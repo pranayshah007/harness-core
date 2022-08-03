@@ -11,7 +11,7 @@ import io.harness.cvng.beans.CVMonitoringCategory;
 import io.harness.cvng.beans.DataSourceType;
 import io.harness.cvng.core.beans.HealthSourceMetricDefinition;
 import io.harness.cvng.core.beans.monitoredService.HealthSource;
-import io.harness.cvng.core.beans.monitoredService.MetricPackDTO;
+import io.harness.cvng.core.beans.monitoredService.TimeSeriesMetricPackDTO;
 import io.harness.cvng.core.entities.AppDynamicsCVConfig;
 import io.harness.cvng.core.entities.CVConfig;
 import io.harness.cvng.core.entities.MetricPack;
@@ -51,7 +51,7 @@ public class AppDynamicsHealthSourceSpec extends MetricHealthSourceSpec {
   @NotNull String feature;
   @NotEmpty String applicationName;
   @NotEmpty String tierName;
-  @Valid Set<MetricPackDTO> metricPacks;
+  @Valid Set<TimeSeriesMetricPackDTO> metricPacks;
   @Valid @UniqueIdentifierCheck List<AppDMetricDefinitions> metricDefinitions;
   public List<AppDMetricDefinitions> getMetricDefinitions() {
     if (metricDefinitions == null) {
@@ -134,7 +134,7 @@ public class AppDynamicsHealthSourceSpec extends MetricHealthSourceSpec {
     });
     cvConfigs.addAll(CollectionUtils.emptyIfNull(metricDefinitions)
                          .stream()
-                         .collect(Collectors.groupingBy(md -> MetricDefinitionKey.fromMetricDefinition(md)))
+                         .collect(Collectors.groupingBy(MetricDefinitionKey::fromMetricDefinition))
                          .values()
                          .stream()
                          .map(mdList -> {
@@ -158,6 +158,7 @@ public class AppDynamicsHealthSourceSpec extends MetricHealthSourceSpec {
                            return appDynamicsCVConfig;
                          })
                          .collect(Collectors.toList()));
+    cvConfigs.forEach(appDynamicsCVConfig -> appDynamicsCVConfig.addMetricThresholds(metricPacks));
     cvConfigs.stream()
         .filter(cvConfig -> CollectionUtils.isNotEmpty(cvConfig.getMetricInfos()))
         .flatMap(cvConfig -> cvConfig.getMetricInfos().stream())

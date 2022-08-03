@@ -15,6 +15,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.service.scm.ScmDelegateClient;
 import io.harness.exception.ConnectException;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.ScmInternalServerErrorException;
 import io.harness.exception.UnexpectedException;
 
 import com.google.inject.Singleton;
@@ -85,7 +86,11 @@ public class ScmDelegateClientImpl implements ScmDelegateClient {
         return new ScmLinuxManager();
       }
     } catch (Exception e) {
-      throw new InvalidRequestException("Manager could not be created", e);
+      log.error(
+          "The delegate encountered internal error and was unable to perform the operation. Scm Manager could not be created",
+          e);
+      throw new ScmInternalServerErrorException(
+          "The delegate encountered internal error and was unable to perform the operation. Please try after some time.");
     }
     throw new InvalidRequestException("SCM on" + OS + "is not supported yet");
   }

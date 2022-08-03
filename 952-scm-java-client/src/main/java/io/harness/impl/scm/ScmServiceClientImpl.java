@@ -92,6 +92,8 @@ import io.harness.product.ci.scm.proto.NativeEvents;
 import io.harness.product.ci.scm.proto.PRFile;
 import io.harness.product.ci.scm.proto.PageRequest;
 import io.harness.product.ci.scm.proto.Provider;
+import io.harness.product.ci.scm.proto.RefreshTokenRequest;
+import io.harness.product.ci.scm.proto.RefreshTokenResponse;
 import io.harness.product.ci.scm.proto.SCMGrpc;
 import io.harness.product.ci.scm.proto.Signature;
 import io.harness.product.ci.scm.proto.UpdateFileResponse;
@@ -872,6 +874,16 @@ public class ScmServiceClientImpl implements ScmServiceClient {
   }
 
   @Override
+  public RefreshTokenResponse refreshToken(ScmConnector scmConnector, String clientId, String clientSecret,
+      String endpoint, String refreshToken, SCMGrpc.SCMBlockingStub scmBlockingStub) {
+    return scmBlockingStub.refreshToken(RefreshTokenRequest.newBuilder()
+                                            .setClientID(clientId)
+                                            .setClientSecret(clientSecret)
+                                            .setRefreshToken(refreshToken)
+                                            .setEndpoint(endpoint)
+                                            .build());
+  }
+
   public GetLatestCommitOnFileResponse getLatestCommitOnFile(
       ScmConnector scmConnector, String branchName, String filepath, SCMGrpc.SCMBlockingStub scmBlockingStub) {
     return getLatestCommitOnFile(scmConnector, scmBlockingStub, branchName, filepath);
@@ -990,6 +1002,6 @@ public class ScmServiceClientImpl implements ScmServiceClient {
 
   private boolean isBitbucketOnPrem(ScmConnector scmConnector) {
     return ConnectorType.BITBUCKET.equals(scmConnector.getConnectorType())
-        && !GitClientHelper.isBitBucketSAAS(scmConnector.getGitConnectionUrl());
+        && !GitClientHelper.isBitBucketSAAS(scmConnector.getUrl());
   }
 }

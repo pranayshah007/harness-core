@@ -7,6 +7,7 @@
 
 package io.harness.cvng.core.dsl;
 
+import static io.harness.rule.OwnerRule.DHRUVX;
 import static io.harness.rule.OwnerRule.KAMAL;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -82,6 +83,40 @@ public class StackdriverLogDataCollectionDSLTest extends HoverflyCVNextGenTestBa
             .build();
     Map<String, Object> env = new HashMap<>();
     env.put("accessToken", "run command - gcloud beta auth application-default print-access-token");
+    env.putAll(dataCollectionRequest.fetchDslEnvVariables());
+    RuntimeParameters runtimeParameters = RuntimeParameters.builder()
+                                              .baseUrl(dataCollectionRequest.getBaseUrl())
+                                              .commonHeaders(dataCollectionRequest.collectionHeaders())
+                                              .commonOptions(dataCollectionRequest.collectionParams())
+                                              .otherEnvVariables(env)
+                                              .endTime(dataCollectionRequest.getEndTime(now))
+                                              .startTime(dataCollectionRequest.getStartTime(now))
+                                              .build();
+
+    List<LogDataRecord> logDataRecords =
+        (List<LogDataRecord>) dataCollectionDSLService.execute(dataCollectionRequest.getDSL(), runtimeParameters);
+    assertThat(logDataRecords).isNotNull();
+  }
+
+  @Test
+  @Owner(developers = DHRUVX)
+  @Category(UnitTests.class)
+  public void testExecute_stackdriverDSL() {
+    Instant now = Instant.parse("2022-07-26T00:00:00.00Z");
+    GcpConnectorDTO gcpConnectorDTO = GcpConnectorDTO.builder().build();
+    ConnectorInfoDTO gcpConnectorInfoDTO = ConnectorInfoDTO.builder().connectorConfig(gcpConnectorDTO).build();
+    StackdriverLogSampleDataRequest dataCollectionRequest =
+        StackdriverLogSampleDataRequest.builder()
+            .type(DataCollectionRequestType.STACKDRIVER_LOG_SAMPLE_DATA)
+            .query(
+                "resource.type=\"k8s_container\"\nresource.labels.project_id=\"chi-play\"\nresource.labels.location=\"us-central1-c\"")
+            .connectorInfoDTO(gcpConnectorInfoDTO)
+            .startTime(now.minus(Duration.ofMinutes(60)))
+            .endTime(now)
+            .build();
+    Map<String, Object> env = new HashMap<>();
+    env.put("project", "chi-play");
+    env.put("accessToken", accessToken);
     env.putAll(dataCollectionRequest.fetchDslEnvVariables());
     RuntimeParameters runtimeParameters = RuntimeParameters.builder()
                                               .baseUrl(dataCollectionRequest.getBaseUrl())

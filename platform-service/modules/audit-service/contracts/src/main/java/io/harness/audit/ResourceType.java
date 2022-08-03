@@ -41,6 +41,8 @@ public enum ResourceType {
   MONITORED_SERVICE(ResourceTypeConstants.MONITORED_SERVICE),
   CHAOS_AGENT(ResourceTypeConstants.CHAOS_AGENT),
   CHAOS_WORKFLOW(ResourceTypeConstants.CHAOS_WORKFLOW),
+  STO_TARGET(ResourceTypeConstants.STO_TARGET),
+  STO_EXEMPTION(ResourceTypeConstants.STO_EXEMPTION),
   CHAOS_GITOPS(ResourceTypeConstants.CHAOS_GITOPS),
   SERVICE_LEVEL_OBJECTIVE(ResourceTypeConstants.SERVICE_LEVEL_OBJECTIVE),
   PERSPECTIVE(ResourceTypeConstants.PERSPECTIVE),

@@ -216,7 +216,7 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
 
   @Override
   public AggregationResults<ActiveServiceInstanceInfo> getActiveServiceInstanceInfo(
-      String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId, long timestampInMs) {
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId) {
     Criteria criteria = Criteria.where(InstanceKeys.accountIdentifier)
                             .is(accountIdentifier)
                             .and(InstanceKeys.orgIdentifier)

@@ -1,6 +1,6 @@
 # Any edit in this file should accompany an increment in version.
 name: rolesConfiguration
-version: 31
+version: 33
 roles:
     - identifier: _project_admin
       name: Project Admin
@@ -106,6 +106,13 @@ roles:
         - gitops_cert_view
         - gitops_cert_edit
         - gitops_cert_delete
+        - sto_issue_view
+        - sto_scan_view
+        - sto_testtarget_view
+        - sto_testtarget_edit
+        - sto_exemption_view
+        - sto_exemption_create
+        - sto_exemption_approve
         - core_file_view
         - core_file_edit
         - core_file_delete
@@ -124,6 +131,8 @@ roles:
         - chaos_chaosworkflow_view
         - chaos_chaosworkflow_edit
         - chaos_chaosworkflow_delete
+        - core_setting_view
+        - core_setting_edit
       allowedScopeLevels:
         - project
       managed: true
@@ -162,12 +171,17 @@ roles:
         - gitops_cluster_view
         - gitops_gpgkey_view
         - gitops_cert_view
+        - sto_issue_view
+        - sto_scan_view
+        - sto_testtarget_view
+        - sto_exemption_view
         - core_file_view
         - core_variable_view
         - chaos_chaoshub_view
         - chaos_chaosagent_view
         - chaos_chaosgitops_view
         - chaos_chaosworkflow_view
+        - core_setting_view
       allowedScopeLevels:
         - project
       managed: true
@@ -281,6 +295,13 @@ roles:
         - gitops_cert_view
         - gitops_cert_edit
         - gitops_cert_delete
+        - sto_issue_view
+        - sto_scan_view
+        - sto_testtarget_view
+        - sto_testtarget_edit
+        - sto_exemption_view
+        - sto_exemption_create
+        - sto_exemption_approve
         - core_file_view
         - core_file_edit
         - core_file_delete
@@ -299,6 +320,8 @@ roles:
         - chaos_chaosworkflow_view
         - chaos_chaosworkflow_edit
         - chaos_chaosworkflow_delete
+        - core_setting_view
+        - core_setting_edit
       allowedScopeLevels:
         - organization
       managed: true
@@ -339,12 +362,17 @@ roles:
         - gitops_cluster_view
         - gitops_gpgkey_view
         - gitops_cert_view
+        - sto_issue_view
+        - sto_scan_view
+        - sto_testtarget_view
+        - sto_exemption_view
         - core_file_view
         - core_variable_view
         - chaos_chaoshub_view
         - chaos_chaosagent_view
         - chaos_chaosgitops_view
         - chaos_chaosworkflow_view
+        - core_setting_view
       allowedScopeLevels:
         - organization
       managed: true
@@ -494,6 +522,8 @@ roles:
         - chaos_chaosworkflow_view
         - chaos_chaosworkflow_edit
         - chaos_chaosworkflow_delete
+        - core_setting_view
+        - core_setting_edit
       allowedScopeLevels:
         - account
       managed: true
@@ -548,6 +578,7 @@ roles:
         - chaos_chaosagent_view
         - chaos_chaosgitops_view
         - chaos_chaosworkflow_view
+        - core_setting_view
       allowedScopeLevels:
         - account
       managed: true
@@ -578,6 +609,7 @@ roles:
         - core_variable_view
         - core_template_view
         - core_template_access
+        - core_setting_view
       allowedScopeLevels:
         - project
       managed: true
@@ -639,6 +671,8 @@ roles:
       managed: true
       allowedScopeLevels:
         - account
+        - organization
+        - project
     - identifier: _sto_secops_role
       name: Security Testing SecOps Role
       description: Can work with security issues and manage security exemptions
@@ -653,6 +687,8 @@ roles:
       managed: true
       allowedScopeLevels:
         - account
+        - organization
+        - project
     - identifier: _account_basic
       name: Account Basic
       description: Account Basic

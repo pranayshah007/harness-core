@@ -49,6 +49,8 @@ public class ResourceTypeConstants {
   public static final String CHAOS_GITOPS = "CHAOS_GITOPS";
   public static final String CHAOS_WORKFLOW = "CHAOS_WORKFLOW";
   public static final String SERVICE_LEVEL_OBJECTIVE = "SERVICE_LEVEL_OBJECTIVE";
+  public static final String STO_TARGET = "STO_TARGET";
+  public static final String STO_EXEMPTION = "STO_EXEMPTION";
   public static final String PERSPECTIVE = "PERSPECTIVE";
   public static final String PERSPECTIVE_BUDGET = "PERSPECTIVE_BUDGET";
   public static final String PERSPECTIVE_REPORT = "PERSPECTIVE_REPORT";

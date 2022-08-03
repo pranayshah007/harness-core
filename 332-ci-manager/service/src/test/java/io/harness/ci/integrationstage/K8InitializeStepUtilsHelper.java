@@ -481,6 +481,30 @@ public class K8InitializeStepUtilsHelper {
         ExecutionWrapperConfig.builder().stepGroup(getRunStepsInStepGroupAsJsonNode3()).build());
   }
 
+  public static List<ExecutionWrapperConfig> getExecutionWrapperConfigListWithStrategy() throws Exception {
+    K8InitializeStepUtilsHelper k8InitializeStepUtilsHelper = new K8InitializeStepUtilsHelper();
+    String step1String = k8InitializeStepUtilsHelper.readFile("strategy/stepWithStrategy1.json");
+    String step2String = k8InitializeStepUtilsHelper.readFile("strategy/stepWithStrategy2.json");
+    String step3String = k8InitializeStepUtilsHelper.readFile("strategy/stepWithStrategy3.json");
+    String stepGroup1String = k8InitializeStepUtilsHelper.readFile("strategy/stepGroupWithStrategy1.json");
+    String stepGroup2String = k8InitializeStepUtilsHelper.readFile("strategy/stepGroupWithStrategy2.json");
+    String stepGroup3String = k8InitializeStepUtilsHelper.readFile("strategy/stepGroupWithStrategy3.json");
+    ObjectMapper mapper = new ObjectMapper();
+    ExecutionWrapperConfig step1 = mapper.readValue(step1String, ExecutionWrapperConfig.class);
+    ExecutionWrapperConfig step2 = mapper.readValue(step2String, ExecutionWrapperConfig.class);
+    ExecutionWrapperConfig step3 = mapper.readValue(step3String, ExecutionWrapperConfig.class);
+    ExecutionWrapperConfig stepGroup1 = mapper.readValue(stepGroup1String, ExecutionWrapperConfig.class);
+    ExecutionWrapperConfig stepGroup2 = mapper.readValue(stepGroup2String, ExecutionWrapperConfig.class);
+    ExecutionWrapperConfig stepGroup3 = mapper.readValue(stepGroup3String, ExecutionWrapperConfig.class);
+    step1.setUuid("MAB-xgo2QTyxGP5ER1ZHdg");
+    step2.setUuid("MAB-xgo2QTyxGP5ER1ZHdg");
+    step3.setUuid("MAB-xgo2QTyxGP5ER1ZHdg");
+    stepGroup1.setUuid("18R7LnNLTu6dZpd4Nvjp_A");
+    stepGroup2.setUuid("18R7LnNLTu6dZpd4Nvjp_A");
+    stepGroup3.setUuid("18R7LnNLTu6dZpd4Nvjp_A");
+    return newArrayList(step1, step2, step3, stepGroup1, stepGroup2, stepGroup3);
+  }
+
   private String readFile(String filename) {
     ClassLoader classLoader = getClass().getClassLoader();
     try {

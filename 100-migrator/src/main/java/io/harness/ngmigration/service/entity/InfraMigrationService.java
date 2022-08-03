@@ -10,11 +10,15 @@ package io.harness.ngmigration.service.entity;
 import static software.wings.api.CloudProviderType.KUBERNETES_CLUSTER;
 import static software.wings.ngmigration.NGMigrationEntityType.CONNECTOR;
 
+import static java.util.stream.Collectors.counting;
+import static java.util.stream.Collectors.groupingBy;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.MigratedEntityMapping;
 import io.harness.cdng.infra.InfrastructureDef;
 import io.harness.cdng.infra.yaml.K8SDirectInfrastructure;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.gitsync.beans.YamlDTO;
 import io.harness.ng.core.infrastructure.InfrastructureType;
 import io.harness.ngmigration.beans.BaseEntityInput;
@@ -23,6 +27,8 @@ import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.MigratorInputType;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
+import io.harness.ngmigration.beans.summary.BaseSummary;
+import io.harness.ngmigration.beans.summary.InfraDefSummary;
 import io.harness.ngmigration.client.NGClient;
 import io.harness.ngmigration.client.PmsClient;
 import io.harness.ngmigration.expressions.MigratorExpressionUtils;
@@ -30,6 +36,8 @@ import io.harness.ngmigration.service.MigratorUtility;
 import io.harness.ngmigration.service.NgMigrationService;
 import io.harness.pms.yaml.ParameterField;
 
+import software.wings.api.CloudProviderType;
+import software.wings.api.DeploymentType;
 import software.wings.infra.DirectKubernetesInfrastructure;
 import software.wings.infra.InfrastructureDefinition;
 import software.wings.ngmigration.CgEntityId;
@@ -60,7 +68,26 @@ public class InfraMigrationService extends NgMigrationService {
   }
 
   @Override
+  public BaseSummary getSummary(List<CgEntityNode> entities) {
+    if (EmptyPredicate.isEmpty(entities)) {
+      return null;
+    }
+    Map<String, Long> deploymentTypeSummary =
+        entities.stream()
+            .map(entity -> ((InfrastructureDefinition) entity.getEntity()).getDeploymentType())
+            .collect(groupingBy(DeploymentType::name, counting()));
+    Map<String, Long> cloudProviderType =
+        entities.stream()
+            .map(entity -> ((InfrastructureDefinition) entity.getEntity()).getCloudProviderType())
+            .collect(groupingBy(CloudProviderType::name, counting()));
+    return new InfraDefSummary(entities.size(), deploymentTypeSummary, cloudProviderType);
+  }
+
+  @Override
   public DiscoveryNode discover(NGMigrationEntity entity) {
+    if (entity == null) {
+      return null;
+    }
     InfrastructureDefinition infra = (InfrastructureDefinition) entity;
     String entityId = infra.getUuid();
     CgEntityId infraEntityId = CgEntityId.builder().type(NGMigrationEntityType.INFRA).id(entityId).build();

@@ -348,6 +348,16 @@ public class DeploymentTimeSeriesAnalysisServiceImpl implements DeploymentTimeSe
   }
 
   @Override
+  public boolean isAnalysisFailFastForLatestTimeRange(String verificationTaskId) {
+    DeploymentTimeSeriesAnalysis deploymentTimeSeriesAnalysis =
+        hPersistence.createQuery(DeploymentTimeSeriesAnalysis.class, excludeAuthority)
+            .filter(DeploymentTimeSeriesAnalysisKeys.verificationTaskId, verificationTaskId)
+            .order(Sort.descending(DeploymentTimeSeriesAnalysisKeys.startTime))
+            .get();
+    return deploymentTimeSeriesAnalysis != null && deploymentTimeSeriesAnalysis.isFailFast();
+  }
+
+  @Override
   public Optional<Risk> getRecentHighestRiskScore(String accountId, String verificationJobInstanceId) {
     DeploymentTimeSeriesAnalysis deploymentTimeSeriesAnalysis =
         getRecentHighestDeploymentTimeSeriesAnalysis(accountId, verificationJobInstanceId);

@@ -15,8 +15,6 @@ import io.harness.changestreamsframework.ChangeTrackingInfo;
 import io.harness.entities.CDCEntity;
 import io.harness.persistence.PersistentEntity;
 
-import software.wings.dl.WingsPersistence;
-
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.HashSet;
@@ -29,7 +27,6 @@ import lombok.extern.slf4j.Slf4j;
 class ChangeDataCaptureHelper {
   @Inject private ChangeTracker changeTracker;
   @Inject private Set<CDCEntity<?>> cdcEntities;
-  @Inject private WingsPersistence wingsPersistence;
 
   void startChangeListeners(ChangeSubscriber changeSubscriber) {
     Set<ChangeTrackingInfo<?>> changeTrackingInfos = new HashSet<>();
@@ -47,12 +44,7 @@ class ChangeDataCaptureHelper {
 
   private <T extends PersistentEntity> ChangeTrackingInfo<T> getChangeTrackingInfo(
       Class<T> subscribedClass, ChangeSubscriber<T> changeSubscriber) {
-    CDCStateEntity cdcStateEntityState = wingsPersistence.get(CDCStateEntity.class, subscribedClass.getCanonicalName());
-    String token = null;
-    if (cdcStateEntityState != null) {
-      token = cdcStateEntityState.getLastSyncedToken();
-    }
-    return new ChangeTrackingInfo<>(subscribedClass, changeSubscriber, token);
+    return new ChangeTrackingInfo<>(subscribedClass, changeSubscriber);
   }
 
   boolean checkIfAnyChangeListenerIsAlive() {

@@ -11,24 +11,26 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotations.dev.OwnedBy;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.swagger.annotations.ApiModel;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
+import javax.validation.constraints.NotNull;
 import lombok.AccessLevel;
-import lombok.NoArgsConstructor;
-import lombok.NonNull;
+import lombok.Builder;
 import lombok.Value;
 import lombok.experimental.FieldDefaults;
-import lombok.experimental.SuperBuilder;
 
-@FieldDefaults(level = AccessLevel.PRIVATE)
-@Value
-@SuperBuilder
-@NoArgsConstructor
 @OwnedBy(CDP)
+@Value
+@Builder
+@FieldDefaults(level = AccessLevel.PRIVATE)
+@JsonIgnoreProperties(ignoreUnknown = true)
+@ApiModel("HostValidationParams")
 @Schema(
     name = "HostValidationParams", description = "Host validation parameters, including host names and delegate tags.")
 public class HostValidationParams {
-  @JsonProperty("hosts") @Schema(description = "Hosts to be validated", required = true) @NonNull List<String> hosts;
+  @JsonProperty("hosts") @Schema(description = "Hosts to be validated", required = true) @NotNull List<String> hosts;
   @JsonProperty("tags") @Schema(description = "Delegate tags (optional)") List<String> tags;
 }

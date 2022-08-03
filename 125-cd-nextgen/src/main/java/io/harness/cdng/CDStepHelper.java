@@ -530,6 +530,10 @@ public class CDStepHelper {
     return cdFeatureFlagHelper.isEnabled(accountId, FeatureName.NEW_KUBECTL_VERSION);
   }
 
+  public boolean isOptimizeFetchFilesKustomize(String accountId) {
+    return cdFeatureFlagHelper.isEnabled(accountId, FeatureName.NG_OPTIMIZE_FETCH_FILES_KUSTOMIZE);
+  }
+
   public boolean shouldCleanUpIncompleteCanaryDeployRelease(String accountId) {
     return cdFeatureFlagHelper.isEnabled(accountId, FeatureName.CLEANUP_INCOMPLETE_CANARY_DEPLOY_RELEASE);
   }

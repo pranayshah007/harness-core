@@ -332,15 +332,15 @@ public class DeploymentStageVariableCreator extends AbstractStageVariableCreator
     if (isNotEmpty(environmentRef.getValue()) && !environmentRef.isExpression()) {
       Optional<Environment> optionalEnvironment =
           environmentService.get(accountIdentifier, orgIdentifier, projectIdentifier, environmentRef.getValue(), false);
-      NGEnvironmentConfig ngEnvironmentConfig = null;
       if (optionalEnvironment.isPresent()) {
-        ngEnvironmentConfig = EnvironmentMapper.toNGEnvironmentConfig(optionalEnvironment.get());
-      }
-      outputProperties.addAll(handleEnvironmentOutcome(ngEnvironmentConfig));
-      // all env.variables also accessed by serviceVariables
-      List<NGVariable> envVariables = ngEnvironmentConfig.getNgEnvironmentInfoConfig().getVariables();
-      if (isNotEmpty(envVariables)) {
-        serviceVariables.addAll(envVariables.stream().map(NGVariable::getName).collect(Collectors.toSet()));
+        final NGEnvironmentConfig ngEnvironmentConfig =
+            EnvironmentMapper.toNGEnvironmentConfig(optionalEnvironment.get());
+        outputProperties.addAll(handleEnvironmentOutcome(ngEnvironmentConfig));
+        // all env.variables also accessed by serviceVariables
+        List<NGVariable> envVariables = ngEnvironmentConfig.getNgEnvironmentInfoConfig().getVariables();
+        if (isNotEmpty(envVariables)) {
+          serviceVariables.addAll(envVariables.stream().map(NGVariable::getName).collect(Collectors.toSet()));
+        }
       }
     } else {
       outputProperties.addAll(handleEnvironmentOutcome(null));

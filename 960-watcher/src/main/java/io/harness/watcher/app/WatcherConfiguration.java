@@ -11,16 +11,18 @@ import io.harness.event.client.impl.EventPublisherConstants;
 
 import java.util.Optional;
 import lombok.Data;
+import lombok.ToString;
 import org.apache.commons.lang3.StringUtils;
 
 /**
  * Created by brett on 10/30/17
  */
 @Data
+@ToString
 public class WatcherConfiguration {
   private String accountId;
-  private String accountSecret;
-  private String delegateToken;
+  @ToString.Exclude private String accountSecret;
+  @ToString.Exclude private String delegateToken;
   private String managerUrl;
   private boolean doUpgrade;
   private String upgradeCheckLocation;

@@ -58,6 +58,8 @@ public class NGTemplateDtoMapper {
         .entityValidityDetails(templateEntity.isEntityInvalid()
                 ? EntityValidityDetails.builder().valid(false).invalidYaml(templateEntity.getYaml()).build()
                 : EntityValidityDetails.builder().valid(true).build())
+        .storeType(templateEntity.getStoreType())
+        .connectorRef(templateEntity.getConnectorRef())
         .build();
   }
 

@@ -9,6 +9,7 @@ package io.harness.cvng.core.dsl;
 
 import static io.harness.CvNextGenTestBase.getResourceFilePath;
 import static io.harness.CvNextGenTestBase.getSourceResourceFile;
+import static io.harness.rule.OwnerRule.DHRUVX;
 import static io.harness.rule.OwnerRule.KAPIL;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -121,6 +122,152 @@ public class NewRelicDataCollectionDSLTest extends HoverflyCVNextGenTestBase {
     assertThat(Sets.newHashSet(timeSeriesRecords))
         .isEqualTo(new Gson().fromJson(
             readJson("custom-deployment-expectation.json"), new TypeToken<Set<TimeSeriesRecord>>() {}.getType()));
+  }
+
+  @Test
+  @Owner(developers = DHRUVX)
+  @Category(UnitTests.class)
+  public void testExecute_newRelicCustomPack_withoutHostDataCollection() throws IOException {
+    DataCollectionDSLService dataCollectionDSLService = new DataCollectionServiceImpl();
+    dataCollectionDSLService.registerDatacollectionExecutorService(executorService);
+    String code = readDSL("custom-pack.datacollection");
+    Instant instant = Instant.ofEpochMilli(1654494751000L);
+    List<MetricPack> metricPacks =
+        metricPackService.getMetricPacks(accountId, orgIdentifier, projectIdentifier, DataSourceType.NEW_RELIC);
+
+    NewRelicDataCollectionInfo newRelicDataCollectionInfo =
+        NewRelicDataCollectionInfo.builder()
+            .applicationName("My Application")
+            .applicationId(107019083)
+            .groupName("G1")
+            .metricInfoList(Arrays.asList(
+                NewRelicMetricInfoDTO.builder()
+                    .metricName("New Relic Metric")
+                    .metricIdentifier("new_relic_metric")
+                    .nrql(
+                        "SELECT count(apm.service.instance.count) FROM Metric WHERE appName LIKE 'My Application' TIMESERIES")
+                    .responseMapping(MetricResponseMappingDTO.builder()
+                                         .metricValueJsonPath("$.timeSeries.[*].results.[*].count")
+                                         .timestampJsonPath("$.timeSeries.[*].beginTimeSeconds")
+                                         .build())
+                    .build()))
+            .metricPack(metricPacks.stream()
+                            .filter(metricPack -> metricPack.getIdentifier().equals("Custom"))
+                            .findFirst()
+                            .get()
+                            .toDTO())
+            .customQuery(true)
+            .build();
+
+    newRelicDataCollectionInfo.setCollectHostData(false);
+    Map<String, Object> params = newRelicDataCollectionInfo.getDslEnvVariables(NewRelicConnectorDTO.builder().build());
+
+    Map<String, String> headers = new HashMap<>();
+    headers.put("X-Query-Key",
+        "***"); // Replace this with the actual value when capturing the request.
+    RuntimeParameters runtimeParameters = RuntimeParameters.builder()
+                                              .startTime(instant.minusSeconds(60))
+                                              .endTime(instant)
+                                              .commonHeaders(headers)
+                                              .otherEnvVariables(params)
+                                              .baseUrl("https://insights-api.newrelic.com/v1/accounts/1805869/")
+                                              .build();
+    List<TimeSeriesRecord> timeSeriesRecords =
+        (List<TimeSeriesRecord>) dataCollectionDSLService.execute(code, runtimeParameters, callDetails -> {});
+
+    assertThat(timeSeriesRecords.size()).isEqualTo(1);
+    assertThat(timeSeriesRecords.get(0).getHostname()).isNull();
+    assertThat(timeSeriesRecords.get(0).getTxnName()).isEqualTo("G1");
+    assertThat(timeSeriesRecords.get(0).getMetricIdentifier()).isEqualTo("new_relic_metric");
+    assertThat(timeSeriesRecords.get(0).getMetricName()).isEqualTo("New Relic Metric");
+    assertThat(timeSeriesRecords.get(0).getMetricValue()).isEqualTo(15.0);
+    assertThat(timeSeriesRecords.get(0).getTimestamp()).isEqualTo(1654494660000L);
+  }
+
+  @Test
+  @Owner(developers = DHRUVX)
+  @Category(UnitTests.class)
+  public void testExecute_newRelicPerformancePack_withoutHostDataCollection() throws IOException {
+    DataCollectionDSLService dataCollectionDSLService = new DataCollectionServiceImpl();
+    dataCollectionDSLService.registerDatacollectionExecutorService(executorService);
+    String code = readDSL("performance-pack.datacollection");
+    Instant instant = Instant.ofEpochMilli(1654494751000L);
+    List<MetricPack> metricPacks =
+        metricPackService.getMetricPacks(accountId, orgIdentifier, projectIdentifier, DataSourceType.NEW_RELIC);
+
+    NewRelicDataCollectionInfo newRelicDataCollectionInfo =
+        NewRelicDataCollectionInfo.builder()
+            .applicationName("My Application")
+            .applicationId(107019083)
+            .metricPack(metricPacks.stream()
+                            .filter(metricPack -> metricPack.getIdentifier().equals("Performance"))
+                            .findFirst()
+                            .get()
+                            .toDTO())
+            .customQuery(false)
+            .build();
+
+    newRelicDataCollectionInfo.setCollectHostData(false);
+    Map<String, Object> params = newRelicDataCollectionInfo.getDslEnvVariables(NewRelicConnectorDTO.builder().build());
+
+    Map<String, String> headers = new HashMap<>();
+    headers.put("X-Query-Key",
+        "***"); // Replace this with the actual value when capturing the request.
+    RuntimeParameters runtimeParameters = RuntimeParameters.builder()
+                                              .startTime(instant.minusSeconds(60))
+                                              .endTime(instant)
+                                              .commonHeaders(headers)
+                                              .otherEnvVariables(params)
+                                              .baseUrl("https://insights-api.newrelic.com/v1/accounts/1805869/")
+                                              .build();
+    List<TimeSeriesRecord> timeSeriesRecords =
+        (List<TimeSeriesRecord>) dataCollectionDSLService.execute(code, runtimeParameters, callDetails -> {});
+
+    assertThat(timeSeriesRecords.size()).isEqualTo(4);
+    assertThat(timeSeriesRecords.get(0).getHostname()).isNull();
+  }
+
+  @Test
+  @Owner(developers = DHRUVX)
+  @Category(UnitTests.class)
+  public void testExecute_newRelicPerformancePack_withHostDataCollection() throws IOException {
+    DataCollectionDSLService dataCollectionDSLService = new DataCollectionServiceImpl();
+    dataCollectionDSLService.registerDatacollectionExecutorService(executorService);
+    String code = readDSL("performance-pack.datacollection");
+    Instant instant = Instant.ofEpochMilli(1654494751000L);
+    List<MetricPack> metricPacks =
+        metricPackService.getMetricPacks(accountId, orgIdentifier, projectIdentifier, DataSourceType.NEW_RELIC);
+
+    NewRelicDataCollectionInfo newRelicDataCollectionInfo =
+        NewRelicDataCollectionInfo.builder()
+            .applicationName("My Application")
+            .applicationId(107019083)
+            .metricPack(metricPacks.stream()
+                            .filter(metricPack -> metricPack.getIdentifier().equals("Performance"))
+                            .findFirst()
+                            .get()
+                            .toDTO())
+            .customQuery(false)
+            .build();
+
+    newRelicDataCollectionInfo.setCollectHostData(true);
+    Map<String, Object> params = newRelicDataCollectionInfo.getDslEnvVariables(NewRelicConnectorDTO.builder().build());
+
+    Map<String, String> headers = new HashMap<>();
+    headers.put("X-Query-Key",
+        "***"); // Replace this with the actual value when capturing the request.
+    RuntimeParameters runtimeParameters = RuntimeParameters.builder()
+                                              .startTime(instant.minusSeconds(60))
+                                              .endTime(instant)
+                                              .commonHeaders(headers)
+                                              .otherEnvVariables(params)
+                                              .baseUrl("https://insights-api.newrelic.com/v1/accounts/1805869/")
+                                              .build();
+    List<TimeSeriesRecord> timeSeriesRecords =
+        (List<TimeSeriesRecord>) dataCollectionDSLService.execute(code, runtimeParameters, callDetails -> {});
+
+    assertThat(timeSeriesRecords.size()).isEqualTo(6);
+    assertThat(timeSeriesRecords.get(0).getHostname()).isNotBlank();
   }
 
   private String readDSL(String name) throws IOException {

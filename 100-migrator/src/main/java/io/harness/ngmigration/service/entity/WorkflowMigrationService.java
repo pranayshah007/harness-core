@@ -28,12 +28,10 @@ import io.harness.beans.OrchestrationWorkflowType;
 import io.harness.cdng.creator.plan.stage.DeploymentStageConfig;
 import io.harness.cdng.environment.yaml.EnvironmentYaml;
 import io.harness.cdng.infra.InfrastructureDef;
-import io.harness.cdng.k8s.K8sRollingStepInfo;
 import io.harness.cdng.pipeline.PipelineInfrastructure;
 import io.harness.cdng.service.beans.ServiceConfig;
 import io.harness.data.structure.CollectionUtils;
 import io.harness.data.structure.EmptyPredicate;
-import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.gitsync.beans.YamlDTO;
 import io.harness.ngmigration.beans.BaseEntityInput;
 import io.harness.ngmigration.beans.BaseInputDefinition;
@@ -48,6 +46,10 @@ import io.harness.ngmigration.client.PmsClient;
 import io.harness.ngmigration.expressions.MigratorExpressionUtils;
 import io.harness.ngmigration.service.MigratorUtility;
 import io.harness.ngmigration.service.NgMigrationService;
+import io.harness.ngmigration.service.step.StepMapper;
+import io.harness.ngmigration.service.step.StepMapperFactory;
+import io.harness.ngmigration.service.workflow.WorkflowHandler;
+import io.harness.ngmigration.service.workflow.WorkflowHandlerFactory;
 import io.harness.plancreator.execution.ExecutionElementConfig;
 import io.harness.plancreator.execution.ExecutionWrapperConfig;
 import io.harness.plancreator.stages.StageElementWrapperConfig;
@@ -55,10 +57,6 @@ import io.harness.plancreator.stages.stage.StageElementConfig;
 import io.harness.plancreator.steps.StepElementConfig;
 import io.harness.plancreator.steps.StepGroupElementConfig;
 import io.harness.pms.yaml.ParameterField;
-import io.harness.steps.shellscript.ShellScriptInlineSource;
-import io.harness.steps.shellscript.ShellScriptSourceWrapper;
-import io.harness.steps.shellscript.ShellScriptStepInfo;
-import io.harness.steps.shellscript.ShellType;
 import io.harness.yaml.core.failurestrategy.FailureStrategyConfig;
 import io.harness.yaml.core.failurestrategy.NGFailureType;
 import io.harness.yaml.core.failurestrategy.OnFailureConfig;
@@ -66,6 +64,7 @@ import io.harness.yaml.core.failurestrategy.rollback.StageRollbackFailureActionC
 import io.harness.yaml.core.timeout.Timeout;
 import io.harness.yaml.utils.JsonPipelineUtils;
 
+import software.wings.beans.GraphNode;
 import software.wings.beans.PhaseStep;
 import software.wings.beans.Service;
 import software.wings.beans.Workflow;
@@ -88,7 +87,6 @@ import io.fabric8.utils.Lists;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -106,6 +104,8 @@ public class WorkflowMigrationService extends NgMigrationService {
   @Inject private RollingWorkflowYamlHandler rollingWorkflowYamlHandler;
   @Inject private ApplicationManifestService applicationManifestService;
   @Inject private MigratorExpressionUtils migratorExpressionUtils;
+  @Inject private StepMapperFactory stepMapperFactory;
+  @Inject private WorkflowHandlerFactory workflowHandlerFactory;
 
   private static final List<String> SUPPORTED_STEPS = Lists.newArrayList(K8S_DEPLOYMENT_ROLLING, SHELL_SCRIPT)
                                                           .stream()
@@ -122,14 +122,31 @@ public class WorkflowMigrationService extends NgMigrationService {
     if (EmptyPredicate.isEmpty(entities)) {
       return null;
     }
-    Map<String, Long> summaryByType = entities.stream()
-                                          .map(entity -> (Workflow) entity.getEntity())
-                                          .collect(groupingBy(entity -> entity.getWorkflowType().name(), counting()));
-    return WorkflowSummary.builder().count(entities.size()).typeSummary(summaryByType).build();
+    Map<String, Long> summaryByType =
+        entities.stream()
+            .map(entity -> (Workflow) entity.getEntity())
+            .collect(groupingBy(entity -> entity.getOrchestration().getOrchestrationWorkflowType().name(), counting()));
+    Map<String, Long> summaryByStepTyp = entities.stream()
+                                             .flatMap(entity -> {
+                                               Workflow workflow = (Workflow) entity.getEntity();
+                                               WorkflowHandler workflowHandler =
+                                                   workflowHandlerFactory.getWorkflowHandler(workflow);
+                                               return workflowHandler.getSteps(workflow).stream();
+                                             })
+                                             .collect(groupingBy(GraphNode::getType, counting()));
+
+    return WorkflowSummary.builder()
+        .count(entities.size())
+        .typeSummary(summaryByType)
+        .stepTypeSummary(summaryByStepTyp)
+        .build();
   }
 
   @Override
   public DiscoveryNode discover(NGMigrationEntity entity) {
+    if (entity == null) {
+      return null;
+    }
     Workflow workflow = (Workflow) entity;
     String entityId = workflow.getUuid();
     CgEntityId workflowEntityId = CgEntityId.builder().type(WORKFLOW).id(entityId).build();
@@ -239,11 +256,11 @@ public class WorkflowMigrationService extends NgMigrationService {
       Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NgEntityDetail> migratedEntities) {
     Workflow workflow = (Workflow) entities.get(entityId).getEntity();
     migratorExpressionUtils.render(workflow);
-    RollingWorkflowYaml rollingWorkflowYaml = rollingWorkflowYamlHandler.toYaml(workflow, workflow.getAppId());
+    WorkflowHandler workflowHandler = workflowHandlerFactory.getWorkflowHandler(workflow);
     List<ExecutionWrapperConfig> steps = new ArrayList<>();
     List<ExecutionWrapperConfig> rollingSteps = new ArrayList<>();
-    if (EmptyPredicate.isNotEmpty(rollingWorkflowYaml.getPhases())) {
-      List<WorkflowPhase.Yaml> phases = rollingWorkflowYaml.getPhases();
+    List<WorkflowPhase.Yaml> phases = workflowHandler.getPhases(workflow);
+    if (EmptyPredicate.isNotEmpty(phases)) {
       steps.addAll(phases.stream()
                        .map(phase -> {
                          List<PhaseStep.Yaml> phaseSteps = phase.getPhaseSteps();
@@ -352,40 +369,13 @@ public class WorkflowMigrationService extends NgMigrationService {
   }
 
   private StepElementConfig getStepElementConfig(StepYaml step) {
-    if (step.getType().equals("K8S_DEPLOYMENT_ROLLING")) {
-      Map<String, Object> properties =
-          EmptyPredicate.isNotEmpty(step.getProperties()) ? step.getProperties() : new HashMap<>();
-      return StepElementConfig.builder()
-          .identifier(MigratorUtility.generateIdentifier(step.getName()))
-          .name(step.getName())
-          .type(StepSpecTypeConstants.K8S_ROLLING_DEPLOY)
-          .stepSpecType(K8sRollingStepInfo.infoBuilder().skipDryRun(ParameterField.createValueField(false)).build())
-          .timeout(ParameterField.createValueField(
-              Timeout.builder().timeoutString(properties.getOrDefault("stateTimeoutInMinutes", "10") + "m").build()))
-          .build();
-    } else if (step.getType().equals("SHELL_SCRIPT")) {
-      Map<String, Object> properties = CollectionUtils.emptyIfNull(step.getProperties());
-      return StepElementConfig.builder()
-          .identifier(MigratorUtility.generateIdentifier(step.getName()))
-          .name(step.getName())
-          .type(io.harness.steps.StepSpecTypeConstants.SHELL_SCRIPT)
-          .stepSpecType(
-              // TODO: add mappers for other fields in shell script
-              ShellScriptStepInfo.infoBuilder()
-                  .onDelegate(ParameterField.createValueField((boolean) properties.get("executeOnDelegate")))
-                  .shell(ShellType.Bash)
-                  .source(
-                      ShellScriptSourceWrapper.builder()
-                          .type("Inline")
-                          .spec(ShellScriptInlineSource.builder()
-                                    .script(ParameterField.createValueField((String) properties.get("scriptString")))
-                                    .build())
-                          .build())
-                  .build())
-          .timeout(ParameterField.createValueField(
-              Timeout.builder().timeoutString(properties.getOrDefault("stateTimeoutInMinutes", "10") + "m").build()))
-          .build();
-    }
-    throw new UnsupportedOperationException(String.format("Not supported step type: [%s]", step.getType()));
+    StepMapper stepMapper = stepMapperFactory.getStepMapper(step.getType());
+    return StepElementConfig.builder()
+        .identifier(MigratorUtility.generateIdentifier(step.getName()))
+        .name(step.getName())
+        .type(stepMapper.getStepType())
+        .stepSpecType(stepMapper.getSpec(step))
+        .timeout(ParameterField.createValueField(Timeout.builder().timeoutString(stepMapper.getTimeout(step)).build()))
+        .build();
   }
 }

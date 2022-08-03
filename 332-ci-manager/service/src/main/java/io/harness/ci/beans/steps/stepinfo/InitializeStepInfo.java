@@ -27,6 +27,7 @@ import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
+import io.harness.steps.matrix.StrategyExpansionData;
 import io.harness.yaml.core.variables.NGVariable;
 import io.harness.yaml.extended.ci.codebase.CodeBase;
 import io.harness.yaml.schema.YamlSchemaIgnoreSubtype;
@@ -83,14 +84,17 @@ public class InitializeStepInfo implements CIStepInfo, WithConnectorRef {
   @NotNull boolean skipGitClone;
   @NotNull Infrastructure infrastructure;
 
+  Map<String, StrategyExpansionData> strategyExpansionMap;
+
   @Builder
   @ConstructorProperties({"accountId", "timeout", "identifier", "name", "retry", "buildJobEnvInfo",
       "executionElementConfig", "usePVC", "ciCodebase", "skipGitClone", "infrastructure", "executionSource",
-      "stageElementConfig", "variables", "stageIdentifier"})
+      "stageElementConfig", "variables", "stageIdentifier", "strategyExpansionMap"})
   public InitializeStepInfo(String accountId, int timeout, String identifier, String name, Integer retry,
       BuildJobEnvInfo buildJobEnvInfo, ExecutionElementConfig executionElementConfig, boolean usePVC,
       CodeBase ciCodebase, boolean skipGitClone, Infrastructure infrastructure, ExecutionSource executionSource,
-      IntegrationStageConfig stageElementConfig, List<NGVariable> variables, String stageIdentifier) {
+      IntegrationStageConfig stageElementConfig, List<NGVariable> variables, String stageIdentifier,
+      Map<String, StrategyExpansionData> strategyExpansionMap) {
     this.accountId = accountId;
     this.timeout = timeout;
     this.identifier = identifier;
@@ -106,6 +110,7 @@ public class InitializeStepInfo implements CIStepInfo, WithConnectorRef {
     this.executionSource = executionSource;
     this.stageIdentifier = stageIdentifier;
     this.variables = variables;
+    this.strategyExpansionMap = strategyExpansionMap;
   }
 
   @Override

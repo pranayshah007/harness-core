@@ -414,9 +414,9 @@ public class EcsBlueGreenServiceSetupRoute53DNS extends State {
 
     ImageDetails imageDetails =
         artifactCollectionUtils.fetchContainerImageDetails(artifact, context.getWorkflowExecutionId());
-    ContainerServiceElement containerServiceElement = ecsStateHelper.buildContainerServiceElement(context,
-        setupExecutionData, executionStatus, imageDetails, getMaxInstances(), getFixedInstances(),
-        getDesiredInstanceCount(), getResizeStrategy(), getServiceSteadyStateTimeout(), log);
+    ContainerServiceElement containerServiceElement =
+        ecsStateHelper.buildContainerServiceElement(context, setupExecutionData, imageDetails, getMaxInstances(),
+            getFixedInstances(), getDesiredInstanceCount(), getResizeStrategy(), getServiceSteadyStateTimeout());
 
     CommandStateExecutionData executionData = (CommandStateExecutionData) context.getStateExecutionData();
     ecsStateHelper.populateFromDelegateResponse(setupExecutionData, executionData, containerServiceElement);

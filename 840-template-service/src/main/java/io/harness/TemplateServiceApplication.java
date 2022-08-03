@@ -57,6 +57,7 @@ import io.harness.template.GenerateOpenApiSpecCommand;
 import io.harness.template.InspectCommand;
 import io.harness.template.beans.yaml.NGTemplateConfig;
 import io.harness.template.entity.TemplateEntity;
+import io.harness.template.event.TemplateEventConsumerService;
 import io.harness.template.gitsync.TemplateEntityGitSyncHandler;
 import io.harness.template.migration.TemplateMigrationProvider;
 import io.harness.threading.ExecutorModule;
@@ -233,6 +234,7 @@ public class TemplateServiceApplication extends Application<TemplateServiceConfi
 
   private void registerManagedBeans(Environment environment, Injector injector) {
     environment.lifecycle().manage(injector.getInstance(OutboxEventPollService.class));
+    environment.lifecycle().manage(injector.getInstance(TemplateEventConsumerService.class));
   }
 
   private void registerResources(Environment environment, Injector injector) {

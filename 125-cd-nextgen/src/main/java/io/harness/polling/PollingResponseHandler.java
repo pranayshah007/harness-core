@@ -11,6 +11,7 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 import static io.harness.polling.contracts.Type.ACR;
+import static io.harness.polling.contracts.Type.AMAZON_S3;
 import static io.harness.polling.contracts.Type.ARTIFACTORY;
 import static io.harness.polling.contracts.Type.DOCKER_HUB;
 import static io.harness.polling.contracts.Type.ECR;
@@ -49,6 +50,7 @@ import io.harness.polling.bean.artifact.DockerHubArtifactInfo;
 import io.harness.polling.bean.artifact.EcrArtifactInfo;
 import io.harness.polling.bean.artifact.GcrArtifactInfo;
 import io.harness.polling.bean.artifact.NexusRegistryArtifactInfo;
+import io.harness.polling.bean.artifact.S3ArtifactInfo;
 import io.harness.polling.bean.manifest.HelmChartManifestInfo;
 import io.harness.polling.bean.manifest.ManifestInfo;
 import io.harness.polling.bean.manifest.ManifestPolledResponse;
@@ -299,8 +301,12 @@ public class PollingResponseHandler {
         polledResponseResultBuilder.name(((AcrArtifactInfo) artifactInfo).getRepository());
         polledResponseResultBuilder.type(ACR);
         break;
+      case AMAZONS3:
+        polledResponseResultBuilder.name(((S3ArtifactInfo) artifactInfo).getBucketName());
+        polledResponseResultBuilder.type(AMAZON_S3);
+        break;
       default:
-        throw new InvalidRequestException("Unsupported Artifact Type" + artifactInfo.getType().getDisplayName());
+        throw new InvalidRequestException("Unsupported Artifact Type " + artifactInfo.getType().getDisplayName());
     }
     return polledResponseResultBuilder.build();
   }

@@ -21,7 +21,8 @@ public enum AnalysisStatus {
   IGNORED,
   TIMEOUT,
   FAILED,
-  COMPLETED;
+  COMPLETED,
+  TERMINATED;
 
   public static ExecutionStatus mapToVerificationJobExecutionStatus(AnalysisStatus analysisStatus) {
     switch (analysisStatus) {

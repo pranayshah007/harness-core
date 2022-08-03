@@ -33,7 +33,7 @@ public class DebeziumConfigurationTest extends CategoryTest {
   public void testGetDebeziumProperties() {
     DebeziumConfig debeziumConfig =
         new DebeziumConfig(false, "testConnector", "offset_file", "offsets", "false", "false", "6000", "1000", "10000",
-            "3", "MongoDbConnectorClass", "rs0/host1", "shop", "", "", "false", "products", "", "2000");
+            60, "3", "MongoDbConnectorClass", 1000, "rs0/host1", "shop", "", "", "false", "products", "", "2000");
     RedisConfig redisConfig = new RedisConfig();
     Properties expectedProps = new Properties();
     expectedProps.setProperty(DebeziumConfiguration.CONNECTOR_NAME, debeziumConfig.getConnectorName());

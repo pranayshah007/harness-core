@@ -1,0 +1,57 @@
+{
+  "data" : {
+    "pairs" : [ {
+      "request" : {
+        "path" : [ {
+          "matcher" : "exact",
+          "value" : "/v1/accounts/1805869/query"
+        } ],
+        "method" : [ {
+          "matcher" : "exact",
+          "value" : "GET"
+        } ],
+        "destination" : [ {
+          "matcher" : "exact",
+          "value" : "insights-api.newrelic.com"
+        } ],
+        "scheme" : [ {
+          "matcher" : "exact",
+          "value" : "https"
+        } ],
+        "query" : {
+          "nrql" : [ {
+            "matcher" : "exact",
+            "value" : "SELECT count(apm.service.instance.count) FROM Metric WHERE appName LIKE 'My Application' TIMESERIES SINCE 1654494691000 UNTIL 1654494751000"
+          } ]
+        },
+        "body" : [ {
+          "matcher" : "exact",
+          "value" : ""
+        } ]
+      },
+      "response" : {
+        "status" : 200,
+        "body" : "H4sIAAAAAAAAALxSTW+bQBD9K9WesQUIqM0tspKecqndVmrlw3h3TFbZD7QMiVrEf+8sOHac9NJL0B7QvDfvzdcgyBMYUQ8iYNcb6kT9axDS945EnZXjPhEHbLTbaYtblN4pZmRVWRTroqrSRKBT/8I+54xp17UoCdXmpDcmgiZy0Dg7fYgry7UYjj5YcBK3BNFweE9MhLeaLgEWs0Dy4YI/gzEb4+VjdBd1UZ0YqO6Ct3fa4FcEdclE9V3DBviHY9y9RQIFBNEe5NRw7D1bpeWqWnOd+ISOdr/baTziHiloKV7HRf0SnWd50zQBGyDt3ZSSfbLa9YQxybfobp1CLugIpsNXU2WZPM3zRVrx26VlXWZ1mv4U59G+J+QnwlnjXhujrxbD31ngDcqrmdAAz1vNW2D9qzwxQd8caXOB5qQZ2njbQsAfmh6YEOvo5SPSVv85W50KaHrNHYtyfcjyIx4WmBf5QqmVWgCsV4u8yrIjyrUssixKe55W+PJfORa7DpppR/vrkx7eYHyfhO504MfeybgoNppvPRFAvMtD3FctoLXLDsOTlrjk26R4rMsXYqdta5hFocdxP47jXwAAAP//AwD8++47uwMAAA==",
+        "encodedBody" : true,
+        "templated" : false,
+        "headers" : {
+          "Content-Encoding" : [ "gzip" ],
+          "Content-Security-Policy" : [ "frame-ancestors *.newrelic.com" ],
+          "Content-Type" : [ "application/json" ],
+          "Date" : [ "Mon, 25 Jul 2022 20:47:51 GMT" ],
+          "Hoverfly" : [ "Was-Here" ],
+          "Proxied-By" : [ "Service Gateway" ],
+          "Strict-Transport-Security" : [ "max-age=31536000; includeSubDomains" ]
+        }
+      }
+    } ],
+    "globalActions" : {
+      "delays" : [ ]
+    }
+  },
+  "meta" : {
+    "schemaVersion" : "v5",
+    "hoverflyVersion" : "v1.1.5",
+    "timeExported" : "2022-07-25T20:47:51Z"
+  }
+}

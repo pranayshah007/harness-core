@@ -52,6 +52,7 @@ import io.harness.delegate.task.git.TaskStatus;
 import io.harness.delegate.task.serverless.ServerlessArtifactConfig;
 import io.harness.delegate.task.serverless.ServerlessArtifactoryArtifactConfig;
 import io.harness.delegate.task.serverless.ServerlessEcrArtifactConfig;
+import io.harness.delegate.task.serverless.ServerlessS3ArtifactConfig;
 import io.harness.delegate.task.serverless.request.ServerlessDeployRequest;
 import io.harness.delegate.task.serverless.response.ServerlessCommandResponse;
 import io.harness.delegate.task.serverless.response.ServerlessDeployResponse;
@@ -115,6 +116,7 @@ public class ServerlessStepCommonHelperTest extends CategoryTest {
                                         .putSetupAbstractions(SetupAbstractionKeys.projectIdentifier, "test-project")
                                         .build();
   private static final String PRIMARY_ARTIFACT_PATH_FOR_ARTIFACTORY = "<+artifact.path>";
+  private static final String PRIMARY_ARTIFACT_PATH_FOR_S3 = "<+artifact.path>";
   private static final String PRIMARY_ARTIFACT_PATH_FOR_ECR = "<+artifact.image>";
   private static final String ARTIFACT_ACTUAL_PATH = "harnessArtifact/artifactFile";
   private static final String SIDECAR_ARTIFACT_PATH_PREFIX = "<+sidecar.artifact.";
@@ -686,5 +688,20 @@ public class ServerlessStepCommonHelperTest extends CategoryTest {
         .isEqualTo("serverless.yml");
     assertThat(serverlessStepCommonHelper.getManifestDefaultFileName("filePath/serverless.json"))
         .isEqualTo("serverless.json");
+  }
+
+  @Test
+  @Owner(developers = PIYUSH_BHUWALKA)
+  @Category(UnitTests.class)
+  public void renderManifestContentTestWhenManifestFileContentNotEmptyAndContainsPrimaryS3ReplacementExpression() {
+    String manifestFileContent = PRIMARY_ARTIFACT_PATH_FOR_S3;
+    ServerlessArtifactConfig serverlessArtifactConfig = ServerlessS3ArtifactConfig.builder().build();
+    Map<String, ServerlessArtifactConfig> sidecarArtifactMap = new HashMap<>();
+    sidecarArtifactMap.put("sidecar1", serverlessArtifactConfig);
+    sidecarArtifactMap.put("sidecar2", serverlessArtifactConfig);
+    doReturn(ARTIFACT_ACTUAL_PATH).when(engineExpressionService).renderExpression(ambiance, ARTIFACT_ACTUAL_PATH);
+    assertThat(serverlessStepCommonHelper.renderManifestContent(
+                   ambiance, manifestFileContent, serverlessArtifactConfig, sidecarArtifactMap))
+        .isEqualTo(ARTIFACT_ACTUAL_PATH);
   }
 }

@@ -92,8 +92,8 @@ public class VmPluginStepSerializer {
     if (pluginStepInfo.getReports().getValue() != null) {
       if (pluginStepInfo.getReports().getValue().getType() == UnitTestReportType.JUNIT) {
         JUnitTestReport junitTestReport = (JUnitTestReport) pluginStepInfo.getReports().getValue().getSpec();
-        List<String> resolvedReport = junitTestReport.resolve(identifier, stepName);
-
+        List<String> resolvedReport =
+            RunTimeInputHandler.resolveListParameter("paths", stepName, identifier, junitTestReport.getPaths(), false);
         pluginStepBuilder.unitTestReport(VmJunitTestReport.builder().paths(resolvedReport).build());
       }
     }

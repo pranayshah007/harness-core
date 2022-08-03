@@ -257,12 +257,12 @@ public class StepUtilsTest extends CategoryTest {
   public void testCreateStepResponseFromChildResponse() {
     Map<String, ResponseData> responseDataMap = new HashMap<>();
     responseDataMap.put("key1", StepResponseNotifyData.builder().nodeUuid("nodeUuid").status(Status.SUCCEEDED).build());
-    StepResponse stepResponse = StepUtils.createStepResponseFromChildResponse(responseDataMap);
+    StepResponse stepResponse = SdkCoreStepUtils.createStepResponseFromChildResponse(responseDataMap);
     assertNull(stepResponse.getFailureInfo());
     assertEquals(stepResponse.getStatus(), Status.SUCCEEDED);
     responseDataMap.put("key2",
         StepResponseNotifyData.builder().failureInfo(FailureInfo.newBuilder().build()).status(Status.FAILED).build());
-    stepResponse = StepUtils.createStepResponseFromChildResponse(responseDataMap);
+    stepResponse = SdkCoreStepUtils.createStepResponseFromChildResponse(responseDataMap);
     assertNotNull(stepResponse.getFailureInfo());
     assertEquals(stepResponse.getStatus(), Status.FAILED);
   }
@@ -279,13 +279,13 @@ public class StepUtilsTest extends CategoryTest {
             .failureInfo(
                 FailureInfo.newBuilder().addFailureData(FailureData.newBuilder().setMessage("abcd").build()).build())
             .build());
-    StepResponse stepResponse = StepUtils.createStepResponseFromChildResponse(responseDataMap);
+    StepResponse stepResponse = SdkCoreStepUtils.createStepResponseFromChildResponse(responseDataMap);
     responseDataMap.put("key2",
         StepResponseNotifyData.builder()
             .failureInfo(FailureInfo.newBuilder().addFailureData(FailureData.newBuilder().build()).build())
             .status(Status.FAILED)
             .build());
-    stepResponse = StepUtils.createStepResponseFromChildResponse(responseDataMap);
+    stepResponse = SdkCoreStepUtils.createStepResponseFromChildResponse(responseDataMap);
     assertNotNull(stepResponse.getFailureInfo());
     assertEquals(stepResponse.getFailureInfo().getFailureDataCount(), 2);
     assertEquals(stepResponse.getStatus(), Status.FAILED);

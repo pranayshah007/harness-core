@@ -13,6 +13,8 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.ng.core.models.SecretSpec;
 import io.harness.ng.core.models.WinRmCredentialsSpec;
 
+import software.wings.stencils.DefaultValue;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonTypeName;
@@ -32,7 +34,7 @@ import lombok.NoArgsConstructor;
 @Schema(name = "WinRmCredentialsSpec", description = "This is the WinRm authentication details defined in Harness.")
 @OwnedBy(CDP)
 public class WinRmCredentialsSpecDTO extends SecretSpecDTO {
-  @Schema(description = "WinRm port") int port;
+  @Schema(description = "WinRm port") @DefaultValue("5986") int port = 5986;
   @NotNull WinRmAuthDTO auth;
 
   @Override

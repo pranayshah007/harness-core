@@ -86,6 +86,7 @@ public class BillingCalculationServiceTest extends CategoryTest {
 
   private final String ACCOUNT_ID = "accountId";
   private final String REGION = "us-east-1";
+  private final String INSTANCE_CATEGORY = "ON_DEMAND";
   private final String GCP_REGION = "us-central1";
   private final String GCP_ZONE_1 = "us-central1-a";
   private final String GCP_ZONE_2 = "us-central1-b";
@@ -571,7 +572,7 @@ public class BillingCalculationServiceTest extends CategoryTest {
   @Owner(developers = OwnerRule.HITESH)
   @Category(UnitTests.class)
   public void testGetInstanceBillingAmountForFargate() throws IOException {
-    when(vmPricingService.getFargatePricingInfo(REGION)).thenReturn(createEcsFargatePricingInfo());
+    when(vmPricingService.getFargatePricingInfo(INSTANCE_CATEGORY, REGION)).thenReturn(createEcsFargatePricingInfo());
     when(instancePricingStrategyRegistry.getInstancePricingStrategy(InstanceType.ECS_TASK_FARGATE))
         .thenReturn(new EcsFargateInstancePricingStrategy(
             vmPricingService, customBillingMetaDataService, awsCustomBillingService));

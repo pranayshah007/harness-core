@@ -69,12 +69,12 @@ public class InstancesPurgeJobTest extends WingsBaseTest {
 
     List<InstanceStatsSnapshot> instanceStatsThatShouldBeRetained =
         allInstanceStats.stream()
-            .filter(stat -> stat.getTimestamp().toEpochMilli() >= job.getRetentionStartTime(5).toEpochMilli())
+            .filter(stat -> stat.getTimestamp().toEpochMilli() >= job.getRetentionStartTime(6).toEpochMilli())
             .collect(toList());
 
     List<ServerlessInstanceStats> serverlessInstanceStatsThatShouldBeRetained =
         allServerlessInstanceStats.stream()
-            .filter(stat -> stat.getTimestamp().toEpochMilli() >= job.getRetentionStartTime(5).toEpochMilli())
+            .filter(stat -> stat.getTimestamp().toEpochMilli() >= job.getRetentionStartTime(6).toEpochMilli())
             .collect(toList());
 
     job.purge();

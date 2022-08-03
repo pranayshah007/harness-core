@@ -27,6 +27,7 @@ public interface DeploymentTimeSeriesAnalysisService {
       DeploymentTimeSeriesAnalysisFilter deploymentTimeSeriesAnalysisFilter, PageParams pageParams);
   List<TransactionMetricInfo> getTransactionMetricInfos(String accountId, String verificationJobInstanceId);
   List<DeploymentTimeSeriesAnalysis> getAnalysisResults(String verificationTaskId);
+  boolean isAnalysisFailFastForLatestTimeRange(String verificationTaskId);
   Optional<Risk> getRecentHighestRiskScore(String accountId, String verificationJobInstanceId);
 
   DeploymentTimeSeriesAnalysis getRecentHighestDeploymentTimeSeriesAnalysis(

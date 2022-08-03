@@ -15,6 +15,8 @@ import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.eraro.ErrorCode;
+import io.harness.exception.PersistentLockException;
 import io.harness.exception.WingsException;
 import io.harness.lock.AcquiredLock;
 import io.harness.lock.PersistentLocker;
@@ -54,6 +56,7 @@ public class ArtifactCollectionServiceImpl implements ArtifactCollectionService 
   @Inject private ArtifactCollectionUtils artifactCollectionUtils;
 
   public static final Duration timeout = Duration.ofMinutes(10);
+  public static final Duration waitTimeout = Duration.ofMinutes(9);
 
   @Override
   public Artifact collectArtifact(String artifactStreamId, BuildDetails buildDetails) {
@@ -94,7 +97,8 @@ public class ArtifactCollectionServiceImpl implements ArtifactCollectionService 
 
   @Override
   public List<Artifact> collectNewArtifacts(String appId, String artifactStreamId) {
-    try (AcquiredLock ignored = persistentLocker.acquireLock(ArtifactStream.class, artifactStreamId, timeout)) {
+    try (AcquiredLock ignored =
+             persistentLocker.waitToAcquireLock(ArtifactStream.class, artifactStreamId, timeout, waitTimeout)) {
       ArtifactStream artifactStream = artifactStreamService.get(artifactStreamId);
       if (artifactStream == null) {
         log.info("Artifact stream: [{}] does not exist. Returning", artifactStreamId);
@@ -115,6 +119,12 @@ public class ArtifactCollectionServiceImpl implements ArtifactCollectionService 
           .map(
               buildDetails -> artifactService.create(artifactCollectionUtils.getArtifact(artifactStream, buildDetails)))
           .collect(Collectors.toList());
+    } catch (Exception e) {
+      log.error(
+          "Not able to fetch the artifact collection for appId: {} , artifactStreamId: {}", appId, artifactStreamId, e);
+      throw new PersistentLockException(
+          String.format("Cannot acquire lock for artifactStreamId : %s ", artifactStreamId),
+          ErrorCode.FAILED_TO_ACQUIRE_PERSISTENT_LOCK, USER);
     }
   }
 }
