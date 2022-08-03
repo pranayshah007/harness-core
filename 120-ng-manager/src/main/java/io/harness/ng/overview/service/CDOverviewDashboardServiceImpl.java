@@ -165,7 +165,7 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
 
     if (startInterval > 0 && endInterval > 0) {
       totalBuildSqlBuilder.append(
-          String.format("startts is not null and startts>=%s and startts<%s;", startInterval, endInterval));
+          String.format("startts is not null and startts>=%s and startts<=%s;", startInterval, endInterval));
     }
 
     return totalBuildSqlBuilder.toString();
@@ -191,7 +191,7 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
 
     if (startInterval > 0 && endInterval > 0) {
       totalBuildSqlBuilder.append(
-          String.format("startts is not null and startts>=%s and startts<%s;", startInterval, endInterval));
+          String.format("startts is not null and startts>=%s and startts<=%s;", startInterval, endInterval));
     }
 
     return totalBuildSqlBuilder.toString();
@@ -223,7 +223,7 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
     totalBuildSqlBuilder.deleteCharAt(totalBuildSqlBuilder.length() - 1);
 
     if (startInterval > 0 && endInterval > 0) {
-      totalBuildSqlBuilder.append(String.format(") and startts>=%s and startts<%s", startInterval, endInterval));
+      totalBuildSqlBuilder.append(String.format(") and startts>=%s and startts<=%s", startInterval, endInterval));
     } else {
       totalBuildSqlBuilder.append(String.format(")"));
     }
@@ -283,7 +283,7 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
     totalBuildSqlBuilder.deleteCharAt(totalBuildSqlBuilder.length() - 1);
 
     if (startInterval > 0 && endInterval > 0) {
-      totalBuildSqlBuilder.append(String.format(") and startts>=%s and startts<%s", startInterval, endInterval));
+      totalBuildSqlBuilder.append(String.format(") and startts>=%s and startts<=%s", startInterval, endInterval));
     } else {
       totalBuildSqlBuilder.append(String.format(")"));
     }
@@ -419,7 +419,7 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
 
     for (int i = 0; i < time.size(); i++) {
       long currentTimeEpoch = time.get(i);
-      if (currentTimeEpoch >= startInterval && currentTimeEpoch < endInterval) {
+      if (currentTimeEpoch >= startInterval && currentTimeEpoch <= endInterval) {
         currentTimeEpoch = getStartingDateEpochValue(currentTimeEpoch, startInterval);
         total++;
         totalCountMap.put(currentTimeEpoch, totalCountMap.get(currentTimeEpoch) + 1);
@@ -943,7 +943,7 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
     }
 
     totalBuildSqlBuilder.append(String.format(
-        " and pesi.id=sii.pipeline_execution_summary_cd_id and sii.service_startts>=%s and sii.service_startts<%s) as "
+        " and pesi.id=sii.pipeline_execution_summary_cd_id and sii.service_startts>=%s and sii.service_startts<=%s) as "
             + "service where status != '' group by status, time_entity;",
         startTime, endTime));
 
@@ -1348,7 +1348,7 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
           long startTime = timeInterval.get(i).getKey();
           long endTime = timeInterval.get(i).getValue();
           long currentTimeEpoch = startTime;
-          if (currentTimeEpoch >= startDate && currentTimeEpoch < endDate) {
+          if (currentTimeEpoch >= startDate && currentTimeEpoch <= endDate) {
             currentTimeEpoch = getStartingDateEpochValue(currentTimeEpoch, startDate);
             totalDeployment++;
             deploymentCountMap.put(currentTimeEpoch, deploymentCountMap.get(currentTimeEpoch) + 1);
