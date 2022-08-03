@@ -189,6 +189,13 @@ public class ProjectServiceImpl implements ProjectService {
   }
 
   private void setupProject(Scope scope) {
+    try {
+      userGroupService.setUpDefaultUserGroup(scope);
+    } catch (DuplicateFieldException ex) {
+      log.error("User Group Creation failed for Organization:" + scope.toString() + "as User Group already exists", ex);
+    } catch (Exception ex) {
+      log.error("User Group Creation failed for Organization: " + scope.toString(), ex);
+    }
     if (featureFlagService.isGlobalEnabled(FeatureName.CREATE_DEFAULT_PROJECT)) {
       if (DEFAULT_PROJECT_IDENTIFIER.equals(scope.getProjectIdentifier())) {
         // Default project is a special case. That is handled by ng account setup service
@@ -207,7 +214,6 @@ public class ProjectServiceImpl implements ProjectService {
       throw new InvalidRequestException("User not found in security context");
     }
     try {
-      userGroupService.setUpDefaultUserGroup(scope);
       assignProjectAdmin(scope, principalId, principalType);
       busyPollUntilProjectSetupCompletes(scope, principalId);
     } catch (Exception e) {

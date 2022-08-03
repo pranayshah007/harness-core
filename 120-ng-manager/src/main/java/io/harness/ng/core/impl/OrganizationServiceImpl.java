@@ -142,6 +142,13 @@ public class OrganizationServiceImpl implements OrganizationService {
   }
 
   private void setupOrganization(Scope scope) {
+    try {
+      userGroupService.setUpDefaultUserGroup(scope);
+    } catch (DuplicateFieldException ex) {
+      log.error("User Group Creation failed for Organization:" + scope.toString() + "as User Group already exists", ex);
+    } catch (Exception ex) {
+      log.error("User Group Creation failed for Organization: " + scope.toString(), ex);
+    }
     if (DEFAULT_ORG_IDENTIFIER.equals(scope.getOrgIdentifier())) {
       // Default org is a special case. That is handled by default org service
       return;
@@ -159,7 +166,6 @@ public class OrganizationServiceImpl implements OrganizationService {
       throw new InvalidRequestException("User not found in security context");
     }
     try {
-      userGroupService.setUpDefaultUserGroup(scope);
       assignOrgAdmin(scope, principalId, principalType);
       busyPollUntilOrgSetupCompletes(scope, principalId);
     } catch (Exception e) {
