@@ -18,6 +18,6 @@ public interface GithubPackagesResourceService {
   GithubPackagesResponseDTO getPackageDetails(
       IdentifierRef connectorRef, String accountId, String orgIdentifier, String projectIdentifier);
 
-  List<BuildDetails> getVersionsOfPackage(IdentifierRef connectorRef, String packageName, String versionRegex,
+  GithubPackagesResponseDTO getVersionsOfPackage(IdentifierRef connectorRef, String packageName, String versionRegex,
       String accountId, String orgIdentifier, String projectIdentifier);
 }

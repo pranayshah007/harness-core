@@ -70,8 +70,8 @@ public class GithubPackagesResourceServiceImpl implements GithubPackagesResource
   }
 
   @Override
-  public List<BuildDetails> getVersionsOfPackage(IdentifierRef connectorRef, String packageName, String versionRegex,
-      String accountId, String orgIdentifier, String projectIdentifier) {
+  public GithubPackagesResponseDTO getVersionsOfPackage(IdentifierRef connectorRef, String packageName,
+      String versionRegex, String accountId, String orgIdentifier, String projectIdentifier) {
     if (EmptyPredicate.isEmpty(versionRegex)) {
       return null;
     }
@@ -91,6 +91,8 @@ public class GithubPackagesResourceServiceImpl implements GithubPackagesResource
           executeSyncTask(githubPackagesArtifactDelegateRequest, ArtifactTaskType.GET_BUILDS, baseNGAccess,
               "Github Packages Get Builds task failure due to error");
 
+      // return
+
     } catch (DelegateServiceDriverException ex) {
       throw new HintException(
           String.format(HintException.DELEGATE_NOT_AVAILABLE, DocumentLinksConstants.DELEGATE_INSTALLATION_LINK),
@@ -99,7 +101,6 @@ public class GithubPackagesResourceServiceImpl implements GithubPackagesResource
       throw new HintException(
           HintException.HINT_DOCKER_HUB_ACCESS_DENIED, new InvalidRequestException(e.getMessage(), USER));
     }
-
     return null;
   }
 
