@@ -35,7 +35,7 @@ public class QueryBuilderTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testSelectStatusTime() {
     String expectedQueryResult =
-        "select status,startts from pipeline_execution_summary_cd where accountid='accountId' and orgidentifier='orgId' and projectidentifier='projectId' and startts is not null and startts>=10 and startts<13;";
+        "select status,startts from pipeline_execution_summary_cd where accountid='accountId' and orgidentifier='orgId' and projectidentifier='projectId' and startts is not null and startts>=10 and startts<=13;";
     String queryResult =
         new CDOverviewDashboardServiceImpl().queryBuilderSelectStatusTime("accountId", "orgId", "projectId", 10L, 13L);
     assertThat(queryResult).isEqualTo(expectedQueryResult);
@@ -46,7 +46,7 @@ public class QueryBuilderTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testQueryBuilderEnvironmentType() {
     String expectedQueryResult =
-        "select env_type from service_infra_info where pipeline_execution_summary_cd_id in (select id from pipeline_execution_summary_cd where accountid='accountId' and orgidentifier='orgId' and projectidentifier='projectId' and startts is not null and startts>=10 and startts<13 ) and env_type is not null;";
+        "select env_type from service_infra_info where pipeline_execution_summary_cd_id in (select id from pipeline_execution_summary_cd where accountid='accountId' and orgidentifier='orgId' and projectidentifier='projectId' and startts is not null and startts>=10 and startts<=13 ) and env_type is not null;";
     String queryResult =
         new CDOverviewDashboardServiceImpl().queryBuilderEnvironmentType("accountId", "orgId", "projectId", 10L, 13L);
     assertThat(queryResult).isEqualTo(expectedQueryResult);
@@ -94,21 +94,21 @@ public class QueryBuilderTest extends CategoryTest {
 
     // failedStatusList
     String expectedQueryResult = "select " + columnsExecutionStatus
-        + " from pipeline_execution_summary_cd where accountid='accountId' and orgidentifier='orgId' and projectidentifier='projectId' and status in ('FAILED','ABORTED','EXPIRED') and startts>=1619626802000 and startts<1622650432000 and startts is not null ORDER BY startts DESC LIMIT 20;";
+        + " from pipeline_execution_summary_cd where accountid='accountId' and orgidentifier='orgId' and projectidentifier='projectId' and status in ('FAILED','ABORTED','EXPIRED') and startts>=1619626802000 and startts<=1622650432000 and startts is not null ORDER BY startts DESC LIMIT 20;";
     String queryResult = new CDOverviewDashboardServiceImpl().queryBuilderStatus(
         "accountId", "orgId", "projectId", 20, failedStatusList, 1619626802000L, 1622650432000L);
     assertThat(queryResult).isEqualTo(expectedQueryResult);
 
     // activeStatusList
     expectedQueryResult = "select " + columnsExecutionStatus
-        + " from pipeline_execution_summary_cd where accountid='accountId' and orgidentifier='orgId' and projectidentifier='projectId' and status in ('RUNNING') and startts>=1619626802000 and startts<1622650432000 and startts is not null ORDER BY startts DESC LIMIT 20;";
+        + " from pipeline_execution_summary_cd where accountid='accountId' and orgidentifier='orgId' and projectidentifier='projectId' and status in ('RUNNING') and startts>=1619626802000 and startts<=1622650432000 and startts is not null ORDER BY startts DESC LIMIT 20;";
     queryResult = new CDOverviewDashboardServiceImpl().queryBuilderStatus(
         "accountId", "orgId", "projectId", 20, activeStatusList, 1619626802000L, 1622650432000L);
     assertThat(queryResult).isEqualTo(expectedQueryResult);
 
     // pending
     expectedQueryResult = "select " + columnsExecutionStatus
-        + " from pipeline_execution_summary_cd where accountid='accountId' and orgidentifier='orgId' and projectidentifier='projectId' and status in ('INTERVENTIONWAITING','APPROVALWAITING') and startts>=1619626802000 and startts<1622650432000 and startts is not null ORDER BY startts DESC LIMIT 20;";
+        + " from pipeline_execution_summary_cd where accountid='accountId' and orgidentifier='orgId' and projectidentifier='projectId' and status in ('INTERVENTIONWAITING','APPROVALWAITING') and startts>=1619626802000 and startts<=1622650432000 and startts is not null ORDER BY startts DESC LIMIT 20;";
     queryResult = new CDOverviewDashboardServiceImpl().queryBuilderStatus(
         "accountId", "orgId", "projectId", 20, pendingStatusList, 1619626802000L, 1622650432000L);
     assertThat(queryResult).isEqualTo(expectedQueryResult);
@@ -142,7 +142,7 @@ public class QueryBuilderTest extends CategoryTest {
 
     // failed
     String expectedQueryResult =
-        "select id from pipeline_execution_summary_cd where accountid='acc' and orgidentifier='org' and projectidentifier='pro' and status in ('FAILED','ABORTED','EXPIRED') and startts>=1619626802000 and startts<1622650432000 and startts is not null ORDER BY startts DESC LIMIT 4";
+        "select id from pipeline_execution_summary_cd where accountid='acc' and orgidentifier='org' and projectidentifier='pro' and status in ('FAILED','ABORTED','EXPIRED') and startts>=1619626802000 and startts<=1622650432000 and startts is not null ORDER BY startts DESC LIMIT 4";
     String queryResult = new CDOverviewDashboardServiceImpl().queryBuilderSelectIdLimitTimeCdTable(
         "acc", "org", "pro", 4, failedStatusList, 1619626802000L, 1622650432000L);
     assertThat(queryResult).isEqualTo(expectedQueryResult);
@@ -167,7 +167,7 @@ public class QueryBuilderTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testQueryBuilderSelectWorkload() {
     String queryExpected =
-        "select service_name,service_id,service_status as status,service_startts as startts,service_endts as endts,deployment_type, pipeline_execution_summary_cd_id from service_infra_info where pipeline_execution_summary_cd_id in (select id from pipeline_execution_summary_cd where accountid='acc' and orgidentifier='org' and projectidentifier='pro' and startts is not null and startts>=10 and startts<13 ) and service_name is not null and service_id is not null;";
+        "select service_name,service_id,service_status as status,service_startts as startts,service_endts as endts,deployment_type, pipeline_execution_summary_cd_id from service_infra_info where pipeline_execution_summary_cd_id in (select id from pipeline_execution_summary_cd where accountid='acc' and orgidentifier='org' and projectidentifier='pro' and startts is not null and startts>=10 and startts<=13 ) and service_name is not null and service_id is not null;";
 
     assertThat(queryExpected)
         .isEqualTo(
@@ -181,20 +181,20 @@ public class QueryBuilderTest extends CategoryTest {
 
     // accountIdentifier as null
     queryExpected =
-        "select service_name,service_id,service_status as status,service_startts as startts,service_endts as endts,deployment_type, pipeline_execution_summary_cd_id from service_infra_info where pipeline_execution_summary_cd_id in (select id from pipeline_execution_summary_cd where orgidentifier='org' and projectidentifier='pro' and startts is not null and startts>=10 and startts<13 ) and service_name is not null and service_id is not null;";
+        "select service_name,service_id,service_status as status,service_startts as startts,service_endts as endts,deployment_type, pipeline_execution_summary_cd_id from service_infra_info where pipeline_execution_summary_cd_id in (select id from pipeline_execution_summary_cd where orgidentifier='org' and projectidentifier='pro' and startts is not null and startts>=10 and startts<=13 ) and service_name is not null and service_id is not null;";
     assertThat(queryExpected)
         .isEqualTo(new CDOverviewDashboardServiceImpl().queryBuilderSelectWorkload(null, "org", "pro", 10L, 13L, null));
 
     // org as null
     queryExpected =
-        "select service_name,service_id,service_status as status,service_startts as startts,service_endts as endts,deployment_type, pipeline_execution_summary_cd_id from service_infra_info where pipeline_execution_summary_cd_id in (select id from pipeline_execution_summary_cd where accountid='acc' and projectidentifier='pro' and startts is not null and startts>=10 and startts<13 ) and service_name is not null and service_id is not null;";
+        "select service_name,service_id,service_status as status,service_startts as startts,service_endts as endts,deployment_type, pipeline_execution_summary_cd_id from service_infra_info where pipeline_execution_summary_cd_id in (select id from pipeline_execution_summary_cd where accountid='acc' and projectidentifier='pro' and startts is not null and startts>=10 and startts<=13 ) and service_name is not null and service_id is not null;";
 
     assertThat(queryExpected)
         .isEqualTo(new CDOverviewDashboardServiceImpl().queryBuilderSelectWorkload("acc", null, "pro", 10L, 13L, null));
 
     // proId as null
     queryExpected =
-        "select service_name,service_id,service_status as status,service_startts as startts,service_endts as endts,deployment_type, pipeline_execution_summary_cd_id from service_infra_info where pipeline_execution_summary_cd_id in (select id from pipeline_execution_summary_cd where accountid='acc' and orgidentifier='org' and startts is not null and startts>=10 and startts<13 ) and service_name is not null and service_id is not null;";
+        "select service_name,service_id,service_status as status,service_startts as startts,service_endts as endts,deployment_type, pipeline_execution_summary_cd_id from service_infra_info where pipeline_execution_summary_cd_id in (select id from pipeline_execution_summary_cd where accountid='acc' and orgidentifier='org' and startts is not null and startts>=10 and startts<=13 ) and service_name is not null and service_id is not null;";
 
     assertThat(queryExpected)
         .isEqualTo(new CDOverviewDashboardServiceImpl().queryBuilderSelectWorkload("acc", "org", null, 10L, 13L, null));
@@ -260,7 +260,7 @@ public class QueryBuilderTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testQueryBuilderServiceDeployments() {
     String expectedQueryResult =
-        "select status, time_entity, COUNT(*) as numberOfRecords from (select service_status as status, service_startts as execution_time, time_bucket_gapfill(86400000, service_startts, 1620000000000, 1620950400000) as time_entity, pipeline_execution_summary_cd_id  from service_infra_info as sii, pipeline_execution_summary_cd as pesi where pesi.accountid='account' and pesi.orgidentifier='org' and pesi.projectidentifier='project' and service_id='service_id' and pesi.id=sii.pipeline_execution_summary_cd_id and sii.service_startts>=1620000000000 and sii.service_startts<1620950400000) as service where status != '' group by status, time_entity;";
+        "select status, time_entity, COUNT(*) as numberOfRecords from (select service_status as status, service_startts as execution_time, time_bucket_gapfill(86400000, service_startts, 1620000000000, 1620950400000) as time_entity, pipeline_execution_summary_cd_id  from service_infra_info as sii, pipeline_execution_summary_cd as pesi where pesi.accountid='account' and pesi.orgidentifier='org' and pesi.projectidentifier='project' and service_id='service_id' and pesi.id=sii.pipeline_execution_summary_cd_id and sii.service_startts>=1620000000000 and sii.service_startts<=1620950400000) as service where status != '' group by status, time_entity;";
     String queryResult = new CDOverviewDashboardServiceImpl().queryBuilderServiceDeployments(
         "account", "org", "project", 1620000000000L, 1620950400000L, 1, "service_id");
     assertThat(queryResult).isEqualTo(expectedQueryResult);
