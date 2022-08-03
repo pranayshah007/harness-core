@@ -7,4 +7,32 @@
 
 package io.harness.delegate.task.artifacts.githubpackages;
 
-public class GithubPackagesArtifactTaskHandler {}
+import io.harness.data.structure.EmptyPredicate;
+import io.harness.delegate.task.artifacts.DelegateArtifactTaskHandler;
+import io.harness.delegate.task.artifacts.response.ArtifactTaskExecutionResponse;
+import io.harness.security.encryption.SecretDecryptionService;
+
+import com.google.inject.Inject;
+import com.google.inject.Singleton;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+
+@Singleton
+@AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor = @__({ @Inject }))
+public class GithubPackagesArtifactTaskHandler
+    extends DelegateArtifactTaskHandler<GithubPackagesArtifactDelegateRequest> {
+  private final SecretDecryptionService secretDecryptionService;
+
+  public ArtifactTaskExecutionResponse getBuilds(GithubPackagesArtifactDelegateRequest attributes) {}
+
+  public void decryptRequestDTOs(GithubPackagesArtifactDelegateRequest attributes) {
+    if (attributes.getGithubConnectorDTO().getAuthentication() != null) {
+      secretDecryptionService.decrypt(attributes.getGithubConnectorDTO().getAuthentication().getCredentials(),
+          attributes.getEncryptedDataDetails());
+    }
+  }
+
+  boolean isRegex(GithubPackagesArtifactDelegateRequest artifactDelegateRequest) {
+    return EmptyPredicate.isNotEmpty(artifactDelegateRequest.getVersionRegex());
+  }
+}
