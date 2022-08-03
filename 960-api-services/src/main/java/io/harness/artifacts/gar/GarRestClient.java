@@ -8,6 +8,7 @@ import retrofit2.Call;
 import retrofit2.http.GET;
 import retrofit2.http.Header;
 import retrofit2.http.Path;
+import retrofit2.http.Query;
 
 @OwnedBy(HarnessTeam.CDC)
 
@@ -17,5 +18,6 @@ public interface GarRestClient {
   Call<GarPackageVersionResponse> listImageTags(@Header("Authorization") String bearerAuthHeader,
       @Path(value = "project", encoded = true) String project, @Path(value = "region", encoded = true) String region,
       @Path(value = "repositories", encoded = true) String repositories,
-      @Path(value = "package", encoded = true) String pkg);
+      @Path(value = "package", encoded = true) String pkg, @Query(value = "pageSize", encoded = true) int pageSize,
+      @Query(value = "pageToken", encoded = true) String pageToken);
 }

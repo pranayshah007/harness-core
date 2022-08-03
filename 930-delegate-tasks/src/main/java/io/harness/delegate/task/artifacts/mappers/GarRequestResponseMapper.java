@@ -17,6 +17,7 @@ public class GarRequestResponseMapper {
         .repositoryName(request.getRepositoryName())
         .region(request.getRegion())
         .pkg(request.getPkg())
+        .maxBuilds(request.getMaxBuilds())
         .build();
   }
   public GarDelegateResponse toGarResponse(BuildDetailsInternal buildDetailsInternal, GarDelegateRequest request) {

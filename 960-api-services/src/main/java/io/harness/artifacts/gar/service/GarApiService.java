@@ -11,5 +11,5 @@ import java.util.List;
 public interface GarApiService {
   int MAX_NO_OF_TAGS_PER_IMAGE = 10000;
 
-  List<BuildDetailsInternal> getBuilds(GarInternalConfig garinternalConfig, int maxNumberOfBuilds);
+  List<BuildDetailsInternal> getBuilds(GarInternalConfig garinternalConfig, String versionRegex, int maxNumberOfBuilds);
 }

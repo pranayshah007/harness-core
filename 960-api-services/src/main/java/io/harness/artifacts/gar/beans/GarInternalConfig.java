@@ -15,5 +15,6 @@ public class GarInternalConfig {
   String repositoryName;
   String region;
   String pkg;
+  int maxBuilds;
   boolean isCertValidationRequired;
 }

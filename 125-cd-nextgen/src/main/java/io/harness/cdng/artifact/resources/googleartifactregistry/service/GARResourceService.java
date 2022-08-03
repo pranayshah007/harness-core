@@ -5,5 +5,5 @@ import io.harness.cdng.artifact.resources.googleartifactregistry.dtos.GARRespons
 
 public interface GARResourceService {
   GARResponseDTO getBuildDetails(IdentifierRef GoogleArtifactRegistryRef, String region, String repositoryName,
-      String project, String pkg, String orgIdentifier, String projectIdentifier);
+      String project, String pkg, String versionRegex, String orgIdentifier, String projectIdentifier);
 }

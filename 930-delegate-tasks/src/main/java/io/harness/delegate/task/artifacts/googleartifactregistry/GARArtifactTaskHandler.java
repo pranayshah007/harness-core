@@ -52,7 +52,8 @@ public class GARArtifactTaskHandler extends DelegateArtifactTaskHandler<GarDeleg
       throw new InvalidRequestException(
           "Could not get basic auth header - " + e.getMessage(), USER); // HintExcpetion Explaination
     }
-    builds = garApiService.getBuilds(garInternalConfig, GarApiService.MAX_NO_OF_TAGS_PER_IMAGE);
+    builds = garApiService.getBuilds(
+        garInternalConfig, attributesRequest.getVersionRegex(), attributesRequest.getMaxBuilds());
     List<GarDelegateResponse> garArtifactDelegateResponseList =
         builds.stream()
             .sorted(new BuildDetailsInternalComparatorDescending())

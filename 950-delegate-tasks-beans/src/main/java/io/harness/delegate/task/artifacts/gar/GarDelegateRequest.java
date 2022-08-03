@@ -32,11 +32,8 @@ public class GarDelegateRequest implements ArtifactSourceDelegateRequest {
   String project;
   String repositoryName;
   String pkg;
-
-  List<String> tagsList;
-  /** RegistryHostName */
-  String registryHostname; // Doubt
   String connectorRef;
+  int maxBuilds;
   /** Gcp Connector*/
   GcpConnectorDTO gcpConnectorDTO;
   /** Encrypted details for decrypting.*/

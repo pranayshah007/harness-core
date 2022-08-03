@@ -53,11 +53,11 @@ public class GARArtifactResource {
       @QueryParam("package") String pkg, @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
       @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
-      @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo) {
+      @QueryParam("versionRegex") String versionRegex, @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo) {
     IdentifierRef connectorRef =
         IdentifierRefHelper.getIdentifierRef(GCPConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
     GARResponseDTO buildDetails = gARResourceService.getBuildDetails(
-        connectorRef, region, repositoryName, project, pkg, orgIdentifier, projectIdentifier);
+        connectorRef, region, repositoryName, project, pkg, versionRegex, orgIdentifier, projectIdentifier);
     return ResponseDTO.newResponse(buildDetails);
   }
 }

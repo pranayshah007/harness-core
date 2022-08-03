@@ -1,9 +1,10 @@
 package io.harness.cdng.artifact.resources.googleartifactregistry.service;
 
-import com.google.common.annotations.VisibleForTesting;
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
-import com.google.inject.name.Named;
+import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
+import static io.harness.exception.WingsException.USER;
+import static io.harness.logging.CommandExecutionStatus.SUCCESS;
+import static io.harness.utils.DelegateOwner.getNGTaskSetupAbstractionsWithOwner;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DelegateTaskRequest;
@@ -40,30 +41,28 @@ import io.harness.ng.core.NGAccess;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.service.DelegateGrpcClientWrapper;
-import org.apache.commons.lang3.StringUtils;
 
-import javax.annotation.Nonnull;
-import javax.validation.Valid;
-import javax.validation.constraints.NotNull;
+import com.google.inject.Inject;
+import com.google.inject.Singleton;
+import com.google.inject.name.Named;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
-
-import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
-import static io.harness.exception.WingsException.USER;
-import static io.harness.logging.CommandExecutionStatus.SUCCESS;
-import static io.harness.utils.DelegateOwner.getNGTaskSetupAbstractionsWithOwner;
+import javax.annotation.Nonnull;
+import javax.validation.Valid;
+import javax.validation.constraints.NotNull;
+import org.apache.commons.lang3.StringUtils;
 
 @Singleton
 @OwnedBy(HarnessTeam.CDC)
 public class GARResourceServiceImpl implements GARResourceService {
   private final ConnectorService connectorService;
   private final SecretManagerClientService secretManagerClientService;
+  private static final int TIMEOUTINSEC = 30;
   @Inject private DelegateGrpcClientWrapper delegateGrpcClientWrapper;
-  @VisibleForTesting static final int timeoutInSecs = 30;
 
   @Inject
   public GARResourceServiceImpl(@Named(DEFAULT_CONNECTOR_SERVICE) ConnectorService connectorService,
@@ -74,14 +73,14 @@ public class GARResourceServiceImpl implements GARResourceService {
 
   @Override
   public GARResponseDTO getBuildDetails(IdentifierRef googleArtifactRegistryRef, String region, String repositoryName,
-      String project, String pkg, String orgIdentifier, String projectIdentifier) {
+      String project, String pkg, String versionRegex, String orgIdentifier, String projectIdentifier) {
     GcpConnectorDTO connector = getConnector(googleArtifactRegistryRef);
     BaseNGAccess baseNGAccess =
         getBaseNGAccess(googleArtifactRegistryRef.getAccountIdentifier(), orgIdentifier, projectIdentifier);
     List<EncryptedDataDetail> encryptionDetails = getEncryptionDetails(connector, baseNGAccess);
     GarDelegateRequest googleArtifactDelegateRequest =
-        ArtifactDelegateRequestUtils.getGoogleArtifactDelegateRequest(region, repositoryName, project, pkg, connector,
-            encryptionDetails, ArtifactSourceType.GOOGLE_ARTIFACT_REGISTRY);
+        ArtifactDelegateRequestUtils.getGoogleArtifactDelegateRequest(region, repositoryName, project, pkg,
+            versionRegex, connector, encryptionDetails, ArtifactSourceType.GOOGLE_ARTIFACT_REGISTRY);
 
     try {
       ArtifactTaskExecutionResponse artifactTaskExecutionResponse = executeSyncTask(googleArtifactDelegateRequest,
@@ -181,7 +180,7 @@ public class GARResourceServiceImpl implements GARResourceService {
             .accountId(ngAccess.getAccountIdentifier())
             .taskType(NGTaskType.GOOGLE_ARTIFACT_REGISTRY_TASK_NG.name())
             .taskParameters(artifactTaskParameters)
-            .executionTimeout(java.time.Duration.ofSeconds(timeoutInSecs))
+            .executionTimeout(java.time.Duration.ofSeconds(TIMEOUTINSEC))
             .taskSetupAbstractions(abstractions)
             .taskSelectors(delegateRequest.getGcpConnectorDTO().getDelegateSelectors())
             .build();
