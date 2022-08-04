@@ -76,9 +76,7 @@ replace_key_value grpcClient.target "$MANAGER_TARGET"
 replace_key_value grpcClient.authority "$MANAGER_AUTHORITY"
 replace_key_value awsConnectorCreatedInstantForPolicyCheck $AWS_CONNECTOR_CREATED_INSTANT_FOR_POLICY_CHECK
 
-replace_key_value notificationClient.httpClient.baseUrl "$NOTIFICATION_BASE_URL"
-replace_key_value notificationClient.secrets.notificationClientSecret "$NEXT_GEN_MANAGER_SECRET"
-replace_key_value notificationClient.messageBroker.uri "${NOTIFICATION_MONGO_URI//\\&/&}"
+replace_key_value notificationClient.secrets.notificationClientSecret "$NOTIFICATION_CLIENT_SECRET"
 
 if [[ "" != "$EVENTS_FRAMEWORK_REDIS_SENTINELS" ]]; then
   IFS=',' read -ra SENTINEL_URLS <<< "$EVENTS_FRAMEWORK_REDIS_SENTINELS"
@@ -110,6 +108,14 @@ fi
 
 if [[ "" != "$AUDIT_ENABLED" ]]; then
   yq write -i $CONFIG_FILE enableAudit "$AUDIT_ENABLED"
+fi
+
+if [[ "" != "$NOTIFICATION_BASE_URL" ]]; then
+  yq write -i $CONFIG_FILE notificationClient.httpClient.baseUrl "$NOTIFICATION_BASE_URL"
+fi
+
+if [[ "" != "$NOTIFICATION_MONGO_URI" ]]; then
+  yq write -i $CONFIG_FILE notificationClient.messageBroker.uri "${NOTIFICATION_MONGO_URI//\\&/&}"
 fi
 
 replace_key_value outboxPollConfig.initialDelayInSeconds "$OUTBOX_POLL_INITIAL_DELAY"
