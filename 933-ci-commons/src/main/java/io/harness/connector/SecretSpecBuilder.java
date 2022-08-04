@@ -165,6 +165,8 @@ public class SecretSpecBuilder {
       secretParamsMap = connectorEnvVariablesHelper.getGcpSecretVariables(connectorDetails);
     } else if (connectorDetails.getConnectorType() == ConnectorType.ARTIFACTORY) {
       secretParamsMap = connectorEnvVariablesHelper.getArtifactorySecretVariables(connectorDetails);
+    } else if (connectorDetails.getConnectorType() == ConnectorType.AZURE) {
+      secretParamsMap = connectorEnvVariablesHelper.getAzureSecretVariables(connectorDetails);
     } else {
       log.info("Decrypting connector of unknown type: {}", connectorDetails.getConnectorType());
     }

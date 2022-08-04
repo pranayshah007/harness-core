@@ -37,6 +37,7 @@ public class AzureAppServicePackageDeploymentContext extends AzureAppServiceDepl
   @NotNull(message = ARTIFACT_TYPE_BLANK_ERROR_MSG)
   @ArtifactTypeSubset(anyOf = {ArtifactType.ZIP, ArtifactType.WAR, ArtifactType.NUGET, ArtifactType.JAR})
   private ArtifactType artifactType;
+  private boolean skipTargetSlotValidation;
 
   @Builder
   public AzureAppServicePackageDeploymentContext(AzureWebClientContext azureWebClientContext,
@@ -45,11 +46,12 @@ public class AzureAppServicePackageDeploymentContext extends AzureAppServiceDepl
       Map<String, AzureAppServiceConnectionString> connSettingsToAdd,
       Map<String, AzureAppServiceConnectionString> connSettingsToRemove, String startupCommand, String slotName,
       String targetSlotName, File artifactFile, ArtifactType artifactType, int steadyStateTimeoutInMin,
-      boolean isBasicDeployment) {
+      boolean isBasicDeployment, boolean skipTargetSlotValidation) {
     super(azureWebClientContext, logCallbackProvider, appSettingsToAdd, appSettingsToRemove, connSettingsToAdd,
         connSettingsToRemove, slotName, targetSlotName, startupCommand, steadyStateTimeoutInMin, isBasicDeployment);
     this.artifactFile = artifactFile;
     this.artifactType = artifactType;
+    this.skipTargetSlotValidation = skipTargetSlotValidation;
   }
 
   @Override

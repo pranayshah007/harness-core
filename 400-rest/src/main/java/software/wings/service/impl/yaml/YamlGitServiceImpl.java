@@ -7,6 +7,7 @@
 
 package software.wings.service.impl.yaml;
 
+import static io.harness.beans.FeatureName.REMOVE_HINT_YAML_GIT_COMMITS;
 import static io.harness.beans.PageRequest.PageRequestBuilder.aPageRequest;
 import static io.harness.beans.PageRequest.UNLIMITED;
 import static io.harness.beans.SearchFilter.Operator.EQ;
@@ -1343,7 +1344,9 @@ public class YamlGitServiceImpl implements YamlGitService {
     // After MultiGit support gitCommit record would have list of yamlGitConfigs.
 
     FindOptions findOptions = new FindOptions();
-    findOptions.modifier("$hint", "gitCommitAccountIdStatusYgcLastUpdatedIdx");
+    if (featureFlagService.isNotEnabled(REMOVE_HINT_YAML_GIT_COMMITS, accountId)) {
+      findOptions.modifier("$hint", "gitCommitAccountIdStatusYgcLastUpdatedIdx");
+    }
 
     GitCommit gitCommit = wingsPersistence.createQuery(GitCommit.class)
                               .filter(GitCommitKeys.accountId, accountId)

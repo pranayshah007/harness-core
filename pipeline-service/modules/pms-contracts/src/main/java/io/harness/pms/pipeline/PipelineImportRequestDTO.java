@@ -30,6 +30,6 @@ import lombok.experimental.FieldDefaults;
 @Schema(name = "PipelineImportRequest",
     description = "Contains basic information required to be linked with imported Pipeline YAML")
 public class PipelineImportRequestDTO {
-  String pipelineName;
-  String pipelineDescription;
+  @Schema(description = "Expected Name of the Pipeline to be imported") String pipelineName;
+  @Schema(description = "Expected Description of the Pipeline to be imported") String pipelineDescription;
 }

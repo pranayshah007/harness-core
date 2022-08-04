@@ -63,6 +63,7 @@ BAZEL_MODULES="\
   //310-ci-manager:module \
   //323-sto-utilities:module \
   //325-sto-beans:module \
+  //332-ci-manager/contracts:module \
   //332-ci-manager/service:module \
   //340-ce-nextgen:module \
   //350-event-server:module \
@@ -82,7 +83,7 @@ BAZEL_MODULES="\
   //450-ce-views:module \
   //460-capability:module \
   //490-ce-commons:module \
-  //pipeline-service:module \
+  //pipeline-service/service:module \
   //pipeline-service/modules/ng-triggers:module \
   //pipeline-service/modules/orchestration-steps:module \
   //pipeline-service/modules/orchestration-steps/contracts:module \

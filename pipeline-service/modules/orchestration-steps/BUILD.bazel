@@ -8,7 +8,10 @@ java_library(
     resources = [
         "//pipeline-service/modules/orchestration-steps/src/main/resources:resource",
     ],
-    visibility = ["//pipeline-service:__subpackages__"],
+    visibility = [
+        "//100-migrator:__subpackages__",
+        "//pipeline-service:__subpackages__",
+    ],
     deps = [
         "//:lombok",
         "//878-ng-common-utilities:module",

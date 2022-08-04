@@ -125,6 +125,30 @@ public class MonitoredServiceResourceTest extends CvNextGenTestBase {
   }
 
   @Test
+  @Owner(developers = DEEPAK_CHHIKARA)
+  @Category(UnitTests.class)
+  public void testCreateFromYamlWithMetricThresholds() throws IOException {
+    String monitoredServiceYaml = getResource("monitoredservice/monitored-service-with-metric-threshold.yaml");
+
+    Response response = RESOURCES.client()
+                            .target("http://localhost:9998/monitored-service/")
+                            .queryParam("accountId", builderFactory.getContext().getAccountId())
+                            .request(MediaType.APPLICATION_JSON_TYPE)
+                            .post(Entity.json(convertToJson(monitoredServiceYaml)));
+    assertThat(response.getStatus()).isEqualTo(200);
+    RestResponse<MonitoredServiceResponse> restResponse =
+        response.readEntity(new GenericType<RestResponse<MonitoredServiceResponse>>() {});
+    MonitoredServiceDTO monitoredServiceDTO = restResponse.getResource().getMonitoredServiceDTO();
+    assertThat(monitoredServiceDTO.getSources().getHealthSources()).hasSize(1);
+    HealthSource healthSource = monitoredServiceDTO.getSources().getHealthSources().iterator().next();
+    HealthSourceMetricDefinition healthSourceMetricDefinition =
+        ((PrometheusHealthSourceSpec) healthSource.getSpec()).getMetricDefinitions().get(0);
+    // assertThat(healthSourceMetricDefinition.getIdentifier()).isEqualTo("prometheus_metric123");
+    assertThat(healthSourceMetricDefinition.getIdentifier())
+        .isEqualTo("PrometheusMetric"); // TODO: remove this after enabling validation.
+  }
+
+  @Test
   @Owner(developers = ABHIJITH)
   @Category(UnitTests.class)
   public void testUpdateFromYaml() throws IOException {

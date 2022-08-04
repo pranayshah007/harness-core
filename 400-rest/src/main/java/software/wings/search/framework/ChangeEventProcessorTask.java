@@ -136,7 +136,7 @@ public class ChangeEventProcessorTask implements Runnable {
         Thread.currentThread().interrupt();
         log.error("Change Event thread interrupted", e);
       } catch (ExecutionException e) {
-        log.error("Change event thread interrupted due to exception", e.getCause());
+        log.error("Change event thread interrupted due to exception", e);
       }
       if (!isChangeHandled) {
         log.error("Could not process changeEvent {}", changeEvent.toString());
@@ -173,23 +173,23 @@ public class ChangeEventProcessorTask implements Runnable {
       }
     }
 
+    boolean isSaved = saveSearchSourceEntitySyncStateToken(sourceClass, changeEvent.getToken());
     for (Future<Boolean> processChangeEventFuture : processChangeEventTaskFutures) {
       boolean isChangeHandled = false;
       try {
         isChangeHandled = processChangeEventFuture.get();
       } catch (InterruptedException e) {
         Thread.currentThread().interrupt();
-        log.error("TimeScale Change Event thread interrupted", e);
+        log.error("ChangeStream: TimeScale Change Event thread interrupted", e);
       } catch (ExecutionException e) {
-        log.error("TimeScale Change event thread interrupted due to exception", e.getCause());
+        log.error("ChangeStream: TimeScale Change event thread interrupted due to exception", e);
       }
       if (!isChangeHandled) {
-        log.error("Could not process TimeScale changeEvent {}", changeEvent.toString());
+        log.error("ChangeStream: Could not process TimeScale changeEvent {}", changeEvent.toString());
         return false;
       }
     }
 
-    boolean isSaved = saveSearchSourceEntitySyncStateToken(sourceClass, changeEvent.getToken());
     if (!isSaved) {
       log.error("Could not save token. ChangeEvent {} could not be processed for entity {}", changeEvent.toString(),
           sourceClass.getCanonicalName());

@@ -11,6 +11,7 @@ import static software.wings.beans.SettingAttribute.SettingCategory.CLOUD_PROVID
 
 import static java.util.Arrays.asList;
 
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.mongo.changestreams.ChangeEvent;
 import io.harness.timescaledb.TimeScaleDBService;
 
@@ -40,11 +41,17 @@ public class CloudProviderTimescaleChangeHandler implements ChangeHandler {
 
     switch (changeEvent.getChangeType()) {
       case INSERT:
-        dbOperation(SQLOperationHelper.insertSQL(tableName, getColumnValueMapping(changeEvent)));
+        Map<String, Object> ColumnValueMapping = getColumnValueMapping(changeEvent);
+        if (!EmptyPredicate.isEmpty(ColumnValueMapping)) {
+          dbOperation(SQLOperationHelper.insertSQL(tableName, ColumnValueMapping));
+        }
         break;
       case UPDATE:
-        dbOperation(SQLOperationHelper.updateSQL(tableName, getColumnValueMapping(changeEvent),
-            Collections.singletonMap("id", changeEvent.getUuid()), getPrimaryKeys()));
+        ColumnValueMapping = getColumnValueMapping(changeEvent);
+        if (!EmptyPredicate.isEmpty(ColumnValueMapping)) {
+          dbOperation(SQLOperationHelper.updateSQL(tableName, getColumnValueMapping(changeEvent),
+              Collections.singletonMap("id", changeEvent.getUuid()), getPrimaryKeys()));
+        }
         break;
       case DELETE:
         dbOperation(SQLOperationHelper.deleteSQL(tableName, Collections.singletonMap("id", changeEvent.getUuid())));

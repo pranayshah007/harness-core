@@ -9,7 +9,9 @@ package io.harness.gitsync.interceptor;
 
 import static io.harness.annotations.dev.HarnessTeam.DX;
 
+import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.TargetModule;
 import io.harness.gitsync.sdk.GitSyncApiConstants;
 
 import io.swagger.v3.oas.annotations.Parameter;
@@ -29,6 +31,7 @@ import lombok.experimental.FieldNameConstants;
 @OwnedBy(DX)
 @NoArgsConstructor
 @AllArgsConstructor
+@TargetModule(HarnessModule._878_NG_COMMON_UTILITIES)
 public class GitEntityFindInfoDTO {
   @Parameter(description = GitSyncApiConstants.BRANCH_PARAM_MESSAGE)
   @QueryParam(GitSyncApiConstants.BRANCH_KEY)

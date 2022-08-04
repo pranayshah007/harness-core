@@ -26,10 +26,16 @@ import io.harness.pms.yaml.YamlUtils;
 import com.google.common.base.Preconditions;
 import java.util.List;
 import java.util.Objects;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 public class CVNGStepUtils {
   public static final String INFRASTRUCTURE_KEY = "infrastructure";
+
+  public static final String ENVIRONMENT_KEY = "environment";
   public static final String SERVICE_CONFIG_KEY = "serviceConfig";
+
+  public static final String SERVICE_KEY = "service";
   public static final String SERVICE_REF_KEY = "serviceRef";
   public static final String ENVIRONMENT_REF_KEY = "environmentRef";
   public static final String SPEC_KEY = "spec";
@@ -40,26 +46,43 @@ public class CVNGStepUtils {
   public static final String PIPELINE = "pipeline";
 
   public static YamlNode getServiceRefNode(YamlNode stageYaml) {
-    return stageYaml.getField(SPEC_KEY)
-        .getNode()
-        .getField(SERVICE_CONFIG_KEY)
-        .getNode()
-        .getField(SERVICE_REF_KEY)
-        .getNode();
+    YamlField serviceConfigKey = stageYaml.getField(SPEC_KEY).getNode().getField(SERVICE_CONFIG_KEY);
+    YamlField serviceKey = stageYaml.getField(SPEC_KEY).getNode().getField(SERVICE_KEY);
+    try {
+      if (serviceKey != null) {
+        return serviceKey.getNode().getField(SERVICE_REF_KEY).getNode();
+      } else {
+        return serviceConfigKey.getNode().getField(SERVICE_REF_KEY).getNode();
+      }
+    } catch (Exception e) {
+      log.error("Exception: " + e.getMessage() + ", Incorrect Service Ref in pipeline Yaml for verify step.");
+      throw e;
+    }
   }
 
   public static boolean hasServiceIdentifier(YamlNode stageYaml) {
-    return stageYaml.getField(SPEC_KEY).getNode().getField(SERVICE_CONFIG_KEY).getNode().getField(SERVICE_REF_KEY)
-        != null;
+    YamlField serviceConfigKey = stageYaml.getField(SPEC_KEY).getNode().getField(SERVICE_CONFIG_KEY);
+    YamlField serviceKey = stageYaml.getField(SPEC_KEY).getNode().getField(SERVICE_KEY);
+    if (serviceKey != null) {
+      return serviceKey.getNode().getField(SERVICE_REF_KEY) != null;
+    } else {
+      return serviceConfigKey.getNode().getField(SERVICE_REF_KEY) != null;
+    }
   }
 
   public static YamlNode getEnvRefNode(YamlNode stageYaml) {
-    return stageYaml.getField(SPEC_KEY)
-        .getNode()
-        .getField(INFRASTRUCTURE_KEY)
-        .getNode()
-        .getField(ENVIRONMENT_REF_KEY)
-        .getNode();
+    YamlField environmentKey = stageYaml.getField(SPEC_KEY).getNode().getField(ENVIRONMENT_KEY);
+    YamlField infrastructureKey = stageYaml.getField(SPEC_KEY).getNode().getField(INFRASTRUCTURE_KEY);
+    try {
+      if (environmentKey != null) {
+        return environmentKey.getNode().getField(ENVIRONMENT_REF_KEY).getNode();
+      } else {
+        return infrastructureKey.getNode().getField(ENVIRONMENT_REF_KEY).getNode();
+      }
+    } catch (Exception e) {
+      log.error("Exception: " + e.getMessage() + ", Incorrect Environment Ref in pipeline Yaml for verify step.");
+      throw e;
+    }
   }
 
   public static YamlField getExecutionNodeField(YamlNode stageYaml) {

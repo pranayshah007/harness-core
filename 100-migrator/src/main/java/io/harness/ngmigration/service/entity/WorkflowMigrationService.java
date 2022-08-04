@@ -64,6 +64,7 @@ import io.harness.yaml.core.failurestrategy.rollback.StageRollbackFailureActionC
 import io.harness.yaml.core.timeout.Timeout;
 import io.harness.yaml.utils.JsonPipelineUtils;
 
+import software.wings.beans.GraphNode;
 import software.wings.beans.PhaseStep;
 import software.wings.beans.Service;
 import software.wings.beans.Workflow;
@@ -125,11 +126,27 @@ public class WorkflowMigrationService extends NgMigrationService {
         entities.stream()
             .map(entity -> (Workflow) entity.getEntity())
             .collect(groupingBy(entity -> entity.getOrchestration().getOrchestrationWorkflowType().name(), counting()));
-    return WorkflowSummary.builder().count(entities.size()).typeSummary(summaryByType).build();
+    Map<String, Long> summaryByStepTyp = entities.stream()
+                                             .flatMap(entity -> {
+                                               Workflow workflow = (Workflow) entity.getEntity();
+                                               WorkflowHandler workflowHandler =
+                                                   workflowHandlerFactory.getWorkflowHandler(workflow);
+                                               return workflowHandler.getSteps(workflow).stream();
+                                             })
+                                             .collect(groupingBy(GraphNode::getType, counting()));
+
+    return WorkflowSummary.builder()
+        .count(entities.size())
+        .typeSummary(summaryByType)
+        .stepTypeSummary(summaryByStepTyp)
+        .build();
   }
 
   @Override
   public DiscoveryNode discover(NGMigrationEntity entity) {
+    if (entity == null) {
+      return null;
+    }
     Workflow workflow = (Workflow) entity;
     String entityId = workflow.getUuid();
     CgEntityId workflowEntityId = CgEntityId.builder().type(WORKFLOW).id(entityId).build();

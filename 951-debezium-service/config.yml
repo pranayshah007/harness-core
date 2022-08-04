@@ -45,6 +45,8 @@ debeziumConfigs:
     connect.backoff.max.delay.ms: ${CONNECT_BACKOFF_MAX_DELAY_MS:-10000}
     connect.max.attempts: ${CONNECT_MAX_ATTEMPTS:-3}
     snapshot.fetch.size: ${SNAPSHOT_FETCH_SIZE:-2000}
+    sleepInterval: ${SLEEP_INTERVAL:-60}
+    producingCountPerBatch: ${PRODUCING_COUNT_PER_BATCH:-1000}
 
 eventsFramework:
   redis:

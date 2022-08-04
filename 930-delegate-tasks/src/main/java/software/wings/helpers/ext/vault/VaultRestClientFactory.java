@@ -160,6 +160,15 @@ public class VaultRestClientFactory {
     }
 
     @Override
+    public boolean deleteSecretPermanentely(String authToken, String secretEngine, String fullPath) throws IOException {
+      VaultPathAndKey pathAndKey = parseFullPath(fullPath);
+      Response<Void> response =
+          vaultRestClient.deleteSecretPermanentely(authToken, secretEngine, pathAndKey.path).execute();
+      logAndThrowErrorIfRequestFailed(response, "V1Impl-deleteSecretPermanentely");
+      return response.isSuccessful();
+    }
+
+    @Override
     public String readSecret(String authToken, String namespace, String secretEngine, String fullPath)
         throws IOException {
       VaultPathAndKey pathAndKey = parseFullPath(fullPath);
@@ -210,6 +219,15 @@ public class VaultRestClientFactory {
       Response<Void> response =
           vaultRestClient.deleteSecret(authToken, namespace, secretEngine, pathAndKey.path).execute();
       logAndThrowErrorIfRequestFailed(response, "V2Impl-deleteSecret");
+      return response.isSuccessful();
+    }
+
+    @Override
+    public boolean deleteSecretPermanentely(String authToken, String secretEngine, String fullPath) throws IOException {
+      VaultPathAndKey pathAndKey = parseFullPath(fullPath);
+      Response<Void> response =
+          vaultRestClient.deleteSecretPermanentely(authToken, secretEngine, pathAndKey.path).execute();
+      logAndThrowErrorIfRequestFailed(response, "V2Impl-deleteSecretPermanentely");
       return response.isSuccessful();
     }
 

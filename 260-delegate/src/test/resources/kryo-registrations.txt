@@ -1734,6 +1734,13 @@
 55407:io.harness.delegate.task.azure.appservice.settings.AppSettingsFile
 55408:io.harness.delegate.task.azure.appservice.settings.EncryptedAppSettingsFile
 55409:io.harness.delegate.task.azure.appservice.webapp.ng.exception.AzureWebAppSlotDeploymentExceptionData
+55410:io.harness.delegate.task.azure.artifact.AzurePackageArtifactConfig
+55411:io.harness.delegate.task.azure.artifact.AzureArtifactRequestDetails
+55412:io.harness.delegate.task.azure.artifact.ArtifactoryAzureArtifactRequestDetails
+55413:io.harness.delegate.task.ssh.AzureInfraDelegateConfig
+55414:io.harness.delegate.task.ssh.AzureSshInfraDelegateConfig
+55415:io.harness.delegate.task.ssh.AzureWinrmInfraDelegateConfig
+55501:io.harness.delegate.beans.instancesync.info.PdcServerInstanceInfo
 56403:io.harness.delegate.beans.storeconfig.CustomRemoteStoreDelegateConfig
 70001:io.harness.accesscontrol.commons.exceptions.AccessDeniedErrorDTO
 70002:io.harness.accesscontrol.acl.api.PermissionCheckDTO
@@ -2247,4 +2254,5 @@
 980028:io.harness.exception.AzureAKSException
 980029:io.harness.exception.runtime.SshCommandExecutionException
 980030:io.harness.exception.InterruptedRuntimeException
+980031:io.harness.exception.InvalidIdentifierRefException
 9800001:io.harness.beans.RecasterMap

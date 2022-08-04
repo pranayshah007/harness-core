@@ -43,7 +43,6 @@ import io.harness.steps.matrix.StrategyMetadata;
 import io.harness.strategy.StrategyValidationUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.protobuf.ByteString;
@@ -226,8 +225,6 @@ public class StrategyUtils {
     String newName = jsonNode.get(NAME).asText() + "_" + String.join("_", combinations);
     JsonNodeUtils.updatePropertyInObjectNode(jsonNode, IDENTIFIER, newIdentifier);
     JsonNodeUtils.updatePropertyInObjectNode(jsonNode, NAME, newName);
-    // Remove strategy node so that we don't calculate strategy on it again in the future.
-    JsonNodeUtils.deletePropertiesInJsonNode((ObjectNode) jsonNode, "strategy");
   }
 
   public String replaceExpressions(

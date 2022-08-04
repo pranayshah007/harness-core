@@ -8,6 +8,7 @@
 package io.harness.cdng.azure.webapp;
 
 import static io.harness.azure.model.AzureConstants.DEPLOY_TO_SLOT;
+import static io.harness.azure.model.AzureConstants.FETCH_ARTIFACT_FILE;
 import static io.harness.azure.model.AzureConstants.SAVE_EXISTING_CONFIGURATIONS;
 import static io.harness.azure.model.AzureConstants.UPDATE_SLOT_CONFIGURATION_SETTINGS;
 import static io.harness.cdng.manifest.yaml.harness.HarnessStoreConstants.HARNESS_STORE_TYPE;
@@ -19,7 +20,6 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.k8s.K8sCommandUnitConstants.FetchFiles;
 
 import static java.lang.String.format;
-import static java.util.Arrays.asList;
 import static java.util.Collections.emptyMap;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -70,6 +70,8 @@ import software.wings.beans.TaskType;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
@@ -107,7 +109,8 @@ public class AzureWebAppSlotDeploymentStep extends TaskChainExecutableWithRollba
             .infrastructure((AzureWebAppInfrastructureOutcome) infrastructure)
             .configs(emptyMap())
             .commandUnitsProgress(CommandUnitsProgress.builder().build())
-            .unprocessedConfigs(emptyMap());
+            .unprocessedConfigs(emptyMap())
+            .primaryArtifactOutcome(azureWebAppStepHelper.getPrimaryArtifactOutcome(ambiance));
 
     if (isNotEmpty(webAppConfig)) {
       return processAndFetchWebAppConfigs(
@@ -206,9 +209,8 @@ public class AzureWebAppSlotDeploymentStep extends TaskChainExecutableWithRollba
       return TaskChainResponse.builder()
           .chainEnd(false)
           .passThroughData(newPassThroughDataBuilder.build())
-          .taskRequest(
-              azureWebAppStepHelper.prepareGitFetchTaskRequest(stepElementParameters, ambiance, gitStoreConfigs,
-                  asList(FetchFiles, SAVE_EXISTING_CONFIGURATIONS, UPDATE_SLOT_CONFIGURATION_SETTINGS, DEPLOY_TO_SLOT)))
+          .taskRequest(azureWebAppStepHelper.prepareGitFetchTaskRequest(
+              stepElementParameters, ambiance, gitStoreConfigs, getCommandUnits(passThroughData, true)))
           .build();
     }
 
@@ -253,7 +255,8 @@ public class AzureWebAppSlotDeploymentStep extends TaskChainExecutableWithRollba
             .applicationSettings(passThroughData.getConfigs().get(APPLICATION_SETTINGS))
             .connectionStrings(passThroughData.getConfigs().get(CONNECTION_STRINGS))
             .startupCommand(passThroughData.getConfigs().get(STARTUP_COMMAND))
-            .artifact(azureWebAppStepHelper.getPrimaryArtifactConfig(ambiance))
+            .artifact(
+                azureWebAppStepHelper.getPrimaryArtifactConfig(ambiance, passThroughData.getPrimaryArtifactOutcome()))
             .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepElementParameters))
             .commandUnitsProgress(passThroughData.getCommandUnitsProgress())
             .build();
@@ -261,8 +264,7 @@ public class AzureWebAppSlotDeploymentStep extends TaskChainExecutableWithRollba
     return TaskChainResponse.builder()
         .chainEnd(false)
         .taskRequest(azureWebAppStepHelper.prepareTaskRequest(stepElementParameters, ambiance,
-            fetchPreDeploymentDataRequest, TaskType.AZURE_WEB_APP_TASK_NG,
-            asList(SAVE_EXISTING_CONFIGURATIONS, UPDATE_SLOT_CONFIGURATION_SETTINGS, DEPLOY_TO_SLOT)))
+            fetchPreDeploymentDataRequest, TaskType.AZURE_WEB_APP_TASK_NG, getCommandUnits(passThroughData, false)))
         .passThroughData(passThroughData)
         .build();
   }
@@ -281,7 +283,8 @@ public class AzureWebAppSlotDeploymentStep extends TaskChainExecutableWithRollba
             .infrastructure(azureWebAppStepHelper.getInfraDelegateConfig(ambiance, passThroughData.getInfrastructure(),
                 getParameterFieldValue(azureWebAppSlotDeploymentStepParameters.getWebApp()),
                 getParameterFieldValue(azureWebAppSlotDeploymentStepParameters.getDeploymentSlot())))
-            .artifact(azureWebAppStepHelper.getPrimaryArtifactConfig(ambiance))
+            .artifact(
+                azureWebAppStepHelper.getPrimaryArtifactConfig(ambiance, passThroughData.getPrimaryArtifactOutcome()))
             .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepElementParameters))
             .commandUnitsProgress(passThroughData.getCommandUnitsProgress())
             .build();
@@ -289,8 +292,24 @@ public class AzureWebAppSlotDeploymentStep extends TaskChainExecutableWithRollba
     return TaskChainResponse.builder()
         .chainEnd(true)
         .taskRequest(azureWebAppStepHelper.prepareTaskRequest(stepElementParameters, ambiance, slotDeploymentRequest,
-            TaskType.AZURE_WEB_APP_TASK_NG, asList(UPDATE_SLOT_CONFIGURATION_SETTINGS, DEPLOY_TO_SLOT)))
+            TaskType.AZURE_WEB_APP_TASK_NG, getCommandUnits(passThroughData, false)))
         .passThroughData(passThroughData)
         .build();
+  }
+
+  private List<String> getCommandUnits(AzureSlotDeploymentPassThroughData passThroughData, boolean fetchFiles) {
+    List<String> units = new ArrayList<>();
+    if (fetchFiles) {
+      units.add(FetchFiles);
+    }
+
+    units.add(SAVE_EXISTING_CONFIGURATIONS);
+    if (azureWebAppStepHelper.isPackageArtifactType(passThroughData.getPrimaryArtifactOutcome())) {
+      units.add(FETCH_ARTIFACT_FILE);
+    }
+
+    units.add(UPDATE_SLOT_CONFIGURATION_SETTINGS);
+    units.add(DEPLOY_TO_SLOT);
+    return units;
   }
 }

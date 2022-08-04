@@ -8,6 +8,7 @@
 package io.harness.delegate.task.azure.appservice;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.azure.model.AzureConstants.DEPLOYMENT_SLOT_PRODUCTION_NAME;
 import static io.harness.azure.model.AzureConstants.SHIFT_TRAFFIC_SLOT_NAME_BLANK_ERROR_MSG;
 import static io.harness.azure.model.AzureConstants.SOURCE_SLOT_NAME_BLANK_ERROR_MSG;
 import static io.harness.azure.model.AzureConstants.TARGET_SLOT_NAME_BLANK_ERROR_MSG;
@@ -45,6 +46,12 @@ public class AzureAppServiceResourceUtilities {
 
   public void swapSlots(AzureWebClientContext webClientContext, AzureLogCallbackProvider logCallbackProvider,
       String deploymentSlot, String targetSlot, Integer timeoutIntervalInMin) {
+    if (DEPLOYMENT_SLOT_PRODUCTION_NAME.equalsIgnoreCase(deploymentSlot)) {
+      String initialTargetSlot = targetSlot;
+      targetSlot = deploymentSlot;
+      deploymentSlot = initialTargetSlot;
+    }
+
     AzureAppServiceDeploymentContext azureAppServiceDeploymentContext = new AzureAppServiceDeploymentContext();
     azureAppServiceDeploymentContext.setAzureWebClientContext(webClientContext);
     azureAppServiceDeploymentContext.setLogCallbackProvider(logCallbackProvider);

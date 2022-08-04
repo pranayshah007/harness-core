@@ -433,8 +433,8 @@ public class AzureWebAppInstanceHandler extends InstanceHandler implements Insta
   }
 
   @Override
-  public FeatureName getFeatureFlagToEnablePerpetualTaskForInstanceSync() {
-    return AZURE_WEBAPP;
+  public Optional<FeatureName> getFeatureFlagToEnablePerpetualTaskForInstanceSync() {
+    return Optional.of(AZURE_WEBAPP);
   }
 
   @Override
@@ -523,8 +523,8 @@ public class AzureWebAppInstanceHandler extends InstanceHandler implements Insta
   }
 
   @Override
-  public FeatureName getFeatureFlagToStopIteratorBasedInstanceSync() {
-    return AZURE_WEBAPP;
+  public Optional<FeatureName> getFeatureFlagToStopIteratorBasedInstanceSync() {
+    return Optional.of(AZURE_WEBAPP);
   }
 
   @NotNull

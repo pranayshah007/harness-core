@@ -665,9 +665,12 @@ public class InstanceHelper {
 
   public boolean shouldSkipIteratorInstanceSync(InfrastructureMapping infrastructureMapping) {
     Optional<InstanceHandler> instanceHandler = getInstanceHandler(infrastructureMapping);
+
     return instanceHandler.isPresent()
-        && featureFlagService.isEnabled(instanceHandler.get().getFeatureFlagToStopIteratorBasedInstanceSync(),
-            infrastructureMapping.getAccountId());
+        && instanceHandler.get()
+               .getFeatureFlagToStopIteratorBasedInstanceSync()
+               .map(featureName -> featureFlagService.isEnabled(featureName, infrastructureMapping.getAccountId()))
+               .orElse(true);
   }
 
   @VisibleForTesting
@@ -688,8 +691,9 @@ public class InstanceHelper {
 
     if (instanceHandler.get() instanceof InstanceSyncByPerpetualTaskHandler) {
       InstanceSyncByPerpetualTaskHandler handler = (InstanceSyncByPerpetualTaskHandler) instanceHandler.get();
-      return featureFlagService.isEnabled(
-          handler.getFeatureFlagToEnablePerpetualTaskForInstanceSync(), infrastructureMapping.getAccountId());
+      return handler.getFeatureFlagToEnablePerpetualTaskForInstanceSync()
+          .map(featureName -> featureFlagService.isEnabled(featureName, infrastructureMapping.getAccountId()))
+          .orElse(true);
     }
 
     return false;

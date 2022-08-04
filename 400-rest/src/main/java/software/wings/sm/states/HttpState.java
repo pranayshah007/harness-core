@@ -505,7 +505,8 @@ public class HttpState extends State implements SweepingOutputStateMixin {
       executionData.setAssertionStatement(assertion);
       executionData.setTemplateVariable(templateUtils.processTemplateVariables(context, getTemplateVariables()));
       ExecutionStatus executionStatus = ExecutionStatus.SUCCESS;
-      if (!evaluateAssertion(context, executionData) || executionData.getStatus() == ExecutionStatus.ERROR) {
+      if (!evaluateAssertion(context, executionData) || executionData.getStatus().equals(ExecutionStatus.ERROR)
+          || executionData.getStatus().equals(ExecutionStatus.FAILED)) {
         executionStatus = ExecutionStatus.FAILED;
         appendFailureType(executionResponseBuilder, context, httpStateExecutionResponse);
       }

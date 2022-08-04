@@ -7,6 +7,9 @@
 
 package io.harness.delegate.task.shell.ssh;
 
+import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.ARTIFACT_CONFIGURATION_NOT_FOUND;
+import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.ARTIFACT_CONFIGURATION_NOT_FOUND_EXPLANATION;
+import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.ARTIFACT_CONFIGURATION_NOT_FOUND_HINT;
 import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.NO_CONFIG_FILE_PROVIDED;
 import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.NO_CONFIG_FILE_PROVIDED_EXPLANATION;
 import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.NO_CONFIG_FILE_PROVIDED_HINT;
@@ -95,6 +98,11 @@ public class SshCopyCommandHandler implements CommandHandler {
         (FileBasedAbstractScriptExecutorNG) sshScriptExecutorFactory.getFileBasedExecutor(context);
     if (FileSourceType.ARTIFACT.equals(copyCommandUnit.getSourceType())) {
       log.info("About to copy artifact");
+      if (sshCommandTaskParameters.getArtifactDelegateConfig() == null) {
+        throw NestedExceptionUtils.hintWithExplanationException(ARTIFACT_CONFIGURATION_NOT_FOUND_HINT,
+            ARTIFACT_CONFIGURATION_NOT_FOUND_EXPLANATION,
+            new SshCommandExecutionException(ARTIFACT_CONFIGURATION_NOT_FOUND));
+      }
       result = executor.copyFiles(context);
       if (result == CommandExecutionStatus.FAILURE) {
         log.info(

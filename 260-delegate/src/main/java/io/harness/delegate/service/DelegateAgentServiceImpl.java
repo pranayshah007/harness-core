@@ -771,6 +771,8 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
 
       // send accountId + delegateId as header for delegate gateway to log websocket connection with account.
       requestBuilder.header("accountId", this.delegateConfiguration.getAccountId());
+      final String agent = "delegate/" + this.versionInfoManager.getVersionInfo().getVersion();
+      requestBuilder.header("User-Agent", agent);
       requestBuilder.header("delegateId", DelegateAgentCommonVariables.getDelegateId());
 
       return requestBuilder;

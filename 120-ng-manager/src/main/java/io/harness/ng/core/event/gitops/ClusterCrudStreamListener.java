@@ -15,6 +15,7 @@ import static io.harness.eventsframework.EventsFrameworkMetadataConstants.GITOPS
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_NESTS;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.Scope;
 import io.harness.cdng.gitops.service.ClusterService;
 import io.harness.eventsframework.consumer.Message;
 import io.harness.eventsframework.entity_crud.EntityChangeDTO;
@@ -69,9 +70,10 @@ public class ClusterCrudStreamListener implements MessageListener {
   private void processDeleteEvent(EntityChangeDTO entityChangeDTO) {
     try (AutoLogContext ignore1 =
              new AccountLogContext(entityChangeDTO.getAccountIdentifier().getValue(), OVERRIDE_NESTS)) {
-      log.info("Deleting cluster {} reference from environments for org {} project {}",
-          entityChangeDTO.getIdentifier().getValue(), entityChangeDTO.getOrgIdentifier().getValue(),
-          entityChangeDTO.getProjectIdentifier().getValue());
+      final Scope scope = Scope.of(entityChangeDTO.getAccountIdentifier().getValue(),
+          entityChangeDTO.getOrgIdentifier().getValue(), entityChangeDTO.getProjectIdentifier().getValue());
+      log.info("Deleting cluster {} reference from environments for scope {}",
+          entityChangeDTO.getIdentifier().getValue(), scope.toString());
     }
 
     DeleteResult result = clusterService.deleteFromAllEnv(entityChangeDTO.getAccountIdentifier().getValue(),

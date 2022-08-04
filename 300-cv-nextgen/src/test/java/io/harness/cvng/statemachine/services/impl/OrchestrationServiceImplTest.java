@@ -13,6 +13,7 @@ import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.ABHIJITH;
 import static io.harness.rule.OwnerRule.DEEPAK_CHHIKARA;
 import static io.harness.rule.OwnerRule.KAMAL;
+import static io.harness.rule.OwnerRule.KAPIL;
 import static io.harness.rule.OwnerRule.PRAVEEN;
 import static io.harness.rule.OwnerRule.SOWMYA;
 
@@ -23,8 +24,10 @@ import io.harness.CvNextGenTestBase;
 import io.harness.category.element.UnitTests;
 import io.harness.cvng.BuilderFactory;
 import io.harness.cvng.DataGenerator;
+import io.harness.cvng.analysis.entities.DeploymentTimeSeriesAnalysis;
 import io.harness.cvng.analysis.entities.LearningEngineTask;
 import io.harness.cvng.analysis.entities.LearningEngineTask.LearningEngineTaskKeys;
+import io.harness.cvng.analysis.services.api.DeploymentTimeSeriesAnalysisService;
 import io.harness.cvng.core.beans.monitoredService.MonitoredServiceDTO;
 import io.harness.cvng.core.entities.AppDynamicsCVConfig;
 import io.harness.cvng.core.entities.CVConfig;
@@ -77,6 +80,7 @@ public class OrchestrationServiceImplTest extends CvNextGenTestBase {
   @Inject private Clock clock;
   @Inject private ServiceLevelIndicatorService serviceLevelIndicatorService;
   @Inject private MonitoredServiceService monitoredServiceService;
+  @Inject private DeploymentTimeSeriesAnalysisService deploymentTimeSeriesAnalysisService;
   private BuilderFactory builderFactory;
   private String cvConfigId;
   private String verificationTaskId;
@@ -252,6 +256,7 @@ public class OrchestrationServiceImplTest extends CvNextGenTestBase {
     AnalysisStateMachine stateMachine =
         dataGenerator.buildStateMachine(AnalysisStatus.SUCCESS, verificationTaskId, timeSeriesAnalysisState);
     hPersistence.save(stateMachine);
+    // createDeploymentTimeSeriesAnalysisRecords();
     orchestrate(verificationTaskId);
 
     AnalysisStateMachine savedStateMachine = hPersistence.createQuery(AnalysisStateMachine.class).get();
@@ -551,6 +556,71 @@ public class OrchestrationServiceImplTest extends CvNextGenTestBase {
     assertThat(orchestrator.getStatus().name()).isEqualTo(AnalysisStatus.RUNNING.name());
     assertThat(orchestrator.getAnalysisStateMachineQueue().get(0).getCurrentState().getType())
         .isEqualTo(AnalysisState.StateType.SLI_METRIC_ANALYSIS);
+  }
+
+  @Test
+  @Owner(developers = KAPIL)
+  @Category(UnitTests.class)
+  public void testQueueAnalysis_withFailFast() {
+    createDeploymentTimeSeriesAnalysisRecords();
+    orchestrationService.queueAnalysis(verificationTaskId, Instant.now(), Instant.now().plus(2, ChronoUnit.MINUTES));
+
+    AnalysisOrchestrator orchestrator = hPersistence.createQuery(AnalysisOrchestrator.class)
+                                            .filter(AnalysisOrchestratorKeys.verificationTaskId, verificationTaskId)
+                                            .get();
+    assertThat(orchestrator).isNull();
+  }
+
+  @Test
+  @Owner(developers = KAPIL)
+  @Category(UnitTests.class)
+  public void testOrchestrate_withFailFast() {
+    AnalysisOrchestrator orchestrator = AnalysisOrchestrator.builder()
+                                            .verificationTaskId(cvConfigId)
+                                            .status(AnalysisOrchestratorStatus.RUNNING)
+                                            .analysisStateMachineQueue(new ArrayList<>())
+                                            .build();
+
+    hPersistence.save(orchestrator);
+    AnalysisStateMachine stateMachine =
+        dataGenerator.buildStateMachine(AnalysisStatus.SUCCESS, verificationTaskId, timeSeriesAnalysisState);
+    hPersistence.save(stateMachine);
+
+    AnalysisStateMachine nextStateMachine =
+        dataGenerator.buildStateMachine(AnalysisStatus.CREATED, verificationTaskId, timeSeriesAnalysisState);
+    orchestrator.getAnalysisStateMachineQueue().add(nextStateMachine);
+    hPersistence.save(orchestrator);
+
+    createDeploymentTimeSeriesAnalysisRecords();
+    orchestrate(verificationTaskId);
+
+    List<AnalysisStateMachine> savedStateMachines = hPersistence.createQuery(AnalysisStateMachine.class).asList();
+    assertThat(savedStateMachines.size()).isEqualTo(2);
+    assertThat(savedStateMachines.get(0).getStatus()).isEqualTo(AnalysisStatus.SUCCESS);
+    assertThat(savedStateMachines.get(1).getStatus()).isEqualTo(AnalysisStatus.TERMINATED);
+    AnalysisOrchestrator savedOrchestrator = hPersistence.createQuery(AnalysisOrchestrator.class).get();
+    assertThat(savedOrchestrator).isNotNull();
+    assertThat(savedOrchestrator.getStatus()).isEqualTo(AnalysisOrchestratorStatus.TERMINATED);
+  }
+
+  private void createDeploymentTimeSeriesAnalysisRecords() {
+    DeploymentTimeSeriesAnalysis deploymentTimeSeriesAnalysisOne =
+        DeploymentTimeSeriesAnalysis.builder()
+            .accountId(accountId)
+            .verificationTaskId(verificationTaskId)
+            .startTime(Instant.now())
+            .endTime(Instant.now().plus(1, ChronoUnit.MINUTES))
+            .build();
+    DeploymentTimeSeriesAnalysis deploymentTimeSeriesAnalysisTwo =
+        DeploymentTimeSeriesAnalysis.builder()
+            .accountId(accountId)
+            .verificationTaskId(verificationTaskId)
+            .startTime(Instant.now().plus(1, ChronoUnit.MINUTES))
+            .endTime(Instant.now().plus(2, ChronoUnit.MINUTES))
+            .build();
+    deploymentTimeSeriesAnalysisTwo.setFailFast(true);
+    deploymentTimeSeriesAnalysisService.save(deploymentTimeSeriesAnalysisOne);
+    deploymentTimeSeriesAnalysisService.save(deploymentTimeSeriesAnalysisTwo);
   }
 
   private AnalysisOrchestrator getOrchestrator(String verificationTaskId) {

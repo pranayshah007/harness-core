@@ -279,6 +279,13 @@ public class UserResourceNG {
     return new RestResponse<>(true);
   }
 
+  @GET
+  @Path("limit-check")
+  public RestResponse<Boolean> getUserLimitCheckForAccount(
+      @QueryParam("accountId") String accountId, @QueryParam("email") String email) {
+    return new RestResponse<>(userService.checkIfUserLimitHasReached(accountId, email));
+  }
+
   @PUT
   @Path("password")
   @ApiOperation(value = "Change user password", nickname = "changeUserPassword")

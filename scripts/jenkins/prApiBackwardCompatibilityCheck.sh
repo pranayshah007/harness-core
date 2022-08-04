@@ -25,7 +25,7 @@ CE_NEXTGEN_T=0
 bazel build ${BAZEL_ARGS} -- //340-ce-nextgen:module_deploy.jar || CE_NEXTGEN_T=$?
 echo "BUILD PIPELINE_SERVICE"
 PIPELINE_SERVICE_T=0
-bazel build ${BAZEL_ARGS} -- //pipeline-service:module_deploy.jar || PIPELINE_SERVICE_T=$?
+bazel build ${BAZEL_ARGS} -- //pipeline-service/service:module_deploy.jar || PIPELINE_SERVICE_T=$?
 echo "BUILD TEMPLATE_SERVICE"
 TEMPLATE_SERVICE_T=0
 bazel build ${BAZEL_ARGS} -- //840-template-service:module_deploy.jar || TEMPLATE_SERVICE_T=$?
@@ -81,7 +81,7 @@ fi
 if [ $PIPELINE_SERVICE_T -eq 0 ]
 then
     echo "====Generating Pipeline-Service Target-Branch Api Spec===="
-    java -jar bazel-bin/pipeline-service/module_deploy.jar generate-openapi-spec target/pipeline_target.json || PIPELINE_SERVICE_T=$?
+    java -jar bazel-bin/pipeline-service/service:module_deploy.jar generate-openapi-spec target/pipeline_target.json || PIPELINE_SERVICE_T=$?
 fi
 
 if [ $TEMPLATE_SERVICE_T -eq 0 ]
@@ -157,7 +157,7 @@ if [ $PIPELINE_SERVICE_T -eq 0 ]
 then
     echo "BUILD PIPELINE_SERVICE"
     PIPELINE_SERVICE_S=0
-    bazel build ${BAZEL_ARGS} -- //pipeline-service:module_deploy.jar || PIPELINE_SERVICE_S=$?
+    bazel build ${BAZEL_ARGS} -- //pipeline-service/service:module_deploy.jar || PIPELINE_SERVICE_S=$?
 else
     PIPELINE_SERVICE_S=1
 fi
@@ -240,7 +240,7 @@ fi
 if [ $PIPELINE_SERVICE_S -eq 0 ]
 then
     echo "====Generating Pipeline-Service Source-Branch Api Spec===="
-    java -jar bazel-bin/pipeline-service/module_deploy.jar generate-openapi-spec target/pipeline_source.json || PIPELINE_SERVICE_S=$?
+    java -jar bazel-bin/pipeline-service/service:module_deploy.jar generate-openapi-spec target/pipeline_source.json || PIPELINE_SERVICE_S=$?
 fi
 
 if [ $TEMPLATE_SERVICE_S -eq 0 ]

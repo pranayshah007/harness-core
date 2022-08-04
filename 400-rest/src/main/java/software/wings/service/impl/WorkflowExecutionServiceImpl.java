@@ -3266,7 +3266,26 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
             .filter(WorkflowExecutionKeys.status, SUCCESS)
             .filter(WorkflowExecutionKeys.infraMappingIds, workflowExecution.getInfraMappingIds())
             .order(Sort.descending(WorkflowExecutionKeys.createdAt));
-    final List<WorkflowExecution> workflowExecutionList = query.asList(new FindOptions().limit(2));
+    List<WorkflowExecution> workflowExecutionList = new ArrayList<>();
+    if (featureFlagService.isEnabled(
+            FeatureName.ON_DEMAND_ROLLBACK_WITH_DIFFERENT_ARTIFACT, workflowExecution.getAccountId())) {
+      boolean firstEntry = true;
+      try (HIterator<WorkflowExecution> iterator = new HIterator<>(query.fetch())) {
+        for (WorkflowExecution wfExecution : iterator) {
+          if (firstEntry) {
+            firstEntry = false;
+            workflowExecutionList.add(wfExecution);
+            continue;
+          }
+          if (isArtifactsListDifferent(wfExecution.getArtifacts(), workflowExecutionList.get(0).getArtifacts())) {
+            workflowExecutionList.add(wfExecution);
+            break;
+          }
+        }
+      }
+    } else {
+      workflowExecutionList = query.asList(new FindOptions().limit(2));
+    }
 
     if (isEmpty(workflowExecutionList)) {
       throw new InvalidRequestException(
@@ -3289,6 +3308,22 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
     WorkflowExecution lastSecondSuccessfulWE = workflowExecutionList.get(1);
     log.info("Fetching artifact from execution: {}", lastSecondSuccessfulWE);
     return lastSecondSuccessfulWE.getArtifacts();
+  }
+
+  boolean isArtifactsListDifferent(List<Artifact> artifactList1, List<Artifact> artifactList2) {
+    // If both artifact list are empty, we should consider them different because artifact must be coming from swimlane.
+    if (isEmpty(artifactList1) && isEmpty(artifactList2)) {
+      return true;
+    }
+
+    if ((isEmpty(artifactList1) && isNotEmpty(artifactList2))
+        || (isNotEmpty(artifactList1) && isEmpty(artifactList2))) {
+      return true;
+    }
+
+    Set<String> artifactBuildNumberList1 = artifactList1.stream().map(Artifact::getUuid).collect(Collectors.toSet());
+    Set<String> artifactBuildNumberList2 = artifactList2.stream().map(Artifact::getUuid).collect(Collectors.toSet());
+    return !artifactBuildNumberList1.equals(artifactBuildNumberList2);
   }
 
   @Override

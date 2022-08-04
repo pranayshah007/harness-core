@@ -8,6 +8,7 @@
 package io.harness.cdng.ssh;
 
 import static io.harness.beans.SwaggerConstants.BOOLEAN_CLASSPATH;
+import static io.harness.beans.SwaggerConstants.STRING_CLASSPATH;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.string;
 
@@ -40,4 +41,5 @@ public class CommandBaseStepInfo {
   @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
   ParameterField<List<TaskSelectorYaml>> delegateSelectors;
   List<CommandUnitWrapper> commandUnits;
+  @ApiModelProperty(dataType = STRING_CLASSPATH) ParameterField<String> host;
 }

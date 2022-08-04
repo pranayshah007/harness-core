@@ -54,7 +54,6 @@ public enum FeatureName {
   CUSTOM_APM_24_X_7_CV_TASK,
   CUSTOM_APM_CV_TASK,
   CUSTOM_DASHBOARD,
-  CUSTOM_DEPLOYMENT,
   CUSTOM_DEPLOYMENT_ARTIFACT_FROM_INSTANCE_JSON,
   NG_DEPLOYMENT_TEMPLATE,
   CUSTOM_MAX_PAGE_SIZE,
@@ -83,6 +82,7 @@ public enum FeatureName {
   FFM_1859,
   FFM_2134_FF_PIPELINES_TRIGGER,
   FFM_3938_STALE_FLAGS_ACTIVE_CARD_HIDE_SHOW,
+  FFM_4117_INTEGRATE_SRM("Enable Feature Flags to send events to the SRM module", HarnessTeam.CF),
   WINRM_COPY_CONFIG_OPTIMIZE,
   ECS_MULTI_LBS,
   ENTITY_AUDIT_RECORD,
@@ -189,7 +189,6 @@ public enum FeatureName {
   ENABLE_LOGIN_AUDITS,
   CUSTOM_MANIFEST,
   WEBHOOK_TRIGGER_AUTHORIZATION,
-  NG_HELM_SOURCE_REPO,
   ENHANCED_GCR_CONNECTIVITY_CHECK,
   USE_TF_CLIENT,
   SERVICE_DASHBOARD_NG,
@@ -321,7 +320,6 @@ public enum FeatureName {
   LDAP_SECRET_AUTH,
   WORKFLOW_EXECUTION_REFRESH_STATUS,
   SERVERLESS_SUPPORT,
-  TF_MODULE_SOURCE_INHERIT_SSH,
   TRIGGERS_PAGE_PAGINATION,
   CVNG_NOTIFICATION_UI,
   STALE_FLAGS_FFM_1510,
@@ -384,6 +382,8 @@ public enum FeatureName {
   GIT_SIMPLIFICATION_DISABLED,
   USE_K8S_API_FOR_STEADY_STATE_CHECK,
   WINRM_ASG_ROLLBACK("Used for Collect remaining instances rollback step", HarnessTeam.CDP),
+
+  SAVE_ARTIFACT_TO_DB("Saves artifact to db and proceed in artifact collection step if not found", HarnessTeam.CDC),
   NG_INLINE_MANIFEST,
   NG_CUSTOM_REMOTE_MANIFEST,
   CI_DISABLE_RESOURCE_OPTIMIZATION(
@@ -398,8 +398,18 @@ public enum FeatureName {
   HOSTED_BUILDS("Used to enabled Hosted builds in paid accounts", HarnessTeam.CI),
   CD_ONBOARDING_ENABLED,
   ATTRIBUTE_TYPE_ACL_ENABLED("Enable attribute filter on NG UI for ACL", HarnessTeam.PL),
-  CREATE_DEFAULT_PROJECT("Enables auto create default project after user signup", HarnessTeam.GTM);
-
+  CREATE_DEFAULT_PROJECT("Enables auto create default project after user signup", HarnessTeam.GTM),
+  ANALYSE_TF_PLAN_SUMMARY(
+      "Enables parsing of the Terraform plan/apply/destroy summary [add/change/destroy] and exposing them as expressions",
+      HarnessTeam.CDP),
+  TERRAFORM_REMOTE_BACKEND_CONFIG("Enables storing Terraform backend configuration in a remote repo", HarnessTeam.CDP),
+  NG_OPTIMIZE_FETCH_FILES_KUSTOMIZE("Used to Optimize kustomize Manifest files fetch in NG", HarnessTeam.CDP),
+  REMOVE_HINT_YAML_GIT_COMMITS("Removes the hint usage in GitCommits collection", HarnessTeam.SPG),
+  FIXED_INSTANCE_ZERO_ALLOW("To allow user to set the fixed instance count to 0 for ECS Deployments", HarnessTeam.CDP),
+  USE_PAGINATED_ENCRYPT_FOR_VARIABLE_OVERRIDES(
+      "Enables PaginatedComponent & Formik for VariableOverrides in CG-UI", HarnessTeam.PL),
+  ON_DEMAND_ROLLBACK_WITH_DIFFERENT_ARTIFACT(
+      "Used to do on demand rollback to previously deployed different artifact on same inframapping", HarnessTeam.CDC);
   @Deprecated
   FeatureName() {
     scope = Scope.PER_ACCOUNT;

@@ -134,7 +134,7 @@ public class AppDynamicsHealthSourceSpec extends MetricHealthSourceSpec {
     });
     cvConfigs.addAll(CollectionUtils.emptyIfNull(metricDefinitions)
                          .stream()
-                         .collect(Collectors.groupingBy(md -> MetricDefinitionKey.fromMetricDefinition(md)))
+                         .collect(Collectors.groupingBy(MetricDefinitionKey::fromMetricDefinition))
                          .values()
                          .stream()
                          .map(mdList -> {
@@ -158,6 +158,7 @@ public class AppDynamicsHealthSourceSpec extends MetricHealthSourceSpec {
                            return appDynamicsCVConfig;
                          })
                          .collect(Collectors.toList()));
+    cvConfigs.forEach(appDynamicsCVConfig -> appDynamicsCVConfig.addMetricThresholds(metricPacks));
     cvConfigs.stream()
         .filter(cvConfig -> CollectionUtils.isNotEmpty(cvConfig.getMetricInfos()))
         .flatMap(cvConfig -> cvConfig.getMetricInfos().stream())

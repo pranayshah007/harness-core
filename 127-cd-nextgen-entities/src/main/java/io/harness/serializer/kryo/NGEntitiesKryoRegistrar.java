@@ -39,6 +39,7 @@ import io.harness.cdng.artifact.outcome.JenkinsArtifactOutcome;
 import io.harness.cdng.artifact.outcome.S3ArtifactOutcome;
 import io.harness.cdng.configfile.ConfigFile;
 import io.harness.cdng.configfile.ConfigFileAttributes;
+import io.harness.cdng.configfile.ConfigFileOutcome;
 import io.harness.cdng.configfile.ConfigFileWrapper;
 import io.harness.cdng.infra.beans.K8sDirectInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sGcpInfrastructureOutcome;
@@ -83,6 +84,7 @@ import io.harness.cdng.manifest.yaml.kinds.OpenshiftParamManifest;
 import io.harness.cdng.manifest.yaml.kinds.ReleaseRepoManifest;
 import io.harness.cdng.manifest.yaml.kinds.ServerlessAwsLambdaManifest;
 import io.harness.cdng.manifest.yaml.kinds.ValuesManifest;
+import io.harness.cdng.manifest.yaml.kinds.kustomize.OverlayConfiguration;
 import io.harness.cdng.manifest.yaml.oci.OciHelmChartStoreConfigType;
 import io.harness.cdng.manifest.yaml.oci.OciHelmChartStoreConfigWrapper;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
@@ -211,6 +213,7 @@ public class NGEntitiesKryoRegistrar implements KryoRegistrar {
     kryo.register(AmazonS3ArtifactConfig.class, 12569);
     kryo.register(AzureRepoStore.class, 12570);
     kryo.register(CustomRemoteStoreConfig.class, 12589);
+    kryo.register(OverlayConfiguration.class, 12591);
     kryo.register(JenkinsArtifactConfig.class, 130012);
     kryo.register(CustomScriptBaseSource.class, 130013);
     kryo.register(CustomArtifactScriptInfo.class, 130014);
@@ -220,5 +223,6 @@ public class NGEntitiesKryoRegistrar implements KryoRegistrar {
     kryo.register(CustomArtifactSpecVisitorHelper.class, 130018);
     kryo.register(CustomScriptInlineSource.class, 130019);
     kryo.register(FetchAllArtifacts.class, 130020);
+    kryo.register(ConfigFileOutcome.class, 130021);
   }
 }
