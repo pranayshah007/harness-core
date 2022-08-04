@@ -446,6 +446,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
   @SuppressWarnings("unchecked")
   public void run(final boolean watched, final boolean isImmutableDelegate) {
     this.isImmutableDelegate = isImmutableDelegate;
+    delegateConfiguration.setImmutable(isImmutableDelegate);
 
     try {
       // Initialize delegate process in background.
