@@ -66,8 +66,8 @@ public class GithubPackagesArtifactDelegateRequest implements ArtifactSourceDele
               githubConnectorDTO.getGitConnectionUrl(), maskingEvaluator));
         }
       } else {
-                throw new UnknownEnumTypeException(
-                        "Github Credential Type", String.valueOf(githubConnectorDTO.getAuthentication().getAuthType());
+        throw new UnknownEnumTypeException(
+            "Github Credential Type", String.valueOf(githubConnectorDTO.getAuthentication().getAuthType()));
       }
     }
     return capabilities;

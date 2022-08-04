@@ -13,6 +13,8 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.artifacts.beans.BuildDetailsInternal;
 import io.harness.artifacts.githubpackages.beans.GithubPackagesInternalConfig;
 
+import software.wings.helpers.ext.jenkins.BuildDetails;
+
 import java.util.List;
 
 @OwnedBy(CDC)
@@ -26,6 +28,6 @@ public interface GithubPackagesRegistryService {
    * @param packageName
    * @param maxNoOfTagsPerImage
    */
-  List<BuildDetailsInternal> getBuilds(
+  List<BuildDetails> getBuilds(
       GithubPackagesInternalConfig githubPackagesInternalConfig, String packageName, int maxNoOfTagsPerImage);
 }

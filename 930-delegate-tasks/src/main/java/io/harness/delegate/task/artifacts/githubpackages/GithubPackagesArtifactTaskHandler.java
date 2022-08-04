@@ -8,6 +8,7 @@
 package io.harness.delegate.task.artifacts.githubpackages;
 
 import io.harness.artifacts.beans.BuildDetailsInternal;
+import io.harness.artifacts.comparator.BuildDetailsComparatorDescending;
 import io.harness.artifacts.comparator.BuildDetailsInternalComparatorDescending;
 import io.harness.artifacts.githubpackages.service.GithubPackagesRegistryService;
 import io.harness.data.structure.EmptyPredicate;
@@ -15,6 +16,8 @@ import io.harness.delegate.task.artifacts.DelegateArtifactTaskHandler;
 import io.harness.delegate.task.artifacts.mappers.GithubPackagesRequestResponseMapper;
 import io.harness.delegate.task.artifacts.response.ArtifactTaskExecutionResponse;
 import io.harness.security.encryption.SecretDecryptionService;
+
+import software.wings.helpers.ext.jenkins.BuildDetails;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -36,12 +39,12 @@ public class GithubPackagesArtifactTaskHandler
   @Inject @Named("githubPackagesExecutor") private ExecutorService executor;
 
   public ArtifactTaskExecutionResponse getBuilds(GithubPackagesArtifactDelegateRequest attributes) {
-    List<BuildDetailsInternal> builds = githubPackagesRegistryService.getBuilds(
+    List<BuildDetails> builds = githubPackagesRegistryService.getBuilds(
         GithubPackagesRequestResponseMapper.toGithubPackagesInternalConfig(attributes), attributes.getPackageName(),
         githubPackagesRegistryService.MAX_NO_OF_TAGS_PER_IMAGE);
     List<GithubPackagesArtifactDelegateResponse> githubPackagesArtifactDelegateResponses =
         builds.stream()
-            .sorted(new BuildDetailsInternalComparatorDescending())
+            .sorted(new BuildDetailsComparatorDescending())
             .map(build -> GithubPackagesRequestResponseMapper.toGithubPackagesResponse(build, attributes))
             .collect(Collectors.toList());
     return getSuccessTaskExecutionResponse(githubPackagesArtifactDelegateResponses);

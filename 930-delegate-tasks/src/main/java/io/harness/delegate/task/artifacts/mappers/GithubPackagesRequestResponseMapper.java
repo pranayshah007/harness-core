@@ -7,10 +7,12 @@
 
 package io.harness.delegate.task.artifacts.mappers;
 
-import io.harness.artifacts.beans.BuildDetailsInternal;
 import io.harness.artifacts.githubpackages.beans.GithubPackagesInternalConfig;
+import io.harness.delegate.task.artifacts.ArtifactSourceType;
 import io.harness.delegate.task.artifacts.githubpackages.GithubPackagesArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.githubpackages.GithubPackagesArtifactDelegateResponse;
+
+import software.wings.helpers.ext.jenkins.BuildDetails;
 
 import lombok.experimental.UtilityClass;
 
@@ -21,7 +23,13 @@ public class GithubPackagesRequestResponseMapper {
   }
 
   public GithubPackagesArtifactDelegateResponse toGithubPackagesResponse(
-      BuildDetailsInternal buildDetailsInternal, GithubPackagesArtifactDelegateRequest request) {
-    return GithubPackagesArtifactDelegateResponse.builder().build();
+      BuildDetails buildDetails, GithubPackagesArtifactDelegateRequest request) {
+    return GithubPackagesArtifactDelegateResponse.builder()
+        .buildDetails(ArtifactBuildDetailsMapper.toBuildDetailsNG(buildDetails))
+        .packageName(request.getPackageName())
+        .version(buildDetails.getNumber())
+        .versionRegex(request.getVersionRegex())
+        .sourceType(ArtifactSourceType.GITHUB_PACKAGES)
+        .build();
   }
 }

@@ -18,8 +18,18 @@ import lombok.Value;
 @Value
 @EqualsAndHashCode(callSuper = false)
 public class GithubPackagesArtifactDelegateResponse extends ArtifactDelegateResponse {
+  String packageName;
+
+  String version;
+
+  String versionRegex;
+
   @Builder
-  public GithubPackagesArtifactDelegateResponse(ArtifactBuildDetailsNG buildDetails, ArtifactSourceType sourceType) {
+  public GithubPackagesArtifactDelegateResponse(ArtifactBuildDetailsNG buildDetails, ArtifactSourceType sourceType,
+      String packageName, String version, String versionRegex) {
     super(buildDetails, sourceType);
+    this.packageName = packageName;
+    this.version = version;
+    this.versionRegex = versionRegex;
   }
 }
