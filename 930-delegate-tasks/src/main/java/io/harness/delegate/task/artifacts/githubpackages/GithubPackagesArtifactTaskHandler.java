@@ -8,18 +8,11 @@
 package io.harness.delegate.task.artifacts.githubpackages;
 
 import io.harness.artifacts.beans.BuildDetailsInternal;
-import io.harness.artifacts.comparator.BuildDetailsComparatorDescending;
 import io.harness.artifacts.comparator.BuildDetailsInternalComparatorDescending;
-import io.harness.artifacts.docker.service.DockerRegistryService;
 import io.harness.artifacts.githubpackages.service.GithubPackagesRegistryService;
-import io.harness.artifacts.jenkins.service.JenkinsRegistryService;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.task.artifacts.DelegateArtifactTaskHandler;
-import io.harness.delegate.task.artifacts.docker.DockerArtifactDelegateResponse;
-import io.harness.delegate.task.artifacts.jenkins.JenkinsArtifactDelegateResponse;
-import io.harness.delegate.task.artifacts.mappers.DockerRequestResponseMapper;
 import io.harness.delegate.task.artifacts.mappers.GithubPackagesRequestResponseMapper;
-import io.harness.delegate.task.artifacts.mappers.JenkinsRequestResponseMapper;
 import io.harness.delegate.task.artifacts.response.ArtifactTaskExecutionResponse;
 import io.harness.security.encryption.SecretDecryptionService;
 
