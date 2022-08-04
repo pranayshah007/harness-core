@@ -20,8 +20,8 @@ java_library(
     deps = [
         "//:lombok",
         "//420-delegate-agent:module",
-        "//420-delegate-service:module",
         "//490-ce-commons:module",
+        "//920-delegate-service-beans:module",
         "//950-ng-core:module",
         "//platform-service/modules/notification-service/delegate-tasks:module",
         "@maven//:org_apache_commons_commons_math3",

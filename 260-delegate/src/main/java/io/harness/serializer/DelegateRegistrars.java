@@ -11,7 +11,6 @@ import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.serializer.kryo.CgOrchestrationBeansKryoRegistrar;
 import io.harness.serializer.kryo.DelegateAgentBeansKryoRegister;
-import io.harness.serializer.kryo.DelegateServiceKryoRegister;
 import io.harness.serializer.kryo.NgAuthenticationServiceKryoRegistrar;
 import io.harness.serializer.kryo.NotificationBeansKryoRegistrar;
 import io.harness.serializer.kryo.NotificationDelegateTasksKryoRegistrar;
@@ -30,7 +29,6 @@ public class DelegateRegistrars {
           .addAll(CvNextGenBeansRegistrars.kryoRegistrars)
           .addAll(ConnectorBeansRegistrars.kryoRegistrars)
           .addAll(DelegateTasksBeansRegistrars.kryoRegistrars)
-          .addAll(CgOrchestrationRegistrars.kryoRegistrars)
           .add(CgOrchestrationBeansKryoRegistrar.class)
           .add(ProjectAndOrgKryoRegistrar.class)
           .addAll(NGCommonsRegistrars.kryoRegistrars)
@@ -44,7 +42,6 @@ public class DelegateRegistrars {
           .add(NotificationDelegateTasksKryoRegistrar.class)
           .add(DelegateAgentBeansKryoRegister.class)
           .add(WatcherBeansKryoRegister.class)
-          .add(DelegateServiceKryoRegister.class)
           .addAll(OutboxEventRegistrars.kryoRegistrars)
           .addAll(AccessControlClientRegistrars.kryoRegistrars)
           .addAll(DelegateTaskRegistrars.kryoRegistrars)

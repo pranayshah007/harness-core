@@ -50,7 +50,7 @@ import org.springframework.guice.annotation.GuiceModule;
 @GuiceModule
 @EnableMongoRepositories(basePackages = {"io.harness.repositories"},
     includeFilters = @ComponentScan.Filter(HarnessRepo.class), mongoTemplateRef = "primary")
-@EnableMongoAuditing
+@EnableMongoAuditing  
 @OwnedBy(HarnessTeam.PL)
 public class SpringPersistenceConfig extends AbstractMongoConfiguration {
   protected final Injector injector;
