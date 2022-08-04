@@ -172,11 +172,8 @@ public class ShellScriptExecutionOnDelegateNG {
       CustomRepositoryResponse.Result.ResultBuilder res = CustomRepositoryResponse.Result.builder();
       res.buildNo(JsonUtils.jsonPath(ctx, artifactRoot + "[" + i + "]." + buildNoPath));
       for (Map.Entry<String, String> entry : map.entrySet()) {
-        String mappedAttribute = EmptyPredicate.isEmpty(entry.getValue())
-            ? entry.getKey().substring(entry.getKey().lastIndexOf('.') + 1)
-            : entry.getValue().substring(entry.getValue().lastIndexOf('.') + 1);
-        String value = JsonUtils.jsonPath(ctx, artifactRoot + "[" + i + "]." + entry.getKey()).toString();
-        metadata.put(mappedAttribute, value);
+        String value = JsonUtils.jsonPath(ctx, artifactRoot + "[" + i + "]." + entry.getValue()).toString();
+        metadata.put(entry.getKey(), value);
       }
       res.metadata(metadata);
       result.add(res.build());
