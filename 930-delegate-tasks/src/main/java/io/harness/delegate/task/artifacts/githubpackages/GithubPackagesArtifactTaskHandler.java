@@ -18,6 +18,7 @@ import io.harness.delegate.task.artifacts.DelegateArtifactTaskHandler;
 import io.harness.delegate.task.artifacts.docker.DockerArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.jenkins.JenkinsArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.mappers.DockerRequestResponseMapper;
+import io.harness.delegate.task.artifacts.mappers.GithubPackagesRequestResponseMapper;
 import io.harness.delegate.task.artifacts.mappers.JenkinsRequestResponseMapper;
 import io.harness.delegate.task.artifacts.response.ArtifactTaskExecutionResponse;
 import io.harness.security.encryption.SecretDecryptionService;
@@ -25,7 +26,9 @@ import io.harness.security.encryption.SecretDecryptionService;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
+import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 
@@ -40,7 +43,15 @@ public class GithubPackagesArtifactTaskHandler
   @Inject @Named("githubPackagesExecutor") private ExecutorService executor;
 
   public ArtifactTaskExecutionResponse getBuilds(GithubPackagesArtifactDelegateRequest attributes) {
-    return null;
+    List<BuildDetailsInternal> builds = githubPackagesRegistryService.getBuilds(
+        GithubPackagesRequestResponseMapper.toGithubPackagesInternalConfig(attributes), attributes.getPackageName(),
+        githubPackagesRegistryService.MAX_NO_OF_TAGS_PER_IMAGE);
+    List<GithubPackagesArtifactDelegateResponse> githubPackagesArtifactDelegateResponses =
+        builds.stream()
+            .sorted(new BuildDetailsInternalComparatorDescending())
+            .map(build -> GithubPackagesRequestResponseMapper.toGithubPackagesResponse(build, attributes))
+            .collect(Collectors.toList());
+    return getSuccessTaskExecutionResponse(githubPackagesArtifactDelegateResponses);
   }
 
   public void decryptRequestDTOs(GithubPackagesArtifactDelegateRequest attributes) {
@@ -48,6 +59,15 @@ public class GithubPackagesArtifactTaskHandler
       secretDecryptionService.decrypt(attributes.getGithubConnectorDTO().getAuthentication().getCredentials(),
           attributes.getEncryptedDataDetails());
     }
+  }
+
+  private ArtifactTaskExecutionResponse getSuccessTaskExecutionResponse(
+      List<GithubPackagesArtifactDelegateResponse> responseList) {
+    return ArtifactTaskExecutionResponse.builder()
+        .artifactDelegateResponses(responseList)
+        .isArtifactSourceValid(true)
+        .isArtifactServerValid(true)
+        .build();
   }
 
   boolean isRegex(GithubPackagesArtifactDelegateRequest artifactDelegateRequest) {

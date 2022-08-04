@@ -8,12 +8,14 @@
 package io.harness.artifacts.githubpackages.service;
 
 import io.harness.artifacts.beans.BuildDetailsInternal;
+import io.harness.artifacts.githubpackages.beans.GithubPackagesInternalConfig;
 
 import java.util.List;
 
 public class GithubPackagesRegistryServiceImpl implements GithubPackagesRegistryService {
   @Override
-  public List<BuildDetailsInternal> getBuilds() {
+  public List<BuildDetailsInternal> getBuilds(
+      GithubPackagesInternalConfig githubPackagesInternalConfig, String packageName, int maxNoOfTagsPerImage) {
     return null;
   }
 }

@@ -7,4 +7,19 @@
 
 package io.harness.delegate.task.artifacts.githubpackages;
 
-public class GithubPackagesArtifactDelegateResponse {}
+import io.harness.delegate.task.artifacts.ArtifactSourceType;
+import io.harness.delegate.task.artifacts.response.ArtifactBuildDetailsNG;
+import io.harness.delegate.task.artifacts.response.ArtifactDelegateResponse;
+
+import lombok.Builder;
+import lombok.EqualsAndHashCode;
+import lombok.Value;
+
+@Value
+@EqualsAndHashCode(callSuper = false)
+public class GithubPackagesArtifactDelegateResponse extends ArtifactDelegateResponse {
+  @Builder
+  public GithubPackagesArtifactDelegateResponse(ArtifactBuildDetailsNG buildDetails, ArtifactSourceType sourceType) {
+    super(buildDetails, sourceType);
+  }
+}

@@ -5,7 +5,8 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-import jenkins.model.Jenkins
+
+import io.harness.artifacts.githubpackages.service.GithubPackagesRegistryService
 
 def jobs = [
         'portal-feature',
@@ -23,7 +24,7 @@ jobs.each {
     def jobName = it
 
     def map = [:]
-    Jenkins.instance.getItemByFullName(jobName).builds.each {
+    GithubPackagesRegistryService.getBuilds.each {
         def id = jobId(it.getDisplayName())
 
         if (id == null) {
@@ -40,7 +41,7 @@ jobs.each {
         }
     }
 
-    Jenkins.instance.getItemByFullName(jobName).builds.each {
+    GithubPackagesRegistryService.getBuilds.each {
         def current = map.get(jobId(it.getDisplayName()))
         if (current == null) {
             return;
