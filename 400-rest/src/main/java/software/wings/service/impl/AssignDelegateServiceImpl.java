@@ -959,7 +959,8 @@ public class AssignDelegateServiceImpl implements AssignDelegateService, Delegat
     return accountDelegates.stream()
         .filter(delegate
             -> delegate.getStatus() == DelegateInstanceStatus.ENABLED
-                && delegate.getLastHeartBeat() > oldestAcceptableHeartBeat)
+                && delegate.getLastHeartBeat() > oldestAcceptableHeartBeat
+                && (delegate.getExpiringAt() == 0 || delegate.getExpiringAt() > System.currentTimeMillis()))
         .collect(toList());
   }
 
