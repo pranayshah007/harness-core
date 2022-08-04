@@ -14,7 +14,6 @@ import io.harness.serializer.kryo.DelegateAgentBeansKryoRegister;
 import io.harness.serializer.kryo.NgAuthenticationServiceKryoRegistrar;
 import io.harness.serializer.kryo.NotificationBeansKryoRegistrar;
 import io.harness.serializer.kryo.NotificationDelegateTasksKryoRegistrar;
-import io.harness.serializer.kryo.ProjectAndOrgKryoRegistrar;
 import io.harness.serializer.kryo.WatcherBeansKryoRegister;
 
 import com.google.common.collect.ImmutableSet;
@@ -30,7 +29,6 @@ public class DelegateRegistrars {
           .addAll(ConnectorBeansRegistrars.kryoRegistrars)
           .addAll(DelegateTasksBeansRegistrars.kryoRegistrars)
           .add(CgOrchestrationBeansKryoRegistrar.class)
-          .add(ProjectAndOrgKryoRegistrar.class)
           .addAll(NGCommonsRegistrars.kryoRegistrars)
           .addAll(NGCoreRegistrars.kryoRegistrars)
           .addAll(RbacCoreRegistrars.kryoRegistrars)
