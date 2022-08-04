@@ -87,12 +87,12 @@ export VERSION=`cat ${VERSION_FILE} | grep 'build.number=' | sed -e 's: *build.n
 export VERSION=${VERSION%??}
 export NEW_VERSION=$(( ${VERSION}+1 ))
 
-sed -i "s:build.number=${VERSION}00:build.number=${NEW_VERSION}00:g" ${VERSION_FILE}
+# sed -i "s:build.number=${VERSION}00:build.number=${NEW_VERSION}00:g" ${VERSION_FILE}
 
-git add ${VERSION_FILE}
-git commit -m "Branching to release/${PURPOSE}/${VERSION}xx. New version ${NEW_VERSION}xx"
-git push origin develop
-print_err "$?" "Pushing build.properties to develop branch failed"
+# git add ${VERSION_FILE}
+# git commit -m "Branching to release/${PURPOSE}/${VERSION}xx. New version ${NEW_VERSION}xx"
+# git push origin develop
+# print_err "$?" "Pushing build.properties to develop branch failed"
 
 
 echo "STEP3: INFO: Creating a release branch for ${PURPOSE}"
