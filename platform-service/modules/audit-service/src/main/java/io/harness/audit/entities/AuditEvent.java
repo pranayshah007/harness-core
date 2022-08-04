@@ -24,6 +24,7 @@ import io.harness.audit.entities.Resource.ResourceKeys;
 import io.harness.audit.entities.ResourceScope.ResourceScopeKeys;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.MongoIndex;
+import io.harness.mongo.index.SortCompoundMongoIndex;
 import io.harness.ng.DbAliases;
 import io.harness.ng.core.common.beans.KeyValuePair;
 import io.harness.ng.core.common.beans.KeyValuePair.KeyValuePairKeys;
@@ -113,6 +114,20 @@ public class AuditEvent {
                  .field(AuditEventKeys.timestamp)
                  .field(AuditEventKeys.insertId)
                  .unique(true)
+                 .build())
+        .add(SortCompoundMongoIndex.builder()
+                 .name("ngAuditAccountIdentifierTypeTime")
+                 .field(AuditEventKeys.ACCOUNT_IDENTIFIER_KEY)
+                 .field(AuditEventKeys.RESOURCE_IDENTIFIER_KEY)
+                 .field(AuditEventKeys.RESOURCE_TYPE_KEY)
+                 .descSortField(AuditEventKeys.timestamp)
+                 .build())
+        .add(SortCompoundMongoIndex.builder()
+                 .name("ngAuditActionIdentiferTypeTime")
+                 .field(AuditEventKeys.ACCOUNT_IDENTIFIER_KEY)
+                 .field(AuditEventKeys.RESOURCE_IDENTIFIER_KEY)
+                 .field(AuditEventKeys.RESOURCE_TYPE_KEY)
+                 .descSortField(AuditEventKeys.timestamp)
                  .build())
         .build();
   }
