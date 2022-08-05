@@ -75,8 +75,8 @@ public class ArtifactDelegateRequestUtils {
         .build();
   }
   public GarDelegateRequest getGoogleArtifactDelegateRequest(String region, String repositoryName, String project,
-      String pkg, String versionRegex, GcpConnectorDTO gcpConnectorDTO, List<EncryptedDataDetail> encryptedDataDetails,
-      ArtifactSourceType sourceType) {
+      String pkg, String version, String versionRegex, GcpConnectorDTO gcpConnectorDTO,
+      List<EncryptedDataDetail> encryptedDataDetails, ArtifactSourceType sourceType) {
     return GarDelegateRequest.builder()
         .region(trim(region))
         .project(trim(project))
@@ -86,6 +86,7 @@ public class ArtifactDelegateRequestUtils {
         .sourceType(sourceType)
         .pkg(trim(pkg))
         .versionRegex(versionRegex)
+        .version(version)
         .encryptedDataDetails(encryptedDataDetails)
         .build();
   }

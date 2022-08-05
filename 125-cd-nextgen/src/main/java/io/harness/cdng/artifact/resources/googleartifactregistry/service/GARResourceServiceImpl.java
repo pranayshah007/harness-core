@@ -73,13 +73,13 @@ public class GARResourceServiceImpl implements GARResourceService {
 
   @Override
   public GARResponseDTO getBuildDetails(IdentifierRef googleArtifactRegistryRef, String region, String repositoryName,
-      String project, String pkg, String versionRegex, String orgIdentifier, String projectIdentifier) {
+      String project, String pkg, String version, String versionRegex, String orgIdentifier, String projectIdentifier) {
     GcpConnectorDTO connector = getConnector(googleArtifactRegistryRef);
     BaseNGAccess baseNGAccess =
         getBaseNGAccess(googleArtifactRegistryRef.getAccountIdentifier(), orgIdentifier, projectIdentifier);
     List<EncryptedDataDetail> encryptionDetails = getEncryptionDetails(connector, baseNGAccess);
     GarDelegateRequest googleArtifactDelegateRequest =
-        ArtifactDelegateRequestUtils.getGoogleArtifactDelegateRequest(region, repositoryName, project, pkg,
+        ArtifactDelegateRequestUtils.getGoogleArtifactDelegateRequest(region, repositoryName, project, pkg, version,
             versionRegex, connector, encryptionDetails, ArtifactSourceType.GOOGLE_ARTIFACT_REGISTRY);
 
     try {

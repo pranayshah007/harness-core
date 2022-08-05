@@ -12,4 +12,7 @@ public interface GarApiService {
   int MAX_NO_OF_TAGS_PER_IMAGE = 10000;
 
   List<BuildDetailsInternal> getBuilds(GarInternalConfig garinternalConfig, String versionRegex, int maxNumberOfBuilds);
+  BuildDetailsInternal getLastSuccessfulBuildFromRegex(GarInternalConfig garinternalConfig, String versionRegex);
+
+  BuildDetailsInternal verifyBuildNumber(GarInternalConfig garInternalConfig, String versionRegex);
 }

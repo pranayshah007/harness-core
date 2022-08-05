@@ -17,6 +17,7 @@ import io.harness.cdng.artifact.bean.yaml.CustomArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.DockerHubArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.EcrArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.GcrArtifactConfig;
+import io.harness.cdng.artifact.bean.yaml.GoogleArtifactRegistryConfig;
 import io.harness.cdng.artifact.bean.yaml.JenkinsArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.NexusRegistryArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.PrimaryArtifact;
@@ -26,6 +27,7 @@ import io.harness.cdng.artifact.outcome.AcrArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactoryGenericArtifactOutcome;
 import io.harness.cdng.artifact.outcome.DockerArtifactOutcome;
 import io.harness.cdng.artifact.outcome.EcrArtifactOutcome;
+import io.harness.cdng.artifact.outcome.GarArtifactOutcome;
 import io.harness.cdng.artifact.outcome.GcrArtifactOutcome;
 import io.harness.cdng.artifact.outcome.JenkinsArtifactOutcome;
 import io.harness.cdng.artifact.outcome.S3ArtifactOutcome;
@@ -208,5 +210,7 @@ public class NGEntitiesKryoRegistrar implements KryoRegistrar {
     kryo.register(OverlayConfiguration.class, 12591);
     kryo.register(JenkinsArtifactConfig.class, 130012);
     kryo.register(ConfigFileOutcome.class, 130013);
+    kryo.register(GoogleArtifactRegistryConfig.class, 130014);
+    kryo.register(GarArtifactOutcome.class, 130015);
   }
 }

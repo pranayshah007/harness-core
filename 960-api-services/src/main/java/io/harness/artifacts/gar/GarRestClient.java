@@ -3,6 +3,7 @@ package io.harness.artifacts.gar;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.artifacts.gar.beans.GarPackageVersionResponse;
+import io.harness.artifacts.gar.beans.GarTags;
 
 import retrofit2.Call;
 import retrofit2.http.GET;
@@ -20,4 +21,10 @@ public interface GarRestClient {
       @Path(value = "repositories", encoded = true) String repositories,
       @Path(value = "package", encoded = true) String pkg, @Query(value = "pageSize", encoded = true) int pageSize,
       @Query(value = "pageToken", encoded = true) String pageToken);
+
+  @GET("/v1beta2/projects/{project}/locations/{region}/repositories/{repositories}/packages/{package}/tags/{tag}")
+  Call<GarTags> getversioninfo(@Header("Authorization") String bearerAuthHeader,
+      @Path(value = "project", encoded = true) String project, @Path(value = "region", encoded = true) String region,
+      @Path(value = "repositories", encoded = true) String repositories,
+      @Path(value = "package", encoded = true) String pkg, @Path(value = "tag", encoded = true) String version);
 }

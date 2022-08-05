@@ -4,6 +4,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.context.MdcGlobalContextData;
 import io.harness.delegate.task.artifacts.gar.GarDelegateRequest;
+import io.harness.delegate.task.artifacts.gar.GarDelegateResponse;
 import io.harness.delegate.task.artifacts.request.ArtifactTaskParameters;
 import io.harness.delegate.task.artifacts.response.ArtifactTaskExecutionResponse;
 import io.harness.delegate.task.artifacts.response.ArtifactTaskResponse;
@@ -42,7 +43,20 @@ public class GARArtifactTaskHelper {
               "Fetched " + artifactTaskResponse.getArtifactTaskExecutionResponse().getArtifactDelegateResponses().size()
                   + " artifacts");
           break;
-
+        case GET_LAST_SUCCESSFUL_BUILD:
+          saveLogs(executionLogCallback, "Fetching Artifact details");
+          artifactTaskResponse = getSuccessTaskResponse(garArtifactTaskHandler.getLastSuccessfulBuild(attributes));
+          GarDelegateResponse garDelegateResponse =
+              (GarDelegateResponse) (artifactTaskResponse.getArtifactTaskExecutionResponse()
+                                         .getArtifactDelegateResponses()
+                                         .size()
+                          != 0
+                      ? artifactTaskResponse.getArtifactTaskExecutionResponse().getArtifactDelegateResponses().get(0)
+                      : GarDelegateResponse.builder().build());
+          saveLogs(executionLogCallback,
+              "Fetched Artifact details \n  type: Google Artifact Registry \n  Version: "
+                  + garDelegateResponse.getVersion());
+          break;
         default:
           saveLogs(executionLogCallback,
               "No corresponding Docker artifact task type [{}]: " + artifactTaskParameters.toString());

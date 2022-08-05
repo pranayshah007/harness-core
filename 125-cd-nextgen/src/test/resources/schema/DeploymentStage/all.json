@@ -2484,6 +2484,67 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "GoogleArtifactRegistryConfig": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/ArtifactConfig"
+        },
+        {
+          "type": "object",
+          "required": [
+            "connectorRef",
+            "package",
+            "project",
+            "region",
+            "repositoryName"
+          ],
+          "properties": {
+            "connectorRef": {
+              "type": "string"
+            },
+            "googleArtifactRegistryType": {
+              "type": "string"
+            },
+            "metadata": {
+              "type": "string"
+            },
+            "package": {
+              "type": "string"
+            },
+            "project": {
+              "type": "string"
+            },
+            "region": {
+              "type": "string"
+            },
+            "repositoryName": {
+              "type": "string"
+            },
+            "version": {
+              "type": "string"
+            },
+            "versionRegex": {
+              "type": "string"
+            }
+          }
+        },
+        {
+          "oneOf": [
+            {
+              "required": [
+                "versionRegex"
+              ]
+            },
+            {
+              "required": [
+                "version"
+              ]
+            }
+          ]
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "HarnessForConfig": {
       "type": "object",
       "properties": {
@@ -3920,7 +3981,7 @@
         },
         {
           "type": "object",
-          "properties": {}
+          "properties": { }
         }
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -4439,7 +4500,7 @@
         },
         {
           "type": "object",
-          "properties": {}
+          "properties": { }
         }
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -5049,7 +5110,7 @@
         {
           "$ref": "#/definitions/Infrastructure"
         },
-        {}
+        { }
       ],
       "$schema": "http://json-schema.org/draft-07/schema#",
       "oneOf": [
@@ -5330,7 +5391,8 @@
             "CustomArtifact",
             "Acr",
             "Jenkins",
-            "AmazonS3"
+            "AmazonS3",
+            "GoogleArtifactRegistry"
           ]
         }
       },
@@ -5444,6 +5506,22 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/GcrArtifactConfig"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "GoogleArtifactRegistry"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/GoogleArtifactRegistryConfig"
               }
             }
           }
@@ -5889,7 +5967,7 @@
         },
         {
           "type": "object",
-          "properties": {}
+          "properties": { }
         }
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -6256,7 +6334,8 @@
             "CustomArtifact",
             "Acr",
             "Jenkins",
-            "AmazonS3"
+            "AmazonS3",
+            "GoogleArtifactRegistry"
           ]
         }
       },
@@ -6378,6 +6457,22 @@
           "if": {
             "properties": {
               "type": {
+                "const": "GoogleArtifactRegistry"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/GoogleArtifactRegistryConfig"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
                 "const": "Jenkins"
               }
             }
@@ -6424,7 +6519,7 @@
         },
         {
           "type": "object",
-          "properties": {}
+          "properties": { }
         }
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -6434,7 +6529,7 @@
         {
           "$ref": "#/definitions/Infrastructure"
         },
-        {}
+        { }
       ],
       "$schema": "http://json-schema.org/draft-07/schema#",
       "oneOf": [

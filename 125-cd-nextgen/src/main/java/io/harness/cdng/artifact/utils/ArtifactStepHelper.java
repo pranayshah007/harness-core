@@ -20,6 +20,7 @@ import io.harness.cdng.artifact.bean.yaml.ArtifactoryRegistryArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.DockerHubArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.EcrArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.GcrArtifactConfig;
+import io.harness.cdng.artifact.bean.yaml.GoogleArtifactRegistryConfig;
 import io.harness.cdng.artifact.bean.yaml.JenkinsArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.NexusRegistryArtifactConfig;
 import io.harness.cdng.artifact.mappers.ArtifactConfigToDelegateReqMapper;
@@ -92,6 +93,23 @@ public class ArtifactStepHelper {
         }
         return ArtifactConfigToDelegateReqMapper.getDockerDelegateRequest(
             dockerConfig, connectorConfig, encryptedDataDetails, dockerConfig.getConnectorRef().getValue());
+      case GOOGLE_ARTIFACT_REGISTRY:
+        GoogleArtifactRegistryConfig googleArtifactRegistryConfig = (GoogleArtifactRegistryConfig) artifactConfig;
+        connectorDTO = getConnector(googleArtifactRegistryConfig.getConnectorRef().getValue(), ambiance);
+        if (!(connectorDTO.getConnectorConfig() instanceof GcpConnectorDTO)) {
+          throw new InvalidConnectorTypeException("provided Connector "
+                  + googleArtifactRegistryConfig.getConnectorRef().getValue() + " is not compatible with "
+                  + googleArtifactRegistryConfig.getSourceType() + " Artifact",
+              WingsException.USER);
+        }
+        GcpConnectorDTO gcpConnectorDTO = (GcpConnectorDTO) connectorDTO.getConnectorConfig();
+        if (gcpConnectorDTO.getCredential() != null && gcpConnectorDTO.getCredential().getConfig() != null) {
+          encryptedDataDetails =
+              secretManagerClientService.getEncryptionDetails(ngAccess, gcpConnectorDTO.getCredential().getConfig());
+        }
+        return ArtifactConfigToDelegateReqMapper.getGarDelegateRequest(googleArtifactRegistryConfig, gcpConnectorDTO,
+            encryptedDataDetails, googleArtifactRegistryConfig.getConnectorRef().getValue());
+
       case AMAZONS3:
         AmazonS3ArtifactConfig amazonS3ArtifactConfig = (AmazonS3ArtifactConfig) artifactConfig;
         connectorDTO = getConnector(amazonS3ArtifactConfig.getConnectorRef().getValue(), ambiance);
@@ -116,7 +134,7 @@ public class ArtifactStepHelper {
                   + " is not compatible with " + gcrArtifactConfig.getSourceType() + " Artifact",
               WingsException.USER);
         }
-        GcpConnectorDTO gcpConnectorDTO = (GcpConnectorDTO) connectorDTO.getConnectorConfig();
+        gcpConnectorDTO = (GcpConnectorDTO) connectorDTO.getConnectorConfig();
         if (gcpConnectorDTO.getCredential() != null && gcpConnectorDTO.getCredential().getConfig() != null) {
           encryptedDataDetails =
               secretManagerClientService.getEncryptionDetails(ngAccess, gcpConnectorDTO.getCredential().getConfig());
@@ -240,6 +258,8 @@ public class ArtifactStepHelper {
         return TaskType.DOCKER_ARTIFACT_TASK_NG;
       case GCR:
         return TaskType.GCR_ARTIFACT_TASK_NG;
+      case GOOGLE_ARTIFACT_REGISTRY:
+        return TaskType.GOOGLE_ARTIFACT_REGISTRY_TASK_NG;
       case ECR:
         return TaskType.ECR_ARTIFACT_TASK_NG;
       case ACR:
@@ -269,6 +289,15 @@ public class ArtifactStepHelper {
                                                    .stream()
                                                    .map(TaskSelectorYaml::new)
                                                    .collect(Collectors.toList()));
+      case GOOGLE_ARTIFACT_REGISTRY:
+        GoogleArtifactRegistryConfig garconfig = (GoogleArtifactRegistryConfig) artifactConfig;
+        connectorDTO = getConnector(garconfig.getConnectorRef().getValue(), ambiance);
+        return TaskSelectorYaml.toTaskSelector(((GcpConnectorDTO) connectorDTO.getConnectorConfig())
+                                                   .getDelegateSelectors()
+                                                   .stream()
+                                                   .map(TaskSelectorYaml::new)
+                                                   .collect(Collectors.toList()));
+
       case GCR:
         GcrArtifactConfig gcrArtifactConfig = (GcrArtifactConfig) artifactConfig;
         connectorDTO = getConnector(gcrArtifactConfig.getConnectorRef().getValue(), ambiance);

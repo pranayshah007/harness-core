@@ -26,11 +26,13 @@ import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.io.IOException;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 
 @OwnedBy(HarnessTeam.CDC)
 @Singleton
@@ -41,6 +43,27 @@ public class GARArtifactTaskHandler extends DelegateArtifactTaskHandler<GarDeleg
   private final GcpHelperService gcpHelperService;
   private final SecretDecryptionService secretDecryptionService;
 
+  @Override
+  public ArtifactTaskExecutionResponse getLastSuccessfulBuild(GarDelegateRequest attributesRequest) {
+    BuildDetailsInternal lastSuccessfulBuild;
+    GarInternalConfig garInternalConfig;
+    try {
+      garInternalConfig = getGarInternalConfig(attributesRequest);
+    } catch (IOException e) {
+      log.error("Could not get basic auth header", e);
+      throw new InvalidRequestException(
+          "Could not get basic auth header - " + e.getMessage(), USER); // HintExcpetion Explaination
+    }
+    if (isRegex(attributesRequest)) {
+      lastSuccessfulBuild =
+          garApiService.getLastSuccessfulBuildFromRegex(garInternalConfig, attributesRequest.getVersionRegex());
+    } else {
+      lastSuccessfulBuild = garApiService.verifyBuildNumber(garInternalConfig, attributesRequest.getVersion());
+    }
+    GarDelegateResponse garDelegateResponse =
+        GarRequestResponseMapper.toGarResponse(lastSuccessfulBuild, attributesRequest);
+    return getSuccessTaskExecutionResponse(Collections.singletonList(garDelegateResponse));
+  }
   @Override
   public ArtifactTaskExecutionResponse getBuilds(GarDelegateRequest attributesRequest) {
     List<BuildDetailsInternal> builds;
@@ -97,5 +120,8 @@ public class GARArtifactTaskHandler extends DelegateArtifactTaskHandler<GarDeleg
       secretDecryptionService.decrypt(garDelegateRequest.getGcpConnectorDTO().getCredential().getConfig(),
           garDelegateRequest.getEncryptedDataDetails());
     }
+  }
+  boolean isRegex(GarDelegateRequest artifactDelegateRequest) {
+    return StringUtils.isBlank(artifactDelegateRequest.getVersion());
   }
 }
