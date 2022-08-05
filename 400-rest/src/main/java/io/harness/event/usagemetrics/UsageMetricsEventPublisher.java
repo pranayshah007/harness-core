@@ -135,13 +135,6 @@ public class UsageMetricsEventPublisher {
     if (workflowExecution.getTriggeredBy() != null) {
       stringData.put(EventProcessor.TRIGGERED_BY, workflowExecution.getTriggeredBy().getUuid());
     }
-    if (workflowExecution.getPipelineSummary() != null
-        && workflowExecution.getPipelineSummary().getPipelineId() != null) {
-      stringData.put(EventProcessor.PARENT_EXECUTION, workflowExecution.getPipelineSummary().getPipelineId());
-    }
-    if (!Lists.isNullOrEmpty(workflowExecution.getWorkflowIds())) {
-      listData.put(EventProcessor.WORKFLOWS, workflowExecution.getWorkflowIds());
-    }
     stringData.put(EventProcessor.ACCOUNTID, accountId);
     longData.put(EventProcessor.DURATION, workflowExecution.getDuration());
     longData.put(EventProcessor.ROLLBACK_DURATION, workflowExecution.getRollbackDuration());
