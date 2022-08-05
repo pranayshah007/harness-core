@@ -174,7 +174,7 @@ public class NGLdapGroupSyncHelper {
         Collections.singletonList(RoleBinding.builder().roleIdentifier(ACCOUNT_VIEWER_ROLE).build()));
     log.info("NGLDAP: creating user invite for account {} and user Invite {} and externalUserId {}", accountId,
         invite.getEmail(), ldapUserResponse.getUserId());
-    inviteService.create(invite, true, false);
+    inviteService.create(invite, false, true);
   }
 
   private void syncUserGroupMetadata(UserGroup userGroup, LdapGroupResponse groupResponse) {
