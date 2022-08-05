@@ -105,16 +105,7 @@ public class DelegateQueueTask implements Runnable {
       while (iterator.hasNext()) {
         DelegateTask delegateTask = iterator.next();
         if (delegateTask.getBroadcastRound() >= MAX_BROADCAST_ROUND) {
-          delegateTaskService.processDelegateResponse(delegateTask.getAccountId(), null, delegateTask.getUuid(),
-              DelegateTaskResponse.builder()
-                  .responseCode(DelegateTaskResponse.ResponseCode.FAILED)
-                  .accountId(delegateTask.getAccountId())
-                  .response(ErrorNotifyResponseData.builder()
-                                .errorMessage(DelegateTaskExpiryReason.REBROADCAST_LIMIT_REACHED.getMessage())
-                                .exception(new DelegateNotAvailableException(
-                                    DelegateTaskExpiryReason.REBROADCAST_LIMIT_REACHED.getMessage()))
-                                .build())
-                  .build());
+          markTaskFailed(delegateTask);
           continue;
         }
         Query<DelegateTask> query = persistence.createQuery(DelegateTask.class, excludeAuthority)
@@ -193,5 +184,18 @@ public class DelegateQueueTask implements Runnable {
       return TimeUnit.MINUTES.toMillis(FibonacciBackOff.getFibonacciElement(delegateTask.getBroadcastRound()));
     }
     return TimeUnit.SECONDS.toMillis(5);
+  }
+
+  private void markTaskFailed(DelegateTask delegateTask) {
+    delegateTaskService.processDelegateResponse(delegateTask.getAccountId(), null, delegateTask.getUuid(),
+        DelegateTaskResponse.builder()
+            .responseCode(DelegateTaskResponse.ResponseCode.FAILED)
+            .accountId(delegateTask.getAccountId())
+            .response(ErrorNotifyResponseData.builder()
+                          .errorMessage(DelegateTaskExpiryReason.REBROADCAST_LIMIT_REACHED.getMessage())
+                          .exception(new DelegateNotAvailableException(
+                              DelegateTaskExpiryReason.REBROADCAST_LIMIT_REACHED.getMessage()))
+                          .build())
+            .build());
   }
 }

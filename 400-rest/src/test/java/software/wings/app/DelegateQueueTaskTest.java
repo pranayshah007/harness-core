@@ -461,7 +461,7 @@ public class DelegateQueueTaskTest extends WingsBaseTest {
     delegateQueueTask.rebroadcastUnassignedTasks();
     // verify no more broadcasting happens for task and count not get updated
     DelegateTask taskAfterBroadcast7 = persistence.get(DelegateTask.class, delegateTask.getUuid());
-    assertThat(taskAfterBroadcast7.getBroadcastCount()).isEqualTo(7);
+    assertThat(taskAfterBroadcast7.getBroadcastCount()).isEqualTo(8);
     assertThat(taskAfterBroadcast7.getBroadcastRound()).isEqualTo(3);
   }
 }
