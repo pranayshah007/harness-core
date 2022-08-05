@@ -593,6 +593,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
               .sampleDelegate(isSample)
               .location(Paths.get("").toAbsolutePath().toString())
               .heartbeatAsObject(true)
+              .immutable(this.isImmutableDelegate)
               .ceEnabled(Boolean.parseBoolean(System.getenv("ENABLE_CE")));
 
       delegateId = registerDelegate(builder);

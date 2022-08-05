@@ -960,8 +960,12 @@ public class AssignDelegateServiceImpl implements AssignDelegateService, Delegat
         .filter(delegate
             -> delegate.getStatus() == DelegateInstanceStatus.ENABLED
                 && delegate.getLastHeartBeat() > oldestAcceptableHeartBeat
-                && (delegate.getExpiringAt() == 0 || delegate.getExpiringAt() > System.currentTimeMillis()))
+                && (!delegate.isImmutable() || isActiveImmutableDelegate(delegate)))
         .collect(toList());
+  }
+
+  private boolean isActiveImmutableDelegate(Delegate delegate) {
+    return delegate.getExpiringAt() == 0 || delegate.getExpiringAt() > System.currentTimeMillis();
   }
 
   private List<Delegate> getDelegatesWithOwnerShipCriteriaMatch(DelegateTask task, List<Delegate> delegates) {

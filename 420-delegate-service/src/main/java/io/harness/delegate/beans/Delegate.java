@@ -126,6 +126,7 @@ public class Delegate implements PersistentEntity, UuidAware, CreatedAtAware, Ac
 
   private boolean heartbeatAsObject;
   private long expiringAt;
+  private boolean immutable;
 
   @Override
   public void updateNextIteration(String fieldName, long nextIteration) {

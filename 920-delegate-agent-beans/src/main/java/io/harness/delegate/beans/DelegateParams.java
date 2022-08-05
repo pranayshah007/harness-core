@@ -55,4 +55,5 @@ public class DelegateParams {
 
   List<String> currentlyExecutingDelegateTasks;
   List<String> tags;
+  boolean immutable;
 }
