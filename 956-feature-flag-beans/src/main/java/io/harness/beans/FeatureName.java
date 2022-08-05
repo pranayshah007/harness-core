@@ -381,6 +381,9 @@ public enum FeatureName {
   QUEUED_COUNT_FOR_QUEUEKEY("Used to display the count of the queue in CG git sync", HarnessTeam.SPG),
   NG_EMAIL_STEP,
   PRUNE_KUBERNETES_RESOURCES_NG,
+  DISABLE_PIPELINE_SCHEMA_VALIDATION(
+      "Used to disable pipeline yaml schema as We saw some intermittent issue in Schema Validation due to invalid schema generation. Will keep this FF until root cause is found and fixed.",
+      HarnessTeam.PIPELINE),
   CI_STEP_GROUP_ENABLED,
   GIT_SIMPLIFICATION_DISABLED,
   USE_K8S_API_FOR_STEADY_STATE_CHECK,
