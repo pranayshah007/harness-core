@@ -44,7 +44,8 @@ public class GitlabServiceImpl implements GitlabService {
       Response<StatusCreationResponse> statusCreationResponseResponse =
           getGitlabRestClient(gitlabConfig, encryptionDetails)
               .createStatus(getAuthToken(token), owner + SEPARATOR + repo, sha, (String) bodyObjectMap.get(STATE),
-                  (String) bodyObjectMap.get(CONTEXT), (String) bodyObjectMap.get(DESC))
+                  (String) bodyObjectMap.get(CONTEXT), (String) bodyObjectMap.get(DESC),
+                  (String) bodyObjectMap.get(TARGET_URL))
               .execute();
 
       return statusCreationResponseResponse.isSuccessful();

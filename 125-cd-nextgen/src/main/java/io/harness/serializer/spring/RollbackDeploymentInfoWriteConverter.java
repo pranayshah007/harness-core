@@ -20,8 +20,7 @@ import org.springframework.data.convert.WritingConverter;
 @OwnedBy(CDP)
 @Singleton
 @WritingConverter
-public class RollbackDeploymentInfoWriteConverter
-    extends AbstractRollbackDeploymentInfoWriteConverter<RollbackDeploymentInfo> {
+public class RollbackDeploymentInfoWriteConverter extends AbstractWriteConverter<RollbackDeploymentInfo> {
   @Inject
   public RollbackDeploymentInfoWriteConverter(KryoSerializer kryoSerializer) {
     super(kryoSerializer);

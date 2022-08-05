@@ -59,4 +59,6 @@ public interface PMSInputSetRepositoryCustom {
 
   boolean existsByAccountIdAndOrgIdentifierAndProjectIdentifierAndPipelineIdentifierAndDeletedNot(
       String accountId, String orgIdentifier, String projectIdentifier, String pipelineIdentifier, boolean notDeleted);
+
+  boolean checkIfInputSetWithGivenFilePathExists(String accountId, String repoURL, String filePath);
 }

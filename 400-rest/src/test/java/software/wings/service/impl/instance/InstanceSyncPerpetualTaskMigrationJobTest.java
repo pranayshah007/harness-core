@@ -37,6 +37,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import org.apache.commons.lang3.reflect.FieldUtils;
 import org.junit.Before;
 import org.junit.Test;
@@ -74,7 +75,7 @@ public class InstanceSyncPerpetualTaskMigrationJobTest extends WingsBaseTest {
         mock(InstanceHandler.class, withSettings().extraInterfaces(InstanceSyncByPerpetualTaskHandler.class));
     when(instanceHandlerFactory.getInstanceHandler(any())).thenReturn(instanceHandler);
     when(((InstanceSyncByPerpetualTaskHandler) instanceHandler).getFeatureFlagToEnablePerpetualTaskForInstanceSync())
-        .thenReturn(MOVE_PCF_INSTANCE_SYNC_TO_PERPETUAL_TASK);
+        .thenReturn(Optional.of(MOVE_PCF_INSTANCE_SYNC_TO_PERPETUAL_TASK));
   }
 
   private Map<FeatureName, InstanceSyncByPerpetualTaskHandler> getEnablePerpetualTaskFeatureFlagsForInstanceSync() {

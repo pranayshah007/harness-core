@@ -223,12 +223,13 @@ public class ConnectorEnvVariablesHelper {
         secretData.put(clientSecretEnvName,
             getVariableSecret(clientSecretEnvName + connectorDetails.getIdentifier(), encodeBase64(clientSecret)));
       } else if (config.getAuthDTO().getAzureSecretType() == KEY_CERT) {
-        String certPathEnvName = connectorDetails.getEnvToSecretsMap().get(EnvVariableEnum.AZURE_CERT_PATH);
+        String certPathEnvName = connectorDetails.getEnvToSecretsMap().get(EnvVariableEnum.AZURE_CERT);
         AzureClientKeyCertDTO decryptedConfig = (AzureClientKeyCertDTO) secretDecryptor.decrypt(
             config.getAuthDTO().getCredentials(), connectorDetails.getEncryptedDataDetails());
         String clientSecret = String.valueOf(decryptedConfig.getClientCertRef().getDecryptedValue());
         secretData.put(certPathEnvName,
-            getFileSecret(certPathEnvName + connectorDetails.getIdentifier(), encodeBase64(clientSecret)));
+            getFileSecret(
+                certPathEnvName + connectorDetails.getIdentifier(), encodeBase64(encodeBase64(clientSecret))));
       } else {
         throw new InvalidArgumentsException(
             format("Unsupported type for azure manual credentials %s", config.getAuthDTO().getAzureSecretType()),

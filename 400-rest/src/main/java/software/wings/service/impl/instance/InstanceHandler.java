@@ -101,14 +101,16 @@ public abstract class InstanceHandler {
 
     if (this instanceof InstanceSyncByPerpetualTaskHandler) {
       InstanceSyncByPerpetualTaskHandler handler = (InstanceSyncByPerpetualTaskHandler) this;
+
+      Optional<FeatureName> featureFlagOpt = handler.getFeatureFlagToEnablePerpetualTaskForInstanceSync();
       isPerpetualTaskEnabled =
-          featureFlagService.isEnabled(handler.getFeatureFlagToEnablePerpetualTaskForInstanceSync(), accountId);
+          featureFlagOpt.map(featureName -> featureFlagService.isEnabled(featureName, accountId)).orElse(true);
     }
 
     return isPerpetualTaskEnabled ? instanceSyncFlow == PERPETUAL_TASK : instanceSyncFlow == ITERATOR;
   }
 
-  public abstract FeatureName getFeatureFlagToStopIteratorBasedInstanceSync();
+  public abstract Optional<FeatureName> getFeatureFlagToStopIteratorBasedInstanceSync();
 
   public abstract Optional<List<DeploymentInfo>> getDeploymentInfo(PhaseExecutionData phaseExecutionData,
       PhaseStepExecutionData phaseStepExecutionData, WorkflowExecution workflowExecution,

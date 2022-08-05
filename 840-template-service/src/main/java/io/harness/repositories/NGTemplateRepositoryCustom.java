@@ -60,12 +60,15 @@ public interface NGTemplateRepositoryCustom {
   TemplateEntity updateTemplateYaml(TemplateEntity templateEntity, TemplateEntity oldTemplateEntity,
       ChangeType changeType, String comments, TemplateUpdateEventType templateUpdateEventType, boolean skipAudits);
 
-  TemplateEntity deleteTemplate(TemplateEntity templateToDelete, String comments);
+  void hardDeleteTemplateForOldGitSync(TemplateEntity templateEntity, String comments);
 
-  void hardDeleteTemplate(TemplateEntity templateEntity, String comments);
+  void deleteTemplate(TemplateEntity templateEntity, String comments);
 
   Page<TemplateEntity> findAll(Criteria criteria, Pageable pageable, String accountIdentifier, String orgIdentifier,
       String projectIdentifier, boolean getDistinctFromBranches);
+
+  Page<TemplateEntity> findAll(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, Criteria criteria, Pageable pageable);
 
   boolean existsByAccountIdAndOrgIdAndProjectIdAndIdentifierAndVersionLabel(
       String accountId, String orgIdentifier, String projectIdentifier, String templateIdentifier, String versionLabel);

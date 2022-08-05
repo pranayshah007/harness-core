@@ -120,7 +120,8 @@ public class PlanNodeExecutionStrategy extends AbstractNodeExecutionStrategy<Pla
     return nodeExecutionService.save(nodeExecution);
   }
 
-  private void resolveParameters(Ambiance ambiance, PmsStepParameters stepParameters, boolean skipUnresolvedCheck) {
+  @VisibleForTesting
+  void resolveParameters(Ambiance ambiance, PmsStepParameters stepParameters, boolean skipUnresolvedCheck) {
     String nodeExecutionId = Objects.requireNonNull(AmbianceUtils.obtainCurrentRuntimeId(ambiance));
     log.info("Starting to Resolve step parameters");
     Object resolvedStepParameters = pmsEngineExpressionService.resolve(ambiance, stepParameters, skipUnresolvedCheck);
@@ -305,7 +306,8 @@ public class PlanNodeExecutionStrategy extends AbstractNodeExecutionStrategy<Pla
     nodeAdviseHelper.queueAdvisingEvent(updatedNodeExecution, planNode, nodeExecution.getStatus());
   }
 
-  private ExecutionCheck performPreFacilitationChecks(Ambiance ambiance, PlanNode planNode) {
+  @VisibleForTesting
+  ExecutionCheck performPreFacilitationChecks(Ambiance ambiance, PlanNode planNode) {
     // Ignore facilitation checks if node is retried
 
     if (AmbianceUtils.isRetry(ambiance)) {

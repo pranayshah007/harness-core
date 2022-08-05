@@ -449,6 +449,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
   @SuppressWarnings("unchecked")
   public void run(final boolean watched, final boolean isImmutableDelegate) {
     this.isImmutableDelegate = isImmutableDelegate;
+    delegateConfiguration.setImmutable(isImmutableDelegate);
 
     try {
       // Initialize delegate process in background.
@@ -951,7 +952,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       log.warn("Delegate used revoked token. It will be frozen and drained.");
       freeze();
     } else {
-      log.warn("Delegate received unhandled message");
+      log.warn("Delegate received unhandled message {}", message);
     }
   }
 

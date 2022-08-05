@@ -31,6 +31,7 @@ import io.harness.beans.EnvironmentType;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.common.beans.SetupAbstractionKeys;
+import io.harness.cdng.infra.beans.AwsInstanceFilter;
 import io.harness.cdng.infra.yaml.Infrastructure;
 import io.harness.cdng.infra.yaml.K8sGcpInfrastructure;
 import io.harness.cdng.infra.yaml.SshWinRmAwsInfrastructure;
@@ -42,11 +43,17 @@ import io.harness.connector.ConnectorInfoDTO;
 import io.harness.delegate.beans.azure.response.AzureHostResponse;
 import io.harness.delegate.beans.azure.response.AzureHostsResponse;
 import io.harness.delegate.beans.connector.ConnectorType;
+import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
+import io.harness.delegate.beans.connector.awsconnector.AwsCredentialDTO;
+import io.harness.delegate.beans.connector.awsconnector.AwsCredentialType;
+import io.harness.delegate.beans.connector.awsconnector.AwsListEC2InstancesTaskResponse;
 import io.harness.delegate.beans.connector.azureconnector.AzureConnectorDTO;
 import io.harness.delegate.beans.connector.gcpconnector.GcpConnectorCredentialDTO;
 import io.harness.delegate.beans.connector.gcpconnector.GcpConnectorDTO;
 import io.harness.delegate.beans.connector.gcpconnector.GcpCredentialType;
 import io.harness.delegate.beans.connector.gcpconnector.GcpManualDetailsDTO;
+import io.harness.delegate.task.ssh.AwsSshInfraDelegateConfig;
+import io.harness.delegate.task.ssh.AwsWinrmInfraDelegateConfig;
 import io.harness.delegate.task.ssh.AzureSshInfraDelegateConfig;
 import io.harness.delegate.task.ssh.AzureWinrmInfraDelegateConfig;
 import io.harness.exception.InvalidRequestException;
@@ -75,10 +82,12 @@ import io.harness.supplier.ThrowingSupplier;
 import io.harness.tasks.ResponseData;
 
 import software.wings.beans.TaskType;
+import software.wings.service.impl.aws.model.AwsEC2Instance;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Map;
 import org.junit.Before;
 import org.junit.Rule;
@@ -126,6 +135,27 @@ public class InfrastructureTaskExecutableStepTest extends CategoryTest {
                                                 .tags(ParameterField.createValueField(ImmutableMap.of("Env", "Dev")))
                                                 .build();
 
+  private final AwsConnectorDTO awsConnectorDTO =
+      AwsConnectorDTO.builder()
+          .credential(AwsCredentialDTO.builder().awsCredentialType(AwsCredentialType.MANUAL_CREDENTIALS).build())
+          .delegateSelectors(ImmutableSet.of("delegate1"))
+          .build();
+  private final ConnectorInfoDTO awsConnectorInfoDTO =
+      ConnectorInfoDTO.builder().connectorType(ConnectorType.AWS).connectorConfig(awsConnectorDTO).build();
+  private final AwsSshInfraDelegateConfig awsSshInfraDelegateConfig =
+      AwsSshInfraDelegateConfig.sshAwsBuilder().awsConnectorDTO(awsConnectorDTO).build();
+  private final AwsWinrmInfraDelegateConfig awsWinrmInfraDelegateConfig =
+      AwsWinrmInfraDelegateConfig.winrmAwsBuilder().awsConnectorDTO(awsConnectorDTO).build();
+  private final Infrastructure awsInfra = SshWinRmAwsInfrastructure.builder()
+                                              .connectorRef(connectorRef)
+                                              .credentialsRef(ParameterField.createValueField("sshKeyRef"))
+                                              .region(ParameterField.createValueField("regionId"))
+                                              .awsInstanceFilter(AwsInstanceFilter.builder()
+                                                                     .vpcs(Arrays.asList("vpc1"))
+                                                                     .tags(Collections.singletonMap("testTag", "test"))
+                                                                     .build())
+                                              .build();
+
   @Before
   public void setUp() {
     when(stepHelper.getEnvironmentType(eq(ambiance))).thenReturn(EnvironmentType.ALL);
@@ -161,6 +191,32 @@ public class InfrastructureTaskExecutableStepTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = VITALIE)
+  @Category(UnitTests.class)
+  public void testObtainTaskAfterRbacWithSshAwsInfra() {
+    when(infrastructureStepHelper.validateAndGetConnector(eq(connectorRef), eq(ambiance), any()))
+        .thenReturn(awsConnectorInfoDTO);
+    when(outcomeService.resolve(any(), eq(RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.SERVICE))))
+        .thenReturn(ServiceStepOutcome.builder().type(ServiceSpecType.SSH).build());
+    when(cdStepHelper.getSshInfraDelegateConfig(any(), eq(ambiance))).thenReturn(awsSshInfraDelegateConfig);
+
+    TaskRequest taskRequest =
+        infrastructureStep.obtainTaskAfterRbac(ambiance, awsInfra, StepInputPackage.builder().build());
+
+    ArgumentCaptor<SshInfraDelegateConfigOutput> awsConfigOutputCaptor =
+        ArgumentCaptor.forClass(SshInfraDelegateConfigOutput.class);
+    verify(executionSweepingOutputService, times(1))
+        .consume(eq(ambiance), eq(OutputExpressionConstants.SSH_INFRA_DELEGATE_CONFIG_OUTPUT_NAME),
+            awsConfigOutputCaptor.capture(), eq(StepCategory.STAGE.name()));
+    SshInfraDelegateConfigOutput awsInfraDelegateConfigOutput = awsConfigOutputCaptor.getValue();
+    assertThat(awsInfraDelegateConfigOutput).isNotNull();
+    assertThat(awsInfraDelegateConfigOutput.getSshInfraDelegateConfig()).isEqualTo(awsSshInfraDelegateConfig);
+
+    assertThat(taskRequest).isNotNull();
+    assertThat(taskRequest.getDelegateTaskRequest().getTaskName()).isEqualTo(TaskType.NG_AWS_TASK.name());
+  }
+
+  @Test
   @Owner(developers = ACASIAN)
   @Category(UnitTests.class)
   public void testObtainTaskAfterRbacWithWinRmAzureInfra() {
@@ -184,6 +240,32 @@ public class InfrastructureTaskExecutableStepTest extends CategoryTest {
 
     assertThat(taskRequest).isNotNull();
     assertThat(taskRequest.getDelegateTaskRequest().getTaskName()).isEqualTo(TaskType.NG_AZURE_TASK.name());
+  }
+
+  @Test
+  @Owner(developers = VITALIE)
+  @Category(UnitTests.class)
+  public void testObtainTaskAfterRbacWithWinRmAwsInfra() {
+    when(infrastructureStepHelper.validateAndGetConnector(eq(connectorRef), eq(ambiance), any()))
+        .thenReturn(awsConnectorInfoDTO);
+    when(outcomeService.resolve(any(), eq(RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.SERVICE))))
+        .thenReturn(ServiceStepOutcome.builder().type(ServiceSpecType.WINRM).build());
+    when(cdStepHelper.getWinRmInfraDelegateConfig(any(), eq(ambiance))).thenReturn(awsWinrmInfraDelegateConfig);
+
+    TaskRequest taskRequest =
+        infrastructureStep.obtainTaskAfterRbac(ambiance, awsInfra, StepInputPackage.builder().build());
+
+    ArgumentCaptor<WinRmInfraDelegateConfigOutput> awsConfigOutputCaptor =
+        ArgumentCaptor.forClass(WinRmInfraDelegateConfigOutput.class);
+    verify(executionSweepingOutputService, times(1))
+        .consume(eq(ambiance), eq(OutputExpressionConstants.WINRM_INFRA_DELEGATE_CONFIG_OUTPUT_NAME),
+            awsConfigOutputCaptor.capture(), eq(StepCategory.STAGE.name()));
+    WinRmInfraDelegateConfigOutput awsInfraDelegateConfigOutput = awsConfigOutputCaptor.getValue();
+    assertThat(awsInfraDelegateConfigOutput).isNotNull();
+    assertThat(awsInfraDelegateConfigOutput.getWinRmInfraDelegateConfig()).isEqualTo(awsWinrmInfraDelegateConfig);
+
+    assertThat(taskRequest).isNotNull();
+    assertThat(taskRequest.getDelegateTaskRequest().getTaskName()).isEqualTo(TaskType.NG_AWS_TASK.name());
   }
 
   @Test
@@ -223,6 +305,41 @@ public class InfrastructureTaskExecutableStepTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = VITALIE)
+  @Category(UnitTests.class)
+  public void testHandleAwsTaskResultWithSecurityContextSuccess() throws Exception {
+    when(outcomeService.resolve(any(), eq(RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.SERVICE))))
+        .thenReturn(ServiceStepOutcome.builder().type(ServiceSpecType.SSH).build());
+    when(cdStepHelper.getSshInfraDelegateConfig(any(), eq(ambiance))).thenReturn(awsSshInfraDelegateConfig);
+
+    AwsListEC2InstancesTaskResponse awsListEC2InstancesTaskResponse =
+        AwsListEC2InstancesTaskResponse.builder()
+            .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
+            .instances(Arrays.asList(AwsEC2Instance.builder().publicDnsName("host1").build()))
+            .build();
+    Map<String, ResponseData> responseDataMap = ImmutableMap.of("aws-hosts-response", awsListEC2InstancesTaskResponse);
+    ThrowingSupplier responseDataSupplier = StrategyHelper.buildResponseDataSupplier(responseDataMap);
+
+    StepResponse response =
+        infrastructureStep.handleTaskResultWithSecurityContext(ambiance, awsInfra, responseDataSupplier);
+
+    assertThat(response).isNotNull();
+    assertThat(response.getStatus()).isEqualTo(Status.SUCCEEDED);
+    assertThat(response.getStepOutcomes()).isNotEmpty();
+    assertThat(response.getFailureInfo()).isNull();
+    assertThat(response.getUnitProgressList()).isNotEmpty();
+
+    ArgumentCaptor<HostsOutput> hostsOutputArgumentCaptor = ArgumentCaptor.forClass(HostsOutput.class);
+    verify(executionSweepingOutputService, times(1))
+        .consume(eq(ambiance), eq(OutputExpressionConstants.OUTPUT), hostsOutputArgumentCaptor.capture(),
+            eq(StepCategory.STAGE.name()));
+
+    HostsOutput hostsOutput = hostsOutputArgumentCaptor.getValue();
+    assertThat(hostsOutput).isNotNull();
+    assertThat(hostsOutput.getHosts()).containsExactly("host1");
+  }
+
+  @Test
   @Owner(developers = ACASIAN)
   @Category(UnitTests.class)
   public void testHandleAzureTaskResultWithSecurityContextFailure() throws Exception {
@@ -252,6 +369,33 @@ public class InfrastructureTaskExecutableStepTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = VITALIE)
+  @Category(UnitTests.class)
+  public void testHandleAwsTaskResultWithSecurityContextFailure() throws Exception {
+    when(outcomeService.resolve(any(), eq(RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.SERVICE))))
+        .thenReturn(ServiceStepOutcome.builder().type(ServiceSpecType.SSH).build());
+    when(cdStepHelper.getSshInfraDelegateConfig(any(), eq(ambiance))).thenReturn(awsSshInfraDelegateConfig);
+
+    AwsListEC2InstancesTaskResponse awsListEC2InstancesTaskResponse =
+        AwsListEC2InstancesTaskResponse.builder().commandExecutionStatus(CommandExecutionStatus.FAILURE).build();
+
+    Map<String, ResponseData> responseDataMap = ImmutableMap.of("aws-hosts-response", awsListEC2InstancesTaskResponse);
+    ThrowingSupplier responseDataSupplier = StrategyHelper.buildResponseDataSupplier(responseDataMap);
+
+    StepResponse response =
+        infrastructureStep.handleTaskResultWithSecurityContext(ambiance, awsInfra, responseDataSupplier);
+
+    assertThat(response).isNotNull();
+    assertThat(response.getStatus()).isEqualTo(Status.FAILED);
+    assertThat(response.getFailureInfo()).isNotNull();
+    assertThat(response.getFailureInfo().getFailureData(0)).isNotNull();
+    assertThat(response.getFailureInfo().getFailureData(0).getCode()).isEqualTo("GENERAL_ERROR");
+    assertThat(response.getUnitProgressList()).isNotEmpty();
+
+    verify(executionSweepingOutputService, times(0)).consume(any(), any(), any(), any());
+  }
+
+  @Test
   @Owner(developers = ACASIAN)
   @Category(UnitTests.class)
   public void testHandleAzureTaskResultWithSecurityContextException() throws Exception {
@@ -263,6 +407,30 @@ public class InfrastructureTaskExecutableStepTest extends CategoryTest {
 
     StepResponse response =
         infrastructureStep.handleTaskResultWithSecurityContext(ambiance, azureInfra, throwingSupplier);
+
+    assertThat(response).isNotNull();
+    assertThat(response.getStatus()).isEqualTo(Status.FAILED);
+    assertThat(response.getFailureInfo()).isNotNull();
+    assertThat(response.getFailureInfo().getFailureData(0)).isNotNull();
+    assertThat(response.getFailureInfo().getFailureData(0).getCode()).isEqualTo("GENERAL_ERROR");
+    assertThat(response.getFailureInfo().getFailureData(0).getMessage()).isEqualTo("INVALID_REQUEST");
+    assertThat(response.getUnitProgressList()).isNotEmpty();
+
+    verify(executionSweepingOutputService, times(0)).consume(any(), any(), any(), any());
+  }
+
+  @Test
+  @Owner(developers = VITALIE)
+  @Category(UnitTests.class)
+  public void testHandleAwsTaskResultWithSecurityContextException() throws Exception {
+    when(outcomeService.resolve(any(), eq(RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.SERVICE))))
+        .thenReturn(ServiceStepOutcome.builder().type(ServiceSpecType.SSH).build());
+    when(cdStepHelper.getSshInfraDelegateConfig(any(), eq(ambiance))).thenReturn(awsSshInfraDelegateConfig);
+
+    when(throwingSupplier.get()).thenThrow(new InvalidRequestException("Task failed to complete"));
+
+    StepResponse response =
+        infrastructureStep.handleTaskResultWithSecurityContext(ambiance, awsInfra, throwingSupplier);
 
     assertThat(response).isNotNull();
     assertThat(response.getStatus()).isEqualTo(Status.FAILED);

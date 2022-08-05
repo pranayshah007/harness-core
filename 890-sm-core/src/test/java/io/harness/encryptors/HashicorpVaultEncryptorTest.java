@@ -14,9 +14,12 @@ import static io.harness.rule.OwnerRule.VIKAS_M;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.powermock.api.mockito.PowerMockito.mockStatic;
 
@@ -27,6 +30,7 @@ import io.harness.concurrent.HTimeLimiter;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.encryptors.clients.HashicorpVaultEncryptor;
 import io.harness.exception.SecretManagementDelegateException;
+import io.harness.exception.runtime.HashiCorpVaultRuntimeException;
 import io.harness.helpers.NGVaultTaskHelper;
 import io.harness.helpers.ext.vault.VaultAppRoleLoginResult;
 import io.harness.rule.Owner;
@@ -541,6 +545,34 @@ public class HashicorpVaultEncryptorTest extends CategoryTest {
     } catch (SecretManagementDelegateException e) {
       assertThat(e.getCause()).isOfAnyClassIn(IOException.class);
     }
+  }
+
+  @Test
+  @Owner(developers = VIKAS_M)
+  @Category(UnitTests.class)
+  public void testRenameSecret_withoutDeletePermissions_shouldPass() throws IOException {
+    String name = UUIDGenerator.generateUuid();
+    String plainText = UUIDGenerator.generateUuid();
+    String fullPath = vaultConfig.getBasePath() + "/" + name;
+    when(vaultRestClient.writeSecret(vaultConfig.getAuthToken(), vaultConfig.getNamespace(),
+             vaultConfig.getSecretEngineName(), fullPath, plainText))
+        .thenAnswer(invocationOnMock -> true);
+    EncryptedRecord oldRecord = EncryptedRecordData.builder()
+                                    .encryptedValue(UUIDGenerator.generateUuid().toCharArray())
+                                    .encryptionKey(UUIDGenerator.generateUuid())
+                                    .build();
+    when(vaultRestClient.readSecret(vaultConfig.getAuthToken(), vaultConfig.getNamespace(),
+             vaultConfig.getSecretEngineName(), vaultConfig.getBasePath() + "/" + oldRecord.getEncryptionKey()))
+        .thenAnswer(invocationOnMock -> plainText);
+    when(vaultRestClient.deleteSecretPermanentely(
+             vaultConfig.getAuthToken(), vaultConfig.getSecretEngineName(), fullPath))
+        .thenThrow(new HashiCorpVaultRuntimeException("error: Permission denied"));
+    EncryptedRecord encryptedRecord =
+        hashicorpVaultEncryptor.renameSecret(vaultConfig.getAccountId(), name, oldRecord, vaultConfig);
+    assertThat(encryptedRecord).isNotNull();
+    assertThat(encryptedRecord.getEncryptionKey()).isEqualTo(name);
+    assertThat(encryptedRecord.getEncryptedValue()).isEqualTo(name.toCharArray());
+    verify(vaultRestClient, times(1)).deleteSecretPermanentely(any(), any(), any());
   }
 
   @Test

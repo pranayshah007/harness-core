@@ -464,6 +464,7 @@ infrastructures {"name": "accountId_organizationIdentifier_projectIdentifier_env
 instance {"name": "accountId_computeProviderId_instanceInfoNamespace_instanceInfoPodName_createdAt", "background": true} {"accountId": 1, "computeProviderId": 1, "instanceInfo.namespace": 1, "instanceInfo.podName": 1, "createdAt": -1}
 instance {"name": "appId_1", "background": true} {"appId": 1}
 instance {"name": "createdAt_1", "background": true} {"createdAt": 1}
+instance {"name": "inframapping_lastUpdated", "background": true} {"infraMappingId": 1, "lastUpdatedAt": -1}
 instance {"name": "instance_index1", "background": true} {"appId": 1, "isDeleted": 1, "deletedAt": 1}
 instance {"name": "instance_index10", "background": true} {"accountId": 1, "infraMappingId": 1}
 instance {"name": "instance_index11", "background": true} {"infraMappingId": 1, "appId": 1, "createdAt": 1, "isDeleted": 1}
@@ -694,6 +695,9 @@ resourceLookup {"name": "tagsNameResourceLookupIndex", "background": true} {"acc
 roles {"name": "appId_1", "background": true} {"appId": 1}
 roles {"name": "createdAt_1", "background": true} {"createdAt": 1}
 roles {"name": "roleType_accountId_1", "background": true} {"roleType": 1, "accountId": 1}
+rollbackData {"name": "key", "background": true} {"key": 1}
+rollbackData {"name": "key_stageStatus_createdAt", "background": true} {"key": 1, "stageStatus": 1, "createdAt": -1}
+rollbackData {"name": "stageExecutionId", "background": true} {"stageExecutionId": 1}
 schema {"name": "createdAt_1", "background": true} {"createdAt": 1}
 searchDistributedLocks {"name": "heartbeat_1", "background": true, "expireAfterSeconds": 70} {"heartbeat": 1}
 searchDistributedLocks {"name": "uuid_1", "background": true} {"uuid": 1}
@@ -790,6 +794,9 @@ ssoSettings {"name": "appId_1", "background": true} {"appId": 1}
 ssoSettings {"name": "createdAt_1", "background": true} {"createdAt": 1}
 ssoSettings {"name": "nextIterations_1", "background": true} {"nextIterations": 1}
 ssoSettings {"name": "typeNextIterations", "background": true} {"type": 1, "nextIterations": 1}
+stageExecutionInfo {"name": "sorted_stage_execution_info_idx", "background": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1, "envIdentifier": 1, "infraIdentifier": 1, "serviceIdentifier": 1, "stageExecutionId": 1, "createdAt": -1}
+stageExecutionInfo {"name": "unique_stage_execution_info_deployment_identifier_idx", "background": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1, "envIdentifier": 1, "infraIdentifier": 1, "serviceIdentifier": 1, "deploymentIdentifier": 1, "stageExecutionId": 1}
+stageExecutionInfo {"name": "unique_stage_execution_info_idx", "background": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1, "envIdentifier": 1, "infraIdentifier": 1, "serviceIdentifier": 1, "stageExecutionId": 1}
 stateExecutionInstances {"name": "accountId_1", "background": true} {"accountId": 1}
 stateExecutionInstances {"name": "appIdExecutionIdStatus", "background": true} {"appId": 1, "executionUuid": 1, "status": 1}
 stateExecutionInstances {"name": "appId_1", "background": true} {"appId": 1}

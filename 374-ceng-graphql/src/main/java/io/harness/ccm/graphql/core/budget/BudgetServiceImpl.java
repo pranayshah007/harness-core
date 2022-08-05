@@ -45,6 +45,7 @@ public class BudgetServiceImpl implements BudgetService {
     BudgetUtils.validateBudget(budget, budgetDao.list(budget.getAccountId(), budget.getName()));
     removeEmailDuplicates(budget);
     validatePerspective(budget);
+    updateBudgetStartTime(budget);
     updateBudgetEndTime(budget);
     updateBudgetCosts(budget);
     return budgetDao.save(budget);
@@ -155,6 +156,14 @@ public class BudgetServiceImpl implements BudgetService {
         alertThreshold.setEmailAddresses(uniqueEmailAddresses);
       }
       budget.setAlertThresholds(alertThresholds);
+    }
+  }
+
+  private void updateBudgetStartTime(Budget budget) {
+    try {
+      budget.setStartTime(BudgetUtils.getStartOfDay(budget.getStartTime()));
+    } catch (Exception e) {
+      log.error("Error occurred while updating start time of budget: {}", budget.getUuid(), e);
     }
   }
 

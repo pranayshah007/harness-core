@@ -105,6 +105,8 @@ public class CENextGenConfiguration extends Configuration {
 
   @JsonProperty("segmentConfiguration") @ConfigSecret private SegmentConfiguration segmentConfiguration;
 
+  @JsonProperty("deploymentClusterName") private String deploymentClusterName;
+
   @JsonProperty("auditClientConfig") private ServiceHttpClientConfig auditClientConfig;
   @JsonProperty(value = "enableAudit") private boolean enableAudit;
   @JsonProperty("exportMetricsToStackDriver") private boolean exportMetricsToStackDriver;

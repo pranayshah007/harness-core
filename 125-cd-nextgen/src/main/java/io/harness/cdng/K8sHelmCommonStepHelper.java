@@ -901,29 +901,6 @@ public class K8sHelmCommonStepHelper {
     throw new UnsupportedOperationException(format("Unsupported Store Config type: [%s]", storeConfig.getKind()));
   }
 
-  //  public LocalFileStoreDelegateConfig getLocalFileStoreDelegateConfigForKustomize(Ambiance ambiance, ManifestOutcome
-  //  kustomizeManifest, HarnessStore storeConfig) {
-  //    NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
-  //    FileReference fileReference = FileReference.of(getParameterFieldValue(storeConfig.getFiles()).get(0),
-  //    ngAccess.getAccountIdentifier(),
-  //            ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier());
-  //    Optional<FileStoreNodeDTO> optionalFileStoreNodeDTO =
-  //            fileStoreService.getWithChildrenByPath(fileReference.getAccountIdentifier(),
-  //            fileReference.getOrgIdentifier(),
-  //                    fileReference.getProjectIdentifier(), fileReference.getPath(), false);
-  //    if (optionalFileStoreNodeDTO.isPresent()) {
-  //      FileStoreNodeDTO manifestFileDirectory = optionalFileStoreNodeDTO.get();
-  //      return LocalFileStoreDelegateConfig.builder()
-  //              .folder(manifestFileDirectory.getName())
-  //              .filePaths(Arrays.asList(manifestFileDirectory.getPath().substring(1)))
-  //              .manifestType(kustomizeManifest.getType())
-  //              .manifestIdentifier(kustomizeManifest.getIdentifier())
-  //              .build();
-  //    } else {
-  //      throw new UnsupportedOperationException(format("Unsupported Store Config type: [%s]", storeConfig.getKind()));
-  //    }
-  //  }
-
   public List<String> getPathsBasedOnManifest(GitStoreConfig gitstoreConfig, String manifestType) {
     List<String> paths = new ArrayList<>();
     switch (manifestType) {

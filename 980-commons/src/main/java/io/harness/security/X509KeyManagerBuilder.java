@@ -32,21 +32,18 @@ import org.apache.commons.lang3.RandomStringUtils;
 /**
  * Responsible for building a X509KeyManager.
  *
- * Explicit key algorithm SunX509 is used to ensure we actually create a X509KeyManager.
- * This is similar to the default algorithm that's returned if nothing else configured.
+ * Explicit algorithm 'PKIX' is used to avoid unintended behavioral changes in the future and to ensure we actually
+ * create a X509KeyManager (see extending class 'X509'):
+ *    https://github.com/openjdk/jdk11u/blob/master/src/java.base/share/classes/sun/security/ssl/KeyManagerFactoryImpl.java
  *
- * Default values are found here:
- *    https://github.com/openjdk/jdk11u/blob/master/src/java.base/share/classes/javax/net/ssl/KeyManagerFactory.java
- *    https://github.com/openjdk/jdk11u/blob/master/src/java.base/share/classes/java/security/KeyStore.java
- *
- * Registered classes for the algorithms can be found here:
- *    https://github.com/openjdk/jdk11u/blob/master/src/java.base/share/classes/sun/security/ssl/SunJSSE.java
+ * This is different to what KeyManagerFactory.getDefaultAlgorithm() returns as of writing this, but will most likely be
+ * the default in the future: https://bugs.openjdk.org/browse/JDK-8272875
  */
 @OwnedBy(PL)
 public class X509KeyManagerBuilder {
   public static final String CLIENT_CERTIFICATE_KEY_ENTRY_NAME_FORMAT = "client-cert-%d";
 
-  private static final String KEY_MANAGER_ALGORITHM_SUNX509 = "SunX509";
+  private static final String KEY_MANAGER_ALGORITHM_PKIX = "PKIX";
   private static final String KEY_ALGORITHM_RSA = "RSA";
   private static final String CERTIFICATE_TYPE_X509 = "X.509";
   private static final String PEM_PRIVATE_KEY_START = "-----BEGIN PRIVATE KEY-----";
@@ -106,10 +103,10 @@ public class X509KeyManagerBuilder {
 
   public X509KeyManager build() throws KeyManagerBuilderException {
     try {
-      KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance(KEY_MANAGER_ALGORITHM_SUNX509);
+      KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance(KEY_MANAGER_ALGORITHM_PKIX);
       keyManagerFactory.init(this.keystore, this.keyStorePassword);
 
-      // We only expect one KeyManager from the SunX509 factory
+      // We only expect one KeyManager from the PKIX factory
       return (X509KeyManager) keyManagerFactory.getKeyManagers()[0];
     } catch (Exception ex) {
       throw new KeyManagerBuilderException(String.format("Failed to create key manager: %s", ex.getMessage()), ex);

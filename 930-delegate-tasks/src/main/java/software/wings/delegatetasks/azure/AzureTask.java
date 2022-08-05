@@ -10,6 +10,8 @@ package software.wings.delegatetasks.azure;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.azure.model.AzureOSType;
+import io.harness.connector.ConnectorValidationResult;
+import io.harness.connector.task.azure.AzureValidationHandler;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.DelegateTaskResponse;
@@ -33,6 +35,7 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(HarnessTeam.CDP)
 public class AzureTask extends AbstractDelegateRunnableTask {
   @Inject private AzureAsyncTaskHelper azureAsyncTaskHelper;
+  @Inject private AzureValidationHandler azureValidationHandler;
 
   public AzureTask(DelegateTaskPackage delegateTaskPackage, ILogStreamingTaskClient logStreamingTaskClient,
       Consumer<DelegateTaskResponse> consumer, BooleanSupplier preExecute) {
@@ -53,10 +56,9 @@ public class AzureTask extends AbstractDelegateRunnableTask {
     String msg;
     switch (azureTaskParams.getAzureTaskType()) {
       case VALIDATE:
-        return AzureValidateTaskResponse.builder()
-            .connectorValidationResult(azureAsyncTaskHelper.getConnectorValidationResult(
-                azureTaskParams.getEncryptionDetails(), azureTaskParams.getAzureConnector()))
-            .build();
+        ConnectorValidationResult connectorValidationResult = azureValidationHandler.validate(azureTaskParams);
+        connectorValidationResult.setDelegateId(getDelegateId());
+        return AzureValidateTaskResponse.builder().connectorValidationResult(connectorValidationResult).build();
       case LIST_SUBSCRIPTIONS:
         return azureAsyncTaskHelper.listSubscriptions(
             azureTaskParams.getEncryptionDetails(), azureTaskParams.getAzureConnector());

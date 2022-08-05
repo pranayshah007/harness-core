@@ -17,6 +17,7 @@ import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Value;
 import lombok.experimental.FieldNameConstants;
+import lombok.experimental.NonFinal;
 import org.mongodb.morphia.annotations.Entity;
 import org.springframework.data.annotation.Persistent;
 import org.springframework.data.annotation.TypeAlias;
@@ -37,12 +38,22 @@ public class GitlabConnector extends Connector implements PersistentRegularItera
   boolean hasApiAccess;
   GitlabApiAccessType apiAccessType;
   GitlabApiAccess gitlabApiAccess;
+  @NonFinal Long nextTokenRenewIteration;
 
   @Override
   public Long obtainNextIteration(String fieldName) {
-    return null;
+    if (GitlabConnectorKeys.nextTokenRenewIteration.equals(fieldName)) {
+      return nextTokenRenewIteration;
+    }
+    throw new IllegalArgumentException("Invalid fieldName " + fieldName);
   }
 
   @Override
-  public void updateNextIteration(String fieldName, long nextIteration) {}
+  public void updateNextIteration(String fieldName, long nextIteration) {
+    if (GitlabConnectorKeys.nextTokenRenewIteration.equals(fieldName)) {
+      this.nextTokenRenewIteration = nextIteration;
+      return;
+    }
+    throw new IllegalArgumentException("Invalid fieldName " + fieldName);
+  }
 }

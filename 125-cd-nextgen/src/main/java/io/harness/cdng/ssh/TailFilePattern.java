@@ -13,16 +13,25 @@ import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.pms.yaml.YamlNode;
 import io.harness.yaml.YamlSchemaTypes;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+import io.swagger.annotations.ApiModelProperty;
 import lombok.Builder;
 import lombok.Data;
+import lombok.Getter;
 
 @Data
 @Builder
 @OwnedBy(HarnessTeam.CDP)
 @RecasterAlias("io.harness.cdng.ssh.TailFilePattern")
 public class TailFilePattern {
+  @JsonProperty(YamlNode.UUID_FIELD_NAME)
+  @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
+  @ApiModelProperty(hidden = true)
+  String uuid;
+
   @YamlSchemaTypes({string}) ParameterField<String> tailFile;
   @YamlSchemaTypes({string}) ParameterField<String> tailPattern;
 }

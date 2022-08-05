@@ -342,8 +342,9 @@ public class InputSetResourcePMSImpl implements InputSetResourcePMS {
       @NotNull @OrgIdentifier String orgIdentifier, @NotNull @ProjectIdentifier String projectIdentifier,
       @NotNull @ResourceIdentifier String pipelineIdentifier, String inputSetIdentifier,
       GitImportInfoDTO gitImportInfoDTO, InputSetImportRequestDTO inputSetImportRequestDTO) {
-    InputSetEntity inputSetEntity = pmsInputSetService.importInputSetFromRemote(
-        accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, inputSetIdentifier, inputSetImportRequestDTO);
+    InputSetEntity inputSetEntity =
+        pmsInputSetService.importInputSetFromRemote(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
+            inputSetIdentifier, inputSetImportRequestDTO, gitImportInfoDTO.getIsForceImport());
     return ResponseDTO.newResponse(
         InputSetImportResponseDTO.builder().identifier(inputSetEntity.getIdentifier()).build());
   }

@@ -11,7 +11,6 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.exception.WingsException.USER;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.enforcement.constants.FeatureRestrictionName;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.exception.InvalidRequestException;
@@ -32,6 +31,7 @@ import io.harness.remote.client.NGRestUtils;
 import io.harness.template.beans.refresh.ValidateTemplateInputsResponseDTO;
 import io.harness.template.beans.refresh.YamlFullRefreshResponseDTO;
 import io.harness.template.remote.TemplateResourceClient;
+import io.harness.template.yaml.TemplateRefHelper;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -68,7 +68,7 @@ public class PMSPipelineTemplateHelper {
 
   public TemplateMergeResponseDTO resolveTemplateRefsInPipeline(String accountId, String orgId, String projectId,
       String yaml, boolean checkForTemplateAccess, boolean getMergedTemplateWithTemplateReferences) {
-    if (pmsFeatureFlagHelper.isEnabled(accountId, FeatureName.NG_TEMPLATES)
+    if (TemplateRefHelper.hasTemplateRef(yaml)
         && pipelineEnforcementService.isFeatureRestricted(accountId, FeatureRestrictionName.TEMPLATE_SERVICE.name())) {
       String TEMPLATE_RESOLVE_EXCEPTION_MSG = "Exception in resolving template refs in given pipeline yaml.";
       long start = System.currentTimeMillis();

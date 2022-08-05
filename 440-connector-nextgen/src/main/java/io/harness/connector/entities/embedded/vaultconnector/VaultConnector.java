@@ -93,7 +93,7 @@ public class VaultConnector extends Connector implements PersistentRegularIterab
   }
 
   public String getK8sAuthEndpoint() {
-    if (!useK8sAuth) {
+    if (!getUseK8sAuth()) {
       return null;
     }
     return Optional.ofNullable(k8sAuthEndpoint).filter(x -> !x.isEmpty()).orElse("kubernetes");

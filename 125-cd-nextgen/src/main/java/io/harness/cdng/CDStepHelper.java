@@ -14,6 +14,7 @@ import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.HarnessStringUtils.emptyIfNull;
 import static io.harness.data.structure.ListUtils.trimStrings;
+import static io.harness.delegate.beans.connector.scm.bitbucket.BitbucketApiAccessType.USERNAME_AND_TOKEN;
 import static io.harness.eraro.ErrorCode.GENERAL_ERROR;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.logging.CommandExecutionStatus.FAILURE;
@@ -67,7 +68,12 @@ import io.harness.delegate.beans.connector.scm.adapter.ScmConnectorMapper;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectorDTO;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoHttpAuthenticationType;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoHttpCredentialsDTO;
+import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketApiAccessDTO;
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketConnectorDTO;
+import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketHttpAuthenticationType;
+import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketHttpCredentialsDTO;
+import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketUsernamePasswordDTO;
+import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketUsernameTokenApiAccessDTO;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubApiAccessDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubApiAccessType;
@@ -181,6 +187,19 @@ public class CDStepHelper {
                .equals(GitlabHttpAuthenticationType.USERNAME_AND_TOKEN);
   }
 
+  public boolean isBitbucketTokenAuth(ScmConnector scmConnector) {
+    return scmConnector instanceof BitbucketConnectorDTO
+        && (((BitbucketConnectorDTO) scmConnector).getApiAccess() != null
+            || isBitbucketUsernameTokenAuth((BitbucketConnectorDTO) scmConnector));
+  }
+
+  public boolean isBitbucketUsernameTokenAuth(BitbucketConnectorDTO bitbucketConnectorDTO) {
+    return bitbucketConnectorDTO.getAuthentication().getCredentials() instanceof BitbucketHttpCredentialsDTO
+        && ((BitbucketHttpCredentialsDTO) bitbucketConnectorDTO.getAuthentication().getCredentials())
+               .getType()
+               .equals(BitbucketHttpAuthenticationType.USERNAME_AND_PASSWORD);
+  }
+
   public boolean isGithubUsernameTokenAuth(GithubConnectorDTO githubConnectorDTO) {
     return githubConnectorDTO.getAuthentication().getCredentials() instanceof GithubHttpCredentialsDTO
         && ((GithubHttpCredentialsDTO) githubConnectorDTO.getAuthentication().getCredentials())
@@ -216,7 +235,8 @@ public class CDStepHelper {
     return cdFeatureFlagHelper.isEnabled(accountId, OPTIMIZED_GIT_FETCH_FILES)
         && ((isGithubTokenAuth((ScmConnector) connectorDTO.getConnectorConfig())
                 || isGitlabTokenAuth((ScmConnector) connectorDTO.getConnectorConfig()))
-            || (isAzureRepoTokenAuth((ScmConnector) connectorDTO.getConnectorConfig())));
+            || (isAzureRepoTokenAuth((ScmConnector) connectorDTO.getConnectorConfig()))
+            || (isBitbucketTokenAuth((ScmConnector) connectorDTO.getConnectorConfig())));
   }
 
   public void addApiAuthIfRequired(ScmConnector scmConnector) {
@@ -244,7 +264,30 @@ public class CDStepHelper {
                                             .spec(GitlabTokenSpecDTO.builder().tokenRef(tokenRef).build())
                                             .build();
       gitlabConnectorDTO.setApiAccess(apiAccessDTO);
+    } else if (scmConnector instanceof BitbucketConnectorDTO
+        && ((BitbucketConnectorDTO) scmConnector).getApiAccess() == null
+        && isBitbucketUsernameTokenAuth((BitbucketConnectorDTO) scmConnector)) {
+      addApiAuthIfRequiredBitbucket(scmConnector);
     }
+  }
+
+  public void addApiAuthIfRequiredBitbucket(ScmConnector scmConnector) {
+    BitbucketConnectorDTO bitbucketConnectorDTO = (BitbucketConnectorDTO) scmConnector;
+    BitbucketUsernamePasswordDTO credentials =
+        (BitbucketUsernamePasswordDTO) ((BitbucketHttpCredentialsDTO) bitbucketConnectorDTO.getAuthentication()
+                                            .getCredentials())
+            .getHttpCredentialsSpec();
+    SecretRefData tokenRef = credentials.getPasswordRef();
+    String usernameRef = credentials.getUsername();
+    BitbucketApiAccessDTO apiAccessDTO =
+        BitbucketApiAccessDTO.builder()
+            .type(USERNAME_AND_TOKEN)
+            .spec(BitbucketUsernameTokenApiAccessDTO.builder()
+                      .tokenRef(tokenRef)
+                      .usernameRef(SecretRefData.builder().decryptedValue(usernameRef.toCharArray()).build())
+                      .build())
+            .build();
+    bitbucketConnectorDTO.setApiAccess(apiAccessDTO);
   }
 
   public String getGitRepoUrl(ScmConnector scmConnector, String repoName) {
@@ -277,6 +320,13 @@ public class CDStepHelper {
         String repoUrl = getGitRepoUrl(gitlabConnectorDTO, repoName);
         gitlabConnectorDTO.setUrl(repoUrl);
         gitlabConnectorDTO.setConnectionType(GitConnectionType.REPO);
+      }
+    } else if (scmConnector instanceof BitbucketConnectorDTO) {
+      BitbucketConnectorDTO bitbucketConnectorDTO = (BitbucketConnectorDTO) scmConnector;
+      if (bitbucketConnectorDTO.getConnectionType() == GitConnectionType.ACCOUNT) {
+        String repoUrl = getGitRepoUrl(bitbucketConnectorDTO, repoName);
+        bitbucketConnectorDTO.setUrl(repoUrl);
+        bitbucketConnectorDTO.setConnectionType(GitConnectionType.REPO);
       }
     }
   }

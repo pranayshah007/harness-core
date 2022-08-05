@@ -20,8 +20,7 @@ import org.springframework.data.convert.ReadingConverter;
 @OwnedBy(CDP)
 @Singleton
 @ReadingConverter
-public class RollbackDeploymentInfoReadConverter
-    extends AbstractRollbackDeploymentInfoReadConverter<RollbackDeploymentInfo> {
+public class RollbackDeploymentInfoReadConverter extends AbstractReadConverter<RollbackDeploymentInfo> {
   @Inject
   protected RollbackDeploymentInfoReadConverter(KryoSerializer kryoSerializer) {
     super(kryoSerializer);

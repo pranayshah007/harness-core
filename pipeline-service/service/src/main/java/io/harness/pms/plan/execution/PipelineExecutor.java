@@ -109,6 +109,10 @@ public class PipelineExecutor {
     sendExecutionStartTelemetryEvent(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier);
     PipelineEntity pipelineEntity =
         executionHelper.fetchPipelineEntity(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier);
+    if (pipelineEntity.getIsDraft() != null && pipelineEntity.getIsDraft()) {
+      throw new InvalidRequestException(String.format(
+          "Cannot execute a Draft Pipeline with PipelineID: %s, ProjectID %s", pipelineIdentifier, projectIdentifier));
+    }
     ExecutionTriggerInfo triggerInfo = executionHelper.buildTriggerInfo(originalExecutionId);
 
     // RetryExecutionParameters

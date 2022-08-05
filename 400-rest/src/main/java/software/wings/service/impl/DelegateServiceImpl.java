@@ -2533,6 +2533,7 @@ public class DelegateServiceImpl implements DelegateService {
       delegateMetricsService.recordDelegateMetrics(delegate, DELEGATE_REGISTRATION_FAILED);
       return DelegateRegisterResponse.builder().action(DelegateRegisterResponse.Action.SELF_DESTRUCT).build();
     }
+
     if (existingDelegate != null) {
       log.debug("Delegate {} already registered for Hostname with : {} IP: {}", delegate.getUuid(),
           delegate.getHostName(), delegate.getIp());
@@ -2621,17 +2622,19 @@ public class DelegateServiceImpl implements DelegateService {
                                                     .tokenName(delegateTokenName.orElse(null))
                                                     .build();
 
+    // TODO: ARPIT for cg grouped delegates we should save tags only in delegateGroup
+
     if (delegateParams.isNg()) {
       final DelegateGroup delegateGroup =
           upsertDelegateGroup(delegateParams.getDelegateName(), delegateParams.getAccountId(), delegateSetupDetails);
       delegateGroupId = delegateGroup.getUuid();
       delegateGroupName = delegateGroup.getName();
-    }
 
-    if (isNotBlank(delegateGroupId) && isNotEmpty(delegateParams.getTags())) {
       persistence.update(persistence.createQuery(DelegateGroup.class).filter(DelegateGroupKeys.uuid, delegateGroupId),
           persistence.createUpdateOperations(DelegateGroup.class)
-              .set(DelegateGroupKeys.tags, new HashSet<>(delegateParams.getTags())));
+              .set(DelegateGroupKeys.tags,
+                  isEmpty(delegateParams.getTags()) ? Collections.emptySet()
+                                                    : new HashSet<>(delegateParams.getTags())));
     }
 
     final DelegateEntityOwner owner = DelegateEntityOwnerHelper.buildOwner(orgIdentifier, projectIdentifier);
@@ -2770,6 +2773,11 @@ public class DelegateServiceImpl implements DelegateService {
       } else {
         registeredDelegate = update(delegate);
       }
+
+      // this condition is satisfied only while registering for the first time after delegate starts/restarts
+      if (delegateSetupDetails != null) {
+        updateDelegateTagsAfterReRegistering(registeredDelegate, delegate.getTags());
+      }
     }
 
     // Not needed to be done when polling is enabled for delegate
@@ -2784,6 +2792,15 @@ public class DelegateServiceImpl implements DelegateService {
       }
     }
     return registeredDelegate;
+  }
+
+  private void updateDelegateTagsAfterReRegistering(Delegate registeredDelegate, List<String> delegateTags) {
+    Query<Delegate> delegateQuery = persistence.createQuery(Delegate.class)
+                                        .filter(DelegateKeys.accountId, registeredDelegate.getAccountId())
+                                        .filter(DelegateKeys.uuid, registeredDelegate.getUuid());
+    persistence.update(
+        delegateQuery, persistence.createUpdateOperations(Delegate.class).set(DelegateKeys.tags, delegateTags));
+    registeredDelegate.setTags(delegateTags);
   }
 
   private void broadcastDelegateHeartBeatResponse(Delegate delegate, Delegate registeredDelegate) {
@@ -3675,7 +3692,6 @@ public class DelegateServiceImpl implements DelegateService {
     delegate.setExcludeScopes(existingInactiveDelegate.getExcludeScopes());
     delegate.setIncludeScopes(existingInactiveDelegate.getIncludeScopes());
     delegate.setDelegateProfileId(existingInactiveDelegate.getDelegateProfileId());
-    delegate.setTags(existingInactiveDelegate.getTags());
     delegate.setKeywords(existingInactiveDelegate.getKeywords());
     delegate.setDescription(existingInactiveDelegate.getDescription());
   }

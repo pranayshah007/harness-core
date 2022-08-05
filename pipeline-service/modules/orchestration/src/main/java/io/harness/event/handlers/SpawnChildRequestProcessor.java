@@ -44,7 +44,7 @@ public class SpawnChildRequestProcessor implements SdkResponseProcessor {
     SpawnChildRequest request = event.getSpawnChildRequest();
     String childNodeId = extractChildNodeId(request);
     String childInstanceId = generateUuid();
-    String eventId = initiateNodeHelper.publishEvent(ambiance, childNodeId, childInstanceId);
+    initiateNodeHelper.publishEvent(ambiance, childNodeId, childInstanceId);
 
     // Attach a Callback to the parent for the child
     EngineResumeCallback callback = EngineResumeCallback.builder().ambiance(ambiance).build();

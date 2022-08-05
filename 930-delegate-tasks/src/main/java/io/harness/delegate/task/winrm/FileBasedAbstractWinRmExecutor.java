@@ -81,7 +81,7 @@ public abstract class FileBasedAbstractWinRmExecutor {
 
   public CommandExecutionStatus copyConfigFiles(ConfigFileMetaData configFileMetaData) {
     if (isBlank(configFileMetaData.getFileId()) || isBlank(configFileMetaData.getFilename())) {
-      saveExecutionLog("There is no config file to copy. " + configFileMetaData.toString(), INFO);
+      saveExecutionLog("There is no config file to copy. " + configFileMetaData, INFO);
       return CommandExecutionStatus.SUCCESS;
     }
 
@@ -98,6 +98,7 @@ public abstract class FileBasedAbstractWinRmExecutor {
 
       commandExecutionStatus =
           splitFileAndTransfer(configFileMetaData, session, outputWriter, errorWriter, configFileLength, fileBytes);
+      saveExecutionLog("Command completed successfully", INFO, commandExecutionStatus);
 
     } catch (Exception e) {
       log.error(ERROR_WHILE_EXECUTING_COMMAND, e);
@@ -106,7 +107,7 @@ public abstract class FileBasedAbstractWinRmExecutor {
           format("Command execution failed. Error: %s", details.getMessage()), ERROR, commandExecutionStatus);
     }
 
-    log.info("Copy Config command execution returned.", commandExecutionStatus);
+    log.info("Copy Config command execution returned status: {}", commandExecutionStatus);
     return commandExecutionStatus;
   }
 
@@ -114,73 +115,45 @@ public abstract class FileBasedAbstractWinRmExecutor {
     return this.config.isUseNoProfile() ? "Powershell -NoProfile " : "Powershell ";
   }
 
-  private void saveExecutionLog(String line, LogLevel level) {
+  protected void saveExecutionLog(String line, LogLevel level) {
     saveExecutionLog(line, level, RUNNING);
   }
 
-  private void saveExecutionLog(String line, LogLevel level, CommandExecutionStatus commandExecutionStatus) {
+  protected void saveExecutionLog(String line, LogLevel level, CommandExecutionStatus commandExecutionStatus) {
     if (shouldSaveExecutionLogs) {
       logCallback.saveExecutionLog(line, level, commandExecutionStatus);
     }
   }
 
-  private CommandExecutionStatus transferFileAsIs(ConfigFileMetaData configFileMetaData, WinRmSession session,
-      ExecutionLogWriter outputWriter, ExecutionLogWriter errorWriter, byte[] fileBytes) throws IOException {
-    int exitCode;
-    String command;
-    String psScriptFile = null;
-
-    if (disableCommandEncoding) {
-      // Keep the temp script in working directory or in Temp is working directory is not set.
-      psScriptFile = config.getWorkingDirectory() == null
-          ? WINDOWS_TEMPFILE_LOCATION
-          : config.getWorkingDirectory() + "harness-" + this.config.getExecutionId() + ".ps1";
-      command = getCopyConfigCommandBehindFF(configFileMetaData, fileBytes);
-      exitCode = session.executeCommandsList(
-          constructPSScriptWithCommands(command, psScriptFile, getPowershell(), config.getCommandParameters()),
-          outputWriter, errorWriter, false, getScriptExecutingCommand(psScriptFile, getPowershell()));
-    } else {
-      String encodedFile = EncodingUtils.encodeBase64(fileBytes);
-      command = getCopyConfigCommand(configFileMetaData, encodedFile);
-
-      exitCode = session.executeCommandString(
-          WinRmExecutorHelper.psWrappedCommandWithEncoding(command, getPowershell(), config.getCommandParameters()),
-          outputWriter, errorWriter, false);
-    }
-    log.info("Execute Command String returned exit code.", exitCode);
-    WinRmExecutorHelper.cleanupFiles(
-        session, psScriptFile, getPowershell(), disableCommandEncoding, config.getCommandParameters());
-    return exitCode == 0 ? SUCCESS : FAILURE;
-  }
-
-  private CommandExecutionStatus splitFileAndTransfer(ConfigFileMetaData configFileMetaData, WinRmSession session,
+  protected CommandExecutionStatus splitFileAndTransfer(ConfigFileMetaData configFileMetaData, WinRmSession session,
       ExecutionLogWriter outputWriter, ExecutionLogWriter errorWriter, int configFileLength, byte[] fileBytes)
       throws IOException {
     final List<List<Byte>> partitions = Lists.partition(Bytes.asList(fileBytes), BATCH_SIZE_BYTES);
-    clearTargetFile(configFileMetaData, session, outputWriter, errorWriter);
-    logFileSizeAndOtherMetadata(configFileMetaData, configFileLength, partitions.size());
+    clearTargetFile(session, outputWriter, errorWriter, configFileMetaData.getDestinationDirectoryPath(),
+        configFileMetaData.getFilename());
+    logFileSizeAndOtherMetadata(configFileLength, partitions.size(), configFileMetaData.getFilename());
 
-    CommandExecutionStatus commandExecutionStatus = SUCCESS;
     int chunkNumber = 1;
     for (List<Byte> partition : partitions) {
       final byte[] bytesToCopy = Bytes.toArray(partition);
-      String command = getCopyConfigCommand(configFileMetaData, bytesToCopy);
-      commandExecutionStatus = executeRemoteCommand(session, outputWriter, errorWriter, command, true);
+      String command = getCopyConfigCommand(
+          bytesToCopy, configFileMetaData.getDestinationDirectoryPath(), configFileMetaData.getFilename());
+      CommandExecutionStatus commandExecutionStatus =
+          executeRemoteCommand(session, outputWriter, errorWriter, command, true);
       if (FAILURE == commandExecutionStatus) {
         saveExecutionLog(format("Failed to copy chunk #%d. Discontinuing", chunkNumber), ERROR, RUNNING);
-        break;
+        return commandExecutionStatus;
       }
       saveExecutionLog(format("Transferred %s data for config file...\n",
                            calcPercentage(chunkNumber * BATCH_SIZE_BYTES, configFileLength)),
           INFO, RUNNING);
       chunkNumber++;
     }
-    return commandExecutionStatus;
+    return SUCCESS;
   }
 
-  private void logFileSizeAndOtherMetadata(
-      ConfigFileMetaData configFileMetaData, int configFileLength, int nPartitions) {
-    saveExecutionLog(format("Size of file (%s) to be transferred %.2f %s", configFileMetaData.getFilename(),
+  protected void logFileSizeAndOtherMetadata(long configFileLength, int nPartitions, String filename) {
+    saveExecutionLog(format("Size of file (%s) to be transferred %.2f %s", filename,
                          configFileLength > 1024 ? configFileLength / 1024.0 : configFileLength,
                          configFileLength > 1024 ? "(KB) KiloBytes" : "(B) Bytes"),
         INFO, RUNNING);
@@ -191,36 +164,37 @@ public abstract class FileBasedAbstractWinRmExecutor {
     }
   }
 
-  private String calcPercentage(int dataTransferred, int configFileLength) {
+  protected String calcPercentage(int dataTransferred, long configFileLength) {
     NumberFormat defaultFormat = NumberFormat.getPercentInstance();
     defaultFormat.setMinimumFractionDigits(2);
     final float fraction = min(1, (float) dataTransferred / configFileLength);
     return color(defaultFormat.format(fraction), (fraction < 1) ? Yellow : Green, Bold);
   }
 
-  private void clearTargetFile(ConfigFileMetaData configFileMetaData, WinRmSession session,
-      ExecutionLogWriter outputWriter, ExecutionLogWriter errorWriter) throws IOException {
-    String command = getDeleteFileCommandStr(configFileMetaData);
+  protected void clearTargetFile(WinRmSession session, ExecutionLogWriter outputWriter, ExecutionLogWriter errorWriter,
+      String destinationDirectoryPath, String filename) throws IOException {
+    String command = getDeleteFileCommandStr(destinationDirectoryPath, filename);
     final CommandExecutionStatus commandExecutionStatus =
         executeRemoteCommand(session, outputWriter, errorWriter, command, false);
     if (commandExecutionStatus != SUCCESS) {
-      final String messsage = format("File %s could not cleared before writing",
-          Paths.get(configFileMetaData.getDestinationDirectoryPath(), configFileMetaData.getFilename()));
+      final String messsage =
+          format("File %s could not cleared before writing", Paths.get(destinationDirectoryPath, filename));
       saveExecutionLog(messsage, ERROR, FAILURE);
       throw new InvalidRequestException(messsage, USER);
     }
   }
 
   @VisibleForTesting
-  public String getDeleteFileCommandStr(ConfigFileMetaData configFileMetaData) {
-    return disableCommandEncoding ? getDeleteFileCommandBehindFF(configFileMetaData)
-                                  : getDeleteFileCommand(configFileMetaData);
+  public String getDeleteFileCommandStr(String destinationDirectoryPath, String filename) {
+    return disableCommandEncoding ? getDeleteFileCommandBehindFF(destinationDirectoryPath, filename)
+                                  : getDeleteFileCommand(destinationDirectoryPath, filename);
   }
 
   @VisibleForTesting
-  public String getCopyConfigCommand(ConfigFileMetaData configFileMetaData, byte[] bytesToCopy) {
-    return disableCommandEncoding ? getCopyConfigCommandBehindFF(configFileMetaData, bytesToCopy)
-                                  : getCopyConfigCommand(configFileMetaData, EncodingUtils.encodeBase64(bytesToCopy));
+  public String getCopyConfigCommand(byte[] bytesToCopy, String destinationDirectoryPath, String filename) {
+    return disableCommandEncoding
+        ? getCopyConfigCommandBehindFF(bytesToCopy, destinationDirectoryPath, filename)
+        : getCopyConfigCommand(EncodingUtils.encodeBase64(bytesToCopy), destinationDirectoryPath, filename);
   }
 
   @VisibleForTesting
@@ -240,7 +214,7 @@ public abstract class FileBasedAbstractWinRmExecutor {
           psWrappedCommandWithEncoding(command, getPowershell(), config.getCommandParameters()), outputWriter,
           errorWriter, false);
     }
-    log.info("Execute Command String returned exit code.", exitCode);
+    log.info("Execute Command String returned exit code. {}", exitCode);
     io.harness.delegate.task.winrm.WinRmExecutorHelper.cleanupFiles(
         session, psScriptFile, getPowershell(), disableCommandEncoding, config.getCommandParameters());
     return exitCode == 0 ? SUCCESS : FAILURE;
@@ -268,7 +242,7 @@ public abstract class FileBasedAbstractWinRmExecutor {
     return exitCode;
   }
 
-  private ExecutionLogWriter getExecutionLogWriter(LogLevel logLevel) {
+  protected ExecutionLogWriter getExecutionLogWriter(LogLevel logLevel) {
     return ExecutionLogWriter.builder()
         .accountId(config.getAccountId())
         .appId(config.getAppId())
@@ -281,38 +255,34 @@ public abstract class FileBasedAbstractWinRmExecutor {
   }
 
   @VisibleForTesting
-  public String getCopyConfigCommandBehindFF(ConfigFileMetaData configFileMetaData, byte[] fileBytes) {
+  public String getCopyConfigCommandBehindFF(byte[] fileBytes, String destinationDirectoryPath, String filename) {
     final String breakCharsEscapedStr = escapeWordBreakChars(escapeLineBreakChars(new String(fileBytes)));
-    return "$fileName = \"" + configFileMetaData.getDestinationDirectoryPath() + "\\" + configFileMetaData.getFilename()
-        + "\"\n"
+    return "$fileName = \"" + destinationDirectoryPath + "\\" + filename + "\"\n"
         + "$commandString = @'\n" + breakCharsEscapedStr + "\n'@"
         + "\n[IO.File]::AppendAllText($fileName, $commandString,   [Text.Encoding]::UTF8)\n"
         + "Write-Host \"Appended to config file on the host.\"";
   }
 
   @VisibleForTesting
-  public String getCopyConfigCommand(ConfigFileMetaData configFileMetaData, String encodedFile) {
+  public String getCopyConfigCommand(String encodedFile, String destinationDirectoryPath, String filename) {
     return "#### Convert Base64 string back to config file ####\n"
         + "\n"
         + "$DecodedString = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String(\"" + encodedFile
         + "\"))\n"
         + "Write-Host \"Decoding config file on the host.\"\n"
-        + "$decodedFile = \'" + configFileMetaData.getDestinationDirectoryPath() + "\\"
-        + configFileMetaData.getFilename() + "\'\n"
+        + "$decodedFile = \'" + destinationDirectoryPath + "\\" + filename + "\'\n"
         + "[IO.File]::AppendAllText($decodedFile, $DecodedString) \n"
         + "Write-Host \"Appended to config file on the host.\"\n";
   }
 
-  private String getDeleteFileCommandBehindFF(ConfigFileMetaData configFileMetaData) {
-    return "$fileName = \"" + configFileMetaData.getDestinationDirectoryPath() + "\\" + configFileMetaData.getFilename()
-        + "\"\n"
+  private String getDeleteFileCommandBehindFF(String destinationDirectoryPath, String filename) {
+    return "$fileName = \"" + destinationDirectoryPath + "\\" + filename + "\"\n"
         + "Write-Host \"Clearing target config file $fileName on the host.\""
         + "\n[IO.File]::Delete($fileName)";
   }
 
-  private String getDeleteFileCommand(ConfigFileMetaData configFileMetaData) {
-    return "$decodedFile = \'" + configFileMetaData.getDestinationDirectoryPath() + "\\"
-        + configFileMetaData.getFilename() + "\'\n"
+  private String getDeleteFileCommand(String destinationDirectoryPath, String filename) {
+    return "$decodedFile = \'" + destinationDirectoryPath + "\\" + filename + "\'\n"
         + "Write-Host \"Clearing target config file $decodedFile  on the host.\"\n"
         + "[IO.File]::Delete($decodedFile)";
   }
