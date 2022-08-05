@@ -512,7 +512,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
           } catch (Exception e) {
             log.error("Error while upgrading watcher", e);
           }
-        }, 0, 60, TimeUnit.MINUTES);
+        }, 0, 15, TimeUnit.MINUTES);
       } else {
         log.info("Delegate process started");
         if (delegateConfiguration.isGrpcServiceEnabled()) {
