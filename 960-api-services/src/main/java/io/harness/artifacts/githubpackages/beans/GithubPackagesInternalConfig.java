@@ -7,4 +7,34 @@
 
 package io.harness.artifacts.githubpackages.beans;
 
-public class GithubPackagesInternalConfig {}
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+
+import io.harness.annotations.dev.HarnessTeam;
+import io.harness.annotations.dev.OwnedBy;
+
+import java.net.URI;
+import javax.ws.rs.core.UriBuilder;
+import lombok.Builder;
+import lombok.Value;
+
+@Value
+@Builder
+@OwnedBy(HarnessTeam.CDC)
+public class GithubPackagesInternalConfig {
+  String githubPackagesUrl;
+  String username;
+  char[] password;
+  char[] token;
+  String authMechanism;
+  boolean isCertValidationRequired;
+  private boolean useConnectorUrlForJobExecution;
+
+  public boolean hasCredentials() {
+    return isNotEmpty(username);
+  }
+
+  public String getGithubPackagesRegistryUrl() {
+    URI uri = UriBuilder.fromUri(githubPackagesUrl).build();
+    return UriBuilder.fromUri(githubPackagesUrl).path(uri.getPath().endsWith("/") ? "" : "/").build().toString();
+  }
+}

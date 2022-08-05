@@ -10,16 +10,12 @@ package io.harness.delegate.task.artifacts.githubpackages;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.context.MdcGlobalContextData;
-import io.harness.delegate.beans.DelegateResponseData;
-import io.harness.delegate.task.artifacts.docker.DockerArtifactDelegateRequest;
-import io.harness.delegate.task.artifacts.docker.DockerArtifactDelegateResponse;
-import io.harness.delegate.task.artifacts.docker.DockerArtifactTaskHandler;
 import io.harness.delegate.task.artifacts.request.ArtifactTaskParameters;
 import io.harness.delegate.task.artifacts.response.ArtifactTaskExecutionResponse;
 import io.harness.delegate.task.artifacts.response.ArtifactTaskResponse;
 import io.harness.eraro.ErrorCode;
 import io.harness.exception.exceptionmanager.exceptionhandler.ExceptionMetadataKeys;
-import io.harness.exception.runtime.DockerHubServerRuntimeException;
+import io.harness.exception.runtime.GithubPackagesServerRuntimeException;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.manage.GlobalContextManager;
@@ -86,7 +82,7 @@ public class GithubPackagesArtifactTaskHelper {
               .errorCode(ErrorCode.INVALID_ARGUMENT)
               .build();
       }
-    } catch (DockerHubServerRuntimeException ex) {
+    } catch (GithubPackagesServerRuntimeException ex) {
       if (GlobalContextManager.get(MdcGlobalContextData.MDC_ID) == null) {
         MdcGlobalContextData mdcGlobalContextData = MdcGlobalContextData.builder().map(new HashMap<>()).build();
         GlobalContextManager.upsertGlobalContextRecord(mdcGlobalContextData);
