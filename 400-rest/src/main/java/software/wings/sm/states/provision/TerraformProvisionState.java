@@ -1357,7 +1357,7 @@ public abstract class TerraformProvisionState extends State {
   private Map<String, String> extractBackendConfigs(ExecutionContext context, FileMetadata fileMetadata) {
     Map<String, Object> rawBackendConfigs = null;
     if (featureFlagService.isEnabled(TERRAFORM_REMOTE_BACKEND_CONFIG, context.getAccountId())) {
-      if (LOCAL_STORE_TYPE.equals(getBackendConfig().getStoreType())) {
+      if (getBackendConfig() != null && LOCAL_STORE_TYPE.equals(getBackendConfig().getStoreType())) {
         rawBackendConfigs = (Map<String, Object>) fileMetadata.getMetadata().get(BACKEND_CONFIG_KEY);
       }
     } else {

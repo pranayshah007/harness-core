@@ -18,6 +18,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.joor.Reflect.on;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.times;
@@ -76,6 +77,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
+import org.mockito.Spy;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.domain.Page;
@@ -87,7 +89,7 @@ import org.springframework.data.mongodb.core.query.Query;
 @OwnedBy(PIPELINE)
 public class PMSInputSetServiceImplTest extends PipelineServiceTestBase {
   @Inject PMSInputSetServiceImpl pmsInputSetService;
-  @InjectMocks PMSInputSetServiceImpl pmsInputSetServiceMock;
+  @Spy @InjectMocks PMSInputSetServiceImpl pmsInputSetServiceMock;
   @Mock private PMSInputSetRepository inputSetRepository;
   @Mock private GitSyncSdkService gitSyncSdkService;
   @Mock private GitAwareEntityHelper gitAwareEntityHelper;
@@ -382,6 +384,7 @@ public class PMSInputSetServiceImplTest extends PipelineServiceTestBase {
   @Test
   @Owner(developers = NAMAN)
   @Category(UnitTests.class)
+  @Deprecated
   public void testImportInputSetFromRemote() {
     String identifier = "input1";
     String name = "this name";
@@ -392,8 +395,12 @@ public class PMSInputSetServiceImplTest extends PipelineServiceTestBase {
     InputSetImportRequestDTO inputSetImportRequest =
         InputSetImportRequestDTO.builder().inputSetName(name).inputSetDescription(description).build();
     doReturn(inputSetEntity).when(inputSetRepository).saveForImportedYAML(inBetweenEntity);
+    doNothing().when(gitAwareEntityHelper).checkRootFolder();
+    doReturn("repoUrl")
+        .when(pmsInputSetServiceMock)
+        .getRepoUrlAndCheckForFileUniqueness(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, false);
     InputSetEntity savedEntity = pmsInputSetServiceMock.importInputSetFromRemote(
-        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, pipelineIdentifier, identifier, inputSetImportRequest);
+        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, pipelineIdentifier, identifier, inputSetImportRequest, true);
     assertThat(savedEntity).isEqualTo(inputSetEntity);
   }
 

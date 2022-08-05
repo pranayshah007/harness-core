@@ -108,16 +108,12 @@ public class GithubApiClient implements GitApiClient {
           gitApiURL, token, gitApiTaskParams.getOwner(), gitApiTaskParams.getRepo(), gitApiTaskParams.getPrNumber());
       if (mergePRResponse != null) {
         responseBuilder.commandExecutionStatus(CommandExecutionStatus.SUCCESS)
-            .gitApiResult(GitApiMergePRTaskResponse.builder()
-                              .sha(mergePRResponse.get("sha").toString())
-                              .merged(Boolean.parseBoolean(mergePRResponse.get("merged").toString()))
-                              .message(mergePRResponse.get("message").toString())
-                              .build());
+            .gitApiResult(GitApiMergePRTaskResponse.builder().sha(mergePRResponse.get("sha").toString()).build());
       } else {
         responseBuilder.commandExecutionStatus(FAILURE).errorMessage("Merging PR encountered a problem");
       }
     } catch (Exception e) {
-      log.error(new StringBuilder("failed while merging PR using connector: ")
+      log.error(new StringBuilder("Failed while merging PR using connector: ")
                     .append(gitConnector.getIdentifier())
                     .toString(),
           e);

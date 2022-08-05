@@ -7,6 +7,9 @@
 
 package io.harness.cvng.core.utils.monitoredService;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+
 import io.harness.cvng.core.beans.HealthSourceMetricDefinition.AnalysisDTO;
 import io.harness.cvng.core.beans.HealthSourceMetricDefinition.AnalysisDTO.DeploymentVerificationDTO;
 import io.harness.cvng.core.beans.HealthSourceMetricDefinition.AnalysisDTO.LiveMonitoringDTO;
@@ -15,10 +18,13 @@ import io.harness.cvng.core.beans.RiskProfile;
 import io.harness.cvng.core.beans.monitoredService.TimeSeriesMetricPackDTO;
 import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.AppDynamicsHealthSourceSpec;
 import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.AppDynamicsHealthSourceSpec.AppDMetricDefinitions;
+import io.harness.cvng.core.constant.MonitoredServiceConstants;
 import io.harness.cvng.core.entities.AppDynamicsCVConfig;
 
 import com.google.common.base.Preconditions;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.commons.collections4.CollectionUtils;
 
@@ -69,15 +75,25 @@ public class AppDynamicsHealthSourceSpecTransformer
                   .build();
             }))
             .collect(Collectors.toList());
+    Set<TimeSeriesMetricPackDTO> metricPacks = new HashSet<>();
+    cvConfigs.forEach(appDynamicsCVConfig -> {
+      String identifier = appDynamicsCVConfig.getMetricPack().getIdentifier();
+      List<TimeSeriesMetricPackDTO.MetricThreshold> metricThresholds = appDynamicsCVConfig.getMetricThresholdDTOs();
+      if (isNotEmpty(metricThresholds)) {
+        metricThresholds.forEach(metricThreshold -> metricThreshold.setMetricType(identifier));
+      }
+      if (!(MonitoredServiceConstants.CUSTOM_METRIC_PACK.equals(identifier) && isEmpty(metricThresholds))) {
+        metricPacks.add(
+            TimeSeriesMetricPackDTO.builder().identifier(identifier).metricThresholds(metricThresholds).build());
+      }
+    });
+
     return AppDynamicsHealthSourceSpec.builder()
         .applicationName(cvConfigs.get(0).getApplicationName())
         .connectorRef(cvConfigs.get(0).getConnectorIdentifier())
         .tierName(cvConfigs.get(0).getTierName())
         .feature(cvConfigs.get(0).getProductName())
-        .metricPacks(cvConfigs.stream()
-                         .filter(cv -> CollectionUtils.isEmpty(cv.getMetricInfos()))
-                         .map(cv -> TimeSeriesMetricPackDTO.toMetricPackDTO(cv.getMetricPack()))
-                         .collect(Collectors.toSet()))
+        .metricPacks(metricPacks)
         .metricDefinitions(metricDefinitions)
         .build();
   }

@@ -26,11 +26,14 @@ import io.harness.iterator.PersistenceIterator;
 import io.harness.logstreaming.ILogStreamingStepClient;
 import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.gitsync.PmsGitSyncHelper;
 import io.harness.pms.plan.execution.SetupAbstractionKeys;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 import io.harness.serializer.KryoSerializer;
+import io.harness.steps.StepHelper;
+import io.harness.steps.StepUtils;
 import io.harness.steps.approval.step.ApprovalInstanceService;
 import io.harness.steps.approval.step.beans.ApprovalType;
 import io.harness.steps.approval.step.custom.entities.CustomApprovalInstance;
@@ -47,6 +50,8 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 
 @OwnedBy(HarnessTeam.CDC)
@@ -62,6 +67,7 @@ public class CustomApprovalHelperServiceTest extends CategoryTest {
   @Mock private ApprovalInstanceService approvalInstanceService;
   private ILogStreamingStepClient logStreamingStepClient;
   @InjectMocks private CustomApprovalHelperServiceImpl customApprovalHelperService;
+  @Mock private StepHelper stepHelper;
 
   @Before
   public void setup() {
@@ -89,10 +95,14 @@ public class CustomApprovalHelperServiceTest extends CategoryTest {
     when(shellScriptHelperService.buildShellScriptTaskParametersNG(any(), any()))
         .thenReturn(ShellScriptTaskParametersNG.builder().build());
     when(ngDelegate2TaskExecutor.queueTask(any(), any(), eq(Duration.ofSeconds(0)))).thenReturn("__TASK_ID__");
-    customApprovalHelperService.handlePollingEvent(null, instance);
-    verify(approvalInstanceService, never()).resetNextIterations(any(), any());
-    verify(ngDelegate2TaskExecutor).queueTask(any(), any(), eq(Duration.ofSeconds(0)));
-    verify(waitNotifyEngine).waitForAllOn(any(), any(), any());
+    try (MockedStatic<StepUtils> aStatic = Mockito.mockStatic(StepUtils.class)) {
+      aStatic.when(() -> StepUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any(), any()))
+          .thenReturn(TaskRequest.newBuilder().build());
+      customApprovalHelperService.handlePollingEvent(null, instance);
+      verify(approvalInstanceService, never()).resetNextIterations(any(), any());
+      verify(ngDelegate2TaskExecutor).queueTask(any(), any(), eq(Duration.ofSeconds(0)));
+      verify(waitNotifyEngine).waitForAllOn(any(), any(), any());
+    }
   }
 
   @Test
@@ -118,10 +128,14 @@ public class CustomApprovalHelperServiceTest extends CategoryTest {
     when(ngDelegate2TaskExecutor.queueTask(any(), any(), eq(Duration.ofSeconds(0)))).thenReturn("__TASK_ID__");
     when(ngDelegate2TaskExecutor.queueTask(any(), any(), eq(Duration.ofSeconds(0))))
         .thenThrow(new IllegalStateException());
-    customApprovalHelperService.handlePollingEvent(iterator, instance);
-    verify(approvalInstanceService).resetNextIterations(any(), any());
-    verify(iterator).wakeup();
-    verify(ngDelegate2TaskExecutor).queueTask(any(), any(), eq(Duration.ofSeconds(0)));
-    verify(waitNotifyEngine, never()).waitForAllOn(any(), any(), any());
+    try (MockedStatic<StepUtils> aStatic = Mockito.mockStatic(StepUtils.class)) {
+      aStatic.when(() -> StepUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any(), any()))
+          .thenReturn(TaskRequest.newBuilder().build());
+      customApprovalHelperService.handlePollingEvent(iterator, instance);
+      verify(approvalInstanceService).resetNextIterations(any(), any());
+      verify(iterator).wakeup();
+      verify(ngDelegate2TaskExecutor).queueTask(any(), any(), eq(Duration.ofSeconds(0)));
+      verify(waitNotifyEngine, never()).waitForAllOn(any(), any(), any());
+    }
   }
 }

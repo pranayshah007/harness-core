@@ -126,6 +126,8 @@ featureFlagConfig:
   featureFlagSystem: LOCAL
   syncFeaturesToCF: false
 
+deploymentClusterName: ""
+
 gcpConfig:
   gcpProjectId: gcpProjectIdPlaceHolder
   gcpAwsConnectorCrudPubSubTopic: "ce-aws-connector-crud"

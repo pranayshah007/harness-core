@@ -87,10 +87,11 @@ public class X509KeyManagerBuilderTest extends CategoryTest {
 
     assertThat(manager).isNotNull();
 
-    PrivateKey pk = manager.getPrivateKey(CLIENT_CERT_ALIAS_0);
+    String fullAlias0 = this.getFirstFullAlias(manager, CLIENT_CERT_ALIAS_0);
+    PrivateKey pk = manager.getPrivateKey(fullAlias0);
     assertThat(pk).isNotNull();
 
-    X509Certificate[] certs = manager.getCertificateChain(CLIENT_CERT_ALIAS_0);
+    X509Certificate[] certs = manager.getCertificateChain(fullAlias0);
     assertThat(certs).isNotNull();
     assertThat(certs.length).isEqualTo(1);
     assertThat(DatatypeConverter.printHexBinary(MessageDigest.getInstance("SHA-256").digest(certs[0].getEncoded())))
@@ -111,10 +112,11 @@ public class X509KeyManagerBuilderTest extends CategoryTest {
 
     assertThat(manager).isNotNull();
 
-    PrivateKey pk = manager.getPrivateKey(CLIENT_CERT_ALIAS_0);
+    String fullAlias0 = this.getFirstFullAlias(manager, CLIENT_CERT_ALIAS_0);
+    PrivateKey pk = manager.getPrivateKey(fullAlias0);
     assertThat(pk).isNotNull();
 
-    X509Certificate[] certs = manager.getCertificateChain(CLIENT_CERT_ALIAS_0);
+    X509Certificate[] certs = manager.getCertificateChain(fullAlias0);
     assertThat(certs).isNotNull();
     assertThat(certs.length).isEqualTo(2);
     X509Certificate clientCert = certs[0];
@@ -149,17 +151,19 @@ public class X509KeyManagerBuilderTest extends CategoryTest {
     X509KeyManager manager = builder.build();
     assertThat(manager).isNotNull();
 
-    PrivateKey pk0 = manager.getPrivateKey(CLIENT_CERT_ALIAS_0);
+    String fullAlias0 = this.getFirstFullAlias(manager, CLIENT_CERT_ALIAS_0);
+    PrivateKey pk0 = manager.getPrivateKey(fullAlias0);
     assertThat(pk0).isNotNull();
 
-    PrivateKey pk1 = manager.getPrivateKey(CLIENT_CERT_ALIAS_1);
+    String fullAlias1 = this.getFirstFullAlias(manager, CLIENT_CERT_ALIAS_1);
+    PrivateKey pk1 = manager.getPrivateKey(fullAlias1);
     assertThat(pk1).isNotNull();
 
-    X509Certificate[] certs0 = manager.getCertificateChain(CLIENT_CERT_ALIAS_0);
+    X509Certificate[] certs0 = manager.getCertificateChain(fullAlias0);
     assertThat(certs0).isNotNull();
     assertThat(certs0.length).isEqualTo(1);
 
-    X509Certificate[] certs1 = manager.getCertificateChain(CLIENT_CERT_ALIAS_1);
+    X509Certificate[] certs1 = manager.getCertificateChain(fullAlias1);
     assertThat(certs1).isNotNull();
     assertThat(certs1.length).isEqualTo(2);
   }
@@ -401,5 +405,28 @@ public class X509KeyManagerBuilderTest extends CategoryTest {
 
     X509KeyManagerBuilder builder = new X509KeyManagerBuilder(mockFileReader);
     builder.withClientCertificateFromFile(FILE_PATH_CERT, FILE_PATH_KEY).build();
+  }
+
+  /**
+   * Returns the full alias of the first cert entry that matches the keystore alias.
+   * Assumption:
+   *    No keystore alias uses a dot.
+   * @param manager the manager.
+   * @param aliasInKeystore the alias to look for.
+   * @return the full alias.
+   * @throws Exception if nothing is found.
+   */
+  private String getFirstFullAlias(X509KeyManager manager, String aliasInKeystore) throws Exception {
+    String[] allFullAliases = manager.getClientAliases("RSA", null);
+    if (allFullAliases != null) {
+      String searchString = "." + aliasInKeystore;
+      for (String fullAlias : allFullAliases) {
+        if (fullAlias != null && fullAlias.endsWith(searchString)) {
+          return fullAlias;
+        }
+      }
+    }
+
+    throw new Exception(String.format("No entry with keystore alias '%s' found", aliasInKeystore));
   }
 }

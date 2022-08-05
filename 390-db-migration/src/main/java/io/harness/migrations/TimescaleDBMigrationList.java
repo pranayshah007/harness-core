@@ -29,7 +29,6 @@ import io.harness.migrations.timescaledb.AddMaxUtilColumns;
 import io.harness.migrations.timescaledb.AddNewIndexToAnomalies;
 import io.harness.migrations.timescaledb.AddNewentityToAnomalies;
 import io.harness.migrations.timescaledb.AddNonComputeCostColumnToBillingData;
-import io.harness.migrations.timescaledb.AddParentPipelineToDeployment;
 import io.harness.migrations.timescaledb.AddPercentagesToCostEvents;
 import io.harness.migrations.timescaledb.AddRequestColumnToBillingData;
 import io.harness.migrations.timescaledb.AddRollbackToDeployment;
@@ -156,8 +155,7 @@ public class TimescaleDBMigrationList {
         .add(Pair.of(65, CreateUserTable.class))
         .add(Pair.of(66, CreateCloudProviderTable.class))
         .add(Pair.of(67, AddAzureColumnAnomaly.class))
-        .add(Pair.of(68, AddParentPipelineToDeployment.class))
-        .add(Pair.of(69, AddFailureDetailsToDeployment.class))
+        .add(Pair.of(68, AddFailureDetailsToDeployment.class))
         .build();
   }
 }

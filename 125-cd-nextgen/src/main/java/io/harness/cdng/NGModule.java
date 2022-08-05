@@ -35,6 +35,8 @@ import io.harness.cdng.envGroup.mappers.EnvironmentGroupFilterPropertiesMapper;
 import io.harness.cdng.envGroup.services.EnvironmentGroupService;
 import io.harness.cdng.envGroup.services.EnvironmentGroupServiceImpl;
 import io.harness.cdng.environment.EnvironmentFilterPropertiesMapper;
+import io.harness.cdng.execution.service.StageExecutionInfoService;
+import io.harness.cdng.execution.service.StageExecutionInfoServiceImpl;
 import io.harness.cdng.gitops.ClusterServiceImpl;
 import io.harness.cdng.gitops.service.ClusterService;
 import io.harness.cdng.instance.info.InstanceInfoService;
@@ -131,6 +133,7 @@ public class NGModule extends AbstractModule {
                 .setPriority(Thread.NORM_PRIORITY)
                 .build()));
     bind(RollbackDataService.class).to(RollbackDataServiceImpl.class);
+    bind(StageExecutionInfoService.class).to(StageExecutionInfoServiceImpl.class);
 
     MapBinder<String, FilterPropertiesMapper> filterPropertiesMapper =
         MapBinder.newMapBinder(binder(), String.class, FilterPropertiesMapper.class);

@@ -49,4 +49,14 @@ public class VaultEntityToDTOTest extends CategoryTest {
     assertNotNull(vaultConnectorDTO);
     assertThat(vaultConnectorDTO.getK8sAuthEndpoint()).isEqualTo("kubernetes");
   }
+
+  @Test
+  @Owner(developers = VIKAS_M)
+  @Category(UnitTests.class)
+  public void testConnector_ExistingVaultWithoutThisUseK8sAuthField() {
+    VaultConnector vaultConnector = VaultConnector.builder().vaultUrl(vaultURL).useK8sAuth(null).build();
+    VaultConnectorDTO vaultConnectorDTO = vaultEntityToDTO.createConnectorDTO(vaultConnector);
+    assertNotNull(vaultConnectorDTO);
+    assertThat(vaultConnectorDTO.getK8sAuthEndpoint()).isNull();
+  }
 }

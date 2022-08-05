@@ -1018,8 +1018,8 @@ public class ContainerInstanceHandler extends InstanceHandler implements Instanc
   }
 
   @Override
-  public FeatureName getFeatureFlagToStopIteratorBasedInstanceSync() {
-    return STOP_INSTANCE_SYNC_VIA_ITERATOR_FOR_CONTAINER_DEPLOYMENTS;
+  public Optional<FeatureName> getFeatureFlagToStopIteratorBasedInstanceSync() {
+    return Optional.of(STOP_INSTANCE_SYNC_VIA_ITERATOR_FOR_CONTAINER_DEPLOYMENTS);
   }
 
   private void validateDeploymentInfos(List<DeploymentSummary> deploymentSummaries) {
@@ -1543,8 +1543,8 @@ public class ContainerInstanceHandler extends InstanceHandler implements Instanc
   }
 
   @Override
-  public FeatureName getFeatureFlagToEnablePerpetualTaskForInstanceSync() {
-    return FeatureName.MOVE_CONTAINER_INSTANCE_SYNC_TO_PERPETUAL_TASK;
+  public Optional<FeatureName> getFeatureFlagToEnablePerpetualTaskForInstanceSync() {
+    return Optional.of(FeatureName.MOVE_CONTAINER_INSTANCE_SYNC_TO_PERPETUAL_TASK);
   }
 
   @Override

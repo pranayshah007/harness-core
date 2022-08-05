@@ -88,6 +88,8 @@ replace_key_value ceAzureSetupConfig.enableFileCheckAtSource "$AZURE_ENABLE_FILE
 
 replace_key_value ceGcpSetupConfig.enableServiceAccountPermissionsCheck "$GCP_ENABLE_SERVICE_ACCOUNT_PERMISSIONS_CHECK"
 
+replace_key_value deploymentClusterName "$DEPLOYMENT_CLUSTER_NAME"
+
 replace_key_value awsConfig.accessKey "$AWS_ACCESS_KEY"
 replace_key_value awsConfig.secretKey "$AWS_SECRET_KEY"
 replace_key_value awsConfig.destinationBucket "$AWS_DESTINATION_BUCKET"

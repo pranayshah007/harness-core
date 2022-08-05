@@ -8,6 +8,7 @@
 package io.harness.delegate.task.shell.winrm;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
@@ -25,6 +26,6 @@ public class WinRmCleanupCommandHandler implements CommandHandler {
   @Override
   public CommandExecutionStatus handle(CommandTaskParameters parameters, NgCommandUnit commandUnit,
       ILogStreamingTaskClient logStreamingTaskClient, CommandUnitsProgress commandUnitsProgress) {
-    return CommandExecutionStatus.SUCCESS;
+    return SUCCESS;
   }
 }

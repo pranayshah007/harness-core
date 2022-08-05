@@ -96,7 +96,8 @@ public class InstanceSyncServiceImpl implements InstanceSyncService {
                  InstanceSyncConstants.INSTANCE_SYNC_LOCK_TIMEOUT, InstanceSyncConstants.INSTANCE_SYNC_WAIT_TIMEOUT)) {
           AbstractInstanceSyncHandler abstractInstanceSyncHandler =
               instanceSyncHandlerFactoryService.getInstanceSyncHandler(
-                  deploymentSummaryDTO.getDeploymentInfoDTO().getType());
+                  deploymentSummaryDTO.getDeploymentInfoDTO().getType(),
+                  infrastructureMappingDTO.getInfrastructureKind());
           // check if existing instance sync perpetual task info record exists or not for incoming infrastructure
           // mapping
           Optional<InstanceSyncPerpetualTaskInfoDTO> instanceSyncPerpetualTaskInfoDTOOptional =
@@ -139,8 +140,12 @@ public class InstanceSyncServiceImpl implements InstanceSyncService {
             }
           }
 
+          deploymentSummaryDTO.setServerInstanceInfoList(
+              abstractInstanceSyncHandler.refreshServerInstanceInfo(deploymentSummaryDTO.getServerInstanceInfoList(),
+                  instanceSyncPerpetualTaskInfoDTO.getDeploymentInfoDetailsDTOList()));
           InstanceSyncLocalCacheManager.setDeploymentSummary(
               deploymentSummaryDTO.getInstanceSyncKey(), deploymentSummaryDTO);
+
           // Sync only for deployment infos / instance sync handler keys from instances from server
           performInstanceSync(instanceSyncPerpetualTaskInfoDTO, infrastructureMappingDTO,
               deploymentSummaryDTO.getServerInstanceInfoList(), abstractInstanceSyncHandler, true);
@@ -207,7 +212,8 @@ public class InstanceSyncServiceImpl implements InstanceSyncService {
                     + instanceSyncPerpetualTaskInfoDTO.getInfrastructureMappingId(),
                 InstanceSyncConstants.INSTANCE_SYNC_LOCK_TIMEOUT, InstanceSyncConstants.INSTANCE_SYNC_WAIT_TIMEOUT)) {
           AbstractInstanceSyncHandler instanceSyncHandler = instanceSyncHandlerFactoryService.getInstanceSyncHandler(
-              instanceSyncPerpetualTaskResponse.getDeploymentType());
+              instanceSyncPerpetualTaskResponse.getDeploymentType(),
+              infrastructureMappingDTO.get().getInfrastructureKind());
           performInstanceSync(instanceSyncPerpetualTaskInfoDTO, infrastructureMappingDTO.get(),
               instanceSyncPerpetualTaskResponse.getServerInstanceDetails(), instanceSyncHandler, false);
           log.info("Instance Sync completed");

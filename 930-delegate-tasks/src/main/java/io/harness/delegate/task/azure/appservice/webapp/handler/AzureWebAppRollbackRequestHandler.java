@@ -8,6 +8,7 @@
 package io.harness.delegate.task.azure.appservice.webapp.handler;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.azure.model.AzureConstants.DEPLOYMENT_SLOT_PRODUCTION_NAME;
 import static io.harness.azure.model.AzureConstants.DEPLOY_TO_SLOT;
 import static io.harness.azure.model.AzureConstants.NO_TRAFFIC_SHIFT_REQUIRED;
 import static io.harness.azure.model.AzureConstants.SLOT_TRAFFIC_PERCENTAGE;
@@ -165,6 +166,7 @@ public class AzureWebAppRollbackRequestHandler extends AzureWebAppRequestHandler
         .startupCommand(preDeploymentData.getStartupCommand())
         .steadyStateTimeoutInMin(
             azureAppServiceResourceUtilities.getTimeoutIntervalInMin(taskRequest.getTimeoutIntervalInMin()))
+        .isBasicDeployment(DEPLOYMENT_SLOT_PRODUCTION_NAME.equalsIgnoreCase(preDeploymentData.getSlotName()))
         .build();
   }
 
@@ -184,7 +186,7 @@ public class AzureWebAppRollbackRequestHandler extends AzureWebAppRequestHandler
     rollbackSetupSlot(taskRequest, deploymentContext);
     double slotTrafficWeight =
         azureAppServiceService.getSlotTrafficWeight(azureWebClientContext, deploymentContext.getSlotName());
-    if (slotTrafficWeight != preDeploymentData.getTrafficWeight()) {
+    if (slotTrafficWeight != preDeploymentData.getTrafficWeight() && !deploymentContext.isBasicDeployment()) {
       rollbackUpdateSlotTrafficWeight(preDeploymentData, azureWebClientContext, logCallbackProvider);
     } else {
       LogCallback rerouteTrafficLogCallback = logCallbackProvider.obtainLogCallback(SLOT_TRAFFIC_PERCENTAGE);

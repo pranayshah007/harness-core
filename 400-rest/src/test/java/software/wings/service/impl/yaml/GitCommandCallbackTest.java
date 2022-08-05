@@ -34,10 +34,12 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import io.harness.CategoryTest;
+import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.eraro.ErrorCode;
+import io.harness.ff.FeatureFlagService;
 import io.harness.git.model.ChangeType;
 import io.harness.rule.Owner;
 import io.harness.tasks.ResponseData;
@@ -91,6 +93,7 @@ public class GitCommandCallbackTest extends CategoryTest {
   @Mock private GitSyncErrorService gitSyncErrorService;
   @Mock private GitSyncService gitSyncService;
   @Mock private GitChangeSetHandler gitChangeSetHandler;
+  @Mock private FeatureFlagService featureFlagService;
 
   @InjectMocks
   private GitCommandCallback commandCallback = new GitCommandCallback(
@@ -332,7 +335,7 @@ public class GitCommandCallbackTest extends CategoryTest {
                                                   .gitCommandStatus(GitCommandStatus.FAILURE)
                                                   .errorCode(ErrorCode.GIT_UNSEEN_REMOTE_HEAD_COMMIT)
                                                   .build();
-
+    doReturn(false).when(featureFlagService).isEnabled(eq(FeatureName.CG_GIT_POLLING), any());
     Map<String, Supplier<ResponseData>> map = new HashMap<>();
     map.put("key", () -> notifyResponseData);
     commandCallback.notify(map);

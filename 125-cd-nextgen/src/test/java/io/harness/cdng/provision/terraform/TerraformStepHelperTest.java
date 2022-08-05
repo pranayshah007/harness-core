@@ -37,7 +37,6 @@ import static org.powermock.api.mockito.PowerMockito.doReturn;
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
@@ -84,7 +83,6 @@ import io.harness.ng.core.dto.secrets.SSHKeySpecDTO;
 import io.harness.persistence.HPersistence;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.steps.StepCategory;
-import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.data.ExecutionSweepingOutput;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
@@ -213,10 +211,6 @@ public class TerraformStepHelperTest extends CategoryTest {
             .folderPath(ParameterField.createValueField("Config/"))
             .connectoref(ParameterField.createValueField("terraform"))
             .build();
-
-    Mockito.doReturn(true)
-        .when(cdFeatureFlagHelper)
-        .isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.TF_MODULE_SOURCE_INHERIT_SSH);
 
     TerraformPlanStepParameters planStepParameters = TerraformStepDataGenerator.generateStepPlanWithVarFiles(
         StoreConfigType.GITHUB, null, gitStoreConfigFiles, null, true);

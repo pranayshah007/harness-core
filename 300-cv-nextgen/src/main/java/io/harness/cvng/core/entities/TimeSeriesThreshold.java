@@ -28,6 +28,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.google.common.collect.ImmutableList;
 import java.util.List;
+import java.util.Objects;
 import javax.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -75,6 +76,13 @@ public final class TimeSeriesThreshold
   @NotNull private TimeSeriesThresholdActionType action;
   @NotNull private TimeSeriesThresholdCriteria criteria;
   private ThresholdConfigType thresholdConfigType;
+
+  public ThresholdConfigType getThresholdConfigType() {
+    if (Objects.isNull(thresholdConfigType)) {
+      return ThresholdConfigType.DEFAULT;
+    }
+    return thresholdConfigType;
+  }
 
   public TimeSeriesThresholdDTO toDTO() {
     return TimeSeriesThresholdDTO.builder()

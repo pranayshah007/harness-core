@@ -7,9 +7,6 @@
 
 package io.harness.delegate.task.shell.ssh;
 
-import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.EMPTY_ARTIFACT_PATH;
-import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.EMPTY_ARTIFACT_PATH_EXPLANATION;
-import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.EMPTY_ARTIFACT_PATH_HINT;
 import static io.harness.logging.LogLevel.ERROR;
 
 import static software.wings.beans.LogColor.White;
@@ -23,9 +20,8 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.artifact.ArtifactMetadataKeys;
 import io.harness.artifactory.ArtifactoryConfigRequest;
 import io.harness.artifactory.ArtifactoryNgService;
-import io.harness.data.structure.EmptyPredicate;
-import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryConnectorDTO;
 import io.harness.delegate.task.artifactory.ArtifactoryRequestMapper;
+import io.harness.delegate.task.shell.ArtifactoryUtils;
 import io.harness.delegate.task.ssh.artifact.ArtifactoryArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.SshWinRmArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.exception.SshExceptionConstants;
@@ -66,8 +62,8 @@ public class ArtifactoryCommandUnitHandler extends ArtifactCommandUnitHandler {
   public InputStream downloadFromRemoteRepo(SshExecutorFactoryContext context, LogCallback logCallback)
       throws IOException {
     ArtifactoryArtifactDelegateConfig artifactoryArtifactConfig = getArtifactoryArtifactDelegateConfig(context);
-    ArtifactoryConfigRequest artifactoryConfigRequest =
-        getArtifactConfigRequest(artifactoryArtifactConfig, logCallback);
+    ArtifactoryConfigRequest artifactoryConfigRequest = ArtifactoryUtils.getArtifactConfigRequest(
+        artifactoryArtifactConfig, logCallback, secretDecryptionService, artifactoryRequestMapper);
     Map<String, String> artifactMetadata = context.getArtifactMetadata();
     String artifactPath =
         Paths.get(artifactoryArtifactConfig.getRepositoryName(), artifactoryArtifactConfig.getArtifactPath())
@@ -101,8 +97,8 @@ public class ArtifactoryCommandUnitHandler extends ArtifactCommandUnitHandler {
   @Override
   public Long getArtifactSize(SshExecutorFactoryContext context, LogCallback logCallback) {
     ArtifactoryArtifactDelegateConfig artifactoryArtifactConfig = getArtifactoryArtifactDelegateConfig(context);
-    ArtifactoryConfigRequest artifactoryConfigRequest =
-        getArtifactConfigRequest(artifactoryArtifactConfig, logCallback);
+    ArtifactoryConfigRequest artifactoryConfigRequest = ArtifactoryUtils.getArtifactConfigRequest(
+        artifactoryArtifactConfig, logCallback, secretDecryptionService, artifactoryRequestMapper);
     Map<String, String> artifactMetadata = context.getArtifactMetadata();
     String artifactPath =
         Paths.get(artifactoryArtifactConfig.getRepositoryName(), artifactoryArtifactConfig.getArtifactPath())
@@ -122,24 +118,5 @@ public class ArtifactoryCommandUnitHandler extends ArtifactCommandUnitHandler {
     }
 
     return (ArtifactoryArtifactDelegateConfig) artifactDelegateConfig;
-  }
-
-  private ArtifactoryConfigRequest getArtifactConfigRequest(
-      ArtifactoryArtifactDelegateConfig artifactoryArtifactConfig, LogCallback logCallback) {
-    if (EmptyPredicate.isEmpty(artifactoryArtifactConfig.getArtifactPath())) {
-      logCallback.saveExecutionLog(
-          "artifactPath or artifactPathFilter is blank", ERROR, CommandExecutionStatus.FAILURE);
-      throw NestedExceptionUtils.hintWithExplanationException(EMPTY_ARTIFACT_PATH_HINT,
-          format(EMPTY_ARTIFACT_PATH_EXPLANATION, artifactoryArtifactConfig.getIdentifier()),
-          new SshCommandExecutionException(EMPTY_ARTIFACT_PATH));
-    }
-    ArtifactoryConnectorDTO artifactoryConnectorDTO =
-        (ArtifactoryConnectorDTO) artifactoryArtifactConfig.getConnectorDTO().getConnectorConfig();
-    secretDecryptionService.decrypt(
-        artifactoryConnectorDTO.getAuth().getCredentials(), artifactoryArtifactConfig.getEncryptedDataDetails());
-    ExceptionMessageSanitizer.storeAllSecretsForSanitizing(
-        artifactoryConnectorDTO, artifactoryArtifactConfig.getEncryptedDataDetails());
-
-    return artifactoryRequestMapper.toArtifactoryRequest(artifactoryConnectorDTO);
   }
 }

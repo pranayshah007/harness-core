@@ -8,6 +8,7 @@
 package io.harness.delegate.task.azure.appservice.webapp.handler;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.azure.model.AzureConstants.DEPLOYMENT_SLOT_PRODUCTION_NAME;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.azure.context.AzureWebClientContext;
@@ -73,6 +74,7 @@ public abstract class AbstractSlotDataRequestHandler<T extends AbstractSlotDataR
         .imagePathAndTag(imagePathAndTag)
         .steadyStateTimeoutInMin(azureResourceUtilities.getTimeoutIntervalInMin(taskRequest.getTimeoutIntervalInMin()))
         .skipTargetSlotValidation(true)
+        .isBasicDeployment(DEPLOYMENT_SLOT_PRODUCTION_NAME.equalsIgnoreCase(infrastructure.getDeploymentSlot()))
         .build();
   }
 
@@ -106,6 +108,8 @@ public abstract class AbstractSlotDataRequestHandler<T extends AbstractSlotDataR
         .artifactType(artifactResponse != null ? artifactResponse.getArtifactType() : ArtifactType.ZIP)
         .steadyStateTimeoutInMin(azureResourceUtilities.getTimeoutIntervalInMin(taskRequest.getTimeoutIntervalInMin()))
         .skipTargetSlotValidation(true)
+        .isBasicDeployment(
+            DEPLOYMENT_SLOT_PRODUCTION_NAME.equalsIgnoreCase(taskRequest.getInfrastructure().getDeploymentSlot()))
         .build();
   }
 }

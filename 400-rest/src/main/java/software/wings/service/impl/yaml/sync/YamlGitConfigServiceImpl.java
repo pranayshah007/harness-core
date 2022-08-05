@@ -42,8 +42,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import lombok.extern.slf4j.Slf4j;
 
 @Singleton
+@Slf4j
 public class YamlGitConfigServiceImpl implements YamlGitConfigService {
   @Inject private WingsPersistence wingsPersistence;
   @Inject private AppService appService;
@@ -160,5 +162,20 @@ public class YamlGitConfigServiceImpl implements YamlGitConfigService {
         .filter(YamlGitConfigKeys.accountId, accountId)
         .filter(YamlGitConfigKeys.appId, appId)
         .get();
+  }
+
+  @Override
+  public void deleteByAccountId(String accountId) {
+    boolean deleted = wingsPersistence.delete(
+        wingsPersistence.createQuery(YamlGitConfig.class).filter(YamlGitConfigKeys.accountId, accountId));
+
+    log.info("Deleted: [{}] yaml git config for account [{}]", deleted, accountId);
+  }
+
+  @Override
+  public void pruneByApplication(String appId) {
+    boolean deleted = wingsPersistence.delete(
+        wingsPersistence.createQuery(YamlGitConfig.class).filter(YamlGitConfigKeys.appId, appId));
+    log.info("Deleted: [{}] yaml git config for appid [{}]", deleted, appId);
   }
 }

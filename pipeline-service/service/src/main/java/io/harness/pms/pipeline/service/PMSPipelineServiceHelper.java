@@ -22,7 +22,7 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.data.structure.HarnessStringUtils;
 import io.harness.engine.GovernanceService;
 import io.harness.engine.governance.PolicyEvaluationFailureException;
-import io.harness.exception.GitYamlException;
+import io.harness.exception.DuplicateFileImportException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ngexception.InvalidFieldsDTO;
 import io.harness.exception.ngexception.beans.yamlschema.YamlSchemaErrorDTO;
@@ -448,7 +448,7 @@ public class PMSPipelineServiceHelper {
     } else if (isAlreadyImported(accountIdentifier, repoURL, gitEntityInfo.getFilePath())) {
       String error = "The Requested YAML with Pipeline Id: " + pipelineIdentifier + ", RepoURl: " + repoURL
           + ", FilePath: " + gitEntityInfo.getFilePath() + " has already been imported.";
-      throw new GitYamlException(error);
+      throw new DuplicateFileImportException(error);
     }
     return repoURL;
   }
@@ -456,14 +456,5 @@ public class PMSPipelineServiceHelper {
   private boolean isAlreadyImported(String accountIdentifier, String repoURL, String filePath) {
     Long totalInstancesOfYAML = pmsPipelineRepository.countFileInstances(accountIdentifier, repoURL, filePath);
     return totalInstancesOfYAML > 0;
-  }
-
-  public static void filePathCheck() {
-    GitEntityInfo gitEntityInfo = GitAwareContextHelper.getGitRequestParamsInfo();
-    String filePath = gitEntityInfo.getFilePath();
-    String key = GitAwareEntityHelper.HARNESS_FOLDER_EXTENSION_WITH_SEPARATOR;
-    if (!filePath.startsWith(key)) {
-      throw new InvalidRequestException("The Requested YAML path should begin with \".harness/\"");
-    }
   }
 }

@@ -50,7 +50,7 @@ public class GitopsInstanceSyncServiceImpl implements GitopsInstanceSyncService 
           instanceList.stream().collect(Collectors.groupingBy(InstanceDTO::getServiceIdentifier));
 
       final AbstractInstanceSyncHandler instanceSyncHandler =
-          instanceSyncHandlerFactoryService.getInstanceSyncHandler(ServiceSpecType.GITOPS);
+          instanceSyncHandlerFactoryService.getInstanceSyncHandler(ServiceSpecType.GITOPS, null);
 
       for (Map.Entry<String, List<InstanceDTO>> instanceDTOList : instancesGroupedByService.entrySet()) {
         List<InstanceDTO> instances = instanceDTOList.getValue();

@@ -60,5 +60,6 @@ public interface PMSInputSetService {
       String accountId, String orgIdentifier, String projectIdentifier, String pipelineIdentifier);
 
   InputSetEntity importInputSetFromRemote(String accountId, String orgIdentifier, String projectIdentifier,
-      String pipelineIdentifier, String inputSetIdentifier, InputSetImportRequestDTO inputSetImportRequestDTO);
+      String pipelineIdentifier, String inputSetIdentifier, InputSetImportRequestDTO inputSetImportRequestDTO,
+      boolean isForceImport);
 }

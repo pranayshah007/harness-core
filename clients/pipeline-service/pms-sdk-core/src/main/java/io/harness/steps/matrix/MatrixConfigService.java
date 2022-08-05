@@ -11,6 +11,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.InvalidYamlException;
 import io.harness.plancreator.strategy.AxisConfig;
 import io.harness.plancreator.strategy.ExcludeConfig;
+import io.harness.plancreator.strategy.ExpressionAxisConfig;
 import io.harness.plancreator.strategy.MatrixConfig;
 import io.harness.plancreator.strategy.StrategyConfig;
 import io.harness.plancreator.strategy.StrategyUtils;
@@ -29,6 +30,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Singleton
@@ -37,9 +39,9 @@ public class MatrixConfigService implements StrategyConfigService {
     MatrixConfig matrixConfig = (MatrixConfig) strategyConfig.getMatrixConfig();
     List<Map<String, String>> combinations = new ArrayList<>();
     List<List<Integer>> matrixMetadata = new ArrayList<>();
-    List<String> keys = new LinkedList<>(matrixConfig.getAxes().keySet());
+    List<String> keys = getKeys(matrixConfig);
 
-    fetchCombinations(new LinkedHashMap<>(), matrixConfig.getAxes(), combinations,
+    fetchCombinations(new LinkedHashMap<>(), matrixConfig.getAxes(), matrixConfig.getExpressionAxes(), combinations,
         ParameterField.isBlank(matrixConfig.getExclude()) ? null : matrixConfig.getExclude().getValue(), matrixMetadata,
         keys, 0, new LinkedList<>());
     List<ChildrenExecutableResponse.Child> children = new ArrayList<>();
@@ -71,9 +73,8 @@ public class MatrixConfigService implements StrategyConfigService {
     MatrixConfig matrixConfig = (MatrixConfig) strategyConfig.getMatrixConfig();
     List<Map<String, String>> combinations = new ArrayList<>();
     List<List<Integer>> matrixMetadata = new ArrayList<>();
-    List<String> keys = new LinkedList<>(matrixConfig.getAxes().keySet());
-
-    fetchCombinations(new LinkedHashMap<>(), matrixConfig.getAxes(), combinations,
+    List<String> keys = getKeys(matrixConfig);
+    fetchCombinations(new LinkedHashMap<>(), matrixConfig.getAxes(), matrixConfig.getExpressionAxes(), combinations,
         ParameterField.isBlank(matrixConfig.getExclude()) ? null : matrixConfig.getExclude().getValue(), matrixMetadata,
         keys, 0, new LinkedList<>());
     int totalCount = combinations.size();
@@ -104,6 +105,7 @@ public class MatrixConfigService implements StrategyConfigService {
    *
    * @param currentCombinationRef - Reference variable to store the current combination
    * @param axes - The axes defined in the yaml
+   * @param expressionAxes - The axes defined in the yaml
    * @param combinationsRef - The number of total combinations that are there till now
    * @param exclude - exclude as mentioned in the yaml
    * @param matrixMetadataRef - The metadata related to the combination number of values
@@ -113,12 +115,14 @@ public class MatrixConfigService implements StrategyConfigService {
    *     index
    */
   private void fetchCombinations(Map<String, String> currentCombinationRef, Map<String, AxisConfig> axes,
-      List<Map<String, String>> combinationsRef, List<ExcludeConfig> exclude, List<List<Integer>> matrixMetadataRef,
-      List<String> keys, int index, List<Integer> indexPath) {
-    if (exclude != null && exclude.contains(ExcludeConfig.builder().exclude(currentCombinationRef).build())) {
+      Map<String, ExpressionAxisConfig> expressionAxes, List<Map<String, String>> combinationsRef,
+      List<ExcludeConfig> exclude, List<List<Integer>> matrixMetadataRef, List<String> keys, int index,
+      List<Integer> indexPath) {
+    if (shouldExclude(exclude, currentCombinationRef)) {
       return;
     }
-    if (axes.size() == index) {
+    // This means we have traversed till the end therefore add it as part of matrix combination
+    if (keys.size() == index) {
       combinationsRef.add(new HashMap<>(currentCombinationRef));
       // Add the path we chose to compute the current combination.
       matrixMetadataRef.add(new ArrayList<>(indexPath));
@@ -126,7 +130,47 @@ public class MatrixConfigService implements StrategyConfigService {
     }
 
     String key = keys.get(index);
-    AxisConfig axisValues = axes.get(key);
+    /*
+     * There are 3 cases which can happen over here:
+     * 1. If a key is present in axes then we will treat value for this key as primitive
+     * 2.If a key is present in expressionAxes then it can be either the string or the object that is stored as value
+     */
+    if (axes.containsKey(key)) {
+      handleAxes(key, currentCombinationRef, axes, expressionAxes, combinationsRef, exclude, matrixMetadataRef, keys,
+          index, indexPath);
+    } else if (expressionAxes.containsKey(key)) {
+      handleExpression(key, currentCombinationRef, axes, expressionAxes, combinationsRef, exclude, matrixMetadataRef,
+          keys, index, indexPath);
+    }
+  }
+
+  private boolean shouldExclude(List<ExcludeConfig> exclude, Map<String, String> currentCombinationRef) {
+    if (exclude == null) {
+      return false;
+    }
+    for (ExcludeConfig excludeConfig : exclude) {
+      Set<String> excludeKeySet = excludeConfig.getExclude().keySet();
+      int count = 0;
+      for (String key : excludeKeySet) {
+        if (!currentCombinationRef.containsKey(key)) {
+          return false;
+        }
+        if (currentCombinationRef.get(key).equals(excludeConfig.getExclude().get(key))) {
+          count++;
+        }
+      }
+      if (count == excludeKeySet.size()) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  private void handleAxes(String key, Map<String, String> currentCombinationRef, Map<String, AxisConfig> primitiveAxes,
+      Map<String, ExpressionAxisConfig> expressionAxes, List<Map<String, String>> combinationsRef,
+      List<ExcludeConfig> exclude, List<List<Integer>> matrixMetadataRef, List<String> keys, int index,
+      List<Integer> indexPath) {
+    AxisConfig axisValues = primitiveAxes.get(key);
     int i = 0;
     // If value is null in one of the axis, then there are two cases:
     // Either null was provided at the start in the pipeline or an expression was present which we were not able to
@@ -137,11 +181,50 @@ public class MatrixConfigService implements StrategyConfigService {
     for (String value : axisValues.getAxisValue().getValue()) {
       currentCombinationRef.put(key, value);
       indexPath.add(i);
-      fetchCombinations(
-          currentCombinationRef, axes, combinationsRef, exclude, matrixMetadataRef, keys, index + 1, indexPath);
+      fetchCombinations(currentCombinationRef, primitiveAxes, expressionAxes, combinationsRef, exclude,
+          matrixMetadataRef, keys, index + 1, indexPath);
       currentCombinationRef.remove(key);
       indexPath.remove(indexPath.size() - 1);
       i++;
     }
+  }
+
+  private void handleExpression(String key, Map<String, String> currentCombinationRef, Map<String, AxisConfig> axes,
+      Map<String, ExpressionAxisConfig> expressionAxisConfigMap, List<Map<String, String>> combinationsRef,
+      List<ExcludeConfig> exclude, List<List<Integer>> matrixMetadataRef, List<String> keys, int index,
+      List<Integer> indexPath) {
+    ExpressionAxisConfig axisValues = expressionAxisConfigMap.get(key);
+    if (axisValues.getExpression().getValue() == null) {
+      throw new InvalidYamlException(
+          "Unable to resolve expression defined as value in matrix axis. Please ensure that the expression is correct");
+    }
+    Object value = axisValues.getExpression().getValue();
+    if (!(value instanceof List)) {
+      throw new InvalidYamlException(
+          "Expression provided did not resolve into a list of string/objects. Please ensure that expression is correct");
+    }
+
+    int i = 0;
+    for (Object val : (List<Object>) axisValues.getExpression()) {
+      if (val instanceof Map) {
+        currentCombinationRef.put(key, JsonUtils.asJson(val));
+      } else if (val instanceof String) {
+        currentCombinationRef.put(key, (String) val);
+      } else {
+        throw new InvalidRequestException("Either Map or String expected. Found unknown");
+      }
+      indexPath.add(i);
+      fetchCombinations(currentCombinationRef, axes, expressionAxisConfigMap, combinationsRef, exclude,
+          matrixMetadataRef, keys, index + 1, indexPath);
+      currentCombinationRef.remove(key);
+      indexPath.remove(indexPath.size() - 1);
+      i++;
+    }
+  }
+
+  private List<String> getKeys(MatrixConfig matrixConfig) {
+    List<String> keys = new LinkedList<>(matrixConfig.getAxes().keySet());
+    keys.addAll(matrixConfig.getExpressionAxes().keySet());
+    return keys;
   }
 }

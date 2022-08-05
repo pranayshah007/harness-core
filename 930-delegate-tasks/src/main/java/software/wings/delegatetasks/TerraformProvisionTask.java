@@ -337,6 +337,7 @@ public class TerraformProvisionTask extends AbstractDelegateRunnableTask {
               saveVariable(writer, entry.getKey(), value);
             }
           }
+          tfBackendConfigFilePath = tfBackendConfigsFile.exists() ? tfBackendConfigsFile.getAbsolutePath() : null;
         }
       }
 

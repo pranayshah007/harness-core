@@ -544,6 +544,7 @@ public class PMSPipelineDtoMapperTest extends CategoryTest {
                                                    .status(Status.ABORTED)
                                                    .startTs(1L)
                                                    .endTs(3L)
+                                                   .runSequence(12)
                                                    .build();
     RecentExecutionInfo recentExecutionInfo1 = RecentExecutionInfo.builder()
                                                    .executionTriggerInfo(executionTriggerInfo)
@@ -563,6 +564,7 @@ public class PMSPipelineDtoMapperTest extends CategoryTest {
     assertThat(response0.getStatus()).isEqualTo(ExecutionStatus.ABORTED);
     assertThat(response0.getStartTs()).isEqualTo(1L);
     assertThat(response0.getEndTs()).isEqualTo(3L);
+    assertThat(response0.getRunSequence()).isEqualTo(12);
     assertThat(response0.getExecutorInfo().getTriggerType()).isEqualTo(TriggerType.MANUAL);
     assertThat(response0.getExecutorInfo().getUsername()).isEqualTo("id");
     assertThat(response0.getExecutorInfo().getEmail()).isEqualTo("id@e.com");

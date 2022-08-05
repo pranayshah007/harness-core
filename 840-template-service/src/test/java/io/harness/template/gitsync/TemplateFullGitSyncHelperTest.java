@@ -34,6 +34,7 @@ import io.harness.template.entity.TemplateEntity.TemplateEntityKeys;
 import io.harness.template.helpers.TemplateEntityDetailUtils;
 import io.harness.template.services.NGTemplateService;
 import io.harness.template.services.NGTemplateServiceHelper;
+import io.harness.template.utils.NGTemplateFeatureFlagHelperService;
 
 import com.google.common.io.Resources;
 import com.google.protobuf.StringValue;
@@ -66,6 +67,7 @@ public class TemplateFullGitSyncHelperTest extends CategoryTest {
   @Mock NGTemplateRepository templateRepository;
   @Mock GitSyncSdkService gitSyncSdkService;
 
+  @Mock NGTemplateFeatureFlagHelperService ngTemplateFeatureFlagHelperService;
   private final String ACCOUNT_ID = "accountId";
   private final String ORG_IDENTIFIER = "orgId";
   private final String PROJ_IDENTIFIER = "projId";
