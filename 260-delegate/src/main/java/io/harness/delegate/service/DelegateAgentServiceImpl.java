@@ -1587,7 +1587,9 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
 
   private void watcherUpgrade(boolean heartbeatTimedOut) {
     String watcherVersion = messageService.getData(WATCHER_DATA, WATCHER_VERSION, String.class);
+    log.info("Trying to fetch watcher versinon");
     String expectedVersion = findExpectedWatcherVersion();
+    log.info("watcher versinon fetched {}, current version {}", expectedVersion, watcherVersion);
     if (expectedVersion == null || StringUtils.equals(expectedVersion, watcherVersion)) {
       watcherVersionMatchedAt = clock.millis();
     }
@@ -1641,7 +1643,9 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
     try {
       RestResponse<String> restResponse =
           executeRestCall(delegateAgentManagerClient.getWatcherVersion(delegateConfiguration.getAccountId()));
+      log.info("received response from manager");
       if (restResponse != null) {
+        log.info("response {}", restResponse.getResource().toString());
         return restResponse.getResource();
       }
     } catch (Exception e) {
