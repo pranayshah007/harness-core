@@ -25,7 +25,7 @@ java_library(
         "//950-ng-project-n-orgs:module",
         "//950-wait-engine:module",
         "//960-ng-core-beans:module",
-        "//960-persistence:module",
+#        "//960-persistence:module",
         "//970-api-services-beans:module",
         "//970-api-services-beans/src/main/proto:970_api_services_beans_java_proto",
         "//970-ng-commons:module",

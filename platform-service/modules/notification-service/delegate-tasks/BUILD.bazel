@@ -12,12 +12,10 @@ java_library(
     ],
     deps = [
         "//:lombok",
-        "//910-delegate-service-driver:module",
         "//920-delegate-service-beans:module",
         "//930-delegate-tasks:module",
         "//950-delegate-tasks-beans:module",
         "//960-ng-core-beans:module",
-        "//960-persistence:module",
         "//970-api-services-beans:module",
         "//970-api-services-beans/src/main/proto:970_api_services_beans_java_proto",
         "//970-ng-commons:module",

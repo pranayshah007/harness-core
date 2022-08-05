@@ -68,7 +68,7 @@ public interface HPersistence extends HealthMonitor {
    * @param readPref the readPref
    * @return         the datastore
    */
-  default AdvancedDatastore getDatastore(PersistentEntity entity) {
+  default AdvancedDatastore getDatastore(io.harness.persistence.PersistentEntity entity) {
     return getDatastore(entity.getClass());
   }
 
@@ -151,7 +151,7 @@ public interface HPersistence extends HealthMonitor {
    * @param cls the cls
    * @return the query
    */
-  <T extends PersistentEntity> Query<T> createQuery(Class<T> cls);
+  <T extends io.harness.persistence.PersistentEntity> Query<T> createQuery(Class<T> cls);
 
   /**
    * Creates the query.
@@ -161,7 +161,7 @@ public interface HPersistence extends HealthMonitor {
    * @param queryChecks  the query checks
    * @return             the query
    */
-  <T extends PersistentEntity> Query<T> createQuery(Class<T> cls, Set<QueryChecks> queryChecks);
+  <T extends io.harness.persistence.PersistentEntity> Query<T> createQuery(Class<T> cls, Set<QueryChecks> queryChecks);
 
   /**
    * Creates the query.
@@ -170,7 +170,7 @@ public interface HPersistence extends HealthMonitor {
    * @param collectionName the collection name
    * @return               the query
    */
-  <T extends PersistentEntity> Query<T> createQueryForCollection(String collectionName);
+  <T extends io.harness.persistence.PersistentEntity> Query<T> createQueryForCollection(String collectionName);
 
   /**
    * Creates the query.
@@ -180,7 +180,7 @@ public interface HPersistence extends HealthMonitor {
    * @param queryChecks      the query checks
    * @return                 the query
    */
-  <T extends PersistentEntity> Query<T> createQueryForCollection(String collectionName, Set<QueryChecks> queryChecks);
+  <T extends io.harness.persistence.PersistentEntity> Query<T> createQueryForCollection(String collectionName, Set<QueryChecks> queryChecks);
 
   /**
    * Creates the update operations.
@@ -188,7 +188,7 @@ public interface HPersistence extends HealthMonitor {
    * @param cls the cls
    * @return the update operations
    */
-  <T extends PersistentEntity> UpdateOperations<T> createUpdateOperations(Class<T> cls);
+  <T extends io.harness.persistence.PersistentEntity> UpdateOperations<T> createUpdateOperations(Class<T> cls);
 
   /**
    * Convert DBObject to java entity.
@@ -196,7 +196,7 @@ public interface HPersistence extends HealthMonitor {
    * @param cls the cls
    * @return the update operations
    */
-  <T extends PersistentEntity> T convertToEntity(Class<T> cls, DBObject dbObject);
+  <T extends io.harness.persistence.PersistentEntity> T convertToEntity(Class<T> cls, DBObject dbObject);
 
   /**
    * Save.
@@ -204,7 +204,7 @@ public interface HPersistence extends HealthMonitor {
    * @param entity   the entity
    * @return the key of the entity
    */
-  <T extends PersistentEntity> String save(T entity);
+  <T extends io.harness.persistence.PersistentEntity> String save(T entity);
 
   /**
    * Save.
@@ -212,7 +212,7 @@ public interface HPersistence extends HealthMonitor {
    * @param entityList list of entities to save
    * @return list of keys
    */
-  <T extends PersistentEntity> List<String> save(List<T> entityList);
+  <T extends io.harness.persistence.PersistentEntity> List<String> save(List<T> entityList);
 
   /**
    * Save list in one go using a batch.
@@ -220,7 +220,7 @@ public interface HPersistence extends HealthMonitor {
    * @param entityList list of entities to save
    * @return list of keys
    */
-  <T extends PersistentEntity> List<String> saveBatch(List<T> entityList);
+  <T extends io.harness.persistence.PersistentEntity> List<String> saveBatch(List<T> entityList);
 
   /**
    * Save ignoring duplicate key errors.
@@ -228,7 +228,7 @@ public interface HPersistence extends HealthMonitor {
    *
    * @param entityList list of entities to save
    */
-  <T extends PersistentEntity> void saveIgnoringDuplicateKeys(List<T> entityList);
+  <T extends io.harness.persistence.PersistentEntity> void saveIgnoringDuplicateKeys(List<T> entityList);
 
   /**
    * Insert.
@@ -236,7 +236,7 @@ public interface HPersistence extends HealthMonitor {
    * @param entity   the entity
    * @return the key of the entity
    */
-  <T extends PersistentEntity> String insert(T entity);
+  <T extends io.harness.persistence.PersistentEntity> String insert(T entity);
 
   /**
    * Insert.
@@ -244,7 +244,7 @@ public interface HPersistence extends HealthMonitor {
    * @param entity   the entity
    * @return the key of the entity
    */
-  <T extends PersistentEntity> String insertIgnoringDuplicateKeys(T entity);
+  <T extends io.harness.persistence.PersistentEntity> String insertIgnoringDuplicateKeys(T entity);
 
   /**
    * Get returns the entity with id.
@@ -253,7 +253,7 @@ public interface HPersistence extends HealthMonitor {
    * @param id  the id of the entity
    * @return the t
    */
-  <T extends PersistentEntity> T get(Class<T> cls, String id);
+  <T extends io.harness.persistence.PersistentEntity> T get(Class<T> cls, String id);
 
   /**
    * Delete.
@@ -262,7 +262,7 @@ public interface HPersistence extends HealthMonitor {
    * @param id the id
    * @return true, if successful
    */
-  <T extends PersistentEntity> boolean delete(Class<T> cls, String id);
+  <T extends io.harness.persistence.PersistentEntity> boolean delete(Class<T> cls, String id);
 
   /**
    * Delete.
@@ -270,7 +270,7 @@ public interface HPersistence extends HealthMonitor {
    * @param query query that selects one or more items to delete
    * @return true, if successful
    */
-  <T extends PersistentEntity> boolean delete(Query<T> query);
+  <T extends io.harness.persistence.PersistentEntity> boolean delete(Query<T> query);
 
   /**
    * Delete the items matching the query without deserializing them on the client side.
@@ -278,7 +278,7 @@ public interface HPersistence extends HealthMonitor {
    * @param query query that selects one or more items to delete
    * @return true, if successful
    */
-  <T extends PersistentEntity> boolean deleteOnServer(Query<T> query);
+  <T extends io.harness.persistence.PersistentEntity> boolean deleteOnServer(Query<T> query);
 
   /**
    * Delete.
@@ -286,7 +286,7 @@ public interface HPersistence extends HealthMonitor {
    * @param entity entity to delete
    * @return true, if successful
    */
-  <T extends PersistentEntity> boolean delete(T entity);
+  <T extends io.harness.persistence.PersistentEntity> boolean delete(T entity);
 
   FindAndModifyOptions upsertReturnNewOptions = new FindAndModifyOptions().upsert(true).returnNew(true);
   FindAndModifyOptions upsertReturnOldOptions = new FindAndModifyOptions().upsert(true).returnNew(false);
@@ -298,7 +298,7 @@ public interface HPersistence extends HealthMonitor {
    * @param updateOperations the update operations
    * @return the entity
    */
-  default<T extends PersistentEntity> void upsert(Query<T> query, UpdateOperations<T> updateOperations) {
+  default<T extends io.harness.persistence.PersistentEntity> void upsert(Query<T> query, UpdateOperations<T> updateOperations) {
     upsert(query, updateOperations, upsertReturnNewOptions);
   }
 
@@ -309,7 +309,7 @@ public interface HPersistence extends HealthMonitor {
    * @param updateOperations the update operations
    * @return the entity
    */
-  <T extends PersistentEntity> T upsert(
+  <T extends io.harness.persistence.PersistentEntity> T upsert(
       Query<T> query, UpdateOperations<T> updateOperations, FindAndModifyOptions options);
 
   /**
@@ -319,7 +319,7 @@ public interface HPersistence extends HealthMonitor {
    * @param ops the ops
    * @return the update results
    */
-  <T extends PersistentEntity> UpdateResults update(T ent, UpdateOperations<T> ops);
+  <T extends io.harness.persistence.PersistentEntity> UpdateResults update(T ent, UpdateOperations<T> ops);
 
   /**
    * Update.
@@ -328,7 +328,7 @@ public interface HPersistence extends HealthMonitor {
    * @param updateOperations the update operations
    * @return the update results
    */
-  <T extends PersistentEntity> UpdateResults update(Query<T> updateQuery, UpdateOperations<T> updateOperations);
+  <T extends io.harness.persistence.PersistentEntity> UpdateResults update(Query<T> updateQuery, UpdateOperations<T> updateOperations);
 
   FindAndModifyOptions returnNewOptions = new FindAndModifyOptions().upsert(false).returnNew(true);
   FindAndModifyOptions returnOldOptions = new FindAndModifyOptions().upsert(false).returnNew(false);
@@ -341,7 +341,7 @@ public interface HPersistence extends HealthMonitor {
    * @param findAndModifyOptions the find and modify options
    * @return previous or new entity depending on options
    */
-  <T extends PersistentEntity> T findAndModify(
+  <T extends io.harness.persistence.PersistentEntity> T findAndModify(
       Query<T> query, UpdateOperations<T> updateOperations, FindAndModifyOptions findAndModifyOptions);
 
   /**
@@ -352,7 +352,7 @@ public interface HPersistence extends HealthMonitor {
    * @param findAndModifyOptions the find and modify options
    * @return previous or new entity depending on options
    */
-  <T extends PersistentEntity> T findAndModifySystemData(
+  <T extends io.harness.persistence.PersistentEntity> T findAndModifySystemData(
       Query<T> query, UpdateOperations<T> updateOperations, FindAndModifyOptions findAndModifyOptions);
 
   /**
@@ -362,7 +362,7 @@ public interface HPersistence extends HealthMonitor {
    * @param findAndModifyOptions the delete and modify options
    * @return previous entity depending on options
    */
-  <T extends PersistentEntity> T findAndDelete(Query<T> query, FindAndModifyOptions findAndModifyOptions);
+  <T extends io.harness.persistence.PersistentEntity> T findAndDelete(Query<T> query, FindAndModifyOptions findAndModifyOptions);
 
   /**
    * Merge.

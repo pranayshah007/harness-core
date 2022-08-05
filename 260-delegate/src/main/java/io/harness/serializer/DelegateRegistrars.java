@@ -30,7 +30,6 @@ public class DelegateRegistrars {
           .addAll(DelegateTasksBeansRegistrars.kryoRegistrars)
           .add(CgOrchestrationBeansKryoRegistrar.class)
           .addAll(NGCommonsRegistrars.kryoRegistrars)
-          .addAll(NGCoreRegistrars.kryoRegistrars)
           .addAll(RbacCoreRegistrars.kryoRegistrars)
           .addAll(SMCoreRegistrars.kryoRegistrars)
           .addAll(FileServiceCommonsRegistrars.kryoRegistrars)
@@ -40,8 +39,6 @@ public class DelegateRegistrars {
           .add(NotificationDelegateTasksKryoRegistrar.class)
           .add(DelegateAgentBeansKryoRegister.class)
           .add(WatcherBeansKryoRegister.class)
-          .addAll(OutboxEventRegistrars.kryoRegistrars)
-          .addAll(AccessControlClientRegistrars.kryoRegistrars)
           .addAll(DelegateTaskRegistrars.kryoRegistrars)
           .add(NgAuthenticationServiceKryoRegistrar.class)
           .build();

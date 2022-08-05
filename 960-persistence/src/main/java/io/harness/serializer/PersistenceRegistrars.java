@@ -23,12 +23,14 @@ public class PersistenceRegistrars {
   public static final ImmutableSet<Class<? extends KryoRegistrar>> kryoRegistrars =
       ImmutableSet.<Class<? extends KryoRegistrar>>builder()
           .addAll(NGCommonsRegistrars.kryoRegistrars)
+              .addAll(PersistenceBeansRegistrars.kryoRegistrars)
           .add(PersistenceKryoRegistrar.class)
           .build();
 
   public static final com.google.common.collect.ImmutableSet<Class<? extends MorphiaRegistrar>> morphiaRegistrars =
       ImmutableSet.<Class<? extends MorphiaRegistrar>>builder()
           .addAll(NGCommonsRegistrars.morphiaRegistrars)
+              .addAll(PersistenceBeansRegistrars.morphiaRegistrars)
           .add(PersistenceMorphiaRegistrar.class)
           .build();
 

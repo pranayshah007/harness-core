@@ -21,7 +21,7 @@ java_library(
     deps = [
         "//:lombok",
         "//953-events-api/src/main/proto:953_events_api_java_proto",
-        "//960-persistence:module",
+        "//960-persistence-beans:module",
         "//970-ng-commons:module",
         "//980-commons:module",
         "//999-annotations:module",

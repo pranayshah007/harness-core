@@ -14,7 +14,7 @@ java_library(
     visibility = ["//visibility:public"],
     deps = [
         "//:lombok",
-        "//960-persistence:module",
+        "//960-persistence:module",929
         "@maven//:com_google_inject_guice",
     ],
 )

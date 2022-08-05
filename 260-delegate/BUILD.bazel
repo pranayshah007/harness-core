@@ -21,8 +21,6 @@ java_library(
         "//:lombok",
         "//420-delegate-agent:module",
         "//490-ce-commons:module",
-        "//920-delegate-service-beans:module",
-        "//950-ng-core:module",
         "//platform-service/modules/notification-service/delegate-tasks:module",
         "@maven//:org_apache_commons_commons_math3",
         "@maven//:org_apache_logging_log4j_log4j_api",
