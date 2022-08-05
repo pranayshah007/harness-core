@@ -1594,6 +1594,8 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       watcherVersionMatchedAt = clock.millis();
     }
     boolean versionMatchTimedOut = clock.millis() - watcherVersionMatchedAt > WATCHER_VERSION_MATCH_TIMEOUT;
+    log.info("versionMatchTimedOut {} watcherVersionMatchedAt {}, clock.millis() {}", versionMatchTimedOut, watcherVersionMatchedAt, clock.millis() );
+
     if (versionMatchTimedOut) {
       log.warn("Watcher version mismatched for {} seconds. Version is {} but should be {}",
           WATCHER_VERSION_MATCH_TIMEOUT / 1000L, watcherVersion, expectedVersion);
