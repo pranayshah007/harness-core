@@ -445,7 +445,7 @@ public class WatcherServiceImpl implements WatcherService {
   private void startUpgradeCheck() {
     upgradeExecutor.scheduleWithFixedDelay(
         new Schedulable("Error while checking for upgrades", this::syncCheckForWatcherUpgrade), 0,
-        watcherConfiguration.getUpgradeCheckIntervalSeconds(), TimeUnit.SECONDS);
+        15, java.util.concurrent.TimeUnit.MINUTES);
   }
 
   private void syncCheckForWatcherUpgrade() {
@@ -1352,7 +1352,7 @@ public class WatcherServiceImpl implements WatcherService {
         }
       }
       if (upgrade) {
-        log.info("[Old] Upgrading watcher");
+        log.info("[Old] Upgrading watcher to version {}", latestVersion);
         working.set(true);
         final boolean isDownloaded = downloadRunScriptsBeforeRestartingDelegateAndWatcher();
         if (isDownloaded) {
