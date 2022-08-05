@@ -6,19 +6,19 @@
 
 CONFIG_FILE=/opt/harness/config.yml
 
-yq delete -i $CONFIG_FILE 'server.applicationConnectors.(type==https)'
+yq 'del(.'server.applicationConnectors.(type==https)')' $CONFIG_FILE
 
-yq write -i $CONFIG_FILE server.adminConnectors "[]"
+yq -i '.server.adminConnectors="[]"' $CONFIG_FILE
 
 if [[ "$STACK_DRIVER_LOGGING_ENABLED" == "true" ]]; then
-  yq delete -i $CONFIG_FILE 'logging.appenders.(type==console)'
-  yq write -i $CONFIG_FILE 'logging.appenders.(type==gke-console).stackdriverLogEnabled' "true"
+  yq 'del(.'logging.appenders.(type==console)')' $CONFIG_FILE
+  yq -i '.'logging.appenders.(type==gke-console).stackdriverLogEnabled'="true"' $CONFIG_FILE
 else
-  yq delete -i $CONFIG_FILE 'logging.appenders.(type==gke-console)'
+  yq 'del(.'logging.appenders.(type==gke-console)')' $CONFIG_FILE
 fi
 
 if [[ "" != "$LOGGING_LEVEL" ]]; then
-    yq write -i $CONFIG_FILE logging.level "$LOGGING_LEVEL"
+    yq -i '.logging.level="$LOGGING_LEVEL"' $CONFIG_FILE
 fi
 
 if [[ "" != "$LOGGERS" ]]; then
@@ -26,23 +26,23 @@ if [[ "" != "$LOGGERS" ]]; then
   for ITEM in "${LOGGER_ITEMS[@]}"; do
     LOGGER=`echo $ITEM | awk -F= '{print $1}'`
     LOGGER_LEVEL=`echo $ITEM | awk -F= '{print $2}'`
-    yq write -i $CONFIG_FILE logging.loggers.[$LOGGER] "${LOGGER_LEVEL}"
+    yq -i '.logging.loggers.[$LOGGER]="${LOGGER_LEVEL}"' $CONFIG_FILE
   done
 fi
 
 if [[ "" != "$SERVER_PORT" ]]; then
-  yq write -i $CONFIG_FILE server.applicationConnectors[0].port "$SERVER_PORT"
+  yq -i '.server.applicationConnectors[0].port="$SERVER_PORT"' $CONFIG_FILE
 fi
 
 if [[ "" != "$SERVER_MAX_THREADS" ]]; then
-  yq write -i $CONFIG_FILE server.maxThreads "$SERVER_MAX_THREADS"
+  yq -i '.server.maxThreads="$SERVER_MAX_THREADS"' $CONFIG_FILE
 fi
 
 if [[ "" != "$EVENTS_CONFIG_REDIS_SENTINELS" ]]; then
   IFS=',' read -ra SENTINEL_URLS <<< "$EVENTS_CONFIG_REDIS_SENTINELS"
   INDEX=0
   for REDIS_SENTINEL_URL in "${SENTINEL_URLS[@]}"; do
-    yq write -i $CONFIG_FILE eventsConfig.redis.sentinelUrls.[$INDEX] "${REDIS_SENTINEL_URL}"
+    yq -i '.eventsConfig.redis.sentinelUrls.[$INDEX]="${REDIS_SENTINEL_URL}"' $CONFIG_FILE
     INDEX=$(expr $INDEX + 1)
   done
 fi
@@ -51,7 +51,7 @@ if [[ "" != "$LOCK_CONFIG_REDIS_SENTINELS" ]]; then
   IFS=',' read -ra SENTINEL_URLS <<< "$LOCK_CONFIG_REDIS_SENTINELS"
   INDEX=0
   for REDIS_SENTINEL_URL in "${SENTINEL_URLS[@]}"; do
-    yq write -i $CONFIG_FILE redisLockConfig.sentinelUrls.[$INDEX] "${REDIS_SENTINEL_URL}"
+    yq -i '.redisLockConfig.sentinelUrls.[$INDEX]="${REDIS_SENTINEL_URL}"' $CONFIG_FILE
     INDEX=$(expr $INDEX + 1)
   done
 fi
@@ -60,7 +60,7 @@ if [[ "" != "$ALLOWED_ORIGINS" ]]; then
   IFS=',' read -ra ALLOWED_ORIGINS <<< "$ALLOWED_ORIGINS"
   INDEX=0
   for ALLOWED_URL in "${ALLOWED_ORIGINS[@]}"; do
-    yq write -i $CONFIG_FILE allowedOrigins.[$INDEX] "${ALLOWED_URL}"
+    yq -i '.allowedOrigins.[$INDEX]="${ALLOWED_URL}"' $CONFIG_FILE
     INDEX=$(expr $INDEX + 1)
   done
 fi

@@ -7,14 +7,14 @@
 CONFIG_FILE=/opt/harness/event-service-config.yml
 
 # Remove the TLS connector (as ingress terminates TLS)
-yq delete -i $CONFIG_FILE connectors[0]
+yq 'del(.connectors[0])' $CONFIG_FILE
 
 if [[ "" != "$MONGO_URI" ]]; then
-  yq write -i $CONFIG_FILE harness-mongo.uri "$MONGO_URI"
+  yq -i '.harness-mongo.uri="$MONGO_URI"' $CONFIG_FILE
 fi
 
 if [[ "" != "$MONGO_READ_PREF_NAME" ]]; then
-  yq write -i $CONFIG_FILE harness-mongo.readPref.name "$MONGO_READ_PREF_NAME"
+  yq -i '.harness-mongo.readPref.name="$MONGO_READ_PREF_NAME"' $CONFIG_FILE
 fi
 
 if [[ "" != "$MONGO_READ_PREF_TAGS" ]]; then
@@ -22,18 +22,18 @@ if [[ "" != "$MONGO_READ_PREF_TAGS" ]]; then
   for ITEM in "${TAG_ITEMS[@]}"; do
     TAG_NAME=$(echo $ITEM | awk -F= '{print $1}')
     TAG_VALUE=$(echo $ITEM | awk -F= '{print $2}')
-    yq write -i $CONFIG_FILE "harness-mongo.readPref.tagSet.[$TAG_NAME]" "$TAG_VALUE"
+    yq -i '.harness-mongo.readPref.tagSet.[$TAG_NAME]="$TAG_VALUE"' $CONFIG_FILE
   done
 fi
 
 if [[ "" != "$MONGO_INDEX_MANAGER_MODE" ]]; then
-  yq write -i $CONFIG_FILE harness-mongo.indexManagerMode $MONGO_INDEX_MANAGER_MODE
+  yq -i '.harness-mongo.indexManagerMode="$MONGO_INDEX_MANAGER_MODE"' $CONFIG_FILE
 fi
 
 if [[ "" != "$EVEMTS_MONGO_INDEX_MANAGER_MODE" ]]; then
-  yq write -i $CONFIG_FILE events-mongo.indexManagerMode $EVEMTS_MONGO_INDEX_MANAGER_MODE
+  yq -i '.events-mongo.indexManagerMode="$EVEMTS_MONGO_INDEX_MANAGER_MODE"' $CONFIG_FILE
 fi
 
 if [[ "" != "$EVENTS_MONGO_URI" ]]; then
-  yq write -i $CONFIG_FILE events-mongo.uri "$EVENTS_MONGO_URI"
+  yq -i '.events-mongo.uri="$EVENTS_MONGO_URI"' $CONFIG_FILE
 fi

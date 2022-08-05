@@ -12,17 +12,17 @@ replace_key_value () {
   CONFIG_KEY="$1";
   CONFIG_VALUE="$2";
   if [[ "" != "$CONFIG_VALUE" ]]; then
-    yq write -i $CONFIG_FILE $CONFIG_KEY $CONFIG_VALUE
+    yq -i '.$CONFIG_KEY="$CONFIG_VALUE"' $CONFIG_FILE
   fi
 }
 
-yq delete -i $CONFIG_FILE 'server.applicationConnectors.(type==https)'
-yq write -i $CONFIG_FILE server.adminConnectors "[]"
+yq 'del(.'server.applicationConnectors.(type==https)')' $CONFIG_FILE
+yq -i '.server.adminConnectors="[]"' $CONFIG_FILE
 
-yq delete -i $CONFIG_FILE 'pmsSdkGrpcServerConfig.connectors.(secure==true)'
+yq 'del(.'pmsSdkGrpcServerConfig.connectors.(secure==true)')' $CONFIG_FILE
 
 if [[ "" != "$LOGGING_LEVEL" ]]; then
-    yq write -i $CONFIG_FILE logging.level "$LOGGING_LEVEL"
+    yq -i '.logging.level="$LOGGING_LEVEL"' $CONFIG_FILE
 fi
 
 if [[ "" != "$LOGGERS" ]]; then
@@ -30,109 +30,109 @@ if [[ "" != "$LOGGERS" ]]; then
   for ITEM in "${LOGGER_ITEMS[@]}"; do
     LOGGER=`echo $ITEM | awk -F= '{print $1}'`
     LOGGER_LEVEL=`echo $ITEM | awk -F= '{print $2}'`
-    yq write -i $CONFIG_FILE logging.loggers.[$LOGGER] "${LOGGER_LEVEL}"
+    yq -i '.logging.loggers.[$LOGGER]="${LOGGER_LEVEL}"' $CONFIG_FILE
   done
 fi
 
 if [[ "" != "$SERVER_PORT" ]]; then
-  yq write -i $CONFIG_FILE server.applicationConnectors[0].port "$SERVER_PORT"
+  yq -i '.server.applicationConnectors[0].port="$SERVER_PORT"' $CONFIG_FILE
 else
-  yq write -i $CONFIG_FILE server.applicationConnectors[0].port "7090"
+  yq -i '.server.applicationConnectors[0].port="7090"' $CONFIG_FILE
 fi
 
 if [[ "" != "$MANAGER_URL" ]]; then
-  yq write -i $CONFIG_FILE managerClientConfig.baseUrl "$MANAGER_URL"
+  yq -i '.managerClientConfig.baseUrl="$MANAGER_URL"' $CONFIG_FILE
 fi
 
 if [[ "" != "$NG_MANAGER_URL" ]]; then
-  yq write -i $CONFIG_FILE ngManagerClientConfig.baseUrl "$NG_MANAGER_URL"
+  yq -i '.ngManagerClientConfig.baseUrl="$NG_MANAGER_URL"' $CONFIG_FILE
 fi
 
 if [[ "" != "$ADDON_IMAGE" ]]; then
-  yq write -i $CONFIG_FILE ciExecutionServiceConfig.addonImage "$ADDON_IMAGE"
+  yq -i '.ciExecutionServiceConfig.addonImage="$ADDON_IMAGE"' $CONFIG_FILE
 fi
 if [[ "" != "$LE_IMAGE" ]]; then
-  yq write -i $CONFIG_FILE ciExecutionServiceConfig.liteEngineImage "$LE_IMAGE"
+  yq -i '.ciExecutionServiceConfig.liteEngineImage="$LE_IMAGE"' $CONFIG_FILE
 fi
 
 if [[ "" != "$GIT_CLONE_IMAGE" ]]; then
-  yq write -i $CONFIG_FILE ciExecutionServiceConfig.stepConfig.gitCloneConfig.image "$GIT_CLONE_IMAGE"
+  yq -i '.ciExecutionServiceConfig.stepConfig.gitCloneConfig.image="$GIT_CLONE_IMAGE"' $CONFIG_FILE
 fi
 
 if [[ "" != "$DOCKER_PUSH_IMAGE" ]]; then
-  yq write -i $CONFIG_FILE ciExecutionServiceConfig.stepConfig.buildAndPushDockerRegistryConfig.image "$DOCKER_PUSH_IMAGE"
+  yq -i '.ciExecutionServiceConfig.stepConfig.buildAndPushDockerRegistryConfig.image="$DOCKER_PUSH_IMAGE"' $CONFIG_FILE
 fi
 
 if [[ "" != "$ECR_PUSH_IMAGE" ]]; then
-  yq write -i $CONFIG_FILE ciExecutionServiceConfig.stepConfig.buildAndPushECRConfig.image "$ECR_PUSH_IMAGE"
+  yq -i '.ciExecutionServiceConfig.stepConfig.buildAndPushECRConfig.image="$ECR_PUSH_IMAGE"' $CONFIG_FILE
 fi
 
 if [[ "" != "$GCR_PUSH_IMAGE" ]]; then
-  yq write -i $CONFIG_FILE ciExecutionServiceConfig.stepConfig.buildAndPushGCRConfig.image "$GCR_PUSH_IMAGE"
+  yq -i '.ciExecutionServiceConfig.stepConfig.buildAndPushGCRConfig.image="$GCR_PUSH_IMAGE"' $CONFIG_FILE
 fi
 
 if [[ "" != "$ENABLE_AUTH" ]]; then
-  yq write -i $CONFIG_FILE enableAuth "$ENABLE_AUTH"
+  yq -i '.enableAuth="$ENABLE_AUTH"' $CONFIG_FILE
 fi
 
 if [[ "" != "$GCS_UPLOAD_IMAGE" ]]; then
-  yq write -i $CONFIG_FILE ciExecutionServiceConfig.stepConfig.gcsUploadConfig.image "$GCS_UPLOAD_IMAGE"
+  yq -i '.ciExecutionServiceConfig.stepConfig.gcsUploadConfig.image="$GCS_UPLOAD_IMAGE"' $CONFIG_FILE
 fi
 
 if [[ "" != "$S3_UPLOAD_IMAGE" ]]; then
-  yq write -i $CONFIG_FILE ciExecutionServiceConfig.stepConfig.s3UploadConfig.image "$S3_UPLOAD_IMAGE"
+  yq -i '.ciExecutionServiceConfig.stepConfig.s3UploadConfig.image="$S3_UPLOAD_IMAGE"' $CONFIG_FILE
 fi
 
 if [[ "" != "$SECURITY_IMAGE" ]]; then
-  yq write -i $CONFIG_FILE ciExecutionServiceConfig.stepConfig.securityConfig.image "$SECURITY_IMAGE"
+  yq -i '.ciExecutionServiceConfig.stepConfig.securityConfig.image="$SECURITY_IMAGE"' $CONFIG_FILE
 fi
 
 if [[ "" != "$ARTIFACTORY_UPLOAD_IMAGE" ]]; then
-  yq write -i $CONFIG_FILE ciExecutionServiceConfig.stepConfig.artifactoryUploadConfig.image "$ARTIFACTORY_UPLOAD_IMAGE"
+  yq -i '.ciExecutionServiceConfig.stepConfig.artifactoryUploadConfig.image="$ARTIFACTORY_UPLOAD_IMAGE"' $CONFIG_FILE
 fi
 
 if [[ "" != "$GCS_CACHE_IMAGE" ]]; then
-  yq write -i $CONFIG_FILE ciExecutionServiceConfig.stepConfig.cacheGCSConfig.image "$GCS_CACHE_IMAGE"
+  yq -i '.ciExecutionServiceConfig.stepConfig.cacheGCSConfig.image="$GCS_CACHE_IMAGE"' $CONFIG_FILE
 fi
 
 if [[ "" != "$S3_CACHE_IMAGE" ]]; then
-  yq write -i $CONFIG_FILE ciExecutionServiceConfig.stepConfig.cacheS3Config.image "$S3_CACHE_IMAGE"
+  yq -i '.ciExecutionServiceConfig.stepConfig.cacheS3Config.image="$S3_CACHE_IMAGE"' $CONFIG_FILE
 fi
 
 if [[ "" != "$VM_GIT_CLONE_IMAGE" ]]; then
-  yq write -i $CONFIG_FILE ciExecutionServiceConfig.stepConfig.vmImageConfig.gitClone "$VM_GIT_CLONE_IMAGE"
+  yq -i '.ciExecutionServiceConfig.stepConfig.vmImageConfig.gitClone="$VM_GIT_CLONE_IMAGE"' $CONFIG_FILE
 fi
 
 if [[ "" != "$VM_DOCKER_PUSH_IMAGE" ]]; then
-  yq write -i $CONFIG_FILE ciExecutionServiceConfig.stepConfig.vmImageConfig.buildAndPushDockerRegistry "$VM_DOCKER_PUSH_IMAGE"
+  yq -i '.ciExecutionServiceConfig.stepConfig.vmImageConfig.buildAndPushDockerRegistry="$VM_DOCKER_PUSH_IMAGE"' $CONFIG_FILE
 fi
 
 if [[ "" != "$VM_ECR_PUSH_IMAGE" ]]; then
-  yq write -i $CONFIG_FILE ciExecutionServiceConfig.stepConfig.vmImageConfig.buildAndPushECR "$VM_ECR_PUSH_IMAGE"
+  yq -i '.ciExecutionServiceConfig.stepConfig.vmImageConfig.buildAndPushECR="$VM_ECR_PUSH_IMAGE"' $CONFIG_FILE
 fi
 
 if [[ "" != "$VM_GCR_PUSH_IMAGE" ]]; then
-  yq write -i $CONFIG_FILE ciExecutionServiceConfig.stepConfig.vmImageConfig.buildAndPushGCR "$VM_GCR_PUSH_IMAGE"
+  yq -i '.ciExecutionServiceConfig.stepConfig.vmImageConfig.buildAndPushGCR="$VM_GCR_PUSH_IMAGE"' $CONFIG_FILE
 fi
 
 if [[ "" != "$VM_GCS_UPLOAD_IMAGE" ]]; then
-  yq write -i $CONFIG_FILE ciExecutionServiceConfig.stepConfig.vmImageConfig.gcsUpload "$VM_GCS_UPLOAD_IMAGE"
+  yq -i '.ciExecutionServiceConfig.stepConfig.vmImageConfig.gcsUpload="$VM_GCS_UPLOAD_IMAGE"' $CONFIG_FILE
 fi
 
 if [[ "" != "$VM_S3_UPLOAD_IMAGE" ]]; then
-  yq write -i $CONFIG_FILE ciExecutionServiceConfig.stepConfig.vmImageConfig.s3Upload "$VM_S3_UPLOAD_IMAGE"
+  yq -i '.ciExecutionServiceConfig.stepConfig.vmImageConfig.s3Upload="$VM_S3_UPLOAD_IMAGE"' $CONFIG_FILE
 fi
 
 if [[ "" != "$VM_ARTIFACTORY_UPLOAD_IMAGE" ]]; then
-  yq write -i $CONFIG_FILE ciExecutionServiceConfig.stepConfig.vmImageConfig.artifactoryUpload "$VM_ARTIFACTORY_UPLOAD_IMAGE"
+  yq -i '.ciExecutionServiceConfig.stepConfig.vmImageConfig.artifactoryUpload="$VM_ARTIFACTORY_UPLOAD_IMAGE"' $CONFIG_FILE
 fi
 
 if [[ "" != "$VM_GCS_CACHE_IMAGE" ]]; then
-  yq write -i $CONFIG_FILE ciExecutionServiceConfig.stepConfig.vmImageConfig.cacheGCS "$VM_GCS_CACHE_IMAGE"
+  yq -i '.ciExecutionServiceConfig.stepConfig.vmImageConfig.cacheGCS="$VM_GCS_CACHE_IMAGE"' $CONFIG_FILE
 fi
 
 if [[ "" != "$VM_S3_CACHE_IMAGE" ]]; then
-  yq write -i $CONFIG_FILE ciExecutionServiceConfig.stepConfig.vmImageConfig.cacheS3 "$VM_S3_CACHE_IMAGE"
+  yq -i '.ciExecutionServiceConfig.stepConfig.vmImageConfig.cacheS3="$VM_S3_CACHE_IMAGE"' $CONFIG_FILE
 fi
 
 if [[ "" != "$VM_SECURITY_IMAGE" ]]; then
@@ -140,143 +140,143 @@ if [[ "" != "$VM_SECURITY_IMAGE" ]]; then
 fi
 
 if [[ "" != "$DEFAULT_MEMORY_LIMIT" ]]; then
-  yq write -i $CONFIG_FILE ciExecutionServiceConfig.defaultMemoryLimit "$DEFAULT_MEMORY_LIMIT"
+  yq -i '.ciExecutionServiceConfig.defaultMemoryLimit="$DEFAULT_MEMORY_LIMIT"' $CONFIG_FILE
 fi
 if [[ "" != "$DEFAULT_CPU_LIMIT" ]]; then
-  yq write -i $CONFIG_FILE ciExecutionServiceConfig.defaultCPULimit "$DEFAULT_CPU_LIMIT"
+  yq -i '.ciExecutionServiceConfig.defaultCPULimit="$DEFAULT_CPU_LIMIT"' $CONFIG_FILE
 fi
 if [[ "" != "$DEFAULT_INTERNAL_IMAGE_CONNECTOR" ]]; then
-  yq write -i $CONFIG_FILE ciExecutionServiceConfig.defaultInternalImageConnector "$DEFAULT_INTERNAL_IMAGE_CONNECTOR"
+  yq -i '.ciExecutionServiceConfig.defaultInternalImageConnector="$DEFAULT_INTERNAL_IMAGE_CONNECTOR"' $CONFIG_FILE
 fi
 if [[ "" != "$PVC_DEFAULT_STORAGE_SIZE" ]]; then
-  yq write -i $CONFIG_FILE ciExecutionServiceConfig.pvcDefaultStorageSize "$PVC_DEFAULT_STORAGE_SIZE"
+  yq -i '.ciExecutionServiceConfig.pvcDefaultStorageSize="$PVC_DEFAULT_STORAGE_SIZE"' $CONFIG_FILE
 fi
 if [[ "" != "$DELEGATE_SERVICE_ENDPOINT_VARIABLE_VALUE" ]]; then
-  yq write -i $CONFIG_FILE ciExecutionServiceConfig.delegateServiceEndpointVariableValue "$DELEGATE_SERVICE_ENDPOINT_VARIABLE_VALUE"
+  yq -i '.ciExecutionServiceConfig.delegateServiceEndpointVariableValue="$DELEGATE_SERVICE_ENDPOINT_VARIABLE_VALUE"' $CONFIG_FILE
 fi
 
 if [[ "" != "$SERVER_MAX_THREADS" ]]; then
-  yq write -i $CONFIG_FILE server.maxThreads "$SERVER_MAX_THREADS"
+  yq -i '.server.maxThreads="$SERVER_MAX_THREADS"' $CONFIG_FILE
 fi
 
 if [[ "" != "$ALLOWED_ORIGINS" ]]; then
-  yq delete -i $CONFIG_FILE allowedOrigins
-  yq write -i $CONFIG_FILE allowedOrigins "$ALLOWED_ORIGINS"
+  yq 'del(.allowedOrigins)' $CONFIG_FILE
+  yq -i '.allowedOrigins="$ALLOWED_ORIGINS"' $CONFIG_FILE
 fi
 
 if [[ "" != "$MONGO_URI" ]]; then
-  yq write -i $CONFIG_FILE harness-mongo.uri "${MONGO_URI//\\&/&}"
+  yq -i '.harness-mongo.uri="${MONGO_URI//\\&/&}"' $CONFIG_FILE
 fi
 
 if [[ "" != "$MANAGER_TARGET" ]]; then
-  yq write -i $CONFIG_FILE managerTarget $MANAGER_TARGET
+  yq -i '.managerTarget="$MANAGER_TARGET"' $CONFIG_FILE
 fi
 
 if [[ "" != "$MANAGER_AUTHORITY" ]]; then
-  yq write -i $CONFIG_FILE managerAuthority $MANAGER_AUTHORITY
+  yq -i '.managerAuthority="$MANAGER_AUTHORITY"' $CONFIG_FILE
 fi
 
 if [[ "" != "$CIMANAGER_MONGO_URI" ]]; then
-  yq write -i $CONFIG_FILE cimanager-mongo.uri "$CIMANAGER_MONGO_URI"
+  yq -i '.cimanager-mongo.uri="$CIMANAGER_MONGO_URI"' $CONFIG_FILE
 fi
 
 if [[ "" != "$SCM_SERVICE_URI" ]]; then
-  yq write -i $CONFIG_FILE scmConnectionConfig.url "$SCM_SERVICE_URI"
+  yq -i '.scmConnectionConfig.url="$SCM_SERVICE_URI"' $CONFIG_FILE
 fi
 
 if [[ "" != "$LOG_SERVICE_ENDPOINT" ]]; then
-  yq write -i $CONFIG_FILE logServiceConfig.baseUrl "$LOG_SERVICE_ENDPOINT"
+  yq -i '.logServiceConfig.baseUrl="$LOG_SERVICE_ENDPOINT"' $CONFIG_FILE
 fi
 
 if [[ "" != "$LOG_SERVICE_GLOBAL_TOKEN" ]]; then
-  yq write -i $CONFIG_FILE logServiceConfig.globalToken "$LOG_SERVICE_GLOBAL_TOKEN"
+  yq -i '.logServiceConfig.globalToken="$LOG_SERVICE_GLOBAL_TOKEN"' $CONFIG_FILE
 fi
 
 if [[ "" != "$TI_SERVICE_ENDPOINT" ]]; then
-  yq write -i $CONFIG_FILE tiServiceConfig.baseUrl "$TI_SERVICE_ENDPOINT"
+  yq -i '.tiServiceConfig.baseUrl="$TI_SERVICE_ENDPOINT"' $CONFIG_FILE
 fi
 
 if [[ "" != "$STO_SERVICE_ENDPOINT" ]]; then
-  yq write -i $CONFIG_FILE stoServiceConfig.baseUrl "$STO_SERVICE_ENDPOINT"
+  yq -i '.stoServiceConfig.baseUrl="$STO_SERVICE_ENDPOINT"' $CONFIG_FILE
 fi
 
 if [[ "" != "$API_URL" ]]; then
-  yq write -i $CONFIG_FILE apiUrl "$API_URL"
+  yq -i '.apiUrl="$API_URL"' $CONFIG_FILE
 fi
 
 if [[ "" != "$PMS_TARGET" ]]; then
-  yq write -i $CONFIG_FILE pmsGrpcClientConfig.target $PMS_TARGET
+  yq -i '.pmsGrpcClientConfig.target="$PMS_TARGET"' $CONFIG_FILE
 fi
 
 if [[ "" != "$PMS_AUTHORITY" ]]; then
-  yq write -i $CONFIG_FILE pmsGrpcClientConfig.authority $PMS_AUTHORITY
+  yq -i '.pmsGrpcClientConfig.authority="$PMS_AUTHORITY"' $CONFIG_FILE
 fi
 
 if [[ "" != "$SHOULD_CONFIGURE_WITH_PMS" ]]; then
-  yq write -i $CONFIG_FILE shouldConfigureWithPMS $SHOULD_CONFIGURE_WITH_PMS
+  yq -i '.shouldConfigureWithPMS="$SHOULD_CONFIGURE_WITH_PMS"' $CONFIG_FILE
 fi
 
 if [[ "" != "$PMS_MONGO_URI" ]]; then
-  yq write -i $CONFIG_FILE pmsMongo.uri "${PMS_MONGO_URI//\\&/&}"
+  yq -i '.pmsMongo.uri="${PMS_MONGO_URI//\\&/&}"' $CONFIG_FILE
 fi
 
 if [[ "" != "$GRPC_SERVER_PORT" ]]; then
-  yq write -i $CONFIG_FILE pmsSdkGrpcServerConfig.connectors[0].port "$GRPC_SERVER_PORT"
+  yq -i '.pmsSdkGrpcServerConfig.connectors[0].port="$GRPC_SERVER_PORT"' $CONFIG_FILE
 fi
 
 if [[ "" != "$TI_SERVICE_GLOBAL_TOKEN" ]]; then
-  yq write -i $CONFIG_FILE tiServiceConfig.globalToken "$TI_SERVICE_GLOBAL_TOKEN"
+  yq -i '.tiServiceConfig.globalToken="$TI_SERVICE_GLOBAL_TOKEN"' $CONFIG_FILE
 fi
 
 if [[ "" != "$STO_SERVICE_GLOBAL_TOKEN" ]]; then
-  yq write -i $CONFIG_FILE stoServiceConfig.globalToken "$STO_SERVICE_GLOBAL_TOKEN"
+  yq -i '.stoServiceConfig.globalToken="$STO_SERVICE_GLOBAL_TOKEN"' $CONFIG_FILE
 fi
 
 if [[ "" != "$NEXT_GEN_MANAGER_SECRET" ]]; then
-  yq write -i $CONFIG_FILE ngManagerServiceSecret "$NEXT_GEN_MANAGER_SECRET"
+  yq -i '.ngManagerServiceSecret="$NEXT_GEN_MANAGER_SECRET"' $CONFIG_FILE
 fi
 
 if [[ "" != "$JWT_AUTH_SECRET" ]]; then
-  yq write -i $CONFIG_FILE jwtAuthSecret "$JWT_AUTH_SECRET"
+  yq -i '.jwtAuthSecret="$JWT_AUTH_SECRET"' $CONFIG_FILE
 fi
 
 if [[ "" != "$JWT_IDENTITY_SERVICE_SECRET" ]]; then
-  yq write -i $CONFIG_FILE jwtIdentityServiceSecret "$JWT_IDENTITY_SERVICE_SECRET"
+  yq -i '.jwtIdentityServiceSecret="$JWT_IDENTITY_SERVICE_SECRET"' $CONFIG_FILE
 fi
 
 if [[ "" != "$API_URL" ]]; then
-  yq write -i $CONFIG_FILE apiUrl "$API_URL"
+  yq -i '.apiUrl="$API_URL"' $CONFIG_FILE
 fi
 
 if [[ "" != "$TIMESCALE_PASSWORD" ]]; then
-  yq write -i $CONFIG_FILE timescaledb.timescaledbPassword "$TIMESCALE_PASSWORD"
+  yq -i '.timescaledb.timescaledbPassword="$TIMESCALE_PASSWORD"' $CONFIG_FILE
 fi
 
 if [[ "" != "$TIMESCALE_URI" ]]; then
-  yq write -i $CONFIG_FILE timescaledb.timescaledbUrl "$TIMESCALE_URI"
+  yq -i '.timescaledb.timescaledbUrl="$TIMESCALE_URI"' $CONFIG_FILE
 fi
 
 if [[ "" != "$TIMESCALEDB_USERNAME" ]]; then
-  yq write -i $CONFIG_FILE timescaledb.timescaledbUsername "$TIMESCALEDB_USERNAME"
+  yq -i '.timescaledb.timescaledbUsername="$TIMESCALEDB_USERNAME"' $CONFIG_FILE
 fi
 
 if [[ "" != "$ENABLE_DASHBOARD_TIMESCALE" ]]; then
-  yq write -i $CONFIG_FILE enableDashboardTimescale $ENABLE_DASHBOARD_TIMESCALE
+  yq -i '.enableDashboardTimescale="$ENABLE_DASHBOARD_TIMESCALE"' $CONFIG_FILE
 fi
 
 if [[ "" != "$MANAGER_SECRET" ]]; then
-  yq write -i $CONFIG_FILE managerServiceSecret "$MANAGER_SECRET"
+  yq -i '.managerServiceSecret="$MANAGER_SECRET"' $CONFIG_FILE
 fi
 
 if [[ "" != "$MONGO_INDEX_MANAGER_MODE" ]]; then
-  yq write -i $CONFIG_FILE cimanager-mongo.indexManagerMode "$MONGO_INDEX_MANAGER_MODE"
+  yq -i '.cimanager-mongo.indexManagerMode="$MONGO_INDEX_MANAGER_MODE"' $CONFIG_FILE
 fi
 
 if [[ "$STACK_DRIVER_LOGGING_ENABLED" == "true" ]]; then
-  yq delete -i $CONFIG_FILE 'logging.appenders.(type==console)'
-  yq write -i $CONFIG_FILE 'logging.appenders.(type==gke-console).stackdriverLogEnabled' "true"
+  yq 'del(.'logging.appenders.(type==console)')' $CONFIG_FILE
+  yq -i '.'logging.appenders.(type==gke-console).stackdriverLogEnabled'="true"' $CONFIG_FILE
 else
-  yq delete -i $CONFIG_FILE 'logging.appenders.(type==gke-console)'
+  yq 'del(.'logging.appenders.(type==gke-console)')' $CONFIG_FILE
 fi
 
 replace_key_value accessControlClient.enableAccessControl "$ACCESS_CONTROL_ENABLED"
@@ -289,41 +289,41 @@ if [[ "" != "$EVENTS_FRAMEWORK_REDIS_SENTINELS" ]]; then
   IFS=',' read -ra SENTINEL_URLS <<< "$EVENTS_FRAMEWORK_REDIS_SENTINELS"
   INDEX=0
   for REDIS_SENTINEL_URL in "${SENTINEL_URLS[@]}"; do
-    yq write -i $CONFIG_FILE eventsFramework.redis.sentinelUrls.[$INDEX] "${REDIS_SENTINEL_URL}"
+    yq -i '.eventsFramework.redis.sentinelUrls.[$INDEX]="${REDIS_SENTINEL_URL}"' $CONFIG_FILE
     INDEX=$(expr $INDEX + 1)
   done
 fi
 
-yq delete -i $REDISSON_CACHE_FILE codec
+yq 'del(.codec)' $REDISSON_CACHE_FILE
 
 if [[ "$REDIS_SCRIPT_CACHE" == "false" ]]; then
-  yq write -i $REDISSON_CACHE_FILE useScriptCache false
+  yq -i '.useScriptCache="false"' $REDISSON_CACHE_FILE
 fi
 
 
 if [[ "" != "$CACHE_CONFIG_REDIS_URL" ]]; then
-  yq write -i $REDISSON_CACHE_FILE singleServerConfig.address "$CACHE_CONFIG_REDIS_URL"
+  yq -i '.singleServerConfig.address="$CACHE_CONFIG_REDIS_URL"' $REDISSON_CACHE_FILE
 fi
 
 if [[ "$CACHE_CONFIG_USE_SENTINEL" == "true" ]]; then
-  yq delete -i $REDISSON_CACHE_FILE singleServerConfig
+  yq 'del(.singleServerConfig)' $REDISSON_CACHE_FILE
 fi
 
 if [[ "" != "$CACHE_CONFIG_SENTINEL_MASTER_NAME" ]]; then
-  yq write -i $REDISSON_CACHE_FILE sentinelServersConfig.masterName "$CACHE_CONFIG_SENTINEL_MASTER_NAME"
+  yq -i '.sentinelServersConfig.masterName="$CACHE_CONFIG_SENTINEL_MASTER_NAME"' $REDISSON_CACHE_FILE
 fi
 
 if [[ "" != "$CACHE_CONFIG_REDIS_SENTINELS" ]]; then
   IFS=',' read -ra SENTINEL_URLS <<< "$CACHE_CONFIG_REDIS_SENTINELS"
   INDEX=0
   for REDIS_SENTINEL_URL in "${SENTINEL_URLS[@]}"; do
-    yq write -i $REDISSON_CACHE_FILE sentinelServersConfig.sentinelAddresses.[$INDEX] "${REDIS_SENTINEL_URL}"
+    yq -i '.sentinelServersConfig.sentinelAddresses.[$INDEX]="${REDIS_SENTINEL_URL}"' $REDISSON_CACHE_FILE
     INDEX=$(expr $INDEX + 1)
   done
 fi
 
 if [[ "" != "$REDIS_NETTY_THREADS" ]]; then
-  yq write -i $REDISSON_CACHE_FILE nettyThreads "$REDIS_NETTY_THREADS"
+  yq -i '.nettyThreads="$REDIS_NETTY_THREADS"' $REDISSON_CACHE_FILE
 fi
 
 yq delete -i $ENTERPRISE_REDISSON_CACHE_FILE codec

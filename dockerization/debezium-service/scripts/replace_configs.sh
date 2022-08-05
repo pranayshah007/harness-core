@@ -11,14 +11,14 @@ replace_key_value () {
   CONFIG_KEY="$1";
   CONFIG_VALUE="$2";
   if [[ "" != "$CONFIG_VALUE" ]]; then
-    yq write -i $CONFIG_FILE $CONFIG_KEY $CONFIG_VALUE
+    yq -i '.$CONFIG_KEY="$CONFIG_VALUE"' $CONFIG_FILE
   fi
 }
 
-yq write -i $CONFIG_FILE server.adminConnectors "[]"
+yq -i '.server.adminConnectors="[]"' $CONFIG_FILE
 
 if [[ "" != "$LOGGING_LEVEL" ]]; then
-    yq write -i $CONFIG_FILE logging.level "$LOGGING_LEVEL"
+    yq -i '.logging.level="$LOGGING_LEVEL"' $CONFIG_FILE
 fi
 
 if [[ "" != "$LOGGERS" ]]; then
@@ -26,56 +26,56 @@ if [[ "" != "$LOGGERS" ]]; then
   for ITEM in "${LOGGER_ITEMS[@]}"; do
     LOGGER=`echo $ITEM | awk -F= '{print $1}'`
     LOGGER_LEVEL=`echo $ITEM | awk -F= '{print $2}'`
-    yq write -i $CONFIG_FILE logging.loggers.[$LOGGER] "${LOGGER_LEVEL}"
+    yq -i '.logging.loggers.[$LOGGER]="${LOGGER_LEVEL}"' $CONFIG_FILE
   done
 fi
 
 if [[ "$STACK_DRIVER_LOGGING_ENABLED" == "true" ]]; then
-  yq delete -i $CONFIG_FILE 'logging.appenders.(type==console)'
-  yq write -i $CONFIG_FILE 'logging.appenders.(type==gke-console).stackdriverLogEnabled' "true"
+  yq 'del(.'logging.appenders.(type==console)')' $CONFIG_FILE
+  yq -i '.'logging.appenders.(type==gke-console).stackdriverLogEnabled'="true"' $CONFIG_FILE
 else
-  yq delete -i $CONFIG_FILE 'logging.appenders.(type==gke-console)'
+  yq 'del(.'logging.appenders.(type==gke-console)')' $CONFIG_FILE
 fi
 
 if [[ "" != "$EVENTS_FRAMEWORK_REDIS_SENTINELS" ]]; then
   IFS=',' read -ra SENTINEL_URLS <<< "$EVENTS_FRAMEWORK_REDIS_SENTINELS"
   INDEX=0
   for REDIS_SENTINEL_URL in "${SENTINEL_URLS[@]}"; do
-    yq write -i $CONFIG_FILE eventsFramework.redis.sentinelUrls.[$INDEX] "${REDIS_SENTINEL_URL}"
+    yq -i '.eventsFramework.redis.sentinelUrls.[$INDEX]="${REDIS_SENTINEL_URL}"' $CONFIG_FILE
     INDEX=$(expr $INDEX + 1)
   done
 fi
 
-yq delete -i $REDISSON_CACHE_FILE codec
+yq 'del(.codec)' $REDISSON_CACHE_FILE
 
 if [[ "$REDIS_SCRIPT_CACHE" == "false" ]]; then
-  yq write -i $REDISSON_CACHE_FILE useScriptCache false
+  yq -i '.useScriptCache="false"' $REDISSON_CACHE_FILE
 fi
 
 
 if [[ "" != "$CACHE_CONFIG_REDIS_URL" ]]; then
-  yq write -i $REDISSON_CACHE_FILE singleServerConfig.address "$CACHE_CONFIG_REDIS_URL"
+  yq -i '.singleServerConfig.address="$CACHE_CONFIG_REDIS_URL"' $REDISSON_CACHE_FILE
 fi
 
 if [[ "$CACHE_CONFIG_USE_SENTINEL" == "true" ]]; then
-  yq delete -i $REDISSON_CACHE_FILE singleServerConfig
+  yq 'del(.singleServerConfig)' $REDISSON_CACHE_FILE
 fi
 
 if [[ "" != "$CACHE_CONFIG_SENTINEL_MASTER_NAME" ]]; then
-  yq write -i $REDISSON_CACHE_FILE sentinelServersConfig.masterName "$CACHE_CONFIG_SENTINEL_MASTER_NAME"
+  yq -i '.sentinelServersConfig.masterName="$CACHE_CONFIG_SENTINEL_MASTER_NAME"' $REDISSON_CACHE_FILE
 fi
 
 if [[ "" != "$CACHE_CONFIG_REDIS_SENTINELS" ]]; then
   IFS=',' read -ra SENTINEL_URLS <<< "$CACHE_CONFIG_REDIS_SENTINELS"
   INDEX=0
   for REDIS_SENTINEL_URL in "${SENTINEL_URLS[@]}"; do
-    yq write -i $REDISSON_CACHE_FILE sentinelServersConfig.sentinelAddresses.[$INDEX] "${REDIS_SENTINEL_URL}"
+    yq -i '.sentinelServersConfig.sentinelAddresses.[$INDEX]="${REDIS_SENTINEL_URL}"' $REDISSON_CACHE_FILE
     INDEX=$(expr $INDEX + 1)
   done
 fi
 
 if [[ "" != "$REDIS_NETTY_THREADS" ]]; then
-  yq write -i $REDISSON_CACHE_FILE nettyThreads "$REDIS_NETTY_THREADS"
+  yq -i '.nettyThreads="$REDIS_NETTY_THREADS"' $REDISSON_CACHE_FILE
 fi
 
 replace_key_value eventsFramework.redis.sentinel $EVENTS_FRAMEWORK_USE_SENTINEL
@@ -111,7 +111,7 @@ if [[ "" != "$REDIS_LOCK_CONFIG_REDIS_SENTINELS" ]]; then
   IFS=',' read -ra SENTINEL_URLS <<< "$REDIS_LOCK_CONFIG_REDIS_SENTINELS"
   INDEX=0
   for REDIS_SENTINEL_URL in "${SENTINEL_URLS[@]}"; do
-    yq write -i $CONFIG_FILE redisLockConfig.sentinelUrls.[$INDEX] "${REDIS_SENTINEL_URL}"
+    yq -i '.redisLockConfig.sentinelUrls.[$INDEX]="${REDIS_SENTINEL_URL}"' $CONFIG_FILE
     INDEX=$(expr $INDEX + 1)
   done
 fi

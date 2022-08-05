@@ -11,22 +11,22 @@ replace_key_value () {
   CONFIG_KEY="$1";
   CONFIG_VALUE="$2";
   if [[ "" != "$CONFIG_VALUE" ]]; then
-    yq write -i $CONFIG_FILE $CONFIG_KEY $CONFIG_VALUE
+    yq -i '.$CONFIG_KEY="$CONFIG_VALUE"' $CONFIG_FILE
   fi
 }
 
-yq write -i $CONFIG_FILE server.adminConnectors "[]"
+yq -i '.server.adminConnectors="[]"' $CONFIG_FILE
 
-yq delete -i $CONFIG_FILE 'gitSdkConfiguration.gitSdkGrpcServerConfig.connectors.(secure==true)'
+yq 'del(.'gitSdkConfiguration.gitSdkGrpcServerConfig.connectors.(secure==true)')' $CONFIG_FILE
 
 if [[ "" != "$LOGGING_LEVEL" ]]; then
-    yq write -i $CONFIG_FILE logging.level "$LOGGING_LEVEL"
+    yq -i '.logging.level="$LOGGING_LEVEL"' $CONFIG_FILE
 fi
 
 if [[ "" != "$SERVER_PORT" ]]; then
-  yq write -i $CONFIG_FILE server.applicationConnectors[0].port "$SERVER_PORT"
+  yq -i '.server.applicationConnectors[0].port="$SERVER_PORT"' $CONFIG_FILE
 else
-  yq write -i $CONFIG_FILE server.applicationConnectors[0].port "15001"
+  yq -i '.server.applicationConnectors[0].port="15001"' $CONFIG_FILE
 fi
 
 if [[ "" != "$LOGGERS" ]]; then
@@ -34,136 +34,136 @@ if [[ "" != "$LOGGERS" ]]; then
   for ITEM in "${LOGGER_ITEMS[@]}"; do
     LOGGER=`echo $ITEM | awk -F= '{print $1}'`
     LOGGER_LEVEL=`echo $ITEM | awk -F= '{print $2}'`
-    yq write -i $CONFIG_FILE logging.loggers.[$LOGGER] "${LOGGER_LEVEL}"
+    yq -i '.logging.loggers.[$LOGGER]="${LOGGER_LEVEL}"' $CONFIG_FILE
   done
 fi
 
 if [[ "" != "$MONGO_URI" ]]; then
-  yq write -i $CONFIG_FILE mongo.uri "${MONGO_URI//\\&/&}"
+  yq -i '.mongo.uri="${MONGO_URI//\\&/&}"' $CONFIG_FILE
 fi
 
 if [[ "" != "$MONGO_TRACE_MODE" ]]; then
-  yq write -i $CONFIG_FILE mongo.traceMode $MONGO_TRACE_MODE
+  yq -i '.mongo.traceMode="$MONGO_TRACE_MODE"' $CONFIG_FILE
 fi
 
 if [[ "" != "$MONGO_CONNECT_TIMEOUT" ]]; then
-  yq write -i $CONFIG_FILE mongo.connectTimeout $MONGO_CONNECT_TIMEOUT
+  yq -i '.mongo.connectTimeout="$MONGO_CONNECT_TIMEOUT"' $CONFIG_FILE
 fi
 
 if [[ "" != "$MONGO_SERVER_SELECTION_TIMEOUT" ]]; then
-  yq write -i $CONFIG_FILE mongo.serverSelectionTimeout $MONGO_SERVER_SELECTION_TIMEOUT
+  yq -i '.mongo.serverSelectionTimeout="$MONGO_SERVER_SELECTION_TIMEOUT"' $CONFIG_FILE
 fi
 
 if [[ "" != "$MAX_CONNECTION_IDLE_TIME" ]]; then
-  yq write -i $CONFIG_FILE mongo.maxConnectionIdleTime $MAX_CONNECTION_IDLE_TIME
+  yq -i '.mongo.maxConnectionIdleTime="$MAX_CONNECTION_IDLE_TIME"' $CONFIG_FILE
 fi
 
 if [[ "" != "$MONGO_CONNECTIONS_PER_HOST" ]]; then
-  yq write -i $CONFIG_FILE mongo.connectionsPerHost $MONGO_CONNECTIONS_PER_HOST
+  yq -i '.mongo.connectionsPerHost="$MONGO_CONNECTIONS_PER_HOST"' $CONFIG_FILE
 fi
 
 if [[ "" != "$MONGO_INDEX_MANAGER_MODE" ]]; then
-  yq write -i $CONFIG_FILE mongo.indexManagerMode $MONGO_INDEX_MANAGER_MODE
+  yq -i '.mongo.indexManagerMode="$MONGO_INDEX_MANAGER_MODE"' $CONFIG_FILE
 fi
 
 if [[ "" != "$MONGO_TRANSACTIONS_ALLOWED" ]]; then
-  yq write -i $CONFIG_FILE mongo.transactionsEnabled $MONGO_TRANSACTIONS_ALLOWED
+  yq -i '.mongo.transactionsEnabled="$MONGO_TRANSACTIONS_ALLOWED"' $CONFIG_FILE
 fi
 
 if [[ "" != "$MANAGER_TARGET" ]]; then
-  yq write -i $CONFIG_FILE managerTarget $MANAGER_TARGET
+  yq -i '.managerTarget="$MANAGER_TARGET"' $CONFIG_FILE
 fi
 
 if [[ "" != "$MANAGER_AUTHORITY" ]]; then
-  yq write -i $CONFIG_FILE managerAuthority $MANAGER_AUTHORITY
+  yq -i '.managerAuthority="$MANAGER_AUTHORITY"' $CONFIG_FILE
 fi
 
 if [[ "" != "$MANAGER_SERVICE_SECRET" ]]; then
-  yq write -i $CONFIG_FILE managerServiceSecret $MANAGER_SERVICE_SECRET
+  yq -i '.managerServiceSecret="$MANAGER_SERVICE_SECRET"' $CONFIG_FILE
 fi
 
 if [[ "" != "$NG_MANAGER_BASE_URL" ]]; then
-  yq write -i $CONFIG_FILE ngManagerServiceHttpClientConfig.baseUrl $NG_MANAGER_BASE_URL
+  yq -i '.ngManagerServiceHttpClientConfig.baseUrl="$NG_MANAGER_BASE_URL"' $CONFIG_FILE
 fi
 
 if [[ "" != "$MANAGER_CLIENT_BASEURL" ]]; then
-  yq write -i $CONFIG_FILE managerClientConfig.baseUrl $MANAGER_CLIENT_BASEURL
+  yq -i '.managerClientConfig.baseUrl="$MANAGER_CLIENT_BASEURL"' $CONFIG_FILE
 fi
 
 if [[ "" != "$NG_MANAGER_SERVICE_SECRET" ]]; then
-  yq write -i $CONFIG_FILE ngManagerServiceSecret $NG_MANAGER_SERVICE_SECRET
+  yq -i '.ngManagerServiceSecret="$NG_MANAGER_SERVICE_SECRET"' $CONFIG_FILE
 fi
 
 if [[ "" != "$PIPELINE_SERVICE_SECRET" ]]; then
-  yq write -i $CONFIG_FILE pipelineServiceSecret "$PIPELINE_SERVICE_SECRET"
+  yq -i '.pipelineServiceSecret="$PIPELINE_SERVICE_SECRET"' $CONFIG_FILE
 fi
 
 if [[ "" != "$NG_MANAGER_GITSYNC_TARGET" ]]; then
-  yq write -i $CONFIG_FILE gitSdkConfiguration.gitManagerGrpcClientConfig.target $NG_MANAGER_GITSYNC_TARGET
+  yq -i '.gitSdkConfiguration.gitManagerGrpcClientConfig.target="$NG_MANAGER_GITSYNC_TARGET"' $CONFIG_FILE
 fi
 
 if [[ "" != "$NG_MANAGER_GITSYNC_AUTHORITY" ]]; then
-  yq write -i $CONFIG_FILE gitSdkConfiguration.gitManagerGrpcClientConfig.authority $NG_MANAGER_GITSYNC_AUTHORITY
+  yq -i '.gitSdkConfiguration.gitManagerGrpcClientConfig.authority="$NG_MANAGER_GITSYNC_AUTHORITY"' $CONFIG_FILE
 fi
 
 if [[ "" != "$SCM_SERVICE_URI" ]]; then
-  yq write -i $CONFIG_FILE gitSdkConfiguration.scmConnectionConfig.url "$SCM_SERVICE_URI"
+  yq -i '.gitSdkConfiguration.scmConnectionConfig.url="$SCM_SERVICE_URI"' $CONFIG_FILE
 fi
 
 if [[ "$STACK_DRIVER_LOGGING_ENABLED" == "true" ]]; then
-  yq delete -i $CONFIG_FILE 'logging.appenders.(type==console)'
-  yq write -i $CONFIG_FILE 'logging.appenders.(type==gke-console).stackdriverLogEnabled' "true"
+  yq 'del(.'logging.appenders.(type==console)')' $CONFIG_FILE
+  yq -i '.'logging.appenders.(type==gke-console).stackdriverLogEnabled'="true"' $CONFIG_FILE
 else
-  yq delete -i $CONFIG_FILE 'logging.appenders.(type==gke-console)'
+  yq 'del(.'logging.appenders.(type==gke-console)')' $CONFIG_FILE
 fi
 
 if [[ "" != "$JWT_AUTH_SECRET" ]]; then
-  yq write -i $CONFIG_FILE jwtAuthSecret "$JWT_AUTH_SECRET"
+  yq -i '.jwtAuthSecret="$JWT_AUTH_SECRET"' $CONFIG_FILE
 fi
 
 if [[ "" != "$JWT_IDENTITY_SERVICE_SECRET" ]]; then
-  yq write -i $CONFIG_FILE jwtIdentityServiceSecret "$JWT_IDENTITY_SERVICE_SECRET"
+  yq -i '.jwtIdentityServiceSecret="$JWT_IDENTITY_SERVICE_SECRET"' $CONFIG_FILE
 fi
 
 if [[ "" != "$EVENTS_FRAMEWORK_REDIS_SENTINELS" ]]; then
   IFS=',' read -ra SENTINEL_URLS <<< "$EVENTS_FRAMEWORK_REDIS_SENTINELS"
   INDEX=0
   for REDIS_SENTINEL_URL in "${SENTINEL_URLS[@]}"; do
-    yq write -i $CONFIG_FILE eventsFramework.redis.sentinelUrls.[$INDEX] "${REDIS_SENTINEL_URL}"
+    yq -i '.eventsFramework.redis.sentinelUrls.[$INDEX]="${REDIS_SENTINEL_URL}"' $CONFIG_FILE
     INDEX=$(expr $INDEX + 1)
   done
 fi
 
-yq delete -i $REDISSON_CACHE_FILE codec
+yq 'del(.codec)' $REDISSON_CACHE_FILE
 
 if [[ "$REDIS_SCRIPT_CACHE" == "false" ]]; then
-  yq write -i $REDISSON_CACHE_FILE useScriptCache false
+  yq -i '.useScriptCache="false"' $REDISSON_CACHE_FILE
 fi
 
 
 if [[ "" != "$CACHE_CONFIG_REDIS_URL" ]]; then
-  yq write -i $REDISSON_CACHE_FILE singleServerConfig.address "$CACHE_CONFIG_REDIS_URL"
+  yq -i '.singleServerConfig.address="$CACHE_CONFIG_REDIS_URL"' $REDISSON_CACHE_FILE
 fi
 
 if [[ "$CACHE_CONFIG_USE_SENTINEL" == "true" ]]; then
-  yq delete -i $REDISSON_CACHE_FILE singleServerConfig
+  yq 'del(.singleServerConfig)' $REDISSON_CACHE_FILE
 fi
 
 if [[ "" != "$CACHE_CONFIG_SENTINEL_MASTER_NAME" ]]; then
-  yq write -i $REDISSON_CACHE_FILE sentinelServersConfig.masterName "$CACHE_CONFIG_SENTINEL_MASTER_NAME"
+  yq -i '.sentinelServersConfig.masterName="$CACHE_CONFIG_SENTINEL_MASTER_NAME"' $REDISSON_CACHE_FILE
 fi
 
 if [[ "" != "$CACHE_CONFIG_REDIS_SENTINELS" ]]; then
   IFS=',' read -ra SENTINEL_URLS <<< "$CACHE_CONFIG_REDIS_SENTINELS"
   INDEX=0
   for REDIS_SENTINEL_URL in "${SENTINEL_URLS[@]}"; do
-    yq write -i $REDISSON_CACHE_FILE sentinelServersConfig.sentinelAddresses.[$INDEX] "${REDIS_SENTINEL_URL}"
+    yq -i '.sentinelServersConfig.sentinelAddresses.[$INDEX]="${REDIS_SENTINEL_URL}"' $REDISSON_CACHE_FILE
     INDEX=$(expr $INDEX + 1)
   done
 fi
 
 if [[ "" != "$REDIS_NETTY_THREADS" ]]; then
-  yq write -i $REDISSON_CACHE_FILE nettyThreads "$REDIS_NETTY_THREADS"
+  yq -i '.nettyThreads="$REDIS_NETTY_THREADS"' $REDISSON_CACHE_FILE
 fi
 
 replace_key_value cacheConfig.cacheNamespace $CACHE_NAMESPACE

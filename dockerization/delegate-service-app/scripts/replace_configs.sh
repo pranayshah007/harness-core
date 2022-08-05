@@ -11,19 +11,19 @@ replace_key_value () {
   CONFIG_KEY="$1";
   CONFIG_VALUE="$2";
   if [[ "" != "$CONFIG_VALUE" ]]; then
-    yq write -i $CONFIG_FILE $CONFIG_KEY $CONFIG_VALUE
+    yq -i '.$CONFIG_KEY="$CONFIG_VALUE"' $CONFIG_FILE
   fi
 }
 
-yq delete -i $CONFIG_FILE 'server.applicationConnectors.(type==h2)'
-yq delete -i $CONFIG_FILE 'grpcServerConfig.connectors.(secure==true)'
-yq delete -i $CONFIG_FILE 'grpcServerClassicConfig.connectors.(secure==true)'
+yq 'del(.'server.applicationConnectors.(type==h2)')' $CONFIG_FILE
+yq 'del(.'grpcServerConfig.connectors.(secure==true)')' $CONFIG_FILE
+yq 'del(.'grpcServerClassicConfig.connectors.(secure==true)')' $CONFIG_FILE
 
 
-yq write -i $CONFIG_FILE server.adminConnectors "[]"
+yq -i '.server.adminConnectors="[]"' $CONFIG_FILE
 
 if [[ "" != "$LOGGING_LEVEL" ]]; then
-    yq write -i $CONFIG_FILE logging.level "$LOGGING_LEVEL"
+    yq -i '.logging.level="$LOGGING_LEVEL"' $CONFIG_FILE
 fi
 
 if [[ "" != "$LOGGERS" ]]; then
@@ -31,160 +31,160 @@ if [[ "" != "$LOGGERS" ]]; then
   for ITEM in "${LOGGER_ITEMS[@]}"; do
     LOGGER=`echo $ITEM | awk -F= '{print $1}'`
     LOGGER_LEVEL=`echo $ITEM | awk -F= '{print $2}'`
-    yq write -i $CONFIG_FILE logging.loggers.[$LOGGER] "${LOGGER_LEVEL}"
+    yq -i '.logging.loggers.[$LOGGER]="${LOGGER_LEVEL}"' $CONFIG_FILE
   done
 fi
 
 if [[ "" != "$SERVER_PORT" ]]; then
-  yq write -i $CONFIG_FILE server.applicationConnectors[0].port "$SERVER_PORT"
+  yq -i '.server.applicationConnectors[0].port="$SERVER_PORT"' $CONFIG_FILE
 else
-  yq write -i $CONFIG_FILE server.applicationConnectors[0].port "9080"
+  yq -i '.server.applicationConnectors[0].port="9080"' $CONFIG_FILE
 fi
 
 if [[ "" != "$GRPC_SERVER_PORT" ]]; then
-  yq write -i $CONFIG_FILE grpcServerConfig.connectors[0].port "$GRPC_SERVER_PORT"
+  yq -i '.grpcServerConfig.connectors[0].port="$GRPC_SERVER_PORT"' $CONFIG_FILE
 fi
 
 if [[ "" != "$GRPC_SERVER_CLASSIC_PORT" ]]; then
-  yq write -i $CONFIG_FILE grpcServerClassicConfig.connectors[0].port "$GRPC_SERVER_CLASSIC_PORT"
+  yq -i '.grpcServerClassicConfig.connectors[0].port="$GRPC_SERVER_CLASSIC_PORT"' $CONFIG_FILE
 fi
 
 if [[ "" != "$SERVER_MAX_THREADS" ]]; then
-  yq write -i $CONFIG_FILE server.maxThreads "$SERVER_MAX_THREADS"
+  yq -i '.server.maxThreads="$SERVER_MAX_THREADS"' $CONFIG_FILE
 fi
 
 if [[ "" != "$UI_SERVER_URL" ]]; then
-  yq write -i $CONFIG_FILE portal.url "$UI_SERVER_URL"
+  yq -i '.portal.url="$UI_SERVER_URL"' $CONFIG_FILE
 fi
 
 if [[ "" != "$AUTHTOKENEXPIRYINMILLIS" ]]; then
-  yq write -i $CONFIG_FILE portal.authTokenExpiryInMillis "$AUTHTOKENEXPIRYINMILLIS"
+  yq -i '.portal.authTokenExpiryInMillis="$AUTHTOKENEXPIRYINMILLIS"' $CONFIG_FILE
 fi
 
 if [[ "" != "$EXTERNAL_GRAPHQL_RATE_LIMIT" ]]; then
-  yq write -i $CONFIG_FILE portal.externalGraphQLRateLimitPerMinute "$EXTERNAL_GRAPHQL_RATE_LIMIT"
+  yq -i '.portal.externalGraphQLRateLimitPerMinute="$EXTERNAL_GRAPHQL_RATE_LIMIT"' $CONFIG_FILE
 fi
 
 if [[ "" != "$CUSTOM_DASH_GRAPHQL_RATE_LIMIT" ]]; then
-  yq write -i $CONFIG_FILE portal.customDashGraphQLRateLimitPerMinute "$CUSTOM_DASH_GRAPHQL_RATE_LIMIT"
+  yq -i '.portal.customDashGraphQLRateLimitPerMinute="$CUSTOM_DASH_GRAPHQL_RATE_LIMIT"' $CONFIG_FILE
 fi
 
 if [[ "" != "$ALLOWED_ORIGINS" ]]; then
-  yq write -i $CONFIG_FILE portal.allowedOrigins "$ALLOWED_ORIGINS"
+  yq -i '.portal.allowedOrigins="$ALLOWED_ORIGINS"' $CONFIG_FILE
 fi
 
 if [[ "" != "$STORE_REQUEST_PAYLOAD" ]]; then
-  yq write -i $CONFIG_FILE auditConfig.storeRequestPayload "$STORE_REQUEST_PAYLOAD"
+  yq -i '.auditConfig.storeRequestPayload="$STORE_REQUEST_PAYLOAD"' $CONFIG_FILE
 fi
 
 if [[ "" != "$STORE_RESPONSE_PAYLOAD" ]]; then
-  yq write -i $CONFIG_FILE auditConfig.storeResponsePayload "$STORE_RESPONSE_PAYLOAD"
+  yq -i '.auditConfig.storeResponsePayload="$STORE_RESPONSE_PAYLOAD"' $CONFIG_FILE
 fi
 
 if [[ "" != "$MONGO_URI" ]]; then
-  yq write -i $CONFIG_FILE mongo.uri "${MONGO_URI//\\&/&}"
+  yq -i '.mongo.uri="${MONGO_URI//\\&/&}"' $CONFIG_FILE
 fi
 
 if [[ "" != "$MONGO_TRACE_MODE" ]]; then
-  yq write -i $CONFIG_FILE mongo.traceMode $MONGO_TRACE_MODE
+  yq -i '.mongo.traceMode="$MONGO_TRACE_MODE"' $CONFIG_FILE
 fi
 
 if [[ "" != "$MONGO_SSL_CONFIG" ]]; then
-  yq write -i $CONFIG_FILE mongo.mongoSSLConfig.mongoSSLEnabled "$MONGO_SSL_CONFIG"
+  yq -i '.mongo.mongoSSLConfig.mongoSSLEnabled="$MONGO_SSL_CONFIG"' $CONFIG_FILE
 fi
 
 if [[ "" != "$MONGO_SSL_CA_TRUST_STORE_PATH" ]]; then
-  yq write -i $CONFIG_FILE mongo.mongoSSLConfig.mongoTrustStorePath "$MONGO_SSL_CA_TRUST_STORE_PATH"
+  yq -i '.mongo.mongoSSLConfig.mongoTrustStorePath="$MONGO_SSL_CA_TRUST_STORE_PATH"' $CONFIG_FILE
 fi
 
 if [[ "" != "$MONGO_SSL_CA_TRUST_STORE_PASSWORD" ]]; then
-  yq write -i $CONFIG_FILE mongo.mongoSSLConfig.mongoTrustStorePassword "$MONGO_SSL_CA_TRUST_STORE_PASSWORD"
+  yq -i '.mongo.mongoSSLConfig.mongoTrustStorePassword="$MONGO_SSL_CA_TRUST_STORE_PASSWORD"' $CONFIG_FILE
 fi
 
 if [[ "" != "$MONGO_CONNECT_TIMEOUT" ]]; then
-  yq write -i $CONFIG_FILE mongo.connectTimeout $MONGO_CONNECT_TIMEOUT
+  yq -i '.mongo.connectTimeout="$MONGO_CONNECT_TIMEOUT"' $CONFIG_FILE
 fi
 
 if [[ "" != "$MONGO_SERVER_SELECTION_TIMEOUT" ]]; then
-  yq write -i $CONFIG_FILE mongo.serverSelectionTimeout $MONGO_SERVER_SELECTION_TIMEOUT
+  yq -i '.mongo.serverSelectionTimeout="$MONGO_SERVER_SELECTION_TIMEOUT"' $CONFIG_FILE
 fi
 
 if [[ "" != "$MAX_CONNECTION_IDLE_TIME" ]]; then
-  yq write -i $CONFIG_FILE mongo.maxConnectionIdleTime $MAX_CONNECTION_IDLE_TIME
+  yq -i '.mongo.maxConnectionIdleTime="$MAX_CONNECTION_IDLE_TIME"' $CONFIG_FILE
 fi
 
 if [[ "" != "$MONGO_CONNECTIONS_PER_HOST" ]]; then
-  yq write -i $CONFIG_FILE mongo.connectionsPerHost $MONGO_CONNECTIONS_PER_HOST
+  yq -i '.mongo.connectionsPerHost="$MONGO_CONNECTIONS_PER_HOST"' $CONFIG_FILE
 fi
 
 if [[ "" != "$MONGO_INDEX_MANAGER_MODE" ]]; then
-  yq write -i $CONFIG_FILE mongo.indexManagerMode $MONGO_INDEX_MANAGER_MODE
+  yq -i '.mongo.indexManagerMode="$MONGO_INDEX_MANAGER_MODE"' $CONFIG_FILE
 fi
 
 if [[ "" != "$EVEMTS_MONGO_INDEX_MANAGER_MODE" ]]; then
-  yq write -i $CONFIG_FILE events-mongo.indexManagerMode $EVEMTS_MONGO_INDEX_MANAGER_MODE
+  yq -i '.events-mongo.indexManagerMode="$EVEMTS_MONGO_INDEX_MANAGER_MODE"' $CONFIG_FILE
 fi
 
 if [[ "" != "$EVENTS_MONGO_URI" ]]; then
-  yq write -i $CONFIG_FILE events-mongo.uri "$EVENTS_MONGO_URI"
+  yq -i '.events-mongo.uri="$EVENTS_MONGO_URI"' $CONFIG_FILE
 else
-  yq delete -i $CONFIG_FILE events-mongo
+  yq 'del(.events-mongo)' $CONFIG_FILE
 fi
 
 if [[ "" != "$CF_CLIENT_API_KEY" ]]; then
-  yq write -i $CONFIG_FILE cfClientConfig.apiKey "$CF_CLIENT_API_KEY"
+  yq -i '.cfClientConfig.apiKey="$CF_CLIENT_API_KEY"' $CONFIG_FILE
 fi
 
 if [[ "" != "$CF_CLIENT_CONFIG_URL" ]]; then
-  yq write -i $CONFIG_FILE cfClientConfig.configUrl "$CF_CLIENT_CONFIG_URL"
+  yq -i '.cfClientConfig.configUrl="$CF_CLIENT_CONFIG_URL"' $CONFIG_FILE
 fi
 
 if [[ "" != "$CF_CLIENT_BUFFER_SIZE" ]]; then
-  yq write -i $CONFIG_FILE cfClientConfig.bufferSize "$CF_CLIENT_BUFFER_SIZE"
+  yq -i '.cfClientConfig.bufferSize="$CF_CLIENT_BUFFER_SIZE"' $CONFIG_FILE
 fi
 
 if [[ "" != "$CF_CLIENT_EVENT_URL" ]]; then
-  yq write -i $CONFIG_FILE cfClientConfig.eventUrl "$CF_CLIENT_EVENT_URL"
+  yq -i '.cfClientConfig.eventUrl="$CF_CLIENT_EVENT_URL"' $CONFIG_FILE
 fi
 
 if [[ "" != "$CF_CLIENT_ANALYTICS_ENABLED" ]]; then
-  yq write -i $CONFIG_FILE cfClientConfig.analyticsEnabled "$CF_CLIENT_ANALYTICS_ENABLED"
+  yq -i '.cfClientConfig.analyticsEnabled="$CF_CLIENT_ANALYTICS_ENABLED"' $CONFIG_FILE
 fi
 
 if [[ "" != "$CF_CLIENT_CONNECTION_TIMEOUT" ]]; then
-  yq write -i $CONFIG_FILE cfClientConfig.connectionTimeout "$CF_CLIENT_CONNECTION_TIMEOUT"
+  yq -i '.cfClientConfig.connectionTimeout="$CF_CLIENT_CONNECTION_TIMEOUT"' $CONFIG_FILE
 fi
 
 if [[ "" != "$CF_CLIENT_READ_TIMEOUT" ]]; then
-  yq write -i $CONFIG_FILE cfClientConfig.readTimeout "$CF_CLIENT_READ_TIMEOUT"
+  yq -i '.cfClientConfig.readTimeout="$CF_CLIENT_READ_TIMEOUT"' $CONFIG_FILE
 fi
 
 if [[ "" != "$CF_MIGRATION_ENABLED" ]]; then
-  yq write -i $CONFIG_FILE cfMigrationConfig.enabled "$CF_MIGRATION_ENABLED"
+  yq -i '.cfMigrationConfig.enabled="$CF_MIGRATION_ENABLED"' $CONFIG_FILE
 fi
 
 if [[ "" != "$CF_MIGRATION_ADMIN_URL" ]]; then
-  yq write -i $CONFIG_FILE cfMigrationConfig.adminUrl "$CF_MIGRATION_ADMIN_URL"
+  yq -i '.cfMigrationConfig.adminUrl="$CF_MIGRATION_ADMIN_URL"' $CONFIG_FILE
 fi
 
 if [[ "" != "$CF_MIGRATION_API_KEY" ]]; then
-  yq write -i $CONFIG_FILE cfMigrationConfig.apiKey "$CF_MIGRATION_API_KEY"
+  yq -i '.cfMigrationConfig.apiKey="$CF_MIGRATION_API_KEY"' $CONFIG_FILE
 fi
 
 if [[ "" != "$CF_MIGRATION_ACCOUNT" ]]; then
-  yq write -i $CONFIG_FILE cfMigrationConfig.account "$CF_MIGRATION_ACCOUNT"
+  yq -i '.cfMigrationConfig.account="$CF_MIGRATION_ACCOUNT"' $CONFIG_FILE
 fi
 
 if [[ "" != "$CF_MIGRATION_ORG" ]]; then
-  yq write -i $CONFIG_FILE cfMigrationConfig.org "$CF_MIGRATION_ORG"
+  yq -i '.cfMigrationConfig.org="$CF_MIGRATION_ORG"' $CONFIG_FILE
 fi
 
 if [[ "" != "$CF_MIGRATION_PROJECT" ]]; then
-  yq write -i $CONFIG_FILE cfMigrationConfig.project "$CF_MIGRATION_PROJECT"
+  yq -i '.cfMigrationConfig.project="$CF_MIGRATION_PROJECT"' $CONFIG_FILE
 fi
 
 if [[ "" != "$CF_MIGRATION_ENVIRONMENT" ]]; then
-  yq write -i $CONFIG_FILE cfMigrationConfig.environment "$CF_MIGRATION_ENVIRONMENT"
+  yq -i '.cfMigrationConfig.environment="$CF_MIGRATION_ENVIRONMENT"' $CONFIG_FILE
 fi
 
 replace_key_value featureFlagConfig.featureFlagSystem "$FEATURE_FLAG_SYSTEM"
@@ -192,103 +192,103 @@ replace_key_value featureFlagConfig.syncFeaturesToCF "$SYNC_FEATURES_TO_CF"
 
 
 if [[ "" != "$MONGO_LOCK_URI" ]]; then
-  yq write -i $CONFIG_FILE mongo.locksUri "${MONGO_LOCK_URI//\\&/&}"
+  yq -i '.mongo.locksUri="${MONGO_LOCK_URI//\\&/&}"' $CONFIG_FILE
 fi
 
-yq write -i $CONFIG_FILE server.requestLog.appenders[0].threshold "TRACE"
+yq -i '.server.requestLog.appenders[0].threshold="TRACE"' $CONFIG_FILE
 
 if [[ "$STACK_DRIVER_LOGGING_ENABLED" == "true" ]]; then
-  yq delete -i $CONFIG_FILE 'logging.appenders.(type==file)'
-  yq delete -i $CONFIG_FILE 'logging.appenders.(type==console)'
-  yq write -i $CONFIG_FILE 'logging.appenders.(type==gke-console).stackdriverLogEnabled' "true"
+  yq 'del(.'logging.appenders.(type==file)')' $CONFIG_FILE
+  yq 'del(.'logging.appenders.(type==console)')' $CONFIG_FILE
+  yq -i '.'logging.appenders.(type==gke-console).stackdriverLogEnabled'="true"' $CONFIG_FILE
 else
   if [[ "$ROLLING_FILE_LOGGING_ENABLED" == "true" ]]; then
-    yq delete -i $CONFIG_FILE 'logging.appenders.(type==gke-console)'
-    yq write -i $CONFIG_FILE 'logging.appenders.(type==file).currentLogFilename' "/opt/harness/logs/delegate-service.log"
-    yq write -i $CONFIG_FILE 'logging.appenders.(type==file).archivedLogFilenamePattern' "/opt/harness/logs/delegate-service.%d.%i.log"
+    yq 'del(.'logging.appenders.(type==gke-console)')' $CONFIG_FILE
+    yq -i '.'logging.appenders.(type==file).currentLogFilename'="/opt/harness/logs/delegate-service.log"' $CONFIG_FILE
+    yq -i '.'logging.appenders.(type==file).archivedLogFilenamePattern'="/opt/harness/logs/delegate-service.%d.%i.log"' $CONFIG_FILE
   else
-    yq delete -i $CONFIG_FILE 'logging.appenders.(type==file)'
-    yq delete -i $CONFIG_FILE 'logging.appenders.(type==gke-console)'
+    yq 'del(.'logging.appenders.(type==file)')' $CONFIG_FILE
+    yq 'del(.'logging.appenders.(type==gke-console)')' $CONFIG_FILE
   fi
 fi
 
 if [[ "" != "$WATCHER_METADATA_URL" ]]; then
-  yq write -i $CONFIG_FILE watcherMetadataUrl "$WATCHER_METADATA_URL"
+  yq -i '.watcherMetadataUrl="$WATCHER_METADATA_URL"' $CONFIG_FILE
 fi
 
 if [[ "" != "$DELEGATE_METADATA_URL" ]]; then
-  yq write -i $CONFIG_FILE delegateMetadataUrl "$DELEGATE_METADATA_URL"
+  yq -i '.delegateMetadataUrl="$DELEGATE_METADATA_URL"' $CONFIG_FILE
 fi
 
 if [[ "" != "$API_URL" ]]; then
-  yq write -i $CONFIG_FILE apiUrl "$API_URL"
+  yq -i '.apiUrl="$API_URL"' $CONFIG_FILE
 fi
 
 if [[ "" != "$ENV_PATH" ]]; then
-  yq write -i $CONFIG_FILE envPath "$ENV_PATH"
+  yq -i '.envPath="$ENV_PATH"' $CONFIG_FILE
 fi
 
 if [[ "" != "$DEPLOY_MODE" ]]; then
-  yq write -i $CONFIG_FILE deployMode "$DEPLOY_MODE"
+  yq -i '.deployMode="$DEPLOY_MODE"' $CONFIG_FILE
 fi
 
 
 if [[ "" != "$jwtPasswordSecret" ]]; then
-  yq write -i $CONFIG_FILE portal.jwtPasswordSecret "$jwtPasswordSecret"
+  yq -i '.portal.jwtPasswordSecret="$jwtPasswordSecret"' $CONFIG_FILE
 fi
 
 if [[ "" != "$jwtExternalServiceSecret" ]]; then
-  yq write -i $CONFIG_FILE portal.jwtExternalServiceSecret "$jwtExternalServiceSecret"
+  yq -i '.portal.jwtExternalServiceSecret="$jwtExternalServiceSecret"' $CONFIG_FILE
 fi
 
 if [[ "" != "$jwtZendeskSecret" ]]; then
-  yq write -i $CONFIG_FILE portal.jwtZendeskSecret "$jwtZendeskSecret"
+  yq -i '.portal.jwtZendeskSecret="$jwtZendeskSecret"' $CONFIG_FILE
 fi
 
 if [[ "" != "$jwtMultiAuthSecret" ]]; then
-  yq write -i $CONFIG_FILE portal.jwtMultiAuthSecret "$jwtMultiAuthSecret"
+  yq -i '.portal.jwtMultiAuthSecret="$jwtMultiAuthSecret"' $CONFIG_FILE
 fi
 
 if [[ "" != "$jwtSsoRedirectSecret" ]]; then
-  yq write -i $CONFIG_FILE portal.jwtSsoRedirectSecret "$jwtSsoRedirectSecret"
+  yq -i '.portal.jwtSsoRedirectSecret="$jwtSsoRedirectSecret"' $CONFIG_FILE
 fi
 
 if [[ "" != "$jwtAuthSecret" ]]; then
-  yq write -i $CONFIG_FILE portal.jwtAuthSecret "$jwtAuthSecret"
+  yq -i '.portal.jwtAuthSecret="$jwtAuthSecret"' $CONFIG_FILE
 fi
 
 if [[ "" != "$jwtMarketPlaceSecret" ]]; then
-  yq write -i $CONFIG_FILE portal.jwtMarketPlaceSecret "$jwtMarketPlaceSecret"
+  yq -i '.portal.jwtMarketPlaceSecret="$jwtMarketPlaceSecret"' $CONFIG_FILE
 fi
 
 if [[ "" != "$jwtIdentityServiceSecret" ]]; then
-  yq write -i $CONFIG_FILE portal.jwtIdentityServiceSecret "$jwtIdentityServiceSecret"
+  yq -i '.portal.jwtIdentityServiceSecret="$jwtIdentityServiceSecret"' $CONFIG_FILE
 fi
 
 if [[ "" != "$jwtDataHandlerSecret" ]]; then
-  yq write -i $CONFIG_FILE portal.jwtDataHandlerSecret "$jwtDataHandlerSecret"
+  yq -i '.portal.jwtDataHandlerSecret="$jwtDataHandlerSecret"' $CONFIG_FILE
 fi
 
 if [[ "" != "$jwtNextGenManagerSecret" ]]; then
-  yq write -i $CONFIG_FILE portal.jwtNextGenManagerSecret "$jwtNextGenManagerSecret"
+  yq -i '.portal.jwtNextGenManagerSecret="$jwtNextGenManagerSecret"' $CONFIG_FILE
 fi
 
 if [[ "" != "$DELEGATE_DOCKER_IMAGE" ]]; then
-  yq write -i $CONFIG_FILE portal.delegateDockerImage "$DELEGATE_DOCKER_IMAGE"
+  yq -i '.portal.delegateDockerImage="$DELEGATE_DOCKER_IMAGE"' $CONFIG_FILE
 fi
 
 if [[ "" != "$OPTIONAL_DELEGATE_TASK_REJECT_AT_LIMIT" ]]; then
-  yq write -i $CONFIG_FILE portal.optionalDelegateTaskRejectAtLimit "$OPTIONAL_DELEGATE_TASK_REJECT_AT_LIMIT"
+  yq -i '.portal.optionalDelegateTaskRejectAtLimit="$OPTIONAL_DELEGATE_TASK_REJECT_AT_LIMIT"' $CONFIG_FILE
 fi
 
 if [[ "" != "$BACKGROUND_SCHEDULER_CLUSTERED" ]]; then
-  yq write -i $CONFIG_FILE backgroundScheduler.clustered "$BACKGROUND_SCHEDULER_CLUSTERED"
+  yq -i '.backgroundScheduler.clustered="$BACKGROUND_SCHEDULER_CLUSTERED"' $CONFIG_FILE
 fi
 
 if [[ "" != "$ENABLE_CRONS" ]]; then
-  yq write -i $CONFIG_FILE enableIterators "$ENABLE_CRONS"
-  yq write -i $CONFIG_FILE backgroundScheduler.enabled "$ENABLE_CRONS"
-  yq write -i $CONFIG_FILE serviceScheduler.enabled "$ENABLE_CRONS"
+  yq -i '.enableIterators="$ENABLE_CRONS"' $CONFIG_FILE
+  yq -i '.backgroundScheduler.enabled="$ENABLE_CRONS"' $CONFIG_FILE
+  yq -i '.serviceScheduler.enabled="$ENABLE_CRONS"' $CONFIG_FILE
 fi
 
 if [[ "" != "$WORKERS" ]]; then
@@ -296,7 +296,7 @@ if [[ "" != "$WORKERS" ]]; then
   for ITEM in "${WORKER_ITEMS[@]}"; do
     WORKER=`echo $ITEM | awk -F= '{print $1}'`
     WORKER_FLAG=`echo $ITEM | awk -F= '{print $2}'`
-    yq write -i $CONFIG_FILE workers.active.[$WORKER] "${WORKER_FLAG}"
+    yq -i '.workers.active.[$WORKER]="${WORKER_FLAG}"' $CONFIG_FILE
   done
 fi
 
@@ -305,111 +305,111 @@ if [[ "" != "$PUBLISHERS" ]]; then
   for ITEM in "${PUBLISHER_ITEMS[@]}"; do
     PUBLISHER=`echo $ITEM | awk -F= '{print $1}'`
     PUBLISHER_FLAG=`echo $ITEM | awk -F= '{print $2}'`
-    yq write -i $CONFIG_FILE publishers.active.[$PUBLISHER] "${PUBLISHER_FLAG}"
+    yq -i '.publishers.active.[$PUBLISHER]="${PUBLISHER_FLAG}"' $CONFIG_FILE
   done
 fi
 
 if [[ "" != "$DISTRIBUTED_LOCK_IMPLEMENTATION" ]]; then
-  yq write -i $CONFIG_FILE distributedLockImplementation "$DISTRIBUTED_LOCK_IMPLEMENTATION"
+  yq -i '.distributedLockImplementation="$DISTRIBUTED_LOCK_IMPLEMENTATION"' $CONFIG_FILE
 fi
 
 if [[ "" != "$ATMOSPHERE_BACKEND" ]]; then
-  yq write -i $CONFIG_FILE atmosphereBroadcaster "$ATMOSPHERE_BACKEND"
+  yq -i '.atmosphereBroadcaster="$ATMOSPHERE_BACKEND"' $CONFIG_FILE
 fi
 
-yq delete -i $REDISSON_CACHE_FILE codec
+yq 'del(.codec)' $REDISSON_CACHE_FILE
 
 if [[ "" != "$REDIS_URL" ]]; then
-  yq write -i $CONFIG_FILE redisLockConfig.redisUrl "$REDIS_URL"
-  yq write -i $CONFIG_FILE redisAtmosphereConfig.redisUrl "$REDIS_URL"
-  yq write -i $REDISSON_CACHE_FILE singleServerConfig.address "$REDIS_URL"
+  yq -i '.redisLockConfig.redisUrl="$REDIS_URL"' $CONFIG_FILE
+  yq -i '.redisAtmosphereConfig.redisUrl="$REDIS_URL"' $CONFIG_FILE
+  yq -i '.singleServerConfig.address="$REDIS_URL"' $REDISSON_CACHE_FILE
 fi
 
 if [[ "$REDIS_SENTINEL" == "true" ]]; then
-  yq write -i $CONFIG_FILE redisLockConfig.sentinel true
-  yq write -i $CONFIG_FILE redisAtmosphereConfig.sentinel true
-  yq delete -i $REDISSON_CACHE_FILE singleServerConfig
+  yq -i '.redisLockConfig.sentinel="true"' $CONFIG_FILE
+  yq -i '.redisAtmosphereConfig.sentinel="true"' $CONFIG_FILE
+  yq 'del(.singleServerConfig)' $REDISSON_CACHE_FILE
 fi
 
 if [[ "" != "$REDIS_MASTER_NAME" ]]; then
-  yq write -i $CONFIG_FILE redisLockConfig.masterName "$REDIS_MASTER_NAME"
-  yq write -i $CONFIG_FILE redisAtmosphereConfig.masterName "$REDIS_MASTER_NAME"
-  yq write -i $REDISSON_CACHE_FILE sentinelServersConfig.masterName "$REDIS_MASTER_NAME"
+  yq -i '.redisLockConfig.masterName="$REDIS_MASTER_NAME"' $CONFIG_FILE
+  yq -i '.redisAtmosphereConfig.masterName="$REDIS_MASTER_NAME"' $CONFIG_FILE
+  yq -i '.sentinelServersConfig.masterName="$REDIS_MASTER_NAME"' $REDISSON_CACHE_FILE
 fi
 
 if [[ "" != "$REDIS_SENTINELS" ]]; then
   IFS=',' read -ra REDIS_SENTINEL_URLS <<< "$REDIS_SENTINELS"
   INDEX=0
   for REDIS_SENTINEL_URL in "${REDIS_SENTINEL_URLS[@]}"; do
-    yq write -i $CONFIG_FILE redisLockConfig.sentinelUrls.[$INDEX] "${REDIS_SENTINEL_URL}"
-    yq write -i $CONFIG_FILE redisAtmosphereConfig.sentinelUrls.[$INDEX] "${REDIS_SENTINEL_URL}"
-    yq write -i $REDISSON_CACHE_FILE sentinelServersConfig.sentinelAddresses.[$INDEX] "${REDIS_SENTINEL_URL}"
+    yq -i '.redisLockConfig.sentinelUrls.[$INDEX]="${REDIS_SENTINEL_URL}"' $CONFIG_FILE
+    yq -i '.redisAtmosphereConfig.sentinelUrls.[$INDEX]="${REDIS_SENTINEL_URL}"' $CONFIG_FILE
+    yq -i '.sentinelServersConfig.sentinelAddresses.[$INDEX]="${REDIS_SENTINEL_URL}"' $REDISSON_CACHE_FILE
     INDEX=$(expr $INDEX + 1)
   done
 fi
 
 if [[ "" != "$REDIS_ENV_NAMESPACE" ]]; then
-    yq write -i $CONFIG_FILE redisLockConfig.envNamespace "$REDIS_ENV_NAMESPACE"
-    yq write -i $CONFIG_FILE redisAtmosphereConfig.envNamespace "$REDIS_ENV_NAMESPACE"
+    yq -i '.redisLockConfig.envNamespace="$REDIS_ENV_NAMESPACE"' $CONFIG_FILE
+    yq -i '.redisAtmosphereConfig.envNamespace="$REDIS_ENV_NAMESPACE"' $CONFIG_FILE
 fi
 
 if [[ "" != "$REDIS_NETTY_THREADS" ]]; then
-  yq write -i $CONFIG_FILE redisLockConfig.nettyThreads "$REDIS_NETTY_THREADS"
-  yq write -i $CONFIG_FILE redisAtmosphereConfig.nettyThreads "$REDIS_NETTY_THREADS"
-  yq write -i $REDISSON_CACHE_FILE nettyThreads "$REDIS_NETTY_THREADS"
+  yq -i '.redisLockConfig.nettyThreads="$REDIS_NETTY_THREADS"' $CONFIG_FILE
+  yq -i '.redisAtmosphereConfig.nettyThreads="$REDIS_NETTY_THREADS"' $CONFIG_FILE
+  yq -i '.nettyThreads="$REDIS_NETTY_THREADS"' $REDISSON_CACHE_FILE
 fi
 
 if [[ "$REDIS_SCRIPT_CACHE" == "false" ]]; then
-  yq write -i $CONFIG_FILE redisLockConfig.useScriptCache false
-  yq write -i $CONFIG_FILE redisAtmosphereConfig.useScriptCache false
-  yq write -i $REDISSON_CACHE_FILE useScriptCache false
+  yq -i '.redisLockConfig.useScriptCache="false"' $CONFIG_FILE
+  yq -i '.redisAtmosphereConfig.useScriptCache="false"' $CONFIG_FILE
+  yq -i '.useScriptCache="false"' $REDISSON_CACHE_FILE
 fi
 
 if [[ "" != "$CACHE_NAMESPACE" ]]; then
-    yq write -i $CONFIG_FILE cacheConfig.cacheNamespace "$CACHE_NAMESPACE"
+    yq -i '.cacheConfig.cacheNamespace="$CACHE_NAMESPACE"' $CONFIG_FILE
 fi
 
 if [[ "" != "$CACHE_BACKEND" ]]; then
-    yq write -i $CONFIG_FILE cacheConfig.cacheBackend "$CACHE_BACKEND"
+    yq -i '.cacheConfig.cacheBackend="$CACHE_BACKEND"' $CONFIG_FILE
 fi
 
 if [[ "" != "$DELEGATE_SERVICE_TARGET" ]]; then
-  yq write -i $CONFIG_FILE grpcDelegateServiceClientConfig.target "$DELEGATE_SERVICE_TARGET"
+  yq -i '.grpcDelegateServiceClientConfig.target="$DELEGATE_SERVICE_TARGET"' $CONFIG_FILE
 fi
 
 if [[ "" != "$DELEGATE_SERVICE_AUTHORITY" ]]; then
-  yq write -i $CONFIG_FILE grpcDelegateServiceClientConfig.authority "$DELEGATE_SERVICE_AUTHORITY"
+  yq -i '.grpcDelegateServiceClientConfig.authority="$DELEGATE_SERVICE_AUTHORITY"' $CONFIG_FILE
 fi
 
 if [[ "" != "$LOG_STREAMING_SERVICE_BASEURL" ]]; then
-  yq write -i $CONFIG_FILE logStreamingServiceConfig.baseUrl "$LOG_STREAMING_SERVICE_BASEURL"
+  yq -i '.logStreamingServiceConfig.baseUrl="$LOG_STREAMING_SERVICE_BASEURL"' $CONFIG_FILE
 fi
 
 if [[ "" != "$LOG_STREAMING_SERVICE_TOKEN" ]]; then
-  yq write -i $CONFIG_FILE logStreamingServiceConfig.serviceToken "$LOG_STREAMING_SERVICE_TOKEN"
+  yq -i '.logStreamingServiceConfig.serviceToken="$LOG_STREAMING_SERVICE_TOKEN"' $CONFIG_FILE
 fi
 
 if [[ "" != "$ACCESS_CONTROL_ENABLED" ]]; then
-  yq write -i $CONFIG_FILE accessControlClient.enableAccessControl $ACCESS_CONTROL_ENABLED
+  yq -i '.accessControlClient.enableAccessControl="$ACCESS_CONTROL_ENABLED"' $CONFIG_FILE
 fi
 
 if [[ "" != "$ACCESS_CONTROL_BASE_URL" ]]; then
-  yq write -i $CONFIG_FILE accessControlClient.accessControlServiceConfig.baseUrl $ACCESS_CONTROL_BASE_URL
+  yq -i '.accessControlClient.accessControlServiceConfig.baseUrl="$ACCESS_CONTROL_BASE_URL"' $CONFIG_FILE
 fi
 
 if [[ "" != "$ACCESS_CONTROL_SECRET" ]]; then
-  yq write -i $CONFIG_FILE accessControlClient.accessControlServiceSecret $ACCESS_CONTROL_SECRET
+  yq -i '.accessControlClient.accessControlServiceSecret="$ACCESS_CONTROL_SECRET"' $CONFIG_FILE
 fi
 
 if [[ "" != "$ENABLE_AUDIT" ]]; then
-  yq write -i $CONFIG_FILE enableAudit $ENABLE_AUDIT
+  yq -i '.enableAudit="$ENABLE_AUDIT"' $CONFIG_FILE
 fi
 
 if [[ "" != "$EVENTS_FRAMEWORK_REDIS_SENTINELS" ]]; then
   IFS=',' read -ra SENTINEL_URLS <<< "$EVENTS_FRAMEWORK_REDIS_SENTINELS"
   INDEX=0
   for REDIS_SENTINEL_URL in "${SENTINEL_URLS[@]}"; do
-    yq write -i $CONFIG_FILE eventsFramework.redis.sentinelUrls.[$INDEX] "${REDIS_SENTINEL_URL}"
+    yq -i '.eventsFramework.redis.sentinelUrls.[$INDEX]="${REDIS_SENTINEL_URL}"' $CONFIG_FILE
     INDEX=$(expr $INDEX + 1)
   done
 fi
@@ -425,73 +425,73 @@ replace_key_value eventsFramework.redis.sslConfig.CATrustStorePath $EVENTS_FRAME
 replace_key_value eventsFramework.redis.sslConfig.CATrustStorePassword $EVENTS_FRAMEWORK_REDIS_SSL_CA_TRUST_STORE_PASSWORD
 
 if [[ "" != "$NG_MANAGER_BASE_URL" ]]; then
-  yq write -i $CONFIG_FILE ngManagerServiceHttpClientConfig.baseUrl "$NG_MANAGER_BASE_URL"
+  yq -i '.ngManagerServiceHttpClientConfig.baseUrl="$NG_MANAGER_BASE_URL"' $CONFIG_FILE
 fi
 
 if [[ "" != "$ENABLE_USER_CHANGESTREAM" ]]; then
-  yq write -i $CONFIG_FILE userChangeStreamEnabled "$ENABLE_USER_CHANGESTREAM"
+  yq -i '.userChangeStreamEnabled="$ENABLE_USER_CHANGESTREAM"' $CONFIG_FILE
 fi
 
 if [[ "" != "$DELEGATE_SERVICE_SECRET" ]]; then
-  yq write -i $CONFIG_FILE dmsSecret $DELEGATE_SERVICE_SECRET
+  yq -i '.dmsSecret="$DELEGATE_SERVICE_SECRET"' $CONFIG_FILE
 fi
 
 if [[ "" != "$CDN_URL" ]]; then
-  yq write -i $CONFIG_FILE cdnConfig.url "$CDN_URL"
+  yq -i '.cdnConfig.url="$CDN_URL"' $CONFIG_FILE
 fi
 
 if [[ "" != "$CDN_KEY" ]]; then
-  yq write -i $CONFIG_FILE cdnConfig.keyName "$CDN_KEY"
+  yq -i '.cdnConfig.keyName="$CDN_KEY"' $CONFIG_FILE
 fi
 
 if [[ "" != "$CDN_KEY_SECRET" ]]; then
-  yq write -i $CONFIG_FILE cdnConfig.keySecret "$CDN_KEY_SECRET"
+  yq -i '.cdnConfig.keySecret="$CDN_KEY_SECRET"' $CONFIG_FILE
 fi
 
 if [[ "" != "$CDN_DELEGATE_JAR_PATH" ]]; then
-  yq write -i $CONFIG_FILE cdnConfig.delegateJarPath "$CDN_DELEGATE_JAR_PATH"
+  yq -i '.cdnConfig.delegateJarPath="$CDN_DELEGATE_JAR_PATH"' $CONFIG_FILE
 fi
 
 if [[ "" != "$CDN_WATCHER_JAR_BASE_PATH" ]]; then
-  yq write -i $CONFIG_FILE cdnConfig.watcherJarBasePath "$CDN_WATCHER_JAR_BASE_PATH"
+  yq -i '.cdnConfig.watcherJarBasePath="$CDN_WATCHER_JAR_BASE_PATH"' $CONFIG_FILE
 fi
 
 if [[ "" != "$CDN_WATCHER_JAR_PATH" ]]; then
-  yq write -i $CONFIG_FILE cdnConfig.watcherJarPath "$CDN_WATCHER_JAR_PATH"
+  yq -i '.cdnConfig.watcherJarPath="$CDN_WATCHER_JAR_PATH"' $CONFIG_FILE
 fi
 
 if [[ "" != "$CDN_WATCHER_METADATA_FILE_PATH" ]]; then
-  yq write -i $CONFIG_FILE cdnConfig.watcherMetaDataFilePath "$CDN_WATCHER_METADATA_FILE_PATH"
+  yq -i '.cdnConfig.watcherMetaDataFilePath="$CDN_WATCHER_METADATA_FILE_PATH"' $CONFIG_FILE
 fi
 
 if [[ "" != "$CDN_ORACLE_JRE_TAR_PATH" ]]; then
-  yq write -i $CONFIG_FILE cdnConfig.cdnJreTarPaths.oracle8u191 "$CDN_ORACLE_JRE_TAR_PATH"
+  yq -i '.cdnConfig.cdnJreTarPaths.oracle8u191="$CDN_ORACLE_JRE_TAR_PATH"' $CONFIG_FILE
 fi
 
 if [[ "" != "$CDN_OPENJDK_JRE_TAR_PATH" ]]; then
-  yq write -i $CONFIG_FILE cdnConfig.cdnJreTarPaths.openjdk8u242 "$CDN_OPENJDK_JRE_TAR_PATH"
+  yq -i '.cdnConfig.cdnJreTarPaths.openjdk8u242="$CDN_OPENJDK_JRE_TAR_PATH"' $CONFIG_FILE
 fi
 
 if [[ "" != "$CURRENT_JRE" ]]; then
-  yq write -i $CONFIG_FILE currentJre "$CURRENT_JRE"
+  yq -i '.currentJre="$CURRENT_JRE"' $CONFIG_FILE
 fi
 
 if [[ "" != "$MIGRATE_TO_JRE" ]]; then
-  yq write -i $CONFIG_FILE migrateToJre "$MIGRATE_TO_JRE"
+  yq -i '.migrateToJre="$MIGRATE_TO_JRE"' $CONFIG_FILE
 fi
 
 if [[ "" != "$ORACLE_JRE_TAR_PATH" ]]; then
-  yq write -i $CONFIG_FILE jreConfigs.oracle8u191.jreTarPath "$ORACLE_JRE_TAR_PATH"
+  yq -i '.jreConfigs.oracle8u191.jreTarPath="$ORACLE_JRE_TAR_PATH"' $CONFIG_FILE
 fi
 
 if [[ "" != "$OPENJDK_JRE_TAR_PATH" ]]; then
-  yq write -i $CONFIG_FILE jreConfigs.openjdk8u242.jreTarPath "$OPENJDK_JRE_TAR_PATH"
+  yq -i '.jreConfigs.openjdk8u242.jreTarPath="$OPENJDK_JRE_TAR_PATH"' $CONFIG_FILE
 fi
 
 if [[ "" != "$FILE_STORAGE" ]]; then
-  yq write -i $CONFIG_FILE fileStorageMode "$FILE_STORAGE"
+  yq -i '.fileStorageMode="$FILE_STORAGE"' $CONFIG_FILE
 fi
 
 if [[ "" != "$CLUSTER_NAME" ]]; then
-  yq write -i $CONFIG_FILE clusterName "$CLUSTER_NAME"
+  yq -i '.clusterName="$CLUSTER_NAME"' $CONFIG_FILE
 fi

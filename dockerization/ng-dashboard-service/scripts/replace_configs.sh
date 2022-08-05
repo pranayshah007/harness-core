@@ -7,54 +7,54 @@
 CONFIG_FILE=/opt/harness/config.yml
 
 if [[ "$STACK_DRIVER_LOGGING_ENABLED" == "true" ]]; then
-  yq delete -i $CONFIG_FILE 'logging.appenders.(type==console)'
-  yq write -i $CONFIG_FILE 'logging.appenders.(type==gke-console).stackdriverLogEnabled' "true"
+  yq 'del(.'logging.appenders.(type==console)')' $CONFIG_FILE
+  yq -i '.'logging.appenders.(type==gke-console).stackdriverLogEnabled'="true"' $CONFIG_FILE
 else
-  yq delete -i $CONFIG_FILE 'logging.appenders.(type==gke-console)'
+  yq 'del(.'logging.appenders.(type==gke-console)')' $CONFIG_FILE
 fi
 
 # Remove the TLS connector (as ingress terminates TLS)
-yq delete -i $CONFIG_FILE connectors[0]
+yq 'del(.connectors[0])' $CONFIG_FILE
 
 
 if [[ "" != "$SERVER_PORT" ]]; then
-  yq write -i $CONFIG_FILE server.applicationConnectors[0].port "$SERVER_PORT"
+  yq -i '.server.applicationConnectors[0].port="$SERVER_PORT"' $CONFIG_FILE
 else
-  yq write -i $CONFIG_FILE server.applicationConnectors[0].port "7100"
+  yq -i '.server.applicationConnectors[0].port="7100"' $CONFIG_FILE
 fi
 
 # The config for communication with the other services
 if [[ "" != "$CD_CLIENT_BASEURL" ]]; then
-  yq write -i $CONFIG_FILE cdServiceClientConfig.baseUrl $CD_CLIENT_BASEURL
+  yq -i '.cdServiceClientConfig.baseUrl="$CD_CLIENT_BASEURL"' $CONFIG_FILE
 fi
 
 if [[ "" != "$CI_CLIENT_BASEURL" ]]; then
-  yq write -i $CONFIG_FILE ciServiceClientConfig.baseUrl $CI_CLIENT_BASEURL
+  yq -i '.ciServiceClientConfig.baseUrl="$CI_CLIENT_BASEURL"' $CONFIG_FILE
 fi
 
 if [[ "" != "$NG_MANAGER_CLIENT_BASEURL" ]]; then
-  yq write -i $CONFIG_FILE ngManagerClientConfig.baseUrl $NG_MANAGER_CLIENT_BASEURL
+  yq -i '.ngManagerClientConfig.baseUrl="$NG_MANAGER_CLIENT_BASEURL"' $CONFIG_FILE
 fi
 
 
 # Secrets
 if [[ "" != "$NEXT_GEN_MANAGER_SECRET" ]]; then
-  yq write -i $CONFIG_FILE secrets.ngManagerServiceSecret "$NEXT_GEN_MANAGER_SECRET"
+  yq -i '.secrets.ngManagerServiceSecret="$NEXT_GEN_MANAGER_SECRET"' $CONFIG_FILE
 fi
 
 if [[ "" != "$PIPELINE_SERVICE_SECRET" ]]; then
-  yq write -i $CONFIG_FILE secrets.pipelineServiceSecret "$PIPELINE_SERVICE_SECRET"
+  yq -i '.secrets.pipelineServiceSecret="$PIPELINE_SERVICE_SECRET"' $CONFIG_FILE
 fi
 
 if [[ "" != "$JWT_AUTH_SECRET" ]]; then
-  yq write -i $CONFIG_FILE secrets.jwtAuthSecret "$JWT_AUTH_SECRET"
+  yq -i '.secrets.jwtAuthSecret="$JWT_AUTH_SECRET"' $CONFIG_FILE
 fi
 
 if [[ "" != "$JWT_IDENTITY_SERVICE_SECRET" ]]; then
-  yq write -i $CONFIG_FILE secrets.jwtIdentityServiceSecret "$JWT_IDENTITY_SERVICE_SECRET"
+  yq -i '.secrets.jwtIdentityServiceSecret="$JWT_IDENTITY_SERVICE_SECRET"' $CONFIG_FILE
 fi
 
 if [[ "" != "$ALLOWED_ORIGINS" ]]; then
-  yq delete -i $CONFIG_FILE allowedOrigins
-  yq write -i $CONFIG_FILE allowedOrigins "$ALLOWED_ORIGINS"
+  yq 'del(.allowedOrigins)' $CONFIG_FILE
+  yq -i '.allowedOrigins="$ALLOWED_ORIGINS"' $CONFIG_FILE
 fi

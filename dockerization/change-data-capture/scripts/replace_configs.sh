@@ -10,74 +10,74 @@ replace_key_value () {
   CONFIG_KEY="$1";
   CONFIG_VALUE="$2";
   if [[ "" != "$CONFIG_VALUE" ]]; then
-    yq write -i $CONFIG_FILE $CONFIG_KEY $CONFIG_VALUE
+    yq -i '.$CONFIG_KEY="$CONFIG_VALUE"' $CONFIG_FILE
   fi
 }
 
 if [[ "$STACK_DRIVER_LOGGING_ENABLED" == "true" ]]; then
-  yq delete -i $CONFIG_FILE 'logging.appenders.(type==console)'
-  yq write -i $CONFIG_FILE 'logging.appenders.(type==gke-console).stackdriverLogEnabled' "true"
+  yq 'del(.'logging.appenders.(type==console)')' $CONFIG_FILE
+  yq -i '.'logging.appenders.(type==gke-console).stackdriverLogEnabled'="true"' $CONFIG_FILE
 else
-  yq delete -i $CONFIG_FILE 'logging.appenders.(type==gke-console)'
+  yq 'del(.'logging.appenders.(type==gke-console)')' $CONFIG_FILE
 fi
 
 # Remove the TLS connector (as ingress terminates TLS)
-yq delete -i $CONFIG_FILE connectors[0]
+yq 'del(.connectors[0])' $CONFIG_FILE
 
 if [[ "" != "$MONGO_URI" ]]; then
-  yq write -i $CONFIG_FILE harness-mongo.uri "$MONGO_URI"
+  yq -i '.harness-mongo.uri="$MONGO_URI"' $CONFIG_FILE
 fi
 
 if [[ "" != "$MONGO_SERVER_SELECTION_TIMEOUT" ]]; then
-  yq write -i $CONFIG_FILE harness-mongo.serverSelectionTimeout "$MONGO_SERVER_SELECTION_TIMEOUT"
+  yq -i '.harness-mongo.serverSelectionTimeout="$MONGO_SERVER_SELECTION_TIMEOUT"' $CONFIG_FILE
 fi
 
 if [[ "" != "$MONGO_TAG_NAME" ]]; then
-  yq write -i $CONFIG_FILE mongotags.tagKey "$MONGO_TAG_NAME"
+  yq -i '.mongotags.tagKey="$MONGO_TAG_NAME"' $CONFIG_FILE
 fi
 
 if [[ "" != "$MONGO_TAG_VALUE" ]]; then
-  yq write -i $CONFIG_FILE mongotags.tagValue "$MONGO_TAG_VALUE"
+  yq -i '.mongotags.tagValue="$MONGO_TAG_VALUE"' $CONFIG_FILE
 fi
 
 if [[ "" != "$MONGO_INDEX_MANAGER_MODE" ]]; then
-  yq write -i $CONFIG_FILE harness-mongo.indexManagerMode $MONGO_INDEX_MANAGER_MODE
+  yq -i '.harness-mongo.indexManagerMode="$MONGO_INDEX_MANAGER_MODE"' $CONFIG_FILE
 fi
 
 if [[ "" != "$EVEMTS_MONGO_INDEX_MANAGER_MODE" ]]; then
-  yq write -i $CONFIG_FILE events-mongo.indexManagerMode $EVEMTS_MONGO_INDEX_MANAGER_MODE
+  yq -i '.events-mongo.indexManagerMode="$EVEMTS_MONGO_INDEX_MANAGER_MODE"' $CONFIG_FILE
 fi
 
 if [[ "" != "$EVENTS_MONGO_URI" ]]; then
-  yq write -i $CONFIG_FILE events-mongo.uri "$EVENTS_MONGO_URI"
+  yq -i '.events-mongo.uri="$EVENTS_MONGO_URI"' $CONFIG_FILE
 fi
 
 if [[ "" != "$PMS_MONGO_URI" ]]; then
-  yq write -i $CONFIG_FILE pms-harness.uri "$PMS_MONGO_URI"
+  yq -i '.pms-harness.uri="$PMS_MONGO_URI"' $CONFIG_FILE
 fi
 
 if [[ "" != "$CDC_MONGO_URI" ]]; then
-  yq write -i $CONFIG_FILE cdc-mongo.uri "$CDC_MONGO_URI"
+  yq -i '.cdc-mongo.uri="$CDC_MONGO_URI"' $CONFIG_FILE
 fi
 
 if [[ "" != "$TIMESCALEDB_URI" ]]; then
-  yq write -i $CONFIG_FILE timescaledb.timescaledbUrl "$TIMESCALEDB_URI"
+  yq -i '.timescaledb.timescaledbUrl="$TIMESCALEDB_URI"' $CONFIG_FILE
 fi
 
 if [[ "" != "$TIMESCALEDB_USERNAME" ]]; then
-  yq write -i $CONFIG_FILE timescaledb.timescaledbUsername "$TIMESCALEDB_USERNAME"
+  yq -i '.timescaledb.timescaledbUsername="$TIMESCALEDB_USERNAME"' $CONFIG_FILE
 fi
 
 if [[ "" != "$TIMESCALEDB_PASSWORD" ]]; then
-  yq write -i $CONFIG_FILE timescaledb.timescaledbPassword "$TIMESCALEDB_PASSWORD"
+  yq -i '.timescaledb.timescaledbPassword="$TIMESCALEDB_PASSWORD"' $CONFIG_FILE
 fi
 
 if [[ "" != "$GCP_PROJECT_ID" ]]; then
-  yq write -i $CONFIG_FILE gcp-project-id "$GCP_PROJECT_ID"
+  yq -i '.gcp-project-id="$GCP_PROJECT_ID"' $CONFIG_FILE
 fi
 
 if [[ "" != "$NG_HARNESS_MONGO_URI" ]]; then
-  yq write -i $CONFIG_FILE ng-harness.uri  "$NG_HARNESS_MONGO_URI"
+  yq -i '.ng-harness.uri=""' $CONFIG_FILE
 fi
 
 replace_key_value cfClientConfig.apiKey "$CF_CLIENT_API_KEY"

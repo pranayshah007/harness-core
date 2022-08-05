@@ -10,7 +10,7 @@ replace_key_value () {
   CONFIG_KEY="$1";
   CONFIG_VALUE="$2";
   if [[ "" != "$CONFIG_VALUE" ]]; then
-    yq write -i "$CONFIG_FILE" "$CONFIG_KEY" "$CONFIG_VALUE"
+    yq -i '.$CONFIG_KEY="$CONFIG_VALUE"' $CONFIG_FILE
   fi
 }
 
@@ -20,40 +20,40 @@ addTags(){
 	IFS=',' read -ra str_array <<< "$tags"
 	for tag in "${str_array[@]}"
 		do
-	   	 	yq write -i /opt/harness/command-library-server-config.yml "$path[+]" "$tag"
+yq -i '.	yq="write"' 	
 		done
 }
 
-yq delete -i /opt/harness/command-library-server-config.yml server.adminConnectors
-yq delete -i $CONFIG_FILE 'server.applicationConnectors.(type==h2)'
+yq 'del(.server.adminConnectors)' /opt/harness/command-library-server-config.yml
+yq 'del(.'server.applicationConnectors.(type==h2)')' $CONFIG_FILE
 
 if [[ "" != "$LOGGING_LEVEL" ]]; then
-  yq write -i /opt/harness/command-library-server-config.yml logging.level "$LOGGING_LEVEL"
+  yq -i '.logging.level="$LOGGING_LEVEL"' /opt/harness/command-library-server-config.yml
 fi
 
 if [[ "" != "$COMMAND_LIBRARY_SERVER_PORT" ]]; then
-  yq write -i /opt/harness/command-library-server-config.yml server.applicationConnectors[0].port "$COMMAND_LIBRARY_SERVER_PORT"
+  yq -i '.server.applicationConnectors[0].port="$COMMAND_LIBRARY_SERVER_PORT"' /opt/harness/command-library-server-config.yml
 else
-  yq write -i /opt/harness/command-library-server-config.yml server.applicationConnectors[0].port "7070"
+  yq -i '.server.applicationConnectors[0].port="7070"' /opt/harness/command-library-server-config.yml
 fi
 
 if [[ "" != "$MONGO_URI" ]]; then
-  yq write -i /opt/harness/command-library-server-config.yml mongo.uri "${MONGO_URI//\\&/&}"
+  yq -i '.mongo.uri="${MONGO_URI//\\&/&}"' /opt/harness/command-library-server-config.yml
 fi
 
-yq write -i /opt/harness/command-library-server-config.yml server.requestLog.appenders[0].type "console"
-yq write -i /opt/harness/command-library-server-config.yml server.requestLog.appenders[0].threshold "TRACE"
-yq write -i /opt/harness/command-library-server-config.yml server.requestLog.appenders[0].target "STDOUT"
+yq -i '.server.requestLog.appenders[0].type="console"' /opt/harness/command-library-server-config.yml
+yq -i '.server.requestLog.appenders[0].threshold="TRACE"' /opt/harness/command-library-server-config.yml
+yq -i '.server.requestLog.appenders[0].target="STDOUT"' /opt/harness/command-library-server-config.yml
 
 if [[ "$STACK_DRIVER_LOGGING_ENABLED" == "true" ]]; then
-  yq delete -i $CONFIG_FILE 'logging.appenders.(type==console)'
-  yq write -i $CONFIG_FILE 'logging.appenders.(type==gke-console).stackdriverLogEnabled' "true"
+  yq 'del(.'logging.appenders.(type==console)')' $CONFIG_FILE
+  yq -i '.'logging.appenders.(type==gke-console).stackdriverLogEnabled'="true"' $CONFIG_FILE
 else
-  yq delete -i $CONFIG_FILE 'logging.appenders.(type==gke-console)'
+  yq 'del(.'logging.appenders.(type==gke-console)')' $CONFIG_FILE
 fi
 
 if [[ "" != "$MANAGER_TO_COMMAND_LIBRARY_SERVICE_SECRET" ]]; then
-  yq write -i /opt/harness/command-library-server-config.yml serviceSecret.managerToCommandLibraryServiceSecret "$MANAGER_TO_COMMAND_LIBRARY_SERVICE_SECRET"
+  yq -i '.serviceSecret.managerToCommandLibraryServiceSecret="$MANAGER_TO_COMMAND_LIBRARY_SERVICE_SECRET"' /opt/harness/command-library-server-config.yml
 fi
 
 if [[ "" != "$ALLOWED_TAGS_TO_ADD" ]]; then
