@@ -70,6 +70,7 @@ public class TokenGenerator {
     try {
       readWriteLock.readLock().lock();
       if (lastEncryptedJWT != null && expiryTimeOfLastJWT > System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(5)) {
+        log.info("token used, {}", lastEncryptedJWT);
         return lastEncryptedJWT;
       }
     } finally {
@@ -104,6 +105,7 @@ public class TokenGenerator {
 
       expiryTimeOfLastJWT = jwtClaims.getExpirationTime().getTime();
       lastEncryptedJWT = jwt.serialize();
+      log.info("token generated, {}", lastEncryptedJWT);
       return lastEncryptedJWT;
     } finally {
       readWriteLock.writeLock().unlock();
