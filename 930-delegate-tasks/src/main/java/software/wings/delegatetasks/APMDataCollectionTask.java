@@ -34,6 +34,7 @@ import io.harness.serializer.JsonUtils;
 import io.harness.time.Timestamp;
 
 import software.wings.beans.TaskType;
+import software.wings.beans.command.AWS4SignerForAuthorizationHeader;
 import software.wings.delegatetasks.cv.RequestExecutor;
 import software.wings.helpers.ext.apm.APMRestClient;
 import software.wings.service.impl.ThirdPartyApiCallLog;
@@ -54,11 +55,14 @@ import com.google.common.collect.HashBiMap;
 import com.google.common.collect.TreeBasedTable;
 import com.google.inject.Inject;
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -341,6 +345,24 @@ public class APMDataCollectionTask extends AbstractDelegateDataCollectionTask {
       return "";
     }
 
+    private Map<String, Object> getAwsAuthHeader() {
+      if (dataCollectionInfo.isAwsRestCall()) {
+        Map<String, Object> resolvedHeaders = resolveDollarReferences(dataCollectionInfo.getHeaders());
+        String accessKey = (String) resolvedHeaders.get("accessKey");
+        String secretKey = (String) resolvedHeaders.get("secretKey");
+        try {
+          String authHeader = AWS4SignerForAuthorizationHeader.getAWSV4AuthorizationHeader(
+              new URL(dataCollectionInfo.getBaseUrl()), "", accessKey, secretKey, new Date(), null);
+          resolvedHeaders.put("Authorization", authHeader);
+
+        } catch (MalformedURLException exception) {
+          log.error("Caught malformedException {}", exception);
+          return null;
+        }
+        return resolvedHeaders;
+      }
+      return null;
+    }
     private Map<String, String> fetchAdditionalHeaders(APMDataCollectionInfo dataCollectionInfo) {
       // Special case for getting the bearer token for azure log analytics
       if (!dataCollectionInfo.getBaseUrl().contains(AZURE_BASE_URL)) {

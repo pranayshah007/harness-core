@@ -69,6 +69,9 @@ public class PrometheusState extends AbstractMetricAnalysisState {
   @Attributes(required = true, title = "Prometheus Server") private String analysisServerConfigId;
 
   private List<TimeSeries> timeSeriesToAnalyze;
+  private String awsPrometheusUrl;
+  private boolean isAwsPrometheus;
+  private String awsPrometheusRegion;
 
   public PrometheusState(String name) {
     super(name, StateType.PROMETHEUS);

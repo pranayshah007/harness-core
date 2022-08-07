@@ -16,8 +16,19 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.InvalidRequestException;
 
+import com.amazonaws.ClientConfiguration;
+import com.amazonaws.DefaultRequest;
+import com.amazonaws.Request;
+import com.amazonaws.Response;
+import com.amazonaws.auth.AWS4Signer;
+import com.amazonaws.http.AmazonHttpClient;
+import com.amazonaws.http.ExecutionContext;
+import com.amazonaws.http.HttpMethodName;
+import com.amazonaws.http.HttpResponse;
+import com.amazonaws.util.SdkHttpUtils;
 import com.google.inject.Singleton;
 import java.io.UnsupportedEncodingException;
+import java.net.URI;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.security.MessageDigest;
@@ -114,6 +125,68 @@ public class AWS4SignerForAuthorizationHeader {
     return authorizationHeader;
   }
 
+  public static Map<String, String> getAWSV4AuthorizationHeaderMap(URL endpointUrl, String regionName,
+      String awsAccessKey, String awsSecretKey, Date now, String awsToken, String service) {
+    // for a simple GET, we have no body so supply the precomputed 'empty' hash
+    Map<String, String> headers = new HashMap<>();
+
+    // first get the date and time for the subsequent request, and convert
+    // to ISO 8601 format for use in signature generation
+    SimpleDateFormat dateTimeFormat = new SimpleDateFormat(ISO_8601_BASIC_FORMAT);
+    dateTimeFormat.setTimeZone(new SimpleTimeZone(0, "UTC"));
+    String dateTimeStamp = dateTimeFormat.format(now);
+    SimpleDateFormat dateStampFormat = new SimpleDateFormat(DATE_STRING_FORMAT);
+    dateStampFormat.setTimeZone(new SimpleTimeZone(0, "UTC"));
+
+    // update the headers with required 'x-amz-date' and 'host' values
+    headers.put("x-amz-date", dateTimeStamp);
+
+    String hostHeader = endpointUrl.getHost();
+    int port = endpointUrl.getPort();
+    if (port > -1) {
+      hostHeader = hostHeader.concat(":" + port);
+    }
+    headers.put("host", hostHeader);
+
+    if (isNotEmpty(awsToken)) {
+      headers.put("X-Amz-Security-Token", awsToken);
+    }
+
+    // canonicalize the headers; we need the set of header names as well as the
+    // names and values to go into the signature process
+    String canonicalizedHeaderNames = getCanonicalizeHeaderNames(headers);
+    String canonicalizedHeaders = getCanonicalizedHeaderString(headers);
+    headers.put("x-amz-content-sha256", EMPTY_BODY_SHA256);
+    // canonicalize the various components of the request
+    String canonicalRequest = getCanonicalRequest(endpointUrl, canonicalizedHeaderNames, canonicalizedHeaders);
+    log.info("Step 1: Create canonical request done...");
+    System.out.println("CANREQ :: " + canonicalRequest);
+    // construct the string to be signed
+    String dateStamp = dateStampFormat.format(now);
+    String scope = dateStamp + "/" + regionName + "/" + service + "/" + TERMINATOR;
+    String stringToSign = getStringToSign(dateTimeStamp, scope, canonicalRequest);
+    log.info("Step 2: Create string to sign done..." + stringToSign);
+
+    // compute the signing key
+    byte[] kSecret = (SCHEME + awsSecretKey).getBytes(UTF_8);
+    byte[] kDate = sign(dateStamp, kSecret, HMAC_SHA_256);
+    byte[] kRegion = sign(regionName, kDate, HMAC_SHA_256);
+    byte[] kService = sign(service, kRegion, HMAC_SHA_256);
+    byte[] kSigning = sign(TERMINATOR, kService, HMAC_SHA_256);
+    byte[] signature = sign(stringToSign, kSigning, HMAC_SHA_256);
+    log.info("Step 3: Calculate signature done..." + signature.toString());
+
+    String credentialsAuthorizationHeader = "Credential=" + awsAccessKey + "/" + scope;
+    String signedHeadersAuthorizationHeader = "SignedHeaders=" + canonicalizedHeaderNames;
+    String signatureAuthorizationHeader = "Signature=" + toHex(signature);
+
+    String authorizationHeader = SCHEME + "-" + ALGORITHM + " " + credentialsAuthorizationHeader + ", "
+        + signedHeadersAuthorizationHeader + ", " + signatureAuthorizationHeader;
+    log.info("Step 4: Create authorization header done...");
+    headers.put("Authorization", authorizationHeader);
+    return headers;
+  }
+
   /**
    * Returns the canonical collection of header names that will be included in
    * the signature. For AWS4, all header names must be included in the process
@@ -172,7 +245,7 @@ public class AWS4SignerForAuthorizationHeader {
   private static String getCanonicalRequest(
       URL endpoint, String canonicalizedHeaderNames, String canonicalizedHeaders) {
     return HTTP_METHOD + "\n" + getEndpointWithCanonicalizedResourcePath(endpoint, false) + "\n"
-        + ""
+        + "end=1620077083&query=container_cpu_usage_seconds_total%7B%7D&start=1620075620&step=60s"
         + "\n" + canonicalizedHeaders + "\n" + canonicalizedHeaderNames + "\n" + EMPTY_BODY_SHA256;
   }
 
@@ -186,6 +259,7 @@ public class AWS4SignerForAuthorizationHeader {
       return "/";
     }
     String path = endpoint.getPath();
+    // if (query) path = endpoint.getQuery();
     if (isEmpty(path)) {
       return "/";
     }
@@ -251,5 +325,26 @@ public class AWS4SignerForAuthorizationHeader {
       encoded = encoded.replace("%2F", "/");
     }
     return encoded;
+  }
+
+  public static Map<String, String> getCanonicalResourcePath(String resourcePath, boolean urlEncode) {
+    Request<Void> request = new DefaultRequest<Void>("aps"); // Request to aws prometheus
+    request.setHttpMethod(HttpMethodName.GET);
+    request.setEndpoint(URI.create(""));
+    request.getHeaders();
+
+    AWS4Signer signer = new AWS4Signer();
+    signer.setRegionName("us-west-2");
+    signer.setServiceName(request.getServiceName());
+    String accessKey = "", secretKey = "";
+    signer.sign(request, CVAwsCredential.builder().AWSAccessKeyId(accessKey).AWSSecretKey(secretKey).build());
+    Response<HttpResponse> rsp = new AmazonHttpClient(new ClientConfiguration())
+                                     .requestExecutionBuilder()
+                                     .executionContext(new ExecutionContext(true))
+                                     .request(request)
+                                     .errorResponseHandler(new SimpleAwsErrorHandler(false))
+                                     .execute(new SimpleAwsResponseHandler(false));
+
+    return request.getHeaders();
   }
 }

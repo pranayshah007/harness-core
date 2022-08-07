@@ -263,6 +263,7 @@ public class AwsHelperService {
 
   public AmazonCloudWatchClient getAwsCloudWatchClient(String region, AwsConfig awsConfig) {
     AmazonCloudWatchClientBuilder builder = AmazonCloudWatchClientBuilder.standard().withRegion(region);
+
     awsApiHelperService.attachCredentialsAndBackoffPolicy(
         builder, AwsConfigToInternalMapper.toAwsInternalConfig(awsConfig));
     return (AmazonCloudWatchClient) builder.build();

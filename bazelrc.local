@@ -1,5 +1,5 @@
 import bazelrc.common
-try-import bazelrc.cache
+#try-import bazelrc.cache
 
 startup --macos_qos_class=utility
 

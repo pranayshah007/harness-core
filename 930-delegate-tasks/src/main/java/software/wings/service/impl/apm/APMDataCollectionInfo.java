@@ -55,6 +55,7 @@ public class APMDataCollectionInfo implements TaskParameters, ExecutionCapabilit
   private int initialDelaySeconds;
   private boolean validateCert;
   private boolean base64EncodingRequired;
+  private boolean awsRestCall;
 
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {
