@@ -49,6 +49,7 @@ public class GithubPackagesArtifactTaskNG extends AbstractDelegateRunnableTask {
   @Override
   public DelegateResponseData run(TaskParameters parameters) throws IOException, JoseException {
     ArtifactTaskParameters taskParameters = (ArtifactTaskParameters) parameters;
+
     return githubPackagesArtifactTaskHelper.getArtifactCollectResponse(taskParameters);
   }
 }

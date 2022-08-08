@@ -65,16 +65,23 @@ public class GithubPackagesArtifactTaskHelper {
     try {
       switch (artifactTaskParameters.getArtifactTaskType()) {
         case GET_BUILDS:
+
           saveLogs(executionLogCallback, "Fetching artifact details");
+
           artifactTaskResponse = getSuccessTaskResponse(githubPackagesArtifactTaskHandler.getBuilds(attributes));
+
           saveLogs(executionLogCallback,
               "Fetched " + artifactTaskResponse.getArtifactTaskExecutionResponse().getArtifactDelegateResponses().size()
                   + " artifacts");
+
           break;
         default:
+
           saveLogs(executionLogCallback,
               "No corresponding Github Package artifact task type [{}]: " + artifactTaskParameters.toString());
+
           log.error("No corresponding Github Package artifact task type [{}]", artifactTaskParameters.toString());
+
           return ArtifactTaskResponse.builder()
               .commandExecutionStatus(CommandExecutionStatus.FAILURE)
               .errorMessage("There is no Github Package artifact task type impl defined for - "
@@ -85,13 +92,17 @@ public class GithubPackagesArtifactTaskHelper {
     } catch (GithubPackagesServerRuntimeException ex) {
       if (GlobalContextManager.get(MdcGlobalContextData.MDC_ID) == null) {
         MdcGlobalContextData mdcGlobalContextData = MdcGlobalContextData.builder().map(new HashMap<>()).build();
+
         GlobalContextManager.upsertGlobalContextRecord(mdcGlobalContextData);
       }
+
       ((MdcGlobalContextData) GlobalContextManager.get(MdcGlobalContextData.MDC_ID))
           .getMap()
           .put(ExceptionMetadataKeys.CONNECTOR.name(), attributes.getConnectorRef());
+
       throw ex;
     }
+
     return artifactTaskResponse;
   }
 }

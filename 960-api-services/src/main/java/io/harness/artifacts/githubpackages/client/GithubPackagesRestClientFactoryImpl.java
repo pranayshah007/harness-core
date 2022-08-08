@@ -35,6 +35,7 @@ public class GithubPackagesRestClientFactoryImpl implements GithubPackagesRestCl
                             .baseUrl(url)
                             .addConverterFactory(JacksonConverterFactory.create())
                             .build();
+
     return retrofit.create(GithubPackagesRestClient.class);
   }
 

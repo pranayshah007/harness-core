@@ -19,7 +19,10 @@ import io.harness.artifacts.githubpackages.beans.GithubPackagesVersionsResponse;
 import io.harness.artifacts.githubpackages.client.GithubPackagesRestClient;
 import io.harness.artifacts.githubpackages.client.GithubPackagesRestClientFactory;
 import io.harness.data.structure.EmptyPredicate;
-import io.harness.exception.*;
+import io.harness.exception.ArtifactServerException;
+import io.harness.exception.ExceptionUtils;
+import io.harness.exception.NestedExceptionUtils;
+import io.harness.exception.WingsException;
 import io.harness.exception.runtime.GithubPackagesServerRuntimeException;
 
 import software.wings.common.BuildDetailsComparatorAscending;
@@ -46,6 +49,7 @@ public class GithubPackagesRegistryServiceImpl implements GithubPackagesRegistry
   public List<BuildDetails> getBuilds(
       GithubPackagesInternalConfig githubPackagesInternalConfig, String packageName, int maxNoOfVersionsPerPackage) {
     List<BuildDetails> buildDetails;
+
     try {
       buildDetails = getBuildDetails(githubPackagesInternalConfig, packageName);
     } catch (GithubPackagesServerRuntimeException ex) {
@@ -82,6 +86,7 @@ public class GithubPackagesRegistryServiceImpl implements GithubPackagesRegistry
   private List<BuildDetails> processPage(GithubPackagesVersionsResponse response, String packageName) {
     if (response != null && EmptyPredicate.isNotEmpty(response.getVersions())) {
       int index = response.getVersions().get(0).getName().lastIndexOf("/");
+
       List<BuildDetails> buildDetails = response.getVersions()
                                             .stream()
                                             .map(version -> {

@@ -18,10 +18,19 @@ import lombok.Value;
 @Value
 @EqualsAndHashCode(callSuper = false)
 public class GithubPackagesArtifactDelegateResponse extends ArtifactDelegateResponse {
+  /**
+   * Package Name in repos need to be referenced.
+   */
   String packageName;
 
+  /**
+   * Exact Version of the artifact
+   */
   String version;
 
+  /**
+   * Version Regex
+   */
   String versionRegex;
 
   @Builder

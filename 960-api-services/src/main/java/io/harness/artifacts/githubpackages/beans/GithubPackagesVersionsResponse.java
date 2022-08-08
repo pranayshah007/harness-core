@@ -11,8 +11,12 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.annotations.dev.OwnedBy;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.util.List;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @OwnedBy(CDC)
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -21,6 +25,13 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 public class GithubPackagesVersionsResponse {
+  /**
+   * List of Versions for a Github Package
+   */
   List<GithubPackagesVersion> versions;
+
+  /**
+   * Page Token
+   */
   String nextPageToken;
 }

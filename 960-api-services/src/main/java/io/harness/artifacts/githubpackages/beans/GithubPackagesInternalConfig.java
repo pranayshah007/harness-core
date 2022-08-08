@@ -35,6 +35,7 @@ public class GithubPackagesInternalConfig {
 
   public String getGithubPackagesRegistryUrl() {
     URI uri = UriBuilder.fromUri(githubPackagesUrl).build();
+
     return UriBuilder.fromUri(githubPackagesUrl).path(uri.getPath().endsWith("/") ? "" : "/").build().toString();
   }
 }

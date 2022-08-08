@@ -24,7 +24,11 @@ import io.harness.security.encryption.EncryptedDataDetail;
 
 import java.util.ArrayList;
 import java.util.List;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.Value;
 
 @Value
 @Data
@@ -33,23 +37,49 @@ import lombok.*;
 @EqualsAndHashCode(callSuper = false)
 @OwnedBy(HarnessTeam.CDC)
 public class GithubPackagesArtifactDelegateRequest implements ArtifactSourceDelegateRequest {
-  /** Package Name in repos need to be referenced. */
+  /**
+   * Package Name in repos need to be referenced.
+   */
   String packageName;
-  /** Package Type */
+
+  /**
+   * Package Type
+   */
   String packageType;
-  /** org of the package if any*/
+
+  /**
+   * org of the package if any
+   */
   String org;
-  /** Exact Version of the artifact*/
+
+  /**
+   * Exact Version of the artifact
+   */
   String version;
-  /** Version Regex*/
+
+  /**
+   * Version Regex
+   */
   String versionRegex;
-  /** Github Connector*/
+
+  /**
+   * Github Connector
+   */
   GithubConnectorDTO githubConnectorDTO;
-  /** Encrypted details for decrypting.*/
+
+  /**
+   * Encrypted details for decrypting.
+   */
   List<EncryptedDataDetail> encryptedDataDetails;
-  /** Artifact Source type.*/
+
+  /**
+   * Artifact Source type.
+   */
   ArtifactSourceType sourceType;
-  /** Connector Refernce. */
+
+  /**
+   * Connector Refernce.
+   */
   String connectorRef;
 
   @Override
@@ -57,9 +87,11 @@ public class GithubPackagesArtifactDelegateRequest implements ArtifactSourceDele
     List<ExecutionCapability> capabilities =
         new ArrayList<>(EncryptedDataDetailsCapabilityHelper.fetchExecutionCapabilitiesForEncryptedDataDetails(
             encryptedDataDetails, maskingEvaluator));
+
     if (githubConnectorDTO.getAuthentication().getCredentials() != null) {
       if (githubConnectorDTO.getAuthentication().getAuthType() == GitAuthType.HTTP) {
         populateDelegateSelectorCapability(capabilities, githubConnectorDTO.getDelegateSelectors());
+
         capabilities.add(HttpConnectionExecutionCapabilityGenerator.buildHttpConnectionExecutionCapability(
             githubConnectorDTO.getGitConnectionUrl(), maskingEvaluator));
       } else {
