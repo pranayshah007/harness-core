@@ -7,19 +7,8 @@
 
 package io.harness.serializer.morphia;
 
-import io.harness.cdng.artifact.bean.yaml.AcrArtifactConfig;
-import io.harness.cdng.artifact.bean.yaml.AmazonS3ArtifactConfig;
-import io.harness.cdng.artifact.bean.yaml.ArtifactListConfig;
-import io.harness.cdng.artifact.bean.yaml.CustomArtifactConfig;
-import io.harness.cdng.artifact.bean.yaml.DockerHubArtifactConfig;
-import io.harness.cdng.artifact.bean.yaml.GcrArtifactConfig;
-import io.harness.cdng.artifact.bean.yaml.JenkinsArtifactConfig;
-import io.harness.cdng.artifact.bean.yaml.SidecarArtifact;
-import io.harness.cdng.artifact.outcome.AcrArtifactOutcome;
-import io.harness.cdng.artifact.outcome.DockerArtifactOutcome;
-import io.harness.cdng.artifact.outcome.GcrArtifactOutcome;
-import io.harness.cdng.artifact.outcome.JenkinsArtifactOutcome;
-import io.harness.cdng.artifact.outcome.S3ArtifactOutcome;
+import io.harness.cdng.artifact.bean.yaml.*;
+import io.harness.cdng.artifact.outcome.*;
 import io.harness.cdng.gitops.entity.Cluster;
 import io.harness.cdng.manifest.yaml.ManifestsOutcome;
 import io.harness.cdng.service.beans.ServiceConfig;
@@ -69,5 +58,7 @@ public class NGEntitiesMorphiaRegistrar implements MorphiaRegistrar {
     h.put("cdng.service.ServiceConfig", ServiceConfig.class);
     h.put("cdng.artifact.bean.yaml.JenkinsArtifactConfig", JenkinsArtifactConfig.class);
     h.put("ngpipeline.artifact.bean.JenkinsArtifactOutcome", JenkinsArtifactOutcome.class);
+    h.put("cdng.artifact.bean.yaml.GithubPackagesArtifactConfig", GithubPackagesArtifactConfig.class);
+    h.put("ngpipeline.artifact.bean.GithubPackagesArtifactOutcome", GithubPackagesArtifactOutcome.class);
   }
 }

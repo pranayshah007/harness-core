@@ -7,28 +7,8 @@
 
 package io.harness.serializer.kryo;
 
-import io.harness.cdng.artifact.bean.yaml.AcrArtifactConfig;
-import io.harness.cdng.artifact.bean.yaml.AmazonS3ArtifactConfig;
-import io.harness.cdng.artifact.bean.yaml.ArtifactListConfig;
-import io.harness.cdng.artifact.bean.yaml.ArtifactOverrideSetWrapper;
-import io.harness.cdng.artifact.bean.yaml.ArtifactOverrideSets;
-import io.harness.cdng.artifact.bean.yaml.ArtifactoryRegistryArtifactConfig;
-import io.harness.cdng.artifact.bean.yaml.CustomArtifactConfig;
-import io.harness.cdng.artifact.bean.yaml.DockerHubArtifactConfig;
-import io.harness.cdng.artifact.bean.yaml.EcrArtifactConfig;
-import io.harness.cdng.artifact.bean.yaml.GcrArtifactConfig;
-import io.harness.cdng.artifact.bean.yaml.JenkinsArtifactConfig;
-import io.harness.cdng.artifact.bean.yaml.NexusRegistryArtifactConfig;
-import io.harness.cdng.artifact.bean.yaml.PrimaryArtifact;
-import io.harness.cdng.artifact.bean.yaml.SidecarArtifact;
-import io.harness.cdng.artifact.bean.yaml.SidecarArtifactWrapper;
-import io.harness.cdng.artifact.outcome.AcrArtifactOutcome;
-import io.harness.cdng.artifact.outcome.ArtifactoryGenericArtifactOutcome;
-import io.harness.cdng.artifact.outcome.DockerArtifactOutcome;
-import io.harness.cdng.artifact.outcome.EcrArtifactOutcome;
-import io.harness.cdng.artifact.outcome.GcrArtifactOutcome;
-import io.harness.cdng.artifact.outcome.JenkinsArtifactOutcome;
-import io.harness.cdng.artifact.outcome.S3ArtifactOutcome;
+import io.harness.cdng.artifact.bean.yaml.*;
+import io.harness.cdng.artifact.outcome.*;
 import io.harness.cdng.configfile.ConfigFile;
 import io.harness.cdng.configfile.ConfigFileAttributes;
 import io.harness.cdng.configfile.ConfigFileOutcome;
@@ -208,5 +188,7 @@ public class NGEntitiesKryoRegistrar implements KryoRegistrar {
     kryo.register(OverlayConfiguration.class, 12591);
     kryo.register(JenkinsArtifactConfig.class, 130012);
     kryo.register(ConfigFileOutcome.class, 130013);
+    kryo.register(GithubPackagesArtifactConfig.class, 130020);
+    kryo.register(GithubPackagesArtifactOutcome.class, 130021);
   }
 }
