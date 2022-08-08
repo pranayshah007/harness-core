@@ -62,6 +62,7 @@ import java.util.Collections;
 import java.util.List;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Null;
 import javax.ws.rs.BeanParam;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
@@ -105,14 +106,17 @@ public class MonitoredServiceResource {
   @Path("/yaml/V2")
   @Timed
   @ExceptionMetered
-  @ApiOperation(value = "saves monitored service from yaml or template", nickname = "saveMonitoredServiceFromYaml")
+  @ApiOperation(
+      value = "saves monitored service from yaml or template version 2", nickname = "saveMonitoredServiceFromYamlV2")
   @NGAccessControlCheck(resourceType = MONITORED_SERVICE, permission = EDIT_PERMISSION)
-  public RestResponse<MonitoredServiceResponse> saveMonitoredServiceFromYamlV2(
-      @ApiParam(required = true) @NotNull @BeanParam ProjectParams projectParam, @NotNull @Valid @Body String yaml,
-      @AccountIdentifier String templateAccountIdentifier, @OrgIdentifier String templateOrgIdentifier,
-      @ProjectIdentifier String templateProjectIdentifer) {
+  public RestResponse<MonitoredServiceResponse>
+  saveMonitoredServiceFromYamlV2(@ApiParam(required = true) @NotNull @BeanParam ProjectParams projectParam,
+      @NotNull @Valid @Body String yaml,
+      @QueryParam("templateAccountIdentifier") @Null @AccountIdentifier String templateAccountIdentifier,
+      @QueryParam("templateOrgIdentifier") @Null @OrgIdentifier String templateOrgIdentifier,
+      @QueryParam("templateProjectIdentifier") @Null @ProjectIdentifier String templateProjectIdentifier) {
     return new RestResponse<>(monitoredServiceService.createFromYamlV2(
-        projectParam, templateAccountIdentifier, templateOrgIdentifier, templateProjectIdentifer, yaml));
+        projectParam, templateAccountIdentifier, templateOrgIdentifier, templateProjectIdentifier, yaml));
   }
 
   @POST

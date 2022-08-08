@@ -271,9 +271,9 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
 
   @Override
   public MonitoredServiceResponse createFromYamlV2(
-      ProjectParams projectParams, String accountId, String orgIdentifier, String projectIdenfier, String yaml) {
+      ProjectParams projectParams, String accountId, String orgIdentifier, String projectIdentifier, String yaml) {
     MonitoredServiceDTO monitoredServiceDTO =
-        getExpandedMonitoredServiceFromYamlV2(projectParams, accountId, orgIdentifier, projectIdenfier, yaml);
+        getExpandedMonitoredServiceFromYamlV2(projectParams, accountId, orgIdentifier, projectIdentifier, yaml);
     return create(projectParams.getAccountIdentifier(), monitoredServiceDTO);
   }
 
