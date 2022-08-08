@@ -12,26 +12,8 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.artifact.ArtifactMetadataKeys;
 import io.harness.cdng.artifact.bean.ArtifactConfig;
-import io.harness.cdng.artifact.bean.yaml.AcrArtifactConfig;
-import io.harness.cdng.artifact.bean.yaml.AmazonS3ArtifactConfig;
-import io.harness.cdng.artifact.bean.yaml.ArtifactoryRegistryArtifactConfig;
-import io.harness.cdng.artifact.bean.yaml.CustomArtifactConfig;
-import io.harness.cdng.artifact.bean.yaml.DockerHubArtifactConfig;
-import io.harness.cdng.artifact.bean.yaml.EcrArtifactConfig;
-import io.harness.cdng.artifact.bean.yaml.GcrArtifactConfig;
-import io.harness.cdng.artifact.bean.yaml.JenkinsArtifactConfig;
-import io.harness.cdng.artifact.bean.yaml.NexusRegistryArtifactConfig;
-import io.harness.cdng.artifact.outcome.AcrArtifactOutcome;
-import io.harness.cdng.artifact.outcome.ArtifactOutcome;
-import io.harness.cdng.artifact.outcome.ArtifactoryArtifactOutcome;
-import io.harness.cdng.artifact.outcome.ArtifactoryGenericArtifactOutcome;
-import io.harness.cdng.artifact.outcome.CustomArtifactOutcome;
-import io.harness.cdng.artifact.outcome.DockerArtifactOutcome;
-import io.harness.cdng.artifact.outcome.EcrArtifactOutcome;
-import io.harness.cdng.artifact.outcome.GcrArtifactOutcome;
-import io.harness.cdng.artifact.outcome.JenkinsArtifactOutcome;
-import io.harness.cdng.artifact.outcome.NexusArtifactOutcome;
-import io.harness.cdng.artifact.outcome.S3ArtifactOutcome;
+import io.harness.cdng.artifact.bean.yaml.*;
+import io.harness.cdng.artifact.outcome.*;
 import io.harness.cdng.artifact.utils.ArtifactUtils;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.task.artifacts.ArtifactSourceType;
@@ -42,6 +24,7 @@ import io.harness.delegate.task.artifacts.azure.AcrArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.docker.DockerArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.ecr.EcrArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.gcr.GcrArtifactDelegateResponse;
+import io.harness.delegate.task.artifacts.githubpackages.GithubPackagesArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.jenkins.JenkinsArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.nexus.NexusArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.response.ArtifactDelegateResponse;
@@ -120,10 +103,30 @@ public class ArtifactResponseToOutcomeMapper {
         JenkinsArtifactDelegateResponse jenkinsArtifactDelegateResponse =
             (JenkinsArtifactDelegateResponse) artifactDelegateResponse;
         return getJenkinsArtifactOutcome(jenkinsArtifactConfig, jenkinsArtifactDelegateResponse, useDelegateResponse);
+      case GITHUB_PACKAGES:
+        GithubPackagesArtifactConfig githubPackagesArtifactConfig = (GithubPackagesArtifactConfig) artifactConfig;
+        GithubPackagesArtifactDelegateResponse githubPackagesArtifactDelegateResponse =
+            (GithubPackagesArtifactDelegateResponse) artifactDelegateResponse;
+        return getGithubPackagesArtifactOutcome(
+            githubPackagesArtifactConfig, githubPackagesArtifactDelegateResponse, useDelegateResponse);
       default:
         throw new UnsupportedOperationException(
             String.format("Unknown Artifact Config type: [%s]", artifactConfig.getSourceType()));
     }
+  }
+
+  private static GithubPackagesArtifactOutcome getGithubPackagesArtifactOutcome(
+      GithubPackagesArtifactConfig githubPackagesArtifactConfig,
+      GithubPackagesArtifactDelegateResponse githubPackagesArtifactDelegateResponse, boolean useDelegateResponse) {
+    return GithubPackagesArtifactOutcome.builder()
+        .packageName(githubPackagesArtifactConfig.getPackageName().getValue())
+        .version(githubPackagesArtifactDelegateResponse.getVersion())
+        .connectorRef(githubPackagesArtifactConfig.getConnectorRef().getValue())
+        .type(ArtifactSourceType.GITHUB_PACKAGES.getDisplayName())
+        .identifier(githubPackagesArtifactConfig.getIdentifier())
+        .primaryArtifact(githubPackagesArtifactConfig.isPrimaryArtifact())
+        .versionRegex(githubPackagesArtifactConfig.getVersionRegex().getValue())
+        .build();
   }
 
   private static S3ArtifactOutcome getS3ArtifactOutcome(AmazonS3ArtifactConfig amazonS3ArtifactConfig,
