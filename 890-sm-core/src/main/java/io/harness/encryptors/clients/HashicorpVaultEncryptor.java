@@ -146,6 +146,9 @@ public class HashicorpVaultEncryptor implements VaultEncryptor {
     } catch (IOException e) {
       String message = "Deletion of Vault secret at " + existingRecord.getEncryptionKey() + " failed";
       throw new SecretManagementDelegateException(VAULT_OPERATION_ERROR, message, e, USER);
+    } catch (HashiCorpVaultRuntimeException e) {
+      log.error("Failed to delete secret in Vault : {}", e.getMessage());
+      return false;
     }
   }
 
