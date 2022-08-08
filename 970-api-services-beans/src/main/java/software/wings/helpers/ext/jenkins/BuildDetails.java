@@ -23,7 +23,6 @@ import lombok.experimental.UtilityClass;
 
 @OwnedBy(HarnessTeam.CDC)
 @Value
-@Builder
 public class BuildDetails {
   @UtilityClass
   public static final class BuildDetailsMetadataKeys {
