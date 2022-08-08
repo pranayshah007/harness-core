@@ -19,8 +19,16 @@ import io.harness.delegate.beans.connector.ceazure.BillingExportSpecDTO;
 import io.harness.delegate.beans.connector.ceazure.CEAzureConnectorDTO;
 import io.harness.ng.core.dto.ErrorDetail;
 
+import com.azure.core.http.policy.HttpLogDetailLevel;
+import com.azure.core.http.rest.PagedIterable;
+import com.azure.core.management.AzureEnvironment;
+import com.azure.core.management.profile.AzureProfile;
 import com.azure.identity.ClientSecretCredential;
 import com.azure.identity.ClientSecretCredentialBuilder;
+import com.azure.resourcemanager.AzureResourceManager;
+import com.azure.resourcemanager.authorization.models.RoleAssignment;
+import com.azure.resourcemanager.authorization.models.RoleDefinition;
+import com.azure.resourcemanager.authorization.models.ServicePrincipal;
 import com.azure.storage.blob.BlobContainerClient;
 import com.azure.storage.blob.BlobServiceClient;
 import com.azure.storage.blob.BlobServiceClientBuilder;
@@ -49,6 +57,8 @@ public class CEAzureConnectorValidator extends io.harness.ccm.connectors.Abstrac
   private final String AZURE_STORAGE_URL_FORMAT = "https://%s.%s";
   private final String GENERIC_LOGGING_ERROR =
       "Failed to validate accountIdentifier:{} orgIdentifier:{} projectIdentifier:{} connectorIdentifier:{} ";
+  private final String AZURE_RBAC_READER_ROLE = "Reader";
+  private final String AZURE_RBAC_CONTRIBUTOR_ROLE = "Contributor";
 
   @Inject CENextGenConfiguration configuration;
   @Inject CEConnectorsHelper ceConnectorsHelper;
@@ -83,10 +93,12 @@ public class CEAzureConnectorValidator extends io.harness.ccm.connectors.Abstrac
     String directoryName = billingExportSpec.getDirectoryName();
     String reportName = billingExportSpec.getReportName();
     String tenantId = ceAzureConnectorDTO.getTenantId();
+    String subscriptionId = ceAzureConnectorDTO.getSubscriptionId();
     String prefix = directoryName + "/" + reportName + "/" + ceConnectorsHelper.getReportMonth();
     final List<ErrorDetail> errorList = new ArrayList<>();
 
     try {
+      List<String> requiredRoles = new ArrayList<>();
       if (featuresEnabled.contains(CEFeatures.BILLING)) {
         String endpoint = String.format(AZURE_STORAGE_URL_FORMAT, storageAccountName, AZURE_STORAGE_SUFFIX);
         BlobContainerClient blobContainerClient = getBlobContainerClient(endpoint, containerName, tenantId);
@@ -100,6 +112,22 @@ public class CEAzureConnectorValidator extends io.harness.ccm.connectors.Abstrac
               .build();
         }
       }
+
+      if (featuresEnabled.contains(CEFeatures.OPTIMIZATION)) {
+        requiredRoles.add(AZURE_RBAC_CONTRIBUTOR_ROLE);
+      } else if (featuresEnabled.contains(CEFeatures.VISIBILITY)) {
+        requiredRoles.add(AZURE_RBAC_READER_ROLE);
+      }
+      errorList.addAll(validateServiceAccountPermissions(tenantId, subscriptionId, requiredRoles));
+      if (!errorList.isEmpty()) {
+        return ConnectorValidationResult.builder()
+            .status(ConnectivityStatus.FAILURE)
+            .errors(errorList)
+            .errorSummary("Authorization permission mismatch")
+            .testedAt(Instant.now().toEpochMilli())
+            .build();
+      }
+
     } catch (BlobStorageException ex) {
       log.error("Error", ex);
       if (ex.getErrorCode().toString().equals("ContainerNotFound")) {
@@ -252,6 +280,51 @@ public class CEAzureConnectorValidator extends io.harness.ccm.connectors.Abstrac
                   "Verify the billing export configuration in CCM and in your Azure account. For more information, refer to the documentation.")
               .code(403)
               .build());
+    }
+    return errorDetails;
+  }
+
+  public List<ErrorDetail> validateServiceAccountPermissions(
+      String tenantId, String subscriptionId, List<String> requiredRoles) {
+    List<ErrorDetail> errorDetails = new ArrayList<>();
+    try {
+      AzureProfile profile = new AzureProfile(tenantId, subscriptionId, AzureEnvironment.AZURE);
+      ClientSecretCredential clientSecretCredential =
+          new ClientSecretCredentialBuilder()
+              .clientId(configuration.getCeAzureSetupConfig().getAzureAppClientId())
+              .clientSecret(configuration.getCeAzureSetupConfig().getAzureAppClientSecret())
+              .tenantId(profile.getTenantId())
+              .build();
+
+      AzureResourceManager azureResourceManager = AzureResourceManager.configure()
+                                                      .withLogLevel(HttpLogDetailLevel.BASIC)
+                                                      .authenticate(clientSecretCredential, profile)
+                                                      .withSubscription(subscriptionId);
+      ServicePrincipal servicePrincipal = azureResourceManager.accessManagement().servicePrincipals().getByName(
+          configuration.getCeAzureSetupConfig().getAzureAppClientId());
+      PagedIterable<RoleAssignment> roles =
+          azureResourceManager.accessManagement().roleAssignments().listByServicePrincipal(servicePrincipal);
+
+      for (RoleAssignment item : roles) {
+        RoleDefinition role =
+            azureResourceManager.accessManagement().roleDefinitions().getById(item.roleDefinitionId());
+        log.info("ServicePrincipal has role: {}", role.roleName());
+        requiredRoles.remove(role.roleName());
+      }
+    } catch (Exception e) {
+      log.info("Exception occurred while fetching list of roles assigned to the service principal: {}", e.getMessage());
+    }
+    if (!requiredRoles.isEmpty()) {
+      String reason = "";
+      for (String requiredRole : requiredRoles) {
+        reason += String.format("Required role '%s' is not assigned to service principal.%n", requiredRole);
+      }
+      log.info(reason);
+      errorDetails.add(ErrorDetail.builder()
+                           .code(403)
+                           .reason(reason)
+                           .message("Review Azure access permissions as per the documentation.")
+                           .build());
     }
     return errorDetails;
   }

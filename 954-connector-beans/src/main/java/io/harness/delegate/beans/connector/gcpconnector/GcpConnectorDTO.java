@@ -12,6 +12,7 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import io.harness.beans.DecryptableEntity;
 import io.harness.connector.DelegateSelectable;
+import io.harness.connector.ManagerExecutable;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.exception.InvalidRequestException;
 
@@ -40,9 +41,11 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @ApiModel("GcpConnector")
 @Schema(name = "GcpConnector", description = "This contains GCP connector details")
-public class GcpConnectorDTO extends ConnectorConfigDTO implements DelegateSelectable {
+public class GcpConnectorDTO extends ConnectorConfigDTO implements DelegateSelectable, ManagerExecutable {
   @Valid @NotNull GcpConnectorCredentialDTO credential;
   Set<String> delegateSelectors;
+  @Builder.Default Boolean executeOnDelegate = true;
+
   @Override
   public List<DecryptableEntity> getDecryptableEntities() {
     if (credential.getGcpCredentialType() == GcpCredentialType.MANUAL_CREDENTIALS) {

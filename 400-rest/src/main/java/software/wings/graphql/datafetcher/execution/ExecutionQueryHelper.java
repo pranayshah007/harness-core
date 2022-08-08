@@ -138,6 +138,11 @@ public class ExecutionQueryHelper {
         utils.setTimeFilter(field, timeFilter);
       }
 
+      if (filter.getApplicationId() != null) {
+        field = query.field(WorkflowExecutionKeys.appId);
+        field.equal(filter.getApplicationId());
+      }
+
       if (filter.getTag() != null) {
         QLDeploymentTagFilter tagFilter = filter.getTag();
         List<QLTagInput> tags = tagFilter.getTags();

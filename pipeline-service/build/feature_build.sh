@@ -17,11 +17,10 @@ export KEY_STORE="/harness/harness_wild.p12"
 export KEY_STORE_PASSWORD=$KEYSTORE_PASS
 
 export BUILD_NAME=$(git rev-parse --abbrev-ref HEAD)
-export BUILD_BAZEL_DEPLOY_JAR=true
 
 export IMAGE_TAG=$VERSION-$BUILD_NAME
 
-export GIT_BRANCH=$BUILD_NAME
+export GIT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
 export GIT_COMMIT=$(git rev-parse HEAD)
 
 echo "--------------------------------------"

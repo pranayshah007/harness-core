@@ -114,6 +114,9 @@ import io.harness.connector.mappers.sumologicmapper.SumoLogicDTOToEntity;
 import io.harness.connector.mappers.sumologicmapper.SumoLogicEntityToDTO;
 import io.harness.connector.task.ConnectorValidationHandler;
 import io.harness.connector.task.NotSupportedValidationHandler;
+import io.harness.connector.task.aws.AwsValidationHandler;
+import io.harness.connector.task.azure.AzureValidationHandler;
+import io.harness.connector.task.gcp.GcpValidationTaskHandler;
 import io.harness.connector.task.git.GitValidationHandler;
 import io.harness.connector.validator.ArtifactoryConnectionValidator;
 import io.harness.connector.validator.AwsConnectorValidator;
@@ -222,15 +225,14 @@ public class ConnectorRegistryFactory {
     registrar.put(ConnectorType.GCP,
         new ConnectorRegistrar(ConnectorCategory.CLOUD_PROVIDER, GcpConnectorValidator.class,
             GcpValidationParamsProvider.class, GcpDTOToEntity.class, GcpEntityToDTO.class,
-            NotSupportedValidationHandler.class));
+            GcpValidationTaskHandler.class));
     registrar.put(ConnectorType.AWS,
         new ConnectorRegistrar(ConnectorCategory.CLOUD_PROVIDER, AwsConnectorValidator.class,
-            AwsValidationParamsProvider.class, AwsDTOToEntity.class, AwsEntityToDTO.class,
-            NotSupportedValidationHandler.class));
+            AwsValidationParamsProvider.class, AwsDTOToEntity.class, AwsEntityToDTO.class, AwsValidationHandler.class));
     registrar.put(ConnectorType.AZURE,
         new ConnectorRegistrar(ConnectorCategory.CLOUD_PROVIDER, AzureConnectorValidator.class,
             AzureValidationParamsProvider.class, AzureDTOToEntity.class, AzureEntityToDTO.class,
-            NotSupportedValidationHandler.class));
+            AzureValidationHandler.class));
     registrar.put(ConnectorType.CE_AWS,
         new ConnectorRegistrar(ConnectorCategory.CLOUD_COST, CCMConnectorValidator.class,
             NoOpConnectorValidationParamsProvider.class, CEAwsDTOToEntity.class, CEAwsEntityToDTO.class,

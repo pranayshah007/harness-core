@@ -91,7 +91,8 @@ public class NgMigrationResource {
     return new RestResponse<>(discoveryService.getSummary(accountId, appId, entityId, entityType));
   }
 
-  @POST
+  // This is get because in prod we cannot run this on customers accounts if it is POST
+  @GET
   @Path("/discover/summary/async")
   @Timed
   @ExceptionMetered
@@ -101,7 +102,7 @@ public class NgMigrationResource {
   }
 
   @GET
-  @Path("/discover/summary/async")
+  @Path("/discover/summary/async-result")
   @Timed
   @ExceptionMetered
   public RestResponse<MigrationAsyncTracker> getAccountLevelSummary(

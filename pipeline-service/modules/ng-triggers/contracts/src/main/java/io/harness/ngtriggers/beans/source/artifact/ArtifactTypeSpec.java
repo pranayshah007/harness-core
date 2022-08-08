@@ -14,6 +14,7 @@ import static io.harness.ngtriggers.Constants.ARTIFACTORY_REGISTRY;
 import static io.harness.ngtriggers.Constants.DOCKER_REGISTRY;
 import static io.harness.ngtriggers.Constants.ECR;
 import static io.harness.ngtriggers.Constants.GCR;
+import static io.harness.ngtriggers.Constants.JENKINS;
 import static io.harness.ngtriggers.Constants.NEXUS3_REGISTRY;
 
 import static com.fasterxml.jackson.annotation.JsonTypeInfo.As.EXTERNAL_PROPERTY;
@@ -34,7 +35,8 @@ import java.util.List;
       @JsonSubTypes.Type(value = NexusRegistrySpec.class, name = NEXUS3_REGISTRY),
       @JsonSubTypes.Type(value = ArtifactoryRegistrySpec.class, name = ARTIFACTORY_REGISTRY),
       @JsonSubTypes.Type(value = AcrSpec.class, name = ACR),
-      @JsonSubTypes.Type(value = AmazonS3RegistrySpec.class, name = AMAZON_S3)
+      @JsonSubTypes.Type(value = AmazonS3RegistrySpec.class, name = AMAZON_S3),
+      @JsonSubTypes.Type(value = JenkinsRegistrySpec.class, name = JENKINS)
 })
 
 @OwnedBy(PIPELINE)

@@ -13,6 +13,7 @@ import io.harness.ccm.commons.dao.CEMetadataRecordDao;
 import io.harness.ccm.commons.entities.batch.CEMetadataRecord;
 import io.harness.ccm.graphql.dto.overview.CCMMetaData;
 import io.harness.ccm.graphql.dto.overview.CCMMetaData.CCMMetaDataBuilder;
+import io.harness.ccm.rbac.CCMRbacHelper;
 import io.harness.ccm.views.dto.DefaultViewIdDto;
 import io.harness.ccm.views.service.CEViewService;
 import io.harness.telemetry.Category;
@@ -32,6 +33,7 @@ public class CCMMetaDataService {
   @Inject private CEMetadataRecordDao metadataRecordDao;
   @Inject private CEViewService ceViewService;
   @Inject private TelemetryReporter telemetryReporter;
+  @Inject private CCMRbacHelper rbacHelper;
 
   @NonNull
   public CCMMetaData getCCMMetaData(@NonNull final String accountId) {
@@ -73,6 +75,8 @@ public class CCMMetaDataService {
       log.error("Encountered exception while getSegmentModuleInterfaceLoadedEventSent.", ex);
     }
 
+    // Checking cost overview permissions
+    ccmMetaDataBuilder.showCostOverview(rbacHelper.hasCostOverviewPermission(accountId, null, null));
     return ccmMetaDataBuilder.build();
   }
 

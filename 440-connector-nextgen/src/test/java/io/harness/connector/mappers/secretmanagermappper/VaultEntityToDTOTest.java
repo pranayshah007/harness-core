@@ -1,3 +1,10 @@
+/*
+ * Copyright 2022 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
+
 package io.harness.connector.mappers.secretmanagermappper;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
@@ -48,5 +55,15 @@ public class VaultEntityToDTOTest extends CategoryTest {
     VaultConnectorDTO vaultConnectorDTO = vaultEntityToDTO.createConnectorDTO(vaultConnector);
     assertNotNull(vaultConnectorDTO);
     assertThat(vaultConnectorDTO.getK8sAuthEndpoint()).isEqualTo("kubernetes");
+  }
+
+  @Test
+  @Owner(developers = VIKAS_M)
+  @Category(UnitTests.class)
+  public void testConnector_ExistingVaultWithoutThisUseK8sAuthField() {
+    VaultConnector vaultConnector = VaultConnector.builder().vaultUrl(vaultURL).useK8sAuth(null).build();
+    VaultConnectorDTO vaultConnectorDTO = vaultEntityToDTO.createConnectorDTO(vaultConnector);
+    assertNotNull(vaultConnectorDTO);
+    assertThat(vaultConnectorDTO.getK8sAuthEndpoint()).isNull();
   }
 }

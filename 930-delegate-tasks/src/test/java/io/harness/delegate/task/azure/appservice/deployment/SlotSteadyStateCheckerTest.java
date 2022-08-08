@@ -39,6 +39,7 @@ import io.harness.azure.model.AzureConfig;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.task.azure.appservice.deployment.verifier.SlotStatusVerifier;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.runtime.azure.AzureAppServicesSlotSteadyStateException;
 import io.harness.logging.LogCallback;
 import io.harness.rule.Owner;
 
@@ -135,14 +136,14 @@ public class SlotSteadyStateCheckerTest extends CategoryTest {
     assertThatThrownBy(()
                            -> slotSteadyStateChecker.waitUntilCompleteWithTimeout(
                                10, 10, mockLogCallback, START_DEPLOYMENT_SLOT, statusVerifier))
-        .isInstanceOf(InvalidRequestException.class)
+        .isInstanceOf(AzureAppServicesSlotSteadyStateException.class)
         .hasMessageContaining("Error while waiting for executing operation");
 
     doReturn(Optional.empty()).when(azureWebClient).getDeploymentSlotByName(eq(azureWebClientContext), eq(SOURCE_SLOT));
     assertThatThrownBy(()
                            -> slotSteadyStateChecker.waitUntilCompleteWithTimeout(
                                10, 10, mockLogCallback, START_DEPLOYMENT_SLOT, statusVerifier))
-        .isInstanceOf(InvalidRequestException.class)
+        .isInstanceOf(AzureAppServicesSlotSteadyStateException.class)
         .hasMessageContaining("Unable to find deployment slot with name");
   }
 
@@ -171,7 +172,7 @@ public class SlotSteadyStateCheckerTest extends CategoryTest {
     assertThatThrownBy(()
                            -> slotSteadyStateChecker.waitUntilCompleteWithTimeout(
                                10, 1, mockLogCallback, START_DEPLOYMENT_SLOT, statusVerifier))
-        .isInstanceOf(InvalidRequestException.class)
+        .isInstanceOf(AzureAppServicesSlotSteadyStateException.class)
         .hasMessageContaining("Call back failed");
   }
 

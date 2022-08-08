@@ -13,7 +13,6 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.ConnectorValidationResult;
-import io.harness.delegate.beans.azure.response.AzureValidateTaskResponse;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.beans.connector.azureconnector.AzureAuthCredentialDTO;
 import io.harness.delegate.beans.connector.azureconnector.AzureConnectorDTO;
@@ -27,7 +26,7 @@ import io.harness.delegate.beans.connector.azureconnector.AzureTaskType;
 import io.harness.delegate.task.TaskParameters;
 
 @OwnedBy(HarnessTeam.CDP)
-public class AzureConnectorValidator extends AbstractConnectorValidator {
+public class AzureConnectorValidator extends AbstractCloudProviderConnectorValidator {
   @Override
   public <T extends ConnectorConfigDTO> TaskParameters getTaskParameters(
       T connectorConfig, String accountIdentifier, String orgIdentifier, String projectIdentifier) {
@@ -61,9 +60,7 @@ public class AzureConnectorValidator extends AbstractConnectorValidator {
   @Override
   public ConnectorValidationResult validate(ConnectorConfigDTO connectorDTO, String accountIdentifier,
       String orgIdentifier, String projectIdentifier, String identifier) {
-    AzureValidateTaskResponse responseData = (AzureValidateTaskResponse) super.validateConnector(
-        connectorDTO, accountIdentifier, orgIdentifier, projectIdentifier, identifier);
-    return responseData.getConnectorValidationResult();
+    return super.validate(connectorDTO, accountIdentifier, orgIdentifier, projectIdentifier, identifier);
   }
 
   @Override

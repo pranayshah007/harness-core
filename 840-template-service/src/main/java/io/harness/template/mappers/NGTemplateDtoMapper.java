@@ -76,6 +76,11 @@ public class NGTemplateDtoMapper {
         ? GitAwareContextHelper.getEntityGitDetailsFromScmGitMetadata()
         : EntityGitDetails.builder().build();
   }
+  public EntityGitDetails getEntityGitDetailsForListTemplates(TemplateEntity templateEntity) {
+    return templateEntity.getStoreType() == null            ? EntityGitDetailsMapper.mapEntityGitDetails(templateEntity)
+        : templateEntity.getStoreType() == StoreType.REMOTE ? GitAwareContextHelper.getEntityGitDetails(templateEntity)
+                                                            : EntityGitDetails.builder().build();
+  }
 
   public TemplateSummaryResponseDTO prepareTemplateSummaryResponseDto(TemplateEntity templateEntity) {
     return TemplateSummaryResponseDTO.builder()
@@ -93,7 +98,7 @@ public class NGTemplateDtoMapper {
         .versionLabel(templateEntity.getVersionLabel())
         .tags(TagMapper.convertToMap(templateEntity.getTags()))
         .version(templateEntity.getVersion())
-        .gitDetails(getEntityGitDetails(templateEntity))
+        .gitDetails(getEntityGitDetailsForListTemplates(templateEntity))
         .lastUpdatedAt(templateEntity.getLastUpdatedAt())
         .entityValidityDetails(templateEntity.isEntityInvalid()
                 ? EntityValidityDetails.builder().valid(false).invalidYaml(templateEntity.getYaml()).build()
@@ -104,20 +109,20 @@ public class NGTemplateDtoMapper {
 
   public TemplateMetadataSummaryResponseDTO prepareTemplateMetaDataSummaryResponseDto(TemplateEntity templateEntity) {
     return TemplateMetadataSummaryResponseDTO.builder()
-        .accountIdentifier(templateEntity.getAccountId())
+        .accountId(templateEntity.getAccountId())
         .orgIdentifier(templateEntity.getOrgIdentifier())
         .projectIdentifier(templateEntity.getProjectIdentifier())
         .identifier(templateEntity.getIdentifier())
         .description(templateEntity.getDescription())
         .name(templateEntity.getName())
-        .isStableTemplate(templateEntity.isStableTemplate())
+        .stableTemplate(templateEntity.isStableTemplate())
         .childType(templateEntity.getChildType())
         .templateEntityType(templateEntity.getTemplateEntityType())
         .templateScope(templateEntity.getTemplateScope())
         .versionLabel(templateEntity.getVersionLabel())
         .tags(TagMapper.convertToMap(templateEntity.getTags()))
         .version(templateEntity.getVersion())
-        .gitDetails(getEntityGitDetails(templateEntity))
+        .gitDetails(getEntityGitDetailsForListTemplates(templateEntity))
         .lastUpdatedAt(templateEntity.getLastUpdatedAt())
         .createdAt(templateEntity.getCreatedAt())
         .storeType(templateEntity.getStoreType())

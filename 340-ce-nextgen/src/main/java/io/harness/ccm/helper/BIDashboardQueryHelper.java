@@ -10,6 +10,7 @@ package io.harness.ccm.helper;
 import static io.harness.annotations.dev.HarnessTeam.CE;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.ccm.graphql.dto.overview.CCMMetaData;
 import io.harness.ccm.remote.beans.BIDashboardSummary;
 import io.harness.ccm.remote.beans.BIDashboardSummary.BIDashboardSummaryBuilder;
 
@@ -34,8 +35,9 @@ public class BIDashboardQueryHelper {
   public final String description = "description";
   public final String serviceType = "serviceType";
   public final String redirectionURL = "redirectionURL";
-  public final String BQ_CCM_LIST_BI_DASHBOARDS_QUERY = "SELECT dashboardName, dashboardId, cloudProvider, "
-      + "description, serviceType, redirectionURL FROM `%s.CE_INTERNAL.biDashboards`;";
+  public final String BQ_CCM_LIST_BI_DASHBOARDS_QUERY = "SELECT dashboardName, dashboardId, cloudProvider,"
+      + " description, serviceType, redirectionURL FROM `%s.CE_INTERNAL.biDashboards`"
+      + " WHERE deploymentCluster = '%s' AND cloudProvider in (%s);";
 
   public List<BIDashboardSummary> extractDashboardSummaries(TableResult result, String accountId) {
     List<BIDashboardSummary> dashboardSummaries = new ArrayList<>();
@@ -77,5 +79,23 @@ public class BIDashboardQueryHelper {
       dashboardSummaries.add(dashboardSummaryBuilder.build());
     }
     return dashboardSummaries;
+  }
+
+  public String createQueryToListDashboards(String gcpProjectId, String deploymentCluster, CCMMetaData ccmMetaData) {
+    List<String> cloudProviders = new ArrayList<>();
+    updateCloudProviders("'AWS'", ccmMetaData.getAwsConnectorsPresent(), cloudProviders);
+    updateCloudProviders("'GCP'", ccmMetaData.getGcpConnectorsPresent(), cloudProviders);
+    updateCloudProviders("'AZURE'", ccmMetaData.getAzureConnectorsPresent(), cloudProviders);
+    updateCloudProviders("'CLUSTER'", ccmMetaData.getK8sClusterConnectorPresent(), cloudProviders);
+
+    return String.format(
+        BQ_CCM_LIST_BI_DASHBOARDS_QUERY, gcpProjectId, deploymentCluster, String.join(",", cloudProviders));
+  }
+
+  public void updateCloudProviders(
+      String cloudProvider, Boolean isConnectorPresentForCloudProvider, List<String> cloudProviders) {
+    if (isConnectorPresentForCloudProvider) {
+      cloudProviders.add(cloudProvider);
+    }
   }
 }

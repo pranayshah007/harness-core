@@ -18,6 +18,7 @@ import io.harness.cvng.core.beans.RiskProfile;
 import io.harness.cvng.core.beans.monitoredService.TimeSeriesMetricPackDTO;
 import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.AppDynamicsHealthSourceSpec;
 import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.AppDynamicsHealthSourceSpec.AppDMetricDefinitions;
+import io.harness.cvng.core.constant.MonitoredServiceConstants;
 import io.harness.cvng.core.entities.AppDynamicsCVConfig;
 
 import com.google.common.base.Preconditions;
@@ -81,7 +82,7 @@ public class AppDynamicsHealthSourceSpecTransformer
       if (isNotEmpty(metricThresholds)) {
         metricThresholds.forEach(metricThreshold -> metricThreshold.setMetricType(identifier));
       }
-      if (!("Custom".equals(identifier) && isEmpty(metricThresholds))) {
+      if (!(MonitoredServiceConstants.CUSTOM_METRIC_PACK.equals(identifier) && isEmpty(metricThresholds))) {
         metricPacks.add(
             TimeSeriesMetricPackDTO.builder().identifier(identifier).metricThresholds(metricThresholds).build());
       }

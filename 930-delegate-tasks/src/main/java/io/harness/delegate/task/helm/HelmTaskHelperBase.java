@@ -21,6 +21,7 @@ import static io.harness.exception.WingsException.USER;
 import static io.harness.filesystem.FileIo.createDirectoryIfDoesNotExist;
 import static io.harness.filesystem.FileIo.deleteDirectoryAndItsContentIfExists;
 import static io.harness.filesystem.FileIo.waitForDirectoryToBeAccessibleOutOfProcess;
+import static io.harness.helm.HelmCommandType.RELEASE_HISTORY;
 import static io.harness.helm.HelmConstants.ADD_COMMAND_FOR_REPOSITORY;
 import static io.harness.helm.HelmConstants.CHARTS_YAML_KEY;
 import static io.harness.helm.HelmConstants.HELM_CACHE_HOME_PLACEHOLDER;
@@ -76,6 +77,7 @@ import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.helm.HelmCliCommandType;
 import io.harness.helm.HelmCommandFlagsUtils;
 import io.harness.helm.HelmCommandTemplateFactory;
+import io.harness.helm.HelmCommandType;
 import io.harness.helm.HelmSubCommandType;
 import io.harness.k8s.K8sGlobalConfigService;
 import io.harness.k8s.manifest.ObjectYamlUtils;
@@ -84,6 +86,8 @@ import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.security.encryption.SecretDecryptionService;
 import io.harness.utils.FieldWithPlainTextOrSecretValueHelper;
+
+import software.wings.helpers.ext.helm.response.ReleaseInfo;
 
 import com.esotericsoftware.yamlbeans.YamlException;
 import com.google.common.util.concurrent.UncheckedTimeoutException;
@@ -152,6 +156,55 @@ public class HelmTaskHelperBase {
             USER, HelmCliCommandType.INIT);
       }
     }
+  }
+
+  public List<ReleaseInfo> parseHelmReleaseCommandOutput(String listReleaseOutput, HelmCommandType helmCommandType)
+      throws IOException {
+    if (isEmpty(listReleaseOutput)) {
+      return new ArrayList<>();
+    }
+    CSVFormat csvFormat = CSVFormat.RFC4180.withFirstRecordAsHeader().withDelimiter('\t').withTrim();
+    return CSVParser.parse(listReleaseOutput, csvFormat)
+        .getRecords()
+        .stream()
+        .map(helmCommandType == RELEASE_HISTORY ? this::releaseHistoryCsvRecordToReleaseInfo
+                                                : this::listReleaseCsvRecordToReleaseInfo)
+        .collect(Collectors.toList());
+  }
+
+  private ReleaseInfo listReleaseCsvRecordToReleaseInfo(CSVRecord releaseRecord) {
+    return ReleaseInfo.builder()
+        .name(releaseRecord.get("NAME"))
+        .revision(releaseRecord.get("REVISION"))
+        .status(releaseRecord.get("STATUS"))
+        .chart(releaseRecord.get("CHART"))
+        .namespace(releaseRecord.get("NAMESPACE"))
+        .build();
+  }
+
+  private ReleaseInfo releaseHistoryCsvRecordToReleaseInfo(CSVRecord releaseRecord) {
+    return ReleaseInfo.builder()
+        .revision(releaseRecord.get("REVISION"))
+        .status(releaseRecord.get("STATUS"))
+        .chart(releaseRecord.get("CHART"))
+        .description(releaseRecord.get("DESCRIPTION"))
+        .build();
+  }
+
+  public void processHelmReleaseHistOutput(ReleaseInfo releaseInfo) {
+    if (checkIfFailed(releaseInfo.getDescription()) || checkIfFailed(releaseInfo.getStatus())) {
+      throw new HelmClientException(
+          "Release History command passed but there is an issue with latest release, details: \n"
+              + releaseInfo.getDescription(),
+          USER, HelmCliCommandType.RELEASE_HISTORY);
+    }
+  }
+
+  public boolean checkIfFailed(String str) {
+    if (!isEmpty(str)) {
+      return str.toLowerCase().contains("failed");
+    }
+    return false;
   }
 
   public void loginOciRegistry(String repoUrl, String userName, char[] password, HelmVersion helmVersion,

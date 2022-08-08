@@ -23,6 +23,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.concurrent.HTimeLimiter;
 import io.harness.delegate.task.azure.appservice.deployment.verifier.SlotStatusVerifier;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.runtime.azure.AzureAppServicesSlotSteadyStateException;
 import io.harness.logging.LogCallback;
 import io.harness.logging.LogLevel;
 
@@ -54,7 +55,7 @@ public class SlotSteadyStateChecker {
       String message =
           format("Error while waiting for executing operation [%s], %n %s", commandUnitName, e.getMessage());
       logCallback.saveExecutionLog(message, LogLevel.ERROR, FAILURE);
-      throw new InvalidRequestException(message, e);
+      throw new AzureAppServicesSlotSteadyStateException(message);
     }
   }
 

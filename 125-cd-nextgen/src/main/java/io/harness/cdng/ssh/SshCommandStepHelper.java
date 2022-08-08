@@ -272,8 +272,8 @@ public class SshCommandStepHelper extends CDStepHelper {
     List<NgCommandUnit> commandUnitsFromStep =
         stepCommandUnits.stream()
             .map(stepCommandUnit
-                -> (stepCommandUnit.isScript()) ? mapScriptCommandUnit(stepCommandUnit.getCommandUnit(), onDelegate)
-                                                : mapCopyCommandUnit(stepCommandUnit.getCommandUnit()))
+                -> (stepCommandUnit.isScript()) ? mapScriptCommandUnit(stepCommandUnit, onDelegate)
+                                                : mapCopyCommandUnit(stepCommandUnit))
             .collect(Collectors.toList());
 
     commandUnits.addAll(commandUnitsFromStep);
@@ -281,7 +281,7 @@ public class SshCommandStepHelper extends CDStepHelper {
     return commandUnits;
   }
 
-  private ScriptCommandUnit mapScriptCommandUnit(StepCommandUnit stepCommandUnit, boolean onDelegate) {
+  private ScriptCommandUnit mapScriptCommandUnit(CommandUnitWrapper stepCommandUnit, boolean onDelegate) {
     if (stepCommandUnit == null) {
       throw new InvalidRequestException("Invalid command unit format specified");
     }
@@ -300,7 +300,7 @@ public class SshCommandStepHelper extends CDStepHelper {
         .build();
   }
 
-  private CopyCommandUnit mapCopyCommandUnit(StepCommandUnit stepCommandUnit) {
+  private CopyCommandUnit mapCopyCommandUnit(CommandUnitWrapper stepCommandUnit) {
     if (stepCommandUnit == null) {
       throw new InvalidRequestException("Invalid command unit format specified");
     }

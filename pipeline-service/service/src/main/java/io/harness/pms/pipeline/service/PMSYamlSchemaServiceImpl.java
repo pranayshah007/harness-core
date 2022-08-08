@@ -7,6 +7,9 @@
 
 package io.harness.pms.pipeline.service;
 
+import static io.harness.pms.pipeline.service.yamlschema.PmsYamlSchemaHelper.APPROVAL_NAMESPACE;
+import static io.harness.pms.pipeline.service.yamlschema.PmsYamlSchemaHelper.FLATTENED_PARALLEL_STEP_ELEMENT_CONFIG_SCHEMA;
+import static io.harness.pms.pipeline.service.yamlschema.PmsYamlSchemaHelper.PARALLEL_STEP_ELEMENT_CONFIG;
 import static io.harness.yaml.schema.beans.SchemaConstants.ALL_OF_NODE;
 import static io.harness.yaml.schema.beans.SchemaConstants.DEFINITIONS_NODE;
 import static io.harness.yaml.schema.beans.SchemaConstants.ONE_OF_NODE;
@@ -126,7 +129,11 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
 
   @Override
   public void validateYamlSchema(String accountId, String orgId, String projectId, String yaml) {
-    validateYamlSchemaInternal(accountId, orgId, projectId, yaml);
+    // Keeping pipeline yaml schema validation behind ff. If ff is disabled then schema validation will happen. Will
+    // remove after finding the root cause of invalid schema generation and fixing it.
+    if (!pmsYamlSchemaHelper.isFeatureFlagEnabled(FeatureName.DISABLE_PIPELINE_SCHEMA_VALIDATION, accountId)) {
+      validateYamlSchemaInternal(accountId, orgId, projectId, yaml);
+    }
   }
 
   private void validateYamlSchemaInternal(String accountIdentifier, String orgId, String projectId, String yaml) {
@@ -207,8 +214,17 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
           .filter(Objects::nonNull)
           .forEach(partialSchemaDTOList1
               -> partialSchemaDTOList1.forEach(partialSchemaDTO
-                  -> pmsYamlSchemaHelper.processPartialStageSchema(
-                      finalMergedDefinitions, pipelineStepsDefinitions, stageElementConfig, partialSchemaDTO)));
+                  -> pmsYamlSchemaHelper.processPartialStageSchema(finalMergedDefinitions, pipelineStepsDefinitions,
+                      stageElementConfig, partialSchemaDTO, accountIdentifier)));
+      // These logs are only for debugging the invalid schema generation issue. Checking only for approval stage
+      if (!finalMergedDefinitions.get(APPROVAL_NAMESPACE)
+               .get(PARALLEL_STEP_ELEMENT_CONFIG)
+               .toString()
+               .equals(FLATTENED_PARALLEL_STEP_ELEMENT_CONFIG_SCHEMA)) {
+        log.warn(
+            "Final flattened ParallelStepElementConfig schema is incorrect for approval stage merging all stage schemas for account after {}",
+            accountIdentifier);
+      }
     } catch (Exception e) {
       log.error(format("[PMS] Exception while merging yaml schema: %s", e.getMessage()), e);
     }

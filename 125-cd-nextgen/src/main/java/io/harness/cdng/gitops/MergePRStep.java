@@ -23,6 +23,7 @@ import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
+import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectorDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.delegate.beans.gitapi.GitApiRequestType;
 import io.harness.delegate.beans.gitapi.GitApiTaskParams;
@@ -124,10 +125,12 @@ public class MergePRStep extends TaskExecutableWithRollbackAndRbac<NGGitOpsRespo
         ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.CREATE_PR_OUTCOME));
     int prNumber;
     String prLink;
+    String sha;
     if (optionalSweepingOutput != null && optionalSweepingOutput.isFound()) {
       CreatePROutcome createPROutcome = (CreatePROutcome) optionalSweepingOutput.getOutput();
       prNumber = createPROutcome.getPrNumber();
       prLink = createPROutcome.getPrlink();
+      sha = createPROutcome.getCommitId();
     } else {
       throw new InvalidRequestException("Pull Request Details are missing", USER);
     }
@@ -150,15 +153,26 @@ public class MergePRStep extends TaskExecutableWithRollbackAndRbac<NGGitOpsRespo
     switch (gitStoreDelegateConfig.getGitConfigDTO().getConnectorType()) {
       case GITHUB:
         GithubConnectorDTO githubConnectorDTO = (GithubConnectorDTO) gitStoreDelegateConfig.getGitConfigDTO();
-        repoOwner = githubConnectorDTO.getGitRepositoryDetails().getOrg();
-        repoName = githubConnectorDTO.getGitRepositoryDetails().getName();
         gitApiTaskParams = GitApiTaskParams.builder()
                                .gitRepoType(GitRepoType.GITHUB)
                                .requestType(GitApiRequestType.MERGE_PR)
                                .connectorDetails(connectorDetails)
                                .prNumber(String.valueOf(prNumber))
-                               .owner(repoOwner)
-                               .repo(repoName)
+                               .owner(githubConnectorDTO.getGitRepositoryDetails().getOrg())
+                               .repo(githubConnectorDTO.getGitRepositoryDetails().getName())
+                               .sha(sha)
+                               .build();
+        break;
+      case AZURE_REPO:
+        AzureRepoConnectorDTO azureRepoConnectorDTO = (AzureRepoConnectorDTO) gitStoreDelegateConfig.getGitConfigDTO();
+        gitApiTaskParams = GitApiTaskParams.builder()
+                               .gitRepoType(GitRepoType.AZURE_REPO)
+                               .requestType(GitApiRequestType.MERGE_PR)
+                               .connectorDetails(connectorDetails)
+                               .prNumber(String.valueOf(prNumber))
+                               .owner(azureRepoConnectorDTO.getGitRepositoryDetails().getOrg())
+                               .repo(azureRepoConnectorDTO.getGitRepositoryDetails().getName())
+                               .sha(sha)
                                .build();
         break;
       default:
