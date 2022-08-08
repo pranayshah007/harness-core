@@ -8,7 +8,6 @@
 package io.harness.delegate.task.artifacts.mappers;
 
 import io.harness.artifacts.githubpackages.beans.GithubPackagesInternalConfig;
-import io.harness.artifacts.jenkins.beans.JenkinsInternalConfig;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.connector.scm.GitAuthType;
 import io.harness.delegate.beans.connector.scm.github.*;
@@ -17,8 +16,6 @@ import io.harness.delegate.task.artifacts.githubpackages.GithubPackagesArtifactD
 import io.harness.delegate.task.artifacts.githubpackages.GithubPackagesArtifactDelegateResponse;
 import io.harness.utils.FieldWithPlainTextOrSecretValueHelper;
 
-import software.wings.beans.GithubPackagesConfig;
-import software.wings.beans.JenkinsConfig;
 import software.wings.helpers.ext.jenkins.BuildDetails;
 
 import lombok.experimental.UtilityClass;
@@ -87,10 +84,6 @@ public class GithubPackagesRequestResponseMapper {
         .password(password.toCharArray())
         .token(token.toCharArray())
         .build();
-  }
-
-  public GithubPackagesInternalConfig toJenkinsInternalConfig(GithubPackagesConfig githubPackagesConfig) {
-    return null;
   }
 
   public GithubPackagesArtifactDelegateResponse toGithubPackagesResponse(

@@ -15,14 +15,11 @@ import io.harness.artifacts.githubpackages.beans.GithubPackagesVersionsResponse;
 import retrofit2.Call;
 import retrofit2.http.GET;
 import retrofit2.http.Header;
-import retrofit2.http.Headers;
 import retrofit2.http.Path;
-import retrofit2.http.Query;
 
 @OwnedBy(CDC)
-public class GithubPackagesRestClient {
+public interface GithubPackagesRestClient {
   @GET("/user/packages/container/{packageName}/versions")
-  Call<GithubPackagesVersionsResponse> listVersionsForPackages(
-      @Path(value = "packageName", encoded = true) String packageName, @Query("page") Integer pageNum,
-      @Query("page_size") int pageSize);
+  Call<GithubPackagesVersionsResponse> listVersionsForPackages(@Header("Authorization") String bearerAuthHeader,
+      @Path(value = "packageName", encoded = true) String packageName);
 }
