@@ -26,13 +26,11 @@ import java.util.List;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import lombok.ToString;
 
 @OwnedBy(CDC)
 @JsonTypeName("GITHUB_PACKAGES")
 @Data
 @Builder
-@ToString(exclude = {"password", "token"})
 @EqualsAndHashCode(callSuper = false)
 @TargetModule(HarnessModule._957_CG_BEANS)
 public class GithubPackagesConfig extends SettingValue
