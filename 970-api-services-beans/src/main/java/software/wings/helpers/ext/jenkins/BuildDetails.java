@@ -17,11 +17,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import lombok.Value;
 import lombok.experimental.UtilityClass;
 
 @OwnedBy(HarnessTeam.CDC)
-@Value
 public class BuildDetails {
   @UtilityClass
   public static final class BuildDetailsMetadataKeys {

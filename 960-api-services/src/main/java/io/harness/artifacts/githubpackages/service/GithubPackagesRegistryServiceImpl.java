@@ -94,11 +94,13 @@ public class GithubPackagesRegistryServiceImpl implements GithubPackagesRegistry
                                               Map<String, String> metadata = new HashMap();
                                               metadata.put(ArtifactMetadataKeys.IMAGE, packageName);
                                               metadata.put(ArtifactMetadataKeys.TAG, finalVersion);
-                                              return BuildDetails.builder()
-                                                  .uiDisplayName("Tag# " + finalVersion)
-                                                  .number(finalVersion)
-                                                  .buildDisplayName(packageName)
-                                                  .build();
+
+                                              BuildDetails build = new BuildDetails();
+                                              build.setUiDisplayName("Tag# " + finalVersion);
+                                              build.setNumber(finalVersion);
+                                              build.setBuildDisplayName(packageName);
+
+                                              return build;
                                             })
                                             .collect(toList());
 
