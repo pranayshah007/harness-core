@@ -170,6 +170,18 @@ public class ExecutionQueryHelper {
             throw new InvalidRequestException("Error while compiling execution query", WingsException.USER);
         }
       }
+
+      if (filter.getArtifactBuildNo() != null) {
+        field = query.field(WorkflowExecutionKeys.executionArgs_artifacts_buildNo);
+        QLIdFilter artifactBuildNoFilter = filter.getArtifactBuildNo();
+        utils.setIdFilter(field, artifactBuildNoFilter);
+      }
+
+      if (filter.getHelmChartVersion() != null) {
+        field = query.field(WorkflowExecutionKeys.executionArgs_helmCharts_version);
+        QLIdFilter helmChartVersionFilter = filter.getHelmChartVersion();
+        utils.setIdFilter(field, helmChartVersionFilter);
+      }
     });
   }
 
