@@ -270,6 +270,14 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
   }
 
   @Override
+  public MonitoredServiceResponse createFromYamlV2(
+      ProjectParams projectParams, String accountId, String orgIdentifier, String projectIdenfier, String yaml) {
+    MonitoredServiceDTO monitoredServiceDTO =
+        getExpandedMonitoredServiceFromYamlV2(projectParams, accountId, orgIdentifier, projectIdenfier, yaml);
+    return create(projectParams.getAccountIdentifier(), monitoredServiceDTO);
+  }
+
+  @Override
   public MonitoredServiceResponse updateFromYaml(ProjectParams projectParams, String identifier, String yaml) {
     MonitoredServiceDTO monitoredServiceDTO = getExpandedMonitoredServiceFromYaml(projectParams, yaml);
     monitoredServiceDTO.setIdentifier(identifier);
@@ -288,6 +296,25 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
     monitoredServiceDTO = (MonitoredServiceDTO) yamlExpressionEvaluator.resolve(monitoredServiceDTO, false);
     monitoredServiceDTO.setProjectIdentifier(projectParams.getProjectIdentifier());
     monitoredServiceDTO.setOrgIdentifier(projectParams.getOrgIdentifier());
+    return monitoredServiceDTO;
+  }
+
+  @SneakyThrows
+  @Override
+  public MonitoredServiceDTO getExpandedMonitoredServiceFromYamlV2(
+      ProjectParams projectParams, String accountId, String orgIdentifier, String projectIdenfier, String yaml) {
+    String templateResolvedYaml = templateFacade.resolveYaml(projectParams, yaml);
+    MonitoredServiceYamlExpressionEvaluator yamlExpressionEvaluator =
+        new MonitoredServiceYamlExpressionEvaluator(templateResolvedYaml);
+    templateResolvedYaml = sanitizeTemplateYaml(templateResolvedYaml);
+    MonitoredServiceDTO monitoredServiceDTO =
+        YamlUtils.read(templateResolvedYaml, MonitoredServiceYamlDTO.class).getMonitoredServiceDTO();
+    monitoredServiceDTO = (MonitoredServiceDTO) yamlExpressionEvaluator.resolve(monitoredServiceDTO, false);
+
+    monitoredServiceDTO.setProjectIdentifier(
+        Objects.nonNull(projectParams.getProjectIdentifier()) ? projectParams.getProjectIdentifier() : projectIdenfier);
+    monitoredServiceDTO.setOrgIdentifier(
+        Objects.nonNull(projectParams.getOrgIdentifier()) ? projectParams.getOrgIdentifier() : orgIdentifier);
     return monitoredServiceDTO;
   }
 

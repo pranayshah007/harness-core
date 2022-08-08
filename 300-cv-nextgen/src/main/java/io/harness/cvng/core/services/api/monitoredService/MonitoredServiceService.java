@@ -44,6 +44,10 @@ import lombok.NonNull;
 public interface MonitoredServiceService extends DeleteEntityByHandler<MonitoredService> {
   MonitoredServiceResponse create(String accountId, MonitoredServiceDTO monitoredServiceDTO);
   MonitoredServiceResponse createFromYaml(ProjectParams projectParams, String yaml);
+
+  public MonitoredServiceResponse createFromYamlV2(
+      ProjectParams projectParams, String accountId, String orgIdentifier, String projectIdenfier, String yaml);
+
   MonitoredServiceResponse updateFromYaml(ProjectParams projectParams, String identifier, String yaml);
   MonitoredServiceResponse update(String accountId, MonitoredServiceDTO monitoredServiceDTO);
   boolean delete(ProjectParams projectParams, String identifier);
@@ -59,6 +63,10 @@ public interface MonitoredServiceService extends DeleteEntityByHandler<Monitored
   @Deprecated MonitoredService getMonitoredService(ProjectParams projectParams, String identifier);
   MonitoredService getMonitoredService(MonitoredServiceParams monitoredServiceParams);
   MonitoredServiceDTO getExpandedMonitoredServiceFromYaml(ProjectParams projectParams, String yaml);
+
+  public MonitoredServiceDTO getExpandedMonitoredServiceFromYamlV2(
+      ProjectParams projectParams, String accountId, String orgIdentifier, String projectIdenfier, String yaml);
+
   Optional<MonitoredService> getApplicationMonitoredService(ServiceEnvironmentParams serviceEnvironmentParams);
 
   List<MonitoredService> list(

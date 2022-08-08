@@ -102,6 +102,20 @@ public class MonitoredServiceResource {
   }
 
   @POST
+  @Path("/yaml/V2")
+  @Timed
+  @ExceptionMetered
+  @ApiOperation(value = "saves monitored service from yaml or template", nickname = "saveMonitoredServiceFromYaml")
+  @NGAccessControlCheck(resourceType = MONITORED_SERVICE, permission = EDIT_PERMISSION)
+  public RestResponse<MonitoredServiceResponse> saveMonitoredServiceFromYamlV2(
+      @ApiParam(required = true) @NotNull @BeanParam ProjectParams projectParam, @NotNull @Valid @Body String yaml,
+      @AccountIdentifier String templateAccountIdentifier, @OrgIdentifier String templateOrgIdentifier,
+      @ProjectIdentifier String templateProjectIdentifer) {
+    return new RestResponse<>(monitoredServiceService.createFromYamlV2(
+        projectParam, templateAccountIdentifier, templateOrgIdentifier, templateProjectIdentifer, yaml));
+  }
+
+  @POST
   @Timed
   @ExceptionMetered
   @ApiOperation(value = "saves monitored service data", nickname = "saveMonitoredService")
