@@ -8,7 +8,7 @@ USER ContainerAdministrator
 
 COPY --from=core /windows/system32/netapi32.dll /windows/system32/netapi32.dll
 ADD ci-addon_/ci-addon.exe C:/addon.exe
-ADD split_tests.exe C:\harness\
+ADD split_tests.exe C:/split_tests.exe
 ENV GODEBUG=netdns=go
 
 RUN setx /M PATH "%PATH%;C:\Program Files\PowerShell"
