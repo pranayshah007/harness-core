@@ -412,7 +412,9 @@ public enum FeatureName {
       "Used to do on demand rollback to previously deployed different artifact on same inframapping", HarnessTeam.CDC),
   CG_GIT_POLLING("Poll git based on account config for git sync in CG.", HarnessTeam.SPG),
   GRAPHQL_WORKFLOW_EXECUTION_OPTIMIZATION(
-      "Making multiple optimizations for workflow execution graphql in CG", HarnessTeam.SPG);
+      "Making multiple optimizations for workflow execution graphql in CG", HarnessTeam.SPG),
+  NG_ENABLE_LDAP_CHECK("Enables NG Ldap in NG-UI", HarnessTeam.PL);
+
   @Deprecated
   FeatureName() {
     scope = Scope.PER_ACCOUNT;
