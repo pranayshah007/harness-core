@@ -86,20 +86,22 @@ public class AzureRepoApiClient implements GitApiClient {
         }
 
         String project = GitClientHelper.getAzureRepoProject(orgAndProject);
-
+        String repo = gitApiTaskParams.getRepo();
+        String prNumber = gitApiTaskParams.getPrNumber();
+        String sha = gitApiTaskParams.getSha();
         AzureRepoConfig azureRepoConfig =
             AzureRepoConfig.builder().azureRepoUrl(getAzureRepoApiURL(azureRepoConnectorDTO.getUrl())).build();
 
         JSONObject mergePRResponse;
-        mergePRResponse =
-            azureRepoService.mergePR(azureRepoConfig, gitApiTaskParams.getUserName(), token, gitApiTaskParams.getSha(),
-                gitApiTaskParams.getOwner(), project, gitApiTaskParams.getRepo(), gitApiTaskParams.getPrNumber());
+        mergePRResponse = azureRepoService.mergePR(azureRepoConfig, gitApiTaskParams.getUserName(), token, sha,
+            gitApiTaskParams.getOwner(), project, repo, prNumber);
 
         if (mergePRResponse != null) {
           responseBuilder.commandExecutionStatus(CommandExecutionStatus.SUCCESS)
               .gitApiResult(GitApiMergePRTaskResponse.builder().sha(mergePRResponse.get("sha").toString()).build());
         } else {
-          responseBuilder.commandExecutionStatus(FAILURE).errorMessage("Merging PR encountered a problem");
+          responseBuilder.commandExecutionStatus(FAILURE).errorMessage(
+              format("Merging PR encountered a problem. sha:%s Repo:%s PrNumber:%s", sha, repo, prNumber));
         }
       }
     } catch (Exception e) {
