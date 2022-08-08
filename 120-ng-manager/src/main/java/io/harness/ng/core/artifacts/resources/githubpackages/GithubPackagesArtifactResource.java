@@ -29,14 +29,19 @@ import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import java.util.List;
 import javax.validation.constraints.NotNull;
-import javax.ws.rs.*;
+import javax.ws.rs.BeanParam;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(CDC)
 @Api("artifacts")
-@Path("/artifacts/github")
+@Path("/artifacts/githubpackages")
 @Produces({"application/json", "application/yaml"})
 @Consumes({"application/json", "application/yaml"})
 @ApiResponses(value =
@@ -49,6 +54,7 @@ import lombok.extern.slf4j.Slf4j;
 public class GithubPackagesArtifactResource {
   private final GithubPackagesResourceService githubPackagesResourceService;
 
+  // GET Api to fetch Github Packages from an account or an org
   @GET
   @Path("packages")
   @ApiOperation(value = "Gets Package details for GithubPackages", nickname = "getPackagesFromGithub")
@@ -66,6 +72,7 @@ public class GithubPackagesArtifactResource {
     return ResponseDTO.newResponse(response);
   }
 
+  // GET Api to fetch Versions for a Github Package
   @GET
   @Path("package/{packageName}/versions")
   @ApiOperation(value = "Gets Versions from Packages", nickname = "getVersionsFromPackages")

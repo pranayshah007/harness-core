@@ -18,7 +18,16 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
-import io.harness.cdng.artifact.outcome.*;
+import io.harness.cdng.artifact.outcome.AcrArtifactOutcome;
+import io.harness.cdng.artifact.outcome.ArtifactOutcome;
+import io.harness.cdng.artifact.outcome.ArtifactoryArtifactOutcome;
+import io.harness.cdng.artifact.outcome.DockerArtifactOutcome;
+import io.harness.cdng.artifact.outcome.EcrArtifactOutcome;
+import io.harness.cdng.artifact.outcome.GcrArtifactOutcome;
+import io.harness.cdng.artifact.outcome.GithubPackagesArtifactOutcome;
+import io.harness.cdng.artifact.outcome.JenkinsArtifactOutcome;
+import io.harness.cdng.artifact.outcome.NexusArtifactOutcome;
+import io.harness.cdng.artifact.outcome.S3ArtifactOutcome;
 import io.harness.cdng.azure.AzureHelperService;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
@@ -166,7 +175,9 @@ public class ImagePullSecretUtils {
   private void getImageDetailsFromGithubPackages(
       GithubPackagesArtifactOutcome artifactOutcome, ImageDetailsBuilder imageDetailsBuilder, Ambiance ambiance) {
     String connectorRef = artifactOutcome.getConnectorRef();
+
     ConnectorInfoDTO connectorDTO = getConnector(connectorRef, ambiance);
+
     GithubConnectorDTO connectorConfig = (GithubConnectorDTO) connectorDTO.getConnectorConfig();
 
     String username = "";
