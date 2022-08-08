@@ -120,6 +120,7 @@ java_library(
         "@maven//:org_powermock_powermock_core",
         "@maven//:org_powermock_powermock_module_junit4",
         "@maven//:org_zeroturnaround_zt_exec",
+        "@maven//:software_amazon_awssdk_ecs",
     ],
 )
 
