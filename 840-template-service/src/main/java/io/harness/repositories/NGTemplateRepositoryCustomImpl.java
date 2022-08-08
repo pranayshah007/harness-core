@@ -521,8 +521,4 @@ public class NGTemplateRepositoryCustomImpl implements NGTemplateRepositoryCusto
             templateToUpdate.getProjectIdentifier(), templateToUpdate, oldTemplateEntity, comments,
             templateUpdateEventType != null ? templateUpdateEventType : TemplateUpdateEventType.OTHERS_EVENT));
   }
-
-  private String getWorkingBranch(String parentContextRepoURL, ) {
-    return null;
-  }
 }
