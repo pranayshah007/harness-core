@@ -403,6 +403,9 @@ public class AuthServiceImpl implements AuthService {
     Decoder decoder = getUrlDecoder();
     final String authHeader = new String(decoder.decode(tokenString.split("\\.")[0]));
     if (authHeader.contains("HS256")) {
+      log.info("Received token {}", tokenString);
+      log.info("authHeader {}", authHeader);
+      log.info("delegate id, account id {} {}", delegateId, accountId);
       delegateTokenAuthenticator.validateDelegateAuth2Token(accountId, tokenString, agentMtlAuthority);
     } else {
       delegateTokenAuthenticator.validateDelegateToken(
