@@ -7,11 +7,13 @@
 
 package io.harness.utils;
 
+import static io.harness.delegate.beans.connector.ConnectorType.AZURE_REPO;
 import static io.harness.delegate.beans.connector.ConnectorType.BITBUCKET;
 import static io.harness.delegate.beans.connector.ConnectorType.CODECOMMIT;
 import static io.harness.delegate.beans.connector.ConnectorType.GIT;
 import static io.harness.delegate.beans.connector.ConnectorType.GITHUB;
 import static io.harness.delegate.beans.connector.ConnectorType.GITLAB;
+import static io.harness.delegate.beans.connector.scm.adapter.AzureRepoToGitMapper.mapToGitConnectionType;
 
 import static java.lang.String.format;
 
@@ -21,6 +23,7 @@ import io.harness.connector.ConnectorDTO;
 import io.harness.connector.ConnectorResourceClient;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails.ConnectorDetailsBuilder;
+import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryAuthType;
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryConnectorDTO;
@@ -41,6 +44,7 @@ import io.harness.delegate.beans.connector.k8Connector.KubernetesCredentialDTO;
 import io.harness.delegate.beans.connector.k8Connector.KubernetesCredentialType;
 import io.harness.delegate.beans.connector.scm.GitConnectionType;
 import io.harness.delegate.beans.connector.scm.awscodecommit.AwsCodeCommitConnectorDTO;
+import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectorDTO;
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketConnectorDTO;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
@@ -110,6 +114,7 @@ public class ConnectorUtils {
       case GITLAB:
       case BITBUCKET:
       case CODECOMMIT:
+      case AZURE_REPO:
         connectorDetails = getGitConnectorDetails(ngAccess, connectorDTO, connectorDetailsBuilder);
         break;
       case GCP:
@@ -188,6 +193,18 @@ public class ConnectorUtils {
       decryptableEntities.forEach(
           entity -> encryptedDataDetails.addAll(secretManagerClientService.getEncryptionDetails(ngAccess, entity)));
     }
+
+    ConnectorConfigDTO connectorConfigDTO = connectorDTO.getConnectorInfo().getConnectorConfig();
+
+    switch (connectorDTO.getConnectorInfo().getConnectorType()) {
+      case GITHUB:
+        GithubConnectorDTO githubConnectorDTO = (GithubConnectorDTO) connectorConfigDTO;
+        connectorDetailsBuilder.executeOnDelegate(githubConnectorDTO.getExecuteOnDelegate());
+        break;
+      default:
+        break;
+    }
+
     return connectorDetailsBuilder.encryptedDataDetails(encryptedDataDetails).build();
   }
 
@@ -265,6 +282,9 @@ public class ConnectorUtils {
     } else if (gitConnector.getConnectorType() == CODECOMMIT) {
       AwsCodeCommitConnectorDTO gitConfigDTO = (AwsCodeCommitConnectorDTO) gitConnector.getConnectorConfig();
       return gitConfigDTO.getUrl();
+    } else if (gitConnector.getConnectorType() == AZURE_REPO) {
+      AzureRepoConnectorDTO gitConfigDTO = (AzureRepoConnectorDTO) gitConnector.getConnectorConfig();
+      return gitConfigDTO.getUrl();
     } else {
       throw new CIStageExecutionException("scmType " + gitConnector.getConnectorType() + "is not supported.");
     }
@@ -283,6 +303,9 @@ public class ConnectorUtils {
     } else if (gitConnector.getConnectorType() == GITLAB) {
       GitlabConnectorDTO gitConfigDTO = (GitlabConnectorDTO) gitConnector.getConnectorConfig();
       return gitConfigDTO.getConnectionType();
+    } else if (gitConnector.getConnectorType() == AZURE_REPO) {
+      AzureRepoConnectorDTO gitConfigDTO = (AzureRepoConnectorDTO) gitConnector.getConnectorConfig();
+      return mapToGitConnectionType(gitConfigDTO.getConnectionType());
     } else {
       throw new CIStageExecutionException("scmType " + gitConnector.getConnectorType() + "is not supported.");
     }

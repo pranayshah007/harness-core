@@ -213,7 +213,10 @@ public class K8sBlueGreenDeployTaskHandler extends K8sTaskHandler {
       if (k8sBlueGreenDeployTaskParameters.isPruningEnabled()) {
         ExecutionLogCallback pruneExecutionLogCallback =
             k8sTaskHelper.getExecutionLogCallback(k8sBlueGreenDeployTaskParameters, Prune);
-        k8sBGBaseHandler.pruneForBg(k8sDelegateTaskParams, pruneExecutionLogCallback, k8sBlueGreenHandlerConfig);
+        k8sBGBaseHandler.pruneForBg(k8sDelegateTaskParams, pruneExecutionLogCallback,
+            k8sBlueGreenHandlerConfig.getPrimaryColor(), k8sBlueGreenHandlerConfig.getStageColor(),
+            k8sBlueGreenHandlerConfig.getPrePruningInfo(), k8sBlueGreenHandlerConfig.getCurrentRelease(),
+            k8sBlueGreenHandlerConfig.getClient());
       }
 
       return k8sTaskHelper.getK8sTaskExecutionResponse(

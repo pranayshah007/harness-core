@@ -19,8 +19,16 @@ import io.harness.delegate.beans.connector.ceazure.BillingExportSpecDTO;
 import io.harness.delegate.beans.connector.ceazure.CEAzureConnectorDTO;
 import io.harness.ng.core.dto.ErrorDetail;
 
+import com.azure.core.http.policy.HttpLogDetailLevel;
+import com.azure.core.http.rest.PagedIterable;
+import com.azure.core.management.AzureEnvironment;
+import com.azure.core.management.profile.AzureProfile;
 import com.azure.identity.ClientSecretCredential;
 import com.azure.identity.ClientSecretCredentialBuilder;
+import com.azure.resourcemanager.AzureResourceManager;
+import com.azure.resourcemanager.authorization.models.RoleAssignment;
+import com.azure.resourcemanager.authorization.models.RoleDefinition;
+import com.azure.resourcemanager.authorization.models.ServicePrincipal;
 import com.azure.storage.blob.BlobContainerClient;
 import com.azure.storage.blob.BlobServiceClient;
 import com.azure.storage.blob.BlobServiceClientBuilder;
@@ -49,6 +57,8 @@ public class CEAzureConnectorValidator extends io.harness.ccm.connectors.Abstrac
   private final String AZURE_STORAGE_URL_FORMAT = "https://%s.%s";
   private final String GENERIC_LOGGING_ERROR =
       "Failed to validate accountIdentifier:{} orgIdentifier:{} projectIdentifier:{} connectorIdentifier:{} ";
+  private final String AZURE_RBAC_READER_ROLE = "Reader";
+  private final String AZURE_RBAC_CONTRIBUTOR_ROLE = "Contributor";
 
   @Inject CENextGenConfiguration configuration;
   @Inject CEConnectorsHelper ceConnectorsHelper;
@@ -67,6 +77,12 @@ public class CEAzureConnectorValidator extends io.harness.ccm.connectors.Abstrac
       log.error("No billing export spec found for this connector {}", connectorIdentifier);
       return ConnectorValidationResult.builder()
           .status(ConnectivityStatus.FAILURE)
+          .errors(ImmutableList.of(
+              ErrorDetail.builder()
+                  .reason("No billing export spec found")
+                  .message(
+                      "Verify the billing export configuration in Harness and in your Azure account. For more information, refer to the documentation.")
+                  .build()))
           .errorSummary("Invalid connector configuration")
           .testedAt(Instant.now().toEpochMilli())
           .build();
@@ -77,10 +93,12 @@ public class CEAzureConnectorValidator extends io.harness.ccm.connectors.Abstrac
     String directoryName = billingExportSpec.getDirectoryName();
     String reportName = billingExportSpec.getReportName();
     String tenantId = ceAzureConnectorDTO.getTenantId();
+    String subscriptionId = ceAzureConnectorDTO.getSubscriptionId();
     String prefix = directoryName + "/" + reportName + "/" + ceConnectorsHelper.getReportMonth();
     final List<ErrorDetail> errorList = new ArrayList<>();
 
     try {
+      List<String> requiredRoles = new ArrayList<>();
       if (featuresEnabled.contains(CEFeatures.BILLING)) {
         String endpoint = String.format(AZURE_STORAGE_URL_FORMAT, storageAccountName, AZURE_STORAGE_SUFFIX);
         BlobContainerClient blobContainerClient = getBlobContainerClient(endpoint, containerName, tenantId);
@@ -89,66 +107,105 @@ public class CEAzureConnectorValidator extends io.harness.ccm.connectors.Abstrac
           return ConnectorValidationResult.builder()
               .status(ConnectivityStatus.FAILURE)
               .errors(errorList)
-              .errorSummary("No billing export file is found")
+              .errorSummary("No billing export file is found in last 24hrs in " + prefix)
               .testedAt(Instant.now().toEpochMilli())
               .build();
         }
       }
+
+      if (featuresEnabled.contains(CEFeatures.OPTIMIZATION)) {
+        requiredRoles.add(AZURE_RBAC_CONTRIBUTOR_ROLE);
+      } else if (featuresEnabled.contains(CEFeatures.VISIBILITY)) {
+        requiredRoles.add(AZURE_RBAC_READER_ROLE);
+      }
+      errorList.addAll(validateServiceAccountPermissions(tenantId, subscriptionId, requiredRoles));
+      if (!errorList.isEmpty()) {
+        return ConnectorValidationResult.builder()
+            .status(ConnectivityStatus.FAILURE)
+            .errors(errorList)
+            .errorSummary("Authorization permission mismatch")
+            .testedAt(Instant.now().toEpochMilli())
+            .build();
+      }
+
     } catch (BlobStorageException ex) {
+      log.error("Error", ex);
       if (ex.getErrorCode().toString().equals("ContainerNotFound")) {
         return ConnectorValidationResult.builder()
             .status(ConnectivityStatus.FAILURE)
             .errors(ImmutableList.of(ErrorDetail.builder()
                                          .code(ex.getStatusCode())
-                                         .reason(ex.getErrorCode().toString())
-                                         .message("Exception while validating storage account details")
+                                         .reason("Container not found")
+                                         .message("Review the billing export settings in your Azure account."
+                                             + " For more information, refer to the documentation.")
                                          .build()))
             .errorSummary("The specified container does not exist")
             .testedAt(Instant.now().toEpochMilli())
             .build();
       } else if (ex.getErrorCode().toString().equals("AuthorizationPermissionMismatch")) {
+        // TODO: Review this when autostopping validations are performed.
         return ConnectorValidationResult.builder()
             .status(ConnectivityStatus.FAILURE)
-            .errors(ImmutableList.of(ErrorDetail.builder()
-                                         .code(ex.getStatusCode())
-                                         .reason(ex.getErrorCode().toString())
-                                         .message("Exception while validating storage account details")
-                                         .build()))
+            .errors(ImmutableList.of(
+                ErrorDetail.builder()
+                    .code(ex.getStatusCode())
+                    .reason("Missing required permissions on the storage account")
+                    .message(
+                        "Review the permissions on your storage account. For more information, refer to the documentation.")
+                    .build()))
             .errorSummary("Authorization permission mismatch")
             .testedAt(Instant.now().toEpochMilli())
             .build();
       }
       return ConnectorValidationResult.builder()
           .status(ConnectivityStatus.FAILURE)
-          .errors(ImmutableList.of(ErrorDetail.builder()
-                                       .code(ex.getStatusCode())
-                                       .reason(ex.getErrorCode().toString())
-                                       .message("Exception while validating storage account details")
-                                       .build()))
-          .errorSummary(ex.getErrorCode().toString())
+          .errors(ImmutableList.of(
+              ErrorDetail.builder()
+                  .code(ex.getStatusCode())
+                  .reason(ex.getMessage())
+                  .message("Review the billing export settings in your Azure account and in CCM connector."
+                      + " For more information, refer to the documentation.")
+                  .build()))
+          .errorSummary("Exception while validating storage account details")
           .testedAt(Instant.now().toEpochMilli())
           .build();
     } catch (MsalServiceException ex) {
+      log.error("Error", ex);
       return ConnectorValidationResult.builder()
           .status(ConnectivityStatus.FAILURE)
-          .errors(ImmutableList.of(ErrorDetail.builder()
-                                       .code(ex.statusCode())
-                                       .reason(ex.errorCode())
-                                       .message("The specified tenantId does not exist")
-                                       .build()))
-          .errorSummary("Exception while validating tenantId")
+          .errors(ImmutableList.of(
+              ErrorDetail.builder()
+                  .code(ex.statusCode())
+                  .reason("Incorrect tenantID.")
+                  .message(
+                      "Verify if you have entered the correct tenant ID in CCM Connector. For more information, refer to the documentation.")
+                  .build()))
+          .errorSummary("The specified tenantID does not exist")
           .testedAt(Instant.now().toEpochMilli())
           .build();
     } catch (Exception ex) {
+      log.error("Error", ex);
       if (ex.getCause() instanceof UnknownHostException) {
         return ConnectorValidationResult.builder()
             .status(ConnectivityStatus.FAILURE)
+            .errors(ImmutableList.of(
+                ErrorDetail.builder()
+                    .reason("Incorrect storage account.")
+                    .message(
+                        "Verify if you have entered the correct storage account in CCM Connector. For more information, refer to the documentation.")
+                    .build()))
             .errorSummary("The specified storage account does not exist")
             .testedAt(Instant.now().toEpochMilli())
             .build();
       } else if (ex.getMessage() != null && ex.getMessage().startsWith("No billing export file")) {
         return ConnectorValidationResult.builder()
             .status(ConnectivityStatus.FAILURE)
+            .errors(ImmutableList.of(
+                ErrorDetail.builder()
+                    .message(
+                        "Verify the billing export configuration in Harness and in your Azure account. For more information, refer to the documentation.")
+                    .reason("")
+                    .build()))
             .errorSummary(ex.getMessage())
             .testedAt(Instant.now().toEpochMilli())
             .build();
@@ -156,7 +213,11 @@ public class CEAzureConnectorValidator extends io.harness.ccm.connectors.Abstrac
         log.error(GENERIC_LOGGING_ERROR, accountIdentifier, orgIdentifier, projectIdentifier, connectorIdentifier, ex);
         return ConnectorValidationResult.builder()
             .status(ConnectivityStatus.FAILURE)
-            .errorSummary("Exception while validating billing export details")
+            .errors(ImmutableList.of(ErrorDetail.builder()
+                                         .reason("Unknown error while validating billing export details")
+                                         .message("Contact Harness Support or Harness Community Forum.")
+                                         .build()))
+            .errorSummary("Unknown error")
             .testedAt(Instant.now().toEpochMilli())
             .build();
       }
@@ -168,8 +229,15 @@ public class CEAzureConnectorValidator extends io.harness.ccm.connectors.Abstrac
           && !ceConnectorsHelper.isDataSyncCheck(accountIdentifier, connectorIdentifier, ConnectorType.CE_AZURE,
               ceConnectorsHelper.JOB_TYPE_CLOUDFUNCTION)) {
         // Issue with CFs
+        log.error("Error with processing data"); // Used for log based metrics
         return ConnectorValidationResult.builder()
-            .errorSummary("Error with processing data. Please contact Harness support")
+            .errors(ImmutableList.of(
+                ErrorDetail.builder()
+                    .reason("Internal error with data processing")
+                    .message("") // UI adds "Contact Harness Support or Harness Community Forum." in this case
+                    .code(500)
+                    .build()))
+            .errorSummary("Error with processing data")
             .status(ConnectivityStatus.FAILURE)
             .build();
       }
@@ -184,6 +252,10 @@ public class CEAzureConnectorValidator extends io.harness.ccm.connectors.Abstrac
   public Collection<ErrorDetail> validateIfFileIsPresent(
       com.azure.core.http.rest.PagedIterable<BlobItem> blobItems, String prefix) {
     List<ErrorDetail> errorDetails = new ArrayList<>();
+    if (!configuration.getCeAzureSetupConfig().isEnableFileCheckAtSource()) {
+      log.info("File present check is disabled in config.");
+      return errorDetails;
+    }
     String latestFileName = "";
     Instant latestFileLastModifiedTime = Instant.EPOCH;
     Instant lastModifiedTime;
@@ -199,17 +271,60 @@ public class CEAzureConnectorValidator extends io.harness.ccm.connectors.Abstrac
     }
     log.info("Latest .csv.gz file in {} latestFileName: {} latestFileLastModifiedTime: {}", prefix, latestFileName,
         latestFileLastModifiedTime);
-    if (!latestFileName.isEmpty()
-        && latestFileLastModifiedTime.getEpochSecond() < (Instant.now().getEpochSecond() - 24 * 60 * 60)) {
+    if (latestFileLastModifiedTime.getEpochSecond() < (Instant.now().getEpochSecond() - 24 * 60 * 60)) {
+      String reason = String.format("No billing export csv file is found in last 24 hrs at %s. ", prefix);
       errorDetails.add(
           ErrorDetail.builder()
-              .reason(String.format("No billing export file is found in last 24 hrs in %s. "
-                      + "Please verify your billing export config in your Azure account and CCM connector. "
-                      + "Follow CCM documentation for more information",
-                  prefix))
-              .message("No billing export file is found")
+              .reason(reason)
+              .message(
+                  "Verify the billing export configuration in CCM and in your Azure account. For more information, refer to the documentation.")
               .code(403)
               .build());
+    }
+    return errorDetails;
+  }
+
+  public List<ErrorDetail> validateServiceAccountPermissions(
+      String tenantId, String subscriptionId, List<String> requiredRoles) {
+    List<ErrorDetail> errorDetails = new ArrayList<>();
+    try {
+      AzureProfile profile = new AzureProfile(tenantId, subscriptionId, AzureEnvironment.AZURE);
+      ClientSecretCredential clientSecretCredential =
+          new ClientSecretCredentialBuilder()
+              .clientId(configuration.getCeAzureSetupConfig().getAzureAppClientId())
+              .clientSecret(configuration.getCeAzureSetupConfig().getAzureAppClientSecret())
+              .tenantId(profile.getTenantId())
+              .build();
+
+      AzureResourceManager azureResourceManager = AzureResourceManager.configure()
+                                                      .withLogLevel(HttpLogDetailLevel.BASIC)
+                                                      .authenticate(clientSecretCredential, profile)
+                                                      .withSubscription(subscriptionId);
+      ServicePrincipal servicePrincipal = azureResourceManager.accessManagement().servicePrincipals().getByName(
+          configuration.getCeAzureSetupConfig().getAzureAppClientId());
+      PagedIterable<RoleAssignment> roles =
+          azureResourceManager.accessManagement().roleAssignments().listByServicePrincipal(servicePrincipal);
+
+      for (RoleAssignment item : roles) {
+        RoleDefinition role =
+            azureResourceManager.accessManagement().roleDefinitions().getById(item.roleDefinitionId());
+        log.info("ServicePrincipal has role: {}", role.roleName());
+        requiredRoles.remove(role.roleName());
+      }
+    } catch (Exception e) {
+      log.info("Exception occurred while fetching list of roles assigned to the service principal: {}", e.getMessage());
+    }
+    if (!requiredRoles.isEmpty()) {
+      String reason = "";
+      for (String requiredRole : requiredRoles) {
+        reason += String.format("Required role '%s' is not assigned to service principal.%n", requiredRole);
+      }
+      log.info(reason);
+      errorDetails.add(ErrorDetail.builder()
+                           .code(403)
+                           .reason(reason)
+                           .message("Review Azure access permissions as per the documentation.")
+                           .build());
     }
     return errorDetails;
   }

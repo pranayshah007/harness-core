@@ -7,15 +7,14 @@
 
 package io.harness.cdng.licenserestriction;
 
+import static io.harness.cd.CDLicenseType.SERVICES;
 import static io.harness.data.structure.CollectionUtils.collectionToStream;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.licensing.beans.modules.types.CDLicenseType.SERVICES;
 import static io.harness.remote.client.NGRestUtils.getResponseWithRetry;
 
 import io.harness.EntityType;
 import io.harness.ModuleType;
 import io.harness.PipelineSetupUsageUtils;
-import io.harness.cdng.usage.beans.CDLicenseUsageDTO;
 import io.harness.common.EntityReference;
 import io.harness.enforcement.beans.metadata.RestrictionMetadataDTO;
 import io.harness.enforcement.client.services.EnforcementClientService;
@@ -24,6 +23,7 @@ import io.harness.enforcement.constants.RestrictionType;
 import io.harness.enforcement.exceptions.EnforcementServiceConnectionException;
 import io.harness.enforcement.exceptions.WrongFeatureStateException;
 import io.harness.entitysetupusageclient.remote.EntitySetupUsageClient;
+import io.harness.licensing.usage.beans.cd.CDLicenseUsageDTO;
 import io.harness.licensing.usage.interfaces.LicenseUsageInterface;
 import io.harness.licensing.usage.params.CDUsageRequestParams;
 import io.harness.ng.core.BaseNGAccess;

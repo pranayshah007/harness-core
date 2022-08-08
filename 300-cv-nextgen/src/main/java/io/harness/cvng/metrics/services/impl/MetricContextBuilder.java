@@ -41,8 +41,9 @@ public class MetricContextBuilder {
         verificationJobInstance -> new AccountMetricContext(verificationJobInstance.getAccountId()));
     addToObjContextMap(LearningEngineTask.class,
         learningEngineTask
-        -> new LETaskMetricContext(
-            learningEngineTask.getAccountId(), learningEngineTask.getType().toString().toLowerCase()));
+        -> new LETaskMetricContext(learningEngineTask.getAccountId(),
+            learningEngineTask.getType().toString().toLowerCase(),
+            learningEngineTask.getTaskStatus().name().toLowerCase()));
     addToObjContextMap(AnalysisStateMachine.class,
         analysisStateMachine
         -> new AnalysisStateMachineContext(

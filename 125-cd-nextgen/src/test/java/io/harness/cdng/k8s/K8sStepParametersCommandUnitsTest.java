@@ -101,6 +101,6 @@ public class K8sStepParametersCommandUnitsTest extends CategoryTest {
   }
 
   private void assertCommandUnitsName(K8sSpecParameters stepParameters, String... expectedCommandUnits) {
-    assertThat(stepParameters.getCommandUnits()).containsExactly(expectedCommandUnits);
+    assertThat(stepParameters.getCommandUnits(false)).containsExactly(expectedCommandUnits);
   }
 }

@@ -16,7 +16,7 @@ import io.harness.gitsync.ScopeDetails;
 
 @OwnedBy(DX)
 public interface FullSyncSdkService {
-  FileChanges getFileChanges(ScopeDetails scopeDetails);
+  FileChanges getEntitiesForFullSync(ScopeDetails scopeDetails);
 
   void doFullSyncForFile(FullSyncChangeSet fullSyncChangeSet);
 }

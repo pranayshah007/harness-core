@@ -39,6 +39,7 @@ import software.wings.beans.SettingAttribute;
 import software.wings.beans.command.CommandUnitDetails.CommandUnitType;
 import software.wings.helpers.ext.ecs.request.EcsListenerUpdateRequestConfigData;
 import software.wings.helpers.ext.ecs.response.EcsCommandExecutionResponse;
+import software.wings.service.impl.aws.manager.AwsHelperServiceManager;
 import software.wings.service.intfc.ActivityService;
 import software.wings.service.intfc.AppService;
 import software.wings.service.intfc.DelegateService;
@@ -52,6 +53,7 @@ import software.wings.sm.ExecutionResponse.ExecutionResponseBuilder;
 import software.wings.sm.State;
 import software.wings.sm.StateType;
 import software.wings.sm.WorkflowStandardParams;
+import software.wings.sm.WorkflowStandardParamsExtensionService;
 
 import com.github.reinert.jjschema.Attributes;
 import com.google.inject.Inject;
@@ -71,6 +73,7 @@ public class EcsBGUpdateListnerState extends State {
   @Inject private ActivityService activityService;
   @Inject private EcsStateHelper ecsStateHelper;
   @Inject protected LogService logService;
+  @Inject private WorkflowStandardParamsExtensionService workflowStandardParamsExtensionService;
 
   public static final String ECS_UPDATE_LISTENER_COMMAND = "ECS Update Listener Command";
 
@@ -108,7 +111,7 @@ public class EcsBGUpdateListnerState extends State {
   protected ExecutionResponse executeInternal(ExecutionContext context) {
     WorkflowStandardParams workflowStandardParams = context.getContextElement(ContextElementType.STANDARD);
     Application application = appService.get(context.getAppId());
-    Environment environment = workflowStandardParams.getEnv();
+    Environment environment = workflowStandardParamsExtensionService.getEnv(workflowStandardParams);
 
     EcsInfrastructureMapping infrastructureMapping = (EcsInfrastructureMapping) infrastructureMappingService.get(
         application.getUuid(), context.fetchInfraMappingId());
@@ -125,6 +128,7 @@ public class EcsBGUpdateListnerState extends State {
     Activity activity = createActivity(context);
     SettingAttribute settingAttribute = settingsService.get(infrastructureMapping.getComputeProviderSettingId());
     AwsConfig awsConfig = (AwsConfig) settingAttribute.getValue();
+    AwsHelperServiceManager.setAmazonClientSDKDefaultBackoffStrategyIfExists(context, awsConfig);
 
     List<EncryptedDataDetail> encryptedDetails = secretManager.getEncryptionDetails(
         (EncryptableSetting) awsConfig, context.getAppId(), context.getWorkflowExecutionId());

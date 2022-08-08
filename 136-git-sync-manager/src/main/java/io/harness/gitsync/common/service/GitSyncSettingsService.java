@@ -23,4 +23,8 @@ public interface GitSyncSettingsService {
   GitSyncSettingsDTO update(GitSyncSettingsDTO request);
 
   void delete(String accountIdentifier, String orgIdentifier, String projectIdentifier);
+
+  boolean enableGitSimplification(String accountIdentifier, String orgIdentifier, String projectIdentifier);
+
+  boolean getGitSimplificationStatus(String accountIdentifier, String orgIdentifier, String projectIdentifier);
 }

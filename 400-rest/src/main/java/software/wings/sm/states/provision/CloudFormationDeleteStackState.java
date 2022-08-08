@@ -49,7 +49,7 @@ public class CloudFormationDeleteStackState extends CloudFormationState {
   }
 
   @Override
-  protected List<String> commandUnits() {
+  protected List<String> commandUnits(CloudFormationInfrastructureProvisioner provisioner) {
     return Collections.singletonList(mainCommandUnit());
   }
 

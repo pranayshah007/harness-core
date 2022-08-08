@@ -304,7 +304,9 @@ public class K8sBGBaseHandlerTest extends CategoryTest {
         getK8sBlueGreenHandlerConfig(primaryColor, stageColor, releaseHistory.getRelease(3), prePruningInfo);
 
     List<KubernetesResourceId> resourcesPruned =
-        k8sBGBaseHandler.pruneForBg(delegateTaskParams, logCallback, k8sBlueGreenHandlerConfig);
+        k8sBGBaseHandler.pruneForBg(delegateTaskParams, logCallback, k8sBlueGreenHandlerConfig.getPrimaryColor(),
+            k8sBlueGreenHandlerConfig.getStageColor(), k8sBlueGreenHandlerConfig.getPrePruningInfo(),
+            k8sBlueGreenHandlerConfig.getCurrentRelease(), k8sBlueGreenHandlerConfig.getClient());
     assertThat(resourcesPruned).hasSize(3);
     assertThat(resourcesPruned.stream().map(KubernetesResourceId::getName).collect(toList()))
         .containsExactlyInAnyOrder(
@@ -323,8 +325,10 @@ public class K8sBGBaseHandlerTest extends CategoryTest {
 
     K8sBlueGreenHandlerConfig k8sBlueGreenHandlerConfig =
         getK8sBlueGreenHandlerConfig("blue", "blue", Release.builder().build(), prePruningInfo);
-    List<KubernetesResourceId> resourcesPruned =
-        k8sBGBaseHandler.pruneForBg(K8sDelegateTaskParams.builder().build(), logCallback, k8sBlueGreenHandlerConfig);
+    List<KubernetesResourceId> resourcesPruned = k8sBGBaseHandler.pruneForBg(K8sDelegateTaskParams.builder().build(),
+        logCallback, k8sBlueGreenHandlerConfig.getPrimaryColor(), k8sBlueGreenHandlerConfig.getStageColor(),
+        k8sBlueGreenHandlerConfig.getPrePruningInfo(), k8sBlueGreenHandlerConfig.getCurrentRelease(),
+        k8sBlueGreenHandlerConfig.getClient());
 
     // Do nothing if colors are the same
     verifyNoMoreInteractions(releaseHistory);
@@ -338,8 +342,10 @@ public class K8sBGBaseHandlerTest extends CategoryTest {
     PrePruningInfo prePruningInfo1 = PrePruningInfo.builder().build();
     K8sBlueGreenHandlerConfig k8sBlueGreenHandlerConfig =
         getK8sBlueGreenHandlerConfig("blue", "green", Release.builder().build(), prePruningInfo1);
-    List<KubernetesResourceId> resourcesPruned =
-        k8sBGBaseHandler.pruneForBg(K8sDelegateTaskParams.builder().build(), logCallback, k8sBlueGreenHandlerConfig);
+    List<KubernetesResourceId> resourcesPruned = k8sBGBaseHandler.pruneForBg(K8sDelegateTaskParams.builder().build(),
+        logCallback, k8sBlueGreenHandlerConfig.getPrimaryColor(), k8sBlueGreenHandlerConfig.getStageColor(),
+        k8sBlueGreenHandlerConfig.getPrePruningInfo(), k8sBlueGreenHandlerConfig.getCurrentRelease(),
+        k8sBlueGreenHandlerConfig.getClient());
 
     // Do nothing if colors are the same
     ArgumentCaptor<String> captor = ArgumentCaptor.forClass(String.class);

@@ -46,6 +46,7 @@ public class RoleAssignmentFilter {
   @Builder.Default @NotNull @Size(max = 100) final Set<String> resourceGroupFilter = new HashSet<>();
   @Builder.Default @NotNull @Size(max = 100) final Set<String> roleFilter = new HashSet<>();
   @Setter @Builder.Default @NotNull @Size(max = 100) Set<PrincipalType> principalTypeFilter = new HashSet<>();
+  @Setter @Builder.Default @NotNull @Size(max = 100) Set<String> principalScopeLevelFilter = new HashSet<>();
   @Setter @Builder.Default @NotNull @Size(max = 100) Set<Principal> principalFilter = new HashSet<>();
   @Builder.Default @NotNull @Valid final ManagedFilter managedFilter = NO_FILTER;
   @Builder.Default @NotNull @Size(max = 100) final Set<Boolean> disabledFilter = new HashSet<>();

@@ -15,6 +15,7 @@ import io.harness.accesscontrol.principals.usergroups.persistence.UserGroupRepos
 import io.harness.accesscontrol.resources.resourcegroups.persistence.ResourceGroupRepository;
 import io.harness.accesscontrol.roleassignments.persistence.repositories.RoleAssignmentRepository;
 import io.harness.accesscontrol.roles.persistence.repositories.RoleRepository;
+import io.harness.accesscontrol.scopes.core.ScopeService;
 import io.harness.aggregator.AggregatorConfiguration;
 import io.harness.aggregator.consumers.AccessControlDebeziumChangeConsumer;
 import io.harness.aggregator.consumers.ChangeConsumerService;
@@ -48,10 +49,10 @@ public class AggregatorPrimarySyncController extends AggregatorBaseSyncControlle
       AggregatorConfiguration aggregatorConfiguration, PersistentLocker persistentLocker,
       ChangeEventFailureHandler changeEventFailureHandler, ChangeConsumerService changeConsumerService,
       RoleAssignmentCRUDEventHandler roleAssignmentCRUDEventHandler,
-      UserGroupCRUDEventHandler userGroupCRUDEventHandler) {
+      UserGroupCRUDEventHandler userGroupCRUDEventHandler, ScopeService scopeService) {
     super(primaryAclRepository, roleAssignmentRepository, roleRepository, resourceGroupRepository, userGroupRepository,
         aggregatorConfiguration, persistentLocker, changeEventFailureHandler, AggregatorJobType.PRIMARY,
-        changeConsumerService, roleAssignmentCRUDEventHandler, userGroupCRUDEventHandler);
+        changeConsumerService, roleAssignmentCRUDEventHandler, userGroupCRUDEventHandler, scopeService);
   }
 
   @Override

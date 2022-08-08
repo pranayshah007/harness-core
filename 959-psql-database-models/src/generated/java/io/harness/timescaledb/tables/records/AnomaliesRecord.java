@@ -442,6 +442,51 @@ public class AnomaliesRecord extends TableRecordImpl<AnomaliesRecord> {
     return (Boolean) get(27);
   }
 
+  /**
+   * Setter for <code>public.anomalies.azuresubscriptionguid</code>.
+   */
+  public AnomaliesRecord setAzuresubscriptionguid(String value) {
+    set(28, value);
+    return this;
+  }
+
+  /**
+   * Getter for <code>public.anomalies.azuresubscriptionguid</code>.
+   */
+  public String getAzuresubscriptionguid() {
+    return (String) get(28);
+  }
+
+  /**
+   * Setter for <code>public.anomalies.azureresourcegroup</code>.
+   */
+  public AnomaliesRecord setAzureresourcegroup(String value) {
+    set(29, value);
+    return this;
+  }
+
+  /**
+   * Getter for <code>public.anomalies.azureresourcegroup</code>.
+   */
+  public String getAzureresourcegroup() {
+    return (String) get(29);
+  }
+
+  /**
+   * Setter for <code>public.anomalies.azuremetercategory</code>.
+   */
+  public AnomaliesRecord setAzuremetercategory(String value) {
+    set(30, value);
+    return this;
+  }
+
+  /**
+   * Getter for <code>public.anomalies.azuremetercategory</code>.
+   */
+  public String getAzuremetercategory() {
+    return (String) get(30);
+  }
+
   // -------------------------------------------------------------------------
   // Constructors
   // -------------------------------------------------------------------------
@@ -461,7 +506,8 @@ public class AnomaliesRecord extends TableRecordImpl<AnomaliesRecord> {
       String workloadname, String workloadtype, String namespace, String region, String gcpproduct, String gcpskuid,
       String gcpskudescription, String gcpproject, String awsservice, String awsaccount, String awsinstancetype,
       String awsusagetype, Double anomalyscore, String reportedby, String feedback, Boolean slackdailynotification,
-      Boolean slackinstantnotification, Boolean slackweeklynotification, Boolean newentity) {
+      Boolean slackinstantnotification, Boolean slackweeklynotification, Boolean newentity,
+      String azuresubscriptionguid, String azureresourcegroup, String azuremetercategory) {
     super(Anomalies.ANOMALIES);
 
     setId(id);
@@ -492,5 +538,8 @@ public class AnomaliesRecord extends TableRecordImpl<AnomaliesRecord> {
     setSlackinstantnotification(slackinstantnotification);
     setSlackweeklynotification(slackweeklynotification);
     setNewentity(newentity);
+    setAzuresubscriptionguid(azuresubscriptionguid);
+    setAzureresourcegroup(azureresourcegroup);
+    setAzuremetercategory(azuremetercategory);
   }
 }

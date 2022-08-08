@@ -13,7 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.EmbeddedUser;
 
-import software.wings.api.ShellScriptProvisionerOutputElement;
+import software.wings.api.ShellScriptProvisionerOutputElementParamMapper;
 import software.wings.beans.InfrastructureMappingBlueprint;
 import software.wings.beans.InfrastructureProvisioner;
 import software.wings.beans.InfrastructureProvisionerType;
@@ -42,7 +42,7 @@ public class ShellScriptInfrastructureProvisioner extends InfrastructureProvisio
 
   @Override
   public String variableKey() {
-    return ShellScriptProvisionerOutputElement.KEY;
+    return ShellScriptProvisionerOutputElementParamMapper.KEY;
   }
 
   @Builder

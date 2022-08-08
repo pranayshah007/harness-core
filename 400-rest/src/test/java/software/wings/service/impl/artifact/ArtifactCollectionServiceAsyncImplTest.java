@@ -113,6 +113,6 @@ public class ArtifactCollectionServiceAsyncImplTest extends WingsBaseTest {
     artifactVariables.put("path", "todolist");
     artifactVariables.put("buildNo", "1.0");
     artifactCollectionServiceAsync.collectNewArtifacts(APP_ID, nexusArtifactStream, "1.0", artifactVariables);
-    verify(buildSourceService, times(1)).getBuild(anyString(), anyString(), anyString(), any());
+    verify(buildSourceService, times(1)).getBuild(anyString(), anyString(), any(), any());
   }
 }

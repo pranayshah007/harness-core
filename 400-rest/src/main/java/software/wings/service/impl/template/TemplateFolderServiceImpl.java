@@ -479,6 +479,9 @@ public class TemplateFolderServiceImpl implements TemplateFolderService {
       if (isEmpty(templateFolder.getPathId()) && templateFolder.getName().equals(folderPath)) {
         return templateFolder;
       }
+      if (templateFolder.getPathId() == null) {
+        continue;
+      }
       List<String> parentUuids =
           Arrays.stream(templateFolder.getPathId().split("/")).distinct().collect(Collectors.toList());
       if (folderPaths.length - 1 != parentUuids.size()) {

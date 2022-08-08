@@ -11,4 +11,4 @@ import static io.harness.annotations.dev.HarnessTeam.DX;
 
 import io.harness.annotations.dev.OwnedBy;
 
-@OwnedBy(DX) public enum ChangeType { ADD, RENAME, MODIFY, DELETE, NONE }
+@OwnedBy(DX) public enum ChangeType { ADD, RENAME, MODIFY, DELETE, NONE, ADD_V2, UPDATE_V2 }

@@ -28,7 +28,7 @@ import lombok.experimental.UtilityClass;
 @UtilityClass
 @OwnedBy(DX)
 public class NGYamlUtils {
-  private static ObjectMapper yamlMapper =
+  private static final ObjectMapper YAML_MAPPER =
       new ObjectMapper(new YAMLFactory().enable(YAMLGenerator.Feature.MINIMIZE_QUOTES))
           .setSerializationInclusion(JsonInclude.Include.NON_NULL)
           .configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false)
@@ -45,12 +45,13 @@ public class NGYamlUtils {
     }
     String yamlString;
     try {
-      objectMapper.setSerializationInclusion(JsonInclude.Include.NON_EMPTY);
-      objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
-      objectMapper.configure(SerializationFeature.WRITE_NULL_MAP_VALUES, false);
-      objectMapper.configure(SerializationFeature.WRITE_EMPTY_JSON_ARRAYS, false);
-      final JsonNode jsonNode = objectMapper.valueToTree(yamlObject);
-      yamlString = yamlMapper.writerWithDefaultPrettyPrinter().writeValueAsString(jsonNode);
+      ObjectMapper internalMapper = objectMapper.copy();
+      internalMapper.setSerializationInclusion(JsonInclude.Include.NON_EMPTY);
+      internalMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+      internalMapper.configure(SerializationFeature.WRITE_NULL_MAP_VALUES, false);
+      internalMapper.configure(SerializationFeature.WRITE_EMPTY_JSON_ARRAYS, false);
+      final JsonNode jsonNode = internalMapper.valueToTree(yamlObject);
+      yamlString = YAML_MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(jsonNode);
     } catch (JsonProcessingException e) {
       throw new InvalidRequestException(
           String.format("Cannot create yaml from YamlObject %s", yamlObject.toString()), e);

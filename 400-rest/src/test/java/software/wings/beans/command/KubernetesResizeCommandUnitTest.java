@@ -23,7 +23,6 @@ import static org.assertj.core.api.Fail.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyInt;
-import static org.mockito.Matchers.anyMap;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.verify;
@@ -51,8 +50,8 @@ import software.wings.service.intfc.WorkflowService;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import io.fabric8.kubernetes.api.KubernetesHelper;
-import io.fabric8.kubernetes.api.model.HorizontalPodAutoscaler;
 import io.fabric8.kubernetes.api.model.ReplicationControllerBuilder;
+import io.fabric8.kubernetes.api.model.autoscaling.v2beta1.HorizontalPodAutoscaler;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -96,11 +95,10 @@ public class KubernetesResizeCommandUnitTest extends WingsBaseTest {
 
   @Before
   public void setup() {
-    when(gkeClusterService.getCluster(
-             any(SettingAttribute.class), eq(emptyList()), anyString(), anyString(), anyBoolean()))
+    when(gkeClusterService.getCluster(any(SettingAttribute.class), eq(emptyList()), any(), any(), anyBoolean()))
         .thenReturn(kubernetesConfig);
     when(kubernetesContainerService.setControllerPodCount(
-             eq(kubernetesConfig), eq(CLUSTER_NAME), anyString(), anyInt(), anyInt(), anyInt(), any()))
+             eq(kubernetesConfig), eq(CLUSTER_NAME), any(), anyInt(), anyInt(), anyInt(), any()))
         .thenAnswer(i -> buildContainerInfos((Integer) i.getArguments()[4], (Integer) i.getArguments()[3]));
     when(kubernetesContainerService.getController(any(), any())).thenReturn(new ReplicationControllerBuilder().build());
   }
@@ -301,9 +299,9 @@ public class KubernetesResizeCommandUnitTest extends WingsBaseTest {
   private ResizeCommandUnitExecutionData execute(LinkedHashMap<String, Integer> activeServiceCounts,
       int controllerPodCount, String controllerName, boolean useFixedInstances, int maxInstances, int fixedInstances,
       int instanceCount, InstanceUnitType instanceUnitType) {
-    when(kubernetesContainerService.getControllerPodCount(eq(kubernetesConfig), anyString()))
+    when(kubernetesContainerService.getControllerPodCount(eq(kubernetesConfig), any()))
         .thenReturn(Optional.of(controllerPodCount));
-    when(kubernetesContainerService.getActiveServiceCountsWithLabels(eq(kubernetesConfig), anyMap()))
+    when(kubernetesContainerService.getActiveServiceCountsWithLabels(eq(kubernetesConfig), any()))
         .thenReturn(activeServiceCounts);
     KubernetesResizeParams resizeParams = resizeParamsBuilder.but()
                                               .withContainerServiceName(controllerName)
@@ -342,7 +340,7 @@ public class KubernetesResizeCommandUnitTest extends WingsBaseTest {
       fail("Should not reach here.");
     } catch (Exception e) {
       assertThat(e.getMessage()).isEqualTo("Virtual Service [rc-name] not found");
-      verify(kubernetesContainerService).createOrReplaceAutoscaler(any(KubernetesConfig.class), anyString());
+      verify(kubernetesContainerService).createOrReplaceAutoscaler(any(), any());
     }
   }
 

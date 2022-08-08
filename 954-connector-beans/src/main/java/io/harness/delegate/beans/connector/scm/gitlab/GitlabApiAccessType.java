@@ -11,7 +11,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonValue;
 
 public enum GitlabApiAccessType {
-  @JsonProperty(GitlabConnectorConstants.TOKEN) TOKEN(GitlabConnectorConstants.TOKEN);
+  @JsonProperty(GitlabConnectorConstants.TOKEN) TOKEN(GitlabConnectorConstants.TOKEN),
+  @JsonProperty(GitlabConnectorConstants.OAUTH) OAUTH(GitlabConnectorConstants.OAUTH);
 
   private final String displayName;
 

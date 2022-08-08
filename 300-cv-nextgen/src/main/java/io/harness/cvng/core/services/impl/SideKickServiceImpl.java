@@ -21,9 +21,9 @@ import com.google.inject.Singleton;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.Map;
+import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.exception.ExceptionUtils;
-import org.mongodb.morphia.FindAndModifyOptions;
 import org.mongodb.morphia.query.Query;
 import org.mongodb.morphia.query.Sort;
 import org.mongodb.morphia.query.UpdateOperations;
@@ -57,43 +57,57 @@ public class SideKickServiceImpl implements SideKickService {
                                 .field(SidekickKeys.runAfter)
                                 .lessThan(clock.instant())
                                 .order(Sort.ascending(SidekickKeys.lastUpdatedAt));
-    UpdateOperations<SideKick> updateOperations = hPersistence.createUpdateOperations(SideKick.class)
-                                                      .set(SidekickKeys.status, Status.RUNNING)
-                                                      .set(SidekickKeys.lastUpdatedAt, clock.millis());
-    SideKick nextTask = hPersistence.findAndModify(query, updateOperations, new FindAndModifyOptions());
-    if (nextTask != null) {
-      log.info("Processing task: {}", nextTask);
-      Status status = null;
-      String exceptionStr = null;
-      String stacktrace = null;
-      try {
-        typeSideKickExecutorMap.get(nextTask.getSideKickData().getType()).execute(nextTask.getSideKickData());
-        status = Status.SUCCESS;
-      } catch (Exception exception) {
-        status = Status.FAILED;
-        exceptionStr = exception.getMessage();
-        stacktrace = ExceptionUtils.getStackTrace(exception);
-      } finally {
-        UpdateOperations<SideKick> statusUpdateOperations =
-            hPersistence.createUpdateOperations(SideKick.class).set(SidekickKeys.status, status);
-        if (exceptionStr != null) {
-          statusUpdateOperations.set(SidekickKeys.exception, exceptionStr);
-        }
-        if (stacktrace != null) {
-          statusUpdateOperations.set(SidekickKeys.stacktrace, stacktrace);
-        }
-        hPersistence.update(nextTask, statusUpdateOperations);
+    SideKick nextTask = query.get();
+    if (Objects.nonNull(nextTask)) {
+      log.info("Checking if can execute task: {}", nextTask);
+      SideKickExecutor executor = typeSideKickExecutorMap.get(nextTask.getSideKickData().getType());
+      if (executor.canExecute(nextTask.getSideKickData())) {
+        log.info("Processing task: {}", nextTask);
+        UpdateOperations<SideKick> updateOperations = hPersistence.createUpdateOperations(SideKick.class)
+                                                          .set(SidekickKeys.status, Status.RUNNING)
+                                                          .set(SidekickKeys.lastUpdatedAt, clock.millis());
+        hPersistence.update(nextTask, updateOperations);
+        executeTask(executor, nextTask);
+      } else {
+        log.info("Rescheduling task: {}", nextTask);
+        reschedule(executor, nextTask);
+      }
+      return true;
+    } else {
+      return false;
+    }
+  }
 
-        if (status == Status.FAILED) {
-          RetryData retryData =
-              typeSideKickExecutorMap.get(nextTask.getSideKickData().getType()).shouldRetry(nextTask.getRetryCount());
-          if (retryData.isShouldRetry()) {
-            shouldRetry(nextTask, retryData.getNextRetryTime());
-          }
+  private void executeTask(SideKickExecutor executor, SideKick task) {
+    Status status = null;
+    String exceptionStr = null;
+    String stacktrace = null;
+    try {
+      executor.execute(task.getSideKickData());
+      status = Status.SUCCESS;
+    } catch (Exception exception) {
+      status = Status.FAILED;
+      exceptionStr = exception.getMessage();
+      stacktrace = ExceptionUtils.getStackTrace(exception);
+    } finally {
+      UpdateOperations<SideKick> statusUpdateOperations =
+          hPersistence.createUpdateOperations(SideKick.class).set(SidekickKeys.status, status);
+      if (exceptionStr != null) {
+        statusUpdateOperations.set(SidekickKeys.exception, exceptionStr);
+      }
+      if (stacktrace != null) {
+        statusUpdateOperations.set(SidekickKeys.stacktrace, stacktrace);
+      }
+      hPersistence.update(task, statusUpdateOperations);
+
+      if (status == Status.FAILED) {
+        RetryData retryData =
+            typeSideKickExecutorMap.get(task.getSideKickData().getType()).shouldRetry(task.getRetryCount());
+        if (retryData.isShouldRetry()) {
+          shouldRetry(task, retryData.getNextRetryTime());
         }
       }
     }
-    return nextTask != null;
   }
 
   private void shouldRetry(SideKick sideKick, Instant nextRunTime) {
@@ -103,5 +117,14 @@ public class SideKickServiceImpl implements SideKickService {
                                                             .set(SidekickKeys.runAfter, nextRunTime);
 
     hPersistence.update(sideKick, statusUpdateOperations);
+  }
+
+  private void reschedule(SideKickExecutor executor, SideKick task) {
+    long currentTime = clock.millis();
+    UpdateOperations<SideKick> updateOperations =
+        hPersistence.createUpdateOperations(SideKick.class)
+            .set(SidekickKeys.lastUpdatedAt, currentTime)
+            .set(SidekickKeys.runAfter, Instant.ofEpochMilli(currentTime).plus(executor.delayExecutionBy()));
+    hPersistence.update(task, updateOperations);
   }
 }

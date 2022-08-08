@@ -98,6 +98,9 @@ public class BatchJobRunner {
     if (batchJobType == BatchJobType.RERUN_JOB) {
       endAt = Instant.now().minus(15, ChronoUnit.HOURS);
     }
+    if (batchJobType == BatchJobType.DELEGATE_HEALTH_CHECK) {
+      endAt = Instant.now();
+    }
     BatchJobScheduleTimeProvider batchJobScheduleTimeProvider =
         new BatchJobScheduleTimeProvider(startAt, endAt, duration, chronoUnit);
     Instant startInstant = startAt;
@@ -142,10 +145,19 @@ public class BatchJobRunner {
       }
 
       long totalTimeTaken = Duration.between(jobsStartTime, Instant.now()).toMinutes();
+      logJobRunTimeStats(accountId, batchJobType, totalTimeTaken);
       if (totalTimeTaken >= 30) {
         log.warn("Job was taking more time so terminated next runs {}", totalTimeTaken);
         break;
       }
+    }
+  }
+
+  private void logJobRunTimeStats(String accountId, BatchJobType batchJobType, long totalTimeTaken) {
+    if (batchJobType.getIntervalUnit() == ChronoUnit.HOURS && totalTimeTaken > 60) {
+      log.error("Hourly Time taken for job is more {} {} {}", accountId, batchJobType, totalTimeTaken);
+    } else if (batchJobType.getIntervalUnit() == ChronoUnit.DAYS && totalTimeTaken > 150) {
+      log.error("Daily Time taken for job is more {} {} {}", accountId, batchJobType, totalTimeTaken);
     }
   }
 

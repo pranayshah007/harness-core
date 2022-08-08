@@ -16,12 +16,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
-
 	"github.com/harness/harness-core/commons/go/lib/exec"
 	"github.com/harness/harness-core/commons/go/lib/filesystem"
 	"github.com/harness/harness-core/product/ci/ti-service/types"
-
 	"go.uber.org/zap"
+	"path"
+	"strings"
 )
 
 var (
@@ -32,13 +32,15 @@ type dotnetRunner struct {
 	fs                filesystem.FileSystem
 	log               *zap.SugaredLogger
 	cmdContextFactory exec.CmdContextFactory
+	agentPath         string
 }
 
-func NewDotnetRunner(log *zap.SugaredLogger, fs filesystem.FileSystem, factory exec.CmdContextFactory) *dotnetRunner {
+func NewDotnetRunner(log *zap.SugaredLogger, fs filesystem.FileSystem, factory exec.CmdContextFactory, agentPath string) *dotnetRunner {
 	return &dotnetRunner{
 		fs:                fs,
 		log:               log,
 		cmdContextFactory: factory,
+		agentPath:         agentPath,
 	}
 }
 
@@ -47,14 +49,26 @@ func (b *dotnetRunner) AutoDetectPackages() ([]string, error) {
 }
 
 func (b *dotnetRunner) GetCmd(ctx context.Context, tests []types.RunnableTest, userArgs, agentConfigPath string, ignoreInstr, runAll bool) (string, error) {
+	// Hard coding the logger for now, as this is the only one for now that does not have compatibility issue with our agent
+	installLoggerCmd := "dotnet add package JUnitTestLogger --version 1.1.0"
+	defaultRunCmd := fmt.Sprintf("%s test --no-build --logger \"junit;LogFilePath=test_results.xml\"", dotnetCmd)
+	agentFullName := path.Join(b.agentPath, "dotnet-agent.injector.dll")
 	if ignoreInstr {
 		b.log.Infow("ignoring instrumentation and not attaching agent")
-		return fmt.Sprintf("%s %s", dotnetCmd, userArgs), nil
+		return fmt.Sprintf("%s\n%s", installLoggerCmd, defaultRunCmd), nil
 	}
 
-	// Create instrumented command here (TODO: Need to figure out how to instrument)
+	var instrumentCmd string
+	// Run all the DLLs through the injector
+	args := strings.Split(userArgs, " ")
+	for _, param := range args {
+		if strings.HasSuffix(param, ".dll") {
+			instrumentCmd += fmt.Sprintf("%s %s %s %s\n", dotnetCmd, agentFullName, param, agentConfigPath)
+		}
+	}
 	if runAll {
-		return fmt.Sprintf("%s %s", dotnetCmd, userArgs), nil // Add instrumentation here
+		b.log.Infow("Running all tests")
+		return fmt.Sprintf("%s\n%s%s", installLoggerCmd, instrumentCmd, defaultRunCmd), nil // Add instrumentation here
 	}
 
 	// Need to handle this for Windows as well
@@ -85,6 +99,7 @@ func (b *dotnetRunner) GetCmd(ctx context.Context, tests []types.RunnableTest, u
 		}
 		testStr += "FullyQualifiedName~" + t
 	}
-
-	return fmt.Sprintf("%s %s --filter \"%s\"", dotnetCmd, userArgs, testStr), nil // Add instrumentation here
+	// dotnet /dotnet-agent.injector.dll /TestProject1.dll ./Config.yaml
+	runtestCmd := fmt.Sprintf("%s test --no-build --logger \"junit;LogFilePath=test_results.xml\" --filter \"%s\"", dotnetCmd, testStr)
+	return fmt.Sprintf("%s\n%s%s", installLoggerCmd, instrumentCmd, runtestCmd), nil
 }

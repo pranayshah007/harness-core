@@ -27,12 +27,14 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.Cd1SetupFields;
 import io.harness.beans.DelegateTask;
 import io.harness.beans.ExecutionStatus;
+import io.harness.beans.FeatureName;
 import io.harness.beans.SweepingOutputInstance;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.TaskData;
 import io.harness.exception.HarnessJiraException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.expression.ExpressionEvaluator;
+import io.harness.ff.FeatureFlagService;
 import io.harness.jira.JiraAction;
 import io.harness.jira.JiraCreateMetaResponse;
 import io.harness.jira.JiraCustomFieldValue;
@@ -101,7 +103,7 @@ import org.mongodb.morphia.annotations.Transient;
 @FieldNameConstants(innerTypeName = "JiraCreateUpdateKeys")
 public class JiraCreateUpdate extends State implements SweepingOutputStateMixin {
   public static final String DATE_ISO_FORMAT = "yyyy-MM-dd";
-  private static final long JIRA_TASK_TIMEOUT_MILLIS = 60 * 1000;
+  private static final long JIRA_TASK_TIMEOUT_MILLIS = 60 * 1000 * 5;
   private static final String JIRA_ISSUE_ID = "issueId";
   private static final String JIRA_ISSUE_KEY = "issueKey";
   private static final String JIRA_ISSUE = "issue";
@@ -126,6 +128,7 @@ public class JiraCreateUpdate extends State implements SweepingOutputStateMixin 
   @Inject private transient ActivityService activityService;
   @Inject @Transient private LogService logService;
   @Inject @Transient private JiraHelperService jiraHelperService;
+  @Inject FeatureFlagService featureFlagService;
 
   @Inject @Transient private transient WingsPersistence wingsPersistence;
   @Inject @Transient private DelegateService delegateService;
@@ -187,8 +190,18 @@ public class JiraCreateUpdate extends State implements SweepingOutputStateMixin 
     JiraCreateMetaResponse createMeta = null;
     renderExpressions(context);
 
+    if (featureFlagService.isEnabled(FeatureName.ALLOW_USER_TYPE_FIELDS_JIRA, accountId)) {
+      if (jiraAction == JiraAction.UPDATE_TICKET) {
+        jiraAction = JiraAction.UPDATE_TICKET_NG;
+      } else if (jiraAction == JiraAction.CREATE_TICKET) {
+        jiraAction = JiraAction.CREATE_TICKET_NG;
+      }
+    }
+
+    final long timeoutMillis = getTimeoutMillis() != null ? getTimeoutMillis() : JIRA_TASK_TIMEOUT_MILLIS;
     if (areRequiredFieldsTemplatized) {
-      createMeta = jiraHelperService.getCreateMetadata(jiraConnectorId, null, project, accountId, context.getAppId());
+      createMeta = jiraHelperService.getCreateMetadata(
+          jiraConnectorId, null, project, accountId, context.getAppId(), timeoutMillis, issueType);
       try {
         validateRequiredFields(createMeta, context);
       } catch (HarnessJiraException e) {
@@ -199,7 +212,8 @@ public class JiraCreateUpdate extends State implements SweepingOutputStateMixin 
 
     if (EmptyPredicate.isNotEmpty(customFields)) {
       JiraCreateMetaResponse createMetadata = createMeta == null
-          ? jiraHelperService.getCreateMetadata(jiraConnectorId, null, project, accountId, context.getAppId())
+          ? jiraHelperService.getCreateMetadata(
+              jiraConnectorId, null, project, accountId, context.getAppId(), timeoutMillis, issueType)
           : createMeta;
 
       Map<String, String> customFieldsIdToNameMap = mapCustomFieldsIdsToNames(createMetadata);
@@ -253,7 +267,7 @@ public class JiraCreateUpdate extends State implements SweepingOutputStateMixin 
                                         .appId(context.getAppId())
                                         .build();
 
-    if (jiraAction == JiraAction.UPDATE_TICKET) {
+    if (jiraAction == JiraAction.UPDATE_TICKET || jiraAction == JiraAction.UPDATE_TICKET_NG) {
       List<String> issueIds = parseExpression(issueId);
       if (EmptyPredicate.isEmpty(issueIds)) {
         return ExecutionResponse.builder()
@@ -275,7 +289,7 @@ public class JiraCreateUpdate extends State implements SweepingOutputStateMixin 
                       .async(true)
                       .taskType(JIRA.name())
                       .parameters(new Object[] {parameters})
-                      .timeout(JIRA_TASK_TIMEOUT_MILLIS)
+                      .timeout(timeoutMillis)
                       .build())
             .tags(jiraConfig.getDelegateSelectors())
             .workflowExecutionId(context.getWorkflowExecutionId())
@@ -800,7 +814,13 @@ public class JiraCreateUpdate extends State implements SweepingOutputStateMixin 
   }
 
   @Override
-  public void handleAbortEvent(ExecutionContext context) {}
+  public void handleAbortEvent(ExecutionContext context) {
+    if (context == null || context.getStateExecutionData() == null) {
+      return;
+    }
+    context.getStateExecutionData().setErrorMsg(
+        "Jira create or update did not complete within timeout " + (getTimeoutMillis() / 1000) + " (s)");
+  }
 
   @Override
   public Map<String, String> validateFields() {

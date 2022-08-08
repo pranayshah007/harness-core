@@ -1,0 +1,56 @@
+---
+orgIdentifier: $orgIdentifier
+projectIdentifier: $projectIdentifier
+identifier: MSIdentifier
+name: promeTest
+type: Application
+description: ''
+serviceRef: cvng_service_UxrHvd7oNa
+environmentRef: cvng_env_prod_NWceMzD9XM
+tags: {}
+sources:
+  healthSources:
+    - name: test
+      identifier: test
+      type: Prometheus
+      spec:
+        connectorRef: prometheus
+        metricDefinitions:
+          - query: max(container_cpu_usage_seconds_total{container="cv-demo",namespace="cv-demo"})
+            isManualQuery: false
+            groupName: prometheusGroup
+            metricName: Prometheus Metric
+            #identifier: prometheus_metric123 TODO: add it after enabling validation.
+            serviceInstanceFieldName: pod
+            prometheusMetric: container_cpu_usage_seconds_total
+            serviceFilter:
+              - labelName: container
+                labelValue: cv-demo
+            envFilter:
+              - labelName: namespace
+                labelValue: cv-demo
+            additionalFilters:
+            aggregation: max
+            riskProfile:
+              category: Infrastructure
+              metricType: INFRA
+              thresholdTypes:
+                - ACT_WHEN_HIGHER
+            sli:
+              enabled: true
+            analysis:
+              deploymentVerification:
+                enabled: true
+                serviceInstanceFieldName: pod
+              liveMonitoring:
+                enabled: true
+              riskProfile:
+                category: Infrastructure
+                metricType: INFRA
+                thresholdTypes:
+                  - ACT_WHEN_HIGHER
+  changeSources: []
+dependencies: []
+notificationRuleRefs:
+  - notificationRuleRef: $identifier
+    enabled: $enabled

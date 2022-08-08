@@ -40,6 +40,14 @@ public class K8SWorkloadService extends CacheUtils {
     @Nullable private String workloadName;
   }
 
+  @Value
+  @EqualsAndHashCode
+  public static class WorkloadUidCacheKey {
+    private String accountId;
+    private String clusterId;
+    private String workloadUid;
+  }
+
   public void updateK8sWorkloadLabelCache(CacheKey key, Set<String> workloadNames) {
     List<K8sWorkload> workloads =
         workloadRepository.getWorkload(key.getAccountId(), key.getClusterId(), key.getNamespace(), workloadNames);

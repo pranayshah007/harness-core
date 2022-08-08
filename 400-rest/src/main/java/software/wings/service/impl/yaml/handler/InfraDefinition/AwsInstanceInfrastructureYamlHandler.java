@@ -20,6 +20,7 @@ import software.wings.beans.yaml.ChangeContext;
 import software.wings.infra.AwsInstanceInfrastructure;
 import software.wings.infra.AwsInstanceInfrastructure.Yaml;
 import software.wings.service.impl.yaml.handler.CloudProviderInfrastructure.CloudProviderInfrastructureYamlHandler;
+import software.wings.service.impl.yaml.service.YamlHelper;
 import software.wings.service.intfc.SettingsService;
 
 import com.google.inject.Inject;
@@ -31,6 +32,7 @@ import java.util.List;
 public class AwsInstanceInfrastructureYamlHandler
     extends CloudProviderInfrastructureYamlHandler<Yaml, AwsInstanceInfrastructure> {
   @Inject private SettingsService settingsService;
+  @Inject private YamlHelper yamlHelper;
   @Override
   public Yaml toYaml(AwsInstanceInfrastructure bean, String appId) {
     SettingAttribute cloudProvider = settingsService.get(bean.getCloudProviderId());
@@ -62,7 +64,9 @@ public class AwsInstanceInfrastructureYamlHandler
   private void toBean(AwsInstanceInfrastructure bean, ChangeContext<Yaml> changeContext) {
     Yaml yaml = changeContext.getYaml();
     String accountId = changeContext.getChange().getAccountId();
+    String appId = yamlHelper.getAppId(accountId, changeContext.getChange().getFilePath());
     SettingAttribute cloudProvider = settingsService.getSettingAttributeByName(accountId, yaml.getCloudProviderName());
+    settingsService.checkRbacOnSettingAttribute(appId, cloudProvider);
     SettingAttribute hostConnectionAttr =
         settingsService.getSettingAttributeByName(accountId, yaml.getHostConnectionAttrsName());
     notNullCheck(format("Cloud Provider with name %s does not exist", yaml.getCloudProviderName()), cloudProvider);

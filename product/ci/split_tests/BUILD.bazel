@@ -1,0 +1,45 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library", "go_test")
+
+go_library(
+    name = "split_tests_lib",
+    srcs = [
+        "filetime.go",
+        "main.go",
+        "utils.go",
+    ],
+    importpath = "github.com/harness/harness-core/product/ci/split_tests",
+    visibility = ["//:__pkg__"],
+    deps = [
+        "//commons/go/lib/logs",
+        "//commons/go/lib/metrics",
+        "//product/ci/common/external",
+        "//product/ci/engine/consts",
+        "//product/ci/engine/grpc",
+        "//product/ci/split_tests/junit",
+        "//product/ci/split_tests/ti",
+        "//product/ci/ti-service/types",
+        "@com_github_alexflint_go_arg//:go-arg",
+        "@com_github_bmatcuk_doublestar//:doublestar",
+        "@org_uber_go_zap//:zap",
+        "@org_uber_go_zap//zapcore",
+    ],
+)
+
+go_binary(
+    name = "split_tests",
+    embed = [":split_tests_lib"],
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "split_tests_test",
+    srcs = ["main_test.go"],
+    data = glob(["testdata/**"]),
+    embed = [":split_tests_lib"],
+    deps = [
+        "//commons/go/lib/logs",
+        "//product/ci/engine/grpc",
+        "//product/ci/engine/grpc/mocks",
+        "@com_github_golang_mock//gomock",
+    ],
+)

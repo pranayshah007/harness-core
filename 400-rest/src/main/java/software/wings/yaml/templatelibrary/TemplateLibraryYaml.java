@@ -22,7 +22,6 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.As;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 import java.util.List;
-import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
@@ -51,13 +50,5 @@ public abstract class TemplateLibraryYaml extends BaseEntityYaml {
     super(type, harnessApiVersion);
     this.description = description;
     this.variables = variables;
-  }
-
-  @Data
-  @Builder
-  public static class TemplateVariableYaml {
-    String name;
-    String description;
-    String value;
   }
 }

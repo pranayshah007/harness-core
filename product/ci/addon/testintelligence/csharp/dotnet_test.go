@@ -26,7 +26,7 @@ func TestDotNet_GetCmd(t *testing.T) {
 
 	cmdFactory := mexec.NewMockCmdContextFactory(ctrl)
 
-	runner := NewDotnetRunner(log.Sugar(), fs, cmdFactory)
+	runner := NewDotnetRunner(log.Sugar(), fs, cmdFactory, "/csharp")
 
 	t1 := types.RunnableTest{Pkg: "pkg1", Class: "cls1", Method: "m1"}
 	t2 := types.RunnableTest{Pkg: "pkg2", Class: "cls2", Method: "m2"}
@@ -41,25 +41,25 @@ func TestDotNet_GetCmd(t *testing.T) {
 	}{
 		{
 			name:                 "run all tests with non-empty test list and runOnlySelectedTests as false",
-			args:                 "test Build.csproj --test-adapter-path:. --logger:trx",
+			args:                 "test.dll",
 			runOnlySelectedTests: false,
-			want:                 "dotnet test Build.csproj --test-adapter-path:. --logger:trx",
+			want:                 "dotnet add package JUnitTestLogger --version 1.1.0\ndotnet /csharp/dotnet-agent.injector.dll test.dll /test/tmp/config.ini\ndotnet test --no-build --logger \"junit;LogFilePath=test_results.xml\"",
 			expectedErr:          false,
 			tests:                []types.RunnableTest{t1, t2},
 		},
 		{
 			name:                 "run all tests with empty test list and runOnlySelectedTests as false",
-			args:                 "test Build.csproj --test-adapter-path:. --logger:trx",
+			args:                 "test.dll",
 			runOnlySelectedTests: false,
-			want:                 "dotnet test Build.csproj --test-adapter-path:. --logger:trx",
+			want:                 "dotnet add package JUnitTestLogger --version 1.1.0\ndotnet /csharp/dotnet-agent.injector.dll test.dll /test/tmp/config.ini\ndotnet test --no-build --logger \"junit;LogFilePath=test_results.xml\"",
 			expectedErr:          false,
 			tests:                []types.RunnableTest{},
 		},
 		{
 			name:                 "run selected tests with given test list",
-			args:                 "test Build.csproj --test-adapter-path:. --logger:trx",
+			args:                 "test.dll",
 			runOnlySelectedTests: true,
-			want:                 "dotnet test Build.csproj --test-adapter-path:. --logger:trx --filter \"FullyQualifiedName~pkg1.cls1|FullyQualifiedName~pkg2.cls2\"",
+			want:                 "dotnet add package JUnitTestLogger --version 1.1.0\ndotnet /csharp/dotnet-agent.injector.dll test.dll /test/tmp/config.ini\ndotnet test --no-build --logger \"junit;LogFilePath=test_results.xml\" --filter \"FullyQualifiedName~pkg1.cls1|FullyQualifiedName~pkg2.cls2\"",
 			expectedErr:          false,
 			tests:                []types.RunnableTest{t1, t2},
 		},
@@ -75,7 +75,7 @@ func TestDotNet_GetCmd(t *testing.T) {
 			name:                 "run selected tests with repeating test list",
 			args:                 "test Build.csproj",
 			runOnlySelectedTests: true,
-			want:                 "dotnet test Build.csproj --filter \"FullyQualifiedName~pkg1.cls1|FullyQualifiedName~pkg2.cls2\"",
+			want:                 "dotnet add package JUnitTestLogger --version 1.1.0\ndotnet test --no-build --logger \"junit;LogFilePath=test_results.xml\" --filter \"FullyQualifiedName~pkg1.cls1|FullyQualifiedName~pkg2.cls2\"",
 			expectedErr:          false,
 			tests:                []types.RunnableTest{t1, t2, t1, t2},
 		},
@@ -83,7 +83,7 @@ func TestDotNet_GetCmd(t *testing.T) {
 			name:                 "run selected tests with single test",
 			args:                 "test Build.csproj",
 			runOnlySelectedTests: true,
-			want:                 "dotnet test Build.csproj --filter \"FullyQualifiedName~pkg2.cls2\"",
+			want:                 "dotnet add package JUnitTestLogger --version 1.1.0\ndotnet test --no-build --logger \"junit;LogFilePath=test_results.xml\" --filter \"FullyQualifiedName~pkg2.cls2\"",
 			expectedErr:          false,
 			tests:                []types.RunnableTest{t2},
 		},
@@ -107,7 +107,7 @@ func TestGetDotnetCmd_Manual(t *testing.T) {
 
 	cmdFactory := mexec.NewMockCmdContextFactory(ctrl)
 
-	runner := NewDotnetRunner(log.Sugar(), fs, cmdFactory)
+	runner := NewDotnetRunner(log.Sugar(), fs, cmdFactory, "/csharp")
 
 	t1 := types.RunnableTest{Pkg: "pkg1", Class: "cls1", Method: "m1"}
 	t2 := types.RunnableTest{Pkg: "pkg2", Class: "cls2", Method: "m2"}
@@ -124,7 +124,7 @@ func TestGetDotnetCmd_Manual(t *testing.T) {
 			name:                 "run all tests with empty test list and runOnlySelectedTests as false",
 			args:                 "test Build.csproj",
 			runOnlySelectedTests: false,
-			want:                 "dotnet test Build.csproj",
+			want:                 "dotnet add package JUnitTestLogger --version 1.1.0\ndotnet test --no-build --logger \"junit;LogFilePath=test_results.xml\"",
 			expectedErr:          false,
 			tests:                []types.RunnableTest{},
 		},
@@ -132,7 +132,7 @@ func TestGetDotnetCmd_Manual(t *testing.T) {
 			name:                 "run selected tests with a test list and runOnlySelectedTests as true",
 			args:                 "test Build.csproj",
 			runOnlySelectedTests: true,
-			want:                 "dotnet test Build.csproj",
+			want:                 "dotnet add package JUnitTestLogger --version 1.1.0\ndotnet test --no-build --logger \"junit;LogFilePath=test_results.xml\"",
 			expectedErr:          false,
 			tests:                []types.RunnableTest{t1, t2},
 		},

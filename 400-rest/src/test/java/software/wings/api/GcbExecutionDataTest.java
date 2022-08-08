@@ -10,8 +10,8 @@ package software.wings.api;
 import static io.harness.rule.OwnerRule.VGLIJIN;
 
 import static software.wings.api.ExecutionDataValue.executionDataValue;
+import static software.wings.delegatetasks.GcbDelegateResponse.gcbDelegateResponseOf;
 import static software.wings.helpers.ext.gcb.models.GcbBuildStatus.WORKING;
-import static software.wings.sm.states.GcbState.GcbDelegateResponse.gcbDelegateResponseOf;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -21,9 +21,9 @@ import io.harness.category.element.UnitTests;
 import io.harness.rule.Owner;
 
 import software.wings.beans.command.GcbTaskParams;
+import software.wings.delegatetasks.GcbDelegateResponse;
 import software.wings.helpers.ext.gcb.models.GcbArtifacts;
 import software.wings.helpers.ext.gcb.models.GcbBuildDetails;
-import software.wings.sm.states.GcbState.GcbDelegateResponse;
 
 import com.google.common.collect.ImmutableMap;
 import java.util.Collections;

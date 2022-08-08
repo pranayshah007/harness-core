@@ -85,6 +85,9 @@ public class CeProductMetricsTasklet implements Tasklet {
     // Budgets
     properties.putAll(cengTelemetryService.getBudgetMetrics(accountId));
 
+    // License Spend
+    properties.putAll(cengTelemetryService.getLicenseUtil(accountId));
+
     telemetryReporter.sendGroupEvent(accountId, null, properties, Collections.singletonMap(Destination.AMPLITUDE, true),
         TelemetryOption.builder().sendForCommunity(false).build());
   }

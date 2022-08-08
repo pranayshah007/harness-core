@@ -24,11 +24,12 @@ import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.environment.beans.EnvironmentType;
 import io.harness.ng.core.environment.dto.EnvironmentRequestDTO;
 import io.harness.ng.core.environment.dto.EnvironmentResponseDTO;
-import io.harness.ng.core.environment.mappers.NGEnvironmentEntityMapper;
+import io.harness.ng.core.environment.mappers.EnvironmentMapper;
 import io.harness.ng.core.environment.services.impl.EnvironmentServiceImpl;
 import io.harness.ng.core.environment.yaml.NGEnvironmentConfig;
 import io.harness.ng.core.environment.yaml.NGEnvironmentInfoConfig;
 import io.harness.ng.core.utils.CoreCriteriaUtils;
+import io.harness.repositories.UpsertOptions;
 import io.harness.rule.Owner;
 
 import software.wings.beans.Environment.EnvironmentKeys;
@@ -93,7 +94,7 @@ public class EnvironmentResourceTest extends CategoryTest {
                                  .name("ENV")
                                  .type(EnvironmentType.PreProduction)
                                  .tags(singletonMap("k1", "v1"))
-                                 .yaml(NGEnvironmentEntityMapper.toYaml(ngEnvironmentConfig))
+                                 .yaml(EnvironmentMapper.toYaml(ngEnvironmentConfig))
                                  .version(0L)
                                  .build();
 
@@ -107,7 +108,7 @@ public class EnvironmentResourceTest extends CategoryTest {
                             .type(EnvironmentType.PreProduction)
                             .tags(tags)
                             .version(0L)
-                            .yaml(NGEnvironmentEntityMapper.toYaml(ngEnvironmentConfig))
+                            .yaml(EnvironmentMapper.toYaml(ngEnvironmentConfig))
                             .build();
   }
 
@@ -165,7 +166,7 @@ public class EnvironmentResourceTest extends CategoryTest {
   @Owner(developers = ARCHIT)
   @Category(UnitTests.class)
   public void testUpsert() {
-    doReturn(environmentEntity).when(environmentService).upsert(environmentEntity);
+    doReturn(environmentEntity).when(environmentService).upsert(environmentEntity, UpsertOptions.DEFAULT);
     EnvironmentResponseDTO response =
         environmentResource.upsert("0", environmentEntity.getAccountId(), environmentRequestDTO).getData();
     assertThat(response).isNotNull();

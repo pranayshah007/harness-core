@@ -28,7 +28,7 @@ public class CVNGPipelineServiceInfoProvider implements PipelineServiceInfoProvi
   @Override
   public List<PartialPlanCreator<?>> getPlanCreators() {
     List<PartialPlanCreator<?>> planCreators = new LinkedList<>();
-    planCreators.add(new CVNGPlanCreator());
+    planCreators.add(new CVNGPlanCreatorV2());
     injectorUtils.injectMembers(planCreators);
     return planCreators;
   }

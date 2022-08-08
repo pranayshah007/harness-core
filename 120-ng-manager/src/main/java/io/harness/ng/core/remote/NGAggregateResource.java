@@ -21,6 +21,8 @@ import static io.harness.ng.accesscontrol.PlatformResourceTypes.USERGROUP;
 import static io.harness.utils.PageUtils.getNGPageResponse;
 import static io.harness.utils.PageUtils.getPageRequest;
 
+import static org.apache.commons.lang3.StringUtils.isBlank;
+
 import io.harness.ModuleType;
 import io.harness.NGCommonEntityConstants;
 import io.harness.NGResourceFilterConstants;
@@ -31,8 +33,10 @@ import io.harness.accesscontrol.ResourceIdentifier;
 import io.harness.accesscontrol.acl.api.Resource;
 import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
+import io.harness.accesscontrol.scopes.ScopeDTO;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SortOrder;
+import io.harness.exception.InvalidRequestException;
 import io.harness.ng.beans.PageRequest;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.api.AggregateAccountResourceService;
@@ -40,7 +44,6 @@ import io.harness.ng.core.api.AggregateOrganizationService;
 import io.harness.ng.core.api.AggregateProjectService;
 import io.harness.ng.core.api.AggregateUserGroupService;
 import io.harness.ng.core.dto.AccountResourcesDTO;
-import io.harness.ng.core.dto.AggregateACLRequest;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.OrganizationAggregateDTO;
@@ -52,6 +55,7 @@ import io.harness.ng.core.dto.UserGroupAggregateDTO;
 import io.harness.ng.core.entities.Organization.OrganizationKeys;
 import io.harness.ng.core.entities.Project.ProjectKeys;
 import io.harness.ng.core.services.OrganizationService;
+import io.harness.ng.core.usergroups.filter.UserGroupFilterType;
 import io.harness.security.annotations.NextGenManagerAuth;
 
 import com.google.common.collect.ImmutableList;
@@ -60,7 +64,7 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
-import java.util.List;
+import io.swagger.v3.oas.annotations.Parameter;
 import java.util.Set;
 import javax.validation.constraints.Max;
 import javax.validation.constraints.NotNull;
@@ -68,14 +72,13 @@ import javax.ws.rs.BeanParam;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
-import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
-import retrofit2.http.Body;
+import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(PL)
 @Api("aggregate")
@@ -88,6 +91,7 @@ import retrofit2.http.Body;
       @ApiResponse(code = 400, response = FailureDTO.class, message = "Bad Request")
       , @ApiResponse(code = 500, response = ErrorDTO.class, message = "Internal server error")
     })
+@Slf4j
 @NextGenManagerAuth
 public class NGAggregateResource {
   private final AggregateOrganizationService aggregateOrganizationService;
@@ -178,6 +182,7 @@ public class NGAggregateResource {
       @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier, @BeanParam PageRequest pageRequest,
       @QueryParam(NGResourceFilterConstants.SEARCH_TERM_KEY) String searchTerm,
+      @QueryParam("filterType") @DefaultValue("EXCLUDE_INHERITED_GROUPS") UserGroupFilterType filterType,
       @QueryParam("userSize") @DefaultValue("6") @Max(20) int userSize) {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
         Resource.of(USERGROUP, null), VIEW_USERGROUP_PERMISSION);
@@ -187,21 +192,7 @@ public class NGAggregateResource {
       pageRequest.setSortOrders(ImmutableList.of(order));
     }
     return ResponseDTO.newResponse(aggregateUserGroupService.listAggregateUserGroups(
-        pageRequest, accountIdentifier, orgIdentifier, projectIdentifier, searchTerm, userSize));
-  }
-
-  @POST
-  @Path("acl/usergroups/filter")
-  @ApiOperation(value = "Get Aggregated User Group list with filter", nickname = "getUserGroupAggregateListsWithFilter")
-  public ResponseDTO<List<UserGroupAggregateDTO>> list(
-      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
-      @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
-      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
-      @Body AggregateACLRequest aggregateACLRequest) {
-    accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
-        Resource.of(USERGROUP, null), VIEW_USERGROUP_PERMISSION);
-    return ResponseDTO.newResponse(aggregateUserGroupService.listAggregateUserGroups(
-        accountIdentifier, orgIdentifier, projectIdentifier, aggregateACLRequest));
+        pageRequest, accountIdentifier, orgIdentifier, projectIdentifier, searchTerm, userSize, filterType));
   }
 
   @GET
@@ -211,11 +202,17 @@ public class NGAggregateResource {
       @NotNull @PathParam(NGCommonEntityConstants.IDENTIFIER_KEY) String identifier,
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
       @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
-      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier) {
+      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @Parameter(description = NGCommonEntityConstants.ORG_KEY + " for the scope of role assignments") @QueryParam(
+          "roleAssignmentScopeOrgIdentifier") String roleAssignmentScopeOrgIdentifier,
+      @Parameter(description = NGCommonEntityConstants.PROJECT_KEY + " for the scope of role assignments") @QueryParam(
+          "roleAssignmentScopeProjectIdentifier") String roleAssignmentScopeProjectIdentifier) {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
         Resource.of(USERGROUP, identifier), VIEW_USERGROUP_PERMISSION);
+    ScopeDTO roleAssignmentScope = validateAndSetRoleAssignmentScope(accountIdentifier, orgIdentifier,
+        projectIdentifier, roleAssignmentScopeOrgIdentifier, roleAssignmentScopeProjectIdentifier);
     return ResponseDTO.newResponse(aggregateUserGroupService.getAggregatedUserGroup(
-        accountIdentifier, orgIdentifier, projectIdentifier, identifier));
+        accountIdentifier, orgIdentifier, projectIdentifier, identifier, roleAssignmentScope));
   }
 
   @GET
@@ -225,5 +222,36 @@ public class NGAggregateResource {
   public ResponseDTO<AccountResourcesDTO> getAccountResourcesCount(
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier) {
     return ResponseDTO.newResponse(aggregateAccountResourceService.getAccountResourcesDTO(accountIdentifier));
+  }
+
+  private ScopeDTO validateAndSetRoleAssignmentScope(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, String roleAssignmentScopeOrgIdentifier, String roleAssignmentScopeProjectIdentifier) {
+    if (!isBlank(orgIdentifier)) {
+      if (roleAssignmentScopeOrgIdentifier == null) {
+        // Backwards compatible
+        roleAssignmentScopeOrgIdentifier = orgIdentifier;
+      } else if (!roleAssignmentScopeOrgIdentifier.equals(orgIdentifier)) {
+        log.info("roleAssignmentScopeOrgIdentifier {} is not equal to orgIdentifier {}",
+            roleAssignmentScopeOrgIdentifier, orgIdentifier);
+        throw new InvalidRequestException(
+            "Invalid role assignment scope provided as roleAssignmentScopeOrgIdentifier is not equal to orgIdentifier.");
+      }
+    }
+    if (!isBlank(projectIdentifier)) {
+      if (roleAssignmentScopeProjectIdentifier == null) {
+        // Backwards compatible
+        roleAssignmentScopeProjectIdentifier = projectIdentifier;
+      } else if (!roleAssignmentScopeProjectIdentifier.equals(projectIdentifier)) {
+        log.info("roleAssignmentScopeProjectIdentifier {} is not equal to projectIdentifier {}",
+            roleAssignmentScopeProjectIdentifier, projectIdentifier);
+        throw new InvalidRequestException(
+            "Invalid role assignment scope provided as roleAssignmentScopeProjectIdentifier is not equal to projectIdentifier.");
+      }
+    }
+    return ScopeDTO.builder()
+        .accountIdentifier(accountIdentifier)
+        .orgIdentifier(roleAssignmentScopeOrgIdentifier)
+        .projectIdentifier(roleAssignmentScopeProjectIdentifier)
+        .build();
   }
 }

@@ -10,6 +10,7 @@ package software.wings.delegatetasks.pcf.pcftaskhandler;
 import static io.harness.rule.OwnerRule.ADWAIT;
 import static io.harness.rule.OwnerRule.ANIL;
 import static io.harness.rule.OwnerRule.IVAN;
+import static io.harness.rule.OwnerRule.RISHABH;
 
 import static software.wings.delegatetasks.pcf.PcfTestConstants.ACCOUNT_ID;
 import static software.wings.delegatetasks.pcf.PcfTestConstants.MANIFEST_YAML;
@@ -31,6 +32,7 @@ import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.times;
@@ -361,6 +363,58 @@ public class PcfSetupCommandTaskHandlerTest extends WingsBaseTest {
         cfCommandSetupRequest, pcfAppAutoscalarRequestData, executionLogCallback);
 
     verify(pcfCommandTaskBaseHelper, times(1)).disableAutoscalar(argumentCaptor.capture(), any());
+    pcfAppAutoscalarRequestData = argumentCaptor.getValue();
+    assertThat(pcfAppAutoscalarRequestData.getApplicationGuid()).isEqualTo("10");
+    assertThat(pcfAppAutoscalarRequestData.getApplicationName()).isEqualTo("a_s_e__1");
+    assertThat(pcfAppAutoscalarRequestData.isExpectedEnabled()).isTrue();
+  }
+
+  @Test
+  @Owner(developers = RISHABH)
+  @Category(UnitTests.class)
+  public void testDownsizeApplicationToZeroFailAutoscaler() throws Exception {
+    reset(pcfDeploymentManager);
+    ApplicationSummary applicationSummary = ApplicationSummary.builder()
+                                                .name("a_s_e__1")
+                                                .diskQuota(1)
+                                                .requestedState(RUNNING)
+                                                .id("10")
+                                                .instances(0)
+                                                .memoryLimit(1)
+                                                .runningInstances(0)
+                                                .build();
+
+    ApplicationDetail applicationDetail = ApplicationDetail.builder()
+                                              .id("10")
+                                              .diskQuota(1)
+                                              .instances(0)
+                                              .memoryLimit(1)
+                                              .name("a_s_e__1")
+                                              .requestedState(STOPPED)
+                                              .stack("")
+                                              .runningInstances(0)
+                                              .build();
+    doReturn(applicationDetail).when(pcfDeploymentManager).getApplicationByName(any());
+    doReturn(applicationDetail).when(pcfDeploymentManager).resizeApplication(any());
+
+    CfCommandSetupRequest cfCommandSetupRequest = CfCommandSetupRequest.builder().useAppAutoscalar(true).build();
+
+    CfAppAutoscalarRequestData pcfAppAutoscalarRequestData =
+        CfAppAutoscalarRequestData.builder().configPathVar("path").build();
+
+    doThrow(new PivotalClientApiException("#Throwing exception to test if flow stops or not"))
+        .when(pcfCommandTaskBaseHelper)
+        .disableAutoscalar(any(), any());
+
+    ArgumentCaptor<CfAppAutoscalarRequestData> argumentCaptor =
+        ArgumentCaptor.forClass(CfAppAutoscalarRequestData.class);
+    pcfSetupCommandTaskHandler.downsizeApplicationToZero(applicationSummary, CfRequestConfig.builder().build(),
+        cfCommandSetupRequest, pcfAppAutoscalarRequestData, executionLogCallback);
+
+    verify(pcfCommandTaskBaseHelper, times(1)).disableAutoscalar(argumentCaptor.capture(), any());
+    verify(pcfCommandTaskBaseHelper, times(1)).disableAutoscalarSafe(argumentCaptor.capture(), any());
+    verify(pcfDeploymentManager, times(0)).changeAutoscalarState(any(), any(), anyBoolean());
+
     pcfAppAutoscalarRequestData = argumentCaptor.getValue();
     assertThat(pcfAppAutoscalarRequestData.getApplicationGuid()).isEqualTo("10");
     assertThat(pcfAppAutoscalarRequestData.getApplicationName()).isEqualTo("a_s_e__1");
@@ -924,6 +978,419 @@ public class PcfSetupCommandTaskHandlerTest extends WingsBaseTest {
   }
 
   @Test
+  @Owner(developers = RISHABH)
+  @Category(UnitTests.class)
+  public void testNonVersionAppCreationFailedBlueGreen()
+      throws ExecutionException, PivotalClientApiException, IOException {
+    final String releaseName = "PaymentApp";
+    final String inActiveAppCurrentName = releaseName + PcfConstants.INACTIVE_APP_NAME_SUFFIX;
+    final String activeAppCurrentName = releaseName;
+
+    List<ApplicationSummary> previousReleases =
+        getPreviousReleasesBeforeDeploymentStart(activeAppCurrentName, inActiveAppCurrentName);
+
+    List<ApplicationSummary> previousReleasesAfterDeployment =
+        getPreviousReleasesAfterDeployment(activeAppCurrentName, inActiveAppCurrentName);
+
+    mockSetupBehaviour(releaseName, previousReleases);
+    when(pcfDeploymentManager.getPreviousReleases(any(), anyString()))
+        .thenReturn(previousReleases, previousReleasesAfterDeployment, previousReleases);
+
+    final ApplicationSummary activeApplication = previousReleases.get(2);
+    final ApplicationSummary inActiveApplication = previousReleases.get(1);
+
+    doReturn(activeApplication)
+        .when(pcfCommandTaskBaseHelper)
+        .findActiveApplication(
+            eq(executionLogCallback), anyBoolean(), any(CfRequestConfig.class), eq(previousReleases));
+
+    doReturn(inActiveApplication)
+        .when(pcfCommandTaskBaseHelper)
+        .getMostRecentInactiveApplication(eq(executionLogCallback), anyBoolean(), eq(activeApplication),
+            eq(previousReleases), any(CfRequestConfig.class));
+
+    doThrow(new PivotalClientApiException("#Throwing sample exception to fail creation"))
+        .when(pcfDeploymentManager)
+        .createApplication(any(), any());
+
+    CfCommandSetupRequest setupRequest = getSetupRequest(releaseName, true, true, true);
+    CfCommandExecutionResponse cfCommandExecutionResponse =
+        pcfSetupCommandTaskHandler.executeTaskInternal(setupRequest, null, logStreamingTaskClient, false);
+
+    assertThat(cfCommandExecutionResponse).isNotNull();
+    assertThat(cfCommandExecutionResponse.getPcfCommandResponse()).isNull();
+    assertThat(cfCommandExecutionResponse.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.FAILURE);
+
+    ArgumentCaptor<CfCreateApplicationRequestData> requestDataCaptor =
+        ArgumentCaptor.forClass(CfCreateApplicationRequestData.class);
+    verify(pcfDeploymentManager, times(1)).createApplication(requestDataCaptor.capture(), eq(executionLogCallback));
+    verify(pcfDeploymentManager, times(2)).renameApplication(any(), any());
+    verify(pcfDeploymentManager, times(1)).deleteApplication(any());
+  }
+  @Test
+  @Owner(developers = RISHABH)
+  @Category(UnitTests.class)
+  public void testNonVersionBlueGreenAppCreationFailedFirstDeploy()
+      throws ExecutionException, PivotalClientApiException, IOException {
+    final String releaseName = "PaymentApp";
+    final String newReleaseName = releaseName + PcfConstants.INACTIVE_APP_NAME_SUFFIX;
+    List<ApplicationSummary> previousReleases = new ArrayList<>();
+    List<ApplicationSummary> previousReleasesAfterDeployment = new ArrayList<>();
+    previousReleasesAfterDeployment.add(ApplicationSummary.builder()
+                                            .name(newReleaseName)
+                                            .diskQuota(1)
+                                            .requestedState(STOPPED)
+                                            .id("1")
+                                            .instances(1)
+                                            .memoryLimit(1)
+                                            .runningInstances(2)
+                                            .build());
+
+    mockSetupBehaviour(releaseName, previousReleases);
+    when(pcfDeploymentManager.getPreviousReleases(any(), anyString()))
+        .thenReturn(previousReleases, previousReleasesAfterDeployment, previousReleases);
+
+    final ApplicationSummary activeApplication = null;
+
+    doReturn(activeApplication)
+        .when(pcfCommandTaskBaseHelper)
+        .findActiveApplication(
+            eq(executionLogCallback), anyBoolean(), any(CfRequestConfig.class), eq(previousReleases));
+
+    doReturn(null)
+        .when(pcfCommandTaskBaseHelper)
+        .getMostRecentInactiveApplication(eq(executionLogCallback), anyBoolean(), eq(activeApplication),
+            eq(previousReleases), any(CfRequestConfig.class));
+
+    doReturn(activeApplication)
+        .when(pcfCommandTaskBaseHelper)
+        .findActiveApplication(
+            eq(executionLogCallback), anyBoolean(), any(CfRequestConfig.class), eq(previousReleases));
+
+    doReturn(null)
+        .when(pcfCommandTaskBaseHelper)
+        .getMostRecentInactiveApplication(eq(executionLogCallback), anyBoolean(), eq(activeApplication),
+            eq(previousReleases), any(CfRequestConfig.class));
+
+    doThrow(new PivotalClientApiException("#Throwing sample exception while creating application"))
+        .when(pcfDeploymentManager)
+        .createApplication(any(), any());
+
+    CfCommandSetupRequest setupRequest = getSetupRequest(releaseName, true, true, true);
+    CfCommandExecutionResponse cfCommandExecutionResponse =
+        pcfSetupCommandTaskHandler.executeTaskInternal(setupRequest, null, logStreamingTaskClient, false);
+
+    assertThat(cfCommandExecutionResponse).isNotNull();
+    assertThat(cfCommandExecutionResponse.getPcfCommandResponse()).isNull();
+    assertThat(cfCommandExecutionResponse.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.FAILURE);
+
+    ArgumentCaptor<CfCreateApplicationRequestData> requestDataCaptor =
+        ArgumentCaptor.forClass(CfCreateApplicationRequestData.class);
+    verify(pcfDeploymentManager, times(1)).createApplication(requestDataCaptor.capture(), eq(executionLogCallback));
+    verify(pcfDeploymentManager, times(0)).renameApplication(any(), any());
+    verify(pcfDeploymentManager, times(0)).deleteApplication(any());
+  }
+
+  @Test
+  @Owner(developers = RISHABH)
+  @Category(UnitTests.class)
+  public void testNonVersionBlueGreenAppCreationFailedSecondDeploy()
+      throws ExecutionException, PivotalClientApiException, IOException {
+    final String releaseName = "PaymentApp";
+    final String newReleaseName = releaseName + PcfConstants.INACTIVE_APP_NAME_SUFFIX;
+    List<ApplicationSummary> previousReleases = new ArrayList<>();
+    previousReleases.add(ApplicationSummary.builder()
+                             .name(releaseName)
+                             .diskQuota(1)
+                             .requestedState(RUNNING)
+                             .id("1")
+                             .instances(1)
+                             .memoryLimit(1)
+                             .runningInstances(2)
+                             .build());
+
+    List<ApplicationSummary> previousReleasesAfterDeployment = new ArrayList<>();
+    previousReleases.add(ApplicationSummary.builder()
+                             .name(releaseName)
+                             .diskQuota(1)
+                             .requestedState(RUNNING)
+                             .id("1")
+                             .instances(1)
+                             .memoryLimit(1)
+                             .runningInstances(2)
+                             .build());
+
+    previousReleasesAfterDeployment.add(ApplicationSummary.builder()
+                                            .name(newReleaseName)
+                                            .diskQuota(1)
+                                            .requestedState(STOPPED)
+                                            .id("2")
+                                            .instances(1)
+                                            .memoryLimit(1)
+                                            .runningInstances(2)
+                                            .build());
+
+    previousReleases.add(ApplicationSummary.builder()
+                             .name(releaseName)
+                             .diskQuota(1)
+                             .requestedState(RUNNING)
+                             .id("1")
+                             .instances(1)
+                             .memoryLimit(1)
+                             .runningInstances(2)
+                             .build());
+
+    mockSetupBehaviour(releaseName, previousReleases);
+    when(pcfDeploymentManager.getPreviousReleases(any(), anyString()))
+        .thenReturn(previousReleases, previousReleasesAfterDeployment, previousReleases);
+
+    final ApplicationSummary activeApplication = previousReleases.get(0);
+
+    doReturn(activeApplication)
+        .when(pcfCommandTaskBaseHelper)
+        .findActiveApplication(
+            eq(executionLogCallback), anyBoolean(), any(CfRequestConfig.class), eq(previousReleases));
+
+    doReturn(null)
+        .when(pcfCommandTaskBaseHelper)
+        .getMostRecentInactiveApplication(eq(executionLogCallback), anyBoolean(), eq(activeApplication),
+            eq(previousReleases), any(CfRequestConfig.class));
+
+    doReturn(previousReleases).when(pcfDeploymentManager).getPreviousReleases(any(), anyString());
+
+    doReturn(activeApplication)
+        .when(pcfCommandTaskBaseHelper)
+        .findActiveApplication(
+            eq(executionLogCallback), anyBoolean(), any(CfRequestConfig.class), eq(previousReleases));
+
+    doReturn(null)
+        .when(pcfCommandTaskBaseHelper)
+        .getMostRecentInactiveApplication(eq(executionLogCallback), anyBoolean(), eq(activeApplication),
+            eq(previousReleases), any(CfRequestConfig.class));
+
+    doThrow(new PivotalClientApiException("#Throwing sample exception while creating application"))
+        .when(pcfDeploymentManager)
+        .createApplication(any(), any());
+
+    CfCommandSetupRequest setupRequest = getSetupRequest(releaseName, true, true, true);
+    CfCommandExecutionResponse cfCommandExecutionResponse =
+        pcfSetupCommandTaskHandler.executeTaskInternal(setupRequest, null, logStreamingTaskClient, false);
+
+    assertThat(cfCommandExecutionResponse).isNotNull();
+    assertThat(cfCommandExecutionResponse.getPcfCommandResponse()).isNull();
+    assertThat(cfCommandExecutionResponse.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.FAILURE);
+
+    ArgumentCaptor<CfCreateApplicationRequestData> requestDataCaptor =
+        ArgumentCaptor.forClass(CfCreateApplicationRequestData.class);
+    verify(pcfDeploymentManager, times(1)).createApplication(requestDataCaptor.capture(), eq(executionLogCallback));
+    verify(pcfDeploymentManager, times(0)).renameApplication(any(), any());
+    verify(pcfDeploymentManager, times(0)).deleteApplication(any());
+  }
+
+  @Test
+  @Owner(developers = RISHABH)
+  @Category(UnitTests.class)
+  public void testNonVersionAppCreationFailedBasic() throws ExecutionException, PivotalClientApiException, IOException {
+    final String releaseName = "PaymentApp";
+    final String inActiveAppCurrentName = releaseName + PcfConstants.INACTIVE_APP_NAME_SUFFIX;
+    final String inActiveAppAfterRename = releaseName + "__2";
+    final String activeAppCurrentName = releaseName;
+
+    List<ApplicationSummary> previousReleases =
+        getPreviousReleasesBeforeDeploymentStart(activeAppCurrentName, inActiveAppCurrentName);
+
+    List<ApplicationSummary> previousReleasesAfterDeployment =
+        getPreviousReleasesAfterDeployment(inActiveAppCurrentName, inActiveAppAfterRename);
+
+    mockSetupBehaviour(releaseName, previousReleases);
+    when(pcfDeploymentManager.getPreviousReleases(any(), anyString()))
+        .thenReturn(previousReleases, previousReleasesAfterDeployment, previousReleases);
+
+    final ApplicationSummary activeApplication = previousReleases.get(2);
+    final ApplicationSummary inActiveApplication = previousReleases.get(1);
+
+    doReturn(activeApplication)
+        .when(pcfCommandTaskBaseHelper)
+        .findActiveApplication(
+            eq(executionLogCallback), anyBoolean(), any(CfRequestConfig.class), eq(previousReleases));
+
+    doReturn(inActiveApplication)
+        .when(pcfCommandTaskBaseHelper)
+        .getMostRecentInactiveApplication(eq(executionLogCallback), anyBoolean(), eq(activeApplication),
+            eq(previousReleases), any(CfRequestConfig.class));
+
+    doThrow(new PivotalClientApiException("#Throwing exception before creating the new application"))
+        .when(pcfDeploymentManager)
+        .createApplication(any(), any());
+
+    CfCommandSetupRequest setupRequest = getSetupRequest(releaseName, true, true, false);
+    CfCommandExecutionResponse cfCommandExecutionResponse =
+        pcfSetupCommandTaskHandler.executeTaskInternal(setupRequest, null, logStreamingTaskClient, false);
+
+    assertThat(cfCommandExecutionResponse).isNotNull();
+    assertThat(cfCommandExecutionResponse.getPcfCommandResponse()).isNull();
+    assertThat(cfCommandExecutionResponse.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.FAILURE);
+
+    ArgumentCaptor<CfCreateApplicationRequestData> requestDataCaptor =
+        ArgumentCaptor.forClass(CfCreateApplicationRequestData.class);
+    verify(pcfDeploymentManager, times(1)).createApplication(requestDataCaptor.capture(), eq(executionLogCallback));
+    verify(pcfDeploymentManager, times(4)).renameApplication(any(), any());
+    verify(pcfDeploymentManager, times(1)).deleteApplication(any());
+  }
+
+  @Test
+  @Owner(developers = RISHABH)
+  @Category(UnitTests.class)
+  public void testNonVersionBasicAppCreationFailedFirstDeploy()
+      throws ExecutionException, PivotalClientApiException, IOException {
+    final String releaseName = "PaymentApp";
+    final String newReleaseName = releaseName + PcfConstants.INACTIVE_APP_NAME_SUFFIX;
+    List<ApplicationSummary> previousReleases = new ArrayList<>();
+    List<ApplicationSummary> previousReleasesAfterDeployment = new ArrayList<>();
+    previousReleasesAfterDeployment.add(ApplicationSummary.builder()
+                                            .name(newReleaseName)
+                                            .diskQuota(1)
+                                            .requestedState(STOPPED)
+                                            .id("1")
+                                            .instances(1)
+                                            .memoryLimit(1)
+                                            .runningInstances(2)
+                                            .build());
+
+    mockSetupBehaviour(releaseName, previousReleases);
+    when(pcfDeploymentManager.getPreviousReleases(any(), anyString()))
+        .thenReturn(previousReleases, previousReleasesAfterDeployment, previousReleases);
+
+    final ApplicationSummary activeApplication = null;
+
+    doReturn(activeApplication)
+        .when(pcfCommandTaskBaseHelper)
+        .findActiveApplication(
+            eq(executionLogCallback), anyBoolean(), any(CfRequestConfig.class), eq(previousReleases));
+
+    doReturn(null)
+        .when(pcfCommandTaskBaseHelper)
+        .getMostRecentInactiveApplication(eq(executionLogCallback), anyBoolean(), eq(activeApplication),
+            eq(previousReleases), any(CfRequestConfig.class));
+
+    doReturn(previousReleases).when(pcfDeploymentManager).getPreviousReleases(any(), anyString());
+
+    doReturn(activeApplication)
+        .when(pcfCommandTaskBaseHelper)
+        .findActiveApplication(
+            eq(executionLogCallback), anyBoolean(), any(CfRequestConfig.class), eq(previousReleases));
+
+    doReturn(null)
+        .when(pcfCommandTaskBaseHelper)
+        .getMostRecentInactiveApplication(eq(executionLogCallback), anyBoolean(), eq(activeApplication),
+            eq(previousReleases), any(CfRequestConfig.class));
+
+    doThrow(new PivotalClientApiException("#Throwing sample exception while creating application"))
+        .when(pcfDeploymentManager)
+        .createApplication(any(), any());
+
+    CfCommandSetupRequest setupRequest = getSetupRequest(releaseName, true, true, false);
+    CfCommandExecutionResponse cfCommandExecutionResponse =
+        pcfSetupCommandTaskHandler.executeTaskInternal(setupRequest, null, logStreamingTaskClient, false);
+
+    assertThat(cfCommandExecutionResponse).isNotNull();
+    assertThat(cfCommandExecutionResponse.getPcfCommandResponse()).isNull();
+    assertThat(cfCommandExecutionResponse.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.FAILURE);
+
+    ArgumentCaptor<CfCreateApplicationRequestData> requestDataCaptor =
+        ArgumentCaptor.forClass(CfCreateApplicationRequestData.class);
+    verify(pcfDeploymentManager, times(1)).createApplication(requestDataCaptor.capture(), eq(executionLogCallback));
+    verify(pcfDeploymentManager, times(0)).renameApplication(any(), any());
+    verify(pcfDeploymentManager, times(0)).deleteApplication(any());
+  }
+
+  @Test
+  @Owner(developers = RISHABH)
+  @Category(UnitTests.class)
+  public void testNonVersionBasicAppCreationFailedSecondDeploy()
+      throws ExecutionException, PivotalClientApiException, IOException {
+    final String releaseName = "PaymentApp";
+    final String activeAppNameAfterRename = releaseName + PcfConstants.INACTIVE_APP_NAME_SUFFIX;
+    List<ApplicationSummary> previousReleases = new ArrayList<>();
+    previousReleases.add(ApplicationSummary.builder()
+                             .name(releaseName)
+                             .diskQuota(1)
+                             .requestedState(RUNNING)
+                             .id("1")
+                             .instances(1)
+                             .memoryLimit(1)
+                             .runningInstances(2)
+                             .build());
+
+    List<ApplicationSummary> previousReleasesAfterDeployment = new ArrayList<>();
+    previousReleases.add(ApplicationSummary.builder()
+                             .name(activeAppNameAfterRename)
+                             .diskQuota(1)
+                             .requestedState(RUNNING)
+                             .id("1")
+                             .instances(1)
+                             .memoryLimit(1)
+                             .runningInstances(2)
+                             .build());
+
+    previousReleasesAfterDeployment.add(ApplicationSummary.builder()
+                                            .name(releaseName)
+                                            .diskQuota(1)
+                                            .requestedState(STOPPED)
+                                            .id("2")
+                                            .instances(1)
+                                            .memoryLimit(1)
+                                            .runningInstances(2)
+                                            .build());
+
+    mockSetupBehaviour(releaseName, previousReleases);
+    when(pcfDeploymentManager.getPreviousReleases(any(), anyString()))
+        .thenReturn(previousReleases, previousReleasesAfterDeployment, previousReleases);
+
+    final ApplicationSummary activeApplication = previousReleases.get(0);
+
+    doReturn(activeApplication)
+        .when(pcfCommandTaskBaseHelper)
+        .findActiveApplication(
+            eq(executionLogCallback), anyBoolean(), any(CfRequestConfig.class), eq(previousReleases));
+
+    doReturn(null)
+        .when(pcfCommandTaskBaseHelper)
+        .getMostRecentInactiveApplication(eq(executionLogCallback), anyBoolean(), eq(activeApplication),
+            eq(previousReleases), any(CfRequestConfig.class));
+
+    doReturn(previousReleases).when(pcfDeploymentManager).getPreviousReleases(any(), anyString());
+
+    doReturn(activeApplication)
+        .when(pcfCommandTaskBaseHelper)
+        .findActiveApplication(
+            eq(executionLogCallback), anyBoolean(), any(CfRequestConfig.class), eq(previousReleases));
+
+    doReturn(null)
+        .when(pcfCommandTaskBaseHelper)
+        .getMostRecentInactiveApplication(eq(executionLogCallback), anyBoolean(), eq(activeApplication),
+            eq(previousReleases), any(CfRequestConfig.class));
+
+    doThrow(new PivotalClientApiException("#Throwing sample exception while creating application"))
+        .when(pcfDeploymentManager)
+        .createApplication(any(), any());
+
+    CfCommandSetupRequest setupRequest = getSetupRequest(releaseName, true, true, false);
+    CfCommandExecutionResponse cfCommandExecutionResponse =
+        pcfSetupCommandTaskHandler.executeTaskInternal(setupRequest, null, logStreamingTaskClient, false);
+
+    assertThat(cfCommandExecutionResponse).isNotNull();
+    assertThat(cfCommandExecutionResponse.getPcfCommandResponse()).isNull();
+    assertThat(cfCommandExecutionResponse.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.FAILURE);
+
+    ArgumentCaptor<CfCreateApplicationRequestData> requestDataCaptor =
+        ArgumentCaptor.forClass(CfCreateApplicationRequestData.class);
+    verify(pcfDeploymentManager, times(1)).createApplication(requestDataCaptor.capture(), eq(executionLogCallback));
+    verify(pcfDeploymentManager, times(2)).renameApplication(any(), any());
+    verify(pcfDeploymentManager, times(1)).deleteApplication(any());
+  }
+
+  @Test
   @Owner(developers = ANIL)
   @Category(UnitTests.class)
   public void testNonVersionToVersionAppRenamingBlueGreen()
@@ -1253,6 +1720,38 @@ public class PcfSetupCommandTaskHandlerTest extends WingsBaseTest {
     List<ApplicationSummary> previousReleases = new ArrayList<>();
     previousReleases.add(ApplicationSummary.builder()
                              .name("PaymentApp__1")
+                             .diskQuota(1)
+                             .requestedState(STOPPED)
+                             .id("1")
+                             .instances(0)
+                             .memoryLimit(1)
+                             .runningInstances(0)
+                             .build());
+    previousReleases.add(ApplicationSummary.builder()
+                             .name(inActiveApp)
+                             .diskQuota(1)
+                             .requestedState(STOPPED)
+                             .id("2")
+                             .instances(0)
+                             .memoryLimit(1)
+                             .runningInstances(0)
+                             .build());
+    previousReleases.add(ApplicationSummary.builder()
+                             .name(activeApp)
+                             .diskQuota(1)
+                             .requestedState(RUNNING)
+                             .id("3")
+                             .instances(1)
+                             .memoryLimit(1)
+                             .runningInstances(2)
+                             .build());
+    return previousReleases;
+  }
+
+  private List<ApplicationSummary> getPreviousReleasesAfterDeployment(String activeApp, String inActiveApp) {
+    List<ApplicationSummary> previousReleases = new ArrayList<>();
+    previousReleases.add(ApplicationSummary.builder()
+                             .name("PaymentApp__2")
                              .diskQuota(1)
                              .requestedState(STOPPED)
                              .id("1")

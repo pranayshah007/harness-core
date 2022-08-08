@@ -49,8 +49,6 @@ public class NexusArtifactTaskHandler extends DelegateArtifactTaskHandler<NexusA
           attributesRequest.getRepositoryFormat(), attributesRequest.getTag());
     }
 
-    nexusRegistryService.verifyArtifactManifestUrl(lastSuccessfulBuild, nexusConfig);
-
     NexusArtifactDelegateResponse nexusArtifactDelegateResponse =
         NexusRequestResponseMapper.toNexusResponse(lastSuccessfulBuild, attributesRequest);
     return getSuccessTaskExecutionResponse(Collections.singletonList(nexusArtifactDelegateResponse));

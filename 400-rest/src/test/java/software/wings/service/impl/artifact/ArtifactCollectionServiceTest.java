@@ -12,10 +12,12 @@ import static io.harness.data.encoding.EncodingUtils.decodeBase64ToString;
 import static io.harness.rule.OwnerRule.AADITI;
 import static io.harness.rule.OwnerRule.ANUBHAW;
 import static io.harness.rule.OwnerRule.GARVIT;
+import static io.harness.rule.OwnerRule.PRABU;
 
 import static software.wings.beans.SettingAttribute.Builder.aSettingAttribute;
 import static software.wings.beans.artifact.Artifact.Builder.anArtifact;
 import static software.wings.beans.artifact.ArtifactStreamType.AMAZON_S3;
+import static software.wings.beans.artifact.ArtifactStreamType.CUSTOM;
 import static software.wings.helpers.ext.jenkins.BuildDetails.Builder.aBuildDetails;
 import static software.wings.utils.ArtifactType.DOCKER;
 import static software.wings.utils.ArtifactType.RPM;
@@ -42,9 +44,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.ArtifactMetadata;
 import io.harness.beans.EmbeddedUser;
 import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
@@ -69,7 +74,7 @@ import software.wings.beans.artifact.AcrArtifactStream;
 import software.wings.beans.artifact.AmazonS3ArtifactStream;
 import software.wings.beans.artifact.AmiArtifactStream;
 import software.wings.beans.artifact.Artifact;
-import software.wings.beans.artifact.Artifact.ArtifactMetadataKeys;
+import software.wings.beans.artifact.ArtifactMetadataKeys;
 import software.wings.beans.artifact.ArtifactStreamAttributes;
 import software.wings.beans.artifact.ArtifactoryArtifactStream;
 import software.wings.beans.artifact.BambooArtifactStream;
@@ -97,6 +102,7 @@ import software.wings.service.intfc.aws.manager.AwsEcrHelperServiceManager;
 import software.wings.service.intfc.security.ManagerDecryptionService;
 import software.wings.service.intfc.security.SecretManager;
 import software.wings.utils.ArtifactType;
+import software.wings.utils.DelegateArtifactCollectionUtils;
 import software.wings.utils.WingsTestConstants;
 
 import com.google.inject.Inject;
@@ -122,8 +128,12 @@ public class ArtifactCollectionServiceTest extends WingsBaseTest {
   public static final String LATEST_BUILD_NUMBER = "latest";
   public static final String GLOBAL_APP_ID = "__GLOBAL_APP_ID__";
   @Inject @Spy private HPersistence persistence;
-  @InjectMocks @Inject @Named("ArtifactCollectionService") private ArtifactCollectionService artifactCollectionService;
+  @InjectMocks
+  @Inject
+  @Named("AsyncArtifactCollectionService")
+  private ArtifactCollectionService artifactCollectionService;
   @InjectMocks @Inject private ArtifactCollectionUtils artifactCollectionUtils;
+  @InjectMocks @Inject private DelegateArtifactCollectionUtils delegateArtifactCollectionUtils;
 
   @Mock ArtifactStreamService artifactStreamService;
   @Mock private ArtifactService artifactService;
@@ -548,7 +558,7 @@ public class ArtifactCollectionServiceTest extends WingsBaseTest {
                             .withSettingId(SETTING_ID)
                             .withArtifactSourceName(ARTIFACT_SOURCE_NAME)
                             .withRevision("1.0")
-                            .withMetadata(metadata)
+                            .withMetadata(new ArtifactMetadata(metadata))
                             .build();
     DockerArtifactStream dockerArtifactStream = DockerArtifactStream.builder()
                                                     .uuid(ARTIFACT_STREAM_ID)
@@ -640,11 +650,9 @@ public class ArtifactCollectionServiceTest extends WingsBaseTest {
             .withAccountId(ACCOUNT_ID)
             .build();
     when(settingsService.get(SETTING_ID)).thenReturn(settingAttribute);
-    when(secretManager.getEncryptionDetails(any(), anyString(), anyString())).thenReturn(null);
-    when(awsEcrHelperServiceManager.getEcrImageUrl(any(), any(), anyString(), anyString(), anyString()))
-        .thenReturn("ecrurl.com");
-    when(awsEcrHelperServiceManager.getAmazonEcrAuthToken(any(), any(), anyString(), anyString(), anyString()))
-        .thenReturn("auth_token");
+    when(secretManager.getEncryptionDetails(any(), any(), any())).thenReturn(null);
+    when(awsEcrHelperServiceManager.getEcrImageUrl(any(), any(), any(), any(), any())).thenReturn("ecrurl.com");
+    when(awsEcrHelperServiceManager.getAmazonEcrAuthToken(any(), any(), any(), any(), any())).thenReturn("auth_token");
     ImageDetails imageDetails = artifactCollectionUtils.fetchContainerImageDetails(artifact, WORKFLOW_EXECUTION_ID);
     assertThat(imageDetails).isNotNull();
     assertThat(imageDetails.getName()).isEqualTo("ecrurl.com");
@@ -891,7 +899,7 @@ public class ArtifactCollectionServiceTest extends WingsBaseTest {
     when(artifactIterator.hasNext()).thenReturn(true).thenReturn(false);
     Map<String, String> map = new HashMap<>();
     map.put("buildNo", "10");
-    when(artifactIterator.next()).thenReturn(anArtifact().withMetadata(map).build());
+    when(artifactIterator.next()).thenReturn(anArtifact().withMetadata(new ArtifactMetadata(map)).build());
     BuildSourceParameters buildSourceParameters =
         artifactCollectionUtils.getBuildSourceParameters(jenkinsArtifactStream, settingAttribute, true, true);
     assertThat(buildSourceParameters).isNotNull();
@@ -906,7 +914,7 @@ public class ArtifactCollectionServiceTest extends WingsBaseTest {
     when(artifactService.prepareArtifactWithMetadataQuery(any())).thenReturn(query);
     when(query.fetch()).thenReturn(artifactIterator);
     when(artifactIterator.hasNext()).thenReturn(true).thenReturn(false);
-    when(artifactIterator.next()).thenReturn(anArtifact().withMetadata(map).build());
+    when(artifactIterator.next()).thenReturn(anArtifact().withMetadata(new ArtifactMetadata(map)).build());
     buildSourceParameters =
         artifactCollectionUtils.getBuildSourceParameters(jenkinsArtifactStream, settingAttribute, true, true);
     assertThat(buildSourceParameters).isNotNull();
@@ -966,7 +974,7 @@ public class ArtifactCollectionServiceTest extends WingsBaseTest {
     when(artifactIterator.hasNext()).thenReturn(true).thenReturn(false);
     Map<String, String> map = new HashMap<>();
     map.put("artifactPath", "myfolder/todolist.war");
-    when(artifactIterator.next()).thenReturn(anArtifact().withMetadata(map).build());
+    when(artifactIterator.next()).thenReturn(anArtifact().withMetadata(new ArtifactMetadata(map)).build());
     BuildSourceParameters buildSourceParameters =
         artifactCollectionUtils.getBuildSourceParameters(jenkinsArtifactStream, settingAttribute, true, true);
     assertThat(buildSourceParameters).isNotNull();
@@ -995,12 +1003,12 @@ public class ArtifactCollectionServiceTest extends WingsBaseTest {
                                                             .savedBuildDetailsKeys(savedBuildDetailsKeys)
                                                             .artifactStreamType(AMAZON_S3.name())
                                                             .build();
-    List<BuildDetails> buildDetails1 = artifactCollectionUtils.getNewBuildDetails(
+    List<BuildDetails> buildDetails1 = delegateArtifactCollectionUtils.getNewBuildDetails(
         savedBuildDetailsKeys, buildDetails, AMAZON_S3.name(), artifactStreamAttributes);
     assertThat(buildDetails1).isEmpty();
 
     buildDetails.add(aBuildDetails().withArtifactPath("new path").build());
-    buildDetails1 = artifactCollectionUtils.getNewBuildDetails(
+    buildDetails1 = delegateArtifactCollectionUtils.getNewBuildDetails(
         savedBuildDetailsKeys, buildDetails, AMAZON_S3.name(), artifactStreamAttributes);
     assertThat(buildDetails1.size()).isEqualTo(1);
     assertThat(buildDetails1).extracting(BuildDetails::getArtifactPath).containsExactly("new path");
@@ -1013,7 +1021,7 @@ public class ArtifactCollectionServiceTest extends WingsBaseTest {
     Set<String> set = new HashSet<>();
     set.add("10");
     set.add("11");
-    assertThat(artifactCollectionUtils.getNewBuildDetails(
+    assertThat(delegateArtifactCollectionUtils.getNewBuildDetails(
                    set, asList(), AMAZON_S3.name(), ArtifactStreamAttributes.builder().build()))
         .isEmpty();
   }
@@ -1022,7 +1030,7 @@ public class ArtifactCollectionServiceTest extends WingsBaseTest {
   @Owner(developers = AADITI)
   @Category(UnitTests.class)
   public void testGetNewBuildDetailsNoSavedArtifacts() {
-    List<BuildDetails> buildDetails = artifactCollectionUtils.getNewBuildDetails(Collections.emptySet(),
+    List<BuildDetails> buildDetails = delegateArtifactCollectionUtils.getNewBuildDetails(Collections.emptySet(),
         asList(aBuildDetails().withArtifactPath("todolist copy.war").build()), AMAZON_S3.name(),
         ArtifactStreamAttributes.builder().build());
     assertThat(buildDetails).isNotEmpty();
@@ -1181,6 +1189,64 @@ public class ArtifactCollectionServiceTest extends WingsBaseTest {
     CustomArtifactStream customArtifactStream =
         CustomArtifactStream.builder().accountId(ACCOUNT_ID).scripts(asList(script)).build();
     artifactCollectionUtils.renderCustomArtifactScriptString(customArtifactStream);
+  }
+
+  @Test
+  @Owner(developers = PRABU)
+  @Category(UnitTests.class)
+  public void shouldCollectNewArtifactsCustom() {
+    BuildDetails dockerBuildDetails = aBuildDetails().withNumber(LATEST_BUILD_NUMBER).build();
+    CustomArtifactStream customArtifactStream = CustomArtifactStream.builder()
+                                                    .uuid(ARTIFACT_STREAM_ID)
+                                                    .appId(APP_ID)
+                                                    .sourceName("ARTIFACT_SOURCE")
+                                                    .serviceId(SERVICE_ID)
+                                                    .settingId(SETTING_ID)
+                                                    .scripts(new ArrayList<>())
+                                                    .build();
+    customArtifactStream.setArtifactStreamType(CUSTOM.name());
+
+    when(artifactStreamService.get(ARTIFACT_STREAM_ID)).thenReturn(customArtifactStream);
+
+    Artifact newArtifact = artifactCollectionUtils.getArtifact(customArtifactStream, dockerBuildDetails);
+    when(artifactService.create(any(Artifact.class))).thenReturn(newArtifact);
+    when(buildSourceService.getBuilds(APP_ID, ARTIFACT_STREAM_ID, SETTING_ID)).thenReturn(asList(dockerBuildDetails));
+
+    Artifact collectedArtifact =
+        artifactCollectionService.collectNewArtifacts(APP_ID, customArtifactStream, LATEST_BUILD_NUMBER);
+    assertThat(collectedArtifact).isNotNull();
+    assertThat(collectedArtifact.getBuildNo()).isEqualTo(LATEST_BUILD_NUMBER);
+    verify(buildSourceService, never()).getBuilds(APP_ID, ARTIFACT_STREAM_ID, SETTING_ID);
+  }
+
+  @Test
+  @Owner(developers = PRABU)
+  @Category(UnitTests.class)
+  public void shouldCollectNewArtifactsCustomWithScript() {
+    BuildDetails dockerBuildDetails = aBuildDetails().withNumber(LATEST_BUILD_NUMBER).build();
+    CustomArtifactStream customArtifactStream =
+        CustomArtifactStream.builder()
+            .uuid(ARTIFACT_STREAM_ID)
+            .appId(APP_ID)
+            .sourceName("ARTIFACT_SOURCE")
+            .serviceId(SERVICE_ID)
+            .settingId(SETTING_ID)
+            .scripts(Collections.singletonList(CustomArtifactStream.Script.builder().scriptString("Script").build()))
+            .build();
+    customArtifactStream.setArtifactStreamType(CUSTOM.name());
+    customArtifactStream.setCollectionEnabled(false);
+
+    when(artifactStreamService.get(ARTIFACT_STREAM_ID)).thenReturn(customArtifactStream);
+
+    Artifact newArtifact = artifactCollectionUtils.getArtifact(customArtifactStream, dockerBuildDetails);
+    when(artifactService.create(any(Artifact.class))).thenReturn(newArtifact);
+    when(buildSourceService.getBuilds(APP_ID, ARTIFACT_STREAM_ID, SETTING_ID)).thenReturn(asList(dockerBuildDetails));
+
+    Artifact collectedArtifact =
+        artifactCollectionService.collectNewArtifacts(APP_ID, customArtifactStream, LATEST_BUILD_NUMBER);
+    assertThat(collectedArtifact).isNotNull();
+    assertThat(collectedArtifact.getBuildNo()).isEqualTo(LATEST_BUILD_NUMBER);
+    verify(buildSourceService).getBuilds(APP_ID, ARTIFACT_STREAM_ID, SETTING_ID);
   }
 
   private AmazonS3ArtifactStream getS3ArtifactStream() {

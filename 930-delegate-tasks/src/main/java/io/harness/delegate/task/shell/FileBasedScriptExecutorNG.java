@@ -10,12 +10,12 @@ package io.harness.delegate.task.shell;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.delegate.task.shell.ssh.SshExecutorFactoryContext;
+import io.harness.delegate.task.ssh.config.ConfigFileParameters;
 import io.harness.logging.CommandExecutionStatus;
-
-import java.util.List;
 
 @OwnedBy(CDP)
 public interface FileBasedScriptExecutorNG {
-  CommandExecutionStatus copyFiles(String destinationDirectoryPath, List<String> files);
-  CommandExecutionStatus copyConfigFiles(String destinationDirectoryPath, List<String> files);
+  CommandExecutionStatus copyFiles(SshExecutorFactoryContext context);
+  CommandExecutionStatus copyConfigFiles(String destinationDirectoryPath, ConfigFileParameters configFileParameters);
 }

@@ -22,11 +22,13 @@ import io.harness.cdng.manifest.yaml.GithubStore;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigType;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
 import io.harness.delegate.beans.storeconfig.FetchType;
+import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.SpecParameters;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -154,6 +156,8 @@ public class TerraformApplyStepInfoTest extends CategoryTest {
     terraformStepConfiguration.setTerraformExecutionData(terraformExecutionData);
     terraformStepConfiguration.setTerraformStepConfigurationType(TerraformStepConfigurationType.INLINE);
     terraformApplyStepInfo.setTerraformStepConfiguration(terraformStepConfiguration);
+    TaskSelectorYaml taskSelectorYaml = new TaskSelectorYaml("sel1");
+    terraformApplyStepInfo.setDelegateSelectors(ParameterField.createValueField(Arrays.asList(taskSelectorYaml)));
 
     SpecParameters specParameters = terraformApplyStepInfo.getSpecParameters();
     TerraformApplyStepParameters terraformApplyStepParameters = (TerraformApplyStepParameters) specParameters;
@@ -164,6 +168,8 @@ public class TerraformApplyStepInfoTest extends CategoryTest {
     assertThat(terraformApplyStepParameters.configuration.spec.varFiles.get("var-file-1").type).isEqualTo("Remote");
     assertThat(terraformApplyStepParameters.configuration.spec.varFiles.get("var-file-1").identifier)
         .isEqualTo("var-file-1");
+    assertThat(terraformApplyStepParameters.delegateSelectors.getValue().get(0).getDelegateSelectors())
+        .isEqualTo("sel1");
   }
 
   @Test

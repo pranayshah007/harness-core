@@ -37,6 +37,7 @@ import software.wings.beans.DynaTraceConfig;
 import software.wings.beans.NewRelicConfig;
 import software.wings.beans.SettingAttribute;
 import software.wings.beans.SyncTaskContext;
+import software.wings.beans.apm.Method;
 import software.wings.common.VerificationConstants;
 import software.wings.delegatetasks.DelegateProxyFactory;
 import software.wings.dl.WingsPersistence;
@@ -54,7 +55,6 @@ import software.wings.service.intfc.newrelic.NewRelicService;
 import software.wings.service.intfc.security.SecretManager;
 import software.wings.sm.ExecutionContextFactory;
 import software.wings.sm.StateType;
-import software.wings.sm.states.APMVerificationState.Method;
 import software.wings.sm.states.NewRelicState;
 import software.wings.sm.states.NewRelicState.Metric;
 

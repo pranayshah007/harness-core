@@ -10,11 +10,12 @@ package software.wings.sm.states.collaboration;
 import static io.harness.rule.OwnerRule.AGORODETKI;
 import static io.harness.rule.OwnerRule.DESCRIPTION_VALUE;
 import static io.harness.rule.OwnerRule.HINGER;
+import static io.harness.rule.OwnerRule.VINICIUS;
+import static io.harness.servicenow.ServiceNowTicketTypeNG.INCIDENT;
 
 import static software.wings.beans.TaskType.SERVICENOW_ASYNC;
 import static software.wings.delegatetasks.servicenow.ServiceNowAction.CREATE;
 import static software.wings.delegatetasks.servicenow.ServiceNowAction.IMPORT_SET;
-import static software.wings.service.impl.servicenow.ServiceNowServiceImpl.ServiceNowTicketType.INCIDENT;
 import static software.wings.utils.WingsTestConstants.ACCOUNT_ID;
 import static software.wings.utils.WingsTestConstants.ACTIVITY_ID;
 import static software.wings.utils.WingsTestConstants.APP_ID;
@@ -25,6 +26,7 @@ import static software.wings.utils.WingsTestConstants.UUID;
 import static software.wings.utils.WingsTestConstants.VARIABLE_NAME;
 import static software.wings.utils.WingsTestConstants.WORKFLOW_EXECUTION_ID;
 
+import static java.lang.String.format;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Matchers.any;
@@ -74,6 +76,8 @@ import org.mockito.runners.MockitoJUnitRunner;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ServiceNowCreateUpdateStateTest extends CategoryTest {
+  private static final String WORKFLOW_VARIABLE_NAME = "testVariable";
+  private static final String WORKFLOW_VARIABLE_VALUE = "testValue";
   @Mock ActivityHelperService activityHelperService;
   @Mock ExecutionContextImpl context;
   @Mock SettingsService settingsService;
@@ -97,7 +101,10 @@ public class ServiceNowCreateUpdateStateTest extends CategoryTest {
         .thenReturn(SettingAttribute.Builder.aSettingAttribute()
                         .withValue(ServiceNowConfig.builder().password(PASSWORD).build())
                         .build());
-    when(context.renderExpression(anyString())).thenAnswer(invocation -> invocation.getArgumentAt(0, String.class));
+    when(context.renderExpression(anyString()))
+        .thenAnswer(invocation
+            -> ((String) invocation.getArguments()[0])
+                   .replace(format("${%s}", WORKFLOW_VARIABLE_NAME), WORKFLOW_VARIABLE_VALUE));
     when(context.getAppId()).thenReturn(APP_ID);
     when(context.getWorkflowExecutionId()).thenReturn(WORKFLOW_EXECUTION_ID);
     when(secretManager.getEncryptionDetails(
@@ -144,6 +151,22 @@ public class ServiceNowCreateUpdateStateTest extends CategoryTest {
     assertThatThrownBy(() -> serviceNowCreateUpdateState.execute(context))
         .isInstanceOf(ServiceNowException.class)
         .hasMessage("Json Body is not a valid Json: invalidJson");
+  }
+
+  @Test
+  @Owner(developers = VINICIUS)
+  @Category(UnitTests.class)
+  public void shouldRenderExpressionForImportSetParams() {
+    ServiceNowCreateUpdateParams params = getParamsForAction(IMPORT_SET);
+    params.setImportSetTableName(format("${%s}", WORKFLOW_VARIABLE_NAME));
+    params.setJsonBody(format("{\"${%s}\":\"${%s}\"}", WORKFLOW_VARIABLE_NAME, WORKFLOW_VARIABLE_NAME));
+    serviceNowCreateUpdateState.setServiceNowCreateUpdateParams(params);
+    serviceNowCreateUpdateState.renderImportSetExpressions(context, params);
+    assertThat(serviceNowCreateUpdateState.getServiceNowCreateUpdateParams())
+        .hasFieldOrPropertyWithValue("importSetTableName", WORKFLOW_VARIABLE_VALUE);
+    assertThat(serviceNowCreateUpdateState.getServiceNowCreateUpdateParams())
+        .hasFieldOrPropertyWithValue(
+            "jsonBody", format("{\"%s\":\"%s\"}", WORKFLOW_VARIABLE_VALUE, WORKFLOW_VARIABLE_VALUE));
   }
 
   @Test

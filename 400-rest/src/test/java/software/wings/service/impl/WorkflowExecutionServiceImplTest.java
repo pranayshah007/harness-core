@@ -14,6 +14,7 @@ import static io.harness.beans.ExecutionStatus.PREPARING;
 import static io.harness.beans.ExecutionStatus.RUNNING;
 import static io.harness.beans.ExecutionStatus.SUCCESS;
 import static io.harness.beans.ExecutionStatus.WAITING;
+import static io.harness.beans.FeatureName.ARTIFACT_COLLECTION_CONFIGURABLE;
 import static io.harness.beans.FeatureName.WEBHOOK_TRIGGER_AUTHORIZATION;
 import static io.harness.beans.PageRequest.PageRequestBuilder.aPageRequest;
 import static io.harness.beans.SearchFilter.Operator.EQ;
@@ -31,6 +32,7 @@ import static io.harness.rule.OwnerRule.PRASHANT;
 import static io.harness.rule.OwnerRule.RAGHU;
 import static io.harness.rule.OwnerRule.RAMA;
 import static io.harness.rule.OwnerRule.SRINIVAS;
+import static io.harness.rule.OwnerRule.TATHAGAT;
 import static io.harness.rule.OwnerRule.VAIBHAV_SI;
 import static io.harness.rule.OwnerRule.VIKAS_S;
 import static io.harness.threading.Poller.pollFor;
@@ -59,6 +61,7 @@ import static software.wings.sm.ExecutionInterrupt.ExecutionInterruptBuilder.anE
 import static software.wings.sm.StateExecutionInstance.Builder.aStateExecutionInstance;
 import static software.wings.sm.StateMachine.StateMachineBuilder.aStateMachine;
 import static software.wings.sm.StateType.APPROVAL;
+import static software.wings.sm.StateType.ARTIFACT_COLLECTION;
 import static software.wings.sm.StateType.EMAIL;
 import static software.wings.sm.StateType.ENV_STATE;
 import static software.wings.sm.WorkflowStandardParams.Builder.aWorkflowStandardParams;
@@ -110,6 +113,7 @@ import static org.mockito.Mockito.when;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
+import io.harness.beans.ArtifactMetadata;
 import io.harness.beans.ExecutionInterruptType;
 import io.harness.beans.ExecutionStatus;
 import io.harness.beans.FeatureName;
@@ -185,6 +189,7 @@ import software.wings.beans.WorkflowExecution.WorkflowExecutionKeys;
 import software.wings.beans.WorkflowPhase;
 import software.wings.beans.appmanifest.HelmChart;
 import software.wings.beans.artifact.Artifact;
+import software.wings.beans.artifact.ArtifactInput;
 import software.wings.beans.artifact.ArtifactStream;
 import software.wings.beans.artifact.CustomArtifactStream;
 import software.wings.beans.artifact.DockerArtifactStream;
@@ -347,10 +352,10 @@ public class WorkflowExecutionServiceImplTest extends WingsBaseTest {
   @Owner(developers = SRINIVAS)
   @Category(UnitTests.class)
   public void shouldTriggerComplexWorkflow() throws InterruptedException {
-    Host host1 = wingsPersistence.saveAndGet(
-        Host.class, aHost().withAppId(app.getUuid()).withEnvId(env.getUuid()).withHostName("host1").build());
-    Host host2 = wingsPersistence.saveAndGet(
-        Host.class, aHost().withAppId(app.getUuid()).withEnvId(env.getUuid()).withHostName("host2").build());
+    Host host1 = aHost().withAppId(app.getUuid()).withEnvId(env.getUuid()).withHostName("host1").build();
+    wingsPersistence.save(host1);
+    Host host2 = aHost().withAppId(app.getUuid()).withEnvId(env.getUuid()).withHostName("host2").build();
+    wingsPersistence.save(host2);
 
     Service service1 = addService("svc1");
     Service service2 = addService("svc2");
@@ -520,8 +525,8 @@ public class WorkflowExecutionServiceImplTest extends WingsBaseTest {
   }
 
   private Pipeline constructPipeline(Service service) {
-    Host host = wingsPersistence.saveAndGet(
-        Host.class, aHost().withAppId(app.getUuid()).withEnvId(env.getUuid()).withHostName("host").build());
+    Host host = aHost().withAppId(app.getUuid()).withEnvId(env.getUuid()).withHostName("host").build();
+    wingsPersistence.save(host);
 
     ServiceTemplate serviceTemplate = getServiceTemplate(service);
 
@@ -612,10 +617,12 @@ public class WorkflowExecutionServiceImplTest extends WingsBaseTest {
   }
 
   private WorkflowExecution triggerPipeline(String appId, Pipeline pipeline) throws InterruptedException {
-    Artifact artifact = wingsPersistence.saveAndGet(
-        Artifact.class, anArtifact().withAppId(app.getUuid()).withDisplayName(ARTIFACT_NAME).build());
+    String artifactKey =
+        wingsPersistence.save(anArtifact().withAppId(app.getUuid()).withDisplayName(ARTIFACT_NAME).build());
+    Artifact artifact = wingsPersistence.getWithAppId(Artifact.class, app.getUuid(), artifactKey);
     ExecutionArgs executionArgs = new ExecutionArgs();
     executionArgs.setArtifacts(asList(artifact));
+    executionArgs.setWorkflowType(WorkflowType.PIPELINE);
 
     WorkflowExecutionUpdateFake callback = new WorkflowExecutionUpdateFake();
     WorkflowExecution execution =
@@ -1223,10 +1230,10 @@ public class WorkflowExecutionServiceImplTest extends WingsBaseTest {
   @Category(UnitTests.class)
   @Ignore("TODO: please provide clear motivation why this test is ignored")
   public void shouldWaitOnError() throws InterruptedException {
-    Host applicationHost1 = wingsPersistence.saveAndGet(
-        Host.class, aHost().withAppId(app.getAppId()).withEnvId(env.getUuid()).withHostName("host1").build());
-    Host applicationHost2 = wingsPersistence.saveAndGet(
-        Host.class, aHost().withAppId(app.getAppId()).withEnvId(env.getUuid()).withHostName("host2").build());
+    Host applicationHost1 = aHost().withAppId(app.getAppId()).withEnvId(env.getUuid()).withHostName("host1").build();
+    wingsPersistence.save(applicationHost1);
+    Host applicationHost2 = aHost().withAppId(app.getAppId()).withEnvId(env.getUuid()).withHostName("host2").build();
+    wingsPersistence.save(applicationHost2);
 
     Service service = addService("svc1");
     ServiceTemplate serviceTemplate = getServiceTemplate(service);
@@ -1415,8 +1422,8 @@ public class WorkflowExecutionServiceImplTest extends WingsBaseTest {
   @Category(UnitTests.class)
   @Ignore("TODO: please provide clear motivation why this test is ignored")
   public void shouldRetryOnError() throws InterruptedException {
-    Host host1 = wingsPersistence.saveAndGet(
-        Host.class, aHost().withAppId(app.getUuid()).withEnvId(env.getUuid()).withHostName("host1").build());
+    Host host1 = aHost().withAppId(app.getUuid()).withEnvId(env.getUuid()).withHostName("host1").build();
+    wingsPersistence.save(host1);
 
     Service service = addService("svc1");
     ServiceTemplate serviceTemplate = getServiceTemplate(service);
@@ -1939,8 +1946,44 @@ public class WorkflowExecutionServiceImplTest extends WingsBaseTest {
     assertThat(workflowExecution1).isNotNull().hasFieldOrPropertyWithValue("releaseNo", "1");
 
     List<Artifact> artifacts = workflowExecutionService.obtainLastGoodDeployedArtifacts(
-        workflowExecution2, workflowExecution1.getInfraMappingIds());
+        workflowExecution2, workflowExecution1.getInfraMappingIds(), true);
     assertThat(artifacts).isNotEmpty();
+  }
+
+  @Test
+  @Owner(developers = TATHAGAT)
+  @Category(UnitTests.class)
+  public void testShouldUseInfraBasedRollbackArtifactFfOn() {
+    when(featureFlagService.isEnabled(FeatureName.INFRA_MAPPING_BASED_ROLLBACK_ARTIFACT, ACCOUNT_ID)).thenReturn(true);
+    List<InfrastructureMapping> infrastructureMappingList1 =
+        asList(DirectKubernetesInfrastructureMapping.builder().deploymentType(DeploymentType.AZURE_VMSS.name()).build(),
+            DirectKubernetesInfrastructureMapping.builder().deploymentType(DeploymentType.KUBERNETES.name()).build());
+
+    assertThat(workflowExecutionService.shouldUseInfraBasedRollbackArtifact(ACCOUNT_ID, infrastructureMappingList1))
+        .isTrue();
+
+    List<InfrastructureMapping> infrastructureMappingList2 = asList(
+        DirectKubernetesInfrastructureMapping.builder().deploymentType(DeploymentType.AZURE_VMSS.name()).build());
+    assertThat(workflowExecutionService.shouldUseInfraBasedRollbackArtifact(ACCOUNT_ID, infrastructureMappingList2))
+        .isFalse();
+  }
+
+  @Test
+  @Owner(developers = TATHAGAT)
+  @Category(UnitTests.class)
+  public void testShouldUseInfraBasedRollbackArtifactFfOff() {
+    when(featureFlagService.isEnabled(FeatureName.INFRA_MAPPING_BASED_ROLLBACK_ARTIFACT, ACCOUNT_ID)).thenReturn(false);
+    List<InfrastructureMapping> infrastructureMappingList1 =
+        asList(DirectKubernetesInfrastructureMapping.builder().deploymentType(DeploymentType.AZURE_VMSS.name()).build(),
+            DirectKubernetesInfrastructureMapping.builder().deploymentType(DeploymentType.KUBERNETES.name()).build());
+
+    assertThat(workflowExecutionService.shouldUseInfraBasedRollbackArtifact(ACCOUNT_ID, infrastructureMappingList1))
+        .isFalse();
+
+    List<InfrastructureMapping> infrastructureMappingList2 = asList(
+        DirectKubernetesInfrastructureMapping.builder().deploymentType(DeploymentType.AZURE_VMSS.name()).build());
+    assertThat(workflowExecutionService.shouldUseInfraBasedRollbackArtifact(ACCOUNT_ID, infrastructureMappingList2))
+        .isFalse();
   }
 
   @Test
@@ -1955,7 +1998,7 @@ public class WorkflowExecutionServiceImplTest extends WingsBaseTest {
 
     List<String> infraMappingList = singletonList("infraMappingId");
     List<Artifact> artifacts =
-        workflowExecutionService.obtainLastGoodDeployedArtifacts(workflowExecution, infraMappingList);
+        workflowExecutionService.obtainLastGoodDeployedArtifacts(workflowExecution, infraMappingList, false);
     assertThat(artifacts).isEmpty();
   }
 
@@ -2486,8 +2529,10 @@ public class WorkflowExecutionServiceImplTest extends WingsBaseTest {
   @Owner(developers = GARVIT)
   @Category(UnitTests.class)
   public void testTriggerPipelineResumeExecution() {
+    ExecutionArgs executionArgs = new ExecutionArgs();
+    executionArgs.setWorkflowType(WorkflowType.PIPELINE);
     WorkflowExecution workflowExecution =
-        WorkflowExecution.builder().accountId(account.getUuid()).executionArgs(new ExecutionArgs()).build();
+        WorkflowExecution.builder().accountId(account.getUuid()).executionArgs(executionArgs).build();
     Pipeline pipeline =
         Pipeline.builder()
             .uuid(PIPELINE_ID)
@@ -2516,8 +2561,10 @@ public class WorkflowExecutionServiceImplTest extends WingsBaseTest {
   @Owner(developers = VIKAS_S)
   @Category(UnitTests.class)
   public void testTriggerPipelineResumeExecutionWithStageName() {
+    ExecutionArgs executionArgs = new ExecutionArgs();
+    executionArgs.setWorkflowType(WorkflowType.PIPELINE);
     WorkflowExecution workflowExecution =
-        WorkflowExecution.builder().accountId(account.getUuid()).executionArgs(new ExecutionArgs()).build();
+        WorkflowExecution.builder().accountId(account.getUuid()).executionArgs(executionArgs).build();
     String stageName = "stageName";
     int parallelIndex = 1;
     Pipeline pipeline =
@@ -2579,11 +2626,12 @@ public class WorkflowExecutionServiceImplTest extends WingsBaseTest {
                                                   .name("testNexus")
                                                   .build();
     when(artifactStreamService.get(ARTIFACT_STREAM_ID)).thenReturn(nexusArtifactStream);
-    when(buildSourceService.getBuild(anyString(), anyString(), anyString(), any()))
+    when(buildSourceService.getBuild(any(), any(), any(), any()))
         .thenReturn(BuildDetails.Builder.aBuildDetails().withNumber("1.0").build());
     Map<String, String> map = new HashMap<>();
     map.put("buildNo", "1.0");
-    Artifact artifact = Artifact.Builder.anArtifact().withMetadata(map).withUuid(ARTIFACT_ID).build();
+    Artifact artifact =
+        Artifact.Builder.anArtifact().withMetadata(new ArtifactMetadata(map)).withUuid(ARTIFACT_ID).build();
     when(artifactCollectionUtils.getArtifact(any(), any())).thenReturn(artifact);
     when(artifactService.create(artifact, nexusArtifactStream, false)).thenReturn(artifact);
     WorkflowExecution workflowExecution = WorkflowExecution.builder().accountId(ACCOUNT_ID).build();
@@ -2704,11 +2752,12 @@ public class WorkflowExecutionServiceImplTest extends WingsBaseTest {
                                                   .name("testNexus")
                                                   .build();
     when(artifactStreamService.get(ARTIFACT_STREAM_ID)).thenReturn(nexusArtifactStream);
-    when(buildSourceService.getBuild(anyString(), anyString(), anyString(), any()))
+    when(buildSourceService.getBuild(any(), any(), any(), any()))
         .thenReturn(BuildDetails.Builder.aBuildDetails().withNumber("1.0").build());
     Map<String, String> map = new HashMap<>();
     map.put("buildNo", "1.0");
-    Artifact artifact = Artifact.Builder.anArtifact().withMetadata(map).withUuid(ARTIFACT_ID).build();
+    Artifact artifact =
+        Artifact.Builder.anArtifact().withMetadata(new ArtifactMetadata(map)).withUuid(ARTIFACT_ID).build();
     when(artifactCollectionUtils.getArtifact(any(), any())).thenReturn(artifact);
     when(artifactService.create(artifact, nexusArtifactStream, false)).thenReturn(artifact);
     WorkflowExecution workflowExecution =
@@ -2969,7 +3018,7 @@ public class WorkflowExecutionServiceImplTest extends WingsBaseTest {
                                               .infraMappingIds(infraMappingList)
                                               .build();
     WorkflowStandardParams stdParams = aWorkflowStandardParams().build();
-    workflowExecutionService.populateRollbackArtifacts(workflowExecution, infraMappingList, stdParams);
+    workflowExecutionService.populateRollbackArtifacts(workflowExecution, infraMappingList, stdParams, true);
     assertThat(stdParams.getRollbackArtifactIds()).isNotNull().isEmpty();
     assertThat(workflowExecution.getRollbackArtifacts()).isNotNull().isEmpty();
   }
@@ -2992,7 +3041,7 @@ public class WorkflowExecutionServiceImplTest extends WingsBaseTest {
     wingsPersistence.save(workflowExecution);
     WorkflowStandardParams stdParams = aWorkflowStandardParams().build();
     workflowExecutionService.populateRollbackArtifacts(
-        workflowExecution, asList(INFRA_MAPPING_ID, INFRA_MAPPING_ID), stdParams);
+        workflowExecution, asList(INFRA_MAPPING_ID, INFRA_MAPPING_ID), stdParams, false);
     assertThat(stdParams.getRollbackArtifactIds()).containsExactly(ARTIFACT_ID);
     assertThat(workflowExecution.getRollbackArtifacts()).hasSize(1);
   }
@@ -3139,11 +3188,12 @@ public class WorkflowExecutionServiceImplTest extends WingsBaseTest {
                                                   .name("testNexus")
                                                   .build();
     when(artifactStreamService.get(ARTIFACT_STREAM_ID)).thenReturn(nexusArtifactStream);
-    when(buildSourceService.getBuild(anyString(), anyString(), anyString(), any()))
+    when(buildSourceService.getBuild(any(), any(), any(), any()))
         .thenReturn(BuildDetails.Builder.aBuildDetails().withNumber("1.0").build());
     Map<String, String> map = new HashMap<>();
     map.put("buildNo", "1.0");
-    Artifact artifact = Artifact.Builder.anArtifact().withMetadata(map).withUuid(ARTIFACT_ID).build();
+    Artifact artifact =
+        Artifact.Builder.anArtifact().withMetadata(new ArtifactMetadata(map)).withUuid(ARTIFACT_ID).build();
     when(artifactCollectionUtils.getArtifact(any(), any())).thenReturn(artifact);
     when(artifactService.create(artifact, nexusArtifactStream, false)).thenReturn(artifact);
     WorkflowExecution workflowExecution =
@@ -3260,5 +3310,81 @@ public class WorkflowExecutionServiceImplTest extends WingsBaseTest {
 
     verify(deploymentAuthHandler).authorizeWorkflowExecution(anyString(), anyString());
     verify(authService).checkIfUserAllowedToDeployWorkflowToEnv(anyString(), anyString());
+  }
+
+  @Test
+  @Owner(developers = INDER)
+  @Category(UnitTests.class)
+  public void shouldTriggerWorkflowWithArtifactInputsAndDisableArtifactCollectionFFOn() throws InterruptedException {
+    String appId = app.getUuid();
+    when(featureFlagService.isEnabled(eq(ARTIFACT_COLLECTION_CONFIGURABLE), anyString())).thenReturn(true);
+
+    SettingAttribute computeProvider =
+        aSettingAttribute().withAppId(app.getUuid()).withValue(aPhysicalDataCenterConfig().build()).build();
+    when(mockSettingsService.getByAccountAndId(any(), any())).thenReturn(computeProvider);
+
+    wingsPersistence.save(computeProvider);
+    final InfrastructureDefinition infraDefinition = createInfraDefinition(computeProvider, "Name4", "host1");
+    Service service = addService("svc1");
+    Service service2 = addService("svc2");
+    Workflow workflow = createWorkflow(app.getAppId(), env, service, infraDefinition);
+
+    ExecutionArgs executionArgs = new ExecutionArgs();
+
+    ArtifactVariable artifactVariable1 =
+        ArtifactVariable.builder()
+            .artifactInput(ArtifactInput.builder().buildNo("build1").artifactStreamId(ARTIFACT_STREAM_ID + "1").build())
+            .build();
+
+    ArtifactVariable artifactVariable2 =
+        ArtifactVariable.builder()
+            .artifactInput(ArtifactInput.builder().buildNo("build2").artifactStreamId(ARTIFACT_STREAM_ID + "2").build())
+            .build();
+    executionArgs.setArtifactVariables(asList(artifactVariable1, artifactVariable2));
+
+    when(artifactStreamServiceBindingService.listArtifactStreamIds(service.getUuid()))
+        .thenReturn(Collections.singletonList(ARTIFACT_STREAM_ID + "1"));
+    when(artifactStreamServiceBindingService.listArtifactStreamIds(service2.getUuid()))
+        .thenReturn(Collections.singletonList(ARTIFACT_STREAM_ID + "2"));
+
+    WorkflowExecutionUpdateFake callback = new WorkflowExecutionUpdateFake();
+    WorkflowExecution execution = workflowExecutionService.triggerOrchestrationWorkflowExecution(appId, env.getUuid(),
+        workflow.getUuid(), null, executionArgs, callback,
+        Trigger.builder().uuid(TRIGGER_ID).condition(new WebHookTriggerCondition()).build());
+    callback.await(ofSeconds(15));
+
+    assertThat(execution).isNotNull();
+    String executionId = execution.getUuid();
+    log.debug("Workflow executionId: {}", executionId);
+    assertThat(executionId).isNotNull();
+    execution = workflowExecutionService.getExecutionDetails(appId, executionId, true, false);
+    assertThat(execution)
+        .isNotNull()
+        .hasFieldOrProperty("releaseNo")
+        .extracting(WorkflowExecution::getUuid, WorkflowExecution::getStatus)
+        .containsExactly(executionId, FAILED);
+
+    List<StateExecutionInstance> response =
+        wingsPersistence
+            .query(StateExecutionInstance.class,
+                PageRequestBuilder.aPageRequest()
+                    .addFilter(StateExecutionInstanceKeys.appId, EQ, appId)
+                    .addFilter(StateExecutionInstanceKeys.executionUuid, EQ, execution.getUuid())
+                    .addFilter(StateExecutionInstanceKeys.stateType, EQ, ARTIFACT_COLLECTION)
+                    .build())
+            .getResponse();
+    assertThat(response).isNotNull().isNotEmpty();
+    List<ContextElement> elements =
+        response.get(0)
+            .getContextElements()
+            .stream()
+            .filter(contextElement -> contextElement.getElementType() == ContextElementType.STANDARD)
+            .collect(toList());
+    assertThat(elements).isNotNull().isNotEmpty();
+    assertThat(elements.get(0)).isInstanceOf(WorkflowStandardParams.class);
+    WorkflowStandardParams workflowStandardParams = (WorkflowStandardParams) elements.get(0);
+    assertThat(workflowStandardParams.getArtifactInputs()).isNotNull().isNotEmpty();
+    assertThat(workflowStandardParams.getArtifactInputs().get(0)).isEqualTo(artifactVariable1.getArtifactInput());
+    verify(artifactStreamServiceBindingService).listArtifactStreamIds(service.getUuid());
   }
 }

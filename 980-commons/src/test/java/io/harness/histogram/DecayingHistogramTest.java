@@ -25,7 +25,6 @@ import java.time.Month;
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import lombok.val;
-import lombok.var;
 import org.joor.Reflect;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;

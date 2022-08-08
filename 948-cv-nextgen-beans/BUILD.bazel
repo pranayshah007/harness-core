@@ -1,0 +1,22 @@
+load("//:tools/bazel/harness.bzl", "java_library")
+load("//:tools/bazel/GenTestRules.bzl", "run_tests")
+load("//:tools/bazel/macros.bzl", "run_analysis")
+
+HarnessTeam = "CV"
+
+java_library(
+    name = "module",
+    srcs = glob(["src/main/java/**/*.java"]),
+    resources = [
+        "//948-cv-nextgen-beans/src/main/resources:resource",
+    ],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//:lombok",
+        "//950-delegate-tasks-beans:module",
+        "//954-connector-beans:module",
+        "//957-cg-beans:module",
+    ],
+)
+
+run_analysis()

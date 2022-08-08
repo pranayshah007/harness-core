@@ -102,7 +102,7 @@ public class CVDataCollectionTaskServiceImplTest extends WingsBaseTest {
     ResponseDTO<List<EncryptedDataDetail>> responseDTO = ResponseDTO.newResponse(Collections.emptyList());
     Response<ResponseDTO<List<EncryptedDataDetail>>> response = Response.success(responseDTO);
     when(call.execute()).thenReturn(response);
-    when(secretNGManagerClient.getEncryptionDetails(any())).thenReturn(call);
+    when(secretNGManagerClient.getEncryptionDetails(any(), any())).thenReturn(call);
   }
 
   @Test

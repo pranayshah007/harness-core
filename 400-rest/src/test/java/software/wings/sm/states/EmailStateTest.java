@@ -28,9 +28,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.joor.Reflect.on;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.powermock.api.mockito.PowerMockito.mock;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
@@ -40,6 +42,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.rule.Owner;
 
 import software.wings.WingsBaseTest;
+import software.wings.api.ContextElementParamMapperFactory;
 import software.wings.api.EmailStateExecutionData;
 import software.wings.api.HostElement;
 import software.wings.app.MainConfiguration;
@@ -56,6 +59,7 @@ import software.wings.sm.ExecutionContextImpl;
 import software.wings.sm.ExecutionResponse;
 import software.wings.sm.StateExecutionInstance;
 import software.wings.sm.WorkflowStandardParams;
+import software.wings.sm.WorkflowStandardParamsExtensionService;
 
 import com.google.common.base.Splitter;
 import com.google.common.collect.Lists;
@@ -125,14 +129,22 @@ public class EmailStateTest extends WingsBaseTest {
     context = new ExecutionContextImpl(stateExecutionInstance, null, injector);
 
     WorkflowStandardParams workflowStandardParams = new WorkflowStandardParams();
-    on(workflowStandardParams).set("app", anApplication().accountId(ACCOUNT_ID).uuid(APP_ID).build());
-    on(workflowStandardParams).set("env", anEnvironment().uuid(ENV_ID).build());
-    on(workflowStandardParams).set("configuration", configuration);
     on(workflowStandardParams).set("currentUser", EmbeddedUser.builder().name("admin").build());
-    on(workflowStandardParams).set("accountService", accountService);
-    on(workflowStandardParams).set("subdomainUrlHelper", subdomainUrlHelper);
-
     context.pushContextElement(workflowStandardParams);
+
+    WorkflowStandardParamsExtensionService workflowStandardParamsExtensionService =
+        mock(WorkflowStandardParamsExtensionService.class);
+    doReturn(anApplication().accountId(ACCOUNT_ID).uuid(APP_ID).build())
+        .when(workflowStandardParamsExtensionService)
+        .getApp(workflowStandardParams);
+    doReturn(anEnvironment().uuid(ENV_ID).build())
+        .when(workflowStandardParamsExtensionService)
+        .getEnv(workflowStandardParams);
+    on(context).set("workflowStandardParamsExtensionService", workflowStandardParamsExtensionService);
+
+    ContextElementParamMapperFactory contextElementParamMapperFactory = new ContextElementParamMapperFactory(
+        subdomainUrlHelper, null, null, null, null, null, null, workflowStandardParamsExtensionService);
+    on(context).set("contextElementParamMapperFactory", contextElementParamMapperFactory);
 
     HostElement host = HostElement.builder().build();
     host.setHostName("app123.application.com");

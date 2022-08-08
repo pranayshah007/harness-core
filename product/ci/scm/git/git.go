@@ -12,12 +12,47 @@ import (
 	"time"
 
 	"github.com/drone/go-scm/scm"
+	"github.com/drone/go-scm/scm/transport/oauth2"
 	"github.com/harness/harness-core/commons/go/lib/utils"
 	"github.com/harness/harness-core/product/ci/scm/converter"
 	"github.com/harness/harness-core/product/ci/scm/gitclient"
 	pb "github.com/harness/harness-core/product/ci/scm/proto"
 	"go.uber.org/zap"
 )
+
+func RefreshToken(ctx context.Context, request *pb.RefreshTokenRequest, log *zap.SugaredLogger) (out *pb.RefreshTokenResponse, err error) {
+	log.Infow("RefreshToken starting:", request.Endpoint, "ClientID:" , request.ClientID)
+
+	before := &scm.Token{
+		Refresh: request.RefreshToken,
+	}
+
+	r := oauth2.Refresher{
+		ClientID:     request.ClientID,
+		ClientSecret: request.ClientSecret,
+		Endpoint:     request.Endpoint,
+		Source:       oauth2.StaticTokenSource(before),
+	}
+
+	after, err := r.Token(ctx)
+
+	if err != nil {
+		log.Errorw("RefreshToken failure:", request.Endpoint, "Error:", err)
+		return nil, err
+	}
+
+	if after == nil {
+		log.Errorw("RefreshToken failure result:", request.Endpoint)
+		return nil, err
+	}
+
+	out = &pb.RefreshTokenResponse{
+		 AccessToken: after.Token,
+		 RefreshToken: after.Refresh,
+	}
+
+	return out ,err
+}
 
 func CreatePR(ctx context.Context, request *pb.CreatePRRequest, log *zap.SugaredLogger) (out *pb.CreatePRResponse, err error) {
 	start := time.Now()
@@ -299,7 +334,7 @@ func FindCommit(ctx context.Context, request *pb.FindCommitRequest, log *zap.Sug
 	return out, nil
 }
 
-func ListBranches(ctx context.Context, request *pb.ListBranchesRequest, log *zap.SugaredLogger) (out *pb.ListBranchesResponse, err error) {
+func ListBranches(ctx context.Context, request *pb.ListBranchesRequest, log *zap.SugaredLogger) (*pb.ListBranchesResponse, error) {
 	start := time.Now()
 	log.Infow("ListBranches starting", "slug", request.GetSlug())
 
@@ -316,24 +351,98 @@ func ListBranches(ctx context.Context, request *pb.ListBranchesRequest, log *zap
 			return nil, err
 		}
 		// this is an error from the git provider, e.g. authentication.
-		out = &pb.ListBranchesResponse{
+		out := &pb.ListBranchesResponse{
 			Status: int32(response.Status),
 			Error:  err.Error(),
 		}
 		return out, nil
 	}
+
 	log.Infow("ListBranches success", "slug", request.GetSlug(), "elapsed_time_ms", utils.TimeSince(start))
 	var branches []string
 	for _, v := range branchesContent {
 		branches = append(branches, v.Name)
 	}
 
-	out = &pb.ListBranchesResponse{
+	out := &pb.ListBranchesResponse{
 		Branches: branches,
 		Pagination: &pb.PageResponse{
 			Next: int32(response.Page.Next),
 		},
 	}
+	return out, nil
+}
+
+func ListBranchesWithDefault(ctx context.Context, request *pb.ListBranchesWithDefaultRequest, log *zap.SugaredLogger) (*pb.ListBranchesWithDefaultResponse, error) {
+	start := time.Now()
+	log.Infow("ListBranchesWithDefault starting", "slug", request.GetSlug())
+
+	client, err := gitclient.GetGitClient(*request.GetProvider(), log)
+	if err != nil {
+		log.Errorw("ListBranchesWithDefault failure", "bad provider", gitclient.GetProvider(*request.GetProvider()), "slug", request.GetSlug(), "elapsed_time_ms", utils.TimeSince(start), zap.Error(err))
+		return nil, err
+	}
+
+	branchesContent, response, err := client.Git.ListBranches(ctx, request.GetSlug(), scm.ListOptions{Page: int(request.GetPagination().GetPage())})
+	if err != nil {
+		// this is an error from the git provider, e.g. authentication.
+		log.Errorw("ListBranchesWithDefault failure", "provider", gitclient.GetProvider(*request.GetProvider()), "slug", request.GetSlug(), "elapsed_time_ms", utils.TimeSince(start), zap.Error(err))
+		if response == nil {
+			return nil, err
+		}
+		out := &pb.ListBranchesWithDefaultResponse{
+			Status: int32(response.Status),
+			Error:  err.Error(),
+		}
+		return out, nil
+	}
+
+	getUserRepoRequest := &pb.GetUserRepoRequest{
+		Slug:     request.GetSlug(),
+		Provider: request.GetProvider(),
+	}
+
+	var branches []string
+	for _, v := range branchesContent {
+		branches = append(branches, v.Name)
+	}
+
+	if len(branches) == 0 && int(request.GetPagination().GetPage()) == 1 {
+		out := &pb.ListBranchesWithDefaultResponse{
+			Branches: branches,
+			Pagination: &pb.PageResponse{
+				Next: int32(response.Page.Next),
+			},
+		}
+		return out, nil
+	}
+
+	log.Infow("ListBranches API ran successfully", "slug", request.GetSlug(), "elapsed_time_ms", utils.TimeSince(start))
+	userRepoResponse, err := GetUserRepo(ctx, getUserRepoRequest, log)
+
+	if err != nil {
+		// this is an error from the git provider, e.g. authentication.
+		log.Errorw("List Default Branch V2 failure", "provider", gitclient.GetProvider(*request.GetProvider()), "slug", request.GetSlug(), "elapsed_time_ms", utils.TimeSince(start), zap.Error(err))
+		if response == nil {
+			return nil, err
+		}
+		// this is an error from the git provider, e.g. authentication.
+		out := &pb.ListBranchesWithDefaultResponse{
+			Status: userRepoResponse.GetStatus(),
+			Error:  userRepoResponse.GetError(),
+		}
+		return out, nil
+	}
+
+	log.Infow("ListRepo success", "slug", request.GetSlug(), "elapsed_time_ms", utils.TimeSince(start))
+	out := &pb.ListBranchesWithDefaultResponse{
+		Branches:      branches,
+		DefaultBranch: userRepoResponse.GetRepo().GetBranch(),
+		Pagination: &pb.PageResponse{
+			Next: int32(response.Page.Next),
+		},
+	}
+	log.Infow("ListBranchesWithDefault success", "slug", request.GetSlug(), "elapsed_time_ms", utils.TimeSince(start))
 	return out, nil
 }
 
@@ -434,30 +543,86 @@ func GetUserRepos(ctx context.Context, request *pb.GetUserReposRequest, log *zap
 		log.Errorw("GetUserRepos failure", "bad provider", gitclient.GetProvider(*request.GetProvider()), "elapsed_time_ms", utils.TimeSince(start), zap.Error(err))
 		return nil, err
 	}
+	paginatedCall := !request.GetFetchAllRepos()
 
-	repoList, response, err := client.Repositories.List(ctx, scm.ListOptions{Page: int(request.GetPagination().GetPage())})
+	if paginatedCall {
+		repoList, response, err := client.Repositories.List(ctx, scm.ListOptions{Page: int(request.GetPagination().GetPage())})
+		if err != nil {
+			log.Errorw("GetUserRepos failure", "provider", gitclient.GetProvider(*request.GetProvider()), "elapsed_time_ms", utils.TimeSince(start), zap.Error(err))
+			// this is a hard error with no response
+			if response == nil {
+				return nil, err
+			}
 
+			out = &pb.GetUserReposResponse{
+				Status: int32(response.Status),
+				Error:  err.Error(),
+			}
+			return out, nil
+		}
+		log.Infow("GetUserRepos success", "elapsed_time_ms", utils.TimeSince(start))
+
+		out = &pb.GetUserReposResponse{
+			Status: int32(response.Status),
+			Repos:  convertRepoList(repoList),
+			Pagination: &pb.PageResponse{
+				Next: int32(response.Page.Next),
+			},
+		}
+		return out, nil
+	} else {
+		// TODO as part of error plan improvement change the
+		// Repos function to return the status code as well
+		repoList, err := Repos(ctx, client, log)
+		if err != nil {
+			log.Infow("GetAllUserRepos failed", err)
+			return nil, err
+		}
+
+		log.Infow("GetAllUserRepos success", "elapsed_time_ms", utils.TimeSince(start), "response", len(repoList))
+		out = &pb.GetUserReposResponse{
+			Status:     int32(200),
+			Repos:      convertAndMiniseRepoList(repoList),
+			Pagination: &pb.PageResponse{},
+		}
+		return out, nil
+	}
+}
+
+func GetUserRepo(ctx context.Context, request *pb.GetUserRepoRequest, log *zap.SugaredLogger) (out *pb.GetUserRepoResponse, err error) {
+	start := time.Now()
+	log.Infow("GetUserRepos starting")
+
+	client, err := gitclient.GetGitClient(*request.GetProvider(), log)
 	if err != nil {
-		log.Errorw("GetUserRepos failure", "provider", gitclient.GetProvider(*request.GetProvider()), "elapsed_time_ms", utils.TimeSince(start), zap.Error(err))
+		log.Errorw("GetUserRepo failure", "bad provider", gitclient.GetProvider(*request.GetProvider()), "elapsed_time_ms", utils.TimeSince(start), zap.Error(err))
+		return nil, err
+	}
+
+	repo, response, err := client.Repositories.Find(ctx, request.GetSlug())
+	if err != nil {
+		log.Errorw("GetUserRepo failure", "provider", gitclient.GetProvider(*request.GetProvider()), "elapsed_time_ms", utils.TimeSince(start), zap.Error(err))
 		// this is a hard error with no response
 		if response == nil {
 			return nil, err
 		}
 
-		out = &pb.GetUserReposResponse{
+		out = &pb.GetUserRepoResponse{
 			Status: int32(response.Status),
 			Error:  err.Error(),
 		}
 		return out, nil
 	}
-	log.Infow("GetUserRepos success", "elapsed_time_ms", utils.TimeSince(start))
 
-	out = &pb.GetUserReposResponse{
+	repository, err := converter.ConvertRepo(repo)
+	if err != nil {
+		log.Errorw("GetUserRepo convert repo failure", "provider", gitclient.GetProvider(*request.GetProvider()), "slug", request.GetSlug(), "elapsed_time_ms", utils.TimeSince(start), zap.Error(err))
+		return nil, err
+	}
+	log.Infow("GetUserRepo success", "elapsed_time_ms", utils.TimeSince(start))
+	out = &pb.GetUserRepoResponse{
 		Status: int32(response.Status),
-		Repos:  convertRepoList(repoList),
-		Pagination: &pb.PageResponse{
-			Next: int32(response.Page.Next),
-		},
+		Repo:   repository,
 	}
 	return out, nil
 }
@@ -465,11 +630,12 @@ func GetUserRepos(ctx context.Context, request *pb.GetUserReposRequest, log *zap
 func GetLatestCommitOnFile(ctx context.Context, request *pb.GetLatestCommitOnFileRequest, log *zap.SugaredLogger) (out *pb.GetLatestCommitOnFileResponse, err error) {
 	// For Bitbucket, we also get commits for a non-existent file if it had been created before (deleted now)
 	response, err := ListCommits(ctx, &pb.ListCommitsRequest{Provider: request.Provider, Slug: request.Slug, Type: &pb.ListCommitsRequest_Branch{Branch: request.Branch}, FilePath: request.FilePath}, log)
+	log.Infow("GetLatestCommitOnFile", "response", response, "error", err)
 	if err != nil {
 		return &pb.GetLatestCommitOnFileResponse{
 			CommitId: "",
 			Error:    err.Error(),
-		}, err
+		}, nil
 	}
 
 	if response.CommitIds != nil && len(response.CommitIds) != 0 {
@@ -506,6 +672,14 @@ func convertRepoList(from []*scm.Repository) (to []*pb.Repository) {
 	return to
 }
 
+func convertAndMiniseRepoList(from []*scm.Repository) (to []*pb.Repository) {
+	for _, v := range from {
+		convertedRepository, _ := converter.ConvertsAndMinimiseRepo(v)
+		to = append(to, convertedRepository)
+	}
+	return to
+}
+
 func convertChange(from *scm.Change) *pb.PRFile {
 	return &pb.PRFile{
 		Path:         from.Path,
@@ -514,4 +688,27 @@ func convertChange(from *scm.Change) *pb.PRFile {
 		Renamed:      from.Renamed,
 		PrevFilePath: from.PrevFilePath,
 	}
+}
+
+// Repos returns the full repository list, traversing and
+// combining paginated responses if necessary.
+func Repos(ctx context.Context, client *scm.Client, log *zap.SugaredLogger) ([]*scm.Repository, error) {
+	list := []*scm.Repository{}
+	opts := scm.ListOptions{Size: 100}
+	for {
+		result, meta, err := client.Repositories.List(ctx, opts)
+		if err != nil {
+			return nil, err
+		}
+		if result != nil {
+			list = append(list, result...)
+		}
+		opts.Page = meta.Page.Next
+		opts.URL = meta.Page.NextURL
+
+		if opts.Page == 0 && opts.URL == "" {
+			break
+		}
+	}
+	return list, nil
 }

@@ -173,11 +173,7 @@ func (r *runTask) execute(ctx context.Context, retryCount int32) (map[string]str
 }
 
 func (r *runTask) getScript(ctx context.Context, outputVarFile string) (string, error) {
-	outputVarCmd := ""
-	for _, o := range r.envVarOutputs {
-		outputVarCmd += fmt.Sprintf("\necho %s $%s >> %s", o, o, outputVarFile)
-	}
-
+	outputVarCmd := r.getOutputVarCmd(r.envVarOutputs, outputVarFile)
 	resolvedCmd, err := resolveExprInCmd(r.command)
 	if err != nil {
 		return "", err
@@ -214,6 +210,31 @@ func (r *runTask) getEarlyExitCommand() (string, error) {
 		return "$ErrorActionPreference = 'Stop' \n", nil
 	}
 	return "", fmt.Errorf("Unknown shell type: %s", r.shellType)
+}
+
+func (r *runTask) getOutputVarCmd(outputVars []string, outputFile string) string {
+	isPsh := r.isPowershell()
+
+	cmd := ""
+	if isPsh {
+		cmd += fmt.Sprintf("\nNew-Item %s", outputFile)
+	}
+	for _, o := range outputVars {
+		if isPsh {
+			cmd += fmt.Sprintf("\n$val = \"%s $Env:%s\" \nAdd-Content -Path %s -Value $val", o, o, outputFile)
+		} else {
+			cmd += fmt.Sprintf("\necho \"%s $%s\" >> %s", o, o, outputFile)
+		}
+	}
+
+	return cmd
+}
+
+func (r *runTask) isPowershell() bool {
+	if r.shellType == pb.ShellType_POWERSHELL || r.shellType == pb.ShellType_PWSH {
+		return true
+	}
+	return false
 }
 
 func logCommandExecErr(log *zap.SugaredLogger, errMsg, stepID, args string, retryCount int32, startTime time.Time, err error) {

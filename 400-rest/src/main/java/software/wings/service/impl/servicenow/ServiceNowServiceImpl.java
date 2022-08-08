@@ -30,7 +30,10 @@ import software.wings.beans.SettingAttribute;
 import software.wings.beans.SyncTaskContext;
 import software.wings.beans.approval.ApprovalPollingJobEntity;
 import software.wings.beans.approval.ServiceNowApprovalParams;
+import software.wings.beans.servicenow.ServiceNowFieldType;
+import software.wings.beans.servicenow.ServiceNowMetaDTO;
 import software.wings.beans.servicenow.ServiceNowTaskParameters;
+import software.wings.beans.servicenow.ServiceNowTicketType;
 import software.wings.delegatetasks.DelegateProxyFactory;
 import software.wings.service.intfc.SettingsService;
 import software.wings.service.intfc.StateExecutionService;
@@ -41,13 +44,8 @@ import software.wings.service.intfc.servicenow.ServiceNowService;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import lombok.Builder;
-import lombok.Data;
-import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.mongodb.morphia.annotations.Transient;
@@ -66,35 +64,6 @@ public class ServiceNowServiceImpl implements ServiceNowService {
 
   @Inject protected DelegateProxyFactory delegateProxyFactory;
   @Inject SettingsService settingService;
-
-  public enum ServiceNowTicketType {
-    INCIDENT("Incident"),
-    PROBLEM("Problem"),
-    CHANGE_REQUEST("Change"),
-    CHANGE_TASK("Change Task");
-    @Getter private String displayName;
-    ServiceNowTicketType(String s) {
-      displayName = s;
-    }
-  }
-
-  public enum ServiceNowFieldType {
-    DATE_TIME(Arrays.asList("glide_date_time", "due_date", "glide_date", "glide_time")),
-    INTEGER(Collections.singletonList("integer")),
-    BOOLEAN(Collections.singletonList("boolean")),
-    STRING(Collections.singletonList("string"));
-    @Getter private List<String> snowInternalTypes;
-    ServiceNowFieldType(List<String> types) {
-      snowInternalTypes = types;
-    }
-  }
-
-  @Data
-  @Builder
-  public static class ServiceNowMetaDTO {
-    private String id;
-    private String displayName;
-  }
 
   @Override
   public void validateCredential(SettingAttribute settingAttribute) {

@@ -138,6 +138,16 @@ public class PhaseStepSubWorkflowTest extends WingsBaseTest {
 
     verify(infrastructureDefinitionService, times(1))
         .renderAndSaveInfraMapping(APP_ID, SERVICE_ID, INFRA_DEFINITION_ID, executionContext);
+    verify(phaseStepSubWorkflow, times(1)).updateInfraMappingDependencies(any(), any(), anyString(), any());
+
+    // In case inframapping failed to be created.
+    doReturn(null)
+        .when(infrastructureDefinitionService)
+        .renderAndSaveInfraMapping(APP_ID, SERVICE_ID, INFRA_DEFINITION_ID, executionContext);
+    phaseStepSubWorkflow.populateInfraMapping(executionContext);
+    verify(infrastructureDefinitionService, times(2))
+        .renderAndSaveInfraMapping(APP_ID, SERVICE_ID, INFRA_DEFINITION_ID, executionContext);
+    verify(phaseStepSubWorkflow, times(1)).updateInfraMappingDependencies(any(), any(), anyString(), any());
   }
 
   @Test

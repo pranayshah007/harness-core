@@ -16,4 +16,5 @@ import java.util.List;
 @OwnedBy(HarnessTeam.DX)
 public interface InstanceSyncPerpetualTaskResponse extends DelegateTaskNotifyResponseData {
   List<ServerInstanceInfo> getServerInstanceDetails();
+  String getDeploymentType();
 }

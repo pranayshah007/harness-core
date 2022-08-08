@@ -11,7 +11,6 @@ import io.harness.cvng.beans.change.ChangeSourceType;
 import io.harness.cvng.core.beans.sidekick.RetryChangeSourceHandleDeleteSideKickData;
 import io.harness.cvng.core.services.api.SideKickExecutor;
 import io.harness.cvng.core.services.impl.ChangeSourceUpdateHandler;
-import io.harness.persistence.HPersistence;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -23,7 +22,6 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class RetryChangeSourceHandleDeleteSideKickExecutor
     implements SideKickExecutor<RetryChangeSourceHandleDeleteSideKickData> {
-  @Inject private HPersistence hPersistence;
   @Inject private Map<ChangeSourceType, ChangeSourceUpdateHandler> changeSourceUpdateHandlerMap;
   @Inject private Clock clock;
 

@@ -50,7 +50,7 @@ public class BitbucketEntityToDTOTest extends CategoryTest {
   @Owner(developers = ABHINAV)
   @Category(UnitTests.class)
   public void testToConnectorEntity_0() throws IOException {
-    final String url = "url";
+    final String url = "https://bitbucket.org/harness";
     final String passwordRef = "passwordRef";
     final String username = "username";
     final String privateKeyRef = "privateKeyRef";

@@ -10,6 +10,7 @@ package io.harness.cvng.servicelevelobjective.services.impl;
 import static io.harness.cvng.servicelevelobjective.entities.SLIRecord.SLIState.BAD;
 import static io.harness.cvng.servicelevelobjective.entities.SLIRecord.SLIState.GOOD;
 import static io.harness.rule.OwnerRule.ABHIJITH;
+import static io.harness.rule.OwnerRule.ARPITJ;
 import static io.harness.rule.OwnerRule.KAMAL;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -26,6 +27,7 @@ import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceServic
 import io.harness.cvng.servicelevelobjective.beans.ErrorBudgetRisk;
 import io.harness.cvng.servicelevelobjective.beans.SLOCalenderType;
 import io.harness.cvng.servicelevelobjective.beans.SLODashboardApiFilter;
+import io.harness.cvng.servicelevelobjective.beans.SLODashboardDetail;
 import io.harness.cvng.servicelevelobjective.beans.SLODashboardWidget;
 import io.harness.cvng.servicelevelobjective.beans.SLODashboardWidget.Point;
 import io.harness.cvng.servicelevelobjective.beans.SLOTarget;
@@ -88,7 +90,7 @@ public class SLODashboardServiceImplTest extends CvNextGenTestBase {
   @Test
   @Owner(developers = KAMAL)
   @Category(UnitTests.class)
-  public void testGetSloDashboardWidgets_withSLOs() {
+  public void testGetSloDashboardWidgets_withNoData() {
     String monitoredServiceIdentifier = "monitoredServiceIdentifier";
     MonitoredServiceDTO monitoredServiceDTO =
         builderFactory.monitoredServiceDTOBuilder().identifier(monitoredServiceIdentifier).build();
@@ -126,7 +128,8 @@ public class SLODashboardServiceImplTest extends CvNextGenTestBase {
     assertThat(sloDashboardWidget.getSloTargetPercentage()).isCloseTo(80, offset(.0001));
     assertThat(sloDashboardWidget.getErrorBudgetRemainingPercentage()).isCloseTo(100, offset(0.0001));
     assertThat(sloDashboardWidget.getErrorBudgetRisk()).isEqualTo(ErrorBudgetRisk.HEALTHY);
-    assertThat(sloDashboardWidget.isRecalculatingSLI()).isFalse();
+    assertThat(sloDashboardWidget.isRecalculatingSLI()).isTrue();
+    assertThat(sloDashboardWidget.isCalculatingSLI()).isTrue();
     assertThat(sloDashboardWidget.getTimeRemainingDays()).isEqualTo(0);
     assertThat(sloDashboardWidget.getServiceIdentifier()).isEqualTo(monitoredServiceDTO.getServiceRef());
     assertThat(sloDashboardWidget.getEnvironmentIdentifier()).isEqualTo(monitoredServiceDTO.getEnvironmentRef());
@@ -187,12 +190,12 @@ public class SLODashboardServiceImplTest extends CvNextGenTestBase {
     sloErrorBudgetResetService.resetErrorBudget(builderFactory.getProjectParams(),
         builderFactory.getSLOErrorBudgetResetDTOBuilder()
             .serviceLevelObjectiveIdentifier(serviceLevelObjective.getIdentifier())
-            .errorBudgetIncrementPercentage(100.0)
+            .errorBudgetIncrementMinutes(100)
             .build());
     sloErrorBudgetResetService.resetErrorBudget(builderFactory.getProjectParams(),
         builderFactory.getSLOErrorBudgetResetDTOBuilder()
             .serviceLevelObjectiveIdentifier(serviceLevelObjective.getIdentifier())
-            .errorBudgetIncrementPercentage(50.0)
+            .errorBudgetIncrementMinutes(50)
             .build());
     PageResponse<SLODashboardWidget> pageResponse =
         sloDashboardService.getSloDashboardWidgets(builderFactory.getProjectParams(),
@@ -204,7 +207,7 @@ public class SLODashboardServiceImplTest extends CvNextGenTestBase {
     SLODashboardWidget sloDashboardWidget = sloDashboardWidgets.get(0);
 
     assertThat(sloDashboardWidget.getErrorBudgetRemaining())
-        .isEqualTo(25920); // 30 days - 30*24*60 - 20% -> 8640 -> 8640 + 8640*1 -> 17280  -> 17280 + 17280*0.5-> 25920
+        .isEqualTo(8790); // 30 days - 30*24*60 - 20% -> 8640 -> 8640 + 100 -> 8740  -> 8740 + 50-> 8790
     assertThat(sloDashboardWidget.getErrorBudgetRemainingPercentage()).isCloseTo(100, offset(0.0001));
   }
 
@@ -263,6 +266,29 @@ public class SLODashboardServiceImplTest extends CvNextGenTestBase {
     assertThat(sloDashboardWidget.getEnvironmentIdentifier()).isEqualTo(monitoredServiceDTO.getEnvironmentRef());
     assertThat(sloDashboardWidget.getServiceName()).isEqualTo("Mocked service name");
     assertThat(sloDashboardWidget.getEnvironmentName()).isEqualTo("Mocked env name");
+  }
+
+  @Test
+  @Owner(developers = ARPITJ)
+  @Category(UnitTests.class)
+  public void testGetSloDashboardDetail() {
+    String monitoredServiceIdentifier = "monitoredServiceIdentifier";
+    MonitoredServiceDTO monitoredServiceDTO =
+        builderFactory.monitoredServiceDTOBuilder().identifier(monitoredServiceIdentifier).build();
+    HealthSource healthSource = monitoredServiceDTO.getSources().getHealthSources().iterator().next();
+    monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
+    ServiceLevelObjectiveDTO serviceLevelObjective = builderFactory.getServiceLevelObjectiveDTOBuilder()
+                                                         .monitoredServiceRef(monitoredServiceIdentifier)
+                                                         .healthSourceRef(healthSource.getIdentifier())
+                                                         .build();
+
+    serviceLevelObjectiveService.create(builderFactory.getProjectParams(), serviceLevelObjective);
+
+    SLODashboardDetail sloDashboardDetail = sloDashboardService.getSloDashboardDetail(
+        builderFactory.getProjectParams(), serviceLevelObjective.getIdentifier(), null, null);
+    assertThat(sloDashboardDetail.getDescription()).isEqualTo("slo description");
+    assertThat(sloDashboardDetail.getSloDashboardWidget().getSloIdentifier())
+        .isEqualTo(serviceLevelObjective.getIdentifier());
   }
 
   private void createData(Instant startTime, List<SLIRecord.SLIState> sliStates, String sliId) {

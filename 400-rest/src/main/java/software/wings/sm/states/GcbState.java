@@ -31,17 +31,15 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.Cd1SetupFields;
 import io.harness.beans.DelegateTask;
-import io.harness.beans.ExecutionStatus;
 import io.harness.beans.SweepingOutputInstance;
 import io.harness.context.ContextElementType;
 import io.harness.data.structure.CollectionUtils;
 import io.harness.data.structure.UUIDGenerator;
-import io.harness.delegate.beans.DelegateMetaInfo;
 import io.harness.delegate.beans.DelegateResponseData;
-import io.harness.delegate.beans.DelegateTaskNotifyResponseData;
 import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.delegate.beans.TaskData;
 import io.harness.exception.UnsupportedOperationException;
+import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.serializer.KryoSerializer;
 import io.harness.tasks.ResponseData;
 
@@ -61,7 +59,7 @@ import software.wings.beans.command.GcbTaskParams;
 import software.wings.beans.command.GcbTaskParams.GcbTaskType;
 import software.wings.beans.template.TemplateUtils;
 import software.wings.common.TemplateExpressionProcessor;
-import software.wings.helpers.ext.gcb.models.GcbBuildDetails;
+import software.wings.delegatetasks.GcbDelegateResponse;
 import software.wings.helpers.ext.gcb.models.GcbBuildStatus;
 import software.wings.service.intfc.ActivityService;
 import software.wings.service.intfc.DelegateService;
@@ -76,6 +74,7 @@ import software.wings.sm.ExecutionResponse.ExecutionResponseBuilder;
 import software.wings.sm.State;
 import software.wings.sm.StateType;
 import software.wings.sm.WorkflowStandardParams;
+import software.wings.sm.WorkflowStandardParamsExtensionService;
 import software.wings.sm.states.gcbconfigs.GcbOptions;
 import software.wings.sm.states.mixin.SweepingOutputStateMixin;
 import software.wings.stencils.DefaultValue;
@@ -83,16 +82,16 @@ import software.wings.stencils.DefaultValue;
 import com.github.reinert.jjschema.Attributes;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -120,6 +119,7 @@ public class GcbState extends State implements SweepingOutputStateMixin {
   @Transient @Inject private SettingsService settingsService;
   @Transient @Inject KryoSerializer kryoSerializer;
   @Transient @Inject InfrastructureMappingService infrastructureMappingService;
+  @Transient @Inject private WorkflowStandardParamsExtensionService workflowStandardParamsExtensionService;
 
   public GcbState(String name) {
     super(name, StateType.GCB.name());
@@ -203,19 +203,26 @@ public class GcbState extends State implements SweepingOutputStateMixin {
         ? context.getGlobalSettingValue(context.getAccountId(), gcbOptions.getRepositorySpec().getGitConfigId())
         : null;
 
+    List<EncryptedDataDetail> gitConfigEncryptionDetails = new ArrayList<>();
+    if (gitConfig != null) {
+      gitConfigEncryptionDetails = secretManager.getEncryptionDetails(gitConfig);
+    }
     if (gitConfig != null && gitConfig.getUrlType() == GitConfig.UrlType.ACCOUNT) {
       String repoName = gcbOptions.getRepositorySpec().getRepoName();
       gitConfig.setRepoName(repoName);
       gitConfig.setRepoUrl(fetchCompleteGitRepoUrl(gitConfig, repoName));
     }
-
+    List<EncryptedDataDetail> gcpEncryptionDetails =
+        secretManager.getEncryptionDetails(gcpConfig, context.getAppId(), context.getWorkflowExecutionId());
+    List<EncryptedDataDetail> allEncryptionDetails = Stream.of(gcpEncryptionDetails, gitConfigEncryptionDetails)
+                                                         .flatMap(Collection::stream)
+                                                         .collect(Collectors.toList());
     GcbTaskParams gcbTaskParams = GcbTaskParams.builder()
                                       .gcpConfig(gcpConfig)
                                       .type(START)
                                       .gcbOptions(gcbOptions)
                                       .substitutions(substitutions)
-                                      .encryptedDataDetails(secretManager.getEncryptionDetails(
-                                          gcpConfig, context.getAppId(), context.getWorkflowExecutionId()))
+                                      .encryptedDataDetails(allEncryptionDetails)
                                       .activityId(activityId)
                                       .unitName(GCB_LOGS)
                                       .gitConfig(gitConfig)
@@ -244,7 +251,7 @@ public class GcbState extends State implements SweepingOutputStateMixin {
     final Application application = context.fetchRequiredApp();
     final WorkflowStandardParams workflowStandardParams = context.getContextElement(ContextElementType.STANDARD);
     String envId = Optional.ofNullable(workflowStandardParams)
-                       .map(WorkflowStandardParams::getEnv)
+                       .map(standardParams -> this.workflowStandardParamsExtensionService.getEnv(standardParams))
                        .map(Environment::getUuid)
                        .orElse(null);
     String infrastructureMappingId = context.fetchInfraMappingId();
@@ -302,7 +309,7 @@ public class GcbState extends State implements SweepingOutputStateMixin {
     ExecutionResponseBuilder responseBuilder =
         ExecutionResponse.builder().executionStatus(delegateResponse.getStatus()).stateExecutionData(gcbExecutionData);
     if (delegateResponse.getErrorMsg() != null) {
-      responseBuilder.errorMessage(delegateResponse.errorMsg);
+      responseBuilder.errorMessage(delegateResponse.getErrorMsg());
     }
     return responseBuilder.build();
   }
@@ -404,37 +411,6 @@ public class GcbState extends State implements SweepingOutputStateMixin {
   @Override
   public KryoSerializer getKryoSerializer() {
     return kryoSerializer;
-  }
-
-  @Data
-  @RequiredArgsConstructor
-  @EqualsAndHashCode(callSuper = false)
-  public static final class GcbDelegateResponse implements DelegateTaskNotifyResponseData {
-    @NotNull private final ExecutionStatus status;
-    @Nullable private final GcbBuildDetails build;
-    @NotNull private final GcbTaskParams params;
-    @Nullable private DelegateMetaInfo delegateMetaInfo;
-    @Nullable private final String errorMsg;
-    @Nullable private List<String> triggers;
-    private final boolean interrupted;
-
-    @NotNull
-    public static GcbDelegateResponse gcbDelegateResponseOf(
-        @NotNull final GcbTaskParams params, @NotNull final GcbBuildDetails build) {
-      return new GcbDelegateResponse(build.getStatus().getExecutionStatus(), build, params, null, false);
-    }
-
-    public static GcbDelegateResponse failedGcbTaskResponse(@NotNull final GcbTaskParams params, String errorMsg) {
-      return new GcbDelegateResponse(FAILED, null, params, errorMsg, false);
-    }
-
-    public static GcbDelegateResponse interruptedGcbTask(@NotNull final GcbTaskParams params) {
-      return new GcbDelegateResponse(DISCONTINUING, null, params, null, true);
-    }
-
-    public boolean isWorking() {
-      return build != null && build.isWorking();
-    }
   }
 
   @VisibleForTesting

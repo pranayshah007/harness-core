@@ -9,8 +9,9 @@ package software.wings.resources;
 
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.delegate.beans.DelegateType.DOCKER;
+import static io.harness.delegate.utils.RbacConstants.DELEGATE_EDIT_PERMISSION;
+import static io.harness.delegate.utils.RbacConstants.DELEGATE_RESOURCE_TYPE;
 import static io.harness.rule.OwnerRule.BOJAN;
-import static io.harness.rule.OwnerRule.HANTANG;
 import static io.harness.rule.OwnerRule.MARKO;
 import static io.harness.rule.OwnerRule.PRAVEEN;
 import static io.harness.rule.OwnerRule.ROHITKARELIA;
@@ -30,7 +31,6 @@ import static javax.ws.rs.client.Entity.entity;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyList;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.atLeastOnce;
@@ -40,6 +40,8 @@ import static org.mockito.Mockito.when;
 import static org.mongodb.morphia.mapping.Mapper.ID_KEY;
 
 import io.harness.CategoryTest;
+import io.harness.accesscontrol.acl.api.Resource;
+import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.BreakDependencyOn;
 import io.harness.annotations.dev.HarnessModule;
@@ -56,6 +58,7 @@ import io.harness.delegate.beans.DelegateGroupListing;
 import io.harness.delegate.beans.DelegateSetupDetails;
 import io.harness.delegate.beans.DelegateSize;
 import io.harness.delegate.beans.DelegateSizeDetails;
+import io.harness.delegate.beans.DelegateTags;
 import io.harness.delegate.beans.DelegateType;
 import io.harness.delegate.filter.DelegateFilterPropertiesDTO;
 import io.harness.delegate.resources.DelegateSetupResourceV2;
@@ -70,7 +73,6 @@ import software.wings.beans.DelegateStatus;
 import software.wings.exception.WingsExceptionMapper;
 import software.wings.helpers.ext.url.SubdomainUrlHelperIntfc;
 import software.wings.resources.DelegateSetupResource.DelegateScopes;
-import software.wings.resources.DelegateSetupResource.DelegateTags;
 import software.wings.service.impl.DelegateServiceImpl;
 import software.wings.service.intfc.DelegateScopeService;
 import software.wings.service.intfc.DelegateService;
@@ -82,7 +84,6 @@ import java.io.FileWriter;
 import java.io.InputStream;
 import java.io.OutputStreamWriter;
 import java.nio.charset.Charset;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -94,13 +95,13 @@ import javax.ws.rs.core.Response;
 import org.apache.commons.io.IOUtils;
 import org.assertj.core.util.Lists;
 import org.glassfish.hk2.utilities.binding.AbstractBinder;
+import org.glassfish.jersey.client.ClientProperties;
 import org.joda.time.DateTime;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
-import org.mockito.ArgumentCaptor;
 
 @OwnedBy(HarnessTeam.DEL)
 @TargetModule(HarnessModule._420_DELEGATE_SERVICE)
@@ -108,15 +109,18 @@ import org.mockito.ArgumentCaptor;
 @BreakDependencyOn("software.wings.service.intfc.DownloadTokenService")
 @BreakDependencyOn("software.wings.utils.ResourceTestRule")
 public class DelegateSetupResourceTest extends CategoryTest {
-  private static String accountId = "ACCOUNT_ID";
-  private static DelegateService delegateService = mock(DelegateService.class);
-  private static DelegateSetupService delegateSetupService = mock(DelegateSetupService.class);
-  private static HttpServletRequest httpServletRequest = mock(HttpServletRequest.class);
-  private static DelegateScopeService delegateScopeService = mock(DelegateScopeService.class);
-  private static DownloadTokenService downloadTokenService = mock(DownloadTokenService.class);
-  private static SubdomainUrlHelperIntfc subdomainUrlHelper = mock(SubdomainUrlHelperIntfc.class);
-  private static DelegateCache delegateCache = mock(DelegateCache.class);
-  private static AccessControlClient accessControlClient = mock(AccessControlClient.class);
+  private static final String MANAGER_URL = "http://manager.url";
+  private static final String VERIFICATION_URL = "null://null:0";
+  private static final String TOKEN_NAME = "dummyTokenName";
+
+  private static final DelegateService delegateService = mock(DelegateService.class);
+  private static final DelegateSetupService delegateSetupService = mock(DelegateSetupService.class);
+  private static final HttpServletRequest httpServletRequest = mock(HttpServletRequest.class);
+  private static final DelegateScopeService delegateScopeService = mock(DelegateScopeService.class);
+  private static final DownloadTokenService downloadTokenService = mock(DownloadTokenService.class);
+  private static final SubdomainUrlHelperIntfc subdomainUrlHelper = mock(SubdomainUrlHelperIntfc.class);
+  private static final DelegateCache delegateCache = mock(DelegateCache.class);
+  private static final AccessControlClient accessControlClient = mock(AccessControlClient.class);
 
   @Parameter public String apiUrl;
 
@@ -147,8 +151,8 @@ public class DelegateSetupResourceTest extends CategoryTest {
   @Category(UnitTests.class)
   public void shouldListDelegates() {
     PageResponse<Delegate> pageResponse = new PageResponse<>();
-    pageResponse.setResponse(asList(Delegate.builder().build()));
-    pageResponse.setTotal(1l);
+    pageResponse.setResponse(Collections.singletonList(Delegate.builder().build()));
+    pageResponse.setTotal(1L);
     when(delegateService.list(any(PageRequest.class))).thenReturn(pageResponse);
     RestResponse<PageResponse<Delegate>> restResponse =
         RESOURCES.client()
@@ -189,7 +193,7 @@ public class DelegateSetupResourceTest extends CategoryTest {
   @Category(UnitTests.class)
   public void shouldGetDelegateStatus() {
     when(delegateService.getDelegateStatus(any()))
-        .thenReturn(DelegateStatus.builder().publishedVersions(asList("1.0.0")).build());
+        .thenReturn(DelegateStatus.builder().publishedVersions(Collections.singletonList("1.0.0")).build());
     RestResponse<DelegateStatus> restResponse = RESOURCES.client()
                                                     .target("/setup/delegates/status?accountId=" + ACCOUNT_ID)
                                                     .request()
@@ -203,7 +207,7 @@ public class DelegateSetupResourceTest extends CategoryTest {
   @Category(UnitTests.class)
   public void shouldGetDelegateStatusWithScalingGroupsVersion() {
     when(delegateService.getDelegateStatusWithScalingGroups(any()))
-        .thenReturn(DelegateStatus.builder().publishedVersions(asList("1.0.0")).build());
+        .thenReturn(DelegateStatus.builder().publishedVersions(Collections.singletonList("1.0.0")).build());
     RestResponse<DelegateStatus> restResponse = RESOURCES.client()
                                                     .target("/setup/delegates/status2?accountId=" + ACCOUNT_ID)
                                                     .request()
@@ -217,7 +221,7 @@ public class DelegateSetupResourceTest extends CategoryTest {
   @Category(UnitTests.class)
   public void shouldGetDelegateStatusWithScalingGroupsDelegates() {
     List<DelegateStatus.DelegateInner> delegates =
-        Arrays.asList(DelegateStatus.DelegateInner.builder().delegateName("test1").build());
+        Collections.singletonList(DelegateStatus.DelegateInner.builder().delegateName("test1").build());
     when(delegateService.getDelegateStatusWithScalingGroups(any()))
         .thenReturn(DelegateStatus.builder().delegates(delegates).build());
     RestResponse<DelegateStatus> restResponse = RESOURCES.client()
@@ -232,10 +236,10 @@ public class DelegateSetupResourceTest extends CategoryTest {
   @Owner(developers = SANJA)
   @Category(UnitTests.class)
   public void shouldGetDelegateStatusWithScalingGroupsScalingGroups() {
-    List<DelegateStatus.DelegateInner> delegatesInScalingGroup = Arrays.asList(
+    List<DelegateStatus.DelegateInner> delegatesInScalingGroup = Collections.singletonList(
         DelegateStatus.DelegateInner.builder().delegateName("test2").delegateGroupName("scaling1").build());
-    List<DelegateScalingGroup> scalingGroups =
-        Arrays.asList(DelegateScalingGroup.builder().delegates(delegatesInScalingGroup).groupName("scaling1").build());
+    List<DelegateScalingGroup> scalingGroups = Collections.singletonList(
+        DelegateScalingGroup.builder().delegates(delegatesInScalingGroup).groupName("scaling1").build());
     when(delegateService.getDelegateStatusWithScalingGroups(any()))
         .thenReturn(DelegateStatus.builder().scalingGroups(scalingGroups).build());
     RestResponse<DelegateStatus> restResponse = RESOURCES.client()
@@ -304,8 +308,6 @@ public class DelegateSetupResourceTest extends CategoryTest {
   @Owner(developers = ROHITKARELIA)
   @Category(UnitTests.class)
   public void shouldGetLatestVersion() {
-    Delegate delegate = Delegate.builder().uuid(ID_KEY).build();
-
     when(delegateService.getLatestDelegateVersion(ACCOUNT_ID)).thenReturn("1.0.0");
     RestResponse<String> restResponse = RESOURCES.client()
                                             .target("/setup/delegates/latest?accountId=" + ACCOUNT_ID)
@@ -320,22 +322,21 @@ public class DelegateSetupResourceTest extends CategoryTest {
   @Owner(developers = ROHITKARELIA)
   @Category(UnitTests.class)
   public void shouldUpdateDelegate() {
-    Delegate delegate = Delegate.builder().uuid(ID_KEY).build();
+    final Delegate inputDelegate = Delegate.builder().delegateName(DELEGATE_NAME).build();
+    final Delegate updatedDelegate =
+        Delegate.builder().uuid(ID_KEY).accountId(ACCOUNT_ID).delegateName(DELEGATE_NAME).build();
 
-    when(delegateService.update(any(Delegate.class)))
-        .thenAnswer(invocation -> invocation.getArgumentAt(0, Delegate.class));
+    when(delegateService.update(updatedDelegate)).thenReturn(updatedDelegate);
+
     RestResponse<Delegate> restResponse =
         RESOURCES.client()
             .target("/setup/delegates/" + ID_KEY + "?accountId=" + ACCOUNT_ID)
             .request()
-            .put(entity(delegate, MediaType.APPLICATION_JSON), new GenericType<RestResponse<Delegate>>() {});
+            .put(entity(inputDelegate, MediaType.APPLICATION_JSON), new GenericType<RestResponse<Delegate>>() {});
 
-    ArgumentCaptor<Delegate> captor = ArgumentCaptor.forClass(Delegate.class);
-    verify(delegateService, atLeastOnce()).update(captor.capture());
-    Delegate captorValue = captor.getValue();
-    assertThat(captorValue.getAccountId()).isEqualTo(ACCOUNT_ID);
-    assertThat(captorValue.getUuid()).isEqualTo(ID_KEY);
-    Delegate resource = restResponse.getResource();
+    verify(delegateService).update(updatedDelegate);
+
+    final Delegate resource = restResponse.getResource();
     assertThat(resource.getAccountId()).isEqualTo(ACCOUNT_ID);
     assertThat(resource.getUuid()).isEqualTo(ID_KEY);
   }
@@ -353,7 +354,7 @@ public class DelegateSetupResourceTest extends CategoryTest {
                                             .delegateType(DelegateType.KUBERNETES)
                                             .build();
 
-    when(delegateService.validateKubernetesYaml(accountId, setupDetails)).thenReturn(setupDetails);
+    when(delegateService.validateKubernetesSetupDetails(accountId, setupDetails)).thenReturn(setupDetails);
     RestResponse<DelegateSetupDetails> restResponse =
         RESOURCES.client()
             .target("/setup/delegates/validate-kubernetes-yaml?accountId=" + accountId)
@@ -369,36 +370,38 @@ public class DelegateSetupResourceTest extends CategoryTest {
   @Owner(developers = MARKO)
   @Category(UnitTests.class)
   public void shouldGenerateKubernetesYaml() throws Exception {
-    String accountId = generateUuid();
-
-    File file = File.createTempFile("test", ".txt");
+    final File file = File.createTempFile("test", ".txt");
     try (OutputStreamWriter outputStreamWriter = new FileWriter(file)) {
-      IOUtils.write("Test", outputStreamWriter);
+      IOUtils.write("Test Data", outputStreamWriter);
     }
+    final DelegateSetupDetails setupDetails = DelegateSetupDetails.builder()
+                                                  .name("name")
+                                                  .description("desc")
+                                                  .size(DelegateSize.LARGE)
+                                                  .delegateConfigurationId("delConfigId")
+                                                  .delegateType(DelegateType.KUBERNETES)
+                                                  .build();
 
-    DelegateSetupDetails setupDetails = DelegateSetupDetails.builder()
-                                            .name("name")
-                                            .description("desc")
-                                            .size(DelegateSize.LARGE)
-                                            .delegateConfigurationId("delConfigId")
-                                            .delegateType(DelegateType.KUBERNETES)
-                                            .build();
-
+    when(subdomainUrlHelper.getManagerUrl(httpServletRequest, ACCOUNT_ID)).thenReturn(MANAGER_URL);
     when(delegateService.generateKubernetesYaml(
-             eq(accountId), eq(setupDetails), anyString(), anyString(), any(MediaType.class)))
+             ACCOUNT_ID, setupDetails, MANAGER_URL, VERIFICATION_URL, MediaType.APPLICATION_JSON_TYPE))
         .thenReturn(file);
-    Response restResponse = RESOURCES.client()
-                                .target("/setup/delegates/generate-kubernetes-yaml?accountId=" + accountId)
-                                .request()
-                                .post(entity(setupDetails, MediaType.APPLICATION_JSON), new GenericType<Response>() {});
 
-    verify(delegateService, atLeastOnce())
-        .generateKubernetesYaml(eq(accountId), eq(setupDetails), anyString(), anyString(), any(MediaType.class));
+    final Response restResponse =
+        RESOURCES.client()
+            .target("/setup/delegates/generate-kubernetes-yaml?accountId=" + ACCOUNT_ID
+                + "&fileFormat=" + MediaType.APPLICATION_JSON)
+            .request()
+            .post(entity(setupDetails, MediaType.APPLICATION_JSON), new GenericType<Response>() {});
+
+    verify(accessControlClient)
+        .checkForAccessOrThrow(ResourceScope.of(ACCOUNT_ID, null, null), Resource.of(DELEGATE_RESOURCE_TYPE, null),
+            DELEGATE_EDIT_PERMISSION);
 
     assertThat(restResponse.getHeaderString("Content-Disposition"))
         .isEqualTo("attachment; filename=" + DelegateServiceImpl.KUBERNETES_DELEGATE + ".tar.gz");
     assertThat(IOUtils.readLines((InputStream) restResponse.getEntity(), Charset.defaultCharset()).get(0))
-        .isEqualTo("Test");
+        .isEqualTo("Test Data");
   }
 
   @Test
@@ -458,16 +461,14 @@ public class DelegateSetupResourceTest extends CategoryTest {
   public void shouldUpdateTags() {
     Delegate delegate = Delegate.builder().accountId(ACCOUNT_ID).uuid(ID_KEY).build();
 
-    DelegateTags delegateTags = new DelegateTags();
-    delegateTags.setTags(asList("tag"));
+    DelegateTags delegateTags = new DelegateTags(Collections.singletonList("tag"));
 
     when(delegateCache.get(anyString(), anyString(), anyBoolean())).thenReturn(delegate);
 
-    RestResponse<Delegate> restResponse =
-        RESOURCES.client()
-            .target("/setup/delegates/" + ID_KEY + "/tags?accountId=" + ACCOUNT_ID)
-            .request()
-            .put(entity(delegateTags, MediaType.APPLICATION_JSON), new GenericType<RestResponse<Delegate>>() {});
+    RESOURCES.client()
+        .target("/setup/delegates/" + ID_KEY + "/tags?accountId=" + ACCOUNT_ID)
+        .request()
+        .put(entity(delegateTags, MediaType.APPLICATION_JSON), new GenericType<RestResponse<Delegate>>() {});
 
     verify(delegateService, atLeastOnce()).updateTags(delegate);
   }
@@ -484,11 +485,10 @@ public class DelegateSetupResourceTest extends CategoryTest {
 
     when(delegateCache.get(anyString(), anyString(), anyBoolean())).thenReturn(delegate);
 
-    RestResponse<Delegate> restResponse =
-        RESOURCES.client()
-            .target("/setup/delegates/" + ID_KEY + "/scopes?accountId=" + ACCOUNT_ID)
-            .request()
-            .put(entity(delegateScopes, MediaType.APPLICATION_JSON), new GenericType<RestResponse<Delegate>>() {});
+    RESOURCES.client()
+        .target("/setup/delegates/" + ID_KEY + "/scopes?accountId=" + ACCOUNT_ID)
+        .request()
+        .put(entity(delegateScopes, MediaType.APPLICATION_JSON), new GenericType<RestResponse<Delegate>>() {});
 
     verify(delegateService, atLeastOnce()).updateScopes(delegate);
   }
@@ -502,10 +502,10 @@ public class DelegateSetupResourceTest extends CategoryTest {
   @Owner(developers = ROHITKARELIA)
   @Category(UnitTests.class)
   public void shouldGetDelegateSelectors() {
-    RestResponse<Set<String>> restResponse = RESOURCES.client()
-                                                 .target("/setup/delegates/delegate-selectors?accountId=" + ACCOUNT_ID)
-                                                 .request()
-                                                 .get(new GenericType<RestResponse<Set<String>>>() {});
+    RESOURCES.client()
+        .target("/setup/delegates/delegate-selectors?accountId=" + ACCOUNT_ID)
+        .request()
+        .get(new GenericType<RestResponse<Set<String>>>() {});
 
     verify(delegateService, atLeastOnce()).getAllDelegateSelectors(ACCOUNT_ID);
   }
@@ -514,10 +514,10 @@ public class DelegateSetupResourceTest extends CategoryTest {
   @Owner(developers = ROHITKARELIA)
   @Category(UnitTests.class)
   public void shouldGetDelegateTags() {
-    RestResponse<Set<String>> restResponse = RESOURCES.client()
-                                                 .target("/setup/delegates/delegate-tags?accountId=" + ACCOUNT_ID)
-                                                 .request()
-                                                 .get(new GenericType<RestResponse<Set<String>>>() {});
+    RESOURCES.client()
+        .target("/setup/delegates/delegate-tags?accountId=" + ACCOUNT_ID)
+        .request()
+        .get(new GenericType<RestResponse<Set<String>>>() {});
 
     verify(delegateService, atLeastOnce()).getAllDelegateSelectors(ACCOUNT_ID);
   }
@@ -526,23 +526,21 @@ public class DelegateSetupResourceTest extends CategoryTest {
   @Owner(developers = ROHITKARELIA)
   @Category(UnitTests.class)
   public void shouldGetAvailableDelegateVersions() {
-    RestResponse<List<String>> restResponse =
-        RESOURCES.client()
-            .target("/setup/delegates/available-versions-for-verification?accountId=" + ACCOUNT_ID)
-            .request()
-            .get(new GenericType<RestResponse<List<String>>>() {});
+    RESOURCES.client()
+        .target("/setup/delegates/available-versions-for-verification?accountId=" + ACCOUNT_ID)
+        .request()
+        .get(new GenericType<RestResponse<List<String>>>() {});
     verify(delegateService, atLeastOnce()).getAvailableVersions(ACCOUNT_ID);
   }
 
   @Test
   @Owner(developers = ROHITKARELIA)
   @Category(UnitTests.class)
-  public void shouldGetkubernetesDelegateNames() {
-    RestResponse<List<String>> restResponse =
-        RESOURCES.client()
-            .target("/setup/delegates/kubernetes-delegates?accountId=" + ACCOUNT_ID)
-            .request()
-            .get(new GenericType<RestResponse<List<String>>>() {});
+  public void shouldGetKubernetesDelegateNames() {
+    RESOURCES.client()
+        .target("/setup/delegates/kubernetes-delegates?accountId=" + ACCOUNT_ID)
+        .request()
+        .get(new GenericType<RestResponse<List<String>>>() {});
     verify(delegateService, atLeastOnce()).getKubernetesDelegateNames(ACCOUNT_ID);
   }
 
@@ -550,20 +548,25 @@ public class DelegateSetupResourceTest extends CategoryTest {
   @Owner(developers = ROHITKARELIA)
   @Category(UnitTests.class)
   public void shouldDelete() {
-    Response restResponse =
-        RESOURCES.client().target("/setup/delegates/" + ID_KEY + "?accountId=" + ACCOUNT_ID).request().delete();
+    RESOURCES.client().target("/setup/delegates/" + ID_KEY + "?accountId=" + ACCOUNT_ID).request().delete();
 
-    verify(delegateService, atLeastOnce()).delete(ACCOUNT_ID, ID_KEY);
+    verify(delegateService).delete(ACCOUNT_ID, ID_KEY);
   }
 
   @Test
-  @Owner(developers = ROHITKARELIA)
+  @Owner(developers = MARKO)
   @Category(UnitTests.class)
-  public void shoulddeleteAllExcept() {
-    Response restResponse =
-        RESOURCES.client().target("/setup/delegates/delete-all-except?accountId=" + ACCOUNT_ID).request().delete();
+  public void shouldDeleteAllExcept() {
+    final List<String> toRetain = asList("del1", "del2");
+    RESOURCES.client()
+        .target("/setup/delegates/delete-all-except?accountId=" + ACCOUNT_ID)
+        // Having body in DELETE request is not allowed according to HTTP standard, but still works with some web
+        // servers
+        .property(ClientProperties.SUPPRESS_HTTP_COMPLIANCE_VALIDATION, true)
+        .request()
+        .method("DELETE", entity(toRetain, MediaType.APPLICATION_JSON));
 
-    verify(delegateService, atLeastOnce()).retainOnlySelectedDelegatesAndDeleteRest(anyString(), anyList());
+    verify(delegateService).retainOnlySelectedDelegatesAndDeleteRest(ACCOUNT_ID, toRetain);
   }
 
   @Test
@@ -583,7 +586,7 @@ public class DelegateSetupResourceTest extends CategoryTest {
     assertThat(restResponse.getResource())
         .containsKey("downloadUrl")
         .containsValue(apiUrl == null
-                ? apiUrl + "://" + apiUrl + ":0/setup/delegates/download?accountId=" + accountId + "&token=" + tokenId
+                ? "null://null:0/setup/delegates/download?accountId=" + accountId + "&token=" + tokenId
                 : apiUrl + "/setup/delegates/download?accountId=" + accountId + "&token=" + tokenId);
     verify(downloadTokenService, atLeastOnce()).createDownloadToken("delegate." + accountId);
   }
@@ -592,68 +595,78 @@ public class DelegateSetupResourceTest extends CategoryTest {
   @Owner(developers = PRAVEEN)
   @Category(UnitTests.class)
   public void shouldDownloadDelegate() throws Exception {
-    File file = File.createTempFile("test", ".txt");
+    final File file = File.createTempFile("test", ".txt");
     try (OutputStreamWriter outputStreamWriter = new FileWriter(file)) {
-      IOUtils.write("Test", outputStreamWriter);
+      IOUtils.write("Test Data", outputStreamWriter);
     }
-    when(delegateService.downloadScripts(anyString(), anyString(), anyString(), anyString(), anyString(), anyString()))
-        .thenReturn(file);
-    Response restResponse = RESOURCES.client()
-                                .target("/setup/delegates/download?accountId=" + ACCOUNT_ID
-                                    + "&token=token&delegateName=delegateName&delegateProfileId=delegateProfileId")
-                                .request()
-                                .get(new GenericType<Response>() {});
 
-    verify(delegateService, atLeastOnce())
-        .downloadScripts(anyString(), anyString(), anyString(), anyString(), anyString(), anyString());
+    when(subdomainUrlHelper.getManagerUrl(httpServletRequest, ACCOUNT_ID)).thenReturn(MANAGER_URL);
+    when(delegateService.downloadScripts(
+             MANAGER_URL, VERIFICATION_URL, ACCOUNT_ID, DELEGATE_NAME, DELEGATE_PROFILE_ID, TOKEN_NAME))
+        .thenReturn(file);
+
+    Response restResponse =
+        RESOURCES.client()
+            .target("/setup/delegates/download?accountId=" + ACCOUNT_ID + "&token=token&delegateName=" + DELEGATE_NAME
+                + "&delegateProfileId=" + DELEGATE_PROFILE_ID + "&tokenName=" + TOKEN_NAME)
+            .request()
+            .get(new GenericType<Response>() {});
+
     verify(downloadTokenService, atLeastOnce()).validateDownloadToken("delegate." + ACCOUNT_ID, "token");
 
     assertThat(restResponse.getHeaderString("Content-Disposition"))
         .isEqualTo("attachment; filename=" + DelegateServiceImpl.DELEGATE_DIR + ".tar.gz");
     assertThat(IOUtils.readLines((InputStream) restResponse.getEntity(), Charset.defaultCharset()).get(0))
-        .isEqualTo("Test");
+        .isEqualTo("Test Data");
   }
 
   @Test
   @Owner(developers = MARKO)
   @Category(UnitTests.class)
   public void shouldDownloadDelegateWithoutNameAndProfile() throws Exception {
-    File file = File.createTempFile("test", ".txt");
+    final File file = File.createTempFile("test", ".txt");
     try (OutputStreamWriter outputStreamWriter = new FileWriter(file)) {
-      IOUtils.write("Test", outputStreamWriter);
+      IOUtils.write("Test Data", outputStreamWriter);
     }
-    when(delegateService.downloadScripts(anyString(), anyString(), anyString(), anyString(), anyString(), anyString()))
+
+    when(subdomainUrlHelper.getManagerUrl(httpServletRequest, ACCOUNT_ID)).thenReturn(MANAGER_URL);
+    when(delegateService.downloadScripts(MANAGER_URL, VERIFICATION_URL, ACCOUNT_ID, null, null, TOKEN_NAME))
         .thenReturn(file);
+
     Response restResponse = RESOURCES.client()
-                                .target("/setup/delegates/download?accountId=" + ACCOUNT_ID + "&token=token")
+                                .target("/setup/delegates/download?accountId=" + ACCOUNT_ID + "&token=token"
+                                    + "&tokenName=" + TOKEN_NAME)
                                 .request()
                                 .get(new GenericType<Response>() {});
 
-    verify(delegateService, atLeastOnce())
-        .downloadScripts(anyString(), anyString(), anyString(), anyString(), anyString(), anyString());
     verify(downloadTokenService, atLeastOnce()).validateDownloadToken("delegate." + ACCOUNT_ID, "token");
 
     assertThat(restResponse.getHeaderString("Content-Disposition"))
         .isEqualTo("attachment; filename=" + DelegateServiceImpl.DELEGATE_DIR + ".tar.gz");
     assertThat(IOUtils.readLines((InputStream) restResponse.getEntity(), Charset.defaultCharset()).get(0))
-        .isEqualTo("Test");
+        .isEqualTo("Test Data");
   }
 
   @Test
-  @Owner(developers = ROHITKARELIA)
+  @Owner(developers = MARKO)
   @Category(UnitTests.class)
   public void shouldDownloadDocker() throws Exception {
-    File file = File.createTempFile("test", ".txt");
+    final File file = File.createTempFile("test", ".txt");
     try (OutputStreamWriter outputStreamWriter = new FileWriter(file)) {
-      IOUtils.write("Test", outputStreamWriter);
+      IOUtils.write("Test Data", outputStreamWriter);
     }
-    when(delegateService.downloadDocker(anyString(), anyString(), anyString(), anyString(), anyString(), anyString()))
+
+    when(subdomainUrlHelper.getManagerUrl(httpServletRequest, ACCOUNT_ID)).thenReturn(MANAGER_URL);
+    when(delegateService.downloadDocker(
+             MANAGER_URL, VERIFICATION_URL, ACCOUNT_ID, DELEGATE_NAME, DELEGATE_PROFILE_ID, TOKEN_NAME))
         .thenReturn(file);
-    Response restResponse = RESOURCES.client()
-                                .target("/setup/delegates/docker?accountId=" + ACCOUNT_ID
-                                    + "&token=token&delegateName=delegateName&delegateProfileId=delegateProfileId")
-                                .request()
-                                .get(new GenericType<Response>() {});
+
+    Response restResponse =
+        RESOURCES.client()
+            .target("/setup/delegates/docker?accountId=" + ACCOUNT_ID + "&token=token&delegateName=" + DELEGATE_NAME
+                + "&delegateProfileId=" + DELEGATE_PROFILE_ID + "&tokenName=" + TOKEN_NAME)
+            .request()
+            .get(new GenericType<Response>() {});
 
     verify(delegateService, atLeastOnce())
         .downloadDocker(anyString(), anyString(), anyString(), anyString(), anyString(), anyString());
@@ -662,148 +675,155 @@ public class DelegateSetupResourceTest extends CategoryTest {
     assertThat(restResponse.getHeaderString("Content-Disposition"))
         .isEqualTo("attachment; filename=" + DelegateServiceImpl.DOCKER_DELEGATE + ".tar.gz");
     assertThat(IOUtils.readLines((InputStream) restResponse.getEntity(), Charset.defaultCharset()).get(0))
-        .isEqualTo("Test");
+        .isEqualTo("Test Data");
   }
 
   @Test
-  @Owner(developers = ROHITKARELIA)
+  @Owner(developers = MARKO)
   @Category(UnitTests.class)
   public void shouldDownloadDockerWithoutNameAndProfile() throws Exception {
-    File file = File.createTempFile("test", ".txt");
+    final File file = File.createTempFile("test", ".txt");
     try (OutputStreamWriter outputStreamWriter = new FileWriter(file)) {
-      IOUtils.write("Test", outputStreamWriter);
+      IOUtils.write("Test Data", outputStreamWriter);
     }
-    when(delegateService.downloadDocker(anyString(), anyString(), anyString(), anyString(), anyString(), anyString()))
+
+    when(subdomainUrlHelper.getManagerUrl(httpServletRequest, ACCOUNT_ID)).thenReturn(MANAGER_URL);
+    when(delegateService.downloadDocker(MANAGER_URL, VERIFICATION_URL, ACCOUNT_ID, null, null, TOKEN_NAME))
         .thenReturn(file);
+
     Response restResponse = RESOURCES.client()
-                                .target("/setup/delegates/docker?accountId=" + ACCOUNT_ID + "&token=token")
+                                .target("/setup/delegates/docker?accountId=" + ACCOUNT_ID + "&token=token"
+                                    + "&tokenName=" + TOKEN_NAME)
                                 .request()
                                 .get(new GenericType<Response>() {});
 
-    verify(delegateService, atLeastOnce())
-        .downloadDocker(anyString(), anyString(), anyString(), anyString(), anyString(), anyString());
     verify(downloadTokenService, atLeastOnce()).validateDownloadToken("delegate." + ACCOUNT_ID, "token");
 
     assertThat(restResponse.getHeaderString("Content-Disposition"))
         .isEqualTo("attachment; filename=" + DelegateServiceImpl.DOCKER_DELEGATE + ".tar.gz");
     assertThat(IOUtils.readLines((InputStream) restResponse.getEntity(), Charset.defaultCharset()).get(0))
-        .isEqualTo("Test");
+        .isEqualTo("Test Data");
   }
 
   @Test
-  @Owner(developers = ROHITKARELIA)
+  @Owner(developers = MARKO)
   @Category(UnitTests.class)
   public void shouldDownloadKubernetes() throws Exception {
-    File file = File.createTempFile("test", ".txt");
+    final File file = File.createTempFile("test", ".txt");
     try (OutputStreamWriter outputStreamWriter = new FileWriter(file)) {
-      IOUtils.write("Test", outputStreamWriter);
+      IOUtils.write("Test Data", outputStreamWriter);
     }
+
+    when(subdomainUrlHelper.getManagerUrl(httpServletRequest, ACCOUNT_ID)).thenReturn(MANAGER_URL);
     when(delegateService.downloadKubernetes(
-             anyString(), anyString(), anyString(), anyString(), anyString(), anyString()))
+             MANAGER_URL, VERIFICATION_URL, ACCOUNT_ID, DELEGATE_NAME, DELEGATE_PROFILE_ID, TOKEN_NAME))
         .thenReturn(file);
+
     Response restResponse = RESOURCES.client()
                                 .target("/setup/delegates/kubernetes?accountId=" + ACCOUNT_ID + "&delegateName="
                                     + DELEGATE_NAME + "&delegateProfileId=" + DELEGATE_PROFILE_ID + "&token=token"
-                                    + "&isCeEnabled=false")
+                                    + "&isCeEnabled=false"
+                                    + "&tokenName=" + TOKEN_NAME)
                                 .request()
                                 .get(new GenericType<Response>() {});
 
     verify(downloadTokenService, atLeastOnce()).validateDownloadToken("delegate." + ACCOUNT_ID, "token");
-    verify(delegateService, atLeastOnce())
-        .downloadKubernetes(anyString(), anyString(), anyString(), anyString(), anyString(), anyString());
 
     assertThat(restResponse.getHeaderString("Content-Disposition"))
         .isEqualTo("attachment; filename=" + DelegateServiceImpl.KUBERNETES_DELEGATE + ".tar.gz");
     assertThat(IOUtils.readLines((InputStream) restResponse.getEntity(), Charset.defaultCharset()).get(0))
-        .isEqualTo("Test");
+        .isEqualTo("Test Data");
   }
 
   @Test
-  @Owner(developers = HANTANG)
+  @Owner(developers = MARKO)
   @Category(UnitTests.class)
   public void shouldDownloadCeKubernetesYaml() throws Exception {
-    File file = File.createTempFile("test", ".txt");
+    final File file = File.createTempFile("test", ".txt");
     try (OutputStreamWriter outputStreamWriter = new FileWriter(file)) {
-      IOUtils.write("Test", outputStreamWriter);
+      IOUtils.write("Test Data", outputStreamWriter);
     }
+
+    when(subdomainUrlHelper.getManagerUrl(httpServletRequest, ACCOUNT_ID)).thenReturn(MANAGER_URL);
     when(delegateService.downloadCeKubernetesYaml(
-             anyString(), anyString(), anyString(), anyString(), anyString(), anyString()))
+             MANAGER_URL, VERIFICATION_URL, ACCOUNT_ID, DELEGATE_NAME, null, TOKEN_NAME))
         .thenReturn(file);
-    Response restResponse = RESOURCES.client()
-                                .target("/setup/delegates/kubernetes?accountId=" + ACCOUNT_ID + "&delegateName="
-                                    + DELEGATE_NAME + "&delegateProfileId=" + DELEGATE_PROFILE_ID + "&token=token"
-                                    + "&isCeEnabled=true")
-                                .request()
-                                .get(new GenericType<Response>() {});
+
+    final Response restResponse = RESOURCES.client()
+                                      .target("/setup/delegates/kubernetes?accountId=" + ACCOUNT_ID + "&delegateName="
+                                          + DELEGATE_NAME + "&delegateProfileId=" + DELEGATE_PROFILE_ID + "&token=token"
+                                          + "&isCeEnabled=true"
+                                          + "&tokenName=" + TOKEN_NAME)
+                                      .request()
+                                      .get(new GenericType<Response>() {});
 
     verify(downloadTokenService, atLeastOnce()).validateDownloadToken("delegate." + ACCOUNT_ID, "token");
-    verify(delegateService, atLeastOnce())
-        .downloadCeKubernetesYaml(anyString(), anyString(), anyString(), anyString(), anyString(), anyString());
 
     assertThat(restResponse.getHeaderString("Content-Disposition"))
         .isEqualTo("attachment; filename=" + DelegateServiceImpl.KUBERNETES_DELEGATE + YAML);
     assertThat(IOUtils.readLines((InputStream) restResponse.getEntity(), Charset.defaultCharset()).get(0))
-        .isEqualTo("Test");
+        .isEqualTo("Test Data");
   }
 
   @Test
-  @Owner(developers = ROHITKARELIA)
+  @Owner(developers = MARKO)
   @Category(UnitTests.class)
   public void shouldDownloadECSDelegate() throws Exception {
-    File file = File.createTempFile("test", ".txt");
+    final File file = File.createTempFile("test", ".txt");
     try (OutputStreamWriter outputStreamWriter = new FileWriter(file)) {
-      IOUtils.write("Test", outputStreamWriter);
+      IOUtils.write("Test Data", outputStreamWriter);
     }
-    when(delegateService.downloadECSDelegate(
-             anyString(), anyString(), anyString(), anyBoolean(), anyString(), anyString(), anyString(), anyString()))
+
+    when(subdomainUrlHelper.getManagerUrl(httpServletRequest, ACCOUNT_ID)).thenReturn(MANAGER_URL);
+    when(delegateService.downloadECSDelegate(MANAGER_URL, VERIFICATION_URL, ACCOUNT_ID, true, HOST_NAME,
+             DELEGATE_GROUP_NAME, DELEGATE_PROFILE_ID, TOKEN_NAME))
         .thenReturn(file);
 
     Response restResponse =
         RESOURCES.client()
             .target("/setup/delegates/ecs?accountId=" + ACCOUNT_ID + "&delegateGroupName=" + DELEGATE_GROUP_NAME
                 + "&awsVpcMode=true"
-                + "&hostname=" + HOST_NAME + "&delegateProfileId=" + DELEGATE_PROFILE_ID + "&token=token")
+                + "&hostname=" + HOST_NAME + "&delegateProfileId=" + DELEGATE_PROFILE_ID + "&token=token"
+                + "&tokenName=" + TOKEN_NAME)
             .request()
             .get(new GenericType<Response>() {});
 
-    verify(delegateService, atLeastOnce())
-        .downloadECSDelegate(
-            anyString(), anyString(), anyString(), anyBoolean(), anyString(), anyString(), anyString(), anyString());
     verify(downloadTokenService, atLeastOnce()).validateDownloadToken("delegate." + ACCOUNT_ID, "token");
 
     assertThat(restResponse.getHeaderString("Content-Disposition"))
         .isEqualTo("attachment; filename=" + DelegateServiceImpl.ECS_DELEGATE + ".tar.gz");
     assertThat(IOUtils.readLines((InputStream) restResponse.getEntity(), Charset.defaultCharset()).get(0))
-        .isEqualTo("Test");
+        .isEqualTo("Test Data");
   }
 
   @Test
-  @Owner(developers = ROHITKARELIA)
+  @Owner(developers = MARKO)
   @Category(UnitTests.class)
   public void downloadDelegateValuesYaml() throws Exception {
-    File file = File.createTempFile("test", ".txt");
+    final File file = File.createTempFile("test", ".txt");
     try (OutputStreamWriter outputStreamWriter = new FileWriter(file)) {
-      IOUtils.write("Test", outputStreamWriter);
+      IOUtils.write("Test Data", outputStreamWriter);
     }
+
+    when(subdomainUrlHelper.getManagerUrl(httpServletRequest, ACCOUNT_ID)).thenReturn(MANAGER_URL);
     when(delegateService.downloadDelegateValuesYamlFile(
-             anyString(), anyString(), anyString(), anyString(), anyString(), anyString()))
+             MANAGER_URL, VERIFICATION_URL, ACCOUNT_ID, DELEGATE_NAME, DELEGATE_PROFILE_ID, TOKEN_NAME))
         .thenReturn(file);
 
     Response restResponse =
         RESOURCES.client()
             .target("/setup/delegates/delegate-helm-values-yaml?accountId=" + ACCOUNT_ID
-                + "&delegateName=" + DELEGATE_NAME + "&delegateProfileId=" + DELEGATE_PROFILE_ID + "&token=token")
+                + "&delegateName=" + DELEGATE_NAME + "&delegateProfileId=" + DELEGATE_PROFILE_ID + "&token=token"
+                + "&tokenName=" + TOKEN_NAME)
             .request()
             .get(new GenericType<Response>() {});
 
-    verify(delegateService, atLeastOnce())
-        .downloadDelegateValuesYamlFile(anyString(), anyString(), anyString(), anyString(), anyString(), anyString());
     verify(downloadTokenService, atLeastOnce()).validateDownloadToken("delegate." + ACCOUNT_ID, "token");
 
     assertThat(restResponse.getHeaderString("Content-Disposition"))
         .isEqualTo("attachment; filename=" + DelegateServiceImpl.HARNESS_DELEGATE_VALUES_YAML + ".yaml");
     assertThat(IOUtils.readLines((InputStream) restResponse.getEntity(), Charset.defaultCharset()).get(0))
-        .isEqualTo("Test");
+        .isEqualTo("Test Data");
   }
 
   @Test
@@ -847,7 +867,7 @@ public class DelegateSetupResourceTest extends CategoryTest {
                                 .get();
     DelegateSetupDetails details = DelegateSetupDetails.builder().delegateType(DOCKER).name("name1").build();
     verify(delegateService, atLeastOnce())
-        .validateDelegateSetupDetails(anyString(), eq(details), eq(DelegateType.DOCKER));
+        .validateDockerDelegateSetupDetails(anyString(), eq(details), eq(DelegateType.DOCKER));
 
     assertThat(restResponse.getStatus()).isEqualTo(Response.Status.OK.getStatusCode());
   }

@@ -78,6 +78,7 @@ import io.harness.tasks.ResponseData;
 
 import software.wings.WingsBaseTest;
 import software.wings.api.ContainerServiceElement;
+import software.wings.api.ContextElementParamMapperFactory;
 import software.wings.api.DeploymentType;
 import software.wings.api.PhaseElement;
 import software.wings.api.PhaseStepExecutionData;
@@ -131,6 +132,7 @@ import software.wings.sm.ExecutionContextImpl;
 import software.wings.sm.ExecutionResponse;
 import software.wings.sm.StateExecutionInstance;
 import software.wings.sm.WorkflowStandardParams;
+import software.wings.sm.WorkflowStandardParamsExtensionService;
 
 import com.google.common.collect.Lists;
 import java.util.ArrayList;
@@ -265,9 +267,16 @@ public class KubernetesDeployTest extends WingsBaseTest {
             .withCommand(aCommand().withCommandType(CommandType.RESIZE).withName(COMMAND_NAME).build())
             .build();
     when(serviceResourceService.getCommandByName(APP_ID, SERVICE_ID, ENV_ID, COMMAND_NAME)).thenReturn(serviceCommand);
-    on(workflowStandardParams).set("appService", appService);
-    on(workflowStandardParams).set("environmentService", environmentService);
-    on(workflowStandardParams).set("subdomainUrlHelper", subdomainUrlHelper);
+
+    WorkflowStandardParamsExtensionService workflowStandardParamsExtensionService =
+        new WorkflowStandardParamsExtensionService(
+            appService, null, artifactService, environmentService, artifactStreamServiceBindingService, null);
+    on(kubernetesDeploy).set("workflowStandardParamsExtensionService", workflowStandardParamsExtensionService);
+    on(kubernetesDeployRollback).set("workflowStandardParamsExtensionService", workflowStandardParamsExtensionService);
+
+    ContextElementParamMapperFactory contextElementParamMapperFactory =
+        new ContextElementParamMapperFactory(subdomainUrlHelper, workflowExecutionService, artifactService, null, null,
+            featureFlagService, null, workflowStandardParamsExtensionService);
 
     InfrastructureMapping infrastructureMapping = aGcpKubernetesInfrastructureMapping()
                                                       .withUuid(INFRA_MAPPING_ID)
@@ -304,7 +313,10 @@ public class KubernetesDeployTest extends WingsBaseTest {
     FieldUtils.writeField(kubernetesDeploy, "secretManager", secretManager, true);
     when(workflowExecutionService.getExecutionDetails(anyString(), anyString(), anyBoolean(), anyBoolean()))
         .thenReturn(WorkflowExecution.builder().build());
+
     context = new ExecutionContextImpl(stateExecutionInstance);
+    on(context).set("workflowStandardParamsExtensionService", workflowStandardParamsExtensionService);
+    on(context).set("contextElementParamMapperFactory", contextElementParamMapperFactory);
 
     when(delegateProxyFactory.get(eq(ContainerService.class), any(SyncTaskContext.class))).thenReturn(containerService);
     when(configuration.getPortal()).thenReturn(portalConfig);

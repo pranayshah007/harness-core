@@ -7,13 +7,11 @@ HarnessTeam = "CV"
 java_library(
     name = "module",
     srcs = glob(["src/main/java/**/*.java"]),
-    resources = [
-        "//430-cv-nextgen-commons/src/main/resources:resource",
-    ],
     visibility = ["//visibility:public"],
     deps = [
         "//:lombok",
         "//440-connector-nextgen:module",
+        "//948-cv-nextgen-beans:module",
         "//950-delegate-tasks-beans:module",
         "//954-connector-beans:module",
         "//959-common-entities:module",
@@ -22,23 +20,6 @@ java_library(
         "//970-api-services-beans:module",
         "//980-commons:module",
         "//999-annotations:module",
-        "@maven//:com_auth0_java_jwt",
-        "@maven//:com_esotericsoftware_kryo",
-        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
-        "@maven//:com_google_api_client_google_api_client",
-        "@maven//:com_google_code_findbugs_annotations",
-        "@maven//:com_google_guava_guava",
-        "@maven//:com_google_inject_guice",
-        "@maven//:com_nimbusds_nimbus_jose_jwt",
-        "@maven//:commons_codec_commons_codec",
-        "@maven//:javax_annotation_javax_annotation_api",
-        "@maven//:javax_validation_validation_api",
-        "@maven//:javax_ws_rs_javax_ws_rs_api",
-        "@maven//:org_apache_commons_commons_lang3",
-        "@maven//:org_hibernate_hibernate_validator",
-        "@maven//:org_json_json",
-        "@maven//:org_mongodb_mongo_java_driver",
-        "@maven//:org_slf4j_slf4j_api",
     ],
 )
 
@@ -53,6 +34,7 @@ java_library(
     deps = [
         ":module",
         "//:lombok",
+        "//948-cv-nextgen-beans:module",
         "//954-connector-beans:module",
         "//959-common-entities:module",
         "//960-persistence:module",

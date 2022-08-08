@@ -10,7 +10,7 @@ package io.harness.commandlibrary.server.service.impl;
 import static io.harness.beans.PageResponse.PageResponseBuilder.aPageResponse;
 import static io.harness.beans.SearchFilter.Operator.CONTAINS;
 import static io.harness.beans.SearchFilter.Operator.EQ;
-import static io.harness.commandlibrary.server.utils.CommandUtils.populateCommandDTO;
+import static io.harness.commandlibrary.server.utils.CommandUtils.populateCommandEntityDTO;
 
 import static java.util.stream.Collectors.toList;
 import static org.apache.commons.collections4.ListUtils.emptyIfNull;
@@ -18,7 +18,7 @@ import static org.apache.commons.collections4.ListUtils.emptyIfNull;
 import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
 import io.harness.beans.SearchFilter;
-import io.harness.commandlibrary.api.dto.CommandDTO;
+import io.harness.commandlibrary.api.dto.CommandEntityDTO;
 import io.harness.commandlibrary.api.dto.CommandStoreDTO;
 import io.harness.commandlibrary.server.service.intfc.CommandService;
 import io.harness.commandlibrary.server.service.intfc.CommandStoreService;
@@ -51,7 +51,7 @@ public class CommandStoreServiceImpl implements CommandStoreService {
   }
 
   @Override
-  public PageResponse<CommandDTO> listCommandsForStore(
+  public PageResponse<CommandEntityDTO> listCommandsForStore(
       String commandStoreName, PageRequest<CommandEntity> pageRequest, String tag) {
     pageRequest.addFilter(CommandEntityKeys.commandStoreName, EQ, commandStoreName);
 
@@ -95,18 +95,22 @@ public class CommandStoreServiceImpl implements CommandStoreService {
     return Optional.empty();
   }
 
-  private PageResponse<CommandDTO> convert(PageResponse<CommandEntity> commandEntitiesPR) {
+  private PageResponse<CommandEntityDTO> convert(PageResponse<CommandEntity> commandEntitiesPR) {
     return aPageResponse()
         .withTotal(commandEntitiesPR.getTotal())
         .withOffset(commandEntitiesPR.getOffset())
         .withLimit(commandEntitiesPR.getLimit())
-        .withResponse(
-            emptyIfNull(commandEntitiesPR.getResponse()).stream().map(this::convertToCommandDTO).collect(toList()))
+        .withResponse(emptyIfNull(commandEntitiesPR.getResponse())
+                          .stream()
+                          .map(this::convertToCommandEntityDTO)
+                          .collect(toList()))
         .build();
   }
 
-  private CommandDTO convertToCommandDTO(CommandEntity commandEntity) {
-    return populateCommandDTO(CommandDTO.builder(), commandEntity, getLatestVersionEntity(commandEntity), null).build();
+  private CommandEntityDTO convertToCommandEntityDTO(CommandEntity commandEntity) {
+    return populateCommandEntityDTO(
+        CommandEntityDTO.builder(), commandEntity, getLatestVersionEntity(commandEntity), null)
+        .build();
   }
 
   private CommandVersionEntity getLatestVersionEntity(CommandEntity commandEntity) {

@@ -27,7 +27,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.reset;
@@ -200,16 +199,16 @@ public class TriggerYamlHandlerTest extends YamlHandlerTestBase {
 
   @Before
   public void setup() {
-    doReturn(ACCOUNT_ID).when(appService).getAccountIdByAppId(anyString());
-    doReturn(APP_ID).when(mockYamlHelper).getAppId(anyString(), anyString());
-    doReturn("trigger").when(mockYamlHelper).extractEntityNameFromYamlPath(anyString(), anyString(), anyString());
+    doReturn(ACCOUNT_ID).when(appService).getAccountIdByAppId(any());
+    doReturn(APP_ID).when(mockYamlHelper).getAppId(any(), any());
+    doReturn("trigger").when(mockYamlHelper).extractEntityNameFromYamlPath(any(), any(), any());
     ArtifactStream artifactStream = DockerArtifactStream.builder().uuid("uuid").imageName("library-nginx-1").build();
     doReturn(artifactStream).when(mockYamlHelper).getArtifactStreamWithName(any(), any(), any());
     doReturn("k8s").when(mockYamlHelper).getServiceNameFromArtifactId(any(), any());
     doReturn("library_nginx").when(mockYamlHelper).getArtifactStreamName(any(), any());
     doReturn(Optional.of(anApplication().uuid(APP_ID).build()))
         .when(mockYamlHelper)
-        .getApplicationIfPresent(anyString(), anyString());
+        .getApplicationIfPresent(any(), any());
     doReturn(handler).when(mockYamlHandlerFactory).getYamlHandler(YamlType.TRIGGER, null);
     doReturn(artifactTriggerConditionHandler)
         .when(mockYamlHandlerFactory)
@@ -229,38 +228,36 @@ public class TriggerYamlHandlerTest extends YamlHandlerTestBase {
     doReturn(artifactSelectionYamlHandler).when(mockYamlHandlerFactory).getYamlHandler(YamlType.ARTIFACT_SELECTION);
     doReturn(manifestSelectionYamlHandler).when(mockYamlHandlerFactory).getYamlHandler(YamlType.MANIFEST_SELECTION);
     Service service = Service.builder().uuid("Service-id").name("k8s").build();
-    doReturn(service).when(serviceResourceService).getServiceByName(anyString(), anyString());
-    doReturn(service).when(serviceResourceService).getServiceByName(anyString(), anyString(), anyBoolean());
-    doReturn(service).when(serviceResourceService).get(anyString(), anyString(), anyBoolean());
+    doReturn(service).when(serviceResourceService).getServiceByName(any(), any());
+    doReturn(service).when(serviceResourceService).getServiceByName(any(), any(), anyBoolean());
+    doReturn(service).when(serviceResourceService).get(any(), any(), anyBoolean());
 
-    doReturn(service).when(mockYamlHelper).getServiceByName(anyString(), anyString());
-    doReturn("k8s").when(mockYamlHelper).getServiceNameFromServiceId(anyString(), anyString());
+    doReturn(service).when(mockYamlHelper).getServiceByName(any(), any());
+    doReturn("k8s").when(mockYamlHelper).getServiceNameFromServiceId(any(), any());
 
     Environment environment = anEnvironment().name("Prod").uuid("env-id").build();
-    doReturn(environment).when(environmentService).getEnvironmentByName(anyString(), anyString(), anyBoolean());
-    doReturn(environment).when(environmentService).get(anyString(), anyString(), anyBoolean());
+    doReturn(environment).when(environmentService).getEnvironmentByName(any(), any(), anyBoolean());
+    doReturn(environment).when(environmentService).get(any(), any(), anyBoolean());
 
     InfrastructureDefinition infrastructureDefinition =
         InfrastructureDefinition.builder().name("Azure k8s").uuid("infra-id").build();
-    doReturn(infrastructureDefinition)
-        .when(infrastructureDefinitionService)
-        .getInfraDefByName(anyString(), anyString(), anyString());
-    doReturn(infrastructureDefinition).when(infrastructureDefinitionService).get(anyString(), anyString());
+    doReturn(infrastructureDefinition).when(infrastructureDefinitionService).getInfraDefByName(any(), any(), any());
+    doReturn(infrastructureDefinition).when(infrastructureDefinitionService).get(any(), any());
 
     SettingAttribute sshConnectionAttributes = aSettingAttribute().withUuid("ssh-id").withName("Wings Key").build();
     UserGroup userGroup = new UserGroup();
     userGroup.setName("Account Administrator");
     userGroup.setUuid("dIyaCXXVRp65abGOlN5Fmg");
     doReturn(sshConnectionAttributes).when(settingsService).fetchSettingAttributeByName(any(), any(), any());
-    doReturn(sshConnectionAttributes).when(settingsService).get(anyString());
+    doReturn(sshConnectionAttributes).when(settingsService).get(any());
     doReturn(userGroup).when(userGroupService).fetchUserGroupByName(any(), any());
-    doReturn(userGroup).when(userGroupService).get(anyString());
+    doReturn(userGroup).when(userGroupService).get(any());
 
     ApplicationManifest applicationManifest =
         ApplicationManifest.builder().serviceId("Service-id").storeType(StoreType.HelmChartRepo).build();
     applicationManifest.setUuid("AppManifest-id");
-    doReturn(applicationManifest).when(mockYamlHelper).getManifestByServiceId(anyString(), anyString());
-    doReturn(true).when(featureFlagService).isEnabled(eq(FeatureName.HELM_CHART_AS_ARTIFACT), anyString());
+    doReturn(applicationManifest).when(mockYamlHelper).getManifestByServiceId(any(), any());
+    doReturn(true).when(featureFlagService).isEnabled(eq(FeatureName.HELM_CHART_AS_ARTIFACT), any());
   }
 
   @Test
@@ -837,7 +834,7 @@ public class TriggerYamlHandlerTest extends YamlHandlerTestBase {
     workflow.setOrchestrationWorkflow(aCanaryOrchestrationWorkflow().build());
     doReturn(workflow).when(mockYamlHelper).getWorkflowFromId(any(), any());
     doReturn(workflow).when(mockYamlHelper).getWorkflowFromName(any(), any());
-    doReturn(null).when(mockYamlHelper).getTrigger(anyString(), anyString());
+    doReturn(null).when(mockYamlHelper).getTrigger(any(), any());
     File yamlFile = null;
     yamlFile = new File(resourcePath + PATH_DELIMITER + validTriggerFiles.Trigger1);
     assertThat(yamlFile).isNotNull();
@@ -893,14 +890,14 @@ public class TriggerYamlHandlerTest extends YamlHandlerTestBase {
     assertThat(capturedTrigger).isNotNull();
     assertThat(capturedTrigger.isSyncFromGit()).isTrue();
 
-    doReturn(capturedTrigger).when(mockYamlHelper).getTrigger(anyString(), anyString());
+    doReturn(capturedTrigger).when(mockYamlHelper).getTrigger(any(), any());
 
     handler.delete(changeContext);
     verify(triggerService).delete(APP_ID, null, true);
   }
 
   private void saveAndRetrieveTrigger(String trigger1) throws IOException {
-    doReturn(null).when(mockYamlHelper).getTrigger(anyString(), anyString());
+    doReturn(null).when(mockYamlHelper).getTrigger(any(), any());
     File yamlFile = null;
     yamlFile = new File(resourcePath + PATH_DELIMITER + trigger1);
     assertThat(yamlFile).isNotNull();
@@ -915,7 +912,7 @@ public class TriggerYamlHandlerTest extends YamlHandlerTestBase {
 
   private void testCRUD(String yamlFileName, TriggerConditionType conditionType, WorkflowType actionType,
       Trigger previousTrigger) throws IOException {
-    doReturn(previousTrigger).when(mockYamlHelper).getTrigger(anyString(), anyString());
+    doReturn(previousTrigger).when(mockYamlHelper).getTrigger(any(), any());
     File yamlFile = null;
     yamlFile = new File(resourcePath + PATH_DELIMITER + yamlFileName);
     assertThat(yamlFile).isNotNull();
@@ -931,7 +928,7 @@ public class TriggerYamlHandlerTest extends YamlHandlerTestBase {
       verify(triggerService).update(captor.capture(), eq(false));
     }
     Trigger savedTrigger = captor.getValue();
-    doReturn(savedTrigger).when(mockYamlHelper).getTrigger(anyString(), anyString());
+    doReturn(savedTrigger).when(mockYamlHelper).getTrigger(any(), any());
 
     handler.upsertFromYaml(changeContext, Arrays.asList(changeContext));
 
@@ -951,17 +948,17 @@ public class TriggerYamlHandlerTest extends YamlHandlerTestBase {
     List<Trigger> triggerList = new ArrayList<>();
     triggerList.add(savedTrigger);
     pageResponse.setResponse(triggerList);
-    doReturn(pageResponse).when(triggerService).list(any(), anyBoolean(), anyString());
+    doReturn(pageResponse).when(triggerService).list(any(), anyBoolean(), any());
     Trigger retrievedTrigger = handler.get(ACCOUNT_ID, yamlFilePath);
 
     assertThat(retrievedTrigger).isNotNull();
     assertThat(retrievedTrigger.getUuid()).isEqualTo(savedTrigger.getUuid());
 
-    doReturn(savedTrigger).when(mockYamlHelper).getTrigger(anyString(), anyString());
+    doReturn(savedTrigger).when(mockYamlHelper).getTrigger(any(), any());
 
     handler.delete(changeContext);
 
-    verify(triggerService).delete(anyString(), anyString(), anyBoolean());
+    verify(triggerService).delete(any(), any(), anyBoolean());
     reset(triggerService);
   }
 

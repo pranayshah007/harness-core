@@ -17,6 +17,7 @@ import io.harness.ModuleType;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.validator.EntityIdentifier;
 import io.harness.data.validator.NGEntityName;
+import io.harness.yaml.core.VariableExpression;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -42,14 +43,20 @@ import lombok.experimental.FieldDefaults;
 @ApiModel(value = "Project")
 @Schema(name = "Project", description = "This is the Project Entity details defined in Harness")
 public class ProjectDTO {
-  @EntityIdentifier(allowBlank = true) @Schema(description = ORG_PARAM_MESSAGE) String orgIdentifier;
+  @EntityIdentifier(allowBlank = true)
+  @Schema(description = ORG_PARAM_MESSAGE)
+  @VariableExpression(skipVariableExpression = true)
+  String orgIdentifier;
   @ApiModelProperty(required = true)
   @Schema(description = PROJECT_PARAM_MESSAGE)
   @EntityIdentifier(allowBlank = false)
   String identifier;
   @ApiModelProperty(required = true) @Schema(description = "Project Name for the entity") @NGEntityName String name;
-  @Schema(description = "Color") String color;
-  @Size(max = 1024) @Schema(description = "List of modules") List<ModuleType> modules;
+  @Schema(description = "Color") @VariableExpression(skipVariableExpression = true) String color;
+  @Size(max = 1024)
+  @Schema(description = "List of modules")
+  @VariableExpression(skipVariableExpression = true)
+  List<ModuleType> modules;
   @Size(max = 1024) @Schema(description = "Description") String description;
   @Size(max = 128) @Schema(description = "Tags") Map<String, String> tags;
   @JsonIgnore Long version;

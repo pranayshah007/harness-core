@@ -16,7 +16,8 @@ import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.environment.beans.EnvironmentType;
-import io.harness.plancreator.pipeline.PipelineConfig;
+import io.harness.plancreator.stages.stage.StageElementConfig;
+import io.harness.plancreator.steps.StepElementConfig;
 import io.harness.pms.execution.ExecutionStatus;
 
 import com.codahale.metrics.annotation.ExceptionMetered;
@@ -69,15 +70,6 @@ public class CDNGExecutionResource {
   }
 
   @GET
-  @ApiOperation(value = "dummy api for checking pms schema", nickname = "dummyApiForSwaggerSchemaCheck")
-  @Path("/dummyApiForSwaggerSchemaCheck")
-  // DO NOT DELETE THIS WITHOUT CONFIRMING WITH UI
-  public ResponseDTO<PipelineConfig> dummyApiForSwaggerSchemaCheck() {
-    log.info("Get pipeline");
-    return ResponseDTO.newResponse(PipelineConfig.builder().build());
-  }
-
-  @GET
   @Timed
   @ExceptionMetered
   @ApiOperation(value = "dummy api", nickname = "getDummyCDPipelineModuleInfo")
@@ -97,5 +89,21 @@ public class CDNGExecutionResource {
                                        .serviceDefinitionTypes(serviceDefinitionTypes)
                                        .environmentTypes(environmentTypes)
                                        .build());
+  }
+
+  @GET
+  @ApiOperation(value = "dummy api for checking deployment stage", nickname = "dummyApiForSwaggerStageSchemaCheck")
+  @Path("/dummyApiForSwaggerStageSchemaCheck")
+  // DO NOT DELETE THIS WITHOUT CONFIRMING WITH UI
+  public ResponseDTO<StageElementConfig> dummyApiForSwaggerSchemaCheckForStage() {
+    return ResponseDTO.newResponse(StageElementConfig.builder().build());
+  }
+
+  @GET
+  @ApiOperation(value = "dummy api for checking deployment stage", nickname = "dummyApiForSwaggerStepSchemaCheck")
+  @Path("/dummyApiForSwaggerStepSchemaCheck")
+  // DO NOT DELETE THIS WITHOUT CONFIRMING WITH UI
+  public ResponseDTO<StepElementConfig> dummyApiForSwaggerSchemaCheckForStep() {
+    return ResponseDTO.newResponse(StepElementConfig.builder().build());
   }
 }

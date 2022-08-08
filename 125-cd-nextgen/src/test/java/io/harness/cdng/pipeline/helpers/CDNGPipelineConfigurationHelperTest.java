@@ -7,6 +7,7 @@
 
 package io.harness.cdng.pipeline.helpers;
 
+import static io.harness.rule.OwnerRule.ACASIAN;
 import static io.harness.rule.OwnerRule.SAHIL;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -35,7 +36,7 @@ public class CDNGPipelineConfigurationHelperTest extends CategoryTest {
   public void testGetExecutionStrategyList() {
     Map<ServiceDefinitionType, List<ExecutionStrategyType>> result =
         cdngPipelineConfigurationHelper.getExecutionStrategyList();
-    assertThat(result.size()).isEqualTo(4);
+    assertThat(result.size()).isEqualTo(6);
   }
 
   @Test
@@ -45,6 +46,26 @@ public class CDNGPipelineConfigurationHelperTest extends CategoryTest {
     StepCategory result = cdngPipelineConfigurationHelper.getSteps(ServiceDefinitionType.KUBERNETES);
     assertThat(result.getName()).isEqualTo(CDNGPipelineConfigurationHelper.LIBRARY);
     assertThat(result.getStepsData()).isEqualTo(new ArrayList<>());
-    assertThat(result.getStepCategories().size()).isEqualTo(6);
+    assertThat(result.getStepCategories().size()).isEqualTo(7);
+  }
+
+  @Test
+  @Owner(developers = ACASIAN)
+  @Category(UnitTests.class)
+  public void testGetSshSteps() {
+    StepCategory result = cdngPipelineConfigurationHelper.getSteps(ServiceDefinitionType.SSH);
+    assertThat(result.getName()).isEqualTo(CDNGPipelineConfigurationHelper.LIBRARY);
+    assertThat(result.getStepsData()).isEqualTo(new ArrayList<>());
+    assertThat(result.getStepCategories().size()).isEqualTo(7);
+  }
+
+  @Test
+  @Owner(developers = ACASIAN)
+  @Category(UnitTests.class)
+  public void testGetWinRmSteps() {
+    StepCategory result = cdngPipelineConfigurationHelper.getSteps(ServiceDefinitionType.WINRM);
+    assertThat(result.getName()).isEqualTo(CDNGPipelineConfigurationHelper.LIBRARY);
+    assertThat(result.getStepsData()).isEqualTo(new ArrayList<>());
+    assertThat(result.getStepCategories().size()).isEqualTo(7);
   }
 }

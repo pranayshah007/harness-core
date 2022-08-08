@@ -8,6 +8,7 @@
 package software.wings.sm.states;
 
 import static org.mockito.AdditionalAnswers.returnsFirstArg;
+import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyObject;
 import static org.mockito.Matchers.anyString;
@@ -45,6 +46,7 @@ import software.wings.service.intfc.WorkflowExecutionService;
 import software.wings.service.intfc.analysis.AnalysisService;
 import software.wings.service.intfc.security.SecretManager;
 import software.wings.service.intfc.verification.CVActivityLogService;
+import software.wings.service.intfc.verification.CVActivityLogger;
 import software.wings.sm.ExecutionContextImpl;
 import software.wings.sm.StateExecutionInstance;
 import software.wings.sm.WorkflowStandardParams;
@@ -197,7 +199,7 @@ public class APMStateVerificationTestBase extends WingsBaseTest {
 
   protected void setupCvActivityLogService(AbstractAnalysisState state) throws IllegalAccessException {
     FieldUtils.writeField(state, "cvActivityLogService", cvActivityLogService, true);
-    PowerMockito.when(cvActivityLogService.getLoggerByStateExecutionId(anyString(), anyString()))
-        .thenReturn(mock(CVActivityLogService.Logger.class));
+    PowerMockito.when(cvActivityLogService.getLoggerByStateExecutionId(any(), any()))
+        .thenReturn(mock(CVActivityLogger.class));
   }
 }

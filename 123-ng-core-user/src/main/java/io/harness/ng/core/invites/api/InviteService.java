@@ -26,7 +26,7 @@ import org.springframework.data.mongodb.core.query.Criteria;
 
 @OwnedBy(PL)
 public interface InviteService {
-  InviteOperationResponse create(Invite invite, boolean isScimInvite);
+  InviteOperationResponse create(Invite invite, boolean isScimInvite, boolean isLdap);
 
   List<InviteOperationResponse> createInvitations(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, CreateInviteDTO createInviteDTO);
@@ -51,4 +51,6 @@ public interface InviteService {
   boolean isUserPasswordSet(String accountIdentifier, String email);
 
   URI getRedirectUrl(InviteAcceptResponse inviteAcceptResponse, String email, String decodedEmail, String jwtToken);
+
+  String getInviteLinkFromInviteId(String accountIdentifier, String inviteId);
 }

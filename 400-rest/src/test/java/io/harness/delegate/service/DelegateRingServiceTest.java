@@ -8,6 +8,7 @@
 package io.harness.delegate.service;
 
 import static io.harness.rule.OwnerRule.ARPIT;
+import static io.harness.rule.OwnerRule.GAURAV;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.MockitoAnnotations.initMocks;
@@ -25,6 +26,8 @@ import software.wings.WingsBaseTest;
 import software.wings.beans.Account;
 
 import com.google.inject.Inject;
+import java.util.Arrays;
+import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -38,6 +41,8 @@ public class DelegateRingServiceTest extends WingsBaseTest {
   private static final String TEST_ACCOUNT_ID = "accountId";
   private static final String LATEST_DELEGATE_IMAGE_TAG = "harness/delegate:latest";
   private static final String LATEST_UPGRADER_IMAGE_TAG = "harness/upgrader:latest";
+  private static final List<String> DELEGATE_VERSION = Arrays.asList("1.0.74410");
+  private static final String WATCHER_VERSION = "1.0.74310";
 
   @InjectMocks @Inject private DelegateRingServiceImpl delegateRingService;
   @Inject private HPersistence persistence;
@@ -65,6 +70,22 @@ public class DelegateRingServiceTest extends WingsBaseTest {
     assertThat(upgraderImageTag).isEqualTo(LATEST_UPGRADER_IMAGE_TAG);
   }
 
+  @Test
+  @Owner(developers = GAURAV)
+  @Category(UnitTests.class)
+  public void shouldGetDelegateVersion() {
+    List<String> delegateVersion = delegateRingService.getDelegateVersions(TEST_ACCOUNT_ID);
+    assertThat(delegateVersion).isEqualTo(DELEGATE_VERSION);
+  }
+
+  @Test
+  @Owner(developers = GAURAV)
+  @Category(UnitTests.class)
+  public void shouldGetWatcherVersion() {
+    String watcherVersion = delegateRingService.getWatcherVersions(TEST_ACCOUNT_ID);
+    assertThat(watcherVersion).isEqualTo(WATCHER_VERSION);
+  }
+
   private void setupAccount(String accountId) {
     persistence.save(
         Account.Builder.anAccount().withUuid(accountId).withRingName(DelegateRingConstants.RING_NAME_1).build());
@@ -75,6 +96,8 @@ public class DelegateRingServiceTest extends WingsBaseTest {
                          .ringName(DelegateRingConstants.RING_NAME_1)
                          .delegateImageTag(LATEST_DELEGATE_IMAGE_TAG)
                          .upgraderImageTag(LATEST_UPGRADER_IMAGE_TAG)
+                         .delegateVersions(DELEGATE_VERSION)
+                         .watcherVersions(WATCHER_VERSION)
                          .build());
   }
 }

@@ -10,11 +10,14 @@ package io.harness.polling.mapper;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.polling.contracts.Type;
+import io.harness.polling.mapper.artifact.AcrArtifactInfoBuilder;
 import io.harness.polling.mapper.artifact.ArtifactoryRegistryArtifactInfoBuilder;
 import io.harness.polling.mapper.artifact.DockerHubArtifactInfoBuilder;
 import io.harness.polling.mapper.artifact.EcrArtifactInfoBuilder;
 import io.harness.polling.mapper.artifact.GcrArtifactInfoBuilder;
+import io.harness.polling.mapper.artifact.JenkinsArtifactInfoBuilder;
 import io.harness.polling.mapper.artifact.NexusRegistryArtifactInfoBuilder;
+import io.harness.polling.mapper.artifact.S3ArtifactInfoBuilder;
 import io.harness.polling.mapper.manifest.GcsHelmChartManifestInfoBuilder;
 import io.harness.polling.mapper.manifest.HttpHelmChartManifestInfoBuilder;
 import io.harness.polling.mapper.manifest.S3HelmChartManifestInfoBuilder;
@@ -43,6 +46,9 @@ public class PollingInfoBuilderRegistry {
     registeredPollingInfoBuilders.put(Type.GCR, GcrArtifactInfoBuilder.class);
     registeredPollingInfoBuilders.put(Type.NEXUS3, NexusRegistryArtifactInfoBuilder.class);
     registeredPollingInfoBuilders.put(Type.ARTIFACTORY, ArtifactoryRegistryArtifactInfoBuilder.class);
+    registeredPollingInfoBuilders.put(Type.ACR, AcrArtifactInfoBuilder.class);
+    registeredPollingInfoBuilders.put(Type.AMAZON_S3, S3ArtifactInfoBuilder.class);
+    registeredPollingInfoBuilders.put(Type.JENKINS, JenkinsArtifactInfoBuilder.class);
   }
 
   public Optional<PollingInfoBuilder> getPollingInfoBuilder(Type type) {

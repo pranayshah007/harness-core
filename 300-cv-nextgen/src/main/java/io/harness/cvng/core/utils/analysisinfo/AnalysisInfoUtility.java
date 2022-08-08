@@ -38,7 +38,7 @@ public class AnalysisInfoUtility {
       Collection<I> analysisInfos, TaskType taskType) {
     return CollectionUtils.emptyIfNull(analysisInfos)
         .stream()
-        .filter(analysisInfo -> ((AnalysisInfo) analysisInfo).isMetricApplicableForDataCollection(taskType))
+        .filter(analysisInfo -> analysisInfo.isMetricApplicableForDataCollection(taskType))
         .collect(Collectors.toList());
   }
 }

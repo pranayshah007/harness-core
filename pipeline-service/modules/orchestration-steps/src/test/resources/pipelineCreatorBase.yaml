@@ -1,0 +1,55 @@
+pipeline:
+  name: ApprovalStageWithHttStep
+  identifier: ApprovalStageWithHttStep
+  projectIdentifier: ArchitProject
+  orgIdentifier: default
+  delegateSelectors:
+    - abc
+    - def
+  tags: {}
+  stages:
+    - stage:
+        name: stage1
+        identifier: stage1
+        description: ""
+        type: Approval
+        spec:
+          execution:
+            steps:
+              - step:
+                  type: Http
+                  name: step1
+                  identifier: step1
+                  spec:
+                    url: https://google.com
+                    method: GET
+                    headers:
+                      - key: head1
+                        value: v1
+                      - key: head2
+                        value: v2
+                    outputVariables:
+                      - name: o1
+                        value: v1
+                        type: String
+                  timeout: 10s
+              - stepGroup:
+                  name: sg1
+                  identifier: sg1
+                  steps:
+                    - step:
+                        type: Http
+                        name: step2
+                        identifier: step2
+                        spec:
+                          url: https://google.com
+                          method: GET
+                          headers: [ ]
+                          outputVariables: [ ]
+                        timeout: 10s
+          serviceDependencies: []
+        tags: {}
+        when:
+          pipelineStatus: All
+          condition: archit
+

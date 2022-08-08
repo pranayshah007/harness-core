@@ -15,7 +15,10 @@ import io.swagger.annotations.ApiModel;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 @OwnedBy(HarnessTeam.CDP)
-@JsonSubTypes({ @JsonSubTypes.Type(value = AzureManualDetailsDTO.class, name = AzureConstants.MANUAL_CONFIG) })
+@JsonSubTypes({
+  @JsonSubTypes.Type(value = AzureManualDetailsDTO.class, name = AzureConstants.MANUAL_CONFIG)
+  , @JsonSubTypes.Type(value = AzureInheritFromDelegateDetailsDTO.class, name = AzureConstants.INHERIT_FROM_DELEGATE)
+})
 @ApiModel("AzureCredentialSpec")
 @Schema(name = "AzureCredentialSpec", description = "This contains Azure connector credentials spec")
 public interface AzureCredentialSpecDTO {}

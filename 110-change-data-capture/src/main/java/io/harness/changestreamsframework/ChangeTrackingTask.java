@@ -9,6 +9,7 @@ package io.harness.changestreamsframework;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.persistence.PersistentEntity;
 
 import com.mongodb.DBObject;
 import com.mongodb.MongoClient;
@@ -34,13 +35,15 @@ class ChangeTrackingTask implements Runnable {
   private ChangeStreamSubscriber changeStreamSubscriber;
   private MongoCollection<DBObject> collection;
   private ClientSession clientSession;
+  private Class<? extends PersistentEntity> subscribedClass;
   private BsonDocument resumeToken;
 
   ChangeTrackingTask(ChangeStreamSubscriber changeStreamSubscriber, MongoCollection<DBObject> collection,
-      ClientSession clientSession, String tokenParam) {
+      ClientSession clientSession, String tokenParam, Class<? extends PersistentEntity> subscribedClass) {
     this.changeStreamSubscriber = changeStreamSubscriber;
     this.collection = collection;
     this.clientSession = clientSession;
+    this.subscribedClass = subscribedClass;
     if (tokenParam != null) {
       this.resumeToken =
           Document.parse(tokenParam).toBsonDocument(BsonDocument.class, MongoClient.getDefaultCodecRegistry());
@@ -72,27 +75,28 @@ class ChangeTrackingTask implements Runnable {
     MongoCursor<ChangeStreamDocument<DBObject>> mongoCursor = null;
     try {
       if (resumeToken == null) {
-        log.info("Opening changeStream without resumeToken");
+        log.info("Opening changeStream without resumeToken on {}", collection.getNamespace());
         mongoCursor = changeStreamIterable.iterator();
       } else {
-        log.info("Opening changeStream with resumeToken");
+        log.info("Opening changeStream with resumeToken on {}", collection.getNamespace());
         boolean isResumeTokenValid = true;
         try {
           mongoCursor = changeStreamIterableResumeToken.resumeAfter(resumeToken).iterator();
         } catch (Exception ex) {
           isResumeTokenValid = false;
-          log.error("Resume Token Invalid :{}", ex);
+          log.error("Resume Token Invalid on {}", collection.getNamespace(), ex);
         }
         if (!isResumeTokenValid) {
-          log.error("Resume Token Invalid, Creating Change Stream Without Resume Token");
+          log.error(
+              "Resume Token Invalid, Creating Change Stream Without Resume Token on {}", collection.getNamespace());
           mongoCursor = changeStreamIterable.iterator();
         }
       }
-      log.info("Connection details for mongo cursor {}", mongoCursor.getServerCursor());
+      log.info("Connection details for {} mongo cursor {}", collection.getNamespace(), mongoCursor.getServerCursor());
       mongoCursor.forEachRemaining(changeStreamDocumentConsumer);
     } finally {
       if (mongoCursor != null) {
-        log.info("Closing mongo cursor");
+        log.info("Closing mongo cursor on {}", collection.getNamespace());
         mongoCursor.close();
       }
     }

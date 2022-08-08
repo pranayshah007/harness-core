@@ -6,6 +6,9 @@
 extend type Query {
   # Get details about all delegates for account
   delegateList(filters: [DelegateFilter], limit: Int, offset: Int): DelegateList @dataFetcher(name: delegateList)
+  # Get details about all delegates for account
+  delegateScopeList(filters: [DelegateScopeFilter], limit: Int, offset: Int): DelegateScopeList
+    @dataFetcher(name: delegateScopeList)
 }
 
 type DelegateList {
@@ -13,11 +16,21 @@ type DelegateList {
   nodes: [Delegate]
 }
 
+type DelegateScopeList {
+  pageInfo: PageInfo
+  nodes: [DelegateScope]
+}
+
 input DelegateFilter {
   accountId: String!
   delegateType: DelegateType
   delegateStatus: DelegateStatus
   delegateName: String
+}
+
+input DelegateScopeFilter {
+  accountId: String!
+  scopeName: String
 }
 
 enum DelegateType {

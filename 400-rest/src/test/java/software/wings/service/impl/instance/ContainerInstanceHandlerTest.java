@@ -15,10 +15,12 @@ import static io.harness.rule.OwnerRule.ACASIAN;
 import static io.harness.rule.OwnerRule.ADWAIT;
 import static io.harness.rule.OwnerRule.ANSHUL;
 import static io.harness.rule.OwnerRule.RAGHVENDRA;
+import static io.harness.rule.OwnerRule.SOURABH;
 import static io.harness.rule.OwnerRule.YOGESH;
 
 import static software.wings.beans.artifact.Artifact.Builder.anArtifact;
 import static software.wings.beans.container.Label.Builder.aLabel;
+import static software.wings.beans.infrastructure.instance.InstanceType.ECS_CONTAINER_INSTANCE;
 import static software.wings.beans.infrastructure.instance.InstanceType.KUBERNETES_CONTAINER_INSTANCE;
 import static software.wings.service.impl.instance.InstanceSyncTestConstants.ACCOUNT_ID;
 import static software.wings.service.impl.instance.InstanceSyncTestConstants.APP_ID;
@@ -44,6 +46,7 @@ import static software.wings.utils.WingsTestConstants.UUID;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
+import static junit.framework.TestCase.assertEquals;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Matchers.any;
@@ -52,7 +55,6 @@ import static org.mockito.Matchers.anyList;
 import static org.mockito.Matchers.anyListOf;
 import static org.mockito.Matchers.anyMapOf;
 import static org.mockito.Matchers.anySet;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.atLeast;
 import static org.mockito.Mockito.doReturn;
@@ -65,12 +67,14 @@ import static org.mockito.Mockito.when;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
+import io.harness.beans.ArtifactMetadata;
 import io.harness.beans.EnvironmentType;
 import io.harness.beans.FeatureName;
 import io.harness.beans.PageResponse;
 import io.harness.category.element.UnitTests;
 import io.harness.container.ContainerInfo;
 import io.harness.delegate.task.helm.HelmChartInfo;
+import io.harness.exception.GeneralException;
 import io.harness.exception.runtime.NoInstancesException;
 import io.harness.ff.FeatureFlagService;
 import io.harness.k8s.model.HarnessLabels;
@@ -81,6 +85,7 @@ import io.harness.persistence.HPersistence;
 import io.harness.rule.Owner;
 
 import software.wings.WingsBaseTest;
+import software.wings.api.AwsCodeDeployDeploymentInfo;
 import software.wings.api.ContainerDeploymentInfoWithLabels;
 import software.wings.api.ContainerDeploymentInfoWithNames;
 import software.wings.api.DeploymentInfo;
@@ -89,6 +94,7 @@ import software.wings.api.HelmSetupExecutionSummary;
 import software.wings.api.K8sDeploymentInfo;
 import software.wings.api.ondemandrollback.OnDemandRollbackInfo;
 import software.wings.beans.Application;
+import software.wings.beans.AwsInfrastructureMapping;
 import software.wings.beans.ContainerInfrastructureMapping;
 import software.wings.beans.DirectKubernetesInfrastructureMapping;
 import software.wings.beans.EcsInfrastructureMapping;
@@ -102,6 +108,7 @@ import software.wings.beans.artifact.Artifact;
 import software.wings.beans.container.Label;
 import software.wings.beans.infrastructure.instance.Instance;
 import software.wings.beans.infrastructure.instance.InstanceType;
+import software.wings.beans.infrastructure.instance.info.EcsContainerInfo;
 import software.wings.beans.infrastructure.instance.info.EcsContainerInfo.Builder;
 import software.wings.beans.infrastructure.instance.info.InstanceInfo;
 import software.wings.beans.infrastructure.instance.info.K8sContainerInfo;
@@ -110,6 +117,9 @@ import software.wings.beans.infrastructure.instance.info.KubernetesContainerInfo
 import software.wings.beans.infrastructure.instance.key.ContainerInstanceKey;
 import software.wings.beans.infrastructure.instance.key.HostInstanceKey;
 import software.wings.beans.infrastructure.instance.key.PodInstanceKey;
+import software.wings.beans.infrastructure.instance.key.deployment.ContainerDeploymentKey;
+import software.wings.beans.infrastructure.instance.key.deployment.DeploymentKey;
+import software.wings.beans.infrastructure.instance.key.deployment.K8sDeploymentKey;
 import software.wings.helpers.ext.k8s.response.K8sInstanceSyncResponse;
 import software.wings.helpers.ext.k8s.response.K8sTaskExecutionResponse;
 import software.wings.service.impl.ContainerMetadata;
@@ -128,10 +138,12 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -174,15 +186,13 @@ public class ContainerInstanceHandlerTest extends WingsBaseTest {
 
     doReturn(Application.Builder.anApplication().name(APP_NAME).uuid(APP_ID).accountId(ACCOUNT_ID).build())
         .when(appService)
-        .get(anyString());
+        .get(any());
 
     doReturn(Environment.Builder.anEnvironment().environmentType(EnvironmentType.PROD).name(ENV_NAME).build())
         .when(environmentService)
-        .get(anyString(), anyString(), anyBoolean());
+        .get(any(), any(), anyBoolean());
 
-    doReturn(Service.builder().name(SERVICE_NAME).build())
-        .when(serviceResourceService)
-        .getWithDetails(anyString(), anyString());
+    doReturn(Service.builder().name(SERVICE_NAME).build()).when(serviceResourceService).getWithDetails(any(), any());
 
     doReturn(false).when(featureFlagService).isEnabled(FeatureName.KEEP_PT_AFTER_K8S_DOWNSCALE, ACCOUNT_ID);
   }
@@ -222,9 +232,7 @@ public class ContainerInstanceHandlerTest extends WingsBaseTest {
   @Owner(developers = ADWAIT)
   @Category(UnitTests.class)
   public void testSyncInstancesDelete_ECS() throws Exception {
-    doReturn(getInframapping(InfrastructureMappingType.AWS_ECS.name()))
-        .when(infraMappingService)
-        .get(anyString(), anyString());
+    doReturn(getInframapping(InfrastructureMappingType.AWS_ECS.name())).when(infraMappingService).get(any(), any());
 
     final List<Instance> instances = asList(
         Instance.builder()
@@ -254,9 +262,7 @@ public class ContainerInstanceHandlerTest extends WingsBaseTest {
     ContainerSyncResponse containerSyncResponse =
         ContainerSyncResponse.builder().containerInfoList(Collections.emptyList()).build();
 
-    doReturn(instances)
-        .when(instanceService)
-        .getInstancesForAppAndInframappingNotRemovedFully(anyString(), anyString());
+    doReturn(instances).when(instanceService).getInstancesForAppAndInframappingNotRemovedFully(any(), any());
     doReturn(containerSyncResponse).when(containerSync).getInstances(any(), anyList());
     containerInstanceHandler.syncInstances(APP_ID, INFRA_MAPPING_ID, InstanceSyncFlow.MANUAL);
     assertionsForDelete(INSTANCE_1_ID);
@@ -267,9 +273,7 @@ public class ContainerInstanceHandlerTest extends WingsBaseTest {
   @Owner(developers = ADWAIT)
   @Category(UnitTests.class)
   public void testSyncInstancesAdd_ECS() throws Exception {
-    doReturn(getInframapping(InfrastructureMappingType.AWS_ECS.name()))
-        .when(infraMappingService)
-        .get(anyString(), anyString());
+    doReturn(getInframapping(InfrastructureMappingType.AWS_ECS.name())).when(infraMappingService).get(any(), any());
 
     PageResponse<Instance> pageResponse = new PageResponse<>();
 
@@ -316,9 +320,7 @@ public class ContainerInstanceHandlerTest extends WingsBaseTest {
                                                               .build()))
                                                       .build();
 
-    doReturn(instances)
-        .when(instanceService)
-        .getInstancesForAppAndInframappingNotRemovedFully(anyString(), anyString());
+    doReturn(instances).when(instanceService).getInstancesForAppAndInframappingNotRemovedFully(any(), any());
     doReturn(containerSyncResponse).when(containerSync).getInstances(any(), anyList());
 
     containerInstanceHandler.syncInstances(APP_ID, INFRA_MAPPING_ID, InstanceSyncFlow.MANUAL);
@@ -329,9 +331,7 @@ public class ContainerInstanceHandlerTest extends WingsBaseTest {
   @Owner(developers = RAGHVENDRA)
   @Category(UnitTests.class)
   public void testSyncInstancesDoNothing7DaysOldDeletedAndAddNew_ECS() throws Exception {
-    doReturn(getInframapping(InfrastructureMappingType.AWS_ECS.name()))
-        .when(infraMappingService)
-        .get(anyString(), anyString());
+    doReturn(getInframapping(InfrastructureMappingType.AWS_ECS.name())).when(infraMappingService).get(any(), any());
 
     PageResponse<Instance> pageResponse = new PageResponse<>();
 
@@ -372,9 +372,7 @@ public class ContainerInstanceHandlerTest extends WingsBaseTest {
                                                                                     .build()))
                                                       .build();
 
-    doReturn(instances)
-        .when(instanceService)
-        .getInstancesForAppAndInframappingNotRemovedFully(anyString(), anyString());
+    doReturn(instances).when(instanceService).getInstancesForAppAndInframappingNotRemovedFully(any(), any());
     doReturn(containerSyncResponse).when(containerSync).getInstances(any(), anyList());
 
     containerInstanceHandler.syncInstances(APP_ID, INFRA_MAPPING_ID, InstanceSyncFlow.MANUAL);
@@ -388,9 +386,7 @@ public class ContainerInstanceHandlerTest extends WingsBaseTest {
   @Owner(developers = ADWAIT)
   @Category(UnitTests.class)
   public void testNewDeployment_DeleteOlderInstance_ECS() throws Exception {
-    doReturn(getInframapping(InfrastructureMappingType.AWS_ECS.name()))
-        .when(infraMappingService)
-        .get(anyString(), anyString());
+    doReturn(getInframapping(InfrastructureMappingType.AWS_ECS.name())).when(infraMappingService).get(any(), any());
 
     PageResponse<Instance> pageResponse = new PageResponse<>();
     final List<Instance> instances = asList(
@@ -418,9 +414,7 @@ public class ContainerInstanceHandlerTest extends WingsBaseTest {
                               .build())
             .build());
 
-    doReturn(instances)
-        .when(instanceService)
-        .getInstancesForAppAndInframappingNotRemovedFully(anyString(), anyString());
+    doReturn(instances).when(instanceService).getInstancesForAppAndInframappingNotRemovedFully(any(), any());
     doReturn(ContainerSyncResponse.builder().containerInfoList(Collections.EMPTY_LIST).build())
         .when(containerSync)
         .getInstances(any(), anyList());
@@ -445,13 +439,11 @@ public class ContainerInstanceHandlerTest extends WingsBaseTest {
   @Owner(developers = ADWAIT)
   @Category(UnitTests.class)
   public void testNewDeployment_AddNewInstance_ECS() throws Exception {
-    doReturn(getInframapping(InfrastructureMappingType.AWS_ECS.name()))
-        .when(infraMappingService)
-        .get(anyString(), anyString());
+    doReturn(getInframapping(InfrastructureMappingType.AWS_ECS.name())).when(infraMappingService).get(any(), any());
 
     doReturn(Collections.emptyList())
         .when(instanceService)
-        .getInstancesForAppAndInframappingNotRemovedFully(anyString(), anyString());
+        .getInstancesForAppAndInframappingNotRemovedFully(any(), any());
     doReturn(ContainerSyncResponse.builder()
                  .containerInfoList(asList(Builder.anEcsContainerInfo()
                                                .withClusterName(ECS_CLUSTER)
@@ -519,7 +511,7 @@ public class ContainerInstanceHandlerTest extends WingsBaseTest {
   public void testSyncInstances_DeleteInstance_Kubernetes() throws Exception {
     doReturn(getInframapping(InfrastructureMappingType.GCP_KUBERNETES.name()))
         .when(infraMappingService)
-        .get(anyString(), anyString());
+        .get(any(), any());
 
     PageResponse<Instance> pageResponse = new PageResponse<>();
 
@@ -549,7 +541,7 @@ public class ContainerInstanceHandlerTest extends WingsBaseTest {
     ContainerSyncResponse containerSyncResponse =
         ContainerSyncResponse.builder().containerInfoList(Collections.EMPTY_LIST).build();
 
-    doReturn(instances).when(instanceService).getInstancesForAppAndInframapping(anyString(), anyString());
+    doReturn(instances).when(instanceService).getInstancesForAppAndInframapping(any(), any());
 
     doReturn(ContainerSyncResponse.builder().containerInfoList(asList()).build())
         .doReturn(containerSyncResponse)
@@ -566,7 +558,7 @@ public class ContainerInstanceHandlerTest extends WingsBaseTest {
   public void testSyncInstances_AddInstance_Kubernetes() throws Exception {
     doReturn(getInframapping(InfrastructureMappingType.GCP_KUBERNETES.name()))
         .when(infraMappingService)
-        .get(anyString(), anyString());
+        .get(any(), any());
 
     PageResponse<Instance> pageResponse = new PageResponse<>();
     final List<Instance> instances = asList(
@@ -608,7 +600,7 @@ public class ContainerInstanceHandlerTest extends WingsBaseTest {
                                                               .build()))
                                                       .build();
 
-    doReturn(instances).when(instanceService).getInstancesForAppAndInframapping(anyString(), anyString());
+    doReturn(instances).when(instanceService).getInstancesForAppAndInframapping(any(), any());
     doReturn(containerSyncResponse).when(containerSync).getInstances(any(), anyList());
 
     containerInstanceHandler.syncInstances(APP_ID, INFRA_MAPPING_ID, InstanceSyncFlow.MANUAL);
@@ -621,7 +613,7 @@ public class ContainerInstanceHandlerTest extends WingsBaseTest {
   public void testNewDeployment_DeleteOldInstances_Kubernetes() throws Exception {
     doReturn(getInframapping(InfrastructureMappingType.GCP_KUBERNETES.name()))
         .when(infraMappingService)
-        .get(anyString(), anyString());
+        .get(any(), any());
 
     PageResponse<Instance> pageResponse = new PageResponse<>();
     final List<Instance> instances = asList(
@@ -648,7 +640,7 @@ public class ContainerInstanceHandlerTest extends WingsBaseTest {
                               .build())
             .build());
 
-    doReturn(instances).when(instanceService).getInstancesForAppAndInframapping(anyString(), anyString());
+    doReturn(instances).when(instanceService).getInstancesForAppAndInframapping(any(), any());
 
     doReturn(ContainerSyncResponse.builder().containerInfoList(asList()).build())
         .when(containerSync)
@@ -678,9 +670,9 @@ public class ContainerInstanceHandlerTest extends WingsBaseTest {
   public void testNewDeployment_AddNewInstance_Kubernetes() throws Exception {
     doReturn(getInframapping(InfrastructureMappingType.GCP_KUBERNETES.name()))
         .when(infraMappingService)
-        .get(anyString(), anyString());
+        .get(any(), any());
 
-    doReturn(Collections.emptyList()).when(instanceService).getInstancesForAppAndInframapping(anyString(), anyString());
+    doReturn(Collections.emptyList()).when(instanceService).getInstancesForAppAndInframapping(any(), any());
     doReturn(ContainerSyncResponse.builder()
                  .containerInfoList(asList(KubernetesContainerInfo.builder()
                                                .clusterName(KUBE_CLUSTER)
@@ -730,7 +722,7 @@ public class ContainerInstanceHandlerTest extends WingsBaseTest {
 
     doReturn(getInframapping(InfrastructureMappingType.GCP_KUBERNETES.name()))
         .when(infraMappingService)
-        .get(anyString(), anyString());
+        .get(any(), any());
 
     final List<Instance> instances = asList(
         Instance.builder()
@@ -755,7 +747,7 @@ public class ContainerInstanceHandlerTest extends WingsBaseTest {
                               .build())
             .build());
 
-    doReturn(instances).when(instanceService).getInstancesForAppAndInframapping(anyString(), anyString());
+    doReturn(instances).when(instanceService).getInstancesForAppAndInframapping(any(), any());
 
     doReturn(ContainerSyncResponse.builder().containerInfoList(asList()).build())
         .doReturn(ContainerSyncResponse.builder()
@@ -863,14 +855,13 @@ public class ContainerInstanceHandlerTest extends WingsBaseTest {
   @Owner(developers = ANSHUL)
   @Category(UnitTests.class)
   public void testNewDeployment_AddNewInstance_K8sV2() throws Exception {
-    doReturn(Collections.emptyList()).when(instanceService).getInstancesForAppAndInframapping(anyString(), anyString());
+    doReturn(Collections.emptyList()).when(instanceService).getInstancesForAppAndInframapping(any(), any());
 
     doReturn(getInframapping(InfrastructureMappingType.GCP_KUBERNETES.name()))
         .when(infraMappingService)
-        .get(anyString(), anyString());
+        .get(any(), any());
 
-    when(k8sStateHelper.fetchPodListForCluster(
-             any(GcpKubernetesInfrastructureMapping.class), anyString(), anyString(), anyString()))
+    when(k8sStateHelper.fetchPodListForCluster(any(GcpKubernetesInfrastructureMapping.class), any(), any(), any()))
         .thenReturn(asList(K8sPod.builder()
                                .name("podName")
                                .namespace("default")
@@ -887,7 +878,7 @@ public class ContainerInstanceHandlerTest extends WingsBaseTest {
                          .withUuid(ARTIFACT_ID)
                          .withArtifactStreamId(ARTIFACT_STREAM_ID)
                          .withAppId("app_id")
-                         .withMetadata(metadata)
+                         .withMetadata(new ArtifactMetadata(metadata))
                          .build());
 
     containerInstanceHandler.handleNewDeployment(Arrays.asList(DeploymentSummary.builder()
@@ -913,8 +904,7 @@ public class ContainerInstanceHandlerTest extends WingsBaseTest {
     assertThat(instance.getLastArtifactSourceName()).isEqualTo("image1");
     assertThat(instance.getLastArtifactBuildNum()).isEqualTo("version1");
 
-    when(k8sStateHelper.fetchPodListForCluster(
-             any(GcpKubernetesInfrastructureMapping.class), anyString(), anyString(), anyString()))
+    when(k8sStateHelper.fetchPodListForCluster(any(GcpKubernetesInfrastructureMapping.class), any(), any(), any()))
         .thenReturn(asList(K8sPod.builder()
                                .name("podName")
                                .namespace("default")
@@ -947,8 +937,7 @@ public class ContainerInstanceHandlerTest extends WingsBaseTest {
     assertThat(instance.getLastArtifactBuildNum()).isEqualTo("version1");
 
     persistence.delete(Artifact.class, ARTIFACT_ID);
-    when(k8sStateHelper.fetchPodListForCluster(
-             any(GcpKubernetesInfrastructureMapping.class), anyString(), anyString(), anyString()))
+    when(k8sStateHelper.fetchPodListForCluster(any(GcpKubernetesInfrastructureMapping.class), any(), any(), any()))
         .thenReturn(asList(K8sPod.builder()
                                .name("podName")
                                .namespace("default")
@@ -1027,13 +1016,13 @@ public class ContainerInstanceHandlerTest extends WingsBaseTest {
   public void test_AddNewK8sPod() throws Exception {
     doReturn(getInframapping(InfrastructureMappingType.GCP_KUBERNETES.name()))
         .when(infraMappingService)
-        .get(anyString(), anyString());
+        .get(any(), any());
 
     final String statefulSetPodName = "harness-statefulset-0";
     PageResponse<Instance> pageResponse = new PageResponse<>();
     final List<Instance> instances = Collections.emptyList();
 
-    doReturn(instances).when(instanceService).getInstancesForAppAndInframapping(anyString(), anyString());
+    doReturn(instances).when(instanceService).getInstancesForAppAndInframapping(any(), any());
     doReturn(asList(K8sPod.builder()
                         .name(statefulSetPodName)
                         .podIP("ip-1")
@@ -1041,7 +1030,7 @@ public class ContainerInstanceHandlerTest extends WingsBaseTest {
                         .containerList(asList(K8sContainer.builder().image("nginx:1.1").build()))
                         .build()))
         .when(k8sStateHelper)
-        .fetchPodListForCluster(any(), anyString(), anyString(), anyString());
+        .fetchPodListForCluster(any(), any(), any(), any());
 
     containerInstanceHandler.handleNewDeployment(
         Arrays.asList(
@@ -1063,13 +1052,13 @@ public class ContainerInstanceHandlerTest extends WingsBaseTest {
   public void test_DeleteAndAddStatefulIfImageChanges() throws Exception {
     doReturn(getInframapping(InfrastructureMappingType.GCP_KUBERNETES.name()))
         .when(infraMappingService)
-        .get(anyString(), anyString());
+        .get(any(), any());
 
     final String statefulSetPodName = "harness-statefulset-0";
     PageResponse<Instance> pageResponse = new PageResponse<>();
     final List<Instance> instances = buildK8sInstance(statefulSetPodName);
 
-    doReturn(instances).when(instanceService).getInstancesForAppAndInframapping(anyString(), anyString());
+    doReturn(instances).when(instanceService).getInstancesForAppAndInframapping(any(), any());
     doReturn(asList(K8sPod.builder()
                         .name(statefulSetPodName)
                         .podIP("ip-1")
@@ -1077,7 +1066,7 @@ public class ContainerInstanceHandlerTest extends WingsBaseTest {
                         .containerList(asList(K8sContainer.builder().image("nginx:1.1").build()))
                         .build()))
         .when(k8sStateHelper)
-        .fetchPodListForCluster(any(), anyString(), anyString(), anyString());
+        .fetchPodListForCluster(any(), any(), any(), any());
 
     containerInstanceHandler.handleNewDeployment(
         Arrays.asList(
@@ -1100,13 +1089,13 @@ public class ContainerInstanceHandlerTest extends WingsBaseTest {
   public void test_DeleteAndAddStatefulIfSideCarImageAdded() throws Exception {
     doReturn(getInframapping(InfrastructureMappingType.GCP_KUBERNETES.name()))
         .when(infraMappingService)
-        .get(anyString(), anyString());
+        .get(any(), any());
 
     final String statefulSetPodName = "harness-statefulset-0";
     PageResponse<Instance> pageResponse = new PageResponse<>();
     final List<Instance> instances = buildK8sInstance(statefulSetPodName);
 
-    doReturn(instances).when(instanceService).getInstancesForAppAndInframapping(anyString(), anyString());
+    doReturn(instances).when(instanceService).getInstancesForAppAndInframapping(any(), any());
     doReturn(asList(K8sPod.builder()
                         .name(statefulSetPodName)
                         .podIP("ip-1")
@@ -1115,7 +1104,7 @@ public class ContainerInstanceHandlerTest extends WingsBaseTest {
                             K8sContainer.builder().image("sidecar").build()))
                         .build()))
         .when(k8sStateHelper)
-        .fetchPodListForCluster(any(), anyString(), anyString(), anyString());
+        .fetchPodListForCluster(any(), any(), any(), any());
 
     containerInstanceHandler.handleNewDeployment(
         Arrays.asList(
@@ -1138,11 +1127,11 @@ public class ContainerInstanceHandlerTest extends WingsBaseTest {
   public void test_k8sDeployment_newImage() throws Exception {
     doReturn(getInframapping(InfrastructureMappingType.GCP_KUBERNETES.name()))
         .when(infraMappingService)
-        .get(anyString(), anyString());
+        .get(any(), any());
 
     final List<Instance> instances = buildK8sInstance("harness-pod-4n42hbh");
 
-    doReturn(instances).when(instanceService).getInstancesForAppAndInframapping(anyString(), anyString());
+    doReturn(instances).when(instanceService).getInstancesForAppAndInframapping(any(), any());
     doReturn(asList(K8sPod.builder()
                         .name("harness-pod-n523nk")
                         .podIP("ip-1")
@@ -1150,7 +1139,7 @@ public class ContainerInstanceHandlerTest extends WingsBaseTest {
                         .containerList(asList(K8sContainer.builder().image("nginx:1.1").build()))
                         .build()))
         .when(k8sStateHelper)
-        .fetchPodListForCluster(any(), anyString(), anyString(), anyString());
+        .fetchPodListForCluster(any(), any(), any(), any());
 
     containerInstanceHandler.handleNewDeployment(
         Arrays.asList(
@@ -1173,11 +1162,11 @@ public class ContainerInstanceHandlerTest extends WingsBaseTest {
   public void test_k8sDeployment_sameImage() throws Exception {
     doReturn(getInframapping(InfrastructureMappingType.GCP_KUBERNETES.name()))
         .when(infraMappingService)
-        .get(anyString(), anyString());
+        .get(any(), any());
 
     final List<Instance> instances = buildK8sInstance("harness-pod-n523nk");
 
-    doReturn(instances).when(instanceService).getInstancesForAppAndInframapping(anyString(), anyString());
+    doReturn(instances).when(instanceService).getInstancesForAppAndInframapping(any(), any());
     doReturn(asList(K8sPod.builder()
                         .name("harness-pod-n523nk")
                         .podIP("ip-1")
@@ -1185,7 +1174,7 @@ public class ContainerInstanceHandlerTest extends WingsBaseTest {
                         .containerList(asList(K8sContainer.builder().image("nginx:0.1").build()))
                         .build()))
         .when(k8sStateHelper)
-        .fetchPodListForCluster(any(), anyString(), anyString(), anyString());
+        .fetchPodListForCluster(any(), any(), any(), any());
 
     containerInstanceHandler.handleNewDeployment(
         Arrays.asList(
@@ -1287,12 +1276,11 @@ public class ContainerInstanceHandlerTest extends WingsBaseTest {
     reset(instanceService);
     doReturn(Sets.newHashSet("controllerName"))
         .when(containerSync)
-        .getControllerNames(
-            any(ContainerInfrastructureMapping.class), anyMapOf(String.class, String.class), anyString());
+        .getControllerNames(any(ContainerInfrastructureMapping.class), anyMapOf(String.class, String.class), any());
     doReturn(getInframapping(InfrastructureMappingType.GCP_KUBERNETES.name()))
         .when(infraMappingService)
-        .get(anyString(), anyString());
-    doReturn(instances).when(instanceService).getInstancesForAppAndInframapping(anyString(), anyString());
+        .get(any(), any());
+    doReturn(instances).when(instanceService).getInstancesForAppAndInframapping(any(), any());
     doReturn(ContainerSyncResponse.builder()
                  .containerInfoList(instances.stream()
                                         .map(instance
@@ -1328,9 +1316,9 @@ public class ContainerInstanceHandlerTest extends WingsBaseTest {
   public void test_K8sHelmChartDeployment_newInstances() throws Exception {
     doReturn(getInframapping(InfrastructureMappingType.GCP_KUBERNETES.name()))
         .when(infraMappingService)
-        .get(anyString(), anyString());
+        .get(any(), any());
 
-    doReturn(Collections.emptyList()).when(instanceService).getInstancesForAppAndInframapping(anyString(), anyString());
+    doReturn(Collections.emptyList()).when(instanceService).getInstancesForAppAndInframapping(any(), any());
     doReturn(asList(K8sPod.builder()
                         .name("sample-pod")
                         .podIP("ip-127.0.0.1")
@@ -1338,7 +1326,7 @@ public class ContainerInstanceHandlerTest extends WingsBaseTest {
                         .containerList(asList(K8sContainer.builder().image("nginx:0.1").build()))
                         .build()))
         .when(k8sStateHelper)
-        .fetchPodListForCluster(any(), anyString(), anyString(), anyString());
+        .fetchPodListForCluster(any(), any(), any(), any());
 
     containerInstanceHandler.handleNewDeployment(
         asList(getDeploymentSummaryWithHelmChartInfo(
@@ -1367,7 +1355,7 @@ public class ContainerInstanceHandlerTest extends WingsBaseTest {
   public void test_K8sHelmChartDeployment_newHelmChartVersion() throws Exception {
     doReturn(getInframapping(InfrastructureMappingType.GCP_KUBERNETES.name()))
         .when(infraMappingService)
-        .get(anyString(), anyString());
+        .get(any(), any());
 
     final List<Instance> instances =
         asList(buildK8sInstanceWithHelmChartInfo("sample-pod", helmChartInfoWithVersion("1.0.0")),
@@ -1376,7 +1364,7 @@ public class ContainerInstanceHandlerTest extends WingsBaseTest {
     instances.get(0).setLastWorkflowExecutionName("Current Workflow");
     instances.get(1).setLastWorkflowExecutionName("Another Workflow");
 
-    doReturn(instances).when(instanceService).getInstancesForAppAndInframapping(anyString(), anyString());
+    doReturn(instances).when(instanceService).getInstancesForAppAndInframapping(any(), any());
     doReturn(asList(K8sPod.builder()
                         .name("sample-pod")
                         .podIP("ip-127.0.0.1")
@@ -1390,7 +1378,7 @@ public class ContainerInstanceHandlerTest extends WingsBaseTest {
                      .containerList(singletonList(K8sContainer.builder().image("nginx:0.1").build()))
                      .build()))
         .when(k8sStateHelper)
-        .fetchPodListForCluster(any(), anyString(), anyString(), anyString());
+        .fetchPodListForCluster(any(), any(), any(), any());
 
     containerInstanceHandler.handleNewDeployment(
         singletonList(getDeploymentSummaryWithHelmChartInfo(helmChartInfoWithVersion("1.1.0"))), false,
@@ -1415,15 +1403,15 @@ public class ContainerInstanceHandlerTest extends WingsBaseTest {
 
     doReturn(getInframapping(InfrastructureMappingType.GCP_KUBERNETES.name()))
         .when(infraMappingService)
-        .get(anyString(), anyString());
-    doReturn(instances).when(instanceService).getInstancesForAppAndInframapping(anyString(), anyString());
+        .get(any(), any());
+    doReturn(instances).when(instanceService).getInstancesForAppAndInframapping(any(), any());
     doReturn(singletonList(K8sPod.builder()
                                .name("sample-pod-2")
                                .namespace("default")
                                .containerList(singletonList(K8sContainer.builder().image("helm-image:1.0").build()))
                                .build()))
         .when(k8sStateHelper)
-        .fetchPodListForCluster(any(ContainerInfrastructureMapping.class), anyString(), anyString(), anyString());
+        .fetchPodListForCluster(any(ContainerInfrastructureMapping.class), any(), any(), any());
 
     containerInstanceHandler.syncInstances(APP_ID, INFRA_MAPPING_ID, InstanceSyncFlow.ITERATOR);
 
@@ -1585,9 +1573,9 @@ public class ContainerInstanceHandlerTest extends WingsBaseTest {
 
     doReturn(getInframapping(InfrastructureMappingType.GCP_KUBERNETES.name()))
         .when(infraMappingService)
-        .get(anyString(), anyString());
-    doReturn(instances).when(instanceService).getInstancesForAppAndInframapping(anyString(), anyString());
-    doReturn(pods).when(k8sStateHelper).fetchPodListForCluster(any(), anyString(), anyString(), anyString());
+        .get(any(), any());
+    doReturn(instances).when(instanceService).getInstancesForAppAndInframapping(any(), any());
+    doReturn(pods).when(k8sStateHelper).fetchPodListForCluster(any(), any(), any(), any());
 
     containerInstanceHandler.handleNewDeployment(
         singletonList(deploymentSummary), false, OnDemandRollbackInfo.builder().onDemandRollback(false).build());
@@ -1656,9 +1644,9 @@ public class ContainerInstanceHandlerTest extends WingsBaseTest {
     ArgumentCaptor<Instance> instanceCaptor = ArgumentCaptor.forClass(Instance.class);
     doReturn(getInframapping(InfrastructureMappingType.GCP_KUBERNETES.name()))
         .when(infraMappingService)
-        .get(anyString(), anyString());
-    doReturn(instances).when(instanceService).getInstancesForAppAndInframapping(anyString(), anyString());
-    doReturn(pods).when(k8sStateHelper).fetchPodListForCluster(any(), anyString(), anyString(), anyString());
+        .get(any(), any());
+    doReturn(instances).when(instanceService).getInstancesForAppAndInframapping(any(), any());
+    doReturn(pods).when(k8sStateHelper).fetchPodListForCluster(any(), any(), any(), any());
 
     containerInstanceHandler.syncInstances(APP_ID, INFRA_MAPPING_ID, InstanceSyncFlow.ITERATOR);
 
@@ -1800,7 +1788,7 @@ public class ContainerInstanceHandlerTest extends WingsBaseTest {
                        .build();
     ContainerInfrastructureMapping infrastructureMapping;
     infrastructureMapping = DirectKubernetesInfrastructureMapping.builder().build();
-    doReturn(instances).when(instanceService).getInstancesForAppAndInframapping(anyString(), anyString());
+    doReturn(instances).when(instanceService).getInstancesForAppAndInframapping(any(), any());
 
     containerInstanceHandler.processInstanceSyncResponseFromPerpetualTask(infrastructureMapping, responseData);
 
@@ -1844,7 +1832,7 @@ public class ContainerInstanceHandlerTest extends WingsBaseTest {
                        .build();
     ContainerInfrastructureMapping infrastructureMapping;
     infrastructureMapping = DirectKubernetesInfrastructureMapping.builder().build();
-    doReturn(instances).when(instanceService).getInstancesForAppAndInframapping(anyString(), anyString());
+    doReturn(instances).when(instanceService).getInstancesForAppAndInframapping(any(), any());
 
     containerInstanceHandler.processInstanceSyncResponseFromPerpetualTask(infrastructureMapping, responseData);
 
@@ -1857,7 +1845,7 @@ public class ContainerInstanceHandlerTest extends WingsBaseTest {
                        .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
                        .build();
     infrastructureMapping = DirectKubernetesInfrastructureMapping.builder().build();
-    doReturn(instances).when(instanceService).getInstancesForAppAndInframapping(anyString(), anyString());
+    doReturn(instances).when(instanceService).getInstancesForAppAndInframapping(any(), any());
 
     containerInstanceHandler.processInstanceSyncResponseFromPerpetualTask(infrastructureMapping, responseData);
 
@@ -1918,7 +1906,7 @@ public class ContainerInstanceHandlerTest extends WingsBaseTest {
     infrastructureMapping = DirectKubernetesInfrastructureMapping.builder()
                                 .infraMappingType(InfrastructureMappingType.DIRECT_KUBERNETES.name())
                                 .build();
-    doReturn(instances).when(instanceService).getInstancesForAppAndInframapping(anyString(), anyString());
+    doReturn(instances).when(instanceService).getInstancesForAppAndInframapping(any(), any());
 
     containerInstanceHandler.processInstanceSyncResponseFromPerpetualTask(infrastructureMapping, responseData);
 
@@ -1989,7 +1977,7 @@ public class ContainerInstanceHandlerTest extends WingsBaseTest {
             .infraMappingType(InfrastructureMappingType.DIRECT_KUBERNETES.name())
             .build();
 
-    doReturn(instances).when(instanceService).getInstancesForAppAndInframapping(anyString(), anyString());
+    doReturn(instances).when(instanceService).getInstancesForAppAndInframapping(any(), any());
     doReturn(responseData)
         .when(containerSync)
         .getInstances(infrastructureMapping,
@@ -2010,7 +1998,7 @@ public class ContainerInstanceHandlerTest extends WingsBaseTest {
                        .containerServiceName("controllerName:1")
                        .type(null)
                        .build()));
-    doReturn(infrastructureMapping).when(infraMappingService).get(anyString(), anyString());
+    doReturn(infrastructureMapping).when(infraMappingService).get(any(), any());
 
     containerInstanceHandler.syncInstances("", "", InstanceSyncFlow.ITERATOR);
 
@@ -2246,6 +2234,92 @@ public class ContainerInstanceHandlerTest extends WingsBaseTest {
   }
 
   @Test
+  @Owner(developers = SOURABH)
+  @Category(UnitTests.class)
+  public void shouldNotChangeInstancesFromPerpetualTaskIfResponseFromDelegateIsSameECS() throws Exception {
+    List<Instance> instancesInDb =
+        Arrays.asList(createECSInstance("instance1"), createECSInstance("instance2"), createECSInstance("instance3"));
+
+    ContainerSyncResponse instanceSyncResponse = containerSyncResponse("instance1", "instance2", "instance3");
+    assertSavedAndDeletedInstancesEcs(instancesInDb, instanceSyncResponse, emptyList(), emptyList());
+  }
+
+  @Test
+  @Owner(developers = SOURABH)
+  @Category(UnitTests.class)
+  public void shouldUpdateInstancesFromPerpetualTaskIfResponseFromDelegateIsNotSameECS() throws Exception {
+    List<Instance> instancesInDb =
+        Arrays.asList(createECSInstance("instance1"), createECSInstance("instance2"), createECSInstance("instance3"));
+
+    ContainerSyncResponse instanceSyncResponse = containerSyncResponse("instance4", "instance5", "instance6");
+    assertSavedAndDeletedInstancesEcs(instancesInDb, instanceSyncResponse,
+        asList("instance4", "instance5", "instance6"), asList("instance1", "instance2", "instance3"));
+  }
+
+  @Test
+  @Owner(developers = SOURABH)
+  @Category(UnitTests.class)
+  public void shouldUpdateInstancesFromPerpetualTaskIfResponseFromDelegateWithOneInstanceSameECS() throws Exception {
+    List<Instance> instancesInDb =
+        Arrays.asList(createECSInstance("instance1"), createECSInstance("instance2"), createECSInstance("instance3"));
+
+    ContainerSyncResponse instanceSyncResponse = containerSyncResponse("instance1", "instance5", "instance6");
+    assertSavedAndDeletedInstancesEcs(
+        instancesInDb, instanceSyncResponse, asList("instance5", "instance6"), asList("instance2", "instance3"));
+  }
+
+  @Test(expected = GeneralException.class)
+  @Owner(developers = SOURABH)
+  @Category(UnitTests.class)
+  public void shouldThrowExceptionOnUnsupportedInfraMapping() throws Exception {
+    AwsInfrastructureMapping awsInfrastructureMapping =
+        AwsInfrastructureMapping.Builder.anAwsInfrastructureMapping().build();
+    containerInstanceHandler.processInstanceSyncResponseFromPerpetualTask(awsInfrastructureMapping, null);
+  }
+
+  @Test
+  @Owner(developers = SOURABH)
+  @Category(UnitTests.class)
+  public void generateDeploymentKeyTestForContainerDeploymentInfoWithLabels() throws Exception {
+    List<Label> labelList = Arrays.asList(createLabel("l1"), createLabel("l2"));
+    DeploymentInfo deploymentInfo = ContainerDeploymentInfoWithLabels.builder()
+                                        .labels(new ArrayList<Label>(asList(createLabel("l1"), createLabel("l2"))))
+                                        .namespace("NS1")
+                                        .releaseName("RN1")
+                                        .build();
+    DeploymentKey deploymentKey = containerInstanceHandler.generateDeploymentKey(deploymentInfo);
+    ContainerDeploymentKey containerDeploymentKey = (ContainerDeploymentKey) deploymentKey;
+    assertThat(labelList).containsExactlyInAnyOrderElementsOf(containerDeploymentKey.getLabels());
+  }
+  @Test
+  @Owner(developers = SOURABH)
+  @Category(UnitTests.class)
+  public void generateDeploymentKeyTestForContainerDeploymentInfoWithNames() throws Exception {
+    DeploymentInfo deploymentInfo =
+        ContainerDeploymentInfoWithNames.builder().containerSvcName("service1").clusterName("cl1").build();
+    ContainerDeploymentKey containerDeploymentKey =
+        (ContainerDeploymentKey) containerInstanceHandler.generateDeploymentKey(deploymentInfo);
+    assertEquals("service1", containerDeploymentKey.getContainerServiceName());
+  }
+  @Test
+  @Owner(developers = SOURABH)
+  @Category(UnitTests.class)
+  public void generateDeploymentKeyTestForK8sDeployment() throws Exception {
+    DeploymentInfo deploymentInfo = K8sDeploymentInfo.builder().releaseName("Name1").clusterName("cl1").build();
+    K8sDeploymentKey k8sDeploymentKey =
+        (K8sDeploymentKey) containerInstanceHandler.generateDeploymentKey(deploymentInfo);
+    assertEquals("Name1", k8sDeploymentKey.getReleaseName());
+  }
+
+  @Test(expected = GeneralException.class)
+  @Owner(developers = SOURABH)
+  @Category(UnitTests.class)
+  public void generateDeploymentKeyTestUnsupportedTypeThrowsException() throws Exception {
+    DeploymentInfo deploymentInfo = AwsCodeDeployDeploymentInfo.builder().build();
+    containerInstanceHandler.generateDeploymentKey(deploymentInfo);
+  }
+
+  @Test
   @Owner(developers = ABOSII)
   @Category(UnitTests.class)
   public void shouldThrowNoInstancesExceptionInstancesExistsInDb() {
@@ -2362,7 +2436,7 @@ public class ContainerInstanceHandlerTest extends WingsBaseTest {
                             .withUuid("artifactId")
                             .withArtifactStreamId("artifactStreamId")
                             .withAppId(APP_ID)
-                            .withMetadata(metadata)
+                            .withMetadata(new ArtifactMetadata(metadata))
                             .build();
 
     List<K8sPod> existingK8sPod =
@@ -2409,6 +2483,44 @@ public class ContainerInstanceHandlerTest extends WingsBaseTest {
     }
   }
 
+  private void assertSavedAndDeletedInstancesEcs(List<Instance> instancesInDb, ContainerSyncResponse syncResponse,
+      List<String> savedInstances, List<String> deletedInstances) throws Exception {
+    ContainerInfrastructureMapping infrastructureMapping =
+        EcsInfrastructureMapping.Builder.anEcsInfrastructureMapping()
+            .withAppId(APP_ID)
+            .withAccountId(ACCOUNT_ID)
+            .withInfraMappingType(InfrastructureMappingType.AWS_ECS.name())
+            .build();
+    infrastructureMapping.setUuid(UUID);
+
+    doReturn(instancesInDb).when(instanceService).getInstancesForAppAndInframappingNotRemovedFully(APP_ID, UUID);
+    Exception thrownException = null;
+
+    try {
+      containerInstanceHandler.processInstanceSyncResponseFromPerpetualTask(infrastructureMapping, syncResponse);
+    } catch (Exception e) {
+      thrownException = e;
+    }
+    ArgumentCaptor<Instance> savedInstancesCaptor = ArgumentCaptor.forClass(Instance.class);
+    ArgumentCaptor<Set<String>> deletedInstancesCaptor =
+        ArgumentCaptor.forClass((Class<Set<String>>) (Object) Set.class);
+
+    verify(instanceService, atLeast(0)).save(savedInstancesCaptor.capture());
+    verify(instanceService, atLeast(0)).delete(deletedInstancesCaptor.capture());
+    assertThat(savedInstancesCaptor.getAllValues()
+                   .stream()
+                   .map(Instance::getInstanceInfo)
+                   .map(EcsContainerInfo.class ::cast)
+                   .map(EcsContainerInfo::getTaskArn))
+        .containsExactlyInAnyOrderElementsOf(savedInstances);
+
+    assertThat(deletedInstancesCaptor.getAllValues().stream().flatMap(Set::stream).collect(Collectors.toList()))
+        .containsExactlyInAnyOrderElementsOf(deletedInstances);
+
+    if (thrownException != null) {
+      throw thrownException;
+    }
+  }
   private void assertSavedAndDeletedInstancesOnNewDeployment(DeploymentSummary deploymentSummary,
       List<Instance> instancesInDb, List<K8sPod> podList, List<String> savedInstances, List<String> deletedInstances,
       Artifact artifact) throws Exception {
@@ -2519,6 +2631,16 @@ public class ContainerInstanceHandlerTest extends WingsBaseTest {
         .build();
   }
 
+  private Instance createECSInstance(String id) {
+    InstanceInfo instanceInfo = EcsContainerInfo.Builder.anEcsContainerInfo().withClusterName("cl1").build();
+    return Instance.builder()
+        .uuid(id)
+        .instanceType(ECS_CONTAINER_INSTANCE)
+        .lastWorkflowExecutionId("WFexec")
+        .containerInstanceKey(ContainerInstanceKey.builder().containerId(id).build())
+        .instanceInfo(instanceInfo)
+        .build();
+  }
   private Instance createKubernetesContainerInstance(String id, String releaseName, String namespace) {
     return createKubernetesContainerInstance(id, releaseName, namespace, null);
   }
@@ -2547,6 +2669,22 @@ public class ContainerInstanceHandlerTest extends WingsBaseTest {
         .k8sPodInfoList(
             Arrays.stream(podIds).map(id -> createK8sPod(id, releaseName, namespace)).collect(Collectors.toList()))
         .build();
+  }
+  public Label createLabel(String name) {
+    return Label.Builder.aLabel().withName(name).build();
+  }
+  private ContainerSyncResponse containerSyncResponse(String... ids) {
+    List<EcsContainerInfo> list = new ArrayList<>();
+    for (String id : ids) {
+      EcsContainerInfo info = createECSInfo(id);
+      list.add(info);
+    }
+    LinkedList<software.wings.beans.infrastructure.instance.info.ContainerInfo> list1 = new LinkedList<>(list);
+    return ContainerSyncResponse.builder().isEcs(true).containerInfoList(list1).build();
+  }
+
+  private EcsContainerInfo createECSInfo(String id) {
+    return EcsContainerInfo.Builder.anEcsContainerInfo().withTaskArn(id).withClusterName("cl1").build();
   }
 
   private ContainerSyncResponse createContainerSyncResponseWith(

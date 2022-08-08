@@ -67,7 +67,7 @@ public class K8SSyncEventTasklet extends EventWriter implements Tasklet {
 
       instanceDataBulkWriteService.updateLifecycle(lifecycleList);
 
-      if (featureFlagService.isEnabled(FeatureName.NODE_RECOMMENDATION_1, jobConstants.getAccountId())) {
+      if (featureFlagService.isEnabled(FeatureName.NODE_RECOMMENDATION_AGGREGATE, jobConstants.getAccountId())) {
         updateInactiveInstancesInTimescale(jobConstants, publishedMessageList);
       }
 
@@ -128,7 +128,9 @@ public class K8SSyncEventTasklet extends EventWriter implements Tasklet {
         Set<String> activeInstanceArns = new HashSet<>();
 
         if (k8SClusterSyncEvent.getVersion() == 2) {
-          activeInstanceArns.addAll(k8SClusterSyncEvent.getActiveNodeUidsMapMap().keySet());
+          Set<String> nodeUids = k8SClusterSyncEvent.getActiveNodeUidsMapMap().keySet();
+          log.info("Active nodeUids are {}", nodeUids.toString());
+          activeInstanceArns.addAll(nodeUids);
           activeInstanceArns.addAll(k8SClusterSyncEvent.getActivePodUidsMapMap().keySet());
           activeInstanceArns.addAll(k8SClusterSyncEvent.getActivePvUidsMapMap().keySet());
         } else {

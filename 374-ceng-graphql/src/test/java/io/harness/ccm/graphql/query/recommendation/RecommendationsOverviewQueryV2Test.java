@@ -7,6 +7,7 @@
 
 package io.harness.ccm.graphql.query.recommendation;
 
+import static io.harness.rule.OwnerRule.ABHIJEET;
 import static io.harness.rule.OwnerRule.UTSAV;
 import static io.harness.timescaledb.Tables.CE_RECOMMENDATIONS;
 
@@ -24,9 +25,12 @@ import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
 import io.harness.ccm.commons.beans.recommendation.RecommendationOverviewStats;
 import io.harness.ccm.commons.beans.recommendation.ResourceType;
+import io.harness.ccm.commons.beans.recommendation.models.RecommendationResponse;
 import io.harness.ccm.graphql.core.recommendation.RecommendationService;
 import io.harness.ccm.graphql.dto.recommendation.FilterStatsDTO;
 import io.harness.ccm.graphql.dto.recommendation.K8sRecommendationFilterDTO;
+import io.harness.ccm.graphql.dto.recommendation.NodeRecommendationDTO;
+import io.harness.ccm.graphql.dto.recommendation.RecommendationDetailsDTO;
 import io.harness.ccm.graphql.dto.recommendation.RecommendationItemDTO;
 import io.harness.ccm.graphql.dto.recommendation.RecommendationsDTO;
 import io.harness.ccm.graphql.utils.GraphQLUtils;
@@ -48,6 +52,8 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.rule.Owner;
 
 import graphql.com.google.common.collect.ImmutableList;
+import io.leangen.graphql.execution.ResolutionEnvironment;
+import java.time.OffsetDateTime;
 import java.util.Collections;
 import java.util.List;
 import org.jooq.Condition;
@@ -79,12 +85,16 @@ public class RecommendationsOverviewQueryV2Test extends CategoryTest {
 
   @Mock private GraphQLUtils graphQLUtils;
   @Mock private RecommendationService recommendationService;
+  @Mock private RecommendationsDetailsQuery detailsQuery;
   @Mock private CEViewService viewService;
   @InjectMocks private RecommendationsOverviewQueryV2 overviewQuery;
 
   @Before
   public void setUp() throws Exception {
     when(graphQLUtils.getAccountIdentifier(any())).thenReturn(ACCOUNT_ID);
+    when(detailsQuery.recommendationDetails(any(RecommendationItemDTO.class), any(OffsetDateTime.class),
+             any(OffsetDateTime.class), any(ResolutionEnvironment.class)))
+        .thenReturn(null);
 
     conditionCaptor = ArgumentCaptor.forClass(Condition.class);
   }
@@ -257,6 +267,23 @@ public class RecommendationsOverviewQueryV2Test extends CategoryTest {
     assertThatThrownBy(() -> overviewQuery.recommendations(filter, null))
         .isExactlyInstanceOf(InvalidRequestException.class)
         .hasMessageContaining(PERSPECTIVE_ID);
+  }
+
+  @Test
+  @Owner(developers = ABHIJEET)
+  @Category(UnitTests.class)
+  public void testIfRecommendationDetailsExistsInListQueryResponse() {
+    when(recommendationService.listAll(eq(ACCOUNT_ID), any(Condition.class), any(), any()))
+        .thenReturn(ImmutableList.of(createRecommendationItem("id0"), createRecommendationItem("id1")));
+    when(detailsQuery.recommendationDetails(
+             any(RecommendationItemDTO.class), any(OffsetDateTime.class), any(OffsetDateTime.class), eq(null)))
+        .thenReturn(createRecommendationDetails());
+
+    final RecommendationsDTO recommendationsDTO = overviewQuery.recommendations(defaultFilter, null);
+
+    assertRecommendationOverviewListResponse(recommendationsDTO);
+    recommendationsDTO.getItems().forEach(
+        item -> assertThat(item.getRecommendationDetails()).isEqualTo(createRecommendationDetails()));
   }
 
   @Test
@@ -465,6 +492,12 @@ public class RecommendationsOverviewQueryV2Test extends CategoryTest {
 
   private static RecommendationItemDTO createRecommendationItem(String id) {
     return createRecommendationItem(id, ResourceType.WORKLOAD);
+  }
+
+  private static RecommendationDetailsDTO createRecommendationDetails() {
+    return NodeRecommendationDTO.builder()
+        .recommended(RecommendationResponse.builder().provider("google").build())
+        .build();
   }
 
   private static RecommendationItemDTO createRecommendationItem(String id, ResourceType resourceType) {

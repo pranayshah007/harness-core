@@ -12,8 +12,12 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import static software.wings.service.impl.instance.InstanceSyncFlow.MANUAL;
 
+import static java.util.Objects.isNull;
+
+import io.harness.beans.ArtifactMetadata;
 import io.harness.beans.ExecutionStatus;
 import io.harness.beans.FeatureName;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.exception.InvalidRequestException;
 import io.harness.validation.Validator;
@@ -29,6 +33,7 @@ import software.wings.beans.CustomInfrastructureMapping;
 import software.wings.beans.InfrastructureMapping;
 import software.wings.beans.WorkflowExecution;
 import software.wings.beans.artifact.Artifact;
+import software.wings.beans.artifact.ArtifactMetadataKeys;
 import software.wings.beans.infrastructure.instance.Instance;
 import software.wings.beans.infrastructure.instance.Instance.InstanceBuilder;
 import software.wings.beans.infrastructure.instance.info.PhysicalHostInstanceInfo;
@@ -38,12 +43,14 @@ import software.wings.beans.infrastructure.instance.key.deployment.DeploymentKey
 import software.wings.beans.template.deploymenttype.CustomDeploymentTypeTemplate;
 import software.wings.service.CustomDeploymentInstanceSyncPTCreator;
 import software.wings.service.InstanceSyncPerpetualTaskCreator;
+import software.wings.service.intfc.ArtifactService;
 import software.wings.service.intfc.customdeployment.CustomDeploymentTypeService;
 import software.wings.sm.PhaseStepExecutionSummary;
 import software.wings.sm.StepExecutionSummary;
 import software.wings.sm.states.customdeployment.InstanceMapperUtils;
 import software.wings.sm.states.customdeployment.InstanceMapperUtils.HostProperties;
 
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -61,7 +68,8 @@ import lombok.extern.slf4j.Slf4j;
 public class CustomDeploymentInstanceHandler extends InstanceHandler implements InstanceSyncByPerpetualTaskHandler {
   @Inject private CustomDeploymentInstanceSyncPTCreator perpetualTaskCreator;
   @Inject private CustomDeploymentTypeService customDeploymentTypeService;
-
+  @Inject ArtifactService artifactService;
+  public static final String artifactBuildNum = "artifactBuildNumber";
   static Function<HostProperties, PhysicalHostInstanceInfo> jsonMapper = hostProperties
       -> PhysicalHostInstanceInfo.builder()
              .hostId(hostProperties.getHostName())
@@ -116,11 +124,26 @@ public class CustomDeploymentInstanceHandler extends InstanceHandler implements 
 
     final DeploymentSummary deploymentSummary;
     if (isNotEmpty(latestHostInfos) && isNotEmpty(newDeploymentSummaries)) {
-      deploymentSummary = getDeploymentSummaryForInstanceCreation(newDeploymentSummaries.get(0), false);
-      latestHostInfos.stream()
-          .map(hostInstanceInfo -> buildInstanceFromHostInfo(infraMapping, hostInstanceInfo, deploymentSummary))
-          .forEach(instanceService::save);
+      deploymentSummary = updateDeploymentSummaryFromDeploymentInfo(newDeploymentSummaries.get(0));
+      if (EmptyPredicate.isNotEmpty(deploymentSummary.getArtifactId())) {
+        // Artifact can be null in the case of rollback in first deployment, in which we shouldn't add the instances
+        latestHostInfos.stream()
+            .map(hostInstanceInfo -> buildInstanceFromHostInfo(infraMapping, hostInstanceInfo, deploymentSummary))
+            .forEach(instanceService::save);
+      }
     }
+  }
+
+  private DeploymentSummary updateDeploymentSummaryFromDeploymentInfo(DeploymentSummary deploymentSummary) {
+    // We are setting the artifact from deployment info, as it has the rollbackArtifact if it's rollback otherwise it
+    // contains the artifact only
+    CustomDeploymentTypeInfo deploymentInfo = (CustomDeploymentTypeInfo) deploymentSummary.getDeploymentInfo();
+    deploymentSummary.setArtifactId(deploymentInfo.getArtifactId());
+    deploymentSummary.setArtifactBuildNum(deploymentInfo.getArtifactBuildNum());
+    deploymentSummary.setArtifactName(deploymentInfo.getArtifactName());
+    deploymentSummary.setArtifactSourceName(deploymentInfo.getArtifactSourceName());
+    deploymentSummary.setArtifactStreamId(deploymentInfo.getArtifactStreamId());
+    return deploymentSummary;
   }
 
   private void incrementalUpdate(List<Instance> instancesInDb, List<PhysicalHostInstanceInfo> latestHostInfos,
@@ -173,7 +196,29 @@ public class CustomDeploymentInstanceHandler extends InstanceHandler implements 
 
   private Instance buildInstanceFromHostInfo(InfrastructureMapping infraMapping,
       PhysicalHostInstanceInfo hostInstanceInfo, DeploymentSummary deploymentSummary) {
-    InstanceBuilder builder = buildInstanceBase(null, infraMapping, deploymentSummary);
+    Artifact artifact = null;
+    if (featureFlagService.isEnabled(
+            FeatureName.CUSTOM_DEPLOYMENT_ARTIFACT_FROM_INSTANCE_JSON, infraMapping.getAccountId())) {
+      if (isNotEmpty(hostInstanceInfo.getProperties())
+          && !isNull(hostInstanceInfo.getProperties().get(artifactBuildNum))) {
+        artifact = artifactService.getArtifactByBuildNumber(deploymentSummary.getAccountId(),
+            deploymentSummary.getArtifactStreamId(), hostInstanceInfo.getProperties().get(artifactBuildNum).toString(),
+            false);
+        if (artifact == null) {
+          log.info(
+              "Couldn't find an artifact from the provided artifact build number, so setting artifact value for instance {} as empty",
+              hostInstanceInfo.getHostName());
+          artifact = Artifact.Builder.anArtifact()
+                         .withDisplayName("")
+                         .withUuid("")
+                         .withArtifactStreamId(deploymentSummary.getArtifactStreamId())
+                         .withArtifactSourceName("")
+                         .withMetadata(new ArtifactMetadata(ImmutableMap.of(ArtifactMetadataKeys.buildNo, "")))
+                         .build();
+        }
+      }
+    }
+    InstanceBuilder builder = buildInstanceBase(null, infraMapping, deploymentSummary, artifact);
     builder.hostInstanceKey(HostInstanceKey.builder()
                                 .hostName(hostInstanceInfo.getHostName())
                                 .infraMappingId(infraMapping.getUuid())
@@ -221,8 +266,8 @@ public class CustomDeploymentInstanceHandler extends InstanceHandler implements 
   }
 
   @Override
-  public FeatureName getFeatureFlagToStopIteratorBasedInstanceSync() {
-    return FeatureName.CUSTOM_DEPLOYMENT;
+  public Optional<FeatureName> getFeatureFlagToStopIteratorBasedInstanceSync() {
+    return Optional.empty();
   }
 
   @Override
@@ -258,8 +303,8 @@ public class CustomDeploymentInstanceHandler extends InstanceHandler implements 
   }
 
   @Override
-  public FeatureName getFeatureFlagToEnablePerpetualTaskForInstanceSync() {
-    return FeatureName.CUSTOM_DEPLOYMENT;
+  public Optional<FeatureName> getFeatureFlagToEnablePerpetualTaskForInstanceSync() {
+    return Optional.empty();
   }
 
   @Override

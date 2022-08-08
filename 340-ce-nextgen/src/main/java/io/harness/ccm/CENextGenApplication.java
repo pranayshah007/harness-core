@@ -7,6 +7,7 @@
 
 package io.harness.ccm;
 
+import static io.harness.AuthorizationServiceHeader.BATCH_PROCESSING;
 import static io.harness.AuthorizationServiceHeader.DEFAULT;
 import static io.harness.annotations.dev.HarnessTeam.CE;
 import static io.harness.logging.LoggingInitializer.initializeLogging;
@@ -42,7 +43,9 @@ import io.harness.ng.core.CorrelationFilter;
 import io.harness.ng.core.exceptionmappers.GenericExceptionMapperV2;
 import io.harness.ng.core.exceptionmappers.JerseyViolationExceptionMapperV2;
 import io.harness.ng.core.exceptionmappers.WingsExceptionMapperV2;
+import io.harness.outbox.OutboxEventPollService;
 import io.harness.persistence.HPersistence;
+import io.harness.request.RequestContextFilter;
 import io.harness.resource.VersionInfoResource;
 import io.harness.secret.ConfigSecretUtils;
 import io.harness.security.InternalApiAuthFilter;
@@ -114,6 +117,7 @@ public class CENextGenApplication extends Application<CENextGenConfiguration> {
   public void initialize(Bootstrap<CENextGenConfiguration> bootstrap) {
     initializeLogging();
     bootstrap.addCommand(new InspectCommand<>(this));
+    bootstrap.addCommand(new GenerateOpenApiSpecCommand());
     // Enable variable substitution with environment variables
     bootstrap.setConfigurationSourceProvider(getConfigurationProvider(bootstrap.getConfigurationSourceProvider()));
     bootstrap.addBundle(getSwaggerBundle());
@@ -174,6 +178,7 @@ public class CENextGenApplication extends Application<CENextGenConfiguration> {
     injector.getInstance(HPersistence.class);
 
     registerAuthFilters(configuration, environment, injector);
+    registerRequestContextFilter(environment);
     registerJerseyFeatures(environment);
     registerCorsFilter(configuration, environment);
     registerResources(environment, injector);
@@ -184,9 +189,14 @@ public class CENextGenApplication extends Application<CENextGenConfiguration> {
     registerScheduledJobs(injector);
     registerMigrations(injector);
     registerOasResource(configuration, environment, injector);
+    environment.lifecycle().manage(injector.getInstance(OutboxEventPollService.class));
     MaintenanceController.forceMaintenance(false);
     createConsumerThreadsToListenToEvents(environment, injector);
     initializeEnforcementSdk(injector);
+  }
+
+  private void registerRequestContextFilter(Environment environment) {
+    environment.jersey().register(new RequestContextFilter());
   }
 
   private void registerOasResource(CENextGenConfiguration configuration, Environment environment, Injector injector) {
@@ -266,6 +276,7 @@ public class CENextGenApplication extends Application<CENextGenConfiguration> {
   private void registerInternalApiAuthFilter(CENextGenConfiguration configuration, Environment environment) {
     Map<String, String> serviceToSecretMapping = new HashMap<>();
     serviceToSecretMapping.put(DEFAULT.getServiceId(), configuration.getNgManagerServiceSecret());
+    serviceToSecretMapping.put(BATCH_PROCESSING.getServiceId(), configuration.getNgManagerServiceSecret());
 
     environment.jersey().register(
         new InternalApiAuthFilter(getAuthFilterPredicate(InternalApi.class), null, serviceToSecretMapping));

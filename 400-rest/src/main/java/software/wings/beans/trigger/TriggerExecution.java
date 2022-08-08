@@ -45,6 +45,7 @@ public class TriggerExecution extends Base {
   public static final String WORKFLOW_ID_KEY = "workflowId";
   public static final String WEBHOOK_EVENT_DETAILS_GIT_CONNECTOR_ID_KEY = "webhookEventDetails.gitConnectorId";
   public static final String WEBHOOK_EVENT_DETAILS_BRANCH_NAME_KEY = "webhookEventDetails.branchName";
+  public static final String WEBHOOK_EVENT_DETAILS_BRANCH_NAMES_KEY = "webhookEventDetails.branchNames";
   public static final String WEBHOOK_EVENT_DETAILS_WEBHOOK_SOURCE_KEY = "webhookEventDetails.webhookSource";
 
   @FdIndex private String accountId;
@@ -85,7 +86,7 @@ public class TriggerExecution extends Base {
   @Builder
   public static class WebhookEventDetails {
     String gitConnectorId;
-    String branchName;
+    List<String> branchNames;
     String repoName;
     String commitId;
     String prevCommitId;

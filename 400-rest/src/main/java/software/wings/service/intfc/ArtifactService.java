@@ -22,11 +22,13 @@ import software.wings.beans.artifact.Artifact.ContentStatus;
 import software.wings.beans.artifact.ArtifactFile;
 import software.wings.beans.artifact.ArtifactStream;
 import software.wings.beans.artifact.ArtifactStreamAttributes;
+import software.wings.beans.artifact.ArtifactView;
 import software.wings.service.intfc.ownership.OwnedByArtifactStream;
 
 import java.io.File;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import org.hibernate.validator.constraints.NotEmpty;
@@ -56,6 +58,10 @@ public interface ArtifactService extends OwnedByArtifactStream {
   PageResponse<Artifact> listArtifactsForService(
       @NotEmpty String appId, String serviceId, @NotNull PageRequest<Artifact> pageRequest);
 
+  // List artifacts for artifact streams having collection enabled, sorted by build no.
+  PageResponse<Artifact> listArtifactsForServiceWithCollectionEnabled(
+      @NotEmpty String appId, String serviceId, @NotNull PageRequest<Artifact> pageRequest);
+
   /***
    * List artifacts sorted by build no.
    * @param serviceId
@@ -83,6 +89,8 @@ public interface ArtifactService extends OwnedByArtifactStream {
    * @return the artifact
    */
   Artifact update(@Valid Artifact artifact);
+
+  void updateMetadataAndRevision(String artifactId, String accountId, Map<String, String> newMetadata, String revision);
 
   /**
    * Update status.
@@ -170,7 +178,7 @@ public interface ArtifactService extends OwnedByArtifactStream {
    * @param appId        the app id
    * @return the artifact
    */
-  Artifact getWithServices(String artifactId, String appId);
+  ArtifactView getWithServices(String artifactId, String appId);
 
   Artifact getWithSource(String artifactId);
   /**
@@ -198,6 +206,8 @@ public interface ArtifactService extends OwnedByArtifactStream {
   Artifact fetchLastCollectedArtifact(ArtifactStream artifactStream);
 
   Artifact getArtifactByBuildNumber(ArtifactStream artifactStream, String buildNumber, boolean regex);
+
+  Artifact getArtifactByBuildNumber(String accountId, String artifactStreamId, String buildNumber, boolean regex);
 
   Artifact getArtifactByBuildNumberAndSourceName(
       ArtifactStream artifactStream, String buildNumber, boolean regex, String artifactSourceName);

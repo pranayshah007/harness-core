@@ -386,8 +386,9 @@ public class Command extends Base implements CommandUnit, NestedAnnotationResolv
       GraphNode node = pipelineIterator.next();
       CommandUnitType type = CommandUnitType.valueOf(node.getType().toUpperCase());
 
-      CommandUnit commandUnit = type.newInstance("");
-      MapperUtils.mapObject(node.getProperties(), type.getTypeClass().cast(commandUnit));
+      CommandUnitDescriptor descriptor = CommandUnitDescriptor.forType(type);
+      CommandUnit commandUnit = descriptor.newInstance("");
+      MapperUtils.mapObject(node.getProperties(), descriptor.getTypeClass().cast(commandUnit));
       commandUnit.setName(node.getName());
       commandUnits.add(commandUnit);
     }

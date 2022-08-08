@@ -63,7 +63,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 
 public class WorkflowYamlHandlerTest extends WorkflowYamlHandlerTestBase {
   @Mock private LimitCheckerFactory limitCheckerFactory;
@@ -149,7 +148,7 @@ public class WorkflowYamlHandlerTest extends WorkflowYamlHandlerTestBase {
   @Before
   public void setup() {
     setup(yamlFilePath, workflowName);
-    when(limitCheckerFactory.getInstance(new Action(Mockito.anyString(), ActionType.CREATE_WORKFLOW)))
+    when(limitCheckerFactory.getInstance(new Action(any(), ActionType.CREATE_WORKFLOW)))
         .thenReturn(new WingsTestConstants.MockChecker(true, ActionType.CREATE_WORKFLOW));
     on(workflowServiceTemplateHelper).set("templateService", templateService);
     when(templateService.fetchTemplateIdFromUri(any(), any(), any())).thenReturn(templateId);
@@ -235,7 +234,7 @@ public class WorkflowYamlHandlerTest extends WorkflowYamlHandlerTestBase {
                            -> testCRUD(workflowYamlFiles.ROLLING_WORKFLOW_INCOMPLETE, rollingWorkflowYamlHandler,
                                OrchestrationWorkflowType.ROLLING))
         .isInstanceOf(JsonMappingException.class)
-        .hasMessageContaining("expected FIELD_NAME: missing property 'type' that is to contain type id");
+        .hasMessageContaining("missing type id property 'type'");
   }
 
   @Test
@@ -329,7 +328,7 @@ public class WorkflowYamlHandlerTest extends WorkflowYamlHandlerTestBase {
                            -> testCRUD(workflowYamlFiles.BUILD_WORKFLOW_INCOMPLETE, buildWorkflowYamlHandler,
                                OrchestrationWorkflowType.BUILD))
         .isInstanceOf(JsonMappingException.class)
-        .hasMessageContaining("expected FIELD_NAME: missing property 'type' that is to contain type id");
+        .hasMessageContaining("missing type id property 'type'");
   }
 
   @Test

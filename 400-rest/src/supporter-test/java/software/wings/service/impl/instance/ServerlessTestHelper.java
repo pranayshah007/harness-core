@@ -7,12 +7,9 @@
 
 package software.wings.service.impl.instance;
 
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyInt;
-import static org.mockito.Matchers.anyListOf;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.anyVararg;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 
@@ -30,7 +27,6 @@ import lombok.Builder;
 import lombok.Data;
 import org.mongodb.morphia.AdvancedDatastore;
 import org.mongodb.morphia.aggregation.AggregationPipeline;
-import org.mongodb.morphia.aggregation.Group;
 import org.mongodb.morphia.query.CriteriaContainer;
 import org.mongodb.morphia.query.FieldEnd;
 import org.mongodb.morphia.query.Query;
@@ -57,33 +53,33 @@ public class ServerlessTestHelper {
     Query queryMock = mock(Query.class);
     final FieldEnd fieldEndMock = mock(FieldEnd.class);
 
-    doReturn(advancedDatastoreMock).when(wingsPersistence).getDatastore(any(Class.class));
-    doReturn(queryMock).when(wingsPersistence).createQuery(any(Class.class));
-    doReturn(fieldEndMock).when(queryMock).field(anyString());
+    doReturn(advancedDatastoreMock).when(wingsPersistence).getDatastore(nullable(Class.class));
+    doReturn(queryMock).when(wingsPersistence).createQuery(nullable(Class.class));
+    doReturn(fieldEndMock).when(queryMock).field(nullable(String.class));
     final CriteriaContainer criteriaContainerMock = mock(CriteriaContainer.class);
-    doReturn(criteriaContainerMock).when(queryMock).and(anyVararg());
-    doReturn(criteriaContainerMock).when(queryMock).or(anyVararg());
-    doReturn(fieldEndMock).when(queryMock).criteria(anyString());
+    doReturn(criteriaContainerMock).when(queryMock).and(any());
+    doReturn(criteriaContainerMock).when(queryMock).or(any());
+    doReturn(fieldEndMock).when(queryMock).criteria(any());
 
-    doReturn(queryMock).when(fieldEndMock).in(any(Iterable.class));
+    doReturn(queryMock).when(fieldEndMock).in(nullable(Iterable.class));
     doReturn(criteriaContainerMock).when(fieldEndMock).equal(any());
     doReturn(queryMock).when(fieldEndMock).lessThanOrEq(any());
     doReturn(criteriaContainerMock).when(fieldEndMock).greaterThanOrEq(any());
     doReturn(queryMock).when(fieldEndMock).lessThan(any());
 
-    doReturn(queryMock).when(queryMock).project(anyString(), anyBoolean());
-    doReturn(queryMock).when(queryMock).order(any(Sort.class));
+    doReturn(queryMock).when(queryMock).project(nullable(String.class), nullable(Boolean.class));
+    doReturn(queryMock).when(queryMock).order(nullable(Sort.class));
 
     AggregationPipeline aggregationPipelineMOck = mock(AggregationPipeline.class);
-    doReturn(aggregationPipelineMOck).when(advancedDatastoreMock).createAggregation(any(Class.class));
+    doReturn(aggregationPipelineMOck).when(advancedDatastoreMock).createAggregation(nullable(Class.class));
 
-    doReturn(aggregationPipelineMOck).when(aggregationPipelineMOck).match(any(Query.class));
-    doReturn(aggregationPipelineMOck).when(aggregationPipelineMOck).group(anyListOf(Group.class), anyVararg());
-    doReturn(aggregationPipelineMOck).when(aggregationPipelineMOck).group(anyString(), anyVararg());
-    doReturn(aggregationPipelineMOck).when(aggregationPipelineMOck).skip(anyInt());
-    doReturn(aggregationPipelineMOck).when(aggregationPipelineMOck).limit(anyInt());
-    doReturn(aggregationPipelineMOck).when(aggregationPipelineMOck).sort(anyVararg());
-    doReturn(aggregationPipelineMOck).when(aggregationPipelineMOck).project(anyVararg());
+    doReturn(aggregationPipelineMOck).when(aggregationPipelineMOck).match(nullable(Query.class));
+    doReturn(aggregationPipelineMOck).when(aggregationPipelineMOck).group(anyList(), any());
+    doReturn(aggregationPipelineMOck).when(aggregationPipelineMOck).group(nullable(String.class), any());
+    doReturn(aggregationPipelineMOck).when(aggregationPipelineMOck).skip(nullable(Integer.class));
+    doReturn(aggregationPipelineMOck).when(aggregationPipelineMOck).limit(nullable(Integer.class));
+    doReturn(aggregationPipelineMOck).when(aggregationPipelineMOck).sort(any());
+    doReturn(aggregationPipelineMOck).when(aggregationPipelineMOck).project(any());
 
     return Mocks.builder()
         .aggregationPipelineMock(aggregationPipelineMOck)

@@ -10,8 +10,8 @@ package software.wings.verification.log;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
-import software.wings.sm.states.CustomLogVerificationState.LogCollectionInfo;
-import software.wings.sm.states.CustomLogVerificationState.Method;
+import software.wings.beans.LogCollectionInfo;
+import software.wings.beans.apm.Method;
 import software.wings.verification.CVConfiguration;
 
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;

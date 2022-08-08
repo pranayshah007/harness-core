@@ -15,6 +15,7 @@ import software.wings.beans.yaml.ChangeContext;
 import software.wings.infra.AzureWebAppInfra;
 import software.wings.infra.AzureWebAppInfra.Yaml;
 import software.wings.service.impl.yaml.handler.CloudProviderInfrastructure.CloudProviderInfrastructureYamlHandler;
+import software.wings.service.impl.yaml.service.YamlHelper;
 import software.wings.service.intfc.SettingsService;
 
 import com.google.inject.Inject;
@@ -22,6 +23,7 @@ import java.util.List;
 
 public class AzureWebAppInfraYamlHandler extends CloudProviderInfrastructureYamlHandler<Yaml, AzureWebAppInfra> {
   @Inject private SettingsService settingsService;
+  @Inject private YamlHelper yamlHelper;
 
   @Override
   public Yaml toYaml(AzureWebAppInfra bean, String appId) {
@@ -42,8 +44,10 @@ public class AzureWebAppInfraYamlHandler extends CloudProviderInfrastructureYaml
     AzureWebAppInfra bean = AzureWebAppInfra.builder().build();
     Yaml yaml = changeContext.getYaml();
     String accountId = changeContext.getChange().getAccountId();
+    String appId = yamlHelper.getAppId(accountId, changeContext.getChange().getFilePath());
     SettingAttribute cloudProvider = settingsService.getSettingAttributeByName(accountId, yaml.getCloudProviderName());
     notNullCheck(String.format("Cloud provider with id = [%s], does not exist", cloudProvider), cloudProvider);
+    settingsService.checkRbacOnSettingAttribute(appId, cloudProvider);
 
     bean.setCloudProviderId(cloudProvider.getUuid());
     bean.setSubscriptionId(yaml.getSubscriptionId());

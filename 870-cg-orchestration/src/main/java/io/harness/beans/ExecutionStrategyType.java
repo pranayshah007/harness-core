@@ -16,12 +16,12 @@ public enum ExecutionStrategyType {
   @JsonProperty("Canary") CANARY("Canary"),
   @JsonProperty("BlueGreen") BLUE_GREEN("BlueGreen"),
   @JsonProperty("Rolling") ROLLING("Rolling"),
-  @JsonProperty("Default") DEFAULT("Default");
-  ;
+  @JsonProperty("Default") DEFAULT("Default"),
+  @JsonProperty("GitOps") GITOPS("GitOps");
 
   private String displayName;
 
-  @JsonCreator
+  @JsonCreator(mode = JsonCreator.Mode.DELEGATING)
   public static ExecutionStrategyType getExecutionStrategy(@JsonProperty("type") String displayName) {
     for (ExecutionStrategyType executionStrategyType : ExecutionStrategyType.values()) {
       if (executionStrategyType.displayName.equalsIgnoreCase(displayName)) {

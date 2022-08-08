@@ -8,6 +8,7 @@
 package io.harness.cdng.k8s.resources.gcp.service.impl;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.delegate.beans.connector.gcpconnector.GcpCredentialType.INHERIT_FROM_DELEGATE;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
@@ -41,11 +42,13 @@ public class GcpResourceServiceImpl implements GcpResourceService {
                                     .build();
 
     List<EncryptedDataDetail> encryptionDetails = gcpHelperService.getEncryptionDetails(connector, baseNGAccess);
-    GcpListClustersRequest request = GcpListClustersRequest.builder()
-                                         .gcpManualDetailsDTO(gcpHelperService.getManualDetailsDTO(connector))
-                                         .delegateSelectors(connector.getDelegateSelectors())
-                                         .encryptionDetails(encryptionDetails)
-                                         .build();
+    GcpListClustersRequest request =
+        GcpListClustersRequest.builder()
+            .gcpManualDetailsDTO(gcpHelperService.getManualDetailsDTO(connector))
+            .useDelegate(INHERIT_FROM_DELEGATE == connector.getCredential().getGcpCredentialType())
+            .delegateSelectors(connector.getDelegateSelectors())
+            .encryptionDetails(encryptionDetails)
+            .build();
 
     GcpClusterListTaskResponse gcpClusterListTaskResponse =
         gcpHelperService.executeSyncTask(baseNGAccess, request, GcpTaskType.LIST_CLUSTERS, "list GCP clusters");

@@ -12,27 +12,25 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
-import io.harness.ff.FeatureFlagService;
 
-import com.google.inject.Inject;
 import java.util.EnumMap;
 import java.util.Set;
 import java.util.function.Predicate;
 
 @OwnedBy(HarnessTeam.CDP)
 public abstract class AbstractFeatureFlagFilter<E> implements FeatureFlagFilter<E> {
-  @Inject private FeatureFlagService featureFlagService;
-
   @Override
   public Predicate<? super E> filter(String accountId, FeatureName featureName) {
     return object -> {
       Set<E> filter = getFeatureFlagMap().get(featureName);
       if (!isEmpty(filter) && filter.contains(object)) {
-        return featureFlagService.isEnabled(featureName, accountId);
+        return isFeatureFlagEnabled(featureName, accountId);
       }
       return true;
     };
   }
 
   public abstract EnumMap<FeatureName, Set<E>> getFeatureFlagMap();
+
+  public abstract boolean isFeatureFlagEnabled(FeatureName featureName, String accountId);
 }

@@ -9,7 +9,9 @@ package io.harness.ng.core.user.remote;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.rule.OwnerRule.ARVIND;
+import static io.harness.rule.OwnerRule.BOOPESH;
 
+import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
@@ -20,14 +22,14 @@ import static org.mockito.MockitoAnnotations.initMocks;
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
-import io.harness.ng.accesscontrol.user.AggregateUserService;
+import io.harness.exception.InvalidRequestException;
 import io.harness.ng.beans.PageRequest;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.dto.ProjectDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.services.ProjectService;
+import io.harness.ng.core.user.UserInfo;
 import io.harness.ng.core.user.service.NgUserService;
-import io.harness.ng.userprofile.services.api.UserInfoService;
 import io.harness.rule.Owner;
 
 import com.google.inject.Inject;
@@ -44,8 +46,6 @@ import org.mockito.Spy;
 public class UserResourceTest extends CategoryTest {
   private static final String ACCOUNT = "account";
   @Mock private NgUserService ngUserService;
-  @Mock private AggregateUserService aggregateUserService;
-  @Mock private UserInfoService userInfoService;
   @Mock private ProjectService projectService;
   @Spy @Inject @InjectMocks private UserResource userResource;
 
@@ -71,5 +71,15 @@ public class UserResourceTest extends CategoryTest {
     assertThat(data.getContent()).isEqualTo(page.getContent());
     assertThat(data.getTotalPages()).isEqualTo(10);
     verify(projectService).listProjectsForUser(any(), eq(ACCOUNT), eq(pageRequest));
+  }
+
+  @Test(expected = InvalidRequestException.class)
+  @Owner(developers = BOOPESH)
+  @Category(UnitTests.class)
+  public void testRemoveExternallyManagedUser() {
+    String userId = randomAlphabetic(10);
+    Optional<UserInfo> userInfo = Optional.ofNullable(UserInfo.builder().externallyManaged(true).uuid(userId).build());
+    doReturn(userInfo).when(ngUserService).getUserById(userId);
+    userResource.removeUser(userId, ACCOUNT, null, null);
   }
 }

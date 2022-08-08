@@ -613,7 +613,7 @@ public class AppServiceTest extends WingsBaseTest {
     when(wingsPersistence.delete(Application.class, APP_ID)).thenReturn(true);
     appService.delete(APP_ID, false);
     verify(yamlPushService).pushYamlChangeSet(anyString(), any(), any(), any(), anyBoolean(), anyBoolean());
-    verify(usageRestrictionsService).removeAppEnvReferences(anyString(), anyString(), anyString());
+    verify(usageRestrictionsService).removeAppEnvReferences(any(), any(), any());
     verify(wingsPersistence).delete(any(), anyString());
   }
 }

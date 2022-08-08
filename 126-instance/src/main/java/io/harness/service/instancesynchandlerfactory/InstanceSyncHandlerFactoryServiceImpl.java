@@ -9,11 +9,16 @@ package io.harness.service.instancesynchandlerfactory;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.service.beans.ServiceSpecType;
 import io.harness.exception.UnexpectedException;
+import io.harness.ng.core.infrastructure.InfrastructureKind;
+import io.harness.ng.core.k8s.ServiceSpecType;
 import io.harness.service.instancesynchandler.AbstractInstanceSyncHandler;
+import io.harness.service.instancesynchandler.AzureWebAppInstanceSyncHandler;
+import io.harness.service.instancesynchandler.GitOpsInstanceSyncHandler;
 import io.harness.service.instancesynchandler.K8sInstanceSyncHandler;
 import io.harness.service.instancesynchandler.NativeHelmInstanceSyncHandler;
+import io.harness.service.instancesynchandler.PdcInstanceSyncHandler;
+import io.harness.service.instancesynchandler.ServerlessAwsLambdaInstanceSyncHandler;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -24,16 +29,39 @@ import lombok.AllArgsConstructor;
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 public class InstanceSyncHandlerFactoryServiceImpl implements InstanceSyncHandlerFactoryService {
   private final K8sInstanceSyncHandler k8sInstanceSyncHandler;
+  private final GitOpsInstanceSyncHandler gitOpsInstanceSyncHandler;
   private final NativeHelmInstanceSyncHandler nativeHelmInstanceSyncHandler;
+  private final ServerlessAwsLambdaInstanceSyncHandler serverlessAwsLambdaInstanceSyncHandler;
+  private final AzureWebAppInstanceSyncHandler azureWebAppInstanceSyncHandler;
+  private final PdcInstanceSyncHandler pdcInstanceSyncHandler;
+
   @Override
-  public AbstractInstanceSyncHandler getInstanceSyncHandler(final String deploymentType) {
+  public AbstractInstanceSyncHandler getInstanceSyncHandler(final String deploymentType, String infraKind) {
     switch (deploymentType) {
+      case ServiceSpecType.GITOPS:
+        return gitOpsInstanceSyncHandler;
       case ServiceSpecType.KUBERNETES:
         return k8sInstanceSyncHandler;
       case ServiceSpecType.NATIVE_HELM:
         return nativeHelmInstanceSyncHandler;
+      case ServiceSpecType.SERVERLESS_AWS_LAMBDA:
+        return serverlessAwsLambdaInstanceSyncHandler;
+      case ServiceSpecType.AZURE_WEBAPP:
+        return azureWebAppInstanceSyncHandler;
+      case ServiceSpecType.SSH:
+      case ServiceSpecType.WINRM:
+        return getSshWinRmInstanceSyncHandler(infraKind);
       default:
-        throw new UnexpectedException("No instance sync handler registered for infrastructure kind: " + deploymentType);
+        throw new UnexpectedException("No instance sync handler registered for deploymentType: " + deploymentType);
+    }
+  }
+
+  private AbstractInstanceSyncHandler getSshWinRmInstanceSyncHandler(String infraKind) {
+    switch (infraKind) {
+      case InfrastructureKind.PDC:
+        return pdcInstanceSyncHandler;
+      default:
+        throw new UnexpectedException("No instance sync handler registered for infraKind: " + infraKind);
     }
   }
 }

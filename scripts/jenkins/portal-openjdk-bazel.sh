@@ -12,7 +12,6 @@ source "${SCRIPT_DIR}/portal-openjdk-bazel-commons.sh"
 
 prepare_to_copy_jars
 
-
 copy_cg_manager_jars
 
 copy_event_server_jars
@@ -29,7 +28,6 @@ copy_ng_dashboard_jars
 
 
 mkdir -p dist/delegate-service-app ;
-
 cd dist/delegate-service-app
 
 cp ${HOME}/.bazel-dirs/bin/270-delegate-service-app/module_deploy.jar delegate-service-capsule.jar
@@ -38,10 +36,12 @@ cp ../../270-delegate-service-app/key.pem .
 cp ../../270-delegate-service-app/cert.pem .
 cp ../../270-delegate-service-app/delegate-service-config.yml .
 cp ../../270-delegate-service-app/src/main/resources/redisson-jcache.yaml .
-cp ../../alpn-boot-8.1.13.v20181017.jar .
 
 cp ../../dockerization/delegate-service-app/Dockerfile-delegate-service-app-jenkins-k8-openjdk ./Dockerfile
 cp ../../dockerization/delegate-service-app/Dockerfile-delegate-service-app-jenkins-k8-gcr-openjdk ./Dockerfile-gcr
+cp ../../dockerization/delegate-service-app/Dockerfile-delegate-service-app-cie-jdk ./Dockerfile-cie-jdk
+cp ../../dockerization/base-images/apm/inject-onprem-apm-bins-into-dockerimage.sh .
+cp ../../dockerization/base-images/apm/inject-saas-apm-bins-into-dockerimage.sh .
 cp -r ../../dockerization/delegate-service-app/scripts/ .
 
 cp ../../protocol.info .
@@ -55,19 +55,21 @@ fi
 cd ../..
 
 mkdir -p dist/cv-nextgen ;
-
 cd dist/cv-nextgen
 
 cp ${HOME}/.bazel-dirs/bin/300-cv-nextgen/module_deploy.jar cv-nextgen-capsule.jar
 cp ../../300-cv-nextgen/keystore.jks .
 cp ../../300-cv-nextgen/cv-nextgen-config.yml .
-cp ../../alpn-boot-8.1.13.v20181017.jar .
 cp ../../300-cv-nextgen/src/main/resources/redisson-jcache.yaml .
 
 
 cp ../../dockerization/cv-nextgen/Dockerfile-verification-jenkins-k8-openjdk ./Dockerfile
 cp ../../dockerization/cv-nextgen/Dockerfile-verification-jenkins-k8-gcr-openjdk ./Dockerfile-gcr
+cp ../../dockerization/cv-nextgen/Dockerfile-cv-nextgen-cie-jdk ./Dockerfile-cie-jdk
+cp ../../dockerization/base-images/apm/inject-onprem-apm-bins-into-dockerimage.sh .
+cp ../../dockerization/base-images/apm/inject-saas-apm-bins-into-dockerimage.sh .
 cp -R ../../dockerization/cv-nextgen/scripts/ .
+
 cp ../../protocol.info .
 echo ${JDK} > jdk.txt
 echo ${VERSION} > version.txt
@@ -76,10 +78,11 @@ then
     echo ${PURPOSE} > purpose.txt
 fi
 
+java -jar cv-nextgen-capsule.jar scan-classpath-metadata
+
 cd ../..
 
 mkdir -p dist/verification-service ;
-
 cd dist/verification-service
 
 cp ${HOME}/.bazel-dirs/bin/270-verification/module_deploy.jar verification-capsule.jar
@@ -88,7 +91,11 @@ cp ../../270-verification/verification-config.yml .
 
 cp ../../dockerization/verification/Dockerfile-verification-jenkins-k8-openjdk ./Dockerfile
 cp ../../dockerization/verification/Dockerfile-verification-jenkins-k8-gcr-openjdk ./Dockerfile-gcr
+cp ../../dockerization/verification/Dockerfile-verification-cie-jdk ./Dockerfile-cie-jdk
+cp ../../dockerization/base-images/apm/inject-onprem-apm-bins-into-dockerimage.sh .
+cp ../../dockerization/base-images/apm/inject-saas-apm-bins-into-dockerimage.sh .
 cp -R ../../dockerization/verification/scripts/ .
+
 cp ../../protocol.info .
 echo ${JDK} > jdk.txt
 echo ${VERSION} > version.txt
@@ -100,17 +107,19 @@ fi
 cd ../..
 
 mkdir -p dist/command-library-server ;
-
 cd dist/command-library-server
 
 cp ${HOME}/.bazel-dirs/bin/210-command-library-server/module_deploy.jar command-library-app-capsule.jar
 cp ../../210-command-library-server/keystore.jks .
 cp ../../210-command-library-server/command-library-server-config.yml .
-cp ../../alpn-boot-8.1.13.v20181017.jar .
 
 cp ../../dockerization/command-library-server/Dockerfile-command-library-server-jenkins-k8-openjdk ./Dockerfile
 cp ../../dockerization/command-library-server/Dockerfile-command-library-server-jenkins-k8-gcr-openjdk ./Dockerfile-gcr
+cp ../../dockerization/command-library-server/Dockerfile-command-library-server-cie-jdk ./Dockerfile-cie-jdk
+cp ../../dockerization/base-images/apm/inject-onprem-apm-bins-into-dockerimage.sh .
+cp ../../dockerization/base-images/apm/inject-saas-apm-bins-into-dockerimage.sh .
 cp -R ../../dockerization/command-library-server/scripts/ .
+
 cp ../../protocol.info .
 echo ${JDK} > jdk.txt
 echo ${VERSION} > version.txt
@@ -131,12 +140,14 @@ else
 fi
 
 cp 260-delegate/config-delegate.yml dist/delegate/config-delegate.yml
+
 jarsigner -tsa http://timestamp.digicert.com -storetype pkcs12 -keystore ${KEY_STORE} -storepass ${KEY_STORE_PASSWORD} dist/delegate/delegate-capsule.jar ${KEY_STORE_ALIAS}
 cp dist/delegate/delegate-capsule.jar delegate-${VERSION}.jar
 cp protocol.info dist/delegate/.
 
 mkdir -p dist/watcher
 cp ${HOME}/.bazel-dirs/bin/960-watcher/module_deploy.jar dist/watcher/watcher-capsule.jar
+
 jarsigner -tsa http://timestamp.digicert.com -storetype pkcs12 -keystore ${KEY_STORE} -storepass ${KEY_STORE_PASSWORD} dist/watcher/watcher-capsule.jar ${KEY_STORE_ALIAS}
 cp dist/watcher/watcher-capsule.jar watcher-${VERSION}.jar
 cp protocol.info dist/watcher/.
@@ -178,19 +189,22 @@ cd ../..
 
 mkdir -p dist/ci-manager
 cd dist/ci-manager
-cp ${HOME}/.bazel-dirs/bin/310-ci-manager/module_deploy.jar ci-manager-capsule.jar
-cp ../../310-ci-manager/ci-manager-config.yml .
-cp ../../keystore.jks .
-cp ../../310-ci-manager/key.pem .
-cp ../../310-ci-manager/cert.pem .
-cp ../../310-ci-manager/src/main/resources/redisson-jcache.yaml .
 
-cp ../../alpn-boot-8.1.13.v20181017.jar .
+cp ${HOME}/.bazel-dirs/bin/332-ci-manager/app/module_deploy.jar ci-manager-capsule.jar
+cp ../../332-ci-manager/config/ci-manager-config.yml .
+cp ../../keystore.jks .
+cp ../../332-ci-manager/config/key.pem .
+cp ../../332-ci-manager/config/cert.pem .
+cp ../../332-ci-manager/service/src/main/resources/redisson-jcache.yaml .
 
 cp ../../dockerization/ci-manager/Dockerfile-ci-manager-jenkins-k8-openjdk ./Dockerfile
 cp ../../dockerization/ci-manager/Dockerfile-ci-manager-jenkins-k8-gcr-openjdk ./Dockerfile-gcr
 cp ../../dockerization/ci-manager/Dockerfile-ci-manager-jenkins-k8-gcr-openjdk-ubi ./Dockerfile-gcr-ubi
+cp ../../dockerization/ci-manager/Dockerfile-ci-manager-cie-jdk ./Dockerfile-cie-jdk
+cp ../../dockerization/base-images/apm/inject-onprem-apm-bins-into-dockerimage.sh .
+cp ../../dockerization/base-images/apm/inject-saas-apm-bins-into-dockerimage.sh .
 cp -r ../../dockerization/ci-manager/scripts/ .
+
 cp ../../ci-manager-protocol.info .
 echo ${JDK} > jdk.txt
 echo ${VERSION} > version.txt
@@ -198,20 +212,23 @@ if [ ! -z ${PURPOSE} ]
 then
     echo ${PURPOSE} > purpose.txt
 fi
+java -jar ci-manager-capsule.jar scan-classpath-metadata
 
 cd ../..
 
 mkdir -p dist/platform-service
 cd dist/platform-service
 
-cp ${HOME}/.bazel-dirs/bin/820-platform-service/module_deploy.jar platform-service-capsule.jar
-cp ../../820-platform-service/config.yml .
-cp ../../820-platform-service/keystore.jks .
-cp ../../820-platform-service/key.pem .
-cp ../../820-platform-service/cert.pem .
-cp ../../alpn-boot-8.1.13.v20181017.jar .
+cp ${HOME}/.bazel-dirs/bin/platform-service/service/module_deploy.jar platform-service-capsule.jar
+cp ../../platform-service/config/config.yml .
+cp ../../platform-service/config/keystore.jks .
+cp ../../platform-service/config/key.pem .
+cp ../../platform-service/config/cert.pem .
 cp ../../dockerization/platform-service/Dockerfile-platform-service-jenkins-k8-openjdk ./Dockerfile
 cp ../../dockerization/platform-service/Dockerfile-platform-service-jenkins-k8-gcr-openjdk ./Dockerfile-gcr
+cp ../../dockerization/platform-service/Dockerfile-platform-service-cie-jdk ./Dockerfile-cie-jdk
+cp ../../dockerization/base-images/apm/inject-onprem-apm-bins-into-dockerimage.sh .
+cp ../../dockerization/base-images/apm/inject-saas-apm-bins-into-dockerimage.sh .
 cp -r ../../dockerization/platform-service/scripts .
 cp ../../protocol.info .
 echo ${JDK} > jdk.txt
@@ -227,16 +244,19 @@ cd ../..
 mkdir -p dist/pipeline-service
 cd dist/pipeline-service
 
-cp ${HOME}/.bazel-dirs/bin/800-pipeline-service/module_deploy.jar pipeline-service-capsule.jar
-cp ../../800-pipeline-service/config.yml .
-cp ../../800-pipeline-service/keystore.jks .
-cp ../../800-pipeline-service/key.pem .
-cp ../../800-pipeline-service/cert.pem .
-cp ../../800-pipeline-service/src/main/resources/redisson-jcache.yaml .
+cp ${HOME}/.bazel-dirs/bin/pipeline-service/service/module_deploy.jar pipeline-service-capsule.jar
+cp ../../pipeline-service/config/config.yml .
+cp ../../pipeline-service/config/keystore.jks .
+cp ../../pipeline-service/config/key.pem .
+cp ../../pipeline-service/config/cert.pem .
+cp ../../pipeline-service/service/src/main/resources/redisson-jcache.yaml .
+cp ../../pipeline-service/service/src/main/resources/enterprise-redisson-jcache.yaml .
 
-cp ../../alpn-boot-8.1.13.v20181017.jar .
 cp ../../dockerization/pipeline-service/Dockerfile-pipeline-service-jenkins-k8-openjdk ./Dockerfile
 cp ../../dockerization/pipeline-service/Dockerfile-pipeline-service-jenkins-k8-gcr-openjdk ./Dockerfile-gcr
+cp ../../dockerization/pipeline-service/Dockerfile-pipeline-service-cie-jdk ./Dockerfile-cie-jdk
+cp ../../dockerization/base-images/apm/inject-onprem-apm-bins-into-dockerimage.sh .
+cp ../../dockerization/base-images/apm/inject-saas-apm-bins-into-dockerimage.sh .
 cp -r ../../dockerization/pipeline-service/scripts/ .
 cp ../../pipeline-service-protocol.info .
 echo ${JDK} > jdk.txt
@@ -256,9 +276,10 @@ cp ${HOME}/.bazel-dirs/bin/951-debezium-service/module_deploy.jar debezium-servi
 cp ../../951-debezium-service/config.yml .
 cp ../../951-debezium-service/src/main/resources/redisson-jcache.yaml .
 
-cp ../../alpn-boot-8.1.13.v20181017.jar .
 cp ../../dockerization/debezium-service/Dockerfile-debezium-service-jenkins-k8-openjdk ./Dockerfile
 cp ../../dockerization/debezium-service/Dockerfile-debezium-service-jenkins-k8-gcr-openjdk ./Dockerfile-gcr
+cp ../../dockerization/base-images/apm/inject-onprem-apm-bins-into-dockerimage.sh .
+cp ../../dockerization/base-images/apm/inject-saas-apm-bins-into-dockerimage.sh .
 cp -r ../../dockerization/debezium-service/scripts/ .
 cp ../../protocol.info .
 echo ${JDK} > jdk.txt
@@ -280,9 +301,11 @@ cp ../../840-template-service/key.pem .
 cp ../../840-template-service/cert.pem .
 cp ../../840-template-service/src/main/resources/redisson-jcache.yaml .
 
-cp ../../alpn-boot-8.1.13.v20181017.jar .
 cp ../../dockerization/template-service/Dockerfile-template-service-jenkins-k8-openjdk ./Dockerfile
 cp ../../dockerization/template-service/Dockerfile-template-service-jenkins-k8-gcr-openjdk ./Dockerfile-gcr
+cp ../../dockerization/template-service/Dockerfile-template-service-cie-jdk ./Dockerfile-cie-jdk
+cp ../../dockerization/base-images/apm/inject-onprem-apm-bins-into-dockerimage.sh .
+cp ../../dockerization/base-images/apm/inject-saas-apm-bins-into-dockerimage.sh .
 cp -r ../../dockerization/template-service/scripts/ .
 cp ../../protocol.info .
 echo ${JDK} > jdk.txt
@@ -300,9 +323,11 @@ cd dist/eventsapi-monitor
 cp ${HOME}/.bazel-dirs/bin/950-events-framework-monitor/module_deploy.jar eventsapi-monitor-capsule.jar
 cp ../../950-events-framework-monitor/config.yml .
 cp ../../950-events-framework-monitor/redis/* .
-cp ../../alpn-boot-8.1.13.v20181017.jar .
 cp ../../dockerization/eventsapi-monitor/Dockerfile-eventsapi-monitor-jenkins-k8-openjdk ./Dockerfile
 cp ../../dockerization/eventsapi-monitor/Dockerfile-eventsapi-monitor-jenkins-k8-gcr-openjdk ./Dockerfile-gcr
+cp ../../dockerization/eventsapi-monitor/Dockerfile-eventsapi-monitor-cie-jdk ./Dockerfile-cie-jdk
+cp ../../dockerization/base-images/apm/inject-onprem-apm-bins-into-dockerimage.sh .
+cp ../../dockerization/base-images/apm/inject-saas-apm-bins-into-dockerimage.sh .
 cp -r ../../dockerization/eventsapi-monitor/scripts/ .
 cp ../../protocol.info .
 echo ${JDK} > jdk.txt
@@ -320,9 +345,10 @@ cd dist/accesscontrol-service
 cp ${HOME}/.bazel-dirs/bin/access-control/service/module_deploy.jar accesscontrol-service-capsule.jar
 cp ../../access-control/config/config.yml .
 cp ../../access-control/config/keystore.jks .
-cp ../../alpn-boot-8.1.13.v20181017.jar .
 cp ../../access-control/build/container/Dockerfile-accesscontrol-service-jenkins-k8-openjdk ./Dockerfile
 cp ../../access-control/build/container/Dockerfile-accesscontrol-service-jenkins-k8-gcr-openjdk ./Dockerfile-gcr
+cp ../../dockerization/base-images/apm/inject-onprem-apm-bins-into-dockerimage.sh .
+cp ../../dockerization/base-images/apm/inject-saas-apm-bins-into-dockerimage.sh .
 cp -r ../../access-control/build/container/scripts/ .
 cp ../../protocol.info .
 echo ${JDK} > jdk.txt
@@ -346,7 +372,6 @@ cp ../../360-cg-manager/cert.pem .
 cp ../../360-cg-manager/newrelic.yml .
 cp ../../100-migrator/config.yml .
 cp ../../400-rest/src/main/resources/redisson-jcache.yaml .
-cp ../../alpn-boot-8.1.13.v20181017.jar .
 
 cp ../../dockerization/migrator/Dockerfile-manager-jenkins-k8-openjdk ./Dockerfile
 cp ../../dockerization/migrator/Dockerfile-manager-jenkins-k8-gcr-openjdk ./Dockerfile-gcr

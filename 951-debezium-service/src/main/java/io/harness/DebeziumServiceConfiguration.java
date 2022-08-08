@@ -8,11 +8,15 @@
 package io.harness;
 
 import static java.util.Collections.singletonList;
+import static java.util.stream.Collectors.toSet;
 
+import io.harness.cf.CfClientConfig;
 import io.harness.debezium.DebeziumConfig;
 import io.harness.eventsframework.EventsFrameworkConfiguration;
+import io.harness.ff.FeatureFlagConfig;
 import io.harness.lock.DistributedLockImplementation;
 import io.harness.redis.RedisConfig;
+import io.harness.secret.ConfigSecret;
 
 import ch.qos.logback.access.spi.IAccessEvent;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -26,17 +30,26 @@ import io.dropwizard.request.logging.LogbackAccessRequestLogFactory;
 import io.dropwizard.request.logging.RequestLogFactory;
 import io.dropwizard.server.DefaultServerFactory;
 import io.dropwizard.server.ServerFactory;
+import io.federecio.dropwizard.swagger.SwaggerBundleConfiguration;
+import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 import java.util.logging.Level;
+import javax.ws.rs.Path;
 import lombok.Data;
+import org.reflections.Reflections;
 
 @Data
 @Singleton
 public class DebeziumServiceConfiguration extends Configuration {
+  @JsonProperty("swagger") private SwaggerBundleConfiguration swaggerBundleConfiguration;
   @JsonProperty("debeziumConfigs") private List<DebeziumConfig> debeziumConfigs;
   @JsonProperty("eventsFramework") private EventsFrameworkConfiguration eventsFrameworkConfiguration;
   @JsonProperty("redisLockConfig") private RedisConfig redisLockConfig;
   @JsonProperty("distributedLockImplementation") private DistributedLockImplementation distributedLockImplementation;
+  @JsonProperty("cfClientConfig") @ConfigSecret private CfClientConfig cfClientConfig;
+  @JsonProperty("featureFlagConfig") private FeatureFlagConfig featureFlagConfig;
 
   public DebeziumServiceConfiguration() {
     DefaultServerFactory defaultServerFactory = new DefaultServerFactory();
@@ -50,6 +63,23 @@ public class DebeziumServiceConfiguration extends Configuration {
     super.setServerFactory(defaultServerFactory);
   }
 
+  private static Set<String> getUniquePackages(Collection<Class<?>> classes) {
+    return classes.stream().map(aClass -> aClass.getPackage().getName()).collect(toSet());
+  }
+  public static Collection<Class<?>> getResourceClasses() {
+    Reflections reflections = new Reflections("io.harness");
+    return reflections.getTypesAnnotatedWith(Path.class);
+  }
+  public SwaggerBundleConfiguration getSwaggerBundleConfiguration() {
+    SwaggerBundleConfiguration defaultSwaggerBundleConfiguration = new SwaggerBundleConfiguration();
+    String resourcePackage = String.join(",", getUniquePackages(getResourceClasses()));
+    defaultSwaggerBundleConfiguration.setResourcePackage(resourcePackage);
+    defaultSwaggerBundleConfiguration.setSchemes(new String[] {"https", "http"});
+    defaultSwaggerBundleConfiguration.setHost("{{localhost}}");
+    defaultSwaggerBundleConfiguration.setTitle("Template Service API Reference");
+    defaultSwaggerBundleConfiguration.setVersion("2.0");
+    return Optional.ofNullable(swaggerBundleConfiguration).orElse(defaultSwaggerBundleConfiguration);
+  }
   @Override
   public void setServerFactory(ServerFactory factory) {
     DefaultServerFactory defaultServerFactory = (DefaultServerFactory) factory;

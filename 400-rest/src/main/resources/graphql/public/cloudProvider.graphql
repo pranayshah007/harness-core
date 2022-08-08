@@ -40,6 +40,7 @@ enum CloudProviderType {
   KUBERNETES_CLUSTER
   PCF
   SPOT_INST
+  RANCHER
 }
 
 interface CloudProvider {
@@ -142,6 +143,16 @@ type PcfCloudProvider implements CloudProvider {
 }
 
 type SpotInstCloudProvider implements CloudProvider {
+  id: String
+  name: String
+  description: String
+  createdAt: DateTime
+  createdBy: User
+  type: String
+  isContinuousEfficiencyEnabled: Boolean
+}
+
+type RancherCloudProvider implements CloudProvider {
   id: String
   name: String
   description: String

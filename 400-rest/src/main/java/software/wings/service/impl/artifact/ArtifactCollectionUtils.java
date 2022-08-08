@@ -38,7 +38,7 @@ import static software.wings.beans.artifact.ArtifactStreamType.SMB;
 import static software.wings.expression.SecretFunctor.Mode.CASCADING;
 import static software.wings.helpers.ext.jenkins.BuildDetails.Builder.aBuildDetails;
 import static software.wings.service.impl.ArtifactoryBuildServiceImpl.MANUAL_PULL_ARTIFACTORY_LIMIT;
-import static software.wings.service.impl.artifact.ArtifactServiceImpl.ARTIFACT_RETENTION_SIZE;
+import static software.wings.service.intfc.BuildService.ARTIFACT_RETENTION_SIZE;
 
 import static java.lang.String.format;
 import static java.util.Arrays.asList;
@@ -50,6 +50,8 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.artifact.ArtifactCollectionResponseHandler;
 import io.harness.artifact.ArtifactUtilities;
+import io.harness.artifacts.docker.service.DockerRegistryUtils;
+import io.harness.beans.ArtifactMetadata;
 import io.harness.beans.Cd1SetupFields;
 import io.harness.beans.DelegateTask;
 import io.harness.beans.DelegateTask.DelegateTaskBuilder;
@@ -82,8 +84,8 @@ import software.wings.beans.SettingAttribute;
 import software.wings.beans.TaskType;
 import software.wings.beans.artifact.AcrArtifactStream;
 import software.wings.beans.artifact.Artifact;
-import software.wings.beans.artifact.Artifact.ArtifactMetadataKeys;
 import software.wings.beans.artifact.Artifact.Builder;
+import software.wings.beans.artifact.ArtifactMetadataKeys;
 import software.wings.beans.artifact.ArtifactStream;
 import software.wings.beans.artifact.ArtifactStreamAttributes;
 import software.wings.beans.artifact.ArtifactStreamCollectionStatus;
@@ -99,11 +101,12 @@ import software.wings.beans.config.ArtifactoryConfig;
 import software.wings.beans.config.NexusConfig;
 import software.wings.beans.template.TemplateHelper;
 import software.wings.beans.template.artifactsource.CustomRepositoryMapping.AttributeMapping;
+import software.wings.delegatetasks.buildsource.BuildCollectParameters;
 import software.wings.delegatetasks.buildsource.BuildSourceParameters;
 import software.wings.delegatetasks.buildsource.BuildSourceParameters.BuildSourceParametersBuilder;
 import software.wings.delegatetasks.buildsource.BuildSourceParameters.BuildSourceRequestType;
 import software.wings.expression.SecretFunctor;
-import software.wings.helpers.ext.azure.AzureHelperService;
+import software.wings.helpers.ext.azure.AzureDelegateHelperService;
 import software.wings.helpers.ext.ecr.EcrClassicService;
 import software.wings.helpers.ext.jenkins.BuildDetails;
 import software.wings.service.impl.AwsHelperService;
@@ -117,9 +120,9 @@ import software.wings.service.intfc.security.SecretManager;
 import software.wings.settings.SettingValue;
 import software.wings.settings.SettingVariableTypes;
 import software.wings.utils.ArtifactType;
+import software.wings.utils.DelegateArtifactCollectionUtils;
 import software.wings.utils.RepositoryType;
 
-import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.time.Duration;
@@ -134,7 +137,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.annotations.Transient;
 
 @TargetModule(_870_CG_ORCHESTRATION)
 @OwnedBy(CDC)
@@ -146,7 +148,7 @@ public class ArtifactCollectionUtils {
   @Inject private ManagerDecryptionService managerDecryptionService;
   @Inject private SecretManager secretManager;
   @Inject private AwsHelperService awsHelperService;
-  @Inject private AzureHelperService azureHelperService;
+  @Inject private AzureDelegateHelperService azureDelegateHelperService;
   @Inject private EcrClassicService ecrClassicService;
   @Inject private AwsEcrHelperServiceManager awsEcrHelperServiceManager;
   @Inject private ExpressionEvaluator evaluator;
@@ -156,11 +158,6 @@ public class ArtifactCollectionUtils {
   @Inject private ArtifactStreamPTaskHelper artifactStreamPTaskHelper;
   @Inject private MainConfiguration mainConfiguration;
 
-  public static final List<String> SUPPORTED_ARTIFACT_CLEANUP_LIST =
-      Lists.newArrayList(DOCKER, AMI, ARTIFACTORY, GCR, ECR, ACR, NEXUS, AZURE_MACHINE_IMAGE, CUSTOM)
-          .stream()
-          .map(Enum::name)
-          .collect(Collectors.toList());
   public static final Long DELEGATE_QUEUE_TIMEOUT = Duration.ofSeconds(60).toMillis();
 
   static final List<String> metadataOnlyStreams = Collections.unmodifiableList(
@@ -177,10 +174,6 @@ public class ArtifactCollectionUtils {
     }
     return System.currentTimeMillis() + timeout;
   }
-
-  @Transient
-  private static final String DOCKER_REGISTRY_CREDENTIAL_TEMPLATE =
-      "{\"%s\":{\"username\":\"%s\",\"password\":\"%s\"}}";
 
   public Artifact getArtifact(ArtifactStream artifactStream, BuildDetails buildDetails) {
     String accountId = null;
@@ -211,9 +204,6 @@ public class ArtifactCollectionUtils {
     if (accountId != null) {
       builder.withAccountId(accountId);
     }
-    if (isNotEmpty(buildDetails.getLabels())) {
-      builder.withLabels(buildDetails.getLabels());
-    }
     return builder.build();
   }
 
@@ -232,10 +222,11 @@ public class ArtifactCollectionUtils {
     return artifactStream.fetchArtifactDisplayName(buildDetails.getNumber());
   }
 
-  private Map<String, String> getMetadata(ArtifactStream artifactStream, BuildDetails buildDetails) {
+  private ArtifactMetadata getMetadata(ArtifactStream artifactStream, BuildDetails buildDetails) {
     String artifactStreamType = artifactStream.getArtifactStreamType();
 
-    Map<String, String> metadata = buildDetails.getMetadata() == null ? new HashMap<>() : buildDetails.getMetadata();
+    ArtifactMetadata metadata =
+        buildDetails.getMetadata() == null ? new ArtifactMetadata() : new ArtifactMetadata(buildDetails.getMetadata());
     if (artifactStreamType.equals(ARTIFACTORY.name())) {
       if (buildDetails.getArtifactPath() != null) {
         metadata.put(ArtifactMetadataKeys.artifactPath, buildDetails.getArtifactPath());
@@ -313,18 +304,21 @@ public class ArtifactCollectionUtils {
     ImageDetails imageDetails = getDockerImageDetailsInternal(artifactStream, null);
     if (isNotBlank(imageDetails.getRegistryUrl()) && isNotBlank(imageDetails.getUsername())
         && isNotBlank(imageDetails.getPassword())) {
-      return encodeBase64(getDockerRegistryCredentials(imageDetails));
+      return encodeBase64(DockerRegistryUtils.getDockerRegistryCredentials(imageDetails));
     }
     return "";
   }
 
-  public static String getDockerRegistryCredentials(ImageDetails imageDetails) {
-    return format(DOCKER_REGISTRY_CREDENTIAL_TEMPLATE, imageDetails.getRegistryUrl(), imageDetails.getUsername(),
-        imageDetails.getPassword().replaceAll("\"", "\\\\\""));
+  public DelegateTaskBuilder fetchCustomDelegateTask(String waitId, ArtifactStream artifactStream,
+      ArtifactStreamAttributes artifactStreamAttributes, boolean isCollection,
+      BuildSourceRequestType buildSourceRequestType) {
+    return fetchCustomDelegateTask(
+        waitId, artifactStream, artifactStreamAttributes, isCollection, buildSourceRequestType, null);
   }
 
   public DelegateTaskBuilder fetchCustomDelegateTask(String waitId, ArtifactStream artifactStream,
-      ArtifactStreamAttributes artifactStreamAttributes, boolean isCollection) {
+      ArtifactStreamAttributes artifactStreamAttributes, boolean isCollection,
+      BuildSourceRequestType buildSourceRequestType, BuildCollectParameters buildCollectParameters) {
     String accountId = artifactStreamAttributes.getAccountId();
     DelegateTaskBuilder delegateTaskBuilder =
         DelegateTask.builder().waitId(waitId).expiry(getDelegateQueueTimeout(accountId));
@@ -336,16 +330,16 @@ public class ArtifactCollectionUtils {
 
     final TaskDataBuilder dataBuilder = TaskData.builder().async(true).taskType(TaskType.BUILD_SOURCE_TASK.name());
 
-    BuildSourceRequestType requestType = BuildSourceRequestType.GET_BUILDS;
-
     BuildSourceParametersBuilder buildSourceParametersBuilder =
         BuildSourceParameters.builder()
             .accountId(artifactStreamAttributes.getAccountId())
             .appId(artifactStream.fetchAppId())
             .artifactStreamAttributes(artifactStreamAttributes)
             .artifactStreamType(artifactStream.getArtifactStreamType())
-            .buildSourceRequestType(requestType)
-            .limit(ArtifactCollectionUtils.getLimit(artifactStream.getArtifactStreamType(), requestType, isCollection))
+            .buildSourceRequestType(buildSourceRequestType)
+            .limit(ArtifactCollectionUtils.getLimit(
+                artifactStream.getArtifactStreamType(), buildSourceRequestType, isCollection))
+            .buildCollectParameters(buildCollectParameters)
             .isCollection(isCollection);
 
     if (isCollection) {
@@ -453,11 +447,11 @@ public class ArtifactCollectionUtils {
             azureConfig, secretManager.getEncryptionDetails(azureConfig, null, workflowExecutionId));
         String loginServer = isNotEmpty(acrArtifactStream.getRegistryHostName())
             ? acrArtifactStream.getRegistryHostName()
-            : azureHelperService.getLoginServerForRegistry(azureConfig,
+            : azureDelegateHelperService.getLoginServerForRegistry(azureConfig,
                 secretManager.getEncryptionDetails(azureConfig, null, workflowExecutionId),
                 acrArtifactStream.getSubscriptionId(), acrArtifactStream.getRegistryName());
 
-        imageDetailsBuilder.registryUrl(azureHelperService.getUrl(loginServer))
+        imageDetailsBuilder.registryUrl(azureDelegateHelperService.getUrl(loginServer))
             .sourceName(acrArtifactStream.getRepositoryName())
             .name(loginServer + "/" + acrArtifactStream.getRepositoryName())
             .username(azureConfig.getClientId())
@@ -528,7 +522,7 @@ public class ArtifactCollectionUtils {
           ecrArtifactStream.getRegion(), ecrArtifactStream);
     } else {
       EcrConfig ecrConfig = (EcrConfig) value;
-      return ecrClassicService.getEcrImageUrl(ecrConfig, ecrArtifactStream);
+      return ecrClassicService.getEcrImageUrl(ecrConfig, ecrArtifactStream.getImageName());
     }
   }
 
@@ -856,7 +850,7 @@ public class ArtifactCollectionUtils {
       String artifactStreamType, ArtifactStreamAttributes artifactStreamAttributes) {
     if (AMI.name().equals(artifactStreamType)) {
       return Artifact::getRevision;
-    } else if (isGenericArtifactStream(artifactStreamType, artifactStreamAttributes)) {
+    } else if (DelegateArtifactCollectionUtils.isGenericArtifactStream(artifactStreamType, artifactStreamAttributes)) {
       return Artifact::getArtifactPath;
     } else {
       return Artifact::getBuildNo;
@@ -881,52 +875,11 @@ public class ArtifactCollectionUtils {
       return buildDetails;
     }
 
-    Function<BuildDetails, String> keyFn = getBuildDetailsKeyFn(artifactStreamType, artifactStreamAttributes);
+    Function<BuildDetails, String> keyFn =
+        DelegateArtifactCollectionUtils.getBuildDetailsKeyFn(artifactStreamType, artifactStreamAttributes);
     return buildDetails.stream()
         .filter(singleBuildDetails -> !savedBuildDetailsKeys.contains(keyFn.apply(singleBuildDetails)))
         .collect(Collectors.toList());
-  }
-
-  /**
-   * getBuildDetailsKeyFn returns a function that can extract a unique key for a BuildDetails object so that it can be
-   * compared with an Artifact object.
-   *
-   * @param artifactStreamType       the artifact stream type
-   * @param artifactStreamAttributes the artifact stream attributes - used only for ARTIFACTORY
-   * @return the function that can used to get the key for a BuildDetails
-   */
-  public static Function<BuildDetails, String> getBuildDetailsKeyFn(
-      String artifactStreamType, ArtifactStreamAttributes artifactStreamAttributes) {
-    if (AMI.name().equals(artifactStreamType)) {
-      return BuildDetails::getRevision;
-    } else if (isGenericArtifactStream(artifactStreamType, artifactStreamAttributes)) {
-      return BuildDetails::getArtifactPath;
-    } else {
-      return BuildDetails::getNumber;
-    }
-  }
-
-  /**
-   * isGenericArtifactStream returns true if we need to compare artifact paths to check if two artifacts - one stored in
-   * our DB and one from an artifact repo - are different.
-   *
-   * @param artifactStreamType       the artifact stream type
-   * @param artifactStreamAttributes the artifact stream attributes - used only for ARTIFACTORY
-   * @return true, if generic artifact stream - uses artifact path as key
-   */
-  static boolean isGenericArtifactStream(String artifactStreamType, ArtifactStreamAttributes artifactStreamAttributes) {
-    if (AMAZON_S3.name().equals(artifactStreamType)) {
-      return true;
-    }
-    if (ARTIFACTORY.name().equals(artifactStreamType)) {
-      if (artifactStreamAttributes.getArtifactType() != null
-          && artifactStreamAttributes.getArtifactType() == ArtifactType.DOCKER) {
-        return false;
-      }
-      return artifactStreamAttributes.getRepositoryType() == null
-          || !artifactStreamAttributes.getRepositoryType().equals(RepositoryType.docker.name());
-    }
-    return false;
   }
 
   public boolean skipArtifactStreamIteration(ArtifactStream artifactStream, boolean isCollection) {
@@ -1046,9 +999,5 @@ public class ArtifactCollectionUtils {
     return builds.stream()
         .map(buildDetails -> artifactService.create(getArtifact(artifactStream, buildDetails)))
         .collect(Collectors.toList());
-  }
-
-  public static boolean supportsCleanup(String artifactStreamType) {
-    return SUPPORTED_ARTIFACT_CLEANUP_LIST.stream().anyMatch(x -> x.equals(artifactStreamType));
   }
 }

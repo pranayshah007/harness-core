@@ -9,7 +9,6 @@ package io.harness.logstreaming;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.exception.InvalidRequestException;
 import io.harness.network.SafeHttpCall;
 
 import java.util.Collections;
@@ -36,22 +35,24 @@ public class LogStreamingStepClientImpl implements ILogStreamingStepClient {
       String logKey = generateLogKey(baseLogKey, logKeySuffix);
       SafeHttpCall.executeWithExceptions(logStreamingClient.openLogStream(token, accountId, logKey));
     } catch (Exception ex) {
-      throw new InvalidRequestException(ex.getMessage() + "\nPlease ensure log service is running.", ex);
+      log.error("Unable to open log stream for account {} and logKeySuffix {} ", accountId, logKeySuffix, ex);
     }
   }
 
   @Override
   public void closeStream(String logKeySuffix) {
+    // we don't want steps to hang because of any log reasons.
     try {
       String logKey = generateLogKey(baseLogKey, logKeySuffix);
       SafeHttpCall.executeWithExceptions(logStreamingClient.closeLogStream(token, accountId, logKey, true));
     } catch (Exception ex) {
-      throw new InvalidRequestException(ex.getMessage() + "\nPlease ensure log service is running.", ex);
+      log.error("Unable to close log stream for account {} and logKeySuffix {} ", accountId, logKeySuffix, ex);
     }
   }
 
   @Override
   public void writeLogLine(LogLine logLine, String logKeySuffix) {
+    // we don't want steps to hang because of any log reasons.
     try {
       String logKey = generateLogKey(baseLogKey, logKeySuffix);
       logStreamingSanitizer.sanitizeLogMessage(logLine);
@@ -60,17 +61,18 @@ public class LogStreamingStepClientImpl implements ILogStreamingStepClient {
       SafeHttpCall.executeWithExceptions(
           logStreamingClient.pushMessage(token, accountId, logKey, Collections.singletonList(logLine)));
     } catch (Exception ex) {
-      throw new InvalidRequestException(ex.getMessage() + "\nPlease ensure log service is running.", ex);
+      log.error("Unable to push message to log stream for account {} and logKeySuffix {}", accountId, logKeySuffix, ex);
     }
   }
 
   @Override
   public void closeAllOpenStreamsWithPrefix(String prefix) {
+    // we don't want steps to hang because of any log reasons.
     try {
       SafeHttpCall.executeWithExceptions(
           logStreamingClient.closeLogStreamWithPrefix(token, accountId, prefix, true, true));
     } catch (Exception ex) {
-      throw new InvalidRequestException(ex.getMessage() + "\nPlease ensure log service is running.", ex);
+      log.error("Unable to close log stream for account {} and logKeySuffix {} ", accountId, prefix, ex);
     }
   }
 

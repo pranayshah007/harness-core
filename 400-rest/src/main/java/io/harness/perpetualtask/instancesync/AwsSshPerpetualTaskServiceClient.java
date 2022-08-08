@@ -115,7 +115,8 @@ public class AwsSshPerpetualTaskServiceClient implements PerpetualTaskServiceCli
     DeploymentType deploymentType =
         serviceResourceService.getDeploymentType(infraMapping, null, infraMapping.getServiceId());
 
-    List<Filter> filters = awsUtils.getAwsFilters((AwsInfrastructureMapping) infraMapping, deploymentType);
+    List<Filter> filters =
+        awsUtils.getFilters(deploymentType, ((AwsInfrastructureMapping) infraMapping).getAwsInstanceFilter());
     SettingAttribute awsCloudProvider = settingsService.get(infraMapping.getComputeProviderSettingId());
     AwsConfig awsConfig = (AwsConfig) awsCloudProvider.getValue();
 

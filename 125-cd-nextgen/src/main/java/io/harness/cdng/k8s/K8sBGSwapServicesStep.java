@@ -55,9 +55,11 @@ public class K8sBGSwapServicesStep extends TaskExecutableWithRollbackAndRbac<K8s
   public static final String K8S_BG_SWAP_SERVICES_COMMAND_NAME = "Blue/Green Swap Services";
   public static final String SKIP_BG_SWAP_SERVICES_STEP_EXECUTION =
       "Services were not swapped in the forward phase. Skipping swapping in rollback.";
-  public static final String BG_STEP_MISSING_ERROR = "Stage Deployment (Blue Green Deploy) is not configured";
+  public static final String BG_STEP_MISSING_ERROR =
+      "Stage Deployment (Blue Green Deploy) is not configured. \nHint: Add Stage Deployment in the execution step.";
 
   @Inject private K8sStepHelper k8sStepHelper;
+  @Inject private CDStepHelper cdStepHelper;
   @Inject private OutcomeService outcomeService;
   @Inject ExecutionSweepingOutputService executionSweepingOutputService;
 
@@ -71,8 +73,9 @@ public class K8sBGSwapServicesStep extends TaskExecutableWithRollbackAndRbac<K8s
       Ambiance ambiance, StepElementParameters stepElementParameters, StepInputPackage inputPackage) {
     K8sBGSwapServicesStepParameters k8sBGSwapServicesStepParameters =
         (K8sBGSwapServicesStepParameters) stepElementParameters.getSpec();
+    String bgStepFqn = k8sBGSwapServicesStepParameters.getBlueGreenStepFqn();
     String bgSwapServicesFqn = k8sBGSwapServicesStepParameters.getBlueGreenSwapServicesStepFqn();
-    if (EmptyPredicate.isNotEmpty(bgSwapServicesFqn)) {
+    if (EmptyPredicate.isNotEmpty(bgSwapServicesFqn) || EmptyPredicate.isNotEmpty(bgStepFqn)) {
       OptionalOutcome optionalOutcome = outcomeService.resolveOptional(ambiance,
           RefObjectUtils.getOutcomeRefObject(
               bgSwapServicesFqn + "." + OutcomeExpressionConstants.K8S_BG_SWAP_SERVICES_OUTCOME));
@@ -85,7 +88,6 @@ public class K8sBGSwapServicesStep extends TaskExecutableWithRollbackAndRbac<K8s
       }
     }
 
-    String bgStepFqn = k8sBGSwapServicesStepParameters.getBlueGreenStepFqn();
     if (EmptyPredicate.isEmpty(bgStepFqn)) {
       throw new InvalidRequestException(BG_STEP_MISSING_ERROR, USER);
     }
@@ -97,17 +99,17 @@ public class K8sBGSwapServicesStep extends TaskExecutableWithRollbackAndRbac<K8s
     }
     K8sBlueGreenOutcome k8sBlueGreenOutcome = (K8sBlueGreenOutcome) optionalSweepingOutput.getOutput();
 
-    InfrastructureOutcome infrastructure = k8sStepHelper.getInfrastructureOutcome(ambiance);
-    String releaseName = k8sStepHelper.getReleaseName(ambiance, infrastructure);
+    InfrastructureOutcome infrastructure = cdStepHelper.getInfrastructureOutcome(ambiance);
+    String releaseName = cdStepHelper.getReleaseName(ambiance, infrastructure);
     K8sSwapServiceSelectorsRequest swapServiceSelectorsRequest =
         K8sSwapServiceSelectorsRequest.builder()
             .service1(k8sBlueGreenOutcome.getPrimaryServiceName())
             .service2(k8sBlueGreenOutcome.getStageServiceName())
-            .k8sInfraDelegateConfig(k8sStepHelper.getK8sInfraDelegateConfig(infrastructure, ambiance))
+            .k8sInfraDelegateConfig(cdStepHelper.getK8sInfraDelegateConfig(infrastructure, ambiance))
             .commandName(K8S_BG_SWAP_SERVICES_COMMAND_NAME)
             .taskType(K8sTaskType.SWAP_SERVICE_SELECTORS)
             .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepElementParameters))
-            .useNewKubectlVersion(k8sStepHelper.isUseNewKubectlVersion(AmbianceUtils.getAccountId(ambiance)))
+            .useNewKubectlVersion(cdStepHelper.isUseNewKubectlVersion(AmbianceUtils.getAccountId(ambiance)))
             .build();
 
     k8sStepHelper.publishReleaseNameStepDetails(ambiance, releaseName);

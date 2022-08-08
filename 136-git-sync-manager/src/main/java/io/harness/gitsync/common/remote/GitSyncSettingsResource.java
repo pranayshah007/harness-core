@@ -15,13 +15,17 @@ import static io.harness.NGCommonEntityConstants.BAD_REQUEST_CODE;
 import static io.harness.NGCommonEntityConstants.BAD_REQUEST_PARAM_MESSAGE;
 import static io.harness.NGCommonEntityConstants.INTERNAL_SERVER_ERROR_CODE;
 import static io.harness.NGCommonEntityConstants.INTERNAL_SERVER_ERROR_MESSAGE;
+import static io.harness.NGCommonEntityConstants.ORG_KEY;
 import static io.harness.NGCommonEntityConstants.ORG_PARAM_MESSAGE;
+import static io.harness.NGCommonEntityConstants.PROJECT_KEY;
 import static io.harness.NGCommonEntityConstants.PROJECT_PARAM_MESSAGE;
 import static io.harness.annotations.dev.HarnessTeam.DX;
 import static io.harness.ng.core.rbac.ProjectPermissions.EDIT_PROJECT_PERMISSION;
 
 import io.harness.NGCommonEntityConstants;
 import io.harness.accesscontrol.AccountIdentifier;
+import io.harness.accesscontrol.OrgIdentifier;
+import io.harness.accesscontrol.ProjectIdentifier;
 import io.harness.accesscontrol.acl.api.Resource;
 import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
@@ -37,6 +41,7 @@ import io.harness.ng.core.dto.ResponseDTO;
 import com.google.inject.Inject;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -109,8 +114,7 @@ public class GitSyncSettingsResource {
   public ResponseDTO<GitSyncSettingsDTO>
   get(@Parameter(description = PROJECT_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
-      @Parameter(description = ORG_PARAM_MESSAGE) @QueryParam(
-          NGCommonEntityConstants.ORG_KEY) String organizationIdentifier,
+      @Parameter(description = ORG_PARAM_MESSAGE) @QueryParam(ORG_KEY) String organizationIdentifier,
       @Parameter(description = ACCOUNT_PARAM_MESSAGE) @QueryParam(ACCOUNT_KEY) @NotEmpty String accountIdentifier) {
     final Optional<GitSyncSettingsDTO> gitSyncSettingsDTO =
         gitSyncSettingsService.get(accountIdentifier, organizationIdentifier, projectIdentifier);
@@ -139,5 +143,34 @@ public class GitSyncSettingsResource {
 
     gitSyncSettings.setAccountIdentifier(accountIdentifier);
     return ResponseDTO.newResponse(gitSyncSettingsService.update(gitSyncSettings));
+  }
+
+  @POST
+  @Hidden
+  @Path("/git-simplification")
+  @ApiOperation(value = "Enable Git Simplification for a project", nickname = "enableGitSimplification")
+  public ResponseDTO<String> enableGitSimplification(
+      @Parameter(required = true) @NotEmpty @QueryParam(ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
+      @Parameter(required = true) @NotEmpty @QueryParam(ORG_KEY) @OrgIdentifier String orgIdentifier,
+      @Parameter(required = true) @NotEmpty @QueryParam(PROJECT_KEY) @ProjectIdentifier String projectIdentifier) {
+    accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
+        Resource.of(ResourceTypes.PROJECT, projectIdentifier), EDIT_PROJECT_PERMISSION);
+
+    gitSyncSettingsService.enableGitSimplification(accountIdentifier, orgIdentifier, projectIdentifier);
+    return ResponseDTO.newResponse(String.format(
+        "New Git Simplification Experience is enabled for project [%s], please ensure that the project [%s] exists in org [%s] and account [%s]. ",
+        projectIdentifier, projectIdentifier, orgIdentifier, accountIdentifier));
+  }
+
+  @GET
+  @Hidden
+  @Path("/git-simplification")
+  @ApiOperation(value = "Get Git Simplification status for a project", nickname = "getGitSimplification")
+  public ResponseDTO<Boolean> getGitSimplificationStatus(
+      @Parameter(required = true) @NotEmpty @QueryParam(ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
+      @Parameter(required = true) @NotEmpty @QueryParam(ORG_KEY) @OrgIdentifier String orgIdentifier,
+      @Parameter(required = true) @NotEmpty @QueryParam(PROJECT_KEY) @ProjectIdentifier String projectIdentifier) {
+    return ResponseDTO.newResponse(
+        gitSyncSettingsService.getGitSimplificationStatus(accountIdentifier, orgIdentifier, projectIdentifier));
   }
 }

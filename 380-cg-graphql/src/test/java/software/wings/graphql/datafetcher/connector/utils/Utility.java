@@ -23,6 +23,8 @@ import software.wings.graphql.schema.mutation.connector.input.helm.QLHelmConnect
 import software.wings.graphql.schema.mutation.connector.input.helm.QLHelmConnectorInput.QLHelmConnectorInputBuilder;
 import software.wings.graphql.schema.mutation.connector.input.helm.QLHttpServerPlatformInput;
 import software.wings.graphql.schema.mutation.connector.input.helm.QLHttpServerPlatformInput.QLHttpServerPlatformInputBuilder;
+import software.wings.graphql.schema.mutation.connector.input.helm.QLOCIPlatformInput;
+import software.wings.graphql.schema.mutation.connector.input.helm.QLOCIPlatformInput.QLOCIPlatformInputBuilder;
 import software.wings.graphql.schema.mutation.connector.input.nexus.QLNexusConnectorInput;
 import software.wings.graphql.schema.mutation.connector.input.nexus.QLNexusConnectorInput.QLNexusConnectorInputBuilder;
 
@@ -77,11 +79,28 @@ public class Utility {
         .name(RequestField.ofNullable("NAME"))
         .httpServerPlatformDetails(RequestField.ofNullable(qlHttpServerPlatformInput))
         .gcsPlatformDetails(RequestField.absent())
-        .amazonS3PlatformDetails(RequestField.absent());
+        .amazonS3PlatformDetails(RequestField.absent())
+        .ociPlatformDetails(RequestField.absent());
+  }
+
+  public static QLHelmConnectorInputBuilder getQlHelmConnectorInputBuilder(QLOCIPlatformInput qlOCIPlatformInput) {
+    return QLHelmConnectorInput.builder()
+        .name(RequestField.ofNullable("NAME"))
+        .httpServerPlatformDetails(RequestField.absent())
+        .gcsPlatformDetails(RequestField.absent())
+        .amazonS3PlatformDetails(RequestField.absent())
+        .ociPlatformDetails(RequestField.ofNullable(qlOCIPlatformInput));
   }
 
   public static QLHttpServerPlatformInputBuilder getQlHttpServerPlatformInputBuilder() {
     return QLHttpServerPlatformInput.builder()
+        .URL(RequestField.ofNullable("URL"))
+        .userName(RequestField.ofNullable("USER"))
+        .passwordSecretId(RequestField.absent());
+  }
+
+  public static QLOCIPlatformInputBuilder getQlOCIPlatformInputBuilder() {
+    return QLOCIPlatformInput.builder()
         .URL(RequestField.ofNullable("URL"))
         .userName(RequestField.ofNullable("USER"))
         .passwordSecretId(RequestField.absent());
@@ -92,7 +111,8 @@ public class Utility {
         .name(RequestField.ofNullable("NAME"))
         .gcsPlatformDetails(RequestField.ofNullable(qlgcsPlatformInput))
         .httpServerPlatformDetails(RequestField.absent())
-        .amazonS3PlatformDetails(RequestField.absent());
+        .amazonS3PlatformDetails(RequestField.absent())
+        .ociPlatformDetails(RequestField.absent());
   }
 
   public static QLGCSPlatformInputBuilder getQlGCSPlatformInputBuilder() {
@@ -107,7 +127,8 @@ public class Utility {
         .name(RequestField.ofNullable("NAME"))
         .amazonS3PlatformDetails(RequestField.ofNullable(qlAmazonS3PlatformInput))
         .httpServerPlatformDetails(RequestField.absent())
-        .gcsPlatformDetails(RequestField.absent());
+        .gcsPlatformDetails(RequestField.absent())
+        .ociPlatformDetails(RequestField.absent());
   }
 
   public static QLAmazonS3PlatformInputBuilder getQlAmazonS3PlatformInputBuilder() {

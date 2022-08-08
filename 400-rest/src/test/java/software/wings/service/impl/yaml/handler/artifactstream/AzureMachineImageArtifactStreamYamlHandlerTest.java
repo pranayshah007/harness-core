@@ -8,11 +8,11 @@
 package software.wings.service.impl.yaml.handler.artifactstream;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.delegate.beans.azure.AzureMachineImageArtifactDTO.ImageType.IMAGE_GALLERY;
 import static io.harness.git.model.ChangeType.MODIFY;
 import static io.harness.rule.OwnerRule.DEEPAK_PUTHRAYA;
 
 import static software.wings.beans.artifact.ArtifactStreamType.AZURE_MACHINE_IMAGE;
-import static software.wings.beans.artifact.AzureMachineImageArtifactStream.ImageType.IMAGE_GALLERY;
 import static software.wings.beans.artifact.AzureMachineImageArtifactStream.OSType.LINUX;
 import static software.wings.utils.WingsTestConstants.ACCOUNT_ID;
 import static software.wings.utils.WingsTestConstants.APP_ID;

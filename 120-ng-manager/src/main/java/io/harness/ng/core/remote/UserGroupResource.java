@@ -32,6 +32,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Scope;
 import io.harness.beans.SortOrder;
 import io.harness.exception.InvalidRequestException;
+import io.harness.ng.accesscontrol.scopes.ScopeNameDTO;
 import io.harness.ng.beans.PageRequest;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.api.UserGroupService;
@@ -43,10 +44,12 @@ import io.harness.ng.core.dto.UserGroupFilterDTO;
 import io.harness.ng.core.user.entities.UserGroup;
 import io.harness.ng.core.user.remote.dto.UserFilter;
 import io.harness.ng.core.user.remote.dto.UserMetadataDTO;
+import io.harness.ng.core.usergroups.filter.UserGroupFilterType;
 import io.harness.ng.core.utils.UserGroupMapper;
 import io.harness.rest.RestResponse;
 import io.harness.security.annotations.NextGenManagerAuth;
 
+import software.wings.beans.sso.LdapLinkGroupRequest;
 import software.wings.beans.sso.SSOType;
 import software.wings.beans.sso.SamlLinkGroupRequest;
 
@@ -71,6 +74,7 @@ import javax.validation.constraints.NotNull;
 import javax.ws.rs.BeanParam;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
@@ -117,7 +121,8 @@ public class UserGroupResource {
 
   @POST
   @ApiOperation(value = "Create a User Group", nickname = "postUserGroup")
-  @Operation(operationId = "postUserGroup", summary = "Create a User Group in an account/org/project",
+  @Operation(operationId = "postUserGroup", summary = "Create User Group",
+      description = "Create a User Group in an account/org/project",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
@@ -143,7 +148,8 @@ public class UserGroupResource {
 
   @PUT
   @ApiOperation(value = "Update a User Group", nickname = "putUserGroup")
-  @Operation(operationId = "putUserGroup", summary = "Update a User Group in an account/org/project",
+  @Operation(operationId = "putUserGroup", description = "Update a User Group in an account/org/project",
+      summary = "Update User Group",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
@@ -160,35 +166,36 @@ public class UserGroupResource {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
         Resource.of(USERGROUP, userGroupDTO.getIdentifier()), MANAGE_USERGROUP_PERMISSION);
     validateScopes(accountIdentifier, orgIdentifier, projectIdentifier, userGroupDTO);
-    checkExternallyManaged(accountIdentifier, orgIdentifier, projectIdentifier, userGroupDTO.getIdentifier());
     userGroupDTO.setAccountIdentifier(accountIdentifier);
     userGroupDTO.setOrgIdentifier(orgIdentifier);
     userGroupDTO.setProjectIdentifier(projectIdentifier);
-    UserGroup userGroup = userGroupService.update(userGroupDTO);
+    UserGroup userGroup = userGroupService.updateWithCheckThatSCIMFieldsAreNotModified(userGroupDTO);
     return ResponseDTO.newResponse(Long.toString(userGroup.getVersion()), toDTO(userGroup));
   }
 
   @PUT
   @Path("/copy")
   @ApiOperation(value = "Copy a User Group to several scopes", nickname = "copyUserGroup")
-  @Operation(operationId = "copyUserGroup", summary = "Get a User Group in an account/org/project",
+  @Operation(operationId = "copyUserGroup", summary = "Copy User Group",
+      description = "Copy a User Group in an account/org/project",
       responses =
       { @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Returns whether the copy was successful") })
+  @Deprecated
   public ResponseDTO<Boolean>
   copy(@Parameter(description = ACCOUNT_PARAM_MESSAGE, required = true) @NotEmpty @QueryParam(
            NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
       @Parameter(description = GROUP_IDENTIFIER_KEY, required = true) @QueryParam(
           NGCommonEntityConstants.GROUP_IDENTIFIER_KEY) String userGroupIdentifier,
       @RequestBody(description = "List of scopes", required = true) List<ScopeDTO> scopes) {
-    accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, null, null),
-        Resource.of(USERGROUP, userGroupIdentifier), MANAGE_USERGROUP_PERMISSION);
-    return ResponseDTO.newResponse(userGroupService.copy(accountIdentifier, userGroupIdentifier, scopes));
+    throw new InvalidRequestException(
+        "This feature is no longer available. You can now directly assign role assignments at project/organization to user groups linked in the account.");
   }
 
   @GET
   @Path("{identifier}")
   @ApiOperation(value = "Get a User Group", nickname = "getUserGroup")
-  @Operation(operationId = "getUserGroup", summary = "Get a User Group in an account/org/project",
+  @Operation(operationId = "getUserGroup", summary = "Get User Group",
+      description = "Get a User Group in an account/org/project",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
@@ -214,7 +221,8 @@ public class UserGroupResource {
   @DELETE
   @Path("{identifier}")
   @ApiOperation(value = "Delete a User Group", nickname = "deleteUserGroup")
-  @Operation(operationId = "deleteUserGroup", summary = "Delete a User Group in an account/org/project",
+  @Operation(operationId = "deleteUserGroup", description = "Delete User Group",
+      summary = "Delete a User Group in an account/org/project",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
@@ -242,7 +250,8 @@ public class UserGroupResource {
 
   @GET
   @ApiOperation(value = "Get User Group List", nickname = "getUserGroupList")
-  @Operation(operationId = "getUserGroupList", summary = "List the User Groups in an account/org/project",
+  @Operation(operationId = "getUserGroupList", description = "List User Groups",
+      summary = "List the User Groups in an account/org/project",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
@@ -254,26 +263,53 @@ public class UserGroupResource {
       @Parameter(description = ORG_PARAM_MESSAGE) @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @Parameter(description = PROJECT_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
-      @Parameter(description = "Search filter which matches by user group name/identifier")
-      @QueryParam(NGResourceFilterConstants.SEARCH_TERM_KEY) String searchTerm, @BeanParam PageRequest pageRequest) {
+      @Parameter(description = "Search filter which matches by user group name/identifier") @QueryParam(
+          NGResourceFilterConstants.SEARCH_TERM_KEY) String searchTerm,
+      @QueryParam("filterType") @DefaultValue("EXCLUDE_INHERITED_GROUPS") UserGroupFilterType filterType,
+      @BeanParam PageRequest pageRequest) {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
         Resource.of(USERGROUP, null), VIEW_USERGROUP_PERMISSION);
     if (isEmpty(pageRequest.getSortOrders())) {
       SortOrder order = SortOrder.Builder.aSortOrder().withField("lastModifiedAt", SortOrder.OrderType.DESC).build();
       pageRequest.setSortOrders(ImmutableList.of(order));
     }
-    Page<UserGroupDTO> page =
-        userGroupService
-            .list(accountIdentifier, orgIdentifier, projectIdentifier, searchTerm, getPageRequest(pageRequest))
-            .map(UserGroupMapper::toDTO);
+    Page<UserGroupDTO> page = userGroupService
+                                  .list(accountIdentifier, orgIdentifier, projectIdentifier, searchTerm, filterType,
+                                      getPageRequest(pageRequest))
+                                  .map(UserGroupMapper::toDTO);
     return ResponseDTO.newResponse(getNGPageResponse(page));
+  }
+
+  @GET
+  @Path("{identifier}/scopes")
+  @ApiOperation(value = "Get Inheriting Child Scope List", nickname = "getInheritingChildScopeList")
+  @Operation(operationId = "getInheritingChildScopeList", summary = "Get Inheriting Child Scopes",
+      description = "List the Child Scopes inheriting this User Group",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(description = "Returns the list of the child scopes inheriting this User Group.")
+      })
+  public ResponseDTO<List<ScopeNameDTO>>
+  getInheritingChildScopeList(@Parameter(description = "Identifier of the user group",
+                                  required = true) @NotNull @PathParam("identifier") String userGroupIdentifier,
+      @Parameter(description = ACCOUNT_PARAM_MESSAGE, required = true) @NotNull @QueryParam(
+          NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
+      @Parameter(description = ORG_PARAM_MESSAGE) @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @Parameter(description = PROJECT_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier) {
+    accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
+        Resource.of(USERGROUP, null), VIEW_USERGROUP_PERMISSION);
+    List<ScopeNameDTO> inheritingScopeNames = userGroupService.getInheritingChildScopeList(
+        accountIdentifier, orgIdentifier, projectIdentifier, userGroupIdentifier);
+    return ResponseDTO.newResponse(inheritingScopeNames);
   }
 
   @POST
   @Path("{identifier}/users")
   @ApiOperation(value = "List users in a user group", nickname = "getUsersInUserGroup")
-  @Operation(operationId = "getUserListInUserGroup",
-      summary = "List the users in a User Group in an account/org/project",
+  @Operation(operationId = "getUserListInUserGroup", summary = "List users in User Group",
+      description = "List the users in a User Group in an account/org/project",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
@@ -302,8 +338,8 @@ public class UserGroupResource {
   @POST
   @Path("batch")
   @ApiOperation(value = "Get Batch User Group List", nickname = "getBatchUserGroupList")
-  @Operation(operationId = "getBatchUsersGroupList",
-      summary = "List the User Groups selected by a filter in an account/org/project",
+  @Operation(operationId = "getBatchUsersGroupList", summary = "List User Groups by filter",
+      description = "List the User Groups selected by a filter in an account/org/project",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
@@ -326,8 +362,8 @@ public class UserGroupResource {
   @GET
   @Path("{identifier}/member/{userIdentifier}")
   @ApiOperation(value = "Check if the user is part of the user group", nickname = "checkMember")
-  @Operation(operationId = "getMember",
-      summary = "Check if the user is part of the user group in an account/org/project",
+  @Operation(operationId = "getMember", summary = "Check user membership",
+      description = "Check if the user is part of the user group in an account/org/project",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
@@ -353,7 +389,8 @@ public class UserGroupResource {
   @PUT
   @Path("{identifier}/member/{userIdentifier}")
   @ApiOperation(value = "Add a user to the user group", nickname = "addMember")
-  @Operation(operationId = "putMember", summary = "Add a user to the user group in an account/org/project",
+  @Operation(operationId = "putMember", summary = "Add user to User Group",
+      description = "Add a user to the user group in an account/org/project",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
@@ -380,7 +417,8 @@ public class UserGroupResource {
   @DELETE
   @Path("{identifier}/member/{userIdentifier}")
   @ApiOperation(value = "Remove a user from the user group", nickname = "removeMember")
-  @Operation(operationId = "deleteMember", summary = "Remove a user from the user group in an account/org/project",
+  @Operation(operationId = "deleteMember", summary = "Remove user from User Group",
+      description = "Remove a user from the user group in an account/org/project",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
@@ -408,7 +446,7 @@ public class UserGroupResource {
     return ResponseDTO.newResponse(Long.toString(userGroup.getVersion()), toDTO(userGroup));
   }
 
-  public static void validateScopes(
+  private static void validateScopes(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, UserGroupDTO userGroupDTO) {
     verifyValuesNotChanged(Lists.newArrayList(Pair.of(accountIdentifier, userGroupDTO.getAccountIdentifier()),
                                Pair.of(orgIdentifier, userGroupDTO.getOrgIdentifier()),
@@ -469,6 +507,34 @@ public class UserGroupResource {
     checkExternallyManaged(accountIdentifier, orgIdentifier, projectIdentifier, userGroupId);
     return new RestResponse<>(userGroupService.linkToSsoGroup(accountIdentifier, orgIdentifier, projectIdentifier,
         userGroupId, SSOType.SAML, samlId, groupRequest.getSamlGroupName(), groupRequest.getSamlGroupName()));
+  }
+
+  @PUT
+  @Path("{userGroupId}/link/ldap/{ldapId}")
+  @ApiOperation(value = "Link to an LDAP group", nickname = "linkToLdapGroup")
+  @Operation(operationId = "linkUserGroupToLDAP",
+      summary = "Link LDAP Group to the User Group to an account/org/project",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(description = "Returns the updated User Group after linking LDAP Group")
+      })
+  public RestResponse<UserGroup>
+  linkToLdapGroup(@Parameter(description = "Identifier of the user group", required = true) @PathParam(
+                      "userGroupId") String userGroupId,
+      @Parameter(description = "LDAP entity identifier", required = true) @PathParam("ldapId") String ldapId,
+      @RequestBody(
+          description = "LDAP Link Group Request", required = true) @NotNull @Valid LdapLinkGroupRequest groupRequest,
+      @Parameter(description = ACCOUNT_PARAM_MESSAGE, required = true) @NotNull @QueryParam(
+          NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
+      @Parameter(description = ORG_PARAM_MESSAGE) @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @Parameter(description = PROJECT_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier) {
+    accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
+        Resource.of(USERGROUP, userGroupId), MANAGE_USERGROUP_PERMISSION);
+    checkExternallyManaged(accountIdentifier, orgIdentifier, projectIdentifier, userGroupId);
+    return new RestResponse<>(userGroupService.linkToSsoGroup(accountIdentifier, orgIdentifier, projectIdentifier,
+        userGroupId, SSOType.LDAP, ldapId, groupRequest.getLdapGroupDN(), groupRequest.getLdapGroupName()));
   }
 
   private void checkExternallyManaged(

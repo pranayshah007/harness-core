@@ -3,6 +3,18 @@
 !!!custom_delegateSyncTaskResponses {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
 !!!custom_delegateTaskProgressResponses {"name": "processAfter_1", "background": true} {"processAfter": 1}
 !!!custom_delegateTaskProgressResponses {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
+appContainers {"name": "appId_1", "background": true} {"appId": 1}
+appContainers {"name": "createdAt_1", "background": true} {"createdAt": 1}
+appContainers {"name": "unique_yaml", "unique": true} {"accountId": 1, "name": 1}
+artifacts {"name": "accountId_1", "background": true} {"accountId": 1}
+artifacts {"name": "accountId_artifactStreamId_createdAt", "background": true} {"accountId": 1, "artifactStreamId": 1, "createdAt": -1}
+artifacts {"name": "appId_1", "background": true} {"appId": 1}
+artifacts {"name": "appId_artifactStreamId_status_createdAt", "background": true} {"appId": 1, "artifactStreamId": 1, "status": 1, "createdAt": -1}
+artifacts {"name": "artifactStream_artifactPath", "background": true} {"artifactStreamId": 1, "metadata.artifactPath": 1}
+artifacts {"name": "artifactStream_buildNo", "background": true} {"artifactStreamId": 1, "metadata.buildNo": 1}
+artifacts {"name": "artifactStream_revision", "background": true} {"artifactStreamId": 1, "revision": 1}
+artifacts {"name": "createdAt_1", "background": true} {"createdAt": 1}
+artifacts {"name": "owners", "background": true} {"artifactStreamId": 1, "appId": 1}
 cache {"name": "accountId_1", "background": true} {"accountId": 1}
 cache {"name": "unique_commutative", "unique": true} {"_id": 1, "contextValue": 1}
 cache {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
@@ -49,6 +61,8 @@ delegateTokens {"name": "validUntil_1", "background": true, "expireAfterSeconds"
 delegateTokensNG {"name": "byAccountAndStatus", "background": true} {"accountId": 1, "owner": 1, "status": 1}
 delegateTokensNG {"name": "byAccountOwnerAndName", "unique": true} {"accountId": 1, "owner": 1, "name": 1}
 delegateTokensNG {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
+emailQueue2 {"name": "earliestGet_1", "background": true, "expireAfterSeconds": 86400} {"earliestGet": 1}
+emailQueue2 {"name": "next4", "background": true} {"topic": 1, "earliestGet": 1}
 encryptedRecords {"name": "acctKmsIdx", "background": true} {"accountId": 1, "kmsId": 1}
 encryptedRecords {"name": "acctNameIdx", "unique": true} {"accountId": 1, "name": 1, "ngMetadata.accountIdentifier": 1, "ngMetadata.orgIdentifier": 1, "ngMetadata.projectIdentifier": 1, "ngMetadata.identifier": 1}
 encryptedRecords {"name": "createdAt_1", "background": true} {"createdAt": 1}
@@ -63,12 +77,21 @@ encryptedRecords {"name": "ngSecretManagerIdx", "background": true} {"ngMetadata
 encryptedRecords {"name": "ngSecretManagerTypeIdx", "background": true} {"accountId": 1, "type": 1, "createdAt": 1}
 encryptedRecords {"name": "parents_1", "background": true} {"parents": 1}
 encryptedRecords {"name": "path_1", "background": true} {"path": 1}
-environmentsNG {"name": "unique_accountId_organizationIdentifier_projectIdentifier_envIdentifier_repo_branch", "unique": true} {"accountId": 1, "orgIdentifier": 1, "projectIdentifier": 1, "identifier": 1, "yamlGitConfigRef": 1, "branch": 1}
 featureFlag {"name": "name_1", "background": true} {"name": 1}
 filters {"name": "unique_accountId_orgId_projectId_name_type_Index", "unique": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1, "name": 1, "filterType": 1}
 filters {"name": "unique_accountId_organizationId_projectId_type", "unique": true} {"fullyQualifiedIdentifier": 1, "filterType": 1}
 gitProcessRequestSdk {"name": "accountId_repo_branch_commit_index", "background": true} {"accountId": 1, "repoUrl": 1, "branch": 1, "commitId": 1}
 harnessApiKeys {"name": "clientType_1", "background": true} {"clientType": 1}
+helmCharts {"name": "accountId_1", "background": true} {"accountId": 1}
+helmCharts {"name": "account_appManifestId", "background": true} {"accountId": 1, "applicationManifestId": 1}
+helmCharts {"name": "appId_appManifestId", "background": true} {"appId": 1, "applicationManifestId": 1}
+helmCharts {"name": "appId_serviceId", "background": true} {"appId": 1, "serviceId": 1}
+helmCharts {"name": "applicationManifestId_1", "background": true} {"applicationManifestId": 1}
+hosts {"name": "appId_1", "background": true} {"appId": 1}
+hosts {"name": "app_inframappingid", "background": true} {"appId": 1, "infraMappingId": 1}
+hosts {"name": "createdAt_1", "background": true} {"createdAt": 1}
+hosts {"name": "hostName_1", "background": true} {"hostName": 1}
+hosts {"name": "serviceTemplateId_1", "background": true} {"serviceTemplateId": 1}
 kmsTransitionEvent2 {"name": "earliestGet_1", "background": true, "expireAfterSeconds": 86400} {"earliestGet": 1}
 kmsTransitionEvent2 {"name": "next4", "background": true} {"topic": 1, "earliestGet": 1}
 migratedEntityMapping {"name": "accountId_1", "background": true} {"accountId": 1}
@@ -81,6 +104,8 @@ migratedEntityMapping {"name": "identifier_1", "background": true} {"identifier"
 migratedEntityMapping {"name": "orgIdentifier_1", "background": true} {"orgIdentifier": 1}
 migratedEntityMapping {"name": "projectIdentifier_1", "background": true} {"projectIdentifier": 1}
 migratedEntityMapping {"name": "scope_1", "background": true} {"scope": 1}
+migrationAsyncTracker {"name": "accountId_1", "background": true} {"accountId": 1}
+migrationAsyncTracker {"name": "appId_1", "background": true} {"appId": 1}
 newRelicMetricRecords {"name": "accountId_1", "background": true} {"accountId": 1}
 newRelicMetricRecords {"name": "appId_1", "background": true} {"appId": 1}
 newRelicMetricRecords {"name": "createdAt_1", "background": true} {"createdAt": 1}
@@ -117,6 +142,13 @@ secretUsageLogs {"name": "appId_1", "background": true} {"appId": 1}
 secretUsageLogs {"name": "createdAt_1", "background": true} {"createdAt": 1}
 secretUsageLogs {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
 serviceSecrets {"name": "serviceType_1", "unique": true} {"serviceType": 1}
+serviceVariables {"name": "appEntityIdx", "background": true} {"appId": 1, "entityId": 1, "createdAt": -1}
+serviceVariables {"name": "appId_1", "background": true} {"appId": 1}
+serviceVariables {"name": "app_entityId", "background": true} {"appId": 1, "entityId": 1}
+serviceVariables {"name": "app_env_templateId", "background": true} {"appId": 1, "envId": 1, "templateId": 1}
+serviceVariables {"name": "createdAt_1", "background": true} {"createdAt": 1}
+serviceVariables {"name": "encryptedValue_1", "background": true} {"encryptedValue": 1}
+serviceVariables {"name": "serviceVariableUniqueIdx", "unique": true} {"entityId": 1, "templateId": 1, "overrideType": 1, "instances": 1, "expression": 1, "type": 1, "name": 1}
 settingAttributes {"name": "accountIdAppIdCategoryCreatedAt", "background": true} {"accountId": 1, "appId": 1, "category": 1, "createdAt": -1}
 settingAttributes {"name": "accountIdAppIdCategoryNameIdx", "background": true, "collation": {"locale": "en", "strength": 1}} {"accountId": 1, "appId": 1, "category": 1, "name": 1}
 settingAttributes {"name": "acctCatTypeIdx", "background": true} {"accountId": 1, "category": 1, "value.type": 1}
@@ -137,6 +169,7 @@ templatesNG {"name": "accountId_organizationId_projectId_identifier_isStable_rep
 templatesNG {"name": "accountId_organizationId_projectId_identifier_label_isDefault", "background": true} {"accountId": 1, "orgIdentifier": 1, "projectIdentifier": 1, "identifier": 1, "versionLabel": 1, "isFromDefaultBranch": 1, "createdAt": -1}
 templatesNG {"name": "accountId_project_org_isDefault", "background": true} {"accountId": 1, "projectIdentifier": 1, "orgIdentifier": 1, "isFromDefaultBranch": 1, "createdAt": -1}
 templatesNG {"name": "accountId_project_org_repo_branch", "background": true} {"accountId": 1, "projectIdentifier": 1, "orgIdentifier": 1, "yamlGitConfigRef": 1, "branch": 1, "createdAt": -1}
+templatesNG {"name": "accountId_repoURL_filePath", "background": true} {"accountId": 1, "repoURL": 1, "filePath": 1}
 templatesNG {"name": "createdAt_1", "background": true} {"createdAt": 1}
 templatesNG {"name": "lastUpdatedAt_idx", "background": true} {"lastUpdatedAt": 1}
 templatesNG {"name": "unique_accountId_organizationId_projectId_identifier_label_repo_branch", "unique": true} {"accountId": 1, "orgIdentifier": 1, "projectIdentifier": 1, "identifier": 1, "versionLabel": 1, "yamlGitConfigRef": 1, "branch": 1}

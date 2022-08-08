@@ -57,10 +57,10 @@ import software.wings.beans.HostConnectionAttributes;
 import software.wings.beans.JenkinsConfig;
 import software.wings.beans.Log;
 import software.wings.beans.SettingAttribute;
-import software.wings.beans.artifact.Artifact.ArtifactMetadataKeys;
+import software.wings.beans.artifact.ArtifactMetadataKeys;
 import software.wings.beans.artifact.ArtifactStreamAttributes;
 import software.wings.beans.artifact.ArtifactStreamType;
-import software.wings.beans.artifact.AzureArtifactsArtifactStream.ProtocolType;
+import software.wings.beans.artifact.AzureArtifactsArtifactStreamProtocolType;
 import software.wings.beans.command.ScpCommandUnit.ScpFileCategory;
 import software.wings.beans.config.ArtifactoryConfig;
 import software.wings.beans.config.NexusConfig;
@@ -212,7 +212,7 @@ public class ScpCommandUnitTest extends WingsBaseTest {
           .metadata(mockMetadata(ArtifactStreamType.AZURE_ARTIFACTS))
           .serverSetting(azureArtifactsConfig)
           .artifactServerEncryptedDataDetails(Collections.emptyList())
-          .protocolType(ProtocolType.maven.name())
+          .protocolType(AzureArtifactsArtifactStreamProtocolType.maven.name())
           .project("PROJECT")
           .feed("FEED")
           .packageId("PACKAGE_ID")
@@ -375,8 +375,8 @@ public class ScpCommandUnitTest extends WingsBaseTest {
   @Owner(developers = AADITI)
   @Category(UnitTests.class)
   public void shouldDownloadArtifactFromAmazonS3IfMetadataOnly() {
-    when(fileBasedScriptExecutor.copyFiles(anyString(), any(ArtifactStreamAttributes.class), anyString(), anyString(),
-             anyString(), anyString(), anyString()))
+    when(fileBasedScriptExecutor.copyFiles(
+             any(), any(ArtifactStreamAttributes.class), any(), any(), any(), any(), any()))
         .thenReturn(CommandExecutionStatus.SUCCESS);
     CommandExecutionStatus status = scpCommandUnit.executeInternal(contextForS3);
     assertThat(status).isEqualTo(CommandExecutionStatus.SUCCESS);
@@ -386,8 +386,8 @@ public class ScpCommandUnitTest extends WingsBaseTest {
   @Owner(developers = AADITI)
   @Category(UnitTests.class)
   public void shouldDownloadArtifactFromArtifactoryIfMetadataOnly() {
-    when(fileBasedScriptExecutor.copyFiles(anyString(), any(ArtifactStreamAttributes.class), anyString(), anyString(),
-             anyString(), anyString(), anyString()))
+    when(fileBasedScriptExecutor.copyFiles(
+             any(), any(ArtifactStreamAttributes.class), any(), any(), any(), any(), any()))
         .thenReturn(CommandExecutionStatus.SUCCESS);
     CommandExecutionStatus status = scpCommandUnit.executeInternal(contextForArtifactory);
     assertThat(status).isEqualTo(CommandExecutionStatus.SUCCESS);
@@ -397,8 +397,8 @@ public class ScpCommandUnitTest extends WingsBaseTest {
   @Owner(developers = AADITI)
   @Category(UnitTests.class)
   public void shouldNotDownloadArtifactFromArtifactoryForRpmType() {
-    when(fileBasedScriptExecutor.copyFiles(anyString(), any(ArtifactStreamAttributes.class), anyString(), anyString(),
-             anyString(), anyString(), anyString()))
+    when(fileBasedScriptExecutor.copyFiles(
+             any(), any(ArtifactStreamAttributes.class), any(), any(), any(), any(), any()))
         .thenReturn(CommandExecutionStatus.SUCCESS);
     CommandExecutionStatus status = scpCommandUnit.executeInternal(contextForArtifactoryRpm);
     assertThat(status).isEqualTo(CommandExecutionStatus.SUCCESS);
@@ -441,7 +441,7 @@ public class ScpCommandUnitTest extends WingsBaseTest {
   public void shouldNotDownloadArtifactFromJenkinsIfNoArtifactFileMetadata() {
     CommandExecutionStatus status = scpCommandUnit.executeInternal(contextForJenkinsOld);
     assertThat(status).isEqualTo(CommandExecutionStatus.SUCCESS);
-    verify(delegateLogService, times(1)).save(anyString(), any(Log.class));
+    verify(delegateLogService, times(1)).save(any(), any(Log.class));
   }
 
   @Test

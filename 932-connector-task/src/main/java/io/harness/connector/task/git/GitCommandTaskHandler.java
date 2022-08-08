@@ -10,6 +10,7 @@ package io.harness.connector.task.git;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.beans.connector.scm.github.GithubApiAccessType.GITHUB_APP;
 import static io.harness.delegate.beans.git.GitCommandExecutionResponse.GitCommandStatus.SUCCESS;
+import static io.harness.exception.WingsException.ExecutionContext.MANAGER;
 import static io.harness.impl.ScmResponseStatusUtils.convertScmStatusCodeToErrorCode;
 
 import static java.lang.String.format;
@@ -18,6 +19,7 @@ import static org.apache.commons.lang3.StringUtils.stripStart;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.PageRequestDTO;
 import io.harness.cistatus.service.GithubAppConfig;
 import io.harness.cistatus.service.GithubService;
 import io.harness.connector.ConnectivityStatus;
@@ -29,6 +31,7 @@ import io.harness.connector.service.scm.ScmDelegateClient;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.connector.scm.GitConnectionType;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
+import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectorDTO;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubApiAccessDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubAppSpecDTO;
@@ -36,7 +39,9 @@ import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.delegate.beans.git.GitCommandExecutionResponse;
 import io.harness.eraro.ErrorCode;
 import io.harness.errorhandling.NGErrorHelper;
+import io.harness.exception.ExplanationException;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.exceptionmanager.ExceptionManager;
 import io.harness.exception.runtime.SCMRuntimeException;
 import io.harness.git.GitClientHelper;
 import io.harness.product.ci.scm.proto.GetUserReposResponse;
@@ -47,7 +52,6 @@ import io.harness.shell.SshSessionConfig;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import java.util.Collections;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -59,6 +63,7 @@ public class GitCommandTaskHandler {
   @Inject private NGErrorHelper ngErrorHelper;
   @Inject private ScmDelegateClient scmDelegateClient;
   @Inject private ScmServiceClient scmServiceClient;
+  @Inject private ExceptionManager exceptionManager;
   @Inject(optional = true) private ScmClient scmClient;
 
   public ConnectorValidationResult validateGitCredentials(GitConfigDTO gitConnector, ScmConnector scmConnector,
@@ -68,12 +73,7 @@ public class GitCommandTaskHandler {
       delegateResponseData = (GitCommandExecutionResponse) handleValidateTask(
           gitConnector, scmConnector, accountIdentifier, sshSessionConfig);
     } catch (Exception e) {
-      return ConnectorValidationResult.builder()
-          .status(ConnectivityStatus.FAILURE)
-          .testedAt(System.currentTimeMillis())
-          .errorSummary(ngErrorHelper.getErrorSummary(e.getMessage()))
-          .errors(Collections.singletonList(ngErrorHelper.createErrorDetail(e.getMessage())))
-          .build();
+      throw exceptionManager.processException(e, MANAGER, log);
     }
     return ConnectorValidationResult.builder()
         .status(ConnectivityStatus.SUCCESS)
@@ -101,7 +101,8 @@ public class GitCommandTaskHandler {
   }
 
   private void handleGitValidation(GitConfigDTO gitConfig, String accountId, SshSessionConfig sshSessionConfig) {
-    if (gitConfig.getGitConnectionType() == GitConnectionType.ACCOUNT) {
+    if (gitConfig.getGitConnectionType() == GitConnectionType.ACCOUNT
+        || gitConfig.getGitConnectionType() == GitConnectionType.PROJECT) {
       if (isNotEmpty(gitConfig.getValidationRepo())) {
         String url = format("%s/%s", stripEnd(gitConfig.getUrl(), "/"), stripStart(gitConfig.getValidationRepo(), "/"));
         gitConfig.setUrl(url);
@@ -126,12 +127,13 @@ public class GitCommandTaskHandler {
     }
 
     GetUserReposResponse reposResponse;
+    PageRequestDTO pageRequest = PageRequestDTO.builder().pageIndex(0).build();
     try {
       if (executeOnDelegate == Boolean.FALSE) {
-        reposResponse = scmClient.getUserRepos(scmConnector);
+        reposResponse = scmClient.getUserRepos(scmConnector, pageRequest);
       } else {
         reposResponse = scmDelegateClient.processScmRequest(
-            c -> scmServiceClient.getUserRepos(scmConnector, SCMGrpc.newBlockingStub(c)));
+            c -> scmServiceClient.getUserRepos(scmConnector, pageRequest, SCMGrpc.newBlockingStub(c)));
       }
     } catch (InvalidRequestException e) {
       throw SCMRuntimeException.builder().message(e.getMessage()).errorCode(ErrorCode.INVALID_REQUEST).build();
@@ -141,6 +143,13 @@ public class GitCommandTaskHandler {
     if (reposResponse != null && reposResponse.getStatus() > 300) {
       ErrorCode errorCode = convertScmStatusCodeToErrorCode(reposResponse.getStatus());
       throw SCMRuntimeException.builder().errorCode(errorCode).message(reposResponse.getError()).build();
+    }
+
+    // AzureRepo returns an error with code 203
+    if (reposResponse != null && scmConnector instanceof AzureRepoConnectorDTO && reposResponse.getStatus() == 203) {
+      ErrorCode errorCode = convertScmStatusCodeToErrorCode(reposResponse.getStatus());
+      throw new ExplanationException("Invalid API Access Token",
+          SCMRuntimeException.builder().errorCode(errorCode).message(reposResponse.getError()).build());
     }
   }
 

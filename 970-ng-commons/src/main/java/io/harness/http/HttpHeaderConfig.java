@@ -8,9 +8,11 @@
 package io.harness.http;
 
 import static io.harness.expression.Expression.ALLOW_SECRETS;
+import static io.harness.yaml.core.VariableExpression.IteratePolicy.REGULAR_WITH_CUSTOM_FIELD;
 
 import io.harness.expression.Expression;
 import io.harness.expression.ExpressionReflectionUtils.NestedAnnotationResolver;
+import io.harness.yaml.core.VariableExpression;
 
 import lombok.Builder;
 import lombok.Value;
@@ -18,6 +20,6 @@ import lombok.Value;
 @Value
 @Builder
 public class HttpHeaderConfig implements NestedAnnotationResolver {
-  @Expression(ALLOW_SECRETS) String key;
-  @Expression(ALLOW_SECRETS) String value;
+  @Expression(ALLOW_SECRETS) @VariableExpression(skipVariableExpression = true) String key;
+  @Expression(ALLOW_SECRETS) @VariableExpression(policy = REGULAR_WITH_CUSTOM_FIELD) String value;
 }

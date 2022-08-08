@@ -28,15 +28,13 @@ fi
 if [ "${RUN_BAZEL_FUNCTIONAL_TESTS}" == "true" ]; then
 
   bazel build ${GCP} ${BAZEL_ARGUMENTS} -- //190-deployment-functional-tests/...
-  curl https://storage.googleapis.com/harness-prod-public/public/shared/tools/alpn/release/8.1.13.v20181017/alpn-boot-8.1.13.v20181017.jar --output alpn-boot-8.1.13.v20181017.jar
 
   bazel run ${GCP} ${BAZEL_ARGUMENTS} 230-model-test:app &
   MANAGER_PID=$!
 
   bazel test --keep_going ${GCP} ${BAZEL_ARGUMENTS} --jobs=3 -- //190-deployment-functional-tests:io.harness.functional.DummyFirstCdFunctionalTest || true
 
-  java -Xbootclasspath/p:alpn-boot-8.1.13.v20181017.jar -Xmx4096m -XX:+HeapDumpOnOutOfMemoryError \
-    -XX:+PrintGCDetails -XX:+PrintGCDateStamps -Xloggc:mygclogfilename.gc -XX:+UseParallelGC \
+  java -Xmx4096m -XX:+HeapDumpOnOutOfMemoryError -Xloggc:mygclogfilename.gc -XX:+UseParallelGC \
     -XX:MaxGCPauseMillis=500 -jar /harness/bazel-out/k8-fastbuild/bin/260-delegate/module_deploy.jar /harness/260-delegate/config-delegate.yml &
   DELEGATE_PID=$!
 

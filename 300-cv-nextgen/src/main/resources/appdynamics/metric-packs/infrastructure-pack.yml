@@ -2,37 +2,37 @@ identifier: Infrastructure
 category: Infrastructure
 metrics:
   - name: CPU.%Busy
-    identifier: CPU_Busy
+    identifier: cpu_busy
     type: INFRA
     path: Application Infrastructure Performance|__tier_name__|Hardware Resources|CPU|%Busy
     validationPath: Application Infrastructure Performance|__tier_name__|Hardware Resources|CPU|%Busy
     included: true
   - name: CPU.%Idle
-    identifier: CPU_Idle
+    identifier: cpu_idle
     type: INFRA
     path: Application Infrastructure Performance|__tier_name__|Hardware Resources|CPU|%Idle
     validationPath: Application Infrastructure Performance|__tier_name__|Hardware Resources|CPU|%Idle
     included: false
   - name: CPU.%Stolen
-    identifier: CPU_Stolen
+    identifier: cpu_stolen
     type: INFRA
     path: Application Infrastructure Performance|__tier_name__|Hardware Resources|CPU|%Stolen
     validationPath: Application Infrastructure Performance|__tier_name__|Hardware Resources|CPU|%Stolen
     included: false
   - name: CPU.IOWait
-    identifier: CPU_IOWait
+    identifier: cpu_iowait
     type: INFRA
     path: Application Infrastructure Performance|__tier_name__|Hardware Resources|CPU|IOWait
     validationPath: Application Infrastructure Performance|__tier_name__|Hardware Resources|CPU|IOWait
     included: false
   - name: CPU.System
-    identifier: CPU_System
+    identifier: cpu_system
     type: INFRA
     path: Application Infrastructure Performance|__tier_name__|Hardware Resources|CPU|System
     validationPath: Application Infrastructure Performance|__tier_name__|Hardware Resources|CPU|System
     included: false
   - name: CPU.User
-    identifier: CPU_User
+    identifier: cpu_user
     type: INFRA
     path: Application Infrastructure Performance|__tier_name__|Hardware Resources|CPU|User
     validationPath: Application Infrastructure Performance|__tier_name__|Hardware Resources|CPU|User

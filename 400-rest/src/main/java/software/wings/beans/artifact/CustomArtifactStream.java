@@ -108,7 +108,7 @@ public class CustomArtifactStream extends ArtifactStream {
 
   @Override
   public boolean shouldValidate() {
-    return true;
+    return !Boolean.FALSE.equals(getCollectionEnabled());
   }
 
   @Data

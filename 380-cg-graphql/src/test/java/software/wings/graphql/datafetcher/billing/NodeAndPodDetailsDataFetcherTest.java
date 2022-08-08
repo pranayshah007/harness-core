@@ -118,7 +118,7 @@ public class NodeAndPodDetailsDataFetcherTest extends AbstractDataFetcherTestBas
     // Account1
     createAccount(ACCOUNT1_ID, getLicenseInfo());
     createApp(ACCOUNT1_ID, APP1_ID_ACCOUNT1, APP1_ID_ACCOUNT1, TAG_TEAM, TAG_VALUE_TEAM1);
-    when(statsHelper.getEntityName(any(), anyString())).thenAnswer(i -> i.getArgumentAt(1, String.class));
+    when(statsHelper.getEntityName(any(), anyString())).thenAnswer(i -> i.getArgument(1, String.class));
     when(instanceDataService.fetchInstanceDataForGivenInstances(Collections.singletonList(INSTANCE_ID)))
         .thenReturn(Collections.singletonList(getTestInstanceData(INSTANCE_ID, INSTANCE_ID, K8S_POD)));
     Connection mockConnection = mock(Connection.class);
@@ -182,7 +182,7 @@ public class NodeAndPodDetailsDataFetcherTest extends AbstractDataFetcherTestBas
     assertThat(data.getData().get(0).getTotalCost()).isEqualTo(10.0);
     assertThat(data.getData().get(0).getIdleCost()).isEqualTo(3.0);
     assertThat(data.getData().get(0).getUnallocatedCost()).isEqualTo(4.0);
-    assertThat(data.getData().get(0).getNetworkCost()).isEqualTo(3.0);
+    assertThat(data.getData().get(0).getNetworkCost()).isEqualTo(0.0);
     assertThat(data.getData().get(0).getCpuAllocatable()).isEqualTo(CPU_UNITS / 1024);
     assertThat(data.getData().get(0).getMemoryAllocatable()).isEqualTo(MEMORY_MB / 1024);
     assertThat(data.getData().get(0).getMachineType()).isEqualTo("linux");
@@ -220,7 +220,7 @@ public class NodeAndPodDetailsDataFetcherTest extends AbstractDataFetcherTestBas
     assertThat(row0.getTotalCost()).isEqualTo(10.0);
     assertThat(row0.getIdleCost()).isEqualTo(3.0);
     assertThat(row0.getUnallocatedCost()).isEqualTo(4.0);
-    assertThat(row0.getNetworkCost()).isEqualTo(3.0);
+    assertThat(row0.getNetworkCost()).isEqualTo(0.0);
     assertThat(row0.getCpuAllocatable()).isEqualTo(-1D);
     assertThat(row0.getMemoryAllocatable()).isEqualTo(-1D);
     assertThat(row0.getMachineType()).isEqualTo(defaultStringValue);

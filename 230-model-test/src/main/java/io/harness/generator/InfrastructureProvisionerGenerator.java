@@ -28,7 +28,7 @@ import software.wings.beans.InfrastructureProvisioner.InfrastructureProvisionerK
 import software.wings.beans.InfrastructureProvisionerType;
 import software.wings.beans.NameValuePair;
 import software.wings.beans.Service;
-import software.wings.beans.ServiceVariable.Type;
+import software.wings.beans.ServiceVariableType;
 import software.wings.beans.SettingAttribute;
 import software.wings.beans.TerraformInfrastructureProvisioner;
 import software.wings.beans.TerraformInfrastructureProvisioner.TerraformInfrastructureProvisionerBuilder;
@@ -80,8 +80,12 @@ public class InfrastructureProvisionerGenerator {
         TerraformInfrastructureProvisioner.builder()
             .name("Harness Terraform Test")
             .sourceRepoSettingId(gitSourceSettingAttribute.getUuid())
-            .variables(asList(NameValuePair.builder().name("access_key").valueType(Type.TEXT.name()).build(),
-                NameValuePair.builder().name("secret_key").valueType(Type.ENCRYPTED_TEXT.name()).build()))
+            .variables(
+                asList(NameValuePair.builder().name("access_key").valueType(ServiceVariableType.TEXT.name()).build(),
+                    NameValuePair.builder()
+                        .name("secret_key")
+                        .valueType(ServiceVariableType.ENCRYPTED_TEXT.name())
+                        .build()))
             .mappingBlueprints(asList(
                 InfrastructureMappingBlueprint.builder()
                     .serviceId(archive.getUuid())

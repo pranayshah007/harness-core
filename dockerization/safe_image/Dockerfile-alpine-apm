@@ -1,4 +1,4 @@
-FROM us.gcr.io/platform-205701/alpine:safe-alpine3.12-sec1695
+FROM us.gcr.io/platform-205701/alpine:safe-alpine3.15.4-bt1276
 
 RUN mkdir -p /opt/harness/
 

@@ -1452,6 +1452,8 @@ public class DelegateTaskProcessTest extends WingsBaseTest {
     persistence.save(delegateProfile);
     delegate.setDelegateProfileId(delegateProfile.getUuid());
     persistence.save(delegate);
+    when(delegateCache.getDelegateProfile(delegate.getAccountId(), delegate.getDelegateProfileId()))
+        .thenReturn(delegateProfile);
     return delegate;
   }
 

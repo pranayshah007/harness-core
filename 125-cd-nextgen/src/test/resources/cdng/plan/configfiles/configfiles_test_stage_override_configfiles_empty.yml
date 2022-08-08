@@ -1,0 +1,6 @@
+stageOverrides:
+  artifacts:
+    primary:
+    sidecars: []
+  manifests: []
+  configFiles: []

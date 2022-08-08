@@ -14,31 +14,75 @@ import io.harness.persistence.HPersistence;
 
 import software.wings.service.intfc.AccountService;
 
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.inject.Inject;
+import java.util.List;
+import lombok.RequiredArgsConstructor;
 
+@RequiredArgsConstructor(onConstructor_ = @Inject)
 public class DelegateRingServiceImpl implements DelegateRingService {
   private final HPersistence persistence;
   private final AccountService accountService;
+  private final Cache<String, DelegateRing> delegateRingCache =
+      Caffeine.newBuilder().maximumSize(10).expireAfterWrite(5, java.util.concurrent.TimeUnit.MINUTES).build();
 
-  @Inject
-  public DelegateRingServiceImpl(HPersistence persistence, AccountService accountService) {
-    this.persistence = persistence;
-    this.accountService = accountService;
+  @Override
+  public String getDelegateImageTag(final String accountId) {
+    return getDelegateRing(accountId).getDelegateImageTag();
   }
 
   @Override
-  public String getDelegateImageTag(String accountId) {
-    return (persistence.createQuery(DelegateRing.class)
-                .filter(DelegateRingKeys.ringName, accountService.get(accountId).getRingName())
-                .get())
-        .getDelegateImageTag();
+  public String getUpgraderImageTag(final String accountId) {
+    return getDelegateRing(accountId).getUpgraderImageTag();
   }
 
   @Override
-  public String getUpgraderImageTag(String accountId) {
-    return (persistence.createQuery(DelegateRing.class)
-                .filter(DelegateRingKeys.ringName, accountService.get(accountId).getRingName())
-                .get())
-        .getUpgraderImageTag();
+  public List<String> getDelegateVersions(final String accountId) {
+    return getDelegateRing(accountId).getDelegateVersions();
+  }
+
+  @Override
+  public List<String> getDelegateVersionsForRing(String ringName, boolean skipCache) {
+    if (!skipCache) {
+      DelegateRing ring = delegateRingCache.getIfPresent(ringName);
+      if (ring != null) {
+        return ring.getDelegateVersions();
+      }
+    }
+    DelegateRing ringFromDB =
+        persistence.createQuery(DelegateRing.class).filter(DelegateRingKeys.ringName, ringName).get();
+    if (!skipCache) {
+      delegateRingCache.put(ringName, ringFromDB);
+    }
+
+    return ringFromDB.getDelegateVersions();
+  }
+
+  @Override
+  public String getWatcherVersions(final String accountId) {
+    return getDelegateRing(accountId).getWatcherVersions();
+  }
+
+  @Override
+  public String getWatcherVersionsForRing(String ringName, boolean skipCache) {
+    if (!skipCache) {
+      DelegateRing ring = delegateRingCache.getIfPresent(ringName);
+      if (ring != null) {
+        return ring.getWatcherVersions();
+      }
+    }
+    DelegateRing ringFromDB =
+        persistence.createQuery(DelegateRing.class).filter(DelegateRingKeys.ringName, ringName).get();
+    if (!skipCache) {
+      delegateRingCache.put(ringName, ringFromDB);
+    }
+    return ringFromDB.getWatcherVersions();
+  }
+
+  private DelegateRing getDelegateRing(String accountId) {
+    return persistence.createQuery(DelegateRing.class)
+        .filter(DelegateRingKeys.ringName, accountService.get(accountId).getRingName())
+        .get();
   }
 }

@@ -11,6 +11,8 @@ import static io.harness.annotations.dev.HarnessTeam.CE;
 import static io.harness.persistence.HQuery.excludeAuthority;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.ccm.commons.beans.InstanceType;
+import io.harness.ccm.commons.constants.InstanceMetaDataConstants;
 import io.harness.ccm.commons.entities.batch.InstanceData;
 import io.harness.ccm.commons.entities.batch.InstanceData.InstanceDataKeys;
 import io.harness.persistence.HPersistence;
@@ -56,6 +58,17 @@ public class InstanceDataDao {
                                     .field(InstanceDataKeys.instanceId)
                                     .in(instanceIds);
     return fetchInstanceData(query.fetch().iterator());
+  }
+
+  public InstanceData fetchInstanceData(
+      String accountId, String clusterId, InstanceType instanceType, String nodePoolName) {
+    return hPersistence.createQuery(InstanceData.class)
+        .filter(InstanceDataKeys.accountId, accountId)
+        .filter(InstanceDataKeys.clusterId, clusterId)
+        .filter(InstanceDataKeys.instanceType, instanceType)
+        // currently we are only computing recommendation for non-null node_pool_name
+        .filter(InstanceDataKeys.metaData + "." + InstanceMetaDataConstants.NODE_POOL_NAME, nodePoolName)
+        .get();
   }
 
   private List<InstanceData> fetchInstanceData(Iterator<InstanceData> iterator) {

@@ -1,5 +1,5 @@
 # to be used when building in Jenkins
-FROM us.gcr.io/platform-205701/harness/serverjre_8:191
+FROM us.gcr.io/platform-205701/alpine:safe-alpine3.15.4-bt1276-apm
 RUN yum install -y hostname tar gzip net-tools traceroute nmap procps
 
 # install yq - a YAML query command line tool
@@ -8,7 +8,7 @@ RUN chmod +x yq
 RUN mv yq /usr/local/bin
 
 # Add the capsule JAR and config.yml
-COPY rest-capsule.jar AppServerAgent-4.5.0.23604.tar.gz newrelic.yml keystore.jks classpath_metadata.json config.yml hazelcast.xml redisson-jcache.yaml /opt/harness/
+COPY rest-capsule.jar newrelic.yml keystore.jks classpath_metadata.json config.yml hazelcast.xml redisson-jcache.yaml /opt/harness/
 
 COPY scripts /opt/harness
 

@@ -1,0 +1,302 @@
+{
+  "pipeline": {
+    "identifier": "cipipelineiuawNYTGSu",
+    "name": "pipeline_with_successful_s3_save and restore cache",
+    "description": "gfjk",
+    "stages": [
+      {
+        "stage": {
+          "identifier": "s3_save_cache",
+          "name": "s3_save_cache",
+          "type": "CI",
+          "variables": [
+            {
+              "name": "AWS_ACCESS_KEY",
+              "type": "String",
+              "value": "AKIAW7HFSAHLRPFRIXHR",
+              "__uuid": "5GZH73TXSl-TRLYiVaN7Yg"
+            },
+            {
+              "name": "AWS_SECRET_KEY",
+              "type": "Secret",
+              "value": "account.testCISecret6xoXFHb4g9",
+              "__uuid": "CJWwGZmsRZ6kQdif5_Ot4Q"
+            }
+          ],
+          "spec": {
+            "sharedPaths": [
+              "/shared"
+            ],
+            "execution": {
+              "steps": [
+                {
+                  "step": {
+                    "identifier": "createBucket",
+                    "name": "create bucket",
+                    "type": "Run",
+                    "spec": {
+                      "command": "aws configure set aws_access_key_id $AWS_ACCESS_KEY\naws configure set aws_secret_access_key $AWS_SECRET_KEY\naws configure set default.region us-west-2\naws s3 rb s3://harnesscie-cache-tar --force || true\naws s3 rb s3://harnesscie-cache-gzip --force || true\naws s3 rb s3://harnesscie-cache-plain --force || true\naws s3 mb s3://harnesscie-cache-tar\naws s3 mb s3://harnesscie-cache-gzip\naws s3 mb s3://harnesscie-cache-plain\n",
+                      "envVariables": {
+                        "HOME": "/shared",
+                        "__uuid": "tXMWG183TkeQuGhQvUXleA"
+                      },
+                      "connectorRef": "account.CItestDockerConnectorLsGyi79hax",
+                      "image": "amazon/aws-cli:2.0.6",
+                      "__uuid": "Bf6G-slRSqq8lI3Mkvn-Eg"
+                    },
+                    "__uuid": "JA81D9GRR3GTQl_VxPb7_A"
+                  },
+                  "__uuid": "HfmdSMQdSFGtS03i8VSvkA"
+                },
+                {
+                  "step": {
+                    "identifier": "rootFile",
+                    "name": "create file at slash",
+                    "type": "Run",
+                    "spec": {
+                      "command": "echo hello world > /shared/cache\n",
+                      "connectorRef": "account.CItestDockerConnectorLsGyi79hax",
+                      "image": "alpine",
+                      "__uuid": "HHWKNIxpQIKmYUMGV5n_fg"
+                    },
+                    "__uuid": "hpBpVWAvSFK2gWT79Tcbfg"
+                  },
+                  "__uuid": "Ytn2cLJqSFGHwU-HN0G9OQ"
+                },
+                {
+                  "step": {
+                    "identifier": "saveCacheTar",
+                    "name": "save cache",
+                    "type": "SaveCacheS3",
+                    "spec": {
+                      "region": "us-west-2",
+                      "connectorRef": "account.testAWSConnectoryikblW3UfN",
+                      "bucket": "harnesscie-cache-tar",
+                      "sourcePaths": [
+                        "src/main/resources",
+                        "/shared/cache"
+                      ],
+                      "key": "cache-tar",
+                      "archiveFormat": "Tar",
+                      "__uuid": "baO6R0JGTNiSyUWFB_GDSQ"
+                    },
+                    "__uuid": "3UxfxZiESCCBjYufKFQwOQ"
+                  },
+                  "__uuid": "ED2lR8jNQEu61Sw8tC2T1A"
+                },
+                {
+                  "step": {
+                    "identifier": "saveCacheGzip",
+                    "name": "save cache",
+                    "type": "SaveCacheS3",
+                    "spec": {
+                      "region": "us-west-2",
+                      "connectorRef": "account.testAWSConnectoryikblW3UfN",
+                      "bucket": "harnesscie-cache-gzip",
+                      "sourcePaths": [
+                        "src/main/java"
+                      ],
+                      "key": "cache-gzip",
+                      "archiveFormat": "Gzip",
+                      "__uuid": "UJr2p9gaTaakxYeB5yl_HA"
+                    },
+                    "__uuid": "bbCpyDW8StSVe0CApiw7Mw"
+                  },
+                  "__uuid": "al6tQtn_Qx6BM8sP-R2_pg"
+                },
+                {
+                  "step": {
+                    "identifier": "saveCachePlain",
+                    "name": "save cache",
+                    "type": "SaveCacheS3",
+                    "spec": {
+                      "region": "us-west-2",
+                      "connectorRef": "account.testAWSConnectoryikblW3UfN",
+                      "bucket": "harnesscie-cache-plain",
+                      "sourcePaths": [
+                        "pom.xml",
+                        "Dockerfile"
+                      ],
+                      "key": "cache-plain",
+                      "__uuid": "6tq2YRv7SB6wFbL12sbdbg"
+                    },
+                    "__uuid": "YPq64k-6QiGkTAHhSHcqjw"
+                  },
+                  "__uuid": "rQy5VOAvQyu_d4xBIGrokA"
+                }
+              ],
+              "__uuid": "GtagnjxLT5mxEcKYokjr0w"
+            },
+            "infrastructure": {
+              "type": "KubernetesDirect",
+              "spec": {
+                "connectorRef": "account.CItestK8sConnectorCMs0vdKHun",
+                "namespace": "harness-qa-delegate",
+                "__uuid": "tiuLkJ2iRVmpJDVkDNcxOA"
+              },
+              "__uuid": "2VZb-zVLQQaaUFZLbjH_7A"
+            },
+            "cloneCodebase": true,
+            "__uuid": "9D4vIi_kSIWsBfBjm96gCA"
+          },
+          "__uuid": "RKLE5XZMSQ642_QxPWOYLw"
+        },
+        "__uuid": "yCGiQl2PS6yhMpvXH-yLzA"
+      },
+      {
+        "stage": {
+          "identifier": "s3_restore_cache",
+          "name": "s3 restore cache",
+          "type": "CI",
+          "variables": [
+            {
+              "name": "AWS_ACCESS_KEY",
+              "type": "String",
+              "value": "AKIAW7HFSAHLRPFRIXHR",
+              "__uuid": "Mp8biRnzQ0So-Sf8nrB-ag"
+            },
+            {
+              "name": "AWS_SECRET_KEY",
+              "type": "Secret",
+              "value": "account.testCISecret6xoXFHb4g9",
+              "__uuid": "kbthK6tHR5qrJFI-rSw5iw"
+            }
+          ],
+          "spec": {
+            "sharedPaths": [
+              "/shared"
+            ],
+            "execution": {
+              "steps": [
+                {
+                  "step": {
+                    "identifier": "restoreCacheTar",
+                    "name": "restore",
+                    "type": "RestoreCacheS3",
+                    "spec": {
+                      "region": "us-west-2",
+                      "connectorRef": "account.testAWSConnectoryikblW3UfN",
+                      "bucket": "harnesscie-cache-tar",
+                      "key": "cache-tar",
+                      "failIfKeyNotFound": true,
+                      "archiveFormat": "Tar",
+                      "__uuid": "2wcAQHQzSO6gQvAKV3oTaA"
+                    },
+                    "__uuid": "yxksNQ8KQ_6BBtlJACp_0g"
+                  },
+                  "__uuid": "gRSC6v-cQYqir_fAdLhYrw"
+                },
+                {
+                  "step": {
+                    "identifier": "restoreCacheGzip",
+                    "name": "restore",
+                    "type": "RestoreCacheS3",
+                    "spec": {
+                      "region": "us-west-2",
+                      "connectorRef": "account.testAWSConnectoryikblW3UfN",
+                      "bucket": "harnesscie-cache-gzip",
+                      "key": "cache-gzip",
+                      "failIfKeyNotFound": true,
+                      "archiveFormat": "Gzip",
+                      "__uuid": "wcUy9NdTTKO2LeOH5ECKaA"
+                    },
+                    "__uuid": "rJOKQX2fSE23aQu-6ZdEmQ"
+                  },
+                  "__uuid": "fy1Cud3ORhyjaHp-lanpYg"
+                },
+                {
+                  "step": {
+                    "identifier": "restoreCachePlain",
+                    "name": "restore",
+                    "type": "RestoreCacheS3",
+                    "spec": {
+                      "region": "us-west-2",
+                      "connectorRef": "account.testAWSConnectoryikblW3UfN",
+                      "bucket": "harnesscie-cache-plain",
+                      "key": "cache-plain",
+                      "failIfKeyNotFound": true,
+                      "__uuid": "RDzpkbQaRw2LPfbMS_BAVw"
+                    },
+                    "__uuid": "nsngNZ6jRjeiGeZwkMRqsw"
+                  },
+                  "__uuid": "pQpNk3HtTpqliLKQKTZKLw"
+                },
+                {
+                  "step": {
+                    "identifier": "testSavedCache",
+                    "name": "test save",
+                    "type": "Run",
+                    "spec": {
+                      "command": "ls src/main/java/com/blog/samples/docker/Application.java\nls src/main/resources/logback.xml\nls pom.xml\nls Dockerfile\nls /shared/cache\n",
+                      "connectorRef": "account.CItestDockerConnectorLsGyi79hax",
+                      "image": "maven:3.6.3-jdk-8",
+                      "__uuid": "29ovX9MBRd2nbIUSFzJUBA"
+                    },
+                    "__uuid": "AKWL__56RfmdsRazz_7wFw"
+                  },
+                  "__uuid": "OnBVCzumS7eRoG1JwP2u0w"
+                },
+                {
+                  "step": {
+                    "identifier": "deleteBucket",
+                    "name": "delete bucket",
+                    "type": "Run",
+                    "spec": {
+                      "command": "aws configure set aws_access_key_id $AWS_ACCESS_KEY\naws configure set aws_secret_access_key $AWS_SECRET_KEY\naws configure set default.region us-west-2\naws s3 rb s3://harnesscie-cache-tar --force || true\naws s3 rb s3://harnesscie-cache-gzip --force || true\naws s3 rb s3://harnesscie-cache-plain --force || true\n",
+                      "envVariables": {
+                        "HOME": "/shared",
+                        "__uuid": "x4jaiodlR8GQiQxnExe4HA"
+                      },
+                      "connectorRef": "account.CItestDockerConnectorLsGyi79hax",
+                      "image": "amazon/aws-cli:2.0.6",
+                      "__uuid": "vWw3q7FVQ_aSm6f-Mwc2vg"
+                    },
+                    "__uuid": "veD6JHGYRGu7RINjQtpE9w"
+                  },
+                  "__uuid": "BMjD43OQSgKXJXRK9WPpbA"
+                }
+              ],
+              "__uuid": "h5phb6RAT7uHE_IL5hIXyg"
+            },
+            "infrastructure": {
+              "type": "KubernetesDirect",
+              "spec": {
+                "connectorRef": "account.CItestK8sConnectorCMs0vdKHun",
+                "namespace": "harness-qa-delegate",
+                "__uuid": "g7dBW7VnQ26jxxE1GqzXPg"
+              },
+              "__uuid": "F4AukQ8HQP6kzcsBPTgd_g"
+            },
+            "cloneCodebase": false,
+            "__uuid": "xHUWiiOlSvqrz9UOnUA_3A"
+          },
+          "__uuid": "bGzme9rTS9ybVelYyv2fGQ"
+        },
+        "__uuid": "bP_iMlxOTjCxxPpPn4-Afw"
+      }
+    ],
+    "properties": {
+      "ci": {
+        "codebase": {
+          "connectorRef": "account.CItestGitConnectorzOQatkjQKZ",
+          "repoName": "springboot",
+          "build": {
+            "type": "branch",
+            "spec": {
+              "branch": "master",
+              "__uuid": "RX3-RHBhTQaV6YuuvV6xNA"
+            },
+            "__uuid": "BVIgmPw5RSm31tNGBJP8bg"
+          },
+          "__uuid": "trTe54CES_CNm9IBHzOOTA"
+        },
+        "__uuid": "5Na3alCbT7ypKVoSlSfGKw"
+      },
+      "__uuid": "ofJRf34-QKW0ISen1Bg6Wg"
+    },
+    "projectIdentifier": "CITestDemoProP1PcmJEzZ5",
+    "orgIdentifier": "CITestDemoOrgUNtoIHwBY8",
+    "__uuid": "Gg4Fc_HzRX-eBHXqOO10FQ"
+  },
+  "__uuid": "__WhBRZ_RD2qWWQJjwnDCg"
+}

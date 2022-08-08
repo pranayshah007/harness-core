@@ -75,6 +75,7 @@ public abstract class BaseMutatorDataFetcher<P, R> extends BaseDataFetcher {
   @Override
   public R get(DataFetchingEnvironment dataFetchingEnvironment) throws Exception {
     try {
+      log.info("Executing gql {}", this.getClass().getName());
       final P parameters = fetchParameters(parameterClass, dataFetchingEnvironment);
       authRuleInstrumentation.instrumentDataFetcher(this, dataFetchingEnvironment, resultClass);
       final MutationContext mutationContext = MutationContext.builder()

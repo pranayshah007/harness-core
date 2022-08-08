@@ -1,3 +1,10 @@
+/*
+ * Copyright 2022 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
+
 package io.harness.connector.impl;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
@@ -41,6 +48,7 @@ public class NGHostServiceImplTest extends ConnectorsTestBase {
   private static final String VM = "VM";
   private static final String accountIdentifier = "accountIdentifier";
   private static final String identifier = "identifier";
+  private static final String scopedIdentifier = "account.identifier";
   private static final String name = "name";
   @Inject @InjectMocks private NGHostServiceImpl hostService;
   @Inject @InjectMocks private DefaultConnectorServiceImpl connectorService;
@@ -52,7 +60,7 @@ public class NGHostServiceImplTest extends ConnectorsTestBase {
     createConnectorWithHosts();
     PageRequest pageRequest = PageRequest.builder().pageIndex(0).pageSize(2).build();
     Page<HostDTO> pageResponse =
-        hostService.filterHostsByConnector(accountIdentifier, null, null, identifier, null, pageRequest);
+        hostService.filterHostsByConnector(accountIdentifier, null, null, scopedIdentifier, null, pageRequest);
 
     assertThat(pageResponse.getTotalElements()).isEqualTo(8);
     assertThat(pageResponse.getTotalPages()).isEqualTo(4);
@@ -65,11 +73,10 @@ public class NGHostServiceImplTest extends ConnectorsTestBase {
   public void testGetPdcConnectorHostsFilterByHostNameCommaSeparated() {
     createConnectorWithHosts();
     PageRequest pageRequest = PageRequest.builder().pageIndex(0).pageSize(2).build();
-    HostFilterDTO filter = new HostFilterDTO();
-    filter.setType(HostFilterType.HOST_NAMES);
-    filter.setFilter("host1, host2,host3\nhost4\nhost5");
+    HostFilterDTO filter =
+        HostFilterDTO.builder().type(HostFilterType.HOST_NAMES).filter("host1, host2,host3\nhost4\nhost5").build();
     Page<HostDTO> pageResponse =
-        hostService.filterHostsByConnector(accountIdentifier, null, null, identifier, filter, pageRequest);
+        hostService.filterHostsByConnector(accountIdentifier, null, null, scopedIdentifier, filter, pageRequest);
 
     assertThat(pageResponse.getTotalElements()).isEqualTo(5);
     assertThat(pageResponse.getTotalPages()).isEqualTo(3);
@@ -82,11 +89,12 @@ public class NGHostServiceImplTest extends ConnectorsTestBase {
   public void testGetPdcConnectorHostsFilterByHostAttributesCommaSeparated() {
     createConnectorWithHosts();
     PageRequest pageRequest = PageRequest.builder().pageIndex(0).pageSize(2).build();
-    HostFilterDTO filter = new HostFilterDTO();
-    filter.setType(HostFilterType.HOST_ATTRIBUTES);
-    filter.setFilter("region:west, hostType:DB\n hostType:VM");
+    HostFilterDTO filter = HostFilterDTO.builder()
+                               .type(HostFilterType.HOST_ATTRIBUTES)
+                               .filter("region:west, hostType:DB\n hostType:VM")
+                               .build();
     Page<HostDTO> pageResponse =
-        hostService.filterHostsByConnector(accountIdentifier, null, null, identifier, filter, pageRequest);
+        hostService.filterHostsByConnector(accountIdentifier, null, null, scopedIdentifier, filter, pageRequest);
 
     assertThat(pageResponse.getTotalElements()).isEqualTo(8);
     assertThat(pageResponse.getTotalPages()).isEqualTo(4);
@@ -99,11 +107,10 @@ public class NGHostServiceImplTest extends ConnectorsTestBase {
   public void testGetPdcConnectorHostsFilterByHostAttributesNewLineSeparated() {
     createConnectorWithHosts();
     PageRequest pageRequest = PageRequest.builder().pageIndex(0).pageSize(2).build();
-    HostFilterDTO filter = new HostFilterDTO();
-    filter.setType(HostFilterType.HOST_ATTRIBUTES);
-    filter.setFilter("region:west\nhostType:DB");
+    HostFilterDTO filter =
+        HostFilterDTO.builder().type(HostFilterType.HOST_ATTRIBUTES).filter("region:west\nhostType:DB").build();
     Page<HostDTO> pageResponse =
-        hostService.filterHostsByConnector(accountIdentifier, null, null, identifier, filter, pageRequest);
+        hostService.filterHostsByConnector(accountIdentifier, null, null, scopedIdentifier, filter, pageRequest);
 
     assertThat(pageResponse.getTotalElements()).isEqualTo(6);
     assertThat(pageResponse.getTotalPages()).isEqualTo(3);
@@ -118,8 +125,8 @@ public class NGHostServiceImplTest extends ConnectorsTestBase {
   private ConnectorDTO createPdcConnectorRequestDTO() {
     PhysicalDataCenterConnectorDTO connectorDTO = PhysicalDataCenterConnectorDTO.builder().hosts(createHosts()).build();
     ConnectorInfoDTO connectorInfo = ConnectorInfoDTO.builder()
-                                         .name(NGHostServiceImplTest.name)
-                                         .identifier(NGHostServiceImplTest.identifier)
+                                         .name(name)
+                                         .identifier(identifier)
                                          .connectorType(ConnectorType.PDC)
                                          .connectorConfig(connectorDTO)
                                          .build();

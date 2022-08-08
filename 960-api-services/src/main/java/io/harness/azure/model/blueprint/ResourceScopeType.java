@@ -23,7 +23,7 @@ public enum ResourceScopeType {
     this.value = value;
   }
 
-  @JsonCreator
+  @JsonCreator(mode = JsonCreator.Mode.DELEGATING)
   public static ResourceScopeType fromString(final String value) {
     ResourceScopeType[] items = ResourceScopeType.values();
     for (ResourceScopeType item : items) {

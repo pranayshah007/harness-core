@@ -13,15 +13,19 @@ import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
 import io.harness.cdng.infra.beans.InfraMapping;
+import io.harness.cdng.infra.beans.InfrastructureDetailsAbstract;
 import io.harness.cdng.infra.beans.K8sDirectInfraMapping;
 import io.harness.filters.ConnectorRefExtractorHelper;
 import io.harness.filters.WithConnectorRef;
+import io.harness.ng.core.infrastructure.InfrastructureKind;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.SkipAutoEvaluation;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
+import io.harness.pms.yaml.YamlNode;
 import io.harness.walktree.visitor.SimpleVisitorHelper;
 import io.harness.walktree.visitor.Visitable;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.annotations.ApiModelProperty;
 import java.util.HashMap;
@@ -41,7 +45,13 @@ import org.springframework.data.annotation.TypeAlias;
 @SimpleVisitorHelper(helperClass = ConnectorRefExtractorHelper.class)
 @TypeAlias("k8sDirectInfrastructure")
 @RecasterAlias("io.harness.cdng.infra.yaml.K8SDirectInfrastructure")
-public class K8SDirectInfrastructure implements Infrastructure, Visitable, WithConnectorRef {
+public class K8SDirectInfrastructure
+    extends InfrastructureDetailsAbstract implements Infrastructure, Visitable, WithConnectorRef {
+  @JsonProperty(YamlNode.UUID_FIELD_NAME)
+  @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
+  @ApiModelProperty(hidden = true)
+  String uuid;
+
   @NotNull
   @NotEmpty
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)

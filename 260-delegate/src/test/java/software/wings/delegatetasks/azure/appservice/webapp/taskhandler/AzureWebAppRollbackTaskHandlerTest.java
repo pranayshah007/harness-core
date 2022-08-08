@@ -11,6 +11,7 @@ import static io.harness.azure.model.AzureConstants.AZURE_APP_SVC_ARTIFACT_DOWNL
 import static io.harness.rule.OwnerRule.ANIL;
 import static io.harness.rule.OwnerRule.IVAN;
 import static io.harness.rule.OwnerRule.JELENA;
+import static io.harness.rule.OwnerRule.TMACARI;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
@@ -19,6 +20,7 @@ import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import io.harness.annotations.dev.HarnessModule;
@@ -28,16 +30,18 @@ import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.task.azure.appservice.AzureAppServicePreDeploymentData;
 import io.harness.delegate.task.azure.appservice.AzureAppServiceTaskResponse;
+import io.harness.delegate.task.azure.appservice.deployment.AzureAppServiceDeploymentService;
+import io.harness.delegate.task.azure.appservice.webapp.AppServiceDeploymentProgress;
 import io.harness.delegate.task.azure.appservice.webapp.request.AzureWebAppRollbackParameters;
+import io.harness.delegate.task.azure.common.AzureAppServiceService;
+import io.harness.delegate.task.azure.common.AzureLogCallbackProvider;
+import io.harness.delegate.task.azure.common.AzureLogCallbackProviderFactory;
 import io.harness.logging.LogCallback;
 import io.harness.rule.Owner;
 
 import software.wings.WingsBaseTest;
 import software.wings.beans.artifact.ArtifactStreamAttributes;
-import software.wings.delegatetasks.azure.appservice.deployment.AzureAppServiceDeploymentService;
-import software.wings.delegatetasks.azure.appservice.webapp.AppServiceDeploymentProgress;
 import software.wings.delegatetasks.azure.common.ArtifactDownloaderServiceLogWrapper;
-import software.wings.delegatetasks.azure.common.AzureAppServiceService;
 import software.wings.delegatetasks.azure.common.context.ArtifactDownloaderContext;
 
 import java.io.File;
@@ -59,6 +63,8 @@ public class AzureWebAppRollbackTaskHandlerTest extends WingsBaseTest {
 
   @Mock private ILogStreamingTaskClient mockLogStreamingTaskClient;
   @Mock private LogCallback mockLogCallback;
+  @Mock private AzureLogCallbackProvider mockLogCallbackProvider;
+  @Mock private AzureLogCallbackProviderFactory mockLogCallbackProviderFactory;
   @Mock private AzureAppServiceDeploymentService azureAppServiceDeploymentService;
   @Mock private AzureAppServiceService azureAppServiceService;
   @Mock private ArtifactDownloaderServiceLogWrapper artifactDownloaderServiceLogWrapper;
@@ -66,6 +72,7 @@ public class AzureWebAppRollbackTaskHandlerTest extends WingsBaseTest {
 
   @Before
   public void setup() {
+    doReturn(mockLogCallbackProvider).when(mockLogCallbackProviderFactory).createCg(mockLogStreamingTaskClient);
     doReturn(mockLogCallback).when(mockLogStreamingTaskClient).obtainLogCallback(anyString());
     doNothing().when(mockLogCallback).saveExecutionLog(anyString(), any(), any());
     doNothing().when(mockLogCallback).saveExecutionLog(anyString(), any());
@@ -103,6 +110,25 @@ public class AzureWebAppRollbackTaskHandlerTest extends WingsBaseTest {
 
     assertThat(azureAppServiceTaskResponse).isNotNull();
     verify(azureAppServiceDeploymentService)
+        .rerouteProductionSlotTraffic(any(), eq(SLOT_NAME), eq(TRAFFIC_WEIGHT), any());
+  }
+
+  @Test
+  @Owner(developers = TMACARI)
+  @Category(UnitTests.class)
+  public void testRollbackWhenDeploymentFailedBasicDeployment() {
+    AzureWebAppRollbackParameters rollbackParameters =
+        buildAzureWebAppRollbackParameters(AppServiceDeploymentProgress.DEPLOY_TO_SLOT);
+    rollbackParameters.setBasicDeployment(true);
+    AzureConfig azureConfig = buildAzureConfig();
+    mockDeployDockerImage();
+    mockRerouteProductionSlotTraffic();
+
+    AzureAppServiceTaskResponse azureAppServiceTaskResponse = azureWebAppRollbackTaskHandler.executeTaskInternal(
+        rollbackParameters, azureConfig, mockLogStreamingTaskClient, null);
+
+    assertThat(azureAppServiceTaskResponse).isNotNull();
+    verify(azureAppServiceDeploymentService, times(0))
         .rerouteProductionSlotTraffic(any(), eq(SLOT_NAME), eq(TRAFFIC_WEIGHT), any());
   }
 

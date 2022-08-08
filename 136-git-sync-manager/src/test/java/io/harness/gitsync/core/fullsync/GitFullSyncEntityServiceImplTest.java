@@ -8,6 +8,7 @@
 package io.harness.gitsync.core.fullsync;
 
 import static io.harness.rule.OwnerRule.BHAVYA;
+import static io.harness.rule.OwnerRule.DEEPAK;
 import static io.harness.rule.OwnerRule.MEET;
 import static io.harness.rule.OwnerRule.PHOENIKX;
 
@@ -38,6 +39,7 @@ import com.google.inject.Inject;
 import com.google.protobuf.StringValue;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 import org.junit.Before;
 import org.junit.Test;
@@ -70,6 +72,7 @@ public class GitFullSyncEntityServiceImplTest extends GitSyncTestBase {
     return GitFullSyncEntityInfo.builder()
         .accountIdentifier(entityScopeInfo.getAccountId())
         .filePath(entityForFullSync.getFilePath())
+        .fullSyncJobId("fullSyncJobId")
         .projectIdentifier(getStringValueFromProtoString(entityScopeInfo.getProjectId()))
         .orgIdentifier(getStringValueFromProtoString(entityScopeInfo.getOrgId()))
         .microservice(microservice.name())
@@ -81,7 +84,7 @@ public class GitFullSyncEntityServiceImplTest extends GitSyncTestBase {
   }
 
   private void createFullSyncFile(String account, String org, String project, String filePath,
-      EntityTypeProtoEnum entityTypeProtoEnum, String name, SyncStatus syncStatus) {
+      EntityTypeProtoEnum entityTypeProtoEnum, String name, SyncStatus syncStatus, String messageId) {
     EntityScopeInfo entityScopeInfo = EntityScopeInfo.newBuilder()
                                           .setAccountId(account)
                                           .setOrgId(StringValue.of(org))
@@ -93,7 +96,7 @@ public class GitFullSyncEntityServiceImplTest extends GitSyncTestBase {
             .setEntityDetail(EntityDetailProtoDTO.newBuilder().setType(entityTypeProtoEnum).setName(name).build())
             .build();
     GitFullSyncEntityInfo gitFullSyncEntityInfo =
-        getFullSyncEntityInfo(entityScopeInfo, "messageId", random(Microservice.class), fileChange, syncStatus);
+        getFullSyncEntityInfo(entityScopeInfo, messageId, random(Microservice.class), fileChange, syncStatus);
     gitFullSyncEntityService.save(gitFullSyncEntityInfo);
   }
 
@@ -103,11 +106,11 @@ public class GitFullSyncEntityServiceImplTest extends GitSyncTestBase {
   public void testListFullSyncFiles() {
     for (int i = 0; i < 6; i++) {
       createFullSyncFile(ACCOUNT, ORG, PROJECT, random(String.class), EntityTypeProtoEnum.CONNECTORS,
-          random(String.class), SyncStatus.QUEUED);
+          random(String.class), SyncStatus.QUEUED, "messageId");
     }
     for (int i = 0; i < 6; i++) {
       createFullSyncFile(ACCOUNT, ORG, PROJECT, random(String.class), EntityTypeProtoEnum.INPUT_SETS,
-          random(String.class), SyncStatus.SUCCESS);
+          random(String.class), SyncStatus.SUCCESS, "messageId");
     }
     PageResponse<GitFullSyncEntityInfoDTO> response =
         gitFullSyncEntityService.list(ACCOUNT, ORG, PROJECT, PageRequest.builder().pageIndex(0).pageSize(5).build(),
@@ -137,11 +140,11 @@ public class GitFullSyncEntityServiceImplTest extends GitSyncTestBase {
   public void testCountOfFilesWithFilter() {
     for (int i = 0; i < 6; i++) {
       createFullSyncFile(ACCOUNT, ORG, PROJECT, random(String.class), EntityTypeProtoEnum.CONNECTORS,
-          random(String.class), SyncStatus.QUEUED);
+          random(String.class), SyncStatus.QUEUED, "messageId");
     }
     for (int i = 0; i < 6; i++) {
       createFullSyncFile(ACCOUNT, ORG, PROJECT, random(String.class), EntityTypeProtoEnum.INPUT_SETS,
-          random(String.class), SyncStatus.SUCCESS);
+          random(String.class), SyncStatus.SUCCESS, "messageId");
     }
 
     long count =
@@ -171,8 +174,8 @@ public class GitFullSyncEntityServiceImplTest extends GitSyncTestBase {
   @Owner(developers = BHAVYA)
   @Category(UnitTests.class)
   public void testUpdateStatus() {
-    createFullSyncFile(
-        ACCOUNT, ORG, PROJECT, FILE_PATH, EntityTypeProtoEnum.CONNECTORS, random(String.class), SyncStatus.QUEUED);
+    createFullSyncFile(ACCOUNT, ORG, PROJECT, FILE_PATH, EntityTypeProtoEnum.CONNECTORS, random(String.class),
+        SyncStatus.QUEUED, "messageId");
     Optional<GitFullSyncEntityInfo> gitFullSyncEntityInfo =
         gitFullSyncEntityService.get(ACCOUNT, ORG, PROJECT, FILE_PATH);
 
@@ -188,9 +191,45 @@ public class GitFullSyncEntityServiceImplTest extends GitSyncTestBase {
   @Owner(developers = MEET)
   @Category(UnitTests.class)
   public void testDeleteAll() {
-    createFullSyncFile(
-        ACCOUNT, ORG, PROJECT, FILE_PATH, EntityTypeProtoEnum.CONNECTORS, random(String.class), SyncStatus.QUEUED);
+    createFullSyncFile(ACCOUNT, ORG, PROJECT, FILE_PATH, EntityTypeProtoEnum.CONNECTORS, random(String.class),
+        SyncStatus.QUEUED, "messageId");
     gitFullSyncEntityService.deleteAll(ACCOUNT, ORG, PROJECT);
     assertThat(gitFullSyncEntityService.get(ACCOUNT, ORG, PROJECT, FILE_PATH).isPresent()).isFalse();
+  }
+
+  @Test
+  @Owner(developers = DEEPAK)
+  @Category(UnitTests.class)
+  public void getQueuedEntityFromPrevJobTest() {
+    // Case 1: When no prev job exits
+    createFullSyncFile(ACCOUNT, ORG, PROJECT, FILE_PATH, EntityTypeProtoEnum.CONNECTORS, random(String.class),
+        SyncStatus.QUEUED, "messageId");
+    createFullSyncFile(ACCOUNT, ORG, PROJECT, FILE_PATH, EntityTypeProtoEnum.CONNECTORS, random(String.class),
+        SyncStatus.QUEUED, "messageId");
+    createFullSyncFile(ACCOUNT, ORG, PROJECT, FILE_PATH, EntityTypeProtoEnum.CONNECTORS, random(String.class),
+        SyncStatus.QUEUED, "messageId");
+    final List<GitFullSyncEntityInfo> previousJobsList =
+        gitFullSyncEntityService.getQueuedEntitiesFromPreviousJobs(ACCOUNT, ORG, PROJECT, "messageId");
+    assertThat(previousJobsList.size()).isEqualTo(0);
+  }
+
+  @Test
+  @Owner(developers = DEEPAK)
+  @Category(UnitTests.class)
+  public void getQueuedEntityFromPrevJobTest1() {
+    // Case 2: When a prev job exits with 2 queued and 2 successful files
+    createFullSyncFile(ACCOUNT, ORG, PROJECT, FILE_PATH, EntityTypeProtoEnum.PIPELINES, random(String.class),
+        SyncStatus.QUEUED, "messageId");
+    createFullSyncFile(ACCOUNT, ORG, PROJECT, FILE_PATH, EntityTypeProtoEnum.PIPELINES, random(String.class),
+        SyncStatus.QUEUED, "messageId");
+    createFullSyncFile(ACCOUNT, ORG, PROJECT, FILE_PATH, EntityTypeProtoEnum.CONNECTORS, random(String.class),
+        SyncStatus.SUCCESS, "messageId");
+    createFullSyncFile(ACCOUNT, ORG, PROJECT, FILE_PATH, EntityTypeProtoEnum.CONNECTORS, random(String.class),
+        SyncStatus.SUCCESS, "messageId");
+    createFullSyncFile(ACCOUNT, ORG, PROJECT, FILE_PATH, EntityTypeProtoEnum.PIPELINES, random(String.class),
+        SyncStatus.QUEUED, "messageId1");
+    final List<GitFullSyncEntityInfo> previousJobsList =
+        gitFullSyncEntityService.getQueuedEntitiesFromPreviousJobs(ACCOUNT, ORG, PROJECT, "messageId1");
+    assertThat(previousJobsList.size()).isEqualTo(2);
   }
 }

@@ -50,13 +50,13 @@ import software.wings.helpers.ext.k8s.response.K8sTrafficSplitResponse;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
+import io.fabric8.istio.api.networking.v1alpha3.VirtualService;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import me.snowdrop.istio.api.networking.v1alpha3.VirtualService;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 
@@ -203,9 +203,8 @@ public class K8sTrafficSplitTaskHandler extends K8sTaskHandler {
       if (virtualService != null) {
         executionLogCallback.saveExecutionLog("\n" + toYaml(virtualService));
       }
-
       virtualService =
-          (VirtualService) kubernetesContainerService.createOrReplaceIstioResource(kubernetesConfig, virtualService);
+          kubernetesContainerService.createOrReplaceFabric8IstioVirtualService(kubernetesConfig, virtualService);
 
       executionLogCallback.saveExecutionLog("\nDone.", INFO, SUCCESS);
       return true;
@@ -218,7 +217,7 @@ public class K8sTrafficSplitTaskHandler extends K8sTaskHandler {
   }
 
   private boolean findVirtualServiceByName(String virtualServiceName, ExecutionLogCallback executionLogCallback) {
-    virtualService = kubernetesContainerService.getIstioVirtualService(kubernetesConfig, virtualServiceName);
+    virtualService = kubernetesContainerService.getFabric8IstioVirtualService(kubernetesConfig, virtualServiceName);
     if (virtualService == null) {
       executionLogCallback.saveExecutionLog(
           "\nNo VirtualService found with name " + virtualServiceName, ERROR, FAILURE);
@@ -257,7 +256,7 @@ public class K8sTrafficSplitTaskHandler extends K8sTaskHandler {
     for (KubernetesResourceId resourceId : resourceIds) {
       if (Kind.VirtualService.name().equals(resourceId.getKind())) {
         VirtualService istioVirtualService =
-            kubernetesContainerService.getIstioVirtualService(kubernetesConfig, resourceId.getName());
+            kubernetesContainerService.getFabric8IstioVirtualService(kubernetesConfig, resourceId.getName());
 
         if (istioVirtualService != null && istioVirtualService.getMetadata() != null
             && isNotEmpty(istioVirtualService.getMetadata().getAnnotations())) {

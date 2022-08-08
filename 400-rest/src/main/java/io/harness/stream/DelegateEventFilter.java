@@ -12,6 +12,7 @@ import static io.harness.delegate.beans.DelegateTaskEvent.DelegateTaskEventBuild
 
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
+import io.harness.beans.DelegateHeartbeatResponseStreaming;
 import io.harness.delegate.beans.DelegateTaskAbortEvent;
 import io.harness.serializer.JsonUtils;
 
@@ -70,6 +71,13 @@ public class DelegateEventFilter extends BroadcastFilterAdapter {
         return abort(message);
       }
 
+      return continueWith(message);
+    }
+    if (message instanceof DelegateHeartbeatResponseStreaming) {
+      DelegateHeartbeatResponseStreaming response = (DelegateHeartbeatResponseStreaming) message;
+      if (!delegateId.equals(response.getDelegateId())) {
+        return abort(message);
+      }
       return continueWith(message);
     }
 

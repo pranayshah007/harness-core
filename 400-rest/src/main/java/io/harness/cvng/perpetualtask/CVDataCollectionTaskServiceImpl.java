@@ -34,6 +34,7 @@ import io.harness.delegate.capability.EncryptedDataDetailsCapabilityHelper;
 import io.harness.exception.UnknownEnumTypeException;
 import io.harness.govern.Switch;
 import io.harness.ng.core.BaseNGAccess;
+import io.harness.ng.core.CorrelationContext;
 import io.harness.ng.core.NGAccess;
 import io.harness.ng.core.NGAccessWithEncryptionConsumer;
 import io.harness.perpetualtask.PerpetualTaskClientContext;
@@ -222,10 +223,12 @@ public class CVDataCollectionTaskServiceImpl implements CVDataCollectionTaskServ
 
   private List<EncryptedDataDetail> getEncryptedDataDetails(
       NGAccess basicNgAccessObject, DecryptableEntity decryptableEntity) {
-    return NGRestUtils.getResponse(secretNGManagerClient.getEncryptionDetails(NGAccessWithEncryptionConsumer.builder()
-                                                                                  .ngAccess(basicNgAccessObject)
-                                                                                  .decryptableEntity(decryptableEntity)
-                                                                                  .build()));
+    return NGRestUtils.getResponse(
+        secretNGManagerClient.getEncryptionDetails(basicNgAccessObject.getAccountIdentifier(),
+            NGAccessWithEncryptionConsumer.builder()
+                .ngAccess(basicNgAccessObject)
+                .decryptableEntity(decryptableEntity)
+                .build()));
   }
 
   @Override
@@ -263,6 +266,8 @@ public class CVDataCollectionTaskServiceImpl implements CVDataCollectionTaskServ
         return CVNGPerpetualTaskUnassignedReason.NO_ELIGIBLE_DELEGATES;
       case MULTIPLE_FAILED_PERPETUAL_TASK:
         return CVNGPerpetualTaskUnassignedReason.MULTIPLE_FAILED_PERPETUAL_TASK;
+      case VALIDATION_TASK_FAILED:
+        return CVNGPerpetualTaskUnassignedReason.VALIDATION_TASK_FAILED;
       default:
         throw new UnknownEnumTypeException("Task Unassigned Reason", String.valueOf(perpetualTaskUnassignedReason));
     }
@@ -316,6 +321,7 @@ public class CVDataCollectionTaskServiceImpl implements CVDataCollectionTaskServ
         .accountId(accountId)
         .orgIdentifier(orgIdentifier)
         .projectIdentifier(projectIdentifier)
+        .correlationId(CorrelationContext.getCorrelationId())
         .appId(GLOBAL_APP_ID)
         .timeout(DEFAULT_SYNC_CALL_TIMEOUT)
         .ngTask(true)

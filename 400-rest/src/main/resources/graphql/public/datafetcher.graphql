@@ -156,6 +156,7 @@ enum DataFetcherEnum {
   delegateApproval
   deleteDelegate
   delegateList
+  delegateScopeList
   addDelegateScope
   attachAllScopesToDelegate
   attachScopeToDelegate

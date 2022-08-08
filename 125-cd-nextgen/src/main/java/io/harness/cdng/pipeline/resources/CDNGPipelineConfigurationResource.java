@@ -19,6 +19,7 @@ import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 
+import com.google.common.io.Resources;
 import com.google.inject.Inject;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -27,8 +28,10 @@ import io.swagger.annotations.ApiResponses;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -119,5 +122,22 @@ public class CDNGPipelineConfigurationResource {
   public ResponseDTO<StepCategory>
   getProvisionerSteps() {
     return ResponseDTO.newResponse(cdngPipelineConfigurationHelper.getStepsForProvisioners());
+  }
+
+  @GET
+  @Path("/cd-stage-yaml-snippet")
+  @ApiOperation(value = "Gets the failure strategy yaml snippet for CD stage", nickname = "getFailureStrategiesYaml")
+  @Operation(operationId = "getFailureStrategiesYaml", summary = "Get Failure Strategies yaml snippet for CD stage",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "Returns failure strategies yaml snippet for CD stage")
+      })
+  public ResponseDTO<String>
+  getFailureStrategiesYaml() throws IOException {
+    ClassLoader classLoader = this.getClass().getClassLoader();
+    return ResponseDTO.newResponse(
+        Resources.toString(Objects.requireNonNull(classLoader.getResource("failureStrategyYaml/failurestrategy.yaml")),
+            StandardCharsets.UTF_8));
   }
 }

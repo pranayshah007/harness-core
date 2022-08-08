@@ -13,6 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
+import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Value;
 
@@ -22,5 +23,5 @@ import lombok.Value;
 @ApiModel(value = "PermissionResponse")
 @Schema(name = "PermissionResponse")
 public class PermissionResponseDTO {
-  @ApiModelProperty(required = true) PermissionDTO permission;
+  @NotNull @ApiModelProperty(required = true) PermissionDTO permission;
 }

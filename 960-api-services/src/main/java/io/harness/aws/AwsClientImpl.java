@@ -13,10 +13,15 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.HintException.HINT_AWS_CONNECTOR_NG_DOCUMENTATION;
 import static io.harness.exception.HintException.IAM_DETAILS_COMMAND;
 
+import static software.wings.service.impl.aws.model.AwsConstants.AWS_DEFAULT_REGION;
+
+import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
 import static org.apache.commons.lang3.StringUtils.defaultString;
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.aws.beans.AwsInternalConfig;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.ExplanationException;
@@ -24,6 +29,10 @@ import io.harness.exception.HintException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.NestedExceptionUtils;
 
+import software.wings.service.impl.AwsApiHelperService;
+
+import com.amazonaws.AmazonClientException;
+import com.amazonaws.AmazonServiceException;
 import com.amazonaws.arn.Arn;
 import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
@@ -55,18 +64,22 @@ import com.amazonaws.services.ecr.AmazonECRClient;
 import com.amazonaws.services.ecr.AmazonECRClientBuilder;
 import com.amazonaws.services.ecr.model.GetAuthorizationTokenRequest;
 import com.amazonaws.services.identitymanagement.AmazonIdentityManagement;
+import com.amazonaws.services.identitymanagement.AmazonIdentityManagementClient;
 import com.amazonaws.services.identitymanagement.AmazonIdentityManagementClientBuilder;
 import com.amazonaws.services.identitymanagement.model.EvaluationResult;
 import com.amazonaws.services.identitymanagement.model.GetRolePolicyRequest;
 import com.amazonaws.services.identitymanagement.model.GetRolePolicyResult;
 import com.amazonaws.services.identitymanagement.model.ListRolePoliciesRequest;
 import com.amazonaws.services.identitymanagement.model.ListRolePoliciesResult;
+import com.amazonaws.services.identitymanagement.model.ListRolesRequest;
+import com.amazonaws.services.identitymanagement.model.ListRolesResult;
 import com.amazonaws.services.identitymanagement.model.SimulatePrincipalPolicyRequest;
 import com.amazonaws.services.identitymanagement.model.SimulatePrincipalPolicyResult;
 import com.amazonaws.services.organizations.AWSOrganizationsClient;
 import com.amazonaws.services.organizations.AWSOrganizationsClientBuilder;
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import com.amazonaws.services.s3.iterable.S3Objects;
 import com.amazonaws.services.s3.model.ObjectListing;
 import com.amazonaws.services.securitytoken.AWSSecurityTokenService;
 import com.amazonaws.services.securitytoken.AWSSecurityTokenServiceClientBuilder;
@@ -78,7 +91,9 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import javax.annotation.Nullable;
@@ -93,6 +108,7 @@ import org.hibernate.validator.constraints.NotEmpty;
 @Slf4j
 public class AwsClientImpl implements AwsClient {
   @Inject protected AwsCallTracker tracker;
+  @Inject AwsApiHelperService awsApiHelperService;
 
   private static final Regions DEFAULT_REGION = Regions.US_EAST_1;
 
@@ -421,6 +437,17 @@ public class AwsClientImpl implements AwsClient {
   }
 
   @Override
+  public S3Objects getIterableS3ObjectSummaries(
+      AWSCredentialsProvider credentialsProvider, String s3BucketName, String s3Prefix) {
+    try {
+      return S3Objects.withPrefix(getAmazonS3Client(credentialsProvider), s3BucketName, s3Prefix);
+    } catch (Exception e) {
+      log.error("Exception getIterableS3ObjectSummaries", e);
+      throw new InvalidRequestException(ExceptionUtils.getMessage(e), e);
+    }
+  }
+
+  @Override
   public AWSOrganizationsClient getAWSOrganizationsClient(
       String crossAccountRoleArn, String externalId, String awsAccessKey, String awsSecretKey) {
     AWSSecurityTokenService awsSecurityTokenService =
@@ -433,5 +460,44 @@ public class AwsClientImpl implements AwsClient {
             .build();
     builder.withCredentials(credentialsProvider);
     return (AWSOrganizationsClient) builder.build();
+  }
+
+  @Override
+  public Map<String, String> listIAMRoles(AwsInternalConfig awsInternalConfig) {
+    try (CloseableAmazonWebServiceClient<AmazonIdentityManagementClient> closeableAmazonIdentityManagementClient =
+             new CloseableAmazonWebServiceClient(getAmazonIdentityManagementClient(awsInternalConfig))) {
+      Map<String, String> result = new HashMap<>();
+      String nextMarker = null;
+      do {
+        ListRolesRequest listRolesRequest = new ListRolesRequest().withMaxItems(400).withMarker(nextMarker);
+        tracker.trackIAMCall("List Roles");
+        ListRolesResult listRolesResult =
+            closeableAmazonIdentityManagementClient.getClient().listRoles(listRolesRequest);
+        listRolesResult.getRoles().forEach(role -> result.put(role.getArn(), role.getRoleName()));
+        nextMarker = listRolesResult.getMarker();
+      } while (nextMarker != null);
+      return result;
+
+    } catch (AmazonServiceException amazonServiceException) {
+      awsApiHelperService.handleAmazonServiceException(amazonServiceException);
+    } catch (AmazonClientException amazonClientException) {
+      awsApiHelperService.handleAmazonClientException(amazonClientException);
+    } catch (Exception e) {
+      log.error("Exception listIAMRoles", e);
+      throw new InvalidRequestException(ExceptionUtils.getMessage(e), e);
+    }
+    return emptyMap();
+  }
+
+  @VisibleForTesting
+  AmazonIdentityManagementClient getAmazonIdentityManagementClient(AwsInternalConfig awsConfig) {
+    AmazonIdentityManagementClientBuilder builder =
+        AmazonIdentityManagementClient.builder().withRegion(getRegion(awsConfig));
+    awsApiHelperService.attachCredentialsAndBackoffPolicy(builder, awsConfig);
+    return (AmazonIdentityManagementClient) builder.build();
+  }
+
+  private String getRegion(AwsInternalConfig awsConfig) {
+    return isNotBlank(awsConfig.getDefaultRegion()) ? awsConfig.getDefaultRegion() : AWS_DEFAULT_REGION;
   }
 }

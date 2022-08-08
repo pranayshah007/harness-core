@@ -17,6 +17,7 @@ import static org.mockito.MockitoAnnotations.initMocks;
 import io.harness.CategoryTest;
 import io.harness.ModuleType;
 import io.harness.category.element.UnitTests;
+import io.harness.cd.CDLicenseType;
 import io.harness.licensing.Edition;
 import io.harness.licensing.LicenseStatus;
 import io.harness.licensing.LicenseType;
@@ -25,12 +26,13 @@ import io.harness.licensing.beans.modules.CEModuleLicenseDTO;
 import io.harness.licensing.beans.modules.CFModuleLicenseDTO;
 import io.harness.licensing.beans.modules.CIModuleLicenseDTO;
 import io.harness.licensing.beans.modules.ModuleLicenseDTO;
-import io.harness.licensing.beans.modules.types.CDLicenseType;
+import io.harness.licensing.beans.modules.STOModuleLicenseDTO;
 import io.harness.licensing.interfaces.clients.ModuleLicenseClient;
 import io.harness.licensing.interfaces.clients.local.CDLocalClient;
 import io.harness.licensing.interfaces.clients.local.CELocalClient;
 import io.harness.licensing.interfaces.clients.local.CFLocalClient;
 import io.harness.licensing.interfaces.clients.local.CILocalClient;
+import io.harness.licensing.interfaces.clients.local.STOLocalClient;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
 
@@ -329,6 +331,70 @@ public class ModuleLicenseInterfaceImplTest extends CategoryTest {
                                        .build();
     CDModuleLicenseDTO dto =
         (CDModuleLicenseDTO) moduleLicenseInterface.generateCommunityLicense(ACCOUNT_IDENTIFIER, ModuleType.CD);
+    dto.setStartTime(0L);
+    assertThat(dto).isEqualTo(expectedDTO);
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.ANDERS)
+  @Category(UnitTests.class)
+  public void testStartEnterpriseTrialOnSTO() {
+    when(clientMap.get(ModuleType.STO)).thenReturn(new STOLocalClient());
+    ModuleLicenseDTO expectedDTO = STOModuleLicenseDTO.builder()
+                                       .numberOfDevelopers(200)
+                                       .accountIdentifier(ACCOUNT_IDENTIFIER)
+                                       .moduleType(ModuleType.STO)
+                                       .licenseType(LicenseType.TRIAL)
+                                       .edition(Edition.ENTERPRISE)
+                                       .status(LicenseStatus.ACTIVE)
+                                       .startTime(0)
+                                       .expiryTime(0)
+                                       .build();
+    STOModuleLicenseDTO dto = (STOModuleLicenseDTO) moduleLicenseInterface.generateTrialLicense(
+        Edition.ENTERPRISE, ACCOUNT_IDENTIFIER, ModuleType.STO);
+    dto.setStartTime(0L);
+    dto.setExpiryTime(0);
+    assertThat(dto).isEqualTo(expectedDTO);
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.ANDERS)
+  @Category(UnitTests.class)
+  public void testStartTeamTrialOnSTO() {
+    when(clientMap.get(ModuleType.STO)).thenReturn(new STOLocalClient());
+    ModuleLicenseDTO expectedDTO = STOModuleLicenseDTO.builder()
+                                       .numberOfDevelopers(200)
+                                       .accountIdentifier(ACCOUNT_IDENTIFIER)
+                                       .moduleType(ModuleType.STO)
+                                       .licenseType(LicenseType.TRIAL)
+                                       .edition(Edition.TEAM)
+                                       .status(LicenseStatus.ACTIVE)
+                                       .startTime(0)
+                                       .expiryTime(0)
+                                       .build();
+    STOModuleLicenseDTO dto = (STOModuleLicenseDTO) moduleLicenseInterface.generateTrialLicense(
+        Edition.TEAM, ACCOUNT_IDENTIFIER, ModuleType.STO);
+    dto.setStartTime(0L);
+    dto.setExpiryTime(0);
+    assertThat(dto).isEqualTo(expectedDTO);
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.ANDERS)
+  @Category(UnitTests.class)
+  public void testStartFreeLicenseOnSTO() {
+    when(clientMap.get(ModuleType.STO)).thenReturn(new STOLocalClient());
+    ModuleLicenseDTO expectedDTO = STOModuleLicenseDTO.builder()
+                                       .numberOfDevelopers(Integer.valueOf(UNLIMITED))
+                                       .accountIdentifier(ACCOUNT_IDENTIFIER)
+                                       .moduleType(ModuleType.STO)
+                                       .status(LicenseStatus.ACTIVE)
+                                       .edition(Edition.FREE)
+                                       .startTime(0)
+                                       .expiryTime(Long.MAX_VALUE)
+                                       .build();
+    STOModuleLicenseDTO dto =
+        (STOModuleLicenseDTO) moduleLicenseInterface.generateFreeLicense(ACCOUNT_IDENTIFIER, ModuleType.STO);
     dto.setStartTime(0L);
     assertThat(dto).isEqualTo(expectedDTO);
   }

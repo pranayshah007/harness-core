@@ -14,11 +14,11 @@ import io.harness.serializer.JsonUtils;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1OwnerReference;
 import java.time.Instant;
+import java.time.OffsetDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.Map;
 import lombok.experimental.SuperBuilder;
 import lombok.extern.slf4j.Slf4j;
-import org.joda.time.DateTime;
 
 @SuperBuilder
 @Slf4j
@@ -49,17 +49,16 @@ public class ChangeIntelConfigMapHandler extends BaseChangeHandler<V1ConfigMap> 
   void processAndSendAddEvent(V1ConfigMap v1ConfigMap) {
     ChangeEventDTO eventDTO = buildChangeEvent(v1ConfigMap);
     if (!hasOwnerReference(v1ConfigMap) && v1ConfigMap.getMetadata() != null
-        && v1ConfigMap.getMetadata().getCreationTimestamp().isAfter(
-            Instant.now().minus(2, ChronoUnit.HOURS).toEpochMilli())
+        && v1ConfigMap.getMetadata().getCreationTimestamp().isAfter(OffsetDateTime.now().minus(2, ChronoUnit.HOURS))
         && shouldProcessEvent(eventDTO)) {
       log.info("ConfigMap doesn't have an ownerReference. Sending event Data");
 
       String newYaml = k8sHandlerUtils.yamlDump(v1ConfigMap);
       ((KubernetesChangeEventMetadata) eventDTO.getMetadata()).setNewYaml(newYaml);
-      DateTime dateTime = v1ConfigMap.getMetadata().getCreationTimestamp();
+      OffsetDateTime dateTime = v1ConfigMap.getMetadata().getCreationTimestamp();
       if (dateTime != null) {
         ((KubernetesChangeEventMetadata) eventDTO.getMetadata())
-            .setTimestamp(Instant.ofEpochMilli(dateTime.toDateTime().toInstant().getMillis()));
+            .setTimestamp(Instant.ofEpochMilli(dateTime.toInstant().toEpochMilli()));
       }
       ((KubernetesChangeEventMetadata) eventDTO.getMetadata()).setAction(KubernetesChangeEventMetadata.Action.Add);
       sendEvent(accountId, eventDTO);
@@ -74,10 +73,11 @@ public class ChangeIntelConfigMapHandler extends BaseChangeHandler<V1ConfigMap> 
     if (oldResource.getMetadata().getAnnotations() != null && newResource.getMetadata().getAnnotations() != null) {
       String renewTokenKey = "renewTime";
       String oldValue = oldResource.getMetadata().getAnnotations().get(leaderKey);
-      Map<String, Object> oldMap = JsonUtils.asMap(oldValue);
-      oldMap.remove(renewTokenKey);
-      oldResource.getMetadata().getAnnotations().put(leaderKey, JsonUtils.asJson(oldMap));
-
+      if (oldValue != null) {
+        Map<String, Object> oldMap = JsonUtils.asMap(oldValue);
+        oldMap.remove(renewTokenKey);
+        oldResource.getMetadata().getAnnotations().put(leaderKey, JsonUtils.asJson(oldMap));
+      }
       String newValue = newResource.getMetadata().getAnnotations().get(leaderKey);
       Map<String, Object> newMap = JsonUtils.asMap(newValue);
       newMap.remove(renewTokenKey);

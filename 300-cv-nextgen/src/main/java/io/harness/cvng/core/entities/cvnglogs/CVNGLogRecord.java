@@ -8,17 +8,21 @@
 package io.harness.cvng.core.entities.cvnglogs;
 
 import io.harness.cvng.beans.cvnglog.CVNGLogDTO;
+import io.harness.cvng.beans.cvnglog.CVNGLogTag;
 import io.harness.metrics.service.api.MetricService;
 import io.harness.persistence.CreatedAtAware;
 
 import java.util.Comparator;
+import java.util.List;
 import java.util.Map;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.Singular;
 
 @Getter
 @Setter
 public abstract class CVNGLogRecord implements CreatedAtAware {
+  @Singular private List<CVNGLogTag> tags;
   private long createdAt;
   public abstract CVNGLogDTO toCVNGLogDTO();
   public abstract boolean isErrorLog();

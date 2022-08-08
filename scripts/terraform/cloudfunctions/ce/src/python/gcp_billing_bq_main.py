@@ -75,10 +75,8 @@ def main(event, context):
     if jsonData.get("dataSourceId") == "cross_region_copy":
         # Event is from BQ DT service. Ingest in unified and preaggregated
         jsonData["datasetName"] = jsonData["destinationDatasetId"]
-        jsonData["accountId"] = get_accountid(jsonData)
-        jsonData["connectorId"] = get_connectorid(jsonData)
+        fetch_acc_from_gcp_conn_info(jsonData)
         util.ACCOUNTID_LOG = jsonData["destinationDatasetId"].split("BillingReport_")[-1]
-        get_source_table_name(jsonData)
         get_unique_billingaccount_id(jsonData)
         jsonData["isFreshSync"] = isFreshSync(jsonData)
         if jsonData.get("isFreshSync"):
@@ -122,36 +120,6 @@ def main(event, context):
     print_("Completed")
     return
 
-def get_accountid(jsonData):
-    #TODO: Use gcpConnectorInfo table to get the account id
-    try:
-        dataset = client.get_dataset(jsonData["datasetName"])
-        desc = dataset.description
-        if desc:
-            print("Dataset description: ", desc)
-            accountid = re.search(r"AccountId: (.*) \],", desc).group(1)
-            print("Found accountid: ", accountid)
-            return accountid
-        else:
-            return ""
-    except Exception as e:
-        print("Error ", e)
-        return ""
-
-def get_connectorid(jsonData):
-    #TODO: Use gcpConnectorInfo table to get the connector id
-    try:
-        # we need to get name of the transfer config from the transfer run name of format
-        # 'projects/422469283168/locations/us/transferConfigs/617aed90-0000-2557-91a4-883d24f9001c/runs/6277305d-0000-2370-925b-14c14eea0504'
-        dt_name = jsonData["name"].replace(re.search("/runs/.*", jsonData["name"]).group(), "")
-        dtjob = bigquery_datatransfer_v1.GetTransferConfigRequest(name=dt_name)
-        dtjob = dt_client.get_transfer_config(dtjob)
-        connectorid = re.split("_", dtjob.display_name)[-1]
-        print("Found connectorid: ", connectorid)
-        return connectorid
-    except Exception as e:
-        print(e)
-        return ""
 
 def get_impersonated_credentials(jsonData):
     # Get source credentials
@@ -171,21 +139,6 @@ def get_impersonated_credentials(jsonData):
     print_("source: %s, target: %s" % (target_credentials._source_credentials.service_account_email,
                                        target_credentials.service_account_email))
 
-
-def get_source_table_name(jsonData):
-    resp = dt_client.list_transfer_logs(parent=jsonData["name"])
-    for msg in resp:
-        # Assuming only one such table exists in the source dataset
-        # Has the format gcp_billing_export_v1_0173B9_A91712_9CE987
-        i = re.search("gcp_billing_export_v1_[A-Z0-9]{6}_[A-Z0-9]{6}_[A-Z0-9]{6} ", msg.message_text)
-        if i:
-            i = i.group().strip()
-            print_("Found gcp export table at source: %s" % i)
-            jsonData["sourceGcpTableName"] = jsonData["tableName"] = i
-            break
-    if not jsonData.get("tableName"):
-        print_("Couldnt find source table name", "ERROR")
-        raise
 
 def get_secret_key():
     client = secretmanager.SecretManagerServiceClient()
@@ -478,13 +431,13 @@ def ingest_data_to_costagg(jsonData):
         ]
     )
 
-    run_batch_query(client, query, job_config, timeout=120)
+    run_batch_query(client, query, job_config, timeout=180)
 
 def update_datatransfer_job_config(jsonData):
-    query = """INSERT INTO `%s.%s.%s` (accountId, connectorId, dataTransferConfig, createdAt) 
+    query = """INSERT INTO `%s.%s.%s` (accountId, connectorId, dataTransferConfig, createdAt, sourceGcpTableName) 
                 VALUES ('%s', '%s', '%s', '%s')
             """ % ( PROJECTID, CEINTERNALDATASET, GCPCONNECTORINFOTABLE,
-                    jsonData["accountId"], jsonData["connectorId"], jsonData["dtName"], datetime.datetime.utcnow())
+                    jsonData["accountId"], jsonData["connectorId"], jsonData["dtName"], datetime.datetime.utcnow(), jsonData["sourceGcpTableName"])
 
     try:
         print_(query)
@@ -493,3 +446,25 @@ def update_datatransfer_job_config(jsonData):
     except Exception as e:
         print_("  Failed to update connector info", "WARN")
         raise e
+
+def fetch_acc_from_gcp_conn_info(jsonData):
+    # 	'name': 'projects/199539700734/locations/us/transferConfigs/615b6cc0-0000-2807-aed0-001a1143233a/runs/615b6cc2-0000-2807-aed0-001a1143233a',
+    dt_name = "/".join(jsonData["name"].split("/")[:-2])
+    query = """SELECT accountId, connectorId, sourceGcpTableName FROM `%s.%s.%s` 
+                WHERE dataTransferConfig='%s';
+            """ % ( PROJECTID, CEINTERNALDATASET, GCPCONNECTORINFOTABLE,
+                    dt_name)
+
+    try:
+        print_(query)
+        query_job = client.query(query)
+        results = query_job.result()  # wait for job to complete
+        for row in results:
+            jsonData["accountId"] = row.accountId
+            jsonData["connectorId"] = row.connectorId
+            jsonData["sourceGcpTableName"] = row.sourceGcpTableName
+            jsonData["tableName"] = row.sourceGcpTableName
+            break
+    except Exception as e:
+        raise e
+    print_("retrieved info from gcpConnectrInfoTable")

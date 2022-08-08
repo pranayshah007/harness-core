@@ -13,6 +13,8 @@ import io.harness.annotations.dev.OwnedBy;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.util.ArrayList;
+import java.util.List;
 
 @OwnedBy(PL)
 public enum ModuleType {
@@ -21,25 +23,43 @@ public enum ModuleType {
   @JsonProperty("CV") CV("Continuous Verification"),
   @JsonProperty("CF") CF("Continuous Features"),
   @JsonProperty("CE") CE("Continuous Efficiency"),
+  @JsonProperty("STO") STO("Security Testing Orchestration"),
 
   // Internal
-  @JsonProperty("CORE") CORE("Core", true),
-  @JsonProperty("PMS") PMS("Pipelines", true),
-  @JsonProperty("TEMPLATESERVICE") TEMPLATESERVICE("TemplateService", true);
+  @JsonProperty("CORE") CORE("Core", true, false),
+  @JsonProperty("PMS") PMS("Pipelines", true, false),
+  @JsonProperty("TEMPLATESERVICE") TEMPLATESERVICE("TemplateService", true, false),
+  @JsonProperty("GOVERNANCE") GOVERNANCE("Governance", true, true),
+  @JsonProperty("CHAOS") CHAOS("Chaos Engineering");
 
   String displayName;
   boolean internal;
 
+  // Until workaround is implemented Ignore flag should be set to True for the first release of a new module
+  boolean ignore;
+
   ModuleType(String displayName) {
-    this(displayName, false);
+    this(displayName, false, false);
   }
 
-  ModuleType(String displayName, boolean internal) {
+  ModuleType(String displayName, boolean internal, boolean ignore) {
     this.displayName = displayName;
     this.internal = internal;
+    this.ignore = ignore;
   }
 
-  @JsonCreator
+  public static List<ModuleType> getModules() {
+    List<ModuleType> moduleList = new ArrayList<>();
+    for (ModuleType moduleEnum : ModuleType.values()) {
+      if (!moduleEnum.ignore) {
+        moduleList.add(moduleEnum);
+      }
+    }
+
+    return moduleList;
+  }
+
+  @JsonCreator(mode = JsonCreator.Mode.DELEGATING)
   public static ModuleType fromString(String moduleType) {
     for (ModuleType moduleEnum : ModuleType.values()) {
       if (moduleEnum.name().equalsIgnoreCase(moduleType)) {

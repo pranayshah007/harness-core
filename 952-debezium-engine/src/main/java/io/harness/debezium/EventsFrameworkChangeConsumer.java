@@ -15,35 +15,43 @@ import io.debezium.engine.ChangeEvent;
 import io.debezium.engine.DebeziumEngine;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.connect.source.SourceRecord;
 
 @Slf4j
-public class EventsFrameworkChangeConsumer implements MongoDatabaseChangeConsumer {
+public class EventsFrameworkChangeConsumer implements MongoCollectionChangeConsumer {
   private static final String OP_FIELD = "__op";
   private static final String DEFAULT_STRING = "default";
 
-  private final String databaseName;
+  private final String collectionName;
   private final DebeziumProducerFactory producerFactory;
+  private int cnt;
+  private long sleepInterval;
+  private long producingCountPerBatch;
 
-  public EventsFrameworkChangeConsumer(String databaseName, DebeziumProducerFactory producerFactory) {
-    this.databaseName = databaseName;
+  public EventsFrameworkChangeConsumer(
+      long sleepInterval, String collectionName, DebeziumProducerFactory producerFactory, long producingCountPerBatch) {
+    this.collectionName = collectionName;
     this.producerFactory = producerFactory;
+    this.sleepInterval = sleepInterval;
+    this.producingCountPerBatch = producingCountPerBatch;
   }
 
   @Override
   public void handleBatch(List<ChangeEvent<String, String>> records,
       DebeziumEngine.RecordCommitter<ChangeEvent<String, String>> recordCommitter) throws InterruptedException {
-    log.info("Handling a batch of {} records for database {}", records.size(), databaseName);
-
+    log.info("Handling a batch of {} records for collection {}", records.size(), collectionName);
     // Add the batch records to the stream(s)
     for (ChangeEvent<String, String> record : records) {
+      cnt++;
       Optional<OpType> opType = getOperationType(((EmbeddedEngineChangeEvent<String, String>) record).sourceRecord());
 
       DebeziumChangeEvent debeziumChangeEvent = DebeziumChangeEvent.newBuilder()
                                                     .setKey(getKeyOrDefault(record))
                                                     .setValue(getValueOrDefault(record))
                                                     .setOptype(opType.get().toString())
+                                                    .setTimestamp(System.currentTimeMillis())
                                                     .build();
 
       Producer producer = producerFactory.get(record.destination());
@@ -52,6 +60,10 @@ public class EventsFrameworkChangeConsumer implements MongoDatabaseChangeConsume
         recordCommitter.markProcessed(record);
       } catch (InterruptedException e) {
         log.error("Exception Occurred while marking record as committed", e);
+      }
+      if (cnt >= producingCountPerBatch) {
+        TimeUnit.SECONDS.sleep(sleepInterval);
+        cnt = 0;
       }
     }
     recordCommitter.markBatchFinished();
@@ -62,16 +74,16 @@ public class EventsFrameworkChangeConsumer implements MongoDatabaseChangeConsume
         .flatMap(x -> OpType.fromString((String) x.value()));
   }
 
-  private String getKeyOrDefault(ChangeEvent<String, String> record) {
+  String getKeyOrDefault(ChangeEvent<String, String> record) {
     return (record.key() != null) ? (record.key()) : DEFAULT_STRING;
   }
 
-  private String getValueOrDefault(ChangeEvent<String, String> record) {
+  String getValueOrDefault(ChangeEvent<String, String> record) {
     return (record.value() != null) ? (record.value()) : DEFAULT_STRING;
   }
 
   @Override
-  public String getDatabase() {
-    return databaseName;
+  public String getCollection() {
+    return collectionName;
   }
 }

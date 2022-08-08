@@ -9,3 +9,4 @@ google-cloud-bigquery-datatransfer
 boto3==1.17.24
 google-cloud-pubsub==2.5.0
 google-api-python-client
+bigquery-schema-generator==1.5

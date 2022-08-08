@@ -76,7 +76,7 @@ public class AzureVaultEncryptorTest extends CategoryTest {
     keyVaultClient = PowerMockito.mock(KeyVaultClient.class);
     mockStatic(KeyVaultADALAuthenticator.class);
     when(KeyVaultADALAuthenticator.getClient(azureVaultConfig.getClientId(), azureVaultConfig.getSecretKey()))
-        .thenReturn(keyVaultClient);
+        .thenAnswer(invocationOnMock -> keyVaultClient);
   }
 
   @Test

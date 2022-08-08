@@ -12,15 +12,17 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.azure.context.AzureWebClientContext;
 import io.harness.azure.model.AzureConfig;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
+import io.harness.delegate.task.azure.appservice.AzureAppServiceResourceUtilities;
 import io.harness.delegate.task.azure.appservice.AzureAppServiceTaskParameters;
 import io.harness.delegate.task.azure.appservice.AzureAppServiceTaskResponse;
+import io.harness.delegate.task.azure.appservice.deployment.AzureAppServiceDeploymentService;
+import io.harness.delegate.task.azure.common.AutoCloseableWorkingDirectory;
+import io.harness.delegate.task.azure.common.AzureAppServiceService;
+import io.harness.delegate.task.azure.common.AzureLogCallbackProviderFactory;
 
 import software.wings.beans.artifact.ArtifactStreamAttributes;
 import software.wings.delegatetasks.azure.appservice.AbstractAzureAppServiceTaskHandler;
-import software.wings.delegatetasks.azure.appservice.deployment.AzureAppServiceDeploymentService;
 import software.wings.delegatetasks.azure.common.ArtifactDownloaderServiceLogWrapper;
-import software.wings.delegatetasks.azure.common.AutoCloseableWorkingDirectory;
-import software.wings.delegatetasks.azure.common.AzureAppServiceService;
 import software.wings.delegatetasks.azure.common.context.ArtifactDownloaderContext;
 
 import com.google.inject.Inject;
@@ -30,6 +32,8 @@ import java.io.File;
 public abstract class AbstractAzureWebAppTaskHandler extends AbstractAzureAppServiceTaskHandler {
   @Inject protected AzureAppServiceDeploymentService azureAppServiceDeploymentService;
   @Inject protected AzureAppServiceService azureAppServiceService;
+  @Inject protected AzureLogCallbackProviderFactory logCallbackProviderFactory;
+  @Inject protected AzureAppServiceResourceUtilities azureAppServiceResourceUtilities;
   @Inject private ArtifactDownloaderServiceLogWrapper artifactDownloaderServiceLogWrapper;
 
   protected AzureWebClientContext buildAzureWebClientContext(

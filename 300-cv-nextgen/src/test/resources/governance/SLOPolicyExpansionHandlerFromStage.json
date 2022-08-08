@@ -1,0 +1,10 @@
+{
+  "serviceConfig": {
+    "useFromStage": {
+      "stage" : "stage1"
+    }
+  },
+  "infrastructure": {
+    "environmentRef" : "env"
+  }
+}

@@ -22,7 +22,6 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyList;
 import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.anyObject;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -43,15 +42,20 @@ import software.wings.APMFetchConfig;
 import software.wings.WingsBaseTest;
 import software.wings.beans.APMValidateCollectorConfig;
 import software.wings.beans.APMVerificationConfig;
+import software.wings.beans.ApmMetricCollectionInfo;
+import software.wings.beans.ApmResponseMapping;
 import software.wings.beans.AppDynamicsConfig;
 import software.wings.beans.AwsConfig;
 import software.wings.beans.DatadogConfig;
 import software.wings.beans.Environment;
 import software.wings.beans.GcpConfig;
+import software.wings.beans.LogCollectionInfo;
+import software.wings.beans.LogResponseMapping;
 import software.wings.beans.NewRelicConfig;
 import software.wings.beans.PrometheusConfig;
 import software.wings.beans.SettingAttribute;
 import software.wings.beans.TaskType;
+import software.wings.beans.apm.Method;
 import software.wings.delegatetasks.DelegateProxyFactory;
 import software.wings.delegatetasks.DelegateStateType;
 import software.wings.dl.WingsPersistence;
@@ -74,14 +78,8 @@ import software.wings.service.intfc.datadog.DatadogService;
 import software.wings.service.intfc.prometheus.PrometheusAnalysisService;
 import software.wings.service.intfc.security.SecretManager;
 import software.wings.service.intfc.verification.CVActivityLogService;
-import software.wings.service.intfc.verification.CVActivityLogService.Logger;
+import software.wings.service.intfc.verification.CVActivityLogger;
 import software.wings.sm.StateType;
-import software.wings.sm.states.APMVerificationState;
-import software.wings.sm.states.APMVerificationState.MetricCollectionInfo;
-import software.wings.sm.states.APMVerificationState.ResponseMapping;
-import software.wings.sm.states.CustomLogVerificationState;
-import software.wings.sm.states.CustomLogVerificationState.LogCollectionInfo;
-import software.wings.sm.states.CustomLogVerificationState.Method;
 import software.wings.sm.states.DatadogState;
 import software.wings.verification.appdynamics.AppDynamicsCVServiceConfiguration;
 import software.wings.verification.cloudwatch.CloudWatchCVServiceConfiguration;
@@ -140,11 +138,10 @@ public class APMVerificationServiceImplTest extends WingsBaseTest {
     FieldUtils.writeField(service, "featureFlagService", featureFlagService, true);
     FieldUtils.writeField(service, "cvActivityLogService", cvActivityLogService, true);
     FieldUtils.writeField(service, "prometheusAnalysisService", prometheusAnalysisService, true);
-    when(featureFlagService.isEnabled(any(), anyString())).thenReturn(false);
-    when(cvActivityLogService.getLoggerByStateExecutionId(anyString(), anyString())).thenReturn(mock(Logger.class));
-    when(cvActivityLogService.getLoggerByCVConfigId(anyString(), anyString(), anyLong()))
-        .thenReturn(mock(Logger.class));
-    when(environmentService.get(anyString(), anyString()))
+    when(featureFlagService.isEnabled(any(), any())).thenReturn(false);
+    when(cvActivityLogService.getLoggerByStateExecutionId(any(), any())).thenReturn(mock(CVActivityLogger.class));
+    when(cvActivityLogService.getLoggerByCVConfigId(any(), any(), anyLong())).thenReturn(mock(CVActivityLogger.class));
+    when(environmentService.get(any(), any()))
         .thenReturn(Environment.Builder.anEnvironment().environmentType(EnvironmentType.PROD).build());
   }
 
@@ -164,10 +161,10 @@ public class APMVerificationServiceImplTest extends WingsBaseTest {
 
     APMSetupTestNodeData nodeData = APMSetupTestNodeData.builder()
                                         .fetchConfig(fetchConfig)
-                                        .apmMetricCollectionInfo(MetricCollectionInfo.builder()
+                                        .apmMetricCollectionInfo(ApmMetricCollectionInfo.builder()
                                                                      .metricName("name")
                                                                      .collectionUrl("testURL")
-                                                                     .responseMapping(ResponseMapping.builder()
+                                                                     .responseMapping(ApmResponseMapping.builder()
                                                                                           .metricValueJsonPath("key1")
                                                                                           .timestampJsonPath("time")
                                                                                           .txnNameFieldValue("txnName")
@@ -176,7 +173,7 @@ public class APMVerificationServiceImplTest extends WingsBaseTest {
                                         .build();
 
     // setup
-    when(mockSettingsService.get(anyString())).thenReturn(attribute);
+    when(mockSettingsService.get(any())).thenReturn(attribute);
     when(mockDelegateProxyFactory.get(any(), any())).thenReturn(mockAPMDelegateService);
     when(mockAPMDelegateService.fetch(any(APMValidateCollectorConfig.class), any(ThirdPartyApiCallLog.class)))
         .thenReturn(dummyResponseString);
@@ -215,11 +212,11 @@ public class APMVerificationServiceImplTest extends WingsBaseTest {
         new File("400-rest/src/test/resources/apm/datadog_sample_response_load.json"), Charsets.UTF_8);
 
     // setup
-    when(mockSettingsService.get(anyString())).thenReturn(attribute);
+    when(mockSettingsService.get(any())).thenReturn(attribute);
     when(mockDelegateProxyFactory.get(any(), any())).thenReturn(mockAPMDelegateService);
     when(mockAPMDelegateService.fetch(any(APMValidateCollectorConfig.class), any(ThirdPartyApiCallLog.class)))
         .thenReturn(textLoad);
-    when(datadogService.getConcatenatedListOfMetricsForValidation(anyString(), any(), any(), any()))
+    when(datadogService.getConcatenatedListOfMetricsForValidation(any(), any(), any(), any()))
         .thenReturn("docker.mem.rss");
     // execute
     VerificationNodeDataSetupResponse response =
@@ -256,11 +253,11 @@ public class APMVerificationServiceImplTest extends WingsBaseTest {
         APMVerificationServiceImplTest.class.getResource("/apm/datadog-emptyResponse.json"), Charsets.UTF_8);
 
     // setup
-    when(mockSettingsService.get(anyString())).thenReturn(attribute);
+    when(mockSettingsService.get(any())).thenReturn(attribute);
     when(mockDelegateProxyFactory.get(any(), any())).thenReturn(mockAPMDelegateService);
     when(mockAPMDelegateService.fetch(any(APMValidateCollectorConfig.class), any(ThirdPartyApiCallLog.class)))
         .thenReturn(textLoad);
-    when(datadogService.getConcatenatedListOfMetricsForValidation(anyString(), any(), any(), any()))
+    when(datadogService.getConcatenatedListOfMetricsForValidation(any(), any(), any(), any()))
         .thenReturn("docker.mem.rss");
     // execute
     VerificationNodeDataSetupResponse response =
@@ -298,8 +295,8 @@ public class APMVerificationServiceImplTest extends WingsBaseTest {
     SettingAttribute attribute = new SettingAttribute();
     attribute.setValue(ddConfig);
     // setup
-    when(mockSettingsService.get(anyString())).thenReturn(attribute);
-    when(datadogService.getConcatenatedListOfMetricsForValidation(anyString(), any(), any(), any()))
+    when(mockSettingsService.get(any())).thenReturn(attribute);
+    when(datadogService.getConcatenatedListOfMetricsForValidation(any(), any(), any(), any()))
         .thenReturn("docker.mem.rss");
     // execute
     VerificationNodeDataSetupResponse response =
@@ -323,13 +320,13 @@ public class APMVerificationServiceImplTest extends WingsBaseTest {
         APMSetupTestNodeData.builder()
             .fetchConfig(fetchConfig)
             .apmMetricCollectionInfo(
-                MetricCollectionInfo.builder().responseMapping(ResponseMapping.builder().build()).build())
+                ApmMetricCollectionInfo.builder().responseMapping(ApmResponseMapping.builder().build()).build())
             .build();
     nodeData.setGuid(generateUuid());
 
     // setup
     ThirdPartyApiCallLog apiCallLog = ThirdPartyApiCallLog.builder().build();
-    when(mockSettingsService.get(anyString())).thenReturn(attribute);
+    when(mockSettingsService.get(any())).thenReturn(attribute);
     when(mockDelegateProxyFactory.get(any(), any())).thenReturn(mockAPMDelegateService);
     when(mockAPMDelegateService.fetch(any(APMValidateCollectorConfig.class), any(ThirdPartyApiCallLog.class)))
         .thenAnswer(invocation -> {
@@ -363,7 +360,7 @@ public class APMVerificationServiceImplTest extends WingsBaseTest {
     APMFetchConfig fetchConfig = APMFetchConfig.builder().url("testFetchURL.com").build();
 
     // setup
-    when(mockSettingsService.get(anyString())).thenReturn(attribute);
+    when(mockSettingsService.get(any())).thenReturn(attribute);
     when(mockDelegateProxyFactory.get(any(), any())).thenReturn(mockAPMDelegateService);
     when(mockAPMDelegateService.fetch(any(APMValidateCollectorConfig.class), any(ThirdPartyApiCallLog.class)))
         .thenReturn(dummyResponseString);
@@ -387,7 +384,7 @@ public class APMVerificationServiceImplTest extends WingsBaseTest {
     APMFetchConfig fetchConfig = APMFetchConfig.builder().url("testFetchURL.com").build();
 
     // setup
-    when(mockSettingsService.get(anyString())).thenReturn(attribute);
+    when(mockSettingsService.get(any())).thenReturn(attribute);
     when(mockDelegateProxyFactory.get(any(), any())).thenReturn(mockAPMDelegateService);
     when(mockAPMDelegateService.fetch(any(APMValidateCollectorConfig.class), any(ThirdPartyApiCallLog.class)))
         .thenReturn(dummyResponseString);
@@ -411,7 +408,7 @@ public class APMVerificationServiceImplTest extends WingsBaseTest {
     APMFetchConfig fetchConfig = APMFetchConfig.builder().url("testFetchURL.com").build();
 
     // setup
-    when(mockSettingsService.get(anyString())).thenReturn(attribute);
+    when(mockSettingsService.get(any())).thenReturn(attribute);
     when(mockDelegateProxyFactory.get(any(), any())).thenReturn(mockAPMDelegateService);
     when(mockAPMDelegateService.fetch(any(APMValidateCollectorConfig.class), any(ThirdPartyApiCallLog.class)))
         .thenThrow(new WingsException(""));
@@ -441,8 +438,8 @@ public class APMVerificationServiceImplTest extends WingsBaseTest {
     config.setStateType(StateType.DATA_DOG);
     wingsPersistence.save(config);
 
-    when(mockSettingsService.get(anyString())).thenReturn(attribute);
-    when(mockWaitNotifyEngine.waitForAllOn(any(), anyObject(), anyString())).thenReturn("waitId");
+    when(mockSettingsService.get(any())).thenReturn(attribute);
+    when(mockWaitNotifyEngine.waitForAllOn(any(), anyObject(), any())).thenReturn("waitId");
     when(mockSecretManager.getEncryptionDetails(dConfg, "appId", null)).thenReturn(new ArrayList<>());
 
     // execute behavior
@@ -452,7 +449,7 @@ public class APMVerificationServiceImplTest extends WingsBaseTest {
     assertThat(response).isTrue();
     ArgumentCaptor<DelegateTask> taskCaptor = ArgumentCaptor.forClass(DelegateTask.class);
 
-    verify(mockWaitNotifyEngine).waitForAllOn(any(), anyObject(), anyString());
+    verify(mockWaitNotifyEngine).waitForAllOn(any(), anyObject(), any());
     verify(mockDelegateService).queueTask(taskCaptor.capture());
     assertThat(TaskType.APM_24_7_METRIC_DATA_COLLECTION_TASK.name())
         .isEqualTo(taskCaptor.getValue().getData().getTaskType());
@@ -481,8 +478,8 @@ public class APMVerificationServiceImplTest extends WingsBaseTest {
     config.setStateType(StateType.APP_DYNAMICS);
     wingsPersistence.save(config);
 
-    when(mockSettingsService.get(anyString())).thenReturn(attribute);
-    when(mockWaitNotifyEngine.waitForAllOn(any(), anyObject(), anyString())).thenReturn("waitId");
+    when(mockSettingsService.get(any())).thenReturn(attribute);
+    when(mockWaitNotifyEngine.waitForAllOn(any(), anyObject(), any())).thenReturn("waitId");
     when(mockSecretManager.getEncryptionDetails(appDynamicsConfig, "appId", null)).thenReturn(new ArrayList<>());
 
     // execute behavior
@@ -492,7 +489,7 @@ public class APMVerificationServiceImplTest extends WingsBaseTest {
     assertThat(response).isTrue();
     ArgumentCaptor<DelegateTask> taskCaptor = ArgumentCaptor.forClass(DelegateTask.class);
 
-    verify(mockWaitNotifyEngine).waitForAllOn(any(), anyObject(), anyString());
+    verify(mockWaitNotifyEngine).waitForAllOn(any(), anyObject(), any());
     verify(mockDelegateService).queueTask(taskCaptor.capture());
     assertThat(TaskType.APPDYNAMICS_COLLECT_24_7_METRIC_DATA.name())
         .isEqualTo(taskCaptor.getValue().getData().getTaskType());
@@ -520,8 +517,8 @@ public class APMVerificationServiceImplTest extends WingsBaseTest {
     config.setStateType(StateType.NEW_RELIC);
     wingsPersistence.save(config);
 
-    when(mockSettingsService.get(anyString())).thenReturn(attribute);
-    when(mockWaitNotifyEngine.waitForAllOn(any(), anyObject(), anyString())).thenReturn("waitId");
+    when(mockSettingsService.get(any())).thenReturn(attribute);
+    when(mockWaitNotifyEngine.waitForAllOn(any(), anyObject(), any())).thenReturn("waitId");
     when(mockSecretManager.getEncryptionDetails(nrConfig, "appId", null)).thenReturn(new ArrayList<>());
 
     // execute behavior
@@ -531,7 +528,7 @@ public class APMVerificationServiceImplTest extends WingsBaseTest {
     assertThat(response).isTrue();
     ArgumentCaptor<DelegateTask> taskCaptor = ArgumentCaptor.forClass(DelegateTask.class);
 
-    verify(mockWaitNotifyEngine).waitForAllOn(any(), anyObject(), anyString());
+    verify(mockWaitNotifyEngine).waitForAllOn(any(), anyObject(), any());
     verify(mockDelegateService).queueTask(taskCaptor.capture());
     assertThat(TaskType.NEWRELIC_COLLECT_24_7_METRIC_DATA.name())
         .isEqualTo(taskCaptor.getValue().getData().getTaskType());
@@ -572,8 +569,8 @@ public class APMVerificationServiceImplTest extends WingsBaseTest {
                                                          .build()));
     wingsPersistence.save(config);
 
-    when(mockSettingsService.get(anyString())).thenReturn(attribute);
-    when(mockWaitNotifyEngine.waitForAllOn(any(), anyObject(), anyString())).thenReturn("waitId");
+    when(mockSettingsService.get(any())).thenReturn(attribute);
+    when(mockWaitNotifyEngine.waitForAllOn(any(), anyObject(), any())).thenReturn("waitId");
     when(mockSecretManager.getEncryptionDetails(nrConfig, "appId", null)).thenReturn(new ArrayList<>());
 
     // execute behavior
@@ -583,7 +580,7 @@ public class APMVerificationServiceImplTest extends WingsBaseTest {
     assertThat(response).isTrue();
     ArgumentCaptor<DelegateTask> taskCaptor = ArgumentCaptor.forClass(DelegateTask.class);
 
-    verify(mockWaitNotifyEngine).waitForAllOn(any(), anyObject(), anyString());
+    verify(mockWaitNotifyEngine).waitForAllOn(any(), anyObject(), any());
     verify(mockDelegateService).queueTask(taskCaptor.capture());
     assertThat(TaskType.APM_24_7_METRIC_DATA_COLLECTION_TASK.name())
         .isEqualTo(taskCaptor.getValue().getData().getTaskType());
@@ -608,8 +605,8 @@ public class APMVerificationServiceImplTest extends WingsBaseTest {
     config.setServiceId("serviceId");
     config.setStateType(StateType.CLOUD_WATCH);
     wingsPersistence.save(config);
-    when(mockSettingsService.get(anyString())).thenReturn(attribute);
-    when(mockWaitNotifyEngine.waitForAllOn(any(), anyObject(), anyString())).thenReturn("waitId");
+    when(mockSettingsService.get(any())).thenReturn(attribute);
+    when(mockWaitNotifyEngine.waitForAllOn(any(), anyObject(), any())).thenReturn("waitId");
     when(mockSecretManager.getEncryptionDetails(awsConfig, "appId", null)).thenReturn(new ArrayList<>());
     when(cloudWatchService.createLambdaFunctionNames(anyList())).thenReturn(new HashMap());
     // execute behavior
@@ -617,7 +614,7 @@ public class APMVerificationServiceImplTest extends WingsBaseTest {
     // verify
     assertThat(response).isTrue();
     ArgumentCaptor<DelegateTask> taskCaptor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(mockWaitNotifyEngine).waitForAllOn(any(), anyObject(), anyString());
+    verify(mockWaitNotifyEngine).waitForAllOn(any(), anyObject(), any());
     verify(mockDelegateService).queueTask(taskCaptor.capture());
     assertThat(TaskType.CLOUD_WATCH_COLLECT_24_7_METRIC_DATA.name())
         .isEqualTo(taskCaptor.getValue().getData().getTaskType());
@@ -642,8 +639,8 @@ public class APMVerificationServiceImplTest extends WingsBaseTest {
                                      .withValue(gcpConfig)
                                      .withUuid(cvConfiguration.getConnectorId())
                                      .build();
-    when(mockSettingsService.get(anyString())).thenReturn(attribute);
-    when(mockWaitNotifyEngine.waitForAllOn(any(), anyObject(), anyString())).thenReturn("waitId");
+    when(mockSettingsService.get(any())).thenReturn(attribute);
+    when(mockWaitNotifyEngine.waitForAllOn(any(), anyObject(), any())).thenReturn("waitId");
     when(mockSecretManager.getEncryptionDetails(gcpConfig, cvConfiguration.getAppId(), null))
         .thenReturn(new ArrayList<>());
 
@@ -653,7 +650,7 @@ public class APMVerificationServiceImplTest extends WingsBaseTest {
     // verify
     assertThat(response).isTrue();
     ArgumentCaptor<DelegateTask> taskCaptor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(mockWaitNotifyEngine).waitForAllOn(any(), anyObject(), anyString());
+    verify(mockWaitNotifyEngine).waitForAllOn(any(), anyObject(), any());
     verify(mockDelegateService).queueTask(taskCaptor.capture());
 
     assertThat(TaskType.STACKDRIVER_COLLECT_24_7_METRIC_DATA.name())
@@ -673,8 +670,8 @@ public class APMVerificationServiceImplTest extends WingsBaseTest {
                                      .withValue(apmConfig)
                                      .withUuid(cvConfiguration.getConnectorId())
                                      .build();
-    when(mockSettingsService.get(anyString())).thenReturn(attribute);
-    when(mockWaitNotifyEngine.waitForAllOn(any(), anyObject(), anyString())).thenReturn("waitId");
+    when(mockSettingsService.get(any())).thenReturn(attribute);
+    when(mockWaitNotifyEngine.waitForAllOn(any(), anyObject(), any())).thenReturn("waitId");
     when(mockSecretManager.getEncryptionDetails(apmConfig, cvConfiguration.getAppId(), null))
         .thenReturn(new ArrayList<>());
 
@@ -684,7 +681,7 @@ public class APMVerificationServiceImplTest extends WingsBaseTest {
     // verify
     assertThat(response).isTrue();
     ArgumentCaptor<DelegateTask> taskCaptor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(mockWaitNotifyEngine).waitForAllOn(any(), anyObject(), anyString());
+    verify(mockWaitNotifyEngine).waitForAllOn(any(), anyObject(), any());
     verify(mockDelegateService).queueTask(taskCaptor.capture());
 
     assertThat(TaskType.CUSTOM_COLLECT_24_7_LOG_DATA.name()).isEqualTo(taskCaptor.getValue().getData().getTaskType());
@@ -708,7 +705,7 @@ public class APMVerificationServiceImplTest extends WingsBaseTest {
             .logCollectionInfo(LogCollectionInfo.builder()
                                    .collectionUrl("testURL")
                                    .method(Method.GET)
-                                   .responseMapping(CustomLogVerificationState.ResponseMapping.builder()
+                                   .responseMapping(LogResponseMapping.builder()
                                                         .hostJsonPath("host")
                                                         .logMessageJsonPath("logMessage")
                                                         .timestampJsonPath("time")
@@ -717,7 +714,7 @@ public class APMVerificationServiceImplTest extends WingsBaseTest {
             .build();
 
     // setup
-    when(mockSettingsService.get(anyString())).thenReturn(attribute);
+    when(mockSettingsService.get(any())).thenReturn(attribute);
     when(mockDelegateProxyFactory.get(any(), any())).thenReturn(mockAPMDelegateService);
     when(mockAPMDelegateService.fetch(any(APMValidateCollectorConfig.class), any(ThirdPartyApiCallLog.class)))
         .thenReturn(dummyResponseString);
@@ -745,12 +742,12 @@ public class APMVerificationServiceImplTest extends WingsBaseTest {
     APMSetupTestNodeData nodeData =
         APMSetupTestNodeData.builder()
             .fetchConfig(fetchConfig)
-            .apmMetricCollectionInfo(MetricCollectionInfo.builder().method(APMVerificationState.Method.POST).build())
+            .apmMetricCollectionInfo(ApmMetricCollectionInfo.builder().method(Method.POST).build())
             .build();
 
     // setup
     ThirdPartyApiCallLog apiCallLog = ThirdPartyApiCallLog.builder().build();
-    when(mockSettingsService.get(anyString())).thenReturn(attribute);
+    when(mockSettingsService.get(any())).thenReturn(attribute);
     when(mockDelegateProxyFactory.get(any(), any())).thenReturn(apmDelegateService);
 
     try {

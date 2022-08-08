@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.SpecParameters;
 import io.harness.pms.yaml.ParameterField;
 
@@ -30,11 +31,14 @@ import lombok.NonNull;
 @RecasterAlias("io.harness.cdng.provision.terraform.TerraformApplyStepParameters")
 public class TerraformApplyStepParameters extends TerraformApplyBaseStepInfo implements SpecParameters {
   @NonNull TerraformStepConfigurationParameters configuration;
+  List<String> planStepsFqn;
 
   @Builder(builderMethodName = "infoBuilder")
   public TerraformApplyStepParameters(ParameterField<String> provisionerIdentifier,
-      ParameterField<List<String>> delegateSelectors, @NonNull TerraformStepConfigurationParameters configuration) {
+      ParameterField<List<TaskSelectorYaml>> delegateSelectors, List<String> planStepsFqn,
+      @NonNull TerraformStepConfigurationParameters configuration) {
     super(provisionerIdentifier, delegateSelectors);
+    this.planStepsFqn = planStepsFqn;
     this.configuration = configuration;
   }
 }

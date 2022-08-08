@@ -260,4 +260,80 @@ public class InputSetMergeHelperTest extends CategoryTest {
     String fullYaml = readFile(fullYamlFile);
     assertThat(mergedYaml).isEqualTo(fullYaml);
   }
+
+  @Test
+  @Owner(developers = NAMAN)
+  @Category(UnitTests.class)
+  public void testMergeOnPipelineVMInfrastructure() {
+    String pipelineYaml = "pipeline:\n"
+        + "    identifier: cipipeline2GDdkmQLfb\n"
+        + "    name: run pipeline with output variable success\n"
+        + "    stages:\n"
+        + "        - stage:\n"
+        + "              identifier: outputvar\n"
+        + "              name: output variable\n"
+        + "              type: CI\n"
+        + "              spec:\n"
+        + "                  execution:\n"
+        + "                      steps:\n"
+        + "                          - step:\n"
+        + "                                identifier: two\n"
+        + "                                name: two\n"
+        + "                                type: Run\n"
+        + "                                spec:\n"
+        + "                                    command: <+input>\n"
+        + "                                    shell: Powershell\n"
+        + "                  infrastructure:\n"
+        + "                      type: VM\n"
+        + "                      spec:\n"
+        + "                          type: Pool\n"
+        + "                          spec:\n"
+        + "                              identifier: windows\n"
+        + "                  cloneCodebase: false\n"
+        + "    projectIdentifier: Plain_Old_Project\n"
+        + "    orgIdentifier: default\n";
+    String runtimeInput = "pipeline:\n"
+        + "    identifier: cipipeline2GDdkmQLfb\n"
+        + "    stages:\n"
+        + "        - stage:\n"
+        + "              identifier: outputvar\n"
+        + "              type: CI\n"
+        + "              spec:\n"
+        + "                  execution:\n"
+        + "                      steps:\n"
+        + "                          - step:\n"
+        + "                                identifier: two\n"
+        + "                                type: Run\n"
+        + "                                spec:\n"
+        + "                                    command: echo done\n";
+    String mergedYaml = mergeInputSetIntoPipeline(pipelineYaml, runtimeInput, false);
+    String expectedMergedYaml = "pipeline:\n"
+        + "  identifier: \"cipipeline2GDdkmQLfb\"\n"
+        + "  name: \"run pipeline with output variable success\"\n"
+        + "  stages:\n"
+        + "  - stage:\n"
+        + "      identifier: \"outputvar\"\n"
+        + "      type: \"CI\"\n"
+        + "      name: \"output variable\"\n"
+        + "      spec:\n"
+        + "        execution:\n"
+        + "          steps:\n"
+        + "          - step:\n"
+        + "              identifier: \"two\"\n"
+        + "              type: \"Run\"\n"
+        + "              name: \"two\"\n"
+        + "              spec:\n"
+        + "                command: \"echo done\"\n"
+        + "                shell: \"Powershell\"\n"
+        + "        infrastructure:\n"
+        + "          type: \"VM\"\n"
+        + "          spec:\n"
+        + "            type: \"Pool\"\n"
+        + "            spec:\n"
+        + "              identifier: \"windows\"\n"
+        + "        cloneCodebase: false\n"
+        + "  projectIdentifier: \"Plain_Old_Project\"\n"
+        + "  orgIdentifier: \"default\"\n";
+    assertThat(mergedYaml).isEqualTo(expectedMergedYaml);
+  }
 }

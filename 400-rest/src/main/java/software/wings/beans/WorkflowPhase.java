@@ -249,7 +249,7 @@ public class WorkflowPhase implements UuidAccess {
         .name(name)
         .type(PHASE.name())
         .rollback(rollback)
-        .properties(NullSafeImmutableMap.builder()
+        .properties(NullSafeImmutableMap.<String, Object>builder()
                         .putIfNotNull("serviceId", serviceId)
                         .putIfNotNull("deploymentType", deploymentType)
                         .putIfNotNull("computeProviderId", computeProviderId)

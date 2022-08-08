@@ -22,6 +22,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @OwnedBy(HarnessTeam.CDC)
 public class DiscoveryNode {
+  private NGMigrationStatus status;
   private CgEntityNode entityNode;
   private Set<CgEntityId> children;
 }

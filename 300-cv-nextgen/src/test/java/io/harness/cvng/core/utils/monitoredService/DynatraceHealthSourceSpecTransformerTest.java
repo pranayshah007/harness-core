@@ -16,7 +16,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.cvng.BuilderFactory;
 import io.harness.cvng.beans.CVMonitoringCategory;
 import io.harness.cvng.beans.TimeSeriesMetricType;
-import io.harness.cvng.core.beans.monitoredService.MetricPackDTO;
+import io.harness.cvng.core.beans.monitoredService.TimeSeriesMetricPackDTO;
 import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.DynatraceHealthSourceSpec;
 import io.harness.cvng.core.entities.DynatraceCVConfig;
 import io.harness.cvng.core.entities.MetricPack;
@@ -60,7 +60,7 @@ public class DynatraceHealthSourceSpecTransformerTest extends CvNextGenTestBase 
     assertThat(dynatraceHealthSourceSpec.getConnectorRef()).isEqualTo(CONNECTOR_IDENTIFIER);
 
     assertThat(dynatraceHealthSourceSpec.getMetricPacks().size()).isEqualTo(METRIC_PACK_COUNT);
-    MetricPackDTO metricPack = dynatraceHealthSourceSpec.getMetricPacks().stream().findFirst().orElse(null);
+    TimeSeriesMetricPackDTO metricPack = dynatraceHealthSourceSpec.getMetricPacks().stream().findFirst().orElse(null);
     assertThat(metricPack).isNotNull();
     assertThat(metricPack.getIdentifier()).isEqualTo(METRIC_PACK_IDENTIFIER);
 

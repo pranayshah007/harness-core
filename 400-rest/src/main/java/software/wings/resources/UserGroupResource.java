@@ -26,6 +26,7 @@ import software.wings.beans.User;
 import software.wings.beans.notification.NotificationSettings;
 import software.wings.beans.security.UserGroup;
 import software.wings.beans.security.UserGroup.UserGroupKeys;
+import software.wings.beans.security.UserGroupSearchTermType;
 import software.wings.beans.sso.LdapLinkGroupRequest;
 import software.wings.beans.sso.SSOType;
 import software.wings.beans.sso.SamlLinkGroupRequest;
@@ -40,6 +41,8 @@ import com.codahale.metrics.annotation.Timed;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.Operation;
 import java.util.List;
 import java.util.stream.Collectors;
 import javax.validation.Valid;
@@ -100,16 +103,18 @@ public class UserGroupResource {
   @AuthRule(permissionType = USER_PERMISSION_READ)
   public RestResponse<PageResponse<UserGroup>> list(@BeanParam PageRequest<UserGroup> pageRequest,
       @QueryParam("accountId") @NotEmpty String accountId, @QueryParam("searchTerm") String searchTerm,
-      @QueryParam("details") @DefaultValue("true") boolean loadUsers) {
-    if (!StringUtils.isEmpty(searchTerm)) {
+      @QueryParam("details") @DefaultValue("true") boolean loadUsers,
+      @QueryParam("searchTermType") @DefaultValue("USERGROUP_NAME") UserGroupSearchTermType searchTermType) {
+    if (UserGroupSearchTermType.USERGROUP_NAME.equals(searchTermType) && !StringUtils.isEmpty(searchTerm)) {
       SearchFilter searchFilter = SearchFilter.builder()
                                       .fieldName(UserGroupKeys.name)
-                                      .op(Operator.STARTS_WITH)
+                                      .op(Operator.CONTAINS)
                                       .fieldValues(new String[] {searchTerm})
                                       .build();
       pageRequest.setFilters(Lists.newArrayList(searchFilter));
     }
-    PageResponse<UserGroup> pageResponse = userGroupService.list(accountId, pageRequest, loadUsers);
+    PageResponse<UserGroup> pageResponse =
+        userGroupService.list(accountId, pageRequest, loadUsers, searchTermType, searchTerm);
     return getPublicUserGroups(pageResponse);
   }
 
@@ -316,9 +321,6 @@ public class UserGroupResource {
       throw new InvalidRequestException("UserGroup Doesn't Exists", WingsException.GROUP);
     } else if (userGroup.isImportedByScim()) {
       throw new InvalidRequestException("Cannot Delete Group Imported From SCIM", WingsException.GROUP);
-    } else if (!(userGroup.getParents().isEmpty())) {
-      throw new InvalidRequestException(
-          "This userGroup is being referenced in approval step in PIPELINE(s). Please make sure to remove the references to delete this userGroup.");
     }
     return new RestResponse<>(userGroupService.delete(accountId, userGroupId, false));
   }
@@ -356,7 +358,7 @@ public class UserGroupResource {
                                              .addFilter("accountId", Operator.EQ, accountId)
                                              .addFieldsIncluded("_id", "name", "notificationSettings")
                                              .build();
-    PageResponse<UserGroup> pageResponse = userGroupService.list(accountId, pageRequest, false);
+    PageResponse<UserGroup> pageResponse = userGroupService.list(accountId, pageRequest, false, null, null);
     return getPublicUserGroups(pageResponse);
   }
 
@@ -390,10 +392,19 @@ public class UserGroupResource {
    */
   @PUT
   @Path("{userGroupId}/unlink")
+  @ApiOperation(value = "unlink Harness User Group from SSO Group", nickname = "unlinkUserGroupFromSSO")
+  @Operation(operationId = "unlinkUserGroupFromSSO", summary = "Unlinks user group from an SSO group",
+      description = "Unlinks user group from an SSO group.",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "default",
+            description = "Successfully unlinked Harness User Group from SSO group that was linked")
+      })
   @Timed
   @ExceptionMetered
-  public RestResponse<UserGroup> unlinkSsoGroup(@PathParam("userGroupId") String userGroupId,
-      @QueryParam("accountId") @NotEmpty String accountId, @QueryParam("retainMembers") boolean retainMembers) {
+  public RestResponse<UserGroup>
+  unlinkSsoGroup(@PathParam("userGroupId") String userGroupId, @QueryParam("accountId") @NotEmpty String accountId,
+      @QueryParam("retainMembers") boolean retainMembers) {
     return new RestResponse<>(
         getPublicUserGroup(userGroupService.unlinkSsoGroup(accountId, userGroupId, retainMembers)));
   }
@@ -409,11 +420,19 @@ public class UserGroupResource {
    */
   @PUT
   @Path("{userGroupId}/link/saml/{samlId}")
+  @ApiOperation(value = "Link Harness User Group with SAML group", nickname = "linkUserGroupWithSAMLGroup")
+  @Operation(operationId = "linkUserGroupWithSAMLGroup", summary = "Link a User Group to a SAML Group",
+      description = "Links the given user group to a SAML group.",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "default",
+            description = "Successfully linked Harness user group with the SAML group of SSO Provider")
+      })
   @Timed
   @ExceptionMetered
-  public RestResponse<UserGroup> linkToSamlGroup(@PathParam("userGroupId") String userGroupId,
-      @PathParam("samlId") String samlId, @QueryParam("accountId") @NotEmpty String accountId,
-      @NotNull @Valid SamlLinkGroupRequest groupRequest) {
+  public RestResponse<UserGroup>
+  linkToSamlGroup(@PathParam("userGroupId") String userGroupId, @PathParam("samlId") String samlId,
+      @QueryParam("accountId") @NotEmpty String accountId, @NotNull @Valid SamlLinkGroupRequest groupRequest) {
     return new RestResponse<>(userGroupService.linkToSsoGroup(accountId, userGroupId, SSOType.SAML, samlId,
         groupRequest.getSamlGroupName(), groupRequest.getSamlGroupName()));
   }

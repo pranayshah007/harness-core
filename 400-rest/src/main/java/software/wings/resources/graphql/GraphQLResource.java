@@ -42,6 +42,7 @@ import software.wings.security.annotations.AuthRule;
 import software.wings.security.annotations.ExternalFacingApiAuth;
 import software.wings.service.intfc.ApiKeyService;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.io.ByteStreams;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -92,6 +93,7 @@ public class GraphQLResource {
   private interface Constants {
     String QUERY = "query";
     String EMPTY_BRACKET = "{";
+    String MUTATION = "mutation";
   }
 
   @Inject
@@ -128,8 +130,9 @@ public class GraphQLResource {
   @ExternalFacingApiAuth
   public Map<String, Object> execute(@HeaderParam(API_KEY_HEADER) String apiKey,
       @QueryParam("accountId") String accountId, @FormDataParam("query") String query,
-      @FormDataParam("file") InputStream uploadedInputStream, @Context HttpServletRequest httpServletRequest) {
-    GraphQLQuery graphQLQuery = JsonUtils.asObject(query, GraphQLQuery.class);
+      @FormDataParam("file") InputStream uploadedInputStream, @Context HttpServletRequest httpServletRequest)
+      throws JsonProcessingException {
+    GraphQLQuery graphQLQuery = JsonUtils.asObjectWithExceptionHandlingType(query, GraphQLQuery.class);
     try (AutoLogContext ignore = new AccountLogContext(accountId, OVERRIDE_ERROR)) {
       log.info("Executing graphql query for file");
       BaseSecretValidator.validateFileWithinSizeLimit(
@@ -200,6 +203,9 @@ public class GraphQLResource {
         if (!(queryInLowerCase.startsWith(Constants.QUERY) || queryInLowerCase.startsWith(Constants.EMPTY_BRACKET))) {
           throw graphQLUtils.getUnauthorizedException();
         }
+        if (queryInLowerCase.contains(Constants.MUTATION)) {
+          throw graphQLUtils.getUnauthorizedExceptionForSupportUserWithMutation();
+        }
       }
       hasUserContext = true;
     } else if (isNotEmpty(apiKey)) {
@@ -240,6 +246,7 @@ public class GraphQLResource {
         if (apiKeyEntry == null) {
           throw graphQLUtils.getInvalidApiKeyException();
         } else {
+          log.info("Using api key {}", apiKeyEntry.getName());
           UserPermissionInfo apiKeyPermissions = apiKeyService.getApiKeyPermissions(apiKeyEntry, accountId);
           UserRestrictionInfo apiKeyRestrictions =
               apiKeyService.getApiKeyRestrictions(apiKeyEntry, apiKeyPermissions, accountId);

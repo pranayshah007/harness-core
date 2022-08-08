@@ -24,8 +24,6 @@ import java.util.stream.Collectors;
 
 public abstract class MetricCVConfigurationYamlHandler<Y extends MetricCVConfigurationYaml, B extends CVConfiguration>
     extends CVConfigurationYamlHandler<Y, B> {
-  private static final String CUSTOM_THRESHOLD_KEY = "customThresholdRefId";
-  private static final String THRESHOLDS_KEY = "metric-thresholds";
   @Inject private MetricDataAnalysisService metricDataAnalysisService;
 
   public void toYaml(MetricCVConfigurationYaml yaml, CVConfiguration bean) {

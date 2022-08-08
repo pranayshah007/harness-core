@@ -47,7 +47,6 @@ public class PhysicalDataCenterEntityToDTOTest extends CategoryTest {
         PhysicalDataCenterConnector.builder().hosts(getHosts()).sshKeyRef(SSK_KEY_REF_IDENTIFIER).build());
 
     assertThat(connectorDTO).isNotNull();
-    assertThat(connectorDTO.getSshKeyRef().getIdentifier()).isEqualTo(SSK_KEY_REF_IDENTIFIER);
     assertThat(connectorDTO.getHosts().size()).isEqualTo(2);
 
     HostDTO hostDTO1 = getHostDTO(HOST_NAME_1);

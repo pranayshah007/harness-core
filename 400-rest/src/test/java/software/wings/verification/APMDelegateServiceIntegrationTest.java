@@ -17,10 +17,10 @@ import io.harness.scm.SecretName;
 
 import software.wings.beans.APMValidateCollectorConfig;
 import software.wings.beans.DatadogConfig;
+import software.wings.beans.apm.Method;
 import software.wings.integration.IntegrationTestBase;
 import software.wings.service.impl.analysis.APMDelegateService;
 import software.wings.service.impl.analysis.APMDelegateServiceImpl;
-import software.wings.sm.states.APMVerificationState.Method;
 
 import java.util.HashMap;
 import java.util.Map;

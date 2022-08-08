@@ -132,7 +132,7 @@ public class AppDynamicsConnectorTest extends CategoryTest {
   public void testGetAppDynamicsConnector() {
     createConnector();
     when(connectorRepository.findByFullyQualifiedIdentifierAndDeletedNot(
-             anyString(), anyString(), anyString(), anyString(), anyBoolean()))
+             anyString(), any(), any(), anyString(), anyBoolean()))
         .thenReturn(Optional.of(appDynamicsConfig));
     ConnectorResponseDTO connectorDTO = connectorService.get(accountIdentifier, null, null, identifier).get();
     ensureAppDynamicsConnectorFieldsAreCorrect(connectorDTO);

@@ -15,7 +15,7 @@ import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
 public abstract class ServiceLevelIndicatorTransformer<E extends ServiceLevelIndicator, S
                                                            extends ServiceLevelIndicatorSpec> {
   public abstract E getEntity(ProjectParams projectParams, ServiceLevelIndicatorDTO serviceLevelIndicatorDTO,
-      String monitoredServiceIndicator, String healthSourceIndicator);
+      String monitoredServiceIndicator, String healthSourceIndicator, boolean isEnabled);
 
   public final ServiceLevelIndicatorDTO getDTO(E serviceLevelIndicator) {
     return ServiceLevelIndicatorDTO.builder()

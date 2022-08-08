@@ -37,6 +37,7 @@ import org.springframework.data.annotation.TypeAlias;
 @RecasterAlias("io.harness.cdng.k8s.K8sRollingRollbackStepNode")
 public class K8sRollingRollbackStepNode extends CdAbstractStepNode {
   @JsonProperty("type") @NotNull StepType type = StepType.K8sRollingRollback;
+  @NotNull
   @JsonProperty("spec")
   @JsonTypeInfo(use = NAME, property = "type", include = EXTERNAL_PROPERTY, visible = true)
   K8sRollingRollbackStepInfo k8sRollingRollbackStepInfo;

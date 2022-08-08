@@ -7,6 +7,8 @@ timeRangeBasedFreezeConfigs:
   - envSelection:
     - filterType: ALL
     filterType: ALL
+    serviceSelection:
+    - filterType: ALL
   applicable: false
   description: git sync
   name: allAppAllEnv

@@ -10,6 +10,7 @@ package io.harness.ng.authenticationsettings.impl;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ng.authenticationsettings.dtos.AuthenticationSettingsResponse;
+import io.harness.ng.authenticationsettings.dtos.mechanisms.LDAPSettings;
 import io.harness.ng.authenticationsettings.dtos.mechanisms.OAuthSettings;
 import io.harness.ng.core.account.AuthenticationMechanism;
 import io.harness.ng.core.user.TwoFactorAdminOverrideSettings;
@@ -39,6 +40,10 @@ public interface AuthenticationSettingsService {
       String samlProviderType, String clientId, String clientSecret);
   SSOConfig deleteSAMLMetadata(@NotNull String accountIdentifier);
   LoginTypeResponse getSAMLLoginTest(@NotNull String accountIdentifier);
+  LDAPSettings getLdapSettings(@NotNull String accountIdentifier);
+  LDAPSettings createLdapSettings(@NotNull String accountIdentifier, LDAPSettings ldapSettings);
+  LDAPSettings updateLdapSettings(@NotNull String accountIdentifier, LDAPSettings ldapSettings);
+  void deleteLdapSettings(@NotNull String accountIdentifier);
   boolean setTwoFactorAuthAtAccountLevel(
       String accountIdentifier, TwoFactorAdminOverrideSettings twoFactorAdminOverrideSettings);
   PasswordStrengthPolicy getPasswordStrengthSettings(String accountIdentifier);

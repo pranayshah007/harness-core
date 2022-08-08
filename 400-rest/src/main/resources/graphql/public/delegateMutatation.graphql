@@ -77,7 +77,8 @@ type Delegate {
   ip: String
   polllingModeEnabled: Boolean
   status: String
-  lastHeartBeat: Long
+  lastHeartBeat: Long @deprecated(reason: "Use lastHeartbeat.")
+  lastHeartbeat: DateTime
   version: String
   delegateProfileId: String
   connections: [DelegateConnection]

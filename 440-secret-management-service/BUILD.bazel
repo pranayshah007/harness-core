@@ -22,7 +22,7 @@ java_library(
         "@maven//:com_google_guava_guava",
         "@maven//:com_google_inject_guice",
         "@maven//:org_apache_commons_commons_lang3",
-        "@maven//:org_hibernate_hibernate_validator",
+        "@maven//:org_hibernate_validator_hibernate_validator",
         "@maven//:org_mybatis_mybatis",
         "@maven//:org_slf4j_slf4j_api",
         "@maven//:org_springframework_data_spring_data_commons",

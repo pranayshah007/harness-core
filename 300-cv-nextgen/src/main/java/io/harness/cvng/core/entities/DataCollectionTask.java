@@ -13,7 +13,7 @@ import io.harness.annotation.HarnessEntity;
 import io.harness.annotation.StoreIn;
 import io.harness.cvng.beans.DataCollectionExecutionStatus;
 import io.harness.cvng.beans.DataCollectionInfo;
-import io.harness.cvng.beans.cvnglog.ExecutionLogDTO;
+import io.harness.cvng.beans.cvnglog.ExecutionLogDTO.LogLevel;
 import io.harness.iterator.PersistentRegularIterable;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdIndex;
@@ -158,13 +158,13 @@ public abstract class DataCollectionTask
         "Last picked up needs to be not null for wait time calculation for dataCollectionTaskId: " + uuid);
     return Duration.between(validAfter, lastPickedAt);
   }
-  public ExecutionLogDTO.LogLevel getLogLevel() {
+  public LogLevel getLogLevel() {
     if (DataCollectionExecutionStatus.getFailedStatuses().contains(status)) {
-      return ExecutionLogDTO.LogLevel.ERROR;
+      return LogLevel.ERROR;
     } else if (DataCollectionExecutionStatus.ABORTED.equals(status)) {
-      return ExecutionLogDTO.LogLevel.WARN;
+      return LogLevel.WARN;
     } else {
-      return ExecutionLogDTO.LogLevel.INFO;
+      return LogLevel.INFO;
     }
   }
 }

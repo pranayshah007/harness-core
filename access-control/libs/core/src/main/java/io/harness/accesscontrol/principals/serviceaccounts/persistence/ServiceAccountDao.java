@@ -28,6 +28,4 @@ public interface ServiceAccountDao {
   Optional<ServiceAccount> get(@NotEmpty String identifier, @NotEmpty String scopeIdentifier);
 
   Optional<ServiceAccount> delete(@NotEmpty String identifier, @NotEmpty String scopeIdentifier);
-
-  long deleteInScopesAndChildScopes(@NotEmpty String identifier, @NotEmpty String scopeIdentifier);
 }

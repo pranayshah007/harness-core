@@ -18,8 +18,6 @@ import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.joor.Reflect.on;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyList;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
@@ -78,12 +76,12 @@ public class EcsSteadyStateCheckTaskTest extends WingsBaseTest {
     doReturn(new DescribeServicesResult().withServices(
                  new Service().withServiceName("Name").withClusterArn("Cluster").withDesiredCount(1)))
         .when(mockAwsHelperService)
-        .describeServices(anyString(), any(), any(), any());
+        .describeServices(any(), any(), any(), any());
     doNothing().when(mockEcsContainerService).waitForTasksToBeInRunningStateWithHandledExceptions(any());
     doNothing().when(mockEcsContainerService).waitForServiceToReachSteadyState(eq(0), any());
     doReturn(singletonList(ContainerInfo.builder().containerId("cid").hostName("host").newContainer(true).build()))
         .when(mockEcsContainerService)
-        .getContainerInfosAfterEcsWait(anyString(), any(), anyList(), anyString(), anyString(), anyList(), any());
+        .getContainerInfosAfterEcsWait(any(), any(), any(), any(), any(), any(), any());
     EcsSteadyStateCheckResponse response = task.run(new Object[] {EcsSteadyStateCheckParams.builder().build()});
     assertThat(response).isNotNull();
     assertThat(response.getExecutionStatus()).isEqualTo(ExecutionStatus.SUCCESS);
@@ -101,14 +99,14 @@ public class EcsSteadyStateCheckTaskTest extends WingsBaseTest {
     doReturn(new DescribeServicesResult().withServices(
                  new Service().withServiceName("Name").withClusterArn("Cluster").withDesiredCount(1)))
         .when(mockAwsHelperService)
-        .describeServices(anyString(), any(), any(), any());
+        .describeServices(any(), any(), any(), any());
     doThrow(TimeoutException.class)
         .when(mockEcsContainerService)
         .waitForTasksToBeInRunningStateWithHandledExceptions(any());
     doNothing().when(mockEcsContainerService).waitForServiceToReachSteadyState(eq(0), any());
     doReturn(singletonList(ContainerInfo.builder().containerId("cid").hostName("host").newContainer(true).build()))
         .when(mockEcsContainerService)
-        .getContainerInfosAfterEcsWait(anyString(), any(), anyList(), anyString(), anyString(), anyList(), any());
+        .getContainerInfosAfterEcsWait(any(), any(), any(), any(), any(), any(), any());
     EcsSteadyStateCheckResponse response = task.run(new Object[] {EcsSteadyStateCheckParams.builder().build()});
     assertThat(response).isNotNull();
     assertThat(response.getExecutionStatus()).isEqualTo(ExecutionStatus.FAILED);

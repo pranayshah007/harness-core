@@ -21,6 +21,7 @@ import java.util.Optional;
       @JsonSubTypes.Type(value = SecretTextSpecDTO.class, name = "SecretText")
       , @JsonSubTypes.Type(value = SecretFileSpecDTO.class, name = "SecretFile"),
           @JsonSubTypes.Type(value = SSHKeySpecDTO.class, name = "SSHKey"),
+          @JsonSubTypes.Type(value = WinRmCredentialsSpecDTO.class, name = "WinRmCredentials"),
     })
 @Schema(name = "SecretSpec", description = "This has details of the Secret defined in Harness.")
 public abstract class SecretSpecDTO {

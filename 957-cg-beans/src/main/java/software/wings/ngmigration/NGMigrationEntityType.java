@@ -12,16 +12,30 @@ import io.harness.annotations.dev.OwnedBy;
 
 @OwnedBy(HarnessTeam.CDC)
 public enum NGMigrationEntityType {
+  TEMPLATE,
+  ACCOUNT,
   APPLICATION,
   DUMMY_HEAD,
   WORKFLOW,
-  PIPELINE,
+  PIPELINE("pipelines"),
   ARTIFACT_STREAM,
-  CONNECTOR,
+  CONNECTOR("connectors"),
   SERVICE,
   ENVIRONMENT,
-  SECRET,
+  SECRET("secrets"),
   INFRA,
   SECRET_MANAGER,
-  MANIFEST
+  MANIFEST;
+
+  private String yamlFolderName;
+
+  NGMigrationEntityType(String yamlFolderName) {
+    this.yamlFolderName = yamlFolderName;
+  }
+
+  NGMigrationEntityType() {}
+
+  public String getYamlFolderName() {
+    return yamlFolderName;
+  }
 }

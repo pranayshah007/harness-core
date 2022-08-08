@@ -9,6 +9,7 @@ package io.harness.cvng.core.services.api;
 
 import io.harness.cvng.beans.cvnglog.CVNGLogDTO;
 import io.harness.cvng.beans.cvnglog.CVNGLogType;
+import io.harness.cvng.beans.cvnglog.ExecutionLogDTO;
 import io.harness.cvng.core.beans.params.PageParams;
 import io.harness.cvng.core.beans.params.logsFilterParams.DeploymentLogsFilter;
 import io.harness.cvng.core.beans.params.logsFilterParams.TimeRangeLogsFilter;
@@ -23,7 +24,7 @@ public interface CVNGLogService {
       String accountId, String traceableId, CVNGLogType cvngLogType, int offset, int pageSize);
 
   List<CVNGLog> getCompleteCVNGLog(String accountId, String VerificationTaskId, CVNGLogType cvngLogType);
-
+  List<ExecutionLogDTO> getExecutionLogDTOs(String accountId, String verificationTaskId);
   PageResponse<CVNGLogDTO> getCVNGLogs(String accountId, String verificationJobInstanceId,
       DeploymentLogsFilter deploymentLogsFilter, PageParams pageParams);
   PageResponse<CVNGLogDTO> getCVNGLogs(String accountId, List<String> verificationTaskIds,

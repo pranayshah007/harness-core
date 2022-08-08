@@ -51,6 +51,10 @@ public interface GitSdkEntityHandlerInterface<B extends GitSyncableEntity, Y ext
 
   String getBranchKey();
 
+  default String getStoreTypeKey() {
+    throw new UnsupportedOperationException("Store Type Key Not specified");
+  }
+
   Y upsert(String accountIdentifier, String yaml, String filePath);
 
   Y fullSyncEntity(FullSyncChangeSet fullSyncChangeSet);

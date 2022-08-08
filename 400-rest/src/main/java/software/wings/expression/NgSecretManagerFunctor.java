@@ -12,6 +12,9 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.exception.WingsException.USER;
+import static io.harness.metrics.impl.DelegateMetricsServiceImpl.SECRETS_CACHE_HITS;
+import static io.harness.metrics.impl.DelegateMetricsServiceImpl.SECRETS_CACHE_INSERTS;
+import static io.harness.metrics.impl.DelegateMetricsServiceImpl.SECRETS_CACHE_LOOKUPS;
 import static io.harness.reflection.ReflectionUtils.getFieldByName;
 import static io.harness.security.SimpleEncryption.CHARSET;
 
@@ -22,6 +25,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.DecryptableEntity;
 import io.harness.beans.IdentifierRef;
+import io.harness.beans.SecretManagerConfig;
 import io.harness.data.encoding.EncodingUtils;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.SecretDetail;
@@ -30,6 +34,7 @@ import io.harness.encryption.SecretRefData;
 import io.harness.exception.FunctorException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.expression.ExpressionFunctor;
+import io.harness.metrics.intfc.DelegateMetricsService;
 import io.harness.ng.core.BaseNGAccess;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 import io.harness.security.SimpleEncryption;
@@ -46,7 +51,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import javax.cache.Cache;
 import lombok.Builder;
+import lombok.EqualsAndHashCode;
 import lombok.Value;
 
 @OwnedBy(CDP)
@@ -54,18 +61,21 @@ import lombok.Value;
 @Builder
 @TargetModule(HarnessModule._950_NG_CORE)
 public class NgSecretManagerFunctor implements ExpressionFunctor, NgSecretManagerFunctorInterface {
-  private int expressionFunctorToken;
-  private final String accountId;
-  private final String orgId;
-  private final String projectId;
-  private final SecretManager secretManager;
-  private final SecretManagerClientService ngSecretService;
-  private SecretManagerMode mode;
+  int expressionFunctorToken;
+  String accountId;
+  String orgId;
+  String projectId;
+  SecretManager secretManager;
+  Cache<String, EncryptedDataDetails> secretsCache;
+  SecretManagerClientService ngSecretService;
+  SecretManagerMode mode;
 
-  @Builder.Default private Map<String, String> evaluatedSecrets = new HashMap<>();
-  @Builder.Default private Map<String, String> evaluatedDelegateSecrets = new HashMap<>();
-  @Builder.Default private Map<String, EncryptionConfig> encryptionConfigs = new HashMap<>();
-  @Builder.Default private Map<String, SecretDetail> secretDetails = new HashMap<>();
+  @Builder.Default Map<String, String> evaluatedSecrets = new HashMap<>();
+  @Builder.Default Map<String, String> evaluatedDelegateSecrets = new HashMap<>();
+  @Builder.Default Map<String, EncryptionConfig> encryptionConfigs = new HashMap<>();
+  @Builder.Default Map<String, SecretDetail> secretDetails = new HashMap<>();
+
+  DelegateMetricsService delegateMetricsService;
 
   @Override
   public Object obtain(String secretIdentifier, int token) {
@@ -107,12 +117,47 @@ public class NgSecretManagerFunctor implements ExpressionFunctor, NgSecretManage
                                               .type(SecretVariableDTO.Type.TEXT)
                                               .build();
 
-    List<EncryptedDataDetail> encryptedDataDetails = ngSecretService.getEncryptionDetails(
-        BaseNGAccess.builder().accountIdentifier(accountId).orgIdentifier(orgId).projectIdentifier(projectId).build(),
-        secretVariableDTO);
+    int keyHash = SecretsCacheKey.builder()
+                      .accountIdentifier(accountId)
+                      .orgIdentifier(orgId)
+                      .projectIdentifier(projectId)
+                      .secretVariableDTO(secretVariableDTO)
+                      .build()
+                      .hashCode();
 
-    if (EmptyPredicate.isEmpty(encryptedDataDetails)) {
-      throw new InvalidRequestException("No secret found with identifier + [" + secretIdentifier + "]", USER);
+    List<EncryptedDataDetail> encryptedDataDetails = null;
+    if (secretsCache != null) {
+      delegateMetricsService.recordDelegateMetricsPerAccount(accountId, SECRETS_CACHE_LOOKUPS);
+      EncryptedDataDetails cachedValue = secretsCache.get(String.valueOf(keyHash));
+      if (cachedValue != null) {
+        // Cache hit.
+        delegateMetricsService.recordDelegateMetricsPerAccount(accountId, SECRETS_CACHE_HITS);
+        encryptedDataDetails = cachedValue.getEncryptedDataDetailList();
+      }
+    }
+
+    if (isEmpty(encryptedDataDetails)) {
+      // Cache miss.
+      encryptedDataDetails = ngSecretService.getEncryptionDetails(
+          BaseNGAccess.builder().accountIdentifier(accountId).orgIdentifier(orgId).projectIdentifier(projectId).build(),
+          secretVariableDTO);
+
+      if (EmptyPredicate.isEmpty(encryptedDataDetails)) {
+        throw new InvalidRequestException("No secret found with identifier + [" + secretIdentifier + "]", USER);
+      }
+
+      // Skip caching secrets for HashiCorp vault.
+      List<EncryptedDataDetail> encryptedDataDetailsToCache =
+          encryptedDataDetails.stream()
+              .filter(encryptedDataDetail
+                  -> encryptedDataDetail.getEncryptedData().getEncryptionType() != EncryptionType.VAULT)
+              .collect(Collectors.toList());
+      if (isNotEmpty(encryptedDataDetailsToCache)) {
+        EncryptedDataDetails objectToCache =
+            EncryptedDataDetails.builder().encryptedDataDetailList(encryptedDataDetailsToCache).build();
+        secretsCache.put(String.valueOf(keyHash), objectToCache);
+        delegateMetricsService.recordDelegateMetricsPerAccount(accountId, SECRETS_CACHE_INSERTS);
+      }
     }
 
     List<EncryptedDataDetail> localEncryptedDetails =
@@ -124,9 +169,9 @@ public class NgSecretManagerFunctor implements ExpressionFunctor, NgSecretManage
     if (isNotEmpty(localEncryptedDetails)) {
       // ToDo Vikas said that we can have decrypt here for now. Later on it will be moved to proper service.
       decryptLocal(secretVariableDTO, localEncryptedDetails);
-      String value = new String(secretVariableDTO.getSecret().getDecryptedValue());
-      evaluatedSecrets.put(secretIdentifier, value);
-      return returnValue(secretIdentifier, value);
+      final String secretValue = new String(secretVariableDTO.getSecret().getDecryptedValue());
+      evaluatedSecrets.put(secretIdentifier, secretValue);
+      return returnValue(secretIdentifier, secretValue);
     }
 
     List<EncryptedDataDetail> nonLocalEncryptedDetails =
@@ -141,8 +186,11 @@ public class NgSecretManagerFunctor implements ExpressionFunctor, NgSecretManage
     }
 
     EncryptedDataDetail encryptedDataDetail = nonLocalEncryptedDetails.get(0);
-    String encryptionConfigUuid = encryptedDataDetail.getEncryptionConfig().getUuid();
-    encryptionConfigs.put(encryptionConfigUuid, encryptedDataDetail.getEncryptionConfig());
+    String encryptionConfigUuid = generateUuid();
+    SecretManagerConfig encryptionConfig = (SecretManagerConfig) encryptedDataDetail.getEncryptionConfig();
+    encryptionConfig.setUuid(encryptionConfigUuid);
+
+    encryptionConfigs.put(encryptionConfigUuid, encryptionConfig);
 
     SecretDetail secretDetail = SecretDetail.builder()
                                     .configUuid(encryptionConfigUuid)
@@ -186,4 +234,13 @@ public class NgSecretManagerFunctor implements ExpressionFunctor, NgSecretManage
           }
         });
   }
+}
+
+@Builder
+@EqualsAndHashCode
+class SecretsCacheKey {
+  String accountIdentifier;
+  String orgIdentifier;
+  String projectIdentifier;
+  SecretVariableDTO secretVariableDTO;
 }

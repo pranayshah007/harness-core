@@ -8,9 +8,9 @@
 package io.harness.cdng.gitSync;
 
 import io.harness.EntityType;
-import io.harness.cdng.envGroup.beans.EnvironmentGroupConfig;
 import io.harness.cdng.envGroup.beans.EnvironmentGroupEntity;
 import io.harness.cdng.envGroup.beans.EnvironmentGroupEntity.EnvironmentGroupKeys;
+import io.harness.cdng.envGroup.beans.EnvironmentGroupWrapperConfig;
 import io.harness.cdng.envGroup.mappers.EnvironmentGroupMapper;
 import io.harness.common.EntityReference;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
@@ -28,14 +28,14 @@ import java.util.Optional;
 import java.util.function.Supplier;
 
 public class EnvironmentGroupEntityGitSyncHelper
-    extends AbstractGitSdkEntityHandler<EnvironmentGroupEntity, EnvironmentGroupConfig> {
+    extends AbstractGitSdkEntityHandler<EnvironmentGroupEntity, EnvironmentGroupWrapperConfig> {
   @Override
   public Optional<EntityGitDetails> getEntityDetailsIfExists(String accountIdentifier, String yaml) {
     return Optional.empty();
   }
 
   @Override
-  public EnvironmentGroupConfig getYamlDTO(String yaml) {
+  public EnvironmentGroupWrapperConfig getYamlDTO(String yaml) {
     return null;
   }
 
@@ -45,12 +45,13 @@ public class EnvironmentGroupEntityGitSyncHelper
   }
 
   @Override
-  protected EnvironmentGroupConfig updateEntityFilePath(String accountIdentifier, String yaml, String newFilePath) {
-    return EnvironmentGroupConfig.builder().build();
+  protected EnvironmentGroupWrapperConfig updateEntityFilePath(
+      String accountIdentifier, String yaml, String newFilePath) {
+    return EnvironmentGroupWrapperConfig.builder().build();
   }
 
   @Override
-  public Supplier<EnvironmentGroupConfig> getYamlFromEntity(EnvironmentGroupEntity entity) {
+  public Supplier<EnvironmentGroupWrapperConfig> getYamlFromEntity(EnvironmentGroupEntity entity) {
     return null;
   }
 
@@ -60,7 +61,8 @@ public class EnvironmentGroupEntityGitSyncHelper
   }
 
   @Override
-  public Supplier<EnvironmentGroupEntity> getEntityFromYaml(EnvironmentGroupConfig yaml, String accountIdentifier) {
+  public Supplier<EnvironmentGroupEntity> getEntityFromYaml(
+      EnvironmentGroupWrapperConfig yaml, String accountIdentifier) {
     return null;
   }
 
@@ -70,13 +72,13 @@ public class EnvironmentGroupEntityGitSyncHelper
   }
 
   @Override
-  public EnvironmentGroupConfig save(String accountIdentifier, String yaml) {
-    return EnvironmentGroupConfig.builder().build();
+  public EnvironmentGroupWrapperConfig save(String accountIdentifier, String yaml) {
+    return EnvironmentGroupWrapperConfig.builder().build();
   }
 
   @Override
-  public EnvironmentGroupConfig update(String accountIdentifier, String yaml, ChangeType changeType) {
-    return EnvironmentGroupConfig.builder().build();
+  public EnvironmentGroupWrapperConfig update(String accountIdentifier, String yaml, ChangeType changeType) {
+    return EnvironmentGroupWrapperConfig.builder().build();
   }
 
   @Override
@@ -115,8 +117,8 @@ public class EnvironmentGroupEntityGitSyncHelper
   }
 
   @Override
-  public EnvironmentGroupConfig fullSyncEntity(FullSyncChangeSet fullSyncChangeSet) {
-    return EnvironmentGroupConfig.builder().build();
+  public EnvironmentGroupWrapperConfig fullSyncEntity(FullSyncChangeSet fullSyncChangeSet) {
+    return EnvironmentGroupWrapperConfig.builder().build();
   }
 
   @Override

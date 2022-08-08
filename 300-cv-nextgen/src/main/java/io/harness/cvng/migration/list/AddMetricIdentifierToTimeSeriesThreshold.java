@@ -10,7 +10,6 @@ package io.harness.cvng.migration.list;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import io.harness.cvng.core.entities.TimeSeriesThreshold;
-import io.harness.cvng.core.entities.TimeSeriesThreshold.TimeSeriesThresholdKeys;
 import io.harness.cvng.migration.CVNGMigration;
 import io.harness.cvng.migration.beans.ChecklistItem;
 import io.harness.persistence.HIterator;
@@ -26,18 +25,15 @@ public class AddMetricIdentifierToTimeSeriesThreshold implements CVNGMigration {
 
   @Override
   public void migrate() {
-    log.info("Deleting TimeSeries Thresholds for Old Custom Health data source type");
-    hPersistence.deleteOnServer(hPersistence.createQuery(TimeSeriesThreshold.class)
-                                    .filter(TimeSeriesThresholdKeys.dataSourceType, "CUSTOM_HEALTH"));
-
     log.info("Adding identifiers for Time Series Thresholds");
     Query<TimeSeriesThreshold> timeSeriesThresholdQuery = hPersistence.createQuery(TimeSeriesThreshold.class);
     try (HIterator<TimeSeriesThreshold> iterator = new HIterator<>(timeSeriesThresholdQuery.fetch())) {
       while (iterator.hasNext()) {
         TimeSeriesThreshold timeSeriesThreshold = iterator.next();
 
-        if (isEmpty(timeSeriesThreshold.getMetricIdentifier())) {
-          String identifier = timeSeriesThreshold.getMetricName().replaceAll(" ", "_");
+        if (isEmpty(timeSeriesThreshold.getMetricIdentifier())
+            || containsUpperCaseLetter(timeSeriesThreshold.getMetricIdentifier())) {
+          String identifier = timeSeriesThreshold.getMetricName().replaceAll(" ", "_").toLowerCase();
           identifier = identifier.replaceAll("\\(", "");
           identifier = identifier.replaceAll("\\)", "");
           timeSeriesThreshold.setMetricIdentifier(identifier);
@@ -49,7 +45,14 @@ public class AddMetricIdentifierToTimeSeriesThreshold implements CVNGMigration {
       }
     }
   }
-
+  public boolean containsUpperCaseLetter(String s) {
+    for (int i = 0; i < s.length(); i++) {
+      if (Character.isUpperCase(s.charAt(i))) {
+        return true;
+      }
+    }
+    return false;
+  }
   @Override
   public ChecklistItem whatHappensOnRollback() {
     return ChecklistItem.NA;

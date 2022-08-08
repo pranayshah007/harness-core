@@ -41,7 +41,7 @@ public class HealthSourceMetricDefinition implements WithIdentifier {
     RiskProfile profile;
     if (Objects.nonNull(riskProfile)) {
       profile = riskProfile;
-    } else if (Objects.nonNull(analysis.riskProfile)) {
+    } else if (analysis != null && Objects.nonNull(analysis.riskProfile)) {
       profile = analysis.riskProfile;
     } else {
       return RiskProfile.builder().build();

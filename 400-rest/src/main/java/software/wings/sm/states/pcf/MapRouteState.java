@@ -58,6 +58,7 @@ import software.wings.sm.ExecutionResponse;
 import software.wings.sm.State;
 import software.wings.sm.StateType;
 import software.wings.sm.WorkflowStandardParams;
+import software.wings.sm.WorkflowStandardParamsExtensionService;
 import software.wings.stencils.DefaultValue;
 
 import com.github.reinert.jjschema.Attributes;
@@ -83,6 +84,7 @@ public class MapRouteState extends State {
   @Inject private transient ActivityService activityService;
   @Inject private transient PcfStateHelper pcfStateHelper;
   @Inject private transient SweepingOutputService sweepingOutputService;
+  @Inject private WorkflowStandardParamsExtensionService workflowStandardParamsExtensionService;
   @Inject @Transient protected transient LogService logService;
   @Getter @Setter private List<String> tags;
 
@@ -140,7 +142,7 @@ public class MapRouteState extends State {
   protected ExecutionResponse executeInternal(ExecutionContext context) {
     WorkflowStandardParams workflowStandardParams = context.getContextElement(ContextElementType.STANDARD);
     Application application = appService.get(context.getAppId());
-    Environment environment = workflowStandardParams.getEnv();
+    Environment environment = workflowStandardParamsExtensionService.getEnv(workflowStandardParams);
     notNullCheck("Environment does not exist", environment, USER);
 
     PcfInfrastructureMapping infrastructureMapping = (PcfInfrastructureMapping) infrastructureMappingService.get(

@@ -8,6 +8,7 @@
 package io.harness.cvng.core.entities;
 
 import static io.harness.cvng.CVConstants.CREATE_TIME_MINUTES_FOR_DEMO_CVCONFIG;
+import static io.harness.cvng.CVConstants.TAG_DATA_SOURCE;
 import static io.harness.cvng.core.utils.ErrorMessageUtils.generateErrorMessageFromParam;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -18,6 +19,7 @@ import io.harness.cvng.beans.CVMonitoringCategory;
 import io.harness.cvng.beans.DataSourceType;
 import io.harness.cvng.core.beans.TimeRange;
 import io.harness.cvng.core.services.api.UpdatableEntity;
+import io.harness.cvng.core.services.api.monitoredService.HealthSourceService;
 import io.harness.cvng.models.VerificationType;
 import io.harness.iterator.PersistentRegularIterable;
 import io.harness.mongo.index.CompoundMongoIndex;
@@ -37,7 +39,9 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import javax.validation.constraints.NotNull;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -63,20 +67,12 @@ public abstract class CVConfig
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
         .add(CompoundMongoIndex.builder()
-                 .name("env_service_category_index")
+                 .name("insert_index")
                  .field(CVConfigKeys.accountId)
                  .field(CVConfigKeys.orgIdentifier)
                  .field(CVConfigKeys.projectIdentifier)
-                 .field(CVConfigKeys.envIdentifier)
-                 .field(CVConfigKeys.serviceIdentifier)
+                 .field(CVConfigKeys.identifier)
                  .build(),
-            CompoundMongoIndex.builder()
-                .name("insert_index")
-                .field(CVConfigKeys.accountId)
-                .field(CVConfigKeys.orgIdentifier)
-                .field(CVConfigKeys.projectIdentifier)
-                .field(CVConfigKeys.identifier)
-                .build(),
             CompoundMongoIndex.builder()
                 .name("monitoredservice_category_index")
                 .field(CVConfigKeys.accountId)
@@ -94,9 +90,6 @@ public abstract class CVConfig
 
   @NotNull private String accountId;
   @NotNull @FdIndex private String connectorIdentifier;
-
-  @NotNull @Deprecated private String serviceIdentifier;
-  @NotNull @Deprecated private String envIdentifier;
 
   private String monitoredServiceIdentifier;
 
@@ -143,9 +136,8 @@ public abstract class CVConfig
     checkNotNull(getVerificationType(), generateErrorMessageFromParam(CVConfigKeys.verificationType));
     checkNotNull(accountId, generateErrorMessageFromParam(CVConfigKeys.accountId));
     checkNotNull(connectorIdentifier, generateErrorMessageFromParam(CVConfigKeys.connectorIdentifier));
-    checkNotNull(serviceIdentifier, generateErrorMessageFromParam(CVConfigKeys.serviceIdentifier));
-    checkNotNull(envIdentifier, generateErrorMessageFromParam(CVConfigKeys.envIdentifier));
     checkNotNull(projectIdentifier, generateErrorMessageFromParam(CVConfigKeys.projectIdentifier));
+    checkNotNull(monitoredServiceIdentifier, generateErrorMessageFromParam(CVConfigKeys.monitoredServiceIdentifier));
     checkNotNull(identifier, generateErrorMessageFromParam(CVConfigKeys.identifier));
     checkNotNull(monitoringSourceName, generateErrorMessageFromParam(CVConfigKeys.monitoringSourceName));
     checkNotNull(category, generateErrorMessageFromParam(CVConfigKeys.category));
@@ -170,12 +162,19 @@ public abstract class CVConfig
   @JsonIgnore public abstract String getDataCollectionDsl();
   public abstract boolean queueAnalysisForPreDeploymentTask();
 
+  public Map<String, String> getVerificationTaskTags() {
+    Map<String, String> tags = new HashMap<>();
+    tags.put(TAG_DATA_SOURCE, this.getType().name());
+    // change this to getHealthSourceIdentifier after refactoring.
+    tags.put("healthSourceIdentifier", HealthSourceService.getNameSpaceAndIdentifier(this.getIdentifier()).getValue());
+    tags.put("verificationType", this.getVerificationType().name());
+    return tags;
+  }
+
   public abstract static class CVConfigUpdatableEntity<T extends CVConfig, D extends CVConfig>
       implements UpdatableEntity<T, D> {
     protected void setCommonOperations(UpdateOperations<T> updateOperations, D cvConfig) {
       updateOperations.set(CVConfigKeys.verificationType, cvConfig.getVerificationType())
-          .set(CVConfigKeys.serviceIdentifier, cvConfig.getServiceIdentifier())
-          .set(CVConfigKeys.envIdentifier, cvConfig.getEnvIdentifier())
           .set(CVConfigKeys.monitoringSourceName, cvConfig.getMonitoringSourceName())
           .set(CVConfigKeys.category, cvConfig.getCategory())
           .set(CVConfigKeys.enabled, cvConfig.isEnabled());

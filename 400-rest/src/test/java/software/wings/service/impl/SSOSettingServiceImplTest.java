@@ -7,12 +7,16 @@
 
 package software.wings.service.impl;
 
+import static io.harness.rule.OwnerRule.BOOPESH;
 import static io.harness.rule.OwnerRule.DEEPAK;
 import static io.harness.rule.OwnerRule.SHASHANK;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyListOf;
+import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -20,11 +24,15 @@ import static org.mockito.Mockito.when;
 import io.harness.alert.AlertData;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;
+import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.InvalidRequestException;
+import io.harness.ff.FeatureFlagService;
 import io.harness.rule.Owner;
+import io.harness.security.encryption.EncryptedDataDetail;
 
 import software.wings.WingsBaseTest;
+import software.wings.annotation.EncryptableSetting;
 import software.wings.beans.alert.Alert;
 import software.wings.beans.alert.AlertType;
 import software.wings.beans.sso.LdapConnectionSettings;
@@ -32,8 +40,12 @@ import software.wings.beans.sso.LdapGroupSettings;
 import software.wings.beans.sso.LdapSettings;
 import software.wings.beans.sso.LdapUserSettings;
 import software.wings.beans.sso.SSOSettings.SSOSettingsKeys;
+import software.wings.helpers.ext.ldap.LdapConstants;
 import software.wings.scheduler.LdapSyncJobConfig;
 import software.wings.service.intfc.AlertService;
+import software.wings.service.intfc.SSOSettingService;
+import software.wings.service.intfc.security.EncryptionService;
+import software.wings.service.intfc.security.SecretManager;
 
 import com.google.inject.Inject;
 import java.util.ArrayList;
@@ -53,7 +65,11 @@ import org.mockito.Mock;
 @TargetModule(HarnessModule._950_NG_AUTHENTICATION_SERVICE)
 public class SSOSettingServiceImplTest extends WingsBaseTest {
   @Mock private AlertService alertService;
-  @Inject @InjectMocks private SSOSettingServiceImpl ssoSettingService;
+  @Mock private SecretManager secretManager;
+  @Inject @InjectMocks private SSOSettingService ssoSettingService;
+  @Inject @InjectMocks SSOServiceHelper ssoServiceHelper;
+  @Mock private EncryptionService encryptionService;
+  @Mock private FeatureFlagService featureFlagService;
   private String accountId = "accountId";
   private String ssoId = "ssoID";
   private String message = "errorMessage";
@@ -211,10 +227,125 @@ public class SSOSettingServiceImplTest extends WingsBaseTest {
     assertThat(ldapSettings.getNextIterations().size()).isEqualTo(10);
   }
 
+  @Test
+  @Owner(developers = BOOPESH)
+  @Category(UnitTests.class)
+  public void createLDAPSettingWithSecret() {
+    LdapSettings ldapSettings = createLDAOSSOProviderWithSecret();
+    ldapSettings.setCronExpression("0 0/15 * 1/1 * ? *");
+    ldapSettings.getConnectionSettings().setPasswordType(LdapConnectionSettings.SECRET);
+    EncryptedDataDetail encryptedDataDetail = mock(EncryptedDataDetail.class);
+    List<EncryptedDataDetail> encryptedDataDetails = Arrays.asList(encryptedDataDetail);
+    when(secretManager.getEncryptionDetails(any(), any(), any())).thenReturn(encryptedDataDetails);
+    ldapSettings.getConnectionSettings().setBindSecret("randomuuid".toCharArray());
+    ldapSettings.getConnectionSettings().setEncryptedBindSecret("randomuuid");
+    when(encryptionService.decrypt(any(EncryptableSetting.class), anyListOf(EncryptedDataDetail.class), eq(false)))
+        .thenReturn(null);
+    when(featureFlagService.isEnabled(FeatureName.LDAP_SECRET_AUTH, ldapSettings.getAccountId())).thenReturn(true);
+    LdapSettings createdLdapSetting = ssoSettingService.createLdapSettings(ldapSettings);
+    assertThat(createdLdapSetting.getConnectionSettings().getPasswordType()).isEqualTo(LdapConnectionSettings.SECRET);
+  }
+
+  @Test
+  @Owner(developers = BOOPESH)
+  @Category(UnitTests.class)
+  public void createLDAPSettingWithInlinePassword() {
+    LdapSettings ldapSettings = createLDAOSSOProvider();
+    ldapSettings.setCronExpression("0 0/15 * 1/1 * ? *");
+    EncryptedDataDetail encryptedDataDetail = mock(EncryptedDataDetail.class);
+    List<EncryptedDataDetail> encryptedDataDetails = Arrays.asList(encryptedDataDetail);
+    when(secretManager.getEncryptionDetails(any(), any(), any())).thenReturn(encryptedDataDetails);
+    ldapSettings.getConnectionSettings().setEncryptedBindPassword("EncryptedBindPassword");
+    when(encryptionService.decrypt(any(EncryptableSetting.class), anyListOf(EncryptedDataDetail.class), eq(false)))
+        .thenReturn(null);
+    when(featureFlagService.isEnabled(FeatureName.LDAP_SECRET_AUTH, ldapSettings.getAccountId())).thenReturn(true);
+    LdapSettings createdLdapSetting = ssoSettingService.createLdapSettings(ldapSettings);
+    assertThat(createdLdapSetting.getConnectionSettings().getPasswordType())
+        .isEqualTo(LdapConnectionSettings.INLINE_SECRET);
+  }
+
+  @Test
+  @Owner(developers = BOOPESH)
+  @Category(UnitTests.class)
+  public void updateLDAPSettingWithInlinePasswordToSecret() {
+    LdapSettings ldapSettings = createLDAOSSOProvider();
+    ldapSettings.setCronExpression("0 0/15 * 1/1 * ? *");
+    EncryptedDataDetail encryptedDataDetail = mock(EncryptedDataDetail.class);
+    List<EncryptedDataDetail> encryptedDataDetails = Arrays.asList(encryptedDataDetail);
+    when(secretManager.getEncryptionDetails(any(), any(), any())).thenReturn(encryptedDataDetails);
+    ldapSettings.getConnectionSettings().setEncryptedBindPassword("EncryptedBindPassword");
+    when(encryptionService.decrypt(any(EncryptableSetting.class), anyListOf(EncryptedDataDetail.class), eq(false)))
+        .thenReturn(null);
+    when(featureFlagService.isEnabled(FeatureName.LDAP_SECRET_AUTH, ldapSettings.getAccountId())).thenReturn(true);
+    LdapSettings createdLdapSetting = ssoSettingService.createLdapSettings(ldapSettings);
+    assertThat(createdLdapSetting.getConnectionSettings().getBindPassword()).isEqualTo(LdapConstants.MASKED_STRING);
+    ldapSettings.getConnectionSettings().setBindSecret("randomuuid".toCharArray());
+    ldapSettings.getConnectionSettings().setEncryptedBindSecret("randomuuid");
+    LdapSettings updateLdapSetting = ssoSettingService.updateLdapSettings(ldapSettings);
+    assertThat(updateLdapSetting.getConnectionSettings().getPasswordType()).isEqualTo(LdapConnectionSettings.SECRET);
+  }
+
+  @Test(expected = InvalidRequestException.class)
+  @Owner(developers = BOOPESH)
+  @Category(UnitTests.class)
+  public void updateLDAPSettingWithBothInlinePasswordAndSecret() {
+    LdapSettings ldapSettings = createLDAOSSOProvider();
+    ldapSettings.setCronExpression("0 0/15 * 1/1 * ? *");
+    EncryptedDataDetail encryptedDataDetail = mock(EncryptedDataDetail.class);
+    List<EncryptedDataDetail> encryptedDataDetails = Arrays.asList(encryptedDataDetail);
+    when(secretManager.getEncryptionDetails(any(), any(), any())).thenReturn(encryptedDataDetails);
+    ldapSettings.getConnectionSettings().setEncryptedBindPassword("EncryptedBindPassword");
+    when(encryptionService.decrypt(any(EncryptableSetting.class), anyListOf(EncryptedDataDetail.class), eq(false)))
+        .thenReturn(null);
+    when(featureFlagService.isEnabled(FeatureName.LDAP_SECRET_AUTH, ldapSettings.getAccountId())).thenReturn(true);
+    ssoSettingService.createLdapSettings(ldapSettings);
+    ldapSettings.getConnectionSettings().setBindPassword("randomPassword");
+    ldapSettings.getConnectionSettings().setBindSecret("randomuuid".toCharArray());
+    ldapSettings.getConnectionSettings().setEncryptedBindSecret("randomuuid");
+    ssoSettingService.updateLdapSettings(ldapSettings);
+  }
+
+  @Test
+  @Owner(developers = BOOPESH)
+  @Category(UnitTests.class)
+  public void updateLDAPSettingWithSecretToInlinePassword() {
+    LdapSettings ldapSettings = createLDAOSSOProviderWithSecret();
+    ldapSettings.setCronExpression("0 0/15 * 1/1 * ? *");
+    ldapSettings.getConnectionSettings().setPasswordType(LdapConnectionSettings.SECRET);
+    EncryptedDataDetail encryptedDataDetail = mock(EncryptedDataDetail.class);
+    List<EncryptedDataDetail> encryptedDataDetails = Arrays.asList(encryptedDataDetail);
+    when(secretManager.getEncryptionDetails(any(), any(), any())).thenReturn(encryptedDataDetails);
+    ldapSettings.getConnectionSettings().setBindSecret("randomuuid".toCharArray());
+    ldapSettings.getConnectionSettings().setEncryptedBindSecret("randomuuid");
+    when(encryptionService.decrypt(any(EncryptableSetting.class), anyListOf(EncryptedDataDetail.class), eq(false)))
+        .thenReturn(null);
+    when(featureFlagService.isEnabled(FeatureName.LDAP_SECRET_AUTH, ldapSettings.getAccountId())).thenReturn(true);
+    ssoSettingService.createLdapSettings(ldapSettings);
+    ldapSettings.getConnectionSettings().setBindPassword("bindPassword");
+    LdapSettings updatedLdapSetting = ssoSettingService.updateLdapSettings(ldapSettings);
+    assertThat(updatedLdapSetting.getConnectionSettings().getPasswordType())
+        .isEqualTo(LdapConnectionSettings.INLINE_SECRET);
+  }
+
   public LdapSettings createLDAOSSOProvider() {
     LdapConnectionSettings connectionSettings = new LdapConnectionSettings();
     connectionSettings.setBindDN("testBindDN");
     connectionSettings.setBindPassword("testBindPassword");
+    LdapUserSettings userSettings = new LdapUserSettings();
+    userSettings.setBaseDN("testBaseDN");
+    List<LdapUserSettings> userSettingsList = new ArrayList<>();
+    userSettingsList.add(userSettings);
+    LdapGroupSettings groupSettings = new LdapGroupSettings();
+    groupSettings.setBaseDN("testBaseDN");
+    ldapSettings =
+        new LdapSettings("testSettings", accountId, connectionSettings, userSettingsList, Arrays.asList(groupSettings));
+    return ldapSettings;
+  }
+
+  public LdapSettings createLDAOSSOProviderWithSecret() {
+    LdapConnectionSettings connectionSettings = new LdapConnectionSettings();
+    connectionSettings.setBindDN("testBindDN");
+    connectionSettings.setBindSecret("testBindSecret".toCharArray());
     LdapUserSettings userSettings = new LdapUserSettings();
     userSettings.setBaseDN("testBaseDN");
     List<LdapUserSettings> userSettingsList = new ArrayList<>();

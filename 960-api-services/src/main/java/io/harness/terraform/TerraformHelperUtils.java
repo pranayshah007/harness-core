@@ -44,7 +44,9 @@ public class TerraformHelperUtils {
     StringBuilder stringargs = new StringBuilder();
     if (isNotEmpty(arguments)) {
       for (String arg : arguments) {
-        stringargs.append(command).append(arg).append(' ');
+        if (isNotEmpty(arg)) {
+          stringargs.append(command).append(arg).append(' ');
+        }
       }
     }
     return stringargs.toString();

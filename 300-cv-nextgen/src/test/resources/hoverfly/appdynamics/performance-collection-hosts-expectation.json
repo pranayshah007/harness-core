@@ -2,7 +2,7 @@
   {
     "hostname": "harness-test-appd-dummy-deployment-canary-685c5d5588-4gx76",
     "txnName": "/",
-    "metricIdentifier": "Calls_per_Minute",
+    "metricIdentifier": "calls_per_minute",
     "metricName": "Calls per Minute",
     "metricValue": 0.0,
     "timestamp": 1642966080000
@@ -10,7 +10,7 @@
   {
     "hostname": "harness-test-appd-dummy-deployment-54f9dfcb84-pgpsg",
     "txnName": "/",
-    "metricIdentifier": "Calls_per_Minute",
+    "metricIdentifier": "calls_per_minute",
     "metricName": "Calls per Minute",
     "metricValue": 0.0,
     "timestamp": 1642966080000
@@ -18,7 +18,7 @@
   {
     "hostname": "harness-test-appd-dummy-deployment-54f9dfcb84-pgpsg",
     "txnName": "/",
-    "metricIdentifier": "Stall_Count",
+    "metricIdentifier": "stall_count",
     "metricName": "Stall Count",
     "metricValue": 0.0,
     "timestamp": 1642966080000
@@ -26,7 +26,7 @@
   {
     "hostname": "harness-test-appd-dummy-deployment-canary-685c5d5588-4gx76",
     "txnName": "/",
-    "metricIdentifier": "Stall_Count",
+    "metricIdentifier": "stall_count",
     "metricName": "Stall Count",
     "metricValue": 0.0,
     "timestamp": 1642966080000
@@ -34,7 +34,7 @@
   {
     "hostname": "harness-test-appd-dummy-deployment-canary-685c5d5588-4gx76",
     "txnName": "/",
-    "metricIdentifier": "Average_Response_Time_ms",
+    "metricIdentifier": "average_response_time_ms",
     "metricName": "Average Response Time (ms)",
     "metricValue": 0.0,
     "timestamp": 1642966080000
@@ -42,7 +42,7 @@
   {
     "hostname": "harness-test-appd-dummy-deployment-54f9dfcb84-pgpsg",
     "txnName": "/",
-    "metricIdentifier": "Average_Response_Time_ms",
+    "metricIdentifier": "average_response_time_ms",
     "metricName": "Average Response Time (ms)",
     "metricValue": 0.0,
     "timestamp": 1642966080000

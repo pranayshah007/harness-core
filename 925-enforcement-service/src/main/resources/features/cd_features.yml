@@ -277,3 +277,123 @@ features:
       COMMUNITY:
         restrictionType: AVAILABILITY
         enabled: true
+  - name: CREATE_STACK
+    description: The restriction on CloudFormation create step
+    restrictions:
+      FREE:
+        restrictionType: AVAILABILITY
+        enabled: true
+      TEAM:
+        restrictionType: AVAILABILITY
+        enabled: true
+      ENTERPRISE:
+        restrictionType: AVAILABILITY
+        enabled: true
+      COMMUNITY:
+        restrictionType: AVAILABILITY
+        enabled: true
+  - name: DELETE_STACK
+    description: The restriction on CloudFormation delete step
+    restrictions:
+      FREE:
+        restrictionType: AVAILABILITY
+        enabled: true
+      TEAM:
+        restrictionType: AVAILABILITY
+        enabled: true
+      ENTERPRISE:
+        restrictionType: AVAILABILITY
+        enabled: true
+      COMMUNITY:
+        restrictionType: AVAILABILITY
+        enabled: true
+  - name: ROLLBACK_STACK
+    description: The restriction on CloudFormation rollback step
+    restrictions:
+      FREE:
+        restrictionType: AVAILABILITY
+        enabled: true
+      TEAM:
+        restrictionType: AVAILABILITY
+        enabled: true
+      ENTERPRISE:
+        restrictionType: AVAILABILITY
+        enabled: true
+      COMMUNITY:
+        restrictionType: AVAILABILITY
+        enabled: true
+  - name: COMMAND
+    description: The restriction on command step
+    restrictions:
+      FREE:
+        restrictionType: AVAILABILITY
+        enabled: true
+      TEAM:
+        restrictionType: AVAILABILITY
+        enabled: true
+      ENTERPRISE:
+        restrictionType: AVAILABILITY
+        enabled: true
+      COMMUNITY:
+        restrictionType: AVAILABILITY
+        enabled: true
+  - name: AZURE_SLOT_DEPLOYMENT
+    description: The restriction on Azure WebApp slot deployment step
+    restrictions:
+      FREE:
+        restrictionType: AVAILABILITY
+        enabled: true
+      TEAM:
+        restrictionType: AVAILABILITY
+        enabled: true
+      ENTERPRISE:
+        restrictionType: AVAILABILITY
+        enabled: true
+      COMMUNITY:
+        restrictionType: AVAILABILITY
+        enabled: true
+  - name: AZURE_TRAFFIC_SHIFT
+    description: The restriction on Azure WebApp traffic shift step
+    restrictions:
+      FREE:
+        restrictionType: AVAILABILITY
+        enabled: true
+      TEAM:
+        restrictionType: AVAILABILITY
+        enabled: true
+      ENTERPRISE:
+        restrictionType: AVAILABILITY
+        enabled: true
+      COMMUNITY:
+        restrictionType: AVAILABILITY
+        enabled: true
+  - name: AZURE_SWAP_SLOT
+    description: The restriction on Azure WebApp swap slot step
+    restrictions:
+      FREE:
+        restrictionType: AVAILABILITY
+        enabled: true
+      TEAM:
+        restrictionType: AVAILABILITY
+        enabled: true
+      ENTERPRISE:
+        restrictionType: AVAILABILITY
+        enabled: true
+      COMMUNITY:
+        restrictionType: AVAILABILITY
+        enabled: true
+  - name: AZURE_WEBAPP_ROLLBACK
+    description: The restriction on Azure WebApp rollback step
+    restrictions:
+      FREE:
+        restrictionType: AVAILABILITY
+        enabled: true
+      TEAM:
+        restrictionType: AVAILABILITY
+        enabled: true
+      ENTERPRISE:
+        restrictionType: AVAILABILITY
+        enabled: true
+      COMMUNITY:
+        restrictionType: AVAILABILITY
+        enabled: true

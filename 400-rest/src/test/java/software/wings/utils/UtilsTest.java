@@ -90,28 +90,28 @@ public class UtilsTest extends CategoryTest {
   @Owner(developers = KAMAL)
   @Category(UnitTests.class)
   public void testAppendPathToBaseUrl() {
-    assertThat(Utils.appendPathToBaseUrl("https://example.com", "hello")).isEqualTo("https://example.com/hello");
-    assertThat(Utils.appendPathToBaseUrl("https://example.com/", "hello")).isEqualTo("https://example.com/hello");
-    assertThat(Utils.appendPathToBaseUrl("https://example.com/", "/hello")).isEqualTo("https://example.com/hello");
-    assertThat(Utils.appendPathToBaseUrl("https://example.com:8080", "hello"))
+    assertThat(CVUtils.appendPathToBaseUrl("https://example.com", "hello")).isEqualTo("https://example.com/hello");
+    assertThat(CVUtils.appendPathToBaseUrl("https://example.com/", "hello")).isEqualTo("https://example.com/hello");
+    assertThat(CVUtils.appendPathToBaseUrl("https://example.com/", "/hello")).isEqualTo("https://example.com/hello");
+    assertThat(CVUtils.appendPathToBaseUrl("https://example.com:8080", "hello"))
         .isEqualTo("https://example.com:8080/hello");
-    assertThat(Utils.appendPathToBaseUrl("https://example.com:8080/", "hello"))
+    assertThat(CVUtils.appendPathToBaseUrl("https://example.com:8080/", "hello"))
         .isEqualTo("https://example.com:8080/hello");
-    assertThat(Utils.appendPathToBaseUrl("https://example.com:8080/", "/hello"))
+    assertThat(CVUtils.appendPathToBaseUrl("https://example.com:8080/", "/hello"))
         .isEqualTo("https://example.com:8080/hello");
-    assertThat(Utils.appendPathToBaseUrl("https://example.com/path1/path2", "hello"))
+    assertThat(CVUtils.appendPathToBaseUrl("https://example.com/path1/path2", "hello"))
         .isEqualTo("https://example.com/path1/path2/hello");
-    assertThat(Utils.appendPathToBaseUrl("https://example.com/path1/path2", "/hello"))
+    assertThat(CVUtils.appendPathToBaseUrl("https://example.com/path1/path2", "/hello"))
         .isEqualTo("https://example.com/path1/path2/hello");
-    assertThat(Utils.appendPathToBaseUrl("https://example.com/path1/path2/", "/hello/"))
+    assertThat(CVUtils.appendPathToBaseUrl("https://example.com/path1/path2/", "/hello/"))
         .isEqualTo("https://example.com/path1/path2/hello/");
-    assertThat(Utils.appendPathToBaseUrl("https://example.com/path1/path2/", "/hello/q=abc&abc=%20abc"))
+    assertThat(CVUtils.appendPathToBaseUrl("https://example.com/path1/path2/", "/hello/q=abc&abc=%20abc"))
         .isEqualTo("https://example.com/path1/path2/hello/q=abc&abc=%20abc");
-    assertThat(Utils.appendPathToBaseUrl("https://example.com", "q=abc&abc=%20abc"))
+    assertThat(CVUtils.appendPathToBaseUrl("https://example.com", "q=abc&abc=%20abc"))
         .isEqualTo("https://example.com/q=abc&abc=%20abc");
-    assertThat(Utils.appendPathToBaseUrl("https://example.com", "")).isEqualTo("https://example.com/");
+    assertThat(CVUtils.appendPathToBaseUrl("https://example.com", "")).isEqualTo("https://example.com/");
     assertThat(
-        Utils.appendPathToBaseUrl("http://35.239.148.216:8080/",
+        CVUtils.appendPathToBaseUrl("http://35.239.148.216:8080/",
             "/api/v1/query_range?start=1592243889&end=1592245089&step=60s&query=container_cpu_usage_seconds_total{container=\"harness-example\",pod=\"harness-example-prod-deployment-canary-7d458cfcb7-z95b6\"}"))
         .isEqualTo(
             "http://35.239.148.216:8080/api/v1/query_range?start=1592243889&end=1592245089&step=60s&query=container_cpu_usage_seconds_total{container=\"harness-example\",pod=\"harness-example-prod-deployment-canary-7d458cfcb7-z95b6\"}");

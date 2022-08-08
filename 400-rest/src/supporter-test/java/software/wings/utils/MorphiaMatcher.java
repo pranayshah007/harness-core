@@ -11,7 +11,7 @@ import static org.hamcrest.Matchers.hasProperty;
 import static org.hamcrest.Matchers.samePropertyValuesAs;
 import static org.joor.Reflect.on;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.argThat;
+import static org.mockito.hamcrest.MockitoHamcrest.argThat;
 
 import org.mongodb.morphia.query.Query;
 import org.mongodb.morphia.query.UpdateOperations;

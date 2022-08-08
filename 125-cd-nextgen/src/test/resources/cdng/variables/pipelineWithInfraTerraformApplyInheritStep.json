@@ -1,0 +1,130 @@
+{
+  "pipeline": {
+    "name": "K8s Deployment V2",
+    "identifier": "K8s_Deployment_v2",
+    "projectIdentifier": "Kubernetes",
+    "orgIdentifier": "default",
+    "tags": {
+      "__uuid": "IFj02tcFQmGvYwwgvNIztQ"
+    },
+    "stages": [
+      {
+        "stage": {
+          "name": "K8s",
+          "identifier": "K8s",
+          "description": "",
+          "type": "Deployment",
+          "spec": {
+            "name": "K8s",
+            "identifier": "K8s",
+            "type": "Deployment",
+            "serviceConfig": {
+              "serviceRef": "K8s",
+              "serviceDefinition": {
+                "type": "Kubernetes",
+                "spec": {
+                  "variables": [],
+                  "manifests": [],
+                  "artifacts": {
+                    "sidecars": [],
+                    "__uuid": "rWf2gv7eS5yBmTkfzIENJQ"
+                  },
+                  "__uuid": "9UjKzU9jSrerucFQ9lD0Bw"
+                },
+                "__uuid": "9qW4Jz-8SKab6dm5FT3oGQ"
+              },
+              "__uuid": "VDFXf1rKQi6GRX7-KAg7Tw"
+            },
+            "infrastructure": {
+              "infrastructureDefinition": {
+                "type": "KubernetesDirect",
+                "spec": {
+                  "connectorRef": "Kubernetes_SA",
+                  "namespace": "default",
+                  "releaseName": "release-<+INFRA_KEY>",
+                  "__uuid": "H9jk-qDDRY2gfAOSFFeYSA"
+                },
+                "provisioner": {
+                  "steps": [
+                    {
+                      "step": {
+                        "type": "TerraformApply",
+                        "name": "Terraform Apply Inherit",
+                        "identifier": "Terraform_Apply_Inherit",
+                        "spec": {
+                          "configuration": {
+                            "type": "InheritFromPlan",
+                            "__uuid": "blplzfiuRweETG8qk8rkqA"
+                          },
+                          "provisionerIdentifier": "test",
+                          "__uuid": "3Zq0hZs9SGCGF5NWKK3Mlg"
+                        },
+                        "timeout": "10m",
+                        "__uuid": "IcMNm4c2TrqzSRBwdqvAow"
+                      },
+                      "__uuid": "Zhx03owGS--mg94Xcu4ong"
+                    }
+                  ],
+                  "__uuid": "OxX8CvnATCiA0klmXo958g"
+                },
+                "__uuid": "HP874kgTScSFigIyL7-oDg"
+              },
+              "allowSimultaneousDeployments": false,
+              "environmentRef": "Test",
+              "__uuid": "4fp8272MRh-LHLWUYshriA"
+            },
+            "execution": {
+              "steps": [],
+              "rollbackSteps": [],
+              "__uuid": "8oeVht07TSu5KAgT75g7YA"
+            },
+            "serviceDependencies": [],
+            "__uuid": "vWl85bJiQBOtC8zH4XFeBA"
+          },
+          "tags": {
+            "__uuid": "VXIKoKkQQ2K68VHcm-tN_A"
+          },
+          "failureStrategies": [
+            {
+              "onFailure": {
+                "errors": [
+                  "AllErrors"
+                ],
+                "action": {
+                  "type": "StageRollback",
+                  "__uuid": "GfAAQxqCQQGF_0nvUSTr8A"
+                },
+                "__uuid": "oIFtjdJQRRCGrDRpd9MLXg"
+              },
+              "__uuid": "lbadgv1OR_-NYnsg9StNgg"
+            }
+          ],
+          "variables": [
+            {
+              "name": "secret",
+              "type": "Secret",
+              "value": "account.testazure",
+              "__uuid": "95IRyP_cS0WUxvH8oIRBJw"
+            },
+            {
+              "name": "test",
+              "type": "String",
+              "value": "<+artifact.tag>",
+              "__uuid": "YUT5YLHhRIuk1-ADN9Hfwg"
+            },
+            {
+              "name": "resourceNamePrefix",
+              "type": "String",
+              "value": "test-resource",
+              "__uuid": "Um4PEEV3QCixltJry-yTVQ"
+            }
+          ],
+          "__uuid": "H3vaxyMURzmirwrXJeAmRg"
+        },
+        "__uuid": "RF8Nv9N-QIuVH7JLy-0gqQ"
+      }
+    ],
+    "__uuid": "5Af_m2KRSQqLldxlDWnqWw"
+  },
+  "__uuid": "G6_ejwvmTmOpGefp9CmiNQ"
+}

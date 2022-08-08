@@ -10,6 +10,7 @@ package software.wings.service.impl.trigger;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.rule.OwnerRule.HARSH;
 import static io.harness.rule.OwnerRule.IGOR;
+import static io.harness.rule.OwnerRule.PRABU;
 import static io.harness.rule.OwnerRule.SRINIVAS;
 import static io.harness.rule.OwnerRule.VARDAN_BANSAL;
 
@@ -80,6 +81,10 @@ public class WebhookEventUtilsTest extends WingsBaseTest {
   private static final String AZURE_DEVOPS_MERGE_PULL_REQUEST_ACTIVE_WEBHOOK =
       "400-rest/src/test/resources/software/wings/service/impl/webhook/azure_merge_pull_active_request.json";
   private static final String VSS_SUBSCRIPTION_ID = "azure_identifier";
+  static final String BITBUCKET_MULTIPLE_PUSH_REQ_FILE =
+      "400-rest/src/test/resources/software/wings/service/impl/webhook/bitbucket_push_multiple_branch.json";
+  static final String BITBUCKET_PUSH_TWO_BRANCH_FILE =
+      "400-rest/src/test/resources/software/wings/service/impl/webhook/bitbucket_push_2branch.json";
 
   @Mock HttpHeaders httpHeaders;
 
@@ -377,6 +382,25 @@ public class WebhookEventUtilsTest extends WingsBaseTest {
     assertThat(webhookEventUtils.shouldIgnorePullRequestMergeEventWithActiveStatusFromAzure(
                    obtainPayloadAsString(AZURE_DEVOPS_MERGE_PULL_REQUEST_ACTIVE_WEBHOOK)))
         .isEqualTo(true);
+  }
+
+  @Test
+  @Owner(developers = PRABU)
+  @Category(UnitTests.class)
+  public void shouldObtainBitBucketPushBranchNameNonNull() throws IOException {
+    when(httpHeaders.getHeaderString(X_BIT_BUCKET_EVENT)).thenReturn(BitBucketEventType.PUSH.getValue());
+    Map<String, Object> payload = obtainPayload(BITBUCKET_MULTIPLE_PUSH_REQ_FILE);
+    assertThat(webhookEventUtils.obtainBranchNameFromBitBucketPush(payload)).containsExactlyInAnyOrder("develop");
+  }
+
+  @Test
+  @Owner(developers = PRABU)
+  @Category(UnitTests.class)
+  public void shouldObtainBitBucketPushBranchNames() throws IOException {
+    when(httpHeaders.getHeaderString(X_BIT_BUCKET_EVENT)).thenReturn(BitBucketEventType.PUSH.getValue());
+    Map<String, Object> payload = obtainPayload(BITBUCKET_PUSH_TWO_BRANCH_FILE);
+    assertThat(webhookEventUtils.obtainBranchNameFromBitBucketPush(payload))
+        .containsExactlyInAnyOrder("develop", "develop2");
   }
 
   private String internalShouldObtainCloneUrl(AuthenticationScheme authenticationScheme, WebhookSource webhookSource,

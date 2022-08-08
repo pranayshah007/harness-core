@@ -28,6 +28,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.FeatureName;
 import io.harness.beans.SecretText;
+import io.harness.delegate.beans.ldap.LdapSettingsWithEncryptedDataDetail;
 import io.harness.eraro.ErrorCode;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
@@ -39,8 +40,10 @@ import io.harness.security.encryption.EncryptedDataDetail;
 import software.wings.beans.Account;
 import software.wings.beans.Event;
 import software.wings.beans.SyncTaskContext;
+import software.wings.beans.sso.LdapConnectionSettings;
 import software.wings.beans.sso.LdapGroupResponse;
 import software.wings.beans.sso.LdapSettings;
+import software.wings.beans.sso.LdapSettingsMapper;
 import software.wings.beans.sso.LdapTestResponse;
 import software.wings.beans.sso.OauthSettings;
 import software.wings.beans.sso.SAMLProviderType;
@@ -106,16 +109,17 @@ public class SSOServiceImpl implements SSOService {
   @Inject private FeatureFlagService featureFlagService;
   @Inject private AuditServiceHelper auditServiceHelper;
   @Inject private EncryptionService encryptionService;
+  @Inject private SSOServiceHelper ssoServiceHelper;
 
   @Override
   public SSOConfig uploadSamlConfiguration(String accountId, InputStream inputStream, String displayName,
       String groupMembershipAttr, Boolean authorizationEnabled, String logoutUrl, String entityIdentifier,
-      String samlProviderType, String clientId, char[] clientSecret) {
+      String samlProviderType, String clientId, char[] clientSecret, boolean isNGSSO) {
     try {
       String fileAsString = IOUtils.toString(inputStream, Charset.defaultCharset());
       groupMembershipAttr = authorizationEnabled ? groupMembershipAttr : null;
       buildAndUploadSamlSettings(accountId, fileAsString, displayName, groupMembershipAttr, logoutUrl, entityIdentifier,
-          samlProviderType, clientId, clientSecret);
+          samlProviderType, clientId, clientSecret, isNGSSO);
       return getAccountAccessManagementSettings(accountId);
     } catch (SamlException | IOException | URISyntaxException e) {
       throw new WingsException(ErrorCode.INVALID_SAML_CONFIGURATION, e);
@@ -134,7 +138,7 @@ public class SSOServiceImpl implements SSOService {
   @Override
   public SSOConfig updateSamlConfiguration(String accountId, InputStream inputStream, String displayName,
       String groupMembershipAttr, Boolean authorizationEnabled, String logoutUrl, String entityIdentifier,
-      String samlProviderType, String clientId, char[] clientSecret) {
+      String samlProviderType, String clientId, char[] clientSecret, boolean isNGSSO) {
     try {
       SamlSettings settings = ssoSettingService.getSamlSettingsByAccountId(accountId);
       String fileAsString;
@@ -158,7 +162,7 @@ public class SSOServiceImpl implements SSOService {
       }
 
       buildAndUploadSamlSettings(accountId, fileAsString, displayName, groupMembershipAttr, logoutUrl, entityIdentifier,
-          samlProviderType, clientId, clientSecret);
+          samlProviderType, clientId, clientSecret, isNGSSO);
       return getAccountAccessManagementSettings(accountId);
     } catch (SamlException | IOException | URISyntaxException e) {
       throw new WingsException(ErrorCode.INVALID_SAML_CONFIGURATION, e);
@@ -214,6 +218,7 @@ public class SSOServiceImpl implements SSOService {
       }
     }
   }
+
   @Override
   public SSOConfig setAuthenticationMechanism(String accountId, AuthenticationMechanism mechanism) {
     checkIfOperationIsAllowed(accountId, mechanism);
@@ -304,7 +309,7 @@ public class SSOServiceImpl implements SSOService {
 
   private SamlSettings buildAndUploadSamlSettings(String accountId, String fileAsString, String displayName,
       String groupMembershipAttr, String logoutUrl, String entityIdentifier, String samlProviderType, String clientId,
-      char[] clientSecret) throws SamlException, URISyntaxException {
+      char[] clientSecret, boolean isNGSSOSetting) throws SamlException, URISyntaxException {
     SamlClient samlClient = samlClientService.getSamlClient(entityIdentifier, fileAsString);
 
     SamlSettings samlSettings = SamlSettings.builder()
@@ -329,7 +334,11 @@ public class SSOServiceImpl implements SSOService {
     if (logoutUrl != null) {
       samlSettings.setLogoutUrl(logoutUrl);
     }
-    return ssoSettingService.saveSamlSettings(samlSettings);
+    if (isNGSSOSetting) {
+      return ssoSettingService.saveSamlSettingsWithoutCGLicenseCheck(samlSettings);
+    } else {
+      return ssoSettingService.saveSamlSettings(samlSettings);
+    }
   }
 
   private OauthSettings buildAndUploadOauthSettings(
@@ -365,6 +374,19 @@ public class SSOServiceImpl implements SSOService {
   }
 
   @Override
+  public LdapSettingsWithEncryptedDataDetail getLdapSettingWithEncryptedDataDetail(@NotBlank String accountId) {
+    LdapSettings ldapSettings = ssoSettingService.getLdapSettingsByAccountId(accountId);
+    populateEncryptedFields(ldapSettings);
+    encryptSecretIfFFisEnabled(ldapSettings);
+    ldapSettings.encryptLdapInlineSecret(secretManager);
+    EncryptedDataDetail encryptedDataDetail = ldapSettings.getEncryptedDataDetails(secretManager);
+    return LdapSettingsWithEncryptedDataDetail.builder()
+        .ldapSettings(LdapSettingsMapper.ldapSettingsDTO(ldapSettings))
+        .encryptedDataDetail(encryptedDataDetail)
+        .build();
+  }
+
+  @Override
   public SamlSettings getSamlSettings(@NotBlank String accountId) {
     return ssoSettingService.getSamlSettingsByAccountId(accountId);
   }
@@ -373,7 +395,8 @@ public class SSOServiceImpl implements SSOService {
   public LdapTestResponse validateLdapConnectionSettings(
       @NotNull LdapSettings ldapSettings, @NotBlank final String accountId) {
     boolean temporaryEncryption = !populateEncryptedFields(ldapSettings);
-    ldapSettings.encryptFields(secretManager);
+    encryptSecretIfFFisEnabled(ldapSettings);
+    ldapSettings.encryptLdapInlineSecret(secretManager);
     EncryptedDataDetail encryptedDataDetail = ldapSettings.getEncryptedDataDetails(secretManager);
     try {
       SyncTaskContext syncTaskContext = SyncTaskContext.builder()
@@ -382,11 +405,9 @@ public class SSOServiceImpl implements SSOService {
                                             .timeout(DEFAULT_SYNC_CALL_TIMEOUT)
                                             .build();
       return delegateProxyFactory.get(LdapDelegateService.class, syncTaskContext)
-          .validateLdapConnectionSettings(ldapSettings, encryptedDataDetail);
+          .validateLdapConnectionSettings(LdapSettingsMapper.ldapSettingsDTO(ldapSettings), encryptedDataDetail);
     } finally {
-      if (temporaryEncryption) {
-        secretManager.deleteSecret(accountId, encryptedDataDetail.getEncryptedData().getUuid(), new HashMap<>(), false);
-      }
+      deleteTempSecret(temporaryEncryption, encryptedDataDetail, ldapSettings, accountId);
     }
   }
 
@@ -394,7 +415,8 @@ public class SSOServiceImpl implements SSOService {
   public LdapTestResponse validateLdapUserSettings(
       @NotNull LdapSettings ldapSettings, @NotBlank final String accountId) {
     boolean temporaryEncryption = !populateEncryptedFields(ldapSettings);
-    ldapSettings.encryptFields(secretManager);
+    encryptSecretIfFFisEnabled(ldapSettings);
+    ldapSettings.encryptLdapInlineSecret(secretManager);
     EncryptedDataDetail encryptedDataDetail = ldapSettings.getEncryptedDataDetails(secretManager);
     try {
       SyncTaskContext syncTaskContext = SyncTaskContext.builder()
@@ -403,11 +425,9 @@ public class SSOServiceImpl implements SSOService {
                                             .timeout(DEFAULT_SYNC_CALL_TIMEOUT)
                                             .build();
       return delegateProxyFactory.get(LdapDelegateService.class, syncTaskContext)
-          .validateLdapUserSettings(ldapSettings, encryptedDataDetail);
+          .validateLdapUserSettings(LdapSettingsMapper.ldapSettingsDTO(ldapSettings), encryptedDataDetail);
     } finally {
-      if (temporaryEncryption) {
-        secretManager.deleteSecret(accountId, encryptedDataDetail.getEncryptedData().getUuid(), new HashMap<>(), false);
-      }
+      deleteTempSecret(temporaryEncryption, encryptedDataDetail, ldapSettings, accountId);
     }
   }
 
@@ -415,7 +435,8 @@ public class SSOServiceImpl implements SSOService {
   public LdapTestResponse validateLdapGroupSettings(
       @NotNull LdapSettings ldapSettings, @NotBlank final String accountId) {
     boolean temporaryEncryption = !populateEncryptedFields(ldapSettings);
-    ldapSettings.encryptFields(secretManager);
+    encryptSecretIfFFisEnabled(ldapSettings);
+    ldapSettings.encryptLdapInlineSecret(secretManager);
     EncryptedDataDetail encryptedDataDetail = ldapSettings.getEncryptedDataDetails(secretManager);
     try {
       SyncTaskContext syncTaskContext = SyncTaskContext.builder()
@@ -424,11 +445,9 @@ public class SSOServiceImpl implements SSOService {
                                             .timeout(DEFAULT_SYNC_CALL_TIMEOUT)
                                             .build();
       return delegateProxyFactory.get(LdapDelegateService.class, syncTaskContext)
-          .validateLdapGroupSettings(ldapSettings, encryptedDataDetail);
+          .validateLdapGroupSettings(LdapSettingsMapper.ldapSettingsDTO(ldapSettings), encryptedDataDetail);
     } finally {
-      if (temporaryEncryption) {
-        secretManager.deleteSecret(accountId, encryptedDataDetail.getEncryptedData().getUuid(), new HashMap<>(), false);
-      }
+      deleteTempSecret(temporaryEncryption, encryptedDataDetail, ldapSettings, accountId);
     }
   }
 
@@ -453,7 +472,8 @@ public class SSOServiceImpl implements SSOService {
                                             .timeout(DEFAULT_SYNC_CALL_TIMEOUT)
                                             .build();
       return delegateProxyFactory.get(LdapDelegateService.class, syncTaskContext)
-          .authenticate(ldapSettings, settingsEncryptedDataDetail, identifier, passwordEncryptedDataDetail);
+          .authenticate(LdapSettingsMapper.ldapSettingsDTO(ldapSettings), settingsEncryptedDataDetail, identifier,
+              passwordEncryptedDataDetail);
     } finally {
       secretManager.deleteSecret(ldapSettings.getAccountId(), passwordEncryptedDataDetail.getEncryptedData().getUuid(),
           new HashMap<>(), false);
@@ -474,7 +494,7 @@ public class SSOServiceImpl implements SSOService {
                                           .timeout(DEFAULT_SYNC_CALL_TIMEOUT)
                                           .build();
     return delegateProxyFactory.get(LdapDelegateService.class, syncTaskContext)
-        .searchGroupsByName(ldapSettings, encryptedDataDetail, nameQuery);
+        .searchGroupsByName(LdapSettingsMapper.ldapSettingsDTO(ldapSettings), encryptedDataDetail, nameQuery);
   }
 
   private boolean isExistingSetting(@NotNull LdapSettings settings) {
@@ -501,8 +521,14 @@ public class SSOServiceImpl implements SSOService {
       return false;
     }
     LdapSettings savedSettings = ssoSettingService.getLdapSettingsByUuid(settings.getUuid());
-    settings.getConnectionSettings().setEncryptedBindPassword(
-        savedSettings.getConnectionSettings().getEncryptedBindPassword());
+    if (isEmpty(savedSettings.getConnectionSettings().getPasswordType())
+        || LdapConnectionSettings.INLINE_SECRET.equals(savedSettings.getConnectionSettings().getPasswordType())) {
+      settings.getConnectionSettings().setEncryptedBindPassword(
+          savedSettings.getConnectionSettings().getEncryptedBindPassword());
+    } else {
+      settings.getConnectionSettings().setEncryptedBindSecret(
+          savedSettings.getConnectionSettings().getEncryptedBindSecret());
+    }
     return true;
   }
 
@@ -564,5 +590,26 @@ public class SSOServiceImpl implements SSOService {
     }
 
     return SAMLProviderType.OTHER;
+  }
+
+  private void encryptSecretIfFFisEnabled(@NotNull LdapSettings ldapSettings) {
+    if (featureFlagService.isEnabled(FeatureName.LDAP_SECRET_AUTH, ldapSettings.getAccountId())) {
+      ssoServiceHelper.encryptLdapSecret(
+          ldapSettings.getConnectionSettings(), secretManager, ldapSettings.getAccountId());
+    }
+  }
+
+  private void deleteTempSecret(boolean temporaryEncryption, EncryptedDataDetail encryptedDataDetail,
+      LdapSettings ldapSettings, String accountId) {
+    if (!featureFlagService.isEnabled(FeatureName.LDAP_SECRET_AUTH, ldapSettings.getAccountId())) {
+      if (temporaryEncryption) {
+        secretManager.deleteSecret(accountId, encryptedDataDetail.getEncryptedData().getUuid(), new HashMap<>(), false);
+      }
+    } else {
+      if (temporaryEncryption
+          && LdapConnectionSettings.INLINE_SECRET.equals(ldapSettings.getConnectionSettings().getPasswordType())) {
+        secretManager.deleteSecret(accountId, encryptedDataDetail.getEncryptedData().getUuid(), new HashMap<>(), false);
+      }
+    }
   }
 }

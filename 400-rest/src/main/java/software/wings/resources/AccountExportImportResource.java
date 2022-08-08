@@ -1059,7 +1059,12 @@ public class AccountExportImportResource {
           log.info(
               "User '{}' with email '{}' clashes with one existing user '{}'.", userId, email, existingUser.getUuid());
           // Adding the new import account into the account list of the existing user.
-          existingUser.getAccounts().add(account);
+          if (isEmpty(existingUser.getAccounts())) {
+            existingUser.setAccounts(Collections.singletonList(account));
+          }
+          if (!existingUser.getAccounts().contains(account)) {
+            existingUser.getAccounts().add(account);
+          }
           wingsPersistence.save(existingUser);
         }
       }

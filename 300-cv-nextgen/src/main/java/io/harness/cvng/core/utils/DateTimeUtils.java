@@ -33,6 +33,7 @@ public class DateTimeUtils {
         zonedDateTime.getDayOfMonth(), zonedDateTime.getHour(), minute, 0, 0, ZoneOffset.UTC);
     return zonedDateTime.toInstant();
   }
+
   public static long instantToEpochMinute(Instant instant) {
     return TimeUnit.MILLISECONDS.toMinutes(instant.toEpochMilli());
   }

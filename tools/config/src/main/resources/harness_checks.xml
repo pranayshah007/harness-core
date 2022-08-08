@@ -215,8 +215,12 @@
 
 
         <!-- PERFORMANCE -->
-
-        <module name="io.harness.checks.ForEachCheck"/>
+<!--        This check is broken, submit for removal, it doesn't support forEach over arrays using Arrays.stream().forEach which is the only valid way to stream array.
+            Other issues:
+            1. This check is very arbitrary. Streaming is slower than native iteration in general, but that doesn't mean we should not use streams.
+            2. The performance impact is only noticeable when dealing with collections several orders of magnitude larger than what we have (millions of records).
+            3. Stream performance has greatly improved since this was made. -->
+<!--        <module name="io.harness.checks.ForEachCheck"/>-->
 
         <!-- Best practices -->
 

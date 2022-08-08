@@ -1,0 +1,4 @@
+pipeline:
+  name: name
+  identifier: identifier
+  stages: []

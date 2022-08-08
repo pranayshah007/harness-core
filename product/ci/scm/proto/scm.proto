@@ -37,6 +37,7 @@ enum Action {
   // pull requests
   SYNC = 9;
   MERGE = 10;
+  EDIT = 11;
 }
 
 // User represents a user account.
@@ -47,6 +48,7 @@ message User {
   string avatar = 4;
   google.protobuf.Timestamp created = 5;
   google.protobuf.Timestamp updated = 6;
+  string id = 7;
 }
 
 // Reference represents a git reference.
@@ -485,11 +487,25 @@ message ListBranchesRequest {
   Provider provider = 3;
 }
 
+message ListBranchesWithDefaultRequest {
+  string slug = 1;
+  PageRequest pagination = 2;
+  Provider provider = 3;
+}
+
 message ListBranchesResponse {
   repeated string branches = 1;
   PageResponse pagination = 2;
   int32 status = 3;
   string error = 4;
+}
+
+message ListBranchesWithDefaultResponse {
+  int32 status = 1;
+  repeated string branches = 2;
+  string default_branch = 3;
+  PageResponse pagination = 4;
+  string error = 5;
 }
 
 message CompareCommitsRequest {
@@ -583,6 +599,7 @@ enum AzureWebhookEvent {
   AZURE_PULLREQUEST_CREATED = 1;
   AZURE_PULLREQUEST_UPDATED = 2;
   AZURE_PULLREQUEST_MERGED = 3;
+  AZURE_PULL_REQUEST_ISSUE_COMMENT = 4;
 }
 
 message GithubWebhookEvents {
@@ -603,7 +620,7 @@ message BitbucketServerWebhookEvents {
 
 message AzureWebhookEvents {
   // Azure only allows one event type per hook
-  AzureWebhookEvent events = 1;
+  repeated AzureWebhookEvent events = 1;
 }
 
 message NativeEvents {
@@ -677,6 +694,7 @@ message GetAuthenticatedUserResponse {
 message GetUserReposRequest {
   PageRequest pagination = 1;
   Provider provider = 2;
+  bool fetchAllRepos = 3;
 }
 
 message GetUserReposResponse {
@@ -684,6 +702,17 @@ message GetUserReposResponse {
   PageResponse pagination = 2;
   int32 status = 3;
   string error = 4;
+}
+
+message GetUserRepoRequest {
+  string slug = 1;
+  Provider provider = 2;
+}
+
+message GetUserRepoResponse {
+  Repository repo = 1;
+  int32 status = 2;
+  string error = 3;
 }
 
 message FindPRRequest {
@@ -708,6 +737,20 @@ message FindCommitResponse {
   int32 status = 1;
   string error = 2;
   Commit commit = 3;
+}
+
+message RefreshTokenRequest {
+  string clientID = 1;
+  string clientSecret = 2;
+  string endpoint = 3;
+  string redirectUri = 4;
+  string refreshToken = 5;
+}
+
+message RefreshTokenResponse {
+  string accessToken = 1;
+  int32 expiresIn = 3;
+  string refreshToken = 4;
 }
 
 service SCM {
@@ -735,6 +778,7 @@ service SCM {
   rpc CreateBranch(CreateBranchRequest) returns (CreateBranchResponse);
   rpc GetLatestCommit(GetLatestCommitRequest) returns (GetLatestCommitResponse);
   rpc ListBranches(ListBranchesRequest) returns (ListBranchesResponse);
+  rpc ListBranchesWithDefault(ListBranchesWithDefaultRequest) returns (ListBranchesWithDefaultResponse);
   rpc ListCommits(ListCommitsRequest) returns (ListCommitsResponse);
   rpc CompareCommits(CompareCommitsRequest) returns (CompareCommitsResponse);
   rpc GetLatestCommitOnFile(GetLatestCommitOnFileRequest) returns (GetLatestCommitOnFileResponse);
@@ -745,9 +789,12 @@ service SCM {
   // User functions
   rpc GetAuthenticatedUser(GetAuthenticatedUserRequest) returns (GetAuthenticatedUserResponse);
   rpc GetUserRepos(GetUserReposRequest) returns (GetUserReposResponse);
+  rpc GetUserRepo(GetUserRepoRequest) returns (GetUserRepoResponse);
 
   // repo functions from go-scm
   rpc CreateWebhook(CreateWebhookRequest) returns (CreateWebhookResponse);
   rpc DeleteWebhook(DeleteWebhookRequest) returns (DeleteWebhookResponse);
   rpc ListWebhooks(ListWebhooksRequest) returns (ListWebhooksResponse);
+
+  rpc RefreshToken(RefreshTokenRequest) returns (RefreshTokenResponse);
 }

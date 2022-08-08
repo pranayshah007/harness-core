@@ -43,6 +43,9 @@ public class PythonMappers {
         .awsService(timeSeries.getAwsService())
         .awsInstanceType(timeSeries.getAwsInstanceType())
         .awsUsageType(timeSeries.getAwsUsageType())
+        .azureSubscription(timeSeries.getAzureSubscription())
+        .azureResourceGroup(timeSeries.getAzureResourceGroup())
+        .azureMeterCategory(timeSeries.getAzureMeterCategory())
         .build();
   }
 
@@ -61,6 +64,9 @@ public class PythonMappers {
     pythonInput.setGcpProduct(source.getGcpProduct());
     pythonInput.setGcpSKUId(source.getGcpSKUId());
     pythonInput.setGcpSKUDescription(source.getGcpSKUDescription());
+    pythonInput.setAzureSubscription(source.getAzureSubscription());
+    pythonInput.setAzureResourceGroup(source.getAzureResourceGroup());
+    pythonInput.setAzureMeterCategory(source.getAzureMeterCategory());
 
     PythonInput.APITimeSeries apiTimeSeries =
         PythonInput.APITimeSeries.builder()

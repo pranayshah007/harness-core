@@ -1,0 +1,118 @@
+{
+  "pipeline": {
+    "identifier": "cipipelinerg8cPOXzkn",
+    "name": "pipeline with successful gcp upload",
+    "description": "fdfd",
+    "stages": [
+      {
+        "stage": {
+          "identifier": "gcp_upload_success",
+          "name": "stage 1",
+          "type": "CI",
+          "variables": [
+            {
+              "name": "GCP_SECRET_KEY",
+              "type": "Secret",
+              "value": "account.testCISecretWHhL3I4oUK",
+              "__uuid": "pNSPmouITwSjLfNg_HIhGw"
+            }
+          ],
+          "spec": {
+            "sharedPaths": [
+              "/.config",
+              "/.gsutil"
+            ],
+            "execution": {
+              "steps": [
+                {
+                  "step": {
+                    "identifier": "upload",
+                    "name": "upload",
+                    "type": "GCSUpload",
+                    "spec": {
+                      "connectorRef": "account.testGCPConnectorT7x3aHB2xd",
+                      "bucket": "harness-gcs-testing",
+                      "sourcePath": "pom.xml",
+                      "target": "test",
+                      "__uuid": "4WnOITHXSae2KQdWwPy0qw"
+                    },
+                    "__uuid": "rKmPrjUNSpiOKFUl0GpKTw"
+                  },
+                  "__uuid": "jrVgRLJXTxGyf-WF_QyGzA"
+                },
+                {
+                  "step": {
+                    "identifier": "upload1",
+                    "name": "upload1",
+                    "type": "GCSUpload",
+                    "spec": {
+                      "connectorRef": "account.testGCPConnectorT7x3aHB2xd",
+                      "bucket": "harness-gcs-testing",
+                      "sourcePath": "pom.xml",
+                      "target": "test",
+                      "__uuid": "7Y-Nbg9JQqyZUCB7e5ICmA"
+                    },
+                    "__uuid": "SQYgrKbcTA6cqiU1grIJ_A"
+                  },
+                  "__uuid": "x21kEM14SmeCmSm0K4bj3A"
+                },
+                {
+                  "step": {
+                    "identifier": "verifyAndDeleteBucket",
+                    "name": "verify",
+                    "type": "Run",
+                    "spec": {
+                      "command": "mkdir -p /tmp\necho $GCP_SECRET_KEY > /tmp/secret.json\ngcloud auth activate-service-account --key-file=/tmp/secret.json\ngsutil cp gs://harness-gcs-testing/test /tmp/pom.xml\n\necho \"Deleting the bucket\"\ngsutil rm -r gs://harness-gcs-testing\n\necho \"Checking whether file exists\"\nif [ ! -f /tmp/pom.xml ]; then\n  echo \"No file present with name pom.xml\"\n  echo \"GCS upload failed!\"\n  exit 1\nfi\n",
+                      "connectorRef": "account.CItestDockerConnectorLsGyi79hax",
+                      "image": "google/cloud-sdk:alpine",
+                      "__uuid": "Aei1X_rrSUGuOH9RDfWFDg"
+                    },
+                    "__uuid": "UZeDm_04Qu28GbG20L0Fzg"
+                  },
+                  "__uuid": "cNLWN6VXQ6urh_uPZFdlYw"
+                }
+              ],
+              "__uuid": "z9hIbaJxQ3mknkK6dqEhPg"
+            },
+            "infrastructure": {
+              "type": "KubernetesDirect",
+              "spec": {
+                "connectorRef": "account.CItestK8sConnectorCMs0vdKHun",
+                "namespace": "harness-qa-delegate",
+                "__uuid": "sc4amwnhRlWKNLcV0Z_nnA"
+              },
+              "__uuid": "GgD0rVRBQXyCerm8IGQOYQ"
+            },
+            "cloneCodebase": true,
+            "__uuid": "sCGrNW7ZRHGx--HdZhuRFQ"
+          },
+          "__uuid": "wsLZG9PEQVaeoOQkI8MoWA"
+        },
+        "__uuid": "5m2EtRHbSca6g9kqlDbOyA"
+      }
+    ],
+    "properties": {
+      "ci": {
+        "codebase": {
+          "connectorRef": "account.CItestGitConnectorfrIx8hvR36",
+          "repoName": "springboot",
+          "build": {
+            "type": "branch",
+            "spec": {
+              "branch": "ci-automation",
+              "__uuid": "REToK7FaRVKKfFayoesWEg"
+            },
+            "__uuid": "UeKLx39kRJ6IACs1t5AeYQ"
+          },
+          "__uuid": "TIXk5UxbSzuxLfhS4fJ0bw"
+        },
+        "__uuid": "ekIk0KCHTJCDVq0vadBg6Q"
+      },
+      "__uuid": "aLj-AiDkTfaJmhpPi9j62w"
+    },
+    "projectIdentifier": "CITestDemoProP1PcmJEzZ5",
+    "orgIdentifier": "CITestDemoOrgUNtoIHwBY8",
+    "__uuid": "6IVltu7ZS56ghjmgMnH9UQ"
+  },
+  "__uuid": "__WhBRZ_RD2qWWQJjwnDCg"
+}

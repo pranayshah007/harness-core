@@ -53,6 +53,7 @@ import software.wings.api.InstanceElementListParam;
 import software.wings.api.PhaseElement;
 import software.wings.api.ServiceElement;
 import software.wings.api.customdeployment.InstanceFetchStateExecutionData;
+import software.wings.api.customdeployment.InstanceFetchStateExecutionData.InstanceFetchStateExecutionDataBuilder;
 import software.wings.api.instancedetails.InstanceInfoVariables;
 import software.wings.api.shellscript.provision.ShellScriptProvisionExecutionData;
 import software.wings.beans.Activity;
@@ -62,6 +63,7 @@ import software.wings.beans.Log.Builder;
 import software.wings.beans.LogColor;
 import software.wings.beans.ServiceTemplate;
 import software.wings.beans.TaskType;
+import software.wings.beans.artifact.Artifact;
 import software.wings.beans.command.CommandUnit;
 import software.wings.beans.command.FetchInstancesCommandUnit;
 import software.wings.beans.shellscript.provisioner.ShellScriptProvisionParameters;
@@ -83,6 +85,7 @@ import software.wings.sm.State;
 import software.wings.sm.StateExecutionContext;
 import software.wings.sm.StateType;
 import software.wings.sm.WorkflowStandardParams;
+import software.wings.sm.WorkflowStandardParamsExtensionService;
 import software.wings.sm.states.ManagerExecutionLogCallback;
 import software.wings.sm.states.customdeployment.InstanceMapperUtils.HostProperties;
 import software.wings.sm.states.utils.StateTimeoutUtils;
@@ -123,6 +126,7 @@ public class InstanceFetchState extends State {
   @Inject private ExpressionEvaluator expressionEvaluator;
   @Inject private ServiceTemplateService serviceTemplateService;
   @Inject private ServiceTemplateHelper serviceTemplateHelper;
+  @Inject private WorkflowStandardParamsExtensionService workflowStandardParamsExtensionService;
 
   @Getter @Setter @DefaultValue("10") String stateTimeoutInMinutes;
   @Getter @Setter private List<String> tags;
@@ -216,8 +220,8 @@ public class InstanceFetchState extends State {
             .setupAbstraction(Cd1SetupFields.APP_ID_FIELD, appId)
             .setupAbstraction(Cd1SetupFields.SERVICE_TEMPLATE_ID_FIELD, serviceTemplateId)
             .setupAbstraction(Cd1SetupFields.ENV_ID_FIELD, envId)
-            .setupAbstraction(
-                Cd1SetupFields.ENV_TYPE_FIELD, workflowStandardParams.getEnv().getEnvironmentType().name())
+            .setupAbstraction(Cd1SetupFields.ENV_TYPE_FIELD,
+                workflowStandardParamsExtensionService.getEnv(workflowStandardParams).getEnvironmentType().name())
             .setupAbstraction(Cd1SetupFields.INFRASTRUCTURE_MAPPING_ID_FIELD, infraMappingId)
             .setupAbstraction(Cd1SetupFields.SERVICE_ID_FIELD, infrastructureMapping.getServiceId())
             .selectionLogsTrackingEnabled(isSelectionLogsTrackingForTasksEnabled())
@@ -242,16 +246,35 @@ public class InstanceFetchState extends State {
 
     appendDelegateTaskDetails(context, delegateTask);
 
+    Artifact artifact = null;
+    if (isRollback()) {
+      artifact = workflowStandardParamsExtensionService.getRollbackArtifactForService(
+          workflowStandardParams, infrastructureMapping.getServiceId());
+    } else {
+      artifact = workflowStandardParamsExtensionService.getArtifactForService(
+          workflowStandardParams, infrastructureMapping.getServiceId());
+    }
+
+    InstanceFetchStateExecutionDataBuilder builder =
+        InstanceFetchStateExecutionData.builder()
+            .activityId(activityId)
+            .hostObjectArrayPath(deploymentTypeTemplate.getHostObjectArrayPath())
+            .hostAttributes(deploymentTypeTemplate.getHostAttributes())
+            .instanceFetchScript(getRenderedScriptExceptSecrets(taskParameters.getScriptBody()))
+            .tags(getRenderedTags(context));
+
+    if (artifact != null) {
+      builder.artifactId(artifact.getUuid())
+          .artifactName(artifact.getDisplayName())
+          .artifactSourceName(artifact.getArtifactSourceName())
+          .artifactStreamId(artifact.getArtifactStreamId())
+          .artifactBuildNum(artifact.getBuildNo());
+    }
+
     return ExecutionResponse.builder()
         .async(true)
         .correlationId(activityId)
-        .stateExecutionData(InstanceFetchStateExecutionData.builder()
-                                .activityId(activityId)
-                                .hostObjectArrayPath(deploymentTypeTemplate.getHostObjectArrayPath())
-                                .hostAttributes(deploymentTypeTemplate.getHostAttributes())
-                                .instanceFetchScript(getRenderedScriptExceptSecrets(taskParameters.getScriptBody()))
-                                .tags(getRenderedTags(context))
-                                .build())
+        .stateExecutionData(builder.build())
         .build();
   }
 
@@ -290,7 +313,11 @@ public class InstanceFetchState extends State {
    */
   @Override
   public void handleAbortEvent(ExecutionContext context) {
-    // nothing to handle
+    if (context == null || context.getStateExecutionData() == null) {
+      return;
+    }
+    context.getStateExecutionData().setErrorMsg(
+        "Fetch instance job did not complete within timeout " + (getTimeoutMillis() / 1000) + " (s)");
   }
 
   /**

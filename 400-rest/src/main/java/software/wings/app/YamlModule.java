@@ -159,6 +159,7 @@ import software.wings.service.impl.yaml.handler.setting.artifactserver.HelmRepoY
 import software.wings.service.impl.yaml.handler.setting.artifactserver.HttpHelmRepoConfigYamlHandler;
 import software.wings.service.impl.yaml.handler.setting.artifactserver.JenkinsConfigYamlHandler;
 import software.wings.service.impl.yaml.handler.setting.artifactserver.NexusConfigYamlHandler;
+import software.wings.service.impl.yaml.handler.setting.artifactserver.OciHelmRepoConfigYamlHandler;
 import software.wings.service.impl.yaml.handler.setting.artifactserver.SftpConfigYamlHandler;
 import software.wings.service.impl.yaml.handler.setting.artifactserver.SmbConfigYamlHandler;
 import software.wings.service.impl.yaml.handler.setting.cloudprovider.AwsConfigYamlHandler;
@@ -380,6 +381,8 @@ public class YamlModule extends CommandLibrarySharedModule {
         MapBinder.newMapBinder(binder(), String.class, HelmRepoYamlHandler.class);
     helmRepoYamlHandlerMapBinder.addBinding(SettingVariableTypes.HTTP_HELM_REPO.name())
         .to(HttpHelmRepoConfigYamlHandler.class);
+    helmRepoYamlHandlerMapBinder.addBinding(SettingVariableTypes.OCI_HELM_REPO.name())
+        .to(OciHelmRepoConfigYamlHandler.class);
     helmRepoYamlHandlerMapBinder.addBinding(SettingVariableTypes.AMAZON_S3_HELM_REPO.name())
         .to(AmazonS3HelmRepoConfigYamlHandler.class);
     helmRepoYamlHandlerMapBinder.addBinding(SettingVariableTypes.GCS_HELM_REPO.name())

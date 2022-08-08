@@ -23,8 +23,6 @@ import io.harness.pcf.model.ManifestType;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import com.fasterxml.jackson.dataformat.yaml.snakeyaml.Yaml;
-import com.fasterxml.jackson.dataformat.yaml.snakeyaml.constructor.SafeConstructor;
 import com.google.inject.Singleton;
 import java.util.List;
 import java.util.Map;
@@ -32,6 +30,8 @@ import java.util.Optional;
 import java.util.TreeMap;
 import javax.annotation.Nullable;
 import lombok.extern.slf4j.Slf4j;
+import org.yaml.snakeyaml.Yaml;
+import org.yaml.snakeyaml.constructor.SafeConstructor;
 
 @Singleton
 @Slf4j

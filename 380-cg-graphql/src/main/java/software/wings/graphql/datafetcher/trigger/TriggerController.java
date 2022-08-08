@@ -8,6 +8,7 @@
 package software.wings.graphql.datafetcher.trigger;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.beans.FeatureName.PIPELINE_PER_ENV_DEPLOYMENT_PERMISSION;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.validation.Validator.notNullCheck;
 
@@ -15,6 +16,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.WorkflowType;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
+import io.harness.ff.FeatureFlagService;
 import io.harness.persistence.HPersistence;
 
 import software.wings.beans.Pipeline;
@@ -34,6 +36,7 @@ import software.wings.graphql.schema.type.trigger.QLCreateOrUpdateTriggerInput;
 import software.wings.graphql.schema.type.trigger.QLTrigger;
 import software.wings.graphql.schema.type.trigger.QLTrigger.QLTriggerBuilder;
 import software.wings.graphql.schema.type.trigger.QLTriggerPayload;
+import software.wings.security.ExecutableElementsFilter;
 import software.wings.service.impl.security.auth.DeploymentAuthHandler;
 import software.wings.service.intfc.AppService;
 import software.wings.service.intfc.AuthService;
@@ -45,6 +48,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
@@ -64,6 +68,7 @@ public class TriggerController {
   @Inject WorkflowExecutionController workflowExecutionController;
   @Inject PipelineExecutionController pipelineExecutionController;
   @Inject SettingsService settingsService;
+  @Inject FeatureFlagService featureFlagService;
 
   public void populateTrigger(Trigger trigger, QLTriggerBuilder qlTriggerBuilder, String accountId) {
     qlTriggerBuilder.id(trigger.getUuid())
@@ -136,7 +141,10 @@ public class TriggerController {
 
         envId = pipelineExecutionController.resolveEnvId(pipeline, variables, true);
         authService.checkIfUserAllowedToDeployPipelineToEnv(appId, envId);
-
+        if (featureFlagService.isEnabled(PIPELINE_PER_ENV_DEPLOYMENT_PERMISSION, pipeline.getAccountId())) {
+          deploymentAuthHandler.authorizeExecutableDeployableInEnv(
+              new HashSet<>(pipeline.getEnvIds()), appId, pipelineId, ExecutableElementsFilter.FilterType.PIPELINE);
+        }
         resolvedWorkflowVariables =
             triggerActionController.validateAndResolvePipelineVariables(variables, pipeline, envId);
         triggerBuilder.workflowVariables(resolvedWorkflowVariables);

@@ -125,7 +125,7 @@ public class Trigger extends Base
   private boolean excludeHostsWithSameArtifact;
   private transient List<HarnessTagLink> tagLinks;
   private boolean disabled;
-  @FdIndex private List<Long> nextIterations = new ArrayList<>();
+  @FdIndex @JsonIgnore private List<Long> nextIterations = new ArrayList<>();
 
   @Builder
   public Trigger(String uuid, String appId, String accountId, EmbeddedUser createdBy, long createdAt,

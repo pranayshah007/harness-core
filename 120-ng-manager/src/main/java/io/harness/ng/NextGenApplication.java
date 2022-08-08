@@ -23,7 +23,6 @@ import static io.harness.pms.contracts.plan.ExpansionRequestType.KEY;
 import static io.harness.pms.listener.NgOrchestrationNotifyEventListener.NG_ORCHESTRATION;
 
 import static com.google.common.collect.ImmutableMap.of;
-import static java.util.stream.Collectors.toSet;
 
 import io.harness.EntityType;
 import io.harness.Microservice;
@@ -39,12 +38,14 @@ import io.harness.cache.CacheModule;
 import io.harness.cdng.creator.CDNGModuleInfoProvider;
 import io.harness.cdng.creator.CDNGPlanCreatorProvider;
 import io.harness.cdng.creator.filters.CDNGFilterCreationResponseMerger;
-import io.harness.cdng.envGroup.beans.EnvironmentGroupConfig;
 import io.harness.cdng.envGroup.beans.EnvironmentGroupEntity;
+import io.harness.cdng.envGroup.beans.EnvironmentGroupWrapperConfig;
 import io.harness.cdng.gitSync.EnvironmentGroupEntityGitSyncHelper;
 import io.harness.cdng.licenserestriction.ServiceRestrictionsUsageImpl;
+import io.harness.cdng.migration.CDMigrationProvider;
 import io.harness.cdng.orchestration.NgStepRegistrar;
 import io.harness.cdng.pipeline.executions.CdngOrchestrationExecutionEventHandlerRegistrar;
+import io.harness.cdng.provision.terraform.functor.TerraformPlanJsonFunctor;
 import io.harness.cdng.visitor.YamlTypes;
 import io.harness.cf.AbstractCfModule;
 import io.harness.cf.CfClientConfig;
@@ -105,17 +106,21 @@ import io.harness.ng.core.exceptionmappers.WingsExceptionMapperV2;
 import io.harness.ng.core.handler.NGVaultSecretManagerRenewalHandler;
 import io.harness.ng.core.migration.NGBeanMigrationProvider;
 import io.harness.ng.core.migration.ProjectMigrationProvider;
+import io.harness.ng.core.migration.UserGroupMigrationProvider;
 import io.harness.ng.core.remote.licenserestriction.CloudCostK8sConnectorRestrictionsUsageImpl;
 import io.harness.ng.core.remote.licenserestriction.OrgRestrictionsUsageImpl;
 import io.harness.ng.core.remote.licenserestriction.ProjectRestrictionsUsageImpl;
 import io.harness.ng.core.user.exception.mapper.InvalidUserRemoveRequestExceptionMapper;
+import io.harness.ng.core.variable.expressions.functors.VariableFunctor;
 import io.harness.ng.migration.DelegateMigrationProvider;
 import io.harness.ng.migration.NGCoreMigrationProvider;
 import io.harness.ng.migration.SourceCodeManagerMigrationProvider;
 import io.harness.ng.migration.UserMembershipMigrationProvider;
 import io.harness.ng.migration.UserMetadataMigrationProvider;
+import io.harness.ng.oauth.OAuthTokenRefresher;
 import io.harness.ng.overview.eventGenerator.DeploymentEventGenerator;
 import io.harness.ng.webhook.services.api.WebhookEventProcessingService;
+import io.harness.ngsettings.settings.SettingsCreationJob;
 import io.harness.observer.NoOpRemoteObserverInformerImpl;
 import io.harness.observer.RemoteObserver;
 import io.harness.observer.RemoteObserverInformer;
@@ -145,7 +150,7 @@ import io.harness.pms.sdk.execution.events.node.start.NodeStartEventRedisConsume
 import io.harness.pms.sdk.execution.events.orchestrationevent.OrchestrationEventRedisConsumer;
 import io.harness.pms.sdk.execution.events.plan.CreatePartialPlanRedisConsumer;
 import io.harness.pms.sdk.execution.events.progress.ProgressEventRedisConsumer;
-import io.harness.pms.serializer.jackson.PmsBeansJacksonModule;
+import io.harness.pms.serializer.json.PmsBeansJacksonModule;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.polling.service.impl.PollingPerpetualTaskManager;
 import io.harness.polling.service.impl.PollingServiceImpl;
@@ -172,6 +177,8 @@ import io.harness.telemetry.NGTelemetryRecordsJob;
 import io.harness.telemetry.TelemetryReporter;
 import io.harness.telemetry.filter.APIAuthTelemetryFilter;
 import io.harness.telemetry.filter.APIAuthTelemetryResponseFilter;
+import io.harness.telemetry.filter.APIErrorsTelemetrySenderFilter;
+import io.harness.telemetry.service.CdTelemetryRecordsJob;
 import io.harness.threading.ExecutorModule;
 import io.harness.threading.ThreadPool;
 import io.harness.token.remote.TokenClient;
@@ -212,20 +219,10 @@ import io.federecio.dropwizard.swagger.SwaggerBundle;
 import io.federecio.dropwizard.swagger.SwaggerBundleConfiguration;
 import io.serializer.HObjectMapper;
 import io.swagger.v3.jaxrs2.integration.resources.OpenApiResource;
-import io.swagger.v3.oas.annotations.tags.Tag;
-import io.swagger.v3.oas.integration.SwaggerConfiguration;
-import io.swagger.v3.oas.integration.api.OpenAPIConfiguration;
-import io.swagger.v3.oas.models.OpenAPI;
-import io.swagger.v3.oas.models.info.Contact;
-import io.swagger.v3.oas.models.info.Info;
-import io.swagger.v3.oas.models.servers.Server;
 import java.lang.annotation.Annotation;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -237,7 +234,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 import javax.servlet.DispatcherType;
 import javax.servlet.FilterRegistration;
 import javax.ws.rs.container.ContainerRequestContext;
@@ -276,6 +272,7 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
     initializeLogging();
     bootstrap.addCommand(new InspectCommand<>(this));
     bootstrap.addCommand(new ScanClasspathMetadataCommand());
+    bootstrap.addCommand(new GenerateOpenApiSpecCommand());
     // Enable variable substitution with environment variables
     bootstrap.setConfigurationSourceProvider(new SubstitutingSourceProvider(
         bootstrap.getConfigurationSourceProvider(), new EnvironmentVariableSubstitutor(false)));
@@ -379,6 +376,7 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
     modules.add(PipelineServiceUtilityModule.getInstance());
     CacheModule cacheModule = new CacheModule(appConfig.getCacheConfig());
     modules.add(cacheModule);
+
     Injector injector = Guice.createInjector(modules);
 
     // Will create collections and Indexes
@@ -402,13 +400,17 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
     registerIterators(appConfig.getNgIteratorsConfig(), injector);
     registerJobs(injector);
     registerQueueListeners(injector);
-    registerPmsSdkEvents(injector);
+    registerPmsSdkEvents(appConfig, injector);
     initializeMonitoring(appConfig, injector);
     registerObservers(injector);
     registerOasResource(appConfig, environment, injector);
     registerManagedBeans(environment, injector);
     initializeEnforcementService(injector, appConfig);
     initializeEnforcementSdk(injector);
+    initializeCdMonitoring(appConfig, injector);
+    SettingsCreationJob settingsCreationJob = injector.getInstance(SettingsCreationJob.class);
+    settingsCreationJob.run();
+
     if (appConfig.getShouldDeployWithGitSync()) {
       intializeGitSync(injector);
       GitSyncSdkInitHelper.initGitSyncSdk(injector, environment, getGitSyncConfiguration(appConfig));
@@ -430,9 +432,14 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
     injector.getInstance(NGTelemetryRecordsJob.class).scheduleTasks();
   }
 
+  private void initializeCdMonitoring(NextGenConfiguration appConfig, Injector injector) {
+    log.info("Initializing Cd Monitoring");
+    injector.getInstance(CdTelemetryRecordsJob.class).scheduleTasks();
+  }
+
   private void registerOasResource(NextGenConfiguration appConfig, Environment environment, Injector injector) {
     OpenApiResource openApiResource = injector.getInstance(OpenApiResource.class);
-    openApiResource.setOpenApiConfiguration(getOasConfig(appConfig));
+    openApiResource.setOpenApiConfiguration(appConfig.getOasConfig());
     environment.jersey().register(openApiResource);
   }
 
@@ -470,6 +477,8 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
           { add(SourceCodeManagerMigrationProvider.class); }
           { add(GitSyncMigrationProvider.class); }
           { add(DelegateMigrationProvider.class); }
+          { add(UserGroupMigrationProvider.class); }
+          { add(CDMigrationProvider.class); }
         })
         .build();
   }
@@ -482,7 +491,7 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
   }
 
   private GitSyncSdkConfiguration getGitSyncConfiguration(NextGenConfiguration config) {
-    final Supplier<List<EntityType>> sortOrder = () -> Collections.singletonList(EntityType.CONNECTORS);
+    final Supplier<List<EntityType>> sortOrder = () -> CoreGitEntityOrderComparator.sortOrder;
     ObjectMapper ngObjectMapper = new ObjectMapper(new YAMLFactory());
     configureObjectMapper(ngObjectMapper);
     Set<GitSyncEntitiesConfiguration> gitSyncEntitiesConfigurations = new HashSet<>();
@@ -495,7 +504,7 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
 
     gitSyncEntitiesConfigurations.add(GitSyncEntitiesConfiguration.builder()
                                           .entityType(EntityType.ENVIRONMENT_GROUP)
-                                          .yamlClass(EnvironmentGroupConfig.class)
+                                          .yamlClass(EnvironmentGroupWrapperConfig.class)
                                           .entityClass(EnvironmentGroupEntity.class)
                                           .entityHelperClass(EnvironmentGroupEntityGitSyncHelper.class)
                                           .build());
@@ -511,6 +520,7 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
         .eventsRedisConfig(config.getEventsFrameworkConfiguration().getRedisConfig())
         .serviceHeader(NG_MANAGER)
         .gitSyncEntitiesConfiguration(gitSyncEntitiesConfigurations)
+        .gitSyncEntitySortComparator(CoreGitEntityOrderComparator.class)
         .objectMapper(ngObjectMapper)
         .build();
   }
@@ -537,6 +547,8 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
     injector.getInstance(InstanceStatsIteratorHandler.class).registerIterators();
     injector.getInstance(GitFullSyncEntityIterator.class)
         .registerIterators(ngIteratorsConfig.getGitFullSyncEntityIteratorConfig().getThreadPoolSize());
+    injector.getInstance(OAuthTokenRefresher.class)
+        .registerIterators(ngIteratorsConfig.getOauthTokenRefreshIteratorConfig().getThreadPoolSize());
   }
 
   public void registerJobs(Injector injector) {
@@ -555,7 +567,7 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
     environment.lifecycle().manage(injector.getInstance(PipelineEventConsumerController.class));
   }
 
-  private void registerPmsSdkEvents(Injector injector) {
+  private void registerPmsSdkEvents(NextGenConfiguration appConfig, Injector injector) {
     log.info("Initializing sdk redis abstract consumers...");
     PipelineEventConsumerController pipelineEventConsumerController =
         injector.getInstance(PipelineEventConsumerController.class);
@@ -567,8 +579,8 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
     pipelineEventConsumerController.register(injector.getInstance(NodeAdviseEventRedisConsumer.class), 2);
     pipelineEventConsumerController.register(injector.getInstance(NodeResumeEventRedisConsumer.class), 2);
     pipelineEventConsumerController.register(injector.getInstance(CreatePartialPlanRedisConsumer.class), 2);
-    pipelineEventConsumerController.register(
-        injector.getInstance(PipelineExecutionSummaryCDRedisEventConsumer.class), 1);
+    pipelineEventConsumerController.register(injector.getInstance(PipelineExecutionSummaryCDRedisEventConsumer.class),
+        appConfig.getDebeziumConsumerConfigs().get(0).getNumberOfThreads());
   }
 
   private void registerYamlSdk(Injector injector) {
@@ -632,6 +644,8 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
   private Map<String, Class<? extends SdkFunctor>> getSdkFunctors() {
     Map<String, Class<? extends SdkFunctor>> sdkFunctorMap = new HashMap<>();
     sdkFunctorMap.put(ImagePullSecretFunctor.IMAGE_PULL_SECRET, ImagePullSecretFunctor.class);
+    sdkFunctorMap.put(VariableFunctor.VARIABLE, VariableFunctor.class);
+    sdkFunctorMap.put(TerraformPlanJsonFunctor.TERRAFORM_PLAN_JSON, TerraformPlanJsonFunctor.class);
     return sdkFunctorMap;
   }
 
@@ -715,35 +729,6 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
         ServerProperties.RESOURCE_VALIDATION_DISABLE, appConfig.isDisableResourceValidation());
   }
 
-  private OpenAPIConfiguration getOasConfig(NextGenConfiguration appConfig) {
-    OpenAPI oas = new OpenAPI();
-    Info info =
-        new Info()
-            .title("Harness NextGen Software Delivery Platform API Reference")
-            .description(
-                "This is the Open Api Spec 3 for the NextGen Manager. This is under active development. Beware of the breaking change with respect to the generated code stub")
-            .termsOfService("https://harness.io/terms-of-use/")
-            .version("3.0")
-            .contact(new Contact().email("contact@harness.io"));
-    oas.info(info);
-    URL baseurl = null;
-    try {
-      baseurl = new URL("https", appConfig.getHostname(), appConfig.getBasePathPrefix());
-      Server server = new Server();
-      server.setUrl(baseurl.toString());
-      oas.servers(Collections.singletonList(server));
-    } catch (MalformedURLException e) {
-      log.error("failed to set baseurl for server, {}/{}", appConfig.hostname, appConfig.getBasePathPrefix());
-    }
-    final Set<String> resourceClasses =
-        getOAS3ResourceClassesOnly().stream().map(Class::getCanonicalName).collect(toSet());
-    return new SwaggerConfiguration()
-        .openAPI(oas)
-        .prettyPrint(true)
-        .resourceClasses(resourceClasses)
-        .scannerClass("io.swagger.v3.jaxrs2.integration.JaxrsAnnotationScanner");
-  }
-
   private void registerJerseyProviders(Environment environment, Injector injector) {
     environment.jersey().register(injector.getInstance(KryoFeature.class));
     environment.jersey().register(JerseyViolationExceptionMapperV2.class);
@@ -813,6 +798,7 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
     if (configuration.getSegmentConfiguration() != null && configuration.getSegmentConfiguration().isEnabled()) {
       registerAPIAuthTelemetryFilter(environment, injector);
       registerAPIAuthTelemetryResponseFilter(environment, injector);
+      registerAPIErrorsTelemetrySenderFilter(environment, injector);
     }
   }
 
@@ -849,6 +835,11 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
   private void registerAPIAuthTelemetryResponseFilter(Environment environment, Injector injector) {
     TelemetryReporter telemetryReporter = injector.getInstance(TelemetryReporter.class);
     environment.jersey().register(new APIAuthTelemetryResponseFilter(telemetryReporter));
+  }
+
+  private void registerAPIErrorsTelemetrySenderFilter(Environment environment, Injector injector) {
+    TelemetryReporter telemetryReporter = injector.getInstance(TelemetryReporter.class);
+    environment.jersey().register(new APIErrorsTelemetrySenderFilter(telemetryReporter, NG_MANAGER.getServiceId()));
   }
 
   private void registerInternalApiAuthFilter(NextGenConfiguration configuration, Environment environment) {
@@ -910,9 +901,5 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
 
     injector.getInstance(EnforcementSdkRegisterService.class)
         .initialize(restrictionUsageRegisterConfiguration, customConfig);
-  }
-
-  public static Collection<Class<?>> getOAS3ResourceClassesOnly() {
-    return HARNESS_RESOURCE_CLASSES.stream().filter(x -> x.isAnnotationPresent(Tag.class)).collect(Collectors.toList());
   }
 }

@@ -13,7 +13,10 @@ import static java.lang.String.format;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.service.scm.ScmDelegateClient;
+import io.harness.exception.ConnectException;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.ScmInternalServerErrorException;
+import io.harness.exception.UnexpectedException;
 
 import com.google.inject.Singleton;
 import io.grpc.Channel;
@@ -46,15 +49,22 @@ public class ScmDelegateClientImpl implements ScmDelegateClient {
           channel = scmUnixManager.getChannel();
           return functor.apply(channel);
         } catch (StatusRuntimeException e) {
+          log.error("Error while communicating with the scm service. Retry count is {}", retryCount, e);
           if (e.getStatus().getCode().equals(Status.Code.UNAVAILABLE)) {
             if (++retryCount > 20) {
-              throw new InvalidRequestException("Cannot start Scm Unix Manager", e);
+              throw new UnexpectedException("Faced Internal Server Error. Please contact Harness Support Team", e);
             }
             Thread.sleep(100);
           } else {
             shutdownChannel(channel);
             throw e;
           }
+        } catch (ConnectException ex) {
+          log.error("Connectivity Error while communicating with the scm service. Retry count is {}", retryCount, ex);
+          if (++retryCount > 20) {
+            throw new UnexpectedException("Faced Internal Server Error. Please contact Harness Support Team", ex);
+          }
+          Thread.sleep(100);
         }
       }
     } finally {
@@ -76,7 +86,11 @@ public class ScmDelegateClientImpl implements ScmDelegateClient {
         return new ScmLinuxManager();
       }
     } catch (Exception e) {
-      throw new InvalidRequestException("Manager could not be created", e);
+      log.error(
+          "The delegate encountered internal error and was unable to perform the operation. Scm Manager could not be created",
+          e);
+      throw new ScmInternalServerErrorException(
+          "The delegate encountered internal error and was unable to perform the operation. Please try after some time.");
     }
     throw new InvalidRequestException("SCM on" + OS + "is not supported yet");
   }

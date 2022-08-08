@@ -158,7 +158,11 @@ public class AppDynamicsHealthSourceSpecTransformerTest extends CvNextGenTestBas
                    .getAnalysis()
                    .getDeploymentVerification()
                    .getServiceInstanceMetricPath())
-        .isEqualTo("serviceInstancePath1");
+        .isEqualTo("Individual Nodes|*|serviceInstancePath1");
+    assertThat(appDynamicsHealthSourceSpec.getMetricDefinitions().get(0).getCompleteServiceInstanceMetricPath())
+        .isEqualTo("baseFolder|" + tierName + "|Individual Nodes|*|serviceInstancePath1");
+    assertThat(appDynamicsHealthSourceSpec.getMetricDefinitions().get(0).getCompleteMetricPath())
+        .isEqualTo("baseFolder|" + tierName + "|path");
     assertThat(appDynamicsHealthSourceSpec.getMetricDefinitions()
                    .get(0)
                    .getAnalysis()
@@ -172,14 +176,12 @@ public class AppDynamicsHealthSourceSpecTransformerTest extends CvNextGenTestBas
     appDynamicsCVConfigs.add(
         AppDynamicsCVConfig.builder()
             .applicationName(applicationName)
-            .envIdentifier(envIdentifier)
             .connectorIdentifier(connectorIdentifier)
             .productName(productName)
             .projectIdentifier(projectIdentifier)
             .accountId(accountId)
             .identifier(identifier)
             .monitoringSourceName(monitoringSourceName)
-            .serviceIdentifier(serviceIdentifier)
             .tierName(tierName)
             .metricPack(MetricPack.builder().identifier("Custom").category(CVMonitoringCategory.ERRORS).build())
             .groupName("group")
@@ -191,7 +193,7 @@ public class AppDynamicsHealthSourceSpecTransformerTest extends CvNextGenTestBas
                     .metricType(TimeSeriesMetricType.INFRA)
                     .baseFolder("baseFolder")
                     .deploymentVerification(DeploymentVerification.builder()
-                                                .serviceInstanceMetricPath("serviceInstancePath1")
+                                                .serviceInstanceMetricPath("Individual Nodes|*|serviceInstancePath1")
                                                 .enabled(true)
                                                 .build())
                     .build()))
@@ -204,14 +206,12 @@ public class AppDynamicsHealthSourceSpecTransformerTest extends CvNextGenTestBas
     metricPacks.forEach(metricPack
         -> appDynamicsCVConfigs.add(AppDynamicsCVConfig.builder()
                                         .applicationName(applicationName)
-                                        .envIdentifier(envIdentifier)
                                         .connectorIdentifier(connectorIdentifier)
                                         .productName(productName)
                                         .projectIdentifier(projectIdentifier)
                                         .accountId(accountId)
                                         .identifier(identifier)
                                         .monitoringSourceName(monitoringSourceName)
-                                        .serviceIdentifier(serviceIdentifier)
                                         .tierName(tierName)
                                         .metricPack(metricPack)
                                         .build()));

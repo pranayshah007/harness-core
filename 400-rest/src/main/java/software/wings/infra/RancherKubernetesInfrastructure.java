@@ -19,6 +19,7 @@ import io.harness.expression.Expression;
 
 import software.wings.annotation.IncludeFieldMap;
 import software.wings.api.CloudProviderType;
+import software.wings.beans.ClusterSelectionCriteriaEntry;
 import software.wings.beans.InfrastructureMapping;
 import software.wings.beans.InfrastructureMappingType;
 import software.wings.beans.RancherKubernetesInfrastructureMapping;
@@ -42,13 +43,6 @@ public class RancherKubernetesInfrastructure
   @IncludeFieldMap @Expression(DISALLOW_SECRETS) private String namespace;
   @Trimmed private String releaseName;
   private List<ClusterSelectionCriteriaEntry> clusterSelectionCriteria;
-
-  @Data
-  @Builder
-  public static class ClusterSelectionCriteriaEntry {
-    String labelName;
-    String labelValues;
-  }
 
   @JsonIgnore
   @Override

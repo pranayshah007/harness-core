@@ -8,6 +8,7 @@
 package io.harness.cdng.creator.plan.stage;
 
 import io.harness.plancreator.stages.stage.AbstractStageNode;
+import io.harness.yaml.core.VariableExpression;
 import io.harness.yaml.core.failurestrategy.FailureStrategyConfig;
 
 import java.util.List;
@@ -15,5 +16,5 @@ import lombok.Data;
 
 @Data
 public abstract class DeploymentAbstractStageNode extends AbstractStageNode {
-  List<FailureStrategyConfig> failureStrategies;
+  @VariableExpression(skipVariableExpression = true) List<FailureStrategyConfig> failureStrategies;
 }

@@ -29,11 +29,6 @@ public class ResourceGroupTestUtils {
   public static ResourceGroup buildResourceGroup(@NotEmpty String scopeIdentifier) {
     return fetchBuilder(scopeIdentifier)
         .resourceSelectors(Sets.newHashSet(getRandomString(20), getRandomString(20)))
-        .fullScopeSelected(false)
         .build();
-  }
-
-  public static ResourceGroup buildResourceGroupWithFullScopeSelected(@NotEmpty String scopeIdentifier) {
-    return fetchBuilder(scopeIdentifier).resourceSelectors(null).fullScopeSelected(true).build();
   }
 }

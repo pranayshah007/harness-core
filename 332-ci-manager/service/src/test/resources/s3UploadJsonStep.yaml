@@ -1,0 +1,94 @@
+{
+  "pipeline": {
+    "identifier": "cipipelineMFhhp9LtIh",
+    "name": "pipeline with successful s3 upload including jexl expression",
+    "description": "fd",
+    "stages": [
+      {
+        "stage": {
+          "identifier": "s3_upload_jexl_success",
+          "name": "s3 upload jexl success",
+          "type": "CI",
+          "variables": [
+            {
+              "name": "AWS_ACCESS_KEY",
+              "type": "String",
+              "value": "AKIAW7HFSAHLRPFRIXHR",
+              "__uuid": "UriAjAu6Rr2RrC16umKIJg"
+            },
+            {
+              "name": "AWS_SECRET_KEY",
+              "type": "Secret",
+              "value": "account.testCISecretVvDZm1bHiu",
+              "__uuid": "8q1Xaw_QSeipqsAK7dIooQ"
+            }
+          ],
+          "spec": {
+            "sharedPaths": [
+              "/shared"
+            ],
+            "execution": {
+              "steps": [
+
+                {
+                  "step": {
+                    "identifier": "upload",
+                    "type": "S3Upload",
+                    "name": "upload",
+                    "spec": {
+                      "region": "us-west-2",
+                      "connectorRef": "account.testAWSConnectorkDLWu8aSBZ",
+                      "bucket": "<+steps.bucketNameCreate.output.outputVariables.bucket>",
+                      "sourcePath": "pom.xml",
+                      "target": "test",
+                      "__uuid": "zBaCkSR-TEeK3eSygLUZKQ"
+                    },
+                    "__uuid": "15SctVKkQkOTzCm9jFviCw"
+                  },
+                  "__uuid": "66IIXYvuQSy6jiuvC4AOew"
+                },
+              ],
+              "__uuid": "dInva48ITMin2MaHUgEwnw"
+            },
+            "infrastructure": {
+              "type": "KubernetesDirect",
+              "spec": {
+                "connectorRef": "account.CItestK8sConnectorCMs0vdKHun",
+                "namespace": "harness-qa-delegate",
+                "__uuid": "fNfZ4N82TEeYnE4_nJnJnQ"
+              },
+              "__uuid": "iLe0ox1RQtSlGaj77L9aDg"
+            },
+            "cloneCodebase": true,
+            "__uuid": "FOwlE6ySTvils8XNXYqCNw"
+          },
+          "__uuid": "WWZ8teQ_Q4aNbZMACX3d3Q"
+        },
+        "__uuid": "pF4d3M-sTiSNqkDD72HZaw"
+      }
+    ],
+    "properties": {
+      "ci": {
+        "codebase": {
+          "connectorRef": "account.CItestGitConnectorxX1YvzBdlo",
+          "repoName": "springboot",
+          "build": {
+            "type": "branch",
+            "spec": {
+              "branch": "ci-automation",
+              "__uuid": "xO8nnwVBTA25sF-FnEgfUA"
+            },
+            "__uuid": "GSmIqulHRb2ucYBLVCQLlA"
+          },
+          "__uuid": "hbTP1eVwQhirLufRJC0qGw"
+        },
+        "__uuid": "6eoCy5C-Qc6z9ZfwDIg18Q"
+      },
+      "__uuid": "dl_VG39OTzmE8mPn54LWfg"
+    },
+    "projectIdentifier": "CITestDemoProP1PcmJEzZ5",
+    "orgIdentifier": "CITestDemoOrgUNtoIHwBY8",
+    "__uuid": "GXUJuH09TEaraESC8RLUrg"
+  },
+  "__uuid": "__WhBRZ_RD2qWWQJjwnDCg"
+}

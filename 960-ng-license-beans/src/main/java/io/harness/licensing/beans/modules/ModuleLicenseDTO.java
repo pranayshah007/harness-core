@@ -43,6 +43,8 @@ import lombok.experimental.SuperBuilder;
           @JsonSubTypes.Type(value = CEModuleLicenseDTO.class, name = "CE"),
           @JsonSubTypes.Type(value = CVModuleLicenseDTO.class, name = "CV"),
           @JsonSubTypes.Type(value = CFModuleLicenseDTO.class, name = "CF"),
+          @JsonSubTypes.Type(value = STOModuleLicenseDTO.class, name = "STO"),
+          @JsonSubTypes.Type(value = STOModuleLicenseDTO.class, name = "CHAOS"),
     })
 @Schema(name = "ModuleLicense", description = "This contains details of the Module License defined in Harness")
 public abstract class ModuleLicenseDTO {
@@ -54,6 +56,8 @@ public abstract class ModuleLicenseDTO {
   LicenseStatus status;
   long startTime;
   long expiryTime;
+  boolean premiumSupport;
+  boolean selfService;
   Long createdAt;
   Long lastModifiedAt;
   Boolean trialExtended;

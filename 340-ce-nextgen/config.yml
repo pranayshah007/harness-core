@@ -6,7 +6,7 @@ server:
       port: 6340
       keyStorePath: keystore.jks
       keyStorePassword: password
-      trustStorePath: ${JAVA_HOME}/jre/lib/security/cacerts
+      trustStorePath: ${JAVA_HOME}/lib/security/cacerts
       certAlias: localhost
       validateCerts: false
       maxRequestHeaderSize: 100KiB
@@ -18,7 +18,7 @@ server:
       port: 9340
       keyStorePath: keystore.jks
       keyStorePassword: password
-      trustStorePath: ${JAVA_HOME}/jre/lib/security/cacerts
+      trustStorePath: ${JAVA_HOME}/lib/security/cacerts
       certAlias: localhost
       validateCerts: false
   requestLog:
@@ -126,13 +126,21 @@ featureFlagConfig:
   featureFlagSystem: LOCAL
   syncFeaturesToCF: false
 
+deploymentClusterName: ""
+
 gcpConfig:
   gcpProjectId: gcpProjectIdPlaceHolder
   gcpAwsConnectorCrudPubSubTopic: "ce-aws-connector-crud"
+  gcpGcpConnectorCrudPubSubTopic: "ce-gcp-connector-crud"
+  gcpAzureConnectorCrudPubSubTopic: "ce-azure-connector-crud"
 
 ceAzureSetupConfig:
   azureAppClientId: azureAppClientIdPlaceholder
   azureAppClientSecret: azureAppClientSecretplaceholder
+  enableFileCheckAtSource: false
+
+ceGcpSetupConfig:
+  enableServiceAccountPermissionsCheck: false
 
 awsConfig:
   accessKey: accessKey_placeholder
@@ -148,3 +156,48 @@ basePathPrefix: ${BASE_PATH_PREFIX:-""}
 secretsConfiguration:
   secretResolutionEnabled: false
   gcpSecretManagerProject: ccm-play
+
+awsConnectorCreatedInstantForPolicyCheck: "2022-05-05T00:00:00.00Z"
+
+notificationClient:
+  messageBroker:
+    type: MONGO
+    uri: mongodb://localhost:27017/notificationChannel
+    connectTimeout: 30000
+    serverSelectionTimeout: 90000
+    maxConnectionIdleTime: 600000
+    connectionsPerHost: 300
+  httpClient:
+    baseUrl: http://localhost:9005
+    connectTimeOutSeconds: 15
+    readTimeOutSeconds: 15
+  secrets:
+    notificationClientSecret: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
+
+segmentConfiguration:
+  enabled: true
+  url: https://api.segment.io/v1/
+  apiKey: UvSVfxy6KzApDrrlhCqSjJBlgPeEDBdf
+
+accessControlClient:
+  enableAccessControl: true
+  accessControlServiceConfig:
+    baseUrl: http://localhost:9006
+    connectTimeOutSeconds: 15
+    readTimeOutSeconds: 15
+  accessControlServiceSecret: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
+
+auditClientConfig:
+  baseUrl: http://localhost:9005/api/
+  connectTimeOutSeconds: 15
+  readTimeOutSeconds: 15
+
+enableAudit: false
+
+outboxPollConfig:
+  initialDelayInSeconds: 5
+  pollingIntervalInSeconds: 5
+  maximumRetryAttemptsForAnEvent: 7
+  lockId: NextGenCE
+
+exportMetricsToStackDriver: false

@@ -13,23 +13,31 @@ import static java.lang.String.format;
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.MigrationAsyncTracker;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.ngmigration.beans.DiscoveryInput;
 import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.MigrationInputResult;
+import io.harness.ngmigration.beans.NGYamlFile;
+import io.harness.ngmigration.beans.summary.BaseSummary;
+import io.harness.ngmigration.service.AsyncDiscoveryHandler;
 import io.harness.ngmigration.service.DiscoveryService;
+import io.harness.ngmigration.utils.NGMigrationConstants;
 import io.harness.rest.RestResponse;
 
 import software.wings.ngmigration.DiscoveryResult;
 import software.wings.ngmigration.NGMigrationEntityType;
-import software.wings.ngmigration.NGYamlFile;
+import software.wings.ngmigration.NGMigrationStatus;
 import software.wings.security.PermissionAttribute.ResourceType;
 import software.wings.security.annotations.Scope;
 
 import com.codahale.metrics.annotation.ExceptionMetered;
 import com.codahale.metrics.annotation.Timed;
+import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
+import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.HeaderParam;
@@ -40,6 +48,7 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.http.entity.ContentType;
 
 @OwnedBy(CDC)
 @Slf4j
@@ -49,6 +58,7 @@ import lombok.extern.slf4j.Slf4j;
 @Scope(ResourceType.APPLICATION)
 public class NgMigrationResource {
   @Inject DiscoveryService discoveryService;
+  @Inject AsyncDiscoveryHandler asyncDiscoveryHandler;
 
   @POST
   @Path("/discover-multi")
@@ -67,23 +77,77 @@ public class NgMigrationResource {
   public RestResponse<DiscoveryResult> discoverEntities(@QueryParam("entityId") String entityId,
       @QueryParam("appId") String appId, @QueryParam("accountId") String accountId,
       @QueryParam("entityType") NGMigrationEntityType entityType, @QueryParam("exportImg") boolean exportImage) {
-    return new RestResponse<>(discoveryService.discover(accountId, appId, entityId, entityType, exportImage));
+    return new RestResponse<>(discoveryService.discover(
+        accountId, appId, entityId, entityType, exportImage ? NGMigrationConstants.DISCOVERY_IMAGE_PATH : null));
+  }
+
+  @GET
+  @Path("/discover/summary")
+  @Timed
+  @ExceptionMetered
+  public RestResponse<Map<NGMigrationEntityType, BaseSummary>> discoverySummary(@QueryParam("entityId") String entityId,
+      @QueryParam("appId") String appId, @QueryParam("accountId") String accountId,
+      @QueryParam("entityType") NGMigrationEntityType entityType) {
+    return new RestResponse<>(discoveryService.getSummary(accountId, appId, entityId, entityType));
+  }
+
+  // This is get because in prod we cannot run this on customers accounts if it is POST
+  @GET
+  @Path("/discover/summary/async")
+  @Timed
+  @ExceptionMetered
+  public RestResponse<Map<String, String>> queueAccountLevelSummary(@QueryParam("accountId") String accountId) {
+    String requestId = asyncDiscoveryHandler.queueAccountSummary(accountId);
+    return new RestResponse<>(ImmutableMap.of("requestId", requestId));
+  }
+
+  @GET
+  @Path("/discover/summary/async-result")
+  @Timed
+  @ExceptionMetered
+  public RestResponse<MigrationAsyncTracker> getAccountLevelSummary(
+      @QueryParam("requestId") String reqId, @QueryParam("accountId") String accountId) {
+    return new RestResponse<>(asyncDiscoveryHandler.getAccountSummary(accountId, reqId));
+  }
+
+  @GET
+  @Path("/discover/viz")
+  @Timed
+  @ExceptionMetered
+  public Response discoverEntitiesImg(@QueryParam("entityId") String entityId, @QueryParam("appId") String appId,
+      @QueryParam("accountId") String accountId, @QueryParam("entityType") NGMigrationEntityType entityType,
+      @QueryParam("exportImg") boolean exportImage) throws IOException {
+    return Response.ok(discoveryService.discoverImg(accountId, appId, entityId, entityType))
+        .header("content-disposition", format("attachment; filename = %s_%s_%s.zip", accountId, entityId, entityType))
+        .header("content-type", ContentType.IMAGE_PNG)
+        .build();
+  }
+
+  @GET
+  @Path("/discover/validate")
+  @Timed
+  @ExceptionMetered
+  public RestResponse<NGMigrationStatus> findDiscoveryErrors(@QueryParam("entityId") String entityId,
+      @QueryParam("appId") String appId, @QueryParam("accountId") String accountId,
+      @QueryParam("entityType") NGMigrationEntityType entityType) {
+    DiscoveryResult discoveryResult = discoveryService.discover(accountId, appId, entityId, entityType, null);
+    return new RestResponse<>(discoveryService.getMigrationStatus(discoveryResult));
   }
 
   @POST
-  @Path("/files")
+  @Path("/save")
   @Timed
   @ExceptionMetered
   public RestResponse<List<NGYamlFile>> getMigratedFiles(@HeaderParam("Authorization") String auth,
       @QueryParam("entityId") String entityId, @QueryParam("appId") String appId,
       @QueryParam("accountId") String accountId, @QueryParam("entityType") NGMigrationEntityType entityType,
-      @QueryParam("dryRun") boolean dryRun, MigrationInputDTO inputDTO) {
-    DiscoveryResult result = discoveryService.discover(accountId, appId, entityId, entityType, false);
-    return new RestResponse<>(discoveryService.migrateEntity(auth, inputDTO, result, dryRun));
+      MigrationInputDTO inputDTO) {
+    DiscoveryResult result = discoveryService.discover(accountId, appId, entityId, entityType, null);
+    return new RestResponse<>(discoveryService.migrateEntity(auth, inputDTO, result, false));
   }
 
   @POST
-  @Path("/export")
+  @Path("/export-yaml")
   @Timed
   @ExceptionMetered
   public Response exportZippedYamlFiles(@HeaderParam("Authorization") String auth,
@@ -95,7 +159,7 @@ public class NgMigrationResource {
       result = discoveryService.discoverMulti(
           accountId, DiscoveryInput.builder().entities(inputDTO.getEntities()).exportImage(false).build());
     } else {
-      result = discoveryService.discover(accountId, appId, entityId, entityType, false);
+      result = discoveryService.discover(accountId, appId, entityId, entityType, null);
     }
     return Response.ok(discoveryService.exportYamlFilesAsZip(inputDTO, result), MediaType.APPLICATION_OCTET_STREAM)
         .header("content-disposition", format("attachment; filename = %s_%s_%s.zip", accountId, entityId, entityType))
@@ -109,7 +173,7 @@ public class NgMigrationResource {
   public RestResponse<MigrationInputResult> getInputs(@QueryParam("entityId") String entityId,
       @QueryParam("appId") String appId, @QueryParam("accountId") String accountId,
       @QueryParam("entityType") NGMigrationEntityType entityType) {
-    DiscoveryResult result = discoveryService.discover(accountId, appId, entityId, entityType, false);
+    DiscoveryResult result = discoveryService.discover(accountId, appId, entityId, entityType, null);
     return new RestResponse<>(discoveryService.migrationInput(result));
   }
 }

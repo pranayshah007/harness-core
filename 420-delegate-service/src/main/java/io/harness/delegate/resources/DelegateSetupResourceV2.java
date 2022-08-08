@@ -12,7 +12,6 @@ import static io.harness.delegate.utils.RbacConstants.DELEGATE_RESOURCE_TYPE;
 import static io.harness.delegate.utils.RbacConstants.DELEGATE_VIEW_PERMISSION;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
-import io.harness.NGCommonEntityConstants;
 import io.harness.NGResourceFilterConstants;
 import io.harness.accesscontrol.acl.api.Resource;
 import io.harness.accesscontrol.acl.api.ResourceScope;
@@ -20,17 +19,14 @@ import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.PageRequest;
-import io.harness.delegate.beans.DelegateGroup;
 import io.harness.delegate.beans.DelegateGroupDetails;
 import io.harness.delegate.beans.DelegateGroupListing;
-import io.harness.delegate.beans.DelegateGroupTags;
 import io.harness.delegate.filter.DelegateFilterPropertiesDTO;
 import io.harness.logging.AccountLogContext;
 import io.harness.logging.AutoLogContext;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.rest.RestResponse;
-import io.harness.security.annotations.InternalApi;
 import io.harness.service.intfc.DelegateSetupService;
 
 import com.codahale.metrics.annotation.ExceptionMetered;
@@ -211,33 +207,6 @@ public class DelegateSetupResourceV2 {
     try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR)) {
       return new RestResponse<>(
           delegateSetupService.updateDelegateGroup(accountId, orgId, projectId, identifier, delegateGroupDetails));
-    }
-  }
-
-  @PUT
-  @Path("/tags")
-  @Timed
-  @InternalApi
-  @ExceptionMetered
-  @Operation(operationId = "updateTagsForDelegateGroup", summary = "Updates tags for the Delegate Group.",
-      responses =
-      {
-        @io.swagger.v3.oas.annotations.responses.
-        ApiResponse(responseCode = "default", description = "Delegate Group details for updated group.")
-      })
-  public RestResponse<DelegateGroup>
-  updateTagsForDelegateGroup(@Parameter(description = "Delegate Group Name") @QueryParam(
-                                 NGCommonEntityConstants.IDENTIFIER_KEY) @NotEmpty String groupName,
-      @Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @QueryParam(
-          NGCommonEntityConstants.ACCOUNT_KEY) @NotEmpty String accountId,
-      @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @QueryParam(
-          NGCommonEntityConstants.ORG_KEY) String orgId,
-      @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
-          NGCommonEntityConstants.PROJECT_KEY) String projectId,
-      @RequestBody(required = true, description = "List of tags") DelegateGroupTags tags) {
-    try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR)) {
-      return new RestResponse<>(
-          delegateSetupService.updateDelegateGroupTags(accountId, orgId, projectId, groupName, tags.getTags()));
     }
   }
 }

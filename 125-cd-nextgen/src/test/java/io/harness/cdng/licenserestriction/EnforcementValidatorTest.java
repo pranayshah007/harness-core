@@ -8,7 +8,7 @@
 package io.harness.cdng.licenserestriction;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
-import static io.harness.licensing.beans.modules.types.CDLicenseType.SERVICES;
+import static io.harness.cd.CDLicenseType.SERVICES;
 import static io.harness.rule.OwnerRule.ARVIND;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -28,7 +28,6 @@ import io.harness.PipelineSetupUsageUtils;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
 import io.harness.category.element.UnitTests;
-import io.harness.cdng.usage.beans.CDLicenseUsageDTO;
 import io.harness.enforcement.beans.metadata.AvailabilityRestrictionMetadataDTO;
 import io.harness.enforcement.beans.metadata.RateLimitRestrictionMetadataDTO;
 import io.harness.enforcement.client.services.EnforcementClientService;
@@ -37,6 +36,7 @@ import io.harness.enforcement.constants.RestrictionType;
 import io.harness.entitysetupusageclient.remote.EntitySetupUsageClient;
 import io.harness.licensing.usage.beans.ReferenceDTO;
 import io.harness.licensing.usage.beans.UsageDataDTO;
+import io.harness.licensing.usage.beans.cd.CDLicenseUsageDTO;
 import io.harness.licensing.usage.interfaces.LicenseUsageInterface;
 import io.harness.licensing.usage.params.CDUsageRequestParams;
 import io.harness.ng.core.EntityDetail;
@@ -62,12 +62,11 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
-import org.powermock.api.mockito.PowerMockito;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 import retrofit2.Call;
 
-@RunWith(PowerMockRunner.class)
+@RunWith(MockitoJUnitRunner.class)
 @Slf4j
 @PrepareForTest({NGRestUtils.class, PipelineSetupUsageUtils.class})
 @OwnedBy(CDP)
@@ -175,7 +174,7 @@ public class EnforcementValidatorTest extends CategoryTest {
         .getLicenseUsage(eq(ACCOUNT_ID), eq(ModuleType.CD), anyLong(),
             eq(CDUsageRequestParams.builder().cdLicenseType(SERVICES).build()));
 
-    PowerMockito.mockStatic(NGRestUtils.class);
+    Mockito.mockStatic(NGRestUtils.class);
     List<EntitySetupUsageDTO> allReferredUsages = getReferredUsages("S3", "S4");
     Call<ResponseDTO<List<EntitySetupUsageDTO>>> responseDTOCallMock = Mockito.mock(Call.class);
     doReturn(responseDTOCallMock)
@@ -184,7 +183,7 @@ public class EnforcementValidatorTest extends CategoryTest {
             eq(FullyQualifiedIdentifierHelper.getFullyQualifiedIdentifier(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID)),
             eq(EntityType.SERVICE), eq(null));
     when(NGRestUtils.getResponseWithRetry(any(), any())).thenReturn(allReferredUsages);
-    PowerMockito.mockStatic(PipelineSetupUsageUtils.class);
+    Mockito.mockStatic(PipelineSetupUsageUtils.class);
     when(PipelineSetupUsageUtils.extractInputReferredEntityFromYaml(
              eq(ACCOUNT_ID), eq(ORG_ID), eq(PROJECT_ID), eq(YAML), eq(allReferredUsages)))
         .thenReturn(

@@ -21,7 +21,9 @@ import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.plan.execution.SetupAbstractionKeys;
+import io.harness.strategy.StrategyValidationUtils;
 
+import com.cronutils.utils.StringUtils;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.protobuf.InvalidProtocolBufferException;
 import java.util.HashMap;
@@ -29,6 +31,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import lombok.NonNull;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
@@ -113,6 +116,15 @@ public class AmbianceUtils {
     return level == null || isEmpty(level.getIdentifier()) ? null : level.getIdentifier();
   }
 
+  public static String obtainStepGroupIdentifier(Ambiance ambiance) {
+    Level level = null;
+    Optional<Level> levelOptional = getStepGroupLevelFromAmbiance(ambiance);
+    if (levelOptional.isPresent()) {
+      level = levelOptional.get();
+    }
+    return level == null || isEmpty(level.getIdentifier()) ? null : level.getIdentifier();
+  }
+
   public static AutoLogContext autoLogContext(Ambiance ambiance) {
     return new AutoLogContext(logContextMap(ambiance), OVERRIDE_NESTS);
   }
@@ -183,6 +195,34 @@ public class AmbianceUtils {
     return stageLevel;
   }
 
+  public String getStageRuntimeIdAmbiance(Ambiance ambiance) {
+    Optional<Level> stageLevel = getStageLevelFromAmbiance(ambiance);
+    if (stageLevel.isPresent()) {
+      return stageLevel.get().getRuntimeId();
+    }
+    throw new InvalidRequestException("Stage not present");
+  }
+
+  public Optional<Level> getStrategyLevelFromAmbiance(Ambiance ambiance) {
+    Optional<Level> stageLevel = Optional.empty();
+    for (Level level : ambiance.getLevelsList()) {
+      if (level.getStepType().getStepCategory() == StepCategory.STRATEGY) {
+        stageLevel = Optional.of(level);
+      }
+    }
+    return stageLevel;
+  }
+
+  public Optional<Level> getStepGroupLevelFromAmbiance(Ambiance ambiance) {
+    Optional<Level> stageLevel = Optional.empty();
+    for (Level level : ambiance.getLevelsList()) {
+      if (level.getStepType().getType().equals("STEP_GROUP")) {
+        stageLevel = Optional.of(level);
+      }
+    }
+    return stageLevel;
+  }
+
   public static boolean isRetry(Ambiance ambiance) {
     Level level = Objects.requireNonNull(obtainCurrentLevel(ambiance));
     return level.getRetryIndex() != 0;
@@ -193,5 +233,50 @@ public class AmbianceUtils {
       return null;
     }
     return ambiance.getLevels(ambiance.getLevelsCount() - 2).getRuntimeId();
+  }
+
+  public static String modifyIdentifier(Ambiance ambiance, String identifier) {
+    Level level = obtainCurrentLevel(ambiance);
+    return modifyIdentifier(level, identifier);
+  }
+
+  public static String modifyIdentifier(Level level, String identifier) {
+    return identifier.replaceAll(
+        StrategyValidationUtils.STRATEGY_IDENTIFIER_POSTFIX_ESCAPED, getStrategyPostfix(level));
+  }
+
+  public static String getStrategyPostfix(Level level) {
+    if (level == null || !level.hasStrategyMetadata()) {
+      return StringUtils.EMPTY;
+    }
+    if (!level.getStrategyMetadata().hasMatrixMetadata()) {
+      if (level.getStrategyMetadata().getTotalIterations() <= 0) {
+        return StringUtils.EMPTY;
+      }
+      return "_" + level.getStrategyMetadata().getCurrentIteration();
+    }
+    if (level.getStrategyMetadata().getMatrixMetadata().getMatrixCombinationList().isEmpty()) {
+      return StringUtils.EMPTY;
+    }
+    return "_"
+        + level.getStrategyMetadata()
+              .getMatrixMetadata()
+              .getMatrixCombinationList()
+              .stream()
+              .map(String::valueOf)
+              .collect(Collectors.joining("_"));
+  }
+  public boolean isCurrentStrategyLevelAtStage(Ambiance ambiance) {
+    int levelsCount = ambiance.getLevelsCount();
+    // Parent of current level is stages.
+    if (levelsCount >= 2 && ambiance.getLevels(levelsCount - 2).getGroup().equals("STAGES")) {
+      return true;
+    }
+    // Parent is Parallel and Its parent of parent is STAGES.
+    if (levelsCount >= 3 && ambiance.getLevels(levelsCount - 2).getStepType().getStepCategory() == StepCategory.FORK
+        && ambiance.getLevels(levelsCount - 3).getGroup().equals("STAGES")) {
+      return true;
+    }
+    return false;
   }
 }

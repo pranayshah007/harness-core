@@ -43,7 +43,7 @@ import software.wings.service.impl.newrelic.MLExperiments;
 import software.wings.service.intfc.DataStoreService;
 import software.wings.service.intfc.analysis.ClusterLevel;
 import software.wings.service.intfc.verification.CVActivityLogService;
-import software.wings.service.intfc.verification.CVActivityLogService.Logger;
+import software.wings.service.intfc.verification.CVActivityLogger;
 import software.wings.sm.ContextElement;
 import software.wings.sm.StateExecutionInstance;
 import software.wings.verification.VerificationDataAnalysisResponse;
@@ -364,8 +364,8 @@ public class LearningEngineAnalysisServiceImpl implements LearningEngineService 
     }
   }
 
-  private void logActivityOnAnalysisComplete(Logger activityLogger, ClusterLevel level, MLAnalysisType mlAnalysisType,
-      long analysisMinute, boolean is247Task) {
+  private void logActivityOnAnalysisComplete(CVActivityLogger activityLogger, ClusterLevel level,
+      MLAnalysisType mlAnalysisType, long analysisMinute, boolean is247Task) {
     String prefix = mlAnalysisType == MLAnalysisType.TIME_SERIES ? "Time series " : "Log ";
     if (level == ClusterLevel.HF) {
       // TODO: clean this up once analysisMinute becomes absolute for everything.

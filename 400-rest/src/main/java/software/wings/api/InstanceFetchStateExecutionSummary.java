@@ -26,12 +26,22 @@ public class InstanceFetchStateExecutionSummary extends StepExecutionSummary imp
   private String scriptOutput;
   private String activityId;
   private List<String> tags;
+  private String artifactId;
+  private String artifactName;
+  private String artifactSourceName;
+  private String artifactStreamId;
+  private String artifactBuildNum;
 
   @Override
   public Optional<List<DeploymentInfo>> extractDeploymentInfo() {
     return Optional.of(singletonList(CustomDeploymentTypeInfo.builder()
                                          .scriptOutput(scriptOutput)
                                          .instanceFetchScript(instanceFetchScript)
+                                         .artifactId(artifactId)
+                                         .artifactName(artifactName)
+                                         .artifactSourceName(artifactSourceName)
+                                         .artifactStreamId(artifactStreamId)
+                                         .artifactBuildNum(artifactBuildNum)
                                          .tags(tags)
                                          .build()));
   }

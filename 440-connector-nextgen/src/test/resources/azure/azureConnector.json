@@ -11,12 +11,13 @@
     },
     "type": "Azure",
     "spec": {
+      "executeOnDelegate": true,
       "delegateSelectors": null,
       "azureEnvironmentType": "AZURE",
       "credential": {
         "type": "ManualConfig",
         "spec": {
-          "clientId": "clientId",
+          "applicationId": "clientId",
           "tenantId": "tenantId",
           "auth": {
             "type": "Secret",

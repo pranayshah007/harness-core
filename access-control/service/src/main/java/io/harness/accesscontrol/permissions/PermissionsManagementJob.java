@@ -47,7 +47,7 @@ public class PermissionsManagementJob {
       byte[] bytes = Resources.toByteArray(url);
       this.permissionsConfig = om.readValue(bytes, PermissionsConfig.class);
     } catch (IOException e) {
-      throw new InvalidRequestException("Permissions file path is invalid");
+      throw new InvalidRequestException("Permissions file path is invalid or the syntax is incorrect", e);
     }
     this.permissionService = permissionService;
   }

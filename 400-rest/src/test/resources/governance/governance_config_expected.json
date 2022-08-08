@@ -43,17 +43,18 @@
         },
         {
           "filterType":"ALL",
-          "envSelection":{
-            "filterType":"ALL_NON_PROD"
+          "envSelection": {
+            "filterType": "ALL_NON_PROD"
           }
         }
       ],
-      "userGroups":[
+      "userGroups": [
         "aaOLwzRsTMOoSlDrjstIHQ",
         "BH5_gD_VRDaWcSCsnZKSug"
       ],
-      "uuid":"FREEZE_ID",
-      "freezeWindowState":"INACTIVE"
+      "uuid": "FREEZE_ID",
+      "freezeWindowState": "INACTIVE",
+      "userGroupSelection": null
     }
   ],
   "enableNextIterations":false,

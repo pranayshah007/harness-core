@@ -1,6 +1,6 @@
 # Any edit in this file should accompany an increment in version.
 name: permissionsConfiguration
-version: 20
+version: 34
 permissions:
   - identifier: core_project_delete
     name: Delete Project
@@ -136,6 +136,24 @@ permissions:
       - account
       - organization
       - project
+  - identifier: core_smtp_view
+    name: View SMTP Config
+    status: ACTIVE
+    includeInAllRoles: false
+    allowedScopeLevels:
+      - account
+  - identifier: core_smtp_edit
+    name: Create or Edit a SMTP Config
+    status: ACTIVE
+    includeInAllRoles: false
+    allowedScopeLevels:
+      - account
+  - identifier: core_smtp_delete
+    name: Delete SMTP Config
+    status: ACTIVE
+    includeInAllRoles: false
+    allowedScopeLevels:
+      - account
   - identifier: core_delegate_view
     name: View Delegates
     status: ACTIVE
@@ -304,6 +322,14 @@ permissions:
       - account
       - organization
       - project
+  - identifier: core_environmentgroup_access
+    name: Access Environment Group
+    status: ACTIVE
+    includeInAllRoles: false
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
   - identifier: core_audit_view
     name: View Audits
     status: ACTIVE
@@ -402,6 +428,12 @@ permissions:
       - project
   - identifier: core_license_view
     name: View Licenses
+    status: ACTIVE
+    includeInAllRoles: false
+    allowedScopeLevels:
+      - account
+  - identifier: core_license_edit
+    name: Edit Licenses
     status: ACTIVE
     includeInAllRoles: false
     allowedScopeLevels:
@@ -707,7 +739,7 @@ permissions:
       - project
   - identifier: gitops_agent_view
     name: View a Gitops Agent
-    status: STAGING
+    status: ACTIVE
     includeInAllRoles: false
     allowedScopeLevels:
       - account
@@ -715,7 +747,7 @@ permissions:
       - project
   - identifier: gitops_agent_edit
     name: Edit a Gitops Agent
-    status: STAGING
+    status: ACTIVE
     includeInAllRoles: false
     allowedScopeLevels:
       - account
@@ -723,7 +755,7 @@ permissions:
       - project
   - identifier: gitops_agent_delete
     name: Delete a Gitops agent
-    status: STAGING
+    status: ACTIVE
     includeInAllRoles: false
     allowedScopeLevels:
       - account
@@ -731,15 +763,7 @@ permissions:
       - project
   - identifier: gitops_application_view
     name: View a Gitops Application
-    status: STAGING
-    includeInAllRoles: false
-    allowedScopeLevels:
-      - account
-      - organization
-      - project
-  - identifier: gitops_application_create
-    name: Create a Gitops Application
-    status: STAGING
+    status: ACTIVE
     includeInAllRoles: false
     allowedScopeLevels:
       - account
@@ -747,7 +771,7 @@ permissions:
       - project
   - identifier: gitops_application_edit
     name: Edit a Gitops Application
-    status: STAGING
+    status: ACTIVE
     includeInAllRoles: false
     allowedScopeLevels:
       - account
@@ -755,7 +779,7 @@ permissions:
       - project
   - identifier: gitops_application_delete
     name: Delete a Gitops Application
-    status: STAGING
+    status: ACTIVE
     includeInAllRoles: false
     allowedScopeLevels:
       - account
@@ -763,7 +787,7 @@ permissions:
       - project
   - identifier: gitops_application_sync
     name: Sync a Gitops Application
-    status: STAGING
+    status: ACTIVE
     includeInAllRoles: false
     allowedScopeLevels:
       - account
@@ -771,7 +795,7 @@ permissions:
       - project
   - identifier: gitops_repository_view
     name: View a Gitops Repository
-    status: STAGING
+    status: ACTIVE
     includeInAllRoles: false
     allowedScopeLevels:
       - account
@@ -779,7 +803,7 @@ permissions:
       - project
   - identifier: gitops_repository_edit
     name: Edit a Gitops Repository
-    status: STAGING
+    status: ACTIVE
     includeInAllRoles: false
     allowedScopeLevels:
       - account
@@ -787,7 +811,7 @@ permissions:
       - project
   - identifier: gitops_repository_delete
     name: Delete a Gitops Repository
-    status: STAGING
+    status: ACTIVE
     includeInAllRoles: false
     allowedScopeLevels:
       - account
@@ -795,7 +819,7 @@ permissions:
       - project
   - identifier: gitops_cluster_view
     name: View a Gitops Cluster
-    status: STAGING
+    status: ACTIVE
     includeInAllRoles: false
     allowedScopeLevels:
       - account
@@ -803,7 +827,7 @@ permissions:
       - project
   - identifier: gitops_cluster_edit
     name: Edit a Gitops Cluster
-    status: STAGING
+    status: ACTIVE
     includeInAllRoles: false
     allowedScopeLevels:
       - account
@@ -811,7 +835,7 @@ permissions:
       - project
   - identifier: gitops_cluster_delete
     name: Delete a Gitops Cluster
-    status: STAGING
+    status: ACTIVE
     includeInAllRoles: false
     allowedScopeLevels:
       - account
@@ -819,7 +843,7 @@ permissions:
       - project
   - identifier: gitops_gpgkey_view
     name: View a Gitops Gpgkey
-    status: STAGING
+    status: ACTIVE
     includeInAllRoles: false
     allowedScopeLevels:
       - account
@@ -827,7 +851,7 @@ permissions:
       - project
   - identifier: gitops_gpgkey_edit
     name: Edit a Gitops Gpgkey
-    status: STAGING
+    status: ACTIVE
     includeInAllRoles: false
     allowedScopeLevels:
       - account
@@ -835,7 +859,7 @@ permissions:
       - project
   - identifier: gitops_gpgkey_delete
     name: Delete a Gitops Gpgkey
-    status: STAGING
+    status: ACTIVE
     includeInAllRoles: false
     allowedScopeLevels:
       - account
@@ -843,7 +867,7 @@ permissions:
       - project
   - identifier: gitops_cert_view
     name: View a Gitops Cert
-    status: STAGING
+    status: ACTIVE
     includeInAllRoles: false
     allowedScopeLevels:
       - account
@@ -851,7 +875,7 @@ permissions:
       - project
   - identifier: gitops_cert_edit
     name: Edit a Gitops Cert
-    status: STAGING
+    status: ACTIVE
     includeInAllRoles: false
     allowedScopeLevels:
       - account
@@ -859,9 +883,339 @@ permissions:
       - project
   - identifier: gitops_cert_delete
     name: Delete a Gitops Cert
-    status: STAGING
+    status: ACTIVE
     includeInAllRoles: false
     allowedScopeLevels:
       - account
       - organization
       - project
+  - identifier: sto_testtarget_view
+    name: View test targets
+    status: ACTIVE
+    includeInAllRoles: false
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
+  - identifier: sto_testtarget_edit
+    name: Edit test targets
+    status: ACTIVE
+    includeInAllRoles: false
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
+  - identifier: sto_exemption_view
+    name: View exemptions
+    status: ACTIVE
+    includeInAllRoles: false
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
+  - identifier: sto_exemption_create
+    name: Create exemption
+    status: ACTIVE
+    includeInAllRoles: false
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
+  - identifier: sto_exemption_approve
+    name: Approve exemption
+    status: ACTIVE
+    includeInAllRoles: false
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
+  - identifier: sto_issue_view
+    name: View security issue
+    status: ACTIVE
+    includeInAllRoles: false
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
+  - identifier: sto_scan_view
+    name: View security scan
+    status: ACTIVE
+    includeInAllRoles: false
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
+  - identifier: core_file_view
+    name: View Files
+    status: ACTIVE
+    includeInAllRoles: false
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
+  - identifier: core_file_edit
+    name: Edit a File
+    status: ACTIVE
+    includeInAllRoles: false
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
+  - identifier: core_file_delete
+    name: Delete File
+    status: ACTIVE
+    includeInAllRoles: false
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
+  - identifier: core_file_access
+    name: Access a File
+    status: ACTIVE
+    includeInAllRoles: false
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
+  - identifier: core_variable_view
+    name: View a Variable
+    status: ACTIVE
+    includeInAllRoles: false
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
+  - identifier: core_variable_edit
+    name: Edit a Variable
+    status: ACTIVE
+    includeInAllRoles: false
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
+  - identifier: core_variable_delete
+    name: Delete a Variable
+    status: ACTIVE
+    includeInAllRoles: false
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
+  - identifier: chaos_chaoshub_view
+    name: View a Chaos Hub
+    status: ACTIVE
+    includeInAllRoles: false
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
+  - identifier: chaos_chaoshub_edit
+    name: Edit a Chaos Hub
+    status: ACTIVE
+    includeInAllRoles: false
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
+  - identifier: chaos_chaoshub_delete
+    name: Delete a Chaos Hub
+    status: ACTIVE
+    includeInAllRoles: false
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
+  - identifier: chaos_chaosagent_view
+    name: View a Chaos Agent
+    status: ACTIVE
+    includeInAllRoles: false
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
+  - identifier: chaos_chaosagent_edit
+    name: Edit a Chaos Agent
+    status: ACTIVE
+    includeInAllRoles: false
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
+  - identifier: chaos_chaosagent_delete
+    name: Delete a Chaos Agent
+    status: ACTIVE
+    includeInAllRoles: false
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
+  - identifier: chaos_chaosgitops_view
+    name: View Gitops
+    status: ACTIVE
+    includeInAllRoles: false
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
+  - identifier: chaos_chaosgitops_edit
+    name: Edit Gitops
+    status: ACTIVE
+    includeInAllRoles: false
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
+  - identifier: chaos_chaosworkflow_view
+    name: View a Chaos Workflow
+    status: ACTIVE
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
+  - identifier: chaos_chaosworkflow_edit
+    name: Edit a Chaos Workflow
+    status: ACTIVE
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
+  - identifier: chaos_chaosworkflow_delete
+    name: Delete a Chaos Workflow
+    status: ACTIVE
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
+  - identifier: core_setting_view
+    name: View Settings
+    status: ACTIVE
+    includeInAllRoles: false
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
+  - identifier: core_setting_edit
+    name: Edit a Setting
+    status: ACTIVE
+    includeInAllRoles: false
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
+  - identifier: ccm_perspective_view
+    name: View a CCM Perspective
+    status: EXPERIMENTAL
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+  - identifier: ccm_perspective_edit
+    name: Create or Edit or Move a CCM Perspective
+    status: EXPERIMENTAL
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+  - identifier: ccm_perspective_delete
+    name: Delete a CCM Perspective
+    status: EXPERIMENTAL
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+  - identifier: ccm_budget_view
+    name: View a CCM Budget
+    status: EXPERIMENTAL
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+  - identifier: ccm_budget_edit
+    name: Create or Edit a CCM Budget
+    status: EXPERIMENTAL
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+  - identifier: ccm_budget_delete
+    name: Delete a CCM Budget
+    status: EXPERIMENTAL
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+  - identifier: ccm_costCategory_view
+    name: View a CCM Cost Category
+    status: EXPERIMENTAL
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+  - identifier: ccm_costCategory_edit
+    name: Create or Edit a CCM Cost Category
+    status: EXPERIMENTAL
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+  - identifier: ccm_costCategory_delete
+    name: Delete a CCM Cost Category
+    status: EXPERIMENTAL
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+  - identifier: ccm_autoStoppingRule_view
+    name: View a CCM Auto Stopping Rule
+    status: EXPERIMENTAL
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+  - identifier: ccm_autoStoppingRule_edit
+    name: Create or Edit a CCM Auto Stopping Rule
+    status: EXPERIMENTAL
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+  - identifier: ccm_autoStoppingRule_delete
+    name: Delete a CCM Auto Stopping Rule
+    status: EXPERIMENTAL
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+  - identifier: ccm_folder_view
+    name: View a CCM Folder
+    status: EXPERIMENTAL
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+  - identifier: ccm_folder_edit
+    name: Create or Edit a CCM Folder
+    status: EXPERIMENTAL
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+  - identifier: ccm_folder_delete
+    name: Delete a CCM Folder
+    status: EXPERIMENTAL
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+  - identifier: ccm_loadBalancer_view
+    name: View a CCM Load balancer
+    status: EXPERIMENTAL
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+  - identifier: ccm_loadBalancer_edit
+    name: Create or Edit a Load balancer
+    status: EXPERIMENTAL
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+  - identifier: ccm_loadBalancer_delete
+    name: Delete a CCM Load balancer
+    status: EXPERIMENTAL
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+  - identifier: ccm_overview_view
+    name: View CCM Overview page
+    status: EXPERIMENTAL
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account

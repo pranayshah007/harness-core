@@ -23,6 +23,7 @@ import static io.harness.utils.RestCallToNGManagerClientUtils.execute;
 import static java.lang.String.format;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
+import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toList;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.springframework.data.mongodb.core.query.Criteria.where;
@@ -35,11 +36,13 @@ import io.harness.beans.IdentifierRef;
 import io.harness.beans.SortOrder;
 import io.harness.beans.SortOrder.OrderType;
 import io.harness.common.EntityReference;
+import io.harness.connector.CombineCcmK8sConnectorResponseDTO;
 import io.harness.connector.ConnectorCatalogueResponseDTO;
 import io.harness.connector.ConnectorCategory;
 import io.harness.connector.ConnectorDTO;
 import io.harness.connector.ConnectorFilterPropertiesDTO;
 import io.harness.connector.ConnectorInfoDTO;
+import io.harness.connector.ConnectorRegistryFactory;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.ConnectorValidationResult;
 import io.harness.connector.ConnectorValidationResult.ConnectorValidationResultBuilder;
@@ -58,8 +61,10 @@ import io.harness.connector.services.ConnectorService;
 import io.harness.connector.stats.ConnectorStatistics;
 import io.harness.connector.stats.ConnectorStatusStats;
 import io.harness.connector.validator.ConnectionValidator;
+import io.harness.delegate.beans.connector.CcmConnectorFilter;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.beans.connector.ConnectorType;
+import io.harness.delegate.beans.connector.cek8s.CEKubernetesClusterConfigDTO;
 import io.harness.delegate.beans.connector.scm.GitConnectionType;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
 import io.harness.delegate.beans.connector.scm.awscodecommit.AwsCodeCommitConnectorDTO;
@@ -77,6 +82,7 @@ import io.harness.exception.ConnectorNotFoundException;
 import io.harness.exception.DelegateServiceDriverException;
 import io.harness.exception.DuplicateFieldException;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.ReferencedEntityException;
 import io.harness.exception.UnexpectedException;
 import io.harness.exception.WingsException;
 import io.harness.exception.ngexception.ConnectorValidationException;
@@ -107,11 +113,15 @@ import io.harness.outbox.api.OutboxService;
 import io.harness.perpetualtask.PerpetualTaskId;
 import io.harness.repositories.ConnectorRepository;
 import io.harness.utils.FullyQualifiedIdentifierHelper;
+import io.harness.utils.IdentifierRefHelper;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -128,6 +138,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Update;
@@ -166,6 +177,15 @@ public class DefaultConnectorServiceImpl implements ConnectorService {
   }
 
   @Override
+  public Optional<ConnectorResponseDTO> getByRef(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String connectorRef) {
+    IdentifierRef identifierRef =
+        IdentifierRefHelper.getIdentifierRef(connectorRef, accountIdentifier, orgIdentifier, projectIdentifier);
+    return get(identifierRef.getAccountIdentifier(), identifierRef.getOrgIdentifier(),
+        identifierRef.getProjectIdentifier(), identifierRef.getIdentifier());
+  }
+
+  @Override
   public Optional<ConnectorResponseDTO> getByName(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String name, boolean isDeletedAllowed) {
     /***
@@ -196,6 +216,16 @@ public class DefaultConnectorServiceImpl implements ConnectorService {
       ConnectorFilterPropertiesDTO filterProperties, String orgIdentifier, String projectIdentifier,
       String filterIdentifier, String searchTerm, Boolean includeAllConnectorsAccessibleAtScope,
       Boolean getDistinctFromBranches) {
+    Page<Connector> connectors =
+        listHelper(page, size, accountIdentifier, filterProperties, orgIdentifier, projectIdentifier, filterIdentifier,
+            searchTerm, includeAllConnectorsAccessibleAtScope, getDistinctFromBranches);
+    return getResponseList(accountIdentifier, orgIdentifier, projectIdentifier, connectors);
+  }
+
+  private Page<Connector> listHelper(int page, int size, String accountIdentifier,
+      ConnectorFilterPropertiesDTO filterProperties, String orgIdentifier, String projectIdentifier,
+      String filterIdentifier, String searchTerm, Boolean includeAllConnectorsAccessibleAtScope,
+      Boolean getDistinctFromBranches) {
     boolean isBuiltInSMDisabled =
         accountSettingService.getIsBuiltInSMDisabled(accountIdentifier, null, null, AccountSettingType.CONNECTOR);
 
@@ -213,10 +243,13 @@ public class DefaultConnectorServiceImpl implements ConnectorService {
     if (Boolean.TRUE.equals(getDistinctFromBranches)
         && gitSyncSdkService.isGitSyncEnabled(accountIdentifier, orgIdentifier, projectIdentifier)) {
       connectors = connectorRepository.findAll(criteria, pageable, true);
+    } else if (Boolean.FALSE.equals(getDistinctFromBranches)
+        && gitSyncSdkService.isGitSyncEnabled(accountIdentifier, orgIdentifier, projectIdentifier)) {
+      connectors = connectorRepository.findAll(criteria, pageable, false);
     } else {
       connectors = connectorRepository.findAll(criteria, pageable, projectIdentifier, orgIdentifier, accountIdentifier);
     }
-    return getResponseList(accountIdentifier, orgIdentifier, projectIdentifier, connectors);
+    return connectors;
   }
 
   private ConnectorResponseDTO getResponse(
@@ -231,6 +264,45 @@ public class DefaultConnectorServiceImpl implements ConnectorService {
     Page<ConnectorResponseDTO> connectorResponseDTOPage = connectors.map(connectorMapper::writeDTO);
     populateGitMetadata(accountIdentifier, orgIdentifier, projectIdentifier, connectorResponseDTOPage.getContent());
     return connectorResponseDTOPage;
+  }
+
+  private Page<CombineCcmK8sConnectorResponseDTO> getCcmK8sResponseList(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, Page<Connector> k8sConnectors, Page<Connector> ccmk8sConnectors) {
+    List<CombineCcmK8sConnectorResponseDTO> combineK8sConnectorResponseDTOList = new ArrayList<>();
+    Page<ConnectorResponseDTO> connectorResponseDTOPage = k8sConnectors.map(connectorMapper::writeDTO);
+    populateGitMetadata(accountIdentifier, orgIdentifier, projectIdentifier, connectorResponseDTOPage.getContent());
+
+    Page<ConnectorResponseDTO> ccmk8sConnectorResponseDTOPage = ccmk8sConnectors.map(connectorMapper::writeDTO);
+    populateGitMetadata(
+        accountIdentifier, orgIdentifier, projectIdentifier, ccmk8sConnectorResponseDTOPage.getContent());
+
+    if (!connectorResponseDTOPage.hasContent()) {
+      return new PageImpl<>(
+          combineK8sConnectorResponseDTOList, k8sConnectors.getPageable(), k8sConnectors.getTotalElements());
+    }
+
+    for (ConnectorResponseDTO k8sconnectorResponseDTO : connectorResponseDTOPage.getContent()) {
+      log.info("k8sconnectorResponseDTO is: {}", k8sconnectorResponseDTO);
+      CombineCcmK8sConnectorResponseDTO combineCcmK8SConnectorResponseDTO = new CombineCcmK8sConnectorResponseDTO();
+      combineCcmK8SConnectorResponseDTO.setK8sConnector(k8sconnectorResponseDTO);
+      combineCcmK8SConnectorResponseDTO.setCcmk8sConnector(new ArrayList<>());
+      for (ConnectorResponseDTO ccmOnlyConnectorResponseDTO : ccmk8sConnectorResponseDTOPage.getContent()) {
+        log.info("ccmOnlyConnectorResponseDTO is: {}", ccmOnlyConnectorResponseDTO);
+        CEKubernetesClusterConfigDTO ceKubernetesClusterConfigDTO =
+            (CEKubernetesClusterConfigDTO) ccmOnlyConnectorResponseDTO.getConnector().getConnectorConfig();
+        if (ceKubernetesClusterConfigDTO.getConnectorRef().equals(
+                k8sconnectorResponseDTO.getConnector().getIdentifier())) {
+          List<ConnectorResponseDTO> sConnector = combineCcmK8SConnectorResponseDTO.getCcmk8sConnector();
+          sConnector.add(ccmOnlyConnectorResponseDTO);
+          combineCcmK8SConnectorResponseDTO.setCcmk8sConnector(sConnector);
+        }
+      }
+      combineK8sConnectorResponseDTOList.add(combineCcmK8SConnectorResponseDTO);
+    }
+
+    log.info("combineK8sConnectorResponseDTOList is: {}", combineK8sConnectorResponseDTOList);
+    return new PageImpl<>(
+        combineK8sConnectorResponseDTOList, k8sConnectors.getPageable(), k8sConnectors.getTotalElements());
   }
 
   private void populateGitMetadata(String accountIdentifier, String orgIdentifier, String projectIdentifier,
@@ -381,9 +453,8 @@ public class DefaultConnectorServiceImpl implements ConnectorService {
         connectorInfo.getOrgIdentifier(), connectorInfo.getProjectIdentifier(), connectorInfo.getIdentifier());
     if (!isIdentifierUnique) {
       throw new InvalidRequestException(
-          String.format("The connector with identifier %s already exists in the account %s, org %s, project %s",
-              connectorInfo.getIdentifier(), accountIdentifier, connectorInfo.getOrgIdentifier(),
-              connectorInfo.getProjectIdentifier()));
+          String.format("Connector: %s has been given an identifier: %s that already exists. Please enter a unique ID.",
+              connectorInfo.getName(), connectorInfo.getIdentifier()));
     }
     if (HARNESS_SECRET_MANAGER_IDENTIFIER.equalsIgnoreCase(connectorRequestDTO.getConnectorInfo().getIdentifier())) {
       log.info("[AccountSetup]:Creating default SecretManager");
@@ -413,16 +484,6 @@ public class DefaultConnectorServiceImpl implements ConnectorService {
         accountIdentifier, connectorEntity.getOrgIdentifier(), connectorEntity.getProjectIdentifier(), connectorEntity);
   }
 
-  private void validateThatAConnectorWithThisNameDoesNotExists(
-      ConnectorInfoDTO connectorRequestDTO, String accountIdentifier) {
-    Page<Connector> connectors = getConnectorsWithGivenName(accountIdentifier, connectorRequestDTO.getOrgIdentifier(),
-        connectorRequestDTO.getProjectIdentifier(), connectorRequestDTO.getName(), true);
-    if (connectors != null && connectors.getSize() >= 1) {
-      throw new InvalidRequestException(
-          format("Connector with name [%s] already exists", connectorRequestDTO.getName()));
-    }
-  }
-
   private Page<Connector> getConnectorsWithGivenName(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String name, boolean isDeletedAllowed) {
     Criteria criteria = new Criteria()
@@ -439,6 +500,22 @@ public class DefaultConnectorServiceImpl implements ConnectorService {
     }
     return connectorRepository.findAll(
         criteria, Pageable.unpaged(), projectIdentifier, orgIdentifier, accountIdentifier);
+  }
+
+  private List<Connector> getConnectors(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, List<String> connectorIdentifiers) {
+    Criteria criteria = new Criteria()
+                            .and(ConnectorKeys.accountIdentifier)
+                            .is(accountIdentifier)
+                            .and(ConnectorKeys.orgIdentifier)
+                            .is(orgIdentifier)
+                            .and(ConnectorKeys.projectIdentifier)
+                            .is(projectIdentifier)
+                            .and(ConnectorKeys.identifier)
+                            .in(connectorIdentifiers);
+    return connectorRepository
+        .findAll(criteria, Pageable.unpaged(), projectIdentifier, orgIdentifier, accountIdentifier)
+        .getContent();
   }
 
   @Override
@@ -568,6 +645,26 @@ public class DefaultConnectorServiceImpl implements ConnectorService {
             connectorDTO.getConnectorInfo().getProjectIdentifier(), criteria, update));
   }
 
+  @Override
+  public List<Map<String, String>> getAttributes(
+      String accountId, String orgIdentifier, String projectIdentifier, List<String> connectorIdentifiers) {
+    Map<String, List<Connector>> connectors =
+        getConnectors(accountId, orgIdentifier, projectIdentifier, connectorIdentifiers)
+            .stream()
+            .collect(groupingBy(Connector::getIdentifier));
+    List<Map<String, String>> attributes = new ArrayList<>();
+    for (String connectorId : connectorIdentifiers) {
+      if (connectors.containsKey(connectorId)) {
+        attributes.add(ImmutableMap.of("category",
+            ConnectorRegistryFactory.getConnectorCategory(connectors.get(connectorId).get(0).getType()).name()));
+      } else {
+        attributes.add(Collections.emptyMap());
+      }
+    }
+
+    return attributes;
+  }
+
   private void deleteTheExistingReferences(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier) {
     GitEntityInfo oldGitEntityInfo = GitContextHelper.getGitEntityInfo();
@@ -643,7 +740,7 @@ public class DefaultConnectorServiceImpl implements ConnectorService {
               new ConnectorDeleteEvent(accountIdentifier, connectorMapper.writeDTO(existingConnector).getConnector()));
     }
 
-    connectorRepository.save(existingConnector, null, changeType, supplier);
+    connectorRepository.delete(existingConnector, null, changeType, supplier);
 
     return true;
   }
@@ -673,7 +770,7 @@ public class DefaultConnectorServiceImpl implements ConnectorService {
       throw new UnexpectedException("Error while deleting the connector");
     }
     if (isEntityReferenced) {
-      throw new InvalidRequestException(String.format(
+      throw new ReferencedEntityException(String.format(
           "Could not delete the connector %s as it is referenced by other entities", connector.getIdentifier()));
     }
   }
@@ -951,7 +1048,13 @@ public class DefaultConnectorServiceImpl implements ConnectorService {
                 SortOrder.Builder.aSortOrder().withField(ConnectorKeys.createdAt, OrderType.DESC).build()))
             .build());
     Page<Connector> connectors = connectorRepository.findAll(
-        Criteria.where(ConnectorKeys.fullyQualifiedIdentifier).in(connectorFQN), pageable, false);
+        new Criteria().andOperator(Criteria.where(ConnectorKeys.fullyQualifiedIdentifier).in(connectorFQN),
+            new Criteria().orOperator(Criteria.where(ConnectorKeys.yamlGitConfigRef)
+                                          .exists(true)
+                                          .and(ConnectorKeys.isFromDefaultBranch)
+                                          .is(true),
+                Criteria.where(ConnectorKeys.yamlGitConfigRef).exists(false))),
+        pageable, false);
     return connectors.getContent().stream().map(connectorMapper::writeDTO).collect(toList());
   }
 
@@ -974,7 +1077,7 @@ public class DefaultConnectorServiceImpl implements ConnectorService {
               }
             }
             item.setDeleted(true);
-            connectorRepository.save(item, ChangeType.DELETE);
+            connectorRepository.delete(item, ChangeType.DELETE);
             Connector existingConnector = connectorOptional.get();
             ConnectorResponseDTO connectorDTO = connectorMapper.writeDTO(existingConnector);
             connectorEntityReferenceHelper.deleteConnectorEntityReferenceWhenConnectorGetsDeleted(
@@ -1025,5 +1128,31 @@ public class DefaultConnectorServiceImpl implements ConnectorService {
       }
     }
     return Boolean.TRUE;
+  }
+
+  @Override
+  public Page<CombineCcmK8sConnectorResponseDTO> listCcmK8S(int page, int size, String accountIdentifier,
+      ConnectorFilterPropertiesDTO filterProperties, String orgIdentifier, String projectIdentifier,
+      String filterIdentifier, String searchTerm, Boolean includeAllConnectorsAccessibleAtScope,
+      Boolean getDistinctFromBranches) {
+    filterProperties.setTypes(Arrays.asList(new ConnectorType[] {ConnectorType.KUBERNETES_CLUSTER}));
+    Page<Connector> k8sConnectors =
+        listHelper(page, size, accountIdentifier, filterProperties, orgIdentifier, projectIdentifier, filterIdentifier,
+            searchTerm, includeAllConnectorsAccessibleAtScope, getDistinctFromBranches);
+
+    List<String> k8sConnectorRefList = new ArrayList<>();
+    for (Connector k8sConnector : k8sConnectors) {
+      k8sConnectorRefList.add(k8sConnector.getIdentifier());
+    }
+    log.info("k8sConnectorRefList {}", k8sConnectorRefList);
+
+    filterProperties.setTypes(Arrays.asList(new ConnectorType[] {ConnectorType.CE_KUBERNETES_CLUSTER}));
+    filterProperties.setCcmConnectorFilter(CcmConnectorFilter.builder().k8sConnectorRef(k8sConnectorRefList).build());
+    Page<Connector> ccmk8sConnectors =
+        listHelper(page, size, accountIdentifier, filterProperties, orgIdentifier, projectIdentifier, filterIdentifier,
+            searchTerm, includeAllConnectorsAccessibleAtScope, getDistinctFromBranches);
+    log.info("ccmk8sConnectors count elements: {} pages: {}", ccmk8sConnectors.getTotalElements(),
+        ccmk8sConnectors.getTotalPages());
+    return getCcmK8sResponseList(accountIdentifier, orgIdentifier, projectIdentifier, k8sConnectors, ccmk8sConnectors);
   }
 }

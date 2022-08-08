@@ -11,6 +11,8 @@ import io.harness.cvng.beans.cvnglog.CVNGLogDTO;
 import io.harness.cvng.core.beans.params.PageParams;
 import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.core.beans.params.logsFilterParams.SLILogsFilter;
+import io.harness.cvng.core.services.api.DeleteEntityByHandler;
+import io.harness.cvng.notification.beans.NotificationRuleResponse;
 import io.harness.cvng.servicelevelobjective.SLORiskCountResponse;
 import io.harness.cvng.servicelevelobjective.beans.SLODashboardApiFilter;
 import io.harness.cvng.servicelevelobjective.beans.SLODashboardWidget.SLOGraphData;
@@ -24,7 +26,7 @@ import io.harness.ng.beans.PageResponse;
 import java.util.List;
 import java.util.Map;
 
-public interface ServiceLevelObjectiveService {
+public interface ServiceLevelObjectiveService extends DeleteEntityByHandler<ServiceLevelObjective> {
   ServiceLevelObjectiveResponse create(ProjectParams projectParams, ServiceLevelObjectiveDTO serviceLevelObjectiveDTO);
 
   ServiceLevelObjectiveResponse update(
@@ -49,4 +51,10 @@ public interface ServiceLevelObjectiveService {
   Map<ServiceLevelObjective, SLOGraphData> getSLOGraphData(List<ServiceLevelObjective> serviceLevelObjectiveList);
   List<SLOErrorBudgetResetDTO> getErrorBudgetResetHistory(ProjectParams projectParams, String sloIdentifier);
   SLOErrorBudgetResetDTO resetErrorBudget(ProjectParams projectParams, SLOErrorBudgetResetDTO resetDTO);
+  void handleNotification(ServiceLevelObjective serviceLevelObjective);
+  PageResponse<NotificationRuleResponse> getNotificationRules(
+      ProjectParams projectParams, String sloIdentifier, PageParams pageParams);
+  void beforeNotificationRuleDelete(ProjectParams projectParams, String notificationRuleRef);
+  void setMonitoredServiceSLOsEnableFlag(
+      ProjectParams projectParams, String monitoreServiceIdentifier, boolean isEnabled);
 }

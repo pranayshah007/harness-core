@@ -7,6 +7,7 @@
 
 package io.harness.cvng.core.entities.cvnglogs;
 
+import static io.harness.cvng.CVNGTestConstants.TIME_FOR_TESTS;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.KANHAIYA;
 
@@ -39,8 +40,8 @@ public class ApiCallLogRecordTest extends CategoryTest {
   public void setup() {
     this.name = generateUuid();
     this.value = generateUuid();
-    this.requestTime = Instant.now().minusSeconds(5);
-    this.responseTime = Instant.now();
+    this.requestTime = TIME_FOR_TESTS.minusSeconds(5);
+    this.responseTime = TIME_FOR_TESTS;
   }
 
   @Test

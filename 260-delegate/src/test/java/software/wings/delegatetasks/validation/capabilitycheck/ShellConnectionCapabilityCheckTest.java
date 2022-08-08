@@ -10,8 +10,8 @@ package software.wings.delegatetasks.validation.capabilitycheck;
 import static io.harness.rule.OwnerRule.PRASHANT;
 import static io.harness.shell.ScriptType.BASH;
 
+import static software.wings.beans.ConnectionType.SSH;
 import static software.wings.beans.HostConnectionAttributes.Builder.aHostConnectionAttributes;
-import static software.wings.sm.states.ShellScriptState.ConnectionType.SSH;
 import static software.wings.utils.WingsTestConstants.ACCOUNT_ID;
 import static software.wings.utils.WingsTestConstants.ACTIVITY_ID;
 import static software.wings.utils.WingsTestConstants.APP_ID;

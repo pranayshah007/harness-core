@@ -23,6 +23,8 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @OwnedBy(HarnessTeam.CDC)
 public class DiscoveryResult {
+  // Return errors & warnings
+  NGMigrationStatus status;
   CgEntityId root;
   Map<CgEntityId, CgEntityNode> entities;
   Map<CgEntityId, Set<CgEntityId>> links;

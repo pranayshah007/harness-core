@@ -12,7 +12,7 @@ import re
 import datetime
 
 from google.cloud import bigquery
-from util import print_
+from util import print_, run_batch_query
 
 """
 Scheduler event:
@@ -53,39 +53,28 @@ def update_instance_state(jsonData):
     query = "UPDATE `%s` set status='DELETED' WHERE status != 'DELETED' and lastUpdatedAt < '%s';" % (
         jsonData["targetTableId"], last_updated_at)
 
-    try:
-        query_job = client.query(query)
-        query_job.result()
-    except Exception as e:
-        print_(query)
-        print_(e)
-    else:
-        print_("Finished updating gcpInstanceInventory table for any terminated instances")
+    run_batch_query(client, query, None, timeout=180)
+    print_("Finished updating gcpInstanceInventory table for any terminated instances")
 
 
 def load_into_main_table(jsonData):
     last_updated_at = datetime.datetime.utcnow()
     query = """MERGE `%s` T
                 USING `%s` S
-                ON T.instanceId = S.instanceId and T.projectNumberPartition = s.projectNumberPartition
+                ON T.instanceId = S.instanceId and T.creationTime = s.creationTime
                 WHEN MATCHED THEN
                   UPDATE SET networkInterfaces = s.networkInterfaces, status = s.status, lastUpdatedAt = '%s', 
                   labels = s.labels, disks = s.disks, lastStartTimestamp = s.lastStartTimestamp
                 WHEN NOT MATCHED THEN
                   INSERT (instanceId, name, creationTime, zone, 
-                    region, machineType, projectId, projectNumber, status, canIpForward,
+                    region, machineType, projectId, status, canIpForward,
                      selfLink, startRestricted, deletionProtection, networkInterfaces, labels, disks,
-                      lastStartTimestamp, lastUpdatedAt, projectNumberPartition) 
+                      lastStartTimestamp, lastUpdatedAt) 
                   VALUES(instanceId, name, creationTime, zone, 
-                    region, machineType, projectId, projectNumber, status, canIpForward,
+                    region, machineType, projectId, status, canIpForward,
                      selfLink, startRestricted, deletionProtection, networkInterfaces, labels, disks, lastStartTimestamp,
-                      lastUpdatedAt, projectNumberPartition) 
+                      lastUpdatedAt) 
                 """ % (jsonData["targetTableId"], jsonData["sourceTableId"], last_updated_at)
-    try:
-        query_job = client.query(query)
-        query_job.result()
-    except Exception as e:
-        print_(query)
-        print_(e, "WARN")
-    else:
-        print_("Finished merging into main gcpInstanceInventory table")
+
+    run_batch_query(client, query, None, timeout=180)
+    print_("Finished merging into main gcpInstanceInventory table")

@@ -23,8 +23,6 @@ import static software.wings.beans.appmanifest.AppManifestKind.VALUES;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyList;
-import static org.mockito.Matchers.anyObject;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.verify;
@@ -134,7 +132,7 @@ public class YamlHelperTest extends WingsBaseTest {
                                         .name("Harness")
                                         .children(Arrays.asList(TemplateFolder.builder().name("Children").build()))
                                         .build();
-    doReturn(templateFolder).when(templateService).getTemplateTree(anyString(), anyString(), anyString(), anyList());
+    doReturn(templateFolder).when(templateService).getTemplateTree(anyString(), anyString(), any(), any());
     TemplateFolder returnTemplateFolder = yamlHelper.ensureTemplateFolder(GLOBAL_ACCOUNT_ID,
         "Setup/Template Library/" + templateFolder.getName() + "/" + templateFolder.getChildren().get(0).getName()
             + "/test.yaml",
@@ -144,7 +142,7 @@ public class YamlHelperTest extends WingsBaseTest {
     // Case 2: When folder is to be created.
     String newFolderName = "newFolder";
     TemplateFolder expectedTemplateFolder = TemplateFolder.builder().name(newFolderName).appId(GLOBAL_APP_ID).build();
-    when(templateFolderService.saveSafelyAndGet(anyObject(), anyString())).thenReturn(expectedTemplateFolder);
+    when(templateFolderService.saveSafelyAndGet(any(), anyString())).thenReturn(expectedTemplateFolder);
     TemplateFolder returnTemplateFolderCase2 = yamlHelper.ensureTemplateFolder(GLOBAL_ACCOUNT_ID,
         "Setup/Template Library/" + templateFolder.getName() + "/" + templateFolder.getChildren().get(0).getName() + "/"
             + newFolderName + "/test.yaml",

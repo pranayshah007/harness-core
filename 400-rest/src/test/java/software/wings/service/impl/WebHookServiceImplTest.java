@@ -39,6 +39,7 @@ import static software.wings.utils.WingsTestConstants.TRIGGER_ID;
 import static software.wings.utils.WingsTestConstants.TRIGGER_NAME;
 import static software.wings.utils.WingsTestConstants.UUID;
 import static software.wings.utils.WingsTestConstants.WORKFLOW_EXECUTION_ID;
+import static software.wings.utils.WingsTestConstants.WORKFLOW_ID;
 
 import static com.google.common.collect.ImmutableMap.of;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -142,8 +143,13 @@ public class WebHookServiceImplTest extends WingsBaseTest {
 
   final String token = CryptoUtils.secureRandAlphaNumString(40);
 
-  WorkflowExecution execution =
-      WorkflowExecution.builder().appId(APP_ID).envId(ENV_ID).uuid(WORKFLOW_EXECUTION_ID).status(RUNNING).build();
+  WorkflowExecution execution = WorkflowExecution.builder()
+                                    .appId(APP_ID)
+                                    .envId(ENV_ID)
+                                    .uuid(WORKFLOW_EXECUTION_ID)
+                                    .status(RUNNING)
+                                    .workflowId(WORKFLOW_ID)
+                                    .build();
 
   Trigger trigger = Trigger.builder()
                         .workflowId(PIPELINE_ID)
@@ -181,10 +187,8 @@ public class WebHookServiceImplTest extends WingsBaseTest {
   public void setUp() {
     final Application application = anApplication().uuid(APP_ID).appId(APP_ID).accountId(ACCOUNT_ID).build();
     doReturn(application).when(appService).get(APP_ID);
-    when(appService.getAccountIdByAppId(anyString())).thenReturn(ACCOUNT_ID);
-    doReturn(execution)
-        .when(triggerService)
-        .triggerExecutionByWebHook(anyString(), anyString(), anyMap(), anyMap(), any(), anyMap());
+    when(appService.getAccountIdByAppId(any())).thenReturn(ACCOUNT_ID);
+    doReturn(execution).when(triggerService).triggerExecutionByWebHook(any(), any(), any(), any(), any(), any());
 
     doReturn(trigger).when(triggerService).getTriggerByWebhookToken(anyString());
     when(configuration.getPortal().getUrl()).thenReturn(PORTAL_URL);
@@ -932,6 +936,9 @@ public class WebHookServiceImplTest extends WingsBaseTest {
     assertThat(response.getUiUrl())
         .isEqualTo(String.format("%s/#/account/%s/app/%s/env/%s/executions/%s/details", PORTAL_URL, ACCOUNT_ID, APP_ID,
             ENV_ID, WORKFLOW_EXECUTION_ID));
+    assertThat(response.getUiSetupUrl())
+        .isEqualTo(
+            String.format("%s/#/account/%s/app/%s/workflows/%s/details", PORTAL_URL, ACCOUNT_ID, APP_ID, WORKFLOW_ID));
   }
 
   @Test(expected = InvalidRequestException.class)
@@ -1043,6 +1050,7 @@ public class WebHookServiceImplTest extends WingsBaseTest {
                                               .status(SUCCESS)
                                               .workflowType(WorkflowType.ORCHESTRATION)
                                               .envId(ENV_ID)
+                                              .workflowId(WORKFLOW_ID)
                                               .build();
     when(configuration.getApiUrl()).thenReturn("app.harness.io/gratis");
     when(configuration.getPortal().getUrl()).thenReturn("app.harness.io");
@@ -1056,12 +1064,15 @@ public class WebHookServiceImplTest extends WingsBaseTest {
         .isEqualTo("app.harness.io/gratis/api/external/v1/executions/UUID/status?accountId=ACCOUNT_ID&appId=APP_ID");
     assertThat(webHookResponse.getUiUrl())
         .isEqualTo("app.harness.io/#/account/ACCOUNT_ID/app/APP_ID/env/ENV_ID/executions/UUID/details");
+    assertThat(webHookResponse.getUiSetupUrl())
+        .isEqualTo("app.harness.io/#/account/ACCOUNT_ID/app/APP_ID/workflows/WORKFLOW_ID/details");
 
     WorkflowExecution pipelineExecution = WorkflowExecution.builder()
                                               .uuid(UUID)
                                               .status(SUCCESS)
                                               .workflowType(WorkflowType.PIPELINE)
                                               .envId(ENV_ID)
+                                              .workflowId(WORKFLOW_ID)
                                               .build();
     response = webHookServiceImpl.constructSuccessResponse(APP_ID, ACCOUNT_ID, pipelineExecution);
     assertThat(response.getEntity()).isNotNull();
@@ -1072,6 +1083,8 @@ public class WebHookServiceImplTest extends WingsBaseTest {
     assertThat(webHookResponse.getUiUrl())
         .isEqualTo(
             "app.harness.io/#/account/ACCOUNT_ID/app/APP_ID/pipeline-execution/UUID/workflow-execution/undefined/details");
+    assertThat(webHookResponse.getUiSetupUrl())
+        .isEqualTo("app.harness.io/#/account/ACCOUNT_ID/app/APP_ID/pipelines/WORKFLOW_ID/edit");
   }
 
   @Test

@@ -12,6 +12,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -20,6 +21,8 @@ import java.util.Map;
  */
 @OwnedBy(HarnessTeam.PIPELINE)
 public class OrchestrationMap extends LinkedHashMap<String, Object> implements Map<String, Object> {
+  @Schema(hidden = true) boolean empty;
+
   public OrchestrationMap() {}
 
   protected OrchestrationMap(Map<String, Object> map) {

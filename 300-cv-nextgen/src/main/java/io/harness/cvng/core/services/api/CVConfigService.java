@@ -33,8 +33,8 @@ public interface CVConfigService extends DeleteEntityByHandler<CVConfig> {
   List<CVConfig> list(String accountId, String connectorIdentifier, String productName);
   List<CVConfig> list(
       String accountId, String orgIdentifier, String projectIdentifier, String monitoringSourceIdentifier);
-  List<CVConfig> listByMonitoringSources(String accountId, String orgIdentifier, String projectIdentifier,
-      String serviceIdentifier, String envIdentifier, List<String> monitoringSources);
+  List<CVConfig> listByMonitoringSources(
+      MonitoredServiceParams monitoredServiceParams, List<String> healthSourceIdentifiers);
   List<String> getProductNames(String accountId, String connectorIdentifier);
   List<String> getMonitoringSourceIds(String accountId, String orgIdentifier, String projectIdentifier, String filter);
   List<CVConfig> listByMonitoringSources(

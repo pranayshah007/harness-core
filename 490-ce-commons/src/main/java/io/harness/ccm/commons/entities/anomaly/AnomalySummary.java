@@ -23,5 +23,6 @@ public class AnomalySummary {
   Double count;
   Double actualCost;
   Double expectedCost;
+  Double anomalousCost;
   Double costImpact;
 }

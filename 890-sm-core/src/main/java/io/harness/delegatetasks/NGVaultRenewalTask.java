@@ -23,10 +23,10 @@ import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.task.AbstractDelegateRunnableTask;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.exception.SecretManagementDelegateException;
-import io.harness.helpers.ext.vault.VaultRestClientFactory;
-import io.harness.helpers.ext.vault.VaultSysAuthRestClient;
 
 import software.wings.beans.BaseVaultConfig;
+import software.wings.helpers.ext.vault.VaultRestClientFactory;
+import software.wings.helpers.ext.vault.VaultSysAuthRestClient;
 
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;

@@ -14,40 +14,35 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.CvNextGenTestBase;
 import io.harness.category.element.UnitTests;
+import io.harness.cvng.BuilderFactory;
 import io.harness.cvng.VerificationApplication;
-import io.harness.cvng.beans.CVMonitoringCategory;
-import io.harness.cvng.beans.DataSourceType;
-import io.harness.cvng.beans.job.Sensitivity;
-import io.harness.cvng.beans.job.TestVerificationJobDTO;
-import io.harness.cvng.beans.job.VerificationJobDTO;
 import io.harness.cvng.core.entities.CVConfig;
-import io.harness.cvng.core.entities.SplunkCVConfig;
 import io.harness.cvng.core.services.api.CVConfigService;
-import io.harness.cvng.models.VerificationType;
-import io.harness.cvng.verificationjob.services.api.VerificationJobService;
 import io.harness.eventsframework.entity_crud.organization.OrganizationEntityChangeDTO;
 import io.harness.persistence.PersistentEntity;
+import io.harness.reflection.HarnessReflections;
 import io.harness.rule.Owner;
 
-import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.stream.Collectors;
+import org.apache.commons.lang3.StringUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.reflections.Reflections;
 
 public class OrganisationChangeEventMessageProcessorTest extends CvNextGenTestBase {
   @Inject private OrganizationChangeEventMessageProcessor organizationChangeEventMessageProcessor;
   @Inject private CVConfigService cvConfigService;
-  @Inject private VerificationJobService verificationJobService;
   private String projectIdentifier;
+  private BuilderFactory builderFactory;
 
   @Before
   public void setup() {
     projectIdentifier = generateUuid();
+    builderFactory = BuilderFactory.getDefault();
   }
 
   @Test
@@ -59,20 +54,10 @@ public class OrganisationChangeEventMessageProcessorTest extends CvNextGenTestBa
     CVConfig cvConfig2 = createCVConfig(accountId, "organisation2");
     cvConfigService.save(cvConfig1);
     cvConfigService.save(cvConfig2);
-    VerificationJobDTO verificationJobDTO1 = createVerificationJobDTO("organisation1");
-    VerificationJobDTO verificationJobDTO2 = createVerificationJobDTO("organisation2");
-    verificationJobService.create(accountId, verificationJobDTO1);
-    verificationJobService.create(accountId, verificationJobDTO2);
     organizationChangeEventMessageProcessor.processDeleteAction(OrganizationEntityChangeDTO.newBuilder()
                                                                     .setAccountIdentifier(accountId)
                                                                     .setIdentifier("organisation1")
                                                                     .build());
-    assertThat(verificationJobService.getVerificationJobDTO(
-                   accountId, "organisation1", projectIdentifier, verificationJobDTO1.getIdentifier()))
-        .isNull();
-    assertThat(verificationJobService.getVerificationJobDTO(
-                   accountId, "organisation2", projectIdentifier, verificationJobDTO2.getIdentifier()))
-        .isNotNull();
     assertThat(cvConfigService.get(cvConfig1.getUuid())).isNull();
     assertThat(cvConfigService.get(cvConfig2.getUuid())).isNotNull();
 
@@ -85,13 +70,6 @@ public class OrganisationChangeEventMessageProcessorTest extends CvNextGenTestBa
                                                                     .setAccountIdentifier(accountId)
                                                                     .setIdentifier("organisation1")
                                                                     .build());
-
-    assertThat(verificationJobService.getVerificationJobDTO(
-                   accountId, "organisation1", projectIdentifier, verificationJobDTO1.getIdentifier()))
-        .isNull();
-    assertThat(verificationJobService.getVerificationJobDTO(
-                   accountId, "organisation2", projectIdentifier, verificationJobDTO2.getIdentifier()))
-        .isNotNull();
     assertThat(retrievedCVConfig1).isNull();
     assertThat(retrievedCVConfig2).isNotNull();
   }
@@ -105,18 +83,8 @@ public class OrganisationChangeEventMessageProcessorTest extends CvNextGenTestBa
     CVConfig cvConfig2 = createCVConfig(accountId, "organisation2");
     cvConfigService.save(cvConfig1);
     cvConfigService.save(cvConfig2);
-    VerificationJobDTO verificationJobDTO1 = createVerificationJobDTO("organisation1");
-    VerificationJobDTO verificationJobDTO2 = createVerificationJobDTO("organisation2");
-    verificationJobService.create(accountId, verificationJobDTO1);
-    verificationJobService.create(accountId, verificationJobDTO2);
     organizationChangeEventMessageProcessor.processDeleteAction(
         OrganizationEntityChangeDTO.newBuilder().setAccountIdentifier(accountId).build());
-    assertThat(verificationJobService.getVerificationJobDTO(
-                   accountId, "organisation1", projectIdentifier, verificationJobDTO1.getIdentifier()))
-        .isNotNull();
-    assertThat(verificationJobService.getVerificationJobDTO(
-                   accountId, "organisation2", projectIdentifier, verificationJobDTO2.getIdentifier()))
-        .isNotNull();
     assertThat(cvConfigService.get(cvConfig1.getUuid())).isNotNull();
     assertThat(cvConfigService.get(cvConfig2.getUuid())).isNotNull();
   }
@@ -127,10 +95,18 @@ public class OrganisationChangeEventMessageProcessorTest extends CvNextGenTestBa
   public void testProcessDeleteAction_entitiesList() {
     Set<Class<? extends PersistentEntity>> entitiesWithVerificationTaskId = new HashSet<>();
     entitiesWithVerificationTaskId.addAll(OrganizationChangeEventMessageProcessor.ENTITIES_MAP.keySet());
-    Reflections reflections = new Reflections(VerificationApplication.class.getPackage().getName());
+    Set<Class<? extends PersistentEntity>> reflections =
+        HarnessReflections.get()
+            .getSubTypesOf(PersistentEntity.class)
+            .stream()
+            .filter(klazz
+                -> StringUtils.startsWithAny(
+                    klazz.getPackage().getName(), VerificationApplication.class.getPackage().getName()))
+            .collect(Collectors.toSet());
     Set<Class<? extends PersistentEntity>> withOrganisationIdentifier = new HashSet<>();
-    reflections.getSubTypesOf(PersistentEntity.class).forEach(entity -> {
-      if (doesClassContainField(entity, "accountId") && doesClassContainField(entity, "orgIdentifier")) {
+    reflections.forEach(entity -> {
+      if (doesClassContainField(entity, "accountId") && doesClassContainField(entity, "orgIdentifier")
+          && !OrganizationChangeEventMessageProcessor.EXCEPTIONS.contains(entity)) {
         withOrganisationIdentifier.add(entity);
       }
     });
@@ -144,41 +120,6 @@ public class OrganisationChangeEventMessageProcessorTest extends CvNextGenTestBa
   }
 
   private CVConfig createCVConfig(String accountId, String orgIdentifier) {
-    SplunkCVConfig cvConfig = new SplunkCVConfig();
-    fillCommon(cvConfig, accountId, orgIdentifier);
-    cvConfig.setQuery("exception");
-    cvConfig.setServiceInstanceIdentifier(generateUuid());
-    return cvConfig;
-  }
-
-  private void fillCommon(CVConfig cvConfig, String accountId, String orgIdentifier) {
-    cvConfig.setVerificationType(VerificationType.LOG);
-    cvConfig.setAccountId(accountId);
-    cvConfig.setConnectorIdentifier(generateUuid());
-    cvConfig.setServiceIdentifier("service");
-    cvConfig.setEnvIdentifier("env");
-    cvConfig.setOrgIdentifier(orgIdentifier);
-    cvConfig.setCategory(CVMonitoringCategory.PERFORMANCE);
-    cvConfig.setProductName(generateUuid());
-    cvConfig.setIdentifier(generateUuid());
-    cvConfig.setMonitoringSourceName(generateUuid());
-    cvConfig.setProjectIdentifier(generateUuid());
-  }
-
-  private VerificationJobDTO createVerificationJobDTO(String orgIdentifier) {
-    TestVerificationJobDTO testVerificationJobDTO = new TestVerificationJobDTO();
-    testVerificationJobDTO.setIdentifier(generateUuid());
-    testVerificationJobDTO.setJobName(generateUuid());
-    testVerificationJobDTO.setDataSources(Lists.newArrayList(DataSourceType.APP_DYNAMICS));
-    testVerificationJobDTO.setMonitoringSources(Arrays.asList(generateUuid()));
-    testVerificationJobDTO.setBaselineVerificationJobInstanceId(null);
-    testVerificationJobDTO.setSensitivity(Sensitivity.MEDIUM.name());
-    testVerificationJobDTO.setServiceIdentifier(generateUuid());
-    testVerificationJobDTO.setEnvIdentifier(generateUuid());
-    testVerificationJobDTO.setBaselineVerificationJobInstanceId(generateUuid());
-    testVerificationJobDTO.setDuration("15m");
-    testVerificationJobDTO.setOrgIdentifier(orgIdentifier);
-    testVerificationJobDTO.setProjectIdentifier(projectIdentifier);
-    return testVerificationJobDTO;
+    return builderFactory.splunkCVConfigBuilder().accountId(accountId).orgIdentifier(orgIdentifier).build();
   }
 }

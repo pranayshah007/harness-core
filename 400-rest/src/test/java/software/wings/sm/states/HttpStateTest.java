@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.beans.FeatureName.TIMEOUT_FAILURE_SUPPORT;
 import static io.harness.rule.OwnerRule.DINESH;
 import static io.harness.rule.OwnerRule.GEORGE;
+import static io.harness.rule.OwnerRule.LUCAS_SALES;
 import static io.harness.rule.OwnerRule.MARKO;
 import static io.harness.rule.OwnerRule.MILOS;
 import static io.harness.rule.OwnerRule.PRABU;
@@ -49,6 +50,7 @@ import static org.joor.Reflect.on;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -56,6 +58,7 @@ import io.harness.annotations.dev.BreakDependencyOn;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
+import io.harness.beans.ArtifactMetadata;
 import io.harness.beans.DelegateTask;
 import io.harness.beans.EmbeddedUser;
 import io.harness.beans.EnvironmentType;
@@ -73,6 +76,8 @@ import io.harness.http.HttpServiceImpl;
 import io.harness.rule.Owner;
 
 import software.wings.WingsBaseTest;
+import software.wings.api.ContextElementParamMapper;
+import software.wings.api.ContextElementParamMapperFactory;
 import software.wings.api.HostElement;
 import software.wings.api.HttpStateExecutionData;
 import software.wings.api.ServiceElement;
@@ -80,7 +85,7 @@ import software.wings.beans.Activity;
 import software.wings.beans.Activity.Type;
 import software.wings.beans.Application;
 import software.wings.beans.Variable;
-import software.wings.beans.artifact.Artifact.ArtifactMetadataKeys;
+import software.wings.beans.artifact.ArtifactMetadataKeys;
 import software.wings.beans.template.TemplateUtils;
 import software.wings.delegatetasks.HttpTask;
 import software.wings.service.impl.AccountServiceImpl;
@@ -95,6 +100,8 @@ import software.wings.sm.StateExecutionData;
 import software.wings.sm.StateExecutionInstance;
 import software.wings.sm.StateType;
 import software.wings.sm.WorkflowStandardParams;
+import software.wings.sm.WorkflowStandardParamsExtensionService;
+import software.wings.sm.WorkflowStandardParamsParamMapper;
 
 import com.github.tomakehurst.wiremock.http.Fault;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
@@ -157,15 +164,17 @@ public class HttpStateTest extends WingsBaseTest {
    */
   @Rule public WireMockRule wireMockRule = new WireMockRule(8088);
 
+  @Inject private HttpServiceImpl httpService;
+  @Inject private Injector injector;
+
   @Mock private WorkflowStandardParams workflowStandardParams;
+  @Mock private WorkflowStandardParamsExtensionService workflowStandardParamsExtensionService;
   @Mock private ActivityHelperService activityHelperService;
   @Mock private FeatureFlagService featureFlagService;
-  @Inject private Injector injector;
   @Mock private DelegateService delegateService;
   @Mock private ExecutionContextImpl executionContext;
   @Mock private TemplateUtils templateUtils;
   @Mock private StateExecutionService stateExecutionService;
-  @Inject private HttpServiceImpl httpService;
   @Mock private AccountServiceImpl accountService;
   @Mock private InfrastructureMappingService infrastructureMappingService;
 
@@ -189,14 +198,15 @@ public class HttpStateTest extends WingsBaseTest {
 
     when(accountService.isCertValidationRequired(any())).thenReturn(false);
 
-    when(workflowStandardParams.fetchRequiredApp()).thenReturn(anApplication().uuid(APP_ID).name(APP_NAME).build());
-    when(workflowStandardParams.getEnv())
+    when(workflowStandardParamsExtensionService.fetchRequiredApp(workflowStandardParams))
+        .thenReturn(anApplication().uuid(APP_ID).name(APP_NAME).build());
+    when(workflowStandardParamsExtensionService.getEnv(workflowStandardParams))
         .thenReturn(anEnvironment().uuid(ENV_ID).name(ENV_NAME).environmentType(EnvironmentType.NON_PROD).build());
+    when(workflowStandardParamsExtensionService.getApp(workflowStandardParams)).thenReturn(app);
     when(workflowStandardParams.getAppId()).thenReturn(APP_ID);
     when(workflowStandardParams.getEnvId()).thenReturn(ENV_ID);
-    when(workflowStandardParams.getApp()).thenReturn(app);
-
     when(workflowStandardParams.getElementType()).thenReturn(ContextElementType.STANDARD);
+
     context = new ExecutionContextImpl(stateExecutionInstance, null, injector);
     context.pushContextElement(workflowStandardParams);
     context.pushContextElement(HostElement.builder().hostName("localhost").build());
@@ -252,10 +262,6 @@ public class HttpStateTest extends WingsBaseTest {
                     .withBody(
                         "{\"status\":{\"code\":\"SUCCESS\"},\"data\":{\"title\":\"Some server\",\"version\":\"2.31.0-MASTER-SNAPSHOT\",\"buildTimestamp\":1506086747259}}")));
 
-    Map<String, Object> map = ImmutableMap.of(ARTIFACT,
-        anArtifact().withMetadata(ImmutableMap.of(ArtifactMetadataKeys.buildNo, "2.31.0-MASTER-SNAPSHOT")).build());
-    when(workflowStandardParams.paramMap(context)).thenReturn(map);
-
     HttpState.Builder jsonHttpStateBuilder =
         aHttpState()
             .withName("healthCheck1")
@@ -268,6 +274,21 @@ public class HttpStateTest extends WingsBaseTest {
 
     HttpState httpState = getHttpState(jsonHttpStateBuilder.but(), context);
     FieldUtils.writeField(httpState, "stateExecutionService", stateExecutionService, true);
+
+    // overwrite mapper factory set in getHttpState
+    ContextElementParamMapper workflowStandardParamsMapper = spy(ContextElementParamMapper.class);
+    when(workflowStandardParamsMapper.paramMap(context))
+        .thenReturn(ImmutableMap.of(ARTIFACT,
+            anArtifact()
+                .withMetadata(
+                    new ArtifactMetadata(ImmutableMap.of(ArtifactMetadataKeys.buildNo, "2.31.0-MASTER-SNAPSHOT")))
+                .build()));
+
+    ContextElementParamMapperFactory contextElementParamMapperFactory =
+        spy(injector.getInstance(ContextElementParamMapperFactory.class));
+    when(contextElementParamMapperFactory.getParamMapper(workflowStandardParams))
+        .thenReturn(workflowStandardParamsMapper);
+    on(context).set("contextElementParamMapperFactory", contextElementParamMapperFactory);
 
     ExecutionResponse response = httpState.execute(context);
 
@@ -307,8 +328,10 @@ public class HttpStateTest extends WingsBaseTest {
                         "{\"status\":{\"code\":\"SUCCESS\"},\"data\":{\"title\":\"Some server\",\"version\":\"2.31.0-MASTER-SNAPSHOT\",\"buildTimestamp\":1506086747259}}")));
 
     Map<String, Object> map = ImmutableMap.of(ARTIFACT,
-        anArtifact().withMetadata(ImmutableMap.of(ArtifactMetadataKeys.buildNo, "2.31.0-MASTER-SNAPSHOT")).build());
-    when(workflowStandardParams.paramMap(context)).thenReturn(map);
+        anArtifact()
+            .withMetadata(new ArtifactMetadata(ImmutableMap.of(ArtifactMetadataKeys.buildNo, "2.31.0-MASTER-SNAPSHOT")))
+            .build());
+    //    when(workflowStandardParams.paramMap(context)).thenReturn(map);
     List<Variable> templateVariables = asList(aVariable().name("url").value("localhost:8088/health/status").build(),
         aVariable().name("buildNo").value("2.31.0-MASTER-SNAPSHOT").build(),
         aVariable().name("contentType").value("application/json").build());
@@ -780,9 +803,23 @@ public class HttpStateTest extends WingsBaseTest {
     on(httpState).set("accountService", accountService);
     on(httpState).set("infrastructureMappingService", infrastructureMappingService);
     on(httpState).set("featureFlagService", featureFlagService);
+    on(httpState).set("workflowStandardParamsExtensionService", workflowStandardParamsExtensionService);
+
+    WorkflowStandardParamsParamMapper workflowStandardParamsParamMapper =
+        injector.getInstance(WorkflowStandardParamsParamMapper.class);
+    on(workflowStandardParamsParamMapper)
+        .set("workflowStandardParamsExtensionService", workflowStandardParamsExtensionService);
+    on(workflowStandardParamsParamMapper).set("element", workflowStandardParams);
+    ContextElementParamMapperFactory contextElementParamMapperFactory =
+        spy(injector.getInstance(ContextElementParamMapperFactory.class));
+    when(contextElementParamMapperFactory.getParamMapper(workflowStandardParams))
+        .thenReturn(workflowStandardParamsParamMapper);
+
+    on(context).set("workflowStandardParamsExtensionService", workflowStandardParamsExtensionService);
+    on(context).set("contextElementParamMapperFactory", contextElementParamMapperFactory);
 
     doAnswer(invocation -> {
-      DelegateTask task = invocation.getArgumentAt(0, DelegateTask.class);
+      DelegateTask task = invocation.getArgument(0, DelegateTask.class);
 
       DelegateRunnableTask delegateRunnableTask =
           new HttpTask(DelegateTaskPackage.builder().data(task.getData()).delegateId(DELEGATE_ID).build(), null,
@@ -799,5 +836,36 @@ public class HttpStateTest extends WingsBaseTest {
         .queueTask(any(DelegateTask.class));
 
     return httpState;
+  }
+
+  @Test
+  @Owner(developers = LUCAS_SALES)
+  @Category(UnitTests.class)
+  public void shouldFailOnSocketTimeoutWithEmptyAssertion() throws IllegalAccessException {
+    wireMockRule.stubFor(get(urlEqualTo("/health/status"))
+                             .withHeader("Content-Type", equalTo("application/xml"))
+                             .withHeader("Accept", equalTo("*/*"))
+                             .willReturn(aResponse().withFixedDelay(2000)));
+
+    HttpState httpState = getHttpState(httpStateBuilder.but().withSocketTimeoutMillis(1000), context);
+    httpState.setAssertion("");
+    FieldUtils.writeField(httpState, "stateExecutionService", stateExecutionService, true);
+
+    ExecutionResponse response = httpState.execute(context);
+    assertThat(response).isNotNull().extracting(ExecutionResponse::isAsync).isEqualTo(true);
+
+    response = asyncExecutionResponse;
+    assertThat(response.getStateExecutionData())
+        .isNotNull()
+        .isInstanceOf(HttpStateExecutionData.class)
+        .isEqualToComparingOnlyGivenFields(HttpStateExecutionData.builder()
+                                               .assertionStatus("FAILED")
+                                               .httpResponseCode(500)
+                                               .httpResponseBody("SocketTimeoutException: Read timed out")
+                                               .build(),
+            "httpUrl", "assertionStatus", "httpResponseCode", "httpResponseBody");
+    assertThat(response.getFailureTypes()).containsOnly(FailureType.TIMEOUT_ERROR);
+    verify(activityHelperService).createAndSaveActivity(any(), any(), any(), any(), any());
+    verify(activityHelperService).updateStatus(ACTIVITY_ID, APP_ID, ExecutionStatus.FAILED);
   }
 }

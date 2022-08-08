@@ -8,12 +8,16 @@
 package io.harness.signup;
 
 import static io.harness.annotations.dev.HarnessTeam.GTM;
+import static io.harness.configuration.DeployMode.DEPLOY_MODE;
 
 import io.harness.AccessControlClientConfiguration;
 import io.harness.AccessControlClientModule;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.configuration.DeployMode;
 import io.harness.ff.FeatureFlagModule;
 import io.harness.remote.client.ServiceHttpClientConfig;
+import io.harness.signup.notification.OnPremSignupNotificationHelper;
+import io.harness.signup.notification.SaasSignupNotificationHelper;
 import io.harness.signup.notification.SignupNotificationHelper;
 import io.harness.signup.notification.SignupNotificationTemplateLoader;
 import io.harness.signup.services.SignupService;
@@ -55,8 +59,14 @@ public class SignupModule extends AbstractModule {
     install(AccessControlClientModule.getInstance(accessControlClientConfiguration, managerServiceSecret));
     install(GoogleCloudFileModule.getInstance());
     bind(SignupService.class).to(SignupServiceImpl.class);
-    bind(SignupNotificationHelper.class);
-    bind(SignupNotificationTemplateLoader.class);
+    String deployMode = System.getenv().get(DEPLOY_MODE);
+
+    if (DeployMode.isOnPrem(deployMode)) {
+      bind(SignupNotificationHelper.class).to(OnPremSignupNotificationHelper.class);
+    } else {
+      bind(SignupNotificationHelper.class).to(SaasSignupNotificationHelper.class);
+      bind(SignupNotificationTemplateLoader.class);
+    }
   }
 
   @Provides

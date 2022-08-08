@@ -180,7 +180,6 @@ public class User extends Base implements Principal {
     // publicUser.setCompanyName(getCompanyName());
     return publicUser;
   }
-
   public boolean isAccountAdmin(String accountId) {
     return roles != null
         && roles.stream()
@@ -469,7 +468,7 @@ public class User extends Base implements Principal {
    * @param accounts Value to set for property 'accounts'.
    */
   public void setAccounts(List<Account> accounts) {
-    this.accounts = accounts;
+    this.accounts = isNotEmpty(accounts) ? accounts.stream().distinct().collect(Collectors.toList()) : accounts;
   }
 
   /**

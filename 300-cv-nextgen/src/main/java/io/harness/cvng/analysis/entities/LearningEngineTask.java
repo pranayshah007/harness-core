@@ -11,7 +11,7 @@ import static io.harness.cvng.analysis.entities.LearningEngineTask.TaskPriority.
 
 import io.harness.annotation.HarnessEntity;
 import io.harness.annotation.StoreIn;
-import io.harness.cvng.beans.cvnglog.ExecutionLogDTO;
+import io.harness.cvng.beans.cvnglog.ExecutionLogDTO.LogLevel;
 import io.harness.cvng.core.entities.VerificationTaskExecutionInstance;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdIndex;
@@ -160,13 +160,13 @@ public abstract class LearningEngineTask implements PersistentEntity, UuidAware,
     return analysisEndTime;
   }
 
-  public ExecutionLogDTO.LogLevel getLogLevel() {
+  public LogLevel getLogLevel() {
     if (ExecutionStatus.FAILED.equals(taskStatus) || ExecutionStatus.TIMEOUT.equals(taskStatus)) {
-      return ExecutionLogDTO.LogLevel.ERROR;
+      return LogLevel.ERROR;
     } else if (ExecutionStatus.QUEUED.equals(taskStatus)) {
-      return ExecutionLogDTO.LogLevel.WARN;
+      return LogLevel.WARN;
     } else {
-      return ExecutionLogDTO.LogLevel.INFO;
+      return LogLevel.INFO;
     }
   }
 }

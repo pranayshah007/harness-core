@@ -22,21 +22,18 @@ import io.harness.remote.client.NGRestUtils;
 import io.harness.rule.Owner;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
-import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
-@RunWith(PowerMockRunner.class)
 @PrepareForTest({NGRestUtils.class})
 @OwnedBy(HarnessTeam.PIPELINE)
 public class InternalReferredEntityExtractorTest extends CategoryTest {
@@ -61,18 +58,32 @@ public class InternalReferredEntityExtractorTest extends CategoryTest {
     String dummy = "dummy";
     List<EntityDetail> entityDetailList = new ArrayList<>();
 
-    PowerMockito.mockStatic(NGRestUtils.class);
+    Mockito.mockStatic(NGRestUtils.class);
     Mockito.when(NGRestUtils.getResponseWithRetry(Mockito.any(), Mockito.any()))
         .thenReturn(EntityReferencesDTO.builder().entitySetupUsageBatchList(new ArrayList<>()).build());
 
-    for (int i = 0; i < 20; i++) {
+    for (int i = 0; i < 5; i++) {
       String name = dummy + i;
-      entityDetailList.add(getEntityDetail(name, EntityType.CONNECTORS));
+      entityDetailList.add(getEntityDetail("conn-" + name, EntityType.CONNECTORS));
+      entityDetailList.add(getEntityDetail("svc-" + name, EntityType.SERVICE));
+
+      // should be ignored
+      entityDetailList.add(getEntityDetail("is-" + name, EntityType.INPUT_SETS));
     }
+
     internalReferredEntityExtractor.extractInternalEntities(ACCOUNT_ID, entityDetailList);
 
     Mockito.verify(entitySetupUsageClient)
-        .listAllReferredUsagesBatch(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
+        .listAllReferredUsagesBatch(ACCOUNT_ID,
+            Arrays.asList("accountId/conn-dummy0", "accountId/conn-dummy1", "accountId/conn-dummy2",
+                "accountId/conn-dummy3", "accountId/conn-dummy4"),
+            EntityType.CONNECTORS, EntityType.SECRETS);
+
+    Mockito.verify(entitySetupUsageClient)
+        .listAllReferredUsagesBatch(ACCOUNT_ID,
+            Arrays.asList("accountId/svc-dummy0", "accountId/svc-dummy1", "accountId/svc-dummy2",
+                "accountId/svc-dummy3", "accountId/svc-dummy4"),
+            EntityType.SERVICE, EntityType.CONNECTORS);
   }
   private EntityDetail getEntityDetail(String name, EntityType entityType) {
     return EntityDetail.builder()

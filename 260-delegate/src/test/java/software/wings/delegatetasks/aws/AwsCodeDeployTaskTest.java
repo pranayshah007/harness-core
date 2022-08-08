@@ -13,8 +13,6 @@ import static io.harness.rule.OwnerRule.SATYAM;
 
 import static org.joor.Reflect.on;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyList;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.verify;
 
 import io.harness.annotations.dev.HarnessModule;
@@ -64,19 +62,18 @@ public class AwsCodeDeployTaskTest extends WingsBaseTest {
   public void testRun() {
     AwsCodeDeployRequest request = AwsCodeDeployListAppRequest.builder().build();
     task.run(new Object[] {request});
-    verify(mockAwsCodeDeployHelperServiceDelegate).listApplications(any(), anyList(), anyString());
+    verify(mockAwsCodeDeployHelperServiceDelegate).listApplications(any(), any(), any());
     request = AwsCodeDeployListDeploymentConfigRequest.builder().build();
     task.run(new Object[] {request});
-    verify(mockAwsCodeDeployHelperServiceDelegate).listDeploymentConfiguration(any(), anyList(), anyString());
+    verify(mockAwsCodeDeployHelperServiceDelegate).listDeploymentConfiguration(any(), any(), any());
     request = AwsCodeDeployListDeploymentGroupRequest.builder().build();
     task.run(new Object[] {request});
-    verify(mockAwsCodeDeployHelperServiceDelegate).listDeploymentGroups(any(), anyList(), anyString(), anyString());
+    verify(mockAwsCodeDeployHelperServiceDelegate).listDeploymentGroups(any(), any(), any(), any());
     request = AwsCodeDeployListDeploymentInstancesRequest.builder().build();
     task.run(new Object[] {request});
-    verify(mockAwsCodeDeployHelperServiceDelegate).listDeploymentInstances(any(), anyList(), anyString(), anyString());
+    verify(mockAwsCodeDeployHelperServiceDelegate).listDeploymentInstances(any(), any(), any(), any());
     request = AwsCodeDeployListAppRevisionRequest.builder().build();
     task.run(new Object[] {request});
-    verify(mockAwsCodeDeployHelperServiceDelegate)
-        .listAppRevision(any(), anyList(), anyString(), anyString(), anyString());
+    verify(mockAwsCodeDeployHelperServiceDelegate).listAppRevision(any(), any(), any(), any(), any());
   }
 }

@@ -44,7 +44,7 @@ import software.wings.beans.Service;
 import software.wings.beans.ServiceTemplate;
 import software.wings.beans.ServiceTemplate.ServiceTemplateKeys;
 import software.wings.beans.ServiceVariable;
-import software.wings.beans.ServiceVariable.Type;
+import software.wings.beans.ServiceVariableType;
 import software.wings.beans.appmanifest.AppManifestKind;
 import software.wings.beans.appmanifest.ApplicationManifest;
 import software.wings.beans.appmanifest.ManifestFile;
@@ -697,7 +697,7 @@ public class ServiceTemplateServiceImpl implements ServiceTemplateService {
     String accountId = appService.get(appId).getAccountId();
     Map<EncryptionConfig, List<EncryptableSettingWithEncryptionDetails>> encryptableSettingDetailsMap = new HashMap<>();
     serviceVariables.forEach(serviceVariable -> {
-      if (serviceVariable.getType() == Type.ENCRYPTED_TEXT) {
+      if (serviceVariable.getType() == ServiceVariableType.ENCRYPTED_TEXT) {
         if (isEmpty(serviceVariable.getAccountId())) {
           serviceVariable.setAccountId(accountId);
         }

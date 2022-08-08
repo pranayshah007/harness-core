@@ -74,7 +74,7 @@ import software.wings.beans.InfrastructureProvisioner;
 import software.wings.beans.PhaseStep;
 import software.wings.beans.PhaseStepType;
 import software.wings.beans.Service;
-import software.wings.beans.ServiceVariable.Type;
+import software.wings.beans.ServiceVariableType;
 import software.wings.beans.SettingAttribute;
 import software.wings.beans.Variable;
 import software.wings.beans.Workflow;
@@ -257,16 +257,16 @@ public class WorkflowGenerator {
                             .addStep(GraphNode.builder()
                                          .type(TERRAFORM_PROVISION.name())
                                          .name("Provision infra")
-                                         .properties(
-                                             ImmutableMap.<String, Object>builder()
-                                                 .put("provisionerId", infrastructureProvisioner.getUuid())
-                                                 .put("variables",
-                                                     asList(ImmutableMap.of("name", "access_key", "value",
-                                                                awsPlaygroundAccessKey, "valueType", Type.TEXT.name()),
-                                                         ImmutableMap.of("name", "secret_key", "value",
-                                                             awsPlaygroundSecretKeyId, "valueType",
-                                                             Type.ENCRYPTED_TEXT.name())))
-                                                 .build())
+                                         .properties(ImmutableMap.<String, Object>builder()
+                                                         .put("provisionerId", infrastructureProvisioner.getUuid())
+                                                         .put("variables",
+                                                             asList(ImmutableMap.of("name", "access_key", "value",
+                                                                        awsPlaygroundAccessKey, "valueType",
+                                                                        ServiceVariableType.TEXT.name()),
+                                                                 ImmutableMap.of("name", "secret_key", "value",
+                                                                     awsPlaygroundSecretKeyId, "valueType",
+                                                                     ServiceVariableType.ENCRYPTED_TEXT.name())))
+                                                         .build())
                                          .build())
                             .build())
                     .withPostDeploymentSteps(

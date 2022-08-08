@@ -13,6 +13,8 @@ import io.harness.annotations.dev.OwnedBy;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import java.util.ArrayList;
+import java.util.List;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -34,9 +36,16 @@ import lombok.experimental.SuperBuilder;
 public abstract class CVNGLogDTO {
   private String accountId;
   private String traceableId;
+  private List<CVNGLogTag> tags;
   private long createdAt;
   private long startTime;
   private long endTime;
   private TraceableType traceableType;
   public abstract CVNGLogType getType();
+  public List<CVNGLogTag> getTags() {
+    if (tags == null) {
+      return new ArrayList<>();
+    }
+    return tags;
+  }
 }

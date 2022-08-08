@@ -1,0 +1,23 @@
+moduleType: CV
+clients:
+  - name: cv-nextgen
+    clientConfig: cvngClientConfig
+    secretConfig: nextGenConfig.cvngServiceSecret
+features:
+  - name: SRM_SERVICES
+    description: Maximum active services at any point in time
+    restrictions:
+      COMMUNITY:
+        restrictionType: AVAILABILITY
+        enabled: true
+      FREE:
+        restrictionType: STATIC_LIMIT
+        limit: 5
+        clientName: cv-nextgen
+      TEAM:
+        restrictionType: STATIC_LIMIT
+        limit: 100
+        clientName: cv-nextgen
+      ENTERPRISE:
+        restrictionType: AVAILABILITY
+        enabled: true

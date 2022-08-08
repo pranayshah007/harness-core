@@ -25,7 +25,7 @@ import org.mockito.InjectMocks;
 import org.mockito.MockitoAnnotations;
 
 public class ErrorTrackingToDTOTest extends CategoryTest {
-  @InjectMocks ErrorTrackingEntityToDTO overOpsEntityToDTO;
+  @InjectMocks ErrorTrackingEntityToDTO errorTrackingEntityToDTO;
 
   @Before
   public void setUp() throws Exception {
@@ -35,13 +35,17 @@ public class ErrorTrackingToDTOTest extends CategoryTest {
   @Test
   @Owner(developers = ANGELO)
   @Category(UnitTests.class)
-  public void testCreateOverOpsConnectorDTO() {
-    String overOpsUrl = "https://overops";
+  public void testCreateErrorTrackingConnectorDTO() {
+    String url = "notused";
+    String apiKeyRef = "SomeApiKeyRef";
 
-    ErrorTrackingConnector overOpsConnector = ErrorTrackingConnector.builder().url(overOpsUrl).build();
+    ErrorTrackingConnector errorTrackingConnector =
+        ErrorTrackingConnector.builder().url(url).apiKeyRef(apiKeyRef).build();
 
-    ErrorTrackingConnectorDTO overOpsConnectorDTO = overOpsEntityToDTO.createConnectorDTO(overOpsConnector);
-    assertThat(overOpsConnectorDTO).isNotNull();
-    assertThat(overOpsConnectorDTO.getUrl()).isEqualTo(overOpsUrl);
+    ErrorTrackingConnectorDTO errorTrackingConnectorDTO =
+        errorTrackingEntityToDTO.createConnectorDTO(errorTrackingConnector);
+    assertThat(errorTrackingConnectorDTO).isNotNull();
+    assertThat(errorTrackingConnectorDTO.getUrl()).isEqualTo(url);
+    assertThat(errorTrackingConnectorDTO.getApiKeyRef().getIdentifier()).isEqualTo(apiKeyRef);
   }
 }

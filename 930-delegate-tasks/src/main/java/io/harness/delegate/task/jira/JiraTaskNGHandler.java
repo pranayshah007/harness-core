@@ -15,6 +15,8 @@ import io.harness.delegate.task.jira.mappers.JiraRequestResponseMapper;
 import io.harness.exception.InvalidArtifactServerException;
 import io.harness.exception.NestedExceptionUtils;
 import io.harness.jira.JiraClient;
+import io.harness.jira.JiraFieldNG;
+import io.harness.jira.JiraFieldTypeNG;
 import io.harness.jira.JiraIssueCreateMetadataNG;
 import io.harness.jira.JiraIssueNG;
 import io.harness.jira.JiraIssueUpdateMetadataNG;
@@ -22,7 +24,9 @@ import io.harness.jira.JiraProjectBasicNG;
 import io.harness.jira.JiraStatusNG;
 
 import com.google.inject.Singleton;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(CDC)
@@ -73,6 +77,18 @@ public class JiraTaskNGHandler {
     JiraClient jiraClient = getJiraClient(params);
     JiraIssueCreateMetadataNG createMetadata = jiraClient.getIssueCreateMetadata(params.getProjectKey(),
         params.getIssueType(), params.getExpand(), params.isFetchStatus(), params.isIgnoreComment());
+
+    // TECHDEBIT: we need to remove user type fields only from calls NG until we add support. After that we need to
+    // remove this block of code.
+    Set<JiraFieldNG> jiraUserFields = new HashSet<>();
+    createMetadata.getProjects().values().forEach(proj
+        -> proj.getIssueTypes().values().forEach(issueType -> issueType.getFields().values().stream().forEach(field -> {
+      if (field.getSchema().getType() == JiraFieldTypeNG.USER) {
+        jiraUserFields.add(field);
+      }
+    })));
+    jiraUserFields.forEach(field -> createMetadata.removeField(field.getName()));
+
     return JiraTaskNGResponse.builder().issueCreateMetadata(createMetadata).build();
   }
 
@@ -84,7 +100,7 @@ public class JiraTaskNGHandler {
 
   public JiraTaskNGResponse createIssue(JiraTaskNGParameters params) {
     JiraClient jiraClient = getJiraClient(params);
-    JiraIssueNG issue = jiraClient.createIssue(params.getProjectKey(), params.getIssueType(), params.getFields());
+    JiraIssueNG issue = jiraClient.createIssue(params.getProjectKey(), params.getIssueType(), params.getFields(), true);
     return JiraTaskNGResponse.builder().issue(issue).build();
   }
 

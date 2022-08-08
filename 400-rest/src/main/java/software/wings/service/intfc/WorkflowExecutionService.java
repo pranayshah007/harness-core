@@ -42,6 +42,7 @@ import software.wings.beans.StateExecutionInterrupt;
 import software.wings.beans.Workflow;
 import software.wings.beans.WorkflowExecution;
 import software.wings.beans.appmanifest.HelmChart;
+import software.wings.beans.approval.PreviousApprovalDetails;
 import software.wings.beans.artifact.Artifact;
 import software.wings.beans.baseline.WorkflowExecutionBaseline;
 import software.wings.beans.concurrency.ConcurrentExecutionResponse;
@@ -76,6 +77,7 @@ import org.mongodb.morphia.query.Query;
 @TargetModule(HarnessModule._870_CG_ORCHESTRATION)
 public interface WorkflowExecutionService extends StateStatusUpdate {
   void refreshPipelineExecution(WorkflowExecution workflowExecution);
+  void refreshStatus(WorkflowExecution workflowExecution);
 
   HIterator<WorkflowExecution> executions(String appId, long startedFrom, long statedTo, Set<String> includeOnlyFields);
 
@@ -172,7 +174,8 @@ public interface WorkflowExecutionService extends StateStatusUpdate {
 
   List<InfrastructureMapping> getResolvedInfraMappings(Workflow workflow, WorkflowExecution workflowExecution);
 
-  List<InfrastructureDefinition> getResolvedInfraDefinitions(Workflow workflow, WorkflowExecution workflowExecution);
+  List<InfrastructureDefinition> getResolvedInfraDefinitions(
+      Workflow workflow, WorkflowExecution workflowExecution, String envId);
 
   List<ElementExecutionSummary> getElementsSummary(
       String appId, String executionUuid, String parentStateExecutionInstanceId);
@@ -193,7 +196,8 @@ public interface WorkflowExecutionService extends StateStatusUpdate {
 
   boolean updateNotes(String appId, String workflowExecutionId, ExecutionArgs executionArgs);
 
-  boolean approveOrRejectExecution(String appId, List<String> userGroupIds, ApprovalDetails approvalDetails);
+  boolean approveOrRejectExecution(
+      String appId, List<String> userGroupIds, ApprovalDetails approvalDetails, String executionUuid);
 
   boolean approveOrRejectExecution(
       String appId, List<String> userGroupIds, ApprovalDetails approvalDetails, ApiKeyEntry apiEntryKey);
@@ -229,7 +233,8 @@ public interface WorkflowExecutionService extends StateStatusUpdate {
 
   List<Artifact> obtainLastGoodDeployedArtifacts(@NotEmpty String appId, @NotEmpty String workflowId);
 
-  List<Artifact> obtainLastGoodDeployedArtifacts(WorkflowExecution workflowExecution, List<String> infraMappingList);
+  List<Artifact> obtainLastGoodDeployedArtifacts(
+      WorkflowExecution workflowExecution, List<String> infraMappingList, boolean useInfraMappingBasedRollbackArtifact);
 
   List<ArtifactVariable> obtainLastGoodDeployedArtifactsVariables(String appId, String workflowId);
 
@@ -333,4 +338,19 @@ public interface WorkflowExecutionService extends StateStatusUpdate {
 
   List<WorkflowExecution> getLatestSuccessWorkflowExecutions(String appId, String workflowId, List<String> serviceIds,
       int executionsToSkip, int executionsToIncludeInResponse);
+
+  PreviousApprovalDetails getPreviousApprovalDetails(
+      String appId, String workflowExecutionId, String pipelineId, String approvalId);
+
+  Boolean approveAndRejectPreviousExecutions(String accountId, String appId, String workflowExecutionId,
+      String stateExecutionId, ApprovalDetails approvalDetails, PreviousApprovalDetails previousApprovalIds);
+
+  void rejectPreviousDeployments(String appId, String workflowExecutionId, ApprovalDetails approvalDetails);
+
+  WorkflowExecution getLastSuccessfulWorkflowExecution(
+      String accountId, String appId, String workflowId, String envId, String serviceId, String infraMappingId);
+
+  WorkflowExecutionInfo getWorkflowExecutionInfo(String appId, String workflowExecutionId);
+
+  WorkflowExecution getWorkflowExecutionWithFailureDetails(@NotNull String appId, @NotNull String workflowExecutionId);
 }

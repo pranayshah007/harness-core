@@ -16,12 +16,10 @@ import io.harness.ccm.views.entities.CEView;
 import io.harness.ccm.views.entities.ViewState;
 import io.harness.ccm.views.service.CEViewService;
 
-import software.wings.beans.Account;
 import software.wings.graphql.datafetcher.billing.CloudBillingHelper;
 
 import com.google.inject.Singleton;
 import java.util.List;
-import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -37,8 +35,7 @@ public class ViewCostUpdateService {
   @Autowired private CloudBillingHelper cloudBillingHelper;
 
   public void updateTotalCost() {
-    List<Account> ceEnabledAccounts = accountShardService.getCeEnabledAccounts();
-    List<String> accountIds = ceEnabledAccounts.stream().map(Account::getUuid).collect(Collectors.toList());
+    List<String> accountIds = accountShardService.getCeEnabledAccountIds();
     accountIds.forEach(accountId -> {
       List<CEView> views = ceViewService.getViewByState(accountId, ViewState.COMPLETED);
       views.forEach(view -> {

@@ -25,17 +25,22 @@ import static org.mockito.Mockito.when;
 
 import io.harness.CvNextGenTestBase;
 import io.harness.category.element.UnitTests;
+import io.harness.cvng.BuilderFactory;
 import io.harness.cvng.analysis.beans.ExceptionInfo;
 import io.harness.cvng.analysis.entities.CanaryLogAnalysisLearningEngineTask;
 import io.harness.cvng.analysis.entities.LearningEngineTask;
 import io.harness.cvng.analysis.entities.LearningEngineTask.ExecutionStatus;
 import io.harness.cvng.analysis.entities.TimeSeriesLearningEngineTask;
 import io.harness.cvng.analysis.services.api.LearningEngineTaskService;
+import io.harness.cvng.core.entities.CVConfig;
+import io.harness.cvng.core.services.api.CVConfigService;
 import io.harness.cvng.core.services.api.VerificationTaskService;
 import io.harness.persistence.HPersistence;
 import io.harness.rule.Owner;
 
 import com.google.inject.Inject;
+import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
@@ -54,7 +59,7 @@ import org.mongodb.morphia.query.UpdateOperations;
 
 public class LearningEngineTaskServiceImplTest extends CvNextGenTestBase {
   @Inject HPersistence hPersistence;
-
+  @Inject private Clock clock;
   @Mock HPersistence mockHPersistence;
   @Mock Query<LearningEngineTask> mockLETaskQuery;
   @Mock UpdateOperations<LearningEngineTask> mockUpdateOperations;
@@ -62,16 +67,20 @@ public class LearningEngineTaskServiceImplTest extends CvNextGenTestBase {
 
   @Inject private LearningEngineTaskService learningEngineTaskService;
   @Inject private VerificationTaskService verificationTaskService;
+  @Inject private CVConfigService cvConfigService;
   private String accountId;
   private String cvConfigId;
   private String verificationTaskId;
+  private BuilderFactory builderFactory;
   @Before
   public void setUp() throws Exception {
     MockitoAnnotations.initMocks(this);
-    accountId = generateUuid();
-    cvConfigId = generateUuid();
-    verificationTaskId =
-        verificationTaskService.createLiveMonitoringVerificationTask(accountId, cvConfigId, APP_DYNAMICS);
+    builderFactory = BuilderFactory.getDefault();
+    CVConfig cvConfig = builderFactory.splunkCVConfigBuilder().build();
+    cvConfigService.save(cvConfig);
+    accountId = builderFactory.getContext().getAccountId();
+    cvConfigId = cvConfig.getUuid();
+    verificationTaskId = verificationTaskService.getServiceGuardVerificationTaskId(accountId, cvConfigId);
   }
 
   @Test
@@ -241,7 +250,7 @@ public class LearningEngineTaskServiceImplTest extends CvNextGenTestBase {
   public void testGetTaskStatus_timeout() throws Exception {
     FieldUtils.writeField(learningEngineTaskService, "hPersistence", mockHPersistence, true);
     LearningEngineTask taskToSave = getTaskToSave(ExecutionStatus.RUNNING);
-    taskToSave.setLastUpdatedAt(Instant.now().minus(1, ChronoUnit.HOURS).toEpochMilli());
+    taskToSave.setLastUpdatedAt(clock.instant().minus(1, ChronoUnit.HOURS).toEpochMilli());
 
     when(mockHPersistence.createQuery(LearningEngineTask.class)).thenReturn(mockLETaskQuery);
     when(mockHPersistence.createUpdateOperations(LearningEngineTask.class)).thenReturn(mockUpdateOperations);
@@ -332,6 +341,7 @@ public class LearningEngineTaskServiceImplTest extends CvNextGenTestBase {
     taskToSave.setAnalysisType(SERVICE_GUARD_LOG_ANALYSIS);
     taskToSave.setAnalysisStartTime(startTime);
     taskToSave.setAnalysisEndTime(endTime);
+    taskToSave.setPickedAt(endTime.plus(Duration.ofMinutes(3)));
     return taskToSave;
   }
 }

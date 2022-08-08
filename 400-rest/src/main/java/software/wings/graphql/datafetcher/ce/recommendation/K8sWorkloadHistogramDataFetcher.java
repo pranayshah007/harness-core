@@ -18,6 +18,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.ccm.commons.entities.k8s.recommendation.PartialRecommendationHistogram;
 import io.harness.ccm.commons.entities.k8s.recommendation.PartialRecommendationHistogram.PartialRecommendationHistogramKeys;
+import io.harness.ccm.commons.utils.StrippedHistogram;
 import io.harness.histogram.Histogram;
 import io.harness.histogram.HistogramCheckpoint;
 import io.harness.persistence.HIterator;
@@ -35,16 +36,12 @@ import software.wings.security.annotations.AuthRule;
 
 import com.google.inject.Inject;
 import java.time.Instant;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-import lombok.Builder;
-import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 import org.mongodb.morphia.query.Query;
 
@@ -94,10 +91,8 @@ public class K8sWorkloadHistogramDataFetcher
               HistogramCheckpoint cpuHistogramCp = cpuHistogram.saveToCheckpoint();
               int numBucketsMemory = RecommenderUtils.MEMORY_HISTOGRAM_OPTIONS.getNumBuckets();
               int numBucketsCpu = RecommenderUtils.CPU_HISTOGRAM_OPTIONS.getNumBuckets();
-              double[] memBucketWeights = bucketWeightsMapToArr(memoryHistogramCp, numBucketsMemory);
-              StrippedHistogram memStripped = stripZeroes(memBucketWeights, MEMORY_HISTOGRAM_FIRST_BUCKET_SIZE);
-              double[] cpuBucketWeights = bucketWeightsMapToArr(cpuHistogramCp, numBucketsCpu);
-              StrippedHistogram cpuStripped = stripZeroes(cpuBucketWeights, CPU_HISTOGRAM_FIRST_BUCKET_SIZE);
+              StrippedHistogram memStripped = StrippedHistogram.fromCheckpoint(memoryHistogramCp, numBucketsMemory);
+              StrippedHistogram cpuStripped = StrippedHistogram.fromCheckpoint(cpuHistogramCp, numBucketsCpu);
               return QLContainerHistogramData.builder()
                   .containerName(containerName)
                   .memoryHistogram(QLHistogramExp.builder()
@@ -133,50 +128,5 @@ public class K8sWorkloadHistogramDataFetcher
       result[p] = histogram.getPercentile(p / 100.0);
     }
     return result;
-  }
-
-  private double[] bucketWeightsMapToArr(HistogramCheckpoint histogram, int numBuckets) {
-    double[] bucketWeightsArr = new double[numBuckets];
-    long sum = 0;
-    for (Integer weight : histogram.getBucketWeights().values()) {
-      sum += weight;
-    }
-    if (sum != 0) {
-      double ratio = histogram.getTotalWeight() / sum;
-      for (int i = 0; i < numBuckets; i++) {
-        bucketWeightsArr[i] = Optional.ofNullable(histogram.getBucketWeights().get(i)).orElse(0) * ratio;
-      }
-    }
-    return bucketWeightsArr;
-  }
-
-  private StrippedHistogram stripZeroes(double[] weights, double firstBucketSize) {
-    int minBucket = weights.length - 1;
-    int maxBucket = 0;
-    for (int i = 0; i < weights.length; i++) {
-      if (weights[i] > 0) {
-        minBucket = Math.min(minBucket, i);
-        maxBucket = Math.max(maxBucket, i);
-      }
-    }
-    if (minBucket <= maxBucket) {
-      double[] newWeights = Arrays.copyOfRange(weights, minBucket, maxBucket + 1);
-      return StrippedHistogram.builder()
-          .bucketWeights(newWeights)
-          .numBuckets(maxBucket - minBucket + 1)
-          .minBucket(minBucket)
-          .maxBucket(maxBucket)
-          .build();
-    }
-    return StrippedHistogram.builder().numBuckets(0).bucketWeights(new double[0]).build();
-  }
-
-  @Value
-  @Builder
-  private static class StrippedHistogram {
-    double[] bucketWeights;
-    int numBuckets;
-    int minBucket;
-    int maxBucket;
   }
 }

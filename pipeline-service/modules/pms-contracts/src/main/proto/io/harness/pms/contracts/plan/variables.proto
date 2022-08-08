@@ -1,0 +1,33 @@
+// Copyright 2021 Harness Inc. All rights reserved.
+// Use of this source code is governed by the PolyForm Shield 1.0.0 license
+// that can be found in the licenses directory at the root of this repository, also available at
+// https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
+
+syntax = "proto3";
+
+package io.harness.pms.contracts.plan;
+
+option java_multiple_files = true;
+
+message YamlProperties {
+  // expression to refer the given field anywhere.
+  string fqn = 1;
+  // expression to refer within a stage.
+  string localName = 2;
+  // this can be used as nested variablePath as well.
+  string variableName = 3;
+  // alias expression which can be used to refer it.
+  string aliasFQN = 4;
+  // indicates whether to show on variables screen or not.
+  bool visible = 5;
+}
+
+message YamlOutputProperties {
+  string fqn = 1;
+  string localName = 2;
+}
+
+message YamlExtraProperties {
+  repeated YamlProperties properties = 1;
+  repeated YamlProperties outputProperties = 2;
+}

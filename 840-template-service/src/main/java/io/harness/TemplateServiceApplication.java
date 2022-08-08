@@ -13,7 +13,6 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.logging.LoggingInitializer.initializeLogging;
 
 import static com.google.common.collect.ImmutableMap.of;
-import static java.util.stream.Collectors.toSet;
 
 import io.harness.accesscontrol.NGAccessDeniedExceptionMapper;
 import io.harness.annotations.dev.OwnedBy;
@@ -54,19 +53,22 @@ import io.harness.security.annotations.NextGenManagerAuth;
 import io.harness.serializer.jackson.TemplateServiceJacksonModule;
 import io.harness.service.impl.DelegateAsyncServiceImpl;
 import io.harness.service.impl.DelegateSyncServiceImpl;
+import io.harness.template.GenerateOpenApiSpecCommand;
 import io.harness.template.InspectCommand;
 import io.harness.template.beans.yaml.NGTemplateConfig;
 import io.harness.template.entity.TemplateEntity;
+import io.harness.template.event.TemplateEventConsumerService;
 import io.harness.template.gitsync.TemplateEntityGitSyncHandler;
 import io.harness.template.migration.TemplateMigrationProvider;
 import io.harness.threading.ExecutorModule;
 import io.harness.threading.ThreadPool;
 import io.harness.token.remote.TokenClient;
+import io.harness.yaml.YamlSdkConfiguration;
+import io.harness.yaml.YamlSdkInitHelper;
 
 import com.codahale.metrics.MetricRegistry;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
@@ -86,18 +88,7 @@ import io.federecio.dropwizard.swagger.SwaggerBundle;
 import io.federecio.dropwizard.swagger.SwaggerBundleConfiguration;
 import io.serializer.HObjectMapper;
 import io.swagger.v3.jaxrs2.integration.resources.OpenApiResource;
-import io.swagger.v3.oas.annotations.tags.Tag;
-import io.swagger.v3.oas.integration.SwaggerConfiguration;
-import io.swagger.v3.oas.integration.api.OpenAPIConfiguration;
-import io.swagger.v3.oas.models.OpenAPI;
-import io.swagger.v3.oas.models.info.Contact;
-import io.swagger.v3.oas.models.info.Info;
-import io.swagger.v3.oas.models.servers.Server;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -108,7 +99,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 import javax.servlet.DispatcherType;
 import javax.servlet.FilterRegistration;
 import javax.ws.rs.container.ContainerRequestContext;
@@ -145,6 +135,7 @@ public class TemplateServiceApplication extends Application<TemplateServiceConfi
   public void initialize(Bootstrap<TemplateServiceConfiguration> bootstrap) {
     initializeLogging();
     bootstrap.addCommand(new InspectCommand<>(this));
+    bootstrap.addCommand(new GenerateOpenApiSpecCommand());
 
     // Enable variable substitution with environment variables
     bootstrap.setConfigurationSourceProvider(new SubstitutingSourceProvider(
@@ -228,6 +219,7 @@ public class TemplateServiceApplication extends Application<TemplateServiceConfi
       registerGitSyncSdk(templateServiceConfiguration, injector, environment);
     }
     registerMigrations(injector);
+    registerYamlSdk(injector);
 
     injector.getInstance(PrimaryVersionChangeScheduler.class).registerExecutors();
     MaintenanceController.forceMaintenance(false);
@@ -236,45 +228,13 @@ public class TemplateServiceApplication extends Application<TemplateServiceConfi
   private void registerOasResource(
       TemplateServiceConfiguration templateServiceConfiguration, Environment environment, Injector injector) {
     OpenApiResource openApiResource = injector.getInstance(OpenApiResource.class);
-    openApiResource.setOpenApiConfiguration(getOasConfig(templateServiceConfiguration));
+    openApiResource.setOpenApiConfiguration(templateServiceConfiguration.getOasConfig());
     environment.jersey().register(openApiResource);
-  }
-
-  private OpenAPIConfiguration getOasConfig(TemplateServiceConfiguration templateServiceConfiguration) {
-    OpenAPI oas = new OpenAPI();
-    Info info = new Info()
-                    .title("Template Service API Reference")
-                    .description("This is the Open Api Spec 3 for the Template Service.")
-                    .termsOfService("https://harness.io/terms-of-use/")
-                    .version("3.0")
-                    .contact(new Contact().email("contact@harness.io"));
-    oas.info(info);
-    URL baseurl = null;
-    try {
-      baseurl = new URL(
-          "https", templateServiceConfiguration.getHostname(), templateServiceConfiguration.getBasePathPrefix());
-      Server server = new Server();
-      server.setUrl(baseurl.toString());
-      oas.servers(Collections.singletonList(server));
-    } catch (MalformedURLException e) {
-      log.error("failed to set baseurl for server, {}/{}", templateServiceConfiguration.hostname,
-          templateServiceConfiguration.getBasePathPrefix());
-    }
-    final Set<String> resourceClasses =
-        getOAS3ResourceClassesOnly().stream().map(Class::getCanonicalName).collect(toSet());
-    return new SwaggerConfiguration()
-        .openAPI(oas)
-        .prettyPrint(true)
-        .resourceClasses(resourceClasses)
-        .scannerClass("io.swagger.v3.jaxrs2.integration.JaxrsAnnotationScanner");
-  }
-
-  public static Collection<Class<?>> getOAS3ResourceClassesOnly() {
-    return getResourceClasses().stream().filter(x -> x.isAnnotationPresent(Tag.class)).collect(Collectors.toList());
   }
 
   private void registerManagedBeans(Environment environment, Injector injector) {
     environment.lifecycle().manage(injector.getInstance(OutboxEventPollService.class));
+    environment.lifecycle().manage(injector.getInstance(TemplateEventConsumerService.class));
   }
 
   private void registerResources(Environment environment, Injector injector) {
@@ -358,7 +318,7 @@ public class TemplateServiceApplication extends Application<TemplateServiceConfi
   }
 
   private GitSyncSdkConfiguration getGitSyncConfiguration(TemplateServiceConfiguration config) {
-    final Supplier<List<EntityType>> sortOrder = () -> Lists.newArrayList(EntityType.TEMPLATE);
+    final Supplier<List<EntityType>> sortOrder = () -> TemplateGitEntityOrderComparator.sortOrder;
     ObjectMapper objectMapper = new ObjectMapper(new YAMLFactory());
     configureObjectMapper(objectMapper);
     Set<GitSyncEntitiesConfiguration> gitSyncEntitiesConfigurations = new HashSet<>();
@@ -379,6 +339,7 @@ public class TemplateServiceApplication extends Application<TemplateServiceConfi
         .eventsRedisConfig(config.getEventsFrameworkConfiguration().getRedisConfig())
         .serviceHeader(TEMPLATE_SERVICE)
         .gitSyncEntitiesConfiguration(gitSyncEntitiesConfigurations)
+        .gitSyncEntitySortComparator(TemplateGitEntityOrderComparator.class)
         .objectMapper(objectMapper)
         .build();
   }
@@ -390,5 +351,14 @@ public class TemplateServiceApplication extends Application<TemplateServiceConfi
     } catch (Exception ex) {
       throw new GeneralException("Failed to start template service because git sync registration failed", ex);
     }
+  }
+
+  private void registerYamlSdk(Injector injector) {
+    YamlSdkConfiguration yamlSdkConfiguration = YamlSdkConfiguration.builder()
+                                                    .requireSchemaInit(true)
+                                                    .requireSnippetInit(true)
+                                                    .requireValidatorInit(false)
+                                                    .build();
+    YamlSdkInitHelper.initialize(injector, yamlSdkConfiguration);
   }
 }

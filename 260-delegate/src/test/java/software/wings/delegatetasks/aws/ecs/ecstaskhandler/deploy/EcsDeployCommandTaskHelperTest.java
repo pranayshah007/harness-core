@@ -8,6 +8,7 @@
 package software.wings.delegatetasks.aws.ecs.ecstaskhandler.deploy;
 
 import static io.harness.rule.OwnerRule.ARVIND;
+import static io.harness.rule.OwnerRule.LOVISH_BANSAL;
 import static io.harness.rule.OwnerRule.SAINATH;
 import static io.harness.rule.OwnerRule.SATYAM;
 
@@ -19,9 +20,6 @@ import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyInt;
-import static org.mockito.Matchers.anyList;
-import static org.mockito.Matchers.anyObject;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
@@ -86,7 +84,7 @@ public class EcsDeployCommandTaskHelperTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void testDeregisterAutoScalarsIfExists() {
     ExecutionLogCallback mockCallback = mock(ExecutionLogCallback.class);
-    doNothing().when(mockCallback).saveExecutionLog(anyString());
+    doNothing().when(mockCallback).saveExecutionLog(any());
     ContextData data = ContextData.builder()
                            .awsConfig(AwsConfig.builder().build())
                            .resizeParams(anEcsResizeParams()
@@ -97,14 +95,14 @@ public class EcsDeployCommandTaskHelperTest extends WingsBaseTest {
                                              .build())
                            .build();
     ScalableTarget target = new ScalableTarget().withResourceId("resId").withScalableDimension("scalDim");
-    doReturn(target).when(mockAwsAppAutoScalingService).getScalableTargetFromJson(anyString());
+    doReturn(target).when(mockAwsAppAutoScalingService).getScalableTargetFromJson(any());
     DescribeScalableTargetsResult result = new DescribeScalableTargetsResult().withScalableTargets(
         new ScalableTarget().withResourceId("resId").withScalableDimension("scalDim"));
-    doReturn(result).when(mockAwsAppAutoScalingService).listScalableTargets(anyString(), any(), anyList(), any());
+    doReturn(result).when(mockAwsAppAutoScalingService).listScalableTargets(any(), any(), any(), any());
     helper.deregisterAutoScalarsIfExists(data, mockCallback);
     ArgumentCaptor<DeregisterScalableTargetRequest> captor =
         ArgumentCaptor.forClass(DeregisterScalableTargetRequest.class);
-    verify(mockAwsAppAutoScalingService).deregisterScalableTarget(anyString(), any(), anyList(), captor.capture());
+    verify(mockAwsAppAutoScalingService).deregisterScalableTarget(any(), any(), any(), captor.capture());
     DeregisterScalableTargetRequest request = captor.getValue();
     assertThat(request).isNotNull();
     assertThat(request.getResourceId()).isEqualTo("resId");
@@ -117,7 +115,7 @@ public class EcsDeployCommandTaskHelperTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void testDeleteAutoScalarForNewService() {
     ExecutionLogCallback mockCallback = mock(ExecutionLogCallback.class);
-    doNothing().when(mockCallback).saveExecutionLog(anyString());
+    doNothing().when(mockCallback).saveExecutionLog(any());
     ContextData data = ContextData.builder()
                            .awsConfig(AwsConfig.builder().build())
                            .resizeParams(anEcsResizeParams()
@@ -130,14 +128,14 @@ public class EcsDeployCommandTaskHelperTest extends WingsBaseTest {
                                              .build())
                            .build();
     String resId = "resId";
-    doReturn(resId).when(mockEcsCommandTaskHelper).getResourceIdForEcsService(anyString(), anyString());
+    doReturn(resId).when(mockEcsCommandTaskHelper).getResourceIdForEcsService(any(), any());
     DescribeScalableTargetsResult result = new DescribeScalableTargetsResult().withScalableTargets(
         new ScalableTarget().withResourceId("resId").withScalableDimension("scalDim"));
-    doReturn(result).when(mockAwsAppAutoScalingService).listScalableTargets(anyString(), any(), anyList(), any());
+    doReturn(result).when(mockAwsAppAutoScalingService).listScalableTargets(any(), any(), any(), any());
     helper.deleteAutoScalarForNewService(data, mockCallback);
     ArgumentCaptor<DeregisterScalableTargetRequest> captor =
         ArgumentCaptor.forClass(DeregisterScalableTargetRequest.class);
-    verify(mockAwsAppAutoScalingService).deregisterScalableTarget(anyString(), any(), anyList(), captor.capture());
+    verify(mockAwsAppAutoScalingService).deregisterScalableTarget(any(), any(), any(), captor.capture());
     DeregisterScalableTargetRequest request = captor.getValue();
     assertThat(request).isNotNull();
     assertThat(request.getResourceId()).isEqualTo("resId");
@@ -150,7 +148,7 @@ public class EcsDeployCommandTaskHelperTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void testRestoreAutoScalarConfigs() {
     ExecutionLogCallback mockCallback = mock(ExecutionLogCallback.class);
-    doNothing().when(mockCallback).saveExecutionLog(anyString());
+    doNothing().when(mockCallback).saveExecutionLog(any());
     ContextData data = ContextData.builder()
                            .awsConfig(AwsConfig.builder().build())
                            .resizeParams(anEcsResizeParams()
@@ -168,15 +166,13 @@ public class EcsDeployCommandTaskHelperTest extends WingsBaseTest {
                            .build();
     doNothing().when(helper).deleteAutoScalarForNewService(any(), any());
     ScalableTarget target = new ScalableTarget().withResourceId("resId").withScalableDimension("scalDim");
-    doReturn(target).when(mockAwsAppAutoScalingService).getScalableTargetFromJson(anyString());
+    doReturn(target).when(mockAwsAppAutoScalingService).getScalableTargetFromJson(any());
     DescribeScalableTargetsResult result = new DescribeScalableTargetsResult();
-    doReturn(result).when(mockAwsAppAutoScalingService).listScalableTargets(anyString(), any(), anyList(), any());
+    doReturn(result).when(mockAwsAppAutoScalingService).listScalableTargets(any(), any(), any(), any());
     helper.restoreAutoScalarConfigs(data, mock(ContainerServiceData.class), mockCallback);
+    verify(mockEcsCommandTaskHelper).registerScalableTargetForEcsService(any(), any(), any(), any(), any(), any());
     verify(mockEcsCommandTaskHelper)
-        .registerScalableTargetForEcsService(any(), anyString(), any(), anyList(), any(), any());
-    verify(mockEcsCommandTaskHelper)
-        .upsertScalingPolicyIfRequired(
-            anyString(), anyString(), anyString(), anyString(), any(), any(), anyList(), any());
+        .upsertScalingPolicyIfRequired(any(), any(), any(), any(), any(), any(), any(), any());
   }
 
   @Test
@@ -200,24 +196,22 @@ public class EcsDeployCommandTaskHelperTest extends WingsBaseTest {
                            .build();
     ContainerServiceData containerServiceData = ContainerServiceData.builder().name("foo__1").desiredCount(2).build();
     ExecutionLogCallback mockCallback = mock(ExecutionLogCallback.class);
-    doNothing().when(mockCallback).saveExecutionLog(anyString());
+    doNothing().when(mockCallback).saveExecutionLog(any());
     String resId = "resId";
-    doReturn(resId).when(mockEcsCommandTaskHelper).getResourceIdForEcsService(anyString(), anyString());
+    doReturn(resId).when(mockEcsCommandTaskHelper).getResourceIdForEcsService(any(), any());
     ScalableTarget target = new ScalableTarget().withResourceId("resId").withScalableDimension("scalDim");
-    doReturn(target).when(mockAwsAppAutoScalingService).getScalableTargetFromJson(anyString());
+    doReturn(target).when(mockAwsAppAutoScalingService).getScalableTargetFromJson(any());
     helper.createAutoScalarConfigIfServiceReachedMaxSize(data, containerServiceData, mockCallback);
     ArgumentCaptor<ScalableTarget> captor = ArgumentCaptor.forClass(ScalableTarget.class);
     verify(mockEcsCommandTaskHelper)
-        .registerScalableTargetForEcsService(any(), anyString(), any(), anyList(), any(), captor.capture());
+        .registerScalableTargetForEcsService(any(), any(), any(), any(), any(), captor.capture());
     ScalableTarget value = captor.getValue();
     assertThat(value).isNotNull();
     assertThat(value.getResourceId()).isEqualTo("resId");
     verify(mockEcsContainerService, times(1))
-        .waitForServiceToReachStableState(
-            anyString(), anyObject(), anyList(), anyString(), anyString(), anyObject(), anyInt());
+        .waitForServiceToReachStableState(any(), any(), any(), any(), any(), any(), anyInt());
     verify(mockEcsCommandTaskHelper)
-        .upsertScalingPolicyIfRequired(
-            anyString(), anyString(), anyString(), anyString(), any(), any(), anyList(), any());
+        .upsertScalingPolicyIfRequired(any(), any(), any(), any(), any(), any(), any(), any());
   }
 
   @Test
@@ -251,7 +245,7 @@ public class EcsDeployCommandTaskHelperTest extends WingsBaseTest {
                            .build();
     doReturn(Optional.of(new Service().withServiceName("foo__1").withDesiredCount(1)))
         .when(mockAwsClusterService)
-        .getService(anyString(), any(), anyList(), anyString(), anyString());
+        .getService(any(), any(), any(), any(), any());
     ContainerServiceData instanceData = helper.getNewInstanceData(data, mock(ExecutionLogCallback.class));
     assertThat(instanceData).isNotNull();
     assertThat(instanceData.getDesiredCount()).isEqualTo(2);
@@ -280,14 +274,12 @@ public class EcsDeployCommandTaskHelperTest extends WingsBaseTest {
     oldActiverServiceCounts.put("foo__3", 0);
     doReturn(oldActiverServiceCounts)
         .when(mockAwsClusterService)
-        .getActiveServiceCounts(anyString(), any(), anyList(), anyString(), anyString());
+        .getActiveServiceCounts(any(), any(), any(), any(), any());
     Map<String, String> imageMap = new HashMap<>();
     imageMap.put("foo__1", "img__1");
     imageMap.put("foo__2", "img__2");
     imageMap.put("foo__3", "img__3");
-    doReturn(imageMap)
-        .when(mockAwsClusterService)
-        .getActiveServiceImages(anyString(), any(), anyList(), anyString(), anyString(), anyString());
+    doReturn(imageMap).when(mockAwsClusterService).getActiveServiceImages(any(), any(), any(), any(), any(), any());
     List<ContainerServiceData> oldInstanceData = helper.getOldInstanceData(data, newServiceData);
     assertThat(oldInstanceData).isNotNull();
     assertThat(oldInstanceData.size()).isEqualTo(2);
@@ -373,6 +365,24 @@ public class EcsDeployCommandTaskHelperTest extends WingsBaseTest {
                                        .build(),
             15, 5, 0))
         .isEqualTo(10);
+  }
+  @Test
+  @Owner(developers = LOVISH_BANSAL)
+  @Category(UnitTests.class)
+  public void testGetDownsizeByAmountifTargetInstancesZero() {
+    assertThat(helper.getDownsizeByAmount(ContextData.builder().blueGreen(true).build(), 15, 5, 0)).isEqualTo(0);
+    assertThat(
+        helper.getDownsizeByAmount(ContextData.builder()
+                                       .blueGreen(false)
+                                       .resizeParams(anEcsResizeParams()
+                                                         .withDownsizeInstanceCount(100)
+                                                         .withFixedInstances(0)
+                                                         .withUseFixedInstances(true)
+                                                         .withDownsizeInstanceUnitType(InstanceUnitType.PERCENTAGE)
+                                                         .build())
+                                       .build(),
+            15, 0, 0))
+        .isEqualTo(0);
   }
 
   @Test

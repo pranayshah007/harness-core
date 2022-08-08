@@ -27,6 +27,7 @@ import static io.harness.security.encryption.EncryptionType.LOCAL;
 import static io.harness.security.encryption.EncryptionType.VAULT;
 import static io.harness.validation.Validator.equalCheck;
 
+import static software.wings.app.ManagerCacheRegistrar.SECRET_CACHE;
 import static software.wings.beans.ServiceVariable.ServiceVariableKeys;
 import static software.wings.service.impl.security.AbstractSecretServiceImpl.checkState;
 import static software.wings.service.impl.security.AbstractSecretServiceImpl.encryptLocal;
@@ -79,6 +80,7 @@ import software.wings.beans.SettingAttribute.SettingCategory;
 import software.wings.beans.VaultConfig;
 import software.wings.beans.WorkflowExecution;
 import software.wings.dl.WingsPersistence;
+import software.wings.expression.EncryptedDataDetails;
 import software.wings.security.UsageRestrictions;
 import software.wings.security.encryption.secretsmanagerconfigs.CustomSecretsManagerConfig;
 import software.wings.service.impl.SettingServiceHelper;
@@ -98,6 +100,7 @@ import com.google.common.collect.Sets;
 import com.google.common.io.Files;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.google.inject.name.Named;
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -119,6 +122,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import javax.cache.Cache;
 import lombok.Builder;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -145,6 +149,7 @@ public class SecretManagerImpl implements SecretManager, EncryptedSettingAttribu
   @Inject private SecretService secretService;
   @Inject private SecretYamlHandler secretYamlHandler;
   @Inject private SecretsDao secretsDao;
+  @Inject @Named(SECRET_CACHE) private Cache<String, EncryptedDataDetails> secretsCache;
 
   @Override
   public EncryptionType getEncryptionType(String accountId) {
@@ -782,7 +787,11 @@ public class SecretManagerImpl implements SecretManager, EncryptedSettingAttribu
 
   private boolean updateHarnessSecret(
       String accountId, String existingRecordId, HarnessSecret secret, boolean validateScopes) {
-    return secretService.updateSecret(accountId, secret, existingRecordId, validateScopes);
+    final boolean updated = secretService.updateSecret(accountId, secret, existingRecordId, validateScopes);
+    if (updated) {
+      secretsCache.remove(existingRecordId);
+    }
+    return updated;
   }
 
   @Override

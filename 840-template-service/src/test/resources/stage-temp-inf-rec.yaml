@@ -1,0 +1,20 @@
+template:
+  name: stt1
+  identifier: stt1
+  versionLabel: "1"
+  type: Stage
+  projectIdentifier: dummy
+  orgIdentifier: default
+  tags: {}
+  spec:
+    type: Approval
+    spec:
+      execution:
+        steps:
+          - step:
+              name: aa
+              identifier: aa
+              template:
+                templateRef: stt1
+                versionLabel: "1"
+      serviceDependencies: []

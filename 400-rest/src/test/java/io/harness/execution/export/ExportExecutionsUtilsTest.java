@@ -17,6 +17,7 @@ import io.harness.rule.Owner;
 
 import java.time.Instant;
 import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -27,7 +28,7 @@ public class ExportExecutionsUtilsTest extends CategoryTest {
   public void testUploadFile() {
     assertThat(ExportExecutionsUtils.prepareZonedDateTime(0)).isNull();
 
-    Instant now = Instant.now();
+    Instant now = Instant.now().truncatedTo(ChronoUnit.MILLIS);
     ZonedDateTime zonedDateTime = ExportExecutionsUtils.prepareZonedDateTime(now.toEpochMilli());
     assertThat(zonedDateTime).isNotNull();
     assertThat(zonedDateTime.toInstant()).isEqualTo(now);

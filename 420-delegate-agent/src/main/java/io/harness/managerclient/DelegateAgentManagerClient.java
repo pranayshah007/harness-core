@@ -11,6 +11,12 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DelegateHeartbeatResponse;
 import io.harness.beans.DelegateTaskEventsResponse;
+import io.harness.delegate.SendTaskProgressRequest;
+import io.harness.delegate.SendTaskProgressResponse;
+import io.harness.delegate.SendTaskStatusRequest;
+import io.harness.delegate.SendTaskStatusResponse;
+import io.harness.delegate.TaskProgressRequest;
+import io.harness.delegate.TaskProgressResponse;
 import io.harness.delegate.beans.DelegateConnectionHeartbeat;
 import io.harness.delegate.beans.DelegateFile;
 import io.harness.delegate.beans.DelegateParams;
@@ -26,11 +32,18 @@ import io.harness.delegate.beans.connector.ConnectorHeartbeatDelegateResponse;
 import io.harness.delegate.beans.instancesync.InstanceSyncPerpetualTaskResponse;
 import io.harness.delegate.task.validation.DelegateConnectionResultDetail;
 import io.harness.logging.AccessTokenBean;
+import io.harness.perpetualtask.HeartbeatRequest;
+import io.harness.perpetualtask.HeartbeatResponse;
+import io.harness.perpetualtask.PerpetualTaskContextResponse;
+import io.harness.perpetualtask.PerpetualTaskListResponse;
 import io.harness.rest.RestResponse;
 import io.harness.serializer.kryo.KryoRequest;
 import io.harness.serializer.kryo.KryoResponse;
 
+import software.wings.beans.ConfigFileDto;
+
 import java.util.List;
+import javax.ws.rs.Consumes;
 import okhttp3.MultipartBody;
 import okhttp3.RequestBody;
 import okhttp3.ResponseBody;
@@ -59,9 +72,9 @@ public interface DelegateAgentManagerClient {
   Call<RestResponse> doConnectionHeartbeat(@Path("delegateId") String delegateId, @Query("accountId") String accountId,
       @Body DelegateConnectionHeartbeat heartbeat);
 
-  @Headers({"Content-Type: application/x-kryo"})
+  @Headers({"Content-Type: application/x-kryo-v2"})
   @KryoRequest
-  @POST("agent/tasks/{taskId}/delegates/{delegateId}")
+  @POST("agent/tasks/{taskId}/delegates/{delegateId}/v2")
   Call<ResponseBody> sendTaskStatus(@Path("delegateId") String delegateId, @Path("taskId") String taskId,
       @Query("accountId") String accountId, @Body DelegateTaskResponse delegateTaskResponse);
 
@@ -107,11 +120,11 @@ public interface DelegateAgentManagerClient {
   Call<DelegateTaskEventsResponse> pollTaskEvents(
       @Path("delegateId") String delegateId, @Query("accountId") String accountId);
 
-  @POST("agent/delegates/instance-sync/{perpetualTaskId}")
+  @POST("instancesync/instance-sync/{perpetualTaskId}")
   Call<RestResponse<Boolean>> publishInstanceSyncResult(@Path("perpetualTaskId") String perpetualTaskId,
       @Query("accountId") String accountId, @Body DelegateResponseData responseData);
 
-  @POST("agent/delegates/instance-sync-ng/{perpetualTaskId}")
+  @POST("instancesync/instance-sync-ng/{perpetualTaskId}")
   Call<RestResponse<Boolean>> processInstanceSyncNGResult(@Path("perpetualTaskId") String perpetualTaskId,
       @Query("accountId") String accountId, @Body InstanceSyncPerpetualTaskResponse responseData);
 
@@ -146,7 +159,7 @@ public interface DelegateAgentManagerClient {
       @Query("accountId") String accountId, @Body RequestBody buildSourceExecutionResponse);
 
   @KryoResponse
-  @PUT("agent/delegates/{delegateId}/tasks/{taskId}/acquire")
+  @PUT("agent/delegates/{delegateId}/tasks/{taskId}/acquire/v2")
   Call<DelegateTaskPackage> acquireTask(@Path("delegateId") String delegateId, @Path("taskId") String uuid,
       @Query("accountId") String accountId, @Query("delegateInstanceId") String delegateInstanceId);
 
@@ -154,13 +167,45 @@ public interface DelegateAgentManagerClient {
   Call<RestResponse<DelegateHeartbeatResponse>> delegateHeartbeat(
       @Query("accountId") String accountId, @Body DelegateParams delegateParams);
 
-  @GET("service-templates/{templateId}/compute-files")
-  Call<RestResponse<String>> getConfigFiles(@Path("templateId") String templateId, @Query("accountId") String accountId,
-      @Query("appId") String appId, @Query("envId") String envId, @Query("hostId") String hostId);
+  @GET("service-templates/{templateId}/compute-files-dto")
+  Call<RestResponse<List<ConfigFileDto>>> getConfigFiles(@Path("templateId") String templateId,
+      @Query("accountId") String accountId, @Query("appId") String appId, @Query("envId") String envId,
+      @Query("hostId") String hostId);
 
   @KryoResponse
-  @POST("agent/delegates/{delegateId}/tasks/{taskId}/report")
+  @POST("agent/delegates/{delegateId}/tasks/{taskId}/report/v2")
   Call<DelegateTaskPackage> reportConnectionResults(@Path("delegateId") String delegateId, @Path("taskId") String uuid,
       @Query("accountId") String accountId, @Query("delegateInstanceId") String delegateInstanceId,
       @Body List<DelegateConnectionResultDetail> results);
+
+  @GET("version/watcher") Call<RestResponse<String>> getWatcherVersion(@Query("accountId") String accountId);
+
+  @Consumes({"application/x-protobuf"})
+  @GET("agent/delegates/perpetual-task/list")
+  Call<PerpetualTaskListResponse> perpetualTaskList(
+      @Query("delegateId") String delegateId, @Query("accountId") String accountId);
+
+  @Consumes({"application/x-protobuf"})
+  @GET("agent/delegates/perpetual-task/context")
+  Call<PerpetualTaskContextResponse> perpetualTaskContext(
+      @Query("taskId") String taskId, @Query("accountId") String accountId);
+
+  @Consumes({"application/x-protobuf"})
+  @PUT("agent/delegates/perpetual-task/heartbeat")
+  Call<HeartbeatResponse> heartbeat(@Query("accountId") String accountId, @Body HeartbeatRequest heartbeatRequest);
+
+  @Consumes({"application/x-protobuf"})
+  @PUT("agent/delegates/task-progress/progress-update")
+  Call<SendTaskProgressResponse> sendTaskProgressUpdate(
+      @Body SendTaskProgressRequest sendTaskProgressRequest, @Query("accountId") String accountId);
+
+  @Consumes({"application/x-protobuf"})
+  @PUT("agent/delegates/task-progress/progress")
+  Call<TaskProgressResponse> taskProgress(
+      @Body TaskProgressRequest taskProgressRequest, @Query("accountId") String accountId);
+
+  @Consumes({"application/x-protobuf"})
+  @PUT("agent/delegates/task-progress/status")
+  Call<SendTaskStatusResponse> sendTaskStatus(
+      @Body SendTaskStatusRequest sendTaskStatusRequest, @Query("accountId") String accountId);
 }

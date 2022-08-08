@@ -29,8 +29,9 @@ import org.mongodb.morphia.query.UpdateOperations;
 public class BusinessMappingDao {
   @Inject private HPersistence hPersistence;
 
-  public boolean save(BusinessMapping businessMapping) {
-    return hPersistence.save(businessMapping) != null;
+  public BusinessMapping save(BusinessMapping businessMapping) {
+    hPersistence.save(businessMapping);
+    return businessMapping;
   }
 
   public BusinessMapping update(BusinessMapping businessMapping) {

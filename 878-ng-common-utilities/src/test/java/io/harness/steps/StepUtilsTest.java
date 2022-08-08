@@ -9,7 +9,9 @@ package io.harness.steps;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.rule.OwnerRule.BRIJESH;
+import static io.harness.rule.OwnerRule.JENNY;
 import static io.harness.rule.OwnerRule.PRABU;
+import static io.harness.rule.OwnerRule.SAHIL;
 import static io.harness.rule.OwnerRule.SAMARTH;
 import static io.harness.rule.OwnerRule.VAIBHAV_SI;
 
@@ -32,17 +34,24 @@ import io.harness.delegate.task.artifacts.docker.DockerArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.request.ArtifactTaskParameters;
 import io.harness.encryption.Scope;
 import io.harness.logging.CommandExecutionStatus;
+import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.Status;
+import io.harness.pms.contracts.execution.failure.FailureData;
 import io.harness.pms.contracts.execution.failure.FailureInfo;
 import io.harness.pms.contracts.execution.tasks.TaskCategory;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.contracts.plan.ExecutionMetadata;
 import io.harness.pms.plan.execution.SetupAbstractionKeys;
+import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponseNotifyData;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.pms.yaml.YAMLFieldNameConstants;
+import io.harness.pms.yaml.YamlField;
+import io.harness.pms.yaml.YamlNode;
+import io.harness.pms.yaml.YamlUtils;
 import io.harness.rule.Owner;
 import io.harness.serializer.KryoSerializer;
 import io.harness.tasks.ResponseData;
@@ -50,6 +59,10 @@ import io.harness.tasks.Task;
 
 import software.wings.beans.TaskType;
 
+import com.google.common.base.Charsets;
+import com.google.common.io.Resources;
+import java.io.IOException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -57,6 +70,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -243,13 +257,37 @@ public class StepUtilsTest extends CategoryTest {
   public void testCreateStepResponseFromChildResponse() {
     Map<String, ResponseData> responseDataMap = new HashMap<>();
     responseDataMap.put("key1", StepResponseNotifyData.builder().nodeUuid("nodeUuid").status(Status.SUCCEEDED).build());
-    StepResponse stepResponse = StepUtils.createStepResponseFromChildResponse(responseDataMap);
+    StepResponse stepResponse = SdkCoreStepUtils.createStepResponseFromChildResponse(responseDataMap);
     assertNull(stepResponse.getFailureInfo());
     assertEquals(stepResponse.getStatus(), Status.SUCCEEDED);
     responseDataMap.put("key2",
         StepResponseNotifyData.builder().failureInfo(FailureInfo.newBuilder().build()).status(Status.FAILED).build());
-    stepResponse = StepUtils.createStepResponseFromChildResponse(responseDataMap);
+    stepResponse = SdkCoreStepUtils.createStepResponseFromChildResponse(responseDataMap);
     assertNotNull(stepResponse.getFailureInfo());
+    assertEquals(stepResponse.getStatus(), Status.FAILED);
+  }
+
+  @Test
+  @Owner(developers = SAHIL)
+  @Category(UnitTests.class)
+  public void testCreateStepResponseFromChildResponseMultipleFailures() {
+    Map<String, ResponseData> responseDataMap = new HashMap<>();
+    responseDataMap.put("key1",
+        StepResponseNotifyData.builder()
+            .nodeUuid("nodeUuid")
+            .status(Status.FAILED)
+            .failureInfo(
+                FailureInfo.newBuilder().addFailureData(FailureData.newBuilder().setMessage("abcd").build()).build())
+            .build());
+    StepResponse stepResponse = SdkCoreStepUtils.createStepResponseFromChildResponse(responseDataMap);
+    responseDataMap.put("key2",
+        StepResponseNotifyData.builder()
+            .failureInfo(FailureInfo.newBuilder().addFailureData(FailureData.newBuilder().build()).build())
+            .status(Status.FAILED)
+            .build());
+    stepResponse = SdkCoreStepUtils.createStepResponseFromChildResponse(responseDataMap);
+    assertNotNull(stepResponse.getFailureInfo());
+    assertEquals(stepResponse.getFailureInfo().getFailureDataCount(), 2);
     assertEquals(stepResponse.getStatus(), Status.FAILED);
   }
 
@@ -304,5 +342,58 @@ public class StepUtilsTest extends CategoryTest {
     assertNotNull(taskRequest.getDelegateTaskRequest());
     assertEquals(taskRequest.getDelegateTaskRequest().getTaskName(), taskData.getTaskType());
     assertEquals(taskRequest.getDelegateTaskRequest().getRequest().getDetails().getMode(), TaskMode.ASYNC);
+  }
+
+  @Test
+  @Owner(developers = JENNY)
+  @Category(UnitTests.class)
+  public void testGetDelegateSelectorsFromPipeline() throws IOException {
+    ParameterField<List<TaskSelectorYaml>> delegateSelectorsFromPipeline =
+        StepUtils.delegateSelectorsFromFqn(planCreationContext(), YAMLFieldNameConstants.PIPELINE);
+    assertEquals(delegateSelectorsFromPipeline.getValue().get(0).getDelegateSelectors(), "selector_pipeline");
+  }
+
+  @Test
+  @Owner(developers = JENNY)
+  @Category(UnitTests.class)
+  public void testGetDelegateSelectorsFromStage() throws IOException {
+    ParameterField<List<TaskSelectorYaml>> delegateSelectorsFromStage =
+        StepUtils.delegateSelectorsFromFqn(planCreationContext(), YAMLFieldNameConstants.STAGE);
+    assertEquals(delegateSelectorsFromStage.getValue().get(0).getDelegateSelectors(), "selector_stage");
+  }
+
+  @Test
+  @Owner(developers = JENNY)
+  @Category(UnitTests.class)
+  public void testGetDelegateSelectorsFromStepGroup() throws IOException {
+    ParameterField<List<TaskSelectorYaml>> delegateSelectorsFromStepGroup =
+        StepUtils.delegateSelectorsFromFqn(planCreationContext(), YAMLFieldNameConstants.STEP_GROUP);
+    assertEquals(delegateSelectorsFromStepGroup.getValue().get(0).getDelegateSelectors(), "selector_step_group");
+  }
+
+  private PlanCreationContext planCreationContext() throws IOException {
+    ClassLoader classLoader = this.getClass().getClassLoader();
+    final URL testFile = classLoader.getResource("pipeline_delegate_selectors.yaml");
+    assertThat(testFile).isNotNull();
+    String pipelineYaml = Resources.toString(testFile, Charsets.UTF_8);
+    String pipelineYamlWithUuid = YamlUtils.injectUuid(pipelineYaml);
+
+    YamlField pipelineYamlField = YamlUtils.readTree(pipelineYamlWithUuid).getNode().getField("pipeline");
+    assertThat(pipelineYamlField).isNotNull();
+    YamlField stagesYamlField = pipelineYamlField.getNode().getField("stages");
+    assertThat(stagesYamlField).isNotNull();
+    List<YamlNode> stagesNodes = stagesYamlField.getNode().asArray();
+    YamlField approvalStageField = stagesNodes.get(0).getField("stage");
+    YamlField approvalSpecField = Objects.requireNonNull(approvalStageField).getNode().getField("spec");
+    YamlField executionField = Objects.requireNonNull(approvalSpecField).getNode().getField("execution");
+
+    YamlField stepGroupYamlField =
+        executionField.getNode().getField("steps").getNode().asArray().get(0).getField("stepGroup");
+    assertThat(stepGroupYamlField).isNotNull();
+
+    YamlField stepsYamlField = Objects.requireNonNull(stepGroupYamlField).getNode().getField("steps");
+
+    PlanCreationContext context = PlanCreationContext.builder().currentField(stepsYamlField).build();
+    return context;
   }
 }

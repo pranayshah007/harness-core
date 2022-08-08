@@ -37,6 +37,7 @@ import software.wings.beans.artifact.ArtifactStreamAttributes;
 import software.wings.helpers.ext.jenkins.BuildDetails;
 import software.wings.service.impl.artifact.ArtifactCollectionUtils;
 import software.wings.service.intfc.ArtifactService;
+import software.wings.utils.DelegateArtifactCollectionUtils;
 
 import com.google.inject.Inject;
 import java.util.ArrayList;
@@ -162,7 +163,7 @@ public class BuildSourceCleanupHelper {
     if (isEmpty(buildDetails)) {
       buildDetailsMap = Collections.emptyMap();
     } else {
-      Function<BuildDetails, String> buildDetailsKeyFn = ArtifactCollectionUtils.getBuildDetailsKeyFn(
+      Function<BuildDetails, String> buildDetailsKeyFn = DelegateArtifactCollectionUtils.getBuildDetailsKeyFn(
           artifactStream.getArtifactStreamType(), artifactStreamAttributes);
       buildDetailsMap = buildDetails.stream().collect(Collectors.toMap(buildDetailsKeyFn, Function.identity()));
     }

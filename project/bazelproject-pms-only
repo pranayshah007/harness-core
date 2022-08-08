@@ -2,21 +2,12 @@ workspace_type: java
 java_language_level: 8
 
 directories:
-  800-pipeline-service
-  810-ng-triggers
-  860-orchestration-steps
-  860-orchestration-visualization
+  pipeline-service
   867-polling-contracts
-  870-orchestration
   874-orchestration-delay
-  876-orchestration-beans
   878-ng-common-utilities
-  879-pms-sdk
-  882-pms-sdk-core
+  880-pipeline-cd-commons
   884-pms-commons
-  888-pms-client
-  889-yaml-commons
-  890-pms-contracts
   890-sm-core
   900-git-sync-sdk
   910-delegate-service-driver
@@ -26,12 +17,9 @@ directories:
   930-ng-core-clients
   937-persistence-tracer
   940-feature-flag
-  940-notification-client
   940-primary-version-manager
-  940-resource-group-beans
   940-secret-manager-client
   945-account-mgmt
-  945-ng-audit-client
   948-access-control-sdk
   949-access-control-commons
   950-delegate-tasks-beans
@@ -41,11 +29,11 @@ directories:
   950-ng-signup-beans
   950-opa-client
   950-wait-engine
-  950-walktree-visitor
   951-ng-audit-commons
   952-scm-java-client
   953-events-api
   953-git-sync-commons
+  953-yaml-commons
   954-connector-beans
   955-alert-beans
   955-cg-yaml
@@ -62,10 +50,10 @@ directories:
   960-api-services
   960-continuous-features
   960-ng-core-beans
-  960-notification-beans
   960-persistence
   960-yaml-sdk
   965-api-key-filter
+  967-walktree-visitor
   970-api-services-beans
   970-grpc
   970-ng-commons
@@ -83,19 +71,11 @@ directories:
 derive_targets_from_directories: false
 
 targets:
-  800-pipeline-service:module
-  860-orchestration-steps:module
-  860-orchestration-visualization:module
-  870-orchestration:module
+  pipeline-service/service:module
   874-orchestration-delay:module
-  876-orchestration-beans:module
   878-ng-common-utilities:module
-  879-pms-sdk:module
-  882-pms-sdk-core:module
   884-pms-commons:module
-  888-pms-client:module
-  889-yaml-commons:module
-  890-pms-contracts:module
+  953-yaml-commons:module
   937-persistence-tracer:module
   950-wait-engine:module
   959-timeout-engine:module

@@ -50,8 +50,6 @@ import software.wings.beans.yaml.GitFileChange;
 import software.wings.beans.yaml.YamlType;
 import software.wings.infra.GoogleKubernetesEngine;
 import software.wings.infra.InfrastructureDefinition;
-import software.wings.service.impl.SSHKeyDataProvider;
-import software.wings.service.impl.WinRmConnectionAttributesDataProvider;
 import software.wings.service.impl.workflow.WorkflowServiceHelper;
 import software.wings.service.impl.yaml.handler.BaseYamlHandler;
 import software.wings.service.impl.yaml.handler.NameValuePairYamlHandler;
@@ -124,8 +122,6 @@ public abstract class WorkflowYamlHandlerTestBase extends YamlHandlerTestBase {
   @InjectMocks @Inject protected VariableYamlHandler variableYamlHandler;
   @InjectMocks @Inject protected NameValuePairYamlHandler nameValuePairYamlHandler;
   @InjectMocks @Inject protected WorkflowServiceHelper workflowServiceHelper;
-  @InjectMocks @Inject private SSHKeyDataProvider sshKeyDataProvider;
-  @InjectMocks @Inject private WinRmConnectionAttributesDataProvider winRmConnectionAttributesDataProvider;
   @InjectMocks @Inject private EntityVersionService entityVersionService;
 
   protected void setup(String yamlFilePath, String workflowName) {
@@ -151,7 +147,7 @@ public abstract class WorkflowYamlHandlerTestBase extends YamlHandlerTestBase {
     when(serviceResourceService.getWithDetails(APP_ID, SERVICE_ID)).thenReturn(service);
 
     when(notificationSetupService.readNotificationGroupByName(anyString(), anyString())).thenReturn(notificationGroup);
-    when(notificationSetupService.readNotificationGroup(anyString(), anyString())).thenReturn(notificationGroup);
+    when(notificationSetupService.readNotificationGroup(any(), any())).thenReturn(notificationGroup);
 
     when(infrastructureMappingService.getInfraMappingByName(anyString(), anyString(), anyString()))
         .thenReturn(infrastructureMapping);
@@ -173,9 +169,9 @@ public abstract class WorkflowYamlHandlerTestBase extends YamlHandlerTestBase {
 
     when(serviceResourceService.getDeploymentType(any(), any(), any())).thenReturn(DeploymentType.KUBERNETES);
     when(userGroupService.fetchUserGroupByName(anyString(), any()))
-        .thenAnswer(invocation -> UserGroup.builder().uuid(invocation.getArgumentAt(1, String.class)).build());
+        .thenAnswer(invocation -> UserGroup.builder().uuid(invocation.getArgument(1, String.class)).build());
     when(userGroupService.get(anyString()))
-        .thenAnswer(invocation -> UserGroup.builder().name(invocation.getArgumentAt(0, String.class)).build());
+        .thenAnswer(invocation -> UserGroup.builder().name(invocation.getArgument(0, String.class)).build());
   }
 
   private InfrastructureMapping getInfraMapping() {

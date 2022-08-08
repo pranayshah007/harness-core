@@ -19,9 +19,13 @@ import io.harness.category.element.UnitTests;
 import io.harness.exception.WingsException;
 import io.harness.rule.Owner;
 
+import software.wings.beans.ApmMetricCollectionInfo;
+import software.wings.beans.ApmResponseMapping;
 import software.wings.beans.Application;
 import software.wings.beans.Service;
 import software.wings.beans.SettingAttribute;
+import software.wings.beans.apm.Method;
+import software.wings.beans.apm.ResponseType;
 import software.wings.beans.yaml.Change;
 import software.wings.beans.yaml.ChangeContext;
 import software.wings.metrics.MetricType;
@@ -32,10 +36,6 @@ import software.wings.service.intfc.ServiceResourceService;
 import software.wings.service.intfc.SettingsService;
 import software.wings.service.intfc.verification.CVConfigurationService;
 import software.wings.sm.StateType;
-import software.wings.sm.states.APMVerificationState.Method;
-import software.wings.sm.states.APMVerificationState.MetricCollectionInfo;
-import software.wings.sm.states.APMVerificationState.ResponseMapping;
-import software.wings.sm.states.APMVerificationState.ResponseType;
 import software.wings.verification.apm.APMCVConfigurationYaml;
 import software.wings.verification.apm.APMCVServiceConfiguration;
 
@@ -107,7 +107,7 @@ public class APMCVConfigurationYamlHandlerTest extends CategoryTest {
   }
 
   private APMCVConfigurationYaml buildYaml() {
-    List<MetricCollectionInfo> metrics = new ArrayList<>();
+    List<ApmMetricCollectionInfo> metrics = new ArrayList<>();
     metrics.add(getMetricCollectionInfo());
 
     APMCVConfigurationYaml yaml = APMCVConfigurationYaml.builder().metricCollectionInfos(metrics).build();
@@ -116,15 +116,15 @@ public class APMCVConfigurationYamlHandlerTest extends CategoryTest {
     return yaml;
   }
 
-  private MetricCollectionInfo getMetricCollectionInfo() {
-    return MetricCollectionInfo.builder()
+  private ApmMetricCollectionInfo getMetricCollectionInfo() {
+    return ApmMetricCollectionInfo.builder()
         .metricName("throughput")
         .metricType(MetricType.THROUGHPUT)
         .tag("cluster-name:harness-test")
         .collectionUrl("url")
         .collectionBody("body")
         .responseType(ResponseType.JSON)
-        .responseMapping(ResponseMapping.builder().build())
+        .responseMapping(ApmResponseMapping.builder().build())
         .method(Method.GET)
         .build();
   }
@@ -134,7 +134,7 @@ public class APMCVConfigurationYamlHandlerTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testToYaml() {
     final String appId = "appId";
-    List<MetricCollectionInfo> metrics = new ArrayList<>();
+    List<ApmMetricCollectionInfo> metrics = new ArrayList<>();
     metrics.add(getMetricCollectionInfo());
 
     APMCVServiceConfiguration cvServiceConfiguration =

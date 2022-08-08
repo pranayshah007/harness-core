@@ -69,7 +69,7 @@ services:
       harness-network:
 
   pipeline-service:
-    image: bazel/800-pipeline-service/container:pipeline_service
+    image: bazel/pipeline-service/container:pipeline_service
     deploy:
       resources:
         limits:
@@ -86,7 +86,7 @@ services:
       harness-network:
 
   platform-service:
-    image: bazel/820-platform-service/container:platform_service
+    image: bazel/platform-service/build/container:platform_service
     deploy:
       resources:
         limits:

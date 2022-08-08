@@ -138,6 +138,17 @@ public class ConnectorCustomRepositoryImpl implements ConnectorCustomRepository 
   }
 
   @Override
+  public void delete(Connector objectToRemove, ConnectorDTO connectorDTO, ChangeType changeType, Supplier functor) {
+    gitAwarePersistence.delete(
+        objectToRemove, NGYamlUtils.getYamlString(connectorDTO), changeType, Connector.class, functor);
+  }
+
+  @Override
+  public void delete(Connector objectToRemove, ChangeType changeType) {
+    gitAwarePersistence.delete(objectToRemove, changeType, Connector.class);
+  }
+
+  @Override
   public Optional<Connector> findOne(Criteria criteria, String repo, String branch) {
     return gitAwarePersistence.findOne(criteria, repo, branch, Connector.class);
   }

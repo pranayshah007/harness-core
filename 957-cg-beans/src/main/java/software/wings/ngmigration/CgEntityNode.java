@@ -23,6 +23,7 @@ import lombok.NoArgsConstructor;
 public class CgEntityNode {
   private String id;
   private NGMigrationEntityType type;
+  private String appId;
   private NGMigrationEntity entity;
   private CgEntityId entityId;
 }

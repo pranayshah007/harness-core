@@ -106,8 +106,9 @@ public class AnomalyDetectionTimeSeries extends Anomaly {
   }
 
   public String getHash() {
-    return AnomalyDetectionHelper.generateHash(String.join(",", getAccountId(),
-        getTestTimePointsList().get(0).toString(), getClusterId(), getNamespace(), getWorkloadName(), getGcpProject(),
-        getGcpProduct(), getGcpSKUId(), getAwsAccount(), getAwsService(), getAwsUsageType()));
+    return AnomalyDetectionHelper.generateHash(
+        String.join(",", getAccountId(), getTestTimePointsList().get(0).toString(), getClusterId(), getNamespace(),
+            getWorkloadName(), getGcpProject(), getGcpProduct(), getGcpSKUId(), getAwsAccount(), getAwsService(),
+            getAwsUsageType(), getAzureSubscription(), getAzureResourceGroup(), getAzureMeterCategory()));
   }
 }

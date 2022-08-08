@@ -25,11 +25,12 @@ import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import java.util.List;
+import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
+import javax.ws.rs.BeanParam;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
 import retrofit2.http.Body;
 
 @Api("parseSampleDara")
@@ -49,14 +50,8 @@ public class ParseSampleDataResource {
   @Timed
   @ExceptionMetered
   @ApiOperation(value = "parse sample data for given json response", nickname = "fetchParsedSampleData")
-  public ResponseDTO<List<TimeSeriesSampleDTO>> getParsedSampleData(@NotNull @QueryParam("accountId") String accountId,
-      @QueryParam("orgIdentifier") @NotNull String orgIdentifier,
-      @QueryParam("projectIdentifier") @NotNull String projectIdentifier, @Body @NotNull SampleDataDTO sampleData) {
-    ProjectParams projectParams = ProjectParams.builder()
-                                      .accountIdentifier(accountId)
-                                      .orgIdentifier(orgIdentifier)
-                                      .projectIdentifier(projectIdentifier)
-                                      .build();
+  public ResponseDTO<List<TimeSeriesSampleDTO>> getParsedSampleData(
+      @NotNull @BeanParam ProjectParams projectParams, @Body @NotNull @Valid SampleDataDTO sampleData) {
     return ResponseDTO.newResponse(sampleDataService.parseSampleData(projectParams, sampleData));
   }
 }

@@ -7,18 +7,24 @@
 
 package software.wings.service.impl.yaml.handler.governance;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
+import io.harness.governance.AllUserGroupFilter;
 import io.harness.governance.ApplicationFilter;
 import io.harness.governance.ApplicationFilterYaml;
+import io.harness.governance.BlackoutWindowFilterType;
+import io.harness.governance.CustomUserGroupFilter;
 import io.harness.governance.TimeRangeBasedFreezeConfig;
 import io.harness.governance.TimeRangeBasedFreezeConfig.TimeRangeBasedFreezeConfigBuilder;
 import io.harness.governance.TimeRangeBasedFreezeConfig.Yaml;
 import io.harness.governance.TimeRangeOccurrence;
+import io.harness.governance.UserGroupFilter;
+import io.harness.governance.UserGroupFilterYaml;
 import io.harness.validation.Validator;
 
 import software.wings.beans.security.UserGroup;
@@ -33,6 +39,7 @@ import software.wings.service.intfc.compliance.GovernanceConfigService;
 
 import com.google.inject.Inject;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 @OwnedBy(HarnessTeam.CDC)
@@ -58,6 +65,8 @@ public class TimeRangeBasedFreezeConfigYamlHandler
     }
 
     TimeRange.Yaml timeRangeYaml = bean.getTimeRange().toYaml();
+    final UserGroupFilterYaml userGroupFilterYaml =
+        buildUserGroupSelectionYaml(bean.getUserGroupSelection(), accountId);
 
     return Yaml.builder()
         .name(bean.getName())
@@ -66,8 +75,25 @@ public class TimeRangeBasedFreezeConfigYamlHandler
         .applicable(bean.isApplicable())
         .appSelections(appFiltersYaml)
         .userGroups(getUserGroupNames(bean.getUserGroups(), accountId))
+        .userGroupSelection(userGroupFilterYaml)
         .timeRange(timeRangeYaml)
         .build();
+  }
+
+  private UserGroupFilterYaml buildUserGroupSelectionYaml(UserGroupFilter userGroupSelection, String accountId) {
+    if (userGroupSelection == null) {
+      return null;
+    }
+    if (BlackoutWindowFilterType.ALL.equals(userGroupSelection.getFilterType())) {
+      return UserGroupFilterYaml.builder().filterType(BlackoutWindowFilterType.ALL).build();
+    } else if (BlackoutWindowFilterType.CUSTOM.equals(userGroupSelection.getFilterType())) {
+      return UserGroupFilterYaml.builder()
+          .userGroupNames(getUserGroupNames(((CustomUserGroupFilter) userGroupSelection).getUserGroups(), accountId))
+          .filterType(BlackoutWindowFilterType.CUSTOM)
+          .build();
+    } else {
+      throw new InvalidRequestException("User group filter type can be CUSTOM or ALL");
+    }
   }
 
   @Override
@@ -75,7 +101,15 @@ public class TimeRangeBasedFreezeConfigYamlHandler
       ChangeContext<Yaml> changeContext, List<ChangeContext> changeSetContext) {
     TimeRangeBasedFreezeConfigBuilder timeRangeBasedFreezeConfig = TimeRangeBasedFreezeConfig.builder();
     toBean(timeRangeBasedFreezeConfig, changeContext, changeSetContext);
-    return timeRangeBasedFreezeConfig.build();
+    final TimeRangeBasedFreezeConfig rangeBasedFreezeConfig = timeRangeBasedFreezeConfig.build();
+    if (rangeBasedFreezeConfig.getUserGroupSelection() == null && isEmpty(rangeBasedFreezeConfig.getUserGroups())) {
+      throw new InvalidRequestException("Both user group and user group selection can't be null");
+    }
+
+    if (rangeBasedFreezeConfig.getUserGroupSelection() != null && isNotEmpty(rangeBasedFreezeConfig.getUserGroups())) {
+      throw new InvalidRequestException("Both user group and user group selection can't be selected");
+    }
+    return rangeBasedFreezeConfig;
   }
 
   @Override
@@ -84,6 +118,9 @@ public class TimeRangeBasedFreezeConfigYamlHandler
   }
 
   private List<String> getUserGroupNames(List<String> userGroupList, String accountId) {
+    if (isEmpty(userGroupList)) {
+      return Collections.emptyList();
+    }
     List<String> userGroupNames = new ArrayList<>();
     for (String userGroupId : userGroupList) {
       UserGroup userGroup = userGroupService.get(accountId, userGroupId);
@@ -94,7 +131,10 @@ public class TimeRangeBasedFreezeConfigYamlHandler
     return userGroupNames;
   }
 
-  private List<String> getUserGroupIds(List<String> userGroupNames, String accountId) {
+  private List<String> getUserGroupIds(List<String> userGroupNames, String accountId, boolean isEmptyUserGroupAllowed) {
+    if (isEmptyUserGroupAllowed) {
+      return Collections.emptyList();
+    }
     if (EmptyPredicate.isEmpty(userGroupNames)) {
       throw new InvalidRequestException("User Groups cannot be empty");
     }
@@ -122,7 +162,8 @@ public class TimeRangeBasedFreezeConfigYamlHandler
     bean.name(yaml.getName());
     bean.applicable(yaml.isApplicable());
     bean.description(yaml.getDescription());
-    bean.userGroups(getUserGroupIds(yaml.getUserGroups(), accountId));
+    bean.userGroups(getUserGroupIds(yaml.getUserGroups(), accountId, yaml.getUserGroupSelection() != null));
+    bean.userGroupSelection(convertSelectionToBean(yaml.getUserGroupSelection(), accountId));
 
     ApplicationFilterYamlHandler applicationFilterYamlHandler;
 
@@ -135,6 +176,20 @@ public class TimeRangeBasedFreezeConfigYamlHandler
     }
 
     bean.appSelections(applicationFilters);
+  }
+
+  private UserGroupFilter convertSelectionToBean(UserGroupFilterYaml userGroupSelection, String accountId) {
+    if (userGroupSelection == null) {
+      return null;
+    }
+    if (BlackoutWindowFilterType.ALL.equals(userGroupSelection.getFilterType())) {
+      return AllUserGroupFilter.builder().userGroupFilterType(BlackoutWindowFilterType.ALL).build();
+    } else {
+      return CustomUserGroupFilter.builder()
+          .userGroupFilterType(BlackoutWindowFilterType.CUSTOM)
+          .userGroups(getUserGroupIds(userGroupSelection.getUserGroupNames(), accountId, false))
+          .build();
+    }
   }
 
   private TimeRange validateTimeRangeYaml(TimeRange.Yaml timeRangeYaml) {

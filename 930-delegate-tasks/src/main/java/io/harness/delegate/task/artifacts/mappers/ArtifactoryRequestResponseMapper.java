@@ -16,7 +16,11 @@ import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryUsern
 import io.harness.delegate.task.artifacts.ArtifactSourceType;
 import io.harness.delegate.task.artifacts.artifactory.ArtifactoryArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.artifactory.ArtifactoryArtifactDelegateResponse;
+import io.harness.delegate.task.artifacts.artifactory.ArtifactoryGenericArtifactDelegateRequest;
+import io.harness.delegate.task.artifacts.artifactory.ArtifactoryGenericArtifactDelegateResponse;
 import io.harness.utils.FieldWithPlainTextOrSecretValueHelper;
+
+import software.wings.helpers.ext.jenkins.BuildDetails;
 
 import lombok.experimental.UtilityClass;
 
@@ -49,7 +53,7 @@ public class ArtifactoryRequestResponseMapper {
         .build();
   }
 
-  public ArtifactoryArtifactDelegateResponse toArtifactoryResponse(
+  public ArtifactoryArtifactDelegateResponse toArtifactoryDockerResponse(
       BuildDetailsInternal buildDetailsInternal, ArtifactoryArtifactDelegateRequest request) {
     return ArtifactoryArtifactDelegateResponse.builder()
         .buildDetails(ArtifactBuildDetailsMapper.toBuildDetailsNG(buildDetailsInternal))
@@ -57,6 +61,17 @@ public class ArtifactoryRequestResponseMapper {
         .artifactPath(request.getArtifactPath())
         .repositoryFormat(request.getRepositoryFormat())
         .tag(buildDetailsInternal.getNumber())
+        .sourceType(ArtifactSourceType.ARTIFACTORY_REGISTRY)
+        .build();
+  }
+
+  public ArtifactoryGenericArtifactDelegateResponse toArtifactoryGenericResponse(
+      BuildDetails buildDetails, ArtifactoryGenericArtifactDelegateRequest request) {
+    return ArtifactoryGenericArtifactDelegateResponse.builder()
+        .buildDetails(ArtifactBuildDetailsMapper.toBuildDetailsNG(buildDetails))
+        .repositoryName(request.getRepositoryName())
+        .artifactPath(buildDetails.getArtifactPath())
+        .repositoryFormat(request.getRepositoryFormat())
         .sourceType(ArtifactSourceType.ARTIFACTORY_REGISTRY)
         .build();
   }

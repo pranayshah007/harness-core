@@ -38,7 +38,6 @@ import io.harness.secrets.SecretService;
 import io.harness.security.encryption.EncryptedRecord;
 import io.harness.security.encryption.EncryptionType;
 import io.harness.serializer.KryoSerializer;
-import io.harness.testlib.RealMongo;
 
 import software.wings.EncryptTestUtils;
 import software.wings.SecretManagementTestHelper;
@@ -162,7 +161,7 @@ public class CyberArkTest extends WingsBaseTest {
     });
 
     when(vaultEncryptor.validateReference(anyString(), any(SecretText.class), anyObject())).thenReturn(true);
-    when(kmsEncryptorsRegistry.getKmsEncryptor(any(KmsConfig.class))).thenReturn(kmsEncryptor);
+    when(kmsEncryptorsRegistry.getKmsEncryptor(any())).thenReturn(kmsEncryptor);
     when(vaultEncryptorsRegistry.getVaultEncryptor(any())).thenReturn(vaultEncryptor);
     when(delegateProxyFactory.get(eq(SecretManagementDelegateService.class), any(SyncTaskContext.class)))
         .thenReturn(secretManagementDelegateService);
@@ -282,7 +281,6 @@ public class CyberArkTest extends WingsBaseTest {
   @Test
   @Owner(developers = UTKARSH)
   @Category(UnitTests.class)
-  @RealMongo
   public void testEncryptDecryptArtifactoryConfig() {
     String queryAsPath = "Address=components;Username=svc_account";
     String secretName = "TestSecret";

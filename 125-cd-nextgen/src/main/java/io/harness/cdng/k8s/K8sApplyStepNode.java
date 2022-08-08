@@ -37,6 +37,7 @@ import org.springframework.data.annotation.TypeAlias;
 @RecasterAlias("io.harness.cdng.k8s.K8sApplyStepNode")
 public class K8sApplyStepNode extends CdAbstractStepNode {
   @JsonProperty("type") @NotNull StepType type = StepType.K8sApply;
+  @NotNull
   @JsonProperty("spec")
   @JsonTypeInfo(use = NAME, property = "type", include = EXTERNAL_PROPERTY, visible = true)
   K8sApplyStepInfo k8sApplyStepInfo;

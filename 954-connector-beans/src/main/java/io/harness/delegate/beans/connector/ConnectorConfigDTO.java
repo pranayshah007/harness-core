@@ -30,6 +30,8 @@ import io.harness.delegate.beans.connector.gcpccm.GcpCloudCostConnectorDTO;
 import io.harness.delegate.beans.connector.gcpconnector.GcpConnectorDTO;
 import io.harness.delegate.beans.connector.gcpkmsconnector.GcpKmsConnectorDTO;
 import io.harness.delegate.beans.connector.helm.HttpHelmConnectorDTO;
+import io.harness.delegate.beans.connector.helm.OciHelmConnectorDTO;
+import io.harness.delegate.beans.connector.jenkins.JenkinsConnectorDTO;
 import io.harness.delegate.beans.connector.jira.JiraConnectorDTO;
 import io.harness.delegate.beans.connector.k8Connector.KubernetesClusterConfigDTO;
 import io.harness.delegate.beans.connector.localconnector.LocalConnectorDTO;
@@ -39,6 +41,7 @@ import io.harness.delegate.beans.connector.pagerduty.PagerDutyConnectorDTO;
 import io.harness.delegate.beans.connector.pdcconnector.PhysicalDataCenterConnectorDTO;
 import io.harness.delegate.beans.connector.prometheusconnector.PrometheusConnectorDTO;
 import io.harness.delegate.beans.connector.scm.awscodecommit.AwsCodeCommitConnectorDTO;
+import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectorDTO;
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketConnectorDTO;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
@@ -51,6 +54,7 @@ import io.harness.delegate.beans.connector.vaultconnector.VaultConnectorDTO;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 
@@ -91,10 +95,15 @@ import java.util.List;
       @JsonSubTypes.Type(value = CustomHealthConnectorDTO.class, name = "CustomHealth"),
       @JsonSubTypes.Type(value = ServiceNowConnectorDTO.class, name = "ServiceNow"),
       @JsonSubTypes.Type(value = ErrorTrackingConnectorDTO.class, name = "ErrorTracking"),
-      @JsonSubTypes.Type(value = PhysicalDataCenterConnectorDTO.class, name = "Pdc")
+      @JsonSubTypes.Type(value = AzureRepoConnectorDTO.class, name = "AzureRepo"),
+      @JsonSubTypes.Type(value = PhysicalDataCenterConnectorDTO.class, name = "Pdc"),
+      @JsonSubTypes.Type(value = JenkinsConnectorDTO.class, name = "Jenkins"),
+      @JsonSubTypes.Type(value = OciHelmConnectorDTO.class, name = "OciHelmRepo")
 })
 @OwnedBy(DX)
 @Schema(name = "ConnectorConfig", description = "This is the view of the ConnectorConfig entity defined in Harness")
+@JsonTypeInfo(
+    use = JsonTypeInfo.Id.NAME, property = "connectorType", include = JsonTypeInfo.As.EXTERNAL_PROPERTY, visible = true)
 public abstract class ConnectorConfigDTO implements DecryptableEntity {
   @JsonIgnore public abstract List<DecryptableEntity> getDecryptableEntities();
 

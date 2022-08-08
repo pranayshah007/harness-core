@@ -7,7 +7,6 @@
 
 package io.harness.azure.utility;
 
-import static io.harness.azure.model.AzureConstants.ACTIVITY_LOG_EVENT_DATA_TEMPLATE;
 import static io.harness.azure.model.AzureConstants.ASSIGNMENT_NAME_PATTERN;
 import static io.harness.azure.model.AzureConstants.BLUEPRINT_ID_REGEX;
 import static io.harness.azure.model.AzureConstants.DEPLOYMENT_SLOT_NAME_PREFIX_PATTERN;
@@ -21,7 +20,6 @@ import static io.harness.azure.model.AzureConstants.DOCKER_REGISTRY_SERVER_URL_P
 import static io.harness.azure.model.AzureConstants.DOCKER_REGISTRY_SERVER_USERNAME_PROPERTY_NAME;
 import static io.harness.azure.model.AzureConstants.RESOURCE_SCOPE_MNG_GROUP_PATTERN;
 import static io.harness.azure.model.AzureConstants.RESOURCE_SCOPE_SUBSCRIPTION_PATTERN;
-import static io.harness.azure.model.AzureConstants.SLOT_SWAP_JOB_PROCESSOR_STR;
 
 import static java.lang.String.format;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
@@ -38,7 +36,6 @@ import io.harness.serializer.JsonUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.microsoft.azure.CloudException;
-import com.microsoft.azure.management.monitor.EventData;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -51,7 +48,6 @@ import java.util.Optional;
 import java.util.SimpleTimeZone;
 import java.util.UUID;
 import java.util.regex.Matcher;
-import java.util.stream.Collectors;
 import lombok.experimental.UtilityClass;
 import org.jetbrains.annotations.NotNull;
 
@@ -126,19 +122,6 @@ public class AzureResourceUtility {
       message = format("%s, %nAzure Cloud Exception Message: %s", message, cloudExMsg);
     }
     return message;
-  }
-
-  public String activityLogEventDataToString(List<EventData> eventData) {
-    return eventData.stream()
-        .filter(AzureResourceUtility::isSlotSwapJobProcessor)
-        .map(ev
-            -> format(ACTIVITY_LOG_EVENT_DATA_TEMPLATE, ev.operationName().localizedValue(), ev.caller(),
-                ev.status().localizedValue(), ev.description()))
-        .collect(Collectors.joining("\n"));
-  }
-
-  public boolean isSlotSwapJobProcessor(EventData ev) {
-    return ev != null && SLOT_SWAP_JOB_PROCESSOR_STR.equals(ev.caller());
   }
 
   @NotNull

@@ -20,19 +20,27 @@ import static java.util.stream.Collectors.toList;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.version.Version;
 import io.harness.concurrent.HTimeLimiter;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.exception.ExplanationException;
 import io.harness.exception.GcpServerException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
+import io.harness.gcp.helpers.GcpCredentialsHelperService;
+import io.harness.k8s.model.GcpAccessTokenSupplier;
+import io.harness.k8s.model.KubernetesClusterAuthType;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.k8s.model.KubernetesConfig.KubernetesConfigBuilder;
 import io.harness.serializer.JsonUtils;
 
 import software.wings.beans.TaskType;
 
+import com.google.api.client.auth.oauth2.StoredCredential;
+import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
 import com.google.api.client.googleapis.json.GoogleJsonResponseException;
 import com.google.api.client.http.HttpStatusCodes;
+import com.google.api.client.util.store.DataStore;
 import com.google.api.services.container.Container;
 import com.google.api.services.container.model.Cluster;
 import com.google.api.services.container.model.CreateClusterRequest;
@@ -46,10 +54,13 @@ import com.google.common.util.concurrent.UncheckedTimeoutException;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.io.IOException;
+import java.time.Clock;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
+import java.util.function.Supplier;
 import lombok.extern.slf4j.Slf4j;
 
 @Singleton
@@ -58,6 +69,8 @@ import lombok.extern.slf4j.Slf4j;
 public class GkeClusterHelper {
   @Inject private GcpHelperService gcpHelperService = new GcpHelperService();
   @Inject private TimeLimiter timeLimiter;
+  @Inject private DataStore<StoredCredential> store;
+  @Inject private Clock clock;
 
   public KubernetesConfig createCluster(char[] serviceAccountKeyFileContent, boolean useDelegate,
       String locationClusterName, String namespace, Map<String, String> params) {
@@ -75,7 +88,7 @@ public class GkeClusterHelper {
                             .execute();
       log.info("Cluster already exists");
       log.debug("Cluster {}, location {}, project {}", clusterName, location, projectId);
-      return configFromCluster(cluster, namespace);
+      return configFromCluster(cluster, namespace, serviceAccountKeyFileContent, useDelegate);
     } catch (IOException e) {
       logNotFoundOrError(e, projectId, location, clusterName, "getting");
     }
@@ -105,7 +118,7 @@ public class GkeClusterHelper {
                               .execute();
         log.info("Cluster status: {}", cluster.getStatus());
         log.debug("Master endpoint: {}", cluster.getEndpoint());
-        return configFromCluster(cluster, namespace);
+        return configFromCluster(cluster, namespace, serviceAccountKeyFileContent, useDelegate);
       }
     } catch (IOException e) {
       logNotFoundOrError(e, projectId, location, clusterName, "creating");
@@ -137,7 +150,8 @@ public class GkeClusterHelper {
       log.debug("Found cluster {} in location {} for project {}", clusterName, location, projectId);
       log.info("Cluster status: {}", cluster.getStatus());
       log.debug("Master endpoint: {}", cluster.getEndpoint());
-      return configFromCluster(cluster, namespace);
+
+      return configFromCluster(cluster, namespace, serviceAccountKeyFileContent, useDelegate);
     } catch (IOException e) {
       // PL-1118: In case the cluster is being destroyed/torn down. Return null will immediately reclaim the service
       // instances
@@ -186,7 +200,8 @@ public class GkeClusterHelper {
     }
   }
 
-  private KubernetesConfig configFromCluster(Cluster cluster, String namespace) {
+  private KubernetesConfig configFromCluster(
+      Cluster cluster, String namespace, char[] serviceAccountKeyFileContent, boolean useDelegate) {
     MasterAuth masterAuth = cluster.getMasterAuth();
     KubernetesConfigBuilder kubernetesConfigBuilder = KubernetesConfig.builder()
                                                           .masterUrl("https://" + cluster.getEndpoint() + "/")
@@ -206,7 +221,40 @@ public class GkeClusterHelper {
     if (masterAuth.getClientKey() != null) {
       kubernetesConfigBuilder.clientKey(masterAuth.getClientKey().toCharArray());
     }
+    if (Version.parse(cluster.getCurrentMasterVersion()).compareTo(Version.parse("1.19")) >= 0) {
+      kubernetesConfigBuilder.authType(KubernetesClusterAuthType.GCP_OAUTH);
+      Supplier<String> tokenSupplier;
+      if (useDelegate) {
+        tokenSupplier = createForDefaultAppCredentials();
+      } else {
+        tokenSupplier = createForServiceAccount(serviceAccountKeyFileContent);
+      }
+      kubernetesConfigBuilder.serviceAccountTokenSupplier(tokenSupplier);
+    }
     return kubernetesConfigBuilder.build();
+  }
+
+  private GcpAccessTokenSupplier createForDefaultAppCredentials() {
+    Function<String, GoogleCredential> mapper = unused -> {
+      try {
+        return GcpCredentialsHelperService.getApplicationDefaultCredentials();
+      } catch (IOException e) {
+        throw new ExplanationException("Cannot instantiate deserialize google credentials.", e);
+      }
+    };
+    return new GcpAccessTokenSupplier(null, mapper, store, clock);
+  }
+
+  private GcpAccessTokenSupplier createForServiceAccount(char[] serviceAccountKeyFileContent) {
+    Function<String, GoogleCredential> mapper = unused -> {
+      try {
+        return gcpHelperService.getGoogleCredential(serviceAccountKeyFileContent, false);
+      } catch (IOException e) {
+        throw new ExplanationException("Cannot instantiate deserialize google credentials.", e);
+      }
+    };
+    String serviceAccountJsonKey = new String(serviceAccountKeyFileContent);
+    return new GcpAccessTokenSupplier(serviceAccountJsonKey, mapper, store, clock);
   }
 
   private String waitForOperationToComplete(Operation operation, Container gkeContainerService, String projectId,

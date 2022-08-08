@@ -9,10 +9,8 @@ package io.harness.service.instancesync;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.service.beans.ServiceSpecType;
 import io.harness.delegate.beans.instancesync.InstanceSyncPerpetualTaskResponse;
 import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
-import io.harness.delegate.beans.instancesync.info.K8sServerInstanceInfo;
 import io.harness.dtos.DeploymentSummaryDTO;
 import io.harness.dtos.InfrastructureMappingDTO;
 import io.harness.dtos.InstanceDTO;
@@ -70,17 +68,22 @@ public class InstanceSyncServiceImpl implements InstanceSyncService {
   private InstanceService instanceService;
   private DeploymentSummaryService deploymentSummaryService;
   private InstanceSyncHelper instanceSyncHelper;
-
+  private InstanceSyncServiceUtils utils;
   private static final int NEW_DEPLOYMENT_EVENT_RETRY = 3;
   private static final long TWO_WEEKS_IN_MILLIS = (long) 14 * 24 * 60 * 60 * 1000;
-
-  enum OperationsOnInstances { ADD, DELETE, UPDATE }
 
   @Override
   public void processInstanceSyncForNewDeployment(DeploymentEvent deploymentEvent) {
     int retryCount = 0;
     DeploymentSummaryDTO deploymentSummaryDTO = deploymentEvent.getDeploymentSummaryDTO();
     InfrastructureMappingDTO infrastructureMappingDTO = deploymentSummaryDTO.getInfrastructureMapping();
+    String infraIdentifier = deploymentEvent.getInfrastructureOutcome() == null
+        ? null
+        : deploymentEvent.getInfrastructureOutcome().getInfraIdentifier();
+    String infraName = deploymentEvent.getInfrastructureOutcome() == null
+        ? null
+        : deploymentEvent.getInfrastructureOutcome().getInfraName();
+    log.info("processInstanceSyncForNewDeployment, deploymentEvent: {}", deploymentEvent);
     try (AutoLogContext ignore1 =
              new AccountLogContext(infrastructureMappingDTO.getAccountIdentifier(), OverrideBehavior.OVERRIDE_ERROR);
          AutoLogContext ignore2 = InstanceSyncLogContext.builder()
@@ -93,13 +96,17 @@ public class InstanceSyncServiceImpl implements InstanceSyncService {
                  InstanceSyncConstants.INSTANCE_SYNC_LOCK_TIMEOUT, InstanceSyncConstants.INSTANCE_SYNC_WAIT_TIMEOUT)) {
           AbstractInstanceSyncHandler abstractInstanceSyncHandler =
               instanceSyncHandlerFactoryService.getInstanceSyncHandler(
-                  deploymentSummaryDTO.getDeploymentInfoDTO().getType());
+                  deploymentSummaryDTO.getDeploymentInfoDTO().getType(),
+                  infrastructureMappingDTO.getInfrastructureKind());
           // check if existing instance sync perpetual task info record exists or not for incoming infrastructure
           // mapping
           Optional<InstanceSyncPerpetualTaskInfoDTO> instanceSyncPerpetualTaskInfoDTOOptional =
               instanceSyncPerpetualTaskInfoService.findByInfrastructureMappingId(infrastructureMappingDTO.getId());
           InstanceSyncPerpetualTaskInfoDTO instanceSyncPerpetualTaskInfoDTO;
           if (!instanceSyncPerpetualTaskInfoDTOOptional.isPresent()) {
+            log.info(
+                "processInstanceSyncForNewDeployment, perpetual task does not exist for infrastructure mapping id: {} ",
+                infrastructureMappingDTO.getId());
             // no existing perpetual task info record found for given infrastructure mapping id
             // so create a new perpetual task and instance sync perpetual task info record
             String perpetualTaskId = instanceSyncPerpetualTaskService.createPerpetualTask(infrastructureMappingDTO,
@@ -107,10 +114,18 @@ public class InstanceSyncServiceImpl implements InstanceSyncService {
                 deploymentEvent.getInfrastructureOutcome());
             instanceSyncPerpetualTaskInfoDTO = instanceSyncPerpetualTaskInfoService.save(
                 prepareInstanceSyncPerpetualTaskInfoDTO(deploymentSummaryDTO, perpetualTaskId));
+            log.info("processInstanceSyncForNewDeployment, instanceSyncPerpetualTaskInfoDTO: {}",
+                instanceSyncPerpetualTaskInfoDTO);
           } else {
+            log.info(
+                "processInstanceSyncForNewDeployment, perpetual task does exists for infrastructure mapping id: {} ",
+                infrastructureMappingDTO.getId());
             instanceSyncPerpetualTaskInfoDTO = instanceSyncPerpetualTaskInfoDTOOptional.get();
+            log.info("processInstanceSyncForNewDeployment, instanceSyncPerpetualTaskInfoDTO: {}",
+                instanceSyncPerpetualTaskInfoDTO);
             if (isNewDeploymentInfo(deploymentSummaryDTO.getDeploymentInfoDTO(),
                     instanceSyncPerpetualTaskInfoDTO.getDeploymentInfoDetailsDTOList())) {
+              log.info("processInstanceSyncForNewDeployment, deployment info doesn't exist in the perpetual task info");
               // it means deployment info doesn't exist in the perpetual task info
               // add the deploymentinfo and deployment summary id to the instance sync pt info record
               addNewDeploymentInfoToInstanceSyncPerpetualTaskInfoRecord(
@@ -125,16 +140,20 @@ public class InstanceSyncServiceImpl implements InstanceSyncService {
             }
           }
 
+          deploymentSummaryDTO.setServerInstanceInfoList(
+              abstractInstanceSyncHandler.refreshServerInstanceInfo(deploymentSummaryDTO.getServerInstanceInfoList(),
+                  instanceSyncPerpetualTaskInfoDTO.getDeploymentInfoDetailsDTOList()));
           InstanceSyncLocalCacheManager.setDeploymentSummary(
               deploymentSummaryDTO.getInstanceSyncKey(), deploymentSummaryDTO);
+
           // Sync only for deployment infos / instance sync handler keys from instances from server
           performInstanceSync(instanceSyncPerpetualTaskInfoDTO, infrastructureMappingDTO,
-              deploymentSummaryDTO.getServerInstanceInfoList(), true);
+              deploymentSummaryDTO.getServerInstanceInfoList(), abstractInstanceSyncHandler, true);
 
           log.info("Instance sync completed for infrastructure mapping id : {}", infrastructureMappingDTO.getId());
           return;
         } catch (Exception exception) {
-          log.error("Attempt {} : Exception occured during instance sync", retryCount + 1, exception);
+          log.error("Attempt {} : Exception occurred during instance sync", retryCount + 1, exception);
           retryCount += 1;
         }
       }
@@ -146,6 +165,10 @@ public class InstanceSyncServiceImpl implements InstanceSyncService {
   @Override
   public void processInstanceSyncByPerpetualTask(String accountIdentifier, String perpetualTaskId,
       InstanceSyncPerpetualTaskResponse instanceSyncPerpetualTaskResponse) {
+    log.info("processInstanceSyncByPerpetualTask, accountIdentifier: {}", accountIdentifier);
+    log.info("processInstanceSyncByPerpetualTask, perpetualTaskId: {}", perpetualTaskId);
+    log.info(
+        "processInstanceSyncByPerpetualTask, instanceSyncPerpetualTaskResponse: {}", instanceSyncPerpetualTaskResponse);
     try (AutoLogContext ignore1 = new AccountLogContext(accountIdentifier, OverrideBehavior.OVERRIDE_ERROR);
          AutoLogContext ignore2 = InstanceSyncLogContext.builder()
                                       .instanceSyncFlow(InstanceSyncFlow.PERPETUAL_TASK_FLOW.name())
@@ -167,6 +190,8 @@ public class InstanceSyncServiceImpl implements InstanceSyncService {
 
       InstanceSyncPerpetualTaskInfoDTO instanceSyncPerpetualTaskInfoDTO =
           instanceSyncPerpetualTaskInfoDTOOptional.get();
+      log.info(
+          "processInstanceSyncByPerpetualTask, instanceSyncPerpetualTaskInfoDTO: {}", instanceSyncPerpetualTaskInfoDTO);
       try (AutoLogContext ignore3 =
                InstanceSyncLogContext.builder()
                    .infrastructureMappingId(instanceSyncPerpetualTaskInfoDTO.getInfrastructureMappingId())
@@ -186,8 +211,11 @@ public class InstanceSyncServiceImpl implements InstanceSyncService {
             AcquiredLock<?> acquiredLock = persistentLocker.waitToAcquireLock(InstanceSyncConstants.INSTANCE_SYNC_PREFIX
                     + instanceSyncPerpetualTaskInfoDTO.getInfrastructureMappingId(),
                 InstanceSyncConstants.INSTANCE_SYNC_LOCK_TIMEOUT, InstanceSyncConstants.INSTANCE_SYNC_WAIT_TIMEOUT)) {
+          AbstractInstanceSyncHandler instanceSyncHandler = instanceSyncHandlerFactoryService.getInstanceSyncHandler(
+              instanceSyncPerpetualTaskResponse.getDeploymentType(),
+              infrastructureMappingDTO.get().getInfrastructureKind());
           performInstanceSync(instanceSyncPerpetualTaskInfoDTO, infrastructureMappingDTO.get(),
-              instanceSyncPerpetualTaskResponse.getServerInstanceDetails(), false);
+              instanceSyncPerpetualTaskResponse.getServerInstanceDetails(), instanceSyncHandler, false);
           log.info("Instance Sync completed");
         } catch (Exception exception) {
           log.error("Exception occured during instance sync", exception);
@@ -203,18 +231,12 @@ public class InstanceSyncServiceImpl implements InstanceSyncService {
    */
   private void performInstanceSync(InstanceSyncPerpetualTaskInfoDTO instanceSyncPerpetualTaskInfoDTO,
       InfrastructureMappingDTO infrastructureMappingDTO, List<ServerInstanceInfo> serverInstanceInfoList,
-      boolean isNewDeploymentSync) {
+      AbstractInstanceSyncHandler instanceSyncHandler, boolean isNewDeploymentSync) {
     // Prepare final list of instances to be added / deleted / updated
-    Map<OperationsOnInstances, List<InstanceDTO>> instancesToBeModified = handleInstanceSync(
-        instanceSyncPerpetualTaskInfoDTO, infrastructureMappingDTO, serverInstanceInfoList, isNewDeploymentSync);
-    processInstances(instancesToBeModified);
-  }
-
-  private void processInstances(Map<OperationsOnInstances, List<InstanceDTO>> instancesToBeModified) {
-    deleteInstances(instancesToBeModified.get(OperationsOnInstances.DELETE));
-    // ** check if saveAll method can be used safely to update multiple records together
-    saveInstances(instancesToBeModified.get(OperationsOnInstances.ADD));
-    updateInstances(instancesToBeModified.get(OperationsOnInstances.UPDATE));
+    Map<OperationsOnInstances, List<InstanceDTO>> instancesToBeModified =
+        handleInstanceSync(instanceSyncPerpetualTaskInfoDTO, infrastructureMappingDTO, serverInstanceInfoList,
+            instanceSyncHandler, isNewDeploymentSync);
+    utils.processInstances(instancesToBeModified);
   }
 
   /**
@@ -225,22 +247,37 @@ public class InstanceSyncServiceImpl implements InstanceSyncService {
   Map<OperationsOnInstances, List<InstanceDTO>> handleInstanceSync(
       InstanceSyncPerpetualTaskInfoDTO instanceSyncPerpetualTaskInfoDTO,
       InfrastructureMappingDTO infrastructureMappingDTO, List<ServerInstanceInfo> serverInstanceInfoList,
-      boolean isNewDeploymentSync) {
-    AbstractInstanceSyncHandler instanceSyncHandler = instanceSyncHandlerFactoryService.getInstanceSyncHandler(
-        getServerInstanceInfoType(serverInstanceInfoList.get(0)));
+      AbstractInstanceSyncHandler instanceSyncHandler, boolean isNewDeploymentSync) {
+    serverInstanceInfoList.forEach(
+        serverInstanceInfo -> log.info("handleInstanceSync, serverInstanceInfo: {}", serverInstanceInfo));
+    log.info("handleInstanceSync, InstanceSyncPerpetualTaskInfoDTO: {}", instanceSyncPerpetualTaskInfoDTO);
+    log.info("handleInstanceSync, InfrastructureMappingDTO: {}", infrastructureMappingDTO);
+    log.info("handleInstanceSync, isNewDeploymentSync: {}", isNewDeploymentSync);
     List<InstanceDTO> instancesInDB = instanceService.getActiveInstancesByInfrastructureMappingId(
         infrastructureMappingDTO.getAccountIdentifier(), infrastructureMappingDTO.getOrgIdentifier(),
-        infrastructureMappingDTO.getProjectIdentifier(), infrastructureMappingDTO.getId(), System.currentTimeMillis());
+        infrastructureMappingDTO.getProjectIdentifier(), infrastructureMappingDTO.getId());
+
+    instancesInDB.forEach(instance -> log.info("handleInstanceSync, Instance in DB: {}", instance));
+
     List<InstanceInfoDTO> instanceInfosFromServer =
         instanceSyncHandler.getInstanceDetailsFromServerInstances(serverInstanceInfoList);
+
+    instanceInfosFromServer.forEach(
+        instanceInfo -> log.info("handleInstanceSync, Instance from Server: {}", instanceInfo));
 
     // map all instances and server instances infos to instance sync handler key (corresponding to deployment info)
     // basically trying to group instances corresponding to a "cluster" together
     Map<String, List<InstanceDTO>> syncKeyToInstancesInDBMap =
-        getSyncKeyToInstancesInDBMap(instanceSyncHandler, instancesInDB);
+        utils.getSyncKeyToInstances(instanceSyncHandler, instancesInDB);
     Map<String, List<InstanceInfoDTO>> syncKeyToInstanceInfoFromServerMap =
-        getSyncKeyToInstancesFromServerMap(instanceSyncHandler, instanceInfosFromServer);
-    Map<OperationsOnInstances, List<InstanceDTO>> instancesToBeModified = initMapForTrackingFinalListOfInstances();
+        utils.getSyncKeyToInstancesFromServerMap(instanceSyncHandler, instanceInfosFromServer);
+    Map<OperationsOnInstances, List<InstanceDTO>> instancesToBeModified =
+        utils.initMapForTrackingFinalListOfInstances();
+
+    syncKeyToInstancesInDBMap.forEach(
+        (key, value) -> log.info("handleInstanceSync, syncKey: {}, InstanceInDBMap: {}", key, value));
+    syncKeyToInstanceInfoFromServerMap.forEach(
+        (key, value) -> log.info("handleInstanceSync, syncKey: {}, InstanceInfoFromServerMap: {}", key, value));
 
     processInstanceSyncForSyncKeysFromServerInstances(instanceSyncHandler, infrastructureMappingDTO,
         instanceSyncPerpetualTaskInfoDTO, syncKeyToInstancesInDBMap, syncKeyToInstanceInfoFromServerMap,
@@ -258,8 +295,11 @@ public class InstanceSyncServiceImpl implements InstanceSyncService {
   private void processInstanceSyncForSyncKeysNotFromServerInstances(Set<String> syncKeysToBeDeleted,
       Map<String, List<InstanceDTO>> syncKeyToInstancesInDBMap,
       Map<OperationsOnInstances, List<InstanceDTO>> instancesToBeModified) {
-    syncKeysToBeDeleted.forEach(syncKey
-        -> instancesToBeModified.get(OperationsOnInstances.DELETE).addAll(syncKeyToInstancesInDBMap.get(syncKey)));
+    syncKeysToBeDeleted.forEach(syncKey -> {
+      instancesToBeModified.get(OperationsOnInstances.DELETE).addAll(syncKeyToInstancesInDBMap.get(syncKey));
+      log.info("processInstanceSyncForSyncKeysNotFromServerInstances, Instance to delete: {}",
+          syncKeyToInstancesInDBMap.get(syncKey));
+    });
   }
 
   private void processInstanceSyncForSyncKeysFromServerInstances(AbstractInstanceSyncHandler instanceSyncHandler,
@@ -305,6 +345,10 @@ public class InstanceSyncServiceImpl implements InstanceSyncService {
     Sets.SetView<String> instancesToBeDeleted =
         Sets.difference(instancesInDBMap.keySet(), instanceInfosFromServerMap.keySet());
 
+    log.info("prepareInstancesToBeDeleted, instanceInfosFromServerMap: {}", instanceInfosFromServerMap.keySet());
+    log.info("prepareInstancesToBeDeleted, instancesInDBMap: {}", instancesInDBMap.keySet());
+    log.info("prepareInstancesToBeDeleted, Instances to be deleted: {}", instancesToBeDeleted);
+
     // Add instances to be deleted to the global map
     instancesToBeModified.get(OperationsOnInstances.DELETE)
         .addAll(instancesToBeDeleted.stream().map(instancesInDBMap::get).collect(Collectors.toSet()));
@@ -316,6 +360,10 @@ public class InstanceSyncServiceImpl implements InstanceSyncService {
       Map<String, InstanceInfoDTO> instanceInfosFromServerMap, boolean isAutoScaled) {
     Sets.SetView<String> instancesToBeAdded =
         Sets.difference(instanceInfosFromServerMap.keySet(), instancesInDBMap.keySet());
+
+    log.info("prepareInstancesToBeAdded, instanceInfosFromServerMap: {}", instanceInfosFromServerMap.keySet());
+    log.info("prepareInstancesToBeAdded, instancesInDBMap: {}", instancesInDBMap.keySet());
+    log.info("prepareInstancesToBeAdded, Instances to be added: {}", instancesToBeAdded);
 
     DeploymentSummaryDTO deploymentSummaryDTO = getDeploymentSummary(instanceSyncKey, instancesInDB, isAutoScaled);
     instancesToBeModified.get(OperationsOnInstances.ADD)
@@ -330,6 +378,10 @@ public class InstanceSyncServiceImpl implements InstanceSyncService {
       boolean isNewDeploymentSync) {
     Sets.SetView<String> instancesToBeUpdated =
         Sets.intersection(instanceInfosFromServerMap.keySet(), instancesInDBMap.keySet());
+
+    log.info("prepareInstancesToBeUpdated, instanceInfosFromServerMap: {}", instanceInfosFromServerMap.keySet());
+    log.info("prepareInstancesToBeUpdated, instancesInDBMap: {}", instancesInDBMap.keySet());
+    log.info("prepareInstancesToBeUpdated, Instances to be updated: {}", instancesToBeUpdated);
 
     // updating deployedAt field in accordance with pipeline execution time
     if (isNewDeploymentSync) {
@@ -409,6 +461,8 @@ public class InstanceSyncServiceImpl implements InstanceSyncService {
         .pipelineExecutionId(instanceDTO.getLastPipelineExecutionId())
         .artifactDetails(instanceDTO.getPrimaryArtifact())
         .deployedAt(instanceDTO.getLastDeployedAt())
+        .infrastructureIdentifier(instanceDTO.getInfraIdentifier())
+        .infrastructureName(instanceDTO.getInfraName())
         .build();
   }
 
@@ -427,21 +481,6 @@ public class InstanceSyncServiceImpl implements InstanceSyncService {
             .deploymentInfoDTO(deploymentSummaryDTO.getDeploymentInfoDTO())
             .lastUsedAt(System.currentTimeMillis())
             .build());
-  }
-
-  private void deleteInstances(List<InstanceDTO> instancesToBeDeleted) {
-    logInstances(OperationsOnInstances.DELETE.name(), instancesToBeDeleted);
-    instancesToBeDeleted.forEach(instanceDTO -> instanceService.softDelete(instanceDTO.getInstanceKey()));
-  }
-
-  private void saveInstances(List<InstanceDTO> instancesToBeSaved) {
-    logInstances(OperationsOnInstances.ADD.name(), instancesToBeSaved);
-    instancesToBeSaved.forEach(instanceDTO -> instanceService.saveOrReturnEmptyIfAlreadyExists(instanceDTO));
-  }
-
-  private void updateInstances(List<InstanceDTO> instancesToBeUpdated) {
-    logInstances(OperationsOnInstances.UPDATE.name(), instancesToBeUpdated);
-    instancesToBeUpdated.forEach(instanceDTO -> instanceService.findAndReplace(instanceDTO));
   }
 
   private List<InstanceDTO> buildInstances(AbstractInstanceSyncHandler abstractInstanceSyncHandler,
@@ -481,50 +520,15 @@ public class InstanceSyncServiceImpl implements InstanceSyncService {
             .lastPipelineExecutionId(deploymentSummaryDTO.getPipelineExecutionId())
             .lastDeployedById(deploymentSummaryDTO.getDeployedById())
             .lastDeployedAt(deploymentSummaryDTO.getDeployedAt())
+            .infraIdentifier(deploymentSummaryDTO.getInfrastructureIdentifier())
+            .infraName(deploymentSummaryDTO.getInfrastructureName())
             .instanceInfoDTO(instanceInfoDTO);
 
     if (isAutoScaled) {
       instanceDTOBuilder.lastDeployedById(InstanceSyncConstants.AUTO_SCALED)
-          .lastPipelineExecutionId(InstanceSyncConstants.AUTO_SCALED)
-          .lastDeployedByName(InstanceSyncConstants.AUTO_SCALED)
-          .lastPipelineExecutionName(InstanceSyncConstants.AUTO_SCALED)
-          .lastDeployedAt(System.currentTimeMillis());
+          .lastDeployedByName(InstanceSyncConstants.AUTO_SCALED);
     }
     return instanceDTOBuilder.build();
-  }
-
-  private Map<OperationsOnInstances, List<InstanceDTO>> initMapForTrackingFinalListOfInstances() {
-    Map<OperationsOnInstances, List<InstanceDTO>> instancesToBeModified = new HashMap<>();
-    instancesToBeModified.put(OperationsOnInstances.ADD, new ArrayList<>());
-    instancesToBeModified.put(OperationsOnInstances.DELETE, new ArrayList<>());
-    instancesToBeModified.put(OperationsOnInstances.UPDATE, new ArrayList<>());
-    return instancesToBeModified;
-  }
-
-  private Map<String, List<InstanceDTO>> getSyncKeyToInstancesInDBMap(
-      AbstractInstanceSyncHandler instanceSyncHandler, List<InstanceDTO> instancesInDB) {
-    Map<String, List<InstanceDTO>> syncKeyToInstancesInDBMap = new HashMap<>();
-    instancesInDB.forEach(instanceDTO -> {
-      String instanceSyncHandlerKey = instanceSyncHandler.getInstanceSyncHandlerKey(instanceDTO.getInstanceInfoDTO());
-      List<InstanceDTO> existingInstanceDTOList =
-          syncKeyToInstancesInDBMap.getOrDefault(instanceSyncHandlerKey, new ArrayList<>());
-      existingInstanceDTOList.add(instanceDTO);
-      syncKeyToInstancesInDBMap.put(instanceSyncHandlerKey, existingInstanceDTOList);
-    });
-    return syncKeyToInstancesInDBMap;
-  }
-
-  private Map<String, List<InstanceInfoDTO>> getSyncKeyToInstancesFromServerMap(
-      AbstractInstanceSyncHandler instanceSyncHandler, List<InstanceInfoDTO> instanceInfosFromServer) {
-    Map<String, List<InstanceInfoDTO>> syncKeyToInstanceInfoFromServerMap = new HashMap<>();
-    instanceInfosFromServer.forEach(instanceInfoDTO -> {
-      String instanceSyncHandlerKey = instanceSyncHandler.getInstanceSyncHandlerKey(instanceInfoDTO);
-      List<InstanceInfoDTO> instanceInfoDTOList =
-          syncKeyToInstanceInfoFromServerMap.getOrDefault(instanceSyncHandlerKey, new ArrayList<>());
-      instanceInfoDTOList.add(instanceInfoDTO);
-      syncKeyToInstanceInfoFromServerMap.put(instanceSyncHandlerKey, instanceInfoDTOList);
-    });
-    return syncKeyToInstanceInfoFromServerMap;
   }
 
   private DeploymentSummaryDTO getDeploymentSummary(
@@ -572,16 +576,6 @@ public class InstanceSyncServiceImpl implements InstanceSyncService {
     return deploymentInfoDTOList;
   }
 
-  private void logInstances(String operation, List<InstanceDTO> instanceDTOList) {
-    if (instanceDTOList.isEmpty()) {
-      return;
-    }
-    StringBuilder stringBuilder = new StringBuilder();
-    instanceDTOList.forEach(instanceDTO -> stringBuilder.append(instanceDTO.getInstanceKey()).append(" :: "));
-    log.info("Instance Operation : {} , count : {} , details : {}", operation, instanceDTOList.size(),
-        stringBuilder.toString());
-  }
-
   private void logServerInstances(List<ServerInstanceInfo> serverInstanceInfoList) {
     if (serverInstanceInfoList.isEmpty()) {
       return;
@@ -589,14 +583,6 @@ public class InstanceSyncServiceImpl implements InstanceSyncService {
     StringBuilder stringBuilder = new StringBuilder();
     serverInstanceInfoList.forEach(
         serverInstanceInfo -> stringBuilder.append(serverInstanceInfo.toString()).append(" :: "));
-    log.info("Server Instances in the perpetual task response : {}", stringBuilder.toString());
-  }
-
-  private String getServerInstanceInfoType(ServerInstanceInfo serverInstanceInfo) {
-    if (serverInstanceInfo instanceof K8sServerInstanceInfo) {
-      return ServiceSpecType.KUBERNETES;
-    }
-
-    return ServiceSpecType.NATIVE_HELM; // as of now only 2 types K8s and Native Helm
+    log.info("Server Instances in the perpetual task response : {}", stringBuilder);
   }
 }

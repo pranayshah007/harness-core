@@ -13,7 +13,6 @@ import static io.harness.rule.OwnerRule.ANJAN;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
 
@@ -90,8 +89,7 @@ public class CustomHealthConnectorTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testCreateCustomHealthConnector() {
     setupWithParamsAndHeaders();
-    when(connectorRepository.findByFullyQualifiedIdentifierAndDeletedNot(
-             anyString(), anyString(), anyString(), anyString(), anyBoolean()))
+    when(connectorRepository.findByFullyQualifiedIdentifierAndDeletedNot(any(), any(), any(), any(), anyBoolean()))
         .thenReturn(Optional.of(customHealthConnector));
     ConnectorResponseDTO connectorResponseDTO = connectorService.create(connectorDTO, accountIdentifier);
     ensureCustomHealthConnectorFieldsAreCorrect(connectorResponseDTO);
@@ -102,8 +100,7 @@ public class CustomHealthConnectorTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testGetCustomHealthConnector() {
     setupWithParamsAndHeaders();
-    when(connectorRepository.findByFullyQualifiedIdentifierAndDeletedNot(
-             anyString(), anyString(), anyString(), anyString(), anyBoolean()))
+    when(connectorRepository.findByFullyQualifiedIdentifierAndDeletedNot(any(), any(), any(), any(), anyBoolean()))
         .thenReturn(Optional.of(customHealthConnector));
     ConnectorResponseDTO connectorDTO = connectorService.get(accountIdentifier, null, null, identifier).get();
     ensureCustomHealthConnectorFieldsAreCorrect(connectorDTO);
@@ -114,8 +111,7 @@ public class CustomHealthConnectorTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testCustomHealthConnector_withNullHeadersAndParams() {
     setupWithNullHeadersAndParams();
-    when(connectorRepository.findByFullyQualifiedIdentifierAndDeletedNot(
-             anyString(), anyString(), anyString(), anyString(), anyBoolean()))
+    when(connectorRepository.findByFullyQualifiedIdentifierAndDeletedNot(any(), any(), any(), any(), anyBoolean()))
         .thenReturn(Optional.of(customHealthConnector));
 
     connectorService.create(connectorDTO, accountIdentifier);
@@ -132,8 +128,7 @@ public class CustomHealthConnectorTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testCustomHealthConnector_withPostMethodAndBody() {
     setupWithPostMethodAndBody();
-    when(connectorRepository.findByFullyQualifiedIdentifierAndDeletedNot(
-             anyString(), anyString(), anyString(), anyString(), anyBoolean()))
+    when(connectorRepository.findByFullyQualifiedIdentifierAndDeletedNot(any(), any(), any(), any(), anyBoolean()))
         .thenReturn(Optional.of(customHealthConnector));
 
     connectorService.create(connectorDTO, accountIdentifier);

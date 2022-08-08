@@ -46,7 +46,7 @@ else
     fi
 fi
 
-export JAVA_OPTS="-Xmx${MEMORY}m -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/heapdump -XX:+PrintGCDetails -XX:+PrintGCDateStamps -Xloggc:mygclogfilename.gc $GC_PARAMS $JAVA_ADVANCED_FLAGS"
+export JAVA_OPTS="-Xmx${MEMORY}m -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/heapdump -Xloggc:mygclogfilename.gc $GC_PARAMS $JAVA_ADVANCED_FLAGS"
 
 
 if [[ "${ENABLE_APPDYNAMICS}" == "true" ]] && [[ "${DISABLE_NEW_RELIC}" == "true" ]]; then
@@ -55,6 +55,16 @@ if [[ "${ENABLE_APPDYNAMICS}" == "true" ]] && [[ "${DISABLE_NEW_RELIC}" == "true
     JAVA_OPTS=$JAVA_OPTS" -javaagent:/opt/harness/AppServerAgent-1.8-21.11.2.33305/javaagent.jar -Dappdynamics.jvm.shutdown.mark.node.as.historical=true"
     JAVA_OPTS="$JAVA_OPTS $node_name"
     echo "Using Appdynamics java agent"
+fi
+
+if [[ "${ENABLE_OPENTELEMETRY}" == "true" ]] ; then
+    echo "OpenTelemetry is enabled"
+    JAVA_OPTS=$JAVA_OPTS" -javaagent:/opt/harness/opentelemetry-javaagent.jar -Dotel.service.name=${OTEL_SERVICE_NAME:-migrator}"
+
+    if [ -n "$OTEL_EXPORTER_OTLP_ENDPOINT" ]; then
+        JAVA_OPTS=$JAVA_OPTS" -Dotel.exporter.otlp.endpoint=$OTEL_EXPORTER_OTLP_ENDPOINT "
+    fi
+    echo "Using OpenTelemetry Java Agent"
 fi
 
 if [[ "${ENABLE_OVEROPS}" == "true" ]] ; then
@@ -67,8 +77,6 @@ if [[ "${DISABLE_NEW_RELIC}" != "true" ]]; then
     JAVA_OPTS=$JAVA_OPTS" -Dnewrelic.environment=$NEWRELIC_ENV"
     echo "Using new relic env " $NEWRELIC_ENV
 fi
-
-JAVA_OPTS=$JAVA_OPTS" -Xbootclasspath/p:/opt/harness/alpn-boot-8.1.13.v20181017.jar"
 
 if [[ "${DEPLOY_MODE}" == "KUBERNETES" || "${DEPLOY_MODE}" == "KUBERNETES_ONPREM" || "${DEPLOY_VERSION}" == "COMMUNITY" ]]; then
     java $JAVA_OPTS -jar $CAPSULE_JAR $COMMAND /opt/harness/config.yml

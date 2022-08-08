@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessModule._870_CG_ORCHESTRATION;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.beans.FeatureName.GIT_HOST_CONNECTIVITY;
 import static io.harness.beans.FeatureName.TERRAFORM_CONFIG_INSPECT_VERSION_SELECTOR;
+import static io.harness.beans.FeatureName.VALIDATE_PROVISIONER_EXPRESSION;
 import static io.harness.beans.PageRequest.PageRequestBuilder.aPageRequest;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -137,6 +138,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 import javax.validation.Valid;
 import javax.validation.executable.ValidateOnExecution;
@@ -156,6 +158,8 @@ import ru.vyarus.guice.validator.group.annotation.ValidationGroups;
 @Slf4j
 @BreakDependencyOn("software.wings.service.intfc.DelegateService")
 public class InfrastructureProvisionerServiceImpl implements InfrastructureProvisionerService {
+  private static final String PROVISIONER_TYPE_KEY_EXPRESSION_FORMAT = "${%s.";
+  private static final Pattern EXPRESSION_PATTERN = Pattern.compile("\\$\\{.+?}");
   @Inject private ManagerExpressionEvaluator evaluator;
 
   @Inject InfrastructureMappingService infrastructureMappingService;
@@ -653,7 +657,8 @@ public class InfrastructureProvisionerServiceImpl implements InfrastructureProvi
       if (evaluated == null) {
         evaluated = evaluator.substitute(property.getValue(), contextMap);
         if (isNullString(evaluated)
-            && property.getValue().contains(format("${%s.", infrastructureProvisionerTypeKey))) {
+            && property.getValue().contains(
+                format(PROVISIONER_TYPE_KEY_EXPRESSION_FORMAT, infrastructureProvisionerTypeKey))) {
           log.info("Unresolved expression \"{}\" ", property.getValue());
           throw new InvalidRequestException(format("Unable to resolve \"%s\" ", property.getValue()), USER);
         }
@@ -1011,10 +1016,23 @@ public class InfrastructureProvisionerServiceImpl implements InfrastructureProvi
     if (isEmpty(variables)) {
       return Collections.emptyMap();
     }
-    return variables.stream()
-        .filter(entry -> entry.getValue() != null)
-        .filter(entry -> "TEXT".equals(entry.getValueType()))
-        .collect(toMap(NameValuePair::getName, entry -> context.renderExpression(entry.getValue())));
+
+    Map<String, String> map = new HashMap<>();
+    for (NameValuePair entry : variables) {
+      if (entry.getValue() != null && "TEXT".equals(entry.getValueType())) {
+        map.merge(entry.getName(), context.renderExpression(entry.getValue()),
+            (a, b) -> { throw new IllegalStateException(format("Duplicate key: %s", entry.getName())); });
+      }
+    }
+    return map;
+  }
+
+  private EncryptedDataDetail getValue(String accountId, String workflowExecutionId, NameValuePair entry) {
+    Optional<EncryptedDataDetail> encryptedDataDetailOptional =
+        secretManager.encryptedDataDetails(accountId, null, entry.getValue(), workflowExecutionId);
+
+    return encryptedDataDetailOptional.orElseThrow(
+        () -> new InvalidRequestException(format("The encrypted variable %s was not found", entry.getName()), USER));
   }
 
   @Override
@@ -1024,18 +1042,15 @@ public class InfrastructureProvisionerServiceImpl implements InfrastructureProvi
       return Collections.emptyMap();
     }
     String accountId = appService.getAccountIdByAppId(appId);
-    return variables.stream()
-        .filter(entry -> entry.getValue() != null)
-        .filter(entry -> "ENCRYPTED_TEXT".equals(entry.getValueType()))
-        .collect(toMap(NameValuePair::getName, entry -> {
-          Optional<EncryptedDataDetail> encryptedDataDetailOptional =
-              secretManager.encryptedDataDetails(accountId, null, entry.getValue(), workflowExecutionId);
 
-          return encryptedDataDetailOptional.orElseThrow(
-              ()
-                  -> new InvalidRequestException(
-                      format("The encrypted variable %s was not found", entry.getName()), USER));
-        }));
+    Map<String, EncryptedDataDetail> map = new HashMap<>();
+    for (NameValuePair entry : variables) {
+      if (entry.getValue() != null && "ENCRYPTED_TEXT".equals(entry.getValueType())) {
+        map.merge(entry.getName(), getValue(accountId, workflowExecutionId, entry),
+            (a, b) -> { throw new IllegalStateException(format("Duplicate encrypted key: %s", entry.getName())); });
+      }
+    }
+    return map;
   }
 
   @Override
@@ -1057,6 +1072,33 @@ public class InfrastructureProvisionerServiceImpl implements InfrastructureProvi
     addProvisionerKeys(properties, infrastructureProvisioner);
     return resolveProperties(
         contextMap, properties, Optional.empty(), Optional.empty(), infrastructureProvisioner.variableKey());
+  }
+
+  /**
+   * Currently setting up only for Terraform Infra provisioner.
+   * The purpose is to not allow creation of InfrastructureMapping if rendering fails for provisioner specific
+   * variable key during PhaseSubStepWorkflow.
+   * @param infrastructureProvisioner
+   * @param resolvedExpressions
+   * @return False if expressions contains provisioner specific variable key else True.
+   */
+  @Override
+  public boolean areExpressionsValid(
+      InfrastructureProvisioner infrastructureProvisioner, Map<String, Object> resolvedExpressions) {
+    if (isNotEmpty(resolvedExpressions)
+        && TerraformInfrastructureProvisioner.VARIABLE_KEY.equals(infrastructureProvisioner.variableKey())) {
+      for (Object val : resolvedExpressions.values()) {
+        if (val instanceof String) {
+          String value = (String) val;
+          if (EXPRESSION_PATTERN.matcher(value).find()
+              && featureFlagService.isEnabled(
+                  VALIDATE_PROVISIONER_EXPRESSION, infrastructureProvisioner.getAccountId())) {
+            return false;
+          }
+        }
+      }
+    }
+    return true;
   }
 
   void addProvisionerKeys(List<BlueprintProperty> properties, InfrastructureProvisioner infrastructureProvisioner) {

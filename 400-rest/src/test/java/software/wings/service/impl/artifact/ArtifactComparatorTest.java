@@ -20,12 +20,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.ArtifactMetadata;
 import io.harness.beans.EmbeddedUser;
 import io.harness.category.element.UnitTests;
 import io.harness.rule.Owner;
 
 import software.wings.beans.artifact.Artifact;
-import software.wings.beans.artifact.Artifact.ArtifactMetadataKeys;
+import software.wings.beans.artifact.ArtifactMetadataKeys;
 
 import com.google.common.collect.ImmutableMap;
 import java.util.List;
@@ -47,16 +48,24 @@ public class ArtifactComparatorTest extends CategoryTest {
   @Category(UnitTests.class)
   public void shouldSortArtifactDescendingOrder() {
     List<Artifact> artifacts =
-        asList(artifactBuilder.withMetadata(ImmutableMap.of(ArtifactMetadataKeys.buildNo, "todolist-1.0-1.x86_64.rpm"))
+        asList(artifactBuilder
+                   .withMetadata(
+                       new ArtifactMetadata(ImmutableMap.of(ArtifactMetadataKeys.buildNo, "todolist-1.0-1.x86_64.rpm")))
                    .but()
                    .build(),
-            artifactBuilder.withMetadata(ImmutableMap.of(ArtifactMetadataKeys.buildNo, "todolist-1.0-10.x86_64.rpm"))
+            artifactBuilder
+                .withMetadata(
+                    new ArtifactMetadata(ImmutableMap.of(ArtifactMetadataKeys.buildNo, "todolist-1.0-10.x86_64.rpm")))
                 .but()
                 .build(),
-            artifactBuilder.withMetadata(ImmutableMap.of(ArtifactMetadataKeys.buildNo, "todolist-1.0-5.x86_64.rpm"))
+            artifactBuilder
+                .withMetadata(
+                    new ArtifactMetadata(ImmutableMap.of(ArtifactMetadataKeys.buildNo, "todolist-1.0-5.x86_64.rpm")))
                 .but()
                 .build(),
-            artifactBuilder.withMetadata(ImmutableMap.of(ArtifactMetadataKeys.buildNo, "todolist-1.0-15.x86_64.rpm"))
+            artifactBuilder
+                .withMetadata(
+                    new ArtifactMetadata(ImmutableMap.of(ArtifactMetadataKeys.buildNo, "todolist-1.0-15.x86_64.rpm")))
                 .but()
                 .build());
     assertThat(artifacts.stream().sorted(new ArtifactComparator()).collect(toList()))

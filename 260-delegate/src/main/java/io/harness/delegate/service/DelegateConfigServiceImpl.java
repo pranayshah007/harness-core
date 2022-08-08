@@ -15,7 +15,7 @@ import io.harness.managerclient.DelegateAgentManagerClient;
 import io.harness.rest.RestResponse;
 import io.harness.serializer.KryoSerializer;
 
-import software.wings.beans.ConfigFile;
+import software.wings.beans.ConfigFileDto;
 import software.wings.delegatetasks.DelegateConfigService;
 
 import com.google.inject.Inject;
@@ -32,9 +32,9 @@ public class DelegateConfigServiceImpl implements DelegateConfigService {
   @Inject private KryoSerializer kryoSerializer;
 
   @Override
-  public List<ConfigFile> getConfigFiles(String appId, String envId, String uuid, String hostId, String accountId)
+  public List<ConfigFileDto> getConfigFiles(String appId, String envId, String uuid, String hostId, String accountId)
       throws IOException {
-    RestResponse<String> executeResult =
+    RestResponse<List<ConfigFileDto>> executeResult =
         execute(delegateAgentManagerClient.getConfigFiles(uuid, accountId, appId, envId, hostId));
 
     if (executeResult == null) {
@@ -46,6 +46,6 @@ public class DelegateConfigServiceImpl implements DelegateConfigService {
     }
 
     log.debug("Successfully acquired the config files. Attempting to deserialized them");
-    return (List<ConfigFile>) kryoSerializer.asObject(executeResult.getResource());
+    return executeResult.getResource();
   }
 }

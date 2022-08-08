@@ -34,8 +34,10 @@ import io.harness.azure.model.AzureARMRGTemplateExportOptions;
 import io.harness.azure.model.AzureARMTemplate;
 import io.harness.azure.model.AzureConfig;
 import io.harness.azure.model.management.ManagementGroupInfo;
+import io.harness.azure.model.tag.TagDetails;
 import io.harness.azure.utility.AzureUtils;
 import io.harness.exception.AzureClientException;
+import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.serializer.JsonUtils;
 
 import com.google.common.reflect.TypeToken;
@@ -43,7 +45,6 @@ import com.google.inject.Singleton;
 import com.microsoft.azure.CloudException;
 import com.microsoft.azure.Page;
 import com.microsoft.azure.PagedList;
-import com.microsoft.azure.credentials.ApplicationTokenCredentials;
 import com.microsoft.azure.management.Azure;
 import com.microsoft.azure.management.resources.Deployment;
 import com.microsoft.azure.management.resources.DeploymentMode;
@@ -58,7 +59,6 @@ import com.microsoft.azure.management.resources.implementation.DeploymentOperati
 import com.microsoft.azure.management.resources.implementation.DeploymentValidateResultInner;
 import com.microsoft.azure.management.resources.implementation.DeploymentsInner;
 import com.microsoft.azure.management.resources.implementation.PageImpl;
-import com.microsoft.rest.LogLevel;
 import com.microsoft.rest.ServiceResponse;
 import java.io.IOException;
 import java.util.Arrays;
@@ -122,7 +122,7 @@ public class AzureManagementClientImpl extends AzureClient implements AzureManag
             ServiceResponse<PageImpl<ManagementGroupInfo>> result = listManagementDelegate(response);
             return Observable.just(new ServiceResponse<Page<ManagementGroupInfo>>(result.body(), result.response()));
           } catch (Exception t) {
-            return Observable.error(t);
+            return Observable.error(ExceptionMessageSanitizer.sanitizeException(t));
           }
         });
   }
@@ -141,7 +141,7 @@ public class AzureManagementClientImpl extends AzureClient implements AzureManag
             ServiceResponse<PageImpl<ManagementGroupInfo>> result = listManagementDelegate(response);
             return Observable.just(new ServiceResponse<Page<ManagementGroupInfo>>(result.body(), result.response()));
           } catch (Exception t) {
-            return Observable.error(t);
+            return Observable.error(ExceptionMessageSanitizer.sanitizeException(t));
           }
         });
   }
@@ -271,7 +271,7 @@ public class AzureManagementClientImpl extends AzureClient implements AzureManag
       String errorMessage = format(
           "Error occurred while deploying at resource group scope, deploymentName: %s, subscriptionId: %s,  resourceGroupName: %s, deploymentMode: %s",
           deploymentName, subscriptionId, resourceGroupName, deploymentMode);
-      throw new AzureClientException(errorMessage, e);
+      throw new AzureClientException(errorMessage, ExceptionMessageSanitizer.sanitizeException(e));
     }
   }
 
@@ -615,26 +615,51 @@ public class AzureManagementClientImpl extends AzureClient implements AzureManag
   }
 
   @Override
-  public void validateAzureConnection(
-      String clientId, String tenantId, String secret, AzureEnvironmentType azureEnvironmentType) {
-    authenticateWithCredentials(
-        new ApplicationTokenCredentials(clientId, tenantId, secret, getAzureEnvironment(azureEnvironmentType)));
+  public List<TagDetails> listTags(AzureConfig azureConfig, String subscriptionId) {
+    ServiceResponse<Page<TagDetails>> response =
+        listTagsSinglePageAsync(azureConfig, subscriptionId).toBlocking().single();
+
+    return new PagedList<TagDetails>(response.body()) {
+      @Override
+      public Page<TagDetails> nextPage(String nextPageLink) {
+        return listTagsNextSinglePageAsync(azureConfig, nextPageLink).toBlocking().single().body();
+      }
+    };
   }
 
-  @Override
-  public void validateAzureConnectionWithCert(
-      String clientId, String tenantId, byte[] cert, AzureEnvironmentType azureEnvironmentType) {
-    authenticateWithCredentials(
-        new ApplicationTokenCredentials(clientId, tenantId, cert, null, getAzureEnvironment(azureEnvironmentType)));
+  private Observable<ServiceResponse<Page<TagDetails>>> listTagsSinglePageAsync(
+      final AzureConfig azureConfig, String subscriptionId) {
+    return getAzureManagementRestClient(azureConfig.getAzureEnvironmentType())
+        .listTags(getAzureBearerAuthToken(azureConfig), subscriptionId)
+        .flatMap(toTagDetails());
   }
 
-  private void authenticateWithCredentials(ApplicationTokenCredentials applicationTokenCredentials) {
-    try {
-      Azure.configure().withLogLevel(LogLevel.NONE).authenticate(applicationTokenCredentials).withDefaultSubscription();
-      log.debug("Azure connection validated for clientId {} ", applicationTokenCredentials.clientId());
-    } catch (Exception e) {
-      handleAzureAuthenticationException(e);
-      handleInvalidCertException(e);
+  private Observable<ServiceResponse<Page<TagDetails>>> listTagsNextSinglePageAsync(
+      final AzureConfig azureConfig, final String nextPageLink) {
+    if (nextPageLink == null) {
+      throw new IllegalArgumentException(NEXT_PAGE_LINK_BLANK_VALIDATION_MSG);
     }
+    String nextUrl = String.format("%s", nextPageLink);
+
+    return getAzureManagementRestClient(azureConfig.getAzureEnvironmentType())
+        .listNext(getAzureBearerAuthToken(azureConfig), nextUrl, AzureManagementRestClient.APP_VERSION)
+        .flatMap(toTagDetails());
+  }
+
+  @NotNull
+  private Func1<Response<ResponseBody>, Observable<ServiceResponse<Page<TagDetails>>>> toTagDetails() {
+    return response -> {
+      try {
+        ServiceResponse<PageImpl<TagDetails>> result =
+            serviceResponseFactory.<PageImpl<TagDetails>, CloudException>newInstance(azureJacksonAdapter)
+                .register(200, (new TypeToken<PageImpl<TagDetails>>() {}).getType())
+                .registerError(CloudException.class)
+                .build(response);
+
+        return Observable.just(new ServiceResponse<Page<TagDetails>>(result.body(), result.response()));
+      } catch (Exception t) {
+        return Observable.error(t);
+      }
+    };
   }
 }

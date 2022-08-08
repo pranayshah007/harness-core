@@ -22,14 +22,21 @@ public class DelegateManagerClientModule extends AbstractModule {
   private final String accountSecret;
   private final String verificationServiceBaseUrl;
   private final String cvNextGenUrl;
+  private final String clientCertificateFilePath;
+  private final String clientCertificateKeyFilePath;
+  private final boolean trustAllCertificates;
 
   public DelegateManagerClientModule(String managerBaseUrl, String verificationServiceBaseUrl, String cvNextGenUrl,
-      String accountId, String accountSecret) {
+      String accountId, String accountSecret, String clientCertificateFilePath, String clientCertificateKeyFilePath,
+      boolean trustAllCertificates) {
     this.managerBaseUrl = managerBaseUrl;
     this.verificationServiceBaseUrl = verificationServiceBaseUrl;
     this.cvNextGenUrl = cvNextGenUrl;
     this.accountId = accountId;
     this.accountSecret = accountSecret;
+    this.clientCertificateFilePath = clientCertificateFilePath;
+    this.clientCertificateKeyFilePath = clientCertificateKeyFilePath;
+    this.trustAllCertificates = trustAllCertificates;
   }
 
   @Override
@@ -37,9 +44,13 @@ public class DelegateManagerClientModule extends AbstractModule {
     TokenGenerator tokenGenerator = new TokenGenerator(accountId, accountSecret);
     bind(TokenGenerator.class).toInstance(tokenGenerator);
     bind(DelegateAgentManagerClient.class)
-        .toProvider(new DelegateAgentManagerClientFactory(managerBaseUrl, tokenGenerator));
+        .toProvider(new DelegateAgentManagerClientFactory(managerBaseUrl, tokenGenerator, clientCertificateFilePath,
+            clientCertificateKeyFilePath, trustAllCertificates));
     bind(VerificationServiceClient.class)
-        .toProvider(new VerificationServiceClientFactory(verificationServiceBaseUrl, tokenGenerator));
-    bind(CVNextGenServiceClient.class).toProvider(new CVNextGenServiceClientFactory(cvNextGenUrl, tokenGenerator));
+        .toProvider(new VerificationServiceClientFactory(verificationServiceBaseUrl, tokenGenerator,
+            clientCertificateFilePath, clientCertificateKeyFilePath, trustAllCertificates));
+    bind(CVNextGenServiceClient.class)
+        .toProvider(new CVNextGenServiceClientFactory(cvNextGenUrl, tokenGenerator, clientCertificateFilePath,
+            clientCertificateKeyFilePath, trustAllCertificates));
   }
 }

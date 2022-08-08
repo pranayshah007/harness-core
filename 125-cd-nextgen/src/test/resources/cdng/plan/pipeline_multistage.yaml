@@ -1,0 +1,248 @@
+pipeline:
+  name: PipelineMultiStage
+  identifier: PipelineMultiStage
+  allowStageExecutions: false
+  stages:
+    - stage:
+        name: Stage1
+        identifier: Stage1
+        description: ""
+        type: Deployment
+        spec:
+          serviceConfig:
+            serviceRef: <+input>
+            serviceDefinition:
+              type: Kubernetes
+              spec:
+                variables: []
+          infrastructure:
+            environmentRef: Test
+            infrastructureDefinition:
+              type: KubernetesDirect
+              spec:
+                connectorRef: Kubernetes_SA
+                namespace: default
+                releaseName: release-<+INFRA_KEY>
+              provisioner:
+                steps:
+                  - step:
+                      type: ShellScript
+                      name: Provisioner Step1
+                      identifier: Provisioner_Step1
+                      spec:
+                        shell: Bash
+                        onDelegate: true
+                        source:
+                          type: Inline
+                          spec:
+                            script: script
+                        environmentVariables: []
+                        outputVariables: []
+                        executionTarget: {}
+                      timeout: 10m
+                  - step:
+                      type: ShellScript
+                      name: Provisioner Step2
+                      identifier: Provisioner_Step2
+                      spec:
+                        shell: Bash
+                        onDelegate: true
+                        source:
+                          type: Inline
+                          spec:
+                            script: script
+                        environmentVariables: []
+                        outputVariables: []
+                        executionTarget: {}
+                      timeout: 10m
+                rollbackSteps:
+                  - step:
+                      type: ShellScript
+                      name: Provisioner Rollback
+                      identifier: Provisioner_Rollback
+                      spec:
+                        shell: Bash
+                        onDelegate: true
+                        source:
+                          type: Inline
+                          spec:
+                            script: script
+                        environmentVariables: []
+                        outputVariables: []
+                        executionTarget: {}
+                      timeout: 10m
+            allowSimultaneousDeployments: false
+          execution:
+            steps:
+              - step:
+                  type: ShellScript
+                  name: Execution Step1
+                  identifier: Execution_Step1
+                  spec:
+                    shell: Bash
+                    onDelegate: true
+                    source:
+                      type: Inline
+                      spec:
+                        script: script
+                    environmentVariables: []
+                    outputVariables: []
+                    executionTarget: {}
+                  timeout: 10m
+              - step:
+                  type: ShellScript
+                  name: Execution Step2
+                  identifier: Execution_Step2
+                  spec:
+                    shell: Bash
+                    onDelegate: true
+                    source:
+                      type: Inline
+                      spec:
+                        script: script
+                    environmentVariables: []
+                    outputVariables: []
+                    executionTarget: {}
+                  timeout: 10m
+            rollbackSteps: []
+        tags: {}
+        failureStrategies:
+          - onFailure:
+              errors:
+                - AllErrors
+              action:
+                type: StageRollback
+    - stage:
+        name: Stage2
+        identifier: Stage2
+        description: ""
+        type: Deployment
+        spec:
+          serviceConfig:
+            useFromStage:
+              stage: Stage1
+          infrastructure:
+            environmentRef: Test
+            infrastructureDefinition:
+              type: KubernetesDirect
+              spec:
+                connectorRef: Kubernetes_SA
+                namespace: default
+                releaseName: release-<+INFRA_KEY>
+            allowSimultaneousDeployments: false
+          execution:
+            steps:
+              - step:
+                  type: ShellScript
+                  name: Execution Step1
+                  identifier: Execution_Step1
+                  spec:
+                    shell: Bash
+                    onDelegate: true
+                    source:
+                      type: Inline
+                      spec:
+                        script: script
+                    environmentVariables: []
+                    outputVariables: []
+                    executionTarget: {}
+                  timeout: 10m
+              - step:
+                  type: ShellScript
+                  name: Execution Step2
+                  identifier: Execution_Step2
+                  spec:
+                    shell: Bash
+                    onDelegate: true
+                    source:
+                      type: Inline
+                      spec:
+                        script: script
+                    environmentVariables: []
+                    outputVariables: []
+                    executionTarget: {}
+                  timeout: 10m
+              - step:
+                  type: ShellScript
+                  name: Execution Script3
+                  identifier: Execution_Script3
+                  spec:
+                    shell: Bash
+                    onDelegate: true
+                    source:
+                      type: Inline
+                      spec:
+                        script: script
+                    environmentVariables: []
+                    outputVariables: []
+                    executionTarget: {}
+                  timeout: 10m
+            rollbackSteps: []
+        tags: {}
+        failureStrategies:
+          - onFailure:
+              errors:
+                - AllErrors
+              action:
+                type: StageRollback
+    - stage:
+        name: Stage3
+        identifier: Stage3
+        description: ""
+        type: Deployment
+        spec:
+          serviceConfig:
+            useFromStage:
+              stage: Stage1
+          infrastructure:
+            environmentRef: Test
+            infrastructureDefinition:
+              type: KubernetesDirect
+              spec:
+                connectorRef: Kubernetes_SA
+                namespace: default
+                releaseName: release-<+INFRA_KEY>
+            allowSimultaneousDeployments: false
+          execution:
+            steps:
+              - step:
+                  type: ShellScript
+                  name: Execution Script1
+                  identifier: Execution_Script1
+                  spec:
+                    shell: Bash
+                    onDelegate: true
+                    source:
+                      type: Inline
+                      spec:
+                        script: script
+                    environmentVariables: []
+                    outputVariables: []
+                    executionTarget: {}
+                  timeout: 10m
+              - step:
+                  type: ShellScript
+                  name: Execution Step2
+                  identifier: Execution_Step2
+                  spec:
+                    shell: Bash
+                    onDelegate: true
+                    source:
+                      type: Inline
+                      spec:
+                        script: script
+                    environmentVariables: []
+                    outputVariables: []
+                    executionTarget: {}
+                  timeout: 10m
+            rollbackSteps: []
+        tags: {}
+        failureStrategies:
+          - onFailure:
+              errors:
+                - AllErrors
+              action:
+                type: StageRollback
+  projectIdentifier: Kubernetes
+  orgIdentifier: default
+  tags: {}

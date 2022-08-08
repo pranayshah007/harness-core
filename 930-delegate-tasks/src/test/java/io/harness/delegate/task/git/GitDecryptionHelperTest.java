@@ -13,6 +13,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyListOf;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
@@ -25,6 +26,7 @@ import io.harness.connector.helper.DecryptionHelper;
 import io.harness.connector.task.git.GitDecryptionHelper;
 import io.harness.connector.task.shell.SshSessionConfigMapper;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
+import io.harness.delegate.beans.connector.scm.genericgitconnector.GitAuthenticationDTO;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubApiAccessDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubApiAccessType;
@@ -60,8 +62,9 @@ public class GitDecryptionHelperTest extends CategoryTest {
   @Owner(developers = ABHINAV2)
   @Category(UnitTests.class)
   public void testDecryptGitConfig() {
-    gitDecryptionHelper.decryptGitConfig(GitConfigDTO.builder().build(), new ArrayList<>());
-    verify(decryptionHelper, times(1)).decrypt(any(GitConfigDTO.class), anyListOf(EncryptedDataDetail.class));
+    gitDecryptionHelper.decryptGitConfig(
+        GitConfigDTO.builder().gitAuth(mock(GitAuthenticationDTO.class)).build(), new ArrayList<>());
+    verify(decryptionHelper, times(1)).decrypt(any(GitAuthenticationDTO.class), anyListOf(EncryptedDataDetail.class));
   }
 
   @Test

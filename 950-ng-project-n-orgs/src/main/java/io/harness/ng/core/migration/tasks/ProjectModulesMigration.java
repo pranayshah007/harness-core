@@ -16,7 +16,6 @@ import io.harness.persistence.HIterator;
 import io.harness.persistence.HPersistence;
 
 import com.google.inject.Inject;
-import java.util.Arrays;
 import lombok.extern.slf4j.Slf4j;
 import org.mongodb.morphia.query.Query;
 import org.springframework.data.mongodb.core.MongoTemplate;
@@ -38,7 +37,7 @@ public class ProjectModulesMigration implements NGMigration {
         log.info("Enabling all modules for the project accountId={} projectId={}", project.getAccountIdentifier(),
             project.getId());
         // All projects should have all modules enabled
-        project.setModules(Arrays.asList(ModuleType.values()));
+        project.setModules(ModuleType.getModules());
 
         try {
           mongoTemplate.save(project);

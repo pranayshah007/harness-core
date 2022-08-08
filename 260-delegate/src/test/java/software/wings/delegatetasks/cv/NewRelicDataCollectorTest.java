@@ -91,8 +91,8 @@ public class NewRelicDataCollectorTest extends WingsBaseTest {
     ThirdPartyApiCallLog thirdPartyApiCallLog = mock(ThirdPartyApiCallLog.class);
     when(dataCollectionExecutionContext.createApiCallLog()).thenReturn(thirdPartyApiCallLog);
     when(dataCollectionExecutionContext.executeRequest(any(), any())).then(invocation -> {
-      String title = invocation.getArgumentAt(0, String.class);
-      Call<?> call = invocation.getArgumentAt(1, Call.class);
+      String title = invocation.getArgument(0, String.class);
+      Call<?> call = invocation.getArgument(1, Call.class);
       Response<?> response = call.execute();
       return response.body();
     });

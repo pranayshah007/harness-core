@@ -1,0 +1,82 @@
+pipeline:
+  name: "tt"
+  identifier: "pipeline"
+  stages:
+    - stage:
+        identifier: "sh"
+        type: "Approval"
+        name: "sh"
+        description: ""
+        spec:
+          execution:
+            steps:
+              - step:
+                  identifier: "uik"
+                  type: "HarnessApproval"
+                  name: "uik"
+                  timeout: "1d"
+                  spec:
+                    approvalMessage: "Please review the following information\nand approve\
+                  \ the pipeline progression"
+                    includePipelineExecutionHistory: true
+                    approvers:
+                      minimumCount: 1
+                      disallowPipelineExecutor: false
+                      userGroups:
+                        - "account.wqedrq"
+                        - "account.dqw"
+                    approverInputs: []
+        tags: {}
+    - stage:
+        identifier: "bdgf"
+        type: "Approval"
+        name: "bdgf"
+        description: ""
+        spec:
+          execution:
+            steps:
+              - step:
+                  identifier: "kjgh"
+                  type: "HarnessApproval"
+                  name: "kjgh"
+                  spec:
+                    approvalMessage: "Please review the following information and approve\
+                  \ the pipeline progression"
+                    includePipelineExecutionHistory: true
+                    approvers:
+                      userGroups: "<+input>"
+                      minimumCount: 1
+                      disallowPipelineExecutor: false
+                    approverInputs: []
+                  timeout: "1d"
+          serviceDependencies: []
+        tags: {}
+    - stage:
+        identifier: "fg"
+        type: "Approval"
+        name: "fg"
+        description: ""
+        spec:
+          execution:
+            steps:
+              - step:
+                  identifier: "ghf"
+                  type: "ShellScript"
+                  name: "ghf"
+                  spec:
+                    shell: "Bash"
+                    onDelegate: true
+                    source:
+                      type: "Inline"
+                      spec:
+                        script: "iii"
+                    environmentVariables: []
+                    outputVariables: []
+                    executionTarget: {}
+                  timeout: "10m"
+          serviceDependencies: []
+        tags: {}
+  allowStageExecutions: true
+  tags: {}
+  projectIdentifier: "proj"
+  orgIdentifier: "org"

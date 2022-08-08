@@ -20,6 +20,7 @@ import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.anyList;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
@@ -151,7 +152,7 @@ public class AzureVMSSSetupStateTest extends WingsBaseTest {
     doReturn(10)
         .when(azureVMSSStateHelper)
         .renderExpressionOrGetDefault(eq("10"), eq(context), eq(AzureConstants.DEFAULT_AZURE_VMSS_TIMEOUT_MIN));
-    doNothing().when(stateExecutionService).appendDelegateTaskDetails(anyString(), any());
+    doNothing().when(stateExecutionService).appendDelegateTaskDetails(any(), any());
     initializeFields(state);
 
     ExecutionResponse result = state.execute(context);
@@ -184,7 +185,7 @@ public class AzureVMSSSetupStateTest extends WingsBaseTest {
 
     assertThat(stateExecutionData.getExecutionDetails()).isNotEmpty();
     assertThat(stateExecutionData.getExecutionSummary()).isNotEmpty();
-    verify(stateExecutionService).appendDelegateTaskDetails(anyString(), any());
+    verify(stateExecutionService).appendDelegateTaskDetails(any(), any());
   }
 
   private void initializeFields(AzureVMSSSetupState state) {
@@ -199,7 +200,7 @@ public class AzureVMSSSetupStateTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void testExecuteGenericExceptionFailure() {
     ExecutionContextImpl context = mock(ExecutionContextImpl.class);
-    doThrow(Exception.class).when(azureVMSSStateHelper).getApplication(eq(context));
+    doAnswer(invocation -> { throw new Exception(); }).when(azureVMSSStateHelper).getApplication(eq(context));
     state.execute(context);
   }
 
@@ -255,7 +256,6 @@ public class AzureVMSSSetupStateTest extends WingsBaseTest {
     assertThat(azureVMSSSetupContextElement.cloneMin()).isNull();
     assertThat(azureVMSSSetupContextElement.toString()).isNotNull();
     assertThat(azureVMSSSetupContextElement.getElementType()).isEqualTo(ContextElementType.AZURE_VMSS_SETUP);
-    assertThat(azureVMSSSetupContextElement.paramMap(context)).isNotEmpty();
 
     assertThat(executionResponse.getStateExecutionData()).isInstanceOf(AzureVMSSSetupStateExecutionData.class);
     AzureVMSSSetupStateExecutionData stateExecutionData =
@@ -284,7 +284,7 @@ public class AzureVMSSSetupStateTest extends WingsBaseTest {
   public void testHandleAsyncResponseProcessingFailure() {
     ExecutionContextImpl context = mock(ExecutionContextImpl.class);
     Map<String, ResponseData> responseMap = getDelegateResponse();
-    doThrow(Exception.class).when(azureVMSSStateHelper).getExecutionStatus(any());
+    doAnswer(invocation -> { throw new Exception(); }).when(azureVMSSStateHelper).getExecutionStatus(any());
     state.handleAsyncResponse(context, responseMap);
   }
 

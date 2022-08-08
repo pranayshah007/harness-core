@@ -15,13 +15,16 @@ import io.harness.pms.yaml.ParameterField;
 
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @OwnedBy(CDP)
 @Data
 @NoArgsConstructor
 public class InlineTerraformVarFileSpec implements TerraformVarFileSpec {
-  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> content;
+  @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String uuid;
+
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) private ParameterField<String> content;
 
   @Override
   public String getType() {

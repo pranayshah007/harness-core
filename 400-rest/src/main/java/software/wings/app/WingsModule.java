@@ -26,6 +26,7 @@ import io.harness.CgOrchestrationModule;
 import io.harness.SecretManagementCoreModule;
 import io.harness.accesscontrol.AccessControlAdminClientConfiguration;
 import io.harness.accesscontrol.AccessControlAdminClientModule;
+import io.harness.agent.AgentMtlsModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.annotations.retry.MethodExecutionHelper;
@@ -64,11 +65,13 @@ import io.harness.ccm.views.businessMapping.service.impl.BusinessMappingServiceI
 import io.harness.ccm.views.businessMapping.service.intf.BusinessMappingService;
 import io.harness.ccm.views.service.CEReportScheduleService;
 import io.harness.ccm.views.service.CEReportTemplateBuilderService;
+import io.harness.ccm.views.service.CEViewFolderService;
 import io.harness.ccm.views.service.CEViewService;
 import io.harness.ccm.views.service.ViewCustomFieldService;
 import io.harness.ccm.views.service.ViewsBillingService;
 import io.harness.ccm.views.service.impl.CEReportScheduleServiceImpl;
 import io.harness.ccm.views.service.impl.CEReportTemplateBuilderServiceImpl;
+import io.harness.ccm.views.service.impl.CEViewFolderServiceImpl;
 import io.harness.ccm.views.service.impl.CEViewServiceImpl;
 import io.harness.ccm.views.service.impl.ViewCustomFieldServiceImpl;
 import io.harness.ccm.views.service.impl.ViewsBillingServiceImpl;
@@ -97,14 +100,14 @@ import io.harness.datahandler.utils.AccountSummaryHelperImpl;
 import io.harness.delegate.DelegateConfigurationServiceProvider;
 import io.harness.delegate.DelegatePropertiesServiceProvider;
 import io.harness.delegate.beans.StartupMode;
-import io.harness.delegate.chartmuseum.NGChartMuseumService;
-import io.harness.delegate.chartmuseum.NGChartMuseumServiceImpl;
 import io.harness.delegate.configuration.DelegateConfiguration;
 import io.harness.delegate.event.listener.OrganizationEntityCRUDEventListener;
 import io.harness.delegate.event.listener.ProjectEntityCRUDEventListener;
 import io.harness.delegate.outbox.DelegateOutboxEventHandler;
+import io.harness.delegate.service.impl.DelegateDownloadServiceImpl;
 import io.harness.delegate.service.impl.DelegateRingServiceImpl;
 import io.harness.delegate.service.impl.DelegateUpgraderServiceImpl;
+import io.harness.delegate.service.intfc.DelegateDownloadService;
 import io.harness.delegate.service.intfc.DelegateNgTokenService;
 import io.harness.delegate.service.intfc.DelegateRingService;
 import io.harness.delegate.service.intfc.DelegateUpgraderService;
@@ -124,6 +127,7 @@ import io.harness.event.reconciliation.service.DeploymentReconService;
 import io.harness.event.reconciliation.service.DeploymentReconServiceImpl;
 import io.harness.event.timeseries.processor.instanceeventprocessor.instancereconservice.IInstanceReconService;
 import io.harness.event.timeseries.processor.instanceeventprocessor.instancereconservice.InstanceReconServiceImpl;
+import io.harness.exception.ExplanationException;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.ff.FeatureFlagModule;
 import io.harness.file.FileServiceModule;
@@ -232,8 +236,6 @@ import io.harness.timescaledb.TimeScaleDBConfig;
 import io.harness.timescaledb.TimeScaleDBService;
 import io.harness.timescaledb.TimeScaleDBServiceImpl;
 import io.harness.usermembership.UserMembershipClientModule;
-import io.harness.utils.featureflaghelper.CGFeatureFlagHelperServiceImpl;
-import io.harness.utils.featureflaghelper.FeatureFlagHelperService;
 import io.harness.version.VersionModule;
 
 import software.wings.DataStorageMode;
@@ -776,6 +778,9 @@ import software.wings.utils.HostValidationService;
 import software.wings.utils.HostValidationServiceImpl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.api.client.auth.oauth2.StoredCredential;
+import com.google.api.client.util.store.DataStore;
+import com.google.api.client.util.store.MemoryDataStoreFactory;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.inject.AbstractModule;
 import com.google.inject.Injector;
@@ -814,6 +819,7 @@ import org.jetbrains.annotations.NotNull;
 @OwnedBy(PL)
 @TargetModule(_360_CG_MANAGER)
 public class WingsModule extends AbstractModule implements ServersModule {
+  private static final int OPEN_CENSUS_EXPORT_INTERVAL_MINUTES = 5;
   private final String hashicorpvault = "hashicorpvault";
   private final MainConfiguration configuration;
   private final StartupMode startupMode;
@@ -1027,6 +1033,14 @@ public class WingsModule extends AbstractModule implements ServersModule {
     bind(EcsContainerService.class).to(EcsContainerServiceImpl.class);
     bind(AwsClusterService.class).to(AwsClusterServiceImpl.class);
     bind(GkeClusterService.class).to(GkeClusterServiceImpl.class);
+    try {
+      bind(new TypeLiteral<DataStore<StoredCredential>>() {
+      }).toInstance(StoredCredential.getDefaultDataStore(new MemoryDataStoreFactory()));
+    } catch (IOException e) {
+      String msg =
+          "Could not initialise GKE access token memory cache. This should not never happen with memory data store.";
+      throw new ExplanationException(msg, e);
+    }
     bind(KubernetesContainerService.class).to(KubernetesContainerServiceImpl.class);
     bind(InfrastructureMappingService.class).to(InfrastructureMappingServiceImpl.class);
     bind(InfrastructureDefinitionService.class).to(InfrastructureDefinitionServiceImpl.class);
@@ -1152,6 +1166,7 @@ public class WingsModule extends AbstractModule implements ServersModule {
     bind(ViewCustomFieldService.class).to(ViewCustomFieldServiceImpl.class);
     bind(ViewsBillingService.class).to(ViewsBillingServiceImpl.class);
     bind(CEViewService.class).to(CEViewServiceImpl.class);
+    bind(CEViewFolderService.class).to(CEViewFolderServiceImpl.class);
     bind(BusinessMappingService.class).to(BusinessMappingServiceImpl.class);
     bind(CECommunicationsService.class).to(CECommunicationsServiceImpl.class);
     bind(CESlackWebhookService.class).to(CESlackWebhookServiceImpl.class);
@@ -1163,6 +1178,7 @@ public class WingsModule extends AbstractModule implements ServersModule {
     bind(DelegateTokenService.class).to(DelegateTokenServiceImpl.class);
     bind(InstanceDataService.class).to(InstanceDataServiceImpl.class);
     bind(EntityMetadataService.class).to(EntityMetadataServiceImpl.class);
+    bind(DelegateDownloadService.class).to(DelegateDownloadServiceImpl.class);
 
     bind(WingsMongoExportImport.class);
 
@@ -1358,7 +1374,6 @@ public class WingsModule extends AbstractModule implements ServersModule {
     bind(CustomDeploymentTypeService.class).to(CustomDeploymentTypeServiceImpl.class);
     bind(NGGitService.class).to(NGGitServiceImpl.class);
     bind(GitClientV2.class).to(GitClientV2Impl.class);
-    bind(NGChartMuseumService.class).to(NGChartMuseumServiceImpl.class);
     bind(PerpetualTaskScheduleService.class).to(PerpetualTaskScheduleServiceImpl.class);
 
     bind(AnomalyService.class).to(AnomalyServiceImpl.class);
@@ -1439,9 +1454,8 @@ public class WingsModule extends AbstractModule implements ServersModule {
     bind(OutboxEventHandler.class).to(WingsOutboxEventHandler.class);
     install(new CVCommonsServiceModule());
     bind(CDChangeSourceIntegrationService.class).to(CDChangeSourceIntegrationServiceImpl.class);
-    bind(FeatureFlagHelperService.class).to(CGFeatureFlagHelperServiceImpl.class);
 
-    install(new MetricsModule());
+    install(new MetricsModule(OPEN_CENSUS_EXPORT_INTERVAL_MINUTES));
     bind(MetricsPublisher.class).to(DelegateMetricsPublisher.class).in(Scopes.SINGLETON);
 
     // these two module needed for background migration # 214.
@@ -1450,6 +1464,8 @@ public class WingsModule extends AbstractModule implements ServersModule {
 
     install(new ProjectClientModule(configuration.getNgManagerServiceHttpClientConfig(),
         configuration.getPortal().getJwtNextGenManagerSecret(), MANAGER.getServiceId()));
+
+    install(new AgentMtlsModule(configuration.getAgentMtlsSubdomain()));
   }
 
   private void registerOutboxEventHandlers() {

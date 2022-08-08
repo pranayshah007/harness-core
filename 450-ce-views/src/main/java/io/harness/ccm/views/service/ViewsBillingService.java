@@ -24,6 +24,8 @@ import io.harness.ccm.views.graphql.ViewCostData;
 import com.google.cloud.bigquery.BigQuery;
 import com.google.cloud.bigquery.TableResult;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 @OwnedBy(CE)
 public interface ViewsBillingService {
@@ -59,6 +61,10 @@ public interface ViewsBillingService {
       List<QLCEViewGroupBy> groupBy, List<QLCEViewAggregation> aggregateFunction, List<QLCEViewSortCriteria> sort,
       String cloudProviderTableName, boolean includeOthers, Integer limit, ViewQueryParams queryParams);
 
+  Map<Long, Double> getUnallocatedCostDataNg(BigQuery bigQuery, List<QLCEViewFilterWrapper> filters,
+      List<QLCEViewGroupBy> groupBy, List<QLCEViewSortCriteria> sort, String cloudProviderTableName,
+      ViewQueryParams queryParams);
+
   QLCEViewTrendInfo getForecastCostData(BigQuery bigQuery, List<QLCEViewFilterWrapper> filters,
       List<QLCEViewAggregation> aggregateFunction, String cloudProviderTableName, ViewQueryParams queryParams);
 
@@ -69,4 +75,7 @@ public interface ViewsBillingService {
       String cloudProviderTableName, ViewQueryParams queryParams);
 
   boolean isDataGroupedByAwsAccount(List<QLCEViewFilterWrapper> filters, List<QLCEViewGroupBy> groupBy);
+
+  Map<String, Map<String, String>> getLabelsForWorkloads(
+      BigQuery bigQuery, Set<String> workloads, String cloudProviderTableName, List<QLCEViewFilterWrapper> filters);
 }

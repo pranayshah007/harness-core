@@ -37,7 +37,6 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
-import lombok.var;
 
 @TargetModule(HarnessModule._870_CG_ORCHESTRATION)
 @Data

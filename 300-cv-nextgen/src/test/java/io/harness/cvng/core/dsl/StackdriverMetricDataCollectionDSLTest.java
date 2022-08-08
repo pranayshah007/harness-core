@@ -165,6 +165,59 @@ public class StackdriverMetricDataCollectionDSLTest extends HoverflyCVNextGenTes
   @Test
   @Owner(developers = ABHIJITH)
   @Category(UnitTests.class)
+  public void testExecute_stackdriverDSLWithNodata() throws IOException {
+    DataCollectionDSLService dataCollectionDSLService = new DataCollectionServiceImpl();
+    dataCollectionDSLService.registerDatacollectionExecutorService(executorService);
+    String code = readDSL("metric-collection.datacollection");
+    Instant instant = Instant.ofEpochMilli(1642966157038L);
+    List<MetricPack> metricPacks = metricPackService.getMetricPacks(builderFactory.getContext().getAccountId(),
+        builderFactory.getContext().getOrgIdentifier(), builderFactory.getContext().getProjectIdentifier(),
+        DataSourceType.APP_DYNAMICS);
+
+    String metricDefinition = FileUtils.readFileToString(
+        new File(getResourceFilePath("hoverfly/stackdriver/stackdriver-metric-no-data-metric-definition.json")),
+        StandardCharsets.UTF_8);
+
+    CVConfig stackdriverCVConfig =
+        builderFactory.stackdriverMetricCVConfigBuilder()
+            .metricInfoList(Arrays.asList(MetricInfo.builder()
+                                              .metricName("kubernetes.io/container/cpu/limit_utilization")
+                                              .identifier("identifier")
+                                              .metricType(TimeSeriesMetricType.RESP_TIME)
+                                              .jsonMetricDefinition(metricDefinition)
+                                              .serviceInstanceField("resource.label.pod_name")
+                                              .build()))
+            .dashboardName("CPU limit utilization [MEAN]")
+            .dashboardPath("projects/7065288960/dashboards/883f5f4e-02e3-44f6-a64e-7f6915d093cf")
+            .metricPack(metricPackService.getMetricPack(builderFactory.getContext().getAccountId(),
+                builderFactory.getContext().getOrgIdentifier(), builderFactory.getContext().getProjectIdentifier(),
+                DataSourceType.STACKDRIVER, "Performance"))
+            .build();
+
+    StackdriverDataCollectionInfo stackdriverDataCollectionInfo =
+        dataCollectionInfoMapper.toDataCollectionInfo((StackdriverCVConfig) stackdriverCVConfig, TaskType.DEPLOYMENT);
+    stackdriverDataCollectionInfo.setCollectHostData(true);
+
+    Map<String, Object> params = stackdriverDataCollectionInfo.getDslEnvVariables(GcpConnectorDTO.builder().build());
+    params.put("accessToken", accessToken);
+    params.put("project", "chi-play");
+    Map<String, String> headers = new HashMap<>();
+    RuntimeParameters runtimeParameters = RuntimeParameters.builder()
+                                              .startTime(instant.minusSeconds(60))
+                                              .endTime(instant)
+                                              .commonHeaders(headers)
+                                              .otherEnvVariables(params)
+                                              .baseUrl("https://monitoring.googleapis.com/v3/projects/")
+                                              .build();
+
+    List<TimeSeriesRecord> timeSeriesRecords =
+        (List<TimeSeriesRecord>) dataCollectionDSLService.execute(code, runtimeParameters, callDetails -> {});
+    assertThat(timeSeriesRecords).isEmpty();
+  }
+
+  @Test
+  @Owner(developers = ABHIJITH)
+  @Category(UnitTests.class)
   public void testExecute_stackdriverDSLWithHostDetails() throws IOException {
     DataCollectionDSLService dataCollectionDSLService = new DataCollectionServiceImpl();
     dataCollectionDSLService.registerDatacollectionExecutorService(executorService);

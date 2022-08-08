@@ -34,13 +34,6 @@ spec:
                 type: K8sCanaryDelete
                 timeout: 10m
                 spec: {}
-          rollbackSteps:
-            - step:
-                name: "Canary Delete"
-                identifier: rollbackCanaryDelete
-                type: K8sCanaryDelete
-                timeout: 10m
-                spec: {}
       - stepGroup:
           name: Primary Deployment
           identifier: primaryDepoyment
@@ -52,10 +45,16 @@ spec:
                 timeout: 10m
                 spec:
                   skipDryRun: false
-          rollbackSteps:
-            - step:
-                name: "Rolling Rollback"
-                identifier: rollingRollback
-                type: K8sRollingRollback
-                timeout: 10m
-                spec: {}
+    rollbackSteps:
+      - step:
+          name: "Canary Delete"
+          identifier: rollbackCanaryDelete
+          type: K8sCanaryDelete
+          timeout: 10m
+          spec: {}
+      - step:
+          name: "Rolling Rollback"
+          identifier: rollingRollback
+          type: K8sRollingRollback
+          timeout: 10m
+          spec: {}

@@ -20,7 +20,7 @@ import io.harness.cvng.beans.CVMonitoringCategory;
 import io.harness.cvng.beans.DataSourceType;
 import io.harness.cvng.beans.MonitoredServiceDataSourceType;
 import io.harness.cvng.core.beans.monitoredService.HealthSource;
-import io.harness.cvng.core.beans.monitoredService.MetricPackDTO;
+import io.harness.cvng.core.beans.monitoredService.TimeSeriesMetricPackDTO;
 import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.AppDynamicsHealthSourceSpec;
 import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.HealthSourceSpec;
 import io.harness.cvng.core.beans.params.MonitoredServiceParams;
@@ -241,8 +241,8 @@ public class HealthSourceServiceImplTest extends CvNextGenTestBase {
     AppDynamicsHealthSourceSpec appDynamicsHealthSourceSpec = (AppDynamicsHealthSourceSpec) healthSource.getSpec();
     appDynamicsHealthSourceSpec.setMetricPacks(
         Arrays
-            .asList(MetricPackDTO.builder().identifier(CVNextGenConstants.ERRORS_PACK_IDENTIFIER).build(),
-                MetricPackDTO.builder().identifier(CVNextGenConstants.PERFORMANCE_PACK_IDENTIFIER).build())
+            .asList(TimeSeriesMetricPackDTO.builder().identifier(CVNextGenConstants.ERRORS_PACK_IDENTIFIER).build(),
+                TimeSeriesMetricPackDTO.builder().identifier(CVNextGenConstants.PERFORMANCE_PACK_IDENTIFIER).build())
             .stream()
             .collect(Collectors.toSet()));
     appDynamicsHealthSourceSpec.setFeature("new-feature");
@@ -288,7 +288,8 @@ public class HealthSourceServiceImplTest extends CvNextGenTestBase {
             .connectorRef(connectorIdentifier)
             .feature(feature)
             .metricPacks(
-                Arrays.asList(MetricPackDTO.builder().identifier(cvMonitoringCategory.getDisplayName()).build())
+                Arrays
+                    .asList(TimeSeriesMetricPackDTO.builder().identifier(cvMonitoringCategory.getDisplayName()).build())
                     .stream()
                     .collect(Collectors.toSet()))
             .metricDefinitions(Collections.EMPTY_LIST)
@@ -305,8 +306,6 @@ public class HealthSourceServiceImplTest extends CvNextGenTestBase {
     assertThat(cvConfig.getAccountId()).isEqualTo(accountId);
     assertThat(cvConfig.getOrgIdentifier()).isEqualTo(orgIdentifier);
     assertThat(cvConfig.getProjectIdentifier()).isEqualTo(projectIdentifier);
-    assertThat(cvConfig.getEnvIdentifier()).isEqualTo(environmentIdentifier);
-    assertThat(cvConfig.getServiceIdentifier()).isEqualTo(serviceIdentifier);
     assertThat(cvConfig.getProductName()).isEqualTo(feature);
     assertThat(cvConfig.getMonitoringSourceName()).isEqualTo(name);
     assertThat(cvConfig.getConnectorIdentifier()).isEqualTo(connectorIdentifier);

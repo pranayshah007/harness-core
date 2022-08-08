@@ -7,6 +7,7 @@
 
 package io.harness.ccm.graphql.query.recommendation;
 
+import static io.harness.rule.OwnerRule.TRUNAPUSHPA;
 import static io.harness.rule.OwnerRule.UTSAV;
 
 import static software.wings.graphql.datafetcher.ce.recommendation.entity.RecommenderUtils.CPU_HISTOGRAM_FIRST_BUCKET_SIZE;
@@ -28,9 +29,11 @@ import io.harness.ccm.commons.beans.recommendation.models.RecommendClusterReques
 import io.harness.ccm.commons.beans.recommendation.models.RecommendNodePoolClusterRequest;
 import io.harness.ccm.commons.beans.recommendation.models.RecommendationResponse;
 import io.harness.ccm.commons.beans.recommendation.models.VirtualMachine;
+import io.harness.ccm.graphql.core.recommendation.ECSRecommendationService;
 import io.harness.ccm.graphql.core.recommendation.NodeRecommendationService;
 import io.harness.ccm.graphql.core.recommendation.WorkloadRecommendationService;
 import io.harness.ccm.graphql.dto.recommendation.ContainerHistogramDTO;
+import io.harness.ccm.graphql.dto.recommendation.ECSRecommendationDTO;
 import io.harness.ccm.graphql.dto.recommendation.NodeRecommendationDTO;
 import io.harness.ccm.graphql.dto.recommendation.RecommendationDetailsDTO;
 import io.harness.ccm.graphql.dto.recommendation.RecommendationItemDTO;
@@ -71,6 +74,7 @@ public class RecommendationsDetailsQueryTest extends CategoryTest {
   @Mock private GraphQLUtils graphQLUtils;
   @Mock private WorkloadRecommendationService workloadRecommendationService;
   @Mock private NodeRecommendationService nodeRecommendationService;
+  @Mock private ECSRecommendationService ecsRecommendationService;
   @InjectMocks private RecommendationsDetailsQuery detailsQuery;
 
   private static final Cost cost =
@@ -284,6 +288,97 @@ public class RecommendationsDetailsQueryTest extends CategoryTest {
     assertThat(totalResourceUsage.getMaxmemory()).isEqualTo(8D);
     assertThat(totalResourceUsage.getSumcpu()).isEqualTo(4D);
     assertThat(totalResourceUsage.getSummemory()).isEqualTo(16D);
+  }
+
+  @Test
+  @Owner(developers = TRUNAPUSHPA)
+  @Category(UnitTests.class)
+  public void testGetECSRecommendationDetailsByIdAsParentQueryNotFound() {
+    when(ecsRecommendationService.getECSRecommendationById(eq(ACCOUNT_ID), eq(ID), any(), any()))
+        .thenReturn(ECSRecommendationDTO.builder().build());
+
+    final RecommendationDetailsDTO recommendationDetails =
+        detailsQuery.recommendationDetails(ID, ResourceType.ECS_SERVICE, null, null, null);
+
+    assertECSRecommendationByIdNotFound(recommendationDetails);
+  }
+
+  @Test
+  @Owner(developers = TRUNAPUSHPA)
+  @Category(UnitTests.class)
+  public void testGetECSRecommendationDetailsByIdAsParentQuery() {
+    when(ecsRecommendationService.getECSRecommendationById(eq(ACCOUNT_ID), eq(ID), any(), any()))
+        .thenReturn(createECSRecommendation());
+
+    final RecommendationDetailsDTO recommendationDetails =
+        detailsQuery.recommendationDetails(ID, ResourceType.ECS_SERVICE, null, null, null);
+
+    assertECSRecommendationDetails(recommendationDetails);
+  }
+
+  public void testGetECSRecommendationDetailsByIdInRecommendationItemContextNotFound() {
+    when(ecsRecommendationService.getECSRecommendationById(eq(ACCOUNT_ID), eq(ID), any(), any()))
+        .thenReturn(ECSRecommendationDTO.builder().build());
+
+    final RecommendationDetailsDTO recommendationDetails =
+        detailsQuery.recommendationDetails(createRecommendationItem(ID, ResourceType.ECS_SERVICE), null, null, null);
+
+    assertECSRecommendationByIdNotFound(recommendationDetails);
+  }
+
+  private static ECSRecommendationDTO createECSRecommendation() {
+    return ECSRecommendationDTO.builder()
+        .lastDayCost(cost)
+        .memoryHistogram(ContainerHistogramDTO.HistogramExp.builder()
+                             .numBuckets(NUM_BUCKET)
+                             .minBucket(MIN_BUCKET)
+                             .maxBucket(MAX_BUCKET)
+                             .bucketWeights(new double[] {1, 2})
+                             .precomputed(new double[] {2, 3})
+                             .totalWeight(TOTAL_WEIGHT)
+                             .build())
+        .cpuHistogram(ContainerHistogramDTO.HistogramExp.builder()
+                          .numBuckets(NUM_BUCKET)
+                          .minBucket(MIN_BUCKET)
+                          .maxBucket(MAX_BUCKET)
+                          .bucketWeights(new double[] {3, 4})
+                          .precomputed(new double[] {4, 5})
+                          .totalWeight(TOTAL_WEIGHT)
+                          .build())
+        .lastDayCost(cost)
+        .build();
+  }
+
+  private void assertECSRecommendationByIdNotFound(final RecommendationDetailsDTO recommendationDetails) {
+    assertThat(recommendationDetails).isNotNull();
+    assertThat(recommendationDetails).isExactlyInstanceOf(ECSRecommendationDTO.class);
+    assertThat(recommendationDetails).isEqualTo(ECSRecommendationDTO.builder().build());
+  }
+
+  private void assertECSRecommendationDetails(final RecommendationDetailsDTO recommendationDetails) {
+    assertThat(recommendationDetails).isNotNull();
+    assertThat(recommendationDetails).isExactlyInstanceOf(ECSRecommendationDTO.class);
+
+    final ECSRecommendationDTO ecsRecommendationDTO = (ECSRecommendationDTO) recommendationDetails;
+    assertThat(ecsRecommendationDTO.getLastDayCost()).isEqualTo(cost);
+
+    final ContainerHistogramDTO.HistogramExp cpuHistogram = ecsRecommendationDTO.getCpuHistogram();
+
+    assertHistogram(cpuHistogram);
+    assertThat(cpuHistogram.getBucketWeights()[0]).isEqualTo(3.0);
+    assertThat(cpuHistogram.getBucketWeights()[1]).isEqualTo(4.0);
+
+    final ContainerHistogramDTO.HistogramExp memoryHistogram = ecsRecommendationDTO.getMemoryHistogram();
+
+    assertThat(memoryHistogram.getBucketWeights()[0]).isEqualTo(1.0);
+    assertThat(memoryHistogram.getBucketWeights()[1]).isEqualTo(2.0);
+  }
+
+  private void assertHistogram(ContainerHistogramDTO.HistogramExp histogramExp) {
+    assertThat(histogramExp.getMinBucket()).isEqualTo(MIN_BUCKET);
+    assertThat(histogramExp.getMaxBucket()).isEqualTo(MAX_BUCKET);
+    assertThat(histogramExp.getTotalWeight()).isEqualTo(TOTAL_WEIGHT);
+    assertThat(histogramExp.getNumBuckets()).isEqualTo(NUM_BUCKET);
   }
 
   public static NodeRecommendationDTO createNodeRecommendation() {

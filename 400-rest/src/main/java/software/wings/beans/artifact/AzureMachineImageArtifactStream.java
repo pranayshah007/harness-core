@@ -8,6 +8,7 @@
 package software.wings.beans.artifact;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.delegate.beans.azure.AzureMachineImageArtifactDTO.ImageType;
 import static io.harness.exception.WingsException.USER;
 
 import static software.wings.beans.artifact.ArtifactStreamType.AZURE_MACHINE_IMAGE;
@@ -18,6 +19,7 @@ import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.EmbeddedUser;
+import io.harness.delegate.beans.azure.AzureMachineImageArtifactDTO;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ff.FeatureFlagService;
 
@@ -38,10 +40,8 @@ import org.apache.commons.lang3.StringUtils;
 public class AzureMachineImageArtifactStream extends ArtifactStream {
   public enum OSType { LINUX, WINDOWS }
 
-  public enum ImageType { IMAGE_GALLERY }
-
   private OSType osType;
-  private ImageType imageType;
+  private AzureMachineImageArtifactDTO.ImageType imageType;
   private String subscriptionId;
   private ImageDefinition imageDefinition;
 

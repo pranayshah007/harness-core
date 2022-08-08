@@ -10,6 +10,8 @@ package io.harness.delegate.task.artifacts.mappers;
 import io.harness.artifacts.beans.BuildDetailsInternal;
 import io.harness.delegate.task.artifacts.response.ArtifactBuildDetailsNG;
 
+import software.wings.helpers.ext.jenkins.BuildDetails;
+
 import java.util.Map;
 import lombok.experimental.UtilityClass;
 
@@ -21,6 +23,15 @@ public class ArtifactBuildDetailsMapper {
         .metadata(buildDetailsInternal.getMetadata())
         .number(buildDetailsInternal.getNumber())
         .uiDisplayName(buildDetailsInternal.getUiDisplayName())
+        .build();
+  }
+
+  public ArtifactBuildDetailsNG toBuildDetailsNG(BuildDetails buildDetails) {
+    return ArtifactBuildDetailsNG.builder()
+        .buildUrl(buildDetails.getBuildUrl())
+        .metadata(buildDetails.getMetadata())
+        .number(buildDetails.getNumber())
+        .uiDisplayName(buildDetails.getUiDisplayName())
         .build();
   }
 

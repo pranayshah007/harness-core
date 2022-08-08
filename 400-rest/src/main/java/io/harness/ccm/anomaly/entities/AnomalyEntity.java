@@ -67,6 +67,10 @@ public class AnomalyEntity {
   String awsInstanceType;
   String awsUsageType;
 
+  String azureSubscription;
+  String azureResourceGroup;
+  String azureMeterCategory;
+
   boolean slackDailyNotification;
   boolean slackInstantNotification;
   boolean slackWeeklyNotification;
@@ -103,6 +107,16 @@ public class AnomalyEntity {
     if (awsAccount != null) {
       return EntityType.AWS_ACCOUNT;
     }
+    if (azureSubscription != null) {
+      return EntityType.AZURE_SUBSCRIPTION;
+    }
+    if (azureResourceGroup != null) {
+      return EntityType.AZURE_RESOURCE_GROUP;
+    }
+    if (azureMeterCategory != null) {
+      return EntityType.AZURE_METER_CATEGORY;
+    }
+
     return null;
   }
 
@@ -137,6 +151,15 @@ public class AnomalyEntity {
     if (awsAccount != null) {
       return awsAccount;
     }
+    if (azureSubscription != null) {
+      return azureSubscription;
+    }
+    if (azureResourceGroup != null) {
+      return azureResourceGroup;
+    }
+    if (azureMeterCategory != null) {
+      return azureMeterCategory;
+    }
     return null;
   }
   public static class AnomaliesDataTableSchema {
@@ -169,6 +192,9 @@ public class AnomalyEntity {
       AWS_SERVICE("awsservice", DataType.STRING),
       AWS_USAGE_TYPE("awsusagetype", DataType.STRING),
       AWS_INSTANCE_TYPE("awsinstancetype", DataType.STRING),
+      AZURE_SUBSCRIPTION("azuresubscriptionguid", DataType.STRING),
+      AZURE_RESOURCE_GROUP("azureresourcegroup", DataType.STRING),
+      AZURE_METER_CATEGORY("azuremetercategory", DataType.STRING),
       ANOMALY_SCORE("anomalyScore", DataType.DOUBLE),
       REPORTED_BY("reportedby", DataType.STRING),
       SLACK_INSTANT_NOTIFICATION("slackInstantNotification", DataType.BOOLEAN),
@@ -229,6 +255,10 @@ public class AnomalyEntity {
     public static final DbColumn awsUsageType;
     public static final DbColumn awsInstanceType;
 
+    public static final DbColumn azureSubscription;
+    public static final DbColumn azureResourceGroup;
+    public static final DbColumn azureMeterCategory;
+
     public static final DbColumn anomalyScore;
     public static final DbColumn reportedBy;
 
@@ -271,6 +301,10 @@ public class AnomalyEntity {
       awsService = table.addColumn("awsservice");
       awsUsageType = table.addColumn("awsusagetype");
       awsInstanceType = table.addColumn("awsinstancetype");
+
+      azureSubscription = table.addColumn("azuresubscriptionguid");
+      azureResourceGroup = table.addColumn("azureresourcegroup");
+      azureMeterCategory = table.addColumn("azuremetercategory");
 
       anomalyScore = table.addColumn("anomalyscore");
       reportedBy = table.addColumn("reportedby");

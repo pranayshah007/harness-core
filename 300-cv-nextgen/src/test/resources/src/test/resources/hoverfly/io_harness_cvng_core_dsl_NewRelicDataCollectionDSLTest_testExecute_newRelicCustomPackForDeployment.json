@@ -1,0 +1,497 @@
+{
+  "data" : {
+    "pairs" : [ {
+      "request" : {
+        "path" : [ {
+          "matcher" : "exact",
+          "value" : "/v1/accounts/1805869/query"
+        } ],
+        "method" : [ {
+          "matcher" : "exact",
+          "value" : "GET"
+        } ],
+        "destination" : [ {
+          "matcher" : "exact",
+          "value" : "insights-api.newrelic.com"
+        } ],
+        "scheme" : [ {
+          "matcher" : "exact",
+          "value" : "https"
+        } ],
+        "query" : {
+          "nrql" : [ {
+            "matcher" : "exact",
+            "value" : "SELECT count(*) FROM Transaction,TransactionError WHERE appName = 'My Application' FACET host SINCE 120 minutes ago"
+          } ]
+        },
+        "body" : [ {
+          "matcher" : "exact",
+          "value" : ""
+        } ]
+      },
+      "response" : {
+        "status" : 200,
+        "body" : "H4sIAAAAAAAAAKyV30/bMBDH/xXk51hK0iSN+zZVBe0BkKAMaRMSjn1uDYkdHKdQqv7vu6TlR0XZ1A0lD8nd+XNf352TFVFcgG/I6NeKGF4BGZE5dwaahtYObyuphLq0ywqMp0MpZZGxYUbvn6VZkIA4aNpyu17Y1ngyisL1zTr4gDOOyraqlrTWNZTawA64UFmesyJnNM8Wd7P95PRwsBqqNC1YmtGHiqUHcf+4/4Uy869T+W77mUqy5/3g5HCw4Ia7JU0lwotUpgmtnszdJ/zBP/NzTFAwlScpVeZhlhzCl9xzaWd/T5JhF2XCMjb3shBfmwKrLkRe5KKgd2Jm5vvp8f/Tn5SK60/ODdJvAuKt5+VF7yaj1d456HWQ1twb+2hOnG3rTyKjPrAGp6yruBFw6XkXsSLaNDUID3K8LVzEAmIr7d9MYUAq7sV8/JI1II+8LMelFfdT3ZVg+BIC8tjZ6liXcAFcbmK3jh+ajzk+IA+lVIC1wnp1ErjoVXaCozxM84zh7mGBBZsua+jMZOq4abjw2hqs2bu3iXPWkffx2JDdaFuDmRgJKMe7FgJSwEybjXASh3FMwwzvaZij3FHMfuIaMPJjQBS+BbwyTnVZatQYZWmShgnDaxC9Ana8URxtvY4/XmrsAvKjODw6/X52NZ1cHn07OSe988p4XaLz7Px6YxjbquYOrrWfoxlt/dd68lRjr5tumyNyO7eNv0XXrNWyE84VhKzglOXDAS3EUNJhXoRUpTxhg7BIorg/O7b14E4OWlNhUj7rO3OzldIdA8zflVupBjZTU2qco+4/EOAcGg9mM3K7y988OK6qNZu2jbaTG5BGV3UJm97hFK/XvwEAAP//AwBF/RDQqwYAAA==",
+        "encodedBody" : true,
+        "templated" : false,
+        "headers" : {
+          "Content-Encoding" : [ "gzip" ],
+          "Content-Security-Policy" : [ "frame-ancestors *.newrelic.com" ],
+          "Content-Type" : [ "application/json" ],
+          "Date" : [ "Mon, 06 Jun 2022 10:42:29 GMT" ],
+          "Hoverfly" : [ "Was-Here" ],
+          "Proxied-By" : [ "Service Gateway" ],
+          "Strict-Transport-Security" : [ "max-age=31536000; includeSubDomains" ]
+        }
+      }
+    }, {
+      "request" : {
+        "path" : [ {
+          "matcher" : "exact",
+          "value" : "/v1/accounts/1805869/query"
+        } ],
+        "method" : [ {
+          "matcher" : "exact",
+          "value" : "GET"
+        } ],
+        "destination" : [ {
+          "matcher" : "exact",
+          "value" : "insights-api.newrelic.com"
+        } ],
+        "scheme" : [ {
+          "matcher" : "exact",
+          "value" : "https"
+        } ],
+        "query" : {
+          "nrql" : [ {
+            "matcher" : "exact",
+            "value" : "SELECT count(apm.service.instance.count) FROM Metric WHERE host = 'harness-pr-prod-deployment-7dddb6976-kzdnv' AND  appName LIKE 'My Application' TIMESERIES SINCE 1654494691000 UNTIL 1654494751000"
+          } ]
+        },
+        "body" : [ {
+          "matcher" : "exact",
+          "value" : ""
+        } ]
+      },
+      "response" : {
+        "status" : 200,
+        "body" : "H4sIAAAAAAAAALxSTW+bQBD9K9WewQJssM2tspKccqndVmrlw3h3IKvsB1qGRC3yf+8A/oiTXnop2gOa9+a9+eoFeQIjyl4EbDtDrSh/9kL6zpEo0+M+Egestdtpi1uU3ikmpEW+WKwXRZFEAp36G7bMGNOubVASqs1ZLhI0koPGyeh/mLJcg6HywYKTuCUY/PqPxEh4q+kaYDELJJ+u+CsYszFePg/ug21xoqC6D97ea4NfENQ1FdU3DRvgH45x9xYJFBAM/iDHhofe01WSr4o1F4ov6Gj3qxnHIx6RgpbibVyU5+g0y891HbAG0t6NKQFeP9mR0A55vkF35xRyTRWYFt9MlpWyJMvipOC3S/IyT8sk+SEu4/1IyE6Ei8ajNkbfLIe/i8A7lNczolziVvMmWP8mT4zQV0faXKEpaYI23jYQ8LumJyYMdXTyGWmrf1+sTgXUneaOxbyShypTGMuVOsSpWiQxLFcyhnU2B0zS+XKeD9K+IwwP/5RjsW2hHte0v73q/h3GN0roTjdedU4Ou2Kj6dwjAcTbOnAFHIPGzloML1rijO+ThoOdnYmtto1hFoUOj/vj8fgHAAD//wMAhc6iYL0DAAA=",
+        "encodedBody" : true,
+        "templated" : false,
+        "headers" : {
+          "Content-Encoding" : [ "gzip" ],
+          "Content-Security-Policy" : [ "frame-ancestors *.newrelic.com" ],
+          "Content-Type" : [ "application/json" ],
+          "Date" : [ "Mon, 06 Jun 2022 10:42:34 GMT" ],
+          "Hoverfly" : [ "Was-Here" ],
+          "Proxied-By" : [ "Service Gateway" ],
+          "Strict-Transport-Security" : [ "max-age=31536000; includeSubDomains" ]
+        }
+      }
+    }, {
+      "request" : {
+        "path" : [ {
+          "matcher" : "exact",
+          "value" : "/v1/accounts/1805869/query"
+        } ],
+        "method" : [ {
+          "matcher" : "exact",
+          "value" : "GET"
+        } ],
+        "destination" : [ {
+          "matcher" : "exact",
+          "value" : "insights-api.newrelic.com"
+        } ],
+        "scheme" : [ {
+          "matcher" : "exact",
+          "value" : "https"
+        } ],
+        "query" : {
+          "nrql" : [ {
+            "matcher" : "exact",
+            "value" : "SELECT count(apm.service.instance.count) FROM Metric WHERE host = 'harness-nr-dummy-pipeline-deployment-7bf6889b89-86vjg' AND  appName LIKE 'My Application' TIMESERIES SINCE 1654494691000 UNTIL 1654494751000"
+          } ]
+        },
+        "body" : [ {
+          "matcher" : "exact",
+          "value" : ""
+        } ]
+      },
+      "response" : {
+        "status" : 200,
+        "body" : "H4sIAAAAAAAAALxSTW+bQBD9K9WewQIM2OZWWUlOudRuK7XyYbwMZJX9QMuQqEX89w7gjzjppZeuOKB5b96br16QI9Ci6IXHttPUiuJnL6TrLIkiHg6BOGKt7F4Z3KF0tmRCnGdpuknzPAoE2vJv2CphTNm2QUlYbs9ygaCJ7BXORv/DlOUa9JXzBqzEHcHo138kBsIZRdcAixkg+XTFX0HrrXbyeXQXRbo8MbC8987cK41fEMprJpbfFGyBfzjGzRskKIFgtAc59Tu2Hq+jbJ1vuE58QUv7X800HfGI5JUUb+OiOEfnUX6ua481kHJ2SvHw+slMhHbMcw3aO1si11SBbvHNYFkpiZIkjHL+9lFWZHERRT/EZbofCcmJcNF4VFqrm93wuwi8Q3k7E8ol7hQvgvVv8sQEfbWk9BWak2Zo60wDHr8remLCWEcnn5F26vfF6lRA3SnuWGQsvErKLCyjKAnjI+QhLperMK2qzWYd50t+o7TrCP3DP+UYbFuopzUdbo+6f4fxiRLa04lXnZXjrthovvZAAPG2jlwBx6Axixb9i5K44POk8V4XZ2KrTKOZRb7D4TAMwx8AAAD//wMAYdIbN7wDAAA=",
+        "encodedBody" : true,
+        "templated" : false,
+        "headers" : {
+          "Content-Encoding" : [ "gzip" ],
+          "Content-Security-Policy" : [ "frame-ancestors *.newrelic.com" ],
+          "Content-Type" : [ "application/json" ],
+          "Date" : [ "Mon, 06 Jun 2022 10:42:37 GMT" ],
+          "Hoverfly" : [ "Was-Here" ],
+          "Proxied-By" : [ "Service Gateway" ],
+          "Strict-Transport-Security" : [ "max-age=31536000; includeSubDomains" ]
+        }
+      }
+    }, {
+      "request" : {
+        "path" : [ {
+          "matcher" : "exact",
+          "value" : "/v1/accounts/1805869/query"
+        } ],
+        "method" : [ {
+          "matcher" : "exact",
+          "value" : "GET"
+        } ],
+        "destination" : [ {
+          "matcher" : "exact",
+          "value" : "insights-api.newrelic.com"
+        } ],
+        "scheme" : [ {
+          "matcher" : "exact",
+          "value" : "https"
+        } ],
+        "query" : {
+          "nrql" : [ {
+            "matcher" : "exact",
+            "value" : "SELECT count(apm.service.instance.count) FROM Metric WHERE host = 'harness-nr-dummy-pipeline-deployment-f7f55b956-qm95g' AND  appName LIKE 'My Application' TIMESERIES SINCE 1654494691000 UNTIL 1654494751000"
+          } ]
+        },
+        "body" : [ {
+          "matcher" : "exact",
+          "value" : ""
+        } ]
+      },
+      "response" : {
+        "status" : 200,
+        "body" : "H4sIAAAAAAAAALxSTW+bQBD9K9WejQUYsM2tspKccqndVmrlw7A7JqvsB1qGRC3yf+8A/oiTXnop2gOa9+a9+eoFeQIjyl4EbDtDrSh/9kL6zpEok+N+Jiqstdtpi1uU3ikmJEWeZeusKOKZQKf+hi1TxrRrG5SEanOWmwkayUHjZPQ/TFmuwXDwwYKTuCUY/PqPxJnwVtM1wGIWSD5d8VcwZmO8fB7cRblanxio7oO399rgFwR1zUT1TcMG+Idj3LxFAgUEgz3Isd+h9WQV56tizXXiCzra/WrG6YhHpKCleBsX5Tk6jfJzXQesgbR3Y0qA1092JLRDnm/Q3TmFXNMBTItvBstKaZymUVzw28V5mSdlHP8Ql+l+JKQnwkXjURujb3bD30XgHcrbGVEucat5Eax/kydG6Ksjba7QlDRBG28bCPhd0xMThjo6+Yy01b8vVqcC6k5zx2JdxEWSqiRaZhVEVbJQESxyiNarrEpVsawWCQ7SviMMD/+UY7FtoR7XtL896v4dxidK6E4nfuicHHbFRtO1zwQQb6viCjgGjZ23GF60xDmfJw33Oj8TW20bwywKHR73x+PxDwAAAP//AwD7vgd7vAMAAA==",
+        "encodedBody" : true,
+        "templated" : false,
+        "headers" : {
+          "Content-Encoding" : [ "gzip" ],
+          "Content-Security-Policy" : [ "frame-ancestors *.newrelic.com" ],
+          "Content-Type" : [ "application/json" ],
+          "Date" : [ "Mon, 06 Jun 2022 10:42:37 GMT" ],
+          "Hoverfly" : [ "Was-Here" ],
+          "Proxied-By" : [ "Service Gateway" ],
+          "Strict-Transport-Security" : [ "max-age=31536000; includeSubDomains" ]
+        }
+      }
+    }, {
+      "request" : {
+        "path" : [ {
+          "matcher" : "exact",
+          "value" : "/v1/accounts/1805869/query"
+        } ],
+        "method" : [ {
+          "matcher" : "exact",
+          "value" : "GET"
+        } ],
+        "destination" : [ {
+          "matcher" : "exact",
+          "value" : "insights-api.newrelic.com"
+        } ],
+        "scheme" : [ {
+          "matcher" : "exact",
+          "value" : "https"
+        } ],
+        "query" : {
+          "nrql" : [ {
+            "matcher" : "exact",
+            "value" : "SELECT count(apm.service.instance.count) FROM Metric WHERE host = 'harness-pr-prod-deployment-7dddb6976-vfnhg' AND  appName LIKE 'My Application' TIMESERIES SINCE 1654494691000 UNTIL 1654494751000"
+          } ]
+        },
+        "body" : [ {
+          "matcher" : "exact",
+          "value" : ""
+        } ]
+      },
+      "response" : {
+        "status" : 200,
+        "body" : "H4sIAAAAAAAAALxSy26cQBD8lWjOsAI0sMAtWtk++ZLdJFKiPQwzvXjkeaChsZUg/j0N+/LaueQSNAfUVV3Vr5GhR2FYPbIA/WCwZ/XPkUk/OGR1Ou0j1kCr3U5b2IL0ThEhLXLOK14UScTAqb9h64ww7foOJILanOUihgs5aDga/Q9TkusgHHywwknYopj9xo/EiHmr8RogMStQPl3xV2HMxnj5PLuzmvMTA9R98PZeG/gCQl0zQX3TYiPoh2LUvAUUSqCY7YVc+p1bT8skL4uK6oQXcLj71S3TYY+AQUv2Ns7qc/Q4ys9tG6AVqL1bUoJ4/WQXQj/n+Q7cnVNANR2E6eHNYEkpS7IsTgp6uySv87ROkh/sMt2PhOxEuGg8amP0zW7ouwi8Q2k7C0olbjUtgvRv8tgCfXWozRU6Jh2hjbedCPBd4xMR5joG+Qy41b8vVqcC2kFTx0yW67XijYg55yrmaZPETcXzeN1UJS/LquGKz9J+QAgP/5Rjoe9Fu6xpf3vU4zuMThTBnU78MDg572o2Wq4qYgJpWw1VQDHR2VUP4UVLWNF54nyvqzOx17YzxMIwwLSfpukPAAAA//8DACfPQyS8AwAA",
+        "encodedBody" : true,
+        "templated" : false,
+        "headers" : {
+          "Content-Encoding" : [ "gzip" ],
+          "Content-Security-Policy" : [ "frame-ancestors *.newrelic.com" ],
+          "Content-Type" : [ "application/json" ],
+          "Date" : [ "Mon, 06 Jun 2022 10:42:38 GMT" ],
+          "Hoverfly" : [ "Was-Here" ],
+          "Proxied-By" : [ "Service Gateway" ],
+          "Strict-Transport-Security" : [ "max-age=31536000; includeSubDomains" ]
+        }
+      }
+    }, {
+      "request" : {
+        "path" : [ {
+          "matcher" : "exact",
+          "value" : "/v1/accounts/1805869/query"
+        } ],
+        "method" : [ {
+          "matcher" : "exact",
+          "value" : "GET"
+        } ],
+        "destination" : [ {
+          "matcher" : "exact",
+          "value" : "insights-api.newrelic.com"
+        } ],
+        "scheme" : [ {
+          "matcher" : "exact",
+          "value" : "https"
+        } ],
+        "query" : {
+          "nrql" : [ {
+            "matcher" : "exact",
+            "value" : "SELECT count(apm.service.instance.count) FROM Metric WHERE host = 'harness-nr-dummy-pipeline-deployment-7bf6889b89-6f46z' AND  appName LIKE 'My Application' TIMESERIES SINCE 1654494691000 UNTIL 1654494751000"
+          } ]
+        },
+        "body" : [ {
+          "matcher" : "exact",
+          "value" : ""
+        } ]
+      },
+      "response" : {
+        "status" : 200,
+        "body" : "H4sIAAAAAAAAALxSTW+bQBD9K9WesQXGYOBWWU1PudRuK7XyYbI7JqvsB1qGRC3iv3cAf8RJL70U7QHNe/PefPWCPIERVS8Ctp2hVlQ/eyF950hUyXCIxAPW2u21xR1K7xQTkjxbr8t1nseRQKf+hm1WjGnXNigJ1fYsFwmayEHjbPQ/TFmuwXD0wYKTuCMY/fr3xEh4q+kaYDELJB+v+AsYszVePo3uolrnJwaqu+DtnTb4BUFdM1F907AF/uEYN2+RQAHBaA9y6ndsPSnirMhLrhOf0dH+VzNNR9wjBS3F67ioztF5lB/rOmANpL2bUgK8fLAToR3zfIPuk1PINR3BtPhqsKy0ilerRZzz28dZlSVVHP8Ql+m+J6xOhIvGvTZG3+yGv4vAG5S3M6Fc4k7zIlj/Jk9M0FdH2lyhOWmGtt42EPC7pkcmjHV08glpp39frE4F1J3mjkUBsToWWbpIMyUXsIZkUabFZqHSIj9uypQ9ylHad4Th8z/lWGxbqKc1HW6Pun+D8YkSutOJHzsnx12x0XztkQDibT1wBRyDxi5bDM9a4pLPk8Z7XZ6JrbaNYRaFDofDMAx/AAAA//8DANHPWp+8AwAA",
+        "encodedBody" : true,
+        "templated" : false,
+        "headers" : {
+          "Content-Encoding" : [ "gzip" ],
+          "Content-Security-Policy" : [ "frame-ancestors *.newrelic.com" ],
+          "Content-Type" : [ "application/json" ],
+          "Date" : [ "Mon, 06 Jun 2022 10:42:53 GMT" ],
+          "Hoverfly" : [ "Was-Here" ],
+          "Proxied-By" : [ "Service Gateway" ],
+          "Strict-Transport-Security" : [ "max-age=31536000; includeSubDomains" ]
+        }
+      }
+    }, {
+      "request" : {
+        "path" : [ {
+          "matcher" : "exact",
+          "value" : "/v1/accounts/1805869/query"
+        } ],
+        "method" : [ {
+          "matcher" : "exact",
+          "value" : "GET"
+        } ],
+        "destination" : [ {
+          "matcher" : "exact",
+          "value" : "insights-api.newrelic.com"
+        } ],
+        "scheme" : [ {
+          "matcher" : "exact",
+          "value" : "https"
+        } ],
+        "query" : {
+          "nrql" : [ {
+            "matcher" : "exact",
+            "value" : "SELECT count(apm.service.instance.count) FROM Metric WHERE host = 'harness-nr-dummy-pipeline-deployment-canary-5d89bb5d54-mxnjz' AND  appName LIKE 'My Application' TIMESERIES SINCE 1654494691000 UNTIL 1654494751000"
+          } ]
+        },
+        "body" : [ {
+          "matcher" : "exact",
+          "value" : ""
+        } ]
+      },
+      "response" : {
+        "status" : 200,
+        "body" : "H4sIAAAAAAAAALxSTW+bQBD9K9WewQKKsc2tspqecqndVmrlw3h3IKvsB1qGRC3iv3cAf8RJLr0U7QHNe/PefPWCPIERZS8Ctp2hVpS/eiF950iU6XCIxBFr7fba4g6ld4oJabHM801eFEkk0Kn3sFXGmHZtg5JQbc9ykaCJHDTORv/DlOUaDJUPFpzEHcHo178lRsJbTdcAi1kg+XDFn8GYrfHycXQX5SY9MVDdBW/vtMGvCOqaieq7hi3wD8e4eYsECghGe5BTv2Pr6TpZrosN14lP6Gj/u5mmI+6RgpbiZVyU5+g8yk91HbAG0t5NKQGeP9iJ0I55vkH32SnkmiowLb4YLCtlSZbFScFvnyzLZVomyU9xme5bQnYiXDTutTH6Zjf8XQReobydCeUSd5oXwfo3eWKCvjnS5grNSTO09baBgD80PTBhrKOTj0g7/edidSqg7jR3LGBVpUmlMK7yfBUrudrEcMzzGPOPmK/XmyRVxSjtO8Lw5Z9yLLYt1NOaDrdH3b/C+EQJ3enEq87JcVdsNF97JIB4W0euYDRv7KLF8KQlLvg8abzXxZnYatsYZlHocDgMw/AXAAD//wMA39NCEbwDAAA=",
+        "encodedBody" : true,
+        "templated" : false,
+        "headers" : {
+          "Content-Encoding" : [ "gzip" ],
+          "Content-Security-Policy" : [ "frame-ancestors *.newrelic.com" ],
+          "Content-Type" : [ "application/json" ],
+          "Date" : [ "Mon, 06 Jun 2022 10:42:53 GMT" ],
+          "Hoverfly" : [ "Was-Here" ],
+          "Proxied-By" : [ "Service Gateway" ],
+          "Strict-Transport-Security" : [ "max-age=31536000; includeSubDomains" ]
+        }
+      }
+    }, {
+      "request" : {
+        "path" : [ {
+          "matcher" : "exact",
+          "value" : "/v1/accounts/1805869/query"
+        } ],
+        "method" : [ {
+          "matcher" : "exact",
+          "value" : "GET"
+        } ],
+        "destination" : [ {
+          "matcher" : "exact",
+          "value" : "insights-api.newrelic.com"
+        } ],
+        "scheme" : [ {
+          "matcher" : "exact",
+          "value" : "https"
+        } ],
+        "query" : {
+          "nrql" : [ {
+            "matcher" : "exact",
+            "value" : "SELECT count(apm.service.instance.count) FROM Metric WHERE host = 'harness-nr-dummy-pipeline-deployment-canary-85d8b9f845-fnqg4' AND  appName LIKE 'My Application' TIMESERIES SINCE 1654494691000 UNTIL 1654494751000"
+          } ]
+        },
+        "body" : [ {
+          "matcher" : "exact",
+          "value" : ""
+        } ]
+      },
+      "response" : {
+        "status" : 200,
+        "body" : "H4sIAAAAAAAAALxSyY6bQBD9lajPYAHDYrhFVianucROIiXyodyUmdb0gppiRgni31OAl/FMLrkE9QHVe/VebYMgR6BFNQiPXa+pE9XPQUjXWxJVPO4DccBG2Z0yuEXpbM2EOM/StEzzPAoE2vpvWJEwpmzXoiSsN2e5QNBM9goXo/9hynIt+qPzBqzELcHkN7wnBsIZRdcAixkg+XjFX0DrjXbyaXIXVVqcGFjfe2fulcYvCPU1E+tvCjbAPxzj5g0S1EAw2YOc+51aj9dRts5LrhOf0dLuVztPRzwgeSXF67ioztFllB+bxmMDpJydUzy8fDAzoZvyXIv2k62RazqC7vDVYFkpiZIkjHJ+uyirsriKoh/iMt33hOREuGg8KK3VzW74uwi8QXk7M8olbhUvgvVv8sQMfbWk9BVakhZo40wLHr8remTCVEcvn5C26vfF6lRA0yvuWKRJinWa3oU5lHUYFwmGBd7FYQbxoVynpYRjMUm7ntB//qccg10Hzbym/e1RD28wPlFCezrxY2/ltCs2Wq49EEC8rQNXwDFozapD/6wkrvg8abrX1ZnYKdNqZpHvcdyP4/gHAAD//wMAMgqkD7wDAAA=",
+        "encodedBody" : true,
+        "templated" : false,
+        "headers" : {
+          "Content-Encoding" : [ "gzip" ],
+          "Content-Security-Policy" : [ "frame-ancestors *.newrelic.com" ],
+          "Content-Type" : [ "application/json" ],
+          "Date" : [ "Mon, 06 Jun 2022 10:43:10 GMT" ],
+          "Hoverfly" : [ "Was-Here" ],
+          "Proxied-By" : [ "Service Gateway" ],
+          "Strict-Transport-Security" : [ "max-age=31536000; includeSubDomains" ]
+        }
+      }
+    }, {
+      "request" : {
+        "path" : [ {
+          "matcher" : "exact",
+          "value" : "/v1/accounts/1805869/query"
+        } ],
+        "method" : [ {
+          "matcher" : "exact",
+          "value" : "GET"
+        } ],
+        "destination" : [ {
+          "matcher" : "exact",
+          "value" : "insights-api.newrelic.com"
+        } ],
+        "scheme" : [ {
+          "matcher" : "exact",
+          "value" : "https"
+        } ],
+        "query" : {
+          "nrql" : [ {
+            "matcher" : "exact",
+            "value" : "SELECT count(apm.service.instance.count) FROM Metric WHERE host = 'harness-datadog-dummy-pipeline-deployment-canary-6956d4969htdbc' AND  appName LIKE 'My Application' TIMESERIES SINCE 1654494691000 UNTIL 1654494751000"
+          } ]
+        },
+        "body" : [ {
+          "matcher" : "exact",
+          "value" : ""
+        } ]
+      },
+      "response" : {
+        "status" : 200,
+        "body" : "H4sIAAAAAAAAALxSTW+bQBD9K9WesQUECHCrrCSnXGq3lVr5MN4dk1X2Ay1Dohbx3zvgrzjppZeiPaB5b96br0GQJzCiHkTArjfUifrnIKTvHYk6GbeR2GGj3UZbXKP0TjEhKfIsq7KiiCOBTv0Nu00Z065rURKq1UkuEjSTg8aD0f8wZbkWw94HC07immDyGz4SI+GtpkuAxSyQfLrgr2DMynj5PLmLukyODFT3wdt7bfALgrpkovqmYQX8wzFu3iKBAoLJHuTc79R6UsZ5WVRcJ76go82vdp6OeEQKWoq3cVGfoodRfm6agA2Q9m5OCfD6yc6EbsrzLbo7p5Br2oPp8M1gWSmN03QRF/w2cV7nSR3HP8R5uh8J6ZFw1njUxuir3fB3FniH8nZmlEtca14E61/liRn66kibC3RIOkArb1sI+F3TExOmOnr5jLTWv89WxwKaXnPHIot3CvY36SLfldlCVZVcyBtMFhUkSslduYfbfJL2PWF4+Kcci10Hzbym7fVRD+8wPlFCdzzxfe/ktCs2Olx7JIB4WzuugGPQ2mWH4UVLXPJ50nSvyxOx07Y1zKLQ47gdx/EPAAAA//8DAMb/i3q8AwAA",
+        "encodedBody" : true,
+        "templated" : false,
+        "headers" : {
+          "Content-Encoding" : [ "gzip" ],
+          "Content-Security-Policy" : [ "frame-ancestors *.newrelic.com" ],
+          "Content-Type" : [ "application/json" ],
+          "Date" : [ "Mon, 06 Jun 2022 10:43:14 GMT" ],
+          "Hoverfly" : [ "Was-Here" ],
+          "Proxied-By" : [ "Service Gateway" ],
+          "Strict-Transport-Security" : [ "max-age=31536000; includeSubDomains" ]
+        }
+      }
+    }, {
+      "request" : {
+        "path" : [ {
+          "matcher" : "exact",
+          "value" : "/v1/accounts/1805869/query"
+        } ],
+        "method" : [ {
+          "matcher" : "exact",
+          "value" : "GET"
+        } ],
+        "destination" : [ {
+          "matcher" : "exact",
+          "value" : "insights-api.newrelic.com"
+        } ],
+        "scheme" : [ {
+          "matcher" : "exact",
+          "value" : "https"
+        } ],
+        "query" : {
+          "nrql" : [ {
+            "matcher" : "exact",
+            "value" : "SELECT count(apm.service.instance.count) FROM Metric WHERE host = 'harness-datadog-dummy-pipeline-deployment-6f4cc8b8cb-jcgnh' AND  appName LIKE 'My Application' TIMESERIES SINCE 1654494691000 UNTIL 1654494751000"
+          } ]
+        },
+        "body" : [ {
+          "matcher" : "exact",
+          "value" : ""
+        } ]
+      },
+      "response" : {
+        "status" : 200,
+        "body" : "H4sIAAAAAAAAALxSTW+bQBD9K9WebQsjwIZbZSU55VK7rdTKh2F3IKvsB1qGRC3iv3cAf8RJL70UcYB5b96br16QJzCi6EXAtjPUiuJnL6TvHIliPRwXosRau4O2uEfpnWLCOkuTJE+yLFoIdOpv2CZmTLu2QUmodme5haCJHDTORv/DlOUaDJUPFpzEPcHo138kLoS3mq4BFrNA8umKv4IxO+Pl8+guimRzYqC6D97ea4NfENQ1E9U3DTvgD45x8xYJFBCM9iCnfsfW19so3WY514kv6Ojwq5mmIx6RgpbibVwU5+g8ys91HbAG0t5NKQFeP9mJ0I55vkF35xRyTRWYFt8MlpXiKI6XUcbvIUqLdF1E0Q9xme5HQnwiXDQetTH6Zjf8XATeobydCeUS95oXwfo3eWKCvjrS5grNSTO087aBgN81PTFhrKOTz0h7/ftidSqg7rQayy/jROVbWFZprpZxpcrlJkf+zcsyUVAlaZyM0r4jDA//lGOxbaGe1nS8Per+HcYnSuhOJ151To67YqP52hcCiLdVcgUcg8auWgwvWuKKz5PGe12dia22jWEWhQ6H4zAMfwAAAP//AwDFf5U4vAMAAA==",
+        "encodedBody" : true,
+        "templated" : false,
+        "headers" : {
+          "Content-Encoding" : [ "gzip" ],
+          "Content-Security-Policy" : [ "frame-ancestors *.newrelic.com" ],
+          "Content-Type" : [ "application/json" ],
+          "Date" : [ "Mon, 06 Jun 2022 10:43:16 GMT" ],
+          "Hoverfly" : [ "Was-Here" ],
+          "Proxied-By" : [ "Service Gateway" ],
+          "Strict-Transport-Security" : [ "max-age=31536000; includeSubDomains" ]
+        }
+      }
+    }, {
+      "request" : {
+        "path" : [ {
+          "matcher" : "exact",
+          "value" : "/v1/accounts/1805869/query"
+        } ],
+        "method" : [ {
+          "matcher" : "exact",
+          "value" : "GET"
+        } ],
+        "destination" : [ {
+          "matcher" : "exact",
+          "value" : "insights-api.newrelic.com"
+        } ],
+        "scheme" : [ {
+          "matcher" : "exact",
+          "value" : "https"
+        } ],
+        "query" : {
+          "nrql" : [ {
+            "matcher" : "exact",
+            "value" : "SELECT count(apm.service.instance.count) FROM Metric WHERE host = 'harness-datadog-dummy-pipeline-deployment-6f4cc8b8cb-xff2p' AND  appName LIKE 'My Application' TIMESERIES SINCE 1654494691000 UNTIL 1654494751000"
+          } ]
+        },
+        "body" : [ {
+          "matcher" : "exact",
+          "value" : ""
+        } ]
+      },
+      "response" : {
+        "status" : 200,
+        "body" : "H4sIAAAAAAAAALxSTW+bQBD9K9WewQJiKHCrrCanXGK3lVr5MN4dk1X2Ay1Dotbiv3cAf8RJLr0U7QHNe/PefB0EeQIj6oMI2PWGOlH/Ogjpe0eiTodtJHbYaLfRFtcovVNMSIt8uayWRZFEAp36CPucMaZd16IkVKuTXCRoIgeNs9H/MGW5FsPeBwtO4ppg9Du8J0bCW02XAItZIPl4wV/AmJXx8ml0F3V1c2Sgug3e3mqDDwjqkonqu4YV8A/HuHmLBAoIRnuQU79j62mZ5GVRcZ34jI42v9tpOuIeKWgpXsdFfYrOo/zSNAEbIO3dlBLg5ZOdCN2Y51t0X51CrmkPpsNXg2WlLMmyOCn4bZK8ztM6SX6K83TfE7Ij4axxr43RV7vh7yzwBuXtTCiXuNa8CNa/yhMT9M2RNhdoTpqhlbctBPyh6ZEJYx29fEJa6z9nq2MBTa+5Y5GX1S6pVBGjgl18A5jGOcg0zpIUyrLMiwyXo7TvCcPdP+VY7DpopjVtr4/68AbjEyV0xxPf906Ou2Kj+dojAcTb2nEFHIPWLjoMz1rigs+TxntdnIidtq1hFoUeh+0wDH8BAAD//wMAiMprjbwDAAA=",
+        "encodedBody" : true,
+        "templated" : false,
+        "headers" : {
+          "Content-Encoding" : [ "gzip" ],
+          "Content-Security-Policy" : [ "frame-ancestors *.newrelic.com" ],
+          "Content-Type" : [ "application/json" ],
+          "Date" : [ "Mon, 06 Jun 2022 10:43:16 GMT" ],
+          "Hoverfly" : [ "Was-Here" ],
+          "Proxied-By" : [ "Service Gateway" ],
+          "Strict-Transport-Security" : [ "max-age=31536000; includeSubDomains" ]
+        }
+      }
+    } ],
+    "globalActions" : {
+      "delays" : [ ]
+    }
+  },
+  "meta" : {
+    "schemaVersion" : "v5",
+    "hoverflyVersion" : "v1.1.5",
+    "timeExported" : "2022-06-06T10:43:20Z"
+  }
+}

@@ -25,6 +25,7 @@ import software.wings.service.impl.yaml.handler.BaseYamlHandler;
 import software.wings.service.impl.yaml.handler.NameValuePairYamlHandler;
 import software.wings.service.impl.yaml.handler.YamlHandlerFactory;
 import software.wings.utils.Utils;
+import software.wings.utils.YamlUtils;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -64,7 +65,7 @@ public class TemplateExpressionYamlHandler extends BaseYamlHandler<TemplateExpre
   public Yaml toYaml(TemplateExpression bean, String appId) {
     NameValuePairYamlHandler nameValuePairYamlHandler = yamlHandlerFactory.getYamlHandler(YamlType.NAME_VALUE_PAIR);
     List<NameValuePair.Yaml> nameValuePairYamlList =
-        Utils.toNameValuePairYamlList(bean.getMetadata(), appId, nameValuePairYamlHandler);
+        YamlUtils.toNameValuePairYamlList(bean.getMetadata(), appId, nameValuePairYamlHandler);
 
     return Yaml.Builder.aYaml()
         .withExpression(bean.getExpression())

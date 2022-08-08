@@ -11,7 +11,7 @@ import static java.lang.String.format;
 
 import io.harness.cistatus.StatusCreationResponse;
 import io.harness.exception.InvalidRequestException;
-import io.harness.gitsync.common.impl.GitUtils;
+import io.harness.git.GitClientHelper;
 import io.harness.network.Http;
 import io.harness.security.encryption.EncryptedDataDetail;
 
@@ -30,7 +30,6 @@ import retrofit2.converter.jackson.JacksonConverterFactory;
 @Singleton
 @Slf4j
 public class BitbucketServiceImpl implements BitbucketService {
-  private final int EXP_TIME = 5 * 60 * 1000;
   private static final String STATE = "state";
 
   @Override
@@ -42,7 +41,7 @@ public class BitbucketServiceImpl implements BitbucketService {
     try {
       Response<StatusCreationResponse> statusCreationResponseResponse;
 
-      if (!GitUtils.isBitBucketCloud(bitbucketConfig.getBitbucketUrl())) {
+      if (!GitClientHelper.isBitBucketSAAS(bitbucketConfig.getBitbucketUrl())) {
         statusCreationResponseResponse =
             getBitbucketClient(bitbucketConfig, encryptionDetails)
                 .createOnPremStatus(getHeaderWithCredentials(token, userName), sha, bodyObjectMap)

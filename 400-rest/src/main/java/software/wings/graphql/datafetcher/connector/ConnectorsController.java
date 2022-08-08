@@ -50,6 +50,7 @@ import software.wings.graphql.schema.type.connector.QLJiraConnector;
 import software.wings.graphql.schema.type.connector.QLLogzConnector;
 import software.wings.graphql.schema.type.connector.QLNewRelicConnector;
 import software.wings.graphql.schema.type.connector.QLNexusConnector;
+import software.wings.graphql.schema.type.connector.QLOciHelmRepoConnector;
 import software.wings.graphql.schema.type.connector.QLPrometheusConnector;
 import software.wings.graphql.schema.type.connector.QLServiceNowConnector;
 import software.wings.graphql.schema.type.connector.QLSftpConnector;
@@ -145,6 +146,8 @@ public class ConnectorsController {
         return QLSftpConnector.builder();
       case HTTP_HELM_REPO:
         return QLHttpHelmRepoConnector.builder();
+      case OCI_HELM_REPO:
+        return QLOciHelmRepoConnector.builder();
       case AMAZON_S3_HELM_REPO:
         return QLAmazonS3HelmRepoConnector.builder();
       case GCS_HELM_REPO:

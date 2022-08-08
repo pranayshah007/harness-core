@@ -40,10 +40,10 @@ import io.harness.security.encryption.EncryptedDataDetail;
 import software.wings.WingsBaseTest;
 import software.wings.beans.BambooConfig;
 import software.wings.beans.JenkinsConfig;
-import software.wings.beans.artifact.Artifact.ArtifactMetadataKeys;
+import software.wings.beans.artifact.ArtifactMetadataKeys;
 import software.wings.beans.artifact.ArtifactStreamAttributes;
 import software.wings.beans.artifact.ArtifactStreamType;
-import software.wings.beans.artifact.AzureArtifactsArtifactStream.ProtocolType;
+import software.wings.beans.artifact.AzureArtifactsArtifactStreamProtocolType;
 import software.wings.beans.config.NexusConfig;
 import software.wings.beans.settings.azureartifacts.AzureArtifactsConfig;
 import software.wings.beans.settings.azureartifacts.AzureArtifactsPATConfig;
@@ -76,7 +76,7 @@ import org.mockito.Mock;
 
 @TargetModule(HarnessModule._930_DELEGATE_TASKS)
 public class ArtifactCollectionTaskHelperTest extends WingsBaseTest {
-  private static final String MAVEN = ProtocolType.maven.name();
+  private static final String MAVEN = AzureArtifactsArtifactStreamProtocolType.maven.name();
   private static final String FEED = "FEED";
   private static final String PACKAGE_ID = "PACKAGE_ID";
   private static final String PACKAGE_NAME_MAVEN = "GROUP_ID:ARTIFACT_ID";
@@ -133,8 +133,8 @@ public class ArtifactCollectionTaskHelperTest extends WingsBaseTest {
     String fileName = "file.war";
     String content = "file content";
     InputStream inputStream = new ByteArrayInputStream(content.getBytes());
-    when(azureArtifactsService.downloadArtifact(any(AzureArtifactsConfig.class), anyListOf(EncryptedDataDetail.class),
-             any(ArtifactStreamAttributes.class), anyMap()))
+    when(azureArtifactsService.downloadArtifact(
+             any(AzureArtifactsConfig.class), any(), any(ArtifactStreamAttributes.class), anyMap()))
         .thenReturn(ImmutablePair.of(fileName, inputStream));
 
     Pair<String, InputStream> pair = artifactCollectionTaskHelper.downloadArtifactAtRuntime(
@@ -161,9 +161,8 @@ public class ArtifactCollectionTaskHelperTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void shouldGetAzureArtifactsFileSize() {
     String fileName = "file.war";
-    String content = "file content";
-    when(azureArtifactsService.listFiles(any(AzureArtifactsConfig.class), anyListOf(EncryptedDataDetail.class),
-             any(ArtifactStreamAttributes.class), anyMap(), eq(false)))
+    when(azureArtifactsService.listFiles(
+             any(AzureArtifactsConfig.class), any(), any(ArtifactStreamAttributes.class), anyMap(), eq(false)))
         .thenReturn(Arrays.asList(new AzureArtifactsPackageFileInfo("random1", 4),
             new AzureArtifactsPackageFileInfo(fileName, 8), new AzureArtifactsPackageFileInfo("random2", 16)));
     assertThat(getArtifactFileSize(fileName)).isEqualTo(8);

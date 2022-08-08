@@ -44,7 +44,6 @@ import io.harness.rest.RestResponse;
 import io.harness.scheduler.PersistentScheduler;
 import io.harness.security.annotations.LearningEngineAuth;
 import io.harness.security.annotations.PublicApi;
-import io.harness.security.annotations.PublicApiWithWhitelist;
 import io.harness.seeddata.SampleDataProviderService;
 
 import software.wings.beans.Account;
@@ -520,8 +519,11 @@ public class AccountResource {
   @ExceptionMetered
   @LearningEngineAuth
   public RestResponse<Boolean> validateDelegateToken(@QueryParam("accountId") @NotEmpty String accountId,
-      @QueryParam("delegateToken") @NotNull String delegateToken, @QueryParam("delegateId") String delegateId) {
-    authService.validateDelegateToken(accountId, substringAfter(delegateToken, "Delegate "), delegateId, false);
+      @QueryParam("delegateToken") @NotNull String delegateToken, @QueryParam("delegateId") String delegateId,
+      @QueryParam("delegateTokenName") String delegateTokenName,
+      @QueryParam("agentMtlsAuthority") String agentMtlsAuthority) {
+    authService.validateDelegateToken(accountId, substringAfter(delegateToken, "Delegate "), delegateId,
+        delegateTokenName, agentMtlsAuthority, false);
     return new RestResponse<>(true);
   }
 
@@ -564,7 +566,7 @@ public class AccountResource {
   }
 
   @GET
-  @PublicApiWithWhitelist
+  @PublicApi
   @Path("/authentication-info")
   public RestResponse<AuthenticationInfo> getAuthenticationInfo(@QueryParam("accountId") String accountId) {
     return new RestResponse<>(accountService.getAuthenticationInfo(accountId));
@@ -660,6 +662,26 @@ public class AccountResource {
       return RestResponse.Builder.aRestResponse()
           .withResponseMessages(
               Lists.newArrayList(ResponseMessage.builder().message("User not allowed to query licenses").build()))
+          .build();
+    }
+  }
+
+  @GET
+  @Path("{accountId}/reset-cache")
+  public RestResponse<Boolean> resetCache(@PathParam("accountId") String accountId) {
+    User existingUser = UserThreadLocal.get();
+    if (existingUser == null) {
+      throw new InvalidRequestException("Invalid User");
+    }
+
+    if (harnessUserGroupService.isHarnessSupportUser(existingUser.getUuid())) {
+      authService.evictUserPermissionAndRestrictionCacheForAccount(accountId, true, true);
+      log.info("Reset cache successful for account id {}", accountId);
+      return new RestResponse<>(Boolean.TRUE);
+    } else {
+      return RestResponse.Builder.aRestResponse()
+          .withResponseMessages(
+              Lists.newArrayList(ResponseMessage.builder().message("User not allowed to reset cache").build()))
           .build();
     }
   }

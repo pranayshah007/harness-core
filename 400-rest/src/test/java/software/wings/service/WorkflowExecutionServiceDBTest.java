@@ -49,6 +49,7 @@ import static org.mockito.Mockito.when;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
+import io.harness.beans.ArtifactMetadata;
 import io.harness.beans.ExecutionStatus;
 import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
@@ -79,7 +80,7 @@ import software.wings.beans.WorkflowExecution;
 import software.wings.beans.WorkflowExecution.WorkflowExecutionBuilder;
 import software.wings.beans.WorkflowExecution.WorkflowExecutionKeys;
 import software.wings.beans.artifact.Artifact;
-import software.wings.beans.artifact.Artifact.ArtifactMetadataKeys;
+import software.wings.beans.artifact.ArtifactMetadataKeys;
 import software.wings.beans.infrastructure.Host;
 import software.wings.events.TestUtils;
 import software.wings.resources.WorkflowResource;
@@ -433,7 +434,7 @@ public class WorkflowExecutionServiceDBTest extends WingsBaseTest {
     Artifact artifact = Artifact.Builder.anArtifact()
                             .withAppId("APP_ID")
                             .withArtifactStreamId(generateUuid())
-                            .withMetadata(ImmutableMap.of(ArtifactMetadataKeys.buildNo, "1.2"))
+                            .withMetadata(new ArtifactMetadata(ImmutableMap.of(ArtifactMetadataKeys.buildNo, "1.2")))
                             .withDisplayName("Some artifact")
                             .build();
 
@@ -464,15 +465,17 @@ public class WorkflowExecutionServiceDBTest extends WingsBaseTest {
 
     Artifact artifact = Artifact.Builder.anArtifact()
                             .withAppId(workflowExecution.getAppId())
+                            .withUuid(generateUuid())
                             .withArtifactStreamId(generateUuid())
-                            .withMetadata(ImmutableMap.of(ArtifactMetadataKeys.buildNo, "1.2"))
+                            .withMetadata(new ArtifactMetadata(ImmutableMap.of(ArtifactMetadataKeys.buildNo, "1.2")))
                             .withDisplayName("Some artifact")
                             .build();
 
     Artifact artifact1 = Artifact.Builder.anArtifact()
                              .withAppId(workflowExecution.getAppId())
+                             .withUuid(generateUuid())
                              .withArtifactStreamId(generateUuid())
-                             .withMetadata(ImmutableMap.of(ArtifactMetadataKeys.buildNo, "1.2"))
+                             .withMetadata(new ArtifactMetadata(ImmutableMap.of(ArtifactMetadataKeys.buildNo, "1.2")))
                              .withDisplayName("Some artifact")
                              .build();
 

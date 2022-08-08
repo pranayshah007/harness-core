@@ -18,7 +18,6 @@ import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.artifact.ArtifactMetadataKeys;
-import io.harness.artifact.ArtifactUtilities;
 import io.harness.artifactory.ArtifactoryClientImpl;
 import io.harness.artifactory.ArtifactoryConfigRequest;
 import io.harness.artifactory.service.ArtifactoryRegistryServiceImpl;
@@ -255,28 +254,6 @@ public class ArtifactoryRegistryServiceImplTest extends CategoryTest {
     assertThat(response).isEqualTo(true);
   }
 
-  @Test
-  @Owner(developers = MLUKIC)
-  @Category(UnitTests.class)
-  public void testVerifyArtifactManifestUrl() {
-    ArtifactoryConfigRequest artifactoryInternalConfig = ArtifactoryConfigRequest.builder()
-                                                             .artifactoryUrl(ARTIFACTORY_URL)
-                                                             .username(ARTIFACTORY_USERNAME)
-                                                             .password(ARTIFACTORY_PASSWORD.toCharArray())
-                                                             .artifactRepositoryUrl("test2.artifactory.harness.io")
-                                                             .build();
-
-    doReturn(true)
-        .when(artifactoryClient)
-        .verifyArtifactManifestUrl(artifactoryInternalConfig,
-            buildDetailsData.get("bdi2").get(0).getMetadata().get(ArtifactMetadataKeys.ARTIFACT_MANIFEST_URL));
-
-    boolean response = artifactoryRegistryService.verifyArtifactManifestUrl(
-        buildDetailsData.get("bdi2").get(0), artifactoryInternalConfig);
-    assertThat(response).isNotNull();
-    assertThat(response).isEqualTo(true);
-  }
-
   private BuildDetailsInternal createBuildDetails(
       String repoUrl, String port, String repoName, String imageName, String tag) {
     return BuildDetailsInternal.builder()
@@ -294,10 +271,6 @@ public class ArtifactoryRegistryServiceImplTest extends CategoryTest {
     Map<String, String> metadata = new HashMap<>();
     metadata.put(ArtifactMetadataKeys.IMAGE, generateArtifactPullUrl(hostname, port, imagePath, imageTag));
     metadata.put(ArtifactMetadataKeys.TAG, imageTag);
-    metadata.put(ArtifactMetadataKeys.ARTIFACT_MANIFEST_URL,
-        hostname + "/artifactory/" + ArtifactUtilities.trimSlashforwardChars(repoName) + "/"
-            + ArtifactUtilities.trimSlashforwardChars(imagePath) + "/"
-            + ArtifactUtilities.trimSlashforwardChars(imageTag) + "/manifest.json");
     return metadata;
   }
 }

@@ -42,7 +42,8 @@ public class RemoveDuplicateUserGroupNameMigration implements Migration {
                   .withLimit(Long.toString(userGroupService.getCountOfUserGroups(account.getUuid())))
                   .addFilter(UserGroup.ACCOUNT_ID_KEY, SearchFilter.Operator.EQ, account.getUuid())
                   .build();
-          List<UserGroup> userGroups = userGroupService.list(account.getUuid(), pageRequest, false).getResponse();
+          List<UserGroup> userGroups =
+              userGroupService.list(account.getUuid(), pageRequest, false, null, null).getResponse();
           Set<String> alreadyUsedNames = new HashSet<>();
           userGroups.forEach(userGroup -> {
             if (userGroup.isImportedByScim()) {

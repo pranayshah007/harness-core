@@ -16,6 +16,7 @@ import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
+import io.harness.delegate.task.azure.common.validator.Validators;
 import io.harness.exception.InvalidRequestException;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
@@ -23,7 +24,6 @@ import io.harness.logging.LogLevel;
 
 import software.wings.beans.artifact.ArtifactStreamAttributes;
 import software.wings.delegatetasks.azure.common.context.ArtifactDownloaderContext;
-import software.wings.delegatetasks.azure.common.validator.Validators;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;

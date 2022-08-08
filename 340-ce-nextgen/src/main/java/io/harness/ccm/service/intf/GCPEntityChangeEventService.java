@@ -11,4 +11,6 @@ import io.harness.eventsframework.entity_crud.EntityChangeDTO;
 
 public interface GCPEntityChangeEventService {
   boolean processGCPEntityCreateEvent(EntityChangeDTO entityChangeDTO);
+  boolean processGCPEntityUpdateEvent(EntityChangeDTO entityChangeDTO);
+  boolean processGCPEntityDeleteEvent(EntityChangeDTO entityChangeDTO);
 }

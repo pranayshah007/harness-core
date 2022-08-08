@@ -7,12 +7,18 @@
 
 package io.harness.common;
 
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+
 import static java.util.Objects.isNull;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.pms.yaml.ParameterField;
 
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
 import lombok.experimental.UtilityClass;
 
 @UtilityClass
@@ -52,15 +58,49 @@ public class ParameterFieldHelper {
     return isNull(fieldValue.getValue()) ? "" : fieldValue.getValue();
   }
 
-  public ParameterField<String> getParameterFieldHandleValueNull(ParameterField<String> fieldValue) {
-    if (isNull(fieldValue)) {
-      return null;
+  public Optional<String> getParameterFieldFinalValue(ParameterField<String> fieldValue) {
+    if (fieldValue == null) {
+      return Optional.empty();
     }
 
-    if (isNull(fieldValue.getValue())) {
-      fieldValue.setValue("");
+    return Optional.ofNullable(fieldValue.fetchFinalValue().toString());
+  }
+
+  public <T> boolean hasListValue(ParameterField<List<T>> listParameterField, boolean allowExpression) {
+    if (ParameterField.isNull(listParameterField)) {
+      return false;
     }
 
-    return fieldValue;
+    if (allowExpression && listParameterField.isExpression()) {
+      return true;
+    }
+
+    return isNotEmpty(getParameterFieldValue(listParameterField));
+  }
+
+  public boolean hasStringValue(ParameterField<String> parameterField, boolean allowExpression) {
+    if (ParameterField.isNull(parameterField)) {
+      return false;
+    }
+
+    if (allowExpression && parameterField.isExpression()) {
+      return true;
+    }
+
+    return isNotEmpty(getParameterFieldValue(parameterField));
+  }
+
+  public List<String> getParameterFieldListValue(
+      ParameterField<List<String>> parameterFieldList, boolean allowGenericExpression) {
+    if (!hasListValue(parameterFieldList, false)) {
+      return Collections.emptyList();
+    }
+
+    List<String> parameterFieldListValue = getParameterFieldValue(parameterFieldList);
+    return allowGenericExpression
+        ? parameterFieldListValue
+        : parameterFieldListValue.stream()
+              .filter(listItem -> !NGExpressionUtils.matchesGenericExpressionPattern(listItem))
+              .collect(Collectors.toList());
   }
 }

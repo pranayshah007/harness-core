@@ -16,6 +16,7 @@ import static io.harness.ccm.commons.constants.ViewFieldConstants.AWS_USAGE_TYPE
 import static io.harness.ccm.commons.constants.ViewFieldConstants.CLOUD_PROVIDER_FIELD_ID;
 import static io.harness.ccm.commons.constants.ViewFieldConstants.CLOUD_SERVICE_NAME_FIELD_ID;
 import static io.harness.ccm.commons.constants.ViewFieldConstants.CLUSTER_NAME_FIELD_ID;
+import static io.harness.ccm.commons.constants.ViewFieldConstants.CLUSTER_TYPE_FIELD_ID;
 import static io.harness.ccm.commons.constants.ViewFieldConstants.ENV_NAME_FIELD_ID;
 import static io.harness.ccm.commons.constants.ViewFieldConstants.GCP_PRODUCT_FIELD_ID;
 import static io.harness.ccm.commons.constants.ViewFieldConstants.GCP_PROJECT_FIELD_ID;
@@ -80,6 +81,7 @@ public class ViewFieldUtils {
 
   public static List<QLCEViewField> getClusterFields() {
     return ImmutableList.of(QLCEViewField.builder().fieldId("clusterName").fieldName("Cluster Name").build(),
+        QLCEViewField.builder().fieldId("clusterType").fieldName("Cluster Type").build(),
         QLCEViewField.builder().fieldId("namespace").fieldName("Namespace").build(),
         QLCEViewField.builder().fieldId("workloadName").fieldName("Workload").build(),
         QLCEViewField.builder().fieldId("appId").fieldName("Application").build(),
@@ -89,6 +91,7 @@ public class ViewFieldUtils {
 
   public static List<QLCEViewField> getNgClusterFields() {
     return ImmutableList.of(QLCEViewField.builder().fieldId(CLUSTER_NAME_FIELD_ID).fieldName("Cluster Name").build(),
+        QLCEViewField.builder().fieldId(CLUSTER_TYPE_FIELD_ID).fieldName("Cluster Type").build(),
         QLCEViewField.builder().fieldId(NAMESPACE_FIELD_ID).fieldName("Namespace").build(),
         QLCEViewField.builder().fieldId(NAMESPACE_FIELD_ID).fieldName("Namespace Id").build(),
         QLCEViewField.builder().fieldId(WORKLOAD_NAME_FIELD_ID).fieldName("Workload").build(),
@@ -110,7 +113,12 @@ public class ViewFieldUtils {
   public static List<QLCEViewField> getCommonFields() {
     return ImmutableList.of(QLCEViewField.builder().fieldId(REGION_FIELD_ID).fieldName("Region").build(),
         QLCEViewField.builder().fieldId("product").fieldName("Product").build(),
+        QLCEViewField.builder().fieldId("cloudProvider").fieldName("Cloud Provider").build(),
         QLCEViewField.builder().fieldId("label").fieldName("Label").build(),
         QLCEViewField.builder().fieldId("none").fieldName(NONE_FIELD).build());
+  }
+
+  public static String getBusinessMappingUnallocatedCostDefaultName() {
+    return "Cost categories default";
   }
 }

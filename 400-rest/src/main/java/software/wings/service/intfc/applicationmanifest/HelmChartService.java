@@ -61,4 +61,6 @@ public interface HelmChartService extends OwnedByApplicationManifest {
       String accountId, String appId, String serviceId, String appManifestName, boolean collectUsingDelegate);
 
   HelmChart createHelmChartWithVersionForAppManifest(ApplicationManifest appManifest, String versionNumber);
+
+  HelmChart createOrUpdateAppVersion(@Valid HelmChart helmChart);
 }

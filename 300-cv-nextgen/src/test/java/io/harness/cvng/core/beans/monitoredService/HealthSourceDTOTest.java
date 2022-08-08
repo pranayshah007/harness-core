@@ -77,8 +77,6 @@ public class HealthSourceDTOTest extends CvNextGenTestBase {
         .accountId(builderFactory.getContext().getAccountId())
         .orgIdentifier(builderFactory.getContext().getOrgIdentifier())
         .projectIdentifier(builderFactory.getContext().getProjectIdentifier())
-        .serviceIdentifier(builderFactory.getContext().getServiceIdentifier())
-        .envIdentifier(builderFactory.getContext().getEnvIdentifier())
         .identifier(monitoringServiceIdentifier + "/" + healthSourceIdentifier)
         .monitoringSourceName(healthSourceIdentifier)
         .metricPack(
@@ -99,7 +97,7 @@ public class HealthSourceDTOTest extends CvNextGenTestBase {
             .connectorRef("connectorIdentifier")
             .feature("feature")
             .metricPacks(new HashSet<>(Collections.singletonList(
-                MetricPackDTO.builder().identifier(cvMonitoringCategory.getDisplayName()).build())))
+                TimeSeriesMetricPackDTO.builder().identifier(cvMonitoringCategory.getDisplayName()).build())))
             .metricDefinitions(Collections.EMPTY_LIST)
             .build();
     return HealthSource.builder()

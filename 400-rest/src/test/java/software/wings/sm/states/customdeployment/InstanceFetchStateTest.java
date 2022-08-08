@@ -92,8 +92,10 @@ import software.wings.sm.ExecutionContext;
 import software.wings.sm.ExecutionResponse;
 import software.wings.sm.StateExecutionContext;
 import software.wings.sm.WorkflowStandardParams;
+import software.wings.sm.WorkflowStandardParamsExtensionService;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.inject.Inject;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -125,6 +127,8 @@ public class InstanceFetchStateTest extends WingsBaseTest {
   @Mock private ServiceTemplateHelper serviceTemplateHelper;
   @Mock private StateExecutionService stateExecutionService;
 
+  @Inject private WorkflowStandardParamsExtensionService workflowStandardParamsExtensionService;
+
   @InjectMocks private InstanceFetchState state = new InstanceFetchState("Fetch Instances");
 
   private static String resourcePath = "400-rest/src/test/resources/software/wings/customdeployment";
@@ -146,14 +150,16 @@ public class InstanceFetchStateTest extends WingsBaseTest {
     Key<ServiceTemplate> serviceTemplateKey = new Key<>(ServiceTemplate.class, "collection", "id");
     doReturn(singletonList(serviceTemplateKey))
         .when(mockServiceTemplateService)
-        .getTemplateRefKeysByService(anyString(), anyString(), anyString());
+        .getTemplateRefKeysByService(any(), any(), any());
     final PhaseElement phaseElement =
         PhaseElement.builder().serviceElement(ServiceElement.builder().uuid(SERVICE_ID).build()).build();
     doReturn(phaseElement).when(context).getContextElement(any(), any());
     WorkflowStandardParams workflowStandardParams =
         aWorkflowStandardParams().withAppId(APP_ID).withEnvId(ENV_ID).build();
-    on(workflowStandardParams).set("environmentService", environmentService);
     doReturn(workflowStandardParams).when(context).getContextElement(ContextElementType.STANDARD);
+
+    on(workflowStandardParamsExtensionService).set("environmentService", environmentService);
+    on(state).set("workflowStandardParamsExtensionService", workflowStandardParamsExtensionService);
 
     doReturn(ACCOUNT_ID).when(context).getAccountId();
     doReturn(APP_ID).when(context).getAppId();
@@ -176,12 +182,12 @@ public class InstanceFetchStateTest extends WingsBaseTest {
             eq(CommandUnitType.CUSTOM_DEPLOYMENT_FETCH_INSTANCES.getName()), anyList());
     doReturn("some-string").when(context).appendStateExecutionId(anyString());
     doReturn(SweepingOutputInstance.builder()).when(context).prepareSweepingOutputBuilder(WORKFLOW);
-    doAnswer(invocation -> invocation.getArgumentAt(0, String.class)).when(context).renderExpression(anyString());
-    doAnswer(invocation -> invocation.getArgumentAt(0, String.class))
+    doAnswer(invocation -> invocation.getArgument(0, String.class)).when(context).renderExpression(anyString());
+    doAnswer(invocation -> invocation.getArgument(0, String.class))
         .when(context)
         .renderExpression(anyString(), any(StateExecutionContext.class));
     doReturn("5").when(context).renderExpression(timeoutExpr);
-    doAnswer(invocation -> invocation.getArgumentAt(0, String.class))
+    doAnswer(invocation -> invocation.getArgument(0, String.class))
         .when(expressionEvaluator)
         .substitute(anyString(), anyMap());
     doNothing().when(stateExecutionService).appendDelegateTaskDetails(anyString(), any());
@@ -297,9 +303,8 @@ public class InstanceFetchStateTest extends WingsBaseTest {
     assertThat(executionResponse.getNotifyElements()).isEmpty();
     assertThat(executionResponse.getExecutionStatus()).isEqualTo(FAILED);
     assertThat(executionResponse.getErrorMessage())
-        .isEqualTo(
-            "JsonParseException: Unexpected character (':' (code 58)): was expecting comma to separate ARRAY entries\n"
-            + " at [Source: {\"Instances\": [\"ip\":\"1.1\"},{\"ip\":\"2.2\"}]}; line: 1, column: 21]");
+        .contains(
+            "JsonParseException: Unexpected character (':' (code 58)): was expecting comma to separate Array entries");
   }
 
   @Test
@@ -431,7 +436,7 @@ public class InstanceFetchStateTest extends WingsBaseTest {
                    .map(HostElement::getProperties)
                    .map(v -> v.get("adminPass"))
                    .collect(Collectors.toList()))
-        .containsOnly((String) null);
+        .containsOnly("", null);
     assertThat(instanceElements.stream()
                    .map(InstanceElement::getHost)
                    .map(HostElement::getProperties)

@@ -1,0 +1,10 @@
+package(default_visibility = ["//platform-service/service:__subpackages__"])
+
+load("//:tools/bazel/macros.bzl", "resources")
+
+resources()
+
+filegroup(
+    name = "resource",
+    srcs = glob(["**"]),
+)

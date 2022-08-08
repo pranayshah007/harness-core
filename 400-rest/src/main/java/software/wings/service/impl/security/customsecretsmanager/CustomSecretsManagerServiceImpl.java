@@ -36,6 +36,7 @@ import software.wings.security.encryption.secretsmanagerconfigs.CustomSecretsMan
 import software.wings.service.impl.security.AbstractSecretServiceImpl;
 import software.wings.service.intfc.security.CustomSecretsManagerService;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.mongodb.DuplicateKeyException;
@@ -86,7 +87,7 @@ public class CustomSecretsManagerServiceImpl extends AbstractSecretServiceImpl i
     if (!secretsManagerConfig.isExecuteOnDelegate()) {
       customSecretsManagerConnectorHelper.setConnectorInConfig(secretsManagerConfig, testVariables);
     }
-    validateInternal(secretsManagerConfig, testVariables);
+    validateInternal(secretsManagerConfig, testVariables, false);
     return true;
   }
 
@@ -141,7 +142,7 @@ public class CustomSecretsManagerServiceImpl extends AbstractSecretServiceImpl i
       customSecretsManagerConnectorHelper.setConnectorInConfig(secretsManagerConfig, testVariables);
     }
     setCommandPathInConfig(secretsManagerConfig);
-    validateInternal(secretsManagerConfig, testVariables);
+    validateInternal(secretsManagerConfig, testVariables, secretsManagerConfig.isSkipValidation());
     secretsManagerConfig.setRemoteHostConnector(null);
     secretsManagerConfig.setCustomSecretsManagerShellScript(null);
     try {
@@ -184,8 +185,9 @@ public class CustomSecretsManagerServiceImpl extends AbstractSecretServiceImpl i
     });
   }
 
-  private void validateInternal(
-      CustomSecretsManagerConfig secretsManagerConfig, Set<EncryptedDataParams> testVariables) {
+  @VisibleForTesting
+  public void validateInternal(CustomSecretsManagerConfig secretsManagerConfig, Set<EncryptedDataParams> testVariables,
+      boolean skipConnectivityValidation) {
     checkIfSecretsManagerConfigCanBeCreatedOrUpdated(secretsManagerConfig.getAccountId());
     if (secretsManagerConfig.isDefault()) {
       throw new InvalidArgumentsException("Custom secret manager cannot be set as default secret manager", USER);
@@ -193,7 +195,9 @@ public class CustomSecretsManagerServiceImpl extends AbstractSecretServiceImpl i
     CustomSecretsManagerValidationUtils.validateName(secretsManagerConfig.getName());
     CustomSecretsManagerValidationUtils.validateConnectionAttributes(secretsManagerConfig);
     CustomSecretsManagerValidationUtils.validateVariables(secretsManagerConfig, testVariables);
-    validateConnectivity(secretsManagerConfig, testVariables);
+    if (!skipConnectivityValidation) {
+      validateConnectivity(secretsManagerConfig, testVariables);
+    }
   }
 
   private void validateConnectivity(

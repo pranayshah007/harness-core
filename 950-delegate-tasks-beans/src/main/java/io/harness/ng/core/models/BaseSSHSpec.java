@@ -7,12 +7,16 @@
 
 package io.harness.ng.core.models;
 
+import static io.harness.annotations.dev.HarnessTeam.CDP;
+
+import io.harness.annotations.dev.OwnedBy;
 import io.harness.ng.core.dto.secrets.BaseSSHSpecDTO;
 
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
 @JsonTypeInfo(
     use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.EXISTING_PROPERTY, property = "type", visible = true)
-public abstract class BaseSSHSpec {
-  public abstract BaseSSHSpecDTO toDTO();
+@OwnedBy(CDP)
+public interface BaseSSHSpec {
+  BaseSSHSpecDTO toDTO();
 }

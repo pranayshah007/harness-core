@@ -28,10 +28,12 @@ import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.connector.CombineCcmK8sConnectorResponseDTO;
 import io.harness.connector.ConnectorCatalogueResponseDTO;
 import io.harness.connector.ConnectorCategory;
 import io.harness.connector.ConnectorDTO;
 import io.harness.connector.ConnectorFilterPropertiesDTO;
+import io.harness.connector.ConnectorRegistryFactory;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.ConnectorValidationResult;
 import io.harness.connector.accesscontrol.ResourceTypes;
@@ -73,7 +75,9 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
@@ -140,7 +144,8 @@ public class ConnectorResource {
   @GET
   @Path("{identifier}")
   @ApiOperation(value = "Get Connector", nickname = "getConnector")
-  @Operation(operationId = "getConnector", summary = "Get the Connector by accountIdentifier and connectorIdentifier",
+  @Operation(operationId = "getConnector", summary = "Return Connector details",
+      description = "Returns the Connector's details for the given Account and Connector ID.",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "default",
@@ -169,8 +174,9 @@ public class ConnectorResource {
   @GET
   @Path("validateUniqueIdentifier")
   @ApiOperation(value = "Validate Identifier is unique", nickname = "validateTheIdentifierIsUnique")
-  @Operation(operationId = "validateTheIdentifierIsUnique",
-      summary = "Validate the Connector by Account Identifier and Connector Identifier",
+  @Operation(operationId = "validateTheIdentifierIsUnique", summary = "Test a Harness Connector",
+      description =
+          "Tests if a Connector can successfully connect Harness to a third-party tool using the an Account and Connector ID.",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "default",
@@ -194,8 +200,8 @@ public class ConnectorResource {
 
   @GET
   @ApiOperation(value = "Gets Connector list", nickname = "getConnectorList")
-  @Operation(operationId = "getConnectorList",
-      summary = "Fetches the list of Connectors corresponding to the request's filter criteria.",
+  @Operation(operationId = "getConnectorList", summary = "List all Connectors using filters",
+      description = "Lists all the Connectors matching the specified filters.",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
@@ -275,8 +281,53 @@ public class ConnectorResource {
   }
 
   @POST
+  @Path("/ccmK8sList")
+  @ApiOperation(value = "Gets CCMK8S Connector list", nickname = "getCCMK8SConnectorList")
+  @Operation(operationId = "getCCMK8SConnectorList",
+      summary = "Fetches the list of CMC K8S Connectors corresponding to the request's filter criteria.",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "Returns the list of Connectors")
+      })
+  public ResponseDTO<PageResponse<CombineCcmK8sConnectorResponseDTO>>
+  ccmK8sList(@Parameter(description = "Page number of navigation. The default value is 0") @QueryParam(
+                 NGResourceFilterConstants.PAGE_KEY) @DefaultValue("0") int page,
+      @Parameter(description = "Number of entries per page. The default value is 100") @QueryParam(
+          NGResourceFilterConstants.SIZE_KEY) @DefaultValue("100") int size,
+      @Parameter(description = ACCOUNT_PARAM_MESSAGE, required = true) @NotBlank @QueryParam(
+          NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
+      @Parameter(
+          description =
+              "This would be used to filter Connectors. Any Connector having the specified string in its Name, ID and Tag would be filtered.")
+      @QueryParam(NGResourceFilterConstants.SEARCH_TERM_KEY) String searchTerm,
+      @Parameter(description = ORG_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgIdentifier,
+      @Parameter(description = PROJECT_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier,
+      @QueryParam(NGResourceFilterConstants.FILTER_KEY) String filterIdentifier,
+      @Parameter(description = "Specify whether or not to include all the Connectors"
+              + " accessible at the scope. For eg if set as true, at the Project scope we will get"
+              + " org and account Connector also in the response") @QueryParam(INCLUDE_ALL_CONNECTORS_ACCESSIBLE)
+      Boolean includeAllConnectorsAccessibleAtScope,
+      @RequestBody(required = true, description = "Details of the filters applied")
+      @Body ConnectorFilterPropertiesDTO connectorListFilter, @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo,
+      @Parameter(
+          description =
+              "This when set to true along with GitSync enabled for the Connector, you can get one connector entity from each identifier. "
+              + "The connector entity can belong to any branch") @QueryParam("getDistinctFromBranches")
+      Boolean getDistinctFromBranches) {
+    accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
+        Resource.of(ResourceTypes.CONNECTOR, null), VIEW_CONNECTOR_PERMISSION);
+    return ResponseDTO.newResponse(getNGPageResponse(connectorService.listCcmK8S(page, size, accountIdentifier,
+        connectorListFilter, orgIdentifier, projectIdentifier, filterIdentifier, searchTerm,
+        includeAllConnectorsAccessibleAtScope, getDistinctFromBranches)));
+  }
+
+  @POST
   @ApiOperation(value = "Creates a Connector", nickname = "createConnector")
-  @Operation(operationId = "createConnector", summary = "Creates a Connector",
+  @Operation(operationId = "createConnector", summary = "Create a Connector",
+      description = "Creates a new Harness Connector.",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
@@ -288,24 +339,30 @@ public class ConnectorResource {
       @Parameter(description = ACCOUNT_PARAM_MESSAGE, required = true) @NotBlank @QueryParam(
           NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
       @BeanParam GitEntityCreateInfoDTO gitEntityCreateInfo) {
-    accessControlClient.checkForAccessOrThrow(
-        ResourceScope.of(accountIdentifier, connector.getConnectorInfo().getOrgIdentifier(),
-            connector.getConnectorInfo().getProjectIdentifier()),
-        Resource.of(ResourceTypes.CONNECTOR, null), EDIT_CONNECTOR_PERMISSION);
-
     if (HARNESS_SECRET_MANAGER_IDENTIFIER.equals(connector.getConnectorInfo().getIdentifier())) {
       throw new InvalidRequestException(
           String.format("%s cannot be used as connector identifier", HARNESS_SECRET_MANAGER_IDENTIFIER), USER);
     }
+    if (connector.getConnectorInfo().getConnectorType() == null) {
+      throw new InvalidRequestException("Connector type cannot be null");
+    }
     if (connector.getConnectorInfo().getConnectorType() == ConnectorType.LOCAL) {
       throw new InvalidRequestException("Local Secret Manager creation not supported", USER);
     }
+    Map<String, String> connectorAttributes = new HashMap<>();
+    connectorAttributes.put("category",
+        ConnectorRegistryFactory.getConnectorCategory(connector.getConnectorInfo().getConnectorType()).toString());
+    accessControlClient.checkForAccessOrThrow(
+        ResourceScope.of(accountIdentifier, connector.getConnectorInfo().getOrgIdentifier(),
+            connector.getConnectorInfo().getProjectIdentifier()),
+        Resource.of(ResourceTypes.CONNECTOR, null, connectorAttributes), EDIT_CONNECTOR_PERMISSION);
     return ResponseDTO.newResponse(connectorService.create(connector, accountIdentifier));
   }
 
   @PUT
   @ApiOperation(value = "Updates a Connector", nickname = "updateConnector")
-  @Operation(operationId = "updateConnector", summary = "Updates the Connector",
+  @Operation(operationId = "updateConnector", summary = "Update a Connector",
+      description = "Updates a Connector for the given ID.",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
@@ -333,7 +390,8 @@ public class ConnectorResource {
   @DELETE
   @Path("{identifier}")
   @ApiOperation(value = "Delete a connector by identifier", nickname = "deleteConnector")
-  @Operation(operationId = "deleteConnector", summary = "Deletes Connector by ID",
+  @Operation(operationId = "deleteConnector", summary = "Delete a Connector",
+      description = "Deletes a Connector for the given ID.",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "default",
@@ -360,7 +418,9 @@ public class ConnectorResource {
   @POST
   @Path("testConnection/{identifier}")
   @ApiOperation(value = "Test the connection", nickname = "getTestConnectionResult")
-  @Operation(operationId = "getTestConnectionResult", summary = "Tests the connection of the Connector by ID",
+  @Operation(operationId = "getTestConnectionResult",
+      summary = "Test Harness Connector connection with third-party tool",
+      description = "Tests if a Harness Connector can successfully connect Harness to a third-party tool.",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
@@ -419,7 +479,8 @@ public class ConnectorResource {
   @POST
   @Path("testGitRepoConnection/{identifier}")
   @ApiOperation(value = "Test the connection", nickname = "getTestGitRepoConnectionResult")
-  @Operation(operationId = "getTestGitRepoConnectionResult", summary = "Tests the Git Repo connection",
+  @Operation(operationId = "getTestGitRepoConnectionResult", summary = "Test Git Connector sync with repo",
+      description = "Tests if a Git Repo Connector can successfully connect Harness to a Git provider.",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
@@ -443,7 +504,8 @@ public class ConnectorResource {
   @GET
   @Path("catalogue")
   @ApiOperation(value = "Get Connector Catalogue", nickname = "getConnectorCatalogue")
-  @Operation(operationId = "getConnectorCatalogue", summary = "Gets the Connector catalogue by Account Identifier",
+  @Operation(operationId = "getConnectorCatalogue", summary = "Lists all Connectors for an account",
+      description = "Lists all the Connectors for the given Account ID.",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
@@ -453,9 +515,6 @@ public class ConnectorResource {
   getConnectorCatalogue(@Parameter(description = ACCOUNT_PARAM_MESSAGE, required = true) @NotBlank @QueryParam(
       NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier) {
     ConnectorCatalogueResponseDTO connectorCatalogue = connectorService.getConnectorCatalogue(accountIdentifier);
-    // temporary solution for hiding Azure connector from catalogue list
-    connectorCatalogue.getCatalogue().forEach(connectorCatalogueItem
-        -> connectorCatalogueItem.getConnectors().removeIf(connectorType -> connectorType == ConnectorType.AZURE));
     return ResponseDTO.newResponse(connectorCatalogue);
   }
 
@@ -484,8 +543,8 @@ public class ConnectorResource {
   @POST
   @Path("/listbyfqn")
   @ApiOperation(value = "Gets Connector list", nickname = "listConnectorByFQN")
-  @Operation(operationId = "listConnectorByFQN",
-      summary = "Get the list of connectors by FQN satisfying the criteria (if any) in the request",
+  @Operation(operationId = "listConnectorByFQN", summary = "Get list of Connectors by FQN",
+      description = "Lists all Connectors for an Account by Fully Qualified Name (FQN).",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
@@ -543,7 +602,8 @@ public class ConnectorResource {
   @GET
   @Path("/fieldValues")
   @ApiOperation(value = "Get All Allowed field values for Connector Type", nickname = "getAllAllowedFieldValues")
-  @Operation(operationId = "getAllAllowedFieldValues", summary = "Get the allowed field values by Connector Type",
+  @Operation(operationId = "getAllAllowedFieldValues", summary = "List all settings for a Connector type",
+      description = "Returns the list of Connector settings for the given Connector type.",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
@@ -555,5 +615,19 @@ public class ConnectorResource {
       @Parameter(description = "Connector type") @NotNull @QueryParam(
           NGCommonEntityConstants.CONNECTOR_TYPE) ConnectorType connectorType) {
     return ResponseDTO.newResponse(ConnectorAllowedFieldValues.TYPE_TO_FIELDS.get(connectorType));
+  }
+
+  @GET
+  @Hidden
+  @Path("/attributes")
+  @ApiOperation(hidden = true, value = "Get Connectors Attributes", nickname = "getConnectorsAttributes")
+  @InternalApi
+  public ResponseDTO<List<Map<String, String>>> getConnectorsAttributes(
+      @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
+      @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @QueryParam("connectorIdentifiers") List<String> connectorIdentifiers) {
+    return ResponseDTO.newResponse(
+        connectorService.getAttributes(accountId, orgIdentifier, projectIdentifier, connectorIdentifiers));
   }
 }

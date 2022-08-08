@@ -26,6 +26,7 @@ import com.google.inject.Provides;
 import com.google.inject.TypeLiteral;
 import com.google.inject.multibindings.MapBinder;
 import com.google.inject.multibindings.Multibinder;
+import com.google.inject.name.Names;
 import io.grpc.BindableService;
 import io.grpc.ServerInterceptor;
 import java.util.List;
@@ -50,11 +51,13 @@ public class DelegateGrpcServiceModule extends AbstractModule {
     bindableServiceMultibinder.addBinding().to(TaskServiceImpl.class);
     bindableServiceMultibinder.addBinding().to(ExpressionServiceImpl.class);
 
+    Multibinder<String> nonAuthServices =
+        Multibinder.newSetBinder(binder(), String.class, Names.named("excludedGrpcAuthValidationServices"));
+    nonAuthServices.addBinding().toInstance(TaskServiceGrpc.SERVICE_NAME);
+
     MapBinder<String, ServiceInfo> stringServiceInfoMapBinder =
         MapBinder.newMapBinder(binder(), String.class, ServiceInfo.class);
     stringServiceInfoMapBinder.addBinding(ExpressionEvaulatorServiceGrpc.SERVICE_NAME)
-        .toInstance(ServiceInfo.builder().id(SERVICE_ID).secret(serviceSecret).build());
-    stringServiceInfoMapBinder.addBinding(TaskServiceGrpc.SERVICE_NAME)
         .toInstance(ServiceInfo.builder().id(SERVICE_ID).secret(serviceSecret).build());
 
     install(new GrpcServerModule(getConnectors(), getProvider(Key.get(new TypeLiteral<Set<BindableService>>() {})),

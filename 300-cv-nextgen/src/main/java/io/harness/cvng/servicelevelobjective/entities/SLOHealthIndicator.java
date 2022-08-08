@@ -70,6 +70,8 @@ public class SLOHealthIndicator implements PersistentEntity, UuidAware, UpdatedA
   String serviceLevelObjectiveIdentifier;
   String monitoredServiceIdentifier;
   double errorBudgetRemainingPercentage;
+  int errorBudgetRemainingMinutes;
+  double errorBudgetBurnRate;
   ErrorBudgetRisk errorBudgetRisk;
   Instant lastComputedAt;
 

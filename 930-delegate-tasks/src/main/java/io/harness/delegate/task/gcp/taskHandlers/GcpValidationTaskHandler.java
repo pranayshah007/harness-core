@@ -24,11 +24,10 @@ import io.harness.delegate.task.gcp.response.GcpResponse;
 import io.harness.delegate.task.gcp.response.GcpValidationTaskResponse;
 import io.harness.errorhandling.NGErrorHelper;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.gcp.client.GcpClient;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.SecretDecryptionService;
-
-import software.wings.delegatetasks.ExceptionMessageSanitizer;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;

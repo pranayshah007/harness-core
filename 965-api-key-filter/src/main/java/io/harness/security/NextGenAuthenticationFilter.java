@@ -94,42 +94,18 @@ public class NextGenAuthenticationFilter extends JWTAuthenticationFilter {
 
   private void validateApiKey(String accountIdentifier, String apiKey) {
     String[] splitToken = apiKey.split(delimiter);
-    if (splitToken.length != 3) {
-      String message = "Token length not matching for API token";
-      log.warn(message);
-      throw new InvalidRequestException(String.format("Invalid API Token: %s", message));
-    }
+    checkIfTokenLengthMatches(splitToken);
     if (EmptyPredicate.isNotEmpty(splitToken)) {
-      String tokenId = splitToken[1];
+      String tokenId = isOldApiKeyToken(splitToken) ? splitToken[1] : splitToken[2];
       TokenDTO tokenDTO = NGRestUtils.getResponse(tokenClient.getToken(tokenId));
 
       if (tokenDTO != null) {
-        if (!accountIdentifier.equals(tokenDTO.getAccountIdentifier())) {
-          throw new InvalidRequestException(String.format("Invalid account token access %s", tokenId));
-        }
-        if (!tokenDTO.getApiKeyType().getValue().equals(splitToken[0])) {
-          String message = "Invalid prefix for API token";
-          log.warn(message);
-          throw new InvalidRequestException(String.format("Invalid API token %s: %s", tokenId, message));
-        }
-        if (!new BCryptPasswordEncoder($2A, 10).matches(splitToken[2], tokenDTO.getEncodedPassword())) {
-          String message = "Raw password not matching for API token";
-          log.warn(message);
-          throw new InvalidRequestException(String.format("Invalid API token %s: %s", tokenId, message));
-        }
-        if (!tokenDTO.isValid()) {
-          throw new InvalidRequestException(
-              "Incoming API token " + tokenDTO.getName() + String.format(" has expired %s", tokenId));
-        }
-        Principal principal = null;
-        if (tokenDTO.getApiKeyType() == ApiKeyType.SERVICE_ACCOUNT) {
-          principal =
-              new ServiceAccountPrincipal(tokenDTO.getParentIdentifier(), tokenDTO.getEmail(), tokenDTO.getUsername());
-        }
-        if (tokenDTO.getApiKeyType() == ApiKeyType.USER) {
-          principal = new UserPrincipal(tokenDTO.getParentIdentifier(), tokenDTO.getEmail(), tokenDTO.getUsername(),
-              tokenDTO.getAccountIdentifier());
-        }
+        checkIfAccountIdMatches(accountIdentifier, tokenDTO, tokenId);
+        checkIfAccountIdInTokenMatches(splitToken, tokenDTO, tokenId);
+        checkIfPrefixMatches(splitToken, tokenDTO, tokenId);
+        checkIFRawPasswordMatches(splitToken, tokenId, tokenDTO);
+        checkIfApiKeyHasExpired(tokenId, tokenDTO);
+        Principal principal = getPrincipal(tokenDTO);
         SecurityContextBuilder.setContext(principal);
         SourcePrincipalContextBuilder.setSourcePrincipal(principal);
       } else {
@@ -166,5 +142,74 @@ public class NextGenAuthenticationFilter extends JWTAuthenticationFilter {
           containerRequestContext.getUriInfo().getPathParameters().getFirst(NGCommonEntityConstants.ACCOUNT_KEY);
     }
     return StringUtils.isEmpty(accountIdentifier) ? Optional.empty() : Optional.of(accountIdentifier);
+  }
+
+  private Principal getPrincipal(TokenDTO tokenDTO) {
+    Principal principal = null;
+    if (tokenDTO.getApiKeyType() == ApiKeyType.SERVICE_ACCOUNT) {
+      principal =
+          new ServiceAccountPrincipal(tokenDTO.getParentIdentifier(), tokenDTO.getEmail(), tokenDTO.getUsername());
+    }
+    if (tokenDTO.getApiKeyType() == ApiKeyType.USER) {
+      principal = new UserPrincipal(
+          tokenDTO.getParentIdentifier(), tokenDTO.getEmail(), tokenDTO.getUsername(), tokenDTO.getAccountIdentifier());
+    }
+    return principal;
+  }
+
+  private void checkIfApiKeyHasExpired(String tokenId, TokenDTO tokenDTO) {
+    if (!tokenDTO.isValid()) {
+      throw new InvalidRequestException(
+          "Incoming API token " + tokenDTO.getName() + String.format(" has expired %s", tokenId));
+    }
+  }
+
+  private void checkIfPrefixMatches(String[] splitToken, TokenDTO tokenDTO, String tokenId) {
+    if (!tokenDTO.getApiKeyType().getValue().equals(splitToken[0])) {
+      String message = "Invalid prefix for API token";
+      log.warn(message);
+      throw new InvalidRequestException(String.format("Invalid API token %s: %s", tokenId, message));
+    }
+  }
+
+  private void checkIFRawPasswordMatches(String[] splitToken, String tokenId, TokenDTO tokenDTO) {
+    BCryptPasswordEncoder bCryptPasswordEncoder = new BCryptPasswordEncoder($2A, 10);
+    if (splitToken.length == 3 && !bCryptPasswordEncoder.matches(splitToken[2], tokenDTO.getEncodedPassword())) {
+      String message = "Raw password not matching for API token";
+      log.warn(message);
+      throw new InvalidRequestException(String.format("Invalid API token %s: %s", tokenId, message));
+    } else if (splitToken.length == 4 && !bCryptPasswordEncoder.matches(splitToken[3], tokenDTO.getEncodedPassword())) {
+      String message = "Raw password not matching for new API token format";
+      log.warn(message);
+      throw new InvalidRequestException(String.format("Invalid API token %s: %s", tokenId, message));
+    }
+  }
+
+  private void checkIfAccountIdInTokenMatches(String[] splitToken, TokenDTO tokenDTO, String tokenId) {
+    if (isNewApiKeyToken(splitToken) && !splitToken[1].equals(tokenDTO.getAccountIdentifier())) {
+      throw new InvalidRequestException(String.format("Invalid accountId in token %s", tokenId));
+    }
+  }
+
+  private void checkIfAccountIdMatches(String accountIdentifier, TokenDTO tokenDTO, String tokenId) {
+    if (!accountIdentifier.equals(tokenDTO.getAccountIdentifier())) {
+      throw new InvalidRequestException(String.format("Invalid account token access %s", tokenId));
+    }
+  }
+
+  private void checkIfTokenLengthMatches(String[] splitToken) {
+    if (!(isOldApiKeyToken(splitToken) || isNewApiKeyToken(splitToken))) {
+      String message = "Token length not matching for API token";
+      log.warn(message);
+      throw new InvalidRequestException(String.format("Invalid API Token: %s", message));
+    }
+  }
+
+  private boolean isOldApiKeyToken(String[] splitToken) {
+    return splitToken.length == 3;
+  }
+
+  private boolean isNewApiKeyToken(String[] splitToken) {
+    return splitToken.length == 4;
   }
 }

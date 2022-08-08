@@ -74,8 +74,8 @@ public class ArtifactCleanupServiceAsyncImpl implements ArtifactCleanupService {
       ArtifactStreamAttributes artifactStreamAttributes =
           artifactCollectionUtils.renderCustomArtifactScriptString((CustomArtifactStream) artifactStream);
       accountId = artifactStreamAttributes.getAccountId();
-      delegateTaskBuilder =
-          artifactCollectionUtils.fetchCustomDelegateTask(waitId, artifactStream, artifactStreamAttributes, false);
+      delegateTaskBuilder = artifactCollectionUtils.fetchCustomDelegateTask(waitId, artifactStream,
+          artifactStreamAttributes, false, BuildSourceParameters.BuildSourceRequestType.GET_BUILDS);
     } else {
       SettingAttribute settingAttribute = settingsService.get(artifactStream.getSettingId());
       if (settingAttribute == null) {

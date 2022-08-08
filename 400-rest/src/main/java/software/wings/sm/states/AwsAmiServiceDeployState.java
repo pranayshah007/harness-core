@@ -106,6 +106,7 @@ import software.wings.sm.InstanceStatusSummary;
 import software.wings.sm.State;
 import software.wings.sm.StateType;
 import software.wings.sm.WorkflowStandardParams;
+import software.wings.sm.WorkflowStandardParamsExtensionService;
 import software.wings.stencils.DefaultValue;
 import software.wings.stencils.EnumData;
 
@@ -157,6 +158,7 @@ public class AwsAmiServiceDeployState extends State {
   @Inject private AwsStateHelper awsStateHelper;
   @Inject private AwsAmiServiceStateHelper awsAmiServiceStateHelper;
   @Inject private FeatureFlagService featureFlagService;
+  @Inject private WorkflowStandardParamsExtensionService workflowStandardParamsExtensionService;
 
   public AwsAmiServiceDeployState(String name) {
     this(name, StateType.AWS_AMI_SERVICE_DEPLOY.name());
@@ -194,9 +196,9 @@ public class AwsAmiServiceDeployState extends State {
     notNullCheck("workflowStandardParams", workflowStandardParams, USER);
     notNullCheck("currentUser", workflowStandardParams.getCurrentUser(), USER);
 
-    Application app = workflowStandardParams.getApp();
+    Application app = workflowStandardParamsExtensionService.getApp(workflowStandardParams);
     notNullCheck("Application", app);
-    Environment env = workflowStandardParams.getEnv();
+    Environment env = workflowStandardParamsExtensionService.getEnv(workflowStandardParams);
     notNullCheck("Environment", env);
     Service service = serviceResourceService.getWithDetails(app.getUuid(), serviceId);
 
@@ -590,7 +592,7 @@ public class AwsAmiServiceDeployState extends State {
     AwsAmiDeployStateExecutionData awsAmiDeployStateExecutionData =
         (AwsAmiDeployStateExecutionData) context.getStateExecutionData();
 
-    Application app = workflowStandardParams.getApp();
+    Application app = workflowStandardParamsExtensionService.getApp(workflowStandardParams);
     notNullCheck("Application", app);
 
     Activity activity = activityService.get(awsAmiDeployStateExecutionData.getActivityId(), app.getUuid());
@@ -600,7 +602,7 @@ public class AwsAmiServiceDeployState extends State {
         activity.getAppId(), context.fetchInfraMappingId());
 
     String serviceId = phaseElement.getServiceElement().getUuid();
-    Environment env = workflowStandardParams.getEnv();
+    Environment env = workflowStandardParamsExtensionService.getEnv(workflowStandardParams);
     notNullCheck("Environment", env);
     Service service = serviceResourceService.getWithDetails(app.getUuid(), serviceId);
     Key<ServiceTemplate> serviceTemplateKey =

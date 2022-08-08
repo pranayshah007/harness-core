@@ -18,6 +18,7 @@ import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assumptions.assumeThat;
 
 import io.harness.PersistenceTestBase;
+import io.harness.agent.sdk.HarnessAlwaysRun;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.WingsException;
@@ -154,6 +155,7 @@ public class MongoPersistentLockerDBTest extends PersistenceTestBase {
   @Owner(developers = GEORGE)
   @Category(UnitTests.class)
   @RealMongo
+  @HarnessAlwaysRun
   public void testAcquireAfterTimeout() throws InterruptedException {
     assumeThat("The underlining code respects lock after timeout.").isEqualTo("true");
     class AnotherLock implements Runnable {

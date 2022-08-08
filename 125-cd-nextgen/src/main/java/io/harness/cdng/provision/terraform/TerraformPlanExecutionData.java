@@ -7,6 +7,7 @@
 
 package io.harness.cdng.provision.terraform;
 
+import static io.harness.beans.SwaggerConstants.BOOLEAN_CLASSPATH;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.string;
 
 import io.harness.annotation.RecasterAlias;
@@ -29,14 +30,19 @@ import javax.validation.constraints.NotNull;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Data;
+import lombok.Getter;
 import lombok.experimental.FieldDefaults;
+import lombok.experimental.FieldNameConstants;
 
 @Data
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @OwnedBy(HarnessTeam.CDP)
+@FieldNameConstants(innerTypeName = "TerraformPlanExecutionDataKeys")
 @RecasterAlias("io.harness.cdng.provision.terraform.TerraformPlanExecutionData")
 public class TerraformPlanExecutionData {
+  @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String uuid;
+
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> workspace;
   @NotNull @JsonProperty("configFiles") TerraformConfigFilesWrapper terraformConfigFilesWrapper;
   @JsonProperty("varFiles") List<TerraformVarFileWrapper> terraformVarFiles;
@@ -48,6 +54,9 @@ public class TerraformPlanExecutionData {
 
   @NotNull TerraformPlanCommand command;
   @NotNull @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> secretManagerRef;
+  @ApiModelProperty(dataType = BOOLEAN_CLASSPATH)
+  @YamlSchemaTypes({string})
+  ParameterField<Boolean> exportTerraformPlanJson;
 
   public TerraformPlanExecutionDataParameters toStepParameters() {
     validateParams();
@@ -59,7 +68,8 @@ public class TerraformPlanExecutionData {
             .targets(targets)
             .environmentVariables(NGVariablesUtils.getMapOfVariables(environmentVariables, 0L))
             .command(command)
-            .secretManagerRef(secretManagerRef);
+            .secretManagerRef(secretManagerRef)
+            .exportTerraformPlanJson(exportTerraformPlanJson);
     LinkedHashMap<String, TerraformVarFile> varFiles = new LinkedHashMap<>();
     if (EmptyPredicate.isNotEmpty(terraformVarFiles)) {
       terraformVarFiles.forEach(terraformVarFile -> {

@@ -17,7 +17,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import io.harness.category.element.UnitTests;
 import io.harness.rule.Owner;
 
-import software.wings.WingsBaseTest;
 import software.wings.graphql.scalar.GraphQLDateTimeScalar;
 
 import graphql.language.StringValue;
@@ -28,7 +27,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 
-public class GraphQLDateTimeScalarTest extends WingsBaseTest {
+public class GraphQLDateTimeScalarTest extends CategoryTest {
   @Rule public ExpectedException thrown = ExpectedException.none();
 
   @Test

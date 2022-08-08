@@ -18,7 +18,10 @@ public enum AzureRegistryType {
   @JsonProperty(AzureConstants.DOCKER_HUB_PUBLIC) DOCKER_HUB_PUBLIC("Docker Hub Public"),
   @JsonProperty(AzureConstants.DOCKER_HUB_PRIVATE) DOCKER_HUB_PRIVATE("Docker Hub Private"),
   @JsonProperty(AzureConstants.ARTIFACTORY_PRIVATE_REGISTRY)
-  ARTIFACTORY_PRIVATE_REGISTRY("Artifactory Private Registry");
+  ARTIFACTORY_PRIVATE_REGISTRY("Artifactory Private Registry"),
+  @JsonProperty(AzureConstants.ECR) ECR("ECR"),
+  @JsonProperty(AzureConstants.GCR) GCR("GCR"),
+  @JsonProperty(AzureConstants.NEXUS_PRIVATE_REGISTRY) NEXUS_PRIVATE_REGISTRY("Nexus Private Registry ");
 
   private final String value;
 
@@ -35,7 +38,7 @@ public enum AzureRegistryType {
     return value;
   }
 
-  @JsonCreator
+  @JsonCreator(mode = JsonCreator.Mode.DELEGATING)
   public static AzureRegistryType getAzureDockerRegistryTypeFromValue(@JsonProperty("type") String value) {
     for (AzureRegistryType sourceType : AzureRegistryType.values()) {
       if (sourceType.value.equalsIgnoreCase(value)) {

@@ -37,6 +37,7 @@ import org.springframework.data.annotation.TypeAlias;
 @RecasterAlias("io.harness.cdng.provision.terraform.TerraformApplyStepNode")
 public class TerraformApplyStepNode extends CdAbstractStepNode {
   @JsonProperty("type") @NotNull StepType type = StepType.TerraformApply;
+  @NotNull
   @JsonProperty("spec")
   @JsonTypeInfo(use = NAME, property = "type", include = EXTERNAL_PROPERTY, visible = true)
   TerraformApplyStepInfo terraformApplyStepInfo;

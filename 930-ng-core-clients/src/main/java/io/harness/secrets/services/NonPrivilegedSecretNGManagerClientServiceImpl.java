@@ -38,7 +38,7 @@ public class NonPrivilegedSecretNGManagerClientServiceImpl implements SecretMana
                                     .projectIdentifier(ngAccess.getProjectIdentifier())
                                     .identifier(ngAccess.getIdentifier())
                                     .build();
-    return restClientExecutor.getResponse(secretManagerClient.getEncryptionDetails(
+    return restClientExecutor.getResponse(secretManagerClient.getEncryptionDetails(ngAccess.getAccountIdentifier(),
         NGAccessWithEncryptionConsumer.builder().ngAccess(baseNGAccess).decryptableEntity(consumer).build()));
   }
 

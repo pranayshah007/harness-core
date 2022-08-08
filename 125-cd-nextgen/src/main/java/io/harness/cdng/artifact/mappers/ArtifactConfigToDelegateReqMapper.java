@@ -7,44 +7,80 @@
 
 package io.harness.cdng.artifact.mappers;
 
+import static software.wings.utils.RepositoryFormat.generic;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.artifact.bean.yaml.AcrArtifactConfig;
+import io.harness.cdng.artifact.bean.yaml.AmazonS3ArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.ArtifactoryRegistryArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.DockerHubArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.EcrArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.GcrArtifactConfig;
+import io.harness.cdng.artifact.bean.yaml.JenkinsArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.NexusRegistryArtifactConfig;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryConnectorDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
+import io.harness.delegate.beans.connector.azureconnector.AzureConnectorDTO;
 import io.harness.delegate.beans.connector.docker.DockerConnectorDTO;
 import io.harness.delegate.beans.connector.gcpconnector.GcpConnectorDTO;
+import io.harness.delegate.beans.connector.jenkins.JenkinsConnectorDTO;
 import io.harness.delegate.beans.connector.nexusconnector.NexusConnectorDTO;
 import io.harness.delegate.task.artifacts.ArtifactDelegateRequestUtils;
+import io.harness.delegate.task.artifacts.ArtifactSourceDelegateRequest;
 import io.harness.delegate.task.artifacts.ArtifactSourceType;
 import io.harness.delegate.task.artifacts.artifactory.ArtifactoryArtifactDelegateRequest;
+import io.harness.delegate.task.artifacts.artifactory.ArtifactoryGenericArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.docker.DockerArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.ecr.EcrArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.gcr.GcrArtifactDelegateRequest;
+import io.harness.delegate.task.artifacts.jenkins.JenkinsArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.nexus.NexusArtifactDelegateRequest;
+import io.harness.delegate.task.artifacts.s3.S3ArtifactDelegateRequest;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.security.encryption.EncryptedDataDetail;
 
+import java.util.Arrays;
 import java.util.List;
 import lombok.experimental.UtilityClass;
 
 @UtilityClass
 @OwnedBy(HarnessTeam.PIPELINE)
 public class ArtifactConfigToDelegateReqMapper {
+  private final String ACCEPT_ALL_REGEX = "\\*";
+
   public DockerArtifactDelegateRequest getDockerDelegateRequest(DockerHubArtifactConfig artifactConfig,
       DockerConnectorDTO connectorDTO, List<EncryptedDataDetail> encryptedDataDetails, String connectorRef) {
     // If both are empty, regex is latest among all docker artifacts.
     String tagRegex = artifactConfig.getTagRegex() != null ? artifactConfig.getTagRegex().getValue() : "";
     String tag = artifactConfig.getTag() != null ? artifactConfig.getTag().getValue() : "";
     if (EmptyPredicate.isEmpty(tag) && EmptyPredicate.isEmpty(tagRegex)) {
-      tagRegex = "\\*";
+      tagRegex = ACCEPT_ALL_REGEX;
     }
     return ArtifactDelegateRequestUtils.getDockerDelegateRequest(artifactConfig.getImagePath().getValue(), tag,
         tagRegex, null, connectorRef, connectorDTO, encryptedDataDetails, ArtifactSourceType.DOCKER_REGISTRY);
+  }
+
+  public S3ArtifactDelegateRequest getAmazonS3DelegateRequest(AmazonS3ArtifactConfig artifactConfig,
+      AwsConnectorDTO connectorDTO, List<EncryptedDataDetail> encryptedDataDetails, String connectorRef) {
+    // If both are empty, regex is latest among all S3 artifacts.
+    String filePathRegex =
+        artifactConfig.getFilePathRegex() != null ? artifactConfig.getFilePathRegex().getValue() : "";
+    String filePath = artifactConfig.getFilePath() != null ? artifactConfig.getFilePath().getValue() : "";
+    if (EmptyPredicate.isEmpty(filePath) && EmptyPredicate.isEmpty(filePathRegex)) {
+      filePathRegex = "*";
+    }
+    return ArtifactDelegateRequestUtils.getAmazonS3DelegateRequest(artifactConfig.getBucketName().getValue(), filePath,
+        filePathRegex, null, connectorRef, connectorDTO, encryptedDataDetails, ArtifactSourceType.AMAZONS3);
+  }
+
+  public JenkinsArtifactDelegateRequest getJenkinsDelegateRequest(JenkinsArtifactConfig artifactConfig,
+      JenkinsConnectorDTO connectorDTO, List<EncryptedDataDetail> encryptedDataDetails, String connectorRef) {
+    String artifactPath = artifactConfig.getArtifactPath() != null ? artifactConfig.getArtifactPath().getValue() : "";
+    String jobName = artifactConfig.getJobName() != null ? artifactConfig.getJobName().getValue() : "";
+    return ArtifactDelegateRequestUtils.getJenkinsDelegateRequest(connectorRef, connectorDTO, encryptedDataDetails,
+        ArtifactSourceType.JENKINS, null, null, jobName, Arrays.asList(artifactPath));
   }
 
   public GcrArtifactDelegateRequest getGcrDelegateRequest(GcrArtifactConfig gcrArtifactConfig,
@@ -53,7 +89,7 @@ public class ArtifactConfigToDelegateReqMapper {
     String tagRegex = gcrArtifactConfig.getTagRegex() != null ? gcrArtifactConfig.getTagRegex().getValue() : "";
     String tag = gcrArtifactConfig.getTag() != null ? gcrArtifactConfig.getTag().getValue() : "";
     if (EmptyPredicate.isEmpty(tag) && EmptyPredicate.isEmpty(tagRegex)) {
-      tagRegex = "\\*";
+      tagRegex = ACCEPT_ALL_REGEX;
     }
     return ArtifactDelegateRequestUtils.getGcrDelegateRequest(gcrArtifactConfig.getImagePath().getValue(), tag,
         tagRegex, null, gcrArtifactConfig.getRegistryHostname().getValue(), connectorRef, gcpConnectorDTO,
@@ -66,7 +102,7 @@ public class ArtifactConfigToDelegateReqMapper {
     String tagRegex = ecrArtifactConfig.getTagRegex() != null ? ecrArtifactConfig.getTagRegex().getValue() : "";
     String tag = ecrArtifactConfig.getTag() != null ? ecrArtifactConfig.getTag().getValue() : "";
     if (EmptyPredicate.isEmpty(tag) && EmptyPredicate.isEmpty(tagRegex)) {
-      tagRegex = "\\*";
+      tagRegex = ACCEPT_ALL_REGEX;
     }
     return ArtifactDelegateRequestUtils.getEcrDelegateRequest(ecrArtifactConfig.getImagePath().getValue(), tag,
         tagRegex, null, ecrArtifactConfig.getRegion().getValue(), connectorRef, awsConnectorDTO, encryptedDataDetails,
@@ -79,7 +115,7 @@ public class ArtifactConfigToDelegateReqMapper {
     String tagRegex = artifactConfig.getTagRegex() != null ? artifactConfig.getTagRegex().getValue() : "";
     String tag = artifactConfig.getTag() != null ? artifactConfig.getTag().getValue() : "";
     if (EmptyPredicate.isEmpty(tag) && EmptyPredicate.isEmpty(tagRegex)) {
-      tagRegex = "\\*";
+      tagRegex = ACCEPT_ALL_REGEX;
     }
     String port = artifactConfig.getRepositoryPort() != null ? artifactConfig.getRepositoryPort().getValue() : null;
     String artifactRepositoryUrl =
@@ -91,22 +127,68 @@ public class ArtifactConfigToDelegateReqMapper {
         ArtifactSourceType.NEXUS3_REGISTRY);
   }
 
-  public ArtifactoryArtifactDelegateRequest getArtifactoryArtifactDelegateRequest(
+  public ArtifactSourceDelegateRequest getArtifactoryArtifactDelegateRequest(
+      ArtifactoryRegistryArtifactConfig artifactConfig, ArtifactoryConnectorDTO artifactoryConnectorDTO,
+      List<EncryptedDataDetail> encryptedDataDetails, String connectorRef) {
+    if (artifactConfig.getRepositoryFormat().getValue().equals(generic.name())) {
+      return ArtifactConfigToDelegateReqMapper.getArtifactoryGenericArtifactDelegateRequest(
+          artifactConfig, artifactoryConnectorDTO, encryptedDataDetails, connectorRef);
+    } else {
+      return ArtifactConfigToDelegateReqMapper.getArtifactoryDockerArtifactDelegateRequest(
+          artifactConfig, artifactoryConnectorDTO, encryptedDataDetails, connectorRef);
+    }
+  }
+
+  private ArtifactoryArtifactDelegateRequest getArtifactoryDockerArtifactDelegateRequest(
       ArtifactoryRegistryArtifactConfig artifactConfig, ArtifactoryConnectorDTO artifactoryConnectorDTO,
       List<EncryptedDataDetail> encryptedDataDetails, String connectorRef) {
     // If both are empty, regex is latest among all docker artifacts.
     String tagRegex = artifactConfig.getTagRegex() != null ? artifactConfig.getTagRegex().getValue() : "";
     String tag = artifactConfig.getTag() != null ? artifactConfig.getTag().getValue() : "";
     if (EmptyPredicate.isEmpty(tag) && EmptyPredicate.isEmpty(tagRegex)) {
-      tagRegex = "\\*";
+      tagRegex = ACCEPT_ALL_REGEX;
     }
 
     String artifactRepositoryUrl =
-        artifactConfig.getArtifactRepositoryUrl() != null ? artifactConfig.getArtifactRepositoryUrl().getValue() : null;
+        artifactConfig.getRepositoryUrl() != null ? artifactConfig.getRepositoryUrl().getValue() : null;
 
-    return ArtifactDelegateRequestUtils.getArtifactoryArtifactDelegateRequest(artifactConfig.getRepository().getValue(),
-        artifactConfig.getArtifactPath().getValue(), artifactConfig.getRepositoryFormat().getValue(),
-        artifactRepositoryUrl, tag, tagRegex, connectorRef, artifactoryConnectorDTO, encryptedDataDetails,
+    return (ArtifactoryArtifactDelegateRequest) ArtifactDelegateRequestUtils.getArtifactoryArtifactDelegateRequest(
+        artifactConfig.getRepository().getValue(), artifactConfig.getArtifactPath().getValue(),
+        artifactConfig.getRepositoryFormat().getValue(), artifactRepositoryUrl, tag, tagRegex, connectorRef,
+        artifactoryConnectorDTO, encryptedDataDetails, ArtifactSourceType.ARTIFACTORY_REGISTRY);
+  }
+
+  private ArtifactoryGenericArtifactDelegateRequest getArtifactoryGenericArtifactDelegateRequest(
+      ArtifactoryRegistryArtifactConfig artifactConfig, ArtifactoryConnectorDTO artifactoryConnectorDTO,
+      List<EncryptedDataDetail> encryptedDataDetails, String connectorRef) {
+    // If both are empty, artifactPathFilter is latest among all artifacts.
+    String artifactPathFilter = ParameterField.isNull(artifactConfig.getArtifactPathFilter())
+        ? ""
+        : artifactConfig.getArtifactPathFilter().getValue();
+    String artifactPath =
+        ParameterField.isNull(artifactConfig.getArtifactPath()) ? "" : artifactConfig.getArtifactPath().getValue();
+
+    String artifactDirectory = ParameterField.isNull(artifactConfig.getArtifactDirectory())
+        ? null
+        : artifactConfig.getArtifactDirectory().getValue();
+
+    return ArtifactDelegateRequestUtils.getArtifactoryGenericArtifactDelegateRequest(
+        artifactConfig.getRepository().getValue(), artifactConfig.getRepositoryFormat().getValue(), artifactDirectory,
+        artifactPath, artifactPathFilter, connectorRef, artifactoryConnectorDTO, encryptedDataDetails,
         ArtifactSourceType.ARTIFACTORY_REGISTRY);
+  }
+
+  public static ArtifactSourceDelegateRequest getAcrDelegateRequest(AcrArtifactConfig acrArtifactConfig,
+      AzureConnectorDTO azureConnectorDTO, List<EncryptedDataDetail> encryptedDataDetails, String connectorRef) {
+    // If both are empty, regex is latest among all acr artifacts.
+    String tagRegex =
+        ParameterField.isNull(acrArtifactConfig.getTagRegex()) ? "" : acrArtifactConfig.getTagRegex().getValue();
+    String tag = ParameterField.isNull(acrArtifactConfig.getTag()) ? "" : acrArtifactConfig.getTag().getValue();
+    if (EmptyPredicate.isEmpty(tag) && EmptyPredicate.isEmpty(tagRegex)) {
+      tagRegex = ACCEPT_ALL_REGEX;
+    }
+    return ArtifactDelegateRequestUtils.getAcrDelegateRequest(acrArtifactConfig.getSubscriptionId().getValue(),
+        acrArtifactConfig.getRegistry().getValue(), acrArtifactConfig.getRepository().getValue(), azureConnectorDTO,
+        tag, tagRegex, null, encryptedDataDetails, ArtifactSourceType.ACR);
   }
 }

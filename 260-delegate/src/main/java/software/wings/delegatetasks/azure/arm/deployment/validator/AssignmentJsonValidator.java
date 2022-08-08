@@ -19,10 +19,9 @@ import io.harness.azure.model.AzureConstants;
 import io.harness.azure.model.blueprint.ResourceScopeType;
 import io.harness.azure.model.blueprint.assignment.Assignment;
 import io.harness.azure.utility.AzureResourceUtility;
+import io.harness.delegate.task.azure.common.validator.Validator;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.serializer.JsonUtils;
-
-import software.wings.delegatetasks.azure.common.validator.Validator;
 
 import org.apache.commons.lang3.StringUtils;
 

@@ -7,14 +7,18 @@
 
 package io.harness.delegate.task.scm;
 
+import static io.harness.delegate.clienttools.ClientTool.SCM;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.UUIDGenerator;
-import io.harness.delegate.configuration.InstallUtils;
+import io.harness.delegate.clienttools.InstallUtils;
+import io.harness.delegate.clienttools.ScmVersion;
 
 import io.grpc.ManagedChannel;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Paths;
 import lombok.extern.slf4j.Slf4j;
 import org.zeroturnaround.exec.ProcessExecutor;
 import org.zeroturnaround.exec.StartedProcess;
@@ -23,8 +27,10 @@ import org.zeroturnaround.exec.StartedProcess;
 @OwnedBy(HarnessTeam.DX)
 public abstract class ScmUnixManager implements AutoCloseable {
   abstract ManagedChannel getChannel();
+  abstract void shutdownEventLoopGroup();
 
-  private final String PATH_TO_SCM_BUILD = InstallUtils.getScmFolderPath();
+  private final String PATH_TO_SCM_BUILD =
+      Paths.get(InstallUtils.getPath(SCM, ScmVersion.DEFAULT)).getParent().toString();
 
   protected String socketAddress;
   protected ProcessExecutor processBuilder;
@@ -38,6 +44,7 @@ public abstract class ScmUnixManager implements AutoCloseable {
 
   public void close() throws IOException {
     server.getProcess().destroy();
+    shutdownEventLoopGroup();
     processBuilder.command("rm", "-rf", socketAddress);
     final StartedProcess process = processBuilder.start();
     process.getProcess().destroy();
@@ -45,7 +52,7 @@ public abstract class ScmUnixManager implements AutoCloseable {
 
   private void runServer() throws IOException {
     processBuilder.directory(new File(PATH_TO_SCM_BUILD));
-    processBuilder.command("./" + InstallUtils.getScmBinary(), "--unix", socketAddress);
+    processBuilder.command("./" + SCM.getBinaryName(), "--unix", socketAddress);
     log.info("Running SCM server at path: {} on port: {}", PATH_TO_SCM_BUILD, socketAddress);
     processBuilder.redirectOutput(System.out);
     processBuilder.redirectError(System.err);

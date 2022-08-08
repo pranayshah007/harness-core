@@ -20,7 +20,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.anyList;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.doNothing;
@@ -376,9 +375,7 @@ public class CfSdkClientImplWithOperationsWrapperMockedTest extends CategoryTest
     verify(cfSdkClient, never()).getAllDomainsForSpace(any());
 
     routes.add(path3);
-    doNothing()
-        .when(cfSdkClient)
-        .createRouteMap(any(), anyString(), anyString(), anyString(), anyBoolean(), anyBoolean(), anyInt());
+    doNothing().when(cfSdkClient).createRouteMap(any(), any(), any(), any(), anyBoolean(), anyBoolean(), any());
     doNothing().when(cfSdkClient).mapRouteMapForApp(any(), any());
     doReturn(asList(Domain.builder().id("id1").name("cfapps.io").status(Status.SHARED).build()))
         .when(cfSdkClient)
@@ -391,7 +388,7 @@ public class CfSdkClientImplWithOperationsWrapperMockedTest extends CategoryTest
     ArgumentCaptor<String> pathCaptor = ArgumentCaptor.forClass(String.class);
     verify(cfSdkClient)
         .createRouteMap(any(), hostCaptor.capture(), domainCaptor.capture(), pathCaptor.capture(), anyBoolean(),
-            anyBoolean(), anyInt());
+            anyBoolean(), any());
     assertThat(hostCaptor.getValue()).isEqualTo("myapp2");
     assertThat(domainCaptor.getValue()).isEqualTo("cfapps.io");
     assertThat(pathCaptor.getValue()).isEqualTo("/P1");
@@ -462,9 +459,7 @@ public class CfSdkClientImplWithOperationsWrapperMockedTest extends CategoryTest
       assertThat(e.getMessage().contains("used domain not present in this space")).isTrue();
     }
 
-    doNothing()
-        .when(cfSdkClient)
-        .createRouteMap(any(), anyString(), anyString(), anyString(), anyBoolean(), anyBoolean(), anyInt());
+    doNothing().when(cfSdkClient).createRouteMap(any(), any(), any(), any(), anyBoolean(), anyBoolean(), any());
     cfSdkClient.createRouteFromPath("app1.apps.io", cfRequestConfig, domains);
     ArgumentCaptor<String> hostCaptor = ArgumentCaptor.forClass(String.class);
     ArgumentCaptor<String> domainCaptor = ArgumentCaptor.forClass(String.class);
@@ -472,7 +467,7 @@ public class CfSdkClientImplWithOperationsWrapperMockedTest extends CategoryTest
 
     verify(cfSdkClient)
         .createRouteMap(any(), hostCaptor.capture(), domainCaptor.capture(), pathCaptor.capture(), anyBoolean(),
-            anyBoolean(), anyInt());
+            anyBoolean(), any());
     assertThat(hostCaptor.getValue()).isEqualTo("app1");
     assertThat(domainCaptor.getValue()).isEqualTo("apps.io");
     assertThat(isBlank(pathCaptor.getValue())).isTrue();
@@ -480,7 +475,7 @@ public class CfSdkClientImplWithOperationsWrapperMockedTest extends CategoryTest
     reset(cfSdkClient);
     doNothing()
         .when(cfSdkClient)
-        .createRouteMap(any(), anyString(), anyString(), anyString(), anyBoolean(), anyBoolean(), anyInt());
+        .createRouteMap(any(), any(), anyString(), anyString(), anyBoolean(), anyBoolean(), any());
     cfSdkClient.createRouteFromPath("app1.apps.io/inside/display.jsp", cfRequestConfig, domains);
     hostCaptor = ArgumentCaptor.forClass(String.class);
     domainCaptor = ArgumentCaptor.forClass(String.class);
@@ -488,15 +483,13 @@ public class CfSdkClientImplWithOperationsWrapperMockedTest extends CategoryTest
 
     verify(cfSdkClient)
         .createRouteMap(any(), hostCaptor.capture(), domainCaptor.capture(), pathCaptor.capture(), anyBoolean(),
-            anyBoolean(), anyInt());
+            anyBoolean(), any());
     assertThat(hostCaptor.getValue()).isEqualTo("app1");
     assertThat(domainCaptor.getValue()).isEqualTo("apps.io");
     assertThat(pathCaptor.getValue()).isEqualTo("/inside/display.jsp");
 
     reset(cfSdkClient);
-    doNothing()
-        .when(cfSdkClient)
-        .createRouteMap(any(), anyString(), anyString(), anyString(), anyBoolean(), anyBoolean(), anyInt());
+    doNothing().when(cfSdkClient).createRouteMap(any(), any(), any(), any(), anyBoolean(), anyBoolean(), any());
     cfSdkClient.createRouteFromPath("cdp-10128.z.harness.io", cfRequestConfig, domains);
     hostCaptor = ArgumentCaptor.forClass(String.class);
     domainCaptor = ArgumentCaptor.forClass(String.class);
@@ -504,7 +497,7 @@ public class CfSdkClientImplWithOperationsWrapperMockedTest extends CategoryTest
 
     verify(cfSdkClient)
         .createRouteMap(any(), hostCaptor.capture(), domainCaptor.capture(), pathCaptor.capture(), anyBoolean(),
-            anyBoolean(), anyInt());
+            anyBoolean(), any());
     assertThat(hostCaptor.getValue()).isEqualTo("cdp-10128");
     assertThat(domainCaptor.getValue()).isEqualTo("z.harness.io");
   }

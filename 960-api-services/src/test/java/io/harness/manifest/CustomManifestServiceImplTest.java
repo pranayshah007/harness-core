@@ -66,7 +66,7 @@ public class CustomManifestServiceImplTest extends CategoryTest {
   public void setup() throws IOException {
     MockitoAnnotations.initMocks(this);
     doAnswer(invocation -> {
-      ShellExecutorConfig config = invocation.getArgumentAt(0, ShellExecutorConfig.class);
+      ShellExecutorConfig config = invocation.getArgument(0, ShellExecutorConfig.class);
       shellWorkingDirectory = config.getWorkingDirectory();
       return scriptProcessExecutor;
     })
@@ -163,7 +163,7 @@ public class CustomManifestServiceImplTest extends CategoryTest {
         .executeCommandString("test script", Collections.emptyList());
 
     Collection<CustomSourceFile> result =
-        customManifestService.fetchValues(customManifestSource, workingDirectory, ACTIVITY_ID, logCallback);
+        customManifestService.fetchValues(customManifestSource, workingDirectory, ACTIVITY_ID, logCallback, true);
     assertThat(result.stream().map(CustomSourceFile::getFilePath))
         .containsExactlyInAnyOrder("file1.yaml", "values/file2.yaml", absolutePath);
     assertThat(result.stream().map(CustomSourceFile::getFileContent))
@@ -183,7 +183,7 @@ public class CustomManifestServiceImplTest extends CategoryTest {
     FileUtils.write(absoluteFile, "absolute-content", Charset.defaultCharset());
 
     Collection<CustomSourceFile> result =
-        customManifestService.fetchValues(customManifestSource, shellWorkingDirectory, ACTIVITY_ID, logCallback);
+        customManifestService.fetchValues(customManifestSource, shellWorkingDirectory, ACTIVITY_ID, logCallback, true);
     assertThat(result.stream().map(CustomSourceFile::getFilePath)).containsExactly(absolutePath);
     assertThat(result.stream().map(CustomSourceFile::getFileContent)).containsExactly("absolute-content");
   }
@@ -198,7 +198,7 @@ public class CustomManifestServiceImplTest extends CategoryTest {
         .when(scriptProcessExecutor)
         .executeCommandString("test script", emptyList());
     String resultWorkingDir =
-        customManifestService.executeCustomSourceScript(ACTIVITY_ID, logCallback, customManifestSource);
+        customManifestService.executeCustomSourceScript(ACTIVITY_ID, logCallback, customManifestSource, true);
 
     assertThat(resultWorkingDir).isNotNull();
     File file = new File(resultWorkingDir);
@@ -218,7 +218,7 @@ public class CustomManifestServiceImplTest extends CategoryTest {
         .executeCommandString("test script", emptyList());
 
     assertThatThrownBy(
-        () -> customManifestService.executeCustomSourceScript(ACTIVITY_ID, logCallback, customManifestSource))
+        () -> customManifestService.executeCustomSourceScript(ACTIVITY_ID, logCallback, customManifestSource, true))
         .isInstanceOf(ShellExecutionException.class)
         .hasMessageContaining("Custom shell script failed");
   }

@@ -46,8 +46,8 @@ public class SLIMetricAnalysisTransformerTest extends CvNextGenTestBase {
   public void setUp() {
     metric1Name = "metric1";
     metric2Name = "metric2Name";
-    metric1Identifier = "metric1Identifier";
-    metric2Identifier = "metric2Identifier";
+    metric1Identifier = "metric1identifier";
+    metric2Identifier = "metric2identifier";
     startTime = Instant.now();
     totalMinutes = 20;
     endTime = startTime.plus(totalMinutes, ChronoUnit.MINUTES);

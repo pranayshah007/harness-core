@@ -1247,7 +1247,7 @@ public class ApplicationManifestServiceTest extends WingsBaseTest {
     when(serviceResourceService.exist(anyString(), anyString())).thenReturn(true);
     when(serviceResourceService.get(APP_ID, SERVICE_ID, false))
         .thenReturn(Service.builder().isK8sV2(true).artifactFromManifest(true).build());
-    when(featureFlagService.isEnabled(eq(FeatureName.HELM_CHART_AS_ARTIFACT), anyString())).thenReturn(true);
+    when(featureFlagService.isEnabled(eq(FeatureName.HELM_CHART_AS_ARTIFACT), any())).thenReturn(true);
     ApplicationManifest applicationManifest =
         ApplicationManifest.builder()
             .name(APP_MANIFEST_NAME + 2)

@@ -42,7 +42,7 @@ import lombok.extern.slf4j.Slf4j;
 public class TemplateYamlConversionHelper {
   TemplateYamlConversionHandlerRegistry templateYamlConversionHandlerRegistry;
 
-  public String convertTemplateYamlToPMSUnderstandableYaml(TemplateEntity templateEntity) {
+  public String convertTemplateYamlToEntityYaml(TemplateEntity templateEntity) {
     String templateYaml = templateEntity.getYaml();
     TemplateEntityType templateEntityType = templateEntity.getTemplateEntityType();
     YamlConversionHandler yamlConversionHandler =

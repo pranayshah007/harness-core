@@ -10,15 +10,20 @@ package io.harness.service.intfc;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.Delegate;
+import io.harness.delegate.beans.DelegateEntityOwner;
 import io.harness.delegate.beans.DelegateGroup;
+import io.harness.delegate.beans.DelegateGroupDTO;
 import io.harness.delegate.beans.DelegateGroupDetails;
 import io.harness.delegate.beans.DelegateGroupListing;
+import io.harness.delegate.beans.DelegateGroupTags;
 import io.harness.delegate.filter.DelegateFilterPropertiesDTO;
 
 import software.wings.beans.SelectorType;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 
 @OwnedBy(HarnessTeam.DEL)
 public interface DelegateSetupService {
@@ -34,7 +39,7 @@ public interface DelegateSetupService {
 
   String getHostNameForGroupedDelegate(String hostname);
 
-  Map<String, SelectorType> retrieveDelegateImplicitSelectors(Delegate delegate);
+  Map<String, SelectorType> retrieveDelegateImplicitSelectors(Delegate delegate, boolean fetchFromCache);
 
   Map<String, SelectorType> retrieveDelegateGroupImplicitSelectors(DelegateGroup delegateGroup);
 
@@ -55,6 +60,24 @@ public interface DelegateSetupService {
   DelegateGroupListing listDelegateGroupDetails(
       String accountId, String orgId, String projectId, String delegateTokenName);
 
-  DelegateGroup updateDelegateGroupTags(
-      String accountId, String orgId, String projectId, String delegateGroupName, List<String> tags);
+  DelegateGroup updateDelegateGroupTags_old(
+      String accountId, String orgId, String projectId, String delegateGroupName, Set<String> tags);
+
+  Optional<DelegateGroupDTO> listDelegateGroupTags(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String groupIdentifier);
+
+  Optional<DelegateGroupDTO> addDelegateGroupTags(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, String groupIdentifier, DelegateGroupTags delegateGroupTags);
+
+  Optional<DelegateGroupDTO> updateDelegateGroupTags(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, String groupIdentifier, DelegateGroupTags delegateGroupTags);
+
+  DelegateGroup getDelegateGroup(String accountId, String delegateGroupId);
+
+  void deleteDelegateGroupsOnDeletingOwner(String accountId, DelegateEntityOwner owner);
+
+  List<DelegateGroupDTO> listDelegateGroupsHavingTags(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, DelegateGroupTags tags);
+
+  List<String> listDelegateImplicitSelectors(Delegate delegate);
 }

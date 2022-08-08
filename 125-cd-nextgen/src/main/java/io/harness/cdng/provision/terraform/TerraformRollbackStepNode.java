@@ -38,6 +38,7 @@ import org.springframework.data.annotation.TypeAlias;
 @RecasterAlias("io.harness.cdng.provision.terraform.TerraformRollbackStepNode")
 public class TerraformRollbackStepNode extends CdAbstractStepNode {
   @JsonProperty("type") @NotNull StepType type = StepType.TerraformRollback;
+  @NotNull
   @JsonProperty("spec")
   @JsonTypeInfo(use = NAME, property = "type", include = EXTERNAL_PROPERTY, visible = true)
   TerraformRollbackStepInfo terraformRollbackStepInfo;

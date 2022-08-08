@@ -36,17 +36,14 @@ import java.util.Optional;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
-import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 import retrofit2.Call;
 
 @OwnedBy(PIPELINE)
-@RunWith(PowerMockRunner.class)
 @PrepareForTest({NGRestUtils.class})
 public class DefaultConnectorRefExpansionHandlerTest extends CategoryTest {
   @InjectMocks DefaultConnectorRefExpansionHandler connectorRefExpansionHandler;
@@ -56,7 +53,7 @@ public class DefaultConnectorRefExpansionHandlerTest extends CategoryTest {
   @Before
   public void setUp() {
     MockitoAnnotations.initMocks(this);
-    PowerMockito.mockStatic(NGRestUtils.class);
+    Mockito.mockStatic(NGRestUtils.class);
   }
 
   @Test
@@ -77,7 +74,7 @@ public class DefaultConnectorRefExpansionHandlerTest extends CategoryTest {
     when(NGRestUtils.getResponseWithRetry(
              requestToClient, "Could not get connector response for account: " + acc + " after {} attempts."))
         .thenReturn(Optional.of(connectorDTOProj));
-    ExpansionResponse expansionResponseProj = connectorRefExpansionHandler.expand(jsonNodeProj, metadataProject);
+    ExpansionResponse expansionResponseProj = connectorRefExpansionHandler.expand(jsonNodeProj, metadataProject, null);
     assertThat(expansionResponseProj.isSuccess()).isTrue();
     assertThat(expansionResponseProj.getKey()).isEqualTo("connector");
     assertThat(expansionResponseProj.getValue().toJson()).isEqualTo("{\"identifier\":\"basic-connector\"}");
@@ -93,7 +90,7 @@ public class DefaultConnectorRefExpansionHandlerTest extends CategoryTest {
     when(NGRestUtils.getResponseWithRetry(
              requestToClient, "Could not get connector response for account: " + acc + " after {} attempts."))
         .thenReturn(Optional.of(connectorDTOOrg));
-    ExpansionResponse expansionResponseOrg = connectorRefExpansionHandler.expand(jsonNodeOrg, metadataOrg);
+    ExpansionResponse expansionResponseOrg = connectorRefExpansionHandler.expand(jsonNodeOrg, metadataOrg, null);
     assertThat(expansionResponseOrg.isSuccess()).isTrue();
     assertThat(expansionResponseOrg.getKey()).isEqualTo("connector");
     assertThat(expansionResponseOrg.getValue().toJson()).isEqualTo("{\"identifier\":\"conn\"}");

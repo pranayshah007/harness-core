@@ -13,6 +13,7 @@ import static io.harness.beans.ExecutionStatus.RUNNING;
 import static io.harness.beans.ExecutionStatus.SUCCESS;
 import static io.harness.beans.FeatureName.ECS_REGISTER_TASK_DEFINITION_TAGS;
 import static io.harness.beans.FeatureName.ENABLE_ADDING_SERVICE_VARS_TO_ECS_SPEC;
+import static io.harness.beans.FeatureName.FIXED_INSTANCE_ZERO_ALLOW;
 import static io.harness.delegate.beans.pcf.ResizeStrategy.RESIZE_NEW_FIRST;
 import static io.harness.exception.FailureType.TIMEOUT;
 import static io.harness.rule.OwnerRule.ADWAIT;
@@ -53,7 +54,6 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyList;
 import static org.mockito.Matchers.anyObject;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
@@ -142,6 +142,7 @@ import software.wings.sm.ExecutionContext;
 import software.wings.sm.ExecutionContextImpl;
 import software.wings.sm.ExecutionResponse;
 import software.wings.sm.WorkflowStandardParams;
+import software.wings.sm.WorkflowStandardParamsExtensionService;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
@@ -155,6 +156,7 @@ import org.junit.experimental.categories.Category;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
@@ -167,12 +169,13 @@ public class EcsStateHelperTest extends CategoryTest {
   @Mock private FeatureFlagService featureFlagService;
   @Mock private SweepingOutputService sweepingOutputService;
   @Mock private StateExecutionService stateExecutionService;
+  @Mock private WorkflowStandardParamsExtensionService workflowStandardParamsExtensionService;
   @Inject @InjectMocks private EcsStateHelper helper;
 
   @Before
   public void setUp() {
     MockitoAnnotations.initMocks(this);
-    doNothing().when(stateExecutionService).appendDelegateTaskDetails(anyString(), any());
+    doNothing().when(stateExecutionService).appendDelegateTaskDetails(any(), any());
   }
 
   @Test
@@ -180,7 +183,7 @@ public class EcsStateHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testBuildContainerSetupParams() {
     ExecutionContextImpl mockContext = mock(ExecutionContextImpl.class);
-    when(mockContext.renderExpression(anyString())).thenAnswer(new Answer<String>() {
+    when(mockContext.renderExpression(any())).thenAnswer(new Answer<String>() {
       @Override
       public String answer(InvocationOnMock invocation) throws Throwable {
         Object[] args = invocation.getArguments();
@@ -312,7 +315,8 @@ public class EcsStateHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testBuildContainerServiceElement() {
     ExecutionContextImpl mockContext = mock(ExecutionContextImpl.class);
-    when(mockContext.renderExpression(anyString())).thenAnswer(new Answer<String>() {
+    Mockito.when(featureFlagService.isEnabled(FIXED_INSTANCE_ZERO_ALLOW, mockContext.getAccountId())).thenReturn(true);
+    when(mockContext.renderExpression(any())).thenAnswer(new Answer<String>() {
       @Override
       public String answer(InvocationOnMock invocation) throws Throwable {
         Object[] args = invocation.getArguments();
@@ -337,7 +341,7 @@ public class EcsStateHelperTest extends CategoryTest {
             .build();
     doReturn(executionData).when(mockContext).getStateExecutionData();
     ContainerServiceElement element = helper.buildContainerServiceElement(
-        mockContext, data, SUCCESS, details, "3", "2", "fixedInstances", RESIZE_NEW_FIRST, 10, mockLogger);
+        mockContext, data, details, "3", "2", "fixedInstances", RESIZE_NEW_FIRST, 10);
     assertThat(element).isNotNull();
     assertThat(element.getUuid()).isEqualTo(SERVICE_ID);
     assertThat(element.getName()).isEqualTo("ContainerServiceName");
@@ -352,7 +356,7 @@ public class EcsStateHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testPrepareBagForEcsSetUp() {
     ExecutionContextImpl mockContext = mock(ExecutionContextImpl.class);
-    when(mockContext.renderExpression(anyString())).thenAnswer(new Answer<String>() {
+    when(mockContext.renderExpression(any())).thenAnswer(new Answer<String>() {
       @Override
       public String answer(InvocationOnMock invocation) throws Throwable {
         Object[] args = invocation.getArguments();
@@ -366,19 +370,19 @@ public class EcsStateHelperTest extends CategoryTest {
     SecretManager mockSecretManaer = mock(SecretManager.class);
     PhaseElement phaseElement =
         PhaseElement.builder().serviceElement(ServiceElement.builder().uuid(SERVICE_ID).build()).build();
-    doReturn(phaseElement).when(mockContext).getContextElement(any(), anyString());
+    doReturn(phaseElement).when(mockContext).getContextElement(any(), any());
     WorkflowStandardParams mockParams = mock(WorkflowStandardParams.class);
     doReturn(mockParams).when(mockContext).getContextElement(any());
     Application app = anApplication().uuid(APP_ID).name(APP_NAME).build();
     Environment env = anEnvironment().uuid(ENV_ID).name(ENV_NAME).build();
-    doReturn(app).when(mockParams).fetchRequiredApp();
-    doReturn(env).when(mockParams).getEnv();
+    doReturn(app).when(workflowStandardParamsExtensionService).fetchRequiredApp(mockParams);
+    doReturn(env).when(workflowStandardParamsExtensionService).getEnv(mockParams);
     Artifact artifact = anArtifact().build();
-    doReturn(artifact).when(mockContext).getDefaultArtifactForService(anyString());
+    doReturn(artifact).when(mockContext).getDefaultArtifactForService(any());
     ImageDetails details = ImageDetails.builder().name("imgName").tag("imgTag").build();
-    doReturn(details).when(mockUtils).fetchContainerImageDetails(any(), anyString());
+    doReturn(details).when(mockUtils).fetchContainerImageDetails(any(), any());
     Service service = Service.builder().uuid(SERVICE_ID).name(SERVICE_NAME).build();
-    doReturn(service).when(mockService).getWithDetails(anyString(), anyString());
+    doReturn(service).when(mockService).getWithDetails(any(), any());
     EcsContainerTask containerTask = new EcsContainerTask();
     containerTask.setUuid("ContainerTaskId");
     EcsInfrastructureMapping mapping = anEcsInfrastructureMapping()
@@ -388,13 +392,13 @@ public class EcsStateHelperTest extends CategoryTest {
                                            .withAssignPublicIp(true)
                                            .withLaunchType("Ec2")
                                            .build();
-    doReturn(mapping).when(mockMappingService).get(anyString(), anyString());
+    doReturn(mapping).when(mockMappingService).get(any(), any());
     SettingAttribute settingAttribute =
         aSettingAttribute().withUuid(SETTING_ID).withValue(AwsConfig.builder().build()).build();
-    doReturn(settingAttribute).when(mockSettingService).get(anyString());
-    doReturn(emptyList()).when(mockSecretManaer).getEncryptionDetails(any(), anyString(), anyString());
+    doReturn(settingAttribute).when(mockSettingService).get(any());
+    doReturn(emptyList()).when(mockSecretManaer).getEncryptionDetails(any(), any(), any());
     EcsServiceSpecification specification = EcsServiceSpecification.builder().serviceId(SERVICE_ID).build();
-    doReturn(specification).when(mockService).getEcsServiceSpecification(anyString(), anyString());
+    doReturn(specification).when(mockService).getEcsServiceSpecification(any(), any());
     EcsSetUpDataBag bag = helper.prepareBagForEcsSetUp(
         mockContext, 0, mockUtils, mockService, mockMappingService, mockSettingService, mockSecretManaer);
     assertThat(bag).isNotNull();
@@ -416,7 +420,7 @@ public class EcsStateHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testRenderEcsSetupContextVariables() {
     ExecutionContextImpl mockContext = mock(ExecutionContextImpl.class);
-    when(mockContext.renderExpression(anyString())).thenAnswer(new Answer<String>() {
+    when(mockContext.renderExpression(any())).thenAnswer(new Answer<String>() {
       @Override
       public String answer(InvocationOnMock invocation) throws Throwable {
         Object[] args = invocation.getArguments();
@@ -427,7 +431,7 @@ public class EcsStateHelperTest extends CategoryTest {
     doReturn(false)
         .doReturn(true)
         .when(featureFlagService)
-        .isNotEnabled(eq(ENABLE_ADDING_SERVICE_VARS_TO_ECS_SPEC), anyString());
+        .isNotEnabled(eq(ENABLE_ADDING_SERVICE_VARS_TO_ECS_SPEC), any());
     Map<String, String> serviceVars = newHashMap("sk", "sv");
     Map<String, String> safeDisplayVars = newHashMap("dk", "dv");
     doReturn(serviceVars).when(mockContext).getServiceVariables();
@@ -647,7 +651,7 @@ public class EcsStateHelperTest extends CategoryTest {
     ArgumentCaptor<SweepingOutputInstance> sweepingOutputInstanceCaptor =
         ArgumentCaptor.forClass(SweepingOutputInstance.class);
     doReturn(null).when(sweepingOutputService).save(sweepingOutputInstanceCaptor.capture());
-    doReturn("").when(mockContext).appendStateExecutionId(anyString());
+    doReturn("").when(mockContext).appendStateExecutionId(any());
     doReturn(SweepingOutputInstance.builder())
         .doReturn(SweepingOutputInstance.builder())
         .when(mockContext)
@@ -657,7 +661,7 @@ public class EcsStateHelperTest extends CategoryTest {
                                     .phaseNameForRollback("Phase1")
                                     .serviceElement(ServiceElement.builder().uuid(SERVICE_ID).build())
                                     .build();
-    doReturn(phaseElement).when(mockContext).getContextElement(any(), anyString());
+    doReturn(phaseElement).when(mockContext).getContextElement(any(), any());
     ExecutionResponse response = helper.handleDelegateResponseForEcsDeploy(
         mockContext, ImmutableMap.of(ACTIVITY_ID, delegateResponse), false, mockService, false, mockHelper);
     assertThat(response).isNotNull();
@@ -711,7 +715,7 @@ public class EcsStateHelperTest extends CategoryTest {
     ArgumentCaptor<SweepingOutputInstance> sweepingOutputInstanceCaptor =
         ArgumentCaptor.forClass(SweepingOutputInstance.class);
     doReturn(null).when(sweepingOutputService).save(sweepingOutputInstanceCaptor.capture());
-    doReturn("").when(mockContext).appendStateExecutionId(anyString());
+    doReturn("").when(mockContext).appendStateExecutionId(any());
     doReturn(SweepingOutputInstance.builder())
         .doReturn(SweepingOutputInstance.builder())
         .when(mockContext)
@@ -721,7 +725,7 @@ public class EcsStateHelperTest extends CategoryTest {
                                     .phaseNameForRollback("Phase1")
                                     .serviceElement(ServiceElement.builder().uuid(SERVICE_ID).build())
                                     .build();
-    doReturn(phaseElement).when(mockContext).getContextElement(any(), anyString());
+    doReturn(phaseElement).when(mockContext).getContextElement(any(), any());
     ExecutionResponse response = helper.handleDelegateResponseForEcsDeploy(
         mockContext, ImmutableMap.of(ACTIVITY_ID, delegateResponse), false, mockService, false, mockHelper);
     assertThat(response).isNotNull();
@@ -786,7 +790,7 @@ public class EcsStateHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testPrepareBagForEcsDeploy() {
     ExecutionContextImpl mockContext = mock(ExecutionContextImpl.class);
-    when(mockContext.renderExpression(anyString())).thenAnswer(new Answer<String>() {
+    when(mockContext.renderExpression(any())).thenAnswer(new Answer<String>() {
       @Override
       public String answer(InvocationOnMock invocation) throws Throwable {
         Object[] args = invocation.getArguments();
@@ -801,8 +805,8 @@ public class EcsStateHelperTest extends CategoryTest {
     doReturn(mockParams).when(mockContext).getContextElement(any());
     Application app = anApplication().uuid(APP_ID).name(APP_NAME).build();
     Environment env = anEnvironment().uuid(ENV_ID).name(ENV_NAME).build();
-    doReturn(app).when(mockParams).fetchRequiredApp();
-    doReturn(env).when(mockParams).getEnv();
+    doReturn(app).when(workflowStandardParamsExtensionService).fetchRequiredApp(mockParams);
+    doReturn(env).when(workflowStandardParamsExtensionService).getEnv(mockParams);
     PhaseElement phaseElement = PhaseElement.builder()
                                     .phaseName("Rollback Phase1")
                                     .phaseNameForRollback("Phase1")
@@ -812,9 +816,9 @@ public class EcsStateHelperTest extends CategoryTest {
         .doReturn(phaseElement)
         .doReturn(phaseElement)
         .when(mockContext)
-        .getContextElement(any(), anyString());
+        .getContextElement(any(), any());
     Service service = Service.builder().uuid(SERVICE_ID).name(SERVICE_NAME).build();
-    doReturn(service).when(mockService).getWithDetails(anyString(), anyString());
+    doReturn(service).when(mockService).getWithDetails(any(), any());
     EcsInfrastructureMapping mapping = anEcsInfrastructureMapping()
                                            .withUuid(INFRA_MAPPING_ID)
                                            .withRegion("us-east-1")
@@ -822,11 +826,11 @@ public class EcsStateHelperTest extends CategoryTest {
                                            .withAssignPublicIp(true)
                                            .withLaunchType("Ec2")
                                            .build();
-    doReturn(mapping).when(mockMappingService).get(anyString(), anyString());
+    doReturn(mapping).when(mockMappingService).get(any(), any());
     SettingAttribute settingAttribute =
         aSettingAttribute().withUuid(SETTING_ID).withValue(AwsConfig.builder().build()).build();
-    doReturn(settingAttribute).when(mockSettingService).get(anyString());
-    doReturn(emptyList()).when(mockSecretManaer).getEncryptionDetails(any(), anyString(), anyString());
+    doReturn(settingAttribute).when(mockSettingService).get(any());
+    doReturn(emptyList()).when(mockSecretManaer).getEncryptionDetails(any(), any(), any());
     SweepingOutputInquiryBuilder builder1 = SweepingOutputInquiry.builder();
     SweepingOutputInquiryBuilder builder2 = SweepingOutputInquiry.builder();
     doReturn(builder1).doReturn(builder2).when(mockContext).prepareSweepingOutputInquiryBuilder();
@@ -962,7 +966,7 @@ public class EcsStateHelperTest extends CategoryTest {
         .executeTask(any());
 
     doNothing().when(sweepingOutputService).ensure(any());
-    doReturn("").when(mockContext).appendStateExecutionId(anyString());
+    doReturn("").when(mockContext).appendStateExecutionId(any());
     doReturn(SweepingOutputInstance.builder())
         .doReturn(SweepingOutputInstance.builder())
         .when(mockContext)
@@ -972,7 +976,7 @@ public class EcsStateHelperTest extends CategoryTest {
                                     .phaseNameForRollback("Phase1")
                                     .serviceElement(ServiceElement.builder().uuid(SERVICE_ID).build())
                                     .build();
-    doReturn(phaseElement).when(mockContext).getContextElement(any(), anyString());
+    doReturn(phaseElement).when(mockContext).getContextElement(any(), any());
 
     helper.createSweepingOutputForRollback(bag, activity, mockDelegateService, ecsResizeParams, mockContext, false);
 

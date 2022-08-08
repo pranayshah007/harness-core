@@ -18,6 +18,7 @@ import software.wings.beans.yaml.ChangeContext;
 import software.wings.infra.DirectKubernetesInfrastructure;
 import software.wings.infra.DirectKubernetesInfrastructure.Yaml;
 import software.wings.service.impl.yaml.handler.CloudProviderInfrastructure.CloudProviderInfrastructureYamlHandler;
+import software.wings.service.impl.yaml.service.YamlHelper;
 import software.wings.service.intfc.SettingsService;
 
 import com.google.inject.Inject;
@@ -26,6 +27,8 @@ import java.util.List;
 public class DirectKubernetesInfrastructureYamlHandler
     extends CloudProviderInfrastructureYamlHandler<Yaml, DirectKubernetesInfrastructure> {
   @Inject private SettingsService settingsService;
+  @Inject private YamlHelper yamlHelper;
+
   @Override
   public Yaml toYaml(DirectKubernetesInfrastructure bean, String appId) {
     SettingAttribute cloudProvider = settingsService.get(bean.getCloudProviderId());
@@ -56,8 +59,10 @@ public class DirectKubernetesInfrastructureYamlHandler
   private void toBean(DirectKubernetesInfrastructure bean, ChangeContext<Yaml> changeContext) {
     Yaml yaml = changeContext.getYaml();
     String accountId = changeContext.getChange().getAccountId();
+    String appId = yamlHelper.getAppId(accountId, changeContext.getChange().getFilePath());
     SettingAttribute cloudProvider = settingsService.getSettingAttributeByName(accountId, yaml.getCloudProviderName());
     notNullCheck(format("Cloud Provider with name %s does not exist", yaml.getCloudProviderName()), cloudProvider);
+    settingsService.checkRbacOnSettingAttribute(appId, cloudProvider);
     bean.setCloudProviderId(cloudProvider.getUuid());
     bean.setClusterName(yaml.getClusterName());
     bean.setNamespace(yaml.getNamespace());

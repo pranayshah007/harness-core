@@ -13,6 +13,7 @@ import io.harness.ConnectorConstants;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.gitsync.sdk.EntityValidityDetails;
+import io.harness.governance.GovernanceMetadata;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.swagger.annotations.ApiModel;
@@ -42,4 +43,5 @@ public class ConnectorResponseDTO {
   @Schema(description = ConnectorConstants.HARNESS_MANAGED) boolean harnessManaged;
   EntityGitDetails gitDetails;
   EntityValidityDetails entityValidityDetails;
+  GovernanceMetadata governanceMetadata;
 }

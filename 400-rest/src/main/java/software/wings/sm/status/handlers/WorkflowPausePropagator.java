@@ -56,7 +56,7 @@ public class WorkflowPausePropagator implements WorkflowStatusPropagator {
     WorkflowExecution execution = propagatorHelper.obtainExecution(appId, updateInfo.getWorkflowExecutionId());
     // We need to refresh the pipeline execution because the pipelineExecution field only gets set when a call from UI
     // is made.
-    propagatorHelper.refreshPipelineExecution(execution.getAccountId(), appId, execution.getPipelineExecutionId());
+    propagatorHelper.refreshPipelineExecution(appId, execution.getPipelineExecutionId());
     if (propagatorHelper.shouldPausePipeline(appId, execution.getPipelineExecutionId())) {
       WorkflowExecution pipelineExecution =
           propagatorHelper.updateStatus(appId, execution.getPipelineExecutionId(), singletonList(RUNNING), PAUSED);

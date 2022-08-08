@@ -20,8 +20,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
 public class KustomizeCapabilityTest extends CategoryTest {
-  private KustomizeCapability capability =
-      KustomizeCapability.builder().pluginRootDir("/home/kustomize_plugins/").build();
+  private final KustomizeCapability capability = new KustomizeCapability("/home/kustomize_plugins/");
 
   @Test
   @Owner(developers = OwnerRule.YOGESH)

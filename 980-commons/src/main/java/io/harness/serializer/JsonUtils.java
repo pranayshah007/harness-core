@@ -10,6 +10,7 @@ package io.harness.serializer;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.data.structure.EmptyPredicate;
 
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.core.JsonParseException;
@@ -46,9 +47,11 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import lombok.experimental.UtilityClass;
@@ -223,8 +226,10 @@ public class JsonUtils {
    * @param jsonString     json to deserialize.
    * @param classToConvert target class type.
    * @return Deserialized object.
+   * This is deprecated as it bypasses all the exception mappers and cast it is as Runtime Exception
    */
   @JsonDeserialize
+  @Deprecated
   public static <T> T asObject(String jsonString, Class<T> classToConvert) {
     return asObject(jsonString, classToConvert, mapper);
   }
@@ -237,8 +242,10 @@ public class JsonUtils {
    * @param classToConvert the class to convert
    * @param objectMapper   the object mapper
    * @return the t
+   * This is deprecated as it bypasses all the exception mappers and cast it is as Runtime Exception
    */
   @JsonDeserialize
+  @Deprecated
   public static <T> T asObject(String jsonString, Class<T> classToConvert, ObjectMapper objectMapper) {
     try {
       return objectMapper.readValue(jsonString, classToConvert);
@@ -287,8 +294,12 @@ public class JsonUtils {
    * @return deserialized list.
    */
   @JsonDeserialize
-  public static <T> T asList(String jsonString, TypeReference<T> valueTypeRef) {
+  public static <T> List<T> asList(String jsonString, TypeReference<List<T>> valueTypeRef) {
     try {
+      if (EmptyPredicate.isEmpty(jsonString)) {
+        return Collections.emptyList();
+      }
+
       return mapper.readValue(jsonString, valueTypeRef);
     } catch (Exception exception) {
       throw new RuntimeException(exception);
@@ -473,5 +484,10 @@ public class JsonUtils {
     JsonParser jsonParser = new JsonParser();
     JsonElement jsonElement = jsonParser.parse(jsonString);
     return gson.toJson(jsonElement);
+  }
+  @JsonDeserialize
+  public static <T> T asObjectWithExceptionHandlingType(String jsonString, Class<T> classToConvert)
+      throws JsonProcessingException {
+    return mapper.readValue(jsonString, classToConvert);
   }
 }

@@ -1,3 +1,10 @@
+/*
+ * Copyright 2022 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
+
 package io.harness.accesscontrol.principals.serviceaccounts;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
@@ -63,7 +70,7 @@ public class HarnessServiceAccountServiceImplTest extends AccessControlTestBase 
         .thenReturn(Response.success(ResponseDTO.newResponse(serviceAccountDTOs)));
     when(serviceAccountService.createIfNotPresent(serviceAccount)).thenReturn(serviceAccount);
     harnessServiceAccountService.sync(identifier, scope);
-    verify(serviceAccountClient, atLeast(3)).listServiceAccounts(accountIdentifier, null, null, resourceIds);
+    verify(serviceAccountClient, atLeast(1)).listServiceAccounts(accountIdentifier, null, null, resourceIds);
     verify(serviceAccountService, times(1)).createIfNotPresent(serviceAccount);
   }
 
@@ -82,7 +89,7 @@ public class HarnessServiceAccountServiceImplTest extends AccessControlTestBase 
         .thenReturn(Response.success(ResponseDTO.newResponse(emptyList())));
     when(serviceAccountService.deleteIfPresent(identifier, scope.toString())).thenReturn(Optional.of(serviceAccount));
     harnessServiceAccountService.sync(identifier, scope);
-    verify(serviceAccountClient, atLeast(3)).listServiceAccounts(accountIdentifier, null, null, resourceIds);
+    verify(serviceAccountClient, atLeast(1)).listServiceAccounts(accountIdentifier, null, null, resourceIds);
     verify(serviceAccountService, times(1)).deleteIfPresent(identifier, scope.toString());
   }
 }

@@ -4,7 +4,7 @@ server:
       port: 9090
       keyStorePath: keystore.jks
       keyStorePassword: password
-      trustStorePath: ${JAVA_HOME}/jre/lib/security/cacerts
+      trustStorePath: ${JAVA_HOME}/lib/security/cacerts
       certAlias: localhost
       validateCerts: false
       maxRequestHeaderSize: 100KiB
@@ -16,7 +16,7 @@ server:
       port: 9091
       keyStorePath: keystore.jks
       keyStorePassword: password
-      trustStorePath: ${JAVA_HOME}/jre/lib/security/cacerts
+      trustStorePath: ${JAVA_HOME}/lib/security/cacerts
       certAlias: localhost
       validateCerts: false
   requestLog:
@@ -70,6 +70,7 @@ clusterName: ""
 deploymentClusterName: ""
 bugsnagApiKey: ""
 numberOfRemindersBeforeAccountDeletion: 3
+agentMtlsSubdomain: ""
 
 jobsFrequencyConfig:
   accountLicenseCheckJobFrequencyInMinutes: 60
@@ -325,7 +326,7 @@ deployMode: KUBERNETES
 deployVariant: SAAS
 envPath: ""
 
-scmVersion: 98fc345b
+scmVersion: 36d92fd8
 
 ngAuthUIEnabled: false
 
@@ -377,6 +378,7 @@ cfClientConfig:
   analyticsEnabled: true
   connectionTimeout: 10000
   readTimeout: 45000
+  bufferSize: 10240
   retries: 6
   sleepInterval: 5000
 
@@ -569,7 +571,7 @@ pipelineConfig:
   approvalStateTimeout: -1
 
 currentJre: openjdk8u242
-migrateToJre: openjdk8u242
+migrateToJre: openjdk11014_9
 
 jreConfigs:
   oracle8u191:
@@ -584,6 +586,11 @@ jreConfigs:
     jreMacDirectory: jdk8u242-b08-jre
     jreTarPath: jre/openjdk-8u242/jre_x64_${OS}_8u242b08.tar.gz
     alpnJarPath: tools/alpn/release/8.1.13.v20181017/alpn-boot-8.1.13.v20181017.jar
+  openjdk11014_9:
+    version: 11.0.14
+    jreDirectory: jdk-11.0.14+9-jre
+    jreMacDirectory: jdk-11.0.14+9-jre
+    jreTarPath: jre/openjdk-11.0.14_9/OpenJDK11U-jre_x64_${OS}_hotspot_11.0.14_9.tar.gz
 
 cdnConfig:
   url: https://qa.harness.io
@@ -597,6 +604,7 @@ cdnConfig:
   cdnJreTarPaths:
     oracle8u191: public/shared/jre/oracle-8u191/jre-8u191-${OS}-x64.tar.gz
     openjdk8u242: public/shared/jre/openjdk-8u242/jre_x64_${OS}_8u242b08.tar.gz
+    openjdk11014_9: public/shared/jre/openjdk-11.0.14_9/OpenJDK11U-jre_x64_${OS}_hotspot_11.0.14_9.tar.gz
 
 commandLibraryServiceConfig:
   baseUrl: https://localhost:5050/command-library-service/
@@ -688,7 +696,7 @@ iteratorsConfig:
   perpetualTaskAssignmentIteratorConfig:
     threadPoolSize: ${PERPETUAL_TASK_ASSIGNMENT_ITERATOR_THREAD_COUNT:-5}
   delegateTaskRebroadcastIteratorConfig:
-    threadPoolSize: ${DELEGATE_TASK_REBROADCAST_ITERATOR_THREAD_COUNT:-5}
+    threadPoolSize: ${DELEGATE_TASK_REBROADCAST_ITERATOR_THREAD_COUNT:-2}
   failDelegateTaskIteratorConfig:
       threadPoolSize: ${FAIL_DELEGATE_TASK_ITERATOR_THREAD_COUNT:-2}
 

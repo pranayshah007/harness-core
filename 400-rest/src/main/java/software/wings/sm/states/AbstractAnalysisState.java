@@ -33,11 +33,13 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.ExecutionStatus;
 import io.harness.beans.FeatureName;
+import io.harness.beans.SweepingOutputInstance;
 import io.harness.context.ContextElementType;
 import io.harness.cv.WorkflowVerificationResult;
 import io.harness.cv.api.WorkflowVerificationResultService;
 import io.harness.expression.ExpressionEvaluator;
 import io.harness.ff.FeatureFlagService;
+import io.harness.serializer.KryoSerializer;
 import io.harness.time.Timestamp;
 import io.harness.waiter.WaitNotifyEngine;
 
@@ -73,12 +75,15 @@ import software.wings.service.intfc.StateExecutionService;
 import software.wings.service.intfc.WorkflowExecutionBaselineService;
 import software.wings.service.intfc.WorkflowExecutionService;
 import software.wings.service.intfc.security.SecretManager;
+import software.wings.service.intfc.sweepingoutput.SweepingOutputService;
 import software.wings.service.intfc.verification.CVActivityLogService;
+import software.wings.service.intfc.verification.CVActivityLogger;
 import software.wings.sm.ExecutionContext;
 import software.wings.sm.ExecutionContextImpl;
 import software.wings.sm.ExecutionResponse;
 import software.wings.sm.State;
 import software.wings.sm.StateType;
+import software.wings.sm.states.mixin.SweepingOutputStateMixin;
 import software.wings.stencils.DefaultValue;
 import software.wings.verification.VerificationDataAnalysisResponse;
 import software.wings.verification.VerificationStateAnalysisExecutionData;
@@ -101,9 +106,12 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import lombok.Builder;
+import lombok.Getter;
+import lombok.Setter;
 import lombok.Value;
 import lombok.experimental.FieldNameConstants;
 import org.apache.commons.lang3.StringUtils;
+import org.mongodb.morphia.annotations.Transient;
 import org.slf4j.Logger;
 
 /**
@@ -113,7 +121,7 @@ import org.slf4j.Logger;
 @FieldNameConstants(innerTypeName = "AbstractAnalysisStateKeys")
 @TargetModule(HarnessModule._870_CG_ORCHESTRATION)
 @BreakDependencyOn("software.wings.service.intfc.DelegateService")
-public abstract class AbstractAnalysisState extends State {
+public abstract class AbstractAnalysisState extends State implements SweepingOutputStateMixin {
   private static final SecureRandom random = new SecureRandom();
   // only use it in the new instance API.
   private static final String DEFAULT_HOSTNAME_TEMPLATE = "${instanceDetails.hostName}";
@@ -122,6 +130,8 @@ public abstract class AbstractAnalysisState extends State {
   public static final String END_TIME_PLACE_HOLDER = "$endTime";
   public static final String HOST_NAME_PLACE_HOLDER = "$hostName";
   public static final int MAX_SAMPLING_SIZE_PER_GROUP = 10;
+  protected static final String CV_STATUS_VARIABLE = "cvStatus";
+  protected static final String CV_STATE_TYPE_VARIABLE = "cvStateType";
 
   protected boolean failOnEmptyNodes;
   protected String timeDuration;
@@ -129,6 +139,8 @@ public abstract class AbstractAnalysisState extends State {
   protected String tolerance;
   protected String predictiveHistoryMinutes;
   protected String initialAnalysisDelay = "2m";
+  @Getter @Setter private String sweepingOutputName;
+  @Getter @Setter private SweepingOutputInstance.Scope sweepingOutputScope;
 
   private static final int DEFAULT_VERIFICATION_STATE_TIMEOUT_MILLIS = 3 * 60 * 60 * 1000; // 3 hours
   private static final int TIMEOUT_BUFFER = 150; // 150 Minutes.
@@ -155,12 +167,18 @@ public abstract class AbstractAnalysisState extends State {
   @Inject protected AccountService accountService;
   @Inject protected CVActivityLogService cvActivityLogService;
   @Inject protected WorkflowVerificationResultService workflowVerificationResultService;
-
+  @Inject @Transient protected SweepingOutputService sweepingOutputService;
+  @Transient @Inject KryoSerializer kryoSerializer;
   protected String hostnameField;
 
   protected String hostnameTemplate;
 
   protected boolean includePreviousPhaseNodes;
+
+  @Override
+  public KryoSerializer getKryoSerializer() {
+    return kryoSerializer;
+  }
 
   @Attributes(title = "Analysis Time duration (in minutes)")
   @DefaultValue("15")
@@ -355,10 +373,11 @@ public abstract class AbstractAnalysisState extends State {
 
   public abstract void setAnalysisServerConfigId(String analysisServerConfigId);
 
-  protected void generateDemoActivityLogs(CVActivityLogService.Logger activityLogger, boolean failedState) {
-    logDataCollectionTriggeredMessage(activityLogger);
+  protected void generateDemoActivityLogs(
+      ExecutionContext executionContext, CVActivityLogger activityLogger, boolean failedState) {
+    logDataCollectionTriggeredMessage(executionContext, activityLogger);
     long startTime = dataCollectionStartTimestampMillis();
-    int duration = Integer.parseInt(getTimeDuration());
+    int duration = Integer.parseInt(getTimeDuration(executionContext));
     for (int minute = 0; minute < duration; minute++) {
       long startTimeMSForCurrentMinute = startTime + Duration.ofMinutes(minute).toMillis();
       long endTimeMSForCurrentMinute = startTimeMSForCurrentMinute + Duration.ofMinutes(1).toMillis();
@@ -389,11 +408,11 @@ public abstract class AbstractAnalysisState extends State {
             || getSettingAttribute(getAnalysisServerConfigId()).getName().toLowerCase().endsWith("prod"));
   }
 
-  protected void generateDemoThirdPartyApiCallLogs(
-      String accountId, String stateExecutionId, boolean failedState, String demoRequestBody, String demoResponseBody) {
+  protected void generateDemoThirdPartyApiCallLogs(ExecutionContext executionContext, String accountId,
+      String stateExecutionId, boolean failedState, String demoRequestBody, String demoResponseBody) {
     List<ThirdPartyApiCallLog> thirdPartyApiCallLogs = new ArrayList<>();
     long startTime = dataCollectionStartTimestampMillis();
-    int duration = Integer.parseInt(getTimeDuration());
+    int duration = Integer.parseInt(getTimeDuration(executionContext));
     for (int minute = 0; minute < duration; minute++) {
       long startTimeMSForCurrentMinute = startTime + Duration.ofMinutes(minute).toMillis();
       ThirdPartyApiCallLog apiCallLog = ThirdPartyApiCallLog.createApiCallLog(accountId, stateExecutionId);
@@ -497,19 +516,19 @@ public abstract class AbstractAnalysisState extends State {
     return Timestamp.currentMinuteBoundary();
   }
 
-  private long dataCollectionEndTimestampMillis(long dataCollectionStartTime) {
+  private long dataCollectionEndTimestampMillis(ExecutionContext executionContext, long dataCollectionStartTime) {
     return Instant.ofEpochMilli(dataCollectionStartTime)
-        .plusMillis(TimeUnit.MINUTES.toMillis(Integer.parseInt(getTimeDuration())))
+        .plusMillis(TimeUnit.MINUTES.toMillis(Integer.parseInt(getTimeDuration(executionContext))))
         .toEpochMilli();
   }
 
-  protected void logDataCollectionTriggeredMessage(CVActivityLogService.Logger activityLogger) {
+  protected void logDataCollectionTriggeredMessage(ExecutionContext executionContext, CVActivityLogger activityLogger) {
     long dataCollectionStartTime = dataCollectionStartTimestampMillis();
     long initDelayMins = TimeUnit.SECONDS.toMinutes(getDelaySeconds(initialAnalysisDelay));
-    activityLogger.info("Triggered data collection for " + getTimeDuration()
+    activityLogger.info("Triggered data collection for " + getTimeDuration(executionContext)
             + " minutes, Data will be collected for time range %t to %t. Waiting for " + initDelayMins
             + " minutes before starting data collection.",
-        dataCollectionStartTime, dataCollectionEndTimestampMillis(dataCollectionStartTime));
+        dataCollectionStartTime, dataCollectionEndTimestampMillis(executionContext, dataCollectionStartTime));
   }
 
   protected boolean isCVTaskEnqueuingEnabled(String accountId) {
@@ -535,6 +554,13 @@ public abstract class AbstractAnalysisState extends State {
     int expressions = StringUtils.countMatches(fieldValue, "$");
     int hostFields = StringUtils.countMatches(fieldValue, "${host}");
     return expressions > hostFields;
+  }
+
+  protected void updateSweepingOutputWithCVResult(ExecutionContext executionContext, String status) {
+    Map<String, Object> sweepingOutputMap = new HashMap<>();
+    sweepingOutputMap.put(CV_STATE_TYPE_VARIABLE, getStateType());
+    sweepingOutputMap.put(CV_STATUS_VARIABLE, status);
+    handleSweepingOutput(sweepingOutputService, executionContext, sweepingOutputMap);
   }
 
   protected ExecutionResponse createExecutionResponse(

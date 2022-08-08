@@ -37,6 +37,7 @@ import org.springframework.data.annotation.TypeAlias;
 @RecasterAlias("io.harness.cdng.k8s.K8sCanaryDeleteStepNode")
 public class K8sCanaryDeleteStepNode extends CdAbstractStepNode {
   @JsonProperty("type") @NotNull StepType type = StepType.K8sCanaryDelete;
+  @NotNull
   @JsonProperty("spec")
   @JsonTypeInfo(use = NAME, property = "type", include = EXTERNAL_PROPERTY, visible = true)
   K8sCanaryDeleteStepInfo k8sCanaryDeleteStepInfo;

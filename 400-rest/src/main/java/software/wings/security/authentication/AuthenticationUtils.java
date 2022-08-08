@@ -24,6 +24,7 @@ import software.wings.app.MainConfiguration;
 import software.wings.beans.Account;
 import software.wings.beans.User;
 import software.wings.dl.WingsPersistence;
+import software.wings.exception.AccountNotFoundException;
 import software.wings.helpers.ext.url.SubdomainUrlHelperIntfc;
 import software.wings.service.intfc.AccountService;
 import software.wings.service.intfc.UserService;
@@ -81,6 +82,15 @@ public class AuthenticationUtils {
     return wingsPersistence.createQuery(User.class).field("email").equal(userName.trim().toLowerCase()).get();
   }
 
+  public Account getAccount(String accountId) {
+    Account account = null;
+    try {
+      account = accountService.get(accountId);
+    } catch (AccountNotFoundException accountNotFoundException) {
+      log.warn("{} Account Id configured does not exist ", accountId);
+    }
+    return account;
+  }
   public Account getDefaultAccount(User user) {
     String defaultAccountId = user.getDefaultAccountId();
     if (isEmpty(defaultAccountId)) {

@@ -35,6 +35,7 @@ import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.service.DelegateGrpcClientWrapper;
 import io.harness.servicenow.ServiceNowActionNG;
 import io.harness.servicenow.ServiceNowFieldNG;
+import io.harness.servicenow.ServiceNowTemplate;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
@@ -44,7 +45,7 @@ import java.util.Map;
 import java.util.Optional;
 
 public class ServiceNowResourceServiceImpl implements ServiceNowResourceService {
-  private static final Duration TIMEOUT = Duration.ofSeconds(60);
+  private static final Duration TIMEOUT = Duration.ofSeconds(30);
 
   private final ConnectorService connectorService;
   private final SecretManagerClientService secretManagerClientService;
@@ -75,6 +76,20 @@ public class ServiceNowResourceServiceImpl implements ServiceNowResourceService 
         ServiceNowTaskNGParameters.builder().action(ServiceNowActionNG.GET_METADATA).ticketType(ticketType);
     return obtainServiceNowTaskNGResponse(serviceNowConnectorRef, orgId, projectId, parametersBuilder)
         .getServiceNowFieldNGList();
+  }
+
+  @Override
+  public List<ServiceNowTemplate> getTemplateList(IdentifierRef connectorRef, String orgId, String projectId, int limit,
+      int offset, String templateName, String ticketType) {
+    ServiceNowTaskNGParametersBuilder parametersBuilder = ServiceNowTaskNGParameters.builder()
+                                                              .action(ServiceNowActionNG.GET_TEMPLATE)
+                                                              .ticketType(ticketType)
+                                                              .templateListLimit(limit)
+                                                              .templateListOffset(offset)
+                                                              .templateName(templateName);
+
+    return obtainServiceNowTaskNGResponse(connectorRef, orgId, projectId, parametersBuilder)
+        .getServiceNowTemplateList();
   }
 
   private ServiceNowTaskNGResponse obtainServiceNowTaskNGResponse(IdentifierRef serviceNowConnectorRef, String orgId,

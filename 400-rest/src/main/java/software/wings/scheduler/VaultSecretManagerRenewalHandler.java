@@ -82,6 +82,10 @@ public class VaultSecretManagerRenewalHandler implements Handler<SecretManagerCo
       log.info("Vault {} not configured with Vault Agent and does not need renewal", baseVaultConfig.getUuid());
       return;
     }
+    if (baseVaultConfig.isUseK8sAuth()) {
+      log.info("Vault {} configured with K8s Auth does not need renewal", baseVaultConfig.getUuid());
+      return;
+    }
     KmsSetupAlert kmsSetupAlert = vaultService.getRenewalAlert(baseVaultConfig);
     try {
       long renewalInterval = baseVaultConfig.getRenewalInterval();

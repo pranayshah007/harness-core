@@ -37,11 +37,13 @@ public class HObjectMapper {
   public static ObjectMapper get() {
     ObjectMapper mapper = new ObjectMapper();
     mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+    mapper.configure(DeserializationFeature.READ_UNKNOWN_ENUM_VALUES_USING_DEFAULT_VALUE, true);
     return mapper;
   }
 
   public static ObjectMapper configureObjectMapperForNG(ObjectMapper mapper) {
     mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+    mapper.configure(DeserializationFeature.READ_UNKNOWN_ENUM_VALUES_USING_DEFAULT_VALUE, true);
     AnnotationAwareJsonSubtypeResolver subtypeResolver =
         AnnotationAwareJsonSubtypeResolver.newInstance(mapper.getSubtypeResolver());
     mapper.setSubtypeResolver(subtypeResolver);

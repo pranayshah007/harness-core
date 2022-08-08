@@ -13,8 +13,8 @@ import static io.harness.rule.OwnerRule.ACASIAN;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
@@ -42,6 +42,7 @@ import io.harness.security.encryption.EncryptedDataDetail;
 import software.wings.beans.TaskType;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Sets;
 import java.util.List;
 import java.util.Map;
 import org.junit.Before;
@@ -67,10 +68,11 @@ public class S3ResourceServiceImplTest extends CategoryTest {
     AwsConnectorDTO awsConnectorDTO =
         AwsConnectorDTO.builder()
             .credential(AwsCredentialDTO.builder().awsCredentialType(AwsCredentialType.INHERIT_FROM_DELEGATE).build())
+            .delegateSelectors(Sets.newHashSet("proj-delegate"))
             .build();
     doReturn(awsConnectorDTO).when(serviceHelper).getAwsConnector(awsConnectorRef);
 
-    doReturn(baseNGAccess).when(serviceHelper).getBaseNGAccess(anyString(), anyString(), anyString());
+    doReturn(baseNGAccess).when(serviceHelper).getBaseNGAccess(any(), any(), any());
     doReturn(encryptionDetails).when(serviceHelper).getAwsEncryptionDetails(awsConnectorDTO, baseNGAccess);
   }
 
@@ -86,7 +88,7 @@ public class S3ResourceServiceImplTest extends CategoryTest {
                                        .build();
     doReturn(response)
         .when(serviceHelper)
-        .getResponseData(eq(baseNGAccess), any(AwsTaskParams.class), eq(TaskType.NG_AWS_TASK.name()));
+        .getResponseData(eq(baseNGAccess), nullable(AwsTaskParams.class), eq(TaskType.NG_AWS_TASK.name()));
 
     Map<String, String> result = s3ResourceServiceImpl.getBuckets(awsConnectorRef, region, "test-org", "test-proj");
     assertThat(result).isNotNull();
@@ -102,6 +104,7 @@ public class S3ResourceServiceImplTest extends CategoryTest {
     assertThat(awsTaskParams.getAwsConnector()).isNotNull();
     assertThat(awsTaskParams.getRegion()).isEqualTo(region);
     assertThat(awsTaskParams.getAwsTaskType()).isEqualTo(AwsTaskType.LIST_S3_BUCKETS);
+    assertThat(awsTaskParams.getAwsConnector().getDelegateSelectors()).contains("proj-delegate");
   }
 
   @Test
@@ -114,7 +117,7 @@ public class S3ResourceServiceImplTest extends CategoryTest {
                                            .build();
     doReturn(response)
         .when(serviceHelper)
-        .getResponseData(eq(baseNGAccess), any(AwsTaskParams.class), eq(TaskType.NG_AWS_TASK.name()));
+        .getResponseData(eq(baseNGAccess), nullable(AwsTaskParams.class), eq(TaskType.NG_AWS_TASK.name()));
 
     try {
       s3ResourceServiceImpl.getBuckets(awsConnectorRef, region, "test-org", "test-proj");

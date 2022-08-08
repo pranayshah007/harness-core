@@ -17,6 +17,7 @@ import retrofit2.http.GET;
 import retrofit2.http.Header;
 import retrofit2.http.Headers;
 import retrofit2.http.POST;
+import retrofit2.http.PUT;
 import retrofit2.http.Path;
 
 public interface GithubRestClient {
@@ -38,5 +39,10 @@ public interface GithubRestClient {
   @GET("/repos/{owner}/{repo}/pulls/{pull_number}")
   @Headers("Accept: application/vnd.github.v3+json")
   Call<Object> findPR(@Header("Authorization") String authorization, @Path("owner") String owner,
+      @Path("repo") String repo, @Path("pull_number") String pullNumber);
+
+  @PUT("repos/{owner}/{repo}/pulls/{pull_number}/merge")
+  @Headers("Accept: application/vnd.github.v3+json")
+  Call<Object> mergePR(@Header("Authorization") String authorization, @Path("owner") String owner,
       @Path("repo") String repo, @Path("pull_number") String pullNumber);
 }

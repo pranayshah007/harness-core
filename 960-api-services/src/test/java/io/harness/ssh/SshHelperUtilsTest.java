@@ -23,6 +23,7 @@ import io.harness.shell.SshSessionFactory;
 
 import java.io.IOException;
 import java.io.Writer;
+import java.util.Collections;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -38,15 +39,15 @@ public class SshHelperUtilsTest extends ApiServiceTestBase {
   @Owner(developers = TMACARI)
   @Category(UnitTests.class)
   public void testExecuteLocalCommand() throws IOException {
-    SshHelperUtils.executeLocalCommand("echo test", logCallback, writer, false);
+    SshHelperUtils.executeLocalCommand("echo test", logCallback, writer, false, Collections.emptyMap());
     verify(logCallback, times(1)).saveExecutionLog("test", LogLevel.INFO);
     verifyZeroInteractions(writer);
 
-    SshHelperUtils.executeLocalCommand("echo test", logCallback, writer, true);
+    SshHelperUtils.executeLocalCommand("echo test", logCallback, writer, true, Collections.emptyMap());
     verify(writer, times(1)).write("test");
     verifyZeroInteractions(logCallback);
 
-    SshHelperUtils.executeLocalCommand("echo test >&2", logCallback, writer, false);
+    SshHelperUtils.executeLocalCommand("echo test >&2", logCallback, writer, false, Collections.emptyMap());
     verify(logCallback, times(1)).saveExecutionLog("test", LogLevel.ERROR);
     verifyZeroInteractions(writer);
   }

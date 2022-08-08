@@ -11,15 +11,15 @@ import static io.harness.rule.OwnerRule.GEORGE;
 import static io.harness.rule.OwnerRule.VUK;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.anyObject;
+import static org.mockito.ArgumentMatchers.isA;
 import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.isA;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 import io.harness.DelegateTestBase;
 import io.harness.category.element.UnitTests;
 import io.harness.manage.ManagedScheduledExecutorService;
-import io.harness.perpetualtask.grpc.PerpetualTaskServiceGrpcClient;
 import io.harness.perpetualtask.k8s.watch.K8sWatchTaskParams;
 import io.harness.rule.Owner;
 import io.harness.serializer.KryoSerializer;
@@ -34,13 +34,16 @@ import com.google.protobuf.ByteString;
 import com.google.protobuf.Timestamp;
 import com.google.protobuf.util.Durations;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ThreadPoolExecutor;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Before;
 import org.junit.Rule;
@@ -72,9 +75,9 @@ public class PerpetualTaskWorkerTest extends DelegateTestBase {
   PerpetualTaskExecutionContext context;
 
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
-  @Mock private PerpetualTaskServiceGrpcClient perpetualTaskServiceGrpcClient;
+  @Mock private PerpetualTaskServiceAgentClient perpetualTaskServiceAgentClient;
   @Mock private Map<String, PerpetualTaskExecutor> factoryMap;
-  @Mock @Named("perpetualTaskExecutor") ExecutorService perpetualTaskExecutor;
+  @Mock @Named("taskExecutor") ThreadPoolExecutor perpetualTaskExecutor;
   @Spy
   @Named("perpetualTaskTimeoutExecutor")
   ScheduledExecutorService perpetualTaskTimeoutExecutor =
@@ -84,7 +87,7 @@ public class PerpetualTaskWorkerTest extends DelegateTestBase {
   @Inject KryoSerializer kryoSerializer;
 
   @Before
-  public void setUp() {
+  public void setUp() throws ExecutionException, InterruptedException {
     kubernetesClusterConfig = KubernetesClusterConfig.builder().accountId(accountId).build();
     ByteString bytes = ByteString.copyFrom(kryoSerializer.asBytes(kubernetesClusterConfig));
     K8sWatchTaskParams k8sWatchTaskParams =
@@ -95,7 +98,18 @@ public class PerpetualTaskWorkerTest extends DelegateTestBase {
     PerpetualTaskSchedule schedule = PerpetualTaskSchedule.newBuilder().setInterval(Durations.fromSeconds(1)).build();
     context = PerpetualTaskExecutionContext.newBuilder().setTaskParams(params).setTaskSchedule(schedule).build();
 
-    when(perpetualTaskServiceGrpcClient.perpetualTaskContext(isA(PerpetualTaskId.class))).thenReturn(context);
+    doReturn(
+        CompletableFuture.completedFuture(Collections.singletonList(PerpetualTaskAssignDetails.newBuilder().build()))
+            .get())
+        .when(perpetualTaskServiceAgentClient)
+        .perpetualTaskList(anyString(), anyObject());
+
+    doReturn(CompletableFuture
+                 .completedFuture(PerpetualTaskContextResponse.newBuilder().setPerpetualTaskContext(context).build())
+                 .get()
+                 .getPerpetualTaskContext())
+        .when(perpetualTaskServiceAgentClient)
+        .perpetualTaskContext(isA(PerpetualTaskId.class), anyObject());
   }
 
   @Test
@@ -127,7 +141,7 @@ public class PerpetualTaskWorkerTest extends DelegateTestBase {
   @Category(UnitTests.class)
   public void testFetchAssignedTask() {
     worker.fetchAssignedTask();
-    verify(perpetualTaskServiceGrpcClient).perpetualTaskList(anyString());
+    verify(perpetualTaskServiceAgentClient).perpetualTaskList(anyString(), anyObject());
   }
 
   @Test

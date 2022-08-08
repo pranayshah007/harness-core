@@ -24,4 +24,5 @@ public class ArtifactSummary {
   private String uuid;
   private String uiDisplayName;
   private String buildNo;
+  private String artifactStreamId;
 }

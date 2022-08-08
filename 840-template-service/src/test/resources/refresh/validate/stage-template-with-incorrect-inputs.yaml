@@ -1,0 +1,37 @@
+template:
+  projectIdentifier: projId
+  orgIdentifier: orgId
+  identifier: stageTemplate
+  versionLabel: 1
+  name: template1
+  type: Stage
+  spec:
+    type: Approval
+    spec:
+      execution:
+        steps:
+          - step:
+              name: Approval
+              identifier: approval
+              type: HarnessApproval
+              timeout: 1d
+              spec:
+                approvalMessage: Please review and approve
+                includePipelineExecutionHistory: true
+                approvers:
+                  minimumCount: 1
+                  disallowPipelineExecutor: false
+                  userGroups: <+input>
+                approverInputs: []
+          - step:
+              name: http-name
+              identifier: http
+              template:
+                templateRef: httpTemplate
+                versionLabel: 1
+                templateInputs:
+                  type: Http
+                  spec:
+                    url: <+input>
+                    method: DELETE
+                    requestBody: <+input>

@@ -55,6 +55,8 @@ message TaskDetails {
     // Using kryo java serialization, useful for java based task where java annotation play important role of
     // determining encrypted fields and expressions.
     bytes kryo_parameters = 3;
+
+    bytes json_parameters = 8;
   }
 
   // Execution time out determines for how long the task should be kept waited on to accomplish its work.
@@ -79,6 +81,7 @@ message TaskDetails {
 // Task selector will be used as one of the ways to decide which delegate can be assigned to the given task
 message TaskSelector {
   string selector = 1;
+  string origin = 2;
 }
 
 message TaskResponseData {

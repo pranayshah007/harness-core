@@ -7,6 +7,7 @@
 
 package software.wings.service.impl.yaml;
 
+import static io.harness.beans.FeatureName.REMOVE_HINT_YAML_GIT_COMMITS;
 import static io.harness.beans.PageRequest.PageRequestBuilder.aPageRequest;
 import static io.harness.beans.PageRequest.UNLIMITED;
 import static io.harness.beans.SearchFilter.Operator.EQ;
@@ -76,6 +77,7 @@ import io.harness.exception.GeneralException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnexpectedException;
 import io.harness.exception.WingsException;
+import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.ff.FeatureFlagService;
 import io.harness.git.model.ChangeType;
 import io.harness.logging.AccountLogContext;
@@ -295,6 +297,7 @@ public class YamlGitServiceImpl implements YamlGitService {
       List<EncryptedDataDetail> encryptionDetails =
           secretManager.getEncryptionDetails(attributeValue, GLOBAL_APP_ID, null);
       managerDecryptionService.decrypt(attributeValue, encryptionDetails);
+      ExceptionMessageSanitizer.storeAllSecretsForSanitizing(attributeValue, encryptionDetails);
       return settingAttributeForSshKey;
     }
 
@@ -508,8 +511,8 @@ public class YamlGitServiceImpl implements YamlGitService {
     }
     for (Application app : apps) {
       if (!onlyGitSyncConfiguredApps || gitSyncConfiguredForApp(app.getAppId(), accountId)) {
-        List<GitFileChange> gitFileChanges = obtainApplicationYamlGitFileChanges(accountId, app).getGitFileChanges();
-        yamlChangeSets.add(obtainYamlChangeSet(accountId, app.getUuid(), gitFileChanges, forcePush));
+        final YamlChangeSet yamlChangeSet = obtainAppYamlChangeSet(accountId, forcePush, app);
+        yamlChangeSets.add(yamlChangeSet);
       } else {
         log.info("Git Sync not configured for appId =[{}]. Skip generating changeset.", app.getAppId());
       }
@@ -517,6 +520,13 @@ public class YamlGitServiceImpl implements YamlGitService {
 
     return yamlChangeSets;
   }
+
+  @Override
+  public YamlChangeSet obtainAppYamlChangeSet(String accountId, boolean forcePush, Application app) {
+    List<GitFileChange> gitFileChanges = obtainApplicationYamlGitFileChanges(accountId, app).getGitFileChanges();
+    return obtainYamlChangeSet(accountId, app.getUuid(), gitFileChanges, forcePush);
+  }
+
   private boolean gitSyncConfiguredForApp(String appId, String accountId) {
     return yamlDirectoryService.weNeedToPushChanges(accountId, appId) != null;
   }
@@ -525,7 +535,7 @@ public class YamlGitServiceImpl implements YamlGitService {
   public List<GitFileChange> performFullSyncDryRun(String accountId) {
     List<GitFileChange> gitFileChanges = new ArrayList<>();
 
-    List<YamlChangeSet> yamlChangeSets = obtainChangeSetFromFullSyncDryRun(accountId, false);
+    List<YamlChangeSet> yamlChangeSets = obtainChangeSetFromFullSyncDryRun(accountId, false, false);
     for (YamlChangeSet yamlChangeSet : yamlChangeSets) {
       gitFileChanges.addAll(yamlChangeSet.getGitFileChanges());
     }
@@ -535,7 +545,7 @@ public class YamlGitServiceImpl implements YamlGitService {
 
   @Override
   public List<YamlChangeSet> obtainChangeSetFromFullSyncDryRun(
-      String accountId, boolean onlyGitSyncConfiguredEntities) {
+      String accountId, boolean onlyGitSyncConfiguredEntities, boolean skipAppLevel) {
     try {
       log.info("Performing full-sync dry-run for account {}", accountId);
       List<YamlChangeSet> yamlChangeSets = new ArrayList<>();
@@ -546,9 +556,10 @@ public class YamlGitServiceImpl implements YamlGitService {
       } else {
         log.info("Git Sync not configured for accountId =[{}]. Skip generating changeset.", accountId);
       }
-
-      yamlChangeSets.addAll(obtainAllApplicationYamlChangeSet(accountId, false, onlyGitSyncConfiguredEntities));
-
+      if (!skipAppLevel) {
+        log.info("Not Skipping app level dryrun");
+        yamlChangeSets.addAll(obtainAllApplicationYamlChangeSet(accountId, false, onlyGitSyncConfiguredEntities));
+      }
       log.info("Performed full-sync dry-run for account {}", accountId);
       return yamlChangeSets;
     } catch (Exception ex) {
@@ -1090,7 +1101,8 @@ public class YamlGitServiceImpl implements YamlGitService {
     // We get some exception in delegate while processing git commands, out of those
     // exceptions, we show the git connection error in UI and create alert so that
     // the user is directed to the git connectivity issue page
-    if (ErrorCode.GIT_CONNECTION_ERROR == gitSyncFailureAlertDetails.getErrorCode()) {
+    if (ErrorCode.GIT_CONNECTION_ERROR == gitSyncFailureAlertDetails.getErrorCode()
+        || (ErrorCode.GENERAL_YAML_ERROR == gitSyncFailureAlertDetails.getErrorCode())) {
       alertService.openAlert(accountId, appId, AlertType.GitConnectionError,
           getGitConnectionErrorAlert(accountId, gitSyncFailureAlertDetails));
     } else {
@@ -1117,7 +1129,7 @@ public class YamlGitServiceImpl implements YamlGitService {
   private GitConnectionErrorAlert getGitConnectionErrorAlert(
       String accountId, GitSyncFailureAlertDetails gitFailureDetails) {
     if (gitFailureDetails == null) {
-      throw new UnexpectedException("The git error detials supplied for the connection error is empty");
+      throw new UnexpectedException("The git error details supplied for the connection error is empty");
     }
     return GitConnectionErrorAlert.builder()
         .accountId(accountId)
@@ -1332,7 +1344,9 @@ public class YamlGitServiceImpl implements YamlGitService {
     // After MultiGit support gitCommit record would have list of yamlGitConfigs.
 
     FindOptions findOptions = new FindOptions();
-    findOptions.modifier("$hint", "gitCommitAccountIdStatusYgcLastUpdatedIdx");
+    if (featureFlagService.isNotEnabled(REMOVE_HINT_YAML_GIT_COMMITS, accountId)) {
+      findOptions.modifier("$hint", "gitCommitAccountIdStatusYgcLastUpdatedIdx");
+    }
 
     GitCommit gitCommit = wingsPersistence.createQuery(GitCommit.class)
                               .filter(GitCommitKeys.accountId, accountId)

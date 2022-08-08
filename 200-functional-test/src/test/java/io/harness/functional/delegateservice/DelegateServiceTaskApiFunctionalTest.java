@@ -12,8 +12,6 @@ import static io.harness.delegate.DelegateServiceGrpc.DelegateServiceBlockingStu
 import static io.harness.rule.OwnerRule.MARKO;
 import static io.harness.rule.OwnerRule.SANJA;
 
-import static software.wings.sm.states.HttpState.HttpStateExecutionResponse;
-
 import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -26,6 +24,7 @@ import io.harness.callback.MongoDatabase;
 import io.harness.category.element.FunctionalTests;
 import io.harness.data.algorithm.HashGenerator;
 import io.harness.delegate.AccountId;
+import io.harness.delegate.DelegateServiceAgentClient;
 import io.harness.delegate.TaskDetails;
 import io.harness.delegate.TaskId;
 import io.harness.delegate.TaskLogAbstractions;
@@ -40,7 +39,6 @@ import io.harness.delegate.task.http.HttpTaskParameters;
 import io.harness.exception.DelegateServiceDriverException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.functional.AbstractFunctionalTest;
-import io.harness.grpc.DelegateServiceGrpcAgentClient;
 import io.harness.grpc.DelegateServiceGrpcClient;
 import io.harness.rule.Owner;
 import io.harness.serializer.KryoSerializer;
@@ -57,6 +55,7 @@ import io.harness.waiter.ProgressUpdateService;
 import io.harness.waiter.WaitNotifyEngine;
 
 import software.wings.app.MainConfiguration;
+import software.wings.beans.HttpStateExecutionResponse;
 import software.wings.dl.WingsPersistence;
 
 import com.google.inject.Inject;
@@ -139,7 +138,7 @@ public class DelegateServiceTaskApiFunctionalTest extends AbstractFunctionalTest
             .getTaskId();
 
     DelegateResponseData responseData =
-        delegateSyncService.waitForTask(taskId.getId(), "Http Execution", Duration.ofSeconds(60));
+        delegateSyncService.waitForTask(taskId.getId(), "Http Execution", Duration.ofSeconds(60), null);
 
     assertThat(responseData).isNotNull();
     HttpStateExecutionResponse executionData = (HttpStateExecutionResponse) responseData;
@@ -193,7 +192,7 @@ public class DelegateServiceTaskApiFunctionalTest extends AbstractFunctionalTest
             .getTaskId();
 
     DelegateResponseData responseData =
-        delegateSyncService.waitForTask(taskId.getId(), "Http Execution", Duration.ofSeconds(60));
+        delegateSyncService.waitForTask(taskId.getId(), "Http Execution", Duration.ofSeconds(60), null);
 
     assertThat(responseData).isNotNull();
     RemoteMethodReturnValueData returnValueData = (RemoteMethodReturnValueData) responseData;
@@ -386,8 +385,7 @@ public class DelegateServiceTaskApiFunctionalTest extends AbstractFunctionalTest
 
     DelegateServiceGrpcClient delegateServiceGrpcClient = new DelegateServiceGrpcClient(
         delegateServiceBlockingStub, delegateAsyncService, kryoSerializer, delegateSyncService, () -> false);
-    DelegateServiceGrpcAgentClient delegateServiceGrpcAgentClient =
-        new DelegateServiceGrpcAgentClient(delegateServiceBlockingStub);
+    DelegateServiceAgentClient delegateServiceAgentClient = new DelegateServiceAgentClient();
 
     DelegateCallbackToken callbackToken = delegateServiceGrpcClient.registerCallback(
         DelegateCallback.newBuilder()
@@ -409,9 +407,9 @@ public class DelegateServiceTaskApiFunctionalTest extends AbstractFunctionalTest
 
     waitNotifyEngine.waitForAllOn("general", new TestNotifyCallback(), new TestProgressCallback(), taskUuid);
 
-    delegateServiceGrpcAgentClient.sendTaskProgressUpdate(
+    delegateServiceAgentClient.sendTaskProgressUpdate(
         AccountId.newBuilder().setId(getAccount().getUuid()).build(), taskId, callbackToken, testDataBytes);
-    delegateServiceGrpcAgentClient.sendTaskProgressUpdate(
+    delegateServiceAgentClient.sendTaskProgressUpdate(
         AccountId.newBuilder().setId(getAccount().getUuid()).build(), taskId, callbackToken, testDataBytes2);
 
     Poller.pollFor(Duration.ofMinutes(5), Duration.ofSeconds(5), () -> { return progressCallCount.get() == 2; });

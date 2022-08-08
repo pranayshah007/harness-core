@@ -20,6 +20,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.telemetry.Category;
 import io.harness.telemetry.TelemetryOption;
 import io.harness.telemetry.TelemetryReporter;
+import io.harness.telemetry.utils.TelemetryDataUtils;
 
 import com.google.inject.Singleton;
 import io.github.resilience4j.ratelimiter.RateLimiter;
@@ -48,6 +49,7 @@ public class APIAuthTelemetryFilter implements ContainerRequestFilter {
   public static final String API_TYPE = "api_type";
   public static final String API_ENDPOINTS_AUTH_SCHEMES = "api_endpoints_auth_schemes";
   public static final String API_AUTH_TELEMETRY_RATE_LIMITER_NAME = "api-auth-telemetry-rate-limiter";
+  public static final String API_PATTERN = "api_pattern";
   public static final int DEFAULT_RATE_LIMIT = 50;
   public static final int DEFAULT_RATE_LIMIT_PERIOD_HOURS = 1;
   public static final int DEFAULT_RATE_LIMIT_TIMEOUT_NANOS = 1;
@@ -83,6 +85,7 @@ public class APIAuthTelemetryFilter implements ContainerRequestFilter {
       properties.put(ACCOUNT_IDENTIFIER, accountIdentifierOptional.get());
       properties.put(API_ENDPOINT, containerRequestContext.getUriInfo().getPath());
       properties.put(API_TYPE, containerRequestContext.getMethod());
+      properties.put(API_PATTERN, TelemetryDataUtils.getApiPattern(containerRequestContext));
 
       try {
         rateLimitedConsumer.accept(reporter

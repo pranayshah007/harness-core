@@ -137,7 +137,8 @@ public class HostServiceImpl implements HostService {
       }
       return applicationHost;
     } else {
-      return wingsPersistence.saveAndGet(Host.class, appHost);
+      wingsPersistence.save(appHost);
+      return appHost;
     }
   }
 

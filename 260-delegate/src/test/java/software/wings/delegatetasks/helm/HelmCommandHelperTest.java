@@ -22,7 +22,7 @@ import io.harness.exception.WingsException;
 import io.harness.rule.Owner;
 
 import software.wings.WingsBaseTest;
-import software.wings.beans.container.HelmChartSpecification;
+import software.wings.beans.dto.HelmChartSpecification;
 import software.wings.helpers.ext.helm.request.HelmInstallCommandRequest;
 import software.wings.helpers.ext.helm.request.HelmReleaseHistoryCommandRequest;
 import software.wings.helpers.ext.helm.request.HelmRollbackCommandRequest;

@@ -52,6 +52,7 @@ import io.harness.encryption.Scope;
 import io.harness.encryption.SecretRefData;
 import io.harness.entitysetupusageclient.remote.EntitySetupUsageClient;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.ReferencedEntityException;
 import io.harness.gitsync.clients.YamlGitConfigClient;
 import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.ng.core.accountsetting.dto.AccountSettingType;
@@ -60,9 +61,11 @@ import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.repositories.ConnectorRepository;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
+import io.harness.utils.FullyQualifiedIdentifierHelper;
 
 import com.google.inject.Inject;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -272,6 +275,37 @@ public class DefaultConnectorServiceImplTest extends ConnectorsTestBase {
   }
 
   @Test
+  @Owner(developers = OwnerRule.NISHANT)
+  @Category({UnitTests.class})
+  public void testListByFqn() {
+    String connectorIdentifier1 = "connectorIdentifier1";
+    String connectorIdentifier2 = "connectorIdentifier2";
+    String connectorIdentifier3 = "connectorIdentifier3";
+    ConnectorResponseDTO connector1 = createConnector(connectorIdentifier1, name + "1");
+    ConnectorResponseDTO connector2 = createConnector(connectorIdentifier2, name + "2");
+    ConnectorResponseDTO connector3 = createConnector(connectorIdentifier3, name + "3");
+    List<String> fqns = new ArrayList<>();
+    fqns.add(FullyQualifiedIdentifierHelper.getFullyQualifiedIdentifier(accountIdentifier,
+        connector1.getConnector().getOrgIdentifier(), connector1.getConnector().getProjectIdentifier(),
+        connectorIdentifier1));
+    fqns.add(FullyQualifiedIdentifierHelper.getFullyQualifiedIdentifier(accountIdentifier,
+        connector2.getConnector().getOrgIdentifier(), connector2.getConnector().getProjectIdentifier(),
+        connectorIdentifier2));
+    fqns.add(FullyQualifiedIdentifierHelper.getFullyQualifiedIdentifier(accountIdentifier,
+        connector3.getConnector().getOrgIdentifier(), connector3.getConnector().getProjectIdentifier(),
+        connectorIdentifier3));
+    List<ConnectorResponseDTO> connectorSummaryDTOSList = connectorService.listbyFQN(accountIdentifier, fqns);
+    assertThat(connectorSummaryDTOSList.size()).isEqualTo(3);
+    List<String> connectorIdentifierList =
+        connectorSummaryDTOSList.stream()
+            .map(connectorSummaryDTO -> connectorSummaryDTO.getConnector().getIdentifier())
+            .collect(toList());
+    assertThat(connectorIdentifierList).contains(connectorIdentifier1);
+    assertThat(connectorIdentifierList).contains(connectorIdentifier2);
+    assertThat(connectorIdentifierList).contains(connectorIdentifier3);
+  }
+
+  @Test
   @Owner(developers = OwnerRule.DEEPAK)
   @Category(UnitTests.class)
   public void testGet() {
@@ -341,6 +375,27 @@ public class DefaultConnectorServiceImplTest extends ConnectorsTestBase {
     assertThat(deleted).isTrue();
   }
 
+  @Test
+  @Owner(developers = OwnerRule.VIKAS_M)
+  @Category(UnitTests.class)
+  public void testDeleteWithEntitiesReferenced_throwsException() {
+    createConnector(identifier, name);
+    Call<ResponseDTO<Boolean>> request = mock(Call.class);
+    try {
+      when(request.execute()).thenReturn(Response.success(ResponseDTO.newResponse(true)));
+    } catch (IOException ex) {
+      log.info("Encountered exception ", ex);
+    }
+    when(entitySetupUsageClient.isEntityReferenced(any(), any(), any())).thenReturn(request);
+    try {
+      connectorService.delete(accountIdentifier, null, null, identifier);
+    } catch (ReferencedEntityException e) {
+      assertThat(e.getMessage())
+          .isEqualTo("Could not delete the connector identifier as it is referenced by other entities");
+    }
+    verify(entitySetupUsageClient, times(1)).isEntityReferenced(anyString(), anyString(), any(EntityType.class));
+  }
+
   @Test(expected = InvalidRequestException.class)
   @Owner(developers = OwnerRule.DEEPAK)
   @Category(UnitTests.class)
@@ -391,7 +446,7 @@ public class DefaultConnectorServiceImplTest extends ConnectorsTestBase {
         .thenReturn(null);
     connectorService.validate(connectorRequestDTO, accountIdentifier);
     verify(kubernetesConnectionValidator, times(1))
-        .validate((ConnectorConfigDTO) any(), anyString(), any(), anyString(), anyString());
+        .validate((ConnectorConfigDTO) any(), anyString(), any(), any(), anyString());
   }
 
   @Test
@@ -405,7 +460,7 @@ public class DefaultConnectorServiceImplTest extends ConnectorsTestBase {
         .thenReturn(ConnectorValidationResult.builder().status(SUCCESS).build());
     connectorService.testConnection(accountIdentifier, null, null, identifier);
     verify(kubernetesConnectionValidator, times(1))
-        .validate((ConnectorConfigDTO) any(), anyString(), anyString(), anyString(), anyString());
+        .validate((ConnectorConfigDTO) any(), anyString(), any(), any(), anyString());
   }
 
   @Test
@@ -512,5 +567,19 @@ public class DefaultConnectorServiceImplTest extends ConnectorsTestBase {
     assertThat(connectorIdentifierList).contains(connectorIdentifier1);
     assertThat(connectorIdentifierList).contains(connectorIdentifier2);
     assertThat(connectorIdentifierList).contains(connectorIdentifier3);
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.MOHIT_GARG)
+  @Category({UnitTests.class})
+  public void testGetConnectorByRef() {
+    createConnector(identifier, name);
+    Optional<ConnectorResponseDTO> connectorResponseDTOOptional =
+        connectorService.getByRef(accountIdentifier, null, null, "account." + identifier);
+    assertThat(connectorResponseDTOOptional.isPresent()).isTrue();
+    assertThat(connectorResponseDTOOptional.get().getConnector().getName()).isEqualTo(name);
+    assertThat(connectorResponseDTOOptional.get().getConnector().getIdentifier()).isEqualTo(identifier);
+    assertThat(connectorResponseDTOOptional.get().getConnector().getOrgIdentifier()).isEqualTo(null);
+    assertThat(connectorResponseDTOOptional.get().getConnector().getProjectIdentifier()).isEqualTo(null);
   }
 }

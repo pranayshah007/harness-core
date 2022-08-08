@@ -9,6 +9,7 @@ package io.harness.batch.processing.billing.timeseries.service.impl;
 
 import static io.harness.rule.OwnerRule.ROHIT;
 import static io.harness.rule.OwnerRule.SHUBHANSHU;
+import static io.harness.rule.OwnerRule.TRUNAPUSHPA;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -20,6 +21,8 @@ import io.harness.CategoryTest;
 import io.harness.batch.processing.billing.service.UtilizationData;
 import io.harness.batch.processing.billing.timeseries.data.InstanceUtilizationData;
 import io.harness.batch.processing.ccm.UtilizationInstanceType;
+import io.harness.batch.processing.cloudevents.aws.ecs.service.util.ClusterIdAndServiceArn;
+import io.harness.batch.processing.cloudevents.aws.ecs.service.util.ECSUtilizationData;
 import io.harness.category.element.UnitTests;
 import io.harness.ccm.commons.beans.HarnessServiceInfo;
 import io.harness.ccm.commons.beans.InstanceType;
@@ -34,7 +37,9 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.Arrays;
+import java.sql.Timestamp;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.HashMap;
@@ -71,8 +76,8 @@ public class UtilizationDataServiceImplTest extends CategoryTest {
   private static final String ENV_ID = "env_id";
   private static final String INFRA_MAPPING_ID = "infra_mapping_id";
   private static final String DEPLOYMENT_SUMMARY_ID = "deployment_summary_id";
-  private static final String START_TIME = "start_time";
-  private static final String END_TIME = "end_time";
+  private static final Timestamp START_TIME = Timestamp.from(Instant.now().minus(Duration.ofDays(7)));
+  private static final Timestamp END_TIME = Timestamp.from(Instant.now());
   private static final double CPU_UTILIZATION = 0.5;
   private static final double MEMORY_UTILIZATION = 0.5;
   final int[] count = {0};
@@ -125,7 +130,7 @@ public class UtilizationDataServiceImplTest extends CategoryTest {
     when(statement.execute()).thenReturn(true);
     mockResultSet();
     Map<String, UtilizationData> utilizationDataMap = utilizationDataService.getUtilizationDataForInstances(
-        instanceDataList(), START_TIME, END_TIME, ACCOUNT_ID, SETTING_ID, CLUSTER_ID);
+        instanceDataList(), START_TIME.toString(), END_TIME.toString(), ACCOUNT_ID, SETTING_ID, CLUSTER_ID);
     assertThat(utilizationDataMap).isNotNull();
     assertThat(utilizationDataMap.get(INSTANCE_ID)).isNotNull();
     UtilizationData utilizationData = utilizationDataMap.get(INSTANCE_ID);
@@ -136,13 +141,31 @@ public class UtilizationDataServiceImplTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = TRUNAPUSHPA)
+  @Category(UnitTests.class)
+  public void testGetUtilizationDataForECSClusters() throws SQLException {
+    when(timeScaleDBService.isValid()).thenReturn(true);
+    when(statement.execute()).thenReturn(true);
+    mockResultSet();
+    Map<ClusterIdAndServiceArn, List<ECSUtilizationData>> utilizationMap =
+        utilizationDataService.getUtilizationDataForECSClusters(
+            ACCOUNT_ID, Collections.singletonList("cluster_id"), START_TIME.toString(), END_TIME.toString());
+    ClusterIdAndServiceArn clusterIdAndServiceArn = utilizationMap.entrySet().iterator().next().getKey();
+    assertThat(utilizationMap).isNotNull();
+    assertThat(utilizationMap.get(clusterIdAndServiceArn)).isNotNull();
+    List<ECSUtilizationData> utilizationData = utilizationMap.get(clusterIdAndServiceArn);
+    assertThat(utilizationData.get(0).getMaxCpuUtilization()).isEqualTo(CPU_UTILIZATION);
+    assertThat(utilizationData.get(0).getMaxMemoryUtilization()).isEqualTo(MEMORY_UTILIZATION);
+  }
+
+  @Test
   @Owner(developers = SHUBHANSHU)
   @Category(UnitTests.class)
   public void testGetUtilizationDataForInstancesWhenDbIsInvalid() {
     when(timeScaleDBService.isValid()).thenReturn(false);
     assertThatThrownBy(()
-                           -> utilizationDataService.getUtilizationDataForInstances(
-                               instanceDataList(), START_TIME, END_TIME, ACCOUNT_ID, SETTING_ID, CLUSTER_ID))
+                           -> utilizationDataService.getUtilizationDataForInstances(instanceDataList(),
+                               START_TIME.toString(), END_TIME.toString(), ACCOUNT_ID, SETTING_ID, CLUSTER_ID))
         .isInstanceOf(InvalidRequestException.class);
   }
 
@@ -172,7 +195,7 @@ public class UtilizationDataServiceImplTest extends CategoryTest {
                                     .clusterName(CLUSTER_NAME)
                                     .harnessServiceInfo(getHarnessServiceInfo())
                                     .build();
-    return Arrays.asList(instanceData);
+    return Collections.singletonList(instanceData);
   }
 
   private HarnessServiceInfo getHarnessServiceInfo() {
@@ -191,6 +214,10 @@ public class UtilizationDataServiceImplTest extends CategoryTest {
     when(resultSet.getDouble("AVGCPUUTILIZATION")).thenAnswer((Answer<Double>) invocation -> CPU_UTILIZATION);
     when(resultSet.getDouble("AVGMEMORYUTILIZATION")).thenAnswer((Answer<Double>) invocation -> MEMORY_UTILIZATION);
     when(resultSet.getString("INSTANCEID")).thenAnswer((Answer<String>) invocation -> INSTANCE_ID);
+    when(resultSet.getString("CLUSTERID")).thenAnswer((Answer<String>) invocation -> CLUSTER_ID);
+    when(resultSet.getString("SERVICEID")).thenAnswer((Answer<String>) invocation -> SERVICE_ID);
+    when(resultSet.getTimestamp("STARTTIME")).thenAnswer((Answer<Timestamp>) invocation -> START_TIME);
+    when(resultSet.getTimestamp("ENDTIME")).thenAnswer((Answer<Timestamp>) invocation -> END_TIME);
     returnResultSet(1);
   }
 

@@ -36,6 +36,7 @@ import io.harness.persistence.UpdatedByAware;
 import io.harness.persistence.UuidAccess;
 import io.harness.persistence.UuidAware;
 import io.harness.persistence.ValidUntilAccess;
+import io.harness.persistence.gitaware.GitAware;
 import io.harness.queue.Queuable;
 import io.harness.queue.WithMonitoring;
 
@@ -73,6 +74,7 @@ public class PersistenceMorphiaRegistrar implements MorphiaRegistrar {
     set.add(ValidUntilAccess.class);
     set.add(PersistentNGCronIterable.class);
     set.add(NameAndValueAccess.class);
+    set.add(GitAware.class);
   }
 
   @Override

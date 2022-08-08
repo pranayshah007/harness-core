@@ -111,21 +111,23 @@ public class KubernetesHelperServiceTest extends CategoryTest {
   }
 
   @Test
-  @Owner(developers = ANSHUL)
-  @Category(UnitTests.class)
-  public void testGetIstioClient() {
-    KubernetesConfig kubernetesConfig = KubernetesConfig.builder().build();
-    kubernetesConfig.setAuthType(KubernetesClusterAuthType.OIDC);
-    doReturn(null).when(oidcTokenRetriever).getOidcIdToken(kubernetesConfig);
-
-    helperService.getIstioClient(kubernetesConfig);
-    verify(oidcTokenRetriever, times(1)).getOidcIdToken(kubernetesConfig);
-  }
-
-  @Test
   @Owner(developers = OwnerRule.SATYAM)
   @Category(UnitTests.class)
   public void testValidateCluster() {
     assertThatThrownBy(() -> helperService.validateCluster("")).isInstanceOf(InvalidArgumentsException.class);
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.MLUKIC)
+  @Category(UnitTests.class)
+  public void testValidateSubscription() {
+    assertThatThrownBy(() -> helperService.validateSubscription("")).isInstanceOf(InvalidArgumentsException.class);
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.MLUKIC)
+  @Category(UnitTests.class)
+  public void testValidateResourceGroup() {
+    assertThatThrownBy(() -> helperService.validateResourceGroup("")).isInstanceOf(InvalidArgumentsException.class);
   }
 }

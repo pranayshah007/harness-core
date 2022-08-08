@@ -16,6 +16,7 @@ import io.harness.batch.processing.pricing.vmpricing.VMInstanceBillingData;
 import io.harness.batch.processing.pricing.vmpricing.VMPricingService;
 import io.harness.batch.processing.service.intfc.CustomBillingMetaDataService;
 import io.harness.batch.processing.tasklet.util.K8sResourceUtils;
+import io.harness.ccm.commons.beans.billing.InstanceCategory;
 import io.harness.ccm.commons.constants.InstanceMetaDataConstants;
 import io.harness.ccm.commons.entities.batch.InstanceData;
 
@@ -45,7 +46,8 @@ public class EcsFargateInstancePricingStrategy implements InstancePricingStrateg
       double instanceActiveSeconds, double parentInstanceActiveSecond) {
     Map<String, String> instanceMetaData = instanceData.getMetaData();
     String region = instanceMetaData.get(InstanceMetaDataConstants.REGION);
-    EcsFargatePricingInfo fargatePricingInfo = vmPricingService.getFargatePricingInfo(region);
+    String instanceCategory = getInstanceCategory(instanceMetaData);
+    EcsFargatePricingInfo fargatePricingInfo = vmPricingService.getFargatePricingInfo(instanceCategory, region);
 
     PricingData customFargatePricing = getCustomFargatePricing(instanceData, startTime, endTime, instanceActiveSeconds);
     if (null != customFargatePricing) {
@@ -71,6 +73,14 @@ public class EcsFargateInstancePricingStrategy implements InstancePricingStrateg
         .build();
   }
 
+  private String getInstanceCategory(Map<String, String> instanceMetaData) {
+    String category = instanceMetaData.get(InstanceMetaDataConstants.INSTANCE_CATEGORY);
+    if (null != category) {
+      return category;
+    }
+    return InstanceCategory.ON_DEMAND.name();
+  }
+
   public PricingData getCustomFargatePricing(
       InstanceData instanceData, Instant startTime, Instant endTime, double instanceActiveSeconds) {
     PricingData pricingData = null;
@@ -81,7 +91,7 @@ public class EcsFargateInstancePricingStrategy implements InstancePricingStrateg
 
       VMInstanceBillingData vmInstanceBillingData =
           awsCustomBillingService.getFargateVMPricingInfo(instanceData.getInstanceId(), startTime, endTime);
-      log.info("Custom Fargate Pricing: {}", vmInstanceBillingData);
+      log.debug("Custom Fargate Pricing: {}", vmInstanceBillingData);
       if (null != vmInstanceBillingData && !Double.isNaN(vmInstanceBillingData.getComputeCost())) {
         double pricePerHr = (vmInstanceBillingData.getComputeCost() * 3600) / instanceActiveSeconds;
         double cpuPricePerHr = (vmInstanceBillingData.getCpuCost() * 3600) / instanceActiveSeconds;

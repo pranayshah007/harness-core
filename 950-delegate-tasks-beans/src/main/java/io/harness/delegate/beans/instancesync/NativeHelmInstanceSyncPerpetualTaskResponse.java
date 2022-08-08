@@ -11,6 +11,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.DelegateMetaInfo;
 import io.harness.logging.CommandExecutionStatus;
+import io.harness.ng.core.k8s.ServiceSpecType;
 
 import java.util.List;
 import lombok.Builder;
@@ -24,4 +25,9 @@ public class NativeHelmInstanceSyncPerpetualTaskResponse implements InstanceSync
   private List<ServerInstanceInfo> serverInstanceDetails;
   private String errorMessage;
   private CommandExecutionStatus commandExecutionStatus;
+
+  @Override
+  public String getDeploymentType() {
+    return ServiceSpecType.NATIVE_HELM;
+  }
 }

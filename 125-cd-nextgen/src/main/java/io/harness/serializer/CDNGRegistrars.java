@@ -11,9 +11,16 @@ import io.harness.EntityType;
 import io.harness.ModuleType;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.azure.webapp.AzureWebAppRollbackStepNode;
+import io.harness.cdng.azure.webapp.AzureWebAppSlotDeploymentStepNode;
+import io.harness.cdng.azure.webapp.AzureWebAppSwapSlotStepNode;
+import io.harness.cdng.azure.webapp.AzureWebAppTrafficShiftStepNode;
 import io.harness.cdng.creator.plan.stage.DeploymentStageNode;
+import io.harness.cdng.gitops.CreatePRStepNode;
+import io.harness.cdng.gitops.MergePRStepNode;
 import io.harness.cdng.helm.HelmDeployStepNode;
 import io.harness.cdng.helm.HelmRollbackStepNode;
+import io.harness.cdng.jenkins.jenkinsstep.JenkinsBuildStepNode;
 import io.harness.cdng.k8s.K8sApplyStepNode;
 import io.harness.cdng.k8s.K8sBGSwapServicesStepNode;
 import io.harness.cdng.k8s.K8sBlueGreenStepNode;
@@ -24,14 +31,22 @@ import io.harness.cdng.k8s.K8sRollingRollbackStepNode;
 import io.harness.cdng.k8s.K8sRollingStepNode;
 import io.harness.cdng.k8s.K8sScaleStepNode;
 import io.harness.cdng.pipeline.CDStepInfo;
+import io.harness.cdng.provision.cloudformation.CloudformationCreateStackStepNode;
+import io.harness.cdng.provision.cloudformation.CloudformationDeleteStackStepNode;
+import io.harness.cdng.provision.cloudformation.CloudformationRollbackStepNode;
 import io.harness.cdng.provision.terraform.TerraformApplyStepNode;
 import io.harness.cdng.provision.terraform.TerraformDestroyStepNode;
 import io.harness.cdng.provision.terraform.TerraformPlanStepNode;
 import io.harness.cdng.provision.terraform.TerraformRollbackStepNode;
+import io.harness.cdng.serverless.ServerlessAwsLambdaDeployStepNode;
+import io.harness.cdng.serverless.ServerlessAwsLambdaRollbackStepNode;
+import io.harness.cdng.ssh.CommandStepNode;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.serializer.kryo.NGKryoRegistrar;
 import io.harness.serializer.morphia.NGMorphiaRegistrar;
+import io.harness.serializer.spring.RollbackDeploymentInfoReadConverter;
+import io.harness.serializer.spring.RollbackDeploymentInfoWriteConverter;
 import io.harness.yaml.schema.beans.SchemaNamespaceConstants;
 import io.harness.yaml.schema.beans.YamlGroup;
 import io.harness.yaml.schema.beans.YamlSchemaMetadata;
@@ -40,8 +55,10 @@ import io.harness.yaml.schema.beans.YamlSchemaRootClass;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import io.serializer.kryo.PollingKryoRegistrar;
+import java.util.Arrays;
 import java.util.Collections;
 import lombok.experimental.UtilityClass;
+import org.springframework.core.convert.converter.Converter;
 
 @OwnedBy(HarnessTeam.CDP)
 @UtilityClass
@@ -55,12 +72,12 @@ public class CDNGRegistrars {
           .addAll(ConnectorNextGenRegistrars.kryoRegistrars)
           .addAll(GitOpsRegistrars.kryoRegistrars)
           .addAll(YamlBeansModuleRegistrars.kryoRegistrars)
-          .addAll(OrchestrationStepsModuleRegistrars.kryoRegistrars)
-          .addAll(CDNGBeanRegistrars.kryoRegistrars)
+          .addAll(CDNGEntityRegistrars.kryoRegistrars)
           .add(NGKryoRegistrar.class)
           .add(PollingKryoRegistrar.class)
           .addAll(DelegateTaskRegistrars.kryoRegistrars)
           .addAll(NGCommonModuleRegistrars.kryoRegistrars)
+          .addAll(FileStoreRegistrars.kryoRegistrars)
           .build();
 
   public final ImmutableSet<Class<? extends MorphiaRegistrar>> morphiaRegistrars =
@@ -73,11 +90,11 @@ public class CDNGRegistrars {
           .add(NGMorphiaRegistrar.class)
           .addAll(ConnectorBeansRegistrars.morphiaRegistrars)
           .addAll(YamlBeansModuleRegistrars.morphiaRegistrars)
-          .addAll(OrchestrationStepsModuleRegistrars.morphiaRegistrars)
-          .addAll(CDNGBeanRegistrars.morphiaRegistrars)
+          .addAll(CDNGEntityRegistrars.morphiaRegistrars)
           .addAll(InstanceRegistrars.morphiaRegistrars)
           .addAll(DelegateTaskRegistrars.morphiaRegistrars)
           .addAll(NGCommonModuleRegistrars.morphiaRegistrars)
+          .addAll(FileStoreRegistrars.morphiaRegistrars)
           .build();
 
   public static final ImmutableList<YamlSchemaRootClass> yamlSchemaRegistrars =
@@ -100,6 +117,30 @@ public class CDNGRegistrars {
                    .availableAtOrgLevel(false)
                    .availableAtAccountLevel(false)
                    .clazz(CDStepInfo.class)
+                   .build())
+          .add(YamlSchemaRootClass.builder()
+                   .entityType(EntityType.GITOPS_CREATE_PR)
+                   .availableAtProjectLevel(true)
+                   .availableAtOrgLevel(false)
+                   .availableAtAccountLevel(false)
+                   .clazz(CreatePRStepNode.class)
+                   .yamlSchemaMetadata(YamlSchemaMetadata.builder()
+                                           .namespace(SchemaNamespaceConstants.CD)
+                                           .modulesSupported(Collections.singletonList(ModuleType.CD))
+                                           .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
+                                           .build())
+                   .build())
+          .add(YamlSchemaRootClass.builder()
+                   .entityType(EntityType.GITOPS_MERGE_PR)
+                   .availableAtProjectLevel(true)
+                   .availableAtOrgLevel(false)
+                   .availableAtAccountLevel(false)
+                   .clazz(MergePRStepNode.class)
+                   .yamlSchemaMetadata(YamlSchemaMetadata.builder()
+                                           .namespace(SchemaNamespaceConstants.CD)
+                                           .modulesSupported(Collections.singletonList(ModuleType.CD))
+                                           .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
+                                           .build())
                    .build())
           .add(YamlSchemaRootClass.builder()
                    .entityType(EntityType.K8S_CANARY_DEPLOY_STEP)
@@ -217,7 +258,7 @@ public class CDNGRegistrars {
                    .clazz(TerraformApplyStepNode.class)
                    .yamlSchemaMetadata(YamlSchemaMetadata.builder()
                                            .namespace(SchemaNamespaceConstants.CD)
-                                           .modulesSupported(Collections.singletonList(ModuleType.CD))
+                                           .modulesSupported(Arrays.asList(ModuleType.CD, ModuleType.PMS))
                                            .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
                                            .build())
                    .build())
@@ -229,7 +270,7 @@ public class CDNGRegistrars {
                    .clazz(TerraformPlanStepNode.class)
                    .yamlSchemaMetadata(YamlSchemaMetadata.builder()
                                            .namespace(SchemaNamespaceConstants.CD)
-                                           .modulesSupported(Collections.singletonList(ModuleType.CD))
+                                           .modulesSupported(Arrays.asList(ModuleType.CD, ModuleType.PMS))
                                            .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
                                            .build())
                    .build())
@@ -241,7 +282,7 @@ public class CDNGRegistrars {
                    .clazz(TerraformDestroyStepNode.class)
                    .yamlSchemaMetadata(YamlSchemaMetadata.builder()
                                            .namespace(SchemaNamespaceConstants.CD)
-                                           .modulesSupported(Collections.singletonList(ModuleType.CD))
+                                           .modulesSupported(Arrays.asList(ModuleType.CD, ModuleType.PMS))
                                            .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
                                            .build())
                    .build())
@@ -253,7 +294,7 @@ public class CDNGRegistrars {
                    .clazz(TerraformRollbackStepNode.class)
                    .yamlSchemaMetadata(YamlSchemaMetadata.builder()
                                            .namespace(SchemaNamespaceConstants.CD)
-                                           .modulesSupported(Collections.singletonList(ModuleType.CD))
+                                           .modulesSupported(Arrays.asList(ModuleType.CD, ModuleType.PMS))
                                            .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
                                            .build())
                    .build())
@@ -281,5 +322,140 @@ public class CDNGRegistrars {
                                            .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
                                            .build())
                    .build())
+          .add(YamlSchemaRootClass.builder()
+                   .entityType(EntityType.CLOUDFORMATION_CREATE_STACK_STEP)
+                   .availableAtProjectLevel(true)
+                   .availableAtOrgLevel(false)
+                   .availableAtAccountLevel(false)
+                   .clazz(CloudformationCreateStackStepNode.class)
+                   .yamlSchemaMetadata(YamlSchemaMetadata.builder()
+                                           .namespace(SchemaNamespaceConstants.CD)
+                                           .modulesSupported(Arrays.asList(ModuleType.CD, ModuleType.PMS))
+                                           .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
+                                           .build())
+                   .build())
+          .add(YamlSchemaRootClass.builder()
+                   .entityType(EntityType.CLOUDFORMATION_DELETE_STACK_STEP)
+                   .availableAtProjectLevel(true)
+                   .availableAtOrgLevel(false)
+                   .availableAtAccountLevel(false)
+                   .clazz(CloudformationDeleteStackStepNode.class)
+                   .yamlSchemaMetadata(YamlSchemaMetadata.builder()
+                                           .namespace(SchemaNamespaceConstants.CD)
+                                           .modulesSupported(Arrays.asList(ModuleType.CD, ModuleType.PMS))
+                                           .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
+                                           .build())
+                   .build())
+          .add(YamlSchemaRootClass.builder()
+                   .entityType(EntityType.SERVERLESS_AWS_LAMBDA_DEPLOY_STEP)
+                   .availableAtProjectLevel(true)
+                   .availableAtOrgLevel(false)
+                   .availableAtAccountLevel(false)
+                   .clazz(ServerlessAwsLambdaDeployStepNode.class)
+                   .yamlSchemaMetadata(YamlSchemaMetadata.builder()
+                                           .namespace(SchemaNamespaceConstants.CD)
+                                           .modulesSupported(Collections.singletonList(ModuleType.CD))
+                                           .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
+                                           .build())
+                   .build())
+          .add(YamlSchemaRootClass.builder()
+                   .entityType(EntityType.SERVERLESS_AWS_LAMBDA_ROLLBACK_STEP)
+                   .availableAtProjectLevel(true)
+                   .availableAtOrgLevel(false)
+                   .availableAtAccountLevel(false)
+                   .clazz(ServerlessAwsLambdaRollbackStepNode.class)
+                   .yamlSchemaMetadata(YamlSchemaMetadata.builder()
+                                           .namespace(SchemaNamespaceConstants.CD)
+                                           .modulesSupported(Collections.singletonList(ModuleType.CD))
+                                           .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
+                                           .build())
+                   .build())
+          .add(YamlSchemaRootClass.builder()
+                   .entityType(EntityType.CLOUDFORMATION_ROLLBACK_STACK_STEP)
+                   .availableAtProjectLevel(true)
+                   .availableAtOrgLevel(false)
+                   .availableAtAccountLevel(false)
+                   .clazz(CloudformationRollbackStepNode.class)
+                   .yamlSchemaMetadata(YamlSchemaMetadata.builder()
+                                           .namespace(SchemaNamespaceConstants.CD)
+                                           .modulesSupported(Arrays.asList(ModuleType.CD, ModuleType.PMS))
+                                           .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
+                                           .build())
+                   .build())
+          .add(YamlSchemaRootClass.builder()
+                   .entityType(EntityType.COMMAND_STEP)
+                   .availableAtProjectLevel(true)
+                   .availableAtOrgLevel(false)
+                   .availableAtAccountLevel(false)
+                   .clazz(CommandStepNode.class)
+                   .yamlSchemaMetadata(YamlSchemaMetadata.builder()
+                                           .namespace(SchemaNamespaceConstants.CD)
+                                           .modulesSupported(Collections.singletonList(ModuleType.CD))
+                                           .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
+                                           .build())
+                   .build())
+          .add(YamlSchemaRootClass.builder()
+                   .entityType(EntityType.AZURE_SLOT_DEPLOYMENT_STEP)
+                   .availableAtProjectLevel(true)
+                   .availableAtOrgLevel(false)
+                   .availableAtAccountLevel(false)
+                   .clazz(AzureWebAppSlotDeploymentStepNode.class)
+                   .yamlSchemaMetadata(YamlSchemaMetadata.builder()
+                                           .namespace(SchemaNamespaceConstants.CD)
+                                           .modulesSupported(Collections.singletonList(ModuleType.CD))
+                                           .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
+                                           .build())
+                   .build())
+          .add(YamlSchemaRootClass.builder()
+                   .entityType(EntityType.AZURE_TRAFFIC_SHIFT_STEP)
+                   .availableAtProjectLevel(true)
+                   .availableAtOrgLevel(false)
+                   .availableAtAccountLevel(false)
+                   .clazz(AzureWebAppTrafficShiftStepNode.class)
+                   .yamlSchemaMetadata(YamlSchemaMetadata.builder()
+                                           .namespace(SchemaNamespaceConstants.CD)
+                                           .modulesSupported(Collections.singletonList(ModuleType.CD))
+                                           .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
+                                           .build())
+                   .build())
+          .add(YamlSchemaRootClass.builder()
+                   .entityType(EntityType.AZURE_SWAP_SLOT_STEP)
+                   .availableAtProjectLevel(true)
+                   .availableAtOrgLevel(false)
+                   .availableAtAccountLevel(false)
+                   .clazz(AzureWebAppSwapSlotStepNode.class)
+                   .yamlSchemaMetadata(YamlSchemaMetadata.builder()
+                                           .namespace(SchemaNamespaceConstants.CD)
+                                           .modulesSupported(Collections.singletonList(ModuleType.CD))
+                                           .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
+                                           .build())
+                   .build())
+          .add(YamlSchemaRootClass.builder()
+                   .entityType(EntityType.AZURE_WEBAPP_ROLLBACK_STEP)
+                   .availableAtProjectLevel(true)
+                   .availableAtOrgLevel(false)
+                   .availableAtAccountLevel(false)
+                   .clazz(AzureWebAppRollbackStepNode.class)
+                   .yamlSchemaMetadata(YamlSchemaMetadata.builder()
+                                           .namespace(SchemaNamespaceConstants.CD)
+                                           .modulesSupported(Collections.singletonList(ModuleType.CD))
+                                           .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
+                                           .build())
+                   .build())
+          .add(YamlSchemaRootClass.builder()
+                   .entityType(EntityType.JENKINS_BUILD)
+                   .availableAtProjectLevel(true)
+                   .availableAtOrgLevel(false)
+                   .availableAtAccountLevel(false)
+                   .clazz(JenkinsBuildStepNode.class)
+                   .yamlSchemaMetadata(YamlSchemaMetadata.builder()
+                                           .namespace(SchemaNamespaceConstants.CD)
+                                           .modulesSupported(Arrays.asList(ModuleType.CD, ModuleType.PMS))
+                                           .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
+                                           .build())
+                   .build())
           .build();
+
+  public final ImmutableList<Class<? extends Converter<?, ?>>> springConverters =
+      ImmutableList.of(RollbackDeploymentInfoReadConverter.class, RollbackDeploymentInfoWriteConverter.class);
 }

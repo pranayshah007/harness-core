@@ -27,7 +27,7 @@ import software.wings.service.impl.analysis.DataCollectionInfoV2;
 import software.wings.service.impl.analysis.DataCollectionTaskResult;
 import software.wings.service.impl.analysis.DataCollectionTaskResult.DataCollectionTaskStatus;
 import software.wings.service.intfc.verification.CVActivityLogService;
-import software.wings.service.intfc.verification.CVActivityLogService.Logger;
+import software.wings.service.intfc.verification.CVActivityLogger;
 import software.wings.service.intfc.verification.CVTaskService;
 import software.wings.verification.VerificationDataAnalysisResponse;
 import software.wings.verification.VerificationStateAnalysisExecutionData;
@@ -227,7 +227,7 @@ public class CVTaskServiceImpl implements CVTaskService {
   }
 
   private void logActivity(DataCollectionTaskResult result, CVTask cvTask) {
-    Logger activityLogger = getActivityLogger(cvTask);
+    CVActivityLogger activityLogger = getActivityLogger(cvTask);
     // plus one in the endtime to represent the minute boundary properly in the UI
     if (result.getStatus() == DataCollectionTaskStatus.SUCCESS) {
       activityLogger.info("Data collection successful for time range %t to %t",
@@ -309,7 +309,7 @@ public class CVTaskServiceImpl implements CVTaskService {
     }
   }
 
-  private Logger getActivityLogger(CVTask cvTask) {
+  private CVActivityLogger getActivityLogger(CVTask cvTask) {
     return activityLogService.getLogger(cvTask.getAccountId(), cvTask.getCvConfigId(),
         cvTask.getDataCollectionInfo().getEndTime().toEpochMilli(), cvTask.getStateExecutionId());
   }

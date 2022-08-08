@@ -50,7 +50,7 @@ public interface CVNGStepTaskService {
       String accountId, String callBackId, DeploymentLogAnalysisFilter deploymentLogAnalysisFilter);
 
   List<String> getTransactionNames(String accountId, String callBackId);
-  List<String> getNodeNames(String accountId, String callBackId);
+  Set<String> getNodeNames(String accountId, String callBackId);
 
   Object getExecutionLogs(String accountId, String callBackId);
   PageResponse<CVNGLogDTO> getCVNGLogs(

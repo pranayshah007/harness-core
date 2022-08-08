@@ -13,8 +13,8 @@ import static org.apache.commons.lang3.StringUtils.EMPTY;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.anyMap;
 import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -55,14 +55,16 @@ public class PivotalUtilsTest extends WingsBaseTest {
     doReturn(processResult).when(processExecutor).execute();
     doReturn("asd").doReturn(null).doReturn(EMPTY).when(processResult).outputUTF8();
 
-    when(PcfUtils.createExecutorForAutoscalarPluginCheck(anyString(), anyMap())).thenReturn(processExecutor);
+    //    when(PcfUtils.createExecutorForAutoscalarPluginCheck(anyString(), anyMap())).thenReturn(processExecutor);
+    when(PcfUtils.createExecutorForAutoscalarPluginCheck(anyString(), anyMap())).thenAnswer(e -> processExecutor);
+
     when(PcfUtils.checkIfAppAutoscalarInstalled(DEFAULT_CF_CLI_PATH, CfCliVersion.V6)).thenCallRealMethod();
     assertThat(PcfUtils.checkIfAppAutoscalarInstalled(DEFAULT_CF_CLI_PATH, CfCliVersion.V6)).isTrue(); // asd
 
     assertThat(PcfUtils.checkIfAppAutoscalarInstalled(DEFAULT_CF_CLI_PATH, CfCliVersion.V6)).isFalse(); // null
     assertThat(PcfUtils.checkIfAppAutoscalarInstalled(DEFAULT_CF_CLI_PATH, CfCliVersion.V6)).isFalse(); // empty
 
-    doThrow(Exception.class).when(processExecutor).execute();
+    doAnswer(invocation -> { throw new Exception(); }).when(processExecutor).execute();
     try {
       PcfUtils.checkIfAppAutoscalarInstalled(DEFAULT_CF_CLI_PATH, CfCliVersion.V6);
     } catch (Exception e) {

@@ -38,6 +38,6 @@ public class SwitchTest extends CategoryTest implements MockableTestMixin {
 
     verify(mockLogger, times(1))
         .error(matches("Unhandled switch value \\{\\}: \\{\\}\n\\{\\}"), matches("java.lang.Integer"), anyInt(),
-            any(String.class));
+            any(Exception.class));
   }
 }

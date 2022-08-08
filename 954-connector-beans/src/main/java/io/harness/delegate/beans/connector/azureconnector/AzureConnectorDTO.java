@@ -15,6 +15,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.azure.AzureEnvironmentType;
 import io.harness.beans.DecryptableEntity;
 import io.harness.connector.DelegateSelectable;
+import io.harness.connector.ManagerExecutable;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.exception.InvalidRequestException;
 
@@ -37,18 +38,26 @@ import lombok.EqualsAndHashCode;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @ApiModel("AzureConnector")
 @Schema(name = "AzureConnector", description = "This contains details of the Azure connector")
-public class AzureConnectorDTO extends ConnectorConfigDTO implements DelegateSelectable {
+public class AzureConnectorDTO extends ConnectorConfigDTO implements DelegateSelectable, ManagerExecutable {
   @NotNull @Valid AzureCredentialDTO credential;
   Set<String> delegateSelectors;
   @Builder.Default
   @NotNull
   @Schema(description = "This specifies the Azure Environment type, which is AZURE by default.")
   private AzureEnvironmentType azureEnvironmentType;
+  @Builder.Default Boolean executeOnDelegate = true;
 
   @Override
   public List<DecryptableEntity> getDecryptableEntities() {
     if (credential.getAzureCredentialType() == AzureCredentialType.MANUAL_CREDENTIALS) {
       return Collections.singletonList(((AzureManualDetailsDTO) credential.getConfig()).getAuthDTO().getCredentials());
+    }
+    if (credential.getAzureCredentialType() == AzureCredentialType.INHERIT_FROM_DELEGATE) {
+      AzureMSIAuthDTO azureMSIAuthDTO = ((AzureInheritFromDelegateDetailsDTO) credential.getConfig()).getAuthDTO();
+
+      if (azureMSIAuthDTO instanceof AzureMSIAuthUADTO) {
+        return Collections.singletonList(((AzureMSIAuthUADTO) azureMSIAuthDTO).getCredentials());
+      }
     }
     return null;
   }

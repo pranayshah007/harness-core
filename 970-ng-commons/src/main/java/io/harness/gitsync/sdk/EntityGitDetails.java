@@ -33,6 +33,8 @@ public class EntityGitDetails {
   @Schema(description = "Root Folder Path of the Entity") String rootFolder;
   @Schema(description = "File Path of the Entity") String filePath;
   @Schema(description = "Name of the repo") String repoName;
+  @Schema(description = "Latest Commit ID") String commitId;
+  @Schema(description = "File Url of the entity") String fileUrl;
 
   public GitSyncBranchContext toGitSyncBranchContext() {
     GitEntityInfo gitEntityInfo = GitEntityInfo.builder()

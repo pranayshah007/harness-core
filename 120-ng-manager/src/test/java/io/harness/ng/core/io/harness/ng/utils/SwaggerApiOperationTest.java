@@ -12,6 +12,7 @@ import static io.harness.rule.OwnerRule.VIKAS;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.CategoryTest;
+import io.harness.agent.sdk.HarnessAlwaysRun;
 import io.harness.category.element.UnitTests;
 import io.harness.rule.Owner;
 
@@ -35,6 +36,7 @@ public class SwaggerApiOperationTest extends CategoryTest {
   @Test
   @Owner(developers = VIKAS)
   @Category(UnitTests.class)
+  @HarnessAlwaysRun
   public void testNickNameUniqueness() {
     // Not adding PATCH at present.
     Set<Class<? extends Annotation>> supportedAnnotation =

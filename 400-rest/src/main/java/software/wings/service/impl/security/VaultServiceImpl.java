@@ -190,7 +190,7 @@ public class VaultServiceImpl extends BaseVaultServiceImpl implements VaultServi
           SECRET_MANAGEMENT_ERROR, "Another vault configuration with the same name or URL exists", e, USER_SRE);
     }
 
-    if (!vaultConfig.isUseVaultAgent()) {
+    if (!vaultConfig.isUseVaultAgent() && !vaultConfig.isUseK8sAuth()) {
       saveVaultCredentials(vaultConfig, authToken, secretId, VAULT);
 
       Query<SecretManagerConfig> query =
@@ -343,6 +343,22 @@ public class VaultServiceImpl extends BaseVaultServiceImpl implements VaultServi
         String message =
             "Was not able to login Vault using the AppRole auth method. Please check your credentials and try again";
         throw new SecretManagementException(VAULT_OPERATION_ERROR, message, USER);
+      }
+    }
+
+    if (vaultConfig.isUseK8sAuth()) {
+      if (isBlank(vaultConfig.getVaultK8sAuthRole())) {
+        throw new io.harness.exception.SecretManagementException(
+            VAULT_OPERATION_ERROR, "You must provide vault role if you are using Vault with K8s Auth method", USER);
+      }
+      if (isBlank(vaultConfig.getServiceAccountTokenPath())) {
+        throw new io.harness.exception.SecretManagementException(VAULT_OPERATION_ERROR,
+            "You must provide service account token path if you are using Vault with K8s Auth method", USER);
+      }
+      if (isEmpty(vaultConfig.getDelegateSelectors())) {
+        throw new io.harness.exception.SecretManagementException(VAULT_OPERATION_ERROR,
+            "You must provide a delegate selector to read service account token if you are using K8s Auth method",
+            USER);
       }
     }
   }

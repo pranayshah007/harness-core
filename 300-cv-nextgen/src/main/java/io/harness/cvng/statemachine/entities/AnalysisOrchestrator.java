@@ -9,7 +9,7 @@ package io.harness.cvng.statemachine.entities;
 
 import io.harness.annotation.HarnessEntity;
 import io.harness.annotation.StoreIn;
-import io.harness.cvng.statemachine.beans.AnalysisStatus;
+import io.harness.cvng.statemachine.beans.AnalysisOrchestratorStatus;
 import io.harness.iterator.PersistentRegularIterable;
 import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.FdTtlIndex;
@@ -46,7 +46,7 @@ public class AnalysisOrchestrator
   @Id private String uuid;
   @FdIndex private String verificationTaskId;
   @Builder.Default private List<AnalysisStateMachine> analysisStateMachineQueue = new ArrayList<>();
-  private AnalysisStatus status;
+  private AnalysisOrchestratorStatus status;
   private long createdAt;
   private long lastUpdatedAt;
   private String accountId;

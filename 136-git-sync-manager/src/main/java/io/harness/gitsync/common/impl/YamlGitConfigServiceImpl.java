@@ -258,13 +258,16 @@ public class YamlGitConfigServiceImpl implements YamlGitConfigService {
     validateTheGitConfigInput(gitSyncConfigDTO);
     YamlGitConfig yamlGitConfigToBeSaved = toYamlGitConfig(gitSyncConfigDTO, accountId);
     yamlGitConfigToBeSaved.setWebhookToken(CryptoUtils.secureRandAlphaNumString(40));
-    registerWebhookAsync(gitSyncConfigDTO);
     YamlGitConfig savedYamlGitConfig = null;
     try (AcquiredLock lock = persistentLocker.waitToAcquireLock(
              getYamlGitConfigScopeKey(gitSyncConfigDTO), Duration.ofMinutes(1), Duration.ofMinutes(2))) {
       final boolean wasGitSyncEnabled = isGitSyncEnabled(
           accountId, gitSyncConfigDTO.getOrganizationIdentifier(), gitSyncConfigDTO.getProjectIdentifier());
+      final boolean isNewRepoInProject = isNewRepoInProject(gitSyncConfigDTO);
       savedYamlGitConfig = yamlGitConfigRepository.save(yamlGitConfigToBeSaved);
+      if (isNewRepoInProject) {
+        registerWebhookAsync(gitSyncConfigDTO);
+      }
       sendEventForGitSyncConfigChange(gitSyncConfigDTO, GitSyncConfigChangeEventType.SAVE_EVENT,
           wasGitSyncEnabled ? GitSyncConfigSwitchType.NONE : GitSyncConfigSwitchType.ENABLED);
       sendEventForConnectorSetupUsageChange(gitSyncConfigDTO);
@@ -291,11 +294,9 @@ public class YamlGitConfigServiceImpl implements YamlGitConfigService {
   }
 
   private void saveWebhook(YamlGitConfigDTO gitSyncConfigDTO) {
-    if (isNewRepoInProject(gitSyncConfigDTO)) {
-      final RetryPolicy<Object> retryPolicy = getWebhookRegistrationRetryPolicy(
-          "[Retrying] attempt: {} for failure case of save webhook call", "Failed to save webhook after {} attempts");
-      Failsafe.with(retryPolicy).get(() -> registerWebhook(gitSyncConfigDTO));
-    }
+    final RetryPolicy<Object> retryPolicy = getWebhookRegistrationRetryPolicy(
+        "[Retrying] attempt: {} for failure case of save webhook call", "Failed to save webhook after {} attempts");
+    Failsafe.with(retryPolicy).get(() -> registerWebhook(gitSyncConfigDTO));
   }
 
   private UpsertWebhookResponseDTO registerWebhook(YamlGitConfigDTO gitSyncConfigDTO) {
@@ -541,6 +542,17 @@ public class YamlGitConfigServiceImpl implements YamlGitConfigService {
         .orElseThrow(() -> new InvalidRequestException("No git sync config exists"));
   }
 
+  @Override
+  public Optional<YamlGitConfigDTO> getByProjectIdAndRepoOptional(
+      String accountId, String orgId, String projectId, String repo) {
+    Optional<YamlGitConfig> yamlGitConfig =
+        yamlGitConfigRepository.findByAccountIdAndOrgIdentifierAndProjectIdentifierAndRepo(
+            accountId, orgId, projectId, repo);
+    if (yamlGitConfig.isPresent()) {
+      return yamlGitConfig.map(YamlGitConfigMapper::toYamlGitConfigDTO);
+    }
+    return Optional.empty();
+  }
   private String getYamlGitConfigScopeKey(YamlGitConfigDTO yamlGitConfig) {
     return Stream
         .of(yamlGitConfig.getAccountIdentifier(), yamlGitConfig.getOrganizationIdentifier(),

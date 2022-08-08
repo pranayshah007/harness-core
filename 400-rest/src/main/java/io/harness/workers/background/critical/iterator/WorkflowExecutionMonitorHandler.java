@@ -18,6 +18,7 @@ import static io.harness.beans.RepairActionCode.CONTINUE_WITH_DEFAULTS;
 import static io.harness.exception.WingsException.ExecutionContext.MANAGER;
 
 import static software.wings.sm.ExecutionInterrupt.ExecutionInterruptBuilder.anExecutionInterrupt;
+import static software.wings.sm.StateType.SHELL_SCRIPT;
 
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
@@ -54,7 +55,6 @@ import software.wings.sm.StateMachineExecutor;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.time.Duration;
-import java.util.concurrent.ExecutorService;
 import lombok.extern.slf4j.Slf4j;
 import org.mongodb.morphia.query.Query;
 import org.mongodb.morphia.query.Sort;
@@ -69,13 +69,14 @@ public class WorkflowExecutionMonitorHandler implements Handler<WorkflowExecutio
   @Inject private PersistenceIteratorFactory persistenceIteratorFactory;
   @Inject private WingsPersistence wingsPersistence;
   @Inject private ExecutionInterruptManager executionInterruptManager;
-  @Inject private ExecutorService executorService;
   @Inject private StateMachineExecutor stateMachineExecutor;
   @Inject private FeatureFlagService featureFlagService;
   @Inject private MorphiaPersistenceProvider<WorkflowExecution> persistenceProvider;
+  @Inject private WorkflowExecutionZombieHandler zombieHandler;
 
   private static final Duration INACTIVITY_TIMEOUT = Duration.ofMinutes(3);
   private static final Duration EXPIRE_THRESHOLD = Duration.ofMinutes(10);
+  private static final Duration SHELL_SCRIPT_EXPIRE_THRESHOLD = Duration.ofSeconds(10);
 
   public void registerIterators(int threadPoolSize) {
     PumpExecutorOptions options = PumpExecutorOptions.builder()
@@ -118,7 +119,13 @@ public class WorkflowExecutionMonitorHandler implements Handler<WorkflowExecutio
         hasActiveStates = stateExecutionInstances.hasNext();
         while (stateExecutionInstances.hasNext()) {
           StateExecutionInstance stateExecutionInstance = stateExecutionInstances.next();
-          if (stateExecutionInstance.getExpiryTs() > System.currentTimeMillis()) {
+          long now = System.currentTimeMillis();
+
+          if (shouldAvoidExpiringWithThreshold(stateExecutionInstance, now)) {
+            continue;
+          }
+
+          if (stateExecutionInstance.getExpiryTs() > now) {
             continue;
           }
 
@@ -203,6 +210,10 @@ public class WorkflowExecutionMonitorHandler implements Handler<WorkflowExecutio
           stateMachineExecutor.executeCallback(executionContext, stateExecutionInstance, finalStatus, null);
         }
       }
+
+      // APPLY ZOMBIE RULES TO FORCE ABORT A STUCK EXECUTION
+      zombieHandler.handle(entity);
+
     } catch (WingsException exception) {
       ExceptionLogger.logProcessedMessages(exception, MANAGER, log);
     } catch (Exception exception) {
@@ -222,5 +233,18 @@ public class WorkflowExecutionMonitorHandler implements Handler<WorkflowExecutio
                                                         .unset(WorkflowExecutionKeys.message);
 
     wingsPersistence.findAndModify(query, updateOps, HPersistence.returnNewOptions);
+  }
+
+  private boolean shouldAvoidExpiringWithThreshold(
+      StateExecutionInstance stateExecutionInstance, long currentTimeMillis) {
+    // adding a expire threshold just for shell script for now
+    if (stateExecutionInstance.getStateType() != null
+        && stateExecutionInstance.getStateType().equals(SHELL_SCRIPT.getName())) {
+      if (stateExecutionInstance.getExpiryTs() < currentTimeMillis
+          && stateExecutionInstance.getExpiryTs() + SHELL_SCRIPT_EXPIRE_THRESHOLD.toMillis() > currentTimeMillis) {
+        return true;
+      }
+    }
+    return false;
   }
 }

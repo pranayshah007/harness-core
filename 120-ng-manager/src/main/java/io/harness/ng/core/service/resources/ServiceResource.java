@@ -34,6 +34,7 @@ import io.harness.ng.core.service.mappers.ServiceElementMapper;
 import io.harness.ng.core.service.services.ServiceEntityManagementService;
 import io.harness.ng.core.service.services.ServiceEntityService;
 import io.harness.ng.core.utils.CoreCriteriaUtils;
+import io.harness.repositories.UpsertOptions;
 import io.harness.utils.PageUtils;
 
 import com.google.inject.Inject;
@@ -154,7 +155,7 @@ public class ServiceResource {
       @QueryParam("accountId") String accountId, @NotNull @Valid ServiceRequestDTO serviceRequestDTO) {
     ServiceEntity requestService = ServiceElementMapper.toServiceEntity(accountId, serviceRequestDTO);
     requestService.setVersion(isNumeric(ifMatch) ? parseLong(ifMatch) : null);
-    ServiceEntity upsertedService = serviceEntityService.upsert(requestService);
+    ServiceEntity upsertedService = serviceEntityService.upsert(requestService, UpsertOptions.DEFAULT);
     return ResponseDTO.newResponse(
         upsertedService.getVersion().toString(), ServiceElementMapper.writeDTO(upsertedService));
   }

@@ -7,6 +7,7 @@
 
 package io.harness.data.structure;
 
+import lombok.NonNull;
 import lombok.experimental.UtilityClass;
 
 @UtilityClass
@@ -17,20 +18,20 @@ import lombok.experimental.UtilityClass;
 public class NullSafeImmutableMap {
   public static class NullSafeBuilder<K, V> extends com.google.common.collect.ImmutableMap.Builder<K, V> {
     @Override
-    public NullSafeBuilder<K, V> put(K key, V value) {
+    public NullSafeBuilder<K, V> put(@NonNull K key, @NonNull V value) {
       super.put(key, value);
       return this;
     }
 
     public NullSafeBuilder<K, V> putIfNotNull(K key, V value) {
-      if (value != null) {
+      if (key != null && value != null) {
         put(key, value);
       }
       return this;
     }
   }
 
-  public static <K, V> NullSafeBuilder builder() {
-    return new NullSafeBuilder<K, V>();
+  public static <K, V> NullSafeBuilder<K, V> builder() {
+    return new NullSafeBuilder<>();
   }
 }

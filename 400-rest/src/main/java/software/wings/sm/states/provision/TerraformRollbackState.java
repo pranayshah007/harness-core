@@ -9,10 +9,13 @@ package software.wings.sm.states.provision;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.beans.ExecutionStatus.SUCCESS;
+import static io.harness.beans.FeatureName.ACTIVITY_ID_BASED_TF_BASE_DIR;
 import static io.harness.beans.FeatureName.GIT_HOST_CONNECTIVITY;
 import static io.harness.beans.FeatureName.TERRAFORM_AWS_CP_AUTHENTICATION;
+import static io.harness.beans.FeatureName.TERRAFORM_REMOTE_BACKEND_CONFIG;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.beans.FileBucket.TERRAFORM_STATE;
+import static io.harness.provision.TerraformConstants.REMOTE_STORE_TYPE;
 import static io.harness.validation.Validator.notNullCheck;
 
 import static software.wings.beans.CGConstants.GLOBAL_APP_ID;
@@ -34,6 +37,7 @@ import io.harness.tasks.ResponseData;
 
 import software.wings.api.TerraformApplyMarkerParam;
 import software.wings.api.TerraformExecutionData;
+import software.wings.api.terraform.TfVarGitSource;
 import software.wings.beans.AwsConfig;
 import software.wings.beans.GitConfig;
 import software.wings.beans.NameValuePair;
@@ -186,6 +190,16 @@ public class TerraformRollbackState extends TerraformProvisionState {
     List<NameValuePair> allBackendConfigs = configParameter.getBackendConfigs();
     Map<String, String> backendConfigs = null;
     Map<String, EncryptedDataDetail> encryptedBackendConfigs = null;
+    String backendConfigStoreType = null;
+    TfVarGitSource remoteBackendConfig = null;
+
+    if (featureFlagService.isEnabled(TERRAFORM_REMOTE_BACKEND_CONFIG, context.getAccountId())) {
+      backendConfigStoreType = configParameter.getBackendConfigStoreType();
+      if (REMOTE_STORE_TYPE.equals(backendConfigStoreType)) {
+        remoteBackendConfig = fetchRemoteConfigGitSource(context, configParameter.getRemoteBackendConfig());
+      }
+    }
+
     if (allBackendConfigs != null) {
       backendConfigs = infrastructureProvisionerService.extractTextVariables(allBackendConfigs, context);
       encryptedBackendConfigs = infrastructureProvisionerService.extractEncryptedTextVariables(
@@ -243,6 +257,8 @@ public class TerraformRollbackState extends TerraformProvisionState {
             .encryptedVariables(encryptedTextVariables)
             .backendConfigs(backendConfigs)
             .encryptedBackendConfigs(encryptedBackendConfigs)
+            .backendConfigStoreType(backendConfigStoreType)
+            .remoteBackendConfig(remoteBackendConfig)
             .environmentVariables(envVars)
             .encryptedEnvironmentVariables(encryptedEnvVars)
             .targets(targets)
@@ -252,7 +268,9 @@ public class TerraformRollbackState extends TerraformProvisionState {
             .workspace(workspace)
             .delegateTag(configParameter.getDelegateTag())
             .isGitHostConnectivityCheck(
-                featureFlagService.isEnabled(GIT_HOST_CONNECTIVITY, executionContext.getApp().getAccountId()));
+                featureFlagService.isEnabled(GIT_HOST_CONNECTIVITY, executionContext.getApp().getAccountId()))
+            .useActivityIdBasedTfBaseDir(
+                featureFlagService.isEnabled(ACTIVITY_ID_BASED_TF_BASE_DIR, context.getAccountId()));
 
     if (featureFlagService.isEnabled(TERRAFORM_AWS_CP_AUTHENTICATION, context.getAccountId())) {
       SettingAttribute settingAttribute = getAwsConfigSettingAttribute(configParameter.getAwsConfigId());

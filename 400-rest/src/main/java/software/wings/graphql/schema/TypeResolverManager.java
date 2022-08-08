@@ -62,6 +62,7 @@ import software.wings.graphql.schema.type.cloudProvider.QLGcpCloudProvider;
 import software.wings.graphql.schema.type.cloudProvider.QLKubernetesClusterCloudProvider;
 import software.wings.graphql.schema.type.cloudProvider.QLPcfCloudProvider;
 import software.wings.graphql.schema.type.cloudProvider.QLPhysicalDataCenterCloudProvider;
+import software.wings.graphql.schema.type.cloudProvider.QLRancherCloudProvider;
 import software.wings.graphql.schema.type.cloudProvider.QLSpotInstCloudProvider;
 import software.wings.graphql.schema.type.connector.QLAmazonS3Connector;
 import software.wings.graphql.schema.type.connector.QLAmazonS3HelmRepoConnector;
@@ -87,6 +88,7 @@ import software.wings.graphql.schema.type.connector.QLJiraConnector;
 import software.wings.graphql.schema.type.connector.QLLogzConnector;
 import software.wings.graphql.schema.type.connector.QLNewRelicConnector;
 import software.wings.graphql.schema.type.connector.QLNexusConnector;
+import software.wings.graphql.schema.type.connector.QLOciHelmRepoConnector;
 import software.wings.graphql.schema.type.connector.QLPrometheusConnector;
 import software.wings.graphql.schema.type.connector.QLSMBConnector;
 import software.wings.graphql.schema.type.connector.QLServiceNowConnector;
@@ -102,6 +104,7 @@ import software.wings.graphql.schema.type.instance.QLEcsContainerInstance;
 import software.wings.graphql.schema.type.instance.QLK8SPodInstance;
 import software.wings.graphql.schema.type.instance.QLPcfInstance;
 import software.wings.graphql.schema.type.instance.QLPhysicalHostInstance;
+import software.wings.graphql.schema.type.secretManagers.QLCustomSecretManagerConfig;
 import software.wings.graphql.schema.type.secrets.QLEncryptedFile;
 import software.wings.graphql.schema.type.secrets.QLEncryptedText;
 import software.wings.graphql.schema.type.secrets.QLKerberosAuthentication;
@@ -166,6 +169,7 @@ public class TypeResolverManager {
     public static final String PipelineStageExecution = "PipelineStageExecution";
     public static final String MANIFEST_SELECTION = "ManifestSelection";
     public static final String APPROVAL_DETAILS = "ApprovalDetails";
+    public static final String SECRET_MANAGER_CONFIG = "SecretManagerConfig";
   }
 
   @UtilityClass
@@ -254,6 +258,7 @@ public class TypeResolverManager {
     public static final String SumoConnector = "SumoConnector";
     public static final String GCSHelmRepoConnector = "GCSHelmRepoConnector";
     public static final String HttpHelmRepoConnector = "HttpHelmRepoConnector";
+    public static final String ociHelmRepoConnector = "OciHelmRepoConnector";
     public static final String AmazonS3HelmRepoConnector = "AmazonS3HelmRepoConnector";
     public static final String UserChangeSet = "UserChangeSet";
     public static final String GitChangeSet = "GitChangeSet";
@@ -294,6 +299,8 @@ public class TypeResolverManager {
     public static final String JIRA_APPROVAL_DETAILS = "JiraApprovalDetails";
     public static final String SNOW_APPROVAL_DETAILS = "SNOWApprovalDetails";
     public static final String SHELL_SCRIPT_DETAILS = "ShellScriptDetails";
+    public static final String CUSTOM_SECRET_MANAGER = "CustomSecretManagerConfig";
+    public static final String RancherCloudProvider = "RancherCloudProvider";
   }
 
   /**
@@ -322,6 +329,7 @@ public class TypeResolverManager {
                     .put(QLKubernetesClusterCloudProvider.class, TypeResolverManagerTypes.KubernetesCloudProvider)
                     .put(QLPcfCloudProvider.class, TypeResolverManagerTypes.PcfCloudProvider)
                     .put(QLSpotInstCloudProvider.class, TypeResolverManagerTypes.SpotInstCloudProvider)
+                    .put(QLRancherCloudProvider.class, TypeResolverManagerTypes.RancherCloudProvider)
                     .build()))
         .put(TypeResolverManagerUnifaces.Connector,
             getResultTypeResolver(
@@ -357,6 +365,7 @@ public class TypeResolverManager {
                     .put(QLInstanaConnector.class, TypeResolverManagerTypes.InstanaCollector)
                     .put(QLGCSHelmRepoConnector.class, TypeResolverManagerTypes.GCSHelmRepoConnector)
                     .put(QLHttpHelmRepoConnector.class, TypeResolverManagerTypes.HttpHelmRepoConnector)
+                    .put(QLOciHelmRepoConnector.class, TypeResolverManagerTypes.ociHelmRepoConnector)
                     .put(QLAmazonS3HelmRepoConnector.class, TypeResolverManagerTypes.AmazonS3HelmRepoConnector)
                     .build()))
         .put(TypeResolverManagerUnifaces.Execution,
@@ -505,6 +514,11 @@ public class TypeResolverManager {
                                       .put(QLSNOWApprovalDetails.class, TypeResolverManagerTypes.SNOW_APPROVAL_DETAILS)
                                       .put(QLShellScriptDetails.class, TypeResolverManagerTypes.SHELL_SCRIPT_DETAILS)
                                       .build()))
+        .put(TypeResolverManagerUnifaces.SECRET_MANAGER_CONFIG,
+            getResultTypeResolver(
+                ImmutableMap.<Class, String>builder()
+                    .put(QLCustomSecretManagerConfig.class, TypeResolverManagerTypes.CUSTOM_SECRET_MANAGER)
+                    .build()))
         .build();
   }
 

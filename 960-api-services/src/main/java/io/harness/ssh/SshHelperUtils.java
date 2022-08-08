@@ -20,6 +20,7 @@ import com.jcraft.jsch.JSchException;
 import java.io.File;
 import java.io.IOException;
 import java.io.Writer;
+import java.util.Map;
 import java.util.concurrent.TimeoutException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -30,8 +31,8 @@ import org.zeroturnaround.exec.stream.LogOutputStream;
 @Slf4j
 @OwnedBy(CDP)
 public class SshHelperUtils {
-  public static void generateTGT(String userPrincipal, String password, String keyTabFilePath, LogCallback logCallback)
-      throws JSchException {
+  public static void generateTGT(String userPrincipal, String password, String keyTabFilePath, LogCallback logCallback,
+      Map<String, String> env) throws JSchException {
     if (!isValidKeyTabFile(keyTabFilePath)) {
       logCallback.saveExecutionLog("Cannot proceed with Ticket Granting Ticket(TGT) generation.", ERROR);
       log.error("Cannot proceed with Ticket Granting Ticket(TGT) generation");
@@ -44,7 +45,7 @@ public class SshHelperUtils {
                                                           : format("kinit -k -t %s %s", keyTabFilePath, userPrincipal);
     boolean ticketGenerated;
     synchronized (SshHelperUtils.class) {
-      ticketGenerated = executeLocalCommand(commandString, logCallback, null, false);
+      ticketGenerated = executeLocalCommand(commandString, logCallback, null, false, env);
     }
     if (ticketGenerated) {
       logCallback.saveExecutionLog("Ticket Granting Ticket(TGT) generated successfully for " + userPrincipal);
@@ -69,7 +70,7 @@ public class SshHelperUtils {
   }
 
   public static boolean executeLocalCommand(
-      String cmdString, LogCallback logCallback, Writer output, boolean isOutputWriter) {
+      String cmdString, LogCallback logCallback, Writer output, boolean isOutputWriter, Map<String, String> env) {
     String[] commandList = new String[] {"/bin/bash", "-c", cmdString};
     ProcessResult processResult = null;
     try {
@@ -77,6 +78,7 @@ public class SshHelperUtils {
                                             .command(commandList)
                                             .directory(new File(System.getProperty("user.home")))
                                             .readOutput(true)
+                                            .environment(env)
                                             .redirectOutput(new LogOutputStream() {
                                               @Override
                                               protected void processLine(String line) {

@@ -216,8 +216,7 @@ public class ConnectorResourceTest extends CategoryTest {
     assertThat(catalogue.size()).isEqualTo(ConnectorCategory.values().length);
     final int totalConnectorsWithinAllCategories =
         catalogue.stream().map(item -> item.getConnectors().size()).mapToInt(Integer::intValue).sum();
-    // Temporary size decreased by 1 because of hided Azure connector. Will be removed after Azure connector is enabled
-    assertThat(totalConnectorsWithinAllCategories).isEqualTo(ConnectorType.values().length - 1);
+    assertThat(totalConnectorsWithinAllCategories).isEqualTo(ConnectorType.values().length);
     Mockito.verify(connectorService, times(1)).getConnectorCatalogue(accountIdentifier);
   }
 

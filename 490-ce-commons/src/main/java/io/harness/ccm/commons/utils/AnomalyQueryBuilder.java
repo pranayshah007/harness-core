@@ -8,6 +8,8 @@
 package io.harness.ccm.commons.utils;
 
 import static io.harness.ccm.commons.entities.CCMField.ALL;
+import static io.harness.ccm.commons.entities.CCMField.ANOMALOUS_SPEND;
+import static io.harness.ccm.commons.entities.CCMField.COST_IMPACT;
 import static io.harness.ccm.commons.entities.CCMOperator.LIKE;
 import static io.harness.ccm.commons.utils.TimeUtils.toOffsetDateTime;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
@@ -23,11 +25,11 @@ import io.harness.ccm.commons.entities.CCMTimeFilter;
 import io.harness.exception.InvalidRequestException;
 import io.harness.timescaledb.tables.records.AnomaliesRecord;
 
-import com.sun.istack.internal.NotNull;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 import org.jooq.Condition;
 import org.jooq.OrderField;
@@ -37,14 +39,22 @@ import org.jooq.impl.DSL;
 @Slf4j
 public class AnomalyQueryBuilder {
   private static final List<TableField<AnomaliesRecord, String>> ANOMALY_TABLE_ENTITIES =
-      new ArrayList<>(Arrays.asList(ANOMALIES.WORKLOADNAME, ANOMALIES.NAMESPACE, ANOMALIES.CLUSTERNAME,
-          ANOMALIES.AWSACCOUNT, ANOMALIES.AWSSERVICE, ANOMALIES.AWSINSTANCETYPE, ANOMALIES.AWSUSAGETYPE,
-          ANOMALIES.GCPPRODUCT, ANOMALIES.GCPPROJECT, ANOMALIES.GCPSKUDESCRIPTION, ANOMALIES.GCPSKUID));
+      Arrays.asList(ANOMALIES.WORKLOADNAME, ANOMALIES.NAMESPACE, ANOMALIES.CLUSTERNAME, ANOMALIES.AWSACCOUNT,
+          ANOMALIES.AWSSERVICE, ANOMALIES.AWSINSTANCETYPE, ANOMALIES.AWSUSAGETYPE, ANOMALIES.GCPPRODUCT,
+          ANOMALIES.GCPPROJECT, ANOMALIES.GCPSKUDESCRIPTION, ANOMALIES.GCPSKUID, ANOMALIES.AZURESUBSCRIPTIONGUID,
+          ANOMALIES.AZURERESOURCEGROUP, ANOMALIES.AZUREMETERCATEGORY);
+
+  // Fields which don't directly correspond to a column in anomalies table
+  private static final List<CCMField> NON_TABLE_FIELDS = Arrays.asList(ANOMALOUS_SPEND, COST_IMPACT, ALL);
 
   @NotNull
   public List<OrderField<?>> getOrderByFields(@NotNull List<CCMSort> sortList) {
     List<OrderField<?>> orderByFields = new ArrayList<>();
-    sortList.forEach(sortField -> orderByFields.add(getOrderByField(sortField)));
+    sortList.forEach(sortField -> {
+      if (!NON_TABLE_FIELDS.contains(sortField.getField())) {
+        orderByFields.add(getOrderByField(sortField));
+      }
+    });
     return orderByFields;
   }
 
@@ -81,6 +91,27 @@ public class AnomalyQueryBuilder {
   }
 
   @NotNull
+  public Condition applyAllFilters(@NotNull CCMFilter filter, @NotNull List<CCMFilter> ruleFilters) {
+    Condition condition = DSL.noCondition();
+    condition = applyPerspectiveRuleFilters(ruleFilters);
+
+    if (filter.getNumericFilters() != null) {
+      condition = applyNumericFilters(filter.getNumericFilters(), condition);
+    }
+
+    if (filter.getStringFilters() != null) {
+      // Todo: Remove perspectiveId filter if present
+      condition = applyStringFilters(filter.getStringFilters(), condition);
+    }
+
+    if (filter.getTimeFilters() != null) {
+      condition = applyTimeFilters(filter.getTimeFilters(), condition);
+    }
+
+    return condition;
+  }
+
+  @NotNull
   private Condition applyTimeFilters(@NotNull List<CCMTimeFilter> filters, Condition condition) {
     for (CCMTimeFilter filter : filters) {
       condition = condition.and(constructCondition(ANOMALIES.ANOMALYTIME, filter.getTimestamp(), filter.getOperator()));
@@ -96,6 +127,10 @@ public class AnomalyQueryBuilder {
           condition = condition.and(
               constructCondition(ANOMALIES.ACTUALCOST, filter.getValue().doubleValue(), filter.getOperator()));
           break;
+        case ANOMALOUS_SPEND:
+          condition = condition.and(constructConditionOnDifferenceOfFields(
+              ANOMALIES.ACTUALCOST, ANOMALIES.EXPECTEDCOST, filter.getValue().doubleValue(), filter.getOperator()));
+          break;
         default:
           throw new InvalidRequestException(
               String.format("%s numeric filter not supported", filter.getField().toString()));
@@ -107,14 +142,30 @@ public class AnomalyQueryBuilder {
   @NotNull
   private Condition applyStringFilters(@NotNull List<CCMStringFilter> filters, Condition condition) {
     for (CCMStringFilter filter : filters) {
-      if (filter.getField() == ALL && filter.getOperator() == LIKE) {
-        condition = condition.and(constructSearchCondition(filter.getValues()));
-      } else {
-        condition = condition.and(
-            constructCondition(getTableField(filter.getField()), filter.getValues(), filter.getOperator()));
+      try {
+        if (filter.getField() == ALL && filter.getOperator() == LIKE) {
+          condition = condition.and(constructSearchCondition(filter.getValues()));
+        } else {
+          condition = condition.and(
+              constructCondition(getTableField(filter.getField()), filter.getValues(), filter.getOperator()));
+        }
+      } catch (Exception ignored) {
       }
     }
     return condition;
+  }
+
+  @NotNull
+  private Condition applyPerspectiveRuleFilters(@NotNull List<CCMFilter> filters) {
+    Condition overallCondition = DSL.noCondition();
+    for (CCMFilter filter : filters) {
+      Condition ruleCondition = DSL.noCondition();
+      if (filter.getStringFilters() != null) {
+        ruleCondition = applyStringFilters(filter.getStringFilters(), ruleCondition);
+      }
+      overallCondition = overallCondition.or(ruleCondition);
+    }
+    return overallCondition;
   }
 
   @NotNull
@@ -134,6 +185,10 @@ public class AnomalyQueryBuilder {
         return ANOMALIES.AWSACCOUNT;
       case AWS_SERVICE:
         return ANOMALIES.AWSSERVICE;
+      case AWS_USAGE_TYPE:
+        return ANOMALIES.AWSUSAGETYPE;
+      case AWS_INSTANCE_TYPE:
+        return ANOMALIES.AWSINSTANCETYPE;
       case GCP_PROJECT:
         return ANOMALIES.GCPPROJECT;
       case GCP_PRODUCT:
@@ -142,6 +197,12 @@ public class AnomalyQueryBuilder {
         return ANOMALIES.GCPSKUID;
       case GCP_SKU_DESCRIPTION:
         return ANOMALIES.GCPSKUDESCRIPTION;
+      case AZURE_SUBSCRIPTION_GUID:
+        return ANOMALIES.AZURESUBSCRIPTIONGUID;
+      case AZURE_RESOURCE_GROUP_NAME:
+        return ANOMALIES.AZURERESOURCEGROUP;
+      case AZURE_METER_CATEGORY:
+        return ANOMALIES.AZUREMETERCATEGORY;
       default:
         throw new InvalidRequestException(String.format("%s not supported", field.toString()));
     }
@@ -168,6 +229,10 @@ public class AnomalyQueryBuilder {
         return ANOMALIES.AWSACCOUNT;
       case AWS_SERVICE:
         return ANOMALIES.AWSSERVICE;
+      case AWS_USAGE_TYPE:
+        return ANOMALIES.AWSUSAGETYPE;
+      case AWS_INSTANCE_TYPE:
+        return ANOMALIES.AWSINSTANCETYPE;
       case GCP_PROJECT:
         return ANOMALIES.GCPPROJECT;
       case GCP_PRODUCT:
@@ -176,6 +241,12 @@ public class AnomalyQueryBuilder {
         return ANOMALIES.GCPSKUID;
       case GCP_SKU_DESCRIPTION:
         return ANOMALIES.GCPSKUDESCRIPTION;
+      case AZURE_SUBSCRIPTION_GUID:
+        return ANOMALIES.AZURESUBSCRIPTIONGUID;
+      case AZURE_RESOURCE_GROUP_NAME:
+        return ANOMALIES.AZURERESOURCEGROUP;
+      case AZURE_METER_CATEGORY:
+        return ANOMALIES.AZUREMETERCATEGORY;
       default:
         throw new InvalidRequestException(String.format("%s not supported", field.toString()));
     }
@@ -226,6 +297,24 @@ public class AnomalyQueryBuilder {
         return value != null ? field.lessOrEqual(value) : DSL.noCondition();
       default:
         throw new InvalidRequestException(String.format("%s not supported for numeric fields", operator.toString()));
+    }
+  }
+
+  @NotNull
+  private static Condition constructConditionOnDifferenceOfFields(TableField<AnomaliesRecord, Double> field1,
+      TableField<AnomaliesRecord, Double> field2, Double value, CCMOperator operator) {
+    switch (operator) {
+      case GREATER_THAN:
+        return value != null ? field1.subtract(field2).greaterThan(value) : DSL.noCondition();
+      case GREATER_THAN_EQUALS_TO:
+        return value != null ? field1.subtract(field2).greaterOrEqual(value) : DSL.noCondition();
+      case LESS_THAN:
+        return value != null ? field1.subtract(field2).lessThan(value) : DSL.noCondition();
+      case LESS_THAN_EQUALS_TO:
+        return value != null ? field1.subtract(field2).lessOrEqual(value) : DSL.noCondition();
+      default:
+        throw new InvalidRequestException(
+            String.format("%s not supported for difference between two numeric fields", operator.toString()));
     }
   }
 

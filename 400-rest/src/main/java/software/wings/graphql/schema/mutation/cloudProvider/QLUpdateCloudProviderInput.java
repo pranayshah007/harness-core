@@ -38,4 +38,5 @@ public class QLUpdateCloudProviderInput implements QLMutationInput {
   private QLUpdatePhysicalDataCenterCloudProviderInput physicalDataCenterCloudProvider;
   private QLUpdateAzureCloudProviderInput azureCloudProvider;
   private QLUpdateAwsCloudProviderInput awsCloudProvider;
+  private QLUpdateRancherCloudProviderInput rancherCloudProvider;
 }

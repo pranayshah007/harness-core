@@ -29,6 +29,7 @@ go_library(
         "//product/ci/engine/consts",
         "//product/ci/engine/grpc/client",
         "//product/ci/engine/proto",
+        "//product/ci/ti-service/client",
         "//product/ci/ti-service/types",
         "@com_github_ghodss_yaml//:yaml",
         "@com_github_grpc_ecosystem_go_grpc_middleware//retry",

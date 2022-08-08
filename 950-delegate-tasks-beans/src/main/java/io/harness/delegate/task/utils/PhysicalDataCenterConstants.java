@@ -20,4 +20,5 @@ public final class PhysicalDataCenterConstants {
   public static final String TRUE_STR = "true";
   public static final String DEFAULT_SSH_PORT = "22";
   public static final int HOSTS_NUMBER_VALIDATION_LIMIT = 10;
+  public static final int DEFAULT_HOST_SOCKET_TIMEOUT_MS = 5000;
 }

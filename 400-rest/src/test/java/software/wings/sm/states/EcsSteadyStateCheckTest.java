@@ -35,7 +35,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyList;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
@@ -86,6 +85,7 @@ import software.wings.sm.ExecutionContext;
 import software.wings.sm.ExecutionContextImpl;
 import software.wings.sm.ExecutionResponse;
 import software.wings.sm.WorkflowStandardParams;
+import software.wings.sm.WorkflowStandardParamsExtensionService;
 
 import com.amazonaws.regions.Regions;
 import com.google.common.collect.ImmutableMap;
@@ -110,6 +110,7 @@ public class EcsSteadyStateCheckTest extends WingsBaseTest {
   @Mock private ContainerDeploymentManagerHelper mockContainerDeploymentManagerHelper;
   @Mock private FeatureFlagService featureFlagService;
   @Mock private StateExecutionService stateExecutionService;
+  @Mock private WorkflowStandardParamsExtensionService workflowStandardParamsExtensionService;
 
   @InjectMocks private EcsSteadyStateCheck check = new EcsSteadyStateCheck("stateName");
 
@@ -123,16 +124,16 @@ public class EcsSteadyStateCheckTest extends WingsBaseTest {
     EmbeddedUser currentUser = EmbeddedUser.builder().name("test").email("test@harness.io").build();
     mockParams.setCurrentUser(currentUser);
     when(mockParams.getCurrentUser()).thenReturn(currentUser);
-    doReturn(mockPhaseElement).when(mockContext).getContextElement(any(), anyString());
+    doReturn(mockPhaseElement).when(mockContext).getContextElement(any(), any());
     doReturn(mockParams).when(mockContext).getContextElement(eq(STANDARD));
     doReturn(null).when(mockContext).getContextElement(eq(INSTANCE));
-    doNothing().when(stateExecutionService).appendDelegateTaskDetails(anyString(), any());
+    doNothing().when(stateExecutionService).appendDelegateTaskDetails(any(), any());
     Application app = anApplication().uuid(APP_ID).name(APP_NAME).accountId(ACCOUNT_ID).build();
-    doReturn(app).when(mockAppService).get(anyString());
+    doReturn(app).when(mockAppService).get(any());
     doReturn(app).when(mockContext).getApp();
     Environment env = anEnvironment().appId(APP_ID).uuid(ENV_ID).name(ENV_NAME).build();
     doReturn(env).when(mockContext).getEnv();
-    doReturn(env).when(mockParams).getEnv();
+    doReturn(env).when(workflowStandardParamsExtensionService).getEnv(mockParams);
     ContainerInfrastructureMapping containerInfrastructureMapping =
         anEcsInfrastructureMapping()
             .withUuid(INFRA_MAPPING_ID)
@@ -142,12 +143,12 @@ public class EcsSteadyStateCheckTest extends WingsBaseTest {
             .withDeploymentType("ECS")
             .build();
     doReturn(false).when(featureFlagService).isEnabled(TIMEOUT_FAILURE_SUPPORT, app.getAccountId());
-    doReturn(containerInfrastructureMapping).when(mockInfrastructureMappingService).get(anyString(), anyString());
+    doReturn(containerInfrastructureMapping).when(mockInfrastructureMappingService).get(any(), any());
     Activity activity = Activity.builder().build();
     activity.setUuid(ACTIVITY_ID);
     doReturn(activity).when(mockActivityService).save(any());
     SettingAttribute awsConfig = aSettingAttribute().withValue(AwsConfig.builder().build()).build();
-    doReturn(awsConfig).when(mockSettingsService).get(anyString());
+    doReturn(awsConfig).when(mockSettingsService).get(any());
     ExecutionResponse response = check.execute(mockContext);
     assertThat(response.getExecutionStatus()).isEqualTo(ExecutionStatus.SUCCESS);
     ArgumentCaptor<DelegateTask> captor = ArgumentCaptor.forClass(DelegateTask.class);
@@ -162,7 +163,7 @@ public class EcsSteadyStateCheckTest extends WingsBaseTest {
     assertThat(APP_ID).isEqualTo(params.getAppId());
     assertThat(ACCOUNT_ID).isEqualTo(params.getAccountId());
     assertThat(ACTIVITY_ID).isEqualTo(params.getActivityId());
-    verify(stateExecutionService).appendDelegateTaskDetails(anyString(), any());
+    verify(stateExecutionService).appendDelegateTaskDetails(any(), any());
   }
 
   @Test(expected = InvalidRequestException.class)
@@ -171,10 +172,10 @@ public class EcsSteadyStateCheckTest extends WingsBaseTest {
   public void testExecuteInvalidInfrastructureMapping() {
     ExecutionContextImpl mockContext = mock(ExecutionContextImpl.class);
     PhaseElement mockPhaseElement = mock(PhaseElement.class);
-    doReturn(mockPhaseElement).when(mockContext).getContextElement(any(), anyString());
+    doReturn(mockPhaseElement).when(mockContext).getContextElement(any(), any());
     Application app = anApplication().uuid(APP_ID).name(APP_NAME).accountId(ACCOUNT_ID).build();
     doReturn(app).when(mockContext).getApp();
-    doReturn(new AwsAmiInfrastructureMapping()).when(mockInfrastructureMappingService).get(anyString(), anyString());
+    doReturn(new AwsAmiInfrastructureMapping()).when(mockInfrastructureMappingService).get(any(), any());
     check.execute(mockContext);
     assertThatExceptionOfType(InvalidRequestException.class)
         .isThrownBy(() -> check.execute(mockContext))
@@ -202,7 +203,7 @@ public class EcsSteadyStateCheckTest extends WingsBaseTest {
         .when(mockContainerDeploymentManagerHelper)
         .getInstanceStatusSummaries(any(), anyList());
     ExecutionResponse response = check.handleAsyncResponse(mockContext, delegateResponse);
-    verify(mockActivityService).updateStatus(anyString(), anyString(), any());
+    verify(mockActivityService).updateStatus(any(), any(), any());
     verify(mockData).setStatus(any());
   }
 

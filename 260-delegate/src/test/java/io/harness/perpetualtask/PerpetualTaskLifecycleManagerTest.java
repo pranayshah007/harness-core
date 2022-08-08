@@ -18,7 +18,6 @@ import static org.mockito.Mockito.when;
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
 import io.harness.perpetualtask.ecs.EcsPerpetualTaskParams;
-import io.harness.perpetualtask.grpc.PerpetualTaskServiceGrpcClient;
 import io.harness.rule.Owner;
 
 import com.google.common.util.concurrent.TimeLimiter;
@@ -44,15 +43,17 @@ public class PerpetualTaskLifecycleManagerTest extends CategoryTest {
   private PerpetualTaskLifecycleManager perpetualTaskLifecycleManager;
   private final Map<String, PerpetualTaskExecutor> factoryMap = new HashMap<>();
   @Mock private TimeLimiter timeLimiter;
-  @Mock private PerpetualTaskServiceGrpcClient perpetualTaskServiceGrpcClient;
+  @Mock private PerpetualTaskServiceAgentClient perpetualTaskServiceAgentClient;
 
   @Mock private PerpetualTaskExecutor perpetualTaskExecutor;
 
   @Captor private ArgumentCaptor<PerpetualTaskId> perpetualTaskIdArgumentCaptor;
   @Captor private ArgumentCaptor<Instant> instantArgumentCaptor;
   @Captor private ArgumentCaptor<PerpetualTaskResponse> perpetualTaskResponseArgumentCaptor;
+  @Captor private ArgumentCaptor<String> accountIdArgumentCaptor;
 
   private final String PERPETUAL_TASK_ID = "perpetualTaskId";
+  private final String ACCOUNT_ID = "test-account-id";
 
   @Mock private AtomicInteger currentlyExecutingPerpetualTasksCount;
 
@@ -77,7 +78,7 @@ public class PerpetualTaskLifecycleManagerTest extends CategoryTest {
     PerpetualTaskExecutionContext taskContext =
         PerpetualTaskExecutionContext.newBuilder().setTaskParams(params).build();
     perpetualTaskLifecycleManager = new PerpetualTaskLifecycleManager(perpetualTaskId, taskContext, factoryMap,
-        perpetualTaskServiceGrpcClient, timeLimiter, currentlyExecutingPerpetualTasksCount);
+        perpetualTaskServiceAgentClient, timeLimiter, currentlyExecutingPerpetualTasksCount, ACCOUNT_ID);
   }
 
   @Test
@@ -88,9 +89,9 @@ public class PerpetualTaskLifecycleManagerTest extends CategoryTest {
     when(perpetualTaskExecutor.runOnce(any(), any(), any())).thenReturn(perpetualTaskResponse);
     when(currentlyExecutingPerpetualTasksCount.get()).thenReturn(1);
     perpetualTaskLifecycleManager.call();
-    verify(perpetualTaskServiceGrpcClient)
+    verify(perpetualTaskServiceAgentClient)
         .heartbeat(perpetualTaskIdArgumentCaptor.capture(), instantArgumentCaptor.capture(),
-            perpetualTaskResponseArgumentCaptor.capture());
+            perpetualTaskResponseArgumentCaptor.capture(), accountIdArgumentCaptor.capture());
     assertThat(perpetualTaskIdArgumentCaptor.getValue().getId()).isEqualTo(PERPETUAL_TASK_ID);
     assertThat(perpetualTaskResponseArgumentCaptor.getValue()).isEqualTo(perpetualTaskResponse);
 
@@ -104,12 +105,14 @@ public class PerpetualTaskLifecycleManagerTest extends CategoryTest {
   public void testRunOnceWhenTimeout() {
     PerpetualTaskResponse perpetualTaskResponse =
         PerpetualTaskResponse.builder().responseCode(408).responseMessage("failed").build();
-    when(perpetualTaskExecutor.runOnce(any(), any(), any())).thenThrow(UncheckedTimeoutException.class);
+    when(perpetualTaskExecutor.runOnce(any(), any(), any())).thenAnswer(invocation -> {
+      throw new UncheckedTimeoutException();
+    });
     when(currentlyExecutingPerpetualTasksCount.get()).thenReturn(1);
     perpetualTaskLifecycleManager.call();
-    verify(perpetualTaskServiceGrpcClient)
+    verify(perpetualTaskServiceAgentClient)
         .heartbeat(perpetualTaskIdArgumentCaptor.capture(), instantArgumentCaptor.capture(),
-            perpetualTaskResponseArgumentCaptor.capture());
+            perpetualTaskResponseArgumentCaptor.capture(), accountIdArgumentCaptor.capture());
     assertThat(perpetualTaskIdArgumentCaptor.getValue().getId()).isEqualTo(PERPETUAL_TASK_ID);
     assertThat(perpetualTaskResponseArgumentCaptor.getValue()).isEqualTo(perpetualTaskResponse);
 
@@ -123,12 +126,12 @@ public class PerpetualTaskLifecycleManagerTest extends CategoryTest {
   public void testRunOnceWhenExceptionWhileExecuting() {
     PerpetualTaskResponse perpetualTaskResponse =
         PerpetualTaskResponse.builder().responseCode(500).responseMessage("failed").build();
-    when(perpetualTaskExecutor.runOnce(any(), any(), any())).thenThrow(Exception.class);
+    when(perpetualTaskExecutor.runOnce(any(), any(), any())).thenAnswer(invocation -> { throw new Exception(); });
     when(currentlyExecutingPerpetualTasksCount.get()).thenReturn(1);
     perpetualTaskLifecycleManager.call();
-    verify(perpetualTaskServiceGrpcClient)
+    verify(perpetualTaskServiceAgentClient)
         .heartbeat(perpetualTaskIdArgumentCaptor.capture(), instantArgumentCaptor.capture(),
-            perpetualTaskResponseArgumentCaptor.capture());
+            perpetualTaskResponseArgumentCaptor.capture(), accountIdArgumentCaptor.capture());
     assertThat(perpetualTaskIdArgumentCaptor.getValue().getId()).isEqualTo(PERPETUAL_TASK_ID);
     assertThat(perpetualTaskResponseArgumentCaptor.getValue()).isEqualTo(perpetualTaskResponse);
 

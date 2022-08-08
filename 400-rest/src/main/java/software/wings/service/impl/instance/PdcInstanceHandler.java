@@ -130,8 +130,8 @@ public class PdcInstanceHandler extends InstanceHandler implements InstanceSyncB
   }
 
   @Override
-  public FeatureName getFeatureFlagToStopIteratorBasedInstanceSync() {
-    return STOP_INSTANCE_SYNC_VIA_ITERATOR_FOR_PDC_DEPLOYMENTS;
+  public Optional<FeatureName> getFeatureFlagToStopIteratorBasedInstanceSync() {
+    return Optional.of(STOP_INSTANCE_SYNC_VIA_ITERATOR_FOR_PDC_DEPLOYMENTS);
   }
 
   @Override
@@ -154,8 +154,8 @@ public class PdcInstanceHandler extends InstanceHandler implements InstanceSyncB
   }
 
   @Override
-  public FeatureName getFeatureFlagToEnablePerpetualTaskForInstanceSync() {
-    return PDC_PERPETUAL_TASK;
+  public Optional<FeatureName> getFeatureFlagToEnablePerpetualTaskForInstanceSync() {
+    return Optional.of(PDC_PERPETUAL_TASK);
   }
 
   @Override

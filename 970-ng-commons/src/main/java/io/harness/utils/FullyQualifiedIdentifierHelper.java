@@ -47,4 +47,18 @@ public class FullyQualifiedIdentifierHelper {
     }
     throw new InvalidRequestException("No account ID provided.");
   }
+
+  public String getFullyQualifiedScope(String accountId, String orgIdentifier, String projectIdentifier) {
+    if (EmptyPredicate.isNotEmpty(projectIdentifier)) {
+      validateOrgIdentifier(orgIdentifier);
+      validateAccountIdentifier(accountId);
+      return String.format("%s/%s/%s", accountId, orgIdentifier, projectIdentifier);
+    } else if (EmptyPredicate.isNotEmpty(orgIdentifier)) {
+      validateAccountIdentifier(accountId);
+      return String.format("%s/%s", accountId, orgIdentifier);
+    } else if (EmptyPredicate.isNotEmpty(accountId)) {
+      return String.format("%s", accountId);
+    }
+    throw new InvalidRequestException("No account ID provided.");
+  }
 }

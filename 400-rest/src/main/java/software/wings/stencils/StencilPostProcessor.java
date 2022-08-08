@@ -81,42 +81,20 @@ public class StencilPostProcessor {
   }
 
   public <T extends Stencil> Stream<Stencil> processStencil(T t, String appId, Map<String, String> args) {
+    long startTime;
     Stencil stencil = t.getOverridingStencil();
-    for (Field field : t.getTypeClass().getDeclaredFields()) {
-      EnumData enumData = field.getAnnotation(EnumData.class);
-      DefaultValue defaultValue = field.getAnnotation(DefaultValue.class);
-      if (enumData != null || defaultValue != null) {
-        if (enumData != null) {
-          Map<String, String> data = getEnumData(appId, args, enumData);
-          stencil = addEnumDataToNode(stencil, data, field.getName());
-        }
-      }
 
-      if (defaultValue != null) {
-        stencil = addDefaultValueToStencil(stencil, field.getName(), defaultValue.value());
-      }
-    }
+    startTime = -System.currentTimeMillis();
+    stencil = processStencilFields(t, appId, args, stencil);
+    log.info("processStencilFields take {} ms", startTime + System.currentTimeMillis());
 
-    for (Method method : t.getTypeClass().getDeclaredMethods()) {
-      String field = getField(method);
-      if (isNotBlank(field)) {
-        EnumData enumData = method.getAnnotation(EnumData.class);
-        DefaultValue defaultValue = method.getAnnotation(DefaultValue.class);
-        if (enumData != null || defaultValue != null) {
-          if (enumData != null) {
-            Map<String, String> data = getEnumData(appId, args, enumData);
-            stencil = addEnumDataToNode(stencil, data, field);
-          }
-        }
-
-        if (defaultValue != null) {
-          stencil = addDefaultValueToStencil(stencil, field, defaultValue.value());
-        }
-      }
-    }
+    startTime = -System.currentTimeMillis();
+    stencil = processStencilMethods(t, appId, args, stencil);
+    log.info("processStencilMethods take {} ms", startTime + System.currentTimeMillis());
 
     Stream<Stencil> returnValue = Stream.of(stencil);
 
+    startTime = -System.currentTimeMillis();
     if (stream(t.getTypeClass().getDeclaredFields())
             .filter(field -> field.getAnnotation(Expand.class) != null)
             .findFirst()
@@ -137,7 +115,9 @@ public class StencilPostProcessor {
                           return Stream.of(stencilForExpand);
                         });
     }
+    log.info("processStencilExpand take {} ms", startTime + System.currentTimeMillis());
 
+    startTime = -System.currentTimeMillis();
     if (stream(t.getTypeClass().getDeclaredMethods())
             .map(method -> method.getAnnotation(DefaultValue.class))
             .anyMatch(Objects::nonNull)) {
@@ -158,8 +138,50 @@ public class StencilPostProcessor {
           });
       returnValue = stencils.stream();
     }
+    log.info("processStencilDefaultValue take {} ms", startTime + System.currentTimeMillis());
 
     return returnValue;
+  }
+
+  private <T extends Stencil> Stencil processStencilMethods(
+      T t, String appId, Map<String, String> args, Stencil stencil) {
+    for (Method method : t.getTypeClass().getDeclaredMethods()) {
+      String field = getField(method);
+      if (isNotBlank(field)) {
+        EnumData enumData = method.getAnnotation(EnumData.class);
+        DefaultValue defaultValue = method.getAnnotation(DefaultValue.class);
+        if (enumData != null || defaultValue != null) {
+          if (enumData != null) {
+            Map<String, String> data = getEnumData(appId, args, enumData);
+            stencil = addEnumDataToNode(stencil, data, field);
+          }
+        }
+
+        if (defaultValue != null) {
+          stencil = addDefaultValueToStencil(stencil, field, defaultValue.value());
+        }
+      }
+    }
+    return stencil;
+  }
+
+  private <T extends Stencil> Stencil processStencilFields(
+      T t, String appId, Map<String, String> args, Stencil stencil) {
+    for (Field field : t.getTypeClass().getDeclaredFields()) {
+      EnumData enumData = field.getAnnotation(EnumData.class);
+      DefaultValue defaultValue = field.getAnnotation(DefaultValue.class);
+      if (enumData != null || defaultValue != null) {
+        if (enumData != null) {
+          Map<String, String> data = getEnumData(appId, args, enumData);
+          stencil = addEnumDataToNode(stencil, data, field.getName());
+        }
+      }
+
+      if (defaultValue != null) {
+        stencil = addDefaultValueToStencil(stencil, field.getName(), defaultValue.value());
+      }
+    }
+    return stencil;
   }
 
   private Map<String, String> getEnumData(String appId, Map<String, String> args, EnumData enumData) {

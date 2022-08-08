@@ -1,0 +1,22 @@
+name: Iterator Metrics
+identifier: iterator_metrics
+metricGroup: iterator
+metrics:
+  - metricName: iterator_error
+    metricDefinition: Exception occurred while processing iterator
+    type: Count
+    unit: "1"
+  - metricName: iterator_working_on_entity
+    metricDefinition: Iterator working on entity
+    type: Count
+    unit: "1"
+  - metricName: iterator_processing_time
+    metricDefinition: Iterator entity processing time
+    type: Duration
+    distribution: [ 0m, 15s, 30s, 1m, 2m, 4m, 8m, 16m, 32m ]
+    unit: "ms"
+  - metricName: iterator_delay
+    metricDefinition: Iterator taking more time than acceptableExecutionTime to process
+    type: Duration
+    distribution: [ 0m, 15s, 30s, 1m, 2m, 4m, 8m, 16m, 32m ]
+    unit: "ms"

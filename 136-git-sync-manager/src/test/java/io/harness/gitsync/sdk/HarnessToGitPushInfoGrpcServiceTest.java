@@ -9,15 +9,19 @@ package io.harness.gitsync.sdk;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.rule.OwnerRule.BHAVYA;
+import static io.harness.rule.OwnerRule.MEET;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.gitsync.BranchDetails;
 import io.harness.gitsync.FileInfo;
 import io.harness.gitsync.GitSyncTestBase;
+import io.harness.gitsync.RepoDetails;
 import io.harness.gitsync.common.impl.HarnessToGitHelperServiceImpl;
 import io.harness.manage.GlobalContextManager;
 import io.harness.rule.Owner;
@@ -30,23 +34,31 @@ import io.harness.security.dto.PrincipalType;
 
 import com.google.inject.Inject;
 import com.google.protobuf.StringValue;
+import io.grpc.Status;
+import io.grpc.StatusRuntimeException;
+import io.grpc.stub.StreamObserver;
 import org.apache.commons.lang3.reflect.FieldUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 @OwnedBy(PL)
 public class HarnessToGitPushInfoGrpcServiceTest extends GitSyncTestBase {
   private final String accountId = "accountId";
+  private final String accountId2 = "accountId2";
   private final String email = "email";
   private final String userName = "userName";
   private final String name = "name";
+  private final String message1 = "message1";
+  private final String message2 = "message2";
   private FileInfo fileInfo;
   private io.harness.security.dto.UserPrincipal userPrincipal;
   @Inject HarnessToGitPushInfoGrpcService harnessToGitPushInfoGrpcService;
   @Mock HarnessToGitHelperServiceImpl harnessToGitHelperService;
+  @Mock StreamObserver<BranchDetails> responseObserver;
 
   @Before
   public void setup() throws Exception {
@@ -87,6 +99,20 @@ public class HarnessToGitPushInfoGrpcServiceTest extends GitSyncTestBase {
       assertThat(SecurityContextBuilder.getPrincipal().getType()).isEqualTo(PrincipalType.USER);
       assertThat(SourcePrincipalContextBuilder.getSourcePrincipal().getName()).isEqualTo(name);
     }
+  }
+
+  @Test
+  @Owner(developers = MEET)
+  @Category(UnitTests.class)
+  public void testGetDefaultBranch() {
+    RepoDetails repoDetails1 = RepoDetails.newBuilder().setAccountId(accountId).build();
+    RepoDetails repoDetails2 = RepoDetails.newBuilder().setAccountId(accountId2).build();
+    when(harnessToGitHelperService.getBranchDetails(repoDetails1))
+        .thenThrow(new StatusRuntimeException(Status.INTERNAL));
+    ArgumentCaptor<StatusRuntimeException> captor = ArgumentCaptor.forClass(StatusRuntimeException.class);
+    harnessToGitPushInfoGrpcService.getDefaultBranch(repoDetails1, responseObserver);
+    verify(responseObserver).onError(captor.capture());
+    assertThat(captor.getValue().getStatus().getCode()).isEqualTo(Status.Code.INTERNAL);
   }
 
   private FileInfo buildFileInfo(Principal principal, boolean isFullSyncFlow) {

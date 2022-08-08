@@ -11,6 +11,7 @@ import static io.harness.beans.EnvironmentType.ALL;
 import static io.harness.rule.OwnerRule.ABHINAV;
 import static io.harness.rule.OwnerRule.ABOSII;
 import static io.harness.rule.OwnerRule.PARDHA;
+import static io.harness.rule.OwnerRule.SHUBHAM_MAHESHWARI;
 import static io.harness.rule.OwnerRule.TATHAGAT;
 import static io.harness.rule.OwnerRule.VAIBHAV_SI;
 
@@ -27,7 +28,6 @@ import static software.wings.utils.WingsTestConstants.WORKFLOW_NAME;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
@@ -64,6 +64,7 @@ import software.wings.api.ShellScriptProvisionerOutputElement;
 import software.wings.api.shellscript.provision.ShellScriptProvisionExecutionData;
 import software.wings.beans.Activity;
 import software.wings.beans.Application;
+import software.wings.beans.CloudFormationInfrastructureProvisioner;
 import software.wings.beans.Environment;
 import software.wings.beans.InfrastructureProvisionerType;
 import software.wings.beans.shellscript.provisioner.ShellScriptInfrastructureProvisioner;
@@ -120,8 +121,8 @@ public class ShellScriptProvisionStateTest extends WingsBaseTest {
     state.setProvisionerId(PROVISIONER_ID);
     doReturn(logCallback)
         .when(infrastructureProvisionerService)
-        .getManagerExecutionCallback(eq(APP_ID), eq(ACTIVITY_ID), anyString());
-    doNothing().when(stateExecutionService).appendDelegateTaskDetails(anyString(), any());
+        .getManagerExecutionCallback(eq(APP_ID), eq(ACTIVITY_ID), any());
+    doNothing().when(stateExecutionService).appendDelegateTaskDetails(any(), any());
   }
 
   @Test
@@ -139,6 +140,37 @@ public class ShellScriptProvisionStateTest extends WingsBaseTest {
     expectedMap.put("key1", "val1");
     expectedMap.put("key2", "val2");
     assertThat(state.parseOutput(json)).isEqualTo(expectedMap);
+  }
+
+  @Test
+  @Owner(developers = SHUBHAM_MAHESHWARI)
+  @Category(UnitTests.class)
+  public void testProvisionerAsInvalidExpression() {
+    when(activityService.save(any())).thenReturn(mock(Activity.class));
+    when(executionContext.getApp()).thenReturn(mock(Application.class));
+    when(executionContext.getEnv()).thenReturn(mock(Environment.class));
+    when(executionContext.getAppId()).thenReturn(APP_ID);
+    when(executionContext.renderExpression(PROVISIONER_ID)).thenReturn("Provisioner Name");
+    when(infrastructureProvisionerService.getByName(APP_ID, "Provisioner Name")).thenReturn(null);
+    assertThatThrownBy(() -> state.execute(executionContext))
+        .isInstanceOf(InvalidArgumentsException.class)
+        .hasMessage("Could not find a Shell Script Provisioner with resolved name: Provisioner Name");
+  }
+
+  @Test
+  @Owner(developers = SHUBHAM_MAHESHWARI)
+  @Category(UnitTests.class)
+  public void testProvisionerAsExpressionInvalidName() {
+    when(activityService.save(any())).thenReturn(mock(Activity.class));
+    when(executionContext.getApp()).thenReturn(mock(Application.class));
+    when(executionContext.getEnv()).thenReturn(mock(Environment.class));
+    when(executionContext.getAppId()).thenReturn(APP_ID);
+    when(executionContext.renderExpression(PROVISIONER_ID)).thenReturn("Provisioner Name");
+    when(infrastructureProvisionerService.getByName(APP_ID, "Provisioner Name"))
+        .thenReturn(CloudFormationInfrastructureProvisioner.builder().build());
+    assertThatThrownBy(() -> state.execute(executionContext))
+        .isInstanceOf(InvalidArgumentsException.class)
+        .hasMessage("Resolved Provisioner with name: Provisioner Name, is not of type Shell Script");
   }
 
   @Test
@@ -162,9 +194,10 @@ public class ShellScriptProvisionStateTest extends WingsBaseTest {
     when(activityService.save(any())).thenReturn(mock(Activity.class));
     when(executionContext.getApp()).thenReturn(mock(Application.class));
     when(executionContext.getEnv()).thenReturn(mock(Environment.class));
-    when(infrastructureProvisionerService.getShellScriptProvisioner(anyString(), anyString()))
+    when(infrastructureProvisionerService.getShellScriptProvisioner(any(), any()))
         .thenReturn(mock(ShellScriptInfrastructureProvisioner.class));
     when(executionContext.getWorkflowExecutionId()).thenReturn("workflow-execution-id");
+    when(executionContext.renderExpression(PROVISIONER_ID)).thenReturn(PROVISIONER_ID);
     state.execute(executionContext);
 
     verify(delegateService).queueTask(delegateTaskArgumentCaptor.capture());
@@ -185,6 +218,7 @@ public class ShellScriptProvisionStateTest extends WingsBaseTest {
 
     doReturn(APP_ID).when(executionContext).getAppId();
     doReturn(null).when(executionContext).getContextElement(ContextElementType.SHELL_SCRIPT_PROVISION);
+    when(executionContext.renderExpression(PROVISIONER_ID)).thenReturn(PROVISIONER_ID);
     ExecutionResponse response = state.handleAsyncResponse(executionContext, responseData);
     verify(activityService, times(1)).updateStatus(ACTIVITY_ID, APP_ID, ExecutionStatus.ERROR);
     assertThat(response.getExecutionStatus()).isEqualTo(ExecutionStatus.ERROR);
@@ -221,6 +255,7 @@ public class ShellScriptProvisionStateTest extends WingsBaseTest {
     doReturn(APP_ID).when(executionContext).getAppId();
     doReturn("rendered-expression").when(executionContext).renderExpression("${expression}");
     doReturn(SweepingOutputInstance.builder()).when(executionContext).prepareSweepingOutputBuilder(Scope.PHASE);
+    when(executionContext.renderExpression(PROVISIONER_ID)).thenReturn(PROVISIONER_ID);
 
     ExecutionResponse response = state.handleAsyncResponse(executionContext, responseData);
 
@@ -252,9 +287,10 @@ public class ShellScriptProvisionStateTest extends WingsBaseTest {
     doReturn(APP_ID).when(executionContext).getAppId();
     doReturn(WorkflowType.ORCHESTRATION).when(executionContext).getWorkflowType();
     doReturn(WORKFLOW_EXECUTION_ID).when(executionContext).getWorkflowExecutionId();
+    when(executionContext.renderExpression(PROVISIONER_ID)).thenReturn(PROVISIONER_ID);
     doReturn(WORKFLOW_NAME).when(executionContext).getWorkflowExecutionName();
     doReturn(Application.Builder.anApplication().uuid(APP_ID).build()).when(executionContext).getApp();
-    doAnswer(invocation -> invocation.getArgumentAt(0, Activity.class)).when(activityService).save(any(Activity.class));
+    doAnswer(invocation -> invocation.getArgument(0, Activity.class)).when(activityService).save(any(Activity.class));
     doReturn(provisioner).when(infrastructureProvisionerService).getShellScriptProvisioner(APP_ID, PROVISIONER_ID);
     ArgumentCaptor<Activity> activityCaptor = ArgumentCaptor.forClass(Activity.class);
     ArgumentCaptor<DelegateTask> delegateTaskArgumentCaptor = ArgumentCaptor.forClass(DelegateTask.class);
@@ -298,9 +334,10 @@ public class ShellScriptProvisionStateTest extends WingsBaseTest {
     when(activityService.save(any())).thenReturn(mock(Activity.class));
     when(executionContext.getApp()).thenReturn(mock(Application.class));
     when(executionContext.getEnv()).thenReturn(mock(Environment.class));
-    when(infrastructureProvisionerService.getShellScriptProvisioner(anyString(), anyString()))
+    when(infrastructureProvisionerService.getShellScriptProvisioner(any(), any()))
         .thenReturn(mock(ShellScriptInfrastructureProvisioner.class));
-    when(executionContext.renderExpression(anyString())).thenReturn(runTimeValueAbc);
+    when(executionContext.renderExpression(any())).thenReturn(runTimeValueAbc);
+    when(executionContext.renderExpression(PROVISIONER_ID)).thenReturn(PROVISIONER_ID);
     state.execute(executionContext);
 
     verify(delegateService).queueTask(delegateTaskArgumentCaptor.capture());
@@ -318,6 +355,8 @@ public class ShellScriptProvisionStateTest extends WingsBaseTest {
         + "    \"com.datadoghq.tags.service\": \"magicbus\",\n"
         + "    \"com.datadoghq.tags.version\": \"755626d45887ba25426c58972686b63d438c4239\"\n"
         + "  }}";
+
+    when(executionContext.renderExpression(PROVISIONER_ID)).thenReturn(PROVISIONER_ID);
 
     Map<String, ResponseData> responseData =
         prepareTestWithResponseDataMap(provisionerOutput, Collections.emptyMap(), null);
@@ -347,6 +386,7 @@ public class ShellScriptProvisionStateTest extends WingsBaseTest {
   @Owner(developers = TATHAGAT)
   @Category(UnitTests.class)
   public void testSaveProvisionerOutputsOnResponseWithExistingOutputs() {
+    when(executionContext.renderExpression(PROVISIONER_ID)).thenReturn(PROVISIONER_ID);
     String provisionerOutput = "{\"key\": \"value\"}";
     Map<String, Object> outputVariablesFromContextElement = new HashMap<>();
     outputVariablesFromContextElement.put("outputVariableFromContext", "value");
@@ -382,6 +422,7 @@ public class ShellScriptProvisionStateTest extends WingsBaseTest {
   @Owner(developers = TATHAGAT)
   @Category(UnitTests.class)
   public void testSaveProvisionerOutputsWithNameShellScriptProvisioner() {
+    when(executionContext.renderExpression(PROVISIONER_ID)).thenReturn(PROVISIONER_ID);
     String provisionerOutput = "{\"key\": \"value\"}";
     Map<String, ResponseData> responseData =
         prepareTestWithResponseDataMap(provisionerOutput, Collections.emptyMap(), null);
@@ -408,7 +449,7 @@ public class ShellScriptProvisionStateTest extends WingsBaseTest {
     doReturn(existingSweepingOutput).when(sweepingOutputService).find(any());
     doReturn(true)
         .when(featureFlagService)
-        .isEnabled(eq(FeatureName.SAVE_SHELL_SCRIPT_PROVISION_OUTPUTS_TO_SWEEPING_OUTPUT), anyString());
+        .isEnabled(eq(FeatureName.SAVE_SHELL_SCRIPT_PROVISION_OUTPUTS_TO_SWEEPING_OUTPUT), any());
     doReturn(SweepingOutputInquiry.builder()).when(executionContext).prepareSweepingOutputInquiryBuilder();
     doReturn(outputElement).when(executionContext).getContextElement(ContextElementType.SHELL_SCRIPT_PROVISION);
     doReturn(APP_ID).when(executionContext).getAppId();

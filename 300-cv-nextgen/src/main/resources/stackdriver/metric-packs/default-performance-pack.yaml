@@ -2,14 +2,14 @@ identifier: Performance
 category: Performance
 metrics:
   - name: Response Time
-    identifier: Response_Time
+    identifier: response_time
     type: RESP_TIME
     included: false
   - name: Throughput
-    identifier: Throughput
+    identifier: throughput
     type: THROUGHPUT
     included: false
   - name: Other
-    identifier: Other
+    identifier: other
     type: ERROR
     included: false

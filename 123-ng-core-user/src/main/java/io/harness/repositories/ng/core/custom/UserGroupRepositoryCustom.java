@@ -24,7 +24,7 @@ public interface UserGroupRepositoryCustom {
 
   Page<UserGroup> findAll(Criteria criteria, Pageable pageable);
 
-  List<UserGroup> findAll(Criteria criteria);
+  List<UserGroup> findAll(Criteria criteria, Integer skip, Integer limit);
 
   UserGroup delete(Criteria criteria);
 

@@ -8,21 +8,35 @@
 package io.harness.ccm;
 
 import static io.harness.AuthorizationServiceHeader.CE_NEXT_GEN;
+import static io.harness.AuthorizationServiceHeader.NG_MANAGER;
 import static io.harness.annotations.dev.HarnessTeam.CE;
+import static io.harness.audit.ResourceTypeConstants.COST_CATEGORY;
+import static io.harness.audit.ResourceTypeConstants.PERSPECTIVE;
+import static io.harness.audit.ResourceTypeConstants.PERSPECTIVE_BUDGET;
+import static io.harness.audit.ResourceTypeConstants.PERSPECTIVE_FOLDER;
+import static io.harness.audit.ResourceTypeConstants.PERSPECTIVE_REPORT;
 import static io.harness.eventsframework.EventsFrameworkConstants.ENTITY_CRUD;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.CONNECTOR_ENTITY;
 import static io.harness.lock.DistributedLockImplementation.MONGO;
 
+import io.harness.AccessControlClientModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.retry.MethodExecutionHelper;
 import io.harness.annotations.retry.RetryOnException;
 import io.harness.annotations.retry.RetryOnExceptionInterceptor;
 import io.harness.app.PrimaryVersionManagerModule;
+import io.harness.audit.client.remote.AuditClientModule;
 import io.harness.aws.AwsClient;
 import io.harness.aws.AwsClientImpl;
 import io.harness.callback.DelegateCallback;
 import io.harness.callback.DelegateCallbackToken;
 import io.harness.callback.MongoDatabase;
+import io.harness.ccm.audittrails.eventhandler.BudgetEventHandler;
+import io.harness.ccm.audittrails.eventhandler.CENextGenOutboxEventHandler;
+import io.harness.ccm.audittrails.eventhandler.CostCategoryEventHandler;
+import io.harness.ccm.audittrails.eventhandler.PerspectiveEventHandler;
+import io.harness.ccm.audittrails.eventhandler.PerspectiveFolderEventHandler;
+import io.harness.ccm.audittrails.eventhandler.ReportEventHandler;
 import io.harness.ccm.bigQuery.BigQueryService;
 import io.harness.ccm.bigQuery.BigQueryServiceImpl;
 import io.harness.ccm.commons.beans.config.GcpConfig;
@@ -38,11 +52,17 @@ import io.harness.ccm.graphql.core.budget.BudgetCostServiceImpl;
 import io.harness.ccm.graphql.core.budget.BudgetService;
 import io.harness.ccm.graphql.core.budget.BudgetServiceImpl;
 import io.harness.ccm.perpetualtask.K8sWatchTaskResourceClientModule;
+import io.harness.ccm.rbac.CCMRbacHelper;
+import io.harness.ccm.rbac.CCMRbacHelperImpl;
+import io.harness.ccm.remote.mapper.anomaly.AnomalyFilterPropertiesMapper;
+import io.harness.ccm.remote.mapper.recommendation.CCMRecommendationFilterPropertiesMapper;
 import io.harness.ccm.service.impl.AWSBucketPolicyHelperServiceImpl;
 import io.harness.ccm.service.impl.AWSOrganizationHelperServiceImpl;
 import io.harness.ccm.service.impl.AnomalyServiceImpl;
 import io.harness.ccm.service.impl.AwsEntityChangeEventServiceImpl;
+import io.harness.ccm.service.impl.AzureEntityChangeEventServiceImpl;
 import io.harness.ccm.service.impl.CCMConnectorDetailsServiceImpl;
+import io.harness.ccm.service.impl.CCMNotificationServiceImpl;
 import io.harness.ccm.service.impl.CEYamlServiceImpl;
 import io.harness.ccm.service.impl.GCPEntityChangeEventServiceImpl;
 import io.harness.ccm.service.impl.LicenseUsageInterfaceImpl;
@@ -50,7 +70,9 @@ import io.harness.ccm.service.intf.AWSBucketPolicyHelperService;
 import io.harness.ccm.service.intf.AWSOrganizationHelperService;
 import io.harness.ccm.service.intf.AnomalyService;
 import io.harness.ccm.service.intf.AwsEntityChangeEventService;
+import io.harness.ccm.service.intf.AzureEntityChangeEventService;
 import io.harness.ccm.service.intf.CCMConnectorDetailsService;
+import io.harness.ccm.service.intf.CCMNotificationService;
 import io.harness.ccm.service.intf.CEYamlService;
 import io.harness.ccm.service.intf.GCPEntityChangeEventService;
 import io.harness.ccm.serviceAccount.CEGcpServiceAccountService;
@@ -64,10 +86,12 @@ import io.harness.ccm.utils.LogAccountIdentifier;
 import io.harness.ccm.views.businessMapping.service.impl.BusinessMappingServiceImpl;
 import io.harness.ccm.views.businessMapping.service.intf.BusinessMappingService;
 import io.harness.ccm.views.service.CEReportScheduleService;
+import io.harness.ccm.views.service.CEViewFolderService;
 import io.harness.ccm.views.service.CEViewService;
 import io.harness.ccm.views.service.ViewCustomFieldService;
 import io.harness.ccm.views.service.ViewsBillingService;
 import io.harness.ccm.views.service.impl.CEReportScheduleServiceImpl;
+import io.harness.ccm.views.service.impl.CEViewFolderServiceImpl;
 import io.harness.ccm.views.service.impl.CEViewServiceImpl;
 import io.harness.ccm.views.service.impl.ViewCustomFieldServiceImpl;
 import io.harness.ccm.views.service.impl.ViewsBillingServiceImpl;
@@ -77,19 +101,26 @@ import io.harness.delegate.beans.DelegateSyncTaskResponse;
 import io.harness.delegate.beans.DelegateTaskProgressResponse;
 import io.harness.enforcement.client.EnforcementClientModule;
 import io.harness.ff.FeatureFlagModule;
+import io.harness.filter.FilterType;
+import io.harness.filter.FiltersModule;
+import io.harness.filter.impl.FilterServiceImpl;
+import io.harness.filter.mapper.FilterPropertiesMapper;
+import io.harness.filter.service.FilterService;
 import io.harness.govern.ProviderMethodInterceptor;
 import io.harness.govern.ProviderModule;
 import io.harness.grpc.DelegateServiceDriverGrpcClientModule;
 import io.harness.grpc.DelegateServiceGrpcClient;
 import io.harness.licensing.usage.interfaces.LicenseUsageInterface;
 import io.harness.lock.DistributedLockImplementation;
-import io.harness.metrics.service.api.MetricService;
-import io.harness.metrics.service.impl.MetricServiceImpl;
+import io.harness.metrics.modules.MetricsModule;
 import io.harness.mongo.AbstractMongoModule;
 import io.harness.mongo.MongoConfig;
 import io.harness.mongo.MongoPersistence;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.ng.core.event.MessageListener;
+import io.harness.notification.module.NotificationClientModule;
+import io.harness.outbox.TransactionOutboxModule;
+import io.harness.outbox.api.OutboxEventHandler;
 import io.harness.persistence.HPersistence;
 import io.harness.persistence.NoopUserProvider;
 import io.harness.persistence.UserProvider;
@@ -101,6 +132,8 @@ import io.harness.secrets.SecretNGManagerClientModule;
 import io.harness.serializer.CENextGenModuleRegistrars;
 import io.harness.serializer.KryoRegistrar;
 import io.harness.service.DelegateServiceDriverModule;
+import io.harness.telemetry.AbstractTelemetryModule;
+import io.harness.telemetry.TelemetryConfiguration;
 import io.harness.threading.ExecutorModule;
 import io.harness.time.TimeModule;
 import io.harness.timescaledb.JooqModule;
@@ -120,6 +153,7 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import com.google.inject.matcher.Matchers;
+import com.google.inject.multibindings.MapBinder;
 import com.google.inject.name.Named;
 import com.google.inject.name.Names;
 import java.util.List;
@@ -212,11 +246,13 @@ public class CENextGenModule extends AbstractModule {
     bind(AwsClient.class).to(AwsClientImpl.class);
     bind(GCPEntityChangeEventService.class).to(GCPEntityChangeEventServiceImpl.class);
     bind(AwsEntityChangeEventService.class).to(AwsEntityChangeEventServiceImpl.class);
+    bind(AzureEntityChangeEventService.class).to(AzureEntityChangeEventServiceImpl.class);
     bind(BusinessMappingService.class).to(BusinessMappingServiceImpl.class);
     bind(LicenseUsageInterface.class).to(LicenseUsageInterfaceImpl.class).in(Singleton.class);
 
     install(new CENextGenPersistenceModule());
     install(ExecutorModule.getInstance());
+    install(FiltersModule.getInstance());
     install(new AbstractMongoModule() {
       @Override
       public UserProvider userProvider() {
@@ -232,6 +268,9 @@ public class CENextGenModule extends AbstractModule {
     install(EnforcementClientModule.getInstance(configuration.getNgManagerClientConfig(),
         configuration.getNgManagerServiceSecret(), CE_NEXT_GEN.getServiceId(),
         configuration.getEnforcementClientConfiguration()));
+    install(new MetricsModule());
+    install(AccessControlClientModule.getInstance(
+        configuration.getAccessControlClientConfiguration(), CE_NEXT_GEN.getServiceId()));
 
     install(new SecretNGManagerClientModule(configuration.getNgManagerClientConfig(),
         configuration.getNgManagerServiceSecret(), CE_NEXT_GEN.getServiceId()));
@@ -242,6 +281,17 @@ public class CENextGenModule extends AbstractModule {
     install(FeatureFlagModule.getInstance());
     install(new EventsFrameworkModule(configuration.getEventsFrameworkConfiguration()));
     install(JooqModule.getInstance());
+    install(new NotificationClientModule(configuration.getNotificationClientConfiguration()));
+    install(new AbstractTelemetryModule() {
+      @Override
+      public TelemetryConfiguration telemetryConfiguration() {
+        return configuration.getSegmentConfiguration();
+      }
+    });
+    install(new AuditClientModule(configuration.getAuditClientConfig(), configuration.getNgManagerServiceSecret(),
+        NG_MANAGER.getServiceId(), configuration.isEnableAudit()));
+    install(new TransactionOutboxModule(
+        configuration.getOutboxPollConfig(), NG_MANAGER.getServiceId(), configuration.isExportMetricsToStackDriver()));
     bind(HPersistence.class).to(MongoPersistence.class);
     bind(CENextGenConfiguration.class).toInstance(configuration);
     bind(SQLConverter.class).to(SQLConverterImpl.class);
@@ -251,6 +301,7 @@ public class CENextGenModule extends AbstractModule {
     bind(GcpResourceManagerService.class).to(GcpResourceManagerServiceImpl.class);
     bind(ViewsBillingService.class).to(ViewsBillingServiceImpl.class);
     bind(CEViewService.class).to(CEViewServiceImpl.class);
+    bind(CEViewFolderService.class).to(CEViewFolderServiceImpl.class);
     bind(ClusterRecordService.class).to(ClusterRecordServiceImpl.class);
     bind(ViewCustomFieldService.class).to(ViewCustomFieldServiceImpl.class);
     bind(CEReportScheduleService.class).to(CEReportScheduleServiceImpl.class);
@@ -263,7 +314,11 @@ public class CENextGenModule extends AbstractModule {
     bind(EntityMetadataService.class).to(EntityMetadataServiceImpl.class);
     bind(CCMConnectorDetailsService.class).to(CCMConnectorDetailsServiceImpl.class);
     bind(AnomalyService.class).to(AnomalyServiceImpl.class);
-    bind(MetricService.class).to(MetricServiceImpl.class);
+    bind(CCMNotificationService.class).to(CCMNotificationServiceImpl.class);
+    bind(FilterService.class).to(FilterServiceImpl.class);
+    registerOutboxEventHandlers();
+    bind(OutboxEventHandler.class).to(CENextGenOutboxEventHandler.class);
+    bind(CCMRbacHelper.class).to(CCMRbacHelperImpl.class);
 
     registerEventsFrameworkMessageListeners();
 
@@ -272,6 +327,12 @@ public class CENextGenModule extends AbstractModule {
     bindAccountLogContextInterceptor();
 
     registerDelegateTaskService();
+
+    MapBinder<String, FilterPropertiesMapper> filterPropertiesMapper =
+        MapBinder.newMapBinder(binder(), String.class, FilterPropertiesMapper.class);
+    filterPropertiesMapper.addBinding(FilterType.CCMRECOMMENDATION.toString())
+        .to(CCMRecommendationFilterPropertiesMapper.class);
+    filterPropertiesMapper.addBinding(FilterType.ANOMALY.toString()).to(AnomalyFilterPropertiesMapper.class);
   }
 
   private void bindAccountLogContextInterceptor() {
@@ -279,6 +340,16 @@ public class CENextGenModule extends AbstractModule {
     requestInjection(accountIdentifierLogInterceptor);
     bindInterceptor(
         Matchers.any(), Matchers.annotatedWith(LogAccountIdentifier.class), accountIdentifierLogInterceptor);
+  }
+
+  private void registerOutboxEventHandlers() {
+    MapBinder<String, OutboxEventHandler> outboxEventHandlerMapBinder =
+        MapBinder.newMapBinder(binder(), String.class, OutboxEventHandler.class);
+    outboxEventHandlerMapBinder.addBinding(PERSPECTIVE).to(PerspectiveEventHandler.class);
+    outboxEventHandlerMapBinder.addBinding(PERSPECTIVE_BUDGET).to(BudgetEventHandler.class);
+    outboxEventHandlerMapBinder.addBinding(PERSPECTIVE_FOLDER).to(PerspectiveFolderEventHandler.class);
+    outboxEventHandlerMapBinder.addBinding(PERSPECTIVE_REPORT).to(ReportEventHandler.class);
+    outboxEventHandlerMapBinder.addBinding(COST_CATEGORY).to(CostCategoryEventHandler.class);
   }
 
   private void registerDelegateTaskService() {

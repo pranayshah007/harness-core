@@ -13,7 +13,6 @@ import static io.harness.rule.OwnerRule.SATYAM;
 
 import static org.joor.Reflect.on;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyList;
 import static org.mockito.Mockito.verify;
 
 import io.harness.annotations.dev.HarnessModule;
@@ -60,9 +59,9 @@ public class AwsIamTaskTest extends WingsBaseTest {
   public void testRun() {
     AwsIamRequest request = AwsIamListRolesRequest.builder().build();
     task.run(request);
-    verify(mockIamServiceDelegate).listIAMRoles(any(), anyList());
+    verify(mockIamServiceDelegate).listIAMRoles(any(), any());
     request = AwsIamListInstanceRolesRequest.builder().build();
     task.run(request);
-    verify(mockIamServiceDelegate).listIamInstanceRoles(any(), anyList());
+    verify(mockIamServiceDelegate).listIamInstanceRoles(any(), any());
   }
 }

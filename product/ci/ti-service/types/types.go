@@ -87,6 +87,7 @@ type TestSuites struct {
 type TestCase struct {
 	Name       string `json:"name"`
 	ClassName  string `json:"class_name"`
+	FileName   string `json:"file_name"`
 	SuiteName  string `json:"suite_name"`
 	Result     Result `json:"result"`
 	DurationMs int64  `json:"duration_ms"`
@@ -169,6 +170,20 @@ type SelectionOverview struct {
 	SourceBranch string           `json:"source_branch"`
 	TargetBranch string           `json:"target_branch"`
 	Selected     SelectionDetails `json:"selected_tests"`
+}
+
+type GetTestTimesReq struct {
+	IncludeFilename  bool `json:"include_filename"`
+	IncludeTestSuite bool `json:"include_test_suite"`
+	IncludeTestCase  bool `json:"include_test_case"`
+	IncludeClassname bool `json:"include_classname"`
+}
+
+type GetTestTimesResp struct {
+	FileTimeMap  map[string]int `json:"file_time_map"`
+	SuiteTimeMap map[string]int `json:"suite_time_map"`
+	TestTimeMap  map[string]int `json:"test_time_map"`
+	ClassTimeMap map[string]int `json:"class_time_map"`
 }
 
 type File struct {

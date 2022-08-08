@@ -75,6 +75,7 @@ public class ArtifactCollectionHandler implements Handler<ArtifactStream> {
     PersistenceIterator iterator = persistenceIteratorFactory.createIterator(ArtifactCollectionHandler.class,
         MongoPersistenceIterator.<ArtifactStream, MorphiaFilterExpander<ArtifactStream>>builder()
             .mode(ProcessMode.PUMP)
+            .iteratorName("ArtifactCollection")
             .clazz(ArtifactStream.class)
             .fieldName(ArtifactStreamKeys.nextIteration)
             .targetInterval(ofMinutes(1))

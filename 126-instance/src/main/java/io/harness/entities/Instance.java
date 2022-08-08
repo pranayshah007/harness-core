@@ -116,6 +116,12 @@ public class Instance {
                  .field(InstanceKeys.lastDeployedAt)
                  .sortField(InstanceKeys.lastDeployedAt)
                  .build())
+        .add(SortCompoundMongoIndex.builder()
+                 .name("accountIdentifier_1_deletedAt_1_createdAt_1")
+                 .field(InstanceKeys.accountIdentifier)
+                 .sortField(InstanceKeys.deletedAt)
+                 .sortField(InstanceKeys.createdAt)
+                 .build())
         .build();
   }
 
@@ -136,6 +142,9 @@ public class Instance {
   private String infrastructureMappingId;
   private String infrastructureKind;
   private String connectorRef;
+
+  private String infraIdentifier;
+  private String infraName;
 
   private ArtifactDetails primaryArtifact;
 

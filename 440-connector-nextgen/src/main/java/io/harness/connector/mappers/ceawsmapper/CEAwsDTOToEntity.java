@@ -40,7 +40,7 @@ public class CEAwsDTOToEntity implements ConnectorDTOToEntityMapper<CEAwsConnect
   @Override
   public CEAwsConfig toConnectorEntity(CEAwsConnectorDTO connectorDTO) {
     CEAwsConfigBuilder ceAwsConfigBuilder = CEAwsConfig.builder();
-
+    String awsAccountIdFromRoleArn;
     List<CEFeatures> featuresList = connectorDTO.getFeaturesEnabled();
     if (featuresList.contains(CEFeatures.BILLING)) {
       final AwsCurAttributesDTO awsCurAttributes = connectorDTO.getCurAttributes();
@@ -67,8 +67,13 @@ public class CEAwsDTOToEntity implements ConnectorDTOToEntityMapper<CEAwsConnect
 
     final CrossAccountAccessDTO crossAccountAccessDTO = connectorDTO.getCrossAccountAccess();
 
+    awsAccountIdFromRoleArn = getAccountId(crossAccountAccessDTO);
+    if (!awsAccountIdFromRoleArn.isEmpty() && !awsAccountIdFromRoleArn.equals(connectorDTO.getAwsAccountId())) {
+      throw new InvalidRequestException("accountId in role arn does not match accountId in overview screen");
+    }
+
     return ceAwsConfigBuilder.crossAccountAccess(crossAccountAccessDTO)
-        .awsAccountId(getAccountId(crossAccountAccessDTO))
+        .awsAccountId(awsAccountIdFromRoleArn)
         .featuresEnabled(featuresList)
         .build();
   }

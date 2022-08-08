@@ -7,6 +7,7 @@
 
 package software.wings.security.authentication;
 
+import static io.harness.rule.OwnerRule.BOOPESH;
 import static io.harness.rule.OwnerRule.PRATEEK;
 import static io.harness.rule.OwnerRule.RUSHABH;
 
@@ -27,6 +28,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.category.element.UnitTests;
 import io.harness.eraro.ErrorCode;
+import io.harness.exception.IllegalArgumentException;
 import io.harness.exception.WingsException;
 import io.harness.ng.core.account.AuthenticationMechanism;
 import io.harness.rule.Owner;
@@ -47,14 +49,13 @@ import com.coveo.saml.SamlClient;
 import com.coveo.saml.SamlException;
 import com.coveo.saml.SamlResponse;
 import com.google.inject.Inject;
-import com.sun.org.apache.xml.internal.security.exceptions.Base64DecodingException;
-import com.sun.org.apache.xml.internal.security.utils.Base64;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
 import net.shibboleth.utilities.java.support.xml.XMLParserException;
+import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.IOUtils;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -82,7 +83,7 @@ public class SamlBasedAuthHandlerTest extends WingsBaseTest {
   @Mock SamlUserGroupSync samlUserGroupSync;
   @Mock SecretManager secretManager;
   @Mock EncryptionService encryptionService;
-  @Inject @InjectMocks @Spy SamlClientService samlClientService;
+  @InjectMocks @Spy SamlClientService samlClientService;
   @Inject @InjectMocks private SamlBasedAuthHandler authHandler;
 
   private static final String oktaIdpUrl =
@@ -151,7 +152,7 @@ public class SamlBasedAuthHandlerTest extends WingsBaseTest {
     final SamlSettings samlSettings = mock(SamlSettings.class);
     when(samlSettings.getAccountId()).thenReturn("AC1");
     List<SamlSettings> samlSettingsList = Arrays.asList(samlSettings);
-    doReturn(samlSettingsList.iterator()).when(samlClientService).getSamlSettingsFromOrigin(anyString(), anyString());
+    doReturn(samlSettingsList.iterator()).when(samlClientService).getSamlSettingsFromOrigin(any(), any());
     doReturn(samlClient).when(samlClientService).getSamlClient(samlSettings);
     when(samlClient.decodeAndValidateSamlResponse(anyString())).thenReturn(samlResponse);
 
@@ -204,7 +205,7 @@ public class SamlBasedAuthHandlerTest extends WingsBaseTest {
         .thenReturn(Arrays.asList(googleSamlSettings1, googleSamlSettings2).iterator());
 
     doReturn(samlClient).when(samlClientService).getSamlClient(any(SamlSettings.class));
-    when(samlClient.decodeAndValidateSamlResponse(anyString())).thenReturn(samlResponse);
+    when(samlClient.decodeAndValidateSamlResponse(any())).thenReturn(samlResponse);
 
     User returnedUser = authHandler.authenticate(googleIdpUrl1, samlResponseString, "TestGoogleAuthAccount2").getUser();
     assertThat(returnedUser).isEqualTo(user);
@@ -263,6 +264,63 @@ public class SamlBasedAuthHandlerTest extends WingsBaseTest {
   }
 
   @Test
+  @Owner(developers = BOOPESH)
+  @Category(UnitTests.class)
+  public void testAzureNonDefaultAccountSaml() throws IOException, SamlException {
+    String accountId1 = "kmpySmUISimoRrJL6NL73w";
+    String accountId2 = "TestAzureAccount1";
+    User user = new User();
+    user.setDefaultAccountId(accountId2);
+    user.setUuid("kmpySmUISimoRrJL6NL73w");
+    Account account1 = new Account();
+    account1.setUuid(accountId1);
+    Account account2 = new Account();
+    account2.setUuid(accountId2);
+    user.setAccounts(Arrays.asList(account1, account2));
+
+    String samlResponseString =
+        IOUtils.toString(getClass().getResourceAsStream("/SamlResponse.txt"), Charset.defaultCharset());
+    account1.setAuthenticationMechanism(io.harness.ng.core.account.AuthenticationMechanism.SAML);
+    when(authenticationUtils.getAccount(accountId1)).thenReturn(account1);
+    when(authenticationUtils.getUser(anyString())).thenReturn(user);
+    when(authenticationUtils.getDefaultAccount(any(User.class))).thenReturn(account2);
+    SamlResponse samlResponse = mock(SamlResponse.class);
+    when(samlResponse.getNameID()).thenReturn("rushabh@harness.io");
+    SamlClient samlClient = mock(SamlClient.class);
+
+    String xml = IOUtils.toString(getClass().getResourceAsStream("/Azure-1-metadata.xml"), Charset.defaultCharset());
+
+    SamlSettings azureSetting1 =
+        SamlSettings.builder()
+            .metaDataFile(xml)
+            .url("https://login.microsoftonline.com/b229b2bb-5f33-4d22-bce0-730f6474e906/saml2")
+            .accountId("TestAzureAccount1")
+            .displayName("Azure 1")
+            .origin("login.microsoftonline.com")
+            .build();
+
+    SamlSettings azureSetting2 = SamlSettings.builder()
+                                     .metaDataFile(xml)
+                                     .url("https://login.microsoftonline.com/b229b2bb-5f33-4d22-bce0-fakedata/saml2")
+                                     .accountId("TestAzureAccount2")
+                                     .displayName("Azure 2")
+                                     .origin("login.microsoftonline.com")
+                                     .build();
+
+    azureSetting1 = spy(azureSetting1);
+    azureSetting2 = spy(azureSetting2);
+
+    when(ssoSettingService.getSamlSettingsIteratorByOrigin("login.microsoftonline.com", accountId1))
+        .thenReturn(Arrays.asList(azureSetting1, azureSetting2).iterator());
+
+    doReturn(samlClient).when(samlClientService).getSamlClient(any(SamlSettings.class));
+    when(samlClient.decodeAndValidateSamlResponse(anyString())).thenReturn(samlResponse);
+
+    User returnedUser = authHandler.authenticate(azureIdpUrl2, samlResponseString, accountId1).getUser();
+    assertThat(returnedUser).isEqualTo(user);
+  }
+
+  @Test
   @Owner(developers = RUSHABH)
   @Category(UnitTests.class)
   public void testSamlAuthenticationAndGroupExtractionForOktaShouldSucceed() throws IOException, SamlException {
@@ -284,11 +342,11 @@ public class SamlBasedAuthHandlerTest extends WingsBaseTest {
     final SamlSettings samlSettings = mock(SamlSettings.class);
     when(samlSettings.getAccountId()).thenReturn("AC1");
     List<SamlSettings> samlSettingsList = Arrays.asList(samlSettings);
-    doReturn(samlSettingsList.iterator()).when(samlClientService).getSamlSettingsFromOrigin(anyString(), anyString());
+    doReturn(samlSettingsList.iterator()).when(samlClientService).getSamlSettingsFromOrigin(any(), any());
     doReturn(samlClient).when(samlClientService).getSamlClient(samlSettings);
     when(samlClient.decodeAndValidateSamlResponse(anyString())).thenReturn(samlResponse);
 
-    doNothing().when(samlUserGroupSync).syncUserGroup(any(SamlUserAuthorization.class), anyString(), anyString());
+    doNothing().when(samlUserGroupSync).syncUserGroup(any(SamlUserAuthorization.class), any(), any());
     doReturn(true).when(samlSettings).isAuthorizationEnabled();
     User returnedUser = authHandler.authenticate(oktaIdpUrl, samlResponseString).getUser();
     assertThat(returnedUser).isEqualTo(user);
@@ -355,11 +413,11 @@ public class SamlBasedAuthHandlerTest extends WingsBaseTest {
     final SamlSettings samlSettings = mock(SamlSettings.class);
     when(samlSettings.getAccountId()).thenReturn("AC1");
     List<SamlSettings> samlSettingsList = Arrays.asList(samlSettings);
-    doReturn(samlSettingsList.iterator()).when(samlClientService).getSamlSettingsFromOrigin(anyString(), anyString());
+    doReturn(samlSettingsList.iterator()).when(samlClientService).getSamlSettingsFromOrigin(any(), any());
     doReturn(samlClient).when(samlClientService).getSamlClient(samlSettings);
     when(samlClient.decodeAndValidateSamlResponse(anyString())).thenReturn(samlResponse);
 
-    doNothing().when(samlUserGroupSync).syncUserGroup(any(SamlUserAuthorization.class), anyString(), anyString());
+    doNothing().when(samlUserGroupSync).syncUserGroup(any(SamlUserAuthorization.class), any(), any());
     doReturn(true).when(samlSettings).isAuthorizationEnabled();
     try {
       authHandler.authenticate(oktaIdpUrl, samlResponseString);
@@ -378,7 +436,7 @@ public class SamlBasedAuthHandlerTest extends WingsBaseTest {
   public void
   testUserGroupsExtractionForAzureShouldSucceed()
       throws IOException, SamlException, XMLParserException, UnmarshallingException, InitializationException,
-             Base64DecodingException {
+             IllegalArgumentException {
     String samlResponseString =
         IOUtils.toString(getClass().getResourceAsStream("/SamlResponse-2.txt"), Charset.defaultCharset());
     final String accountId = "kmpySmUISimoRrJL6NL73w";
@@ -419,8 +477,9 @@ public class SamlBasedAuthHandlerTest extends WingsBaseTest {
     assertThat(groups.size()).isGreaterThan(150);
   }
 
-  private Assertion getSamlAssertion(String samlResponse)
-      throws IOException, XMLParserException, UnmarshallingException, InitializationException, Base64DecodingException {
+  private Assertion getSamlAssertion(String samlResponse) throws IOException, XMLParserException, UnmarshallingException
+                                                                 ,
+                                                                 InitializationException, IllegalArgumentException {
     InitializationService.initialize();
     SAMLConfigurationInitializer samlInitializer = new SAMLConfigurationInitializer();
     samlInitializer.init();
@@ -430,8 +489,7 @@ public class SamlBasedAuthHandlerTest extends WingsBaseTest {
 
     GlobalParserPoolInitializer parserPoolInitializer = new GlobalParserPoolInitializer();
     parserPoolInitializer.init();
-
-    byte[] decode = Base64.decode(samlResponse);
+    byte[] decode = new Base64().decode(samlResponse);
     String decodedSAMLStr = new String(decode, StandardCharsets.UTF_8);
     Response response = (Response) XMLObjectSupport.unmarshallFromInputStream(
         XMLObjectProviderRegistrySupport.getParserPool(), new StringInputStream(decodedSAMLStr));

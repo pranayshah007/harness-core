@@ -22,9 +22,11 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 
@@ -54,5 +56,13 @@ public class FileServiceResourceNG {
     boolean updated = fileService.updateParentEntityIdAndVersion(
         null, URLDecoder.decode(entityId, "UTF-8"), null, stateFileId, null, fileBucket);
     return new RestResponse<>(updated);
+  }
+
+  @DELETE
+  @Path("{fileId}")
+  public RestResponse<Void> deleteFile(
+      @PathParam("fileId") String fileId, @QueryParam("bucket") FileBucket fileBucket) {
+    fileService.deleteFile(fileId, fileBucket);
+    return new RestResponse<>(null);
   }
 }

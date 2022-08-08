@@ -70,6 +70,23 @@ public class JiraClient {
     this.restClient = createRestClient();
   }
 
+  public JiraInstanceData getInstanceData() {
+    return executeCall(restClient.getInstanceData(), "fetching jira instance data");
+  }
+  public JiraUserData getUser(String userKey) {
+    return executeCall(restClient.getUser(userKey), "getting user");
+  }
+
+  public List<JiraUserData> getUsers(String userQuery, String accountId, String startAt) {
+    JiraInstanceData jiraInstanceData = getInstanceData();
+    switch (jiraInstanceData.deploymentType) {
+      case SERVER:
+        return executeCall(restClient.getUsersForJiraServer(userQuery, accountId, "10", startAt), "fetching users");
+      default:
+        return executeCall(restClient.getUsers(userQuery, accountId, "10", startAt), "fetching users");
+    }
+  }
+
   /**
    * Get all projects for the jira instance.
    *
@@ -253,8 +270,8 @@ public class JiraClient {
    *                      element has comma itself, it should be wrapped in quotes
    * @return the created issue
    */
-  public JiraIssueNG createIssue(
-      @NotBlank String projectKey, @NotBlank String issueTypeName, Map<String, String> fields) {
+  public JiraIssueNG createIssue(@NotBlank String projectKey, @NotBlank String issueTypeName,
+      Map<String, String> fields, boolean checkRequiredFields) {
     JiraIssueCreateMetadataNG createMetadata = getIssueCreateMetadata(projectKey, issueTypeName, null, false, false);
     JiraProjectNG project = createMetadata.getProjects().get(projectKey);
     if (project == null) {
@@ -272,7 +289,8 @@ public class JiraClient {
     String comment = pair.getRight();
 
     // Create issue with all non-comment fields.
-    JiraCreateIssueRequestNG createIssueRequest = new JiraCreateIssueRequestNG(project, issueType, fields);
+    JiraCreateIssueRequestNG createIssueRequest =
+        new JiraCreateIssueRequestNG(project, issueType, fields, checkRequiredFields);
     JiraIssueNG issue = executeCall(restClient.createIssue(createIssueRequest), "creating issue");
 
     // Add comment.

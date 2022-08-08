@@ -16,6 +16,7 @@ import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubHttpAuthenticationType;
 import io.harness.delegate.beans.connector.scm.github.GithubHttpCredentialsDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubOauthDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubSshCredentialsDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubUsernamePasswordDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubUsernameTokenDTO;
@@ -43,12 +44,17 @@ public class GithubToGitMapper {
         username = httpCredentialsSpec.getUsername();
         usernameRef = httpCredentialsSpec.getUsernameRef();
         passwordRef = httpCredentialsSpec.getPasswordRef();
-      } else {
+      } else if (credentials.getType() == GithubHttpAuthenticationType.USERNAME_AND_TOKEN) {
         final GithubUsernameTokenDTO githubUsernameTokenDTO =
             (GithubUsernameTokenDTO) credentials.getHttpCredentialsSpec();
         username = githubUsernameTokenDTO.getUsername();
         usernameRef = githubUsernameTokenDTO.getUsernameRef();
         passwordRef = githubUsernameTokenDTO.getTokenRef();
+      } else {
+        final GithubOauthDTO githubOauthDTO = (GithubOauthDTO) credentials.getHttpCredentialsSpec();
+        username = GithubOauthDTO.userName;
+        usernameRef = null;
+        passwordRef = githubOauthDTO.getTokenRef();
       }
       GitConfigDTO gitConfigForHttp = GitConfigCreater.getGitConfigForHttp(connectionType, url, validationRepo,
           username, usernameRef, passwordRef, githubConnectorDTO.getDelegateSelectors());

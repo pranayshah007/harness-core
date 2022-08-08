@@ -44,11 +44,11 @@ func runCmd(ctx context.Context, cmd exec.Command, stepID string, commands []str
 	}
 
 	err = cmd.Wait()
-	if rusage, e := cmd.ProcessState().SysUsageUnit(); e == nil {
+	if rss, e := cmd.ProcessState().MaxRss(); e == nil {
 		addonLogger.Infow(
 			"max RSS memory used by step",
 			"step_id", stepID,
-			"max_rss_memory_kb", rusage.Maxrss)
+			"max_rss_memory_kb", rss)
 	}
 
 	if ctxErr := ctx.Err(); ctxErr == context.DeadlineExceeded {

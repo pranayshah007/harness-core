@@ -18,6 +18,7 @@ import io.harness.delegate.beans.DelegateAsyncTaskResponse;
 import io.harness.delegate.beans.DelegateAsyncTaskResponse.DelegateAsyncTaskResponseKeys;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.ErrorNotifyResponseData;
+import io.harness.delegate.beans.SerializedResponseData;
 import io.harness.persistence.HPersistence;
 import io.harness.queue.QueueController;
 import io.harness.serializer.KryoSerializer;
@@ -94,9 +95,16 @@ public class DelegateAsyncServiceImpl implements DelegateAsyncService {
             lockedAsyncTaskResponse.getUuid(), queryTime, loopProcessingTime);
 
         loopStartTime = globalStopwatch.elapsed(TimeUnit.MILLISECONDS);
-        ResponseData responseData = disableDeserialization
-            ? BinaryResponseData.builder().data(lockedAsyncTaskResponse.getResponseData()).build()
-            : (DelegateResponseData) kryoSerializer.asInflatedObject(lockedAsyncTaskResponse.getResponseData());
+        ResponseData data = (ResponseData) kryoSerializer.asInflatedObject(lockedAsyncTaskResponse.getResponseData());
+        ResponseData responseData;
+        if (data instanceof SerializedResponseData) {
+          responseData = data;
+        } else {
+          responseData = disableDeserialization
+              ? BinaryResponseData.builder().data(lockedAsyncTaskResponse.getResponseData()).build()
+              : (DelegateResponseData) data;
+        }
+
         long doneWithStartTime = stopwatch.elapsed(TimeUnit.MILLISECONDS);
         waitNotifyEngine.doneWith(lockedAsyncTaskResponse.getUuid(), responseData);
         long doneWithEndTime = stopwatch.elapsed(TimeUnit.MILLISECONDS);

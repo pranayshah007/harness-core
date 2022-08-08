@@ -34,6 +34,7 @@ import software.wings.sm.ExecutionResponse;
 import software.wings.sm.State;
 import software.wings.sm.StateType;
 import software.wings.sm.WorkflowStandardParams;
+import software.wings.sm.WorkflowStandardParamsExtensionService;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
@@ -49,6 +50,7 @@ import lombok.extern.slf4j.Slf4j;
 public class ArtifactCheckState extends State {
   @Inject private transient ArtifactService artifactService;
   @Inject private transient DelayEventHelper delayEventHelper;
+  @Inject private transient WorkflowStandardParamsExtensionService workflowStandardParamsExtensionService;
 
   private static int DELAY_TIME_IN_SEC = 60;
 
@@ -59,7 +61,7 @@ public class ArtifactCheckState extends State {
   @Override
   public ExecutionResponse execute(ExecutionContext context) {
     WorkflowStandardParams workflowStandardParams = context.getContextElement(ContextElementType.STANDARD);
-    List<Artifact> artifacts = workflowStandardParams.getArtifacts();
+    List<Artifact> artifacts = workflowStandardParamsExtensionService.getArtifacts(workflowStandardParams);
     if (isEmpty(artifacts)) {
       return ExecutionResponse.builder().errorMessage("Artifacts are not required.").build();
     }
@@ -157,7 +159,8 @@ public class ArtifactCheckState extends State {
 
     if (artifactNamesForDownload.isEmpty()) {
       WorkflowStandardParams workflowStandardParams = context.getContextElement(ContextElementType.STANDARD);
-      List<Artifact> artifacts = Preconditions.checkNotNull(workflowStandardParams.getArtifacts());
+      List<Artifact> artifacts =
+          Preconditions.checkNotNull(workflowStandardParamsExtensionService.getArtifacts(workflowStandardParams));
       return getExecutionResponse(artifacts);
     }
 

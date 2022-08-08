@@ -1,0 +1,10 @@
+serviceOverrides:
+  environmentRef: envIdentifier
+  serviceRef: serviceIdentifier
+  variables:
+    - name: memory
+      value: <+input>
+      type: String
+    - name: cpu
+      value: <+input>
+      type: String

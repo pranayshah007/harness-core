@@ -9,6 +9,8 @@ package io.harness.delegate.task.citasks.cik8handler.helper;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
+import io.harness.SystemWrapper;
+
 import com.google.inject.Singleton;
 import java.io.File;
 import java.util.ArrayList;
@@ -34,7 +36,7 @@ public class SecretVolumesHelper {
       return secretVolumeMappings;
     }
 
-    String mountVolumes = System.getenv(CI_MOUNT_VOLUMES);
+    String mountVolumes = SystemWrapper.getenv(CI_MOUNT_VOLUMES);
     String mountVolumesList[] = mountVolumes.split(",");
     if (isEmpty(mountVolumesList)) {
       return secretVolumeMappings;
@@ -69,7 +71,7 @@ public class SecretVolumesHelper {
 
   public boolean checkSecretVolumesConfigured() {
     try {
-      String mountVolumes = System.getenv(CI_MOUNT_VOLUMES);
+      String mountVolumes = SystemWrapper.getenv(CI_MOUNT_VOLUMES);
       if (isEmpty(mountVolumes)) {
         return false;
       }

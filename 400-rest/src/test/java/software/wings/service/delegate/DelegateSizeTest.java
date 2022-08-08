@@ -7,63 +7,61 @@
 
 package software.wings.service.delegate;
 
-import static io.harness.rule.OwnerRule.BOJAN;
+import static io.harness.rule.OwnerRule.MARKO;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.when;
 
 import io.harness.category.element.UnitTests;
 import io.harness.configuration.DeployVariant;
 import io.harness.delegate.beans.DelegateSizeDetails;
 import io.harness.rule.Owner;
 
-import software.wings.WingsBaseTest;
 import software.wings.service.impl.DelegateServiceImpl;
 
-import com.google.inject.Inject;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
+import org.mockito.junit.MockitoJUnitRunner;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({DeployVariant.class})
-@PowerMockIgnore({"javax.security.*", "javax.net.*", "javax.management.*", "javax.crypto.*"})
-public class DelegateSizeTest extends WingsBaseTest {
-  @Inject private DelegateServiceImpl delegateService;
+@RunWith(MockitoJUnitRunner.class)
+public class DelegateSizeTest {
+  @Mock private DelegateServiceImpl underTest;
 
   @Test
-  @Owner(developers = BOJAN)
+  @Owner(developers = MARKO)
   @Category(UnitTests.class)
   public void testFetchDefaultDelegateSize() {
-    PowerMockito.mockStatic(DeployVariant.class);
-    PowerMockito.when(DeployVariant.isCommunity(anyString())).thenReturn(false);
+    try (MockedStatic<DeployVariant> deployVariant = Mockito.mockStatic(DeployVariant.class)) {
+      deployVariant.when(() -> DeployVariant.isCommunity(null)).thenReturn(false);
+      when(underTest.fetchDefaultDockerDelegateSize()).thenCallRealMethod();
+      DelegateSizeDetails delegateSizeDetails = underTest.fetchDefaultDockerDelegateSize();
 
-    DelegateSizeDetails delegateSizeDetails = delegateService.fetchDefaultDockerDelegateSize();
-
-    assertThat(delegateSizeDetails.getCpu()).isEqualTo(0.5);
-    assertThat(delegateSizeDetails.getLabel()).isEqualTo("Default");
-    assertThat(delegateSizeDetails.getRam()).isEqualTo(2048);
-    assertThat(delegateSizeDetails.getReplicas()).isEqualTo(0);
-    assertThat(delegateSizeDetails.getSize()).isNull();
+      assertThat(delegateSizeDetails.getCpu()).isEqualTo(1);
+      assertThat(delegateSizeDetails.getLabel()).isEqualTo("Default");
+      assertThat(delegateSizeDetails.getRam()).isEqualTo(2048);
+      assertThat(delegateSizeDetails.getReplicas()).isEqualTo(0);
+      assertThat(delegateSizeDetails.getSize()).isNull();
+    }
   }
 
   @Test
-  @Owner(developers = BOJAN)
+  @Owner(developers = MARKO)
   @Category(UnitTests.class)
   public void testFetchDefaultCommunityDelegateSize() {
-    PowerMockito.mockStatic(DeployVariant.class);
-    PowerMockito.when(DeployVariant.isCommunity(anyString())).thenReturn(true);
+    try (MockedStatic<DeployVariant> deployVariant = Mockito.mockStatic(DeployVariant.class)) {
+      deployVariant.when(() -> DeployVariant.isCommunity(null)).thenReturn(true);
+      when(underTest.fetchDefaultDockerDelegateSize()).thenCallRealMethod();
+      DelegateSizeDetails delegateSizeDetails = underTest.fetchDefaultDockerDelegateSize();
 
-    DelegateSizeDetails delegateSizeDetails = delegateService.fetchDefaultDockerDelegateSize();
-
-    assertThat(delegateSizeDetails.getCpu()).isEqualTo(0.5);
-    assertThat(delegateSizeDetails.getLabel()).isEqualTo("Default Community Size");
-    assertThat(delegateSizeDetails.getRam()).isEqualTo(768);
-    assertThat(delegateSizeDetails.getReplicas()).isEqualTo(0);
-    assertThat(delegateSizeDetails.getSize()).isNull();
+      assertThat(delegateSizeDetails.getCpu()).isEqualTo(1);
+      assertThat(delegateSizeDetails.getLabel()).isEqualTo("Default Community Size");
+      assertThat(delegateSizeDetails.getRam()).isEqualTo(768);
+      assertThat(delegateSizeDetails.getReplicas()).isEqualTo(0);
+      assertThat(delegateSizeDetails.getSize()).isNull();
+    }
   }
 }

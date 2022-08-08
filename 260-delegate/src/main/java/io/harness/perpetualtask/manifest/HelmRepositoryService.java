@@ -53,7 +53,7 @@ public class HelmRepositoryService implements ManifestRepositoryService {
 
   @NotNull
   private String getDestinationDirectory(HelmChartConfigParams helmChartConfigParams) {
-    return MANIFEST_COLLECTION_DIR + "-" + convertBase64UuidToCanonicalForm(helmChartConfigParams.getRepoName());
+    return MANIFEST_COLLECTION_DIR + "/" + convertBase64UuidToCanonicalForm(helmChartConfigParams.getRepoName());
   }
 
   @Override

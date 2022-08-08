@@ -12,7 +12,6 @@ import java.util.List;
 import lombok.Builder;
 import lombok.Value;
 import lombok.experimental.FieldNameConstants;
-import org.mongodb.morphia.annotations.Transient;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 @FieldNameConstants(innerTypeName = "DelegateConfigurationKeys")
@@ -21,9 +20,9 @@ import org.mongodb.morphia.annotations.Transient;
 public class DelegateConfiguration {
   private List<String> delegateVersions;
   private Action action;
-  @Transient private boolean accountVersion;
   // Since we will always have one delegateversion for account adding validUntil for all of them at once.
   private Long validUntil;
+  private boolean validTillNextRelease;
 
   public enum Action { SELF_DESTRUCT }
 }

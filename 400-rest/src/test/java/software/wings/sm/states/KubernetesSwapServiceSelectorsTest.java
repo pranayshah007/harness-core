@@ -49,6 +49,7 @@ import software.wings.sm.ExecutionContextImpl;
 import software.wings.sm.ExecutionResponse;
 import software.wings.sm.StateExecutionInstance;
 import software.wings.sm.WorkflowStandardParams;
+import software.wings.sm.WorkflowStandardParamsExtensionService;
 import software.wings.sm.states.k8s.K8sStateHelper;
 
 import com.google.inject.Inject;
@@ -67,6 +68,7 @@ public class KubernetesSwapServiceSelectorsTest extends WingsBaseTest {
   @Mock private SweepingOutputService sweepingOutputService;
   @Mock private K8sStateHelper k8sStateHelper;
   @Mock private InfrastructureMappingService infrastructureMappingService;
+  @Mock private WorkflowStandardParamsExtensionService workflowStandardParamsExtensionService;
   @Inject KryoSerializer kryoSerializer;
 
   @InjectMocks

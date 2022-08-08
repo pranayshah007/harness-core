@@ -18,14 +18,14 @@ public class HelmCommandResponseMapper {
   public HelmInstallCommandResponse getHelmInstallCommandResponse(HelmClientImpl.HelmCliResponse cliResponse) {
     return HelmInstallCommandResponse.builder()
         .commandExecutionStatus(cliResponse.getCommandExecutionStatus())
-        .output(cliResponse.getOutput())
+        .output(cliResponse.getOutputWithErrorStream())
         .build();
   }
 
   public HelmInstallCmdResponseNG getHelmInstCmdRespNG(HelmClientImpl.HelmCliResponse cliResponse) {
     return HelmInstallCmdResponseNG.builder()
         .commandExecutionStatus(cliResponse.getCommandExecutionStatus())
-        .output(cliResponse.getOutput())
+        .output(cliResponse.getOutputWithErrorStream())
         .build();
   }
 }

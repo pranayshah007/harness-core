@@ -37,6 +37,7 @@ import org.springframework.data.annotation.TypeAlias;
 @RecasterAlias("io.harness.cdng.helm.HelmDeployStepNode")
 public class HelmDeployStepNode extends CdAbstractStepNode {
   @JsonProperty("type") @NotNull StepType type = StepType.HelmDeploy;
+  @NotNull
   @JsonProperty("spec")
   @JsonTypeInfo(use = NAME, property = "type", include = EXTERNAL_PROPERTY, visible = true)
   HelmDeployStepInfo helmDeployStepInfo;

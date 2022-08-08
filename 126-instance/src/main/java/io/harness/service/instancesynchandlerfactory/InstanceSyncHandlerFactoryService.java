@@ -13,5 +13,5 @@ import io.harness.service.instancesynchandler.AbstractInstanceSyncHandler;
 
 @OwnedBy(HarnessTeam.DX)
 public interface InstanceSyncHandlerFactoryService {
-  AbstractInstanceSyncHandler getInstanceSyncHandler(String deploymentType);
+  AbstractInstanceSyncHandler getInstanceSyncHandler(String deploymentType, String infraKind);
 }

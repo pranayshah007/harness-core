@@ -1,0 +1,161 @@
+{
+  "pipeline": {
+    "name": "K8s Deployment V2",
+    "identifier": "K8s_Deployment_v2",
+    "projectIdentifier": "Kubernetes",
+    "orgIdentifier": "default",
+    "tags": {
+      "__uuid": "jY0mbgOrQ923SijO-nXT1w"
+    },
+    "stages": [
+      {
+        "stage": {
+          "name": "K8s",
+          "identifier": "K8s",
+          "description": "",
+          "type": "Deployment",
+          "spec": {
+            "name": "K8s",
+            "identifier": "K8s",
+            "type": "Deployment",
+            "serviceConfig": {
+              "serviceRef": "K8s",
+              "serviceDefinition": {
+                "type": "Kubernetes",
+                "spec": {
+                  "variables": [],
+                  "manifests": [],
+                  "artifacts": {
+                    "sidecars": [],
+                    "__uuid": "484bAx5cSoSIka0mZluU4g"
+                  },
+                  "__uuid": "S-jF3jcwRpGFwWLehJRTwg"
+                },
+                "__uuid": "UFk6FYdqTkWlA9nsTnKIcA"
+              },
+              "__uuid": "G1LzU2LeTYmrW5Afer4jmA"
+            },
+            "infrastructure": {
+              "infrastructureDefinition": {
+                "type": "KubernetesDirect",
+                "spec": {
+                  "connectorRef": "Kubernetes_SA",
+                  "namespace": "default",
+                  "releaseName": "release-<+INFRA_KEY>",
+                  "__uuid": "kEJLTC7MSLS4v6KL8_OOpQ"
+                },
+                "provisioner": {
+                  "rollbackSteps": [
+                    {
+                      "step": {
+                        "type": "TerraformRollback",
+                        "name": "Terraform Rollback",
+                        "identifier": "dfe51017-d346-5323-be6f-c55cbb699cc9",
+                        "timeout": "10m",
+                        "spec": {
+                          "provisionerIdentifier": null,
+                          "__uuid": "NEboUU7hS8quzDGJ20AdxA"
+                        },
+                        "__uuid": "H-Y4CgfeT8KHnDxLdCyOEQ"
+                      },
+                      "__uuid": "iSFgBvXdQkyMgXGVIrmjHQ"
+                    }
+                  ],
+                  "steps": [
+                    {
+                      "step": {
+                        "type": "TerraformRollback",
+                        "name": "Terraform Rollback",
+                        "identifier": "Terraform_Rollback",
+                        "spec": {
+                          "provisionerIdentifier": "test",
+                          "__uuid": "wxPmFk4sRbqnhPr8C8xOEw"
+                        },
+                        "timeout": "10m",
+                        "__uuid": "r0pALZBbSdiueMSypGpRAg"
+                      },
+                      "__uuid": "eXe9jAxlQaaXZPeqmRw0hw"
+                    }
+                  ],
+                  "__uuid": "nEKY-R-uQVmS1n1gPAM5vw"
+                },
+                "__uuid": "dfNWfF3HQhCfQIr2j5-IZQ"
+              },
+              "allowSimultaneousDeployments": false,
+              "environmentRef": "Test",
+              "__uuid": "QiA9Mh8QR3OGx5LVaoDvyw"
+            },
+            "execution": {
+              "steps": [
+                {
+                  "step": {
+                    "type": "K8sApply",
+                    "name": "K8s Apply Step",
+                    "identifier": "K8s_Apply_Step",
+                    "spec": {
+                      "filePaths": [
+                        "test"
+                      ],
+                      "skipDryRun": false,
+                      "skipSteadyStateCheck": false,
+                      "__uuid": "nPQA98lyRFWn_YWLcw_XsA"
+                    },
+                    "timeout": "10m",
+                    "__uuid": "GvPc32obQeeWAsTwgxJfqg"
+                  },
+                  "__uuid": "FSEJH-0JQPKVcUeBrogIvQ"
+                }
+              ],
+              "rollbackSteps": [],
+              "__uuid": "vlrPTWkwRoGGC0VHK_9ffw"
+            },
+            "serviceDependencies": [],
+            "__uuid": "sghVksKrSean37sB5TOL_A"
+          },
+          "tags": {
+            "__uuid": "AwlzNEz3TxGhiSxEeYzerA"
+          },
+          "failureStrategies": [
+            {
+              "onFailure": {
+                "errors": [
+                  "AllErrors"
+                ],
+                "action": {
+                  "type": "StageRollback",
+                  "__uuid": "K7hX5x2oR4KHevZWXK6B2w"
+                },
+                "__uuid": "z1n8rYn6SfGmgu2TOBztLQ"
+              },
+              "__uuid": "CNHmnZD-R_6iflOKa-hHdg"
+            }
+          ],
+          "variables": [
+            {
+              "name": "secret",
+              "type": "Secret",
+              "value": "account.testazure",
+              "__uuid": "AEcOJTdHStG-c6J5QKNPdA"
+            },
+            {
+              "name": "test",
+              "type": "String",
+              "value": "<+artifact.tag>",
+              "__uuid": "dQFzcJYpQUWEXw6mCYwLsw"
+            },
+            {
+              "name": "resourceNamePrefix",
+              "type": "String",
+              "value": "test-resource",
+              "__uuid": "-RoaXYJgQ8CeRMoMrxtx2A"
+            }
+          ],
+          "__uuid": "_X52OP6eT62v_jYIX4icbw"
+        },
+        "__uuid": "A9dvnhPjRrSF33wg5SE9Ag"
+      }
+    ],
+    "__uuid": "Dk-quBY6ScKfnoeWxr6udA"
+  },
+  "__uuid": "QKBNfrf9STq2yluVtbkBxA"
+}

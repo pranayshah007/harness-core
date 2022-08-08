@@ -1,0 +1,220 @@
+{
+  "pipeline": {
+    "name": "K8s Deployment V2",
+    "identifier": "K8s_Deployment_v2",
+    "projectIdentifier": "Kubernetes",
+    "orgIdentifier": "default",
+    "tags": {
+      "__uuid": "GDpTEsGySSGLCrJrDCimfQ"
+    },
+    "stages": [
+      {
+        "stage": {
+          "name": "K8s",
+          "identifier": "K8s",
+          "description": "",
+          "type": "Deployment",
+          "spec": {
+            "name": "K8s",
+            "identifier": "K8s",
+            "type": "Deployment",
+            "serviceConfig": {
+              "serviceRef": "K8s",
+              "serviceDefinition": {
+                "type": "Kubernetes",
+                "spec": {
+                  "variables": [],
+                  "manifests": [
+                  ],
+                  "artifacts": {
+                    "sidecars": [],
+                    "__uuid": "DhfvZxrMQMOzG4R_0dNXMg"
+                  },
+                  "__uuid": "kZGvKCIPTbad-3zDzDb6hA"
+                },
+                "__uuid": "JeXvbkBKSAWqY1LXjFR-LA"
+              },
+              "__uuid": "Mx69LzgvRP6au1c6TZAZdA"
+            },
+            "infrastructure": {
+              "infrastructureDefinition": {
+                "type": "KubernetesDirect",
+                "spec": {
+                  "connectorRef": "Kubernetes_SA",
+                  "namespace": "default",
+                  "releaseName": "release-<+INFRA_KEY>",
+                  "__uuid": "i49AyFKcSuiFdF4hhSsVIA"
+                },
+                "provisioner": {
+                  "steps": [
+                    {
+                      "step": {
+                        "type": "TerraformApply",
+                        "name": "Terraform Apply",
+                        "identifier": "Terraform_Apply",
+                        "spec": {
+                          "provisionerIdentifier": "test",
+                          "configuration": {
+                            "type": "Inline",
+                            "spec": {
+                              "workspace": "default",
+                              "configFiles": {
+                                "store": {
+                                  "type": "Artifactory",
+                                  "spec": {
+                                    "connectorRef": "Artifactory_Terraform",
+                                    "artifactPaths": [
+                                      "terraform"
+                                    ],
+                                    "repositoryName": "<+input>",
+                                    "gitFetchType": "Branch",
+                                    "__uuid": "q_QOQgZ3T128Uyvz4dif3w"
+                                  },
+                                  "__uuid": "xfEK00-pTq-aU5MwTxpq_g"
+                                },
+                                "moduleSource": {
+                                  "useConnectorCredentials": true,
+                                  "__uuid": "djfaBeuQRK6WVU_F5_7NUw"
+                                },
+                                "__uuid": "uMHttjd6ReOZzkSKH6lN9A"
+                              },
+                              "backendConfig": {
+                                "type": "Inline",
+                                "spec": {
+                                  "content": "region = us-east1",
+                                  "__uuid": "E4kZp430RkONfRKDN5kLfg"
+                                },
+                                "__uuid": "ojf278KuRA2CP8gPh_Pyag"
+                              },
+                              "environmentVariables": [
+                                {
+                                  "name": "GIT_SSH_COMMAND",
+                                  "value": "-i test.pem",
+                                  "type": "String",
+                                  "__uuid": "LIexzJAbQO6stS561OlI3w"
+                                },
+                                {
+                                  "name": "ANSWER",
+                                  "value": "yes",
+                                  "type": "String",
+                                  "__uuid": "KJBn1rNkQDWMgbdbAxKSzA"
+                                }
+                              ],
+                              "targets": [
+                                "prod",
+                                "dev"
+                              ],
+                              "varFiles": [
+                                {
+                                  "varFile": {
+                                    "spec": {
+                                      "content": "test = value",
+                                      "__uuid": "Y1UArzGGSASMO_exO05X3Q"
+                                    },
+                                    "identifier": "tvfar_inline",
+                                    "type": "Inline",
+                                    "__uuid": "uzaAAArpRs-RJD-qEpFsoQ"
+                                  },
+                                  "__uuid": "uZdlrmMZSt6-b7nG6tHgyA"
+                                },
+                                {
+                                  "varFile": {
+                                    "type": "Remote",
+                                    "identifier": "tfvar_arifactory",
+                                    "spec": {
+                                      "store": {
+                                        "type": "Artifactory",
+                                        "spec": {
+                                          "repositoryName": "<+input>",
+                                          "artifactPaths": [
+                                            "terraform-tfvars",
+                                            "terraform-tfvars-prod"
+                                          ],
+                                          "connectorRef": "Artifactory_Terraform",
+                                          "__uuid": "WJj6l2bbTuW9DzPhmgNYZg"
+                                        },
+                                        "__uuid": "qd4noCfcQTG-sA-p4DXwqQ"
+                                      },
+                                      "__uuid": "mvPoKoQrR5uNUwOCkP-0Og"
+                                    },
+                                    "__uuid": "a5CQ0m6xTO6ZWBiL0xkYLw"
+                                  },
+                                  "__uuid": "7Iq8Zi3pRwCjGUb-QoIhKg"
+                                }
+                              ],
+                              "__uuid": "GO6NFUZyRfiyZM2gIsZpsg"
+                            },
+                            "__uuid": "iWVoZZQgTKqAXnYbJ6AfAg"
+                          },
+                          "__uuid": "p0rbCBepQcaJRkWegaxduA"
+                        },
+                        "timeout": "10m",
+                        "__uuid": "V3-8vc2ISQmmFpTSBMC7gg"
+                      },
+                      "__uuid": "qOeoJ4uGRzi0nuuhYK73fw"
+                    }
+                  ],
+                  "rollbackSteps": [],
+                  "__uuid": "JVvMOvtMQQiS0MKjmnusVQ"
+                },
+                "__uuid": "gB-cIBB2TEKe1XMuz6OqYw"
+              },
+              "allowSimultaneousDeployments": false,
+              "environmentRef": "Test",
+              "__uuid": "-IM8w1vFS9C0WutNMhBpkA"
+            },
+            "execution": {
+              "steps": [],
+              "rollbackSteps": [],
+              "__uuid": "BMbcR6ZrTHOTW2KP504jrw"
+            },
+            "serviceDependencies": [],
+            "__uuid": "hqF7YdwZSjuS9HaIrZZbFA"
+          },
+          "tags": {
+            "__uuid": "XFtBi_5HRRSPS7C9Xfhgqg"
+          },
+          "failureStrategies": [
+            {
+              "onFailure": {
+                "errors": [
+                  "AllErrors"
+                ],
+                "action": {
+                  "type": "StageRollback",
+                  "__uuid": "Mw5hKGJwQCyjOxiH6pcjsg"
+                },
+                "__uuid": "vmT2RV9AQGC4OyPFAIByMQ"
+              },
+              "__uuid": "WjOEB7YxSQ-nfw_dXTuvGw"
+            }
+          ],
+          "variables": [
+            {
+              "name": "secret",
+              "type": "Secret",
+              "value": "account.testazure",
+              "__uuid": "E_amCZRySq-s_llelavZow"
+            },
+            {
+              "name": "test",
+              "type": "String",
+              "value": "<+artifact.tag>",
+              "__uuid": "IampkT7RRUqckfNKFkWz7w"
+            },
+            {
+              "name": "resourceNamePrefix",
+              "type": "String",
+              "value": "test-resource",
+              "__uuid": "Q9sxcfaFTEmbYMY3iQgMsw"
+            }
+          ],
+          "__uuid": "8I1sgm2BSjuwW0N_1dl6zA"
+        },
+        "__uuid": "xsbfPDi7TACk0XUyH-pJBw"
+      }
+    ],
+    "__uuid": "bC-5a0zaRqGAp9vrMO7EPQ"
+  },
+  "__uuid": "ThcS6MjbTTevMOQE7I_bRA"
+}

@@ -19,7 +19,11 @@ import lombok.Data;
 @Data
 @JsonSubTypes({
   @JsonSubTypes.Type(value = AzureClientSecretKeyDTO.class, name = AzureConstants.SECRET_KEY)
-  , @JsonSubTypes.Type(value = AzureClientKeyCertDTO.class, name = AzureConstants.KEY_CERT)
+  , @JsonSubTypes.Type(value = AzureClientKeyCertDTO.class, name = AzureConstants.KEY_CERT),
+      @JsonSubTypes.Type(
+          value = AzureUserAssignedMSIAuthDTO.class, name = AzureConstants.USER_ASSIGNED_MANAGED_IDENTITY),
+      @JsonSubTypes.Type(
+          value = AzureSystemAssignedMSIAuthDTO.class, name = AzureConstants.SYSTEM_ASSIGNED_MANAGED_IDENTITY)
 })
 @Schema(name = "AzureAuthCredential", description = "This contains azure auth credentials")
 public abstract class AzureAuthCredentialDTO implements DecryptableEntity {}

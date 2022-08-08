@@ -36,7 +36,6 @@ public class DelegateServiceClassicGrpcClientModule extends ProviderModule {
   private final String target;
   private final String authority;
   private final String deployMode = System.getenv().get("DEPLOY_MODE");
-  private final String ONPREM = "ONPREM";
   private final String KUBERNETES_ONPREM = "KUBERNETES_ONPREM";
 
   @Override
@@ -55,7 +54,7 @@ public class DelegateServiceClassicGrpcClientModule extends ProviderModule {
   @Provides
   public Channel delegateServiceClassicChannel(VersionInfoManager versionInfoManager) throws SSLException {
     String authorityToUse = computeAuthority(versionInfoManager.getVersionInfo());
-    if (ONPREM.equals(deployMode) || KUBERNETES_ONPREM.equals(deployMode)) {
+    if (KUBERNETES_ONPREM.equals(deployMode)) {
       return NettyChannelBuilder.forTarget(target).overrideAuthority(authorityToUse).usePlaintext().build();
     } else {
       SslContext sslContext = GrpcSslContexts.forClient().trustManager(InsecureTrustManagerFactory.INSTANCE).build();
@@ -69,7 +68,7 @@ public class DelegateServiceClassicGrpcClientModule extends ProviderModule {
     if (!isValidAuthority(authority)) {
       log.info("Authority in config {} is invalid. Using default value {}", authority, defaultAuthority);
       authorityToUse = defaultAuthority;
-    } else if (!(ONPREM.equals(deployMode) || KUBERNETES_ONPREM.equals(deployMode))) {
+    } else if (!KUBERNETES_ONPREM.equals(deployMode)) {
       String versionPrefix = "v-" + versionInfo.getVersion().replace('.', '-') + "-";
       String versionedAuthority = versionPrefix + authority;
       if (isValidAuthority(versionedAuthority)) {

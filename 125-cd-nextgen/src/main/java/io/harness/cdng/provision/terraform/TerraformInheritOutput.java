@@ -37,7 +37,7 @@ public class TerraformInheritOutput implements ExecutionSweepingOutput {
   String backendConfig;
   List<String> targets;
   Map<String, String> environmentVariables;
-
+  boolean useConnectorCredentials;
   EncryptionConfig encryptionConfig;
   EncryptedRecordData encryptedTfPlan;
   String planName;

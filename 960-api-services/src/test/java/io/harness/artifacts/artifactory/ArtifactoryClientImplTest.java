@@ -17,6 +17,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.artifact.ArtifactMetadataKeys;
 import io.harness.artifactory.ArtifactoryClientImpl;
 import io.harness.artifactory.ArtifactoryConfigRequest;
 import io.harness.artifacts.beans.BuildDetailsInternal;
@@ -34,6 +35,7 @@ import com.github.tomakehurst.wiremock.core.Options;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import java.util.List;
+import java.util.stream.Collectors;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -48,18 +50,33 @@ public class ArtifactoryClientImplTest {
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
   @Rule
   public WireMockRule wireMockRule =
+      new WireMockRule(WireMockConfiguration.wireMockConfig().port(Options.DYNAMIC_PORT), false);
+  @Rule
+  public WireMockRule wireMockRule2 =
       new WireMockRule(WireMockConfiguration.wireMockConfig()
-                           .usingFilesUnderDirectory("960-api-services/src/test/resources")
-                           .port(Options.DYNAMIC_PORT),
-          false);
+                           .usingFilesUnderClasspath("960-api-services/src/test/resources")
+                           .disableRequestJournal()
+                           .bindAddress("127.0.0.1")
+                           .port(0));
+
   @InjectMocks private ArtifactoryClientImpl artifactoryClient;
+  private ArtifactoryConfigRequest artifactoryConfig2;
 
   private static String url;
+  private static String url2;
 
   @Before
   public void before() {
     MockitoAnnotations.initMocks(this);
     url = "http://localhost:" + wireMockRule.port();
+
+    url2 = String.format("http://127.0.0.1:%d/artifactory/", wireMockRule2.port());
+    artifactoryConfig2 = ArtifactoryConfigRequest.builder()
+                             .artifactoryUrl(url2)
+                             .username("admin")
+                             .password("dummy123!".toCharArray())
+                             .hasCredentials(true)
+                             .build();
   }
 
   @Test
@@ -128,32 +145,72 @@ public class ArtifactoryClientImplTest {
   @Test
   @Owner(developers = MLUKIC)
   @Category(UnitTests.class)
-  public void testGetArtifactsDetails() {
-    ArtifactoryConfigRequest artifactoryConfigRequest = ArtifactoryConfigRequest.builder()
-                                                            .artifactoryUrl(url)
-                                                            .username("username")
-                                                            .password("password".toCharArray())
-                                                            .hasCredentials(true)
-                                                            .artifactRepositoryUrl(url)
-                                                            .build();
+  public void testGetArtifactsDetailsSuccess() {
+    String repoKey = "TestRepoKey";
+    String artifactPath = "test/artifact";
 
-    wireMockRule.stubFor(get(urlEqualTo("/api/docker/testrepo/v2/nginx/tags/list"))
-                             .willReturn(aResponse().withStatus(200).withBody("{\n"
-                                 + "  \"name\" : \"nginx\",\n"
-                                 + "  \"tags\" : [ \"1.15\", \"latest\", \"1.20\", \"1.21\" ]\n"
-                                 + "}")));
+    wireMockRule2.stubFor(get(urlEqualTo("/artifactory/api/repositories/" + repoKey))
+                              .willReturn(aResponse().withStatus(200).withBody("{\n"
+                                  + "    \"key\": \"testRepoKey\",\n"
+                                  + "    \"packageType\": \"docker\",\n"
+                                  + "    \"description\": \"\",\n"
+                                  + "    \"rclass\": \"local\"\n"
+                                  + "}")));
 
-    wireMockRule.stubFor(
-        get(urlEqualTo("/api/docker/testrepo/v2/nginx2/tags/list")).willReturn(aResponse().withStatus(200)));
+    wireMockRule2.stubFor(get(urlEqualTo("/artifactory/api/docker/" + repoKey + "/v2/_catalog"))
+                              .willReturn(aResponse().withStatus(200).withBody("{\n"
+                                  + "    \"repositories\": [\n"
+                                  + "        \"alpine\",\n"
+                                  + "        \"nginx\",\n"
+                                  + "        \"test\",\n"
+                                  + "        \"foo\",\n"
+                                  + "        \"" + artifactPath + "\"\n"
+                                  + "    ]\n"
+                                  + "}")));
+
+    wireMockRule2.stubFor(get(urlEqualTo("/artifactory/api/docker/" + repoKey + "/v2/" + artifactPath + "/tags/list"))
+                              .willReturn(aResponse().withStatus(200).withBody("{\n"
+                                  + "    \"name\": \"" + artifactPath + "\",\n"
+                                  + "    \"tags\": [\n"
+                                  + "        \"1.0\",\n"
+                                  + "        \"2.0\",\n"
+                                  + "        \"3-unit\",\n"
+                                  + "        \"3-test\"\n"
+                                  + "    ]\n"
+                                  + "}")));
 
     List<BuildDetailsInternal> response = artifactoryClient.getArtifactsDetails(
-        artifactoryConfigRequest, "testrepo", "nginx", RepositoryFormat.docker.name(), 10000);
-    assertThat(response.size()).isNotNull();
+        artifactoryConfig2, repoKey, artifactPath, RepositoryFormat.docker.name(), 10000);
+
     assertThat(response.size()).isEqualTo(4);
+    List<String> dockerPullCommands =
+        response.stream().map(bdi -> bdi.getMetadata().get(ArtifactMetadataKeys.IMAGE)).collect(Collectors.toList());
+
+    String fullRepoPath = "127-" + repoKey + ".0.0.1:" + wireMockRule2.port() + "/" + artifactPath;
+    assertThat(dockerPullCommands)
+        .contains(fullRepoPath + ":1.0", fullRepoPath + ":2.0", fullRepoPath + ":3-unit", fullRepoPath + ":3-test");
+  }
+
+  @Test
+  @Owner(developers = MLUKIC)
+  @Category(UnitTests.class)
+  public void testGetArtifactsDetailsNonexistentRepository() {
+    String repoKey = "TestRepoKey";
+    String artifactPath = "test/artifact";
+
+    wireMockRule2.stubFor(get(urlEqualTo("/artifactory/api/repositories/" + repoKey))
+                              .willReturn(aResponse().withStatus(400).withBody("{\n"
+                                  + "    \"errors\": [\n"
+                                  + "        {\n"
+                                  + "            \"status\": 400,\n"
+                                  + "            \"message\": \"Bad Request\"\n"
+                                  + "        }\n"
+                                  + "    ]\n"
+                                  + "}")));
 
     assertThatThrownBy(()
                            -> artifactoryClient.getArtifactsDetails(
-                               artifactoryConfigRequest, "testrepo", "nginx2", RepositoryFormat.docker.name(), 10000))
+                               artifactoryConfig2, repoKey, artifactPath, RepositoryFormat.docker.name(), 10000))
         .isInstanceOf(HintException.class)
         .getCause()
         .isInstanceOf(ExplanationException.class)
@@ -164,31 +221,64 @@ public class ArtifactoryClientImplTest {
   @Test
   @Owner(developers = MLUKIC)
   @Category(UnitTests.class)
-  public void testVerifyArtifactManifestUrl() {
-    ArtifactoryConfigRequest artifactoryConfigRequest = ArtifactoryConfigRequest.builder()
-                                                            .artifactoryUrl(url)
-                                                            .username("username")
-                                                            .password("password".toCharArray())
-                                                            .hasCredentials(true)
-                                                            .artifactRepositoryUrl(url)
-                                                            .build();
+  public void testGetArtifactsDetailsNonexistentDockerImage() {
+    String repoKey = "TestRepoKey";
+    String artifactPath = "test/artifact";
 
-    String artifactManifestUrl = url + "/artifactory/testrepo/nginx/latest/manifest.json";
+    wireMockRule2.stubFor(get(urlEqualTo("/artifactory/api/repositories/" + repoKey))
+                              .willReturn(aResponse().withStatus(200).withBody("{\n"
+                                  + "    \"key\": \"testRepoKey\",\n"
+                                  + "    \"packageType\": \"docker\",\n"
+                                  + "    \"description\": \"\",\n"
+                                  + "    \"rclass\": \"local\"\n"
+                                  + "}")));
 
-    wireMockRule.stubFor(
-        get(urlEqualTo("/artifactory/testrepo/nginx/latest/manifest.json")).willReturn(aResponse().withStatus(200)));
+    wireMockRule2.stubFor(get(urlEqualTo("/artifactory/api/docker/" + repoKey + "/v2/_catalog"))
+                              .willReturn(aResponse().withStatus(404).withBody("{\n"
+                                  + "    \"errors\": [\n"
+                                  + "        {\n"
+                                  + "            \"status\": 404,\n"
+                                  + "            \"message\": \"Not Found\"\n"
+                                  + "        }\n"
+                                  + "    ]\n"
+                                  + "}")));
 
-    boolean response = artifactoryClient.verifyArtifactManifestUrl(artifactoryConfigRequest, artifactManifestUrl);
-    assertThat(response).isNotNull();
-    assertThat(response).isEqualTo(true);
+    assertThatThrownBy(()
+                           -> artifactoryClient.getArtifactsDetails(
+                               artifactoryConfig2, repoKey, artifactPath, RepositoryFormat.docker.name(), 10000))
+        .isInstanceOf(HintException.class)
+        .getCause()
+        .isInstanceOf(ExplanationException.class);
+  }
 
-    String artifactManifestUrl2 = url + "/artifactory/testrepo2/nginx/latest/manifest.json";
+  @Test
+  @Owner(developers = MLUKIC)
+  @Category(UnitTests.class)
+  public void testGetArtifactsDetailsNonexistentDockerImage2() {
+    String repoKey = "TestRepoKey";
+    String artifactPath = "test/artifact";
 
-    wireMockRule.stubFor(
-        get(urlEqualTo("/artifactory/testrepo2/nginx/latest/manifest.json")).willReturn(aResponse().withStatus(404)));
+    wireMockRule2.stubFor(get(urlEqualTo("/artifactory/api/repositories/" + repoKey))
+                              .willReturn(aResponse().withStatus(200).withBody("{\n"
+                                  + "    \"key\": \"testRepoKey\",\n"
+                                  + "    \"packageType\": \"docker\",\n"
+                                  + "    \"description\": \"\",\n"
+                                  + "    \"rclass\": \"local\"\n"
+                                  + "}")));
 
-    assertThatThrownBy(
-        () -> artifactoryClient.verifyArtifactManifestUrl(artifactoryConfigRequest, artifactManifestUrl2))
+    wireMockRule2.stubFor(get(urlEqualTo("/artifactory/api/docker/" + repoKey + "/v2/_catalog"))
+                              .willReturn(aResponse().withStatus(200).withBody("{\n"
+                                  + "    \"repositories\": [\n"
+                                  + "        \"alpine\",\n"
+                                  + "        \"nginx\",\n"
+                                  + "        \"test\",\n"
+                                  + "        \"foo\"\n"
+                                  + "    ]\n"
+                                  + "}")));
+
+    assertThatThrownBy(()
+                           -> artifactoryClient.getArtifactsDetails(
+                               artifactoryConfig2, repoKey, artifactPath, RepositoryFormat.docker.name(), 10000))
         .isInstanceOf(HintException.class)
         .getCause()
         .isInstanceOf(ExplanationException.class)

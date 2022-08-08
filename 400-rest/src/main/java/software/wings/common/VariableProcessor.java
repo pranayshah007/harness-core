@@ -13,7 +13,7 @@ package software.wings.common;
 
 import static io.harness.annotations.dev.HarnessModule._957_CG_BEANS;
 
-import static software.wings.beans.ServiceVariable.Type.ARTIFACT;
+import static software.wings.beans.ServiceVariableType.ARTIFACT;
 import static software.wings.service.intfc.ServiceTemplateService.EncryptedFieldComputeMode.OBTAIN_VALUE;
 
 import io.harness.annotations.dev.TargetModule;

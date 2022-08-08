@@ -23,7 +23,7 @@ public final class TerragruntConstants {
   public static final String TERRAGRUNT_PLAN_DESTROY_COMMAND_FORMAT =
       "terragrunt plan -destroy -out=tfdestroyplan -input=false %s %s";
   public static final String TERRAGRUNT_DESTROY_COMMAND_FORMAT =
-      "terragrunt destroy -force --terragrunt-non-interactive %s %s";
+      "terragrunt destroy %s --terragrunt-non-interactive %s %s";
   public static final String TERRAGRUNT_RUN_ALL_APPLY_COMMAND_FORMAT =
       "terragrunt run-all apply -input=false --terragrunt-non-interactive %s %s";
   public static final String TERRAGRUNT_RUN_ALL_PLAN_COMMAND_FORMAT =
@@ -31,7 +31,7 @@ public final class TerragruntConstants {
   public static final String TERRAGRUNT_RUN_ALL_PLAN_DESTROY_COMMAND_FORMAT =
       "terragrunt run-all plan -destroy -out=tfdestroyplan -input=false %s %s";
   public static final String TERRAGRUNT_RUN_ALL_DESTROY_COMMAND_FORMAT =
-      "terragrunt run-all destroy -force --terragrunt-non-interactive %s %s";
+      "terragrunt run-all destroy %s --terragrunt-non-interactive %s %s";
   public static final String TERRAGRUNT_WORKSPACE_LIST_COMMAND_FORMAT = "terragrunt workspace list";
   public static final String TERRAGRUNT_RUN_ALL_REFRESH_COMMAND_FORMAT =
       "terragrunt run-all refresh -input=false %s %s";
@@ -53,4 +53,8 @@ public final class TerragruntConstants {
   public static final String DESTROY_PLAN = "Destroy Plan";
   public static final String DESTROY = "Destroy";
   public static final String WRAP_UP = "Wrap Up";
+  public static final String SKIP_ROLLBACK = "skipRollback";
+
+  public static final String FORCE_FLAG = "-force";
+  public static final String TF_DEFAULT_BINARY_PATH = "terraform";
 }

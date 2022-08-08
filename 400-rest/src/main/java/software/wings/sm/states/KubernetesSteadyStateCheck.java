@@ -20,11 +20,13 @@ import static java.util.stream.Collectors.toList;
 import io.harness.beans.Cd1SetupFields;
 import io.harness.beans.DelegateTask;
 import io.harness.beans.ExecutionStatus;
+import io.harness.beans.FeatureName;
 import io.harness.context.ContextElementType;
 import io.harness.delegate.beans.TaskData;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
+import io.harness.ff.FeatureFlagService;
 import io.harness.tasks.ResponseData;
 
 import software.wings.api.InstanceElement;
@@ -55,6 +57,7 @@ import software.wings.sm.InstanceStatusSummary;
 import software.wings.sm.State;
 import software.wings.sm.StateType;
 import software.wings.sm.WorkflowStandardParams;
+import software.wings.sm.WorkflowStandardParamsExtensionService;
 import software.wings.stencils.DefaultValue;
 
 import com.github.reinert.jjschema.Attributes;
@@ -78,6 +81,8 @@ public class KubernetesSteadyStateCheck extends State {
   @Inject private transient ActivityService activityService;
   @Inject private transient ContainerDeploymentManagerHelper containerDeploymentManagerHelper;
   @Inject private transient ContainerMasterUrlHelper containerMasterUrlHelper;
+  @Inject private transient WorkflowStandardParamsExtensionService workflowStandardParamsExtensionService;
+  @Inject private transient FeatureFlagService featureFlagService;
 
   @Getter @Setter @Attributes(title = "Labels") private List<Label> labels = Lists.newArrayList();
 
@@ -99,10 +104,15 @@ public class KubernetesSteadyStateCheck extends State {
     try {
       WorkflowStandardParams workflowStandardParams = context.getContextElement(ContextElementType.STANDARD);
       Application app = appService.get(context.getAppId());
-      Environment env = workflowStandardParams.getEnv();
+      Environment env = workflowStandardParamsExtensionService.getEnv(workflowStandardParams);
       ContainerInfrastructureMapping containerInfraMapping =
           (ContainerInfrastructureMapping) infrastructureMappingService.get(
               app.getUuid(), context.fetchInfraMappingId());
+
+      if (featureFlagService.isEnabled(FeatureName.DEPRECATE_K8S_STEADY_STATE_CHECK_STEP, app.getAccountId())) {
+        throw new InvalidRequestException(
+            "The Steady State Check step is based on old k8s V1 and is NOT SUPPORTED ANYMORE", USER);
+      }
 
       if (CollectionUtils.isEmpty(labels)) {
         throw new InvalidRequestException("Labels cannot be empty.");

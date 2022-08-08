@@ -169,6 +169,8 @@ public class LicenseServiceImpl implements LicenseService {
 
       LicenseInfo licenseInfo = account.getLicenseInfo();
 
+      checkAtLeastOneModuleLicenseActive(account, licenseInfo, ngLicenseDecision);
+
       if (licenseInfo == null) {
         return;
       }
@@ -621,5 +623,23 @@ public class LicenseServiceImpl implements LicenseService {
       return false;
     }
     return true;
+  }
+
+  /**
+   * Check ng licenses, cg cd license and ce license to determine if user account is actively used
+   * @param account
+   * @param licenseInfo
+   * @param ngLicenseDecision
+   */
+  private void checkAtLeastOneModuleLicenseActive(
+      Account account, LicenseInfo licenseInfo, CheckExpiryResultDTO ngLicenseDecision) {
+    CeLicenseInfo ceLicenseInfo = account.getCeLicenseInfo();
+    if (ngLicenseDecision.isNgAccountActive()
+        || (licenseInfo != null && licenseInfo.getAccountStatus().equals(AccountStatus.ACTIVE))
+        || (ceLicenseInfo != null && ceLicenseInfo.getExpiryTime() > System.currentTimeMillis())) {
+      accountService.updateAccountActivelyUsed(account.getUuid(), true);
+    } else {
+      accountService.updateAccountActivelyUsed(account.getUuid(), false);
+    }
   }
 }

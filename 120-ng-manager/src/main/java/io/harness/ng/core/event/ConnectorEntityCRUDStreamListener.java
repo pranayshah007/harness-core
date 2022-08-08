@@ -99,7 +99,8 @@ public class ConnectorEntityCRUDStreamListener implements MessageListener {
   }
 
   private boolean processOrganizationDeleteEvent(OrganizationEntityChangeDTO organizationEntityChangeDTO) {
-    return true;
+    return connectorEntityCRUDEventHandler.deleteAssociatedConnectors(
+        organizationEntityChangeDTO.getAccountIdentifier(), organizationEntityChangeDTO.getIdentifier(), null);
   }
 
   private boolean processOrganizationRestoreEvent(OrganizationEntityChangeDTO organizationEntityChangeDTO) {

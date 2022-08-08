@@ -295,7 +295,7 @@ public class ServiceInstanceServiceTest extends WingsBaseTest {
   public void shouldSaveServiceInstanceWithAccountId() {
     ServiceInstance serviceInstance = builder.build();
     when(wingsPersistence.saveAndGet(eq(ServiceInstance.class), any(ServiceInstance.class))).thenAnswer(invocation -> {
-      ServiceInstance serviceInstance1 = invocation.getArgumentAt(1, ServiceInstance.class);
+      ServiceInstance serviceInstance1 = invocation.getArgument(1, ServiceInstance.class);
       return serviceInstance1;
     });
     ServiceInstance savedServiceInstance = serviceInstanceService.save(serviceInstance);

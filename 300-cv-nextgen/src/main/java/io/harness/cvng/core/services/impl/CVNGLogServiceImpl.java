@@ -8,10 +8,9 @@
 package io.harness.cvng.core.services.impl;
 
 import static io.harness.cvng.CVConstants.TAG_ACCOUNT_ID;
-import static io.harness.cvng.CVConstants.TAG_DATA_SOURCE;
 import static io.harness.cvng.CVConstants.TAG_ONBOARDING;
-import static io.harness.cvng.CVConstants.TAG_UNRECORDED;
 import static io.harness.cvng.CVConstants.TAG_VERIFICATION_TYPE;
+import static io.harness.cvng.beans.cvnglog.CVNGLogType.EXECUTION_LOG;
 import static io.harness.cvng.beans.cvnglog.TraceableType.ONBOARDING;
 import static io.harness.cvng.beans.cvnglog.TraceableType.VERIFICATION_TASK;
 import static io.harness.persistence.HQuery.excludeAuthority;
@@ -19,7 +18,10 @@ import static io.harness.persistence.HQuery.excludeAuthority;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cvng.beans.cvnglog.CVNGLogDTO;
+import io.harness.cvng.beans.cvnglog.CVNGLogTag;
+import io.harness.cvng.beans.cvnglog.CVNGLogTag.TagType;
 import io.harness.cvng.beans.cvnglog.CVNGLogType;
+import io.harness.cvng.beans.cvnglog.ExecutionLogDTO;
 import io.harness.cvng.beans.cvnglog.TraceableType;
 import io.harness.cvng.core.beans.params.PageParams;
 import io.harness.cvng.core.beans.params.logsFilterParams.DeploymentLogsFilter;
@@ -47,8 +49,11 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import lombok.Builder;
+import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 import org.mongodb.morphia.UpdateOptions;
 import org.mongodb.morphia.query.Query;
@@ -69,11 +74,16 @@ public class CVNGLogServiceImpl implements CVNGLogService {
 
     callLogs.forEach(logRecord -> {
       CVNGLogRecord cvngLogRecord = CVNGLog.toCVNGLogRecord(logRecord);
-      cvngLogRecord.recordsMetrics(metricService, getTags(logRecord));
+      List<CVNGLogTag> cvngLogTags = new ArrayList<>();
+      TagResult tagResult = getTags(logRecord);
+      cvngLogTags.addAll(logRecord.getTags());
+      cvngLogTags.addAll(getCommonLogTags(logRecord));
+      cvngLogTags.addAll(tagResult.getCvngLogTags());
+      cvngLogRecord.setTags(cvngLogTags);
+      cvngLogRecord.recordsMetrics(metricService, tagResult.getTagsMap());
       cvngLogRecord.setCreatedAt(clock.instant().toEpochMilli());
       Instant startTime = Instant.ofEpochMilli(logRecord.getStartTime());
       Instant endTime = Instant.ofEpochMilli(logRecord.getEndTime());
-
       Query<CVNGLog> cvngLogQuery = hPersistence.createQuery(CVNGLog.class)
                                         .filter(CVNGLogKeys.accountId, logRecord.getAccountId())
                                         .filter(CVNGLogKeys.logType, logRecord.getType())
@@ -95,6 +105,28 @@ public class CVNGLogServiceImpl implements CVNGLogService {
                   .addToSet(CVNGLogKeys.logRecords, cvngLogRecord),
               options);
     });
+  }
+
+  private List<CVNGLogTag> getCommonLogTags(CVNGLogDTO cvngLogDTO) {
+    List<CVNGLogTag> cvngLogTags = new ArrayList<>();
+    cvngLogTags.add(CVNGLogTag.builder()
+                        .key("startTime")
+                        .value(Long.toString(cvngLogDTO.getStartTime()))
+                        .type(TagType.TIMESTAMP)
+                        .build());
+    cvngLogTags.add(CVNGLogTag.builder()
+                        .key("endTime")
+                        .value(Long.toString(cvngLogDTO.getEndTime()))
+                        .type(TagType.TIMESTAMP)
+                        .build());
+    cvngLogTags.add(
+        CVNGLogTag.builder().key("traceableId").value(cvngLogDTO.getTraceableId()).type(TagType.DEBUG).build());
+    cvngLogTags.add(CVNGLogTag.builder()
+                        .key("traceableType")
+                        .value(cvngLogDTO.getTraceableType().name())
+                        .type(TagType.DEBUG)
+                        .build());
+    return cvngLogTags;
   }
 
   @Override
@@ -123,6 +155,20 @@ public class CVNGLogServiceImpl implements CVNGLogService {
         .filter(CVNGLogKeys.traceableId, verificationTaskId)
         .filter(CVNGLogKeys.logType, cvngLogType)
         .asList();
+  }
+
+  @Override
+  public List<ExecutionLogDTO> getExecutionLogDTOs(String accountId, String verificationTaskId) {
+    return hPersistence.createQuery(CVNGLog.class)
+        .filter(CVNGLogKeys.accountId, accountId)
+        .filter(CVNGLogKeys.traceableId, verificationTaskId)
+        .filter(CVNGLogKeys.traceableType, VERIFICATION_TASK)
+        .filter(CVNGLogKeys.logType, EXECUTION_LOG)
+        .asList()
+        .stream()
+        .map(cvngLog -> (List<ExecutionLogDTO>) (List<?>) cvngLog.toCVNGLogDTOs())
+        .flatMap(List<ExecutionLogDTO>::stream)
+        .collect(Collectors.toList());
   }
 
   @Override
@@ -203,24 +249,35 @@ public class CVNGLogServiceImpl implements CVNGLogService {
         .asList();
   }
 
-  private Map<String, String> getTags(CVNGLogDTO cvngLogDTO) {
-    Map<String, String> tags = new HashMap<>();
-    tags.put(TAG_ACCOUNT_ID, cvngLogDTO.getAccountId());
+  private TagResult getTags(CVNGLogDTO cvngLogDTO) {
+    List<CVNGLogTag> cvngLogTags = new ArrayList<>();
+    Map<String, String> tagsMap = new HashMap<>();
+    tagsMap.put(TAG_ACCOUNT_ID, cvngLogDTO.getAccountId());
 
     if (cvngLogDTO.getType() == CVNGLogType.API_CALL_LOG) {
       if (cvngLogDTO.getTraceableType() == VERIFICATION_TASK) {
-        VerificationTask verificationTask = verificationTaskService.get(cvngLogDTO.getTraceableId());
-        if (verificationTask != null && verificationTask.getTags() != null) {
-          tags.putAll(verificationTask.getTags());
-        } else {
-          tags.put(TAG_DATA_SOURCE, TAG_UNRECORDED);
-          tags.put(TAG_VERIFICATION_TYPE, TAG_UNRECORDED);
+        Optional<VerificationTask> verificationTask = verificationTaskService.maybeGet(cvngLogDTO.getTraceableId());
+        if (verificationTask.isPresent()) {
+          tagsMap.putAll(verificationTask.get().getTags());
+          verificationTask.get().getTags().forEach(
+              (key, value) -> cvngLogTags.add(CVNGLogTag.builder().key(key).value(value).type(TagType.STRING).build()));
         }
       } else if (cvngLogDTO.getTraceableType() == ONBOARDING) {
-        tags.put(TAG_DATA_SOURCE, TAG_ONBOARDING);
-        tags.put(TAG_VERIFICATION_TYPE, TAG_ONBOARDING);
+        tagsMap.put(TAG_VERIFICATION_TYPE, TAG_ONBOARDING);
+      }
+    } else {
+      Optional<VerificationTask> verificationTask = verificationTaskService.maybeGet(cvngLogDTO.getTraceableId());
+      if (verificationTask.isPresent()) {
+        verificationTask.get().getTags().forEach(
+            (key, value) -> cvngLogTags.add(CVNGLogTag.builder().key(key).value(value).type(TagType.STRING).build()));
       }
     }
-    return tags;
+    return TagResult.builder().tagsMap(tagsMap).cvngLogTags(cvngLogTags).build();
+  }
+  @Value
+  @Builder
+  private static class TagResult {
+    Map<String, String> tagsMap;
+    List<CVNGLogTag> cvngLogTags;
   }
 }

@@ -21,7 +21,6 @@ import io.harness.cvng.servicelevelobjective.services.api.SLOErrorBudgetResetSer
 import io.harness.cvng.servicelevelobjective.services.api.SLOHealthIndicatorService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveService;
-import io.harness.data.structure.CollectionUtils;
 import io.harness.persistence.HPersistence;
 
 import com.google.common.base.Preconditions;
@@ -31,7 +30,6 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
 import org.mongodb.morphia.query.UpdateOperations;
 
 public class SLOHealthIndicatorServiceImpl implements SLOHealthIndicatorService {
@@ -61,6 +59,16 @@ public class SLOHealthIndicatorServiceImpl implements SLOHealthIndicatorService 
         .filter(SLOHealthIndicatorKeys.orgIdentifier, projectParams.getOrgIdentifier())
         .filter(SLOHealthIndicatorKeys.projectIdentifier, projectParams.getProjectIdentifier())
         .filter(SLOHealthIndicatorKeys.serviceLevelObjectiveIdentifier, serviceLevelObjectiveIdentifier)
+        .get();
+  }
+
+  @Override
+  public SLOHealthIndicator getBySLOEntity(ServiceLevelObjective serviceLevelObjective) {
+    return hPersistence.createQuery(SLOHealthIndicator.class)
+        .filter(SLOHealthIndicatorKeys.accountId, serviceLevelObjective.getAccountId())
+        .filter(SLOHealthIndicatorKeys.orgIdentifier, serviceLevelObjective.getOrgIdentifier())
+        .filter(SLOHealthIndicatorKeys.projectIdentifier, serviceLevelObjective.getProjectIdentifier())
+        .filter(SLOHealthIndicatorKeys.serviceLevelObjectiveIdentifier, serviceLevelObjective.getIdentifier())
         .get();
   }
 
@@ -118,13 +126,8 @@ public class SLOHealthIndicatorServiceImpl implements SLOHealthIndicatorService 
     LocalDateTime currentLocalDate = LocalDateTime.ofInstant(clock.instant(), serviceLevelObjective.getZoneOffset());
     List<SLOErrorBudgetResetDTO> errorBudgetResetDTOS =
         sloErrorBudgetResetService.getErrorBudgetResets(projectParams, serviceLevelObjective.getIdentifier());
-    int totalErrorBudgetMinutes = serviceLevelObjective.getActiveErrorBudgetMinutes(
-        CollectionUtils.emptyIfNull(errorBudgetResetDTOS)
-            .stream()
-            .sorted((dto1, dto2) -> dto1.getCreatedAt().compareTo(dto2.getCreatedAt()))
-            .map(dto -> dto.getErrorBudgetIncrementPercentage())
-            .collect(Collectors.toList()),
-        currentLocalDate);
+    int totalErrorBudgetMinutes =
+        serviceLevelObjective.getActiveErrorBudgetMinutes(errorBudgetResetDTOS, currentLocalDate);
     ServiceLevelObjective.TimePeriod timePeriod = serviceLevelObjective.getCurrentTimeRange(currentLocalDate);
     Instant currentTimeMinute = DateTimeUtils.roundDownTo1MinBoundary(clock.instant());
     SLOGraphData sloGraphData = sliRecordService.getGraphData(serviceLevelIndicator.getUuid(),
@@ -139,6 +142,7 @@ public class SLOHealthIndicatorServiceImpl implements SLOHealthIndicatorService 
               .serviceLevelObjectiveIdentifier(serviceLevelObjective.getIdentifier())
               .monitoredServiceIdentifier(serviceLevelObjective.getMonitoredServiceIdentifier())
               .errorBudgetRemainingPercentage(sloGraphData.getErrorBudgetRemainingPercentage())
+              .errorBudgetRemainingMinutes(sloGraphData.getErrorBudgetRemaining())
               .build();
       hPersistence.save(newSloHealthIndicator);
     } else {

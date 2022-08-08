@@ -28,7 +28,7 @@ import io.harness.rule.Owner;
 
 import software.wings.beans.TaskType;
 import software.wings.beans.artifact.ArtifactStreamAttributes;
-import software.wings.beans.artifact.AzureArtifactsArtifactStream.ProtocolType;
+import software.wings.beans.artifact.AzureArtifactsArtifactStreamProtocolType;
 import software.wings.beans.settings.azureartifacts.AzureArtifactsConfig;
 import software.wings.beans.settings.azureartifacts.AzureArtifactsPATConfig;
 import software.wings.helpers.ext.azure.devops.AzureArtifactsService;
@@ -55,8 +55,8 @@ public class AzureArtifactsCollectionTaskTest extends CategoryTest {
   private String azureDevopsUrl = "http://localhost:8881/artifactory/";
   private AzureArtifactsPATConfig azureArtifactsPATConfig =
       AzureArtifactsPATConfig.builder().azureDevopsUrl(azureDevopsUrl).pat("dummy123!".toCharArray()).build();
-  private TaskData mavenDelegateTask = prepareTaskData(ProtocolType.maven);
-  private TaskData nugetDelegateTask = prepareTaskData(ProtocolType.nuget);
+  private TaskData mavenDelegateTask = prepareTaskData(AzureArtifactsArtifactStreamProtocolType.maven);
+  private TaskData nugetDelegateTask = prepareTaskData(AzureArtifactsArtifactStreamProtocolType.nuget);
 
   @InjectMocks
   private AzureArtifactsCollectionTask mavenCollectionTask = new AzureArtifactsCollectionTask(
@@ -108,7 +108,7 @@ public class AzureArtifactsCollectionTaskTest extends CategoryTest {
             any(AzureArtifactsConfig.class), any(), any(), any(), eq(DELEGATE_ID2), any(), eq(ACCOUNT_ID), any());
   }
 
-  private TaskData prepareTaskData(ProtocolType protocolType) {
+  private TaskData prepareTaskData(AzureArtifactsArtifactStreamProtocolType protocolType) {
     return TaskData.builder()
         .async(true)
         .taskType(TaskType.AZURE_ARTIFACTS_COLLECTION.name())
@@ -123,7 +123,9 @@ public class AzureArtifactsCollectionTaskTest extends CategoryTest {
                         .project("PROJECT")
                         .feed("FEED")
                         .packageId("PACKAGE_ID")
-                        .packageName(protocolType == ProtocolType.nuget ? "PACKAGE_NAME" : "GROUP_ID:ARTIFACT_ID")
+                        .packageName(protocolType == AzureArtifactsArtifactStreamProtocolType.nuget
+                                ? "PACKAGE_NAME"
+                                : "GROUP_ID:ARTIFACT_ID")
                         .build())
                 .artifactMetadata(ImmutableMap.of("buildNo", VERSION, "version", VERSION, "versionId", VERSION_ID))
                 .build()})

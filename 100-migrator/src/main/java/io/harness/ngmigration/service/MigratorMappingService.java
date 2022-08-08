@@ -13,10 +13,11 @@ import io.harness.beans.MigratedEntityMapping;
 import io.harness.beans.MigratedEntityMapping.MigratedEntityMappingKeys;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.encryption.Scope;
+import io.harness.ngmigration.beans.NGYamlFile;
+import io.harness.ngmigration.beans.NgEntityDetail;
 import io.harness.persistence.HPersistence;
 
 import software.wings.ngmigration.CgBasicInfo;
-import software.wings.ngmigration.NGYamlFile;
 
 import com.google.inject.Inject;
 import java.util.List;
@@ -54,25 +55,38 @@ public class MigratorMappingService {
 
   public void mapCgNgEntity(NGYamlFile yamlFile) {
     MigratedEntityMapping mapping = ngMigrationFactory.getMethod(yamlFile.getType()).generateMappingEntity(yamlFile);
+    if (mapping == null) {
+      // Cases like Secret Manager where we are not saving the entity right now
+      return;
+    }
     if (!doesMappingExist(yamlFile)) {
       hPersistence.save(mapping);
     }
   }
 
   public boolean doesMappingExist(NGYamlFile yamlFile) {
-    CgBasicInfo basicInfo = yamlFile.getCgBasicInfo();
+    CgBasicInfo cgBasicInfo = yamlFile.getCgBasicInfo();
     MigratedEntityMapping mapping = ngMigrationFactory.getMethod(yamlFile.getType()).generateMappingEntity(yamlFile);
+    NgEntityDetail ngEntityDetail = NgEntityDetail.builder()
+                                        .identifier(mapping.getIdentifier())
+                                        .projectIdentifier(mapping.getProjectIdentifier())
+                                        .orgIdentifier(mapping.getOrgIdentifier())
+                                        .build();
+    return doesMappingExist(cgBasicInfo, ngEntityDetail);
+  }
+
+  public boolean doesMappingExist(CgBasicInfo cgBasicInfo, NgEntityDetail ngEntityDetail) {
     Query<MigratedEntityMapping> query =
         hPersistence.createQuery(MigratedEntityMapping.class)
-            .filter(MigratedEntityMappingKeys.accountId, basicInfo.getAccountId())
-            .filter(MigratedEntityMappingKeys.cgEntityId, basicInfo.getId())
-            .filter(MigratedEntityMappingKeys.entityType, basicInfo.getType().name())
-            .filter(MigratedEntityMappingKeys.accountIdentifier, basicInfo.getAccountId())
-            .filter(MigratedEntityMappingKeys.identifier, mapping.getIdentifier())
-            .filter(
-                MigratedEntityMappingKeys.scope, getScope(mapping.getOrgIdentifier(), mapping.getProjectIdentifier()));
-    if (StringUtils.isNotBlank(basicInfo.getAppId())) {
-      query.filter(MigratedEntityMappingKeys.appId, basicInfo.getAppId());
+            .filter(MigratedEntityMappingKeys.accountId, cgBasicInfo.getAccountId())
+            .filter(MigratedEntityMappingKeys.cgEntityId, cgBasicInfo.getId())
+            .filter(MigratedEntityMappingKeys.entityType, cgBasicInfo.getType().name())
+            .filter(MigratedEntityMappingKeys.accountIdentifier, cgBasicInfo.getAccountId())
+            .filter(MigratedEntityMappingKeys.identifier, ngEntityDetail.getIdentifier())
+            .filter(MigratedEntityMappingKeys.scope,
+                getScope(ngEntityDetail.getOrgIdentifier(), ngEntityDetail.getProjectIdentifier()));
+    if (StringUtils.isNotBlank(cgBasicInfo.getAppId())) {
+      query.filter(MigratedEntityMappingKeys.appId, cgBasicInfo.getAppId());
     }
     return EmptyPredicate.isNotEmpty(query.asList());
   }

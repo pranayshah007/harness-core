@@ -9,7 +9,8 @@ package io.harness.ccm.commons.beans.recommendation;
 
 public enum ResourceType {
   WORKLOAD,
-  NODE_POOL;
+  NODE_POOL,
+  ECS_SERVICE
   //  CLUSTER,
   //  AUTO_STOPPING;
 }

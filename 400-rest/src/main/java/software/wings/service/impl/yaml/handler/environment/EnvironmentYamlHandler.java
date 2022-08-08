@@ -45,7 +45,7 @@ import software.wings.beans.ServiceTemplate.ServiceTemplateKeys;
 import software.wings.beans.ServiceVariable;
 import software.wings.beans.ServiceVariable.OverrideType;
 import software.wings.beans.ServiceVariable.ServiceVariableBuilder;
-import software.wings.beans.ServiceVariable.Type;
+import software.wings.beans.ServiceVariableType;
 import software.wings.beans.yaml.ChangeContext;
 import software.wings.service.impl.yaml.handler.ArtifactVariableYamlHelper;
 import software.wings.service.impl.yaml.handler.BaseYamlHandler;
@@ -216,16 +216,16 @@ public class EnvironmentYamlHandler extends BaseYamlHandler<Environment.Yaml, En
     return serviceVariables.stream()
         .map(serviceVariable -> {
           List<AllowedValueYaml> allowedValueYamlList = new ArrayList<>();
-          Type variableType = serviceVariable.getType();
+          ServiceVariableType variableType = serviceVariable.getType();
           String value = null;
-          if (Type.ENCRYPTED_TEXT == variableType) {
+          if (ServiceVariableType.ENCRYPTED_TEXT == variableType) {
             value =
                 secretManager.getEncryptedYamlRef(serviceVariable.getAccountId(), serviceVariable.getEncryptedValue());
-          } else if (Type.TEXT == variableType) {
+          } else if (ServiceVariableType.TEXT == variableType) {
             if (serviceVariable.getValue() != null) {
               value = String.valueOf(serviceVariable.getValue());
             }
-          } else if (Type.ARTIFACT == variableType) {
+          } else if (ServiceVariableType.ARTIFACT == variableType) {
             serviceVariableYamlHelper.convertArtifactVariableToYaml(accountId, serviceVariable, allowedValueYamlList);
           } else {
             String msg = "Invalid value type: " + variableType + ". for variable: " + serviceVariable.getName()
@@ -540,16 +540,16 @@ public class EnvironmentYamlHandler extends BaseYamlHandler<Environment.Yaml, En
     }
 
     if ("TEXT".equals(overrideYaml.getValueType())) {
-      variableBuilder.type(Type.TEXT);
+      variableBuilder.type(ServiceVariableType.TEXT);
       variableBuilder.value(overrideYaml.getValue() != null ? overrideYaml.getValue().toCharArray() : null);
     } else if ("ENCRYPTED_TEXT".equals(overrideYaml.getValueType())) {
-      variableBuilder.type(Type.ENCRYPTED_TEXT);
+      variableBuilder.type(ServiceVariableType.ENCRYPTED_TEXT);
       String encryptedRecordId = yamlHelper.extractEncryptedRecordId(overrideYaml.getValue(), accountId);
       variableBuilder.encryptedValue(encryptedRecordId);
       variableBuilder.value(isBlank(encryptedRecordId) ? null : encryptedRecordId.toCharArray());
     } else if ("ARTIFACT".equals(overrideYaml.getValueType())) {
       if (featureFlagService.isEnabled(FeatureName.ARTIFACT_STREAM_REFACTOR, accountId)) {
-        variableBuilder.type(Type.ARTIFACT);
+        variableBuilder.type(ServiceVariableType.ARTIFACT);
         List<String> allowedList = artifactVariableYamlHelper.computeAllowedList(
             accountId, overrideYaml.getAllowedList(), overrideYaml.getName());
         variableBuilder.allowedList(allowedList);

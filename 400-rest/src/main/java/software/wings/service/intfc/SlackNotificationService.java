@@ -36,5 +36,5 @@ public interface SlackNotificationService {
    * @param message
    * @param slackWebhooks
    */
-  void sendJSONMessage(String message, List<String> slackWebhooks);
+  void sendJSONMessage(String message, List<String> slackWebhooks, String accountId);
 }

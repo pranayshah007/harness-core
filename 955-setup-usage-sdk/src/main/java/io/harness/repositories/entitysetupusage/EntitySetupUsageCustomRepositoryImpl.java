@@ -21,6 +21,8 @@ import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.aggregation.Aggregation;
+import org.springframework.data.mongodb.core.aggregation.AggregationResults;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.repository.support.PageableExecutionUtils;
@@ -55,5 +57,10 @@ public class EntitySetupUsageCustomRepositoryImpl implements EntitySetupUsageCus
     Query query = new Query(criteria);
     DeleteResult removeResult = mongoTemplate.remove(query, EntitySetupUsage.class);
     return removeResult.getDeletedCount();
+  }
+
+  @Override
+  public <T> AggregationResults<T> aggregate(Aggregation aggregation, Class<T> classToFillResultIn) {
+    return mongoTemplate.aggregate(aggregation, EntitySetupUsage.class, classToFillResultIn);
   }
 }

@@ -24,8 +24,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.times;
@@ -390,7 +390,7 @@ public class PcfCommandTaskHandlerTest extends CategoryTest {
     assertThat(pcfInfraMappingDataResponse.getRunningInstanceCount()).isEqualTo(2);
 
     // Fetch running count failure
-    doThrow(Exception.class)
+    doAnswer(invocation -> { throw new Exception(); })
         .when(cfDeploymentManager)
         .getPreviousReleases(any(CfRequestConfig.class), eq(appNamePrefix));
     cfCommandExecutionResponse =

@@ -1,4 +1,5 @@
 <#import "upgrader-role.ftl" as upgraderRole>
+<#import "mtls.ftl" as mtls>
 <#macro cronjob base64Secret fullDelegateName=delegateName>
 <#assign upgraderSaName = "upgrader-cronjob-sa">
 <@upgraderRole.cronJobRole upgraderSaName />
@@ -28,6 +29,9 @@ data:
     workloadName: ${fullDelegateName}
     namespace: ${delegateNamespace}
     containerName: delegate
+<#if mtlsEnabled == "true">
+    <@mtls.upgraderCfg />
+</#if>
     delegateConfig:
       accountId: ${accountId}
       managerHost: ${managerHostAndPort}
@@ -61,8 +65,14 @@ spec:
             volumeMounts:
               - name: config-volume
                 mountPath: /etc/config
+<#if mtlsEnabled == "true">
+              <@mtls.upgraderVolumeMount />
+</#if>
           volumes:
             - name: config-volume
               configMap:
                 name: ${fullDelegateName}-upgrader-config
+<#if mtlsEnabled == "true">
+            <@mtls.upgraderVolume fullDelegateName=fullDelegateName />
+</#if>
 </#macro>

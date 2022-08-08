@@ -1,0 +1,15 @@
+pipeline:
+  name: name
+  identifier: identifier
+  stages:
+    - stage:
+        identifier: stage1
+        name: stage1
+      parallel:
+        - stage:
+            identifier: parallel1
+            name: parallel stage
+        - stage:
+            identifier: parallel2
+            name: parallel stage2
+

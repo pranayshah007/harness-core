@@ -10,7 +10,6 @@ package io.harness.delegate.task.artifacts.artifactory;
 import static io.harness.rule.OwnerRule.MLUKIC;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -49,7 +48,9 @@ public class ArtifactoryArtifactTaskHelperTest extends CategoryTest {
   @Owner(developers = MLUKIC)
   @Category(UnitTests.class)
   public void testGetArtifactCollectResponseGetLastSuccessfulBuild() {
-    doNothing().when(artifactoryArtifactTaskHandler).decryptRequestDTOs(any());
+    doNothing()
+        .when(artifactoryArtifactTaskHandler)
+        .decryptRequestDTOs(ArtifactoryArtifactDelegateRequest.builder().build());
     ArtifactoryArtifactDelegateRequest artifactoryArtifactDelegateRequest =
         ArtifactoryArtifactDelegateRequest.builder()
             .artifactoryConnectorDTO(
@@ -68,7 +69,7 @@ public class ArtifactoryArtifactTaskHelperTest extends CategoryTest {
     assertThat(artifactTaskResponse).isNotNull();
     assertThat(artifactTaskResponse.getArtifactTaskExecutionResponse()).isEqualTo(artifactTaskExecutionResponse);
 
-    verify(artifactoryArtifactTaskHandler).decryptRequestDTOs(any());
+    verify(artifactoryArtifactTaskHandler).decryptRequestDTOs(artifactoryArtifactDelegateRequest);
     verify(artifactoryArtifactTaskHandler).getLastSuccessfulBuild(artifactoryArtifactDelegateRequest);
   }
 
@@ -76,7 +77,9 @@ public class ArtifactoryArtifactTaskHelperTest extends CategoryTest {
   @Owner(developers = MLUKIC)
   @Category(UnitTests.class)
   public void testGetArtifactCollectResponseGetBuilds() {
-    doNothing().when(artifactoryArtifactTaskHandler).decryptRequestDTOs(any());
+    doNothing()
+        .when(artifactoryArtifactTaskHandler)
+        .decryptRequestDTOs(ArtifactoryArtifactDelegateRequest.builder().build());
     ArtifactoryArtifactDelegateRequest artifactoryArtifactDelegateRequest =
         ArtifactoryArtifactDelegateRequest.builder()
             .artifactoryConnectorDTO(
@@ -95,7 +98,7 @@ public class ArtifactoryArtifactTaskHelperTest extends CategoryTest {
     assertThat(artifactTaskResponse).isNotNull();
     assertThat(artifactTaskResponse.getArtifactTaskExecutionResponse()).isEqualTo(artifactTaskExecutionResponse);
 
-    verify(artifactoryArtifactTaskHandler).decryptRequestDTOs(any());
+    verify(artifactoryArtifactTaskHandler).decryptRequestDTOs(artifactoryArtifactDelegateRequest);
     verify(artifactoryArtifactTaskHandler).getBuilds(artifactoryArtifactDelegateRequest);
   }
 
@@ -103,7 +106,9 @@ public class ArtifactoryArtifactTaskHelperTest extends CategoryTest {
   @Owner(developers = MLUKIC)
   @Category(UnitTests.class)
   public void testGetArtifactCollectResponseValidateArtifactServers() {
-    doNothing().when(artifactoryArtifactTaskHandler).decryptRequestDTOs(any());
+    doNothing()
+        .when(artifactoryArtifactTaskHandler)
+        .decryptRequestDTOs(ArtifactoryArtifactDelegateRequest.builder().build());
     ArtifactoryArtifactDelegateRequest artifactoryArtifactDelegateRequest =
         ArtifactoryArtifactDelegateRequest.builder()
             .artifactoryConnectorDTO(
@@ -122,7 +127,7 @@ public class ArtifactoryArtifactTaskHelperTest extends CategoryTest {
     assertThat(artifactTaskResponse).isNotNull();
     assertThat(artifactTaskResponse.getArtifactTaskExecutionResponse()).isEqualTo(artifactTaskExecutionResponse);
 
-    verify(artifactoryArtifactTaskHandler).decryptRequestDTOs(any());
+    verify(artifactoryArtifactTaskHandler).decryptRequestDTOs(artifactoryArtifactDelegateRequest);
     verify(artifactoryArtifactTaskHandler).validateArtifactServer(artifactoryArtifactDelegateRequest);
   }
 }

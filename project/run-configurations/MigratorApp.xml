@@ -7,9 +7,6 @@
                     blaze-command="run"
                     keep-in-sync="true">
         <blaze-target>//100-migrator:module</blaze-target>
-        <blaze-user-flag>
-            --jvmopt="-Xbootclasspath/p:${HOME}/.m2/repository/org/mortbay/jetty/alpn/alpn-boot/8.1.13.v20181017/alpn-boot-8.1.13.v20181017.jar"
-        </blaze-user-flag>
         <blaze-user-exe-flag>server</blaze-user-exe-flag>
         <blaze-user-exe-flag>$PROJECT_DIR$/../100-migrator/config.yml</blaze-user-exe-flag>
     </blaze-settings>

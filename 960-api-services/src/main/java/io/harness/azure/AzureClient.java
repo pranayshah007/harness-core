@@ -7,9 +7,6 @@
 
 package io.harness.azure;
 
-import static io.harness.azure.model.AzureConstants.SUBSCRIPTION_ID_NULL_VALIDATION_MSG;
-import static io.harness.eraro.ErrorCode.AZURE_CLIENT_EXCEPTION;
-import static io.harness.exception.WingsException.USER;
 import static io.harness.network.Http.getOkHttpClientBuilder;
 
 import static com.google.common.base.Charsets.UTF_8;
@@ -19,30 +16,40 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
 
 import io.harness.azure.client.AzureBlueprintRestClient;
 import io.harness.azure.client.AzureContainerRegistryRestClient;
+import io.harness.azure.client.AzureKubernetesRestClient;
 import io.harness.azure.client.AzureManagementRestClient;
 import io.harness.azure.context.AzureClientContext;
 import io.harness.azure.model.AzureConfig;
 import io.harness.azure.model.AzureConstants;
-import io.harness.exception.AzureClientException;
+import io.harness.azure.utility.AzureUtils;
+import io.harness.data.structure.EmptyPredicate;
+import io.harness.exception.AzureAuthenticationException;
 import io.harness.exception.ExceptionUtils;
-import io.harness.exception.InvalidCredentialsException;
-import io.harness.exception.InvalidRequestException;
+import io.harness.exception.NestedExceptionUtils;
+import io.harness.exception.WingsException;
 import io.harness.network.Http;
 
+import com.auth0.jwt.JWT;
+import com.auth0.jwt.algorithms.Algorithm;
 import com.google.inject.Singleton;
 import com.microsoft.aad.adal4j.AuthenticationException;
 import com.microsoft.azure.AzureEnvironment;
 import com.microsoft.azure.credentials.ApplicationTokenCredentials;
+import com.microsoft.azure.credentials.AzureTokenCredentials;
+import com.microsoft.azure.credentials.MSICredentials;
 import com.microsoft.azure.management.Azure;
 import com.microsoft.rest.LogLevel;
 import com.microsoft.rest.ServiceResponseBuilder;
 import com.microsoft.rest.serializer.JacksonAdapter;
-import java.io.IOException;
 import java.security.InvalidKeyException;
+import java.security.interfaces.RSAPrivateKey;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.OkHttpClient;
-import okhttp3.ResponseBody;
 import retrofit2.Retrofit;
 import retrofit2.adapter.rxjava.RxJavaCallAdapterFactory;
 import retrofit2.converter.jackson.JacksonConverterFactory;
@@ -65,93 +72,57 @@ public class AzureClient {
   }
 
   protected Azure getAzureClientWithDefaultSubscription(AzureConfig azureConfig) {
-    try {
-      ApplicationTokenCredentials credentials =
-          new ApplicationTokenCredentials(azureConfig.getClientId(), azureConfig.getTenantId(),
-              String.valueOf(azureConfig.getKey()), getAzureEnvironment(azureConfig.getAzureEnvironmentType()));
-
-      return Azure.configure().withLogLevel(LogLevel.NONE).authenticate(credentials).withDefaultSubscription();
-    } catch (Exception e) {
-      handleAzureAuthenticationException(e);
-    }
-    return null;
+    return getAzureClient(azureConfig, null);
   }
 
   protected Azure getAzureClient(AzureConfig azureConfig, String subscriptionId) {
-    if (isBlank(subscriptionId)) {
-      throw new IllegalArgumentException(SUBSCRIPTION_ID_NULL_VALIDATION_MSG);
-    }
-
     try {
-      ApplicationTokenCredentials credentials =
-          new ApplicationTokenCredentials(azureConfig.getClientId(), azureConfig.getTenantId(),
-              String.valueOf(azureConfig.getKey()), getAzureEnvironment(azureConfig.getAzureEnvironmentType()));
+      Azure.Authenticated authenticated =
+          Azure.configure().withLogLevel(LogLevel.NONE).authenticate(getAuthenticationTokenCredentials(azureConfig));
+      return isBlank(subscriptionId) ? authenticated.withDefaultSubscription()
+                                     : authenticated.withSubscription(subscriptionId);
 
-      return Azure.configure().withLogLevel(LogLevel.NONE).authenticate(credentials).withSubscription(subscriptionId);
     } catch (Exception e) {
       handleAzureAuthenticationException(e);
-      throw new InvalidRequestException("Failed to connect to Azure cluster. " + ExceptionUtils.getMessage(e), USER);
-    }
-  }
-
-  protected AzureEnvironment getAzureEnvironment(AzureEnvironmentType azureEnvironmentType) {
-    if (azureEnvironmentType == null) {
-      return AzureEnvironment.AZURE;
     }
 
-    switch (azureEnvironmentType) {
-      case AZURE_US_GOVERNMENT:
-        return AzureEnvironment.AZURE_US_GOVERNMENT;
-
-      case AZURE:
-      default:
-        return AzureEnvironment.AZURE;
-    }
+    return null;
   }
 
   protected void handleAzureAuthenticationException(Exception e) {
-    log.error("HandleAzureAuthenticationException: Exception:" + e);
+    String message = null;
 
     Throwable e1 = e;
     while (e1.getCause() != null) {
       e1 = e1.getCause();
-      if (e1 instanceof AuthenticationException) {
-        throw new InvalidCredentialsException("Invalid Azure credentials." + e1.getMessage(), USER);
+      if (e1 instanceof AuthenticationException || e1 instanceof InvalidKeyException) {
+        message = "Invalid Azure credentials." + e1.getMessage();
+      }
+      if (e1 instanceof InterruptedException) {
+        message = "Failed to connect to Azure cluster. " + ExceptionUtils.getMessage(e1);
       }
     }
-  }
 
-  protected void handleInvalidCertException(Exception e) {
-    log.error("HandleInvalidCertException: Exception:" + e);
-
-    Throwable e1 = e;
-    while (e1.getCause() != null) {
-      e1 = e1.getCause();
-      if (e1 instanceof InvalidKeyException) {
-        throw new InvalidCredentialsException("Invalid Azure credentials." + e1.getMessage(), USER);
-      }
-    }
-  }
-
-  protected void handleAzureErrorResponse(ResponseBody response, okhttp3.Response rawResponse) {
-    String errorJSONMsg;
-    try {
-      errorJSONMsg = response != null ? new String(response.bytes()) : rawResponse.toString();
-    } catch (IOException e) {
-      errorJSONMsg = rawResponse.toString();
-      log.error("Unable to parse Azure REST error response: ", e);
+    if (EmptyPredicate.isEmpty(message)) {
+      message = e.getMessage();
     }
 
-    throw new AzureClientException(errorJSONMsg, AZURE_CLIENT_EXCEPTION, USER);
+    throw NestedExceptionUtils.hintWithExplanationException("Check your Azure credentials",
+        "Failed to connect to Azure", new AzureAuthenticationException(message, WingsException.USER, null));
   }
 
   protected AzureManagementRestClient getAzureManagementRestClient(AzureEnvironmentType azureEnvironmentType) {
-    String url = getAzureEnvironment(azureEnvironmentType).resourceManagerEndpoint();
+    String url = AzureUtils.getAzureEnvironment(azureEnvironmentType).resourceManagerEndpoint();
     return getAzureRestClient(url, AzureManagementRestClient.class);
   }
 
+  protected AzureKubernetesRestClient getAzureKubernetesRestClient(AzureEnvironmentType azureEnvironmentType) {
+    String url = AzureUtils.getAzureEnvironment(azureEnvironmentType).resourceManagerEndpoint();
+    return getAzureRestClient(url, AzureKubernetesRestClient.class);
+  }
+
   protected AzureBlueprintRestClient getAzureBlueprintRestClient(AzureEnvironmentType azureEnvironmentType) {
-    String url = getAzureEnvironment(azureEnvironmentType).resourceManagerEndpoint();
+    String url = AzureUtils.getAzureEnvironment(azureEnvironmentType).resourceManagerEndpoint();
     return getAzureRestClient(url, AzureBlueprintRestClient.class);
   }
 
@@ -178,12 +149,9 @@ public class AzureClient {
 
   protected String getAzureBearerAuthToken(AzureConfig azureConfig) {
     try {
-      AzureEnvironment azureEnvironment = getAzureEnvironment(azureConfig.getAzureEnvironmentType());
-      ApplicationTokenCredentials credentials = new ApplicationTokenCredentials(
-          azureConfig.getClientId(), azureConfig.getTenantId(), new String(azureConfig.getKey()), azureEnvironment);
-
-      String token = credentials.getToken(azureEnvironment.managementEndpoint());
-      return "Bearer " + token;
+      return "Bearer "
+          + getAuthenticationTokenCredentials(azureConfig)
+                .getToken(AzureUtils.getAzureEnvironment(azureConfig.getAzureEnvironmentType()).managementEndpoint());
     } catch (Exception e) {
       handleAzureAuthenticationException(e);
     }
@@ -194,7 +162,50 @@ public class AzureClient {
     return "Basic " + encodeBase64String(format("%s:%s", username, password).getBytes(UTF_8));
   }
 
-  private String buildRepositoryHostUrl(String repositoryHost) {
+  protected String getAzureBearerAuthHeader(final String token) {
+    return format("Bearer %s", token);
+  }
+
+  protected String buildRepositoryHostUrl(String repositoryHost) {
     return format("https://%s%s", repositoryHost, repositoryHost.endsWith("/") ? "" : "/");
+  }
+
+  protected AzureTokenCredentials getAuthenticationTokenCredentials(AzureConfig azureConfig) {
+    AzureEnvironment azureEnvironment = AzureUtils.getAzureEnvironment(azureConfig.getAzureEnvironmentType());
+    switch (azureConfig.getAzureAuthenticationType()) {
+      case SERVICE_PRINCIPAL_CERT:
+        return new ApplicationTokenCredentials(
+            azureConfig.getClientId(), azureConfig.getTenantId(), azureConfig.getCert(), null, azureEnvironment);
+      case MANAGED_IDENTITY_SYSTEM_ASSIGNED:
+        return new MSICredentials(azureEnvironment);
+      case MANAGED_IDENTITY_USER_ASSIGNED:
+        return new MSICredentials(azureEnvironment).withClientId(azureConfig.getClientId());
+      default:
+        // by default, it should be SERVICE_PRINCIPAL_SECRET
+        return new ApplicationTokenCredentials(azureConfig.getClientId(), azureConfig.getTenantId(),
+            String.valueOf(azureConfig.getKey()), azureEnvironment);
+    }
+  }
+
+  protected String createClientAssertion(AzureConfig azureConfig) {
+    String certThumbprintInBase64 = AzureUtils.getCertificateThumbprintBase64Encoded(azureConfig.getCert());
+    RSAPrivateKey privateKey = AzureUtils.getPrivateKeyFromPEMFile(azureConfig.getCert());
+
+    Algorithm algorithm = Algorithm.RSA256(privateKey);
+
+    Map<String, Object> headers = new HashMap<>();
+    headers.put("x5t", certThumbprintInBase64);
+
+    long currentTimestamp = System.currentTimeMillis();
+    return JWT.create()
+        .withHeader(headers)
+        .withAudience(format("%s%s/oauth2/v2.0/token", AzureUtils.AUTH_URL, azureConfig.getTenantId()))
+        .withIssuer(azureConfig.getClientId())
+        .withIssuedAt(new Date(currentTimestamp))
+        .withNotBefore(new Date(currentTimestamp))
+        .withExpiresAt(new Date(currentTimestamp + 10 * 60 * 1000))
+        .withJWTId(UUID.randomUUID().toString())
+        .withSubject(azureConfig.getClientId())
+        .sign(algorithm);
   }
 }

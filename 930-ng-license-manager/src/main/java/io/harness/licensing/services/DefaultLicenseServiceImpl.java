@@ -7,6 +7,8 @@
 
 package io.harness.licensing.services;
 
+import static io.harness.configuration.DeployMode.DEPLOY_MODE;
+import static io.harness.configuration.DeployVariant.DEPLOY_VERSION;
 import static io.harness.licensing.LicenseModule.LICENSE_CACHE_NAMESPACE;
 import static io.harness.licensing.interfaces.ModuleLicenseImpl.TRIAL_DURATION;
 import static io.harness.remote.client.RestClientUtils.getResponse;
@@ -18,6 +20,8 @@ import io.harness.account.services.AccountService;
 import io.harness.beans.EmbeddedUser;
 import io.harness.ccm.license.CeLicenseInfoDTO;
 import io.harness.ccm.license.remote.CeLicenseClient;
+import io.harness.configuration.DeployMode;
+import io.harness.configuration.DeployVariant;
 import io.harness.exception.InvalidRequestException;
 import io.harness.licensing.Edition;
 import io.harness.licensing.EditionAction;
@@ -115,10 +119,17 @@ public class DefaultLicenseServiceImpl implements LicenseService {
   }
 
   @Override
+  public List<ModuleLicenseDTO> getEnabledModuleLicensesByModuleType(ModuleType moduleType, long expiryTime) {
+    List<ModuleLicense> licenses =
+        moduleLicenseRepository.findByModuleTypeAndExpiryTimeGreaterThanEqual(moduleType, expiryTime);
+    return licenses.stream().map(licenseObjectConverter::<ModuleLicenseDTO>toDTO).collect(Collectors.toList());
+  }
+
+  @Override
   public AccountLicenseDTO getAccountLicense(String accountIdentifier) {
     AccountLicenseDTO dto = AccountLicenseDTO.builder().accountId(accountIdentifier).build();
     Map<ModuleType, List<ModuleLicenseDTO>> allModuleLicenses = new HashMap<>();
-    for (ModuleType moduleType : ModuleType.values()) {
+    for (ModuleType moduleType : ModuleType.getModules()) {
       if (moduleType.isInternal()) {
         continue;
       }
@@ -142,44 +153,13 @@ public class DefaultLicenseServiceImpl implements LicenseService {
 
   @Override
   public ModuleLicenseDTO createModuleLicense(ModuleLicenseDTO moduleLicense) {
-    ModuleLicense license = licenseObjectConverter.toEntity(moduleLicense);
-    verifyAccountExistence(license.getAccountIdentifier());
-    // validate license existence
-    List<ModuleLicense> existingLicenses = moduleLicenseRepository.findByAccountIdentifierAndModuleType(
-        license.getAccountIdentifier(), license.getModuleType());
-    if (existingLicenses.size() != 0) {
-      throw new InvalidRequestException(
-          String.format("ModuleLicense with accountIdentifier [%s] and moduleType [%s] already exists",
-              license.getAccountIdentifier(), license.getModuleType()));
-    }
-
-    // Validate entity
-    license.setCreatedBy(EmbeddedUser.builder().email(getEmailFromPrincipal()).build());
-    ModuleLicense savedEntity = saveLicense(license);
-    // Send telemetry
-
-    log.info("Created license for module [{}] in account [{}]", savedEntity.getModuleType(),
-        savedEntity.getAccountIdentifier());
+    ModuleLicense savedEntity = createModuleLicense(licenseObjectConverter.toEntity(moduleLicense));
     return licenseObjectConverter.toDTO(savedEntity);
   }
 
   @Override
   public ModuleLicenseDTO updateModuleLicense(ModuleLicenseDTO moduleLicense) {
-    ModuleLicense license = licenseObjectConverter.toEntity(moduleLicense);
-    // validate the license
-    Optional<ModuleLicense> existingEntityOptional = moduleLicenseRepository.findById(moduleLicense.getId());
-    if (!existingEntityOptional.isPresent()) {
-      throw new NotFoundException(String.format("ModuleLicense with identifier [%s] not found", moduleLicense.getId()));
-    }
-
-    ModuleLicense existedLicense = existingEntityOptional.get();
-    ModuleLicense updateLicense = ModuleLicenseHelper.compareAndUpdate(existedLicense, license);
-
-    updateLicense.setLastUpdatedBy(EmbeddedUser.builder().email(getEmailFromPrincipal()).build());
-    ModuleLicense updatedLicense = saveLicense(updateLicense);
-
-    log.info("Updated license for module [{}] in account [{}]", updatedLicense.getModuleType(),
-        updatedLicense.getAccountIdentifier());
+    ModuleLicense updatedLicense = updateModuleLicense(licenseObjectConverter.toEntity(moduleLicense));
     return licenseObjectConverter.toDTO(updatedLicense);
   }
 
@@ -195,6 +175,53 @@ public class DefaultLicenseServiceImpl implements LicenseService {
     evictCache(moduleLicense.getAccountIdentifier(), moduleLicense.getModuleType());
     log.info("Deleted license [{}] for module [{}] in account [{}]", id, moduleLicense.getModuleType(),
         moduleLicense.getAccountIdentifier());
+  }
+
+  @Override
+  public ModuleLicense getCurrentLicense(String accountId, ModuleType moduleType) {
+    List<ModuleLicense> licenses = moduleLicenseRepository.findByAccountIdentifierAndModuleType(accountId, moduleType);
+    return ModuleLicenseHelper.getLatestLicense(licenses);
+  }
+
+  @Override
+  public ModuleLicense createModuleLicense(ModuleLicense moduleLicense) {
+    verifyAccountExistence(moduleLicense.getAccountIdentifier());
+    // validate license existence
+    List<ModuleLicense> existingLicenses = moduleLicenseRepository.findByAccountIdentifierAndModuleType(
+        moduleLicense.getAccountIdentifier(), moduleLicense.getModuleType());
+    if (existingLicenses.size() != 0) {
+      throw new InvalidRequestException(
+          String.format("ModuleLicense with accountIdentifier [%s] and moduleType [%s] already exists",
+              moduleLicense.getAccountIdentifier(), moduleLicense.getModuleType()));
+    }
+
+    // Validate entity
+    moduleLicense.setCreatedBy(EmbeddedUser.builder().email(getEmailFromPrincipal()).build());
+    ModuleLicense savedEntity = saveLicense(moduleLicense);
+    // Send telemetry
+
+    log.info("Created license for module [{}] in account [{}]", savedEntity.getModuleType(),
+        savedEntity.getAccountIdentifier());
+    return savedEntity;
+  }
+
+  @Override
+  public ModuleLicense updateModuleLicense(ModuleLicense moduleLicense) {
+    // validate the license
+    Optional<ModuleLicense> existingEntityOptional = moduleLicenseRepository.findById(moduleLicense.getId());
+    if (!existingEntityOptional.isPresent()) {
+      throw new NotFoundException(String.format("ModuleLicense with identifier [%s] not found", moduleLicense.getId()));
+    }
+
+    ModuleLicense existedLicense = existingEntityOptional.get();
+    ModuleLicense updateLicense = ModuleLicenseHelper.compareAndUpdate(existedLicense, moduleLicense);
+
+    updateLicense.setLastUpdatedBy(EmbeddedUser.builder().email(getEmailFromPrincipal()).build());
+    ModuleLicense updatedLicense = saveLicense(updateLicense);
+
+    log.info("Updated license for module [{}] in account [{}]", updatedLicense.getModuleType(),
+        updatedLicense.getAccountIdentifier());
+    return updatedLicense;
   }
 
   @Override
@@ -291,8 +318,12 @@ public class DefaultLicenseServiceImpl implements LicenseService {
     List<ModuleLicense> licenses = moduleLicenseRepository.findByAccountIdentifier(accountIdentifier);
     long currentTime = Instant.now().toEpochMilli();
     long maxExpiryTime = 0;
+    boolean atLeastOneLicenseActive = false;
     boolean isPaidOrFree = false;
     for (ModuleLicense moduleLicense : licenses) {
+      if (moduleLicense.isActive() == true) {
+        atLeastOneLicenseActive = true;
+      }
       if (Edition.FREE.equals(moduleLicense.getEdition())) {
         isPaidOrFree = true;
         continue;
@@ -323,6 +354,7 @@ public class DefaultLicenseServiceImpl implements LicenseService {
     return CheckExpiryResultDTO.builder()
         .shouldDelete(!isPaidOrFree && (maxExpiryTime <= currentTime))
         .expiryTime(maxExpiryTime)
+        .ngAccountActive(atLeastOneLicenseActive)
         .build();
   }
 
@@ -352,7 +384,16 @@ public class DefaultLicenseServiceImpl implements LicenseService {
         });
 
     if (!highestEditionLicense.isPresent()) {
-      return Edition.FREE;
+      Edition edition = Edition.FREE;
+      if (DeployMode.isOnPrem(System.getenv().get(DEPLOY_MODE))) {
+        if (DeployVariant.isCommunity(System.getenv().get(DEPLOY_VERSION))) {
+          edition = Edition.COMMUNITY;
+        } else {
+          edition = Edition.ENTERPRISE;
+        }
+      }
+      log.warn("Account {} has no highest edition license, fallback to {}", accountIdentifier, edition);
+      return edition;
     }
     return highestEditionLicense.get().getEdition();
   }
@@ -374,7 +415,7 @@ public class DefaultLicenseServiceImpl implements LicenseService {
   @Override
   public Map<ModuleType, Long> getLastUpdatedAtMap(String accountIdentifier) {
     Map<ModuleType, Long> lastUpdatedAtMap = new HashMap<>();
-    for (ModuleType moduleType : ModuleType.values()) {
+    for (ModuleType moduleType : ModuleType.getModules()) {
       if (moduleType.isInternal()) {
         continue;
       }

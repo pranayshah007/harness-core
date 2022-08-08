@@ -101,6 +101,7 @@ public final class CVNGLog implements PersistentEntity, UuidAware, AccountAccess
     List<CVNGLogDTO> cvngLogDTOS = new ArrayList<>();
     logRecords.forEach(logRecord -> {
       CVNGLogDTO cvngLogDTO = logRecord.toCVNGLogDTO();
+      cvngLogDTO.setTags(logRecord.getTags());
       commonFieldsSetUp(cvngLogDTO);
       cvngLogDTOS.add(cvngLogDTO);
     });

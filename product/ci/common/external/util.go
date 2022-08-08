@@ -100,6 +100,9 @@ func GetNudges() []logs.Nudge {
 			"If you are using self signed certs, Harness allows setting them "+
 				"at a global level on the delegate agent. Visit documentation for more details!",
 			errors.New("Certificate issue")),
+		logs.NewNudge("storage: bucket doesn't exist", "Ensure the bucket is created", errors.New("Bucket does not exist")),
+		logs.NewNudge("kaniko should only be run inside of a container", "Container runtime is not detected. Please add an environment variable named “container” with a value of “docker” to the stage's environment variables.",
+			errors.New("Kaniko container runtime error")),
 	}
 }
 

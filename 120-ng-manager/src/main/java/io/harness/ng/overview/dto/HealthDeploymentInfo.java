@@ -20,4 +20,5 @@ public class HealthDeploymentInfo {
   private TotalDeploymentInfo total;
   private io.harness.ng.overview.dto.DeploymentInfo success;
   private DeploymentInfo failure;
+  private DeploymentInfo active;
 }

@@ -7,6 +7,9 @@
 
 package io.harness.delegate.beans.connector.scm.github;
 
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.utils.FilePathUtils.removeStartingAndEndingSlash;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DecryptableEntity;
@@ -17,6 +20,11 @@ import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.scm.GitAuthType;
 import io.harness.delegate.beans.connector.scm.GitConnectionType;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
+import io.harness.delegate.beans.connector.scm.utils.ScmConnectorHelper;
+import io.harness.exception.InvalidRequestException;
+import io.harness.git.GitClientHelper;
+import io.harness.gitsync.beans.GitRepositoryDTO;
+import io.harness.utils.FilePathUtils;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -46,13 +54,17 @@ import org.hibernate.validator.constraints.NotBlank;
 @Schema(name = "GithubConnector", description = "This contains details of Github connectors")
 public class GithubConnectorDTO
     extends ConnectorConfigDTO implements ScmConnector, DelegateSelectable, ManagerExecutable {
-  @NotNull @JsonProperty("type") GitConnectionType connectionType;
+  @NotNull
+  @JsonProperty("type")
+  @Schema(type = "string", allowableValues = {"Account", "Repo"})
+  GitConnectionType connectionType;
   @NotBlank @NotNull String url;
   String validationRepo;
   @Valid @NotNull GithubAuthenticationDTO authentication;
   @Valid GithubApiAccessDTO apiAccess;
   Set<String> delegateSelectors;
   Boolean executeOnDelegate;
+  String gitConnectionUrl;
 
   @Builder
   public GithubConnectorDTO(GitConnectionType connectionType, String url, String validationRepo,
@@ -92,5 +104,51 @@ public class GithubConnectorDTO
   @JsonIgnore
   public ConnectorType getConnectorType() {
     return ConnectorType.GITHUB;
+  }
+
+  public String getUrl() {
+    if (isNotEmpty(gitConnectionUrl)) {
+      return gitConnectionUrl;
+    }
+    return url;
+  }
+
+  @Override
+  public String getGitConnectionUrl(GitRepositoryDTO gitRepositoryDTO) {
+    if (connectionType == GitConnectionType.REPO) {
+      String linkedRepo = getGitRepositoryDetails().getName();
+      if (!linkedRepo.equals(gitRepositoryDTO.getName())) {
+        throw new InvalidRequestException(
+            String.format("Provided repoName [%s] does not match with the repoName [%s] provided in connector.",
+                gitRepositoryDTO.getName(), linkedRepo));
+      }
+      return url;
+    }
+    return FilePathUtils.addEndingSlashIfMissing(url) + gitRepositoryDTO.getName();
+  }
+
+  @Override
+  public GitRepositoryDTO getGitRepositoryDetails() {
+    if (GitConnectionType.REPO.equals(connectionType)) {
+      return GitRepositoryDTO.builder()
+          .name(GitClientHelper.getGitRepo(url))
+          .org(GitClientHelper.getGitOwner(url, false))
+          .build();
+    }
+    return GitRepositoryDTO.builder().org(GitClientHelper.getGitOwner(url, true)).build();
+  }
+
+  @Override
+  public String getFileUrl(String branchName, String filePath, GitRepositoryDTO gitRepositoryDTO) {
+    ScmConnectorHelper.validateGetFileUrlParams(branchName, filePath);
+    String repoUrl = removeStartingAndEndingSlash(getGitConnectionUrl(gitRepositoryDTO));
+    String httpRepoUrl = GitClientHelper.getCompleteHTTPUrlForGithub(repoUrl);
+    filePath = removeStartingAndEndingSlash(filePath);
+    return String.format("%s/blob/%s/%s", httpRepoUrl, branchName, filePath);
+  }
+
+  @Override
+  public void validate() {
+    GitClientHelper.validateURL(url);
   }
 }

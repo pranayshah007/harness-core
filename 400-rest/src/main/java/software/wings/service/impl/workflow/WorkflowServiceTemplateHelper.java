@@ -20,6 +20,7 @@ import static software.wings.beans.EntityType.ENVIRONMENT;
 import static software.wings.beans.EntityType.INFRASTRUCTURE_DEFINITION;
 import static software.wings.beans.EntityType.INFRASTRUCTURE_MAPPING;
 import static software.wings.beans.EntityType.SERVICE;
+import static software.wings.sm.StateType.APPROVAL;
 
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toList;
@@ -53,6 +54,7 @@ import software.wings.sm.states.HelmDeployState.HelmDeployStateKeys;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -85,10 +87,34 @@ public class WorkflowServiceTemplateHelper {
   private static final String JENKINS_SERVER_VAR_DESC = "Variable for Jenkins server configuration entity";
   private static final String TIMEOUT_PROPERTY_KEY = "timeoutMillis";
   private static final String ARTIFACT_SOURCE_VAR_DESC = "Variable for Artifact source configuration entity";
+  protected static final Integer MAXIMUM_TIMEOUT = 2147400049;
 
   @Inject private TemplateService templateService;
   @Inject private TemplateHelper templateHelper;
   @Inject private ServiceResourceService serviceResourceService;
+
+  public void validatePhaseStepsProperties(PhaseStep phaseStep) {
+    phaseStep.getSteps().forEach(step -> {
+      if (step.getType().equals(APPROVAL.name())) {
+        Number timeoutMillis = (Number) step.getProperties().get(TIMEOUT_PROPERTY_KEY);
+        if (timeoutMillis != null
+            && (timeoutMillis instanceof BigInteger || timeoutMillis.longValue() > MAXIMUM_TIMEOUT)) {
+          throw new InvalidRequestException("Value exceeded maximum timeout of 3w 3d 20h 30m.");
+        }
+      }
+    });
+  }
+
+  public void validateWorkflowStepsProperties(Workflow newWorkflow) {
+    OrchestrationWorkflow orchestrationWorkflow = newWorkflow.getOrchestrationWorkflow();
+    if (orchestrationWorkflow instanceof CanaryOrchestrationWorkflow) {
+      CanaryOrchestrationWorkflow canaryOrchestrationWorkflow =
+          (CanaryOrchestrationWorkflow) newWorkflow.getOrchestrationWorkflow();
+      canaryOrchestrationWorkflow.getWorkflowPhases().forEach(workflowPhase -> {
+        workflowPhase.getPhaseSteps().forEach(phaseStep -> { validatePhaseStepsProperties(phaseStep); });
+      });
+    }
+  }
 
   public void updateLinkedPhaseStepTemplate(PhaseStep phaseStep, PhaseStep oldPhaseStep) {
     updateLinkedPhaseStepTemplate(phaseStep, oldPhaseStep, false);
@@ -157,6 +183,7 @@ public class WorkflowServiceTemplateHelper {
   }
 
   public void updateLinkedPhaseStepTemplate(PhaseStep phaseStep, PhaseStep oldPhaseStep, boolean fromYaml) {
+    validatePhaseStepsProperties(phaseStep);
     if (phaseStep != null) {
       StepSkipStrategy.validateStepSkipStrategies(phaseStep.getStepSkipStrategies());
     }

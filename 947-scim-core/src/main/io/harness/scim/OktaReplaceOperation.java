@@ -15,7 +15,11 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.ArrayList;
 import java.util.List;
+import lombok.ToString;
+import lombok.extern.slf4j.Slf4j;
 
+@ToString(callSuper = true, includeFieldNames = true)
+@Slf4j
 public class OktaReplaceOperation extends PatchOperation {
   @JsonProperty private final JsonNode value;
 
@@ -35,18 +39,30 @@ public class OktaReplaceOperation extends PatchOperation {
 
   @Override
   public <T> List<T> getValues(final Class<T> cls) throws JsonProcessingException {
-    ArrayList<T> replaceObjects = new ArrayList<>(value.size());
-    for (JsonNode node : value) {
-      replaceObjects.add(jsonObjectMapper.treeToValue(node, cls));
+    try {
+      ArrayList<T> replaceObjects = new ArrayList<>(value.size());
+      for (JsonNode node : value) {
+        log.info("Value {}", node.toString());
+        replaceObjects.add(jsonObjectMapper.treeToValue(node, cls));
+      }
+      return replaceObjects;
+    } catch (Exception e) {
+      throw new IllegalArgumentException("Replace Patch operation contains "
+          + "multiple values");
     }
-    return replaceObjects;
   }
 
   @Override
   public <T> T getValue(final Class<T> cls) throws JsonProcessingException {
+    log.info("Fetching Values for " + cls.getName());
+    log.info("Value logging {}", value);
     if (value.isArray()) {
-      throw new IllegalArgumentException("Replace Patch operation contains "
-          + "multiple values");
+      log.info("GetValues Logging" + getValues(cls).toString());
+      if (getValues(cls).get(0) != null) {
+        log.info("GetValues Inside " + getValues(cls).get(0).toString());
+      }
+
+      return getValues(cls).get(0);
     }
     return jsonObjectMapper.treeToValue(value, cls);
   }

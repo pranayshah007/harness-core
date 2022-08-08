@@ -131,7 +131,7 @@ public class AzureVMSSSyncTaskHandlerTest extends WingsBaseTest {
   public void testListVirtualMachineScaleSets() {
     doReturn(Collections.singletonList(virtualMachineScaleSet))
         .when(mockAzureComputeClient)
-        .listVirtualMachineScaleSetsByResourceGroupName(any(), anyString(), anyString());
+        .listVirtualMachineScaleSetsByResourceGroupName(any(), any(), any());
 
     AzureVMSSListVirtualMachineScaleSetsParameters azureVMSSListVirtualMachineScaleSetsParameters =
         AzureVMSSListVirtualMachineScaleSetsParameters.builder().build();
@@ -154,7 +154,7 @@ public class AzureVMSSSyncTaskHandlerTest extends WingsBaseTest {
   public void testGetVirtualMachineScaleSets() {
     doReturn(Optional.of(virtualMachineScaleSet))
         .when(mockAzureComputeClient)
-        .getVirtualMachineScaleSetByName(any(), anyString(), anyString(), any());
+        .getVirtualMachineScaleSetByName(any(), any(), any(), any());
 
     PagedList<VirtualMachineScaleSetVM> pageList = getPageList();
     pageList.add(virtualMachineScaleSetVM);

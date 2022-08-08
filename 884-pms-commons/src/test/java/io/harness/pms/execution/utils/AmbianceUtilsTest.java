@@ -12,6 +12,8 @@ import static io.harness.rule.OwnerRule.GARVIT;
 import static io.harness.rule.OwnerRule.PRASHANT;
 import static io.harness.rule.OwnerRule.SAHIL;
 
+import static junit.framework.TestCase.assertFalse;
+import static junit.framework.TestCase.assertTrue;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -23,6 +25,8 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.NGAccess;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
+import io.harness.pms.contracts.execution.MatrixMetadata;
+import io.harness.pms.contracts.execution.StrategyMetadata;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.rule.Owner;
@@ -218,6 +222,59 @@ public class AmbianceUtilsTest extends CategoryTest {
         .build();
   }
 
+  private Ambiance buildAmbianceUsingStrategyMetadata() {
+    Level phaseLevel =
+        Level.newBuilder()
+            .setRuntimeId(PHASE_RUNTIME_ID)
+            .setSetupId(PHASE_SETUP_ID)
+            .setStartTs(1)
+            .setIdentifier("i1")
+            .setStepType(StepType.newBuilder().setType("PHASE").setStepCategory(StepCategory.STEP).build())
+            .build();
+    Level sectionLevel =
+        Level.newBuilder()
+            .setRuntimeId(SECTION_RUNTIME_ID)
+            .setSetupId(SECTION_SETUP_ID)
+            .setGroup("SECTION")
+            .setStartTs(2)
+            .setIdentifier("i2")
+            .setStepType(StepType.newBuilder().setType("SECTION").setStepCategory(StepCategory.STAGE).build())
+            .build();
+    Level strategyLevel =
+        Level.newBuilder()
+            .setRuntimeId("STRATEGY_RUNTIME_ID")
+            .setSetupId("STRATEGY_SETUP_ID")
+            .setGroup("STRATEGY")
+            .setStartTs(2)
+            .setIdentifier("i2")
+            .setStepType(StepType.newBuilder().setType("STRATEGY").setStepCategory(StepCategory.STRATEGY).build())
+            .build();
+    Level stageLevel =
+        Level.newBuilder()
+            .setRuntimeId(SECTION_RUNTIME_ID)
+            .setSetupId(SECTION_SETUP_ID)
+            .setGroup("STAGE")
+            .setStartTs(3)
+            .setIdentifier("i3")
+            .setStepType(StepType.newBuilder().setType("SECTION").setStepCategory(StepCategory.STAGE).build())
+            .setStrategyMetadata(StrategyMetadata.newBuilder()
+                                     .setMatrixMetadata(MatrixMetadata.newBuilder().addMatrixCombination(1).build())
+                                     .build())
+            .build();
+    List<Level> levels = new ArrayList<>();
+    levels.add(phaseLevel);
+    levels.add(sectionLevel);
+    levels.add(strategyLevel);
+    levels.add(stageLevel);
+    return Ambiance.newBuilder()
+        .setPlanExecutionId(PLAN_EXECUTION_ID)
+        .setPlanId(PLAN_ID)
+        .putAllSetupAbstractions(ImmutableMap.of(
+            "accountId", ACCOUNT_ID, "orgIdentifier", ORG_ID, "projectIdentifier", PROJECT_ID, "appId", APP_ID))
+        .addAllLevels(levels)
+        .build();
+  }
+
   @Test
   @Owner(developers = SAHIL)
   @Category(UnitTests.class)
@@ -245,5 +302,60 @@ public class AmbianceUtilsTest extends CategoryTest {
     String parentRuntimeId = AmbianceUtils.obtainParentRuntimeId(ambiance);
     assertThat(parentRuntimeId).isNotNull();
     assertThat(parentRuntimeId).isEqualTo(SECTION_RUNTIME_ID);
+  }
+
+  @Test
+  @Owner(developers = SAHIL)
+  @Category(UnitTests.class)
+  public void testGetStrategyLevelFromAmbiance() {
+    Ambiance ambiance = buildAmbianceUsingStrategyMetadata();
+    Optional<Level> strategyLevel = AmbianceUtils.getStrategyLevelFromAmbiance(ambiance);
+    assertThat(strategyLevel.isPresent()).isTrue();
+  }
+
+  @Test
+  @Owner(developers = SAHIL)
+  @Category(UnitTests.class)
+  public void testIsCurrentStrategyLevelAtStage() {
+    Ambiance ambiance = Ambiance.newBuilder().addLevels(Level.newBuilder().buildPartial()).build();
+    assertFalse(AmbianceUtils.isCurrentStrategyLevelAtStage(ambiance));
+    ambiance = Ambiance.newBuilder()
+                   .addLevels(Level.newBuilder().setGroup("STEPS").buildPartial())
+                   .addLevels(Level.newBuilder().buildPartial())
+                   .build();
+    assertFalse(AmbianceUtils.isCurrentStrategyLevelAtStage(ambiance));
+
+    ambiance = Ambiance.newBuilder()
+                   .addLevels(Level.newBuilder().setGroup("STAGES").buildPartial())
+                   .addLevels(Level.newBuilder().buildPartial())
+                   .build();
+    assertTrue(AmbianceUtils.isCurrentStrategyLevelAtStage(ambiance));
+
+    ambiance = Ambiance.newBuilder()
+                   .addLevels(Level.newBuilder().setGroup("STEPS").buildPartial())
+                   .addLevels(Level.newBuilder()
+                                  .setStepType(StepType.newBuilder().setStepCategory(StepCategory.FORK).build())
+                                  .buildPartial())
+                   .addLevels(Level.newBuilder().buildPartial())
+                   .build();
+    assertFalse(AmbianceUtils.isCurrentStrategyLevelAtStage(ambiance));
+
+    ambiance = Ambiance.newBuilder()
+                   .addLevels(Level.newBuilder().setGroup("STAGES").buildPartial())
+                   .addLevels(Level.newBuilder()
+                                  .setStepType(StepType.newBuilder().setStepCategory(StepCategory.STAGE).build())
+                                  .buildPartial())
+                   .addLevels(Level.newBuilder().buildPartial())
+                   .build();
+    assertFalse(AmbianceUtils.isCurrentStrategyLevelAtStage(ambiance));
+
+    ambiance = Ambiance.newBuilder()
+                   .addLevels(Level.newBuilder().setGroup("STAGES").buildPartial())
+                   .addLevels(Level.newBuilder()
+                                  .setStepType(StepType.newBuilder().setStepCategory(StepCategory.FORK).build())
+                                  .buildPartial())
+                   .addLevels(Level.newBuilder().buildPartial())
+                   .build();
+    assertTrue(AmbianceUtils.isCurrentStrategyLevelAtStage(ambiance));
   }
 }

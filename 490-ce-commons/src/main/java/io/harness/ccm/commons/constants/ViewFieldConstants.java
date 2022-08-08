@@ -12,6 +12,7 @@ public interface ViewFieldConstants {
   String AWS_ACCOUNT_FIELD = "Account";
 
   String CLUSTER_NAME_FIELD_ID = "clusterName";
+  String CLUSTER_TYPE_FIELD_ID = "clusterType";
   String NAMESPACE_FIELD_ID = "namespace";
   String WORKLOAD_NAME_FIELD_ID = "workloadName";
   String INSTANCE_NAME_FIELD_ID = "instanceName";
@@ -24,10 +25,14 @@ public interface ViewFieldConstants {
   String TASK_FIELD_ID = "taskId";
   String LAUNCH_TYPE_FIELD_ID = "launchType";
 
-  String AWS_SERVICE_FIELD_ID = "awsServicecode";
+  String AWS_SERVICE_FIELD_ID = "awsServiceCode";
   String AWS_ACCOUNT_FIELD_ID = "awsUsageAccountId";
   String AWS_INSTANCE_TYPE_FIELD_ID = "awsInstancetype";
-  String AWS_USAGE_TYPE_ID = "awsUsagetype";
+  String AWS_USAGE_TYPE_ID = "awsUsageType";
+
+  String AZURE_SUBSCRIPTION_GUID = "azureSubscriptionGuid";
+  String AZURE_RESOURCE_GROUP = "azureResourceGroup";
+  String AZURE_METER_CATEGORY = "azureMeterCategory";
 
   String GCP_PRODUCT_FIELD_ID = "gcpProduct";
   String GCP_PROJECT_FIELD_ID = "gcpProjectId";

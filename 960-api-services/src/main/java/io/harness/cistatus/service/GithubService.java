@@ -8,6 +8,7 @@
 package io.harness.cistatus.service;
 
 import java.util.Map;
+import org.json.JSONObject;
 
 public interface GithubService {
   String getToken(GithubAppConfig githubAppConfig);
@@ -16,4 +17,6 @@ public interface GithubService {
       Map<String, Object> bodyObjectMap);
 
   String findPR(String apiUrl, String token, String owner, String repo, String prNumber);
+
+  JSONObject mergePR(String apiUrl, String token, String owner, String repo, String prNumber);
 }

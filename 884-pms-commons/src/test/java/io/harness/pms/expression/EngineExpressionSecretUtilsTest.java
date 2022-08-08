@@ -15,6 +15,7 @@ import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.expression.EngineExpressionSecretUtils;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 
@@ -53,6 +54,7 @@ public class EngineExpressionSecretUtilsTest extends CategoryTest {
                         .dummyB3(ParameterField.createExpressionField(
                             true, "dummyB3 ${dummyB3} ${ngSecretManager.obtain(\"dummyB3\", 123)}", null, false))
                         .dummyB4(ParameterField.createValueField(dummyB2))
+                        .awsExpression("${AWS::StackName}")
                         .build();
 
     DummyA res = (DummyA) EngineExpressionSecretUtils.revertSecrets(dummyA);
@@ -79,6 +81,7 @@ public class EngineExpressionSecretUtilsTest extends CategoryTest {
     assertThat(res.getDummyB1().getInt3().getExpressionValue()).isEqualTo("int3 ${int3} <+secrets.getValue(\"int3\")>");
     assertThat(res.getDummyB4().getValue().getInt3().getExpressionValue())
         .isEqualTo("int3 ${int3} <+secrets.getValue(\"int3\")>");
+    assertThat(res.getAwsExpression()).isEqualTo("${AWS::StackName}");
   }
 
   @Value
@@ -91,6 +94,7 @@ public class EngineExpressionSecretUtilsTest extends CategoryTest {
     DummyB dummyB2;
     ParameterField<DummyB> dummyB3;
     ParameterField<DummyB> dummyB4;
+    String awsExpression;
   }
 
   @Value

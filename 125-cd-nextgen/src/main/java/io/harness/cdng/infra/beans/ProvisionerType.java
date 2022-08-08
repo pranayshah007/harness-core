@@ -8,6 +8,9 @@
 package io.harness.cdng.infra.beans;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.cdng.pipeline.NGStepType.CF_CREATE_STACK;
+import static io.harness.cdng.pipeline.NGStepType.CF_DELETE_STACK;
+import static io.harness.cdng.pipeline.NGStepType.CF_ROLLBACK_STACK;
 import static io.harness.cdng.pipeline.NGStepType.TERRAFORM_APPLY;
 import static io.harness.cdng.pipeline.NGStepType.TERRAFORM_DESTROY;
 import static io.harness.cdng.pipeline.NGStepType.TERRAFORM_PLAN;
@@ -29,9 +32,9 @@ public enum ProvisionerType {
   AZURE_ARM("ARM"),
   SHELL_SCRIPT_PROVISIONER("Script");
 
-  private static final Set<ProvisionerType> supportedTypes = ImmutableSet.of(TERRAFORM);
-  private static final List<NGStepType> supportedSteps =
-      Arrays.asList(TERRAFORM_APPLY, TERRAFORM_PLAN, TERRAFORM_DESTROY, TERRAFORM_ROLLBACK);
+  private static final Set<ProvisionerType> supportedTypes = ImmutableSet.of(TERRAFORM, CLOUD_FORMATION);
+  private static final List<NGStepType> supportedSteps = Arrays.asList(TERRAFORM_APPLY, TERRAFORM_PLAN,
+      TERRAFORM_DESTROY, TERRAFORM_ROLLBACK, CF_CREATE_STACK, CF_DELETE_STACK, CF_ROLLBACK_STACK);
 
   @Getter private final String displayName;
   ProvisionerType(String displayName) {

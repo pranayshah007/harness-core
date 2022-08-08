@@ -24,6 +24,11 @@ input UpdateEncryptedText {
   inheritScopesFromSM: Boolean
 }
 
+type EncryptedDataParamsOutput {
+  name: String
+  value: String
+}
+
 input EncryptedDataParams {
   name: String
   value: String

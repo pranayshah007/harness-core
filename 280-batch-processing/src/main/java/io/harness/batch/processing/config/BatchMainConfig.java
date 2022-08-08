@@ -12,6 +12,7 @@ import io.harness.cf.CfClientConfig;
 import io.harness.event.handler.segment.SegmentConfig;
 import io.harness.ff.FeatureFlagConfig;
 import io.harness.mongo.MongoConfig;
+import io.harness.notification.NotificationClientConfiguration;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.timescaledb.TimeScaleDBConfig;
 
@@ -48,9 +49,12 @@ public class BatchMainConfig {
   @JsonProperty("banzaiConfig") private BanzaiConfig banzaiConfig;
   @JsonProperty("ngManagerServiceHttpClientConfig") private ServiceHttpClientConfig ngManagerServiceHttpClientConfig;
   @JsonProperty("ngManagerServiceSecret") private String ngManagerServiceSecret;
+  @JsonProperty("ceNgServiceHttpClientConfig") private ServiceHttpClientConfig ceNgServiceHttpClientConfig;
+  @JsonProperty("ceNgServiceSecret") private String ceNgServiceSecret;
   @JsonProperty("banzaiRecommenderConfig") private ServiceHttpClientConfig banzaiRecommenderConfig;
   @JsonProperty("connectorHealthUpdateJobConfig") private ConnectorHealthUpdateJobConfig connectorHealthUpdateJobConfig;
   @JsonProperty("awsAccountTagsCollectionJobConfig")
   private AwsAccountTagsCollectionJobConfig awsAccountTagsCollectionJobConfig;
   @JsonProperty("gcpConfig") private GcpConfig gcpConfig;
+  @JsonProperty("notificationClient") private NotificationClientConfiguration notificationClientConfiguration;
 }

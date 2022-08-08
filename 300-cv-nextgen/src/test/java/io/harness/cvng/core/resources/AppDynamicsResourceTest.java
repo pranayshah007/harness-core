@@ -34,6 +34,7 @@ import io.harness.cvng.core.services.api.AppDynamicsService;
 import io.harness.cvng.core.services.api.AppDynamicsServiceimplTest;
 import io.harness.cvng.core.services.api.MetricPackService;
 import io.harness.cvng.core.services.api.OnboardingService;
+import io.harness.ng.core.CorrelationContext;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.rule.Owner;
 import io.harness.rule.ResourceTestRule;
@@ -87,11 +88,11 @@ public class AppDynamicsResourceTest extends CvNextGenTestBase {
                             .get();
     assertThat(response.getStatus()).isEqualTo(400);
     String responseJson = response.readEntity(String.class);
-    assertThat(responseJson).contains("{\"field\":\"appName\",\"message\":\"may not be null\"}");
-    assertThat(responseJson).contains("{\"field\":\"projectIdentifier\",\"message\":\"may not be null\"}");
-    assertThat(responseJson).contains("{\"field\":\"connectorIdentifier\",\"message\":\"may not be null\"}");
-    assertThat(responseJson).contains("{\"field\":\"orgIdentifier\",\"message\":\"may not be null\"}");
-    assertThat(responseJson).contains("{\"field\":\"accountId\",\"message\":\"may not be null\"}");
+    assertThat(responseJson).contains("{\"field\":\"appName\",\"message\":\"must not be null\"}");
+    assertThat(responseJson).contains("{\"field\":\"projectIdentifier\",\"message\":\"must not be null\"}");
+    assertThat(responseJson).contains("{\"field\":\"connectorIdentifier\",\"message\":\"must not be null\"}");
+    assertThat(responseJson).contains("{\"field\":\"orgIdentifier\",\"message\":\"must not be null\"}");
+    assertThat(responseJson).contains("{\"field\":\"accountId\",\"message\":\"must not be null\"}");
   }
 
   @SneakyThrows
@@ -105,13 +106,13 @@ public class AppDynamicsResourceTest extends CvNextGenTestBase {
                             .get();
     assertThat(response.getStatus()).isEqualTo(400);
     String responseJson = response.readEntity(String.class);
-    assertThat(responseJson).contains("{\"field\":\"appName\",\"message\":\"may not be null\"}");
-    assertThat(responseJson).contains("{\"field\":\"projectIdentifier\",\"message\":\"may not be null\"}");
-    assertThat(responseJson).contains("{\"field\":\"connectorIdentifier\",\"message\":\"may not be null\"}");
-    assertThat(responseJson).contains("{\"field\":\"orgIdentifier\",\"message\":\"may not be null\"}");
-    assertThat(responseJson).contains("{\"field\":\"accountId\",\"message\":\"may not be null\"}");
-    assertThat(responseJson).contains("{\"field\":\"tier\",\"message\":\"may not be null\"}");
-    assertThat(responseJson).contains("{\"field\":\"baseFolder\",\"message\":\"may not be null\"}");
+    assertThat(responseJson).contains("{\"field\":\"appName\",\"message\":\"must not be null\"}");
+    assertThat(responseJson).contains("{\"field\":\"projectIdentifier\",\"message\":\"must not be null\"}");
+    assertThat(responseJson).contains("{\"field\":\"connectorIdentifier\",\"message\":\"must not be null\"}");
+    assertThat(responseJson).contains("{\"field\":\"orgIdentifier\",\"message\":\"must not be null\"}");
+    assertThat(responseJson).contains("{\"field\":\"accountId\",\"message\":\"must not be null\"}");
+    assertThat(responseJson).contains("{\"field\":\"tier\",\"message\":\"must not be null\"}");
+    assertThat(responseJson).contains("{\"field\":\"baseFolder\",\"message\":\"must not be null\"}");
   }
 
   @SneakyThrows
@@ -125,13 +126,13 @@ public class AppDynamicsResourceTest extends CvNextGenTestBase {
                             .get();
     assertThat(response.getStatus()).isEqualTo(400);
     String responseJson = response.readEntity(String.class);
-    assertThat(responseJson).contains("{\"field\":\"appName\",\"message\":\"may not be null\"}");
-    assertThat(responseJson).contains("{\"field\":\"projectIdentifier\",\"message\":\"may not be null\"}");
-    assertThat(responseJson).contains("{\"field\":\"connectorIdentifier\",\"message\":\"may not be null\"}");
-    assertThat(responseJson).contains("{\"field\":\"orgIdentifier\",\"message\":\"may not be null\"}");
-    assertThat(responseJson).contains("{\"field\":\"accountId\",\"message\":\"may not be null\"}");
-    assertThat(responseJson).contains("{\"field\":\"tier\",\"message\":\"may not be null\"}");
-    assertThat(responseJson).contains("{\"field\":\"baseFolder\",\"message\":\"may not be null\"}");
+    assertThat(responseJson).contains("{\"field\":\"appName\",\"message\":\"must not be null\"}");
+    assertThat(responseJson).contains("{\"field\":\"projectIdentifier\",\"message\":\"must not be null\"}");
+    assertThat(responseJson).contains("{\"field\":\"connectorIdentifier\",\"message\":\"must not be null\"}");
+    assertThat(responseJson).contains("{\"field\":\"orgIdentifier\",\"message\":\"must not be null\"}");
+    assertThat(responseJson).contains("{\"field\":\"accountId\",\"message\":\"must not be null\"}");
+    assertThat(responseJson).contains("{\"field\":\"tier\",\"message\":\"must not be null\"}");
+    assertThat(responseJson).contains("{\"field\":\"baseFolder\",\"message\":\"must not be null\"}");
   }
 
   @SneakyThrows
@@ -307,6 +308,119 @@ public class AppDynamicsResourceTest extends CvNextGenTestBase {
     assertThat(appdynamicsMetricDataResponse.getDataPoints().size()).isEqualTo(4);
     assertThat(appdynamicsMetricDataResponse.getDataPoints().get(0).getTimestamp()).isEqualTo(1595760660000L);
     assertThat(appdynamicsMetricDataResponse.getDataPoints().get(0).getValue()).isEqualTo(233.0);
+  }
+
+  @SneakyThrows
+  @Test
+  @Owner(developers = ABHIJITH)
+  @Category(UnitTests.class)
+  public void testGetMetricDataV2() {
+    final List<MetricPackDTO> metricPacks =
+        metricPackService.getMetricPacks(DataSourceType.APP_DYNAMICS, builderFactory.getContext().getAccountId(),
+            builderFactory.getContext().getOrgIdentifier(), builderFactory.getContext().getProjectIdentifier());
+    assertThat(metricPacks).isNotEmpty();
+
+    String textLoad = Resources.toString(
+        AppDynamicsServiceimplTest.class.getResource("/timeseries/appd_metric_data_validation.json"), Charsets.UTF_8);
+    JsonUtils.asObject(textLoad, OnboardingResponseDTO.class);
+
+    DataCollectionRequest request = AppDynamicSingleMetricDataRequest.builder()
+                                        .applicationName("appName")
+                                        .endTime(builderFactory.getClock().instant())
+                                        .startTime(builderFactory.getClock().instant().minus(Duration.ofHours(1)))
+                                        .metricPath("baseFolder|tier|metricPath")
+                                        .type(DataCollectionRequestType.APPDYNAMICS_GET_SINGLE_METRIC_DATA)
+                                        .build();
+
+    OnboardingRequestDTO onboardingRequestDTO =
+        OnboardingRequestDTO.builder()
+            .dataCollectionRequest(request)
+            .connectorIdentifier(connectorIdentifier)
+            .accountId(builderFactory.getContext().getProjectParams().getAccountIdentifier())
+            .tracingId("tracingId")
+            .orgIdentifier(builderFactory.getContext().getProjectParams().getOrgIdentifier())
+            .projectIdentifier(builderFactory.getContext().getProjectParams().getProjectIdentifier())
+            .build();
+
+    OnboardingService mockOnboardingService = mock(OnboardingService.class);
+    FieldUtils.writeField(appDynamicsService, "onboardingService", mockOnboardingService, true);
+    when(mockOnboardingService.getOnboardingResponse(
+             eq(builderFactory.getContext().getAccountId()), eq(onboardingRequestDTO)))
+        .thenReturn(JsonUtils.asObject(textLoad, OnboardingResponseDTO.class));
+
+    CorrelationContext.setCorrelationId("tracingId");
+    Response response = RESOURCES.client()
+                            .target("http://localhost:9998/appdynamics/metric-data/v2")
+                            .queryParam("accountId", builderFactory.getContext().getAccountId())
+                            .queryParam("orgIdentifier", builderFactory.getContext().getOrgIdentifier())
+                            .queryParam("projectIdentifier", builderFactory.getContext().getProjectIdentifier())
+                            .queryParam("connectorIdentifier", connectorIdentifier)
+                            .queryParam("appName", "appName")
+                            .queryParam("completeMetricPath", "baseFolder|tier|metricPath")
+                            .request(MediaType.APPLICATION_JSON_TYPE)
+                            .get();
+
+    assertThat(response.getStatus()).isEqualTo(200);
+    AppdynamicsMetricDataResponse appdynamicsMetricDataResponse =
+        response.readEntity(new GenericType<ResponseDTO<AppdynamicsMetricDataResponse>>() {}).getData();
+
+    assertThat(appdynamicsMetricDataResponse.getResponseStatus()).isEqualTo(ThirdPartyApiResponseStatus.SUCCESS);
+    assertThat(appdynamicsMetricDataResponse.getStartTime())
+        .isEqualTo(builderFactory.getClock().instant().minus(Duration.ofHours(1)).toEpochMilli());
+    assertThat(appdynamicsMetricDataResponse.getEndTime())
+        .isEqualTo(builderFactory.getClock().instant().toEpochMilli());
+    assertThat(appdynamicsMetricDataResponse.getDataPoints().size()).isEqualTo(4);
+    assertThat(appdynamicsMetricDataResponse.getDataPoints().get(0).getTimestamp()).isEqualTo(1595760660000L);
+    assertThat(appdynamicsMetricDataResponse.getDataPoints().get(0).getValue()).isEqualTo(233.0);
+  }
+
+  @SneakyThrows
+  @Test
+  @Owner(developers = ABHIJITH)
+  @Category(UnitTests.class)
+  public void testGetCompleteServiceInstanceMetricPath() {
+    String textLoad = Resources.toString(
+        AppDynamicsServiceimplTest.class.getResource("/appd/appd_file_structure_dsl_sample_output.json"),
+        Charsets.UTF_8);
+    JsonUtils.asObject(textLoad, OnboardingResponseDTO.class);
+
+    DataCollectionRequest request = AppDynamicFetchFileStructureRequest.builder()
+                                        .appName("appName")
+                                        .path("baseFolder|tier")
+                                        .type(DataCollectionRequestType.APPDYNAMICS_FETCH_METRIC_STRUCTURE)
+                                        .build();
+
+    OnboardingRequestDTO onboardingRequestDTO =
+        OnboardingRequestDTO.builder()
+            .dataCollectionRequest(request)
+            .connectorIdentifier(connectorIdentifier)
+            .accountId(builderFactory.getContext().getProjectParams().getAccountIdentifier())
+            .tracingId("tracingId")
+            .orgIdentifier(builderFactory.getContext().getProjectParams().getOrgIdentifier())
+            .projectIdentifier(builderFactory.getContext().getProjectParams().getProjectIdentifier())
+            .build();
+
+    OnboardingService mockOnboardingService = mock(OnboardingService.class);
+    FieldUtils.writeField(appDynamicsService, "onboardingService", mockOnboardingService, true);
+    when(mockOnboardingService.getOnboardingResponse(
+             eq(builderFactory.getContext().getAccountId()), eq(onboardingRequestDTO)))
+        .thenReturn(JsonUtils.asObject(textLoad, OnboardingResponseDTO.class));
+
+    CorrelationContext.setCorrelationId("tracingId");
+    Response response = RESOURCES.client()
+                            .target("http://localhost:9998/appdynamics/complete-service-instance-metric-path")
+                            .queryParam("accountId", builderFactory.getContext().getAccountId())
+                            .queryParam("orgIdentifier", builderFactory.getContext().getOrgIdentifier())
+                            .queryParam("projectIdentifier", builderFactory.getContext().getProjectIdentifier())
+                            .queryParam("connectorIdentifier", connectorIdentifier)
+                            .queryParam("appName", "appName")
+                            .queryParam("completeMetricPath", "baseFolder|tier|path|metricPath")
+                            .request(MediaType.APPLICATION_JSON_TYPE)
+                            .get();
+
+    assertThat(response.getStatus()).isEqualTo(200);
+    String serviceInstanceMetricPath = response.readEntity(new GenericType<ResponseDTO<String>>() {}).getData();
+    assertThat(serviceInstanceMetricPath).isEqualTo("baseFolder|tier|Individual Nodes|*|path|metricPath");
   }
 
   @SneakyThrows

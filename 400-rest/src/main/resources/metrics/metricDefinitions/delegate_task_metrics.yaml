@@ -38,3 +38,7 @@ metrics:
     metricDefinition: Delegate task not whitelisted
     type: Count
     unit: "1"
+  - metricName: delegate_response
+    metricDefinition: Delegate response
+    type: Count
+    unit: "1"

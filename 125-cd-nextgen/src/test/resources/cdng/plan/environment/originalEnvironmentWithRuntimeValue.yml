@@ -1,0 +1,13 @@
+environment:
+  name: dev
+  identifier: dev
+  tags: []
+  description: ""
+  orgIdentifier: my_org
+  projectIdentifier: my_proj
+  variables:
+    - name: var1
+      type: String
+      value: <+input>
+
+

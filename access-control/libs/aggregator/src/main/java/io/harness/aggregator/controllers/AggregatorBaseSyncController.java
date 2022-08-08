@@ -17,6 +17,7 @@ import io.harness.accesscontrol.roleassignments.persistence.RoleAssignmentDBO;
 import io.harness.accesscontrol.roleassignments.persistence.repositories.RoleAssignmentRepository;
 import io.harness.accesscontrol.roles.persistence.RoleDBO;
 import io.harness.accesscontrol.roles.persistence.repositories.RoleRepository;
+import io.harness.accesscontrol.scopes.core.ScopeService;
 import io.harness.aggregator.AggregatorConfiguration;
 import io.harness.aggregator.DebeziumConfig;
 import io.harness.aggregator.MongoOffsetBackingStore;
@@ -112,7 +113,7 @@ public abstract class AggregatorBaseSyncController implements Runnable {
       PersistentLocker persistentLocker, ChangeEventFailureHandler changeEventFailureHandler,
       AggregatorJobType aggregatorJobType, ChangeConsumerService changeConsumerService,
       RoleAssignmentCRUDEventHandler roleAssignmentCRUDEventHandler,
-      UserGroupCRUDEventHandler userGroupCRUDEventHandler) {
+      UserGroupCRUDEventHandler userGroupCRUDEventHandler, ScopeService scopeService) {
     ChangeConsumer<RoleAssignmentDBO> roleAssignmentChangeConsumer = new RoleAssignmentChangeConsumerImpl(
         aclRepository, roleAssignmentRepository, changeConsumerService, roleAssignmentCRUDEventHandler);
     ChangeConsumer<RoleDBO> roleChangeConsumer = new RoleChangeConsumerImpl(
@@ -121,7 +122,7 @@ public abstract class AggregatorBaseSyncController implements Runnable {
         roleAssignmentRepository, resourceGroupRepository, aggregatorJobType.name(), changeConsumerService);
     ChangeConsumer<UserGroupDBO> userGroupChangeConsumer =
         new UserGroupChangeConsumerImpl(aclRepository, roleAssignmentRepository, userGroupRepository,
-            aggregatorJobType.name(), changeConsumerService, userGroupCRUDEventHandler);
+            aggregatorJobType.name(), changeConsumerService, scopeService, userGroupCRUDEventHandler);
     collectionToConsumerMap = new HashMap<>();
     collectionToConsumerMap.put(ROLE_ASSIGNMENTS, roleAssignmentChangeConsumer);
     collectionToConsumerMap.put(ROLES, roleChangeConsumer);

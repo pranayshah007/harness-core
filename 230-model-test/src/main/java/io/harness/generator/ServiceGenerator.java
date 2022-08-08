@@ -44,6 +44,7 @@ import software.wings.beans.LambdaSpecification.FunctionSpecification;
 import software.wings.beans.Service;
 import software.wings.beans.Service.ServiceKeys;
 import software.wings.beans.ServiceVariable;
+import software.wings.beans.ServiceVariableType;
 import software.wings.beans.SettingAttribute;
 import software.wings.beans.appmanifest.AppManifestKind;
 import software.wings.beans.appmanifest.ApplicationManifest;
@@ -588,7 +589,7 @@ public class ServiceGenerator {
                                           .envId(GLOBAL_ENV_ID)
                                           .entityId(service.getUuid())
                                           .entityType(EntityType.SERVICE)
-                                          .type(ServiceVariable.Type.TEXT)
+                                          .type(ServiceVariableType.TEXT)
                                           .name(name)
                                           .value(value.toCharArray())
                                           .accountId(service.getAccountId())

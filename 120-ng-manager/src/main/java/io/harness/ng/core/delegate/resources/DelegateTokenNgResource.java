@@ -21,7 +21,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.DelegateGroupListing;
 import io.harness.delegate.beans.DelegateTokenDetails;
 import io.harness.delegate.beans.DelegateTokenStatus;
-import io.harness.ng.core.delegate.client.DelegateTokenNgClient;
+import io.harness.ng.core.delegate.client.DelegateNgManagerCgManagerClient;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.remote.client.RestClientUtils;
@@ -69,11 +69,12 @@ import lombok.extern.slf4j.Slf4j;
     })
 
 public class DelegateTokenNgResource {
-  private final DelegateTokenNgClient delegateTokenClient;
+  private final DelegateNgManagerCgManagerClient delegateTokenClient;
   private final AccessControlClient accessControlClient;
 
   @Inject
-  public DelegateTokenNgResource(DelegateTokenNgClient delegateTokenClient, AccessControlClient accessControlClient) {
+  public DelegateTokenNgResource(
+      DelegateNgManagerCgManagerClient delegateTokenClient, AccessControlClient accessControlClient) {
     this.delegateTokenClient = delegateTokenClient;
     this.accessControlClient = accessControlClient;
   }

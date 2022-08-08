@@ -35,7 +35,7 @@ import software.wings.beans.Service;
 import software.wings.beans.ServiceTemplate;
 import software.wings.beans.ServiceVariable;
 import software.wings.beans.ServiceVariable.OverrideType;
-import software.wings.beans.ServiceVariable.Type;
+import software.wings.beans.ServiceVariableType;
 import software.wings.rules.SetupScheduler;
 import software.wings.service.intfc.AppService;
 import software.wings.service.intfc.ServiceResourceService;
@@ -92,7 +92,7 @@ public class ConfigVariableIntegrationTest extends IntegrationTestBase {
   @Ignore("skipping the integration test")
   public void shouldOverrideServiceConfigVariable() {
     // Config variable - Entity type as Service
-    serviceVariable1 = getServiceVariable(Type.TEXT);
+    serviceVariable1 = getServiceVariable(ServiceVariableType.TEXT);
     serviceVariable1.setAppId(app.getAppId());
 
     String svId = serviceVariableService.save(serviceVariable1).getUuid();
@@ -100,10 +100,10 @@ public class ConfigVariableIntegrationTest extends IntegrationTestBase {
 
     assertThat(parentServiceVariable.getEntityType()).isEqualTo(EntityType.SERVICE);
     assertThat(parentServiceVariable.getUuid()).isEqualTo(svId);
-    assertThat(parentServiceVariable.getType().name()).isEqualTo(Type.TEXT.name());
+    assertThat(parentServiceVariable.getType().name()).isEqualTo(ServiceVariableType.TEXT.name());
 
     // Config variable override - Entity type as Service Template
-    serviceVariable2 = getServiceVariable(Type.TEXT);
+    serviceVariable2 = getServiceVariable(ServiceVariableType.TEXT);
     serviceVariable2.setAppId(app.getAppId());
     serviceVariable2.setEntityType(EntityType.SERVICE_TEMPLATE);
     serviceVariable2.setTemplateId(serviceTemplate.getUuid());
@@ -115,7 +115,7 @@ public class ConfigVariableIntegrationTest extends IntegrationTestBase {
 
     assertThat(overrideServiceVariable.getEntityType()).isEqualTo(EntityType.SERVICE_TEMPLATE);
     assertThat(overrideServiceVariable.getUuid()).isEqualTo(newSvId);
-    assertThat(overrideServiceVariable.getType().name()).isEqualTo(Type.TEXT.name());
+    assertThat(overrideServiceVariable.getType().name()).isEqualTo(ServiceVariableType.TEXT.name());
     assertThat(overrideServiceVariable.getParentServiceVariableId()).isEqualTo(parentServiceVariable.getUuid());
   }
 
@@ -130,7 +130,7 @@ public class ConfigVariableIntegrationTest extends IntegrationTestBase {
                                                    .encryptionKey(generateUuid())
                                                    .build());
     // Config variable - Entity type as Service
-    serviceVariable1 = getServiceVariable(Type.ENCRYPTED_TEXT);
+    serviceVariable1 = getServiceVariable(ServiceVariableType.ENCRYPTED_TEXT);
     serviceVariable1.setAppId(app.getAppId());
     serviceVariable1.setValue(encryptedId.toCharArray());
     serviceVariable1.setEncryptedValue("encryptedValue");
@@ -140,10 +140,10 @@ public class ConfigVariableIntegrationTest extends IntegrationTestBase {
 
     assertThat(parentServiceVariable.getEntityType()).isEqualTo(EntityType.SERVICE);
     assertThat(parentServiceVariable.getUuid()).isEqualTo(svId);
-    assertThat(parentServiceVariable.getType().name()).isEqualTo(Type.ENCRYPTED_TEXT.name());
+    assertThat(parentServiceVariable.getType().name()).isEqualTo(ServiceVariableType.ENCRYPTED_TEXT.name());
 
     // Variable override - Entity type as Service Template
-    serviceVariable2 = getServiceVariable(Type.ENCRYPTED_TEXT);
+    serviceVariable2 = getServiceVariable(ServiceVariableType.ENCRYPTED_TEXT);
     serviceVariable2.setAppId(app.getAppId());
     serviceVariable2.setEntityType(EntityType.SERVICE_TEMPLATE);
     serviceVariable2.setTemplateId(serviceTemplate.getUuid());
@@ -156,11 +156,11 @@ public class ConfigVariableIntegrationTest extends IntegrationTestBase {
 
     assertThat(overrideServiceVariable.getEntityType()).isEqualTo(EntityType.SERVICE_TEMPLATE);
     assertThat(overrideServiceVariable.getUuid()).isEqualTo(newSvId);
-    assertThat(overrideServiceVariable.getType().name()).isEqualTo(Type.ENCRYPTED_TEXT.name());
+    assertThat(overrideServiceVariable.getType().name()).isEqualTo(ServiceVariableType.ENCRYPTED_TEXT.name());
     assertThat(overrideServiceVariable.getParentServiceVariableId()).isEqualTo(parentServiceVariable.getUuid());
   }
 
-  private ServiceVariable getServiceVariable(Type type) {
+  private ServiceVariable getServiceVariable(ServiceVariableType type) {
     return ServiceVariable.builder()
         .envId(env.getUuid())
         .entityType(EntityType.SERVICE)

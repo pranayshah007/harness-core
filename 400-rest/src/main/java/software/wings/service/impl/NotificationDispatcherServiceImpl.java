@@ -15,10 +15,10 @@ import static java.util.stream.Collectors.toList;
 
 import io.harness.beans.EmbeddedUser;
 import io.harness.exception.ExceptionUtils;
-import io.harness.notifications.NotificationReceiverInfo;
 
 import software.wings.beans.Notification;
 import software.wings.beans.NotificationGroup;
+import software.wings.beans.NotificationReceiverInfo;
 import software.wings.beans.NotificationRule;
 import software.wings.beans.alert.AlertNotificationRule;
 import software.wings.beans.security.UserGroup;

@@ -27,6 +27,6 @@ import lombok.experimental.FieldDefaults;
 @OwnedBy(PL)
 @Schema(name = "PasswordChange", description = "This is the view of the PasswordChange entity defined in Harness")
 public class PasswordChangeDTO {
-  String currentPassword;
-  String newPassword;
+  @Schema(description = "This is the current password.") String currentPassword;
+  @Schema(description = "This is the new password.") String newPassword;
 }

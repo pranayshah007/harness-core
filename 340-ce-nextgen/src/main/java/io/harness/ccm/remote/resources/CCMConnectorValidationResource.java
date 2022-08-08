@@ -20,7 +20,6 @@ import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.ConnectorValidationResult;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.ng.core.dto.ResponseDTO;
-import io.harness.security.annotations.InternalApi;
 import io.harness.security.annotations.NextGenManagerAuth;
 
 import com.codahale.metrics.annotation.ExceptionMetered;
@@ -42,7 +41,6 @@ import org.springframework.stereotype.Service;
 @NextGenManagerAuth
 @Slf4j
 @Service
-@InternalApi
 @OwnedBy(CE)
 public class CCMConnectorValidationResource {
   @Inject CEConnectorValidatorFactory ceConnectorValidatorFactory;
@@ -56,10 +54,10 @@ public class CCMConnectorValidationResource {
   public ResponseDTO<ConnectorValidationResult> testConnection(
       @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId, ConnectorResponseDTO connectorResponseDTO) {
     // Implement validation methods for each connector type
+    log.info("Connector dto from ngmanager in request {}", connectorResponseDTO.toString());
     ConnectorType connectorType = connectorResponseDTO.getConnector().getConnectorType();
     AbstractCEConnectorValidator ceConnectorValidator = ceConnectorValidatorFactory.getValidator(connectorType);
     if (ceConnectorValidator != null) {
-      log.info("Connector response dto {}", connectorResponseDTO);
       return ResponseDTO.newResponse(ceConnectorValidator.validate(connectorResponseDTO, accountId));
     } else {
       return ResponseDTO.newResponse();

@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.eventsframework.consumer.Message;
+import io.harness.eventsframework.impl.redis.monitoring.publisher.RedisEventMetricPublisher;
 import io.harness.redis.RedisConfig;
 
 import java.time.Duration;
@@ -32,6 +33,12 @@ public class RedisConsumer extends RedisAbstractConsumer {
     super(topicName, groupName, redissonClient, maxProcessingTime, batchSize, envNamespace);
   }
 
+  public RedisConsumer(String topicName, String groupName, @NotNull RedissonClient redissonClient,
+      Duration maxProcessingTime, int batchSize, String envNamespace,
+      RedisEventMetricPublisher redisEventMetricPublisher) {
+    super(topicName, groupName, redissonClient, maxProcessingTime, batchSize, envNamespace, redisEventMetricPublisher);
+  }
+
   @Override
   public List<Message> read(Duration maxWaitTime) {
     return getMessages(false, maxWaitTime);
@@ -45,5 +52,12 @@ public class RedisConsumer extends RedisAbstractConsumer {
   public static RedisConsumer of(String topicName, String groupName, @NotNull RedissonClient redissonClient,
       Duration maxProcessingTime, int batchSize, String envNamespace) {
     return new RedisConsumer(topicName, groupName, redissonClient, maxProcessingTime, batchSize, envNamespace);
+  }
+
+  public static RedisConsumer of(String topicName, String groupName, @NotNull RedissonClient redissonClient,
+      Duration maxProcessingTime, int batchSize, String envNamespace,
+      RedisEventMetricPublisher redisEventMetricPublisher) {
+    return new RedisConsumer(
+        topicName, groupName, redissonClient, maxProcessingTime, batchSize, envNamespace, redisEventMetricPublisher);
   }
 }

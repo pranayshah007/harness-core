@@ -23,7 +23,7 @@ import io.harness.exception.WingsException;
 import io.harness.managerclient.DelegateAgentManagerClient;
 import io.harness.rest.RestResponse;
 
-import software.wings.beans.artifact.Artifact.ArtifactMetadataKeys;
+import software.wings.beans.artifact.ArtifactMetadataKeys;
 import software.wings.beans.artifact.ArtifactStreamAttributes;
 import software.wings.beans.artifact.ArtifactStreamType;
 import software.wings.delegatetasks.DelegateFileManager;

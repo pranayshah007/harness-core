@@ -63,6 +63,8 @@ public class InstanceMetaDataUtils {
       nodePoolValue = labelsMap.get(K8sCCMConstants.EKS_NODE_POOL_KEY);
     } else if (null != labelsMap.get(K8sCCMConstants.EKSCTL_NODE_POOL_KEY)) {
       nodePoolValue = labelsMap.get(K8sCCMConstants.EKSCTL_NODE_POOL_KEY);
+    } else if (null != labelsMap.get(K8sCCMConstants.NODE_POOL_NAME_KEY)) {
+      nodePoolValue = labelsMap.get(K8sCCMConstants.NODE_POOL_NAME_KEY);
     }
     if (null != nodePoolValue) {
       metaData.put(InstanceMetaDataConstants.NODE_POOL_NAME, nodePoolValue);
@@ -83,6 +85,15 @@ public class InstanceMetaDataUtils {
     return false;
   }
 
+  @NonNull
+  public static InstanceCategory getInstanceCategoryECSFargate(String capacityProviderName) {
+    InstanceCategory instanceCategory = InstanceCategory.ON_DEMAND;
+    if ("FARGATE_SPOT".equals(capacityProviderName)) {
+      instanceCategory = InstanceCategory.SPOT;
+    }
+    return instanceCategory;
+  }
+
   @NotNull
   public static InstanceCategory getInstanceCategory(
       @NonNull CloudProvider k8SCloudProvider, @NonNull Map<String, String> labelsMap, @Nullable String accountId) {
@@ -92,6 +103,7 @@ public class InstanceMetaDataUtils {
       case GCP:
         if (checkIfKeyExistsAndIsTrue(K8sCCMConstants.GKE_PREEMPTIBLE_KEY, labelsMap)
             || checkIfKeyExistsAndIsTrue(K8sCCMConstants.PREEMPTIBLE_KEY, labelsMap)
+            || checkIfKeyExistsAndIsTrue(K8sCCMConstants.GKE_SPOT_KEY, labelsMap)
             || checkIfKeyExistsAndIsTrue(K8sCCMConstants.PREEMPTIBLE_NODE_KEY, labelsMap)) {
           instanceCategory = InstanceCategory.SPOT;
         }

@@ -34,13 +34,16 @@ public class GitEnabledHelper {
     final boolean gitSyncEnabled =
         yamlGitConfigService.isGitSyncEnabled(accountIdentifier, organizationIdentifier, projectIdentifier);
     final GitEnabledDTOBuilder gitEnabledDTOBuilder = GitEnabledDTO.builder().isGitSyncEnabled(gitSyncEnabled);
+    final Optional<GitSyncSettingsDTO> gitSyncSettingsDTO =
+        gitSyncSettingsService.get(accountIdentifier, organizationIdentifier, projectIdentifier);
     if (gitSyncEnabled) {
-      final Optional<GitSyncSettingsDTO> gitSyncSettingsDTO =
-          gitSyncSettingsService.get(accountIdentifier, organizationIdentifier, projectIdentifier);
       final ConnectivityMode connectivityMode = gitSyncSettingsDTO.filter(settings -> !settings.isExecuteOnDelegate())
                                                     .map(settings -> ConnectivityMode.MANAGER)
                                                     .orElse(ConnectivityMode.DELEGATE);
       gitEnabledDTOBuilder.connectivityMode(connectivityMode);
+    } else {
+      gitSyncSettingsDTO.ifPresent(syncSettingsDTO
+          -> gitEnabledDTOBuilder.isGitSimplificationEnabled(syncSettingsDTO.isGitSimplificationEnabled()));
     }
     return gitEnabledDTOBuilder.build();
   }

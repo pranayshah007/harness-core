@@ -20,9 +20,9 @@ import io.harness.ccm.commons.entities.k8s.recommendation.K8sWorkloadRecommendat
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import com.sun.istack.internal.Nullable;
 import java.math.BigDecimal;
 import java.time.Instant;
+import javax.annotation.Nullable;
 import lombok.NonNull;
 
 /**

@@ -1,0 +1,63 @@
+{
+  "data" : {
+    "pairs" : [ {
+      "request" : {
+        "path" : [ {
+          "matcher" : "exact",
+          "value" : "/api/v1/label/pod/values"
+        } ],
+        "method" : [ {
+          "matcher" : "exact",
+          "value" : "GET"
+        } ],
+        "destination" : [ {
+          "matcher" : "exact",
+          "value" : "35.214.81.102:9090"
+        } ],
+        "scheme" : [ {
+          "matcher" : "exact",
+          "value" : "http"
+        } ],
+        "query" : {
+          "end" : [ {
+            "matcher" : "exact",
+            "value" : "1653646860"
+          } ],
+          "match[]" : [ {
+            "matcher" : "exact",
+            "value" : "job=\"payment-service-nikpapag\""
+          } ],
+          "start" : [ {
+            "matcher" : "exact",
+            "value" : "1653646560"
+          } ]
+        },
+        "body" : [ {
+          "matcher" : "exact",
+          "value" : ""
+        } ]
+      },
+      "response" : {
+        "status" : 200,
+        "body" : "H4sIAAAAAAAA/5TLMQpCMQwG4Lv8c7OpkV5FHNI0LYLaYlJBxLs7vBO89YPvCw+J5cjwpWruSKgSgnzBlM/DnkFur/dNjfqIQdXmfWzOXPjUjq0xlYN2RdpTajlPxvX3BwAA//8BAAD//8UOn1iDAAAA",
+        "encodedBody" : true,
+        "templated" : false,
+        "headers" : {
+          "Content-Encoding" : [ "gzip" ],
+          "Content-Length" : [ "114" ],
+          "Content-Type" : [ "application/json" ],
+          "Date" : [ "Fri, 27 May 2022 14:14:47 GMT" ],
+          "Hoverfly" : [ "Was-Here" ]
+        }
+      }
+    } ],
+    "globalActions" : {
+      "delays" : [ ]
+    }
+  },
+  "meta" : {
+    "schemaVersion" : "v5",
+    "hoverflyVersion" : "v1.1.5",
+    "timeExported" : "2022-05-27T14:14:48Z"
+  }
+}

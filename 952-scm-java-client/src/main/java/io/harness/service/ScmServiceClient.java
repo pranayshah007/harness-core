@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.DX;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FileContentBatchResponse;
+import io.harness.beans.PageRequestDTO;
 import io.harness.beans.gitsync.GitFileDetails;
 import io.harness.beans.gitsync.GitFilePathDetails;
 import io.harness.beans.gitsync.GitPRCreateRequest;
@@ -30,13 +31,17 @@ import io.harness.product.ci.scm.proto.FindFilesInCommitResponse;
 import io.harness.product.ci.scm.proto.FindFilesInPRResponse;
 import io.harness.product.ci.scm.proto.FindPRResponse;
 import io.harness.product.ci.scm.proto.GetAuthenticatedUserResponse;
+import io.harness.product.ci.scm.proto.GetLatestCommitOnFileResponse;
 import io.harness.product.ci.scm.proto.GetLatestCommitResponse;
+import io.harness.product.ci.scm.proto.GetUserRepoResponse;
 import io.harness.product.ci.scm.proto.GetUserReposResponse;
 import io.harness.product.ci.scm.proto.IsLatestFileResponse;
 import io.harness.product.ci.scm.proto.ListBranchesResponse;
+import io.harness.product.ci.scm.proto.ListBranchesWithDefaultResponse;
 import io.harness.product.ci.scm.proto.ListCommitsInPRResponse;
 import io.harness.product.ci.scm.proto.ListCommitsResponse;
 import io.harness.product.ci.scm.proto.ListWebhooksResponse;
+import io.harness.product.ci.scm.proto.RefreshTokenResponse;
 import io.harness.product.ci.scm.proto.SCMGrpc;
 import io.harness.product.ci.scm.proto.UpdateFileResponse;
 
@@ -82,6 +87,9 @@ public interface ScmServiceClient {
 
   ListBranchesResponse listBranches(ScmConnector scmConnector, SCMGrpc.SCMBlockingStub scmBlockingStub);
 
+  ListBranchesWithDefaultResponse listBranchesWithDefault(
+      ScmConnector scmConnector, PageRequestDTO pageRequest, SCMGrpc.SCMBlockingStub scmBlockingStub);
+
   ListCommitsResponse listCommits(ScmConnector scmConnector, String branch, SCMGrpc.SCMBlockingStub scmBlockingStub);
 
   ListCommitsInPRResponse listCommitsInPR(
@@ -120,9 +128,26 @@ public interface ScmServiceClient {
 
   GetAuthenticatedUserResponse getAuthenticatedUser(ScmConnector scmConnector, SCMGrpc.SCMBlockingStub scmBlockingStub);
 
-  GetUserReposResponse getUserRepos(ScmConnector scmConnector, SCMGrpc.SCMBlockingStub scmBlockingStub);
+  GetUserReposResponse getUserRepos(
+      ScmConnector scmConnector, PageRequestDTO pageRequest, SCMGrpc.SCMBlockingStub scmBlockingStub);
+
+  GetUserReposResponse getAllUserRepos(ScmConnector scmConnector, SCMGrpc.SCMBlockingStub scmBlockingStub);
 
   FindPRResponse findPR(ScmConnector scmConnector, long number, SCMGrpc.SCMBlockingStub scmBlockingStub);
 
   FindCommitResponse findCommit(ScmConnector scmConnector, String commitId, SCMGrpc.SCMBlockingStub scmBlockingStub);
+
+  GetUserRepoResponse getRepoDetails(ScmConnector scmConnector, SCMGrpc.SCMBlockingStub scmBlockingStub);
+
+  CreateBranchResponse createNewBranchV2(
+      ScmConnector scmConnector, String newBranchName, String baseBranchName, SCMGrpc.SCMBlockingStub scmBlockingStub);
+
+  CreatePRResponse createPullRequestV2(ScmConnector scmConnector, String sourceBranchName, String targetBranchName,
+      String prTitle, SCMGrpc.SCMBlockingStub scmBlockingStub);
+
+  RefreshTokenResponse refreshToken(ScmConnector scmConnector, String clientId, String clientSecret, String endpoint,
+      String refreshToken, SCMGrpc.SCMBlockingStub scmBlockingStub);
+
+  GetLatestCommitOnFileResponse getLatestCommitOnFile(
+      ScmConnector scmConnector, String branchName, String filepath, SCMGrpc.SCMBlockingStub scmBlockingStub);
 }

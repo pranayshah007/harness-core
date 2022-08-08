@@ -10,35 +10,36 @@ package io.harness.delegate.task.citasks.vm;
 import static io.harness.data.encoding.EncodingUtils.decodeBase64;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.delegate.task.citasks.vm.helper.CIVMConstants.DRONE_COMMIT_BRANCH;
-import static io.harness.delegate.task.citasks.vm.helper.CIVMConstants.DRONE_COMMIT_LINK;
-import static io.harness.delegate.task.citasks.vm.helper.CIVMConstants.DRONE_COMMIT_SHA;
-import static io.harness.delegate.task.citasks.vm.helper.CIVMConstants.DRONE_REMOTE_URL;
-import static io.harness.delegate.task.citasks.vm.helper.CIVMConstants.DRONE_SOURCE_BRANCH;
-import static io.harness.delegate.task.citasks.vm.helper.CIVMConstants.DRONE_TARGET_BRANCH;
-import static io.harness.delegate.task.citasks.vm.helper.CIVMConstants.NETWORK_ID;
-import static io.harness.delegate.task.citasks.vm.helper.CIVMConstants.RUN_STEP_KIND;
+import static io.harness.vm.CIVMConstants.DRONE_COMMIT_BRANCH;
+import static io.harness.vm.CIVMConstants.DRONE_COMMIT_LINK;
+import static io.harness.vm.CIVMConstants.DRONE_COMMIT_SHA;
+import static io.harness.vm.CIVMConstants.DRONE_REMOTE_URL;
+import static io.harness.vm.CIVMConstants.DRONE_SOURCE_BRANCH;
+import static io.harness.vm.CIVMConstants.DRONE_TARGET_BRANCH;
+import static io.harness.vm.CIVMConstants.NETWORK_ID;
 
 import static java.lang.String.format;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.connector.SecretSpecBuilder;
 import io.harness.delegate.beans.ci.CIInitializeTaskParams;
 import io.harness.delegate.beans.ci.pod.SecretParams;
 import io.harness.delegate.beans.ci.vm.CIVmInitializeTaskParams;
 import io.harness.delegate.beans.ci.vm.VmServiceStatus;
 import io.harness.delegate.beans.ci.vm.VmTaskExecutionResponse;
 import io.harness.delegate.beans.ci.vm.runner.ExecuteStepRequest;
+import io.harness.delegate.beans.ci.vm.runner.ExecuteStepRequest.ExecuteStepRequestBuilder;
 import io.harness.delegate.beans.ci.vm.runner.SetupVmRequest;
 import io.harness.delegate.beans.ci.vm.runner.SetupVmResponse;
 import io.harness.delegate.beans.ci.vm.steps.VmServiceDependency;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.task.citasks.CIInitializeTaskHandler;
-import io.harness.delegate.task.citasks.cik8handler.SecretSpecBuilder;
 import io.harness.delegate.task.citasks.cik8handler.helper.ProxyVariableHelper;
 import io.harness.delegate.task.citasks.vm.helper.HttpHelper;
 import io.harness.delegate.task.citasks.vm.helper.StepExecutionHelper;
 import io.harness.logging.CommandExecutionStatus;
+import io.harness.vm.VmExecuteStepUtils;
 
 import com.google.inject.Inject;
 import java.util.ArrayList;
@@ -57,6 +58,7 @@ public class CIVmInitializeTaskHandler implements CIInitializeTaskHandler {
   @Inject private SecretSpecBuilder secretSpecBuilder;
   @Inject private ProxyVariableHelper proxyVariableHelper;
   @Inject private StepExecutionHelper stepExecutionHelper;
+  @Inject private VmExecuteStepUtils vmExecuteStepUtils;
 
   @Override
   public Type getType() {
@@ -189,8 +191,11 @@ public class CIVmInitializeTaskHandler implements CIInitializeTaskHandler {
 
   private VmServiceStatus startService(VmServiceDependency serviceDependency, String taskId, String ipAddress,
       CIVmInitializeTaskParams initializeTaskParams) {
-    ExecuteStepRequest request = convertService(serviceDependency, taskId, ipAddress, initializeTaskParams.getPoolID(),
-        initializeTaskParams.getWorkingDir(), initializeTaskParams.getVolToMountPath());
+    ExecuteStepRequestBuilder builder = vmExecuteStepUtils.convertService(serviceDependency, initializeTaskParams);
+    builder.correlationID(taskId);
+    builder.ipAddress(ipAddress);
+    ExecuteStepRequest request = builder.build();
+
     VmTaskExecutionResponse serviceResponse = stepExecutionHelper.callRunnerForStepExecution(request);
     VmServiceStatus.Status status = VmServiceStatus.Status.ERROR;
     if (serviceResponse.getCommandExecutionStatus() == CommandExecutionStatus.SUCCESS) {
@@ -203,46 +208,6 @@ public class CIVmInitializeTaskHandler implements CIInitializeTaskHandler {
         .logKey(serviceDependency.getLogKey())
         .errorMessage(serviceResponse.getErrorMessage())
         .status(status)
-        .build();
-  }
-
-  private ExecuteStepRequest convertService(VmServiceDependency params, String taskId, String ipAddress, String poolId,
-      String workDir, Map<String, String> volToMountPath) {
-    ExecuteStepRequest.Config.ConfigBuilder configBuilder =
-        ExecuteStepRequest.Config.builder()
-            .id(params.getIdentifier())
-            .name(params.getIdentifier())
-            .logKey(params.getLogKey())
-            .workingDir(workDir)
-            .volumeMounts(stepExecutionHelper.getVolumeMounts(volToMountPath))
-            .image(params.getImage())
-            .pull(params.getPullPolicy())
-            .user(params.getRunAsUser())
-            .envs(params.getEnvVariables())
-            .detach(true)
-            .kind(RUN_STEP_KIND);
-    ExecuteStepRequest.ImageAuth imageAuth =
-        stepExecutionHelper.getImageAuth(params.getImage(), params.getImageConnector());
-
-    List<String> secrets = new ArrayList<>();
-    if (isNotEmpty(params.getSecrets())) {
-      secrets.addAll(params.getSecrets());
-    }
-    if (imageAuth != null) {
-      configBuilder.imageAuth(imageAuth);
-      secrets.add(imageAuth.getPassword());
-    }
-    configBuilder.secrets(secrets);
-
-    if (isNotEmpty(params.getPortBindings())) {
-      configBuilder.portBindings(params.getPortBindings());
-    }
-
-    return ExecuteStepRequest.builder()
-        .correlationID(taskId)
-        .poolId(poolId)
-        .ipAddress(ipAddress)
-        .config(configBuilder.build())
         .build();
   }
 }

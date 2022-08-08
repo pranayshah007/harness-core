@@ -43,6 +43,7 @@ public class DockerRegistryConfigYamlHandler extends ArtifactServerYamlHandler<Y
                  .username(dockerConfig.getUsername())
                  .delegateSelectors(delegateSelectors)
                  .password(getEncryptedYamlRef(dockerConfig.getAccountId(), dockerConfig.getEncryptedPassword()))
+                 .skipValidation(dockerConfig.isSkipValidation())
                  .build();
     } else {
       yaml = Yaml.builder()
@@ -50,6 +51,7 @@ public class DockerRegistryConfigYamlHandler extends ArtifactServerYamlHandler<Y
                  .type(dockerConfig.getType())
                  .url(dockerConfig.getDockerRegistryUrl())
                  .delegateSelectors(delegateSelectors)
+                 .skipValidation(dockerConfig.isSkipValidation())
                  .build();
     }
 
@@ -71,6 +73,7 @@ public class DockerRegistryConfigYamlHandler extends ArtifactServerYamlHandler<Y
                               .encryptedPassword(yaml.getPassword())
                               .username(yaml.getUsername())
                               .delegateSelectors(delegateSelectors)
+                              .skipValidation(yaml.getSkipValidation())
                               .build();
     return buildSettingAttribute(accountId, changeContext.getChange().getFilePath(), uuid, config);
   }

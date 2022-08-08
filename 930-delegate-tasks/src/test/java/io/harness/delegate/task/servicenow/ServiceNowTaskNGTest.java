@@ -8,6 +8,7 @@
 package io.harness.delegate.task.servicenow;
 
 import static io.harness.rule.OwnerRule.PRABU;
+import static io.harness.rule.OwnerRule.vivekveman;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
@@ -86,5 +87,12 @@ public class ServiceNowTaskNGTest extends CategoryTest {
     assertThat(serviceNowTaskNGParameters.getDelegateSelectors()).containsExactlyInAnyOrder("selector1");
     serviceNowTaskNGParameters.getServiceNowConnectorDTO().setDelegateSelectors(ImmutableSet.of("selector2"));
     assertThat(serviceNowTaskNGParameters.getDelegateSelectors()).containsExactlyInAnyOrder("selector1", "selector2");
+  }
+
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void testisSupportingErrorFramework() {
+    assertThat(serviceNowTaskNG.isSupportingErrorFramework()).isTrue();
   }
 }

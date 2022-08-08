@@ -21,4 +21,9 @@ public class CustomDeploymentTypeInfo extends DeploymentInfo {
   private String instanceFetchScript;
   private String scriptOutput;
   private List<String> tags;
+  private String artifactId;
+  private String artifactName;
+  private String artifactSourceName;
+  private String artifactStreamId;
+  private String artifactBuildNum;
 }

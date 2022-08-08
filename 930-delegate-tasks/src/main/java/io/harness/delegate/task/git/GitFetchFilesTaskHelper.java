@@ -20,9 +20,13 @@ import io.harness.logging.LogCallback;
 
 import com.google.inject.Singleton;
 import java.util.List;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 
 @Singleton
 public class GitFetchFilesTaskHelper {
+  private static final String ERROR_MESSAGE_FORMAT = "Reason: %s, %s";
+  private static final String ERROR_MESSAGE_WITH_ROOT_CAUSE_FORMAT = "Reason: %s, %s%nRoot Cause: %s";
+  private static final String ROOT_CAUSE_MESSAGE_FORMAT = "%s: %s";
   public void printFileNamesInExecutionLogs(LogCallback executionLogCallback, List<GitFile> files) {
     if (EmptyPredicate.isEmpty(files)) {
       return;
@@ -44,5 +48,16 @@ public class GitFetchFilesTaskHelper {
     filePathList.forEach(filePath -> sb.append(color(format("- %s", filePath), Gray)).append(System.lineSeparator()));
 
     logCallback.saveExecutionLog(sb.toString());
+  }
+
+  public String extractErrorMessage(Exception exception) {
+    String reason = exception.getCause() != null ? exception.getCause().getMessage() : "";
+    Throwable rootCause = ExceptionUtils.getRootCause(exception);
+    if (rootCause != null) {
+      String rootCauseMessage =
+          String.format(ROOT_CAUSE_MESSAGE_FORMAT, rootCause.getClass().getCanonicalName(), rootCause.getMessage());
+      return String.format(ERROR_MESSAGE_WITH_ROOT_CAUSE_FORMAT, exception.getMessage(), reason, rootCauseMessage);
+    }
+    return String.format(ERROR_MESSAGE_FORMAT, exception.getMessage(), reason);
   }
 }

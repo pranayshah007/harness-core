@@ -32,7 +32,7 @@ public abstract class AbstractChangeDataHandler implements ChangeHandler {
 
   @Override
   public boolean handleChange(ChangeEvent<?> changeEvent, String tableName, String[] fields) {
-    log.info("In TimeScale Change Handler: {}, {}, {}", changeEvent, tableName, fields);
+    log.trace("In TimeScale Change Handler: {}, {}, {}", changeEvent, tableName, fields);
     Map<String, String> columnValueMapping = null;
     List<String> primaryKeys = null;
     try {
@@ -40,6 +40,11 @@ public abstract class AbstractChangeDataHandler implements ChangeHandler {
       columnValueMapping = getColumnValueMapping(changeEvent, fields);
     } catch (Exception e) {
       log.info(String.format("Not able to parse this event %s", changeEvent));
+    }
+
+    if (!tableName.equals("pipeline_execution_summary_ci") && columnValueMapping != null) {
+      columnValueMapping.remove("moduleinfo_is_private");
+      columnValueMapping.remove("pr");
     }
 
     switch (changeEvent.getChangeType()) {
@@ -72,7 +77,7 @@ public abstract class AbstractChangeDataHandler implements ChangeHandler {
 
   public boolean dbOperation(String query) {
     boolean successfulOperation = false;
-    log.info("In dbOperation, Query: {}", query);
+    log.trace("In dbOperation, Query: {}", query);
     if (timeScaleDBService.isValid()) {
       int retryCount = 0;
       while (!successfulOperation && retryCount < MAX_RETRY_COUNT) {

@@ -12,7 +12,6 @@ import static io.harness.rule.OwnerRule.SAHIL;
 
 import static software.wings.beans.SSHExecutionCredential.Builder.aSSHExecutionCredential;
 import static software.wings.beans.artifact.ArtifactFile.Builder.anArtifactFile;
-import static software.wings.beans.command.Command.Builder.aCommand;
 import static software.wings.beans.command.CommandExecutionContext.Builder.aCommandExecutionContext;
 import static software.wings.beans.command.CommandType.ENABLE;
 import static software.wings.beans.infrastructure.Host.Builder.aHost;
@@ -37,8 +36,8 @@ import io.harness.logging.CommandExecutionStatus;
 import io.harness.rule.Owner;
 
 import software.wings.WingsBaseTest;
-import software.wings.beans.command.Command;
 import software.wings.beans.command.CommandExecutionContext;
+import software.wings.beans.dto.Command;
 import software.wings.beans.infrastructure.Host;
 import software.wings.service.intfc.ServiceCommandExecutorService;
 import software.wings.service.intfc.security.SSHVaultService;
@@ -83,7 +82,7 @@ public class CommandTaskTest extends WingsBaseTest {
   @Owner(developers = SAHIL)
   @Category(UnitTests.class)
   public void testRunWithObjectParameters() {
-    Command command = aCommand().withName("Ami-Command").withCommandType(ENABLE).build();
+    Command command = Command.builder().name("Ami-Command").commandType(ENABLE).build();
     CommandExecutionResult expectedCommandExecutionResult =
         CommandExecutionResult.builder()
             .status(CommandExecutionStatus.SUCCESS)
@@ -101,7 +100,7 @@ public class CommandTaskTest extends WingsBaseTest {
   @Owner(developers = SAHIL)
   @Category(UnitTests.class)
   public void testRunWithObjectParametersException() {
-    Command command = aCommand().withName("Ami-Command").withCommandType(ENABLE).build();
+    Command command = Command.builder().name("Ami-Command").commandType(ENABLE).build();
     CommandExecutionResult expectedCommandExecutionResult =
         CommandExecutionResult.builder()
             .status(CommandExecutionStatus.FAILURE)

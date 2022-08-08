@@ -120,7 +120,8 @@ public class AuthRuleFilter implements ContainerRequestFilter {
       "account/export", "account/import", "account/delete/", "account/disable", "account/enable", "users/reset-cache",
       "executions/workflow-variables", "executions/nodeSubGraphs", "executions/deployment-metadata",
       "setup-as-code/yaml/internal/template-yaml-sync", "infrastructure-definitions/list",
-      "usageRestrictions/references", "setup/delegates/ng/v2"};
+      "usageRestrictions/references", "setup/delegates/ng/v2", "custom-dashboard/deployment-recon-per-account",
+      "custom-dashboard/deployment-recon-all-accounts", "custom-dashboard/instance-recon-per-account"};
   private static final String[] EXEMPTED_URI_SUFFIXES = new String[] {"sales-contacts", "addSubdomainUrl"};
   private static final String USER_NOT_AUTHORIZED = "User not authorized";
   private static final String X_FORWARDED_FOR = "X-Forwarded-For";
@@ -433,7 +434,7 @@ public class AuthRuleFilter implements ContainerRequestFilter {
 
   private void validateAccountStatus(String accountId, boolean isHarnessUserExemptedRequest) {
     String accountStatus = accountService.getAccountStatus(accountId);
-    log.info("Testing: accountstatus for accountId {} is {}", accountId, accountStatus);
+    log.debug("Testing: accountstatus for accountId {} is {}", accountId, accountStatus);
     if (AccountStatus.DELETED.equals(accountStatus)) {
       log.error("Testing: account {} does not exist with status {}", accountId, accountStatus);
       throw new WingsException(ACCOUNT_DOES_NOT_EXIST, USER);
@@ -698,7 +699,9 @@ public class AuthRuleFilter implements ContainerRequestFilter {
     Method resourceMethod = resourceInfo.getResourceMethod();
 
     return resourceMethod.getAnnotation(DelegateAuth.class) != null
-        || resourceClass.getAnnotation(DelegateAuth.class) != null;
+        || resourceClass.getAnnotation(DelegateAuth.class) != null
+        || resourceMethod.getAnnotation(io.harness.security.annotations.DelegateAuth2.class) != null
+        || resourceClass.getAnnotation(io.harness.security.annotations.DelegateAuth2.class) != null;
   }
 
   private boolean learningEngineServiceAPI() {

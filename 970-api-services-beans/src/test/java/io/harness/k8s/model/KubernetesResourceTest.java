@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.exception.WingsException.ReportTarget.LOG_SYSTEM;
 import static io.harness.k8s.manifest.ManifestHelper.processYaml;
 import static io.harness.logging.LoggingInitializer.initializeLogging;
+import static io.harness.rule.OwnerRule.ABHINAV2;
 import static io.harness.rule.OwnerRule.ABOSII;
 import static io.harness.rule.OwnerRule.ANKIT;
 import static io.harness.rule.OwnerRule.ANSHUL;
@@ -43,6 +44,7 @@ import io.kubernetes.client.openapi.models.V1Deployment;
 import io.kubernetes.client.util.Yaml;
 import java.io.IOException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 import java.util.function.UnaryOperator;
@@ -706,5 +708,23 @@ public class KubernetesResourceTest extends CategoryTest {
     fileContents = Resources.toString(url, Charsets.UTF_8);
     KubernetesResource resourceWithoutAnnotation = processYaml(fileContents).get(0);
     assertThat(resourceWithoutAnnotation.isSkipPruning()).isFalse();
+  }
+
+  @Test
+  @Owner(developers = ABHINAV2)
+  @Category(UnitTests.class)
+  public void testYamlConstructorMessageExtraction() throws IOException {
+    URL url = this.getClass().getResource("/secret-invalid-value.yaml");
+    String fileContents = Resources.toString(url, StandardCharsets.UTF_8);
+    KubernetesResource resource = processYaml(fileContents).get(0);
+
+    assertThatThrownBy(resource::getK8sResource).matches(throwable -> {
+      KubernetesYamlException exception = (KubernetesYamlException) throwable;
+      String errorMessage = exception.getParams().get("reason").toString();
+      assertThat(errorMessage).contains("Failed to load spec for resource kind: Secret, name: test-secret");
+      assertThat(errorMessage).contains("Cannot create property=data for JavaBean=class V1Secret");
+      assertThat(errorMessage).contains("in 'reader', line 7, column 3:");
+      return true;
+    });
   }
 }

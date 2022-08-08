@@ -66,6 +66,7 @@ import software.wings.sm.ExecutionResponse;
 import software.wings.sm.State;
 import software.wings.sm.StateType;
 import software.wings.sm.WorkflowStandardParams;
+import software.wings.sm.WorkflowStandardParamsExtensionService;
 import software.wings.sm.states.k8s.K8sStateHelper;
 
 import com.github.reinert.jjschema.Attributes;
@@ -95,6 +96,7 @@ public class KubernetesSwapServiceSelectors extends State {
   @Inject private ContainerMasterUrlHelper containerMasterUrlHelper;
   @Inject private SweepingOutputService sweepingOutputService;
   @Inject private KryoSerializer kryoSerializer;
+  @Inject private WorkflowStandardParamsExtensionService workflowStandardParamsExtensionService;
 
   @Getter @Setter @Attributes(title = "Service One") private String service1;
 
@@ -162,8 +164,8 @@ public class KubernetesSwapServiceSelectors extends State {
     notNullCheck("workflowStandardParams", workflowStandardParams, USER);
     notNullCheck("currentUser", workflowStandardParams.getCurrentUser(), USER);
 
-    Application app = workflowStandardParams.fetchRequiredApp();
-    Environment env = workflowStandardParams.fetchRequiredEnv();
+    Application app = workflowStandardParamsExtensionService.fetchRequiredApp(workflowStandardParams);
+    Environment env = workflowStandardParamsExtensionService.fetchRequiredEnv(workflowStandardParams);
 
     ActivityBuilder activityBuilder = Activity.builder()
                                           .applicationName(app.getName())
@@ -239,7 +241,7 @@ public class KubernetesSwapServiceSelectors extends State {
     PhaseElement phaseElement = context.getContextElement(ContextElementType.PARAM, PhaseElement.PHASE_PARAM);
     WorkflowStandardParams workflowStandardParams = context.getContextElement(ContextElementType.STANDARD);
     Application app = appService.get(context.getAppId());
-    Environment env = workflowStandardParams.getEnv();
+    Environment env = workflowStandardParamsExtensionService.getEnv(workflowStandardParams);
     ContainerInfrastructureMapping containerInfraMapping =
         (ContainerInfrastructureMapping) infrastructureMappingService.get(app.getUuid(), context.fetchInfraMappingId());
 

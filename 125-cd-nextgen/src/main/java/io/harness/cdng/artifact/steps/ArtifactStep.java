@@ -14,7 +14,6 @@ import io.harness.cdng.artifact.mappers.ArtifactResponseToOutcomeMapper;
 import io.harness.cdng.artifact.utils.ArtifactStepHelper;
 import io.harness.cdng.artifact.utils.ArtifactUtils;
 import io.harness.cdng.service.steps.ServiceStepsHelper;
-import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.TaskSelector;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.task.artifacts.ArtifactSourceDelegateRequest;
@@ -22,7 +21,6 @@ import io.harness.delegate.task.artifacts.ArtifactTaskType;
 import io.harness.delegate.task.artifacts.request.ArtifactTaskParameters;
 import io.harness.delegate.task.artifacts.response.ArtifactTaskResponse;
 import io.harness.exception.ArtifactServerException;
-import io.harness.exception.InvalidArgumentsException;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.logstreaming.NGLogCallback;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -46,7 +44,6 @@ import software.wings.beans.LogWeight;
 
 import com.google.inject.Inject;
 import java.util.Collections;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
@@ -72,7 +69,7 @@ public class ArtifactStep implements TaskExecutable<ArtifactStepParameters, Arti
   @Override
   public TaskRequest obtainTask(
       Ambiance ambiance, ArtifactStepParameters stepParameters, StepInputPackage inputPackage) {
-    ArtifactConfig finalArtifact = applyArtifactsOverlay(stepParameters);
+    ArtifactConfig finalArtifact = artifactStepHelper.applyArtifactsOverlay(stepParameters);
     NGLogCallback logCallback = serviceStepsHelper.getServiceLogCallback(ambiance);
     if (finalArtifact.isPrimaryArtifact()) {
       logCallback.saveExecutionLog("Processing primary artifact...");
@@ -117,7 +114,7 @@ public class ArtifactStep implements TaskExecutable<ArtifactStepParameters, Arti
   @Override
   public StepResponse handleTaskResult(Ambiance ambiance, ArtifactStepParameters stepParameters,
       ThrowingSupplier<ArtifactTaskResponse> responseDataSupplier) throws Exception {
-    ArtifactConfig finalArtifact = applyArtifactsOverlay(stepParameters);
+    ArtifactConfig finalArtifact = artifactStepHelper.applyArtifactsOverlay(stepParameters);
     ArtifactTaskResponse taskResponse = responseDataSupplier.get();
 
     NGLogCallback logCallback = serviceStepsHelper.getServiceLogCallback(ambiance);
@@ -157,29 +154,5 @@ public class ArtifactStep implements TaskExecutable<ArtifactStepParameters, Arti
             + (taskResponse.getCommandExecutionStatus() == null ? "null"
                                                                 : taskResponse.getCommandExecutionStatus().name()));
     }
-  }
-
-  private ArtifactConfig applyArtifactsOverlay(ArtifactStepParameters stepParameters) {
-    List<ArtifactConfig> artifactList = new LinkedList<>();
-    // 1. Original artifacts
-    if (stepParameters.getSpec() != null) {
-      artifactList.add(stepParameters.getSpec());
-    }
-    // 2. Override sets
-    if (stepParameters.getOverrideSets() != null) {
-      artifactList.addAll(stepParameters.getOverrideSets());
-    }
-    // 3. Stage Overrides
-    if (stepParameters.getStageOverride() != null) {
-      artifactList.add(stepParameters.getStageOverride());
-    }
-    if (EmptyPredicate.isEmpty(artifactList)) {
-      throw new InvalidArgumentsException("No artifacts defined");
-    }
-    ArtifactConfig resultantArtifact = artifactList.get(0);
-    for (ArtifactConfig artifact : artifactList.subList(1, artifactList.size())) {
-      resultantArtifact = resultantArtifact.applyOverrides(artifact);
-    }
-    return resultantArtifact;
   }
 }

@@ -20,6 +20,7 @@ import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 import static software.wings.beans.delegation.ShellScriptParameters.CommandUnit;
 
 import static com.google.common.collect.Lists.newArrayList;
+import static java.lang.Boolean.FALSE;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 
@@ -61,6 +62,7 @@ import software.wings.annotation.EncryptableSetting;
 import software.wings.api.ScriptStateExecutionData;
 import software.wings.beans.Activity.Type;
 import software.wings.beans.AwsConfig;
+import software.wings.beans.ConnectionType;
 import software.wings.beans.ContainerInfrastructureMapping;
 import software.wings.beans.HostConnectionAttributes;
 import software.wings.beans.InfrastructureMapping;
@@ -99,6 +101,7 @@ import software.wings.sm.State;
 import software.wings.sm.StateExecutionContext;
 import software.wings.sm.StateType;
 import software.wings.sm.WorkflowStandardParams;
+import software.wings.sm.WorkflowStandardParamsExtensionService;
 import software.wings.sm.states.mixin.SweepingOutputStateMixin;
 import software.wings.stencils.DefaultValue;
 
@@ -142,6 +145,7 @@ public class ShellScriptState extends State implements SweepingOutputStateMixin 
   @Inject @Transient private FeatureFlagService featureFlagService;
   @Transient @Inject KryoSerializer kryoSerializer;
   @Inject @Transient private SSHVaultService sshVaultService;
+  @Inject @Transient private WorkflowStandardParamsExtensionService workflowStandardParamsExtensionService;
 
   @Getter @Setter @Attributes(title = "Execute on Delegate") private boolean executeOnDelegate;
 
@@ -158,8 +162,6 @@ public class ShellScriptState extends State implements SweepingOutputStateMixin 
   public KryoSerializer getKryoSerializer() {
     return kryoSerializer;
   }
-
-  public enum ConnectionType { SSH, WINRM }
 
   @NotEmpty
   @Getter
@@ -343,9 +345,10 @@ public class ShellScriptState extends State implements SweepingOutputStateMixin 
     String infrastructureMappingId = context.fetchInfraMappingId();
 
     WorkflowStandardParams workflowStandardParams = context.getContextElement(ContextElementType.STANDARD);
-    String envId = (workflowStandardParams == null || workflowStandardParams.getEnv() == null)
+    String envId = (workflowStandardParams == null
+                       || workflowStandardParamsExtensionService.getEnv(workflowStandardParams) == null)
         ? null
-        : workflowStandardParams.getEnv().getUuid();
+        : workflowStandardParamsExtensionService.getEnv(workflowStandardParams).getUuid();
 
     String appId = workflowStandardParams == null ? null : workflowStandardParams.getAppId();
 
@@ -454,9 +457,12 @@ public class ShellScriptState extends State implements SweepingOutputStateMixin 
 
     List<String> allTags = newArrayList();
     List<String> renderedTags = newArrayList();
-    String cloudProviderTag = getTagFromCloudProvider(containerServiceParams);
-    if (isNotEmpty(cloudProviderTag)) {
-      allTags.add(cloudProviderTag);
+
+    if (!Objects.equals(includeInfraSelectors, FALSE)) {
+      String cloudProviderTag = getTagFromCloudProvider(containerServiceParams);
+      if (isNotEmpty(cloudProviderTag)) {
+        allTags.add(cloudProviderTag);
+      }
     }
 
     if (isNotEmpty(delegateSelectors)) {
@@ -577,7 +583,7 @@ public class ShellScriptState extends State implements SweepingOutputStateMixin 
         .build();
   }
 
-  private String getTagFromCloudProvider(ContainerServiceParams containerServiceParams) {
+  String getTagFromCloudProvider(ContainerServiceParams containerServiceParams) {
     if (containerServiceParams != null) {
       SettingAttribute settingAttribute = containerServiceParams.getSettingAttribute();
       SettingValue settingValue = settingAttribute.getValue();

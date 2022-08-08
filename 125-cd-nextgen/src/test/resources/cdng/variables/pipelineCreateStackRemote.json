@@ -1,0 +1,158 @@
+{
+  "pipeline": {
+    "name": "test",
+    "identifier": "test",
+    "projectIdentifier": "test",
+    "orgIdentifier": "default",
+    "tags": {
+      "__uuid": "orofT1VNSHy1mc_mCSKY1g"
+    },
+    "stages": [
+      {
+        "stage": {
+          "name": "foo",
+          "identifier": "foo",
+          "description": "",
+          "type": "Deployment",
+          "spec": {
+            "serviceConfig": {
+              "serviceRef": "foo",
+              "serviceDefinition": {
+                "type": "Kubernetes",
+                "spec": {
+                  "variables": [],
+                  "__uuid": "LZPhHzj8S-SvRCcY_SACfg"
+                },
+                "__uuid": "nf6T-FMHQ8ao3cfYsTWOiA"
+              },
+              "__uuid": "bgZJIIXORwaaK81s-I_QDg"
+            },
+            "infrastructure": {
+              "environmentRef": "bar",
+              "infrastructureDefinition": {
+                "type": "KubernetesDirect",
+                "spec": {
+                  "namespace": "nana",
+                  "releaseName": "release-\u003c+INFRA_KEY\u003e",
+                  "connectorRef": "bar",
+                  "__uuid": "I-pN30cASIK6iSVswBBHwA"
+                },
+                "provisioner": {
+                  "steps": [
+                    {
+                      "step": {
+                        "type": "CreateStack",
+                        "name": "Create Stack",
+                        "identifier": "createStack",
+                        "timeout": "10m",
+                        "spec": {
+                          "provisionerIdentifier": "foobar",
+                          "configuration": {
+                            "connectorRef": "barbar",
+                            "region": "us-west-2",
+                            "templateFile": {
+                              "type": "Remote",
+                              "spec": {
+                                "store": {
+                                  "type": "Github",
+                                  "spec": {
+                                    "gitFetchType": "Branch",
+                                    "connectorRef": "superConnector",
+                                    "branch": "master",
+                                    "paths": [
+                                      "path1"
+                                    ],
+                                    "__uuid": "WfJJrQK4QZWPKef1JiyFGA"
+                                  },
+                                  "__uuid": "Rvx0d3EXQc-tNNmclWsDLg"
+                                },
+                                "__uuid": "XfOTavG0TEuUofnmeu5pmQ"
+                              },
+                              "__uuid": "bFBvQJibSIiy_Wz1BTp5Lg"
+                            },
+                            "parameters": [
+                              {
+                                "identifier": "parametersid1",
+                                "store": {
+                                  "type": "S3Url",
+                                  "spec": {
+                                    "connectorRef": "cftest",
+                                    "region": "us-east-1",
+                                    "urls": [
+                                      "parameters1.json",
+                                      "parameters2.json"
+                                    ],
+                                    "__uuid": "hrtF2KjETme3xJfWKGMXXA"
+                                  },
+                                  "__uuid": "y1TdqI4sSTCiTkMkUpbZnQ"
+                                },
+                                "__uuid": "H9NcVtZGS_CFTZsht7NKQg"
+                              }
+                            ],
+                            "stackName": "ofofo",
+                            "__uuid": "qFDoEwhYQ_abyMFwzhZmog"
+                          },
+                          "__uuid": "E58_TQJsTGW7ofIjecyqpQ"
+                        },
+                        "__uuid": "B2YABFIXTI-snnAfZ43cQA"
+                      },
+                      "__uuid": "VrwCYn6ST8WfKRHrQBLdow"
+                    }
+                  ],
+                  "__uuid": "LBBdEA9GR52jfhpfBwKwlw"
+                },
+                "__uuid": "qN8p239EQMmXEsYoMl6N9A"
+              },
+              "allowSimultaneousDeployments": false,
+              "__uuid": "F7gCTMpqRtiJ-KXgiFtxBQ"
+            },
+            "execution": {
+              "steps": [
+                {
+                  "step": {
+                    "type": "K8sApply",
+                    "name": "babar",
+                    "identifier": "babar",
+                    "spec": {
+                      "filePaths": [
+                        "bababab"
+                      ],
+                      "skipDryRun": false,
+                      "skipSteadyStateCheck": false,
+                      "__uuid": "ZGtgdnnyQleo0Cw-ZyKctQ"
+                    },
+                    "timeout": "10m",
+                    "__uuid": "nYjfap56Rqy3F6Jtc9wCkw"
+                  },
+                  "__uuid": "1c2wURAIRTO-EEnj9ty2cA"
+                }
+              ],
+              "rollbackSteps": [],
+              "__uuid": "Mk2gCbZrTimkUVQj8irvSA"
+            },
+            "__uuid": "C7NmWcr7QGq8vV_cdCoNuQ"
+          },
+          "failureStrategies": [
+            {
+              "onFailure": {
+                "errors": [
+                  "AllErrors"
+                ],
+                "action": {
+                  "type": "StageRollback",
+                  "__uuid": "wpiUaBV9T1ibbALA6mU3cQ"
+                },
+                "__uuid": "JUh78AeDSIKBtnIMWUgMgg"
+              },
+              "__uuid": "1A1MFacrRzmo2c5wIiCvPA"
+            }
+          ],
+          "__uuid": "HtWdxvrxRcyvnyFtsMre7g"
+        },
+        "__uuid": "kRKbLK_XQ7GZpj16asGUyQ"
+      }
+    ],
+    "__uuid": "m0myiN5eQECCJQDd2ulcBQ"
+  },
+  "__uuid": "rxMuIBNzTdKMUZeA3yopBA"
+}

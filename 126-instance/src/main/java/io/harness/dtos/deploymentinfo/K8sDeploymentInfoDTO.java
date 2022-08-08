@@ -10,7 +10,7 @@ package io.harness.dtos.deploymentinfo;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.service.beans.ServiceSpecType;
+import io.harness.ng.core.k8s.ServiceSpecType;
 import io.harness.util.InstanceSyncKey;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;

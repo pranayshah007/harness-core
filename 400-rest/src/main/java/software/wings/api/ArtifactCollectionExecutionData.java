@@ -17,6 +17,7 @@ import io.harness.delegate.beans.DelegateTaskNotifyResponseData;
 
 import software.wings.beans.EntityType;
 import software.wings.sm.StateExecutionData;
+import software.wings.utils.MappingUtils;
 
 import java.util.Map;
 import lombok.Builder;
@@ -84,5 +85,9 @@ public class ArtifactCollectionExecutionData extends StateExecutionData implemen
 
     putNotNull(executionDetails, "message", ExecutionDataValue.builder().displayName("Message").value(message).build());
     return executionDetails;
+  }
+
+  public void setMetadata(Map<String, String> metadata) {
+    this.metadata = MappingUtils.safeCopy(metadata);
   }
 }

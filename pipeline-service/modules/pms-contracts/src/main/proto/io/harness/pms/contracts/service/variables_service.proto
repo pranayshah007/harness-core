@@ -1,0 +1,39 @@
+// Copyright 2022 Harness Inc. All rights reserved.
+// Use of this source code is governed by the PolyForm Shield 1.0.0 license
+// that can be found in the licenses directory at the root of this repository, also available at
+// https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
+
+syntax = "proto3";
+
+package io.harness.pms.contracts.service;
+
+option java_multiple_files = true;
+
+import "io/harness/pms/contracts/plan/variables.proto";
+
+service VariablesService {
+  rpc getVariables(VariablesServiceRequest) returns (VariableMergeResponseProto);
+}
+
+message VariableMergeResponseProto {
+  string yaml = 1;
+  map<string, VariableResponseMapValueProto> metadataMap = 2;
+  repeated string errorResponses = 3;
+  // List of all the expressions registered by other services
+  repeated ServiceExpressionPropertiesProto serviceExpressionPropertiesList = 4;
+}
+
+message VariablesServiceRequest {
+  string yaml = 1;  // yaml construct that pms understands
+}
+
+message VariableResponseMapValueProto {
+  io.harness.pms.contracts.plan.YamlProperties yamlProperties = 1;
+  io.harness.pms.contracts.plan.YamlOutputProperties yamlOutputProperties = 2 [deprecated = true];
+  io.harness.pms.contracts.plan.YamlExtraProperties yamlExtraProperties = 3;
+}
+
+message ServiceExpressionPropertiesProto {
+  string serviceName = 1;
+  string expression = 2;
+}

@@ -7,6 +7,7 @@
 
 package io.harness.ccm.graphql.core.budget;
 
+import static io.harness.ccm.budget.BudgetPeriod.DAILY;
 import static io.harness.ccm.commons.utils.BigQueryHelper.UNIFIED_TABLE;
 import static io.harness.ccm.views.graphql.QLCEViewTimeFilterOperator.AFTER;
 import static io.harness.ccm.views.graphql.QLCEViewTimeFilterOperator.BEFORE;
@@ -52,8 +53,8 @@ public class BudgetCostServiceImpl implements BudgetCostService {
 
   @Override
   public double getActualCost(Budget budget) {
-    return getActualCost(budget.getAccountId(), BudgetUtils.getPerspectiveIdForBudget(budget), budget.getStartTime(),
-        budget.getPeriod());
+    return getActualCost(budget.getAccountId(), BudgetUtils.getPerspectiveIdForBudget(budget),
+        BudgetUtils.getBudgetStartTime(budget), budget.getPeriod());
   }
 
   @Override
@@ -77,7 +78,7 @@ public class BudgetCostServiceImpl implements BudgetCostService {
   public double getForecastCost(String accountId, String perspectiveId, long startOfPeriod, BudgetPeriod period) {
     String cloudProviderTableName = bigQueryHelper.getCloudProviderTableName(accountId, UNIFIED_TABLE);
     List<QLCEViewFilterWrapper> filters = new ArrayList<>();
-    long startTime = BudgetUtils.getStartTimeForForecasting(startOfPeriod);
+    long startTime = BudgetUtils.getStartTimeForForecasting();
     long endTime = BudgetUtils.getEndTimeForBudget(startOfPeriod, period) - BudgetUtils.ONE_DAY_MILLIS;
     filters.add(viewsQueryHelper.getViewMetadataFilter(perspectiveId));
     filters.add(viewsQueryHelper.getPerspectiveTimeFilter(startTime, AFTER));
@@ -92,6 +93,13 @@ public class BudgetCostServiceImpl implements BudgetCostService {
             .minStartTime(1000 * startTime)
             .maxStartTime(1000 * BudgetUtils.getStartOfCurrentDay() - BudgetUtils.ONE_DAY_MILLIS)
             .build();
+
+    if (period == DAILY) {
+      return viewsQueryHelper.getRoundedDoubleValue(costDataForForecast.getCost()
+          / (Double.valueOf((costDataForForecast.getMaxStartTime() - costDataForForecast.getMinStartTime())
+              / (1000 * (double) BudgetUtils.ONE_DAY_MILLIS))));
+    }
+
     double costTillNow = getActualCost(accountId, perspectiveId, startOfPeriod, period);
     return viewsQueryHelper.getRoundedDoubleValue(
         costTillNow + viewsQueryHelper.getForecastCost(costDataForForecast, Instant.ofEpochMilli(endTime)));
@@ -99,8 +107,8 @@ public class BudgetCostServiceImpl implements BudgetCostService {
 
   @Override
   public double getLastPeriodCost(Budget budget) {
-    return getLastPeriodCost(
-        budget.getAccountId(), budget.getScope().getEntityIds().get(0), budget.getStartTime(), budget.getPeriod());
+    return getLastPeriodCost(budget.getAccountId(), budget.getScope().getEntityIds().get(0),
+        BudgetUtils.getBudgetStartTime(budget), budget.getPeriod());
   }
 
   @Override
@@ -181,7 +189,7 @@ public class BudgetCostServiceImpl implements BudgetCostService {
         .fetch(viewsBillingService.getTimeSeriesStatsNg(bigQueryService.get(), filters, groupBy, aggregationFunction,
                    Collections.emptyList(), cloudProviderTable, true, 100,
                    viewsQueryHelper.buildQueryParams(accountId, true, false, false, false, timeOffsetInDays)),
-            perspectiveTimeSeriesHelper.getTimePeriod(groupBy))
+            perspectiveTimeSeriesHelper.getTimePeriod(groupBy), groupBy)
         .getStats();
   }
 

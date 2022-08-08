@@ -153,4 +153,6 @@ public interface InstanceService
   List<Instance> getInstancesForAppAndInframapping(String appId, String infraMappingId);
 
   long getInstanceCount(String appId, String infraMappingId);
+
+  Instance getLastDiscoveredInstance(String appId, String infrastructureDefinitionId);
 }

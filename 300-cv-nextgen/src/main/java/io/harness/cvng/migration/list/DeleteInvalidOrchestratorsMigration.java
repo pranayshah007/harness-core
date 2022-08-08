@@ -11,7 +11,7 @@ import io.harness.cvng.core.entities.VerificationTask;
 import io.harness.cvng.core.services.api.VerificationTaskService;
 import io.harness.cvng.migration.CVNGMigration;
 import io.harness.cvng.migration.beans.ChecklistItem;
-import io.harness.cvng.statemachine.beans.AnalysisStatus;
+import io.harness.cvng.statemachine.beans.AnalysisOrchestratorStatus;
 import io.harness.cvng.statemachine.entities.AnalysisOrchestrator;
 import io.harness.cvng.statemachine.entities.AnalysisOrchestrator.AnalysisOrchestratorKeys;
 import io.harness.cvng.statemachine.services.api.OrchestrationService;
@@ -34,7 +34,7 @@ public class DeleteInvalidOrchestratorsMigration implements CVNGMigration {
   public void migrate() {
     Query<AnalysisOrchestrator> orchestratorQuery =
         hPersistence.createQuery(AnalysisOrchestrator.class)
-            .filter(AnalysisOrchestratorKeys.status, AnalysisStatus.RUNNING);
+            .filter(AnalysisOrchestratorKeys.status, AnalysisOrchestratorStatus.RUNNING);
     Set<String> deletedVerificationTasks = new HashSet<>();
     try (HIterator<AnalysisOrchestrator> iterator = new HIterator<>(orchestratorQuery.fetch())) {
       while (iterator.hasNext()) {

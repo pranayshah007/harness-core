@@ -26,6 +26,7 @@ public class CCMMetaData {
   @GraphQLNonNull @Builder.Default Boolean inventoryDataPresent = false;
   @GraphQLNonNull @Builder.Default Boolean clusterDataPresent = false;
   @GraphQLNonNull @Builder.Default Boolean isSampleClusterPresent = false;
+  @GraphQLNonNull @Builder.Default Boolean showCostOverview = false;
   String defaultAzurePerspectiveId;
   String defaultAwsPerspectiveId;
   String defaultGcpPerspectiveId;

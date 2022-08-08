@@ -14,8 +14,9 @@ import static io.harness.eraro.ErrorCode.VAULT_OPERATION_ERROR;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.helpers.NGVaultTaskHelper.getVaultAwmIamAuthLoginResult;
 import static io.harness.helpers.NGVaultTaskHelper.getVaultK8sAuthLoginResult;
-import static io.harness.helpers.ext.vault.VaultRestClientFactory.getFullPath;
 import static io.harness.threading.Morpheus.sleep;
+
+import static software.wings.helpers.ext.vault.VaultRestClientFactory.getFullPath;
 
 import static java.time.Duration.ofMillis;
 
@@ -25,15 +26,16 @@ import io.harness.encryptors.VaultEncryptor;
 import io.harness.exception.SecretManagementDelegateException;
 import io.harness.exception.runtime.HashiCorpVaultRuntimeException;
 import io.harness.helpers.ext.vault.VaultAppRoleLoginResult;
-import io.harness.helpers.ext.vault.VaultK8sLoginResult;
-import io.harness.helpers.ext.vault.VaultRestClientFactory;
 import io.harness.security.encryption.EncryptedRecord;
 import io.harness.security.encryption.EncryptedRecordData;
 import io.harness.security.encryption.EncryptionConfig;
 
 import software.wings.beans.VaultConfig;
+import software.wings.helpers.ext.vault.VaultK8sLoginResult;
+import software.wings.helpers.ext.vault.VaultRestClientFactory;
 
 import com.google.common.util.concurrent.TimeLimiter;
+import com.google.common.util.concurrent.UncheckedTimeoutException;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.io.IOException;
@@ -70,11 +72,12 @@ public class HashicorpVaultEncryptor implements VaultEncryptor {
         failedAttempts++;
         log.warn("encryption failed. trial num: {}", failedAttempts, e);
         if (failedAttempts == NUM_OF_RETRIES) {
-          if (e instanceof HashiCorpVaultRuntimeException) {
+          if (e instanceof UncheckedTimeoutException) {
+            throw timeoutException(e);
+          } else if (e instanceof HashiCorpVaultRuntimeException) {
             throw new HashiCorpVaultRuntimeException(e.getMessage());
           } else {
-            String message = "After " + NUM_OF_RETRIES + " tries, encryption for vault secret " + name + " failed.";
-            throw new SecretManagementDelegateException(VAULT_OPERATION_ERROR, message, e, USER);
+            throw encryptionFailedException(e, name);
           }
         }
         sleep(ofMillis(1000));
@@ -95,11 +98,12 @@ public class HashicorpVaultEncryptor implements VaultEncryptor {
         failedAttempts++;
         log.warn("encryption failed. trial num: {}", failedAttempts, e);
         if (failedAttempts == NUM_OF_RETRIES) {
-          if (e instanceof HashiCorpVaultRuntimeException) {
+          if (e instanceof UncheckedTimeoutException) {
+            throw timeoutException(e);
+          } else if (e instanceof HashiCorpVaultRuntimeException) {
             throw new HashiCorpVaultRuntimeException(e.getMessage());
           } else {
-            String message = "After " + NUM_OF_RETRIES + " tries, encryption for vault secret " + name + " failed.";
-            throw new SecretManagementDelegateException(VAULT_OPERATION_ERROR, message, e, USER);
+            throw encryptionFailedException(e, name);
           }
         }
         sleep(ofMillis(1000));
@@ -120,8 +124,11 @@ public class HashicorpVaultEncryptor implements VaultEncryptor {
         failedAttempts++;
         log.warn("encryption failed. trial num: {}", failedAttempts, e);
         if (failedAttempts == NUM_OF_RETRIES) {
-          String message = "After " + NUM_OF_RETRIES + " tries, encryption for vault secret " + name + " failed.";
-          throw new SecretManagementDelegateException(VAULT_OPERATION_ERROR, message, e, USER);
+          if (e instanceof UncheckedTimeoutException) {
+            throw timeoutException(e);
+          } else {
+            throw encryptionFailedException(e, name);
+          }
         }
         sleep(ofMillis(1000));
       }
@@ -135,8 +142,7 @@ public class HashicorpVaultEncryptor implements VaultEncryptor {
       String fullPath = getFullPath(vaultConfig.getBasePath(), existingRecord.getEncryptionKey());
       String vaultToken = getToken(vaultConfig);
       return VaultRestClientFactory.create(vaultConfig)
-          .deleteSecret(
-              String.valueOf(vaultToken), vaultConfig.getNamespace(), vaultConfig.getSecretEngineName(), fullPath);
+          .deleteSecretPermanentely(String.valueOf(vaultToken), vaultConfig.getSecretEngineName(), fullPath);
     } catch (IOException e) {
       String message = "Deletion of Vault secret at " + existingRecord.getEncryptionKey() + " failed";
       throw new SecretManagementDelegateException(VAULT_OPERATION_ERROR, message, e, USER);
@@ -161,7 +167,11 @@ public class HashicorpVaultEncryptor implements VaultEncryptor {
         String oldFullPath = getFullPath(vaultConfig.getBasePath(), existingRecord.getEncryptionKey());
         if (!oldFullPath.equals(fullPath)) {
           if (deleteRequired) {
-            deleteSecret(accountId, existingRecord, vaultConfig);
+            try {
+              deleteSecret(accountId, existingRecord, vaultConfig);
+            } catch (Exception e) {
+              log.error("Delete secret failed in rename secret call with the following error {}", e.getMessage());
+            }
           }
         }
       }
@@ -199,9 +209,13 @@ public class HashicorpVaultEncryptor implements VaultEncryptor {
         failedAttempts++;
         log.warn("decryption failed. trial num: {}", failedAttempts, e);
         if (failedAttempts == NUM_OF_RETRIES) {
-          String message = "Decryption failed after " + NUM_OF_RETRIES + " retries for secret "
-              + encryptedRecord.getEncryptionKey() + " or path " + encryptedRecord.getPath();
-          throw new SecretManagementDelegateException(VAULT_OPERATION_ERROR, message, e, USER);
+          if (e instanceof UncheckedTimeoutException) {
+            throw timeoutException(e);
+          } else {
+            String message = "Decryption failed after " + NUM_OF_RETRIES + " retries for secret "
+                + encryptedRecord.getEncryptionKey() + " or path " + encryptedRecord.getPath();
+            throw new SecretManagementDelegateException(VAULT_OPERATION_ERROR, message, e, USER);
+          }
         }
         sleep(ofMillis(1000));
       }
@@ -258,5 +272,15 @@ public class HashicorpVaultEncryptor implements VaultEncryptor {
       throw exception;
     }
     return true;
+  }
+
+  private SecretManagementDelegateException timeoutException(Exception e) {
+    String message = "After " + NUM_OF_RETRIES + " tries, delegate(s) is not able to establish connection to Vault.";
+    return new SecretManagementDelegateException(VAULT_OPERATION_ERROR, message, e, USER);
+  }
+
+  private SecretManagementDelegateException encryptionFailedException(Exception e, String name) {
+    String message = "After " + NUM_OF_RETRIES + " tries, encryption for vault secret " + name + " failed.";
+    return new SecretManagementDelegateException(VAULT_OPERATION_ERROR, message, e, USER);
   }
 }

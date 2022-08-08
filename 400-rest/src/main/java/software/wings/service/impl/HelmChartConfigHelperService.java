@@ -219,6 +219,7 @@ public class HelmChartConfigHelperService {
       HelmRepoConfig helmRepoConfig, String settingAttributeId, String workflowExecutionId) {
     switch (helmRepoConfig.getSettingType()) {
       case HTTP_HELM_REPO:
+      case OCI_HELM_REPO:
         return convertBase64UuidToCanonicalForm(settingAttributeId);
 
       default:

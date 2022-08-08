@@ -10,6 +10,7 @@ package io.harness.connector.impl;
 import static io.harness.NGConstants.HARNESS_SECRET_MANAGER_IDENTIFIER;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.beans.FeatureName.ENABLE_CERT_VALIDATION;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.eraro.ErrorCode.INVALID_AZURE_VAULT_CONFIGURATION;
 import static io.harness.eraro.ErrorCode.INVALID_CREDENTIAL;
@@ -299,45 +300,69 @@ public class NGVaultServiceImpl implements NGVaultService {
   @Override
   public void processAppRole(ConnectorDTO connectorDTO, ConnectorConfigDTO existingConnectorConfigDTO,
       String accountIdentifier, boolean create) {
-    if (null != connectorDTO.getConnectorInfo()
-        && ConnectorType.VAULT == connectorDTO.getConnectorInfo().getConnectorType()) {
-      ConnectorInfoDTO connectorInfo = connectorDTO.getConnectorInfo();
-      VaultConnectorDTO vaultConnectorDTO = (VaultConnectorDTO) connectorInfo.getConnectorConfig();
-      if (AccessType.APP_ROLE == vaultConnectorDTO.getAccessType()) {
-        SecretRefData secretRefData = vaultConnectorDTO.getSecretId();
-        String orgIdentifier = connectorInfo.getOrgIdentifier();
-        String projectIdentifier = connectorInfo.getProjectIdentifier();
-        decryptSecretRefData(accountIdentifier, orgIdentifier, projectIdentifier, secretRefData);
-        VaultConfig vaultConfig = VaultConfig.builder()
-                                      .accountId(accountIdentifier)
-                                      .name(connectorInfo.getName())
-                                      .vaultUrl(vaultConnectorDTO.getVaultUrl())
-                                      .appRoleId(vaultConnectorDTO.getAppRoleId())
-                                      .secretId(String.valueOf(secretRefData.getDecryptedValue()))
-                                      .build();
-
-        VaultAppRoleLoginResult loginResult = appRoleLogin(vaultConfig);
-        if (loginResult != null && isNotEmpty(loginResult.getClientToken())) {
-          Scope scope = secretRefData.getScope();
-          orgIdentifier = getOrgIdentifier(orgIdentifier, scope);
-          projectIdentifier = getProjectIdentifier(projectIdentifier, scope);
-
-          if (null != existingConnectorConfigDTO
-              && APP_ROLE != ((VaultConnectorDTO) existingConnectorConfigDTO).getAccessType()) {
-            create = true;
-          }
-          SecretRefData authTokenRefData =
-              populateSecretRefData(connectorInfo.getIdentifier() + "_" + VaultConnectorKeys.authTokenRef,
-                  loginResult.getClientToken().toCharArray(), scope, accountIdentifier, orgIdentifier,
-                  projectIdentifier, create);
-          vaultConnectorDTO.setAuthToken(authTokenRefData);
-        } else {
-          String message =
-              "Was not able to login Vault using the AppRole auth method. Please check your credentials and try again";
-          throw new SecretManagementException(VAULT_OPERATION_ERROR, message, USER);
-        }
-      }
+    if (!isProcessAppRoleInputValid(connectorDTO, accountIdentifier)) {
+      return;
     }
+
+    ConnectorInfoDTO connectorInfo = connectorDTO.getConnectorInfo();
+    VaultConnectorDTO vaultConnectorDTO = (VaultConnectorDTO) connectorInfo.getConnectorConfig();
+
+    SecretRefData secretRefData = vaultConnectorDTO.getSecretId();
+    String orgIdentifier = connectorInfo.getOrgIdentifier();
+    String projectIdentifier = connectorInfo.getProjectIdentifier();
+    decryptSecretRefData(accountIdentifier, orgIdentifier, projectIdentifier, secretRefData);
+    VaultConfig vaultConfig = VaultConfig.builder()
+                                  .accountId(accountIdentifier)
+                                  .name(connectorInfo.getName())
+                                  .vaultUrl(vaultConnectorDTO.getVaultUrl())
+                                  .appRoleId(vaultConnectorDTO.getAppRoleId())
+                                  .secretId(String.valueOf(secretRefData.getDecryptedValue()))
+                                  .ngMetadata(NGSecretManagerMetadata.builder()
+                                                  .accountIdentifier(accountIdentifier)
+                                                  .orgIdentifier(orgIdentifier)
+                                                  .projectIdentifier(projectIdentifier)
+                                                  .build())
+                                  .build();
+
+    VaultAppRoleLoginResult loginResult = appRoleLogin(vaultConfig);
+    if (loginResult == null || isEmpty(loginResult.getClientToken())) {
+      String message =
+          "Was not able to login Vault using the AppRole auth method. Please check your credentials and try again";
+      throw new SecretManagementException(VAULT_OPERATION_ERROR, message, USER);
+    }
+
+    Scope scope = secretRefData.getScope();
+    orgIdentifier = getOrgIdentifier(orgIdentifier, scope);
+    projectIdentifier = getProjectIdentifier(projectIdentifier, scope);
+
+    if (null != existingConnectorConfigDTO
+        && APP_ROLE != ((VaultConnectorDTO) existingConnectorConfigDTO).getAccessType()) {
+      create = true;
+    }
+    SecretRefData authTokenRefData = populateSecretRefData(
+        connectorInfo.getIdentifier() + "_" + VaultConnectorKeys.authTokenRef,
+        loginResult.getClientToken().toCharArray(), scope, accountIdentifier, orgIdentifier, projectIdentifier, create);
+    vaultConnectorDTO.setAuthToken(authTokenRefData);
+  }
+
+  private boolean isProcessAppRoleInputValid(ConnectorDTO connectorDTO, String accountIdentifier) {
+    if (connectorDTO.getConnectorInfo() == null
+        || connectorDTO.getConnectorInfo().getConnectorType() != ConnectorType.VAULT) {
+      log.error("App role processing needs VAULT ConnectorType, but found: '%s'. Account: '%s', ConnectorDTO: '%s'",
+          connectorDTO.getConnectorInfo().getConnectorType(), accountIdentifier, connectorDTO.toString());
+      return false;
+    }
+
+    ConnectorInfoDTO connectorInfo = connectorDTO.getConnectorInfo();
+    VaultConnectorDTO vaultConnectorDTO = (VaultConnectorDTO) connectorInfo.getConnectorConfig();
+
+    if (vaultConnectorDTO.getAccessType() != AccessType.APP_ROLE) {
+      log.error("Vault connector should have APP_ROLE access type, but found: '%s'. Account: '%s', ConnectorDTO: '%s'",
+          vaultConnectorDTO.getAccessType(), accountIdentifier, connectorDTO);
+      return false;
+    }
+
+    return true;
   }
 
   private SecretManagerMetadataDTO getHashicorpVaultMetadata(String accountIdentifier,
@@ -483,7 +508,14 @@ public class NGVaultServiceImpl implements NGVaultService {
             .map(metadataRequestSpec
                 -> ((VaultK8sCredentialDTO) (metadataRequestSpec.getSpec())).getServiceAccountTokenPath())
             .filter(saTokenPath -> !saTokenPath.isEmpty());
-    serviceAccountTokenPath.ifPresent(saTokenPath -> { vaultConfig.setServiceAccountTokenPath(saTokenPath); });
+    serviceAccountTokenPath.ifPresent(vaultConfig::setServiceAccountTokenPath);
+
+    Optional<String> k8sAuthEndpoint =
+        Optional.ofNullable(specDTO)
+            .filter(metadataRequestSpec -> metadataRequestSpec.getAccessType() == AccessType.K8s_AUTH)
+            .map(metadataRequestSpec -> ((VaultK8sCredentialDTO) (metadataRequestSpec.getSpec())).getK8sAuthEndpoint())
+            .filter(k8sPath -> !k8sPath.isEmpty());
+    k8sAuthEndpoint.ifPresent(vaultConfig::setK8sAuthEndpoint);
   }
 
   private SecretManagerMetadataDTO getAzureKeyVaultMetadata(String accountIdentifier,

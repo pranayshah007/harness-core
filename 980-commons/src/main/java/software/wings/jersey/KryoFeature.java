@@ -16,12 +16,17 @@ import javax.ws.rs.core.FeatureContext;
 @Singleton
 public class KryoFeature implements Feature {
   @Inject KryoMessageBodyProvider kryoMessageBodyProvider;
+  @Inject DelegateKryoMessageBodyProvider delegateKryoMessageBodyProvider;
 
   @Override
   public boolean configure(FeatureContext context) {
     Configuration config = context.getConfiguration();
     if (kryoMessageBodyProvider != null && !config.isRegistered(kryoMessageBodyProvider)) {
       context.register(kryoMessageBodyProvider);
+    }
+
+    if (delegateKryoMessageBodyProvider != null && !config.isRegistered(delegateKryoMessageBodyProvider)) {
+      context.register(delegateKryoMessageBodyProvider);
     }
 
     return true;

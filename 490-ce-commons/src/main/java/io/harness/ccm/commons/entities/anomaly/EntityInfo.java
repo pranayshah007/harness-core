@@ -31,4 +31,9 @@ public class EntityInfo {
   String awsServiceCode;
   String awsInstancetype;
   String awsUsageType;
+  String azureSubscriptionGuid;
+  String azureResourceGroup;
+  String azureMeterCategory;
+  String azureServiceName;
+  String azureInstanceId;
 }

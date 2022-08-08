@@ -8,23 +8,25 @@
 package io.harness.ng.core.artifacts.resources.docker;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.NGCommonEntityConstants;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
+import io.harness.cdng.artifact.bean.ArtifactConfig;
+import io.harness.cdng.artifact.bean.yaml.DockerHubArtifactConfig;
 import io.harness.cdng.artifact.resources.docker.dtos.DockerBuildDetailsDTO;
 import io.harness.cdng.artifact.resources.docker.dtos.DockerRequestDTO;
 import io.harness.cdng.artifact.resources.docker.dtos.DockerResponseDTO;
 import io.harness.cdng.artifact.resources.docker.service.DockerResourceService;
 import io.harness.common.NGExpressionUtils;
-import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.gitsync.interceptor.GitEntityFindInfoDTO;
 import io.harness.ng.core.artifacts.resources.util.ArtifactResourceUtils;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
-import io.harness.pipeline.remote.PipelineServiceClient;
 import io.harness.utils.IdentifierRefHelper;
 
 import com.google.inject.Inject;
@@ -58,7 +60,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class DockerArtifactResource {
   private final DockerResourceService dockerResourceService;
-  private final PipelineServiceClient pipelineServiceClient;
+  private final ArtifactResourceUtils artifactResourceUtils;
 
   @GET
   @Path("getBuildDetails")
@@ -66,8 +68,8 @@ public class DockerArtifactResource {
   public ResponseDTO<DockerResponseDTO> getBuildDetails(@QueryParam("imagePath") String imagePath,
       @QueryParam("connectorRef") String dockerConnectorIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
-      @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
-      @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo) {
     IdentifierRef connectorRef =
         IdentifierRefHelper.getIdentifierRef(dockerConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
@@ -88,11 +90,24 @@ public class DockerArtifactResource {
       @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.PIPELINE_KEY) String pipelineIdentifier,
       @NotNull @QueryParam("fqnPath") String fqnPath, @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo,
-      @NotNull String runtimeInputYaml) {
+      @NotNull String runtimeInputYaml, @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceRef) {
+    if (isNotEmpty(serviceRef)) {
+      final ArtifactConfig artifactSpecFromService = artifactResourceUtils.locateArtifactInService(
+          accountId, orgIdentifier, projectIdentifier, serviceRef, fqnPath);
+      DockerHubArtifactConfig dockerHubArtifactConfig = (DockerHubArtifactConfig) artifactSpecFromService;
+      if (isEmpty(imagePath)) {
+        imagePath = (String) dockerHubArtifactConfig.getImagePath().fetchFinalValue();
+      }
+      if (isEmpty(dockerConnectorIdentifier)) {
+        dockerConnectorIdentifier = dockerHubArtifactConfig.getConnectorRef().getValue();
+      }
+    }
+
+    imagePath = artifactResourceUtils.getResolvedImagePath(accountId, orgIdentifier, projectIdentifier,
+        pipelineIdentifier, runtimeInputYaml, imagePath, fqnPath, gitEntityBasicInfo, serviceRef);
+
     IdentifierRef connectorRef =
         IdentifierRefHelper.getIdentifierRef(dockerConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
-    imagePath = ArtifactResourceUtils.getResolvedImagePath(pipelineServiceClient, accountId, orgIdentifier,
-        projectIdentifier, pipelineIdentifier, runtimeInputYaml, imagePath, fqnPath, gitEntityBasicInfo);
     DockerResponseDTO buildDetails =
         dockerResourceService.getBuildDetails(connectorRef, imagePath, orgIdentifier, projectIdentifier);
     return ResponseDTO.newResponse(buildDetails);
@@ -183,8 +198,7 @@ public class DockerArtifactResource {
       try {
         ResponseDTO<DockerBuildDetailsDTO> lastSuccessfulBuild = getLastSuccessfulBuild(
             imagePath, dockerConnectorIdentifier, accountId, orgIdentifier, projectIdentifier, requestDTO);
-        if (lastSuccessfulBuild.getData() != null
-            && EmptyPredicate.isNotEmpty(lastSuccessfulBuild.getData().getTag())) {
+        if (lastSuccessfulBuild.getData() != null && isNotEmpty(lastSuccessfulBuild.getData().getTag())) {
           isValidArtifact = true;
         }
       } catch (Exception e) {

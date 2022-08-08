@@ -32,13 +32,11 @@ import io.harness.delegate.task.k8s.ContainerDeploymentDelegateBaseHelper;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.ExplanationException;
 import io.harness.exception.HintException;
+import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.k8s.K8sGlobalConfigService;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.logging.LogLevel;
-import io.harness.secret.SecretSanitizerThreadLocal;
-
-import software.wings.delegatetasks.ExceptionMessageSanitizer;
 
 import com.google.inject.Inject;
 import java.nio.file.Paths;
@@ -70,7 +68,6 @@ public class HelmCommandTaskNG extends AbstractDelegateRunnableTask {
   public HelmCommandTaskNG(DelegateTaskPackage delegateTaskPackage, ILogStreamingTaskClient logStreamingTaskClient,
       Consumer<DelegateTaskResponse> consumer, BooleanSupplier preExecute) {
     super(delegateTaskPackage, logStreamingTaskClient, consumer, preExecute);
-    SecretSanitizerThreadLocal.addAll(delegateTaskPackage.getSecrets());
   }
 
   @Override
@@ -87,6 +84,9 @@ public class HelmCommandTaskNG extends AbstractDelegateRunnableTask {
   public HelmCmdExecResponseNG run(TaskParameters parameters) {
     helmDeployServiceNG.setLogStreamingClient(this.getLogStreamingTaskClient());
     HelmCommandRequestNG helmCommandRequestNG = (HelmCommandRequestNG) parameters;
+    if (helmCommandRequestNG.getCommandUnitsProgress() == null) {
+      helmCommandRequestNG.setCommandUnitsProgress(CommandUnitsProgress.builder().build());
+    }
     HelmCommandResponseNG helmCommandResponseNG;
 
     String workingDirectory = Paths.get(WORKING_DIR_BASE, convertBase64UuidToCanonicalForm(generateUuid()))

@@ -10,11 +10,17 @@ package io.harness.delegate.beans;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
-import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.Value;
+import org.apache.commons.lang3.StringUtils;
 
 @OwnedBy(HarnessTeam.DEL)
 @Value
 public final class DelegateGroupTags {
-  private final List<String> tags;
+  private final Set<String> tags;
+
+  public Set<String> getTags() {
+    return tags.stream().filter(StringUtils::isNotBlank).map(String::trim).collect(Collectors.toSet());
+  }
 }

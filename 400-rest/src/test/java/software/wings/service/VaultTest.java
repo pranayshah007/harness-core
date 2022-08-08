@@ -75,7 +75,6 @@ import io.harness.security.encryption.EncryptedRecord;
 import io.harness.security.encryption.EncryptionConfig;
 import io.harness.security.encryption.EncryptionType;
 import io.harness.serializer.KryoSerializer;
-import io.harness.testlib.RealMongo;
 import io.harness.threading.Morpheus;
 
 import software.wings.EncryptTestUtils;
@@ -95,7 +94,7 @@ import software.wings.beans.Service;
 import software.wings.beans.ServiceTemplate;
 import software.wings.beans.ServiceVariable;
 import software.wings.beans.ServiceVariable.OverrideType;
-import software.wings.beans.ServiceVariable.Type;
+import software.wings.beans.ServiceVariableType;
 import software.wings.beans.SettingAttribute;
 import software.wings.beans.SettingAttribute.SettingAttributeKeys;
 import software.wings.beans.SettingAttribute.SettingCategory;
@@ -282,7 +281,7 @@ public class VaultTest extends WingsBaseTest {
 
     when(vaultEncryptor.validateReference(anyString(), any(SecretText.class), anyObject())).thenReturn(true);
 
-    when(kmsEncryptorsRegistry.getKmsEncryptor(any(KmsConfig.class))).thenReturn(kmsEncryptor);
+    when(kmsEncryptorsRegistry.getKmsEncryptor(any())).thenReturn(kmsEncryptor);
     when(vaultEncryptorsRegistry.getVaultEncryptor(any())).thenReturn(vaultEncryptor);
     when(delegateProxyFactory.get(eq(SecretManagementDelegateService.class), any(SyncTaskContext.class)))
         .thenReturn(secretManagementDelegateService);
@@ -1074,7 +1073,6 @@ public class VaultTest extends WingsBaseTest {
   @Test
   @Owner(developers = UNKNOWN)
   @Category(UnitTests.class)
-  @RealMongo
   public void vaultEncryptionSaveServiceVariable() throws IllegalAccessException {
     VaultConfig vaultConfig = secretManagementTestHelper.getVaultConfigWithAuthToken(VAULT_TOKEN);
     vaultService.saveOrUpdateVaultConfig(accountId, vaultConfig, true);
@@ -1096,7 +1094,7 @@ public class VaultTest extends WingsBaseTest {
                                                 .accountId(accountId)
                                                 .name(UUID.randomUUID().toString())
                                                 .value(secretId.toCharArray())
-                                                .type(Type.ENCRYPTED_TEXT)
+                                                .type(ServiceVariableType.ENCRYPTED_TEXT)
                                                 .build();
 
     String savedAttributeId = wingsPersistence.save(serviceVariable);
@@ -1112,7 +1110,7 @@ public class VaultTest extends WingsBaseTest {
 
     Map<String, Object> keyValuePairs = new HashMap<>();
     keyValuePairs.put("name", "newName");
-    keyValuePairs.put("type", Type.ENCRYPTED_TEXT);
+    keyValuePairs.put("type", ServiceVariableType.ENCRYPTED_TEXT);
     keyValuePairs.put("value", secretId.toCharArray());
     wingsPersistence.updateFields(ServiceVariable.class, savedAttributeId, keyValuePairs);
     assertThat(wingsPersistence.createQuery(EncryptedData.class).count()).isEqualTo(numOfEncRecords + 2);
@@ -1165,7 +1163,7 @@ public class VaultTest extends WingsBaseTest {
                                                 .accountId(accountId)
                                                 .name(UUID.randomUUID().toString())
                                                 .value(secretId.toCharArray())
-                                                .type(Type.ENCRYPTED_TEXT)
+                                                .type(ServiceVariableType.ENCRYPTED_TEXT)
                                                 .build();
 
     String savedAttributeId = wingsPersistence.save(serviceVariable);
@@ -1215,7 +1213,6 @@ public class VaultTest extends WingsBaseTest {
   @Owner(developers = UTKARSH)
   @Repeat(times = 3, successes = 1)
   @Category(UnitTests.class)
-  @RealMongo
   public void transitionVault() throws InterruptedException, IllegalAccessException {
     Thread listenerThread = startTransitionListener();
     try {
@@ -1486,7 +1483,6 @@ public class VaultTest extends WingsBaseTest {
   @Test
   @Owner(developers = UTKARSH)
   @Category(UnitTests.class)
-  @RealMongo
   public void saveConfigFileWithEncryption() throws IOException, IllegalAccessException {
     final long seed = System.currentTimeMillis();
     log.info("seed: " + seed);

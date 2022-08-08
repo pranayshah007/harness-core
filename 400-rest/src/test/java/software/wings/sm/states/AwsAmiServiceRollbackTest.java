@@ -38,7 +38,6 @@ import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
@@ -94,6 +93,7 @@ import software.wings.service.intfc.sweepingoutput.SweepingOutputService;
 import software.wings.sm.ExecutionContextImpl;
 import software.wings.sm.ExecutionResponse;
 import software.wings.sm.WorkflowStandardParams;
+import software.wings.sm.WorkflowStandardParamsExtensionService;
 
 import com.google.common.collect.Lists;
 import java.util.ArrayList;
@@ -119,6 +119,7 @@ public class AwsAmiServiceRollbackTest extends WingsBaseTest {
   @Mock private KryoSerializer kryoSerializer;
   @Mock private StateExecutionService stateExecutionService;
   @Mock private FeatureFlagService featureFlagService;
+  @Mock private WorkflowStandardParamsExtensionService workflowStandardParamsExtensionService;
 
   @InjectMocks private AwsAmiServiceRollback state = new AwsAmiServiceRollback("stepName");
 
@@ -153,7 +154,7 @@ public class AwsAmiServiceRollbackTest extends WingsBaseTest {
   public void testExecuteInternal() {
     state.setRollbackAllPhasesAtOnce(true);
     ExecutionContextImpl mockContext = mock(ExecutionContextImpl.class);
-    when(mockContext.renderExpression(anyString())).thenAnswer((Answer<String>) invocation -> {
+    when(mockContext.renderExpression(any())).thenAnswer((Answer<String>) invocation -> {
       Object[] args = invocation.getArguments();
       return (String) args[0];
     });
@@ -175,7 +176,7 @@ public class AwsAmiServiceRollbackTest extends WingsBaseTest {
             .desiredInstances(2)
             .maxInstances(2)
             .build();
-    doReturn(phaseElement).when(mockContext).getContextElement(any(), anyString());
+    doReturn(phaseElement).when(mockContext).getContextElement(any(), any());
     doReturn(SweepingOutputInquiry.builder()).when(mockContext).prepareSweepingOutputInquiryBuilder();
     doReturn(false).when(featureFlagService).isEnabled(any(), any());
     WorkflowStandardParams mockParams = mock(WorkflowStandardParams.class);
@@ -184,12 +185,12 @@ public class AwsAmiServiceRollbackTest extends WingsBaseTest {
     doReturn(EmbeddedUser.builder().email("user@harness.io").name("user").build()).when(mockParams).getCurrentUser();
     doReturn(mockParams).when(mockContext).getContextElement(any());
     Environment environment = anEnvironment().uuid(ENV_ID).environmentType(PROD).name(ENV_NAME).build();
-    doReturn(environment).when(mockParams).getEnv();
+    doReturn(environment).when(workflowStandardParamsExtensionService).getEnv(mockParams);
     doReturn(environment).when(mockContext).fetchRequiredEnvironment();
     Application application = anApplication().uuid(APP_ID).name(APP_NAME).accountId(ACCOUNT_ID).build();
-    doReturn(application).when(mockParams).getApp();
+    doReturn(application).when(workflowStandardParamsExtensionService).getApp(mockParams);
     Service service = Service.builder().uuid(SERVICE_ID).name(SERVICE_NAME).build();
-    doReturn(service).when(mockServiceResourceService).getWithDetails(anyString(), anyString());
+    doReturn(service).when(mockServiceResourceService).getWithDetails(any(), any());
     doReturn(serviceSetupElement)
         .when(mockAwsAmiServiceStateHelper)
         .getSetupElementFromSweepingOutput(mockContext, AMI_SERVICE_SETUP_SWEEPING_OUTPUT_NAME);
@@ -199,22 +200,18 @@ public class AwsAmiServiceRollbackTest extends WingsBaseTest {
         .getContextElement(ContextElementType.AMI_SERVICE_DEPLOY);
     String revision = "ami-1234";
     Artifact artifact = anArtifact().withRevision(revision).build();
-    doReturn(artifact).when(mockContext).getDefaultArtifactForService(anyString());
-    doNothing().when(stateExecutionService).appendDelegateTaskDetails(anyString(), any());
+    doReturn(artifact).when(mockContext).getDefaultArtifactForService(any());
+    doNothing().when(stateExecutionService).appendDelegateTaskDetails(any(), any());
     ArtifactStream artifactStream =
         AmiArtifactStream.builder().uuid(ARTIFACT_STREAM_ID).sourceName(ARTIFACT_SOURCE_NAME).build();
-    doReturn(artifactStream).when(mockArtifactStreamService).get(anyString());
+    doReturn(artifactStream).when(mockArtifactStreamService).get(any());
     Command command = aCommand().withName("Ami-Command").withCommandType(ENABLE).build();
     ServiceCommand serviceCommand = aServiceCommand().withCommand(command).build();
-    doReturn(serviceCommand)
-        .when(mockServiceResourceService)
-        .getCommandByName(anyString(), anyString(), anyString(), anyString());
+    doReturn(serviceCommand).when(mockServiceResourceService).getCommandByName(any(), any(), any(), any());
     AmiCommandUnit commandUnit = new AmiCommandUnit();
     commandUnit.setName("Ami-Command-Unit");
     List<CommandUnit> commandUnits = singletonList(commandUnit);
-    doReturn(commandUnits)
-        .when(mockServiceResourceService)
-        .getFlattenCommandUnitList(anyString(), anyString(), anyString(), anyString());
+    doReturn(commandUnits).when(mockServiceResourceService).getFlattenCommandUnitList(any(), any(), any(), any());
     Activity activity = Activity.builder().uuid(ACTIVITY_ID).appId(APP_ID).build();
     doReturn(activity).when(mockActivityService).save(any());
     String classicLb = "classicLb";
@@ -233,10 +230,10 @@ public class AwsAmiServiceRollbackTest extends WingsBaseTest {
                                                             .withStageTargetGroupArns(stageTgs)
                                                             .withAutoScalingGroupName(baseAsg)
                                                             .build();
-    doReturn(infrastructureMapping).when(mockInfrastructureMappingService).get(anyString(), anyString());
+    doReturn(infrastructureMapping).when(mockInfrastructureMappingService).get(any(), any());
     SettingAttribute cloudProvider = aSettingAttribute().withValue(AwsConfig.builder().build()).build();
-    doReturn(cloudProvider).when(mockSettingsService).get(anyString());
-    doReturn(emptyList()).when(mockSecretManager).getEncryptionDetails(any(), anyString(), anyString());
+    doReturn(cloudProvider).when(mockSettingsService).get(any());
+    doReturn(emptyList()).when(mockSecretManager).getEncryptionDetails(any(), any(), any());
 
     ExecutionResponse response = state.executeInternal(mockContext);
     verify(mockDelegateService, times(1)).queueTask(any(DelegateTask.class));

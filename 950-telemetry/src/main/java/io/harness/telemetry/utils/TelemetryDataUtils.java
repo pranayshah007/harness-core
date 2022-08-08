@@ -7,6 +7,7 @@
 
 package io.harness.telemetry.utils;
 
+import static io.harness.TelemetryConstants.SYSTEM_USER;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import io.harness.security.SecurityContextBuilder;
@@ -14,9 +15,13 @@ import io.harness.security.dto.Principal;
 import io.harness.security.dto.UserPrincipal;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import javax.ws.rs.container.ContainerRequestContext;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
+import org.glassfish.jersey.server.internal.routing.UriRoutingContext;
+import org.glassfish.jersey.uri.UriTemplate;
 
 @UtilityClass
 @Slf4j
@@ -41,7 +46,7 @@ public class TelemetryDataUtils {
     if (isEmpty(identity)) {
       log.debug("Failed to read identity from principal, use system user instead");
       // TODO add "-{accountId}" after "system" when accountId is provided in principal
-      identity = "system";
+      identity = SYSTEM_USER;
     }
     return identity;
   }
@@ -74,5 +79,14 @@ public class TelemetryDataUtils {
       }
     }
     return nonNullProperties;
+  }
+
+  public static String getApiPattern(ContainerRequestContext containerRequestContext) {
+    List<UriTemplate> templates = ((UriRoutingContext) containerRequestContext.getUriInfo()).getMatchedTemplates();
+    StringBuilder pattern = new StringBuilder("");
+    for (int i = 0; i < templates.size(); i++) {
+      pattern.append(templates.get(templates.size() - 1 - i).getTemplate());
+    }
+    return pattern.toString();
   }
 }

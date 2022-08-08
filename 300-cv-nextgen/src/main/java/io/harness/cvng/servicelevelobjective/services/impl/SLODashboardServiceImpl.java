@@ -11,10 +11,12 @@ import io.harness.cvng.client.NextGenService;
 import io.harness.cvng.core.beans.monitoredService.MonitoredServiceDTO;
 import io.harness.cvng.core.beans.params.PageParams;
 import io.harness.cvng.core.beans.params.ProjectParams;
+import io.harness.cvng.core.beans.params.TimeRangeParams;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
 import io.harness.cvng.core.utils.DateTimeUtils;
 import io.harness.cvng.servicelevelobjective.SLORiskCountResponse;
 import io.harness.cvng.servicelevelobjective.beans.SLODashboardApiFilter;
+import io.harness.cvng.servicelevelobjective.beans.SLODashboardDetail;
 import io.harness.cvng.servicelevelobjective.beans.SLODashboardWidget;
 import io.harness.cvng.servicelevelobjective.beans.SLOErrorBudgetResetDTO;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorDTO;
@@ -28,7 +30,6 @@ import io.harness.cvng.servicelevelobjective.services.api.SLODashboardService;
 import io.harness.cvng.servicelevelobjective.services.api.SLOErrorBudgetResetService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveService;
-import io.harness.data.structure.CollectionUtils;
 import io.harness.ng.beans.PageResponse;
 
 import com.google.common.base.Preconditions;
@@ -37,11 +38,8 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.function.Function;
+import java.util.Objects;
 import java.util.stream.Collectors;
-import org.jetbrains.annotations.NotNull;
 
 public class SLODashboardServiceImpl implements SLODashboardService {
   @Inject private ServiceLevelObjectiveService serviceLevelObjectiveService;
@@ -57,25 +55,11 @@ public class SLODashboardServiceImpl implements SLODashboardService {
       ProjectParams projectParams, SLODashboardApiFilter filter, PageParams pageParams) {
     PageResponse<ServiceLevelObjectiveResponse> sloPageResponse =
         serviceLevelObjectiveService.getSLOForDashboard(projectParams, filter, pageParams);
-    Set<String> monitoredServiceIdentifiers =
-        sloPageResponse.getContent()
-            .stream()
-            .map(slo -> slo.getServiceLevelObjectiveDTO().getMonitoredServiceRef())
-            .collect(Collectors.toSet());
-    Map<String, MonitoredServiceDTO> identifierToMonitoredServiceMap =
-        getIdentifierToMonitoredServiceDTOMap(projectParams, monitoredServiceIdentifiers);
-    Map<String, List<SLOErrorBudgetResetDTO>> errorBudgetResetDTOMap =
-        sloErrorBudgetResetService.getErrorBudgetResets(projectParams,
-            sloPageResponse.getContent()
-                .stream()
-                .map(slo -> slo.getServiceLevelObjectiveDTO().getIdentifier())
-                .collect(Collectors.toSet()));
+
     List<SLODashboardWidget> sloDashboardWidgets =
         sloPageResponse.getContent()
             .stream()
-            .map(sloResponse
-                -> getSloDashboardWidget(projectParams, identifierToMonitoredServiceMap, sloResponse,
-                    errorBudgetResetDTOMap.get(sloResponse.getServiceLevelObjectiveDTO().getIdentifier())))
+            .map(sloResponse -> getSloDashboardWidget(projectParams, sloResponse, null))
             .collect(Collectors.toList());
     return PageResponse.<SLODashboardWidget>builder()
         .pageSize(sloPageResponse.getPageSize())
@@ -88,14 +72,36 @@ public class SLODashboardServiceImpl implements SLODashboardService {
   }
 
   @Override
+  public SLODashboardDetail getSloDashboardDetail(
+      ProjectParams projectParams, String identifier, Long startTime, Long endTime) {
+    ServiceLevelObjectiveResponse sloResponse = serviceLevelObjectiveService.get(projectParams, identifier);
+    SLODashboardWidget sloDashboardWidget;
+    if (Objects.isNull(startTime) || Objects.isNull(endTime)) {
+      sloDashboardWidget = getSloDashboardWidget(projectParams, sloResponse, null);
+    } else {
+      sloDashboardWidget = getSloDashboardWidget(projectParams, sloResponse,
+          TimeRangeParams.builder()
+              .startTime(Instant.ofEpochMilli(startTime))
+              .endTime(Instant.ofEpochMilli(endTime))
+              .build());
+    }
+    return SLODashboardDetail.builder()
+        .description(sloResponse.getServiceLevelObjectiveDTO().getDescription())
+        .createdAt(sloResponse.getCreatedAt())
+        .lastModifiedAt(sloResponse.getLastModifiedAt())
+        .timeRangeFilters(serviceLevelObjectiveService.getEntity(projectParams, identifier).getTimeRangeFilters())
+        .sloDashboardWidget(sloDashboardWidget)
+        .build();
+  }
+
+  @Override
   public SLORiskCountResponse getRiskCount(
       ProjectParams projectParams, SLODashboardApiFilter serviceLevelObjectiveFilter) {
     return serviceLevelObjectiveService.getRiskCount(projectParams, serviceLevelObjectiveFilter);
   }
 
-  private SLODashboardWidget getSloDashboardWidget(ProjectParams projectParams,
-      Map<String, MonitoredServiceDTO> identifierToMonitoredServiceMap, ServiceLevelObjectiveResponse sloResponse,
-      List<SLOErrorBudgetResetDTO> errorBudgetResetDTOS) {
+  private SLODashboardWidget getSloDashboardWidget(
+      ProjectParams projectParams, ServiceLevelObjectiveResponse sloResponse, TimeRangeParams filter) {
     Preconditions.checkState(sloResponse.getServiceLevelObjectiveDTO().getServiceLevelIndicators().size() == 1,
         "Only one service level indicator is supported");
     ServiceLevelIndicatorDTO serviceLevelIndicatorDTO =
@@ -106,20 +112,18 @@ public class SLODashboardServiceImpl implements SLODashboardService {
     ServiceLevelObjectiveDTO slo = sloResponse.getServiceLevelObjectiveDTO();
     ServiceLevelObjective serviceLevelObjective =
         serviceLevelObjectiveService.getEntity(projectParams, slo.getIdentifier());
-    MonitoredServiceDTO monitoredService = identifierToMonitoredServiceMap.get(slo.getMonitoredServiceRef());
+    MonitoredServiceDTO monitoredService =
+        monitoredServiceService.get(projectParams, slo.getMonitoredServiceRef()).getMonitoredServiceDTO();
     LocalDateTime currentLocalDate = LocalDateTime.ofInstant(clock.instant(), serviceLevelObjective.getZoneOffset());
     TimePeriod timePeriod = serviceLevelObjective.getCurrentTimeRange(currentLocalDate);
     Instant currentTimeMinute = DateTimeUtils.roundDownTo1MinBoundary(clock.instant());
-    int totalErrorBudgetMinutes = serviceLevelObjective.getActiveErrorBudgetMinutes(
-        CollectionUtils.emptyIfNull(errorBudgetResetDTOS)
-            .stream()
-            .sorted((dto1, dto2) -> dto1.getCreatedAt().compareTo(dto2.getCreatedAt()))
-            .map(dto -> dto.getErrorBudgetIncrementPercentage())
-            .collect(Collectors.toList()),
-        currentLocalDate);
+    List<SLOErrorBudgetResetDTO> errorBudgetResetDTOS =
+        sloErrorBudgetResetService.getErrorBudgetResets(projectParams, slo.getIdentifier());
+    int totalErrorBudgetMinutes =
+        serviceLevelObjective.getActiveErrorBudgetMinutes(errorBudgetResetDTOS, currentLocalDate);
     SLODashboardWidget.SLOGraphData sloGraphData = sliRecordService.getGraphData(serviceLevelIndicator.getUuid(),
         timePeriod.getStartTime(serviceLevelObjective.getZoneOffset()), currentTimeMinute, totalErrorBudgetMinutes,
-        serviceLevelIndicator.getSliMissingDataType(), serviceLevelIndicator.getVersion());
+        serviceLevelIndicator.getSliMissingDataType(), serviceLevelIndicator.getVersion(), filter);
     return SLODashboardWidget.withGraphData(sloGraphData)
         .sloIdentifier(slo.getIdentifier())
         .title(slo.getName())
@@ -151,18 +155,6 @@ public class SLODashboardServiceImpl implements SLODashboardService {
                       .currentRatePercentage(sloGraphData.dailyBurnRate(serviceLevelObjective.getZoneOffset()))
                       .build())
         .build();
-  }
-
-  @NotNull
-  private Map<String, MonitoredServiceDTO> getIdentifierToMonitoredServiceDTOMap(
-      ProjectParams projectParams, Set<String> monitoredServiceIdentifiers) {
-    List<MonitoredServiceDTO> monitoredServiceDTOS =
-        monitoredServiceService.get(projectParams, monitoredServiceIdentifiers)
-            .stream()
-            .map(monitoredServiceResponse -> monitoredServiceResponse.getMonitoredServiceDTO())
-            .collect(Collectors.toList());
-    return monitoredServiceDTOS.stream().collect(
-        Collectors.toMap(MonitoredServiceDTO::getIdentifier, Function.identity()));
   }
 
   private String getHealthSourceName(MonitoredServiceDTO monitoredServiceDTO, String healthSourceRef) {

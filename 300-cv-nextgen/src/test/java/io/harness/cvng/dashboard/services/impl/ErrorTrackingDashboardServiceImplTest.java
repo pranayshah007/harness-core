@@ -27,6 +27,7 @@ import io.harness.cvng.analysis.entities.LogAnalysisResult;
 import io.harness.cvng.analysis.entities.LogAnalysisResult.AnalysisResult;
 import io.harness.cvng.analysis.entities.LogAnalysisResult.LogAnalysisTag;
 import io.harness.cvng.analysis.services.api.LogAnalysisService;
+import io.harness.cvng.beans.DataSourceType;
 import io.harness.cvng.core.beans.params.PageParams;
 import io.harness.cvng.core.beans.params.TimeRangeParams;
 import io.harness.cvng.core.beans.params.filterParams.LiveMonitoringLogAnalysisFilter;
@@ -39,14 +40,11 @@ import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceServic
 import io.harness.cvng.dashboard.beans.AnalyzedLogDataDTO;
 import io.harness.cvng.dashboard.services.api.ErrorTrackingDashboardService;
 import io.harness.ng.beans.PageResponse;
-import io.harness.persistence.HPersistence;
 import io.harness.rule.Owner;
 
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
-import java.time.Clock;
 import java.time.Instant;
-import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -62,16 +60,9 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 public class ErrorTrackingDashboardServiceImplTest extends CvNextGenTestBase {
-  private String projectIdentifier;
-  private String orgIdentifier;
   private String serviceIdentifier;
-  private String envIdentifier;
-  private String accountId;
-  private Clock clock;
 
   @Inject private ErrorTrackingDashboardService errorTrackingDashboardService;
-  @Inject private HPersistence hPersistence;
-  @Inject private LogAnalysisService logAnalysisService;
   @Inject private MonitoredServiceService monitoredServiceService;
   @Mock private LogAnalysisService mockLogAnalysisService;
   @Mock private CVConfigService mockCvConfigService;
@@ -81,24 +72,20 @@ public class ErrorTrackingDashboardServiceImplTest extends CvNextGenTestBase {
   @Before
   public void setUp() throws Exception {
     builderFactory = BuilderFactory.getDefault();
-    projectIdentifier = builderFactory.getContext().getProjectIdentifier();
-    orgIdentifier = builderFactory.getContext().getOrgIdentifier();
     serviceIdentifier = builderFactory.getContext().getServiceIdentifier();
-    envIdentifier = builderFactory.getContext().getEnvIdentifier();
-    accountId = builderFactory.getContext().getAccountId();
     monitoredServiceService.createDefault(builderFactory.getProjectParams(),
         builderFactory.getContext().getServiceIdentifier(), builderFactory.getContext().getEnvIdentifier());
 
-    clock = Clock.fixed(Instant.parse("2020-04-22T10:02:06Z"), ZoneOffset.UTC);
     MockitoAnnotations.initMocks(this);
     FieldUtils.writeField(errorTrackingDashboardService, "logAnalysisService", mockLogAnalysisService, true);
     FieldUtils.writeField(errorTrackingDashboardService, "cvConfigService", mockCvConfigService, true);
     FieldUtils.writeField(errorTrackingDashboardService, "verificationTaskService", mockVerificationTaskService, true);
     when(mockVerificationTaskService.getServiceGuardVerificationTaskId(anyString(), anyString()))
-        .thenAnswer(invocation -> invocation.getArgumentAt(1, String.class));
+        .thenAnswer(invocation -> invocation.getArgument(1, String.class));
 
-    when(mockVerificationTaskService.createLiveMonitoringVerificationTask(anyString(), anyString(), any()))
-        .thenAnswer(invocation -> invocation.getArgumentAt(1, String.class));
+    when(mockVerificationTaskService.createLiveMonitoringVerificationTask(
+             anyString(), anyString(), any(DataSourceType.class)))
+        .thenAnswer(invocation -> invocation.getArgument(1, String.class));
   }
 
   @Test
@@ -326,7 +313,6 @@ public class ErrorTrackingDashboardServiceImplTest extends CvNextGenTestBase {
   private CVConfig createCvConfig(String cvConfigId, String serviceIdentifier) {
     SplunkCVConfig splunkCVConfig = new SplunkCVConfig();
     splunkCVConfig.setUuid(cvConfigId);
-    splunkCVConfig.setServiceIdentifier(serviceIdentifier);
     return splunkCVConfig;
   }
 

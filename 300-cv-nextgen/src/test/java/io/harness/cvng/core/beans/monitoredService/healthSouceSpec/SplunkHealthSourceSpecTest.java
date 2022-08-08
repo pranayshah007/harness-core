@@ -163,8 +163,6 @@ public class SplunkHealthSourceSpecTest extends CvNextGenTestBase {
     assertThat(cvConfig.getOrgIdentifier()).isEqualTo(orgIdentifier);
     assertThat(cvConfig.getProjectIdentifier()).isEqualTo(projectIdentifier);
     assertThat(cvConfig.getConnectorIdentifier()).isEqualTo(connectorIdentifier);
-    assertThat(cvConfig.getEnvIdentifier()).isEqualTo(envIdentifier);
-    assertThat(cvConfig.getServiceIdentifier()).isEqualTo(serviceIdentifier);
     assertThat(cvConfig.getIdentifier()).isEqualTo(identifier);
     assertThat(cvConfig.getProductName()).isEqualTo(feature);
     assertThat(cvConfig.getMonitoringSourceName()).isEqualTo(name);

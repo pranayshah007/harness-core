@@ -13,6 +13,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
+import io.harness.ff.FeatureFlagService;
 import io.harness.rule.Owner;
 
 import software.wings.graphql.datafetcher.connector.ConnectorsController;
@@ -32,6 +33,7 @@ public class ConnectorFactoryTest extends CategoryTest {
   @Mock private SettingsService settingsService;
   @Mock private ConnectorsController connectorsController;
   @Mock private UsageScopeController usageScopeController;
+  @Mock private FeatureFlagService featureFlagService;
 
   @Before
   public void setup() {
@@ -42,8 +44,8 @@ public class ConnectorFactoryTest extends CategoryTest {
   @Owner(developers = TMACARI)
   @Category(UnitTests.class)
   public void testGetGitConnector() {
-    Connector connector = ConnectorFactory.getConnector(
-        QLConnectorType.GIT, connectorsController, secretManager, settingsService, usageScopeController);
+    Connector connector = ConnectorFactory.getConnector(QLConnectorType.GIT, connectorsController, secretManager,
+        settingsService, usageScopeController, featureFlagService);
     assertThat(connector).isInstanceOf(GitConnector.class);
   }
 }

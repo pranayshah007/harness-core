@@ -31,7 +31,11 @@ import java.util.stream.Collectors;
 @OwnedBy(HarnessTeam.PIPELINE)
 public class InternalReferredEntityExtractor {
   private static final int MAX_PAGE_SIZE = 50;
-  @Inject EntitySetupUsageClient entitySetupUsageClient;
+
+  private static final Map<EntityType, EntityType> referredByEntityTypeToReferredEntityTypeMap =
+      Map.of(EntityType.CONNECTORS, EntityType.SECRETS, EntityType.SERVICE, EntityType.CONNECTORS);
+
+  @Inject private EntitySetupUsageClient entitySetupUsageClient;
 
   public List<EntityDetail> extractInternalEntities(String accountIdentifier, List<EntityDetail> entityDetails) {
     List<EntityDetail> referredEntitiesContainingInternalEntities =
@@ -49,8 +53,8 @@ public class InternalReferredEntityExtractor {
       List<List<String>> partitionedList = Lists.partition(entry.getValue(), MAX_PAGE_SIZE);
       for (List<String> entityDetail : partitionedList) {
         EntityReferencesDTO entityReferencesDTO =
-            getResponseWithRetry(entitySetupUsageClient.listAllReferredUsagesBatch(
-                                     accountIdentifier, entityDetail, entry.getKey(), EntityType.SECRETS),
+            getResponseWithRetry(entitySetupUsageClient.listAllReferredUsagesBatch(accountIdentifier, entityDetail,
+                                     entry.getKey(), referredByEntityTypeToReferredEntityTypeMap.get(entry.getKey())),
                 "Internal refereed entities could not be extracted after {} attempts.");
         for (EntitySetupUsageBatchDTO entitySetupUsageBatchDTO : entityReferencesDTO.getEntitySetupUsageBatchList()) {
           internalReferredEntities.addAll(entitySetupUsageBatchDTO.getReferredEntities()
@@ -64,6 +68,6 @@ public class InternalReferredEntityExtractor {
   }
 
   private boolean hasInternalReferredEntities(EntityType entityType) {
-    return entityType == EntityType.CONNECTORS;
+    return referredByEntityTypeToReferredEntityTypeMap.containsKey(entityType);
   }
 }

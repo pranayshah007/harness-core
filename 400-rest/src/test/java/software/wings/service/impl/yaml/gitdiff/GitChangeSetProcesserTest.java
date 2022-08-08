@@ -11,7 +11,6 @@ import static io.harness.rule.OwnerRule.ROHIT_KUMAR;
 
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyMap;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
@@ -55,7 +54,7 @@ public class GitChangeSetProcesserTest extends CategoryTest {
   public void processGitChangeSet() {
     final GitDiffResult gitDiffResult = GitDiffResult.builder().build();
     gitChangeSetProcesser.processGitChangeSet(ACCOUNTID, gitDiffResult);
-    verify(yamlGitService, Mockito.times(1)).isCommitAlreadyProcessed(eq(ACCOUNTID), anyString());
+    verify(yamlGitService, Mockito.times(1)).isCommitAlreadyProcessed(eq(ACCOUNTID), any());
     verify(gitChangeAuditRecordHandler, times(1)).processGitChangesForAudit(ACCOUNTID, gitDiffResult);
     verify(gitChangesToEntityConverter, times(1)).ingestGitYamlChangs(ACCOUNTID, gitDiffResult);
     verify(gitChangeAuditRecordHandler, times(1)).finalizeAuditRecord(eq(ACCOUNTID), any(), anyMap());
@@ -66,9 +65,9 @@ public class GitChangeSetProcesserTest extends CategoryTest {
   @Category(UnitTests.class)
   public void processGitChangeSet_commitalreadyprocessed() {
     final GitDiffResult gitDiffResult = GitDiffResult.builder().build();
-    doReturn(true).when(yamlGitService).isCommitAlreadyProcessed(anyString(), anyString());
+    doReturn(true).when(yamlGitService).isCommitAlreadyProcessed(any(), any());
     gitChangeSetProcesser.processGitChangeSet(ACCOUNTID, gitDiffResult);
-    verify(yamlGitService, Mockito.times(1)).isCommitAlreadyProcessed(eq(ACCOUNTID), anyString());
+    verify(yamlGitService, Mockito.times(1)).isCommitAlreadyProcessed(eq(ACCOUNTID), any());
     verify(gitChangeAuditRecordHandler, times(0)).processGitChangesForAudit(ACCOUNTID, gitDiffResult);
     verify(gitChangesToEntityConverter, times(0)).ingestGitYamlChangs(ACCOUNTID, gitDiffResult);
     verify(gitChangeAuditRecordHandler, times(0)).finalizeAuditRecord(eq(ACCOUNTID), any(), anyMap());

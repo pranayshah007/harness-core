@@ -28,8 +28,6 @@ import io.harness.beans.DelegateTask;
 import io.harness.beans.ExecutionStatus;
 import io.harness.beans.TriggeredBy;
 import io.harness.context.ContextElementType;
-import io.harness.delegate.beans.DelegateMetaInfo;
-import io.harness.delegate.beans.DelegateTaskNotifyResponseData;
 import io.harness.delegate.beans.TaskData;
 import io.harness.tasks.ResponseData;
 
@@ -42,6 +40,7 @@ import software.wings.beans.BambooConfig;
 import software.wings.beans.Environment;
 import software.wings.beans.InfrastructureMapping;
 import software.wings.beans.TaskType;
+import software.wings.delegatetasks.BambooTask.BambooExecutionResponse;
 import software.wings.service.impl.SettingServiceHelper;
 import software.wings.service.intfc.ActivityService;
 import software.wings.service.intfc.DelegateService;
@@ -52,6 +51,7 @@ import software.wings.sm.ExecutionContextImpl;
 import software.wings.sm.ExecutionResponse;
 import software.wings.sm.State;
 import software.wings.sm.WorkflowStandardParams;
+import software.wings.sm.WorkflowStandardParamsExtensionService;
 import software.wings.stencils.DefaultValue;
 
 import com.github.reinert.jjschema.Attributes;
@@ -62,11 +62,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.mongodb.morphia.annotations.Transient;
 
@@ -93,6 +88,7 @@ public class BambooState extends State {
   @Inject @Transient private InfrastructureMappingService infrastructureMappingService;
   @Inject private SecretManager secretManager;
   @Inject private SettingServiceHelper settingServiceHelper;
+  @Inject private WorkflowStandardParamsExtensionService workflowStandardParamsExtensionService;
 
   public BambooState(String name) {
     super(name, BAMBOO.name());
@@ -159,9 +155,10 @@ public class BambooState extends State {
 
   protected ExecutionResponse executeInternal(ExecutionContext context, String activityId) {
     WorkflowStandardParams workflowStandardParams = context.getContextElement(ContextElementType.STANDARD);
-    String envId = (workflowStandardParams == null || workflowStandardParams.getEnv() == null)
+    String envId = (workflowStandardParams == null
+                       || workflowStandardParamsExtensionService.getEnv(workflowStandardParams) == null)
         ? null
-        : workflowStandardParams.getEnv().getUuid();
+        : workflowStandardParamsExtensionService.getEnv(workflowStandardParams).getUuid();
     notNullCheck("Application cannot be null", context.getApp());
     String accountId = ((ExecutionContextImpl) context).getApp().getAccountId();
 
@@ -243,9 +240,8 @@ public class BambooState extends State {
   public ExecutionResponse handleAsyncResponse(ExecutionContext context, Map<String, ResponseData> response) {
     String activityId = response.keySet().iterator().next();
     BambooExecutionResponse bambooExecutionResponse = (BambooExecutionResponse) response.values().iterator().next();
-    updateActivityStatus(
-        activityId, ((ExecutionContextImpl) context).getApp().getUuid(), bambooExecutionResponse.getExecutionStatus());
-    BambooExecutionData bambooExecutionData = (BambooExecutionData) context.getStateExecutionData();
+    updateActivityStatus(activityId, context.getApp().getUuid(), bambooExecutionResponse.getExecutionStatus());
+    BambooExecutionData bambooExecutionData = context.getStateExecutionData();
     bambooExecutionData.setProjectName(bambooExecutionResponse.getProjectName());
     bambooExecutionData.setPlanName(bambooExecutionResponse.getPlanName());
     bambooExecutionData.setBuildNumber(bambooExecutionResponse.getBuildNumber());
@@ -336,24 +332,5 @@ public class BambooState extends State {
   @Override
   public boolean isSelectionLogsTrackingForTasksEnabled() {
     return true;
-  }
-
-  @Data
-  @Builder
-  @NoArgsConstructor
-  @AllArgsConstructor
-  @EqualsAndHashCode(callSuper = false)
-  public static final class BambooExecutionResponse implements DelegateTaskNotifyResponseData {
-    private DelegateMetaInfo delegateMetaInfo;
-    private String projectName;
-    private String planName;
-    private String planUrl;
-    private String buildStatus;
-    private String buildUrl;
-    private String buildNumber;
-    private ExecutionStatus executionStatus;
-    private String errorMessage;
-    private List<ParameterEntry> parameters;
-    private List<FilePathAssertionEntry> filePathAssertionMap;
   }
 }

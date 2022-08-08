@@ -20,7 +20,6 @@ import static software.wings.utils.WingsTestConstants.APP_ID;
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -47,7 +46,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.Spy;
 
 public class BlueGreenWorkflowYamlHandlerTest extends WorkflowYamlHandlerTestBase {
@@ -68,7 +66,7 @@ public class BlueGreenWorkflowYamlHandlerTest extends WorkflowYamlHandlerTestBas
   @Owner(developers = MILOS)
   @Category(UnitTests.class)
   public void testCRUDAndGet() throws Exception {
-    when(limitCheckerFactory.getInstance(new Action(Mockito.anyString(), ActionType.CREATE_WORKFLOW)))
+    when(limitCheckerFactory.getInstance(new Action(any(), ActionType.CREATE_WORKFLOW)))
         .thenReturn(new WingsTestConstants.MockChecker(true, ActionType.CREATE_WORKFLOW));
     when(workflowServiceHelper.isK8sV2Service(any(), any())).thenReturn(true);
     when(workflowServiceHelper.getCategory(any(), any())).thenReturn(AbstractWorkflowFactory.Category.K8S_V2);
@@ -77,7 +75,7 @@ public class BlueGreenWorkflowYamlHandlerTest extends WorkflowYamlHandlerTestBas
     when(abstractWorkflowFactory.getWorkflowCreatorFactory(AbstractWorkflowFactory.Category.K8S_V2))
         .thenReturn(k8sV2WorkflowFactory);
     when(k8sV2WorkflowFactory.getWorkflowCreator(any())).thenReturn(k8V2BlueGreenWorkflowCreator);
-    when(infrastructureDefinitionService.getInfraDefById(anyString(), anyString())).thenReturn(constructGKInfraDef());
+    when(infrastructureDefinitionService.getInfraDefById(any(), any())).thenReturn(constructGKInfraDef());
 
     String validYamlContent = readYamlStringInFile(BLUE_GREEN_VALID_YAML_CONTENT_RESOURCE_PATH);
     ChangeContext<BlueGreenWorkflowYaml> changeContext =

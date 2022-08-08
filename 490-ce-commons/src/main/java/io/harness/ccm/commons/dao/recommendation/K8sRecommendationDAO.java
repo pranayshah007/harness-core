@@ -43,8 +43,8 @@ import io.harness.ccm.commons.beans.recommendation.models.RecommendClusterReques
 import io.harness.ccm.commons.beans.recommendation.models.RecommendationResponse;
 import io.harness.ccm.commons.constants.CloudProvider;
 import io.harness.ccm.commons.constants.InstanceMetaDataConstants;
+import io.harness.ccm.commons.dao.InstanceDataDao;
 import io.harness.ccm.commons.entities.batch.InstanceData;
-import io.harness.ccm.commons.entities.batch.InstanceData.InstanceDataKeys;
 import io.harness.ccm.commons.entities.k8s.recommendation.K8sNodeRecommendation;
 import io.harness.ccm.commons.entities.k8s.recommendation.K8sNodeRecommendation.K8sNodeRecommendationKeys;
 import io.harness.ccm.commons.entities.k8s.recommendation.K8sWorkloadRecommendation;
@@ -100,6 +100,7 @@ public class K8sRecommendationDAO {
 
   @Inject private HPersistence hPersistence;
   @Inject private DSLContext dslContext;
+  @Inject private InstanceDataDao instanceDataDao;
 
   @NonNull
   public Optional<K8sWorkloadRecommendation> fetchK8sWorkloadRecommendationById(
@@ -297,15 +298,8 @@ public class K8sRecommendationDAO {
 
   @NonNull
   public K8sServiceProvider getServiceProvider(JobConstants jobConstants, NodePoolId nodePoolId) {
-    InstanceData instanceData = hPersistence.createQuery(InstanceData.class)
-                                    .filter(InstanceDataKeys.accountId, jobConstants.getAccountId())
-                                    .filter(InstanceDataKeys.clusterId, nodePoolId.getClusterid())
-                                    .filter(InstanceDataKeys.instanceType, InstanceType.K8S_NODE)
-                                    // currently we are only computing recommendation for non-null node_pool_name
-                                    .filter(InstanceDataKeys.metaData + "." + InstanceMetaDataConstants.NODE_POOL_NAME,
-                                        nodePoolId.getNodepoolname())
-                                    .get();
-
+    InstanceData instanceData = instanceDataDao.fetchInstanceData(
+        jobConstants.getAccountId(), nodePoolId.getClusterid(), InstanceType.K8S_NODE, nodePoolId.getNodepoolname());
     try {
       Map<String, String> metaData = instanceData.getMetaData();
       String region = metaData.get(InstanceMetaDataConstants.REGION);

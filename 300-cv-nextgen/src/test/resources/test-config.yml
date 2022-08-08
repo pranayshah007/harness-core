@@ -7,7 +7,7 @@ server:
       port: 6060
       keyStorePath: keystore.jks
       keyStorePassword: password
-      trustStorePath: ${JAVA_HOME}/jre/lib/security/cacerts
+      trustStorePath: ${JAVA_HOME}/lib/security/cacerts
       certAlias: localhost
       validateCerts: false
   adminConnectors:
@@ -15,7 +15,7 @@ server:
       port: 6061
       keyStorePath: keystore.jks
       keyStorePassword: password
-      trustStorePath: ${JAVA_HOME}/jre/lib/security/cacerts
+      trustStorePath: ${JAVA_HOME}/lib/security/cacerts
       certAlias: localhost
       validateCerts: false
   requestLog:
@@ -57,6 +57,23 @@ managerClientConfig:
   connectTimeOutSeconds: 15
   readTimeOutSeconds: 15
 
+ngManagerClientConfig:
+  baseUrl: http://localhost:7457/
+  connectTimeOutSeconds: 15
+  readTimeOutSeconds: 15
+
+enforcementClientConfiguration:
+  enforcementCheckEnabled: true
+
+ngManagerServiceSecret: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
+
+templateServiceClientConfig:
+  baseUrl: http://localhost:15001/api/
+  connectTimeOutSeconds: 15
+  readTimeOutSeconds: 15
+
+templateServiceSecret: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
+
 nextGen:
   managerServiceSecret: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
   ngManagerUrl: http://localhost:7457
@@ -73,11 +90,14 @@ notificationClient:
     maxConnectionIdleTime: 600000
     connectionsPerHost: 300
   httpClient:
-    baseUrl: http://localhost:9005
+    baseUrl: http://localhost:9005/api/
     connectTimeOutSeconds: 15
     readTimeOutSeconds: 15
   secrets:
     notificationClientSecret: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
+
+shouldConfigureWithNotification: false
+
 eventsFramework:
   redis:
     sentinel: false
@@ -120,3 +140,10 @@ accessControlClientConfig:
     baseUrl: "http://localhost:9006/api/"
     readTimeOutSeconds: 15
     connectTimeOutSeconds: 15
+
+auditClientConfig:
+  baseUrl: http://localhost:9005/api/
+  connectTimeOutSeconds: 15
+  readTimeOutSeconds: 15
+
+enableAudit: false

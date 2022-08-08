@@ -51,6 +51,7 @@ import static software.wings.settings.SettingVariableTypes.KUBERNETES_CLUSTER;
 import static software.wings.settings.SettingVariableTypes.LOGZ;
 import static software.wings.settings.SettingVariableTypes.NEW_RELIC;
 import static software.wings.settings.SettingVariableTypes.NEXUS;
+import static software.wings.settings.SettingVariableTypes.OCI_HELM_REPO;
 import static software.wings.settings.SettingVariableTypes.PCF;
 import static software.wings.settings.SettingVariableTypes.PROMETHEUS;
 import static software.wings.settings.SettingVariableTypes.RANCHER;
@@ -74,6 +75,7 @@ import io.harness.security.encryption.EncryptedDataDetail;
 
 import software.wings.annotation.EncryptableSetting;
 import software.wings.beans.CGConstants;
+import software.wings.beans.DockerConfig;
 import software.wings.beans.GcpConfig;
 import software.wings.beans.GitConfig;
 import software.wings.beans.KubernetesClusterConfig;
@@ -108,7 +110,7 @@ public class SettingServiceHelper {
       KUBERNETES_CLUSTER, PCF, SPOT_INST, APP_DYNAMICS, NEW_RELIC, INSTANA, PROMETHEUS, DATA_DOG, DYNA_TRACE,
       CLOUD_WATCH, DATA_DOG_LOG, BUG_SNAG, ELK, SPLUNK, SUMO, LOGZ, APM_VERIFICATION, JENKINS, BAMBOO, DOCKER, NEXUS,
       ARTIFACTORY, SMB, SFTP, AMAZON_S3_HELM_REPO, GCS_HELM_REPO, HTTP_HELM_REPO, AZURE_ARTIFACTS_PAT, GIT, SMTP, JIRA,
-      SERVICENOW, WINRM_CONNECTION_ATTRIBUTES, HOST_CONNECTION_ATTRIBUTES, CE_AZURE, RANCHER);
+      SERVICENOW, WINRM_CONNECTION_ATTRIBUTES, HOST_CONNECTION_ATTRIBUTES, CE_AZURE, RANCHER, OCI_HELM_REPO);
 
   @Inject private SecretManager secretManager;
   @Inject private ManagerDecryptionService managerDecryptionService;
@@ -187,7 +189,9 @@ public class SettingServiceHelper {
           || (settingAttribute.getValue() instanceof PcfConfig
               && ((PcfConfig) settingAttribute.getValue()).isSkipValidation())
           || (settingAttribute.getValue() instanceof ArtifactoryConfig
-              && ((ArtifactoryConfig) settingAttribute.getValue()).isSkipValidation());
+              && ((ArtifactoryConfig) settingAttribute.getValue()).isSkipValidation())
+          || (settingAttribute.getValue() instanceof DockerConfig
+              && ((DockerConfig) settingAttribute.getValue()).isSkipValidation());
     }
 
     return false;
@@ -291,6 +295,7 @@ public class SettingServiceHelper {
       case AMAZON_S3_HELM_REPO:
       case GCS_HELM_REPO:
       case HTTP_HELM_REPO:
+      case OCI_HELM_REPO:
       case AZURE_ARTIFACTS_PAT:
         return true;
       default:

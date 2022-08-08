@@ -9,6 +9,7 @@ package io.harness.cdng.k8s.resources.gcp.service.impl;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.rule.OwnerRule.ACASIAN;
+import static io.harness.rule.OwnerRule.JELENA;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
@@ -26,6 +27,7 @@ import io.harness.cdng.k8s.resources.gcp.GcpResponseDTO;
 import io.harness.delegate.beans.connector.gcpconnector.GcpConnectorCredentialDTO;
 import io.harness.delegate.beans.connector.gcpconnector.GcpConnectorDTO;
 import io.harness.delegate.beans.connector.gcpconnector.GcpCredentialType;
+import io.harness.delegate.beans.connector.gcpconnector.GcpDelegateDetailsDTO;
 import io.harness.delegate.beans.connector.gcpconnector.GcpManualDetailsDTO;
 import io.harness.delegate.task.gcp.GcpTaskType;
 import io.harness.delegate.task.gcp.request.GcpListClustersRequest;
@@ -39,6 +41,7 @@ import io.harness.rule.Owner;
 import io.harness.security.encryption.EncryptedDataDetail;
 
 import java.util.Arrays;
+import java.util.Collections;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -101,6 +104,54 @@ public class GcpResourceServiceImplTest extends CategoryTest {
     assertThat(ngAccess.getOrgIdentifier()).isEqualTo("orgIdentifier");
     assertThat(ngAccess.getProjectIdentifier()).isEqualTo("projectIdentifier");
     assertThat(request.isUseDelegate()).isFalse();
+  }
+
+  @Test
+  @Owner(developers = JELENA)
+  @Category(UnitTests.class)
+  public void shouldGetClusterNamesWhenInheritingCredentials() {
+    IdentifierRef identifierRef = IdentifierRef.builder()
+                                      .accountIdentifier(ACCOUNT_ID)
+                                      .identifier("identifier")
+                                      .projectIdentifier(PROJECT_IDENTIFIER)
+                                      .orgIdentifier(ORG_IDENTIFIER)
+                                      .build();
+    String delegateSelector = "test-delegate";
+    GcpConnectorDTO gcpConnectorDTO =
+        GcpConnectorDTO.builder()
+            .credential(GcpConnectorCredentialDTO.builder()
+                            .gcpCredentialType(GcpCredentialType.INHERIT_FROM_DELEGATE)
+                            .config(GcpDelegateDetailsDTO.builder()
+                                        .delegateSelectors(Collections.singleton(delegateSelector))
+                                        .build())
+                            .build())
+            .build();
+    when(gcpHelperService.getConnector(identifierRef)).thenReturn(gcpConnectorDTO);
+
+    when(gcpHelperService.executeSyncTask(
+             any(BaseNGAccess.class), any(GcpRequest.class), eq(GcpTaskType.LIST_CLUSTERS), eq("list GCP clusters")))
+        .thenReturn(GcpClusterListTaskResponse.builder()
+                        .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
+                        .clusterNames(Arrays.asList("cluster1", "cluster2"))
+                        .build());
+
+    GcpResponseDTO responseDTO =
+        gcpResourceService.getClusterNames(identifierRef, ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER);
+    assertThat(responseDTO).isNotNull();
+    assertThat(responseDTO.getClusterNames()).containsExactly("cluster1", "cluster2");
+
+    ArgumentCaptor<BaseNGAccess> ngAccessCaptor = ArgumentCaptor.forClass(BaseNGAccess.class);
+    ArgumentCaptor<GcpListClustersRequest> requestCaptor = ArgumentCaptor.forClass(GcpListClustersRequest.class);
+    verify(gcpHelperService, times(1))
+        .executeSyncTask(
+            ngAccessCaptor.capture(), requestCaptor.capture(), eq(GcpTaskType.LIST_CLUSTERS), eq("list GCP clusters"));
+    BaseNGAccess ngAccess = ngAccessCaptor.getValue();
+    GcpListClustersRequest request = requestCaptor.getValue();
+
+    assertThat(ngAccess.getAccountIdentifier()).isEqualTo("accountId");
+    assertThat(ngAccess.getOrgIdentifier()).isEqualTo("orgIdentifier");
+    assertThat(ngAccess.getProjectIdentifier()).isEqualTo("projectIdentifier");
+    assertThat(request.isUseDelegate()).isTrue();
   }
 
   private GcpConnectorDTO getConnector() {

@@ -13,7 +13,7 @@ public enum EmailType {
   VERIFY,
   CONFIRM;
 
-  @JsonCreator
+  @JsonCreator(mode = JsonCreator.Mode.DELEGATING)
   public static EmailType fromString(String emailType) {
     for (EmailType type : EmailType.values()) {
       if (type.name().equalsIgnoreCase(emailType)) {

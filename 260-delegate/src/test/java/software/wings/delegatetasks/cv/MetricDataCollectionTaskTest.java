@@ -15,7 +15,6 @@ import static software.wings.service.impl.newrelic.NewRelicMetricDataRecord.DEFA
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
@@ -95,8 +94,7 @@ public class MetricDataCollectionTaskTest extends WingsBaseTest {
     when(metricsDataCollectionInfo.getDataCollectionStartTime()).thenReturn(now);
     metricsDataCollectionTask.collectAndSaveData(metricsDataCollectionInfo);
     ArgumentCaptor<List> captor = ArgumentCaptor.forClass(List.class);
-    verify(metricStoreService)
-        .saveNewRelicMetrics(anyString(), anyString(), anyString(), anyString(), captor.capture());
+    verify(metricStoreService).saveNewRelicMetrics(any(), any(), any(), any(), captor.capture());
     List<NewRelicMetricDataRecord> capturedList = captor.getValue();
     assertThat(capturedList.size()).isEqualTo(3);
     assertThat(capturedList.stream().allMatch(
@@ -165,7 +163,7 @@ public class MetricDataCollectionTaskTest extends WingsBaseTest {
     when(metricsDataCollectionInfo.getStartTime()).thenReturn(now);
     when(metricsDataCollectionInfo.getDataCollectionStartTime()).thenReturn(now);
     metricsDataCollectionTask.collectAndSaveData(metricsDataCollectionInfo);
-    verify(metricStoreService, times(3)).saveNewRelicMetrics(anyString(), anyString(), anyString(), anyString(), any());
+    verify(metricStoreService, times(3)).saveNewRelicMetrics(any(), any(), any(), any(), any());
   }
 
   @Test
@@ -182,8 +180,7 @@ public class MetricDataCollectionTaskTest extends WingsBaseTest {
     when(metricsDataCollectionInfo.getEndTime()).thenReturn(now);
     metricsDataCollectionTask.collectAndSaveData(metricsDataCollectionInfo);
     ArgumentCaptor<List> captor = ArgumentCaptor.forClass(List.class);
-    verify(metricStoreService)
-        .saveNewRelicMetrics(anyString(), anyString(), anyString(), anyString(), captor.capture());
+    verify(metricStoreService).saveNewRelicMetrics(any(), any(), any(), any(), captor.capture());
     List<NewRelicMetricDataRecord> capturedList = captor.getValue();
     assertThat(capturedList.size()).isEqualTo(1);
     assertThat(capturedList.get(0).getName()).isEqualTo("Harness heartbeat metric");

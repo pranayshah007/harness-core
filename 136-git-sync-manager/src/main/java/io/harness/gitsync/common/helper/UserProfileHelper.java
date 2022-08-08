@@ -12,6 +12,12 @@ import static io.harness.annotations.dev.HarnessTeam.DX;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
+import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoApiAccessDTO;
+import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoApiAccessType;
+import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectorDTO;
+import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoHttpCredentialsDTO;
+import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoTokenSpecDTO;
+import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoUsernameTokenDTO;
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketApiAccessDTO;
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketApiAccessType;
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketConnectorDTO;
@@ -27,6 +33,7 @@ import io.harness.delegate.beans.connector.scm.github.GithubUsernameTokenDTO;
 import io.harness.delegate.beans.git.YamlGitConfigDTO;
 import io.harness.encryption.SecretRefData;
 import io.harness.exception.InvalidRequestException;
+import io.harness.ng.userprofile.commons.AzureRepoSCMDTO;
 import io.harness.ng.userprofile.commons.BitbucketSCMDTO;
 import io.harness.ng.userprofile.commons.GithubSCMDTO;
 import io.harness.ng.userprofile.commons.SCMType;
@@ -92,6 +99,20 @@ public class UserProfileHelper {
                                                          .build())
                                                .build());
         break;
+      case AZURE_REPO:
+        AzureRepoConnectorDTO azureRepoConnectorDTO = (AzureRepoConnectorDTO) scmConnector;
+
+        AzureRepoUsernameTokenDTO azureRepoUsernameTokenDTO =
+            (AzureRepoUsernameTokenDTO) ((AzureRepoHttpCredentialsDTO) ((AzureRepoSCMDTO) userScmProfile)
+                                             .getAuthentication()
+                                             .getCredentials())
+                .getHttpCredentialsSpec();
+        azureRepoConnectorDTO.setApiAccess(
+            AzureRepoApiAccessDTO.builder()
+                .type(AzureRepoApiAccessType.TOKEN)
+                .spec(AzureRepoTokenSpecDTO.builder().tokenRef(azureRepoUsernameTokenDTO.getTokenRef()).build())
+                .build());
+        break;
       default:
         throw new IllegalStateException("Unexpected value: " + scmConnector.getConnectorType());
     }
@@ -120,6 +141,12 @@ public class UserProfileHelper {
       case GITHUB:
         GithubSCMDTO githubSCM = (GithubSCMDTO) userScmProfile;
         return ((GithubUsernameTokenDTO) ((GithubHttpCredentialsDTO) githubSCM.getAuthentication().getCredentials())
+                    .getHttpCredentialsSpec())
+            .getUsername();
+      case AZURE_REPO:
+        AzureRepoSCMDTO azureRepoSCMDTO = (AzureRepoSCMDTO) userScmProfile;
+        return ((AzureRepoUsernameTokenDTO) ((AzureRepoHttpCredentialsDTO) azureRepoSCMDTO.getAuthentication()
+                                                 .getCredentials())
                     .getHttpCredentialsSpec())
             .getUsername();
       default:

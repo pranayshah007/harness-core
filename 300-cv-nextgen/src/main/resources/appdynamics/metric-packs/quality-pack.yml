@@ -2,7 +2,7 @@ identifier: Errors
 category: Errors
 metrics:
   - name: Number of Errors
-    identifier: Number_of_Errors
+    identifier: number_of_errors
     type: ERROR
     path: Errors|__tier_name__|__metric_filter__|Number of Errors
     validationPath: Overall Application Performance|__tier_name__|Exceptions per Minute

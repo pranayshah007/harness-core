@@ -22,12 +22,14 @@ import static java.util.stream.Collectors.joining;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
+import io.harness.beans.FeatureName;
 import io.harness.beans.PageRequest.PageRequestBuilder;
 import io.harness.beans.SearchFilter.Operator;
 import io.harness.delegate.beans.Delegate;
 import io.harness.delegate.beans.Delegate.DelegateKeys;
 import io.harness.event.handler.impl.EventPublishHelper;
 import io.harness.exception.InvalidRequestException;
+import io.harness.ff.FeatureFlagService;
 import io.harness.iterator.PersistentCronIterable;
 import io.harness.ng.core.account.AuthenticationMechanism;
 import io.harness.ng.core.account.OauthProviderType;
@@ -42,6 +44,7 @@ import software.wings.beans.NotificationRule;
 import software.wings.beans.alert.Alert;
 import software.wings.beans.alert.AlertType;
 import software.wings.beans.alert.SSOSyncFailedAlert;
+import software.wings.beans.sso.LdapConnectionSettings;
 import software.wings.beans.sso.LdapSettings;
 import software.wings.beans.sso.OauthSettings;
 import software.wings.beans.sso.SSOSettings;
@@ -108,6 +111,8 @@ public class SSOSettingServiceImpl implements SSOSettingService {
   @Inject private LdapGroupScheduledHandler ldapGroupScheduledHandler;
   @Inject @Named("BackgroundJobScheduler") private PersistentScheduler jobScheduler;
   @Inject private LdapSyncJobConfig ldapSyncJobConfig;
+  @Inject private SSOServiceHelper ssoServiceHelper;
+  @Inject private FeatureFlagService featureFlagService;
   static final int ONE_DAY = 86400000;
 
   @Override
@@ -138,6 +143,18 @@ public class SSOSettingServiceImpl implements SSOSettingService {
   @Override
   @RestrictedApi(SamlFeature.class)
   public SamlSettings saveSamlSettings(@GetAccountId(SamlSettingsAccountIdExtractor.class) SamlSettings settings) {
+    return saveSSOSettingsInternal(settings);
+  }
+
+  // This function is meant to be called for ng sso settings, as the license check is already done in NG Service
+  @Override
+  public SamlSettings saveSamlSettingsWithoutCGLicenseCheck(
+      @GetAccountId(SamlSettingsAccountIdExtractor.class) SamlSettings settings) {
+    return saveSSOSettingsInternal(settings);
+  }
+
+  private SamlSettings saveSSOSettingsInternal(
+      @GetAccountId(SamlSettingsAccountIdExtractor.class) SamlSettings settings) {
     SamlSettings queriedSettings = getSamlSettingsByAccountId(settings.getAccountId());
     SamlSettings savedSettings;
     if (queriedSettings != null) {
@@ -259,10 +276,14 @@ public class SSOSettingServiceImpl implements SSOSettingService {
   @RestrictedApi(LdapFeature.class)
   public LdapSettings createLdapSettings(
       @GetAccountId(LdapSettingsAccountIdExtractor.class) @NotNull LdapSettings settings) {
+    validateLdapSetting(settings);
     if (getLdapSettingsByAccountId(settings.getAccountId()) != null) {
       throw new InvalidRequestException("Ldap settings already exist for this account.");
     }
-    settings.encryptFields(secretManager);
+    if (featureFlagService.isEnabled(FeatureName.LDAP_SECRET_AUTH, settings.getAccountId())) {
+      ssoServiceHelper.encryptLdapSecret(settings.getConnectionSettings(), secretManager, settings.getAccountId());
+    }
+    settings.encryptLdapInlineSecret(secretManager);
     if (isEmpty(settings.getCronExpression())) {
       settings.setCronExpression(ldapSyncJobConfig.getDefaultCronExpression());
     }
@@ -281,17 +302,25 @@ public class SSOSettingServiceImpl implements SSOSettingService {
   public LdapSettings updateLdapSettings(
       @GetAccountId(LdapSettingsAccountIdExtractor.class) @NotNull LdapSettings settings) {
     LdapSettings oldSettings = getLdapSettingsByAccountId(settings.getAccountId());
+    validateLdapSetting(settings);
     if (oldSettings == null) {
       throw new InvalidRequestException("No existing Ldap settings found for this account.");
     }
     settings.getConnectionSettings().setEncryptedBindPassword(
         oldSettings.getConnectionSettings().getEncryptedBindPassword());
+    settings.getConnectionSettings().setPasswordType(oldSettings.getConnectionSettings().getPasswordType());
+    settings.getConnectionSettings().setEncryptedBindSecret(
+        oldSettings.getConnectionSettings().getEncryptedBindSecret());
+    oldSettings.getConnectionSettings().setAccountId(settings.getAccountId());
     oldSettings.setUrl(settings.getUrl());
     oldSettings.setDisplayName(settings.getDisplayName());
     oldSettings.setConnectionSettings(settings.getConnectionSettings());
     oldSettings.setUserSettingsList(settings.getUserSettingsList());
     oldSettings.setGroupSettingsList(settings.getGroupSettingsList());
-    oldSettings.encryptFields(secretManager);
+    if (featureFlagService.isEnabled(FeatureName.LDAP_SECRET_AUTH, settings.getAccountId())) {
+      ssoServiceHelper.encryptLdapSecret(oldSettings.getConnectionSettings(), secretManager, settings.getAccountId());
+    }
+    oldSettings.encryptLdapInlineSecret(secretManager);
     oldSettings.setDefaultCronExpression(ldapSyncJobConfig.getDefaultCronExpression());
     oldSettings.setCronExpression(settings.getCronExpression());
     updateNextIterations(oldSettings);
@@ -302,6 +331,14 @@ public class SSOSettingServiceImpl implements SSOSettingService {
     LdapGroupSyncJob.add(jobScheduler, savedSettings.getAccountId(), savedSettings.getUuid());
     ldapGroupScheduledHandler.wakeup();
     return savedSettings;
+  }
+
+  private void validateLdapSetting(LdapSettings settings) {
+    if (!featureFlagService.isEnabled(FeatureName.LDAP_SECRET_AUTH, settings.getAccountId())
+        && settings.getConnectionSettings().getBindSecret() != null
+        && isNotEmpty(settings.getConnectionSettings().getBindSecret())) {
+      throw new InvalidRequestException("Please turn on FF (LDAP_SECRET_AUTH) to use secrets ");
+    }
   }
 
   @Override
@@ -319,8 +356,10 @@ public class SSOSettingServiceImpl implements SSOSettingService {
       throw new InvalidRequestException(
           "Deleting SSO provider with linked user groups is not allowed. Unlink the user groups first.");
     }
-    secretManager.deleteSecret(
-        settings.getAccountId(), settings.getConnectionSettings().getEncryptedBindPassword(), new HashMap<>(), false);
+    if (LdapConnectionSettings.INLINE_SECRET.equals(settings.getConnectionSettings().getPasswordType())) {
+      secretManager.deleteSecret(
+          settings.getAccountId(), settings.getConnectionSettings().getEncryptedBindPassword(), new HashMap<>(), false);
+    }
     wingsPersistence.delete(settings);
     LdapGroupSyncJob.delete(jobScheduler, this, settings.getAccountId(), settings.getUuid());
     auditServiceHelper.reportDeleteForAuditingUsingAccountId(settings.getAccountId(), settings);
@@ -333,22 +372,33 @@ public class SSOSettingServiceImpl implements SSOSettingService {
     if (isEmpty(accountId)) {
       return null;
     }
-    return wingsPersistence.createQuery(LdapSettings.class)
-        .field(SSOSettingsKeys.accountId)
-        .equal(accountId)
-        .field(SSOSettingsKeys.type)
-        .equal(SSOType.LDAP)
-        .get();
+    LdapSettings ldapSettings = wingsPersistence.createQuery(LdapSettings.class)
+                                    .field(SSOSettingsKeys.accountId)
+                                    .equal(accountId)
+                                    .field(SSOSettingsKeys.type)
+                                    .equal(SSOType.LDAP)
+                                    .get();
+    sanitizeLdapSetting(ldapSettings);
+    return ldapSettings;
   }
 
   @Override
   public LdapSettings getLdapSettingsByUuid(@NotBlank String uuid) {
-    return wingsPersistence.createQuery(LdapSettings.class)
-        .field("uuid")
-        .equal(uuid)
-        .field("type")
-        .equal(SSOType.LDAP)
-        .get();
+    LdapSettings ldapSettings = wingsPersistence.createQuery(LdapSettings.class)
+                                    .field("uuid")
+                                    .equal(uuid)
+                                    .field("type")
+                                    .equal(SSOType.LDAP)
+                                    .get();
+    sanitizeLdapSetting(ldapSettings);
+    return ldapSettings;
+  }
+
+  private void sanitizeLdapSetting(LdapSettings ldapSettings) {
+    if (ldapSettings != null && isNotEmpty(ldapSettings.getConnectionSettings().getEncryptedBindSecret())) {
+      ldapSettings.getConnectionSettings().setBindSecret(
+          ldapSettings.getConnectionSettings().getEncryptedBindSecret().toCharArray());
+    }
   }
 
   @Override

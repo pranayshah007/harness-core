@@ -8,13 +8,17 @@
 package io.harness.cvng.core.entities;
 
 import static io.harness.cvng.core.utils.ErrorMessageUtils.generateErrorMessageFromParam;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import io.harness.cvng.beans.CVMonitoringCategory;
 import io.harness.cvng.beans.DataSourceType;
+import io.harness.cvng.beans.ThresholdConfigType;
 import io.harness.cvng.beans.TimeSeriesMetricType;
+import io.harness.cvng.core.beans.monitoredService.TimeSeriesMetricPackDTO;
 import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.AppDynamicsHealthSourceSpec.AppDMetricDefinitions;
+import io.harness.cvng.core.constant.MonitoredServiceConstants;
 import io.harness.cvng.core.entities.AppDynamicsCVConfig.MetricInfo;
 import io.harness.cvng.core.services.CVNextGenConstants;
 import io.harness.cvng.core.utils.analysisinfo.AnalysisInfoUtility;
@@ -25,16 +29,19 @@ import io.harness.cvng.core.utils.analysisinfo.SLIMetricTransformer;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import lombok.AccessLevel;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
-import lombok.Value;
 import lombok.experimental.FieldDefaults;
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.SuperBuilder;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.mongodb.morphia.query.UpdateOperations;
 
 @JsonTypeName("APP_DYNAMICS")
@@ -91,13 +98,28 @@ public class AppDynamicsCVConfig extends MetricCVConfig<MetricInfo> {
   }
 
   @Override
+  public Optional<String> maybeGetGroupName() {
+    return Optional.ofNullable(groupName);
+  }
+
+  @Override
   public List<MetricInfo> getMetricInfos() {
+    populateCompleteMetricPaths();
+    if (metricInfos == null) {
+      return Collections.emptyList();
+    }
     return metricInfos;
   }
 
   @Override
   public void setMetricInfos(List<MetricInfo> metricInfos) {
     this.metricInfos = metricInfos;
+    populateCompleteMetricPaths();
+  }
+
+  public void setTierName(String tierName) {
+    this.tierName = tierName;
+    populateCompleteMetricPaths();
   }
 
   public static class AppDynamicsCVConfigUpdatableEntity
@@ -136,6 +158,8 @@ public class AppDynamicsCVConfig extends MetricCVConfig<MetricInfo> {
               .metricName(md.getMetricName())
               .baseFolder(md.getBaseFolder())
               .metricPath(md.getMetricPath())
+              .completeServiceInstanceMetricPath(md.getCompleteServiceInstanceMetricPath())
+              .completeMetricPath(md.getCompleteMetricPath())
               .sli(SLIMetricTransformer.transformDTOtoEntity(md.getSli()))
               .liveMonitoring(LiveMonitoringTransformer.transformDTOtoEntity(md.getAnalysis()))
               .deploymentVerification(DevelopmentVerificationTransformer.transformDTOtoEntity(md.getAnalysis()))
@@ -144,7 +168,6 @@ public class AppDynamicsCVConfig extends MetricCVConfig<MetricInfo> {
       this.metricInfos.add(metricInfo);
       Set<TimeSeriesThreshold> thresholds = getThresholdsToCreateOnSaveForCustomProviders(
           metricInfo.getMetricName(), metricInfo.getMetricType(), md.getRiskProfile().getThresholdTypes());
-
       metricPack.addToMetrics(MetricPack.MetricDefinition.builder()
                                   .thresholds(new ArrayList<>(thresholds))
                                   .type(metricInfo.getMetricType())
@@ -154,14 +177,79 @@ public class AppDynamicsCVConfig extends MetricCVConfig<MetricInfo> {
                                   .build());
     });
     this.setMetricPack(metricPack);
+    populateCompleteMetricPaths();
   }
 
-  @Value
+  public void addMetricThresholds(Set<TimeSeriesMetricPackDTO> timeSeriesMetricPacks) {
+    if (isEmpty(timeSeriesMetricPacks)) {
+      return;
+    }
+    getMetricPack().getMetrics().forEach(metric -> {
+      timeSeriesMetricPacks.forEach(timeSeriesMetricPackDTO -> {
+        if (!isEmpty(timeSeriesMetricPackDTO.getMetricThresholds())) {
+          timeSeriesMetricPackDTO.getMetricThresholds()
+              .stream()
+              .filter(metricPackDTO -> metric.getName().equals(metricPackDTO.getMetricName()))
+              .forEach(metricPackDTO -> metricPackDTO.getTimeSeriesThresholdCriteria().forEach(criteria -> {
+                List<TimeSeriesThreshold> timeSeriesThresholds =
+                    metric.getThresholds() != null ? metric.getThresholds() : new ArrayList<>();
+                TimeSeriesThreshold timeSeriesThreshold =
+                    TimeSeriesThreshold.builder()
+                        .accountId(getAccountId())
+                        .projectIdentifier(getProjectIdentifier())
+                        .dataSourceType(getType())
+                        .metricType(metric.getType())
+                        .metricIdentifier(metric.getIdentifier())
+                        .metricName(metricPackDTO.getMetricName())
+                        .action(metricPackDTO.getType().getTimeSeriesThresholdActionType())
+                        .criteria(criteria)
+                        .thresholdConfigType(ThresholdConfigType.CUSTOMER)
+                        .build();
+                if (!MonitoredServiceConstants.CUSTOM_METRIC_PACK.equalsIgnoreCase(
+                        timeSeriesMetricPackDTO.getIdentifier())) {
+                  timeSeriesThreshold.setMetricGroupName(metricPackDTO.getGroupName());
+                }
+                timeSeriesThresholds.add(timeSeriesThreshold);
+                metric.setThresholds(timeSeriesThresholds);
+              }));
+        }
+      });
+    });
+  }
+
+  @Data
   @SuperBuilder
   @FieldDefaults(level = AccessLevel.PRIVATE)
+  @FieldNameConstants(innerTypeName = "AppDynamicsMetricInfoKeys")
   public static class MetricInfo extends AnalysisInfo {
-    String baseFolder;
-    String metricPath;
+    @Deprecated String baseFolder;
+    @Deprecated String metricPath;
+    String completeMetricPath;
+    String completeServiceInstanceMetricPath;
     TimeSeriesMetricType metricType;
+  }
+
+  public void populateCompleteMetricPaths() {
+    CollectionUtils.emptyIfNull(metricInfos).forEach(metricInfo -> populateCompleteMetricPaths(metricInfo));
+  }
+
+  // TODO: remove after UI change and data migration to completeMetricPaths.
+  private void populateCompleteMetricPaths(MetricInfo metricInfo) {
+    if (StringUtils.isEmpty(tierName)) {
+      // If tier is not yet set, skip
+      return;
+    }
+    if (StringUtils.isEmpty(metricInfo.getCompleteMetricPath())) {
+      metricInfo.setCompleteMetricPath(getCompleteMetricPath(metricInfo.getBaseFolder(), metricInfo.getMetricPath()));
+    }
+    if (StringUtils.isEmpty(metricInfo.getCompleteServiceInstanceMetricPath())
+        && StringUtils.isNotEmpty(metricInfo.getDeploymentVerification().getServiceInstanceMetricPath())) {
+      metricInfo.setCompleteServiceInstanceMetricPath(getCompleteMetricPath(
+          metricInfo.getBaseFolder(), metricInfo.getDeploymentVerification().getServiceInstanceMetricPath()));
+    }
+  }
+
+  private String getCompleteMetricPath(String basePath, String metricPath) {
+    return basePath + "|" + tierName + "|" + metricPath;
   }
 }

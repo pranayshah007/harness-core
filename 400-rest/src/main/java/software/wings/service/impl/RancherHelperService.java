@@ -10,7 +10,6 @@ package software.wings.service.impl;
 import static io.harness.exception.WingsException.USER;
 
 import static software.wings.beans.CGConstants.GLOBAL_APP_ID;
-import static software.wings.sm.states.HttpState.HttpStateExecutionResponse;
 
 import io.harness.beans.Cd1SetupFields;
 import io.harness.beans.DelegateTask;
@@ -24,6 +23,7 @@ import io.harness.delegate.task.http.HttpTaskParameters;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 
+import software.wings.beans.HttpStateExecutionResponse;
 import software.wings.beans.RancherConfig;
 import software.wings.beans.TaskType;
 import software.wings.service.intfc.DelegateService;

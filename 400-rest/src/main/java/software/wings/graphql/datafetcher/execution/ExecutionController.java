@@ -8,6 +8,7 @@
 package software.wings.graphql.datafetcher.execution;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.beans.FeatureName.ADD_MANIFEST_COLLECTION_STEP;
 import static io.harness.beans.FeatureName.BYPASS_HELM_FETCH;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -474,6 +475,10 @@ public class ExecutionController {
         applicationManifestService.getAppManifestByName(service.getAppId(), null, service.getUuid(), appManifestName);
     notNullCheck("App manifest with name " + appManifestName + " doesn't belong to the given app and service",
         applicationManifest);
+
+    if (featureFlagService.isEnabled(ADD_MANIFEST_COLLECTION_STEP, service.getAccountId())) {
+      return HelmChart.builder().applicationManifestId(applicationManifest.getUuid()).version(versionNumber).build();
+    }
 
     HelmChart helmChart =
         helmChartService.getByChartVersion(service.getAppId(), service.getUuid(), appManifestName, versionNumber);

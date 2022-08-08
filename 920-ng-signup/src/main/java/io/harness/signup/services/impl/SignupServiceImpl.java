@@ -8,6 +8,7 @@
 package io.harness.signup.services.impl;
 
 import static io.harness.annotations.dev.HarnessTeam.GTM;
+import static io.harness.beans.FeatureName.AUTO_FREE_MODULE_LICENSE;
 import static io.harness.configuration.DeployMode.DEPLOY_MODE;
 import static io.harness.configuration.DeployVariant.DEPLOY_VERSION;
 import static io.harness.exception.WingsException.USER;
@@ -34,8 +35,12 @@ import io.harness.exception.SignupException;
 import io.harness.exception.UserAlreadyPresentException;
 import io.harness.exception.WeakPasswordException;
 import io.harness.exception.WingsException;
+import io.harness.ff.FeatureFlagService;
+import io.harness.licensing.Edition;
+import io.harness.licensing.beans.modules.StartTrialDTO;
 import io.harness.licensing.services.LicenseService;
 import io.harness.ng.core.dto.AccountDTO;
+import io.harness.ng.core.user.SignupAction;
 import io.harness.ng.core.user.UserInfo;
 import io.harness.ng.core.user.UserRequestDTO;
 import io.harness.ng.core.user.UtmInfo;
@@ -59,6 +64,7 @@ import io.harness.user.remote.UserClient;
 import io.harness.version.VersionInfoManager;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
@@ -76,6 +82,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -88,6 +95,9 @@ import org.mindrot.jbcrypt.BCrypt;
 @Singleton
 @OwnedBy(GTM)
 public class SignupServiceImpl implements SignupService {
+  public static final String INTENT = "module";
+  public static final String SIGNUP_ACTION = "license_type";
+  public static final String EDITION = "plan";
   private AccountService accountService;
   private UserClient userClient;
   private SignupValidator signupValidator;
@@ -99,6 +109,7 @@ public class SignupServiceImpl implements SignupService {
   private final AccessControlClient accessControlClient;
   private final LicenseService licenseService;
   private final VersionInfoManager versionInfoManager;
+  private final FeatureFlagService featureFlagService;
 
   public static final String FAILED_EVENT_NAME = "SIGNUP_ATTEMPT_FAILED";
   public static final String SUCCEED_EVENT_NAME = "NEW_SIGNUP";
@@ -108,6 +119,8 @@ public class SignupServiceImpl implements SignupService {
   private static final int SIGNUP_TOKEN_VALIDITY_IN_DAYS = 30;
   private static final String UNDEFINED_ACCOUNT_ID = "undefined";
   private static final String NG_AUTH_UI_PATH_PREFIX = "auth/";
+  private static final String VERIFY_URL_GENERATION_FAILED = "Failed to generate verify url";
+  private static final String EMAIL = "email";
 
   private static String deployVersion = System.getenv().get(DEPLOY_VERSION);
 
@@ -117,7 +130,7 @@ public class SignupServiceImpl implements SignupService {
       SignupNotificationHelper signupNotificationHelper, SignupVerificationTokenRepository verificationTokenRepository,
       @Named("NGSignupNotification") ExecutorService executorService,
       @Named("PRIVILEGED") AccessControlClient accessControlClient, LicenseService licenseService,
-      VersionInfoManager versionInfoManager) {
+      VersionInfoManager versionInfoManager, FeatureFlagService featureFlagService) {
     this.accountService = accountService;
     this.userClient = userClient;
     this.signupValidator = signupValidator;
@@ -129,6 +142,7 @@ public class SignupServiceImpl implements SignupService {
     this.accessControlClient = accessControlClient;
     this.licenseService = licenseService;
     this.versionInfoManager = versionInfoManager;
+    this.featureFlagService = featureFlagService;
   }
 
   /**
@@ -152,7 +166,7 @@ public class SignupServiceImpl implements SignupService {
         signupNotificationHelper.sendSignupNotification(
             user, EmailType.VERIFY, PredefinedTemplate.EMAIL_VERIFY.getIdentifier(), url);
       } catch (URISyntaxException e) {
-        log.error("Failed to generate verify url", e);
+        log.error(VERIFY_URL_GENERATION_FAILED, e);
       }
     });
     return user;
@@ -249,7 +263,7 @@ public class SignupServiceImpl implements SignupService {
             UserInfo.builder().email(dto.getEmail()).defaultAccountId(UNDEFINED_ACCOUNT_ID).build(), EmailType.VERIFY,
             PredefinedTemplate.EMAIL_VERIFY.getIdentifier(), url);
       } catch (URISyntaxException e) {
-        log.error("Failed to generate verify url", e);
+        log.error(VERIFY_URL_GENERATION_FAILED, e);
       }
     });
     log.info("Created NG signup invite for {}", dto.getEmail());
@@ -300,6 +314,15 @@ public class SignupServiceImpl implements SignupService {
       });
 
       waitForRbacSetup(userInfo.getDefaultAccountId(), userInfo.getUuid(), userInfo.getEmail());
+
+      if (featureFlagService.isGlobalEnabled(AUTO_FREE_MODULE_LICENSE)) {
+        enableModuleLicense(
+            !userInfo.getIntent().equals("") ? ModuleType.valueOf(userInfo.getIntent().toUpperCase()) : null,
+            userInfo.getEdition() != null ? Edition.valueOf(userInfo.getEdition()) : null,
+            userInfo.getSignupAction() != null ? SignupAction.valueOf(userInfo.getSignupAction()) : null,
+            userInfo.getDefaultAccountId());
+      }
+
       log.info("Completed NG signup for {}", userInfo.getEmail());
       return userInfo;
     } catch (Exception e) {
@@ -421,6 +444,16 @@ public class SignupServiceImpl implements SignupService {
     AccountDTO account = createAccount(signupDTO);
     UserInfo oAuthUser = createOAuthUser(dto, account);
 
+    if (dto.getIntent() != null && !dto.getIntent().equals("")) {
+      oAuthUser.setIntent(dto.getIntent().toString());
+    }
+    if (dto.getEdition() != null) {
+      oAuthUser.setEdition(dto.getEdition().toString());
+    }
+    if (dto.getSignupAction() != null) {
+      oAuthUser.setSignupAction(dto.getSignupAction().toString());
+    }
+
     sendSucceedTelemetryEvent(
         dto.getEmail(), dto.getUtmInfo(), account.getIdentifier(), oAuthUser, SignupType.OAUTH_FLOW, account.getName());
 
@@ -434,8 +467,26 @@ public class SignupServiceImpl implements SignupService {
       }
     });
 
+    if (featureFlagService.isGlobalEnabled(AUTO_FREE_MODULE_LICENSE)) {
+      enableModuleLicense(dto.getIntent(), dto.getEdition(), dto.getSignupAction(), account.getIdentifier());
+    }
     waitForRbacSetup(oAuthUser.getDefaultAccountId(), oAuthUser.getUuid(), oAuthUser.getEmail());
     return oAuthUser;
+  }
+
+  private void enableModuleLicense(
+      ModuleType intent, Edition edition, SignupAction signupAction, String accountIdentifier) {
+    Set<ModuleType> moduleTypeSet = Sets.newHashSet(ModuleType.CD, ModuleType.CI, ModuleType.CF, ModuleType.CE);
+    if (signupAction != null && edition != null && intent != null && signupAction.equals(SignupAction.TRIAL)
+        && moduleTypeSet.contains(intent)) {
+      StartTrialDTO startTrialDTO = StartTrialDTO.builder().edition(edition).moduleType(intent).build();
+      licenseService.startTrialLicense(accountIdentifier, startTrialDTO);
+      moduleTypeSet.remove(intent);
+    }
+
+    for (ModuleType moduleType : moduleTypeSet) {
+      licenseService.startFreeLicense(accountIdentifier, moduleType);
+    }
   }
 
   /**
@@ -496,7 +547,7 @@ public class SignupServiceImpl implements SignupService {
           UserInfo.builder().email(email).defaultAccountId(UNDEFINED_ACCOUNT_ID).build(), EmailType.VERIFY,
           PredefinedTemplate.EMAIL_VERIFY.getIdentifier(), url);
     } catch (URISyntaxException e) {
-      throw new InvalidRequestException("Failed to generate verify url", e);
+      throw new InvalidRequestException(VERIFY_URL_GENERATION_FAILED, e);
     }
     log.info("Resend verification email for {}", email);
   }
@@ -533,24 +584,25 @@ public class SignupServiceImpl implements SignupService {
     properties.put("failedAt", failedAt);
     addUtmInfoToProperties(utmInfo, properties);
 
+    String accountIdentifier = accountDTO == null ? UNDEFINED_ACCOUNT_ID : accountDTO.getIdentifier();
     if (accountDTO != null) {
       properties.put("company", accountDTO.getCompanyName());
-      telemetryReporter.sendTrackEvent(FAILED_EVENT_NAME, email, accountDTO.getIdentifier(), properties,
-          ImmutableMap.<Destination, Boolean>builder().put(Destination.SALESFORCE, true).build(), Category.SIGN_UP);
-    } else {
-      telemetryReporter.sendTrackEvent(FAILED_EVENT_NAME, email, null, properties,
-          ImmutableMap.<Destination, Boolean>builder().put(Destination.SALESFORCE, true).build(), Category.SIGN_UP);
     }
+    telemetryReporter.sendTrackEvent(FAILED_EVENT_NAME, email, accountIdentifier, properties,
+        ImmutableMap.<Destination, Boolean>builder().put(Destination.SALESFORCE, true).build(), Category.SIGN_UP);
+    telemetryReporter.sendTrackEvent(FAILED_EVENT_NAME, email, accountIdentifier, properties,
+        ImmutableMap.<Destination, Boolean>builder().put(Destination.MARKETO, true).build(), Category.SIGN_UP);
   }
 
   private void sendSucceedTelemetryEvent(
       String email, UtmInfo utmInfo, String accountId, UserInfo userInfo, String source, String accountName) {
     HashMap<String, Object> properties = new HashMap<>();
-    properties.put("email", email);
+    properties.put(EMAIL, email);
     properties.put("name", userInfo.getName());
     properties.put("id", userInfo.getUuid());
     properties.put("startTime", String.valueOf(Instant.now().toEpochMilli()));
     properties.put("accountId", accountId);
+    properties.put("accountName", accountName);
     properties.put("source", source);
 
     addUtmInfoToProperties(utmInfo, properties);
@@ -567,9 +619,13 @@ public class SignupServiceImpl implements SignupService {
     telemetryReporter.sendGroupEvent(
         accountId, email, groupProperties, ImmutableMap.<Destination, Boolean>builder().build());
 
+    HashMap<String, Object> analyticsUserProperties = new HashMap<>();
+    analyticsUserProperties.put("accountId", accountId);
+    analyticsUserProperties.put("accountName", accountName);
+
     // identify event to register a dummy user account to represent account for analytics purposes
-    telemetryReporter.sendIdentifyEvent(TelemetryConstants.SEGMENT_DUMMY_ACCOUNT_PREFIX + accountId, groupProperties,
-        ImmutableMap.<Destination, Boolean>builder().put(Destination.AMPLITUDE, true).build());
+    telemetryReporter.sendIdentifyEvent(TelemetryConstants.SEGMENT_DUMMY_ACCOUNT_PREFIX + accountId,
+        analyticsUserProperties, ImmutableMap.<Destination, Boolean>builder().put(Destination.AMPLITUDE, true).build());
 
     // group event to register dummy user account with new account
     telemetryReporter.sendGroupEvent(accountId, TelemetryConstants.SEGMENT_DUMMY_ACCOUNT_PREFIX + accountId,
@@ -580,9 +636,20 @@ public class SignupServiceImpl implements SignupService {
 
     // Wait 20 seconds, to ensure identify is sent before track
     ScheduledExecutorService tempExecutor = Executors.newSingleThreadScheduledExecutor();
+    HashMap<String, Object> trackProperties = properties;
+
+    if (userInfo.getIntent() != null && !userInfo.getIntent().equals("")) {
+      trackProperties.put(INTENT, userInfo.getIntent());
+    }
+    if (userInfo.getSignupAction() != null) {
+      trackProperties.put(SIGNUP_ACTION, userInfo.getSignupAction());
+    }
+    if (userInfo.getEdition() != null) {
+      trackProperties.put(EDITION, userInfo.getEdition());
+    }
     tempExecutor.schedule(
         ()
-            -> telemetryReporter.sendTrackEvent(SUCCEED_EVENT_NAME, email, accountId, properties,
+            -> telemetryReporter.sendTrackEvent(SUCCEED_EVENT_NAME, email, accountId, trackProperties,
                 ImmutableMap.<Destination, Boolean>builder().put(Destination.MARKETO, true).build(), Category.SIGN_UP),
         20, TimeUnit.SECONDS);
     log.info("Signup telemetry sent");
@@ -590,7 +657,7 @@ public class SignupServiceImpl implements SignupService {
 
   private void sendCommunitySucceedTelemetry(String email, String accountId, UserInfo userInfo, String source) {
     HashMap<String, Object> properties = new HashMap<>();
-    properties.put("email", userInfo.getEmail());
+    properties.put(EMAIL, userInfo.getEmail());
     properties.put("name", userInfo.getName());
     properties.put("id", userInfo.getUuid());
     properties.put("firstInstallTime", String.valueOf(Instant.now().toEpochMilli()));

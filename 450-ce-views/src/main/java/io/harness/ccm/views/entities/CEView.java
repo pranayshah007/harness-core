@@ -9,6 +9,8 @@ package io.harness.ccm.views.entities;
 
 import io.harness.annotation.StoreIn;
 import io.harness.beans.EmbeddedUser;
+import io.harness.mongo.index.CompoundMongoIndex;
+import io.harness.mongo.index.MongoIndex;
 import io.harness.ng.DbAliases;
 import io.harness.persistence.AccountAccess;
 import io.harness.persistence.CreatedAtAware;
@@ -18,6 +20,7 @@ import io.harness.persistence.UpdatedAtAware;
 import io.harness.persistence.UpdatedByAware;
 import io.harness.persistence.UuidAware;
 
+import com.google.common.collect.ImmutableList;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 import javax.validation.constraints.Size;
@@ -39,15 +42,27 @@ import org.mongodb.morphia.annotations.Id;
 @Schema(description = "This object will contain the complete definition of a Cloud Cost Perspective")
 public final class CEView implements PersistentEntity, UuidAware, CreatedAtAware, UpdatedAtAware, AccountAccess,
                                      CreatedByAware, UpdatedByAware {
+  public static List<MongoIndex> mongoIndexes() {
+    return ImmutableList.<MongoIndex>builder()
+        .add(CompoundMongoIndex.builder()
+                 .name("accountId_folderId")
+                 .field(CEViewKeys.accountId)
+                 .field(CEViewKeys.folderId)
+                 .build())
+        .build();
+  }
   @Id String uuid;
-  @Size(min = 1, max = 32, message = "for view must be between 1 and 32 characters long") @NotBlank String name;
+  @Size(min = 1, max = 80, message = "for view must be between 1 and 80 characters long") @NotBlank String name;
   String accountId;
+  String folderId;
   @NotBlank String viewVersion;
 
   ViewTimeRange viewTimeRange;
   List<ViewRule> viewRules;
   List<ViewFieldIdentifier> dataSources;
   ViewVisualization viewVisualization;
+  ViewPreferences viewPreferences;
+
   ViewType viewType = ViewType.CUSTOMER;
 
   ViewState viewState = ViewState.DRAFT;
@@ -57,4 +72,23 @@ public final class CEView implements PersistentEntity, UuidAware, CreatedAtAware
   long lastUpdatedAt;
   private EmbeddedUser createdBy;
   private EmbeddedUser lastUpdatedBy;
+
+  public CEView toDTO() {
+    return CEView.builder()
+        .uuid(getUuid())
+        .name(getName())
+        .accountId(getAccountId())
+        .viewVersion(getViewVersion())
+        .viewRules(getViewRules())
+        .dataSources(getDataSources())
+        .viewVisualization(getViewVisualization())
+        .viewType(getViewType())
+        .viewState(getViewState())
+        .totalCost(getTotalCost())
+        .createdAt(getCreatedAt())
+        .lastUpdatedAt(getLastUpdatedAt())
+        .createdBy(getCreatedBy())
+        .lastUpdatedBy(getLastUpdatedBy())
+        .build();
+  }
 }

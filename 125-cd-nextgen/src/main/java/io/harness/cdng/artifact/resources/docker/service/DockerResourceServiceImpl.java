@@ -10,6 +10,7 @@ package io.harness.cdng.artifact.resources.docker.service;
 import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
+import static io.harness.utils.DelegateOwner.getNGTaskSetupAbstractionsWithOwner;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -55,7 +56,9 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
@@ -212,18 +215,25 @@ public class DockerResourceServiceImpl implements DockerResourceService {
                                                         .artifactTaskType(artifactTaskType)
                                                         .attributes(delegateRequest)
                                                         .build();
+    Map<String, String> owner = getNGTaskSetupAbstractionsWithOwner(
+        ngAccess.getAccountIdentifier(), ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier());
+    Map<String, String> abstractions = new HashMap<>(owner);
+    if (ngAccess.getOrgIdentifier() != null) {
+      abstractions.put("orgIdentifier", ngAccess.getOrgIdentifier());
+    }
+    if (ngAccess.getProjectIdentifier() != null && ngAccess.getOrgIdentifier() != null) {
+      abstractions.put("projectIdentifier", ngAccess.getProjectIdentifier());
+    }
     final DelegateTaskRequest delegateTaskRequest =
         DelegateTaskRequest.builder()
             .accountId(ngAccess.getAccountIdentifier())
             .taskType(NGTaskType.DOCKER_ARTIFACT_TASK_NG.name())
             .taskParameters(artifactTaskParameters)
             .executionTimeout(java.time.Duration.ofSeconds(timeoutInSecs))
-            .taskSetupAbstraction("orgIdentifier", ngAccess.getOrgIdentifier())
-            .taskSetupAbstraction("ng", "true")
-            .taskSetupAbstraction("owner", ngAccess.getOrgIdentifier() + "/" + ngAccess.getProjectIdentifier())
-            .taskSetupAbstraction("projectIdentifier", ngAccess.getProjectIdentifier())
+            .taskSetupAbstractions(abstractions)
             .taskSelectors(delegateRequest.getDockerConnectorDTO().getDelegateSelectors())
             .build();
+
     return delegateGrpcClientWrapper.executeSyncTask(delegateTaskRequest);
   }
 

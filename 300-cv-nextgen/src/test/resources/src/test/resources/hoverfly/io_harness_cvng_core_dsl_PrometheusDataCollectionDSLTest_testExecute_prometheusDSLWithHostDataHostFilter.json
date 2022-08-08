@@ -1,0 +1,117 @@
+{
+  "data" : {
+    "pairs" : [ {
+      "request" : {
+        "path" : [ {
+          "matcher" : "exact",
+          "value" : "/api/v1/label/instance/values"
+        } ],
+        "method" : [ {
+          "matcher" : "exact",
+          "value" : "GET"
+        } ],
+        "destination" : [ {
+          "matcher" : "exact",
+          "value" : "prometheus.local:9090"
+        } ],
+        "scheme" : [ {
+          "matcher" : "exact",
+          "value" : "http"
+        } ],
+        "query" : {
+          "end" : [ {
+            "matcher" : "exact",
+            "value" : "1655066040"
+          } ],
+          "match[]" : [ {
+            "matcher" : "exact",
+            "value" : "{accountId=\"kmpySmUISimoRrJL6NL73w\"}"
+          } ],
+          "start" : [ {
+            "matcher" : "exact",
+            "value" : "1654979640"
+          } ]
+        },
+        "body" : [ {
+          "matcher" : "exact",
+          "value" : ""
+        } ]
+      },
+      "response" : {
+        "status" : 200,
+        "body" : "H4sIAAAAAAAA/6pWKi5JLCktVrJSKi5NTk4tLlbSUUpJLElUsopWysgvLtFLyU/OTi3Sy8wrSS3KS8yxsrCwsFSKrQUAAAD//wEAAP//MxTdHTkAAAA=",
+        "encodedBody" : true,
+        "templated" : false,
+        "headers" : {
+          "Content-Encoding" : [ "gzip" ],
+          "Content-Length" : [ "86" ],
+          "Content-Type" : [ "application/json" ],
+          "Date" : [ "Sun, 12 Jun 2022 21:13:12 GMT" ],
+          "Hoverfly" : [ "Was-Here" ]
+        }
+      }
+    }, {
+      "request" : {
+        "path" : [ {
+          "matcher" : "exact",
+          "value" : "/api/v1/query_range"
+        } ],
+        "method" : [ {
+          "matcher" : "exact",
+          "value" : "GET"
+        } ],
+        "destination" : [ {
+          "matcher" : "exact",
+          "value" : "prometheus.local:9090"
+        } ],
+        "scheme" : [ {
+          "matcher" : "exact",
+          "value" : "http"
+        } ],
+        "query" : {
+          "end" : [ {
+            "matcher" : "exact",
+            "value" : "1655066040"
+          } ],
+          "query" : [ {
+            "matcher" : "exact",
+            "value" : "avg(learning_engine_task_non_final_status_count{accountId=\"kmpySmUISimoRrJL6NL73w\",instance=\"host.docker.internal:8889\"})"
+          } ],
+          "start" : [ {
+            "matcher" : "exact",
+            "value" : "1654979640"
+          } ],
+          "step" : [ {
+            "matcher" : "exact",
+            "value" : "60s"
+          } ]
+        },
+        "body" : [ {
+          "matcher" : "exact",
+          "value" : ""
+        } ]
+      },
+      "response" : {
+        "status" : 200,
+        "body" : "H4sIAAAAAAAA/1zTMW6EMBQG4bu8msLY/o3xOdIhCkRcrLQrRdhEiRB3T5OkmHaKr5vLWt/62axYO/e9tmaDvW99s3LZUdv57G/fH9WKvbZ+PL5s+K1WlstetR+P3cp1D/a5Pc/arCzLmCSXvHduMG/r8B8SQvAMGSFGBBEV0UQ0EZ2IZqKZ6Ex0Bhoc0DA6BqDBewaigWgkGomKqIgmohPRiWgmmonOQKNzDEDj6BmARk80EA1EI9FIVEQT0UR0IjoRzURnojNQOc8AVCNQ8SjxKPEo8SjxKPEo8SjxKPEo8SjxKPEo8SjxqPR31Hqv9/0DAAD//wEAAP//TpoI6qgEAAA=",
+        "encodedBody" : true,
+        "templated" : false,
+        "headers" : {
+          "Content-Encoding" : [ "gzip" ],
+          "Content-Length" : [ "260" ],
+          "Content-Type" : [ "application/json" ],
+          "Date" : [ "Sun, 12 Jun 2022 21:13:12 GMT" ],
+          "Hoverfly" : [ "Was-Here" ]
+        }
+      }
+    } ],
+    "globalActions" : {
+      "delays" : [ ]
+    }
+  },
+  "meta" : {
+    "schemaVersion" : "v5",
+    "hoverflyVersion" : "v1.1.5",
+    "timeExported" : "2022-06-12T21:13:12Z"
+  }
+}

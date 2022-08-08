@@ -23,6 +23,10 @@ echo "--------------------------------------"
 echo $JDK $BUILD $VERSION $PURPOSE $GIT_BRANCH $GIT_COMMIT $(date)
 echo "--------------------------------------"
 
+echo \ >> bazelrc.remote
+echo build --google_credentials=/tmp/storage_secret.json >> bazelrc.remote
+cat bazelrc.remote
+
 yum install zlib-devel -y
 
 chmod +x scripts/bazel/UpdateVersionInfoyaml.sh

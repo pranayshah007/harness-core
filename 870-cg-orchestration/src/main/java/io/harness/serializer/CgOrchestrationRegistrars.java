@@ -37,6 +37,7 @@ public class CgOrchestrationRegistrars {
       ImmutableSet.<Class<? extends KryoRegistrar>>builder()
           .addAll(WaitEngineRegistrars.kryoRegistrars)
           .addAll(DelegateTasksBeansRegistrars.kryoRegistrars)
+          .addAll(CvNextGenBeansRegistrars.kryoRegistrars)
           .addAll(OrchestrationDelayRegistrars.kryoRegistrars)
           .addAll(LicenseBeanRegistrar.kryoRegistrars)
           .addAll(AccessControlClientRegistrars.kryoRegistrars)

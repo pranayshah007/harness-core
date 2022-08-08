@@ -17,11 +17,15 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
+import io.harness.delegate.beans.connector.ConnectorType;
+import io.harness.delegate.beans.git.YamlGitConfigDTO;
 import io.harness.exception.UnsupportedOperationException;
 import io.harness.gitsync.common.dtos.RepoProviders;
 import io.harness.rule.Owner;
 
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -70,5 +74,28 @@ public class RepoProviderHelperTest extends CategoryTest {
     RepoProviders repoProviderFromGithubUrl =
         RepoProviderHelper.getRepoProviderFromTheUrl("https://github.com/harness/harness-core");
     assertThat(repoProviderFromGithubUrl).isEqualTo(GITHUB);
+  }
+
+  @Test
+  @Owner(developers = DEEPAK)
+  @Category(UnitTests.class)
+  public void getRepoProviderTypeTest() throws IOException {
+    YamlGitConfigDTO yamlGitConfigDTO1 = YamlGitConfigDTO.builder().gitConnectorType(ConnectorType.GITHUB).build();
+    YamlGitConfigDTO yamlGitConfigDTO2 = YamlGitConfigDTO.builder().gitConnectorType(ConnectorType.GITHUB).build();
+    List<YamlGitConfigDTO> yamlGitConfigDTOS = Arrays.asList(yamlGitConfigDTO1, yamlGitConfigDTO2);
+    final RepoProviders repoProviderType = RepoProviderHelper.getRepoProviderType(yamlGitConfigDTOS);
+    assertThat(repoProviderType).isEqualTo(GITHUB);
+
+    YamlGitConfigDTO yamlGitConfigDTO3 = YamlGitConfigDTO.builder().gitConnectorType(ConnectorType.BITBUCKET).build();
+    YamlGitConfigDTO yamlGitConfigDTO4 = YamlGitConfigDTO.builder().gitConnectorType(ConnectorType.BITBUCKET).build();
+    List<YamlGitConfigDTO> bitbucketYamlGitConfigDTOS = Arrays.asList(yamlGitConfigDTO3, yamlGitConfigDTO4);
+    final RepoProviders repoProviderType1 = RepoProviderHelper.getRepoProviderType(bitbucketYamlGitConfigDTOS);
+    assertThat(repoProviderType1).isEqualTo(BITBUCKET);
+
+    YamlGitConfigDTO yamlGitConfigDTO5 = YamlGitConfigDTO.builder().gitConnectorType(ConnectorType.GITLAB).build();
+    YamlGitConfigDTO yamlGitConfigDTO6 = YamlGitConfigDTO.builder().gitConnectorType(ConnectorType.GITLAB).build();
+    List<YamlGitConfigDTO> gitlabYamlGitConfigDTOS = Arrays.asList(yamlGitConfigDTO5, yamlGitConfigDTO6);
+    final RepoProviders repoProviderTyp2 = RepoProviderHelper.getRepoProviderType(gitlabYamlGitConfigDTOS);
+    assertThat(repoProviderTyp2).isEqualTo(GITLAB);
   }
 }

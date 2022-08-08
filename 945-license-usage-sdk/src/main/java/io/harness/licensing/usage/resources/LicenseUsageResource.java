@@ -10,9 +10,11 @@ package io.harness.licensing.usage.resources;
 import io.harness.ModuleType;
 import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.accesscontrol.NGAccessControlCheck;
+import io.harness.cd.CDLicenseType;
 import io.harness.exception.InvalidRequestException;
-import io.harness.licensing.beans.modules.types.CDLicenseType;
 import io.harness.licensing.usage.beans.LicenseUsageDTO;
+import io.harness.licensing.usage.beans.cd.ServiceInstanceUsageDTO;
+import io.harness.licensing.usage.beans.cd.ServiceUsageDTO;
 import io.harness.licensing.usage.interfaces.LicenseUsageInterface;
 import io.harness.licensing.usage.params.CDUsageRequestParams;
 import io.harness.licensing.usage.params.UsageRequestParams;
@@ -91,5 +93,46 @@ public class LicenseUsageResource {
     } catch (IllegalArgumentException e) {
       throw new InvalidRequestException("Module is invalid", e);
     }
+  }
+
+  @GET
+  @Path("CD/servicesLicense")
+  @ApiOperation(
+      value = "Gets License Usage By Timestamp for Services in CD Module", nickname = "getCDLicenseUsageForServices")
+  @Operation(operationId = "getCDLicenseUsageForServices",
+      summary = "Gets License Usage By Module, Timestamp, and Account Identifier",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "Returns a license usage object")
+      })
+  @NGAccessControlCheck(resourceType = "LICENSE", permission = "core_license_view")
+  public ResponseDTO<ServiceUsageDTO>
+  getCDLicenseUsageForServices(@Parameter(description = "Account id to get the license usage.") @QueryParam(
+                                   "accountIdentifier") @AccountIdentifier String accountIdentifier,
+      @QueryParam("timestamp") long timestamp) {
+    return ResponseDTO.newResponse((ServiceUsageDTO) licenseUsageInterface.getLicenseUsage(accountIdentifier,
+        ModuleType.CD, timestamp, CDUsageRequestParams.builder().cdLicenseType(CDLicenseType.SERVICES).build()));
+  }
+
+  @GET
+  @Path("CD/serviceInstancesLicense")
+  @ApiOperation(value = "Gets License Usage By Timestamp for Service Instances in CD Module",
+      nickname = "getCDLicenseUsageForServiceInstances")
+  @Operation(operationId = "getCDLicenseUsageForServiceInstances",
+      summary = "Gets License Usage By Module, Timestamp, and Account Identifier",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "Returns a license usage object")
+      })
+  @NGAccessControlCheck(resourceType = "LICENSE", permission = "core_license_view")
+  public ResponseDTO<ServiceInstanceUsageDTO>
+  getCDLicenseUsageForServiceInstances(@Parameter(description = "Account id to get the license usage.") @QueryParam(
+                                           "accountIdentifier") @AccountIdentifier String accountIdentifier,
+      @QueryParam("timestamp") long timestamp) {
+    return ResponseDTO.newResponse(
+        (ServiceInstanceUsageDTO) licenseUsageInterface.getLicenseUsage(accountIdentifier, ModuleType.CD, timestamp,
+            CDUsageRequestParams.builder().cdLicenseType(CDLicenseType.SERVICE_INSTANCES).build()));
   }
 }

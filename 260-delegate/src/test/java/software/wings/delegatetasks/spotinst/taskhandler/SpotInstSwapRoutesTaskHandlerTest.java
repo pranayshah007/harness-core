@@ -13,6 +13,7 @@ import static io.harness.rule.OwnerRule.SATYAM;
 
 import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.anyList;
@@ -105,7 +106,7 @@ public class SpotInstSwapRoutesTaskHandlerTest extends WingsBaseTest {
         SpotInstConfig.builder().spotInstAccountId("SPOTINST_ACCOUNT_ID").spotInstToken(new char[] {'a', 'b'}).build(),
         AwsConfig.builder().build());
     verify(mockAwsElbHelperServiceDelegate)
-        .updateListenersForSpotInstBGDeployment(any(), anyList(), anyList(), anyString(), any());
+        .updateListenersForSpotInstBGDeployment(any(), anyList(), nullable(List.class), nullable(String.class), any());
     verify(mockSpotInstHelperServiceDelegate).updateElastiGroupCapacity(anyString(), anyString(), anyString(), any());
   }
 
@@ -123,7 +124,7 @@ public class SpotInstSwapRoutesTaskHandlerTest extends WingsBaseTest {
     doReturn(new DescribeListenersResult().withListeners(new Listener().withDefaultActions(
                  new Action().withType("forward").withTargetGroupArn("STAGE_TARGET_GROUP_ARN"))))
         .when(mockAwsElbHelperServiceDelegate)
-        .describeListenerResult(any(), anyList(), anyString(), anyString());
+        .describeListenerResult(any(), nullable(List.class), nullable(String.class), nullable(String.class));
     String oldId = "oldId";
     String newId = "newId";
     SpotInstSwapRoutesTaskParameters parameters =
@@ -141,7 +142,8 @@ public class SpotInstSwapRoutesTaskHandlerTest extends WingsBaseTest {
         SpotInstConfig.builder().spotInstAccountId("SPOTINST_ACCOUNT_ID").spotInstToken(new char[] {'a', 'b'}).build(),
         AwsConfig.builder().build());
     verify(mockAwsElbHelperServiceDelegate)
-        .updateDefaultListenersForSpotInstBG(any(), anyList(), anyString(), anyString(), anyString());
+        .updateDefaultListenersForSpotInstBG(
+            any(), anyList(), anyString(), nullable(String.class), nullable(String.class));
     verify(spotInstSwapRoutesTaskHandler, times(2))
         .updateElastiGroupAndWait(anyString(), anyString(), any(), anyInt(), any(), anyString(), anyString());
   }

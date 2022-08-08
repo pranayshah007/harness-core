@@ -12,6 +12,5 @@ import io.harness.annotations.dev.OwnedBy;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 public class DocumentLinksConstants {
-  public static String DELEGATE_INSTALLATION_LINK =
-      "https://docs.harness.io/article/migeq3achl-harness-delegate-faqs#delegate_installation";
+  public static String DELEGATE_INSTALLATION_LINK = "https://ngdocs.harness.io/article/re8kk0ex4k";
 }

@@ -49,4 +49,13 @@ public class LinearHistogramOptions implements HistogramOptions {
     checkElementIndex(bucket, this.numBuckets);
     return bucket * this.bucketSize;
   }
+
+  @Override
+  public boolean equals(Object other) {
+    if (!(other instanceof LinearHistogramOptions)) {
+      return false;
+    }
+    LinearHistogramOptions o = (LinearHistogramOptions) other;
+    return this.numBuckets == o.numBuckets && this.bucketSize == o.bucketSize && this.epsilon == o.epsilon;
+  }
 }

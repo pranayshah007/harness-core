@@ -12,7 +12,9 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.rule.OwnerRule.SAINATH;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 
 import io.harness.annotations.dev.OwnedBy;
@@ -27,6 +29,7 @@ import software.wings.beans.yaml.ChangeContext;
 import software.wings.beans.yaml.YamlType;
 import software.wings.infra.AwsAmiInfrastructure;
 import software.wings.service.impl.yaml.handler.InfraDefinition.AwsAmiInfrastructureYamlHandler;
+import software.wings.service.impl.yaml.service.YamlHelper;
 import software.wings.service.intfc.SettingsService;
 import software.wings.yaml.handler.YamlHandlerTestBase;
 
@@ -46,6 +49,7 @@ import org.mockito.Mock;
 public class AwsAmiInfrastructureYamlHandlerTest extends YamlHandlerTestBase {
   @Mock SettingsService settingsService;
   @InjectMocks @Inject AwsAmiInfrastructureYamlHandler awsAmiInfrastructureYamlHandler;
+  @Mock YamlHelper yamlHelper;
 
   @Test
   @Owner(developers = SAINATH)
@@ -110,7 +114,8 @@ public class AwsAmiInfrastructureYamlHandlerTest extends YamlHandlerTestBase {
 
     SettingAttribute settingAttribute = SettingAttribute.Builder.aSettingAttribute().withUuid(cloudProviderId).build();
     doReturn(settingAttribute).when(settingsService).getSettingAttributeByName(anyString(), anyString());
-
+    doReturn("App1").when(yamlHelper).getAppId(any(), any());
+    doNothing().when(settingsService).checkRbacOnSettingAttribute(any(), any());
     AwsAmiInfrastructure bean = awsAmiInfrastructureYamlHandler.upsertFromYaml(changeContext, null);
 
     assertThat(bean.getCloudProviderId()).isEqualTo(cloudProviderId);

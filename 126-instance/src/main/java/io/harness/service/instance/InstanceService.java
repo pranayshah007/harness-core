@@ -10,14 +10,15 @@ package io.harness.service.instance;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.dtos.InstanceDTO;
+import io.harness.models.ActiveServiceInstanceInfo;
 import io.harness.models.CountByServiceIdAndEnvType;
 import io.harness.models.EnvBuildInstanceCount;
 import io.harness.models.InstancesByBuildId;
 
 import java.util.List;
 import java.util.Optional;
+import javax.validation.constraints.NotEmpty;
 import org.springframework.data.mongodb.core.aggregation.AggregationResults;
-import org.springframework.data.mongodb.core.query.Criteria;
 
 @OwnedBy(HarnessTeam.DX)
 public interface InstanceService {
@@ -31,7 +32,8 @@ public interface InstanceService {
 
   void deleteAll(List<InstanceDTO> instanceDTOList);
 
-  Optional<InstanceDTO> softDelete(String instanceKey);
+  Optional<InstanceDTO> delete(@NotEmpty String instanceKey, @NotEmpty String accountIdentifier,
+      @NotEmpty String orgIdentifier, @NotEmpty String projectIdentifier, String infrastructureMappingId);
 
   Optional<InstanceDTO> findAndReplace(InstanceDTO instanceDTO);
 
@@ -51,8 +53,11 @@ public interface InstanceService {
   List<InstanceDTO> getActiveInstancesByServiceId(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId, long timestampInMs);
 
-  List<InstanceDTO> getActiveInstancesByInfrastructureMappingId(String accountIdentifier, String orgIdentifier,
-      String projectIdentifier, String infrastructureMappingId, long timestampInMs);
+  List<InstanceDTO> getActiveInstancesByServiceId(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId);
+
+  List<InstanceDTO> getActiveInstancesByInfrastructureMappingId(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String infrastructureMappingId);
 
   List<InstanceDTO> getActiveInstancesByInstanceInfo(
       String accountIdentifier, String instanceInfoNamespace, String instanceInfoPodName);
@@ -60,12 +65,13 @@ public interface InstanceService {
   AggregationResults<EnvBuildInstanceCount> getEnvBuildInstanceCountByServiceId(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId, long timestampInMs);
 
+  AggregationResults<ActiveServiceInstanceInfo> getActiveServiceInstanceInfo(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId);
+
   AggregationResults<InstancesByBuildId> getActiveInstancesByServiceIdEnvIdAndBuildIds(String accountIdentifier,
       String orgIdentifier, String projectIdentifier, String serviceId, String envId, List<String> buildIds,
       long timestampInMs, int limit);
 
   AggregationResults<CountByServiceIdAndEnvType> getActiveServiceInstanceCountBreakdown(String accountIdentifier,
       String orgIdentifier, String projectIdentifier, List<String> serviceId, long timestampInMs);
-
-  InstanceDTO findFirstInstance(Criteria criteria);
 }

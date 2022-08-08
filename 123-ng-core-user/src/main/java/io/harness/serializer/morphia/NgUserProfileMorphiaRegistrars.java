@@ -13,7 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.morphia.MorphiaRegistrarHelperPut;
 import io.harness.ng.userprofile.entities.AwsCodeCommitSCM;
-import io.harness.ng.userprofile.entities.AzureDevOpsSCM;
+import io.harness.ng.userprofile.entities.AzureRepoSCM;
 import io.harness.ng.userprofile.entities.BitbucketSCM;
 import io.harness.ng.userprofile.entities.GithubSCM;
 import io.harness.ng.userprofile.entities.GitlabSCM;
@@ -30,7 +30,7 @@ public class NgUserProfileMorphiaRegistrars implements MorphiaRegistrar {
     set.add(GithubSCM.class);
     set.add(GitlabSCM.class);
     set.add(AwsCodeCommitSCM.class);
-    set.add(AzureDevOpsSCM.class);
+    set.add(AzureRepoSCM.class);
   }
 
   @Override

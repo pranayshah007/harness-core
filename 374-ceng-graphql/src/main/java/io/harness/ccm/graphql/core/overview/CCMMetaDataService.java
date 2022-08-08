@@ -7,21 +7,33 @@
 
 package io.harness.ccm.graphql.core.overview;
 
+import static io.harness.telemetry.Destination.AMPLITUDE;
+
 import io.harness.ccm.commons.dao.CEMetadataRecordDao;
 import io.harness.ccm.commons.entities.batch.CEMetadataRecord;
 import io.harness.ccm.graphql.dto.overview.CCMMetaData;
 import io.harness.ccm.graphql.dto.overview.CCMMetaData.CCMMetaDataBuilder;
+import io.harness.ccm.rbac.CCMRbacHelper;
 import io.harness.ccm.views.dto.DefaultViewIdDto;
 import io.harness.ccm.views.service.CEViewService;
+import io.harness.telemetry.Category;
+import io.harness.telemetry.TelemetryReporter;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.util.Collections;
+import java.util.HashMap;
 import lombok.NonNull;
+import lombok.extern.slf4j.Slf4j;
 
 @Singleton
+@Slf4j
 public class CCMMetaDataService {
+  public static final String MODULE_INTERFACE_LOADED = "Module Interface Loaded";
   @Inject private CEMetadataRecordDao metadataRecordDao;
   @Inject private CEViewService ceViewService;
+  @Inject private TelemetryReporter telemetryReporter;
+  @Inject private CCMRbacHelper rbacHelper;
 
   @NonNull
   public CCMMetaData getCCMMetaData(@NonNull final String accountId) {
@@ -43,6 +55,28 @@ public class CCMMetaDataService {
     ccmMetaDataBuilder.defaultGcpPerspectiveId(defaultViewIds.getGcpViewId());
     ccmMetaDataBuilder.defaultClusterPerspectiveId(defaultViewIds.getClusterViewId());
 
+    try {
+      Boolean isSegmentModuleInterfaceLoadedEventSent = null;
+      if (null != ceMetadataRecord) {
+        isSegmentModuleInterfaceLoadedEventSent = ceMetadataRecord.getSegmentModuleInterfaceLoadedEventSent();
+      }
+      if (isSegmentModuleInterfaceLoadedEventSent == null || !isSegmentModuleInterfaceLoadedEventSent) {
+        HashMap<String, Object> properties = new HashMap<>();
+        properties.put("module", "CCM");
+        telemetryReporter.sendTrackEvent(MODULE_INTERFACE_LOADED, null, accountId, properties,
+            Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL);
+        if (null == ceMetadataRecord) {
+          ceMetadataRecord = CEMetadataRecord.builder().build();
+        }
+        ceMetadataRecord.setSegmentModuleInterfaceLoadedEventSent(true);
+        metadataRecordDao.upsert(ceMetadataRecord);
+      }
+    } catch (Exception ex) {
+      log.error("Encountered exception while getSegmentModuleInterfaceLoadedEventSent.", ex);
+    }
+
+    // Checking cost overview permissions
+    ccmMetaDataBuilder.showCostOverview(rbacHelper.hasCostOverviewPermission(accountId, null, null));
     return ccmMetaDataBuilder.build();
   }
 

@@ -20,9 +20,7 @@ import io.harness.beans.EventDetail;
 import io.harness.beans.EventPayload;
 import io.harness.beans.EventStatus;
 import io.harness.beans.EventType;
-import io.harness.beans.FeatureName;
 import io.harness.beans.event.TestEventPayload;
-import io.harness.ff.FeatureFlagService;
 import io.harness.persistence.HPersistence;
 
 import com.google.inject.Inject;
@@ -40,16 +38,12 @@ import org.mongodb.morphia.query.UpdateOperations;
 public class EventServiceImpl implements EventService {
   private static final int MAX_RETRY_ALLOWED = 1;
   @Inject EventHelper eventHelper;
-  @Inject private FeatureFlagService featureFlagService;
   @Inject private HPersistence hPersistence;
 
   @Inject private EventConfigService eventConfigService;
 
   @Override
   public void deliverEvent(String accountId, String appId, EventPayload payload) {
-    if (!featureFlagService.isEnabled(FeatureName.APP_TELEMETRY, accountId)) {
-      return;
-    }
     List<CgEventConfig> eventConfigList = eventConfigService.listAllEventsConfig(accountId, appId);
     if (!isEmpty(eventConfigList)) {
       eventConfigList.stream()
@@ -115,9 +109,6 @@ public class EventServiceImpl implements EventService {
 
   @Override
   public void deliverEvent(String accountId, String appId, String eventConfigId, EventPayload payload) {
-    if (!featureFlagService.isEnabled(FeatureName.APP_TELEMETRY, accountId)) {
-      return;
-    }
     CgEventConfig eventConfig = eventConfigService.getEventsConfig(accountId, appId, eventConfigId);
     deliverEvent(accountId, appId, eventConfig, payload);
   }

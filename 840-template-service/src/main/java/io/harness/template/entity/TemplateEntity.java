@@ -16,6 +16,7 @@ import io.harness.data.validator.EntityIdentifier;
 import io.harness.data.validator.EntityName;
 import io.harness.data.validator.Trimmed;
 import io.harness.encryption.Scope;
+import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.persistance.GitSyncableEntity;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdIndex;
@@ -29,13 +30,14 @@ import io.harness.persistence.CreatedAtAware;
 import io.harness.persistence.PersistentEntity;
 import io.harness.persistence.UpdatedAtAware;
 import io.harness.persistence.UuidAware;
-import io.harness.security.dto.Principal;
+import io.harness.persistence.gitaware.GitAware;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.github.reinert.jjschema.SchemaIgnore;
 import com.google.common.collect.ImmutableList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import lombok.Builder;
@@ -47,10 +49,8 @@ import lombok.experimental.NonFinal;
 import lombok.experimental.Wither;
 import org.hibernate.validator.constraints.NotEmpty;
 import org.mongodb.morphia.annotations.Entity;
-import org.springframework.data.annotation.CreatedBy;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
-import org.springframework.data.annotation.LastModifiedBy;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.annotation.TypeAlias;
 import org.springframework.data.annotation.Version;
@@ -67,7 +67,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @HarnessEntity(exportable = true)
 @StoreIn(DbAliases.TEMPLATE)
 public class TemplateEntity
-    implements GitSyncableEntity, PersistentEntity, AccountAccess, UuidAware, CreatedAtAware, UpdatedAtAware {
+    implements GitAware, GitSyncableEntity, PersistentEntity, AccountAccess, UuidAware, CreatedAtAware, UpdatedAtAware {
   @Setter @NonFinal @Id @org.mongodb.morphia.annotations.Id String uuid;
 
   @NotEmpty String accountId;
@@ -81,7 +81,7 @@ public class TemplateEntity
 
   @Wither @NotEmpty String fullyQualifiedIdentifier;
 
-  @Wither @NotEmpty String yaml;
+  @Wither @NotEmpty @NonFinal @Setter String yaml;
   @Wither @Builder.Default Boolean deleted = Boolean.FALSE;
 
   @Wither String versionLabel;
@@ -95,16 +95,21 @@ public class TemplateEntity
   @Setter @NonFinal @SchemaIgnore @FdIndex @CreatedDate long createdAt;
   @Setter @NonFinal @SchemaIgnore @NotNull @LastModifiedDate long lastUpdatedAt;
 
-  @CreatedBy Principal createdBy;
-  @LastModifiedBy Principal lastUpdatedBy;
+  @Setter @NonFinal Set<String> modules;
 
   @Wither @Setter @NonFinal String objectIdOfYaml;
   @Setter @NonFinal Boolean isFromDefaultBranch;
   @Setter @NonFinal String branch;
   @Setter @NonFinal String yamlGitConfigRef;
-  @Setter @NonFinal String filePath;
+  @Wither @Setter @NonFinal String filePath;
   @Setter @NonFinal String rootFolder;
   @Wither @NonFinal Boolean isEntityInvalid;
+
+  // git experience parameters after simplification
+  @Wither @Setter @NonFinal StoreType storeType;
+  @Wither @Setter @NonFinal String repo;
+  @Wither @Setter @NonFinal String connectorRef;
+  @Wither @Setter @NonFinal String repoURL;
 
   @Override
   public String getAccountIdentifier() {
@@ -180,6 +185,12 @@ public class TemplateEntity
                      TemplateEntityKeys.orgIdentifier, TemplateEntityKeys.isFromDefaultBranch))
                  .descSortField(TemplateEntityKeys.createdAt)
                  .build())
+        .add(CompoundMongoIndex.builder()
+                 .name("accountId_repoURL_filePath")
+                 .field(TemplateEntityKeys.accountId)
+                 .field(TemplateEntityKeys.repoURL)
+                 .field(TemplateEntityKeys.filePath)
+                 .build())
         .build();
   }
 
@@ -196,5 +207,15 @@ public class TemplateEntity
   @Override
   public String getInvalidYamlString() {
     return yaml;
+  }
+
+  @Override
+  public String getData() {
+    return yaml;
+  }
+
+  @Override
+  public void setData(String yaml) {
+    this.yaml = yaml;
   }
 }

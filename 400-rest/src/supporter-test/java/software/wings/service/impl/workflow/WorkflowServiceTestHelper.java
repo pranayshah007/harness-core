@@ -599,7 +599,7 @@ public class WorkflowServiceTestHelper {
     assertThat(clonedOrchestrationWorkflow.isValid()).isFalse();
     assertThat(clonedOrchestrationWorkflow.getValidationMessage()).startsWith("Environment");
     List<WorkflowPhase> workflowPhases = clonedOrchestrationWorkflow.getWorkflowPhases();
-    assertThat(workflowPhases).extracting(WorkflowPhase::getServiceId).contains(TARGET_SERVICE_ID);
+    assertThat(workflowPhases).extracting(WorkflowPhase::getServiceId).containsNull();
     assertThat(workflowPhases).isNotNull().hasSize(1).extracting(WorkflowPhase::getInfraMappingId).containsNull();
     assertThat(workflowPhases).isNotNull().hasSize(1).extracting(WorkflowPhase::getInfraMappingName).containsNull();
     assertThat(workflowPhases).isNotNull().hasSize(1).extracting(WorkflowPhase::getComputeProviderId).containsNull();

@@ -23,9 +23,8 @@ import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
@@ -52,13 +51,14 @@ import software.wings.beans.container.KubernetesServiceType;
 import software.wings.cloudprovider.gke.GkeClusterService;
 
 import com.google.common.collect.ImmutableMap;
-import io.fabric8.kubernetes.api.model.HorizontalPodAutoscaler;
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ReplicationController;
 import io.fabric8.kubernetes.api.model.ReplicationControllerBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.api.model.ServiceBuilder;
+import io.fabric8.kubernetes.api.model.autoscaling.v1.HorizontalPodAutoscaler;
 import java.time.Clock;
 import java.util.Arrays;
 import java.util.Date;
@@ -187,16 +187,16 @@ public class KubernetesSetupCommandUnitTest extends WingsBaseTest {
                                                                     .endStatus()
                                                                     .build();
 
-    when(gkeClusterService.getCluster(
-             any(SettingAttribute.class), eq(emptyList()), anyString(), anyString(), anyBoolean()))
+    when(gkeClusterService.getCluster(nullable(SettingAttribute.class), eq(emptyList()), nullable(String.class),
+             nullable(String.class), nullable(Boolean.class)))
         .thenReturn(kubernetesConfig);
-    when(kubernetesContainerService.createOrReplaceController(eq(kubernetesConfig), any(ReplicationController.class)))
+    when(kubernetesContainerService.createOrReplaceController(eq(kubernetesConfig), nullable(HasMetadata.class)))
         .thenReturn(replicationController);
     when(kubernetesContainerService.listControllers(kubernetesConfig)).thenReturn(null);
     when(kubernetesContainerService.createOrReplaceServiceFabric8(
-             eq(kubernetesConfig), any(io.fabric8.kubernetes.api.model.Service.class)))
+             eq(kubernetesConfig), nullable(io.fabric8.kubernetes.api.model.Service.class)))
         .thenReturn(kubernetesService);
-    when(kubernetesContainerService.createOrReplaceSecretFabric8(eq(kubernetesConfig), any(Secret.class)))
+    when(kubernetesContainerService.createOrReplaceSecretFabric8(eq(kubernetesConfig), nullable(Secret.class)))
         .thenReturn(secret);
   }
 
@@ -219,9 +219,9 @@ public class KubernetesSetupCommandUnitTest extends WingsBaseTest {
     CommandExecutionStatus status = kubernetesSetupCommandUnit.execute(context);
     assertThat(status).isEqualTo(CommandExecutionStatus.SUCCESS);
     verify(gkeClusterService)
-        .getCluster(any(SettingAttribute.class), eq(emptyList()), anyString(), anyString(), anyBoolean());
-    verify(kubernetesContainerService)
-        .createOrReplaceController(eq(kubernetesConfig), any(ReplicationController.class));
+        .getCluster(nullable(SettingAttribute.class), eq(emptyList()), nullable(String.class), nullable(String.class),
+            nullable(Boolean.class));
+    verify(kubernetesContainerService).createOrReplaceController(eq(kubernetesConfig), nullable(HasMetadata.class));
   }
 
   @Test
@@ -229,7 +229,7 @@ public class KubernetesSetupCommandUnitTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void testCreateCustomMetricHorizontalPodAutoscalar() throws Exception {
     ExecutionLogCallback executionLogCallback = mock(ExecutionLogCallback.class);
-    doNothing().when(executionLogCallback).saveExecutionLog(anyString(), any());
+    doNothing().when(executionLogCallback).saveExecutionLog(nullable(String.class), any());
 
     Map<String, String> labels = new HashMap<>();
     labels.put("app", "appName");
@@ -273,10 +273,6 @@ public class KubernetesSetupCommandUnitTest extends WingsBaseTest {
     assertThat(horizontalPodAutoscaler.getMetadata().getLabels().containsKey("version")).isTrue();
     assertThat(horizontalPodAutoscaler.getMetadata().getLabels().get("app")).isEqualTo("appName");
     assertThat(horizontalPodAutoscaler.getMetadata().getLabels().get("version")).isEqualTo("9");
-    assertThat(horizontalPodAutoscaler.getSpec().getAdditionalProperties()).isNotNull();
-    assertThat(horizontalPodAutoscaler.getSpec().getAdditionalProperties()).hasSize(1);
-    assertThat(horizontalPodAutoscaler.getSpec().getAdditionalProperties().keySet().iterator().next())
-        .isEqualTo("metrics");
     assertThat(horizontalPodAutoscaler.getSpec().getMinReplicas()).isEqualTo(Integer.valueOf(3));
     assertThat(horizontalPodAutoscaler.getSpec().getMaxReplicas()).isEqualTo(Integer.valueOf(6));
   }
@@ -286,7 +282,7 @@ public class KubernetesSetupCommandUnitTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void testBasicHorizontalPodAutoscalar() throws Exception {
     ExecutionLogCallback executionLogCallback = mock(ExecutionLogCallback.class);
-    doNothing().when(executionLogCallback).saveExecutionLog(anyString(), any());
+    doNothing().when(executionLogCallback).saveExecutionLog(nullable(String.class), any());
 
     Map labels = new HashMap();
     labels.put("app", "appName");
@@ -319,7 +315,6 @@ public class KubernetesSetupCommandUnitTest extends WingsBaseTest {
     assertThat(horizontalPodAutoscaler.getMetadata().getLabels().get("version")).isEqualTo("9");
     assertThat(horizontalPodAutoscaler.getSpec().getMinReplicas()).isEqualTo(Integer.valueOf(1));
     assertThat(horizontalPodAutoscaler.getSpec().getMaxReplicas()).isEqualTo(Integer.valueOf(2));
-    assertThat(horizontalPodAutoscaler.getSpec().getTargetCPUUtilizationPercentage()).isEqualTo(Integer.valueOf(20));
 
     setupParams = KubernetesSetupParamsBuilder
                       .aKubernetesSetupParams()
@@ -347,7 +342,6 @@ public class KubernetesSetupCommandUnitTest extends WingsBaseTest {
     assertThat(horizontalPodAutoscaler.getMetadata().getLabels().get("version")).isEqualTo("9");
     assertThat(horizontalPodAutoscaler.getSpec().getMinReplicas()).isEqualTo(Integer.valueOf(2));
     assertThat(horizontalPodAutoscaler.getSpec().getMaxReplicas()).isEqualTo(Integer.valueOf(3));
-    assertThat(horizontalPodAutoscaler.getSpec().getTargetCPUUtilizationPercentage()).isEqualTo(Integer.valueOf(30));
   }
 
   @Test
@@ -355,7 +349,7 @@ public class KubernetesSetupCommandUnitTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void testBlueGreenValidationServiceNotAllowedWithBlueGreen() throws Exception {
     ExecutionLogCallback executionLogCallback = mock(ExecutionLogCallback.class);
-    doNothing().when(executionLogCallback).saveExecutionLog(anyString(), any());
+    doNothing().when(executionLogCallback).saveExecutionLog(nullable(String.class), any());
 
     KubernetesSetupParams setupParams = KubernetesSetupParamsBuilder.aKubernetesSetupParams()
                                             .withBlueGreen(true)
@@ -375,7 +369,7 @@ public class KubernetesSetupCommandUnitTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void testBlueGreenValidationEmptyBlueGreenConfig() throws Exception {
     ExecutionLogCallback executionLogCallback = mock(ExecutionLogCallback.class);
-    doNothing().when(executionLogCallback).saveExecutionLog(anyString(), any());
+    doNothing().when(executionLogCallback).saveExecutionLog(nullable(String.class), any());
 
     KubernetesBlueGreenConfig blueGreenConfig = new KubernetesBlueGreenConfig();
     setupParams = KubernetesSetupParamsBuilder.aKubernetesSetupParams()
@@ -396,7 +390,7 @@ public class KubernetesSetupCommandUnitTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void testBlueGreenValidationServiceNonePrimaryService() throws Exception {
     ExecutionLogCallback executionLogCallback = mock(ExecutionLogCallback.class);
-    doNothing().when(executionLogCallback).saveExecutionLog(anyString(), any());
+    doNothing().when(executionLogCallback).saveExecutionLog(nullable(String.class), any());
 
     KubernetesServiceSpecification serviceSpec = new KubernetesServiceSpecification();
     serviceSpec.setServiceType(KubernetesServiceType.None);
@@ -421,7 +415,7 @@ public class KubernetesSetupCommandUnitTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void testBlueGreenValidationSmokeTest() throws Exception {
     ExecutionLogCallback executionLogCallback = mock(ExecutionLogCallback.class);
-    doNothing().when(executionLogCallback).saveExecutionLog(anyString(), any());
+    doNothing().when(executionLogCallback).saveExecutionLog(nullable(String.class), any());
 
     KubernetesServiceSpecification serviceSpec = new KubernetesServiceSpecification();
     serviceSpec.setServiceType(KubernetesServiceType.ClusterIP);
@@ -478,9 +472,9 @@ public class KubernetesSetupCommandUnitTest extends WingsBaseTest {
 
     assertThat(status).isEqualTo(CommandExecutionStatus.SUCCESS);
     verify(gkeClusterService)
-        .getCluster(any(SettingAttribute.class), eq(emptyList()), anyString(), anyString(), anyBoolean());
-    verify(kubernetesContainerService)
-        .createOrReplaceController(eq(kubernetesConfig), any(ReplicationController.class));
+        .getCluster(nullable(SettingAttribute.class), eq(emptyList()), nullable(String.class), nullable(String.class),
+            nullable(Boolean.class));
+    verify(kubernetesContainerService).createOrReplaceController(eq(kubernetesConfig), nullable(HasMetadata.class));
 
     verify(kubernetesContainerService)
         .setControllerPodCount(eq(kubernetesConfig), eq(setupParams.getClusterName()), eq(controllerName0), eq(2),

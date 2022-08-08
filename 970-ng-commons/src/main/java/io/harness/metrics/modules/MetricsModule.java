@@ -15,11 +15,17 @@ import com.google.inject.AbstractModule;
 import com.google.inject.name.Names;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
+import lombok.AllArgsConstructor;
+import lombok.NoArgsConstructor;
 
+@NoArgsConstructor
+@AllArgsConstructor
 public class MetricsModule extends AbstractModule {
+  private int exportIntervalMins = 1;
+
   @Override
   protected void configure() {
-    bind(MetricService.class).to(MetricServiceImpl.class);
+    bind(MetricService.class).toInstance(new MetricServiceImpl(exportIntervalMins));
 
     bind(ScheduledExecutorService.class)
         .annotatedWith(Names.named("metricsPublisherExecutor"))

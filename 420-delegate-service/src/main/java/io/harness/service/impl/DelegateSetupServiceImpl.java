@@ -28,10 +28,11 @@ import io.harness.delegate.beans.Delegate.DelegateKeys;
 import io.harness.delegate.beans.DelegateEntityOwner;
 import io.harness.delegate.beans.DelegateGroup;
 import io.harness.delegate.beans.DelegateGroup.DelegateGroupKeys;
+import io.harness.delegate.beans.DelegateGroupDTO;
 import io.harness.delegate.beans.DelegateGroupDetails;
 import io.harness.delegate.beans.DelegateGroupListing;
 import io.harness.delegate.beans.DelegateGroupStatus;
-import io.harness.delegate.beans.DelegateInsightsDetails;
+import io.harness.delegate.beans.DelegateGroupTags;
 import io.harness.delegate.beans.DelegateInstanceStatus;
 import io.harness.delegate.beans.DelegateProfile;
 import io.harness.delegate.beans.DelegateProfile.DelegateProfileKeys;
@@ -41,6 +42,7 @@ import io.harness.delegate.beans.DelegateToken.DelegateTokenKeys;
 import io.harness.delegate.beans.DelegateTokenStatus;
 import io.harness.delegate.events.DelegateGroupUpsertEvent;
 import io.harness.delegate.filter.DelegateFilterPropertiesDTO;
+import io.harness.delegate.filter.DelegateInstanceConnectivityStatus;
 import io.harness.delegate.utils.DelegateEntityOwnerHelper;
 import io.harness.exception.InvalidRequestException;
 import io.harness.filter.dto.FilterDTO;
@@ -48,7 +50,6 @@ import io.harness.filter.service.FilterService;
 import io.harness.outbox.api.OutboxService;
 import io.harness.persistence.HPersistence;
 import io.harness.service.intfc.DelegateCache;
-import io.harness.service.intfc.DelegateInsightsService;
 import io.harness.service.intfc.DelegateSetupService;
 
 import software.wings.beans.SelectorType;
@@ -60,8 +61,10 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
@@ -84,7 +87,6 @@ import org.mongodb.morphia.query.UpdateOperations;
 public class DelegateSetupServiceImpl implements DelegateSetupService {
   @Inject private HPersistence persistence;
   @Inject private DelegateCache delegateCache;
-  @Inject private DelegateInsightsService delegateInsightsService;
   @Inject private DelegateConnectionDao delegateConnectionDao;
   @Inject private FilterService filterService;
   @Inject private OutboxService outboxService;
@@ -122,7 +124,7 @@ public class DelegateSetupServiceImpl implements DelegateSetupService {
                                         .field(DelegateKeys.status)
                                         .notEqual(DelegateInstanceStatus.DELETED)
                                         .asList();
-    DelegateGroup delegateGroup = delegateCache.getDelegateGroup(accountId, delegateGroupId);
+    DelegateGroup delegateGroup = getDelegateGroup(accountId, delegateGroupId);
 
     return buildDelegateGroupDetails(accountId, delegateGroup, groupDelegates, delegateGroupId);
   }
@@ -132,8 +134,7 @@ public class DelegateSetupServiceImpl implements DelegateSetupService {
       String accountId, String orgId, String projectId, String identifier) {
     DelegateEntityOwner owner = DelegateEntityOwnerHelper.buildOwner(orgId, projectId);
 
-    DelegateGroup delegateGroup =
-        delegateCache.getDelegateGroupByAccountAndOwnerAndIdentifier(accountId, owner, identifier);
+    DelegateGroup delegateGroup = getDelegateGroupByAccountAndOwnerAndIdentifier(accountId, owner, identifier);
 
     String delegateGroupId = delegateGroup != null ? delegateGroup.getUuid() : null;
     List<Delegate> groupDelegates = persistence.createQuery(Delegate.class)
@@ -158,18 +159,14 @@ public class DelegateSetupServiceImpl implements DelegateSetupService {
     return hostname;
   }
 
-  private DelegateInsightsDetails retrieveDelegateInsightsDetails(String accountId, String delegateGroupId) {
-    return delegateInsightsService.retrieveDelegateInsightsDetails(
-        accountId, delegateGroupId, System.currentTimeMillis() - TimeUnit.HOURS.toMillis(1));
-  }
-
   @Override
-  public Map<String, SelectorType> retrieveDelegateImplicitSelectors(Delegate delegate) {
+  public Map<String, SelectorType> retrieveDelegateImplicitSelectors(Delegate delegate, boolean fetchFromCache) {
     SortedMap<String, SelectorType> selectorTypeMap = new TreeMap<>();
 
     if (isNotEmpty(delegate.getDelegateGroupId())) {
-      DelegateGroup delegateGroup =
-          delegateCache.getDelegateGroup(delegate.getAccountId(), delegate.getDelegateGroupId());
+      DelegateGroup delegateGroup = fetchFromCache
+          ? delegateCache.getDelegateGroup(delegate.getAccountId(), delegate.getDelegateGroupId())
+          : getDelegateGroup(delegate.getAccountId(), delegate.getDelegateGroupId());
 
       if (delegateGroup != null) {
         selectorTypeMap.put(delegateGroup.getName().toLowerCase(), SelectorType.GROUP_NAME);
@@ -317,7 +314,6 @@ public class DelegateSetupServiceImpl implements DelegateSetupService {
 
     DelegateGroup updatedDelegateGroup =
         persistence.findAndModify(updateQuery, updateOperations, HPersistence.returnNewOptions);
-    delegateCache.invalidateDelegateGroupCache(accountId, delegateGroupId);
 
     return buildDelegateGroupDetails(accountId, updatedDelegateGroup, null, delegateGroupId);
   }
@@ -337,7 +333,6 @@ public class DelegateSetupServiceImpl implements DelegateSetupService {
 
     DelegateGroup updatedDelegateGroup =
         persistence.findAndModify(updateQuery, updateOperations, HPersistence.returnNewOptions);
-    delegateCache.invalidateDelegateGroupCacheByIdentifier(accountId, owner, identifier);
 
     String delegateGroupId = updatedDelegateGroup != null ? updatedDelegateGroup.getUuid() : null;
     return buildDelegateGroupDetails(accountId, updatedDelegateGroup, null, delegateGroupId);
@@ -366,7 +361,7 @@ public class DelegateSetupServiceImpl implements DelegateSetupService {
             -> isEmpty(delegateTokenName)
                 || (delegatesByGroup.get(delegateGroupId) != null && !delegatesByGroup.get(delegateGroupId).isEmpty()))
         .map(delegateGroupId -> {
-          DelegateGroup delegateGroup = delegateCache.getDelegateGroup(accountId, delegateGroupId);
+          DelegateGroup delegateGroup = getDelegateGroup(accountId, delegateGroupId);
           return buildDelegateGroupDetails(
               accountId, delegateGroup, delegatesByGroup.get(delegateGroupId), delegateGroupId);
         })
@@ -464,7 +459,6 @@ public class DelegateSetupServiceImpl implements DelegateSetupService {
         .delegateConfigurationId(delegateConfigurationId)
         .groupImplicitSelectors(retrieveDelegateGroupImplicitSelectors(delegateGroup))
         .groupCustomSelectors(groupCustomSelectors)
-        .delegateInsightsDetails(retrieveDelegateInsightsDetails(accountId, delegateGroupId))
         .lastHeartBeat(lastHeartBeat)
         .delegateInstanceDetails(delegateInstanceDetails)
         .connectivityStatus(connectivityStatus)
@@ -495,24 +489,58 @@ public class DelegateSetupServiceImpl implements DelegateSetupService {
 
     List<String> delegateGroupIds = getDelegateGroupIds(accountId, orgId, projectId, filterProperties, searchTerm);
 
-    final Map<String, List<Delegate>> delegatesByGroup = persistence.createQuery(Delegate.class)
-                                                             .filter(DelegateKeys.accountId, accountId)
-                                                             .field(DelegateKeys.delegateGroupId)
-                                                             .in(delegateGroupIds)
-                                                             .asList()
-                                                             .stream()
-                                                             .collect(groupingBy(Delegate::getDelegateGroupId));
+    List<Delegate> delegateList = persistence.createQuery(Delegate.class)
+                                      .filter(DelegateKeys.accountId, accountId)
+                                      .field(DelegateKeys.delegateGroupId)
+                                      .in(delegateGroupIds)
+                                      .asList();
+
+    // filter delegates if filtering by delegateInstanceConnectivityStatus is enabled
+    if (filterProperties != null && filterProperties.getStatus() != null
+        && newFilterStatus(filterProperties.getStatus())) {
+      delegateList = filterByDelegateInstanceStatus(delegateList, filterProperties);
+    }
+
+    final Map<String, List<Delegate>> delegatesByGroup =
+        delegateList.stream().collect(groupingBy(Delegate::getDelegateGroupId));
+
+    // Remove groupId which doesn't have single delegate after filter is applied.
+    if (filterProperties != null && filterProperties.getStatus() != null
+        && newFilterStatus(filterProperties.getStatus())) {
+      delegateGroupIds = delegateGroupIds.stream()
+                             .filter(delegateGroup -> isNotEmpty(delegatesByGroup.get(delegateGroup)))
+                             .collect(toList());
+    }
 
     List<DelegateGroupDetails> delegateGroupDetails =
         delegateGroupIds.stream()
             .map(delegateGroupId -> {
-              DelegateGroup delegateGroup = delegateCache.getDelegateGroup(accountId, delegateGroupId);
+              DelegateGroup delegateGroup = getDelegateGroup(accountId, delegateGroupId);
               return buildDelegateGroupDetails(
                   accountId, delegateGroup, delegatesByGroup.get(delegateGroupId), delegateGroupId);
             })
             .sorted(new DelegateGroupDetailsComparator())
             .collect(toList());
     return DelegateGroupListing.builder().delegateGroupDetails(delegateGroupDetails).build();
+  }
+
+  // Todo: Anupam to remove this condition once UI changes are deployed.
+  private boolean newFilterStatus(DelegateInstanceConnectivityStatus status) {
+    return DelegateInstanceConnectivityStatus.CONNECTED.equals(status)
+        || DelegateInstanceConnectivityStatus.DISCONNECTED.equals(status);
+  }
+
+  private List<Delegate> filterByDelegateInstanceStatus(
+      List<Delegate> delegateList, DelegateFilterPropertiesDTO filterProperties) {
+    if (filterProperties.getStatus().equals(DelegateInstanceConnectivityStatus.DISCONNECTED)) {
+      return delegateList.stream()
+          .filter(
+              delegate -> delegate.getLastHeartBeat() <= System.currentTimeMillis() - HEARTBEAT_EXPIRY_TIME.toMillis())
+          .collect(toList());
+    }
+    return delegateList.stream()
+        .filter(delegate -> delegate.getLastHeartBeat() > System.currentTimeMillis() - HEARTBEAT_EXPIRY_TIME.toMillis())
+        .collect(toList());
   }
 
   @Override
@@ -541,7 +569,7 @@ public class DelegateSetupServiceImpl implements DelegateSetupService {
           delegateGroupQuery.or(delegateGroupQuery.criteria(DelegateGroupKeys.name).contains(searchTerm),
               delegateGroupQuery.criteria(DelegateGroupKeys.description).contains(searchTerm),
               delegateGroupQuery.criteria(DelegateGroupKeys.identifier).contains(searchTerm),
-              delegateGroupQuery.criteria(DelegateGroupKeys.tags).hasThisOne(searchTerm));
+              delegateGroupQuery.criteria(DelegateGroupKeys.tags).contains(searchTerm));
       delegateGroupQuery.and(criteria);
     }
 
@@ -561,6 +589,10 @@ public class DelegateSetupServiceImpl implements DelegateSetupService {
       if (isNotEmpty(filterProperties.getDescription())) {
         delegateGroupQuery.field(DelegateGroupKeys.description).contains(filterProperties.getDescription());
       }
+
+      if (isNotEmpty(filterProperties.getDelegateTags())) {
+        delegateGroupQuery.field(DelegateGroupKeys.tags).hasAllOf(filterProperties.getDelegateTags());
+      }
     }
     return delegateGroupQuery.field(DelegateGroupKeys.status)
         .notEqual(DelegateGroupStatus.DELETED)
@@ -571,9 +603,11 @@ public class DelegateSetupServiceImpl implements DelegateSetupService {
   }
 
   @Override
-  public DelegateGroup updateDelegateGroupTags(
-      String accountId, String orgId, String projectId, String delegateGroupName, List<String> tags) {
+  public DelegateGroup updateDelegateGroupTags_old(
+      String accountId, String orgId, String projectId, String delegateGroupName, Set<String> tags) {
     DelegateEntityOwner owner = DelegateEntityOwnerHelper.buildOwner(orgId, projectId);
+
+    log.warn("Using a deprecated api for updating delegate group tags.");
 
     Query<DelegateGroup> updateQuery = persistence.createQuery(DelegateGroup.class)
                                            .filter(DelegateGroupKeys.accountId, accountId)
@@ -586,18 +620,183 @@ public class DelegateSetupServiceImpl implements DelegateSetupService {
 
     DelegateGroup updatedDelegateGroup =
         persistence.findAndModify(updateQuery, updateOperations, HPersistence.returnNewOptions);
-    delegateCache.invalidateDelegateGroupCacheByIdentifier(accountId, owner, delegateGroupName);
 
-    outboxService.save(
-        DelegateGroupUpsertEvent.builder()
-            .accountIdentifier(accountId)
-            .orgIdentifier(orgId)
-            .projectIdentifier(projectId)
-            .delegateGroupId(updatedDelegateGroup.getUuid())
-            .delegateSetupDetails(DelegateSetupDetails.builder().identifier(updatedDelegateGroup.getUuid()).build())
-            .build());
+    outboxService.save(DelegateGroupUpsertEvent.builder()
+                           .accountIdentifier(accountId)
+                           .orgIdentifier(orgId)
+                           .projectIdentifier(projectId)
+                           .delegateGroupId(updatedDelegateGroup.getUuid())
+                           .delegateSetupDetails(DelegateSetupDetails.builder()
+                                                     .identifier(updatedDelegateGroup.getIdentifier())
+                                                     .tags(updatedDelegateGroup.getTags())
+                                                     .build())
+                           .build());
     log.info("Updating tags for delegate group: {} tags:{}", delegateGroupName, String.valueOf(tags.toString()));
     return updatedDelegateGroup;
+  }
+
+  @Override
+  public Optional<DelegateGroupDTO> listDelegateGroupTags(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String groupIdentifier) {
+    try {
+      DelegateEntityOwner owner = DelegateEntityOwnerHelper.buildOwner(orgIdentifier, projectIdentifier);
+      DelegateGroup delegateGroup =
+          getDelegateGroupByAccountAndOwnerAndIdentifier(accountIdentifier, owner, groupIdentifier);
+      return Optional.of(DelegateGroupDTO.convertToDTO(delegateGroup, listDelegateGroupImplicitTags(delegateGroup)));
+    } catch (Exception e) {
+      log.error("Error occurred during fetching list of delegate group tags", e);
+      return Optional.empty();
+    }
+  }
+
+  @Override
+  public Optional<DelegateGroupDTO> addDelegateGroupTags(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, String groupIdentifier, DelegateGroupTags delegateGroupTags) {
+    try {
+      DelegateEntityOwner owner = DelegateEntityOwnerHelper.buildOwner(orgIdentifier, projectIdentifier);
+      DelegateGroup delegateGroup =
+          getDelegateGroupByAccountAndOwnerAndIdentifier(accountIdentifier, owner, groupIdentifier);
+      Set<String> existingTags = delegateGroup.getTags();
+      if (isNotEmpty(existingTags)) {
+        existingTags.addAll(delegateGroupTags.getTags());
+      }
+      return updateDelegateGroupTags(accountIdentifier, orgIdentifier, projectIdentifier, groupIdentifier,
+          isNotEmpty(existingTags) ? new DelegateGroupTags(existingTags)
+                                   : new DelegateGroupTags(delegateGroupTags.getTags()));
+    } catch (Exception e) {
+      log.error("Error occurred during adding delegate group tags", e);
+      return Optional.empty();
+    }
+  }
+
+  @Override
+  public Optional<DelegateGroupDTO> updateDelegateGroupTags(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, String groupIdentifier, DelegateGroupTags delegateGroupTags) {
+    try {
+      DelegateEntityOwner owner = DelegateEntityOwnerHelper.buildOwner(orgIdentifier, projectIdentifier);
+
+      Query<DelegateGroup> updateQuery = persistence.createQuery(DelegateGroup.class)
+                                             .filter(DelegateGroupKeys.accountId, accountIdentifier)
+                                             .filter(DelegateGroupKeys.identifier, groupIdentifier)
+                                             .filter(DelegateGroupKeys.owner, owner)
+                                             .filter(DelegateGroupKeys.ng, true);
+
+      final UpdateOperations<DelegateGroup> updateOperations = persistence.createUpdateOperations(DelegateGroup.class);
+      setUnset(updateOperations, DelegateGroupKeys.tags, delegateGroupTags.getTags());
+
+      DelegateGroup updatedDelegateGroup =
+          persistence.findAndModify(updateQuery, updateOperations, HPersistence.returnNewOptions);
+
+      outboxService.save(DelegateGroupUpsertEvent.builder()
+                             .accountIdentifier(accountIdentifier)
+                             .orgIdentifier(orgIdentifier)
+                             .projectIdentifier(projectIdentifier)
+                             .delegateGroupId(updatedDelegateGroup.getUuid())
+                             .delegateSetupDetails(DelegateSetupDetails.builder()
+                                                       .identifier(updatedDelegateGroup.getIdentifier())
+                                                       .tags(updatedDelegateGroup.getTags())
+                                                       .build())
+                             .build());
+      log.info("Updating tags for delegate group: {} tags: {}", groupIdentifier, delegateGroupTags.getTags());
+      return Optional.of(DelegateGroupDTO.convertToDTO(updatedDelegateGroup, null));
+    } catch (Exception e) {
+      log.error("Error occurred during updating delegate group tags", e);
+      return Optional.empty();
+    }
+  }
+
+  @Override
+  public DelegateGroup getDelegateGroup(String accountId, String delegateGroupId) {
+    if (isEmpty(accountId) || isEmpty(delegateGroupId)) {
+      return null;
+    }
+    return persistence.createQuery(DelegateGroup.class)
+        .filter(DelegateGroupKeys.accountId, accountId)
+        .filter(DelegateGroupKeys.uuid, delegateGroupId)
+        .get();
+  }
+
+  @Override
+  public void deleteDelegateGroupsOnDeletingOwner(String accountId, DelegateEntityOwner owner) {
+    Query<DelegateGroup> query = persistence.createQuery(DelegateGroup.class)
+                                     .filter(DelegateGroupKeys.accountId, accountId)
+                                     .filter(DelegateGroupKeys.ng, true)
+                                     .filter(DelegateGroupKeys.owner, owner);
+
+    persistence.delete(query);
+  }
+
+  @Override
+  public List<DelegateGroupDTO> listDelegateGroupsHavingTags(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, DelegateGroupTags tags) {
+    DelegateEntityOwner owner = DelegateEntityOwnerHelper.buildOwner(orgIdentifier, projectIdentifier);
+    List<DelegateGroup> allDelegateGroupList = persistence.createQuery(DelegateGroup.class)
+                                                   .filter(DelegateGroupKeys.accountId, accountIdentifier)
+                                                   .filter(DelegateGroupKeys.ng, true)
+                                                   .filter(DelegateGroupKeys.owner, owner)
+                                                   .asList();
+    return allDelegateGroupList.stream()
+        .filter(delegateGroup -> checkForDelegateGroupsHavingAllTags(delegateGroup, tags))
+        .map(
+            delegateGroup -> DelegateGroupDTO.convertToDTO(delegateGroup, listDelegateGroupImplicitTags(delegateGroup)))
+        .collect(Collectors.toList());
+  }
+
+  @Override
+  public List<String> listDelegateImplicitSelectors(Delegate delegate) {
+    List<String> delegateImplicitSelectors = new ArrayList<>();
+
+    if (isNotEmpty(delegate.getDelegateGroupId())) {
+      DelegateGroup delegateGroup =
+          delegateCache.getDelegateGroup(delegate.getAccountId(), delegate.getDelegateGroupId());
+
+      if (delegateGroup != null) {
+        delegateImplicitSelectors.add(delegateGroup.getName().toLowerCase());
+
+        if (isNotEmpty(delegateGroup.getTags())) {
+          delegateImplicitSelectors.addAll(delegateGroup.getTags());
+        }
+      }
+    } else if (isNotEmpty(delegate.getHostName())) {
+      delegateImplicitSelectors.add(delegate.getHostName().toLowerCase());
+    }
+
+    if (isNotEmpty(delegate.getDelegateName())) {
+      delegateImplicitSelectors.add(delegate.getDelegateName().toLowerCase());
+    }
+
+    DelegateProfile delegateProfile =
+        delegateCache.getDelegateProfile(delegate.getAccountId(), delegate.getDelegateProfileId());
+
+    if (delegateProfile != null && isNotEmpty(delegateProfile.getName())) {
+      delegateImplicitSelectors.add(delegateProfile.getName().toLowerCase());
+    }
+
+    if (delegateProfile != null && isNotEmpty(delegateProfile.getSelectors())) {
+      delegateImplicitSelectors.addAll(delegateProfile.getSelectors());
+    }
+
+    return delegateImplicitSelectors;
+  }
+
+  private boolean checkForDelegateGroupsHavingAllTags(DelegateGroup delegateGroup, DelegateGroupTags tags) {
+    Set<String> delegateGroupTags = listDelegateGroupImplicitTags(delegateGroup);
+    if (isNotEmpty(delegateGroup.getTags())) {
+      delegateGroupTags.addAll(delegateGroup.getTags());
+    }
+    return delegateGroupTags.containsAll(tags.getTags());
+  }
+
+  private DelegateGroup getDelegateGroupByAccountAndOwnerAndIdentifier(
+      String accountId, DelegateEntityOwner owner, String delegateGroupIdentifier) {
+    if (isEmpty(accountId) || isEmpty(delegateGroupIdentifier)) {
+      return null;
+    }
+    return persistence.createQuery(DelegateGroup.class)
+        .filter(DelegateGroupKeys.accountId, accountId)
+        .filter(DelegateGroupKeys.owner, owner)
+        .filter(DelegateGroupKeys.identifier, delegateGroupIdentifier)
+        .get();
   }
 
   private Map<String, Boolean> isDelegateTokenActive(String accountId, List<String> tokensNameList) {
@@ -613,5 +812,26 @@ public class DelegateSetupServiceImpl implements DelegateSetupService {
         -> delegateTokenStatusMap.put(
             delegateToken.getName(), DelegateTokenStatus.ACTIVE.equals(delegateToken.getStatus())));
     return delegateTokenStatusMap;
+  }
+
+  private Set<String> listDelegateGroupImplicitTags(final DelegateGroup delegateGroup) {
+    Set<String> implicitTags = new HashSet<>();
+    if (delegateGroup == null) {
+      return implicitTags;
+    }
+    implicitTags.add(delegateGroup.getName().toLowerCase());
+    final DelegateProfile delegateProfile =
+        delegateCache.getDelegateProfile(delegateGroup.getAccountId(), delegateGroup.getDelegateConfigurationId());
+
+    if (delegateProfile != null && isNotEmpty(delegateProfile.getName())) {
+      implicitTags.add(delegateProfile.getName().toLowerCase());
+    }
+
+    if (delegateProfile != null && isNotEmpty(delegateProfile.getSelectors())) {
+      for (final String selector : delegateProfile.getSelectors()) {
+        implicitTags.add(selector.toLowerCase());
+      }
+    }
+    return implicitTags;
   }
 }

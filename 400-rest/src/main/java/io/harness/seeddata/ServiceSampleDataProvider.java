@@ -169,7 +169,7 @@ public class ServiceSampleDataProvider {
         + "namespace: ${infra.kubernetes.namespace}\n"
         + "\n"
         + "# Service Type allow you to specify what kind of service you want.\n"
-        + "# Possible values for ServiceType are:\n"
+        + "# Possible values for ServiceVariableType are:\n"
         + "# ClusterIP | NodePort | LoadBalancer | ExternalName\n"
         + "serviceType: LoadBalancer\n"
         + "\n"

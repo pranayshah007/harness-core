@@ -60,6 +60,8 @@ public class SumoLogicConnectorTest extends CategoryTest {
   String identifier = "sumoLogicIdentifier";
   String name = "SumoLogic";
   String accountIdentifier = "accountIdentifier";
+  String projectIdentifier = "projectIdentifier";
+  String orgIdentifier = "orgIdentifier";
   String accessIdRef = "accessIdRef";
   String accessKeyRef = "accessKeyRef";
 
@@ -109,7 +111,7 @@ public class SumoLogicConnectorTest extends CategoryTest {
              anyString(), anyString(), anyString(), anyString(), anyBoolean()))
         .thenReturn(Optional.of(sumoLogicConnector));
     ConnectorResponseDTO connectorResponseDTOFromGet =
-        connectorService.get(accountIdentifier, null, null, identifier).get();
+        connectorService.get(accountIdentifier, orgIdentifier, projectIdentifier, identifier).get();
     assertThat(connectorResponseDTO).isEqualTo(connectorResponseDTOFromGet);
   }
 

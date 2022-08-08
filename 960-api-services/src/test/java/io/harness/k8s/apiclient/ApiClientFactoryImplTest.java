@@ -9,21 +9,30 @@ package io.harness.k8s.apiclient;
 
 import static io.harness.rule.OwnerRule.ABOSII;
 import static io.harness.rule.OwnerRule.AVMOHAN;
+import static io.harness.rule.OwnerRule.BOGDAN;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
+import io.harness.k8s.model.KubernetesClusterAuthType;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.rule.Owner;
 
 import io.kubernetes.client.openapi.ApiClient;
+import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.apis.VersionApi;
 import io.kubernetes.client.openapi.auth.ApiKeyAuth;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import okhttp3.HttpUrl;
+import okhttp3.mockwebserver.MockResponse;
+import okhttp3.mockwebserver.MockWebServer;
 import okio.ByteString;
 import org.apache.commons.codec.binary.Base64;
 import org.junit.Before;
@@ -103,7 +112,7 @@ public class ApiClientFactoryImplTest extends CategoryTest {
   public void testGetClientWithServiceTokenAuth() throws Exception {
     KubernetesConfig kubernetesConfig = KubernetesConfig.builder()
                                             .masterUrl("https://34.66.78.221")
-                                            .serviceAccountToken("service-token".toCharArray())
+                                            .serviceAccountTokenSupplier(() -> "service-token")
                                             .build();
 
     ApiClient client = apiClientFactory.getClient(kubernetesConfig);
@@ -177,10 +186,53 @@ public class ApiClientFactoryImplTest extends CategoryTest {
     testGetApiClientWithCaCert(Base64.encodeBase64String(TEST_CERT.getBytes()), TEST_CERT);
   }
 
+  @Test
+  @Owner(developers = BOGDAN)
+  @Category(UnitTests.class)
+  public void testGcpInterceptor() throws ApiException, IOException, InterruptedException {
+    try (MockWebServer mockWebServer = new MockWebServer()) {
+      // given
+      mockWebServer.start();
+      HttpUrl url = mockWebServer.url("");
+      mockWebServer.enqueue(new MockResponse());
+      mockWebServer.enqueue(new MockResponse());
+
+      String firstToken = "FirstToken";
+      String secondToken = "SecondToken";
+      KubernetesConfig kubernetesConfig = KubernetesConfig.builder()
+                                              .masterUrl(url.toString())
+                                              .authType(KubernetesClusterAuthType.GCP_OAUTH)
+                                              .serviceAccountTokenSupplier(supplierReturning(firstToken, secondToken))
+                                              .build();
+      ApiClient apiClient = apiClientFactory.getClient(kubernetesConfig);
+
+      // when
+      VersionApi apiInstance = new VersionApi(apiClient);
+      apiInstance.getCode();
+      apiInstance.getCode();
+
+      // then
+      assertThat(mockWebServer.takeRequest(1L, TimeUnit.SECONDS).getHeader("Authorization"))
+          .isEqualTo("Bearer " + firstToken);
+      assertThat(mockWebServer.takeRequest(1L, TimeUnit.SECONDS).getHeader("Authorization"))
+          .isEqualTo("Bearer " + secondToken);
+    }
+  }
+
+  private Supplier<String> supplierReturning(String... tokens) {
+    return new Supplier<String>() {
+      private int callCount = 0;
+      @Override
+      public String get() {
+        return tokens[callCount++];
+      }
+    };
+  }
+
   private void testGetApiClientWithCaCert(String cert, String expectedCert) throws IOException {
     KubernetesConfig kubernetesConfig = KubernetesConfig.builder()
                                             .masterUrl("https://34.13.13.112")
-                                            .serviceAccountToken("token".toCharArray())
+                                            .serviceAccountTokenSupplier(() -> "token")
                                             .caCert(cert.toCharArray())
                                             .build();
 

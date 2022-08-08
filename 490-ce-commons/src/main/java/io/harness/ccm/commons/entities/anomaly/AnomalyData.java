@@ -23,7 +23,8 @@ public class AnomalyData {
   String anomalyRelativeTime;
   Double actualAmount;
   Double expectedAmount;
-  Double trend;
+  Double anomalousSpend;
+  Double anomalousSpendPercentage;
   String resourceName;
   String resourceInfo;
   EntityInfo entity;

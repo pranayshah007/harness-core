@@ -23,6 +23,7 @@ import io.harness.govern.ProviderModule;
 import io.harness.govern.ServersModule;
 import io.harness.lock.DistributedLockImplementation;
 import io.harness.lock.PersistentLockModule;
+import io.harness.metrics.modules.MetricsModule;
 import io.harness.mongo.MongoPersistence;
 import io.harness.mongo.queue.MongoQueueConsumer;
 import io.harness.mongo.queue.MongoQueuePublisher;
@@ -110,6 +111,7 @@ public class PersistenceRule implements MethodRule, InjectorRuleMixin, MongoRule
 
     List<Module> modules = new ArrayList<>();
     modules.add(new ComponentTestsModule());
+    modules.add(new MetricsModule());
     modules.add(KryoModule.getInstance());
     modules.add(new ProviderModule() {
       @Provides

@@ -14,6 +14,7 @@ import io.harness.accesscontrol.principals.PrincipalType;
 import io.harness.accesscontrol.principals.serviceaccounts.persistence.ServiceAccountDao;
 import io.harness.accesscontrol.roleassignments.RoleAssignmentFilter;
 import io.harness.accesscontrol.roleassignments.RoleAssignmentService;
+import io.harness.accesscontrol.scopes.core.ScopeService;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ng.beans.PageRequest;
 import io.harness.ng.beans.PageResponse;
@@ -39,6 +40,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 public class ServiceAccountServiceImpl implements ServiceAccountService {
   private final ServiceAccountDao serviceAccountDao;
   private final RoleAssignmentService roleAssignmentService;
+  private final ScopeService scopeService;
   private final TransactionTemplate transactionTemplate;
   private static final RetryPolicy<Object> deleteServiceAccountTransactionPolicy = RetryUtils.getRetryPolicy(
       "[Retrying]: Failed to delete service account and corresponding role assignments; attempt: {}",
@@ -47,10 +49,11 @@ public class ServiceAccountServiceImpl implements ServiceAccountService {
 
   @Inject
   public ServiceAccountServiceImpl(ServiceAccountDao serviceAccountDao, TransactionTemplate transactionTemplate,
-      RoleAssignmentService roleAssignmentService) {
+      RoleAssignmentService roleAssignmentService, ScopeService scopeService) {
     this.serviceAccountDao = serviceAccountDao;
     this.transactionTemplate = transactionTemplate;
     this.roleAssignmentService = roleAssignmentService;
+    this.scopeService = scopeService;
   }
 
   @Override
@@ -78,10 +81,10 @@ public class ServiceAccountServiceImpl implements ServiceAccountService {
     return Optional.empty();
   }
 
-  private long deleteInternal(String identifier, String scopeIdentifier) {
+  private Optional<ServiceAccount> deleteInternal(String identifier, String scopeIdentifier) {
     return Failsafe.with(deleteServiceAccountTransactionPolicy).get(() -> transactionTemplate.execute(status -> {
       deleteServiceAccountRoleAssignments(identifier, scopeIdentifier);
-      return serviceAccountDao.deleteInScopesAndChildScopes(identifier, scopeIdentifier);
+      return serviceAccountDao.delete(identifier, scopeIdentifier);
     }));
   }
 
@@ -90,10 +93,13 @@ public class ServiceAccountServiceImpl implements ServiceAccountService {
         RoleAssignmentFilter.builder()
             .scopeFilter(scopeIdentifier)
             .includeChildScopes(true)
-            .principalFilter(Sets.newHashSet(Principal.builder()
-                                                 .principalType(PrincipalType.SERVICE_ACCOUNT)
-                                                 .principalIdentifier(identifier)
-                                                 .build()))
+            .principalFilter(Sets.newHashSet(
+                Principal.builder()
+                    .principalType(PrincipalType.SERVICE_ACCOUNT)
+                    .principalIdentifier(identifier)
+                    .principalScopeLevel(
+                        scopeService.buildScopeFromScopeIdentifier(scopeIdentifier).getLevel().toString())
+                    .build()))
             .build());
   }
 }

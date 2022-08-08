@@ -188,6 +188,8 @@ public interface InfrastructureMappingService
 
   String getInfraMappingsByServiceAndInfraDefinitionIds(String appId, String serviceId, String infraDefinitionId);
 
+  InfrastructureMapping getInfraMappingWithDeploymentType(String appId, String serviceId, String infraDefinitionId);
+
   List<String> listOrganizationsForPcf(String appId, String computeProviderId);
 
   List<String> listSpacesForPcf(String appId, String computeProviderId, String organization);

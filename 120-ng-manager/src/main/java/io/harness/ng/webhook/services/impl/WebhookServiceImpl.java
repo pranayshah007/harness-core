@@ -80,7 +80,9 @@ public class WebhookServiceImpl implements WebhookService, WebhookEventService {
       log.info("Upsert Webhook Response : {}", response);
       return response;
     } catch (Exception exception) {
-      log.error("Upsert Webhook Error : ", exception);
+      log.error("Upsert Webhook Error for accountId: {}, orgId:{}, projectId:{} : ",
+          upsertWebhookRequestDTO.getAccountIdentifier(), upsertWebhookRequestDTO.getOrgIdentifier(),
+          upsertWebhookRequestDTO.getProjectIdentifier(), exception);
       throw exception;
     }
   }

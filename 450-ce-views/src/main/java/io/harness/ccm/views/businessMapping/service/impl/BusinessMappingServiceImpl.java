@@ -12,21 +12,29 @@ import io.harness.ccm.views.businessMapping.entities.BusinessMapping;
 import io.harness.ccm.views.businessMapping.service.intf.BusinessMappingService;
 import io.harness.ccm.views.entities.ViewField;
 import io.harness.ccm.views.entities.ViewFieldIdentifier;
+import io.harness.ccm.views.helper.AwsAccountFieldHelper;
 
 import com.google.inject.Inject;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
 
 public class BusinessMappingServiceImpl implements BusinessMappingService {
-  @Inject BusinessMappingDao businessMappingDao;
+  @Inject private BusinessMappingDao businessMappingDao;
+  @Inject private AwsAccountFieldHelper awsAccountFieldHelper;
+
   @Override
-  public boolean save(BusinessMapping businessMapping) {
+  public BusinessMapping save(BusinessMapping businessMapping) {
+    validateBusinessMapping(businessMapping);
     return businessMappingDao.save(businessMapping);
   }
 
   @Override
   public BusinessMapping get(String uuid, String accountId) {
-    return businessMappingDao.get(uuid, accountId);
+    final BusinessMapping businessMapping = businessMappingDao.get(uuid, accountId);
+    modifyBusinessMapping(businessMapping);
+    return businessMapping;
   }
 
   @Override
@@ -36,6 +44,7 @@ public class BusinessMappingServiceImpl implements BusinessMappingService {
 
   @Override
   public BusinessMapping update(BusinessMapping businessMapping) {
+    updateBusinessMapping(businessMapping);
     return businessMappingDao.update(businessMapping);
   }
 
@@ -46,7 +55,10 @@ public class BusinessMappingServiceImpl implements BusinessMappingService {
 
   @Override
   public List<BusinessMapping> list(String accountId) {
-    return businessMappingDao.findByAccountId(accountId);
+    List<BusinessMapping> businessMappings = businessMappingDao.findByAccountId(accountId);
+    businessMappings.forEach(this::modifyBusinessMapping);
+    businessMappings.sort(Comparator.comparing(BusinessMapping::getLastUpdatedAt).reversed());
+    return businessMappings;
   }
 
   @Override
@@ -62,5 +74,34 @@ public class BusinessMappingServiceImpl implements BusinessMappingService {
                             .build());
     }
     return viewFieldList;
+  }
+
+  private void validateBusinessMapping(final BusinessMapping businessMapping) {
+    // TODO: Validate if Business Mapping already exists or not
+    updateBusinessMapping(businessMapping);
+  }
+
+  private void updateBusinessMapping(final BusinessMapping businessMapping) {
+    if (Objects.nonNull(businessMapping.getCostTargets())) {
+      businessMapping.getCostTargets().forEach(
+          costTarget -> awsAccountFieldHelper.removeAwsAccountNameFromAccountRules(costTarget.getRules()));
+    }
+    if (Objects.nonNull(businessMapping.getSharedCosts())) {
+      businessMapping.getSharedCosts().forEach(
+          sharedCost -> awsAccountFieldHelper.removeAwsAccountNameFromAccountRules(sharedCost.getRules()));
+    }
+  }
+
+  private void modifyBusinessMapping(final BusinessMapping businessMapping) {
+    if (Objects.nonNull(businessMapping.getCostTargets())) {
+      businessMapping.getCostTargets().forEach(costTarget
+          -> awsAccountFieldHelper.mergeAwsAccountNameInAccountRules(
+              costTarget.getRules(), businessMapping.getAccountId()));
+    }
+    if (Objects.nonNull(businessMapping.getSharedCosts())) {
+      businessMapping.getSharedCosts().forEach(sharedCost
+          -> awsAccountFieldHelper.mergeAwsAccountNameInAccountRules(
+              sharedCost.getRules(), businessMapping.getAccountId()));
+    }
   }
 }

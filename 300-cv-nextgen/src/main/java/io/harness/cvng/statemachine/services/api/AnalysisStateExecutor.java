@@ -12,15 +12,7 @@ import static io.harness.cvng.analysis.CVAnalysisConstants.MAX_RETRIES;
 import io.harness.cvng.statemachine.beans.AnalysisState;
 import io.harness.cvng.statemachine.beans.AnalysisStatus;
 
-import com.google.common.collect.Lists;
-import java.time.Duration;
-import java.time.Instant;
-import java.util.List;
-
 public abstract class AnalysisStateExecutor<T extends AnalysisState> {
-  private static final List<Duration> RETRY_WAIT_DURATIONS = Lists.newArrayList(Duration.ofMinutes(1),
-      Duration.ofMinutes(5), Duration.ofMinutes(10), Duration.ofMinutes(30), Duration.ofHours(1));
-
   public abstract AnalysisState execute(T analysisState);
   public abstract AnalysisStatus getExecutionStatus(T analysisState);
   public abstract AnalysisState handleRerun(T analysisState);
@@ -44,9 +36,5 @@ public abstract class AnalysisStateExecutor<T extends AnalysisState> {
 
   public int getMaxRetry() {
     return MAX_RETRIES;
-  }
-
-  public Instant getNextValidAfter(Instant currentTime, int retryCount) {
-    return currentTime.plus(RETRY_WAIT_DURATIONS.get(Math.min(retryCount, RETRY_WAIT_DURATIONS.size() - 1)));
   }
 }

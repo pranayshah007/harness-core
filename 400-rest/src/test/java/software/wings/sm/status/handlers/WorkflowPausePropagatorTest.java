@@ -25,6 +25,9 @@ import io.harness.testlib.RealMongo;
 import software.wings.WingsBaseTest;
 import software.wings.beans.Account;
 import software.wings.beans.Application;
+import software.wings.beans.Pipeline;
+import software.wings.beans.PipelineStage;
+import software.wings.beans.PipelineStage.PipelineStageElement;
 import software.wings.beans.PipelineStageExecution;
 import software.wings.beans.WorkflowExecution;
 import software.wings.beans.WorkflowExecution.WorkflowExecutionKeys;
@@ -100,10 +103,18 @@ public class WorkflowPausePropagatorTest extends WingsBaseTest {
             .workflowId(generateUuid())
             .workflowType(WorkflowType.PIPELINE)
             .status(ExecutionStatus.RUNNING)
-            .pipelineExecution(aPipelineExecution()
-                                   .withPipelineStageExecutions(
-                                       singletonList(PipelineStageExecution.builder().status(internalStatus).build()))
-                                   .build())
+            .pipelineExecution(
+                aPipelineExecution()
+                    .withPipeline(Pipeline.builder()
+                                      .pipelineStages(singletonList(PipelineStage.builder()
+                                                                        .name("Stage 1")
+                                                                        .pipelineStageElements(singletonList(
+                                                                            PipelineStageElement.builder().build()))
+                                                                        .build()))
+                                      .build())
+                    .withPipelineStageExecutions(
+                        singletonList(PipelineStageExecution.builder().status(internalStatus).build()))
+                    .build())
             .build());
     wingsPersistence.save(WorkflowExecution.builder()
                               .uuid(WORKFLOW_EXECUTION_ID)

@@ -18,7 +18,6 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.anyList;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
@@ -81,22 +80,19 @@ public class EcsListenerUpdateBGTaskHandlerTest extends WingsBaseTest {
   @Owner(developers = IVAN)
   @Category(UnitTests.class)
   public void testRollbackWithUpdateRequired() {
-    doNothing().when(executionLogCallback).saveExecutionLog(anyString());
+    doNothing().when(executionLogCallback).saveExecutionLog(any());
     doNothing()
         .when(ecsSwapRoutesCommandTaskHelper)
-        .upsizeOlderService(
-            any(), anyList(), anyString(), anyString(), anyInt(), anyString(), any(), anyInt(), anyBoolean());
+        .upsizeOlderService(any(), anyList(), any(), any(), anyInt(), any(), any(), anyInt(), anyBoolean());
     doNothing()
         .when(awsElbHelperServiceDelegate)
-        .swapListenersForEcsBG(any(), anyList(), anyBoolean(), anyString(), anyString(), anyString(), anyString(),
-            anyString(), anyString(), anyString(), any());
+        .swapListenersForEcsBG(any(), anyList(), anyBoolean(), any(), any(), any(), any(), any(), any(), any(), any());
     doNothing()
         .when(ecsSwapRoutesCommandTaskHelper)
-        .updateServiceTags(any(), anyList(), anyString(), anyString(), anyString(), anyString(), anyBoolean(), any());
+        .updateServiceTags(any(), anyList(), any(), any(), any(), any(), anyBoolean(), any());
     doReturn(Arrays.asList(new Action()))
         .when(awsElbHelperServiceDelegate)
-        .getMatchingTargetGroupForSpecificListenerRuleArn(
-            any(), anyList(), anyString(), anyString(), anyString(), anyString(), any());
+        .getMatchingTargetGroupForSpecificListenerRuleArn(any(), anyList(), any(), any(), any(), any(), any());
 
     EcsBGListenerUpdateRequest ecsBGListenerUpdateRequest =
         EcsBGListenerUpdateRequest.builder().rollback(true).isUseSpecificListenerRuleArn(true).build();
@@ -112,23 +108,21 @@ public class EcsListenerUpdateBGTaskHandlerTest extends WingsBaseTest {
   @Owner(developers = IVAN)
   @Category(UnitTests.class)
   public void testRollbackWithNoUpdateRequired() {
-    doNothing().when(executionLogCallback).saveExecutionLog(anyString());
+    doNothing().when(executionLogCallback).saveExecutionLog(any());
     doNothing()
         .when(ecsSwapRoutesCommandTaskHelper)
-        .upsizeOlderService(
-            any(), anyList(), anyString(), anyString(), anyInt(), anyString(), any(), anyInt(), anyBoolean());
+        .upsizeOlderService(any(), anyList(), any(), any(), anyInt(), any(), any(), anyInt(), anyBoolean());
     doNothing()
         .when(ecsSwapRoutesCommandTaskHelper)
-        .updateServiceTags(any(), anyList(), anyString(), anyString(), anyString(), anyString(), anyBoolean(), any());
+        .updateServiceTags(any(), anyList(), any(), any(), any(), any(), anyBoolean(), any());
     doNothing()
         .when(ecsSwapRoutesCommandTaskHelper)
 
-        .downsizeOlderService(any(), anyList(), anyString(), anyString(), anyString(), any(), any());
+        .downsizeOlderService(any(), anyList(), any(), any(), any(), any(), any());
 
     doReturn(Collections.emptyList())
         .when(awsElbHelperServiceDelegate)
-        .getMatchingTargetGroupForSpecificListenerRuleArn(
-            any(), anyList(), anyString(), anyString(), anyString(), anyString(), any());
+        .getMatchingTargetGroupForSpecificListenerRuleArn(any(), anyList(), any(), any(), any(), any(), any());
 
     EcsBGListenerUpdateRequest ecsBGListenerUpdateRequest =
         EcsBGListenerUpdateRequest.builder().rollback(true).isUseSpecificListenerRuleArn(true).build();
@@ -144,18 +138,17 @@ public class EcsListenerUpdateBGTaskHandlerTest extends WingsBaseTest {
   @Owner(developers = IVAN)
   @Category(UnitTests.class)
   public void testDownsizeOldService() {
-    doNothing().when(executionLogCallback).saveExecutionLog(anyString());
+    doNothing().when(executionLogCallback).saveExecutionLog(any());
     doNothing()
         .when(awsElbHelperServiceDelegate)
-        .swapListenersForEcsBG(any(), anyList(), anyBoolean(), anyString(), anyString(), anyString(), anyString(),
-            anyString(), anyString(), anyString(), any());
+        .swapListenersForEcsBG(any(), anyList(), anyBoolean(), any(), any(), any(), any(), any(), any(), any(), any());
     doNothing()
         .when(ecsSwapRoutesCommandTaskHelper)
-        .updateServiceTags(any(), anyList(), anyString(), anyString(), anyString(), anyString(), anyBoolean(), any());
+        .updateServiceTags(any(), anyList(), any(), any(), any(), any(), anyBoolean(), any());
     doNothing()
         .when(ecsSwapRoutesCommandTaskHelper)
 
-        .downsizeOlderService(any(), anyList(), anyString(), anyString(), anyString(), any(), any());
+        .downsizeOlderService(any(), anyList(), any(), any(), any(), any(), any());
 
     EcsBGListenerUpdateRequest ecsBGListenerUpdateRequest = EcsBGListenerUpdateRequest.builder()
                                                                 .rollback(false)
@@ -181,21 +174,19 @@ public class EcsListenerUpdateBGTaskHandlerTest extends WingsBaseTest {
     Listener listener = new Listener();
     listener.setDefaultActions(Arrays.asList(action));
     describeListenersResult.setListeners(Arrays.asList(listener));
-    doNothing().when(executionLogCallback).saveExecutionLog(anyString());
+    doNothing().when(executionLogCallback).saveExecutionLog(any());
     doNothing()
         .when(ecsSwapRoutesCommandTaskHelper)
-        .upsizeOlderService(
-            any(), anyList(), anyString(), anyString(), anyInt(), anyString(), any(), anyInt(), anyBoolean());
+        .upsizeOlderService(any(), anyList(), any(), any(), anyInt(), any(), any(), anyInt(), anyBoolean());
     doReturn(describeListenersResult)
         .when(awsElbHelperServiceDelegate)
-        .describeListenerResult(any(), anyList(), anyString(), anyString());
+        .describeListenerResult(any(), anyList(), any(), any());
     doNothing()
         .when(awsElbHelperServiceDelegate)
-        .swapListenersForEcsBG(any(), anyList(), anyBoolean(), anyString(), anyString(), anyString(), anyString(),
-            anyString(), anyString(), anyString(), any());
+        .swapListenersForEcsBG(any(), anyList(), anyBoolean(), any(), any(), any(), any(), any(), any(), any(), any());
     doNothing()
         .when(ecsSwapRoutesCommandTaskHelper)
-        .updateServiceTags(any(), anyList(), anyString(), anyString(), anyString(), anyString(), anyBoolean(), any());
+        .updateServiceTags(any(), anyList(), any(), any(), any(), any(), anyBoolean(), any());
 
     EcsBGListenerUpdateRequest ecsBGListenerUpdateRequest =
         EcsBGListenerUpdateRequest.builder().rollback(true).isUseSpecificListenerRuleArn(false).build();
@@ -211,17 +202,16 @@ public class EcsListenerUpdateBGTaskHandlerTest extends WingsBaseTest {
   @Owner(developers = ARVIND)
   @Category(UnitTests.class)
   public void testDownsizeOldService_Timeout() {
-    doNothing().when(executionLogCallback).saveExecutionLog(anyString());
+    doNothing().when(executionLogCallback).saveExecutionLog(any());
     doNothing()
         .when(awsElbHelperServiceDelegate)
-        .swapListenersForEcsBG(any(), anyList(), anyBoolean(), anyString(), anyString(), anyString(), anyString(),
-            anyString(), anyString(), anyString(), any());
+        .swapListenersForEcsBG(any(), anyList(), anyBoolean(), any(), any(), any(), any(), any(), any(), any(), any());
     doNothing()
         .when(ecsSwapRoutesCommandTaskHelper)
-        .updateServiceTags(any(), anyList(), anyString(), anyString(), anyString(), anyString(), anyBoolean(), any());
+        .updateServiceTags(any(), anyList(), any(), any(), any(), any(), anyBoolean(), any());
     doThrow(new TimeoutException("", "", null))
         .when(ecsSwapRoutesCommandTaskHelper)
-        .downsizeOlderService(any(), anyList(), anyString(), anyString(), anyString(), any(), any());
+        .downsizeOlderService(any(), anyList(), any(), any(), any(), any(), any());
 
     EcsBGListenerUpdateRequest ecsBGListenerUpdateRequest = EcsBGListenerUpdateRequest.builder()
                                                                 .rollback(false)
@@ -242,18 +232,17 @@ public class EcsListenerUpdateBGTaskHandlerTest extends WingsBaseTest {
   @Owner(developers = SAINATH)
   @Category(UnitTests.class)
   public void testDelayWaitBeforeOldServiceDownSize() {
-    doNothing().when(executionLogCallback).saveExecutionLog(anyString());
+    doNothing().when(executionLogCallback).saveExecutionLog(any());
     doNothing()
         .when(awsElbHelperServiceDelegate)
-        .swapListenersForEcsBG(any(), anyList(), anyBoolean(), anyString(), anyString(), anyString(), anyString(),
-            anyString(), anyString(), anyString(), any());
+        .swapListenersForEcsBG(any(), anyList(), anyBoolean(), any(), any(), any(), any(), any(), any(), any(), any());
     doNothing()
         .when(ecsSwapRoutesCommandTaskHelper)
-        .updateServiceTags(any(), anyList(), anyString(), anyString(), anyString(), anyString(), anyBoolean(), any());
+        .updateServiceTags(any(), anyList(), any(), any(), any(), any(), anyBoolean(), any());
     doNothing()
         .when(ecsSwapRoutesCommandTaskHelper)
 
-        .downsizeOlderService(any(), anyList(), anyString(), anyString(), anyString(), any(), any());
+        .downsizeOlderService(any(), anyList(), any(), any(), any(), any(), any());
 
     // rollback=false
     EcsBGListenerUpdateRequest ecsBGListenerUpdateRequest = EcsBGListenerUpdateRequest.builder()

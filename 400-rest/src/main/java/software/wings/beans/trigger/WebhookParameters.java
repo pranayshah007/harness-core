@@ -43,6 +43,7 @@ public class WebhookParameters {
 
   // Bit Bucket Push Request suggestions
   public static final String BIT_BUCKET_PUSH_BRANCH_REF = "${push.changes[0].'new'.name}";
+  public static final String BIT_BUCKET_PUSH_BRANCH_FORMAT = "${push.changes[%d].'new'.name}";
   public static final String BIT_BUCKET_PULL_BRANCH_REF = "${pullrequest.source.branch.name}";
   public static final String BIT_BUCKET_ON_PREM_PULL_BRANCH_REF = "${pullRequest.fromRef.displayId}";
   public static final String BIT_BUCKET_COMMIT_ID = "${push.changes[0].'new'.target.hash}";

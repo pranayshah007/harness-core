@@ -1,0 +1,23 @@
+pipeline:
+  name: pipeline
+  identifier: pipeline
+  stages:
+    - stage:
+        name: dev
+        identifier: dev
+        type: Deployment
+        spec:
+          serviceConfig:
+            serviceDefinition:
+              type: Kubernetes
+              spec:
+                artifacts:
+                  primary:
+                    type: ArtifactoryRegistry
+                    spec:
+                      connectorRef: <+input>
+                      artifactPath: <+input>
+                      repository: <+input>
+                      repositoryUrl: <+input>
+                      repositoryFormat: <+input>
+                      tag: <+input>

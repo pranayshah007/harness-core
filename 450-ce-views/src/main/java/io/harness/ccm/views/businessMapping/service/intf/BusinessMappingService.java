@@ -13,7 +13,7 @@ import io.harness.ccm.views.entities.ViewField;
 import java.util.List;
 
 public interface BusinessMappingService {
-  boolean save(BusinessMapping businessMapping);
+  BusinessMapping save(BusinessMapping businessMapping);
   BusinessMapping get(String uuid, String accountId);
   BusinessMapping get(String uuid);
   BusinessMapping update(BusinessMapping businessMapping);

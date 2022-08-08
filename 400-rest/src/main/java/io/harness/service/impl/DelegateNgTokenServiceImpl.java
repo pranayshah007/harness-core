@@ -15,8 +15,6 @@ import static java.lang.String.format;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.UUIDGenerator;
-import io.harness.delegate.beans.Delegate;
-import io.harness.delegate.beans.Delegate.DelegateKeys;
 import io.harness.delegate.beans.DelegateEntityOwner;
 import io.harness.delegate.beans.DelegateToken;
 import io.harness.delegate.beans.DelegateToken.DelegateTokenKeys;
@@ -110,7 +108,6 @@ public class DelegateNgTokenServiceImpl implements DelegateNgTokenService, Accou
     // we are not removing token from delegateTokenCache in DelegateTokenCacheHelper, since the cache has an expiry of 3
     // mins.
 
-    invalidateDelegateGroupCache(accountId, tokenName);
     publishRevokeTokenAuditEvent(updatedDelegateToken);
 
     return getDelegateTokenDetails(updatedDelegateToken, false);
@@ -138,10 +135,20 @@ public class DelegateNgTokenServiceImpl implements DelegateNgTokenService, Accou
     return null;
   }
 
+  // some old ng delegates are using accountKey as token, and the value of acccountKey is same as default token in cg
+  // which is not encoded. So we should not decode it.
   @Override
   public String getDelegateTokenValue(String accountId, String name) {
     DelegateToken delegateToken = matchNameTokenQuery(accountId, name).get();
-    return delegateToken != null ? decodeBase64ToString(delegateToken.getValue()) : null;
+    if (delegateToken != null) {
+      if (delegateToken.isNg()) {
+        return decodeBase64ToString(delegateToken.getValue());
+      } else {
+        return delegateToken.getValue();
+      }
+    }
+    log.warn("Not able to find delegate token {} for account {} . Please verify manually.", name, accountId);
+    return null;
   }
 
   @Override
@@ -286,17 +293,6 @@ public class DelegateNgTokenServiceImpl implements DelegateNgTokenService, Accou
         .name(delegateToken.getName())
         .identifier(delegateToken.getUuid())
         .build();
-  }
-
-  private void invalidateDelegateGroupCache(String accountId, String tokenName) {
-    List<Delegate> delegates = persistence.createQuery(Delegate.class)
-                                   .filter(DelegateKeys.accountId, accountId)
-                                   .filter(DelegateKeys.delegateTokenName, tokenName)
-                                   .asList();
-    delegates.stream()
-        .map(Delegate::getUuid)
-        .distinct()
-        .forEach(delegateGroupId -> delegateCache.invalidateDelegateGroupCache(accountId, delegateGroupId));
   }
 
   @Override

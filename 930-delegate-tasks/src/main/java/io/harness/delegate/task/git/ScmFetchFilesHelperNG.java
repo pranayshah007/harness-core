@@ -18,11 +18,13 @@ import static java.util.stream.Collectors.toList;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FileContentBatchResponse;
+import io.harness.beans.gitsync.GitPRCreateRequest;
 import io.harness.connector.service.scm.ScmDelegateClient;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
 import io.harness.delegate.beans.storeconfig.FetchType;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
 import io.harness.exception.ExceptionUtils;
+import io.harness.exception.ExplanationException;
 import io.harness.exception.GitClientException;
 import io.harness.exception.WingsException;
 import io.harness.exception.YamlException;
@@ -30,8 +32,11 @@ import io.harness.filesystem.FileIo;
 import io.harness.git.model.CommitResult;
 import io.harness.git.model.FetchFilesResult;
 import io.harness.git.model.GitFile;
+import io.harness.impl.ScmResponseStatusUtils;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
+import io.harness.product.ci.scm.proto.CreateBranchResponse;
+import io.harness.product.ci.scm.proto.CreatePRResponse;
 import io.harness.product.ci.scm.proto.FileContent;
 import io.harness.product.ci.scm.proto.SCMGrpc;
 import io.harness.service.ScmServiceClient;
@@ -202,5 +207,32 @@ public class ScmFetchFilesHelperNG {
               scmConnector, filePaths, gitStoreDelegateConfig.getCommitId(), SCMGrpc.newBlockingStub(c)));
     }
     return fileBatchContentResponse;
+  }
+
+  // GitOps methods
+  public CreatePRResponse createPR(ScmConnector scmConnector, GitPRCreateRequest gitPRCreateRequest) {
+    CreatePRResponse createPRResponse = scmDelegateClient.processScmRequest(
+        c -> scmServiceClient.createPullRequest(scmConnector, gitPRCreateRequest, SCMGrpc.newBlockingStub(c)));
+    try {
+      ScmResponseStatusUtils.checkScmResponseStatusAndThrowException(
+          createPRResponse.getStatus(), createPRResponse.getError());
+    } catch (WingsException e) {
+      throw new ExplanationException(String.format("Could not create the pull request from %s to %s",
+                                         gitPRCreateRequest.getSourceBranch(), gitPRCreateRequest.getTargetBranch()),
+          e);
+    }
+    return createPRResponse;
+  }
+
+  public CreateBranchResponse createNewBranch(ScmConnector scmConnector, String branch, String baseBranch) {
+    CreateBranchResponse createBranchResponse = scmDelegateClient.processScmRequest(
+        c -> scmServiceClient.createNewBranch(scmConnector, branch, baseBranch, SCMGrpc.newBlockingStub(c)));
+    try {
+      ScmResponseStatusUtils.checkScmResponseStatusAndThrowException(
+          createBranchResponse.getStatus(), createBranchResponse.getError());
+    } catch (WingsException e) {
+      throw new ExplanationException(String.format("Could not create a new branch %s from %s", branch, baseBranch), e);
+    }
+    return createBranchResponse;
   }
 }

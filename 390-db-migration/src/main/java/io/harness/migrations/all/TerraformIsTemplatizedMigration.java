@@ -12,6 +12,7 @@ import static io.harness.persistence.HQuery.excludeAuthority;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.migrations.Migration;
 import io.harness.persistence.HIterator;
 
@@ -65,11 +66,12 @@ public class TerraformIsTemplatizedMigration implements Migration {
           }
         } catch (Exception ex) {
           log.error("Error while updating isTemplatized field for provisioner: {}",
-              provisioner != null ? provisioner.getName() : "", ex);
+              provisioner != null ? provisioner.getName() : "", ExceptionMessageSanitizer.sanitizeException(ex));
         }
       }
     } catch (Exception ex) {
-      log.error("Failed - Populating templatized field in TerraformInfrastructureProvisioner", ex);
+      log.error("Failed - Populating templatized field in TerraformInfrastructureProvisioner",
+          ExceptionMessageSanitizer.sanitizeException(ex));
     }
   }
 }

@@ -1,0 +1,57 @@
+name: service
+identifier: service1
+orgIdentifier: my_org
+projectIdentifier: my_proj
+serviceDefinition:
+  type: Kubernetes
+  spec:
+    artifacts:
+      primary:
+        type: DockerRegistry
+        spec:
+          connectorRef: org.DockerConnectorForAutomationTest
+          imagePath: harness/todolist-sample
+          tag: "10"
+      sidecars:
+        - sidecar:
+            identifier: sidecar1
+            type: DockerRegistry
+            spec:
+              connectorRef: org.DockerConnectorForAutomationTest
+              imagePath: harness/todolist-sample
+              tag: "10"
+    manifests:
+      - manifest:
+          identifier: manifestIdentifier
+          spec:
+            store:
+              type: Git
+              spec:
+                connectorRef: org.GitConnectorForAutomationTest
+                gitFetchType: Branch
+                repoName: https://github.com/wings-software/sample-k8s-manifests.git
+                paths:
+                  - ng-automation/k8s/templates/
+                branch: master
+          type: K8sManifest
+      - manifest:
+          identifier: valuesmanifest
+          spec:
+            store:
+              type: Git
+              spec:
+                connectorRef: org.GitConnectorForAutomationTest
+                gitFetchType: Branch
+                repoName: https://github.com/wings-software/sample-k8s-manifests.git
+                paths:
+                  - ng-automation/k8s/valuesWithClusterTypeService.yaml
+                branch: master
+          type: Values
+    variables: []
+
+
+
+
+
+
+

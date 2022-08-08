@@ -12,8 +12,8 @@ import static io.harness.logging.CommandExecutionStatus.FAILURE;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 import static io.harness.rule.OwnerRule.TATHAGAT;
 
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.never;
@@ -79,20 +79,14 @@ public class TerragruntApplyDestroyTaskHandlerTest extends CategoryTest {
         CliResponse.builder().commandExecutionStatus(SUCCESS).output("cli-output").build();
     doReturn(terragruntCliResponse)
         .when(terragruntClient)
-        .plan(any(TerragruntCliCommandRequestParams.class), anyString(), anyString(), anyString(), any());
+        .plan(any(), nullable(String.class), nullable(String.class), nullable(String.class), any());
     doReturn(terragruntCliResponse)
         .when(terragruntClient)
-        .planDestroy(any(TerragruntCliCommandRequestParams.class), anyString(), anyString(), anyString(), any());
-    doReturn(terragruntCliResponse)
-        .when(terragruntClient)
-        .output(any(TerragruntCliCommandRequestParams.class), anyString(), any());
-    doReturn(terragruntCliResponse).when(terragruntClient).apply(any(TerragruntCliCommandRequestParams.class), any());
-    doReturn("encryptedPlanContent".getBytes())
-        .when(encryptDecryptHelper)
-        .getDecryptedContent(any(EncryptionConfig.class), any(EncryptedRecord.class));
-    doReturn(terragruntCliResponse)
-        .when(terragruntClient)
-        .showJson(any(TerragruntCliCommandRequestParams.class), anyString(), any());
+        .planDestroy(any(), nullable(String.class), nullable(String.class), nullable(String.class), any());
+    doReturn(terragruntCliResponse).when(terragruntClient).output(any(), nullable(String.class), any());
+    doReturn(terragruntCliResponse).when(terragruntClient).apply(any(), any());
+    doReturn("encryptedPlanContent".getBytes()).when(encryptDecryptHelper).getDecryptedContent(any(), any());
+    doReturn(terragruntCliResponse).when(terragruntClient).showJson(any(), nullable(String.class), any());
   }
 
   @Test
@@ -168,8 +162,8 @@ public class TerragruntApplyDestroyTaskHandlerTest extends CategoryTest {
         TerragruntProvisionParameters.builder().runPlanOnly(false).build();
     doReturn(CliResponse.builder().commandExecutionStatus(SUCCESS).build())
         .when(terragruntClient)
-        .destroy(any(TerragruntCliCommandRequestParams.class), anyString(), anyString(), anyString(),
-            any(LogCallback.class));
+        .destroy(any(TerragruntCliCommandRequestParams.class), nullable(String.class), nullable(String.class),
+            nullable(String.class), any(LogCallback.class));
     applyDestroyTaskHandler.executeDestroyTask(
         provisionParameters, cliCommandRequestParams, delegateLogService, TF_PLAN_NAME, TF_CONFIG_FILE_DIRECTORY);
 
@@ -188,12 +182,12 @@ public class TerragruntApplyDestroyTaskHandlerTest extends CategoryTest {
                                                             .build();
     doReturn(CliResponse.builder().commandExecutionStatus(SUCCESS).build())
         .when(terragruntClient)
-        .applyDestroyTfPlan(any(TerragruntCliCommandRequestParams.class), any(LogCallback.class));
+        .applyDestroyTfPlan(any(), any());
     applyDestroyTaskHandler.executeDestroyTask(
         provisionParameters, cliCommandRequestParams, delegateLogService, TF_PLAN_NAME, TF_CONFIG_FILE_DIRECTORY);
 
     verify(terragruntClient, times(1)).applyDestroyTfPlan(eq(cliCommandRequestParams), any(LogCallback.class));
-    verify(encryptDecryptHelper, times(1)).getDecryptedContent(any(EncryptionConfig.class), any(EncryptedRecord.class));
+    verify(encryptDecryptHelper, times(1)).getDecryptedContent(any(), any());
     verify(terragruntClient, never()).planDestroy(any(), any(), any(), any(), any());
   }
 
@@ -204,7 +198,8 @@ public class TerragruntApplyDestroyTaskHandlerTest extends CategoryTest {
     TerragruntProvisionParameters provisionParameters = TerragruntProvisionParameters.builder().build();
     doReturn(CliResponse.builder().commandExecutionStatus(FAILURE).build())
         .when(terragruntClient)
-        .plan(any(TerragruntCliCommandRequestParams.class), anyString(), anyString(), anyString(), any());
+        .plan(any(TerragruntCliCommandRequestParams.class), nullable(String.class), nullable(String.class),
+            nullable(String.class), any());
 
     applyDestroyTaskHandler.executeApplyTask(
         provisionParameters, cliCommandRequestParams, delegateLogService, TF_PLAN_NAME, TF_CONFIG_FILE_DIRECTORY);

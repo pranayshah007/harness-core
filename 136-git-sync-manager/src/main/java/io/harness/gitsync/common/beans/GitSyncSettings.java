@@ -68,4 +68,5 @@ public class GitSyncSettings {
   @Version Long version;
 
   public static final String IS_EXECUTE_ON_DELEGATE = "isExecuteOnDelegate";
+  public static final String IS_GIT_SIMPLIFICATION_ENABLED = "isGitSimplificationEnabled";
 }

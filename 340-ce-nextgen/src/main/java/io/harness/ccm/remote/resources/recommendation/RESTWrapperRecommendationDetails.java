@@ -15,6 +15,7 @@ import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ccm.commons.beans.recommendation.ResourceType;
 import io.harness.ccm.commons.utils.TimeUtils;
+import io.harness.ccm.graphql.dto.recommendation.ECSRecommendationDTO;
 import io.harness.ccm.graphql.dto.recommendation.NodeRecommendationDTO;
 import io.harness.ccm.graphql.dto.recommendation.WorkloadRecommendationDTO;
 import io.harness.ccm.graphql.query.recommendation.RecommendationsDetailsQuery;
@@ -146,5 +147,53 @@ public class RESTWrapperRecommendationDetails {
         (WorkloadRecommendationDTO) detailsQuery.recommendationDetails(id, ResourceType.WORKLOAD,
             TimeUtils.toOffsetDateTime(startTime.getMillis()), TimeUtils.toOffsetDateTime(endTime.getMillis()), env);
     return ResponseDTO.newResponse(workloadRecommendation);
+  }
+
+  @GET
+  @Path("ecs-service")
+  @Timed
+  @LogAccountIdentifier
+  @ExceptionMetered
+  @Consumes(MediaType.APPLICATION_JSON)
+  @ApiOperation(value = "ECS Recommendation Details", nickname = "ecsRecommendationDetail")
+  @Operation(operationId = "ecsRecommendationDetail",
+      description = "Returns ECS Recommendation details for the given Recommendation identifier.",
+      summary = "Return ECS Recommendation",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "Returns the ECS Recommendation for the given identifier.",
+            content = { @Content(mediaType = MediaType.APPLICATION_JSON) })
+      })
+  public ResponseDTO<ECSRecommendationDTO>
+  ecsRecommendationDetail(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
+                              NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
+      @Parameter(required = true, description = "ECS Recommendation identifier.") @QueryParam(
+          "id") @NotNull @Valid String id,
+      @Parameter(required = false, description = DATETIME_DESCRIPTION + " Defaults to Today-7days") @QueryParam(
+          "from") @Nullable @Valid String from,
+      @Parameter(required = false, description = DATETIME_DESCRIPTION + " Defaults to Today") @QueryParam(
+          "to") @Nullable @Valid String to) {
+    final ResolutionEnvironment env = GraphQLToRESTHelper.createResolutionEnv(accountId);
+
+    DateTime endTime = DateTime.now().withTimeAtStartOfDay();
+    DateTime startTime = endTime.minusDays(7);
+
+    if (from != null) {
+      startTime = DateTime.parse(from);
+    }
+    if (to != null) {
+      endTime = DateTime.parse(to);
+    }
+
+    if (startTime.isAfter(endTime)) {
+      throw new InvalidArgumentsException(
+          String.format(INVALID_DATETIME_INPUT, startTime.toString(), endTime.toString()));
+    }
+
+    ECSRecommendationDTO ecsRecommendation =
+        (ECSRecommendationDTO) detailsQuery.recommendationDetails(id, ResourceType.ECS_SERVICE,
+            TimeUtils.toOffsetDateTime(startTime.getMillis()), TimeUtils.toOffsetDateTime(endTime.getMillis()), env);
+    return ResponseDTO.newResponse(ecsRecommendation);
   }
 }

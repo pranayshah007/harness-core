@@ -31,4 +31,5 @@ public class ConnectorDetails {
   @NotNull List<EncryptedDataDetail> encryptedDataDetails;
   SSHKeyDetails sshKeyDetails;
   @Singular("envToSecretEntry") Map<EnvVariableEnum, String> envToSecretsMap;
+  Boolean executeOnDelegate;
 }

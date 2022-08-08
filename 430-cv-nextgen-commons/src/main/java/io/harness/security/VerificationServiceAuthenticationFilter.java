@@ -7,6 +7,7 @@
 
 package io.harness.security;
 
+import static io.harness.agent.AgentGatewayConstants.HEADER_AGENT_MTLS_AUTHORITY;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.eraro.ErrorCode.EXPIRED_TOKEN;
@@ -153,8 +154,11 @@ public abstract class VerificationServiceAuthenticationFilter implements Contain
     String header = containerRequestContext.getHeaderString(HttpHeaders.AUTHORIZATION);
     if (header.contains("Delegate")) {
       String delegateId = containerRequestContext.getHeaderString("delegateId");
+      String delegateTokenName = containerRequestContext.getHeaderString("delegateTokenName");
+      String agentMtlsAuthority = containerRequestContext.getHeaderString(HEADER_AGENT_MTLS_AUTHORITY);
       validateDelegateToken(accountId,
-          substringAfter(containerRequestContext.getHeaderString(HttpHeaders.AUTHORIZATION), "Delegate "), delegateId);
+          substringAfter(containerRequestContext.getHeaderString(HttpHeaders.AUTHORIZATION), "Delegate "), delegateId,
+          delegateTokenName, agentMtlsAuthority);
     } else {
       throw new IllegalStateException("Invalid header:" + header);
     }
@@ -209,7 +213,8 @@ public abstract class VerificationServiceAuthenticationFilter implements Contain
     }
   }
 
-  public abstract void validateDelegateToken(String accountId, String tokenString, String delegateId);
+  public abstract void validateDelegateToken(
+      String accountId, String tokenString, String delegateId, String delegateTokenName, String agentMtlsAuthority);
 
   protected boolean validateHarnessClientApiRequest(ClientType clientType, String apiKey) {
     if (clientType == null || apiKey == null) {

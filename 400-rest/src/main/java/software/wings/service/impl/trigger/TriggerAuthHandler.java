@@ -8,6 +8,7 @@
 package software.wings.service.impl.trigger;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.beans.FeatureName.PIPELINE_PER_ENV_DEPLOYMENT_PERMISSION;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.eraro.ErrorCode.ACCESS_DENIED;
 import static io.harness.exception.WingsException.USER;
@@ -23,11 +24,13 @@ import io.harness.beans.WorkflowType;
 import io.harness.exception.TriggerException;
 import io.harness.exception.UnauthorizedException;
 import io.harness.exception.WingsException;
+import io.harness.ff.FeatureFlagService;
 
 import software.wings.beans.Environment;
 import software.wings.beans.User;
 import software.wings.beans.trigger.Trigger;
 import software.wings.expression.ManagerExpressionEvaluator;
+import software.wings.security.ExecutableElementsFilter;
 import software.wings.security.PermissionAttribute;
 import software.wings.security.PermissionAttribute.Action;
 import software.wings.security.PermissionAttribute.PermissionType;
@@ -40,6 +43,7 @@ import software.wings.service.intfc.EnvironmentService;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
@@ -51,6 +55,7 @@ public class TriggerAuthHandler {
   @Inject private DeploymentAuthHandler deploymentAuthHandler;
   @Inject private EnvironmentService environmentService;
   @Inject private AuthService authService;
+  @Inject private FeatureFlagService featureFlagService;
 
   void authorizeEnvironment(Trigger trigger, String envId) {
     String appId = trigger.getAppId();
@@ -72,6 +77,10 @@ public class TriggerAuthHandler {
             authService.checkIfUserAllowedToDeployWorkflowToEnv(appId, envId);
           } else {
             authService.checkIfUserAllowedToDeployPipelineToEnv(appId, envId);
+            if (featureFlagService.isEnabled(PIPELINE_PER_ENV_DEPLOYMENT_PERMISSION, trigger.getAccountId())) {
+              deploymentAuthHandler.authorizeExecutableDeployableInEnv(Collections.singleton(envId), appId,
+                  trigger.getPipelineId(), ExecutableElementsFilter.FilterType.PIPELINE);
+            }
           }
         } catch (WingsException ex) {
           throw new TriggerException(

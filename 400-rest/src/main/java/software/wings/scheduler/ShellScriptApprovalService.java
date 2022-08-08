@@ -78,9 +78,10 @@ public class ShellScriptApprovalService {
 
     long retryInterval = scriptApprovalPollingEntity.getRetryInterval();
     long delayUntilNext = retryInterval - PUMP_INTERVAL.toMillis();
+    int expressionFunctorToken = scriptApprovalPollingEntity.getExpressionFunctorToken();
 
-    boolean shouldRetry = !tryShellScriptApproval(
-        accountId, appId, approvalId, activityId, scriptString, delegateSelectors, stateExecutionInstanceId);
+    boolean shouldRetry = !tryShellScriptApproval(accountId, appId, approvalId, activityId, scriptString,
+        delegateSelectors, stateExecutionInstanceId, expressionFunctorToken);
     if (shouldRetry && retryInterval != TARGET_INTERVAL.toMillis()) {
       long nextIteration = System.currentTimeMillis() + delayUntilNext;
       approvalPolingService.updateNextIteration(scriptApprovalPollingEntity.getUuid(), nextIteration);
@@ -101,7 +102,8 @@ public class ShellScriptApprovalService {
   }
 
   boolean tryShellScriptApproval(String accountId, String appId, String approvalId, String activityId,
-      String scriptString, List<String> delegateSelectors, String stateExecutionInstanceId) {
+      String scriptString, List<String> delegateSelectors, String stateExecutionInstanceId,
+      int expressionFunctorToken) {
     ShellScriptApprovalTaskParameters shellScriptApprovalTaskParameters =
         ShellScriptApprovalTaskParameters.builder()
             .accountId(accountId)
@@ -124,6 +126,7 @@ public class ShellScriptApprovalService {
                                               .async(false)
                                               .taskType(TaskType.SHELL_SCRIPT_APPROVAL.name())
                                               .parameters(new Object[] {shellScriptApprovalTaskParameters})
+                                              .expressionFunctorToken(expressionFunctorToken)
                                               .timeout(TimeUnit.MINUTES.toMillis(TIME_OUT_IN_MINUTES))
                                               .build())
                                     .selectionLogsTrackingEnabled(true)

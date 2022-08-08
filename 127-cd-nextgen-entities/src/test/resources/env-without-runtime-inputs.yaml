@@ -1,0 +1,17 @@
+environment:
+    name: prod
+    identifier: prod
+    description: prod env in local
+    tags:
+        harness: ""
+        prod: ""
+    type: Production
+    orgIdentifier: default
+    projectIdentifier: neo
+    variables:
+        - name: nonrtvar1
+          type: String
+          value: val1
+        - name: nonrtvar2
+          type: String
+          value: alsmcasc

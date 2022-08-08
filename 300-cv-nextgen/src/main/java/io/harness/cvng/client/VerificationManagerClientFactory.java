@@ -7,10 +7,13 @@
 
 package io.harness.cvng.client;
 
+import static io.harness.ng.core.CorrelationContext.getCorrelationIdInterceptor;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.network.Http;
 import io.harness.network.NoopHostnameVerifier;
+import io.harness.security.AllTrustingX509TrustManager;
 import io.harness.security.ServiceTokenGenerator;
 import io.harness.security.VerificationAuthInterceptor;
 
@@ -31,8 +34,7 @@ import retrofit2.converter.jackson.JacksonConverterFactory;
 @Singleton
 @OwnedBy(HarnessTeam.CV)
 public class VerificationManagerClientFactory implements Provider<VerificationManagerClient> {
-  public static final ImmutableList<TrustManager> TRUST_ALL_CERTS =
-      ImmutableList.of(new VerificationManagerClientX509TrustManager());
+  public static final ImmutableList<TrustManager> TRUST_ALL_CERTS = ImmutableList.of(new AllTrustingX509TrustManager());
 
   private String baseUrl;
   private ServiceTokenGenerator tokenGenerator;
@@ -62,9 +64,10 @@ public class VerificationManagerClientFactory implements Provider<VerificationMa
 
       return Http.getOkHttpClientWithProxyAuthSetup()
           .connectionPool(new ConnectionPool(0, 5, TimeUnit.MINUTES))
-          .readTimeout(30, TimeUnit.SECONDS)
+          .readTimeout(60, TimeUnit.SECONDS)
           .retryOnConnectionFailure(true)
           .addInterceptor(new VerificationAuthInterceptor(tokenGenerator))
+          .addInterceptor(getCorrelationIdInterceptor())
           .sslSocketFactory(sslSocketFactory, (X509TrustManager) TRUST_ALL_CERTS.get(0))
           .hostnameVerifier(new NoopHostnameVerifier())
           .build();

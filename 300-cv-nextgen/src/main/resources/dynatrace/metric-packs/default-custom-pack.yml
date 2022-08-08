@@ -2,7 +2,7 @@ identifier: Custom
 category: Errors
 metrics:
   - name: Custom
-    identifier: Custom
+    identifier: custom
     type: ERROR
     path: defaultPath
     included: false

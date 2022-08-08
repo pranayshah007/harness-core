@@ -16,7 +16,6 @@ import static software.wings.service.InstanceSyncConstants.INFRASTRUCTURE_MAPPIN
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.isNull;
 import static org.mockito.Mockito.when;
 
@@ -80,15 +79,14 @@ public class PdcPerpetualTaskClientTest extends WingsBaseTest {
     when(perpetualTaskService.deleteTask(any(), any())).thenReturn(true);
     when(perpetualTaskService.resetTask(stringCaptor.capture(), any(), isNull(PerpetualTaskExecutionBundle.class)))
         .thenReturn(true);
-    when(perpetualTaskService.createTask(
-             any(), anyString(), any(), scheduleArgumentCaptor.capture(), anyBoolean(), anyString()))
+    when(perpetualTaskService.createTask(any(), any(), any(), scheduleArgumentCaptor.capture(), anyBoolean(), any()))
         .thenReturn(TASK_ID);
-    when(infraMappingService.get(anyString(), anyString()))
+    when(infraMappingService.get(any(), any()))
         .thenReturn(PhysicalInfrastructureMapping.Builder.aPhysicalInfrastructureMapping()
                         .withAppId(HARNESS_APPLICATION_ID)
                         .withUuid(INFRA_ID)
                         .build());
-    when(settingsService.get(anyString()))
+    when(settingsService.get(any()))
         .thenReturn(SettingAttribute.Builder.aSettingAttribute().withValue(hostConnectionAttributes).build());
     when(perpetualTaskService.getTaskRecord(TASK_ID))
         .thenReturn(PerpetualTaskRecord.builder().accountId(ACCOUNT_ID).build());
@@ -137,13 +135,13 @@ public class PdcPerpetualTaskClientTest extends WingsBaseTest {
   public void testGetTaskParamsWinrm() {
     PerpetualTaskClientContext clientContext = getPerpetualTaskClientContext();
 
-    when(infraMappingService.get(anyString(), anyString()))
+    when(infraMappingService.get(any(), any()))
         .thenReturn(PhysicalInfrastructureMappingWinRm.Builder.aPhysicalInfrastructureMappingWinRm()
                         .withAppId(HARNESS_APPLICATION_ID)
                         .withUuid(INFRA_ID)
                         .build());
     WinRmConnectionAttributes winRmConnectionAttributes = WinRmConnectionAttributes.builder().build();
-    when(settingsService.get(anyString()))
+    when(settingsService.get(any()))
         .thenReturn(SettingAttribute.Builder.aSettingAttribute().withValue(winRmConnectionAttributes).build());
     when(secretsManager.getEncryptionDetails(winRmConnectionAttributes, null, null))
         .thenReturn(Collections.emptyList());

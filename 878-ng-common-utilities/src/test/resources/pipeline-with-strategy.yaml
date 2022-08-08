@@ -1,0 +1,700 @@
+pipeline:
+  name: plan creator
+  identifier: plan_creator
+  projectIdentifier: LocalDev
+  orgIdentifier: default
+  tags: {}
+  stages:
+    - stage:
+        name: a1-1
+        identifier: a11
+        description: ""
+        strategy:
+          matrix:
+            a: [ "1","2","3" ]
+            b: ["2","3","4"]
+            exclude:
+              - a: 1
+                b: 2
+        type: Approval
+        variables:
+          - name: matrixAExpression
+            value: <+matrix.a>
+            type: String
+          - name: matrixBExpression
+            value: <+matrix.b>
+            type: String
+          - name: currentItertionVariable
+            value: <+strategy.iteration>
+            type: String
+          - name: totalIterationVariable
+            value: <+strategy.iterations>
+            type: String
+        spec:
+          execution:
+            steps:
+              - stepGroup:
+                  name: searching
+                  identifier: searching
+                  steps:
+                    - step:
+                        strategy:
+                          matrix:
+                            a: [ "1","2","3" ]
+                            b: [ "2","3","4" ]
+                            exclude:
+                              - a: 1
+                                b: 2
+                        type: Http
+                        name: <+matrix.b>
+                        identifier: <+matrix.a>
+                        spec:
+                          url: https://www.google.com
+                          method: GET
+                          headers: []
+                          outputVariables: []
+                        timeout: 1m
+                    - step:
+                        type: Http
+                        name: bing
+                        identifier: bing
+                        spec:
+                          url: https://www.bing.com
+                          method: GET
+                          headers: []
+                          outputVariables: []
+                        timeout: 10s
+              - parallel:
+                  - step:
+                      type: Http
+                      name: google again
+                      identifier: google_again
+                      spec:
+                        url: https://www.google.com
+                        method: GET
+                        headers: []
+                        outputVariables: []
+                      timeout: 10s
+                  - step:
+                      type: Http
+                      name: bing in parallel
+                      identifier: bing_in_parallel
+                      spec:
+                        url: https://www.bing.com
+                        method: GET
+                        headers: []
+                        outputVariables: []
+                      timeout: 10s
+          serviceDependencies: []
+        tags: {}
+    - stage:
+        name: a1-1
+        identifier: a11
+        description: ""
+        strategy:
+          matrix:
+            a: [ "1","2","3" ]
+            b: ["2","3","4"]
+            c: ["a", "b", "c"]
+            exclude:
+              - a: 1
+                b: 2
+        type: Approval
+        spec:
+          execution:
+            steps:
+              - stepGroup:
+                  name: searching
+                  identifier: searching
+                  steps:
+                    - step:
+                        type: Http
+                        name: google
+                        identifier: google
+                        spec:
+                          url: https://www.google.com
+                          method: GET
+                          headers: []
+                          outputVariables: []
+                        timeout: 1m
+                    - step:
+                        type: Http
+                        name: bing
+                        identifier: bing
+                        spec:
+                          url: https://www.bing.com
+                          method: GET
+                          headers: []
+                          outputVariables: []
+                        timeout: 10s
+              - parallel:
+                  - step:
+                      type: Http
+                      name: google again
+                      identifier: google_again
+                      spec:
+                        url: https://www.google.com
+                        method: GET
+                        headers: []
+                        outputVariables: []
+                      timeout: 10s
+                  - step:
+                      type: Http
+                      name: bing in parallel
+                      identifier: bing_in_parallel
+                      spec:
+                        url: https://www.bing.com
+                        method: GET
+                        headers: []
+                        outputVariables: []
+                      timeout: 10s
+          serviceDependencies: []
+        tags: {}
+    - stage:
+        name: a1-1
+        identifier: a11
+        description: ""
+        strategy:
+          repeat:
+            times: 10
+        variables:
+          - name: currentItertionVariable
+            value: <+strategy.iteration>
+            type: String
+          - name: totalIterationVariable
+            value: <+strategy.iterations>
+            type: String
+        type: Approval
+        spec:
+          execution:
+            steps:
+              - stepGroup:
+                  name: sg2
+                  identifier: sg1
+                  steps:
+                    - step:
+                        type: Http
+                        name: <+strategy.iterations>
+                        identifier: <+strategy.iteration>
+                        strategy:
+                          repeat:
+                            times: 10
+                        spec:
+                          url: https://www.google.com
+                          method: GET
+                          headers: []
+                          outputVariables: []
+                        timeout: 1m
+                    - step:
+                        type: Http
+                        name: bing
+                        identifier: bing
+                        spec:
+                          url: https://www.bing.com
+                          method: GET
+                          headers: []
+                          outputVariables: []
+                        timeout: 10s
+              - parallel:
+                  - step:
+                      type: Http
+                      name: google again
+                      identifier: google_again
+                      spec:
+                        url: https://www.google.com
+                        method: GET
+                        headers: []
+                        outputVariables: []
+                      timeout: 10s
+                  - step:
+                      type: Http
+                      name: bing in parallel
+                      identifier: bing_in_parallel
+                      spec:
+                        url: https://www.bing.com
+                        method: GET
+                        headers: []
+                        outputVariables: []
+                      timeout: 10s
+          serviceDependencies: []
+        tags: {}
+    - stage:
+        name: a1-2
+        identifier: a12
+        description: ""
+        strategy:
+          parallelism: 4
+        variables:
+          - name: currentItertionVariable
+            value: <+strategy.iteration>
+            type: String
+          - name: totalIterationVariable
+            value: <+strategy.iterations>
+            type: String
+        type: Approval
+        spec:
+          execution:
+            steps:
+              - stepGroup:
+                  name: searching
+                  identifier: searching
+                  steps:
+                    - step:
+                        type: Http
+                        name: <+strategy.iterations>
+                        identifier: <+strategy.iteration>
+                        strategy:
+                          parallelism: 4
+                        spec:
+                          url: https://www.google.com
+                          method: GET
+                          headers: []
+                          outputVariables: []
+                        timeout: 1m
+                    - step:
+                        type: Http
+                        name: bing
+                        identifier: bing
+                        spec:
+                          url: https://www.bing.com
+                          method: GET
+                          headers: []
+                          outputVariables: []
+                        timeout: 10s
+              - parallel:
+                  - step:
+                      type: Http
+                      name: google again
+                      identifier: google_again
+                      spec:
+                        url: https://www.google.com
+                        method: GET
+                        headers: []
+                        outputVariables: []
+                      timeout: 10s
+                  - step:
+                      type: Http
+                      name: bing in parallel
+                      identifier: bing_in_parallel
+                      spec:
+                        url: https://www.bing.com
+                        method: GET
+                        headers: []
+                        outputVariables: []
+                      timeout: 10s
+          serviceDependencies: []
+        tags: {}
+    - stage:
+        name: a1-1
+        identifier: a11
+        description: ""
+        strategy:
+          repeat:
+            items: ["a", "b", "c"]
+        variables:
+          - name: currentItertionVariable
+            value: <+strategy.iteration>
+            type: String
+          - name: totalIterationVariable
+            value: <+strategy.iterations>
+            type: String
+        type: Approval
+        spec:
+          execution:
+            steps:
+              - stepGroup:
+                  name: sg2
+                  identifier: sg1
+                  steps:
+                    - step:
+                        type: Http
+                        name: <+strategy.iterations>
+                        identifier: <+strategy.iteration>
+                        strategy:
+                          repeat:
+                            times: 10
+                        spec:
+                          url: https://www.google.com
+                          method: GET
+                          headers: []
+                          outputVariables: []
+                        timeout: 1m
+                    - step:
+                        type: Http
+                        name: bing
+                        identifier: bing
+                        spec:
+                          url: https://www.bing.com
+                          method: GET
+                          headers: []
+                          outputVariables: []
+                        timeout: 10s
+              - parallel:
+                  - step:
+                      type: Http
+                      name: google again
+                      identifier: google_again
+                      spec:
+                        url: https://www.google.com
+                        method: GET
+                        headers: []
+                        outputVariables: []
+                      timeout: 10s
+                  - step:
+                      type: Http
+                      name: bing in parallel
+                      identifier: bing_in_parallel
+                      spec:
+                        url: https://www.bing.com
+                        method: GET
+                        headers: []
+                        outputVariables: []
+                      timeout: 10s
+          serviceDependencies: []
+        tags: {}
+    - stage:
+        name: a1-1
+        identifier: a11
+        description: ""
+        strategy:
+          repeat:
+            items: ["a", "b", "c"]
+            start: 0
+            end: 1
+        variables:
+          - name: currentItertionVariable
+            value: <+strategy.iteration>
+            type: String
+          - name: totalIterationVariable
+            value: <+strategy.iterations>
+            type: String
+          - name: itemValues
+            value: <+repeat.item>
+            type: String
+        type: Approval
+        spec:
+          execution:
+            steps:
+              - stepGroup:
+                  name: sg2
+                  identifier: sg1
+                  steps:
+                    - step:
+                        type: Http
+                        name: <+strategy.iterations>
+                        identifier: <+strategy.iteration>
+                        strategy:
+                          repeat:
+                            times: 10
+                        spec:
+                          url: https://www.google.com
+                          method: GET
+                          headers: []
+                          outputVariables: []
+                        timeout: 1m
+                    - step:
+                        type: Http
+                        name: bing
+                        identifier: bing
+                        spec:
+                          url: https://www.bing.com
+                          method: GET
+                          headers: []
+                          outputVariables: []
+                        timeout: 10s
+              - parallel:
+                  - step:
+                      type: Http
+                      name: google again
+                      identifier: google_again
+                      spec:
+                        url: https://www.google.com
+                        method: GET
+                        headers: []
+                        outputVariables: []
+                      timeout: 10s
+                  - step:
+                      type: Http
+                      name: bing in parallel
+                      identifier: bing_in_parallel
+                      spec:
+                        url: https://www.bing.com
+                        method: GET
+                        headers: []
+                        outputVariables: []
+                      timeout: 10s
+          serviceDependencies: []
+        tags: {}
+    - stage:
+        name: a1-1
+        identifier: a11
+        description: ""
+        strategy:
+          repeat:
+            items: ["a", "b", "c", "d", "e"]
+            start: 0
+            end: 20
+            unit: PERCENTAGE
+        variables:
+          - name: currentItertionVariable
+            value: <+strategy.iteration>
+            type: String
+          - name: totalIterationVariable
+            value: <+strategy.iterations>
+            type: String
+        type: Approval
+        spec:
+          execution:
+            steps:
+              - stepGroup:
+                  name: sg2
+                  identifier: sg1
+                  steps:
+                    - step:
+                        type: Http
+                        name: <+strategy.iterations>
+                        identifier: <+strategy.iteration>
+                        strategy:
+                          repeat:
+                            times: 10
+                        spec:
+                          url: https://www.google.com
+                          method: GET
+                          headers: []
+                          outputVariables: []
+                        timeout: 1m
+                    - step:
+                        type: Http
+                        name: bing
+                        identifier: bing
+                        spec:
+                          url: https://www.bing.com
+                          method: GET
+                          headers: []
+                          outputVariables: []
+                        timeout: 10s
+              - parallel:
+                  - step:
+                      type: Http
+                      name: google again
+                      identifier: google_again
+                      spec:
+                        url: https://www.google.com
+                        method: GET
+                        headers: []
+                        outputVariables: []
+                      timeout: 10s
+                  - step:
+                      type: Http
+                      name: bing in parallel
+                      identifier: bing_in_parallel
+                      spec:
+                        url: https://www.bing.com
+                        method: GET
+                        headers: []
+                        outputVariables: []
+                      timeout: 10s
+          serviceDependencies: []
+        tags: {}
+    - stage:
+        name: a1-1
+        identifier: a11
+        description: ""
+        strategy:
+          repeat:
+            items: ["a", "b", "c", "d", "e"]
+            start: 20
+            end: 100
+            unit: PERCENTAGE
+        variables:
+          - name: currentItertionVariable
+            value: <+strategy.iteration>
+            type: String
+          - name: totalIterationVariable
+            value: <+strategy.iterations>
+            type: String
+        type: Approval
+        spec:
+          execution:
+            steps:
+              - stepGroup:
+                  name: sg2
+                  identifier: sg1
+                  steps:
+                    - step:
+                        type: Http
+                        name: <+strategy.iterations>
+                        identifier: <+strategy.iteration>
+                        strategy:
+                          repeat:
+                            times: 10
+                        spec:
+                          url: https://www.google.com
+                          method: GET
+                          headers: []
+                          outputVariables: []
+                        timeout: 1m
+                    - step:
+                        type: Http
+                        name: bing
+                        identifier: bing
+                        spec:
+                          url: https://www.bing.com
+                          method: GET
+                          headers: []
+                          outputVariables: []
+                        timeout: 10s
+              - parallel:
+                  - step:
+                      type: Http
+                      name: google again
+                      identifier: google_again
+                      spec:
+                        url: https://www.google.com
+                        method: GET
+                        headers: []
+                        outputVariables: []
+                      timeout: 10s
+                  - step:
+                      type: Http
+                      name: bing in parallel
+                      identifier: bing_in_parallel
+                      spec:
+                        url: https://www.bing.com
+                        method: GET
+                        headers: []
+                        outputVariables: []
+                      timeout: 10s
+          serviceDependencies: []
+        tags: {}
+    - stage:
+        name: a1-1
+        identifier: a11
+        description: ""
+        strategy:
+          repeat:
+            items: ["a", "b", "c", "d"]
+            start: 0
+            end: 4
+        variables:
+          - name: currentItertionVariable
+            value: <+strategy.iteration>
+            type: String
+          - name: totalIterationVariable
+            value: <+strategy.iterations>
+            type: String
+        type: Approval
+        spec:
+          execution:
+            steps:
+              - stepGroup:
+                  name: sg2
+                  identifier: sg1
+                  steps:
+                    - step:
+                        type: Http
+                        name: <+strategy.iterations>
+                        identifier: <+strategy.iteration>
+                        strategy:
+                          repeat:
+                            times: 10
+                        spec:
+                          url: https://www.google.com
+                          method: GET
+                          headers: []
+                          outputVariables: []
+                        timeout: 1m
+                    - step:
+                        type: Http
+                        name: bing
+                        identifier: bing
+                        spec:
+                          url: https://www.bing.com
+                          method: GET
+                          headers: []
+                          outputVariables: []
+                        timeout: 10s
+              - parallel:
+                  - step:
+                      type: Http
+                      name: google again
+                      identifier: google_again
+                      spec:
+                        url: https://www.google.com
+                        method: GET
+                        headers: []
+                        outputVariables: []
+                      timeout: 10s
+                  - step:
+                      type: Http
+                      name: bing in parallel
+                      identifier: bing_in_parallel
+                      spec:
+                        url: https://www.bing.com
+                        method: GET
+                        headers: []
+                        outputVariables: []
+                      timeout: 10s
+          serviceDependencies: []
+        tags: {}
+    - parallel:
+        - stage:
+            name: d1
+            identifier: d1
+            description: ""
+            type: Deployment
+            spec:
+              serviceConfig:
+                serviceDefinition:
+                  type: Kubernetes
+                  spec:
+                    manifests:
+                      - manifest:
+                          identifier: m1
+                          type: K8sManifest
+                          spec:
+                            store:
+                              type: Github
+                              spec:
+                                connectorRef: repo_in_payload
+                                gitFetchType: Branch
+                                paths:
+                                  - dds
+                                branch: master
+                            skipResourceVersioning: false
+                    variables: []
+                serviceRef: s1help
+              infrastructure:
+                environmentRef: ee
+                infrastructureDefinition:
+                  type: KubernetesDirect
+                  spec:
+                    connectorRef: account.temp
+                    namespace: ssss
+                    releaseName: release-<+INFRA_KEY>
+                allowSimultaneousDeployments: false
+              execution:
+                steps:
+                  - step:
+                      type: ShellScript
+                      name: echo1
+                      identifier: echo1
+                      spec:
+                        shell: Bash
+                        onDelegate: true
+                        source:
+                          type: Inline
+                          spec:
+                            script: echo done
+                        environmentVariables: []
+                        outputVariables: []
+                        executionTarget: {}
+                      timeout: 10m
+                rollbackSteps: []
+            tags: {}
+            failureStrategies:
+              - onFailure:
+                  errors:
+                    - AllErrors
+                  action:
+                    type: StageRollback

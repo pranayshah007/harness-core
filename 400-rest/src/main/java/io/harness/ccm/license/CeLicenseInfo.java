@@ -27,7 +27,12 @@ public class CeLicenseInfo {
 
   @JsonIgnore
   public long getExpiryTimeWithGracePeriod() {
-    return expiryTime + Duration.ofDays(CE_TRIAL_GRACE_PERIOD_DAYS).toMillis();
+    // adding 15 days to long.max value becomes -ve
+    long gracePeriodTime = expiryTime + Duration.ofDays(CE_TRIAL_GRACE_PERIOD_DAYS).toMillis();
+    if (gracePeriodTime > expiryTime) {
+      return gracePeriodTime;
+    }
+    return expiryTime;
   }
 
   @JsonIgnore

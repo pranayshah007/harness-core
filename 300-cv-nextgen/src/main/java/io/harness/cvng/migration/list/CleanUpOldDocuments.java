@@ -9,7 +9,7 @@ package io.harness.cvng.migration.list;
 
 import io.harness.cvng.migration.CVNGMigration;
 import io.harness.cvng.migration.beans.ChecklistItem;
-import io.harness.cvng.statemachine.beans.AnalysisStatus;
+import io.harness.cvng.statemachine.beans.AnalysisOrchestratorStatus;
 import io.harness.cvng.statemachine.entities.AnalysisOrchestrator;
 import io.harness.cvng.statemachine.entities.AnalysisOrchestrator.AnalysisOrchestratorKeys;
 import io.harness.cvng.statemachine.entities.AnalysisStateMachine;
@@ -27,7 +27,7 @@ public class CleanUpOldDocuments implements CVNGMigration {
   public void migrate() {
     Query<AnalysisOrchestrator> analysisOrchestratorQuery =
         hPersistence.createQuery(AnalysisOrchestrator.class)
-            .filter(AnalysisOrchestratorKeys.status, AnalysisStatus.CREATED);
+            .filter(AnalysisOrchestratorKeys.status, AnalysisOrchestratorStatus.CREATED);
     List<AnalysisOrchestrator> analysisOrchestratorList = analysisOrchestratorQuery.asList();
     for (AnalysisOrchestrator analysisOrchestrator : analysisOrchestratorList) {
       if (analysisOrchestrator.getAnalysisStateMachineQueue().isEmpty()) {

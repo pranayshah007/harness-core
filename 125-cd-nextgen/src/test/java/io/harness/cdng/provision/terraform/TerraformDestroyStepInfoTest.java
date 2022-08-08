@@ -22,11 +22,13 @@ import io.harness.cdng.manifest.yaml.GithubStore;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigType;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
 import io.harness.delegate.beans.storeconfig.FetchType;
+import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.SpecParameters;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -155,6 +157,9 @@ public class TerraformDestroyStepInfoTest extends CategoryTest {
     terraformStepConfiguration.setTerraformStepConfigurationType(TerraformStepConfigurationType.INLINE);
     terraformDestroyStepInfo.setTerraformStepConfiguration(terraformStepConfiguration);
 
+    TaskSelectorYaml taskSelectorYaml = new TaskSelectorYaml("sel1");
+    terraformDestroyStepInfo.setDelegateSelectors(ParameterField.createValueField(Arrays.asList(taskSelectorYaml)));
+
     SpecParameters specParameters = terraformDestroyStepInfo.getSpecParameters();
     TerraformDestroyStepParameters terraformDestroyStepParameters = (TerraformDestroyStepParameters) specParameters;
     assertThat(specParameters).isNotNull();
@@ -164,6 +169,8 @@ public class TerraformDestroyStepInfoTest extends CategoryTest {
     assertThat(terraformDestroyStepParameters.configuration.spec.varFiles.get("var-file-1").type).isEqualTo("Remote");
     assertThat(terraformDestroyStepParameters.configuration.spec.varFiles.get("var-file-1").identifier)
         .isEqualTo("var-file-1");
+    assertThat(terraformDestroyStepParameters.delegateSelectors.getValue().get(0).getDelegateSelectors())
+        .isEqualTo("sel1");
   }
 
   @Test

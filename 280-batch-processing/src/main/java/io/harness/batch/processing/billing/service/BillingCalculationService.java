@@ -75,7 +75,7 @@ public class BillingCalculationService {
     if (null == parentInstanceActiveSecond || parentInstanceActiveSecond == 0) {
       parentInstanceActiveSecond = instanceActiveSeconds;
       if (instanceData.getInstanceType() == InstanceType.K8S_POD) {
-        log.warn("Instance parent active time is 0 {} {}", instanceData.getInstanceId(), startTime);
+        log.debug("Instance parent active time is 0 {} {}", instanceData.getInstanceId(), startTime);
         parentInstanceActiveSecond = 24 * 3600D;
       }
     }

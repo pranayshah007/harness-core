@@ -25,8 +25,8 @@ import static software.wings.utils.WingsTestConstants.SERVICE_ID;
 import static software.wings.utils.WingsTestConstants.SETTING_ID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.reset;
@@ -160,25 +160,31 @@ public class InfrastructureDefinitionYamlHandlerTest extends YamlHandlerTestBase
             .uuid(InfraDefinitionTestConstants.INFRA_PROVISIONER_ID)
             .name(InfraDefinitionTestConstants.INFRA_PROVISIONER)
             .build();
-    doReturn(ACCOUNT_ID).when(appService).getAccountIdByAppId(anyString());
-    doReturn(APP_ID).when(mockYamlHelper).getAppId(anyString(), anyString());
-    doReturn(ENV_ID).when(mockYamlHelper).getEnvironmentId(anyString(), anyString());
+    doReturn(ACCOUNT_ID).when(appService).getAccountIdByAppId(nullable(String.class));
+    doReturn(APP_ID).when(mockYamlHelper).getAppId(nullable(String.class), nullable(String.class));
+    doReturn(ENV_ID).when(mockYamlHelper).getEnvironmentId(nullable(String.class), nullable(String.class));
     doReturn(settingAttribute)
         .doReturn(settingAttribute)
         .when(mockSettingsService)
-        .getSettingAttributeByName(anyString(), anyString());
-    doReturn(settingAttribute).doReturn(settingAttribute).when(mockSettingsService).get(anyString());
-    doReturn("infra-def").when(mockYamlHelper).extractEntityNameFromYamlPath(anyString(), anyString(), anyString());
-    doReturn(service).when(serviceResourceService).get(anyString(), anyString());
-    doReturn(service).when(serviceResourceService).getServiceByName(anyString(), anyString());
+        .getSettingAttributeByName(nullable(String.class), nullable(String.class));
+    doReturn(settingAttribute).doReturn(settingAttribute).when(mockSettingsService).get(nullable(String.class));
+    doReturn("infra-def")
+        .when(mockYamlHelper)
+        .extractEntityNameFromYamlPath(nullable(String.class), nullable(String.class), nullable(String.class));
+    doReturn(service).when(serviceResourceService).get(nullable(String.class), nullable(String.class));
+    doReturn(service).when(serviceResourceService).getServiceByName(nullable(String.class), nullable(String.class));
     doReturn(Optional.of(anApplication().uuid(APP_ID).build()))
         .when(mockYamlHelper)
-        .getApplicationIfPresent(anyString(), anyString());
+        .getApplicationIfPresent(nullable(String.class), nullable(String.class));
     doReturn(Optional.of(anEnvironment().uuid(ENV_ID).build()))
         .when(mockYamlHelper)
-        .getEnvIfPresent(anyString(), anyString());
-    doReturn(infrastructureProvisioner).when(infrastructureProvisionerService).get(anyString(), anyString());
-    doReturn(infrastructureProvisioner).when(infrastructureProvisionerService).getByName(anyString(), anyString());
+        .getEnvIfPresent(nullable(String.class), nullable(String.class));
+    doReturn(infrastructureProvisioner)
+        .when(infrastructureProvisionerService)
+        .get(nullable(String.class), nullable(String.class));
+    doReturn(infrastructureProvisioner)
+        .when(infrastructureProvisionerService)
+        .getByName(nullable(String.class), nullable(String.class));
   }
 
   @Test
@@ -246,7 +252,9 @@ public class InfrastructureDefinitionYamlHandlerTest extends YamlHandlerTestBase
   @Owner(developers = YOGESH)
   @Category(UnitTests.class)
   public void TestCRUDAndGet_AWS_INSTANCE() throws IOException {
-    doReturn(awsInstanceInfrastructureYamlHandler).when(mockYamlHandlerFactory).getYamlHandler(any(), anyString());
+    doReturn(awsInstanceInfrastructureYamlHandler)
+        .when(mockYamlHandlerFactory)
+        .getYamlHandler(any(), nullable(String.class));
     testCRUD(validYamlInfraStructureFiles.AWS_INSTANCE, InfrastructureType.AWS_INSTANCE, DeploymentType.WINRM,
         CloudProviderType.AWS);
     testCRUD(validYamlInfraStructureFiles.AWS_INSTANCE_PROVISIONER, InfrastructureType.AWS_INSTANCE, DeploymentType.SSH,
@@ -259,7 +267,9 @@ public class InfrastructureDefinitionYamlHandlerTest extends YamlHandlerTestBase
   @Owner(developers = YOGESH)
   @Category(UnitTests.class)
   public void TestCRUDAndGet_AWS_CODEDEPLOY() throws IOException {
-    doReturn(codeDeployInfrastructureYamlHandler).when(mockYamlHandlerFactory).getYamlHandler(any(), anyString());
+    doReturn(codeDeployInfrastructureYamlHandler)
+        .when(mockYamlHandlerFactory)
+        .getYamlHandler(any(), nullable(String.class));
     testCRUD(validYamlInfraStructureFiles.AWS_CODEDEPLOY, InfrastructureType.CODE_DEPLOY, DeploymentType.AWS_CODEDEPLOY,
         CloudProviderType.AWS);
   }
@@ -329,7 +339,7 @@ public class InfrastructureDefinitionYamlHandlerTest extends YamlHandlerTestBase
         .fetchDeploymentTemplateUri("templateId");
     doReturn("templateId")
         .when(customDeploymentTypeService)
-        .fetchDeploymentTemplateIdFromUri(anyString(), eq("Harness/My-Deployment-Types/My-Webshphere"));
+        .fetchDeploymentTemplateIdFromUri(nullable(String.class), eq("Harness/My-Deployment-Types/My-Webshphere"));
     doReturn(customInfrastructureYamlHandler).when(mockYamlHandlerFactory).getYamlHandler(any(), any());
     testCRUD(validYamlInfraStructureFiles.CUSTOM_INFRA, InfrastructureType.CUSTOM_INFRASTRUCTURE, DeploymentType.CUSTOM,
         CloudProviderType.CUSTOM);
@@ -337,7 +347,9 @@ public class InfrastructureDefinitionYamlHandlerTest extends YamlHandlerTestBase
 
   private void testCRUD(String yamlFileName, String cloudProviderInfrastructureType, DeploymentType deploymentType,
       CloudProviderType cloudProviderType) throws IOException {
-    doReturn(null).when(mockYamlHelper).getInfraDefinitionIdByAppIdYamlPath(anyString(), anyString(), anyString());
+    doReturn(null)
+        .when(mockYamlHelper)
+        .getInfraDefinitionIdByAppIdYamlPath(nullable(String.class), nullable(String.class), nullable(String.class));
     File yamlFile = null;
     yamlFile = new File(resourcePath + PATH_DELIMITER + yamlFileName);
 
@@ -355,7 +367,7 @@ public class InfrastructureDefinitionYamlHandlerTest extends YamlHandlerTestBase
 
     doReturn(savedDefinition)
         .when(mockYamlHelper)
-        .getInfraDefinitionIdByAppIdYamlPath(anyString(), anyString(), anyString());
+        .getInfraDefinitionIdByAppIdYamlPath(nullable(String.class), nullable(String.class), nullable(String.class));
 
     handler.upsertFromYaml(changeContext, Arrays.asList(changeContext));
 
@@ -374,7 +386,7 @@ public class InfrastructureDefinitionYamlHandlerTest extends YamlHandlerTestBase
 
     doReturn(savedDefinition)
         .when(infrastructureDefinitionService)
-        .getInfraDefByName(anyString(), anyString(), anyString());
+        .getInfraDefByName(nullable(String.class), nullable(String.class), nullable(String.class));
 
     InfrastructureDefinition retrievedDefinition = handler.get(ACCOUNT_ID, yamlFilePath);
 
@@ -383,11 +395,11 @@ public class InfrastructureDefinitionYamlHandlerTest extends YamlHandlerTestBase
 
     doReturn(savedDefinition)
         .when(mockYamlHelper)
-        .getInfraDefinitionIdByAppIdYamlPath(anyString(), anyString(), anyString());
+        .getInfraDefinitionIdByAppIdYamlPath(nullable(String.class), nullable(String.class), nullable(String.class));
 
     handler.delete(changeContext);
 
-    verify(infrastructureDefinitionService).deleteByYamlGit(anyString(), anyString());
+    verify(infrastructureDefinitionService).deleteByYamlGit(nullable(String.class), nullable(String.class));
 
     reset(infrastructureDefinitionService);
   }

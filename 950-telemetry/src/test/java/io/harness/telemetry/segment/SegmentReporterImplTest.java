@@ -7,6 +7,9 @@
 
 package io.harness.telemetry.segment;
 
+import static io.harness.TelemetryConstants.SEGMENT_DUMMY_ACCOUNT_PREFIX;
+import static io.harness.TelemetryConstants.SYSTEM_USER;
+import static io.harness.rule.OwnerRule.ALLEN;
 import static io.harness.rule.OwnerRule.ZHUO;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -93,6 +96,45 @@ public class SegmentReporterImplTest extends TelemetrySdkTestBase {
     assertThat(message.properties().get(USER_ID_KEY)).isEqualTo(EMAIL);
     assertThat(message.properties().get(CATEGORY_KEY)).isEqualTo(TEST_CATEGORY);
     assertThat(message.userId()).isEqualTo(EMAIL);
+    assertThat(message.integrations().get(DESTINATION)).isEqualTo(true);
+  }
+
+  @Test
+  @Owner(developers = ALLEN)
+  @Category(UnitTests.class)
+  public void testSendTrackEventWithAnalyticsUser() {
+    Mockito.when(SecurityContextBuilder.getPrincipal()).thenReturn(new UserPrincipal(null, null, null, null));
+    Mockito.when(segmentSender.isEnabled()).thenReturn(true);
+    String testAccountId = "testAccount";
+    segmentReporterImpl.sendTrackEvent("test", null, testAccountId, properties, destinations, TEST_CATEGORY);
+    Mockito.verify(segmentSender).enqueue(trackCaptor.capture());
+    TrackMessage message = trackCaptor.getValue().build();
+    assertThat(message.event()).isEqualTo("test");
+    assertThat(message.properties().get(PROPERTY_KEY)).isEqualTo(PROPERTY_VALUE);
+    assertThat(message.properties().get(NULL_KEY)).isEqualTo(NULL_VALUE);
+    assertThat(message.properties().get(GROUP_ID_KEY)).isEqualTo(testAccountId);
+    assertThat(message.properties().get(USER_ID_KEY)).isEqualTo(SEGMENT_DUMMY_ACCOUNT_PREFIX + testAccountId);
+    assertThat(message.properties().get(CATEGORY_KEY)).isEqualTo(TEST_CATEGORY);
+    assertThat(message.userId()).isEqualTo(SEGMENT_DUMMY_ACCOUNT_PREFIX + testAccountId);
+    assertThat(message.integrations().get(DESTINATION)).isEqualTo(true);
+  }
+
+  @Test
+  @Owner(developers = ALLEN)
+  @Category(UnitTests.class)
+  public void testSendTrackEventWithSystemUser() {
+    Mockito.when(SecurityContextBuilder.getPrincipal()).thenReturn(new UserPrincipal(null, null, null, null));
+    Mockito.when(segmentSender.isEnabled()).thenReturn(true);
+    segmentReporterImpl.sendTrackEvent("test", null, null, properties, destinations, TEST_CATEGORY);
+    Mockito.verify(segmentSender).enqueue(trackCaptor.capture());
+    TrackMessage message = trackCaptor.getValue().build();
+    assertThat(message.event()).isEqualTo("test");
+    assertThat(message.properties().get(PROPERTY_KEY)).isEqualTo(PROPERTY_VALUE);
+    assertThat(message.properties().get(NULL_KEY)).isEqualTo(NULL_VALUE);
+    assertThat(message.properties().get(GROUP_ID_KEY)).isEqualTo("null");
+    assertThat(message.properties().get(USER_ID_KEY)).isEqualTo(SYSTEM_USER);
+    assertThat(message.properties().get(CATEGORY_KEY)).isEqualTo(TEST_CATEGORY);
+    assertThat(message.userId()).isEqualTo(SYSTEM_USER);
     assertThat(message.integrations().get(DESTINATION)).isEqualTo(true);
   }
 

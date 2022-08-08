@@ -22,6 +22,7 @@ import static software.wings.utils.WingsTestConstants.WORKFLOW_NAME;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.anyList;
+import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.when;
 
 import io.harness.beans.FeatureName;
@@ -102,7 +103,7 @@ public class SlackMessageDispatcherTest extends WingsBaseTest {
 
     slackMessageDispatcher.dispatch(notifications, setting);
     ArgumentCaptor<String> stringArgumentCaptor = ArgumentCaptor.forClass(String.class);
-    Mockito.verify(slackNotificationService).sendJSONMessage(stringArgumentCaptor.capture(), anyList());
+    Mockito.verify(slackNotificationService).sendJSONMessage(stringArgumentCaptor.capture(), anyList(), eq(ACCOUNT_ID));
     assertThat(stringArgumentCaptor.getValue())
         .isNotEmpty()
         .contains("\"username\" : \"Harness\"")
@@ -132,7 +133,7 @@ public class SlackMessageDispatcherTest extends WingsBaseTest {
 
     slackMessageDispatcher.dispatch(notifications, setting);
     ArgumentCaptor<String> stringArgumentCaptor = ArgumentCaptor.forClass(String.class);
-    Mockito.verify(slackNotificationService).sendJSONMessage(stringArgumentCaptor.capture(), anyList());
+    Mockito.verify(slackNotificationService).sendJSONMessage(stringArgumentCaptor.capture(), anyList(), eq(ACCOUNT_ID));
     assertThat(stringArgumentCaptor.getValue())
         .isNotEmpty()
         .contains("\"username\" : \"Harness\"")

@@ -55,6 +55,7 @@ import software.wings.beans.TaskType;
 import software.wings.beans.artifact.Artifact;
 import software.wings.beans.command.Command;
 import software.wings.beans.command.CommandExecutionContext;
+import software.wings.beans.command.CommandMapper;
 import software.wings.beans.command.ContainerSetupCommandUnitExecutionData;
 import software.wings.beans.command.ContainerSetupParams;
 import software.wings.beans.command.EcsSetupParams;
@@ -78,6 +79,7 @@ import software.wings.sm.InstanceStatusSummary;
 import software.wings.sm.State;
 import software.wings.sm.StateExecutionData;
 import software.wings.sm.WorkflowStandardParams;
+import software.wings.sm.WorkflowStandardParamsExtensionService;
 import software.wings.sm.states.k8s.K8sStateHelper;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -119,6 +121,7 @@ public abstract class ContainerServiceSetup extends State {
   @Inject private ArtifactCollectionUtils artifactCollectionUtils;
   @Inject private ContainerMasterUrlHelper containerMasterUrlHelper;
   @Inject private ContainerDeploymentManagerHelper containerDeploymentManagerHelper;
+  @Inject private WorkflowStandardParamsExtensionService workflowStandardParamsExtensionService;
 
   ContainerServiceSetup(String name, String type) {
     super(name, type);
@@ -140,8 +143,8 @@ public abstract class ContainerServiceSetup extends State {
       ImageDetails imageDetails =
           artifactCollectionUtils.fetchContainerImageDetails(artifact, context.getWorkflowExecutionId());
 
-      Application app = workflowStandardParams.fetchRequiredApp();
-      Environment env = workflowStandardParams.getEnv();
+      Application app = workflowStandardParamsExtensionService.fetchRequiredApp(workflowStandardParams);
+      Environment env = workflowStandardParamsExtensionService.getEnv(workflowStandardParams);
       Service service = serviceResourceService.getWithDetails(app.getUuid(), serviceId);
 
       log.info("Setting up container service for service {}", service.getName());
@@ -250,7 +253,7 @@ public abstract class ContainerServiceSetup extends State {
               .data(TaskData.builder()
                         .async(true)
                         .taskType(TaskType.COMMAND.name())
-                        .parameters(new Object[] {command, commandExecutionContext})
+                        .parameters(new Object[] {CommandMapper.toCommandDTO(command), commandExecutionContext})
                         .timeout(TimeUnit.HOURS.toMillis(1))
                         .build())
               .setupAbstraction(Cd1SetupFields.ENV_ID_FIELD, env.getUuid())

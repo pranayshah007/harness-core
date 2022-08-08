@@ -1,0 +1,28 @@
+load("@rules_proto//proto:defs.bzl", "proto_library")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("@io_bazel_rules_go//proto:def.bzl", "go_proto_library")
+
+proto_library(
+    name = "970_ng_commons_proto",
+    srcs = [
+        "scope_identifiers.proto",
+    ],
+    visibility = ["//visibility:public"],
+    deps = [
+        "@com_google_protobuf//:wrappers_proto",
+    ],
+)
+
+go_proto_library(
+    name = "970_ng_commons_go_proto",
+    importpath = "github.com/harness/harness-core/970-ng-commons/src/main/proto/io/harness",
+    proto = ":970_ng_commons_proto",
+    visibility = ["//visibility:public"],
+)
+
+go_library(
+    name = "entity",
+    embed = [":970_ng_commons_go_proto"],
+    importpath = "github.com/harness/harness-core/970-ng-commons/src/main/proto/io/harness",
+    visibility = ["//visibility:public"],
+)

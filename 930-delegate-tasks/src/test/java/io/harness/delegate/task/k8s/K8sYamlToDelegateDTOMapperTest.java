@@ -189,7 +189,7 @@ public class K8sYamlToDelegateDTOMapperTest extends CategoryTest {
         k8sYamlToDelegateDTOMapper.createKubernetesConfigFromClusterConfig(connectorDTOWithServiceAccountCreds, null);
     assertThat(config).isNotNull();
     assertThat(config.getMasterUrl()).isEqualTo(masterUrl);
-    assertThat(config.getServiceAccountToken()).isEqualTo(serviceAccountKey.toCharArray());
+    assertThat(config.getServiceAccountTokenSupplier().get()).isEqualTo(serviceAccountKey);
   }
 
   @Test
@@ -231,7 +231,7 @@ public class K8sYamlToDelegateDTOMapperTest extends CategoryTest {
         k8sYamlToDelegateDTOMapper.createKubernetesConfigFromClusterConfig(connectorDTOWithServiceAccountCreds, null);
     assertThat(config).isNotNull();
     assertThat(config.getMasterUrl()).isEqualTo(masterUrl);
-    assertThat(config.getServiceAccountToken()).isEqualTo(serviceAccountKey.toCharArray());
+    assertThat(config.getServiceAccountTokenSupplier().get()).isEqualTo(serviceAccountKey);
     assertThat(config.getCaCert()).isEqualTo(caCertKey.toCharArray());
   }
 

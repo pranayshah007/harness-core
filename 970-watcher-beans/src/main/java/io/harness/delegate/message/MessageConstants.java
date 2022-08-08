@@ -29,6 +29,8 @@ public interface MessageConstants {
 
   // Delegate data fields
   String DELEGATE_VERSION = "version";
+  String DELEGATE_ID = "delegateId";
+  String DELEGATE_TOKEN_NAME = "delegateTokenName";
   String DELEGATE_HEARTBEAT = "heartbeat";
   String DELEGATE_IS_NEW = "newDelegate";
   String DELEGATE_RESTART_NEEDED = "restartNeeded";
@@ -54,4 +56,7 @@ public interface MessageConstants {
   // Messages received by watcher from delegate processes
   String NEW_DELEGATE = "new-delegate";
   String DELEGATE_STARTED = "delegate-started";
+
+  // below msg will be sent to watcher if delegateId is not present
+  String UNREGISTERED = "Unregistered";
 }

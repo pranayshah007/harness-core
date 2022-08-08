@@ -30,6 +30,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.Cd1SetupFields;
 import io.harness.beans.DelegateTask;
+import io.harness.beans.FeatureName;
 import io.harness.delegate.beans.TaskData;
 import io.harness.exception.InvalidRequestException;
 import io.harness.persistence.HIterator;
@@ -50,6 +51,7 @@ import software.wings.helpers.ext.cloudformation.request.CloudFormationCreateSta
 import software.wings.helpers.ext.cloudformation.request.CloudFormationDeleteStackRequest;
 import software.wings.helpers.ext.cloudformation.response.CloudFormationCommandResponse;
 import software.wings.helpers.ext.cloudformation.response.CloudFormationCreateStackResponse;
+import software.wings.service.impl.aws.manager.AwsHelperServiceManager;
 import software.wings.sm.ExecutionContext;
 import software.wings.sm.ExecutionContextImpl;
 import software.wings.sm.ExecutionResponse;
@@ -64,6 +66,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import org.mongodb.morphia.query.Query;
 import org.mongodb.morphia.query.Sort;
 
 @Slf4j
@@ -78,7 +81,7 @@ public class CloudFormationRollbackStackState extends CloudFormationState {
   }
 
   @Override
-  protected List<String> commandUnits() {
+  protected List<String> commandUnits(CloudFormationInfrastructureProvisioner provisioner) {
     return Collections.singletonList(mainCommandUnit());
   }
 
@@ -174,12 +177,15 @@ public class CloudFormationRollbackStackState extends CloudFormationState {
     ExecutionContextImpl executionContext = (ExecutionContextImpl) context;
     String entityId = getStackNameSuffix(executionContext, provisionerId);
 
-    try (HIterator<CloudFormationRollbackConfig> configIterator =
-             new HIterator(wingsPersistence.createQuery(CloudFormationRollbackConfig.class)
-                               .filter(CloudFormationRollbackConfigKeys.appId, context.getAppId())
-                               .filter(CloudFormationRollbackConfigKeys.entityId, entityId)
-                               .order(Sort.descending(CloudFormationRollbackConfigKeys.createdAt))
-                               .fetch())) {
+    Query<CloudFormationRollbackConfig> getRollbackConfig =
+        wingsPersistence.createQuery(CloudFormationRollbackConfig.class)
+            .filter(CloudFormationRollbackConfigKeys.appId, context.getAppId())
+            .filter(CloudFormationRollbackConfigKeys.entityId, entityId);
+    if (featureFlagService.isEnabled(FeatureName.CF_ROLLBACK_CONFIG_FILTER, context.getAccountId())) {
+      getRollbackConfig.filter(CloudFormationRollbackConfigKeys.awsConfigId, fetchResolvedAwsConfigId(context));
+    }
+    getRollbackConfig.order(Sort.descending(CloudFormationRollbackConfigKeys.createdAt)).fetch();
+    try (HIterator<CloudFormationRollbackConfig> configIterator = new HIterator(getRollbackConfig.fetch())) {
       if (!configIterator.hasNext()) {
         /**
          * No config found.
@@ -227,7 +233,7 @@ public class CloudFormationRollbackStackState extends CloudFormationState {
        * For details, see CD-4767
        */
       AwsConfig awsConfig = getAwsConfig(configParameter.getAwsConfigId());
-      setAmazonClientSDKDefaultBackoffStrategyIfExists(context, awsConfig);
+      AwsHelperServiceManager.setAmazonClientSDKDefaultBackoffStrategyIfExists(context, awsConfig);
       String roleArnRendered = executionContext.renderExpression(configParameter.getCloudFormationRoleArn());
       CloudFormationCreateStackRequestBuilder builder = CloudFormationCreateStackRequest.builder().awsConfig(awsConfig);
       if (CLOUDFORMATION_STACK_CREATE_URL.equals(configParameter.getCreateType())) {
@@ -318,7 +324,7 @@ public class CloudFormationRollbackStackState extends CloudFormationState {
     CloudFormationRollbackInfoElement stackElement = stackElementOptional.get();
     ExecutionContextImpl executionContext = (ExecutionContextImpl) context;
     AwsConfig awsConfig = getAwsConfig(stackElement.getAwsConfigId());
-    setAmazonClientSDKDefaultBackoffStrategyIfExists(context, awsConfig);
+    AwsHelperServiceManager.setAmazonClientSDKDefaultBackoffStrategyIfExists(context, awsConfig);
     DelegateTask delegateTask;
     if (!stackElement.isStackExisted()) {
       CloudFormationDeleteStackRequest request =

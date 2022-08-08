@@ -11,7 +11,6 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.ConnectorCategory;
-import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.dto.secrets.SecretDTOV2;
 import io.harness.ng.core.dto.secrets.SecretResponseWrapper;
 import io.harness.ng.core.remote.SecretValidationMetaData;
@@ -21,6 +20,7 @@ import io.harness.secretmanagerclient.SecretType;
 import java.io.InputStream;
 import java.util.List;
 import java.util.Optional;
+import org.springframework.data.domain.Page;
 
 @OwnedBy(PL)
 public interface SecretCrudService {
@@ -34,11 +34,14 @@ public interface SecretCrudService {
   Optional<SecretResponseWrapper> get(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier);
 
-  PageResponse<SecretResponseWrapper> list(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+  Page<SecretResponseWrapper> list(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       List<String> identifiers, List<SecretType> secretTypes, boolean includeSecretsFromEverySubScope,
       String searchTerm, int page, int size, ConnectorCategory sourceCategory);
 
   boolean delete(String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier);
+
+  void deleteBatch(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, List<String> secretIdentifiersList);
 
   SecretResponseWrapper createFile(String accountIdentifier, SecretDTOV2 dto, InputStream inputStream);
 

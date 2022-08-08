@@ -10,11 +10,11 @@ package io.harness.ngmigration.service;
 import io.harness.encryption.Scope;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.ngmigration.beans.InputDefaults;
+import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
 import io.harness.pms.yaml.ParameterField;
 
 import software.wings.ngmigration.NGMigrationEntityType;
-import software.wings.ngmigration.NGYamlFile;
 
 import java.util.Comparator;
 import java.util.List;

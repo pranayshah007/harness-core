@@ -1,20 +1,23 @@
 /*
  * Copyright 2021 Harness Inc. All rights reserved.
- * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
- * that can be found in the licenses directory at the root of this repository, also available at
- * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0
+license
+ * that can be found in the licenses directory at the root of this
+repository, also available at
+ *
+https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
 package io.harness.signup.services;
 
 import static io.harness.annotations.dev.HarnessTeam.GTM;
 import static io.harness.rule.OwnerRule.NATHAN;
+import static io.harness.rule.OwnerRule.XIN;
 import static io.harness.rule.OwnerRule.ZHUO;
 import static io.harness.signup.services.impl.SignupServiceImpl.FAILED_EVENT_NAME;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
@@ -25,6 +28,7 @@ import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
 
 import io.harness.CategoryTest;
+import io.harness.ModuleType;
 import io.harness.TelemetryConstants;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.account.services.AccountService;
@@ -34,9 +38,13 @@ import io.harness.category.element.UnitTests;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.SignupException;
 import io.harness.exception.WingsException;
+import io.harness.ff.FeatureFlagService;
+import io.harness.licensing.Edition;
+import io.harness.licensing.beans.modules.StartTrialDTO;
 import io.harness.licensing.services.LicenseService;
 import io.harness.ng.core.dto.AccountDTO;
 import io.harness.ng.core.dto.GatewayAccountRequestDTO;
+import io.harness.ng.core.user.SignupAction;
 import io.harness.ng.core.user.UserInfo;
 import io.harness.ng.core.user.UserRequestDTO;
 import io.harness.repositories.SignupVerificationTokenRepository;
@@ -49,7 +57,7 @@ import io.harness.signup.dto.SignupInviteDTO;
 import io.harness.signup.dto.VerifyTokenResponseDTO;
 import io.harness.signup.entities.SignupVerificationToken;
 import io.harness.signup.notification.EmailType;
-import io.harness.signup.notification.SignupNotificationHelper;
+import io.harness.signup.notification.SaasSignupNotificationHelper;
 import io.harness.signup.services.impl.SignupServiceImpl;
 import io.harness.signup.validator.SignupValidator;
 import io.harness.telemetry.TelemetryReporter;
@@ -82,12 +90,14 @@ public class SignupServiceImplTest extends CategoryTest {
   @Mock AccessControlClient accessControlClient;
   @Mock ReCaptchaVerifier reCaptchaVerifier;
   @Mock TelemetryReporter telemetryReporter;
-  @Mock SignupNotificationHelper signupNotificationHelper;
+  @Mock SaasSignupNotificationHelper signupNotificationHelper;
   @Mock SignupVerificationTokenRepository verificationTokenRepository;
   @Mock @Named("NGSignupNotification") ExecutorService executorService;
   @Mock LicenseService licenseService;
   @Mock VersionInfoManager versionInfoManager;
+  @Mock FeatureFlagService featureFlagService;
 
+  private static final String TOKEN = "token";
   private static final String EMAIL = "test@test.com";
   private static final String INVALID_EMAIL = "test";
   private static final String PASSWORD = "admin12345";
@@ -101,7 +111,7 @@ public class SignupServiceImplTest extends CategoryTest {
     initMocks(this);
     signupServiceImpl = new SignupServiceImpl(accountService, userClient, signupValidator, reCaptchaVerifier,
         telemetryReporter, signupNotificationHelper, verificationTokenRepository, executorService, accessControlClient,
-        licenseService, versionInfoManager);
+        licenseService, versionInfoManager, featureFlagService);
   }
 
   @Test
@@ -117,13 +127,15 @@ public class SignupServiceImplTest extends CategoryTest {
 
     Call<RestResponse<UserInfo>> createUserCall = mock(Call.class);
     when(createUserCall.execute()).thenReturn(Response.success(new RestResponse<>(newUser)));
+
     when(userClient.createNewUser(any(UserRequestDTO.class))).thenReturn(createUserCall);
 
     UserInfo returnedUser = signupServiceImpl.signup(signupDTO, null);
 
-    verify(reCaptchaVerifier, times(1)).verifyInvisibleCaptcha(anyString());
+    verify(reCaptchaVerifier, times(1)).verifyInvisibleCaptcha(any());
     verify(telemetryReporter, times(1)).sendIdentifyEvent(eq(EMAIL), any(), any());
     verify(telemetryReporter, times(1))
+
         .sendIdentifyEvent(eq(TelemetryConstants.SEGMENT_DUMMY_ACCOUNT_PREFIX + ACCOUNT_ID), any(), any());
     verify(telemetryReporter, times(1)).sendGroupEvent(eq(ACCOUNT_ID), eq(EMAIL), any(), any());
     verify(executorService, times(1));
@@ -135,46 +147,66 @@ public class SignupServiceImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testCreateSignupInvite() throws IOException {
     SignupDTO signupDTO = SignupDTO.builder().email(EMAIL).password(PASSWORD).intent("CI").build();
+
     doNothing().when(signupValidator).validateSignup(any(SignupDTO.class));
 
     Call<RestResponse<SignupInviteDTO>> createNewSignupInviteCall = mock(Call.class);
     when(createNewSignupInviteCall.execute())
         .thenReturn(Response.success(new RestResponse<>(SignupInviteDTO.builder().build())));
+
     when(userClient.createNewSignupInvite(any(SignupInviteDTO.class))).thenReturn(createNewSignupInviteCall);
 
     boolean result = signupServiceImpl.createSignupInvite(signupDTO, null);
 
-    verify(reCaptchaVerifier, times(1)).verifyInvisibleCaptcha(anyString());
+    verify(reCaptchaVerifier, times(1)).verifyInvisibleCaptcha(any());
     verify(telemetryReporter, times(1)).sendIdentifyEvent(eq(EMAIL), any(), any());
     verify(executorService, times(1));
     assertThat(result).isTrue();
   }
 
   @Test
-  @Owner(developers = ZHUO)
+  @Owner(developers = XIN)
   @Category(UnitTests.class)
   public void testCompleteSignupInvite() throws IOException {
     Call<RestResponse<UserInfo>> completeSignupInviteCall = mock(Call.class);
     List<GatewayAccountRequestDTO> accounts = new ArrayList<>();
+
     accounts.add(GatewayAccountRequestDTO.builder().accountName(ACCOUNT_NAME).build());
     when(completeSignupInviteCall.execute())
         .thenReturn(Response.success(new RestResponse<>(
-            UserInfo.builder().email(EMAIL).defaultAccountId(ACCOUNT_ID).accounts(accounts).intent("CI").build())));
+
+            UserInfo.builder()
+                .email(EMAIL)
+                .defaultAccountId(ACCOUNT_ID)
+                .accounts(accounts)
+                .intent("ci")
+                .signupAction("TRIAL")
+                .edition("TEAM")
+                .build())));
+
     when(userClient.completeSignupInvite(any())).thenReturn(completeSignupInviteCall);
 
     SignupVerificationToken verificationToken =
+
         SignupVerificationToken.builder().email(EMAIL).validUntil(Long.MAX_VALUE).build();
-    when(verificationTokenRepository.findByToken("token")).thenReturn(Optional.of(verificationToken));
+    when(verificationTokenRepository.findByToken(TOKEN)).thenReturn(Optional.of(verificationToken));
     when(accessControlClient.hasAccess(any(), any(), any())).thenReturn(true);
-    UserInfo userInfo = signupServiceImpl.completeSignupInvite("token");
+    when(featureFlagService.isGlobalEnabled(any())).thenReturn(true);
+    UserInfo userInfo = signupServiceImpl.completeSignupInvite(TOKEN);
 
     verify(telemetryReporter, times(1)).sendIdentifyEvent(eq(EMAIL), any(), any());
     verify(telemetryReporter, times(1))
+
         .sendIdentifyEvent(eq(TelemetryConstants.SEGMENT_DUMMY_ACCOUNT_PREFIX + ACCOUNT_ID), any(), any());
     verify(telemetryReporter, times(1)).sendGroupEvent(eq(ACCOUNT_ID), eq(EMAIL), any(), any());
+
+    verify(licenseService, times(1)).startTrialLicense(eq(ACCOUNT_ID), any(StartTrialDTO.class));
+    verify(licenseService, times(3)).startFreeLicense(eq(ACCOUNT_ID), any(ModuleType.class));
     verify(executorService, times(1));
-    assertThat(userInfo.getIntent()).isEqualTo("CI");
+    assertThat(userInfo.getIntent()).isEqualTo("ci");
     assertThat(userInfo.getEmail()).isEqualTo(EMAIL);
+    assertThat(userInfo.getSignupAction()).isEqualTo("TRIAL");
+    assertThat(userInfo.getEdition()).isEqualTo("TEAM");
     assertThat(userInfo.getDefaultAccountId()).isEqualTo(ACCOUNT_ID);
   }
 
@@ -182,37 +214,50 @@ public class SignupServiceImplTest extends CategoryTest {
   @Owner(developers = ZHUO)
   @Category(UnitTests.class)
   public void testCompleteSignupInviteWithInvalidToken() throws IOException {
-    when(verificationTokenRepository.findByToken("token")).thenReturn(Optional.ofNullable(null));
-    signupServiceImpl.completeSignupInvite("token");
+    when(verificationTokenRepository.findByToken(TOKEN)).thenReturn(Optional.ofNullable(null));
+    signupServiceImpl.completeSignupInvite(TOKEN);
   }
 
   @Test
-  @Owner(developers = NATHAN)
+  @Owner(developers = XIN)
   @Category(UnitTests.class)
   public void testSignupOAuth() throws IOException {
     String name = "testName";
-    OAuthSignupDTO oAuthSignupDTO = OAuthSignupDTO.builder().email(EMAIL).name(name).build();
+    OAuthSignupDTO oAuthSignupDTO = OAuthSignupDTO.builder()
+                                        .email(EMAIL)
+                                        .name(name)
+                                        .intent(ModuleType.CI)
+                                        .signupAction(SignupAction.TRIAL)
+                                        .edition(Edition.TEAM)
+                                        .build();
     AccountDTO accountDTO = AccountDTO.builder().identifier(ACCOUNT_ID).build();
     UserInfo newUser = UserInfo.builder().email(EMAIL).build();
 
     doNothing().when(signupValidator).validateEmail(eq(EMAIL));
+
     when(accountService.createAccount(any(SignupDTO.class))).thenReturn(accountDTO);
 
     Call<RestResponse<UserInfo>> createUserCall = mock(Call.class);
     when(createUserCall.execute()).thenReturn(Response.success(new RestResponse<>(newUser)));
+
     when(userClient.createNewOAuthUser(any(UserRequestDTO.class))).thenReturn(createUserCall);
 
     Call<RestResponse<Optional<UserInfo>>> getUserByIdCall = mock(Call.class);
     when(createUserCall.execute()).thenReturn(Response.success(new RestResponse<>(newUser)));
     when(userClient.getUserById(any())).thenReturn(getUserByIdCall);
     when(accessControlClient.hasAccess(any(), any(), any())).thenReturn(true);
+    when(featureFlagService.isGlobalEnabled(any())).thenReturn(true);
 
     UserInfo returnedUser = signupServiceImpl.oAuthSignup(oAuthSignupDTO);
 
     verify(telemetryReporter, times(1)).sendIdentifyEvent(eq(EMAIL), any(), any());
     verify(telemetryReporter, times(1))
+
         .sendIdentifyEvent(eq(TelemetryConstants.SEGMENT_DUMMY_ACCOUNT_PREFIX + ACCOUNT_ID), any(), any());
     verify(telemetryReporter, times(1)).sendGroupEvent(eq(ACCOUNT_ID), eq(EMAIL), any(), any());
+
+    verify(licenseService, times(1)).startTrialLicense(eq(ACCOUNT_ID), any(StartTrialDTO.class));
+    verify(licenseService, times(3)).startFreeLicense(eq(ACCOUNT_ID), any(ModuleType.class));
     verify(executorService, times(1));
     assertThat(returnedUser.getEmail()).isEqualTo(newUser.getEmail());
   }
@@ -228,23 +273,23 @@ public class SignupServiceImplTest extends CategoryTest {
     try {
       signupServiceImpl.signup(signupDTO, null);
     } catch (SignupException e) {
-      verify(telemetryReporter, times(1))
+      verify(telemetryReporter, times(2))
           .sendTrackEvent(
               eq(FAILED_EVENT_NAME), eq(INVALID_EMAIL), any(), any(), any(), eq(io.harness.telemetry.Category.SIGN_UP));
       throw e;
     }
   }
 
-  @Test(expected = WingsException.class)
+  @Test(expected = RuntimeException.class)
   @Owner(developers = ZHUO)
   @Category(UnitTests.class)
   public void testSignupWithInvliadReCaptcha() {
     SignupDTO signupDTO = SignupDTO.builder().email(INVALID_EMAIL).password(PASSWORD).build();
-    doThrow(new WingsException("")).when(reCaptchaVerifier).verifyInvisibleCaptcha(any());
+    doThrow(new RuntimeException("")).when(reCaptchaVerifier).verifyInvisibleCaptcha(any());
     try {
       signupServiceImpl.signup(signupDTO, null);
     } catch (WingsException e) {
-      verify(telemetryReporter, times(1))
+      verify(telemetryReporter, times(2))
           .sendTrackEvent(
               eq(FAILED_EVENT_NAME), eq(INVALID_EMAIL), any(), any(), any(), eq(io.harness.telemetry.Category.SIGN_UP));
       throw e;
@@ -262,7 +307,7 @@ public class SignupServiceImplTest extends CategoryTest {
     try {
       signupServiceImpl.oAuthSignup(oAuthSignupDTO);
     } catch (SignupException e) {
-      verify(telemetryReporter, times(1))
+      verify(telemetryReporter, times(2))
           .sendTrackEvent(
               eq(FAILED_EVENT_NAME), eq(INVALID_EMAIL), any(), any(), any(), eq(io.harness.telemetry.Category.SIGN_UP));
       throw e;
@@ -274,13 +319,18 @@ public class SignupServiceImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testResendEmailNotification() throws IOException, URISyntaxException {
     SignupInviteDTO signupInviteDTO =
+
         SignupInviteDTO.builder().email(EMAIL).completed(false).createdFromNG(true).build();
     Call<RestResponse<SignupInviteDTO>> getSignupInviteCall = mock(Call.class);
     when(getSignupInviteCall.execute()).thenReturn(Response.success(new RestResponse<>(signupInviteDTO)));
+
     when(userClient.getSignupInvite(EMAIL)).thenReturn(getSignupInviteCall);
     SignupVerificationToken verificationToken =
+
         SignupVerificationToken.builder().email(EMAIL).validUntil(Long.MAX_VALUE).token("123").build();
+
     when(verificationTokenRepository.findByEmail(EMAIL)).thenReturn(Optional.of(verificationToken));
+
     when(verificationTokenRepository.save(any())).thenReturn(verificationToken);
     when(accountService.getBaseUrl(any())).thenReturn(NEXT_GEN_PORATL);
 
@@ -298,6 +348,7 @@ public class SignupServiceImplTest extends CategoryTest {
   public void testVerifyToken() throws IOException {
     Call<RestResponse<Boolean>> changeUserVerifiedCall = mock(Call.class);
     when(changeUserVerifiedCall.execute()).thenReturn(Response.success(new RestResponse<>(true)));
+
     when(userClient.changeUserEmailVerified(any())).thenReturn(changeUserVerifiedCall);
     when(verificationTokenRepository.findByToken("2"))
         .thenReturn(Optional.of(SignupVerificationToken.builder()
@@ -307,6 +358,7 @@ public class SignupServiceImplTest extends CategoryTest {
                                     .token("2")
                                     .build()));
     VerifyTokenResponseDTO verifyTokenResponseDTO = signupServiceImpl.verifyToken("2");
+
     assertThat(verifyTokenResponseDTO.getAccountIdentifier()).isEqualTo(ACCOUNT_ID);
   }
 }

@@ -7,13 +7,18 @@
 
 package io.harness.gitsync.common.helper;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.utils.FilePathUtils.addStartingSlashIfMissing;
 
 import io.harness.delegate.beans.connector.ConnectorType;
+import io.harness.delegate.beans.git.YamlGitConfigDTO;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.UnexpectedException;
 import io.harness.exception.UnsupportedOperationException;
+import io.harness.git.GitClientHelper;
 import io.harness.gitsync.common.dtos.RepoProviders;
 
+import java.util.List;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 
@@ -45,6 +50,26 @@ public class RepoProviderHelper {
         return RepoProviders.BITBUCKET;
       case GITLAB:
         return RepoProviders.GITLAB;
+      case AZURE_REPO:
+        return RepoProviders.AZURE;
+      default:
+        throw new InvalidRequestException("Unknown connector type " + connectorType);
+    }
+  }
+
+  public RepoProviders getRepoProviderType(ConnectorType connectorType, String url) {
+    switch (connectorType) {
+      case GITHUB:
+        return RepoProviders.GITHUB;
+      case BITBUCKET:
+        if (GitClientHelper.isBitBucketSAAS(url)) {
+          return RepoProviders.BITBUCKET;
+        }
+        return RepoProviders.BITBUCKET_SERVER;
+      case GITLAB:
+        return RepoProviders.GITLAB;
+      case AZURE_REPO:
+        return RepoProviders.AZURE;
       default:
         throw new InvalidRequestException("Unknown connector type " + connectorType);
     }
@@ -55,5 +80,13 @@ public class RepoProviderHelper {
       return RepoProviders.BITBUCKET;
     }
     return RepoProviders.GITHUB;
+  }
+
+  public static RepoProviders getRepoProviderType(List<YamlGitConfigDTO> yamlGitConfigs) {
+    if (isEmpty(yamlGitConfigs)) {
+      throw new UnexpectedException("The git sync configs cannot be null when figuring out the repo provider");
+    }
+    final YamlGitConfigDTO yamlGitConfigDTO = yamlGitConfigs.get(0);
+    return RepoProviderHelper.getRepoProviderFromConnectorType(yamlGitConfigDTO.getGitConnectorType());
   }
 }

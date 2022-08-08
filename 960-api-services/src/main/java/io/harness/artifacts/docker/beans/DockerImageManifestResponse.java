@@ -12,6 +12,8 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.ArtifactMetaInfo;
+import io.harness.beans.ArtifactMetaInfo.ArtifactMetaInfoBuilder;
 import io.harness.serializer.JsonUtils;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -19,6 +21,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import lombok.Data;
+import okhttp3.Headers;
+import retrofit2.Response;
 
 @OwnedBy(CDC)
 @Data
@@ -64,5 +68,18 @@ public class DockerImageManifestResponse {
     DockerImageManifestHistoryElement singleHistory = history.get(0);
     Map<String, String> labels = singleHistory.getLabels();
     return (labels == null) ? new HashMap<>() : labels;
+  }
+
+  public ArtifactMetaInfo fetchArtifactMetaInfo(Response<DockerImageManifestResponse> response) {
+    ArtifactMetaInfoBuilder metaInfoBuilder = ArtifactMetaInfo.builder();
+    Headers headers = response.headers();
+    if (headers != null) {
+      metaInfoBuilder.sha(headers.get("docker-content-digest"));
+    }
+    if (isEmpty(history)) {
+      return metaInfoBuilder.build();
+    }
+    metaInfoBuilder.labels(fetchLabels());
+    return metaInfoBuilder.build();
   }
 }

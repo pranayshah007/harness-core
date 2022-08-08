@@ -11,6 +11,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
+import org.jooq.exception.DataAccessException;
 
 @UtilityClass
 @Slf4j
@@ -23,5 +24,12 @@ public class DBUtils {
     } catch (SQLException e) {
       log.warn("Error while closing result set", e);
     }
+  }
+
+  public static boolean isConnectionError(DataAccessException ex) {
+    if (ex.getMessage().contains("Error getting connection from data source")) {
+      return true;
+    }
+    return false;
   }
 }

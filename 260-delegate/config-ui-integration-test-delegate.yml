@@ -1,5 +1,5 @@
 accountId: 1234567890123456789012
-accountSecret: 2f6b0988b6fb3370073c3d0505baee59
+delegateToken: 2f6b0988b6fb3370073c3d0505baee59
 managerUrl: https://localhost:9090/api/
 verificationServiceUrl: https://localhost:7070/verification/
 heartbeatIntervalMs: 60000

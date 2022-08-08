@@ -21,6 +21,8 @@ public class NGConstants {
   public static final String FILE_METADATA_KEY = "fileMetadata";
   public static final String HARNESS_SECRET_MANAGER_IDENTIFIER = "harnessSecretManager";
   public static final String DEFAULT_ORG_IDENTIFIER = "default";
+  public static final String DEFAULT_PROJECT_IDENTIFIER = "default_project";
+  public static final String DEFAULT_PROJECT_NAME = "Default Project";
   public static final String DEPRECATED_ALL_RESOURCES_RESOURCE_GROUP_IDENTIFIER = "_all_resources";
   public static final String ALL_RESOURCES_INCLUDING_CHILD_SCOPES_RESOURCE_GROUP_IDENTIFIER =
       "_all_resources_including_child_scopes";

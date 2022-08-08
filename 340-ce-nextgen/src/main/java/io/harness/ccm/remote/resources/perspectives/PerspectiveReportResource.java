@@ -9,10 +9,20 @@ package io.harness.ccm.remote.resources.perspectives;
 
 import static io.harness.NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE;
 import static io.harness.annotations.dev.HarnessTeam.CE;
+import static io.harness.ccm.remote.resources.TelemetryConstants.MODULE;
+import static io.harness.ccm.remote.resources.TelemetryConstants.MODULE_NAME;
+import static io.harness.ccm.remote.resources.TelemetryConstants.REPORT_CREATED;
+import static io.harness.ccm.remote.resources.TelemetryConstants.REPORT_TYPE;
+import static io.harness.outbox.TransactionOutboxModule.OUTBOX_TRANSACTION_TEMPLATE;
+import static io.harness.springdata.TransactionUtils.DEFAULT_TRANSACTION_RETRY_POLICY;
+import static io.harness.telemetry.Destination.AMPLITUDE;
 
 import io.harness.NGCommonEntityConstants;
 import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.ccm.audittrails.events.ReportCreateEvent;
+import io.harness.ccm.audittrails.events.ReportDeleteEvent;
+import io.harness.ccm.audittrails.events.ReportUpdateEvent;
 import io.harness.ccm.utils.LogAccountIdentifier;
 import io.harness.ccm.views.entities.CEReportSchedule;
 import io.harness.ccm.views.service.CEReportScheduleService;
@@ -20,11 +30,15 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.outbox.api.OutboxService;
 import io.harness.security.annotations.NextGenManagerAuth;
+import io.harness.telemetry.Category;
+import io.harness.telemetry.TelemetryReporter;
 
 import com.codahale.metrics.annotation.ExceptionMetered;
 import com.codahale.metrics.annotation.Timed;
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.v3.oas.annotations.Operation;
@@ -34,6 +48,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
@@ -48,7 +64,10 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import lombok.extern.slf4j.Slf4j;
+import net.jodah.failsafe.Failsafe;
+import net.jodah.failsafe.RetryPolicy;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.support.TransactionTemplate;
 
 @Api("perspectiveReport")
 @Path("perspectiveReport")
@@ -64,12 +83,21 @@ import org.springframework.stereotype.Service;
 @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "Internal server error",
     content = { @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ErrorDTO.class)) })
 public class PerspectiveReportResource {
+  private final TelemetryReporter telemetryReporter;
   private final CEReportScheduleService ceReportScheduleService;
   private static final String accountIdPathParam = "{" + NGCommonEntityConstants.ACCOUNT_KEY + "}";
 
+  private final RetryPolicy<Object> transactionRetryPolicy = DEFAULT_TRANSACTION_RETRY_POLICY;
+  private final TransactionTemplate transactionTemplate;
+  private final OutboxService outboxService;
+
   @Inject
-  public PerspectiveReportResource(CEReportScheduleService ceReportScheduleService) {
+  public PerspectiveReportResource(CEReportScheduleService ceReportScheduleService, TelemetryReporter telemetryReporter,
+      @Named(OUTBOX_TRANSACTION_TEMPLATE) TransactionTemplate transactionTemplate, OutboxService outboxService) {
     this.ceReportScheduleService = ceReportScheduleService;
+    this.telemetryReporter = telemetryReporter;
+    this.transactionTemplate = transactionTemplate;
+    this.outboxService = outboxService;
   }
 
   @GET
@@ -131,13 +159,23 @@ public class PerspectiveReportResource {
     final String deleteSuccessfulMsg = "Successfully deleted the record";
 
     if (perspectiveId != null) {
-      ceReportScheduleService.deleteAllByView(perspectiveId, accountId);
-
-      return ResponseDTO.newResponse(deleteSuccessfulMsg);
+      return ResponseDTO.newResponse(
+          Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
+            List<CEReportSchedule> ceList = ceReportScheduleService.getReportSettingByView(perspectiveId, accountId);
+            for (CEReportSchedule report : ceList) {
+              outboxService.save(new ReportDeleteEvent(accountId, report.toDTO()));
+            }
+            ceReportScheduleService.deleteAllByView(perspectiveId, accountId);
+            return deleteSuccessfulMsg;
+          })));
     } else if (reportId != null) {
+      CEReportSchedule report = ceReportScheduleService.get(reportId, accountId).toDTO();
       ceReportScheduleService.delete(reportId, accountId);
-
-      return ResponseDTO.newResponse(deleteSuccessfulMsg);
+      return ResponseDTO.newResponse(
+          Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
+            outboxService.save(new ReportDeleteEvent(accountId, report.toDTO()));
+            return deleteSuccessfulMsg;
+          })));
     }
 
     throw new InvalidRequestException("Either 'perspectiveId' or 'reportId' is needed");
@@ -166,7 +204,25 @@ public class PerspectiveReportResource {
     List<CEReportSchedule> ceList = new ArrayList<>();
     try {
       ceList.add(ceReportScheduleService.createReportSetting(accountId, schedule));
-      return ResponseDTO.newResponse(ceList);
+      HashMap<String, Object> properties = new HashMap<>();
+      properties.put(MODULE, MODULE_NAME);
+      String cronValue[] = schedule.getUserCron().split(" ");
+      String reportType = "Monthly";
+      if (!cronValue[4].equals("*")) {
+        reportType = "Yearly";
+      } else if (cronValue[3].equals("?")) {
+        reportType = "Weekly";
+      } else if (cronValue[3].equals("*")) {
+        reportType = "Daily";
+      }
+      properties.put(REPORT_TYPE, reportType);
+      telemetryReporter.sendTrackEvent(
+          REPORT_CREATED, null, accountId, properties, Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL);
+      return ResponseDTO.newResponse(
+          Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
+            outboxService.save(new ReportCreateEvent(accountId, schedule.toDTO()));
+            return ceList;
+          })));
     } catch (IllegalArgumentException e) {
       log.error("ERROR", e);
 
@@ -192,7 +248,14 @@ public class PerspectiveReportResource {
       @NotNull @Valid @RequestBody(
           required = true, description = "CEReportSchedule object to be updated") CEReportSchedule schedule) {
     try {
-      return ResponseDTO.newResponse(ceReportScheduleService.update(accountId, schedule));
+      CEReportSchedule oldReport = ceReportScheduleService.get(schedule.getUuid(), accountId);
+      List<CEReportSchedule> reports = ceReportScheduleService.update(accountId, schedule);
+      CEReportSchedule newReport = ceReportScheduleService.get(schedule.getUuid(), accountId);
+      return ResponseDTO.newResponse(
+          Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
+            outboxService.save(new ReportUpdateEvent(accountId, newReport.toDTO(), oldReport.toDTO()));
+            return reports;
+          })));
     } catch (IllegalArgumentException e) {
       log.warn(String.valueOf(e));
 

@@ -122,7 +122,6 @@ import software.wings.service.intfc.template.TemplateService;
 import software.wings.service.intfc.yaml.YamlPushService;
 import software.wings.settings.SettingValue;
 import software.wings.settings.SettingVariableTypes;
-import software.wings.stencils.DataProvider;
 import software.wings.utils.ArtifactType;
 import software.wings.utils.RepositoryFormat;
 import software.wings.utils.RepositoryType;
@@ -162,7 +161,7 @@ import ru.vyarus.guice.validator.group.annotation.ValidationGroups;
 @ValidateOnExecution
 @Slf4j
 @OwnedBy(CDC)
-public class ArtifactStreamServiceImpl implements ArtifactStreamService, DataProvider {
+public class ArtifactStreamServiceImpl implements ArtifactStreamService {
   private static final Integer REFERENCED_ENTITIES_TO_SHOW = 10;
   public static final String ARTIFACT_STREAM_DEBUG_LOG = "ARTIFACT_STREAM_DEBUG_LOG ";
 
@@ -801,7 +800,7 @@ public class ArtifactStreamServiceImpl implements ArtifactStreamService, DataPro
       deletePerpetualTask(artifactStream);
     } else {
       if (shouldDeleteArtifactsOnSourceChanged(existingArtifactStream, finalArtifactStream)
-          || shouldDeleteArtifactsOnServerChanged(existingArtifactStream)) {
+          || shouldDeleteArtifactsOnServerChanged(existingArtifactStream, finalArtifactStream)) {
         deleteArtifacts(accountId, finalArtifactStream);
       } else {
         resetPerpetualTask(finalArtifactStream);
@@ -1115,10 +1114,11 @@ public class ArtifactStreamServiceImpl implements ArtifactStreamService, DataPro
     }
   }
 
-  private boolean shouldDeleteArtifactsOnServerChanged(ArtifactStream oldArtifactStream) {
+  private boolean shouldDeleteArtifactsOnServerChanged(
+      ArtifactStream oldArtifactStream, ArtifactStream updatedArtifactStream) {
     ArtifactStreamType artifactStreamType = ArtifactStreamType.valueOf(oldArtifactStream.getArtifactStreamType());
     if (artifactStreamType != CUSTOM) {
-      return oldArtifactStream.artifactServerChanged(oldArtifactStream);
+      return oldArtifactStream.artifactServerChanged(updatedArtifactStream);
     }
     return false;
   }
@@ -1349,6 +1349,21 @@ public class ArtifactStreamServiceImpl implements ArtifactStreamService, DataPro
   }
 
   @Override
+  public List<ArtifactStream> getArtifactStreamsForService(String appId, String serviceId, List<String> projections) {
+    Query<ArtifactStream> query = wingsPersistence.createQuery(ArtifactStream.class)
+                                      .filter(ArtifactStreamKeys.appId, appId)
+                                      .filter(ArtifactStreamKeys.serviceId, serviceId);
+
+    if (isNotEmpty(projections)) {
+      for (String projectionKey : projections) {
+        query.project(projectionKey, true);
+      }
+    }
+
+    return query.asList();
+  }
+
+  @Override
   public Map<String, String> fetchArtifactSourceProperties(String accountId, String artifactStreamId) {
     ArtifactStream artifactStream = wingsPersistence.get(ArtifactStream.class, artifactStreamId);
     Map<String, String> artifactSourceProperties = new HashMap<>();
@@ -1483,22 +1498,6 @@ public class ArtifactStreamServiceImpl implements ArtifactStreamService, DataPro
           pruneArtifactStream(artifactStream);
           auditServiceHelper.reportDeleteForAuditing(appId, artifactStream);
         });
-  }
-
-  @Override
-  public Map<String, String> getData(String appId, Map<String, String> params) {
-    if (appId == null || GLOBAL_APP_ID.equals(appId)) {
-      return new HashMap<>();
-    }
-
-    List<ArtifactStream> artifactStreams = listByAppId(appId);
-    if (isEmpty(artifactStreams)) {
-      return new HashMap<>();
-    }
-
-    Map<String, String> data = new HashMap<>();
-    artifactStreams.forEach(artifactStream -> data.put(artifactStream.getUuid(), artifactStream.getSourceName()));
-    return data;
   }
 
   @Override
@@ -1754,6 +1753,7 @@ public class ArtifactStreamServiceImpl implements ArtifactStreamService, DataPro
         .uuid(artifact.getUuid())
         .uiDisplayName(artifact.getUiDisplayName())
         .buildNo(artifact.getBuildNo())
+        .artifactStreamId(artifact.getArtifactStreamId())
         .build();
   }
 }

@@ -15,9 +15,11 @@ import io.harness.persistence.UserProvider;
 
 import software.wings.beans.User;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
 @OwnedBy(PL)
+@Slf4j
 public class ThreadLocalUserProvider implements UserProvider {
   public static EmbeddedUser populateEmbeddedUser(User user) {
     EmbeddedUser embeddedUser = EmbeddedUser.builder()

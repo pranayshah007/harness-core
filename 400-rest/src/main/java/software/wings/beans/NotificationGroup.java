@@ -11,7 +11,6 @@ import io.harness.annotation.HarnessEntity;
 import io.harness.beans.EmbeddedUser;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.MongoIndex;
-import io.harness.notifications.NotificationReceiverInfo;
 import io.harness.persistence.AccountAccess;
 import io.harness.persistence.NameAccess;
 

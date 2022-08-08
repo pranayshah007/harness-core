@@ -1,0 +1,85 @@
+{
+  "data" : {
+    "pairs" : [ {
+      "request" : {
+        "path" : [ {
+          "matcher" : "exact",
+          "value" : "/v3/projects/chi-play/timeSeries"
+        } ],
+        "method" : [ {
+          "matcher" : "exact",
+          "value" : "GET"
+        } ],
+        "destination" : [ {
+          "matcher" : "exact",
+          "value" : "monitoring.googleapis.com"
+        } ],
+        "scheme" : [ {
+          "matcher" : "exact",
+          "value" : "https"
+        } ],
+        "query" : {
+          "aggregation.alignmentPeriod" : [ {
+            "matcher" : "exact",
+            "value" : "60s"
+          } ],
+          "aggregation.crossSeriesReducer" : [ {
+            "matcher" : "exact",
+            "value" : "REDUCE_MEAN"
+          } ],
+          "aggregation.groupByFields" : [ {
+            "matcher" : "exact",
+            "value" : "resource.label.pod_name"
+          } ],
+          "aggregation.perSeriesAligner" : [ {
+            "matcher" : "exact",
+            "value" : "ALIGN_MEAN"
+          } ],
+          "filter" : [ {
+            "matcher" : "exact",
+            "value" : "metric.type=\"kubernetes.io/container/cpu/limit_utilization\" resource.label.pod_name=\"123\" resource.type=\"k8s_container\""
+          } ],
+          "interval.endTime" : [ {
+            "matcher" : "exact",
+            "value" : "2022-01-23T19:29:17.038Z"
+          } ],
+          "interval.startTime" : [ {
+            "matcher" : "exact",
+            "value" : "2022-01-23T19:28:17.038Z"
+          } ]
+        },
+        "body" : [ {
+          "matcher" : "exact",
+          "value" : ""
+        } ]
+      },
+      "response" : {
+        "status" : 200,
+        "body" : "H4sIAAAAAAAC/6vmUlBQKs3LLFGyUlAyVOKq5QIAuxaBvBIAAAA=",
+        "encodedBody" : true,
+        "templated" : false,
+        "headers" : {
+          "Alt-Svc" : [ "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000,h3-Q050=\":443\"; ma=2592000,h3-Q046=\":443\"; ma=2592000,h3-Q043=\":443\"; ma=2592000,quic=\":443\"; ma=2592000; v=\"46,43\"" ],
+          "Cache-Control" : [ "private" ],
+          "Content-Encoding" : [ "gzip" ],
+          "Content-Type" : [ "application/json; charset=UTF-8" ],
+          "Date" : [ "Mon, 04 Jul 2022 06:04:22 GMT" ],
+          "Hoverfly" : [ "Was-Here" ],
+          "Server" : [ "ESF" ],
+          "Vary" : [ "Origin", "X-Origin", "Referer" ],
+          "X-Content-Type-Options" : [ "nosniff" ],
+          "X-Frame-Options" : [ "SAMEORIGIN" ],
+          "X-Xss-Protection" : [ "0" ]
+        }
+      }
+    } ],
+    "globalActions" : {
+      "delays" : [ ]
+    }
+  },
+  "meta" : {
+    "schemaVersion" : "v5",
+    "hoverflyVersion" : "v1.1.5",
+    "timeExported" : "2022-07-04T06:04:22Z"
+  }
+}

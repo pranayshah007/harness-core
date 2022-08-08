@@ -1,0 +1,19 @@
+{
+  "identifier": "Build_and_Push_to_ECR",
+  "type": "BuildAndPushECR",
+  "name": "Build and Push to ECR",
+  "spec": {
+    "connectorRef": "AWSConnector",
+    "region": "ap-south-1",
+    "account": "1233444545",
+    "imageName": "test-repo",
+    "tags": [
+      "5"
+    ],
+    "baseImageConnectorRefs": [
+      "docker"
+    ],
+    "__uuid": "Ql8i3tFNQeaOYeK1t7M2gQ"
+  },
+  "__uuid": "fPwhbrACS72bOVExQfurWg"
+}

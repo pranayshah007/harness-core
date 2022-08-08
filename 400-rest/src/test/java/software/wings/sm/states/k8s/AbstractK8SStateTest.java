@@ -78,9 +78,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.Assertions.fail;
 import static org.joor.Reflect.on;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyMap;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.CALLS_REAL_METHODS;
 import static org.mockito.Mockito.doReturn;
@@ -106,7 +106,6 @@ import io.harness.delegate.task.helm.HelmChartInfo;
 import io.harness.delegate.task.manifests.request.CustomManifestValuesFetchParams;
 import io.harness.delegate.task.manifests.response.CustomManifestValuesFetchResponse;
 import io.harness.deployment.InstanceDetails;
-import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.expression.VariableResolverTracker;
@@ -122,6 +121,7 @@ import io.harness.serializer.KryoSerializer;
 import io.harness.tasks.ResponseData;
 
 import software.wings.WingsBaseTest;
+import software.wings.api.ContextElementParamMapperFactory;
 import software.wings.api.DeploymentType;
 import software.wings.api.InstanceElement;
 import software.wings.api.InstanceElementListParam;
@@ -204,6 +204,7 @@ import software.wings.sm.ExecutionResponse;
 import software.wings.sm.InstanceStatusSummary;
 import software.wings.sm.StateExecutionInstance;
 import software.wings.sm.WorkflowStandardParams;
+import software.wings.sm.WorkflowStandardParamsExtensionService;
 import software.wings.utils.ApplicationManifestUtils;
 
 import com.google.common.collect.ImmutableMap;
@@ -259,7 +260,6 @@ public class AbstractK8SStateTest extends WingsBaseTest {
   @Mock private ContainerDeploymentManagerHelper containerDeploymentManagerHelper;
   @Mock private InstanceService instanceService;
   @Mock private GitConfigHelperService gitConfigHelperService;
-  @Mock private K8sStateHelper mockK8sStateHelper;
   @Mock private AwsCommandHelper awsCommandHelper;
   @Mock private StateExecutionService stateExecutionService;
 
@@ -306,8 +306,6 @@ public class AbstractK8SStateTest extends WingsBaseTest {
   @Before
   public void setup() {
     context = new ExecutionContextImpl(stateExecutionInstance);
-    on(workflowStandardParams).set("appService", appService);
-    on(workflowStandardParams).set("environmentService", environmentService);
     on(context).set("infrastructureMappingService", infrastructureMappingService);
     on(context).set("serviceResourceService", serviceResourceService);
     on(context).set("artifactService", artifactService);
@@ -317,16 +315,30 @@ public class AbstractK8SStateTest extends WingsBaseTest {
     on(context).set("stateExecutionInstance", stateExecutionInstance);
     on(context).set("sweepingOutputService", sweepingOutputService);
 
+    WorkflowStandardParamsExtensionService workflowStandardParamsExtensionService =
+        new WorkflowStandardParamsExtensionService(
+            appService, accountService, artifactService, environmentService, null, null);
+    on(context).set("workflowStandardParamsExtensionService", workflowStandardParamsExtensionService);
+    on(k8sStateHelper).set("workflowStandardParamsExtensionService", workflowStandardParamsExtensionService);
+    on(abstractK8SState).set("workflowStandardParamsExtensionService", workflowStandardParamsExtensionService);
+    on(k8sRollingDeploy).set("workflowStandardParamsExtensionService", workflowStandardParamsExtensionService);
+    on(k8sCanaryDeploy).set("workflowStandardParamsExtensionService", workflowStandardParamsExtensionService);
+
     on(abstractK8SState).set("kryoSerializer", kryoSerializer);
-    on(abstractK8SState).set("k8sStateHelper", k8sStateHelper);
     on(abstractK8SState).set("sweepingOutputService", sweepingOutputService);
     on(abstractK8SState).set("applicationManifestService", applicationManifestService);
+    on(abstractK8SState).set("k8sStateHelper", k8sStateHelper);
+    on(k8sRollingDeploy).set("k8sStateHelper", k8sStateHelper);
+    on(k8sCanaryDeploy).set("k8sStateHelper", k8sStateHelper);
 
     on(k8sStateHelper).set("sweepingOutputService", mockedSweepingOutputService);
     on(k8sStateHelper).set("infrastructureMappingService", infrastructureMappingService);
 
-    on(workflowStandardParams).set("subdomainUrlHelper", subdomainUrlHelper);
     when(subdomainUrlHelper.getPortalBaseUrl(any())).thenReturn("baseUrl");
+    ContextElementParamMapperFactory contextElementParamMapperFactory =
+        new ContextElementParamMapperFactory(subdomainUrlHelper, null, artifactService, null,
+            applicationManifestService, featureFlagService, null, workflowStandardParamsExtensionService);
+    on(context).set("contextElementParamMapperFactory", contextElementParamMapperFactory);
 
     when(accountService.getAccountWithDefaults(ACCOUNT_ID))
         .thenReturn(Account.Builder.anAccount().withUuid(ACCOUNT_ID).withAccountName(ACCOUNT_NAME).build());
@@ -335,7 +347,8 @@ public class AbstractK8SStateTest extends WingsBaseTest {
     when(appService.get(any())).thenReturn(application);
     when(environmentService.get(APP_ID, ENV_ID, false))
         .thenReturn(anEnvironment().appId(APP_ID).environmentType(EnvironmentType.PROD).uuid(ENV_ID).build());
-    when(evaluator.substitute(anyString(), anyMap(), any(VariableResolverTracker.class), anyString()))
+    when(evaluator.substitute(
+             nullable(String.class), anyMap(), any(VariableResolverTracker.class), nullable(String.class)))
         .thenAnswer(i -> i.getArguments()[0]);
     doReturn(K8sClusterConfig.builder().build())
         .when(containerDeploymentManagerHelper)
@@ -401,8 +414,8 @@ public class AbstractK8SStateTest extends WingsBaseTest {
       }
     });
 
-    doReturn(GitConfig.builder().build()).when(settingsService).fetchGitConfigFromConnectorId(anyString());
-    doReturn(emptyList()).when(secretManager).getEncryptionDetails(any(), anyString(), any());
+    doReturn(GitConfig.builder().build()).when(settingsService).fetchGitConfigFromConnectorId(nullable(String.class));
+    doReturn(emptyList()).when(secretManager).getEncryptionDetails(any(), nullable(String.class), any());
 
     K8sDelegateManifestConfig delegateManifestConfig =
         abstractK8SState.createDelegateManifestConfig(context, appManifest);
@@ -533,7 +546,7 @@ public class AbstractK8SStateTest extends WingsBaseTest {
   @Owner(developers = YOGESH)
   @Category(UnitTests.class)
   public void testRenderForKustomizeInDelegateManifestConfig() {
-    when(settingsService.fetchGitConfigFromConnectorId(anyString())).thenReturn(new GitConfig());
+    when(settingsService.fetchGitConfigFromConnectorId(nullable(String.class))).thenReturn(new GitConfig());
     when(gitFileConfigHelperService.renderGitFileConfig(any(ExecutionContext.class), any(GitFileConfig.class)))
         .thenReturn(new GitFileConfig());
 
@@ -577,11 +590,13 @@ public class AbstractK8SStateTest extends WingsBaseTest {
     infrastructureMapping.setComputeProviderSettingId(SETTING_ID);
 
     K8sTaskExecutionResponse response = K8sTaskExecutionResponse.builder().build();
-    when(infrastructureMappingService.get(anyString(), anyString())).thenReturn(infrastructureMapping);
+    when(infrastructureMappingService.get(nullable(String.class), nullable(String.class)))
+        .thenReturn(infrastructureMapping);
     when(delegateService.executeTask(any())).thenReturn(response);
     when(serviceTemplateHelper.fetchServiceTemplateId(any())).thenReturn(SETTING_ID);
-    when(evaluator.substitute(anyString(), any(), any(), anyString())).thenReturn("default");
-    when(serviceResourceService.getHelmVersionWithDefault(anyString(), anyString())).thenReturn(HelmVersion.V2);
+    when(evaluator.substitute(nullable(String.class), any(), any(), nullable(String.class))).thenReturn("default");
+    when(serviceResourceService.getHelmVersionWithDefault(nullable(String.class), nullable(String.class)))
+        .thenReturn(HelmVersion.V2);
     ApplicationManifest applicationManifest =
         ApplicationManifest.builder().skipVersioningForAllK8sObjects(true).storeType(Local).build();
     Map<K8sValuesLocation, ApplicationManifest> applicationManifestMap = new HashMap<>();
@@ -623,9 +638,11 @@ public class AbstractK8SStateTest extends WingsBaseTest {
                                             .build();
     when(delegateService.executeTask(any())).thenReturn(response);
     when(serviceTemplateHelper.fetchServiceTemplateId(any())).thenReturn(SETTING_ID);
-    when(infrastructureMappingService.get(anyString(), anyString())).thenReturn(infrastructureMapping);
-    when(evaluator.substitute(anyString(), any(), any(), anyString())).thenReturn("default");
-    when(serviceResourceService.getHelmVersionWithDefault(anyString(), anyString())).thenReturn(HelmVersion.V2);
+    when(infrastructureMappingService.get(nullable(String.class), nullable(String.class)))
+        .thenReturn(infrastructureMapping);
+    when(evaluator.substitute(nullable(String.class), any(), any(), nullable(String.class))).thenReturn("default");
+    when(serviceResourceService.getHelmVersionWithDefault(nullable(String.class), nullable(String.class)))
+        .thenReturn(HelmVersion.V2);
     doReturn(K8sClusterConfig.builder().build())
         .when(containerDeploymentManagerHelper)
         .getK8sClusterConfig(any(ContainerInfrastructureMapping.class), eq(context));
@@ -989,12 +1006,8 @@ public class AbstractK8SStateTest extends WingsBaseTest {
     assertThat(releaseName).isEqualTo("64317ae8-c2a8-3fd8-af26-68f2e717431a");
 
     infrastructureMapping.setReleaseName("-release-name");
-    try {
-      abstractK8SState.fetchReleaseName(context, infrastructureMapping);
-      fail("Should not reach here");
-    } catch (Exception ex) {
-      assertThatExceptionOfType(InvalidArgumentsException.class);
-    }
+    releaseName = abstractK8SState.fetchReleaseName(context, infrastructureMapping);
+    assertThat(releaseName).isEqualTo("-release-name");
   }
 
   @Test
@@ -1744,14 +1757,16 @@ public class AbstractK8SStateTest extends WingsBaseTest {
     abstractK8SState.storePreviousHelmDeploymentInfo(context, applicationManifest);
     verify(mockedSweepingOutputService, never()).findSweepingOutput(any(SweepingOutputInquiry.class));
     verify(mockedSweepingOutputService, never()).ensure(any(SweepingOutputInstance.class));
-    verify(instanceService, never()).getInstancesForAppAndInframapping(anyString(), anyString());
+    verify(instanceService, never()).getInstancesForAppAndInframapping(nullable(String.class), nullable(String.class));
   }
 
   private void testStorePreviousHelmDeploymentInfoForHelmDeployment(
       StoreType storeType, List<Instance> instances, HelmChartInfo expectedChartInfo) {
     reset(mockedSweepingOutputService);
     ApplicationManifest applicationManifest = ApplicationManifest.builder().storeType(storeType).build();
-    doReturn(instances).when(instanceService).getInstancesForAppAndInframapping(anyString(), anyString());
+    doReturn(instances)
+        .when(instanceService)
+        .getInstancesForAppAndInframapping(nullable(String.class), nullable(String.class));
     doReturn(null).when(mockedSweepingOutputService).findSweepingOutput(any(SweepingOutputInquiry.class));
 
     abstractK8SState.storePreviousHelmDeploymentInfo(context, applicationManifest);
@@ -1772,7 +1787,7 @@ public class AbstractK8SStateTest extends WingsBaseTest {
 
     abstractK8SState.storePreviousHelmDeploymentInfo(context, applicationManifest);
     verify(mockedSweepingOutputService, times(1)).findSweepingOutput(any(SweepingOutputInquiry.class));
-    verify(instanceService, never()).getInstancesForAppAndInframapping(anyString(), anyString());
+    verify(instanceService, never()).getInstancesForAppAndInframapping(nullable(String.class), nullable(String.class));
     verify(mockedSweepingOutputService, never()).ensure(any(SweepingOutputInstance.class));
   }
 
@@ -1839,10 +1854,12 @@ public class AbstractK8SStateTest extends WingsBaseTest {
     when(executionContext.getContextElement(ContextElementType.STANDARD)).thenReturn(workflowStandardParams);
     when(executionContext.getContextElement(ContextElementType.PARAM, PHASE_PARAM)).thenReturn(phaseElement);
     when(((DeploymentExecutionContext) executionContext).getArtifactForService(any())).thenReturn(new Artifact());
-    when(infrastructureMappingService.get(anyString(), anyString())).thenReturn(infrastructureMapping);
+    when(infrastructureMappingService.get(nullable(String.class), nullable(String.class)))
+        .thenReturn(infrastructureMapping);
     when(serviceTemplateHelper.fetchServiceTemplateId(any())).thenReturn(SETTING_ID);
-    when(evaluator.substitute(anyString(), any(), any(), anyString())).thenReturn("default");
-    when(serviceResourceService.getHelmVersionWithDefault(anyString(), anyString())).thenReturn(HelmVersion.V2);
+    when(evaluator.substitute(nullable(String.class), any(), any(), nullable(String.class))).thenReturn("default");
+    when(serviceResourceService.getHelmVersionWithDefault(nullable(String.class), nullable(String.class)))
+        .thenReturn(HelmVersion.V2);
     doReturn(K8sClusterConfig.builder().namespace("default").build())
         .when(containerDeploymentManagerHelper)
         .getK8sClusterConfig(any(ContainerInfrastructureMapping.class), eq(executionContext));

@@ -136,14 +136,12 @@ public class StackdriverLogHealthSourceSpecTransformerTest extends CvNextGenTest
                                            .serviceInstanceIdentifier(query.getServiceInstanceIdentifier())
                                            .queryName(query.getName())
                                            .query(query.getQuery())
-                                           .envIdentifier(envIdentifier)
                                            .connectorIdentifier(connectorIdentifier)
                                            .productName(productName)
                                            .projectIdentifier(projectIdentifier)
                                            .accountId(accountId)
                                            .identifier(identifier)
                                            .monitoringSourceName(monitoringSourceName)
-                                           .serviceIdentifier(serviceIdentifier)
                                            .build()));
     return stackdriverLogCVConfigs;
   }

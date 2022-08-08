@@ -30,7 +30,6 @@ import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyList;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doCallRealMethod;
 import static org.mockito.Mockito.doNothing;
@@ -52,7 +51,7 @@ import io.harness.rule.Owner;
 
 import software.wings.beans.AwsConfig;
 import software.wings.beans.SettingAttribute;
-import software.wings.beans.artifact.Artifact.ArtifactMetadataKeys;
+import software.wings.beans.artifact.ArtifactMetadataKeys;
 import software.wings.beans.artifact.ArtifactStreamAttributes;
 import software.wings.beans.artifact.ArtifactStreamType;
 import software.wings.beans.command.ExecutionLogCallback;
@@ -219,13 +218,13 @@ public class AwsLambdaHelperServiceDelegateImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testExecuteFunction() {
     AWSLambdaClient mockClient = mock(AWSLambdaClient.class);
-    doReturn(mockClient).when(awsLambdaHelperServiceDelegate).getAmazonLambdaClient(anyString(), any());
+    doReturn(mockClient).when(awsLambdaHelperServiceDelegate).getAmazonLambdaClient(any(), any());
     doReturn(null).when(mockEncryptionService).decrypt(any(), anyList(), eq(false));
     doReturn(new InvokeResult().withStatusCode(1).withFunctionError("err").withLogResult("log").withPayload(
                  StandardCharsets.UTF_8.encode("payload")))
         .when(mockClient)
         .invoke(any());
-    doNothing().when(mockTracker).trackLambdaCall(anyString());
+    doNothing().when(mockTracker).trackLambdaCall(any());
     awsLambdaHelperServiceDelegate.executeFunction(AwsLambdaExecuteFunctionRequest.builder()
                                                        .awsConfig(AwsConfig.builder().build())
                                                        .encryptionDetails(emptyList())
@@ -242,10 +241,10 @@ public class AwsLambdaHelperServiceDelegateImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testExecuteWf_FxDoesNotExistS3() {
     AWSLambdaClient mockClient = mock(AWSLambdaClient.class);
-    doReturn(mockClient).when(awsLambdaHelperServiceDelegate).getAmazonLambdaClient(anyString(), any());
+    doReturn(mockClient).when(awsLambdaHelperServiceDelegate).getAmazonLambdaClient(any(), any());
     doReturn(null).when(mockEncryptionService).decrypt(any(), anyList(), eq(false));
     ExecutionLogCallback mockCallBack = mock(ExecutionLogCallback.class);
-    doNothing().when(mockCallBack).saveExecutionLog(anyString(), any());
+    doNothing().when(mockCallBack).saveExecutionLog(any(), any());
     doReturn(null).when(mockClient).getFunction(any());
     doReturn(new CreateFunctionResult()
                  .withCodeSha256("sha256")
@@ -279,7 +278,7 @@ public class AwsLambdaHelperServiceDelegateImplTest extends CategoryTest {
             .functionParams(singletonList(AwsLambdaFunctionParams.builder().functionName("fxName").build()))
             .build();
 
-    doNothing().when(mockTracker).trackLambdaCall(anyString());
+    doNothing().when(mockTracker).trackLambdaCall(any());
     awsLambdaHelperServiceDelegate.executeWf(request, mockCallBack);
     verify(mockClient).createFunction(any());
     verify(mockClient).createAlias(any());
@@ -291,10 +290,10 @@ public class AwsLambdaHelperServiceDelegateImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testExecuteWf_FxDoesNotExistNonS3() {
     AWSLambdaClient mockClient = mock(AWSLambdaClient.class);
-    doReturn(mockClient).when(awsLambdaHelperServiceDelegate).getAmazonLambdaClient(anyString(), any());
+    doReturn(mockClient).when(awsLambdaHelperServiceDelegate).getAmazonLambdaClient(any(), any());
     doReturn(null).when(mockEncryptionService).decrypt(any(), anyList(), eq(false));
     ExecutionLogCallback mockCallBack = mock(ExecutionLogCallback.class);
-    doNothing().when(mockCallBack).saveExecutionLog(anyString(), any());
+    doNothing().when(mockCallBack).saveExecutionLog(any(), any());
     doReturn(null).when(mockClient).getFunction(any());
     doReturn(new CreateFunctionResult()
                  .withCodeSha256("sha256")
@@ -331,7 +330,7 @@ public class AwsLambdaHelperServiceDelegateImplTest extends CategoryTest {
     doReturn(mockInputStream)
         .when(mockDelegateFileManager)
         .downloadArtifactAtRuntime(any(), any(), any(), any(), any(), any());
-    doNothing().when(mockTracker).trackLambdaCall(anyString());
+    doNothing().when(mockTracker).trackLambdaCall(any());
     awsLambdaHelperServiceDelegate.executeWf(request, mockCallBack);
     verify(mockClient).createFunction(any());
     verify(mockClient).createAlias(any());
@@ -343,10 +342,10 @@ public class AwsLambdaHelperServiceDelegateImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testExecuteWf_FxExistsS3() {
     AWSLambdaClient mockClient = mock(AWSLambdaClient.class);
-    doReturn(mockClient).when(awsLambdaHelperServiceDelegate).getAmazonLambdaClient(anyString(), any());
+    doReturn(mockClient).when(awsLambdaHelperServiceDelegate).getAmazonLambdaClient(any(), any());
     doReturn(null).when(mockEncryptionService).decrypt(any(), anyList(), eq(false));
     ExecutionLogCallback mockCallBack = mock(ExecutionLogCallback.class);
-    doNothing().when(mockCallBack).saveExecutionLog(anyString(), any());
+    doNothing().when(mockCallBack).saveExecutionLog(any(), any());
     doReturn(new GetFunctionResult().withConfiguration(new FunctionConfiguration().withCodeSha256("sha256_old")))
         .when(mockClient)
         .getFunction(any());
@@ -386,7 +385,7 @@ public class AwsLambdaHelperServiceDelegateImplTest extends CategoryTest {
                                             .functionParams(singletonList(AwsLambdaFunctionParams.builder().build()))
                                             .build();
 
-    doNothing().when(mockTracker).trackLambdaCall(anyString());
+    doNothing().when(mockTracker).trackLambdaCall(any());
     awsLambdaHelperServiceDelegate.executeWf(request, mockCallBack);
     verify(mockClient, times(2)).updateFunctionCode(any());
     verify(mockClient).updateFunctionConfiguration(any());
@@ -400,10 +399,10 @@ public class AwsLambdaHelperServiceDelegateImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testExecuteWf_FxExistsNonS3() {
     AWSLambdaClient mockClient = mock(AWSLambdaClient.class);
-    doReturn(mockClient).when(awsLambdaHelperServiceDelegate).getAmazonLambdaClient(anyString(), any());
+    doReturn(mockClient).when(awsLambdaHelperServiceDelegate).getAmazonLambdaClient(any(), any());
     doReturn(null).when(mockEncryptionService).decrypt(any(), anyList(), eq(false));
     ExecutionLogCallback mockCallBack = mock(ExecutionLogCallback.class);
-    doNothing().when(mockCallBack).saveExecutionLog(anyString(), any());
+    doNothing().when(mockCallBack).saveExecutionLog(any(), any());
     doReturn(new GetFunctionResult().withConfiguration(new FunctionConfiguration().withCodeSha256("sha256_old")))
         .when(mockClient)
         .getFunction(any());
@@ -447,7 +446,7 @@ public class AwsLambdaHelperServiceDelegateImplTest extends CategoryTest {
     doReturn(mockInputStream)
         .when(mockDelegateFileManager)
         .downloadArtifactAtRuntime(any(), any(), any(), any(), any(), any());
-    doNothing().when(mockTracker).trackLambdaCall(anyString());
+    doNothing().when(mockTracker).trackLambdaCall(any());
     awsLambdaHelperServiceDelegate.executeWf(request, mockCallBack);
     verify(mockClient, times(2)).updateFunctionCode(any());
     verify(mockClient).updateFunctionConfiguration(any());
@@ -468,8 +467,8 @@ public class AwsLambdaHelperServiceDelegateImplTest extends CategoryTest {
             .withTags(initialTags);
     Map<String, String> finalTags = ImmutableMap.of("k2", "v2");
     ExecutionLogCallback mockCallBack = mock(ExecutionLogCallback.class);
-    doNothing().when(mockCallBack).saveExecutionLog(anyString());
-    doNothing().when(mockTracker).trackLambdaCall(anyString());
+    doNothing().when(mockCallBack).saveExecutionLog(any());
+    doNothing().when(mockTracker).trackLambdaCall(any());
     awsLambdaHelperServiceDelegate.tagExistingFunction(getFunctionResult, finalTags, mockCallBack, mockClient);
     verify(mockClient).untagResource(any());
     verify(mockClient).tagResource(any());
@@ -498,9 +497,9 @@ public class AwsLambdaHelperServiceDelegateImplTest extends CategoryTest {
         new ListAliasesResult().withAliases(new AliasConfiguration().withName("alias"));
     doReturn(listAliasesResult).when(mockClient).listAliases(any(ListAliasesRequest.class));
 
-    doReturn(mockClient).when(awsLambdaHelperServiceDelegate).getAmazonLambdaClient(anyString(), any());
+    doReturn(mockClient).when(awsLambdaHelperServiceDelegate).getAmazonLambdaClient(any(), any());
     final AwsLambdaDetailsRequest awsLambdaDetailsRequest = AwsLambdaDetailsRequest.builder().loadAliases(true).build();
-    doNothing().when(mockTracker).trackLambdaCall(anyString());
+    doNothing().when(mockTracker).trackLambdaCall(any());
     final AwsLambdaDetailsResponse functionDetails =
         awsLambdaHelperServiceDelegate.getFunctionDetails(awsLambdaDetailsRequest, false);
     assertThat(functionDetails.getLambdaDetails().getLastModified()).isNotNull();
@@ -515,7 +514,7 @@ public class AwsLambdaHelperServiceDelegateImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void test_getFunctionDetails_error() {
     AWSLambdaClient mockClient = mock(AWSLambdaClient.class);
-    doReturn(mockClient).when(awsLambdaHelperServiceDelegate).getAmazonLambdaClient(anyString(), any());
+    doReturn(mockClient).when(awsLambdaHelperServiceDelegate).getAmazonLambdaClient(any(), any());
     doCallRealMethod().when(awsEcrApiHelperServiceDelegateBase).handleAmazonServiceException(any());
     doReturn(null).when(mockEncryptionService).decrypt(any(), anyList(), eq(false));
     doThrow(new AmazonServiceException("service exception"))
@@ -534,7 +533,7 @@ public class AwsLambdaHelperServiceDelegateImplTest extends CategoryTest {
     doThrow(new ResourceNotFoundException("resource not found"))
         .when(mockClient)
         .getFunction(any(GetFunctionRequest.class));
-    doNothing().when(mockTracker).trackLambdaCall(anyString());
+    doNothing().when(mockTracker).trackLambdaCall(any());
     final AwsLambdaDetailsResponse functionDetails =
         awsLambdaHelperServiceDelegate.getFunctionDetails(awsLambdaDetailsRequest, false);
     assertThat(functionDetails.getLambdaDetails()).isNull();

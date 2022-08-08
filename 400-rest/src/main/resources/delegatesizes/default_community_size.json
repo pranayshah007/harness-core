@@ -2,5 +2,5 @@
   "label" : "Default Community Size",
   "taskLimit" : "50",
   "ram" : "768",
-  "cpu" : "0.5"
+  "cpu" : "1"
 }

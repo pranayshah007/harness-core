@@ -179,8 +179,7 @@ public class CustomLogDataCollectionTaskTest extends CategoryTest {
     callsList.forEach(call -> assertThat(call.request().url().toString().contains("apiKey=decryptedApiKey")));
 
     verify(logAnalysisStoreService, times(1))
-        .save(any(DelegateStateType.class), anyString(), anyString(), anyString(), anyString(), anyString(),
-            anyString(), anyString(), anyString(), any(List.class));
+        .save(any(DelegateStateType.class), any(), any(), any(), any(), any(), any(), any(), any(), any(List.class));
   }
 
   @Test
@@ -252,8 +251,7 @@ public class CustomLogDataCollectionTaskTest extends CategoryTest {
     });
 
     verify(logAnalysisStoreService, times(1))
-        .save(any(DelegateStateType.class), anyString(), anyString(), anyString(), anyString(), anyString(),
-            anyString(), anyString(), anyString(), any(List.class));
+        .save(any(DelegateStateType.class), any(), any(), any(), any(), any(), any(), any(), any(), any(List.class));
   }
 
   @Test
@@ -309,8 +307,7 @@ public class CustomLogDataCollectionTaskTest extends CategoryTest {
     callsList.forEach(call -> assertThat(call.request().url().toString().contains("apiKey=decryptedApiKey")));
 
     verify(logAnalysisStoreService, times(1))
-        .save(any(DelegateStateType.class), anyString(), anyString(), anyString(), anyString(), anyString(),
-            anyString(), anyString(), anyString(), any(List.class));
+        .save(any(DelegateStateType.class), any(), any(), any(), any(), any(), any(), any(), any(), any(List.class));
   }
 
   @Test
@@ -413,8 +410,8 @@ public class CustomLogDataCollectionTaskTest extends CategoryTest {
     Map<String, Map<String, CustomLogResponseMapper>> logDefinition = new HashMap<>();
     logDefinition.put(searchUrl, responseMappers);
     setup(logDefinition, new HashSet<>(Arrays.asList("test.hostname.2", "test.hostname.22", "test.hostname.12")));
-    when(logAnalysisStoreService.save(any(DelegateStateType.class), anyString(), anyString(), anyString(), anyString(),
-             anyString(), anyString(), anyString(), anyString(), any(List.class)))
+    when(logAnalysisStoreService.save(
+             any(DelegateStateType.class), any(), any(), any(), any(), any(), any(), any(), any(), any(List.class)))
         .thenThrow(new IOException("This is bad"))
         .thenReturn(true);
     when(requestExecutor.executeRequest(any(), any(), any())).thenReturn(textLoad);
@@ -436,7 +433,6 @@ public class CustomLogDataCollectionTaskTest extends CategoryTest {
     callsList.forEach(call -> assertThat(call.request().url().toString().contains("apiKey=decryptedApiKey")));
 
     verify(logAnalysisStoreService, times(2))
-        .save(any(DelegateStateType.class), anyString(), anyString(), anyString(), anyString(), anyString(),
-            anyString(), anyString(), anyString(), any(List.class));
+        .save(any(DelegateStateType.class), any(), any(), any(), any(), any(), any(), any(), any(), any(List.class));
   }
 }

@@ -84,11 +84,18 @@ public final class InstanceData implements PersistentEntity, UuidAware, CreatedA
                  .field(InstanceDataKeys.instanceState)
                  .build())
         .add(CompoundMongoIndex.builder()
-                 .name("accountId_instanceType_activeInstanceIterator_usageStartTime")
+                 .name("accountId_clusterId_instanceType_nodePoolName")
                  .field(InstanceDataKeys.accountId)
+                 .field(InstanceDataKeys.clusterId)
                  .field(InstanceDataKeys.instanceType)
+                 .field(InstanceDataKeys.NODE_POOL_NAME)
+                 .build())
+        .add(CompoundMongoIndex.builder()
+                 .name("accountId_activeInstanceIterator_usageStartTime_instanceType")
+                 .field(InstanceDataKeys.accountId)
                  .field(InstanceDataKeys.activeInstanceIterator)
                  .field(InstanceDataKeys.usageStartTime)
+                 .field(InstanceDataKeys.instanceType)
                  .build())
         .build();
   }
@@ -128,5 +135,6 @@ public final class InstanceData implements PersistentEntity, UuidAware, CreatedA
   public static final class InstanceDataKeys {
     private InstanceDataKeys() {}
     public static final String CLOUD_PROVIDER = "metaData.cloud_provider";
+    public static final String NODE_POOL_NAME = "metaData.node_pool_name";
   }
 }

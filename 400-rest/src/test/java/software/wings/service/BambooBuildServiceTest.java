@@ -11,7 +11,7 @@ import static io.harness.rule.OwnerRule.ANUBHAW;
 import static io.harness.rule.OwnerRule.SRINIVAS;
 
 import static software.wings.helpers.ext.jenkins.BuildDetails.Builder.aBuildDetails;
-import static software.wings.service.impl.artifact.ArtifactServiceImpl.ARTIFACT_RETENTION_SIZE;
+import static software.wings.service.intfc.BuildService.ARTIFACT_RETENTION_SIZE;
 import static software.wings.utils.WingsTestConstants.APP_ID;
 import static software.wings.utils.WingsTestConstants.ARTIFACT_PATH;
 import static software.wings.utils.WingsTestConstants.ARTIFACT_STREAM_ID;

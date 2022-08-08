@@ -108,7 +108,7 @@ public class HarnessKubernetesClientFactoryTest extends WingsBaseTest {
 
     harnessKubernetesClientFactory.newKubernetesClient(k8sClusterConfig);
     verify(kubernetesHelperService, times(1)).getKubernetesClient(kubernetesConfig);
-    verify(containerDeploymentDelegateHelper, times(1)).getKubernetesConfig(k8sClusterConfig, eq(anyBoolean()));
+    verify(containerDeploymentDelegateHelper, times(1)).getKubernetesConfig(eq(k8sClusterConfig), anyBoolean());
     assertThat(kubernetesConfig.getMasterUrl()).isEqualTo("https://int-capi-rancher.cncpl.us:443/k8s/clusters/c-pv9p9");
   }
 

@@ -15,4 +15,5 @@ public class DebeziumConstants {
   public static final int DEBEZIUM_TOPIC_SIZE = 10_000;
 
   public static final String DEBEZIUM_LOCK_PREFIX = "DEBEZIUM_LOCKER_";
+  public static final String DEBEZIUM_OFFSET_PREFIX = "DEBEZIUM_OFFSETS_";
 }

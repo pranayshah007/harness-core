@@ -18,7 +18,9 @@ extend type Query {
 
 input ExecutionFilter {
   execution: IdFilter
+  # application: IdFilter is deprecated please use applicationId: String instead.
   application: IdFilter
+  applicationId: String
   service: IdFilter
   cloudProvider: IdFilter
   environment: IdFilter
@@ -90,6 +92,7 @@ union Cause = ExecutedByUser | ExecutedAlongPipeline | ExecutedByTrigger | Execu
 
 interface Execution {
   id: String
+  executionUrl: String
   application: Application
   createdAt: DateTime
   startedAt: DateTime
@@ -129,6 +132,8 @@ type Manifest {
 type WorkflowExecution implements Execution {
   # Workflow Execution Id
   id: String
+
+  executionUrl: String
 
   application: Application
     @dataFetcher(name: application, useBatch: true, contextFieldArgsMap: "{ \"applicationId\": \"appId\"}")
@@ -171,6 +176,8 @@ type WorkflowExecution implements Execution {
 type PipelineExecution implements Execution {
   # Workflow Execution Id
   id: String
+
+  executionUrl: String
 
   application: Application
     @dataFetcher(name: application, useBatch: true, contextFieldArgsMap: "{ \"applicationId\": \"appId\"}")

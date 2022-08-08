@@ -1,0 +1,28 @@
+spec:
+  execution:
+    steps:
+      - step:
+          type: CustomApproval
+          name: Custom Approval
+          identifier: b4675e4d-6b2b-5a86-a5e2-a28f1b4ccd08
+          timeout: 1d
+          spec:
+            shell: Bash
+            retryInterval: 10s
+            scriptTimeout: 10m
+            source:
+              type: Inline
+              spec:
+                script: ""
+            environmentVariables: []
+            delegateSelectors: []
+            approvalCriteria:
+              type: KeyValues
+              spec:
+                matchAnyCondition: false
+                conditions: []
+            rejectionCriteria:
+              type: KeyValues
+              spec:
+                matchAnyCondition: false
+                conditions: []

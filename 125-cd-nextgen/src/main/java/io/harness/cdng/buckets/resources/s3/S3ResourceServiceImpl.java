@@ -10,20 +10,25 @@ package io.harness.cdng.buckets.resources.s3;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 
+import static software.wings.service.impl.aws.model.AwsConstants.AWS_DEFAULT_REGION;
+
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.common.resources.AwsResourceServiceHelper;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsS3BucketResponse;
 import io.harness.delegate.beans.connector.awsconnector.AwsTaskParams;
 import io.harness.delegate.beans.connector.awsconnector.AwsTaskType;
+import io.harness.delegate.beans.connector.awsconnector.S3BuildsResponse;
 import io.harness.exception.BucketServerException;
 import io.harness.ng.core.BaseNGAccess;
 import io.harness.security.encryption.EncryptedDataDetail;
 
 import software.wings.beans.TaskType;
+import software.wings.helpers.ext.jenkins.BuildDetails;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -43,6 +48,10 @@ public class S3ResourceServiceImpl implements S3ResourceService {
   @Override
   public Map<String, String> getBuckets(
       IdentifierRef awsConnectorRef, String region, String orgIdentifier, String projectIdentifier) {
+    if (EmptyPredicate.isEmpty(region)) {
+      region = AWS_DEFAULT_REGION;
+    }
+
     AwsConnectorDTO connector = serviceHelper.getAwsConnector(awsConnectorRef);
     BaseNGAccess baseNGAccess =
         serviceHelper.getBaseNGAccess(awsConnectorRef.getAccountIdentifier(), orgIdentifier, projectIdentifier);
@@ -59,11 +68,69 @@ public class S3ResourceServiceImpl implements S3ResourceService {
     return awsS3BucketResponse.getBuckets();
   }
 
+  @Override
+  public List<BuildDetails> getFilePaths(IdentifierRef awsConnectorRef, String region, String bucketName,
+      String filePathRegex, String orgIdentifier, String projectIdentifier) {
+    if (EmptyPredicate.isEmpty(filePathRegex)) {
+      return null;
+    }
+
+    if (EmptyPredicate.isEmpty(region)) {
+      region = AWS_DEFAULT_REGION;
+    }
+
+    AwsConnectorDTO connector = serviceHelper.getAwsConnector(awsConnectorRef);
+
+    BaseNGAccess baseNGAccess =
+        serviceHelper.getBaseNGAccess(awsConnectorRef.getAccountIdentifier(), orgIdentifier, projectIdentifier);
+
+    List<EncryptedDataDetail> encryptionDetails = serviceHelper.getAwsEncryptionDetails(connector, baseNGAccess);
+
+    AwsTaskParams awsTaskParams = AwsTaskParams.builder()
+                                      .awsTaskType(AwsTaskType.GET_BUILDS)
+                                      .awsConnector(connector)
+                                      .encryptionDetails(encryptionDetails)
+                                      .region(region)
+                                      .bucketName(bucketName)
+                                      .filePathRegex(filePathRegex)
+                                      .build();
+
+    S3BuildsResponse s3BuildsResponse =
+        executeSyncTaskForArtifactPaths(awsTaskParams, baseNGAccess, "AWS S3 Get File Paths task failure due to error");
+
+    return s3BuildsResponse.getBuilds();
+  }
+
   private AwsS3BucketResponse executeSyncTask(
       AwsTaskParams awsTaskParams, BaseNGAccess ngAccess, String ifFailedMessage) {
     DelegateResponseData responseData =
         serviceHelper.getResponseData(ngAccess, awsTaskParams, TaskType.NG_AWS_TASK.name());
+
     return getTaskExecutionResponse(responseData, ifFailedMessage);
+  }
+
+  private S3BuildsResponse executeSyncTaskForArtifactPaths(
+      AwsTaskParams awsTaskParams, BaseNGAccess ngAccess, String ifFailedMessage) {
+    DelegateResponseData responseData =
+        serviceHelper.getResponseData(ngAccess, awsTaskParams, TaskType.NG_AWS_TASK.name());
+
+    return getTaskExecutionResponseForArtifactPaths(responseData, ifFailedMessage);
+  }
+
+  private S3BuildsResponse getTaskExecutionResponseForArtifactPaths(
+      DelegateResponseData responseData, String ifFailedMessage) {
+    if (responseData instanceof ErrorNotifyResponseData) {
+      ErrorNotifyResponseData errorNotifyResponseData = (ErrorNotifyResponseData) responseData;
+      throw new BucketServerException(ifFailedMessage + " - " + errorNotifyResponseData.getErrorMessage());
+    }
+
+    S3BuildsResponse s3BuildsResponse = (S3BuildsResponse) responseData;
+
+    if (s3BuildsResponse.getCommandExecutionStatus() != SUCCESS) {
+      throw new BucketServerException(ifFailedMessage);
+    }
+
+    return s3BuildsResponse;
   }
 
   private AwsS3BucketResponse getTaskExecutionResponse(DelegateResponseData responseData, String ifFailedMessage) {
@@ -73,6 +140,7 @@ public class S3ResourceServiceImpl implements S3ResourceService {
     }
 
     AwsS3BucketResponse awsS3BucketResponse = (AwsS3BucketResponse) responseData;
+
     if (awsS3BucketResponse.getCommandExecutionStatus() != SUCCESS) {
       throw new BucketServerException(ifFailedMessage);
     }

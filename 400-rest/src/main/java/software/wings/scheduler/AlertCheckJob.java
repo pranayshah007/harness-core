@@ -61,8 +61,9 @@ public class AlertCheckJob implements Job {
   private static final SecureRandom random = new SecureRandom();
   public static final String GROUP = "ALERT_CHECK_CRON_GROUP";
 
-  private static final int POLL_INTERVAL = 300;
-  private static final long MAX_HB_TIMEOUT = TimeUnit.MINUTES.toMillis(5);
+  private static final int POLL_INTERVAL = 120;
+  private static final int START_DELAY_TIME = 300;
+  private static final long MAX_HB_TIMEOUT = TimeUnit.MINUTES.toMillis(3);
 
   @Inject private AlertService alertService;
   @Inject private WingsPersistence wingsPersistence;
@@ -76,7 +77,7 @@ public class AlertCheckJob implements Job {
 
   public static void addWithDelay(PersistentScheduler jobScheduler, String accountId) {
     // Add some randomness in the trigger start time to avoid overloading quartz by firing jobs at the same time.
-    long startTime = System.currentTimeMillis() + random.nextInt((int) TimeUnit.SECONDS.toMillis(POLL_INTERVAL));
+    long startTime = System.currentTimeMillis() + random.nextInt((int) TimeUnit.SECONDS.toMillis(START_DELAY_TIME));
     addInternal(jobScheduler, accountId, new Date(startTime));
   }
 

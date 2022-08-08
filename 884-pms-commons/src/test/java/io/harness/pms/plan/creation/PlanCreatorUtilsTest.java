@@ -16,6 +16,7 @@ import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.pms.contracts.plan.ExecutionMetadata;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
@@ -105,5 +106,41 @@ public class PlanCreatorUtilsTest extends CategoryTest {
     String yamlContent = Resources.toString(testFile, Charsets.UTF_8);
     YamlField yamlField = YamlUtils.readTree(YamlUtils.injectUuid(yamlContent));
     return yamlField.getNode().getField("pipeline").getNode();
+  }
+
+  @Test
+  @Owner(developers = SAHIL)
+  @Category(UnitTests.class)
+  public void getDependencyNodeIdsForParallelNode() throws IOException {
+    YamlField parallelField = getPipelineNode()
+                                  .getField("stages")
+                                  .getNode()
+                                  .asArray()
+                                  .get(0)
+                                  .getField("stage")
+                                  .getNode()
+                                  .getField("spec")
+                                  .getNode()
+                                  .getField("execution")
+                                  .getNode()
+                                  .getField("steps")
+                                  .getNode()
+                                  .asArray()
+                                  .get(3)
+                                  .getField("parallel");
+    assertThat(PlanCreatorUtils.getDependencyNodeIdsForParallelNode(parallelField)).isNotEmpty();
+    assertThat(PlanCreatorUtils.getDependencyNodeIdsForParallelNode(parallelField).size()).isEqualTo(2);
+  }
+
+  @Test
+  @Owner(developers = SAHIL)
+  @Category(UnitTests.class)
+  public void getAutoLogContext() throws IOException {
+    ExecutionMetadata executionMetadata = ExecutionMetadata.newBuilder().build();
+    String accountId = "accountId";
+    String orgId = "orgId";
+    String projectIdentifier = "projectIdentifier";
+
+    assertThat(PlanCreatorUtils.autoLogContext(executionMetadata, accountId, orgId, projectIdentifier)).isNotNull();
   }
 }

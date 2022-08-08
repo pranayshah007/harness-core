@@ -13,12 +13,12 @@
     {
       "identity" : [ "servers", "cluster-2-server1" ],
       "stagingMode" : "stage",
-      "listenAddress" : null
+      "listenAddress" : ""
     },
     {
       "identity" : [ "servers", "cluster-2-server2" ],
       "stagingMode" : "stage",
-      "listenAddress" : null
+      "listenAddress" : ""
     }
   ]
 }

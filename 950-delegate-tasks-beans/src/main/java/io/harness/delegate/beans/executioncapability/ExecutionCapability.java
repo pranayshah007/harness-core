@@ -29,9 +29,14 @@ public interface ExecutionCapability {
    * valid. Applicable to capabilities with Evaluation Mode AGENT.
    */
   Duration getMaxValidityPeriod();
+
   /**
    * Should return the period that should pass until the capability check should be validated again. Applicable to
    * capabilities with Evaluation Mode AGENT.
    */
   Duration getPeriodUntilNextValidation();
+
+  default String getCapabilityToString() {
+    return null;
+  }
 }

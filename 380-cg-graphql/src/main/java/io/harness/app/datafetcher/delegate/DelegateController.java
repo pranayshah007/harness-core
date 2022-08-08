@@ -42,6 +42,8 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(DEL)
 public class DelegateController {
   private static final Map<String, TaskGroup> taskGroupMapping = taskGroupMapping();
+  private static final Map<String, QLTaskGroup> qlTaskGroupMap =
+      EnumSet.allOf(QLTaskGroup.class).stream().collect(Collectors.toMap(Enum::name, taskGroup -> taskGroup));
 
   public static void populateQLDelegate(
       Delegate delegate, QLDelegateBuilder qlDelegateBuilder, List<DelegateConnection> delegateConnections) {
@@ -58,6 +60,7 @@ public class DelegateController {
         .version(delegate.getVersion())
         .pollingModeEnabled(delegate.isPolllingModeEnabled())
         .lastHeartBeat(delegate.getLastHeartBeat())
+        .lastHeartbeat(delegate.getLastHeartBeat())
         .includeScopes(delegate.getIncludeScopes())
         .excludeScopes(delegate.getExcludeScopes())
         .supportedTasks(delegate.getSupportedTaskTypes())
@@ -110,10 +113,20 @@ public class DelegateController {
 
   public static void populateQLDelegateScope(
       DelegateScope delegateScope, QLDelegateScopeBuilder qlDelegateScopeBuilder) {
+    List<QLTaskGroup> qlTaskGroups = new ArrayList<>();
+    if (delegateScope.getTaskTypes() != null) {
+      qlTaskGroups = delegateScope.getTaskTypes()
+                         .stream()
+                         .map(task -> qlTaskGroupMap.get(task.name()))
+                         .collect(Collectors.toList());
+    }
+
     qlDelegateScopeBuilder.name(delegateScope.getName())
-        .applications(delegateScope.getServices())
-        .services(delegateScope.getApplications())
+        .applications(delegateScope.getApplications())
+        .services(delegateScope.getServices())
         .environments(delegateScope.getEnvironments())
+        .infrastructureDefinitions(delegateScope.getInfrastructureDefinitions())
+        .taskTypes(qlTaskGroups)
         .uuid(delegateScope.getUuid())
         .environmentTypes(populateQLEnvironmentTypeList(delegateScope.getEnvironmentTypes()))
         .build();
@@ -146,7 +159,7 @@ public class DelegateController {
 
   public static List<QLEnvironmentType> populateQLEnvironmentTypeList(List<EnvironmentType> environmentTypeList) {
     List<QLEnvironmentType> qlEnvironmentTypeList = new ArrayList<>();
-    if (environmentTypeList.isEmpty()) {
+    if (isEmpty(environmentTypeList)) {
       return qlEnvironmentTypeList;
     }
     qlEnvironmentTypeList = environmentTypeList.stream()

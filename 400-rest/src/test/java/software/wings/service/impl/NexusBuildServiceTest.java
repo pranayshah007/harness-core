@@ -31,7 +31,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyInt;
-import static org.mockito.Matchers.anySet;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -306,7 +305,7 @@ public class NexusBuildServiceTest extends WingsBaseTest {
                                               .build();
     nexusBuildService.getBuilds(APP_ID, attributes, nexusConfig, Collections.emptyList());
     verify(nexusService)
-        .getVersions(eq(npm.name()), eq(nexusRequest), eq("someJobName"), eq("someNexusPackageName"), anySet());
+        .getVersions(eq(npm.name()), eq(nexusRequest), eq("someJobName"), eq("someNexusPackageName"), any());
 
     attributes = ArtifactStreamAttributes.builder()
                      .jobName("someJobName")
@@ -316,7 +315,7 @@ public class NexusBuildServiceTest extends WingsBaseTest {
                      .build();
     nexusBuildService.getBuilds(APP_ID, attributes, nexusConfig, Collections.emptyList());
     verify(nexusService)
-        .getVersions(eq(npm.name()), eq(nexusRequest), eq("someJobName"), eq("someNexusPackageName"), anySet());
+        .getVersions(eq(npm.name()), eq(nexusRequest), eq("someJobName"), eq("someNexusPackageName"), any());
   }
 
   @Test

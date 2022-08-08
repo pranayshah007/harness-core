@@ -8,6 +8,7 @@
 package io.harness.batch.processing.dao.impl;
 
 import static io.harness.persistence.HPersistence.returnNewOptions;
+import static io.harness.persistence.HQuery.excludeAuthority;
 
 import static java.util.Objects.isNull;
 
@@ -37,7 +38,7 @@ public class BillingDataPipelineRecordDaoImpl implements BillingDataPipelineReco
 
   @Override
   public List<BillingDataPipelineRecord> listAllBillingDataPipelineRecords() {
-    return hPersistence.createQuery(BillingDataPipelineRecord.class).asList();
+    return hPersistence.createQuery(BillingDataPipelineRecord.class, excludeAuthority).asList();
   }
 
   @Override

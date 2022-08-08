@@ -141,6 +141,7 @@ import com.google.common.collect.Sets.SetView;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -156,6 +157,7 @@ import javax.ws.rs.core.MultivaluedMap;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
@@ -751,9 +753,11 @@ public class AuthHandler {
             envDeploymentPermissionMap = new HashMap<>();
           }
           buildPipelineEnvMap(permissionTypeAppIdEntityMap.get(PIPELINE).get(appId),
-              permissionTypeAppIdEntityMap.get(ENV).get(appId), (EnvFilter) entityFilter, envDeploymentPermissionMap);
+              permissionTypeAppIdEntityMap.get(ENV).get(appId), (EnvFilter) entityFilter, envDeploymentPermissionMap,
+              entityActions);
           buildWorkflowEnvMap(permissionTypeAppIdEntityMap.get(WORKFLOW).get(appId),
-              permissionTypeAppIdEntityMap.get(ENV).get(appId), (EnvFilter) entityFilter, envDeploymentPermissionMap);
+              permissionTypeAppIdEntityMap.get(ENV).get(appId), (EnvFilter) entityFilter, envDeploymentPermissionMap,
+              entityActions);
           finalAppPermissionSummary.setEnvExecutableElementDeployPermissions(envDeploymentPermissionMap);
           break;
 
@@ -764,8 +768,8 @@ public class AuthHandler {
   }
 
   private void buildPipelineEnvMap(List<Base> pipelines, List<Base> environments, EnvFilter filter,
-      Map<AppPermissionSummary.ExecutableElementInfo, Set<String>> permission) {
-    if (isEmpty(pipelines)) {
+      Map<AppPermissionSummary.ExecutableElementInfo, Set<String>> permission, Set<Action> entityActions) {
+    if (isEmpty(pipelines) || isEmpty(entityActions) || !entityActions.contains(Action.EXECUTE_PIPELINE)) {
       return;
     }
 
@@ -798,18 +802,19 @@ public class AuthHandler {
               .entityType(executableElementFilterType)
               .build();
       if (permission.containsKey(executableElementInfo)) {
-        permission.get(executableElementInfo).addAll(envIds);
+        permission.get(executableElementInfo).addAll(ObjectUtils.clone(envIds));
       } else {
-        permission.put(executableElementInfo, envIds);
+        permission.put(executableElementInfo, ObjectUtils.clone(envIds));
       }
     });
   }
 
   private void buildWorkflowEnvMap(List<Base> workflows, List<Base> environments, EnvFilter filter,
-      Map<AppPermissionSummary.ExecutableElementInfo, Set<String>> permission) {
-    if (isEmpty(workflows)) {
+      Map<AppPermissionSummary.ExecutableElementInfo, Set<String>> permission, Set<Action> entityActions) {
+    if (isEmpty(workflows) || isEmpty(entityActions) || !entityActions.contains(Action.EXECUTE_WORKFLOW)) {
       return;
     }
+
     ExecutableElementsFilter executableElementsFilter;
     if (filter == null) {
       executableElementsFilter = new ExecutableElementsFilter();
@@ -838,11 +843,9 @@ public class AuthHandler {
               .entityType(executableElementFilterType)
               .build();
       if (permission.containsKey(executableElementInfo)) {
-        permission.get(executableElementInfo).addAll(envIds);
+        permission.get(executableElementInfo).addAll(ObjectUtils.clone(envIds));
       } else {
-        Set<String> executableElementInfos = new HashSet<>();
-        executableElementInfos.addAll(envIds);
-        permission.put(executableElementInfo, envIds);
+        permission.put(executableElementInfo, ObjectUtils.clone(envIds));
       }
     });
   }
@@ -892,10 +895,7 @@ public class AuthHandler {
   }
 
   private Map<String, List<Base>> getAppIdServiceMap(String accountId) {
-    PageRequest<Service> pageRequest =
-        aPageRequest().addFilter("accountId", Operator.EQ, accountId).addFieldsIncluded("_id", "appId").build();
-    List<Service> list =
-        getAllEntities(pageRequest, () -> serviceResourceService.list(pageRequest, false, false, false, null));
+    List<Service> list = serviceResourceService.list(accountId, Arrays.asList("_id", "appId"));
     return list.stream().collect(Collectors.groupingBy(Base::getAppId));
   }
 
@@ -920,14 +920,8 @@ public class AuthHandler {
   }
 
   private Map<String, List<Base>> getAppIdWorkflowMap(String accountId) {
-    PageRequest<Workflow> pageRequest =
-        aPageRequest()
-            .addFilter("accountId", Operator.EQ, accountId)
-            .addFieldsIncluded("_id", "appId", "envId", "templatized", "templateExpressions")
-            .build();
-
     List<Workflow> list =
-        getAllEntities(pageRequest, () -> workflowService.listWorkflowsWithoutOrchestration(pageRequest));
+        workflowService.list(accountId, Arrays.asList("_id", "appId", "envId", "templatized", "templateExpressions"));
     return list.stream().collect(Collectors.groupingBy(Base::getAppId));
   }
 
@@ -1971,7 +1965,7 @@ public class AuthHandler {
                                              .addFilter("accountId", EQ, accountId)
                                              .addFilter("name", EQ, DEFAULT_ACCOUNT_ADMIN_USER_GROUP_NAME)
                                              .build();
-    PageResponse<UserGroup> userGroups = userGroupService.list(accountId, pageRequest, true);
+    PageResponse<UserGroup> userGroups = userGroupService.list(accountId, pageRequest, true, null, null);
     UserGroup userGroup = null;
     if (CollectionUtils.isNotEmpty(userGroups)) {
       userGroup = userGroups.get(0);

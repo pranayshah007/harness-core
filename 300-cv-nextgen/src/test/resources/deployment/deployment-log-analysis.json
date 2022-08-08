@@ -1,0 +1,297 @@
+{
+  "verificationTaskId" : "verificationTaskId",
+  "clusters" : [
+    {
+      "text" : "clusterZero",
+      "label" : 0
+    },
+    {
+      "text" : "clusterOne",
+      "label" : 1
+    },
+    {
+      "text" : "clusterTwo",
+      "label" : 2
+    },
+    {
+      "text" : "clusterThree",
+      "label" : 3
+    }
+  ],
+  "resultSummary" : {
+    "risk" : 0,
+    "score" : 0.0,
+    "controlClusterSummaries" : [
+      {
+        "label" : 0,
+        "controlFrequencyData" : [
+          101.0,
+          122.0,
+          155.0,
+          185.0,
+          166.0
+        ]
+      },
+      {
+        "label" : 1,
+        "controlFrequencyData" : [
+          1.0,
+          2.0,
+          1.0
+        ]
+      }
+    ],
+    "controlClusterHostFrequencies" : [
+      {
+        "label" : 0,
+        "frequencyData" : [
+          {
+            "host": "host1",
+            "frequencies": [
+              {
+                "timeStamp": 100,
+                "count": 101.0
+              }, {
+                "timeStamp": 200,
+                "count": 122.0
+              }, {
+                "timeStamp": 300,
+                "count": 155.0
+              }, {
+                "timeStamp": 400,
+                "count": 185.0
+              }, {
+                "timeStamp": 500,
+                "count": 166.0
+              }
+            ]
+          }
+        ]
+      },{
+        "label" : 1,
+        "frequencyData" : [
+          {
+            "host": "host1",
+            "frequencies": [
+              {
+                "timeStamp": 100,
+                "count": 1.0
+              }, {
+                "timeStamp": 200,
+                "count": 2.0
+              }, {
+                "timeStamp": 300,
+                "count": 1.0
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "testClusterSummaries" : [
+      {
+        "label" : 0,
+        "clusterType" : "KNOWN_EVENT",
+        "risk" : 0,
+        "score" : 0.0,
+        "count" : 152,
+        "testFrequencyData" : [
+          152.0
+        ] ,
+        "frequencyData" : [
+          {
+            "host": "host1",
+            "frequencies": [
+              {
+                "timeStamp": 100,
+                "count": 152.0
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "label" : 1,
+        "clusterType" : "UNEXPECTED_FREQUENCY",
+        "risk" : 1,
+        "score" : 0.0,
+        "count" : 1,
+        "testFrequencyData" : [
+          1100.0
+        ],
+        "frequencyData" : [
+          {
+            "host": "host1",
+            "frequencies": [
+              {
+                "timeStamp": 100,
+                "count": 1200.0
+              }
+            ]
+          },
+          {
+            "host": "host2",
+            "frequencies": [
+              {
+                "timeStamp": 100,
+                "count": 1000.0
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "label" : 2,
+        "clusterType" : "UNKNOWN_EVENT",
+        "risk" : 1,
+        "score" : 0.0,
+        "count" : 25,
+        "testFrequencyData" : [
+          12.0,
+          13.0
+        ],
+        "frequencyData" : [
+          {
+            "host": "host1",
+            "frequencies": [
+              {
+                "timeStamp": 100,
+                "count": 12.0
+              }
+            ]
+          },
+          {
+            "host": "host2",
+            "frequencies": [
+              {
+                "timeStamp": 200,
+                "count": 13.0
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "label" : 3,
+        "clusterType" : "UNKNOWN_EVENT",
+        "risk" : 1,
+        "score" : 0.0,
+        "count" : 39,
+        "testFrequencyData" : [
+          12.0,
+          13.0,
+          14.0
+        ],
+        "frequencyData" : [
+          {
+            "host": "host1",
+            "frequencies": [
+              {
+                "timeStamp": 100,
+                "count": 12.0
+              },{
+                "timeStamp": 200,
+                "count": 13.0
+              }
+            ]
+          },
+          {
+            "host": "host2",
+            "frequencies": [
+              {
+                "timeStamp": 300,
+                "count": 14.0
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "hostSummaries" : [
+    {
+      "host" : "hostOne",
+      "resultSummary" : {
+        "risk" : 0,
+        "score" : 0.0,
+        "testClusterSummaries" : [
+          {
+            "label" : 0,
+            "clusterType" : "KNOWN_EVENT",
+            "risk" : 0,
+            "score" : 0.0,
+            "count" : 1,
+            "testFrequencyData" : [
+              1.0
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "host" : "hostTwo",
+      "resultSummary" : {
+        "risk" : 0,
+        "score" : 0.0,
+        "controlClusterSummaries" : [
+          {
+            "label" : 1,
+            "controlFrequencyData" : [
+              101.0,
+              102.0,
+              103.0
+            ]
+          }
+        ],
+        "testClusterSummaries" : [
+          {
+            "label" : 1,
+            "clusterType" : "UNEXPECTED_FREQUENCY",
+            "risk" : 1,
+            "score" : 0.0,
+            "count" : 101,
+            "testFrequencyData" : [
+              1101.0
+            ]
+          },
+          {
+            "label" : 3,
+            "clusterType" : "UNKNOWN_EVENT",
+            "risk" : 1,
+            "score" : 0.0,
+            "count" : 39,
+            "testFrequencyData" : [
+              12.0,
+              13.0,
+              14.0
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "host" : "hostThree",
+      "resultSummary" : {
+        "risk" : 1,
+        "score" : 0.0,
+        "testClusterSummaries" : [
+          {
+            "label" : 2,
+            "clusterType" : "UNKNOWN_EVENT",
+            "risk" : 1,
+            "score" : 0.0,
+            "count" : 1,
+            "testFrequencyData" : [
+              1.0,
+              2.0,
+              3.0,
+              4.0,
+              5.0,
+              6.0
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

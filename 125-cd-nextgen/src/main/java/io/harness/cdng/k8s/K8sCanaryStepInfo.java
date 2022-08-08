@@ -19,10 +19,12 @@ import io.harness.plancreator.steps.common.SpecParameters;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.pms.yaml.YamlNode;
 import io.harness.walktree.visitor.SimpleVisitorHelper;
 import io.harness.walktree.visitor.Visitable;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.annotations.ApiModelProperty;
 import java.util.List;
@@ -42,6 +44,11 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("k8sCanaryStepInfo")
 @RecasterAlias("io.harness.cdng.k8s.K8sCanaryStepInfo")
 public class K8sCanaryStepInfo extends K8sCanaryBaseStepInfo implements CDStepInfo, Visitable {
+  @JsonProperty(YamlNode.UUID_FIELD_NAME)
+  @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
+  @ApiModelProperty(hidden = true)
+  private String uuid;
+
   @JsonIgnore private String name;
   @JsonIgnore private String identifier;
 
@@ -78,5 +85,10 @@ public class K8sCanaryStepInfo extends K8sCanaryBaseStepInfo implements CDStepIn
         .skipDryRun(skipDryRun)
         .delegateSelectors(delegateSelectors)
         .build();
+  }
+
+  @Override
+  public ParameterField<List<TaskSelectorYaml>> fetchDelegateSelectors() {
+    return getDelegateSelectors();
   }
 }

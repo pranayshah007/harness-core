@@ -7,12 +7,14 @@
 
 package io.harness.cvng.servicelevelobjective.beans;
 
+import io.harness.cvng.notification.beans.NotificationRuleRefDTO;
 import io.harness.data.validator.EntityIdentifier;
 import io.harness.data.validator.NGEntityName;
 import io.harness.gitsync.beans.YamlDTO;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.swagger.annotations.ApiModelProperty;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import javax.validation.Valid;
@@ -41,11 +43,19 @@ public class ServiceLevelObjectiveDTO implements YamlDTO {
   ServiceLevelIndicatorType type;
   @Valid @NotNull List<ServiceLevelIndicatorDTO> serviceLevelIndicators;
   @Valid @NotNull SLOTarget target;
+  List<NotificationRuleRefDTO> notificationRuleRefs;
 
   public ServiceLevelIndicatorType getType() {
     if (type == null && CollectionUtils.isNotEmpty(serviceLevelIndicators)) {
       return serviceLevelIndicators.get(0).getType();
     }
     return type;
+  }
+
+  public List<NotificationRuleRefDTO> getNotificationRuleRefs() {
+    if (notificationRuleRefs == null) {
+      return Collections.emptyList();
+    }
+    return notificationRuleRefs;
   }
 }

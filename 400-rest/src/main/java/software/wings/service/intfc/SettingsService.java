@@ -57,6 +57,8 @@ public interface SettingsService extends OwnedByAccount, OwnedBySettingAttribute
 
   List<SettingAttribute> listAllSettingAttributesByType(String accountId, String type);
 
+  List<String> getSettingIdsForAccount(String accountId);
+
   List<SettingAttribute> list(String accountId, SettingAttribute.SettingCategory category);
 
   List<SettingAttribute> getFilteredSettingAttributes(List<SettingAttribute> inputSettingAttributes,
@@ -86,6 +88,8 @@ public interface SettingsService extends OwnedByAccount, OwnedBySettingAttribute
   SettingAttribute getOnlyConnectivityError(String settingId);
 
   SettingAttribute getSettingAttributeByName(String accountId, String settingAttributeName);
+
+  void checkRbacOnSettingAttribute(String appId, SettingAttribute settingAttribute);
 
   @ValidationGroups(Update.class) SettingAttribute update(@Valid SettingAttribute settingAttribute);
 

@@ -43,6 +43,7 @@ import io.harness.cvng.core.beans.OnboardingRequestDTO;
 import io.harness.cvng.core.beans.OnboardingResponseDTO;
 import io.harness.delegate.beans.connector.appdynamicsconnector.AppDynamicsConnectorDTO;
 import io.harness.ng.beans.PageResponse;
+import io.harness.ng.core.CorrelationContext;
 import io.harness.rule.Owner;
 import io.harness.serializer.JsonUtils;
 
@@ -88,6 +89,7 @@ public class AppDynamicsServiceimplTest extends CvNextGenTestBase {
     FieldUtils.writeField(onboardingService, "nextGenService", nextGenService, true);
     FieldUtils.writeField(onboardingService, "verificationManagerService", verificationManagerService, true);
     FieldUtils.writeField(appDynamicsService, "clock", builderFactory.getClock(), true);
+    CorrelationContext.setCorrelationId(generateUuid());
 
     when(nextGenService.get(anyString(), anyString(), anyString(), anyString()))
         .then(invocation
@@ -322,6 +324,44 @@ public class AppDynamicsServiceimplTest extends CvNextGenTestBase {
   @Test
   @Owner(developers = ABHIJITH)
   @Category(UnitTests.class)
+  public void testGetCompleteServiceInstanceMetricPath() throws IOException, IllegalAccessException {
+    String textLoad = Resources.toString(
+        AppDynamicsServiceimplTest.class.getResource("/appd/appd_file_structure_dsl_sample_output.json"),
+        Charsets.UTF_8);
+    JsonUtils.asObject(textLoad, OnboardingResponseDTO.class);
+
+    DataCollectionRequest request = AppDynamicFetchFileStructureRequest.builder()
+                                        .appName("appName")
+                                        .path("baseFolder|tier")
+                                        .type(DataCollectionRequestType.APPDYNAMICS_FETCH_METRIC_STRUCTURE)
+                                        .build();
+
+    OnboardingRequestDTO onboardingRequestDTO =
+        OnboardingRequestDTO.builder()
+            .dataCollectionRequest(request)
+            .connectorIdentifier(connectorIdentifier)
+            .accountId(builderFactory.getContext().getProjectParams().getAccountIdentifier())
+            .tracingId("tracingId")
+            .orgIdentifier(builderFactory.getContext().getProjectParams().getOrgIdentifier())
+            .projectIdentifier(builderFactory.getContext().getProjectParams().getProjectIdentifier())
+            .build();
+
+    OnboardingService mockOnboardingService = mock(OnboardingService.class);
+    FieldUtils.writeField(appDynamicsService, "onboardingService", mockOnboardingService, true);
+    when(mockOnboardingService.getOnboardingResponse(
+             eq(builderFactory.getContext().getAccountId()), eq(onboardingRequestDTO)))
+        .thenReturn(JsonUtils.asObject(textLoad, OnboardingResponseDTO.class));
+
+    String serviceInstanceMetricPath =
+        appDynamicsService.getCompleteServiceInstanceMetricPath(builderFactory.getContext().getProjectParams(),
+            connectorIdentifier, "appName", "baseFolder|tier|metricPath", "tracingId");
+
+    assertThat(serviceInstanceMetricPath).isEqualTo("baseFolder|tier|Individual Nodes|*|metricPath");
+  }
+
+  @Test
+  @Owner(developers = ABHIJITH)
+  @Category(UnitTests.class)
   public void testGetMetricData() throws IOException, IllegalAccessException {
     final List<MetricPackDTO> metricPacks =
         metricPackService.getMetricPacks(DataSourceType.APP_DYNAMICS, accountId, orgIdentifier, projectIdentifier);
@@ -358,6 +398,56 @@ public class AppDynamicsServiceimplTest extends CvNextGenTestBase {
     AppdynamicsMetricDataResponse appdynamicsMetricDataResponse =
         appDynamicsService.getMetricData(builderFactory.getContext().getProjectParams(), connectorIdentifier, "appName",
             "baseFolder", "tier", "metricPath", "tracingId");
+
+    assertThat(appdynamicsMetricDataResponse.getResponseStatus()).isEqualTo(ThirdPartyApiResponseStatus.SUCCESS);
+    assertThat(appdynamicsMetricDataResponse.getStartTime())
+        .isEqualTo(builderFactory.getClock().instant().minus(Duration.ofHours(1)).toEpochMilli());
+    assertThat(appdynamicsMetricDataResponse.getEndTime())
+        .isEqualTo(builderFactory.getClock().instant().toEpochMilli());
+    assertThat(appdynamicsMetricDataResponse.getDataPoints().size()).isEqualTo(4);
+    assertThat(appdynamicsMetricDataResponse.getDataPoints().get(0).getTimestamp()).isEqualTo(1595760660000L);
+    assertThat(appdynamicsMetricDataResponse.getDataPoints().get(0).getValue()).isEqualTo(233.0);
+  }
+
+  @Test
+  @Owner(developers = ABHIJITH)
+  @Category(UnitTests.class)
+  public void testGetMetricDataV2() throws IOException, IllegalAccessException {
+    final List<MetricPackDTO> metricPacks =
+        metricPackService.getMetricPacks(DataSourceType.APP_DYNAMICS, accountId, orgIdentifier, projectIdentifier);
+    assertThat(metricPacks).isNotEmpty();
+
+    String textLoad = Resources.toString(
+        AppDynamicsServiceimplTest.class.getResource("/timeseries/appd_metric_data_validation.json"), Charsets.UTF_8);
+    JsonUtils.asObject(textLoad, OnboardingResponseDTO.class);
+
+    DataCollectionRequest request = AppDynamicSingleMetricDataRequest.builder()
+                                        .applicationName("appName")
+                                        .endTime(builderFactory.getClock().instant())
+                                        .startTime(builderFactory.getClock().instant().minus(Duration.ofHours(1)))
+                                        .metricPath("baseFolder|tier|metricPath")
+                                        .type(DataCollectionRequestType.APPDYNAMICS_GET_SINGLE_METRIC_DATA)
+                                        .build();
+
+    OnboardingRequestDTO onboardingRequestDTO =
+        OnboardingRequestDTO.builder()
+            .dataCollectionRequest(request)
+            .connectorIdentifier(connectorIdentifier)
+            .accountId(builderFactory.getContext().getProjectParams().getAccountIdentifier())
+            .tracingId("tracingId")
+            .orgIdentifier(builderFactory.getContext().getProjectParams().getOrgIdentifier())
+            .projectIdentifier(builderFactory.getContext().getProjectParams().getProjectIdentifier())
+            .build();
+
+    OnboardingService mockOnboardingService = mock(OnboardingService.class);
+    FieldUtils.writeField(appDynamicsService, "onboardingService", mockOnboardingService, true);
+    when(mockOnboardingService.getOnboardingResponse(
+             eq(builderFactory.getContext().getAccountId()), eq(onboardingRequestDTO)))
+        .thenReturn(JsonUtils.asObject(textLoad, OnboardingResponseDTO.class));
+
+    AppdynamicsMetricDataResponse appdynamicsMetricDataResponse =
+        appDynamicsService.getMetricDataV2(builderFactory.getContext().getProjectParams(), connectorIdentifier,
+            "appName", "baseFolder|tier|metricPath", "tracingId");
 
     assertThat(appdynamicsMetricDataResponse.getResponseStatus()).isEqualTo(ThirdPartyApiResponseStatus.SUCCESS);
     assertThat(appdynamicsMetricDataResponse.getStartTime())

@@ -39,6 +39,7 @@ import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.anyMap;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Matchers.isA;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.spy;
@@ -60,6 +61,8 @@ import io.harness.k8s.model.K8sPod;
 import io.harness.k8s.model.KubernetesResource;
 import io.harness.rule.Owner;
 
+import software.wings.api.ContextElementParamMapper;
+import software.wings.api.ContextElementParamMapperFactory;
 import software.wings.api.InstanceElementListParam;
 import software.wings.api.k8s.K8sElement;
 import software.wings.api.k8s.K8sStateExecutionData;
@@ -83,6 +86,7 @@ import software.wings.sm.ExecutionContextImpl;
 import software.wings.sm.ExecutionResponse;
 import software.wings.sm.StateExecutionInstance;
 import software.wings.sm.WorkflowStandardParams;
+import software.wings.sm.WorkflowStandardParamsExtensionService;
 import software.wings.utils.ApplicationManifestUtils;
 
 import com.google.common.collect.ImmutableMap;
@@ -111,6 +115,8 @@ public class K8sCanaryDeployTest extends CategoryTest {
   @Mock private ActivityService activityService;
   @Mock private K8sStateHelper k8sStateHelper;
   @Mock private FeatureFlagService mockFeatureFlagService;
+  @Mock private ContextElementParamMapperFactory contextElementParamMapperFactory;
+  @Mock private WorkflowStandardParamsExtensionService workflowStandardParamsExtensionService;
   @InjectMocks K8sCanaryDeploy k8sCanaryDeploy = spy(new K8sCanaryDeploy(K8S_CANARY_DEPLOY.name()));
 
   private StateExecutionInstance stateExecutionInstance = aStateExecutionInstance().displayName(STATE_NAME).build();
@@ -121,6 +127,8 @@ public class K8sCanaryDeployTest extends CategoryTest {
   public void setup() {
     MockitoAnnotations.initMocks(this);
     context = new ExecutionContextImpl(stateExecutionInstance);
+    on(context).set("contextElementParamMapperFactory", contextElementParamMapperFactory);
+    on(context).set("workflowStandardParamsExtensionService", workflowStandardParamsExtensionService);
     k8sCanaryDeploy.setSkipDryRun(true);
     k8sCanaryDeploy.setStateTimeoutInMinutes(10);
     k8sCanaryDeploy.setInstances("5");
@@ -310,9 +318,15 @@ public class K8sCanaryDeployTest extends CategoryTest {
     doNothing().when(k8sCanaryDeploy).saveK8sElement(any(), any());
     doNothing().when(k8sCanaryDeploy).saveInstanceInfoToSweepingOutput(any(), any(), any());
     doReturn(APP_ID).when(k8sCanaryDeploy).fetchAppId(context);
+    doReturn(application).when(workflowStandardParamsExtensionService).getApp(standardContextElement);
     doReturn(false).when(k8sCanaryDeploy).shouldInheritManifest(context);
-    doReturn(application).when(standardContextElement).getApp();
-    doReturn(ImmutableMap.of()).when(standardContextElement).paramMap(context);
+
+    // Overwrite default param mapper for WorkflowStandardParams.
+    ContextElementParamMapper paramMapper = spy(ContextElementParamMapper.class);
+    when(paramMapper.paramMap(any())).thenReturn(ImmutableMap.of());
+    when(this.contextElementParamMapperFactory.getParamMapper(isA(WorkflowStandardParams.class)))
+        .thenReturn(paramMapper);
+
     ExecutionResponse executionResponse =
         k8sCanaryDeploy.handleAsyncResponseForK8sTask(context, ImmutableMap.of("response", taskExecutionResponse));
     K8sStateExecutionData executionData = (K8sStateExecutionData) executionResponse.getStateExecutionData();
@@ -427,6 +441,6 @@ public class K8sCanaryDeployTest extends CategoryTest {
     context.pushContextElement(standardParams);
     stateExecutionInstance.setStateExecutionMap(
         ImmutableMap.of(stateExecutionInstance.getDisplayName(), stateExecutionData));
-    doReturn(application).when(standardParams).getApp();
+    doReturn(application).when(workflowStandardParamsExtensionService).getApp(standardParams);
   }
 }

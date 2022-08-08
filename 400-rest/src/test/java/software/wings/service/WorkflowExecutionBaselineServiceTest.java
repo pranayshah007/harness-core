@@ -18,7 +18,9 @@ import static software.wings.sm.StateExecutionInstance.Builder.aStateExecutionIn
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
+import static org.joor.Reflect.on;
 import static org.mockito.Mockito.when;
+import static org.powermock.api.mockito.PowerMockito.mock;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -51,6 +53,7 @@ import software.wings.sm.StateExecutionInstance;
 import software.wings.sm.StateMachineExecutor;
 import software.wings.sm.StateType;
 import software.wings.sm.WorkflowStandardParams;
+import software.wings.sm.WorkflowStandardParamsExtensionService;
 
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
@@ -694,6 +697,8 @@ public class WorkflowExecutionBaselineServiceTest extends WingsBaseTest {
     List<WorkflowExecution> workflowExecutions = new ArrayList<>();
     String pipelineExecutionId = UUID.randomUUID().toString();
 
+    WorkflowStandardParamsExtensionService workflowStandardParamsExtensionService =
+        mock(WorkflowStandardParamsExtensionService.class);
     for (int i = 0; i < numOfWorkflowExecutions; i++) {
       String envId = UUID.randomUUID().toString();
       envIds.add(envId);
@@ -719,16 +724,21 @@ public class WorkflowExecutionBaselineServiceTest extends WingsBaseTest {
 
       ExecutionContextImpl executionContext = Mockito.mock(ExecutionContextImpl.class);
       WorkflowStandardParams workflowStandardParams = Mockito.mock(WorkflowStandardParams.class);
-      when(workflowStandardParams.fetchRequiredEnv()).thenReturn(anEnvironment().uuid(envId).build());
       when(executionContext.fetchWorkflowStandardParamsFromContext()).thenReturn(workflowStandardParams);
       when(executionContext.getContextElement(ContextElementType.STANDARD)).thenReturn(workflowStandardParams);
       when(executionContext.getContextElement(ContextElementType.PARAM, PhaseElement.PHASE_PARAM))
           .thenReturn(PhaseElement.builder().serviceElement(ServiceElement.builder().uuid(serviceId).build()).build());
       when(stateMachineExecutor.getExecutionContext(appId, workflowExecutionId, stateExecutionId))
           .thenReturn(executionContext);
+
+      when(workflowStandardParamsExtensionService.fetchRequiredEnv(workflowStandardParams))
+          .thenReturn(anEnvironment().uuid(envId).build());
+      on(executionContext).set("workflowStandardParamsExtensionService", workflowStandardParamsExtensionService);
     }
 
     FieldUtils.writeField(workflowExecutionService, "stateMachineExecutor", stateMachineExecutor, true);
+    FieldUtils.writeField(workflowExecutionService, "workflowStandardParamsExtensionService",
+        workflowStandardParamsExtensionService, true);
 
     for (int i = 0; i < numOfWorkflowExecutions; i++) {
       WorkflowExecution workflowExecution =

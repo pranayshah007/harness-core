@@ -27,6 +27,9 @@ import io.harness.testlib.RealMongo;
 import software.wings.WingsBaseTest;
 import software.wings.beans.Account;
 import software.wings.beans.Application;
+import software.wings.beans.Pipeline;
+import software.wings.beans.PipelineStage;
+import software.wings.beans.PipelineStage.PipelineStageElement;
 import software.wings.beans.PipelineStageExecution;
 import software.wings.beans.WorkflowExecution;
 import software.wings.beans.WorkflowExecution.WorkflowExecutionKeys;
@@ -114,19 +117,28 @@ public class WorkflowResumePropagatorTest extends WingsBaseTest {
   }
 
   private void buildAndSave(ExecutionStatus internalStatus) {
-    persistence.save(WorkflowExecution.builder()
-                         .uuid(PIPELINE_EXECUTION_ID)
-                         .appId(APP_ID)
-                         .appName(APP_NAME)
-                         .accountId(ACCOUNT_ID)
-                         .workflowId(generateUuid())
-                         .workflowType(WorkflowType.PIPELINE)
-                         .status(ExecutionStatus.PAUSED)
-                         .pipelineExecution(aPipelineExecution()
-                                                .withPipelineStageExecutions(singletonList(
-                                                    PipelineStageExecution.builder().status(internalStatus).build()))
-                                                .build())
-                         .build());
+    persistence.save(
+        WorkflowExecution.builder()
+            .uuid(PIPELINE_EXECUTION_ID)
+            .appId(APP_ID)
+            .appName(APP_NAME)
+            .accountId(ACCOUNT_ID)
+            .workflowId(generateUuid())
+            .workflowType(WorkflowType.PIPELINE)
+            .status(ExecutionStatus.PAUSED)
+            .pipelineExecution(
+                aPipelineExecution()
+                    .withPipeline(Pipeline.builder()
+                                      .pipelineStages(singletonList(PipelineStage.builder()
+                                                                        .name("Stage 1")
+                                                                        .pipelineStageElements(singletonList(
+                                                                            PipelineStageElement.builder().build()))
+                                                                        .build()))
+                                      .build())
+                    .withPipelineStageExecutions(
+                        singletonList(PipelineStageExecution.builder().status(internalStatus).build()))
+                    .build())
+            .build());
     persistence.save(WorkflowExecution.builder()
                          .uuid(WORKFLOW_EXECUTION_ID)
                          .appId(APP_ID)

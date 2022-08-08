@@ -29,7 +29,7 @@ public class GitPRCreateRequest {
   @Schema(description = "Source Branch for pull request") @NotEmpty @NotNull @Trimmed String sourceBranch;
   @Schema(description = "Target Branch for pull request") @NotEmpty @NotNull @Trimmed String targetBranch;
   @Schema(description = "PR title") @NotEmpty @NotNull String title;
-  @Schema(description = "Git Sync Config Id") @NotNull String yamlGitConfigRef;
+  @Schema(description = "Git Sync Config Id") String yamlGitConfigRef; // removed @NotNull annotation
   @Schema(description = ACCOUNT_PARAM_MESSAGE) @NotBlank String accountIdentifier;
   @Schema(description = ORG_PARAM_MESSAGE) String orgIdentifier;
   @Schema(description = PROJECT_PARAM_MESSAGE) String projectIdentifier;

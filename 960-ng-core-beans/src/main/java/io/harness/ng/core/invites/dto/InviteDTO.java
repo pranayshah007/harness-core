@@ -9,6 +9,7 @@ package io.harness.ng.core.invites.dto;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
+import io.harness.NGCommonEntityConstants;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ng.core.invites.InviteType;
 
@@ -33,14 +34,22 @@ import org.hibernate.validator.constraints.NotEmpty;
 @OwnedBy(PL)
 @Schema(name = "Invite", description = "This is the view of the Invite entity defined in Harness")
 public class InviteDTO {
-  @ApiModelProperty(required = true) String id;
-  @ApiModelProperty(required = true) String name;
-  @ApiModelProperty(required = true) @NotEmpty @Email String email;
-  @ApiModelProperty(required = true) String accountIdentifier;
-  String orgIdentifier;
-  String projectIdentifier;
-  List<RoleBinding> roleBindings;
-  List<String> userGroups;
-  @ApiModelProperty(required = true) @NotNull InviteType inviteType;
-  @Builder.Default Boolean approved = false;
+  @Schema(description = "Identifier of the Invite.") @ApiModelProperty(required = true) String id;
+  @Schema(description = "Name of the Invite.") @ApiModelProperty(required = true) String name;
+  @Schema(description = "Email Id associated with the user to be invited.")
+  @ApiModelProperty(required = true)
+  @NotEmpty
+  @Email
+  String email;
+  @Schema(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE)
+  @ApiModelProperty(required = true)
+  String accountIdentifier;
+  @Schema(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) String orgIdentifier;
+  @Schema(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) String projectIdentifier;
+  @Schema(description = "Role bindings to be associated with the invited users.") List<RoleBinding> roleBindings;
+  @Schema(description = "List of the userGroups in the invite.") List<String> userGroups;
+  @Schema(description = "Specifies the invite type.") @ApiModelProperty(required = true) @NotNull InviteType inviteType;
+  @Schema(description = "Specifies whether or not the invite is approved. By default this value is set to false.")
+  @Builder.Default
+  Boolean approved = false;
 }

@@ -59,7 +59,8 @@ import org.mockito.Mock;
  */
 public class AmazonS3ServiceTest extends WingsBaseTest {
   @Mock AwsHelperService awsHelperService;
-  @Mock AwsS3HelperServiceDelegate mockAwsS3HelperServiceDelegate;
+  @Mock AwsS3HelperServiceDelegate awsS3HelperServiceDelegate;
+  //  @Mock AwsS3HelperServiceDelegate mockAwsS3HelperServiceDelegate;
   @Inject private AmazonS3Service amazonS3Service;
   @Inject @InjectMocks private DelegateFileManager delegateFileManager;
 
@@ -71,15 +72,14 @@ public class AmazonS3ServiceTest extends WingsBaseTest {
 
   @Before
   public void setUp() throws IllegalAccessException {
-    FieldUtils.writeField(amazonS3Service, "awsHelperService", awsHelperService, true);
-    FieldUtils.writeField(amazonS3Service, "awsS3HelperServiceDelegate", mockAwsS3HelperServiceDelegate, true);
+    FieldUtils.writeField(amazonS3Service, "awsS3HelperServiceDelegate", awsS3HelperServiceDelegate, true);
   }
 
   @Test
   @Owner(developers = RAMA)
   @Category(UnitTests.class)
   public void shouldGetBuckets() {
-    when(mockAwsS3HelperServiceDelegate.listBucketNames(awsConfig, null)).thenReturn(Lists.newArrayList("bucket1"));
+    when(awsS3HelperServiceDelegate.listBucketNames(awsConfig, null)).thenReturn(Lists.newArrayList("bucket1"));
     Map<String, String> buckets = amazonS3Service.getBuckets(awsConfig, null);
     assertThat(buckets).hasSize(1).containsKeys("bucket1");
   }
@@ -95,7 +95,8 @@ public class AmazonS3ServiceTest extends WingsBaseTest {
     objectSummary.setBucketName("bucket1");
     objectSummary.setLastModified(new Date());
     listObjectsV2Result.getObjectSummaries().add(objectSummary);
-    when(awsHelperService.listObjectsInS3(any(AwsConfig.class), any(), any())).thenReturn(listObjectsV2Result);
+    when(awsS3HelperServiceDelegate.listObjectsInS3(any(AwsConfig.class), any(), any()))
+        .thenReturn(listObjectsV2Result);
     List<String> artifactPaths = amazonS3Service.getArtifactPaths(awsConfig, null, "bucket1");
     assertThat(artifactPaths).hasSize(1).contains("key1");
   }
@@ -115,7 +116,8 @@ public class AmazonS3ServiceTest extends WingsBaseTest {
       objectSummary.setBucketName("bucket1");
       objectSummary.setLastModified(new Date());
       listObjectsV2Result.getObjectSummaries().add(objectSummary);
-      when(awsHelperService.listObjectsInS3(any(AwsConfig.class), any(), any())).thenReturn(listObjectsV2Result);
+      when(awsS3HelperServiceDelegate.listObjectsInS3(any(AwsConfig.class), any(), any()))
+          .thenReturn(listObjectsV2Result);
 
       ObjectMetadata objectMetadata = new ObjectMetadata();
       objectMetadata.setLastModified(new Date());
@@ -129,7 +131,8 @@ public class AmazonS3ServiceTest extends WingsBaseTest {
         delegateFile.setFileId(UUID.randomUUID().toString());
 
         s3Object.setObjectContent(new FileInputStream(file));
-        when(awsHelperService.getObjectFromS3(any(AwsConfig.class), any(), any(), any())).thenReturn(s3Object);
+        when(awsS3HelperServiceDelegate.getObjectFromS3(any(AwsConfig.class), any(), any(), any()))
+            .thenReturn(s3Object);
         when(delegateFileManager.upload(any(), any())).thenReturn(delegateFile);
       }
 
@@ -157,12 +160,13 @@ public class AmazonS3ServiceTest extends WingsBaseTest {
     objectSummary.setLastModified(new Date());
     objectSummary.setSize(4856L);
     listObjectsV2Result.getObjectSummaries().add(objectSummary);
-    when(awsHelperService.listObjectsInS3(any(AwsConfig.class), any(), any())).thenReturn(listObjectsV2Result);
+    when(awsS3HelperServiceDelegate.listObjectsInS3(any(AwsConfig.class), any(), any()))
+        .thenReturn(listObjectsV2Result);
 
     ObjectMetadata objectMetadata = new ObjectMetadata();
     objectMetadata.setLastModified(new Date());
 
-    when(awsHelperService.getObjectMetadataFromS3(any(AwsConfig.class), any(), any(), any()))
+    when(awsS3HelperServiceDelegate.getObjectMetadataFromS3(any(AwsConfig.class), any(), any(), any()))
         .thenReturn(objectMetadata);
 
     // Test without versioning enabled
@@ -191,12 +195,13 @@ public class AmazonS3ServiceTest extends WingsBaseTest {
     objectSummary.setBucketName("bucket1");
     objectSummary.setLastModified(new Date());
     listObjectsV2Result.getObjectSummaries().add(objectSummary);
-    when(awsHelperService.listObjectsInS3(any(AwsConfig.class), any(), any())).thenReturn(listObjectsV2Result);
+    when(awsS3HelperServiceDelegate.listObjectsInS3(any(AwsConfig.class), any(), any()))
+        .thenReturn(listObjectsV2Result);
 
     ObjectMetadata objectMetadata = new ObjectMetadata();
     objectMetadata.setLastModified(new Date());
 
-    when(awsHelperService.getObjectMetadataFromS3(any(AwsConfig.class), any(), any(), any()))
+    when(awsS3HelperServiceDelegate.getObjectMetadataFromS3(any(AwsConfig.class), any(), any(), any()))
         .thenReturn(objectMetadata);
 
     List<BuildDetails> artifactsBuildDetails =
@@ -216,12 +221,13 @@ public class AmazonS3ServiceTest extends WingsBaseTest {
     objectSummary.setBucketName("bucket1");
     objectSummary.setLastModified(new Date());
     listObjectsV2Result.getObjectSummaries().add(objectSummary);
-    when(awsHelperService.listObjectsInS3(any(AwsConfig.class), any(), any())).thenReturn(listObjectsV2Result);
+    when(awsS3HelperServiceDelegate.listObjectsInS3(any(AwsConfig.class), any(), any()))
+        .thenReturn(listObjectsV2Result);
 
     ObjectMetadata objectMetadata = new ObjectMetadata();
     objectMetadata.setLastModified(new Date());
 
-    when(awsHelperService.getObjectMetadataFromS3(any(AwsConfig.class), any(), any(), any()))
+    when(awsS3HelperServiceDelegate.getObjectMetadataFromS3(any(AwsConfig.class), any(), any(), any()))
         .thenReturn(objectMetadata);
 
     List<BuildDetails> artifactsBuildDetails =
@@ -236,10 +242,10 @@ public class AmazonS3ServiceTest extends WingsBaseTest {
   public void testGetFileSize() {
     ObjectMetadata metadata = new ObjectMetadata();
     metadata.setContentLength(100);
-    when(awsHelperService.getObjectMetadataFromS3(awsConfig, null, "bucket1", "key")).thenReturn(metadata);
+    when(awsS3HelperServiceDelegate.getObjectMetadataFromS3(awsConfig, null, "bucket1", "key")).thenReturn(metadata);
     assertThat(amazonS3Service.getFileSize(awsConfig, null, "bucket1", "key")).isEqualTo(100);
 
-    when(awsHelperService.getObjectMetadataFromS3(eq(awsConfig), eq(null), any(), any())).thenReturn(null);
+    when(awsS3HelperServiceDelegate.getObjectMetadataFromS3(eq(awsConfig), eq(null), any(), any())).thenReturn(null);
     assertThatThrownBy(() -> amazonS3Service.getFileSize(awsConfig, null, "doesNotExist", "doesNotExist"))
         .isInstanceOf(InvalidRequestException.class)
         .extracting("message")
@@ -250,7 +256,7 @@ public class AmazonS3ServiceTest extends WingsBaseTest {
   @Owner(developers = DEEPAK_PUTHRAYA)
   @Category(UnitTests.class)
   public void shouldThrowExceptionForGetArtifactsBuildDetails() {
-    when(awsHelperService.isVersioningEnabledForBucket(awsConfig, null, "bucket1"))
+    when(awsS3HelperServiceDelegate.isVersioningEnabledForBucket(awsConfig, null, "bucket1"))
         .thenThrow(new AmazonS3Exception("Bucket does not exist"));
     assertThatThrownBy(
         () -> amazonS3Service.getArtifactsBuildDetails(awsConfig, null, "bucket1", new ArrayList<>(), true))

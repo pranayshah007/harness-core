@@ -14,9 +14,11 @@ import io.harness.encryption.SecretReference;
 import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 @Data
 @Builder
+@EqualsAndHashCode
 public class SecretVariableDTO implements DecryptableEntity {
   public enum Type { TEXT, FILE }
   @NotNull String name;

@@ -20,13 +20,13 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.concurrent.HTimeLimiter;
 import io.harness.encryptors.VaultEncryptor;
 import io.harness.exception.SecretManagementDelegateException;
-import io.harness.helpers.ext.cyberark.CyberArkReadResponse;
-import io.harness.helpers.ext.cyberark.CyberArkRestClientFactory;
 import io.harness.security.encryption.EncryptedRecord;
 import io.harness.security.encryption.EncryptedRecordData;
 import io.harness.security.encryption.EncryptionConfig;
 
 import software.wings.beans.CyberArkConfig;
+import software.wings.helpers.ext.cyberark.CyberArkReadResponse;
+import software.wings.helpers.ext.cyberark.CyberArkRestClientFactory;
 
 import com.google.common.util.concurrent.TimeLimiter;
 import com.google.inject.Inject;

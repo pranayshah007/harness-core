@@ -15,9 +15,9 @@ import io.harness.category.element.UnitTests;
 import io.harness.rule.Owner;
 
 import software.wings.WingsBaseTest;
+import software.wings.beans.LogCollectionInfo;
+import software.wings.beans.apm.Method;
 import software.wings.sm.StateType;
-import software.wings.sm.states.CustomLogVerificationState.LogCollectionInfo;
-import software.wings.sm.states.CustomLogVerificationState.Method;
 
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;

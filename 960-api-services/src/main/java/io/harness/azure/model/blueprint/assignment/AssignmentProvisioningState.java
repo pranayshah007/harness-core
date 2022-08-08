@@ -29,7 +29,7 @@ public enum AssignmentProvisioningState {
   }
 
   /* use this value for deserialization */
-  @JsonCreator
+  @JsonCreator(mode = JsonCreator.Mode.DELEGATING)
   public static AssignmentProvisioningState fromString(String value) {
     AssignmentProvisioningState[] items = AssignmentProvisioningState.values();
     for (AssignmentProvisioningState item : items) {

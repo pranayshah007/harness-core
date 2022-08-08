@@ -60,7 +60,7 @@ public class SLOErrorBudgetResetServiceImplTest extends CvNextGenTestBase {
             builderFactory.getSLOErrorBudgetResetDTOBuilder().serviceLevelObjectiveIdentifier(sloIdentifier).build());
     SLOErrorBudgetResetDTO saved =
         sloErrorBudgetResetService.getErrorBudgetResets(builderFactory.getProjectParams(), sloIdentifier).get(0);
-    assertThat(saved.getValidUntil().longValue()).isEqualTo(1587549726000L);
+    assertThat(saved.getValidUntil().longValue()).isEqualTo(1587549720000L);
   }
 
   @Test
@@ -103,13 +103,13 @@ public class SLOErrorBudgetResetServiceImplTest extends CvNextGenTestBase {
     sloErrorBudgetResetService.resetErrorBudget(builderFactory.getProjectParams(),
         builderFactory.getSLOErrorBudgetResetDTOBuilder()
             .serviceLevelObjectiveIdentifier("slo2")
-            .errorBudgetIncrementPercentage(20.0)
+            .errorBudgetIncrementMinutes(20)
             .build());
     Map<String, List<SLOErrorBudgetResetDTO>> savedMap = sloErrorBudgetResetService.getErrorBudgetResets(
         builderFactory.getProjectParams(), new HashSet<>(Arrays.asList("slo1", "slo2")));
     assertThat(savedMap).hasSize(2);
-    assertThat(savedMap.get("slo1").get(0).getErrorBudgetIncrementPercentage()).isEqualTo(10.0);
-    assertThat(savedMap.get("slo2").get(0).getErrorBudgetIncrementPercentage()).isEqualTo(20.0);
+    assertThat(savedMap.get("slo1").get(0).getErrorBudgetIncrementMinutes()).isEqualTo(10);
+    assertThat(savedMap.get("slo2").get(0).getErrorBudgetIncrementMinutes()).isEqualTo(20);
   }
 
   @Test

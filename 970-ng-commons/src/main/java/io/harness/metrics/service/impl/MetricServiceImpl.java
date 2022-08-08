@@ -23,8 +23,10 @@ import io.harness.serializer.YamlUtils;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.common.base.Charsets;
 import com.google.common.io.Resources;
+import com.google.inject.Singleton;
 import io.opencensus.common.Duration;
 import io.opencensus.common.Scope;
+import io.opencensus.exporter.stats.prometheus.PrometheusStatsCollector;
 import io.opencensus.exporter.stats.stackdriver.StackdriverStatsConfiguration;
 import io.opencensus.exporter.stats.stackdriver.StackdriverStatsExporter;
 import io.opencensus.stats.Measure;
@@ -40,6 +42,7 @@ import io.opencensus.tags.TagKey;
 import io.opencensus.tags.TagValue;
 import io.opencensus.tags.Tagger;
 import io.opencensus.tags.Tags;
+import io.prometheus.client.exporter.HTTPServer;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -59,23 +62,48 @@ import org.reflections.scanners.ResourcesScanner;
 
 @Slf4j
 @OwnedBy(HarnessTeam.CV)
+@Singleton
 public class MetricServiceImpl implements MetricService {
+  private final int exportIntervalMins;
+  private final boolean isMetricsCollectionIsEnabled;
+  private final List<MetricConfiguration> metricConfigurations = new ArrayList<>();
+  private final Map<String, MetricGroup> metricGroupMap = new HashMap<>();
   private static final String GOOGLE_APPLICATION_CREDENTIALS = "GOOGLE_APPLICATION_CREDENTIALS";
   private static final String ENV_METRICS_COLLECTION_DISABLED = "METRICS_COLLECTION_DISABLED";
-  private static final boolean METRICS_COLLECTION_IS_ENABLED;
-  private static final List<MetricConfiguration> METRIC_CONFIG_DEFINITIONS = new ArrayList<>();
-  private static final Map<String, MetricGroup> METRIC_GROUP_MAP = new HashMap<>();
+  private static final String ENABLE_PROMETHEUS_COLLECTOR = "ENABLE_PROMETHEUS_COLLECTOR";
+  private static final String PROMETHEUS_COLLECTOR_PORT = "PROMETHEUS_COLLECTOR_PORT";
 
-  static {
-    METRICS_COLLECTION_IS_ENABLED = isMetricPublicationEnabled();
-    if (METRICS_COLLECTION_IS_ENABLED) {
-      initializeFromYAML();
+  public MetricServiceImpl(int exportIntervalMins) {
+    this.exportIntervalMins = exportIntervalMins;
+    isMetricsCollectionIsEnabled = isMetricPublicationEnabled();
+    createHttpServerForPrometheus();
+    initializeFromYAML();
+  }
+
+  private final Tagger tagger = Tags.getTagger();
+  private final StatsRecorder statsRecorder = Stats.getStatsRecorder();
+
+  private void createHttpServerForPrometheus() {
+    if (isPrometheusConnectorEnabled()) {
+      int prometheusPort = 8889;
+      if (isNotEmpty(System.getenv(PROMETHEUS_COLLECTOR_PORT))) {
+        prometheusPort = Integer.parseInt(System.getenv(PROMETHEUS_COLLECTOR_PORT));
+      }
+      log.info("Prometheus endpoint port: {}", prometheusPort);
+      try {
+        HTTPServer server = new HTTPServer(prometheusPort, true);
+      } catch (IOException e) {
+        throw new IllegalStateException(e);
+      }
     }
   }
-  private static final Tagger tagger = Tags.getTagger();
-  private static final StatsRecorder statsRecorder = Stats.getStatsRecorder();
 
-  private static boolean isMetricPublicationEnabled() {
+  private boolean isPrometheusConnectorEnabled() {
+    return isNotEmpty(System.getenv(ENABLE_PROMETHEUS_COLLECTOR))
+        && Boolean.parseBoolean(System.getenv(ENABLE_PROMETHEUS_COLLECTOR));
+  }
+
+  private boolean isMetricPublicationEnabled() {
     String disabled = System.getenv(ENV_METRICS_COLLECTION_DISABLED);
     log.info("METRICS_COLLECTION_DISABLED: {}", disabled);
     // By default, metrics collection is enabled.
@@ -84,12 +112,14 @@ public class MetricServiceImpl implements MetricService {
       return false; // Not enabled.
     }
 
-    String creds = System.getenv(GOOGLE_APPLICATION_CREDENTIALS);
-    log.info("GOOGLE_APPLICATION_CREDENTIALS: {}", creds);
-    return isNotEmpty(creds);
+    String googleApplicationCred = System.getenv(GOOGLE_APPLICATION_CREDENTIALS);
+    boolean prometheusCollectorEnabled = isPrometheusConnectorEnabled();
+    log.info("GOOGLE_APPLICATION_CREDENTIALS: {} ENABLE_PROMETHEUS_COLLECTOR: {}", googleApplicationCred,
+        prometheusCollectorEnabled);
+    return isNotEmpty(googleApplicationCred) || prometheusCollectorEnabled;
   }
 
-  private static void recordTaggedStat(Map<TagKey, String> tags, Measure md, Double d) {
+  private void recordTaggedStat(Map<TagKey, String> tags, Measure md, Double d) {
     TagContextBuilder contextBuilder = tagger.emptyBuilder();
     tags.forEach((tag, val) -> contextBuilder.put(tag, TagValue.create(val)));
     TagContext tctx = contextBuilder.build();
@@ -109,10 +139,13 @@ public class MetricServiceImpl implements MetricService {
       metricConfigDefinitions.addAll(metricDefinitionInitializer.getMetricConfiguration());
     });
     registerMetricConfigDefinitions(metricConfigDefinitions);
-    METRIC_CONFIG_DEFINITIONS.addAll(metricConfigDefinitions);
+    metricConfigurations.addAll(metricConfigDefinitions);
   }
 
-  private static void initializeFromYAML() {
+  private void initializeFromYAML() {
+    if (!isMetricsCollectionIsEnabled) {
+      return;
+    }
     List<MetricConfiguration> metricConfigDefinitions = new ArrayList<>();
     long startTime = Instant.now().toEpochMilli();
     Set<String> metricFiles =
@@ -143,29 +176,40 @@ public class MetricServiceImpl implements MetricService {
         final String yaml = Resources.toString(MetricServiceImpl.class.getResource(path), Charsets.UTF_8);
         YamlUtils yamlUtils = new YamlUtils();
         final MetricGroup metricGroup = yamlUtils.read(yaml, new TypeReference<MetricGroup>() {});
-        METRIC_GROUP_MAP.put(metricGroup.getIdentifier(), metricGroup);
+        metricGroupMap.put(metricGroup.getIdentifier(), metricGroup);
       } catch (IOException e) {
         throw new IllegalStateException("Error reading metric group file", e);
       }
     });
     registerMetricConfigDefinitions(metricConfigDefinitions);
-    METRIC_CONFIG_DEFINITIONS.addAll(metricConfigDefinitions);
+    metricConfigurations.addAll(metricConfigDefinitions);
 
     try {
       StackdriverStatsConfiguration configuration =
           StackdriverStatsConfiguration.builder()
-              .setExportInterval(Duration.fromMillis(TimeUnit.MINUTES.toMillis(1)))
-              .setDeadline(Duration.fromMillis(TimeUnit.MINUTES.toMillis(5)))
+              .setExportInterval(Duration.fromMillis(TimeUnit.MINUTES.toMillis(exportIntervalMins)))
+              .setDeadline(Duration.fromMillis(TimeUnit.MINUTES.toMillis(Math.max(10, exportIntervalMins * 5))))
               .setConstantLabels(Collections.emptyMap())
               .build();
       StackdriverStatsExporter.createAndRegister(configuration);
+
       log.info("StackdriverStatsExporter created");
     } catch (Exception ex) {
       log.error("Exception while trying to register stackdriver metrics exporter", ex);
     }
+
+    if (isPrometheusConnectorEnabled()) {
+      try {
+        PrometheusStatsCollector.createAndRegister();
+        log.info("Created prometheus exporter");
+      } catch (Exception ex) {
+        log.error("Exception while trying to register prometheus metrics exporter", ex);
+      }
+    }
+
     log.info("Finished loading metrics definitions from YAML. time taken is {} ms, {} metrics loaded",
-        Instant.now().toEpochMilli() - startTime, METRIC_CONFIG_DEFINITIONS.size());
-    for (MetricConfiguration metricConfiguration : METRIC_CONFIG_DEFINITIONS) {
+        Instant.now().toEpochMilli() - startTime, metricConfigurations.size());
+    for (MetricConfiguration metricConfiguration : metricConfigurations) {
       log.info("Loaded metric definition: {}", metricConfiguration);
     }
   }
@@ -177,17 +221,17 @@ public class MetricServiceImpl implements MetricService {
 
   @Override
   public void initializeMetrics(List<MetricDefinitionInitializer> metricDefinitionInitializes) {
-    if (!METRICS_COLLECTION_IS_ENABLED) {
+    if (!isMetricsCollectionIsEnabled) {
       return;
     }
     fetchAndInitMetricDefinitions(metricDefinitionInitializes);
   }
 
-  private static void registerMetricConfigDefinitions(List<MetricConfiguration> metricConfigDefinitions) {
+  private void registerMetricConfigDefinitions(List<MetricConfiguration> metricConfigDefinitions) {
     metricConfigDefinitions.forEach(metricConfigDefinition -> {
-      List<String> labels = METRIC_GROUP_MAP.get(metricConfigDefinition.getMetricGroup()) == null
+      List<String> labels = metricGroupMap.get(metricConfigDefinition.getMetricGroup()) == null
           ? new ArrayList<>()
-          : METRIC_GROUP_MAP.get(metricConfigDefinition.getMetricGroup()).getLabels();
+          : metricGroupMap.get(metricConfigDefinition.getMetricGroup()).getLabels();
       if (!labels.contains(ENV_LABEL)) {
         labels.add(ENV_LABEL);
       }
@@ -205,11 +249,11 @@ public class MetricServiceImpl implements MetricService {
   @Override
   public void recordMetric(String metricName, double value) {
     try {
-      if (!METRICS_COLLECTION_IS_ENABLED) {
+      if (!isMetricsCollectionIsEnabled) {
         return;
       }
       MetricConfiguration metricConfiguration = null;
-      for (MetricConfiguration configDefinition : METRIC_CONFIG_DEFINITIONS) {
+      for (MetricConfiguration configDefinition : metricConfigurations) {
         if (configDefinition.getMetrics()
                 .stream()
                 .map(MetricConfiguration.Metric::getMetricName)
@@ -228,7 +272,7 @@ public class MetricServiceImpl implements MetricService {
                                                   .findFirst()
                                                   .get();
 
-      MetricGroup group = METRIC_GROUP_MAP.get(metricConfiguration.getMetricGroup());
+      MetricGroup group = metricGroupMap.get(metricConfiguration.getMetricGroup());
       List<String> labelNames =
           group == null || group.getLabels() == null ? Arrays.asList(ENV_LABEL) : group.getLabels();
       Map<String, String> labelVals = group == null ? new HashMap<>() : getLabelValues(labelNames);

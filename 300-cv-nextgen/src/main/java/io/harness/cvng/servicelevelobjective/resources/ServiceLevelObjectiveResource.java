@@ -7,10 +7,7 @@
 
 package io.harness.cvng.servicelevelobjective.resources;
 
-import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.accesscontrol.NGAccessControlCheck;
-import io.harness.accesscontrol.OrgIdentifier;
-import io.harness.accesscontrol.ProjectIdentifier;
 import io.harness.accesscontrol.ResourceIdentifier;
 import io.harness.accesscontrol.acl.api.Resource;
 import io.harness.accesscontrol.acl.api.ResourceScope;
@@ -22,6 +19,7 @@ import io.harness.cvng.beans.cvnglog.CVNGLogDTO;
 import io.harness.cvng.core.beans.params.PageParams;
 import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.core.beans.params.logsFilterParams.SLILogsFilter;
+import io.harness.cvng.notification.beans.NotificationRuleResponse;
 import io.harness.cvng.servicelevelobjective.beans.SLOErrorBudgetResetDTO;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveDTO;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveFilter;
@@ -94,17 +92,9 @@ public class ServiceLevelObjectiveResource {
   @Path("{identifier}")
   @ApiOperation(value = "update slo data", nickname = "updateSLOData")
   @NGAccessControlCheck(resourceType = SLO, permission = EDIT_PERMISSION)
-  public RestResponse<ServiceLevelObjectiveResponse> updateSLOData(
-      @ApiParam(required = true) @NotNull @QueryParam("accountId") @AccountIdentifier String accountId,
-      @ApiParam(required = true) @NotNull @QueryParam("orgIdentifier") @OrgIdentifier String orgIdentifier,
-      @ApiParam(required = true) @NotNull @QueryParam("projectIdentifier") @ProjectIdentifier String projectIdentifier,
+  public RestResponse<ServiceLevelObjectiveResponse> updateSLOData(@NotNull @BeanParam ProjectParams projectParams,
       @ApiParam(required = true) @NotNull @PathParam("identifier") @ResourceIdentifier String identifier,
       @NotNull @Valid @Body ServiceLevelObjectiveDTO serviceLevelObjectiveDTO) {
-    ProjectParams projectParams = ProjectParams.builder()
-                                      .accountIdentifier(accountId)
-                                      .orgIdentifier(orgIdentifier)
-                                      .projectIdentifier(projectIdentifier)
-                                      .build();
     return new RestResponse<>(serviceLevelObjectiveService.update(projectParams, identifier, serviceLevelObjectiveDTO));
   }
 
@@ -114,17 +104,8 @@ public class ServiceLevelObjectiveResource {
   @Path("{identifier}")
   @ApiOperation(value = "delete slo data", nickname = "deleteSLOData")
   @NGAccessControlCheck(resourceType = SLO, permission = DELETE_PERMISSION)
-  public RestResponse<Boolean> deleteSLOData(
-      @ApiParam(required = true) @NotNull @QueryParam("accountId") @AccountIdentifier String accountId,
-      @ApiParam(required = true) @NotNull @PathParam("identifier") @ResourceIdentifier String identifier,
-      @ApiParam(required = true) @NotNull @QueryParam("orgIdentifier") @OrgIdentifier String orgIdentifier,
-      @ApiParam(required = true) @NotNull @QueryParam(
-          "projectIdentifier") @ProjectIdentifier String projectIdentifier) {
-    ProjectParams projectParams = ProjectParams.builder()
-                                      .accountIdentifier(accountId)
-                                      .orgIdentifier(orgIdentifier)
-                                      .projectIdentifier(projectIdentifier)
-                                      .build();
+  public RestResponse<Boolean> deleteSLOData(@NotNull @BeanParam ProjectParams projectParams,
+      @ApiParam(required = true) @NotNull @PathParam("identifier") @ResourceIdentifier String identifier) {
     return new RestResponse<>(serviceLevelObjectiveService.delete(projectParams, identifier));
   }
 
@@ -134,16 +115,9 @@ public class ServiceLevelObjectiveResource {
   @ApiOperation(value = "get all service level objectives ", nickname = "getServiceLevelObjectives")
   @NGAccessControlCheck(resourceType = SLO, permission = VIEW_PERMISSION)
   public ResponseDTO<PageResponse<ServiceLevelObjectiveResponse>> getServiceLevelObjectives(
-      @ApiParam(required = true) @NotNull @QueryParam("accountId") @AccountIdentifier String accountId,
-      @ApiParam(required = true) @NotNull @QueryParam("orgIdentifier") @OrgIdentifier String orgIdentifier,
-      @ApiParam(required = true) @NotNull @QueryParam("projectIdentifier") @ProjectIdentifier String projectIdentifier,
-      @QueryParam("offset") @NotNull Integer offset, @QueryParam("pageSize") @NotNull Integer pageSize,
+      @NotNull @BeanParam ProjectParams projectParams, @QueryParam("offset") @NotNull Integer offset,
+      @QueryParam("pageSize") @NotNull Integer pageSize,
       @BeanParam ServiceLevelObjectiveFilter serviceLevelObjectiveFilter) {
-    ProjectParams projectParams = ProjectParams.builder()
-                                      .accountIdentifier(accountId)
-                                      .orgIdentifier(orgIdentifier)
-                                      .projectIdentifier(projectIdentifier)
-                                      .build();
     return ResponseDTO.newResponse(
         serviceLevelObjectiveService.get(projectParams, offset, pageSize, serviceLevelObjectiveFilter));
   }
@@ -155,16 +129,8 @@ public class ServiceLevelObjectiveResource {
   @ApiOperation(value = "get service level objective data", nickname = "getServiceLevelObjective")
   @NGAccessControlCheck(resourceType = SLO, permission = VIEW_PERMISSION)
   public RestResponse<ServiceLevelObjectiveResponse> getServiceLevelObjective(
-      @ApiParam(required = true) @NotNull @QueryParam("accountId") @AccountIdentifier String accountId,
-      @ApiParam(required = true) @NotNull @PathParam("identifier") @ResourceIdentifier String identifier,
-      @ApiParam(required = true) @NotNull @QueryParam("orgIdentifier") @OrgIdentifier String orgIdentifier,
-      @ApiParam(required = true) @NotNull @QueryParam(
-          "projectIdentifier") @ProjectIdentifier String projectIdentifier) {
-    ProjectParams projectParams = ProjectParams.builder()
-                                      .accountIdentifier(accountId)
-                                      .orgIdentifier(orgIdentifier)
-                                      .projectIdentifier(projectIdentifier)
-                                      .build();
+      @NotNull @BeanParam ProjectParams projectParams,
+      @ApiParam(required = true) @NotNull @PathParam("identifier") @ResourceIdentifier String identifier) {
     return new RestResponse<>(serviceLevelObjectiveService.get(projectParams, identifier));
   }
 
@@ -175,16 +141,9 @@ public class ServiceLevelObjectiveResource {
   @ApiOperation(value = "get service level objective logs", nickname = "getServiceLevelObjectiveLogs")
   @NGAccessControlCheck(resourceType = SLO, permission = VIEW_PERMISSION)
   public RestResponse<PageResponse<CVNGLogDTO>> getServiceLevelObjectiveLogs(
-      @NotNull @QueryParam("accountId") @AccountIdentifier String accountId,
-      @NotNull @QueryParam("orgIdentifier") @OrgIdentifier String orgIdentifier,
-      @NotNull @QueryParam("projectIdentifier") @ProjectIdentifier String projectIdentifier,
+      @NotNull @BeanParam ProjectParams projectParams,
       @ApiParam(required = true) @NotNull @PathParam("identifier") @ResourceIdentifier String identifier,
       @BeanParam SLILogsFilter sliLogsFilter, @BeanParam PageParams pageParams) {
-    ProjectParams projectParams = ProjectParams.builder()
-                                      .accountIdentifier(accountId)
-                                      .orgIdentifier(orgIdentifier)
-                                      .projectIdentifier(projectIdentifier)
-                                      .build();
     return new RestResponse<>(
         serviceLevelObjectiveService.getCVNGLogs(projectParams, identifier, sliLogsFilter, pageParams));
   }
@@ -195,17 +154,9 @@ public class ServiceLevelObjectiveResource {
   @Path("{identifier}/resetErrorBudget")
   @ApiOperation(value = "reset Error budget history", nickname = "resetErrorBudget")
   @NGAccessControlCheck(resourceType = SLO, permission = EDIT_PERMISSION)
-  public RestResponse<SLOErrorBudgetResetDTO> resetErrorBudget(
-      @ApiParam(required = true) @NotNull @QueryParam("accountId") @AccountIdentifier String accountId,
-      @ApiParam(required = true) @NotNull @QueryParam("orgIdentifier") @OrgIdentifier String orgIdentifier,
-      @ApiParam(required = true) @NotNull @QueryParam("projectIdentifier") @ProjectIdentifier String projectIdentifier,
+  public RestResponse<SLOErrorBudgetResetDTO> resetErrorBudget(@NotNull @BeanParam ProjectParams projectParams,
       @ApiParam(required = true) @NotNull @PathParam("identifier") @ResourceIdentifier String sloIdentifier,
       @NotNull @Valid @Body SLOErrorBudgetResetDTO sloErrorBudgetResetDTO) {
-    ProjectParams projectParams = ProjectParams.builder()
-                                      .accountIdentifier(accountId)
-                                      .orgIdentifier(orgIdentifier)
-                                      .projectIdentifier(projectIdentifier)
-                                      .build();
     sloErrorBudgetResetDTO.setServiceLevelObjectiveIdentifier(sloIdentifier);
     return new RestResponse<>(serviceLevelObjectiveService.resetErrorBudget(projectParams, sloErrorBudgetResetDTO));
   }
@@ -217,15 +168,22 @@ public class ServiceLevelObjectiveResource {
   @ApiOperation(value = "get error budget reset History", nickname = "getErrorBudgetResetHistory")
   @NGAccessControlCheck(resourceType = SLO, permission = VIEW_PERMISSION)
   public RestResponse<List<SLOErrorBudgetResetDTO>> getErrorBudgetResetHistory(
-      @ApiParam(required = true) @NotNull @QueryParam("accountId") @AccountIdentifier String accountId,
-      @ApiParam(required = true) @NotNull @QueryParam("orgIdentifier") @OrgIdentifier String orgIdentifier,
-      @ApiParam(required = true) @NotNull @QueryParam("projectIdentifier") @ProjectIdentifier String projectIdentifier,
+      @NotNull @BeanParam ProjectParams projectParams,
       @ApiParam(required = true) @NotNull @PathParam("identifier") @ResourceIdentifier String sloIdentifier) {
-    ProjectParams projectParams = ProjectParams.builder()
-                                      .accountIdentifier(accountId)
-                                      .orgIdentifier(orgIdentifier)
-                                      .projectIdentifier(projectIdentifier)
-                                      .build();
     return new RestResponse<>(serviceLevelObjectiveService.getErrorBudgetResetHistory(projectParams, sloIdentifier));
+  }
+
+  @GET
+  @Timed
+  @ExceptionMetered
+  @Path("{identifier}/notification-rules")
+  @ApiOperation(value = "get notification rules for SLO", nickname = "getNotificationRulesForSLO")
+  @NGAccessControlCheck(resourceType = SLO, permission = VIEW_PERMISSION)
+  public ResponseDTO<PageResponse<NotificationRuleResponse>> getNotificationRulesForSLO(
+      @NotNull @BeanParam ProjectParams projectParams,
+      @ApiParam(required = true) @NotNull @PathParam("identifier") @ResourceIdentifier String sloIdentifier,
+      @BeanParam PageParams pageParams) {
+    return ResponseDTO.newResponse(
+        serviceLevelObjectiveService.getNotificationRules(projectParams, sloIdentifier, pageParams));
   }
 }

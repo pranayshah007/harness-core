@@ -11,7 +11,6 @@ import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.delegate.beans.Delegate.DelegateBuilder;
 import static io.harness.rule.OwnerRule.ARPIT;
 import static io.harness.rule.OwnerRule.MARKO;
-import static io.harness.rule.OwnerRule.MARKOM;
 import static io.harness.rule.OwnerRule.NICOLAS;
 import static io.harness.rule.OwnerRule.NIKOLA;
 import static io.harness.rule.OwnerRule.SANJA;
@@ -347,7 +346,7 @@ public class DelegateProfileServiceTest extends WingsBaseTest {
   }
 
   @Test
-  @Owner(developers = MARKOM)
+  @Owner(developers = MARKO)
   @Category(UnitTests.class)
   public void testFetchNgPrimaryProfileShouldCreateOrgProfile() {
     final String accountId = "accountId";

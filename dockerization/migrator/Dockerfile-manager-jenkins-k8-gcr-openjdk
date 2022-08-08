@@ -1,8 +1,8 @@
 # to be used when building in Jenkins
-FROM us.gcr.io/platform-205701/alpine:safe-alpine3.12-sec1695-bt699-apm
+FROM us.gcr.io/platform-205701/alpine:safe-alpine3.15.4-bt1276-apm
 
 # Add the capsule JAR and config.yml
-COPY migrator-capsule.jar newrelic.yml keystore.jks config.yml hazelcast.xml redisson-jcache.yaml alpn-boot-8.1.13.v20181017.jar protocol.info /opt/harness/
+COPY migrator-capsule.jar newrelic.yml keystore.jks config.yml hazelcast.xml redisson-jcache.yaml protocol.info /opt/harness/
 
 COPY scripts /opt/harness
 

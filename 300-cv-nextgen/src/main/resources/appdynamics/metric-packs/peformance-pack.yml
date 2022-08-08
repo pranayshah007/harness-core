@@ -2,63 +2,63 @@ identifier: Performance
 category: Performance
 metrics:
   - name: Average Response Time (ms)
-    identifier: Average_Response_Time_ms
+    identifier: average_response_time_ms
     type: RESP_TIME
     path: Business Transaction Performance|Business Transactions|__tier_name__|__metric_filter__|Average Response Time (ms)
     validationPath: Overall Application Performance|__tier_name__|Average Response Time (ms)
     included: true
   - name: Calls per Minute
-    identifier: Calls_per_Minute
+    identifier: calls_per_minute
     type: THROUGHPUT
     path: Business Transaction Performance|Business Transactions|__tier_name__|__metric_filter__|Calls per Minute
     validationPath: Overall Application Performance|__tier_name__|Calls per Minute
     included: true
   - name: Stall Count
-    identifier: Stall_Count
+    identifier: stall_count
     type: ERROR
     path: Business Transaction Performance|Business Transactions|__tier_name__|__metric_filter__|Stall Count
     validationPath: Overall Application Performance|__tier_name__|Stall Count
     included: true
   - name: Errors per Minute
-    identifier: Errors_per_Minute
+    identifier: errors_per_minute
     type: ERROR
     path: Business Transaction Performance|Business Transactions|__tier_name__|__metric_filter__|Errors per Minute
     validationPath: Overall Application Performance|__tier_name__|Errors per Minute
     included: true
   - name: 95th Percentile Response Time (ms)
-    identifier: 95th_Percentile_Response_Time_ms
+    identifier: 95th_percentile_response_time_ms
     type: RESP_TIME
     path: Business Transaction Performance|Business Transactions|__tier_name__|__metric_filter__|95th Percentile Response Time (ms)
     included: false
   - name: Average Block Time (ms)
-    identifier: Average_Block_Time_ms
+    identifier: average_block_time_ms
     type: RESP_TIME
     path: Business Transaction Performance|Business Transactions|__tier_name__|__metric_filter__|Average Block Time (ms)
     included: false
   - name: Average CPU Used (ms)
-    identifier: Average_CPU_Used_ms
+    identifier: average_cpu_used_ms
     type: INFRA
     path: Business Transaction Performance|Business Transactions|__tier_name__|__metric_filter__|Average CPU Used (ms)
     included: false
   - name: Average Wait Time (ms)
-    identifier: Average_Wait_Time_ms
+    identifier: average_wait_time_ms
     type: RESP_TIME
     path: Business Transaction Performance|Business Transactions|__tier_name__|__metric_filter__|Average Wait Time (ms)
     included: false
   - name: Normal Average Response Time (ms)
-    identifier: Normal_Average_Response_Time_ms
+    identifier: normal_average_response_time_ms
     type: RESP_TIME
     path: Business Transaction Performance|Business Transactions|__tier_name__|__metric_filter__|Normal Average Response Time (ms)
     validationPath: Overall Application Performance|__tier_name__|Normal Average Response Time (ms)
     included: false
   - name: Number of Slow Calls
-    identifier: Number_of_Slow_Calls
+    identifier: number_of_slow_calls
     type: ERROR
     path: Business Transaction Performance|Business Transactions|__tier_name__|__metric_filter__|Number of Slow Calls
     validationPath: Overall Application Performance|__tier_name__|Number of Slow Calls
     included: false
   - name: Number of Very Slow Calls
-    identifier: Number_of_Very_Slow_Calls
+    identifier: number_of_very_slow_calls
     type: ERROR
     path: Business Transaction Performance|Business Transactions|__tier_name__|__metric_filter__|Number of Very Slow Calls
     validationPath: Overall Application Performance|__tier_name__|Number of Very Slow Calls

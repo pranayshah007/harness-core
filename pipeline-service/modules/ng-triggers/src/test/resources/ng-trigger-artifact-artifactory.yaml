@@ -1,0 +1,41 @@
+trigger:
+  name: first trigger
+  identifier: first_trigger
+  enabled: true
+  tags: {}
+  orgIdentifier: org
+  projectIdentifier: proj
+  pipelineIdentifier: pipeline
+  source:
+    type: Artifact
+    spec:
+      stageIdentifier: dev
+      artifactRef: primary
+      type: ArtifactoryRegistry
+      spec:
+        connectorRef: account.conn
+        artifactDirectory: artifactstest
+        repository: automation-repo-do-not-delete
+        repositoryFormat: generic
+        artifactPath: <+trigger.artifact.build>
+        eventConditions:
+          - key: build
+            operator: Regex
+            value: release.*
+  inputYaml: |
+    pipeline:
+        identifier: pipeline
+        stages:
+            - stage:
+                  identifier: dev
+                  type: Deployment
+                  spec:
+                      serviceConfig:
+                          serviceDefinition:
+                              type: ServerlessAwsLambda
+                              spec:
+                                  artifacts:
+                                      primary:
+                                          type: ArtifactoryRegistry
+                                          spec:
+                                              artifactPath: <+trigger.artifact.build>

@@ -48,8 +48,8 @@ public class PmsGrpcClientUtils {
     } else if (ex instanceof StatusRuntimeException) {
       return processStatusRuntimeException((StatusRuntimeException) ex);
     } else {
-      return new GeneralException(
-          ex == null ? "Unknown error while communicating with pipeline service" : ExceptionUtils.getMessage(ex));
+      log.error("Unknown Error Occurred, check exception logs", ex);
+      return new GeneralException(ex == null ? "Unknown Error Occurred" : ExceptionUtils.getMessage(ex));
     }
   }
 
@@ -59,8 +59,8 @@ public class PmsGrpcClientUtils {
               ? "Unknown grpc error while communicating with pipeline service"
               : ex.getStatus().getDescription());
     }
-    log.error("Error connecting to pipeline service. Is it running?", ex);
-    return new GeneralException("Error connecting to pipeline service");
+    log.error("Unknown Exception Occurred.", ex);
+    return new GeneralException("Unknown Exception Occurred. Please contact with Harness.", ex);
   }
 
   private RetryPolicy<Object> createRetryPolicy() {

@@ -19,6 +19,7 @@ import io.harness.delegate.task.pcf.response.CfCommandExecutionResponse;
 import io.harness.delegate.task.pcf.response.CfInstanceSyncResponse;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidArgumentsException;
+import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.pcf.model.CfRequestConfig;
 import io.harness.security.encryption.EncryptedDataDetail;
@@ -56,7 +57,7 @@ public class PcfApplicationDetailsCommandTaskHandler extends PcfCommandTaskHandl
     try {
       CfInternalConfig pcfConfig = cfCommandRequest.getPcfConfig();
       secretDecryptionService.decrypt(pcfConfig, encryptedDataDetails, isInstanceSync);
-
+      ExceptionMessageSanitizer.storeAllSecretsForSanitizing(pcfConfig, encryptedDataDetails);
       CfInstanceSyncRequest cfInstanceSyncRequest = (CfInstanceSyncRequest) cfCommandRequest;
       CfRequestConfig cfRequestConfig =
           CfRequestConfig.builder()
@@ -88,7 +89,7 @@ public class PcfApplicationDetailsCommandTaskHandler extends PcfCommandTaskHandl
       log.warn("Failed while collecting PCF Application Details For Application: {}, with Error: {}",
           ((CfInstanceSyncRequest) cfCommandRequest).getPcfApplicationName(), e);
       cfInstanceSyncResponse.setCommandExecutionStatus(CommandExecutionStatus.FAILURE);
-      cfInstanceSyncResponse.setOutput(ExceptionUtils.getMessage(e));
+      cfInstanceSyncResponse.setOutput(ExceptionUtils.getMessage(ExceptionMessageSanitizer.sanitizeException(e)));
     }
 
     cfCommandExecutionResponse.setErrorMessage(cfInstanceSyncResponse.getOutput());

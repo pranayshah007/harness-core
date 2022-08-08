@@ -46,12 +46,16 @@ import io.harness.rule.Owner;
 import io.harness.rule.Repeat;
 import io.harness.serializer.JsonUtils;
 
+import software.wings.beans.ApmMetricCollectionInfo;
+import software.wings.beans.ApmResponseMapping;
 import software.wings.beans.ElkConfig;
 import software.wings.beans.Environment;
 import software.wings.beans.Service;
 import software.wings.beans.SettingAttribute;
 import software.wings.beans.SettingAttribute.Builder;
 import software.wings.beans.SettingAttribute.SettingCategory;
+import software.wings.beans.apm.Method;
+import software.wings.beans.apm.ResponseType;
 import software.wings.dl.WingsPersistence;
 import software.wings.integration.IntegrationTestBase;
 import software.wings.metrics.MetricType;
@@ -75,10 +79,6 @@ import software.wings.service.impl.newrelic.LearningEngineAnalysisTask.LearningE
 import software.wings.service.intfc.AppService;
 import software.wings.service.intfc.EnvironmentService;
 import software.wings.sm.StateType;
-import software.wings.sm.states.APMVerificationState.Method;
-import software.wings.sm.states.APMVerificationState.MetricCollectionInfo;
-import software.wings.sm.states.APMVerificationState.ResponseMapping;
-import software.wings.sm.states.APMVerificationState.ResponseType;
 import software.wings.verification.CVConfiguration;
 import software.wings.verification.CVConfiguration.CVConfigurationKeys;
 import software.wings.verification.apm.APMCVServiceConfiguration;
@@ -359,12 +359,12 @@ public class CVConfigurationIntegrationTest extends IntegrationTestBase {
     apmcvServiceConfiguration.setStateType(APM_VERIFICATION);
     apmcvServiceConfiguration.setAnalysisTolerance(AnalysisTolerance.MEDIUM);
 
-    List<MetricCollectionInfo> metricCollectionInfos = new ArrayList<>();
-    ResponseMapping responseMapping = new ResponseMapping("queries[*].results.[0].name", "somejsonpath", "sometxnname",
-        "somemetricjsonpath", "hostpath", "hostregex", "timestamppath", "formattimestamp");
+    List<ApmMetricCollectionInfo> metricCollectionInfos = new ArrayList<>();
+    ApmResponseMapping responseMapping = new ApmResponseMapping("queries[*].results.[0].name", "somejsonpath",
+        "sometxnname", "somemetricjsonpath", "hostpath", "hostregex", "timestamppath", "formattimestamp");
 
-    MetricCollectionInfo metricCollectionInfo = new MetricCollectionInfo("metricName", MetricType.INFRA, "randomtag",
-        "dummyuri", null, "bodycollection", ResponseType.JSON, responseMapping, Method.POST);
+    ApmMetricCollectionInfo metricCollectionInfo = new ApmMetricCollectionInfo("metricName", MetricType.INFRA,
+        "randomtag", "dummyuri", null, "bodycollection", ResponseType.JSON, responseMapping, Method.POST);
 
     metricCollectionInfos.add(metricCollectionInfo);
     apmcvServiceConfiguration.setMetricCollectionInfos(metricCollectionInfos);
@@ -670,9 +670,9 @@ public class CVConfigurationIntegrationTest extends IntegrationTestBase {
     assertThat(APM_VERIFICATION).isEqualTo(fetchedObject.getStateType());
     assertThat(AnalysisTolerance.MEDIUM).isEqualTo(fetchedObject.getAnalysisTolerance());
 
-    List<MetricCollectionInfo> metricCollectionInfos = fetchedObject.getMetricCollectionInfos();
+    List<ApmMetricCollectionInfo> metricCollectionInfos = fetchedObject.getMetricCollectionInfos();
     assertThat(1).isEqualTo(metricCollectionInfos.size());
-    MetricCollectionInfo metricCollectionInfo = metricCollectionInfos.get(0);
+    ApmMetricCollectionInfo metricCollectionInfo = metricCollectionInfos.get(0);
     assertThat("metricName").isEqualTo(metricCollectionInfo.getMetricName());
     assertThat("dummyuri").isEqualTo(metricCollectionInfo.getCollectionUrl());
     assertThat("bodycollection").isEqualTo(metricCollectionInfo.getCollectionBody());
@@ -680,7 +680,7 @@ public class CVConfigurationIntegrationTest extends IntegrationTestBase {
     assertThat(Method.POST).isEqualTo(metricCollectionInfo.getMethod());
     assertThat(ResponseType.JSON).isEqualTo(metricCollectionInfo.getResponseType());
 
-    ResponseMapping responseMapping = metricCollectionInfo.getResponseMapping();
+    ApmResponseMapping responseMapping = metricCollectionInfo.getResponseMapping();
     assertThat("timestamppath").isEqualTo(responseMapping.getTimestampJsonPath());
     assertThat("queries[*].results.[0].name").isEqualTo(responseMapping.getTxnNameFieldValue());
     assertThat("hostpath").isEqualTo(responseMapping.getHostJsonPath());

@@ -52,6 +52,7 @@ import static java.util.Arrays.asList;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
+import io.harness.beans.ArtifactMetadata;
 
 import software.wings.beans.ArtifactVariable;
 import software.wings.beans.AzureConfig;
@@ -102,7 +103,7 @@ public class TriggerServiceTestHelper {
                                         .withAppId(APP_ID)
                                         .withUuid(ARTIFACT_ID)
                                         .withArtifactStreamId(ARTIFACT_STREAM_ID)
-                                        .withMetadata(ImmutableMap.of("buildNo", ARTIFACT_FILTER))
+                                        .withMetadata(new ArtifactMetadata(ImmutableMap.of("buildNo", ARTIFACT_FILTER)))
                                         .build();
 
   public static Trigger buildArtifactTrigger() {

@@ -24,7 +24,7 @@ import software.wings.WingsBaseTest;
 import software.wings.beans.AzureImageDefinition;
 import software.wings.beans.AzureImageVersion;
 import software.wings.beans.artifact.ArtifactStreamAttributes;
-import software.wings.helpers.ext.azure.AzureHelperService;
+import software.wings.helpers.ext.azure.AzureDelegateHelperService;
 import software.wings.helpers.ext.jenkins.BuildDetails;
 import software.wings.service.impl.AzureMachineImageBuildServiceImpl;
 import software.wings.service.intfc.AzureMachineImageBuildService;
@@ -42,14 +42,14 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 
 public class AzureMachineImageBuildServiceTest extends WingsBaseTest {
-  @Mock AzureHelperService azureHelperService;
+  @Mock AzureDelegateHelperService azureDelegateHelperService;
   @Inject @InjectMocks AzureMachineImageBuildService buildService = new AzureMachineImageBuildServiceImpl();
 
   @Test
   @Owner(developers = DEEPAK_PUTHRAYA)
   @Category(UnitTests.class)
   public void testGetBuilds() {
-    when(azureHelperService.listImageDefinitionVersions(
+    when(azureDelegateHelperService.listImageDefinitionVersions(
              any(), any(), anyString(), anyString(), anyString(), anyString()))
         .thenReturn(Lists.newArrayList(AzureImageVersion.builder()
                                            .name("v1.0")
@@ -107,7 +107,7 @@ public class AzureMachineImageBuildServiceTest extends WingsBaseTest {
                                               .azureImageGalleryName("galleryName")
                                               .azureImageDefinition("imageDefinition")
                                               .build();
-    when(azureHelperService.listImageDefinitions(
+    when(azureDelegateHelperService.listImageDefinitions(
              any(), any(), eq("subscriptionId"), eq("resourceGroup"), eq("galleryName")))
         .thenReturn(Lists.newArrayList(AzureImageDefinition.builder().name("imageDefinition").osType("LINUX").build()));
 
@@ -129,7 +129,7 @@ public class AzureMachineImageBuildServiceTest extends WingsBaseTest {
                                               .azureImageGalleryName("galleryName")
                                               .azureImageDefinition("imageDefinition")
                                               .build();
-    when(azureHelperService.listImageDefinitions(
+    when(azureDelegateHelperService.listImageDefinitions(
              any(), any(), eq("subscriptionId"), eq("resourceGroup"), eq("galleryName")))
         .thenReturn(
             Lists.newArrayList(AzureImageDefinition.builder().name("randomImageDefinition").osType("LINUX").build()));

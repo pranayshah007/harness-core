@@ -17,7 +17,8 @@ import software.wings.settings.SettingVariableTypes;
 public enum SecretType {
   SecretFile,
   SecretText,
-  SSHKey;
+  SSHKey,
+  WinRmCredentials;
 
   public static SettingVariableTypes toSettingVariableType(SecretType secretType) {
     if (secretType == null) {
@@ -30,6 +31,8 @@ public enum SecretType {
         return SettingVariableTypes.SECRET_TEXT;
       case SSHKey:
         return SettingVariableTypes.SSH_SESSION_CONFIG;
+      case WinRmCredentials:
+        return SettingVariableTypes.WINRM_SESSION_CONFIG;
       default:
         throw new IllegalArgumentException("SecretType " + secretType + " cannot be converted to settingVariableType");
     }

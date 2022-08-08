@@ -62,6 +62,8 @@ public interface ServiceResourceService extends OwnedByApplication {
   PageResponse<Service> list(PageRequest<Service> request, boolean withBuildSource, boolean withServiceCommands,
       boolean withTags, String tagFilter);
 
+  List<Service> list(String accountId, List<String> projectFields);
+
   /**
    * Save.
    *
@@ -158,6 +160,15 @@ public interface ServiceResourceService extends OwnedByApplication {
   Service get(@NotEmpty String appId, @NotEmpty String serviceId, boolean includeCommands);
 
   String getName(@NotEmpty String appId, @NotEmpty String serviceId);
+
+  /**
+   * Gets map of Service id and Service name.
+   *
+   * @param accountId
+   * @param serviceIds
+   * @return Map of Service id and Service names
+   */
+  Map<String, String> getServiceNamesWithAccountId(String accountId, @Nonnull Set<String> serviceIds);
 
   /**
    * Gets service by name.

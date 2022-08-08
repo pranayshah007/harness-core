@@ -71,11 +71,9 @@ import software.wings.service.intfc.AppService;
 import software.wings.service.intfc.DataStoreService;
 import software.wings.service.intfc.MetricDataAnalysisService;
 import software.wings.service.intfc.SettingsService;
-import software.wings.service.intfc.VerificationService;
 import software.wings.service.intfc.WorkflowExecutionService;
 import software.wings.service.intfc.WorkflowService;
 import software.wings.service.intfc.analysis.ClusterLevel;
-import software.wings.service.intfc.verification.CVConfigurationService;
 import software.wings.sm.StateExecutionData;
 import software.wings.sm.StateExecutionInstance;
 import software.wings.sm.StateType;
@@ -116,12 +114,10 @@ public class MetricDataAnalysisServiceImpl implements MetricDataAnalysisService 
   public static final int DEFAULT_PAGE_SIZE = 10;
   @Inject private WingsPersistence wingsPersistence;
   @Inject private WorkflowExecutionService workflowExecutionService;
-  @Inject private VerificationService learningEngineService;
   @Inject protected SettingsService settingsService;
   @Inject private WorkflowService workflowService;
   @Inject private AppService appService;
   @Inject private DataStoreService dataStoreService;
-  @Inject private CVConfigurationService cvConfigurationService;
 
   @Override
   public String getLastSuccessfulWorkflowExecutionIdWithData(DelegateStateType stateType, String appId,
@@ -320,7 +316,10 @@ public class MetricDataAnalysisServiceImpl implements MetricDataAnalysisService 
   public List<TimeSeriesMLTransactionThresholds> getCustomThreshold(String customThresholdRefId) {
     Query<TimeSeriesMLTransactionThresholds> query =
         wingsPersistence.createQuery(TimeSeriesMLTransactionThresholds.class, excludeAuthority)
-            .filter(TimeSeriesMLTransactionThresholdKeys.customThresholdRefId, customThresholdRefId);
+            .filter(TimeSeriesMLTransactionThresholdKeys.customThresholdRefId, customThresholdRefId)
+            .order(Sort.ascending(TimeSeriesMLTransactionThresholdKeys.groupName),
+                Sort.ascending(TimeSeriesMLTransactionThresholdKeys.transactionName),
+                Sort.ascending(TimeSeriesMLTransactionThresholdKeys.metricName));
 
     List<TimeSeriesMLTransactionThresholds> transactionThresholds = new ArrayList<>();
     try (HIterator<TimeSeriesMLTransactionThresholds> iterator = new HIterator(query.fetch())) {

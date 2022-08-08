@@ -244,27 +244,6 @@ public class NexusRegistryServiceImplTest extends CategoryTest {
     assertThat(response).isEqualTo(true);
   }
 
-  @Test
-  @Owner(developers = MLUKIC)
-  @Category(UnitTests.class)
-  public void testVerifyArtifactManifestUrl() {
-    NexusRequest nexusConfig = NexusRequest.builder()
-                                   .nexusUrl(NEXUS_URL)
-                                   .username(NEXUS_USERNAME)
-                                   .password(NEXUS_PASSWORD.toCharArray())
-                                   .artifactRepositoryUrl("nexus.harness.io:8002")
-                                   .build();
-
-    doReturn(true)
-        .when(nexusClient)
-        .verifyArtifactManifestUrl(nexusConfig,
-            buildDetailsData.get("bdi2").get(0).getMetadata().get(ArtifactMetadataKeys.ARTIFACT_MANIFEST_URL));
-
-    boolean response = nexusRegistryService.verifyArtifactManifestUrl(buildDetailsData.get("bdi2").get(0), nexusConfig);
-    assertThat(response).isNotNull();
-    assertThat(response).isEqualTo(true);
-  }
-
   private BuildDetailsInternal createBuildDetails(
       String repoUrl, String port, String repoName, String imageName, String tag) {
     return BuildDetailsInternal.builder()
@@ -282,8 +261,6 @@ public class NexusRegistryServiceImplTest extends CategoryTest {
     Map<String, String> metadata = new HashMap<>();
     metadata.put(ArtifactMetadataKeys.IMAGE, generateArtifactPullUrl(hostname, port, imagePath, imageTag));
     metadata.put(ArtifactMetadataKeys.TAG, imageTag);
-    metadata.put(ArtifactMetadataKeys.ARTIFACT_MANIFEST_URL,
-        hostname + "/repository/" + repoName + "/v2/" + imagePath + "/manifests/" + imageTag);
     return metadata;
   }
 }

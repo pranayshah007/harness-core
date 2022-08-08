@@ -1,0 +1,54 @@
+provisioner:
+  steps:
+    - step:
+        type: CreateStack
+        name: Create Stack
+        identifier: dfe51017-d346-5323-be6f-c55cbb699cc5
+        timeout: 10m
+        spec:
+          provisionerIdentifier:
+          configuration:
+            connectorRef:
+            region:
+            roleArn:
+            templateFile:
+            parameters:
+            stackName:
+            parameterOverrides:
+            skipOnStackStatuses:
+            capabilities:
+            tags:
+    - step:
+        type: HarnessApproval
+        name: Harness Approval
+        identifier: dfe51017-d346-5323-be6f-c55cbb699cc4
+        timeout: 1d
+        spec:
+          approvalMessage:
+          includePipelineExecutionHistory: true
+          approvers:
+            userGroups: [ ]
+            minimumCount: 1
+            disallowPipelineExecutor: true
+          approverInputs:
+            - name: ""
+              defaultValue: ""
+    - step:
+        type: DeleteStack
+        name: Delete Stack
+        identifier: dfe51017-d346-5323-be6f-c55cbb699ff3
+        timeout: 10m
+        spec:
+          configuration:
+            type: Inherited
+            spec:
+              provisionerIdentifier:
+  rollbackSteps:
+    - step:
+        type: RollbackStack
+        name: Rollback Stack
+        identifier: dfe51017-d346-5323-be6f-c55cbb699ff5
+        spec:
+          configuration:
+            provisionerIdentifier:
+        timeout: 10m

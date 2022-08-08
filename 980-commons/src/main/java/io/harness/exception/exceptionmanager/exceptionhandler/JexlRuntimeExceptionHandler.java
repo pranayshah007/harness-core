@@ -17,7 +17,9 @@ import io.harness.exception.runtime.JexlRuntimeException;
 
 import com.google.common.collect.ImmutableSet;
 import java.util.Set;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @OwnedBy(HarnessTeam.PIPELINE)
 public class JexlRuntimeExceptionHandler implements ExceptionHandler {
   public static Set<Class<? extends Exception>> exceptions() {
@@ -26,6 +28,7 @@ public class JexlRuntimeExceptionHandler implements ExceptionHandler {
 
   @Override
   public WingsException handleException(Exception exception) {
+    log.error("Logging JexlRuntime exception details", exception);
     if (exception instanceof JexlRuntimeException) {
       JexlRuntimeException jexlRuntimeException = (JexlRuntimeException) exception;
       String expression = jexlRuntimeException.getExpression();
@@ -33,13 +36,28 @@ public class JexlRuntimeExceptionHandler implements ExceptionHandler {
       if (jexlRuntimeException.getRootCause() != null) {
         message = ExceptionUtils.getMessage(jexlRuntimeException.getRootCause());
       } else {
-        message = ExceptionUtils.getMessage(exception);
-      }
-      if (message.contains("parsing")) {
-        message = "Expression could not be resolved due to incorrect expression format.";
+        message = getExplanationMessage(exception);
       }
       return new EngineExpressionEvaluationException(message, expression);
     }
     return new InvalidRequestException(ExceptionUtils.getMessage(exception));
+  }
+
+  public static String getExplanationMessage(Exception ex) {
+    String message = ExceptionUtils.getMessage(ex);
+    if (message.contains("parsing")) {
+      return "Expression could not be resolved due to incorrect expression format.";
+    } else {
+      return "Failed to evaluate the expression.";
+    }
+  }
+
+  public static String getHintMessage(Exception ex) {
+    String message = ExceptionUtils.getMessage(ex);
+    if (message.contains("parsing")) {
+      return "Please re-check the expressions are written in correct format of <+...> as well as for embedded expressions.";
+    } else {
+      return "Expression might contain some unresolved expressions which could not be evaluated.";
+    }
   }
 }

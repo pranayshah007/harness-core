@@ -62,4 +62,9 @@ public class HelmDeployStepInfo extends HelmDeployBaseStepInfo implements CDStep
   public SpecParameters getSpecParameters() {
     return HelmDeployStepParams.infoBuilder().delegateSelectors(delegateSelectors).build();
   }
+
+  @Override
+  public ParameterField<List<TaskSelectorYaml>> fetchDelegateSelectors() {
+    return getDelegateSelectors();
+  }
 }

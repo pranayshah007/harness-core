@@ -23,10 +23,6 @@ import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.openshift.OpenShiftClient;
 
-import com.fasterxml.jackson.dataformat.yaml.snakeyaml.DumperOptions;
-import com.fasterxml.jackson.dataformat.yaml.snakeyaml.Yaml;
-import com.fasterxml.jackson.dataformat.yaml.snakeyaml.constructor.SafeConstructor;
-import com.fasterxml.jackson.dataformat.yaml.snakeyaml.representer.Representer;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.io.IOException;
@@ -36,6 +32,10 @@ import java.util.List;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.validator.constraints.NotEmpty;
+import org.yaml.snakeyaml.DumperOptions;
+import org.yaml.snakeyaml.Yaml;
+import org.yaml.snakeyaml.constructor.SafeConstructor;
+import org.yaml.snakeyaml.representer.Representer;
 
 @OwnedBy(CDP)
 @Singleton

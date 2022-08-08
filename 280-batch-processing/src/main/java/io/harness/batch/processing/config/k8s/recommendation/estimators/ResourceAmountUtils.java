@@ -66,7 +66,7 @@ public class ResourceAmountUtils {
     return Optional.ofNullable(resourceMap.get(MEMORY)).orElse(0L);
   }
 
-  static Map<String, String> convertToReadableForm(Map<String, Long> resourceMap) {
+  public static Map<String, String> convertToReadableForm(Map<String, Long> resourceMap) {
     ImmutableMap.Builder<String, String> builder = ImmutableMap.<String, String>builder();
     if (resourceMap.containsKey(CPU)) {
       builder.put(CPU, readableCpuAmount(cpu(resourceMap)));

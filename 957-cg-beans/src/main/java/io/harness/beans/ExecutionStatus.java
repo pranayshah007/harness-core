@@ -62,6 +62,7 @@ public enum ExecutionStatus {
   private static Set<ExecutionStatus> persistedActiveStatuses = EnumSet.<ExecutionStatus>of(RUNNING, PAUSED);
   public static Set<ExecutionStatus> resumableStatuses =
       EnumSet.<ExecutionStatus>of(FAILED, ABORTED, REJECTED, EXPIRED, ERROR);
+
   ExecutionStatus() {}
 
   public static Set<ExecutionStatus> activeStatuses() {
@@ -85,6 +86,10 @@ public enum ExecutionStatus {
 
   public static boolean isFinalStatus(ExecutionStatus status) {
     return status != null && finalStatuses.contains(status);
+  }
+
+  public static boolean isNotFinalStatus(ExecutionStatus status) {
+    return !isFinalStatus(status);
   }
 
   public static Set<ExecutionStatus> brokeStatuses() {

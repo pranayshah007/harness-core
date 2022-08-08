@@ -7,9 +7,6 @@
                     blaze-command="run"
                     keep-in-sync="true">
         <blaze-target>//360-cg-manager:module</blaze-target>
-        <blaze-user-flag>
-            --jvmopt="-Xbootclasspath/p:${PROJECT_DIR}/../alpn-boot-8.1.13.v20181017.jar"
-        </blaze-user-flag>
         <blaze-user-exe-flag>server</blaze-user-exe-flag>
         <blaze-user-exe-flag>$PROJECT_DIR$/../360-cg-manager/config.yml</blaze-user-exe-flag>
     </blaze-settings>

@@ -10,6 +10,7 @@ package software.wings.sm.states;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.rule.OwnerRule.ANSHUL;
 import static io.harness.rule.OwnerRule.ROHIT_KUMAR;
+import static io.harness.rule.OwnerRule.VAIBHAV_KUMAR;
 
 import static software.wings.beans.Application.Builder.anApplication;
 import static software.wings.beans.Environment.Builder.anEnvironment;
@@ -69,7 +70,8 @@ import software.wings.beans.Environment;
 import software.wings.beans.LambdaSpecification;
 import software.wings.beans.Service;
 import software.wings.beans.SettingAttribute;
-import software.wings.beans.artifact.Artifact.ArtifactMetadataKeys;
+import software.wings.beans.artifact.Artifact;
+import software.wings.beans.artifact.ArtifactMetadataKeys;
 import software.wings.beans.artifact.ArtifactStreamAttributes;
 import software.wings.beans.artifact.ArtifactStreamType;
 import software.wings.beans.artifact.DockerArtifactStream;
@@ -88,8 +90,10 @@ import software.wings.service.intfc.ServiceTemplateService;
 import software.wings.service.intfc.SettingsService;
 import software.wings.service.intfc.StateExecutionService;
 import software.wings.service.intfc.security.SecretManager;
+import software.wings.settings.SettingVariableTypes;
 import software.wings.sm.ExecutionContextImpl;
 import software.wings.sm.WorkflowStandardParams;
+import software.wings.sm.WorkflowStandardParamsExtensionService;
 import software.wings.utils.WingsTestConstants;
 
 import java.util.Collections;
@@ -120,6 +124,7 @@ public class AwsLambdaStateTest extends CategoryTest {
   @Mock private ServiceTemplateService serviceTemplateService;
   @Mock private DelegateService delegateService;
   @Mock private StateExecutionService stateExecutionService;
+  @Mock WorkflowStandardParamsExtensionService workflowStandardParamsExtensionService;
 
   @Spy @InjectMocks AwsLambdaState awsLambdaState;
   private SettingAttribute awsSetting =
@@ -152,9 +157,9 @@ public class AwsLambdaStateTest extends CategoryTest {
     EmbeddedUser mockCurrentUser = mock(EmbeddedUser.class);
     doReturn(mockCurrentUser).when(mockParams).getCurrentUser();
     doReturn(mockParams).when(mockContext).getContextElement(ContextElementType.STANDARD);
-    doReturn(app).when(mockParams).fetchRequiredApp();
-    doReturn(env).when(mockParams).getEnv();
-    doReturn(env).when(mockParams).getEnv();
+    doReturn(app).when(workflowStandardParamsExtensionService).fetchRequiredApp(mockParams);
+    doReturn(env).when(workflowStandardParamsExtensionService).getEnv(mockParams);
+    doReturn(env).when(workflowStandardParamsExtensionService).getEnv(mockParams);
     doReturn(mock(Service.class)).when(serviceResourceService).getWithDetails(anyString(), anyString());
     final ServiceCommand serviceCommandMock = mock(ServiceCommand.class);
     doReturn(serviceCommandMock)
@@ -200,8 +205,8 @@ public class AwsLambdaStateTest extends CategoryTest {
     EmbeddedUser mockCurrentUser = mock(EmbeddedUser.class);
     doReturn(mockCurrentUser).when(mockParams).getCurrentUser();
     doReturn(mockParams).when(mockContext).getContextElement(ContextElementType.STANDARD);
-    doReturn(app).when(mockParams).fetchRequiredApp();
-    doReturn(env).when(mockParams).getEnv();
+    doReturn(app).when(workflowStandardParamsExtensionService).fetchRequiredApp(mockParams);
+    doReturn(env).when(workflowStandardParamsExtensionService).getEnv(mockParams);
 
     DockerArtifactStream mockDockerArtifactStream = mock(DockerArtifactStream.class);
     ArtifactStreamAttributes artifactStreamAttributes = ArtifactStreamAttributes.builder()
@@ -252,6 +257,39 @@ public class AwsLambdaStateTest extends CategoryTest {
     verify(aliases, atLeastOnce()).isEmpty();
     AwsLambdaExecuteWfRequest parameter = (AwsLambdaExecuteWfRequest) delegateTask.getData().getParameters()[0];
     assertThat(parameter.getEvaluatedAliases()).isEmpty();
+  }
+
+  @Test
+  @Owner(developers = VAIBHAV_KUMAR)
+  @Category(UnitTests.class)
+  public void testArtifactPathForSource() {
+    // Case1: when jobName occurs as a substring inside artifactPath
+    String path = "harness-internal/harness-internal/20211208.2.zip";
+    String jobName1 = "harness-internal";
+    String url1 = "https://harness.jfrog.io/artifactory/harness-internal/harness-internal/20211208.2.zip";
+    Map<String, String> metadata = new HashMap<String, String>() {
+      {
+        put("artifactPath", path);
+        put("url", url1);
+      }
+    };
+
+    Artifact artifact = new Artifact();
+    ArtifactStreamAttributes artifactStreamAttributes = ArtifactStreamAttributes.builder()
+                                                            .artifactStreamType(SettingVariableTypes.ARTIFACTORY.name())
+                                                            .jobName(jobName1)
+                                                            .metadata(metadata)
+                                                            .build();
+    String result = awsLambdaState.artifactPathForSource(artifact, artifactStreamAttributes);
+    assertThat(result).isEqualTo(path);
+
+    // Case2: when there is no overlap between jobName and artifactPath
+    String jobName2 = "test";
+    String url2 = "https://harness.jfrog.io/artifactory/test/harness-internal/20211208.2.zip";
+    artifactStreamAttributes.setJobName(jobName2);
+    metadata.put("url", url2);
+    result = awsLambdaState.artifactPathForSource(artifact, artifactStreamAttributes);
+    assertThat(result).isEqualTo(path);
   }
 
   private Map<String, String> mockMetadata(ArtifactStreamType artifactStreamType) {

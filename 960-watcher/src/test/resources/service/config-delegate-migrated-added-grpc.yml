@@ -1,5 +1,5 @@
 accountId: kmpySmUISimoRrJL6NL73w
-accountSecret: 2f6b0988b6fb3370073c3d0505baee59
+delegateToken: 2f6b0988b6fb3370073c3d0505baee59
 managerUrl: https://app.harness.io/api
 verificationServiceUrl: https://app.harness.io/verification
 cvNextGenUrl: https://localhost:6060/cv/api/

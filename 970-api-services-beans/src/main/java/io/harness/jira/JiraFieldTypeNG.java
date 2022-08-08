@@ -21,7 +21,8 @@ public enum JiraFieldTypeNG {
   @JsonProperty("date") DATE,
   @JsonProperty("datetime") DATETIME,
   @JsonProperty("timetracking") TIME_TRACKING,
-  @JsonProperty("option") OPTION;
+  @JsonProperty("option") OPTION,
+  @JsonProperty("user") USER;
 
   public static JiraFieldTypeNG fromTypeString(String typeStr) {
     if (typeStr == null) {
@@ -29,6 +30,8 @@ public enum JiraFieldTypeNG {
     }
 
     switch (typeStr) {
+      case "user":
+        return USER;
       case "any":
       case "string":
         return STRING;

@@ -16,11 +16,15 @@ import io.harness.ng.core.BaseNGAccess;
 import io.harness.ng.core.NGAccess;
 
 import com.google.inject.Inject;
+import java.lang.reflect.Field;
 import java.lang.reflect.Parameter;
+import javax.ws.rs.BeanParam;
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
+import lombok.SneakyThrows;
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
+import org.apache.commons.lang3.reflect.FieldUtils;
 
 @NoArgsConstructor
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
@@ -46,6 +50,9 @@ public class NGAccessControlCheckHandler implements MethodInterceptor {
       if (parameter.isAnnotationPresent(ResourceIdentifier.class)) {
         builder.identifier((String) argument);
       }
+      if (parameter.isAnnotationPresent(BeanParam.class)) {
+        populateNGAccessBuilderFromBeanParam(builder, argument);
+      }
     }
     return builder.build();
   }
@@ -58,5 +65,27 @@ public class NGAccessControlCheckHandler implements MethodInterceptor {
         ResourceScope.of(ngAccess.getAccountIdentifier(), ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier()),
         Resource.of(ngAccessControlCheck.resourceType(), ngAccess.getIdentifier()), ngAccessControlCheck.permission());
     return methodInvocation.proceed();
+  }
+
+  @SneakyThrows
+  private void populateNGAccessBuilderFromBeanParam(BaseNGAccess.Builder builder, Object object) {
+    for (Field field : object.getClass().getDeclaredFields()) {
+      if (!field.getType().equals(String.class)) {
+        continue;
+      }
+      String fieldValue = (String) FieldUtils.readField(field, object, true);
+      if (field.isAnnotationPresent(AccountIdentifier.class)) {
+        builder.accountIdentifier(fieldValue);
+      }
+      if (field.isAnnotationPresent(OrgIdentifier.class)) {
+        builder.orgIdentifier(fieldValue);
+      }
+      if (field.isAnnotationPresent(ProjectIdentifier.class)) {
+        builder.projectIdentifier(fieldValue);
+      }
+      if (field.isAnnotationPresent(ResourceIdentifier.class)) {
+        builder.identifier(fieldValue);
+      }
+    }
   }
 }

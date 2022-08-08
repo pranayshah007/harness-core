@@ -2,9 +2,6 @@
     <blaze-settings handler-id="BlazeJavaRunConfigurationHandlerProvider" blaze-command="run" debug_port="6010"
                     kind="java_binary">
         <blaze-target>//270-verification:module</blaze-target>
-        <blaze-user-flag>
-            --jvmopt="-Xbootclasspath/p:${HOME}/.m2/repository/org/mortbay/jetty/alpn/alpn-boot/8.1.13.v20181017/alpn-boot-8.1.13.v20181017.jar"
-        </blaze-user-flag>
         <blaze-user-exe-flag>server</blaze-user-exe-flag>
         <blaze-user-exe-flag>$PROJECT_DIR$/../270-verification/verification-config.yml</blaze-user-exe-flag>
     </blaze-settings>

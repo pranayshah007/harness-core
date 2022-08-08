@@ -28,6 +28,7 @@ import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.UnitProgress;
 import io.harness.ng.core.EntityDetail;
+import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.plancreator.steps.common.rollback.TaskExecutableWithRollbackAndRbac;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -52,6 +53,7 @@ import software.wings.beans.TaskType;
 import com.google.inject.Inject;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
@@ -141,6 +143,8 @@ public class TerraformDestroyStep extends TaskExecutableWithRollbackAndRbac<Terr
         .terraformCommand(TerraformCommand.DESTROY)
         .terraformCommandUnit(TerraformCommandUnit.Destroy)
         .entityId(entityId)
+        .tfModuleSourceInheritSSH(helper.isExportCredentialForSourceModule(
+            configuration.getSpec().getConfigFiles(), stepElementParameters.getType()))
         .workspace(ParameterFieldHelper.getParameterFieldValue(spec.getWorkspace()))
         .configFile(helper.getGitFetchFilesConfig(
             spec.getConfigFiles().getStore().getSpec(), ambiance, TerraformStepHelper.TF_CONFIG_FILES))
@@ -150,7 +154,9 @@ public class TerraformDestroyStep extends TaskExecutableWithRollbackAndRbac<Terr
         .backendConfig(helper.getBackendConfig(spec.getBackendConfig()))
         .targets(ParameterFieldHelper.getParameterFieldValue(spec.getTargets()))
         .saveTerraformStateJson(false)
-        .environmentVariables(helper.getEnvironmentVariablesMap(spec.getEnvironmentVariables()))
+        .environmentVariables(helper.getEnvironmentVariablesMap(spec.getEnvironmentVariables()) == null
+                ? new HashMap<>()
+                : helper.getEnvironmentVariablesMap(spec.getEnvironmentVariables()))
         .timeoutInMillis(
             StepUtils.getTimeoutMillis(stepElementParameters.getTimeout(), TerraformConstants.DEFAULT_TIMEOUT));
 
@@ -161,10 +167,9 @@ public class TerraformDestroyStep extends TaskExecutableWithRollbackAndRbac<Terr
             .timeout(StepUtils.getTimeoutMillis(stepElementParameters.getTimeout(), TerraformConstants.DEFAULT_TIMEOUT))
             .parameters(new Object[] {builder.build()})
             .build();
-
     return StepUtils.prepareCDTaskRequest(ambiance, taskData, kryoSerializer,
         Collections.singletonList(TerraformCommandUnit.Destroy.name()), TaskType.TERRAFORM_TASK_NG.getDisplayName(),
-        StepUtils.getTaskSelectors(parameters.getDelegateSelectors()), stepHelper.getEnvironmentType(ambiance));
+        TaskSelectorYaml.toTaskSelector(parameters.getDelegateSelectors()), stepHelper.getEnvironmentType(ambiance));
   }
 
   private TaskRequest obtainInheritedTask(
@@ -183,6 +188,7 @@ public class TerraformDestroyStep extends TaskExecutableWithRollbackAndRbac<Terr
     builder.workspace(inheritOutput.getWorkspace())
         .configFile(helper.getGitFetchFilesConfig(
             inheritOutput.getConfigFiles(), ambiance, TerraformStepHelper.TF_CONFIG_FILES))
+        .tfModuleSourceInheritSSH(inheritOutput.isUseConnectorCredentials())
         .fileStoreConfigFiles(helper.getFileStoreFetchFilesConfig(
             inheritOutput.getFileStoreConfig(), ambiance, TerraformStepHelper.TF_CONFIG_FILES))
         .varFileInfos(helper.prepareTerraformVarFileInfo(inheritOutput.getVarFileConfigs(), ambiance))
@@ -192,7 +198,8 @@ public class TerraformDestroyStep extends TaskExecutableWithRollbackAndRbac<Terr
         .encryptionConfig(inheritOutput.getEncryptionConfig())
         .encryptedTfPlan(inheritOutput.getEncryptedTfPlan())
         .planName(inheritOutput.getPlanName())
-        .environmentVariables(inheritOutput.getEnvironmentVariables())
+        .environmentVariables(
+            inheritOutput.getEnvironmentVariables() == null ? new HashMap<>() : inheritOutput.getEnvironmentVariables())
         .timeoutInMillis(
             StepUtils.getTimeoutMillis(stepElementParameters.getTimeout(), TerraformConstants.DEFAULT_TIMEOUT));
 
@@ -203,10 +210,9 @@ public class TerraformDestroyStep extends TaskExecutableWithRollbackAndRbac<Terr
             .timeout(StepUtils.getTimeoutMillis(stepElementParameters.getTimeout(), TerraformConstants.DEFAULT_TIMEOUT))
             .parameters(new Object[] {builder.build()})
             .build();
-
     return StepUtils.prepareCDTaskRequest(ambiance, taskData, kryoSerializer,
         Collections.singletonList(TerraformCommandUnit.Destroy.name()), TaskType.TERRAFORM_TASK_NG.getDisplayName(),
-        StepUtils.getTaskSelectors(parameters.getDelegateSelectors()), stepHelper.getEnvironmentType(ambiance));
+        TaskSelectorYaml.toTaskSelector(parameters.getDelegateSelectors()), stepHelper.getEnvironmentType(ambiance));
   }
 
   private TaskRequest obtainLastApplyTask(
@@ -226,12 +232,15 @@ public class TerraformDestroyStep extends TaskExecutableWithRollbackAndRbac<Terr
         .backendConfig(terraformConfig.getBackendConfig())
         .targets(terraformConfig.getTargets())
         .saveTerraformStateJson(false)
-        .environmentVariables(terraformConfig.getEnvironmentVariables())
+        .environmentVariables(terraformConfig.getEnvironmentVariables() == null
+                ? new HashMap<>()
+                : terraformConfig.getEnvironmentVariables())
         .timeoutInMillis(
             StepUtils.getTimeoutMillis(stepElementParameters.getTimeout(), TerraformConstants.DEFAULT_TIMEOUT));
     if (terraformConfig.getConfigFiles() != null) {
       builder.configFile(helper.getGitFetchFilesConfig(
           terraformConfig.getConfigFiles().toGitStoreConfig(), ambiance, TerraformStepHelper.TF_CONFIG_FILES));
+      builder.tfModuleSourceInheritSSH(terraformConfig.isUseConnectorCredentials());
     }
     if (terraformConfig.getFileStoreConfig() != null) {
       builder.fileStoreConfigFiles(
@@ -246,10 +255,9 @@ public class TerraformDestroyStep extends TaskExecutableWithRollbackAndRbac<Terr
             .timeout(StepUtils.getTimeoutMillis(stepElementParameters.getTimeout(), TerraformConstants.DEFAULT_TIMEOUT))
             .parameters(new Object[] {builder.build()})
             .build();
-
     return StepUtils.prepareCDTaskRequest(ambiance, taskData, kryoSerializer,
         Collections.singletonList(TerraformCommandUnit.Destroy.name()), TaskType.TERRAFORM_TASK_NG.getDisplayName(),
-        StepUtils.getTaskSelectors(parameters.getDelegateSelectors()), stepHelper.getEnvironmentType(ambiance));
+        TaskSelectorYaml.toTaskSelector(parameters.getDelegateSelectors()), stepHelper.getEnvironmentType(ambiance));
   }
 
   @Override

@@ -61,5 +61,5 @@ public class TokenDTO {
   @Size(max = 128) @Schema(description = "Tags for the Token") Map<String, String> tags;
   @Schema(description = "Email Id of the user who created the Token.") private String email;
   @Schema(description = "Name of the user who created the Token.") private String username;
-  private String encodedPassword;
+  @Schema(description = "This is the encoded password of the Token.") private String encodedPassword;
 }

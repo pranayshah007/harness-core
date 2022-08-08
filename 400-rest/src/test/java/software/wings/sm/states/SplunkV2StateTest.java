@@ -41,7 +41,7 @@ import software.wings.service.impl.analysis.LogMLAnalysisSummary;
 import software.wings.service.impl.splunk.SplunkDataCollectionInfoV2;
 import software.wings.service.intfc.AccountService;
 import software.wings.service.intfc.AppService;
-import software.wings.service.intfc.verification.CVActivityLogService.Logger;
+import software.wings.service.intfc.verification.CVActivityLogger;
 import software.wings.sm.ExecutionResponse;
 import software.wings.sm.StateType;
 import software.wings.verification.VerificationDataAnalysisResponse;
@@ -69,7 +69,7 @@ import org.mockito.MockitoAnnotations;
  */
 public class SplunkV2StateTest extends APMStateVerificationTestBase {
   private SplunkV2State splunkState;
-  @Mock private Logger activityLogger;
+  @Mock private CVActivityLogger activityLogger;
 
   @Before
   public void setup() throws IllegalAccessException {
@@ -174,7 +174,7 @@ public class SplunkV2StateTest extends APMStateVerificationTestBase {
     SplunkV2State spyState = spy(splunkState);
     doReturn(workflowId).when(spyState).getWorkflowId(executionContext);
     doReturn(serviceId).when(spyState).getPhaseServiceId(executionContext);
-    Logger activityLogger = mock(Logger.class);
+    CVActivityLogger activityLogger = mock(CVActivityLogger.class);
     when(cvActivityLogService.getLoggerByStateExecutionId(anyString(), anyString())).thenReturn(activityLogger);
     doReturn(AbstractAnalysisState.CVInstanceApiResponse.builder()
                  .testNodes(Collections.singleton("some-host"))
@@ -203,14 +203,13 @@ public class SplunkV2StateTest extends APMStateVerificationTestBase {
   @Test
   @Owner(developers = RAGHU)
   @Category(UnitTests.class)
-
   public void comparePreviousNodeNameNotResolved() {
     splunkState.setComparisonStrategy(AnalysisComparisonStrategy.COMPARE_WITH_PREVIOUS.name());
     splunkState.setHostnameTemplate("${some-expression}");
     SplunkV2State spyState = spy(splunkState);
     doReturn(workflowId).when(spyState).getWorkflowId(executionContext);
     doReturn(serviceId).when(spyState).getPhaseServiceId(executionContext);
-    Logger activityLogger = mock(Logger.class);
+    CVActivityLogger activityLogger = mock(CVActivityLogger.class);
     when(cvActivityLogService.getLoggerByStateExecutionId(anyString(), anyString())).thenReturn(activityLogger);
     doReturn(AbstractAnalysisState.CVInstanceApiResponse.builder()
                  .controlNodes(Collections.singleton("${some-expression}"))
@@ -243,7 +242,7 @@ public class SplunkV2StateTest extends APMStateVerificationTestBase {
         .when(spyState)
         .getCVInstanceAPIResponse(any());
 
-    Logger activityLogger = mock(Logger.class);
+    CVActivityLogger activityLogger = mock(CVActivityLogger.class);
     when(cvActivityLogService.getLoggerByStateExecutionId(anyString(), anyString())).thenReturn(activityLogger);
     ExecutionResponse response = spyState.execute(executionContext);
     assertThat(response.getExecutionStatus()).isEqualTo(ExecutionStatus.FAILED);
@@ -285,8 +284,8 @@ public class SplunkV2StateTest extends APMStateVerificationTestBase {
   @Category(UnitTests.class)
   public void handleAsyncSummaryPassNoData() {
     doReturn("exception").when(executionContext).renderExpression(anyString());
-    Logger activityLogger = mock(Logger.class);
-    when(cvActivityLogService.getLoggerByStateExecutionId(anyString(), anyString())).thenReturn(activityLogger);
+    CVActivityLogger activityLogger = mock(CVActivityLogger.class);
+    when(cvActivityLogService.getLoggerByStateExecutionId(any(), any())).thenReturn(activityLogger);
     VerificationStateAnalysisExecutionData logAnalysisExecutionData =
         VerificationStateAnalysisExecutionData.builder()
             .correlationId(UUID.randomUUID().toString())

@@ -8,6 +8,7 @@
 package io.harness.cvng.analysis.services.impl;
 
 import static io.harness.cvng.CVConstants.BULK_OPERATION_THRESHOLD;
+import static io.harness.cvng.CVNGTestConstants.TIME_FOR_TESTS;
 import static io.harness.cvng.beans.DataSourceType.APP_DYNAMICS;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.persistence.HQuery.excludeAuthority;
@@ -48,29 +49,21 @@ import io.harness.cvng.analysis.entities.TestLogAnalysisLearningEngineTask;
 import io.harness.cvng.analysis.services.api.DeploymentLogAnalysisService;
 import io.harness.cvng.analysis.services.api.LearningEngineTaskService;
 import io.harness.cvng.analysis.services.api.LogAnalysisService;
-import io.harness.cvng.beans.CVMonitoringCategory;
-import io.harness.cvng.beans.DataSourceType;
-import io.harness.cvng.beans.job.Sensitivity;
-import io.harness.cvng.beans.job.TestVerificationJobDTO;
 import io.harness.cvng.client.NextGenService;
 import io.harness.cvng.core.entities.CVConfig;
 import io.harness.cvng.core.entities.LogCVConfig;
-import io.harness.cvng.core.entities.SplunkCVConfig;
 import io.harness.cvng.core.services.api.CVConfigService;
 import io.harness.cvng.core.services.api.VerificationTaskService;
 import io.harness.cvng.dashboard.entities.HeatMap;
-import io.harness.cvng.models.VerificationType;
 import io.harness.cvng.statemachine.beans.AnalysisInput;
 import io.harness.cvng.verificationjob.entities.TestVerificationJob;
 import io.harness.cvng.verificationjob.entities.VerificationJob;
 import io.harness.cvng.verificationjob.entities.VerificationJobInstance;
 import io.harness.cvng.verificationjob.services.api.VerificationJobInstanceService;
-import io.harness.cvng.verificationjob.services.api.VerificationJobService;
 import io.harness.ng.core.environment.beans.EnvironmentType;
 import io.harness.persistence.HPersistence;
 import io.harness.rule.Owner;
 
-import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import com.mongodb.BasicDBObject;
@@ -106,7 +99,6 @@ public class LogAnalysisServiceImplTest extends CvNextGenTestBase {
   @Inject private VerificationTaskService verificationTaskService;
   @Inject private DeploymentLogAnalysisService deploymentLogAnalysisService;
   @Inject private VerificationJobInstanceService verificationJobInstanceService;
-  @Inject private VerificationJobService verificationJobService;
   @Mock private NextGenService nextGenService;
   private Instant instant;
   private String accountId;
@@ -130,8 +122,8 @@ public class LogAnalysisServiceImplTest extends CvNextGenTestBase {
   public void scheduleLogAnalysisTask() {
     AnalysisInput input = AnalysisInput.builder()
                               .verificationTaskId(verificationTaskId)
-                              .startTime(Instant.now().minus(10, ChronoUnit.MINUTES))
-                              .endTime(Instant.now())
+                              .startTime(TIME_FOR_TESTS.minus(10, ChronoUnit.MINUTES))
+                              .endTime(TIME_FOR_TESTS)
                               .build();
     String taskId = logAnalysisService.scheduleServiceGuardLogAnalysisTask(input);
 
@@ -638,25 +630,7 @@ public class LogAnalysisServiceImplTest extends CvNextGenTestBase {
   }
 
   private CVConfig createCVConfig() {
-    SplunkCVConfig cvConfig = new SplunkCVConfig();
-    fillCommon(cvConfig);
-    cvConfig.setQuery("exception");
-    cvConfig.setServiceInstanceIdentifier(generateUuid());
-    return cvConfig;
-  }
-
-  private void fillCommon(CVConfig cvConfig) {
-    cvConfig.setVerificationType(VerificationType.LOG);
-    cvConfig.setAccountId(generateUuid());
-    cvConfig.setConnectorIdentifier(generateUuid());
-    cvConfig.setServiceIdentifier(generateUuid());
-    cvConfig.setEnvIdentifier("prod" + generateUuid());
-    cvConfig.setProjectIdentifier(generateUuid());
-    cvConfig.setOrgIdentifier(generateUuid());
-    cvConfig.setIdentifier(generateUuid());
-    cvConfig.setMonitoringSourceName(generateUuid());
-    cvConfig.setCategory(CVMonitoringCategory.PERFORMANCE);
-    cvConfig.setProductName(generateUuid());
+    return builderFactory.splunkCVConfigBuilder().build();
   }
 
   private void fillCommon(LearningEngineTask learningEngineTask, LearningEngineTaskType analysisType) {
@@ -666,22 +640,11 @@ public class LogAnalysisServiceImplTest extends CvNextGenTestBase {
     learningEngineTask.setFailureUrl("failure-url");
     learningEngineTask.setAnalysisStartTime(instant.minus(Duration.ofMinutes(10)));
     learningEngineTask.setAnalysisEndTime(instant);
+    learningEngineTask.setPickedAt(instant.plus(Duration.ofMinutes(2)));
   }
 
   private VerificationJob newTestVerificationJob() {
-    TestVerificationJobDTO testVerificationJob = new TestVerificationJobDTO();
-    testVerificationJob.setIdentifier(generateUuid());
-    testVerificationJob.setJobName(generateUuid());
-    testVerificationJob.setDataSources(Lists.newArrayList(DataSourceType.SPLUNK));
-    testVerificationJob.setSensitivity(Sensitivity.MEDIUM.name());
-    testVerificationJob.setServiceIdentifier(generateUuid());
-    testVerificationJob.setOrgIdentifier(generateUuid());
-    testVerificationJob.setProjectIdentifier(generateUuid());
-    testVerificationJob.setEnvIdentifier("prod" + generateUuid());
-    testVerificationJob.setSensitivity(Sensitivity.MEDIUM.name());
-    testVerificationJob.setBaselineVerificationJobInstanceId("LAST");
-    testVerificationJob.setDuration("15m");
-    return verificationJobService.fromDto(testVerificationJob);
+    return builderFactory.testVerificationJobBuilder().build();
   }
 
   private VerificationJobInstance newVerificationJobInstance() {

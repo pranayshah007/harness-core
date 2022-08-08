@@ -8,10 +8,13 @@
 package software.wings.beans.approval;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.expression.Expression.ALLOW_SECRETS;
 
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
+import io.harness.delegate.task.TaskParameters;
+import io.harness.expression.Expression;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.util.List;
@@ -27,8 +30,8 @@ import lombok.experimental.FieldNameConstants;
 @TargetModule(HarnessModule._957_CG_BEANS)
 @JsonIgnoreProperties(ignoreUnknown = true)
 @FieldNameConstants(innerTypeName = "ShellScriptApprovalParamsKeys")
-public class ShellScriptApprovalParams {
-  @Getter @Setter private String scriptString;
+public class ShellScriptApprovalParams implements TaskParameters {
+  @Getter @Setter @Expression(ALLOW_SECRETS) private String scriptString;
 
   /* Retry Interval in Milliseconds*/
   @Getter @Setter private Integer retryInterval;

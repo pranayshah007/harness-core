@@ -8,10 +8,10 @@ package tasks
 import (
 	"bytes"
 	"context"
+	"path/filepath"
 
 	"encoding/json"
 	"errors"
-	"fmt"
 	"os"
 	"testing"
 	"time"
@@ -51,7 +51,7 @@ func TestCreateJavaAgentArg(t *testing.T) {
 		addonLogger:          log.Sugar(),
 	}
 
-	expDir := fmt.Sprintf(outDir, tmpFilePath)
+	expDir := filepath.Join(tmpFilePath, outDir) + "/"
 	expData := `outDir: /test/tmp/ti/callgraph/
 logLevel: 0
 logConsole: false
@@ -89,7 +89,7 @@ func TestCreateJavaAgentArg_WithWriteFailure(t *testing.T) {
 		addonLogger:          log.Sugar(),
 	}
 
-	expDir := fmt.Sprintf(outDir, tmpFilePath)
+	expDir := filepath.Join(tmpFilePath, outDir) + "/"
 	expData := `outDir: /test/tmp/ti/callgraph/
 logLevel: 0
 logConsole: false
@@ -119,7 +119,7 @@ func TestGetCmd_WithNoFilesChanged(t *testing.T) {
 	tmpFilePath := "/test/tmp"
 	packages := "p1, p2, p3"
 
-	expDir := fmt.Sprintf(outDir, tmpFilePath)
+	expDir := filepath.Join(tmpFilePath, outDir) + "/"
 	expData := `outDir: /test/tmp/ti/callgraph/
 logLevel: 0
 logConsole: false
@@ -172,7 +172,7 @@ export HARNESS_JAVA_AGENT=-javaagent:/addon/bin/java-agent.jar=/test/tmp/config.
 echo x
 mvn -am -DharnessArgLine=-javaagent:/addon/bin/java-agent.jar=/test/tmp/config.ini -DargLine=-javaagent:/addon/bin/java-agent.jar=/test/tmp/config.ini clean test
 echo y`
-	got, err := r.getCmd(ctx, outputFile)
+	got, err := r.getCmd(ctx, "/tmp/addon/agent", outputFile)
 	assert.Nil(t, err)
 	assert.Equal(t, r.runOnlySelectedTests, false) // If no errors, we should run only selected tests
 	assert.Equal(t, got, want)
@@ -192,7 +192,7 @@ func TestGetCmd_SelectAll(t *testing.T) {
 	tmpFilePath := "/test/tmp"
 	packages := "p1, p2, p3"
 
-	expDir := fmt.Sprintf(outDir, tmpFilePath)
+	expDir := filepath.Join(tmpFilePath, outDir) + "/"
 	expData := `outDir: /test/tmp/ti/callgraph/
 logLevel: 0
 logConsole: false
@@ -245,7 +245,7 @@ export HARNESS_JAVA_AGENT=-javaagent:/addon/bin/java-agent.jar=/test/tmp/config.
 echo x
 mvn -am -DharnessArgLine=-javaagent:/addon/bin/java-agent.jar=/test/tmp/config.ini -DargLine=-javaagent:/addon/bin/java-agent.jar=/test/tmp/config.ini clean test
 echo y`
-	got, err := r.getCmd(ctx, outputFile)
+	got, err := r.getCmd(ctx, "/tmp/addon/agent", outputFile)
 	assert.Nil(t, err)
 	assert.Equal(t, r.runOnlySelectedTests, false) // Since selection returns all the tests
 	assert.Equal(t, got, want)
@@ -262,7 +262,7 @@ func TestGetCmd_RunAll(t *testing.T) {
 	tmpFilePath := "/test/tmp"
 	packages := "p1, p2, p3"
 
-	expDir := fmt.Sprintf(outDir, tmpFilePath)
+	expDir := filepath.Join(tmpFilePath, outDir) + "/"
 	expData := `outDir: /test/tmp/ti/callgraph/
 logLevel: 0
 logConsole: false
@@ -313,7 +313,7 @@ export HARNESS_JAVA_AGENT=-javaagent:/addon/bin/java-agent.jar=/test/tmp/config.
 echo x
 mvn -am -DharnessArgLine=-javaagent:/addon/bin/java-agent.jar=/test/tmp/config.ini -DargLine=-javaagent:/addon/bin/java-agent.jar=/test/tmp/config.ini clean test
 echo y`
-	got, err := r.getCmd(ctx, outputFile)
+	got, err := r.getCmd(ctx, "/tmp/addon/agent", outputFile)
 	assert.Nil(t, err)
 	assert.Equal(t, r.runOnlySelectedTests, false) // Since there was an error in execution
 	assert.Equal(t, got, want)
@@ -330,7 +330,7 @@ func TestGetCmd_ManualExecution(t *testing.T) {
 	tmpFilePath := "/test/tmp"
 	packages := "p1, p2, p3"
 
-	expDir := fmt.Sprintf(outDir, tmpFilePath)
+	expDir := filepath.Join(tmpFilePath, outDir) + "/"
 	expData := `outDir: /test/tmp/ti/callgraph/
 logLevel: 0
 logConsole: false
@@ -381,7 +381,7 @@ export HARNESS_JAVA_AGENT=-javaagent:/addon/bin/java-agent.jar=/test/tmp/config.
 echo x
 mvn clean test
 echo y`
-	got, err := r.getCmd(ctx, outputFile)
+	got, err := r.getCmd(ctx, "/tmp/addon/agent", outputFile)
 	assert.Nil(t, err)
 	assert.Equal(t, r.runOnlySelectedTests, false) // Since it's a manual execution
 	assert.Equal(t, got, want)
@@ -398,7 +398,7 @@ func TestGetCmd_ErrorIncorrectBuildTool(t *testing.T) {
 	tmpFilePath := "/test/tmp"
 	packages := "p1, p2, p3"
 
-	expDir := fmt.Sprintf(outDir, tmpFilePath)
+	expDir := filepath.Join(tmpFilePath, outDir) + "/"
 	expData := `outDir: /test/tmp/ti/callgraph/
 logLevel: 0
 logConsole: false
@@ -443,7 +443,7 @@ instrPackages: p1, p2, p3`
 		return false
 	}
 
-	_, err := r.getCmd(ctx, outputFile)
+	_, err := r.getCmd(ctx, "/tmp/addon/agent", outputFile)
 	assert.NotNil(t, err)
 }
 
@@ -502,7 +502,7 @@ func TestRun_Success(t *testing.T) {
 	tmpFilePath := "/test/tmp"
 	packages := "p1, p2, p3"
 
-	expDir := fmt.Sprintf(outDir, tmpFilePath)
+	expDir := filepath.Join(tmpFilePath, outDir) + "/"
 	expData := `outDir: /test/tmp/ti/callgraph/
 logLevel: 0
 logConsole: false
@@ -581,6 +581,14 @@ instrPackages: p1, p2, p3`
 		return nil
 	}
 
+	oldInstallAgent := installAgentFn
+	defer func() {
+		installAgentFn = oldInstallAgent
+	}()
+	installAgentFn = func(ctx context.Context, path, language, framework, frameworkVersion, buildEnvironment string, log *zap.SugaredLogger, fs filesystem.FileSystem) (string, error) {
+		return "", nil
+	}
+
 	_, _, err := r.Run(ctx)
 	assert.Nil(t, err)
 	assert.Equal(t, called, 2) // Make sure both CG collection and report collection are called
@@ -604,7 +612,7 @@ func TestRun_Execution_Failure(t *testing.T) {
 	tmpFilePath := "/test/tmp"
 	packages := "p1, p2, p3"
 
-	expDir := fmt.Sprintf(outDir, tmpFilePath)
+	expDir := filepath.Join(tmpFilePath, outDir) + "/"
 	expData := `outDir: /test/tmp/ti/callgraph/
 logLevel: 0
 logConsole: false
@@ -693,6 +701,14 @@ instrPackages: p1, p2, p3`
 		return nil
 	}
 
+	oldInstallAgent := installAgentFn
+	defer func() {
+		installAgentFn = oldInstallAgent
+	}()
+	installAgentFn = func(ctx context.Context, path, language, framework, frameworkVersion, buildEnvironment string, log *zap.SugaredLogger, fs filesystem.FileSystem) (string, error) {
+		return "", nil
+	}
+
 	_, _, err := r.Run(ctx)
 	assert.Equal(t, err, expErr)
 	assert.Equal(t, called, 2) // makes ure both functions are called even on failure
@@ -716,7 +732,7 @@ func TestRun_Execution_Cg_Failure(t *testing.T) {
 	tmpFilePath := "/test/tmp"
 	packages := "p1, p2, p3"
 
-	expDir := fmt.Sprintf(outDir, tmpFilePath)
+	expDir := filepath.Join(tmpFilePath, outDir) + "/"
 	expData := `outDir: /test/tmp/ti/callgraph/
 logLevel: 0
 logConsole: false
@@ -802,6 +818,13 @@ instrPackages: p1, p2, p3`
 		return nil
 	}
 
+	oldInstallAgent := installAgentFn
+	defer func() {
+		installAgentFn = oldInstallAgent
+	}()
+	installAgentFn = func(ctx context.Context, path, language, framework, frameworkVersion, buildEnvironment string, log *zap.SugaredLogger, fs filesystem.FileSystem) (string, error) {
+		return "", nil
+	}
 	_, _, err := r.Run(ctx)
 	assert.Equal(t, err, errCg)
 }
@@ -824,7 +847,7 @@ func TestRun_Execution_Reports_Failure(t *testing.T) {
 	tmpFilePath := "/test/tmp"
 	packages := "p1, p2, p3"
 
-	expDir := fmt.Sprintf(outDir, tmpFilePath)
+	expDir := filepath.Join(tmpFilePath, outDir) + "/"
 	expData := `outDir: /test/tmp/ti/callgraph/
 logLevel: 0
 logConsole: false
@@ -908,6 +931,14 @@ instrPackages: p1, p2, p3`
 	}()
 	collectTestReportsFn = func(ctx context.Context, reports []*pb.Report, stepID string, log *zap.SugaredLogger) error {
 		return errReport
+	}
+
+	oldInstallAgent := installAgentFn
+	defer func() {
+		installAgentFn = oldInstallAgent
+	}()
+	installAgentFn = func(ctx context.Context, path, language, framework, frameworkVersion, buildEnvironment string, log *zap.SugaredLogger, fs filesystem.FileSystem) (string, error) {
+		return "", nil
 	}
 
 	_, _, err := r.Run(ctx)

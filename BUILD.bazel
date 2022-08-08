@@ -28,7 +28,7 @@ filegroup(
 # gazelle:exclude  vendor
 # gazelle:exclude  build
 # gazelle:exclude  */target
-# gazelle:exclude {990-commons-test,970-grpc,970-api-services-beans,960-notification-beans,959-timeout-engine,953-git-sync-commons,959-timeout-engine,950-timeout-engine,950-delegate-tasks-beans,950-wait-engine,867-polling-contracts,22-ng-delegate-service-beans,24-manager-delegate-service-beans,24-ng-manager-service-beans,890-pms-contracts,400-rest,460-capability,160-stress-tester}
+# gazelle:exclude {990-commons-test,970-grpc,970-api-services-beans,959-timeout-engine,953-git-sync-commons,959-timeout-engine,950-timeout-engine,950-delegate-tasks-beans,950-wait-engine,867-polling-contracts,22-ng-delegate-service-beans,24-manager-delegate-service-beans,24-ng-manager-service-beans,954-pms-contracts,400-rest,460-capability,160-stress-tester}
 
 # gazelle:exclude .git/
 # gazelle:exclude pkg/
@@ -73,6 +73,7 @@ go_path(
         # Note: If any library is not referenced by below ones, then add them in this list.
         "//product/ci/engine:engine_lib",
         "//product/ci/addon:addon_lib",
+        "//product/ci/split_tests:split_tests_lib",
         "//product/ci/scm:scm_lib",
         "//product/log-service:log-service_lib",
     ],
@@ -93,7 +94,11 @@ java_library(
     name = "lombok",
     exported_plugins = [":lombok_plugin"],
     visibility = ["//visibility:public"],
-    exports = ["@maven//:org_projectlombok_lombok"],
+    exports = [
+        "@maven//:com_google_code_findbugs_annotations",
+        "@maven//:org_projectlombok_lombok",
+        "@maven//:org_slf4j_slf4j_api",
+    ],
 )
 
 filegroup(

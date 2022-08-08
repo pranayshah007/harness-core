@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"strings"
 	"testing"
 
 	"github.com/golang/mock/gomock"
@@ -35,8 +36,13 @@ func TestIsLatestFilePositivePath(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(200)
-		content, _ := os.ReadFile("testdata/FileFindSource.json")
-		fmt.Fprint(w, string(content))
+		if strings.Contains(r.URL.Path, "contents") {
+			content, _ := os.ReadFile("testdata/FileFindSource.json")
+			fmt.Fprint(w, string(content))
+		} else {
+			content, _ := os.ReadFile("testdata/CommitsOfFile.json")
+			fmt.Fprint(w, string(content))
+		}
 	}))
 	defer ts.Close()
 

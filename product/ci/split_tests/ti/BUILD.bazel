@@ -1,0 +1,17 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "ti",
+    srcs = [
+        "ti_helper.go",
+    ],
+    importpath = "github.com/harness/harness-core/product/ci/split_tests/ti",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//product/ci/engine/consts",
+        "//product/ci/engine/grpc/client",
+        "//product/ci/engine/proto",
+        "//product/ci/ti-service/types",
+        "@org_uber_go_zap//:zap",
+    ],
+)

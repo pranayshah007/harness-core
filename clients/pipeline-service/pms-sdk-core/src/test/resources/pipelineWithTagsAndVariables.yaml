@@ -1,0 +1,27 @@
+pipeline:
+  identifier: p1
+  name: pipeline1
+  tags:
+    t1: a1
+  properties:
+    ci:
+      codebase:
+        connectorRef: nvh
+        build: <+input>
+  variables:
+    - name: test1
+      type: Number
+      value: 11
+    - name: test2
+      type: String
+      value: archit
+  stages:
+    - parallel:
+        - stage:
+            identifier: managerDeployment
+            type: DummyStageNode
+            name: managerDeployment
+    - stage:
+        identifier: managerDeployment
+        type: DummyStageNode
+        name: managerDeployment

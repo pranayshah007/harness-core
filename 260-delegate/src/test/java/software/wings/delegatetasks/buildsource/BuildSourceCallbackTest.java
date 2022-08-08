@@ -37,6 +37,7 @@ import static org.mockito.Mockito.when;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.artifact.ArtifactCollectionResponseHandler;
+import io.harness.beans.ArtifactMetadata;
 import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.ErrorNotifyResponseData;
@@ -97,8 +98,10 @@ public class BuildSourceCallbackTest extends WingsBaseTest {
   private static final BuildDetails BUILD_DETAILS_1 = aBuildDetails().withNumber("1").build();
   private static final BuildDetails BUILD_DETAILS_2 = aBuildDetails().withNumber("2").build();
 
-  private static final Artifact ARTIFACT_1 = anArtifact().withMetadata(newHashMap("buildNo", "1")).build();
-  private static final Artifact ARTIFACT_2 = anArtifact().withMetadata(newHashMap("buildNo", "2")).build();
+  private static final Artifact ARTIFACT_1 =
+      anArtifact().withMetadata(new ArtifactMetadata(newHashMap("buildNo", "1"))).build();
+  private static final Artifact ARTIFACT_2 =
+      anArtifact().withMetadata(new ArtifactMetadata(newHashMap("buildNo", "2"))).build();
 
   @Before
   public void setupMocks() {

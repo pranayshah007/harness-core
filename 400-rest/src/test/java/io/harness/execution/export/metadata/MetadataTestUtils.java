@@ -27,6 +27,7 @@ import static software.wings.utils.WingsTestConstants.WORKFLOW_NAME;
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import io.harness.beans.ArtifactMetadata;
 import io.harness.beans.CreatedByType;
 import io.harness.beans.EmbeddedUser;
 import io.harness.beans.EnvironmentType;
@@ -164,7 +165,7 @@ public class MetadataTestUtils {
         .withAccountId(ACCOUNT_ID)
         .withAppId(APP_ID)
         .withArtifactStreamId("as_id")
-        .withMetadata(ImmutableMap.of("buildNo", "buildNo"))
+        .withMetadata(new ArtifactMetadata(ImmutableMap.of("buildNo", "buildNo")))
         .withArtifactSourceName("asn" + idx)
         .withUiDisplayName("dn" + idx)
         .withDisplayName("dn" + idx)

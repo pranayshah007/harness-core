@@ -12,6 +12,7 @@ import retrofit2.Response;
 import retrofit2.http.GET;
 import retrofit2.http.Header;
 import retrofit2.http.Headers;
+import retrofit2.http.Path;
 import retrofit2.http.Query;
 import retrofit2.http.Url;
 import rx.Observable;
@@ -26,4 +27,8 @@ public interface AzureManagementRestClient {
   @GET
   Observable<Response<ResponseBody>> listNext(
       @Header("Authorization") String bearerAuthHeader, @Url String nextUrl, @Query("api-version") String appVersion);
+
+  @GET("subscriptions/{subscriptionId}/tagNames?api-version=2020-10-01")
+  Observable<Response<ResponseBody>> listTags(
+      @Header("Authorization") String bearerAuthHeader, @Path("subscriptionId") String subscriptionId);
 }

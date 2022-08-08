@@ -10,6 +10,7 @@ package io.harness.connector.services;
 import static io.harness.annotations.dev.HarnessTeam.DX;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.connector.CombineCcmK8sConnectorResponseDTO;
 import io.harness.connector.ConnectorCatalogueResponseDTO;
 import io.harness.connector.ConnectorCategory;
 import io.harness.connector.ConnectorDTO;
@@ -36,6 +37,9 @@ public interface ConnectorCrudService {
 
   Optional<ConnectorResponseDTO> get(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String connectorIdentifier);
+
+  Optional<ConnectorResponseDTO> getByRef(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String connectorRef);
 
   Optional<ConnectorResponseDTO> getByName(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String name, boolean isDeletedAllowed);
@@ -70,4 +74,9 @@ public interface ConnectorCrudService {
 
   void deleteBatch(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, List<String> connectorIdentifiersList);
+
+  Page<CombineCcmK8sConnectorResponseDTO> listCcmK8S(int page, int size, String accountIdentifier,
+      ConnectorFilterPropertiesDTO filterProperties, String orgIdentifier, String projectIdentifier,
+      String filterIdentifier, String searchTerm, Boolean includeAllConnectorsAccessibleAtScope,
+      Boolean getDistinctFromBranches);
 }

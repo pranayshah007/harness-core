@@ -1,3 +1,10 @@
+/*
+ * Copyright 2022 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
+
 package io.harness.ng.core.remote;
 
 import static io.harness.NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE;
@@ -12,6 +19,7 @@ import io.harness.accesscontrol.acl.api.Resource;
 import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.ng.core.beans.HostValidationParams;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
@@ -30,7 +38,10 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.POST;
@@ -45,7 +56,7 @@ import lombok.extern.slf4j.Slf4j;
 @Api("/host-validation")
 @Produces({"application/json", "application/yaml"})
 @Consumes({"application/json", "application/yaml"})
-@Tag(name = "ValidateHost", description = "This contains APIs related to SSH host validation")
+@Tag(name = "ValidateHost", description = "This contains APIs related to SSH or WinRm host validation")
 @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Bad Request",
     content =
     {
@@ -66,33 +77,41 @@ import lombok.extern.slf4j.Slf4j;
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 @NextGenManagerAuth
 @Slf4j
+/*
+  @deprecated {@link io.harness.ng.core.remote.NGHostResource#validateHost(String, String, String, String,
+     HostValidationParams )} should be used instead.
+ * */
+@Deprecated
 public class HostValidationResource {
   private final NGHostValidationService hostValidationService;
   private final AccessControlClient accessControlClient;
 
   @POST
   @Consumes({"application/json"})
-  @Path("ssh")
-  @ApiOperation(value = "Validate SSH hosts connectivity", nickname = "validateSshHosts")
-  @Operation(operationId = "validateSshHosts", summary = "Validates hosts connectivity using SSH credentials",
+  @ApiOperation(value = "Validate hosts connectivity", nickname = "validateHostsConnectivity")
+  @Operation(operationId = "validateHosts", summary = "Validates hosts connectivity credentials",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
         ApiResponse(responseCode = "default", description = "Returns validation response")
       })
   public ResponseDTO<List<HostValidationDTO>>
-  validateSshHost(@Parameter(description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
-                      NGCommonEntityConstants.ACCOUNT_KEY) @NotNull String accountIdentifier,
+  validateHost(@Parameter(description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
+                   NGCommonEntityConstants.ACCOUNT_KEY) @NotNull String accountIdentifier,
       @Parameter(description = ORG_PARAM_MESSAGE) @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @Parameter(description = PROJECT_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @Parameter(description = "Secret Identifier") @QueryParam(
           NGCommonEntityConstants.IDENTIFIER_KEY) @NotNull String secretIdentifier,
-      @RequestBody(required = true, description = "List of SSH hosts to validate") @NotNull List<String> hosts) {
+      @RequestBody(
+          required = true, description = "List of SSH or WinRm hosts to validate, and Delegate tags (optional)")
+      @NotNull @Valid HostValidationParams hostValidationParams) {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
         Resource.of(SECRET_RESOURCE_TYPE, secretIdentifier), SECRET_ACCESS_PERMISSION, "Unauthorized to view secrets.");
 
-    return ResponseDTO.newResponse(hostValidationService.validateSSHHosts(
-        hosts, accountIdentifier, orgIdentifier, projectIdentifier, secretIdentifier));
+    return ResponseDTO.newResponse(hostValidationService.validateHosts(hostValidationParams.getHosts(),
+        accountIdentifier, orgIdentifier, projectIdentifier, secretIdentifier,
+        hostValidationParams.getTags() != null ? new HashSet<>(hostValidationParams.getTags())
+                                               : Collections.emptySet()));
   }
 }

@@ -24,7 +24,7 @@ public enum TerraformPlanCommand {
     this.displayName = displayName;
   }
 
-  @JsonCreator
+  @JsonCreator(mode = JsonCreator.Mode.DELEGATING)
   public static TerraformPlanCommand getPlanCommandType(String displayName) {
     for (TerraformPlanCommand value : TerraformPlanCommand.values()) {
       if (value.displayName.equalsIgnoreCase(displayName)) {

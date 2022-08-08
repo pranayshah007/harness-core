@@ -67,21 +67,19 @@ public class OutcomeConnectionDataFetcher
     WorkflowExecution execution = persistence.get(WorkflowExecution.class, qlQuery.getExecutionId());
 
     QLOutcomeConnectionBuilder connectionBuilder = QLOutcomeConnection.builder();
-
     QLPageInfoBuilder pageInfoBuilder = QLPageInfo.builder().hasMore(false).offset(0).limit(0).total(0);
 
-    if (isNotEmpty(execution.getServiceExecutionSummaries())) {
-      pageInfoBuilder.total(execution.getServiceExecutionSummaries().size())
-          .limit(execution.getServiceExecutionSummaries().size());
-
-      final Environment environment = persistence.get(Environment.class, execution.getEnvId());
-      QLEnvironmentBuilder environmentBuilder = QLEnvironment.builder();
-      if (environment != null) {
-        EnvironmentController.populateEnvironment(environment, environmentBuilder);
-      }
-      if (featureFlagService.isEnabled(FeatureName.OUTCOME_GRAPHQL_WITH_INFRA_DEF, execution.getAccountId())) {
-        getOutcomeWithInfraDef(qlQuery, execution, connectionBuilder);
-      } else {
+    final Environment environment = persistence.get(Environment.class, execution.getEnvId());
+    QLEnvironmentBuilder environmentBuilder = QLEnvironment.builder();
+    if (environment != null) {
+      EnvironmentController.populateEnvironment(environment, environmentBuilder);
+    }
+    if (featureFlagService.isEnabled(FeatureName.OUTCOME_GRAPHQL_WITH_INFRA_DEF, execution.getAccountId())) {
+      getOutcomeWithInfraDef(qlQuery, execution, connectionBuilder);
+    } else {
+      if (isNotEmpty(execution.getServiceExecutionSummaries())) {
+        pageInfoBuilder.total(execution.getServiceExecutionSummaries().size())
+            .limit(execution.getServiceExecutionSummaries().size());
         for (ElementExecutionSummary summary : execution.getServiceExecutionSummaries()) {
           QLDeploymentOutcomeBuilder deployment = QLDeploymentOutcome.builder().context(
               ImmutableMap.<String, Object>builder()

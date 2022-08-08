@@ -15,6 +15,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.ExecutionCapabilityDemander;
 import io.harness.delegate.beans.executioncapability.SelectorCapability;
+import io.harness.delegate.task.ActivityAccess;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.expression.Expression;
 import io.harness.expression.ExpressionEvaluator;
@@ -29,7 +30,7 @@ import lombok.Data;
 @Data
 @Builder
 @OwnedBy(HarnessTeam.CDC)
-public class ShellScriptApprovalTaskParameters implements TaskParameters, ExecutionCapabilityDemander {
+public class ShellScriptApprovalTaskParameters implements TaskParameters, ActivityAccess, ExecutionCapabilityDemander {
   private String accountId;
   private String appId;
   private String activityId;

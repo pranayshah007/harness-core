@@ -36,7 +36,6 @@ import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyInt;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
@@ -112,7 +111,7 @@ public class EcsSetupRollbackTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void testExecute() {
     ExecutionContextImpl mockContext = mock(ExecutionContextImpl.class);
-    when(mockContext.renderExpression(anyString())).thenAnswer(new Answer<String>() {
+    when(mockContext.renderExpression(any())).thenAnswer(new Answer<String>() {
       @Override
       public String answer(InvocationOnMock invocation) throws Throwable {
         Object[] args = invocation.getArguments();
@@ -137,19 +136,17 @@ public class EcsSetupRollbackTest extends WingsBaseTest {
                               .build();
     doReturn(bag).when(mockEcsStateHelper).prepareBagForEcsSetUp(any(), anyInt(), any(), any(), any(), any(), any());
     Activity activity = Activity.builder().uuid(ACTIVITY_ID).build();
-    doReturn(activity).when(mockEcsStateHelper).createActivity(any(), anyString(), anyString(), any(), any());
+    doReturn(activity).when(mockEcsStateHelper).createActivity(any(), any(), any(), any(), any());
     ContainerRollbackRequestElement rollbackElement = ContainerRollbackRequestElement.builder().build();
     doReturn(rollbackElement).when(mockEcsStateHelper).getDeployElementFromSweepingOutput(any());
     EcsSetupParams params =
         anEcsSetupParams().withBlueGreen(false).withServiceName("EcsSvc").withClusterName(CLUSTER_NAME).build();
     doReturn(params).when(mockEcsStateHelper).buildContainerSetupParams(any(), any());
     CommandStateExecutionData executionData = aCommandStateExecutionData().build();
-    doReturn(executionData)
-        .when(mockEcsStateHelper)
-        .getStateExecutionData(any(), anyString(), any(), any(Activity.class));
+    doReturn(executionData).when(mockEcsStateHelper).getStateExecutionData(any(), any(), any(), any(Activity.class));
     EcsSetupContextVariableHolder holder = EcsSetupContextVariableHolder.builder().build();
     doReturn(holder).when(mockEcsStateHelper).renderEcsSetupContextVariables(any());
-    doNothing().when(stateExecutionService).appendDelegateTaskDetails(anyString(), any());
+    doNothing().when(stateExecutionService).appendDelegateTaskDetails(any(), any());
     doReturn(DelegateTask.builder().uuid(DEL_TASK_ID).description("desc").build())
         .when(mockEcsStateHelper)
         .createAndQueueDelegateTaskForEcsServiceSetUp(any(), any(), any(Activity.class), any(), eq(true));
@@ -186,7 +183,7 @@ public class EcsSetupRollbackTest extends WingsBaseTest {
     assertThat(response.getStateExecutionData()).isEqualTo(executionData);
     assertThat(response.getDelegateTaskId()).isEqualTo(DEL_TASK_ID);
     verify(featureFlagService).isEnabled(eq(TIMEOUT_FAILURE_SUPPORT), any());
-    verify(stateExecutionService).appendDelegateTaskDetails(anyString(), any());
+    verify(stateExecutionService).appendDelegateTaskDetails(any(), any());
   }
 
   @Test
@@ -213,18 +210,17 @@ public class EcsSetupRollbackTest extends WingsBaseTest {
     doReturn(executionData).when(mockContext).getStateExecutionData();
     PhaseElement phaseElement =
         PhaseElement.builder().serviceElement(ServiceElement.builder().uuid(SERVICE_ID).build()).build();
-    doReturn(phaseElement).when(mockContext).getContextElement(any(), anyString());
+    doReturn(phaseElement).when(mockContext).getContextElement(any(), any());
     Artifact artifact = anArtifact().withRevision("rev").build();
-    doReturn(artifact).when(mockContext).getDefaultArtifactForService(anyString());
+    doReturn(artifact).when(mockContext).getDefaultArtifactForService(any());
     ImageDetails details = ImageDetails.builder().name("imgName").tag("imgTag").build();
-    doReturn(details).when(mockArtifactCollectionUtils).fetchContainerImageDetails(any(), anyString());
+    doReturn(details).when(mockArtifactCollectionUtils).fetchContainerImageDetails(any(), any());
     ContainerServiceElement containerServiceElement = ContainerServiceElement.builder().build();
     doReturn(containerServiceElement)
         .when(mockEcsStateHelper)
-        .buildContainerServiceElement(
-            any(), any(), any(), any(), anyString(), anyString(), anyString(), any(), anyInt(), any());
+        .buildContainerServiceElement(any(), any(), any(), any(), any(), any(), any(), anyInt());
     doReturn(SweepingOutputInstance.builder()).when(mockContext).prepareSweepingOutputBuilder(any());
-    doReturn("foo").when(mockEcsStateHelper).getSweepingOutputName(any(), anyBoolean(), anyString());
+    doReturn("foo").when(mockEcsStateHelper).getSweepingOutputName(any(), anyBoolean(), any());
 
     ExecutionResponse response = state.handleAsyncResponse(mockContext, ImmutableMap.of(ACTIVITY_ID, delegateResponse));
     verify(mockEcsStateHelper).populateFromDelegateResponse(any(), any(), any());
@@ -257,18 +253,17 @@ public class EcsSetupRollbackTest extends WingsBaseTest {
     doReturn(executionData).when(mockContext).getStateExecutionData();
     PhaseElement phaseElement =
         PhaseElement.builder().serviceElement(ServiceElement.builder().uuid(SERVICE_ID).build()).build();
-    doReturn(phaseElement).when(mockContext).getContextElement(any(), anyString());
+    doReturn(phaseElement).when(mockContext).getContextElement(any(), any());
     Artifact artifact = anArtifact().withRevision("rev").build();
-    doReturn(artifact).when(mockContext).getDefaultArtifactForService(anyString());
+    doReturn(artifact).when(mockContext).getDefaultArtifactForService(any());
     ImageDetails details = ImageDetails.builder().name("imgName").tag("imgTag").build();
-    doReturn(details).when(mockArtifactCollectionUtils).fetchContainerImageDetails(any(), anyString());
+    doReturn(details).when(mockArtifactCollectionUtils).fetchContainerImageDetails(any(), any());
     ContainerServiceElement containerServiceElement = ContainerServiceElement.builder().build();
     doReturn(containerServiceElement)
         .when(mockEcsStateHelper)
-        .buildContainerServiceElement(
-            any(), any(), any(), any(), anyString(), anyString(), anyString(), any(), anyInt(), any());
+        .buildContainerServiceElement(any(), any(), any(), any(), any(), any(), any(), anyInt());
     doReturn(SweepingOutputInstance.builder()).when(mockContext).prepareSweepingOutputBuilder(any());
-    doReturn("foo").when(mockEcsStateHelper).getSweepingOutputName(any(), anyBoolean(), anyString());
+    doReturn("foo").when(mockEcsStateHelper).getSweepingOutputName(any(), anyBoolean(), any());
 
     ExecutionResponse response = state.handleAsyncResponse(mockContext, ImmutableMap.of(ACTIVITY_ID, delegateResponse));
     verify(mockEcsStateHelper).populateFromDelegateResponse(any(), any(), any());

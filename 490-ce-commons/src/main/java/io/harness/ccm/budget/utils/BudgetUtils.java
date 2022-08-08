@@ -7,6 +7,7 @@
 
 package io.harness.ccm.budget.utils;
 
+import static io.harness.ccm.budget.BudgetPeriod.DAILY;
 import static io.harness.ccm.budget.BudgetScopeType.PERSPECTIVE;
 import static io.harness.ccm.budget.BudgetType.SPECIFIED_AMOUNT;
 
@@ -105,6 +106,18 @@ public class BudgetUtils {
     return zdtStart.toEpochSecond() * 1000 + ONE_DAY_MILLIS - 1000;
   }
 
+  public static long getStartOfDay(long day) {
+    Calendar c = Calendar.getInstance();
+    c.setTimeZone(TimeZone.getTimeZone(DEFAULT_TIMEZONE));
+    c.setTimeInMillis(day);
+    c.set(Calendar.MILLISECOND, 0);
+    c.set(Calendar.SECOND, 0);
+    c.set(Calendar.MINUTE, 0);
+    c.set(Calendar.HOUR, 0);
+    c.set(Calendar.HOUR_OF_DAY, 0);
+    return c.getTimeInMillis();
+  }
+
   public static long getStartOfMonth(boolean prevMonth) {
     Calendar c = Calendar.getInstance();
     c.setTimeZone(TimeZone.getTimeZone(DEFAULT_TIMEZONE));
@@ -119,13 +132,10 @@ public class BudgetUtils {
     return c.getTimeInMillis();
   }
 
-  private static long getStartOfPeriod(BudgetPeriod period) {
+  private static long getStartOfPeriod(long startTime, BudgetPeriod period) {
     Calendar c = Calendar.getInstance();
     c.setTimeZone(TimeZone.getTimeZone(DEFAULT_TIMEZONE));
-    c.set(Calendar.HOUR_OF_DAY, 0);
-    c.set(Calendar.MINUTE, 0);
-    c.set(Calendar.SECOND, 0);
-    c.set(Calendar.MILLISECOND, 0);
+    c.setTimeInMillis(startTime);
     switch (period) {
       case WEEKLY:
         c.set(Calendar.DAY_OF_WEEK, 1);
@@ -290,7 +300,8 @@ public class BudgetUtils {
 
   public static int getTimeOffsetInDays(Budget budget) {
     try {
-      return (int) ((budget.getStartTime() - getStartOfPeriod(budget.getPeriod())) / ONE_DAY_MILLIS);
+      return (
+          int) ((budget.getStartTime() - getStartOfPeriod(budget.getStartTime(), budget.getPeriod())) / ONE_DAY_MILLIS);
     } catch (Exception e) {
       return 0;
     }
@@ -327,6 +338,9 @@ public class BudgetUtils {
 
   public static long getBudgetStartTime(Budget budget) {
     if (budget.getStartTime() != 0) {
+      if (budget.getPeriod() == DAILY) {
+        return budget.getStartTime() - 2 * ONE_DAY_MILLIS;
+      }
       return budget.getStartTime();
     }
     return getStartOfMonth(false);

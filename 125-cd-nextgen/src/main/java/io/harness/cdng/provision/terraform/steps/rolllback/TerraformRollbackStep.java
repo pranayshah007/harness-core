@@ -12,13 +12,14 @@ import static java.lang.String.format;
 import io.harness.account.services.AccountService;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.cdng.expressions.CDExpressionResolveFunctor;
+import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.provision.terraform.TerraformConfig;
 import io.harness.cdng.provision.terraform.TerraformConfigDAL;
 import io.harness.cdng.provision.terraform.TerraformConfigHelper;
 import io.harness.cdng.provision.terraform.TerraformStepHelper;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
-import io.harness.delegate.TaskSelector;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.task.terraform.TFTaskType;
 import io.harness.delegate.task.terraform.TerraformCommandUnit;
@@ -30,6 +31,7 @@ import io.harness.expression.ExpressionEvaluatorUtils;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.UnitProgress;
 import io.harness.persistence.HIterator;
+import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.plancreator.steps.common.rollback.TaskExecutableWithRollbackAndRbac;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -58,6 +60,7 @@ import software.wings.beans.TaskType;
 
 import com.google.inject.Inject;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 
@@ -77,6 +80,7 @@ public class TerraformRollbackStep extends TaskExecutableWithRollbackAndRbac<Ter
   @Inject private EngineExpressionService engineExpressionService;
   @Inject public TerraformConfigDAL terraformConfigDAL;
   @Inject private AccountService accountService;
+  @Inject private CDFeatureFlagHelper cdFeatureFlagHelper;
 
   @Override
   public TaskRequest obtainTaskAfterRbac(
@@ -88,6 +92,11 @@ public class TerraformRollbackStep extends TaskExecutableWithRollbackAndRbac<Ter
         terraformStepHelper.generateFullIdentifier(stepParametersSpec.getProvisionerIdentifier(), ambiance);
     try (HIterator<TerraformConfig> configIterator = terraformConfigHelper.getIterator(ambiance, entityId)) {
       if (!configIterator.hasNext()) {
+        if (cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.EXPORT_TF_PLAN_JSON_NG)) {
+          terraformStepHelper.cleanupTfPlanJsonForProvisioner(
+              ambiance, stepParametersSpec.getPlanStepsFqn(), provisionerIdentifier);
+        }
+
         return TaskRequest.newBuilder()
             .setSkipTaskRequest(
                 SkipTaskRequest.newBuilder()
@@ -144,6 +153,7 @@ public class TerraformRollbackStep extends TaskExecutableWithRollbackAndRbac<Ter
       if (rollbackConfig.getConfigFiles() != null) {
         builder.configFile(terraformStepHelper.getGitFetchFilesConfig(
             rollbackConfig.getConfigFiles().toGitStoreConfig(), ambiance, TerraformStepHelper.TF_CONFIG_FILES));
+        builder.tfModuleSourceInheritSSH(rollbackConfig.isUseConnectorCredentials());
       }
       if (rollbackConfig.getFileStoreConfig() != null) {
         builder.fileStoreConfigFiles(terraformStepHelper.getFileStoreFetchFilesConfig(
@@ -153,7 +163,9 @@ public class TerraformRollbackStep extends TaskExecutableWithRollbackAndRbac<Ter
 
       builder.backendConfig(rollbackConfig.getBackendConfig())
           .targets(rollbackConfig.getTargets())
-          .environmentVariables(rollbackConfig.getEnvironmentVariables())
+          .environmentVariables(rollbackConfig.getEnvironmentVariables() == null
+                  ? new HashMap<>()
+                  : rollbackConfig.getEnvironmentVariables())
           .timeoutInMillis(StepUtils.getTimeoutMillis(stepParameters.getTimeout(), TerraformConstants.DEFAULT_TIMEOUT));
 
       TaskData taskData =
@@ -164,13 +176,10 @@ public class TerraformRollbackStep extends TaskExecutableWithRollbackAndRbac<Ter
               .parameters(new Object[] {builder.build()})
               .build();
 
-      ParameterField<List<String>> delegateSelectors = stepParametersSpec.getDelegateSelectors();
-
-      List<TaskSelector> taskSelectors = StepUtils.getTaskSelectors(delegateSelectors);
-
+      ParameterField<List<TaskSelectorYaml>> delegateSelectors = stepParametersSpec.getDelegateSelectors();
       return StepUtils.prepareCDTaskRequest(ambiance, taskData, kryoSerializer,
           Collections.singletonList(TerraformCommandUnit.Rollback.name()), TaskType.TERRAFORM_TASK_NG.getDisplayName(),
-          taskSelectors, stepHelper.getEnvironmentType(ambiance));
+          TaskSelectorYaml.toTaskSelector(delegateSelectors), stepHelper.getEnvironmentType(ambiance));
     }
   }
 

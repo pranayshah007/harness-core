@@ -37,4 +37,16 @@ public class CoreCriteriaUtils {
     criteria.and(DELETED).is(deleted);
     return criteria;
   }
+
+  public Criteria createCriteriaForGetList(String accountId, String orgIdentifier, String projectIdentifier) {
+    Criteria criteria = new Criteria();
+    if (isNotEmpty(accountId)) {
+      criteria.and(ACCOUNT_ID).is(accountId);
+      criteria.and(ORG_ID).is(orgIdentifier);
+      criteria.and(PROJECT_ID).is(projectIdentifier);
+    } else {
+      throw new InvalidRequestException("Account identifier cannot be null");
+    }
+    return criteria;
+  }
 }

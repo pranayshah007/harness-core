@@ -29,7 +29,7 @@ import io.harness.rule.Owner;
 import software.wings.WingsBaseTest;
 import software.wings.beans.GitConfig;
 import software.wings.beans.SettingAttribute;
-import software.wings.service.intfc.yaml.YamlChangeSetService;
+import software.wings.service.impl.yaml.YamlChangeSetServiceImpl;
 import software.wings.service.intfc.yaml.YamlGitService;
 
 import com.google.inject.Inject;
@@ -42,7 +42,7 @@ import org.mockito.Spy;
 
 public class GitChangeSetRunnableNewTest extends WingsBaseTest {
   @Inject @Spy GitChangeSetRunnableHelper gitChangeSetRunnableHelper;
-  @Inject @Spy YamlChangeSetService yamlChangeSetService;
+  @Inject YamlChangeSetServiceImpl yamlChangeSetService;
   @Mock private YamlGitService yamlGitSyncService;
   @Inject private HPersistence persistence;
 

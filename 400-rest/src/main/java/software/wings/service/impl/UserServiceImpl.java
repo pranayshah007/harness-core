@@ -32,6 +32,7 @@ import static io.harness.persistence.HQuery.excludeAuthority;
 
 import static software.wings.app.ManagerCacheRegistrar.PRIMARY_CACHE_PREFIX;
 import static software.wings.app.ManagerCacheRegistrar.USER_CACHE;
+import static software.wings.beans.Account.AccountKeys;
 import static software.wings.beans.AccountRole.AccountRoleBuilder.anAccountRole;
 import static software.wings.beans.ApplicationRole.ApplicationRoleBuilder.anApplicationRole;
 import static software.wings.beans.CGConstants.GLOBAL_APP_ID;
@@ -121,6 +122,8 @@ import io.harness.sanitizer.HtmlInputSanitizer;
 import io.harness.security.dto.UserPrincipal;
 import io.harness.serializer.KryoSerializer;
 import io.harness.signup.dto.SignupInviteDTO;
+import io.harness.telemetry.Destination;
+import io.harness.telemetry.TelemetryReporter;
 import io.harness.usermembership.remote.UserMembershipClient;
 import io.harness.version.VersionInfoManager;
 
@@ -254,6 +257,9 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -308,6 +314,7 @@ public class UserServiceImpl implements UserService {
   private static final String SYSTEM = "system";
   private static final String SETUP_ACCOUNT_FROM_MARKETPLACE = "Account Setup from Marketplace";
   private static final String NG_AUTH_UI_PATH_PREFIX = "auth/";
+  private static final String USER_INVITE = "user_invite";
 
   /**
    * The Executor service.
@@ -350,6 +357,7 @@ public class UserServiceImpl implements UserService {
   @Inject private SegmentHelper segmentHelper;
   @Inject private FeatureFlagService featureFlagService;
   @Inject @Named("PRIVILEGED") private UserMembershipClient userMembershipClient;
+  @Inject private TelemetryReporter telemetryReporter;
 
   private Cache<String, User> getUserCache() {
     if (configurationController.isPrimary()) {
@@ -417,6 +425,51 @@ public class UserServiceImpl implements UserService {
     createSSOSettingsAndMarkAsDefaultAuthMechanism(accountId);
 
     return savedUser;
+  }
+
+  public io.harness.ng.beans.PageResponse<Account> getUserAccountsAndSupportAccounts(
+      String userId, int pageIndex, int pageSize, String searchTerm) {
+    User user = get(userId);
+    Account defaultAccount = null;
+    List<Account> userAccounts = user.getAccounts();
+    for (Account account : userAccounts) {
+      if (user.getDefaultAccountId().equals(account.getUuid())) {
+        defaultAccount = account;
+        break;
+      }
+    }
+    if (defaultAccount != null) {
+      userAccounts.remove(defaultAccount);
+      userAccounts.add(0, defaultAccount);
+    }
+    userAccounts.addAll(user.getSupportAccounts());
+    if (isNotEmpty(searchTerm)) {
+      PageRequest<Account> accountPageRequest = aPageRequest()
+                                                    .addFilter(SearchFilter.builder()
+                                                                   .fieldName(AccountKeys.accountName)
+                                                                   .op(SearchFilter.Operator.CONTAINS)
+                                                                   .fieldValues(new String[] {searchTerm})
+                                                                   .build())
+                                                    .build();
+      final List<String> accountIds =
+          accountService.getAccounts(accountPageRequest).stream().map(UuidAware::getUuid).collect(toList());
+      if (accountIds.size() > 0) {
+        userAccounts = userAccounts.stream().filter(p -> accountIds.contains(p.getUuid())).collect(Collectors.toList());
+      } else {
+        userAccounts.clear();
+      }
+    }
+    List<Account> finalAccounts = userAccounts.subList(
+        Math.min(userAccounts.size(), pageIndex), Math.min(userAccounts.size(), pageIndex + pageSize));
+
+    return io.harness.ng.beans.PageResponse.<Account>builder()
+        .content(finalAccounts)
+        .pageItemCount(finalAccounts.size())
+        .pageSize(pageSize)
+        .pageIndex(pageIndex)
+        .totalItems(userAccounts.size())
+        .totalPages((userAccounts.size() + pageSize - 1) / pageSize)
+        .build();
   }
 
   @Override
@@ -490,6 +543,7 @@ public class UserServiceImpl implements UserService {
                           .withCompanyName(username)
                           .withDefaultExperience(DefaultExperience.NG)
                           .withCreatedFromNG(true)
+                          .withIsProductLed(true)
                           .withAppId(GLOBAL_APP_ID)
                           .build();
     account.setLicenseInfo(LicenseInfo.builder()
@@ -985,10 +1039,14 @@ public class UserServiceImpl implements UserService {
   }
 
   @Override
-  public User getUserByUserId(String userId) {
+  public User getUserByUserId(String accountId, String userId) {
     User user = null;
-    if (isNotEmpty(userId)) {
-      user = wingsPersistence.createQuery(User.class).filter(UserKeys.externalUserId, userId).get();
+    if (isNotEmpty(userId) && isNotEmpty(accountId)) {
+      user = wingsPersistence.createQuery(User.class)
+                 .filter(UserKeys.externalUserId, userId)
+                 .field(UserKeys.accounts)
+                 .hasThisOne(accountId)
+                 .get();
       loadSupportAccounts(user);
       if (user != null && isEmpty(user.getAccounts())) {
         user.setAccounts(newArrayList());
@@ -1279,6 +1337,17 @@ public class UserServiceImpl implements UserService {
     }
   }
 
+  @Override
+  public boolean checkIfUserLimitHasReached(String accountId, String email) {
+    try {
+      limitCheck(accountId, email);
+      return false;
+    } catch (WingsException e) {
+      log.error("Exception while checking user limit for account {}", accountId, e);
+      return true;
+    }
+  }
+
   private void limitCheck(String accountId, String email) {
     try {
       Account account = accountService.get(accountId);
@@ -1291,6 +1360,7 @@ public class UserServiceImpl implements UserService {
       List<User> existingUsersAndInvites = query.asList();
       userServiceLimitChecker.limitCheck(accountId, existingUsersAndInvites, new HashSet<>(Arrays.asList(email)));
     } catch (WingsException e) {
+      log.error("The user limit has been reached for account {} and email {}", accountId, email);
       throw e;
     } catch (Exception e) {
       // catching this because we don't want to stop user invites due to failure in limit check
@@ -1323,7 +1393,7 @@ public class UserServiceImpl implements UserService {
 
     User user = getUserByEmail(userInvite.getEmail());
     if (user == null) {
-      user = getUserByUserId(userInvite.getExternalUserId());
+      user = getUserByUserId(account.getUuid(), userInvite.getExternalUserId());
     }
 
     boolean createNewUser = user == null;
@@ -1498,7 +1568,7 @@ public class UserServiceImpl implements UserService {
                                              .addFilter(UserGroupKeys.accountId, EQ, accountId)
                                              .addFilter(UserGroupKeys.memberIds, EQ, userId)
                                              .build();
-    PageResponse<UserGroup> pageResponse = userGroupService.list(accountId, pageRequest, loadUsers);
+    PageResponse<UserGroup> pageResponse = userGroupService.list(accountId, pageRequest, loadUsers, null, null);
     return pageResponse.getResponse();
   }
 
@@ -1516,7 +1586,7 @@ public class UserServiceImpl implements UserService {
                                              .addFilter("_id", IN, userGroupIds.toArray())
                                              .addFilter(UserGroupKeys.accountId, EQ, accountId)
                                              .build();
-    PageResponse<UserGroup> pageResponse = userGroupService.list(accountId, pageRequest, true);
+    PageResponse<UserGroup> pageResponse = userGroupService.list(accountId, pageRequest, true, null, null);
     return pageResponse.getResponse();
   }
 
@@ -1757,9 +1827,49 @@ public class UserServiceImpl implements UserService {
     eventPublishHelper.publishUserRegistrationCompletionEvent(userInvite.getAccountId(), existingUser);
     auditServiceHelper.reportForAuditingUsingAccountId(
         userInvite.getAccountId(), null, userInvite, Type.ACCEPTED_INVITE);
+    sendInviteAcceptTelemetryEvents(existingUser, userInvite.getAccountId(), account.getAccountName());
     log.info(
         "Auditing accepted invite for userInvite={} in account={}", userInvite.getName(), userInvite.getAccountName());
     return ACCOUNT_INVITE_ACCEPTED;
+  }
+
+  private void sendInviteAcceptTelemetryEvents(User user, String accountId, String accountName) {
+    String userEmail = user.getEmail();
+
+    HashMap<String, Object> properties = new HashMap<>();
+    properties.put("email", userEmail);
+    properties.put("name", user.getName());
+    properties.put("id", user.getUuid());
+    properties.put("startTime", String.valueOf(Instant.now().toEpochMilli()));
+    properties.put("accountId", accountId);
+    properties.put("accountName", accountName);
+    properties.put("source", USER_INVITE);
+
+    // identify event to register new user
+    telemetryReporter.sendIdentifyEvent(
+        userEmail, properties, ImmutableMap.<Destination, Boolean>builder().put(Destination.MARKETO, true).build());
+
+    HashMap<String, Object> groupProperties = new HashMap<>();
+    groupProperties.put("group_id", accountId);
+    groupProperties.put("group_type", "Account");
+    groupProperties.put("group_name", accountName);
+
+    // group event to register new signed-up user with new account
+    telemetryReporter.sendGroupEvent(accountId, userEmail, groupProperties,
+        ImmutableMap.<Destination, Boolean>builder().put(Destination.MARKETO, true).build());
+
+    // flush all events so that event queue is empty
+    telemetryReporter.flush();
+
+    properties.put("platform", "CG");
+    // Wait 20 seconds, to ensure identify is sent before track
+    ScheduledExecutorService tempExecutor = Executors.newSingleThreadScheduledExecutor();
+    tempExecutor.schedule(
+        ()
+            -> telemetryReporter.sendTrackEvent("Invite Accepted", userEmail, accountId, properties,
+                ImmutableMap.<Destination, Boolean>builder().put(Destination.MARKETO, true).build(), null),
+        20, TimeUnit.SECONDS);
+    log.info("User Invite telemetry sent");
   }
 
   @Override
@@ -2702,7 +2812,7 @@ public class UserServiceImpl implements UserService {
                                      .withLimit(Long.toString(userGroupService.getCountOfUserGroups(accountId)))
                                      .addFilter(UserGroupKeys.accountId, EQ, accountId)
                                      .build();
-    PageResponse<UserGroup> res = userGroupService.list(accountId, req, false);
+    PageResponse<UserGroup> res = userGroupService.list(accountId, req, false, null, null);
     List<UserGroup> allUserGroupList = res.getResponse();
     if (isEmpty(allUserGroupList)) {
       return;
@@ -2797,6 +2907,17 @@ public class UserServiceImpl implements UserService {
         }
       }
 
+      if (updateUsergroup) {
+        PageResponse<UserGroup> pageResponse = userGroupService.list(accountId,
+            aPageRequest()
+                .withLimit(Long.toString(userGroupService.getCountOfUserGroups(accountId)))
+                .addFilter(UserGroupKeys.memberIds, HAS, user.getUuid())
+                .build(),
+            true, null, null);
+        List<UserGroup> userGroupList = pageResponse.getResponse();
+        removeUserFromUserGroups(user, userGroupList, false);
+      }
+
       if (updatedActiveAccounts.isEmpty() && updatedPendingAccounts.isEmpty()) {
         deleteUser(user);
         return;
@@ -2813,17 +2934,6 @@ public class UserServiceImpl implements UserService {
         for (Role role : accountRoles) {
           updatedRolesForUser.remove(role);
         }
-      }
-
-      if (updateUsergroup) {
-        PageResponse<UserGroup> pageResponse = userGroupService.list(accountId,
-            aPageRequest()
-                .withLimit(Long.toString(userGroupService.getCountOfUserGroups(accountId)))
-                .addFilter(UserGroupKeys.memberIds, HAS, user.getUuid())
-                .build(),
-            true);
-        List<UserGroup> userGroupList = pageResponse.getResponse();
-        removeUserFromUserGroups(user, userGroupList, false);
       }
 
       UpdateOperations<User> updateOp = wingsPersistence.createUpdateOperations(User.class)
@@ -2937,7 +3047,7 @@ public class UserServiceImpl implements UserService {
 
   @Override
   public List<User> getUsers(Set<String> userIds) {
-    Query<User> query = wingsPersistence.createQuery(User.class).field("uuid").in(userIds);
+    Query<User> query = wingsPersistence.createQuery(User.class, excludeAuthority).field("uuid").in(userIds);
     return query.asList();
   }
 
@@ -3233,7 +3343,7 @@ public class UserServiceImpl implements UserService {
             .addFilter(UserGroup.ACCOUNT_ID_KEY, EQ, accountId)
             .addFilter(UserGroupKeys.name, EQ, UserGroup.DEFAULT_ACCOUNT_ADMIN_USER_GROUP_NAME)
             .build();
-    PageResponse<UserGroup> pageResponse = userGroupService.list(accountId, pageRequest, true);
+    PageResponse<UserGroup> pageResponse = userGroupService.list(accountId, pageRequest, true, null, null);
     return pageResponse.getResponse();
   }
 

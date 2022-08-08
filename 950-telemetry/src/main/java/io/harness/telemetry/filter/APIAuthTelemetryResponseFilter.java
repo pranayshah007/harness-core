@@ -22,6 +22,7 @@ import io.harness.ng.core.dto.FailureDTO;
 import io.harness.telemetry.Category;
 import io.harness.telemetry.TelemetryOption;
 import io.harness.telemetry.TelemetryReporter;
+import io.harness.telemetry.utils.TelemetryDataUtils;
 
 import com.google.inject.Singleton;
 import io.github.resilience4j.ratelimiter.RateLimiter;
@@ -49,6 +50,7 @@ public class APIAuthTelemetryResponseFilter implements ContainerResponseFilter {
   public static final String ACCOUNT_IDENTIFIER = "account_identifier";
   public static final String API_ENDPOINT = "api_endpoint";
   public static final String API_TYPE = "api_type";
+  public static final String API_PATTERN = "api_pattern";
   public static final String RESPONSE_CODE = "response_code";
   public static final String ERROR_MESSAGE = "error_message";
   public static final String API_ENDPOINTS_ERRORED_RESPONSE = "api_endpoints_errored_response";
@@ -93,6 +95,7 @@ public class APIAuthTelemetryResponseFilter implements ContainerResponseFilter {
       properties.put(API_ENDPOINT, containerRequestContext.getUriInfo().getPath());
       properties.put(API_TYPE, containerRequestContext.getMethod());
       properties.put(RESPONSE_CODE, responseCode);
+      properties.put(API_PATTERN, TelemetryDataUtils.getApiPattern(containerRequestContext));
       if (containerResponseContext.getEntity() instanceof ErrorDTO) {
         properties.put(ERROR_MESSAGE, ((ErrorDTO) containerResponseContext.getEntity()).getMessage());
       } else if (containerResponseContext.getEntity() instanceof FailureDTO) {

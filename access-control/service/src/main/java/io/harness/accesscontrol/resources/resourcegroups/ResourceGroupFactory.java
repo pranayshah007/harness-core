@@ -8,6 +8,8 @@
 package io.harness.accesscontrol.resources.resourcegroups;
 
 import static io.harness.accesscontrol.scopes.core.Scope.PATH_DELIMITER;
+import static io.harness.accesscontrol.scopes.core.Scope.SCOPE_DELIMITER;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.accesscontrol.scopes.core.Scope;
@@ -15,43 +17,24 @@ import io.harness.accesscontrol.scopes.harness.HarnessScopeParams;
 import io.harness.accesscontrol.scopes.harness.ScopeMapper;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.resourcegroup.model.DynamicResourceSelector;
-import io.harness.resourcegroup.model.ResourceSelector;
-import io.harness.resourcegroup.model.ResourceSelectorByScope;
-import io.harness.resourcegroup.model.StaticResourceSelector;
-import io.harness.resourcegroup.v1.remote.dto.ResourceGroupDTO;
-import io.harness.resourcegroupclient.remote.v1.ResourceGroupResponse;
+import io.harness.resourcegroup.beans.ScopeFilterType;
+import io.harness.resourcegroup.v2.model.AttributeFilter;
+import io.harness.resourcegroup.v2.model.ResourceFilter;
+import io.harness.resourcegroup.v2.model.ScopeSelector;
+import io.harness.resourcegroup.v2.remote.dto.ResourceGroupDTO;
+import io.harness.resourcegroup.v2.remote.dto.ResourceGroupResponse;
 
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 @OwnedBy(HarnessTeam.PL)
 public class ResourceGroupFactory {
-  public ResourceGroup buildResourceGroup(ResourceGroupResponse resourceGroupResponse, String scopeIdentifier) {
-    ResourceGroupDTO resourceGroupDTO = resourceGroupResponse.getResourceGroup();
-    Set<String> resourceSelectors;
-    if (resourceGroupDTO.getResourceSelectors() == null) {
-      resourceSelectors = new HashSet<>();
-    } else {
-      resourceSelectors = resourceGroupDTO.getResourceSelectors()
-                              .stream()
-                              .map(this::buildResourceSelector)
-                              .flatMap(Collection::stream)
-                              .collect(Collectors.toSet());
-    }
-    return ResourceGroup.builder()
-        .identifier(resourceGroupDTO.getIdentifier())
-        .scopeIdentifier(scopeIdentifier)
-        .name(resourceGroupDTO.getName())
-        .resourceSelectors(resourceSelectors)
-        .managed(resourceGroupResponse.isHarnessManaged())
-        .fullScopeSelected(resourceGroupDTO.isFullScopeSelected())
-        .allowedScopeLevels(resourceGroupDTO.getAllowedScopeLevels())
-        .build();
-  }
+  private final String CONDITIONAL_EXPRESSION_TEMPLATE = "<+resource.attribute.%s> =~ [%s]";
 
   public ResourceGroup buildResourceGroup(ResourceGroupResponse resourceGroupResponse) {
     ResourceGroupDTO resourceGroupDTO = resourceGroupResponse.getResourceGroup();
@@ -66,41 +49,138 @@ public class ResourceGroupFactory {
     return buildResourceGroup(resourceGroupResponse, scope == null ? null : scope.toString());
   }
 
-  public Set<String> buildResourceSelector(ResourceSelector resourceSelector) {
-    if (resourceSelector instanceof StaticResourceSelector) {
-      StaticResourceSelector staticResourceSelector = (StaticResourceSelector) resourceSelector;
-      return staticResourceSelector.getIdentifiers()
+  ResourceGroup buildResourceGroup(ResourceGroupResponse resourceGroupResponse, String scopeIdentifier) {
+    ResourceGroupDTO resourceGroupDTO = resourceGroupResponse.getResourceGroup();
+    Set<ResourceSelector> resourceSelectors = buildResourceSelector(resourceGroupDTO);
+    return ResourceGroup.builder()
+        .identifier(resourceGroupDTO.getIdentifier())
+        .scopeIdentifier(scopeIdentifier)
+        .name(resourceGroupDTO.getName())
+        .resourceSelectors(resourceSelectors.stream()
+                               .filter(resourceSelector -> !resourceSelector.isConditional())
+                               .map(ResourceSelector::getSelector)
+                               .collect(Collectors.toSet()))
+        .resourceSelectorsV2(resourceSelectors)
+        .managed(resourceGroupResponse.isHarnessManaged())
+        .allowedScopeLevels(resourceGroupDTO.getAllowedScopeLevels())
+        .build();
+  }
+
+  private Scope getScope(ScopeSelector scopeSelector) {
+    if (isNotEmpty(scopeSelector.getAccountIdentifier())) {
+      return ScopeMapper.fromParams(HarnessScopeParams.builder()
+                                        .accountIdentifier(scopeSelector.getAccountIdentifier())
+                                        .orgIdentifier(scopeSelector.getOrgIdentifier())
+                                        .projectIdentifier(scopeSelector.getProjectIdentifier())
+                                        .build());
+    }
+    return null;
+  }
+
+  private boolean addProjectResource(ScopeSelector scopeSelector) {
+    if (ScopeFilterType.INCLUDING_CHILD_SCOPES.equals(scopeSelector.getFilter())) {
+      return true;
+    } else if (ScopeFilterType.EXCLUDING_CHILD_SCOPES.equals(scopeSelector.getFilter())
+        && scopeSelector.getProjectIdentifier() != null) {
+      return true;
+    }
+    return false;
+  }
+
+  private boolean addOrgResource(ScopeSelector scopeSelector) {
+    if (scopeSelector.getProjectIdentifier() == null) {
+      if (ScopeFilterType.INCLUDING_CHILD_SCOPES.equals(scopeSelector.getFilter())) {
+        return true;
+      } else if (ScopeFilterType.EXCLUDING_CHILD_SCOPES.equals(scopeSelector.getFilter())
+          && scopeSelector.getOrgIdentifier() != null) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  private Set<ResourceSelector> getResourceSelectors(
+      io.harness.resourcegroup.v2.model.ResourceSelector resourceSelector) {
+    if (isEmpty(resourceSelector.getIdentifiers())) {
+      String selector = PATH_DELIMITER.concat(resourceSelector.getResourceType())
+                            .concat(PATH_DELIMITER)
+                            .concat(ResourceGroup.ALL_RESOURCES_IDENTIFIER);
+      Optional<String> condition = getCondition(resourceSelector.getAttributeFilter());
+      return Collections.singleton(ResourceSelector.builder()
+                                       .selector(selector)
+                                       .conditional(condition.isPresent())
+                                       .condition(condition.orElse(null))
+                                       .build());
+    } else {
+      return resourceSelector.getIdentifiers()
           .stream()
           .map(identifier
-              -> PATH_DELIMITER.concat(staticResourceSelector.getResourceType())
-                     .concat(PATH_DELIMITER)
-                     .concat(identifier))
+              -> ResourceSelector.builder()
+                     .selector(PATH_DELIMITER.concat(resourceSelector.getResourceType())
+                                   .concat(PATH_DELIMITER)
+                                   .concat(identifier))
+                     .build())
           .collect(Collectors.toSet());
-    } else if (resourceSelector instanceof DynamicResourceSelector) {
-      DynamicResourceSelector dynamicResourceSelector = (DynamicResourceSelector) resourceSelector;
-      if (Boolean.TRUE.equals(dynamicResourceSelector.getIncludeChildScopes())) {
-        return Collections.singleton(PATH_DELIMITER.concat(ResourceGroup.INCLUDE_CHILD_SCOPES_IDENTIFIER)
-                                         .concat(PATH_DELIMITER)
-                                         .concat(dynamicResourceSelector.getResourceType())
-                                         .concat(PATH_DELIMITER)
-                                         .concat(ResourceGroup.ALL_RESOURCES_IDENTIFIER));
-      }
-      return Collections.singleton(PATH_DELIMITER.concat(dynamicResourceSelector.getResourceType())
-                                       .concat(PATH_DELIMITER)
-                                       .concat(ResourceGroup.ALL_RESOURCES_IDENTIFIER));
-    } else if (resourceSelector instanceof ResourceSelectorByScope) {
-      ResourceSelectorByScope resourceSelectorByScope = (ResourceSelectorByScope) resourceSelector;
-      if (resourceSelectorByScope.isIncludeChildScopes()) {
-        return Collections.singleton(PATH_DELIMITER.concat(ResourceGroup.INCLUDE_CHILD_SCOPES_IDENTIFIER)
-                                         .concat(PATH_DELIMITER)
-                                         .concat(ResourceGroup.ALL_RESOURCES_IDENTIFIER)
-                                         .concat(PATH_DELIMITER)
-                                         .concat(ResourceGroup.ALL_RESOURCES_IDENTIFIER));
-      }
-      return Collections.singleton(PATH_DELIMITER.concat(ResourceGroup.ALL_RESOURCES_IDENTIFIER)
-                                       .concat(PATH_DELIMITER)
-                                       .concat(ResourceGroup.ALL_RESOURCES_IDENTIFIER));
     }
-    return Collections.emptySet();
+  }
+
+  private Optional<String> getCondition(AttributeFilter attributeFilter) {
+    if (attributeFilter == null || isEmpty(attributeFilter.getAttributeValues())) {
+      return Optional.empty();
+    }
+    return Optional.of(String.format(CONDITIONAL_EXPRESSION_TEMPLATE, attributeFilter.getAttributeName(),
+        convertToString(attributeFilter.getAttributeValues())));
+  }
+
+  private String convertToString(List<String> attributeValues) {
+    return attributeValues.stream().map(value -> "\"" + value + "\"").collect(Collectors.joining(","));
+  }
+
+  Set<ResourceSelector> buildResourceSelector(ResourceGroupDTO resourceGroupDTO) {
+    Set<ResourceSelector> resourceSelectors = new HashSet<>();
+    Set<ResourceSelector> selectors = new HashSet<>();
+    ResourceFilter resourceFilter = resourceGroupDTO.getResourceFilter();
+    List<ScopeSelector> includedScopes = resourceGroupDTO.getIncludedScopes();
+    if (isEmpty(includedScopes) || resourceFilter == null) {
+      return new HashSet<>();
+    }
+
+    if (Boolean.TRUE.equals(resourceFilter.isIncludeAllResources())) {
+      resourceSelectors.add(ResourceSelector.builder()
+                                .selector(PATH_DELIMITER.concat(ResourceGroup.ALL_RESOURCES_IDENTIFIER)
+                                              .concat(PATH_DELIMITER)
+                                              .concat(ResourceGroup.ALL_RESOURCES_IDENTIFIER))
+                                .build());
+    } else {
+      resourceFilter.getResources().forEach(
+          resourceSelector -> { resourceSelectors.addAll(getResourceSelectors(resourceSelector)); });
+    }
+
+    includedScopes.stream().filter(Objects::nonNull).forEach(scopeSelector -> {
+      Scope scope = getScope(scopeSelector);
+      StringBuilder selector = new StringBuilder(scope == null ? "" : scope.toString().concat(SCOPE_DELIMITER));
+      if (ScopeFilterType.INCLUDING_CHILD_SCOPES.equals(scopeSelector.getFilter())) {
+        selector.append(PATH_DELIMITER).append(ResourceGroup.INCLUDE_CHILD_SCOPES_IDENTIFIER);
+      }
+
+      Set<ResourceSelector> modifiedResourceSelectors = new HashSet<>(resourceSelectors);
+      if (Boolean.FALSE.equals(resourceFilter.isIncludeAllResources())) {
+        if (addOrgResource(scopeSelector)) {
+          modifiedResourceSelectors.addAll(getResourceSelectors(
+              io.harness.resourcegroup.v2.model.ResourceSelector.builder().resourceType("ORGANIZATION").build()));
+        }
+        if (addProjectResource(scopeSelector)) {
+          modifiedResourceSelectors.addAll(getResourceSelectors(
+              io.harness.resourcegroup.v2.model.ResourceSelector.builder().resourceType("PROJECT").build()));
+        }
+      }
+      modifiedResourceSelectors.forEach(resourceSelector
+          -> selectors.add(ResourceSelector.builder()
+                               .selector(selector.toString().concat(resourceSelector.getSelector()))
+                               .conditional(resourceSelector.isConditional())
+                               .condition(resourceSelector.getCondition())
+                               .build()));
+    });
+    return selectors;
   }
 }

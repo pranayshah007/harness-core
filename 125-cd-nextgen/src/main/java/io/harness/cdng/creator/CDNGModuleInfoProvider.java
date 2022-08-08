@@ -7,19 +7,27 @@
 
 package io.harness.cdng.creator;
 
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.artifact.outcome.ArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactsOutcome;
+import io.harness.cdng.gitops.steps.GitopsClustersOutcome;
+import io.harness.cdng.gitops.steps.GitopsClustersStep;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.infra.steps.InfrastructureStep;
+import io.harness.cdng.infra.steps.InfrastructureTaskExecutableStep;
 import io.harness.cdng.pipeline.executions.beans.CDPipelineModuleInfo;
 import io.harness.cdng.pipeline.executions.beans.CDPipelineModuleInfo.CDPipelineModuleInfoBuilder;
 import io.harness.cdng.pipeline.executions.beans.CDStageModuleInfo;
 import io.harness.cdng.pipeline.executions.beans.CDStageModuleInfo.CDStageModuleInfoBuilder;
 import io.harness.cdng.pipeline.executions.beans.InfraExecutionSummary;
 import io.harness.cdng.pipeline.executions.beans.ServiceExecutionSummary;
+import io.harness.cdng.pipeline.executions.beans.ServiceExecutionSummary.ArtifactsSummary;
+import io.harness.cdng.pipeline.executions.beans.ServiceExecutionSummary.ArtifactsSummary.ArtifactsSummaryBuilder;
 import io.harness.cdng.service.steps.ServiceConfigStep;
+import io.harness.cdng.service.steps.ServiceSectionStep;
 import io.harness.cdng.service.steps.ServiceStepOutcome;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.data.structure.EmptyPredicate;
@@ -35,12 +43,13 @@ import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
 import io.harness.pms.sdk.execution.beans.PipelineModuleInfo;
 import io.harness.pms.sdk.execution.beans.StageModuleInfo;
-import io.harness.steps.environment.EnvironmentOutcome;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Singleton
@@ -48,10 +57,8 @@ import java.util.stream.Collectors;
 public class CDNGModuleInfoProvider implements ExecutionSummaryModuleInfoProvider {
   @Inject OutcomeService outcomeService;
 
-  public ServiceExecutionSummary.ArtifactsSummary mapArtifactsOutcomeToSummary(
-      Optional<ArtifactsOutcome> artifactsOutcomeOptional) {
-    ServiceExecutionSummary.ArtifactsSummary.ArtifactsSummaryBuilder artifactsSummaryBuilder =
-        ServiceExecutionSummary.ArtifactsSummary.builder();
+  public ArtifactsSummary mapArtifactsOutcomeToSummary(Optional<ArtifactsOutcome> artifactsOutcomeOptional) {
+    ArtifactsSummaryBuilder artifactsSummaryBuilder = ArtifactsSummary.builder();
     if (artifactsOutcomeOptional == null || !artifactsOutcomeOptional.isPresent()) {
       return artifactsSummaryBuilder.build();
     }
@@ -61,7 +68,7 @@ public class CDNGModuleInfoProvider implements ExecutionSummaryModuleInfoProvide
       artifactsSummaryBuilder.primary(artifactsOutcome.getPrimary().getArtifactSummary());
     }
 
-    if (EmptyPredicate.isNotEmpty(artifactsOutcome.getSidecars())) {
+    if (isNotEmpty(artifactsOutcome.getSidecars())) {
       artifactsSummaryBuilder.sidecars(artifactsOutcome.getSidecars()
                                            .values()
                                            .stream()
@@ -91,21 +98,29 @@ public class CDNGModuleInfoProvider implements ExecutionSummaryModuleInfoProvide
     return Optional.ofNullable((ArtifactsOutcome) optionalOutcome.getOutcome());
   }
 
-  private Optional<EnvironmentOutcome> getEnvironmentOutcome(OrchestrationEvent event) {
+  private Optional<InfrastructureOutcome> getInfrastructureOutcome(OrchestrationEvent event) {
     OptionalOutcome optionalOutcome = outcomeService.resolveOptional(
         event.getAmbiance(), RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.OUTPUT));
     if (!optionalOutcome.isFound()) {
       return Optional.empty();
     }
-    return Optional.ofNullable(((InfrastructureOutcome) optionalOutcome.getOutcome()).getEnvironment());
+    return Optional.ofNullable((InfrastructureOutcome) optionalOutcome.getOutcome());
   }
 
   private boolean isServiceNodeAndCompleted(StepType stepType, Status status) {
-    return Objects.equals(stepType, ServiceConfigStep.STEP_TYPE) && StatusUtils.isFinalStatus(status);
+    return (Objects.equals(stepType, ServiceConfigStep.STEP_TYPE)
+               || Objects.equals(stepType, ServiceSectionStep.STEP_TYPE))
+        && StatusUtils.isFinalStatus(status);
   }
 
   private boolean isInfrastructureNodeAndCompleted(StepType stepType, Status status) {
-    return Objects.equals(stepType, InfrastructureStep.STEP_TYPE) && StatusUtils.isFinalStatus(status);
+    return (Objects.equals(stepType, InfrastructureStep.STEP_TYPE)
+               || Objects.equals(stepType, InfrastructureTaskExecutableStep.STEP_TYPE))
+        && StatusUtils.isFinalStatus(status);
+  }
+
+  private boolean isGitopsNodeAndCompleted(StepType stepType, Status status) {
+    return Objects.equals(stepType, GitopsClustersStep.STEP_TYPE) && StatusUtils.isFinalStatus(status);
   }
 
   @Override
@@ -126,7 +141,28 @@ public class CDNGModuleInfoProvider implements ExecutionSummaryModuleInfoProvide
         InfrastructureOutcome infrastructureOutcome = (InfrastructureOutcome) infraOptionalOutcome.getOutcome();
         cdPipelineModuleInfoBuilder.envIdentifier(infrastructureOutcome.getEnvironment().getIdentifier())
             .environmentType(infrastructureOutcome.getEnvironment().getType())
-            .infrastructureType(infrastructureOutcome.getKind());
+            .infrastructureType(infrastructureOutcome.getKind())
+            .infrastructureIdentifier(infrastructureOutcome.getInfraIdentifier())
+            .infrastructureName(infrastructureOutcome.getInfraName());
+      }
+    } else if (isGitopsNodeAndCompleted(stepType, event.getStatus())) {
+      OptionalOutcome optionalOutcome = outcomeService.resolveOptional(
+          ambiance, RefObjectUtils.getOutcomeRefObject(GitopsClustersStep.GITOPS_SWEEPING_OUTPUT));
+      if (optionalOutcome != null && optionalOutcome.isFound()) {
+        GitopsClustersOutcome gitopsOutcome = (GitopsClustersOutcome) optionalOutcome.getOutcome();
+        gitopsOutcome.getClustersData()
+            .stream()
+            .map(GitopsClustersOutcome.ClusterData::getEnvId)
+            .filter(EmptyPredicate::isNotEmpty)
+            .collect(Collectors.toSet())
+            .forEach(cdPipelineModuleInfoBuilder::envIdentifier);
+
+        gitopsOutcome.getClustersData()
+            .stream()
+            .map(GitopsClustersOutcome.ClusterData::getEnvGroupId)
+            .filter(EmptyPredicate::isNotEmpty)
+            .collect(Collectors.toSet())
+            .forEach(cdPipelineModuleInfoBuilder::envGroupIdentifier);
       }
     }
     return cdPipelineModuleInfoBuilder.build();
@@ -144,17 +180,38 @@ public class CDNGModuleInfoProvider implements ExecutionSummaryModuleInfoProvide
                                                       .identifier(outcome.getIdentifier())
                                                       .displayName(outcome.getName())
                                                       .deploymentType(outcome.getServiceDefinitionType())
+                                                      .gitOpsEnabled(outcome.isGitOpsEnabled())
                                                       .artifacts(mapArtifactsOutcomeToSummary(artifactsOutcome))
                                                       .build()));
-    }
-    if (isInfrastructureNodeAndCompleted(stepType, event.getStatus())) {
-      Optional<EnvironmentOutcome> environmentOutcome = getEnvironmentOutcome(event);
-      environmentOutcome.ifPresent(outcome
-          -> cdStageModuleInfoBuilder.infraExecutionSummary(InfraExecutionSummary.builder()
-                                                                .identifier(outcome.getIdentifier())
-                                                                .name(outcome.getName())
-                                                                .type(outcome.getType().name())
-                                                                .build()));
+    } else if (isInfrastructureNodeAndCompleted(stepType, event.getStatus())) {
+      Optional<InfrastructureOutcome> infrastructureOutcome = getInfrastructureOutcome(event);
+      infrastructureOutcome.ifPresent(outcome -> {
+        if (outcome.getEnvironment() != null) {
+          cdStageModuleInfoBuilder.infraExecutionSummary(InfraExecutionSummary.builder()
+                                                             .identifier(outcome.getEnvironment().getIdentifier())
+                                                             .name(outcome.getEnvironment().getName())
+                                                             .type(outcome.getEnvironment().getType().name())
+                                                             .infrastructureIdentifier(outcome.getInfraIdentifier())
+                                                             .infrastructureName(outcome.getInfraName())
+                                                             .build());
+        }
+      });
+    } else if (isGitopsNodeAndCompleted(stepType, event.getStatus())) {
+      OptionalOutcome optionalOutcome = outcomeService.resolveOptional(
+          event.getAmbiance(), RefObjectUtils.getOutcomeRefObject(GitopsClustersStep.GITOPS_SWEEPING_OUTPUT));
+      if (optionalOutcome != null && optionalOutcome.isFound()) {
+        GitopsClustersOutcome gitopsOutcome = (GitopsClustersOutcome) optionalOutcome.getOutcome();
+        // envId -> ClusterData
+        Map<String, GitopsClustersOutcome.ClusterData> envs = gitopsOutcome.getClustersData().stream().collect(
+            Collectors.toMap(GitopsClustersOutcome.ClusterData::getEnvId, Function.identity(), (k1, k2) -> k1));
+        if (envs.size() == 1) {
+          String envIdentifier = envs.keySet().iterator().next();
+          cdStageModuleInfoBuilder.infraExecutionSummary(InfraExecutionSummary.builder()
+                                                             .identifier(envIdentifier)
+                                                             .name(envs.get(envIdentifier).getEnvName())
+                                                             .build());
+        }
+      }
     }
     return cdStageModuleInfoBuilder.build();
   }
@@ -163,6 +220,7 @@ public class CDNGModuleInfoProvider implements ExecutionSummaryModuleInfoProvide
   public boolean shouldRun(OrchestrationEvent event) {
     StepType stepType = AmbianceUtils.getCurrentStepType(event.getAmbiance());
     return isServiceNodeAndCompleted(stepType, event.getStatus())
-        || isInfrastructureNodeAndCompleted(stepType, event.getStatus());
+        || isInfrastructureNodeAndCompleted(stepType, event.getStatus())
+        || isGitopsNodeAndCompleted(stepType, event.getStatus());
   }
 }

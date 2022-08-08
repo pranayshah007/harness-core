@@ -22,6 +22,7 @@ import io.harness.security.annotations.DelegateAuth;
 import io.harness.serializer.KryoSerializer;
 
 import software.wings.beans.ConfigFile;
+import software.wings.beans.ConfigFileDto;
 import software.wings.beans.ServiceTemplate;
 import software.wings.security.PermissionAttribute.ResourceType;
 import software.wings.security.annotations.AuthRule;
@@ -33,6 +34,7 @@ import com.codahale.metrics.annotation.Timed;
 import com.google.inject.Inject;
 import io.swagger.annotations.Api;
 import java.util.List;
+import java.util.stream.Collectors;
 import javax.ws.rs.BeanParam;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -168,5 +170,17 @@ public class ServiceTemplateResource {
     List<ConfigFile> configFiles = serviceTemplateService.computedConfigFiles(appId, envId, templateId);
 
     return new RestResponse<>(kryoSerializer.asString(configFiles));
+  }
+
+  @DelegateAuth
+  @GET
+  @Path("{templateId}/compute-files-dto")
+  @Timed
+  @ExceptionMetered
+  public RestResponse<List<ConfigFileDto>> computeFilesDto(@PathParam("templateId") String templateId,
+      @QueryParam("envId") @NotEmpty String envId, @QueryParam("appId") @NotEmpty String appId,
+      @QueryParam("hostId") String hostId, @QueryParam("accountId") @NotEmpty String accountId) {
+    List<ConfigFile> configFiles = serviceTemplateService.computedConfigFiles(appId, envId, templateId);
+    return new RestResponse<>(configFiles.stream().map(ConfigFile::toDto).collect(Collectors.toList()));
   }
 }

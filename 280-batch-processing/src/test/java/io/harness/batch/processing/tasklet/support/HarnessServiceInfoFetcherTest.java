@@ -92,7 +92,9 @@ public class HarnessServiceInfoFetcherTest extends CategoryTest {
   public void shouldReturnEmptyOptionalWhenNoReleaseNameLabel() throws Exception {
     ImmutableMap<String, String> labels = ImmutableMap.of("key1", "value1");
 
-    when(k8sLabelServiceInfoFetcher.fetchHarnessServiceInfoFromCache(ACCOUNT_ID, labels)).thenThrow(Exception.class);
+    when(k8sLabelServiceInfoFetcher.fetchHarnessServiceInfoFromCache(ACCOUNT_ID, labels)).thenAnswer(invocation -> {
+      throw new Exception();
+    });
     assertThat(harnessServiceInfoFetcher.fetchHarnessServiceInfo(ACCOUNT_ID, SETTING_ID, NAMESPACE, POD_NAME, labels))
         .isNotPresent();
   }

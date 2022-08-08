@@ -618,29 +618,39 @@ public class ContainerInstanceHandler extends InstanceHandler implements Instanc
     for (String podName : instancesToBeAdded) {
       if (deploymentSummary == null) {
         deploymentSummary = DeploymentSummary.builder().build();
+        InstanceInfo info = null;
         if (!instancesInDB.isEmpty()) {
           generateDeploymentSummaryFromInstance(instancesInDB.stream().findFirst().get(), deploymentSummary);
-          InstanceInfo info = instancesInDB.stream()
-                                  .sorted(Comparator.comparingLong(Instance::getLastDeployedAt).reversed())
-                                  .findFirst()
-                                  .get()
-                                  .getInstanceInfo();
-          if (info instanceof K8sPodInfo) {
-            K8sPodInfo instanceInfo = (K8sPodInfo) info;
-            if (Objects.isNull(deploymentSummary.getDeploymentInfo())) {
-              deploymentSummary.setDeploymentInfo(K8sDeploymentInfo.builder()
-                                                      .clusterName(instanceInfo.getClusterName())
-                                                      .releaseName(instanceInfo.getReleaseName())
-                                                      .namespace(instanceInfo.getNamespace())
-                                                      .blueGreenStageColor(instanceInfo.getBlueGreenColor())
-                                                      .helmChartInfo(instanceInfo.getHelmChartInfo())
-                                                      .build());
-            }
-          }
+          info = instancesInDB.stream()
+                     .sorted(Comparator.comparingLong(Instance::getLastDeployedAt).reversed())
+                     .findFirst()
+                     .get()
+                     .getInstanceInfo();
         } else {
-          deploymentSummary.setDeployedByName(AUTO_SCALE);
-          deploymentSummary.setDeployedById(AUTO_SCALE);
-          deploymentSummary.setDeployedAt(System.currentTimeMillis());
+          Instance lastDiscoveredInstance = instanceService.getLastDiscoveredInstance(
+              containerInfraMapping.getAppId(), containerInfraMapping.getUuid());
+
+          if (Objects.nonNull(lastDiscoveredInstance)) {
+            generateDeploymentSummaryFromInstance(lastDiscoveredInstance, deploymentSummary);
+            info = lastDiscoveredInstance.getInstanceInfo();
+          } else {
+            deploymentSummary.setDeployedByName(AUTO_SCALE);
+            deploymentSummary.setDeployedById(AUTO_SCALE);
+            deploymentSummary.setDeployedAt(System.currentTimeMillis());
+          }
+        }
+
+        if (Objects.nonNull(info) && info instanceof K8sPodInfo) {
+          K8sPodInfo instanceInfo = (K8sPodInfo) info;
+          if (Objects.isNull(deploymentSummary.getDeploymentInfo())) {
+            deploymentSummary.setDeploymentInfo(K8sDeploymentInfo.builder()
+                                                    .clusterName(instanceInfo.getClusterName())
+                                                    .releaseName(instanceInfo.getReleaseName())
+                                                    .namespace(instanceInfo.getNamespace())
+                                                    .blueGreenStageColor(instanceInfo.getBlueGreenColor())
+                                                    .helmChartInfo(instanceInfo.getHelmChartInfo())
+                                                    .build());
+          }
         }
       }
       HelmChartInfo helmChartInfo =
@@ -1008,8 +1018,8 @@ public class ContainerInstanceHandler extends InstanceHandler implements Instanc
   }
 
   @Override
-  public FeatureName getFeatureFlagToStopIteratorBasedInstanceSync() {
-    return STOP_INSTANCE_SYNC_VIA_ITERATOR_FOR_CONTAINER_DEPLOYMENTS;
+  public Optional<FeatureName> getFeatureFlagToStopIteratorBasedInstanceSync() {
+    return Optional.of(STOP_INSTANCE_SYNC_VIA_ITERATOR_FOR_CONTAINER_DEPLOYMENTS);
   }
 
   private void validateDeploymentInfos(List<DeploymentSummary> deploymentSummaries) {
@@ -1238,26 +1248,55 @@ public class ContainerInstanceHandler extends InstanceHandler implements Instanc
                                      : null)
                              .build());
 
-    boolean instanceBuilderUpdated = false;
     if (deploymentSummary != null && deploymentSummary.getArtifactStreamId() != null) {
-      for (K8sContainer k8sContainer : pod.getContainerList()) {
-        Artifact artifact = findArtifactForImage(
-            deploymentSummary.getArtifactStreamId(), infraMapping.getAppId(), k8sContainer.getImage());
+      return populateArtifactInInstanceBuilder(builder, deploymentSummary, infraMapping, pod).build();
+    }
 
-        if (artifact != null) {
+    return builder.build();
+  }
+
+  private InstanceBuilder populateArtifactInInstanceBuilder(
+      InstanceBuilder builder, DeploymentSummary deploymentSummary, InfrastructureMapping infraMapping, K8sPod pod) {
+    boolean instanceBuilderUpdated = false;
+    Artifact firstValidArtifact = null;
+    String firstValidImage = "";
+    for (K8sContainer k8sContainer : pod.getContainerList()) {
+      String image = k8sContainer.getImage();
+      Artifact artifact = findArtifactForImage(deploymentSummary.getArtifactStreamId(), infraMapping.getAppId(), image);
+
+      if (artifact != null) {
+        if (firstValidArtifact == null) {
+          firstValidArtifact = artifact;
+          firstValidImage = image;
+        }
+        // update only if buildNumber also matches
+        if (isBuildNumSame(deploymentSummary.getArtifactBuildNum(), artifact.getBuildNo())) {
           builder.lastArtifactId(artifact.getUuid());
-          updateInstanceWithArtifactSourceAndBuildNum(builder, k8sContainer);
+          updateInstanceWithArtifactSourceAndBuildNum(builder, image);
           instanceBuilderUpdated = true;
           break;
         }
       }
     }
 
-    if (!instanceBuilderUpdated) {
-      updateInstanceWithArtifactSourceAndBuildNum(builder, pod.getContainerList().get(0));
+    if (!instanceBuilderUpdated && firstValidArtifact != null) {
+      builder.lastArtifactId(firstValidArtifact.getUuid());
+      updateInstanceWithArtifactSourceAndBuildNum(builder, firstValidImage);
+      instanceBuilderUpdated = true;
     }
 
-    return builder.build();
+    if (!instanceBuilderUpdated) {
+      updateInstanceWithArtifactSourceAndBuildNum(builder, pod.getContainerList().get(0).getImage());
+    }
+
+    return builder;
+  }
+
+  private boolean isBuildNumSame(String build1, String build2) {
+    if (isEmpty(build1) || isEmpty(build2)) {
+      return false;
+    }
+    return build1.equals(build2);
   }
 
   private Artifact findArtifactForImage(String artifactStreamId, String appId, String image) {
@@ -1269,8 +1308,7 @@ public class ContainerInstanceHandler extends InstanceHandler implements Instanc
         .get();
   }
 
-  private void updateInstanceWithArtifactSourceAndBuildNum(InstanceBuilder builder, K8sContainer container) {
-    String image = container.getImage();
+  private void updateInstanceWithArtifactSourceAndBuildNum(InstanceBuilder builder, String image) {
     String artifactSource;
     String tag;
     String[] splitArray = image.split(":");
@@ -1285,7 +1323,7 @@ public class ContainerInstanceHandler extends InstanceHandler implements Instanc
       tag = image;
     }
 
-    builder.lastArtifactName(container.getImage());
+    builder.lastArtifactName(image);
     builder.lastArtifactSourceName(artifactSource);
     builder.lastArtifactBuildNum(tag);
   }
@@ -1505,8 +1543,8 @@ public class ContainerInstanceHandler extends InstanceHandler implements Instanc
   }
 
   @Override
-  public FeatureName getFeatureFlagToEnablePerpetualTaskForInstanceSync() {
-    return FeatureName.MOVE_CONTAINER_INSTANCE_SYNC_TO_PERPETUAL_TASK;
+  public Optional<FeatureName> getFeatureFlagToEnablePerpetualTaskForInstanceSync() {
+    return Optional.of(FeatureName.MOVE_CONTAINER_INSTANCE_SYNC_TO_PERPETUAL_TASK);
   }
 
   @Override

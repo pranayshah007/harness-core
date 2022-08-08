@@ -13,11 +13,14 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static software.wings.sm.StateType.ENV_LOOP_STATE;
 import static software.wings.sm.StateType.ENV_STATE;
 
+import static java.lang.String.format;
+
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
+import io.harness.expression.ExpressionEvaluator;
 
 import software.wings.beans.EntityType;
 import software.wings.beans.Pipeline;
@@ -29,12 +32,14 @@ import software.wings.beans.Workflow;
 import software.wings.expression.ManagerExpressionEvaluator;
 import software.wings.sm.states.EnvState.EnvStateKeys;
 
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.http.client.utils.URIBuilder;
 
 @OwnedBy(CDC)
 @Slf4j
@@ -80,9 +85,22 @@ public class PipelineServiceHelper {
       List<String> infraIdsInLoop = Arrays.asList(infraValueInPipelineStage.trim().split("\\s*,\\s*"));
       infraIdsInLoop.stream().filter(infraId -> !infraDefinitionIds.contains(infraId)).forEach(infraDefinitionIds::add);
     }
+
+    if (hasExpressionValue(infraValueInPipelineStage)) {
+      pipelineStage.setLooped(true);
+      pipelineStage.setLoopedVarName(infraVarNameInPipelineStage);
+    }
+  }
+
+  private static boolean hasExpressionValue(String infraValueInPipelineStage) {
+    return ExpressionEvaluator.matchesVariablePattern(infraValueInPipelineStage)
+        && infraValueInPipelineStage.contains(".");
   }
 
   public static void updatePipelineWithLoopedState(Pipeline pipeline) {
+    if (pipeline.getInfraDefinitionIds() == null) {
+      pipeline.setInfraDefinitionIds(new ArrayList<>());
+    }
     for (PipelineStage pipelineStage : pipeline.getPipelineStages()) {
       if (pipelineStage.isLooped()) {
         PipelineStageElement pse = pipelineStage.getPipelineStageElements().get(0);
@@ -106,7 +124,8 @@ public class PipelineServiceHelper {
           } else {
             if (EmptyPredicate.isEmpty(pipelineStageVariableValues)
                 || !pipelineStageVariableValues.containsKey(varLooped)
-                || !pipelineStageVariableValues.get(varLooped).contains(",")) {
+                || (!pipelineStageVariableValues.get(varLooped).contains(",")
+                    && !hasExpressionValue(pipelineStageVariableValues.get(varLooped)))) {
               throw new InvalidRequestException("Pipeline stage marked as loop, but doesnt have looping config");
             }
             loopedValues = Arrays.asList(pipelineStageVariableValues.get(varLooped).trim().split("\\s*,\\s*"));
@@ -114,6 +133,7 @@ public class PipelineServiceHelper {
           pse.setType(ENV_LOOP_STATE.getType());
           pse.getProperties().put("loopedValues", loopedValues);
           pse.getProperties().put("loopedVarName", varLooped);
+          pipeline.getInfraDefinitionIds().addAll(loopedValues);
         }
       }
     }
@@ -146,7 +166,12 @@ public class PipelineServiceHelper {
 
   public static String resolveEnvIdForPipelineStage(Map<String, Object> pipelineStageElementProperties,
       Map<String, String> workflowVariables, List<Variable> pipelineVariables) {
-    String envId = (String) pipelineStageElementProperties.get(EnvStateKeys.envId);
+    String envId = pipelineVariables.stream()
+                       .filter(var -> EntityType.ENVIRONMENT.equals(var.obtainEntityType()))
+                       .findFirst()
+                       .map(it -> workflowVariables.get(it.getName()))
+                       .orElse((String) pipelineStageElementProperties.get(EnvStateKeys.envId));
+
     if (!ManagerExpressionEvaluator.matchesVariablePattern(envId)) {
       return envId;
     }
@@ -160,5 +185,26 @@ public class PipelineServiceHelper {
                                       .map(Variable::getValue)
                                       .orElse("");
     return workflowVariables.get(workflowVariableName);
+  }
+
+  public static String generatePipelineExecutionUrl(
+      String accountId, String appId, String pipelineExecutionId, String baseUrl) {
+    return buildAbsoluteUrl(format("/account/%s/app/%s/pipeline-execution/%s/workflow-execution/undefined/details",
+                                accountId, appId, pipelineExecutionId),
+        baseUrl);
+  }
+
+  public static String buildAbsoluteUrl(String fragment, String baseUrl) {
+    if (!baseUrl.endsWith("/")) {
+      baseUrl += "/";
+    }
+    try {
+      URIBuilder uriBuilder = new URIBuilder(baseUrl);
+      uriBuilder.setFragment(fragment);
+      return uriBuilder.toString();
+    } catch (URISyntaxException e) {
+      log.error("Bad URI syntax", e);
+      return baseUrl;
+    }
   }
 }

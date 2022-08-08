@@ -10,4 +10,19 @@ package io.harness.delegate.beans.connector.awsconnector;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
-@OwnedBy(HarnessTeam.CDP) public enum AwsTaskType { VALIDATE, LIST_S3_BUCKETS }
+@OwnedBy(HarnessTeam.CDP)
+public enum AwsTaskType {
+  VALIDATE,
+  LIST_S3_BUCKETS,
+  GET_BUILDS,
+  GET_BUILD,
+  LAST_SUCCESSFUL_BUILD,
+  LIST_IAM_ROLES,
+  CF_LIST_PARAMS,
+  LIST_EC2_INSTANCES,
+  LIST_ASG_INSTANCES,
+  LIST_ASG_NAMES,
+  LIST_VPC,
+  LIST_TAGS,
+  LIST_LOAD_BALANCERS
+}

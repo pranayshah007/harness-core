@@ -1,0 +1,138 @@
+{
+  "type": "object",
+  "required": [
+    "identifier",
+    "name",
+    "type"
+  ],
+  "properties": {
+    "delegateSelectors": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "description": {
+      "type": "string"
+    },
+    "failureStrategies": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/FailureStrategyConfig"
+      }
+    },
+    "identifier": {
+      "type": "string",
+      "pattern": "^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$"
+    },
+    "name": {
+      "type": "string",
+      "pattern": "^[a-zA-Z_][-0-9a-zA-Z_\\s]{0,63}$"
+    },
+    "tags": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "Approval"
+      ]
+    },
+    "variables": {
+      "type": "array",
+      "items": {
+        "oneOf": [
+          {
+            "$ref": "#/definitions/NumberNGVariable"
+          },
+          {
+            "$ref": "#/definitions/SecretNGVariable"
+          },
+          {
+            "$ref": "#/definitions/StringNGVariable"
+          }
+        ]
+      }
+    },
+    "when": {
+      "$ref": "#/definitions/StageWhenCondition"
+    }
+  },
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "Approval"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "spec": {
+            "$ref": "#/definitions/ApprovalStageConfig"
+          }
+        }
+      }
+    }
+  ],
+  "definitions": {
+    "StepElementConfig": {
+      "type": "object",
+      "required": [
+        "identifier",
+        "name",
+        "type"
+      ],
+      "properties": {
+        "description": {
+          "type": "string"
+        },
+        "failureStrategies": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/FailureStrategyConfig"
+          }
+        },
+        "identifier": {
+          "type": "string",
+          "pattern": "^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$"
+        },
+        "name": {
+          "type": "string",
+          "pattern": "^[a-zA-Z_][-0-9a-zA-Z_\\s]{0,63}$"
+        },
+        "timeout": {
+          "type": "string",
+          "pattern": "^(([1-9])+\\d+[s])|(((([1-9])+\\d*[mhwd])+([\\s]?\\d+[smhwd])*)|(<\\+input>.*)|(.*<\\+.*>.*))$"
+        },
+        "type": {
+          "type": "string"
+        },
+        "when": {
+          "$ref": "#/definitions/StepWhenCondition"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "ParallelStepElementConfig": {
+      "type": "object",
+      "required": [
+        "sections"
+      ],
+      "properties": {
+        "sections": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ExecutionWrapperConfig"
+          }
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    }
+  }
+}

@@ -70,8 +70,9 @@ public class SettingAttributeValidateConnectivityHandler implements Handler<Sett
                            SettingVariableTypes.BAMBOO.name(), SettingVariableTypes.GCS.name(),
                            SettingVariableTypes.AMAZON_S3.name(), SettingVariableTypes.AZURE_ARTIFACTS_PAT.name(),
                            SettingVariableTypes.HTTP_HELM_REPO.name(), SettingVariableTypes.AMAZON_S3_HELM_REPO.name(),
-                           SettingVariableTypes.GCS_HELM_REPO.name(), SettingVariableTypes.SMB.name(),
-                           SettingVariableTypes.SFTP.name(), SettingVariableTypes.CUSTOM.name())))
+                           SettingVariableTypes.OCI_HELM_REPO.name(), SettingVariableTypes.GCS_HELM_REPO.name(),
+                           SettingVariableTypes.SMB.name(), SettingVariableTypes.SFTP.name(),
+                           SettingVariableTypes.CUSTOM.name())))
             .schedulingType(REGULAR)
             .persistenceProvider(persistenceProvider)
             .redistribute(true));

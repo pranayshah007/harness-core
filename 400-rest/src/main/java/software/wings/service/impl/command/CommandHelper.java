@@ -18,6 +18,7 @@ import static software.wings.beans.CommandCategory.Type.VERIFICATIONS;
 import static java.util.stream.Collectors.toList;
 
 import software.wings.beans.CommandCategory;
+import software.wings.beans.command.CommandUnitDescriptor;
 import software.wings.beans.command.CommandUnitType;
 import software.wings.beans.command.ServiceCommand;
 import software.wings.beans.command.ServiceCommand.ServiceCommandKeys;
@@ -66,7 +67,8 @@ public class CommandHelper {
     List<CommandUnit> verifications = new ArrayList<>();
 
     for (CommandUnitType commandUnitType : CommandUnitType.values()) {
-      StencilCategory stencilCategory = commandUnitType.getStencilCategory();
+      CommandUnitDescriptor commandUnitDescriptor = CommandUnitDescriptor.forType(commandUnitType);
+      StencilCategory stencilCategory = commandUnitDescriptor.getStencilCategory();
       CommandUnit commandUnitItem = CommandUnit.builder().name(commandUnitType.getName()).type(commandUnitType).build();
       if (StencilCategory.SCRIPTS == stencilCategory) {
         scripts.add(commandUnitItem);

@@ -9,12 +9,10 @@ package io.harness.gitsync.fullsync;
 
 import static io.harness.annotations.dev.HarnessTeam.DX;
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
-import static io.harness.ng.core.entitydetail.EntityDetailProtoToRestMapper.mapEventToRestEntityType;
 
 import static java.util.stream.Collectors.toCollection;
 
 import io.harness.AuthorizationServiceHeader;
-import io.harness.EntityType;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.ExceptionUtils;
 import io.harness.gitsync.FileChanges;
@@ -33,25 +31,19 @@ import io.harness.security.SourcePrincipalContextBuilder;
 import io.harness.security.dto.ServicePrincipal;
 
 import com.google.inject.Inject;
-import com.google.inject.name.Named;
 import io.grpc.stub.StreamObserver;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
-import java.util.function.Supplier;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @OwnedBy(DX)
 public class FullSyncGrpcService extends FullSyncServiceImplBase {
   FullSyncSdkService fullSyncSdkService;
-  Supplier<List<EntityType>> sortOrder;
 
   @Inject
-  public FullSyncGrpcService(
-      FullSyncSdkService fullSyncSdkService, @Named("GitSyncSortOrder") Supplier<List<EntityType>> sortOrder) {
+  public FullSyncGrpcService(FullSyncSdkService fullSyncSdkService) {
     this.fullSyncSdkService = fullSyncSdkService;
-    this.sortOrder = sortOrder;
   }
 
   @Override
@@ -60,7 +52,7 @@ public class FullSyncGrpcService extends FullSyncServiceImplBase {
       log.info("Got the grpc request to get entities for full sync");
       SecurityContextBuilder.setContext(
           new ServicePrincipal(AuthorizationServiceHeader.GIT_SYNC_SERVICE.getServiceId()));
-      final FileChanges fileChanges = fullSyncSdkService.getFileChanges(request);
+      final FileChanges fileChanges = fullSyncSdkService.getEntitiesForFullSync(request);
       responseObserver.onNext(fileChanges);
       responseObserver.onCompleted();
     } finally {
@@ -75,14 +67,10 @@ public class FullSyncGrpcService extends FullSyncServiceImplBase {
       log.info("Got the grpc request to sync full sync entities");
       List<FullSyncChangeSet> fileChangesList =
           request.getFileChangesList().stream().collect(toCollection(ArrayList::new));
-      List<EntityType> entityTypesOrder = emptyIfNull(sortOrder.get());
-      emptyIfNull(fileChangesList)
-          .sort(Comparator.comparingInt(
-              f -> entityTypesOrder.indexOf(mapEventToRestEntityType(f.getEntityDetail().getType()))));
       SourcePrincipalContextBuilder.setSourcePrincipal(
           new ServicePrincipal(AuthorizationServiceHeader.GIT_SYNC_SERVICE.getServiceId()));
       List<FullSyncFileResponse> fullSyncFileResponses = new ArrayList<>();
-      for (FullSyncChangeSet fileChangeSet : fileChangesList) {
+      for (FullSyncChangeSet fileChangeSet : emptyIfNull(fileChangesList)) {
         try {
           fullSyncSdkService.doFullSyncForFile(fileChangeSet);
           fullSyncFileResponses.add(

@@ -13,6 +13,7 @@ import io.harness.annotation.HarnessEntity;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.delegate.beans.DelegateTaskRank;
+import io.harness.delegate.beans.NgSetupFields;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.TaskData.TaskDataKeys;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
@@ -172,6 +173,8 @@ public class DelegateTask
 
   @Transient private List<String> taskActivityLogs;
 
+  @Transient Map<String, List<String>> nonAssignableDelegates;
+
   @FdTtlIndex @Default private Date validUntil = Date.from(OffsetDateTime.now().plusDays(2).toInstant());
 
   public Long fetchExtraTimeoutForForceExecution() {
@@ -188,6 +191,11 @@ public class DelegateTask
       return data.getTaskType();
     }
     return description;
+  }
+
+  public boolean isNGTask(Map<String, String> setupAbstractions) {
+    return !isEmpty(setupAbstractions) && setupAbstractions.get(NgSetupFields.NG) != null
+        && Boolean.TRUE.equals(Boolean.valueOf(setupAbstractions.get(NgSetupFields.NG)));
   }
 
   public enum Status {

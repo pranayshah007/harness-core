@@ -8,10 +8,8 @@
 package io.harness.nexus.service;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
-import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.artifact.ArtifactMetadataKeys;
 import io.harness.artifacts.beans.BuildDetailsInternal;
 import io.harness.artifacts.comparator.BuildDetailsInternalComparatorAscending;
 import io.harness.artifacts.comparator.BuildDetailsInternalComparatorDescending;
@@ -128,19 +126,5 @@ public class NexusRegistryServiceImpl implements NexusRegistryService {
             "Found multiple artifacts for tag [%s] in Nexus repository [%s] for %s artifact [%s] in registry [%s].",
             tag, repository, repositoryFormat, artifactName, nexusConfig.getNexusUrl()),
         new NexusRegistryException(String.format("Found multiple artifact tags ('%s'), but expected only one.", tag)));
-  }
-
-  @Override
-  public boolean verifyArtifactManifestUrl(BuildDetailsInternal buildDetailsInternal, NexusRequest nexusConfig) {
-    String artifactManifestUrl = buildDetailsInternal.getMetadata().get(ArtifactMetadataKeys.ARTIFACT_MANIFEST_URL);
-    if (isNotEmpty(artifactManifestUrl)) {
-      return nexusClient.verifyArtifactManifestUrl(nexusConfig, artifactManifestUrl);
-    }
-
-    throw NestedExceptionUtils.hintWithExplanationException(
-        "Please verify your Nexus artifact repository URL field or repository port.",
-        String.format("Artifact manifest url was not found when retrieving metadata for artifact [%s]",
-            buildDetailsInternal.getMetadata().get(ArtifactMetadataKeys.IMAGE)),
-        new NexusRegistryException("Could not retrieve artifact manifest."));
   }
 }

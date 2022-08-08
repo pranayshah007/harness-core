@@ -71,6 +71,11 @@ public class CEMetadataRecordDao {
           CEMetadataRecordKeys.segmentDataReadyEventSent, ceMetadataRecord.getSegmentDataReadyEventSent());
     }
 
+    if (null != ceMetadataRecord.getSegmentModuleInterfaceLoadedEventSent()) {
+      updateOperations.set(CEMetadataRecordKeys.segmentModuleInterfaceLoadedEventSent,
+          ceMetadataRecord.getSegmentModuleInterfaceLoadedEventSent());
+    }
+
     if (null != ceMetadataRecord.getApplicationDataPresent()) {
       updateOperations.set(CEMetadataRecordKeys.applicationDataPresent, ceMetadataRecord.getApplicationDataPresent());
     }

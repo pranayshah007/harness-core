@@ -36,6 +36,7 @@ import software.wings.beans.EntityType;
 import software.wings.beans.ServiceTemplate;
 import software.wings.beans.ServiceVariable;
 import software.wings.beans.ServiceVariable.ServiceVariableKeys;
+import software.wings.beans.ServiceVariableType;
 import software.wings.service.intfc.ServiceVariableService;
 import software.wings.settings.SettingVariableTypes;
 
@@ -94,7 +95,7 @@ public class ServiceVariableSetupUsageBuilderTest extends WingsBaseTest {
                                           .accountId(account.getUuid())
                                           .name("service_variable_1")
                                           .encryptedValue(encryptedDataId)
-                                          .type(ServiceVariable.Type.ENCRYPTED_TEXT)
+                                          .type(ServiceVariableType.ENCRYPTED_TEXT)
                                           .build();
 
     serviceVariables.add(persistence.get(ServiceVariable.class, persistence.save(serviceVariable)));

@@ -15,8 +15,8 @@
           "value": "${accountId}"
         },
         {
-          "name": "ACCOUNT_SECRET",
-          "value": "${accountSecret}"
+          "name": "DELEGATE_TOKEN",
+          "value": "${delegateToken}"
         },
         {
           "name": "DELEGATE_CHECK_LOCATION",

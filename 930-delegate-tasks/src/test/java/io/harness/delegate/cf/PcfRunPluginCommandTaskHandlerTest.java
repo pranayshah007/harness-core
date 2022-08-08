@@ -22,7 +22,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyListOf;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
@@ -78,7 +77,7 @@ public class PcfRunPluginCommandTaskHandlerTest extends CategoryTest {
   @Before
   public void setUp() throws Exception {
     MockitoAnnotations.initMocks(this);
-    doReturn(executionLogCallback).when(logStreamingTaskClient).obtainLogCallback(anyString());
+    doReturn(executionLogCallback).when(logStreamingTaskClient).obtainLogCallback(any());
   }
 
   private CfInternalConfig getPcfConfig() {

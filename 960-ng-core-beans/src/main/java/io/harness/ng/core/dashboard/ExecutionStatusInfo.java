@@ -18,14 +18,15 @@ import lombok.Value;
 @Value
 @Builder
 public class ExecutionStatusInfo {
-  private String pipelineName;
-  private String pipelineIdentifier;
-  private long startTs;
-  private long endTs;
-  private String status;
-  private String planExecutionId;
-  private GitInfo gitInfo;
-  private String triggerType;
-  private AuthorInfo author;
-  private List<ServiceDeploymentInfo> serviceInfoList;
+  String pipelineName;
+  String pipelineIdentifier;
+  long startTs;
+  long endTs;
+  String status;
+  String planExecutionId;
+  GitInfo gitInfo;
+  String triggerType;
+  AuthorInfo author;
+  List<ServiceDeploymentInfo> serviceInfoList;
+  List<EnvironmentDeploymentsInfo> environmentInfoList;
 }

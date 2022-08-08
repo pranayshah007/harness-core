@@ -14,6 +14,7 @@ import io.harness.EntityType;
 import io.harness.Microservice;
 import io.harness.ScmConnectionConfig;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.gitsync.common.GitSyncEntityOrderComparatorInMsvc;
 import io.harness.grpc.client.GrpcClientConfig;
 import io.harness.grpc.server.GrpcServerConfig;
 import io.harness.redis.RedisConfig;
@@ -45,5 +46,6 @@ public class GitSyncSdkConfiguration {
   AuthorizationServiceHeader serviceHeader;
   ObjectMapper objectMapper;
   Set<GitSyncEntitiesConfiguration> gitSyncEntitiesConfiguration;
+  Class<? extends GitSyncEntityOrderComparatorInMsvc> gitSyncEntitySortComparator;
   public enum DeployMode { REMOTE, IN_PROCESS }
 }

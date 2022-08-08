@@ -38,6 +38,11 @@ aws_cur_table_schema = [
     },
     {
         "mode": "NULLABLE",
+        "name": "servicename",
+        "type": "STRING"
+    },
+    {
+        "mode": "NULLABLE",
         "name": "blendedrate",
         "type": "STRING"
     },
@@ -105,6 +110,16 @@ aws_cur_table_schema = [
         "mode": "NULLABLE",
         "name": "marketOption",
         "type": "STRING"
+    },
+    {
+        "mode": "NULLABLE",
+        "name": "amortisedCost",
+        "type": "FLOAT"
+    },
+    {
+        "mode": "NULLABLE",
+        "name": "netAmortisedCost",
+        "type": "FLOAT"
     },
     {
         "fields": [
@@ -1260,11 +1275,6 @@ gcpInstanceInventorySchema = [
     },
     {
         "mode": "NULLABLE",
-        "name": "projectNumber",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
         "name": "status",
         "type": "STRING"
     },
@@ -1351,11 +1361,6 @@ gcpInstanceInventorySchema = [
         "mode": "NULLABLE",
         "name": "lastUpdatedAt",
         "type": "TIMESTAMP"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "projectNumberPartition",
-        "type": "INTEGER"
     }
 ]
 
@@ -1388,11 +1393,6 @@ gcpDiskInventorySchema = [
     {
         "mode": "NULLABLE",
         "name": "projectId",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "projectNumber",
         "type": "STRING"
     },
     {
@@ -1559,10 +1559,5 @@ gcpDiskInventorySchema = [
         "mode": "NULLABLE",
         "name": "lastUpdatedAt",
         "type": "TIMESTAMP"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "projectNumberPartition",
-        "type": "INTEGER"
     }
 ]

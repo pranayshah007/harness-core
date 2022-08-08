@@ -11,7 +11,7 @@ import io.harness.cvng.beans.CVMonitoringCategory;
 import io.harness.cvng.beans.DataSourceType;
 import io.harness.cvng.core.beans.HealthSourceMetricDefinition;
 import io.harness.cvng.core.beans.monitoredService.HealthSource;
-import io.harness.cvng.core.beans.monitoredService.MetricPackDTO;
+import io.harness.cvng.core.beans.monitoredService.TimeSeriesMetricPackDTO;
 import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.core.entities.CVConfig;
 import io.harness.cvng.core.entities.DynatraceCVConfig;
@@ -50,7 +50,7 @@ public class DynatraceHealthSourceSpec extends MetricHealthSourceSpec {
   @NotEmpty String serviceId;
   String serviceName;
   List<String> serviceMethodIds;
-  @Valid Set<MetricPackDTO> metricPacks;
+  @Valid Set<TimeSeriesMetricPackDTO> metricPacks;
   List<DynatraceMetricDefinition> metricDefinitions;
 
   @Override
@@ -116,8 +116,6 @@ public class DynatraceHealthSourceSpec extends MetricHealthSourceSpec {
                                        .dynatraceServiceName(serviceName)
                                        .dynatraceServiceId(serviceId)
                                        .serviceMethodIds(serviceMethodIds)
-                                       .envIdentifier(environmentRef)
-                                       .serviceIdentifier(serviceRef)
                                        .metricPack(metricPackFromDb)
                                        .category(metricPackFromDb.getCategory())
                                        .build();
@@ -143,9 +141,7 @@ public class DynatraceHealthSourceSpec extends MetricHealthSourceSpec {
                                    .productName(feature)
                                    .dynatraceServiceName(serviceName)
                                    .dynatraceServiceId(serviceId)
-                                   .envIdentifier(environmentRef)
                                    .serviceMethodIds(serviceMethodIds)
-                                   .serviceIdentifier(serviceRef)
                                    .groupName(metricDefinitionList.get(0).getGroupName())
                                    .category(metricDefinitionList.get(0).getRiskProfile().getCategory())
                                    .build();

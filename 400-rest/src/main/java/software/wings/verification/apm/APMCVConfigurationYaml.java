@@ -13,7 +13,7 @@ import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 
-import software.wings.sm.states.APMVerificationState;
+import software.wings.beans.ApmMetricCollectionInfo;
 import software.wings.verification.MetricCVConfigurationYaml;
 
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
@@ -31,5 +31,5 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(callSuper = true)
 @JsonPropertyOrder({"type", "harnessApiVersion"})
 public final class APMCVConfigurationYaml extends MetricCVConfigurationYaml {
-  private List<APMVerificationState.MetricCollectionInfo> metricCollectionInfos;
+  private List<ApmMetricCollectionInfo> metricCollectionInfos;
 }

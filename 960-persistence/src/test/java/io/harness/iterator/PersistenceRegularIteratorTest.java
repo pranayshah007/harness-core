@@ -24,6 +24,7 @@ import io.harness.PersistenceTestBase;
 import io.harness.category.element.UnitTests;
 import io.harness.iterator.TestRegularIterableEntity.RegularIterableEntityKeys;
 import io.harness.maintenance.MaintenanceGuard;
+import io.harness.metrics.impl.IteratorMetricsServiceImpl;
 import io.harness.mongo.iterator.MongoPersistenceIterator;
 import io.harness.mongo.iterator.MongoPersistenceIterator.Handler;
 import io.harness.mongo.iterator.filter.MorphiaFilterExpander;
@@ -50,6 +51,8 @@ public class PersistenceRegularIteratorTest extends PersistenceTestBase {
   @Inject private HPersistence persistence;
   @Inject private MorphiaPersistenceProvider<TestRegularIterableEntity> persistenceProvider;
   @Inject private QueueController queueController;
+  @Inject private IteratorMetricsServiceImpl iteratorMetricsService;
+
   private ExecutorService executorService = ThreadPool.create(4, 15, 1, TimeUnit.SECONDS);
 
   static class TestHandler implements Handler<TestRegularIterableEntity> {
@@ -65,6 +68,7 @@ public class PersistenceRegularIteratorTest extends PersistenceTestBase {
     MongoPersistenceIterator<TestRegularIterableEntity, MorphiaFilterExpander<TestRegularIterableEntity>> iterator =
         MongoPersistenceIterator.<TestRegularIterableEntity, MorphiaFilterExpander<TestRegularIterableEntity>>builder()
             .mode(mode)
+            .iteratorName(this.getClass().getName())
             .clazz(TestRegularIterableEntity.class)
             .fieldName(RegularIterableEntityKeys.nextIteration)
             .targetInterval(ofSeconds(10))
@@ -79,6 +83,7 @@ public class PersistenceRegularIteratorTest extends PersistenceTestBase {
             .persistenceProvider(persistenceProvider)
             .build();
     on(iterator).set("queueController", queueController);
+    on(iterator).set("iteratorMetricsService", iteratorMetricsService);
     return iterator;
   }
 

@@ -319,7 +319,7 @@ public class AwsLambdaInstanceHandler extends InstanceHandler implements Instanc
       syncLambdaInstanceInDB(instanceToUpdate, lambdaInstanceInfo);
 
     } catch (NoDelegatesException ex) {
-      log.warn("Delegates are not available ", ex.getMessage());
+      log.warn("error while Syncing Aws Lambda Instance. skipping the sync for it", ex);
     } catch (Exception e) {
       log.info("error while Syncing Aws Lambda Instance. skipping the sync for it", e);
     }
@@ -457,8 +457,8 @@ public class AwsLambdaInstanceHandler extends InstanceHandler implements Instanc
   }
 
   @Override
-  public FeatureName getFeatureFlagToStopIteratorBasedInstanceSync() {
-    return STOP_INSTANCE_SYNC_VIA_ITERATOR_FOR_AWS_LAMBDA_DEPLOYMENTS;
+  public Optional<FeatureName> getFeatureFlagToStopIteratorBasedInstanceSync() {
+    return Optional.of(STOP_INSTANCE_SYNC_VIA_ITERATOR_FOR_AWS_LAMBDA_DEPLOYMENTS);
   }
 
   @VisibleForTesting
@@ -681,8 +681,8 @@ public class AwsLambdaInstanceHandler extends InstanceHandler implements Instanc
   }
 
   @Override
-  public FeatureName getFeatureFlagToEnablePerpetualTaskForInstanceSync() {
-    return MOVE_AWS_LAMBDA_INSTANCE_SYNC_TO_PERPETUAL_TASK;
+  public Optional<FeatureName> getFeatureFlagToEnablePerpetualTaskForInstanceSync() {
+    return Optional.of(MOVE_AWS_LAMBDA_INSTANCE_SYNC_TO_PERPETUAL_TASK);
   }
 
   @Override

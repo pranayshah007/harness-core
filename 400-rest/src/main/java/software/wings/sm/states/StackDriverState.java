@@ -39,6 +39,7 @@ import software.wings.service.intfc.stackdriver.StackDriverService;
 import software.wings.sm.ExecutionContext;
 import software.wings.sm.StateType;
 import software.wings.sm.WorkflowStandardParams;
+import software.wings.sm.WorkflowStandardParamsExtensionService;
 import software.wings.verification.VerificationStateAnalysisExecutionData;
 import software.wings.verification.stackdriver.StackDriverMetricCVConfiguration;
 import software.wings.verification.stackdriver.StackDriverMetricDefinition;
@@ -70,6 +71,7 @@ import org.slf4j.Logger;
 @BreakDependencyOn("software.wings.service.intfc.DelegateService")
 public class StackDriverState extends AbstractMetricAnalysisState {
   @Inject private transient StackDriverService stackDriverService;
+  @Inject private transient WorkflowStandardParamsExtensionService workflowStandardParamsExtensionService;
 
   private String analysisServerConfigId;
 
@@ -133,9 +135,10 @@ public class StackDriverState extends AbstractMetricAnalysisState {
   protected String triggerAnalysisDataCollection(ExecutionContext context, AnalysisContext analysisContext,
       VerificationStateAnalysisExecutionData executionData, Map<String, String> hosts) {
     WorkflowStandardParams workflowStandardParams = context.getContextElement(ContextElementType.STANDARD);
-    String envId = workflowStandardParams == null || workflowStandardParams.getEnv() == null
+    String envId =
+        workflowStandardParams == null || workflowStandardParamsExtensionService.getEnv(workflowStandardParams) == null
         ? null
-        : workflowStandardParams.getEnv().getUuid();
+        : workflowStandardParamsExtensionService.getEnv(workflowStandardParams).getUuid();
 
     String resolvedConnectorId =
         getResolvedConnectorId(context, StackDriverStateKeys.analysisServerConfigId, analysisServerConfigId);
@@ -201,7 +204,7 @@ public class StackDriverState extends AbstractMetricAnalysisState {
             .stateExecutionId(context.getStateExecutionInstanceId())
             .dataCollectionStartTime(dataCollectionStartTimeStamp)
             .dataCollectionEndTime(
-                dataCollectionStartTimeStamp + TimeUnit.MINUTES.toMillis(Integer.parseInt(getTimeDuration())))
+                dataCollectionStartTimeStamp + TimeUnit.MINUTES.toMillis(Integer.parseInt(getTimeDuration(context))))
             .executionData(executionData)
             .build(),
         waitId);

@@ -57,6 +57,7 @@ import software.wings.beans.PhaseStep;
 import software.wings.beans.SSHExecutionCredential;
 import software.wings.beans.Service;
 import software.wings.beans.ServiceVariable;
+import software.wings.beans.ServiceVariableType;
 import software.wings.beans.SettingAttribute;
 import software.wings.beans.Workflow;
 import software.wings.beans.WorkflowExecution;
@@ -218,7 +219,7 @@ public class EcsRunTaskFunctionalTest extends AbstractFunctionalTest {
     variable.setValue(value.toCharArray());
     variable.setName(name);
     variable.setEntityType(EntityType.SERVICE);
-    variable.setType(ServiceVariable.Type.TEXT);
+    variable.setType(ServiceVariableType.TEXT);
     variable.setEntityId(service.getUuid());
     return variable;
   }

@@ -15,10 +15,10 @@ import io.harness.category.element.UnitTests;
 import io.harness.rule.Owner;
 
 import software.wings.WingsBaseTest;
+import software.wings.beans.ApmMetricCollectionInfo;
+import software.wings.beans.apm.Method;
 import software.wings.metrics.MetricType;
 import software.wings.sm.StateType;
-import software.wings.sm.states.APMVerificationState.Method;
-import software.wings.sm.states.APMVerificationState.MetricCollectionInfo;
 
 import com.google.common.collect.Lists;
 import java.util.HashSet;
@@ -36,10 +36,14 @@ public class APMCVServiceConfigurationTest extends WingsBaseTest {
   private static final String serviceId = "serviceId";
   private static final StateType stateType = StateType.APM_VERIFICATION;
 
-  private List<MetricCollectionInfo> getMetricCollectionInfo() {
+  private List<ApmMetricCollectionInfo> getMetricCollectionInfo() {
     return Lists.newArrayList(
-        MetricCollectionInfo.builder().metricType(MetricType.ERROR).method(Method.GET).collectionUrl("Url1").build(),
-        MetricCollectionInfo.builder().metricType(MetricType.INFRA).method(Method.GET).collectionUrl("Url2").build());
+        ApmMetricCollectionInfo.builder().metricType(MetricType.ERROR).method(Method.GET).collectionUrl("Url1").build(),
+        ApmMetricCollectionInfo.builder()
+            .metricType(MetricType.INFRA)
+            .method(Method.GET)
+            .collectionUrl("Url2")
+            .build());
   }
 
   private APMCVServiceConfiguration createAPMConfig() {

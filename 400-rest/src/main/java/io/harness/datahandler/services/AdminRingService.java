@@ -12,6 +12,7 @@ import io.harness.delegate.beans.DelegateRing.DelegateRingKeys;
 import io.harness.persistence.HPersistence;
 
 import com.google.inject.Inject;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.mongodb.morphia.query.Query;
 import org.mongodb.morphia.query.UpdateOperations;
@@ -29,11 +30,15 @@ public class AdminRingService {
     return updateRingKey(imageTag, ringName, DelegateRingKeys.upgraderImageTag);
   }
 
-  public boolean updateDelegateVersion(final String version, final String ringName) {
-    return updateRingKey(version, ringName, DelegateRingKeys.delegateVersions);
+  public boolean updateDelegateVersion(final List<String> versions, final String ringName) {
+    return updateRingKey(versions, ringName, DelegateRingKeys.delegateVersions);
   }
 
-  private boolean updateRingKey(final String ringKeyValue, final String ringName, final String ringKey) {
+  public boolean updateWatcherVersion(final List<String> versions, final String ringName) {
+    return updateRingKey(versions, ringName, DelegateRingKeys.watcherVersions);
+  }
+
+  private boolean updateRingKey(final Object ringKeyValue, final String ringName, final String ringKey) {
     final Query<DelegateRing> filter =
         persistence.createQuery(DelegateRing.class).filter(DelegateRingKeys.ringName, ringName);
     final UpdateOperations<DelegateRing> updateOperation =

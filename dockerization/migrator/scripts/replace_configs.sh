@@ -327,7 +327,6 @@ if [[ "" != "$jwtNextGenManagerSecret" ]]; then
   yq write -i $CONFIG_FILE cg.portal.jwtNextGenManagerSecret "$jwtNextGenManagerSecret"
 fi
 
-
 if [[ "" != "$FEATURES" ]]; then
   yq write -i $CONFIG_FILE cg.featuresEnabled "$FEATURES"
 fi
@@ -474,6 +473,10 @@ fi
 
 if [[ "" != "$DELEGATE_DOCKER_IMAGE" ]]; then
   yq write -i $CONFIG_FILE cg.portal.delegateDockerImage "$DELEGATE_DOCKER_IMAGE"
+fi
+
+if [[ "" != "$OPTIONAL_DELEGATE_TASK_REJECT_AT_LIMIT" ]]; then
+  yq write -i $CONFIG_FILE portal.optionalDelegateTaskRejectAtLimit "$OPTIONAL_DELEGATE_TASK_REJECT_AT_LIMIT"
 fi
 
 if [[ "" != "$EXECUTION_LOG_DATA_STORE" ]]; then

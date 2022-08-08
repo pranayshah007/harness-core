@@ -36,18 +36,12 @@ public class DelegateServiceDriverExceptionHandler implements ExceptionHandler {
     if (exception instanceof StatusRuntimeException) {
       StatusRuntimeException statusRuntimeException = (StatusRuntimeException) exception;
       log.error("Delegate Service Drive Exception: {}", statusRuntimeException.getMessage());
-      if (statusRuntimeException.getStatus() == null) {
-        return NestedExceptionUtils.hintWithExplanationException(
-            String.format(HINT_MESSAGE, statusRuntimeException.getMessage()), DEFAULT_MESSAGE,
-            new InvalidRequestException(statusRuntimeException.getMessage(), exception));
-      }
-      String message = DEFAULT_MESSAGE;
-      if (statusCodeToMessageMap.containsKey(statusRuntimeException.getStatus().getCode())) {
-        message = statusCodeToMessageMap.get(statusRuntimeException.getStatus().getCode());
-      }
-      return NestedExceptionUtils.hintWithExplanationException(
-          String.format(HINT_MESSAGE, statusRuntimeException.getMessage()), message,
-          new InvalidRequestException(statusRuntimeException.getMessage(), exception));
+      final String message = statusRuntimeException.getStatus() != null
+              && statusCodeToMessageMap.containsKey(statusRuntimeException.getStatus().getCode())
+          ? statusCodeToMessageMap.get(statusRuntimeException.getStatus().getCode())
+          : DEFAULT_MESSAGE;
+      return NestedExceptionUtils.hintWithExplanationException(HINT_MESSAGE + " " + statusRuntimeException.getMessage(),
+          message, new InvalidRequestException(statusRuntimeException.getMessage(), exception));
     }
     return new InvalidRequestException(exception.getMessage(), exception);
   }

@@ -12,6 +12,7 @@ import io.harness.cvng.analysis.beans.LiveMonitoringLogAnalysisClusterDTO;
 import io.harness.cvng.analysis.entities.LogAnalysisResult;
 import io.harness.cvng.core.beans.params.MonitoredServiceParams;
 import io.harness.cvng.core.beans.params.PageParams;
+import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.core.beans.params.TimeRangeParams;
 import io.harness.cvng.core.beans.params.filterParams.LiveMonitoringLogAnalysisFilter;
 import io.harness.cvng.dashboard.beans.AnalyzedLogDataDTO;
@@ -28,6 +29,7 @@ import io.swagger.annotations.ApiOperation;
 import java.time.Instant;
 import java.util.List;
 import javax.validation.constraints.NotNull;
+import javax.ws.rs.BeanParam;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -48,17 +50,16 @@ public class ErrorTrackingDashboardResource {
   @ExceptionMetered
   @ApiOperation(value = "get all error tracking data for a time range", nickname = "getAllErrorTrackingData")
   public RestResponse<PageResponse<AnalyzedLogDataDTO>> getAllErrorTrackingData(
-      @QueryParam("accountId") String accountId, @NotNull @QueryParam("orgIdentifier") String orgIdentifier,
-      @NotNull @QueryParam("projectIdentifier") String projectIdentifier,
+      @NotNull @BeanParam ProjectParams projectParams,
       @QueryParam("monitoredServiceIdentifier") String monitoredServiceIdentifier,
       @QueryParam("clusterTypes") List<LogAnalysisResult.LogAnalysisTag> clusterTypes,
       @NotNull @QueryParam("startTime") Long startTimeMillis, @NotNull @QueryParam("endTime") Long endTimeMillis,
       @QueryParam("healthSources") List<String> healthSourceIdentifiers,
       @QueryParam("page") @DefaultValue("0") int page, @QueryParam("size") @DefaultValue("10") int size) {
     MonitoredServiceParams serviceEnvironmentParams = MonitoredServiceParams.builder()
-                                                          .accountIdentifier(accountId)
-                                                          .orgIdentifier(orgIdentifier)
-                                                          .projectIdentifier(projectIdentifier)
+                                                          .accountIdentifier(projectParams.getAccountIdentifier())
+                                                          .orgIdentifier(projectParams.getOrgIdentifier())
+                                                          .projectIdentifier(projectParams.getProjectIdentifier())
                                                           .monitoredServiceIdentifier(monitoredServiceIdentifier)
                                                           .build();
     TimeRangeParams timeRangeParams = TimeRangeParams.builder()
@@ -82,16 +83,15 @@ public class ErrorTrackingDashboardResource {
   @ExceptionMetered
   @ApiOperation(value = "get all log cluster data for a time range", nickname = "getAllErrorTrackingClusterData")
   public RestResponse<List<LiveMonitoringLogAnalysisClusterDTO>> getAllErrorTrackingClusterData(
-      @QueryParam("accountId") String accountId, @NotNull @QueryParam("orgIdentifier") String orgIdentifier,
-      @NotNull @QueryParam("projectIdentifier") String projectIdentifier,
+      @NotNull @BeanParam ProjectParams projectParams,
       @QueryParam("monitoredServiceIdentifier") String monitoredServiceIdentifier,
       @QueryParam("clusterTypes") List<LogAnalysisResult.LogAnalysisTag> clusterTypes,
       @NotNull @QueryParam("startTime") Long startTimeMillis, @NotNull @QueryParam("endTime") Long endTimeMillis,
       @QueryParam("healthSources") List<String> healthSourceIdentifiers) {
     MonitoredServiceParams serviceEnvironmentParams = MonitoredServiceParams.builder()
-                                                          .accountIdentifier(accountId)
-                                                          .orgIdentifier(orgIdentifier)
-                                                          .projectIdentifier(projectIdentifier)
+                                                          .accountIdentifier(projectParams.getAccountIdentifier())
+                                                          .orgIdentifier(projectParams.getOrgIdentifier())
+                                                          .projectIdentifier(projectParams.getProjectIdentifier())
                                                           .monitoredServiceIdentifier(monitoredServiceIdentifier)
                                                           .build();
     TimeRangeParams timeRangeParams = TimeRangeParams.builder()

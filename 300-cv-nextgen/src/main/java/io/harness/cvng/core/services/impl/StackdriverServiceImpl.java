@@ -106,35 +106,29 @@ public class StackdriverServiceImpl implements StackdriverService {
   @Override
   public List<LinkedHashMap> getSampleLogData(String accountId, String connectorIdentifier, String orgIdentifier,
       String projectIdentifier, String query, String tracingId) {
-    try {
-      Instant now = DateTimeUtils.roundDownTo1MinBoundary(Instant.now());
+    Instant now = DateTimeUtils.roundDownTo1MinBoundary(Instant.now());
 
-      DataCollectionRequest request = StackdriverLogSampleDataRequest.builder()
-                                          .type(DataCollectionRequestType.STACKDRIVER_LOG_SAMPLE_DATA)
-                                          .query(query)
-                                          .startTime(now.minus(Duration.ofMinutes(60)))
-                                          .endTime(now)
-                                          .build();
+    DataCollectionRequest request = StackdriverLogSampleDataRequest.builder()
+                                        .type(DataCollectionRequestType.STACKDRIVER_LOG_SAMPLE_DATA)
+                                        .query(query)
+                                        .startTime(now.minus(Duration.ofMinutes(60)))
+                                        .endTime(now)
+                                        .build();
 
-      OnboardingRequestDTO onboardingRequestDTO = OnboardingRequestDTO.builder()
-                                                      .dataCollectionRequest(request)
-                                                      .connectorIdentifier(connectorIdentifier)
-                                                      .accountId(accountId)
-                                                      .tracingId(tracingId)
-                                                      .orgIdentifier(orgIdentifier)
-                                                      .projectIdentifier(projectIdentifier)
-                                                      .build();
+    OnboardingRequestDTO onboardingRequestDTO = OnboardingRequestDTO.builder()
+                                                    .dataCollectionRequest(request)
+                                                    .connectorIdentifier(connectorIdentifier)
+                                                    .accountId(accountId)
+                                                    .tracingId(tracingId)
+                                                    .orgIdentifier(orgIdentifier)
+                                                    .projectIdentifier(projectIdentifier)
+                                                    .build();
 
-      OnboardingResponseDTO response = onboardingService.getOnboardingResponse(accountId, onboardingRequestDTO);
+    OnboardingResponseDTO response = onboardingService.getOnboardingResponse(accountId, onboardingRequestDTO);
 
-      final Gson gson = new Gson();
-      Type type = new TypeToken<List<LinkedHashMap>>() {}.getType();
-      return gson.fromJson(JsonUtils.asJson(response.getResult()), type);
-    } catch (Exception ex) {
-      String msg = "Exception while trying to fetch sample data. Please ensure that the query is valid.";
-      log.error(msg, ex);
-      throw new OnboardingException(msg);
-    }
+    final Gson gson = new Gson();
+    Type type = new TypeToken<List<LinkedHashMap>>() {}.getType();
+    return gson.fromJson(JsonUtils.asJson(response.getResult()), type);
   }
 
   @Override

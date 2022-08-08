@@ -15,8 +15,10 @@ import static java.util.stream.Collectors.toList;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.aws.beans.AwsInternalConfig;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.security.encryption.EncryptedDataDetail;
 
 import software.wings.beans.CloudFormationSourceType;
@@ -33,16 +35,22 @@ import com.amazonaws.AmazonServiceException;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.cloudformation.AmazonCloudFormationClient;
 import com.amazonaws.services.cloudformation.AmazonCloudFormationClientBuilder;
+import com.amazonaws.services.cloudformation.model.AmazonCloudFormationException;
+import com.amazonaws.services.cloudformation.model.DescribeStacksRequest;
 import com.amazonaws.services.cloudformation.model.GetTemplateRequest;
 import com.amazonaws.services.cloudformation.model.GetTemplateResult;
 import com.amazonaws.services.cloudformation.model.GetTemplateSummaryRequest;
 import com.amazonaws.services.cloudformation.model.GetTemplateSummaryResult;
+import com.amazonaws.services.cloudformation.model.ListStackResourcesRequest;
+import com.amazonaws.services.cloudformation.model.ListStackResourcesResult;
 import com.amazonaws.services.cloudformation.model.ParameterDeclaration;
+import com.amazonaws.services.cloudformation.model.StackResourceSummary;
 import com.amazonaws.services.ec2.model.AmazonEC2Exception;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.List;
+import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 
 @Singleton
@@ -95,10 +103,37 @@ public class AwsCFHelperServiceDelegateImpl
     } catch (AmazonClientException amazonClientException) {
       handleAmazonClientException(amazonClientException);
     } catch (Exception e) {
-      log.error("Exception getParamsData", e);
-      throw new InvalidRequestException(ExceptionUtils.getMessage(e), e);
+      Exception sanitizeException = ExceptionMessageSanitizer.sanitizeException(e);
+      log.error("Exception getParamsData", sanitizeException);
+      throw new InvalidRequestException(ExceptionUtils.getMessage(sanitizeException), sanitizeException);
     }
     return emptyList();
+  }
+
+  @Override
+  public boolean stackExists(AwsInternalConfig awsConfig, String region, String stackId) {
+    try (CloseableAmazonWebServiceClient<AmazonCloudFormationClient> closeableAmazonCloudFormationClient =
+             new CloseableAmazonWebServiceClient(getAmazonCloudFormationClient(Regions.fromName(region), awsConfig))) {
+      DescribeStacksRequest describeStacksRequest = new DescribeStacksRequest().withStackName(stackId);
+      tracker.trackCFCall("Describe Stacks");
+      closeableAmazonCloudFormationClient.getClient().describeStacks(describeStacksRequest);
+      return true;
+    } catch (AmazonCloudFormationException amazonCloudFormationException) {
+      if (EmptyPredicate.isNotEmpty(amazonCloudFormationException.getErrorCode())
+          && amazonCloudFormationException.getErrorCode().equals("ValidationError")) {
+        return false;
+      } else {
+        handleAmazonClientException(amazonCloudFormationException);
+      }
+    } catch (AmazonEC2Exception amazonEC2Exception) {
+      handleAmazonServiceException(amazonEC2Exception);
+    } catch (AmazonClientException amazonClientException) {
+      handleAmazonClientException(amazonClientException);
+    } catch (Exception e) {
+      log.error("Exception getStackBody", e);
+      throw new InvalidRequestException(ExceptionUtils.getMessage(e), e);
+    }
+    return true;
   }
 
   @Override
@@ -115,18 +150,19 @@ public class AwsCFHelperServiceDelegateImpl
     } catch (AmazonClientException amazonClientException) {
       handleAmazonClientException(amazonClientException);
     } catch (Exception e) {
-      log.error("Exception getStackBody", e);
-      throw new InvalidRequestException(ExceptionUtils.getMessage(e), e);
+      Exception sanitizeException = ExceptionMessageSanitizer.sanitizeException(e);
+      log.error("Exception getStackBody", sanitizeException);
+      throw new InvalidRequestException(ExceptionUtils.getMessage(sanitizeException), sanitizeException);
     }
     return "";
   }
 
   @Override
-  public List<String> getCapabilities(AwsInternalConfig awsConfig, String region, String data, String type) {
+  public List<String> getCapabilities(AwsInternalConfig awsConfig, String region, String data, String templateType) {
     try (CloseableAmazonWebServiceClient<AmazonCloudFormationClient> closeableAmazonCloudFormationClient =
              new CloseableAmazonWebServiceClient(getAmazonCloudFormationClient(Regions.fromName(region), awsConfig))) {
       GetTemplateSummaryRequest request = new GetTemplateSummaryRequest();
-      if ("s3".equalsIgnoreCase(type)) {
+      if ("s3".equalsIgnoreCase(templateType)) {
         request.withTemplateURL(normalizeS3TemplatePath(data));
       } else {
         request.withTemplateBody(data);
@@ -139,8 +175,9 @@ public class AwsCFHelperServiceDelegateImpl
     } catch (AmazonClientException amazonClientException) {
       handleAmazonClientException(amazonClientException);
     } catch (Exception e) {
-      log.error("Exception getCapabilities", e);
-      throw new InvalidRequestException(ExceptionUtils.getMessage(e), e);
+      Exception sanitizeException = ExceptionMessageSanitizer.sanitizeException(e);
+      log.error("Exception getCapabilities", sanitizeException);
+      throw new InvalidRequestException(ExceptionUtils.getMessage(sanitizeException), sanitizeException);
     }
     return emptyList();
   }
@@ -155,5 +192,34 @@ public class AwsCFHelperServiceDelegateImpl
       normalizedS3TemplatePath = s3Path.replaceAll("\\+", "%20");
     }
     return normalizedS3TemplatePath;
+  }
+
+  @Override
+  public String getPhysicalIdBasedOnLogicalId(
+      AwsInternalConfig awsConfig, String region, String stackName, String logicalId) {
+    try (CloseableAmazonWebServiceClient<AmazonCloudFormationClient> closeableAmazonCloudFormationClient =
+             new CloseableAmazonWebServiceClient(getAmazonCloudFormationClient(Regions.fromName(region), awsConfig))) {
+      ListStackResourcesRequest listStackResourcesRequest = new ListStackResourcesRequest();
+      listStackResourcesRequest.setStackName(stackName);
+      tracker.trackCFCall("List Stack Resources");
+      ListStackResourcesResult listStackResourcesResult =
+          closeableAmazonCloudFormationClient.getClient().listStackResources(listStackResourcesRequest);
+      Optional<StackResourceSummary> resource = listStackResourcesResult.getStackResourceSummaries()
+                                                    .stream()
+                                                    .filter(p -> p.getLogicalResourceId().equals(logicalId))
+                                                    .findFirst();
+      if (resource.isPresent()) {
+        return resource.get().getPhysicalResourceId();
+      }
+    } catch (AmazonEC2Exception amazonEC2Exception) {
+      handleAmazonServiceException(amazonEC2Exception);
+    } catch (AmazonClientException amazonClientException) {
+      handleAmazonClientException(amazonClientException);
+    } catch (Exception e) {
+      Exception sanitizeException = ExceptionMessageSanitizer.sanitizeException(e);
+      log.error("Exception getStackBody", sanitizeException);
+      throw new InvalidRequestException(ExceptionUtils.getMessage(sanitizeException), sanitizeException);
+    }
+    return "";
   }
 }

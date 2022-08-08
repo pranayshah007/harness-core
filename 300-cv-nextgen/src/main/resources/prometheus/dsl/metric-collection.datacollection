@@ -4,6 +4,7 @@ Var index = 0
 Var one = 1
 Var returnList = []
 Var hostQueryAddon = ""
+Var maximumHostSizeAllowed = 100
 
 while Var:index !=  Var:lengthOfItems {
     Var metricName = Env:metricNameList[Var:index]
@@ -13,9 +14,15 @@ while Var:index !=  Var:lengthOfItems {
     Var metricIdentifier =  Env:metricIdentifiers[Var:index]
 
     if Env:collectHostData == "true" {
-        Var hostQuery = concat(Env:baseUrl, "api/v1/label/", Var:serviceInstanceField, "/values?start=", Env:startTimeSeconds,"&end=", Env:endTimeSeconds, "&match[]=", Var:filters)
+        Var hostQuery = concat(Env:baseUrl, "api/v1/label/", Var:serviceInstanceField, "/values?start=", Env:startTimeSeconds,"&end=", Env:endTimeSeconds, "&match[]={", Var:filters, "}")
         Var hostResult = sync-call(url=Var:hostQuery, header=Env:commonHeaders)
         Var hostList = extract(Var:hostResult,$.data)
+        Var hostListLength = Var:hostList.length()
+
+        if Var:maximumHostSizeAllowed < Var:hostListLength {
+            Var exceptionMessage = concat("Host list returned from Prometheus is of size ", Var:hostListLength, ", which is greater than allowed ",  Var:maximumHostSizeAllowed, ", please check the query")
+            throw exception Var:exceptionMessage
+        }
         foreach host in Var:hostList {
             Var hostFilter = concat(",",Var:serviceInstanceField, "=\"", Var:host, "\"}")
             print Var:hostFilter

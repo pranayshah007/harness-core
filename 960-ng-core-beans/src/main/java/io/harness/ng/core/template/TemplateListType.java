@@ -31,7 +31,7 @@ public enum TemplateListType {
     this.yamlType = yamlType;
   }
 
-  @JsonCreator
+  @JsonCreator(mode = JsonCreator.Mode.DELEGATING)
   public static TemplateListType getTemplateType(@JsonProperty("type") String yamlType) {
     for (TemplateListType value : TemplateListType.values()) {
       if (value.yamlType.equalsIgnoreCase(yamlType)) {

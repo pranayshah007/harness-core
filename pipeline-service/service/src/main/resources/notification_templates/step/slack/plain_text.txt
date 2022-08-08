@@ -1,0 +1,32 @@
+{
+    "text" : "*Step ${PIPELINE_STEP_NAME} failed for pipeline <${PIPELINE_URL}|${PIPELINE}>*\n",
+    "attachments" : [
+        {
+          "color" : "${COLOR}",
+          "blocks" : [
+            {
+              "type" : "section",
+              "text" : {
+                "type" : "mrkdwn",
+                "text": "*Pipeline:* <${PIPELINE_URL}|${PIPELINE}>\n*Pipeline Step:* ${PIPELINE_STEP_NAME}\n*Triggered by:* ${USER_NAME}\n _Started<!date^${START_TS_SECS}^ {date_short_pretty} at {time}| ${START_DATE}> and ${EVENT_TYPE} at <!date^${END_TS_SECS}^{time}|${END_DATE}>_. Took ${DURATION_READABLE}."
+              }
+            },
+            {
+              "type" : "context",
+              "elements" : [
+                {
+                  "type" : "image",
+                  "image_url" :
+                      "https://s3.amazonaws.com/wings-assets/slackicons/${IMAGE_STATUS}.png",
+                  "alt_text" : "Failed"
+                },
+                {
+                  "type": "mrkdwn",
+                  "text": "*<${URL}|Open Execution>*"
+                },
+              ]
+            }
+          ]
+        }
+    ]
+}

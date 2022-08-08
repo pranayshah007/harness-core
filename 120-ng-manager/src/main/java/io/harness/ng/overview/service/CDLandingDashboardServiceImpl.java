@@ -11,11 +11,16 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import static org.jooq.impl.DSL.row;
 
+import io.harness.aggregates.AggregateProjectInfo;
+import io.harness.aggregates.AggregateServiceInfo;
+import io.harness.aggregates.TimeWiseExecutionSummary;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cd.CDDashboardServiceHelper;
+import io.harness.cd.NgServiceInfraInfoUtils;
+import io.harness.cd.TimeScaleDAL;
 import io.harness.dashboards.DashboardHelper;
 import io.harness.dashboards.DeploymentStatsSummary;
 import io.harness.dashboards.EnvCount;
-import io.harness.dashboards.GroupBy;
 import io.harness.dashboards.PipelineExecutionDashboardInfo;
 import io.harness.dashboards.PipelinesExecutionDashboardInfo;
 import io.harness.dashboards.ProjectDashBoardInfo;
@@ -27,9 +32,7 @@ import io.harness.dashboards.SortBy;
 import io.harness.dashboards.TimeBasedDeploymentInfo;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.ng.core.OrgProjectIdentifier;
-import io.harness.ng.overview.dto.AggregateProjectInfo;
-import io.harness.ng.overview.dto.AggregateServiceInfo;
-import io.harness.ng.overview.dto.TimeWiseExecutionSummary;
+import io.harness.pms.dashboards.GroupBy;
 import io.harness.pms.execution.ExecutionStatus;
 import io.harness.timescaledb.tables.pojos.PipelineExecutionSummaryCd;
 import io.harness.timescaledb.tables.pojos.Services;
@@ -45,7 +48,6 @@ import javax.validation.constraints.NotNull;
 import org.jooq.Record2;
 import org.jooq.Record3;
 import org.jooq.Row2;
-import org.jooq.Row3;
 import org.jooq.Table;
 import org.jooq.impl.DSL;
 
@@ -97,7 +99,8 @@ public class CDLandingDashboardServiceImpl implements CDLandingDashboardService 
           serviceDashboardInfo);
     }
 
-    Table<Record3<String, String, String>> orgProjectServiceTable = getOrgProjectServiceTable(serviceInfraInfoList);
+    Table<Record3<String, String, String>> orgProjectServiceTable =
+        NgServiceInfraInfoUtils.getOrgProjectServiceTable(serviceInfraInfoList);
     prepareServicesChangeRate(
         orgProjectServiceTable, accountIdentifier, startInterval, endInterval, servicesDashboardInfoList);
     prepareStatusWiseCount(
@@ -138,7 +141,8 @@ public class CDLandingDashboardServiceImpl implements CDLandingDashboardService 
           serviceDashboardInfo);
     }
 
-    Table<Record3<String, String, String>> orgProjectServiceTable = getOrgProjectServiceTable(serviceInfraInfoList);
+    Table<Record3<String, String, String>> orgProjectServiceTable =
+        NgServiceInfraInfoUtils.getOrgProjectServiceTable(serviceInfraInfoList);
     prepareServiceInstancesChangeRate(
         orgProjectServiceTable, accountIdentifier, startInterval, endInterval, combinedIdToRecordMap);
     addServiceNames(combinedIdToRecordMap, accountIdentifier, orgProjectServiceTable);
@@ -271,18 +275,6 @@ public class CDLandingDashboardServiceImpl implements CDLandingDashboardService 
     combinedId.deleteCharAt(combinedId.length() - 1);
 
     return combinedId.toString();
-  }
-
-  private Table<Record3<String, String, String>> getOrgProjectServiceTable(
-      List<AggregateServiceInfo> serviceInfraInfoList) {
-    Row3<String, String, String>[] orgProjectServiceRows = new Row3[serviceInfraInfoList.size()];
-    int index = 0;
-    for (AggregateServiceInfo aggregateServiceInfo : serviceInfraInfoList) {
-      orgProjectServiceRows[index++] = row(aggregateServiceInfo.getOrgidentifier(),
-          aggregateServiceInfo.getProjectidentifier(), aggregateServiceInfo.getServiceId());
-    }
-
-    return DSL.values(orgProjectServiceRows).as("t", "orgId", "projectId", "serviceId");
   }
 
   @org.jetbrains.annotations.NotNull

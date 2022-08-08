@@ -9,8 +9,10 @@ package io.harness.exception.ngexception.beans;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.exception.ngexception.ErrorMetadataConstants;
 import io.harness.exception.ngexception.ErrorMetadataDTO;
 
+import com.fasterxml.jackson.annotation.JsonTypeName;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Data;
@@ -20,11 +22,12 @@ import lombok.experimental.FieldDefaults;
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @OwnedBy(HarnessTeam.PL)
+@JsonTypeName(ErrorMetadataConstants.SCM_ERROR)
 public class ScmErrorMetadataDTO implements ErrorMetadataDTO {
   String conflictCommitId;
 
   @Override
   public String getType() {
-    return "ScmErrorMetadataDTO";
+    return ErrorMetadataConstants.SCM_ERROR;
   }
 }

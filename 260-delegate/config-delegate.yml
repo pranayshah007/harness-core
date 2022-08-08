@@ -1,5 +1,5 @@
 accountId: kmpySmUISimoRrJL6NL73w
-accountSecret: 2f6b0988b6fb3370073c3d0505baee59
+delegateToken: 2f6b0988b6fb3370073c3d0505baee59
 managerUrl: https://localhost:9090/api/
 verificationServiceUrl: https://localhost:7070/verification/
 cvNextGenUrl: https://localhost:6060/cv/api/
@@ -16,3 +16,6 @@ grpcServiceConnectorPort: 8080
 logStreamingServiceBaseUrl: http://localhost:8079
 clientToolsDownloadDisabled: false
 installClientToolsInBackground: true
+
+# Required for local development as manger uses self-signed cert
+trustAllCertificates: true

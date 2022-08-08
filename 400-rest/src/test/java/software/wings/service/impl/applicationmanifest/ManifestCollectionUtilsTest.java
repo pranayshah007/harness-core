@@ -25,15 +25,18 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
+import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import io.harness.beans.DelegateTask;
+import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.task.manifests.request.ManifestCollectionParams;
 import io.harness.exception.InvalidRequestException;
+import io.harness.ff.FeatureFlagService;
 import io.harness.k8s.model.HelmVersion;
 import io.harness.perpetualtask.PerpetualTaskService;
 import io.harness.rule.Owner;
@@ -52,7 +55,6 @@ import software.wings.beans.settings.helm.HttpHelmRepoConfig;
 import software.wings.helpers.ext.helm.request.HelmChartCollectionParams;
 import software.wings.helpers.ext.helm.request.HelmChartConfigParams;
 import software.wings.service.intfc.ApplicationManifestService;
-import software.wings.service.intfc.FeatureFlagService;
 import software.wings.service.intfc.ServiceResourceService;
 import software.wings.service.intfc.SettingsService;
 import software.wings.service.intfc.applicationmanifest.HelmChartService;
@@ -96,7 +98,8 @@ public class ManifestCollectionUtilsTest extends WingsBaseTest {
         .get(any());
     doReturn(Arrays.asList(EncryptedDataDetail.builder().fieldName(ENCRYPT).build()))
         .when(secretManager)
-        .getEncryptionDetails(any(EncryptableSetting.class), anyString(), anyString());
+        .getEncryptionDetails(any(EncryptableSetting.class), any(), any());
+    doReturn(true).when(featureFlagService).isEnabled(eq(FeatureName.USE_LATEST_CHARTMUSEUM_VERSION), any());
 
     ManifestCollectionParams collectionParams = manifestCollectionUtils.prepareCollectTaskParams(MANIFEST_ID, APP_ID);
     assertThat(collectionParams.getAppManifestId()).isEqualTo(MANIFEST_ID);
@@ -113,6 +116,7 @@ public class ManifestCollectionUtilsTest extends WingsBaseTest {
     assertThat(helmChartConfigParams.getHelmVersion()).isEqualTo(HelmVersion.V3);
     assertThat(helmChartConfigParams.getRepoName()).isEqualTo(convertBase64UuidToCanonicalForm(MANIFEST_ID));
     assertThat(helmChartConfigParams.getHelmRepoConfig()).isInstanceOf(HttpHelmRepoConfig.class);
+    assertThat(helmChartConfigParams.isUseLatestChartMuseumVersion()).isEqualTo(true);
   }
 
   @Test
@@ -156,7 +160,7 @@ public class ManifestCollectionUtilsTest extends WingsBaseTest {
         .get(any());
     doReturn(Arrays.asList(EncryptedDataDetail.builder().fieldName(ENCRYPT).build()))
         .when(secretManager)
-        .getEncryptionDetails(any(EncryptableSetting.class), anyString(), anyString());
+        .getEncryptionDetails(any(EncryptableSetting.class), any(), any());
 
     DelegateTask delegateTask = manifestCollectionUtils.buildValidationTask(MANIFEST_ID, APP_ID);
     assertThat(delegateTask.getAccountId()).isEqualTo(ACCOUNT_ID);
@@ -181,7 +185,7 @@ public class ManifestCollectionUtilsTest extends WingsBaseTest {
     List<HelmChart> publishedCharts =
         Arrays.asList(generateHelmChartWithVersion("1"), generateHelmChartWithVersion("2"));
 
-    doReturn(true).when(featureFlagService).isFeatureFlagEnabled(any(), any());
+    doReturn(true).when(featureFlagService).isEnabled(any(), any());
 
     doReturn(applicationManifest).when(applicationManifestService).getById(APP_ID, MANIFEST_ID);
     doReturn(service).when(serviceResourceService).get(APP_ID, SERVICE_ID);

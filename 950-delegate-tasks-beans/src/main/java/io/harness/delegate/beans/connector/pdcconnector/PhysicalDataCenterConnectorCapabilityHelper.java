@@ -8,12 +8,16 @@
 package io.harness.delegate.beans.connector.pdcconnector;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.exception.WingsException.USER_SRE;
+
+import static java.lang.String.format;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.connector.ConnectorCapabilityBaseHelper;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.task.mixin.SocketConnectivityCapabilityGenerator;
 import io.harness.delegate.task.utils.PhysicalDataCenterUtils;
+import io.harness.exception.InvalidArgumentsException;
 import io.harness.expression.ExpressionEvaluator;
 
 import java.util.List;
@@ -29,9 +33,14 @@ public class PhysicalDataCenterConnectorCapabilityHelper extends ConnectorCapabi
         physicalDataCenterConnectorDTO.getHosts().stream().map(HostDTO::getHostName).collect(Collectors.toList());
     List<ExecutionCapability> capabilityList =
         hostNames.stream()
-            .map(host
-                -> SocketConnectivityCapabilityGenerator.buildSocketConnectivityCapability(
-                    host, PhysicalDataCenterUtils.getPortOrSSHDefault(host)))
+            .map(host -> {
+              String hostName = PhysicalDataCenterUtils.extractHostnameFromHost(host).orElseThrow(
+                  ()
+                      -> new InvalidArgumentsException(
+                          format("Not found hostName for host capability check, host: %s", host), USER_SRE));
+              return SocketConnectivityCapabilityGenerator.buildSocketConnectivityCapability(
+                  hostName, PhysicalDataCenterUtils.getPortOrSSHDefault(host));
+            })
             .collect(Collectors.toList());
 
     populateDelegateSelectorCapability(capabilityList, physicalDataCenterConnectorDTO.getDelegateSelectors());

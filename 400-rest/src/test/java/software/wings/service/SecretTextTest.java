@@ -82,7 +82,7 @@ import software.wings.beans.Service;
 import software.wings.beans.ServiceTemplate;
 import software.wings.beans.ServiceVariable;
 import software.wings.beans.ServiceVariable.OverrideType;
-import software.wings.beans.ServiceVariable.Type;
+import software.wings.beans.ServiceVariableType;
 import software.wings.beans.SyncTaskContext;
 import software.wings.beans.User;
 import software.wings.beans.VaultConfig;
@@ -266,7 +266,7 @@ public class SecretTextTest extends WingsBaseTest {
 
     when(vaultEncryptor.deleteSecret(anyString(), anyObject(), anyObject())).thenReturn(true);
 
-    when(kmsEncryptorsRegistry.getKmsEncryptor(any(KmsConfig.class))).thenReturn(kmsEncryptor);
+    when(kmsEncryptorsRegistry.getKmsEncryptor(any())).thenReturn(kmsEncryptor);
     when(vaultEncryptorsRegistry.getVaultEncryptor(any())).thenReturn(vaultEncryptor);
 
     when(delegateProxyFactory.get(eq(SecretManagementDelegateService.class), any(SyncTaskContext.class)))
@@ -371,7 +371,7 @@ public class SecretTextTest extends WingsBaseTest {
                                                 .name(getRandomServiceVariableName())
                                                 .value(secretId.toCharArray())
                                                 .encryptedValue(secretId)
-                                                .type(Type.ENCRYPTED_TEXT)
+                                                .type(ServiceVariableType.ENCRYPTED_TEXT)
                                                 .build();
 
     String savedAttributeId = wingsPersistence.save(serviceVariable);
@@ -494,7 +494,7 @@ public class SecretTextTest extends WingsBaseTest {
                                                 .name(getRandomServiceVariableName())
                                                 .value(secretId.toCharArray())
                                                 .encryptedValue(secretId)
-                                                .type(Type.ENCRYPTED_TEXT)
+                                                .type(ServiceVariableType.ENCRYPTED_TEXT)
                                                 .build();
 
     String savedAttributeId = wingsPersistence.save(serviceVariable);
@@ -612,7 +612,7 @@ public class SecretTextTest extends WingsBaseTest {
                                                 .accountId(accountId)
                                                 .name("service_var" + getRandomServiceVariableName())
                                                 .value(secretId1.toCharArray())
-                                                .type(Type.ENCRYPTED_TEXT)
+                                                .type(ServiceVariableType.ENCRYPTED_TEXT)
                                                 .build();
     Application application = anApplication().accountId(accountId).name(generateUuid()).build();
     String appId = wingsPersistence.save(application);
@@ -689,7 +689,7 @@ public class SecretTextTest extends WingsBaseTest {
     final Map<String, Object> keyValuePairs = new HashMap<>();
     keyValuePairs.put("name", updatedName);
     keyValuePairs.put("appId", updatedAppId);
-    keyValuePairs.put("type", Type.ENCRYPTED_TEXT);
+    keyValuePairs.put("type", ServiceVariableType.ENCRYPTED_TEXT);
     keyValuePairs.put("value", secretId3.toCharArray());
 
     wingsPersistence.updateFields(ServiceVariable.class, savedAttributeId, keyValuePairs);
@@ -787,7 +787,7 @@ public class SecretTextTest extends WingsBaseTest {
                                                   .accountId(accountId)
                                                   .name(generateUuid())
                                                   .value(secretId.toCharArray())
-                                                  .type(Type.ENCRYPTED_TEXT)
+                                                  .type(ServiceVariableType.ENCRYPTED_TEXT)
                                                   .build();
 
       String savedAttributeId = wingsPersistence.save(serviceVariable);
@@ -893,7 +893,7 @@ public class SecretTextTest extends WingsBaseTest {
                                                   .accountId(accountId)
                                                   .name(generateUuid())
                                                   .value(secretId.toCharArray())
-                                                  .type(Type.ENCRYPTED_TEXT)
+                                                  .type(ServiceVariableType.ENCRYPTED_TEXT)
                                                   .build();
 
       String savedAttributeId = wingsPersistence.save(serviceVariable);
@@ -976,7 +976,7 @@ public class SecretTextTest extends WingsBaseTest {
                                                     .accountId(accountId)
                                                     .name(generateUuid())
                                                     .value(secretId.toCharArray())
-                                                    .type(Type.ENCRYPTED_TEXT)
+                                                    .type(ServiceVariableType.ENCRYPTED_TEXT)
                                                     .build();
 
         wingsPersistence.save(serviceVariable);
@@ -1055,7 +1055,7 @@ public class SecretTextTest extends WingsBaseTest {
                                                     .accountId(accountId)
                                                     .name(generateUuid())
                                                     .value(secretId.toCharArray())
-                                                    .type(Type.ENCRYPTED_TEXT)
+                                                    .type(ServiceVariableType.ENCRYPTED_TEXT)
                                                     .build();
 
         wingsPersistence.save(serviceVariable);
@@ -1127,7 +1127,7 @@ public class SecretTextTest extends WingsBaseTest {
                                                   .accountId(accountId)
                                                   .name(generateUuid())
                                                   .value(secretId.toCharArray())
-                                                  .type(Type.ENCRYPTED_TEXT)
+                                                  .type(ServiceVariableType.ENCRYPTED_TEXT)
                                                   .build();
 
       wingsPersistence.save(serviceVariable);
@@ -1589,7 +1589,7 @@ public class SecretTextTest extends WingsBaseTest {
                                               .accountId(accountId)
                                               .name("service_variable_" + i + "_j" + j)
                                               .value(secretId.toCharArray())
-                                              .type(Type.ENCRYPTED_TEXT)
+                                              .type(ServiceVariableType.ENCRYPTED_TEXT)
                                               .build();
         serviceVariableNames.add(serviceVariable.getName());
         serviceVariableIds.add(serviceVariableResource.save(appId, serviceVariable).getResource().getUuid());
@@ -1771,7 +1771,7 @@ public class SecretTextTest extends WingsBaseTest {
                                                 .accountId(accountId)
                                                 .name("service_variable_" + i + "_j" + j + "_k" + k)
                                                 .value(secretId.toCharArray())
-                                                .type(Type.ENCRYPTED_TEXT)
+                                                .type(ServiceVariableType.ENCRYPTED_TEXT)
                                                 .build();
           serviceVariableTemplateNames.add(serviceTemplate.getName());
           serviceVariableIds.add(serviceVariableResource.save(appId, serviceVariable).getResource().getUuid());
@@ -1945,7 +1945,7 @@ public class SecretTextTest extends WingsBaseTest {
                                               .accountId(accountId)
                                               .name("service_variable_j" + j + "_k" + k)
                                               .value(secretId.toCharArray())
-                                              .type(Type.ENCRYPTED_TEXT)
+                                              .type(ServiceVariableType.ENCRYPTED_TEXT)
                                               .build();
         serviceVariableIds.add(serviceVariableResource.save(appId, serviceVariable).getResource().getUuid());
         appIds.add(appId);
@@ -2084,7 +2084,7 @@ public class SecretTextTest extends WingsBaseTest {
                                               .accountId(accountId)
                                               .name("service_variable_" + i + "_j" + j)
                                               .value(secretId.toCharArray())
-                                              .type(Type.ENCRYPTED_TEXT)
+                                              .type(ServiceVariableType.ENCRYPTED_TEXT)
                                               .build();
         serviceVariableNames.add(serviceVariable.getName());
         serviceVariableIds.add(serviceVariableResource.save(appId, serviceVariable).getResource().getUuid());
@@ -2183,7 +2183,7 @@ public class SecretTextTest extends WingsBaseTest {
                                                 .accountId(accountId)
                                                 .name("service_variable_" + i + "_" + j + "_" + k)
                                                 .value(secretIds.get(j * numOfServiceVariables).toCharArray())
-                                                .type(Type.ENCRYPTED_TEXT)
+                                                .type(ServiceVariableType.ENCRYPTED_TEXT)
                                                 .build();
           serviceVariableTemplateNames.add(serviceTemplate.getName());
           serviceVariableIds.add(serviceVariableResource.save(appId, serviceVariable).getResource().getUuid());

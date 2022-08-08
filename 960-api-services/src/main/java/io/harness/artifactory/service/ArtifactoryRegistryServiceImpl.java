@@ -8,10 +8,8 @@
 package io.harness.artifactory.service;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
-import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.artifact.ArtifactMetadataKeys;
 import io.harness.artifactory.ArtifactoryClientImpl;
 import io.harness.artifactory.ArtifactoryConfigRequest;
 import io.harness.artifacts.beans.BuildDetailsInternal;
@@ -115,20 +113,5 @@ public class ArtifactoryRegistryServiceImpl implements ArtifactoryRegistryServic
   @Override
   public boolean validateCredentials(ArtifactoryConfigRequest artifactoryConfig) {
     return artifactoryClient.validateArtifactServer(artifactoryConfig);
-  }
-
-  @Override
-  public boolean verifyArtifactManifestUrl(
-      BuildDetailsInternal buildDetailsInternal, ArtifactoryConfigRequest artifactoryConfig) {
-    String artifactManifestUrl = buildDetailsInternal.getMetadata().get(ArtifactMetadataKeys.ARTIFACT_MANIFEST_URL);
-    if (isNotEmpty(artifactManifestUrl)) {
-      return artifactoryClient.verifyArtifactManifestUrl(artifactoryConfig, artifactManifestUrl);
-    }
-
-    throw NestedExceptionUtils.hintWithExplanationException(
-        "Please verify your Artifactory artifact repository URL field or repository port.",
-        String.format("Artifact manifest url was not found when retrieving metadata for artifact [%s]",
-            buildDetailsInternal.getMetadata().get(ArtifactMetadataKeys.IMAGE)),
-        new ArtifactoryRegistryException("Could not retrieve artifact manifest."));
   }
 }

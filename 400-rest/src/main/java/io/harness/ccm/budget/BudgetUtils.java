@@ -393,7 +393,8 @@ public class BudgetUtils {
     filters.add(getPerspectiveTimeFilter(startTime, AFTER));
     return viewsBillingService.convertToQLViewTimeSeriesData(
         viewsBillingService.getTimeSeriesStats(bigQueryService.get(), filters, groupBy, aggregationFunction,
-            Collections.emptyList(), cloudBillingHelper.getCloudProviderTableName(accountId, unified)));
+            Collections.emptyList(), cloudBillingHelper.getCloudProviderTableName(accountId, unified)),
+        accountId, groupBy);
   }
 
   private double getActualCostForPerspectiveBudget(Budget budget, String cloudProviderTable) {

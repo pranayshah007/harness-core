@@ -8,7 +8,7 @@
 package io.harness.k8s.kubectl;
 
 public class RolloutCommand extends AbstractExecutable {
-  private Kubectl client;
+  private final Kubectl client;
 
   public RolloutCommand(Kubectl client) {
     this.client = client;

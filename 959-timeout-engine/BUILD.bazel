@@ -14,17 +14,6 @@ java_library(
         "//960-persistence:module",
         "//980-commons:module",
         "//999-annotations:module",
-        "@maven//:com_esotericsoftware_kryo",
-        "@maven//:com_google_code_findbugs_annotations",
-        "@maven//:com_google_guava_guava",
-        "@maven//:com_google_inject_guice",
-        "@maven//:javax_validation_validation_api",
-        "@maven//:org_apache_commons_commons_lang3",
-        "@maven//:org_mongodb_morphia_morphia",
-        "@maven//:org_slf4j_slf4j_api",
-        "@maven//:org_springframework_data_spring_data_commons",
-        "@maven//:org_springframework_data_spring_data_mongodb",
-        "@maven//:org_springframework_spring_core",
     ],
 )
 

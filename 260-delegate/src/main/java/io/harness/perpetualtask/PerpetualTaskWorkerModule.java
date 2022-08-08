@@ -28,12 +28,15 @@ import io.harness.perpetualtask.instancesync.AwsLambdaInstanceSyncPerpetualTaskP
 import io.harness.perpetualtask.instancesync.AwsSshInstanceSyncPerpetualTaskParams;
 import io.harness.perpetualtask.instancesync.AzureVmssInstanceSyncPerpetualTaskParams;
 import io.harness.perpetualtask.instancesync.AzureWebAppInstanceSyncPerpetualProtoTaskParams;
+import io.harness.perpetualtask.instancesync.AzureWebAppNGInstanceSyncPerpetualTaskParams;
 import io.harness.perpetualtask.instancesync.ContainerInstanceSyncPerpetualTaskParams;
 import io.harness.perpetualtask.instancesync.CustomDeploymentInstanceSyncTaskParams;
 import io.harness.perpetualtask.instancesync.K8sInstanceSyncPerpetualTaskParams;
 import io.harness.perpetualtask.instancesync.NativeHelmInstanceSyncPerpetualTaskParams;
 import io.harness.perpetualtask.instancesync.PcfInstanceSyncPerpetualTaskParams;
 import io.harness.perpetualtask.instancesync.PdcInstanceSyncPerpetualTaskParams;
+import io.harness.perpetualtask.instancesync.PdcPerpetualTaskParamsNg;
+import io.harness.perpetualtask.instancesync.ServerlessAwsLambdaInstanceSyncPerpetualTaskParams;
 import io.harness.perpetualtask.instancesync.SpotinstAmiInstanceSyncPerpetualTaskParams;
 import io.harness.perpetualtask.k8s.watch.K8SWatchTaskExecutor;
 import io.harness.perpetualtask.k8s.watch.K8sWatchTaskParams;
@@ -107,6 +110,12 @@ public class PerpetualTaskWorkerModule extends AbstractModule {
         .to(ManifestPerpetualTaskExecutorNg.class);
     mapBinder.addBinding(ArtifactCollectionTaskParamsNg.class.getSimpleName())
         .to(ArtifactPerpetualTaskExecutorNg.class);
+    mapBinder.addBinding(ServerlessAwsLambdaInstanceSyncPerpetualTaskParams.class.getSimpleName())
+        .to(ServerlessAwsLambdaInstanceSyncPerpetualTaskExecutor.class);
+    mapBinder.addBinding(AzureWebAppNGInstanceSyncPerpetualTaskParams.class.getSimpleName())
+        .to(AzureWebAppInstanceSyncPerpetualTaskExecutor.class);
+    mapBinder.addBinding(PdcPerpetualTaskParamsNg.class.getSimpleName()).to(PdcPerpetualTaskExecutorNg.class);
+
     install(new FactoryModuleBuilder()
                 .implement(PodWatcher.class, PodWatcher.class)
                 .implement(NodeWatcher.class, NodeWatcher.class)

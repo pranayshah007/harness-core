@@ -20,6 +20,7 @@ import io.harness.artifacts.docker.beans.DockerInternalConfig;
 import io.harness.artifacts.docker.beans.DockerPublicImageTagResponse;
 import io.harness.artifacts.docker.client.DockerRestClientFactory;
 import io.harness.artifacts.docker.service.DockerRegistryServiceImpl.DockerRegistryToken;
+import io.harness.beans.ArtifactMetaInfo;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidArtifactServerException;
@@ -202,6 +203,12 @@ public class DockerPublicRegistryProcessor {
         .uiDisplayName("Tag# " + publicImageTag.getName())
         .metadata(metadata)
         .build();
+  }
+
+  public ArtifactMetaInfo getArtifactMetaInfo(DockerInternalConfig dockerConfig, String imageName, String buildNo) {
+    DockerRegistryRestClient registryRestClient = dockerRestClientFactory.getDockerRegistryRestClient(dockerConfig);
+    Function<Headers, String> getToken = headers -> getToken(headers, registryRestClient);
+    return dockerRegistryUtils.getArtifactMetaInfo(dockerConfig, registryRestClient, getToken, "", imageName, buildNo);
   }
 
   public List<Map<String, String>> getLabels(

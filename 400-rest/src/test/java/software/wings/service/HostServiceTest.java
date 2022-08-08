@@ -234,9 +234,8 @@ public class HostServiceTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void testSaveHost() {
     Host host = getCleanHost();
-    doReturn(host).when(wingsPersistence).saveAndGet(Host.class, host);
     Host savedHost = hostService.saveHost(host);
-    verify(wingsPersistence).saveAndGet(Host.class, host);
+    verify(wingsPersistence).save(host);
     assertThat(savedHost).isEqualTo(host);
 
     Host host1 = getCleanHost();

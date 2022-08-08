@@ -8,6 +8,7 @@
 package software.wings.resources;
 
 import static io.harness.annotations.dev.HarnessTeam.DEL;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
@@ -18,6 +19,7 @@ import io.harness.rest.RestResponse;
 import io.harness.security.annotations.InternalApi;
 
 import com.google.inject.Inject;
+import java.util.List;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
@@ -63,11 +65,22 @@ public class AdminRingResource {
   @PUT
   @Path("/{ringName}/delegate-version")
   public RestResponse<Boolean> updateDelegateVersion(
-      @PathParam("ringName") final String ringName, @Body final String delegateVersion) {
-    if (isBlank(delegateVersion) || isBlank(ringName)) {
+      @PathParam("ringName") final String ringName, @Body final List<String> delegateVersion) {
+    if (isEmpty(delegateVersion) || isBlank(ringName)) {
       throw new InvalidRequestException("Empty delegate version or ring name");
     }
     log.info("Updating delegate.jar version for ring {} to {}", ringName, delegateVersion);
     return new RestResponse<>(adminRingService.updateDelegateVersion(delegateVersion, ringName));
+  }
+
+  @PUT
+  @Path("/{ringName}/watcher-version")
+  public RestResponse<Boolean> updateWatcherVersion(
+      @PathParam("ringName") final String ringName, @Body final List<String> watcherVersion) {
+    if (isEmpty(watcherVersion) || isBlank(ringName)) {
+      throw new InvalidRequestException("Empty delegate version or ring name");
+    }
+    log.info("Updating watcher.jar version for ring {} to {}", ringName, watcherVersion);
+    return new RestResponse<>(adminRingService.updateWatcherVersion(watcherVersion, ringName));
   }
 }

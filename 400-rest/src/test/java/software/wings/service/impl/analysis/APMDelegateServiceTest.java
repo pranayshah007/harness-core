@@ -26,10 +26,10 @@ import io.harness.security.encryption.EncryptedDataDetail;
 import software.wings.beans.APMValidateCollectorConfig;
 import software.wings.beans.DatadogConfig;
 import software.wings.beans.PrometheusConfig;
+import software.wings.beans.apm.Method;
 import software.wings.delegatetasks.cv.RequestExecutor;
 import software.wings.service.impl.ThirdPartyApiCallLog;
 import software.wings.service.intfc.security.EncryptionService;
-import software.wings.sm.states.APMVerificationState;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -75,7 +75,7 @@ public class APMDelegateServiceTest extends CategoryTest {
                                                              .baseUrl("http://sampleUrl.com/")
                                                              .url("api/v1/services")
                                                              .headers(headers)
-                                                             .collectionMethod(APMVerificationState.Method.GET)
+                                                             .collectionMethod(Method.GET)
                                                              .build();
 
     String response = apmDelegateService.fetch(validateCollectorConfig, ThirdPartyApiCallLog.builder().build());
@@ -108,7 +108,7 @@ public class APMDelegateServiceTest extends CategoryTest {
             .url("api/v1/services")
             .headers(headers)
             .options(options)
-            .collectionMethod(APMVerificationState.Method.POST)
+            .collectionMethod(Method.POST)
             .build();
 
     String response = apmDelegateService.fetch(validateCollectorConfig, ThirdPartyApiCallLog.builder().build());

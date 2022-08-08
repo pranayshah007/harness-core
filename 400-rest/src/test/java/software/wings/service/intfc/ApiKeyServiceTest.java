@@ -9,6 +9,7 @@ package software.wings.service.intfc;
 
 import static io.harness.beans.PageResponse.PageResponseBuilder.aPageResponse;
 import static io.harness.rule.OwnerRule.NIKOLA;
+import static io.harness.rule.OwnerRule.PRATEEK;
 import static io.harness.rule.OwnerRule.RAMA;
 import static io.harness.rule.OwnerRule.SATYAM;
 import static io.harness.rule.OwnerRule.UJJAWAL;
@@ -31,12 +32,14 @@ import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import io.harness.beans.PageRequest;
 import io.harness.beans.PageRequest.PageRequestBuilder;
 import io.harness.beans.PageResponse;
 import io.harness.beans.SearchFilter.Operator;
 import io.harness.category.element.UnitTests;
+import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnauthorizedException;
 import io.harness.exception.WingsException;
 import io.harness.rule.Owner;
@@ -48,11 +51,14 @@ import software.wings.beans.ApiKeyEntry;
 import software.wings.beans.Event.Type;
 import software.wings.beans.User;
 import software.wings.beans.security.UserGroup;
+import software.wings.security.UserPermissionInfo;
 import software.wings.security.UserRequestContext;
+import software.wings.security.UserRestrictionInfo;
 import software.wings.security.UserThreadLocal;
 import software.wings.service.impl.AuditServiceHelper;
 
 import com.google.inject.Inject;
+import javax.cache.Cache;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Before;
 import org.junit.Test;
@@ -63,13 +69,18 @@ import org.mockito.Mock;
 @Slf4j
 public class ApiKeyServiceTest extends WingsBaseTest {
   @Mock private AccountService accountService;
+  @Mock private UserService userService;
   @Mock private UserGroupService userGroupService;
   @Mock private AuditServiceHelper auditServiceHelper;
+  @Mock private Cache<String, ApiKeyEntry> apiKeyCache;
+  @Mock private Cache<String, UserPermissionInfo> apiKeyPermissionInfoCache;
+  @Mock private Cache<String, UserRestrictionInfo> apiKeyRestrictionInfoCache;
   @Inject @InjectMocks private ApiKeyService apiKeyService;
 
   @Before
   public void init() {
     setUserRequestContext();
+    when(userService.isUserAssignedToAccount(any(), any())).thenReturn(true);
   }
 
   private void setUserRequestContext() {
@@ -118,7 +129,7 @@ public class ApiKeyServiceTest extends WingsBaseTest {
     doReturn(account).when(accountService).get(ACCOUNT_ID);
     UserGroup userGroup = UserGroup.builder().uuid(USER_GROUP_ID).name(name).build();
     PageResponse pageResponse = aPageResponse().withResponse(asList(userGroup)).build();
-    doReturn(pageResponse).when(userGroupService).list(anyString(), any(PageRequest.class), anyBoolean());
+    doReturn(pageResponse).when(userGroupService).list(anyString(), any(PageRequest.class), anyBoolean(), any(), any());
     ApiKeyEntry apiKeyEntry =
         ApiKeyEntry.builder().name("name1").accountId(ACCOUNT_ID).userGroupIds(asList(USER_GROUP_ID)).build();
     return apiKeyService.generate(ACCOUNT_ID, apiKeyEntry);
@@ -138,6 +149,29 @@ public class ApiKeyServiceTest extends WingsBaseTest {
     verify(auditServiceHelper, times(1))
         .reportForAuditingUsingAccountId(
             eq(apiKeyEntry.getAccountId()), eq(null), any(ApiKeyEntry.class), eq(Type.UPDATE));
+  }
+
+  @Test
+  @Owner(developers = PRATEEK)
+  @Category(UnitTests.class)
+  public void testUpdateWithCache() {
+    ApiKeyEntry apiKeyEntry = generateKey("name");
+
+    ApiKeyEntry apiKeyEntryForUpdate =
+        ApiKeyEntry.builder().name("newName").userGroupIds(asList(USER_GROUP_ID + "2")).build();
+    ApiKeyEntry updatedApiKeyEntry =
+        apiKeyService.update(apiKeyEntry.getUuid(), apiKeyEntry.getAccountId(), apiKeyEntryForUpdate);
+    assertThat(updatedApiKeyEntry).isNotNull();
+    assertThat(updatedApiKeyEntry.getUuid()).isEqualTo(apiKeyEntry.getUuid());
+    assertThat(updatedApiKeyEntry.getUserGroupIds()).isNotEmpty();
+    verify(auditServiceHelper, times(1))
+        .reportForAuditingUsingAccountId(
+            eq(apiKeyEntry.getAccountId()), eq(null), any(ApiKeyEntry.class), eq(Type.CREATE));
+    verify(apiKeyCache, times(1)).remove(updatedApiKeyEntry.getAccountId() + updatedApiKeyEntry.getDecryptedKey());
+    verify(apiKeyPermissionInfoCache, times(1))
+        .remove(updatedApiKeyEntry.getAccountId() + updatedApiKeyEntry.getDecryptedKey());
+    verify(apiKeyRestrictionInfoCache, times(1))
+        .remove(updatedApiKeyEntry.getAccountId() + updatedApiKeyEntry.getDecryptedKey());
   }
 
   @Test
@@ -206,5 +240,65 @@ public class ApiKeyServiceTest extends WingsBaseTest {
     } catch (UnauthorizedException ex) {
       fail("Validation failed: " + ex.getMessage());
     }
+  }
+
+  @Test
+  @Owner(developers = UJJAWAL)
+  @Category(UnitTests.class)
+  public void testGetApiKey() {
+    ApiKeyEntry apiKeyEntry = generateKey("name");
+    User user = User.Builder.anUser().uuid("uid").name("username").build();
+    UserThreadLocal.set(user);
+    when(userService.isUserAssignedToAccount(any(), any())).thenReturn(true);
+    boolean exceptionThrown = false;
+    ApiKeyEntry apiKeyEntryFromGet = null;
+    try {
+      apiKeyEntryFromGet = apiKeyService.get(apiKeyEntry.getUuid(), ACCOUNT_ID);
+    } catch (InvalidRequestException ex) {
+      exceptionThrown = true;
+    }
+    assertThat(apiKeyEntryFromGet).isNotNull();
+    String key = apiKeyEntryFromGet.getDecryptedKey();
+    assertThat(key).isEqualTo(apiKeyEntry.getDecryptedKey());
+    assertThat(exceptionThrown).isFalse();
+  }
+
+  @Test
+  @Owner(developers = UJJAWAL)
+  @Category(UnitTests.class)
+  public void testGetApiKey2() {
+    ApiKeyEntry apiKeyEntry = generateKey("name");
+    User user = User.Builder.anUser().uuid("uid").name("username").build();
+    UserThreadLocal.set(user);
+    when(userService.isUserAssignedToAccount(any(), any())).thenReturn(false);
+    ApiKeyEntry apiKeyEntryFromGet = null;
+    boolean exceptionThrown = false;
+    try {
+      apiKeyEntryFromGet = apiKeyService.get(apiKeyEntry.getUuid(), ACCOUNT_ID);
+    } catch (InvalidRequestException ex) {
+      exceptionThrown = true;
+    }
+    assertThat(apiKeyEntryFromGet).isNotNull();
+    assertThat(exceptionThrown).isFalse();
+  }
+
+  @Test
+  @Owner(developers = UJJAWAL)
+  @Category(UnitTests.class)
+  public void testGetApiKey3() {
+    ApiKeyEntry apiKeyEntry = generateKey("name");
+    UserThreadLocal.set(null);
+    when(userService.isUserAssignedToAccount(any(), any())).thenReturn(true);
+    boolean exceptionThrown = false;
+    ApiKeyEntry apiKeyEntryFromGet = null;
+    try {
+      apiKeyEntryFromGet = apiKeyService.get(apiKeyEntry.getUuid(), ACCOUNT_ID);
+    } catch (InvalidRequestException ex) {
+      exceptionThrown = true;
+    }
+    assertThat(apiKeyEntryFromGet).isNotNull();
+    String key = apiKeyEntryFromGet.getDecryptedKey();
+    assertThat(key).isEqualTo(apiKeyEntry.getDecryptedKey());
+    assertThat(exceptionThrown).isFalse();
   }
 }

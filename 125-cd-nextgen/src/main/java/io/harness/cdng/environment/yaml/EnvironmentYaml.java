@@ -16,10 +16,12 @@ import io.harness.cdng.visitor.helpers.pipelineinfrastructure.EnvironmentYamlVis
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.ng.core.environment.beans.EnvironmentType;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.pms.yaml.YamlNode;
 import io.harness.walktree.visitor.SimpleVisitorHelper;
 import io.harness.walktree.visitor.Visitable;
 import io.harness.yaml.core.intfc.OverridesApplier;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.annotations.ApiModelProperty;
 import java.util.Map;
 import javax.validation.constraints.NotNull;
@@ -36,6 +38,11 @@ import org.springframework.data.annotation.TypeAlias;
 @OwnedBy(CDC)
 @RecasterAlias("io.harness.cdng.environment.yaml.EnvironmentYaml")
 public class EnvironmentYaml implements OverridesApplier<EnvironmentYaml>, Visitable {
+  @JsonProperty(YamlNode.UUID_FIELD_NAME)
+  @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
+  @ApiModelProperty(hidden = true)
+  private String uuid;
+
   @NotNull @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) @Wither String name;
   @NotNull @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) @Wither String identifier;
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) @Wither private ParameterField<String> description;

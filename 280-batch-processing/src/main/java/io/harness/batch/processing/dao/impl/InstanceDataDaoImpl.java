@@ -118,6 +118,21 @@ public class InstanceDataDaoImpl implements InstanceDataDao {
   }
 
   @Override
+  public void correctInstanceStateActiveIterationTime(InstanceData instanceData) {
+    UpdateOperations<InstanceData> instanceDataUpdateOperations =
+        hPersistence.createUpdateOperations(InstanceData.class)
+            .set(InstanceDataKeys.activeInstanceIterator,
+                ActiveInstanceIterator.getActiveInstanceIteratorFromStopTime(instanceData.getUsageStopTime()))
+            .set(InstanceDataKeys.instanceState, InstanceState.STOPPED.name());
+    Query<InstanceData> query = hPersistence.createQuery(InstanceData.class)
+                                    .filter(InstanceDataKeys.accountId, instanceData.getAccountId())
+                                    .filter(InstanceDataKeys.clusterId, instanceData.getClusterId())
+                                    .filter(InstanceDataKeys.instanceId, instanceData.getInstanceId());
+
+    hPersistence.upsert(query, instanceDataUpdateOperations, upsertReturnOldOptions);
+  }
+
+  @Override
   public InstanceData fetchActiveInstanceData(
       String accountId, String clusterId, String instanceId, List<InstanceState> instanceState) {
     return hPersistence.createQuery(InstanceData.class)
@@ -248,13 +263,12 @@ public class InstanceDataDaoImpl implements InstanceDataDao {
       String accountId, Instant startTime, Instant endTime, List<InstanceType> instanceTypes) {
     return hPersistence.createQuery(InstanceData.class, excludeCount)
         .filter(InstanceDataKeys.accountId, accountId)
-        .field(InstanceDataKeys.instanceType)
-        .in(instanceTypes)
         .field(InstanceDataKeys.activeInstanceIterator)
         .greaterThanOrEq(startTime)
         .field(InstanceDataKeys.usageStartTime)
         .lessThanOrEq(endTime)
-        .order(InstanceDataKeys.accountId + "," + InstanceDataKeys.instanceType + ","
-            + InstanceDataKeys.activeInstanceIterator);
+        .field(InstanceDataKeys.instanceType)
+        .in(instanceTypes)
+        .order(InstanceDataKeys.accountId + "," + InstanceDataKeys.activeInstanceIterator);
   }
 }

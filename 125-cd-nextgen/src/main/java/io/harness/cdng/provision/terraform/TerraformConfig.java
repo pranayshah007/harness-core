@@ -69,4 +69,5 @@ public class TerraformConfig implements PersistentEntity, CreatedAtAware {
   Map<String, String> environmentVariables;
   String workspace;
   List<String> targets;
+  boolean useConnectorCredentials;
 }

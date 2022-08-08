@@ -83,7 +83,7 @@ import retrofit2.http.Body;
 public interface RoleResource {
   @GET
   @ApiOperation(value = "Get Roles", nickname = "getRoleList")
-  @Operation(operationId = "getRoleList", summary = "List roles in the given scope",
+  @Operation(operationId = "getRoleList", summary = "List Roles", description = "List roles in the given scope",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Paginated list of roles in the given scope")
@@ -96,7 +96,7 @@ public interface RoleResource {
   @GET
   @Path("{identifier}")
   @ApiOperation(value = "Get Role", nickname = "getRole")
-  @Operation(operationId = "getRole", summary = "Get a Role by identifier",
+  @Operation(operationId = "getRole", summary = "Get Role", description = "Get a Role by identifier",
       responses = { @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Queried Role") })
   ResponseDTO<RoleResponseDTO>
   get(@Parameter(description = "Identifier of the Role") @NotEmpty @PathParam(IDENTIFIER_KEY) String identifier,
@@ -105,7 +105,7 @@ public interface RoleResource {
   @PUT
   @Path("{identifier}")
   @ApiOperation(value = "Update Role", nickname = "putRole")
-  @Operation(operationId = "putRole", summary = "Update a Custom Role by identifier",
+  @Operation(operationId = "putRole", summary = "Update Role", description = "Update a Custom Role by identifier",
       responses = { @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Updated Role") })
   ResponseDTO<RoleResponseDTO>
   update(@Parameter(description = "Identifier of the Role") @NotNull @PathParam(IDENTIFIER_KEY) String identifier,
@@ -114,7 +114,7 @@ public interface RoleResource {
 
   @POST
   @ApiOperation(value = "Create Role", nickname = "postRole")
-  @Operation(operationId = "postRole", summary = "Create a Custom Role in a scope",
+  @Operation(operationId = "postRole", summary = "Create Role", description = "Create a Custom Role in a scope",
       responses = { @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Created Role") })
   ResponseDTO<RoleResponseDTO>
   create(@Parameter(description = ACCOUNT_PARAM_MESSAGE) @NotEmpty @QueryParam(
@@ -126,7 +126,7 @@ public interface RoleResource {
   @DELETE
   @Path("{identifier}")
   @ApiOperation(value = "Delete Role", nickname = "deleteRole")
-  @Operation(operationId = "deleteRole", summary = "Delete a Custom Role in a scope",
+  @Operation(operationId = "deleteRole", summary = "Delete Role", description = "Delete a Custom Role in a scope",
       responses = { @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Deleted Role") })
   ResponseDTO<RoleResponseDTO>
   delete(@Parameter(description = "Identifier of the Role") @NotNull @PathParam(IDENTIFIER_KEY) String identifier,

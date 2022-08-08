@@ -1,10 +1,10 @@
-load("@rules_rust//rust:rust.bzl", "rust_binary")
-
-rust_binary(
-    name = "order",
-    srcs = glob(["src/**/*.rs"]),
-    proc_macro_deps = [
-    ],
-    deps = [
-    ],
-)
+#load("@rules_rust//rust:rust.bzl", "rust_binary")
+#
+#rust_binary(
+#    name = "order",
+#    srcs = glob(["src/**/*.rs"]),
+#    proc_macro_deps = [
+#    ],
+#    deps = [
+#    ],
+#)

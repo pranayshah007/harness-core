@@ -13,9 +13,6 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.context.ContextElementType;
 
 import software.wings.sm.ContextElement;
-import software.wings.sm.ExecutionContext;
-
-import java.util.Map;
 
 /**
  * The type Sample element.
@@ -45,11 +42,6 @@ public class SampleElement implements ContextElement {
 
   @Override
   public String getName() {
-    return null;
-  }
-
-  @Override
-  public Map<String, Object> paramMap(ExecutionContext context) {
     return null;
   }
 

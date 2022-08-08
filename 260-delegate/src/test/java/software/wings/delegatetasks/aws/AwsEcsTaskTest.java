@@ -16,8 +16,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.joor.Reflect.on;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyList;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
@@ -72,7 +70,7 @@ public class AwsEcsTaskTest extends WingsBaseTest {
   public void testRun() {
     AwsEcsRequest request = AwsEcsListClustersRequest.builder().build();
     task.run(request);
-    verify(mockEcsHelperServiceDelegate).listClusters(any(), anyList(), anyString());
+    verify(mockEcsHelperServiceDelegate).listClusters(any(), any(), any());
   }
 
   @Test
@@ -83,7 +81,7 @@ public class AwsEcsTaskTest extends WingsBaseTest {
     service.setServiceName("serviceName");
     doReturn(Collections.singletonList(service))
         .when(mockEcsHelperServiceDelegate)
-        .listServicesForCluster(any(), any(), anyString(), anyString());
+        .listServicesForCluster(any(), any(), any(), any());
     AwsEcsListClusterServicesRequest awsEcsListClusterServicesRequest =
         AwsEcsListClusterServicesRequest.builder().build();
 
@@ -94,7 +92,7 @@ public class AwsEcsTaskTest extends WingsBaseTest {
         .isEqualTo(ExecutionStatus.SUCCESS);
     assertThat(((AwsEcsListClusterServicesResponse) awsResponse).getServices().get(0).getServiceName())
         .isEqualTo("serviceName");
-    verify(mockEcsHelperServiceDelegate).listServicesForCluster(any(), any(), anyString(), anyString());
+    verify(mockEcsHelperServiceDelegate).listServicesForCluster(any(), any(), any(), any());
   }
 
   @Test(expected = InvalidRequestException.class)
@@ -103,7 +101,7 @@ public class AwsEcsTaskTest extends WingsBaseTest {
   public void testRunWithInvalidRequestException() {
     doThrow(new RuntimeException("Error msg"))
         .when(mockEcsHelperServiceDelegate)
-        .listServicesForCluster(any(), any(), anyString(), anyString());
+        .listServicesForCluster(any(), any(), any(), any());
     AwsEcsListClusterServicesRequest awsEcsListClusterServicesRequest =
         AwsEcsListClusterServicesRequest.builder().build();
 
@@ -119,7 +117,7 @@ public class AwsEcsTaskTest extends WingsBaseTest {
   public void testRunWithWingsException() {
     doThrow(new InvalidRequestException("Error msg"))
         .when(mockEcsHelperServiceDelegate)
-        .listServicesForCluster(any(), any(), anyString(), anyString());
+        .listServicesForCluster(any(), any(), any(), any());
     AwsEcsListClusterServicesRequest awsEcsListClusterServicesRequest =
         AwsEcsListClusterServicesRequest.builder().build();
 

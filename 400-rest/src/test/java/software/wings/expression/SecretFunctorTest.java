@@ -9,7 +9,7 @@ package software.wings.expression;
 
 import static io.harness.rule.OwnerRule.AADITI;
 
-import static software.wings.beans.ServiceVariable.Type.ENCRYPTED_TEXT;
+import static software.wings.beans.ServiceVariableType.ENCRYPTED_TEXT;
 import static software.wings.expression.SecretFunctor.Mode.CASCADING;
 import static software.wings.utils.WingsTestConstants.ACCOUNT_ID;
 import static software.wings.utils.WingsTestConstants.APP_ID;

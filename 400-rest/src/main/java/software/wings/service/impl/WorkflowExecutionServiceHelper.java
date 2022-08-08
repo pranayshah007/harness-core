@@ -8,13 +8,12 @@
 package software.wings.service.impl;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
-import static io.harness.beans.ExecutionStatus.ERROR;
-import static io.harness.beans.ExecutionStatus.FAILED;
 import static io.harness.beans.OrchestrationWorkflowType.BUILD;
 import static io.harness.beans.WorkflowType.ORCHESTRATION;
 import static io.harness.beans.WorkflowType.PIPELINE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.expression.ExpressionEvaluator.matchesVariablePattern;
 import static io.harness.validation.Validator.notNullCheck;
@@ -28,7 +27,9 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
+import io.harness.beans.ExecutionStatus;
 import io.harness.beans.OrchestrationWorkflowType;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.expression.ExpressionEvaluator;
 import io.harness.ff.FeatureFlagService;
@@ -38,6 +39,7 @@ import software.wings.api.DeploymentType;
 import software.wings.api.WorkflowElement;
 import software.wings.beans.CanaryOrchestrationWorkflow;
 import software.wings.beans.ExecutionArgs;
+import software.wings.beans.InfrastructureMapping;
 import software.wings.beans.Pipeline;
 import software.wings.beans.PipelineStage;
 import software.wings.beans.PipelineStage.PipelineStageElement;
@@ -67,7 +69,6 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -78,6 +79,8 @@ import java.util.Set;
 import java.util.StringJoiner;
 import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
+import lombok.NonNull;
+import org.apache.commons.lang3.StringUtils;
 import org.mongodb.morphia.query.Query;
 import org.mongodb.morphia.query.Sort;
 
@@ -100,7 +103,6 @@ public class WorkflowExecutionServiceHelper {
     if (isBlank(workflowExecutionId) || isEmpty(workflowVariables)) {
       return new WorkflowVariablesMetadata(workflowVariables);
     }
-
     WorkflowExecution workflowExecution = workflowExecutionService.getWorkflowExecution(appId, workflowExecutionId);
     if (workflowExecution == null || workflowExecution.getExecutionArgs() == null
         || executionArgs.getWorkflowType() != workflowExecution.getWorkflowType()
@@ -177,7 +179,8 @@ public class WorkflowExecutionServiceHelper {
       }
     }
 
-    workflowExecution.setInfraDefinitionIds(workflowService.getResolvedInfraDefinitionIds(workflow, workflowVariables));
+    workflowExecution.setInfraDefinitionIds(
+        workflowService.getResolvedInfraDefinitionIds(workflow, workflowVariables, resolveEnvId));
     workflowExecution.setCloudProviderIds(infrastructureDefinitionService.fetchCloudProviderIds(
         workflow.getAppId(), workflowExecution.getInfraDefinitionIds()));
     return workflowExecution;
@@ -336,7 +339,12 @@ public class WorkflowExecutionServiceHelper {
         }
         continue;
       }
-      variable.setValue(oldWorkflowVariablesMap.get(name));
+      String oldValue = oldWorkflowVariablesMap.get(name);
+      if (!StringUtils.isBlank(oldValue)
+          && (EmptyPredicate.isEmpty(variable.getAllowedList()) || variable.getAllowedList().contains(oldValue))) {
+        // not updating value if variable itself is updated
+        variable.setValue(oldValue);
+      }
       // This is never a noop as we have already dealt with the case that this workflow variable is new.
       oldWorkflowVariablesMap.remove(name);
     }
@@ -478,7 +486,8 @@ public class WorkflowExecutionServiceHelper {
     return !(matchesVariablePattern(defaultValuePresent) && !defaultValuePresent.contains("."));
   }
 
-  public List<String> getInfraMappings(Workflow workflow, Map<String, String> workflowVariables) {
+  @NonNull
+  public List<InfrastructureMapping> getInfraMappings(Workflow workflow, Map<String, String> workflowVariables) {
     if (workflow == null || workflow.getOrchestrationWorkflow() == null) {
       return new ArrayList<>();
     }
@@ -489,7 +498,7 @@ public class WorkflowExecutionServiceHelper {
     return orchestrationWorkflow.getWorkflowPhases()
         .stream()
         .map(phase
-            -> infrastructureMappingService.getInfraMappingsByServiceAndInfraDefinitionIds(workflow.getAppId(),
+            -> infrastructureMappingService.getInfraMappingWithDeploymentType(workflow.getAppId(),
                 workflowService.getResolvedServiceIdFromPhase(phase, workflowVariables),
                 workflowService.getResolvedInfraDefinitionIdFromPhase(phase, workflowVariables)))
         .filter(Objects::nonNull)
@@ -547,6 +556,10 @@ public class WorkflowExecutionServiceHelper {
         executionDetails.put(stateExecutionInstance.getUuid(),
             new StringJoiner("").add(
                 String.format("%s failed: [%s]", phaseStepExecution.getDisplayName(), failureDetails)));
+      } else if (isNotEmpty(failureDetails)) {
+        // Error Handling for Rejected Pipeline
+        executionDetails.put(
+            generateUuid(), new StringJoiner("").add(String.format("WorkflowExecutionFailed : [%s]", failureDetails)));
       }
     }
   }
@@ -567,7 +580,7 @@ public class WorkflowExecutionServiceHelper {
                                               .filter(StateExecutionInstanceKeys.appId, appId)
                                               .filter(StateExecutionInstanceKeys.executionUuid, workflowExecutionId)
                                               .field(StateExecutionInstanceKeys.status)
-                                              .in(EnumSet.of(FAILED, ERROR))
+                                              .in(ExecutionStatus.resumableStatuses)
                                               .order(Sort.ascending(StateExecutionInstanceKeys.endTs));
 
     return query.project(StateExecutionInstanceKeys.uuid, true)
@@ -577,5 +590,34 @@ public class WorkflowExecutionServiceHelper {
         .project(StateExecutionInstanceKeys.stateName, true)
         .project(StateExecutionInstanceKeys.stateExecutionMap, true)
         .asList();
+  }
+
+  public void populateFailureDetailsWithStepInfo(WorkflowExecution workflowExecution) {
+    Map<String, StringJoiner> executionDetails = new LinkedHashMap<>();
+    HashSet<String> parentInstances = new HashSet<>();
+    StringJoiner failureMessage = new StringJoiner(", ");
+    StringJoiner failedStepNames = new StringJoiner(", ");
+    StringJoiner failedStepTypes = new StringJoiner(", ");
+
+    List<StateExecutionInstance> allExecutionInstances =
+        fetchAllFailedExecutionInstances(workflowExecution.getAppId(), workflowExecution.getUuid());
+
+    prepareFailedPhases(allExecutionInstances, parentInstances, executionDetails);
+    prepareFailedSteps(workflowExecution.getAppId(), workflowExecution.getUuid(), allExecutionInstances,
+        parentInstances, executionDetails);
+
+    if (isNotEmpty(executionDetails)) {
+      executionDetails.forEach((id, message) -> {
+        failureMessage.add(message.toString());
+        allExecutionInstances.stream().filter(sei -> id.equals(sei.getUuid())).findFirst().ifPresent(sei -> {
+          failedStepNames.add(sei.getStateName());
+          failedStepTypes.add(sei.getStateType());
+        });
+      });
+    }
+
+    workflowExecution.setFailureDetails(failureMessage.toString());
+    workflowExecution.setFailedStepNames(failedStepNames.toString());
+    workflowExecution.setFailedStepTypes(failedStepTypes.toString());
   }
 }

@@ -44,6 +44,7 @@ import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -98,6 +99,18 @@ public class ClusterDataToBigQueryTasklet implements Tasklet {
     }
   }
 
+  @Value
+  @EqualsAndHashCode
+  @VisibleForTesting
+  public static class AccountClusterKey {
+    String accountId;
+    String clusterId;
+
+    public static AccountClusterKey getAccountClusterKeyFromInstanceData(InstanceBillingData instanceBillingData) {
+      return new AccountClusterKey(instanceBillingData.getAccountId(), instanceBillingData.getClusterId());
+    }
+  }
+
   @Override
   public RepeatStatus execute(StepContribution stepContribution, ChunkContext chunkContext) throws Exception {
     JobParameters parameters = chunkContext.getStepContext().getStepExecution().getJobParameters();
@@ -123,7 +136,8 @@ public class ClusterDataToBigQueryTasklet implements Tasklet {
     boolean avroFileWithSchemaExists = false;
     do {
       instanceBillingDataList = billingDataReader.getNext();
-      List<ClusterBillingData> clusterBillingDataList = getClusterBillingDataForBatch(instanceBillingDataList);
+      List<ClusterBillingData> clusterBillingDataList =
+          getClusterBillingDataForBatch(jobConstants.getAccountId(), batchJobType, instanceBillingDataList);
       log.debug("clusterBillingDataList size: {}", clusterBillingDataList.size());
       writeDataToAvro(
           jobConstants.getAccountId(), clusterBillingDataList, billingDataFileName, avroFileWithSchemaExists);
@@ -142,9 +156,8 @@ public class ClusterDataToBigQueryTasklet implements Tasklet {
   }
 
   @VisibleForTesting
-  public List<ClusterBillingData> getClusterBillingDataForBatch(List<InstanceBillingData> instanceBillingDataList) {
-    List<ClusterBillingData> clusterBillingDataList = new ArrayList<>();
-
+  public List<ClusterBillingData> getClusterBillingDataForBatch(
+      String accountId, BatchJobType batchJobType, List<InstanceBillingData> instanceBillingDataList) {
     Map<String, Map<String, String>> instanceIdToLabelMapping = new HashMap<>();
     List<String> instanceIdList =
         instanceBillingDataList.stream()
@@ -156,17 +169,26 @@ public class ClusterDataToBigQueryTasklet implements Tasklet {
             .map(InstanceBillingData::getInstanceId)
             .collect(Collectors.toList());
     if (!instanceIdList.isEmpty()) {
-      instanceIdToLabelMapping = instanceDataService.fetchLabelsForGivenInstances(instanceIdList);
+      instanceIdToLabelMapping = instanceDataService.fetchLabelsForGivenInstances(accountId, instanceIdList);
     }
 
+    return getClusterBillingDataForBatchWorkloadUid(instanceBillingDataList, instanceIdToLabelMapping);
+  }
+
+  public List<ClusterBillingData> getClusterBillingDataForBatchWorkloadName(String accountId, BatchJobType batchJobType,
+      List<InstanceBillingData> instanceBillingDataList, Map<String, Map<String, String>> instanceIdToLabelMapping) {
+    List<ClusterBillingData> clusterBillingDataList = new ArrayList<>();
     Map<Key, List<InstanceBillingData>> instanceBillingDataGrouped =
         instanceBillingDataList.stream().collect(Collectors.groupingBy(Key::getKeyFromInstanceData));
 
+    log.info("Started Querying data {}", instanceBillingDataGrouped.size());
     for (Key key : instanceBillingDataGrouped.keySet()) {
       List<InstanceBillingData> instances = instanceBillingDataGrouped.get(key);
-      Map<K8SWorkloadService.CacheKey, Map<String, String>> labelMap = getLabelMapForGroup(instances, key);
-      log.debug("labelMap: {}", labelMap);
-
+      Map<K8SWorkloadService.CacheKey, Map<String, String>> labelMap = new HashMap<>();
+      if (!(batchJobType == BatchJobType.CLUSTER_DATA_HOURLY_TO_BIG_QUERY
+              && accountId.equals("fuWKs4a9RXqvFrsjdKTl-w"))) {
+        labelMap = getLabelMapForGroup(instances, key);
+      }
       for (InstanceBillingData instanceBillingData : instances) {
         Map<String, String> labels = labelMap.get(
             new K8SWorkloadService.CacheKey(instanceBillingData.getAccountId(), instanceBillingData.getClusterId(),
@@ -176,6 +198,33 @@ public class ClusterDataToBigQueryTasklet implements Tasklet {
         clusterBillingDataList.add(clusterBillingData);
       }
     }
+    log.info("Finished Querying data");
+
+    return clusterBillingDataList;
+  }
+
+  public List<ClusterBillingData> getClusterBillingDataForBatchWorkloadUid(
+      List<InstanceBillingData> instanceBillingDataList, Map<String, Map<String, String>> instanceIdToLabelMapping) {
+    List<ClusterBillingData> clusterBillingDataList = new ArrayList<>();
+    Map<AccountClusterKey, List<InstanceBillingData>> instanceBillingDataGrouped =
+        instanceBillingDataList.stream().collect(
+            Collectors.groupingBy(AccountClusterKey::getAccountClusterKeyFromInstanceData));
+
+    log.info("Started Querying data {}", instanceBillingDataGrouped.size());
+    for (AccountClusterKey accountClusterKey : instanceBillingDataGrouped.keySet()) {
+      List<InstanceBillingData> instances = instanceBillingDataGrouped.get(accountClusterKey);
+      Map<K8SWorkloadService.WorkloadUidCacheKey, Map<String, String>> labelMap =
+          getLabelMapForClusterGroup(instances, accountClusterKey);
+
+      for (InstanceBillingData instanceBillingData : instances) {
+        Map<String, String> labels = labelMap.get(new K8SWorkloadService.WorkloadUidCacheKey(
+            instanceBillingData.getAccountId(), instanceBillingData.getClusterId(), instanceBillingData.getTaskId()));
+        ClusterBillingData clusterBillingData = convertInstanceBillingDataToAVROObjects(
+            instanceBillingData, labels, instanceIdToLabelMapping.get(instanceBillingData.getInstanceId()));
+        clusterBillingDataList.add(clusterBillingData);
+      }
+    }
+    log.info("Finished Querying data");
 
     return clusterBillingDataList;
   }
@@ -188,11 +237,42 @@ public class ClusterDataToBigQueryTasklet implements Tasklet {
     String namespace = key.getNamespace();
     Set<String> workloadNames =
         instanceBillingDataList.stream().map(InstanceBillingData::getWorkloadName).collect(Collectors.toSet());
-    List<K8sWorkload> workloads = workloadRepository.getWorkload(accountId, clusterId, namespace, workloadNames);
+
+    List<K8sWorkload> workloads;
+    if (accountId.equals("hW63Ny6rQaaGsKkVjE0pJA")) {
+      workloads = workloadRepository.getWorkloadWithoutSorting(accountId, clusterId, namespace, workloadNames);
+    } else {
+      workloads = workloadRepository.getWorkload(accountId, clusterId, namespace, workloadNames);
+    }
     Map<K8SWorkloadService.CacheKey, Map<String, String>> labelMap = new HashMap<>();
     workloads.forEach(workload
         -> labelMap.put(new K8SWorkloadService.CacheKey(accountId, clusterId, namespace, workload.getName()),
             workload.getLabels()));
+    return labelMap;
+  }
+
+  @VisibleForTesting
+  public Map<K8SWorkloadService.WorkloadUidCacheKey, Map<String, String>> getLabelMapForClusterGroup(
+      List<InstanceBillingData> instanceBillingDataList, AccountClusterKey accountClusterKey) {
+    String accountId = accountClusterKey.getAccountId();
+    String clusterId = accountClusterKey.getClusterId();
+    Set<String> workloadUids =
+        instanceBillingDataList.stream()
+            .filter(instanceBillingData
+                -> ImmutableSet.of(InstanceType.K8S_POD_FARGATE.name(), InstanceType.K8S_POD.name())
+                       .contains(instanceBillingData.getInstanceType()))
+            .map(InstanceBillingData::getTaskId)
+            .collect(Collectors.toSet());
+
+    List<K8sWorkload> workloads = new ArrayList<>();
+    if (!workloadUids.isEmpty()) {
+      workloads = workloadRepository.getWorkloadByWorkloadUid(accountId, clusterId, workloadUids);
+    }
+
+    Map<K8SWorkloadService.WorkloadUidCacheKey, Map<String, String>> labelMap = new HashMap<>();
+    workloads.forEach(workload
+        -> labelMap.put(
+            new K8SWorkloadService.WorkloadUidCacheKey(accountId, clusterId, workload.getUid()), workload.getLabels()));
     return labelMap;
   }
 
@@ -310,41 +390,38 @@ public class ClusterDataToBigQueryTasklet implements Tasklet {
     }
 
     List<Label> labels = new ArrayList<>();
+    Set<String> labelKeySet = new HashSet<>();
     if (ImmutableSet.of(InstanceType.K8S_POD.name(), InstanceType.K8S_POD_FARGATE.name())
             .contains(instanceBillingData.getInstanceType())) {
       if (null != k8sWorkloadLabel) {
-        k8sWorkloadLabel.forEach((key, value) -> {
-          Label workloadLabel = new Label();
-          workloadLabel.setKey(key);
-          workloadLabel.setValue(value);
-          labels.add(workloadLabel);
-        });
+        k8sWorkloadLabel.forEach((key, value) -> appendLabel(key, value, labelKeySet, labels));
       }
     }
 
     if (null != labelMap) {
-      labelMap.forEach((key, value) -> {
-        Label label = new Label();
-        label.setKey(key);
-        label.setValue(value);
-        labels.add(label);
-      });
+      labelMap.forEach((key, value) -> appendLabel(key, value, labelKeySet, labels));
     }
 
     if (null != instanceBillingData.getAppId()) {
       List<HarnessTags> harnessTags = harnessTagService.getHarnessTags(accountId, instanceBillingData.getAppId());
       harnessTags.addAll(harnessTagService.getHarnessTags(accountId, instanceBillingData.getServiceId()));
       harnessTags.addAll(harnessTagService.getHarnessTags(accountId, instanceBillingData.getEnvId()));
-      harnessTags.forEach(harnessTag -> {
-        Label harnessLabel = new Label();
-        harnessLabel.setKey(harnessTag.getKey());
-        harnessLabel.setValue(harnessTag.getValue());
-        labels.add(harnessLabel);
-      });
+      harnessTags.forEach(harnessTag -> appendLabel(harnessTag.getKey(), harnessTag.getValue(), labelKeySet, labels));
     }
 
     clusterBillingData.setLabels(Arrays.asList(labels.toArray()));
     return clusterBillingData;
+  }
+
+  @VisibleForTesting
+  public void appendLabel(String key, String value, Set<String> labelKeySet, List<Label> labels) {
+    Label label = new Label();
+    if (!labelKeySet.contains(key)) {
+      label.setKey(key);
+      label.setValue(value);
+      labels.add(label);
+      labelKeySet.add(key);
+    }
   }
 
   @NotNull

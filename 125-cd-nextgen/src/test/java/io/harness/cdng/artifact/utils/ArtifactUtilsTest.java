@@ -9,6 +9,7 @@ package io.harness.cdng.artifact.utils;
 
 import static io.harness.rule.OwnerRule.ARCHIT;
 import static io.harness.rule.OwnerRule.MLUKIC;
+import static io.harness.rule.OwnerRule.SHIVAM;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -18,9 +19,11 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.artifact.bean.ArtifactConfig;
+import io.harness.cdng.artifact.bean.yaml.AcrArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.ArtifactListConfig;
 import io.harness.cdng.artifact.bean.yaml.ArtifactoryRegistryArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.DockerHubArtifactConfig;
+import io.harness.cdng.artifact.bean.yaml.JenkinsArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.NexusRegistryArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.PrimaryArtifact;
 import io.harness.cdng.artifact.bean.yaml.SidecarArtifact;
@@ -28,6 +31,7 @@ import io.harness.cdng.artifact.bean.yaml.SidecarArtifactWrapper;
 import io.harness.cdng.artifact.outcome.ArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactoryArtifactOutcome;
 import io.harness.cdng.artifact.outcome.DockerArtifactOutcome;
+import io.harness.cdng.artifact.outcome.JenkinsArtifactOutcome;
 import io.harness.cdng.artifact.outcome.NexusArtifactOutcome;
 import io.harness.exception.InvalidRequestException;
 import io.harness.rule.Owner;
@@ -104,6 +108,25 @@ public class ArtifactUtilsTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = SHIVAM)
+  @Category(UnitTests.class)
+  public void testJenkins_IsPrimaryArtifact() {
+    JenkinsArtifactConfig config = JenkinsArtifactConfig.builder().primaryArtifact(true).build();
+    boolean primaryArtifact = config.isPrimaryArtifact();
+    assertThat(primaryArtifact).isTrue();
+    config = JenkinsArtifactConfig.builder().primaryArtifact(false).build();
+    primaryArtifact = config.isPrimaryArtifact();
+    assertThat(primaryArtifact).isFalse();
+
+    ArtifactOutcome artifactOutcome = JenkinsArtifactOutcome.builder().primaryArtifact(true).build();
+    primaryArtifact = artifactOutcome.isPrimaryArtifact();
+    assertThat(primaryArtifact).isTrue();
+    artifactOutcome = JenkinsArtifactOutcome.builder().primaryArtifact(false).build();
+    primaryArtifact = artifactOutcome.isPrimaryArtifact();
+    assertThat(primaryArtifact).isFalse();
+  }
+
+  @Test
   @Owner(developers = MLUKIC)
   @Category(UnitTests.class)
   public void testNexusRegistry_IsPrimaryArtifact() {
@@ -156,6 +179,19 @@ public class ArtifactUtilsTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = SHIVAM)
+  @Category(UnitTests.class)
+  public void testJenkins_GetArtifactKey() {
+    JenkinsArtifactConfig artifactConfig =
+        JenkinsArtifactConfig.builder().primaryArtifact(true).identifier("ARTIFACT1").build();
+    String artifactKey = ArtifactUtils.getArtifactKey(artifactConfig);
+    assertThat(artifactKey).isEqualTo("ARTIFACT1");
+    artifactConfig = JenkinsArtifactConfig.builder().primaryArtifact(false).identifier("ARTIFACT1").build();
+    artifactKey = ArtifactUtils.getArtifactKey(artifactConfig);
+    assertThat(artifactKey).isEqualTo("sidecars.ARTIFACT1");
+  }
+
+  @Test
   @Owner(developers = MLUKIC)
   @Category(UnitTests.class)
   public void testNexusRegistry_GetArtifactKey() {
@@ -201,6 +237,25 @@ public class ArtifactUtilsTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = SHIVAM)
+  @Category(UnitTests.class)
+  public void testJenkins_ConvertArtifactListConfig() {
+    JenkinsArtifactConfig primaryArtifact =
+        JenkinsArtifactConfig.builder().primaryArtifact(true).identifier("ARTIFACT1").build();
+    JenkinsArtifactConfig sidecarArtifact =
+        JenkinsArtifactConfig.builder().primaryArtifact(false).identifier("ARTIFACT2").build();
+    ArtifactListConfig artifactListConfig =
+        ArtifactListConfig.builder()
+            .primary(PrimaryArtifact.builder().spec(primaryArtifact).build())
+            .sidecar(SidecarArtifactWrapper.builder()
+                         .sidecar(SidecarArtifact.builder().spec(sidecarArtifact).build())
+                         .build())
+            .build();
+    List<ArtifactConfig> artifactsList = ArtifactUtils.convertArtifactListIntoArtifacts(artifactListConfig, null);
+    assertThat(artifactsList).containsOnly(primaryArtifact, sidecarArtifact);
+  }
+
+  @Test
   @Owner(developers = MLUKIC)
   @Category(UnitTests.class)
   public void testNexusRegistry_ConvertArtifactListConfig() {
@@ -227,6 +282,25 @@ public class ArtifactUtilsTest extends CategoryTest {
         ArtifactoryRegistryArtifactConfig.builder().primaryArtifact(true).identifier("ARTIFACT1").build();
     ArtifactoryRegistryArtifactConfig sidecarArtifact =
         ArtifactoryRegistryArtifactConfig.builder().primaryArtifact(false).identifier("ARTIFACT2").build();
+    ArtifactListConfig artifactListConfig =
+        ArtifactListConfig.builder()
+            .primary(PrimaryArtifact.builder().spec(primaryArtifact).build())
+            .sidecar(SidecarArtifactWrapper.builder()
+                         .sidecar(SidecarArtifact.builder().spec(sidecarArtifact).build())
+                         .build())
+            .build();
+    List<ArtifactConfig> artifactsList = ArtifactUtils.convertArtifactListIntoArtifacts(artifactListConfig, null);
+    assertThat(artifactsList).containsOnly(primaryArtifact, sidecarArtifact);
+  }
+
+  @Test
+  @Owner(developers = MLUKIC)
+  @Category(UnitTests.class)
+  public void testAcr_ConvertArtifactListConfig() {
+    AcrArtifactConfig primaryArtifact =
+        AcrArtifactConfig.builder().primaryArtifact(true).identifier("ARTIFACT1").build();
+    AcrArtifactConfig sidecarArtifact =
+        AcrArtifactConfig.builder().primaryArtifact(false).identifier("ARTIFACT2").build();
     ArtifactListConfig artifactListConfig =
         ArtifactListConfig.builder()
             .primary(PrimaryArtifact.builder().spec(primaryArtifact).build())

@@ -12,6 +12,7 @@ import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
+import io.harness.logging.LogCallback;
 
 import software.wings.beans.GitConfig;
 import software.wings.beans.GitOperationContext;
@@ -41,8 +42,14 @@ public interface GitClient {
   GitFetchFilesResult fetchFilesByPath(
       GitConfig gitConfig, GitFetchFilesRequest gitRequest, boolean shouldExportCommitSha);
 
+  GitFetchFilesResult fetchFilesByPath(
+      GitConfig gitConfig, GitFetchFilesRequest gitRequest, boolean shouldExportCommitSha, LogCallback logCallback);
+
   GitFetchFilesResult fetchFilesBetweenCommits(GitConfig gitConfig, GitFilesBetweenCommitsRequest gitRequest);
 
   String downloadFiles(
       GitConfig gitConfig, GitFetchFilesRequest gitRequest, String destinationDirectory, boolean shouldExportCommitSha);
+
+  String downloadFiles(GitConfig gitConfig, GitFetchFilesRequest gitRequest, String destinationDirectory,
+      boolean shouldExportCommitSha, LogCallback logCallback);
 }

@@ -41,7 +41,7 @@ import static software.wings.api.DeploymentType.valueOf;
 import static software.wings.beans.ConfigFile.DEFAULT_TEMPLATE_ID;
 import static software.wings.beans.EntityVersion.Builder.anEntityVersion;
 import static software.wings.beans.Service.GLOBAL_SERVICE_NAME_FOR_YAML;
-import static software.wings.beans.ServiceVariable.Type.ENCRYPTED_TEXT;
+import static software.wings.beans.ServiceVariableType.ENCRYPTED_TEXT;
 import static software.wings.beans.appmanifest.ManifestFile.VALUES_YAML_KEY;
 import static software.wings.beans.command.Command.Builder.aCommand;
 import static software.wings.beans.command.CommandUnitType.COMMAND;
@@ -150,6 +150,7 @@ import software.wings.beans.command.CodeDeployCommandUnit;
 import software.wings.beans.command.Command;
 import software.wings.beans.command.Command.CommandKeys;
 import software.wings.beans.command.CommandUnit;
+import software.wings.beans.command.CommandUnitDescriptor;
 import software.wings.beans.command.CommandUnitType;
 import software.wings.beans.command.ServiceCommand;
 import software.wings.beans.command.ServiceCommand.ServiceCommandKeys;
@@ -213,6 +214,8 @@ import software.wings.stencils.StencilCategory;
 import software.wings.stencils.StencilPostProcessor;
 import software.wings.utils.ApplicationManifestUtils;
 import software.wings.utils.ArtifactType;
+import software.wings.utils.ContainerFamilyCommandProviderFactory;
+import software.wings.utils.artifacts.ArtifactCommandHelper;
 import software.wings.verification.CVConfiguration;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -231,6 +234,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -356,6 +360,7 @@ public class ServiceResourceServiceImpl implements ServiceResourceService, DataP
   @Inject private CustomDeploymentTypeService customDeploymentTypeService;
   @Inject private CVConfigurationService cvConfigurationService;
   @Inject private UserGroupService userGroupService;
+  @Inject private ContainerFamilyCommandProviderFactory containerFamilyCommandProviderFactory;
 
   /**
    * {@inheritDoc}
@@ -393,6 +398,13 @@ public class ServiceResourceServiceImpl implements ServiceResourceService, DataP
           pageResponse.getResponse(), pageResponse.getResponse().get(0).getAccountId());
     }
     return pageResponse;
+  }
+
+  @Override
+  public List<Service> list(String accountId, List<String> projectFields) {
+    Query<Service> svcQuery = wingsPersistence.createQuery(Service.class).filter(ServiceKeys.accountId, accountId);
+    emptyIfNull(projectFields).forEach(field -> { svcQuery.project(field, true); });
+    return emptyIfNull(svcQuery.asList());
   }
 
   private void applyInfraBasedFilters(PageRequest<Service> request) {
@@ -503,6 +515,8 @@ public class ServiceResourceServiceImpl implements ServiceResourceService, DataP
       throw new InvalidRequestException(
           "Artifact from Manifest flag can be set to true only for kubernetes and helm deployment types");
     }
+
+    validateArtifactType(service);
 
     // TODO: ASR: IMP: update the block below for artifact variables as service variable
     if (createdFromYaml) {
@@ -848,9 +862,9 @@ public class ServiceResourceServiceImpl implements ServiceResourceService, DataP
     ArtifactType artifactType = service.getArtifactType();
     AppContainer appContainer = service.getAppContainer();
     if (appContainer != null && appContainer.getFamily() != null) {
-      isInternal = appContainer.getFamily().isInternal();
+      isInternal = this.containerFamilyCommandProviderFactory.getProvider(appContainer.getFamily()).isInternal();
     } else if (artifactType != null) {
-      isInternal = artifactType.isInternal();
+      isInternal = ArtifactCommandHelper.getArtifactCommands(artifactType).isInternal();
     }
     return isInternal;
   }
@@ -861,7 +875,8 @@ public class ServiceResourceServiceImpl implements ServiceResourceService, DataP
     ArtifactType artifactType = service.getArtifactType();
     AppContainer appContainer = service.getAppContainer();
     if (appContainer != null && appContainer.getFamily() != null) {
-      commands = appContainer.getFamily().getDefaultCommands(artifactType, appContainer);
+      commands = this.containerFamilyCommandProviderFactory.getProvider(appContainer.getFamily())
+                     .getDefaultCommands(artifactType, appContainer);
     } else if (artifactType != null) {
       Command command;
       Template template;
@@ -888,7 +903,7 @@ public class ServiceResourceServiceImpl implements ServiceResourceService, DataP
           }
           break;
         default:
-          commands = artifactType.getDefaultCommands();
+          commands = ArtifactCommandHelper.getArtifactCommands(artifactType).getDefaultCommands();
       }
     }
 
@@ -1124,6 +1139,27 @@ public class ServiceResourceServiceImpl implements ServiceResourceService, DataP
     List<Service> serviceList = wingsPersistence.createQuery(Service.class)
                                     .field(ServiceKeys.appId)
                                     .equal(appId)
+                                    .field(ServiceKeys.uuid)
+                                    .in(serviceIds)
+                                    .project(ServiceKeys.name, true)
+                                    .project(ServiceKeys.uuid, true)
+                                    .asList();
+
+    Map<String, String> mapServiceIdToServiceName = new HashMap<>();
+    for (Service service : serviceList) {
+      mapServiceIdToServiceName.put(service.getUuid(), service.getName());
+    }
+    return mapServiceIdToServiceName;
+  }
+
+  @Override
+  public Map<String, String> getServiceNamesWithAccountId(String accountId, @Nonnull Set<String> serviceIds) {
+    if (isEmpty(serviceIds)) {
+      return Collections.emptyMap();
+    }
+    List<Service> serviceList = wingsPersistence.createQuery(Service.class)
+                                    .field(ServiceKeys.accountId)
+                                    .equal(accountId)
                                     .field(ServiceKeys.uuid)
                                     .in(serviceIds)
                                     .project(ServiceKeys.name, true)
@@ -2211,7 +2247,7 @@ public class ServiceResourceServiceImpl implements ServiceResourceService, DataP
   @Override
   public List<Stencil> getCommandStencils(@NotEmpty String appId, @NotEmpty String serviceId, String commandName) {
     return stencilPostProcessor.postProcess(
-        asList(CommandUnitType.values()), appId, getEntityMap(serviceId, commandName));
+        this.getDescriptorsForAllCommandUnitTypes(), appId, getEntityMap(serviceId, commandName));
   }
 
   private Map<String, String> getEntityMap(@NotEmpty String serviceId, String commandName) {
@@ -2230,8 +2266,8 @@ public class ServiceResourceServiceImpl implements ServiceResourceService, DataP
   @Override
   public List<Stencil> getCommandStencils(
       String appId, String serviceId, String commandName, boolean onlyScriptCommands) {
-    List<Stencil> stencils =
-        stencilPostProcessor.postProcess(asList(CommandUnitType.values()), appId, getEntityMap(serviceId, commandName));
+    List<Stencil> stencils = stencilPostProcessor.postProcess(
+        this.getDescriptorsForAllCommandUnitTypes(), appId, getEntityMap(serviceId, commandName));
     if (onlyScriptCommands) {
       // Suppress Container commands
       Predicate<Stencil> predicate = stencil -> stencil.getStencilCategory() != StencilCategory.CONTAINERS;
@@ -2244,6 +2280,10 @@ public class ServiceResourceServiceImpl implements ServiceResourceService, DataP
       stencils = stencils.stream().filter(predicate).collect(toList());
     }
     return stencils;
+  }
+
+  private List<CommandUnitDescriptor> getDescriptorsForAllCommandUnitTypes() {
+    return Arrays.stream(CommandUnitType.values()).map(type -> CommandUnitDescriptor.forType(type)).collect(toList());
   }
 
   @Override
@@ -3268,5 +3308,58 @@ public class ServiceResourceServiceImpl implements ServiceResourceService, DataP
     }
 
     return services.stream().map(Base::getUuid).collect(Collectors.toList());
+  }
+
+  private void validateArtifactType(Service service) {
+    if (service.getDeploymentType() != null && service.getArtifactType() != null) {
+      switch (service.getDeploymentType()) {
+        case KUBERNETES:
+          if (service.getArtifactType() != ArtifactType.DOCKER) {
+            throw new InvalidRequestException("Only DOCKER artifactType allowed for KUBERNETES Deployment Type");
+          }
+          break;
+        case HELM:
+          if (service.getArtifactType() != ArtifactType.DOCKER) {
+            throw new InvalidRequestException("Only DOCKER artifactType allowed for HELM Deployment Type");
+          }
+          break;
+        case ECS:
+          if (service.getArtifactType() != ArtifactType.DOCKER) {
+            throw new InvalidRequestException(
+                "Only DOCKER artifactType allowed for Amazon EC2 Container Services (ECS) Deployment Type");
+          }
+          break;
+        case AWS_CODEDEPLOY:
+          if (service.getArtifactType() != ArtifactType.AWS_CODEDEPLOY) {
+            throw new InvalidRequestException(
+                "Only AWS_CODEDEPLOY artifactType allowed for AWS CODEDEPLOY Deployment Type");
+          }
+          break;
+        case AWS_LAMBDA:
+          if (service.getArtifactType() != ArtifactType.AWS_LAMBDA) {
+            throw new InvalidRequestException("Only AWS_LAMBDA artifactType allowed for AWS Lambda Deployment Type");
+          }
+          break;
+        case AMI:
+          if (service.getArtifactType() != ArtifactType.AMI) {
+            throw new InvalidRequestException("Only AMI artifactType allowed for AMI Deployment Type");
+          }
+          break;
+        case PCF:
+          if (service.getArtifactType() != ArtifactType.PCF) {
+            throw new InvalidRequestException(
+                "Only PCF artifactType allowed for Tanzu Application Services Deployment Type");
+          }
+          break;
+        case AZURE_VMSS:
+          if (service.getArtifactType() != ArtifactType.AZURE_MACHINE_IMAGE) {
+            throw new InvalidRequestException(
+                "Only AZURE_MACHINE_IMAGE artifactType allowed for Azure Virtual Machine Scale Set Deployment Type");
+          }
+          break;
+        default:
+          break;
+      }
+    }
   }
 }

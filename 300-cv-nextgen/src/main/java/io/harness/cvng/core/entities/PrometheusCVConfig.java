@@ -15,9 +15,12 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import io.harness.cvng.beans.CVMonitoringCategory;
 import io.harness.cvng.beans.DataSourceType;
+import io.harness.cvng.beans.ThresholdConfigType;
 import io.harness.cvng.beans.TimeSeriesMetricType;
 import io.harness.cvng.core.beans.PrometheusMetricDefinition;
 import io.harness.cvng.core.beans.PrometheusMetricDefinition.PrometheusFilter;
+import io.harness.cvng.core.beans.monitoredService.TimeSeriesMetricPackDTO;
+import io.harness.cvng.core.constant.MonitoredServiceConstants;
 import io.harness.cvng.core.entities.PrometheusCVConfig.MetricInfo;
 import io.harness.cvng.core.utils.analysisinfo.AnalysisInfoUtility;
 import io.harness.cvng.core.utils.analysisinfo.DevelopmentVerificationTransformer;
@@ -27,7 +30,9 @@ import io.harness.cvng.core.utils.analysisinfo.SLIMetricTransformer;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.google.common.base.Preconditions;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import javax.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
@@ -65,7 +70,15 @@ public class PrometheusCVConfig extends MetricCVConfig<MetricInfo> {
   }
 
   @Override
+  public Optional<String> maybeGetGroupName() {
+    return Optional.of(groupName);
+  }
+
+  @Override
   public List<MetricInfo> getMetricInfos() {
+    if (metricInfoList == null) {
+      return Collections.emptyList();
+    }
     return metricInfoList;
   }
 
@@ -129,8 +142,8 @@ public class PrometheusCVConfig extends MetricCVConfig<MetricInfo> {
     }
   }
 
-  public void populateFromMetricDefinitions(
-      List<PrometheusMetricDefinition> metricDefinitions, CVMonitoringCategory category) {
+  public void populateFromMetricDefinitions(List<PrometheusMetricDefinition> metricDefinitions,
+      CVMonitoringCategory category, Set<TimeSeriesMetricPackDTO> timeSeriesMetricPacks) {
     if (metricInfoList == null) {
       metricInfoList = new ArrayList<>();
     }
@@ -177,6 +190,42 @@ public class PrometheusCVConfig extends MetricCVConfig<MetricInfo> {
                                   .build());
     });
     this.setMetricPack(metricPack);
+  }
+
+  public void addMetricThresholds(Set<TimeSeriesMetricPackDTO> timeSeriesMetricPacks) {
+    if (isEmpty(timeSeriesMetricPacks)) {
+      return;
+    }
+    getMetricPack().getMetrics().forEach(metric -> {
+      timeSeriesMetricPacks.stream()
+          .filter(timeSeriesMetricPack
+              -> timeSeriesMetricPack.getIdentifier().equalsIgnoreCase(MonitoredServiceConstants.CUSTOM_METRIC_PACK))
+          .forEach(timeSeriesMetricPackDTO -> {
+            if (!isEmpty(timeSeriesMetricPackDTO.getMetricThresholds())) {
+              timeSeriesMetricPackDTO.getMetricThresholds()
+                  .stream()
+                  .filter(metricPackDTO -> metric.getName().equals(metricPackDTO.getMetricName()))
+                  .forEach(metricPackDTO -> metricPackDTO.getTimeSeriesThresholdCriteria().forEach(criteria -> {
+                    List<TimeSeriesThreshold> timeSeriesThresholds =
+                        metric.getThresholds() != null ? metric.getThresholds() : new ArrayList<>();
+                    TimeSeriesThreshold timeSeriesThreshold =
+                        TimeSeriesThreshold.builder()
+                            .accountId(getAccountId())
+                            .projectIdentifier(getProjectIdentifier())
+                            .dataSourceType(getType())
+                            .metricIdentifier(metric.getIdentifier())
+                            .metricType(metric.getType())
+                            .metricName(metricPackDTO.getMetricName())
+                            .action(metricPackDTO.getType().getTimeSeriesThresholdActionType())
+                            .criteria(criteria)
+                            .thresholdConfigType(ThresholdConfigType.CUSTOMER)
+                            .build();
+                    timeSeriesThresholds.add(timeSeriesThreshold);
+                    metric.setThresholds(timeSeriesThresholds);
+                  }));
+            }
+          });
+    });
   }
 
   @Override

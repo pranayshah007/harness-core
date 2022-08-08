@@ -27,8 +27,8 @@ import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import java.util.List;
-import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
+import javax.ws.rs.BeanParam;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
@@ -54,16 +54,8 @@ public class PagerDutyResource {
   @ExceptionMetered
   @ApiOperation(value = "gets services from PagerDuty", nickname = "getServicesFromPagerDuty")
   public RestResponse<List<PagerDutyServiceDetail>> getServicesFromPagerDuty(
-      @QueryParam("accountId") @Valid final String accountId,
-      @QueryParam("orgIdentifier") @NotNull String orgIdentifier,
-      @QueryParam("projectIdentifier") @NotNull String projectIdentifier,
-      @QueryParam("connectorIdentifier") String connectorIdentifier,
+      @NotNull @BeanParam ProjectParams projectParams, @QueryParam("connectorIdentifier") String connectorIdentifier,
       @QueryParam("requestGuid") @NotNull String requestGuid) {
-    ProjectParams projectParams = ProjectParams.builder()
-                                      .accountIdentifier(accountId)
-                                      .orgIdentifier(orgIdentifier)
-                                      .projectIdentifier(projectIdentifier)
-                                      .build();
     return new RestResponse<>(pagerDutyService.getPagerDutyServices(projectParams, connectorIdentifier, requestGuid));
   }
 }

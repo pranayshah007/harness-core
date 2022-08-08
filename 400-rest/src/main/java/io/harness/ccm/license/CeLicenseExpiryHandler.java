@@ -63,9 +63,15 @@ public class CeLicenseExpiryHandler implements Handler<Account> {
   public void handle(Account account) {
     CeLicenseInfo ceLicenseInfo =
         Optional.ofNullable(account.getCeLicenseInfo()).orElse(CeLicenseInfo.builder().build());
+    long actualExpiryTime = ceLicenseInfo.getExpiryTime();
     long expiryTime = ceLicenseInfo.getExpiryTimeWithGracePeriod();
     if (expiryTime != 0L && Instant.now().toEpochMilli() > expiryTime) {
       account.setCloudCostEnabled(false);
+      accountService.update(account);
+    }
+
+    if (actualExpiryTime == Long.MAX_VALUE && !account.isCloudCostEnabled()) {
+      account.setCloudCostEnabled(true);
       accountService.update(account);
     }
   }

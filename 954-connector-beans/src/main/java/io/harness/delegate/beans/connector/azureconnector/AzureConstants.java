@@ -16,4 +16,6 @@ public class AzureConstants {
   public static final String MANUAL_CONFIG = "ManualConfig";
   public static final String SECRET_KEY = "Secret";
   public static final String KEY_CERT = "Certificate";
+  public static final String SYSTEM_ASSIGNED_MANAGED_IDENTITY = "SystemAssignedManagedIdentity";
+  public static final String USER_ASSIGNED_MANAGED_IDENTITY = "UserAssignedManagedIdentity";
 }

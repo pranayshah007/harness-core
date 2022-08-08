@@ -26,17 +26,31 @@ if [[ -z "$CAPSULE_JAR" ]]; then
    export CAPSULE_JAR=/opt/harness/cv-nextgen-capsule.jar
 fi
 
-export JAVA_OPTS="-Xms${MEMORY}m -Xmx${MEMORY}m -XX:+HeapDumpOnOutOfMemoryError -XX:+PrintGCDetails -XX:+PrintGCDateStamps -Xloggc:mygclogfilename.gc -XX:+UseG1GC -XX:InitiatingHeapOccupancyPercent=40 -XX:MaxGCPauseMillis=500 -Dfile.encoding=UTF-8"
+export JAVA_OPTS="-Xms${MEMORY}m -Xmx${MEMORY}m -XX:+HeapDumpOnOutOfMemoryError -Xloggc:mygclogfilename.gc -XX:+UseG1GC -XX:InitiatingHeapOccupancyPercent=40 -XX:MaxGCPauseMillis=500 -Dfile.encoding=UTF-8"
 
 if [[ "${ENABLE_APPDYNAMICS}" == "true" ]]; then
-    mkdir /opt/harness/AppServerAgent-20.8.0.30686 && unzip AppServerAgent-20.8.0.30686.zip -d /opt/harness/AppServerAgent-20.8.0.30686
+    mkdir /opt/harness/AppServerAgent-1.8-21.11.2.33305 && unzip AppServerAgent-1.8-21.11.2.33305.zip -d /opt/harness/AppServerAgent-1.8-21.11.2.33305
     node_name="-Dappdynamics.agent.nodeName=$(hostname)"
-    JAVA_OPTS=$JAVA_OPTS" -javaagent:/opt/harness/AppServerAgent-20.8.0.30686/javaagent.jar -Dappdynamics.jvm.shutdown.mark.node.as.historical=true"
+    JAVA_OPTS=$JAVA_OPTS" -javaagent:/opt/harness/AppServerAgent-1.8-21.11.2.33305/javaagent.jar -Dappdynamics.jvm.shutdown.mark.node.as.historical=true"
     JAVA_OPTS="$JAVA_OPTS $node_name"
     echo "Using Appdynamics java agent"
 fi
 
-JAVA_OPTS=$JAVA_OPTS" -Xbootclasspath/p:/opt/harness/alpn-boot-8.1.13.v20181017.jar"
+if [[ "${ENABLE_MONITORING}" == "true" ]] ; then
+    echo "Monitoring  is enabled"
+    JAVA_OPTS="$JAVA_OPTS ${MONITORING_FLAGS}"
+    echo "Using inspectIT Java Agent"
+fi
+
+if [[ "${ENABLE_OPENTELEMETRY}" == "true" ]] ; then
+    echo "OpenTelemetry is enabled"
+    JAVA_OPTS=$JAVA_OPTS" -javaagent:/opt/harness/opentelemetry-javaagent.jar -Dotel.service.name=${OTEL_SERVICE_NAME:-cv-nextgen}"
+
+    if [ -n "$OTEL_EXPORTER_OTLP_ENDPOINT" ]; then
+        JAVA_OPTS=$JAVA_OPTS" -Dotel.exporter.otlp.endpoint=$OTEL_EXPORTER_OTLP_ENDPOINT "
+    fi
+    echo "Using OpenTelemetry Java Agent"
+fi
 
 if [[ "${DEPLOY_MODE}" == "KUBERNETES" ]] || [[ "${DEPLOY_MODE}" == "KUBERNETES_ONPREM" ]]; then
     java $JAVA_OPTS -jar $CAPSULE_JAR $COMMAND /opt/harness/cv-nextgen-config.yml

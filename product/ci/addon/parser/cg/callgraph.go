@@ -43,6 +43,7 @@ func (cg *Callgraph) ToStringMap() map[string]interface{} {
 			"class":           v.Class,
 			"type":            v.Type,
 			"callsReflection": v.CallsReflection,
+			"alwaysRun":       v.AlwaysRun,
 			"file":            v.File,
 		}
 		nodes = append(nodes, data)
@@ -96,6 +97,8 @@ func FromStringMap(data map[string]interface{}) (*Callgraph, error) {
 							node.Class = v.(string)
 						case "callsReflection":
 							node.CallsReflection = v.(bool)
+						case "alwaysRun":
+                            node.AlwaysRun = v.(bool)
 						case "type":
 							node.Type = v.(string)
 						case "file":
@@ -174,6 +177,7 @@ type Node struct {
 	Class           string
 	Type            string
 	CallsReflection bool
+	AlwaysRun       bool
 	File            string
 }
 

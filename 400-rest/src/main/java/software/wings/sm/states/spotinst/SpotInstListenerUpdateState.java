@@ -47,6 +47,7 @@ import software.wings.sm.ExecutionResponse;
 import software.wings.sm.State;
 import software.wings.sm.StateType;
 import software.wings.sm.WorkflowStandardParams;
+import software.wings.sm.WorkflowStandardParamsExtensionService;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.google.common.collect.ImmutableList;
@@ -66,6 +67,7 @@ public class SpotInstListenerUpdateState extends State {
   @Inject private transient SettingsService settingsService;
   @Inject private transient ActivityService activityService;
   @Inject private transient SpotInstStateHelper spotInstStateHelper;
+  @Inject private transient WorkflowStandardParamsExtensionService workflowStandardParamsExtensionService;
 
   @Getter @Setter private boolean downsizeOldElastiGroup;
   public static final String SPOTINST_LISTENER_UPDATE_COMMAND = "SpotInst Listener Update";
@@ -100,7 +102,7 @@ public class SpotInstListenerUpdateState extends State {
   protected ExecutionResponse executeInternal(ExecutionContext context) {
     WorkflowStandardParams workflowStandardParams = context.getContextElement(ContextElementType.STANDARD);
 
-    Environment env = workflowStandardParams.fetchRequiredEnv();
+    Environment env = workflowStandardParamsExtensionService.fetchRequiredEnv(workflowStandardParams);
     Application app = appService.get(context.getAppId());
     AwsAmiInfrastructureMapping awsAmiInfrastructureMapping =
         (AwsAmiInfrastructureMapping) infrastructureMappingService.get(app.getUuid(), context.fetchInfraMappingId());

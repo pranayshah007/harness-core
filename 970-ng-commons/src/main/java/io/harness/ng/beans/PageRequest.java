@@ -37,6 +37,11 @@ import lombok.experimental.FieldDefaults;
 @AllArgsConstructor
 public class PageRequest {
   @Parameter(description = PAGE_PARAM_MESSAGE) @QueryParam(PAGE_KEY) @DefaultValue("0") int pageIndex;
-  @Parameter(description = SIZE_PARAM_MESSAGE) @QueryParam(SIZE_KEY) @DefaultValue("50") @Max(100) int pageSize;
+  @Parameter(description = SIZE_PARAM_MESSAGE + "(max 100)"
+          + "Default Value: 50")
+  @QueryParam(SIZE_KEY)
+  @DefaultValue("50")
+  @Max(100)
+  int pageSize;
   @Parameter(description = SORT_PARAM_MESSAGE) @QueryParam(SORT_KEY) List<SortOrder> sortOrders;
 }

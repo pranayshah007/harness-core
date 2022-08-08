@@ -8,6 +8,7 @@
 package io.harness.generator.artifactstream;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.delegate.beans.azure.AzureMachineImageArtifactDTO.ImageType.IMAGE_GALLERY;
 import static io.harness.generator.constants.ArtifactStreamsGeneratorConstants.AZURE_MACHINE_IMAGE_ARTIFACT_STREAM_NAME;
 import static io.harness.generator.constants.ArtifactStreamsGeneratorConstants.IMAGE_GALLERY_NAME;
 import static io.harness.generator.constants.ArtifactStreamsGeneratorConstants.LINUX_IMAGE_DEFINITION_NAME;
@@ -15,7 +16,6 @@ import static io.harness.generator.constants.InfraDefinitionGeneratorConstants.A
 import static io.harness.generator.constants.InfraDefinitionGeneratorConstants.AZURE_SUBSCRIPTION_ID;
 
 import static software.wings.beans.CGConstants.GLOBAL_APP_ID;
-import static software.wings.beans.artifact.AzureMachineImageArtifactStream.ImageType.IMAGE_GALLERY;
 import static software.wings.beans.artifact.AzureMachineImageArtifactStream.OSType.LINUX;
 
 import io.harness.annotations.dev.OwnedBy;

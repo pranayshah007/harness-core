@@ -64,7 +64,7 @@ public class HelmValuesFetchTaskParametersTest extends CategoryTest {
     assertThat(capabilities.size()).isEqualTo(2);
     assertThat(capabilities)
         .extracting(ExecutionCapability::getCapabilityType)
-        .containsExactly(CapabilityType.HELM_INSTALL, CapabilityType.HTTP);
+        .containsExactly(CapabilityType.HELM_INSTALL, CapabilityType.SOCKET);
 
     ContainerServiceParams containerServiceParams =
         ContainerServiceParams.builder()
@@ -82,7 +82,7 @@ public class HelmValuesFetchTaskParametersTest extends CategoryTest {
     assertThat(capabilities.size()).isEqualTo(3);
     assertThat(capabilities)
         .extracting(ExecutionCapability::getCapabilityType)
-        .containsExactly(CapabilityType.HELM_INSTALL, CapabilityType.HTTP, CapabilityType.SELECTORS);
+        .containsExactly(CapabilityType.HELM_INSTALL, CapabilityType.SOCKET, CapabilityType.SELECTORS);
 
     helmChartConfigParams.setHelmRepoConfig(null);
     capabilities = taskParameters.fetchRequiredExecutionCapabilities(null);

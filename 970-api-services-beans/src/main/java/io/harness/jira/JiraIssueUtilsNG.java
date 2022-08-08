@@ -73,24 +73,30 @@ public class JiraIssueUtilsNG {
     }
 
     Map<String, JiraFieldNG> finalIssueTypeFields = issueTypeFields;
+
+    fields = parseFieldsForCGCalls(finalIssueTypeFields, fields);
+
     Set<String> invalidFields =
         fields.keySet().stream().filter(k -> !finalIssueTypeFields.containsKey(k)).collect(Collectors.toSet());
     if (EmptyPredicate.isNotEmpty(invalidFields)) {
       throw new JiraClientException(
-          String.format("Some fields are invalid for this jira issue type: %s", String.join(", ", invalidFields)),
+          String.format("Fields {%s} are invalid for the provided jira issue type", String.join(", ", invalidFields)),
           true);
     }
 
     Map<String, String> finalFields = fields;
     if (checkRequiredFields) {
-      Set<String> requiredFieldsNotPresent = issueTypeFields.entrySet()
-                                                 .stream()
-                                                 .filter(e -> e.getValue().isRequired())
-                                                 .map(Map.Entry::getKey)
-                                                 .filter(f -> !finalFields.containsKey(f))
-                                                 .collect(Collectors.toSet());
+      Set<String> requiredFieldsNotPresent =
+          issueTypeFields.entrySet()
+              .stream()
+              // TECHDEBIT: remove the USER validation after support for user type fields
+              .filter(
+                  e -> e.getValue().isRequired() && !e.getValue().getSchema().getType().equals(JiraFieldTypeNG.USER))
+              .map(Map.Entry::getKey)
+              .filter(f -> !finalFields.containsKey(f))
+              .collect(Collectors.toSet());
       if (EmptyPredicate.isNotEmpty(requiredFieldsNotPresent)) {
-        throw new JiraClientException(String.format("Some required fields for this jira issue type are missing: %s",
+        throw new JiraClientException(String.format("Required fields {%s} for the provided jira issue type are missing",
                                           String.join(", ", requiredFieldsNotPresent)),
             true);
       }
@@ -104,6 +110,18 @@ public class JiraIssueUtilsNG {
     addTimeTrackingField(currFieldValues, fields);
 
     fieldKeys.forEach(key -> addKey(currFieldValues, key, finalIssueTypeFields.get(key), finalFields.get(key)));
+  }
+
+  private Map<String, String> parseFieldsForCGCalls(
+      Map<String, JiraFieldNG> finalIssueTypeFields, Map<String, String> fields) {
+    Map<String, String> fieldIdsMapToName =
+        finalIssueTypeFields.entrySet().stream().collect(Collectors.toMap(e -> e.getValue().getKey(), e -> e.getKey()));
+    return fields.entrySet().stream().collect(Collectors.toMap(field -> {
+      if (fieldIdsMapToName.containsKey(field.getKey()) && !finalIssueTypeFields.containsKey(field.getKey())) {
+        return fieldIdsMapToName.get(field.getKey());
+      }
+      return field.getKey();
+    }, Map.Entry::getValue));
   }
 
   private void addTimeTrackingField(Map<String, Object> currFieldValues, Map<String, String> fields) {
@@ -140,6 +158,8 @@ public class JiraIssueUtilsNG {
 
   private Object convertToFinalValue(JiraFieldNG field, String name, String value) {
     switch (field.getSchema().getType()) {
+      case USER:
+        return new JiraFieldUserPickerNG(value);
       case STRING:
         return value;
       case NUMBER:

@@ -61,7 +61,7 @@ import org.reflections.Reflections;
 
 @OwnedBy(HarnessTeam.CDP)
 class MicroserviceInterfaceTool {
-  private static void log(String message) {
+  static void log(String message) {
     System.out.println(message);
   }
 
@@ -97,7 +97,7 @@ class MicroserviceInterfaceTool {
     return classToHash;
   }
 
-  private static Map<String, String> computeKryoHashes(Set<String> kryoDependencies) throws Exception {
+  static Map<String, String> computeKryoHashes(Set<String> kryoDependencies) throws Exception {
     Kryo kryo = new Kryo();
     log("Loading all implementers of Kryo Registrars");
     Set<Class<? extends KryoRegistrar>> registrars = getAllImplementingClasses();
@@ -233,7 +233,7 @@ class MicroserviceInterfaceTool {
 
   // This method computes the hash of a class by generating a String representation of the
   // fields of that class. We can continue improving it further.
-  private static String calculateStringHash(Class specialClass) throws Exception {
+  static String calculateStringHash(Class specialClass) throws Exception {
     List<Field> fields = ReflectionUtils.getAllDeclaredAndInheritedFields(specialClass);
     List<String> collect = fields.stream()
                                .map(field -> field.getType().getCanonicalName() + ":" + field.getName())

@@ -9,12 +9,21 @@ package io.harness.cvng.core.services.api;
 
 import io.harness.cvng.core.entities.SideKick.SideKickData;
 
+import java.time.Duration;
 import java.time.Instant;
 import lombok.Builder;
 import lombok.Value;
 
 public interface SideKickExecutor<E extends SideKickData> {
   void execute(E sideKickInfo);
+
+  default boolean canExecute(E sideKickInfo) {
+    return true;
+  }
+
+  default Duration delayExecutionBy() {
+    return Duration.ZERO;
+  }
 
   @Value
   @Builder

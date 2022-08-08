@@ -24,6 +24,7 @@ import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
 import io.harness.delegate.beans.storeconfig.FetchType;
 import io.harness.expression.ExpressionEvaluatorUtils;
 import io.harness.expression.TrimmerFunctor;
+import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.SpecParameters;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.yaml.ParameterField;
@@ -152,6 +153,8 @@ public class TerraformPlanStepInfoTest extends CategoryTest {
     terraformPlanExecutionData.setCommand(TerraformPlanCommand.APPLY);
     terraformPlanExecutionData.setSecretManagerRef(ParameterField.createValueField("secret"));
     terraformPlanStepInfo.setTerraformPlanExecutionData(terraformPlanExecutionData);
+    TaskSelectorYaml taskSelectorYaml = new TaskSelectorYaml("sel1");
+    terraformPlanStepInfo.setDelegateSelectors(ParameterField.createValueField(Arrays.asList(taskSelectorYaml)));
     SpecParameters specParameters = terraformPlanStepInfo.getSpecParameters();
     TerraformPlanStepParameters terraformPlanStepParameters = (TerraformPlanStepParameters) specParameters;
     assertThat(specParameters).isNotNull();
@@ -159,6 +162,8 @@ public class TerraformPlanStepInfoTest extends CategoryTest {
     assertThat(terraformPlanStepParameters.configuration.configFiles.store.getType()).isEqualTo(StoreConfigType.GITHUB);
     assertThat(terraformPlanStepParameters.configuration.varFiles.get("var-file-1").type).isEqualTo("Remote");
     assertThat(terraformPlanStepParameters.configuration.varFiles.get("var-file-1").identifier).isEqualTo("var-file-1");
+    assertThat(terraformPlanStepParameters.delegateSelectors.getValue().get(0).getDelegateSelectors())
+        .isEqualTo("sel1");
   }
 
   @Test
@@ -192,10 +197,13 @@ public class TerraformPlanStepInfoTest extends CategoryTest {
             .workspace(ParameterField.createExpressionField(true, "<+workspace>  ", null, true))
             .build();
 
+    TaskSelectorYaml taskSelector1 = new TaskSelectorYaml(" del1 ");
+    TaskSelectorYaml taskSelector2 = new TaskSelectorYaml("del2  ");
+
     TerraformPlanStepInfo terraformPlanStepInfo =
         TerraformPlanStepInfo.infoBuilder()
             .provisionerIdentifier(ParameterField.createValueField("  abc  "))
-            .delegateSelectors(ParameterField.createValueField(Arrays.asList(" del1 ", "del2  ")))
+            .delegateSelectors(ParameterField.createValueField(Arrays.asList(taskSelector1, taskSelector2)))
             .terraformPlanExecutionData(terraformPlanExecutionData)
             .build();
 
@@ -203,7 +211,8 @@ public class TerraformPlanStepInfoTest extends CategoryTest {
         (TerraformPlanStepInfo) ExpressionEvaluatorUtils.updateExpressions(terraformPlanStepInfo, new TrimmerFunctor());
 
     assertThat(terraformPlanStepInfo.getProvisionerIdentifier().getValue()).isEqualTo("abc");
-    assertThat(terraformPlanStepInfo.getDelegateSelectors().getValue()).isEqualTo(Arrays.asList("del1", "del2"));
+    assertThat(terraformPlanStepInfo.getDelegateSelectors().getValue())
+        .isEqualTo(Arrays.asList(taskSelector1, taskSelector2));
     assertThat(terraformPlanStepInfo.getTerraformPlanExecutionData().getTargets().getValue())
         .isEqualTo(Arrays.asList("t1", "t2"));
     assertThat(terraformPlanStepInfo.getTerraformPlanExecutionData().getEnvironmentVariables().get(0).getName())

@@ -1,0 +1,10 @@
+[
+  {
+    "hostname": "harness-pr-prod-deployment-7dddb6976-kzdnv",
+    "txnName": "G1",
+    "metricIdentifier": "new_relic_metric",
+    "metricName": "New Relic Metric",
+    "metricValue": 1.0,
+    "timestamp": 1654494660000
+  }
+]

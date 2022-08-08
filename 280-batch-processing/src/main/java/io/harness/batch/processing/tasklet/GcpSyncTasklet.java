@@ -101,10 +101,13 @@ public class GcpSyncTasklet implements Tasklet {
     String accountId = jobConstants.getAccountId();
     Long endTime = jobConstants.getJobEndTime();
 
+    boolean firstSync = false;
     BatchJobScheduledData batchJobScheduledData =
         batchJobScheduledDataDao.fetchLastBatchJobScheduledData(accountId, BatchJobType.SYNC_BILLING_REPORT_GCP);
     if (null != batchJobScheduledData) {
       endTime = batchJobScheduledData.getEndAt().toEpochMilli();
+    } else {
+      firstSync = true;
     }
     BillingDataPipelineConfig billingDataPipelineConfig = mainConfig.getBillingDataPipelineConfig();
 
@@ -124,7 +127,7 @@ public class GcpSyncTasklet implements Tasklet {
           processGCPConnector(billingDataPipelineConfig, gcpCloudCostConnectorDTO.getServiceAccountEmail(),
               gcpCloudCostConnectorDTO.getBillingExportSpec().getDatasetId(), gcpCloudCostConnectorDTO.getProjectId(),
               gcpCloudCostConnectorDTO.getBillingExportSpec().getTableId(), accountId, connectorInfo.getIdentifier(),
-              endTime);
+              endTime, firstSync);
         } catch (Exception e) {
           log.error("Exception processing NG GCP Connector: {}", connectorInfo.getIdentifier(), e);
         }
@@ -143,7 +146,7 @@ public class GcpSyncTasklet implements Tasklet {
         try {
           processGCPConnector(billingDataPipelineConfig, gcpServiceAccount.getEmail(),
               gcpBillingAccount.getBqDatasetId(), gcpBillingAccount.getBqProjectId(), "", accountId,
-              gcpBillingAccount.getUuid(), endTime);
+              gcpBillingAccount.getUuid(), endTime, firstSync);
         } catch (Exception e) {
           log.error("Exception processing CG GCP Connector: {}", gcpBillingAccount.getUuid(), e);
         }
@@ -153,7 +156,8 @@ public class GcpSyncTasklet implements Tasklet {
   }
 
   private void processGCPConnector(BillingDataPipelineConfig billingDataPipelineConfig, String serviceAccountEmail,
-      String datasetId, String projectId, String tableName, String accountId, String connectorId, Long endTime) {
+      String datasetId, String projectId, String tableName, String accountId, String connectorId, Long endTime,
+      boolean firstSync) {
     ServiceAccountCredentials sourceCredentials = getCredentials(GOOGLE_CREDENTIALS_PATH);
     Credentials credentials = getImpersonatedCredentials(sourceCredentials, serviceAccountEmail);
     BigQuery bigQuery = BigQueryOptions.newBuilder().setCredentials(credentials).build().getService();
@@ -169,7 +173,7 @@ public class GcpSyncTasklet implements Tasklet {
           Long lastModifiedTime = tableGranularData.getLastModifiedTime();
           lastModifiedTime = lastModifiedTime != null ? lastModifiedTime : table.getCreationTime();
           log.info("Sync condition {} {}", lastModifiedTime, endTime);
-          if (lastModifiedTime > endTime) {
+          if (lastModifiedTime > endTime || firstSync) {
             CacheKey cacheKey = new CacheKey(accountId, projectId, datasetId);
             gcpSyncInfo.get(cacheKey,
                 key
@@ -187,7 +191,7 @@ public class GcpSyncTasklet implements Tasklet {
       Long lastModifiedTime = tableGranularData.getLastModifiedTime();
       lastModifiedTime = lastModifiedTime != null ? lastModifiedTime : tableGranularData.getCreationTime();
       log.info("Sync condition {} {}", lastModifiedTime, endTime);
-      if (lastModifiedTime > endTime) {
+      if (lastModifiedTime > endTime || firstSync) {
         CacheKey cacheKey = new CacheKey(accountId, projectId, datasetId);
         gcpSyncInfo.get(cacheKey,
             key

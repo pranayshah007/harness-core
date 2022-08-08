@@ -1,0 +1,12 @@
+pipeline:
+  identifier: "pipeline2"
+  stages:
+    - stage:
+        identifier: "stage1"
+        type: "Deployment"
+        spec:
+          execution:
+            steps:
+              - step:
+                  identifier: "verify"
+                  type: "Verify"

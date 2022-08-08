@@ -29,7 +29,7 @@ public interface ServiceLevelIndicatorService {
 
   List<String> update(ProjectParams projectParams, List<ServiceLevelIndicatorDTO> serviceLevelIndicatorDTOList,
       String serviceLevelObjectiveIdentifier, List<String> serviceLevelIndicatorsList, String monitoredServiceIndicator,
-      String healthSourceIndicator, TimePeriod timePeriod);
+      String healthSourceIndicator, TimePeriod timePeriod, TimePeriod currentTimePeriod);
 
   void deleteByIdentifier(ProjectParams projectParams, List<String> serviceLevelIndicatorIdentifier);
 
@@ -45,4 +45,7 @@ public interface ServiceLevelIndicatorService {
       String healthSourceIdentifier, List<String> metricIdentifiers);
 
   List<String> getSLIs(ProjectParams projectParams, String monitoredServiceIdentifier);
+
+  void setMonitoredServiceSLIsEnableFlag(
+      ProjectParams projectParams, String monitoredServiceIdentifier, boolean isEnabled);
 }

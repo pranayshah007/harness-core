@@ -40,21 +40,22 @@ public class PublishedMessageTest extends CategoryTest {
             .build();
     Any payload = Any.pack(ecsTaskLifecycle);
     String accountId = "accountId-123";
-    io.harness.ccm.commons.entities.events.PublishedMessage publishedMessage =
-        io.harness.ccm.commons.entities.events.PublishedMessage.builder()
-            .accountId(accountId)
-            .data(payload.toByteArray())
-            .type(ecsTaskLifecycle.getClass().getName())
-            .build();
+    Date validUntil = Date.from(OffsetDateTime.now().plusDays(14).toInstant());
+    PublishedMessage publishedMessage = PublishedMessage.builder()
+                                            .accountId(accountId)
+                                            .data(payload.toByteArray())
+                                            .type(ecsTaskLifecycle.getClass().getName())
+                                            .validUntil(validUntil)
+                                            .build();
     assertThat(publishedMessage.getMessage()).isEqualTo(ecsTaskLifecycle);
   }
 
   @Test
   @Owner(developers = AVMOHAN)
   @Category(UnitTests.class)
-  public void shouldSetValidUntil() throws Exception {
-    Date expected = Date.from(OffsetDateTime.now().plusDays(14).toInstant());
-    io.harness.ccm.commons.entities.events.PublishedMessage message = PublishedMessage.builder().build();
-    assertThat(message.getValidUntil()).isNotNull().isAfterOrEqualTo(expected);
+  public void shouldSetValidUntil() {
+    Date validUntil = Date.from(OffsetDateTime.now().plusDays(14).toInstant());
+    PublishedMessage message = PublishedMessage.builder().validUntil(validUntil).build();
+    assertThat(message.getValidUntil()).isNotNull().isAfterOrEqualTo(new Date());
   }
 }

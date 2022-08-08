@@ -17,6 +17,7 @@ import io.harness.cvng.beans.activity.ActivityVerificationStatus;
 import io.harness.cvng.core.entities.CVConfig;
 import io.harness.cvng.core.utils.DateTimeUtils;
 import io.harness.cvng.statemachine.beans.AnalysisStatus;
+import io.harness.cvng.verificationjob.entities.CanaryVerificationJob.CanaryVerificationJobKeys;
 import io.harness.cvng.verificationjob.entities.VerificationJob.RuntimeParameter.RuntimeParameterKeys;
 import io.harness.cvng.verificationjob.entities.VerificationJob.VerificationJobKeys;
 import io.harness.iterator.PersistentRegularIterable;
@@ -81,7 +82,7 @@ public final class VerificationJobInstance
   }
   private static final Duration TIMEOUT = Duration.ofMinutes(30);
   public static final String VERIFICATION_JOB_TYPE_KEY =
-      String.format("%s.%s", VerificationJobInstanceKeys.resolvedJob, VerificationJobKeys.type);
+      String.format("%s.%s", VerificationJobInstanceKeys.resolvedJob, CanaryVerificationJobKeys.type);
   public static String PROJECT_IDENTIFIER_KEY =
       String.format("%s.%s", VerificationJobInstanceKeys.resolvedJob, VerificationJobKeys.projectIdentifier);
   public static String ORG_IDENTIFIER_KEY =

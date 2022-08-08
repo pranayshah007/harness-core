@@ -18,8 +18,6 @@ import static software.wings.sm.states.azure.appservices.AzureAppServiceSlotSetu
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyListOf;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
@@ -51,7 +49,6 @@ import software.wings.beans.SettingAttribute;
 import software.wings.beans.artifact.Artifact;
 import software.wings.beans.artifact.ArtifactStreamAttributes;
 import software.wings.beans.artifact.ArtifactStreamType;
-import software.wings.beans.command.CommandUnit;
 import software.wings.beans.config.ArtifactoryConfig;
 import software.wings.service.impl.servicetemplates.ServiceTemplateHelper;
 import software.wings.service.intfc.ActivityService;
@@ -128,7 +125,7 @@ public class AzureWebAppSlotRollbackTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void testRollbackHandleAsyncResponseSuccess() {
     ExecutionContextImpl context = mock(ExecutionContextImpl.class);
-    doNothing().when(azureVMSSStateHelper).updateActivityStatus(anyString(), anyString(), any());
+    doNothing().when(azureVMSSStateHelper).updateActivityStatus(any(), any(), any());
     doReturn(SUCCESS).when(azureVMSSStateHelper).getAppServiceExecutionStatus(any());
     List<AzureAppDeploymentData> azureAppDeploymentData = getAzureAppDeploymentData();
     AzureWebAppInfrastructureMapping azureWebAppInfrastructureMapping = getAzureWebAppInfraMapping();
@@ -276,19 +273,15 @@ public class AzureWebAppSlotRollbackTest extends WingsBaseTest {
           .when(azureSweepingOutputServiceHelper)
           .getInfoFromSweepingOutput(eq(mockContext), eq(SWEEPING_OUTPUT_APP_SERVICE));
     }
-    doReturn(activity)
-        .when(azureVMSSStateHelper)
-        .createAndSaveActivity(any(), any(), anyString(), anyString(), any(), anyListOf(CommandUnit.class));
+    doReturn(activity).when(azureVMSSStateHelper).createAndSaveActivity(any(), any(), any(), any(), any(), any());
     doReturn(managerExecutionLogCallback).when(azureVMSSStateHelper).getExecutionLogCallback(activity);
     doReturn(Optional.empty()).when(azureVMSSStateHelper).getUserDataSpecification(mockContext);
-    doReturn(appServiceStateData)
-        .when(azureVMSSStateHelper)
-        .populateAzureAppServiceData(eq(mockContext), any(Artifact.class));
+    doReturn(appServiceStateData).when(azureVMSSStateHelper).populateAzureAppServiceData(eq(mockContext), any());
     doReturn("service-template-id").when(serviceTemplateHelper).fetchServiceTemplateId(any());
     doReturn(delegateResult).when(delegateService).queueTask(any());
-    doNothing().when(stateExecutionService).appendDelegateTaskDetails(anyString(), any());
+    doNothing().when(stateExecutionService).appendDelegateTaskDetails(any(), any());
 
-    when(mockContext.renderExpression(anyString())).thenAnswer((Answer<String>) invocation -> {
+    when(mockContext.renderExpression(any())).thenAnswer((Answer<String>) invocation -> {
       Object[] args = invocation.getArguments();
       return (String) args[0];
     });

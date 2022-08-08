@@ -14,11 +14,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.CvNextGenTestBase;
 import io.harness.category.element.UnitTests;
-import io.harness.cvng.beans.CVMonitoringCategory;
+import io.harness.cvng.BuilderFactory;
 import io.harness.cvng.core.entities.CVConfig;
-import io.harness.cvng.core.entities.SplunkCVConfig;
 import io.harness.cvng.core.services.api.CVConfigService;
-import io.harness.cvng.models.VerificationType;
 import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
 import io.harness.rule.ResourceTestRule;
@@ -48,17 +46,17 @@ public class CVConfigResourceTest extends CvNextGenTestBase {
   private String productName;
   private String monitoringSourceIdentifier;
   private String monitoringSourceName;
-  private String serviceInstanceIdentifier;
+  private BuilderFactory builderFactory;
 
   @Before
   public void setup() {
     injector.injectMembers(cvConfigResource);
-    this.accountId = generateUuid();
+    builderFactory = BuilderFactory.getDefault();
+    this.accountId = builderFactory.getContext().getAccountId();
     this.connectorIdentifier = generateUuid();
     this.productName = generateUuid();
     this.monitoringSourceIdentifier = generateUuid();
     this.monitoringSourceName = generateUuid();
-    this.serviceInstanceIdentifier = generateUuid();
   }
   @Test
   @Owner(developers = NEMANJA)
@@ -82,26 +80,12 @@ public class CVConfigResourceTest extends CvNextGenTestBase {
     assertThat(retrievedProductNames).contains(cvConfigs.get(1).getProductName());
   }
 
-  private SplunkCVConfig createCVConfig() {
-    SplunkCVConfig cvConfig = new SplunkCVConfig();
-    fillCommon(cvConfig);
-    cvConfig.setQuery("exception");
-    cvConfig.setServiceInstanceIdentifier(serviceInstanceIdentifier);
-    return cvConfig;
-  }
-
-  private void fillCommon(CVConfig cvConfig) {
-    cvConfig.setVerificationType(VerificationType.LOG);
-    cvConfig.setAccountId(accountId);
-    cvConfig.setConnectorIdentifier(connectorIdentifier);
-    cvConfig.setServiceIdentifier(generateUuid());
-    cvConfig.setEnvIdentifier(generateUuid());
-    cvConfig.setProjectIdentifier(generateUuid());
-    cvConfig.setOrgIdentifier(generateUuid());
-    cvConfig.setIdentifier(monitoringSourceIdentifier);
-    cvConfig.setMonitoringSourceName(monitoringSourceName);
-    cvConfig.setCategory(CVMonitoringCategory.PERFORMANCE);
-    cvConfig.setProductName(productName);
-    cvConfig.setCreatedAt(1);
+  private CVConfig createCVConfig() {
+    return builderFactory.splunkCVConfigBuilder()
+        .productName(productName)
+        .connectorIdentifier(connectorIdentifier)
+        .monitoredServiceIdentifier(monitoringSourceIdentifier)
+        .monitoringSourceName(monitoringSourceName)
+        .build();
   }
 }

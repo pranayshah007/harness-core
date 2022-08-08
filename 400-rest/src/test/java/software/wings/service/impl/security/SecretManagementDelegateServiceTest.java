@@ -13,22 +13,20 @@ import static io.harness.rule.OwnerRule.UTKARSH;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
-import static org.powermock.api.mockito.PowerMockito.mockStatic;
 
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.SecretManagementDelegateException;
-import io.harness.helpers.ext.azure.KeyVaultADALAuthenticator;
-import io.harness.helpers.ext.cyberark.CyberArkReadResponse;
-import io.harness.helpers.ext.cyberark.CyberArkRestClient;
-import io.harness.helpers.ext.cyberark.CyberArkRestClientFactory;
 import io.harness.rule.Owner;
 
 import software.wings.beans.CyberArkConfig;
+import software.wings.helpers.ext.cyberark.CyberArkReadResponse;
+import software.wings.helpers.ext.cyberark.CyberArkRestClient;
+import software.wings.helpers.ext.cyberark.CyberArkRestClientFactory;
 
-import com.microsoft.azure.keyvault.KeyVaultClient;
 import java.io.IOException;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.MediaType;
@@ -38,10 +36,7 @@ import okhttp3.ResponseBody;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.MockedStatic;
 import retrofit2.Call;
 import retrofit2.Response;
 
@@ -49,10 +44,6 @@ import retrofit2.Response;
  * @author marklu on 2019-03-06
  */
 @Slf4j
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({KeyVaultADALAuthenticator.class, KeyVaultClient.class, CyberArkRestClientFactory.class})
-@PowerMockIgnore(
-    {"okhttp3.*", "javax.security.*", "org.apache.http.conn.ssl.", "javax.net.ssl.", "javax.crypto.*", "sun.*"})
 public class SecretManagementDelegateServiceTest extends CategoryTest {
   private SecretManagementDelegateServiceImpl secretManagementDelegateService;
 
@@ -67,12 +58,12 @@ public class SecretManagementDelegateServiceTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testCyberArkConfigValidation_shouldPass() throws IOException {
     CyberArkConfig cyberArkConfig = getCyberArkConfig("/");
-    mockStatic(CyberArkRestClientFactory.class);
+    MockedStatic<CyberArkRestClientFactory> aStatic = mockStatic(CyberArkRestClientFactory.class);
     CyberArkRestClient cyberArkRestClient = mock(CyberArkRestClient.class);
     CyberArkReadResponse cyberArkReadResponse = mock(CyberArkReadResponse.class);
     Call<CyberArkReadResponse> cyberArkReadResponseCall = mock(Call.class);
     Response<CyberArkReadResponse> cyberArkReadResponseResponse = Response.success(cyberArkReadResponse);
-    when(CyberArkRestClientFactory.create(cyberArkConfig)).thenReturn(cyberArkRestClient);
+    aStatic.when(() -> CyberArkRestClientFactory.create(cyberArkConfig)).thenReturn(cyberArkRestClient);
     when(cyberArkRestClient.readSecret(anyString(), anyString())).thenReturn(cyberArkReadResponseCall);
     when(cyberArkReadResponseCall.execute()).thenReturn(cyberArkReadResponseResponse);
     secretManagementDelegateService.validateCyberArkConfig(cyberArkConfig);
@@ -83,7 +74,7 @@ public class SecretManagementDelegateServiceTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testCyberArkConfigValidation_shouldFail() throws IOException {
     CyberArkConfig cyberArkConfig = getCyberArkConfig("/");
-    mockStatic(CyberArkRestClientFactory.class);
+    MockedStatic<CyberArkRestClientFactory> aStatic = mockStatic(CyberArkRestClientFactory.class);
     CyberArkRestClient cyberArkRestClient = mock(CyberArkRestClient.class);
     Call<CyberArkReadResponse> cyberArkReadResponseCall = mock(Call.class);
     Response<CyberArkReadResponse> cyberArkReadResponseResponse =
@@ -94,7 +85,7 @@ public class SecretManagementDelegateServiceTest extends CategoryTest {
                 .protocol(Protocol.HTTP_1_1)
                 .request(new Request.Builder().url("http://localhost/").build())
                 .build());
-    when(CyberArkRestClientFactory.create(cyberArkConfig)).thenReturn(cyberArkRestClient);
+    aStatic.when(() -> CyberArkRestClientFactory.create(cyberArkConfig)).thenReturn(cyberArkRestClient);
     when(cyberArkRestClient.readSecret(anyString(), anyString())).thenReturn(cyberArkReadResponseCall);
     when(cyberArkReadResponseCall.execute()).thenReturn(cyberArkReadResponseResponse);
 

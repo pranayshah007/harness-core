@@ -8,6 +8,7 @@
 package io.harness.gitsync.core.impl;
 
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.gitsync.common.helper.RepoProviderHelper.getRepoProviderType;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -30,6 +31,7 @@ import io.harness.gitsync.common.dtos.GitToHarnessGetFilesStepResponse;
 import io.harness.gitsync.common.dtos.GitToHarnessProcessMsvcStepRequest;
 import io.harness.gitsync.common.dtos.GitToHarnessProcessMsvcStepResponse;
 import io.harness.gitsync.common.dtos.GitToHarnessProgressDTO;
+import io.harness.gitsync.common.dtos.RepoProviders;
 import io.harness.gitsync.common.helper.GitConnectivityExceptionHelper;
 import io.harness.gitsync.common.helper.GitToHarnessProgressHelper;
 import io.harness.gitsync.common.helper.YamlGitConfigHelper;
@@ -157,7 +159,8 @@ public class BranchPushEventYamlChangeSetHandler implements YamlChangeSetHandler
         log.error("Error while processing branch push event {}", yamlChangeSetDTO, ex);
         String gitConnectivityErrorMessage = GitConnectivityExceptionHelper.getErrorMessage(ex);
         if (isNotEmpty(gitConnectivityErrorMessage)) {
-          recordConnectivityErrors(yamlChangeSetDTO, gitConnectivityErrorMessage);
+          RepoProviders repoProvider = getRepoProviderType(yamlGitConfigDTOList);
+          recordConnectivityErrors(yamlChangeSetDTO, gitConnectivityErrorMessage, repoProvider);
         }
         // Update the g2h status to ERROR
         gitToHarnessProgressService.updateProgressStatus(
@@ -214,9 +217,10 @@ public class BranchPushEventYamlChangeSetHandler implements YamlChangeSetHandler
         .build();
   }
 
-  private void recordConnectivityErrors(YamlChangeSetDTO yamlChangeSetDTO, String errorMessage) {
-    gitSyncErrorService.recordConnectivityError(
-        yamlChangeSetDTO.getAccountId(), yamlChangeSetDTO.getRepoUrl(), errorMessage);
+  private void recordConnectivityErrors(
+      YamlChangeSetDTO yamlChangeSetDTO, String errorMessage, RepoProviders repoProvider) {
+    gitSyncErrorService.saveConnectivityError(
+        yamlChangeSetDTO.getAccountId(), yamlChangeSetDTO.getRepoUrl(), errorMessage, repoProvider);
   }
 
   private GitToHarnessProcessMsvcStepResponse performBranchSync(GitToHarnessGetFilesStepRequest request) {

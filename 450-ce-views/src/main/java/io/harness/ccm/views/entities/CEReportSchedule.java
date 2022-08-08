@@ -62,7 +62,7 @@ public final class CEReportSchedule implements PersistentEntity, UuidAware, Crea
 
   @Id String uuid;
   @NotEmpty(message = "Name for report schedule must not be empty")
-  @Size(min = 1, max = 32, message = ": for report schedule name must be between 1 and 32 characters long")
+  @Size(min = 1, max = 80, message = ": for report schedule name must be between 1 and 80 characters long")
   String name;
   @Builder.Default boolean enabled = true;
   @Size(max = 100, message = ": for report schedule description must be between 0 and 100 characters long")
@@ -80,4 +80,22 @@ public final class CEReportSchedule implements PersistentEntity, UuidAware, Crea
   EmbeddedUser createdBy;
   EmbeddedUser lastUpdatedBy;
   Date nextExecution;
+
+  public CEReportSchedule toDTO() {
+    return CEReportSchedule.builder()
+        .uuid(getUuid())
+        .name(getName())
+        .description(getDescription())
+        .viewsId(getViewsId())
+        .userCron(getUserCron())
+        .recipients(getRecipients())
+        .accountId(getAccountId())
+        .createdAt(getCreatedAt())
+        .lastUpdatedAt(getLastUpdatedAt())
+        .userCronTimeZone(getUserCronTimeZone())
+        .createdBy(getCreatedBy())
+        .lastUpdatedBy(getLastUpdatedBy())
+        .nextExecution(getNextExecution())
+        .build();
+  }
 }

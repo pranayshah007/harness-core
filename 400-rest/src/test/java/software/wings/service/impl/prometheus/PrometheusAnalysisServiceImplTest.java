@@ -17,11 +17,11 @@ import io.harness.category.element.UnitTests;
 import io.harness.rule.Owner;
 
 import software.wings.WingsBaseTest;
+import software.wings.beans.apm.Method;
 import software.wings.metrics.MetricType;
 import software.wings.service.impl.analysis.TimeSeries;
 import software.wings.service.impl.apm.APMMetricInfo;
 import software.wings.service.intfc.prometheus.PrometheusAnalysisService;
-import software.wings.sm.states.APMVerificationState;
 
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
@@ -68,7 +68,7 @@ public class PrometheusAnalysisServiceImplTest extends WingsBaseTest {
       metricInfos.forEach(apmMetricInfo -> {
         assertThat(apmMetricInfo.getMetricName()).isEqualTo("metric-" + index);
         assertThat(apmMetricInfo.getMetricType()).isEqualTo(MetricType.INFRA);
-        assertThat(apmMetricInfo.getMethod()).isEqualTo(APMVerificationState.Method.GET);
+        assertThat(apmMetricInfo.getMethod()).isEqualTo(Method.GET);
 
         final Map<String, APMMetricInfo.ResponseMapper> responseMappers = apmMetricInfo.getResponseMappers();
         assertThat(responseMappers.size()).isEqualTo(3);

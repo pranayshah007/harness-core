@@ -158,7 +158,7 @@ public class ActivityLogsProcessorTest extends CategoryTest {
     ActivityCommandUnitMetadata[] currCommandUnit = new ActivityCommandUnitMetadata[] {null};
 
     doAnswer(invocation -> {
-      ZipEntry entry = invocation.getArgumentAt(0, ZipEntry.class);
+      ZipEntry entry = invocation.getArgument(0, ZipEntry.class);
       String name = entry.getName().substring(4);
       if (name.equals(commandUnit11.getExecutionLogFile())) {
         currCommandUnit[0] = commandUnit11;
@@ -282,7 +282,7 @@ public class ActivityLogsProcessorTest extends CategoryTest {
             aLog().activityId("aid3").commandUnitName("cu32").build()));
 
     when(logService.list(anyString(), any())).thenAnswer(invocation -> {
-      PageRequest<Log> pageRequest = invocation.getArgumentAt(1, PageRequest.class);
+      PageRequest<Log> pageRequest = invocation.getArgument(1, PageRequest.class);
       if (pageRequest == null
           || (EmptyPredicate.isNotEmpty(pageRequest.getOffset()) && !"0".equals(pageRequest.getOffset()))) {
         return aPageResponse().withResponse(Collections.emptyList()).build();

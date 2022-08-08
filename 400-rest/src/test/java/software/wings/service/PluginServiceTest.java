@@ -8,6 +8,7 @@
 package software.wings.service;
 
 import static io.harness.beans.FeatureName.ARTIFACT_STREAM_REFACTOR;
+import static io.harness.beans.FeatureName.HELM_OCI_SUPPORT;
 import static io.harness.rule.OwnerRule.ANUBHAW;
 import static io.harness.rule.OwnerRule.RAGHU;
 
@@ -25,6 +26,9 @@ import static software.wings.beans.PluginCategory.Verification;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
 
@@ -70,6 +74,7 @@ import software.wings.beans.settings.azureartifacts.AzureArtifactsPATConfig;
 import software.wings.beans.settings.helm.AmazonS3HelmRepoConfig;
 import software.wings.beans.settings.helm.GCSHelmRepoConfig;
 import software.wings.beans.settings.helm.HttpHelmRepoConfig;
+import software.wings.beans.settings.helm.OciHelmRepoConfig;
 import software.wings.helpers.ext.mail.SmtpConfig;
 import software.wings.service.impl.PluginServiceImpl;
 import software.wings.service.intfc.PluginService;
@@ -100,6 +105,7 @@ public class PluginServiceTest extends CategoryTest {
     initMocks(this);
     FieldUtils.writeField(pluginService, "featureFlagService", mockFeatureFlagService, true);
     when(mockFeatureFlagService.isEnabled(ARTIFACT_STREAM_REFACTOR, accountId)).thenReturn(false);
+    doReturn(true).when(mockFeatureFlagService).isEnabled(eq(HELM_OCI_SUPPORT), any());
     when(mockFeatureFlagService.isEnabled(ARTIFACT_STREAM_REFACTOR, multiArtifactEnabledAccountId)).thenReturn(true);
   }
 
@@ -108,7 +114,7 @@ public class PluginServiceTest extends CategoryTest {
   @Category(UnitTests.class)
   public void shouldGetInstalledPlugins() throws Exception {
     assertThat(pluginService.getInstalledPlugins(accountId))
-        .hasSize(37)
+        .hasSize(38)
         .containsExactly(anAccountPlugin()
                              .withSettingClass(JenkinsConfig.class)
                              .withAccountId(accountId)
@@ -366,6 +372,14 @@ public class PluginServiceTest extends CategoryTest {
                 .withPluginCategories(asList(HelmRepo))
                 .build(),
             anAccountPlugin()
+                .withSettingClass(OciHelmRepoConfig.class)
+                .withAccountId(accountId)
+                .withIsEnabled(true)
+                .withDisplayName(SettingVariableTypes.OCI_HELM_REPO.getDisplayName())
+                .withType(SettingVariableTypes.OCI_HELM_REPO.name())
+                .withPluginCategories(asList(HelmRepo))
+                .build(),
+            anAccountPlugin()
                 .withSettingClass(AmazonS3HelmRepoConfig.class)
                 .withAccountId(accountId)
                 .withIsEnabled(true)
@@ -407,7 +421,7 @@ public class PluginServiceTest extends CategoryTest {
                 .build());
 
     assertThat(pluginService.getInstalledPlugins(multiArtifactEnabledAccountId))
-        .hasSize(38)
+        .hasSize(39)
         .contains(anAccountPlugin()
                       .withSettingClass(CustomArtifactServerConfig.class)
                       .withAccountId(multiArtifactEnabledAccountId)
@@ -423,18 +437,18 @@ public class PluginServiceTest extends CategoryTest {
   @Category(UnitTests.class)
   public void shouldGetPluginSettingSchema() throws Exception {
     assertThat(pluginService.getPluginSettingSchema(accountId))
-        .hasSize(37)
+        .hasSize(38)
         .containsOnlyKeys("APP_DYNAMICS", "NEW_RELIC", "DYNA_TRACE", "PROMETHEUS", "APM_VERIFICATION", "DATA_DOG",
             "INSTANA", "SCALYR", "JENKINS", "BAMBOO", "SMTP", "BUG_SNAG", "SPLUNK", "ELK", "LOGZ", "SUMO", "AWS", "GCP",
             "AZURE", "PHYSICAL_DATA_CENTER", "KUBERNETES_CLUSTER", "DOCKER", "HOST_CONNECTION_ATTRIBUTES", "ELB",
-            "NEXUS", "ARTIFACTORY", "PCF", "GIT", "JIRA", "SMB", "SFTP", "HTTP_HELM_REPO", "AMAZON_S3_HELM_REPO",
-            "GCS_HELM_REPO", "SERVICENOW", "SPOT_INST", "AZURE_ARTIFACTS_PAT");
+            "NEXUS", "ARTIFACTORY", "PCF", "GIT", "JIRA", "SMB", "SFTP", "HTTP_HELM_REPO", "OCI_HELM_REPO",
+            "AMAZON_S3_HELM_REPO", "GCS_HELM_REPO", "SERVICENOW", "SPOT_INST", "AZURE_ARTIFACTS_PAT");
     assertThat(pluginService.getPluginSettingSchema(multiArtifactEnabledAccountId))
-        .hasSize(38)
+        .hasSize(39)
         .containsOnlyKeys("APP_DYNAMICS", "NEW_RELIC", "DYNA_TRACE", "PROMETHEUS", "APM_VERIFICATION", "DATA_DOG",
             "JENKINS", "BAMBOO", "SMTP", "BUG_SNAG", "SPLUNK", "ELK", "LOGZ", "SUMO", "INSTANA", "SCALYR", "AWS", "GCP",
             "AZURE", "PHYSICAL_DATA_CENTER", "KUBERNETES_CLUSTER", "DOCKER", "HOST_CONNECTION_ATTRIBUTES", "ELB",
-            "NEXUS", "ARTIFACTORY", "PCF", "GIT", "JIRA", "SMB", "SFTP", "HTTP_HELM_REPO", "AMAZON_S3_HELM_REPO",
-            "GCS_HELM_REPO", "SERVICENOW", "CUSTOM", "SPOT_INST", "AZURE_ARTIFACTS_PAT");
+            "NEXUS", "ARTIFACTORY", "PCF", "GIT", "JIRA", "SMB", "SFTP", "HTTP_HELM_REPO", "OCI_HELM_REPO",
+            "AMAZON_S3_HELM_REPO", "GCS_HELM_REPO", "SERVICENOW", "CUSTOM", "SPOT_INST", "AZURE_ARTIFACTS_PAT");
   }
 }

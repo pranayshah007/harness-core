@@ -13,10 +13,6 @@ import io.harness.ng.core.activityhistory.impl.NGActivityServiceImpl;
 import io.harness.ng.core.activityhistory.impl.NGActivitySummaryServiceImpl;
 import io.harness.ng.core.activityhistory.service.NGActivityService;
 import io.harness.ng.core.activityhistory.service.NGActivitySummaryService;
-import io.harness.ng.core.environment.services.EnvironmentService;
-import io.harness.ng.core.environment.services.impl.EnvironmentServiceImpl;
-import io.harness.ng.core.service.services.ServiceEntityService;
-import io.harness.ng.core.service.services.impl.ServiceEntityServiceImpl;
 
 import com.google.inject.AbstractModule;
 import java.util.concurrent.atomic.AtomicReference;
@@ -35,8 +31,6 @@ public class NGCoreModule extends AbstractModule {
   @Override
   protected void configure() {
     super.configure();
-    bind(EnvironmentService.class).to(EnvironmentServiceImpl.class);
-    bind(ServiceEntityService.class).to(ServiceEntityServiceImpl.class);
     bind(NGActivityService.class).to(NGActivityServiceImpl.class);
     bind(NGActivitySummaryService.class).to(NGActivitySummaryServiceImpl.class);
   }

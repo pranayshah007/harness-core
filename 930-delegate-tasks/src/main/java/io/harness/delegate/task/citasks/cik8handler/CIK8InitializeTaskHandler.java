@@ -12,12 +12,12 @@ package io.harness.delegate.task.citasks.cik8handler;
  * git secrets.
  */
 
+import static io.harness.connector.SecretSpecBuilder.OPAQUE_SECRET_TYPE;
+import static io.harness.connector.SecretSpecBuilder.getSecretName;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.beans.ci.k8s.PodStatus.Status.RUNNING;
 import static io.harness.delegate.beans.ci.pod.CIContainerType.LITE_ENGINE;
-import static io.harness.delegate.task.citasks.cik8handler.SecretSpecBuilder.OPAQUE_SECRET_TYPE;
-import static io.harness.delegate.task.citasks.cik8handler.SecretSpecBuilder.getSecretName;
 import static io.harness.govern.Switch.unhandled;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
@@ -25,6 +25,7 @@ import static java.lang.String.format;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.connector.SecretSpecBuilder;
 import io.harness.data.encoding.EncodingUtils;
 import io.harness.delegate.beans.ci.CIInitializeTaskParams;
 import io.harness.delegate.beans.ci.k8s.CIK8InitializeTaskParams;
@@ -47,7 +48,6 @@ import io.harness.delegate.task.citasks.cik8handler.helper.ProxyVariableHelper;
 import io.harness.delegate.task.citasks.cik8handler.helper.SecretVolumesHelper;
 import io.harness.delegate.task.citasks.cik8handler.k8java.CIK8JavaClientHandler;
 import io.harness.delegate.task.citasks.cik8handler.k8java.pod.PodSpecBuilder;
-import io.harness.k8s.KubernetesHelperService;
 import io.harness.k8s.apiclient.ApiClientFactory;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.logging.AutoLogContext;
@@ -98,7 +98,6 @@ public class CIK8InitializeTaskHandler implements CIInitializeTaskHandler {
   @Inject private PodSpecBuilder podSpecBuilder;
   @Inject private K8sConnectorHelper k8sConnectorHelper;
   @Inject private SecretSpecBuilder secretSpecBuilder;
-  @Inject private KubernetesHelperService kubernetesHelperService;
   @Inject private K8EventHandler k8EventHandler;
   @Inject private ProxyVariableHelper proxyVariableHelper;
   @Inject private SecretVolumesHelper secretVolumesHelper;
@@ -126,6 +125,17 @@ public class CIK8InitializeTaskHandler implements CIInitializeTaskHandler {
     PodParams podParams = cik8InitializeTaskParams.getCik8PodParams();
     String namespace = podParams.getNamespace();
     String podName = podParams.getName();
+    String serviceAccountName = podParams.getServiceAccountName();
+
+    if (namespace != null) {
+      namespace = namespace.replaceAll("\\s+", "");
+      podParams.setNamespace(namespace);
+    }
+
+    if (serviceAccountName != null) {
+      serviceAccountName = serviceAccountName.replaceAll("\\s+", "");
+      podParams.setServiceAccountName(serviceAccountName);
+    }
 
     K8sTaskExecutionResponse result;
     CiK8sTaskResponse k8sTaskResponse = null;
@@ -306,7 +316,17 @@ public class CIK8InitializeTaskHandler implements CIInitializeTaskHandler {
         continue;
       }
 
-      containerVolumeMounts.forEach(c::addVolumeMountsItem);
+      if (c.getImage().contains("kaniko")) {
+        for (V1VolumeMount containerVolumeMount : containerVolumeMounts) {
+          // For kaniko containers, only mount volumes to the kaniko allowed path.
+          // Any other path can interfere with the image creation process.
+          if (containerVolumeMount.getMountPath().startsWith("/kaniko")) {
+            c.addVolumeMountsItem(containerVolumeMount);
+          }
+        }
+      } else {
+        containerVolumeMounts.forEach(c::addVolumeMountsItem);
+      }
     }
   }
 

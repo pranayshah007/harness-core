@@ -33,7 +33,7 @@ import io.harness.audit.client.api.AuditClientService;
 import io.harness.category.element.UnitTests;
 import io.harness.context.GlobalContext;
 import io.harness.ng.core.environment.beans.Environment;
-import io.harness.ng.core.environment.beans.EnvironmentRequest;
+import io.harness.ng.core.environment.mappers.EnvironmentMapper;
 import io.harness.ng.core.events.EnvironmentCreateEvent;
 import io.harness.ng.core.events.EnvironmentDeleteEvent;
 import io.harness.ng.core.events.EnvironmentUpdatedEvent;
@@ -105,7 +105,7 @@ public class EnvironmentEventHandlerTest extends CategoryTest {
                                   .createdAt(Long.valueOf(randomNumeric(6)))
                                   .build();
 
-    String newYaml = getYamlString(EnvironmentRequest.builder().environment(environment).build());
+    String newYaml = getYamlString(EnvironmentMapper.toNGEnvironmentConfig(environment));
     final ArgumentCaptor<AuditEntry> auditEntryArgumentCaptor = ArgumentCaptor.forClass(AuditEntry.class);
     when(auditClientService.publishAudit(any(), any(), any())).thenReturn(true);
     environmentEventHandler.handle(outboxEvent);
@@ -156,7 +156,7 @@ public class EnvironmentEventHandlerTest extends CategoryTest {
                                   .createdAt(Long.valueOf(randomNumeric(6)))
                                   .build();
 
-    String oldYaml = getYamlString(EnvironmentRequest.builder().environment(environment).build());
+    String oldYaml = getYamlString(EnvironmentMapper.toNGEnvironmentConfig(environment));
     final ArgumentCaptor<AuditEntry> auditEntryArgumentCaptor = ArgumentCaptor.forClass(AuditEntry.class);
     when(auditClientService.publishAudit(any(), any(), any())).thenReturn(true);
     environmentEventHandler.handle(outboxEvent);
@@ -214,8 +214,8 @@ public class EnvironmentEventHandlerTest extends CategoryTest {
                                   .createdAt(Long.valueOf(randomNumeric(6)))
                                   .build();
 
-    String newYaml = getYamlString(EnvironmentRequest.builder().environment(newEnvironment).build());
-    String oldYaml = getYamlString(EnvironmentRequest.builder().environment(oldEnvironment).build());
+    String newYaml = getYamlString(EnvironmentMapper.toNGEnvironmentConfig(newEnvironment));
+    String oldYaml = getYamlString(EnvironmentMapper.toNGEnvironmentConfig(oldEnvironment));
     final ArgumentCaptor<AuditEntry> auditEntryArgumentCaptor = ArgumentCaptor.forClass(AuditEntry.class);
     when(auditClientService.publishAudit(any(), any(), any())).thenReturn(true);
     environmentEventHandler.handle(outboxEvent);
@@ -267,7 +267,7 @@ public class EnvironmentEventHandlerTest extends CategoryTest {
                                   .createdAt(Long.valueOf(randomNumeric(6)))
                                   .build();
 
-    String newYaml = getYamlString(EnvironmentRequest.builder().environment(environment).build());
+    String newYaml = getYamlString(EnvironmentMapper.toNGEnvironmentConfig(environment));
     final ArgumentCaptor<AuditEntry> auditEntryArgumentCaptor = ArgumentCaptor.forClass(AuditEntry.class);
     when(auditClientService.publishAudit(any(), any(), any())).thenReturn(true);
     environmentEventHandler.handle(outboxEvent);

@@ -8,7 +8,7 @@
 package io.harness.delegate.app;
 
 import static io.harness.annotations.dev.HarnessModule._420_DELEGATE_AGENT;
-import static io.harness.configuration.DeployMode.DEPLOY_MODE;
+import static io.harness.configuration.DeployMode.isOnPrem;
 import static io.harness.delegate.message.MessageConstants.DELEGATE_DASH;
 import static io.harness.delegate.message.MessageConstants.NEW_DELEGATE;
 import static io.harness.delegate.message.MessageConstants.WATCHER_DATA;
@@ -23,23 +23,21 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.annotations.dev.BreakDependencyOn;
 import io.harness.annotations.dev.TargetModule;
+import io.harness.configuration.DeployMode;
 import io.harness.delegate.app.modules.DelegateAgentModule;
 import io.harness.delegate.configuration.DelegateConfiguration;
 import io.harness.delegate.message.MessageService;
 import io.harness.delegate.service.DelegateAgentService;
 import io.harness.event.client.EventPublisher;
-import io.harness.grpc.pingpong.PingPongClient;
 import io.harness.serializer.YamlUtils;
 import io.harness.threading.ExecutorModule;
 import io.harness.threading.ThreadPool;
 import io.harness.utils.ProcessControl;
 
 import ch.qos.logback.classic.LoggerContext;
-import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
-import com.ning.http.client.AsyncHttpClient;
 import java.io.File;
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
@@ -51,6 +49,7 @@ import java.util.logging.Level;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.asynchttpclient.DefaultAsyncHttpClient;
 import org.slf4j.ILoggerFactory;
 import org.slf4j.LoggerFactory;
 import org.slf4j.bridge.SLF4JBridgeHandler;
@@ -60,6 +59,7 @@ import org.slf4j.bridge.SLF4JBridgeHandler;
 @BreakDependencyOn("io.harness.serializer.ManagerRegistrars")
 @BreakDependencyOn("io.harness.serializer.kryo.CvNextGenCommonsBeansKryoRegistrar")
 public class DelegateApplication {
+  private static final String DEPLOY_MODE = System.getenv(DeployMode.DEPLOY_MODE);
   private static String processId = String.valueOf(ProcessControl.myProcessId());
   private static DelegateConfiguration configuration;
 
@@ -99,7 +99,7 @@ public class DelegateApplication {
       java.util.logging.LogManager.getLogManager().getLogger("").setLevel(Level.INFO);
 
       initializeLogging();
-      log.info("Starting Delegate");
+      log.info("Starting Delegate in {} mode", DEPLOY_MODE);
       log.info("Process: {}", ManagementFactory.getRuntimeMXBean().getName());
       DelegateApplication delegateApplication = new DelegateApplication();
       delegateApplication.run(configuration, watcherProcess);
@@ -128,9 +128,7 @@ public class DelegateApplication {
       watcherData.put(WATCHER_PROCESS, watcherProcess);
       messageService.putAllData(WATCHER_DATA, watcherData);
     }
-    if (!ImmutableSet.of("ONPREM", "KUBERNETES_ONPREM").contains(System.getenv().get(DEPLOY_MODE))) {
-      injector.getInstance(PingPongClient.class).startAsync();
-    }
+
     DelegateAgentService delegateService = injector.getInstance(DelegateAgentService.class);
     delegateService.run(watched, false);
 
@@ -140,34 +138,36 @@ public class DelegateApplication {
   private void addShutdownHook(Injector injector, MessageService messageService) {
     Runtime.getRuntime().addShutdownHook(new Thread(() -> {
       try {
-        injector.getInstance(DelegateAgentService.class).shutdown(false);
-      } catch (final InterruptedException e) {
-        log.error("Delegate shutdown interrupted", e);
-        Thread.currentThread().interrupt();
+        try {
+          injector.getInstance(DelegateAgentService.class).shutdown(false);
+        } catch (final InterruptedException e) {
+          log.error("Delegate shutdown interrupted", e);
+          Thread.currentThread().interrupt();
+        }
+
+        messageService.closeChannel(DELEGATE, processId);
+        messageService.closeData(DELEGATE_DASH + processId);
+        log.info("Message service has been closed.");
+
+        if (!isOnPrem(DEPLOY_MODE)) {
+          injector.getInstance(EventPublisher.class).shutdown();
+        }
+
+        injector.getInstance(ExecutorService.class).shutdown();
+        log.info("Executor services have been shut down.");
+
+        injector.getInstance(DefaultAsyncHttpClient.class).close();
+        log.info("Async HTTP client has been closed.");
+        log.info("Delegate Shutdown completed successfully");
+        ILoggerFactory loggerFactory = LoggerFactory.getILoggerFactory();
+        if (loggerFactory instanceof LoggerContext) {
+          LoggerContext context = (LoggerContext) loggerFactory;
+          context.stop();
+        }
+        log.info("Log manager has been shutdown and logs have been flushed.");
+      } catch (Exception ex) {
+        log.error("Encountered error while executing Delegate shutdown ", ex);
       }
-
-      messageService.closeChannel(DELEGATE, processId);
-      messageService.closeData(DELEGATE_DASH + processId);
-      log.info("Message service has been closed.");
-
-      final PingPongClient pingPongClient = injector.getInstance(PingPongClient.class);
-      if (pingPongClient != null) {
-        pingPongClient.stopAsync();
-      }
-
-      injector.getInstance(ExecutorService.class).shutdown();
-      injector.getInstance(EventPublisher.class).shutdown();
-      log.info("Executor services have been shut down.");
-
-      injector.getInstance(AsyncHttpClient.class).close();
-      log.info("Async HTTP client has been closed.");
-
-      ILoggerFactory loggerFactory = LoggerFactory.getILoggerFactory();
-      if (loggerFactory instanceof LoggerContext) {
-        LoggerContext context = (LoggerContext) loggerFactory;
-        context.stop();
-      }
-      log.info("Log manager has been shutdown and logs have been flushed.");
     }));
   }
 }

@@ -19,7 +19,6 @@ import io.harness.rule.Owner;
 
 import software.wings.WingsBaseTest;
 import software.wings.beans.EcrConfig;
-import software.wings.beans.artifact.EcrArtifactStream;
 import software.wings.helpers.ext.jenkins.BuildDetails;
 import software.wings.helpers.ext.jenkins.BuildDetails.BuildDetailsMetadataKeys;
 import software.wings.service.impl.AwsHelperService;
@@ -89,7 +88,7 @@ public class EcrClassicServiceTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void shouldGetEcrImageURl() {
     EcrConfig ecrConfig = EcrConfig.builder().ecrUrl("https://aws_account_id.dkr.ecr.region.amazonaws.com").build();
-    assertThat(ecrService.getEcrImageUrl(ecrConfig, EcrArtifactStream.builder().imageName("imageName").build()))
+    assertThat(ecrService.getEcrImageUrl(ecrConfig, "imageName"))
         .isEqualTo("aws_account_id.dkr.ecr.region.amazonaws.com/imageName");
   }
 

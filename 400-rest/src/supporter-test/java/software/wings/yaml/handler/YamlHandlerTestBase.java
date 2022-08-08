@@ -16,10 +16,10 @@ import software.wings.yaml.YamlHelper;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import com.fasterxml.jackson.dataformat.yaml.snakeyaml.Yaml;
 import java.io.IOException;
 import org.junit.Rule;
 import org.junit.rules.ExpectedException;
+import org.yaml.snakeyaml.Yaml;
 
 /**
  * @author rktummala on 1/9/18

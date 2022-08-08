@@ -24,6 +24,7 @@ import io.harness.ccm.bigQuery.BigQueryService;
 import io.harness.ccm.views.entities.CEView;
 import io.harness.ccm.views.entities.ViewState;
 import io.harness.ccm.views.entities.ViewType;
+import io.harness.ccm.views.helper.AwsAccountFieldHelper;
 import io.harness.ccm.views.service.CEReportScheduleService;
 import io.harness.ccm.views.service.CEViewService;
 import io.harness.ccm.views.service.ViewCustomFieldService;
@@ -49,12 +50,14 @@ public class CEViewResourceTest extends CategoryTest {
   private static CEReportScheduleService ceReportScheduleService = mock(CEReportScheduleService.class);
   private static BigQueryService bigQueryService = mock(BigQueryService.class);
   private static CloudBillingHelper cloudBillingHelper = mock(CloudBillingHelper.class);
+  private static AwsAccountFieldHelper awsAccountFieldHelper = mock(AwsAccountFieldHelper.class);
 
   @ClassRule
-  public static ResourceTestRule RESOURCES = ResourceTestRule.builder()
-                                                 .instance(new CEViewResource(ceViewService, ceReportScheduleService,
-                                                     viewCustomFieldService, bigQueryService, cloudBillingHelper))
-                                                 .build();
+  public static ResourceTestRule RESOURCES =
+      ResourceTestRule.builder()
+          .instance(new CEViewResource(ceViewService, ceReportScheduleService, viewCustomFieldService, bigQueryService,
+              cloudBillingHelper, awsAccountFieldHelper))
+          .build();
 
   private final String ACCOUNT_ID = "ACCOUNT_ID";
   private final String NAME = "VIEW_NAME";
@@ -81,7 +84,7 @@ public class CEViewResourceTest extends CategoryTest {
                  .viewVersion(viewVersion)
                  .build();
     when(ceViewService.get(VIEW_ID)).thenReturn(ceView);
-    when(ceViewService.save(ceView)).thenReturn(ceView);
+    when(ceViewService.save(ceView, false)).thenReturn(ceView);
     when(ceViewService.update(ceView)).thenReturn(ceView);
     when(cloudBillingHelper.getCloudProviderTableName(ACCOUNT_ID, unified)).thenReturn(UNIFIED_TABLE);
   }
@@ -94,7 +97,7 @@ public class CEViewResourceTest extends CategoryTest {
         .target(format("/view?accountId=%s", ACCOUNT_ID))
         .request()
         .post(entity(ceView, MediaType.APPLICATION_JSON), new GenericType<Response>() {});
-    verify(ceViewService).save(ceView);
+    verify(ceViewService).save(ceView, false);
     verify(ceViewService).updateTotalCost(ceView, bigQueryService.get(), UNIFIED_TABLE);
   }
 

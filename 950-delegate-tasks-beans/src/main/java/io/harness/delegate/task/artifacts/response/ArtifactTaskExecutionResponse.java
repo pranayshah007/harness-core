@@ -10,6 +10,10 @@ package io.harness.delegate.task.artifacts.response;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.delegate.task.jenkins.JenkinsBuildTaskNGResponse;
+
+import software.wings.helpers.ext.jenkins.BuildDetails;
+import software.wings.helpers.ext.jenkins.JobDetails;
 
 import java.util.List;
 import lombok.Builder;
@@ -24,4 +28,8 @@ public class ArtifactTaskExecutionResponse {
   boolean isArtifactServerValid;
   boolean isArtifactSourceValid;
   List<String> artifactImages;
+  List<BuildDetails> buildDetails;
+  List<JobDetails> jobDetails;
+  List<String> artifactPath;
+  JenkinsBuildTaskNGResponse jenkinsBuildTaskNGResponse;
 }

@@ -26,7 +26,7 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(callSuper = true)
 @JsonTypeName("SecretFile")
 @JsonIgnoreProperties(ignoreUnknown = true)
-@Schema(name = "SecretFileSpe", description = "This has details of Secret File defined in harness")
+@Schema(name = "SecretFileSpec", description = "This has details of Secret File defined in harness")
 public class SecretFileSpecDTO extends SecretSpecDTO {
   @Schema(description = SecretConstants.SECRET_MANAGER_IDENTIFIER) @NotNull private String secretManagerIdentifier;
 

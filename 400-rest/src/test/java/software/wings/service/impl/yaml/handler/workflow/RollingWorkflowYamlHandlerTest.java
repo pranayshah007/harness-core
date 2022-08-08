@@ -24,10 +24,10 @@ import static software.wings.utils.WingsTestConstants.APP_ID;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.joor.Reflect.on;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyList;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.when;
 
 import io.harness.category.element.UnitTests;
@@ -52,14 +52,15 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Mockito;
+import org.mockito.Spy;
 
 public class RollingWorkflowYamlHandlerTest extends WorkflowYamlHandlerTestBase {
   private String workflowName = "rolling";
 
   @InjectMocks @Inject private RollingWorkflowYamlHandler yamlHandler;
   @Mock private LimitCheckerFactory limitCheckerFactory;
-  @Mock private WorkflowServiceHelper workflowServiceHelper;
+  @Inject @Spy private WorkflowServiceHelper workflowServiceHelperSpy;
+  @Mock WorkflowServiceHelper workflowServiceHelper;
 
   @Before
   public void runBeforeTest() {
@@ -109,13 +110,11 @@ public class RollingWorkflowYamlHandlerTest extends WorkflowYamlHandlerTestBase 
     ChangeContext<RollingWorkflowYaml> changeContext1 =
         getChangeContext(yamlFileContent1, ROLLING_VALID_YAML_FILE_PATH, yamlHandler);
 
-    when(limitCheckerFactory.getInstance(new Action(Mockito.anyString(), ActionType.CREATE_WORKFLOW)))
+    when(limitCheckerFactory.getInstance(new Action(any(), ActionType.CREATE_WORKFLOW)))
         .thenReturn(new WingsTestConstants.MockChecker(true, ActionType.CREATE_WORKFLOW));
-    when(workflowServiceHelper.isK8sV2Service(any(), any())).thenReturn(true);
-    when(workflowServiceHelper.getCategory(any(), any())).thenReturn(AbstractWorkflowFactory.Category.GENERAL);
-    when(workflowServiceHelper.propagateWorkflowDataToPhases(
-             any(), anyList(), anyString(), anyString(), anyString(), anyBoolean(), anyBoolean(), anyBoolean()))
-        .thenCallRealMethod();
+    doReturn(true).when(workflowServiceHelperSpy).isK8sV2Service(any(), any());
+    when(workflowServiceHelperSpy.getCategory(any(), any())).thenReturn(AbstractWorkflowFactory.Category.GENERAL);
+    on(workflowService).set("workflowServiceHelper", workflowServiceHelperSpy);
 
     RollingWorkflowYaml yamlObject1 = (RollingWorkflowYaml) getYaml(yamlFileContent1, RollingWorkflowYaml.class);
     changeContext1.setYaml(yamlObject1);
@@ -158,7 +157,7 @@ public class RollingWorkflowYamlHandlerTest extends WorkflowYamlHandlerTestBase 
 
   private void testCRUDrolling(String rollingYamlContentResourcePath)
       throws IOException, io.harness.exception.HarnessException {
-    when(limitCheckerFactory.getInstance(new Action(Mockito.anyString(), ActionType.CREATE_WORKFLOW)))
+    when(limitCheckerFactory.getInstance(new Action(any(), ActionType.CREATE_WORKFLOW)))
         .thenReturn(new WingsTestConstants.MockChecker(true, ActionType.CREATE_WORKFLOW));
     when(workflowServiceHelper.isK8sV2Service(any(), any())).thenReturn(true);
     when(workflowServiceHelper.getCategory(any(), any())).thenReturn(AbstractWorkflowFactory.Category.GENERAL);

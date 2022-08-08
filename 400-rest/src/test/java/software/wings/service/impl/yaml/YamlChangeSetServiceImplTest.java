@@ -10,12 +10,14 @@ package software.wings.service.impl.yaml;
 import static io.harness.rule.OwnerRule.ABHINAV;
 import static io.harness.rule.OwnerRule.DEEPAK;
 import static io.harness.rule.OwnerRule.ROHIT_KUMAR;
+import static io.harness.rule.OwnerRule.YUVRAJ;
 
 import static software.wings.beans.CGConstants.GLOBAL_APP_ID;
 import static software.wings.beans.SettingAttribute.Builder.aSettingAttribute;
 import static software.wings.utils.WingsTestConstants.ACCOUNT_ID;
 import static software.wings.utils.WingsTestConstants.SETTING_ID;
 import static software.wings.yaml.gitSync.YamlChangeSet.MAX_RETRY_COUNT_EXCEEDED_CODE;
+import static software.wings.yaml.gitSync.YamlChangeSet.Status.COMPLETED;
 import static software.wings.yaml.gitSync.YamlChangeSet.Status.QUEUED;
 import static software.wings.yaml.gitSync.YamlChangeSet.Status.RUNNING;
 import static software.wings.yaml.gitSync.YamlChangeSet.Status.SKIPPED;
@@ -35,7 +37,10 @@ import software.wings.yaml.gitSync.YamlChangeSet;
 import software.wings.yaml.gitSync.YamlGitConfig;
 
 import com.google.inject.Inject;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.stream.Collectors;
+import org.apache.commons.lang3.StringUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -243,5 +248,85 @@ public class YamlChangeSetServiceImplTest extends WingsBaseTest {
     YamlChangeSet yamlChangeSetAfterUpdate = yamlChangeSetService.get(ACCOUNT_ID, yamlChangeSet.getUuid());
     assertThat(yamlChangeSetAfterUpdate.getStatus()).isEqualTo(QUEUED);
     assertThat(yamlChangeSetAfterUpdate.getPushRetryCount()).isEqualTo(1);
+  }
+
+  @Test
+  @Owner(developers = YUVRAJ)
+  @Category(UnitTests.class)
+  public void test_getItemsInQueueKey() {
+    String accountId = "accountId";
+    String appId = "appId";
+    String gitConnectorId = "gitConnectorId";
+    String repositoryName = "repoName";
+    final YamlGitConfig yamlGitConfig = YamlGitConfig.builder()
+                                            .accountId(accountId)
+                                            .branchName("master")
+                                            .enabled(true)
+                                            .appId(appId)
+                                            .repositoryName(repositoryName)
+                                            .gitConnectorId(gitConnectorId)
+                                            .build();
+    persistence.save(yamlGitConfig);
+    String queueKey = Arrays
+                          .asList(yamlGitConfig.getAccountId(), yamlGitConfig.getGitConnectorId(),
+                              yamlGitConfig.getRepositoryName(), yamlGitConfig.getBranchName())
+                          .stream()
+                          .filter(StringUtils::isNotBlank)
+                          .collect(Collectors.joining(":"));
+
+    final YamlChangeSet yamlChangeSet1 = yamlChangeSetService.save(
+        YamlChangeSet.builder()
+            .fullSync(false)
+            .status(QUEUED)
+            .accountId(accountId)
+            .appId(appId)
+            .queueKey(queueKey)
+            .gitWebhookRequestAttributes(
+                GitWebhookRequestAttributes.builder().branchName("master").gitConnectorId(gitConnectorId).build())
+            .gitFileChanges(Collections.emptyList())
+            .build());
+
+    final YamlChangeSet yamlChangeSet2 = yamlChangeSetService.save(
+        YamlChangeSet.builder()
+            .fullSync(false)
+            .status(QUEUED)
+            .accountId(accountId)
+            .appId(appId)
+            .queueKey(queueKey)
+            .gitWebhookRequestAttributes(
+                GitWebhookRequestAttributes.builder().branchName("master").gitConnectorId(gitConnectorId).build())
+            .gitFileChanges(Collections.emptyList())
+            .build());
+
+    final YamlChangeSet yamlChangeSet3 = yamlChangeSetService.save(
+        YamlChangeSet.builder()
+            .fullSync(false)
+            .status(COMPLETED)
+            .accountId(accountId)
+            .appId(appId)
+            .queueKey(queueKey)
+            .gitWebhookRequestAttributes(
+                GitWebhookRequestAttributes.builder().branchName("master").gitConnectorId(gitConnectorId).build())
+            .gitFileChanges(Collections.emptyList())
+            .build());
+
+    final YamlChangeSet yamlChangeSet4 = yamlChangeSetService.save(
+        YamlChangeSet.builder()
+            .fullSync(false)
+            .status(QUEUED)
+            .accountId(accountId)
+            .appId(appId)
+            .queueKey("queueKey")
+            .gitWebhookRequestAttributes(
+                GitWebhookRequestAttributes.builder().branchName("master").gitConnectorId(gitConnectorId).build())
+            .gitFileChanges(Collections.emptyList())
+            .build());
+
+    persistence.save(yamlChangeSet1);
+    persistence.save(yamlChangeSet2);
+    persistence.save(yamlChangeSet3);
+    persistence.save(yamlChangeSet4);
+    long count = yamlChangeSetService.getItemsInQueueKey(appId, accountId);
+    assertThat(count).isEqualTo(2);
   }
 }

@@ -25,9 +25,11 @@ import io.harness.cvng.dashboard.services.api.HeatMapService;
 import io.harness.cvng.dashboard.services.api.ServiceDependencyGraphService;
 
 import com.google.inject.Inject;
+import io.jsonwebtoken.lang.Collections;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
@@ -44,22 +46,30 @@ public class ServiceDependencyGraphServiceImpl implements ServiceDependencyGraph
 
   @Override
   public ServiceDependencyGraphDTO getDependencyGraph(@NonNull ProjectParams projectParams,
-      @Nullable String serviceIdentifier, @Nullable String environmentIdentifier,
-      @NonNull boolean servicesAtRiskFilter) {
+      @Nullable String serviceIdentifier, @Nullable String environmentIdentifier, @NonNull boolean servicesAtRiskFilter,
+      @Nullable String filter) {
     if (serviceIdentifier == null && environmentIdentifier == null) {
-      return getDependencyGraph(projectParams, null, servicesAtRiskFilter);
+      return getDependencyGraph(projectParams, null, servicesAtRiskFilter, filter);
     }
     List<MonitoredService> monitoredServices =
         monitoredServiceService.list(projectParams, serviceIdentifier, environmentIdentifier);
     Set<String> monitoredServiceIdentifiers =
         monitoredServices.stream().map(MonitoredService::getIdentifier).collect(Collectors.toSet());
-    return getDependencyGraph(projectParams, new ArrayList<>(monitoredServiceIdentifiers), servicesAtRiskFilter);
+    return getDependencyGraph(
+        projectParams, new ArrayList<>(monitoredServiceIdentifiers), servicesAtRiskFilter, filter);
   }
 
   @Override
   public ServiceDependencyGraphDTO getDependencyGraph(@NonNull ProjectParams projectParams,
-      @Nullable List<String> monitoredServiceIdentifiers, @NonNull boolean servicesAtRiskFilter) {
-    List<MonitoredService> monitoredServices = monitoredServiceService.list(projectParams, monitoredServiceIdentifiers);
+      @Nullable List<String> monitoredServiceIdentifiers, @NonNull boolean servicesAtRiskFilter,
+      @Nullable String filter) {
+    List<MonitoredService> monitoredServices = new ArrayList<>();
+    if (!Objects.isNull(filter)) {
+      monitoredServices = monitoredServiceService.listWithFilter(projectParams, monitoredServiceIdentifiers, filter);
+    } else {
+      monitoredServices = monitoredServiceService.list(projectParams, monitoredServiceIdentifiers);
+    }
+
     Set<String> monitoredServiceIdentifierSet =
         monitoredServices.stream().map(MonitoredService::getIdentifier).collect(Collectors.toSet());
     List<ServiceDependency> serviceDependencies =
@@ -68,7 +78,11 @@ public class ServiceDependencyGraphServiceImpl implements ServiceDependencyGraph
     // Get nodes for dependent services
     serviceDependencies.forEach(
         serviceDependency -> monitoredServiceIdentifierSet.add(serviceDependency.getFromMonitoredServiceIdentifier()));
-    monitoredServices = monitoredServiceService.list(projectParams, new ArrayList<>(monitoredServiceIdentifierSet));
+    if (!Objects.isNull(filter) && Collections.isEmpty(monitoredServiceIdentifierSet)) {
+      monitoredServices = new ArrayList<>();
+    } else {
+      monitoredServices = monitoredServiceService.list(projectParams, new ArrayList<>(monitoredServiceIdentifierSet));
+    }
 
     Set<String> serviceIdentifiers =
         monitoredServices.stream().map(MonitoredService::getServiceIdentifier).collect(Collectors.toSet());

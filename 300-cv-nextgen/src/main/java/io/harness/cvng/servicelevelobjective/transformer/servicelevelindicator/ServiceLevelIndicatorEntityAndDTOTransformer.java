@@ -19,11 +19,11 @@ public class ServiceLevelIndicatorEntityAndDTOTransformer {
   @Inject private Map<SLIMetricType, ServiceLevelIndicatorTransformer> serviceLevelIndicatorTransformerMap;
 
   public ServiceLevelIndicator getEntity(ProjectParams projectParams, ServiceLevelIndicatorDTO serviceLevelIndicatorDTO,
-      String monitoredServiceIndicator, String healthSourceIndicator) {
+      String monitoredServiceIndicator, String healthSourceIndicator, boolean isEnabled) {
     ServiceLevelIndicatorTransformer serviceLevelIndicatorTransformer =
         serviceLevelIndicatorTransformerMap.get(serviceLevelIndicatorDTO.getSpec().getType());
     return serviceLevelIndicatorTransformer.getEntity(
-        projectParams, serviceLevelIndicatorDTO, monitoredServiceIndicator, healthSourceIndicator);
+        projectParams, serviceLevelIndicatorDTO, monitoredServiceIndicator, healthSourceIndicator, isEnabled);
   }
 
   public ServiceLevelIndicatorDTO getDto(ServiceLevelIndicator serviceLevelIndicator) {

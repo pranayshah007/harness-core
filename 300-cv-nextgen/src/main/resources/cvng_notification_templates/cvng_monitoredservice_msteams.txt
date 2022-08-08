@@ -1,0 +1,33 @@
+{
+  "@type": "MessageCard",
+  "themeColor": "#FFFFFF",
+  "summary": "Harness SRM",
+  "sections": [
+    {
+      "activityTitle": "Service Health: ${MONITORED_SERVICE_NAME} ${HEADER_MESSAGE} ${SERVICE_NAME} service",
+      "activitySubtitle": "Trigger ${TRIGGER_MESSAGE}. Incident occurred ${START_DATE}",
+      "facts": [
+              {
+                  "name": "Top metrics that are affected",
+                  "value": "${ANOMALOUS_METRIC}"
+              },
+              {
+                  "name": "Account Name",
+                  "value": "${ACCOUNT_NAME}"
+              },
+              {
+                  "name": "Organization Name",
+                  "value": "${ORG_NAME}"
+              },
+             {
+                  "name": "Project Name",
+                  "value": "${PROJECT_NAME}"
+             },
+             {
+                   "name": "View Service Health details",
+                   "value": "[${URL}](${URL})"
+             },
+      ],
+    }
+  ]
+}

@@ -62,9 +62,11 @@ import software.wings.service.intfc.ArtifactStreamService;
 import software.wings.service.intfc.DelegateService;
 import software.wings.service.intfc.SettingsService;
 import software.wings.service.intfc.security.SecretManager;
+import software.wings.utils.MappingUtils;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -124,6 +126,7 @@ public class ArtifactCollectEventListener extends QueueListener<CollectEvent> {
 
   private DelegateTask createDelegateTask(
       String accountId, ArtifactStream artifactStream, Artifact artifact, String waitId) {
+    Map<String, String> artifactMetadata = MappingUtils.safeCopy(artifact.getMetadata());
     switch (ArtifactStreamType.valueOf(artifactStream.getArtifactStreamType())) {
       case JENKINS: {
         JenkinsArtifactStream jenkinsArtifactStream = (JenkinsArtifactStream) artifactStream;
@@ -136,7 +139,7 @@ public class ArtifactCollectEventListener extends QueueListener<CollectEvent> {
                 .encryptedDataDetails(secretManager.getEncryptionDetails(jenkinsConfig, null, null))
                 .jobName(jenkinsArtifactStream.getJobname())
                 .artifactPaths(jenkinsArtifactStream.getArtifactPaths())
-                .metaData(artifact.getMetadata())
+                .metaData(artifactMetadata)
                 .build();
 
         return DelegateTask.builder()
@@ -160,15 +163,14 @@ public class ArtifactCollectEventListener extends QueueListener<CollectEvent> {
             .accountId(accountId)
             .setupAbstraction(Cd1SetupFields.APP_ID_FIELD, GLOBAL_APP_ID)
             .waitId(waitId)
-            .data(
-                TaskData.builder()
-                    .async(true)
-                    .taskType(TaskType.BAMBOO_COLLECTION.name())
-                    .parameters(new Object[] {bambooConfig,
-                        secretManager.getEncryptionDetails(bambooConfig, null, null),
-                        bambooArtifactStream.fetchArtifactStreamAttributes(featureFlagService), artifact.getMetadata()})
-                    .timeout(DEFAULT_ASYNC_CALL_TIMEOUT)
-                    .build())
+            .data(TaskData.builder()
+                      .async(true)
+                      .taskType(TaskType.BAMBOO_COLLECTION.name())
+                      .parameters(
+                          new Object[] {bambooConfig, secretManager.getEncryptionDetails(bambooConfig, null, null),
+                              bambooArtifactStream.fetchArtifactStreamAttributes(featureFlagService), artifactMetadata})
+                      .timeout(DEFAULT_ASYNC_CALL_TIMEOUT)
+                      .build())
             .build();
       }
       case NEXUS: {
@@ -185,7 +187,7 @@ public class ArtifactCollectEventListener extends QueueListener<CollectEvent> {
                     .async(true)
                     .taskType(TaskType.NEXUS_COLLECTION.name())
                     .parameters(new Object[] {nexusConfig, secretManager.getEncryptionDetails(nexusConfig, null, null),
-                        nexusArtifactStream.fetchArtifactStreamAttributes(featureFlagService), artifact.getMetadata()})
+                        nexusArtifactStream.fetchArtifactStreamAttributes(featureFlagService), artifactMetadata})
                     .timeout(DEFAULT_ASYNC_CALL_TIMEOUT)
                     .build())
             .build();
@@ -200,7 +202,7 @@ public class ArtifactCollectEventListener extends QueueListener<CollectEvent> {
                 .artifactoryConfig(artifactoryConfig)
                 .encryptedDataDetails(secretManager.getEncryptionDetails(artifactoryConfig, null, null))
                 .jobName(artifactoryArtifactStream.getJobname())
-                .metadata(artifact.getMetadata())
+                .metadata(artifactMetadata)
                 .build();
         return DelegateTask.builder()
             .accountId(accountId)
@@ -258,7 +260,7 @@ public class ArtifactCollectEventListener extends QueueListener<CollectEvent> {
                             .encryptedDataDetails(secretManager.getEncryptionDetails(azureArtifactsConfig, null, null))
                             .artifactStreamAttributes(
                                 azureArtifactsArtifactStream.fetchArtifactStreamAttributes(featureFlagService))
-                            .artifactMetadata(artifact.getMetadata())
+                            .artifactMetadata(artifactMetadata)
                             .build()})
                     .timeout(DEFAULT_ASYNC_CALL_TIMEOUT)
                     .build())

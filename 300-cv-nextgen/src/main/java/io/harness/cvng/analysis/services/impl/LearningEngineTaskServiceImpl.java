@@ -126,8 +126,9 @@ public class LearningEngineTaskServiceImpl implements LearningEngineTaskService 
             // TODO: this should be done using iterator.
             log.info("LearningEngineTask {} for verificationTaskId {} has TIMEDOUT", task.getUuid(),
                 task.getVerificationTaskId());
-            incTaskStatusMetric(task.getAccountId(), ExecutionStatus.TIMEOUT);
             task.setTaskStatus(ExecutionStatus.TIMEOUT);
+            incTaskStatusMetric(task.getAccountId(), ExecutionStatus.TIMEOUT);
+            addTimeToFinishMetrics(task);
             executionLogService.getLogger(task).log(
                 task.getLogLevel(), "Learning engine task status: " + task.getTaskStatus());
             timedOutTaskIds.add(task.getUuid());
@@ -157,11 +158,9 @@ public class LearningEngineTaskServiceImpl implements LearningEngineTaskService 
   private void addTimeToFinishMetrics(LearningEngineTask task) {
     try (AutoMetricContext ignore = metricContextBuilder.getContext(task, LearningEngineTask.class)) {
       metricService.recordDuration(CVNGMetricsUtils.LEARNING_ENGINE_TASK_TOTAL_TIME, task.totalTime(clock.instant()));
-      if (task.getPickedAt() != null) { // Remove this in the future after lastPickedAt is populated.
-        metricService.recordDuration(CVNGMetricsUtils.LEARNING_ENGINE_TASK_WAIT_TIME, task.waitTime());
-        metricService.recordDuration(
-            CVNGMetricsUtils.LEARNING_ENGINE_TASK_RUNNING_TIME, task.runningTime(clock.instant()));
-      }
+      metricService.recordDuration(CVNGMetricsUtils.LEARNING_ENGINE_TASK_WAIT_TIME, task.waitTime());
+      metricService.recordDuration(
+          CVNGMetricsUtils.LEARNING_ENGINE_TASK_RUNNING_TIME, task.runningTime(clock.instant()));
     }
   }
 
@@ -214,13 +213,14 @@ public class LearningEngineTaskServiceImpl implements LearningEngineTaskService 
         updateOperations);
     LearningEngineTask learningEngineTask = get(taskId);
     incTaskStatusMetric(learningEngineTask.getAccountId(), ExecutionStatus.FAILED);
+    addTimeToFinishMetrics(learningEngineTask);
     executionLogService.getLogger(learningEngineTask)
-        .log(learningEngineTask.getLogLevel(), "Learning engine task status: " + learningEngineTask.getTaskStatus());
+        .error("Learning engine task failed. Exception: ", learningEngineTask.getException());
   }
 
   private boolean hasTaskTimedOut(LearningEngineTask task) {
     if (task != null && task.getTaskStatus().equals(ExecutionStatus.RUNNING)) {
-      Instant tenMinsAgo = Instant.now().minus(10, ChronoUnit.MINUTES);
+      Instant tenMinsAgo = clock.instant().minus(10, ChronoUnit.MINUTES);
       if (Instant.ofEpochMilli(task.getLastUpdatedAt()).isBefore(tenMinsAgo)) {
         return true;
       }

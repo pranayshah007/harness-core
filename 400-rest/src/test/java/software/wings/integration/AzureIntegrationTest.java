@@ -24,6 +24,7 @@ import software.wings.WingsBaseTest;
 import software.wings.beans.AzureAvailabilitySet;
 import software.wings.beans.AzureConfig;
 import software.wings.beans.AzureVirtualMachineScaleSet;
+import software.wings.helpers.ext.azure.AzureDelegateHelperService;
 import software.wings.helpers.ext.azure.AzureHelperService;
 import software.wings.rules.Integration;
 import software.wings.service.intfc.security.EncryptionService;
@@ -54,6 +55,7 @@ public class AzureIntegrationTest extends WingsBaseTest {
 
   @Inject private ScmSecret scmSecret;
   @Inject private AzureHelperService azureHelperService;
+  @Inject private AzureDelegateHelperService azureDelegateHelperService;
   @Inject private EncryptionService encryptionService;
 
   @Before
@@ -95,7 +97,7 @@ public class AzureIntegrationTest extends WingsBaseTest {
 
     for (Map.Entry<String, String> entry : subscriptions.entrySet()) {
       String subscriptionId = entry.getKey();
-      registries.addAll(azureHelperService.listContainerRegistryNames(config, subscriptionId));
+      registries.addAll(azureDelegateHelperService.listContainerRegistryNames(config, subscriptionId));
     }
     assertThat(registries).isNotEmpty();
 
@@ -147,7 +149,8 @@ public class AzureIntegrationTest extends WingsBaseTest {
     for (Map.Entry<String, String> entry : subscriptions.entrySet()) {
       String subscriptionId = entry.getKey();
       log.info("Subscription: " + subscriptionId);
-      Set<String> tags = azureHelperService.listTagsBySubscription(subscriptionId, config, Collections.emptyList());
+      Set<String> tags =
+          azureDelegateHelperService.listTagsBySubscription(subscriptionId, config, Collections.emptyList());
       assertThat(tags).isNotEmpty();
       for (String tag : tags) {
         log.info("Tag: " + tag);
@@ -167,7 +170,7 @@ public class AzureIntegrationTest extends WingsBaseTest {
       String subscriptionId = entry.getKey();
       log.info("Subscription: " + subscriptionId);
       Set<String> resourceGroups =
-          azureHelperService.listResourceGroups(config, Collections.EMPTY_LIST, subscriptionId);
+          azureDelegateHelperService.listResourceGroups(config, Collections.EMPTY_LIST, subscriptionId);
       assertThat(resourceGroups).isNotEmpty();
 
       // Win hosts
@@ -204,12 +207,12 @@ public class AzureIntegrationTest extends WingsBaseTest {
     subscriptions.forEach((subId, Desc) -> log.info(subId + Desc));
     for (Map.Entry<String, String> entry : subscriptions.entrySet()) {
       String subscriptionId = entry.getKey();
-      List<String> registries = azureHelperService.listContainerRegistryNames(config, subscriptionId);
+      List<String> registries = azureDelegateHelperService.listContainerRegistryNames(config, subscriptionId);
       for (String registry : registries) {
         if (registry.equals("harnessexample")) {
-          List<String> repositories = azureHelperService.listRepositories(config, subscriptionId, registry);
+          List<String> repositories = azureDelegateHelperService.listRepositories(config, subscriptionId, registry);
           for (String repository : repositories) {
-            List<String> tags = azureHelperService.listRepositoryTags(
+            List<String> tags = azureDelegateHelperService.listRepositoryTags(
                 config, Collections.emptyList(), subscriptionId, registry, repository);
             log.info("Details: " + subscriptionId + " " + registry + " " + repository + " " + tags.toString());
           }
@@ -224,6 +227,6 @@ public class AzureIntegrationTest extends WingsBaseTest {
   }
 
   private Map<String, String> listSubscriptions(AzureConfig config) {
-    return azureHelperService.listSubscriptions(config, Collections.emptyList());
+    return azureDelegateHelperService.listSubscriptions(config, Collections.emptyList());
   }
 }

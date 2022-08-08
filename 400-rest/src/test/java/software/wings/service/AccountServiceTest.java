@@ -66,6 +66,7 @@ import io.harness.cvng.beans.ServiceGuardLimitDTO;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.datahandler.models.AccountDetails;
 import io.harness.delegate.beans.DelegateConfiguration;
+import io.harness.delegate.service.DelegateVersionService;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnauthorizedException;
@@ -171,6 +172,7 @@ public class AccountServiceTest extends WingsBaseTest {
   @Mock private AccountPermissionUtils accountPermissionUtils;
   @Mock private CgCdLicenseUsageService cgCdLicenseUsageService;
   @Mock private FeatureFlagService featureFlagService;
+  @Mock private DelegateVersionService delegateVersionService;
 
   @Mock(answer = Answers.RETURNS_DEEP_STUBS) private MainConfiguration configuration;
 
@@ -200,7 +202,9 @@ public class AccountServiceTest extends WingsBaseTest {
   public void setup() throws IllegalAccessException {
     FieldUtils.writeField(licenseService, "accountService", accountService, true);
     FieldUtils.writeField(accountService, "licenseService", licenseService, true);
+    FieldUtils.writeField(accountService, "delegateVersionService", delegateVersionService, true);
     FieldUtils.writeField(accountResource, "accountPermissionUtils", accountPermissionUtils, true);
+    when(delegateVersionService.getDelegateJarVersions(anyString())).thenReturn(Collections.emptyList());
   }
 
   private Account saveAccount(String companyName) {

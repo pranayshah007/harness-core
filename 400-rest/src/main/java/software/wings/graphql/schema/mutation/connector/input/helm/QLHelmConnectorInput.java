@@ -28,4 +28,5 @@ public class QLHelmConnectorInput {
   private RequestField<QLAmazonS3PlatformInput> amazonS3PlatformDetails;
   private RequestField<QLGCSPlatformInput> gcsPlatformDetails;
   private RequestField<QLHttpServerPlatformInput> httpServerPlatformDetails;
+  private RequestField<QLOCIPlatformInput> ociPlatformDetails;
 }

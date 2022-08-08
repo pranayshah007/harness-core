@@ -1,0 +1,85 @@
+/*
+ * Copyright 2021 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
+
+package io.harness.ccm;
+
+import static javax.ws.rs.core.MediaType.APPLICATION_JSON_TYPE;
+import static org.apache.commons.lang3.StringUtils.EMPTY;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.annotations.VisibleForTesting;
+import io.dropwizard.cli.ConfiguredCommand;
+import io.dropwizard.setup.Bootstrap;
+import io.swagger.v3.jaxrs2.integration.resources.BaseOpenApiResource;
+import java.io.FileOutputStream;
+import java.io.OutputStream;
+import javax.servlet.ServletConfig;
+import javax.ws.rs.core.Application;
+import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriInfo;
+import lombok.extern.slf4j.Slf4j;
+import net.sourceforge.argparse4j.inf.Namespace;
+import net.sourceforge.argparse4j.inf.Subparser;
+
+@Slf4j
+public class GenerateOpenApiSpecCommand extends ConfiguredCommand<CENextGenConfiguration> {
+  public static final String OUTPUT_FILE_PATH = "outputFilePath";
+  public static final String LEADING_AND_TRAILING_QUOTES = "^\"|\"$";
+  public static final String NEW_LINE = "\\n";
+  public static final String BACKWARD_SLASH = "\\";
+  private OutputStream outputStream;
+
+  public GenerateOpenApiSpecCommand() {
+    super("generate-openapi-spec", "Generates Openapi 3 specification file");
+  }
+
+  @VisibleForTesting
+  public GenerateOpenApiSpecCommand(OutputStream outputStream) {
+    this();
+    this.outputStream = outputStream;
+  }
+
+  @Override
+  public void configure(Subparser subparser) {
+    subparser.addArgument(OUTPUT_FILE_PATH).help("Absolute path to output openapi spec file");
+    subparser.addArgument(new String[] {"file"}).nargs("?").help("application configuration file");
+  }
+
+  @Override
+  protected void run(Bootstrap<CENextGenConfiguration> bootstrap, Namespace namespace,
+      CENextGenConfiguration configuration) throws Exception {
+    String outputFilePath = namespace.getString(OUTPUT_FILE_PATH);
+
+    LocalOpenAPIResource localOpenAPIResource = new LocalOpenAPIResource();
+    localOpenAPIResource.setOpenApiConfiguration(configuration.getOasConfig());
+    Response json = localOpenAPIResource.getOpenApi(null, null, null, null, APPLICATION_JSON_TYPE.getSubtype());
+
+    try (OutputStream out = outputStream != null ? outputStream : new FileOutputStream(outputFilePath)) {
+      String openApiSpecContent = sanitize(json);
+      out.write(openApiSpecContent.getBytes());
+    } catch (Exception exception) {
+      log.error("Failed to generate OpenAPI spec at location : " + OUTPUT_FILE_PATH + " because of : " + exception);
+    }
+  }
+
+  private String sanitize(Response json) throws JsonProcessingException {
+    String openApiSpecContent = new ObjectMapper().writeValueAsString(json.getEntity());
+    return openApiSpecContent.replace(NEW_LINE, EMPTY)
+        .replace(BACKWARD_SLASH, EMPTY)
+        .replaceAll(LEADING_AND_TRAILING_QUOTES, EMPTY);
+  }
+
+  static class LocalOpenAPIResource extends BaseOpenApiResource {
+    @Override
+    protected Response getOpenApi(
+        HttpHeaders headers, ServletConfig config, Application app, UriInfo uriInfo, String type) throws Exception {
+      return super.getOpenApi(headers, config, app, uriInfo, type);
+    }
+  }
+}

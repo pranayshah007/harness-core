@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.rule.OwnerRule.ABOSII;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
@@ -88,7 +89,7 @@ public class HelmCommandTaskTest extends WingsBaseTest {
     doReturn(mock(LogCallback.class)).when(dummyCommandRequest).getExecutionLogCallback();
     doReturn(kubeConfigLocation)
         .when(containerDeploymentDelegateHelper)
-        .createAndGetKubeConfigLocation(any(ContainerServiceParams.class));
+        .createAndGetKubeConfigLocation(nullable(ContainerServiceParams.class));
     helmCommandTask.run(dummyCommandRequest);
 
     verify(helmDeployService, times(1)).ensureHelmInstalled(dummyCommandRequest);

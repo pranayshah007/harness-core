@@ -9,12 +9,18 @@ package io.harness;
 
 import static io.harness.AuthorizationServiceHeader.TEMPLATE_SERVICE;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.eventsframework.EventsFrameworkConstants.ENTITY_CRUD;
+import static io.harness.eventsframework.EventsFrameworkMetadataConstants.ORGANIZATION_ENTITY;
+import static io.harness.eventsframework.EventsFrameworkMetadataConstants.PROJECT_ENTITY;
 import static io.harness.lock.DistributedLockImplementation.MONGO;
+import static io.harness.ng.core.template.TemplateEntityConstants.MONITORED_SERVICE;
 import static io.harness.ng.core.template.TemplateEntityConstants.PIPELINE;
+import static io.harness.ng.core.template.TemplateEntityConstants.SECRET_MANAGER;
 import static io.harness.ng.core.template.TemplateEntityConstants.STAGE;
 import static io.harness.ng.core.template.TemplateEntityConstants.STEP;
 import static io.harness.outbox.OutboxSDKConstants.DEFAULT_OUTBOX_POLL_CONFIGURATION;
 
+import io.harness.account.AccountClientModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.app.PrimaryVersionManagerModule;
 import io.harness.audit.client.remote.AuditClientModule;
@@ -39,29 +45,44 @@ import io.harness.mongo.AbstractMongoModule;
 import io.harness.mongo.MongoConfig;
 import io.harness.mongo.MongoPersistence;
 import io.harness.morphia.MorphiaRegistrar;
+import io.harness.ng.core.event.MessageListener;
 import io.harness.organization.OrganizationClientModule;
 import io.harness.outbox.TransactionOutboxModule;
 import io.harness.outbox.api.OutboxEventHandler;
 import io.harness.persistence.HPersistence;
 import io.harness.persistence.NoopUserProvider;
 import io.harness.persistence.UserProvider;
+import io.harness.pipeline.yamlschema.PipelineYamlSchemaClientModule;
 import io.harness.project.ProjectClientModule;
 import io.harness.redis.RedisConfig;
+import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.serializer.KryoRegistrar;
 import io.harness.serializer.TemplateServiceModuleRegistrars;
 import io.harness.service.DelegateServiceDriverModule;
+import io.harness.template.event.OrgEntityCrudStreamListener;
+import io.harness.template.event.ProjectEntityCrudStreamListener;
 import io.harness.template.events.TemplateOutboxEventHandler;
 import io.harness.template.eventsframework.TemplateEventsFrameworkModule;
+import io.harness.template.handler.PipelineTemplateYamlConversionHandler;
 import io.harness.template.handler.TemplateYamlConversionHandler;
 import io.harness.template.handler.TemplateYamlConversionHandlerRegistry;
 import io.harness.template.mappers.TemplateFilterPropertiesMapper;
+import io.harness.template.services.NGTemplateSchemaService;
+import io.harness.template.services.NGTemplateSchemaServiceImpl;
 import io.harness.template.services.NGTemplateService;
 import io.harness.template.services.NGTemplateServiceImpl;
+import io.harness.template.services.TemplateMergeService;
+import io.harness.template.services.TemplateMergeServiceImpl;
+import io.harness.template.services.TemplateRefreshService;
+import io.harness.template.services.TemplateRefreshServiceImpl;
 import io.harness.time.TimeModule;
 import io.harness.token.TokenClientModule;
 import io.harness.waiter.AbstractWaiterModule;
 import io.harness.waiter.WaiterConfiguration;
+import io.harness.yaml.YamlSdkModule;
+import io.harness.yaml.schema.beans.YamlSchemaRootClass;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -73,6 +94,7 @@ import com.google.inject.Singleton;
 import com.google.inject.multibindings.MapBinder;
 import com.google.inject.name.Named;
 import com.google.inject.name.Names;
+import io.dropwizard.jackson.Jackson;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -128,7 +150,11 @@ public class TemplateServiceModule extends AbstractModule {
         this.templateServiceConfiguration.getNgManagerServiceSecret(), TEMPLATE_SERVICE.getServiceId()));
     install(new EntitySetupUsageClientModule(this.templateServiceConfiguration.getNgManagerServiceHttpClientConfig(),
         this.templateServiceConfiguration.getNgManagerServiceSecret(), TEMPLATE_SERVICE.getServiceId()));
-
+    install(new PipelineYamlSchemaClientModule(
+        ServiceHttpClientConfig.builder()
+            .baseUrl(templateServiceConfiguration.getPipelineServiceClientConfig().getBaseUrl())
+            .build(),
+        templateServiceConfiguration.getPipelineServiceSecret(), TEMPLATE_SERVICE.toString()));
     install(new DelegateServiceDriverGrpcClientModule(templateServiceConfiguration.getManagerServiceSecret(),
         templateServiceConfiguration.getManagerTarget(), templateServiceConfiguration.getManagerAuthority(), true));
     install(new AuditClientModule(this.templateServiceConfiguration.getAuditClientConfig(),
@@ -140,6 +166,9 @@ public class TemplateServiceModule extends AbstractModule {
     install(AccessControlClientModule.getInstance(
         this.templateServiceConfiguration.getAccessControlClientConfiguration(), TEMPLATE_SERVICE.getServiceId()));
     install(new TemplateEventsFrameworkModule(this.templateServiceConfiguration.getEventsFrameworkConfiguration()));
+    install(new AccountClientModule(templateServiceConfiguration.getManagerClientConfig(),
+        templateServiceConfiguration.getManagerServiceSecret(), TEMPLATE_SERVICE.toString()));
+    install(YamlSdkModule.getInstance());
 
     bind(ScheduledExecutorService.class)
         .annotatedWith(Names.named("taskPollExecutor"))
@@ -150,6 +179,9 @@ public class TemplateServiceModule extends AbstractModule {
     bind(OutboxEventHandler.class).to(TemplateOutboxEventHandler.class);
     bind(HPersistence.class).to(MongoPersistence.class);
     bind(NGTemplateService.class).to(NGTemplateServiceImpl.class);
+    bind(NGTemplateSchemaService.class).to(NGTemplateSchemaServiceImpl.class);
+    bind(TemplateRefreshService.class).to(TemplateRefreshServiceImpl.class);
+    bind(TemplateMergeService.class).to(TemplateMergeServiceImpl.class).in(Singleton.class);
 
     install(EnforcementClientModule.getInstance(templateServiceConfiguration.getNgManagerServiceHttpClientConfig(),
         templateServiceConfiguration.getNgManagerServiceSecret(), TEMPLATE_SERVICE.getServiceId(),
@@ -158,6 +190,7 @@ public class TemplateServiceModule extends AbstractModule {
     MapBinder<String, FilterPropertiesMapper> filterPropertiesMapper =
         MapBinder.newMapBinder(binder(), String.class, FilterPropertiesMapper.class);
     filterPropertiesMapper.addBinding(FilterType.TEMPLATE.toString()).to(TemplateFilterPropertiesMapper.class);
+    registerEventsFrameworkMessageListeners();
   }
 
   @Provides
@@ -181,6 +214,14 @@ public class TemplateServiceModule extends AbstractModule {
   public Set<Class<? extends TypeConverter>> morphiaConverters() {
     return ImmutableSet.<Class<? extends TypeConverter>>builder()
         .addAll(TemplateServiceModuleRegistrars.morphiaConverters)
+        .build();
+  }
+
+  @Provides
+  @Singleton
+  List<YamlSchemaRootClass> yamlSchemaRootClasses() {
+    return ImmutableList.<YamlSchemaRootClass>builder()
+        .addAll(TemplateServiceModuleRegistrars.yamlSchemaRegistrars)
         .build();
   }
 
@@ -230,6 +271,15 @@ public class TemplateServiceModule extends AbstractModule {
         () -> getDelegateCallbackToken(delegateServiceGrpcClient));
   }
 
+  private void registerEventsFrameworkMessageListeners() {
+    bind(MessageListener.class)
+        .annotatedWith(Names.named(PROJECT_ENTITY + ENTITY_CRUD))
+        .to(ProjectEntityCrudStreamListener.class);
+    bind(MessageListener.class)
+        .annotatedWith(Names.named(ORGANIZATION_ENTITY + ENTITY_CRUD))
+        .to(OrgEntityCrudStreamListener.class);
+  }
+
   @Provides
   @Singleton
   TemplateYamlConversionHandlerRegistry getTemplateYamlConversionHandlerRegistry(Injector injector) {
@@ -237,10 +287,30 @@ public class TemplateServiceModule extends AbstractModule {
         new TemplateYamlConversionHandlerRegistry();
     templateYamlConversionHandlerRegistry.register(STEP, injector.getInstance(TemplateYamlConversionHandler.class));
     templateYamlConversionHandlerRegistry.register(STAGE, injector.getInstance(TemplateYamlConversionHandler.class));
-    templateYamlConversionHandlerRegistry.register(PIPELINE, injector.getInstance(TemplateYamlConversionHandler.class));
+    templateYamlConversionHandlerRegistry.register(
+        PIPELINE, injector.getInstance(PipelineTemplateYamlConversionHandler.class));
+    templateYamlConversionHandlerRegistry.register(
+        MONITORED_SERVICE, injector.getInstance(TemplateYamlConversionHandler.class));
+    templateYamlConversionHandlerRegistry.register(
+        SECRET_MANAGER, injector.getInstance(TemplateYamlConversionHandler.class));
     return templateYamlConversionHandlerRegistry;
   }
 
+  @Provides
+  @Singleton
+  @Named("allowedParallelStages")
+  public Integer getAllowedParallelStages() {
+    return templateServiceConfiguration.getAllowedParallelStages();
+  }
+
+  @Provides
+  @Named("yaml-schema-mapper")
+  @Singleton
+  public ObjectMapper getYamlSchemaObjectMapper() {
+    ObjectMapper objectMapper = Jackson.newObjectMapper();
+    TemplateServiceApplication.configureObjectMapper(objectMapper);
+    return objectMapper;
+  }
   private DelegateCallbackToken getDelegateCallbackToken(DelegateServiceGrpcClient delegateServiceClient) {
     log.info("Generating Delegate callback token");
     final DelegateCallbackToken delegateCallbackToken = delegateServiceClient.registerCallback(

@@ -32,6 +32,7 @@ import static software.wings.features.DeploymentHistoryFeature.FEATURE_NAME;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
+import static org.apache.commons.lang3.StringUtils.EMPTY;
 import static org.mongodb.morphia.aggregation.Accumulator.accumulator;
 import static org.mongodb.morphia.aggregation.Group.first;
 import static org.mongodb.morphia.aggregation.Group.grouping;
@@ -58,7 +59,6 @@ import io.harness.exception.WingsException;
 import io.harness.exception.WingsException.ReportTarget;
 import io.harness.ff.FeatureFlagService;
 import io.harness.logging.ExceptionLogger;
-import io.harness.persistence.HIterator;
 import io.harness.persistence.HPersistence;
 import io.harness.time.EpochUtils;
 
@@ -71,7 +71,6 @@ import software.wings.beans.InfrastructureMapping;
 import software.wings.beans.Service;
 import software.wings.beans.SettingAttribute.SettingCategory;
 import software.wings.beans.User;
-import software.wings.beans.Workflow;
 import software.wings.beans.WorkflowExecution;
 import software.wings.beans.WorkflowExecution.WorkflowExecutionKeys;
 import software.wings.beans.appmanifest.HelmChart;
@@ -218,6 +217,23 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
 
       instanceSummaryMap.put(groupByEntityType, entitySummaryStatsList);
     }
+
+    List<EntitySummaryStats> updatedServiceDetails = instanceSummaryMap.get(EntityType.SERVICE.name());
+    Set<String> serviceIds = new HashSet<>();
+    for (EntitySummaryStats serviceSummary : updatedServiceDetails) {
+      serviceIds.add(serviceSummary.getEntitySummary().getId());
+    }
+    Map<String, String> serviceIdNameMapping =
+        serviceResourceService.getServiceNamesWithAccountId(accountId, serviceIds);
+    for (EntitySummaryStats serviceSummary : updatedServiceDetails) {
+      String serviceId = serviceSummary.getEntitySummary().getId();
+      String serviceType = serviceSummary.getEntitySummary().getType();
+      String serviceName = serviceSummary.getEntitySummary().getName();
+      String serviceNameUpdated =
+          serviceIdNameMapping.containsKey(serviceId) ? serviceIdNameMapping.get(serviceId) : serviceName;
+      serviceSummary.setEntitySummary(new EntitySummary(serviceId, serviceNameUpdated, serviceType));
+    }
+    instanceSummaryMap.replace(EntityType.SERVICE.name(), updatedServiceDetails);
 
     return InstanceSummaryStats.Builder.anInstanceSummaryStats()
         .countMap(instanceSummaryMap)
@@ -376,31 +392,28 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
   }
 
   private List<Instance> getInstancesForAccount(String accountId, long timestamp, Query<Instance> query) {
-    List<Instance> instanceList = new ArrayList<>();
+    Set<Instance> instanceSet = new HashSet<>();
     query.field("accountId").equal(accountId);
     if (timestamp > 0) {
       query.field(Instance.CREATED_AT_KEY).lessThanOrEq(timestamp);
-      query.and(
-          query.or(query.criteria("isDeleted").equal(false), query.criteria("deletedAt").greaterThanOrEq(timestamp)));
+      Query<Instance> clonedQuery_1 = query.cloneQuery();
+      Query<Instance> clonedQuery_2 = query.cloneQuery();
+      clonedQuery_1.field("isDeleted").equal(false);
+      clonedQuery_2.field("deletedAt").greaterThanOrEq(timestamp);
+      instanceSet.addAll(clonedQuery_1.asList());
+      instanceSet.addAll(clonedQuery_2.asList());
     } else {
-      query.filter("isDeleted", false);
+      instanceSet.addAll(query.filter("isDeleted", false).asList());
     }
 
-    int counter = 0;
-    try (HIterator<Instance> iterator = new HIterator<>(query.fetch())) {
-      for (Instance instance : iterator) {
-        counter++;
-        instanceList.add(instance);
-      }
-    }
+    int counter = instanceSet.size();
 
-    if (isNotEmpty(instanceList)) {
-      HashSet<Instance> instanceSet = new HashSet<>(instanceList);
+    if (isNotEmpty(instanceSet)) {
       log.info("Instances reported {}, set count {}", counter, instanceSet.size());
     } else {
       log.info("Instances reported {}", counter);
     }
-    return instanceList;
+    return new ArrayList<>(instanceSet);
   }
 
   private long getCreatedTimeOfInstanceAtTimestamp(
@@ -531,6 +544,21 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
     final Iterator<ServiceInstanceCount> aggregate =
         HPersistence.retry(() -> aggregationPipeline.aggregate(ServiceInstanceCount.class));
     aggregate.forEachRemaining(instanceInfoList::add);
+
+    Set<String> serviceIds = new HashSet<>();
+    for (ServiceInstanceCount serviceInstanceCount : instanceInfoList) {
+      serviceIds.add(serviceInstanceCount.getServiceInfo().getId());
+    }
+    Map<String, String> serviceIdNameMapping =
+        serviceResourceService.getServiceNamesWithAccountId(accountId, serviceIds);
+    for (ServiceInstanceCount serviceInstanceCount : instanceInfoList) {
+      String serviceId = serviceInstanceCount.getServiceInfo().getId();
+      String serviceType = serviceInstanceCount.getServiceInfo().getType();
+      String serviceName = serviceInstanceCount.getServiceInfo().getName();
+      String serviceNameUpdated =
+          serviceIdNameMapping.containsKey(serviceId) ? serviceIdNameMapping.get(serviceId) : serviceName;
+      serviceInstanceCount.setServiceInfo(new EntitySummary(serviceId, serviceNameUpdated, serviceType));
+    }
     return constructInstanceSummaryStatsByService(instanceInfoList, offset, limit);
   }
 
@@ -573,6 +601,7 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
 
   private List<InstanceStatsByEnvironment> constructInstanceStatsForService(
       String serviceId, List<ServiceAggregationInfo> serviceAggregationInfoList) {
+    log.info("serviceAggregationInfoList size :{}", serviceAggregationInfoList.size());
     if (isEmpty(serviceAggregationInfoList)) {
       return Lists.newArrayList();
     }
@@ -588,6 +617,7 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
     for (ServiceAggregationInfo serviceAggregationInfo : serviceAggregationInfoList) {
       int size = serviceAggregationInfo.getInstanceInfoList().size();
       List<EntitySummary> instanceList = Lists.newArrayListWithExpectedSize(size);
+
       for (EntitySummary instanceSummary : serviceAggregationInfo.getInstanceInfoList()) {
         // We have to clone the entity summary because type is not present in database.
         EntitySummary newInstanceSummary = EntitySummary.builder()
@@ -604,6 +634,7 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
                                         .build();
 
       if (currentEnv == null || !compareEnvironment(currentEnv, serviceAggregationInfo.getEnvInfo())) {
+        log.info("ServiceAggregation ID inside loop :{}", serviceAggregationInfo.getEnvInfo().getId());
         currentArtifactList = Lists.newArrayList();
         currentEnv =
             getInstanceStatsByEnvironment(appId, serviceId, serviceAggregationInfo.getEnvInfo(), currentArtifactList);
@@ -701,6 +732,7 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
   private InstanceStatsByEnvironment getInstanceStatsByEnvironment(
       String appId, String serviceId, EnvInfo envInfo, List<InstanceStatsByArtifact> currentArtifactList) {
     EnvironmentSummaryBuilder builder = EnvironmentSummary.builder();
+    log.info("Details related to instance, appid:{}, serviceId:{}, envInfo:{}", appId, serviceId, envInfo.getId());
     builder.prod("PROD".equals(envInfo.getType()))
         .id(envInfo.getId())
         .type(EntityType.ENVIRONMENT.name())
@@ -712,6 +744,10 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
             .instanceStatsByArtifactList(currentArtifactList);
     if (isNotEmpty(syncStatusList)) {
       boolean hasSyncIssues = hasSyncIssues(syncStatusList);
+      for (SyncStatus syncStatus : syncStatusList) {
+        log.info("details of syncstatus inframap id:{}, service ID: {}", syncStatus.getInfraMappingId(),
+            syncStatus.getServiceId());
+      }
       instanceStatsByEnvironmentBuilder.infraMappingSyncStatusList(syncStatusList);
       instanceStatsByEnvironmentBuilder.hasSyncIssues(hasSyncIssues);
     }
@@ -835,11 +871,11 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
         .sort(descending("count"))
         .aggregate(AggregationInfo.class)
         .forEachRemaining(instanceInfoList::add);
-    return constructCurrentActiveInstances(instanceInfoList, appId, accountId);
+    return constructCurrentActiveInstances(instanceInfoList, appId, accountId, serviceId);
   }
 
   private List<CurrentActiveInstances> constructCurrentActiveInstances(
-      List<AggregationInfo> aggregationInfoList, String appId, String accountId) {
+      List<AggregationInfo> aggregationInfoList, String appId, String accountId, String serviceId) {
     List<CurrentActiveInstances> currentActiveInstancesList = Lists.newArrayList();
     for (AggregationInfo aggregationInfo : aggregationInfoList) {
       long count = aggregationInfo.getCount();
@@ -869,57 +905,60 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
                               .build();
       }
 
-      long deployedAt = aggregationInfo.getArtifactInfo().getDeployedAt();
-
       String lastWorkflowExecutionId = aggregationInfo.getArtifactInfo().getLastWorkflowExecutionId();
-      // To fetch last execution
-      final WorkflowExecution lastWE = wingsPersistence.createQuery(WorkflowExecution.class)
-                                           .filter(WorkflowExecutionKeys.uuid, lastWorkflowExecutionId)
-                                           .get();
+
+      WorkflowExecution workflowExecution =
+          wingsPersistence.getWithAppId(WorkflowExecution.class, appId, lastWorkflowExecutionId);
+      WorkflowExecution lastSuccessfulWE = null;
+      if (workflowExecution != null) {
+        // To fetch last successful execution
+        lastSuccessfulWE = workflowExecutionService.getLastSuccessfulWorkflowExecution(
+            accountId, appId, workflowExecution.getWorkflowId(), envInfo.getId(), serviceId, infraMappingInfo.getId());
+      } else {
+        log.warn("workflow execution with id {} has been deleted due to retention policy", lastWorkflowExecutionId);
+      }
 
       CurrentActiveInstances currentActiveInstances;
-      if (lastWE == null) {
-        log.info("Last workflow execution is null, Execution Id {}", lastWorkflowExecutionId);
+      if (lastSuccessfulWE == null) {
+        log.info("Last successful workflow execution couldn't be found. "
+                + "WFExecutionId {}, AccountId {}, AppId {}, WorkflowId {}, EnvId {}, ServiceId {}, InfraId {}",
+            lastWorkflowExecutionId, accountId, appId,
+            workflowExecution == null ? EMPTY : workflowExecution.getWorkflowId(), envInfo.getId(), serviceId,
+            infraMappingInfo.getId());
+        long deployedAt = aggregationInfo.getArtifactInfo().getDeployedAt();
         currentActiveInstances = CurrentActiveInstances.builder()
                                      .artifact(artifactSummary)
                                      .manifest(manifestSummary)
-                                     .lastWorkflowExecutionDate(new Date(deployedAt))
-                                     .deployedAt(new Date(deployedAt))
+                                     // handling case where Workflow Execution has been deleted due to retention policy
+                                     .lastWorkflowExecutionDate(workflowExecution == null ? null : new Date(deployedAt))
+                                     .deployedAt(workflowExecution == null ? null : new Date(deployedAt))
                                      .environment(environmentSummary)
                                      .instanceCount(count)
                                      .serviceInfra(serviceInfraSummary)
                                      .onDemandRollbackAvailable(false)
                                      .build();
       } else {
-        Workflow workflow = workflowService.readWorkflowWithoutOrchestration(appId, lastWE.getWorkflowId());
-        String workflowName;
-        if (workflow != null) {
-          workflowName = workflow.getName();
-        } else {
-          // if workflow is deleted setting workflowExecution name so UI does not break.
-          workflowName = lastWE.getName();
-        }
-        boolean rollbackAvailable = workflowExecutionService.getOnDemandRollbackAvailable(appId, lastWE);
-        EntitySummary workflowExecutionSummary =
-            getEntitySummary(workflowName, lastWE.getUuid(), EntityType.WORKFLOW_EXECUTION.name());
+        boolean rollbackAvailable = workflowExecutionService.getOnDemandRollbackAvailable(appId, lastSuccessfulWE);
+        EntitySummary workflowExecutionSummary = getEntitySummary(
+            lastSuccessfulWE.getName(), lastSuccessfulWE.getUuid(), EntityType.WORKFLOW_EXECUTION.name());
 
-        PipelineSummary pipelineSummary = lastWE.getPipelineSummary();
+        PipelineSummary pipelineSummary = lastSuccessfulWE.getPipelineSummary();
         // This is just precautionary this should never happen hence logging this
-        if (lastWE.isOnDemandRollback() && pipelineSummary != null) {
-          log.error("Pipeline Summary non null for rollback execution : {}", lastWE.getUuid());
+        if (lastSuccessfulWE.isOnDemandRollback() && pipelineSummary != null) {
+          log.error("Pipeline Summary non null for rollback execution : {}", lastSuccessfulWE.getUuid());
           pipelineSummary = null;
         }
         EntitySummary pipelineEntitySummary = null;
         if (pipelineSummary != null) {
           pipelineEntitySummary = getEntitySummary(
-              pipelineSummary.getPipelineName(), lastWE.getPipelineExecutionId(), EntityType.PIPELINE.name());
+              pipelineSummary.getPipelineName(), lastSuccessfulWE.getPipelineExecutionId(), EntityType.PIPELINE.name());
         }
 
         currentActiveInstances = CurrentActiveInstances.builder()
                                      .artifact(artifactSummary)
                                      .manifest(manifestSummary)
-                                     .lastWorkflowExecutionDate(new Date(lastWE.getStartTs()))
-                                     .deployedAt(new Date(deployedAt))
+                                     .lastWorkflowExecutionDate(new Date(lastSuccessfulWE.getStartTs()))
+                                     .deployedAt(new Date(lastSuccessfulWE.getStartTs()))
                                      .environment(environmentSummary)
                                      .instanceCount(count)
                                      .serviceInfra(serviceInfraSummary)

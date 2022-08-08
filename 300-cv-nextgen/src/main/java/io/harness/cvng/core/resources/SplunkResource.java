@@ -8,6 +8,8 @@
 package io.harness.cvng.core.resources;
 
 import io.harness.cvng.beans.SplunkSavedSearch;
+import io.harness.cvng.core.beans.TimeSeriesSampleDTO;
+import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.core.services.api.SplunkService;
 import io.harness.rest.RestResponse;
 import io.harness.security.annotations.NextGenManagerAuth;
@@ -19,8 +21,9 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import java.util.LinkedHashMap;
 import java.util.List;
-import javax.validation.Valid;
+import java.util.SortedSet;
 import javax.validation.constraints.NotNull;
+import javax.ws.rs.BeanParam;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
@@ -38,13 +41,11 @@ public class SplunkResource {
   @Timed
   @ExceptionMetered
   @ApiOperation(value = "gets saved searches in splunk", nickname = "getSplunkSavedSearches")
-  public RestResponse<List<SplunkSavedSearch>> getSavedSearches(@QueryParam("accountId") @Valid final String accountId,
-      @QueryParam("orgIdentifier") @NotNull String orgIdentifier,
-      @QueryParam("projectIdentifier") @NotNull String projectIdentifier,
+  public RestResponse<List<SplunkSavedSearch>> getSavedSearches(@NotNull @BeanParam ProjectParams projectParams,
       @QueryParam("connectorIdentifier") String connectorIdentifier,
       @QueryParam("requestGuid") @NotNull String requestGuid) {
-    return new RestResponse<>(
-        splunkService.getSavedSearches(accountId, orgIdentifier, projectIdentifier, connectorIdentifier, requestGuid));
+    return new RestResponse<>(splunkService.getSavedSearches(projectParams.getAccountIdentifier(),
+        projectParams.getOrgIdentifier(), projectParams.getProjectIdentifier(), connectorIdentifier, requestGuid));
   }
 
   @GET
@@ -52,13 +53,26 @@ public class SplunkResource {
   @Timed
   @ExceptionMetered
   @ApiOperation(value = "validates given setting for splunk data source", nickname = "getSplunkSampleData")
-  public RestResponse<List<LinkedHashMap>> getSampleData(@NotNull @QueryParam("accountId") final String accountId,
-      @QueryParam("orgIdentifier") @NotNull String orgIdentifier,
-      @QueryParam("projectIdentifier") @NotNull String projectIdentifier,
+  public RestResponse<List<LinkedHashMap>> getSampleData(@NotNull @BeanParam ProjectParams projectParams,
       @NotNull @QueryParam("connectorIdentifier") String connectorIdentifier,
       @NotNull @NotEmpty @QueryParam("query") String query, @QueryParam("requestGuid") @NotNull String requestGuid) {
-    return new RestResponse<>(splunkService.getSampleData(
-        accountId, orgIdentifier, projectIdentifier, connectorIdentifier, query, requestGuid));
+    return new RestResponse<>(
+        splunkService.getSampleData(projectParams.getAccountIdentifier(), projectParams.getOrgIdentifier(),
+            projectParams.getProjectIdentifier(), connectorIdentifier, query, requestGuid));
+  }
+
+  @GET
+  @Path("metric-sample-data")
+  @Timed
+  @ExceptionMetered
+  @ApiOperation(value = "validates given setting for splunk data source", nickname = "getSplunkMetricSampleData")
+  public RestResponse<SortedSet<TimeSeriesSampleDTO>> getMetricSampleData(
+      @NotNull @BeanParam ProjectParams projectParams,
+      @NotNull @QueryParam("connectorIdentifier") String connectorIdentifier,
+      @NotNull @NotEmpty @QueryParam("query") String query, @QueryParam("requestGuid") @NotNull String requestGuid) {
+    return new RestResponse<>(
+        splunkService.getMetricSampleData(projectParams.getAccountIdentifier(), projectParams.getOrgIdentifier(),
+            projectParams.getProjectIdentifier(), connectorIdentifier, query, requestGuid));
   }
 
   @GET
@@ -66,12 +80,11 @@ public class SplunkResource {
   @Timed
   @ExceptionMetered
   @ApiOperation(value = "get latest histogram for the query", nickname = "getSplunkLatestHistogram")
-  public RestResponse<List<LinkedHashMap>> getLatestHistogram(@NotNull @QueryParam("accountId") final String accountId,
-      @QueryParam("orgIdentifier") @NotNull String orgIdentifier,
-      @QueryParam("projectIdentifier") @NotNull String projectIdentifier,
+  public RestResponse<List<LinkedHashMap>> getLatestHistogram(@NotNull @BeanParam ProjectParams projectParams,
       @NotNull @QueryParam("connectorIdentifier") String connectorIdentifier,
       @NotNull @NotEmpty @QueryParam("query") String query, @QueryParam("requestGuid") @NotNull String requestGuid) {
-    return new RestResponse<>(splunkService.getLatestHistogram(
-        accountId, orgIdentifier, projectIdentifier, connectorIdentifier, query, requestGuid));
+    return new RestResponse<>(
+        splunkService.getLatestHistogram(projectParams.getAccountIdentifier(), projectParams.getOrgIdentifier(),
+            projectParams.getProjectIdentifier(), connectorIdentifier, query, requestGuid));
   }
 }

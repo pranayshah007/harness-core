@@ -21,6 +21,7 @@ import software.wings.beans.notification.NotificationSettings;
 import software.wings.beans.security.AccountPermissions;
 import software.wings.beans.security.AppPermission;
 import software.wings.beans.security.UserGroup;
+import software.wings.beans.security.UserGroupSearchTermType;
 import software.wings.beans.sso.SSOType;
 import software.wings.service.intfc.ownership.OwnedByAccount;
 import software.wings.service.intfc.ownership.OwnedByApplication;
@@ -59,12 +60,15 @@ public interface UserGroupService
    * List page response.
    *
    * @param req the req
+   * @param searchTermType
+   * @param searchTerm
    * @return the page response
    */
   /* (non-Javadoc)
    * @see software.wings.service.intfc.UserGroupService#list(software.wings.dl.PageRequest)
    */
-  PageResponse<UserGroup> list(@NotEmpty String accountId, PageRequest<UserGroup> req, boolean loadUsers);
+  PageResponse<UserGroup> list(@NotEmpty String accountId, PageRequest<UserGroup> req, boolean loadUsers,
+      UserGroupSearchTermType searchTermType, String searchTerm);
   long getCountOfUserGroups(String accountId);
   /**
    * list user groups by name.

@@ -9,6 +9,7 @@ package software.wings.sm.states.provision;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.beans.ExecutionStatus.SUCCESS;
+import static io.harness.beans.FeatureName.TG_USE_AUTO_APPROVE_FLAG;
 import static io.harness.delegate.beans.FileBucket.TERRAFORM_STATE;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.validation.Validator.notNullCheck;
@@ -207,6 +208,7 @@ public class TerragruntRollbackState extends TerragruntProvisionState {
               .tfVarFiles(configParameter.getTfVarFiles())
               .tfVarSource(terragruntStateHelper.getTfVarSource(context, getTfVarFiles(), getTfVarGitFileConfig()))
               .workspace(workspace)
+              .useAutoApproveFlag(featureFlagService.isEnabled(TG_USE_AUTO_APPROVE_FLAG, context.getAccountId()))
               .delegateTag(configParameter.getDelegateTag())
               .build();
 

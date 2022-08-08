@@ -7,6 +7,9 @@
 
 package io.harness.telemetry.segment;
 
+import static io.harness.TelemetryConstants.SEGMENT_DUMMY_ACCOUNT_PREFIX;
+import static io.harness.TelemetryConstants.SYSTEM_USER;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.telemetry.Category;
@@ -63,6 +66,11 @@ public class SegmentReporterImpl implements TelemetryReporter {
     }
     if (properties == null) {
       properties = new HashMap<>();
+    }
+
+    // check if analytics user can be used instead of system user
+    if (identity == SYSTEM_USER && accountId != null) {
+      identity = SEGMENT_DUMMY_ACCOUNT_PREFIX + accountId;
     }
 
     try {

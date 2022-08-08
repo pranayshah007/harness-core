@@ -1,17 +1,13 @@
-FROM harness/manager-openjdk-8u242:x86_64-alpine-jdk8u242-b08
+# to be used when building in Jenkins
+FROM harness/java-docker-base:smp_jdk11
 
-# Add the capsule JAR and config.yml
 COPY --chown=65534:65534 keystore.jks /opt/harness/
+COPY --chown=65534:65534 redisson-jcache.yaml /opt/harness/
 COPY --chown=65534:65534 cv-nextgen-config.yml /opt/harness/
 COPY --chown=65534:65534 cv-nextgen-capsule.jar /opt/harness/
-COPY --chown=65534:65534 alpn-boot-8.1.13.v20181017.jar /opt/harness/
-COPY --chown=65534:65534 redisson-jcache.yaml /opt/harness/
+COPY --chown=65534:65534 classpath_metadata.json /opt/harness/
 COPY --chown=65534:65534 scripts /opt/harness/
 
-
-
-RUN  chmod 500 /opt/harness/*.sh
-
-WORKDIR /opt/harness
+RUN chmod 500 /opt/harness/*.sh
 
 CMD [ "./run.sh" ]

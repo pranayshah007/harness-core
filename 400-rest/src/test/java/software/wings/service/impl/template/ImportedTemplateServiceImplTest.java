@@ -18,7 +18,7 @@ import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.doReturn;
 
 import io.harness.category.element.UnitTests;
-import io.harness.commandlibrary.api.dto.CommandDTO;
+import io.harness.commandlibrary.api.dto.CommandEntityDTO;
 import io.harness.persistence.HPersistence;
 import io.harness.rule.Owner;
 
@@ -49,9 +49,9 @@ public class ImportedTemplateServiceImplTest extends TemplateBaseTestHelper {
 
   public void mockItems() {
     MockitoAnnotations.initMocks(this);
-    doReturn(CommandDTO.builder().commandStoreName(COMMAND_STORE_NAME).name(COMMAND_NAME).build())
+    doReturn(CommandEntityDTO.builder().commandStoreName(COMMAND_STORE_NAME).name(COMMAND_NAME).build())
         .when(importedTemplateService)
-        .downloadAndGetCommandDTO(anyString(), anyString());
+        .downloadAndGetCommandEntityDTO(anyString(), anyString());
   }
 
   @Test

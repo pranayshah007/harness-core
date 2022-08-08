@@ -10,6 +10,7 @@ package software.wings.graphql.schema.type.deploymentfreezewindow;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
+import software.wings.graphql.schema.mutation.deploymentfreezewindow.input.QLUserGroupFilterInput;
 import software.wings.security.PermissionAttribute;
 import software.wings.security.annotations.Scope;
 
@@ -31,4 +32,5 @@ public class QLDeploymentFreezeWindow {
   List<String> notifyTo;
   List<QLFreezeWindow> freezeWindows;
   QLSetup setup;
+  QLUserGroupFilterInput userGroupSelection;
 }

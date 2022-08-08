@@ -15,9 +15,11 @@ import static software.wings.security.PermissionAttribute.PermissionType.LOGGED_
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.EmbeddedUser;
+import io.harness.beans.FeatureName;
 import io.harness.exception.GraphQLException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
+import io.harness.ff.FeatureFlagService;
 
 import software.wings.api.ApprovalStateExecutionData;
 import software.wings.beans.ApiKeyEntry;
@@ -46,23 +48,26 @@ public class ApproveOrRejectApprovalsDataFetcher
   private WingsPersistence persistence;
   private WorkflowExecutionService workflowExecutionService;
   private DeploymentAuthHandler deploymentAuthHandler;
+  private FeatureFlagService featureFlagService;
 
   @Inject
   public ApproveOrRejectApprovalsDataFetcher(WorkflowExecutionService workflowExecutionService,
-      DeploymentAuthHandler deploymentAuthHandler, WingsPersistence persistence) {
+      DeploymentAuthHandler deploymentAuthHandler, WingsPersistence persistence,
+      FeatureFlagService featureFlagService) {
     super(QLApproveOrRejectApprovalsInput.class, QLApproveOrRejectApprovalsPayload.class);
     this.workflowExecutionService = workflowExecutionService;
     this.deploymentAuthHandler = deploymentAuthHandler;
     this.persistence = persistence;
+    this.featureFlagService = featureFlagService;
   }
 
   @Override
   @AuthRule(permissionType = LOGGED_IN)
   protected QLApproveOrRejectApprovalsPayload mutateAndFetch(
       QLApproveOrRejectApprovalsInput approveOrRejectApprovalsInput, MutationContext mutationContext) {
-    WorkflowExecution execution = persistence.createAuthorizedQuery(WorkflowExecution.class)
-                                      .filter("_id", approveOrRejectApprovalsInput.getExecutionId())
-                                      .get();
+    final String executionId = approveOrRejectApprovalsInput.getExecutionId();
+    WorkflowExecution execution =
+        persistence.createAuthorizedQuery(WorkflowExecution.class).filter("_id", executionId).get();
     if (execution == null) {
       throw new InvalidRequestException("Execution does not exist or access is denied", WingsException.USER);
     }
@@ -71,21 +76,25 @@ public class ApproveOrRejectApprovalsDataFetcher
     ApiKeyEntry apiKeyEntry = graphQLContext.get("apiKeyEntry");
 
     ApprovalDetails approvalDetails = constructApprovalDetailsFromInput(approveOrRejectApprovalsInput, apiKeyEntry);
+    final String appId = approveOrRejectApprovalsInput.getApplicationId();
     ApprovalStateExecutionData approvalStateExecutionData =
         workflowExecutionService.fetchApprovalStateExecutionDataFromWorkflowExecution(
-            approveOrRejectApprovalsInput.getApplicationId(), approveOrRejectApprovalsInput.getExecutionId(), null,
-            approvalDetails);
+            appId, executionId, null, approvalDetails);
 
     verifyApproveOrRejectApprovalsInput(approveOrRejectApprovalsInput, approvalStateExecutionData);
 
-    if (isEmpty(approvalStateExecutionData.getUserGroups())) {
-      deploymentAuthHandler.authorize(
-          approveOrRejectApprovalsInput.getApplicationId(), approveOrRejectApprovalsInput.getExecutionId());
+    if (approvalStateExecutionData.isAutoRejectPreviousDeployments()
+        && approvalDetails.getAction() == ApprovalDetails.Action.APPROVE
+        && featureFlagService.isEnabled(FeatureName.AUTO_REJECT_PREVIOUS_APPROVALS, execution.getAccountId())) {
+      workflowExecutionService.rejectPreviousDeployments(appId, executionId, approvalDetails);
     }
 
-    boolean success =
-        workflowExecutionService.approveOrRejectExecution(approveOrRejectApprovalsInput.getApplicationId(),
-            approvalStateExecutionData.getUserGroups(), approvalDetails, apiKeyEntry);
+    if (isEmpty(approvalStateExecutionData.getUserGroups())) {
+      deploymentAuthHandler.authorize(appId, executionId);
+    }
+
+    boolean success = workflowExecutionService.approveOrRejectExecution(
+        appId, approvalStateExecutionData.getUserGroups(), approvalDetails, apiKeyEntry);
 
     return QLApproveOrRejectApprovalsPayload.builder()
         .success(success)

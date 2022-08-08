@@ -421,7 +421,8 @@ public class AppServiceImpl implements AppService {
     }
 
     ensureSafeToDelete(appId, application.getName());
-
+    // added as response of https://harness.atlassian.net/browse/CDS-35910
+    log.info("Deleting app {} by user {}", appId, UserThreadLocal.get());
     String accountId = this.getAccountIdByAppId(appId);
     StaticLimitCheckerWithDecrement checker = (StaticLimitCheckerWithDecrement) limitCheckerFactory.getInstance(
         new io.harness.limits.Action(accountId, ActionType.CREATE_APPLICATION));

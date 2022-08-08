@@ -88,6 +88,7 @@ import software.wings.sm.State;
 import software.wings.sm.StateExecutionContext;
 import software.wings.sm.StateType;
 import software.wings.sm.WorkflowStandardParams;
+import software.wings.sm.WorkflowStandardParamsExtensionService;
 import software.wings.utils.ApplicationManifestUtils;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -131,6 +132,7 @@ public class PcfPluginState extends State {
   @Inject private transient ApplicationManifestUtils applicationManifestUtils;
   @Inject private transient TemplateUtils templateUtils;
   @Inject private FeatureFlagService featureFlagService;
+  @Inject private transient WorkflowStandardParamsExtensionService workflowStandardParamsExtensionService;
 
   public static final String PCF_PLUGIN_COMMAND = "Execute CF Command";
   public static final String FILE_START_REPO_ROOT_REGEX = PcfConstants.FILE_START_REPO_ROOT_REGEX;
@@ -336,7 +338,8 @@ public class PcfPluginState extends State {
     PhaseElement phaseElement = getPhaseElement(context);
     WorkflowStandardParams workflowStandardParams = getWorkflowStandardParams(context);
     Application app = requireNonNull(appService.get(context.getAppId()), "App cannot be null");
-    Environment env = requireNonNull(workflowStandardParams.getEnv(), "Env cannot be null");
+    Environment env =
+        requireNonNull(workflowStandardParamsExtensionService.getEnv(workflowStandardParams), "Env cannot be null");
     ServiceElement serviceElement = phaseElement.getServiceElement();
 
     final PcfInfrastructureMapping pcfInfrastructureMapping = getPcfInfrastructureMapping(context, app);

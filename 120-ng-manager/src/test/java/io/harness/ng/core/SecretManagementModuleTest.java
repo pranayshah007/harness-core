@@ -17,8 +17,11 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.MockitoAnnotations.initMocks;
 
 import io.harness.CategoryTest;
+import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.account.AccountClient;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cache.CacheConfig;
+import io.harness.cache.CacheModule;
 import io.harness.category.element.UnitTests;
 import io.harness.connector.impl.DefaultConnectorServiceImpl;
 import io.harness.connector.services.ConnectorService;
@@ -32,7 +35,13 @@ import io.harness.ng.core.api.NGSecretManagerService;
 import io.harness.ng.core.api.impl.NGSecretManagerServiceImpl;
 import io.harness.ng.core.entitysetupusage.service.EntitySetupUsageService;
 import io.harness.ng.eventsframework.EventsFrameworkModule;
+import io.harness.ng.opa.OpaService;
+import io.harness.ng.opa.OpaServiceImpl;
+import io.harness.ng.opa.entities.secret.OpaSecretService;
+import io.harness.ng.opa.entities.secret.OpaSecretServiceImpl;
+import io.harness.opaclient.OpaServiceClient;
 import io.harness.outbox.api.OutboxService;
+import io.harness.pms.redisConsumer.DebeziumConsumerConfig;
 import io.harness.redis.RedisConfig;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.repositories.ConnectorRepository;
@@ -67,11 +76,13 @@ import org.springframework.transaction.support.TransactionTemplate;
 @OwnedBy(PL)
 public class SecretManagementModuleTest extends CategoryTest {
   private SecretManagementModule secretManagementModule;
+  private CacheModule cacheModule;
   private SecretManagementClientModule secretManagementClientModule;
   @Mock private SecretRepository secretRepository;
   @Mock private ConnectorRepository connectorRepository;
   @Mock private ConnectorService connectorService;
   @Mock private AccountClient accountClient;
+  @Mock private AccessControlClient accessControlClient;
   @Mock private NGConnectorSecretManagerService ngConnectorSecretManagerService;
   public static final String OUTBOX_TRANSACTION_TEMPLATE = "OUTBOX_TRANSACTION_TEMPLATE";
 
@@ -90,6 +101,7 @@ public class SecretManagementModuleTest extends CategoryTest {
     secretManagementModule = new SecretManagementModule();
     secretManagementClientModule =
         new SecretManagementClientModule(secretManagerClientConfig, serviceSecret, "NextGenManager");
+    cacheModule = new CacheModule(CacheConfig.builder().build());
 
     List<Module> modules = new ArrayList<>();
     modules.add(new ProviderModule() {
@@ -132,6 +144,13 @@ public class SecretManagementModuleTest extends CategoryTest {
       @Singleton
       AccountClient getAccountClient() {
         return mock(AccountClient.class);
+      }
+    });
+    modules.add(new ProviderModule() {
+      @Provides
+      @Singleton
+      AccessControlClient getAccessControlClient() {
+        return mock(AccessControlClient.class);
       }
     });
     modules.add(new ProviderModule() {
@@ -183,9 +202,12 @@ public class SecretManagementModuleTest extends CategoryTest {
         return mock(FeatureFlagService.class);
       }
     });
+    List<DebeziumConsumerConfig> list = new ArrayList<>();
+    list.add(DebeziumConsumerConfig.builder().build());
     modules.add(new EventsFrameworkModule(EventsFrameworkConfiguration.builder()
                                               .redisConfig(RedisConfig.builder().redisUrl("dummyRedisUrl").build())
-                                              .build()));
+                                              .build(),
+        list));
     modules.add(new ProviderModule() {
       @Provides
       @Singleton
@@ -219,6 +241,31 @@ public class SecretManagementModuleTest extends CategoryTest {
     });
     modules.add(secretManagementModule);
     modules.add(secretManagementClientModule);
+    modules.add(new ProviderModule() {
+      @Provides
+      @Singleton
+      OpaService registerConnecterService() {
+        return mock(OpaServiceImpl.class);
+      }
+    });
+
+    modules.add(new ProviderModule() {
+      @Provides
+      @Singleton
+      OpaSecretService registerConnecterService() {
+        return mock(OpaSecretServiceImpl.class);
+      }
+    });
+
+    modules.add(new ProviderModule() {
+      @Provides
+      @Singleton
+      OpaServiceClient registerOpaServiceClientService() {
+        return mock(OpaServiceClient.class);
+      }
+    });
+    modules.add(cacheModule);
+
     Injector injector = Guice.createInjector(modules);
 
     NGSecretManagerService ngSecretManagerService = injector.getInstance(NGSecretManagerService.class);

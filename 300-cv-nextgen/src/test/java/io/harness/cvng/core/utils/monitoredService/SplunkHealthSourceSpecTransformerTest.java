@@ -106,14 +106,12 @@ public class SplunkHealthSourceSpecTransformerTest extends CvNextGenTestBase {
                    .serviceInstanceIdentifier(serviceInstanceIdentifier)
                    .queryName(query.getName())
                    .query(query.getQuery())
-                   .envIdentifier(envIdentifier)
                    .connectorIdentifier(connectorIdentifier)
                    .productName(productName)
                    .projectIdentifier(projectIdentifier)
                    .accountId(accountId)
                    .identifier(identifier)
                    .monitoringSourceName(monitoringSourceName)
-                   .serviceIdentifier(serviceIdentifier)
                    .build())
         .collect(Collectors.toList());
   }

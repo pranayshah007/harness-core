@@ -11,9 +11,8 @@ import static io.harness.rule.OwnerRule.IVAN;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.anyString;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.powermock.api.mockito.PowerMockito.doReturn;
+import static org.powermock.api.mockito.PowerMockito.mock;
 import static org.powermock.api.mockito.PowerMockito.whenNew;
 
 import io.harness.annotations.dev.HarnessModule;
@@ -44,7 +43,7 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({IOUtils.class, ArtifactDownloaderService.class})
+@PrepareForTest({File.class, FileOutputStream.class, IOUtils.class, ArtifactDownloaderService.class})
 @TargetModule(HarnessModule._930_DELEGATE_TASKS)
 @PowerMockIgnore({"javax.security.*", "javax.net.*"})
 public class ArtifactDownloaderServiceTest extends WingsBaseTest {
@@ -106,10 +105,10 @@ public class ArtifactDownloaderServiceTest extends WingsBaseTest {
     mockCreateArtifactFileInWorkingDirectory(mockWorkingDirectory, artifactName);
 
     FileOutputStream mockFileOutputStream = mock(FileOutputStream.class);
-    whenNew(FileOutputStream.class).withArguments(mockWorkingDirectory).thenReturn(mockFileOutputStream);
+    PowerMockito.whenNew(FileOutputStream.class).withAnyArguments().thenReturn(mockFileOutputStream);
 
     PowerMockito.mockStatic(IOUtils.class);
-    when(IOUtils.copy(mockArtifactFileStream, mockFileOutputStream)).thenReturn(1024);
+    PowerMockito.when(IOUtils.copy(mockArtifactFileStream, mockFileOutputStream)).thenAnswer(invocationOnMock -> 1024);
   }
 
   private void mockCreateArtifactFileInWorkingDirectory(File workingDirectory, String artifactName) throws Exception {

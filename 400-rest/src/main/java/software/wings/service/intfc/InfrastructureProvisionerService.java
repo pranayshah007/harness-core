@@ -104,4 +104,7 @@ public interface InfrastructureProvisionerService extends OwnedByApplication {
 
   Map<String, Object> resolveExpressions(InfrastructureDefinition infrastructureDefinition,
       Map<String, Object> contextMap, InfrastructureProvisioner infrastructureProvisioner);
+
+  boolean areExpressionsValid(
+      InfrastructureProvisioner infrastructureProvisioner, Map<String, Object> resolvedExpressions);
 }

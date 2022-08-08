@@ -15,25 +15,27 @@ import io.harness.CategoryTest;
 import io.harness.accesscontrol.NGAccessControlCheck;
 import io.harness.category.element.UnitTests;
 import io.harness.cvng.utils.NGAccessControlClientCheck;
+import io.harness.reflection.HarnessReflections;
 import io.harness.rule.Owner;
 
 import com.google.common.collect.Sets;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
+import javax.ws.rs.BeanParam;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
+import org.apache.commons.lang3.StringUtils;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.reflections.Reflections;
 
 public class CVNGAccessControlCheckTest extends CategoryTest {
   @Test
@@ -51,10 +53,14 @@ public class CVNGAccessControlCheckTest extends CategoryTest {
 
     final Class<? extends Annotation> ngAccessControlCheckClass = NGAccessControlCheck.class;
     final Class<? extends Annotation> ngAccessControlClientCheckClass = NGAccessControlClientCheck.class;
-
-    Reflections ref =
-        new Reflections(Arrays.asList(MONITORED_SERVICE_RESOURCE_PATH, SLO_RESOURCE_PATH, SLO_DASHBOARD_RESOURCE_PATH));
-    List<Class<?>> klasses = new ArrayList<>(ref.getTypesAnnotatedWith(Path.class));
+    List<Class<?>> klasses =
+        HarnessReflections.get()
+            .getTypesAnnotatedWith(Path.class)
+            .stream()
+            .filter(klazz
+                -> StringUtils.startsWithAny(klazz.getPackage().getName(), MONITORED_SERVICE_RESOURCE_PATH,
+                    SLO_RESOURCE_PATH, SLO_DASHBOARD_RESOURCE_PATH))
+            .collect(Collectors.toList());
 
     klasses.forEach(klass -> {
       for (final Method method : klass.getDeclaredMethods()) {
@@ -72,6 +78,12 @@ public class CVNGAccessControlCheckTest extends CategoryTest {
                 .forEach(paramAnnotations
                     -> Arrays.asList(paramAnnotations)
                            .forEach(paramAnnotation -> methodAnnotationMap.put(paramAnnotation.toString(), 1)));
+
+            Arrays.stream(method.getParameters())
+                .filter(parameter -> parameter.isAnnotationPresent(BeanParam.class))
+                .flatMap(parameter -> Arrays.stream(parameter.getType().getDeclaredFields()))
+                .flatMap(field -> Arrays.stream(field.getAnnotations()))
+                .forEach(fieldAnnotation -> methodAnnotationMap.put(fieldAnnotation.toString(), 1));
 
             necessaryAccessControlAnnotations.forEach(accessControlAnnotation
                 -> assertThat(methodAnnotationMap.containsKey(accessControlAnnotation))

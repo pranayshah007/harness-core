@@ -7,6 +7,7 @@
 
 package io.harness.batch.processing.config.k8s.recommendation;
 
+import static io.harness.batch.processing.cloudevents.aws.ecs.service.tasklet.AwsECSServiceRecommendationTasklet.getMonthlySavings;
 import static io.harness.batch.processing.config.k8s.recommendation.estimators.ContainerResourceRequirementEstimators.burstableRecommender;
 import static io.harness.batch.processing.config.k8s.recommendation.estimators.ContainerResourceRequirementEstimators.customRecommender;
 import static io.harness.batch.processing.config.k8s.recommendation.estimators.ContainerResourceRequirementEstimators.guaranteedRecommender;
@@ -291,19 +292,7 @@ class ComputedRecommendationWriter implements ItemWriter<K8sWorkloadRecommendati
     */
     BigDecimal cpuChangePercent = resourceChangePercent(containerRecommendations, CPU);
     BigDecimal memoryChangePercent = resourceChangePercent(containerRecommendations, MEMORY);
-    BigDecimal monthlySavings = null;
-
-    if (cpuChangePercent != null || memoryChangePercent != null) {
-      BigDecimal costChangeForDay = BigDecimal.ZERO;
-      if (cpuChangePercent != null && lastDayCost.getCpu() != null) {
-        costChangeForDay = costChangeForDay.add(cpuChangePercent.multiply(lastDayCost.getCpu()));
-      }
-      if (memoryChangePercent != null && lastDayCost.getMemory() != null) {
-        costChangeForDay = costChangeForDay.add(memoryChangePercent.multiply(lastDayCost.getMemory()));
-      }
-      monthlySavings = costChangeForDay.multiply(BigDecimal.valueOf(-30)).setScale(2, HALF_UP);
-    }
-    return monthlySavings;
+    return getMonthlySavings(lastDayCost, cpuChangePercent, memoryChangePercent);
   }
 
   /**

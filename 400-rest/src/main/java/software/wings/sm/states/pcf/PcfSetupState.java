@@ -85,7 +85,7 @@ import software.wings.beans.TaskType;
 import software.wings.beans.appmanifest.AppManifestKind;
 import software.wings.beans.appmanifest.ApplicationManifest;
 import software.wings.beans.artifact.Artifact;
-import software.wings.beans.artifact.Artifact.ArtifactMetadataKeys;
+import software.wings.beans.artifact.ArtifactMetadataKeys;
 import software.wings.beans.artifact.ArtifactStream;
 import software.wings.beans.artifact.ArtifactStreamAttributes;
 import software.wings.beans.command.CommandUnit;
@@ -113,6 +113,7 @@ import software.wings.sm.StateExecutionContext;
 import software.wings.sm.StateExecutionData;
 import software.wings.sm.StateType;
 import software.wings.sm.WorkflowStandardParams;
+import software.wings.sm.WorkflowStandardParamsExtensionService;
 import software.wings.stencils.DefaultValue;
 import software.wings.utils.ApplicationManifestUtils;
 import software.wings.utils.ServiceVersionConvention;
@@ -152,6 +153,7 @@ public class PcfSetupState extends State {
   @Inject private transient FeatureFlagService featureFlagService;
   @Inject private ApplicationManifestUtils applicationManifestUtils;
   @Inject private transient SweepingOutputService sweepingOutputService;
+  @Inject private transient WorkflowStandardParamsExtensionService workflowStandardParamsExtensionService;
 
   public static final String PCF_SETUP_COMMAND = "PCF Setup";
   public static final String URL = "url";
@@ -246,7 +248,7 @@ public class PcfSetupState extends State {
     PhaseElement phaseElement = context.getContextElement(ContextElementType.PARAM, PhaseElement.PHASE_PARAM);
     WorkflowStandardParams workflowStandardParams = context.getContextElement(ContextElementType.STANDARD);
     Application app = appService.get(context.getAppId());
-    Environment env = workflowStandardParams.getEnv();
+    Environment env = workflowStandardParamsExtensionService.getEnv(workflowStandardParams);
     notNullCheck("Env can not be null", env);
     ServiceElement serviceElement = phaseElement.getServiceElement();
 
@@ -292,7 +294,7 @@ public class PcfSetupState extends State {
     List<String> tempRouteMaps = fetchTempRoutes(context, pcfInfrastructureMapping);
     List<String> routeMaps = fetchRouteMaps(context, pcfManifestsPackage, pcfInfrastructureMapping);
     Integer maxCount = fetchMaxCount(pcfManifestsPackage);
-
+    boolean isWebProcessCountZero = maxCount == 0;
     Map<String, String> serviceVariables = context.getServiceVariables().entrySet().stream().collect(
         Collectors.toMap(Entry::getKey, e -> e.getValue().toString()));
     if (serviceVariables != null) {
@@ -392,6 +394,7 @@ public class PcfSetupState extends State {
             .artifactProcessingScript(artifactProcessingScript)
             .tags(tags)
             .cfAppNamePrefix(pcfAppNameSuffix)
+            .isWebProcessCountZero(isWebProcessCountZero)
             .build();
 
     String waitId = generateUuid();
@@ -680,6 +683,7 @@ public class PcfSetupState extends State {
             .existingAppNamingStrategy(isPcfSetupCommandResponseNull
                     ? AppNamingStrategy.VERSIONING.name()
                     : cfSetupCommandResponse.getExistingAppNamingStrategy())
+            .isWebProcessCountZero(stateExecutionData.isWebProcessCountZero())
             .isUseCfCli(true);
 
     if (!isPcfSetupCommandResponseNull) {

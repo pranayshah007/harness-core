@@ -49,11 +49,12 @@ import software.wings.service.impl.newrelic.NewRelicMetricAnalysisRecord;
 import software.wings.service.impl.newrelic.NewRelicMetricAnalysisRecord.NewRelicMetricAnalysis;
 import software.wings.service.impl.stackdriver.StackDriverDataCollectionInfo;
 import software.wings.service.intfc.MetricDataAnalysisService;
-import software.wings.service.intfc.verification.CVActivityLogService.Logger;
+import software.wings.service.intfc.verification.CVActivityLogger;
 import software.wings.sm.ExecutionContext;
 import software.wings.sm.ExecutionResponse;
 import software.wings.sm.StateType;
 import software.wings.sm.WorkflowStandardParams;
+import software.wings.sm.WorkflowStandardParamsExtensionService;
 import software.wings.verification.VerificationDataAnalysisResponse;
 import software.wings.verification.VerificationStateAnalysisExecutionData;
 
@@ -117,6 +118,7 @@ public abstract class AbstractMetricAnalysisState extends AbstractAnalysisState 
   }
   @Transient @Inject protected MetricDataAnalysisService metricAnalysisService;
   @Transient @Inject protected VersionInfoManager versionInfoManager;
+  @Transient @Inject protected WorkflowStandardParamsExtensionService workflowStandardParamsExtensionService;
 
   public AbstractMetricAnalysisState(String name, StateType stateType) {
     super(name, stateType.name());
@@ -134,7 +136,7 @@ public abstract class AbstractMetricAnalysisState extends AbstractAnalysisState 
     try (VerificationLogContext ignored = new VerificationLogContext(context.getAccountId(), null,
              context.getStateExecutionInstanceId(), DelegateStateType.valueOf(getStateType()), OVERRIDE_ERROR)) {
       getLogger().info("Executing state {}", context.getStateExecutionInstanceId());
-      Logger activityLogger = cvActivityLogService.getLoggerByStateExecutionId(
+      CVActivityLogger activityLogger = cvActivityLogService.getLoggerByStateExecutionId(
           context.getAccountId(), context.getStateExecutionInstanceId());
       if (context.isRetry()) {
         activityLogger.info(RETRYING_VERIFICATION_STATE_MSG);
@@ -154,7 +156,7 @@ public abstract class AbstractMetricAnalysisState extends AbstractAnalysisState 
               "Your license type does not support running this verification. Skipping Analysis");
         }
 
-        if (!isEmpty(getTimeDuration()) && Integer.parseInt(getTimeDuration()) > MAX_WORKFLOW_TIMEOUT) {
+        if (!isEmpty(getTimeDuration(context)) && Integer.parseInt(getTimeDuration(context)) > MAX_WORKFLOW_TIMEOUT) {
           return generateAnalysisResponse(analysisContext, ExecutionStatus.SKIPPED, false,
               "Time duration cannot be more than 4 hours. Skipping Analysis");
         }
@@ -180,8 +182,9 @@ public abstract class AbstractMetricAnalysisState extends AbstractAnalysisState 
         if (isDemoPath(analysisContext)) {
           boolean failedState =
               settingsService.get(getAnalysisServerConfigId()).getName().toLowerCase().endsWith("dev");
-          generateDemoActivityLogs(activityLogger, failedState);
-          generateDemoThirdPartyApiCallLogs(context.getAccountId(), context.getStateExecutionInstanceId(), failedState);
+          generateDemoActivityLogs(context, activityLogger, failedState);
+          generateDemoThirdPartyApiCallLogs(
+              context, context.getAccountId(), context.getStateExecutionInstanceId(), failedState);
           return getDemoExecutionResponse(analysisContext);
         }
 
@@ -265,14 +268,15 @@ public abstract class AbstractMetricAnalysisState extends AbstractAnalysisState 
         if (getComparisonStrategy() == COMPARE_WITH_PREVIOUS) {
           WorkflowStandardParams workflowStandardParams = context.getContextElement(ContextElementType.STANDARD);
           baselineWorkflowExecutionId = workflowExecutionBaselineService.getBaselineExecutionId(context.getAppId(),
-              context.getWorkflowId(), workflowStandardParams.getEnv().getUuid(), analysisContext.getServiceId());
+              context.getWorkflowId(), workflowStandardParamsExtensionService.getEnv(workflowStandardParams).getUuid(),
+              analysisContext.getServiceId());
           if (isEmpty(baselineWorkflowExecutionId)) {
             responseMessage = "No baseline was set for the workflow. Workflow running with auto baseline.";
             getLogger().info(responseMessage);
             baselineWorkflowExecutionId = metricAnalysisService.getLastSuccessfulWorkflowExecutionIdWithData(
                 analysisContext.getStateType().getDelegateStateType(), analysisContext.getAppId(),
                 analysisContext.getWorkflowId(), analysisContext.getServiceId(), getPhaseInfraMappingId(context),
-                workflowStandardParams.getEnv().getUuid());
+                workflowStandardParamsExtensionService.getEnv(workflowStandardParams).getUuid());
           } else {
             responseMessage = "Baseline is fixed for the workflow. Analyzing against fixed baseline.";
             getLogger().info("Baseline execution is {}", baselineWorkflowExecutionId);
@@ -320,7 +324,7 @@ public abstract class AbstractMetricAnalysisState extends AbstractAnalysisState 
           getLogger().info(
               "triggered data collection for {} state, delegateTaskId: {}", getStateType(), delegateTaskId);
         }
-        logDataCollectionTriggeredMessage(activityLogger);
+        logDataCollectionTriggeredMessage(context, activityLogger);
         VerificationDataAnalysisResponse response =
             VerificationDataAnalysisResponse.builder().stateExecutionData(executionData).build();
         response.setExecutionStatus(ExecutionStatus.RUNNING);
@@ -386,6 +390,7 @@ public abstract class AbstractMetricAnalysisState extends AbstractAnalysisState 
         (VerificationDataAnalysisResponse) response.values().iterator().next();
 
     if (ExecutionStatus.isBrokeStatus(executionResponse.getExecutionStatus())) {
+      updateSweepingOutputWithCVResult(executionContext, executionResponse.getExecutionStatus().name());
       return getErrorExecutionResponse(executionContext, executionResponse);
     }
 
@@ -402,6 +407,7 @@ public abstract class AbstractMetricAnalysisState extends AbstractAnalysisState 
       NewRelicMetricAnalysisRecord manualActionRecord =
           metricAnalysisService.getLatestLocalAnalysisRecord(context.getStateExecutionId());
       Preconditions.checkNotNull(manualActionRecord);
+      updateSweepingOutputWithCVResult(executionContext, cvMetaData.getExecutionStatus().name());
       return createExecutionResponse(context, cvMetaData.getExecutionStatus(), manualActionRecord.getMessage(), false);
     }
 
@@ -413,6 +419,7 @@ public abstract class AbstractMetricAnalysisState extends AbstractAnalysisState 
                                                                                          : ExecutionStatus.SUCCESS;
       continuousVerificationService.setMetaDataExecutionStatus(
           context.getStateExecutionId(), executionStatus, true, false);
+      updateSweepingOutputWithCVResult(executionContext, executionStatus.name());
       return generateAnalysisResponse(
           context, executionStatus, false, "No Analysis result found. This is not a failure.");
     }
@@ -440,6 +447,8 @@ public abstract class AbstractMetricAnalysisState extends AbstractAnalysisState 
         context.getStateExecutionId(), executionStatus, false, false);
 
     updateExecutionStatus(context.getStateExecutionId(), true, executionStatus, "Analysis completed");
+    updateSweepingOutputWithCVResult(executionContext, executionStatus.name());
+
     return ExecutionResponse.builder()
         .executionStatus(executionStatus)
         .stateExecutionData(executionResponse.getStateExecutionData())
@@ -477,7 +486,7 @@ public abstract class AbstractMetricAnalysisState extends AbstractAnalysisState 
     Map<String, String> controlNodes = cvInstanceAPIResponse.getControlNodes().stream().collect(
         Collectors.toMap(key -> key, key -> DEFAULT_GROUP_NAME));
 
-    int timeDurationInt = Integer.parseInt(getTimeDuration());
+    int timeDurationInt = Integer.parseInt(getTimeDuration(context));
     String accountId = appService.get(context.getAppId()).getAccountId();
     boolean isHistoricalDataCollection = isHistoricalAnalysis(context.getAccountId());
     AnalysisContext analysisContext =
@@ -549,7 +558,7 @@ public abstract class AbstractMetricAnalysisState extends AbstractAnalysisState 
             .workflowExecutionId(context.getWorkflowExecutionId())
             .serviceId(getPhaseServiceId(context))
             .timeSeriesMlAnalysisType(analyzedTierAnalysisType)
-            .collectionTime(Integer.parseInt(getTimeDuration()))
+            .collectionTime(Integer.parseInt(getTimeDuration(context)))
             .encryptedDataDetails(
                 secretManager.getEncryptionDetails(gcpConfig, context.getAppId(), context.getWorkflowExecutionId()))
             .hosts(new HashMap<>())
@@ -572,9 +581,10 @@ public abstract class AbstractMetricAnalysisState extends AbstractAnalysisState 
     this.tolerance = tolerance;
   }
 
-  private void generateDemoThirdPartyApiCallLogs(String accountId, String stateExecutionId, boolean failedState) {
+  private void generateDemoThirdPartyApiCallLogs(
+      ExecutionContext executionContext, String accountId, String stateExecutionId, boolean failedState) {
     super.generateDemoThirdPartyApiCallLogs(
-        accountId, stateExecutionId, failedState, demoRequestBody(), demoMetricResponse());
+        executionContext, accountId, stateExecutionId, failedState, demoRequestBody(), demoMetricResponse());
   }
   @Language("JSON")
   private String demoRequestBody() {

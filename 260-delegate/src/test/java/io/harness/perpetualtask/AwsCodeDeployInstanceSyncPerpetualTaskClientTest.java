@@ -29,7 +29,6 @@ import static software.wings.service.impl.instance.InstanceSyncTestConstants.US_
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.anyObject;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.eq;
@@ -50,7 +49,7 @@ import software.wings.annotation.EncryptableSetting;
 import software.wings.api.DeploymentType;
 import software.wings.beans.Application;
 import software.wings.beans.AwsConfig;
-import software.wings.beans.AwsInfrastructureMapping;
+import software.wings.beans.AwsInstanceFilter;
 import software.wings.beans.CodeDeployInfrastructureMapping;
 import software.wings.beans.Environment;
 import software.wings.beans.Service;
@@ -118,7 +117,7 @@ public class AwsCodeDeployInstanceSyncPerpetualTaskClientTest extends CategoryTe
         Environment.Builder.anEnvironment().accountId(ACCOUNT_ID).uuid(ENV_ID).appId(APP_ID).name(ENV_NAME).build())
         .when(environmentService)
         .get(any(), any());
-    when(kryoSerializer.asBytes(anyObject()))
+    when(kryoSerializer.asBytes(any()))
         .thenAnswer(invocationOnMock -> String.valueOf(invocationOnMock.hashCode()).getBytes());
   }
 
@@ -127,14 +126,12 @@ public class AwsCodeDeployInstanceSyncPerpetualTaskClientTest extends CategoryTe
   @Category(UnitTests.class)
   public void testGetValidationTask() {
     List<Filter> ec2Filters = singletonList(new Filter("instance-state", singletonList("running")));
-    doReturn(ec2Filters)
-        .when(awsUtils)
-        .getAwsFilters(any(AwsInfrastructureMapping.class), eq(DeploymentType.AWS_CODEDEPLOY));
+    doReturn(ec2Filters).when(awsUtils).getFilters(eq(DeploymentType.AWS_CODEDEPLOY), any());
     DelegateTask validationTask = client.getValidationTask(getClientContext(), ACCOUNT_ID);
 
     verify(infraMappingService, times(1)).get(APP_ID, INFRA_MAPPING_ID);
     verify(settingsService, times(1)).get(COMPUTE_PROVIDER_SETTING_ID);
-    verify(secretManager, times(1)).getEncryptionDetails(any(EncryptableSetting.class));
+    verify(secretManager, times(1)).getEncryptionDetails(any());
 
     assertThat(validationTask.getAccountId()).isEqualTo(ACCOUNT_ID);
     assertThat(validationTask.getSetupAbstractions().get(Cd1SetupFields.APP_ID_FIELD)).isEqualTo(GLOBAL_APP_ID);
@@ -153,9 +150,7 @@ public class AwsCodeDeployInstanceSyncPerpetualTaskClientTest extends CategoryTe
   @Category(UnitTests.class)
   public void testGetTaskParams() {
     List<Filter> ec2Filters = singletonList(new Filter("instance-state", singletonList("running")));
-    doReturn(ec2Filters)
-        .when(awsUtils)
-        .getAwsFilters(any(AwsInfrastructureMapping.class), eq(DeploymentType.AWS_CODEDEPLOY));
+    doReturn(ec2Filters).when(awsUtils).getFilters(eq(DeploymentType.AWS_CODEDEPLOY), any(AwsInstanceFilter.class));
     AwsCodeDeployInstanceSyncPerpetualTaskParams taskParams =
         (AwsCodeDeployInstanceSyncPerpetualTaskParams) client.getTaskParams(getClientContext());
 

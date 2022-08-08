@@ -359,7 +359,7 @@ public enum StepType {
   AZURE_WEBAPP_SLOT_SETUP(AzureWebAppSlotSetup.class, WorkflowServiceHelper.AZURE_WEBAPP_SLOT_SETUP,
       singletonList(WorkflowStepType.AZURE_WEBAPP), singletonList(PhaseStepType.AZURE_WEBAPP_SLOT_SETUP),
       Lists.newArrayList(DeploymentType.AZURE_WEBAPP), singletonList(PhaseType.NON_ROLLBACK),
-      asList(CANARY, BLUE_GREEN)),
+      asList(BASIC, CANARY, BLUE_GREEN)),
   AZURE_WEBAPP_SLOT_SWAP(AzureWebAppSlotSwap.class, WorkflowServiceHelper.AZURE_WEBAPP_SLOT_SWAP,
       singletonList(WorkflowStepType.AZURE_WEBAPP), singletonList(PhaseStepType.AZURE_WEBAPP_SLOT_SWAP),
       Lists.newArrayList(DeploymentType.AZURE_WEBAPP), singletonList(PhaseType.NON_ROLLBACK),
@@ -369,7 +369,8 @@ public enum StepType {
       Lists.newArrayList(DeploymentType.AZURE_WEBAPP), singletonList(PhaseType.NON_ROLLBACK), singletonList(CANARY)),
   AZURE_WEBAPP_SLOT_ROLLBACK(AzureWebAppSlotRollback.class, WorkflowServiceHelper.AZURE_WEBAPP_SLOT_ROLLBACK,
       singletonList(WorkflowStepType.AZURE_WEBAPP), singletonList(PhaseStepType.AZURE_WEBAPP_SLOT_ROLLBACK),
-      Lists.newArrayList(DeploymentType.AZURE_WEBAPP), singletonList(PhaseType.ROLLBACK), asList(CANARY, BLUE_GREEN)),
+      Lists.newArrayList(DeploymentType.AZURE_WEBAPP), singletonList(PhaseType.ROLLBACK),
+      asList(BASIC, CANARY, BLUE_GREEN)),
 
   // AWS CodeDeploy
   AWS_CODEDEPLOY_STATE(AwsCodeDeployState.class, AWS_CODE_DEPLOY, asList(WorkflowStepType.AWS_CODE_DEPLOY),
@@ -625,7 +626,7 @@ public enum StepType {
       asList(PhaseType.ROLLBACK), TerraformProvisionStepYamlBuilder.class),
   TERRAGRUNT_PROVISION(TerragruntApplyState.class, WorkflowServiceHelper.TERRAGRUNT_PROVISION,
       asList(INFRASTRUCTURE_PROVISIONER), asList(PhaseStepType.values()), asList(DeploymentType.values()),
-      asList(PhaseType.NON_ROLLBACK), TerragruntProvisionStepYamlBuilder.class),
+      asList(PhaseType.NON_ROLLBACK, PhaseType.ROLLBACK), TerragruntProvisionStepYamlBuilder.class),
   TERRAGRUNT_DESTROY(TerragruntDestroyState.class, WorkflowServiceHelper.TERRAGRUNT_DESTROY,
       asList(INFRASTRUCTURE_PROVISIONER),
       asList(POST_DEPLOYMENT, WRAP_UP, K8S_PHASE_STEP, CUSTOM_DEPLOYMENT_PHASE_STEP),

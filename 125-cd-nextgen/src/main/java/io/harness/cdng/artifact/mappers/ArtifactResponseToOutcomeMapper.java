@@ -12,33 +12,52 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.artifact.ArtifactMetadataKeys;
 import io.harness.cdng.artifact.bean.ArtifactConfig;
+import io.harness.cdng.artifact.bean.yaml.AcrArtifactConfig;
+import io.harness.cdng.artifact.bean.yaml.AmazonS3ArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.ArtifactoryRegistryArtifactConfig;
+import io.harness.cdng.artifact.bean.yaml.CustomArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.DockerHubArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.EcrArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.GcrArtifactConfig;
+import io.harness.cdng.artifact.bean.yaml.JenkinsArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.NexusRegistryArtifactConfig;
+import io.harness.cdng.artifact.outcome.AcrArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactoryArtifactOutcome;
+import io.harness.cdng.artifact.outcome.ArtifactoryGenericArtifactOutcome;
+import io.harness.cdng.artifact.outcome.CustomArtifactOutcome;
 import io.harness.cdng.artifact.outcome.DockerArtifactOutcome;
 import io.harness.cdng.artifact.outcome.EcrArtifactOutcome;
 import io.harness.cdng.artifact.outcome.GcrArtifactOutcome;
+import io.harness.cdng.artifact.outcome.JenkinsArtifactOutcome;
 import io.harness.cdng.artifact.outcome.NexusArtifactOutcome;
+import io.harness.cdng.artifact.outcome.S3ArtifactOutcome;
 import io.harness.cdng.artifact.utils.ArtifactUtils;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.task.artifacts.ArtifactSourceType;
+import io.harness.delegate.task.artifacts.S3ArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.artifactory.ArtifactoryArtifactDelegateResponse;
+import io.harness.delegate.task.artifacts.artifactory.ArtifactoryGenericArtifactDelegateResponse;
+import io.harness.delegate.task.artifacts.azure.AcrArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.docker.DockerArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.ecr.EcrArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.gcr.GcrArtifactDelegateResponse;
+import io.harness.delegate.task.artifacts.jenkins.JenkinsArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.nexus.NexusArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.response.ArtifactDelegateResponse;
+import io.harness.pms.yaml.ParameterField;
 
+import software.wings.utils.RepositoryFormat;
+
+import java.nio.file.Paths;
 import lombok.experimental.UtilityClass;
 
 @UtilityClass
 @OwnedBy(CDC)
 public class ArtifactResponseToOutcomeMapper {
-  private final String IMAGE_PULL_SECRET = "<+imagePullSecret.";
+  private final String IMAGE_PULL_SECRET_START = "<+imagePullSecret.";
+  private final String IMAGE_PULL_SECRET_END = ">";
+
   public ArtifactOutcome toArtifactOutcome(
       ArtifactConfig artifactConfig, ArtifactDelegateResponse artifactDelegateResponse, boolean useDelegateResponse) {
     switch (artifactConfig.getSourceType()) {
@@ -62,16 +81,62 @@ public class ArtifactResponseToOutcomeMapper {
         NexusArtifactDelegateResponse nexusDelegateResponse = (NexusArtifactDelegateResponse) artifactDelegateResponse;
         return getNexusArtifactOutcome(nexusRegistryArtifactConfig, nexusDelegateResponse, useDelegateResponse);
       case ARTIFACTORY_REGISTRY:
+        ArtifactOutcome artifactOutcome = null;
         ArtifactoryRegistryArtifactConfig artifactoryRegistryArtifactConfig =
             (ArtifactoryRegistryArtifactConfig) artifactConfig;
-        ArtifactoryArtifactDelegateResponse artifactoryDelegateResponse =
-            (ArtifactoryArtifactDelegateResponse) artifactDelegateResponse;
-        return getArtifactoryArtifactOutcome(
-            artifactoryRegistryArtifactConfig, artifactoryDelegateResponse, useDelegateResponse);
+        RepositoryFormat repositoryType =
+            RepositoryFormat.valueOf(artifactoryRegistryArtifactConfig.getRepositoryFormat().getValue());
+        switch (repositoryType) {
+          case docker:
+            ArtifactoryArtifactDelegateResponse artifactoryDelegateResponse =
+                (ArtifactoryArtifactDelegateResponse) artifactDelegateResponse;
+            artifactOutcome = getArtifactoryArtifactOutcome(
+                artifactoryRegistryArtifactConfig, artifactoryDelegateResponse, useDelegateResponse);
+            return artifactOutcome;
+          case generic:
+            ArtifactoryGenericArtifactDelegateResponse artifactoryGenericDelegateResponse =
+                (ArtifactoryGenericArtifactDelegateResponse) artifactDelegateResponse;
+            artifactOutcome = getArtifactoryGenericArtifactOutcome(
+                artifactoryRegistryArtifactConfig, artifactoryGenericDelegateResponse, useDelegateResponse);
+            return artifactOutcome;
+          default:
+            throw new UnsupportedOperationException(
+                String.format("Repository Format [%s] for Artifactory Not Supported", repositoryType));
+        }
+      case ACR:
+        AcrArtifactConfig acrArtifactConfig = (AcrArtifactConfig) artifactConfig;
+        AcrArtifactDelegateResponse acrArtifactDelegateResponse =
+            (AcrArtifactDelegateResponse) artifactDelegateResponse;
+        return getAcrArtifactOutcome(acrArtifactConfig, acrArtifactDelegateResponse, useDelegateResponse);
+      case CUSTOM_ARTIFACT:
+        CustomArtifactConfig customArtifactConfig = (CustomArtifactConfig) artifactConfig;
+        return getCustomArtifactOutcome(customArtifactConfig);
+      case AMAZONS3:
+        AmazonS3ArtifactConfig amazonS3ArtifactConfig = (AmazonS3ArtifactConfig) artifactConfig;
+        S3ArtifactDelegateResponse s3ArtifactDelegateResponse = (S3ArtifactDelegateResponse) artifactDelegateResponse;
+        return getS3ArtifactOutcome(amazonS3ArtifactConfig, s3ArtifactDelegateResponse, useDelegateResponse);
+      case JENKINS:
+        JenkinsArtifactConfig jenkinsArtifactConfig = (JenkinsArtifactConfig) artifactConfig;
+        JenkinsArtifactDelegateResponse jenkinsArtifactDelegateResponse =
+            (JenkinsArtifactDelegateResponse) artifactDelegateResponse;
+        return getJenkinsArtifactOutcome(jenkinsArtifactConfig, jenkinsArtifactDelegateResponse, useDelegateResponse);
       default:
         throw new UnsupportedOperationException(
             String.format("Unknown Artifact Config type: [%s]", artifactConfig.getSourceType()));
     }
+  }
+
+  private static S3ArtifactOutcome getS3ArtifactOutcome(AmazonS3ArtifactConfig amazonS3ArtifactConfig,
+      S3ArtifactDelegateResponse s3ArtifactDelegateResponse, boolean useDelegateResponse) {
+    return S3ArtifactOutcome.builder()
+        .bucketName(amazonS3ArtifactConfig.getBucketName().getValue())
+        .filePath(s3ArtifactDelegateResponse.getFilePath())
+        .connectorRef(amazonS3ArtifactConfig.getConnectorRef().getValue())
+        .type(ArtifactSourceType.AMAZONS3.getDisplayName())
+        .identifier(amazonS3ArtifactConfig.getIdentifier())
+        .primaryArtifact(amazonS3ArtifactConfig.isPrimaryArtifact())
+        .filePathRegex(amazonS3ArtifactConfig.getFilePathRegex().getValue())
+        .build();
   }
 
   private DockerArtifactOutcome getDockerArtifactOutcome(DockerHubArtifactConfig dockerConfig,
@@ -86,7 +151,7 @@ public class ArtifactResponseToOutcomeMapper {
         .identifier(dockerConfig.getIdentifier())
         .type(ArtifactSourceType.DOCKER_REGISTRY.getDisplayName())
         .primaryArtifact(dockerConfig.isPrimaryArtifact())
-        .imagePullSecret(IMAGE_PULL_SECRET + ArtifactUtils.getArtifactKey(dockerConfig) + ">")
+        .imagePullSecret(createImagePullSecret(ArtifactUtils.getArtifactKey(dockerConfig)))
         .build();
   }
 
@@ -103,7 +168,7 @@ public class ArtifactResponseToOutcomeMapper {
         .identifier(gcrArtifactConfig.getIdentifier())
         .type(ArtifactSourceType.GCR.getDisplayName())
         .primaryArtifact(gcrArtifactConfig.isPrimaryArtifact())
-        .imagePullSecret(IMAGE_PULL_SECRET + ArtifactUtils.getArtifactKey(gcrArtifactConfig) + ">")
+        .imagePullSecret(createImagePullSecret(ArtifactUtils.getArtifactKey(gcrArtifactConfig)))
         .build();
   }
 
@@ -120,7 +185,7 @@ public class ArtifactResponseToOutcomeMapper {
         .identifier(ecrArtifactConfig.getIdentifier())
         .type(ArtifactSourceType.ECR.getDisplayName())
         .primaryArtifact(ecrArtifactConfig.isPrimaryArtifact())
-        .imagePullSecret(IMAGE_PULL_SECRET + ArtifactUtils.getArtifactKey(ecrArtifactConfig) + ">")
+        .imagePullSecret(createImagePullSecret(ArtifactUtils.getArtifactKey(ecrArtifactConfig)))
         .build();
   }
 
@@ -138,7 +203,8 @@ public class ArtifactResponseToOutcomeMapper {
         .identifier(artifactConfig.getIdentifier())
         .type(ArtifactSourceType.NEXUS3_REGISTRY.getDisplayName())
         .primaryArtifact(artifactConfig.isPrimaryArtifact())
-        .imagePullSecret(IMAGE_PULL_SECRET + ArtifactUtils.getArtifactKey(artifactConfig) + ">")
+        .imagePullSecret(createImagePullSecret(ArtifactUtils.getArtifactKey(artifactConfig)))
+        .registryHostname(getRegistryHostnameValue(artifactDelegateResponse))
         .build();
   }
 
@@ -156,8 +222,90 @@ public class ArtifactResponseToOutcomeMapper {
         .identifier(artifactConfig.getIdentifier())
         .type(ArtifactSourceType.ARTIFACTORY_REGISTRY.getDisplayName())
         .primaryArtifact(artifactConfig.isPrimaryArtifact())
-        .imagePullSecret(IMAGE_PULL_SECRET + ArtifactUtils.getArtifactKey(artifactConfig) + ">")
+        .imagePullSecret(createImagePullSecret(ArtifactUtils.getArtifactKey(artifactConfig)))
+        .registryHostname(getRegistryHostnameValue(artifactDelegateResponse))
         .build();
+  }
+
+  private ArtifactoryGenericArtifactOutcome getArtifactoryGenericArtifactOutcome(
+      ArtifactoryRegistryArtifactConfig artifactConfig,
+      ArtifactoryGenericArtifactDelegateResponse artifactDelegateResponse, boolean useDelegateResponse) {
+    String artifactPath = useDelegateResponse ? ParameterField.isBlank(artifactConfig.getArtifactPathFilter())
+            ? Paths.get(artifactConfig.getArtifactDirectory().getValue(), artifactDelegateResponse.getArtifactPath())
+                  .toString()
+            : artifactDelegateResponse.getArtifactPath()
+                                              : (ParameterField.isNull(artifactConfig.getArtifactPath()) ? null
+                                                      : ParameterField.isBlank(artifactConfig.getArtifactPathFilter())
+                                                      ? Paths
+                                                            .get(artifactConfig.getArtifactDirectory().getValue(),
+                                                                artifactConfig.getArtifactPath().getValue())
+                                                            .toString()
+                                                      : artifactConfig.getArtifactPath().getValue());
+
+    return ArtifactoryGenericArtifactOutcome.builder()
+        .repositoryName(artifactConfig.getRepository().getValue())
+        .connectorRef(artifactConfig.getConnectorRef().getValue())
+        .artifactDirectory(artifactConfig.getArtifactDirectory().getValue())
+        .repositoryFormat(artifactConfig.getRepositoryFormat().getValue())
+        .artifactPath(artifactPath)
+        // As tag is common field in all artifact outcomes, this need to be populated
+        .tag(artifactPath)
+        .artifactPathFilter(ParameterField.isNull(artifactConfig.getArtifactPathFilter())
+                ? null
+                : artifactConfig.getArtifactPathFilter().getValue())
+        .identifier(artifactConfig.getIdentifier())
+        .type(ArtifactSourceType.ARTIFACTORY_REGISTRY.getDisplayName())
+        .primaryArtifact(artifactConfig.isPrimaryArtifact())
+        .build();
+  }
+
+  private CustomArtifactOutcome getCustomArtifactOutcome(CustomArtifactConfig artifactConfig) {
+    return CustomArtifactOutcome.builder()
+        .identifier(artifactConfig.getIdentifier())
+        .primaryArtifact(artifactConfig.isPrimaryArtifact())
+        .version(artifactConfig.getVersion().getValue())
+        .build();
+  }
+
+  private AcrArtifactOutcome getAcrArtifactOutcome(AcrArtifactConfig acrArtifactConfig,
+      AcrArtifactDelegateResponse acrArtifactDelegateResponse, boolean useDelegateResponse) {
+    return AcrArtifactOutcome.builder()
+        .subscription(acrArtifactConfig.getSubscriptionId().getValue())
+        .registry(getRegistryHostnameValue(acrArtifactDelegateResponse))
+        .repository(acrArtifactConfig.getRepository().getValue())
+        .image(getImageValue(acrArtifactDelegateResponse))
+        .connectorRef(acrArtifactConfig.getConnectorRef().getValue())
+        .tag(getAcrTag(useDelegateResponse, acrArtifactDelegateResponse.getTag(), acrArtifactConfig.getTag()))
+        .tagRegex(acrArtifactConfig.getTagRegex() != null ? acrArtifactConfig.getTagRegex().getValue() : null)
+        .identifier(acrArtifactConfig.getIdentifier())
+        .type(ArtifactSourceType.ACR.getDisplayName())
+        .primaryArtifact(acrArtifactConfig.isPrimaryArtifact())
+        .imagePullSecret(createImagePullSecret(ArtifactUtils.getArtifactKey(acrArtifactConfig)))
+        .build();
+  }
+
+  private static JenkinsArtifactOutcome getJenkinsArtifactOutcome(JenkinsArtifactConfig jenkinsArtifactConfig,
+      JenkinsArtifactDelegateResponse jenkinsArtifactDelegateResponse, boolean useDelegateResponse) {
+    return JenkinsArtifactOutcome.builder()
+        .jobName(jenkinsArtifactConfig.getJobName().getValue())
+        .build(getJenkinsBuild(useDelegateResponse, jenkinsArtifactDelegateResponse, jenkinsArtifactConfig))
+        .artifactPath(jenkinsArtifactConfig.getArtifactPath().getValue())
+        .connectorRef(jenkinsArtifactConfig.getConnectorRef().getValue())
+        .type(ArtifactSourceType.JENKINS.getDisplayName())
+        .identifier(jenkinsArtifactConfig.getIdentifier())
+        .primaryArtifact(jenkinsArtifactConfig.isPrimaryArtifact())
+        .build();
+  }
+
+  private String getAcrTag(boolean useDelegateResponse, String delegateResponseTag, ParameterField<String> configTag) {
+    return useDelegateResponse ? delegateResponseTag : !ParameterField.isNull(configTag) ? configTag.getValue() : null;
+  }
+
+  private String getJenkinsBuild(boolean useDelegateResponse,
+      JenkinsArtifactDelegateResponse jenkinsArtifactDelegateResponse, JenkinsArtifactConfig jenkinsArtifactConfig) {
+    return useDelegateResponse
+        ? jenkinsArtifactDelegateResponse.getBuild()
+        : (jenkinsArtifactConfig.getBuild() != null ? jenkinsArtifactConfig.getBuild().getValue() : null);
   }
 
   private String getImageValue(ArtifactDelegateResponse artifactDelegateResponse) {
@@ -167,5 +315,18 @@ public class ArtifactResponseToOutcomeMapper {
     return EmptyPredicate.isNotEmpty(artifactDelegateResponse.getBuildDetails().getMetadata())
         ? artifactDelegateResponse.getBuildDetails().getMetadata().get(ArtifactMetadataKeys.IMAGE)
         : null;
+  }
+
+  private String getRegistryHostnameValue(ArtifactDelegateResponse artifactDelegateResponse) {
+    if (artifactDelegateResponse == null || artifactDelegateResponse.getBuildDetails() == null) {
+      return null;
+    }
+    return EmptyPredicate.isNotEmpty(artifactDelegateResponse.getBuildDetails().getMetadata())
+        ? artifactDelegateResponse.getBuildDetails().getMetadata().get(ArtifactMetadataKeys.REGISTRY_HOSTNAME)
+        : null;
+  }
+
+  private String createImagePullSecret(String artifactKey) {
+    return String.format("%s%s%s", IMAGE_PULL_SECRET_START, artifactKey, IMAGE_PULL_SECRET_END);
   }
 }

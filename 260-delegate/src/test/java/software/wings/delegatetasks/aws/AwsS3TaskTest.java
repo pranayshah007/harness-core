@@ -14,7 +14,6 @@ import static io.harness.rule.OwnerRule.SATYAM;
 
 import static org.joor.Reflect.on;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyList;
 import static org.mockito.Mockito.verify;
 
 import io.harness.annotations.dev.HarnessModule;
@@ -61,7 +60,7 @@ public class AwsS3TaskTest extends WingsBaseTest {
   public void testRunWithTaskParameters() {
     AwsS3Request request = AwsS3ListBucketNamesRequest.builder().build();
     task.run(request);
-    verify(mockS3HelperServiceDelegate).listBucketNames(any(), anyList());
+    verify(mockS3HelperServiceDelegate).listBucketNames(any(), any());
   }
 
   @Test(expected = NotImplementedException.class)

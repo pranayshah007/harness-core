@@ -14,11 +14,11 @@ import static software.wings.service.impl.newrelic.NewRelicMetricDataRecord.DEFA
 
 import io.harness.beans.FeatureName;
 
+import software.wings.beans.ApmMetricCollectionInfo;
 import software.wings.metrics.MetricType;
 import software.wings.service.impl.analysis.DataCollectionInfoV2;
 import software.wings.service.impl.apm.CustomAPMDataCollectionInfo;
 import software.wings.sm.states.APMVerificationState;
-import software.wings.sm.states.APMVerificationState.MetricCollectionInfo;
 import software.wings.verification.CVConfiguration;
 
 import java.util.ArrayList;
@@ -39,7 +39,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = false)
 public class APMCVServiceConfiguration extends CVConfiguration {
-  private List<MetricCollectionInfo> metricCollectionInfos;
+  private List<ApmMetricCollectionInfo> metricCollectionInfos;
 
   @Override
   public boolean isCVTaskBasedCollectionFeatureFlagged() {
@@ -77,7 +77,7 @@ public class APMCVServiceConfiguration extends CVConfiguration {
       return false;
     }
 
-    for (MetricCollectionInfo metricCollectionInfo : metricCollectionInfos) {
+    for (ApmMetricCollectionInfo metricCollectionInfo : metricCollectionInfos) {
       if (!metricCollectionInfo.getCollectionUrl().contains("${start_time}")
           && !metricCollectionInfo.getCollectionUrl().contains("${start_time_seconds}")) {
         if (isEmpty(metricCollectionInfo.getCollectionBody())
@@ -114,13 +114,13 @@ public class APMCVServiceConfiguration extends CVConfiguration {
     return isAllThroughput.get();
   }
 
-  public boolean validateUniqueMetricTxnCombination(List<MetricCollectionInfo> metricCollectionInfoList) {
+  public boolean validateUniqueMetricTxnCombination(List<ApmMetricCollectionInfo> metricCollectionInfoList) {
     boolean isValidCombination = true;
 
     Map<String, String> metricNameTxnNameMap = new HashMap<>();
 
     if (isNotEmpty(metricCollectionInfoList)) {
-      for (MetricCollectionInfo metricCollectionInfo : metricCollectionInfoList) {
+      for (ApmMetricCollectionInfo metricCollectionInfo : metricCollectionInfoList) {
         String txnName = metricCollectionInfo.getResponseMapping().getTxnNameFieldValue() == null
             ? "*"
             : metricCollectionInfo.getResponseMapping().getTxnNameFieldValue();
@@ -165,7 +165,7 @@ public class APMCVServiceConfiguration extends CVConfiguration {
     }
 
     // Now for some more stringent validation based on txnName if it's available.
-    Map<String, List<MetricCollectionInfo>> txnNameInfoMap = new HashMap<>();
+    Map<String, List<ApmMetricCollectionInfo>> txnNameInfoMap = new HashMap<>();
     metricCollectionInfos.forEach(metricCollectionInfo -> {
       final String txnName = metricCollectionInfo.getResponseMapping().getTxnNameFieldValue();
       if (isNotEmpty(txnName)) {

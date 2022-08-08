@@ -8,12 +8,16 @@
 package io.harness.ng.core.remote;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.rule.OwnerRule.NISHANT;
 import static io.harness.rule.OwnerRule.PIYUSH;
 
+import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
@@ -31,15 +35,20 @@ import io.harness.rule.Owner;
 
 import software.wings.service.impl.security.NGEncryptorService;
 
+import io.dropwizard.jersey.validation.JerseyViolationException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import javax.validation.ConstraintViolation;
 import javax.validation.Validator;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.mockito.Mockito;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 
 @OwnedBy(PL)
 public class NGSecretResourceV2Test extends CategoryTest {
@@ -56,6 +65,7 @@ public class NGSecretResourceV2Test extends CategoryTest {
     secretPermissionValidator = mock(SecretPermissionValidator.class);
     encryptedDataService = mock(NGEncryptedDataService.class);
     ngEncryptorService = mock(NGEncryptorService.class);
+    validator = mock(Validator.class);
     ngSecretResourceV2 = new NGSecretResourceV2(
         ngSecretService, validator, encryptedDataService, secretPermissionValidator, ngEncryptorService);
   }
@@ -65,15 +75,10 @@ public class NGSecretResourceV2Test extends CategoryTest {
   @Category(UnitTests.class)
   public void testIfListSecretsPostCallReturnsSuccessfully() {
     List<Object> mockResponse = Collections.singletonList(getMockResponse());
-    PageResponse<Object> pageResponse = PageResponse.builder().content(mockResponse).build();
+    Page<Object> page = new PageImpl<>(mockResponse);
 
-    doNothing()
-        .when(secretPermissionValidator)
-        .checkForAccessOrThrow(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
-    doReturn(pageResponse)
-        .when(ngSecretService)
-        .list(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.anyList(), Mockito.anyList(), Mockito.anyBoolean(),
-            Mockito.any(), Mockito.anyInt(), Mockito.anyInt(), Mockito.any());
+    doNothing().when(secretPermissionValidator).checkForAccessOrThrow(any(), any(), any(), any());
+    doReturn(page).when(ngSecretService).list("Test", "TestOrg", "TestProj", null, null, false, null, 1, 10, null);
     ResponseDTO<PageResponse<SecretResponseWrapper>> list = ngSecretResourceV2.listSecrets(
         "Test", "TestOrg", "TestProj", SecretResourceFilterDTO.builder().identifiers(null).build(), 1, 10);
     assertThat(list.getData().getContent().size()).isEqualTo(1);
@@ -88,5 +93,22 @@ public class NGSecretResourceV2Test extends CategoryTest {
             .build();
     mockResponse.add(secretResponseWrapper);
     return mockResponse;
+  }
+
+  @Test(expected = JerseyViolationException.class)
+  @Owner(developers = NISHANT)
+  @Category(UnitTests.class)
+  public void testValidateRequestPayload() {
+    String accountIdentifier = randomAlphabetic(10);
+    String orgIdentifier = randomAlphabetic(10);
+    String projectIdentifier = randomAlphabetic(10);
+    String spec =
+        "{\"secret\":{\"type\":\"SecretFile\",\"identifier\":\"test_identifier\",\"description\":\"\",\"tags\":{},"
+        + "\"spec\":{\"secretManagerIdentifier\":\"harnessSecretManager\"}}}";
+    ConstraintViolation<Object> mockviolation = mock(ConstraintViolation.class);
+    Set<ConstraintViolation<Object>> violations = new HashSet<>();
+    violations.add(mockviolation);
+    when(validator.validate(any())).thenReturn(violations);
+    ngSecretResourceV2.createSecretFile(accountIdentifier, orgIdentifier, projectIdentifier, false, null, spec);
   }
 }

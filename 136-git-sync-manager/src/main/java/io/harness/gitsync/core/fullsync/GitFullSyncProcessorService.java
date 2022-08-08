@@ -19,7 +19,8 @@ import java.util.List;
 
 @OwnedBy(DX)
 public interface GitFullSyncProcessorService {
-  FullSyncMsvcProcessingResponse processFiles(Microservice microservice, List<GitFullSyncEntityInfo> entityInfoList);
+  FullSyncMsvcProcessingResponse processFilesInBatches(
+      Microservice microservice, List<GitFullSyncEntityInfo> entityInfoList);
 
   void performFullSync(GitFullSyncJob fullSyncJob);
 }

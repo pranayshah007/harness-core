@@ -15,6 +15,7 @@ import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Map;
 import java.util.Set;
+import javax.validation.constraints.NotNull;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -36,8 +37,11 @@ import lombok.experimental.FieldNameConstants;
 public class RoleDTO {
   public static final String MODEL_NAME = "Role";
 
-  @Schema(description = "Unique identifier of the role") @ApiModelProperty(required = true) final String identifier;
-  @Schema(description = "Name of the role") @ApiModelProperty(required = true) final String name;
+  @Schema(description = "Unique identifier of the role")
+  @NotNull
+  @ApiModelProperty(required = true)
+  final String identifier;
+  @Schema(description = "Name of the role") @NotNull @ApiModelProperty(required = true) final String name;
   @Schema(
       description = "List of the permission identifiers (Subset of the list returned by GET /authz/api/permissions)")
   final Set<String> permissions;

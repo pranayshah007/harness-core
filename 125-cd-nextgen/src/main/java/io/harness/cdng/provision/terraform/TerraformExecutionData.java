@@ -30,6 +30,7 @@ import java.util.List;
 import javax.validation.constraints.NotNull;
 import lombok.AccessLevel;
 import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.apache.commons.lang3.StringUtils;
@@ -40,6 +41,8 @@ import org.apache.commons.lang3.StringUtils;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @RecasterAlias("io.harness.cdng.provision.terraform.TerraformExecutionData")
 public class TerraformExecutionData {
+  @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String uuid;
+
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> workspace;
   @NotNull @JsonProperty("configFiles") TerraformConfigFilesWrapper terraformConfigFilesWrapper;
   @JsonProperty("varFiles") List<TerraformVarFileWrapper> terraformVarFiles;

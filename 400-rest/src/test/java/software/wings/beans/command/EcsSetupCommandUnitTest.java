@@ -25,6 +25,7 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyList;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -39,17 +40,20 @@ import software.wings.beans.SettingAttribute;
 import software.wings.cloudprovider.aws.AwsClusterService;
 import software.wings.delegatetasks.aws.ecs.ecstaskhandler.EcsSetupCommandHandler;
 import software.wings.delegatetasks.aws.ecs.ecstaskhandler.EcsSetupCommandTaskHelper;
+import software.wings.service.intfc.aws.delegate.AwsEcsHelperServiceDelegate;
 import software.wings.utils.EcsConvention;
 import software.wings.utils.WingsTestConstants;
 
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.ecs.model.CreateServiceRequest;
 import com.amazonaws.services.ecs.model.RegisterTaskDefinitionRequest;
+import com.amazonaws.services.ecs.model.Service;
 import com.amazonaws.services.ecs.model.TaskDefinition;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import java.util.Collections;
 import java.util.Date;
+import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -59,6 +63,7 @@ import org.mockito.Mock;
 public class EcsSetupCommandUnitTest extends WingsBaseTest {
   public static final String CLUSTER_NAME = "clusterName";
   @Mock private AwsClusterService awsClusterService;
+  @Mock private AwsEcsHelperServiceDelegate awsEcsHelperServiceDelegate;
   @InjectMocks @Inject private EcsSetupCommandTaskHelper ecsSetupCommandTaskHelper;
   @InjectMocks @Inject private EcsSetupCommandHandler ecsSetupCommandHandler;
   @InjectMocks @Inject private EcsSetupCommandUnit ecsSetupCommandUnit;
@@ -112,6 +117,10 @@ public class EcsSetupCommandUnitTest extends WingsBaseTest {
     when(awsClusterService.getServices(
              Regions.US_EAST_1.getName(), computeProvider, Collections.emptyList(), WingsTestConstants.CLUSTER_NAME))
         .thenReturn(Lists.newArrayList(ecsService));
+    doReturn(List.of(new Service().withServiceName("servicenm")))
+        .when(awsEcsHelperServiceDelegate)
+        .listServicesForCluster(any(), any(), any(), any());
+
     CommandExecutionStatus status = ecsSetupCommandUnit.execute(context);
     assertThat(status).isEqualTo(CommandExecutionStatus.SUCCESS);
     verify(awsClusterService)

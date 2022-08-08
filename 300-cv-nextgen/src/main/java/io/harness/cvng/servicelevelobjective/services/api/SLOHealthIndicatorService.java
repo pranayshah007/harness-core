@@ -18,6 +18,7 @@ public interface SLOHealthIndicatorService {
   List<SLOHealthIndicator> getByMonitoredServiceIdentifiers(
       ProjectParams projectParams, List<String> monitoredServiceIdentifiers);
   SLOHealthIndicator getBySLOIdentifier(ProjectParams projectParams, String serviceLevelObjectiveIdentifier);
+  SLOHealthIndicator getBySLOEntity(ServiceLevelObjective serviceLevelObjective);
   List<SLOHealthIndicator> getBySLOIdentifiers(
       ProjectParams projectParams, List<String> serviceLevelObjectiveIdentifiers);
   void upsert(ServiceLevelIndicator serviceLevelIndicator);

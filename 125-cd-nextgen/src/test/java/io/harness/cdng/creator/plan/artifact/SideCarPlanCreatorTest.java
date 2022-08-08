@@ -7,6 +7,7 @@
 
 package io.harness.cdng.creator.plan.artifact;
 
+import static io.harness.rule.OwnerRule.ABOSII;
 import static io.harness.rule.OwnerRule.MLUKIC;
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
 
@@ -17,12 +18,16 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDNGTestBase;
 import io.harness.cdng.artifact.bean.yaml.SidecarArtifact;
+import io.harness.cdng.artifact.steps.ArtifactStep;
 import io.harness.cdng.artifact.steps.ArtifactStepParameters;
+import io.harness.cdng.artifact.steps.ArtifactSyncStep;
 import io.harness.cdng.creator.plan.PlanCreatorConstants;
 import io.harness.cdng.visitor.YamlTypes;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.delegate.task.artifacts.ArtifactSourceConstants;
+import io.harness.delegate.task.artifacts.ArtifactSourceType;
 import io.harness.pms.contracts.plan.Dependency;
+import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.sdk.core.plan.PlanNode;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
@@ -56,7 +61,7 @@ public class SideCarPlanCreatorTest extends CDNGTestBase {
   public void testGetSupportedTypes() {
     Map<String, Set<String>> supportedTypes = sidecarPlanCreator.getSupportedTypes();
     assertThat(supportedTypes.containsKey(YamlTypes.SIDECAR_ARTIFACT_CONFIG)).isEqualTo(true);
-    assertThat(supportedTypes.get(YamlTypes.SIDECAR_ARTIFACT_CONFIG).size()).isEqualTo(5);
+    assertThat(supportedTypes.get(YamlTypes.SIDECAR_ARTIFACT_CONFIG).size()).isEqualTo(9);
     assertThat(
         supportedTypes.get(YamlTypes.SIDECAR_ARTIFACT_CONFIG).contains(ArtifactSourceConstants.DOCKER_REGISTRY_NAME))
         .isEqualTo(true);
@@ -69,6 +74,15 @@ public class SideCarPlanCreatorTest extends CDNGTestBase {
         .isEqualTo(true);
     assertThat(supportedTypes.get(YamlTypes.SIDECAR_ARTIFACT_CONFIG)
                    .contains(ArtifactSourceConstants.ARTIFACTORY_REGISTRY_NAME))
+        .isEqualTo(true);
+    assertThat(supportedTypes.get(YamlTypes.SIDECAR_ARTIFACT_CONFIG).contains(ArtifactSourceConstants.ACR_NAME))
+        .isEqualTo(true);
+    assertThat(
+        supportedTypes.get(YamlTypes.SIDECAR_ARTIFACT_CONFIG).contains(ArtifactSourceConstants.CUSTOM_ARTIFACT_NAME))
+        .isEqualTo(true);
+    assertThat(supportedTypes.get(YamlTypes.SIDECAR_ARTIFACT_CONFIG).contains(ArtifactSourceConstants.AMAZON_S3_NAME))
+        .isEqualTo(true);
+    assertThat(supportedTypes.get(YamlTypes.SIDECAR_ARTIFACT_CONFIG).contains(ArtifactSourceConstants.JENKINS_NAME))
         .isEqualTo(true);
   }
 
@@ -93,5 +107,35 @@ public class SideCarPlanCreatorTest extends CDNGTestBase {
     assertThat(sidecarPlanNode.getUuid()).isEqualTo(uuid);
     assertThat(sidecarPlanNode.getIdentifier()).isEqualTo(identifier);
     assertThat(sidecarPlanNode.getStepParameters()).isEqualTo(artifactStepParameters);
+    assertThat(sidecarPlanNode.getStepType()).isEqualTo(ArtifactStep.STEP_TYPE);
+    assertThat(sidecarPlanNode.getFacilitatorObtainments().get(0).getType().getType())
+        .isEqualTo(OrchestrationFacilitatorType.TASK);
+  }
+
+  @Test
+  @Owner(developers = ABOSII)
+  @Category(UnitTests.class)
+  public void testGetParentNodeCustomArtifactFixedValue() {
+    HashMap<String, ByteString> metadataDependency = new HashMap<>();
+    String uuid = UUIDGenerator.generateUuid();
+    String identifier = "sidecar1";
+    ArtifactStepParameters artifactStepParameters =
+        ArtifactStepParameters.builder().identifier(identifier).type(ArtifactSourceType.CUSTOM_ARTIFACT).build();
+
+    metadataDependency.put(YamlTypes.UUID, ByteString.copyFrom(kryoSerializer.asDeflatedBytes(uuid)));
+    metadataDependency.put(
+        PlanCreatorConstants.IDENTIFIER, ByteString.copyFrom(kryoSerializer.asDeflatedBytes(identifier)));
+    metadataDependency.put(PlanCreatorConstants.SIDECAR_STEP_PARAMETERS,
+        ByteString.copyFrom(kryoSerializer.asDeflatedBytes(artifactStepParameters)));
+    Dependency dependency = Dependency.newBuilder().putAllMetadata(metadataDependency).build();
+    PlanCreationContext ctx = PlanCreationContext.builder().dependency(dependency).build();
+    PlanCreationResponse sidecarPlanCreationResponse = sidecarPlanCreator.createPlanForField(ctx, null);
+    PlanNode sidecarPlanNode = sidecarPlanCreationResponse.getPlanNode();
+    assertThat(sidecarPlanNode.getUuid()).isEqualTo(uuid);
+    assertThat(sidecarPlanNode.getIdentifier()).isEqualTo(identifier);
+    assertThat(sidecarPlanNode.getStepParameters()).isEqualTo(artifactStepParameters);
+    assertThat(sidecarPlanNode.getStepType()).isEqualTo(ArtifactSyncStep.STEP_TYPE);
+    assertThat(sidecarPlanNode.getFacilitatorObtainments().get(0).getType().getType())
+        .isEqualTo(OrchestrationFacilitatorType.SYNC);
   }
 }

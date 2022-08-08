@@ -135,13 +135,13 @@ public class AwsInstanceHandler extends InstanceHandler implements InstanceSyncB
   }
 
   @Override
-  public FeatureName getFeatureFlagToStopIteratorBasedInstanceSync() {
-    return FeatureName.STOP_INSTANCE_SYNC_VIA_ITERATOR_FOR_AWS_SSH_DEPLOYMENTS;
+  public Optional<FeatureName> getFeatureFlagToStopIteratorBasedInstanceSync() {
+    return Optional.of(FeatureName.STOP_INSTANCE_SYNC_VIA_ITERATOR_FOR_AWS_SSH_DEPLOYMENTS);
   }
 
   @Override
-  public FeatureName getFeatureFlagToEnablePerpetualTaskForInstanceSync() {
-    return FeatureName.MOVE_AWS_SSH_INSTANCE_SYNC_TO_PERPETUAL_TASK;
+  public Optional<FeatureName> getFeatureFlagToEnablePerpetualTaskForInstanceSync() {
+    return Optional.of(FeatureName.MOVE_AWS_SSH_INSTANCE_SYNC_TO_PERPETUAL_TASK);
   }
 
   @Override

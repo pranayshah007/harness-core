@@ -7,7 +7,6 @@
 
 package io.harness.connector.validator;
 
-import static io.harness.connector.validator.CEKubernetesConnectionValidator.CONNECTOR_REF_NOT_EXIST;
 import static io.harness.delegate.beans.connector.k8Connector.KubernetesCredentialType.INHERIT_FROM_DELEGATE;
 import static io.harness.rule.OwnerRule.UTSAV;
 
@@ -104,21 +103,15 @@ public class CEKubernetesConnectionValidatorTest extends CategoryTest {
     assertThat(connectorValidationResult.getTestedAt()).isLessThanOrEqualTo(Instant.now().toEpochMilli());
   }
 
-  @Test
+  @Test(expected = IllegalArgumentException.class)
   @Owner(developers = UTSAV)
   @Category(UnitTests.class)
   public void testConnectorRefNotFound() {
     when(connectorService.get(any(), any(), any(), any())).thenReturn(Optional.empty());
-
-    final ConnectorValidationResult connectorValidationResult =
-        ceKubernetesConnectionValidator.validate(ceKubernetesClusterConfigDTO, ACCOUNT_ID, null, null, null);
+    ceKubernetesConnectionValidator.validate(ceKubernetesClusterConfigDTO, ACCOUNT_ID, null, null, null);
 
     verifyZeroInteractions(delegateGrpcClientWrapper);
     verify(connectorService, times(1)).get(any(), any(), any(), eq(CONNECTOR_IDENTIFIER));
-
-    assertThat(connectorValidationResult.getStatus()).isEqualTo(ConnectivityStatus.FAILURE);
-    assertThat(connectorValidationResult.getErrorSummary())
-        .isEqualTo(String.format(CONNECTOR_REF_NOT_EXIST, CONNECTOR_REF));
   }
 
   @Test
@@ -147,7 +140,7 @@ public class CEKubernetesConnectionValidatorTest extends CategoryTest {
     assertThat(connectorValidationResult.getErrorSummary()).isEqualTo("errorSummary");
   }
 
-  @Test
+  @Test(expected = IllegalArgumentException.class)
   @Owner(developers = UTSAV)
   @Category(UnitTests.class)
   public void testWronglyScopedConnectorConfig() {
@@ -158,10 +151,6 @@ public class CEKubernetesConnectionValidatorTest extends CategoryTest {
 
     verifyZeroInteractions(delegateGrpcClientWrapper);
     verifyZeroInteractions(connectorService);
-
-    assertThat(connectorValidationResult.getStatus()).isEqualTo(ConnectivityStatus.FAILURE);
-    assertThat(connectorValidationResult.getErrorSummary())
-        .isEqualTo(String.format("No scope found for string: %s", randomScopeName));
   }
 
   @Test

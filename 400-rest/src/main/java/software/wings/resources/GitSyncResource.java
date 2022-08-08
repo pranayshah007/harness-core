@@ -10,6 +10,7 @@ package software.wings.resources;
 import static io.harness.beans.SearchFilter.Operator.EQ;
 
 import static software.wings.security.PermissionAttribute.PermissionType.LOGGED_IN;
+import static software.wings.security.PermissionAttribute.PermissionType.MANAGE_CONFIG_AS_CODE;
 import static software.wings.security.PermissionAttribute.ResourceType.SETTING;
 
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
@@ -21,10 +22,12 @@ import io.harness.rest.RestResponse;
 import software.wings.beans.GitDetail;
 import software.wings.beans.GitFileActivitySummary;
 import software.wings.security.PermissionAttribute.PermissionType;
+import software.wings.security.annotations.ApiKeyAuthorized;
 import software.wings.security.annotations.AuthRule;
 import software.wings.security.annotations.Scope;
 import software.wings.service.impl.yaml.GitToHarnessErrorCommitStats;
 import software.wings.service.impl.yaml.gitsync.ChangeSetDTO;
+import software.wings.service.intfc.yaml.YamlChangeSetService;
 import software.wings.service.intfc.yaml.sync.GitSyncErrorService;
 import software.wings.service.intfc.yaml.sync.GitSyncService;
 import software.wings.yaml.errorhandling.GitProcessingError;
@@ -58,15 +61,19 @@ import org.hibernate.validator.constraints.NotEmpty;
 @Path("git-sync")
 @Produces(APPLICATION_JSON)
 @Scope(SETTING)
+@ApiKeyAuthorized(permissionType = LOGGED_IN)
 @Slf4j
 public class GitSyncResource {
   private GitSyncService gitSyncService;
   private GitSyncErrorService gitSyncErrorService;
+  private YamlChangeSetService yamlChangeSetService;
 
   @Inject
-  public GitSyncResource(GitSyncService gitSyncService, GitSyncErrorService gitSyncErrorService) {
+  public GitSyncResource(GitSyncService gitSyncService, GitSyncErrorService gitSyncErrorService,
+      YamlChangeSetService yamlChangeSetService) {
     this.gitSyncService = gitSyncService;
     this.gitSyncErrorService = gitSyncErrorService;
+    this.yamlChangeSetService = yamlChangeSetService;
   }
 
   @GET
@@ -225,6 +232,7 @@ public class GitSyncResource {
   @POST
   @Path("errors/_discard")
   @AuthRule(permissionType = PermissionType.MANAGE_CONFIG_AS_CODE)
+  @ApiKeyAuthorized(permissionType = MANAGE_CONFIG_AS_CODE)
   public RestResponse discardGitSyncErrorV2(@QueryParam("accountId") String accountId, List<String> errors) {
     gitSyncErrorService.deleteGitSyncErrorAndLogFileActivity(errors, Status.DISCARDED, accountId);
     return RestResponse.Builder.aRestResponse().build();
@@ -272,5 +280,12 @@ public class GitSyncResource {
     List<ChangeSetDTO> changeSetDTOList =
         gitSyncService.getCommitsWhichAreBeingProcessed(accountId, appId, count, gitToHarness);
     return new RestResponse<>(changeSetDTOList);
+  }
+
+  @GET
+  @Path("queuedCount")
+  public long getQueueCountByApplication(
+      @QueryParam("accountId") String accountId, @QueryParam("appId") @DefaultValue("__GLOBAL_APP_ID__") String appId) {
+    return yamlChangeSetService.getItemsInQueueKey(appId, accountId);
   }
 }

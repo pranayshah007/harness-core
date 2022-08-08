@@ -37,6 +37,7 @@ import software.wings.service.intfc.ArtifactService;
 import software.wings.sm.ExecutionContext;
 import software.wings.sm.ExecutionResponse;
 import software.wings.sm.WorkflowStandardParams;
+import software.wings.sm.WorkflowStandardParamsExtensionService;
 
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
@@ -52,6 +53,7 @@ import org.mockito.Mock;
 public class ArtifactCheckStateTest extends WingsBaseTest {
   @Inject private ArtifactService artifactService;
   @Inject private HPersistence persistence;
+  @Inject private WorkflowStandardParamsExtensionService workflowStandardParamsExtensionService;
   @Mock private ExecutionContext context;
   @Mock DelayEventHelper delayEventHelper;
 
@@ -63,12 +65,13 @@ public class ArtifactCheckStateTest extends WingsBaseTest {
   public void setUp() throws IllegalAccessException {
     appId = UUID.randomUUID().toString();
     workflowStandardParams = aWorkflowStandardParams().withAppId(appId).build();
-    FieldUtils.writeField(workflowStandardParams, "artifactService", artifactService, true);
     when(context.getContextElement(ContextElementType.STANDARD)).thenReturn(workflowStandardParams);
     when(context.getAppId()).thenReturn(appId);
     when(delayEventHelper.delay(anyInt(), any())).thenReturn("anyGUID");
     FieldUtils.writeField(artifactCheckState, "artifactService", artifactService, true);
     FieldUtils.writeField(artifactCheckState, "delayEventHelper", delayEventHelper, true);
+    FieldUtils.writeField(
+        artifactCheckState, "workflowStandardParamsExtensionService", workflowStandardParamsExtensionService, true);
   }
 
   @Test

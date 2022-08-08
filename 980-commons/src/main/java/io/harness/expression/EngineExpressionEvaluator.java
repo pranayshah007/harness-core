@@ -17,7 +17,9 @@ import io.harness.exception.EngineExpressionEvaluationException;
 import io.harness.exception.EngineFunctorException;
 import io.harness.exception.FunctorException;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.UnresolvedExpressionsException;
+import io.harness.exception.exceptionmanager.exceptionhandler.JexlRuntimeExceptionHandler;
 import io.harness.expression.functors.DateTimeFunctor;
 import io.harness.text.StringReplacer;
 import io.harness.text.resolver.ExpressionResolver;
@@ -215,7 +217,21 @@ public class EngineExpressionEvaluator {
     checkDepth(depth, expression);
     EvaluateExpressionResolver resolver = new EvaluateExpressionResolver(this, ctx, depth);
     String finalExpression = runStringReplacer(expression, resolver);
-    return evaluateInternal(finalExpression, ctx);
+    try {
+      return evaluateInternal(finalExpression, ctx);
+    } catch (JexlException ex) {
+      if (ex.getCause() instanceof EngineFunctorException) {
+        throw new EngineExpressionEvaluationException(
+            (EngineFunctorException) ex.getCause(), createExpression(expression));
+      } else if (ex.getCause() instanceof FunctorException) {
+        // For backwards compatibility.
+        throw new EngineExpressionEvaluationException((FunctorException) ex.getCause(), createExpression(expression));
+      }
+      log.error(format("Failed to evaluate final expression: %s", expression), ex);
+      throw NestedExceptionUtils.hintWithExplanationException(JexlRuntimeExceptionHandler.getHintMessage(ex),
+          JexlRuntimeExceptionHandler.getExplanationMessage(ex),
+          new EngineExpressionEvaluationException("Expression evaluation failed", expression));
+    }
   }
 
   public PartialEvaluateResult partialRenderExpression(String expression) {

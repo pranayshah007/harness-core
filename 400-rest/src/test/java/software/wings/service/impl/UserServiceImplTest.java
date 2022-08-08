@@ -9,6 +9,9 @@ package software.wings.service.impl;
 
 import static io.harness.annotations.dev.HarnessModule._360_CG_MANAGER;
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.beans.PageRequest.PageRequestBuilder.aPageRequest;
+import static io.harness.beans.PageResponse.PageResponseBuilder.aPageResponse;
+import static io.harness.beans.SearchFilter.Operator.HAS;
 import static io.harness.ng.core.invites.dto.InviteOperationResponse.ACCOUNT_INVITE_ACCEPTED;
 import static io.harness.ng.core.invites.dto.InviteOperationResponse.ACCOUNT_INVITE_ACCEPTED_NEED_PASSWORD;
 import static io.harness.ng.core.invites.dto.InviteOperationResponse.FAIL;
@@ -17,16 +20,20 @@ import static io.harness.ng.core.invites.dto.InviteOperationResponse.INVITE_INVA
 import static io.harness.ng.core.invites.dto.InviteOperationResponse.USER_ALREADY_ADDED;
 import static io.harness.rule.OwnerRule.DEEPAK;
 import static io.harness.rule.OwnerRule.MOHIT;
+import static io.harness.rule.OwnerRule.NAMANG;
 import static io.harness.rule.OwnerRule.NANDAN;
 import static io.harness.rule.OwnerRule.PRATEEK;
 import static io.harness.rule.OwnerRule.RAJ;
 import static io.harness.rule.OwnerRule.VIKAS_M;
 import static io.harness.rule.OwnerRule.VOJIN;
 
+import static software.wings.app.ManagerCacheRegistrar.PRIMARY_CACHE_PREFIX;
+import static software.wings.app.ManagerCacheRegistrar.USER_CACHE;
 import static software.wings.beans.Account.Builder.anAccount;
 import static software.wings.beans.CGConstants.GLOBAL_APP_ID;
 import static software.wings.beans.User.Builder.anUser;
 import static software.wings.beans.UserInvite.UserInviteBuilder.anUserInvite;
+import static software.wings.beans.security.UserGroup.builder;
 import static software.wings.utils.WingsTestConstants.ACCOUNT_ID;
 import static software.wings.utils.WingsTestConstants.USER_EMAIL;
 import static software.wings.utils.WingsTestConstants.USER_NAME;
@@ -35,18 +42,27 @@ import static software.wings.utils.WingsTestConstants.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.PageRequest;
+import io.harness.cache.HarnessCacheManager;
+import io.harness.cache.NoOpCache;
 import io.harness.category.element.UnitTests;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.event.handler.impl.EventPublishHelper;
+import io.harness.eventsframework.EventsFrameworkConstants;
+import io.harness.eventsframework.EventsFrameworkMetadataConstants;
+import io.harness.eventsframework.api.Producer;
+import io.harness.eventsframework.producer.Message;
+import io.harness.eventsframework.schemas.user.UserDTO;
 import io.harness.exception.InvalidRequestException;
 import io.harness.invites.remote.NgInviteClient;
 import io.harness.ng.core.account.AuthenticationMechanism;
@@ -54,23 +70,39 @@ import io.harness.ng.core.common.beans.Generation;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.dto.UserInviteDTO;
 import io.harness.ng.core.invites.dto.InviteOperationResponse;
+import io.harness.ng.core.user.NGRemoveUserFilter;
+import io.harness.persistence.HPersistence;
 import io.harness.rule.Owner;
+import io.harness.usermembership.remote.UserMembershipClient;
 
 import software.wings.WingsBaseTest;
 import software.wings.beans.Account;
+import software.wings.beans.Base.BaseKeys;
 import software.wings.beans.User;
 import software.wings.beans.UserInvite;
+import software.wings.beans.UserInvite.UserInviteKeys;
+import software.wings.beans.security.UserGroup;
+import software.wings.beans.security.UserGroup.UserGroupKeys;
+import software.wings.core.managerConfiguration.ConfigurationController;
 import software.wings.dl.WingsPersistence;
 import software.wings.helpers.ext.url.SubdomainUrlHelperIntfc;
 import software.wings.security.authentication.TOTPAuthHandler;
 import software.wings.service.intfc.AccountService;
+import software.wings.service.intfc.HarnessUserGroupService;
 import software.wings.service.intfc.SignupService;
+import software.wings.service.intfc.UserGroupService;
 
+import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
+import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
+import javax.cache.expiry.AccessedExpiryPolicy;
+import javax.cache.expiry.Duration;
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.UriInfo;
@@ -81,12 +113,20 @@ import org.mockito.InjectMocks;
 import org.mockito.Matchers;
 import org.mockito.Mock;
 import org.mockito.Mockito;
+import retrofit2.Call;
 import retrofit2.Response;
 
 @OwnedBy(PL)
 @TargetModule(_360_CG_MANAGER)
 public class UserServiceImplTest extends WingsBaseTest {
   @Mock AccountService accountService;
+  @Mock HarnessUserGroupService harnessUserGroupService;
+  @Mock UserGroupService userGroupService;
+  @Mock ConfigurationController configurationController;
+  @Mock HarnessCacheManager harnessCacheManager;
+  @Mock @Named(EventsFrameworkConstants.ENTITY_CRUD) Producer eventProducer;
+  @Mock AuditServiceHelper auditServiceHelper;
+  @Mock @Named("PRIVILEGED") UserMembershipClient userMembershipClient;
   @Inject @InjectMocks UserServiceImpl userServiceImpl;
   @Inject private SubdomainUrlHelperIntfc subdomainUrlHelper;
   @Mock NgInviteClient ngInviteClient;
@@ -351,6 +391,10 @@ public class UserServiceImplTest extends WingsBaseTest {
     user.getAccounts().add(withSso);
     wingsPersistence.save(user);
     when(accountService.get(ACCOUNT_ID)).thenReturn(withSso);
+    when(configurationController.isPrimary()).thenReturn(true);
+    when(harnessCacheManager.getCache(PRIMARY_CACHE_PREFIX + USER_CACHE, String.class, User.class,
+             AccessedExpiryPolicy.factoryOf(Duration.THIRTY_MINUTES)))
+        .thenReturn(new NoOpCache<>());
     UserInvite userInviteRetrieved = userServiceImpl.getUserInviteByEmailAndAccount(USER_EMAIL, ACCOUNT_ID);
     InviteOperationResponse inviteOperationResponse =
         userServiceImpl.checkInviteStatus(userInviteRetrieved, Generation.CG);
@@ -376,6 +420,10 @@ public class UserServiceImplTest extends WingsBaseTest {
     retrofit2.Call<ResponseDTO<Boolean>> req = mock(retrofit2.Call.class);
     when(ngInviteClient.completeInvite(anyString())).thenReturn(req);
     when(req.execute()).thenReturn(Response.success(ResponseDTO.newResponse()));
+    when(configurationController.isPrimary()).thenReturn(true);
+    when(harnessCacheManager.getCache(PRIMARY_CACHE_PREFIX + USER_CACHE, String.class, User.class,
+             AccessedExpiryPolicy.factoryOf(Duration.THIRTY_MINUTES)))
+        .thenReturn(new NoOpCache<>());
     userServiceImpl.completeNGInvite(inviteDTO, false);
     verify(eventPublishHelper, times(1)).publishUserRegistrationCompletionEvent(anyString(), any());
   }
@@ -402,6 +450,10 @@ public class UserServiceImplTest extends WingsBaseTest {
     retrofit2.Call<ResponseDTO<Boolean>> req = mock(retrofit2.Call.class);
     when(ngInviteClient.completeInvite(anyString())).thenReturn(req);
     when(req.execute()).thenReturn(Response.success(ResponseDTO.newResponse()));
+    when(configurationController.isPrimary()).thenReturn(true);
+    when(harnessCacheManager.getCache(PRIMARY_CACHE_PREFIX + USER_CACHE, String.class, User.class,
+             AccessedExpiryPolicy.factoryOf(Duration.THIRTY_MINUTES)))
+        .thenReturn(new NoOpCache<>());
     userServiceImpl.completeNGInvite(inviteDTO, false);
     verify(totpAuthHandler, times(1)).sendTwoFactorAuthenticationResetEmail(any());
     verify(eventPublishHelper, times(1)).publishUserRegistrationCompletionEvent(anyString(), any());
@@ -634,5 +686,194 @@ public class UserServiceImplTest extends WingsBaseTest {
     assertThat(userServiceImpl.sanitizeUserName(name1)).isEqualTo(USER_NAME);
     assertThat(userServiceImpl.sanitizeUserName(name2)).isEqualTo(expectedName2);
     assertThat(userServiceImpl.sanitizeUserName(name3)).isEqualTo(expectedName3);
+  }
+
+  @Test
+  @Owner(developers = NAMANG)
+  @Category(UnitTests.class)
+  public void test_delete_when_user_part_of_only_one_CG_account() {
+    Account account = anAccount().withUuid("ACCOUNT_ID").build();
+    wingsPersistence.save(account);
+    User user1 = User.Builder.anUser()
+                     .uuid(UUIDGenerator.generateUuid())
+                     .accounts(Collections.singletonList(account))
+                     .email("aBc@harness.io")
+                     .name("pqr")
+                     .build();
+    User user2 = User.Builder.anUser()
+                     .uuid(UUIDGenerator.generateUuid())
+                     .accounts(Collections.singletonList(account))
+                     .email("uio@harness.io")
+                     .name("UIo")
+                     .build();
+    UserGroup userGroup1 = builder()
+                               .accountId("ACCOUNT_ID")
+                               .uuid(UUIDGenerator.generateUuid())
+                               .name("abcug" + System.currentTimeMillis())
+                               .description("dfgvhbjnhgf")
+                               .memberIds(new LinkedList<>(Arrays.asList(user1.getUuid(), user2.getUuid())))
+                               .members(new LinkedList<>(Arrays.asList(user1, user2)))
+                               .isDefault(true)
+                               .build();
+    UserGroup userGroup1_updated = builder()
+                                       .accountId("ACCOUNT_ID")
+                                       .uuid(UUIDGenerator.generateUuid())
+                                       .name("abcug" + System.currentTimeMillis())
+                                       .description("dfgvhbjnhgf")
+                                       .memberIds(new LinkedList<>(Arrays.asList(user2.getUuid())))
+                                       .members(new LinkedList<>(Arrays.asList(user2)))
+                                       .isDefault(true)
+                                       .build();
+    wingsPersistence.save(user1);
+    when(harnessUserGroupService.isHarnessSupportUser(user1.getUuid())).thenReturn(false);
+    assertThat(userServiceImpl.get(user1.getUuid())).isEqualTo(user1);
+
+    when(accountService.isNextGenEnabled("ACCOUNT_ID")).thenReturn(false);
+    when(userGroupService.getCountOfUserGroups("ACCOUNT_ID")).thenReturn(Long.valueOf(1));
+    when(userGroupService.list("ACCOUNT_ID",
+             aPageRequest().withLimit("1").addFilter(UserGroupKeys.memberIds, HAS, user1.getUuid()).build(), true, null,
+             null))
+        .thenReturn(
+            aPageResponse().withResponse(Collections.singletonList(userGroup1)).withTotal(1).withLimit("10").build());
+    when(userGroupService.updateMembers(userGroup1, false, false)).thenReturn(userGroup1_updated);
+    when(configurationController.isPrimary()).thenReturn(true);
+    when(harnessCacheManager.getCache(PRIMARY_CACHE_PREFIX + USER_CACHE, String.class, User.class,
+             AccessedExpiryPolicy.factoryOf(Duration.THIRTY_MINUTES)))
+        .thenReturn(new NoOpCache<>());
+
+    when(eventProducer.send(
+             Message.newBuilder()
+                 .putAllMetadata(ImmutableMap.of(EventsFrameworkMetadataConstants.ENTITY_TYPE,
+                     EventsFrameworkMetadataConstants.USER_ENTITY, EventsFrameworkMetadataConstants.ACTION,
+                     EventsFrameworkMetadataConstants.DELETE_ACTION))
+                 .setData(UserDTO.newBuilder().build().toByteString())
+                 .build()))
+        .thenReturn("dummy-message-id");
+
+    doNothing().when(auditServiceHelper).reportDeleteForAuditingUsingAccountId("ACCOUNT_ID", user1);
+
+    userServiceImpl.delete("ACCOUNT_ID", user1.getUuid());
+    assertThat(wingsPersistence.createQuery(UserInvite.class)
+                   .filter(UserInviteKeys.email, user1.getEmail())
+                   .filter(UserInviteKeys.accountId, "ACCOUNT_ID")
+                   .get())
+        .isEqualTo(null);
+    verify(accountService, times(1)).isNextGenEnabled("ACCOUNT_ID");
+    verifyNoMoreInteractions(userMembershipClient);
+    verify(userGroupService, times(1))
+        .list("ACCOUNT_ID",
+            aPageRequest().withLimit("1").addFilter(UserGroupKeys.memberIds, HAS, user1.getUuid()).build(), true, null,
+            null);
+    verify(userGroupService, times(1)).updateMembers(userGroup1, false, false);
+    assertThat(
+        wingsPersistence.findAndDelete(wingsPersistence.createQuery(User.class).filter(BaseKeys.uuid, user1.getUuid()),
+            HPersistence.returnOldOptions))
+        .isEqualTo(null);
+    verify(configurationController, times(1)).isPrimary();
+    verify(harnessCacheManager, times(1))
+        .getCache(PRIMARY_CACHE_PREFIX + USER_CACHE, String.class, User.class,
+            AccessedExpiryPolicy.factoryOf(Duration.THIRTY_MINUTES));
+    verify(eventProducer, times(1)).send(any(Message.class));
+    verify(auditServiceHelper, times(1)).reportDeleteForAuditingUsingAccountId("ACCOUNT_ID", user1);
+  }
+
+  @Test
+  @Owner(developers = NAMANG)
+  @Category(UnitTests.class)
+  public void test_delete_when_user_part_of_only_one_NG_account() throws IOException {
+    Account account = anAccount().withUuid("ACCOUNT_ID").build();
+    wingsPersistence.save(account);
+    User user1 = User.Builder.anUser()
+                     .uuid(UUIDGenerator.generateUuid())
+                     .accounts(Collections.singletonList(account))
+                     .email("aBc@harness.io")
+                     .name("pqr")
+                     .build();
+    User user2 = User.Builder.anUser()
+                     .uuid(UUIDGenerator.generateUuid())
+                     .accounts(Collections.singletonList(account))
+                     .email("uio@harness.io")
+                     .name("UIo")
+                     .build();
+    UserGroup userGroup1 = builder()
+                               .accountId("ACCOUNT_ID")
+                               .uuid(UUIDGenerator.generateUuid())
+                               .name("abcug" + System.currentTimeMillis())
+                               .description("dfgvhbjnhgf")
+                               .memberIds(new LinkedList<>(Arrays.asList(user1.getUuid(), user2.getUuid())))
+                               .members(new LinkedList<>(Arrays.asList(user1, user2)))
+                               .isDefault(true)
+                               .build();
+    UserGroup userGroup1_updated = builder()
+                                       .accountId("ACCOUNT_ID")
+                                       .uuid(UUIDGenerator.generateUuid())
+                                       .name("abcug" + System.currentTimeMillis())
+                                       .description("dfgvhbjnhgf")
+                                       .memberIds(new LinkedList<>(Arrays.asList(user2.getUuid())))
+                                       .members(new LinkedList<>(Arrays.asList(user2)))
+                                       .isDefault(true)
+                                       .build();
+    wingsPersistence.save(user1);
+    when(harnessUserGroupService.isHarnessSupportUser(user1.getUuid())).thenReturn(false);
+    assertThat(userServiceImpl.get(user1.getUuid())).isEqualTo(user1);
+
+    when(accountService.isNextGenEnabled("ACCOUNT_ID")).thenReturn(true);
+
+    ResponseDTO<Boolean> responseDTO = ResponseDTO.newResponse(true);
+    Call<ResponseDTO<Boolean>> responseDTOCall = mock(Call.class);
+    when(userMembershipClient.isUserInScope(user1.getUuid(), "ACCOUNT_ID", null, null)).thenReturn(responseDTOCall);
+    when(responseDTOCall.execute()).thenReturn(Response.success(responseDTO));
+    when(userMembershipClient.removeUserInternal(
+             user1.getUuid(), "ACCOUNT_ID", null, null, NGRemoveUserFilter.ACCOUNT_LAST_ADMIN_CHECK))
+        .thenReturn(responseDTOCall);
+
+    when(userGroupService.getCountOfUserGroups("ACCOUNT_ID")).thenReturn(Long.valueOf(1));
+    when(userGroupService.list("ACCOUNT_ID",
+             aPageRequest().withLimit("1").addFilter(UserGroupKeys.memberIds, HAS, user1.getUuid()).build(), true, null,
+             null))
+        .thenReturn(
+            aPageResponse().withResponse(Collections.singletonList(userGroup1)).withTotal(1).withLimit("10").build());
+    when(userGroupService.updateMembers(userGroup1, false, false)).thenReturn(userGroup1_updated);
+    when(configurationController.isPrimary()).thenReturn(true);
+    when(harnessCacheManager.getCache(PRIMARY_CACHE_PREFIX + USER_CACHE, String.class, User.class,
+             AccessedExpiryPolicy.factoryOf(Duration.THIRTY_MINUTES)))
+        .thenReturn(new NoOpCache<>());
+
+    when(eventProducer.send(
+             Message.newBuilder()
+                 .putAllMetadata(ImmutableMap.of(EventsFrameworkMetadataConstants.ENTITY_TYPE,
+                     EventsFrameworkMetadataConstants.USER_ENTITY, EventsFrameworkMetadataConstants.ACTION,
+                     EventsFrameworkMetadataConstants.DELETE_ACTION))
+                 .setData(UserDTO.newBuilder().build().toByteString())
+                 .build()))
+        .thenReturn("dummy-message-id");
+
+    doNothing().when(auditServiceHelper).reportDeleteForAuditingUsingAccountId("ACCOUNT_ID", user1);
+
+    userServiceImpl.delete("ACCOUNT_ID", user1.getUuid());
+    assertThat(wingsPersistence.createQuery(UserInvite.class)
+                   .filter(UserInviteKeys.email, user1.getEmail())
+                   .filter(UserInviteKeys.accountId, "ACCOUNT_ID")
+                   .get())
+        .isEqualTo(null);
+    verify(accountService, times(1)).isNextGenEnabled("ACCOUNT_ID");
+    verify(userMembershipClient, times(1)).isUserInScope(user1.getUuid(), "ACCOUNT_ID", null, null);
+    verify(userMembershipClient, times(1))
+        .removeUserInternal(user1.getUuid(), "ACCOUNT_ID", null, null, NGRemoveUserFilter.ACCOUNT_LAST_ADMIN_CHECK);
+    verify(userGroupService, times(1))
+        .list("ACCOUNT_ID",
+            aPageRequest().withLimit("1").addFilter(UserGroupKeys.memberIds, HAS, user1.getUuid()).build(), true, null,
+            null);
+    verify(userGroupService, times(1)).updateMembers(userGroup1, false, false);
+    assertThat(
+        wingsPersistence.findAndDelete(wingsPersistence.createQuery(User.class).filter(BaseKeys.uuid, user1.getUuid()),
+            HPersistence.returnOldOptions))
+        .isEqualTo(null);
+    verify(configurationController, times(1)).isPrimary();
+    verify(harnessCacheManager, times(1))
+        .getCache(PRIMARY_CACHE_PREFIX + USER_CACHE, String.class, User.class,
+            AccessedExpiryPolicy.factoryOf(Duration.THIRTY_MINUTES));
+    verify(eventProducer, times(1)).send(any(Message.class));
+    verify(auditServiceHelper, times(1)).reportDeleteForAuditingUsingAccountId("ACCOUNT_ID", user1);
   }
 }

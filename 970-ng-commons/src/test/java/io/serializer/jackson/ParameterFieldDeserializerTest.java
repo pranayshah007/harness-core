@@ -16,7 +16,9 @@ import io.harness.multiline.MultilineStringMixin;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
+import io.harness.yaml.core.timeout.Timeout;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import java.io.IOException;
@@ -30,7 +32,6 @@ import org.junit.experimental.categories.Category;
 
 public class ParameterFieldDeserializerTest extends CategoryTest implements MultilineStringMixin {
   private ObjectMapper objectMapper;
-
   @Before
   public void setUp() {
     objectMapper = new ObjectMapper(new YAMLFactory());
@@ -92,6 +93,34 @@ public class ParameterFieldDeserializerTest extends CategoryTest implements Mult
   @Test
   @Owner(developers = OwnerRule.NAMAN)
   @Category(UnitTests.class)
+  public void testParameterFieldInputSetDeserializationForNonStringFieldsWithAllowedValues()
+      throws JsonProcessingException {
+    String yaml = "infrastructure:\n"
+        + "  inner3:  4.5.allowedValues(1.5, 3.0, 4.5)\n"
+        + "  timeout: 1d.allowedValues(12h, 1d)";
+    Pipeline readValue = objectMapper.readValue(yaml, Pipeline.class);
+    assertThat(readValue).isNotNull();
+    assertThat(readValue.infrastructure).isNotNull();
+    assertThat(readValue.infrastructure.isExpression()).isEqualTo(false);
+    assertThat(readValue.infrastructure.getValue()).isNotNull();
+
+    ParameterField<Double> inner3 = readValue.infrastructure.getValue().inner3;
+    assertThat(inner3.isExpression()).isFalse();
+    assertThat(inner3.getValue()).isEqualTo(4.5);
+    assertThat(inner3.getInputSetValidator().getValidatorType()).isEqualTo(InputSetValidatorType.ALLOWED_VALUES);
+    assertThat(inner3.getInputSetValidator().getParameters()).isEqualTo("1.5, 3.0, 4.5");
+
+    ParameterField<Timeout> timeout = readValue.infrastructure.getValue().timeout;
+    assertThat(timeout.isExpression()).isFalse();
+    assertThat(timeout.getInputSetValidator().getValidatorType()).isEqualTo(InputSetValidatorType.ALLOWED_VALUES);
+    assertThat(timeout.getInputSetValidator().getParameters()).isEqualTo("12h, 1d");
+    Timeout timeoutValue = timeout.getValue();
+    assertThat(timeoutValue.getTimeoutString()).isEqualTo("1d");
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.NAMAN)
+  @Category(UnitTests.class)
   public void testParameterFieldInputSetDeserialization2() throws IOException {
     ClassLoader classLoader = this.getClass().getClassLoader();
     final URL testFile = classLoader.getResource("pipeline.yml");
@@ -137,5 +166,6 @@ public class ParameterFieldDeserializerTest extends CategoryTest implements Mult
     private ParameterField<String> inner8;
     private ParameterField<String> inner9;
     private ParameterField<String> inner10;
+    private ParameterField<Timeout> timeout;
   }
 }

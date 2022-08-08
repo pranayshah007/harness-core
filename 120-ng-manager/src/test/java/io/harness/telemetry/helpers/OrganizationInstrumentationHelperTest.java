@@ -10,10 +10,8 @@ package io.harness.telemetry.helpers;
 import static io.harness.ng.core.remote.OrganizationMapper.toOrganization;
 import static io.harness.rule.OwnerRule.TEJAS;
 
+import static junit.framework.TestCase.assertTrue;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
-import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -23,6 +21,7 @@ import io.harness.ng.core.entities.Organization;
 import io.harness.rule.Owner;
 import io.harness.telemetry.TelemetryReporter;
 
+import java.util.concurrent.CompletableFuture;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -51,26 +50,22 @@ public class OrganizationInstrumentationHelperTest {
     String accountIdentifier = randomAlphabetic(10);
     OrganizationDTO organizationDTO = createOrganizationDTO(randomAlphabetic(10));
     Organization organization = toOrganization(organizationDTO);
-    instrumentationHelper.sendOrganizationCreateEvent(organization, accountIdentifier);
-    try {
-      verify(telemetryReporter, times(1)).sendTrackEvent(any(), any(), any(), any(), any());
-    } catch (Exception e) {
-      e.printStackTrace();
-    }
+    CompletableFuture telemetryTask =
+        instrumentationHelper.sendOrganizationCreateEvent(organization, accountIdentifier);
+    telemetryTask.join();
+    assertTrue(telemetryTask.isDone());
   }
 
   @Test
   @Owner(developers = TEJAS)
   @Category(UnitTests.class)
-  public void testDeleteOrganiztionTrackSend() {
+  public void testDeleteOrganizationTrackSend() {
     String accountIdentifier = randomAlphabetic(10);
     OrganizationDTO organizationDTO = createOrganizationDTO(randomAlphabetic(10));
     Organization organization = toOrganization(organizationDTO);
-    instrumentationHelper.sendOrganizationDeleteEvent(organization, accountIdentifier);
-    try {
-      verify(telemetryReporter, times(1)).sendTrackEvent(any(), any(), any(), any(), any());
-    } catch (Exception e) {
-      e.printStackTrace();
-    }
+    CompletableFuture telemetryTask =
+        instrumentationHelper.sendOrganizationDeleteEvent(organization, accountIdentifier);
+    telemetryTask.join();
+    assertTrue(telemetryTask.isDone());
   }
 }

@@ -8,6 +8,7 @@
 package software.wings.sm.states;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.beans.FeatureName.RESOURCE_CONSTRAINT_SCOPE_PIPELINE_ENABLED;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
@@ -18,6 +19,7 @@ import static software.wings.beans.NotificationRule.NotificationRuleBuilder.aNot
 import static software.wings.common.NotificationMessageResolver.NotificationMessageType.RESOURCE_CONSTRAINT_BLOCKED_NOTIFICATION;
 import static software.wings.common.NotificationMessageResolver.NotificationMessageType.RESOURCE_CONSTRAINT_UNBLOCKED_NOTIFICATION;
 import static software.wings.sm.states.HoldingScope.PHASE;
+import static software.wings.sm.states.HoldingScope.PIPELINE;
 import static software.wings.sm.states.HoldingScope.WORKFLOW;
 import static software.wings.sm.states.ResourceConstraintState.AcquireMode.ENSURE;
 
@@ -63,6 +65,7 @@ import software.wings.sm.ExecutionResponse.ExecutionResponseBuilder;
 import software.wings.sm.State;
 import software.wings.sm.StateType;
 import software.wings.sm.WorkflowStandardParams;
+import software.wings.sm.WorkflowStandardParamsExtensionService;
 import software.wings.stencils.DefaultValue;
 
 import com.github.reinert.jjschema.Attributes;
@@ -89,6 +92,7 @@ public class ResourceConstraintState extends State {
   @Inject @Transient private WingsPersistence wingsPersistence;
   @Inject @Transient private WorkflowNotificationHelper workflowNotificationHelper;
   @Inject @Transient private FeatureFlagService featureFlagService;
+  @Inject @Transient private WorkflowStandardParamsExtensionService workflowStandardParamsExtensionService;
 
   @Getter @Setter private String resourceConstraintId;
   @Getter @Setter private String resourceUnit;
@@ -164,6 +168,20 @@ public class ResourceConstraintState extends State {
 
     String releaseEntityId = null;
     switch (HoldingScope.valueOf(holdingScope)) {
+      case PIPELINE:
+        if (featureFlagService.isEnabled(RESOURCE_CONSTRAINT_SCOPE_PIPELINE_ENABLED, context.getAccountId())) {
+          WorkflowStandardParams workflowStandardParams = context.getContextElement(ContextElementType.STANDARD);
+          String pipelineDeploymentUuid = workflowStandardParams.getWorkflowElement().getPipelineDeploymentUuid();
+          if (pipelineDeploymentUuid == null) {
+            // for direct workflow executions, the scope should be workflow
+            releaseEntityId = ResourceConstraintService.releaseEntityId(context.getWorkflowExecutionId());
+            this.setHoldingScope(WORKFLOW.name());
+            break;
+          }
+          releaseEntityId = ResourceConstraintService.releaseEntityId(pipelineDeploymentUuid);
+          break;
+        }
+        throw new InvalidRequestException(String.format("Unhandled holding scope %s", holdingScope));
       case WORKFLOW:
         releaseEntityId = ResourceConstraintService.releaseEntityId(context.getWorkflowExecutionId());
         break;
@@ -242,7 +260,9 @@ public class ResourceConstraintState extends State {
 
     WorkflowStandardParams workflowStandardParams = context.getContextElement(ContextElementType.STANDARD);
 
-    String envId = workflowStandardParams.getEnv() == null ? null : workflowStandardParams.getEnv().getUuid();
+    String envId = workflowStandardParamsExtensionService.getEnv(workflowStandardParams) == null
+        ? null
+        : workflowStandardParamsExtensionService.getEnv(workflowStandardParams).getUuid();
     final String workflowUrl = workflowNotificationHelper.calculateWorkflowUrl(
         context.getWorkflowExecutionId(), context.getOrchestrationWorkflowType(), accountId, context.getAppId(), envId);
 
@@ -311,25 +331,49 @@ public class ResourceConstraintState extends State {
     return ExecutionResponse.builder().stateExecutionData(stateExecutionData);
   }
 
+  private String getPipelineDeploymentIdIfExists(WorkflowStandardParams workflowStandardParams) {
+    if (workflowStandardParams != null && workflowStandardParams.getWorkflowElement() != null) {
+      return workflowStandardParams.getWorkflowElement().getPipelineDeploymentUuid();
+    }
+    return null;
+  }
+
   int alreadyAcquiredPermits(String holdingScope, ExecutionContext executionContext) {
     int currentlyAcquiredPermits = 0;
     String releaseEntityId;
     String parentReleaseEntityId;
     String appId = executionContext.fetchRequiredApp().getUuid();
+    WorkflowStandardParams workflowStandardParams = executionContext.getContextElement(ContextElementType.STANDARD);
+    String pipelineDeploymentUuid = getPipelineDeploymentIdIfExists(workflowStandardParams);
+
     switch (HoldingScope.valueOf(holdingScope)) {
+      case PIPELINE:
+        if (featureFlagService.isEnabled(RESOURCE_CONSTRAINT_SCOPE_PIPELINE_ENABLED, executionContext.getAccountId())) {
+          releaseEntityId = ResourceConstraintService.releaseEntityId(pipelineDeploymentUuid);
+          currentlyAcquiredPermits +=
+              resourceConstraintService.getAllCurrentlyAcquiredPermits(holdingScope, releaseEntityId, appId);
+          return currentlyAcquiredPermits;
+        }
+        throw new InvalidRequestException(String.format("Unhandled holding scope %s", holdingScope));
       case WORKFLOW:
         releaseEntityId = ResourceConstraintService.releaseEntityId(executionContext.getWorkflowExecutionId());
         currentlyAcquiredPermits +=
             resourceConstraintService.getAllCurrentlyAcquiredPermits(holdingScope, releaseEntityId, appId);
         return currentlyAcquiredPermits;
       case PHASE:
+        int pipelineCurrentlyAcquiredPermits = 0;
         PhaseElement phaseElement =
             executionContext.getContextElement(ContextElementType.PARAM, PhaseElement.PHASE_PARAM);
         parentReleaseEntityId = ResourceConstraintService.releaseEntityId(executionContext.getWorkflowExecutionId());
         releaseEntityId = ResourceConstraintService.releaseEntityId(
             executionContext.getWorkflowExecutionId(), phaseElement.getPhaseName());
+        if (pipelineDeploymentUuid != null) {
+          pipelineCurrentlyAcquiredPermits =
+              resourceConstraintService.getAllCurrentlyAcquiredPermits(PIPELINE.name(), pipelineDeploymentUuid, appId);
+        }
         return resourceConstraintService.getAllCurrentlyAcquiredPermits(PHASE.name(), releaseEntityId, appId)
-            + resourceConstraintService.getAllCurrentlyAcquiredPermits(WORKFLOW.name(), parentReleaseEntityId, appId);
+            + resourceConstraintService.getAllCurrentlyAcquiredPermits(WORKFLOW.name(), parentReleaseEntityId, appId)
+            + pipelineCurrentlyAcquiredPermits;
       default:
         throw new InvalidRequestException(String.format("Unhandled holding scope %s", holdingScope));
     }

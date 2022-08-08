@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.DX;
 import static io.harness.gitsync.interceptor.GitSyncConstants.DEFAULT;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.exception.InvalidRequestException;
 import io.harness.git.model.ChangeType;
 import io.harness.gitsync.beans.YamlDTO;
 import io.harness.gitsync.entityInfo.GitSdkEntityHandlerInterface;
@@ -100,6 +101,34 @@ public class GitAwarePersistenceNewImpl implements GitAwarePersistence {
     return mongoTemplate.save(objectToSave);
   }
 
+  @Override
+  public <B extends GitSyncableEntity> void delete(
+      B objectToRemove, String yaml, ChangeType changeType, Class<B> entityClass, Supplier functor) {
+    final GitSdkEntityHandlerInterface gitSdkEntityHandlerInterface =
+        gitPersistenceHelperServiceMap.get(entityClass.getCanonicalName());
+    final EntityDetail entityDetail = gitSdkEntityHandlerInterface.getEntityDetail(objectToRemove);
+    final boolean gitSyncEnabled = isGitSyncEnabled(entityDetail.getEntityRef().getProjectIdentifier(),
+        entityDetail.getEntityRef().getOrgIdentifier(), entityDetail.getEntityRef().getAccountIdentifier());
+    if (!gitSyncEnabled) {
+      Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
+        mongoTemplate.remove(objectToRemove);
+        if (functor != null) {
+          functor.get();
+        }
+        return null;
+      }));
+    } else {
+      if (changeType == ChangeType.DELETE) {
+        deleteWithGitSyncEnabled(objectToRemove, yaml, entityDetail);
+      } else if (changeType == ChangeType.NONE) {
+        mongoTemplate.remove(objectToRemove);
+      } else {
+        throw new InvalidRequestException(
+            String.format("ChangeType : %s, is not supported for delete operation", changeType.toString()));
+      }
+    }
+  }
+
   private <B extends GitSyncableEntity, Y extends YamlDTO> B saveWithGitSyncEnabled(
       B objectToSave, String yamlString, ChangeType changeType, EntityDetail entityDetail) {
     final GitEntityInfo gitBranchInfo = getGitEntityInfo();
@@ -111,6 +140,15 @@ public class GitAwarePersistenceNewImpl implements GitAwarePersistence {
 
     gitSyncMsvcHelper.postPushInformationToGitMsvc(entityDetail, scmPushResponse, gitBranchInfo);
     return savedObjectInMongo;
+  }
+
+  private <B extends GitSyncableEntity> void deleteWithGitSyncEnabled(
+      B objectToRemove, String yamlString, EntityDetail entityDetail) {
+    final GitEntityInfo gitBranchInfo = getGitEntityInfo();
+    final ScmPushResponse scmPushResponse =
+        scmGitSyncHelper.pushToGit(gitBranchInfo, yamlString, ChangeType.DELETE, entityDetail);
+    gitSyncMsvcHelper.postPushInformationToGitMsvc(entityDetail, scmPushResponse, gitBranchInfo);
+    mongoTemplate.remove(objectToRemove);
   }
 
   @Override
@@ -128,6 +166,15 @@ public class GitAwarePersistenceNewImpl implements GitAwarePersistence {
       objectToSave.setIsFromDefaultBranch(true);
     }
     return mongoTemplate.save(objectToSave);
+  }
+
+  @Override
+  public <B extends GitSyncableEntity, Y extends YamlDTO> void delete(
+      B objectToRemove, ChangeType changeType, Class<B> entityClass) {
+    final Supplier<Y> yamlFromEntity =
+        gitPersistenceHelperServiceMap.get(entityClass.getCanonicalName()).getYamlFromEntity(objectToRemove);
+    final String yaml = NGYamlUtils.getYamlString(yamlFromEntity.get(), objectMapper);
+    delete(objectToRemove, yaml, changeType, entityClass, null);
   }
 
   private <B extends GitSyncableEntity> void updateObjectWithGitMetadata(

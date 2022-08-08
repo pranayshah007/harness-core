@@ -1,0 +1,100 @@
+{
+  "pipeline": {
+    "identifier": "cipipelineRwSqZ0P60k",
+    "description": "dfd",
+    "name": "artifactory saas upload success",
+    "stages": [
+      {
+        "stage": {
+          "identifier": "artifactory_saas_upload_success",
+          "name": "stage 1",
+          "type": "CI",
+          "variables": [
+            {
+              "name": "JFROG_USERNAME",
+              "type": "String",
+              "value": "automationuser",
+              "__uuid": "PSvXqAw3QrqTfm4EH11X_w"
+            },
+            {
+              "name": "JFROG_SERVER_URL",
+              "type": "String",
+              "value": "https://harness.jfrog.io/harness",
+              "__uuid": "pOJEc6YsTUCsVzSKwm3CAw"
+            },
+            {
+              "name": "JFROG_PASSWORD",
+              "type": "Secret",
+              "value": "account.testCISecretD3Y6QDKbI8",
+              "__uuid": "O42el8N7RU-yL7Zc2Efp3g"
+            },
+            {
+              "name": "JFROG_CLI_OFFER_CONFIG",
+              "type": "String",
+              "value": "false",
+              "__uuid": "cZQiiOPpS0-k1JvoqXn5GQ"
+            }
+          ],
+          "spec": {
+            "execution": {
+              "steps": [
+                {
+                  "step": {
+                    "identifier": "uploadFile",
+                    "name": "upload file",
+                    "type": "ArtifactoryUpload",
+                    "spec": {
+                      "connectorRef": "account.testArtifactoryConnectornmUcucqZKh",
+                      "target": "pcf/harnesscitesting/",
+                      "sourcePath": "*.xml",
+                      "__uuid": "Yz6oTblyShC2ZBoTlMUOXA"
+                    },
+                    "__uuid": "izt2yVsqSNiEDmdTxI8KDQ"
+                  },
+                  "__uuid": "EbC3UJf2Tuqc6onW64g9LA"
+                }
+              ],
+              "__uuid": "-rsKlx10RHmn4NnWK4Qhxg"
+            },
+            "infrastructure": {
+              "type": "KubernetesDirect",
+              "spec": {
+                "connectorRef": "account.CItestK8sConnectorCMs0vdKHun",
+                "namespace": "harness-qa-delegate",
+                "__uuid": "xWdM2p88TX6_P98mxMQjfQ"
+              },
+              "__uuid": "XfVI1TylS3WgSVthUqlVVA"
+            },
+            "cloneCodebase": true,
+            "__uuid": "aop526ciQSOpLqJ8s7n4mA"
+          },
+          "__uuid": "6RR0z1RNSD61IJsRnseemw"
+        },
+        "__uuid": "NqzKMVIFTN6YnX6clsVCpA"
+      }
+    ],
+    "properties": {
+      "ci": {
+        "codebase": {
+          "connectorRef": "account.CItestGitConnectorCTp3TQbxj5",
+          "repoName": "springboot",
+          "build": {
+            "type": "branch",
+            "spec": {
+              "branch": "ci-automation",
+              "__uuid": "vNIHidGeTDeZe5JgfiFm6A"
+            },
+            "__uuid": "bhyCfNxvS9StjDuNV2blTQ"
+          },
+          "__uuid": "ocI4vyN0ReKMo0Xbg5ZqKA"
+        },
+        "__uuid": "9_EQKem7Swejtoq9Qrxg1g"
+      },
+      "__uuid": "olvPrZSlQSiqKay6QVCU3w"
+    },
+    "projectIdentifier": "CITestDemoProP1PcmJEzZ5",
+    "orgIdentifier": "CITestDemoOrgUNtoIHwBY8",
+    "__uuid": "efqu0TnoT8mfBGEnMwkQKg"
+  },
+  "__uuid": "__WhBRZ_RD2qWWQJjwnDCg"
+}

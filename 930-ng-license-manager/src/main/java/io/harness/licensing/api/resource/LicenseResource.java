@@ -290,6 +290,22 @@ public class LicenseResource {
     return ResponseDTO.newResponse(Boolean.TRUE);
   }
 
+  @GET
+  @Path("{moduleType}/enabled")
+  @ApiOperation(
+      value = "Get Module Licenses for Specific Module Type which Expiry Time is Greater or Equal to the Provided Time",
+      nickname = "getModuleLicenseForSpecificModuleType", hidden = true)
+  @InternalApi
+  @Hidden
+  public ResponseDTO<List<ModuleLicenseDTO>>
+  getModuleLicensesByModuleType(@Parameter(required = true, description = "A Harness Platform module.") @NotNull
+                                @PathParam(NGCommonEntityConstants.MODULE_TYPE) ModuleType moduleType,
+      @Parameter(
+          required = true, description = "Find All module licenses expiry time greater or equals to provided time")
+      @NotNull @QueryParam(NGCommonEntityConstants.EXPIRY_TIME) long expiryTime) {
+    return ResponseDTO.newResponse(licenseService.getEnabledModuleLicensesByModuleType(moduleType, expiryTime));
+  }
+
   private void validateModuleType(ModuleType moduleType) {
     if (moduleType.isInternal()) {
       throw new IllegalArgumentException("ModuleType is invalid", WingsException.USER);

@@ -18,7 +18,8 @@ public enum ServiceNowActionNG {
   GET_TICKET("Get ticket"),
   CREATE_TICKET("Create ticket"),
   UPDATE_TICKET("Update ticket"),
-  GET_METADATA("Get Metadata");
+  GET_METADATA("Get Metadata"),
+  GET_TEMPLATE("Get Template");
 
   private final String displayName;
 

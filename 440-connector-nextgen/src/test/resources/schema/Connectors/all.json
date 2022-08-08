@@ -340,6 +340,9 @@
               "items": {
                 "type": "string"
               }
+            },
+            "executeOnDelegate": {
+              "type": "boolean"
             }
           }
         }
@@ -860,6 +863,38 @@
               }
             }
           }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "SystemAssignedManagedIdentity"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/AzureSystemAssignedMSIAuth"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "UserAssignedManagedIdentity"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/AzureUserAssignedMSIAuth"
+              }
+            }
+          }
         }
       ]
     },
@@ -929,6 +964,9 @@
               "items": {
                 "type": "string"
               }
+            },
+            "executeOnDelegate": {
+              "type": "boolean"
             }
           }
         }
@@ -955,6 +993,22 @@
           "if": {
             "properties": {
               "type": {
+                "const": "InheritFromDelegate"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/AzureInheritFromDelegateDetails"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
                 "const": "ManualConfig"
               }
             }
@@ -971,6 +1025,26 @@
     },
     "AzureCredentialSpec": {
       "type": "object",
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "AzureInheritFromDelegateDetails": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/AzureCredentialSpec"
+        },
+        {
+          "type": "object",
+          "required": [
+            "auth"
+          ],
+          "properties": {
+            "auth": {
+              "readOnly": true,
+              "$ref": "#/definitions/AzureMSIAuth"
+            }
+          }
+        }
+      ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "AzureKeyVaultConnectorDTO": {
@@ -1025,6 +1099,10 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "AzureMSIAuth": {
+      "type": "object",
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "AzureManualDetails": {
       "allOf": [
         {
@@ -1033,19 +1111,306 @@
         {
           "type": "object",
           "required": [
+            "applicationId",
             "auth",
-            "clientId",
             "tenantId"
           ],
           "properties": {
+            "applicationId": {
+              "type": "string",
+              "readOnly": true
+            },
             "auth": {
               "readOnly": true,
               "$ref": "#/definitions/AzureAuthDTO"
             },
-            "clientId": {
+            "tenantId": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "AzureRepoApiAccess": {
+      "type": "object",
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "Token"
+          ]
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "Token"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/AzureRepoTokenSpec"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "AzureRepoApiAccessSpecDTO": {
+      "type": "object",
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "AzureRepoAuthentication": {
+      "type": "object",
+      "required": [
+        "spec",
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "Http",
+            "Ssh"
+          ]
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "Http"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/AzureRepoHttpCredentials"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "Ssh"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/AzureRepoSshCredentials"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "AzureRepoConnector": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/ConnectorConfigDTO"
+        },
+        {
+          "type": "object",
+          "required": [
+            "authentication",
+            "type",
+            "url"
+          ],
+          "properties": {
+            "apiAccess": {
+              "$ref": "#/definitions/AzureRepoApiAccess"
+            },
+            "authentication": {
+              "$ref": "#/definitions/AzureRepoAuthentication"
+            },
+            "delegateSelectors": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string"
+              }
+            },
+            "type": {
+              "type": "string",
+              "enum": [
+                "Project",
+                "Repo"
+              ]
+            },
+            "url": {
               "type": "string"
             },
-            "tenantId": {
+            "validationRepo": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "AzureRepoCredentialsDTO": {
+      "type": "object",
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "AzureRepoHttpCredentials": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/AzureRepoCredentialsDTO"
+        },
+        {
+          "type": "object",
+          "required": [
+            "spec",
+            "type"
+          ],
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": [
+                "UsernameToken"
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "UsernameToken"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/AzureRepoUsernameToken"
+              }
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "AzureRepoHttpCredentialsSpecDTO": {
+      "type": "object",
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "AzureRepoSshCredentials": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/AzureRepoCredentialsDTO"
+        },
+        {
+          "type": "object",
+          "required": [
+            "sshKeyRef"
+          ],
+          "properties": {
+            "sshKeyRef": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "AzureRepoTokenSpec": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/AzureRepoApiAccessSpecDTO"
+        },
+        {
+          "type": "object",
+          "required": [
+            "tokenRef"
+          ],
+          "properties": {
+            "tokenRef": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "AzureRepoUsernameToken": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/AzureRepoHttpCredentialsSpecDTO"
+        },
+        {
+          "type": "object",
+          "required": [
+            "tokenRef"
+          ],
+          "properties": {
+            "tokenRef": {
+              "type": "string"
+            },
+            "username": {
+              "type": "string"
+            },
+            "usernameRef": {
+              "type": "string"
+            }
+          }
+        },
+        {
+          "oneOf": [
+            {
+              "required": [
+                "usernameRef"
+              ]
+            },
+            {
+              "required": [
+                "username"
+              ]
+            }
+          ]
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "AzureSystemAssignedMSIAuth": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/AzureAuthCredentialDTO"
+        },
+        {
+          "type": "object"
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "AzureUserAssignedMSIAuth": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/AzureAuthCredentialDTO"
+        },
+        {
+          "type": "object",
+          "required": [
+            "clientId"
+          ],
+          "properties": {
+            "clientId": {
               "type": "string"
             }
           }
@@ -1200,7 +1565,8 @@
               "type": "string",
               "enum": [
                 "Account",
-                "Repo"
+                "Repo",
+                "Project"
               ]
             },
             "url": {
@@ -1475,6 +1841,7 @@
     },
     "ConnectorConfigDTO": {
       "type": "object",
+      "discriminator": "connectorType",
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "ConnectorInfoDTO": {
@@ -1545,7 +1912,10 @@
             "CustomHealth",
             "ServiceNow",
             "ErrorTracking",
-             "Pdc"
+            "Pdc",
+            "AzureRepo",
+            "Jenkins",
+            "OciHelmRepo"
           ]
         }
       },
@@ -1659,6 +2029,22 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/AzureKeyVaultConnectorDTO"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "AzureRepo"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/AzureRepoConnector"
               }
             }
           }
@@ -1939,6 +2325,22 @@
           "if": {
             "properties": {
               "type": {
+                "const": "Jenkins"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/JenkinsConnectorDTO"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
                 "const": "Jira"
               }
             }
@@ -2011,6 +2413,22 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/NexusConnector"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "OciHelmRepo"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/OciHelmConnectorDTO"
               }
             }
           }
@@ -2203,7 +2621,7 @@
       ],
       "properties": {
         "encryptedValueRef": {
-          "$ref": "#/definitions/SecretRefData"
+          "type": "string"
         },
         "key": {
           "type": "string"
@@ -2488,6 +2906,9 @@
         },
         {
           "type": "object",
+          "required": [
+            "credential"
+          ],
           "properties": {
             "credential": {
               "$ref": "#/definitions/GcpConnectorCredential"
@@ -2498,6 +2919,9 @@
               "items": {
                 "type": "string"
               }
+            },
+            "executeOnDelegate": {
+              "type": "boolean"
             }
           }
         }
@@ -2632,7 +3056,8 @@
               "type": "string",
               "enum": [
                 "Account",
-                "Repo"
+                "Repo",
+                "Project"
               ]
             },
             "delegateSelectors": {
@@ -2763,7 +3188,8 @@
           "type": "string",
           "enum": [
             "GithubApp",
-            "Token"
+            "Token",
+            "OAuth"
           ]
         }
       },
@@ -2781,6 +3207,22 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/GithubAppSpec"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "OAuth"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/GithubOauth"
               }
             }
           }
@@ -2918,7 +3360,8 @@
               "type": "string",
               "enum": [
                 "Account",
-                "Repo"
+                "Repo",
+                "Project"
               ]
             },
             "url": {
@@ -2952,8 +3395,25 @@
               "type": "string",
               "enum": [
                 "UsernamePassword",
-                "UsernameToken"
+                "UsernameToken",
+                "OAuth"
               ]
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "OAuth"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/GithubOauth"
+              }
             }
           }
         },
@@ -2994,6 +3454,25 @@
     },
     "GithubHttpCredentialsSpecDTO": {
       "type": "object",
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "GithubOauth": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/GithubHttpCredentialsSpecDTO"
+        },
+        {
+          "type": "object",
+          "required": [
+            "tokenRef"
+          ],
+          "properties": {
+            "tokenRef": {
+              "type": "string"
+            }
+          }
+        }
+      ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "GithubSshCredentials": {
@@ -3121,12 +3600,29 @@
         "type": {
           "type": "string",
           "enum": [
-            "Token"
+            "Token",
+            "OAuth"
           ]
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#",
       "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "OAuth"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/GitlabOauth"
+              }
+            }
+          }
+        },
         {
           "if": {
             "properties": {
@@ -3230,7 +3726,8 @@
               "type": "string",
               "enum": [
                 "Account",
-                "Repo"
+                "Repo",
+                "Project"
               ]
             },
             "url": {
@@ -3265,7 +3762,8 @@
               "enum": [
                 "UsernamePassword",
                 "UsernameToken",
-                "Kerberos"
+                "Kerberos",
+                "OAuth"
               ]
             }
           }
@@ -3282,6 +3780,22 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/GitlabKerberos"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "OAuth"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/GitlabOauth"
               }
             }
           }
@@ -3337,6 +3851,29 @@
           ],
           "properties": {
             "kerberosKeyRef": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "GitlabOauth": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/GitlabHttpCredentialsSpecDTO"
+        },
+        {
+          "type": "object",
+          "required": [
+            "refreshTokenRef",
+            "tokenRef"
+          ],
+          "properties": {
+            "refreshTokenRef": {
+              "type": "string"
+            },
+            "tokenRef": {
               "type": "string"
             }
           }
@@ -3549,6 +4086,157 @@
       "allOf": [
         {
           "$ref": "#/definitions/HttpHelmAuthCredentialsDTO"
+        },
+        {
+          "type": "object",
+          "required": [
+            "passwordRef"
+          ],
+          "properties": {
+            "passwordRef": {
+              "type": "string"
+            },
+            "username": {
+              "type": "string"
+            },
+            "usernameRef": {
+              "type": "string"
+            }
+          }
+        },
+        {
+          "oneOf": [
+            {
+              "required": [
+                "usernameRef"
+              ]
+            },
+            {
+              "required": [
+                "username"
+              ]
+            }
+          ]
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "JenkinsAuthCredentialsDTO": {
+      "type": "object",
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "JenkinsAuthenticationDTO": {
+      "type": "object",
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "UsernamePassword",
+            "Anonymous",
+            "Bearer Token(HTTP Header)"
+          ]
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "Bearer Token(HTTP Header)"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/JenkinsBearerTokenDTO"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "UsernamePassword"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/JenkinsUserNamePasswordDTO"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "JenkinsBearerTokenDTO": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/JenkinsAuthCredentialsDTO"
+        },
+        {
+          "type": "object",
+          "required": [
+            "tokenRef"
+          ],
+          "properties": {
+            "tokenRef": {
+              "type": "string"
+            }
+          }
+        },
+        {
+          "oneOf": [
+            {
+              "required": [
+                "tokenRef"
+              ]
+            }
+          ]
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "JenkinsConnectorDTO": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/ConnectorConfigDTO"
+        },
+        {
+          "type": "object",
+          "required": [
+            "jenkinsUrl"
+          ],
+          "properties": {
+            "auth": {
+              "$ref": "#/definitions/JenkinsAuthenticationDTO"
+            },
+            "delegateSelectors": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string"
+              }
+            },
+            "jenkinsUrl": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "JenkinsUserNamePasswordDTO": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/JenkinsAuthCredentialsDTO"
         },
         {
           "type": "object",
@@ -4115,6 +4803,112 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "OciHelmAuthCredentialsDTO": {
+      "type": "object",
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "OciHelmAuthenticationDTO": {
+      "type": "object",
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "UsernamePassword",
+            "Anonymous"
+          ]
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "UsernamePassword"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/OciHelmUsernamePasswordDTO"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "OciHelmConnectorDTO": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/ConnectorConfigDTO"
+        },
+        {
+          "type": "object",
+          "required": [
+            "helmRepoUrl"
+          ],
+          "properties": {
+            "auth": {
+              "$ref": "#/definitions/OciHelmAuthenticationDTO"
+            },
+            "delegateSelectors": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string"
+              }
+            },
+            "helmRepoUrl": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "OciHelmUsernamePasswordDTO": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/OciHelmAuthCredentialsDTO"
+        },
+        {
+          "type": "object",
+          "required": [
+            "passwordRef"
+          ],
+          "properties": {
+            "passwordRef": {
+              "type": "string"
+            },
+            "username": {
+              "type": "string"
+            },
+            "usernameRef": {
+              "type": "string"
+            }
+          }
+        },
+        {
+          "oneOf": [
+            {
+              "required": [
+                "usernameRef"
+              ]
+            },
+            {
+              "required": [
+                "username"
+              ]
+            }
+          ]
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "PagerDutyConnectorDTO": {
       "allOf": [
         {
@@ -4148,9 +4942,6 @@
         },
         {
           "type": "object",
-          "required": [
-            "sshKeyRef"
-          ],
           "properties": {
             "delegateSelectors": {
               "type": "array",
@@ -4164,9 +4955,6 @@
               "items": {
                 "$ref": "#/definitions/HostDTO"
               }
-            },
-            "sshKeyRef": {
-              "type": "string"
             }
           }
         }
@@ -4191,39 +4979,24 @@
                 "type": "string"
               }
             },
+            "headers": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/CustomHealthKeyAndValue"
+              }
+            },
+            "passwordRef": {
+              "type": "string"
+            },
             "url": {
+              "type": "string"
+            },
+            "username": {
               "type": "string"
             }
           }
         }
       ],
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
-    "SecretRefData": {
-      "type": "object",
-      "properties": {
-        "decryptedValue": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "identifier": {
-          "type": "string"
-        },
-        "null": {
-          "type": "boolean"
-        },
-        "scope": {
-          "type": "string",
-          "enum": [
-            "account",
-            "org",
-            "project",
-            "unknown"
-          ]
-        }
-      },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "ServiceNowConnector": {
@@ -4390,6 +5163,9 @@
               "items": {
                 "type": "string"
               }
+            },
+            "k8sAuthEndpoint": {
+              "type": "string"
             },
             "namespace": {
               "type": "string"

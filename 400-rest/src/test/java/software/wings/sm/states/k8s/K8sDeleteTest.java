@@ -25,6 +25,7 @@ import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.joor.Reflect.on;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyList;
 import static org.mockito.Matchers.anyLong;
@@ -139,7 +140,7 @@ public class K8sDeleteTest extends CategoryTest {
     k8sDelete.setResources("${workflow.variables.resources}");
     k8sDelete.setFilePaths(null);
     k8sDelete.setDeleteNamespacesForRelease(true);
-
+    k8sDelete.setStateTimeoutInMinutes(15);
     k8sDelete.execute(context);
 
     ArgumentCaptor<List> listArgumentCaptor = ArgumentCaptor.forClass(List.class);
@@ -162,10 +163,10 @@ public class K8sDeleteTest extends CategoryTest {
                     .commandName(K8S_DELETE_COMMAND_NAME)
                     .k8sTaskType(DELETE)
                     .deleteNamespacesForRelease(true)
-                    .timeoutIntervalInMin(10)
+                    .timeoutIntervalInMin(15)
                     .useNewKubectlVersion(false)
                     .build()),
-            anyMap());
+            nullable(Map.class));
   }
 
   @Test
@@ -179,7 +180,7 @@ public class K8sDeleteTest extends CategoryTest {
     k8sDelete.setResources("${workflow.variables.resources}");
     k8sDelete.setFilePaths(null);
     k8sDelete.setDeleteNamespacesForRelease(false);
-
+    k8sDelete.setStateTimeoutInMinutes(5);
     k8sDelete.execute(context);
 
     ArgumentCaptor<List> listArgumentCaptor = ArgumentCaptor.forClass(List.class);
@@ -202,10 +203,10 @@ public class K8sDeleteTest extends CategoryTest {
                     .commandName(K8S_DELETE_COMMAND_NAME)
                     .k8sTaskType(DELETE)
                     .deleteNamespacesForRelease(false)
-                    .timeoutIntervalInMin(10)
+                    .timeoutIntervalInMin(5)
                     .useNewKubectlVersion(false)
                     .build()),
-            anyMap());
+            nullable(Map.class));
   }
 
   @Test
@@ -337,7 +338,8 @@ public class K8sDeleteTest extends CategoryTest {
     when(context.getStateExecutionData()).thenReturn(new K8sStateExecutionData());
 
     k8sDelete.handleAsyncResponseForK8sTask(context, response);
-    verify(activityService, times(1)).updateStatus(anyString(), anyString(), any(ExecutionStatus.class));
+    verify(activityService, times(1))
+        .updateStatus(nullable(String.class), nullable(String.class), any(ExecutionStatus.class));
   }
 
   @Test

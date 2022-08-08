@@ -50,6 +50,7 @@ import static org.mockito.Mockito.when;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
+import io.harness.beans.ArtifactMetadata;
 import io.harness.beans.EmbeddedUser;
 import io.harness.beans.ExecutionStatus;
 import io.harness.beans.OrchestrationWorkflowType;
@@ -71,7 +72,7 @@ import software.wings.beans.NotificationGroup;
 import software.wings.beans.NotificationRule;
 import software.wings.beans.Service;
 import software.wings.beans.WorkflowExecution;
-import software.wings.beans.artifact.Artifact.ArtifactMetadataKeys;
+import software.wings.beans.artifact.ArtifactMetadataKeys;
 import software.wings.common.NotificationMessageResolver.NotificationMessageType;
 import software.wings.dl.WingsPersistence;
 import software.wings.helpers.ext.url.SubdomainUrlHelperIntfc;
@@ -156,19 +157,20 @@ public class WorkflowNotificationHelperTest extends WingsBaseTest {
     when(executionContext.getApp())
         .thenReturn(anApplication().accountId(ACCOUNT_ID).uuid(APP_ID).name(APP_NAME).build());
     when(executionContext.getArtifacts())
-        .thenReturn(ImmutableList.of(anArtifact()
-                                         .withArtifactSourceName("artifact-1")
-                                         .withMetadata(ImmutableMap.of(ArtifactMetadataKeys.buildNo, "build-1"))
-                                         .withArtifactStreamId(ARTIFACT_STREAM_ID_1)
-                                         .build(),
+        .thenReturn(ImmutableList.of(
+            anArtifact()
+                .withArtifactSourceName("artifact-1")
+                .withMetadata(new ArtifactMetadata(ImmutableMap.of(ArtifactMetadataKeys.buildNo, "build-1")))
+                .withArtifactStreamId(ARTIFACT_STREAM_ID_1)
+                .build(),
             anArtifact()
                 .withArtifactSourceName("artifact-2")
-                .withMetadata(ImmutableMap.of(ArtifactMetadataKeys.buildNo, "build-2"))
+                .withMetadata(new ArtifactMetadata(ImmutableMap.of(ArtifactMetadataKeys.buildNo, "build-2")))
                 .withArtifactStreamId(ARTIFACT_STREAM_ID_2)
                 .build(),
             anArtifact()
                 .withArtifactSourceName("artifact-3")
-                .withMetadata(ImmutableMap.of(ArtifactMetadataKeys.buildNo, "build-3"))
+                .withMetadata(new ArtifactMetadata(ImmutableMap.of(ArtifactMetadataKeys.buildNo, "build-3")))
                 .withArtifactStreamId(ARTIFACT_STREAM_ID_3)
                 .build()));
     when(executionContext.getEnv()).thenReturn(anEnvironment().uuid(ENV_ID).name(ENV_NAME).appId(APP_ID).build());
@@ -462,11 +464,12 @@ public class WorkflowNotificationHelperTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void shouldSendWorkflowStatusChangeNotificationSomeArtifacts() {
     when(executionContext.getArtifacts())
-        .thenReturn(ImmutableList.of(anArtifact()
-                                         .withArtifactSourceName("artifact-1")
-                                         .withMetadata(ImmutableMap.of(ArtifactMetadataKeys.buildNo, "build-1"))
-                                         .withArtifactStreamId(ARTIFACT_STREAM_ID_1)
-                                         .build()));
+        .thenReturn(ImmutableList.of(
+            anArtifact()
+                .withArtifactSourceName("artifact-1")
+                .withMetadata(new ArtifactMetadata(ImmutableMap.of(ArtifactMetadataKeys.buildNo, "build-1")))
+                .withArtifactStreamId(ARTIFACT_STREAM_ID_1)
+                .build()));
     NotificationRule notificationRule =
         setupNotificationRule(ExecutionScope.WORKFLOW, asList(ExecutionStatus.FAILED, ExecutionStatus.SUCCESS));
 
@@ -600,11 +603,12 @@ public class WorkflowNotificationHelperTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void shouldSendWorkflowStatusChangeWithInfraDefinitions() {
     when(executionContext.getArtifacts())
-        .thenReturn(ImmutableList.of(anArtifact()
-                                         .withArtifactSourceName("artifact-1")
-                                         .withMetadata(ImmutableMap.of(ArtifactMetadataKeys.buildNo, "build-1"))
-                                         .withArtifactStreamId(ARTIFACT_STREAM_ID_1)
-                                         .build()));
+        .thenReturn(ImmutableList.of(
+            anArtifact()
+                .withArtifactSourceName("artifact-1")
+                .withMetadata(new ArtifactMetadata(ImmutableMap.of(ArtifactMetadataKeys.buildNo, "build-1")))
+                .withArtifactStreamId(ARTIFACT_STREAM_ID_1)
+                .build()));
     when(workflowExecutionService.getExecutionDetails(APP_ID, WORKFLOW_EXECUTION_ID, true, false))
         .thenReturn(WorkflowExecution.builder()
                         .serviceIds(asList("service-1", "service-2"))

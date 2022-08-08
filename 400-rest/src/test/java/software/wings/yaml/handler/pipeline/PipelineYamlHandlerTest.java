@@ -58,8 +58,6 @@ import software.wings.beans.yaml.YamlType;
 import software.wings.infra.AwsInstanceInfrastructure;
 import software.wings.infra.InfrastructureDefinition;
 import software.wings.rules.SetupScheduler;
-import software.wings.service.impl.SSHKeyDataProvider;
-import software.wings.service.impl.WinRmConnectionAttributesDataProvider;
 import software.wings.service.impl.workflow.WorkflowServiceHelper;
 import software.wings.service.impl.yaml.WorkflowYAMLHelper;
 import software.wings.service.impl.yaml.handler.tag.HarnessTagYamlHelper;
@@ -90,7 +88,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 
 /**
  * @author rktummala on 1/9/18
@@ -117,8 +114,6 @@ public class PipelineYamlHandlerTest extends YamlHandlerTestBase {
   @InjectMocks @Inject WorkflowServiceHelper workflowServiceHelper;
   @InjectMocks @Inject private PipelineYamlHandler yamlHandler;
   @InjectMocks @Inject private PipelineStageYamlHandler pipelineStageYamlHandler;
-  @InjectMocks @Inject private SSHKeyDataProvider sshKeyDataProvider;
-  @InjectMocks @Inject private WinRmConnectionAttributesDataProvider winRmConnectionAttributesDataProvider;
   @InjectMocks @Inject private EntityVersionService entityVersionService;
 
   private final String APP_NAME = "app1";
@@ -180,13 +175,13 @@ public class PipelineYamlHandlerTest extends YamlHandlerTestBase {
     Service service = Service.builder().name(SERVICE_NAME).uuid(SERVICE_ID).artifactType(WAR).build();
     when(serviceResourceService.get(APP_ID, SERVICE_ID, false)).thenReturn(service);
     when(serviceResourceService.getWithDetails(APP_ID, SERVICE_ID)).thenReturn(service);
-    when(accountService.get(anyString())).thenReturn(account);
-    when(limitCheckerFactory.getInstance(new Action(Mockito.anyString(), ActionType.CREATE_WORKFLOW)))
+    when(accountService.get(any())).thenReturn(account);
+    when(limitCheckerFactory.getInstance(new Action(any(), ActionType.CREATE_WORKFLOW)))
         .thenReturn(new MockChecker(true, ActionType.CREATE_WORKFLOW));
 
     Application application =
         Application.Builder.anApplication().name(APP_NAME).uuid(APP_ID).accountId(ACCOUNT_ID).build();
-    when(appService.getAppByName(anyString(), anyString())).thenReturn(application);
+    when(appService.getAppByName(any(), any())).thenReturn(application);
 
     when(appService.get(APP_ID)).thenReturn(application);
 

@@ -28,6 +28,7 @@ import io.harness.delegate.beans.connector.scm.github.GithubAppSpecDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubTokenSpecDTO;
 import io.harness.delegate.beans.gitapi.GitApiFindPRTaskResponse;
+import io.harness.delegate.beans.gitapi.GitApiMergePRTaskResponse;
 import io.harness.delegate.beans.gitapi.GitApiTaskParams;
 import io.harness.delegate.beans.gitapi.GitApiTaskResponse;
 import io.harness.delegate.beans.gitapi.GitApiTaskResponse.GitApiTaskResponseBuilder;
@@ -43,6 +44,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.json.JSONObject;
 
 @Singleton
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
@@ -79,6 +81,39 @@ public class GithubApiClient implements GitApiClient {
       }
     } catch (Exception e) {
       log.error(new StringBuilder("failed while fetching PR Details using connector: ")
+                    .append(gitConnector.getIdentifier())
+                    .toString(),
+          e);
+      responseBuilder.commandExecutionStatus(FAILURE).errorMessage(e.getMessage());
+    }
+
+    return responseBuilder.build();
+  }
+
+  @Override
+  public DelegateResponseData mergePR(GitApiTaskParams gitApiTaskParams) {
+    GitApiTaskResponseBuilder responseBuilder = GitApiTaskResponse.builder();
+    ConnectorDetails gitConnector = gitApiTaskParams.getConnectorDetails();
+    try {
+      if (gitConnector == null
+          || !gitConnector.getConnectorConfig().getClass().isAssignableFrom(GithubConnectorDTO.class)) {
+        throw new InvalidRequestException(
+            format("Invalid Connector %s, Need GithubConfig: ", gitConnector.getIdentifier()));
+      }
+      GithubConnectorDTO gitConfigDTO = (GithubConnectorDTO) gitConnector.getConnectorConfig();
+      String token = retrieveAuthToken(gitConnector);
+      String gitApiURL = getGitApiURL(gitConfigDTO.getUrl());
+
+      JSONObject mergePRResponse = githubService.mergePR(
+          gitApiURL, token, gitApiTaskParams.getOwner(), gitApiTaskParams.getRepo(), gitApiTaskParams.getPrNumber());
+      if (mergePRResponse != null) {
+        responseBuilder.commandExecutionStatus(CommandExecutionStatus.SUCCESS)
+            .gitApiResult(GitApiMergePRTaskResponse.builder().sha(mergePRResponse.get("sha").toString()).build());
+      } else {
+        responseBuilder.commandExecutionStatus(FAILURE).errorMessage("Merging PR encountered a problem");
+      }
+    } catch (Exception e) {
+      log.error(new StringBuilder("Failed while merging PR using connector: ")
                     .append(gitConnector.getIdentifier())
                     .toString(),
           e);

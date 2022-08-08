@@ -29,6 +29,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
+import javax.ws.rs.BeanParam;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -64,15 +65,13 @@ public class NewRelicResource {
   @Timed
   @ExceptionMetered
   @ApiOperation(value = "get all newrelic applications", nickname = "getNewRelicApplications")
-  public ResponseDTO<List<NewRelicApplication>> getNewRelicApplications(
-      @NotNull @QueryParam("accountId") String accountId,
+  public ResponseDTO<List<NewRelicApplication>> getNewRelicApplications(@NotNull @BeanParam ProjectParams projectParams,
       @NotNull @QueryParam("connectorIdentifier") final String connectorIdentifier,
-      @QueryParam("orgIdentifier") @NotNull String orgIdentifier,
-      @QueryParam("projectIdentifier") @NotNull String projectIdentifier, @QueryParam("pageSize") @NotNull int pageSize,
-      @QueryParam("offset") @NotNull int offset, @QueryParam("filter") @DefaultValue("") String filter,
-      @NotNull @QueryParam("tracingId") String tracingId) {
-    return ResponseDTO.newResponse(newRelicService.getNewRelicApplications(
-        accountId, connectorIdentifier, orgIdentifier, projectIdentifier, filter, tracingId));
+      @QueryParam("pageSize") @NotNull int pageSize, @QueryParam("offset") @NotNull int offset,
+      @QueryParam("filter") @DefaultValue("") String filter, @NotNull @QueryParam("tracingId") String tracingId) {
+    return ResponseDTO.newResponse(
+        newRelicService.getNewRelicApplications(projectParams.getAccountIdentifier(), connectorIdentifier,
+            projectParams.getOrgIdentifier(), projectParams.getProjectIdentifier(), filter, tracingId));
   }
 
   @POST
@@ -81,13 +80,13 @@ public class NewRelicResource {
   @ExceptionMetered
   @ApiOperation(value = "get metric data for given metric packs", nickname = "getNewRelicMetricData")
   public ResponseDTO<MetricPackValidationResponse> getNewRelicMetricData(
-      @QueryParam("accountId") @NotNull String accountId, @QueryParam("orgIdentifier") @NotNull String orgIdentifier,
-      @QueryParam("projectIdentifier") @NotNull String projectIdentifier,
+      @NotNull @BeanParam ProjectParams projectParams,
       @QueryParam("connectorIdentifier") @NotNull String connectorIdentifier,
       @QueryParam("appName") @NotNull String appName, @QueryParam("appId") @NotNull String appId,
       @QueryParam("requestGuid") @NotNull String requestGuid, @NotNull @Valid @Body List<MetricPackDTO> metricPacks) {
-    return ResponseDTO.newResponse(newRelicService.validateData(
-        accountId, connectorIdentifier, orgIdentifier, projectIdentifier, appName, appId, metricPacks, requestGuid));
+    return ResponseDTO.newResponse(newRelicService.validateData(projectParams.getAccountIdentifier(),
+        connectorIdentifier, projectParams.getOrgIdentifier(), projectParams.getProjectIdentifier(), appName, appId,
+        metricPacks, requestGuid));
   }
 
   @GET
@@ -95,16 +94,9 @@ public class NewRelicResource {
   @Timed
   @ExceptionMetered
   @ApiOperation(value = "get sample data for given nrql", nickname = "getSampleDataForNRQL")
-  public ResponseDTO<LinkedHashMap> getSampleDataForNRQL(@QueryParam("accountId") @NotNull String accountId,
-      @QueryParam("orgIdentifier") @NotNull String orgIdentifier,
-      @QueryParam("projectIdentifier") @NotNull String projectIdentifier,
+  public ResponseDTO<LinkedHashMap> getSampleDataForNRQL(@NotNull @BeanParam ProjectParams projectParams,
       @QueryParam("connectorIdentifier") @NotNull String connectorIdentifier,
       @QueryParam("requestGuid") @NotNull String requestGuid, @QueryParam("nrql") @NotNull String nrql) {
-    ProjectParams projectParams = ProjectParams.builder()
-                                      .accountIdentifier(accountId)
-                                      .orgIdentifier(orgIdentifier)
-                                      .projectIdentifier(projectIdentifier)
-                                      .build();
     return ResponseDTO.newResponse(
         newRelicService.fetchSampleData(projectParams, connectorIdentifier, nrql, requestGuid));
   }

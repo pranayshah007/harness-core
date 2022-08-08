@@ -29,6 +29,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.EmbeddedUser;
 import io.harness.category.element.UnitTests;
+import io.harness.cvng.BuilderFactory;
 import io.harness.cvng.analysis.beans.TimeSeriesTestDataDTO.MetricData;
 import io.harness.cvng.analysis.entities.TimeSeriesRiskSummary;
 import io.harness.cvng.analysis.entities.TimeSeriesRiskSummary.TransactionMetricRisk;
@@ -96,7 +97,6 @@ import org.mongodb.morphia.query.Sort;
 public class TimeSeriesRecordServiceImplTest extends CvNextGenTestBase {
   private String accountId;
   private String connectorIdentifier;
-  private String groupId;
   private Random random;
   private String projectIdentifier;
   private String verificationTaskId;
@@ -108,15 +108,16 @@ public class TimeSeriesRecordServiceImplTest extends CvNextGenTestBase {
   @Inject private MetricPackService metricPackService;
   @Inject private HostRecordService hostRecordService;
   @Mock private TimeSeriesAnalysisService timeSeriesAnalysisService;
+  private BuilderFactory builderFactory;
 
   @Before
   public void setUp() throws IllegalAccessException {
+    builderFactory = BuilderFactory.getDefault();
     verificationTaskId = generateUuid();
-    accountId = generateUuid();
+    accountId = builderFactory.getContext().getAccountId();
     connectorIdentifier = generateUuid();
-    groupId = generateUuid();
-    projectIdentifier = generateUuid();
-    orgIdentifier = generateUuid();
+    projectIdentifier = builderFactory.getContext().getProjectIdentifier();
+    orgIdentifier = builderFactory.getContext().getOrgIdentifier();
     random = new Random(System.currentTimeMillis());
     testUserProvider.setActiveUser(EmbeddedUser.builder().name("user1").build());
     FieldUtils.writeField(timeSeriesRecordService, "timeSeriesAnalysisService", timeSeriesAnalysisService, true);
@@ -515,15 +516,9 @@ public class TimeSeriesRecordServiceImplTest extends CvNextGenTestBase {
   @Category(UnitTests.class)
   public void testGetTimeSeriesMetricDefinitions_notIncludedMetricsInCVConfig() {
     metricPackService.getMetricPacks(accountId, orgIdentifier, projectIdentifier, APP_DYNAMICS);
-    AppDynamicsCVConfig appDynamicsCVConfig = new AppDynamicsCVConfig();
+    AppDynamicsCVConfig appDynamicsCVConfig = builderFactory.appDynamicsCVConfigBuilder().build();
     appDynamicsCVConfig.setVerificationType(VerificationType.TIME_SERIES);
-    appDynamicsCVConfig.setProjectIdentifier(projectIdentifier);
-    appDynamicsCVConfig.setOrgIdentifier(orgIdentifier);
-    appDynamicsCVConfig.setAccountId(accountId);
     appDynamicsCVConfig.setConnectorIdentifier(connectorIdentifier);
-    appDynamicsCVConfig.setServiceIdentifier("serviceIdentifier");
-    appDynamicsCVConfig.setEnvIdentifier("environmentIdentifier");
-    appDynamicsCVConfig.setIdentifier(groupId);
     appDynamicsCVConfig.setMonitoringSourceName(generateUuid());
     appDynamicsCVConfig.setTierName("docker-tier");
     appDynamicsCVConfig.setApplicationName("cv-app");
@@ -581,15 +576,7 @@ public class TimeSeriesRecordServiceImplTest extends CvNextGenTestBase {
   @Category(UnitTests.class)
   public void testGetTimeSeriesMetricDefinitions_projectLevelThresholdsNotncluded() {
     metricPackService.getMetricPacks(accountId, orgIdentifier, projectIdentifier, APP_DYNAMICS);
-    AppDynamicsCVConfig appDynamicsCVConfig = new AppDynamicsCVConfig();
-    appDynamicsCVConfig.setVerificationType(VerificationType.TIME_SERIES);
-    appDynamicsCVConfig.setProjectIdentifier(projectIdentifier);
-    appDynamicsCVConfig.setOrgIdentifier(orgIdentifier);
-    appDynamicsCVConfig.setAccountId(accountId);
-    appDynamicsCVConfig.setConnectorIdentifier(connectorIdentifier);
-    appDynamicsCVConfig.setServiceIdentifier("serviceIdentifier");
-    appDynamicsCVConfig.setEnvIdentifier("environmentIdentifier");
-    appDynamicsCVConfig.setIdentifier(groupId);
+    AppDynamicsCVConfig appDynamicsCVConfig = builderFactory.appDynamicsCVConfigBuilder().build();
     appDynamicsCVConfig.setMonitoringSourceName(generateUuid());
     appDynamicsCVConfig.setTierName("docker-tier");
     appDynamicsCVConfig.setApplicationName("cv-app");
@@ -633,15 +620,8 @@ public class TimeSeriesRecordServiceImplTest extends CvNextGenTestBase {
   @Category(UnitTests.class)
   public void testGetTimeSeriesMetricDefinitions_projectLevelThresholdsIncluded() {
     metricPackService.getMetricPacks(accountId, orgIdentifier, projectIdentifier, APP_DYNAMICS);
-    AppDynamicsCVConfig appDynamicsCVConfig = new AppDynamicsCVConfig();
-    appDynamicsCVConfig.setVerificationType(VerificationType.TIME_SERIES);
-    appDynamicsCVConfig.setProjectIdentifier(projectIdentifier);
-    appDynamicsCVConfig.setOrgIdentifier(orgIdentifier);
-    appDynamicsCVConfig.setAccountId(accountId);
+    AppDynamicsCVConfig appDynamicsCVConfig = builderFactory.appDynamicsCVConfigBuilder().build();
     appDynamicsCVConfig.setConnectorIdentifier(connectorIdentifier);
-    appDynamicsCVConfig.setServiceIdentifier("serviceIdentifier");
-    appDynamicsCVConfig.setEnvIdentifier("environmentIdentifier");
-    appDynamicsCVConfig.setIdentifier(groupId);
     appDynamicsCVConfig.setMonitoringSourceName(generateUuid());
     appDynamicsCVConfig.setTierName("docker-tier");
     appDynamicsCVConfig.setApplicationName("cv-app");

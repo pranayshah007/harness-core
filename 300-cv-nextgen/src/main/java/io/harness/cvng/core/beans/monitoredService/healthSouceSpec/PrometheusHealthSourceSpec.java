@@ -11,6 +11,7 @@ import io.harness.cvng.beans.CVMonitoringCategory;
 import io.harness.cvng.beans.DataSourceType;
 import io.harness.cvng.core.beans.PrometheusMetricDefinition;
 import io.harness.cvng.core.beans.monitoredService.HealthSource.CVConfigUpdateResult;
+import io.harness.cvng.core.beans.monitoredService.TimeSeriesMetricPackDTO;
 import io.harness.cvng.core.entities.CVConfig;
 import io.harness.cvng.core.entities.PrometheusCVConfig;
 import io.harness.cvng.core.services.api.MetricPackService;
@@ -44,6 +45,7 @@ import org.apache.commons.lang3.StringUtils;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class PrometheusHealthSourceSpec extends MetricHealthSourceSpec {
   @UniqueIdentifierCheck @Valid List<PrometheusMetricDefinition> metricDefinitions;
+  @Valid Set<TimeSeriesMetricPackDTO> metricPacks;
 
   public List<PrometheusMetricDefinition> getMetricDefinitions() {
     if (metricDefinitions == null) {
@@ -60,8 +62,8 @@ public class PrometheusHealthSourceSpec extends MetricHealthSourceSpec {
       metricDefinition.setServiceIdentifier(serviceRef);
       metricDefinition.setEnvIdentifier(environmentRef);
     });
-    List<PrometheusCVConfig> cvConfigsFromThisObj = toCVConfigs(accountId, orgIdentifier, projectIdentifier,
-        environmentRef, serviceRef, monitoredServiceIdentifier, identifier, name);
+    List<PrometheusCVConfig> cvConfigsFromThisObj =
+        toCVConfigs(accountId, orgIdentifier, projectIdentifier, monitoredServiceIdentifier, identifier, name);
     Map<Key, PrometheusCVConfig> existingConfigMap = new HashMap<>();
 
     List<PrometheusCVConfig> existingSDCVConfigs = (List<PrometheusCVConfig>) (List<?>) existingCVConfigs;
@@ -113,7 +115,7 @@ public class PrometheusHealthSourceSpec extends MetricHealthSourceSpec {
   }
 
   private List<PrometheusCVConfig> toCVConfigs(String accountId, String orgIdentifier, String projectIdentifier,
-      String environmentRef, String serviceRef, String monitoredServiceIdentifier, String identifier, String name) {
+      String monitoredServiceIdentifier, String identifier, String name) {
     List<PrometheusCVConfig> cvConfigs = new ArrayList<>();
     // One cvConfig per service+environment+groupName+category.
     Map<Key, List<PrometheusMetricDefinition>> keyDefinitionMap = new HashMap<>();
@@ -135,13 +137,12 @@ public class PrometheusHealthSourceSpec extends MetricHealthSourceSpec {
                                         .connectorIdentifier(getConnectorRef())
                                         .monitoringSourceName(name)
                                         .groupName(key.getGroupName())
-                                        .envIdentifier(environmentRef)
-                                        .serviceIdentifier(serviceRef)
                                         .category(category)
                                         .monitoredServiceIdentifier(monitoredServiceIdentifier)
                                         .build();
 
-      cvConfig.populateFromMetricDefinitions(definitionList, category);
+      cvConfig.populateFromMetricDefinitions(definitionList, category, metricPacks);
+      cvConfig.addMetricThresholds(metricPacks);
       cvConfigs.add(cvConfig);
     });
 
@@ -149,8 +150,6 @@ public class PrometheusHealthSourceSpec extends MetricHealthSourceSpec {
   }
   private Key getKeyFromPrometheusMetricDefinition(PrometheusMetricDefinition prometheusMetricDefinition) {
     return Key.builder()
-        .envIdentifier(prometheusMetricDefinition.getEnvIdentifier())
-        .serviceIdentifier(prometheusMetricDefinition.getServiceIdentifier())
         .category(prometheusMetricDefinition.getRiskProfile().getCategory())
         .groupName(prometheusMetricDefinition.getGroupName())
         .build();
@@ -158,8 +157,7 @@ public class PrometheusHealthSourceSpec extends MetricHealthSourceSpec {
 
   private Key getKeyFromConfig(PrometheusCVConfig prometheusCVConfig) {
     return Key.builder()
-        .envIdentifier(prometheusCVConfig.getEnvIdentifier())
-        .serviceIdentifier(prometheusCVConfig.getServiceIdentifier())
+        .monitoredServiceIdentifier(prometheusCVConfig.getMonitoredServiceIdentifier())
         .groupName(prometheusCVConfig.getGroupName())
         .category(prometheusCVConfig.getCategory())
         .build();
@@ -168,8 +166,7 @@ public class PrometheusHealthSourceSpec extends MetricHealthSourceSpec {
   @Value
   @Builder
   private static class Key {
-    String envIdentifier;
-    String serviceIdentifier;
+    String monitoredServiceIdentifier;
     CVMonitoringCategory category;
     String groupName;
   }

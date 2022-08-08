@@ -114,6 +114,8 @@ public final class HelmConstants {
     public static final String HELM_RENDER_SPECIFIC_TEMPLATE =
         "${HELM_PATH} template ${RELEASE_NAME} ${CHART_LOCATION} ${COMMAND_FLAGS} -s ${CHART_FILE} --namespace ${NAMESPACE} ${OVERRIDE_VALUES}";
     public static final String HELM_VERSION_COMMAND_TEMPLATE = "${HELM_PATH} version --short ${COMMAND_FLAGS}";
+    public static final String HELM_OCI_REGISTRY_LOGIN_COMMAND_TEMPLATE =
+        "${HELM_PATH} registry login ${REGISTRY_URL} ${USERNAME} ${PASSWORD}";
     public static final String HELM_FETCH_ALL_VERSIONS_COMMAND_TEMPLATE =
         "${HELM_PATH} search repo ${REPO_NAME}/${CHART_NAME} -l --devel --max-col-width 300";
     public static final String HELM_REPO_FLAGS = " --repository-config ${HELM_CACHE_HOME}/repo-${REPO_NAME}.yaml";

@@ -80,6 +80,7 @@ fi
 find . \( -iname "*.proto" -a -not -regex ".*/target/.*" \) |\
     grep -v src/main/proto/log_analysis_record.proto |\
     grep -v src/main/proto/time_series_record.proto |\
+    grep -v src/main/proto/io/harness/notification/notification_request.proto |\
     while read file; do validate_proto "$file"; done
 
 ISSUES=`buf check lint`

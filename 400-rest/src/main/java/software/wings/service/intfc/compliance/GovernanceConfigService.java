@@ -12,6 +12,7 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.governance.ApplicationFilter;
 import io.harness.governance.DeploymentFreezeInfo;
 import io.harness.governance.GovernanceFreezeConfig;
+import io.harness.governance.TimeRangeBasedFreezeConfig;
 
 import software.wings.beans.governance.GovernanceConfig;
 import software.wings.service.intfc.ownership.OwnedByAccount;
@@ -54,4 +55,6 @@ public interface GovernanceConfigService extends OwnedByAccount {
   List<String> getEnvIdsFromAppSelection(String appId, ApplicationFilter appSelection);
 
   List<String> getServiceIdsFromAppSelection(String appId, ApplicationFilter appSelection);
+
+  Set<String> getReferencedUserGroupIds(List<TimeRangeBasedFreezeConfig> timeRangeBasedFreezeConfig);
 }

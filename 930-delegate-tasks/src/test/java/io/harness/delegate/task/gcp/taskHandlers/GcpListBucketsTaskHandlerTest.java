@@ -74,7 +74,7 @@ public class GcpListBucketsTaskHandlerTest extends CategoryTest {
     MockitoAnnotations.initMocks(this);
     doReturn("test_sa").when(gcpHelperService).getProjectId(serviceAccountFileContent, false);
     doReturn("test_delegate").when(gcpHelperService).getProjectId(null, true);
-    doReturn(storageService).when(gcpHelperService).getGcsStorageService(any(char[].class), anyBoolean());
+    doReturn(storageService).when(gcpHelperService).getGcsStorageService(any(), anyBoolean());
     doReturn(bucketsService).when(storageService).buckets();
   }
 

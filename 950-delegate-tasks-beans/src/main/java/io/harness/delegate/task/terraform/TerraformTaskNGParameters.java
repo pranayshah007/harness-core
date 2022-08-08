@@ -57,6 +57,7 @@ public class TerraformTaskNGParameters
   @Expression(DISALLOW_SECRETS) List<String> targets;
   @Expression(ALLOW_SECRETS) Map<String, String> environmentVariables;
   boolean saveTerraformStateJson;
+  boolean tfModuleSourceInheritSSH;
   long timeoutInMillis;
 
   // For plan

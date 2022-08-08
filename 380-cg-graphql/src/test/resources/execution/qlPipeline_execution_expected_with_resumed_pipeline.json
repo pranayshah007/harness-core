@@ -55,5 +55,6 @@
       "status": "QUEUED"
     }
   ],
-  "failureDetails":"failureDetails"
+  "failureDetails":"failureDetails",
+  "executionUrl":"PORTAL_URL/#/account/kmpySmUISimoRrJL6NL73w/app/nCLN8c84SqWPr44sqg65JQ/pipeline-execution/null/workflow-execution/undefined/details"
 }

@@ -22,4 +22,5 @@ public class CliResponse {
   private CommandExecutionStatus commandExecutionStatus;
   private String output;
   private String error;
+  private Integer exitCode;
 }

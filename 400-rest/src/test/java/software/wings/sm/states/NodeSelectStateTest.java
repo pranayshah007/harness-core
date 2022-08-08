@@ -45,9 +45,9 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyList;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
@@ -201,9 +201,11 @@ public class NodeSelectStateTest extends WingsBaseTest {
                         .infraMappingId(INFRA_MAPPING_ID)
                         .build());
     when(context.getStateExecutionInstance()).thenReturn(stateExecutionInstance);
-    when(infrastructureMappingService.selectServiceInstances(anyString(), anyString(), anyString(), any()))
+    when(infrastructureMappingService.selectServiceInstances(
+             nullable(String.class), nullable(String.class), nullable(String.class), any()))
         .thenReturn(instances);
-    when(infrastructureMappingService.listHostDisplayNames(anyString(), anyString(), anyString()))
+    when(infrastructureMappingService.listHostDisplayNames(
+             nullable(String.class), nullable(String.class), nullable(String.class)))
         .thenReturn(asList("Host1", "Host2", "Host3"));
 
     when(context.getContextElement(ContextElementType.INSTANCE)).thenReturn(contextElement);
@@ -211,12 +213,13 @@ public class NodeSelectStateTest extends WingsBaseTest {
              ContextElementType.PARAM, ServiceInstanceArtifactParam.SERVICE_INSTANCE_ARTIFACT_PARAMS))
         .thenReturn(serviceInstanceArtifactParam);
     when(context.getContextElement(ContextElementType.STANDARD)).thenReturn(workflowStandardParams);
-    when(hostService.getHostsByHostIds(anyString(), anyString(), anyList())).thenAnswer(invocationOnMock -> {
-      return invocationOnMock.getArgumentAt(2, List.class)
-          .stream()
-          .map(item -> Host.Builder.aHost().withUuid((String) item).build())
-          .collect(Collectors.toList());
-    });
+    when(hostService.getHostsByHostIds(nullable(String.class), nullable(String.class), anyList()))
+        .thenAnswer(invocationOnMock -> {
+          return invocationOnMock.getArgument(2, List.class)
+              .stream()
+              .map(item -> Host.Builder.aHost().withUuid((String) item).build())
+              .collect(Collectors.toList());
+        });
     when(context.prepareSweepingOutputBuilder(any(SweepingOutputInstance.Scope.class)))
         .thenReturn(SweepingOutputInstance.builder());
   }
@@ -296,7 +299,8 @@ public class NodeSelectStateTest extends WingsBaseTest {
     when(context.getContextElement(ContextElementType.PARAM, PhaseElement.PHASE_PARAM)).thenReturn(phaseElement);
     when(infrastructureMappingService.get(APP_ID, INFRA_MAPPING_ID)).thenReturn(physicalSSHInfrastructureMapping);
     when(context.getAppId()).thenReturn(APP_ID);
-    when(infrastructureMappingService.selectServiceInstances(anyString(), anyString(), anyString(), any()))
+    when(infrastructureMappingService.selectServiceInstances(
+             nullable(String.class), nullable(String.class), nullable(String.class), any()))
         .thenReturn(Arrays.asList(testInstance1, testInstance2, testInstance3, testInstance4))
         .thenReturn(instances);
     when(context.renderExpression("3")).thenReturn("3");
@@ -372,7 +376,8 @@ public class NodeSelectStateTest extends WingsBaseTest {
     when(context.getContextElement(ContextElementType.PARAM, PhaseElement.PHASE_PARAM)).thenReturn(phaseElement);
     when(infrastructureMappingService.get(APP_ID, INFRA_MAPPING_ID)).thenReturn(physicalSSHInfrastructureMapping);
     when(context.getAppId()).thenReturn(APP_ID);
-    when(infrastructureMappingService.selectServiceInstances(anyString(), anyString(), anyString(), any()))
+    when(infrastructureMappingService.selectServiceInstances(
+             nullable(String.class), nullable(String.class), nullable(String.class), any()))
         .thenReturn(Arrays.asList(testInstance1, testInstance2, testInstance3, testInstance4))
         .thenReturn(instances);
     when(context.renderExpression("3")).thenReturn("3");
@@ -645,7 +650,8 @@ public class NodeSelectStateTest extends WingsBaseTest {
     when(context.getContextElement(ContextElementType.PARAM, PhaseElement.PHASE_PARAM)).thenReturn(phaseElement);
     when(context.renderExpression("1")).thenReturn("1");
     when(infrastructureMappingService.get(APP_ID, INFRA_MAPPING_ID)).thenReturn(physicalSSHInfrastructureMapping);
-    when(infrastructureMappingService.selectServiceInstances(anyString(), anyString(), anyString(), any()))
+    when(infrastructureMappingService.selectServiceInstances(
+             nullable(String.class), nullable(String.class), nullable(String.class), any()))
         .thenReturn(emptyList());
     when(context.getAppId()).thenReturn(APP_ID);
     when(context.fetchInfraMappingId()).thenReturn(INFRA_MAPPING_ID);
@@ -689,7 +695,8 @@ public class NodeSelectStateTest extends WingsBaseTest {
     when(context.getContextElement(ContextElementType.PARAM, PhaseElement.PHASE_PARAM)).thenReturn(phaseElement);
     when(context.renderExpression("1")).thenReturn("1");
     when(infrastructureMappingService.get(APP_ID, INFRA_MAPPING_ID)).thenReturn(physicalSSHInfrastructureMapping);
-    when(infrastructureMappingService.selectServiceInstances(anyString(), anyString(), anyString(), any()))
+    when(infrastructureMappingService.selectServiceInstances(
+             nullable(String.class), nullable(String.class), nullable(String.class), any()))
         .thenReturn(emptyList());
     when(context.getAppId()).thenReturn(APP_ID);
     when(context.fetchInfraMappingId()).thenReturn(INFRA_MAPPING_ID);
@@ -730,7 +737,8 @@ public class NodeSelectStateTest extends WingsBaseTest {
         .thenReturn(aWorkflowStandardParams().withExecutionHosts(Arrays.asList("host1", "host2")).build());
     when(context.renderExpression("1")).thenReturn("1");
     when(infrastructureMappingService.get(APP_ID, INFRA_MAPPING_ID)).thenReturn(physicalSSHInfrastructureMapping);
-    when(infrastructureMappingService.selectServiceInstances(anyString(), anyString(), anyString(), any()))
+    when(infrastructureMappingService.selectServiceInstances(
+             nullable(String.class), nullable(String.class), nullable(String.class), any()))
         .thenReturn(emptyList());
     when(context.getAppId()).thenReturn(APP_ID);
     when(context.fetchInfraMappingId()).thenReturn(INFRA_MAPPING_ID);
@@ -767,9 +775,11 @@ public class NodeSelectStateTest extends WingsBaseTest {
     nodeSelectState.setInstanceCount("100");
     nodeSelectState.setInstanceUnitType(InstanceUnitType.PERCENTAGE);
     when(infrastructureMappingService.get(APP_ID, INFRA_MAPPING_ID)).thenReturn(physicalSSHInfrastructureMapping);
-    when(infrastructureMappingService.selectServiceInstances(anyString(), anyString(), anyString(), any()))
+    when(infrastructureMappingService.selectServiceInstances(
+             nullable(String.class), nullable(String.class), nullable(String.class), any()))
         .thenReturn(emptyList());
-    when(infrastructureMappingService.listHostDisplayNames(anyString(), anyString(), anyString()))
+    when(infrastructureMappingService.listHostDisplayNames(
+             nullable(String.class), nullable(String.class), nullable(String.class)))
         .thenReturn(emptyList());
     when(context.getAppId()).thenReturn(APP_ID);
     when(context.renderExpression("100")).thenReturn("100");
@@ -856,6 +866,7 @@ public class NodeSelectStateTest extends WingsBaseTest {
   public void testGetInstanceElements() {
     testGetInstanceElementsForNoServiceInstance();
     testGetInstanceDetailsForPartialRollout();
+    testGetInstanceDetailsForPartialRolloutSpecificHosts();
   }
 
   private void testGetInstanceDetailsForPartialRollout() {
@@ -869,20 +880,42 @@ public class NodeSelectStateTest extends WingsBaseTest {
 
     when(instanceExpressionProcessor.convertToInstanceElements(allAvailable)).thenReturn(allInstanceElements);
 
-    final List<InstanceElement> instanceElements = nodeSelectState.getInstanceElements(deployed, allAvailable);
+    final List<InstanceElement> instanceElements = nodeSelectState.getInstanceElements(deployed, allAvailable, false);
     assertThat(instanceElements).hasSize(3);
     assertThat(instanceElements.stream().filter(InstanceElement::isNewInstance).collect(Collectors.toList()))
         .containsExactly(allInstanceElements.get(1));
   }
 
+  private void testGetInstanceDetailsForPartialRolloutSpecificHosts() {
+    List<ServiceInstance> infraInstances = asList(aServiceInstance().withUuid("id-1").build());
+    List<ServiceInstance> deployed =
+        asList(aServiceInstance().withUuid("specific-1").build(), aServiceInstance().withUuid("specific-2").build());
+    List<InstanceElement> infraInstanceElems =
+        infraInstances.stream()
+            .map(instance -> anInstanceElement().uuid(instance.getUuid()).build())
+            .collect(Collectors.toList());
+    List<InstanceElement> specificHostsInstanceElems =
+        deployed.stream()
+            .map(instance -> anInstanceElement().uuid(instance.getUuid()).build())
+            .collect(Collectors.toList());
+
+    when(instanceExpressionProcessor.convertToInstanceElements(infraInstances)).thenReturn(infraInstanceElems);
+    when(instanceExpressionProcessor.convertToInstanceElements(deployed)).thenReturn(specificHostsInstanceElems);
+
+    final List<InstanceElement> instanceElements = nodeSelectState.getInstanceElements(deployed, infraInstances, true);
+    assertThat(instanceElements).hasSize(2);
+    assertThat(instanceElements.stream().filter(InstanceElement::isNewInstance).collect(Collectors.toList()))
+        .containsExactly(specificHostsInstanceElems.get(0), specificHostsInstanceElems.get(1));
+  }
+
   private void testGetInstanceElementsForNoServiceInstance() {
     when(instanceExpressionProcessor.convertToInstanceElements(emptyList())).thenReturn(emptyList());
-    List<InstanceElement> instanceElements = nodeSelectState.getInstanceElements(emptyList(), emptyList());
+    List<InstanceElement> instanceElements = nodeSelectState.getInstanceElements(emptyList(), emptyList(), false);
     assertThat(instanceElements).isEmpty();
 
     // if instanceExpressionProcessor returns null for some reason
     when(instanceExpressionProcessor.convertToInstanceElements(emptyList())).thenReturn(null);
-    instanceElements = nodeSelectState.getInstanceElements(emptyList(), emptyList());
+    instanceElements = nodeSelectState.getInstanceElements(emptyList(), emptyList(), false);
     assertThat(instanceElements).isEmpty();
   }
 
@@ -927,17 +960,18 @@ public class NodeSelectStateTest extends WingsBaseTest {
     getInstanceDetailsWhenNoNewerInstancesDeployed();
     getInstanceDetailsForPartialRollout();
     getInstanceDetailsForNoInstances();
+    getInstanceDetailsSpecificHosts();
   }
 
   private void getInstanceDetailsWhenNoNewerInstancesDeployed() {
-    List<InstanceDetails> instanceDetails = nodeSelectState.getInstanceDetails(
-        APP_ID, ENV_ID, emptyList(), Arrays.asList(aServiceInstance().withUuid("id-3").withHostId("host-3").build()));
+    List<InstanceDetails> instanceDetails = nodeSelectState.getInstanceDetails(APP_ID, ENV_ID, emptyList(),
+        Collections.singletonList(aServiceInstance().withUuid("id-3").withHostId("host-3").build()), false);
     assertThat(instanceDetails).isNotEmpty();
     assertThat(instanceDetails.get(0).getPhysicalHost().getInstanceId()).isEqualTo("host-3");
   }
 
   private void getInstanceDetailsForNoInstances() {
-    assertThat(nodeSelectState.getInstanceDetails(APP_ID, ENV_ID, emptyList(), emptyList())).isEmpty();
+    assertThat(nodeSelectState.getInstanceDetails(APP_ID, ENV_ID, emptyList(), emptyList(), false)).isEmpty();
   }
 
   private void getInstanceDetailsForPartialRollout() {
@@ -945,15 +979,27 @@ public class NodeSelectStateTest extends WingsBaseTest {
         asList(ServiceInstance.Builder.aServiceInstance().withUuid("id-1").withHostId("host-1").build(),
             aServiceInstance().withUuid("id-2").withHostId("host-2").build(),
             aServiceInstance().withUuid("id-3").withHostId("host-3").build());
-    List<InstanceElement> allInstanceElements =
-        allAvailable.stream()
-            .map(instance -> anInstanceElement().uuid(instance.getUuid()).build())
-            .collect(Collectors.toList());
     List<ServiceInstance> deployed = asList(allAvailable.get(1));
     final List<InstanceDetails> instanceDetails =
-        nodeSelectState.getInstanceDetails(APP_ID, ENV_ID, deployed, allAvailable);
+        nodeSelectState.getInstanceDetails(APP_ID, ENV_ID, deployed, allAvailable, false);
     assertThat(instanceDetails).hasSize(3);
     assertThat(instanceDetails.stream().filter(InstanceDetails::isNewInstance).collect(Collectors.toList())).hasSize(1);
+  }
+
+  private void getInstanceDetailsSpecificHosts() {
+    List<ServiceInstance> infraInstances = asList(aServiceInstance().withUuid("id-1").withHostId("host-1").build());
+    List<ServiceInstance> deployed = asList(aServiceInstance().withUuid("id-2").withHostId("specific-1").build(),
+        aServiceInstance().withUuid("id-3").withHostId("specific-2").build());
+    final List<InstanceDetails> instanceDetails =
+        nodeSelectState.getInstanceDetails(APP_ID, ENV_ID, deployed, infraInstances, true);
+    assertThat(instanceDetails).hasSize(2);
+    assertThat(instanceDetails.stream()
+                   .filter(InstanceDetails::isNewInstance)
+                   .map(InstanceDetails::getPhysicalHost)
+                   .map(InstanceDetails.PHYSICAL_HOST::getInstanceId)
+                   .collect(Collectors.toList()))
+        .contains("specific-1", "specific-2")
+        .hasSize(2);
   }
 
   @Test
@@ -969,7 +1015,7 @@ public class NodeSelectStateTest extends WingsBaseTest {
     assertThat(nodeSelectState.generateInstanceDetailsFromServiceInstances(emptyList(), APP_ID, ENV_ID, true))
         .isEmpty();
 
-    when(hostService.getHostsByHostIds(anyString(), anyString(), anyList())).thenReturn(null);
+    when(hostService.getHostsByHostIds(nullable(String.class), nullable(String.class), anyList())).thenReturn(null);
 
     assertThat(nodeSelectState.generateInstanceDetailsFromServiceInstances(
                    asList(aServiceInstance().build()), APP_ID, ENV_ID, true))
@@ -985,7 +1031,7 @@ public class NodeSelectStateTest extends WingsBaseTest {
   }
 
   private void testBuildInstanceDetailFromAwsHost() {
-    Host host = Host.Builder.aHost()
+    Host host = aHost()
                     .withUuid("id-1")
                     .withHostName("ip-42")
                     .withEc2Instance(new com.amazonaws.services.ec2.model.Instance())
@@ -1002,7 +1048,7 @@ public class NodeSelectStateTest extends WingsBaseTest {
   }
 
   private void testBuildInstanceDetailFromPhysicalHost() {
-    Host host = Host.Builder.aHost()
+    Host host = aHost()
                     .withUuid("id-1")
                     .withHostName("ip-42")
                     .withPublicDns("harness-linux-ssh-test.westus2.cloudapp.azure.com")
@@ -1031,9 +1077,11 @@ public class NodeSelectStateTest extends WingsBaseTest {
     when(workflowStandardParams.isExcludeHostsWithSameArtifact()).thenReturn(true);
 
     when(infrastructureMappingService.get(APP_ID, INFRA_MAPPING_ID)).thenReturn(physicalSSHInfrastructureMapping);
-    when(infrastructureMappingService.selectServiceInstances(anyString(), anyString(), anyString(), any()))
+    when(infrastructureMappingService.selectServiceInstances(
+             nullable(String.class), nullable(String.class), nullable(String.class), any()))
         .thenReturn(emptyList());
-    when(infrastructureMappingService.listHostDisplayNames(anyString(), anyString(), anyString()))
+    when(infrastructureMappingService.listHostDisplayNames(
+             nullable(String.class), nullable(String.class), nullable(String.class)))
         .thenReturn(asList("host-1"));
     when(serviceInstanceArtifactParam.getInstanceArtifactMap())
         .thenReturn(ImmutableMap.of(instance1.getUuid(), ARTIFACT_ID));
@@ -1067,9 +1115,11 @@ public class NodeSelectStateTest extends WingsBaseTest {
     when(workflowStandardParams.isExcludeHostsWithSameArtifact()).thenReturn(true);
 
     when(infrastructureMappingService.get(APP_ID, INFRA_MAPPING_ID)).thenReturn(physicalSSHInfrastructureMapping);
-    when(infrastructureMappingService.selectServiceInstances(anyString(), anyString(), anyString(), any()))
+    when(infrastructureMappingService.selectServiceInstances(
+             nullable(String.class), nullable(String.class), nullable(String.class), any()))
         .thenReturn(emptyList());
-    when(infrastructureMappingService.listHostDisplayNames(anyString(), anyString(), anyString()))
+    when(infrastructureMappingService.listHostDisplayNames(
+             nullable(String.class), nullable(String.class), nullable(String.class)))
         .thenReturn(asList("host-1"));
     when(serviceInstanceArtifactParam.getInstanceArtifactMap())
         .thenReturn(ImmutableMap.of(instance1.getUuid(), ARTIFACT_ID));
@@ -1103,9 +1153,11 @@ public class NodeSelectStateTest extends WingsBaseTest {
     when(workflowStandardParams.isExcludeHostsWithSameArtifact()).thenReturn(true);
 
     when(infrastructureMappingService.get(APP_ID, INFRA_MAPPING_ID)).thenReturn(physicalSSHInfrastructureMapping);
-    when(infrastructureMappingService.selectServiceInstances(anyString(), anyString(), anyString(), any()))
+    when(infrastructureMappingService.selectServiceInstances(
+             nullable(String.class), nullable(String.class), nullable(String.class), any()))
         .thenReturn(emptyList());
-    when(infrastructureMappingService.listHostDisplayNames(anyString(), anyString(), anyString()))
+    when(infrastructureMappingService.listHostDisplayNames(
+             nullable(String.class), nullable(String.class), nullable(String.class)))
         .thenReturn(asList("host-1"));
     when(serviceInstanceArtifactParam.getInstanceArtifactMap())
         .thenReturn(ImmutableMap.of(instance1.getUuid(), ARTIFACT_ID));
@@ -1136,9 +1188,11 @@ public class NodeSelectStateTest extends WingsBaseTest {
     when(workflowStandardParams.isExcludeHostsWithSameArtifact()).thenReturn(true);
 
     when(infrastructureMappingService.get(APP_ID, INFRA_MAPPING_ID)).thenReturn(awsInfrastructureMapping);
-    when(infrastructureMappingService.selectServiceInstances(anyString(), anyString(), anyString(), any()))
+    when(infrastructureMappingService.selectServiceInstances(
+             nullable(String.class), nullable(String.class), nullable(String.class), any()))
         .thenReturn(emptyList());
-    when(infrastructureMappingService.listHostDisplayNames(anyString(), anyString(), anyString()))
+    when(infrastructureMappingService.listHostDisplayNames(
+             nullable(String.class), nullable(String.class), nullable(String.class)))
         .thenReturn(asList("host-1"));
     when(serviceInstanceArtifactParam.getInstanceArtifactMap())
         .thenReturn(ImmutableMap.of(instance1.getUuid(), ARTIFACT_ID));
@@ -1173,9 +1227,11 @@ public class NodeSelectStateTest extends WingsBaseTest {
     when(workflowStandardParams.isExcludeHostsWithSameArtifact()).thenReturn(true);
 
     when(infrastructureMappingService.get(APP_ID, INFRA_MAPPING_ID)).thenReturn(awsInfrastructureMapping);
-    when(infrastructureMappingService.selectServiceInstances(anyString(), anyString(), anyString(), any()))
+    when(infrastructureMappingService.selectServiceInstances(
+             nullable(String.class), nullable(String.class), nullable(String.class), any()))
         .thenReturn(emptyList());
-    when(infrastructureMappingService.listHostDisplayNames(anyString(), anyString(), anyString()))
+    when(infrastructureMappingService.listHostDisplayNames(
+             nullable(String.class), nullable(String.class), nullable(String.class)))
         .thenReturn(asList("host-1"));
     when(serviceInstanceArtifactParam.getInstanceArtifactMap())
         .thenReturn(ImmutableMap.of(instance1.getUuid(), ARTIFACT_ID));
@@ -1211,9 +1267,11 @@ public class NodeSelectStateTest extends WingsBaseTest {
     when(featureFlagService.isNotEnabled(eq(DEPLOY_TO_INLINE_HOSTS), any())).thenReturn(true);
 
     when(infrastructureMappingService.get(APP_ID, INFRA_MAPPING_ID)).thenReturn(awsInfrastructureMapping);
-    when(infrastructureMappingService.selectServiceInstances(anyString(), anyString(), anyString(), any()))
+    when(infrastructureMappingService.selectServiceInstances(
+             nullable(String.class), nullable(String.class), nullable(String.class), any()))
         .thenReturn(instances);
-    when(infrastructureMappingService.listHostDisplayNames(anyString(), anyString(), anyString()))
+    when(infrastructureMappingService.listHostDisplayNames(
+             nullable(String.class), nullable(String.class), nullable(String.class)))
         .thenReturn(asList("host-1"));
     when(serviceInstanceArtifactParam.getInstanceArtifactMap())
         .thenReturn(ImmutableMap.of(instance1.getUuid(), ARTIFACT_ID));
@@ -1249,10 +1307,12 @@ public class NodeSelectStateTest extends WingsBaseTest {
     doReturn(account).when(accountService).get(any());
 
     when(infrastructureMappingService.get(APP_ID, INFRA_MAPPING_ID)).thenReturn(awsInfrastructureMapping);
-    when(infrastructureMappingService.selectServiceInstances(anyString(), anyString(), anyString(), any()))
+    when(infrastructureMappingService.selectServiceInstances(
+             nullable(String.class), nullable(String.class), nullable(String.class), any()))
         .thenReturn(Lists.newArrayList(instance1, instance2, instance3, instance3, instance3, instance3, instance3,
             instance3, instance3, instance3, instance3));
-    when(infrastructureMappingService.listHostDisplayNames(anyString(), anyString(), anyString()))
+    when(infrastructureMappingService.listHostDisplayNames(
+             nullable(String.class), nullable(String.class), nullable(String.class)))
         .thenReturn(asList("host-1", "host-2", "host-3", "host-3", "host-3", "host-3", "host-3", "host-3", "host-3",
             "host-3", "host-3"));
     when(serviceInstanceArtifactParam.getInstanceArtifactMap())
@@ -1293,9 +1353,11 @@ public class NodeSelectStateTest extends WingsBaseTest {
     when(workflowStandardParams.isExcludeHostsWithSameArtifact()).thenReturn(true);
 
     when(infrastructureMappingService.get(APP_ID, INFRA_MAPPING_ID)).thenReturn(physicalSSHInfrastructureMapping);
-    when(infrastructureMappingService.selectServiceInstances(anyString(), anyString(), anyString(), any()))
+    when(infrastructureMappingService.selectServiceInstances(
+             nullable(String.class), nullable(String.class), nullable(String.class), any()))
         .thenReturn(emptyList());
-    when(infrastructureMappingService.listHostDisplayNames(anyString(), anyString(), anyString()))
+    when(infrastructureMappingService.listHostDisplayNames(
+             nullable(String.class), nullable(String.class), nullable(String.class)))
         .thenReturn(asList("host-1"));
     when(serviceInstanceArtifactParam.getInstanceArtifactMap())
         .thenReturn(ImmutableMap.of(instance1.getUuid(), ARTIFACT_ID));
@@ -1306,7 +1368,8 @@ public class NodeSelectStateTest extends WingsBaseTest {
 
     nodeSelectState.execute(context);
     verify(infrastructureMappingService, times(2))
-        .selectServiceInstances(anyString(), anyString(), anyString(), argumentCaptor.capture());
+        .selectServiceInstances(
+            nullable(String.class), nullable(String.class), nullable(String.class), argumentCaptor.capture());
     assertThat(argumentCaptor.getAllValues().get(0).getCount()).isEqualTo(100);
   }
 
@@ -1325,7 +1388,8 @@ public class NodeSelectStateTest extends WingsBaseTest {
 
     when(infrastructureMappingService.get(APP_ID, INFRA_MAPPING_ID))
         .thenReturn(anAwsInfrastructureMapping().withProvisionInstances(true).build());
-    when(infrastructureMappingService.listHostDisplayNames(anyString(), anyString(), anyString()))
+    when(infrastructureMappingService.listHostDisplayNames(
+             nullable(String.class), nullable(String.class), nullable(String.class)))
         .thenReturn(asList("host-1"));
 
     assertThatThrownBy(() -> nodeSelectState.execute(context))

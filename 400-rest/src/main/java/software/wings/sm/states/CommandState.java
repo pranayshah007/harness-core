@@ -79,13 +79,15 @@ import software.wings.beans.Variable;
 import software.wings.beans.VariableType;
 import software.wings.beans.WinRmConnectionAttributes;
 import software.wings.beans.artifact.Artifact;
-import software.wings.beans.artifact.Artifact.ArtifactMetadataKeys;
+import software.wings.beans.artifact.ArtifactFile;
+import software.wings.beans.artifact.ArtifactMetadataKeys;
 import software.wings.beans.artifact.ArtifactStream;
 import software.wings.beans.artifact.ArtifactStreamAttributes;
 import software.wings.beans.artifact.ArtifactStreamType;
 import software.wings.beans.command.CleanupPowerShellCommandUnit;
 import software.wings.beans.command.CleanupSshCommandUnit;
 import software.wings.beans.command.Command;
+import software.wings.beans.command.CommandMapper;
 import software.wings.beans.command.CommandUnit;
 import software.wings.beans.command.CommandUnitType;
 import software.wings.beans.command.ExecCommandUnit;
@@ -128,7 +130,9 @@ import software.wings.sm.State;
 import software.wings.sm.StateExecutionContext;
 import software.wings.sm.StateExecutionContext.StateExecutionContextBuilder;
 import software.wings.sm.WorkflowStandardParams;
+import software.wings.sm.WorkflowStandardParamsExtensionService;
 import software.wings.stencils.Expand;
+import software.wings.utils.MappingUtils;
 
 import com.github.reinert.jjschema.Attributes;
 import com.github.reinert.jjschema.SchemaIgnore;
@@ -184,6 +188,7 @@ public class CommandState extends State {
   @Inject @Transient private transient ServiceTemplateHelper serviceTemplateHelper;
   @Inject @Transient private transient TemplateExpressionProcessor templateExpressionProcessor;
   @Inject @Transient private transient SSHVaultService sshVaultService;
+  @Inject @Transient private transient WorkflowStandardParamsExtensionService workflowStandardParamsExtensionService;
 
   @Attributes(title = "Command") @Expand(dataProvider = CommandStateEnumDataProvider.class) private String commandName;
 
@@ -569,11 +574,11 @@ public class CommandState extends State {
 
       CommandParameters commandParameters = commandParametersBuilder.activityId(activityId)
                                                 .deploymentType(deploymentType.name())
-                                                .command(command)
+                                                .command(CommandMapper.toCommandDTO(command))
                                                 .build();
 
-      delegateTaskId = queueDelegateTask(activityId, envId, infrastructureMappingId, accountId, commandParameters,
-          context, expressionFunctorToken, command);
+      delegateTaskId = queueDelegateTask(
+          activityId, envId, infrastructureMappingId, accountId, commandParameters, context, expressionFunctorToken);
       log.info("DelegateTaskId [{}] sent for activityId [{}]", delegateTaskId, activityId);
 
     } catch (WingsException ex) {
@@ -703,7 +708,7 @@ public class CommandState extends State {
   }
 
   private String queueDelegateTask(String activityId, String envId, String infrastructureMappingId, String accountId,
-      CommandParameters commandParameters, ExecutionContext context, int expressionFunctorToken, Command command) {
+      CommandParameters commandParameters, ExecutionContext context, int expressionFunctorToken) {
     String appId = context.getAppId();
     InfrastructureMapping infrastructureMapping = infrastructureMappingService.get(appId, infrastructureMappingId);
     String serviceId = infrastructureMapping == null ? null : infrastructureMapping.getServiceId();
@@ -740,7 +745,7 @@ public class CommandState extends State {
       Service service, String accountId, Artifact artifact, CommandParametersBuilder commandParametersBuilder) {
     log.info("Artifact being used: {} for stateExecutionInstanceId: {}", artifact.getUuid(),
         context.getStateExecutionInstanceId());
-    commandParametersBuilder.metadata(artifact.getMetadata());
+    commandParametersBuilder.metadata(MappingUtils.safeCopy(artifact.getMetadata()));
     // Observed NPE in alerts
     ArtifactStream artifactStream = artifactStreamService.get(artifact.getArtifactStreamId());
     if (artifactStream == null) {
@@ -778,6 +783,27 @@ public class CommandState extends State {
 
     commandParametersBuilder.artifactFiles(artifact.getArtifactFiles());
     executionDataBuilder.withArtifactName(artifact.getDisplayName()).withActivityId(artifact.getUuid());
+    populateArtifactFileNameToContext(commandParametersBuilder, artifact);
+  }
+
+  private void populateArtifactFileNameToContext(CommandParametersBuilder commandParametersBuilder, Artifact artifact) {
+    String artifactFileName = null;
+    if (artifact == null) {
+      return;
+    }
+    List<ArtifactFile> artifactFileList = artifact.getArtifactFiles();
+    if (artifactFileList == null || artifactFileList.size() == 0) {
+      return;
+    }
+    ArtifactFile artifactFile = artifact.getArtifactFiles().get(0);
+    if (artifactFile.getName() == null) {
+      if (artifact.getMetadata() != null) {
+        artifactFileName = artifact.getMetadata().get(ArtifactMetadataKeys.artifactFileName);
+      }
+    } else {
+      artifactFileName = artifactFile.getName();
+    }
+    commandParametersBuilder.artifactFileName(artifactFileName);
   }
 
   private void getMultiArtifactDetails(ExecutionContext context, CommandStateExecutionData.Builder executionDataBuilder,
@@ -856,15 +882,15 @@ public class CommandState extends State {
           throw new InvalidRequestException(
               format("ArtifactStreamAttributes not found for artifact: %s", artifactVariableName));
         }
-        if (isNotEmpty(artifact.getArtifactFiles())) {
-          String name = artifact.getArtifactFiles().get(0).getName();
-          if (isNotEmpty(name)) {
-            artifactFileName = name;
-          }
-        } else if (artifactStreamAttributes.getMetadata() != null) {
+        if (artifactStreamAttributes.getMetadata() != null) {
           String value = artifactStreamAttributes.getMetadata().get(ArtifactMetadataKeys.artifactFileName);
           if (isNotEmpty(value)) {
             artifactFileName = value;
+          }
+        } else if (isNotEmpty(artifact.getArtifactFiles())) {
+          String name = artifact.getArtifactFiles().get(0).getName();
+          if (isNotEmpty(name)) {
+            artifactFileName = name;
           }
         }
       }
@@ -925,6 +951,9 @@ public class CommandState extends State {
 
     commandParametersBuilder.multiArtifact(
         featureFlagService.isEnabled(FeatureName.ARTIFACT_STREAM_REFACTOR, accountId));
+
+    commandParametersBuilder.useWinRMKerberosUniqueCacheFile(
+        featureFlagService.isEnabled(FeatureName.WINRM_KERBEROS_CACHE_UNIQUE_FILE, accountId));
   }
 
   private ExecutionResponse handleException(ExecutionContext context,
@@ -1112,7 +1141,7 @@ public class CommandState extends State {
     if (isRollback()) {
       if (context.getContextElement(ContextElementType.INSTANCE) == null) {
         WorkflowStandardParams contextElement = context.getContextElement(ContextElementType.STANDARD);
-        return contextElement.getRollbackArtifactForService(serviceId);
+        return workflowStandardParamsExtensionService.getRollbackArtifactForService(contextElement, serviceId);
       }
       Artifact previousArtifact = serviceResourceService.findPreviousArtifact(
           context.getAppId(), context.getWorkflowExecutionId(), context.getContextElement(ContextElementType.INSTANCE));
@@ -1344,6 +1373,7 @@ public class CommandState extends State {
     }
     return null;
   }
+
   @Override
   @SchemaIgnore
   public List<EntityType> getRequiredExecutionArgumentTypes() {

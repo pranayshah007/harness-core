@@ -35,12 +35,12 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.k8s.beans.K8sRollingRollbackHandlerConfig;
 import io.harness.delegate.task.k8s.K8sTaskHelperBase;
-import io.harness.delegate.task.k8s.exception.KubernetesExceptionExplanation;
-import io.harness.delegate.task.k8s.exception.KubernetesExceptionHints;
-import io.harness.delegate.task.k8s.exception.KubernetesExceptionMessages;
 import io.harness.exception.ExplanationException;
 import io.harness.exception.KubernetesTaskException;
 import io.harness.exception.NestedExceptionUtils;
+import io.harness.k8s.exception.KubernetesExceptionExplanation;
+import io.harness.k8s.exception.KubernetesExceptionHints;
+import io.harness.k8s.exception.KubernetesExceptionMessages;
 import io.harness.k8s.kubectl.Kubectl;
 import io.harness.k8s.kubectl.RolloutUndoCommand;
 import io.harness.k8s.kubectl.Utils;
@@ -57,11 +57,14 @@ import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.Maps;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -70,6 +73,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.zeroturnaround.exec.ProcessResult;
 import org.zeroturnaround.exec.stream.LogOutputStream;
 
@@ -305,7 +309,8 @@ public class K8sRollingRollbackBaseHandler {
              LogOutputStream logErrorStream = getExecutionLogOutputStream(logCallback, ERROR)) {
           printableCommand = new StringBuilder().append("\n").append(printableCommand).append("\n\n").toString();
           logOutputStream.write(printableCommand.getBytes(StandardCharsets.UTF_8));
-          result = executeScript(k8sDelegateTaskParams, rolloutUndoCommand, logOutputStream, logErrorStream);
+          result = executeScript(
+              k8sDelegateTaskParams, rolloutUndoCommand, logOutputStream, logErrorStream, Maps.newHashMap());
         }
       } else {
         RolloutUndoCommand rolloutUndoCommand =
@@ -415,9 +420,10 @@ public class K8sRollingRollbackBaseHandler {
 
   @VisibleForTesting
   ProcessResult executeScript(K8sDelegateTaskParams k8sDelegateTaskParams, String rolloutUndoCommand,
-      LogOutputStream logOutputStream, LogOutputStream logErrorStream) throws Exception {
+      LogOutputStream logOutputStream, LogOutputStream logErrorStream, Map<String, String> environment)
+      throws Exception {
     return Utils.executeScript(
-        k8sDelegateTaskParams.getWorkingDirectory(), rolloutUndoCommand, logOutputStream, logErrorStream);
+        k8sDelegateTaskParams.getWorkingDirectory(), rolloutUndoCommand, logOutputStream, logErrorStream, environment);
   }
 
   @VisibleForTesting
@@ -531,6 +537,23 @@ public class K8sRollingRollbackBaseHandler {
           "Failed in  deleting newly created resources of current failed  release.", WARN, RUNNING);
       deleteLogCallback.saveExecutionLog(getMessage(ex), WARN, SUCCESS);
     }
+  }
+
+  public void logResourceRecreationStatus(
+      ResourceRecreationStatus resourceRecreationStatus, LogCallback pruneLogCallback) {
+    if (resourceRecreationStatus == ResourceRecreationStatus.RESOURCE_CREATION_SUCCESSFUL) {
+      pruneLogCallback.saveExecutionLog("Successfully recreated pruned resources.", INFO, SUCCESS);
+    } else if (resourceRecreationStatus == ResourceRecreationStatus.NO_RESOURCE_CREATED) {
+      pruneLogCallback.saveExecutionLog("No resource recreated.", INFO, SUCCESS);
+    }
+  }
+
+  @NotNull
+  public Set<KubernetesResourceId> getResourcesRecreated(
+      List<KubernetesResourceId> prunedResourceIds, ResourceRecreationStatus resourceRecreationStatus) {
+    return resourceRecreationStatus.equals(ResourceRecreationStatus.RESOURCE_CREATION_SUCCESSFUL)
+        ? new HashSet<>(prunedResourceIds)
+        : Collections.emptySet();
   }
 
   private List<KubernetesResourceId> getResourcesTobeDeletedInOrder(

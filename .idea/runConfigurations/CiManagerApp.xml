@@ -2,7 +2,7 @@
   <configuration default="false" name="CiManagerApp" type="Application" factoryName="Application">
     <option name="ALTERNATIVE_JRE_PATH" value="1.8" />
     <option name="MAIN_CLASS_NAME" value="io.harness.app.CIManagerApplication" />
-    <module name="310-ci-manager" />
+    <module name="332-ci-manager/app" />
     <option name="PROGRAM_PARAMETERS" value="server ci-manager-config.yml" />
     <option name="VM_PARAMETERS" value="-Xbootclasspath/p:$MAVEN_REPOSITORY$/org/mortbay/jetty/alpn/alpn-boot/8.1.13.v20181017/alpn-boot-8.1.13.v20181017.jar" />
     <option name="WORKING_DIRECTORY" value="$MODULE_DIR$" />

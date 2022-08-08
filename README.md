@@ -4,23 +4,44 @@ harness-core Project Dev environment setup instructions
 ==================================================
 ## On MacOS
 
+#### Please go through the following wiki page to setup local environment to build harness-core with bazel. Minimal and required steps are written in below wiki page.
+#### You can ignore steps 1 to 3 in "Prerequisities" section and can ignore steps 1 to 3 in "Build" section after following the below wiki.
+```
+https://harness.atlassian.net/wiki/spaces/BT/pages/21101969665/How+to+setup+local+system+to+build+and+run+backend+code+harness-core+using+Bazel.
+```
+
 ### Prerequisities
 1. Install Homebrew:
 ```
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 ```
 
-
-2. Download and Install Java 8
+~~2. DEPRECATED STEPS DO NOT USE Download and Install Java 8
 
    *Note: Brew will download and install the latest version of OpenJDK/JRE, its recommended to install OpenJDK/JRE_1.8.0_242 to be in sync with the version everyone is using in the team.*
 
-   To setup the recommended version, download the OpenJDK 1.8-242 (jdk8u242-b08) JRE .pkg from [AdoptOpenJDK](https://github.com/AdoptOpenJDK/openjdk8-binaries/releases/tag/jdk8u242-b08) and install it. Make sure to update `JAVA_HOME` and `PATH` accordingly (see step 5).
+   To setup the recommended version, download the OpenJDK 1.8-242 (jdk8u242-b08) JRE .pkg from [AdoptOpenJDK](https://github.com/AdoptOpenJDK/openjdk8-binaries/releases/tag/jdk8u242-b08) and install it. Make sure to update `JAVA_HOME` and `PATH` accordingly (see step 5).~~
+
+2. Install JDK11 locally - 11.0.15 Temurin build 
+   
+Download JDK 11 for MAC
+`curl -OL https://github.com/adoptium/temurin11-binaries/releases/download/jdk-11.0.15%2B10/OpenJDK11U-jdk_x64_mac_hotspot_11.0.15_10.tar.gz`
+
+Untar it
+`tar -xzf OpenJDK11U-jdk_x64_mac_hotspot_11.0.15_10.tar.gz`
+
+Update java home (Also update in .bashrc/.zshrc)
+`export JAVA_HOME=path_to_folder/jdk-11.0.15+10/Contents/Home`
+
+Update path (Also update in .bashrc/.zshrc)
+`export PATH=$JAVA_HOME/bin:$PATH`
+
+Check java version, should be 11
+`java --version`
 
 3. Install bazel:
 ```
 brew install bazelisk
-
 ```
 
 4. Install npm (used for front-end)
@@ -28,24 +49,14 @@ brew install bazelisk
 brew install npm
 ```
 
-5. Set up JAVA_HOME: create or add this to your bash profile `~/.bashrc` or `~/.zshrc` file and add following line:
-```
-export JAVA_HOME=$(/usr/libexec/java_home -v1.8)
-```
-
-If bash used, the better option might be specifying full path to jdk, e.g:
-
-```
-export JAVA_HOME=/Library/Java/JavaVirtualMachines/adoptopenjdk-8.jdk/Contents/Home
-```
-6. Update /etc/hosts to reflect your hostname
+5. Update /etc/hosts to reflect your hostname
 ```
 255.255.255.255	broadcasthost
 127.0.0.1  <your hostname>
 ::1        <your hostname>
 ```
 
-7. Download and install `buf`
+6. Download and install `buf`
 Complete this step only if you are actively working with the protocol buffer files.
 ```
 brew tap bufbuild/buf
@@ -57,11 +68,11 @@ To check if your protobuf files are according to the coding standards execute in
 buf lint
 ```
 
-8. Install Docker
+7. Install Docker
 
 Official steps to install docker on mac: [docker.com](https://docs.docker.com/desktop/mac/install/).
 
-9. If you are on MacOS make sure you have Xcode installed
+8. If you are on MacOS make sure you have Xcode installed
 
 
 ### Git setup
@@ -101,7 +112,7 @@ Official steps to install docker on mac: [docker.com](https://docs.docker.com/de
    
     NOTE: If you have regular bazel installed, please uninstall bazel and install bazelisk. It allows us to use the git repo to synchronize everyone's installation of bazel.
 
-4. Setup the build purpose
+2. Setup the build purpose
    
    You need to set environment variable BUILD_PURPOSE with one of the following values:
    *   DEVELOPMENT - set this when you building for development purposes
@@ -114,14 +125,14 @@ Official steps to install docker on mac: [docker.com](https://docs.docker.com/de
    export BUILD_PURPOSE=DEVELOPMENT
    ```
    
-4. Go to `harness-core` directory and run
+3. Go to `harness-core` directory and run
 
     ```
     scripts/bazel/generate_credentials.sh
     bazel build //... or bazel build :all
     ```
 
-5. If Global Search is not required:
+4. If Global Search is not required:
 
     Install and start MongoDB Docker Image (v4.2):
     ```
@@ -131,7 +142,7 @@ Official steps to install docker on mac: [docker.com](https://docs.docker.com/de
 
     Install & use [RoboMongo](https://robomongo.org/download) client to test MongoDB connection.
 
-6. If Global search has to be enabled (OPTIONAL):
+5. If Global search has to be enabled (OPTIONAL):
 
     Install and start Elasticsearch Docker Image for Search(v7.3):
     ```
@@ -168,7 +179,7 @@ Official steps to install docker on mac: [docker.com](https://docs.docker.com/de
     In `360-cg-manager/config.yml` set `mongo.uri` to `mongodb://mongo1:30001,mongo2:30002,mongo3:30003/harness`.
     Do the same in `config-datagen.yml` and `verification-config.yml`.
 
-7. If TimeScaleDB has to be enabled (Optional for now)
+6. If TimeScaleDB has to be enabled (Optional for now)
 
    a. Start TimeScaleDB using the following docker command: `docker run -d --name harness-timescaledb -v ~/timescaledb/data:/var/lib/postgresql/data -p 5432:5432 --rm -e POSTGRES_USER=admin -e POSTGRES_DB=harness -e POSTGRES_PASSWORD=password timescale/timescaledb:latest-pg14`
 
@@ -179,7 +190,7 @@ Official steps to install docker on mac: [docker.com](https://docs.docker.com/de
     timescaledbUsername: admin
     timescaledbPassword: password
   ```
-8. Install Redis - Follow the instructions from [here](https://gist.github.com/tomysmile/1b8a321e7c58499ef9f9441b2faa0aa8)
+7. Install Redis - Follow the instructions from [here](https://gist.github.com/tomysmile/1b8a321e7c58499ef9f9441b2faa0aa8)
 
 
 ### Run Harness without IDE (especially for the UI development)
@@ -268,15 +279,16 @@ helper shell scripts:
    NOTE: Download IntelliJ as per your macOS architecture i.e. x86_64 (intel) or arm64 (Apple silicon). You can check your architecture by command “uname -m“.
   
    It's recommended to install the latest version of IntelliJ that's supported by the Bazel Plugin. To find the latest supported version, please refer to the [bazel github project](https://github.com/bazelbuild/intellij/blob/master/intellij_platform_sdk/build_defs.bzl#L11).
-
+   As of June, 2022 recommended version of IntelliJ is 2021.3.3
    After identifying the desired version of IntelliJ, you can download it from [jetbrains.com](https://www.jetbrains.com/idea/download/other.html).
 
 2. Install bazel project plugin from the IntelliJ marketplace
 
 3. Import `harness-core` as a Bazel project
-   1. Open `File > Import Bazel Project...`
-   1. Enter `/path/to/repo/harness-core` for Workspace, click Next
-   1. Select `Import project view file` and enter `project/bazelproject` as the Project view
+   a. Open `File > Import Bazel Project...`.
+   b. Enter `/path/to/repo/harness-core` for Workspace, click Next.
+   c. Select `Import project view file` and enter `project/bazelproject` as the Project view. 
+   NOTE: If you do not see this file `project/bazelproject` in the list then select option `Create from scratch` and paste the content of `project/bazelproject` in the text area.
 4. Install ClangFormatIJ Plugin: https://plugins.jetbrains.com/plugin/8396-clangformatij
    (use `Ctrl/Cmd-Alt-K` to format current statement or the selection)
 
@@ -391,7 +403,7 @@ The admin username and password are in BaseIntegrationTest.java.
 # Go Development
 ## Prerequisites
 ### Install Go
-1. Install Go 1.14 [here](https://golang.org/dl/)
+1. Install Go 1.17.8 [here](https://golang.org/dl/)
 2. Add this to .bash_profile: `export PATH=$PATH:~/go/bin`
 3. Install dependent tools by running:
 ```lang=bash

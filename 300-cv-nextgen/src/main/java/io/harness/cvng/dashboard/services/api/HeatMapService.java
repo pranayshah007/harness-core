@@ -37,6 +37,9 @@ public interface HeatMapService {
   Map<String, RiskData> getLatestRiskScoreByMonitoredService(
       ProjectParams projectParams, List<String> monitoredServiceIdentifiers);
 
+  boolean isEveryHeatMapBelowThresholdForRiskTimeBuffer(ProjectParams projectParams, String monitoredServiceIdentifier,
+      double healthScoreThreshold, long riskTimeBufferMins);
+
   HistoricalTrend getOverAllHealthScore(
       ProjectParams projectParams, String monitoredServiceIdentifier, DurationDTO duration, Instant endTime);
 }

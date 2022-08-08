@@ -6,7 +6,7 @@ shared_dependencies = [
     "@maven//:com_google_guava_guava",
 ] + [
     "//:lombok",
-    "//127-cd-nextgen-beans:module",
+    "//127-cd-nextgen-entities:module",
     "//400-rest:module",
     "//958-migration-sdk:module",
     "//980-commons:module",

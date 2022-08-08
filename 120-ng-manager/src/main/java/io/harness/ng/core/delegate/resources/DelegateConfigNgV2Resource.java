@@ -29,7 +29,7 @@ import io.harness.delegate.beans.DelegateProfileDetailsNg;
 import io.harness.delegate.beans.ScopingRuleDetailsNg;
 import io.harness.delegate.filter.DelegateProfileFilterPropertiesDTO;
 import io.harness.ng.core.api.DelegateProfileManagerNgService;
-import io.harness.ng.core.delegate.client.DelegateConfigClient;
+import io.harness.ng.core.delegate.client.DelegateNgManagerCgManagerClient;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
@@ -87,14 +87,14 @@ import retrofit2.http.Body;
 public class DelegateConfigNgV2Resource {
   private final DelegateProfileManagerNgService delegateProfileManagerNgService;
   private final AccessControlClient accessControlClient;
-  private final DelegateConfigClient delegateConfigClient;
+  private final DelegateNgManagerCgManagerClient delegateNgManagerCgManagerClient;
 
   @Inject
   public DelegateConfigNgV2Resource(DelegateProfileManagerNgService delegateProfileManagerNgService,
-      AccessControlClient accessControlClient, DelegateConfigClient delegateConfigClient) {
+      AccessControlClient accessControlClient, DelegateNgManagerCgManagerClient delegateNgManagerCgManagerClient) {
     this.delegateProfileManagerNgService = delegateProfileManagerNgService;
     this.accessControlClient = accessControlClient;
-    this.delegateConfigClient = delegateConfigClient;
+    this.delegateNgManagerCgManagerClient = delegateNgManagerCgManagerClient;
   }
 
   @GET
@@ -347,12 +347,15 @@ public class DelegateConfigNgV2Resource {
   @Timed
   @Path("{identifier}/tags")
   @ExceptionMetered
-  @Operation(operationId = "updateTagsForDelegateGroup", summary = "Update tags for the Delegate group",
+  @Operation(operationId = "updateTagsForDelegateGroup",
+      summary =
+          "Note: This api is deprecated. Please start using Delegate Group Tags Apis. This Api updates tags for the Delegate group",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
         ApiResponse(responseCode = "default", description = "Delegate Group details for updated group")
       })
+  @Deprecated
   public RestResponse<DelegateGroup>
   updateTagsForDelegateGroup(@Parameter(description = "Delegate Group Name") @PathParam(
                                  NGCommonEntityConstants.IDENTIFIER_KEY) @NotEmpty String groupName,
@@ -364,6 +367,6 @@ public class DelegateConfigNgV2Resource {
           NGCommonEntityConstants.PROJECT_KEY) String projectId,
       @RequestBody(required = true, description = "List of tags") DelegateGroupTags tags) {
     return new RestResponse<>(RestClientUtils.getResponse(
-        delegateConfigClient.updateDelegateGroupTags(groupName, accountId, orgId, projectId, tags)));
+        delegateNgManagerCgManagerClient.updateDelegateGroupTags_old(groupName, accountId, orgId, projectId, tags)));
   }
 }

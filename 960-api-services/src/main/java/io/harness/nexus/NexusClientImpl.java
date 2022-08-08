@@ -136,16 +136,4 @@ public class NexusClientImpl {
       return nexusThreeService.getBuildDetails(nexusConfig, repository, port, artifactName, repositoryFormat, tag);
     }
   }
-
-  public boolean verifyArtifactManifestUrl(NexusRequest nexusConfig, String artifactManifestUrl) {
-    if (isNexusVersion2(nexusConfig)) {
-      throw NestedExceptionUtils.hintWithExplanationException(
-          "Please check your Nexus connector and/or artifact configuration. Please use the 3.x connector version.",
-          "Nexus 2.x connector does not support docker artifact type.",
-          new NexusRegistryException(
-              String.format("Currently Nexus connector version [%s] is not allowed.", nexusConfig.getVersion())));
-    } else {
-      return nexusThreeService.verifyArtifactManifestUrl(nexusConfig, artifactManifestUrl);
-    }
-  }
 }

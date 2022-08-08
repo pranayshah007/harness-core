@@ -8,6 +8,7 @@
 package software.wings.service.impl.pipeline;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.rule.OwnerRule.LUCAS_SALES;
 import static io.harness.rule.OwnerRule.POOJA;
 import static io.harness.rule.OwnerRule.PRABU;
 
@@ -483,5 +484,62 @@ public class PipelineServiceHelperTest extends WingsBaseTest {
         Pipeline.builder().name("Test pipeline").pipelineStages(asList(pipelineStage, pipelineStage2)).build();
     List<String> envIds = PipelineServiceHelper.getEnvironmentIdsForParallelIndex(pipeline, 1);
     assertThat(envIds).isEmpty();
+  }
+
+  @Test
+  @Owner(developers = PRABU)
+  @Category(UnitTests.class)
+  public void testUpdateLoopingInfoWhenInfraAsExpression() {
+    List<Variable> userVariables = new ArrayList<>();
+    Variable infraVar1 = aVariable().entityType(INFRASTRUCTURE_DEFINITION).name("infra1").build();
+    userVariables.add(infraVar1);
+    OrchestrationWorkflow orchestrationWorkflow =
+        aCanaryOrchestrationWorkflow().withUserVariables(userVariables).build();
+    Workflow workflow = aWorkflow().orchestrationWorkflow(orchestrationWorkflow).build();
+    Map<String, String> workflowVariable = ImmutableMap.of("infra1", "${context.var1}");
+    PipelineStageElement pipelineStageElement =
+        PipelineStageElement.builder().workflowVariables(workflowVariable).name("test step").type("ENV_STATE").build();
+
+    PipelineStage pipelineStage = PipelineStage.builder().pipelineStageElements(asList(pipelineStageElement)).build();
+    List<String> infraDefIds = new ArrayList<>();
+    PipelineServiceHelper.updateLoopingInfo(pipelineStage, workflow, infraDefIds);
+    assertThat(pipelineStage.isLooped()).isEqualTo(true);
+    assertThat(pipelineStage.getLoopedVarName()).isEqualTo("infra1");
+    assertThat(infraDefIds).isEmpty();
+  }
+
+  @Test
+  @Owner(developers = LUCAS_SALES)
+  @Category(UnitTests.class)
+  public void shouldResolveEnvIdsForParallelStage1UsingPipelineVariables() {
+    PipelineStageElement pipelineStageElement = PipelineStageElement.builder()
+                                                    .properties(ImmutableMap.of(EnvStateKeys.envId, "${env}"))
+                                                    .name("test step")
+                                                    .type("ENV_STATE")
+                                                    .workflowVariables(ImmutableMap.of("envName", "anotherEnvId"))
+                                                    .parallelIndex(1)
+                                                    .build();
+    PipelineStageElement pipelineStageElement2 = PipelineStageElement.builder()
+                                                     .properties(ImmutableMap.of(EnvStateKeys.envId, "${env}"))
+                                                     .name("test step")
+                                                     .type("ENV_STATE")
+                                                     .workflowVariables(ImmutableMap.of("envName", ENV_ID))
+                                                     .parallelIndex(1)
+                                                     .build();
+    PipelineStage pipelineStage = PipelineStage.builder()
+                                      .pipelineStageElements(asList(pipelineStageElement))
+                                      .loopedVarName("infra1")
+                                      .looped(true)
+                                      .build();
+    PipelineStage pipelineStage2 = PipelineStage.builder()
+                                       .pipelineStageElements(asList(pipelineStageElement2))
+                                       .loopedVarName("infra1")
+                                       .looped(true)
+                                       .build();
+    Pipeline pipeline =
+        Pipeline.builder().name("Test pipeline").pipelineStages(asList(pipelineStage, pipelineStage2)).build();
+    pipeline.getPipelineVariables().add(aVariable().entityType(ENVIRONMENT).name("envName").value("envId").build());
+    List<String> envIds = PipelineServiceHelper.getEnvironmentIdsForParallelIndex(pipeline, 1);
+    assertThat(envIds).hasSize(2).containsExactly("anotherEnvId", ENV_ID);
   }
 }

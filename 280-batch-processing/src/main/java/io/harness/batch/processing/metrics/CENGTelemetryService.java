@@ -15,4 +15,5 @@ public interface CENGTelemetryService {
   HashMap<String, Object> getPerspectivesMetrics(String accountId);
   HashMap<String, Object> getReportMetrics(String accountId);
   HashMap<String, Object> getBudgetMetrics(String accountId);
+  HashMap<String, Object> getLicenseUtil(String accountId);
 }

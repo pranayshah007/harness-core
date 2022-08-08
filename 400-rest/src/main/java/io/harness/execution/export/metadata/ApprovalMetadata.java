@@ -17,7 +17,7 @@ import io.harness.execution.export.ExportExecutionsUtils;
 
 import software.wings.api.ApprovalStateExecutionData;
 import software.wings.beans.NameValuePair;
-import software.wings.service.impl.servicenow.ServiceNowServiceImpl.ServiceNowTicketType;
+import software.wings.beans.servicenow.ServiceNowTicketType;
 import software.wings.sm.StateExecutionData;
 import software.wings.sm.states.ApprovalState.ApprovalStateType;
 

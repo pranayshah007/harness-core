@@ -10,7 +10,7 @@ package io.harness.morphia;
 import static io.harness.govern.IgnoreThrowable.ignoredOnPurpose;
 import static io.harness.morphia.MorphiaRegistrar.putClass;
 
-import io.harness.annotations.ti.HarnessTrace;
+import io.harness.agent.sdk.HarnessTrace;
 import io.harness.exception.GeneralException;
 import io.harness.exception.UnexpectedException;
 import io.harness.govern.Switch;

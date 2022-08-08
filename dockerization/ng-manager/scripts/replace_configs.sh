@@ -166,11 +166,23 @@ if [[ "" != "$NEXT_GEN_MANAGER_SECRET" ]]; then
 fi
 
 if [[ "" != "$NEXT_GEN_MANAGER_SECRET" ]]; then
+  yq write -i $CONFIG_FILE nextGen.cvngServiceSecret "$NEXT_GEN_MANAGER_SECRET"
+fi
+
+if [[ "" != "$NEXT_GEN_MANAGER_SECRET" ]]; then
   yq write -i $CONFIG_FILE nextGen.ceNextGenServiceSecret "$NEXT_GEN_MANAGER_SECRET"
 fi
 
 if [[ "" != "$NEXT_GEN_MANAGER_SECRET" ]]; then
   yq write -i $CONFIG_FILE nextGen.ffServiceSecret "$NEXT_GEN_MANAGER_SECRET"
+fi
+
+if [[ "" != "$TEMPLATE_SERVICE_ENDPOINT" ]]; then
+  yq write -i $CONFIG_FILE templateServiceClientConfig.baseUrl $TEMPLATE_SERVICE_ENDPOINT
+fi
+
+if [[ "" != "$TEMPLATE_SERVICE_SECRET" ]]; then
+  yq write -i $CONFIG_FILE nextGen.templateServiceSecret $TEMPLATE_SERVICE_SECRET
 fi
 
 if [[ "" != "$AUTH_ENABLED" ]]; then
@@ -336,6 +348,34 @@ if [[ "" != "$LOCK_CONFIG_REDIS_URL" ]]; then
   yq write -i $REDISSON_CACHE_FILE singleServerConfig.address "$LOCK_CONFIG_REDIS_URL"
 fi
 
+if [[ "" != "$GITLAB_OAUTH_CLIENT" ]]; then
+  yq write -i $CONFIG_FILE gitlabConfig.clientId "$GITLAB_OAUTH_CLIENT"
+fi
+
+if [[ "" != "$GITLAB_OAUTH_SECRET" ]]; then
+  yq write -i $CONFIG_FILE gitlabConfig.clientSecret "$GITLAB_OAUTH_SECRET"
+fi
+
+if [[ "" != "$GITLAB_OAUTH_CALLBACK_URL" ]]; then
+  yq write -i $CONFIG_FILE gitlabConfig.callbackUrl "$GITLAB_OAUTH_CALLBACK_URL"
+fi
+
+if [[ "" != "$OAUTH_REFRESH_FREQUECY" ]]; then
+  yq write -i $CONFIG_FILE oauthRefreshFrequency "$OAUTH_REFRESH_FREQUECY"
+fi
+
+if [[ "" != "$OAUTH_REFRESH_ENABLED" ]]; then
+  yq write -i $CONFIG_FILE oauthRefreshEnabled "$OAUTH_REFRESH_ENABLED"
+fi
+
+if [[ "" != "$DELEGATE_STATUS_ENDPOINT" ]]; then
+  yq write -i $CONFIG_FILE delegateStatusEndpoint "$DELEGATE_STATUS_ENDPOINT"
+fi
+
+if [[ "" != "$SIGNUP_TARGET_ENV" ]]; then
+  yq write -i $CONFIG_FILE signupTargetEnv "$SIGNUP_TARGET_ENV"
+fi
+
 if [[ "$LOCK_CONFIG_USE_SENTINEL" == "true" ]]; then
   yq delete -i $REDISSON_CACHE_FILE singleServerConfig
 fi
@@ -440,23 +480,38 @@ replace_key_value gitGrpcClientConfigs.templateservice.authority "$TEMPLATE_GITS
 replace_key_value gitGrpcClientConfigs.cf.target "$CF_GITSYNC_TARGET"
 replace_key_value gitGrpcClientConfigs.cf.authority "$CF_GITSYNC_AUTHORITY"
 
-replace_key_value gitGrpcClientConfigs.policymgmt.target "$POLICYMGMT_GITSYNC_TARGET"
-replace_key_value gitGrpcClientConfigs.policymgmt.authority "$POLICYMGMT_GITSYNC_AUTHORITY"
-
 replace_key_value cfClientConfig.apiKey "$CF_CLIENT_API_KEY"
 replace_key_value cfClientConfig.configUrl "$CF_CLIENT_CONFIG_URL"
 replace_key_value cfClientConfig.eventUrl "$CF_CLIENT_EVENT_URL"
 replace_key_value cfClientConfig.analyticsEnabled "$CF_CLIENT_ANALYTICS_ENABLED"
 replace_key_value cfClientConfig.connectionTimeout "$CF_CLIENT_CONNECTION_TIMEOUT"
 replace_key_value cfClientConfig.readTimeout "$CF_CLIENT_READ_TIMEOUT"
+replace_key_value cfClientConfig.bufferSize "$CF_CLIENT_BUFFER_SIZE"
 replace_key_value featureFlagConfig.featureFlagSystem "$FEATURE_FLAG_SYSTEM"
 replace_key_value featureFlagConfig.syncFeaturesToCF "$SYNC_FEATURES_TO_CF"
 replace_key_value ceAzureSetupConfig.azureAppClientId "$AZURE_APP_CLIENT_ID"
 replace_key_value ceAzureSetupConfig.azureAppClientSecret "$AZURE_APP_CLIENT_SECRET"
 replace_key_value pipelineServiceClientConfig.baseUrl "$PIPELINE_SERVICE_CLIENT_BASEURL"
 replace_key_value ciManagerClientConfig.baseUrl "$CI_MANAGER_SERVICE_CLIENT_BASEURL"
+replace_key_value cvngClientConfig.baseUrl "$CVNG_SERVICE_CLIENT_BASEURL"
 replace_key_value scopeAccessCheckEnabled "${SCOPE_ACCESS_CHECK:-true}"
 
 replace_key_value enforcementClientConfiguration.enforcementCheckEnabled "$ENFORCEMENT_CHECK_ENABLED"
 replace_key_value secretsConfiguration.gcpSecretManagerProject "$GCP_SECRET_MANAGER_PROJECT"
 replace_key_value secretsConfiguration.secretResolutionEnabled "$RESOLVE_SECRETS"
+
+replace_key_value opaServerConfig.baseUrl "$OPA_SERVER_BASEURL"
+replace_key_value opaServerConfig.secret "$OPA_SERVER_SECRET"
+replace_key_value policyManagerSecret "$OPA_SERVER_SECRET"
+replace_key_value opaClientConfig.baseUrl "$OPA_SERVER_BASEURL"
+if [[ "" != "$OPA_CONNECT_TIMEOUT" ]]; then
+  replace_key_value opaClientConfig.connectTimeOutSeconds "$OPA_CONNECT_TIMEOUT"
+fi
+if [[ "" != "$OPA_READ_TIMEOUT" ]]; then
+  replace_key_value opaClientConfig.readTimeOutSeconds "$OPA_READ_TIMEOUT"
+fi
+
+replace_key_value subscriptionConfig.stripeApiKey "$STRIPE_API_KEY"
+
+replace_key_value gitopsResourceClientConfig.config.baseUrl "$GITOPS_SERVICE_CLIENT_BASEURL"
+replace_key_value gitopsResourceClientConfig.secret "$GITOPS_SERVICE_SECRET"

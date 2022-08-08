@@ -32,7 +32,7 @@ public class EnvironmentRefExpansionHandler implements JsonExpansionHandler {
   @Inject EnvironmentService environmentService;
 
   @Override
-  public ExpansionResponse expand(JsonNode fieldValue, ExpansionRequestMetadata metadata) {
+  public ExpansionResponse expand(JsonNode fieldValue, ExpansionRequestMetadata metadata, String fqn) {
     String accountId = metadata.getAccountId();
     String orgId = metadata.getOrgId();
     String projectId = metadata.getProjectId();

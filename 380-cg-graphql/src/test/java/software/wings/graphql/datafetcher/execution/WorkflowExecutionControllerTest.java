@@ -153,8 +153,8 @@ public class WorkflowExecutionControllerTest extends WingsBaseTest {
             -> Service.builder()
                    .appId(APP_ID)
                    .accountId(ACCOUNT_ID)
-                   .name(invocationOnMock.getArgumentAt(1, String.class))
-                   .uuid(invocationOnMock.getArgumentAt(1, String.class))
+                   .name(invocationOnMock.getArgument(1, String.class))
+                   .uuid(invocationOnMock.getArgument(1, String.class))
                    .build());
     ArtifactStream artifactStream = CustomArtifactStream.builder().build();
     when(artifactService.get(ACCOUNT_ID, ARTIFACT_ID + 2))
@@ -240,8 +240,8 @@ public class WorkflowExecutionControllerTest extends WingsBaseTest {
         .thenAnswer(invocationOnMock
             -> Service.builder()
                    .appId(APP_ID)
-                   .name(invocationOnMock.getArgumentAt(1, String.class))
-                   .uuid(invocationOnMock.getArgumentAt(1, String.class))
+                   .name(invocationOnMock.getArgument(1, String.class))
+                   .uuid(invocationOnMock.getArgument(1, String.class))
                    .build());
     assertThatThrownBy(()
                            -> workflowExecutionController.startWorkflowExecution(
@@ -545,8 +545,8 @@ public class WorkflowExecutionControllerTest extends WingsBaseTest {
         .thenAnswer(invocationOnMock
             -> Service.builder()
                    .appId(APP_ID)
-                   .name(invocationOnMock.getArgumentAt(1, String.class))
-                   .uuid(invocationOnMock.getArgumentAt(1, String.class))
+                   .name(invocationOnMock.getArgument(1, String.class))
+                   .uuid(invocationOnMock.getArgument(1, String.class))
                    .build());
     when(helmChartService.getByChartVersion(APP_ID, SERVICE_ID, APP_MANIFEST_NAME, "1.0"))
         .thenReturn(HelmChart.builder().uuid(HELM_CHART_ID).build());
@@ -610,8 +610,8 @@ public class WorkflowExecutionControllerTest extends WingsBaseTest {
         .thenAnswer(invocationOnMock
             -> Service.builder()
                    .appId(APP_ID)
-                   .name(invocationOnMock.getArgumentAt(1, String.class))
-                   .uuid(invocationOnMock.getArgumentAt(1, String.class))
+                   .name(invocationOnMock.getArgument(1, String.class))
+                   .uuid(invocationOnMock.getArgument(1, String.class))
                    .build());
     assertThatThrownBy(()
                            -> workflowExecutionController.startWorkflowExecution(
@@ -640,8 +640,8 @@ public class WorkflowExecutionControllerTest extends WingsBaseTest {
         .thenAnswer(invocationOnMock
             -> Service.builder()
                    .appId(APP_ID)
-                   .name(invocationOnMock.getArgumentAt(1, String.class))
-                   .uuid(invocationOnMock.getArgumentAt(1, String.class))
+                   .name(invocationOnMock.getArgument(1, String.class))
+                   .uuid(invocationOnMock.getArgument(1, String.class))
                    .build());
     when(helmChartService.getByChartVersion(APP_ID, SERVICE_ID, APP_MANIFEST_NAME, "2.0"))
         .thenReturn(HelmChart.builder().uuid(HELM_CHART_ID).build());

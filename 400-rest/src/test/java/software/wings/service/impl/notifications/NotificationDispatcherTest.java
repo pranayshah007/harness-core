@@ -20,6 +20,7 @@ import static software.wings.utils.WingsTestConstants.NOTIFICATION_GROUP_ID;
 import static software.wings.utils.WingsTestConstants.WORKFLOW_EXECUTION_ID;
 import static software.wings.utils.WingsTestConstants.WORKFLOW_NAME;
 
+import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -97,7 +98,7 @@ public class NotificationDispatcherTest extends WingsBaseTest {
                                                .build();
 
     NotificationProcessingController notificationProcessingController = mock(NotificationProcessingController.class);
-    when(notificationProcessingController.canProcessAccount(anyString())).thenReturn(true);
+    when(notificationProcessingController.canProcessAccount(any())).thenReturn(true);
     FieldUtils.writeField(
         notificationGroupDispatcher, "notificationProcessingController", notificationProcessingController, true);
 

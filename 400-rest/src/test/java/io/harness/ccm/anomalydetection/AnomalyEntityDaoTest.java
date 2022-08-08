@@ -51,7 +51,7 @@ public class AnomalyEntityDaoTest extends CategoryTest {
   String updateQuery =
       "UPDATE anomalies SET note = 'K8S_Anomaly',slackInstantNotification = 'false',slackDailyNotification = 'false',slackWeeklyNotification = 'false' WHERE ((id = 'ANOMALY_ID1') AND (accountid = 'ACCOUNT_ID'))";
   String insertQuery =
-      "INSERT INTO anomalies (id,accountid,actualcost,expectedcost,anomalytime,timegranularity,clusterid,clustername,namespace,workloadtype,workloadname,region,gcpproduct,gcpproject,gcpskuid,gcpskudescription,awsaccount,awsinstancetype,awsservice,awsusagetype,anomalyscore,reportedby,newentity) VALUES ('ANOMALY_ID1','ACCOUNT_ID',10.1,12.3,'1970-01-01T00:00:00Z','DAILY','CLUSTER_ID','CLUSTER_NAME',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,12.34,NULL,'false') ON CONFLICT (id,anomalytime) DO UPDATE SET actualcost = 10.100000 , expectedcost = 12.300000 ";
+      "INSERT INTO anomalies (id,accountid,actualcost,expectedcost,anomalytime,timegranularity,clusterid,clustername,namespace,workloadtype,workloadname,region,gcpproduct,gcpproject,gcpskuid,gcpskudescription,azuresubscriptionguid,azureresourcegroup,azuremetercategory,awsaccount,awsinstancetype,awsservice,awsusagetype,anomalyscore,reportedby,newentity) VALUES ('ANOMALY_ID1','ACCOUNT_ID',10.1,12.3,'1970-01-01T00:00:00Z','DAILY','CLUSTER_ID','CLUSTER_NAME',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,12.34,NULL,'false') ON CONFLICT (id,anomalytime) DO UPDATE SET actualcost = 10.100000 , expectedcost = 12.300000 ";
   String deleteQuery =
       "DELETE FROM anomalies WHERE ((id IN ('TEMP_ID_1') ) AND (anomalytime = '1970-01-01T00:00:00Z'))";
   @Before

@@ -7,6 +7,8 @@
 
 package io.harness.delegate.task.executioncapability;
 
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+
 import io.harness.capability.CapabilityParameters;
 import io.harness.capability.CapabilitySubjectPermission;
 import io.harness.capability.CapabilitySubjectPermission.CapabilitySubjectPermissionBuilder;
@@ -25,11 +27,14 @@ public class CIVmConnectionCapabilityCheck implements CapabilityCheck, ProtoCapa
   @Override
   public CapabilityResponse performCapabilityCheck(ExecutionCapability delegateCapability) {
     CIVmConnectionCapability connectionCapabiilty = (CIVmConnectionCapability) delegateCapability;
-    boolean isOwner = isPoolOwner(connectionCapabiilty.getPoolId());
+    boolean isOwner = isPoolOwner(connectionCapabiilty.getPoolId(), connectionCapabiilty.getStageRuntimeId());
     return CapabilityResponse.builder().delegateCapability(delegateCapability).validated(isOwner).build();
   }
 
-  private boolean isPoolOwner(String poolId) {
+  private boolean isPoolOwner(String poolId, String stageRuntimeId) {
+    if (isNotEmpty(stageRuntimeId)) {
+      return httpHelper.isPoolOwnerWithStageIdRetries(poolId, stageRuntimeId);
+    }
     Response<PoolOwnerStepResponse> response = httpHelper.isPoolOwner(poolId);
     boolean isOwner = false;
     if (response.isSuccessful()) {
@@ -45,7 +50,8 @@ public class CIVmConnectionCapabilityCheck implements CapabilityCheck, ProtoCapa
     if (parameters.getCapabilityCase() != CapabilityParameters.CapabilityCase.CI_VM_PARAMETERS) {
       return builder.permissionResult(CapabilitySubjectPermission.PermissionResult.DENIED).build();
     }
-    boolean isOwner = isPoolOwner(parameters.getCiVmParameters().getPoolId());
+    boolean isOwner =
+        isPoolOwner(parameters.getCiVmParameters().getPoolId(), parameters.getCiVmParameters().getStageRuntimeId());
 
     return builder
         .permissionResult(isOwner ? CapabilitySubjectPermission.PermissionResult.ALLOWED

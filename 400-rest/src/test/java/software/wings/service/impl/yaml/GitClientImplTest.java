@@ -7,6 +7,7 @@
 
 package software.wings.service.impl.yaml;
 
+import static io.harness.filesystem.FileIo.createDirectoryIfDoesNotExist;
 import static io.harness.git.model.ChangeType.RENAME;
 import static io.harness.rule.OwnerRule.ADWAIT;
 import static io.harness.rule.OwnerRule.ANSHUL;
@@ -18,6 +19,7 @@ import static io.harness.shell.SshSessionFactory.getSSHSession;
 import static software.wings.beans.yaml.GitFileChange.Builder.aGitFileChange;
 import static software.wings.utils.WingsTestConstants.ACCOUNT_ID;
 
+import static java.lang.String.format;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -50,6 +52,9 @@ import software.wings.beans.yaml.GitDiffResult;
 import software.wings.beans.yaml.GitFetchFilesRequest;
 import software.wings.beans.yaml.GitFileChange;
 
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
 import com.google.inject.Inject;
 import com.jcraft.jsch.JSch;
 import com.jcraft.jsch.JSchException;
@@ -81,6 +86,7 @@ import org.eclipse.jgit.transport.OpenSshConfig;
 import org.eclipse.jgit.transport.SshSessionFactory;
 import org.eclipse.jgit.transport.SshTransport;
 import org.eclipse.jgit.util.FS;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
@@ -211,6 +217,29 @@ public class GitClientImplTest extends WingsBaseTest {
       + "+rabOzjsrJHAl5YogGm2nT5r2Zq5jYobJyUy0+p9pW1MShXTLTDguDZHFmbg\n"
       + "-----END RSA PRIVATE KEY-----\n";
 
+  private static final String INTER_PROCESS_LOCK_FILE =
+      "./repository/gitFileDownloads/locksTmpDir/interProcessFileLock_%s";
+  private static final String REPO_GIT_DOWNLOAD_DIR = "./repository/gitFileDownloads/locksTmpDir";
+  private static final String CONNECTOR_ID = "CONNECTOR_ID";
+
+  private static final LoadingCache<String, Object> cache =
+      CacheBuilder.newBuilder()
+          .maximumSize(2000)
+          .expireAfterAccess(1, TimeUnit.HOURS)
+          .build(new CacheLoader<String, Object>() {
+            @Override
+            public Object load(String key) {
+              return new File(format(INTER_PROCESS_LOCK_FILE, key));
+            }
+          });
+
+  @Before
+  public void setUp() throws Exception {
+    createDirectoryIfDoesNotExist(REPO_GIT_DOWNLOAD_DIR);
+    File indexLockFile = new File(format(INTER_PROCESS_LOCK_FILE, CONNECTOR_ID));
+    indexLockFile.createNewFile();
+  }
+
   @Test
   @Owner(developers = ADWAIT)
   @Category(UnitTests.class)
@@ -327,7 +356,8 @@ public class GitClientImplTest extends WingsBaseTest {
     GitConfig gitConfig = GitConfig.builder().accountId(ACCOUNT_ID).build();
     String repoPath = Files.createTempDirectory(UUID.randomUUID().toString()).toString();
 
-    when(gitClientHelper.getLockObject(GIT_CONNECTOR_ID)).thenReturn("lockObject");
+    when(gitClientHelper.getLockObject(GIT_CONNECTOR_ID))
+        .thenReturn(new File(format(INTER_PROCESS_LOCK_FILE, CONNECTOR_ID)));
     when(gitClientHelper.getFileDownloadRepoDirectory(gitConfig, GIT_CONNECTOR_ID)).thenReturn(repoPath);
 
     createLocalRepo(repoPath);
@@ -356,7 +386,8 @@ public class GitClientImplTest extends WingsBaseTest {
     GitConfig gitConfig = GitConfig.builder().accountId(ACCOUNT_ID).build();
     String repoPath = Files.createTempDirectory(UUID.randomUUID().toString()).toString();
 
-    when(gitClientHelper.getLockObject(GIT_CONNECTOR_ID)).thenReturn("lockObject");
+    when(gitClientHelper.getLockObject(GIT_CONNECTOR_ID))
+        .thenReturn(new File(format(INTER_PROCESS_LOCK_FILE, CONNECTOR_ID)));
     when(gitClientHelper.getFileDownloadRepoDirectory(gitConfig, GIT_CONNECTOR_ID)).thenReturn(repoPath);
 
     createLocalRepo(repoPath);

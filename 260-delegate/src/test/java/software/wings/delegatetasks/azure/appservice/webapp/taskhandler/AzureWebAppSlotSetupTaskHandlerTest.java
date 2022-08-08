@@ -13,9 +13,9 @@ import static io.harness.rule.OwnerRule.IVAN;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.doThrow;
 
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;
@@ -33,9 +33,14 @@ import io.harness.delegate.task.azure.AzureTaskResponse;
 import io.harness.delegate.task.azure.appservice.AzureAppServicePreDeploymentData;
 import io.harness.delegate.task.azure.appservice.AzureAppServiceTaskParameters;
 import io.harness.delegate.task.azure.appservice.AzureAppServiceTaskResponse;
+import io.harness.delegate.task.azure.appservice.deployment.AzureAppServiceDeploymentService;
 import io.harness.delegate.task.azure.appservice.webapp.request.AzureWebAppSlotSetupParameters;
 import io.harness.delegate.task.azure.appservice.webapp.response.AzureAppDeploymentData;
 import io.harness.delegate.task.azure.appservice.webapp.response.AzureWebAppSlotSetupResponse;
+import io.harness.delegate.task.azure.common.AzureAppServiceService;
+import io.harness.delegate.task.azure.common.AzureContainerRegistryService;
+import io.harness.delegate.task.azure.common.AzureLogCallbackProvider;
+import io.harness.delegate.task.azure.common.AzureLogCallbackProviderFactory;
 import io.harness.encryption.Scope;
 import io.harness.encryption.SecretRefData;
 import io.harness.logging.CommandExecutionStatus;
@@ -44,10 +49,7 @@ import io.harness.rule.Owner;
 
 import software.wings.WingsBaseTest;
 import software.wings.beans.artifact.ArtifactStreamAttributes;
-import software.wings.delegatetasks.azure.appservice.deployment.AzureAppServiceDeploymentService;
 import software.wings.delegatetasks.azure.common.ArtifactDownloaderServiceLogWrapper;
-import software.wings.delegatetasks.azure.common.AzureAppServiceService;
-import software.wings.delegatetasks.azure.common.AzureContainerRegistryService;
 
 import com.microsoft.azure.management.containerregistry.AccessKeyType;
 import com.microsoft.azure.management.containerregistry.RegistryCredentials;
@@ -66,6 +68,8 @@ import org.mockito.Spy;
 public class AzureWebAppSlotSetupTaskHandlerTest extends WingsBaseTest {
   @Mock private ILogStreamingTaskClient mockLogStreamingTaskClient;
   @Mock private LogCallback mockLogCallback;
+  @Mock private AzureLogCallbackProvider mockLogCallbackProvider;
+  @Mock private AzureLogCallbackProviderFactory mockLogCallbackProviderFactory;
   @Mock private AzureAppServiceDeploymentService azureAppServiceDeploymentService;
   @Mock private AzureAppServiceService azureAppServiceService;
   @Mock private AzureContainerRegistryService azureContainerRegistryService;
@@ -75,6 +79,7 @@ public class AzureWebAppSlotSetupTaskHandlerTest extends WingsBaseTest {
 
   @Before
   public void setup() {
+    doReturn(mockLogCallbackProvider).when(mockLogCallbackProviderFactory).createCg(mockLogStreamingTaskClient);
     doReturn(mockLogCallback).when(mockLogStreamingTaskClient).obtainLogCallback(anyString());
     doNothing().when(mockLogCallback).saveExecutionLog(anyString(), any(), any());
     doNothing().when(mockLogCallback).saveExecutionLog(anyString(), any());
@@ -137,7 +142,9 @@ public class AzureWebAppSlotSetupTaskHandlerTest extends WingsBaseTest {
     doReturn(AzureAppServicePreDeploymentData.builder())
         .when(azureAppServiceService)
         .getDefaultPreDeploymentDataBuilder(any(), any());
-    doThrow(Exception.class).when(azureAppServiceDeploymentService).deployDockerImage(any(), any());
+    doAnswer(invocation -> { throw new Exception(); })
+        .when(azureAppServiceDeploymentService)
+        .deployDockerImage(any(), any());
 
     AzureTaskExecutionResponse azureTaskExecutionResponse = azureWebAppSlotSetupTaskHandler.executeTask(
         setupParameters, azureConfig, mockLogStreamingTaskClient, artifactStreamAttributes);
@@ -157,7 +164,9 @@ public class AzureWebAppSlotSetupTaskHandlerTest extends WingsBaseTest {
     AzureConfig azureConfig = buildAzureConfig();
     AzureAppServiceTaskParameters setupParameters = buildAzureAppServiceTaskParameters(false);
     ArtifactStreamAttributes artifactStreamAttributes = buildArtifactStreamAttributes(true);
-    doThrow(Exception.class).when(azureAppServiceService).getDefaultPreDeploymentDataBuilder(any(), any());
+    doAnswer(invocation -> { throw new Exception(); })
+        .when(azureAppServiceService)
+        .getDefaultPreDeploymentDataBuilder(any(), any());
 
     AzureTaskExecutionResponse azureTaskExecutionResponse = azureWebAppSlotSetupTaskHandler.executeTask(
         setupParameters, azureConfig, mockLogStreamingTaskClient, artifactStreamAttributes);

@@ -10,7 +10,7 @@ services:
     image: ${delegateDockerImage}
     environment:
       - ACCOUNT_ID=${accountId}
-      - ACCOUNT_SECRET=${accountSecret}
+      - DELEGATE_TOKEN=${delegateToken}
 <#if isImmutable == "false">
       - MANAGER_HOST_AND_PORT=${managerHostAndPort}
       - WATCHER_STORAGE_URL=${watcherStorageUrl}

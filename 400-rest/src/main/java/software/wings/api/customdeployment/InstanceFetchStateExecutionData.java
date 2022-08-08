@@ -36,6 +36,11 @@ public class InstanceFetchStateExecutionData extends StateExecutionData {
   private String activityId;
   private String hostObjectArrayPath;
   private String instanceFetchScript;
+  private String artifactId;
+  private String artifactName;
+  private String artifactSourceName;
+  private String artifactStreamId;
+  private String artifactBuildNum;
   private Map<String, String> hostAttributes;
   private String scriptOutput;
   @Builder.Default private List<InstanceStatusSummary> newInstanceStatusSummaries = new ArrayList<>();
@@ -65,6 +70,11 @@ public class InstanceFetchStateExecutionData extends StateExecutionData {
     return InstanceFetchStateExecutionSummary.builder()
         .activityId(activityId)
         .instanceFetchScript(instanceFetchScript)
+        .artifactId(artifactId)
+        .artifactName(artifactName)
+        .artifactSourceName(artifactSourceName)
+        .artifactStreamId(artifactStreamId)
+        .artifactBuildNum(artifactBuildNum)
         .scriptOutput(scriptOutput)
         .tags(tags)
         .build();

@@ -11,6 +11,7 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.remote.client.NGRestUtils.getResponse;
 
 import io.harness.ModuleType;
+import io.harness.cd.CDLicenseType;
 import io.harness.licensing.Edition;
 import io.harness.licensing.LicenseStatus;
 import io.harness.licensing.LicenseType;
@@ -18,7 +19,6 @@ import io.harness.licensing.beans.modules.AccountLicenseDTO;
 import io.harness.licensing.beans.modules.CDModuleLicenseDTO;
 import io.harness.licensing.beans.modules.CDModuleLicenseDTO.CDModuleLicenseDTOBuilder;
 import io.harness.licensing.beans.modules.ModuleLicenseDTO;
-import io.harness.licensing.beans.modules.types.CDLicenseType;
 import io.harness.licensing.remote.admin.AdminLicenseHttpClient;
 import io.harness.migrations.Migration;
 

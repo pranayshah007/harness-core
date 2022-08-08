@@ -49,14 +49,14 @@ public class InstanceStatsIteratorHandler implements Handler<DeploymentAccounts>
     persistenceIteratorFactory.createPumpIteratorWithDedicatedThreadPool(
         PersistenceIteratorFactory.PumpExecutorOptions.builder()
             .name("InstanceStatsMetricsPublisher")
-            .poolSize(1)
-            .interval(ofMinutes(10))
+            .poolSize(5)
+            .interval(ofMinutes(30))
             .build(),
         InstanceStatsIteratorHandler.class,
         MongoPersistenceIterator.<DeploymentAccounts, MorphiaFilterExpander<DeploymentAccounts>>builder()
             .clazz(DeploymentAccounts.class)
             .fieldName(DeploymentAccountsKeys.instanceStatsMetricsPublisherIteration)
-            .targetInterval(ofMinutes(10))
+            .targetInterval(ofMinutes(30))
             .acceptableExecutionTime(ofSeconds(30))
             .acceptableNoAlertDelay(ofSeconds(30))
             .handler(this)

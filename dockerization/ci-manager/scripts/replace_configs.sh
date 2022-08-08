@@ -71,12 +71,20 @@ if [[ "" != "$GCR_PUSH_IMAGE" ]]; then
   yq write -i $CONFIG_FILE ciExecutionServiceConfig.stepConfig.buildAndPushGCRConfig.image "$GCR_PUSH_IMAGE"
 fi
 
+if [[ "" != "$ENABLE_AUTH" ]]; then
+  yq write -i $CONFIG_FILE enableAuth "$ENABLE_AUTH"
+fi
+
 if [[ "" != "$GCS_UPLOAD_IMAGE" ]]; then
   yq write -i $CONFIG_FILE ciExecutionServiceConfig.stepConfig.gcsUploadConfig.image "$GCS_UPLOAD_IMAGE"
 fi
 
 if [[ "" != "$S3_UPLOAD_IMAGE" ]]; then
   yq write -i $CONFIG_FILE ciExecutionServiceConfig.stepConfig.s3UploadConfig.image "$S3_UPLOAD_IMAGE"
+fi
+
+if [[ "" != "$SECURITY_IMAGE" ]]; then
+  yq write -i $CONFIG_FILE ciExecutionServiceConfig.stepConfig.securityConfig.image "$SECURITY_IMAGE"
 fi
 
 if [[ "" != "$ARTIFACTORY_UPLOAD_IMAGE" ]]; then
@@ -184,6 +192,10 @@ if [[ "" != "$TI_SERVICE_ENDPOINT" ]]; then
   yq write -i $CONFIG_FILE tiServiceConfig.baseUrl "$TI_SERVICE_ENDPOINT"
 fi
 
+if [[ "" != "$STO_SERVICE_ENDPOINT" ]]; then
+  yq write -i $CONFIG_FILE stoServiceConfig.baseUrl "$STO_SERVICE_ENDPOINT"
+fi
+
 if [[ "" != "$API_URL" ]]; then
   yq write -i $CONFIG_FILE apiUrl "$API_URL"
 fi
@@ -210,6 +222,10 @@ fi
 
 if [[ "" != "$TI_SERVICE_GLOBAL_TOKEN" ]]; then
   yq write -i $CONFIG_FILE tiServiceConfig.globalToken "$TI_SERVICE_GLOBAL_TOKEN"
+fi
+
+if [[ "" != "$STO_SERVICE_GLOBAL_TOKEN" ]]; then
+  yq write -i $CONFIG_FILE stoServiceConfig.globalToken "$STO_SERVICE_GLOBAL_TOKEN"
 fi
 
 if [[ "" != "$NEXT_GEN_MANAGER_SECRET" ]]; then
@@ -308,6 +324,11 @@ fi
 
 replace_key_value cacheConfig.cacheNamespace $CACHE_NAMESPACE
 replace_key_value cacheConfig.cacheBackend $CACHE_BACKEND
+
+replace_key_value segmentConfiguration.enabled "$SEGMENT_ENABLED"
+replace_key_value segmentConfiguration.url "$SEGMENT_URL"
+replace_key_value segmentConfiguration.apiKey "$SEGMENT_APIKEY"
+replace_key_value segmentConfiguration.certValidationRequired "$SEGMENT_VERIFY_CERT"
 
 replace_key_value eventsFramework.redis.sentinel $EVENTS_FRAMEWORK_USE_SENTINEL
 replace_key_value eventsFramework.redis.envNamespace $EVENTS_FRAMEWORK_ENV_NAMESPACE

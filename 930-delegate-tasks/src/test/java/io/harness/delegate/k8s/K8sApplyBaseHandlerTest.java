@@ -16,6 +16,7 @@ import static org.mockito.Matchers.anyList;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
@@ -70,6 +71,8 @@ public class K8sApplyBaseHandlerTest extends CategoryTest {
     List<KubernetesResource> workloads =
         Arrays.asList(KubernetesResource.builder().spec("Spec").resourceId(deployment).build());
     K8sApplyHandlerConfig config = new K8sApplyHandlerConfig();
+    Kubectl client = mock(Kubectl.class);
+    config.setClient(client);
     config.setWorkloads(workloads);
     config.setCustomWorkloads(Collections.emptyList());
 
@@ -84,7 +87,7 @@ public class K8sApplyBaseHandlerTest extends CategoryTest {
         .doStatusCheckForAllCustomResources(any(Kubectl.class), anyList(), eq(delegateTaskParams), eq(logCallback),
             eq(true), eq(timeoutIntervalInMillis), eq(false));
     boolean result = baseHandler.steadyStateCheck(
-        false, namespace, delegateTaskParams, timeoutIntervalInMillis, logCallback, config, false);
+        false, namespace, delegateTaskParams, timeoutIntervalInMillis, logCallback, config, false, false);
     assertThat(result).isTrue();
 
     verify(k8sTaskHelperBase, times(1))
@@ -107,6 +110,8 @@ public class K8sApplyBaseHandlerTest extends CategoryTest {
     KubernetesResource crdResource = KubernetesResource.builder().spec("Spec").resourceId(crd).build();
     List<KubernetesResource> workloads = Arrays.asList(crdResource);
     K8sApplyHandlerConfig config = new K8sApplyHandlerConfig();
+    Kubectl client = mock(Kubectl.class);
+    config.setClient(client);
     config.setWorkloads(Collections.emptyList());
     config.setCustomWorkloads(workloads);
 
@@ -121,7 +126,7 @@ public class K8sApplyBaseHandlerTest extends CategoryTest {
         .doStatusCheckForAllCustomResources(any(Kubectl.class), anyList(), eq(delegateTaskParams), eq(logCallback),
             eq(true), eq(timeoutIntervalInMillis), eq(false));
     boolean result = baseHandler.steadyStateCheck(
-        false, namespace, delegateTaskParams, timeoutIntervalInMillis, logCallback, config, false);
+        false, namespace, delegateTaskParams, timeoutIntervalInMillis, logCallback, config, false, false);
     assertThat(result).isTrue();
 
     verify(k8sTaskHelperBase, times(1))
@@ -150,6 +155,9 @@ public class K8sApplyBaseHandlerTest extends CategoryTest {
     List<KubernetesResource> customWorkloads = Arrays.asList(crdResource);
     List<KubernetesResource> managedWorkloads = Arrays.asList(deploymentResource);
     K8sApplyHandlerConfig config = new K8sApplyHandlerConfig();
+
+    Kubectl client = mock(Kubectl.class);
+    config.setClient(client);
     config.setWorkloads(managedWorkloads);
     config.setCustomWorkloads(customWorkloads);
 
@@ -164,7 +172,7 @@ public class K8sApplyBaseHandlerTest extends CategoryTest {
         .doStatusCheckForAllCustomResources(any(Kubectl.class), anyList(), eq(delegateTaskParams), eq(logCallback),
             eq(true), eq(timeoutIntervalInMillis), eq(false));
     boolean result = baseHandler.steadyStateCheck(
-        false, namespace, delegateTaskParams, timeoutIntervalInMillis, logCallback, config, false);
+        false, namespace, delegateTaskParams, timeoutIntervalInMillis, logCallback, config, false, false);
     assertThat(result).isTrue();
 
     verify(k8sTaskHelperBase, times(1))
@@ -193,6 +201,8 @@ public class K8sApplyBaseHandlerTest extends CategoryTest {
     List<KubernetesResource> customWorkloads = Arrays.asList(crdResource);
     List<KubernetesResource> managedWorkloads = Arrays.asList(deploymentResource);
     K8sApplyHandlerConfig config = new K8sApplyHandlerConfig();
+    Kubectl client = mock(Kubectl.class);
+    config.setClient(client);
     config.setWorkloads(managedWorkloads);
     config.setCustomWorkloads(customWorkloads);
 
@@ -207,7 +217,7 @@ public class K8sApplyBaseHandlerTest extends CategoryTest {
         .doStatusCheckForAllCustomResources(any(Kubectl.class), anyList(), eq(delegateTaskParams), eq(logCallback),
             eq(true), eq(timeoutIntervalInMillis), eq(false));
     boolean result = baseHandler.steadyStateCheck(
-        false, namespace, delegateTaskParams, timeoutIntervalInMillis, logCallback, config, false);
+        false, namespace, delegateTaskParams, timeoutIntervalInMillis, logCallback, config, false, false);
     assertThat(result).isFalse();
 
     verify(k8sTaskHelperBase, times(1))
@@ -236,6 +246,8 @@ public class K8sApplyBaseHandlerTest extends CategoryTest {
     List<KubernetesResource> customWorkloads = Arrays.asList(crdResource);
     List<KubernetesResource> managedWorkloads = Arrays.asList(deploymentResource);
     K8sApplyHandlerConfig config = new K8sApplyHandlerConfig();
+    Kubectl client = mock(Kubectl.class);
+    config.setClient(client);
     config.setWorkloads(managedWorkloads);
     config.setCustomWorkloads(customWorkloads);
 
@@ -250,7 +262,7 @@ public class K8sApplyBaseHandlerTest extends CategoryTest {
         .doStatusCheckForAllCustomResources(any(Kubectl.class), anyList(), eq(delegateTaskParams), eq(logCallback),
             eq(true), eq(timeoutIntervalInMillis), eq(false));
     boolean result = baseHandler.steadyStateCheck(
-        false, namespace, delegateTaskParams, timeoutIntervalInMillis, logCallback, config, false);
+        false, namespace, delegateTaskParams, timeoutIntervalInMillis, logCallback, config, false, false);
     assertThat(result).isFalse();
 
     verify(k8sTaskHelperBase, times(1))
@@ -274,7 +286,7 @@ public class K8sApplyBaseHandlerTest extends CategoryTest {
     config.setCustomWorkloads(Collections.emptyList());
 
     boolean result = baseHandler.steadyStateCheck(
-        false, namespace, delegateTaskParams, timeoutIntervalInMillis, logCallback, config, false);
+        false, namespace, delegateTaskParams, timeoutIntervalInMillis, logCallback, config, false, false);
     assertThat(result).isTrue();
   }
 
@@ -296,7 +308,7 @@ public class K8sApplyBaseHandlerTest extends CategoryTest {
     config.setCustomWorkloads(customWorkloads);
 
     boolean result = baseHandler.steadyStateCheck(
-        true, namespace, delegateTaskParams, timeoutIntervalInMillis, logCallback, config, false);
+        true, namespace, delegateTaskParams, timeoutIntervalInMillis, logCallback, config, false, false);
     assertThat(result).isTrue();
   }
 

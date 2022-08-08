@@ -68,7 +68,7 @@ public class PreDeploymentCheckerTest extends WingsBaseTest {
   @Category(UnitTests.class)
   @Ignore("TODO: please provide clear motivation why this test is ignored")
   public void checkDeploymentRateLimit() {
-    when(mainConfiguration.getDeployMode()).thenReturn(DeployMode.ONPREM);
+    when(mainConfiguration.getDeployMode()).thenReturn(DeployMode.KUBERNETES_ONPREM);
 
     String accountId = "some-account-id";
     rateLimitChecker.check(accountId);

@@ -24,13 +24,13 @@ import io.harness.delegate.task.AbstractDelegateRunnableTask;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.exception.SecretManagementDelegateException;
 import io.harness.helpers.ext.vault.SecretEngineSummary;
-import io.harness.helpers.ext.vault.SysMount;
-import io.harness.helpers.ext.vault.SysMountsResponse;
 import io.harness.helpers.ext.vault.VaultAppRoleLoginResult;
-import io.harness.helpers.ext.vault.VaultRestClientFactory;
-import io.harness.helpers.ext.vault.VaultSysAuthRestClient;
 
 import software.wings.beans.BaseVaultConfig;
+import software.wings.helpers.ext.vault.SysMount;
+import software.wings.helpers.ext.vault.SysMountsResponse;
+import software.wings.helpers.ext.vault.VaultRestClientFactory;
+import software.wings.helpers.ext.vault.VaultSysAuthRestClient;
 
 import java.io.IOException;
 import java.util.ArrayList;

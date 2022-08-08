@@ -23,8 +23,12 @@ import io.harness.product.ci.scm.proto.CompareCommitsResponse;
 import io.harness.product.ci.scm.proto.CreateBranchResponse;
 import io.harness.product.ci.scm.proto.FindCommitResponse;
 import io.harness.product.ci.scm.proto.FindPRResponse;
+import io.harness.product.ci.scm.proto.GetLatestCommitOnFileResponse;
 import io.harness.product.ci.scm.proto.GetLatestCommitResponse;
+import io.harness.product.ci.scm.proto.GetUserRepoResponse;
+import io.harness.product.ci.scm.proto.GetUserReposResponse;
 import io.harness.product.ci.scm.proto.ListBranchesResponse;
+import io.harness.product.ci.scm.proto.ListBranchesWithDefaultResponse;
 import io.harness.product.ci.scm.proto.ListCommitsInPRResponse;
 import io.harness.product.ci.scm.proto.ListCommitsResponse;
 import io.harness.product.ci.scm.proto.SCMGrpc;
@@ -136,13 +140,57 @@ public class ScmGitRefTask extends AbstractDelegateRunnableTask {
             .findCommitResponse(commitResponse.toByteArray())
             .build();
       }
-      case CREATE_NEW_BRANCH: {
+      case CREATE_BRANCH: {
         final CreateBranchResponse createBranchResponse = scmDelegateClient.processScmRequest(c
             -> scmServiceClient.createNewBranch(scmGitRefTaskParams.getScmConnector(), scmGitRefTaskParams.getBranch(),
                 scmGitRefTaskParams.getBaseBranch(), SCMGrpc.newBlockingStub(c)));
         return ScmGitRefTaskResponseData.builder()
             .gitRefType(scmGitRefTaskParams.getGitRefType())
             .createBranchResponse(createBranchResponse.toByteArray())
+            .build();
+      }
+      case REPOSITORY_LIST: {
+        final GetUserReposResponse getUserReposResponse = scmDelegateClient.processScmRequest(c
+            -> scmServiceClient.getUserRepos(scmGitRefTaskParams.getScmConnector(),
+                scmGitRefTaskParams.getPageRequest(), SCMGrpc.newBlockingStub(c)));
+        return ScmGitRefTaskResponseData.builder()
+            .gitRefType(scmGitRefTaskParams.getGitRefType())
+            .getUserReposResponse(getUserReposResponse.toByteArray())
+            .build();
+      }
+      case BRANCH_LIST_WITH_DEFAULT_BRANCH: {
+        final ListBranchesWithDefaultResponse listBranchesWithDefaultResponse = scmDelegateClient.processScmRequest(c
+            -> scmServiceClient.listBranchesWithDefault(scmGitRefTaskParams.getScmConnector(),
+                scmGitRefTaskParams.getPageRequest(), SCMGrpc.newBlockingStub(c)));
+        return ScmGitRefTaskResponseData.builder()
+            .gitRefType(scmGitRefTaskParams.getGitRefType())
+            .getListBranchesWithDefaultResponse(listBranchesWithDefaultResponse.toByteArray())
+            .build();
+      }
+      case REPOSITORY_DETAILS: {
+        final GetUserRepoResponse getUserRepoResponse = scmDelegateClient.processScmRequest(
+            c -> scmServiceClient.getRepoDetails(scmGitRefTaskParams.getScmConnector(), SCMGrpc.newBlockingStub(c)));
+        return ScmGitRefTaskResponseData.builder()
+            .gitRefType(scmGitRefTaskParams.getGitRefType())
+            .getUserRepoResponse(getUserRepoResponse.toByteArray())
+            .build();
+      }
+      case CREATE_BRANCH_V2: {
+        final CreateBranchResponse createBranchResponse = scmDelegateClient.processScmRequest(c
+            -> scmServiceClient.createNewBranchV2(scmGitRefTaskParams.getScmConnector(),
+                scmGitRefTaskParams.getBranch(), scmGitRefTaskParams.getBaseBranch(), SCMGrpc.newBlockingStub(c)));
+        return ScmGitRefTaskResponseData.builder()
+            .gitRefType(scmGitRefTaskParams.getGitRefType())
+            .createBranchResponse(createBranchResponse.toByteArray())
+            .build();
+      }
+      case GET_LATEST_COMMIT_ON_FILE: {
+        final GetLatestCommitOnFileResponse getLatestCommitOnFileResponse = scmDelegateClient.processScmRequest(c
+            -> scmServiceClient.getLatestCommitOnFile(scmGitRefTaskParams.getScmConnector(),
+                scmGitRefTaskParams.getBranch(), scmGitRefTaskParams.getFilePath(), SCMGrpc.newBlockingStub(c)));
+        return ScmGitRefTaskResponseData.builder()
+            .gitRefType(scmGitRefTaskParams.getGitRefType())
+            .getLatestCommitOnFileResponse(getLatestCommitOnFileResponse.toByteArray())
             .build();
       }
       default:

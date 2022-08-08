@@ -10,8 +10,6 @@ package io.harness.connector.mappers.pdcconnector;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.connector.ConnectorTestConstants.HOST_NAME_1;
 import static io.harness.connector.ConnectorTestConstants.HOST_NAME_2;
-import static io.harness.connector.ConnectorTestConstants.SSK_KEY_REF_IDENTIFIER;
-import static io.harness.connector.ConnectorTestConstants.SSK_KEY_REF_IDENTIFIER_WITH_ACCOUNT_SCOPE;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -22,8 +20,6 @@ import io.harness.connector.entities.embedded.pdcconnector.Host;
 import io.harness.connector.entities.embedded.pdcconnector.PhysicalDataCenterConnector;
 import io.harness.delegate.beans.connector.pdcconnector.HostDTO;
 import io.harness.delegate.beans.connector.pdcconnector.PhysicalDataCenterConnectorDTO;
-import io.harness.encryption.Scope;
-import io.harness.encryption.SecretRefData;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
 
@@ -47,13 +43,9 @@ public class PhysicalDataCenterDTOToEntityTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testCreateConnectorDTO() {
     PhysicalDataCenterConnector physicalDataCenterConnector = physicalDataCenterDTOToEntity.toConnectorEntity(
-        PhysicalDataCenterConnectorDTO.builder()
-            .hosts(getHostDTOs())
-            .sshKeyRef(SecretRefData.builder().identifier(SSK_KEY_REF_IDENTIFIER).scope(Scope.ACCOUNT).build())
-            .build());
+        PhysicalDataCenterConnectorDTO.builder().hosts(getHostDTOs()).build());
 
     assertThat(physicalDataCenterConnector).isNotNull();
-    assertThat(physicalDataCenterConnector.getSshKeyRef()).isEqualTo(SSK_KEY_REF_IDENTIFIER_WITH_ACCOUNT_SCOPE);
     assertThat(physicalDataCenterConnector.getHosts().size()).isEqualTo(2);
 
     Host host1 = getHost(HOST_NAME_1);

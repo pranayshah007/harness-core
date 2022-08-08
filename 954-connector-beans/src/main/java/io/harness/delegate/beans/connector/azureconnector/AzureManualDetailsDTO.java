@@ -25,7 +25,7 @@ import lombok.Value;
 @ApiModel("AzureManualDetails")
 @Schema(name = "AzureManualDetails", description = "This contains Azure manual credentials connector details")
 public class AzureManualDetailsDTO implements AzureCredentialSpecDTO {
-  @Schema(description = "Application ID of the Azure App.") @NotNull String clientId;
+  @Schema(description = "Application ID of the Azure App.") @JsonProperty("applicationId") @NotNull String clientId;
 
   @NotNull
   @Schema(description = "The Azure Active Directory (AAD) directory ID where you created your application.")

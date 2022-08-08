@@ -85,6 +85,7 @@ import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.TaskGroup;
 import io.harness.delegate.beans.TaskSelectorMap;
 import io.harness.delegate.beans.executioncapability.CapabilityType;
+import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.HttpConnectionExecutionCapability;
 import io.harness.delegate.beans.executioncapability.SelectorCapability;
 import io.harness.delegate.task.http.HttpTaskParameters;
@@ -147,6 +148,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.apache.commons.lang3.reflect.FieldUtils;
 import org.atmosphere.cpr.Broadcaster;
 import org.atmosphere.cpr.BroadcasterFactory;
@@ -990,6 +992,119 @@ public class DelegateTaskServiceClassicTest extends WingsBaseTest {
     List<DelegateTaskEvent> delegateTaskEvents =
         delegateTaskServiceClassic.getDelegateTaskEvents(ACCOUNT_ID, "delegateid2", true);
     assertThat(delegateTaskEvents).isEmpty();
+  }
+
+  @Test
+  @Owner(developers = JENNY)
+  @Category(UnitTests.class)
+  public void testDelegateFetchTaskSelectorCapabilities_NoSelectionCapabilities() {
+    String taskId = generateUuid();
+    String accountId = generateUuid();
+
+    DelegateTask task = DelegateTask.builder()
+                            .uuid(taskId)
+                            .accountId(accountId)
+                            .selectionLogsTrackingEnabled(true)
+                            .executionCapabilities(
+                                asList(HttpConnectionExecutionCapability.builder().url("https://google.com").build()))
+                            .build();
+    List<SelectorCapability> selectorCapabilities =
+        delegateTaskServiceClassic.fetchTaskSelectorCapabilities(task.getExecutionCapabilities());
+    assertThat(selectorCapabilities).isEmpty();
+  }
+
+  @Test
+  @Owner(developers = JENNY)
+  @Category(UnitTests.class)
+  public void testDelegateFetchTaskSelectorCapabilities_SelectionCapabilityWithEmptyOrigin() {
+    Set<String> selectors1 = Stream.of("sel1").collect(Collectors.toSet());
+    Set<String> selectors2 = Stream.of("sel2").collect(Collectors.toSet());
+
+    SelectorCapability selectorCapability1 =
+        SelectorCapability.builder().selectors(selectors1).selectorOrigin("stage").build();
+    SelectorCapability selectorCapability2 =
+        SelectorCapability.builder().selectors(selectors2).selectorOrigin("").build();
+
+    List<ExecutionCapability> executionCapabilityList = asList(selectorCapability1, selectorCapability2);
+    List<SelectorCapability> selectorCapabilityList =
+        delegateTaskServiceClassic.fetchTaskSelectorCapabilities(executionCapabilityList);
+    assertThat(selectorCapabilityList).hasSize(1);
+  }
+
+  @Test
+  @Owner(developers = JENNY)
+  @Category(UnitTests.class)
+  public void testDelegateFetchTaskSelectorCapabilities_SelectionCapabilityWithDefaultOrigin() {
+    Set<String> selectors1 = Stream.of("sel1").collect(Collectors.toSet());
+
+    SelectorCapability selectorCapability1 =
+        SelectorCapability.builder().selectors(selectors1).selectorOrigin("default").build();
+
+    List<ExecutionCapability> executionCapabilityList = asList(selectorCapability1);
+    List<SelectorCapability> selectorCapabilityList =
+        delegateTaskServiceClassic.fetchTaskSelectorCapabilities(executionCapabilityList);
+    assertThat(selectorCapabilityList).hasSize(1);
+    assertThat(selectorCapabilityList.get(0).getSelectorOrigin()).isEqualTo("default");
+    assertThat(selectorCapabilityList.get(0).getSelectors()).contains("sel1");
+  }
+
+  @Test
+  @Owner(developers = JENNY)
+  @Category(UnitTests.class)
+  public void testDelegateFetchTaskSelectorCapabilities_SelectionCapabilityWithTaskSelectorOrigin() {
+    Set<String> selectors1 = Stream.of("sel1", "sel2").collect(Collectors.toSet());
+    Set<String> selectors2 = Stream.of("sel3").collect(Collectors.toSet());
+
+    SelectorCapability selectorCapability1 =
+        SelectorCapability.builder().selectors(selectors1).selectorOrigin("pipeline").build();
+    SelectorCapability selectorCapability2 =
+        SelectorCapability.builder().selectors(selectors2).selectorOrigin("Task Selectors").build();
+
+    List<ExecutionCapability> executionCapabilityList = asList(selectorCapability1, selectorCapability2);
+    List<SelectorCapability> selectorCapabilityList =
+        delegateTaskServiceClassic.fetchTaskSelectorCapabilities(executionCapabilityList);
+    assertThat(selectorCapabilityList).hasSize(1);
+    assertThat(selectorCapabilityList.get(0).getSelectors()).contains("sel1", "sel2");
+    assertThat(selectorCapabilityList.get(0).getSelectorOrigin()).isEqualTo("pipeline");
+  }
+
+  @Test
+  @Owner(developers = JENNY)
+  @Category(UnitTests.class)
+  public void testDelegateFetchTaskSelectorCapabilities_SelectionCapabilityWithSelectorsFromPipelineAndConnector() {
+    Set<String> selectors1 = Stream.of("sel1", "sel2").collect(Collectors.toSet());
+    Set<String> selectors2 = Stream.of("sel3").collect(Collectors.toSet());
+
+    SelectorCapability selectorCapability1 =
+        SelectorCapability.builder().selectors(selectors1).selectorOrigin("step").build();
+    SelectorCapability selectorCapability2 =
+        SelectorCapability.builder().selectors(selectors2).selectorOrigin("connector").build();
+
+    List<ExecutionCapability> executionCapabilityList = asList(selectorCapability1, selectorCapability2);
+    List<SelectorCapability> selectorCapabilityList =
+        delegateTaskServiceClassic.fetchTaskSelectorCapabilities(executionCapabilityList);
+    // ignore connector ones
+    assertThat(selectorCapabilityList).hasSize(1);
+    assertThat(selectorCapabilityList.get(0).getSelectors()).contains("sel1", "sel2");
+    assertThat(selectorCapabilityList.get(0).getSelectorOrigin()).isEqualTo("step");
+  }
+
+  @Test
+  @Owner(developers = JENNY)
+  @Category(UnitTests.class)
+  public void testDelegateFetchTaskSelectorCapabilities_SelectionCapabilityWithSelectorsFromPipeline() {
+    Set<String> selectors1 = Stream.of("sel1", "sel2").collect(Collectors.toSet());
+
+    SelectorCapability selectorCapability1 =
+        SelectorCapability.builder().selectors(selectors1).selectorOrigin("step").build();
+
+    List<ExecutionCapability> executionCapabilityList = asList(selectorCapability1);
+    List<SelectorCapability> selectorCapabilityList =
+        delegateTaskServiceClassic.fetchTaskSelectorCapabilities(executionCapabilityList);
+    // ignore connector ones
+    assertThat(selectorCapabilityList).hasSize(1);
+    assertThat(selectorCapabilityList.get(0).getSelectors()).contains("sel1", "sel2");
+    assertThat(selectorCapabilityList.get(0).getSelectorOrigin()).isEqualTo("step");
   }
 
   private CapabilityRequirement buildCapabilityRequirement() {

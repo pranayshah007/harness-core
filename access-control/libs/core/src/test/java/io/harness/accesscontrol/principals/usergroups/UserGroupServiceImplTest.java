@@ -1,3 +1,10 @@
+/*
+ * Copyright 2022 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
+
 package io.harness.accesscontrol.principals.usergroups;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
@@ -15,6 +22,7 @@ import static org.mockito.Mockito.when;
 import io.harness.accesscontrol.AccessControlCoreTestBase;
 import io.harness.accesscontrol.principals.usergroups.persistence.UserGroupDao;
 import io.harness.accesscontrol.roleassignments.RoleAssignmentService;
+import io.harness.accesscontrol.scopes.core.ScopeService;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.InvalidRequestException;
@@ -34,13 +42,16 @@ public class UserGroupServiceImplTest extends AccessControlCoreTestBase {
   private RoleAssignmentService roleAssignmentService;
   private TransactionTemplate transactionTemplate;
   private UserGroupService userGroupService;
+  private ScopeService scopeService;
 
   @Before
   public void setup() {
     userGroupDao = mock(UserGroupDao.class);
     roleAssignmentService = mock(RoleAssignmentService.class);
     transactionTemplate = mock(TransactionTemplate.class);
-    userGroupService = spy(new UserGroupServiceImpl(userGroupDao, roleAssignmentService, transactionTemplate));
+    scopeService = mock(ScopeService.class);
+    userGroupService =
+        spy(new UserGroupServiceImpl(userGroupDao, roleAssignmentService, scopeService, transactionTemplate));
   }
 
   @Test

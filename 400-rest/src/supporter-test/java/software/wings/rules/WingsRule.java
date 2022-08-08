@@ -521,7 +521,7 @@ public class WingsRule implements MethodRule, InjectorRuleMixin, MongoRuleMixin 
           notifyQueuePublisherRegister.register(
               ORCHESTRATION, payload -> publisher.send(asList(ORCHESTRATION), payload));
         }
-        injector.getInstance(QueueListenerController.class).register(injector.getInstance(queueListenerClass), 1);
+        injector.getInstance(QueueListenerController.class).register(injector.getInstance(queueListenerClass), 2);
       }
     }
   }

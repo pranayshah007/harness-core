@@ -16,5 +16,6 @@ import lombok.experimental.UtilityClass;
 @UtilityClass
 public class PmsConstants {
   public final String QUEUING_RC_NAME = "Queuing";
+  public final int QUEUING_RC_PERMITS = 1;
   public final String RELEASE_ENTITY_TYPE_PLAN = "PLAN";
 }

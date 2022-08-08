@@ -9,23 +9,43 @@ package io.harness.ccm.remote.resources;
 
 import static io.harness.NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE;
 import static io.harness.annotations.dev.HarnessTeam.CE;
+import static io.harness.ccm.remote.resources.TelemetryConstants.ALERTS_COUNT;
+import static io.harness.ccm.remote.resources.TelemetryConstants.BUDGET_CREATED;
+import static io.harness.ccm.remote.resources.TelemetryConstants.BUDGET_PERIOD;
+import static io.harness.ccm.remote.resources.TelemetryConstants.BUDGET_TYPE;
+import static io.harness.ccm.remote.resources.TelemetryConstants.MODULE;
+import static io.harness.ccm.remote.resources.TelemetryConstants.MODULE_NAME;
+import static io.harness.outbox.TransactionOutboxModule.OUTBOX_TRANSACTION_TEMPLATE;
+import static io.harness.springdata.TransactionUtils.DEFAULT_TRANSACTION_RETRY_POLICY;
+import static io.harness.telemetry.Destination.AMPLITUDE;
 
 import io.harness.NGCommonEntityConstants;
 import io.harness.accesscontrol.AccountIdentifier;
+import io.harness.accesscontrol.NGAccessControlCheck;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.ccm.audittrails.events.BudgetCreateEvent;
+import io.harness.ccm.audittrails.events.BudgetDeleteEvent;
+import io.harness.ccm.audittrails.events.BudgetUpdateEvent;
 import io.harness.ccm.commons.entities.billing.Budget;
 import io.harness.ccm.commons.entities.budget.BudgetData;
 import io.harness.ccm.graphql.core.budget.BudgetService;
+import io.harness.ccm.rbac.CCMRbacHelper;
+import io.harness.ccm.rbac.CCMRbacPermissions;
+import io.harness.ccm.rbac.CCMResources;
 import io.harness.ccm.utils.LogAccountIdentifier;
 import io.harness.ccm.views.service.CEViewService;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.outbox.api.OutboxService;
 import io.harness.security.annotations.NextGenManagerAuth;
+import io.harness.telemetry.Category;
+import io.harness.telemetry.TelemetryReporter;
 
 import com.codahale.metrics.annotation.ExceptionMetered;
 import com.codahale.metrics.annotation.Timed;
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.v3.oas.annotations.Operation;
@@ -34,6 +54,8 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
@@ -48,7 +70,10 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import lombok.extern.slf4j.Slf4j;
+import net.jodah.failsafe.Failsafe;
+import net.jodah.failsafe.RetryPolicy;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.support.TransactionTemplate;
 
 @Api("budgets")
 @Path("budgets")
@@ -67,6 +92,12 @@ import org.springframework.stereotype.Service;
 public class BudgetResource {
   @Inject private BudgetService budgetService;
   @Inject private CEViewService ceViewService;
+  @Inject private TelemetryReporter telemetryReporter;
+  @Inject @Named(OUTBOX_TRANSACTION_TEMPLATE) private TransactionTemplate transactionTemplate;
+  @Inject private OutboxService outboxService;
+  @Inject CCMRbacHelper rbacHelper;
+
+  private final RetryPolicy<Object> transactionRetryPolicy = DEFAULT_TRANSACTION_RETRY_POLICY;
 
   @POST
   @Timed
@@ -87,10 +118,23 @@ public class BudgetResource {
   public ResponseDTO<String>
   save(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
            NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
-      @RequestBody(required = true, description = "Budget definition") Budget budget) {
+      @RequestBody(required = true, description = "Budget definition") @NotNull @Valid Budget budget) {
+    rbacHelper.checkBudgetEditPermission(accountId, null, null);
     budget.setAccountId(accountId);
     budget.setNgBudget(true);
-    return ResponseDTO.newResponse(budgetService.create(budget));
+    HashMap<String, Object> properties = new HashMap<>();
+    properties.put(MODULE, MODULE_NAME);
+    properties.put(BUDGET_PERIOD, budget.getPeriod());
+    properties.put(BUDGET_TYPE, budget.getType());
+    properties.put(ALERTS_COUNT, budget.getAlertThresholds().length);
+    String createCall = budgetService.create(budget);
+    telemetryReporter.sendTrackEvent(
+        BUDGET_CREATED, null, accountId, properties, Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL);
+    return ResponseDTO.newResponse(
+        Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
+          outboxService.save(new BudgetCreateEvent(accountId, budget.toDTO()));
+          return createCall;
+        })));
   }
 
   @POST
@@ -112,6 +156,7 @@ public class BudgetResource {
             NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @PathParam("id") @Parameter(required = true, description = "Unique identifier for the budget") String budgetId,
       @QueryParam("cloneName") @Parameter(required = true, description = "Name of the new budget") String budgetName) {
+    rbacHelper.checkBudgetEditPermission(accountId, null, null);
     return ResponseDTO.newResponse(budgetService.clone(budgetId, budgetName, accountId));
   }
 
@@ -133,6 +178,7 @@ public class BudgetResource {
   get(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @Parameter(required = true, description = "Unique identifier for the budget") @PathParam("id") String budgetId) {
+    rbacHelper.checkBudgetViewPermission(accountId, null, null);
     return ResponseDTO.newResponse(budgetService.get(budgetId, accountId));
   }
 
@@ -152,6 +198,7 @@ public class BudgetResource {
   public ResponseDTO<List<Budget>>
   list(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
       NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId) {
+    rbacHelper.checkBudgetViewPermission(accountId, null, null);
     return ResponseDTO.newResponse(budgetService.list(accountId));
   }
 
@@ -174,6 +221,7 @@ public class BudgetResource {
            NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @Parameter(required = true, description = "Unique identifier for the Perspective") @QueryParam(
           "perspectiveId") String perspectiveId) {
+    rbacHelper.checkBudgetViewPermission(accountId, null, null);
     return ResponseDTO.newResponse(budgetService.list(accountId, perspectiveId));
   }
 
@@ -196,9 +244,16 @@ public class BudgetResource {
   update(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
              NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @Valid @NotNull @Parameter(required = true, description = "Unique identifier for the budget") @PathParam("id")
-      String budgetId, @RequestBody(required = true, description = "The Budget object") @NotNull Budget budget) {
+      String budgetId, @RequestBody(required = true, description = "The Budget object") @NotNull @Valid Budget budget) {
+    rbacHelper.checkBudgetEditPermission(accountId, null, null);
+    Budget oldBudget = budgetService.get(budgetId, accountId);
     budgetService.update(budgetId, budget);
-    return ResponseDTO.newResponse("Successfully updated the budget");
+    Budget newBudget = budgetService.get(budgetId, accountId);
+    return ResponseDTO.newResponse(
+        Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
+          outboxService.save(new BudgetUpdateEvent(accountId, newBudget.toDTO(), oldBudget.toDTO()));
+          return "Successfully updated the budget";
+        })));
   }
 
   @DELETE
@@ -220,8 +275,14 @@ public class BudgetResource {
              NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @NotNull @Valid @Parameter(required = true, description = "Unique identifier for the budget") @PathParam(
           "id") String budgetId) {
+    rbacHelper.checkBudgetDeletePermission(accountId, null, null);
+    Budget budget = budgetService.get(budgetId, accountId);
     budgetService.delete(budgetId, accountId);
-    return ResponseDTO.newResponse("Successfully deleted the budget");
+    return ResponseDTO.newResponse(
+        Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
+          outboxService.save(new BudgetDeleteEvent(accountId, budget.toDTO()));
+          return "Successfully deleted the budget";
+        })));
   }
 
   @GET
@@ -261,6 +322,7 @@ public class BudgetResource {
   @Timed
   @LogAccountIdentifier
   @ExceptionMetered
+  @NGAccessControlCheck(resourceType = CCMResources.BUDGET, permission = CCMRbacPermissions.BUDGET_VIEW)
   @ApiOperation(value = "Get cost details for budget", nickname = "getCostDetails")
   @Operation(operationId = "getCostDetails",
       description = "Fetch the cost details of a Cloud Cost Budget for the given Budget ID.",

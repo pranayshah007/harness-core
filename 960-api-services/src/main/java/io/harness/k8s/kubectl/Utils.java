@@ -9,6 +9,7 @@ package io.harness.k8s.kubectl;
 
 import java.io.File;
 import java.io.OutputStream;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import lombok.experimental.UtilityClass;
 import org.apache.commons.lang3.StringUtils;
@@ -20,11 +21,11 @@ import org.zeroturnaround.exec.StartedProcess;
 public class Utils {
   private static final String newLineRegex = "\\r?\\n";
 
-  public static ProcessResult executeScript(
-      String directoryPath, String command, OutputStream output, OutputStream error) throws Exception {
+  public static ProcessResult executeScript(String directoryPath, String command, OutputStream output,
+      OutputStream error, Map<String, String> environment) throws Exception {
     ProcessExecutor processExecutor = new ProcessExecutor()
-
                                           .directory(new File(directoryPath))
+                                          .environment(environment)
                                           .commandSplit(command)
                                           .readOutput(true)
                                           .redirectOutput(output)
@@ -33,10 +34,11 @@ public class Utils {
     return processExecutor.execute();
   }
 
-  public static StartedProcess startScript(
-      String directoryPath, String command, OutputStream output, OutputStream error) throws Exception {
+  public static StartedProcess startScript(String directoryPath, String command, OutputStream output,
+      OutputStream error, Map<String, String> environment) throws Exception {
     ProcessExecutor processExecutor = new ProcessExecutor()
                                           .directory(new File(directoryPath))
+                                          .environment(environment)
                                           .commandSplit(command)
                                           .readOutput(true)
                                           .redirectOutput(output)

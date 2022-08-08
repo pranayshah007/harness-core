@@ -55,11 +55,4 @@ public interface NexusRegistryService {
    * @return boolean validate
    */
   boolean validateCredentials(NexusRequest nexusConfig);
-
-  /**
-   * Verifies the Artifact Tag Manifest exists
-   * @param lastSuccessfulBuild       artifact build details
-   * @param nexusConfig         the artifactory config
-   */
-  boolean verifyArtifactManifestUrl(BuildDetailsInternal lastSuccessfulBuild, NexusRequest nexusConfig);
 }

@@ -1,0 +1,307 @@
+{
+  "totalClusters": 4,
+  "eventCounts": [
+    {
+      "clusterType": "KNOWN_EVENT",
+      "count": 1,
+      "displayName": "Known"
+    },
+    {
+      "clusterType": "UNEXPECTED_FREQUENCY",
+      "count": 1,
+      "displayName": "Unexpected Frequency"
+    },
+    {
+      "clusterType": "UNKNOWN_EVENT",
+      "count": 2,
+      "displayName": "Unknown"
+    },
+    {
+      "clusterType": "BASELINE",
+      "count": 2,
+      "displayName": "Baseline"
+    }
+  ],
+  "logAnalysisRadarCharts": {
+    "totalPages": 1,
+    "totalItems": 4,
+    "pageItemCount": 4,
+    "pageSize": 20,
+    "content": [
+      {
+        "message": "clusterTwo",
+        "clusterId": "7360bb51-fb72-372f-bc2c-f57adb2f881a",
+        "label": 2,
+        "risk": "UNHEALTHY",
+        "clusterType": "UNKNOWN_EVENT",
+        "count": 25,
+        "frequencyData": [
+          12.0,
+          13.0
+        ],
+        "hostFrequencyData": [
+          {
+            "frequencies": [
+              {
+                "timeStamp": 100,
+                "count": 12.0
+              }
+            ],
+            "host": "host1"
+          },
+          {
+            "frequencies": [
+              {
+                "timeStamp": 200,
+                "count": 13.0
+              }
+            ],
+            "host": "host2"
+          }
+        ],
+        "averageFrequencyData": [
+          {
+            "timeStamp": 100,
+            "count": 12.0
+          },
+          {
+            "timeStamp": 200,
+            "count": 13.0
+          }
+        ],
+        "hasControlData": false
+      },
+      {
+        "message": "clusterThree",
+        "clusterId": "78e3fb69-e56d-3c18-a0e7-433542b2c000",
+        "label": 3,
+        "risk": "UNHEALTHY",
+        "clusterType": "UNKNOWN_EVENT",
+        "count": 39,
+        "frequencyData": [
+          12.0,
+          13.0,
+          14.0
+        ],
+        "hostFrequencyData": [
+          {
+            "frequencies": [
+              {
+                "timeStamp": 100,
+                "count": 12.0
+              },
+              {
+                "timeStamp": 200,
+                "count": 13.0
+              }
+            ],
+            "host": "host1"
+          },
+          {
+            "frequencies": [
+              {
+                "timeStamp": 300,
+                "count": 14.0
+              }
+            ],
+            "host": "host2"
+          }
+        ],
+        "averageFrequencyData": [
+          {
+            "timeStamp": 100,
+            "count": 12.0
+          },
+          {
+            "timeStamp": 200,
+            "count": 13.0
+          },
+          {
+            "timeStamp": 300,
+            "count": 14.0
+          }
+        ],
+        "hasControlData": false
+      },
+      {
+        "message": "clusterOne",
+        "clusterId": "5da3b033-bbf0-3034-9ad4-47cf7fd1b6b0",
+        "label": 1,
+        "risk": "UNHEALTHY",
+        "clusterType": "UNEXPECTED_FREQUENCY",
+        "count": 1,
+        "frequencyData": [
+          1100.0
+        ],
+        "hostFrequencyData": [
+          {
+            "frequencies": [
+              {
+                "timeStamp": 100,
+                "count": 1200.0
+              }
+            ],
+            "host": "host1"
+          },
+          {
+            "frequencies": [
+              {
+                "timeStamp": 100,
+                "count": 1000.0
+              }
+            ],
+            "host": "host2"
+          }
+        ],
+        "baseline": {
+          "message": "clusterOne",
+          "label": 1,
+          "risk": "NO_ANALYSIS",
+          "clusterType": "BASELINE",
+          "count": 0,
+          "frequencyData": [
+            1.0,
+            2.0,
+            1.0
+          ],
+          "hostFrequencyData": [
+            {
+              "frequencies": [
+                {
+                  "timeStamp": 100,
+                  "count": 1.0
+                },
+                {
+                  "timeStamp": 200,
+                  "count": 2.0
+                },
+                {
+                  "timeStamp": 300,
+                  "count": 1.0
+                }
+              ],
+              "host": "host1"
+            }
+          ],
+          "averageFrequencyData": [
+            {
+              "timeStamp": 100,
+              "count": 1.0
+            },
+            {
+              "timeStamp": 200,
+              "count": 2.0
+            },
+            {
+              "timeStamp": 300,
+              "count": 1.0
+            }
+          ],
+          "hasControlData": false
+        },
+        "averageFrequencyData": [
+          {
+            "timeStamp": 100,
+            "count": 1100.0
+          }
+        ],
+        "hasControlData": true
+      },
+      {
+        "message": "clusterZero",
+        "clusterId": "fb17d0c8-501d-30d3-9b0f-7ff0a7ddf09e",
+        "label": 0,
+        "risk": "HEALTHY",
+        "clusterType": "KNOWN_EVENT",
+        "count": 152,
+        "frequencyData": [
+          152.0
+        ],
+        "hostFrequencyData": [
+          {
+            "frequencies": [
+              {
+                "timeStamp": 100,
+                "count": 152.0
+              }
+            ],
+            "host": "host1"
+          }
+        ],
+        "baseline": {
+          "message": "clusterZero",
+          "label": 0,
+          "risk": "NO_ANALYSIS",
+          "clusterType": "BASELINE",
+          "count": 0,
+          "frequencyData": [
+            101.0,
+            122.0,
+            155.0,
+            185.0,
+            166.0
+          ],
+          "hostFrequencyData": [
+            {
+              "frequencies": [
+                {
+                  "timeStamp": 100,
+                  "count": 101.0
+                },
+                {
+                  "timeStamp": 200,
+                  "count": 122.0
+                },
+                {
+                  "timeStamp": 300,
+                  "count": 155.0
+                },
+                {
+                  "timeStamp": 400,
+                  "count": 185.0
+                },
+                {
+                  "timeStamp": 500,
+                  "count": 166.0
+                }
+              ],
+              "host": "host1"
+            }
+          ],
+          "averageFrequencyData": [
+            {
+              "timeStamp": 400,
+              "count": 185.0
+            },
+            {
+              "timeStamp": 500,
+              "count": 166.0
+            },
+            {
+              "timeStamp": 100,
+              "count": 101.0
+            },
+            {
+              "timeStamp": 200,
+              "count": 122.0
+            },
+            {
+              "timeStamp": 300,
+              "count": 155.0
+            }
+          ],
+          "hasControlData": false
+        },
+        "averageFrequencyData": [
+          {
+            "timeStamp": 100,
+            "count": 152.0
+          }
+        ],
+        "hasControlData": true
+      }
+    ],
+    "pageIndex": 0,
+    "empty": false
+  }
+}

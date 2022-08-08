@@ -1,0 +1,276 @@
+server:
+  applicationConnectors:
+    - type: https
+      port: 7171
+      keyStorePath: keystore.jks
+      keyStorePassword: password
+      trustStorePath: ${JAVA_HOME}/lib/security/cacerts
+      certAlias: localhost
+      validateCerts: false
+      maxRequestHeaderSize: 100KiB
+    - type: http
+      port: 4457
+      maxRequestHeaderSize: 100KiB
+  adminConnectors:
+    - type: https
+      port: 7071
+      keyStorePath: keystore.jks
+      keyStorePassword: password
+      trustStorePath: ${JAVA_HOME}/lib/security/cacerts
+      certAlias: localhost
+      validateCerts: false
+  requestLog:
+    appenders: []
+
+logging:
+  level: INFO
+  loggers:
+    org.glassfish.jersey: WARN
+    allbegray.slack: WARN
+    org.glassfish.jersey.server.ServerRuntime.Responder: "OFF"
+  appenders:
+    - type: console
+      threshold: TRACE
+      target: STDOUT
+      logFormat: "%date{ISO8601} %green([%thread]) %highlight(%-5level) %cyan(%logger) - %msg %yellow(%replace(%mdc){'(.+)', '[$1]'}) %n"
+    - type: gke-console
+      threshold: TRACE
+      target: STDOUT
+      stackdriverLogEnabled: false
+
+accessControlClient:
+  enableAccessControl: false
+  accessControlServiceConfig:
+    baseUrl: http://localhost:9006/api/
+    connectTimeOutSeconds: 15
+    readTimeOutSeconds: 15
+  accessControlServiceSecret: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
+
+
+harness-mongo:
+  uri: mongodb://localhost:27017/harness
+  connectTimeout: 30000
+  serverSelectionTimeout: 90000
+  maxConnectionIdleTime: 600000
+  connectionsPerHost: 50
+cimanager-mongo:
+  uri: mongodb://localhost:27017/harnessci
+  connectTimeout: 30000
+  serverSelectionTimeout: 90000
+  maxConnectionIdleTime: 600000
+  connectionsPerHost: 300
+  indexManagerMode: AUTO
+  aliasDBName: harnessci
+pmsMongo:
+  uri: mongodb://localhost:27017/pms-harness
+  connectTimeout: 30000
+  serverSelectionTimeout: 90000
+  maxConnectionIdleTime: 600000
+  connectionsPerHost: 300
+  indexManagerMode: AUTO
+
+enableAuth: false
+
+scmConnectionConfig:
+  url: localhost:8091
+
+logServiceConfig:
+  baseUrl: https://qa.harness.io/log-service/
+  globalToken: "c76e567a-b341-404d-a8dd-d9738714eb82"
+
+tiServiceConfig:
+  baseUrl: http://localhost:8078
+  globalToken: "78d16b66-4b4c-11eb-8377-acde48001122"
+
+stoServiceConfig:
+  baseUrl: http://localhost:4000
+  globalToken: "551715ea-ca71-11ec-9d64-0242ac120002"
+
+managerTarget: localhost:9880
+managerAuthority: localhost
+managerServiceSecret: "IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM"
+jwtAuthSecret: "dOkdsVqdRPPRJG31XU0qY4MPqmBBMk0PTAGIKM6O7TGqhjyxScIdJe80mwh5Yb5zF3KxYBHw6B3Lfzlq"
+ngManagerServiceSecret: "IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM"
+jwtIdentityServiceSecret: "HVSKUYqD4e5Rxu12hFDdCJKGM64sxgEynvdDhaOHaTHhwwn0K4Ttr0uoOxSsEVYNrUU="
+
+ngManagerClientConfig:
+  baseUrl: http://localhost:7457/
+  connectTimeOutSeconds: 40
+  readTimeOutSeconds: 40
+
+managerClientConfig:
+  baseUrl: http://localhost:3457/api/
+  connectTimeOutSeconds: 15
+  readTimeOutSeconds: 15
+ciExecutionServiceConfig:
+  addonImageTag: releaseBuild-30
+  liteEngineImageTag: releaseBuild-29
+  defaultMemoryLimit: 500
+  defaultCPULimit: 400
+  defaultInternalImageConnector: ''
+  pvcDefaultStorageSize: 25600
+  delegateServiceEndpointVariableValue: "delegate-service:8080"
+  addonImage: harness/ci-addon:1.14.11
+  liteEngineImage: harness/ci-lite-engine:1.14.11
+  isLocal: false
+  stepConfig:
+    # The below config is for K8 steps
+    gitCloneConfig:
+      # Use rootless image only for K8 git clone
+      image: harness/drone-git:1.2.2-rootless
+      entrypoint:
+        - /usr/local/bin/clone
+      windowsEntrypoint:
+        - "pwsh"
+        - "C:\\bin\\clone.ps1"
+    buildAndPushDockerRegistryConfig:
+      image: plugins/kaniko:1.6.1
+      entrypoint:
+        - /kaniko/kaniko-docker
+    buildAndPushECRConfig:
+      image: plugins/kaniko-ecr:1.6.1
+      entrypoint:
+        - /kaniko/kaniko-ecr
+    buildAndPushGCRConfig:
+      image: plugins/kaniko-gcr:1.6.1
+      entrypoint:
+        - /kaniko/kaniko-gcr
+    buildAndPushACRConfig:
+      image: plugins/kaniko-acr:1.6.4-linux-amd64
+      entrypoint:
+        - /kaniko/kaniko-acr
+    gcsUploadConfig:
+      image: plugins/gcs:1.3.0
+      entrypoint:
+        - /bin/drone-gcs
+      windowsEntrypoint:
+        - "C:\\drone-gcs.exe"
+    s3UploadConfig:
+      image: plugins/s3:1.1.0
+      entrypoint:
+        - /bin/drone-s3
+      windowsEntrypoint:
+        - "C:\\drone-s3.exe"
+    securityConfig:
+      image: zeronorth/sto_plugin:dev
+      entrypoint:
+        - /bin/sh
+        - -c
+        - python3 ${DOCKER_ENTRYPOINT}
+    artifactoryUploadConfig:
+      image: plugins/artifactory:1.1.1
+      entrypoint:
+        - /bin/plugin
+      windowsEntrypoint:
+        - "C:\\bin\\drone-artifactory.exe"
+    cacheGCSConfig:
+      image: plugins/cache:1.4.2
+      entrypoint:
+        - /bin/drone-cache
+      windowsEntrypoint:
+        - "C:\\drone-cache.exe"
+    cacheS3Config:
+      image: plugins/cache:1.4.2
+      entrypoint:
+        - /bin/drone-cache
+      windowsEntrypoint:
+        - "C:\\drone-cache.exe"
+    vmImageConfig:
+      # Use root image for VM git clone
+      gitClone: harness/drone-git:1.2.0
+      buildAndPushDockerRegistry: plugins/docker:latest
+      buildAndPushACR: plugins/acr:latest
+      buildAndPushECR: plugins/ecr:latest
+      buildAndPushGCR: plugins/gcr:latest
+      gcsUpload: plugins/gcs:1.3.0
+      s3Upload: plugins/s3:1.1.0
+      security: plugin/sto_plugin:dev
+      artifactoryUpload: plugins/artifactory:1.1.1
+      cacheGCS: plugins/cache:1.4.2
+      cacheS3: plugins/cache:1.4.2
+
+pmsSdkExecutionPoolConfig:
+  corePoolSize: ${PMS_SDK_EXECUTION_POOL_CORE_SIZE:-50}
+  maxPoolSize: ${PMS_SDK_EXECUTION_POOL_MAX_SIZE:-300}
+  idleTime: ${PMS_SDK_EXECUTION_POOL_IDLE_TIME:-120}
+  timeUnit: ${PMS_SDK_EXECUTION_POOL_IDLE_TIME_TIME_UNIT:-SECONDS}
+
+pmsSdkOrchestrationEventPoolConfig:
+  corePoolSize: ${PMS_SDK_ORCHESTRATION_EVENT_POOL_CORE_SIZE:-50}
+  maxPoolSize: ${PMS_SDK_ORCHESTRATION_EVENT_POOL_MAX_SIZE:-300}
+  idleTime: ${PMS_SDK_ORCHESTRATION_EVENT_POOL_IDLE_TIME:-120}
+  timeUnit: ${PMS_SDK_ORCHESTRATION_EVENT_POOL_IDLE_TIME_TIME_UNIT:-SECONDS}
+
+asyncDelegateResponseConsumption:
+  corePoolSize: ${ASYNC_DELEGATE_RESPONSE_THREAD_COUNT:-1}
+
+pmsSdkGrpcServerConfig:
+  connectors:
+    - port: 12301
+      secure: true
+      keyFilePath: key.pem
+      certFilePath: cert.pem
+    - port: 12302
+
+pmsGrpcClientConfig:
+  target: localhost:12011
+  authority: localhost
+
+apiUrl: https://localhost:8181/#/
+
+shouldConfigureWithPMS: false
+
+enableDashboardTimescale: false
+
+timescaledb:
+  timescaledbUrl: "jdbc:postgresql://34.83.25.129:5432/harness"
+  timescaledbUsername: "harnessappdev"
+  timescaledbPassword: "harnessappdev"
+  connectTimeout: 10
+  socketTimeout: 30
+  logUnclosedConnections: false
+  loggerLevel: OFF
+
+eventsFramework:
+  redis:
+    sentinel: false
+    masterName: "test"
+    redisUrl: "redis://localhost:6379"
+    sentinelUrls:
+      - "redis://redis1:26379"
+      - "redis://redis2:26379"
+      - "redis://redis3:26379"
+    envNamespace: ""
+    readMode: MASTER
+    nettyThreads: 16
+    useScriptCache: true
+    userName: ""
+    password: ""
+    sslConfig:
+      enabled: false
+      CATrustStorePath: "/tmp/ca_trust_store"
+      CATrustStorePassword: ""
+
+hostname: ${HOSTNAME:-localhost}
+
+basePathPrefix: ${BASE_PATH_PREFIX:-""}
+
+segmentConfiguration:
+  enabled: false
+  url: "segment_url_place_holder"
+  apiKey: "segment_api_key"
+  certValidationRequired: false
+
+cacheConfig:
+  cacheBackend: REDIS
+  cacheNamespace: ""
+  disabledCaches: [ ]
+
+enforcementClientConfiguration:
+  enforcementCheckEnabled: false
+
+pmsPlanCreatorServicePoolConfig:
+  corePoolSize: ${PLAN_CREATOR_SERVICE_EXECUTOR_POOL_CORE_SIZE:-2}
+  maxPoolSize: ${PLAN_CREATOR_SERVICE_EXECUTOR_POOL_MAX_SIZE:-3}
+  idleTime: ${PLAN_CREATOR_SERVICE_EXECUTOR_POOL_IDLE_TIME:-30}
+  timeUnit: ${PLAN_CREATOR_SERVICE_EXECUTOR_POOL_IDLE_TIME_TIME_UNIT:-SECONDS}

@@ -36,8 +36,10 @@ import io.harness.ng.overview.dto.ActiveServiceInstanceSummary;
 import io.harness.ng.overview.dto.DashboardWorkloadDeployment;
 import io.harness.ng.overview.dto.EnvBuildIdAndInstanceCountInfoList;
 import io.harness.ng.overview.dto.EnvIdCountPair;
+import io.harness.ng.overview.dto.EnvironmentDeploymentInfo;
 import io.harness.ng.overview.dto.ExecutionDeploymentInfo;
 import io.harness.ng.overview.dto.HealthDeploymentDashboard;
+import io.harness.ng.overview.dto.InstanceGroupedByArtifactList;
 import io.harness.ng.overview.dto.InstancesByBuildIdList;
 import io.harness.ng.overview.dto.ServiceDeploymentInfoDTO;
 import io.harness.ng.overview.dto.ServiceDeploymentListInfo;
@@ -52,6 +54,7 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
+import io.swagger.v3.oas.annotations.Parameter;
 import java.util.List;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
@@ -159,10 +162,12 @@ public class CDDashboardOverviewResource {
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) @ResourceIdentifier String projectIdentifier,
+      @NotNull @QueryParam(NGResourceFilterConstants.START_TIME) long startInterval,
+      @NotNull @QueryParam(NGResourceFilterConstants.END_TIME) long endInterval,
       @QueryParam("top") @DefaultValue("20") long days) {
     log.info("Getting deployments for active failed and running status");
     return ResponseDTO.newResponse(cdOverviewDashboardService.getDeploymentActiveFailedRunningInfo(
-        accountIdentifier, orgIdentifier, projectIdentifier, days));
+        accountIdentifier, orgIdentifier, projectIdentifier, days, startInterval, endInterval));
   }
 
   @GET
@@ -194,9 +199,11 @@ public class CDDashboardOverviewResource {
       @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @NotNull @QueryParam(NGResourceFilterConstants.START_TIME) long startTime,
-      @NotNull @QueryParam(NGResourceFilterConstants.END_TIME) long endTime) throws Exception {
+      @NotNull @QueryParam(NGResourceFilterConstants.END_TIME) long endTime,
+      @Parameter(description = "Specifies the sorting criteria of the list") @QueryParam("sort") List<String> sort)
+      throws Exception {
     return ResponseDTO.newResponse(cdOverviewDashboardService.getServiceDetailsList(
-        accountIdentifier, orgIdentifier, projectIdentifier, startTime, endTime));
+        accountIdentifier, orgIdentifier, projectIdentifier, startTime, endTime, sort));
   }
 
   @GET
@@ -250,6 +257,20 @@ public class CDDashboardOverviewResource {
       @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceId) {
     return ResponseDTO.newResponse(cdOverviewDashboardService.getEnvBuildInstanceCountByServiceId(
+        accountIdentifier, orgIdentifier, projectIdentifier, serviceId));
+  }
+
+  @GET
+  @Path("/getActiveServiceInstances")
+  @ApiOperation(
+      value = "Get list of artifact version, last pipeline execution, environment, infrastructure with instance count",
+      nickname = "getActiveServiceInstances")
+  public ResponseDTO<InstanceGroupedByArtifactList>
+  getEnvBuildInstanceCountV2(@NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceId) {
+    return ResponseDTO.newResponse(cdOverviewDashboardService.getInstanceGroupedByArtifactList(
         accountIdentifier, orgIdentifier, projectIdentifier, serviceId));
   }
 
@@ -318,6 +339,32 @@ public class CDDashboardOverviewResource {
       @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceId) {
     return ResponseDTO.newResponse(cdOverviewDashboardService.getServiceHeaderInfo(
+        accountIdentifier, orgIdentifier, projectIdentifier, serviceId));
+  }
+
+  @GET
+  @Path("/getEnvArtifactDetailsByServiceId")
+  @ApiOperation(value = "Get list of unique environment and Artifact version filter by service_id",
+      nickname = "getEnvArtifactDetailsByServiceId")
+  public ResponseDTO<EnvironmentDeploymentInfo>
+  getEnvArtifactDetailsByServiceId(@NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceId) {
+    return ResponseDTO.newResponse(cdOverviewDashboardService.getEnvironmentDeploymentDetailsByServiceId(
+        accountIdentifier, orgIdentifier, projectIdentifier, serviceId));
+  }
+
+  @GET
+  @Path("/getActiveServiceDeployments")
+  @ApiOperation(value = "Get Information about artifacts for a particular service, deployed to different environments",
+      nickname = "getActiveServiceDeployments")
+  public ResponseDTO<InstanceGroupedByArtifactList>
+  getActiveServiceDeployments(@NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceId) {
+    return ResponseDTO.newResponse(cdOverviewDashboardService.getActiveServiceDeploymentsList(
         accountIdentifier, orgIdentifier, projectIdentifier, serviceId));
   }
 }

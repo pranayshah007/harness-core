@@ -56,6 +56,7 @@ import software.wings.service.impl.newrelic.NewRelicMetricDataRecord;
 import software.wings.service.intfc.DataStoreService;
 import software.wings.service.intfc.analysis.ClusterLevel;
 import software.wings.service.intfc.verification.CVActivityLogService;
+import software.wings.service.intfc.verification.CVActivityLogger;
 import software.wings.sm.StateType;
 import software.wings.verification.VerificationDataAnalysisResponse;
 
@@ -474,7 +475,7 @@ public class WorkflowAnalysisJobTest extends VerificationBase {
     when(verificationManagerClient.getListOfPublishedVersions(anyString())).thenReturn(versionsCall);
 
     when(cvActivityLogService.getLoggerByStateExecutionId(anyString(), anyString()))
-        .thenReturn(mock(CVActivityLogService.Logger.class));
+        .thenReturn(mock(CVActivityLogger.class));
 
     workflowLogAnalysisJob.handle(logAnalysisContext);
 

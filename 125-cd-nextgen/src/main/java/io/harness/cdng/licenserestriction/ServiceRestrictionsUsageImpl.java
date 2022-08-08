@@ -7,14 +7,14 @@
 
 package io.harness.cdng.licenserestriction;
 
-import static io.harness.licensing.beans.modules.types.CDLicenseType.SERVICES;
+import static io.harness.cd.CDLicenseType.SERVICES;
 
 import io.harness.ModuleType;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.usage.beans.ServiceUsageDTO;
 import io.harness.enforcement.beans.metadata.RateLimitRestrictionMetadataDTO;
 import io.harness.enforcement.client.usage.RestrictionUsageInterface;
+import io.harness.licensing.usage.beans.cd.ServiceUsageDTO;
 import io.harness.licensing.usage.interfaces.LicenseUsageInterface;
 import io.harness.licensing.usage.params.CDUsageRequestParams;
 

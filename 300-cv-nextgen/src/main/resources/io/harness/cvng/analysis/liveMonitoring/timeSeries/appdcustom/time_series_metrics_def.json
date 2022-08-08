@@ -1,53 +1,41 @@
- {
-    "accountId": "$accountId",
-    "timestamp": "$timestamp",
-    "verificationTaskId": "$verificationTaskId",
-    "host": "some-host",
-    "metricValues": [
-      {
-        "metricName":"Errors per Minute",
-        "metricIdentifier": "errors_per_minute",
-        "timeSeriesValues":[
-          {
-            "groupName":"get_users_api",
-            "value": -1,
-            "percent": 0
-          },{
-            "groupName":"create_order_api",
-            "value": -1,
-            "percent":0
-          }
-        ]
-      },
-      {
-        "metricName":"Average Response Time (ms)",
-        "metricIdentifier": "avg_response_time",
-        "timeSeriesValues":[
-          {
-            "groupName":"get_users_api",
-            "value": -1,
-            "percent": 0
-          },{
-            "groupName":"create_order_api",
-            "value": -1,
-            "percent":0
-          }
-        ]
-      },
-      {
-        "metricName":"Calls per Minute",
-        "metricIdentifier": "calls_per_minute",
-        "timeSeriesValues":[
-          {
-            "groupName":"get_users_api",
-            "value": -1,
-            "percent": 0
-          },{
-            "groupName":"create_order_api",
-            "value": -1,
-            "percent":0
-          }
-        ]
-      }
-    ]
-  }
+{
+  "accountId": "$accountId",
+  "timestamp": "$timestamp",
+  "verificationTaskId": "$verificationTaskId",
+  "host": "some-host",
+  "metricValues": [
+    {
+      "metricName":"Errors per Minute",
+      "metricIdentifier": "errors_per_minute",
+      "timeSeriesValues":[
+        {
+          "groupName":"get_users_api",
+          "value": -1,
+          "percent": 0
+        }
+      ]
+    },
+    {
+      "metricName":"Average Response Time (ms)",
+      "metricIdentifier": "average_response_time_ms",
+      "timeSeriesValues":[
+        {
+          "groupName":"get_users_api",
+          "value": -1,
+          "percent": 0
+        }
+      ]
+    },
+    {
+      "metricName":"Calls per Minute",
+      "metricIdentifier": "calls_per_minute",
+      "timeSeriesValues":[
+        {
+          "groupName":"get_users_api",
+          "value": -1,
+          "percent": 0
+        }
+      ]
+    }
+  ]
+}

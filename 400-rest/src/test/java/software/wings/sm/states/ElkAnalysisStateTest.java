@@ -44,7 +44,7 @@ import software.wings.service.impl.elk.ElkQueryType;
 import software.wings.service.intfc.AccountService;
 import software.wings.service.intfc.AppService;
 import software.wings.service.intfc.elk.ElkAnalysisService;
-import software.wings.service.intfc.verification.CVActivityLogService.Logger;
+import software.wings.service.intfc.verification.CVActivityLogger;
 import software.wings.sm.ExecutionResponse;
 import software.wings.sm.StateType;
 import software.wings.sm.states.AbstractAnalysisState.CVInstanceApiResponse;
@@ -68,7 +68,7 @@ public class ElkAnalysisStateTest extends APMStateVerificationTestBase {
   @Mock private ElkAnalysisService elkAnalysisService;
   private ElkAnalysisState elkAnalysisState;
   private String elkConfigId;
-  @Mock private Logger activityLogger;
+  @Mock private CVActivityLogger activityLogger;
 
   @Before
   public void setup() throws IllegalAccessException {

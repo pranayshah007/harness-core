@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.annotations.dev.OwnedBy;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Set;
 import lombok.Builder;
 import lombok.Value;
@@ -22,4 +23,5 @@ public class CacheConfig {
   CacheBackend cacheBackend;
   String cacheNamespace;
   Set<String> disabledCaches;
+  @JsonProperty(defaultValue = "false") boolean enterpriseCacheEnabled;
 }

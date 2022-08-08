@@ -38,6 +38,7 @@ import static org.mockito.Mockito.when;
 
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;
+import io.harness.beans.ArtifactMetadata;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.ff.FeatureFlagService;
@@ -49,7 +50,7 @@ import software.wings.beans.SettingAttribute;
 import software.wings.beans.artifact.AcrArtifactStream;
 import software.wings.beans.artifact.AmiArtifactStream;
 import software.wings.beans.artifact.Artifact;
-import software.wings.beans.artifact.Artifact.ArtifactMetadataKeys;
+import software.wings.beans.artifact.ArtifactMetadataKeys;
 import software.wings.beans.artifact.ArtifactStream;
 import software.wings.beans.artifact.ArtifactStreamAttributes;
 import software.wings.beans.artifact.ArtifactStreamType;
@@ -211,8 +212,10 @@ public class BuildSourceCleanupCallbackTest extends WingsBaseTest {
                           .withRevision("1.0")
                           .build();
 
-  private static final Artifact ARTIFACT_1 = anArtifact().withMetadata(Maps.newHashMap("buildNo", "1")).build();
-  private static final Artifact ARTIFACT_2 = anArtifact().withMetadata(Maps.newHashMap("buildNo", "2")).build();
+  private static final Artifact ARTIFACT_1 =
+      anArtifact().withMetadata(new ArtifactMetadata(Maps.newHashMap("buildNo", "1"))).build();
+  private static final Artifact ARTIFACT_2 =
+      anArtifact().withMetadata(new ArtifactMetadata(Maps.newHashMap("buildNo", "2"))).build();
 
   private static final BuildDetails BUILD_DETAILS_1 = aBuildDetails().withNumber("1").withArtifactPath("a").build();
   private static final BuildDetails BUILD_DETAILS_2 = aBuildDetails().withNumber("2").withArtifactPath("b").build();
@@ -416,7 +419,7 @@ public class BuildSourceCleanupCallbackTest extends WingsBaseTest {
     when(artifactIterator.hasNext()).thenReturn(true).thenReturn(false);
     Map<String, String> metadataMap = new HashMap<>();
     metadataMap.put(ArtifactMetadataKeys.buildNo, "1");
-    when(artifactIterator.next()).thenReturn(anArtifact().withMetadata(metadataMap).build());
+    when(artifactIterator.next()).thenReturn(anArtifact().withMetadata(new ArtifactMetadata(metadataMap)).build());
 
     buildSourceCleanupCallback.handleResponseForSuccessInternal(
         prepareBuildSourceExecutionResponse(true), ARTIFACT_STREAM);

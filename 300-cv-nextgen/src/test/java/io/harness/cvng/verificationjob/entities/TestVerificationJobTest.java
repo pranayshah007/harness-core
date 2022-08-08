@@ -19,7 +19,6 @@ import static org.mockito.Mockito.when;
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
 import io.harness.cvng.beans.job.Sensitivity;
-import io.harness.cvng.beans.job.TestVerificationJobDTO;
 import io.harness.cvng.verificationjob.services.api.VerificationJobInstanceService;
 import io.harness.rule.Owner;
 
@@ -48,7 +47,7 @@ public class TestVerificationJobTest extends CategoryTest {
     TestVerificationJob testVerificationJob = createTestVerificationJob();
     assertThat(testVerificationJob.getBaselineVerificationJobInstanceId()).isNull();
     VerificationJobInstanceService verificationJobInstanceService = mock(VerificationJobInstanceService.class);
-    when(verificationJobInstanceService.getLastSuccessfulTestVerificationJobExecutionId(any(), any(), any(), any()))
+    when(verificationJobInstanceService.getLastSuccessfulTestVerificationJobExecutionId(any()))
         .thenReturn(Optional.empty());
     testVerificationJob.resolveAdditionsFields(verificationJobInstanceService);
     assertThat(testVerificationJob.getBaselineVerificationJobInstanceId()).isNull();
@@ -62,20 +61,10 @@ public class TestVerificationJobTest extends CategoryTest {
     assertThat(testVerificationJob.getBaselineVerificationJobInstanceId()).isNull();
     VerificationJobInstanceService verificationJobInstanceService = mock(VerificationJobInstanceService.class);
     String baseline = generateUuid();
-    when(verificationJobInstanceService.getLastSuccessfulTestVerificationJobExecutionId(any(), any(), any(), any()))
+    when(verificationJobInstanceService.getLastSuccessfulTestVerificationJobExecutionId(any()))
         .thenReturn(Optional.of(baseline));
     testVerificationJob.resolveAdditionsFields(verificationJobInstanceService);
     assertThat(testVerificationJob.getBaselineVerificationJobInstanceId()).isEqualTo(baseline);
-  }
-
-  @Test
-  @Owner(developers = KAMAL)
-  @Category({UnitTests.class})
-  public void testGetDTO_lastBaseline() {
-    TestVerificationJob testVerificationJob = createTestVerificationJob();
-    TestVerificationJobDTO testVerificationJobDTO =
-        (TestVerificationJobDTO) testVerificationJob.getVerificationJobDTO();
-    assertThat(testVerificationJobDTO.getBaselineVerificationJobInstanceId()).isEqualTo("LAST");
   }
 
   @Test
@@ -86,35 +75,7 @@ public class TestVerificationJobTest extends CategoryTest {
     testVerificationJob.setSensitivity("High", false);
     String baseline = generateUuid();
     testVerificationJob.setBaselineVerificationJobInstanceId(baseline);
-    TestVerificationJobDTO testVerificationJobDTO =
-        (TestVerificationJobDTO) testVerificationJob.getVerificationJobDTO();
-    assertThat(testVerificationJobDTO.getSensitivity()).isEqualTo("HIGH");
     assertThat(testVerificationJob.getSensitivity()).isEqualTo(Sensitivity.HIGH);
-  }
-
-  @Test
-  @Owner(developers = KAMAL)
-  @Category({UnitTests.class})
-  public void testGetDTO_ignoreCasesInSensitivityInvalid() {
-    TestVerificationJob testVerificationJob = createTestVerificationJob();
-    testVerificationJob.setSensitivity("HigH", false);
-    assertThatThrownBy(() -> testVerificationJob.getVerificationJobDTO())
-        .isInstanceOf(IllegalStateException.class)
-        .hasMessage("No enum mapping found for HigH");
-    assertThatThrownBy(() -> testVerificationJob.getSensitivity())
-        .isInstanceOf(IllegalStateException.class)
-        .hasMessage("No enum mapping found for HigH");
-  }
-  @Test
-  @Owner(developers = KAMAL)
-  @Category({UnitTests.class})
-  public void testGetDTO_validBaseline() {
-    TestVerificationJob testVerificationJob = createTestVerificationJob();
-    String baseline = generateUuid();
-    testVerificationJob.setBaselineVerificationJobInstanceId(baseline);
-    TestVerificationJobDTO testVerificationJobDTO =
-        (TestVerificationJobDTO) testVerificationJob.getVerificationJobDTO();
-    assertThat(testVerificationJobDTO.getBaselineVerificationJobInstanceId()).isEqualTo(baseline);
   }
 
   private TestVerificationJob createTestVerificationJob() {

@@ -29,7 +29,6 @@ import static org.joor.Reflect.on;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.anyList;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
@@ -110,7 +109,7 @@ public class SpotinstTrafficShiftAlbSetupStateTest extends WingsBaseTest {
     StateExecutionService stateExecutionService = mock(StateExecutionService.class);
     on(state).set("stateExecutionService", stateExecutionService);
     DeploymentExecutionContext mockContext = mock(DeploymentExecutionContext.class);
-    when(mockContext.renderExpression(anyString())).thenAnswer(new Answer<String>() {
+    when(mockContext.renderExpression(any())).thenAnswer(new Answer<String>() {
       @Override
       public String answer(InvocationOnMock invocation) throws Throwable {
         Object[] args = invocation.getArguments();
@@ -130,24 +129,23 @@ public class SpotinstTrafficShiftAlbSetupStateTest extends WingsBaseTest {
             .build();
     doReturn(dataBag).when(mockSpotinstStateHelper).getDataBag(any());
     PhaseElement mockPhaseElement = mock(PhaseElement.class);
-    doReturn(mockPhaseElement).when(mockContext).getContextElement(any(), anyString());
+    doReturn(mockPhaseElement).when(mockContext).getContextElement(any(), any());
     doReturn(ServiceElement.builder().uuid(SERVICE_ID).build()).when(mockPhaseElement).getServiceElement();
-    doReturn(anArtifact().withUuid(ARTIFACT_ID).build()).when(mockContext).getDefaultArtifactForService(anyString());
+    doReturn(anArtifact().withUuid(ARTIFACT_ID).build()).when(mockContext).getDefaultArtifactForService(any());
     doReturn(Activity.builder().uuid(ACTIVITY_ID).build())
         .when(mockSpotinstStateHelper)
-        .createActivity(any(), any(), anyString(), anyString(), any(), anyList());
+        .createActivity(any(), any(), any(), any(), any(), anyList());
     doReturn(ElastiGroup.builder()
                  .id("elastId")
                  .name("elastName")
                  .capacity(ElastiGroupCapacity.builder().minimum(0).maximum(1).target(1).build())
                  .build())
         .when(mockSpotinstStateHelper)
-        .generateConfigFromJson(anyString());
-    doNothing().when(stateExecutionService).appendDelegateTaskDetails(anyString(), any());
+        .generateConfigFromJson(any());
+    doNothing().when(stateExecutionService).appendDelegateTaskDetails(any(), any());
     doReturn(DelegateTask.builder().description("desc").build())
         .when(mockSpotinstStateHelper)
-        .getDelegateTask(anyString(), anyString(), any(), anyString(), anyString(), anyString(), any(), any(),
-            anyString(), eq(true));
+        .getDelegateTask(any(), any(), any(), any(), any(), any(), any(), any(), any(), eq(true));
     ExecutionResponse response = state.execute(mockContext);
     assertThat(response).isNotNull();
     assertThat(response.getCorrelationIds().size()).isEqualTo(1);
@@ -175,7 +173,7 @@ public class SpotinstTrafficShiftAlbSetupStateTest extends WingsBaseTest {
     on(state).set("activityService", mockActivityService);
     SpotInstStateHelper mockSpotinstStateHelper = mock(SpotInstStateHelper.class);
     on(state).set("spotinstStateHelper", mockSpotinstStateHelper);
-    doReturn(10).when(mockSpotinstStateHelper).renderCount(anyString(), any(), anyInt());
+    doReturn(10).when(mockSpotinstStateHelper).renderCount(any(), any(), anyInt());
     SpotInstTaskExecutionResponse delegateResponse =
         SpotInstTaskExecutionResponse.builder()
             .delegateMetaInfo(DelegateMetaInfo.builder().build())
@@ -221,7 +219,7 @@ public class SpotinstTrafficShiftAlbSetupStateTest extends WingsBaseTest {
                     .build())
             .build();
     ExecutionContext mockContext = mock(ExecutionContext.class);
-    when(mockContext.renderExpression(anyString())).thenAnswer(new Answer<String>() {
+    when(mockContext.renderExpression(any())).thenAnswer(new Answer<String>() {
       @Override
       public String answer(InvocationOnMock invocation) throws Throwable {
         Object[] args = invocation.getArguments();

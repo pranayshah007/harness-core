@@ -164,14 +164,13 @@ import software.wings.service.intfc.ServiceResourceService;
 import software.wings.sm.StateType;
 import software.wings.sm.states.AwsCodeDeployState;
 import software.wings.sm.states.customdeployment.InstanceFetchState.InstanceFetchStateKeys;
-import software.wings.utils.ArtifactType;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import io.fabric8.kubernetes.api.KubernetesHelper;
-import io.fabric8.kubernetes.api.model.HorizontalPodAutoscaler;
+import io.fabric8.kubernetes.api.model.autoscaling.v1.HorizontalPodAutoscaler;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -992,11 +991,36 @@ public class WorkflowServiceHelper {
     if (isDynamicInfrastructure) {
       phaseSteps.add(aPhaseStep(PhaseStepType.PROVISION_INFRASTRUCTURE, PROVISION_INFRASTRUCTURE).build());
     }
-    if (CANARY == orchestrationWorkflowType) {
-      generateAppServiceCanaryPhaseSteps(isFirstPhase, phaseSteps, commandMap);
-    } else if (BLUE_GREEN == orchestrationWorkflowType) {
-      generateAppServiceBlueGreenPhaseSteps(phaseSteps, commandMap);
+    switch (orchestrationWorkflowType) {
+      case BASIC:
+        generateAppServiceBasicPhaseSteps(phaseSteps, commandMap);
+        break;
+      case CANARY:
+        generateAppServiceCanaryPhaseSteps(isFirstPhase, phaseSteps, commandMap);
+        break;
+      case BLUE_GREEN:
+        generateAppServiceBlueGreenPhaseSteps(phaseSteps, commandMap);
+        break;
+      default:
+        return;
     }
+  }
+
+  private void generateAppServiceBasicPhaseSteps(
+      List<PhaseStep> phaseSteps, Map<CommandType, List<Command>> commandMap) {
+    phaseSteps.add(aPhaseStep(PhaseStepType.AZURE_WEBAPP_SLOT_SETUP, AZURE_WEBAPP_SLOT_SETUP)
+                       .addStep(GraphNode.builder()
+                                    .id(generateUuid())
+                                    .type(StateType.AZURE_WEBAPP_SLOT_SETUP.name())
+                                    .name(AZURE_WEBAPP_SLOT_DEPLOYMENT)
+                                    .build())
+                       .build());
+
+    phaseSteps.add(aPhaseStep(PhaseStepType.VERIFY_SERVICE, VERIFY_SERVICE)
+                       .addAllSteps(commandNodes(commandMap, CommandType.VERIFY))
+                       .build());
+
+    phaseSteps.add(aPhaseStep(PhaseStepType.WRAP_UP, WRAP_UP).build());
   }
 
   private void generateAppServiceCanaryPhaseSteps(
@@ -1070,27 +1094,14 @@ public class WorkflowServiceHelper {
     if (!isAzureWebAppSupportedWorkflowType(orchestrationWorkflowType)) {
       throw new InvalidRequestException(
           format(
-              "Unsupported workflow type [%s] for Azure Web App deployment. Canary & Blue/Green deployment are supported",
+              "Unsupported workflow type [%s] for Azure Web App deployment. Basic, Canary & Blue/Green deployment are supported",
               orchestrationWorkflowType != null ? orchestrationWorkflowType.name() : ""),
           USER);
     }
-    if (!featureFlagService.isEnabled(FeatureName.AZURE_WEBAPP_NON_CONTAINER, accountId)
-        && isAzureWebappNonContainerDeployment(appId, workflowPhase)) {
-      throw new InvalidRequestException(
-          format("Azure WebApp non-container deployment is disabled by feature flag for account id : %s", accountId),
-          USER);
-    }
-  }
-
-  private boolean isAzureWebappNonContainerDeployment(String appId, WorkflowPhase workflowPhase) {
-    Service service = serviceResourceService.getWithDetails(appId, workflowPhase.getServiceId());
-    ArtifactType artifactType = service.getArtifactType();
-    return ArtifactType.WAR.equals(artifactType) || ArtifactType.ZIP.equals(artifactType)
-        || ArtifactType.NUGET.equals(artifactType);
   }
 
   private boolean isAzureWebAppSupportedWorkflowType(OrchestrationWorkflowType workflowType) {
-    return (CANARY == workflowType) || (BLUE_GREEN == workflowType);
+    return (BASIC == workflowType) || (CANARY == workflowType) || (BLUE_GREEN == workflowType);
   }
 
   public void generateNewWorkflowPhaseStepsForAWSLambda(String appId, WorkflowPhase workflowPhase) {
@@ -2446,6 +2457,15 @@ public class WorkflowServiceHelper {
         }
 
         phase.setTemplateExpressions(phaseTemplateExpressions);
+
+        // CDS-36932
+        // When the environment change, we clear the infrastructure definitions to force the user
+        // to review every phase and manually fix it. That behavior is a feature and not a bug.
+        if (envChanged) {
+          unsetInfraMappingDetails(phase);
+          unsetInfraDefinitionsDetails(phase);
+          resetNodeSelection(phase);
+        }
       }
     }
     Map<String, WorkflowPhase> rollbackWorkflowPhaseIdMap = canaryOrchestrationWorkflow.getRollbackWorkflowPhaseIdMap();
@@ -2453,6 +2473,7 @@ public class WorkflowServiceHelper {
       rollbackWorkflowPhaseIdMap.values().forEach(phase -> {
         if (envChanged) {
           unsetInfraMappingDetails(phase);
+          unsetInfraDefinitionsDetails(phase);
           resetNodeSelection(phase);
         }
         if (infraChanged) {
@@ -2677,13 +2698,13 @@ public class WorkflowServiceHelper {
   }
 
   public List<InfrastructureDefinition> getResolvedInfraDefinitions(
-      Workflow workflow, Map<String, String> workflowVariables) {
+      Workflow workflow, Map<String, String> workflowVariables, String envId) {
     if (workflow == null || workflow.getOrchestrationWorkflow() == null) {
       return new ArrayList<>();
     }
     OrchestrationWorkflow orchestrationWorkflow = workflow.getOrchestrationWorkflow();
     if (orchestrationWorkflow.isInfraDefinitionTemplatized()) {
-      return resolvedTemplateInfraDefinitions(workflow, workflowVariables);
+      return resolvedTemplateInfraDefinitions(workflow, workflowVariables, envId);
     }
     return infrastructureDefinitionService.getInfraStructureDefinitionByUuids(
         workflow.getAppId(), orchestrationWorkflow.getInfraDefinitionIds());
@@ -2698,10 +2719,11 @@ public class WorkflowServiceHelper {
     }
   }
 
-  public List<String> getResolvedInfraDefinitionIds(Workflow workflow, Map<String, String> workflowVariables) {
+  public List<String> getResolvedInfraDefinitionIds(
+      Workflow workflow, Map<String, String> workflowVariables, String resolveEnvId) {
     OrchestrationWorkflow orchestrationWorkflow = workflow.getOrchestrationWorkflow();
     if (orchestrationWorkflow.isInfraDefinitionTemplatized()) {
-      return resolveInfraDefinitionIds(workflow, workflowVariables);
+      return resolveInfraDefinitionIds(workflow, workflowVariables, resolveEnvId);
     } else {
       return orchestrationWorkflow.getInfraDefinitionIds();
     }
@@ -2714,8 +2736,8 @@ public class WorkflowServiceHelper {
   }
 
   private List<InfrastructureDefinition> resolvedTemplateInfraDefinitions(
-      Workflow workflow, Map<String, String> workflowVariables) {
-    List<String> infrDefinitionIds = resolveInfraDefinitionIds(workflow, workflowVariables);
+      Workflow workflow, Map<String, String> workflowVariables, String envId) {
+    List<String> infrDefinitionIds = resolveInfraDefinitionIds(workflow, workflowVariables, envId);
     return infrastructureDefinitionService.getInfraStructureDefinitionByUuids(workflow.getAppId(), infrDefinitionIds);
   }
 
@@ -2737,21 +2759,35 @@ public class WorkflowServiceHelper {
     return infraMappingIds;
   }
 
-  private List<String> resolveInfraDefinitionIds(Workflow workflow, Map<String, String> workflowVariables) {
+  private List<String> resolveInfraDefinitionIds(
+      Workflow workflow, Map<String, String> workflowVariables, String resolveEnvId) {
     OrchestrationWorkflow orchestrationWorkflow = workflow.getOrchestrationWorkflow();
     List<Variable> userVariables = orchestrationWorkflow.getUserVariables();
     List<String> infraDefinitionNames = new ArrayList<>();
     if (userVariables != null) {
       infraDefinitionNames = getEntityNames(userVariables, INFRASTRUCTURE_DEFINITION);
     }
-    List<String> infraDefinitionIds = getTemplatizedIds(workflowVariables, infraDefinitionNames);
+    List<String> infraDefinitionIdsOrNames = getTemplatizedIds(workflowVariables, infraDefinitionNames);
     List<String> templatizedInfraDefinitionIds = orchestrationWorkflow.getTemplatizedInfraDefinitionIds();
     List<String> workflowDefinitionIds = orchestrationWorkflow.getInfraDefinitionIds();
     if (workflowDefinitionIds != null) {
       workflowDefinitionIds.stream()
           .filter(infraDefinitionId -> !templatizedInfraDefinitionIds.contains(infraDefinitionId))
-          .forEach(infraDefinitionIds::add);
+          .forEach(infraDefinitionIdsOrNames::add);
     }
+    List<String> infraDefinitionIds = new ArrayList<>();
+    infraDefinitionIdsOrNames.forEach(infraIdOrName -> {
+      if (ExpressionEvaluator.containsVariablePattern(infraIdOrName)) {
+        return;
+      }
+      InfrastructureDefinition infraDef =
+          infrastructureDefinitionService.getInfraDefById(workflow.getAccountId(), infraIdOrName);
+      if (infraDef == null) {
+        infraDef = infrastructureDefinitionService.getInfraByName(workflow.getAccountId(), infraIdOrName, resolveEnvId);
+      }
+      notNullCheck("Infra definition " + infraIdOrName + " is invalid", infraDef);
+      infraDefinitionIds.add(infraDef.getUuid());
+    });
     return infraDefinitionIds;
   }
 
@@ -2766,14 +2802,12 @@ public class WorkflowServiceHelper {
     phase.setComputeProviderId(null);
     phase.setInfraMappingId(null);
     phase.setInfraMappingName(null);
-    // phase.setDeploymentType(null);
   }
 
   public void unsetInfraDefinitionsDetails(WorkflowPhase phase) {
     phase.setComputeProviderId(null);
     phase.setInfraDefinitionId(null);
     phase.setInfraDefinitionName(null);
-    // phase.setDeploymentType(null);
   }
 
   public boolean isExecutionForK8sV2Service(WorkflowExecution workflowExecution) {
@@ -2842,8 +2876,10 @@ public class WorkflowServiceHelper {
         throw new InvalidRequestException(
             format("%s variable %s is not set for stage %s", prefix, variable.getName(), stageElement.getName()));
       } else if (ExpressionEvaluator.matchesVariablePattern(finalValue) && (isEntity || !finalValue.contains("."))) {
-        throw new InvalidRequestException(format("%s variable %s for stage %s cannot be left as an expression", prefix,
-            variable.getName(), stageElement.getName()));
+        if (!(INFRASTRUCTURE_DEFINITION.equals(variable.obtainEntityType()) && finalValue.contains("."))) {
+          throw new InvalidRequestException(format("%s variable %s for stage %s cannot be left as an expression",
+              prefix, variable.getName(), stageElement.getName()));
+        }
       }
     }
   }

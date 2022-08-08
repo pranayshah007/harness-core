@@ -16,7 +16,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.Assertions.fail;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.spy;
@@ -114,11 +113,11 @@ public class NewRelicDeploymentMarkerStateTest extends APMStateVerificationTestB
   public void shouldTestTriggered() {
     doThrow(new WingsException("Can not find application by id"))
         .when(newRelicService)
-        .resolveApplicationId(anyString(), anyString(), anyString(), anyString());
+        .resolveApplicationId(any(), any(), any(), any());
 
     doThrow(new WingsException("Can not find application by name"))
         .when(newRelicService)
-        .resolveApplicationName(anyString(), anyString(), anyString(), anyString());
+        .resolveApplicationName(any(), any(), any(), any());
 
     when(executionContext.renderExpression("${workflow.variables.NewRelic_Server}")).thenReturn(settingId);
 
@@ -146,7 +145,7 @@ public class NewRelicDeploymentMarkerStateTest extends APMStateVerificationTestB
 
     doReturn(NewRelicApplication.builder().id(30444).build())
         .when(newRelicService)
-        .resolveApplicationName(anyString(), anyString(), anyString(), anyString());
+        .resolveApplicationName(any(), any(), any(), any());
     ExecutionResponse executionResponse = spyRelicDeploymentMarkerState.execute(executionContext);
     assertThat(executionResponse.getExecutionStatus()).isEqualTo(ExecutionStatus.RUNNING);
   }

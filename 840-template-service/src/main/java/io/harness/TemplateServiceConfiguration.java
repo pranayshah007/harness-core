@@ -22,6 +22,7 @@ import io.harness.mongo.MongoConfig;
 import io.harness.remote.client.ServiceHttpClientConfig;
 
 import ch.qos.logback.access.spi.IAccessEvent;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.ImmutableList;
 import com.google.inject.Singleton;
@@ -34,20 +35,32 @@ import io.dropwizard.request.logging.RequestLogFactory;
 import io.dropwizard.server.DefaultServerFactory;
 import io.dropwizard.server.ServerFactory;
 import io.federecio.dropwizard.swagger.SwaggerBundleConfiguration;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.integration.SwaggerConfiguration;
+import io.swagger.v3.oas.integration.api.OpenAPIConfiguration;
+import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.info.Contact;
+import io.swagger.v3.oas.models.info.Info;
+import io.swagger.v3.oas.models.servers.Server;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Level;
+import java.util.stream.Collectors;
 import javax.ws.rs.Path;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.extern.slf4j.Slf4j;
 import org.reflections.Reflections;
 
 @Data
 @EqualsAndHashCode(callSuper = false)
+@Slf4j
 @OwnedBy(CDC)
 @Singleton
 public class TemplateServiceConfiguration extends Configuration {
@@ -60,6 +73,7 @@ public class TemplateServiceConfiguration extends Configuration {
   @JsonProperty("eventsFramework") private EventsFrameworkConfiguration eventsFrameworkConfiguration;
   @JsonProperty("auditClientConfig") private ServiceHttpClientConfig auditClientConfig;
   @JsonProperty("ngManagerServiceHttpClientConfig") private ServiceHttpClientConfig ngManagerServiceHttpClientConfig;
+  @JsonProperty("managerClientConfig") private ServiceHttpClientConfig managerClientConfig;
   @JsonProperty("cacheConfig") private CacheConfig cacheConfig;
 
   @JsonProperty(value = "enableAudit") private boolean enableAudit;
@@ -68,10 +82,13 @@ public class TemplateServiceConfiguration extends Configuration {
   @JsonProperty("jwtIdentityServiceSecret") private String jwtIdentityServiceSecret;
   @JsonProperty("ngManagerServiceSecret") private String ngManagerServiceSecret;
   @JsonProperty("accessControlClientConfig") private AccessControlClientConfiguration accessControlClientConfiguration;
-  @JsonProperty("hostname") String hostname;
-  @JsonProperty("basePathPrefix") String basePathPrefix;
+  @JsonProperty("hostname") String hostname = "localhost";
+  @JsonProperty("basePathPrefix") String basePathPrefix = "";
   @JsonProperty("enforcementClientConfiguration") EnforcementClientConfiguration enforcementClientConfiguration;
   @JsonProperty("pmsGrpcClientConfig") GrpcClientConfig pmsGrpcClientConfig;
+  @JsonProperty("pipelineServiceClientConfig") private ServiceHttpClientConfig pipelineServiceClientConfig;
+  @JsonProperty("pipelineServiceSecret") private String pipelineServiceSecret;
+  @JsonProperty("allowedParallelStages") private int allowedParallelStages;
 
   private boolean shouldDeployWithGitSync;
   private GitSdkConfiguration gitSdkConfiguration;
@@ -147,5 +164,37 @@ public class TemplateServiceConfiguration extends Configuration {
 
   public static Set<String> getUniquePackagesContainingResources() {
     return getResourceClasses().stream().map(aClass -> aClass.getPackage().getName()).collect(toSet());
+  }
+
+  @JsonIgnore
+  public OpenAPIConfiguration getOasConfig() {
+    OpenAPI oas = new OpenAPI();
+    Info info = new Info()
+                    .title("Template Service API Reference")
+                    .description("This is the Open Api Spec 3 for the Template Service.")
+                    .termsOfService("https://harness.io/terms-of-use/")
+                    .version("3.0")
+                    .contact(new Contact().email("contact@harness.io"));
+    oas.info(info);
+    URL baseurl = null;
+    try {
+      baseurl = new URL("https", hostname, basePathPrefix);
+      Server server = new Server();
+      server.setUrl(baseurl.toString());
+      oas.servers(singletonList(server));
+    } catch (MalformedURLException e) {
+      log.error("failed to set baseurl for server, {}/{}", hostname, basePathPrefix);
+    }
+    final Set<String> resourceClasses =
+        getOAS3ResourceClassesOnly().stream().map(Class::getCanonicalName).collect(toSet());
+    return new SwaggerConfiguration()
+        .openAPI(oas)
+        .prettyPrint(true)
+        .resourceClasses(resourceClasses)
+        .scannerClass("io.swagger.v3.jaxrs2.integration.JaxrsAnnotationScanner");
+  }
+
+  public static Collection<Class<?>> getOAS3ResourceClassesOnly() {
+    return getResourceClasses().stream().filter(x -> x.isAnnotationPresent(Tag.class)).collect(Collectors.toList());
   }
 }

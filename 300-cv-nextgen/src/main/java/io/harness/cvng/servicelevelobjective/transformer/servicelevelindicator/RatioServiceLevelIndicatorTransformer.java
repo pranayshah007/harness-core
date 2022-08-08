@@ -18,8 +18,8 @@ public class RatioServiceLevelIndicatorTransformer
     extends ServiceLevelIndicatorTransformer<RatioServiceLevelIndicator, ServiceLevelIndicatorSpec> {
   @Override
   public RatioServiceLevelIndicator getEntity(ProjectParams projectParams,
-      ServiceLevelIndicatorDTO serviceLevelIndicatorDTO, String monitoredServiceIndicator,
-      String healthSourceIndicator) {
+      ServiceLevelIndicatorDTO serviceLevelIndicatorDTO, String monitoredServiceIndicator, String healthSourceIndicator,
+      boolean isEnabled) {
     RatioSLIMetricSpec ratioSLIMetricSpec = (RatioSLIMetricSpec) serviceLevelIndicatorDTO.getSpec().getSpec();
     return RatioServiceLevelIndicator.builder()
         .accountId(projectParams.getAccountIdentifier())
@@ -36,6 +36,7 @@ public class RatioServiceLevelIndicatorTransformer
         .thresholdType(ratioSLIMetricSpec.getThresholdType())
         .monitoredServiceIdentifier(monitoredServiceIndicator)
         .healthSourceIdentifier(healthSourceIndicator)
+        .enabled(isEnabled)
         .build();
   }
 

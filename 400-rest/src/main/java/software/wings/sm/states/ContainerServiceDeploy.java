@@ -64,6 +64,7 @@ import software.wings.beans.SettingAttribute;
 import software.wings.beans.TaskType;
 import software.wings.beans.command.Command;
 import software.wings.beans.command.CommandExecutionContext;
+import software.wings.beans.command.CommandMapper;
 import software.wings.beans.command.ContainerResizeParams;
 import software.wings.beans.command.KubernetesResizeParams;
 import software.wings.beans.command.ResizeCommandUnitExecutionData;
@@ -84,6 +85,7 @@ import software.wings.sm.ExecutionResponse;
 import software.wings.sm.InstanceStatusSummary;
 import software.wings.sm.State;
 import software.wings.sm.WorkflowStandardParams;
+import software.wings.sm.WorkflowStandardParamsExtensionService;
 import software.wings.sm.states.k8s.K8sStateHelper;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -113,6 +115,7 @@ public abstract class ContainerServiceDeploy extends State {
   @Inject private SweepingOutputService sweepingOutputService;
   @Inject private ContainerMasterUrlHelper containerMasterUrlHelper;
   @Inject private ContainerDeploymentManagerHelper containerDeploymentManagerHelper;
+  @Inject private WorkflowStandardParamsExtensionService workflowStandardParamsExtensionService;
 
   ContainerServiceDeploy(String name, String type) {
     super(name, type);
@@ -122,7 +125,7 @@ public abstract class ContainerServiceDeploy extends State {
   public ExecutionResponse execute(ExecutionContext context) {
     try {
       log.info("Executing container service deploy");
-      ContextData contextData = new ContextData(context, this);
+      ContextData contextData = new ContextData(context, this, this.workflowStandardParamsExtensionService);
 
       InfrastructureMapping infrastructureMapping =
           infrastructureMappingService.get(contextData.appId, contextData.infrastructureMappingId);
@@ -238,7 +241,8 @@ public abstract class ContainerServiceDeploy extends State {
               .data(TaskData.builder()
                         .async(true)
                         .taskType(TaskType.COMMAND.name())
-                        .parameters(new Object[] {contextData.command, commandExecutionContext})
+                        .parameters(
+                            new Object[] {CommandMapper.toCommandDTO(contextData.command), commandExecutionContext})
                         .timeout(TimeUnit.HOURS.toMillis(1))
                         .build())
               .setupAbstraction(Cd1SetupFields.ENV_ID_FIELD, contextData.env.getUuid())
@@ -281,8 +285,8 @@ public abstract class ContainerServiceDeploy extends State {
       String appId = context.getAppId();
       WorkflowStandardParams workflowStandardParams = context.getContextElement(ContextElementType.STANDARD);
       Preconditions.checkNotNull(workflowStandardParams);
-      Preconditions.checkNotNull(workflowStandardParams.getEnv());
-      String envId = workflowStandardParams.getEnv().getUuid();
+      Preconditions.checkNotNull(workflowStandardParamsExtensionService.getEnv(workflowStandardParams));
+      String envId = workflowStandardParamsExtensionService.getEnv(workflowStandardParams).getUuid();
       executionData.setNewInstanceStatusSummaries(
           buildInstanceStatusSummaries(appId, serviceId, envId, serviceElement, response));
 
@@ -433,13 +437,14 @@ public abstract class ContainerServiceDeploy extends State {
     final Integer instanceCount;
     final Integer downsizeInstanceCount;
 
-    ContextData(ExecutionContext context, ContainerServiceDeploy containerServiceDeploy) {
+    ContextData(ExecutionContext context, ContainerServiceDeploy containerServiceDeploy,
+        WorkflowStandardParamsExtensionService workflowStandardParamsExtensionService) {
       PhaseElement phaseElement = context.getContextElement(ContextElementType.PARAM, PhaseElement.PHASE_PARAM);
       serviceId = phaseElement.getServiceElement().getUuid();
       appId = context.getAppId();
       WorkflowStandardParams workflowStandardParams = context.getContextElement(ContextElementType.STANDARD);
-      app = workflowStandardParams.getApp();
-      env = workflowStandardParams.getEnv();
+      app = workflowStandardParamsExtensionService.getApp(workflowStandardParams);
+      env = workflowStandardParamsExtensionService.getEnv(workflowStandardParams);
       Preconditions.checkNotNull(env);
       service = containerServiceDeploy.serviceResourceService.getWithDetails(appId, serviceId);
       command = containerServiceDeploy.serviceResourceService

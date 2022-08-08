@@ -26,7 +26,7 @@ public enum TerraformStepConfigurationType {
     this.displayName = displayName;
   }
 
-  @JsonCreator
+  @JsonCreator(mode = JsonCreator.Mode.DELEGATING)
   public static TerraformStepConfigurationType getConfigurationType(String displayName) {
     for (TerraformStepConfigurationType value : TerraformStepConfigurationType.values()) {
       if (value.displayName.equalsIgnoreCase(displayName)) {

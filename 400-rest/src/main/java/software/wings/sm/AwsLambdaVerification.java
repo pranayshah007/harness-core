@@ -73,11 +73,13 @@ import org.mongodb.morphia.annotations.Transient;
 public class AwsLambdaVerification extends State {
   @Attributes(title = "Function Test Events") private List<LambdaTestEvent> lambdaTestEvents = new ArrayList<>();
 
+  private static final long TIME_OUT_IN_MINUTES = 2;
+
   @Transient @Inject private ActivityService activityService;
   @Transient @Inject private SecretManager secretManager;
   @Inject @Transient private transient InfrastructureMappingService infrastructureMappingService;
   @Inject @Transient private transient SettingsService settingsService;
-  private static final long TIME_OUT_IN_MINUTES = 2;
+  @Inject @Transient private transient WorkflowStandardParamsExtensionService workflowStandardParamsExtensionService;
   @Inject private DelegateService delegateService;
 
   /**
@@ -95,7 +97,7 @@ public class AwsLambdaVerification extends State {
     AwsLambdaExecutionData awsLambdaExecutionData = new AwsLambdaExecutionData();
     try {
       WorkflowStandardParams workflowStandardParams = context.getContextElement(ContextElementType.STANDARD);
-      Application app = workflowStandardParams.fetchRequiredApp();
+      Application app = workflowStandardParamsExtensionService.fetchRequiredApp(workflowStandardParams);
 
       AwsLambdaInfraStructureMapping infrastructureMapping =
           (AwsLambdaInfraStructureMapping) infrastructureMappingService.get(
@@ -240,8 +242,8 @@ public class AwsLambdaVerification extends State {
 
   private String createActivity(ExecutionContext executionContext) {
     WorkflowStandardParams workflowStandardParams = executionContext.getContextElement(ContextElementType.STANDARD);
-    Application app = workflowStandardParams.fetchRequiredApp();
-    Environment env = workflowStandardParams.fetchRequiredEnv();
+    Application app = workflowStandardParamsExtensionService.fetchRequiredApp(workflowStandardParams);
+    Environment env = workflowStandardParamsExtensionService.fetchRequiredEnv(workflowStandardParams);
 
     Activity activity = Activity.builder()
                             .applicationName(app.getName())

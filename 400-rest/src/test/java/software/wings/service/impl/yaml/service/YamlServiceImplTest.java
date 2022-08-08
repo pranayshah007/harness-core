@@ -76,7 +76,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import javax.activity.InvalidActivityException;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Before;
 import org.junit.Test;
@@ -85,6 +84,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
+import org.omg.CORBA.INVALID_ACTIVITY;
 
 @Slf4j
 public class YamlServiceImplTest extends WingsBaseTest {
@@ -122,7 +122,6 @@ public class YamlServiceImplTest extends WingsBaseTest {
         .isEmpty();
   }
 
-  @Test
   @Owner(developers = ADWAIT)
   @Category(UnitTests.class)
   public void testFilterInvalidFilePaths() throws Exception {
@@ -160,7 +159,6 @@ public class YamlServiceImplTest extends WingsBaseTest {
       assertThat(yamlService.isProcessingAllowed(change, type)).isEqualTo(true);
     }
   }
-
   @Test
   @Owner(developers = ROHIT_KUMAR)
   @Category(UnitTests.class)
@@ -255,7 +253,7 @@ public class YamlServiceImplTest extends WingsBaseTest {
   @Test
   @Owner(developers = VARDAN_BANSAL)
   @Category(UnitTests.class)
-  public void shouldPerformYAMLOperationWithAuditsLogged() throws InvalidActivityException, FileNotFoundException {
+  public void shouldPerformYAMLOperationWithAuditsLogged() throws INVALID_ACTIVITY, FileNotFoundException {
     final AuditHeader auditHeader = AuditHeader.Builder.anAuditHeader().build();
     final String auditId = "AUDIT_ID";
     final String testAccountId = "TEST_ACCOUNT_ID";
@@ -307,6 +305,49 @@ public class YamlServiceImplTest extends WingsBaseTest {
     yamlService.upsertFromYaml(changeContext, Collections.singletonList(changeContext));
     verify(applicationYamlHandler, times(1)).upsertFromYaml(any(), anyList());
     verify(harnessTagYamlHelper, times(1)).upsertTagLinksIfRequired(any());
+  }
+
+  @Test
+  @Owner(developers = DEEPAK)
+  @Category(UnitTests.class)
+  public void getFilesWhichAreSuccessfullyProcessedTest() throws Exception {
+    GitFileChange change1 = getGitFileChange("TestAccountID", "Setup/Applications/app1/Index1.yaml", "inputEntityId1");
+    GitFileChange change2 = getGitFileChange("TestAccountID", "Setup/Applications/app1/Index2.yaml", "inputEntityId1");
+    GitFileChange change3 = getGitFileChange("TestAccountID", "Setup/Applications/app1/Index3.yaml", "inputEntityId1");
+    GitFileChange change4 = getGitFileChange("TestAccountID", "Setup/Applications/app1/Index4.yaml", "inputEntityId1");
+    GitFileChange change5 = getGitFileChange("TestAccountID", "Setup/Applications/app1/Index5.yaml", "inputEntityId1");
+
+    ChangeContext changeContext1 = ChangeContext.Builder.aChangeContext().withChange(change1).build();
+    ChangeContext changeContext2 = ChangeContext.Builder.aChangeContext().withChange(change2).build();
+    ChangeContext changeContext3 = ChangeContext.Builder.aChangeContext().withChange(change3).build();
+    ChangeContext changeContext4 = ChangeContext.Builder.aChangeContext().withChange(change4).build();
+    ChangeContext changeContext5 = ChangeContext.Builder.aChangeContext().withChange(change5).build();
+
+    List<ChangeContext> allChangeContexts =
+        Arrays.asList(changeContext1, changeContext2, changeContext3, changeContext4, changeContext5);
+
+    // Case where no files failed
+    List<Change> filesWhichAreSuccessfullyProcessed =
+        yamlService.getFilesWhichAreSuccessfullyProcessed(allChangeContexts, new ArrayList<>());
+    assertThat(filesWhichAreSuccessfullyProcessed.size()).isEqualTo(5);
+
+    List<Change> filesWhichAreSuccessfullyProcessed1 =
+        yamlService.getFilesWhichAreSuccessfullyProcessed(allChangeContexts, Arrays.asList(change1, change2, change3));
+    assertThat(filesWhichAreSuccessfullyProcessed1.size()).isEqualTo(2);
+
+    List<Change> filesWhichAreSuccessfullyProcessed2 =
+        yamlService.getFilesWhichAreSuccessfullyProcessed(allChangeContexts, Arrays.asList(change4, change5));
+    assertThat(filesWhichAreSuccessfullyProcessed2.size()).isEqualTo(3);
+  }
+
+  private GitFileChange getGitFileChange(String accountId, String filePath, String entityId) {
+    return aGitFileChange()
+        .withChangeType(ChangeType.MODIFY)
+        .withFileContent("")
+        .withFilePath(filePath)
+        .withAccountId(accountId)
+        .withEntityId(entityId)
+        .build();
   }
 
   @Test

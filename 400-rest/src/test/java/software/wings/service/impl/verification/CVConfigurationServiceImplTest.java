@@ -46,6 +46,8 @@ import software.wings.WingsBaseTest;
 import software.wings.alerts.AlertStatus;
 import software.wings.beans.APMVerificationConfig;
 import software.wings.beans.Account;
+import software.wings.beans.ApmMetricCollectionInfo;
+import software.wings.beans.ApmResponseMapping;
 import software.wings.beans.Application;
 import software.wings.beans.DatadogConfig;
 import software.wings.beans.Environment;
@@ -58,6 +60,8 @@ import software.wings.beans.alert.AlertType;
 import software.wings.beans.alert.UsageLimitExceededAlert;
 import software.wings.beans.alert.cv.ContinuousVerificationAlertData;
 import software.wings.beans.alert.cv.ContinuousVerificationDataCollectionAlert;
+import software.wings.beans.apm.Method;
+import software.wings.beans.apm.ResponseType;
 import software.wings.metrics.MetricType;
 import software.wings.metrics.TimeSeriesMetricDefinition;
 import software.wings.service.impl.analysis.AnalysisTolerance;
@@ -80,8 +84,6 @@ import software.wings.service.intfc.SettingsService;
 import software.wings.service.intfc.verification.CVConfigurationService;
 import software.wings.service.intfc.yaml.YamlPushService;
 import software.wings.sm.StateType;
-import software.wings.sm.states.APMVerificationState;
-import software.wings.sm.states.APMVerificationState.MetricCollectionInfo;
 import software.wings.sm.states.DatadogState;
 import software.wings.sm.states.DatadogState.Metric;
 import software.wings.sm.states.StackDriverState;
@@ -916,21 +918,20 @@ public class CVConfigurationServiceImplTest extends WingsBaseTest {
   public void testValidateUniqueTxnMetricNameCombinationInvalidCaseTxnJsonPath() {
     APMCVServiceConfiguration apmcvServiceConfiguration = createAPMCVConfig(true, appId, accountId);
 
-    List<MetricCollectionInfo> metricCollectionInfos = new ArrayList<>();
-    APMVerificationState.ResponseMapping responseMapping = new APMVerificationState.ResponseMapping(null, "sometxnName",
-        "sometxnname", "somemetricjsonpath", "hostpath", "hostregex", "timestamppath", "formattimestamp");
+    List<ApmMetricCollectionInfo> metricCollectionInfos = new ArrayList<>();
+    ApmResponseMapping responseMapping = new ApmResponseMapping(null, "sometxnName", "sometxnname",
+        "somemetricjsonpath", "hostpath", "hostregex", "timestamppath", "formattimestamp");
 
-    MetricCollectionInfo metricCollectionInfo = new MetricCollectionInfo("metricName", MetricType.INFRA, "randomtag",
-        "dummyuri", null, "bodycollection ${start_time} ${end_time}", APMVerificationState.ResponseType.JSON,
-        responseMapping, APMVerificationState.Method.POST);
+    ApmMetricCollectionInfo metricCollectionInfo =
+        new ApmMetricCollectionInfo("metricName", MetricType.INFRA, "randomtag", "dummyuri", null,
+            "bodycollection ${start_time} ${end_time}", ResponseType.JSON, responseMapping, Method.POST);
 
-    APMVerificationState.ResponseMapping responseMapping2 =
-        new APMVerificationState.ResponseMapping(null, "differentJsonPath", "sometxnname", "somemetricjsonpath",
-            "hostpath", "hostregex", "timestamppath", "formattimestamp");
+    ApmResponseMapping responseMapping2 = new ApmResponseMapping(null, "differentJsonPath", "sometxnname",
+        "somemetricjsonpath", "hostpath", "hostregex", "timestamppath", "formattimestamp");
 
-    MetricCollectionInfo metricCollectionInfo2 = new MetricCollectionInfo("metricName", MetricType.INFRA, "randomtag",
-        "dummyuri ${start_time} ${end_time}", null, "bodycollection", APMVerificationState.ResponseType.JSON,
-        responseMapping2, APMVerificationState.Method.POST);
+    ApmMetricCollectionInfo metricCollectionInfo2 =
+        new ApmMetricCollectionInfo("metricName", MetricType.INFRA, "randomtag", "dummyuri ${start_time} ${end_time}",
+            null, "bodycollection", ResponseType.JSON, responseMapping2, Method.POST);
 
     metricCollectionInfos.add(metricCollectionInfo);
     metricCollectionInfos.add(metricCollectionInfo2);
@@ -1324,14 +1325,13 @@ public class CVConfigurationServiceImplTest extends WingsBaseTest {
     apmcvServiceConfiguration.setStateType(APM_VERIFICATION);
     apmcvServiceConfiguration.setAnalysisTolerance(AnalysisTolerance.MEDIUM);
 
-    List<MetricCollectionInfo> metricCollectionInfos = new ArrayList<>();
-    APMVerificationState.ResponseMapping responseMapping =
-        new APMVerificationState.ResponseMapping("myhardcodedtxnName", null, "sometxnname",
-            "series[*].pointlist[*].[1]", null, null, "series[*].pointlist[*].[0]", null);
+    List<ApmMetricCollectionInfo> metricCollectionInfos = new ArrayList<>();
+    ApmResponseMapping responseMapping = new ApmResponseMapping("myhardcodedtxnName", null, "sometxnname",
+        "series[*].pointlist[*].[1]", null, null, "series[*].pointlist[*].[0]", null);
 
-    MetricCollectionInfo metricCollectionInfo = new MetricCollectionInfo("metricName", MetricType.INFRA, "randomtag",
-        "dummyuri ${start_time} ${end_time}", null, "{\"bodycollection\":\"body\"}",
-        APMVerificationState.ResponseType.JSON, responseMapping, APMVerificationState.Method.POST);
+    ApmMetricCollectionInfo metricCollectionInfo =
+        new ApmMetricCollectionInfo("metricName", MetricType.INFRA, "randomtag", "dummyuri ${start_time} ${end_time}",
+            null, "{\"bodycollection\":\"body\"}", ResponseType.JSON, responseMapping, Method.POST);
 
     metricCollectionInfos.add(metricCollectionInfo);
     apmcvServiceConfiguration.setMetricCollectionInfos(metricCollectionInfos);
@@ -1341,17 +1341,17 @@ public class CVConfigurationServiceImplTest extends WingsBaseTest {
   private APMCVServiceConfiguration createAPMCVConfigWithInvalidCollectionInfo(boolean enabled24x7) {
     APMCVServiceConfiguration apmcvServiceConfiguration = createAPMCVConfig(true, appId, accountId);
 
-    List<MetricCollectionInfo> metricCollectionInfos = new ArrayList<>();
-    APMVerificationState.ResponseMapping responseMapping = new APMVerificationState.ResponseMapping("sometxnName", null,
-        "sometxnname", "somemetricjsonpath", "hostpath", "hostregex", "timestamppath", "formattimestamp");
+    List<ApmMetricCollectionInfo> metricCollectionInfos = new ArrayList<>();
+    ApmResponseMapping responseMapping = new ApmResponseMapping("sometxnName", null, "sometxnname",
+        "somemetricjsonpath", "hostpath", "hostregex", "timestamppath", "formattimestamp");
 
-    MetricCollectionInfo metricCollectionInfo = new MetricCollectionInfo("metricName", MetricType.INFRA, "randomtag",
-        "dummyuri ${start_time} ${end_time}", null, "bodycollection", APMVerificationState.ResponseType.JSON,
-        responseMapping, APMVerificationState.Method.POST);
+    ApmMetricCollectionInfo metricCollectionInfo =
+        new ApmMetricCollectionInfo("metricName", MetricType.INFRA, "randomtag", "dummyuri ${start_time} ${end_time}",
+            null, "bodycollection", ResponseType.JSON, responseMapping, Method.POST);
 
-    MetricCollectionInfo metricCollectionInfo2 = new MetricCollectionInfo("metricName", MetricType.INFRA, "randomtag",
-        "dummyuri ${start_time} ${end_time}", null, "bodycollection", APMVerificationState.ResponseType.JSON,
-        responseMapping, APMVerificationState.Method.POST);
+    ApmMetricCollectionInfo metricCollectionInfo2 =
+        new ApmMetricCollectionInfo("metricName", MetricType.INFRA, "randomtag", "dummyuri ${start_time} ${end_time}",
+            null, "bodycollection", ResponseType.JSON, responseMapping, Method.POST);
 
     metricCollectionInfos.add(metricCollectionInfo);
     metricCollectionInfos.add(metricCollectionInfo2);

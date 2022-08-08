@@ -1,0 +1,38 @@
+pipeline:
+  name: pipeline2
+  identifier: pipeline2
+  projectIdentifier: cvngsignoff16aug
+  orgIdentifier: CVNG
+  tags: {}
+  stages:
+    - stage:
+        name: stage1
+        identifier: stage1
+        description: ""
+        type: Deployment
+        spec:
+          serviceConfig:
+            serviceRef: service
+            serviceDefinition:
+              type: Kubernetes
+              spec:
+                variables: []
+          infrastructure:
+            environmentRef: env
+            infrastructureDefinition:
+              type: KubernetesDirect
+              spec:
+                connectorRef: account.test_demo_0
+                namespace: default
+                releaseName: release-<+INFRA_KEY>
+            allowSimultaneousDeployments: false
+          execution:
+            steps: []
+            rollbackSteps: []
+        tags: {}
+        failureStrategies:
+          - onFailure:
+              errors:
+                - AllErrors
+              action:
+                type: StageRollback

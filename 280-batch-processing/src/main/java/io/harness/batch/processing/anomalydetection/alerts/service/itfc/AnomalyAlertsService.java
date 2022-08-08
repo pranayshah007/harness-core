@@ -11,4 +11,5 @@ import java.time.Instant;
 
 public interface AnomalyAlertsService {
   void sendAnomalyDailyReport(String accountId, Instant date);
+  void sendNgAnomalyAlerts(String accountId, Instant date);
 }

@@ -27,6 +27,7 @@ import com.google.inject.Inject;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -39,7 +40,6 @@ import lombok.extern.slf4j.Slf4j;
 public abstract class CVMetricStepYamlBuilder extends StepYamlBuilder {
   private static final String CUSTOM_THRESHOLD_KEY = "customThresholdRefId";
   private static final String THRESHOLDS_KEY = "metric-thresholds";
-  private static final String ACCOUNT_TO_DEBUG = "78iEHpolS_uhk2XmjVO-4Q";
 
   @Inject private MetricDataAnalysisService metricDataAnalysisService;
 
@@ -49,12 +49,11 @@ public abstract class CVMetricStepYamlBuilder extends StepYamlBuilder {
     if (name.equals(CUSTOM_THRESHOLD_KEY)) {
       List<TimeSeriesMLTransactionThresholds> thresholds =
           metricDataAnalysisService.getCustomThreshold((String) objectValue);
-      Set<TimeSeriesMLTransactionThresholdsDTO> thresholdsDTOSet = new HashSet<>();
+      Set<TimeSeriesMLTransactionThresholdsDTO> thresholdsDTOSet = new LinkedHashSet<>();
       if (isNotEmpty(thresholds)) {
         thresholds.forEach(threshold
             -> thresholdsDTOSet.add(TimeSeriesMLTransactionThresholdsDTO.fromTransactionThresholdsEntity(threshold)));
       }
-
       outputProperties.put(THRESHOLDS_KEY, new ArrayList<>(thresholdsDTOSet));
     }
     if (!name.equals(THRESHOLDS_KEY)) {

@@ -1,0 +1,4 @@
+summary: "Harness SRM. Service Health: ${MONITORED_SERVICE_NAME} ${HEADER_MESSAGE} ${SERVICE_NAME} service. Trigger ${TRIGGER_MESSAGE}. Incident occurred ${START_DATE}. Top metrics that are affected ${ANOMALOUS_METRIC}. Account Name ${ACCOUNT_NAME}, Organization Name ${ORG_NAME}, Project Name ${PROJECT_NAME}. View Service Health details ${URL}"
+link:
+    href: harness.io
+    text: Harness

@@ -10,7 +10,10 @@ package software.wings.service.impl;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.beans.EnvironmentType.NON_PROD;
 import static io.harness.beans.ExecutionStatus.FAILED;
+import static io.harness.beans.ExecutionStatus.PAUSED;
+import static io.harness.beans.ExecutionStatus.REJECTED;
 import static io.harness.beans.ExecutionStatus.SUCCESS;
+import static io.harness.beans.FeatureName.AUTO_REJECT_PREVIOUS_APPROVALS;
 import static io.harness.beans.FeatureName.WEBHOOK_TRIGGER_AUTHORIZATION;
 import static io.harness.beans.PageRequest.PageRequestBuilder.aPageRequest;
 import static io.harness.beans.PageRequest.UNLIMITED;
@@ -27,11 +30,13 @@ import static io.harness.rule.OwnerRule.GARVIT;
 import static io.harness.rule.OwnerRule.GEORGE;
 import static io.harness.rule.OwnerRule.HARSH;
 import static io.harness.rule.OwnerRule.INDER;
+import static io.harness.rule.OwnerRule.LUCAS_SALES;
 import static io.harness.rule.OwnerRule.POOJA;
 import static io.harness.rule.OwnerRule.PRABU;
 import static io.harness.rule.OwnerRule.RAMA;
 import static io.harness.rule.OwnerRule.SRINIVAS;
 import static io.harness.rule.OwnerRule.UJJAWAL;
+import static io.harness.rule.OwnerRule.UTKARSH_CHOUBEY;
 import static io.harness.rule.OwnerRule.YOGESH;
 
 import static software.wings.api.EnvStateExecutionData.Builder.anEnvStateExecutionData;
@@ -45,19 +50,26 @@ import static software.wings.beans.WorkflowExecution.builder;
 import static software.wings.beans.deployment.DeploymentMetadata.Include.ARTIFACT_SERVICE;
 import static software.wings.beans.deployment.DeploymentMetadata.Include.DEPLOYMENT_TYPE;
 import static software.wings.beans.deployment.DeploymentMetadata.Include.ENVIRONMENT;
+import static software.wings.service.impl.workflow.WorkflowServiceTestHelper.constructCanaryWorkflowWithPhase;
 import static software.wings.sm.InstanceStatusSummary.InstanceStatusSummaryBuilder.anInstanceStatusSummary;
 import static software.wings.sm.StateExecutionInstance.Builder.aStateExecutionInstance;
 import static software.wings.sm.StateMachine.StateMachineBuilder.aStateMachine;
+import static software.wings.sm.StateType.ARTIFACT_COLLECT_LOOP_STATE;
 import static software.wings.utils.WingsTestConstants.ACCOUNT1_ID;
 import static software.wings.utils.WingsTestConstants.ACCOUNT_ID;
 import static software.wings.utils.WingsTestConstants.ACCOUNT_NAME;
+import static software.wings.utils.WingsTestConstants.APPROVAL_EXECUTION_ID;
 import static software.wings.utils.WingsTestConstants.APP_ID;
 import static software.wings.utils.WingsTestConstants.APP_NAME;
+import static software.wings.utils.WingsTestConstants.ARTIFACT_STREAM_ID;
 import static software.wings.utils.WingsTestConstants.COMPANY_NAME;
 import static software.wings.utils.WingsTestConstants.DEFAULT_VERSION;
 import static software.wings.utils.WingsTestConstants.ENV_ID;
 import static software.wings.utils.WingsTestConstants.HELM_CHART_ID;
+import static software.wings.utils.WingsTestConstants.INFRA_DEFINITION_ID;
+import static software.wings.utils.WingsTestConstants.PIPELINE_EXECUTION_ID;
 import static software.wings.utils.WingsTestConstants.PIPELINE_ID;
+import static software.wings.utils.WingsTestConstants.PIPELINE_STAGE_ELEMENT_ID;
 import static software.wings.utils.WingsTestConstants.SERVICE1_ID;
 import static software.wings.utils.WingsTestConstants.SERVICE2_ID;
 import static software.wings.utils.WingsTestConstants.SERVICE3_ID;
@@ -66,6 +78,7 @@ import static software.wings.utils.WingsTestConstants.SERVICE5_ID;
 import static software.wings.utils.WingsTestConstants.SERVICE6_ID;
 import static software.wings.utils.WingsTestConstants.SERVICE_ID;
 import static software.wings.utils.WingsTestConstants.SERVICE_INSTANCE_ID;
+import static software.wings.utils.WingsTestConstants.STATE_EXECUTION_ID;
 import static software.wings.utils.WingsTestConstants.TRIGGER_ID;
 import static software.wings.utils.WingsTestConstants.USER_EMAIL;
 import static software.wings.utils.WingsTestConstants.USER_GROUP_ID;
@@ -114,6 +127,8 @@ import io.harness.exception.WingsException;
 import io.harness.ff.FeatureFlagService;
 import io.harness.ng.core.account.AuthenticationMechanism;
 import io.harness.rule.Owner;
+import io.harness.tasks.ResponseData;
+import io.harness.waiter.WaitNotifyEngine;
 
 import software.wings.WingsBaseTest;
 import software.wings.api.ApprovalStateExecutionData;
@@ -127,9 +142,13 @@ import software.wings.beans.ApiKeyEntry;
 import software.wings.beans.ApprovalDetails;
 import software.wings.beans.ApprovalDetails.Action;
 import software.wings.beans.ArtifactVariable;
+import software.wings.beans.CanaryOrchestrationWorkflow;
 import software.wings.beans.ElementExecutionSummary.ElementExecutionSummaryBuilder;
 import software.wings.beans.EntityType;
 import software.wings.beans.ExecutionArgs;
+import software.wings.beans.GraphNode;
+import software.wings.beans.OrchestrationWorkflow;
+import software.wings.beans.PhaseStep;
 import software.wings.beans.Pipeline;
 import software.wings.beans.PipelineExecution;
 import software.wings.beans.PipelineStage.PipelineStageElement;
@@ -141,12 +160,16 @@ import software.wings.beans.Variable;
 import software.wings.beans.Workflow;
 import software.wings.beans.WorkflowExecution;
 import software.wings.beans.appmanifest.HelmChart;
+import software.wings.beans.approval.ApprovalInfo;
+import software.wings.beans.approval.PreviousApprovalDetails;
 import software.wings.beans.artifact.Artifact;
+import software.wings.beans.artifact.ArtifactInput;
 import software.wings.beans.deployment.DeploymentMetadata;
 import software.wings.beans.security.UserGroup;
 import software.wings.beans.trigger.Trigger;
 import software.wings.beans.trigger.WebHookTriggerCondition;
 import software.wings.dl.WingsPersistence;
+import software.wings.helpers.ext.url.SubdomainUrlHelper;
 import software.wings.rules.Listeners;
 import software.wings.security.UserThreadLocal;
 import software.wings.service.impl.deployment.checks.AccountExpirationChecker;
@@ -162,12 +185,16 @@ import software.wings.service.intfc.WorkflowExecutionService;
 import software.wings.service.intfc.WorkflowService;
 import software.wings.service.intfc.applicationmanifest.HelmChartService;
 import software.wings.sm.ExecutionContextImpl;
+import software.wings.sm.ExecutionInterrupt;
+import software.wings.sm.ExecutionInterruptManager;
 import software.wings.sm.StateExecutionData;
 import software.wings.sm.StateExecutionInstance;
 import software.wings.sm.StateExecutionInstance.StateExecutionInstanceKeys;
 import software.wings.sm.StateMachineExecutionSimulator;
 import software.wings.sm.StateMachineExecutor;
+import software.wings.sm.StateType;
 import software.wings.sm.WorkflowStandardParams;
+import software.wings.sm.states.ArtifactCollectLoopState.ArtifactCollectLoopStateKeys;
 import software.wings.sm.states.ForkState.ForkStateExecutionData;
 import software.wings.utils.JsonUtils;
 
@@ -191,8 +218,10 @@ import org.assertj.core.util.Lists;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mongodb.morphia.query.FieldEnd;
 import org.mongodb.morphia.query.FindOptions;
 import org.mongodb.morphia.query.MorphiaIterator;
@@ -212,10 +241,12 @@ import org.mongodb.morphia.query.UpdateResults;
 public class WorkflowExecutionServiceTest extends WingsBaseTest {
   @InjectMocks @Inject private WorkflowExecutionService workflowExecutionService;
   @InjectMocks
+  @Spy
   private software.wings.service.impl.WorkflowExecutionServiceImpl workflowExecutionServiceSpy =
       spy(software.wings.service.impl.WorkflowExecutionServiceImpl.class);
 
   @Mock private WingsPersistence wingsPersistence;
+  @Mock private ExecutionInterruptManager executionInterruptManager;
   @Mock private WorkflowService workflowService;
   @Mock private PipelineService pipelineService;
   @Mock private UserGroupService userGroupService;
@@ -235,6 +266,8 @@ public class WorkflowExecutionServiceTest extends WingsBaseTest {
   @Mock private ArtifactService artifactService;
   @Mock private StateMachineExecutor stateMachineExecutor;
   @Mock private ApplicationManifestService applicationManifestService;
+  @Mock private WaitNotifyEngine waitNotifyEngine;
+  @Mock private SubdomainUrlHelper subdomainUrlHelper;
 
   @Inject private WingsPersistence wingsPersistence1;
 
@@ -283,6 +316,54 @@ public class WorkflowExecutionServiceTest extends WingsBaseTest {
     when(wingsPersistence.createQuery(eq(StateExecutionInstance.class))).thenReturn(statequery);
     when(workflowExecutionServiceHelper.fetchFailureDetails(APP_ID, WORKFLOW_EXECUTION_ID))
         .thenReturn("failureDetails");
+  }
+
+  @Test
+  @Owner(developers = LUCAS_SALES)
+  @Category(UnitTests.class)
+  public void testRejectWithRollback() {
+    Query mockQuery = mock(Query.class);
+    WorkflowExecution workflowExecution = WorkflowExecution.builder().uuid("executionId").build();
+    doReturn(mockQuery).when(wingsPersistence).createQuery(WorkflowExecution.class);
+    doReturn(mockQuery).when(mockQuery).filter(any(), any());
+    doReturn(mockQuery).when(mockQuery).filter(any(), any());
+    doReturn(mockQuery).when(mockQuery).project(WorkflowExecutionKeys.appId, true);
+    doReturn(mockQuery).when(mockQuery).project(WorkflowExecutionKeys.uuid, true);
+    doReturn(workflowExecution).when(mockQuery).get();
+    doReturn(workflowExecution).when(wingsPersistence).getWithAppId(eq(WorkflowExecution.class), any(), any());
+    doReturn(mock(ExecutionInterrupt.class)).when(executionInterruptManager).registerExecutionInterrupt(any());
+
+    String approvalId = generateUuid();
+    ApprovalDetails approvalDetails = new ApprovalDetails();
+    approvalDetails.setApprovalId(approvalId);
+    approvalDetails.setAction(Action.ROLLBACK);
+
+    boolean success = workflowExecutionService.approveOrRejectExecution(APP_ID, asList(), approvalDetails, "workflow");
+    assertThat(success).isEqualTo(true);
+  }
+
+  @Test(expected = InvalidRequestException.class)
+  @Owner(developers = LUCAS_SALES)
+  @Category(UnitTests.class)
+  public void testRejectWithRollbackShouldFailWhenPipelineExecution() {
+    Query mockQuery = mock(Query.class);
+    WorkflowExecution workflowExecution =
+        WorkflowExecution.builder().workflowType(WorkflowType.PIPELINE).uuid("executionId").build();
+    doReturn(mockQuery).when(wingsPersistence).createQuery(WorkflowExecution.class);
+    doReturn(mockQuery).when(mockQuery).filter(any(), any());
+    doReturn(mockQuery).when(mockQuery).filter(any(), any());
+    doReturn(mockQuery).when(mockQuery).project(WorkflowExecutionKeys.appId, true);
+    doReturn(mockQuery).when(mockQuery).project(WorkflowExecutionKeys.uuid, true);
+    doReturn(workflowExecution).when(mockQuery).get();
+    doReturn(workflowExecution).when(wingsPersistence).getWithAppId(eq(WorkflowExecution.class), any(), any());
+    doReturn(mock(ExecutionInterrupt.class)).when(executionInterruptManager).registerExecutionInterrupt(any());
+
+    String approvalId = generateUuid();
+    ApprovalDetails approvalDetails = new ApprovalDetails();
+    approvalDetails.setApprovalId(approvalId);
+    approvalDetails.setAction(Action.ROLLBACK);
+
+    workflowExecutionService.approveOrRejectExecution(APP_ID, asList(), approvalDetails, "workflow");
   }
 
   @Test
@@ -417,7 +498,7 @@ public class WorkflowExecutionServiceTest extends WingsBaseTest {
   @Owner(developers = ANSHUL)
   @Category(UnitTests.class)
   public void shouldFetchWorkflowExecution() {
-    when(query.order(Sort.descending(anyString()))).thenReturn(query);
+    when(query.order(Sort.descending(any()))).thenReturn(query);
     when(query.get(any(FindOptions.class))).thenReturn(builder().appId(APP_ID).build());
     WorkflowExecution workflowExecution =
         workflowExecutionService.fetchWorkflowExecution(APP_ID, asList(SERVICE_ID), asList(ENV_ID), WORKFLOW_ID);
@@ -440,10 +521,10 @@ public class WorkflowExecutionServiceTest extends WingsBaseTest {
 
     UserThreadLocal.set(user);
     when(appService.getAccountIdByAppId(APP_ID)).thenReturn(ACCOUNT_ID);
-    when(userGroupService.verifyUserAuthorizedToAcceptOrRejectApproval(anyString(), anyList())).thenReturn(true);
+    when(userGroupService.verifyUserAuthorizedToAcceptOrRejectApproval(any(), any())).thenReturn(true);
 
-    boolean success =
-        workflowExecutionService.approveOrRejectExecution(APP_ID, asList(userGroup.getUuid()), approvalDetails);
+    boolean success = workflowExecutionService.approveOrRejectExecution(
+        APP_ID, asList(userGroup.getUuid()), approvalDetails, (String) null);
     assertThat(success).isEqualTo(true);
     UserThreadLocal.unset();
   }
@@ -466,8 +547,8 @@ public class WorkflowExecutionServiceTest extends WingsBaseTest {
     when(appService.getAccountIdByAppId(APP_ID)).thenReturn(ACCOUNT_ID);
     when(userGroupService.verifyUserAuthorizedToAcceptOrRejectApproval(anyString(), anyList())).thenReturn(false);
 
-    boolean success =
-        workflowExecutionService.approveOrRejectExecution(APP_ID, asList(userGroup.getUuid()), approvalDetails);
+    boolean success = workflowExecutionService.approveOrRejectExecution(
+        APP_ID, asList(userGroup.getUuid()), approvalDetails, (String) null);
     assertThat(success).isEqualTo(false);
     UserThreadLocal.unset();
   }
@@ -605,7 +686,7 @@ public class WorkflowExecutionServiceTest extends WingsBaseTest {
 
     UserThreadLocal.set(user);
     String entityId = generateUuid();
-    when(userGroupService.verifyUserAuthorizedToAcceptOrRejectApproval(anyString(), anyList())).thenReturn(true);
+    when(userGroupService.verifyUserAuthorizedToAcceptOrRejectApproval(any(), any())).thenReturn(true);
 
     doNothing().when(deploymentAuthHandler).authorizeWorkflowOrPipelineForExecution(any(), anyString());
     boolean success =
@@ -648,10 +729,10 @@ public class WorkflowExecutionServiceTest extends WingsBaseTest {
 
     UserThreadLocal.set(user);
     when(appService.getAccountIdByAppId(APP_ID)).thenReturn(ACCOUNT_ID);
-    when(userGroupService.verifyUserAuthorizedToAcceptOrRejectApproval(anyString(), anyList())).thenReturn(true);
+    when(userGroupService.verifyUserAuthorizedToAcceptOrRejectApproval(any(), any())).thenReturn(true);
 
-    boolean success =
-        workflowExecutionService.approveOrRejectExecution(APP_ID, asList(userGroup.getUuid()), approvalDetails);
+    boolean success = workflowExecutionService.approveOrRejectExecution(
+        APP_ID, asList(userGroup.getUuid()), approvalDetails, (String) null);
     assertThat(success).isEqualTo(true);
     UserThreadLocal.unset();
   }
@@ -674,8 +755,8 @@ public class WorkflowExecutionServiceTest extends WingsBaseTest {
     when(appService.getAccountIdByAppId(APP_ID)).thenReturn(ACCOUNT_ID);
     when(userGroupService.verifyUserAuthorizedToAcceptOrRejectApproval(anyString(), anyList())).thenReturn(false);
 
-    boolean success =
-        workflowExecutionService.approveOrRejectExecution(APP_ID, asList(userGroup.getUuid()), approvalDetails);
+    boolean success = workflowExecutionService.approveOrRejectExecution(
+        APP_ID, asList(userGroup.getUuid()), approvalDetails, (String) null);
     assertThat(success).isEqualTo(false);
     UserThreadLocal.unset();
   }
@@ -699,7 +780,8 @@ public class WorkflowExecutionServiceTest extends WingsBaseTest {
     UserThreadLocal.set(user1);
     when(appService.getAccountIdByAppId(APP_ID)).thenReturn(ACCOUNT_ID);
 
-    workflowExecutionService.approveOrRejectExecution(APP_ID, asList(userGroup.getUuid()), approvalDetails);
+    workflowExecutionService.approveOrRejectExecution(
+        APP_ID, asList(userGroup.getUuid()), approvalDetails, (String) null);
   }
 
   @Test(expected = InvalidRequestException.class)
@@ -721,7 +803,8 @@ public class WorkflowExecutionServiceTest extends WingsBaseTest {
     UserThreadLocal.set(user1);
     when(appService.getAccountIdByAppId(APP_ID)).thenReturn(ACCOUNT_ID);
 
-    workflowExecutionService.approveOrRejectExecution(APP_ID, asList(userGroup.getUuid()), approvalDetails);
+    workflowExecutionService.approveOrRejectExecution(
+        APP_ID, asList(userGroup.getUuid()), approvalDetails, (String) null);
   }
 
   @Test
@@ -1548,7 +1631,7 @@ public class WorkflowExecutionServiceTest extends WingsBaseTest {
     UpdateOperations updateOperations = mock(UpdateOperations.class);
     when(wingsPersistence.createQuery(eq(WorkflowExecution.class))).thenReturn(query);
     when(wingsPersistence.createUpdateOperations(eq(WorkflowExecution.class))).thenReturn(updateOperations);
-    when(updateOperations.set(anyString(), anyString())).thenReturn(updateOperations);
+    when(updateOperations.set(anyString(), any())).thenReturn(updateOperations);
     workflowExecutionService.continuePipelineStage(appID, pipelineExecutionId, pipelineStageElementId, executionArgs);
 
     List<Artifact> expectedArtifacts = JsonUtils.readResourceFile(
@@ -1561,6 +1644,81 @@ public class WorkflowExecutionServiceTest extends WingsBaseTest {
     verify(updateOperations).set(eq(WorkflowExecutionKeys.executionArgs_artifact_variables), eq(expectedArtifactVars));
     verify(updateOperations).set(eq(WorkflowExecutionKeys.artifacts), eq(expectedArtifacts));
     verify(updateOperations).set(eq(WorkflowExecutionKeys.executionArgs_artifacts), eq(expectedArtifacts));
+    verify(updateOperations).set(eq(WorkflowExecutionKeys.serviceIds), eq(asList("NA2uRPKLTqm9VU3dPENb-g")));
+    verify(updateOperations).set(eq(WorkflowExecutionKeys.infraDefinitionIds), eq(asList("62pv3U26RnmaLYFiZxjiTg")));
+  }
+
+  @Test
+  @Owner(developers = PRABU)
+  @Category(UnitTests.class)
+  public void testContinueExecutionOfPausedBuildPipelineExecution() {
+    final String appID = "nCLN8c84SqWPr44sqg65JQ";
+    final String pipelineStageElementId = "iibzVUjNTlWsv23lQIrkWw";
+    final String pipelineExecutionId = "3v2FfeZUTvqSnz7djyGMqQ";
+
+    ExecutionArgs executionArgs =
+        JsonUtils.readResourceFile("execution_args/execution_args_continue_pipeline.json", ExecutionArgs.class);
+    executionArgs.setWorkflowVariables(Collections.singletonMap("wf_variable", "value1"));
+    WorkflowExecution workflowExecution =
+        JsonUtils.readResourceFile("execution/runtime_pipeline_execution_stage2.json", WorkflowExecution.class);
+    workflowExecution.setServiceIds(null);
+    workflowExecution.setInfraDefinitionIds(null);
+    workflowExecution.setEnvIds(null);
+    workflowExecution.getExecutionArgs().setWorkflowVariables(new HashMap<>());
+
+    Pipeline pipeline = JsonUtils.readResourceFile("pipeline/k8s_two_stage_pipeline_without_vars.json", Pipeline.class);
+    pipeline.getPipelineStages().get(1).getPipelineStageElements().get(0).getProperties().remove("envId");
+    Workflow workflow = JsonUtils.readResourceFile("workflows/k8s_workflow.json", Workflow.class);
+    ((CanaryOrchestrationWorkflow) workflow.getOrchestrationWorkflow()).setUserVariables(new ArrayList<>());
+    Artifact artifact = JsonUtils.readResourceFile("artifacts/artifacts.json", Artifact.class);
+    StateExecutionInstance stateExecutionInstance = aStateExecutionInstance()
+                                                        .uuid("D7fBZxZyQniDAhWTHdnYHQ")
+                                                        .appId("nCLN8c84SqWPr44sqg65JQ")
+                                                        .status(ExecutionStatus.PAUSED)
+                                                        .executionUuid("dTFHGyWOTMSHXGQoI5kVKw")
+                                                        .contextElements(new LinkedList<>())
+                                                        .build();
+
+    ExecutionContextImpl context = mock(ExecutionContextImpl.class);
+    WorkflowStandardParams params = new WorkflowStandardParams();
+
+    when(artifactService.get(anyString(), anyString())).thenReturn(artifact);
+    when(wingsPersistence.getWithAppId(eq(WorkflowExecution.class), eq(appID), eq(pipelineExecutionId)))
+        .thenReturn(workflowExecution);
+    when(pipelineService.readPipelineWithVariables(eq(appID), anyString())).thenReturn(pipeline);
+    when(pipelineService.getPipeline(eq(appID), anyString())).thenReturn(pipeline);
+    doNothing().when(deploymentAuthHandler).authorizePipelineExecution(anyString(), anyString());
+    doNothing().when(authService).checkIfUserAllowedToDeployPipelineToEnv(anyString(), anyString());
+    when(workflowService.readWorkflow(eq(appID), anyString())).thenReturn(workflow);
+
+    Query query = mock(Query.class);
+    when(wingsPersistence.createQuery(eq(StateExecutionInstance.class))).thenReturn(query);
+    when(query.filter(anyString(), any())).thenReturn(query);
+    when(query.get()).thenReturn(stateExecutionInstance);
+    when(stateMachineExecutor.getExecutionContext(anyString(), anyString(), anyString())).thenReturn(context);
+    when(context.getContextElement(eq(ContextElementType.STANDARD))).thenReturn(params);
+    when(wingsPersistence.createUpdateOperations(eq(StateExecutionInstance.class)))
+        .thenReturn(mock(UpdateOperations.class));
+    // Test that updates are correct
+    UpdateOperations updateOperations = mock(UpdateOperations.class);
+    when(wingsPersistence.createQuery(eq(WorkflowExecution.class))).thenReturn(query);
+    when(wingsPersistence.createUpdateOperations(eq(WorkflowExecution.class))).thenReturn(updateOperations);
+    when(updateOperations.set(anyString(), any())).thenReturn(updateOperations);
+    workflowExecutionService.continuePipelineStage(appID, pipelineExecutionId, pipelineStageElementId, executionArgs);
+
+    List<Artifact> expectedArtifacts = JsonUtils.readResourceFile(
+        "artifacts/expected_artifacts_continue_pipeline.json", new TypeReference<List<Artifact>>() {});
+
+    List<ArtifactVariable> expectedArtifactVars = JsonUtils.readResourceFile(
+        "artifacts/expected_artifact_variables_continue_pipeline.json", new TypeReference<List<ArtifactVariable>>() {});
+
+    verify(updateOperations).set(eq(WorkflowExecutionKeys.startTs), anyLong());
+    verify(updateOperations).set(eq(WorkflowExecutionKeys.executionArgs_artifact_variables), eq(expectedArtifactVars));
+    verify(updateOperations).set(eq(WorkflowExecutionKeys.artifacts), eq(expectedArtifacts));
+    verify(updateOperations).set(eq(WorkflowExecutionKeys.executionArgs_artifacts), eq(expectedArtifacts));
+    verify(updateOperations, never()).set(eq(WorkflowExecutionKeys.serviceIds), anyList());
+    verify(updateOperations, never()).set(eq(WorkflowExecutionKeys.infraDefinitionIds), anyList());
+    verify(updateOperations, never()).set(eq(WorkflowExecutionKeys.envIds), anyList());
   }
 
   @Test
@@ -1757,6 +1915,28 @@ public class WorkflowExecutionServiceTest extends WingsBaseTest {
   }
 
   @Test
+  @Owner(developers = UTKARSH_CHOUBEY)
+  @Category(UnitTests.class)
+  public void shouldPopulateFailureDetailsForRejectedExecutionWithinPipeline() {
+    WorkflowExecution workflowExecution =
+        WorkflowExecution.builder()
+            .uuid(WORKFLOW_EXECUTION_ID)
+            .appId(APP_ID)
+            .workflowType(WorkflowType.PIPELINE)
+            .pipelineExecution(PipelineExecution.Builder.aPipelineExecution()
+                                   .withPipelineStageExecutions(
+                                       singletonList(PipelineStageExecution.builder()
+                                                         .workflowExecutions(asList(getRejectedWorkflowExecution()))
+                                                         .build()))
+                                   .build())
+            .build();
+    workflowExecutionService.populateFailureDetails(workflowExecution);
+    WorkflowExecution rejectedExecution =
+        workflowExecution.getPipelineExecution().getPipelineStageExecutions().get(0).getWorkflowExecutions().get(0);
+    assertThat(rejectedExecution.getFailureDetails()).isEqualTo("failureDetails");
+  }
+
+  @Test
   @Owner(developers = PRABU)
   @Category(UnitTests.class)
   public void shouldNotPopulateTriggeredByForEnvLoopState() {
@@ -1783,6 +1963,344 @@ public class WorkflowExecutionServiceTest extends WingsBaseTest {
     assertThat(stageExecutionList.get(0).getTriggeredBy().getName()).isEqualTo("admin");
   }
 
+  @Test
+  @Owner(developers = PRABU)
+  @Category(UnitTests.class)
+  public void testGetPreviousApprovalDetails() {
+    String approvalId = generateUuid();
+    WorkflowExecution currentWorkflowExecution =
+        builder()
+            .infraDefinitionIds(asList(INFRA_DEFINITION_ID, INFRA_DEFINITION_ID + 2))
+            .serviceIds(asList(SERVICE1_ID, SERVICE2_ID))
+            .pipelineExecution(
+                aPipelineExecution()
+                    .withPipelineStageExecutions(
+                        asList(PipelineStageExecution.builder()
+                                   .status(PAUSED)
+                                   .stateType(StateType.APPROVAL.name())
+                                   .stateExecutionData(
+                                       ApprovalStateExecutionData.builder().approvalId(APPROVAL_EXECUTION_ID).build())
+                                   .pipelineStageElementId(PIPELINE_STAGE_ELEMENT_ID)
+                                   .build()))
+                    .withStatus(PAUSED)
+                    .build())
+            .build();
+
+    WorkflowExecution previousWorkflowExecution1 =
+        builder()
+            .infraDefinitionIds(asList(INFRA_DEFINITION_ID, INFRA_DEFINITION_ID + 2))
+            .serviceIds(asList(SERVICE1_ID))
+            .pipelineExecution(
+                aPipelineExecution()
+                    .withPipelineStageExecutions(asList(PipelineStageExecution.builder()
+                                                            .status(PAUSED)
+                                                            .pipelineStageElementId(PIPELINE_STAGE_ELEMENT_ID)
+                                                            .build()))
+                    .withStatus(PAUSED)
+                    .build())
+            .build();
+
+    WorkflowExecution previousWorkflowExecution2 =
+        builder()
+            .infraDefinitionIds(asList(INFRA_DEFINITION_ID, INFRA_DEFINITION_ID + 2))
+            .serviceIds(asList(SERVICE1_ID, SERVICE2_ID))
+            .pipelineExecution(
+                aPipelineExecution()
+                    .withPipelineStageExecutions(asList(PipelineStageExecution.builder()
+                                                            .status(PAUSED)
+                                                            .pipelineStageElementId(PIPELINE_STAGE_ELEMENT_ID + 1)
+                                                            .build()))
+                    .withStatus(PAUSED)
+                    .build())
+            .build();
+
+    WorkflowExecution previousWorkflowExecution3 =
+        builder()
+            .infraDefinitionIds(asList(INFRA_DEFINITION_ID, INFRA_DEFINITION_ID + 2))
+            .serviceIds(asList(SERVICE1_ID, SERVICE2_ID))
+            .pipelineExecution(
+                aPipelineExecution()
+                    .withPipelineStageExecutions(
+                        asList(PipelineStageExecution.builder()
+                                   .status(PAUSED)
+                                   .pipelineStageElementId(PIPELINE_STAGE_ELEMENT_ID)
+                                   .stateType(StateType.APPROVAL.name())
+                                   .stateExecutionData(
+                                       ApprovalStateExecutionData.builder().approvalId(APPROVAL_EXECUTION_ID).build())
+                                   .build()))
+                    .withStatus(PAUSED)
+                    .build())
+            .build();
+
+    when(appService.getAccountIdByAppId(APP_ID)).thenReturn(ACCOUNT_ID);
+
+    Query query = mock(Query.class);
+    FieldEnd fieldEnd = mock(FieldEnd.class);
+    when(wingsPersistence.createQuery(eq(WorkflowExecution.class))).thenReturn(query);
+    when(query.filter(anyString(), anyString())).thenReturn(query);
+    when(query.project(anyString(), anyBoolean())).thenReturn(query);
+    when(query.order(any(Sort.class))).thenReturn(query);
+    when(query.field(anyString())).thenReturn(fieldEnd);
+    when(fieldEnd.lessThan(anyLong())).thenReturn(query);
+    when(fieldEnd.in(any())).thenReturn(query);
+    when(query.get()).thenReturn(currentWorkflowExecution);
+    when(query.asList())
+        .thenReturn(asList(previousWorkflowExecution1, previousWorkflowExecution2, previousWorkflowExecution3));
+
+    PreviousApprovalDetails previousApprovalDetails = workflowExecutionService.getPreviousApprovalDetails(
+        APP_ID, WORKFLOW_EXECUTION_ID, PIPELINE_ID, APPROVAL_EXECUTION_ID);
+    assertThat(previousApprovalDetails.getSize()).isEqualTo(1);
+    assertThat(previousApprovalDetails.getPreviousApprovals().get(0).getApprovalId()).isEqualTo(APPROVAL_EXECUTION_ID);
+    UserThreadLocal.unset();
+  }
+
+  @Test
+  @Owner(developers = PRABU)
+  @Category(UnitTests.class)
+  public void shouldApproveAndRejectPreviousExecutions() {
+    String approvalId = generateUuid();
+    ApprovalDetails approvalDetails = new ApprovalDetails();
+    approvalDetails.setApprovalId(approvalId);
+    approvalDetails.setAction(Action.APPROVE);
+
+    PreviousApprovalDetails previousApprovalDetails =
+        PreviousApprovalDetails.builder()
+            .size(2)
+            .previousApprovals(asList(ApprovalInfo.builder().approvalId(approvalId + 2).build(),
+                ApprovalInfo.builder().approvalId(approvalId + 3).build()))
+            .build();
+
+    User user = createUser(USER_ID);
+    saveUserToPersistence(user);
+    UserGroup userGroup = createUserGroup(asList(user.getUuid()));
+    saveUserGroupToPersistence(userGroup);
+
+    when(wingsPersistence.query(eq(StateExecutionInstance.class), any()))
+        .thenReturn(aPageResponse().withResponse(Collections.emptyList()).build());
+
+    ApprovalStateExecutionData stateExecutionData =
+        ApprovalStateExecutionData.builder().currentStatus(PAUSED.name()).approvalId(approvalId).build();
+    stateExecutionData.setStatus(PAUSED);
+    UserThreadLocal.set(user);
+    when(appService.getAccountIdByAppId(APP_ID)).thenReturn(ACCOUNT_ID);
+    WorkflowExecution workflowExecution =
+        builder()
+            .workflowType(WorkflowType.PIPELINE)
+            .status(PAUSED)
+            .pipelineExecution(
+                aPipelineExecution()
+                    .withPipelineStageExecutions(asList(
+                        PipelineStageExecution.builder().status(PAUSED).stateExecutionData(stateExecutionData).build()))
+                    .build())
+            .build();
+    when(wingsPersistence.getWithAppId(WorkflowExecution.class, APP_ID, WORKFLOW_EXECUTION_ID))
+        .thenReturn(workflowExecution);
+    when(featureFlagService.isEnabled(AUTO_REJECT_PREVIOUS_APPROVALS, ACCOUNT_ID)).thenReturn(true);
+    when(subdomainUrlHelper.getPortalBaseUrl(anyString())).thenReturn("https://dummyurl");
+
+    doNothing().when(workflowExecutionServiceSpy).refreshPipelineExecution(workflowExecution);
+    workflowExecutionServiceSpy.approveAndRejectPreviousExecutions(
+        ACCOUNT_ID, APP_ID, WORKFLOW_EXECUTION_ID, STATE_EXECUTION_ID, approvalDetails, previousApprovalDetails);
+    ArgumentCaptor<ResponseData> captor1 = ArgumentCaptor.forClass(ResponseData.class);
+    ArgumentCaptor<ResponseData> captor2 = ArgumentCaptor.forClass(ResponseData.class);
+    ArgumentCaptor<ResponseData> captor3 = ArgumentCaptor.forClass(ResponseData.class);
+    verify(waitNotifyEngine).doneWith(eq(approvalId), captor1.capture());
+    verify(waitNotifyEngine).doneWith(eq(approvalId + 2), captor2.capture());
+    verify(waitNotifyEngine).doneWith(eq(approvalId + 3), captor3.capture());
+    assertThat(captor1.getValue()).isInstanceOf(ApprovalStateExecutionData.class);
+    assertThat(captor2.getValue()).isInstanceOf(ApprovalStateExecutionData.class);
+    assertThat(captor3.getValue()).isInstanceOf(ApprovalStateExecutionData.class);
+    assertThat(((ApprovalStateExecutionData) captor1.getValue()).getStatus()).isEqualTo(SUCCESS);
+    assertThat(((ApprovalStateExecutionData) captor2.getValue()).getStatus()).isEqualTo(REJECTED);
+    assertThat(((ApprovalStateExecutionData) captor3.getValue()).getStatus()).isEqualTo(REJECTED);
+    assertThat(((ApprovalStateExecutionData) captor2.getValue()).getComments())
+        .isEqualTo(
+            "Pipeline rejected when the following execution was approved: https://dummyurl/#/account/ACCOUNT_ID/app/APP_ID/pipeline-execution/WORKFLOW_EXECUTION_ID/workflow-execution/undefined/details");
+    UserThreadLocal.unset();
+  }
+
+  @Test
+  @Owner(developers = INDER)
+  @Category(UnitTests.class)
+  public void shouldNotAllowWorkflowExecutionWhenEnvNotAvailableForNonBuildWorkflow() {
+    Workflow workflow = aWorkflow()
+                            .appId("appId")
+                            .name("workflowName")
+                            .description("Sample Workflow")
+                            .orchestrationWorkflow(aCanaryOrchestrationWorkflow().build())
+                            .workflowType(WorkflowType.ORCHESTRATION)
+                            .uuid("uuid")
+                            .build();
+    when(workflowExecutionServiceHelper.obtainWorkflow(workflow.getUuid(), workflow.getUuid())).thenReturn(workflow);
+
+    assertThatThrownBy(()
+                           -> workflowExecutionService.triggerOrchestrationWorkflowExecution(workflow.getUuid(), null,
+                               workflow.getUuid(), null, ExecutionArgs.builder().build(), null, null))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("Environment is not provided in the workflow");
+  }
+
+  @Test
+  @Owner(developers = INDER)
+  @Category(UnitTests.class)
+  public void shouldUpdateWorkflowWithArtifactCollectionSteps() {
+    Workflow workflow = constructCanaryWorkflowWithPhase();
+    assertThat(workflow).isNotNull().hasFieldOrProperty("uuid");
+    List<ArtifactInput> artifactInputs =
+        Collections.singletonList(ArtifactInput.builder().buildNo("build1").artifactStreamId("id").build());
+
+    OrchestrationWorkflow orchestrationWorkflow =
+        workflowExecutionServiceSpy.updateWorkflowWithArtifactCollectionSteps(workflow, artifactInputs, null);
+    assertThat(orchestrationWorkflow).isNotNull().isInstanceOf(CanaryOrchestrationWorkflow.class);
+    CanaryOrchestrationWorkflow canaryOrchestrationWorkflow = (CanaryOrchestrationWorkflow) orchestrationWorkflow;
+    PhaseStep preDeploymentSteps = canaryOrchestrationWorkflow.getPreDeploymentSteps();
+    assertThat(preDeploymentSteps).isNotNull();
+    assertThat(preDeploymentSteps.getSteps()).isNotNull().isNotEmpty();
+
+    GraphNode graphNode = preDeploymentSteps.getSteps().get(0);
+    assertThat(graphNode.getType()).isEqualTo(ARTIFACT_COLLECT_LOOP_STATE.getType());
+    assertThat(graphNode.getName()).isEqualTo("Artifact/Manifest Collection");
+    assertThat(graphNode.getProperties()).isNotNull().isNotEmpty();
+    assertThat(graphNode.getProperties().get(ArtifactCollectLoopStateKeys.artifactInputList)).isEqualTo(artifactInputs);
+  }
+
+  @Test
+  @Owner(developers = INDER)
+  @Category(UnitTests.class)
+  public void shouldAddArtifactInputsToContext() {
+    ArtifactVariable artifactVariable =
+        ArtifactVariable.builder()
+            .artifactInput(ArtifactInput.builder().buildNo("1").artifactStreamId(ARTIFACT_STREAM_ID + 1).build())
+            .build();
+    ArtifactVariable artifactVariable2 =
+        ArtifactVariable.builder()
+            .artifactInput(ArtifactInput.builder().buildNo("2").artifactStreamId(ARTIFACT_STREAM_ID + 2).build())
+            .build();
+    ArtifactVariable artifactVariable3 = ArtifactVariable.builder().build();
+    WorkflowStandardParams workflowStandardParams = new WorkflowStandardParams();
+    List<ArtifactVariable> artifactVariables = asList(artifactVariable, artifactVariable2, artifactVariable3);
+    workflowExecutionServiceSpy.addArtifactInputsToContext(artifactVariables, workflowStandardParams);
+    assertThat(workflowStandardParams.getArtifactInputs()).isNotNull().isNotEmpty().hasSize(2);
+    assertThat(workflowStandardParams.getArtifactInputs())
+        .isEqualTo(asList(artifactVariable.getArtifactInput(), artifactVariable2.getArtifactInput()));
+  }
+
+  @Test
+  @Owner(developers = PRABU)
+  @Category(UnitTests.class)
+  public void testGetPreviousApprovalDetailsForWorkflow() {
+    String approvalStateIdentifier = generateUuid();
+    WorkflowExecution currentWorkflowExecution =
+        builder()
+            .uuid(WORKFLOW_EXECUTION_ID)
+            .infraDefinitionIds(asList(INFRA_DEFINITION_ID, INFRA_DEFINITION_ID + 2))
+            .serviceIds(asList(SERVICE1_ID, SERVICE2_ID))
+            .appId(APP_ID)
+            .build();
+
+    WorkflowExecution previousWorkflowExecution1 =
+        builder()
+            .appId(APP_ID)
+            .uuid(WORKFLOW_EXECUTION_ID + 2)
+            .infraDefinitionIds(asList(INFRA_DEFINITION_ID, INFRA_DEFINITION_ID + 2))
+            .serviceIds(asList(SERVICE1_ID))
+            .build();
+
+    WorkflowExecution previousWorkflowExecution2 = builder()
+                                                       .appId(APP_ID)
+                                                       .uuid(WORKFLOW_EXECUTION_ID + 3)
+                                                       .infraDefinitionIds(asList(INFRA_DEFINITION_ID))
+                                                       .serviceIds(asList(SERVICE1_ID, SERVICE2_ID))
+                                                       .build();
+
+    WorkflowExecution previousWorkflowExecution3 =
+        builder()
+            .appId(APP_ID)
+            .uuid(WORKFLOW_EXECUTION_ID + 4)
+            .infraDefinitionIds(asList(INFRA_DEFINITION_ID, INFRA_DEFINITION_ID + 2))
+            .serviceIds(asList(SERVICE1_ID, SERVICE2_ID))
+            .build();
+    ApprovalStateExecutionData approvalStateExecutionData =
+        ApprovalStateExecutionData.builder().approvalId(APPROVAL_EXECUTION_ID).build();
+    approvalStateExecutionData.setApprovalStateIdentifier(approvalStateIdentifier);
+    doReturn(asList(approvalStateExecutionData,
+                 ApprovalStateExecutionData.builder().approvalId(APPROVAL_EXECUTION_ID).build()))
+        .when(workflowExecutionServiceSpy)
+        .fetchApprovalStateExecutionsDataFromWorkflowExecution(any(), any());
+
+    List<String> approvalIds = workflowExecutionServiceSpy.getPreviousApprovalIdsWithSameServicesAndInfraForWorkflow(
+        currentWorkflowExecution,
+        asList(previousWorkflowExecution1, previousWorkflowExecution2, previousWorkflowExecution3),
+        asList(SERVICE1_ID, SERVICE2_ID), asList(INFRA_DEFINITION_ID, INFRA_DEFINITION_ID + 2), APPROVAL_EXECUTION_ID);
+    assertThat(approvalIds).hasSize(1);
+    assertThat(approvalIds.get(0)).isEqualTo(APPROVAL_EXECUTION_ID);
+  }
+
+  @Test
+  @Owner(developers = PRABU)
+  @Category(UnitTests.class)
+  public void testShouldNotGetApprovalIdsForWorkflowInSamePipelineExecution() {
+    String approvalStateIdentifier = generateUuid();
+    WorkflowExecution currentWorkflowExecution =
+        builder()
+            .uuid(WORKFLOW_EXECUTION_ID)
+            .infraDefinitionIds(asList(INFRA_DEFINITION_ID, INFRA_DEFINITION_ID + 2))
+            .serviceIds(asList(SERVICE1_ID, SERVICE2_ID))
+            .pipelineExecutionId(PIPELINE_EXECUTION_ID)
+            .appId(APP_ID)
+            .build();
+
+    WorkflowExecution previousWorkflowExecution1 =
+        builder()
+            .appId(APP_ID)
+            .uuid(WORKFLOW_EXECUTION_ID + 2)
+            .infraDefinitionIds(asList(INFRA_DEFINITION_ID, INFRA_DEFINITION_ID + 2))
+            .serviceIds(asList(SERVICE1_ID, SERVICE2_ID))
+            .pipelineExecutionId(PIPELINE_EXECUTION_ID)
+            .build();
+
+    WorkflowExecution previousWorkflowExecution2 =
+        builder()
+            .appId(APP_ID)
+            .uuid(WORKFLOW_EXECUTION_ID + 3)
+            .infraDefinitionIds(asList(INFRA_DEFINITION_ID, INFRA_DEFINITION_ID + 2))
+            .serviceIds(asList(SERVICE1_ID, SERVICE2_ID))
+            .build();
+
+    WorkflowExecution previousWorkflowExecution3 =
+        builder()
+            .appId(APP_ID)
+            .uuid(WORKFLOW_EXECUTION_ID + 4)
+            .infraDefinitionIds(asList(INFRA_DEFINITION_ID, INFRA_DEFINITION_ID + 2))
+            .serviceIds(asList(SERVICE1_ID, SERVICE2_ID))
+            .build();
+    ApprovalStateExecutionData approvalStateExecutionData =
+        ApprovalStateExecutionData.builder().approvalId(APPROVAL_EXECUTION_ID).build();
+    approvalStateExecutionData.setApprovalStateIdentifier(approvalStateIdentifier);
+    doReturn(asList(approvalStateExecutionData,
+                 ApprovalStateExecutionData.builder().approvalId(APPROVAL_EXECUTION_ID + 4).build()))
+        .when(workflowExecutionServiceSpy)
+        .fetchApprovalStateExecutionsDataFromWorkflowExecution(APP_ID, WORKFLOW_EXECUTION_ID);
+    doReturn(asList(approvalStateExecutionData,
+                 ApprovalStateExecutionData.builder().approvalId(APPROVAL_EXECUTION_ID + 3).build()))
+        .when(workflowExecutionServiceSpy)
+        .fetchApprovalStateExecutionsDataFromWorkflowExecution(APP_ID, WORKFLOW_EXECUTION_ID + 2);
+    doReturn(asList(ApprovalStateExecutionData.builder().approvalId(APPROVAL_EXECUTION_ID + 2).build()))
+        .when(workflowExecutionServiceSpy)
+        .fetchApprovalStateExecutionsDataFromWorkflowExecution(APP_ID, WORKFLOW_EXECUTION_ID + 3);
+    doReturn(asList(approvalStateExecutionData,
+                 ApprovalStateExecutionData.builder().approvalId(APPROVAL_EXECUTION_ID).build()))
+        .when(workflowExecutionServiceSpy)
+        .fetchApprovalStateExecutionsDataFromWorkflowExecution(APP_ID, WORKFLOW_EXECUTION_ID + 4);
+
+    List<String> approvalIds = workflowExecutionServiceSpy.getPreviousApprovalIdsWithSameServicesAndInfraForWorkflow(
+        currentWorkflowExecution,
+        asList(previousWorkflowExecution1, previousWorkflowExecution2, previousWorkflowExecution3),
+        asList(SERVICE1_ID, SERVICE2_ID), asList(INFRA_DEFINITION_ID, INFRA_DEFINITION_ID + 2), APPROVAL_EXECUTION_ID);
+    assertThat(approvalIds).hasSize(1);
+    assertThat(approvalIds.get(0)).isEqualTo(APPROVAL_EXECUTION_ID);
+  }
+
   private WorkflowExecution getFailedOrchestrationWorkflowExecution() {
     return WorkflowExecution.builder()
         .uuid(WORKFLOW_EXECUTION_ID)
@@ -1798,6 +2316,15 @@ public class WorkflowExecutionServiceTest extends WingsBaseTest {
         .appId(APP_ID)
         .status(SUCCESS)
         .workflowType(WorkflowType.ORCHESTRATION)
+        .build();
+  }
+
+  private WorkflowExecution getRejectedWorkflowExecution() {
+    return WorkflowExecution.builder()
+        .uuid(WORKFLOW_EXECUTION_ID)
+        .appId(APP_ID)
+        .status(REJECTED)
+        .workflowType(WorkflowType.PIPELINE)
         .build();
   }
 }

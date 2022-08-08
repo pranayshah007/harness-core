@@ -16,10 +16,13 @@ import static java.lang.String.format;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
-import io.harness.delegate.configuration.InstallUtils;
+import io.harness.delegate.clienttools.ClientTool;
+import io.harness.delegate.clienttools.HarnessPywinrmVersion;
+import io.harness.delegate.clienttools.InstallUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.logging.LogCallback;
+import io.harness.logging.LogLevel;
 import io.harness.ssh.SshHelperUtils;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -35,18 +38,22 @@ import java.io.IOException;
 import java.io.Writer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.FileUtils;
 
 @Slf4j
 @OwnedBy(CDP)
 @TargetModule(HarnessModule._930_DELEGATE_TASKS)
 public class WinRmSession implements AutoCloseable {
   private static final int retryCount = 1;
+  @VisibleForTesting static final String FILE_CACHE_TYPE = "FILE";
+  @VisibleForTesting static final String KERBEROS_CACHE_NAME_ENV = "KRB5CCNAME";
   @VisibleForTesting static final String COMMAND_PLACEHOLDER = "%s %s";
 
   private final ShellCommand shell;
@@ -56,6 +63,7 @@ public class WinRmSession implements AutoCloseable {
   private WinRmClient client;
   private WinRmClientContext context;
   private PyWinrmArgs args;
+  private Path cacheFilePath;
 
   public WinRmSession(WinRmSessionConfig config, LogCallback logCallback) throws JSchException {
     Map<String, String> processedEnvironmentMap = new HashMap<>();
@@ -65,7 +73,16 @@ public class WinRmSession implements AutoCloseable {
       }
     }
     this.logCallback = logCallback;
+    Map<String, String> generateTGTEnv = new HashMap<>();
     if (config.getAuthenticationScheme() == AuthenticationScheme.KERBEROS) {
+      if (config.isUseKerberosUniqueCacheFile()) {
+        this.cacheFilePath = config.getSessionCacheFilePath();
+        String cache = String.format("%s:%s", FILE_CACHE_TYPE, cacheFilePath);
+        logCallback.saveExecutionLog(String.format("Using kerberos cache: %s", cache));
+        processedEnvironmentMap.put(KERBEROS_CACHE_NAME_ENV, cache);
+        generateTGTEnv.put(KERBEROS_CACHE_NAME_ENV, cache);
+      }
+
       args = PyWinrmArgs.builder()
                  .hostname(getEndpoint(config.getHostname(), config.getPort(), config.isUseSSL()))
                  .username(getUserPrincipal(config.getUsername(), config.getDomain()))
@@ -74,7 +91,7 @@ public class WinRmSession implements AutoCloseable {
                  .timeout(config.getTimeout())
                  .build();
       SshHelperUtils.generateTGT(getUserPrincipal(config.getUsername(), config.getDomain()), config.getPassword(),
-          config.getKeyTabFilePath(), logCallback);
+          config.getKeyTabFilePath(), logCallback, generateTGTEnv);
       shell = null;
       if (executeCommandString("echo 'checking connection'", null, null, false) != 0) {
         throw new InvalidRequestException("Cannot reach remote host");
@@ -94,7 +111,8 @@ public class WinRmSession implements AutoCloseable {
             .environment(processedEnvironmentMap)
             .retriesForConnectionFailures(retryCount)
             .context(context)
-            .operationTimeout(config.getTimeout());
+            .operationTimeout(config.getTimeout())
+            .retryReceiveAfterOperationTimeout(WinRmClientBuilder.neverRetryReceiveAfterOperationTimeout());
 
     client = clientBuilder.build();
     shell = client.createShell();
@@ -119,9 +137,11 @@ public class WinRmSession implements AutoCloseable {
         byte[] buff = command.getBytes(StandardCharsets.UTF_8);
         Files.write(Paths.get(commandFilePath), buff);
 
-        return SshHelperUtils.executeLocalCommand(format(COMMAND_PLACEHOLDER, InstallUtils.getHarnessPywinrmToolPath(),
-                                                      args.getArgs(commandFile.getAbsolutePath())),
-                   logCallback, output, isOutputWriter)
+        return SshHelperUtils.executeLocalCommand(
+                   format(COMMAND_PLACEHOLDER,
+                       InstallUtils.getPath(ClientTool.HARNESS_PYWINRM, HarnessPywinrmVersion.V0_4),
+                       args.getArgs(commandFile.getAbsolutePath())),
+                   logCallback, output, isOutputWriter, args.getEnvironmentMap())
             ? 0
             : 1;
       } catch (IOException e) {
@@ -213,6 +233,19 @@ public class WinRmSession implements AutoCloseable {
     }
     if (context != null) {
       context.shutdown();
+    }
+    if (cacheFilePath != null) {
+      File cacheFile = cacheFilePath.toFile();
+      if (cacheFile.exists()) {
+        try {
+          FileUtils.forceDelete(cacheFile);
+        } catch (IOException e) {
+          logCallback.saveExecutionLog(
+              format("Failed to delete cache file '%s', due to: %s. Try to delete it manually.", cacheFilePath,
+                  e.getMessage()),
+              LogLevel.ERROR);
+        }
+      }
     }
   }
 

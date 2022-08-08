@@ -24,7 +24,7 @@ import io.harness.security.encryption.EncryptedDataDetail;
 
 import software.wings.WingsBaseTest;
 import software.wings.beans.AzureConfig;
-import software.wings.beans.artifact.Artifact.ArtifactMetadataKeys;
+import software.wings.beans.artifact.ArtifactMetadataKeys;
 import software.wings.beans.artifact.ArtifactStreamAttributes;
 import software.wings.helpers.ext.jenkins.BuildDetails;
 
@@ -40,7 +40,7 @@ import org.mockito.Mock;
 
 @OwnedBy(CDC)
 public class AcrServiceTest extends WingsBaseTest {
-  @Mock private AzureHelperService azureHelperService;
+  @Mock private AzureDelegateHelperService azureDelegateHelperService;
   @Inject @InjectMocks AcrService acrService;
 
   AzureConfig azureConfig = AzureConfig.builder().build();
@@ -53,7 +53,8 @@ public class AcrServiceTest extends WingsBaseTest {
     ArtifactStreamAttributes attributes1 =
         ArtifactStreamAttributes.builder().registryHostName("registryHostName").repositoryName("repoName").build();
 
-    when(azureHelperService.listRepositoryTags(azureConfig, encryptionDetailList, "registryHostName", "repoName"))
+    when(azureDelegateHelperService.listRepositoryTags(
+             azureConfig, encryptionDetailList, "registryHostName", "repoName"))
         .thenReturn(Lists.newArrayList("latest", "v2", "v1"));
     assertThat(acrService.getBuilds(azureConfig, null, attributes1, 100))
         .hasSize(3)
@@ -65,7 +66,7 @@ public class AcrServiceTest extends WingsBaseTest {
                                                .repositoryName("repoName")
                                                .build();
 
-    when(azureHelperService.getLoginServerForRegistry(azureConfig, encryptionDetailList, "subId", "regName"))
+    when(azureDelegateHelperService.getLoginServerForRegistry(azureConfig, encryptionDetailList, "subId", "regName"))
         .thenReturn("registryHostName");
     assertThat(acrService.getBuilds(azureConfig, null, attributes2, 100))
         .hasSize(3)
@@ -76,13 +77,15 @@ public class AcrServiceTest extends WingsBaseTest {
   @Owner(developers = DEEPAK_PUTHRAYA)
   @Category(UnitTests.class)
   public void shouldVerifyImageName() {
-    when(azureHelperService.isValidSubscription(azureConfig, "invalidSubId")).thenReturn(false);
-    when(azureHelperService.isValidSubscription(azureConfig, "validSubId")).thenReturn(true);
+    when(azureDelegateHelperService.isValidSubscription(azureConfig, "invalidSubId")).thenReturn(false);
+    when(azureDelegateHelperService.isValidSubscription(azureConfig, "validSubId")).thenReturn(true);
 
-    when(azureHelperService.isValidContainerRegistry(azureConfig, "validSubId", "invalidRegName")).thenReturn(false);
-    when(azureHelperService.isValidContainerRegistry(azureConfig, "validSubId", "validRegName")).thenReturn(true);
+    when(azureDelegateHelperService.isValidContainerRegistry(azureConfig, "validSubId", "invalidRegName"))
+        .thenReturn(false);
+    when(azureDelegateHelperService.isValidContainerRegistry(azureConfig, "validSubId", "validRegName"))
+        .thenReturn(true);
 
-    when(azureHelperService.listRepositories(azureConfig, "validSubId", "validRegName"))
+    when(azureDelegateHelperService.listRepositories(azureConfig, "validSubId", "validRegName"))
         .thenReturn(Lists.newArrayList("repoName1"))
         .thenReturn(Lists.newArrayList("repoName1", "repoName2"));
 

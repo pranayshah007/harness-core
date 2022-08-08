@@ -18,7 +18,7 @@ import static org.apache.commons.lang3.StringUtils.SPACE;
 import io.harness.data.structure.EmptyPredicate;
 
 import software.wings.beans.Notification;
-import software.wings.common.NotificationMessageResolver;
+import software.wings.common.NotificationConstants;
 import software.wings.service.intfc.MicrosoftTeamsNotificationService;
 
 import com.google.api.client.util.Charsets;
@@ -138,7 +138,7 @@ public class MicrosoftTeamsMessageDispatcher {
     });
     formatTemplateUrlAndName(clonedTemplateVariables);
     String notificationStatus = templateVariables.getOrDefault(KEY_VERB, EMPTY);
-    clonedTemplateVariables.put(THEME_COLOR, NotificationMessageResolver.getThemeColor(notificationStatus, BLUE_COLOR));
+    clonedTemplateVariables.put(THEME_COLOR, NotificationConstants.getThemeColor(notificationStatus, BLUE_COLOR));
     return clonedTemplateVariables;
   }
 

@@ -51,7 +51,7 @@ import software.wings.beans.Environment.Yaml;
 import software.wings.beans.Service;
 import software.wings.beans.ServiceTemplate;
 import software.wings.beans.ServiceVariable;
-import software.wings.beans.ServiceVariable.Type;
+import software.wings.beans.ServiceVariableType;
 import software.wings.beans.yaml.ChangeContext;
 import software.wings.beans.yaml.GitFileChange;
 import software.wings.beans.yaml.YamlType;
@@ -290,7 +290,7 @@ public class EnvironmentYamlHandlerTest extends YamlHandlerTestBase {
     parentService.setUuid(SERVICE_VARIABLE_ID);
     ServiceVariable existing_1 = ServiceVariable.builder()
                                      .name("sv-1")
-                                     .type(Type.ENCRYPTED_TEXT)
+                                     .type(ServiceVariableType.ENCRYPTED_TEXT)
                                      .envId(ENV_ID)
                                      .serviceId(SERVICE_ID)
                                      .entityType(EntityType.SERVICE_TEMPLATE)
@@ -299,7 +299,7 @@ public class EnvironmentYamlHandlerTest extends YamlHandlerTestBase {
                                      .build();
     ServiceVariable existing_2 = ServiceVariable.builder()
                                      .name("sv-2")
-                                     .type(Type.TEXT)
+                                     .type(ServiceVariableType.TEXT)
                                      .envId(ENV_ID)
                                      .serviceId(SERVICE_ID)
                                      .entityType(EntityType.SERVICE_TEMPLATE)
@@ -318,10 +318,9 @@ public class EnvironmentYamlHandlerTest extends YamlHandlerTestBase {
     ServiceTemplate serviceTemplate_1 = aServiceTemplate().withServiceId(SERVICE_ID).withEnvId(ENV_ID).build();
     environment.setServiceTemplates(Arrays.asList(serviceTemplate_1));
 
-    when(yamlHelper.extractEncryptedRecordId(eq(existing_1_override.getValue()), anyString()))
+    when(yamlHelper.extractEncryptedRecordId(eq(existing_1_override.getValue()), any()))
         .thenReturn(expected_value_for_encrypted_var);
-    when(mockServiceVariableService.getServiceVariablesByTemplate(
-             anyString(), anyString(), any(ServiceTemplate.class), any()))
+    when(mockServiceVariableService.getServiceVariablesByTemplate(any(), any(), any(ServiceTemplate.class), any()))
         .thenReturn(Arrays.asList(existing_1, existing_2));
     when(yamlHelper.getEnvironment(APP_ID, validYamlFilePath)).thenReturn(environment);
     when(serviceResourceService.getServiceByName(APP_ID, existing_1_override.getServiceName()))
@@ -337,7 +336,7 @@ public class EnvironmentYamlHandlerTest extends YamlHandlerTestBase {
     yaml.setVariableOverrides(Arrays.asList(existing_1_override));
     ChangeContext<Yaml> changeContext = getChangeContext(yaml);
     yamlHandler.upsertFromYaml(changeContext, null);
-    verify(mockServiceVariableService, times(1)).delete(anyString(), anyString(), eq(true));
+    verify(mockServiceVariableService, times(1)).delete(anyString(), any(), eq(true));
     verify(mockServiceVariableService, times(1)).update(captor.capture(), eq(true));
     String encrypted_serviceVariableValue = String.valueOf(captor.getValue().getValue());
     assertThat(encrypted_serviceVariableValue).isEqualTo(expected_value_for_encrypted_var);
@@ -385,7 +384,7 @@ public class EnvironmentYamlHandlerTest extends YamlHandlerTestBase {
     Environment environment = getDefaultEnvironment();
     ServiceVariable existing = ServiceVariable.builder()
                                    .name("sv-1")
-                                   .type(Type.TEXT)
+                                   .type(ServiceVariableType.TEXT)
                                    .envId(GLOBAL_ENV_ID)
                                    .entityType(EntityType.ENVIRONMENT)
                                    .build();
@@ -417,7 +416,7 @@ public class EnvironmentYamlHandlerTest extends YamlHandlerTestBase {
 
     ServiceVariable newly_added = ServiceVariable.builder()
                                       .name("sv-2")
-                                      .type(Type.ENCRYPTED_TEXT)
+                                      .type(ServiceVariableType.ENCRYPTED_TEXT)
                                       .envId(GLOBAL_ENV_ID)
                                       .entityType(EntityType.ENVIRONMENT)
                                       .value(encryped_yaml_ref.toCharArray())

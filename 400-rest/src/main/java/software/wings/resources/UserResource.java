@@ -28,11 +28,13 @@ import static software.wings.utils.Utils.urlDecode;
 import static com.google.common.collect.ImmutableMap.of;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
+import io.harness.NGResourceFilterConstants;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.authenticationservice.recaptcha.ReCaptchaVerifier;
 import io.harness.beans.FeatureFlag;
+import io.harness.beans.FeatureName;
 import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
 import io.harness.eraro.ErrorCode;
@@ -40,6 +42,7 @@ import io.harness.eraro.ResponseMessage;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnauthorizedException;
 import io.harness.exception.WingsException;
+import io.harness.ff.FeatureFlagService;
 import io.harness.logging.AutoLogContext;
 import io.harness.logging.ExceptionLogger;
 import io.harness.ng.core.common.beans.Generation;
@@ -95,6 +98,7 @@ import com.codahale.metrics.annotation.ExceptionMetered;
 import com.codahale.metrics.annotation.Timed;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
+import com.typesafe.config.Optional;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.v3.oas.annotations.Hidden;
@@ -168,6 +172,7 @@ public class UserResource {
   private MainConfiguration mainConfiguration;
   private AccountPasswordExpirationJob accountPasswordExpirationJob;
   private ReCaptchaVerifier reCaptchaVerifier;
+  private FeatureFlagService featureFlagService;
 
   private static final String BASIC = "Basic";
   private static final List<BugsnagTab> tab =
@@ -180,7 +185,7 @@ public class UserResource {
       TwoFactorAuthenticationManager twoFactorAuthenticationManager, Map<String, Cache<?, ?>> caches,
       HarnessUserGroupService harnessUserGroupService, UserGroupService userGroupService,
       MainConfiguration mainConfiguration, AccountPasswordExpirationJob accountPasswordExpirationJob,
-      ReCaptchaVerifier reCaptchaVerifier) {
+      ReCaptchaVerifier reCaptchaVerifier, FeatureFlagService featureFlagService) {
     this.userService = userService;
     this.authService = authService;
     this.accountService = accountService;
@@ -193,6 +198,7 @@ public class UserResource {
     this.mainConfiguration = mainConfiguration;
     this.accountPasswordExpirationJob = accountPasswordExpirationJob;
     this.reCaptchaVerifier = reCaptchaVerifier;
+    this.featureFlagService = featureFlagService;
   }
 
   /**
@@ -520,6 +526,24 @@ public class UserResource {
   }
 
   /**
+   * Get User Account details response.
+   *
+   * @return the rest response
+   */
+  @GET
+  @Path("accounts")
+  @Scope(value = ResourceType.USER, scope = LOGGED_IN)
+  @Timed
+  @ExceptionMetered
+  @AuthRule(permissionType = LOGGED_IN)
+  public RestResponse<io.harness.ng.beans.PageResponse<Account>> getUserAccounts(
+      @QueryParam(NGResourceFilterConstants.PAGE_KEY) @DefaultValue("0") int pageIndex,
+      @QueryParam(NGResourceFilterConstants.SIZE_KEY) @DefaultValue("20") int pageSize,
+      @Optional @QueryParam(NGResourceFilterConstants.SEARCH_TERM_KEY) String searchTerm) {
+    return new RestResponse<>(userService.getUserAccountsAndSupportAccounts(
+        UserThreadLocal.get().getUuid(), pageIndex, pageSize, searchTerm));
+  }
+  /**
    * Look up the user object using email and login the user. Intended for internal use only.
    * E.g. The Identity Service authenticated the user through OAuth provider and get the user email, then
    * login this user through this API directly.
@@ -690,6 +714,9 @@ public class UserResource {
   @ExceptionMetered
   public RestResponse<User> forceLoginUsingHarnessPassword(
       @QueryParam("accountId") String accountId, LoginRequest loginBody) {
+    if (featureFlagService.isEnabled(FeatureName.DISABLE_LOCAL_LOGIN, accountId)) {
+      throw new InvalidRequestException(String.format("Local Login is not enabled for account {}", accountId));
+    }
     return new RestResponse<>(authenticationManager.loginUsingHarnessPassword(
         authenticationManager.extractToken(loginBody.getAuthorization(), BASIC), accountId));
   }

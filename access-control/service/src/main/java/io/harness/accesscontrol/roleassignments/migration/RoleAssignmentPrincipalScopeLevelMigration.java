@@ -1,3 +1,10 @@
+/*
+ * Copyright 2022 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
+
 package io.harness.accesscontrol.roleassignments.migration;
 
 import static io.harness.accesscontrol.principals.PrincipalType.SERVICE_ACCOUNT;
@@ -105,7 +112,11 @@ public class RoleAssignmentPrincipalScopeLevelMigration implements NGMigration {
 
   private String getServiceAccountScopeLevel(@NotNull String serviceAccountIdentifier, @NotNull Scope scope) {
     HarnessScopeParams scopeParams = ScopeMapper.toParams(scope);
-    harnessServiceAccountService.sync(serviceAccountIdentifier, scope);
+    Scope serviceAccountScope = scope;
+    while (serviceAccountScope != null) {
+      harnessServiceAccountService.sync(serviceAccountIdentifier, scope);
+      serviceAccountScope = serviceAccountScope.getParentScope();
+    }
     Scope accountScope = ScopeMapper.fromParams(
         HarnessScopeParams.builder().accountIdentifier(scopeParams.getAccountIdentifier()).build());
     if (serviceAccountService.get(serviceAccountIdentifier, accountScope.toString()).isPresent()) {

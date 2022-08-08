@@ -7,6 +7,7 @@
 
 package io.harness.serializer.kryo;
 
+import io.harness.beans.DelegateHeartbeatResponseStreaming;
 import io.harness.delegate.beans.DelegateConnectionHeartbeat;
 import io.harness.delegate.beans.DelegateParams;
 import io.harness.delegate.beans.DelegateProfileParams;
@@ -26,5 +27,6 @@ public class DelegateAgentBeansKryoRegister implements KryoRegistrar {
     kryo.register(DelegateProfileParams.class, 6504);
     kryo.register(DelegateTaskEvent.class, 6505);
     kryo.register(DelegateTaskAbortEvent.class, 6506);
+    kryo.register(DelegateHeartbeatResponseStreaming.class, 6507);
   }
 }

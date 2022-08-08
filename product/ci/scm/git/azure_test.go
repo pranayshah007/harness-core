@@ -52,6 +52,50 @@ func TestListCommitsAzure(t *testing.T) {
 	assert.Greater(t, len(got.CommitIds), 1, "more than 1 commit")
 }
 
+func TestFindCommitAzure(t *testing.T) {
+	if azureToken == "" {
+		t.Skip("Skipping, Acceptance test")
+	}
+	in := &pb.ListCommitsRequest{
+		Slug: repoID,
+		Type: &pb.ListCommitsRequest_Branch{
+			Branch: "main",
+		},
+		Provider: &pb.Provider{
+			Hook: &pb.Provider_Azure{
+				Azure: &pb.AzureProvider{
+					PersonalAccessToken: azureToken,
+					Organization:        organization,
+					Project:             project,
+				},
+			},
+			Debug: true,
+		},
+	}
+
+	log, _ := logs.GetObservedLogger(zap.InfoLevel)
+	commitsList, err := ListCommits(context.Background(), in, log.Sugar())
+	assert.Nil(t, err, "no errors")
+	// lets grab the second commit from the list
+	in2 := &pb.FindCommitRequest{
+		Slug: repoID,
+		Ref:  commitsList.CommitIds[1],
+		Provider: &pb.Provider{
+			Hook: &pb.Provider_Azure{
+				Azure: &pb.AzureProvider{
+					PersonalAccessToken: azureToken,
+					Organization:        organization,
+					Project:             project,
+				},
+			},
+			Debug: true,
+		},
+	}
+	got, err2 := FindCommit(context.Background(), in2, log.Sugar())
+	assert.Nil(t, err2, "no errors")
+	assert.NotEqual(t, "", got.Commit.Sha, "there is a commit sha")
+}
+
 func TestGetLatestCommitOnFileAzure(t *testing.T) {
 	if azureToken == "" {
 		t.Skip("Skipping, Acceptance test")

@@ -45,7 +45,7 @@ import software.wings.WingsBaseTest;
 import software.wings.beans.BambooConfig;
 import software.wings.beans.artifact.ArtifactStreamAttributes;
 import software.wings.delegatetasks.DelegateFileManager;
-import software.wings.delegatetasks.collect.artifacts.ArtifactCollectionTaskHelper;
+import software.wings.delegatetasks.collect.artifacts.ArtifactCollectionCommonTaskHelper;
 import software.wings.helpers.ext.jenkins.BuildDetails;
 import software.wings.service.intfc.security.EncryptionService;
 import software.wings.utils.JsonUtils;
@@ -80,7 +80,8 @@ public class BambooServiceTest extends WingsBaseTest {
                                                           .port(0));
 
   @Inject @InjectMocks DelegateFileManager delegateFileManager;
-  @Mock private ArtifactCollectionTaskHelper artifactCollectionTaskHelper;
+  ;
+  @Mock private ArtifactCollectionCommonTaskHelper artifactCollectionCommonTaskHelper;
 
   @Mock private EncryptionService encryptionService;
   @InjectMocks private BambooService bambooService = new BambooServiceImpl();
@@ -95,7 +96,7 @@ public class BambooServiceTest extends WingsBaseTest {
                        .build();
     on(bambooService).set("timeLimiter", new FakeTimeLimiter());
     on(bambooService).set("encryptionService", encryptionService);
-    on(bambooService).set("artifactCollectionTaskHelper", artifactCollectionTaskHelper);
+    on(bambooService).set("artifactCollectionCommonTaskHelper", artifactCollectionCommonTaskHelper);
   }
 
   @Test
@@ -228,7 +229,7 @@ public class BambooServiceTest extends WingsBaseTest {
     when(delegateFileManager.upload(any(), any())).thenReturn(delegateFile);
     bambooService.downloadArtifacts(
         bambooConfig, null, artifactStreamAttributes, "11", null, null, null, listNotifyResponseData);
-    verify(artifactCollectionTaskHelper, times(1))
+    verify(artifactCollectionCommonTaskHelper, times(1))
         .addDataToResponse(any(),
             eq("http://localhost:" + wireMockRule.port() + "/artifact/TOD-TOD/JOB1/build-11/artifacts/todolist.tar"),
             any(), any(), any(), any());

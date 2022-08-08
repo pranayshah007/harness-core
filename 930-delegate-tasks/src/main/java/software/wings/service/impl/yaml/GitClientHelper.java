@@ -14,12 +14,14 @@ import static io.harness.eraro.ErrorCode.GIT_CONNECTION_ERROR;
 import static io.harness.exception.WingsException.ADMIN_SRE;
 import static io.harness.exception.WingsException.SRE;
 import static io.harness.exception.WingsException.USER_ADMIN;
+import static io.harness.filesystem.FileIo.createDirectoryIfDoesNotExist;
 import static io.harness.git.model.ChangeType.ADD;
 import static io.harness.git.model.ChangeType.DELETE;
 import static io.harness.git.model.ChangeType.MODIFY;
 import static io.harness.git.model.ChangeType.RENAME;
 import static io.harness.govern.Switch.unhandled;
 
+import static java.lang.String.format;
 import static org.apache.commons.codec.binary.Hex.encodeHexString;
 
 import io.harness.annotations.dev.BreakDependencyOn;
@@ -80,20 +82,32 @@ public class GitClientHelper {
       REPOSITORY_GIT_FILE_DOWNLOADS_REPO_BASE_DIR + "/{REPO_URL_HASH}";
   private static final String GIT_REPO_BASE_DIR =
       "./repository/${REPO_TYPE}/${ACCOUNT_ID}/${CONNECTOR_ID}/${REPO_NAME}/${REPO_URL_HASH}";
-  private LoadingCache<String, Object> cache = CacheBuilder.newBuilder()
-                                                   .maximumSize(2000)
-                                                   .expireAfterAccess(1, TimeUnit.HOURS)
-                                                   .build(new CacheLoader<String, Object>() {
-                                                     @Override
-                                                     public Object load(String key) throws Exception {
-                                                       return new Object();
-                                                     }
-                                                   });
+  private static final String REPOSITORY_GIT_LOCK_DIR = "./repository/gitFileDownloads/.locks";
+  private static final String REPOSITORY_GIT_LOCK_FIlE = REPOSITORY_GIT_LOCK_DIR + "/lock_%s";
 
-  public Object getLockObject(String gitConnectorId) {
+  static {
     try {
-      String uniqueGitConfigString = gitConnectorId;
-      return cache.get(uniqueGitConfigString);
+      createDirectoryIfDoesNotExist(REPOSITORY_GIT_LOCK_DIR);
+    } catch (IOException e) {
+      log.error("Error occurred while creating the lock directory", e);
+    }
+  }
+
+  private LoadingCache<String, File> cache = CacheBuilder.newBuilder()
+                                                 .maximumSize(2000)
+                                                 .expireAfterAccess(1, TimeUnit.HOURS)
+                                                 .build(new CacheLoader<String, File>() {
+                                                   @Override
+                                                   public File load(String key) throws Exception {
+                                                     File file = new File(format(REPOSITORY_GIT_LOCK_FIlE, key));
+                                                     file.createNewFile();
+                                                     return file;
+                                                   }
+                                                 });
+
+  public File getLockObject(String gitConnectorId) {
+    try {
+      return cache.get(gitConnectorId);
     } catch (Exception e) {
       throw new WingsException(ErrorCode.GENERAL_ERROR, WingsException.USER);
     }

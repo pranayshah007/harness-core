@@ -9,6 +9,8 @@ package io.harness.beans;
 
 import io.harness.delegate.task.TaskParameters;
 
+import software.wings.beans.SerializationFormat;
+
 import java.time.Duration;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -22,6 +24,7 @@ import lombok.Value;
 public class DelegateTaskRequest {
   boolean parked;
   String taskType;
+
   TaskParameters taskParameters;
   String accountId;
   @Singular Map<String, String> taskSetupAbstractions;
@@ -31,4 +34,6 @@ public class DelegateTaskRequest {
   LinkedHashMap<String, String> logStreamingAbstractions;
   boolean forceExecute;
   int expressionFunctorToken;
+  List<String> eligibleToExecuteDelegateIds;
+  @Builder.Default SerializationFormat serializationFormat = SerializationFormat.KRYO;
 }

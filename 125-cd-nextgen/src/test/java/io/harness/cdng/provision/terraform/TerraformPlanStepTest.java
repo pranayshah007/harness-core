@@ -7,6 +7,7 @@
 
 package io.harness.cdng.provision.terraform;
 
+import static io.harness.rule.OwnerRule.ABOSII;
 import static io.harness.rule.OwnerRule.NAMAN_TALAYCHA;
 import static io.harness.rule.OwnerRule.NGONZALEZ;
 
@@ -16,15 +17,17 @@ import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.powermock.api.mockito.PowerMockito.doReturn;
-import static org.powermock.api.mockito.PowerMockito.mockStatic;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.EnvironmentType;
+import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigType;
+import io.harness.cdng.provision.terraform.functor.TerraformPlanJsonFunctor;
+import io.harness.cdng.provision.terraform.outcome.TerraformPlanOutcome;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.connector.ConnectorType;
@@ -75,13 +78,14 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.mockito.junit.MockitoRule;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
-@RunWith(PowerMockRunner.class)
+@RunWith(MockitoJUnitRunner.class)
 @PrepareForTest({StepUtils.class})
 @OwnedBy(HarnessTeam.CDP)
 public class TerraformPlanStepTest extends CategoryTest {
@@ -211,7 +215,7 @@ public class TerraformPlanStepTest extends CategoryTest {
     StepInputPackage stepInputPackage = StepInputPackage.builder().build();
     doReturn("test-account/test-org/test-project/id").when(terraformStepHelper).generateFullIdentifier(any(), any());
     doReturn("fileId").when(terraformStepHelper).getLatestFileId(any());
-    doReturn("planName").when(terraformStepHelper).getTerraformPlanName(any(), any());
+    doReturn("planName").when(terraformStepHelper).getTerraformPlanName(any(), any(), any());
     doReturn(gitFetchFilesConfig).when(terraformStepHelper).getGitFetchFilesConfig(any(), any(), any());
     doReturn(varFileInfo).when(terraformStepHelper).toTerraformVarFileInfo(any(), any());
     doReturn(EnvironmentType.NON_PROD).when(stepHelper).getEnvironmentType(any());
@@ -219,7 +223,7 @@ public class TerraformPlanStepTest extends CategoryTest {
     doReturn(ImmutableMap.of("KEY", ParameterField.createValueField("VAL")))
         .when(terraformStepHelper)
         .getEnvironmentVariablesMap(any());
-    mockStatic(StepUtils.class);
+    Mockito.mockStatic(StepUtils.class);
     PowerMockito.when(StepUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(TaskRequest.newBuilder().build());
     ArgumentCaptor<TaskData> taskDataArgumentCaptor = ArgumentCaptor.forClass(TaskData.class);
@@ -288,7 +292,7 @@ public class TerraformPlanStepTest extends CategoryTest {
     StepInputPackage stepInputPackage = StepInputPackage.builder().build();
     doReturn("test-account/test-org/test-project/id").when(terraformStepHelper).generateFullIdentifier(any(), any());
     doReturn("fileId").when(terraformStepHelper).getLatestFileId(any());
-    doReturn("planName").when(terraformStepHelper).getTerraformPlanName(any(), any());
+    doReturn("planName").when(terraformStepHelper).getTerraformPlanName(any(), any(), any());
     doReturn(artifactoryStoreDelegateConfig)
         .when(terraformStepHelper)
         .getFileStoreFetchFilesConfig(any(), any(), any());
@@ -298,7 +302,7 @@ public class TerraformPlanStepTest extends CategoryTest {
     doReturn(ImmutableMap.of("KEY", ParameterField.createValueField("VAL")))
         .when(terraformStepHelper)
         .getEnvironmentVariablesMap(any());
-    mockStatic(StepUtils.class);
+    Mockito.mockStatic(StepUtils.class);
     PowerMockito.when(StepUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(TaskRequest.newBuilder().build());
     ArgumentCaptor<TaskData> taskDataArgumentCaptor = ArgumentCaptor.forClass(TaskData.class);
@@ -338,11 +342,17 @@ public class TerraformPlanStepTest extends CategoryTest {
     TerraformTaskNGResponse terraformTaskNGResponse = TerraformTaskNGResponse.builder()
                                                           .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
                                                           .unitProgressData(unitProgressData)
+                                                          .detailedExitCode(2)
                                                           .build();
     StepResponse stepResponse = terraformPlanStep.handleTaskResultWithSecurityContext(
         ambiance, stepElementParameters, () -> terraformTaskNGResponse);
     assertThat(stepResponse.getStatus()).isEqualTo(Status.SUCCEEDED);
     assertThat(stepResponse.getStepOutcomes()).isNotNull();
+    assertThat(stepResponse.getStepOutcomes()).hasSize(1);
+    StepResponse.StepOutcome stepOutcome = ((List<StepResponse.StepOutcome>) stepResponse.getStepOutcomes()).get(0);
+    assertThat(stepOutcome.getOutcome()).isInstanceOf(TerraformPlanOutcome.class);
+    assertThat(((TerraformPlanOutcome) (stepOutcome.getOutcome())).getDetailedExitCode()).isEqualTo(2);
+
     verify(terraformStepHelper, times(1)).saveTerraformInheritOutput(any(), any(), any());
     verify(terraformStepHelper, times(1)).updateParentEntityIdAndVersion(any(), any());
   }
@@ -400,5 +410,47 @@ public class TerraformPlanStepTest extends CategoryTest {
     } catch (InvalidRequestException invalidRequestException) {
       assertThat(invalidRequestException.getMessage()).isEqualTo(message);
     }
+  }
+
+  @Test
+  @Owner(developers = ABOSII)
+  @Category(UnitTests.class)
+  public void testHandleTaskResultWithTfPlanJsonFileId() throws Exception {
+    Ambiance ambiance = getAmbiance();
+    StepElementParameters stepElementParameters =
+        StepElementParameters.builder()
+            .spec(TerraformPlanStepParameters.infoBuilder()
+                      .stepFqn("step1")
+                      .provisionerIdentifier(ParameterField.createValueField("provisioner1"))
+                      .configuration(TerraformPlanExecutionDataParameters.builder()
+                                         .exportTerraformPlanJson(ParameterField.createValueField(true))
+                                         .build())
+                      .build())
+            .build();
+
+    doReturn(true).when(cdFeatureFlagHelper).isEnabled("test-account", FeatureName.EXPORT_TF_PLAN_JSON_NG);
+
+    TerraformTaskNGResponse ngResponse = TerraformTaskNGResponse.builder()
+                                             .tfPlanJsonFileId("fileId")
+                                             .stateFileId("fileStateId")
+                                             .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
+                                             .build();
+
+    doReturn("outputPlanJson")
+        .when(terraformStepHelper)
+        .saveTerraformPlanJsonOutput(ambiance, ngResponse, "provisioner1");
+
+    StepResponse stepResponse =
+        terraformPlanStep.handleTaskResultWithSecurityContext(ambiance, stepElementParameters, () -> ngResponse);
+
+    verify(terraformStepHelper).saveTerraformPlanJsonOutput(ambiance, ngResponse, "provisioner1");
+
+    assertThat(stepResponse.getStepOutcomes()).hasSize(1);
+    StepResponse.StepOutcome planOutcome = stepResponse.getStepOutcomes().iterator().next();
+    assertThat(planOutcome.getName()).isEqualTo(TerraformPlanOutcome.OUTCOME_NAME);
+    assertThat(planOutcome.getOutcome()).isInstanceOf(TerraformPlanOutcome.class);
+    TerraformPlanOutcome terraformPlanOutcome = (TerraformPlanOutcome) planOutcome.getOutcome();
+    assertThat(terraformPlanOutcome.getJsonFilePath())
+        .isEqualTo(TerraformPlanJsonFunctor.getExpression("step1", "outputPlanJson"));
   }
 }

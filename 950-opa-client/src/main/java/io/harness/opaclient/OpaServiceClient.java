@@ -30,5 +30,5 @@ public interface OpaServiceClient {
   @POST(API_PREFIX + "evaluate-by-ids")
   Call<OpaEvaluationResponseHolder> evaluateWithCredentialsByID(@Query("accountIdentifier") String accountId,
       @Query("orgIdentifier") String orgId, @Query("projectIdentifier") String projId, @Query("ids") String policySets,
-      @Body Object context);
+      @Query("entityMetadata") String entityMetadata, @Body Object context);
 }

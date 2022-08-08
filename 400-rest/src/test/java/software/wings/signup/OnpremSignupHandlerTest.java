@@ -83,7 +83,7 @@ public class OnpremSignupHandlerTest extends WingsBaseTest {
     doNothing().when(userService).sendVerificationEmail(any(UserInvite.class), anyString(), Mockito.anyMap());
 
     when(userService.saveUserInvite(any(UserInvite.class))).thenReturn(UUID);
-    when(configuration.getDeployMode()).thenReturn(DeployMode.ONPREM);
+    when(configuration.getDeployMode()).thenReturn(DeployMode.KUBERNETES_ONPREM);
     doNothing()
         .when(eventPublishHelper)
         .publishTrialUserSignupEvent(anyString(), anyString(), anyString(), anyString());

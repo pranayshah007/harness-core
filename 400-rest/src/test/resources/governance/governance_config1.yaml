@@ -12,6 +12,8 @@ timeRangeBasedFreezeConfigs:
       - qa
       filterType: CUSTOM
     filterType: CUSTOM
+    serviceSelection:
+    - filterType: ALL
   applicable: false
   description: git sync
   name: customAppCustomEnv

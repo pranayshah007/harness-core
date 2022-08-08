@@ -36,6 +36,9 @@ import static org.powermock.api.mockito.PowerMockito.whenNew;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.azure.AzureEnvironmentType;
+import io.harness.azure.model.tag.AzureListTagsResponse;
+import io.harness.azure.model.tag.TagDetails;
+import io.harness.azure.model.tag.TagValue;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.InvalidRequestException;
 import io.harness.k8s.model.KubernetesConfig;
@@ -102,6 +105,8 @@ import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
@@ -111,7 +116,7 @@ import retrofit2.Response;
 import rx.Observable;
 
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({Azure.class, AzureHelperService.class, Http.class})
+@PrepareForTest({Azure.class, AzureHelperService.class, AzureDelegateHelperService.class, Http.class})
 @PowerMockIgnore({"javax.security.*", "javax.net.*"})
 @OwnedBy(HarnessTeam.CDC)
 public class AzureHelperServiceTest extends WingsBaseTest {
@@ -125,41 +130,43 @@ public class AzureHelperServiceTest extends WingsBaseTest {
   @Mock Call<AksGetCredentialsResponse> aksGetCredentialsCall;
 
   @InjectMocks private AzureHelperService azureHelperService;
+  @InjectMocks private AzureDelegateHelperService azureDelegateHelperService;
 
   @Test()
   @Owner(developers = ANSHUL)
   @Category(UnitTests.class)
   public void testValidateAzureAccountCredential() throws Exception {
-    PowerMockito.mockStatic(Azure.class);
-    when(Azure.configure()).thenReturn(configurable);
-    when(configurable.withLogLevel(any(LogLevel.class))).thenReturn(configurable);
-    when(configurable.authenticate(any(ApplicationTokenCredentials.class))).thenReturn(authenticated);
-    when(authenticated.withDefaultSubscription()).thenReturn(azure);
+    try (MockedStatic<Azure> azureMockedStatic = Mockito.mockStatic(Azure.class)) {
+      when(Azure.configure()).thenReturn(configurable);
+      when(configurable.withLogLevel(any(LogLevel.class))).thenReturn(configurable);
+      when(configurable.authenticate(any(ApplicationTokenCredentials.class))).thenReturn(authenticated);
+      when(authenticated.withDefaultSubscription()).thenReturn(azure);
 
-    AzureConfig azureConfig =
-        AzureConfig.builder().clientId("clientId").tenantId("tenantId").key("key".toCharArray()).build();
-    azureHelperService.validateAzureAccountCredential(azureConfig, emptyList());
+      AzureConfig azureConfig =
+          AzureConfig.builder().clientId("clientId").tenantId("tenantId").key("key".toCharArray()).build();
+      azureHelperService.validateAzureAccountCredential(azureConfig, emptyList());
 
-    ArgumentCaptor<ApplicationTokenCredentials> captor = ArgumentCaptor.forClass(ApplicationTokenCredentials.class);
-    verify(configurable, times(1)).authenticate(captor.capture());
-    ApplicationTokenCredentials tokenCredentials = captor.getValue();
-    assertThat(tokenCredentials.clientId()).isEqualTo("clientId");
-    assertThat(tokenCredentials.environment().managementEndpoint()).isEqualTo("https://management.core.windows.net/");
+      ArgumentCaptor<ApplicationTokenCredentials> captor = ArgumentCaptor.forClass(ApplicationTokenCredentials.class);
+      verify(configurable, times(1)).authenticate(captor.capture());
+      ApplicationTokenCredentials tokenCredentials = captor.getValue();
+      assertThat(tokenCredentials.clientId()).isEqualTo("clientId");
+      assertThat(tokenCredentials.environment().managementEndpoint()).isEqualTo("https://management.core.windows.net/");
 
-    azureConfig.setAzureEnvironmentType(AZURE);
-    azureHelperService.validateAzureAccountCredential(azureConfig, emptyList());
-    verify(configurable, times(2)).authenticate(captor.capture());
-    tokenCredentials = captor.getValue();
-    assertThat(tokenCredentials.clientId()).isEqualTo("clientId");
-    assertThat(tokenCredentials.environment().managementEndpoint()).isEqualTo("https://management.core.windows.net/");
+      azureConfig.setAzureEnvironmentType(AZURE);
+      azureHelperService.validateAzureAccountCredential(azureConfig, emptyList());
+      verify(configurable, times(2)).authenticate(captor.capture());
+      tokenCredentials = captor.getValue();
+      assertThat(tokenCredentials.clientId()).isEqualTo("clientId");
+      assertThat(tokenCredentials.environment().managementEndpoint()).isEqualTo("https://management.core.windows.net/");
 
-    azureConfig.setAzureEnvironmentType(AZURE_US_GOVERNMENT);
-    azureHelperService.validateAzureAccountCredential(azureConfig, emptyList());
-    verify(configurable, times(3)).authenticate(captor.capture());
-    tokenCredentials = captor.getValue();
-    assertThat(tokenCredentials.clientId()).isEqualTo("clientId");
-    assertThat(tokenCredentials.environment().managementEndpoint())
-        .isEqualTo("https://management.core.usgovcloudapi.net/");
+      azureConfig.setAzureEnvironmentType(AZURE_US_GOVERNMENT);
+      azureHelperService.validateAzureAccountCredential(azureConfig, emptyList());
+      verify(configurable, times(3)).authenticate(captor.capture());
+      tokenCredentials = captor.getValue();
+      assertThat(tokenCredentials.clientId()).isEqualTo("clientId");
+      assertThat(tokenCredentials.environment().managementEndpoint())
+          .isEqualTo("https://management.core.usgovcloudapi.net/");
+    }
   }
 
   @Test()
@@ -170,18 +177,18 @@ public class AzureHelperServiceTest extends WingsBaseTest {
     whenNew(ApplicationTokenCredentials.class).withAnyArguments().thenReturn(tokenCredentials);
     when(tokenCredentials.getToken(anyString())).thenReturn("tokenValue");
 
-    AzureHelperService spyAzureHelperService = spy(AzureHelperService.class);
-    on(spyAzureHelperService).set("encryptionService", encryptionService);
+    AzureDelegateHelperService spyAzureDelegateHelperService = spy(AzureDelegateHelperService.class);
+    on(spyAzureDelegateHelperService).set("encryptionService", encryptionService);
 
     AzureManagementRestClient azureManagementRestClient = mock(AzureManagementRestClient.class);
-    doReturn(azureManagementRestClient).when(spyAzureHelperService).getAzureManagementRestClient(any());
+    doReturn(azureManagementRestClient).when(spyAzureDelegateHelperService).getAzureManagementRestClient(any());
     Call<AzureListTagsResponse> responseCall = (Call<AzureListTagsResponse>) mock(Call.class);
     doReturn(responseCall).when(azureManagementRestClient).listTags(anyString(), anyString());
 
     AzureListTagsResponse azureListTagsResponse = new AzureListTagsResponse();
-    TagDetails tagDetails = new TagDetails();
+    io.harness.azure.model.tag.TagDetails tagDetails = new TagDetails();
     tagDetails.setTagName("tagName");
-    TagValue tagValue = new TagValue();
+    io.harness.azure.model.tag.TagValue tagValue = new TagValue();
     tagValue.setTagValue("tagValue");
     tagDetails.setValues(asList(tagValue));
     azureListTagsResponse.setValue(asList(tagDetails));
@@ -191,11 +198,12 @@ public class AzureHelperServiceTest extends WingsBaseTest {
 
     AzureConfig azureConfig =
         AzureConfig.builder().clientId("clientId").tenantId("tenantId").key("key".toCharArray()).build();
-    List<AzureTagDetails> azureTagDetails = spyAzureHelperService.listTags(azureConfig, emptyList(), "subscripId");
+    List<AzureTagDetails> azureTagDetails =
+        spyAzureDelegateHelperService.listTags(azureConfig, emptyList(), "subscripId");
     assertThat(azureTagDetails.get(0).getTagName()).isEqualTo("tagName");
     assertThat(azureTagDetails.get(0).getValues()).isEqualTo(asList("tagValue"));
 
-    Set<String> tags = spyAzureHelperService.listTagsBySubscription("subscripId", azureConfig, emptyList());
+    Set<String> tags = spyAzureDelegateHelperService.listTagsBySubscription("subscripId", azureConfig, emptyList());
     assertThat(tags).contains("tagName");
   }
 
@@ -209,19 +217,19 @@ public class AzureHelperServiceTest extends WingsBaseTest {
 
     AzureConfig azureConfig =
         AzureConfig.builder().clientId("clientId").tenantId("tenantId").key("key".toCharArray()).build();
-    azureHelperService.getAzureBearerAuthToken(azureConfig);
+    azureDelegateHelperService.getAzureBearerAuthToken(azureConfig);
     ArgumentCaptor<String> captor = ArgumentCaptor.forClass(String.class);
     verify(tokenCredentials).getToken(captor.capture());
     assertThat(captor.getValue()).isEqualTo("https://management.core.windows.net/");
 
     azureConfig.setAzureEnvironmentType(AzureEnvironmentType.AZURE);
-    azureHelperService.getAzureBearerAuthToken(azureConfig);
+    azureDelegateHelperService.getAzureBearerAuthToken(azureConfig);
     captor = ArgumentCaptor.forClass(String.class);
     verify(tokenCredentials, times(2)).getToken(captor.capture());
     assertThat(captor.getValue()).isEqualTo("https://management.core.windows.net/");
 
     azureConfig.setAzureEnvironmentType(AzureEnvironmentType.AZURE_US_GOVERNMENT);
-    azureHelperService.getAzureBearerAuthToken(azureConfig);
+    azureDelegateHelperService.getAzureBearerAuthToken(azureConfig);
     captor = ArgumentCaptor.forClass(String.class);
     verify(tokenCredentials, times(3)).getToken(captor.capture());
     assertThat(captor.getValue()).isEqualTo("https://management.core.usgovcloudapi.net/");
@@ -231,145 +239,154 @@ public class AzureHelperServiceTest extends WingsBaseTest {
   @Owner(developers = ANSHUL)
   @Category(UnitTests.class)
   public void testGetAzureManagementRestClient() {
-    PowerMockito.mockStatic(Http.class);
-    OkHttpClient.Builder clientBuilder = new OkHttpClient.Builder();
-    when(Http.getOkHttpClientBuilder()).thenReturn(clientBuilder);
+    try (MockedStatic<Http> httpMockedStatic = Mockito.mockStatic(Http.class)) {
+      OkHttpClient.Builder clientBuilder = new OkHttpClient.Builder();
+      when(Http.getOkHttpClientBuilder()).thenReturn(clientBuilder);
 
-    azureHelperService.getAzureManagementRestClient(null);
-    ArgumentCaptor<String> captor = ArgumentCaptor.forClass(String.class);
-    PowerMockito.verifyStatic(Http.class);
-    Http.checkAndGetNonProxyIfApplicable(captor.capture());
-    assertThat(captor.getValue()).isEqualTo("https://management.azure.com/");
+      azureDelegateHelperService.getAzureManagementRestClient(null);
+      ArgumentCaptor<String> captor = ArgumentCaptor.forClass(String.class);
+      PowerMockito.verifyStatic(Http.class);
+      Http.checkAndGetNonProxyIfApplicable(captor.capture());
+      assertThat(captor.getValue()).isEqualTo("https://management.azure.com/");
 
-    azureHelperService.getAzureManagementRestClient(AzureEnvironmentType.AZURE_US_GOVERNMENT);
-    captor = ArgumentCaptor.forClass(String.class);
-    PowerMockito.verifyStatic(Http.class, times(2));
-    Http.checkAndGetNonProxyIfApplicable(captor.capture());
-    assertThat(captor.getValue()).isEqualTo("https://management.usgovcloudapi.net/");
+      azureDelegateHelperService.getAzureManagementRestClient(AzureEnvironmentType.AZURE_US_GOVERNMENT);
+      captor = ArgumentCaptor.forClass(String.class);
+      PowerMockito.verifyStatic(Http.class, times(2));
+      Http.checkAndGetNonProxyIfApplicable(captor.capture());
+      assertThat(captor.getValue()).isEqualTo("https://management.usgovcloudapi.net/");
 
-    azureHelperService.getAzureManagementRestClient(AzureEnvironmentType.AZURE);
-    captor = ArgumentCaptor.forClass(String.class);
-    PowerMockito.verifyStatic(Http.class, times(3));
-    Http.checkAndGetNonProxyIfApplicable(captor.capture());
-    assertThat(captor.getValue()).isEqualTo("https://management.azure.com/");
+      azureDelegateHelperService.getAzureManagementRestClient(AzureEnvironmentType.AZURE);
+      captor = ArgumentCaptor.forClass(String.class);
+      PowerMockito.verifyStatic(Http.class, times(3));
+      Http.checkAndGetNonProxyIfApplicable(captor.capture());
+      assertThat(captor.getValue()).isEqualTo("https://management.azure.com/");
+    }
   }
 
   @Test()
   @Owner(developers = ANSHUL)
   @Category(UnitTests.class)
   public void testURLInGetAzureClient() throws Exception {
-    PowerMockito.mockStatic(Azure.class);
-    when(Azure.configure()).thenReturn(configurable);
-    when(configurable.withLogLevel(any(LogLevel.class))).thenReturn(configurable);
-    when(configurable.authenticate(any(ApplicationTokenCredentials.class))).thenReturn(authenticated);
-    when(authenticated.withDefaultSubscription()).thenReturn(azure);
+    try (MockedStatic<Azure> azureMockedStatic = Mockito.mockStatic(Azure.class)) {
+      PowerMockito.mockStatic(Azure.class);
+      when(Azure.configure()).thenReturn(configurable);
+      when(configurable.withLogLevel(any(LogLevel.class))).thenReturn(configurable);
+      when(configurable.authenticate(any(ApplicationTokenCredentials.class))).thenReturn(authenticated);
+      when(authenticated.withDefaultSubscription()).thenReturn(azure);
 
-    AzureConfig azureConfig =
-        AzureConfig.builder().clientId("clientId").tenantId("tenantId").key("key".toCharArray()).build();
-    azureHelperService.getAzureClient(azureConfig);
-    ArgumentCaptor<ApplicationTokenCredentials> captor = ArgumentCaptor.forClass(ApplicationTokenCredentials.class);
-    verify(configurable, times(1)).authenticate(captor.capture());
-    assertThat(captor.getValue().environment().managementEndpoint()).isEqualTo("https://management.core.windows.net/");
+      AzureConfig azureConfig =
+          AzureConfig.builder().clientId("clientId").tenantId("tenantId").key("key".toCharArray()).build();
+      azureDelegateHelperService.getAzureClient(azureConfig);
+      ArgumentCaptor<ApplicationTokenCredentials> captor = ArgumentCaptor.forClass(ApplicationTokenCredentials.class);
+      verify(configurable, times(1)).authenticate(captor.capture());
+      assertThat(captor.getValue().environment().managementEndpoint())
+          .isEqualTo("https://management.core.windows.net/");
 
-    azureConfig.setAzureEnvironmentType(AzureEnvironmentType.AZURE_US_GOVERNMENT);
-    azureHelperService.getAzureClient(azureConfig);
-    captor = ArgumentCaptor.forClass(ApplicationTokenCredentials.class);
-    verify(configurable, times(2)).authenticate(captor.capture());
-    assertThat(captor.getValue().environment().managementEndpoint())
-        .isEqualTo("https://management.core.usgovcloudapi.net/");
+      azureConfig.setAzureEnvironmentType(AzureEnvironmentType.AZURE_US_GOVERNMENT);
+      azureDelegateHelperService.getAzureClient(azureConfig);
+      captor = ArgumentCaptor.forClass(ApplicationTokenCredentials.class);
+      verify(configurable, times(2)).authenticate(captor.capture());
+      assertThat(captor.getValue().environment().managementEndpoint())
+          .isEqualTo("https://management.core.usgovcloudapi.net/");
 
-    azureConfig.setAzureEnvironmentType(AzureEnvironmentType.AZURE);
-    azureHelperService.getAzureClient(azureConfig);
-    captor = ArgumentCaptor.forClass(ApplicationTokenCredentials.class);
-    verify(configurable, times(3)).authenticate(captor.capture());
-    assertThat(captor.getValue().environment().managementEndpoint()).isEqualTo("https://management.core.windows.net/");
+      azureConfig.setAzureEnvironmentType(AzureEnvironmentType.AZURE);
+      azureDelegateHelperService.getAzureClient(azureConfig);
+      captor = ArgumentCaptor.forClass(ApplicationTokenCredentials.class);
+      verify(configurable, times(3)).authenticate(captor.capture());
+      assertThat(captor.getValue().environment().managementEndpoint())
+          .isEqualTo("https://management.core.windows.net/");
 
-    when(authenticated.withSubscription("subscriptionId")).thenReturn(azure);
-    azureHelperService.getAzureClient(azureConfig, "subscriptionId");
-    captor = ArgumentCaptor.forClass(ApplicationTokenCredentials.class);
-    verify(configurable, times(4)).authenticate(captor.capture());
-    assertThat(captor.getValue().environment().managementEndpoint()).isEqualTo("https://management.core.windows.net/");
+      when(authenticated.withSubscription("subscriptionId")).thenReturn(azure);
+      azureDelegateHelperService.getAzureClient(azureConfig, "subscriptionId");
+      captor = ArgumentCaptor.forClass(ApplicationTokenCredentials.class);
+      verify(configurable, times(4)).authenticate(captor.capture());
+      assertThat(captor.getValue().environment().managementEndpoint())
+          .isEqualTo("https://management.core.windows.net/");
 
-    azureConfig.setAzureEnvironmentType(AzureEnvironmentType.AZURE_US_GOVERNMENT);
-    azureHelperService.getAzureClient(azureConfig, "subscriptionId");
-    captor = ArgumentCaptor.forClass(ApplicationTokenCredentials.class);
-    verify(configurable, times(5)).authenticate(captor.capture());
-    assertThat(captor.getValue().environment().managementEndpoint())
-        .isEqualTo("https://management.core.usgovcloudapi.net/");
+      azureConfig.setAzureEnvironmentType(AzureEnvironmentType.AZURE_US_GOVERNMENT);
+      azureDelegateHelperService.getAzureClient(azureConfig, "subscriptionId");
+      captor = ArgumentCaptor.forClass(ApplicationTokenCredentials.class);
+      verify(configurable, times(5)).authenticate(captor.capture());
+      assertThat(captor.getValue().environment().managementEndpoint())
+          .isEqualTo("https://management.core.usgovcloudapi.net/");
 
-    azureConfig.setAzureEnvironmentType(AzureEnvironmentType.AZURE);
-    azureHelperService.getAzureClient(azureConfig, "subscriptionId");
-    captor = ArgumentCaptor.forClass(ApplicationTokenCredentials.class);
-    verify(configurable, times(6)).authenticate(captor.capture());
-    assertThat(captor.getValue().environment().managementEndpoint()).isEqualTo("https://management.core.windows.net/");
+      azureConfig.setAzureEnvironmentType(AzureEnvironmentType.AZURE);
+      azureDelegateHelperService.getAzureClient(azureConfig, "subscriptionId");
+      captor = ArgumentCaptor.forClass(ApplicationTokenCredentials.class);
+      verify(configurable, times(6)).authenticate(captor.capture());
+      assertThat(captor.getValue().environment().managementEndpoint())
+          .isEqualTo("https://management.core.windows.net/");
+    }
   }
 
   @Test()
   @Owner(developers = ANSHUL)
   @Category(UnitTests.class)
   public void testNPEInListVmsByTagsAndResourceGroup() {
-    PowerMockito.mockStatic(Azure.class);
-    when(Azure.configure()).thenReturn(configurable);
-    when(configurable.withLogLevel(any(LogLevel.class))).thenReturn(configurable);
-    when(configurable.authenticate(any(ApplicationTokenCredentials.class))).thenReturn(authenticated);
-    when(authenticated.withSubscription("subscriptionId")).thenReturn(azure);
-    VirtualMachines mockVirtualMachines = mock(VirtualMachines.class);
-    when(azure.virtualMachines()).thenReturn(mockVirtualMachines);
-    VirtualMachine virtualMachine = mock(VirtualMachine.class);
-    PagedList<VirtualMachine> virtualMachinePagedList = new PagedList<VirtualMachine>() {
-      @Override
-      public Page<VirtualMachine> nextPage(String nextPageLink) throws RestException {
-        return null;
-      }
-    };
-    virtualMachinePagedList.add(virtualMachine);
-    when(mockVirtualMachines.listByResourceGroup("resourceGroup")).thenReturn(virtualMachinePagedList);
+    try (MockedStatic<Azure> azureMockedStatic = Mockito.mockStatic(Azure.class)) {
+      when(Azure.configure()).thenReturn(configurable);
+      when(configurable.withLogLevel(any(LogLevel.class))).thenReturn(configurable);
+      when(configurable.authenticate(any(ApplicationTokenCredentials.class))).thenReturn(authenticated);
+      when(authenticated.withSubscription("subscriptionId")).thenReturn(azure);
+      VirtualMachines mockVirtualMachines = mock(VirtualMachines.class);
+      when(azure.virtualMachines()).thenReturn(mockVirtualMachines);
+      VirtualMachine virtualMachine = mock(VirtualMachine.class);
+      PagedList<VirtualMachine> virtualMachinePagedList = new PagedList<VirtualMachine>() {
+        @Override
+        public Page<VirtualMachine> nextPage(String nextPageLink) throws RestException {
+          return null;
+        }
+      };
+      virtualMachinePagedList.add(virtualMachine);
+      when(mockVirtualMachines.listByResourceGroup("resourceGroup")).thenReturn(virtualMachinePagedList);
 
-    AzureConfig azureConfig =
-        AzureConfig.builder().clientId("clientId").tenantId("tenantId").key("key".toCharArray()).build();
-    List<VirtualMachine> virtualMachines = azureHelperService.listVmsByTagsAndResourceGroup(
-        azureConfig, emptyList(), "subscriptionId", "resourceGroup", emptyMap(), OSType.LINUX);
-    assertThat(virtualMachines).isEmpty();
+      AzureConfig azureConfig =
+          AzureConfig.builder().clientId("clientId").tenantId("tenantId").key("key".toCharArray()).build();
+      List<VirtualMachine> virtualMachines = azureHelperService.listVmsByTagsAndResourceGroup(
+          azureConfig, emptyList(), "subscriptionId", "resourceGroup", emptyMap(), OSType.LINUX);
+      assertThat(virtualMachines).isEmpty();
+    }
   }
 
   @Test()
   @Owner(developers = ANSHUL)
   @Category(UnitTests.class)
   public void testListVaults() throws Exception {
-    PowerMockito.mockStatic(Azure.class);
-    when(Azure.configure()).thenReturn(configurable);
-    when(configurable.withLogLevel(any(LogLevel.class))).thenReturn(configurable);
-    when(configurable.authenticate(any(ApplicationTokenCredentials.class))).thenReturn(authenticated);
-    when(authenticated.withDefaultSubscription()).thenReturn(azure);
-    when(azure.resourceGroups()).thenReturn(resourceGroups);
-    when(resourceGroups.list()).thenReturn(new PagedList<ResourceGroup>() {
-      @Override
-      public Page<ResourceGroup> nextPage(String nextPageLink) throws RestException {
-        return null;
-      }
-    });
+    try (MockedStatic<Azure> azureMockedStatic = Mockito.mockStatic(Azure.class)) {
+      when(Azure.configure()).thenReturn(configurable);
+      when(configurable.withLogLevel(any(LogLevel.class))).thenReturn(configurable);
+      when(configurable.authenticate(any(ApplicationTokenCredentials.class))).thenReturn(authenticated);
+      when(authenticated.withDefaultSubscription()).thenReturn(azure);
+      when(azure.resourceGroups()).thenReturn(resourceGroups);
+      when(resourceGroups.list()).thenReturn(new PagedList<ResourceGroup>() {
+        @Override
+        public Page<ResourceGroup> nextPage(String nextPageLink) throws RestException {
+          return null;
+        }
+      });
 
-    AzureVaultConfig azureVaultConfig =
-        AzureVaultConfig.builder().clientId("clientId").tenantId("tenantId").secretKey("key").build();
+      AzureVaultConfig azureVaultConfig =
+          AzureVaultConfig.builder().clientId("clientId").tenantId("tenantId").secretKey("key").build();
 
-    azureHelperService.listVaults(ACCOUNT_ID, azureVaultConfig);
-    ArgumentCaptor<ApplicationTokenCredentials> captor = ArgumentCaptor.forClass(ApplicationTokenCredentials.class);
-    verify(configurable, times(1)).authenticate(captor.capture());
-    ApplicationTokenCredentials tokenCredentials = captor.getValue();
-    assertThat(tokenCredentials.environment().managementEndpoint()).isEqualTo("https://management.core.windows.net/");
+      azureHelperService.listVaults(ACCOUNT_ID, azureVaultConfig);
+      ArgumentCaptor<ApplicationTokenCredentials> captor = ArgumentCaptor.forClass(ApplicationTokenCredentials.class);
+      verify(configurable, times(1)).authenticate(captor.capture());
+      ApplicationTokenCredentials tokenCredentials = captor.getValue();
+      assertThat(tokenCredentials.environment().managementEndpoint()).isEqualTo("https://management.core.windows.net/");
 
-    azureVaultConfig.setAzureEnvironmentType(AZURE_US_GOVERNMENT);
-    azureHelperService.listVaults(ACCOUNT_ID, azureVaultConfig);
-    verify(configurable, times(2)).authenticate(captor.capture());
-    tokenCredentials = captor.getValue();
-    assertThat(tokenCredentials.environment().managementEndpoint())
-        .isEqualTo("https://management.core.usgovcloudapi.net/");
+      azureVaultConfig.setAzureEnvironmentType(AZURE_US_GOVERNMENT);
+      azureHelperService.listVaults(ACCOUNT_ID, azureVaultConfig);
+      verify(configurable, times(2)).authenticate(captor.capture());
+      tokenCredentials = captor.getValue();
+      assertThat(tokenCredentials.environment().managementEndpoint())
+          .isEqualTo("https://management.core.usgovcloudapi.net/");
 
-    azureVaultConfig.setAzureEnvironmentType(AZURE);
-    azureHelperService.listVaults(ACCOUNT_ID, azureVaultConfig);
-    verify(configurable, times(3)).authenticate(captor.capture());
-    tokenCredentials = captor.getValue();
-    assertThat(tokenCredentials.environment().managementEndpoint()).isEqualTo("https://management.core.windows.net/");
+      azureVaultConfig.setAzureEnvironmentType(AZURE);
+      azureHelperService.listVaults(ACCOUNT_ID, azureVaultConfig);
+      verify(configurable, times(3)).authenticate(captor.capture());
+      tokenCredentials = captor.getValue();
+      assertThat(tokenCredentials.environment().managementEndpoint()).isEqualTo("https://management.core.windows.net/");
+    }
   }
 
   @Test
@@ -399,7 +416,7 @@ public class AzureHelperServiceTest extends WingsBaseTest {
         + "    client-key-data: client-key-data\n";
 
     AzureConfig azureConfig = AzureConfig.builder().azureEnvironmentType(AZURE).build();
-    AzureHelperService spyOnAzureHelperService = spy(azureHelperService);
+    AzureDelegateHelperService spyOnAzureHelperService = spy(azureDelegateHelperService);
     AksGetCredentialsResponse credentials = new AksGetCredentialsResponse();
     AksGetCredentialProperties properties = credentials.new AksGetCredentialProperties();
     properties.setKubeConfig(encodeBase64(kubeConfig));
@@ -425,512 +442,517 @@ public class AzureHelperServiceTest extends WingsBaseTest {
   @Owner(developers = DEEPAK_PUTHRAYA)
   @Category(UnitTests.class)
   public void testListSubscriptions() throws IOException {
-    PowerMockito.mockStatic(Azure.class);
-    when(Azure.configure()).thenReturn(configurable);
-    when(configurable.withLogLevel(any(LogLevel.class))).thenReturn(configurable);
-    when(configurable.authenticate(any(ApplicationTokenCredentials.class))).thenReturn(authenticated);
-    when(authenticated.withDefaultSubscription()).thenReturn(azure);
+    try (MockedStatic<Azure> azureMockedStatic = Mockito.mockStatic(Azure.class)) {
+      when(Azure.configure()).thenReturn(configurable);
+      when(configurable.withLogLevel(any(LogLevel.class))).thenReturn(configurable);
+      when(configurable.authenticate(any(ApplicationTokenCredentials.class))).thenReturn(authenticated);
+      when(authenticated.withDefaultSubscription()).thenReturn(azure);
 
-    AzureConfig azureConfig =
-        AzureConfig.builder().clientId("clientId").tenantId("tenantId").key("key".toCharArray()).build();
+      AzureConfig azureConfig =
+          AzureConfig.builder().clientId("clientId").tenantId("tenantId").key("key".toCharArray()).build();
 
-    Subscriptions subscriptions = mock(Subscriptions.class);
-    when(subscriptions.list()).thenReturn(new PagedList<Subscription>() {
-      @Override
-      public Stream<Subscription> stream() {
-        return Stream.of(new Subscription() {
-          @Override
-          public String subscriptionId() {
-            return "subscriptionId";
-          }
+      Subscriptions subscriptions = mock(Subscriptions.class);
+      when(subscriptions.list()).thenReturn(new PagedList<Subscription>() {
+        @Override
+        public Stream<Subscription> stream() {
+          return Stream.of(new Subscription() {
+            @Override
+            public String subscriptionId() {
+              return "subscriptionId";
+            }
 
-          @Override
-          public String displayName() {
-            return "subscriptionName";
-          }
+            @Override
+            public String displayName() {
+              return "subscriptionName";
+            }
 
-          @Override
-          public SubscriptionState state() {
-            return null;
-          }
+            @Override
+            public SubscriptionState state() {
+              return null;
+            }
 
-          @Override
-          public SubscriptionPolicies subscriptionPolicies() {
-            return null;
-          }
+            @Override
+            public SubscriptionPolicies subscriptionPolicies() {
+              return null;
+            }
 
-          @Override
-          public PagedList<Location> listLocations() {
-            return null;
-          }
+            @Override
+            public PagedList<Location> listLocations() {
+              return null;
+            }
 
-          @Override
-          public Location getLocationByRegion(Region region) {
-            return null;
-          }
+            @Override
+            public Location getLocationByRegion(Region region) {
+              return null;
+            }
 
-          @Override
-          public SubscriptionInner inner() {
-            return null;
-          }
+            @Override
+            public SubscriptionInner inner() {
+              return null;
+            }
 
-          @Override
-          public String key() {
-            return null;
-          }
-        });
-      }
+            @Override
+            public String key() {
+              return null;
+            }
+          });
+        }
 
-      @Override
-      public Page<Subscription> nextPage(String s) throws RestException, IOException {
-        return null;
-      }
-    });
-    when(azure.subscriptions()).thenReturn(subscriptions);
-    assertThat(azureHelperService.listSubscriptions(azureConfig, emptyList())).hasSize(1);
+        @Override
+        public Page<Subscription> nextPage(String s) throws RestException, IOException {
+          return null;
+        }
+      });
+      when(azure.subscriptions()).thenReturn(subscriptions);
+      assertThat(azureDelegateHelperService.listSubscriptions(azureConfig, emptyList())).hasSize(1);
+    }
   }
 
   @Test()
   @Owner(developers = DEEPAK_PUTHRAYA)
   @Category(UnitTests.class)
   public void testListImageGalleries() {
-    PowerMockito.mockStatic(Azure.class);
-    when(Azure.configure()).thenReturn(configurable);
-    when(configurable.withLogLevel(any(LogLevel.class))).thenReturn(configurable);
-    when(configurable.authenticate(any(ApplicationTokenCredentials.class))).thenReturn(authenticated);
-    when(authenticated.withSubscription(anyString())).thenReturn(azure);
+    try (MockedStatic<Azure> azureMockedStatic = Mockito.mockStatic(Azure.class)) {
+      when(Azure.configure()).thenReturn(configurable);
+      when(configurable.withLogLevel(any(LogLevel.class))).thenReturn(configurable);
+      when(configurable.authenticate(any(ApplicationTokenCredentials.class))).thenReturn(authenticated);
+      when(authenticated.withSubscription(anyString())).thenReturn(azure);
 
-    AzureConfig azureConfig =
-        AzureConfig.builder().clientId("clientId").tenantId("tenantId").key("key".toCharArray()).build();
+      AzureConfig azureConfig =
+          AzureConfig.builder().clientId("clientId").tenantId("tenantId").key("key".toCharArray()).build();
 
-    Galleries mockGalleries = mock(Galleries.class);
-    when(azure.galleries()).thenReturn(mockGalleries);
-    when(mockGalleries.listByResourceGroup(anyString())).thenReturn(new PagedList<Gallery>() {
-      @Override
-      public Stream<Gallery> stream() {
-        return Stream.of(new Gallery() {
-          @Override
-          public String description() {
-            return null;
-          }
+      Galleries mockGalleries = mock(Galleries.class);
+      when(azure.galleries()).thenReturn(mockGalleries);
+      when(mockGalleries.listByResourceGroup(anyString())).thenReturn(new PagedList<Gallery>() {
+        @Override
+        public Stream<Gallery> stream() {
+          return Stream.of(new Gallery() {
+            @Override
+            public String description() {
+              return null;
+            }
 
-          @Override
-          public String uniqueName() {
-            return null;
-          }
+            @Override
+            public String uniqueName() {
+              return null;
+            }
 
-          @Override
-          public String provisioningState() {
-            return null;
-          }
+            @Override
+            public String provisioningState() {
+              return null;
+            }
 
-          @Override
-          public Observable<GalleryImage> getImageAsync(String s) {
-            return null;
-          }
+            @Override
+            public Observable<GalleryImage> getImageAsync(String s) {
+              return null;
+            }
 
-          @Override
-          public GalleryImage getImage(String s) {
-            return null;
-          }
+            @Override
+            public GalleryImage getImage(String s) {
+              return null;
+            }
 
-          @Override
-          public Observable<GalleryImage> listImagesAsync() {
-            return null;
-          }
+            @Override
+            public Observable<GalleryImage> listImagesAsync() {
+              return null;
+            }
 
-          @Override
-          public PagedList<GalleryImage> listImages() {
-            return null;
-          }
+            @Override
+            public PagedList<GalleryImage> listImages() {
+              return null;
+            }
 
-          @Override
-          public ComputeManager manager() {
-            return null;
-          }
+            @Override
+            public ComputeManager manager() {
+              return null;
+            }
 
-          @Override
-          public String resourceGroupName() {
-            return null;
-          }
+            @Override
+            public String resourceGroupName() {
+              return null;
+            }
 
-          @Override
-          public String type() {
-            return null;
-          }
+            @Override
+            public String type() {
+              return null;
+            }
 
-          @Override
-          public String regionName() {
-            return null;
-          }
+            @Override
+            public String regionName() {
+              return null;
+            }
 
-          @Override
-          public Region region() {
-            return null;
-          }
+            @Override
+            public Region region() {
+              return null;
+            }
 
-          @Override
-          public Map<String, String> tags() {
-            return null;
-          }
+            @Override
+            public Map<String, String> tags() {
+              return null;
+            }
 
-          @Override
-          public String id() {
-            return null;
-          }
+            @Override
+            public String id() {
+              return null;
+            }
 
-          @Override
-          public String name() {
-            return null;
-          }
+            @Override
+            public String name() {
+              return null;
+            }
 
-          @Override
-          public GalleryInner inner() {
-            return null;
-          }
+            @Override
+            public GalleryInner inner() {
+              return null;
+            }
 
-          @Override
-          public String key() {
-            return null;
-          }
+            @Override
+            public String key() {
+              return null;
+            }
 
-          @Override
-          public Gallery refresh() {
-            return null;
-          }
+            @Override
+            public Gallery refresh() {
+              return null;
+            }
 
-          @Override
-          public Observable<Gallery> refreshAsync() {
-            return null;
-          }
+            @Override
+            public Observable<Gallery> refreshAsync() {
+              return null;
+            }
 
-          @Override
-          public Update update() {
-            return null;
-          }
-        });
-      }
+            @Override
+            public Update update() {
+              return null;
+            }
+          });
+        }
 
-      @Override
-      public Page<Gallery> nextPage(String s) throws RestException, IOException {
-        return null;
-      }
-    });
-    assertThat(
-        azureHelperService.listImageGalleries(azureConfig, emptyList(), "someSubscriptionId", "someResourceGroup"))
-        .hasSize(1);
+        @Override
+        public Page<Gallery> nextPage(String s) throws RestException, IOException {
+          return null;
+        }
+      });
+      assertThat(azureDelegateHelperService.listImageGalleries(
+                     azureConfig, emptyList(), "someSubscriptionId", "someResourceGroup"))
+          .hasSize(1);
+    }
   }
 
   @Test()
   @Owner(developers = DEEPAK_PUTHRAYA)
   @Category(UnitTests.class)
   public void testListImageDefinitions() {
-    PowerMockito.mockStatic(Azure.class);
-    when(Azure.configure()).thenReturn(configurable);
-    when(configurable.withLogLevel(any(LogLevel.class))).thenReturn(configurable);
-    when(configurable.authenticate(any(ApplicationTokenCredentials.class))).thenReturn(authenticated);
-    when(authenticated.withSubscription(anyString())).thenReturn(azure);
+    try (MockedStatic<Azure> azureMockedStatic = Mockito.mockStatic(Azure.class)) {
+      when(Azure.configure()).thenReturn(configurable);
+      when(configurable.withLogLevel(any(LogLevel.class))).thenReturn(configurable);
+      when(configurable.authenticate(any(ApplicationTokenCredentials.class))).thenReturn(authenticated);
+      when(authenticated.withSubscription(anyString())).thenReturn(azure);
 
-    AzureConfig azureConfig =
-        AzureConfig.builder().clientId("clientId").tenantId("tenantId").key("key".toCharArray()).build();
+      AzureConfig azureConfig =
+          AzureConfig.builder().clientId("clientId").tenantId("tenantId").key("key".toCharArray()).build();
 
-    Galleries mockGalleries = mock(Galleries.class);
-    GalleryImages mockImages = mock(GalleryImages.class);
-    when(azure.galleries()).thenReturn(mockGalleries);
-    when(azure.galleryImages()).thenReturn(mockImages);
-    when(mockImages.listByGallery(anyString(), anyString())).thenReturn(new PagedList<GalleryImage>() {
-      @Override
-      public Stream<GalleryImage> stream() {
-        return Stream.of(new GalleryImage() {
-          @Override
-          public String description() {
-            return null;
-          }
+      Galleries mockGalleries = mock(Galleries.class);
+      GalleryImages mockImages = mock(GalleryImages.class);
+      when(azure.galleries()).thenReturn(mockGalleries);
+      when(azure.galleryImages()).thenReturn(mockImages);
+      when(mockImages.listByGallery(anyString(), anyString())).thenReturn(new PagedList<GalleryImage>() {
+        @Override
+        public Stream<GalleryImage> stream() {
+          return Stream.of(new GalleryImage() {
+            @Override
+            public String description() {
+              return null;
+            }
 
-          @Override
-          public List<DiskSkuTypes> unsupportedDiskTypes() {
-            return null;
-          }
+            @Override
+            public List<DiskSkuTypes> unsupportedDiskTypes() {
+              return null;
+            }
 
-          @Override
-          public Disallowed disallowed() {
-            return null;
-          }
+            @Override
+            public Disallowed disallowed() {
+              return null;
+            }
 
-          @Override
-          public DateTime endOfLifeDate() {
-            return null;
-          }
+            @Override
+            public DateTime endOfLifeDate() {
+              return null;
+            }
 
-          @Override
-          public String eula() {
-            return null;
-          }
+            @Override
+            public String eula() {
+              return null;
+            }
 
-          @Override
-          public String id() {
-            return null;
-          }
+            @Override
+            public String id() {
+              return null;
+            }
 
-          @Override
-          public GalleryImageIdentifier identifier() {
-            return null;
-          }
+            @Override
+            public GalleryImageIdentifier identifier() {
+              return null;
+            }
 
-          @Override
-          public String location() {
-            return null;
-          }
+            @Override
+            public String location() {
+              return null;
+            }
 
-          @Override
-          public String name() {
-            return null;
-          }
+            @Override
+            public String name() {
+              return null;
+            }
 
-          @Override
-          public OperatingSystemStateTypes osState() {
-            return null;
-          }
+            @Override
+            public OperatingSystemStateTypes osState() {
+              return null;
+            }
 
-          @Override
-          public OperatingSystemTypes osType() {
-            return OperatingSystemTypes.LINUX;
-          }
+            @Override
+            public OperatingSystemTypes osType() {
+              return OperatingSystemTypes.LINUX;
+            }
 
-          @Override
-          public String privacyStatementUri() {
-            return null;
-          }
+            @Override
+            public String privacyStatementUri() {
+              return null;
+            }
 
-          @Override
-          public String provisioningState() {
-            return null;
-          }
+            @Override
+            public String provisioningState() {
+              return null;
+            }
 
-          @Override
-          public ImagePurchasePlan purchasePlan() {
-            return null;
-          }
+            @Override
+            public ImagePurchasePlan purchasePlan() {
+              return null;
+            }
 
-          @Override
-          public RecommendedMachineConfiguration recommendedVirtualMachineConfiguration() {
-            return null;
-          }
+            @Override
+            public RecommendedMachineConfiguration recommendedVirtualMachineConfiguration() {
+              return null;
+            }
 
-          @Override
-          public String releaseNoteUri() {
-            return null;
-          }
+            @Override
+            public String releaseNoteUri() {
+              return null;
+            }
 
-          @Override
-          public Map<String, String> tags() {
-            return null;
-          }
+            @Override
+            public Map<String, String> tags() {
+              return null;
+            }
 
-          @Override
-          public String type() {
-            return null;
-          }
+            @Override
+            public String type() {
+              return null;
+            }
 
-          @Override
-          public Observable<GalleryImageVersion> getVersionAsync(String s) {
-            return null;
-          }
+            @Override
+            public Observable<GalleryImageVersion> getVersionAsync(String s) {
+              return null;
+            }
 
-          @Override
-          public GalleryImageVersion getVersion(String s) {
-            return null;
-          }
+            @Override
+            public GalleryImageVersion getVersion(String s) {
+              return null;
+            }
 
-          @Override
-          public Observable<GalleryImageVersion> listVersionsAsync() {
-            return null;
-          }
+            @Override
+            public Observable<GalleryImageVersion> listVersionsAsync() {
+              return null;
+            }
 
-          @Override
-          public PagedList<GalleryImageVersion> listVersions() {
-            return null;
-          }
+            @Override
+            public PagedList<GalleryImageVersion> listVersions() {
+              return null;
+            }
 
-          @Override
-          public ComputeManager manager() {
-            return null;
-          }
+            @Override
+            public ComputeManager manager() {
+              return null;
+            }
 
-          @Override
-          public GalleryImageInner inner() {
-            return null;
-          }
+            @Override
+            public GalleryImageInner inner() {
+              return null;
+            }
 
-          @Override
-          public String key() {
-            return null;
-          }
+            @Override
+            public String key() {
+              return null;
+            }
 
-          @Override
-          public GalleryImage refresh() {
-            return null;
-          }
+            @Override
+            public GalleryImage refresh() {
+              return null;
+            }
 
-          @Override
-          public Observable<GalleryImage> refreshAsync() {
-            return null;
-          }
+            @Override
+            public Observable<GalleryImage> refreshAsync() {
+              return null;
+            }
 
-          @Override
-          public Update update() {
-            return null;
-          }
-        });
-      }
+            @Override
+            public Update update() {
+              return null;
+            }
+          });
+        }
 
-      @Override
-      public Page<GalleryImage> nextPage(String s) throws RestException, IOException {
-        return null;
-      }
-    });
-    assertThat(azureHelperService.listImageDefinitions(
-                   azureConfig, emptyList(), "someSubscriptionId", "someResourceGroup", "someGallery"))
-        .hasSize(1);
+        @Override
+        public Page<GalleryImage> nextPage(String s) throws RestException, IOException {
+          return null;
+        }
+      });
+      assertThat(azureDelegateHelperService.listImageDefinitions(
+                     azureConfig, emptyList(), "someSubscriptionId", "someResourceGroup", "someGallery"))
+          .hasSize(1);
+    }
   }
 
   @Test()
   @Owner(developers = DEEPAK_PUTHRAYA)
   @Category(UnitTests.class)
   public void testListImageDefinitionVersions() {
-    PowerMockito.mockStatic(Azure.class);
-    when(Azure.configure()).thenReturn(configurable);
-    when(configurable.withLogLevel(any(LogLevel.class))).thenReturn(configurable);
-    when(configurable.authenticate(any(ApplicationTokenCredentials.class))).thenReturn(authenticated);
-    when(authenticated.withSubscription(anyString())).thenReturn(azure);
+    try (MockedStatic<Azure> azureMockedStatic = Mockito.mockStatic(Azure.class)) {
+      when(Azure.configure()).thenReturn(configurable);
+      when(configurable.withLogLevel(any(LogLevel.class))).thenReturn(configurable);
+      when(configurable.authenticate(any(ApplicationTokenCredentials.class))).thenReturn(authenticated);
+      when(authenticated.withSubscription(anyString())).thenReturn(azure);
 
-    AzureConfig azureConfig =
-        AzureConfig.builder().clientId("clientId").tenantId("tenantId").key("key".toCharArray()).build();
+      AzureConfig azureConfig =
+          AzureConfig.builder().clientId("clientId").tenantId("tenantId").key("key".toCharArray()).build();
 
-    GalleryImageVersions galleryImageVersion = mock(GalleryImageVersions.class);
-    when(azure.galleryImageVersions()).thenReturn(galleryImageVersion);
-    when(galleryImageVersion.listByGalleryImage(anyString(), anyString(), anyString()))
-        .thenReturn(new PagedList<GalleryImageVersion>() {
-          @Override
-          public Stream<GalleryImageVersion> stream() {
-            return Stream.of(new GalleryImageVersion() {
-              @Override
-              public String id() {
-                return null;
-              }
+      GalleryImageVersions galleryImageVersion = mock(GalleryImageVersions.class);
+      when(azure.galleryImageVersions()).thenReturn(galleryImageVersion);
+      when(galleryImageVersion.listByGalleryImage(anyString(), anyString(), anyString()))
+          .thenReturn(new PagedList<GalleryImageVersion>() {
+            @Override
+            public Stream<GalleryImageVersion> stream() {
+              return Stream.of(new GalleryImageVersion() {
+                @Override
+                public String id() {
+                  return null;
+                }
 
-              @Override
-              public String location() {
-                return null;
-              }
+                @Override
+                public String location() {
+                  return null;
+                }
 
-              @Override
-              public String name() {
-                return null;
-              }
+                @Override
+                public String name() {
+                  return null;
+                }
 
-              @Override
-              public String provisioningState() {
-                return "Succeeded";
-              }
+                @Override
+                public String provisioningState() {
+                  return "Succeeded";
+                }
 
-              @Override
-              public GalleryImageVersionPublishingProfile publishingProfile() {
-                return null;
-              }
+                @Override
+                public GalleryImageVersionPublishingProfile publishingProfile() {
+                  return null;
+                }
 
-              @Override
-              public List<TargetRegion> availableRegions() {
-                return null;
-              }
+                @Override
+                public List<TargetRegion> availableRegions() {
+                  return null;
+                }
 
-              @Override
-              public DateTime endOfLifeDate() {
-                return null;
-              }
+                @Override
+                public DateTime endOfLifeDate() {
+                  return null;
+                }
 
-              @Override
-              public Boolean isExcludedFromLatest() {
-                return true;
-              }
+                @Override
+                public Boolean isExcludedFromLatest() {
+                  return true;
+                }
 
-              @Override
-              public ReplicationStatus replicationStatus() {
-                return null;
-              }
+                @Override
+                public ReplicationStatus replicationStatus() {
+                  return null;
+                }
 
-              @Override
-              public GalleryImageVersionStorageProfile storageProfile() {
-                return null;
-              }
+                @Override
+                public GalleryImageVersionStorageProfile storageProfile() {
+                  return null;
+                }
 
-              @Override
-              public Map<String, String> tags() {
-                return null;
-              }
+                @Override
+                public Map<String, String> tags() {
+                  return null;
+                }
 
-              @Override
-              public String type() {
-                return null;
-              }
+                @Override
+                public String type() {
+                  return null;
+                }
 
-              @Override
-              public ComputeManager manager() {
-                return null;
-              }
+                @Override
+                public ComputeManager manager() {
+                  return null;
+                }
 
-              @Override
-              public GalleryImageVersionInner inner() {
-                return null;
-              }
+                @Override
+                public GalleryImageVersionInner inner() {
+                  return null;
+                }
 
-              @Override
-              public String key() {
-                return null;
-              }
+                @Override
+                public String key() {
+                  return null;
+                }
 
-              @Override
-              public GalleryImageVersion refresh() {
-                return null;
-              }
+                @Override
+                public GalleryImageVersion refresh() {
+                  return null;
+                }
 
-              @Override
-              public Observable<GalleryImageVersion> refreshAsync() {
-                return null;
-              }
+                @Override
+                public Observable<GalleryImageVersion> refreshAsync() {
+                  return null;
+                }
 
-              @Override
-              public Update update() {
-                return null;
-              }
-            });
-          }
+                @Override
+                public Update update() {
+                  return null;
+                }
+              });
+            }
 
-          @Override
-          public Page<GalleryImageVersion> nextPage(String s) throws RestException, IOException {
-            return null;
-          }
-        });
+            @Override
+            public Page<GalleryImageVersion> nextPage(String s) throws RestException, IOException {
+              return null;
+            }
+          });
 
-    assertThat(azureHelperService.listImageDefinitionVersions(azureConfig, emptyList(), "someSubscriptionId",
-                   "someResourceGroupName", "someGalleryName", "someImageDefinitionName"))
-        .hasSize(1);
+      assertThat(azureDelegateHelperService.listImageDefinitionVersions(azureConfig, emptyList(), "someSubscriptionId",
+                     "someResourceGroupName", "someGalleryName", "someImageDefinitionName"))
+          .hasSize(1);
+    }
   }
 
   @Test
   @Owner(developers = AGORODETKI)
   @Category(UnitTests.class)
   public void shouldRethrowInvalidRequestExceptionWhenInvalidCredentialsExceptionIsThrown() {
-    PowerMockito.mockStatic(Azure.class);
-    when(Azure.configure()).thenReturn(configurable);
-    when(configurable.withLogLevel(any(LogLevel.class))).thenReturn(configurable);
-    when(configurable.authenticate(any(ApplicationTokenCredentials.class)))
-        .thenThrow(new AuthenticationException(new AuthenticationException("Failed to authenticate")));
-    AzureConfig azureConfig =
-        AzureConfig.builder().clientId("clientId").tenantId("tenantId").key("key".toCharArray()).build();
+    try (MockedStatic<Azure> azureMockedStatic = Mockito.mockStatic(Azure.class)) {
+      when(Azure.configure()).thenReturn(configurable);
+      when(configurable.withLogLevel(any(LogLevel.class))).thenReturn(configurable);
+      when(configurable.authenticate(any(ApplicationTokenCredentials.class)))
+          .thenThrow(new AuthenticationException(new AuthenticationException("Failed to authenticate")));
+      AzureConfig azureConfig =
+          AzureConfig.builder().clientId("clientId").tenantId("tenantId").key("key".toCharArray()).build();
 
-    assertThatThrownBy(() -> { azureHelperService.getAzureClient(azureConfig); })
-        .isInstanceOf(InvalidRequestException.class)
-        .hasMessageContaining("Invalid Azure credentials.");
+      assertThatThrownBy(() -> { azureDelegateHelperService.getAzureClient(azureConfig); })
+          .isInstanceOf(InvalidRequestException.class)
+          .hasMessageContaining("Invalid Azure credentials.");
+    }
   }
 }

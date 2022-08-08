@@ -9,6 +9,7 @@ package io.harness.template.helpers;
 
 import static io.harness.ng.core.template.TemplateEntityConstants.STAGE;
 import static io.harness.rule.OwnerRule.INDER;
+import static io.harness.template.beans.NGTemplateConstants.STABLE_VERSION;
 import static io.harness.template.helpers.TemplateReferenceTestHelper.ACCOUNT_ID;
 import static io.harness.template.helpers.TemplateReferenceTestHelper.ORG_ID;
 import static io.harness.template.helpers.TemplateReferenceTestHelper.PROJECT_ID;
@@ -22,28 +23,34 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.EntityType;
 import io.harness.TemplateServiceTestBase;
+import io.harness.account.AccountClient;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
-import io.harness.entitysetupusageclient.remote.EntitySetupUsageClient;
+import io.harness.encryption.Scope;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum;
 import io.harness.eventsframework.schemas.entity.IdentifierRefProtoDTO;
+import io.harness.exception.InvalidIdentifierRefException;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.ngexception.NGTemplateException;
 import io.harness.ng.core.EntityDetail;
-import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.entitydetail.EntityDetailProtoToRestMapper;
 import io.harness.ng.core.entitysetupusage.dto.EntitySetupUsageDTO;
 import io.harness.ng.core.template.TemplateEntityType;
 import io.harness.pms.contracts.service.EntityReferenceServiceGrpc;
 import io.harness.pms.gitsync.PmsGitSyncHelper;
 import io.harness.preflight.PreFlightCheckMetadata;
+import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
 import io.harness.template.entity.TemplateEntity;
+import io.harness.template.handler.DummyYamlConversionHandler;
 import io.harness.template.handler.TemplateYamlConversionHandler;
 import io.harness.template.handler.TemplateYamlConversionHandlerRegistry;
 import io.harness.template.services.NGTemplateServiceHelper;
@@ -66,6 +73,7 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import retrofit2.Call;
 import retrofit2.Response;
@@ -77,10 +85,11 @@ public class TemplateReferenceHelperTest extends TemplateServiceTestBase {
   EntityReferenceServiceGrpc.EntityReferenceServiceBlockingStub entityReferenceServiceBlockingStub;
   @Inject TemplateYamlConversionHelper templateYamlConversionHelper;
   @Mock PmsGitSyncHelper pmsGitSyncHelper;
-  @Mock EntitySetupUsageClient entitySetupUsageClient;
+  @Mock TemplateSetupUsageHelper templateSetupUsageHelper;
   @Mock NGTemplateServiceHelper templateServiceHelper;
   @Inject TemplateYamlConversionHandlerRegistry templateYamlConversionHandlerRegistry;
   @Inject EntityDetailProtoToRestMapper entityDetailProtoToRestMapper;
+  @Mock AccountClient accountClient;
 
   TemplateReferenceHelper templateReferenceHelper;
 
@@ -96,7 +105,11 @@ public class TemplateReferenceHelperTest extends TemplateServiceTestBase {
         grpcCleanupRule.register(InProcessChannelBuilder.forName(serverName).directExecutor().build()));
 
     templateReferenceHelper = new TemplateReferenceHelper(entityReferenceServiceBlockingStub,
-        templateYamlConversionHelper, pmsGitSyncHelper, entitySetupUsageClient, templateServiceHelper);
+        templateYamlConversionHelper, pmsGitSyncHelper, templateServiceHelper, templateSetupUsageHelper, accountClient);
+    Call<RestResponse<Boolean>> ffCall = mock(Call.class);
+    when(accountClient.isFeatureFlagEnabled(eq(FeatureName.NG_TEMPLATE_REFERENCES_SUPPORT.name()), anyString()))
+        .thenReturn(ffCall);
+    when(ffCall.execute()).thenReturn(Response.success(new RestResponse<>(true)));
   }
 
   private String readFile(String filename) {
@@ -154,21 +167,21 @@ public class TemplateReferenceHelperTest extends TemplateServiceTestBase {
   public void testGetNestedTemplateReferences_stageTemplateWithoutNestedReferenceTemplateInputs() throws IOException {
     String filename = "pms-stage-template.yaml";
     String yaml = readFile(filename);
-
-    Call<ResponseDTO<List<EntitySetupUsageDTO>>> entityUsageCall = mock(Call.class);
-    when(entitySetupUsageClient.listAllReferredUsages(eq(0), eq(100), anyString(), anyString(), eq(null), eq(null)))
-        .thenReturn(entityUsageCall);
-    when(entityUsageCall.clone()).thenReturn(entityUsageCall);
-    when(entityUsageCall.execute()).thenReturn(Response.success(ResponseDTO.newResponse(Collections.EMPTY_LIST)));
+    when(templateSetupUsageHelper.getReferencesOfTemplate(
+             anyString(), anyString(), anyString(), anyString(), anyString()))
+        .thenReturn(Collections.EMPTY_LIST);
 
     List<EntityDetailProtoDTO> templateReferences =
         templateReferenceHelper.getNestedTemplateReferences(ACCOUNT_ID, ORG_ID, PROJECT_ID, yaml, true);
     assertThat(templateReferences).isNotNull().hasSize(2);
-
+    Map<String, String> metadata1 = new HashMap<>();
+    Map<String, String> metadata2 = new HashMap<>();
+    metadata1.put("fqn", "stage.spec.execution.steps.http.template");
+    metadata2.put("fqn", "stage.spec.execution.steps.approval.template");
     EntityDetailProtoDTO expected1 = TemplateReferenceTestHelper.generateTemplateRefEntityDetailProto(
-        ACCOUNT_ID, ORG_ID, PROJECT_ID, "approvalTemplate", "1");
+        ACCOUNT_ID, ORG_ID, PROJECT_ID, "approvalTemplate", "1", metadata2);
     EntityDetailProtoDTO expected2 = TemplateReferenceTestHelper.generateTemplateRefEntityDetailProto(
-        ACCOUNT_ID, ORG_ID, PROJECT_ID, "httpTemplate", "1");
+        ACCOUNT_ID, ORG_ID, PROJECT_ID, "httpTemplate", "1", metadata1);
     assertThat(templateReferences).containsExactlyInAnyOrder(expected1, expected2);
   }
 
@@ -189,31 +202,37 @@ public class TemplateReferenceHelperTest extends TemplateServiceTestBase {
     templateYamlConversionHandlerRegistry.register(STAGE, new TemplateYamlConversionHandler());
     Map<String, String> metadataMap = new HashMap<>();
     metadataMap.put(PreFlightCheckMetadata.FQN, "templateInputs.spec.connectorRef");
-    Call<ResponseDTO<List<EntitySetupUsageDTO>>> entityUsageCall = mock(Call.class);
-    when(entitySetupUsageClient.listAllReferredUsages(eq(0), eq(100), anyString(), anyString(), eq(null), eq(null)))
-        .thenReturn(entityUsageCall);
-    when(entityUsageCall.clone()).thenReturn(entityUsageCall);
-    when(entityUsageCall.execute())
-        .thenReturn(Response.success(ResponseDTO.newResponse(
-            Collections.singletonList(EntitySetupUsageDTO.builder()
-                                          .referredEntity(EntityDetail.builder()
-                                                              .entityRef(generateIdentifierRefWithUnknownScope(
-                                                                  ACCOUNT_ID, ORG_ID, PROJECT_ID, "", metadataMap))
-                                                              .type(EntityType.CONNECTORS)
-                                                              .build())
-                                          .build()))));
+    metadataMap.put(PreFlightCheckMetadata.EXPRESSION, "<+input>");
+    when(templateSetupUsageHelper.getReferencesOfTemplate(
+             anyString(), anyString(), anyString(), anyString(), anyString()))
+        .thenReturn(Collections.singletonList(
+            EntitySetupUsageDTO.builder()
+                .referredEntity(EntityDetail.builder()
+                                    .entityRef(generateIdentifierRefWithUnknownScope(
+                                        ACCOUNT_ID, ORG_ID, PROJECT_ID, "<+input>.allowedValues(a,b,c)", metadataMap))
+                                    .type(EntityType.CONNECTORS)
+                                    .build())
+                .build()));
 
-    List<EntityDetailProtoDTO> referredEntities = templateReferenceHelper.populateTemplateReferences(templateEntity);
+    templateReferenceHelper.populateTemplateReferences(templateEntity);
 
+    ArgumentCaptor<List> referredEntitiesArgumentCapture = ArgumentCaptor.forClass(List.class);
+    verify(templateSetupUsageHelper)
+        .publishSetupUsageEvent(eq(templateEntity), referredEntitiesArgumentCapture.capture());
+    List<EntityDetailProtoDTO> referredEntities = referredEntitiesArgumentCapture.getValue();
     assertThat(referredEntities).isNotNull().hasSize(4);
     assertThat(referredEntities).containsExactlyInAnyOrderElementsOf(getStageTemplateProtoReferences());
   }
 
   private List<EntityDetailProtoDTO> getStageTemplateProtoReferences() {
+    HashMap<String, String> metadata1 = new HashMap<>();
+    metadata1.put("fqn", "stage.spec.execution.steps.approval.template");
+    HashMap<String, String> metadata2 = new HashMap<>();
+    metadata2.put("fqn", "stage.spec.execution.steps.jiraApprovalTemplate.template");
     EntityDetailProtoDTO expected1 = TemplateReferenceTestHelper.generateTemplateRefEntityDetailProto(
-        ACCOUNT_ID, ORG_ID, PROJECT_ID, "approvalTemplate", "1");
+        ACCOUNT_ID, ORG_ID, PROJECT_ID, "approvalTemplate", "1", metadata1);
     EntityDetailProtoDTO expected2 = TemplateReferenceTestHelper.generateTemplateRefEntityDetailProto(
-        ACCOUNT_ID, ORG_ID, PROJECT_ID, "jiraApprovalTemplate", "1");
+        ACCOUNT_ID, ORG_ID, PROJECT_ID, "jiraApprovalTemplate", "1", metadata2);
     EntityDetailProtoDTO expected3 = TemplateReferenceTestHelper.generateIdentifierRefEntityDetailProto(ACCOUNT_ID,
         ORG_ID, PROJECT_ID, "jiraConnector",
         new HashMap<>(Collections.singletonMap(
@@ -254,28 +273,23 @@ public class TemplateReferenceHelperTest extends TemplateServiceTestBase {
             .map(referredEntity -> EntitySetupUsageDTO.builder().referredEntity(referredEntity).build())
             .collect(Collectors.toList());
 
-    Call<ResponseDTO<List<EntitySetupUsageDTO>>> entityUsageCall1 = mock(Call.class);
-    when(entitySetupUsageClient.listAllReferredUsages(
-             0, 100, ACCOUNT_ID, "accountId/orgId/projectId/stageTemplate/1/", null, null))
-        .thenReturn(entityUsageCall1);
-    when(entityUsageCall1.clone()).thenReturn(entityUsageCall1);
-    when(entityUsageCall1.execute()).thenReturn(Response.success(ResponseDTO.newResponse(setupUsages)));
-
-    Call<ResponseDTO<List<EntitySetupUsageDTO>>> entityUsageCall2 = mock(Call.class);
-    when(entitySetupUsageClient.listAllReferredUsages(
-             0, 100, ACCOUNT_ID, "accountId/orgId/projectId/approvalTemplate/1/", null, null))
-        .thenReturn(entityUsageCall2);
-    when(entityUsageCall2.clone()).thenReturn(entityUsageCall2);
-    when(entityUsageCall2.execute()).thenReturn(Response.success(ResponseDTO.newResponse(Collections.emptyList())));
+    when(templateSetupUsageHelper.getReferencesOfTemplate("accountId", "orgId", "projectId", "stageTemplate", "1"))
+        .thenReturn(setupUsages);
+    when(templateSetupUsageHelper.getReferencesOfTemplate("accountId", "orgId", "projectId", "approvalTemplate", "1"))
+        .thenReturn(Collections.emptyList());
 
     List<EntityDetailProtoDTO> referredEntities =
         templateReferenceHelper.getNestedTemplateReferences(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYaml, false);
 
     assertThat(referredEntities).isNotNull().hasSize(3);
+    Map<String, String> metadata1 = new HashMap<>();
+    Map<String, String> metadata2 = new HashMap<>();
+    metadata1.put("fqn", "pipeline.stages.qaStage.template");
+    metadata2.put("fqn", "pipeline.stages.qaStage2.spec.execution.steps.approval.template");
     EntityDetailProtoDTO expected1 = TemplateReferenceTestHelper.generateTemplateRefEntityDetailProto(
-        ACCOUNT_ID, ORG_ID, PROJECT_ID, "stageTemplate", "1");
+        ACCOUNT_ID, ORG_ID, PROJECT_ID, "stageTemplate", "1", metadata1);
     EntityDetailProtoDTO expected2 = TemplateReferenceTestHelper.generateTemplateRefEntityDetailProto(
-        ACCOUNT_ID, ORG_ID, PROJECT_ID, "approvalTemplate", "1");
+        ACCOUNT_ID, ORG_ID, PROJECT_ID, "approvalTemplate", STABLE_VERSION, metadata2);
     Map<String, String> expectedMap = new HashMap<>();
     expectedMap.put(PreFlightCheckMetadata.FQN,
         "pipeline.stages.qaStage.template.templateInputs.spec.execution.steps.jiraApprovalTemplate.template.templateInputs.spec.connectorRef");
@@ -293,7 +307,50 @@ public class TemplateReferenceHelperTest extends TemplateServiceTestBase {
 
     assertThatThrownBy(
         () -> templateReferenceHelper.getNestedTemplateReferences(ACCOUNT_ID, ORG_ID, null, pipelineYaml, false))
-        .isInstanceOf(InvalidRequestException.class)
+        .isInstanceOf(InvalidIdentifierRefException.class)
         .hasMessage("ProjectIdentifier cannot be empty for PROJECT scope");
+  }
+
+  @Test
+  @Owner(developers = INDER)
+  @Category(UnitTests.class)
+  public void shouldThrowInvalidIdentifierRefExceptionForOutOfScopeReferences() {
+    TemplateEntity templateEntity = TemplateEntity.builder()
+                                        .accountId(ACCOUNT_ID)
+                                        .orgIdentifier(ORG_ID)
+                                        .versionLabel("v1")
+                                        .templateScope(Scope.ORG)
+                                        .yaml(TemplateReferenceTestHelper.INVALID_IDENTIFIER_REF_YAML)
+                                        .templateEntityType(TemplateEntityType.STAGE_TEMPLATE)
+                                        .build();
+
+    templateYamlConversionHandlerRegistry.register(STAGE, new DummyYamlConversionHandler());
+
+    assertThatThrownBy(() -> templateReferenceHelper.populateTemplateReferences(templateEntity))
+        .isInstanceOf(InvalidIdentifierRefException.class)
+        .hasMessage(
+            "Unable to save to ORG. Template can be saved to ORG only when all the referenced entities are available in the scope.");
+  }
+
+  @Test
+  @Owner(developers = INDER)
+  @Category(UnitTests.class)
+  public void shouldThrowExceptionOnErrorWhileCalculatingReferences() {
+    TemplateEntity templateEntity = TemplateEntity.builder()
+                                        .identifier("template1")
+                                        .accountId(ACCOUNT_ID)
+                                        .orgIdentifier(ORG_ID)
+                                        .versionLabel("v1")
+                                        .templateScope(Scope.ORG)
+                                        .yaml(TemplateReferenceTestHelper.INVALID_YAML)
+                                        .templateEntityType(TemplateEntityType.STAGE_TEMPLATE)
+                                        .build();
+
+    templateYamlConversionHandlerRegistry.register(STAGE, new DummyYamlConversionHandler());
+
+    assertThatThrownBy(() -> templateReferenceHelper.populateTemplateReferences(templateEntity))
+        .isInstanceOf(NGTemplateException.class)
+        .hasMessage(
+            "Exception in calculating references for template with identifier template1 and version label v1: Some error1, Some error2");
   }
 }

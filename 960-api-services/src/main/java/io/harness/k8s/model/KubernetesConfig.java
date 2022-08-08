@@ -7,13 +7,18 @@
 
 package io.harness.k8s.model;
 
+import static io.harness.k8s.model.KubernetesClusterAuthType.GCP_OAUTH;
+
+import java.util.Optional;
+import java.util.function.Supplier;
 import lombok.Builder;
 import lombok.Data;
 import lombok.ToString;
 import org.hibernate.validator.constraints.NotEmpty;
 
 @Data
-@ToString(exclude = {"password", "caCert", "clientCert", "clientKey", "clientKeyPassphrase", "serviceAccountToken"})
+@ToString(exclude = {"password", "caCert", "clientCert", "clientKey", "clientKeyPassphrase",
+              "serviceAccountTokenSupplier", "aadIdToken"})
 public class KubernetesConfig {
   @NotEmpty private String masterUrl;
   private char[] username;
@@ -22,7 +27,7 @@ public class KubernetesConfig {
   private char[] clientCert;
   private char[] clientKey;
   private char[] clientKeyPassphrase;
-  private char[] serviceAccountToken;
+  private Supplier<String> serviceAccountTokenSupplier;
   private String clientKeyAlgo;
   private String namespace;
   @NotEmpty private String accountId;
@@ -37,12 +42,14 @@ public class KubernetesConfig {
   private char[] oidcClientId;
   private char[] oidcPassword;
 
+  private KubernetesAzureConfig azureConfig;
+
   @Builder
   public KubernetesConfig(String masterUrl, char[] username, char[] password, char[] caCert, char[] clientCert,
-      char[] clientKey, char[] clientKeyPassphrase, char[] serviceAccountToken, String clientKeyAlgo, String namespace,
-      String accountId, KubernetesClusterAuthType authType, char[] oidcClientId, char[] oidcSecret,
+      char[] clientKey, char[] clientKeyPassphrase, Supplier<String> serviceAccountTokenSupplier, String clientKeyAlgo,
+      String namespace, String accountId, KubernetesClusterAuthType authType, char[] oidcClientId, char[] oidcSecret,
       String oidcIdentityProviderUrl, String oidcUsername, char[] oidcPassword, String oidcScopes,
-      OidcGrantType oidcGrantType) {
+      OidcGrantType oidcGrantType, String clusterName, KubernetesAzureConfig azureConfig) {
     this.masterUrl = masterUrl;
     this.username = username == null ? null : username.clone();
     this.password = password == null ? null : password.clone();
@@ -50,7 +57,7 @@ public class KubernetesConfig {
     this.clientCert = clientCert == null ? null : clientCert.clone();
     this.clientKey = clientKey == null ? null : clientKey.clone();
     this.clientKeyPassphrase = clientKeyPassphrase == null ? null : clientKeyPassphrase.clone();
-    this.serviceAccountToken = serviceAccountToken == null ? null : serviceAccountToken.clone();
+    this.serviceAccountTokenSupplier = serviceAccountTokenSupplier;
     this.clientKeyAlgo = clientKeyAlgo;
     this.namespace = namespace;
     this.accountId = accountId;
@@ -62,5 +69,16 @@ public class KubernetesConfig {
     this.oidcPassword = oidcPassword == null ? null : oidcPassword.clone();
     this.oidcScopes = oidcScopes;
     this.oidcGrantType = oidcGrantType == null ? OidcGrantType.password : oidcGrantType;
+    this.azureConfig = azureConfig;
+  }
+
+  public Optional<String> getGcpAccountKeyFileContent() {
+    if (GCP_OAUTH != authType) {
+      return Optional.empty();
+    }
+    if (!(serviceAccountTokenSupplier instanceof GcpAccessTokenSupplier)) {
+      return Optional.empty();
+    }
+    return ((GcpAccessTokenSupplier) serviceAccountTokenSupplier).getServiceAccountJsonKey();
   }
 }

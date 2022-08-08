@@ -26,7 +26,8 @@ public enum FileBucket {
   PROFILE_RESULTS,
   TERRAFORM_PLAN,
   TERRAFORM_PLAN_JSON,
-  EXPORT_EXECUTIONS;
+  EXPORT_EXECUTIONS,
+  FILE_STORE;
 
   private int chunkSize;
 

@@ -17,15 +17,14 @@ import static org.mockito.Mockito.when;
 import io.harness.category.element.UnitTests;
 import io.harness.rule.Owner;
 
+import software.wings.beans.LogCollectionInfo;
+import software.wings.beans.LogResponseMapping;
+import software.wings.beans.apm.Method;
+import software.wings.beans.apm.ResponseType;
 import software.wings.beans.yaml.Change;
 import software.wings.beans.yaml.ChangeContext;
 import software.wings.service.impl.analysis.FeedbackPriority;
 import software.wings.sm.StateType;
-import software.wings.sm.states.CustomLogVerificationState;
-import software.wings.sm.states.CustomLogVerificationState.LogCollectionInfo;
-import software.wings.sm.states.CustomLogVerificationState.Method;
-import software.wings.sm.states.CustomLogVerificationState.ResponseMapping;
-import software.wings.sm.states.CustomLogVerificationState.ResponseType;
 import software.wings.verification.log.CustomLogCVServiceConfiguration;
 import software.wings.verification.log.CustomLogCVServiceConfiguration.CustomLogsCVConfigurationYaml;
 import software.wings.verification.log.LogsCVConfiguration.LogsCVConfigurationYaml;
@@ -48,7 +47,7 @@ public class CustomLogsCVConfigurationYamlHandlerTest extends CVConfigurationYam
         .collectionUrl("testUrl")
         .method(Method.GET)
         .responseType(ResponseType.JSON)
-        .responseMapping(ResponseMapping.builder()
+        .responseMapping(LogResponseMapping.builder()
                              .hostJsonPath("hostname")
                              .logMessageJsonPath("message")
                              .timestampJsonPath("@timestamp")
@@ -98,7 +97,7 @@ public class CustomLogsCVConfigurationYamlHandlerTest extends CVConfigurationYam
     yaml.setLogCollectionInfo(LogCollectionInfo.builder()
                                   .collectionUrl("testURL ${start_time} ${end_time}")
                                   .method(Method.GET)
-                                  .responseMapping(CustomLogVerificationState.ResponseMapping.builder()
+                                  .responseMapping(LogResponseMapping.builder()
                                                        .hostJsonPath("host")
                                                        .logMessageJsonPath("logMessage")
                                                        .timestampJsonPath("time")
@@ -140,7 +139,7 @@ public class CustomLogsCVConfigurationYamlHandlerTest extends CVConfigurationYam
     yaml.setLogCollectionInfo(LogCollectionInfo.builder()
                                   .collectionUrl("testURL ${start_time} ${end_time}")
                                   .method(Method.GET)
-                                  .responseMapping(CustomLogVerificationState.ResponseMapping.builder()
+                                  .responseMapping(LogResponseMapping.builder()
                                                        .hostJsonPath("host")
                                                        .logMessageJsonPath("logMessage")
                                                        .timestampJsonPath("time")

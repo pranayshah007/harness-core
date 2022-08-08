@@ -19,7 +19,7 @@ import io.harness.datacollection.entity.CallDetails;
 
 import software.wings.delegatetasks.DelegateLogService;
 
-import com.hazelcast.internal.util.Preconditions;
+import com.google.common.base.Preconditions;
 import java.time.Instant;
 import java.util.function.Consumer;
 import lombok.extern.slf4j.Slf4j;

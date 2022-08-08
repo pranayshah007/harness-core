@@ -20,12 +20,15 @@ import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.SweepingOutputInstance;
 import io.harness.deployment.InstanceDetails;
 import io.harness.exception.InvalidRequestException;
 
 import software.wings.api.AmiServiceSetupElement;
+import software.wings.api.AwsAmiInfoVariables;
 import software.wings.api.HostElement;
 import software.wings.api.InstanceElement;
+import software.wings.api.pcf.InfoVariables;
 import software.wings.beans.InfrastructureMapping;
 import software.wings.beans.container.UserDataSpecification;
 import software.wings.beans.infrastructure.Host;
@@ -34,7 +37,8 @@ import software.wings.service.impl.AwsUtils;
 import software.wings.service.impl.servicetemplates.ServiceTemplateHelper;
 import software.wings.service.intfc.HostService;
 import software.wings.service.intfc.ServiceResourceService;
-import software.wings.service.intfc.ServiceTemplateService;
+import software.wings.service.intfc.WorkflowExecutionService;
+import software.wings.service.intfc.sweepingoutput.SweepingOutputService;
 import software.wings.sm.ExecutionContext;
 
 import com.amazonaws.services.ec2.model.Instance;
@@ -57,9 +61,10 @@ public class AwsStateHelper {
   @Inject private AwsUtils awsUtils;
   @Inject private HostService hostService;
   @Inject private AwsHelperService awsHelperService;
-  @Inject private ServiceTemplateService templateService;
   @Inject private ServiceTemplateHelper serviceTemplateHelper;
   @Inject private ServiceResourceService serviceResourceService;
+  @Inject private SweepingOutputService sweepingOutputService;
+  @Inject private WorkflowExecutionService workflowExecutionService;
 
   public List<InstanceElement> generateInstanceElements(
       List<Instance> ec2InstancesAded, InfrastructureMapping infraMapping, ExecutionContext context) {
@@ -167,5 +172,20 @@ public class AwsStateHelper {
     }
 
     return null;
+  }
+
+  void populateAmiVariables(ExecutionContext context, AwsAmiInfoVariables awsAmiInfoVariables) {
+    InfoVariables infoVariables = sweepingOutputService.findSweepingOutput(
+        context.prepareSweepingOutputInquiryBuilder().name(AwsAmiInfoVariables.SWEEPING_OUTPUT_NAME).build());
+    if (infoVariables == null) {
+      SweepingOutputInstance.Scope outputScope =
+          workflowExecutionService.isMultiService(context.getAppId(), context.getWorkflowExecutionId())
+          ? SweepingOutputInstance.Scope.PHASE
+          : SweepingOutputInstance.Scope.WORKFLOW;
+      sweepingOutputService.save(context.prepareSweepingOutputBuilder(outputScope)
+                                     .name(AwsAmiInfoVariables.SWEEPING_OUTPUT_NAME)
+                                     .value(awsAmiInfoVariables)
+                                     .build());
+    }
   }
 }

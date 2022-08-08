@@ -34,7 +34,7 @@ func TestCreateListAndDeleteWebhookAzure(t *testing.T) {
 		NativeEvents: &pb.NativeEvents{
 			NativeEvents: &pb.NativeEvents_Azure{
 				Azure: &pb.AzureWebhookEvents{
-					Events: pb.AzureWebhookEvent_AZURE_PULLREQUEST_CREATED,
+					Events: []pb.AzureWebhookEvent{pb.AzureWebhookEvent_AZURE_PULLREQUEST_CREATED, pb.AzureWebhookEvent_AZURE_PUSH},
 				},
 			},
 		},
@@ -55,7 +55,7 @@ func TestCreateListAndDeleteWebhookAzure(t *testing.T) {
 
 	assert.Nil(t, err, "no errors")
 	assert.Equal(t, int32(200), got.Status, "Correct http response")
-	assert.Equal(t, pb.AzureWebhookEvent_AZURE_PULLREQUEST_CREATED, got.GetWebhook().GetNativeEvents().GetAzure().GetEvents(), "created a webhook 'asdas' event")
+	assert.Equal(t, 2, len(got.GetWebhook().GetNativeEvents().GetAzure().GetEvents()), "created a webhook with 2 events")
 
 	list := &pb.ListWebhooksRequest{
 		Slug: repoID,
@@ -73,24 +73,27 @@ func TestCreateListAndDeleteWebhookAzure(t *testing.T) {
 	got2, err2 := ListWebhooks(context.Background(), list, log.Sugar())
 
 	assert.Nil(t, err2, "no errors")
-	assert.LessOrEqual(t, 1, len(got2.Webhooks), "there is 1 webhook")
+	assert.LessOrEqual(t, 2, len(got2.Webhooks), "there are 2 webhooks")
 
-	del := &pb.DeleteWebhookRequest{
-		Slug: repoID,
-		Id:   got.Webhook.Id,
-		Provider: &pb.Provider{
-			Hook: &pb.Provider_Azure{
-				Azure: &pb.AzureProvider{
-					PersonalAccessToken: azureToken,
-					Organization:        organization,
-					Project:             project,
+	for _, hook := range got2.Webhooks {
+		del := &pb.DeleteWebhookRequest{
+			Slug: repoID,
+			Id:   hook.Id,
+			Provider: &pb.Provider{
+				Hook: &pb.Provider_Azure{
+					Azure: &pb.AzureProvider{
+						PersonalAccessToken: azureToken,
+						Organization:        organization,
+						Project:             project,
+					},
 				},
+				Debug: true,
 			},
-			Debug: true,
-		},
-	}
-	got3, err3 := DeleteWebhook(context.Background(), del, log.Sugar())
+		}
 
-	assert.Nil(t, err3, "no errors")
-	assert.Equal(t, int32(204), got3.Status, "Correct http response")
+		got3, err3 := DeleteWebhook(context.Background(), del, log.Sugar())
+
+		assert.Nil(t, err3, "no errors")
+		assert.Equal(t, int32(204), got3.Status, "Correct http response")
+	}
 }

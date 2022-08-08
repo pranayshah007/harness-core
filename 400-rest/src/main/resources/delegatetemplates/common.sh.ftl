@@ -49,7 +49,11 @@ esac
 
 JVM_URL=${delegateStorageUrl}/${jreTarPath}
 
+<#if alpnJarPath?? >
 ALPN_BOOT_JAR_URL=${delegateStorageUrl}/${alpnJarPath}
+<#else>
+ALPN_BOOT_JAR_URL=""
+</#if>
 
 <#noparse>
 SOURCE="${BASH_SOURCE[0]}"

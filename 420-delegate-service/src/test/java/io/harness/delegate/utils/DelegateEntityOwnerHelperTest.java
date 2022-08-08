@@ -8,7 +8,6 @@
 package io.harness.delegate.utils;
 
 import static io.harness.rule.OwnerRule.MARKO;
-import static io.harness.rule.OwnerRule.MARKOM;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -62,28 +61,28 @@ public class DelegateEntityOwnerHelperTest extends DelegateServiceTestBase {
   }
 
   @Test
-  @Owner(developers = MARKOM)
+  @Owner(developers = MARKO)
   @Category(UnitTests.class)
   public void whenOwnerNullThenIsAccount() {
     assertThat(DelegateEntityOwnerHelper.isAccount(null)).isTrue();
   }
 
   @Test
-  @Owner(developers = MARKOM)
+  @Owner(developers = MARKO)
   @Category(UnitTests.class)
   public void whenOwnerNullThenIsNotOrg() {
     assertThat(DelegateEntityOwnerHelper.isOrganisation(null)).isFalse();
   }
 
   @Test
-  @Owner(developers = MARKOM)
+  @Owner(developers = MARKO)
   @Category(UnitTests.class)
   public void whenOwnerNullThenIsNotProject() {
     assertThat(DelegateEntityOwnerHelper.isProject(null)).isFalse();
   }
 
   @Test
-  @Owner(developers = MARKOM)
+  @Owner(developers = MARKO)
   @Category(UnitTests.class)
   public void whenOwnerOrgThenIsOrganisation() {
     final DelegateEntityOwner owner = DelegateEntityOwnerHelper.buildOwner("orgId", StringUtils.EMPTY);
@@ -91,7 +90,7 @@ public class DelegateEntityOwnerHelperTest extends DelegateServiceTestBase {
   }
 
   @Test
-  @Owner(developers = MARKOM)
+  @Owner(developers = MARKO)
   @Category(UnitTests.class)
   public void whenOwnerProjectThenIsProject() {
     final DelegateEntityOwner owner = DelegateEntityOwnerHelper.buildOwner("orgId", "projId");

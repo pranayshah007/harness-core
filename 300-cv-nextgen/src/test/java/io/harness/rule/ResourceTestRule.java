@@ -39,6 +39,18 @@ import org.junit.rules.TestRule;
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
 
+/**
+ * @deprecated
+ * Avoid using {@link ResourceTestRule} if it needs to be used in a static way (which is AFAIK always). When used like
+ * this all mocks that rule "instantiates" need to be static which means that verification and/or stubbing is carried
+ * over between tests (we need to use atLeastOnce() to overcome this for example which is bad). This makes tests flaky
+ * and less safe, but also all mocking is lenient which makes them even less reliable. <P> <P> Instead, it's better to
+ * use {@link JerseyTest} directly. You can find example of good usage of JerseyTest with non-static mocked service in
+ * the see also section.
+ *
+ * @see software.wings.resources.DelegateSetupResourceTest Example of bad usage
+ * @see io.harness.delegate.resources.DelegateUpgraderResourceTest Example of good usage
+ */
 public class ResourceTestRule implements TestRule {
   private final Set<Object> singletons;
   private final Set<Class<?>> providers;
@@ -163,7 +175,7 @@ public class ResourceTestRule implements TestRule {
      * @param resourceTestRule the resource test rule
      */
     public ResourceTestResourceConfig(String ruleId, ResourceTestRule resourceTestRule) {
-      super(true, new MetricRegistry());
+      super(new MetricRegistry());
       RULE_ID_TO_RULE.put(ruleId, resourceTestRule);
       configure(resourceTestRule);
     }

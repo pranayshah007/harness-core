@@ -81,7 +81,8 @@ public class FilterResource {
   @GET
   @Path("{identifier}")
   @ApiOperation(value = "Get Filter", nickname = "getFilter")
-  @Operation(operationId = "getFilter", summary = "Gets a Filter by identifier",
+  @Operation(operationId = "getFilter", summary = "Return Filter Details",
+      description = "Returns the settings of a filter for the given ID.",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(
@@ -103,15 +104,15 @@ public class FilterResource {
 
   @GET
   @ApiOperation(value = "Get Filter", nickname = "getFilterList")
-  @Operation(operationId = "getConnectorListV2",
-      summary = "Get the list of Filters satisfying the criteria (if any) in the request",
+  @Operation(operationId = "getConnectorListV2", summary = "List Filters",
+      description = "Lists Filters for the given criteria.",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
         ApiResponse(responseCode = "default", description = "Returns the list of Filters")
       })
   public ResponseDTO<PageResponse<FilterDTO>>
-  list(@Parameter(description = "Page number of navigation. If left empty, default value of 0 is assumed") @QueryParam(
+  list(@Parameter(description = "Page number of navigation. If left empty, default value of 0 is assumed.") @QueryParam(
            NGResourceFilterConstants.PAGE_KEY) @DefaultValue("0") int page,
       @Parameter(description = "Number of entries per page. If left empty, default value of 100 is assumed")
       @QueryParam(NGResourceFilterConstants.SIZE_KEY) @DefaultValue("100") int size,
@@ -128,7 +129,7 @@ public class FilterResource {
 
   @POST
   @ApiOperation(value = "Create a Filter", nickname = "postFilter")
-  @Operation(operationId = "postFilter", summary = "Creates a Filter",
+  @Operation(operationId = "postFilter", summary = "Create a Filter", description = "Creates a Filter.",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
@@ -144,7 +145,8 @@ public class FilterResource {
 
   @PUT
   @ApiOperation(value = "Update a Filter", nickname = "updateFilter")
-  @Operation(operationId = "updateFilter", summary = "Updates the Filter",
+  @Operation(operationId = "updateFilter", summary = "Update a Filter",
+      description = "Updates the filter for the given ID.",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
@@ -162,7 +164,8 @@ public class FilterResource {
   @DELETE
   @Path("{identifier}")
   @ApiOperation(value = "Delete a filter", nickname = "deleteFilter")
-  @Operation(operationId = "deleteFilter", summary = "Delete a Filter by identifier",
+  @Operation(operationId = "deleteFilter", summary = "Delete a Filter",
+      description = "Deletes a filter for the given ID.",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.

@@ -7,8 +7,15 @@
 
 package io.harness.k8s.kubectl;
 
+import io.harness.k8s.K8sConstants;
+
+import com.google.api.client.util.Maps;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Map;
 import org.zeroturnaround.exec.ProcessResult;
 import org.zeroturnaround.exec.StartedProcess;
 
@@ -22,13 +29,19 @@ public abstract class AbstractExecutable implements Executable {
       writeCommandToOutput(command, output);
     }
 
-    return Utils.executeScript(directory, command, output, error);
+    Map<String, String> environment = Maps.newHashMap();
+    addGcpCredentialsToEnvironmentIfExist(directory, environment);
+
+    return Utils.executeScript(directory, command, output, error, environment);
   }
 
   @Override
   public StartedProcess executeInBackground(String directory, OutputStream output, OutputStream error)
       throws Exception {
-    return Utils.startScript(directory, this.command(), output, error);
+    Map<String, String> environment = Maps.newHashMap();
+    addGcpCredentialsToEnvironmentIfExist(directory, environment);
+
+    return Utils.startScript(directory, this.command(), output, error, environment);
   }
 
   public static String getPrintableCommand(String command) {
@@ -36,8 +49,14 @@ public abstract class AbstractExecutable implements Executable {
     if (index != -1) {
       return command.substring(index);
     }
-
     return command.substring(command.indexOf("oc --kubeconfig"));
+  }
+
+  private void addGcpCredentialsToEnvironmentIfExist(String directory, Map<String, String> environment) {
+    Path googleApplicationCredentialsPath = Paths.get(directory).resolve(K8sConstants.GCP_JSON_KEY_FILE_NAME);
+    if (Files.exists(googleApplicationCredentialsPath)) {
+      environment.put("GOOGLE_APPLICATION_CREDENTIALS", googleApplicationCredentialsPath.toAbsolutePath().toString());
+    }
   }
 
   private void writeCommandToOutput(String command, OutputStream output) throws Exception {

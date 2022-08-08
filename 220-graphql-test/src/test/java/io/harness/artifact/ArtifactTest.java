@@ -12,6 +12,7 @@ import static io.harness.rule.OwnerRule.SRINIVAS;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.GraphQLTest;
+import io.harness.beans.ArtifactMetadata;
 import io.harness.category.element.UnitTests;
 import io.harness.category.layer.GraphQLTests;
 import io.harness.generator.ApplicationGenerator;
@@ -25,7 +26,7 @@ import io.harness.testframework.graphql.QLTestObject;
 
 import software.wings.beans.Application;
 import software.wings.beans.artifact.Artifact;
-import software.wings.beans.artifact.Artifact.ArtifactMetadataKeys;
+import software.wings.beans.artifact.ArtifactMetadataKeys;
 import software.wings.beans.artifact.ArtifactStream;
 import software.wings.graphql.schema.type.artifact.QLArtifact.QLArtifactKeys;
 import software.wings.service.intfc.ArtifactService;
@@ -63,7 +64,7 @@ public class ArtifactTest extends GraphQLTest {
     Artifact artifact = Artifact.Builder.anArtifact()
                             .withAppId(application.getUuid())
                             .withArtifactStreamId(artifactStream.getUuid())
-                            .withMetadata(ImmutableMap.of(ArtifactMetadataKeys.buildNo, "1.2"))
+                            .withMetadata(new ArtifactMetadata(ImmutableMap.of(ArtifactMetadataKeys.buildNo, "1.2")))
                             .withDisplayName("Some artifact")
                             .build();
 

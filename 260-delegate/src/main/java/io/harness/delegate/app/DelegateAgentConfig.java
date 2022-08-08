@@ -18,7 +18,7 @@ import lombok.EqualsAndHashCode;
 @Singleton
 public class DelegateAgentConfig extends Configuration {
   @JsonProperty private final String accountId;
-  @JsonProperty private final String accountSecret;
+  @JsonProperty private final String delegateToken;
   @JsonProperty private final String managerUrl;
   @JsonProperty private final String verificationServiceUrl;
   @JsonProperty private final String cvNextGenUrl;
@@ -36,4 +36,8 @@ public class DelegateAgentConfig extends Configuration {
   @JsonProperty private final boolean clientToolsDownloadDisabled;
   @JsonProperty private final boolean installClientToolsInBackground;
   @JsonProperty private final int maxCachedArtifacts;
+  @JsonProperty private final String clientCertificateFilePath;
+  @JsonProperty private final String clientCertificateKeyFilePath;
+  @JsonProperty private final boolean trustAllCertificates;
+  @JsonProperty private final boolean grpcAuthorityModificationDisabled;
 }

@@ -1,4 +1,5 @@
 load("@rules_java//java:defs.bzl", "java_binary")
+load("//:tools/bazel/GenTestRules.bzl", "run_tests")
 load("//:tools/bazel/macros.bzl", "run_analysis")
 
 java_library(
@@ -15,9 +16,22 @@ java_library(
         "//:lombok",
         "//959-debezium-beans/src/main/proto:959_debezium_beans_java_proto",
         "//960-persistence:module",
-        "@maven//:com_google_code_findbugs_annotations",
         "@maven//:org_redisson_redisson",
     ],
 )
+
+java_library(
+    name = "tests",
+    testonly = True,
+    srcs = glob(["src/test/**/*.java"]),
+    resources = ["//959-debezium-beans/src/test/resources:resource"],
+    visibility = ["//visibility:public"],
+    deps = [
+        ":module",
+        "//990-commons-test:module",
+    ],
+)
+
+run_tests()
 
 run_analysis()

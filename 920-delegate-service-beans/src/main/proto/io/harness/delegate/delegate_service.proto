@@ -62,6 +62,7 @@ message SubmitTaskRequest {
   bool selectionTrackingLogEnabled = 9;
 
   bool force_execute = 10;
+  repeated string eligibleToExecuteDelegateIds = 11;
 }
 
 message SubmitTaskResponse {

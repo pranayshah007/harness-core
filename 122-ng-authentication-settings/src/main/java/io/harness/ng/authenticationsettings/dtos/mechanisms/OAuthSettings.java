@@ -29,7 +29,7 @@ import lombok.EqualsAndHashCode;
 @OwnedBy(HarnessTeam.PL)
 @Schema(description = "This contains the information about OAuth settings defined in Harness.")
 public class OAuthSettings extends NGAuthSettings {
-  private String filter;
+  @Schema(description = "Filter out the available OAuth providers.") private String filter;
   @Schema(description = "This is the list of OAuth Providers that are supported.")
   private Set<OauthProviderType> allowedProviders;
 

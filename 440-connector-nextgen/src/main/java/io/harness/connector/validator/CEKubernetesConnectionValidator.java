@@ -12,7 +12,6 @@ import static software.wings.beans.TaskType.CE_VALIDATE_KUBERNETES_CONFIG;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
-import io.harness.connector.ConnectivityStatus;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.ConnectorValidationResult;
 import io.harness.connector.services.ConnectorService;
@@ -31,7 +30,6 @@ import io.harness.security.encryption.EncryptedDataDetail;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
-import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
@@ -53,29 +51,10 @@ public class CEKubernetesConnectionValidator extends AbstractKubernetesConnector
   @Override
   public ConnectorValidationResult validate(ConnectorConfigDTO kubernetesClusterConfig, String accountIdentifier,
       String orgIdentifier, String projectIdentifier, String identifier) {
-    DelegateResponseData responseData;
-
-    try {
-      responseData = super.validateConnector(
-          kubernetesClusterConfig, accountIdentifier, orgIdentifier, projectIdentifier, identifier);
-
-      KubernetesConnectionTaskResponse taskResponse = (KubernetesConnectionTaskResponse) responseData;
-      return taskResponse.getConnectorValidationResult();
-    } catch (IllegalArgumentException ex) {
-      return ConnectorValidationResult.builder()
-          .status(ConnectivityStatus.FAILURE)
-          .errorSummary(ex.getMessage())
-          .testedAt(Instant.now().toEpochMilli())
-          .build();
-    } catch (Exception ex) {
-      log.error("Unknown error found while validating ccm k8s connector", ex);
-
-      return ConnectorValidationResult.builder()
-          .status(ConnectivityStatus.FAILURE)
-          .errorSummary(ex.getMessage())
-          .testedAt(Instant.now().toEpochMilli())
-          .build();
-    }
+    DelegateResponseData responseData = super.validateConnector(
+        kubernetesClusterConfig, accountIdentifier, orgIdentifier, projectIdentifier, identifier);
+    KubernetesConnectionTaskResponse taskResponse = (KubernetesConnectionTaskResponse) responseData;
+    return taskResponse.getConnectorValidationResult();
   }
 
   @Override

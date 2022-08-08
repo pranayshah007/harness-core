@@ -15,7 +15,6 @@ import io.harness.concurrent.HTimeLimiter;
 import io.harness.grpc.utils.AnyUtils;
 import io.harness.grpc.utils.HTimestamps;
 import io.harness.logging.AutoLogContext;
-import io.harness.perpetualtask.grpc.PerpetualTaskServiceGrpcClient;
 
 import com.google.common.util.concurrent.TimeLimiter;
 import com.google.common.util.concurrent.UncheckedTimeoutException;
@@ -36,27 +35,29 @@ public class PerpetualTaskLifecycleManager {
   private final PerpetualTaskExecutionParams params;
   private final PerpetualTaskExecutionContext context;
   private final PerpetualTaskExecutor perpetualTaskExecutor;
-  private final PerpetualTaskServiceGrpcClient perpetualTaskServiceGrpcClient;
+  private final PerpetualTaskServiceAgentClient perpetualTaskServiceAgentClient;
   private final AtomicInteger currentlyExecutingPerpetualTasksCount;
+  private final String accountId;
 
   PerpetualTaskLifecycleManager(PerpetualTaskId taskId, PerpetualTaskExecutionContext context,
-      Map<String, PerpetualTaskExecutor> factoryMap, PerpetualTaskServiceGrpcClient perpetualTaskServiceGrpcClient,
-      TimeLimiter timeLimiter, AtomicInteger currentlyExecutingPerpetualTasksCount) {
+      Map<String, PerpetualTaskExecutor> factoryMap, PerpetualTaskServiceAgentClient perpetualTaskServiceAgentClient,
+      TimeLimiter timeLimiter, AtomicInteger currentlyExecutingPerpetualTasksCount, String accountId) {
     this.taskId = taskId;
     this.context = context;
     this.timeLimiter = timeLimiter;
-    this.perpetualTaskServiceGrpcClient = perpetualTaskServiceGrpcClient;
+    this.perpetualTaskServiceAgentClient = perpetualTaskServiceAgentClient;
     params = context.getTaskParams();
     perpetualTaskExecutor = factoryMap.get(getTaskType(params));
     timeoutMillis = Durations.toMillis(context.getTaskSchedule().getTimeout());
     this.currentlyExecutingPerpetualTasksCount = currentlyExecutingPerpetualTasksCount;
+    this.accountId = accountId;
   }
 
   void startTask() {
     try {
       HTimeLimiter.callInterruptible21(timeLimiter, Duration.ofMillis(timeoutMillis), this::call);
     } catch (UncheckedTimeoutException tex) {
-      log.debug("Timed out starting task", tex);
+      log.error("Timed out starting task", tex);
     } catch (Exception ex) {
       log.error("Exception is ", ex);
     }
@@ -92,7 +93,7 @@ public class PerpetualTaskLifecycleManager {
       log.error("Exception is ", ex);
       decrementTaskCounter();
     }
-    perpetualTaskServiceGrpcClient.heartbeat(taskId, taskStartTime, perpetualTaskResponse);
+    perpetualTaskServiceAgentClient.heartbeat(taskId, taskStartTime, perpetualTaskResponse, accountId);
     return null;
   }
 

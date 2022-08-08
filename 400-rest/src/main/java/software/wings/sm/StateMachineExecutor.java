@@ -1012,7 +1012,9 @@ public class StateMachineExecutor implements StateInspectionListener {
       }
       case NEXT_STEP:
       case ROLLBACK_PROVISIONER_AFTER_PHASES:
-      case ROLLBACK: {
+      case ROLLBACK:
+      case ROLLBACK_ON_APPROVAL:
+      case ROLLBACK_PROVISIONER_AFTER_PHASES_ON_APPROVAL: {
         if (executionEventAdvice.getNextChildStateMachineId() != null
             || executionEventAdvice.getNextStateName() != null) {
           executionEventAdviceTransition(context, executionEventAdvice);
@@ -1588,11 +1590,17 @@ public class StateMachineExecutor implements StateInspectionListener {
           ? context.getStateExecutionData().getErrorMsg()
           : errorMsgBuilder.toString();
 
-      if (stateExecutionInstance.getStateParams() != null) {
-        MapperUtils.mapObject(stateExecutionInstance.getStateParams(), currentState);
+      try {
+        if (stateExecutionInstance.getStateParams() != null) {
+          MapperUtils.mapObject(stateExecutionInstance.getStateParams(), currentState);
+        }
+      } catch (org.modelmapper.MappingException e) {
+        log.error("Got model mapping exception during mapping the stateparams {}",
+            stateExecutionInstance.getStateParams(), e);
       }
+
       currentState.handleAbortEvent(context);
-      if (!(StateType.SHELL_SCRIPT.name().equals(stateExecutionInstance.getStateType())
+      if (!(isStepSupportingTimeout(stateExecutionInstance)
               && featureFlagService.isEnabled(TIMEOUT_FAILURE_SUPPORT, context.getAccountId())
               && finalStatus == EXPIRED)) {
         updated = terminateAndTransition(context, stateExecutionInstance, finalStatus, errorMessage);
@@ -1610,6 +1618,11 @@ public class StateMachineExecutor implements StateInspectionListener {
       throw new WingsException(ErrorCode.STATE_DISCONTINUE_FAILED)
           .addParam("displayName", stateExecutionInstance.getDisplayName());
     }
+  }
+
+  private boolean isStepSupportingTimeout(StateExecutionInstance stateExecutionInstance) {
+    return StateType.SHELL_SCRIPT.name().equals(stateExecutionInstance.getStateType())
+        || StateType.HTTP.name().equals(stateExecutionInstance.getStateType());
   }
 
   private boolean terminateAndTransition(ExecutionContextImpl context, StateExecutionInstance stateExecutionInstance,
@@ -1712,6 +1725,7 @@ public class StateMachineExecutor implements StateInspectionListener {
     cloned.setHasInspection(false);
     cloned.setExpiryTs(Long.MAX_VALUE);
     cloned.setStateTimeout(null);
+    cloned.setDelegateTaskId(null);
     return cloned;
   }
 
@@ -2049,7 +2063,9 @@ public class StateMachineExecutor implements StateInspectionListener {
         }
         case END_EXECUTION:
         case ROLLBACK_PROVISIONER_AFTER_PHASES:
-        case ROLLBACK: {
+        case ROLLBACK:
+        case ROLLBACK_ON_APPROVAL:
+        case ROLLBACK_PROVISIONER_AFTER_PHASES_ON_APPROVAL: {
           endExecution(workflowExecutionInterrupt, workflowExecution);
           break;
         }
@@ -2130,6 +2146,12 @@ public class StateMachineExecutor implements StateInspectionListener {
       StateMachine sm = stateExecutionService.obtainStateMachine(stateExecutionInstance);
       ExecutionContextImpl context = new ExecutionContextImpl(stateExecutionInstance, sm, injector);
       injector.injectMembers(context);
+      if (workflowExecutionInterrupt.getExecutionInterruptType().equals(
+              ExecutionInterruptType.ROLLBACK_PROVISIONER_AFTER_PHASES_ON_APPROVAL)
+          || workflowExecutionInterrupt.getExecutionInterruptType().equals(
+              ExecutionInterruptType.ROLLBACK_ON_APPROVAL)) {
+        continue;
+      }
       discontinueMarkedInstance(context, stateExecutionInstance, ABORTED);
     }
   }
@@ -2512,7 +2534,7 @@ public class StateMachineExecutor implements StateInspectionListener {
           MapperUtils.mapObject(stateExecutionInstance.getStateParams(), state);
         }
         ExecutionResponse executionResponse = state.handleAsyncResponse(context, response);
-        stateMachineExecutor.handleExecuteResponse(context, executionResponse);
+        stateMachineExecutor.handleResponse(context, executionResponse);
       } catch (WingsException ex) {
         stateMachineExecutor.handleExecuteResponseException(context, ex);
       } catch (Exception ex) {

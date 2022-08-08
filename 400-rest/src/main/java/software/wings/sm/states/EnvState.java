@@ -24,6 +24,7 @@ import static software.wings.beans.alert.AlertType.DEPLOYMENT_FREEZE_EVENT;
 import static software.wings.sm.ExecutionInterrupt.ExecutionInterruptBuilder.anExecutionInterrupt;
 
 import static java.util.Arrays.asList;
+import static java.util.stream.Collectors.toList;
 
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
@@ -40,6 +41,7 @@ import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.exception.DeploymentFreezeException;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.WingsException;
+import io.harness.expression.ExpressionEvaluator;
 import io.harness.ff.FeatureFlagService;
 import io.harness.logging.ExceptionLogger;
 import io.harness.logging.Misc;
@@ -58,6 +60,7 @@ import software.wings.beans.ArtifactVariable;
 import software.wings.beans.DeploymentExecutionContext;
 import software.wings.beans.EntityType;
 import software.wings.beans.ExecutionArgs;
+import software.wings.beans.HelmChartInputType;
 import software.wings.beans.ManifestVariable;
 import software.wings.beans.NameValuePair;
 import software.wings.beans.VariableType;
@@ -68,7 +71,6 @@ import software.wings.beans.appmanifest.ApplicationManifest;
 import software.wings.beans.appmanifest.HelmChart;
 import software.wings.beans.artifact.Artifact;
 import software.wings.common.NotificationMessageResolver;
-import software.wings.service.impl.EnvironmentServiceImpl;
 import software.wings.service.impl.WorkflowExecutionUpdate;
 import software.wings.service.impl.deployment.checks.DeploymentFreezeUtils;
 import software.wings.service.impl.workflow.WorkflowServiceHelper;
@@ -86,7 +88,6 @@ import software.wings.sm.State;
 import software.wings.sm.StateExecutionInstance;
 import software.wings.sm.StateType;
 import software.wings.sm.WorkflowStandardParams;
-import software.wings.stencils.Expand;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.github.reinert.jjschema.Attributes;
@@ -101,7 +102,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.FieldNameConstants;
@@ -123,11 +123,7 @@ public class EnvState extends State implements WorkflowState {
   public static final Integer ENV_STATE_TIMEOUT_MILLIS = 7 * 24 * 60 * 60 * 1000;
 
   // NOTE: This field should no longer be used. It contains incorrect/stale values.
-  @Expand(dataProvider = EnvironmentServiceImpl.class)
-  @Attributes(required = true, title = "Environment")
-  @Setter
-  @Deprecated
-  private String envId;
+  @Attributes(required = true, title = "Environment") @Setter @Deprecated private String envId;
 
   @Attributes(required = true, title = "Workflow") @Setter private String workflowId;
 
@@ -185,6 +181,7 @@ public class EnvState extends State implements WorkflowState {
     DeploymentExecutionContext deploymentExecutionContext = (DeploymentExecutionContext) context;
     List<Artifact> artifacts = deploymentExecutionContext.getArtifacts();
     List<ArtifactVariable> artifactVariables = getArtifactVariables(deploymentExecutionContext, workflowStandardParams);
+    artifactVariables.addAll(getArtifactVariablesFromArtifactInputs(workflowStandardParams));
 
     ExecutionArgs executionArgs = new ExecutionArgs();
     executionArgs.setWorkflowType(WorkflowType.ORCHESTRATION);
@@ -197,6 +194,7 @@ public class EnvState extends State implements WorkflowState {
     if (featureFlagService.isEnabled(FeatureName.HELM_CHART_AS_ARTIFACT, context.getAccountId())) {
       List<HelmChart> helmCharts = deploymentExecutionContext.getHelmCharts();
       List<ManifestVariable> manifestVariables = getManifestVariables(workflowStandardParams);
+      manifestVariables.addAll(getManifestVariablesFromManifestInputs(workflowStandardParams));
       executionArgs.setHelmCharts(helmCharts);
       executionArgs.setManifestVariables(manifestVariables);
     }
@@ -213,7 +211,24 @@ public class EnvState extends State implements WorkflowState {
 
     envStateExecutionData.setOrchestrationWorkflowType(
         workflow.getOrchestrationWorkflow().getOrchestrationWorkflowType());
+
     try {
+      if (executionArgs.getWorkflowVariables() != null) {
+        List<String> workflowVariablesWithExpressionValue =
+            executionArgs.getWorkflowVariables()
+                .entrySet()
+                .stream()
+                .filter(variable -> hasExpressionValue(variable.getValue()))
+                .map(Entry::getKey)
+                .collect(toList());
+        if (isNotEmpty(workflowVariablesWithExpressionValue)) {
+          workflowVariablesWithExpressionValue.forEach(variable -> {
+            String value = context.renderExpression(executionArgs.getWorkflowVariables().get(variable));
+            executionArgs.getWorkflowVariables().put(variable,
+                value == null || "null".equals(value) ? executionArgs.getWorkflowVariables().get(variable) : value);
+          });
+        }
+      }
       WorkflowExecution execution = executionService.triggerOrchestrationExecution(
           appId, null, workflowId, context.getWorkflowExecutionId(), executionArgs, null);
       envStateExecutionData.setWorkflowExecutionId(execution.getUuid());
@@ -244,6 +259,33 @@ public class EnvState extends State implements WorkflowState {
           .stateExecutionData(envStateExecutionData)
           .build();
     }
+  }
+
+  private List<ArtifactVariable> getArtifactVariablesFromArtifactInputs(WorkflowStandardParams workflowStandardParams) {
+    if (isEmpty(workflowStandardParams.getArtifactInputs())) {
+      return new ArrayList<>();
+    }
+
+    return workflowStandardParams.getArtifactInputs()
+        .stream()
+        .map(artifactInput -> ArtifactVariable.builder().artifactInput(artifactInput).build())
+        .collect(toList());
+  }
+
+  private List<ManifestVariable> getManifestVariablesFromManifestInputs(WorkflowStandardParams workflowStandardParams) {
+    if (isEmpty(workflowStandardParams.getManifestInputs())) {
+      return new ArrayList<>();
+    }
+
+    return workflowStandardParams.getManifestInputs()
+        .stream()
+        .map(manifestInput
+            -> ManifestVariable.builder()
+                   .appManifestId(manifestInput.getAppManifestId())
+                   .value(manifestInput.getBuildNo())
+                   .inputType(HelmChartInputType.VERSION)
+                   .build())
+        .collect(toList());
   }
 
   private Map<String, String> getPlaceHolderValues(ExecutionContext context) {
@@ -352,7 +394,7 @@ public class EnvState extends State implements WorkflowState {
       List<ArtifactVariable> overriddenArtifactVariables =
           artifactVariables.stream()
               .filter(artifactVariable -> artifactVariable.getName().equals(name))
-              .collect(Collectors.toList());
+              .collect(toList());
       if (isNotEmpty(overriddenArtifactVariables)) {
         artifactVariables.removeIf(artifactVariable -> artifactVariable.getName().equals(name));
       }
@@ -393,7 +435,7 @@ public class EnvState extends State implements WorkflowState {
     context.getStateExecutionData().setErrorMsg(
         "Workflow not completed within " + Misc.getDurationString(getTimeoutMillis()));
     try {
-      EnvStateExecutionData envStateExecutionData = (EnvStateExecutionData) context.getStateExecutionData();
+      EnvStateExecutionData envStateExecutionData = context.getStateExecutionData();
       if (envStateExecutionData != null && envStateExecutionData.getWorkflowExecutionId() != null) {
         ExecutionInterrupt executionInterrupt = anExecutionInterrupt()
                                                     .executionInterruptType(ExecutionInterruptType.ABORT_ALL)
@@ -419,7 +461,7 @@ public class EnvState extends State implements WorkflowState {
       return executionResponseBuilder.build();
     }
 
-    EnvStateExecutionData stateExecutionData = (EnvStateExecutionData) context.getStateExecutionData();
+    EnvStateExecutionData stateExecutionData = context.getStateExecutionData();
     if (stateExecutionData.getOrchestrationWorkflowType() == OrchestrationWorkflowType.BUILD) {
       if (!featureFlagService.isEnabled(FeatureName.ARTIFACT_STREAM_REFACTOR, context.getAccountId())) {
         saveArtifactAndManifestElements(context, stateExecutionData);
@@ -528,6 +570,10 @@ public class EnvState extends State implements WorkflowState {
             .name(ServiceArtifactVariableElements.SWEEPING_OUTPUT_NAME + context.getStateExecutionInstanceId())
             .value(ServiceArtifactVariableElements.builder().artifactVariableElements(artifactVariableElements).build())
             .build());
+  }
+
+  private static boolean hasExpressionValue(String workflowVariableValue) {
+    return ExpressionEvaluator.matchesVariablePattern(workflowVariableValue) && workflowVariableValue.contains(".");
   }
 
   @Deprecated

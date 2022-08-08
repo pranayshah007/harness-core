@@ -41,9 +41,6 @@ public interface LogAnalysisService {
   void saveAnalysis(String learningEngineTaskId, DeploymentLogAnalysisDTO deploymentLogAnalysisDTO);
   void logDeploymentVerificationProgress(AnalysisInput inputs, AnalysisStatus finalStatus);
 
-  LogAnalysisResult getLatestAnalysisForVerificationTaskId(
-      String verificationTaskId, Instant startTime, Instant endTime);
-
   List<LogAnalysisResult> getTopLogAnalysisResults(
       List<String> verificationTaskIds, Instant startTime, Instant endTime);
 }

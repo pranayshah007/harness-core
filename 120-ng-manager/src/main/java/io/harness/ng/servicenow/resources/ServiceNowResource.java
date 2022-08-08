@@ -18,6 +18,7 @@ import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.servicenow.ServiceNowFieldNG;
+import io.harness.servicenow.ServiceNowTemplate;
 import io.harness.servicenow.ServiceNowTicketTypeDTO;
 import io.harness.servicenow.ServiceNowTicketTypeNG;
 import io.harness.utils.IdentifierRefHelper;
@@ -101,18 +102,19 @@ public class ServiceNowResource {
   }
 
   @GET
-  @Path("applicationStatus")
-  @ApiOperation(value = "Check if harness application is added to ServiceNow instance",
-      nickname = "getServiceNowApplicationStatus")
-  public ResponseDTO<Boolean>
-  getApplicationStatus(@NotNull @QueryParam("connectorRef") String serviceNowConnectorRef,
+  @Path("getTemplate")
+  @ApiOperation(value = "Get ServiceNow template metadata", nickname = "getServiceNowTemplateMetadata")
+  public ResponseDTO<List<ServiceNowTemplate>> getTemplateMetadata(
+      @NotNull @QueryParam("connectorRef") String serviceNowConnectorRef,
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
       @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgId,
-      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectId,
+      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectId, @QueryParam("ticketType") String ticketType,
+      @QueryParam("templateName") String templateName, @QueryParam("limit") int limit, @QueryParam("offset") int offset,
       @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo) {
     IdentifierRef connectorRef =
         IdentifierRefHelper.getIdentifierRef(serviceNowConnectorRef, accountId, orgId, projectId);
-    // mock response to disable template section
-    return ResponseDTO.newResponse(false);
+    List<ServiceNowTemplate> metadataResponse = serviceNowResourceService.getTemplateList(
+        connectorRef, orgId, projectId, limit, offset, templateName, ticketType);
+    return ResponseDTO.newResponse(metadataResponse);
   }
 }

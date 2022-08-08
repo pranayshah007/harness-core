@@ -14,13 +14,13 @@ import static javax.ws.rs.Priorities.HEADER_DECORATOR;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.context.GlobalContext;
+import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.sdk.GitSyncApiConstants;
 import io.harness.manage.GlobalContextManager;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Charsets;
 import com.google.inject.Singleton;
-import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import javax.annotation.Priority;
@@ -37,7 +37,7 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(DX)
 public class GitSyncThreadDecorator implements ContainerRequestFilter, ContainerResponseFilter {
   @Override
-  public void filter(ContainerRequestContext requestContext) throws IOException {
+  public void filter(ContainerRequestContext requestContext) {
     MultivaluedMap<String, String> pathParameters = requestContext.getUriInfo().getPathParameters();
     MultivaluedMap<String, String> queryParameters = requestContext.getUriInfo().getQueryParameters();
     final String branchName =
@@ -60,6 +60,13 @@ public class GitSyncThreadDecorator implements ContainerRequestFilter, Container
         getRequestParamFromContext(GitSyncApiConstants.BASE_BRANCH, pathParameters, queryParameters);
     final String resolvedConflictCommitId =
         getRequestParamFromContext(GitSyncApiConstants.RESOLVED_CONFLICT_COMMIT_ID, pathParameters, queryParameters);
+    final String connectorRef =
+        getRequestParamFromContext(GitSyncApiConstants.CONNECTOR_REF, pathParameters, queryParameters);
+    final String storeType =
+        getRequestParamFromContext(GitSyncApiConstants.STORE_TYPE, pathParameters, queryParameters);
+    final String repoName = getRequestParamFromContext(GitSyncApiConstants.REPO_NAME, pathParameters, queryParameters);
+    final String lastCommitId =
+        getRequestParamFromContext(GitSyncApiConstants.LAST_COMMIT_ID, pathParameters, queryParameters);
     final GitEntityInfo branchInfo = GitEntityInfo.builder()
                                          .branch(branchName)
                                          .filePath(filePath)
@@ -67,10 +74,14 @@ public class GitSyncThreadDecorator implements ContainerRequestFilter, Container
                                          .commitMsg(commitMsg)
                                          .lastObjectId(lastObjectId)
                                          .folderPath(folderPath)
-                                         .isNewBranch(Boolean.valueOf(isNewBranch))
-                                         .findDefaultFromOtherRepos(Boolean.valueOf(findDefaultFromOtherBranches))
+                                         .isNewBranch(Boolean.parseBoolean(isNewBranch))
+                                         .findDefaultFromOtherRepos(Boolean.parseBoolean(findDefaultFromOtherBranches))
                                          .baseBranch(baseBranch)
                                          .resolvedConflictCommitId(resolvedConflictCommitId)
+                                         .connectorRef(connectorRef)
+                                         .storeType(StoreType.getFromStringOrNull(storeType))
+                                         .repoName(repoName)
+                                         .lastCommitId(lastCommitId)
                                          .build();
     if (!GlobalContextManager.isAvailable()) {
       GlobalContextManager.set(new GlobalContext());
@@ -97,8 +108,8 @@ public class GitSyncThreadDecorator implements ContainerRequestFilter, Container
   }
 
   @Override
-  public void filter(ContainerRequestContext containerRequestContext, ContainerResponseContext containerResponseContext)
-      throws IOException {
+  public void filter(
+      ContainerRequestContext containerRequestContext, ContainerResponseContext containerResponseContext) {
     GlobalContextManager.unset();
   }
 }

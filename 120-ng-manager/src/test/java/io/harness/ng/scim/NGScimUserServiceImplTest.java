@@ -12,6 +12,7 @@ import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.UJJAWAL;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -20,6 +21,7 @@ import static org.mockito.Mockito.when;
 
 import io.harness.NgManagerTestBase;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.beans.Scope;
 import io.harness.category.element.UnitTests;
 import io.harness.ng.core.api.UserGroupService;
@@ -31,6 +33,7 @@ import io.harness.ng.core.user.remote.dto.UserMetadataDTO;
 import io.harness.ng.core.user.service.NgUserService;
 import io.harness.rule.Owner;
 import io.harness.scim.ScimUser;
+import io.harness.utils.featureflaghelper.NGFeatureFlagHelperService;
 
 import software.wings.beans.Account;
 import software.wings.beans.UserInvite;
@@ -49,14 +52,16 @@ public class NGScimUserServiceImplTest extends NgManagerTestBase {
   private UserGroupService userGroupService;
   private InviteService inviteService;
   private NGScimUserServiceImpl scimUserService;
+  private NGFeatureFlagHelperService nGFeatureFlagHelperService;
 
   @Before
   public void setup() throws IllegalAccessException {
     inviteService = mock(InviteService.class);
     ngUserService = mock(NgUserService.class);
     userGroupService = mock(UserGroupService.class);
-
-    scimUserService = new NGScimUserServiceImpl(ngUserService, inviteService, userGroupService);
+    nGFeatureFlagHelperService = mock(NGFeatureFlagHelperService.class);
+    scimUserService =
+        new NGScimUserServiceImpl(ngUserService, inviteService, userGroupService, nGFeatureFlagHelperService);
   }
 
   @Test
@@ -88,9 +93,11 @@ public class NGScimUserServiceImplTest extends NgManagerTestBase {
     UserInvite userInvite = new UserInvite();
     userInvite.setEmail("username@harness.io");
 
-    when(ngUserService.getUserInfoByEmailFromCG(anyString())).thenReturn(Optional.ofNullable(userInfo));
+    when(ngUserService.getUserInfoByEmailFromCG(any())).thenReturn(Optional.ofNullable(userInfo));
     when(ngUserService.getUserByEmail(userInfo.getEmail(), true)).thenReturn(Optional.ofNullable(userMetadataDTO));
-    when(ngUserService.getUserById(anyString())).thenReturn(Optional.ofNullable(userInfo));
+    when(ngUserService.getUserById(any())).thenReturn(Optional.ofNullable(userInfo));
+    when(nGFeatureFlagHelperService.isEnabled(account.getUuid(), FeatureName.ACCOUNT_BASIC_ROLE_ONLY))
+        .thenReturn(false);
     Response response = scimUserService.createUser(scimUser, account.getUuid());
 
     assertThat(response).isNotNull();
@@ -119,6 +126,8 @@ public class NGScimUserServiceImplTest extends NgManagerTestBase {
     when(ngUserService.getUserInfoByEmailFromCG(anyString())).thenReturn(Optional.ofNullable(userInfo));
     when(ngUserService.getUserByEmail(userInfo.getEmail(), true)).thenReturn(Optional.ofNullable(null));
     when(ngUserService.getUserById(anyString())).thenReturn(Optional.ofNullable(userInfo));
+    when(nGFeatureFlagHelperService.isEnabled(account.getUuid(), FeatureName.ACCOUNT_BASIC_ROLE_ONLY))
+        .thenReturn(false);
     Response response = scimUserService.createUser(scimUser, account.getUuid());
 
     assertThat(response).isNotNull();
@@ -159,9 +168,9 @@ public class NGScimUserServiceImplTest extends NgManagerTestBase {
                                                      .build())
                                           .orElse(null);
 
-    when(ngUserService.getUserInfoByEmailFromCG(anyString())).thenReturn(Optional.ofNullable(userInfo));
+    when(ngUserService.getUserInfoByEmailFromCG(any())).thenReturn(Optional.ofNullable(userInfo));
     when(ngUserService.getUserByEmail(userInfo.getEmail(), true)).thenReturn(Optional.ofNullable(userMetadataDTO));
-    when(ngUserService.getUserById(anyString())).thenReturn(Optional.ofNullable(userInfo));
+    when(ngUserService.getUserById(any())).thenReturn(Optional.ofNullable(userInfo));
     Response response = scimUserService.createUser(scimUser, account.getUuid());
 
     assertThat(response).isNotNull();

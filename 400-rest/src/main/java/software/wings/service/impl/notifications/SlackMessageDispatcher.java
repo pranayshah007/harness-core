@@ -140,7 +140,7 @@ public class SlackMessageDispatcher {
         }
         String resolvedString = sub.replace(approvalTemplate);
         slackNotificationService.sendJSONMessage(
-            resolvedString, Collections.singletonList(slackConfig.getOutgoingWebhookUrl()));
+            resolvedString, Collections.singletonList(slackConfig.getOutgoingWebhookUrl()), accountId);
         continue;
       }
 

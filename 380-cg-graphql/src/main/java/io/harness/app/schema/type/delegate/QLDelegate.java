@@ -38,6 +38,7 @@ public class QLDelegate implements QLObject {
   boolean pollingModeEnabled;
   String status;
   long lastHeartBeat;
+  Long lastHeartbeat;
   String version;
   String delegateProfileId;
   List<String> tags;

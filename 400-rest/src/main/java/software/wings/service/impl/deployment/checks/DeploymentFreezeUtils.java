@@ -31,6 +31,7 @@ import software.wings.beans.alert.DeploymentFreezeEventAlert;
 import software.wings.common.NotificationMessageResolver;
 import software.wings.common.NotificationMessageResolver.NotificationMessageType;
 import software.wings.helpers.ext.url.SubdomainUrlHelper;
+import software.wings.service.impl.compliance.GovernanceUserGroupHelper;
 import software.wings.service.impl.workflow.WorkflowNotificationHelper;
 import software.wings.service.intfc.AlertService;
 import software.wings.service.intfc.NotificationService;
@@ -60,6 +61,7 @@ public class DeploymentFreezeUtils {
   @Inject AlertService alertService;
   @Inject WorkflowNotificationHelper workflowNotificationHelper;
   @Inject private SubdomainUrlHelper subdomainUrlHelper;
+  @Inject private GovernanceUserGroupHelper governanceUserGroupHelper;
 
   public void sendPipelineRejectionNotification(
       String accountId, String appId, List<String> deploymentFreezeIds, Map<String, String> placeholderValues) {
@@ -80,7 +82,12 @@ public class DeploymentFreezeUtils {
     governanceFreezeConfigs.forEach(freezeWindow -> {
       Map<String, String> clonedPlaceHolderMap = new HashMap<>(placeholderValues);
       clonedPlaceHolderMap.put(END_TIME, workflowNotificationHelper.getFormattedTime(freezeWindow.fetchEndTime()));
-      sendNotificationToUserGroups(accountId, clonedPlaceHolderMap, freezeWindow.getUserGroups(), appId,
+      List<String> userGroupForNotification = freezeWindow.getUserGroups();
+      if (freezeWindow.getUserGroupSelection() != null) {
+        userGroupForNotification =
+            governanceUserGroupHelper.getUserGroups(freezeWindow.getUserGroupSelection(), accountId);
+      }
+      sendNotificationToUserGroups(accountId, clonedPlaceHolderMap, userGroupForNotification, appId,
           notificationMessageType, freezeWindow.getName());
     });
   }
@@ -95,7 +102,12 @@ public class DeploymentFreezeUtils {
     Map<String, String> placeholderValues = new HashMap<>();
     placeholderValues.put(START_TIME, workflowNotificationHelper.getFormattedTime(System.currentTimeMillis()));
     placeholderValues.put(END_TIME, workflowNotificationHelper.getFormattedTime(governanceFreezeConfig.fetchEndTime()));
-    sendNotificationToUserGroups(accountId, placeholderValues, governanceFreezeConfig.getUserGroups(), GLOBAL_APP_ID,
+    List<String> userGroupsForNotification = governanceFreezeConfig.getUserGroups();
+    if (governanceFreezeConfig.getUserGroupSelection() != null) {
+      userGroupsForNotification =
+          governanceUserGroupHelper.getUserGroups(governanceFreezeConfig.getUserGroupSelection(), accountId);
+    }
+    sendNotificationToUserGroups(accountId, placeholderValues, userGroupsForNotification, GLOBAL_APP_ID,
         FREEZE_ACTIVATION_NOTIFICATION, governanceFreezeConfig.getName());
   }
 
@@ -126,7 +138,12 @@ public class DeploymentFreezeUtils {
 
     Map<String, String> placeholderValues = new HashMap<>();
     placeholderValues.put(END_TIME, workflowNotificationHelper.getFormattedTime(System.currentTimeMillis()));
-    sendNotificationToUserGroups(accountId, placeholderValues, governanceFreezeConfig.getUserGroups(), GLOBAL_APP_ID,
+    List<String> userGroupsForNotification = governanceFreezeConfig.getUserGroups();
+    if (governanceFreezeConfig.getUserGroupSelection() != null) {
+      userGroupsForNotification =
+          governanceUserGroupHelper.getUserGroups(governanceFreezeConfig.getUserGroupSelection(), accountId);
+    }
+    sendNotificationToUserGroups(accountId, placeholderValues, userGroupsForNotification, GLOBAL_APP_ID,
         FREEZE_DEACTIVATION_NOTIFICATION, governanceFreezeConfig.getName());
   }
 

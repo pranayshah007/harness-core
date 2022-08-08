@@ -15,10 +15,14 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.encryption.Encrypted;
 
 import software.wings.annotation.EncryptableSetting;
+import software.wings.beans.WinRmCommandParameter;
 import software.wings.settings.SettingVariableTypes;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.github.reinert.jjschema.SchemaIgnore;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import lombok.Builder;
@@ -50,6 +54,8 @@ public class WinRmSessionConfig implements EncryptableSetting {
   private final Map<String, String> environment;
   @Builder.Default private Integer timeout = (int) TimeUnit.MINUTES.toMillis(30);
   private boolean useNoProfile;
+  private boolean useKerberosUniqueCacheFile;
+  private List<WinRmCommandParameter> commandParameters;
 
   @SchemaIgnore private String encryptedPassword;
 
@@ -68,5 +74,9 @@ public class WinRmSessionConfig implements EncryptableSetting {
   @Override
   public void setDecrypted(boolean decrypted) {
     throw new IllegalStateException();
+  }
+
+  public Path getSessionCacheFilePath() {
+    return Paths.get(System.getProperty("java.io.tmpdir", "/tmp"), String.format("harness_krb5cc_%s", executionId));
   }
 }

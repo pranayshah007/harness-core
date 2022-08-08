@@ -29,6 +29,7 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
+import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import java.util.Collections;
 import java.util.List;
@@ -113,6 +114,18 @@ public class CdPartialYamlSchemaResource implements YamlSchemaResource {
         throw new InvalidRequestException(format("stage %s does not exist in module cd", entityType));
       }
     }
+    return ResponseDTO.newResponse(
+        cdYamlSchemaService.getIndividualYamlSchema(entityType, orgIdentifier, projectIdentifier, scope));
+  }
+
+  @GET
+  @Path("/entityYaml")
+  @Hidden
+  public ResponseDTO<JsonNode> getEntityYamlSchema(
+      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
+      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @QueryParam(NGCommonEntityConstants.ENTITY_TYPE) EntityType entityType, Scope scope) {
     return ResponseDTO.newResponse(
         cdYamlSchemaService.getIndividualYamlSchema(entityType, orgIdentifier, projectIdentifier, scope));
   }

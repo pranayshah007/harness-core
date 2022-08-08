@@ -116,16 +116,18 @@ public class DefaultWinRmExecutor implements WinRmExecutor {
       String psScriptFile = null;
       if (disableCommandEncoding) {
         psScriptFile = getPSScriptFile();
-        exitCode = session.executeCommandsList(
-            WinRmExecutorHelper.constructPSScriptWithCommands(command, psScriptFile, powershell), outputWriter,
-            errorWriter, false, getScriptExecutingCommand(psScriptFile, powershell));
+        exitCode = session.executeCommandsList(WinRmExecutorHelper.constructPSScriptWithCommands(
+                                                   command, psScriptFile, powershell, config.getCommandParameters()),
+            outputWriter, errorWriter, false, getScriptExecutingCommand(psScriptFile, powershell));
       } else {
         exitCode = session.executeCommandString(
-            WinRmExecutorHelper.psWrappedCommandWithEncoding(command, powershell), outputWriter, errorWriter, false);
+            WinRmExecutorHelper.psWrappedCommandWithEncoding(command, powershell, config.getCommandParameters()),
+            outputWriter, errorWriter, false);
       }
       commandExecutionStatus = (exitCode == 0) ? SUCCESS : FAILURE;
       saveExecutionLog(format("%nCommand completed with ExitCode (%d)", exitCode), INFO, commandExecutionStatus);
-      WinRmExecutorHelper.cleanupFiles(session, psScriptFile, powershell, disableCommandEncoding);
+      WinRmExecutorHelper.cleanupFiles(
+          session, psScriptFile, powershell, disableCommandEncoding, config.getCommandParameters());
     } catch (RuntimeException re) {
       throw re;
     } catch (Exception e) {
@@ -201,19 +203,21 @@ public class DefaultWinRmExecutor implements WinRmExecutor {
       if (disableCommandEncoding) {
         psScriptFile = getPSScriptFile();
 
-        exitCode = session.executeCommandsList(
-            WinRmExecutorHelper.constructPSScriptWithCommands(command, psScriptFile, powershell), outputWriter,
-            errorWriter, false, getScriptExecutingCommand(psScriptFile, powershell));
+        exitCode = session.executeCommandsList(WinRmExecutorHelper.constructPSScriptWithCommands(
+                                                   command, psScriptFile, powershell, config.getCommandParameters()),
+            outputWriter, errorWriter, false, getScriptExecutingCommand(psScriptFile, powershell));
       } else {
         exitCode = session.executeCommandString(
-            WinRmExecutorHelper.psWrappedCommandWithEncoding(command, powershell), outputWriter, errorWriter, false);
+            WinRmExecutorHelper.psWrappedCommandWithEncoding(command, powershell, config.getCommandParameters()),
+            outputWriter, errorWriter, false);
       }
       commandExecutionStatus = (exitCode == 0) ? SUCCESS : FAILURE;
 
       if (commandExecutionStatus == SUCCESS && envVariablesOutputFile != null) {
         // If we are here, we will run another command to get the output variables. Make sure we delete the previous
         // script
-        WinRmExecutorHelper.cleanupFiles(session, psScriptFile, powershell, disableCommandEncoding);
+        WinRmExecutorHelper.cleanupFiles(
+            session, psScriptFile, powershell, disableCommandEncoding, config.getCommandParameters());
         executionDataBuilder.sweepingOutputEnvVariables(
             collectOutputEnvironmentVariables(session, envVariablesOutputFile, secretEnvVariablesToCollect));
       }
@@ -221,7 +225,8 @@ public class DefaultWinRmExecutor implements WinRmExecutor {
       saveExecutionLog(format("%nCommand completed with ExitCode (%d)", exitCode), INFO, commandExecutionStatus);
       executeCommandResponseBuilder.status(commandExecutionStatus);
       executeCommandResponseBuilder.commandExecutionData(executionDataBuilder.build());
-      WinRmExecutorHelper.cleanupFiles(session, psScriptFile, powershell, disableCommandEncoding);
+      WinRmExecutorHelper.cleanupFiles(
+          session, psScriptFile, powershell, disableCommandEncoding, config.getCommandParameters());
       return executeCommandResponseBuilder.build();
     } catch (RuntimeException re) {
       throw re;
@@ -255,11 +260,12 @@ public class DefaultWinRmExecutor implements WinRmExecutor {
       int exitCode;
       if (disableCommandEncoding) {
         psScriptFile = getPSScriptFile();
-        exitCode = session.executeCommandsList(
-            WinRmExecutorHelper.constructPSScriptWithCommands(commandWithoutEncoding, psScriptFile, powershell),
+        exitCode = session.executeCommandsList(WinRmExecutorHelper.constructPSScriptWithCommands(commandWithoutEncoding,
+                                                   psScriptFile, powershell, config.getCommandParameters()),
             outputAccumulator, errorAccumulator, true, getScriptExecutingCommand(psScriptFile, powershell));
       } else {
-        exitCode = session.executeCommandString(WinRmExecutorHelper.psWrappedCommandWithEncoding(command, powershell),
+        exitCode = session.executeCommandString(
+            WinRmExecutorHelper.psWrappedCommandWithEncoding(command, powershell, config.getCommandParameters()),
             outputAccumulator, errorAccumulator, true);
       }
       if (exitCode != 0) {
@@ -291,8 +297,10 @@ public class DefaultWinRmExecutor implements WinRmExecutor {
         }
       }
 
-      WinRmExecutorHelper.cleanupFiles(session, envVariablesOutputFile, powershell, disableCommandEncoding);
-      WinRmExecutorHelper.cleanupFiles(session, psScriptFile, powershell, disableCommandEncoding);
+      WinRmExecutorHelper.cleanupFiles(
+          session, envVariablesOutputFile, powershell, disableCommandEncoding, config.getCommandParameters());
+      WinRmExecutorHelper.cleanupFiles(
+          session, psScriptFile, powershell, disableCommandEncoding, config.getCommandParameters());
     } catch (RuntimeException re) {
       throw re;
     } catch (Exception e) {

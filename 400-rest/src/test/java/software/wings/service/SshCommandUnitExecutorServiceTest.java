@@ -27,7 +27,6 @@ import static software.wings.beans.HostConnectionAttributes.Builder.aHostConnect
 import static software.wings.beans.SSHExecutionCredential.Builder.aSSHExecutionCredential;
 import static software.wings.beans.SettingAttribute.Builder.aSettingAttribute;
 import static software.wings.beans.artifact.ArtifactFile.Builder.anArtifactFile;
-import static software.wings.beans.command.Command.Builder.aCommand;
 import static software.wings.beans.command.CommandExecutionContext.Builder.aCommandExecutionContext;
 import static software.wings.beans.command.ExecCommandUnit.Builder.anExecCommandUnit;
 import static software.wings.beans.command.ScpCommandUnit.Builder.aScpCommandUnit;
@@ -73,7 +72,6 @@ import io.harness.shell.SshSessionConfig;
 import software.wings.WingsBaseTest;
 import software.wings.beans.SettingAttribute;
 import software.wings.beans.artifact.ArtifactStreamAttributes;
-import software.wings.beans.command.Command;
 import software.wings.beans.command.CommandExecutionContext;
 import software.wings.beans.command.CommandUnit;
 import software.wings.beans.command.CommandUnitHelper;
@@ -83,6 +81,7 @@ import software.wings.beans.command.InitSshCommandUnit;
 import software.wings.beans.command.InitSshCommandUnitV2;
 import software.wings.beans.command.ScpCommandUnit;
 import software.wings.beans.command.ScpCommandUnit.ScpFileCategory;
+import software.wings.beans.dto.Command;
 import software.wings.beans.infrastructure.Host;
 import software.wings.beans.infrastructure.Host.Builder;
 import software.wings.core.local.executors.ShellExecutorFactory;
@@ -447,8 +446,8 @@ public class SshCommandUnitExecutorServiceTest extends WingsBaseTest {
     InitSshCommandUnit commandUnit = new InitSshCommandUnit();
     on(commandUnit).set("commandUnitHelper", new CommandUnitHelper());
     Command command =
-        aCommand()
-            .withCommandUnits(asList(commandUnit,
+        Command.builder()
+            .commandUnits(asList(commandUnit,
                 anExecCommandUnit().withName("dols").withCommandPath("/tmp").withCommandString("ls").build()))
             .build();
     commandUnit.setCommand(command);
@@ -493,8 +492,8 @@ public class SshCommandUnitExecutorServiceTest extends WingsBaseTest {
     InitSshCommandUnitV2 commandUnit = new InitSshCommandUnitV2();
     on(commandUnit).set("commandUnitHelper", new CommandUnitHelper());
     Command command =
-        aCommand()
-            .withCommandUnits(asList(commandUnit,
+        Command.builder()
+            .commandUnits(asList(commandUnit,
                 anExecCommandUnit().withName("dols").withCommandPath("/tmp").withCommandString("ls").build()))
             .build();
     commandUnit.setCommand(command);
@@ -524,16 +523,16 @@ public class SshCommandUnitExecutorServiceTest extends WingsBaseTest {
     InitSshCommandUnit commandUnit = new InitSshCommandUnit();
     on(commandUnit).set("commandUnitHelper", new CommandUnitHelper());
     Command command =
-        aCommand()
-            .withCommandUnits(asList(commandUnit,
+        Command.builder()
+            .commandUnits(asList(commandUnit,
                 anExecCommandUnit().withName("dols").withCommandPath("/tmp").withCommandString("ls").build(),
-                aCommand()
-                    .withName("start1")
-                    .withCommandUnits(asList(anExecCommandUnit()
-                                                 .withName("startscript")
-                                                 .withCommandString("start.sh")
-                                                 .withCommandPath("/home/tomcat")
-                                                 .build()))
+                Command.builder()
+                    .name("start1")
+                    .commandUnits(asList(anExecCommandUnit()
+                                             .withName("startscript")
+                                             .withCommandString("start.sh")
+                                             .withCommandPath("/home/tomcat")
+                                             .build()))
                     .build()))
             .build();
     commandUnit.setCommand(command);
@@ -583,16 +582,16 @@ public class SshCommandUnitExecutorServiceTest extends WingsBaseTest {
     InitSshCommandUnitV2 commandUnit = new InitSshCommandUnitV2();
     on(commandUnit).set("commandUnitHelper", new CommandUnitHelper());
     Command command =
-        aCommand()
-            .withCommandUnits(asList(commandUnit,
+        Command.builder()
+            .commandUnits(asList(commandUnit,
                 anExecCommandUnit().withName("dols").withCommandPath("/tmp").withCommandString("ls").build(),
-                aCommand()
-                    .withName("start1")
-                    .withCommandUnits(asList(anExecCommandUnit()
-                                                 .withName("startscript")
-                                                 .withCommandString("start.sh")
-                                                 .withCommandPath("/home/tomcat")
-                                                 .build()))
+                Command.builder()
+                    .name("start1")
+                    .commandUnits(asList(anExecCommandUnit()
+                                             .withName("startscript")
+                                             .withCommandString("start.sh")
+                                             .withCommandPath("/home/tomcat")
+                                             .build()))
                     .build()))
             .build();
     commandUnit.setCommand(command);
@@ -628,8 +627,8 @@ public class SshCommandUnitExecutorServiceTest extends WingsBaseTest {
     InitSshCommandUnit commandUnit = new InitSshCommandUnit();
     on(commandUnit).set("commandUnitHelper", new CommandUnitHelper());
     Command command =
-        aCommand()
-            .withCommandUnits(asList(commandUnit,
+        Command.builder()
+            .commandUnits(asList(commandUnit,
                 anExecCommandUnit().withName("dols").withCommandPath("/tmp").withCommandString("ls").build()))
             .build();
     commandUnit.setCommand(command);
@@ -668,8 +667,8 @@ public class SshCommandUnitExecutorServiceTest extends WingsBaseTest {
     InitSshCommandUnit commandUnit = new InitSshCommandUnit();
     on(commandUnit).set("commandUnitHelper", new CommandUnitHelper());
     Command command =
-        aCommand()
-            .withCommandUnits(asList(commandUnit,
+        Command.builder()
+            .commandUnits(asList(commandUnit,
                 anExecCommandUnit().withName("dols").withCommandPath("/tmp").withCommandString("ls").build()))
             .build();
     commandUnit.setCommand(command);

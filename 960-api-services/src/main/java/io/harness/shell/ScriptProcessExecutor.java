@@ -8,6 +8,7 @@
 package io.harness.shell;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.filesystem.FileIo.createDirectoryIfDoesNotExist;
 import static io.harness.filesystem.FileIo.deleteDirectoryAndItsContentIfExists;
 import static io.harness.filesystem.FileIo.deleteFileIfExists;
@@ -37,20 +38,25 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.attribute.PosixFilePermission;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.output.NullOutputStream;
 import org.zeroturnaround.exec.ProcessExecutor;
 import org.zeroturnaround.exec.ProcessResult;
+import org.zeroturnaround.exec.stop.ProcessStopper;
 import org.zeroturnaround.exec.stream.LogOutputStream;
 
 /**
@@ -103,13 +109,16 @@ public class ScriptProcessExecutor extends AbstractScriptExecutor {
 
       if (!isEmpty(config.getKubeConfigContent())) {
         try (FileOutputStream outputStream = new FileOutputStream(kubeConfigFile)) {
-          outputStream.write(config.getKubeConfigContent().getBytes(Charset.forName("UTF-8")));
+          outputStream.write(config.getKubeConfigContent().getBytes(StandardCharsets.UTF_8));
           environment.put(HARNESS_KUBE_CONFIG_PATH, kubeConfigFile.getCanonicalPath());
         }
       }
 
+      Optional<Path> gcpKeyFile = createGcpKeyFileIfNeeded(workingDirectory.toPath());
+      gcpKeyFile.ifPresent(updateEnvironmentWithGcpPath(environment));
+
       try (FileOutputStream outputStream = new FileOutputStream(scriptFile)) {
-        outputStream.write(command.getBytes(Charset.forName("UTF-8")));
+        outputStream.write(command.getBytes(StandardCharsets.UTF_8));
 
         String[] commandList = new String[] {"/bin/bash", scriptFilename};
         ProcessExecutor processExecutor =
@@ -135,24 +144,25 @@ public class ScriptProcessExecutor extends AbstractScriptExecutor {
         ProcessResult processResult = processExecutor.execute();
         commandExecutionStatus = processResult.getExitValue() == 0 ? SUCCESS : FAILURE;
         if (commandExecutionStatus == SUCCESS) {
-          saveExecutionLog(format("Command completed with ExitCode (%d)", processResult.getExitValue()), INFO,
-              commandExecutionStatus);
+          saveExecutionLog(format("Command completed with ExitCode (%d)", processResult.getExitValue()), INFO);
         } else {
-          saveExecutionLog(format("CommandExecution failed with exit code: (%d)", processResult.getExitValue()), ERROR,
-              commandExecutionStatus);
+          saveExecutionLog(format("CommandExecution failed with exit code: (%d)", processResult.getExitValue()), ERROR);
         }
       } catch (RuntimeException | InterruptedException | TimeoutException e) {
-        saveExecutionLog(format("Exception: %s", e), ERROR, commandExecutionStatus);
+        saveExecutionLog(format("Exception: %s", e), ERROR);
       } finally {
         if (isEmpty(config.getWorkingDirectory())) {
           deleteDirectoryAndItsContentIfExists(workingDirectory.getAbsolutePath());
         } else {
           deleteFileIfExists(scriptFile.getAbsolutePath());
           deleteFileIfExists(kubeConfigFile.getAbsolutePath());
+          if (gcpKeyFile.isPresent()) {
+            deleteFileIfExists(gcpKeyFile.get().toAbsolutePath().toString());
+          }
         }
       }
     } catch (IOException e) {
-      saveExecutionLog("IOException:" + e, ERROR);
+      saveExecutionLog("IOException:" + e, ERROR, FAILURE);
     }
     return commandExecutionStatus;
   }
@@ -190,7 +200,7 @@ public class ScriptProcessExecutor extends AbstractScriptExecutor {
           executeCommandResponse =
               executeBashScript(command, envVariablesToCollect, secretEnvVariablesToCollect, timeoutInMillis);
         } catch (Exception e) {
-          saveExecutionLog(format("Exception: %s", e), ERROR, FAILURE);
+          saveExecutionLog(format("Exception: %s", e), ERROR);
         }
         break;
 
@@ -232,6 +242,9 @@ public class ScriptProcessExecutor extends AbstractScriptExecutor {
       }
     }
 
+    Optional<Path> gcpKeyFile = createGcpKeyFileIfNeeded(workingDirectory.toPath());
+    gcpKeyFile.ifPresent(updateEnvironmentWithGcpPath(environment));
+
     String envVariablesFilename;
     File envVariablesOutputFile = null;
 
@@ -252,19 +265,21 @@ public class ScriptProcessExecutor extends AbstractScriptExecutor {
 
     Map<String, String> envVariablesMap = new HashMap<>();
     try (FileOutputStream outputStream = new FileOutputStream(scriptFile)) {
-      outputStream.write(command.getBytes(Charset.forName("UTF-8")));
-
+      outputStream.write(command.getBytes(StandardCharsets.UTF_8));
       Files.setPosixFilePermissions(scriptFile.toPath(),
           newHashSet(
               PosixFilePermission.OWNER_READ, PosixFilePermission.OWNER_EXECUTE, PosixFilePermission.OWNER_WRITE));
       log.info("Done setting file permissions for script {}", scriptFile);
 
       String[] commandList = new String[] {"/bin/bash", scriptFilename};
+      ProcessStopper processStopper = new ChildProcessStopper(
+          scriptFilename, workingDirectory, new ProcessExecutor().environment(environment).directory(workingDirectory));
       ProcessExecutor processExecutor = new ProcessExecutor()
                                             .command(commandList)
                                             .directory(workingDirectory)
                                             .environment(environment)
                                             .readOutput(true)
+                                            .stopper(processStopper)
                                             .redirectOutput(new LogOutputStream() {
                                               @Override
                                               protected void processLine(String line) {
@@ -285,25 +300,31 @@ public class ScriptProcessExecutor extends AbstractScriptExecutor {
       ProcessResult processResult = processExecutor.execute();
       commandExecutionStatus = processResult.getExitValue() == 0 ? SUCCESS : FAILURE;
       if (commandExecutionStatus == SUCCESS && envVariablesOutputFile != null) {
-        try (BufferedReader br =
-                 new BufferedReader(new InputStreamReader(new FileInputStream(envVariablesOutputFile), "UTF-8"))) {
+        try (BufferedReader br = new BufferedReader(
+                 new InputStreamReader(new FileInputStream(envVariablesOutputFile), StandardCharsets.UTF_8))) {
           processScriptOutputFile(envVariablesMap, br, secretVariablesToCollect);
         } catch (IOException e) {
           saveExecutionLog("IOException:" + e, ERROR);
         }
       }
       executionDataBuilder.sweepingOutputEnvVariables(envVariablesMap);
-      saveExecutionLog(
-          format("Command completed with ExitCode (%d)", processResult.getExitValue()), INFO, commandExecutionStatus);
+
+      if (config.isCloseLogStream()) {
+        saveExecutionLog(
+            format("Command completed with ExitCode (%d)", processResult.getExitValue()), INFO, commandExecutionStatus);
+      } else {
+        saveExecutionLog(format("Command completed with ExitCode (%d)", processResult.getExitValue()), INFO);
+      }
+
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();
-      handleException(executionDataBuilder, envVariablesMap, commandExecutionStatus, e, "Script execution interrupted");
+      handleException(executionDataBuilder, envVariablesMap, e, "Script execution interrupted");
     } catch (TimeoutException e) {
       executionDataBuilder.expired(true);
-      handleException(executionDataBuilder, envVariablesMap, commandExecutionStatus, e, "Script execution timed out");
+      handleException(executionDataBuilder, envVariablesMap, e, "Script execution timed out");
     } catch (RuntimeException e) {
-      handleException(executionDataBuilder, envVariablesMap, commandExecutionStatus, e,
-          format("Exception occurred in Script execution. Reason: %s", e));
+      handleException(
+          executionDataBuilder, envVariablesMap, e, format("Exception occurred in Script execution. Reason: %s", e));
     } finally {
       if (isEmpty(config.getWorkingDirectory())) {
         deleteDirectoryAndItsContentIfExists(workingDirectory.getAbsolutePath());
@@ -313,6 +334,9 @@ public class ScriptProcessExecutor extends AbstractScriptExecutor {
         if (envVariablesOutputFile != null) {
           deleteFileIfExists(envVariablesOutputFile.getAbsolutePath());
         }
+        if (gcpKeyFile.isPresent()) {
+          deleteFileIfExists(gcpKeyFile.get().toAbsolutePath().toString());
+        }
       }
     }
     executeCommandResponseBuilder.status(commandExecutionStatus);
@@ -321,9 +345,9 @@ public class ScriptProcessExecutor extends AbstractScriptExecutor {
   }
 
   private void handleException(ShellExecutionDataBuilder executionDataBuilder, Map<String, String> envVariablesMap,
-      CommandExecutionStatus commandExecutionStatus, Exception e, String message) {
+      Exception e, String message) {
     executionDataBuilder.sweepingOutputEnvVariables(envVariablesMap);
-    saveExecutionLog(message, ERROR, commandExecutionStatus);
+    saveExecutionLog(message, ERROR);
     log.error("Exception in script execution ", e);
   }
 
@@ -362,5 +386,19 @@ public class ScriptProcessExecutor extends AbstractScriptExecutor {
   @Override
   public String getHost() {
     return null;
+  }
+
+  private Optional<Path> createGcpKeyFileIfNeeded(Path workingDir) throws IOException {
+    if (isNotEmpty(config.getGcpKeyFileContent())) {
+      Path gcpKeyFile = Files.createTempFile(workingDir, "gcpKey-", ".json");
+      Files.write(gcpKeyFile, new String(config.getGcpKeyFileContent()).getBytes(StandardCharsets.UTF_8));
+      return Optional.of(gcpKeyFile);
+    } else {
+      return Optional.empty();
+    }
+  }
+
+  private Consumer<Path> updateEnvironmentWithGcpPath(Map<String, String> environment) {
+    return path -> environment.put("GOOGLE_APPLICATION_CREDENTIALS", path.toAbsolutePath().toString());
   }
 }

@@ -9,8 +9,8 @@ package software.wings.resources;
 
 import io.harness.rest.RestResponse;
 
-import software.wings.service.impl.servicenow.ServiceNowServiceImpl.ServiceNowFieldType;
-import software.wings.service.impl.servicenow.ServiceNowServiceImpl.ServiceNowTicketType;
+import software.wings.beans.servicenow.ServiceNowFieldType;
+import software.wings.beans.servicenow.ServiceNowTicketType;
 import software.wings.service.intfc.servicenow.ServiceNowService;
 
 import com.codahale.metrics.annotation.ExceptionMetered;

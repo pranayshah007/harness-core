@@ -2,7 +2,10 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 
 go_library(
     name = "csharp",
-    srcs = ["dotnet.go"],
+    srcs = [
+        "dotnet.go",
+        "nunit_console.go",
+    ],
     importpath = "github.com/harness/harness-core/product/ci/addon/testintelligence/csharp",
     visibility = ["//visibility:public"],
     deps = [

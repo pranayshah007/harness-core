@@ -10,6 +10,7 @@ package io.harness.cvng.core.resources;
 import io.harness.annotations.ExposeInternalException;
 import io.harness.cvng.beans.DataSourceType;
 import io.harness.cvng.beans.MetricPackDTO;
+import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.core.entities.MetricPack;
 import io.harness.cvng.core.services.api.MetricPackService;
 import io.harness.rest.RestResponse;
@@ -23,6 +24,7 @@ import io.swagger.annotations.ApiOperation;
 import java.util.List;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
+import javax.ws.rs.BeanParam;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
@@ -42,24 +44,20 @@ public class MetricPackResource {
   @Timed
   @ExceptionMetered
   @ApiOperation(value = "get all metric packs for a connector type", nickname = "getMetricPacks")
-  public RestResponse<List<MetricPackDTO>> getMetricPacks(@QueryParam("accountId") @NotNull String accountId,
-      @QueryParam("orgIdentifier") @NotNull String orgIdentifier,
-      @QueryParam("projectIdentifier") @NotNull String projectIdentifier,
+  public RestResponse<List<MetricPackDTO>> getMetricPacks(@NotNull @BeanParam ProjectParams projectParams,
       @QueryParam("dataSourceType") @NotNull DataSourceType dataSourceType) {
-    return new RestResponse<>(
-        metricPackService.getMetricPacks(dataSourceType, accountId, orgIdentifier, projectIdentifier));
+    return new RestResponse<>(metricPackService.getMetricPacks(dataSourceType, projectParams.getAccountIdentifier(),
+        projectParams.getOrgIdentifier(), projectParams.getProjectIdentifier()));
   }
 
   @POST
   @Timed
   @ExceptionMetered
   @ApiOperation(value = "saves a metric pack for a connector type", nickname = "saveMetricPacks")
-  public RestResponse<Boolean> saveMetricPacks(@QueryParam("accountId") @NotNull String accountId,
-      @QueryParam("orgIdentifier") @NotNull String orgIdentifier,
-      @QueryParam("projectIdentifier") @NotNull String projectIdentifier,
+  public RestResponse<Boolean> saveMetricPacks(@NotNull @BeanParam ProjectParams projectParams,
       @QueryParam("dataSourceType") @NotNull DataSourceType dataSourceType,
       @NotNull @Valid @Body List<MetricPack> metricPacks) {
-    return new RestResponse<>(
-        metricPackService.saveMetricPacks(accountId, orgIdentifier, projectIdentifier, dataSourceType, metricPacks));
+    return new RestResponse<>(metricPackService.saveMetricPacks(projectParams.getAccountIdentifier(),
+        projectParams.getOrgIdentifier(), projectParams.getProjectIdentifier(), dataSourceType, metricPacks));
   }
 }

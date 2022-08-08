@@ -11,7 +11,8 @@ public class ExpansionKeysConstants {
   public static final String SLO_POLICY_EXPANSION_KEY = "sloPolicy";
   public static final String SERVICE_CONFIG = "serviceConfig";
   public static final String SERVICE_REF = "serviceRef";
+  public static final String SERVICE = "service";
+  public static final String IDENTIFIER = "identifier";
   public static final String INFRASTRUCTURE = "infrastructure";
   public static final String ENVIRONMENT_REF = "environmentRef";
-  public static final String MONITORED_SERVICE_DELIMITER = "_";
 }

@@ -61,6 +61,7 @@ import software.wings.beans.command.CodeDeployCommandExecutionData;
 import software.wings.beans.command.CodeDeployParams;
 import software.wings.beans.command.Command;
 import software.wings.beans.command.CommandExecutionContext;
+import software.wings.beans.command.CommandMapper;
 import software.wings.delegatetasks.aws.AwsCommandHelper;
 import software.wings.service.impl.AwsHelperService;
 import software.wings.service.impl.aws.model.AwsCodeDeployS3LocationData;
@@ -79,6 +80,7 @@ import software.wings.sm.InstanceStatusSummary;
 import software.wings.sm.State;
 import software.wings.sm.StateType;
 import software.wings.sm.WorkflowStandardParams;
+import software.wings.sm.WorkflowStandardParamsExtensionService;
 import software.wings.stencils.DataProvider;
 import software.wings.stencils.DefaultValue;
 import software.wings.stencils.EnumData;
@@ -138,6 +140,7 @@ public class AwsCodeDeployState extends State {
   @Inject protected transient InfrastructureMappingService infrastructureMappingService;
   @Inject protected transient ServiceTemplateService serviceTemplateService;
   @Inject protected transient SecretManager secretManager;
+  @Inject private transient WorkflowStandardParamsExtensionService workflowStandardParamsExtensionService;
   @Inject private SweepingOutputService sweepingOutputService;
   @Inject private AwsStateHelper awsStateHelper;
 
@@ -168,8 +171,8 @@ public class AwsCodeDeployState extends State {
     String serviceId = phaseElement.getServiceElement().getUuid();
 
     WorkflowStandardParams workflowStandardParams = context.getContextElement(ContextElementType.STANDARD);
-    Application app = workflowStandardParams.fetchRequiredApp();
-    Environment env = workflowStandardParams.fetchRequiredEnv();
+    Application app = workflowStandardParamsExtensionService.fetchRequiredApp(workflowStandardParams);
+    Environment env = workflowStandardParamsExtensionService.fetchRequiredEnv(workflowStandardParams);
 
     String envId = env.getUuid();
     Service service = serviceResourceService.getWithDetails(app.getUuid(), serviceId);
@@ -239,7 +242,7 @@ public class AwsCodeDeployState extends State {
             .data(TaskData.builder()
                       .async(true)
                       .taskType(TaskType.COMMAND.name())
-                      .parameters(new Object[] {command, commandExecutionContext})
+                      .parameters(new Object[] {CommandMapper.toCommandDTO(command), commandExecutionContext})
                       .timeout(getTaskTimeout())
                       .build())
             .setupAbstraction(Cd1SetupFields.ENV_ID_FIELD, envId)
@@ -342,8 +345,8 @@ public class AwsCodeDeployState extends State {
     String serviceId = phaseElement.getServiceElement().getUuid();
 
     WorkflowStandardParams workflowStandardParams = context.getContextElement(ContextElementType.STANDARD);
-    Application app = workflowStandardParams.fetchRequiredApp();
-    Environment env = workflowStandardParams.fetchRequiredEnv();
+    Application app = workflowStandardParamsExtensionService.fetchRequiredApp(workflowStandardParams);
+    Environment env = workflowStandardParamsExtensionService.fetchRequiredEnv(workflowStandardParams);
     Key<ServiceTemplate> serviceTemplateKey =
         serviceTemplateService.getTemplateRefKeysByService(app.getUuid(), serviceId, env.getUuid()).get(0);
 

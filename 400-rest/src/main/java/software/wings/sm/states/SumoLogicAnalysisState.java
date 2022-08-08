@@ -151,19 +151,20 @@ public class SumoLogicAnalysisState extends AbstractLogAnalysisState {
 
       String waitId = generateUuid();
       String infrastructureMappingId = context.fetchInfraMappingId();
-      delegateTasks.add(DelegateTask.builder()
-                            .accountId(appService.get(context.getAppId()).getAccountId())
-                            .setupAbstraction(Cd1SetupFields.APP_ID_FIELD, context.getAppId())
-                            .waitId(waitId)
-                            .data(TaskData.builder()
-                                      .async(true)
-                                      .taskType(TaskType.SUMO_COLLECT_LOG_DATA.name())
-                                      .parameters(new Object[] {dataCollectionInfo})
-                                      .timeout(TimeUnit.MINUTES.toMillis(Integer.parseInt(getTimeDuration()) + 60))
-                                      .build())
-                            .setupAbstraction(Cd1SetupFields.ENV_ID_FIELD, envId)
-                            .setupAbstraction(Cd1SetupFields.INFRASTRUCTURE_MAPPING_ID_FIELD, infrastructureMappingId)
-                            .build());
+      delegateTasks.add(
+          DelegateTask.builder()
+              .accountId(appService.get(context.getAppId()).getAccountId())
+              .setupAbstraction(Cd1SetupFields.APP_ID_FIELD, context.getAppId())
+              .waitId(waitId)
+              .data(TaskData.builder()
+                        .async(true)
+                        .taskType(TaskType.SUMO_COLLECT_LOG_DATA.name())
+                        .parameters(new Object[] {dataCollectionInfo})
+                        .timeout(TimeUnit.MINUTES.toMillis(Integer.parseInt(getTimeDuration(context)) + 60))
+                        .build())
+              .setupAbstraction(Cd1SetupFields.ENV_ID_FIELD, envId)
+              .setupAbstraction(Cd1SetupFields.INFRASTRUCTURE_MAPPING_ID_FIELD, infrastructureMappingId)
+              .build());
       waitIds[i++] = waitId;
     }
     waitNotifyEngine.waitForAllOn(ORCHESTRATION,
@@ -172,7 +173,7 @@ public class SumoLogicAnalysisState extends AbstractLogAnalysisState {
             .stateExecutionId(context.getStateExecutionInstanceId())
             .dataCollectionStartTime(logCollectionStartTimeStamp)
             .dataCollectionEndTime(
-                logCollectionStartTimeStamp + TimeUnit.MINUTES.toMillis(Integer.parseInt(getTimeDuration())))
+                logCollectionStartTimeStamp + TimeUnit.MINUTES.toMillis(Integer.parseInt(getTimeDuration(context))))
             .executionData(executionData)
             .build(),
         waitIds);

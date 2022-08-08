@@ -11,6 +11,8 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.batch.processing.billing.service.UtilizationData;
 import io.harness.batch.processing.billing.timeseries.data.InstanceUtilizationData;
+import io.harness.batch.processing.cloudevents.aws.ecs.service.util.ClusterIdAndServiceArn;
+import io.harness.batch.processing.cloudevents.aws.ecs.service.util.ECSUtilizationData;
 import io.harness.ccm.commons.beans.InstanceType;
 import io.harness.ccm.commons.constants.InstanceMetaDataConstants;
 import io.harness.ccm.commons.entities.batch.InstanceData;
@@ -26,6 +28,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Timestamp;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -50,6 +53,10 @@ public class UtilizationDataServiceImpl {
       "INSERT INTO UTILIZATION_DATA (STARTTIME, ENDTIME, ACCOUNTID, MAXCPU, MAXMEMORY, AVGCPU, AVGMEMORY, INSTANCEID, INSTANCETYPE, CLUSTERID, SETTINGID, MAXCPUVALUE, MAXMEMORYVALUE, AVGCPUVALUE, AVGMEMORYVALUE, AVGSTORAGECAPACITYVALUE, AVGSTORAGEUSAGEVALUE, AVGSTORAGEREQUESTVALUE, MAXSTORAGEUSAGEVALUE, MAXSTORAGEREQUESTVALUE) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT DO NOTHING";
   private static final String UTILIZATION_DATA_QUERY =
       "SELECT MAX(MAXCPU) as MAXCPUUTILIZATION, MAX(MAXMEMORY) as MAXMEMORYUTILIZATION, AVG(AVGCPU) as AVGCPUUTILIZATION, AVG(AVGMEMORY) as AVGMEMORYUTILIZATION, MAX(MAXCPUVALUE) as MAXCPUVALUE, MAX(MAXMEMORYVALUE) as MAXMEMORYVALUE, AVG(AVGCPUVALUE) as AVGCPUVALUE, AVG(AVGMEMORYVALUE) as AVGMEMORYVALUE, AVG(AVGSTORAGECAPACITYVALUE) as AVGSTORAGECAPACITYVALUE ,AVG(AVGSTORAGEUSAGEVALUE) as AVGSTORAGEUSAGEVALUE, AVG(AVGSTORAGEREQUESTVALUE) as AVGSTORAGEREQUESTVALUE ,MAX(MAXSTORAGEUSAGEVALUE) as MAXSTORAGEUSAGEVALUE, MAX(MAXSTORAGEREQUESTVALUE) as MAXSTORAGEREQUESTVALUE, INSTANCEID FROM UTILIZATION_DATA WHERE ACCOUNTID = '%s' AND SETTINGID = '%s' AND CLUSTERID = '%s' AND INSTANCEID IN ('%s') AND STARTTIME >= '%s' AND STARTTIME < '%s' GROUP BY INSTANCEID;";
+  private static final String UTILIZATION_DATA_QUERY_BY_CLUSTER_IDS =
+      "SELECT INSTANCEID AS SERVICEID, CLUSTERID, MAX(MAXCPU) as MAXCPUUTILIZATION, MAX(MAXMEMORY) as MAXMEMORYUTILIZATION, STARTTIME, ENDTIME FROM UTILIZATION_DATA WHERE ACCOUNTID = '%s' AND CLUSTERID IN ('%s') AND STARTTIME >= '%s' AND STARTTIME < '%s' GROUP BY CLUSTERID, INSTANCEID, STARTTIME, ENDTIME ORDER BY STARTTIME ASC;";
+  private static final String UTILIZATION_DATA_PURGE_QUERY =
+      "SELECT drop_chunks('utilization_data', interval '90 days')";
 
   public boolean create(List<InstanceUtilizationData> instanceUtilizationDataList) {
     boolean successfulInsert = false;
@@ -117,6 +124,55 @@ public class UtilizationDataServiceImpl {
         return getUtilizationDataFromTimescaleDB(query, serviceArnToInstanceIds);
       } else {
         throw new InvalidRequestException("Cannot process request in InstanceBillingDataTasklet");
+      }
+    } catch (Exception e) {
+      throw new InvalidRequestException("Error while fetching utilization data {}", e);
+    }
+  }
+
+  public Map<ClusterIdAndServiceArn, List<ECSUtilizationData>> getUtilizationDataForECSClusters(
+      String accountId, List<String> clusterIds, String startTime, String endTime) {
+    try {
+      if (timeScaleDBService.isValid()) {
+        String query = String.format(
+            UTILIZATION_DATA_QUERY_BY_CLUSTER_IDS, accountId, String.join("','", clusterIds), startTime, endTime);
+        ResultSet resultSet = null;
+        Map<ClusterIdAndServiceArn, List<ECSUtilizationData>> utilizationDataMap = new HashMap<>();
+        int retryCount = 0;
+        while (retryCount < SELECT_MAX_RETRY_COUNT) {
+          retryCount++;
+          try (Connection connection = timeScaleDBService.getDBConnection();
+               Statement statement = connection.createStatement()) {
+            resultSet = statement.executeQuery(query);
+            while (resultSet.next()) {
+              String clusterId = resultSet.getString("CLUSTERID");
+              String serviceId = resultSet.getString("SERVICEID");
+              double maxCpuUtilization = resultSet.getDouble("MAXCPUUTILIZATION");
+              double maxMemoryUtilization = resultSet.getDouble("MAXMEMORYUTILIZATION");
+              Instant utilStartTime = resultSet.getTimestamp("STARTTIME").toInstant();
+              Instant utilEndTime = resultSet.getTimestamp("ENDTIME").toInstant();
+              ClusterIdAndServiceArn clusterIdAndServiceArn = new ClusterIdAndServiceArn(clusterId, serviceId);
+              if (!utilizationDataMap.containsKey(clusterIdAndServiceArn)) {
+                utilizationDataMap.put(clusterIdAndServiceArn, new ArrayList<>());
+              }
+              utilizationDataMap.get(clusterIdAndServiceArn)
+                  .add(ECSUtilizationData.builder()
+                           .maxCpuUtilization(maxCpuUtilization)
+                           .maxMemoryUtilization(maxMemoryUtilization)
+                           .startTime(utilStartTime)
+                           .endTime(utilEndTime)
+                           .build());
+            }
+            return utilizationDataMap;
+          } catch (SQLException e) {
+            log.error("Error while fetching utilization data : exception", e);
+          } finally {
+            DBUtils.close(resultSet);
+          }
+        }
+        return null;
+      } else {
+        throw new InvalidRequestException("Cannot process request in ECS Recommendation");
       }
     } catch (Exception e) {
       throw new InvalidRequestException("Error while fetching utilization data {}", e);
@@ -202,6 +258,29 @@ public class UtilizationDataServiceImpl {
       instanceIds.computeIfAbsent(utilInstanceId, k -> new ArrayList<>()).add(instanceId);
     });
     return instanceIds;
+  }
+
+  public boolean purgeUtilisationData() {
+    log.info("Purging old {} data !!", UTILIZATION_DATA_PURGE_QUERY);
+    return executeQuery(UTILIZATION_DATA_PURGE_QUERY);
+  }
+
+  private boolean executeQuery(String query) {
+    boolean result = false;
+    if (timeScaleDBService.isValid()) {
+      int retryCount = 0;
+      while (retryCount < MAX_RETRY_COUNT && !result) {
+        try (Connection connection = timeScaleDBService.getDBConnection();
+             Statement statement = connection.createStatement()) {
+          statement.execute(query);
+          result = true;
+        } catch (SQLException e) {
+          log.error("Failed to execute query=[{}]", query, e);
+          retryCount++;
+        }
+      }
+    }
+    return result;
   }
 
   private String getValueForKeyFromInstanceMetaData(String metaDataKey, InstanceData instanceData) {

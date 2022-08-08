@@ -48,6 +48,9 @@ public class Anomalies implements Serializable {
   private Boolean slackinstantnotification;
   private Boolean slackweeklynotification;
   private Boolean newentity;
+  private String azuresubscriptionguid;
+  private String azureresourcegroup;
+  private String azuremetercategory;
 
   public Anomalies() {}
 
@@ -80,6 +83,9 @@ public class Anomalies implements Serializable {
     this.slackinstantnotification = value.slackinstantnotification;
     this.slackweeklynotification = value.slackweeklynotification;
     this.newentity = value.newentity;
+    this.azuresubscriptionguid = value.azuresubscriptionguid;
+    this.azureresourcegroup = value.azureresourcegroup;
+    this.azuremetercategory = value.azuremetercategory;
   }
 
   public Anomalies(String id, String accountid, Double actualcost, Double expectedcost, OffsetDateTime anomalytime,
@@ -87,7 +93,8 @@ public class Anomalies implements Serializable {
       String workloadtype, String namespace, String region, String gcpproduct, String gcpskuid,
       String gcpskudescription, String gcpproject, String awsservice, String awsaccount, String awsinstancetype,
       String awsusagetype, Double anomalyscore, String reportedby, String feedback, Boolean slackdailynotification,
-      Boolean slackinstantnotification, Boolean slackweeklynotification, Boolean newentity) {
+      Boolean slackinstantnotification, Boolean slackweeklynotification, Boolean newentity,
+      String azuresubscriptionguid, String azureresourcegroup, String azuremetercategory) {
     this.id = id;
     this.accountid = accountid;
     this.actualcost = actualcost;
@@ -116,6 +123,9 @@ public class Anomalies implements Serializable {
     this.slackinstantnotification = slackinstantnotification;
     this.slackweeklynotification = slackweeklynotification;
     this.newentity = newentity;
+    this.azuresubscriptionguid = azuresubscriptionguid;
+    this.azureresourcegroup = azureresourcegroup;
+    this.azuremetercategory = azuremetercategory;
   }
 
   /**
@@ -538,6 +548,51 @@ public class Anomalies implements Serializable {
     return this;
   }
 
+  /**
+   * Getter for <code>public.anomalies.azuresubscriptionguid</code>.
+   */
+  public String getAzuresubscriptionguid() {
+    return this.azuresubscriptionguid;
+  }
+
+  /**
+   * Setter for <code>public.anomalies.azuresubscriptionguid</code>.
+   */
+  public Anomalies setAzuresubscriptionguid(String azuresubscriptionguid) {
+    this.azuresubscriptionguid = azuresubscriptionguid;
+    return this;
+  }
+
+  /**
+   * Getter for <code>public.anomalies.azureresourcegroup</code>.
+   */
+  public String getAzureresourcegroup() {
+    return this.azureresourcegroup;
+  }
+
+  /**
+   * Setter for <code>public.anomalies.azureresourcegroup</code>.
+   */
+  public Anomalies setAzureresourcegroup(String azureresourcegroup) {
+    this.azureresourcegroup = azureresourcegroup;
+    return this;
+  }
+
+  /**
+   * Getter for <code>public.anomalies.azuremetercategory</code>.
+   */
+  public String getAzuremetercategory() {
+    return this.azuremetercategory;
+  }
+
+  /**
+   * Setter for <code>public.anomalies.azuremetercategory</code>.
+   */
+  public Anomalies setAzuremetercategory(String azuremetercategory) {
+    this.azuremetercategory = azuremetercategory;
+    return this;
+  }
+
   @Override
   public boolean equals(Object obj) {
     if (this == obj)
@@ -687,6 +742,21 @@ public class Anomalies implements Serializable {
         return false;
     } else if (!newentity.equals(other.newentity))
       return false;
+    if (azuresubscriptionguid == null) {
+      if (other.azuresubscriptionguid != null)
+        return false;
+    } else if (!azuresubscriptionguid.equals(other.azuresubscriptionguid))
+      return false;
+    if (azureresourcegroup == null) {
+      if (other.azureresourcegroup != null)
+        return false;
+    } else if (!azureresourcegroup.equals(other.azureresourcegroup))
+      return false;
+    if (azuremetercategory == null) {
+      if (other.azuremetercategory != null)
+        return false;
+    } else if (!azuremetercategory.equals(other.azuremetercategory))
+      return false;
     return true;
   }
 
@@ -722,6 +792,9 @@ public class Anomalies implements Serializable {
     result = prime * result + ((this.slackinstantnotification == null) ? 0 : this.slackinstantnotification.hashCode());
     result = prime * result + ((this.slackweeklynotification == null) ? 0 : this.slackweeklynotification.hashCode());
     result = prime * result + ((this.newentity == null) ? 0 : this.newentity.hashCode());
+    result = prime * result + ((this.azuresubscriptionguid == null) ? 0 : this.azuresubscriptionguid.hashCode());
+    result = prime * result + ((this.azureresourcegroup == null) ? 0 : this.azureresourcegroup.hashCode());
+    result = prime * result + ((this.azuremetercategory == null) ? 0 : this.azuremetercategory.hashCode());
     return result;
   }
 
@@ -757,6 +830,9 @@ public class Anomalies implements Serializable {
     sb.append(", ").append(slackinstantnotification);
     sb.append(", ").append(slackweeklynotification);
     sb.append(", ").append(newentity);
+    sb.append(", ").append(azuresubscriptionguid);
+    sb.append(", ").append(azureresourcegroup);
+    sb.append(", ").append(azuremetercategory);
 
     sb.append(")");
     return sb.toString();

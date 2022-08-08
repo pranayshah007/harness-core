@@ -56,6 +56,7 @@ import software.wings.service.intfc.AccountService;
 import software.wings.service.intfc.ApiKeyService;
 import software.wings.service.intfc.AuthService;
 import software.wings.service.intfc.UserGroupService;
+import software.wings.service.intfc.UserService;
 import software.wings.utils.CryptoUtils;
 
 import com.google.common.base.Charsets;
@@ -94,6 +95,7 @@ public class ApiKeyServiceImpl implements ApiKeyService {
   @Inject private AuthService authService;
   @Inject private ExecutorService executorService;
   @Inject private AuditServiceHelper auditServiceHelper;
+  @Inject private UserService userService;
 
   private static String DELIMITER = "::";
 
@@ -122,7 +124,7 @@ public class ApiKeyServiceImpl implements ApiKeyService {
             .build();
     String id = duplicateCheck(
         () -> wingsPersistence.save(apiKeyEntryToBeSaved), ApiKeyEntryKeys.name, apiKeyEntryToBeSaved.getName());
-    auditServiceHelper.reportForAuditingUsingAccountId(accountId, null, apiKeyEntry, Type.CREATE);
+    auditServiceHelper.reportForAuditingUsingAccountId(accountId, null, apiKeyEntryToBeSaved, Type.CREATE);
     return get(id, accountId);
   }
 
@@ -151,7 +153,7 @@ public class ApiKeyServiceImpl implements ApiKeyService {
     if (!same) {
       evictApiKeyAndRebuildCache(apiKeyEntryAfterUpdate.getDecryptedKey(), accountId, true);
     }
-    auditServiceHelper.reportForAuditingUsingAccountId(accountId, null, apiKeyEntry, Type.UPDATE);
+    auditServiceHelper.reportForAuditingUsingAccountId(accountId, null, apiKeyEntryAfterUpdate, Type.UPDATE);
     return apiKeyEntryAfterUpdate;
   }
 
@@ -163,9 +165,9 @@ public class ApiKeyServiceImpl implements ApiKeyService {
 
   private void evictApiKeyAndRebuildCache(String apiKey, String accountId, boolean rebuild) {
     log.info("Evicting cache for api key [{}], accountId: [{}]", apiKey, accountId);
-    boolean apiKeyPresent = apiKeyCache.remove(apiKey);
-    boolean apiKeyPresentInPermissions = apiKeyPermissionInfoCache.remove(apiKey);
-    boolean apiKeyPresentInRestrictions = apiKeyRestrictionInfoCache.remove(apiKey);
+    boolean apiKeyPresent = apiKeyCache.remove(getKeyForAPIKeyCache(accountId, apiKey));
+    boolean apiKeyPresentInPermissions = apiKeyPermissionInfoCache.remove(getKeyForAPIKeyCache(accountId, apiKey));
+    boolean apiKeyPresentInRestrictions = apiKeyRestrictionInfoCache.remove(getKeyForAPIKeyCache(accountId, apiKey));
 
     if (rebuild) {
       executorService.submit(() -> {
@@ -330,18 +332,19 @@ public class ApiKeyServiceImpl implements ApiKeyService {
     } else {
       ApiKeyEntry apiKeyEntry;
       try {
-        apiKeyEntry = apiKeyCache.get(apiKey);
+        apiKeyEntry = apiKeyCache.get(getKeyForAPIKeyCache(accountId, apiKey));
         if (apiKeyEntry == null) {
           apiKeyEntry = getByKeyFromDB(apiKey, accountId, details);
           notNullCheck("Api-key does not exist", apiKeyEntry, USER);
-          apiKeyCache.put(apiKeyEntry.getDecryptedKey(), apiKeyEntry);
+          apiKeyCache.put(getKeyForAPIKeyCache(accountId, apiKeyEntry.getDecryptedKey()), apiKeyEntry);
         }
       } catch (Exception ex) {
         // If there was any exception, remove that entry from cache
-        apiKeyCache.remove(apiKey);
+        log.error("Exception while fetching the apiKeyEntry from cache", ex);
+        apiKeyCache.remove(getKeyForAPIKeyCache(accountId, apiKey));
         apiKeyEntry = getByKeyFromDB(apiKey, accountId, details);
         if (apiKeyEntry != null) {
-          apiKeyCache.put(apiKeyEntry.getDecryptedKey(), apiKeyEntry);
+          apiKeyCache.put(getKeyForAPIKeyCache(accountId, apiKeyEntry.getDecryptedKey()), apiKeyEntry);
         }
       }
       return apiKeyEntry;
@@ -357,18 +360,35 @@ public class ApiKeyServiceImpl implements ApiKeyService {
     } else {
       UserPermissionInfo apiKeyPermissionInfo;
       try {
-        apiKeyPermissionInfo = apiKeyPermissionInfoCache.get(apiKey);
+        apiKeyPermissionInfo = apiKeyPermissionInfoCache.get(getKeyForAPIKeyCache(accountId, apiKey));
         if (apiKeyPermissionInfo == null) {
           apiKeyPermissionInfo = authHandler.evaluateUserPermissionInfo(accountId, apiKeyEntry.getUserGroups(), null);
-          apiKeyPermissionInfoCache.put(apiKey, apiKeyPermissionInfo);
+          logApiKeyPermissions(apiKeyPermissionInfo);
+          apiKeyPermissionInfoCache.put(getKeyForAPIKeyCache(accountId, apiKey), apiKeyPermissionInfo);
         }
       } catch (Exception ex) {
         // If there was any exception, remove that entry from cache
-        apiKeyPermissionInfoCache.remove(apiKey);
+        log.info("Encountered exception while getting api key permissions for the accountId [{}]", accountId);
+        apiKeyPermissionInfoCache.remove(getKeyForAPIKeyCache(accountId, apiKey));
         apiKeyPermissionInfo = authHandler.evaluateUserPermissionInfo(accountId, apiKeyEntry.getUserGroups(), null);
-        apiKeyPermissionInfoCache.put(apiKey, apiKeyPermissionInfo);
+        logApiKeyPermissions(apiKeyPermissionInfo);
+        apiKeyPermissionInfoCache.put(getKeyForAPIKeyCache(accountId, apiKey), apiKeyPermissionInfo);
       }
       return apiKeyPermissionInfo;
+    }
+  }
+
+  private void logApiKeyPermissions(UserPermissionInfo apiKeyPermissionInfo) {
+    try {
+      if (apiKeyPermissionInfo.getAppPermissionMap().isEmpty()) {
+        log.error("Api key app permission map is empty");
+      }
+      if (apiKeyPermissionInfo.getAccountPermissionSummary() == null
+          || apiKeyPermissionInfo.getAccountPermissionSummary().getPermissions().isEmpty()) {
+        log.error("Api key account permission set is empty");
+      }
+    } catch (Exception e) {
+      log.error("Exception while getting account permission set", e);
     }
   }
 
@@ -382,18 +402,19 @@ public class ApiKeyServiceImpl implements ApiKeyService {
     } else {
       UserRestrictionInfo apiKeyPermissionInfo;
       try {
-        apiKeyPermissionInfo = apiKeyRestrictionInfoCache.get(apiKey);
+        apiKeyPermissionInfo = apiKeyRestrictionInfoCache.get(getKeyForAPIKeyCache(accountId, apiKey));
         if (apiKeyPermissionInfo == null) {
           apiKeyPermissionInfo =
               authService.getUserRestrictionInfoFromDB(accountId, userPermissionInfo, apiKeyEntry.getUserGroups());
-          apiKeyRestrictionInfoCache.put(apiKey, apiKeyPermissionInfo);
+          apiKeyRestrictionInfoCache.put(getKeyForAPIKeyCache(accountId, apiKey), apiKeyPermissionInfo);
         }
       } catch (Exception ex) {
         // If there was any exception, remove that entry from cache
-        apiKeyRestrictionInfoCache.remove(apiKey);
+        log.info("Encountered exception while getting api key restrictions for the accountId [{}]", accountId);
+        apiKeyRestrictionInfoCache.remove(getKeyForAPIKeyCache(accountId, apiKey));
         apiKeyPermissionInfo =
             authService.getUserRestrictionInfoFromDB(accountId, userPermissionInfo, apiKeyEntry.getUserGroups());
-        apiKeyRestrictionInfoCache.put(apiKey, apiKeyPermissionInfo);
+        apiKeyRestrictionInfoCache.put(getKeyForAPIKeyCache(accountId, apiKey), apiKeyPermissionInfo);
       }
       return apiKeyPermissionInfo;
     }
@@ -421,7 +442,7 @@ public class ApiKeyServiceImpl implements ApiKeyService {
 
     apiKeyEntryList.forEach(apiKeyEntry -> {
       String apiKey = apiKeyEntry.getDecryptedKey();
-      boolean hasPermissions = apiKeyPermissionInfoCache.remove(apiKey);
+      boolean hasPermissions = apiKeyPermissionInfoCache.remove(getKeyForAPIKeyCache(accountId, apiKey));
       if (hasPermissions) {
         keys.add(apiKey);
       }
@@ -468,6 +489,10 @@ public class ApiKeyServiceImpl implements ApiKeyService {
     // Load cache again
     UserPermissionInfo permissions = getApiKeyPermissions(apiKeyEntry, accountId);
     getApiKeyRestrictions(apiKeyEntry, permissions, accountId);
+  }
+
+  private String getKeyForAPIKeyCache(final String accountId, final String apiKey) {
+    return accountId + apiKey;
   }
 
   @Override

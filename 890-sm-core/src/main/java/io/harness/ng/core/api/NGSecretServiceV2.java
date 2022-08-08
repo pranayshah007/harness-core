@@ -15,6 +15,8 @@ import io.harness.ng.core.models.Secret;
 import io.harness.ng.core.remote.SecretValidationMetaData;
 import io.harness.ng.core.remote.SecretValidationResultDTO;
 
+import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -37,5 +39,9 @@ public interface NGSecretServiceV2 {
 
   long count(String accountIdentifier, String orgIdentifier, String projectIdentifier);
 
-  Page<Secret> list(Criteria criteria, int page, int size);
+  Page<Secret> list(Criteria criteria);
+
+  List<Secret> getPermitted(Collection<Secret> secrets);
+
+  Page<Secret> list(List<Secret> secrets, int page, int size);
 }

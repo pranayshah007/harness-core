@@ -27,7 +27,6 @@ import io.harness.migrations.all.AddAccountIdToResourceContraintInstanceCollecti
 import io.harness.migrations.all.AddAccountIdToServiceCommands;
 import io.harness.migrations.all.AddAccountIdToServiceInstance;
 import io.harness.migrations.all.AddAccountIdToServiceTemplates;
-import io.harness.migrations.all.AddAccountIdToServiceVariables;
 import io.harness.migrations.all.AddAccountIdToStateExecutionInstance;
 import io.harness.migrations.all.AddAccountIdToStateMachine;
 import io.harness.migrations.all.AddAccountIdToTerraformConfig;
@@ -48,16 +47,20 @@ import io.harness.migrations.all.AddAnalysisStatusMigration;
 import io.harness.migrations.all.AddAppManifestName;
 import io.harness.migrations.all.AddArtifactIdentityMigration;
 import io.harness.migrations.all.AddCeFullTrialLicenseToCurrentAccounts;
+import io.harness.migrations.all.AddClusterNameInGcpTypeInstanceMigration;
+import io.harness.migrations.all.AddDeploymentFreezeReferenceToUserGroups;
 import io.harness.migrations.all.AddEnableIteratorsToGovernanceConfig;
 import io.harness.migrations.all.AddHarnessOwnedToResourceConstraint;
 import io.harness.migrations.all.AddInfraMappingNameToInstanceData;
 import io.harness.migrations.all.AddIsDefaultFlagToUserGroup;
+import io.harness.migrations.all.AddNotificationGroupReferenceToUserGroups;
 import io.harness.migrations.all.AddOrchestrationToWorkflows;
 import io.harness.migrations.all.AddPipelinesReferenceToUserGroups;
 import io.harness.migrations.all.AddRingsToAccountMigration;
 import io.harness.migrations.all.AddStateMachineToWorkflowExecutions;
 import io.harness.migrations.all.AddValidUntilToSecretUsageLogs;
 import io.harness.migrations.all.AddValidUntilToWorkflowExecution;
+import io.harness.migrations.all.AlertCheckJobPollIntervalMigration;
 import io.harness.migrations.all.AmendCorruptedEncryptedServiceVariable;
 import io.harness.migrations.all.ApiKeysSetNameMigration;
 import io.harness.migrations.all.CDPaidLicenseToNGMigration;
@@ -83,6 +86,7 @@ import io.harness.migrations.all.DeleteInvalidArtifactStreams;
 import io.harness.migrations.all.DeleteInvalidServiceGuardConfigs;
 import io.harness.migrations.all.DeleteOrphanNotificationGroups;
 import io.harness.migrations.all.DeleteOrphanPerpetualTaskMigration;
+import io.harness.migrations.all.DeleteStaleDelegateInsightsSummaryMigration;
 import io.harness.migrations.all.DeleteStaleSlackConfigs;
 import io.harness.migrations.all.DeleteStaleThirdPartyApiCallLogsMigration;
 import io.harness.migrations.all.DeletedAccountStatusMigration;
@@ -129,9 +133,14 @@ import io.harness.migrations.all.SetEmailToIndividualMemberFlag;
 import io.harness.migrations.all.SetLastLoginTimeToAllUsers;
 import io.harness.migrations.all.TemplateLibraryYamlMigration;
 import io.harness.migrations.all.TerraformIsTemplatizedMigration;
+import io.harness.migrations.all.TimeSeriesMLScoresTTLMigration;
+import io.harness.migrations.all.TimeSeriesRiskSummaryTTLMigration;
 import io.harness.migrations.all.TimeSeriesThresholdsMigration;
 import io.harness.migrations.all.UpdateAccountEncryptionClassNames;
+import io.harness.migrations.all.UpdateCorruptedEmptyClusterNameInstanceStatsMigration;
+import io.harness.migrations.all.UpdateCorruptedInstanceStatsMigration;
 import io.harness.migrations.all.UpdateInstanceInfoWithLastArtifactIdMigration;
+import io.harness.migrations.all.UpdateNameInAwsInfrastructureMappingMigration;
 import io.harness.migrations.all.UpdateStaleDefaultAccountIds;
 import io.harness.migrations.all.UpdateWorkflowExecutionAccountId;
 import io.harness.migrations.all.UpdateWorkflowExecutionDuration;
@@ -301,7 +310,7 @@ public class MigrationBackgroundList {
         .add(Pair.of(144, BaseMigration.class))
         .add(Pair.of(145, RemoveDeletedAppIdsFromUserGroups.class))
         .add(Pair.of(146, AddAccountIdToServiceCommands.class))
-        .add(Pair.of(147, AddAccountIdToServiceVariables.class))
+        .add(Pair.of(147, BaseMigration.class))
         .add(Pair.of(148, AddCeFullTrialLicenseToCurrentAccounts.class))
         .add(Pair.of(149, AddAccountIdToServiceInstance.class))
         .add(Pair.of(150, BaseMigration.class))
@@ -372,6 +381,19 @@ public class MigrationBackgroundList {
         .add(Pair.of(215, AddPipelinesReferenceToUserGroups.class))
         .add(Pair.of(216, BaseMigration.class))
         .add(Pair.of(217, DeleteFailedNgDelegateTokenAuditsMigration.class))
+        .add(Pair.of(218, AlertCheckJobPollIntervalMigration.class))
+        .add(Pair.of(219, BaseMigration.class))
+        .add(Pair.of(220, AddNotificationGroupReferenceToUserGroups.class))
+        .add(Pair.of(221, BaseMigration.class))
+        .add(Pair.of(222, UpdateNameInAwsInfrastructureMappingMigration.class))
+        .add(Pair.of(223, BaseMigration.class))
+        .add(Pair.of(224, UpdateCorruptedInstanceStatsMigration.class))
+        .add(Pair.of(225, UpdateCorruptedEmptyClusterNameInstanceStatsMigration.class))
+        .add(Pair.of(226, AddClusterNameInGcpTypeInstanceMigration.class))
+        .add(Pair.of(227, AddDeploymentFreezeReferenceToUserGroups.class))
+        .add(Pair.of(228, DeleteStaleDelegateInsightsSummaryMigration.class))
+        .add(Pair.of(229, TimeSeriesRiskSummaryTTLMigration.class))
+        .add(Pair.of(230, TimeSeriesMLScoresTTLMigration.class))
         .build();
   }
 }

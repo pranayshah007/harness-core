@@ -7,6 +7,7 @@
 
 package io.harness.delegate.task.executioncapability;
 
+import static io.harness.delegate.clienttools.ClientTool.CHARTMUSEUM;
 import static io.harness.k8s.kubectl.Utils.encloseWithQuotesIfNeeded;
 import static io.harness.k8s.kubectl.Utils.executeCommand;
 
@@ -19,7 +20,8 @@ import io.harness.capability.CapabilitySubjectPermission.PermissionResult;
 import io.harness.delegate.beans.executioncapability.CapabilityResponse;
 import io.harness.delegate.beans.executioncapability.ChartMuseumCapability;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
-import io.harness.delegate.configuration.InstallUtils;
+import io.harness.delegate.clienttools.ChartmuseumVersion;
+import io.harness.delegate.clienttools.InstallUtils;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -28,7 +30,7 @@ public class ChartMuseumCapabilityCheck implements CapabilityCheck, ProtoCapabil
   @Override
   public CapabilityResponse performCapabilityCheck(ExecutionCapability delegateCapability) {
     ChartMuseumCapability capability = (ChartMuseumCapability) delegateCapability;
-    String chartMuseumPath = InstallUtils.getChartMuseumPath(capability.isUseLatestChartMuseumVersion());
+    String chartMuseumPath = getChartMuseumPath(capability.isUseLatestChartMuseumVersion());
     if (isBlank(chartMuseumPath)) {
       return CapabilityResponse.builder().delegateCapability(capability).validated(false).build();
     }
@@ -46,7 +48,7 @@ public class ChartMuseumCapabilityCheck implements CapabilityCheck, ProtoCapabil
     if (parameters.getCapabilityCase() != CapabilityParameters.CapabilityCase.CHART_MUSEUM_PARAMETERS) {
       return builder.permissionResult(PermissionResult.DENIED).build();
     }
-    String chartMuseumPath = InstallUtils.getChartMuseumPath(false);
+    String chartMuseumPath = getChartMuseumPath(false);
     if (isBlank(chartMuseumPath)) {
       return builder.permissionResult(PermissionResult.DENIED).build();
     }
@@ -56,5 +58,12 @@ public class ChartMuseumCapabilityCheck implements CapabilityCheck, ProtoCapabil
         .permissionResult(
             executeCommand(chartMuseumVersionCommand, 2) ? PermissionResult.ALLOWED : PermissionResult.DENIED)
         .build();
+  }
+
+  private String getChartMuseumPath(final boolean useLatestVersion) {
+    if (useLatestVersion) {
+      return InstallUtils.getLatestVersionPath(CHARTMUSEUM);
+    }
+    return InstallUtils.getPath(CHARTMUSEUM, ChartmuseumVersion.V0_8);
   }
 }

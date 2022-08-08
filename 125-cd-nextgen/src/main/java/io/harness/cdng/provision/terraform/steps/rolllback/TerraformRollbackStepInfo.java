@@ -15,6 +15,7 @@ import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
 import io.harness.cdng.pipeline.CDStepInfo;
+import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.SpecParameters;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
@@ -38,9 +39,10 @@ import lombok.experimental.FieldDefaults;
 @RecasterAlias("io.harness.cdng.provision.terraform.steps.rolllback.TerraformRollbackStepInfo")
 public class TerraformRollbackStepInfo implements CDStepInfo {
   @NotNull String provisionerIdentifier;
+
   @YamlSchemaTypes(value = {runtime})
   @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
-  ParameterField<List<String>> delegateSelectors;
+  ParameterField<List<TaskSelectorYaml>> delegateSelectors;
 
   @Override
   public StepType getStepType() {
@@ -58,5 +60,10 @@ public class TerraformRollbackStepInfo implements CDStepInfo {
         .provisionerIdentifier(this.provisionerIdentifier)
         .delegateSelectors(delegateSelectors)
         .build();
+  }
+
+  @Override
+  public ParameterField<List<TaskSelectorYaml>> fetchDelegateSelectors() {
+    return getDelegateSelectors();
   }
 }

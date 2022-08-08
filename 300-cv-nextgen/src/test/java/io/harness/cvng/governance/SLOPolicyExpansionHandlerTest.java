@@ -32,6 +32,7 @@ import io.harness.serializer.JsonUtils;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.base.Charsets;
 import com.google.inject.Inject;
+import com.google.protobuf.ByteString;
 import java.io.IOException;
 ;
 import org.apache.commons.io.IOUtils;
@@ -83,7 +84,7 @@ public class SLOPolicyExpansionHandlerTest extends CvNextGenTestBase {
             .setOrgId(builderFactory.getProjectParams().getOrgIdentifier())
             .setProjectId(builderFactory.getProjectParams().getProjectIdentifier())
             .build();
-    ExpansionResponse expansionResponse = sloPolicyExpansionHandler.expand(jsonNode, metadataProject);
+    ExpansionResponse expansionResponse = sloPolicyExpansionHandler.expand(jsonNode, metadataProject, null);
     assertThat(expansionResponse.isSuccess()).isTrue();
     assertThat(expansionResponse.getKey()).isEqualTo("sloPolicy");
     assertThat(expansionResponse.getValue().toJson()).isEqualTo(JsonUtils.asJson(sloPolicyDTO));
@@ -105,10 +106,87 @@ public class SLOPolicyExpansionHandlerTest extends CvNextGenTestBase {
             .setOrgId(builderFactory.getProjectParams().getOrgIdentifier())
             .setProjectId(builderFactory.getProjectParams().getProjectIdentifier())
             .build();
-    ExpansionResponse expansionResponse = sloPolicyExpansionHandler.expand(jsonNode, metadataProject);
+    ExpansionResponse expansionResponse = sloPolicyExpansionHandler.expand(jsonNode, metadataProject, null);
     assertThat(expansionResponse.isSuccess()).isTrue();
     assertThat(expansionResponse.getKey()).isEqualTo("sloPolicy");
     assertThat(expansionResponse.getValue().toJson()).isEqualTo(JsonUtils.asJson(sloPolicyDTO));
     assertThat(expansionResponse.getPlacement()).isEqualTo(ExpansionPlacementStrategy.APPEND);
+  }
+
+  @Test
+  @Owner(developers = DEEPAK_CHHIKARA)
+  @Category(UnitTests.class)
+  public void testExpand_withFromStage() throws IOException {
+    SLOPolicyDTO sloPolicyDTO = SLOPolicyDTO.builder()
+                                    .sloErrorBudgetRemainingPercentage(100D)
+                                    .statusOfMonitoredService(MonitoredServiceStatus.CONFIGURED)
+                                    .build();
+    final String stageYaml = IOUtils.resourceToString(
+        "governance/SLOPolicyExpansionHandlerFromStage.json", Charsets.UTF_8, this.getClass().getClassLoader());
+    JsonNode jsonNode = JsonUtils.asObject(stageYaml, JsonNode.class);
+    final String pipelineYaml = IOUtils.resourceToString(
+        "governance/SLOPolicyExpansionHandlerFromStagePipeline.yaml", Charsets.UTF_8, this.getClass().getClassLoader());
+    ExpansionRequestMetadata metadataProject =
+        ExpansionRequestMetadata.newBuilder()
+            .setAccountId(builderFactory.getProjectParams().getAccountIdentifier())
+            .setOrgId(builderFactory.getProjectParams().getOrgIdentifier())
+            .setProjectId(builderFactory.getProjectParams().getProjectIdentifier())
+            .setYaml(ByteString.copyFromUtf8(pipelineYaml))
+            .build();
+    ExpansionResponse expansionResponse = sloPolicyExpansionHandler.expand(jsonNode, metadataProject, null);
+    assertThat(expansionResponse.isSuccess()).isTrue();
+    assertThat(expansionResponse.getKey()).isEqualTo("sloPolicy");
+    assertThat(expansionResponse.getValue().toJson()).isEqualTo(JsonUtils.asJson(sloPolicyDTO));
+    assertThat(expansionResponse.getPlacement()).isEqualTo(ExpansionPlacementStrategy.APPEND);
+  }
+
+  @Test
+  @Owner(developers = DEEPAK_CHHIKARA)
+  @Category(UnitTests.class)
+  public void testExpand_withServiceIdentifier() throws IOException {
+    SLOPolicyDTO sloPolicyDTO = SLOPolicyDTO.builder()
+                                    .sloErrorBudgetRemainingPercentage(100D)
+                                    .statusOfMonitoredService(MonitoredServiceStatus.CONFIGURED)
+                                    .build();
+    final String stageYaml = IOUtils.resourceToString(
+        "governance/SLOPolicyExpansionHandlerServiceIdentifier.json", Charsets.UTF_8, this.getClass().getClassLoader());
+    JsonNode jsonNode = JsonUtils.asObject(stageYaml, JsonNode.class);
+    final String pipelineYaml = IOUtils.resourceToString(
+        "governance/SLOPolicyExpansionHandlerFromStagePipeline.yaml", Charsets.UTF_8, this.getClass().getClassLoader());
+    ExpansionRequestMetadata metadataProject =
+        ExpansionRequestMetadata.newBuilder()
+            .setAccountId(builderFactory.getProjectParams().getAccountIdentifier())
+            .setOrgId(builderFactory.getProjectParams().getOrgIdentifier())
+            .setProjectId(builderFactory.getProjectParams().getProjectIdentifier())
+            .setYaml(ByteString.copyFromUtf8(pipelineYaml))
+            .build();
+    ExpansionResponse expansionResponse = sloPolicyExpansionHandler.expand(jsonNode, metadataProject, null);
+    assertThat(expansionResponse.isSuccess()).isTrue();
+    assertThat(expansionResponse.getKey()).isEqualTo("sloPolicy");
+    assertThat(expansionResponse.getValue().toJson()).isEqualTo(JsonUtils.asJson(sloPolicyDTO));
+    assertThat(expansionResponse.getPlacement()).isEqualTo(ExpansionPlacementStrategy.APPEND);
+  }
+
+  @Test(expected = IllegalStateException.class)
+  @Owner(developers = DEEPAK_CHHIKARA)
+  @Category(UnitTests.class)
+  public void testExpand_withoutFromStage() throws IOException {
+    SLOPolicyDTO sloPolicyDTO = SLOPolicyDTO.builder()
+                                    .sloErrorBudgetRemainingPercentage(100D)
+                                    .statusOfMonitoredService(MonitoredServiceStatus.CONFIGURED)
+                                    .build();
+    final String stageYaml = IOUtils.resourceToString(
+        "governance/SLOPolicyExpansionHandlerInValidStage.json", Charsets.UTF_8, this.getClass().getClassLoader());
+    JsonNode jsonNode = JsonUtils.asObject(stageYaml, JsonNode.class);
+    final String pipelineYaml = IOUtils.resourceToString(
+        "governance/SLOPolicyExpansionHandlerFromStagePipeline.yaml", Charsets.UTF_8, this.getClass().getClassLoader());
+    ExpansionRequestMetadata metadataProject =
+        ExpansionRequestMetadata.newBuilder()
+            .setAccountId(builderFactory.getProjectParams().getAccountIdentifier())
+            .setOrgId(builderFactory.getProjectParams().getOrgIdentifier())
+            .setProjectId(builderFactory.getProjectParams().getProjectIdentifier())
+            .setYaml(ByteString.copyFromUtf8(pipelineYaml))
+            .build();
+    ExpansionResponse expansionResponse = sloPolicyExpansionHandler.expand(jsonNode, metadataProject, null);
   }
 }

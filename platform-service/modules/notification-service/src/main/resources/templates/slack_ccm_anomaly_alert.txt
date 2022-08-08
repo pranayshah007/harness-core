@@ -1,0 +1,38 @@
+{
+	"blocks": [
+		{
+			"type": "section",
+			"text": {
+				"type": "mrkdwn",
+				"text": ":bell: ${count_of_anomalies} Cost Anomalies detected today (${date}) in the Perspective ${perspective_name} by Harness."
+			}
+		},
+		{
+			"type": "section",
+			"text": {
+				"type": "mrkdwn",
+				"text": "${count_of_anomalies} Cost Anomalies:"
+			}
+		},
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": "${anomalies_details}"
+             }
+        },
+        {
+            "type": "actions",
+            "elements": [
+                {
+                    "type": "button",
+                    "text": {
+                        "type": "plain_text",
+                        "text": "View Perspective"
+                    },
+                    "url": "${perspective_url}"
+                }
+            ]
+        }
+	]
+}

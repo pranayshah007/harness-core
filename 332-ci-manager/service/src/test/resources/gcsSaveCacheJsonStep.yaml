@@ -1,0 +1,247 @@
+{
+  "pipeline": {
+    "identifier": "cipipelinecL8M1zbzFM",
+    "name": "pipeline with successful gcs save and restore cache",
+    "description": "fd",
+    "stages": [
+      {
+        "stage": {
+          "identifier": "gcs_save_cache",
+          "name": "gcs save cache",
+          "type": "CI",
+          "variables": [
+            {
+              "name": "GCP_SECRET_KEY",
+              "type": "Secret",
+              "value": "account.testCISecretE5DneLo9eJ",
+              "__uuid": "ocU7SPYDT8CNrCUa7PvSbA"
+            }
+          ],
+          "spec": {
+            "sharedPaths": [
+              "/.config",
+              "/.gsutil"
+            ],
+            "execution": {
+              "steps": [
+                {
+                  "step": {
+                    "identifier": "saveCacheTar",
+                    "name": "save cache",
+                    "type": "SaveCacheGCS",
+                    "spec": {
+                      "bucket": "harness-gcs-cache-tar1",
+                      "sourcePaths": [
+                        "src/main/resources"
+                      ],
+                      "key": "cache-tar",
+                      "connectorRef": "account.testGCPConnectorMTaWo3gtMf",
+                      "archiveFormat": "Tar",
+                      "__uuid": "w28j67aiTzGgfwKduaRV_w"
+                    },
+                    "__uuid": "3sMrKp9xQImoaZv1idR24g"
+                  },
+                  "__uuid": "0UTXZ7Q_S9ab7Vu50zo51Q"
+                },
+                {
+                  "step": {
+                    "identifier": "saveCacheGzip",
+                    "name": "save cache",
+                    "type": "SaveCacheGCS",
+                    "spec": {
+                      "bucket": "harness-gcs-cache-gzip1",
+                      "sourcePaths": [
+                        "src/main/java"
+                      ],
+                      "key": "cache-gzip",
+                      "connectorRef": "account.testGCPConnectorMTaWo3gtMf",
+                      "archiveFormat": "Gzip",
+                      "__uuid": "t6852eQtSfaYDVK_3TvRIw"
+                    },
+                    "__uuid": "UixOdaPFQSGyXvogLpmgmQ"
+                  },
+                  "__uuid": "B_yhJjwHRjSXTytsIrN97A"
+                },
+                {
+                  "step": {
+                    "identifier": "saveCachePlain",
+                    "name": "save cache",
+                    "type": "SaveCacheGCS",
+                    "spec": {
+                      "bucket": "harness-gcs-cache-plain1",
+                      "sourcePaths": [
+                        "pom.xml",
+                        "Dockerfile"
+                      ],
+                      "key": "cache-plain",
+                      "connectorRef": "account.testGCPConnectorMTaWo3gtMf",
+                      "__uuid": "MDg31Q1nS1iuP_zD2H6FLA"
+                    },
+                    "__uuid": "0LMfGfeRT0isyCuePHFSog"
+                  },
+                  "__uuid": "pa_dtVAVTYSqrA90ghPndA"
+                }
+              ],
+              "__uuid": "J5V0xd6ATpClyATJx5d3Xg"
+            },
+            "infrastructure": {
+              "type": "KubernetesDirect",
+              "spec": {
+                "connectorRef": "account.CItestK8sConnectorCMs0vdKHun",
+                "namespace": "harness-qa-delegate",
+                "__uuid": "LQziVyYVQiq6NtyWnYu3ew"
+              },
+              "__uuid": "a82wvWheSzKMdm51psdL4w"
+            },
+            "cloneCodebase": true,
+            "__uuid": "IXNhZ6_ZRv2WoCO6vvuiJg"
+          },
+          "__uuid": "fKt6u1mWTPu2rWkC7iIwMw"
+        },
+        "__uuid": "qDKbdhxVRmCluiiIOyb8VA"
+      },
+      {
+        "stage": {
+          "identifier": "gcs_restore_cache",
+          "name": "gcs restore cache",
+          "type": "CI",
+          "variables": [
+            {
+              "name": "GCP_SECRET_KEY",
+              "type": "Secret",
+              "value": "account.testCISecretE5DneLo9eJ",
+              "__uuid": "Nx1neKo2QGOPkTGz9MJ2Pg"
+            }
+          ],
+          "spec": {
+            "sharedPaths": [
+              "/.config",
+              "/.gsutil"
+            ],
+            "execution": {
+              "steps": [
+                {
+                  "step": {
+                    "identifier": "restoreCacheTar",
+                    "name": "restore cache",
+                    "type": "RestoreCacheGCS",
+                    "spec": {
+                      "connectorRef": "account.testGCPConnectorMTaWo3gtMf",
+                      "bucket": "harness-gcs-cache-tar1",
+                      "key": "cache-tar",
+                      "failIfKeyNotFound": true,
+                      "archiveFormat": "Tar",
+                      "__uuid": "aUUGhmTiQ0qbPL8qGKQSlQ"
+                    },
+                    "__uuid": "wpFBKpxSQVqKbKt5xF2c3w"
+                  },
+                  "__uuid": "oLxHlqoXR6GxZWgenguNTA"
+                },
+                {
+                  "step": {
+                    "identifier": "restoreCacheGzip",
+                    "name": "restore cache gzip",
+                    "type": "RestoreCacheGCS",
+                    "spec": {
+                      "connectorRef": "account.testGCPConnectorMTaWo3gtMf",
+                      "bucket": "harness-gcs-cache-gzip1",
+                      "key": "cache-gzip",
+                      "failIfKeyNotFound": true,
+                      "archiveFormat": "Gzip",
+                      "__uuid": "khkCKsInQW2ccttzyG1aDA"
+                    },
+                    "__uuid": "w8CZUddiS9i8tafykD2jkg"
+                  },
+                  "__uuid": "lXMANvObTii4rV5wc3KZuQ"
+                },
+                {
+                  "step": {
+                    "identifier": "restoreCachePlain",
+                    "name": "restore cache plain",
+                    "type": "RestoreCacheGCS",
+                    "spec": {
+                      "connectorRef": "account.testGCPConnectorMTaWo3gtMf",
+                      "bucket": "harness-gcs-cache-plain1",
+                      "key": "cache-plain",
+                      "failIfKeyNotFound": true,
+                      "__uuid": "iyIMNHB2TmucZWeMHnHUBA"
+                    },
+                    "__uuid": "TsM7MxZjQLaF0mcYrU7AXw"
+                  },
+                  "__uuid": "z4Z3YKPPRi-BODI8xsiQEQ"
+                },
+                {
+                  "step": {
+                    "identifier": "testSavedCache",
+                    "name": "test saved cache",
+                    "type": "Run",
+                    "spec": {
+                      "command": "ls src/main/java/com/blog/samples/docker/Application.java\nls src/main/resources/logback.xml\nls pom.xml\nls Dockerfile\n",
+                      "connectorRef": "account.CItestDockerConnectorLsGyi79hax",
+                      "image": "maven:3.6.3-jdk-8",
+                      "__uuid": "TXayUUuORdyM076HXQKsVQ"
+                    },
+                    "__uuid": "nNqf3Q9XTaWWyG12P6Szwg"
+                  },
+                  "__uuid": "eTBjmkbQTQCOPzxqV05-Lw"
+                },
+                {
+                  "step": {
+                    "identifier": "deleteBucket",
+                    "name": "delete bucket",
+                    "type": "Run",
+                    "spec": {
+                      "command": "echo $GCP_SECRET_KEY > secret.json\ngcloud auth activate-service-account --key-file=secret.json\necho \"Deleting the bucket\"\ngsutil rm -r gs://harness-gcs-cache-tar1\ngsutil rm -r gs://harness-gcs-cache-gzip1\ngsutil rm -r gs://harness-gcs-cache-plain1\n",
+                      "connectorRef": "account.CItestDockerConnectorLsGyi79hax",
+                      "image": "google/cloud-sdk:alpine",
+                      "__uuid": "qNs_6elyRUSjIPKB5GrBFw"
+                    },
+                    "__uuid": "QdZhLi_4QMW74TXgI_tEsQ"
+                  },
+                  "__uuid": "RI7vcdmbTei3CtUk9fYhWw"
+                }
+              ],
+              "__uuid": "oXKzO6EqTrKIUBykhrziFw"
+            },
+            "infrastructure": {
+              "type": "KubernetesDirect",
+              "spec": {
+                "connectorRef": "account.CItestK8sConnectorCMs0vdKHun",
+                "namespace": "harness-qa-delegate",
+                "__uuid": "TZ6RiWbaQOWpnFJc7-1Ulg"
+              },
+              "__uuid": "UE6o8ehZR32SVoMhdN1wRA"
+            },
+            "cloneCodebase": false,
+            "__uuid": "NTyyDNJZTnqepMGWW7-aBQ"
+          },
+          "__uuid": "krou94FhTs6xDhsQBFM6MA"
+        },
+        "__uuid": "3c81gEimToWX8RgOg95HyA"
+      }
+    ],
+    "properties": {
+      "ci": {
+        "codebase": {
+          "connectorRef": "account.CItestGitConnectorRyuuqwoikf",
+          "repoName": "springboot",
+          "build": {
+            "type": "branch",
+            "spec": {
+              "branch": "ci-automation",
+              "__uuid": "MeafFHNSRmmgubCc-JLXFw"
+            },
+            "__uuid": "gRnoBbicTHeYqCv78s-Bkg"
+          },
+          "__uuid": "9HKLR3ujQHCVadFsYM_fHA"
+        },
+        "__uuid": "o54kphC-QRuAv50emI-ivQ"
+      },
+      "__uuid": "4Z0zKQtBTgiPVMhoqTATWQ"
+    },
+    "projectIdentifier": "CITestDemoProP1PcmJEzZ5",
+    "orgIdentifier": "CITestDemoOrgUNtoIHwBY8",
+    "__uuid": "5OSZQriST16n3Y7nARiSkg"
+  },
+  "__uuid": "__WhBRZ_RD2qWWQJjwnDCg"
+}

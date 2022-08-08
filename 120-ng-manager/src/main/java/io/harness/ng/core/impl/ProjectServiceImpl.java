@@ -9,8 +9,10 @@ package io.harness.ng.core.impl;
 
 import static io.harness.NGCommonEntityConstants.MONGODB_ID;
 import static io.harness.NGConstants.DEFAULT_ORG_IDENTIFIER;
+import static io.harness.NGConstants.DEFAULT_PROJECT_IDENTIFIER;
 import static io.harness.NGConstants.DEFAULT_PROJECT_LEVEL_RESOURCE_GROUP_IDENTIFIER;
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.beans.FeatureName.HARD_DELETE_ENTITIES;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.enforcement.constants.FeatureRestrictionName.MULTIPLE_PROJECTS;
@@ -40,12 +42,15 @@ import io.harness.accesscontrol.acl.api.Resource;
 import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.beans.Scope;
 import io.harness.beans.Scope.ScopeKeys;
 import io.harness.enforcement.client.annotation.FeatureRestrictionCheck;
 import io.harness.exception.DuplicateFieldException;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
+import io.harness.ff.FeatureFlagService;
+import io.harness.gitsync.common.service.YamlGitConfigService;
 import io.harness.ng.beans.PageRequest;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.DefaultOrganization;
@@ -78,6 +83,7 @@ import io.harness.security.dto.PrincipalType;
 import io.harness.telemetry.helpers.ProjectInstrumentationHelper;
 import io.harness.utils.PageUtils;
 import io.harness.utils.ScopeUtils;
+import io.harness.utils.featureflaghelper.NGFeatureFlagHelperService;
 
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
@@ -88,7 +94,6 @@ import io.github.resilience4j.retry.RetryConfig;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -96,7 +101,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
@@ -127,12 +131,16 @@ public class ProjectServiceImpl implements ProjectService {
   private final AccessControlClient accessControlClient;
   private final ScopeAccessHelper scopeAccessHelper;
   private final ProjectInstrumentationHelper instrumentationHelper;
+  private final YamlGitConfigService yamlGitConfigService;
+  private final NGFeatureFlagHelperService ngFeatureFlagHelperService;
+  private final FeatureFlagService featureFlagService;
 
   @Inject
   public ProjectServiceImpl(ProjectRepository projectRepository, OrganizationService organizationService,
       @Named(OUTBOX_TRANSACTION_TEMPLATE) TransactionTemplate transactionTemplate, OutboxService outboxService,
       NgUserService ngUserService, AccessControlClient accessControlClient, ScopeAccessHelper scopeAccessHelper,
-      ProjectInstrumentationHelper instrumentationHelper) {
+      ProjectInstrumentationHelper instrumentationHelper, YamlGitConfigService yamlGitConfigService,
+      NGFeatureFlagHelperService ngFeatureFlagHelperService, FeatureFlagService featureFlagService) {
     this.projectRepository = projectRepository;
     this.organizationService = organizationService;
     this.transactionTemplate = transactionTemplate;
@@ -141,6 +149,9 @@ public class ProjectServiceImpl implements ProjectService {
     this.accessControlClient = accessControlClient;
     this.scopeAccessHelper = scopeAccessHelper;
     this.instrumentationHelper = instrumentationHelper;
+    this.yamlGitConfigService = yamlGitConfigService;
+    this.ngFeatureFlagHelperService = ngFeatureFlagHelperService;
+    this.featureFlagService = featureFlagService;
   }
 
   @Override
@@ -150,7 +161,7 @@ public class ProjectServiceImpl implements ProjectService {
     validateCreateProjectRequest(accountIdentifier, orgIdentifier, projectDTO);
     Project project = toProject(projectDTO);
 
-    project.setModules(Arrays.asList(ModuleType.values()));
+    project.setModules(ModuleType.getModules());
     project.setOrgIdentifier(orgIdentifier);
     project.setAccountIdentifier(accountIdentifier);
     try {
@@ -164,7 +175,7 @@ public class ProjectServiceImpl implements ProjectService {
       setupProject(Scope.of(accountIdentifier, orgIdentifier, projectDTO.getIdentifier()));
       log.info(String.format("Project with identifier %s and orgIdentifier %s was successfully created",
           project.getIdentifier(), projectDTO.getOrgIdentifier()));
-      CompletableFuture.runAsync(() -> instrumentationHelper.sendProjectCreateEvent(createdProject, accountIdentifier));
+      instrumentationHelper.sendProjectCreateEvent(createdProject, accountIdentifier);
       return createdProject;
     } catch (DuplicateKeyException ex) {
       throw new DuplicateFieldException(
@@ -175,6 +186,12 @@ public class ProjectServiceImpl implements ProjectService {
   }
 
   private void setupProject(Scope scope) {
+    if (featureFlagService.isGlobalEnabled(FeatureName.CREATE_DEFAULT_PROJECT)) {
+      if (DEFAULT_PROJECT_IDENTIFIER.equals(scope.getProjectIdentifier())) {
+        // Default project is a special case. That is handled by ng account setup service
+        return;
+      }
+    }
     String principalId = null;
     PrincipalType principalType = PrincipalType.USER;
     if (SourcePrincipalContextBuilder.getSourcePrincipal() != null
@@ -260,7 +277,7 @@ public class ProjectServiceImpl implements ProjectService {
   @DefaultOrganization
   public Optional<Project> get(
       String accountIdentifier, @OrgIdentifier String orgIdentifier, @ProjectIdentifier String projectIdentifier) {
-    return projectRepository.findByAccountIdentifierAndOrgIdentifierAndIdentifierAndDeletedNot(
+    return projectRepository.findByAccountIdentifierAndOrgIdentifierAndIdentifierIgnoreCaseAndDeletedNot(
         accountIdentifier, orgIdentifier, projectIdentifier, true);
   }
 
@@ -545,15 +562,17 @@ public class ProjectServiceImpl implements ProjectService {
     return Failsafe.with(DEFAULT_TRANSACTION_RETRY_POLICY).get(() -> transactionTemplate.execute(status -> {
       Project deletedProject = projectRepository.delete(accountIdentifier, orgIdentifier, projectIdentifier, version);
       boolean delete = deletedProject != null;
+      if (delete && ngFeatureFlagHelperService.isEnabled(accountIdentifier, HARD_DELETE_ENTITIES)) {
+        projectRepository.hardDelete(accountIdentifier, orgIdentifier, projectIdentifier, version);
+      }
 
       if (delete) {
         log.info(String.format("Project with identifier %s and orgIdentifier %s was successfully deleted",
             projectIdentifier, orgIdentifier));
+        yamlGitConfigService.deleteAll(accountIdentifier, orgIdentifier, projectIdentifier);
         outboxService.save(
             new ProjectDeleteEvent(deletedProject.getAccountIdentifier(), ProjectMapper.writeDTO(deletedProject)));
-
-        CompletableFuture.runAsync(
-            () -> instrumentationHelper.sendProjectDeleteEvent(deletedProject, accountIdentifier));
+        instrumentationHelper.sendProjectDeleteEvent(deletedProject, accountIdentifier);
       } else {
         log.error(String.format(
             "Project with identifier %s and orgIdentifier %s could not be deleted", projectIdentifier, orgIdentifier));

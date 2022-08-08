@@ -1,0 +1,132 @@
+{
+  "pipeline": {
+    "identifier": "cipipelineqEfa0l9XYj",
+    "description": "ds",
+    "name": "runtest pipeline",
+    "stages": [
+      {
+        "stage": {
+          "identifier": "run_test",
+          "name": "run test pipeline",
+          "type": "CI",
+          "spec": {
+            "execution": {
+              "steps": [
+                {
+                  "step": {
+                    "type": "RunTests",
+                    "name": "ti",
+                    "identifier": "ti",
+                    "spec": {
+                      "connectorRef": "account.CItestDockerConnectorLsGyi79hax",
+                      "image": "maven:3.8-openjdk-8",
+                      "args": " -Dmaven.repo.local=/addon test",
+                      "buildTool": "Maven",
+                      "language": "Java",
+                      "packages": "io.harness",
+                      "runOnlySelectedTests": true,
+                      "testAnnotations": "io.harness.myOwnHarnessTest",
+                      "preCommand": "export hello=$foo\necho <+stage.variables.stageVar>\necho $secret\nprintenv\n",
+                      "envVariables": {
+                        "foo": "bar",
+                        "secret": "<+stage.variables.stageVar>",
+                        "__uuid": "7Nv--kzuTzeJcRa6dmEo1w"
+                      },
+                      "outputVariables": [
+                        {
+                          "name": "hello",
+                          "__uuid": "DHZLn3_cQFyrMjBymjRmZw"
+                        }
+                      ],
+                      "reports": {
+                        "type": "JUnit",
+                        "spec": {
+                          "paths": [
+                            "**/*.xml"
+                          ],
+                          "__uuid": "Eec2A2ZjQP2RGgKLUegNZQ"
+                        },
+                        "__uuid": "ktVQ9-HZQuOs1Wi3X3N_6g"
+                      },
+                      "resources": {
+                        "limits": {
+                          "memory": "0.6Gi",
+                          "cpu": "0.5",
+                          "__uuid": "SSOUiFRQRYeNW9j5w9r6Yg"
+                        },
+                        "__uuid": "YA_fKXoQTlSdR8ZJgz_6AA"
+                      },
+                      "__uuid": "nYycifzpSBmGvoWckePJrA"
+                    },
+                    "__uuid": "gjqNDGjBQAisH3g5f9u_3A"
+                  },
+                  "__uuid": "lrIPc26_RvOvT2bmtbSLHA"
+                },
+                {
+                  "step": {
+                    "identifier": "testoutputVar",
+                    "name": "test-output-variable",
+                    "type": "Run",
+                    "spec": {
+                      "command": "y=<+steps.ti.output.outputVariables.hello>\nif [[ $y == bar ]]; then\n  echo success $y\nelse\n  exit 1\nfi\n",
+                      "connectorRef": "account.CItestDockerConnectorLsGyi79hax",
+                      "image": "alpine",
+                      "__uuid": "LwMCYk1hSm2oYU7sLLu_zA"
+                    },
+                    "__uuid": "f8EQ-oEGSoiHVmEe_Kwx_A"
+                  },
+                  "__uuid": "CUnpXIZOQQG922b7rNhd8Q"
+                }
+              ],
+              "__uuid": "y4U2T56BTbiXishrXAjQnw"
+            },
+            "infrastructure": {
+              "type": "KubernetesDirect",
+              "spec": {
+                "connectorRef": "account.CItestK8sConnectorCMs0vdKHun",
+                "namespace": "harness-qa-delegate",
+                "__uuid": "pueCIt17SLa7sd54GsZkjA"
+              },
+              "__uuid": "pvk-CGf6S8qn9kyYke7XfQ"
+            },
+            "cloneCodebase": true,
+            "__uuid": "Vdc2qNbJTA6YNj7uQgtoxA"
+          },
+          "variables": [
+            {
+              "name": "stageVar",
+              "type": "Secret",
+              "value": "account.testCISecret9eXcHQaQ6q",
+              "__uuid": "QmDPq0uGR42fJqeVFAKBHw"
+            }
+          ],
+          "__uuid": "Sj9V8g0PSAesr_Rp5IlUTQ"
+        },
+        "__uuid": "juaJmnZ8Ql65w9dn5aS89A"
+      }
+    ],
+    "properties": {
+      "ci": {
+        "codebase": {
+          "connectorRef": "account.CItestGitConnectorXNRBQiZX37",
+          "repoName": "jhttp",
+          "build": {
+            "type": "branch",
+            "spec": {
+              "branch": "master",
+              "__uuid": "2_nmdY4JTYKlne-SOed46g"
+            },
+            "__uuid": "dJJoy-suQv-4IlIDlKhE7Q"
+          },
+          "__uuid": "95-H7J6BSQ-s6skZMiB1Wg"
+        },
+        "__uuid": "tgcnYl12TZ-gwS5vUNG6FA"
+      },
+      "__uuid": "Q--J9AlHS5Oe4ZUoXkAV4Q"
+    },
+    "projectIdentifier": "CITestDemoProP1PcmJEzZ5",
+    "orgIdentifier": "CITestDemoOrgUNtoIHwBY8",
+    "__uuid": "gYWzhOh7TdCuttn7t6ffUQ"
+  },
+  "__uuid": "__WhBRZ_RD2qWWQJjwnDCg"
+}

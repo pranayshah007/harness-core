@@ -16,9 +16,11 @@ import io.harness.utils.FullyQualifiedIdentifierHelper;
 import java.util.Map;
 import lombok.Builder;
 import lombok.Data;
+import lombok.experimental.FieldNameConstants;
 
 @Data
 @Builder
+@FieldNameConstants(innerTypeName = "IdentifierRefKeys")
 @OwnedBy(HarnessTeam.PIPELINE)
 public class IdentifierRef implements EntityReference {
   Scope scope;
@@ -35,6 +37,10 @@ public class IdentifierRef implements EntityReference {
   public String getFullyQualifiedName() {
     return FullyQualifiedIdentifierHelper.getFullyQualifiedIdentifier(
         accountIdentifier, orgIdentifier, projectIdentifier, identifier);
+  }
+
+  public String getFullyQualifiedScopeIdentifier() {
+    return FullyQualifiedIdentifierHelper.getFullyQualifiedScope(accountIdentifier, orgIdentifier, projectIdentifier);
   }
 
   public String buildScopedIdentifier() {

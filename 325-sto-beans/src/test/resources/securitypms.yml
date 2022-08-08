@@ -1,0 +1,68 @@
+pipeline:
+  name: My Deployment Pipeline
+  identifier: myPipeline1
+  description: Sample Project Build and Test Pipeline
+  properties:
+    ci:
+      codebase:
+        repoName: mycode.git # accept w/o git at the end
+        connectorRef: account.gitconnector
+        build: <+input> # build: type branch|tag spec: branch: <name>
+  stages:
+    - stage:
+        identifier: stage1
+        name: stage1
+        type: SecurityTests
+        description: Build artifacts off master and upload to artifacts repo
+        variables:
+          - name: REPLACE_USERNAME_HERE
+            type: Secret
+            value: REPLACE_USERNAME_HERE
+          - name: param1
+            type: String
+            value: value1
+        spec:
+          infrastructure:
+            type: KubernetesDirect
+            spec:
+              connectorRef: cidelegate
+              namespace: harness-delegate
+          cloneCodebase: true # default is true
+          sharedPaths:
+            - myPath
+            - myPath2
+
+          serviceDependencies:
+            - identifier: database
+              name: database
+              type: Service
+              spec:
+                envVariables: #Optional - A set of environment variables for the container, on top of what was provided in the custom vars
+                  kube_context: myContext <+mySecret>
+                entrypoint:  # (optional)
+                  - "mysqld"
+                args:  # (optional) - marks the flags for the entry point
+                  - "--character-set-server=utf8mb4"
+                connectorRef: "np-quotecenter" #(optional)
+                image: "us.gcr.io/platform-205701/mysql:12" #latest if version not provided
+                resources:
+                  limits:
+                    memory: 2Gi
+                    cpu: 250m
+          execution:
+            steps:
+              - step:
+                  name: slack plugin wrapper
+                  identifier: mySlackPluginWrapper
+                  timeout: 20m
+                  type: Security
+                  spec:
+                    connectorRef: "gcr-NA"
+                    image: plugins/slack
+                    settings:
+                      webhook: https://hooks.slack.com/services/...
+                      channel: dev
+                    resources:
+                      limits:
+                        memory: 64Mi
+                        cpu: 250m

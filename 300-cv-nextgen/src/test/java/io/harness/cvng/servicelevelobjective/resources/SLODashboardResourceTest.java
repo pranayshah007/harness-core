@@ -8,6 +8,7 @@
 package io.harness.cvng.servicelevelobjective.resources;
 
 import static io.harness.rule.OwnerRule.ABHIJITH;
+import static io.harness.rule.OwnerRule.ARPITJ;
 import static io.harness.rule.OwnerRule.KAMAL;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -153,5 +154,38 @@ public class SLODashboardResourceTest extends CvNextGenTestBase {
     assertThat(responseString).contains("\"count\":1");
     assertThat(responseString).contains("\"identifier\":\"UNHEALTHY\"");
     assertThat(responseString).contains("\"displayName\":\"Unhealthy\"");
+  }
+
+  @Test
+  @Owner(developers = ARPITJ)
+  @Category(UnitTests.class)
+  public void test_sloWidgetIdentifier() {
+    ServiceLevelObjectiveDTO sloDTO = builderFactory.getServiceLevelObjectiveDTOBuilder()
+                                          .identifier("id1")
+                                          .userJourneyRef("uj1")
+                                          .type(ServiceLevelIndicatorType.AVAILABILITY)
+                                          .build();
+
+    serviceLevelObjectiveService.create(builderFactory.getProjectParams(), sloDTO);
+    SLOHealthIndicator sloHealthIndicator = builderFactory.sLOHealthIndicatorBuilder()
+                                                .serviceLevelObjectiveIdentifier(sloDTO.getIdentifier())
+                                                .errorBudgetRemainingPercentage(10)
+                                                .errorBudgetRisk(ErrorBudgetRisk.UNHEALTHY)
+                                                .build();
+    hPersistence.save(sloHealthIndicator);
+
+    Response response = RESOURCES.client()
+                            .target("http://localhost:9998/slo-dashboard/widget/id1")
+                            .queryParam("accountId", builderFactory.getContext().getAccountId())
+                            .queryParam("orgIdentifier", builderFactory.getContext().getOrgIdentifier())
+                            .queryParam("projectIdentifier", builderFactory.getContext().getProjectIdentifier())
+                            .request(MediaType.APPLICATION_JSON_TYPE)
+                            .get();
+
+    assertThat(response.getStatus()).isEqualTo(200);
+    String responseString = response.readEntity(String.class);
+    assertThat(responseString).contains("\"sloIdentifier\":\"id1\"");
+    assertThat(responseString).contains("\"title\":\"sloName\"");
+    assertThat(responseString).contains("\"healthSourceName\":\"health source name\"");
   }
 }

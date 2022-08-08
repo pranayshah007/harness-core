@@ -18,6 +18,9 @@ import java.util.List;
 @OwnedBy(CDP)
 public interface ArtifactoryRegistryService {
   int MAX_NO_OF_TAGS_PER_ARTIFACT = 10000;
+  int MAX_NO_OF_BUILDS_PER_ARTIFACT = 10000;
+  String DEFAULT_ARTIFACT_FILTER = "*";
+  String DEFAULT_ARTIFACT_DIRECTORY = "/";
 
   /**
    * Gets builds.
@@ -61,12 +64,4 @@ public interface ArtifactoryRegistryService {
    * @return boolean validate
    */
   boolean validateCredentials(ArtifactoryConfigRequest toArtifactoryInternalConfig);
-
-  /**
-   * Verifies the Artifact Tag Manifest exists
-   * @param lastSuccessfulBuild       artifact build details
-   * @param artifactoryConfig         the artifactory config
-   */
-  boolean verifyArtifactManifestUrl(
-      BuildDetailsInternal lastSuccessfulBuild, ArtifactoryConfigRequest artifactoryConfig);
 }

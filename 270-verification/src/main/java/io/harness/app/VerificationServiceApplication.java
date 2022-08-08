@@ -78,6 +78,8 @@ import io.harness.serializer.JsonSubtypeResolver;
 import io.harness.serializer.KryoRegistrar;
 import io.harness.serializer.ManagerRegistrars;
 import io.harness.serializer.VerificationRegistrars;
+import io.harness.service.impl.AgentMtlsEndpointServiceReadOnlyImpl;
+import io.harness.service.intfc.AgentMtlsEndpointService;
 
 import software.wings.app.CharsetResponseFilter;
 import software.wings.beans.Account;
@@ -313,6 +315,8 @@ public class VerificationServiceApplication extends Application<VerificationServ
     modules.add(new AbstractModule() {
       @Override
       protected void configure() {
+        // verification service only needs reading capabilities for datapath authority validation
+        bind(AgentMtlsEndpointService.class).to(AgentMtlsEndpointServiceReadOnlyImpl.class);
         bind(DelegateTokenAuthenticator.class).to(DelegateTokenAuthenticatorImpl.class).in(Singleton.class);
       }
     });
@@ -440,6 +444,7 @@ public class VerificationServiceApplication extends Application<VerificationServ
     PersistenceIterator dataCollectionIterator =
         MongoPersistenceIterator.<AnalysisContext, MorphiaFilterExpander<AnalysisContext>>builder()
             .mode(ProcessMode.PUMP)
+            .iteratorName("WorkflowIterator." + iteratorFieldName)
             .clazz(AnalysisContext.class)
             .fieldName(iteratorFieldName)
             .targetInterval(interval)
@@ -466,6 +471,7 @@ public class VerificationServiceApplication extends Application<VerificationServ
     PersistenceIterator dataCollectionIterator =
         MongoPersistenceIterator.<AnalysisContext, MorphiaFilterExpander<AnalysisContext>>builder()
             .mode(ProcessMode.PUMP)
+            .iteratorName("WorkflowDataCollectionIterator")
             .clazz(AnalysisContext.class)
             .fieldName(iteratorFieldName)
             .targetInterval(interval)
@@ -495,6 +501,7 @@ public class VerificationServiceApplication extends Application<VerificationServ
     PersistenceIterator alertsCleanupIterator =
         MongoPersistenceIterator.<Alert, MorphiaFilterExpander<Alert>>builder()
             .mode(ProcessMode.PUMP)
+            .iteratorName("AlertsCleanupIterator")
             .clazz(Alert.class)
             .fieldName(AlertKeys.cvCleanUpIteration)
             .targetInterval(interval)
@@ -521,6 +528,7 @@ public class VerificationServiceApplication extends Application<VerificationServ
     PersistenceIterator dataCollectionIterator =
         MongoPersistenceIterator.<AnalysisContext, MorphiaFilterExpander<AnalysisContext>>builder()
             .mode(ProcessMode.PUMP)
+            .iteratorName("CreateCVTaskIterator")
             .clazz(AnalysisContext.class)
             .fieldName(AnalysisContextKeys.cvTaskCreationIteration)
             .targetInterval(interval)

@@ -15,7 +15,6 @@ import static org.joor.Reflect.on;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyList;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.verify;
 
 import io.harness.annotations.dev.HarnessModule;
@@ -37,6 +36,7 @@ import software.wings.service.impl.aws.model.AwsEc2Request;
 import software.wings.service.impl.aws.model.AwsEc2ValidateCredentialsRequest;
 import software.wings.service.intfc.aws.delegate.AwsEc2HelperServiceDelegate;
 
+import java.util.Collections;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -67,24 +67,24 @@ public class AwsEc2TaskTest extends WingsBaseTest {
   public void testRun() {
     AwsEc2Request request = AwsEc2ValidateCredentialsRequest.builder().build();
     task.run(new Object[] {request});
-    verify(mockEc2ServiceDelegate).validateAwsAccountCredential(any(), anyList());
+    verify(mockEc2ServiceDelegate).validateAwsAccountCredential(any(), any());
     request = AwsEc2ListRegionsRequest.builder().build();
     task.run(new Object[] {request});
-    verify(mockEc2ServiceDelegate).listRegions(any(), anyList());
+    verify(mockEc2ServiceDelegate).listRegions(any(), any());
     request = AwsEc2ListVpcsRequest.builder().build();
     task.run(new Object[] {request});
-    verify(mockEc2ServiceDelegate).listVPCs(any(), anyList(), anyString());
+    verify(mockEc2ServiceDelegate).listVPCs(any(), any(), any());
     request = AwsEc2ListSubnetsRequest.builder().build();
     task.run(new Object[] {request});
-    verify(mockEc2ServiceDelegate).listSubnets(any(), anyList(), anyString(), anyList());
+    verify(mockEc2ServiceDelegate).listSubnets(any(), any(), any(), any());
     request = AwsEc2ListSGsRequest.builder().build();
     task.run(new Object[] {request});
-    verify(mockEc2ServiceDelegate).listSGs(any(), anyList(), anyString(), anyList());
+    verify(mockEc2ServiceDelegate).listSGs(any(), any(), any(), any());
     request = AwsEc2ListTagsRequest.builder().build();
     task.run(new Object[] {request});
-    verify(mockEc2ServiceDelegate).listTags(any(), anyList(), anyString(), anyString());
-    request = AwsEc2ListInstancesRequest.builder().build();
+    verify(mockEc2ServiceDelegate).listTags(any(), any(), any(), any());
+    request = AwsEc2ListInstancesRequest.builder().filters(Collections.emptyList()).build();
     task.run(new Object[] {request});
-    verify(mockEc2ServiceDelegate).listEc2Instances(any(), anyList(), anyString(), anyList(), anyBoolean());
+    verify(mockEc2ServiceDelegate).listEc2Instances(any(), any(), any(), anyList(), anyBoolean());
   }
 }

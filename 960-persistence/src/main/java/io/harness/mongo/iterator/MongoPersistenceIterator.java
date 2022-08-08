@@ -11,6 +11,10 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.govern.Switch.unhandled;
 import static io.harness.iterator.PersistenceIterator.ProcessMode.PUMP;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
+import static io.harness.metrics.impl.IteratorMetricsServiceImpl.ITERATOR_DELAY;
+import static io.harness.metrics.impl.IteratorMetricsServiceImpl.ITERATOR_ERROR;
+import static io.harness.metrics.impl.IteratorMetricsServiceImpl.ITERATOR_PROCESSING_TIME;
+import static io.harness.metrics.impl.IteratorMetricsServiceImpl.ITERATOR_WORKING_ON_ENTITY;
 import static io.harness.mongo.iterator.MongoPersistenceIterator.SchedulingType.IRREGULAR_SKIP_MISSED;
 import static io.harness.mongo.iterator.MongoPersistenceIterator.SchedulingType.REGULAR;
 import static io.harness.threading.Morpheus.sleep;
@@ -27,6 +31,7 @@ import io.harness.iterator.PersistentIrregularIterable;
 import io.harness.iterator.PersistentIterable;
 import io.harness.iterator.PersistentRegularIterable;
 import io.harness.maintenance.MaintenanceController;
+import io.harness.metrics.impl.IteratorMetricsServiceImpl;
 import io.harness.mongo.DelayLogContext;
 import io.harness.mongo.EntityLogContext;
 import io.harness.mongo.EntityProcessController;
@@ -53,6 +58,7 @@ public class MongoPersistenceIterator<T extends PersistentIterable, F extends Fi
   private static final Duration QUERY_TIME = ofMillis(200);
 
   @Inject private final QueueController queueController;
+  @Inject private IteratorMetricsServiceImpl iteratorMetricsService;
 
   public interface Handler<T> {
     void handle(T entity);
@@ -76,6 +82,7 @@ public class MongoPersistenceIterator<T extends PersistentIterable, F extends Fi
   private boolean redistribute;
   private EntityProcessController<T> entityProcessController;
   @Getter private SchedulingType schedulingType;
+  private String iteratorName;
 
   private long movingAvg(long current, long sample) {
     return (15 * current + sample) / 16;
@@ -186,6 +193,7 @@ public class MongoPersistenceIterator<T extends PersistentIterable, F extends Fi
         break;
       } catch (Throwable exception) {
         log.error("Exception occurred while processing iterator", exception);
+        iteratorMetricsService.recordIteratorMetrics(iteratorName, ITERATOR_ERROR);
         sleep(ofSeconds(1));
       }
     }
@@ -223,11 +231,11 @@ public class MongoPersistenceIterator<T extends PersistentIterable, F extends Fi
       try {
         semaphore.acquire();
       } catch (InterruptedException e) {
-        log.info("Working on entity was interrupted");
+        log.error("Working on entity was interrupted", e);
+        iteratorMetricsService.recordIteratorMetrics(iteratorName, ITERATOR_ERROR);
         Thread.currentThread().interrupt();
         return;
       }
-
       long startTime = currentTimeMillis();
 
       try {
@@ -240,12 +248,14 @@ public class MongoPersistenceIterator<T extends PersistentIterable, F extends Fi
         }
 
         long delay = nextIteration == null || nextIteration == 0 ? 0 : startTime - nextIteration;
-
         try (DelayLogContext ignore2 = new DelayLogContext(delay, OVERRIDE_ERROR)) {
-          if (delay < acceptableNoAlertDelay.toMillis()) {
-            log.info("Working on entity");
-          } else {
-            log.error(
+          log.debug("Working on entity");
+          iteratorMetricsService.recordIteratorMetrics(iteratorName, ITERATOR_WORKING_ON_ENTITY);
+          iteratorMetricsService.recordIteratorMetricsWithDuration(
+              iteratorName, Duration.ofMillis(delay), ITERATOR_DELAY);
+
+          if (delay >= acceptableNoAlertDelay.toMillis()) {
+            log.debug(
                 "Working on entity but the delay is more than the acceptable {}", acceptableNoAlertDelay.toMillis());
           }
         }
@@ -254,21 +264,26 @@ public class MongoPersistenceIterator<T extends PersistentIterable, F extends Fi
           handler.handle(entity);
         } catch (RuntimeException exception) {
           log.error("Catch and handle all exceptions in the entity handler", exception);
+          iteratorMetricsService.recordIteratorMetrics(iteratorName, ITERATOR_ERROR);
         }
       } catch (Throwable exception) {
         log.error("Exception while processing entity", exception);
+        iteratorMetricsService.recordIteratorMetrics(iteratorName, ITERATOR_ERROR);
       } finally {
         semaphore.release();
 
         long processTime = currentTimeMillis() - startTime;
+        log.debug("Done with entity");
+        iteratorMetricsService.recordIteratorMetricsWithDuration(
+            iteratorName, Duration.ofMillis(processTime), ITERATOR_PROCESSING_TIME);
+
         try (ProcessTimeLogContext ignore2 = new ProcessTimeLogContext(processTime, OVERRIDE_ERROR)) {
-          if (acceptableExecutionTime == null || processTime <= acceptableExecutionTime.toMillis()) {
-            log.info("Done with entity");
-          } else {
-            log.error("Done with entity but took too long acceptable {}", acceptableExecutionTime.toMillis());
+          if (acceptableExecutionTime != null && processTime > acceptableExecutionTime.toMillis()) {
+            log.debug("Done with entity but took too long acceptable {}", acceptableExecutionTime.toMillis());
           }
         } catch (Throwable exception) {
           log.error("Exception while recording the processing of entity", exception);
+          iteratorMetricsService.recordIteratorMetrics(iteratorName, ITERATOR_ERROR);
         }
       }
     }

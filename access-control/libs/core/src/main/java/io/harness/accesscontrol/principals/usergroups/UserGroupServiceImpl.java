@@ -14,6 +14,7 @@ import io.harness.accesscontrol.principals.PrincipalType;
 import io.harness.accesscontrol.principals.usergroups.persistence.UserGroupDao;
 import io.harness.accesscontrol.roleassignments.RoleAssignmentFilter;
 import io.harness.accesscontrol.roleassignments.RoleAssignmentService;
+import io.harness.accesscontrol.scopes.core.ScopeService;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnexpectedException;
@@ -41,6 +42,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 public class UserGroupServiceImpl implements UserGroupService {
   private final UserGroupDao userGroupDao;
   private final RoleAssignmentService roleAssignmentService;
+  private final ScopeService scopeService;
   private final TransactionTemplate transactionTemplate;
   private static final RetryPolicy<Object> deleteUserGroupTransactionPolicy = RetryUtils.getRetryPolicy(
       "[Retrying]: Failed to delete user group and corresponding role assignments; attempt: {}",
@@ -48,10 +50,11 @@ public class UserGroupServiceImpl implements UserGroupService {
       ImmutableList.of(TransactionException.class), Duration.ofSeconds(5), 3, log);
 
   @Inject
-  public UserGroupServiceImpl(
-      UserGroupDao userGroupDao, RoleAssignmentService roleAssignmentService, TransactionTemplate transactionTemplate) {
+  public UserGroupServiceImpl(UserGroupDao userGroupDao, RoleAssignmentService roleAssignmentService,
+      ScopeService scopeService, TransactionTemplate transactionTemplate) {
     this.userGroupDao = userGroupDao;
     this.roleAssignmentService = roleAssignmentService;
+    this.scopeService = scopeService;
     this.transactionTemplate = transactionTemplate;
   }
 
@@ -93,8 +96,14 @@ public class UserGroupServiceImpl implements UserGroupService {
       long deleteCount = roleAssignmentService.deleteMulti(
           RoleAssignmentFilter.builder()
               .scopeFilter(scopeIdentifier)
+              .includeChildScopes(true)
               .principalFilter(Sets.newHashSet(
-                  Principal.builder().principalType(PrincipalType.USER_GROUP).principalIdentifier(identifier).build()))
+                  Principal.builder()
+                      .principalType(PrincipalType.USER_GROUP)
+                      .principalIdentifier(identifier)
+                      .principalScopeLevel(
+                          scopeService.buildScopeFromScopeIdentifier(scopeIdentifier).getLevel().toString())
+                      .build()))
               .build());
       return userGroupDao.delete(identifier, scopeIdentifier)
           .orElseThrow(()

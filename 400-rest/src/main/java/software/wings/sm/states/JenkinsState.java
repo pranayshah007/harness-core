@@ -68,6 +68,7 @@ import software.wings.sm.ExecutionResponse;
 import software.wings.sm.State;
 import software.wings.sm.StateType;
 import software.wings.sm.WorkflowStandardParams;
+import software.wings.sm.WorkflowStandardParamsExtensionService;
 import software.wings.sm.states.mixin.SweepingOutputStateMixin;
 import software.wings.stencils.DefaultValue;
 
@@ -105,6 +106,8 @@ public class JenkinsState extends State implements SweepingOutputStateMixin {
 
   private boolean unstableSuccess;
 
+  @Getter @Setter private List<String> delegateSelectors;
+
   private boolean injectEnvVars;
 
   private List<FilePathAssertionEntry> filePathsForAssertion = Lists.newArrayList();
@@ -121,6 +124,7 @@ public class JenkinsState extends State implements SweepingOutputStateMixin {
   @Transient @Inject private SettingsService settingsService;
   @Transient @Inject private KryoSerializer kryoSerializer;
   @Transient @Inject private InfrastructureMappingService infrastructureMappingService;
+  @Inject private WorkflowStandardParamsExtensionService workflowStandardParamsExtensionService;
 
   public JenkinsState(String name) {
     super(name, StateType.JENKINS.name());
@@ -250,9 +254,10 @@ public class JenkinsState extends State implements SweepingOutputStateMixin {
     }
     WorkflowStandardParams workflowStandardParams = context.getContextElement(ContextElementType.STANDARD);
 
-    String envId = (workflowStandardParams == null || workflowStandardParams.getEnv() == null)
+    String envId = (workflowStandardParams == null
+                       || workflowStandardParamsExtensionService.getEnv(workflowStandardParams) == null)
         ? null
-        : workflowStandardParams.getEnv().getUuid();
+        : workflowStandardParamsExtensionService.getEnv(workflowStandardParams).getUuid();
 
     String accountId = ((ExecutionContextImpl) context).fetchRequiredApp().getAccountId();
 
@@ -353,6 +358,7 @@ public class JenkinsState extends State implements SweepingOutputStateMixin {
     return DelegateTask.builder()
         .accountId(((ExecutionContextImpl) context).fetchRequiredApp().getAccountId())
         .waitId(activityId)
+        .tags(delegateSelectors)
         .setupAbstraction(Cd1SetupFields.APP_ID_FIELD, ((ExecutionContextImpl) context).fetchRequiredApp().getAppId())
         .description("Trigger Jenkins job")
         .data(TaskData.builder()
@@ -387,9 +393,10 @@ public class JenkinsState extends State implements SweepingOutputStateMixin {
     }
     WorkflowStandardParams workflowStandardParams = context.getContextElement(ContextElementType.STANDARD);
 
-    String envId = (workflowStandardParams == null || workflowStandardParams.getEnv() == null)
+    String envId = (workflowStandardParams == null
+                       || workflowStandardParamsExtensionService.getEnv(workflowStandardParams) == null)
         ? null
-        : workflowStandardParams.getEnv().getUuid();
+        : workflowStandardParamsExtensionService.getEnv(workflowStandardParams).getUuid();
 
     String infrastructureMappingId = context.fetchInfraMappingId();
 

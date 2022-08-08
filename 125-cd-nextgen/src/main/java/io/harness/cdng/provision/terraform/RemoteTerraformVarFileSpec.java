@@ -12,14 +12,18 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
 
+import io.swagger.annotations.ApiModelProperty;
 import javax.validation.constraints.NotNull;
 import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @OwnedBy(CDP)
 @Data
 @NoArgsConstructor
 public class RemoteTerraformVarFileSpec implements TerraformVarFileSpec {
+  @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String uuid;
+
   @NotNull StoreConfigWrapper store;
 
   @Override

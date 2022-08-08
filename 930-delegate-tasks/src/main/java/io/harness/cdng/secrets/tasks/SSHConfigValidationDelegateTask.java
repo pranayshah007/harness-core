@@ -87,7 +87,7 @@ public class SSHConfigValidationDelegateTask extends AbstractDelegateRunnableTas
             (SSHPasswordCredentialDTO) secretDecryptionService.decrypt(sshPasswordCredentialDTO, encryptionDetails);
         builder.withAccessType(AccessType.USER_PASSWORD)
             .withUserName(passwordCredentialDTO.getUserName())
-            .withPassword(passwordCredentialDTO.getPassword().getDecryptedValue());
+            .withSshPassword(passwordCredentialDTO.getPassword().getDecryptedValue());
         break;
       case KeyReference:
         SSHKeyReferenceCredentialDTO sshKeyReferenceCredentialDTO =

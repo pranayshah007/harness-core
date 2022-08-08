@@ -14,28 +14,28 @@ import static io.harness.nexus.NexusHelper.isRequestSuccessful;
 import static io.harness.nexus.NexusHelper.isSuccessful;
 
 import static java.util.Collections.emptyMap;
+import static java.util.stream.Collectors.toList;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.artifact.ArtifactMetadataKeys;
 import io.harness.artifact.ArtifactUtilities;
 import io.harness.artifacts.beans.BuildDetailsInternal;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.artifact.ArtifactFileMetadataInternal;
 import io.harness.exception.InvalidArtifactServerException;
 import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.NexusRegistryException;
 import io.harness.exception.WingsException;
 import io.harness.nexus.model.Asset;
+import io.harness.nexus.model.DockerImageResponse;
 import io.harness.nexus.model.Nexus3ComponentResponse;
 import io.harness.nexus.model.Nexus3Repository;
-import io.harness.nexus.model.Nexus3TokenResponse;
 
 import software.wings.utils.RepositoryFormat;
 
 import com.google.common.collect.Lists;
 import com.google.inject.Singleton;
 import java.io.IOException;
-import java.net.HttpURLConnection;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -95,6 +95,39 @@ public class NexusThreeClientImpl {
     return emptyMap();
   }
 
+  public List<String> getDockerImages(NexusRequest nexusConfig, String repository) throws IOException {
+    String repositoryKey = ArtifactUtilities.trimSlashforwardChars(repository);
+    log.info("Retrieving docker images for repository {} from url {}", repositoryKey, nexusConfig.getNexusUrl());
+    List<String> images = new ArrayList<>();
+    NexusThreeRestClient nexusThreeRestClient = getNexusThreeClient(nexusConfig);
+    Response<DockerImageResponse> response;
+    if (nexusConfig.isHasCredentials()) {
+      response =
+          nexusThreeRestClient
+              .getDockerImages(
+                  Credentials.basic(nexusConfig.getUsername(), new String(nexusConfig.getPassword())), repositoryKey)
+              .execute();
+    } else {
+      response = nexusThreeRestClient.getDockerImages(repositoryKey).execute();
+    }
+    if (isSuccessful(response)) {
+      if (response.body() != null && response.body().getRepositories() != null) {
+        images.addAll(response.body().getRepositories().stream().collect(toList()));
+        log.info("Retrieving docker images for repository {} from url {} success. Images are {}", repositoryKey,
+            nexusConfig.getNexusUrl(), images);
+      } else {
+        throw NestedExceptionUtils.hintWithExplanationException(
+            "Check if the connector details - URL & credentials are correct", "No images were found for the connector",
+            new InvalidArtifactServerException("Failed to fetch the images", WingsException.USER));
+      }
+    } else {
+      log.warn("Failed to fetch the docker images as request is not success");
+      throw new InvalidArtifactServerException("Failed to fetch the docker images", WingsException.USER);
+    }
+    log.info("No images found for repository {}", repositoryKey);
+    return images;
+  }
+
   public NexusThreeRestClient getNexusThreeClient(NexusRequest nexusConfig) {
     return NexusHelper.getRetrofit(nexusConfig, JacksonConverterFactory.create()).create(NexusThreeRestClient.class);
   }
@@ -138,20 +171,47 @@ public class NexusThreeClientImpl {
           String.format("Repository port [%s] field must only contain numeric characters.", port),
           new NexusRegistryException("Invalid Nexus artifact configuration details"));
     }
+    String repositoryKey = ArtifactUtilities.trimSlashforwardChars(repository);
+    String artifactPath = ArtifactUtilities.trimSlashforwardChars(artifactName);
+
+    try {
+      Map<String, String> repos = getRepositories(nexusConfig, repositoryFormat);
+      if (EmptyPredicate.isEmpty(repos.get(repositoryKey))) {
+        throw new NexusRegistryException("Repository was not found");
+      }
+    } catch (IOException | NexusRegistryException e) {
+      throw NestedExceptionUtils.hintWithExplanationException(
+          "Please check Nexus artifact configuration and verify that repository is valid.",
+          String.format("Failed to retrieve repository '%s'", repositoryKey),
+          new NexusRegistryException(e.getMessage()));
+    }
+
+    try {
+      List<String> images = getDockerImages(nexusConfig, repositoryKey);
+      if (images.stream().noneMatch(img -> img.equalsIgnoreCase(artifactPath))) {
+        throw new NexusRegistryException("Artifact was not found");
+      }
+    } catch (IOException | NexusRegistryException e) {
+      throw NestedExceptionUtils.hintWithExplanationException(
+          "Please check Nexus artifact configuration and verify that artifact path is valid.",
+          String.format("Failed to retrieve image artifact '%s'", artifactPath),
+          new NexusRegistryException(e.getMessage()));
+    }
+
     log.info("Retrieving artifact versions(tags)");
     NexusThreeRestClient nexusThreeRestClient = getNexusThreeClient(nexusConfig);
     final Call<Nexus3ComponentResponse> request;
     if (nexusConfig.isHasCredentials()) {
       request = nexusThreeRestClient.search(
-          Credentials.basic(nexusConfig.getUsername(), new String(nexusConfig.getPassword())), repository, artifactName,
-          repositoryFormat, null);
+          Credentials.basic(nexusConfig.getUsername(), new String(nexusConfig.getPassword())), repositoryKey,
+          artifactPath, repositoryFormat, null);
     } else {
-      request = nexusThreeRestClient.search(repository, artifactName, repositoryFormat, null);
+      request = nexusThreeRestClient.search(repositoryKey, artifactPath, repositoryFormat, null);
     }
 
     Response<Nexus3ComponentResponse> response = executeRequest(request);
     List<BuildDetailsInternal> result = processComponentResponse(
-        request, response, nexusConfig, repository, port, artifactName, repositoryFormat, null);
+        request, response, nexusConfig, repositoryKey, port, artifactPath, repositoryFormat, null);
 
     if (isEmpty(result)) {
       throw NestedExceptionUtils.hintWithExplanationException("Please check your artifact configuration.",
@@ -159,7 +219,7 @@ public class NexusThreeClientImpl {
               request.request().method(), request.request().url(), response.code()),
           new NexusRegistryException(
               String.format("No tags found for artifact [repositoryFormat=%s, repository=%s, artifact=%s].",
-                  repositoryFormat, repository, artifactName)));
+                  repositoryFormat, repositoryKey, artifactPath)));
     }
 
     return result;
@@ -217,27 +277,55 @@ public class NexusThreeClientImpl {
 
   public List<BuildDetailsInternal> getBuildDetails(NexusRequest nexusConfig, String repository, String port,
       String artifactName, String repositoryFormat, String tag) {
+    String repositoryKey = ArtifactUtilities.trimSlashforwardChars(repository);
+    String artifactPath = ArtifactUtilities.trimSlashforwardChars(artifactName);
+
     if (isNotEmpty(port) && !port.matches(REPO_PORT_REGEX)) {
       throw NestedExceptionUtils.hintWithExplanationException(
           "Please check repository port field in your Nexus artifact configuration.",
           String.format("Repository port [%s] field must only contain numeric characters.", port),
-          new NexusRegistryException(
-              String.format("Repository port has an invalid value.", repositoryFormat, repository, artifactName, tag)));
+          new NexusRegistryException(String.format(
+              "Repository port has an invalid value.", repositoryFormat, repositoryKey, artifactPath, tag)));
     }
     log.info("Retrieving artifact details");
+
+    try {
+      Map<String, String> repos = getRepositories(nexusConfig, repositoryFormat);
+      if (EmptyPredicate.isEmpty(repos.get(repositoryKey))) {
+        throw new NexusRegistryException("Repository was not found");
+      }
+    } catch (IOException | NexusRegistryException e) {
+      throw NestedExceptionUtils.hintWithExplanationException(
+          "Please check Nexus artifact configuration and verify that repository is valid.",
+          String.format("Failed to retrieve repository '%s'", repositoryKey),
+          new NexusRegistryException(e.getMessage()));
+    }
+
+    try {
+      List<String> images = getDockerImages(nexusConfig, repositoryKey);
+      if (images.stream().noneMatch(img -> img.equalsIgnoreCase(artifactPath))) {
+        throw new NexusRegistryException("Artifact was not found");
+      }
+    } catch (IOException | NexusRegistryException e) {
+      throw NestedExceptionUtils.hintWithExplanationException(
+          "Please check Nexus artifact configuration and verify that artifact path is valid.",
+          String.format("Failed to retrieve image artifact '%s'", artifactPath),
+          new NexusRegistryException(e.getMessage()));
+    }
+
     NexusThreeRestClient nexusThreeRestClient = getNexusThreeClient(nexusConfig);
     final Call<Nexus3ComponentResponse> request;
     if (nexusConfig.isHasCredentials()) {
       request = nexusThreeRestClient.getArtifact(
-          Credentials.basic(nexusConfig.getUsername(), new String(nexusConfig.getPassword())), repository, artifactName,
-          repositoryFormat, tag, null);
+          Credentials.basic(nexusConfig.getUsername(), new String(nexusConfig.getPassword())), repositoryKey,
+          artifactPath, repositoryFormat, tag, null);
     } else {
-      request = nexusThreeRestClient.getArtifact(repository, artifactName, repositoryFormat, tag, null);
+      request = nexusThreeRestClient.getArtifact(repositoryKey, artifactPath, repositoryFormat, tag, null);
     }
 
     Response<Nexus3ComponentResponse> response = executeRequest(request);
-    List<BuildDetailsInternal> result =
-        processComponentResponse(request, response, nexusConfig, repository, port, artifactName, repositoryFormat, tag);
+    List<BuildDetailsInternal> result = processComponentResponse(
+        request, response, nexusConfig, repositoryKey, port, artifactPath, repositoryFormat, tag);
 
     if (isEmpty(result)) {
       throw NestedExceptionUtils.hintWithExplanationException("Please check your artifact configuration.",
@@ -245,7 +333,7 @@ public class NexusThreeClientImpl {
               request.request().method(), request.request().url(), response.code()),
           new NexusRegistryException(
               String.format("Artifact [repositoryFormat=%s, repository=%s, artifact=%s, tag=%s] was not found.",
-                  repositoryFormat, repository, artifactName, tag)));
+                  repositoryFormat, repositoryKey, artifactPath, tag)));
     }
 
     return result;
@@ -281,15 +369,13 @@ public class NexusThreeClientImpl {
 
           String repoName = ArtifactUtilities.getNexusRepositoryNameNG(
               nexusConfig.getNexusUrl(), port, nexusConfig.getArtifactRepositoryUrl(), artifactName);
+          String registryHostname = ArtifactUtilities.extractRegistryHost(repoName);
+
           log.info("Retrieving docker tags for repository {} imageName {} ", repository, artifactName);
           Map<String, String> metadata = new HashMap<>();
           metadata.put(ArtifactMetadataKeys.IMAGE, repoName + ":" + actualTag);
           metadata.put(ArtifactMetadataKeys.TAG, actualTag);
-          metadata.put(ArtifactMetadataKeys.ARTIFACT_MANIFEST_URL,
-              ArtifactUtilities.getNexusRegistryUrlNG(
-                  nexusConfig.getNexusUrl(), port, nexusConfig.getArtifactRepositoryUrl())
-                  + "/repository/" + ArtifactUtilities.trimSlashforwardChars(repository) + "/"
-                  + ArtifactUtilities.trimSlashforwardChars(artifactPath));
+          metadata.put(ArtifactMetadataKeys.REGISTRY_HOSTNAME, registryHostname);
 
           BuildDetailsInternal buildDetailsInternal = BuildDetailsInternal.builder()
                                                           .number(component.getVersion())
@@ -303,43 +389,5 @@ public class NexusThreeClientImpl {
       }
     }
     return components;
-  }
-
-  public boolean verifyArtifactManifestUrl(NexusRequest nexusConfig, String artifactManifestUrl) {
-    NexusThreeRestClient nexusThreeRestClient = getNexusThreeClient(
-        nexusConfig, ArtifactUtilities.getBaseUrl(ArtifactUtilities.getHostname(artifactManifestUrl)));
-    String authorization;
-
-    if (nexusConfig.isHasCredentials()) {
-      authorization = Credentials.basic(nexusConfig.getUsername(), new String(nexusConfig.getPassword()));
-    } else {
-      final Call<Nexus3TokenResponse> tokenRequest = nexusThreeRestClient.getAnonymousAccessToken();
-      final Response<Nexus3TokenResponse> tokenResponse = executeRequest(tokenRequest);
-      authorization = "Bearer " + tokenResponse.body().getToken();
-    }
-
-    HttpURLConnection connection = null;
-    try {
-      connection = (HttpURLConnection) new URL(artifactManifestUrl).openConnection();
-      connection.setRequestMethod("GET");
-      connection.setConnectTimeout(15000);
-      connection.setReadTimeout(15000);
-      connection.setRequestProperty("Authorization", authorization);
-      if (connection.getResponseCode() == 200) {
-        return true;
-      }
-    } catch (IOException e) {
-      log.error("Failed to pull artifact manifest", e);
-    } finally {
-      if (connection != null) {
-        connection.disconnect();
-      }
-    }
-
-    throw NestedExceptionUtils.hintWithExplanationException(
-        "Please verify your Nexus artifact repository URL field or repository port.",
-        String.format("Can not pull the artifact manifest. Check was performed with API call '%s %s'", "GET",
-            artifactManifestUrl),
-        new NexusRegistryException("Could not retrieve artifact manifest."));
   }
 }

@@ -7,6 +7,7 @@
 
 package io.harness.aggregator.consumers;
 
+import static io.harness.accesscontrol.scopes.core.Scope.PATH_DELIMITER;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.rule.OwnerRule.KARAN;
 
@@ -44,6 +45,7 @@ import io.harness.utils.PageTestUtils;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -61,18 +63,17 @@ public class ResourceGroupChangeConsumerImplTest extends AggregatorTestBase {
   private RoleService roleService;
   private UserGroupService userGroupService;
   private ResourceGroupService resourceGroupService;
-  private ScopeService scopeService;
   private ResourceGroupChangeConsumerImpl resourceGroupChangeConsumer;
   private int randomCount;
   private String id = randomAlphabetic(10);
-  private ResourceGroupDBO resourceGroupDBO = getResourceGroupDBO(id, true);
+  private ResourceGroupDBO resourceGroupDBO = getResourceGroupDBO(id);
 
   @Before
   public void setup() {
+    ScopeService scopeService = mock(ScopeService.class);
     roleService = mock(RoleService.class);
     resourceGroupService = mock(ResourceGroupService.class);
     userGroupService = mock(UserGroupService.class);
-    scopeService = mock(ScopeService.class);
     roleAssignmentRepository = mock(RoleAssignmentRepository.class);
     resourceGroupRepository = mock(ResourceGroupRepository.class);
     ChangeConsumerService changeConsumerService =
@@ -82,7 +83,7 @@ public class ResourceGroupChangeConsumerImplTest extends AggregatorTestBase {
     aclRepository.cleanCollection();
     randomCount = ThreadLocalRandom.current().nextInt(1, 10);
     id = randomAlphabetic(10);
-    resourceGroupDBO = getResourceGroupDBO(id, true);
+    resourceGroupDBO = getResourceGroupDBO(id);
   }
 
   private List<RoleAssignmentDBO> getRoleAssignments(ResourceGroupDBO resourceGroupDBO, PrincipalType principalType) {
@@ -109,13 +110,24 @@ public class ResourceGroupChangeConsumerImplTest extends AggregatorTestBase {
     return randomStrings;
   }
 
-  private ResourceGroupDBO getResourceGroupDBO(String id, boolean fullScopeSelected) {
+  private ResourceGroupDBO getResourceGroupDBO(String id) {
     return ResourceGroupDBO.builder()
         .id(id)
         .scopeIdentifier(randomAlphabetic(10))
         .identifier(randomAlphabetic(10))
         .name(randomAlphabetic(10))
-        .fullScopeSelected(fullScopeSelected)
+        .resourceSelectors(Collections.singleton(PATH_DELIMITER.concat(ResourceGroup.ALL_RESOURCES_IDENTIFIER)
+                                                     .concat(PATH_DELIMITER)
+                                                     .concat(ResourceGroup.ALL_RESOURCES_IDENTIFIER)))
+        .build();
+  }
+
+  private ResourceGroupDBO getResourceGroupDBOWithNoResourceSelectors(String id) {
+    return ResourceGroupDBO.builder()
+        .id(id)
+        .scopeIdentifier(randomAlphabetic(10))
+        .identifier(randomAlphabetic(10))
+        .name(randomAlphabetic(10))
         .build();
   }
 
@@ -173,15 +185,15 @@ public class ResourceGroupChangeConsumerImplTest extends AggregatorTestBase {
   @Owner(developers = KARAN)
   @Category(UnitTests.class)
   public void testResourceGroupUpdateNoResourceSelectors() {
-    resourceGroupDBO = getResourceGroupDBO(id, false);
+    resourceGroupDBO = getResourceGroupDBOWithNoResourceSelectors(id);
     List<RoleAssignmentDBO> roleAssignmentDBOs = getRoleAssignments(resourceGroupDBO, PrincipalType.USER);
 
     preResourceGroupUpdate(resourceGroupDBO, roleAssignmentDBOs);
 
     resourceGroupChangeConsumer.consumeUpdateEvent(id, resourceGroupDBO);
 
-    assertConsumeUpdateEventBaseInvocations(id, 0);
-    assertRoleAssignmentDBOs(resourceGroupDBO, roleAssignmentDBOs, 0, 0, 0, 0);
+    assertConsumeUpdateEventBaseInvocations(id, -1);
+    assertRoleAssignmentDBOs(resourceGroupDBO, roleAssignmentDBOs, -1, 0, 0, 0);
   }
 
   @Test
@@ -207,20 +219,19 @@ public class ResourceGroupChangeConsumerImplTest extends AggregatorTestBase {
                                                .scopeIdentifier(resourceGroupDBO.getScopeIdentifier())
                                                .identifier(resourceGroupDBO.getIdentifier())
                                                .name(resourceGroupDBO.getName())
-                                               .fullScopeSelected(false)
                                                .build();
 
     List<RoleAssignmentDBO> roleAssignmentDBOs = getRoleAssignments(oldResourceGroupDBO, PrincipalType.USER);
     preResourceGroupUpdate(oldResourceGroupDBO, roleAssignmentDBOs);
     resourceGroupChangeConsumer.consumeUpdateEvent(id, oldResourceGroupDBO);
 
-    assertConsumeUpdateEventBaseInvocations(id, 0);
-    assertRoleAssignmentDBOs(oldResourceGroupDBO, roleAssignmentDBOs, 0, 0, 0, 0);
+    assertConsumeUpdateEventBaseInvocations(id, -1);
+    assertRoleAssignmentDBOs(oldResourceGroupDBO, roleAssignmentDBOs, -1, 0, 0, 0);
 
     preResourceGroupUpdate(resourceGroupDBO, roleAssignmentDBOs);
     resourceGroupChangeConsumer.consumeUpdateEvent(id, resourceGroupDBO);
-    assertConsumeUpdateEventBaseInvocations(id, 1);
-    assertRoleAssignmentDBOs(resourceGroupDBO, roleAssignmentDBOs, 1, randomCount, 1, 1);
+    assertConsumeUpdateEventBaseInvocations(id, 0);
+    assertRoleAssignmentDBOs(resourceGroupDBO, roleAssignmentDBOs, 0, randomCount, 1, 1);
   }
 
   private void preResourceGroupUpdate(

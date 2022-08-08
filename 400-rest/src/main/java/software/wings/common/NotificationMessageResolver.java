@@ -11,12 +11,6 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.govern.Switch.unhandled;
 import static io.harness.logging.Misc.getDurationString;
 
-import static software.wings.common.NotificationConstants.ABORTED_COLOR;
-import static software.wings.common.NotificationConstants.COMPLETED_COLOR;
-import static software.wings.common.NotificationConstants.FAILED_COLOR;
-import static software.wings.common.NotificationConstants.PAUSED_COLOR;
-import static software.wings.common.NotificationConstants.RESUMED_COLOR;
-
 import static java.lang.String.format;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -358,25 +352,6 @@ public class NotificationMessageResolver {
       default:
         unhandled(status);
         return FAILED_STATUS;
-    }
-  }
-
-  public static String getThemeColor(String status, String defaultColor) {
-    switch (status) {
-      case "completed":
-        return COMPLETED_COLOR;
-      case "expired":
-      case "rejected":
-      case FAILED_STATUS:
-        return FAILED_COLOR;
-      case "paused":
-        return PAUSED_COLOR;
-      case "resumed":
-        return RESUMED_COLOR;
-      case "aborted":
-        return ABORTED_COLOR;
-      default:
-        return defaultColor;
     }
   }
 

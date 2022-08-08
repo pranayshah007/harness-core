@@ -37,6 +37,7 @@ public class CIVmCleanupTaskParams implements CICleanupTaskParams, ExecutionCapa
 
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {
-    return Collections.singletonList(CIVmConnectionCapability.builder().poolId(poolId).build());
+    return Collections.singletonList(
+        CIVmConnectionCapability.builder().poolId(poolId).stageRuntimeId(stageRuntimeId).build());
   }
 }

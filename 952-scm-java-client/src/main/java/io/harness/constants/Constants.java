@@ -22,10 +22,13 @@ public interface Constants {
   String X_AMZ_SNS_TOPIC_ARN = "X-Amz-Sns-Topic-Arn";
   String X_HARNESS_WEBHOOK_TOKEN = "X-HARNESS-WEBHOOK-TOKEN";
   String X_HARNESS_TRIGGER_ID = "X-HARNESS-TRIGGER-ID";
+  String X_VSS_HEADER = "x-vss-subscriptionid";
   String UNRECOGNIZED_WEBHOOK = "Unrecognized Webhook";
 
   int SCM_CONFLICT_ERROR_CODE = 409;
   String SCM_CONFLICT_ERROR_MESSAGE = "Cannot update file as it has conflicts with remote";
   int SCM_INTERNAL_SERVER_ERROR_CODE = 500;
   String SCM_INTERNAL_SERVER_ERROR_MESSAGE = "Faced internal server error on SCM, couldn't complete operation";
+  String SCM_GIT_PROVIDER_ERROR_MESSAGE =
+      "Facing issues while performing required operation on git provider, please try again later";
 }

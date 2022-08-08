@@ -11,6 +11,7 @@ import io.harness.annotations.ExposeInternalException;
 import io.harness.cvng.beans.DataSourceType;
 import io.harness.cvng.core.beans.OnboardingRequestDTO;
 import io.harness.cvng.core.beans.OnboardingResponseDTO;
+import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.core.services.api.OnboardingService;
 import io.harness.rest.RestResponse;
 import io.harness.security.annotations.NextGenManagerAuth;
@@ -21,6 +22,7 @@ import com.google.inject.Inject;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import javax.validation.constraints.NotNull;
+import javax.ws.rs.BeanParam;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
@@ -49,14 +51,12 @@ public class OnboardingResource {
   @ExceptionMetered
   @Path("/connector")
   @ApiOperation(value = "connector api response", nickname = "validateConnector")
-  public RestResponse<Void> validateConnector(@QueryParam("accountId") @NotNull String accountId,
+  public RestResponse<Void> validateConnector(@NotNull @BeanParam ProjectParams projectParams,
       @QueryParam("connectorIdentifier") @NotNull String connectorIdentifier,
-      @QueryParam("orgIdentifier") @NotNull String orgIdentifier,
-      @QueryParam("projectIdentifier") @NotNull String projectIdentifier,
       @QueryParam("tracingId") @NotNull String tracingId,
       @QueryParam("dataSourceType") @NotNull DataSourceType dataSourceType) {
-    onboardingService.checkConnectivity(
-        accountId, orgIdentifier, projectIdentifier, connectorIdentifier, tracingId, dataSourceType);
+    onboardingService.checkConnectivity(projectParams.getAccountIdentifier(), projectParams.getOrgIdentifier(),
+        projectParams.getProjectIdentifier(), connectorIdentifier, tracingId, dataSourceType);
     return new RestResponse<>(null);
   }
 }

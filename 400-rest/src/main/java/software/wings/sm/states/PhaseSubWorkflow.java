@@ -74,6 +74,7 @@ import software.wings.sm.StateExecutionData;
 import software.wings.sm.StateExecutionInstance;
 import software.wings.sm.StateType;
 import software.wings.sm.WorkflowStandardParams;
+import software.wings.sm.WorkflowStandardParamsExtensionService;
 
 import com.github.reinert.jjschema.SchemaIgnore;
 import com.google.common.annotations.VisibleForTesting;
@@ -119,11 +120,12 @@ public class PhaseSubWorkflow extends SubWorkflowState {
   @Inject @Transient private PhaseSubWorkflowHelperService phaseSubWorkflowHelperService;
   @Inject @Transient private SettingsService settingsService;
   @Inject @Transient private KryoSerializer kryoSerializer;
+  @Inject @Transient private WorkflowStandardParamsExtensionService workflowStandardParamsExtensionService;
 
   @Override
   public ExecutionResponse execute(ExecutionContext context) {
     WorkflowStandardParams workflowStandardParams = context.getContextElement(ContextElementType.STANDARD);
-    Application app = workflowStandardParams.getApp();
+    Application app = workflowStandardParamsExtensionService.getApp(workflowStandardParams);
     notNullCheck("App Cannot be null", app, USER);
 
     TemplateExpression serviceTemplateExpression = null, infraDefinitionTemplateExpression = null,

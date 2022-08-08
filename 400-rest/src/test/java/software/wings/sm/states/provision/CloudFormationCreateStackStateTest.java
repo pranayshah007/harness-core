@@ -8,12 +8,14 @@
 package software.wings.sm.states.provision;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.beans.FeatureName.CLOUDFORMATION_CHANGE_SET;
 import static io.harness.beans.FeatureName.CLOUDFORMATION_SKIP_WAIT_FOR_RESOURCES;
 import static io.harness.beans.FeatureName.SKIP_BASED_ON_STACK_STATUSES;
 import static io.harness.delegate.task.cloudformation.CloudformationBaseHelperImpl.CLOUDFORMATION_STACK_CREATE_BODY;
 import static io.harness.delegate.task.cloudformation.CloudformationBaseHelperImpl.CLOUDFORMATION_STACK_CREATE_URL;
 import static io.harness.logging.CommandExecutionStatus.FAILURE;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
+import static io.harness.rule.OwnerRule.ARVIND;
 import static io.harness.rule.OwnerRule.BOJANA;
 import static io.harness.rule.OwnerRule.JELENA;
 import static io.harness.rule.OwnerRule.NAVNEET;
@@ -43,7 +45,6 @@ import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyList;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
@@ -116,6 +117,7 @@ import software.wings.settings.SettingVariableTypes;
 import software.wings.sm.ExecutionContextImpl;
 import software.wings.sm.ExecutionResponse;
 import software.wings.sm.WorkflowStandardParams;
+import software.wings.sm.WorkflowStandardParamsExtensionService;
 import software.wings.utils.GitUtilsManager;
 import software.wings.utils.WingsTestConstants;
 
@@ -157,6 +159,7 @@ public class CloudFormationCreateStackStateTest extends WingsBaseTest {
   @Mock private LogService logService;
   @Mock private FeatureFlagService featureFlagService;
   @Mock private StateExecutionService stateExecutionService;
+  @Mock private WorkflowStandardParamsExtensionService workflowStandardParamsExtensionService;
 
   @InjectMocks @Spy private CloudFormationCreateStackState state = new CloudFormationCreateStackState("stateName");
 
@@ -170,7 +173,7 @@ public class CloudFormationCreateStackStateTest extends WingsBaseTest {
     WorkflowStandardParams mockParams = mock(WorkflowStandardParams.class);
     doReturn(mockParams).when(mockContext).fetchWorkflowStandardParamsFromContext();
     Environment env = anEnvironment().appId(APP_ID).uuid(ENV_ID).name(ENV_NAME).build();
-    doReturn(env).when(mockParams).fetchRequiredEnv();
+    doReturn(env).when(workflowStandardParamsExtensionService).fetchRequiredEnv(mockParams);
 
     Application application = new Application();
     application.setAppId(APP_ID);
@@ -179,12 +182,12 @@ public class CloudFormationCreateStackStateTest extends WingsBaseTest {
     when(mockContext.getApp()).thenReturn(application);
     when(mockContext.getEnv()).thenReturn(env);
 
-    Answer<String> doReturnSameValue = invocation -> invocation.getArgumentAt(0, String.class);
-    doAnswer(doReturnSameValue).when(mockContext).renderExpression(anyString());
+    Answer<String> doReturnSameValue = invocation -> invocation.getArgument(0, String.class);
+    doAnswer(doReturnSameValue).when(mockContext).renderExpression(any());
 
     SettingAttribute settingAttribute = aSettingAttribute().withValue(awsConfig).build();
-    doReturn(settingAttribute).when(settingsService).get(anyString());
-    doNothing().when(stateExecutionService).appendDelegateTaskDetails(anyString(), any());
+    doReturn(settingAttribute).when(settingsService).get(any());
+    doNothing().when(stateExecutionService).appendDelegateTaskDetails(any(), any());
   }
 
   @Test
@@ -247,7 +250,7 @@ public class CloudFormationCreateStackStateTest extends WingsBaseTest {
 
     GitConfig gitConfig = GitConfig.builder().urlType(GitConfig.UrlType.REPO).repoUrl(repoUrl).build();
     when(gitUtilsManager.getGitConfig("sourceRepoSettingId")).thenReturn(gitConfig);
-    when(mockInfrastructureProvisionerService.get(anyString(), anyString())).thenReturn(provisioner);
+    when(mockInfrastructureProvisionerService.get(any(), any())).thenReturn(provisioner);
     state.setFileFetched(false);
     state.setUseParametersFile(true);
     state.setParametersFilePaths(Collections.singletonList("parameters.json"));
@@ -365,7 +368,7 @@ public class CloudFormationCreateStackStateTest extends WingsBaseTest {
 
     GitConfig gitConfig = GitConfig.builder().urlType(GitConfig.UrlType.REPO).repoUrl(repoUrl).build();
     when(gitUtilsManager.getGitConfig("sourceRepoSettingId")).thenReturn(gitConfig);
-    when(mockInfrastructureProvisionerService.get(anyString(), anyString())).thenReturn(provisioner);
+    when(mockInfrastructureProvisionerService.get(any(), any())).thenReturn(provisioner);
     state.setFileFetched(false);
     state.executeInternal(mockContext, ACTIVITY_ID);
     ArgumentCaptor<DelegateTask> captor = ArgumentCaptor.forClass(DelegateTask.class);
@@ -408,7 +411,7 @@ public class CloudFormationCreateStackStateTest extends WingsBaseTest {
 
     GitConfig gitConfig = GitConfig.builder().urlType(GitConfig.UrlType.ACCOUNT).repoUrl("http://xyz.com").build();
     when(gitUtilsManager.getGitConfig("sourceRepoSettingId")).thenReturn(gitConfig);
-    when(mockInfrastructureProvisionerService.get(anyString(), anyString())).thenReturn(provisioner);
+    when(mockInfrastructureProvisionerService.get(any(), any())).thenReturn(provisioner);
     state.setFileFetched(false);
     state.executeInternal(mockContext, ACTIVITY_ID);
     ArgumentCaptor<DelegateTask> captor = ArgumentCaptor.forClass(DelegateTask.class);
@@ -455,7 +458,7 @@ public class CloudFormationCreateStackStateTest extends WingsBaseTest {
     doReturn(SweepingOutputInquiry.builder()).when(mockContext).prepareSweepingOutputInquiryBuilder();
     doReturn(SweepingOutputInstance.builder()).when(mockContext).prepareSweepingOutputBuilder(any());
     doReturn(ScriptStateExecutionData.builder().build()).when(mockContext).getStateExecutionData();
-    when(templateExpressionProcessor.getTemplateExpression(anyList(), anyString())).thenReturn(templateExpression);
+    when(templateExpressionProcessor.getTemplateExpression(anyList(), any())).thenReturn(templateExpression);
 
     SettingAttribute settingAttribute = mock(SettingAttribute.class);
     when(templateExpressionProcessor.resolveSettingAttributeByNameOrId(
@@ -479,7 +482,7 @@ public class CloudFormationCreateStackStateTest extends WingsBaseTest {
         "stackId", existingStackInfo, cloudFormationRollbackInfo, "UPDATE_ROLLBACK_COMPLETE");
     when(mockContext.getContextElement(ContextElementType.CLOUD_FORMATION_PROVISION))
         .thenReturn(CloudFormationOutputInfoElement.builder().build());
-    when(templateExpressionProcessor.getTemplateExpression(anyList(), anyString())).thenReturn(null);
+    when(templateExpressionProcessor.getTemplateExpression(anyList(), any())).thenReturn(null);
     state.setAwsConfigId("awsConfigId");
     cloudFormationElementList = state.handleResponse(createStackResponse, mockContext);
     verifyResponse(cloudFormationElementList, false, "awsConfigId");
@@ -494,14 +497,17 @@ public class CloudFormationCreateStackStateTest extends WingsBaseTest {
     CloudFormationInfrastructureProvisioner cloudFormationInfrastructureProvisioner =
         CloudFormationInfrastructureProvisioner.builder()
             .sourceType(GIT.name())
-            .gitFileConfig(GitFileConfig.builder().connectorId("sourceRepoSettingId").commitId("commitId").build())
+            .gitFileConfig(GitFileConfig.builder()
+                               .filePath("filePath")
+                               .connectorId("sourceRepoSettingId")
+                               .commitId("commitId")
+                               .build())
             .build();
 
     GitConfig gitConfig = GitConfig.builder().urlType(GitConfig.UrlType.REPO).repoUrl(repoUrl).build();
     when(gitUtilsManager.getGitConfig("sourceRepoSettingId")).thenReturn(gitConfig);
 
-    when(mockInfrastructureProvisionerService.get(anyString(), anyString()))
-        .thenReturn(cloudFormationInfrastructureProvisioner);
+    when(mockInfrastructureProvisionerService.get(any(), any())).thenReturn(cloudFormationInfrastructureProvisioner);
 
     state.setUseParametersFile(true);
     state.setParametersFilePaths(Collections.singletonList("filePath"));
@@ -548,9 +554,11 @@ public class CloudFormationCreateStackStateTest extends WingsBaseTest {
     Map<String, ResponseData> delegateResponse = ImmutableMap.of(ACTIVITY_ID,
         GitCommandExecutionResponse.builder()
             .gitCommandStatus(GitCommandExecutionResponse.GitCommandStatus.FAILURE)
+            .errorMessage("anErrorMessage")
             .build());
     ExecutionResponse response = state.handleAsyncResponse(mockContext, delegateResponse);
     assertThat(response.getExecutionStatus()).isEqualTo(ExecutionStatus.FAILED);
+    assertThat(response.getErrorMessage()).isEqualTo("anErrorMessage");
   }
 
   @Test
@@ -605,9 +613,11 @@ public class CloudFormationCreateStackStateTest extends WingsBaseTest {
     Map<String, ResponseData> delegateResponse = ImmutableMap.of(ACTIVITY_ID,
         FetchS3FilesExecutionResponse.builder()
             .commandStatus(FetchS3FilesExecutionResponse.FetchS3FilesCommandStatus.FAILURE)
+            .errorMessage("any error message")
             .build());
     ExecutionResponse response = state.handleAsyncResponse(mockContext, delegateResponse);
     assertThat(response.getExecutionStatus()).isEqualTo(ExecutionStatus.FAILED);
+    assertThat(response.getErrorMessage()).isNotEmpty();
   }
 
   private void testHandleAsyncResponse(CloudFormationCreateStackResponse createStackResponse) {
@@ -695,8 +705,7 @@ public class CloudFormationCreateStackStateTest extends WingsBaseTest {
     GitConfig gitConfig = GitConfig.builder().urlType(GitConfig.UrlType.REPO).repoUrl(repoUrl).build();
     when(gitUtilsManager.getGitConfig("sourceRepoSettingId")).thenReturn(gitConfig);
 
-    when(mockInfrastructureProvisionerService.get(anyString(), anyString()))
-        .thenReturn(cloudFormationInfrastructureProvisioner);
+    when(mockInfrastructureProvisionerService.get(any(), any())).thenReturn(cloudFormationInfrastructureProvisioner);
 
     state.setFileFetched(false);
     state.setTemplateExpressions(emptyList());
@@ -812,5 +821,107 @@ public class CloudFormationCreateStackStateTest extends WingsBaseTest {
     CloudFormationCreateStackRequest request =
         (CloudFormationCreateStackRequest) delegateTask.getData().getParameters()[0];
     assertThat(request.isSkipWaitForResources()).isTrue();
+  }
+
+  @Test
+  @Owner(developers = ARVIND)
+  @Category(UnitTests.class)
+  public void verifyDeployIsFalse() {
+    when(featureFlagService.isEnabled(CLOUDFORMATION_CHANGE_SET, mockContext.getAccountId())).thenReturn(false);
+    CloudFormationInfrastructureProvisioner provisioner = CloudFormationInfrastructureProvisioner.builder()
+                                                              .sourceType(TEMPLATE_URL.name())
+                                                              .templateFilePath(TEMPLATE_FILE_PATH)
+                                                              .build();
+
+    state.buildAndQueueDelegateTask(mockContext, provisioner, awsConfig, ACTIVITY_ID);
+    ArgumentCaptor<DelegateTask> captor = ArgumentCaptor.forClass(DelegateTask.class);
+    verify(delegateService).queueTask(captor.capture());
+    DelegateTask delegateTask = captor.getValue();
+    CloudFormationCreateStackRequest request =
+        (CloudFormationCreateStackRequest) delegateTask.getData().getParameters()[0];
+    assertThat(request.isDeploy()).isFalse();
+  }
+
+  @Test
+  @Owner(developers = ARVIND)
+  @Category(UnitTests.class)
+  public void verifyDeployIsTrue() {
+    when(featureFlagService.isEnabled(CLOUDFORMATION_CHANGE_SET, mockContext.getAccountId())).thenReturn(true);
+    CloudFormationInfrastructureProvisioner provisioner = CloudFormationInfrastructureProvisioner.builder()
+                                                              .sourceType(TEMPLATE_URL.name())
+                                                              .templateFilePath(TEMPLATE_FILE_PATH)
+                                                              .build();
+
+    state.buildAndQueueDelegateTask(mockContext, provisioner, awsConfig, ACTIVITY_ID);
+    ArgumentCaptor<DelegateTask> captor = ArgumentCaptor.forClass(DelegateTask.class);
+    verify(delegateService).queueTask(captor.capture());
+    DelegateTask delegateTask = captor.getValue();
+    CloudFormationCreateStackRequest request =
+        (CloudFormationCreateStackRequest) delegateTask.getData().getParameters()[0];
+    assertThat(request.isDeploy()).isTrue();
+  }
+
+  @Test
+  @Owner(developers = NAVNEET)
+  @Category(UnitTests.class)
+  public void verifyCommandUnitsForGitFileFetch() {
+    CloudFormationInfrastructureProvisioner provisionerGit =
+        CloudFormationInfrastructureProvisioner.builder().sourceType(GIT.name()).build();
+    List<String> commandsGit = state.commandUnits(provisionerGit);
+
+    assertThat(commandsGit.size()).isEqualTo(2);
+    assertThat(commandsGit).contains("Fetch Files");
+
+    CloudFormationInfrastructureProvisioner provisionerInline =
+        CloudFormationInfrastructureProvisioner.builder().sourceType(TEMPLATE_BODY.name()).build();
+    List<String> commandsInline = state.commandUnits(provisionerInline);
+
+    assertThat(commandsInline.size()).isEqualTo(1);
+    assertThat(commandsInline).doesNotContain("Fetch Files");
+
+    CloudFormationInfrastructureProvisioner provisionerS3 =
+        CloudFormationInfrastructureProvisioner.builder().sourceType(TEMPLATE_URL.name()).build();
+    List<String> commandsS3 = state.commandUnits(provisionerS3);
+
+    assertThat(commandsS3.size()).isEqualTo(1);
+    assertThat(commandsS3).doesNotContain("Fetch Files");
+
+    state.setUseParametersFile(true);
+    List<String> commandsS3withParams = state.commandUnits(provisionerS3);
+
+    assertThat(commandsS3withParams.size()).isEqualTo(2);
+    assertThat(commandsS3withParams).contains("Fetch Files");
+  }
+
+  @Test
+  @Owner(developers = NAVNEET)
+  @Category(UnitTests.class)
+  public void verifyDuplicateKeyErrorHandlingForTextVariables() {
+    CloudFormationInfrastructureProvisioner provisioner = CloudFormationInfrastructureProvisioner.builder()
+                                                              .sourceType(TEMPLATE_URL.name())
+                                                              .templateFilePath(TEMPLATE_FILE_PATH)
+                                                              .build();
+    when(mockInfrastructureProvisionerService.extractTextVariables(any(), any()))
+        .thenThrow(new IllegalStateException("Duplicate key"));
+
+    ExecutionResponse response = state.buildAndQueueDelegateTask(mockContext, provisioner, awsConfig, ACTIVITY_ID);
+    assertThat(response.getExecutionStatus()).isEqualTo(ExecutionStatus.FAILED);
+    assertThat(response.getErrorMessage()).isEqualTo("Duplicate key");
+  }
+
+  @Test
+  @Owner(developers = NAVNEET)
+  @Category(UnitTests.class)
+  public void verifyDuplicateKeyErrorHandlingForEncryptedTextVariables() {
+    CloudFormationInfrastructureProvisioner provisioner = CloudFormationInfrastructureProvisioner.builder()
+                                                              .sourceType(TEMPLATE_URL.name())
+                                                              .templateFilePath(TEMPLATE_FILE_PATH)
+                                                              .build();
+    when(mockInfrastructureProvisionerService.extractEncryptedTextVariables(any(), any(), any()))
+        .thenThrow(new IllegalStateException("Duplicate encrypted key"));
+
+    ExecutionResponse response = state.buildAndQueueDelegateTask(mockContext, provisioner, awsConfig, ACTIVITY_ID);
+    assertThat(response.getExecutionStatus()).isEqualTo(ExecutionStatus.FAILED);
+    assertThat(response.getErrorMessage()).isEqualTo("Duplicate encrypted key");
   }
 }

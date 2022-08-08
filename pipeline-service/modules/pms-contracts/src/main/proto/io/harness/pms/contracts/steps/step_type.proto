@@ -1,0 +1,46 @@
+// Copyright 2021 Harness Inc. All rights reserved.
+// Use of this source code is governed by the PolyForm Shield 1.0.0 license
+// that can be found in the licenses directory at the root of this repository, also available at
+// https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
+
+syntax = "proto3";
+
+package io.harness.pms.contracts.steps;
+
+option java_multiple_files = true;
+
+message SdkStep {
+  StepType stepType = 1;
+  StepInfo stepInfo = 2;
+  bool isPartOfStepPallete = 3;
+}
+
+message StepType {
+  string type = 1;
+  StepCategory stepCategory = 2;
+}
+
+message StepInfo {
+  string name = 1;
+  string type = 2;
+  StepMetaData stepMetaData = 3;
+  string featureFlag = 4;
+  string featureRestrictionName = 5;
+}
+
+message StepMetaData {
+  repeated string category = 1;
+  string folderPath = 2;
+  repeated string folderPaths = 3;
+}
+
+enum StepCategory {
+  UNKNOWN = 0;
+  PIPELINE = 1;
+  STAGE = 2;
+  STEP = 3;
+  STAGES = 4;
+  FORK = 5;
+  STEP_GROUP = 6;
+  STRATEGY = 7;
+}

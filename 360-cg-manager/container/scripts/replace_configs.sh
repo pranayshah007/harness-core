@@ -184,6 +184,10 @@ if [[ "" != "$CF_CLIENT_CONFIG_URL" ]]; then
   yq write -i $CONFIG_FILE cfClientConfig.configUrl "$CF_CLIENT_CONFIG_URL"
 fi
 
+if [[ "" != "$CF_CLIENT_BUFFER_SIZE" ]]; then
+  yq write -i $CONFIG_FILE cfClientConfig.bufferSize "$CF_CLIENT_BUFFER_SIZE"
+fi
+
 if [[ "" != "$CF_CLIENT_EVENT_URL" ]]; then
   yq write -i $CONFIG_FILE cfClientConfig.eventUrl "$CF_CLIENT_EVENT_URL"
 fi
@@ -482,6 +486,10 @@ fi
 
 if [[ "" != "$DELEGATE_DOCKER_IMAGE" ]]; then
   yq write -i $CONFIG_FILE portal.delegateDockerImage "$DELEGATE_DOCKER_IMAGE"
+fi
+
+if [[ "" != "$OPTIONAL_DELEGATE_TASK_REJECT_AT_LIMIT" ]]; then
+  yq write -i $CONFIG_FILE portal.optionalDelegateTaskRejectAtLimit "$OPTIONAL_DELEGATE_TASK_REJECT_AT_LIMIT"
 fi
 
 if [[ "" != "$EXECUTION_LOG_DATA_STORE" ]]; then
@@ -1001,4 +1009,8 @@ fi
 
 if [[ "" != "$INCORRECT_ATTEMPTS_UNTIL_SECOPS_NOTIFIED" ]]; then
  yq write -i config.yml totp.incorrectAttemptsUntilSecOpsNotified "$INCORRECT_ATTEMPTS_UNTIL_SECOPS_NOTIFIED"
+fi
+
+if [[ "" != "$AGENT_MTLS_SUBDOMAIN" ]]; then
+  yq write -i $CONFIG_FILE agentMtlsSubdomain "$AGENT_MTLS_SUBDOMAIN"
 fi

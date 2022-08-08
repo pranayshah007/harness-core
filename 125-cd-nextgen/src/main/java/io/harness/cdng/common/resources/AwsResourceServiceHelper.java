@@ -21,6 +21,7 @@ import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsManualConfigSpecDTO;
+import io.harness.delegate.beans.connector.awsconnector.AwsTaskParams;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.artifacts.ecr.EcrArtifactDelegateRequest;
 import io.harness.exception.InvalidRequestException;
@@ -101,6 +102,9 @@ public class AwsResourceServiceHelper {
             .executionTimeout(java.time.Duration.ofSeconds(timeoutInSecs))
             .taskSetupAbstraction(SetupAbstractionKeys.orgIdentifier, ngAccess.getOrgIdentifier())
             .taskSetupAbstraction(SetupAbstractionKeys.projectIdentifier, ngAccess.getProjectIdentifier())
+            .taskSetupAbstraction("ng", "true")
+            .taskSetupAbstraction("owner", ngAccess.getOrgIdentifier() + "/" + ngAccess.getProjectIdentifier())
+            .taskSelectors(((AwsTaskParams) taskParameters).getAwsConnector().getDelegateSelectors())
             .build();
     return delegateGrpcClientWrapper.executeSyncTask(delegateTaskRequest);
   }

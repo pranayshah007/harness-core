@@ -9,6 +9,7 @@ package io.harness.cvng.core.resources;
 
 import io.harness.annotations.ExposeInternalException;
 import io.harness.cvng.core.beans.CustomHealthSampleDataRequest;
+import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.core.services.api.CustomHealthService;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
@@ -23,6 +24,7 @@ import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import javax.validation.constraints.NotNull;
+import javax.ws.rs.BeanParam;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
@@ -47,12 +49,11 @@ public class CustomHealthResource {
   @Timed
   @ExceptionMetered
   @ApiOperation(value = "get sample data", nickname = "fetchSampleData")
-  public ResponseDTO<Object> getSampleData(@NotNull @QueryParam("accountId") String accountId,
+  public ResponseDTO<Object> getSampleData(@NotNull @BeanParam ProjectParams projectParams,
       @NotNull @QueryParam("connectorIdentifier") final String connectorIdentifier,
-      @QueryParam("orgIdentifier") @NotNull String orgIdentifier,
-      @QueryParam("projectIdentifier") @NotNull String projectIdentifier,
       @NotNull @QueryParam("tracingId") String tracingId, @NotNull @Body CustomHealthSampleDataRequest request) {
-    return ResponseDTO.newResponse(customHealthService.fetchSampleData(
-        accountId, connectorIdentifier, orgIdentifier, projectIdentifier, tracingId, request));
+    return ResponseDTO.newResponse(
+        customHealthService.fetchSampleData(projectParams.getAccountIdentifier(), connectorIdentifier,
+            projectParams.getOrgIdentifier(), projectParams.getProjectIdentifier(), tracingId, request));
   }
 }

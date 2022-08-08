@@ -24,6 +24,7 @@ import software.wings.beans.yaml.ChangeContext;
 import software.wings.infra.AwsAmiInfrastructure;
 import software.wings.infra.AwsAmiInfrastructure.Yaml;
 import software.wings.service.impl.yaml.handler.CloudProviderInfrastructure.CloudProviderInfrastructureYamlHandler;
+import software.wings.service.impl.yaml.service.YamlHelper;
 import software.wings.service.intfc.SettingsService;
 
 import com.google.inject.Inject;
@@ -34,6 +35,8 @@ import java.util.List;
 public class AwsAmiInfrastructureYamlHandler
     extends CloudProviderInfrastructureYamlHandler<Yaml, AwsAmiInfrastructure> {
   @Inject private SettingsService settingsService;
+  @Inject private YamlHelper yamlHelper;
+
   @Override
   public Yaml toYaml(AwsAmiInfrastructure bean, String appId) {
     SettingAttribute cloudProvider = settingsService.get(bean.getCloudProviderId());
@@ -74,7 +77,9 @@ public class AwsAmiInfrastructureYamlHandler
   private void toBean(AwsAmiInfrastructure bean, ChangeContext<Yaml> changeContext) {
     Yaml yaml = changeContext.getYaml();
     String accountId = changeContext.getChange().getAccountId();
+    String appId = yamlHelper.getAppId(accountId, changeContext.getChange().getFilePath());
     SettingAttribute cloudProvider = settingsService.getSettingAttributeByName(accountId, yaml.getCloudProviderName());
+    settingsService.checkRbacOnSettingAttribute(appId, cloudProvider);
     notNullCheck(format("Cloud Provider with name %s does not exist", yaml.getCloudProviderName()), cloudProvider);
     String spotinstCloudProviderId = null;
     if (AmiDeploymentType.SPOTINST == yaml.getAmiDeploymentType()) {

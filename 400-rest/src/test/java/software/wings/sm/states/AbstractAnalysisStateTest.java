@@ -53,7 +53,7 @@ import software.wings.service.intfc.ServiceResourceService;
 import software.wings.service.intfc.StateExecutionService;
 import software.wings.service.intfc.WorkflowExecutionService;
 import software.wings.service.intfc.verification.CVActivityLogService;
-import software.wings.service.intfc.verification.CVActivityLogService.Logger;
+import software.wings.service.intfc.verification.CVActivityLogger;
 import software.wings.sm.ExecutionContext;
 import software.wings.sm.states.AbstractAnalysisState.AbstractAnalysisStateKeys;
 
@@ -109,9 +109,9 @@ public class AbstractAnalysisStateTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void testGenerateDemoActivityLogs_whenStateIsSuccessful() {
     AbstractAnalysisState abstractAnalysisState = mock(AbstractAnalysisState.class, Mockito.CALLS_REAL_METHODS);
-    when(abstractAnalysisState.getTimeDuration()).thenReturn("15");
-    Logger activityLogger = mock(Logger.class);
-    abstractAnalysisState.generateDemoActivityLogs(activityLogger, false);
+    when(abstractAnalysisState.getTimeDuration(executionContext)).thenReturn("15");
+    CVActivityLogger activityLogger = mock(CVActivityLogger.class);
+    abstractAnalysisState.generateDemoActivityLogs(executionContext, activityLogger, false);
     verify(activityLogger, times(46)).info(anyString(), anyLong(), anyLong());
     verify(activityLogger, times(1)).info(eq("Analysis successful"));
   }
@@ -121,9 +121,9 @@ public class AbstractAnalysisStateTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void testGenerateDemoActivityLogs_whenStateFailed() {
     AbstractAnalysisState abstractAnalysisState = mock(AbstractAnalysisState.class, Mockito.CALLS_REAL_METHODS);
-    when(abstractAnalysisState.getTimeDuration()).thenReturn("15");
-    Logger activityLogger = mock(Logger.class);
-    abstractAnalysisState.generateDemoActivityLogs(activityLogger, true);
+    when(abstractAnalysisState.getTimeDuration(executionContext)).thenReturn("15");
+    CVActivityLogger activityLogger = mock(CVActivityLogger.class);
+    abstractAnalysisState.generateDemoActivityLogs(executionContext, activityLogger, true);
     verify(activityLogger, times(45)).info(anyString(), anyLong(), anyLong());
     verify(activityLogger, times(1)).error(anyString(), anyLong(), anyLong());
     verify(activityLogger, times(1)).error(eq("Analysis failed"));
@@ -136,11 +136,11 @@ public class AbstractAnalysisStateTest extends WingsBaseTest {
     AbstractAnalysisState abstractAnalysisState = mock(AbstractAnalysisState.class, Mockito.CALLS_REAL_METHODS);
     WingsPersistence wingsPersistence = mock(WingsPersistence.class);
     FieldUtils.writeField(abstractAnalysisState, "wingsPersistence", wingsPersistence, true);
-    when(abstractAnalysisState.getTimeDuration()).thenReturn("15");
+    when(abstractAnalysisState.getTimeDuration(executionContext)).thenReturn("15");
     String accountId = generateUuid();
     String stateExecutionId = generateUuid();
     abstractAnalysisState.generateDemoThirdPartyApiCallLogs(
-        accountId, stateExecutionId, false, "request body", "response body");
+        executionContext, accountId, stateExecutionId, false, "request body", "response body");
 
     ArgumentCaptor<List> argumentCaptor = ArgumentCaptor.forClass(List.class);
     verify(wingsPersistence).save(argumentCaptor.capture());
@@ -168,11 +168,11 @@ public class AbstractAnalysisStateTest extends WingsBaseTest {
     AbstractAnalysisState abstractAnalysisState = mock(AbstractAnalysisState.class, Mockito.CALLS_REAL_METHODS);
     WingsPersistence wingsPersistence = mock(WingsPersistence.class);
     FieldUtils.writeField(abstractAnalysisState, "wingsPersistence", wingsPersistence, true);
-    when(abstractAnalysisState.getTimeDuration()).thenReturn("15");
+    when(abstractAnalysisState.getTimeDuration(executionContext)).thenReturn("15");
     String accountId = generateUuid();
     String stateExecutionId = generateUuid();
     abstractAnalysisState.generateDemoThirdPartyApiCallLogs(
-        accountId, stateExecutionId, true, "request body", "response body");
+        executionContext, accountId, stateExecutionId, true, "request body", "response body");
     ArgumentCaptor<List> argumentCaptor = ArgumentCaptor.forClass(List.class);
     verify(wingsPersistence).save(argumentCaptor.capture());
     List<ThirdPartyApiCallLog> savedCallLogs = argumentCaptor.getValue();
@@ -326,7 +326,7 @@ public class AbstractAnalysisStateTest extends WingsBaseTest {
   public void testGetResolvedFieldValue_whenExpressionInvalidValue() throws Exception {
     AbstractAnalysisState abstractAnalysisState = mock(AbstractAnalysisState.class, Mockito.CALLS_REAL_METHODS);
     FieldUtils.writeField(abstractAnalysisState, "cvActivityLogService", cvActivityLogService, true);
-    when(cvActivityLogService.getLoggerByStateExecutionId(anyString(), anyString())).thenReturn(mock(Logger.class));
+    when(cvActivityLogService.getLoggerByStateExecutionId(any(), any())).thenReturn(mock(CVActivityLogger.class));
     abstractAnalysisState.setHostnameTemplate("${hostnameTemplate}");
     when(executionContext.renderExpression("${hostnameTemplate}")).thenReturn("${hostnameTemplate}");
 
@@ -343,7 +343,7 @@ public class AbstractAnalysisStateTest extends WingsBaseTest {
   public void testGetResolvedFieldValue_whenExpressionValidValue() throws Exception {
     AbstractAnalysisState abstractAnalysisState = mock(AbstractAnalysisState.class, Mockito.CALLS_REAL_METHODS);
     FieldUtils.writeField(abstractAnalysisState, "cvActivityLogService", cvActivityLogService, true);
-    when(cvActivityLogService.getLoggerByStateExecutionId(anyString(), anyString())).thenReturn(mock(Logger.class));
+    when(cvActivityLogService.getLoggerByStateExecutionId(any(), any())).thenReturn(mock(CVActivityLogger.class));
     abstractAnalysisState.setHostnameTemplate("${hostnameTemplate}");
     when(executionContext.renderExpression("${hostnameTemplate}")).thenReturn("resolved template");
 

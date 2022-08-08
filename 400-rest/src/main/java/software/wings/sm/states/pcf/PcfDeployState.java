@@ -85,6 +85,7 @@ import software.wings.sm.InstanceStatusSummary;
 import software.wings.sm.State;
 import software.wings.sm.StateType;
 import software.wings.sm.WorkflowStandardParams;
+import software.wings.sm.WorkflowStandardParamsExtensionService;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.github.reinert.jjschema.Attributes;
@@ -110,6 +111,7 @@ public class PcfDeployState extends State {
   @Inject private transient PcfStateHelper pcfStateHelper;
   @Inject private transient SweepingOutputService sweepingOutputService;
   @Inject protected transient FeatureFlagService featureFlagService;
+  @Inject private transient WorkflowStandardParamsExtensionService workflowStandardParamsExtensionService;
 
   @Attributes(title = "Desired Instances(cumulative)", required = true) private Integer instanceCount;
   @Attributes(title = "Instance Unit Type", required = true)
@@ -182,7 +184,7 @@ public class PcfDeployState extends State {
     WorkflowStandardParams workflowStandardParams = context.getContextElement(ContextElementType.STANDARD);
 
     Application app = appService.get(context.getAppId());
-    Environment env = workflowStandardParams.getEnv();
+    Environment env = workflowStandardParamsExtensionService.getEnv(workflowStandardParams);
 
     PcfInfrastructureMapping pcfInfrastructureMapping =
         (PcfInfrastructureMapping) infrastructureMappingService.get(app.getUuid(), context.fetchInfraMappingId());
@@ -282,7 +284,8 @@ public class PcfDeployState extends State {
 
   protected Integer getUpsizeUpdateCount(SetupSweepingOutputPcf setupSweepingOutputPcf, CfInternalConfig pcfConfig) {
     Integer count = setupSweepingOutputPcf.getDesiredActualFinalCount();
-    return getInstanceCountToBeUpdated(count, instanceCount, instanceUnitType, true, pcfConfig, true);
+    return getInstanceCountToBeUpdated(
+        count, instanceCount, instanceUnitType, true, pcfConfig, true, setupSweepingOutputPcf.isWebProcessCountZero());
   }
 
   @VisibleForTesting
@@ -297,7 +300,7 @@ public class PcfDeployState extends State {
         ? existingAppInstanceCount
         : setupSweepingOutputPcf.getDesiredActualFinalCount();
     downsizeUpdateCount = getInstanceCountToBeUpdated(runningInstanceCount, downsizeUpdateCount,
-        downsizeInstanceUnitType, false, pcfConfig, hasUserDefinedDownsizeForOldApp);
+        downsizeInstanceUnitType, false, pcfConfig, hasUserDefinedDownsizeForOldApp, false);
 
     return downsizeUpdateCount;
   }
@@ -318,8 +321,12 @@ public class PcfDeployState extends State {
   }
 
   private Integer getInstanceCountToBeUpdated(Integer maxInstanceCount, Integer instanceCountValue,
-      InstanceUnitType unitType, boolean upsize, CfInternalConfig pcfConfig, boolean hasUserDefinedDownsizeForOldApp) {
+      InstanceUnitType unitType, boolean upsize, CfInternalConfig pcfConfig, boolean hasUserDefinedDownsizeForOldApp,
+      boolean isWebProcessCountZero) {
     // final count after upsize or downsize in this deploy phase
+    if (isWebProcessCountZero) {
+      return 0;
+    }
     Integer updateCount;
     if (unitType == PERCENTAGE) {
       int percent = Math.min(instanceCountValue, 100);

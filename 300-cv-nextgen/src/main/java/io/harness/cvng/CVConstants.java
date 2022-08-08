@@ -44,16 +44,15 @@ public interface CVConstants {
   String DATA_SOURCE_TYPE = "type";
   String SLO_TARGET_TYPE = "type";
   String SLI_METRIC_TYPE = "type";
+  String METRIC_THRESHOLD_METRIC_TYPE = "type";
   String LIVE_MONITORING = "live_monitoring";
   String DEPLOYMENT = "deployment";
 
-  String TAG_DATA_SOURCE = "dataSource";
+  String TAG_DATA_SOURCE = "dataSourceType";
   String TAG_VERIFICATION_TYPE = "verificationType";
   String TAG_ACCOUNT_ID = "accountId";
   String TAG_ONBOARDING = "onboarding";
-  String TAG_UNRECORDED = "unrecorded";
   String STATEMACHINE_PUBLISHER = "srm_statemachine_publisher";
-  String STATEMACHINE_CONSUMER = "srm_statemachine_consumer";
   String SET_KEY = "$set";
   int BULK_OPERATION_THRESHOLD = 1000;
 }

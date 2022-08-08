@@ -25,6 +25,7 @@ import io.harness.cvng.beans.DataSourceType;
 import io.harness.cvng.beans.SyncDataCollectionRequest;
 import io.harness.cvng.core.beans.OnboardingRequestDTO;
 import io.harness.cvng.core.beans.OnboardingResponseDTO;
+import io.harness.cvng.core.beans.monitoredService.MonitoredServiceDTO;
 import io.harness.cvng.core.beans.sli.SLIOnboardingGraphs;
 import io.harness.cvng.core.entities.CVConfig;
 import io.harness.cvng.core.entities.MetricCVConfig;
@@ -33,11 +34,13 @@ import io.harness.cvng.core.services.api.DataCollectionSLIInfoMapper;
 import io.harness.cvng.core.services.api.MetricPackService;
 import io.harness.cvng.core.services.api.OnboardingService;
 import io.harness.cvng.core.services.api.monitoredService.HealthSourceService;
+import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
 import io.harness.cvng.servicelevelobjective.beans.SLIMetricType;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorDTO;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorService;
 import io.harness.cvng.servicelevelobjective.transformer.servicelevelindicator.ServiceLevelIndicatorTransformer;
+import io.harness.ng.core.CorrelationContext;
 import io.harness.persistence.HPersistence;
 import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
@@ -73,6 +76,7 @@ public class ServiceLevelIndicatorResourceTest extends CvNextGenTestBase {
   @Inject private Injector injector;
   @Inject private ServiceLevelIndicatorService serviceLevelIndicatorService;
   @Inject private MetricPackService metricPackService;
+  @Inject MonitoredServiceService monitoredServiceService;
   @Inject HPersistence hPersistence;
   @Inject Map<SLIMetricType, ServiceLevelIndicatorTransformer> serviceLevelIndicatorTransformerMap;
   @Inject private Map<DataSourceType, DataCollectionSLIInfoMapper> dataSourceTypeDataCollectionInfoMapperMap;
@@ -84,12 +88,15 @@ public class ServiceLevelIndicatorResourceTest extends CvNextGenTestBase {
       ResourceTestRule.builder().addResource(serviceLevelIndicatorResource).build();
 
   private String connectorIdentifier;
+  private String monitoredServiceIdentifier;
 
   @SneakyThrows
   @Before
   public void setup() {
     injector.injectMembers(serviceLevelIndicatorResource);
     connectorIdentifier = generateUuid();
+    monitoredServiceIdentifier = "monitoredServiceIdentifier";
+    createMonitoredService();
   }
 
   @Test
@@ -97,6 +104,7 @@ public class ServiceLevelIndicatorResourceTest extends CvNextGenTestBase {
   @Category(UnitTests.class)
   public void testGetOnboardingGraph() throws IOException, IllegalAccessException {
     String tracingId = "tracingId";
+    CorrelationContext.setCorrelationId(tracingId);
     ServiceLevelIndicatorDTO serviceLevelIndicatorDTO =
         builderFactory.getThresholdServiceLevelIndicatorDTOBuilder().build();
     String monitoredServiceIdentifier = "monitoredServiceIdentifier";
@@ -113,7 +121,7 @@ public class ServiceLevelIndicatorResourceTest extends CvNextGenTestBase {
     ServiceLevelIndicator serviceLevelIndicator =
         serviceLevelIndicatorTransformerMap.get(serviceLevelIndicatorDTO.getSpec().getType())
             .getEntity(builderFactory.getProjectParams(), serviceLevelIndicatorDTO, monitoredServiceIdentifier,
-                serviceLevelIndicatorDTO.getHealthSourceRef());
+                serviceLevelIndicatorDTO.getHealthSourceRef(), true);
     DataCollectionInfo dataCollectionInfo = dataSourceTypeDataCollectionInfoMapperMap.get(cvConfig.getType())
                                                 .toDataCollectionInfo(Arrays.asList(cvConfig), serviceLevelIndicator);
 
@@ -172,5 +180,12 @@ public class ServiceLevelIndicatorResourceTest extends CvNextGenTestBase {
         .isEqualTo("Calls per Minute");
     assertThat(sliOnboardingGraphs.getMetricGraphs().get("Calls per Minute").getDataPoints().get(0).getValue())
         .isEqualTo(343.0);
+  }
+
+  private void createMonitoredService() {
+    MonitoredServiceDTO monitoredServiceDTO =
+        builderFactory.monitoredServiceDTOBuilder().identifier(monitoredServiceIdentifier).build();
+    monitoredServiceDTO.setSources(MonitoredServiceDTO.Sources.builder().build());
+    monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
   }
 }

@@ -49,7 +49,7 @@ if [[ -e proxy.config ]]; then
       if [[ "$PROXY_PASSWORD_ENC" != "" ]]; then
         export PROXY_PASSWORD=$(echo $PROXY_PASSWORD_ENC | openssl enc -d -a -des-ecb -K ${hexkey})
       fi
-      export PROXY_CURL="-x "$PROXY_SCHEME"://"$PROXY_USER:$PROXY_PASSWORD@$PROXY_HOST:$PROXY_PORT
+      export PROXY_CURL="-x "$PROXY_SCHEME"://"$PROXY_USER:$(url_encode "$PROXY_PASSWORD")@$PROXY_HOST:$PROXY_PORT
     else
       export PROXY_CURL="-x "$PROXY_SCHEME"://"$PROXY_HOST:$PROXY_PORT
       export http_proxy=$PROXY_SCHEME://$PROXY_HOST:$PROXY_PORT
@@ -112,14 +112,6 @@ if [[ $ACCOUNT_STATUS == "DELETED" ]]; then
   exit 0
 fi
 
-JRE_TAR_FILE=jre_x64_linux_8u242b08.tar.gz
-
-if [ -f "$JRE_TAR_FILE" ]; then
-  echo "untar jre"
-  tar -xzf $JRE_TAR_FILE
-  rm -f $JRE_TAR_FILE
-fi
-
 if [ ! -d $JRE_DIR -o ! -e $JRE_BINARY ]; then
   echo "Downloading JRE packages..."
   JVM_TAR_FILENAME=$(basename "$JVM_URL")
@@ -137,23 +129,22 @@ fi
 
 export DEPLOY_MODE=${deployMode}
 
+<#if isOnPrem == "false">
+REMOTE_WATCHER_VERSION=${watcherJarVersion}
+REMOTE_WATCHER_URL=${remoteWatcherUrlCdn}/openjdk-8u242/${watcherJarVersion}/watcher.jar
+<#else>
 echo "Checking Watcher latest version..."
 WATCHER_STORAGE_URL=${watcherStorageUrl}
 REMOTE_WATCHER_LATEST=$(curl $MANAGER_PROXY_CURL -ks $WATCHER_STORAGE_URL/${watcherCheckLocation})
-if [[ $DEPLOY_MODE != "KUBERNETES" ]]; then
 REMOTE_WATCHER_URL=$WATCHER_STORAGE_URL/$(echo $REMOTE_WATCHER_LATEST | cut -d " " -f2)
-<#if useCdn == "true">
-else
-REMOTE_WATCHER_URL=${remoteWatcherUrlCdn}/$(echo $REMOTE_WATCHER_LATEST | cut -d " " -f2)
-</#if>
-fi
 REMOTE_WATCHER_VERSION=$(echo $REMOTE_WATCHER_LATEST | cut -d " " -f1)
+</#if>
 
 if [ ! -e watcher.jar ]; then
   echo "Downloading Watcher $REMOTE_WATCHER_VERSION ..."
   curl $MANAGER_PROXY_CURL -#k $REMOTE_WATCHER_URL -o watcher.jar
 else
-  WATCHER_CURRENT_VERSION=$(jar_app_version watcher.jar)
+  WATCHER_CURRENT_VERSION=$(echo $(jar_app_version watcher.jar) | cut -d "." -f3)
   if [[ $REMOTE_WATCHER_VERSION != $WATCHER_CURRENT_VERSION ]]; then
     echo "The current version $WATCHER_CURRENT_VERSION is not the same as the expected remote version $REMOTE_WATCHER_VERSION"
     echo "Downloading Watcher $REMOTE_WATCHER_VERSION ..."
@@ -190,14 +181,9 @@ if [ ! -e config-watcher.yml ]; then
 fi
 test "$(tail -c 1 config-watcher.yml)" && `echo "" >> config-watcher.yml`
 set +x
-if ! `grep accountSecret config-watcher.yml > /dev/null`; then
-  echo "accountSecret: ${accountSecret}" >> config-watcher.yml
-fi
-<#if delegateToken??>
 if ! `grep delegateToken config-watcher.yml > /dev/null`; then
-echo "delegateToken: ${delegateToken}" >> config-watcher.yml
+  echo "delegateToken: ${delegateToken}" >> config-watcher.yml
 fi
-</#if>
 set -x
 if ! `grep managerUrl config-watcher.yml > /dev/null`; then
   echo "managerUrl: ${managerHostAndPort}/api/" >> config-watcher.yml
@@ -243,31 +229,30 @@ export DELEGATE_TYPE=${delegateType}
 export HOSTNAME
 export CAPSULE_CACHE_DIR="$DIR/.cache"
 
+<#if isJdk11Watcher == "true">
+# Strip JAVA_OPTS that is not recognized by JRE11
+<#noparse>
+WATCHER_JAVA_OPTS=${WATCHER_JAVA_OPTS//UseCGroupMemoryLimitForHeap/UseContainerSupport}
+</#noparse>
+</#if>
 if [[ $1 == "upgrade" ]]; then
   echo "Upgrade"
   WATCHER_CURRENT_VERSION=$(jar_app_version watcher.jar)
   mkdir -p watcherBackup.$WATCHER_CURRENT_VERSION
   cp watcher.jar watcherBackup.$WATCHER_CURRENT_VERSION
-  $JRE_BINARY $PROXY_SYS_PROPS $OVERRIDE_TMP_PROPS -Dwatchersourcedir="$DIR" -Xmx192m -XX:+HeapDumpOnOutOfMemoryError -XX:+PrintGCDetails -XX:+PrintGCDateStamps -Xloggc:mygclogfilename.gc -XX:+UseParallelGC -XX:MaxGCPauseMillis=500 -Dfile.encoding=UTF-8 $WATCHER_JAVA_OPTS -jar watcher.jar config-watcher.yml upgrade $2
+  $JRE_BINARY $PROXY_SYS_PROPS $OVERRIDE_TMP_PROPS -Dwatchersourcedir="$DIR" -Xmx192m -XX:+HeapDumpOnOutOfMemoryError -Xloggc:mygclogfilename.gc -XX:+UseParallelGC -XX:MaxGCPauseMillis=500 -Dfile.encoding=UTF-8 $WATCHER_JAVA_OPTS -jar watcher.jar config-watcher.yml upgrade $2
 else
   if `pgrep -f "\-Dwatchersourcedir=$DIR"> /dev/null`; then
     echo "Watcher already running"
   else
-    nohup $JRE_BINARY $PROXY_SYS_PROPS $OVERRIDE_TMP_PROPS -Dwatchersourcedir="$DIR" -Xmx192m -XX:+HeapDumpOnOutOfMemoryError -XX:+PrintGCDetails -XX:+PrintGCDateStamps -Xloggc:mygclogfilename.gc -XX:+UseParallelGC -XX:MaxGCPauseMillis=500 -Dfile.encoding=UTF-8 $WATCHER_JAVA_OPTS -jar watcher.jar config-watcher.yml >nohup-watcher.out 2>&1 &
-    sleep 1
-    if [ -s nohup-watcher.out ]; then
-      echo "Failed to start Watcher."
-      echo "$(cat nohup-watcher.out)"
-      exit 1
+    nohup $JRE_BINARY $PROXY_SYS_PROPS $OVERRIDE_TMP_PROPS -Dwatchersourcedir="$DIR" -Xmx192m -XX:+HeapDumpOnOutOfMemoryError -Xloggc:mygclogfilename.gc -XX:+UseParallelGC -XX:MaxGCPauseMillis=500 -Dfile.encoding=UTF-8 $WATCHER_JAVA_OPTS -jar watcher.jar config-watcher.yml >nohup-watcher.out 2>&1 &
+    sleep 5
+    if `pgrep -f "\-Dwatchersourcedir=$DIR"> /dev/null`; then
+      echo "Watcher started"
     else
-      sleep 3
-      if `pgrep -f "\-Dwatchersourcedir=$DIR"> /dev/null`; then
-        echo "Watcher started"
-      else
-        echo "Failed to start Watcher."
-        echo "$(tail -n 30 watcher.log)"
-        exit 1
-      fi
+      echo "Failed to start Watcher."
+      echo "$(tail -n 30 watcher.log)"
+      exit 1
     fi
   fi
 fi ) 2>&1 | tee -a logs/log_clean.log && sed '/######################################################################## 100.0%/d' logs/log_clean.log >> logs/startscript.log

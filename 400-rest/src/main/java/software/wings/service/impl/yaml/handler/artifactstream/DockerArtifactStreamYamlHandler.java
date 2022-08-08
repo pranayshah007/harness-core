@@ -106,9 +106,12 @@ public class DockerArtifactStreamYamlHandler extends ArtifactStreamYamlHandler<Y
 
   private DockerArtifactStream toBean(
       String accountId, DockerArtifactStreamBuilder builder, Yaml artifactStreamYaml, String appId) {
-    return builder.settingId(getSettingId(accountId, appId, artifactStreamYaml.getServerName()))
-        .imageName(artifactStreamYaml.getImageName())
-        .build();
+    DockerArtifactStream dockerArtifactStream =
+        builder.settingId(getSettingId(accountId, appId, artifactStreamYaml.getServerName()))
+            .imageName(artifactStreamYaml.getImageName())
+            .build();
+    dockerArtifactStream.setCollectionEnabled(artifactStreamYaml.getCollectionEnabled());
+    return dockerArtifactStream;
   }
 
   @Override

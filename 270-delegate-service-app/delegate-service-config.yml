@@ -4,7 +4,7 @@ server:
       port: 9080
       keyStorePath: keystore.jks
       keyStorePassword: password
-      trustStorePath: ${JAVA_HOME}/jre/lib/security/cacerts
+      trustStorePath: ${JAVA_HOME}/lib/security/cacerts
       certAlias: localhost
       validateCerts: false
       maxRequestHeaderSize: 100KiB
@@ -16,7 +16,7 @@ server:
       port: 9092
       keyStorePath: keystore.jks
       keyStorePassword: password
-      trustStorePath: ${JAVA_HOME}/jre/lib/security/cacerts
+      trustStorePath: ${JAVA_HOME}/lib/security/cacerts
       certAlias: localhost
       validateCerts: false
   requestLog:
@@ -52,6 +52,7 @@ serviceScheduler:
 enableIterators: true
 clusterName: ""
 deploymentClusterName: ""
+agentMtlsSubdomain: ""
 
 jobsFrequencyConfig:
   accountLicenseCheckJobFrequencyInMinutes: 60
@@ -200,7 +201,7 @@ deployMode: KUBERNETES
 deployVariant: SAAS
 envPath: ""
 
-scmVersion: 98fc345b
+scmVersion: 36d92fd8
 
 portal:
   url: https://localhost:8000

@@ -45,8 +45,8 @@ fi
 check_package_installed lcov
 clear_dir ${MODULE_COVERAGE_DIR}
 
-echo "Bazel Command: bazel coverage -s -k --java_toolchain=@bazel_tools//tools/jdk:toolchain_hostjdk8 --collect_code_coverage --combined_report=lcov --coverage_report_generator=@bazel_tools//tools/test:coverage_report_generator //${MODULE_NAME}/..."
-bazel coverage -s -k --java_toolchain=@bazel_tools//tools/jdk:toolchain_hostjdk8 \
+echo "Bazel Command: bazel coverage -s -k --java_toolchain=@bazel_tools//tools/jdk:toolchain_java11 --collect_code_coverage --combined_report=lcov --coverage_report_generator=@bazel_tools//tools/test:coverage_report_generator //${MODULE_NAME}/..."
+bazel coverage -s -k --java_toolchain=@bazel_tools//tools/jdk:toolchain_java11 \
 --collect_code_coverage --combined_report=lcov \
 --coverage_report_generator=@bazel_tools//tools/test:coverage_report_generator \
 //${MODULE_NAME}/...

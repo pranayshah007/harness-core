@@ -137,6 +137,7 @@ public class MainConfiguration extends Configuration implements AssetsBundleConf
   @JsonProperty("serviceScheduler") private SchedulerConfig serviceSchedulerConfig = new SchedulerConfig();
   @JsonProperty("watcherMetadataUrl") private String watcherMetadataUrl;
   @JsonProperty("delegateMetadataUrl") private String delegateMetadataUrl;
+  @JsonProperty("agentMtlsSubdomain") private String agentMtlsSubdomain;
   @JsonProperty("awsInstanceTypes") private List<String> awsInstanceTypes;
   @JsonProperty("awsRegionIdToName") private Map<String, String> awsRegionIdToName;
   @JsonProperty("apiUrl") private String apiUrl;

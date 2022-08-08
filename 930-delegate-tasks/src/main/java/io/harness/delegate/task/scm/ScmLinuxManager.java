@@ -19,13 +19,21 @@ import java.io.IOException;
 
 @OwnedBy(HarnessTeam.DX)
 public class ScmLinuxManager extends ScmUnixManager {
+  EpollEventLoopGroup epollEventLoopGroup;
+
   public ScmLinuxManager() throws IOException {}
 
   public ManagedChannel getChannel() {
+    epollEventLoopGroup = new EpollEventLoopGroup();
     return NettyChannelBuilder.forAddress(new DomainSocketAddress(socketAddress))
-        .eventLoopGroup(new EpollEventLoopGroup())
+        .eventLoopGroup(epollEventLoopGroup)
         .channelType(EpollDomainSocketChannel.class)
         .usePlaintext()
         .build();
+  }
+
+  @Override
+  void shutdownEventLoopGroup() {
+    epollEventLoopGroup.shutdownGracefully();
   }
 }

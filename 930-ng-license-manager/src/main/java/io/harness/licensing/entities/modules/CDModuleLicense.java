@@ -9,7 +9,7 @@ package io.harness.licensing.entities.modules;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.licensing.beans.modules.types.CDLicenseType;
+import io.harness.cd.CDLicenseType;
 
 import lombok.Builder;
 import lombok.Data;

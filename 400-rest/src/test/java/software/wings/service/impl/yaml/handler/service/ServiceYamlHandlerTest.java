@@ -47,7 +47,7 @@ import software.wings.beans.NameValuePair;
 import software.wings.beans.Service;
 import software.wings.beans.Service.Yaml;
 import software.wings.beans.ServiceVariable;
-import software.wings.beans.ServiceVariable.Type;
+import software.wings.beans.ServiceVariableType;
 import software.wings.beans.yaml.ChangeContext;
 import software.wings.beans.yaml.GitFileChange;
 import software.wings.service.impl.yaml.handler.tag.HarnessTagYamlHelper;
@@ -95,17 +95,18 @@ public class ServiceYamlHandlerTest extends YamlHandlerTestBase {
     Application application = Builder.anApplication().accountId(ACCOUNT_ID).uuid(APP_ID).build();
     ServiceVariable enc_1 = ServiceVariable.builder()
                                 .name("enc_1")
-                                .type(Type.ENCRYPTED_TEXT)
+                                .type(ServiceVariableType.ENCRYPTED_TEXT)
                                 .encryptedValue("some-secret")
                                 .accountId(ACCOUNT_ID)
                                 .build();
     ServiceVariable enc_2 = ServiceVariable.builder()
                                 .name("enc_2")
-                                .type(Type.ENCRYPTED_TEXT)
+                                .type(ServiceVariableType.ENCRYPTED_TEXT)
                                 .encryptedValue("other-secret")
                                 .accountId(ACCOUNT_ID)
                                 .build();
-    ServiceVariable var_1 = ServiceVariable.builder().name("var_1").type(Type.TEXT).value("var".toCharArray()).build();
+    ServiceVariable var_1 =
+        ServiceVariable.builder().name("var_1").type(ServiceVariableType.TEXT).value("var".toCharArray()).build();
     service = Service.builder()
                   .appId(APP_ID)
                   .uuid(SERVICE_ID)
@@ -127,17 +128,17 @@ public class ServiceYamlHandlerTest extends YamlHandlerTestBase {
     when(appContainerService.getByName(anyString(), anyString()))
         .thenReturn(AppContainer.Builder.anAppContainer().withName("Tomcat 7").build());
     when(serviceResourceService.save(any(), anyBoolean(), anyBoolean()))
-        .thenAnswer(invocationOnMock -> invocationOnMock.getArgumentAt(0, Service.class));
+        .thenAnswer(invocationOnMock -> invocationOnMock.getArgument(0, Service.class));
     when(serviceResourceService.update(any(), anyBoolean()))
-        .thenAnswer(invocationOnMock -> invocationOnMock.getArgumentAt(0, Service.class));
+        .thenAnswer(invocationOnMock -> invocationOnMock.getArgument(0, Service.class));
     when(serviceVariableService.save(any(), anyBoolean()))
-        .thenAnswer(invocationOnMock -> invocationOnMock.getArgumentAt(0, ServiceVariable.class));
+        .thenAnswer(invocationOnMock -> invocationOnMock.getArgument(0, ServiceVariable.class));
     when(appService.get(APP_ID)).thenReturn(application);
     when(yamlHelper.getApplicationIfPresent(ACCOUNT_ID, validYamlFilePath)).thenReturn(Optional.of(application));
     when(yamlHelper.extractEncryptedRecordId(eq("safeharness:some-secret"), anyString())).thenReturn("some-secret");
     when(yamlHelper.extractEncryptedRecordId(eq("amazonkms:other-secret"), anyString())).thenReturn("other-secret");
     when(serviceVariableService.update(any(), anyBoolean()))
-        .thenAnswer(invocationOnMock -> invocationOnMock.getArgumentAt(0, ServiceVariable.class));
+        .thenAnswer(invocationOnMock -> invocationOnMock.getArgument(0, ServiceVariable.class));
     when(customDeploymentTypeService.fetchDeploymentTemplateUri(WingsTestConstants.TEMPLATE_ID))
         .thenReturn("template-uri");
     when(customDeploymentTypeService.fetchDeploymentTemplateIdFromUri(anyString(), eq("template-uri")))
@@ -307,7 +308,7 @@ public class ServiceYamlHandlerTest extends YamlHandlerTestBase {
     NameValuePair.Yaml newServiceVar = NameValuePair.Yaml.builder()
                                            .name("enc_3")
                                            .value("safeharness:new-secret")
-                                           .valueType(Type.ENCRYPTED_TEXT.name())
+                                           .valueType(ServiceVariableType.ENCRYPTED_TEXT.name())
                                            .build();
     yaml.getConfigVariables().add(newServiceVar);
     when(yamlHelper.extractEncryptedRecordId(eq("safeharness:new-secret"), anyString())).thenReturn("new-secret");
@@ -331,7 +332,7 @@ public class ServiceYamlHandlerTest extends YamlHandlerTestBase {
     NameValuePair.Yaml newServiceVar = NameValuePair.Yaml.builder()
                                            .name("enc-4")
                                            .value("safeharness:new-secret")
-                                           .valueType(Type.ENCRYPTED_TEXT.name())
+                                           .valueType(ServiceVariableType.ENCRYPTED_TEXT.name())
                                            .build();
     yaml.getConfigVariables().add(newServiceVar);
     when(yamlHelper.extractEncryptedRecordId(eq("safeharness:new-secret"), anyString())).thenReturn("new-secret");

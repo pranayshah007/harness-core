@@ -11,10 +11,12 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.k8s.model.KubernetesResourceId;
 import io.harness.pms.sdk.core.data.ExecutionSweepingOutput;
 import io.harness.pms.sdk.core.data.Outcome;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
+import java.util.List;
 import lombok.Builder;
 import lombok.Value;
 import org.springframework.data.annotation.TypeAlias;
@@ -28,4 +30,5 @@ import org.springframework.data.annotation.TypeAlias;
 public class K8sRollingOutcome implements Outcome, ExecutionSweepingOutput {
   String releaseName;
   int releaseNumber;
+  List<KubernetesResourceId> prunedResourceIds;
 }

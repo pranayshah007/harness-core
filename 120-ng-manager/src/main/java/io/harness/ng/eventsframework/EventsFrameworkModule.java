@@ -18,13 +18,12 @@ import static io.harness.eventsframework.EventsFrameworkConstants.GIT_PR_EVENT_S
 import static io.harness.eventsframework.EventsFrameworkConstants.GIT_PUSH_EVENT_STREAM;
 import static io.harness.eventsframework.EventsFrameworkConstants.GIT_PUSH_EVENT_STREAM_MAX_TOPIC_SIZE;
 import static io.harness.eventsframework.EventsFrameworkConstants.INSTANCE_STATS;
-import static io.harness.eventsframework.EventsFrameworkConstants.PIPELINE_EXECUTION_SUMMARY_CD_CONSUMER;
-import static io.harness.eventsframework.EventsFrameworkConstants.PIPELINE_EXECUTION_SUMMARY_CD_REDIS_KEY;
 import static io.harness.eventsframework.EventsFrameworkConstants.PIPELINE_EXECUTION_SUMMARY_REDIS_EVENT_CONSUMER_CD;
 import static io.harness.eventsframework.EventsFrameworkConstants.WEBHOOK_EVENTS_STREAM;
 import static io.harness.eventsframework.EventsFrameworkConstants.WEBHOOK_EVENTS_STREAM_MAX_TOPIC_SIZE;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cache.HarnessCacheManager;
 import io.harness.eventsframework.EventsFrameworkConfiguration;
 import io.harness.eventsframework.EventsFrameworkConstants;
 import io.harness.eventsframework.api.Consumer;
@@ -34,12 +33,20 @@ import io.harness.eventsframework.impl.noop.NoOpProducer;
 import io.harness.eventsframework.impl.redis.GitAwareRedisProducer;
 import io.harness.eventsframework.impl.redis.RedisConsumer;
 import io.harness.eventsframework.impl.redis.RedisProducer;
-import io.harness.eventsframework.impl.redis.RedisSerialConsumer;
 import io.harness.eventsframework.impl.redis.RedisUtils;
+import io.harness.pms.redisConsumer.DebeziumConsumerConfig;
 import io.harness.redis.RedisConfig;
+import io.harness.version.VersionInfoManager;
 
 import com.google.inject.AbstractModule;
+import com.google.inject.Provides;
+import com.google.inject.Singleton;
+import com.google.inject.name.Named;
 import com.google.inject.name.Names;
+import java.util.List;
+import javax.cache.Cache;
+import javax.cache.expiry.AccessedExpiryPolicy;
+import javax.cache.expiry.Duration;
 import lombok.AllArgsConstructor;
 import org.redisson.api.RedissonClient;
 
@@ -47,6 +54,7 @@ import org.redisson.api.RedissonClient;
 @AllArgsConstructor
 public class EventsFrameworkModule extends AbstractModule {
   private final EventsFrameworkConfiguration eventsFrameworkConfiguration;
+  private final List<DebeziumConsumerConfig> debeziumConsumerConfigs;
 
   @Override
   protected void configure() {
@@ -230,9 +238,18 @@ public class EventsFrameworkModule extends AbstractModule {
               redisConfig.getEnvNamespace()));
       bind(Consumer.class)
           .annotatedWith(Names.named(PIPELINE_EXECUTION_SUMMARY_REDIS_EVENT_CONSUMER_CD))
-          .toInstance(RedisSerialConsumer.of(PIPELINE_EXECUTION_SUMMARY_CD_REDIS_KEY, NG_MANAGER.getServiceId(),
-              PIPELINE_EXECUTION_SUMMARY_CD_CONSUMER, redissonClient,
-              EventsFrameworkConstants.DEFAULT_MAX_PROCESSING_TIME, redisConfig.getEnvNamespace()));
+          .toInstance(RedisConsumer.of(debeziumConsumerConfigs.get(0).getTopicName(), NG_MANAGER.getServiceId(),
+              redissonClient, EventsFrameworkConstants.DEFAULT_MAX_PROCESSING_TIME,
+              debeziumConsumerConfigs.get(0).getBatchSize(), redisConfig.getEnvNamespace()));
     }
+  }
+
+  @Provides
+  @Singleton
+  @Named("debeziumEventsCache")
+  public Cache<String, Long> sdkEventsCache(
+      HarnessCacheManager harnessCacheManager, VersionInfoManager versionInfoManager) {
+    return harnessCacheManager.getCache("debeziumEventsCache", String.class, Long.class,
+        AccessedExpiryPolicy.factoryOf(Duration.ONE_HOUR), versionInfoManager.getVersionInfo().getBuildNo());
   }
 }

@@ -32,7 +32,6 @@ import io.harness.beans.Event;
 import io.harness.beans.EventPayload;
 import io.harness.beans.EventStatus;
 import io.harness.beans.EventType;
-import io.harness.beans.FeatureName;
 import io.harness.beans.KeyValuePair;
 import io.harness.beans.WebHookEventConfig;
 import io.harness.beans.event.TestEventPayload;
@@ -98,7 +97,6 @@ public class EventDeliveryServiceTest extends WingsBaseTest {
 
   @Before
   public void setUp() {
-    when(featureFlagService.isEnabled(eq(FeatureName.APP_TELEMETRY), anyString())).thenReturn(true);
     WEBHOOK_CONFIG.setUrl(URL);
     WEBHOOK_CONFIG.setSocketTimeoutMillis(60000);
   }

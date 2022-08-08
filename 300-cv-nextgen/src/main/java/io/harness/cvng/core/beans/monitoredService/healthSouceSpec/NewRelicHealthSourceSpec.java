@@ -11,13 +11,14 @@ import io.harness.cvng.beans.CVMonitoringCategory;
 import io.harness.cvng.beans.DataSourceType;
 import io.harness.cvng.core.beans.HealthSourceMetricDefinition;
 import io.harness.cvng.core.beans.monitoredService.HealthSource.CVConfigUpdateResult;
-import io.harness.cvng.core.beans.monitoredService.MetricPackDTO;
+import io.harness.cvng.core.beans.monitoredService.TimeSeriesMetricPackDTO;
 import io.harness.cvng.core.entities.CVConfig;
 import io.harness.cvng.core.entities.MetricPack;
 import io.harness.cvng.core.entities.NewRelicCVConfig;
 import io.harness.cvng.core.services.api.MetricPackService;
 import io.harness.cvng.core.validators.UniqueIdentifierCheck;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.google.common.collect.Sets;
 import java.util.ArrayList;
@@ -43,7 +44,7 @@ public class NewRelicHealthSourceSpec extends MetricHealthSourceSpec {
   String applicationName;
   String applicationId;
   String feature;
-  Set<MetricPackDTO> metricPacks;
+  Set<TimeSeriesMetricPackDTO> metricPacks;
   @UniqueIdentifierCheck List<NewRelicMetricDefinition> newRelicMetricDefinitions;
 
   @Override
@@ -110,8 +111,6 @@ public class NewRelicHealthSourceSpec extends MetricHealthSourceSpec {
                                               .monitoringSourceName(name)
                                               .applicationName(applicationName)
                                               .applicationId(Long.valueOf(applicationId))
-                                              .envIdentifier(environmentRef)
-                                              .serviceIdentifier(serviceRef)
                                               .metricPack(metricPackFromDb)
                                               .category(metricPackFromDb.getCategory())
                                               .productName(feature)
@@ -136,8 +135,6 @@ public class NewRelicHealthSourceSpec extends MetricHealthSourceSpec {
                                               .productName(feature)
                                               .applicationName(applicationName)
                                               .applicationId(Long.valueOf(applicationId))
-                                              .envIdentifier(environmentRef)
-                                              .serviceIdentifier(serviceRef)
                                               .groupName(definitionList.get(0).getGroupName())
                                               .category(definitionList.get(0).getRiskProfile().getCategory())
                                               .monitoredServiceIdentifier(monitoredServiceIdentifier)
@@ -155,15 +152,15 @@ public class NewRelicHealthSourceSpec extends MetricHealthSourceSpec {
     return Key.builder()
         .applicationId(cvConfig.getApplicationId())
         .applicationName(cvConfig.getApplicationName())
-        .envIdentifier(cvConfig.getEnvIdentifier())
-        .serviceIdentifier(cvConfig.getServiceIdentifier())
         .metricPack(cvConfig.getMetricPack())
+        .monitoredServiceIdentifier(cvConfig.getMonitoredServiceIdentifier())
         .build();
   }
 
+  @JsonIgnore
   @Override
   public List<? extends HealthSourceMetricDefinition> getMetricDefinitions() {
-    return this.newRelicMetricDefinitions;
+    return getNewRelicMetricDefinitions();
   }
 
   @Data
@@ -181,8 +178,7 @@ public class NewRelicHealthSourceSpec extends MetricHealthSourceSpec {
   private static class Key {
     private String applicationName;
     private long applicationId;
-    private String envIdentifier;
-    private String serviceIdentifier;
+    private String monitoredServiceIdentifier;
     MetricPack metricPack;
   }
 

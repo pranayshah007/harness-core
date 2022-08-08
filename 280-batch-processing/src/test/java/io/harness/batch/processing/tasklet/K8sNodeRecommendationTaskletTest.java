@@ -280,8 +280,38 @@ public class K8sNodeRecommendationTaskletTest extends BaseTaskletTest {
   @Owner(developers = UTSAV)
   @Category(UnitTests.class)
   public void testJobSuccessOnBadResourceConstraint() throws Exception {
-    ErrorResponse errorResponse =
-        ErrorResponse.builder().status(400).detail("could not recommend cluster with the requested resources").build();
+    ErrorResponse errorResponse = ErrorResponse.builder()
+                                      .status(400)
+                                      .detail("No node pool could be recommended with the specified tuning parameters")
+                                      .build();
+    okhttp3.Response rawResponse = (new okhttp3.Response.Builder())
+                                       .code(400)
+                                       .protocol(Protocol.HTTP_1_1)
+                                       .message("Bad Request")
+                                       .request((new okhttp3.Request.Builder()).url("http://localhost/").build())
+                                       .build();
+    Response response = Response.error(
+        ResponseBody.create(MediaType.parse(javax.ws.rs.core.MediaType.APPLICATION_JSON), GSON.toJson(errorResponse)),
+        rawResponse);
+
+    when(banzaiRecommenderClient
+             .getRecommendation(eq(k8sServiceProvider.getCloudProvider().getCloudProviderName()),
+                 eq(k8sServiceProvider.getCloudProvider().getK8sService()), eq(k8sServiceProvider.getRegion()), any())
+             .execute())
+        .thenReturn(response);
+
+    assertThat(tasklet.execute(null, chunkContext)).isNull();
+
+    // shouldn't upsert recommendation
+    verify(k8sRecommendationDAO, times(0)).insertNodeRecommendationResponse(any(), any(), any(), any(), any(), any());
+    verify(recommendationCrudService, times(0)).upsertNodeRecommendation(any(), any(), any(), any(), any());
+  }
+
+  @Test
+  @Owner(developers = UTSAV)
+  @Category(UnitTests.class)
+  public void testJobSuccessOnBadRequestConstraint() throws Exception {
+    ErrorResponse errorResponse = ErrorResponse.builder().status(400).detail("400 Bad Request").build();
     okhttp3.Response rawResponse = (new okhttp3.Response.Builder())
                                        .code(400)
                                        .protocol(Protocol.HTTP_1_1)

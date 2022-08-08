@@ -9,9 +9,14 @@ package io.harness.ngmigration.service;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.ngmigration.utils.NGMigrationConstants.VIZ_FILE_NAME;
+import static io.harness.ngmigration.utils.NGMigrationConstants.VIZ_TEMP_DIR_PREFIX;
+
+import static java.util.stream.Collectors.groupingBy;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.network.Http;
 import io.harness.ng.core.utils.NGYamlUtils;
@@ -20,7 +25,9 @@ import io.harness.ngmigration.beans.DiscoverEntityInput;
 import io.harness.ngmigration.beans.DiscoveryInput;
 import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.MigrationInputResult;
+import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
+import io.harness.ngmigration.beans.summary.BaseSummary;
 import io.harness.ngmigration.client.NGClient;
 import io.harness.ngmigration.client.PmsClient;
 import io.harness.ngmigration.utils.NGMigrationConstants;
@@ -32,7 +39,7 @@ import software.wings.ngmigration.DiscoveryNode;
 import software.wings.ngmigration.DiscoveryResult;
 import software.wings.ngmigration.NGMigrationEntity;
 import software.wings.ngmigration.NGMigrationEntityType;
-import software.wings.ngmigration.NGYamlFile;
+import software.wings.ngmigration.NGMigrationStatus;
 
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
@@ -48,6 +55,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -64,6 +72,7 @@ import javax.ws.rs.core.StreamingOutput;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.OkHttpClient;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.StringUtils;
 import retrofit2.Retrofit;
 import retrofit2.converter.jackson.JacksonConverterFactory;
 
@@ -83,6 +92,17 @@ public class DiscoveryService {
     CgEntityNode currentNode = discoveryNode.getEntityNode();
     Set<CgEntityId> chilldren = discoveryNode.getChildren();
 
+    if (graph.containsKey(currentNode.getEntityId()) && parent != null) {
+      // We have already discovered and traversed the children. We do not need to process the children again
+      graph.get(parent).add(currentNode.getEntityId());
+      return;
+    }
+
+    // To ensure that appId is present in case of account level discovery
+    if (NGMigrationEntityType.APPLICATION.equals(currentNode.getType())) {
+      appId = currentNode.getId();
+    }
+
     // Add the discovered node to the graph
     entities.putIfAbsent(currentNode.getEntityId(), currentNode);
     graph.putIfAbsent(currentNode.getEntityId(), new HashSet<>());
@@ -95,13 +115,30 @@ public class DiscoveryService {
 
     // Discover the child nodes and add to graph
     if (isNotEmpty(chilldren)) {
-      // check if child already discovered, if yes, no need to rediscover. Just create a link in parent.
-      chilldren.forEach(child -> {
+      // TODO: check if child already discovered, if yes, no need to rediscover. Just create a link in parent.
+      for (CgEntityId child : chilldren) {
         NgMigrationService ngMigrationService = migrationFactory.getMethod(child.getType());
         DiscoveryNode node = ngMigrationService.discover(accountId, appId, child.getId());
         travel(accountId, appId, entities, graph, currentNode.getEntityId(), node);
-      });
+      }
     }
+  }
+
+  public Map<NGMigrationEntityType, BaseSummary> getSummary(
+      String accountId, String appId, String entityId, NGMigrationEntityType entityType) {
+    DiscoveryResult result = discover(accountId, appId, entityId, entityType, null);
+    Map<NGMigrationEntityType, List<CgEntityNode>> entitiesByType =
+        result.getEntities().values().stream().collect(groupingBy(CgEntityNode::getType));
+
+    Map<NGMigrationEntityType, BaseSummary> summaries = new HashMap<>();
+
+    entitiesByType.forEach((key, value) -> {
+      NgMigrationService ngMigrationService = migrationFactory.getMethod(key);
+      BaseSummary summary = ngMigrationService.getSummary(value);
+      summaries.put(key, summary);
+    });
+
+    return summaries;
   }
 
   /*
@@ -143,8 +180,24 @@ public class DiscoveryService {
     return DiscoveryResult.builder().entities(entities).links(graph).root(head.getEntityNode().getEntityId()).build();
   }
 
+  public StreamingOutput discoverImg(String accountId, String appId, String entityId, NGMigrationEntityType entityType)
+      throws IOException {
+    Path path = Files.createTempDirectory(VIZ_TEMP_DIR_PREFIX);
+    String imgPath = path.toFile().getAbsolutePath() + VIZ_FILE_NAME;
+    discover(accountId, appId, entityId, entityType, imgPath);
+    return output -> {
+      try {
+        byte[] data = Files.readAllBytes(Paths.get(imgPath));
+        output.write(data);
+        output.flush();
+      } catch (Exception e) {
+        throw new IllegalStateException("Could not export viz output file");
+      }
+    };
+  }
+
   public DiscoveryResult discover(
-      String accountId, String appId, String entityId, NGMigrationEntityType entityType, boolean shouldExportImg) {
+      String accountId, String appId, String entityId, NGMigrationEntityType entityType, String filePath) {
     if (NGMigrationEntityType.APPLICATION.equals(entityType)) {
       // ensure that appId & entityId are same if we are tying to migrate an app.
       appId = entityId;
@@ -158,19 +211,41 @@ public class DiscoveryService {
       throw new IllegalStateException("Root cannot be found!");
     }
     travel(accountId, appId, entities, graph, null, node);
-    if (shouldExportImg) {
-      exportImg(entities, graph);
+    if (StringUtils.isNotBlank(filePath)) {
+      exportImg(entities, graph, filePath);
     }
     return DiscoveryResult.builder().entities(entities).links(graph).root(node.getEntityNode().getEntityId()).build();
   }
 
-  private void exportImg(Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, Set<CgEntityId>> graph) {
+  public NGMigrationStatus getMigrationStatus(DiscoveryResult discoveryResult) {
+    if (EmptyPredicate.isEmpty(discoveryResult.getEntities())) {
+      return NGMigrationStatus.builder().status(true).build();
+    }
+    boolean possible = true;
+    List<String> errors = new ArrayList<>();
+    for (CgEntityNode node : discoveryResult.getEntities().values()) {
+      NgMigrationService ngMigration = migrationFactory.getMethod(node.getType());
+      NGMigrationStatus migrationStatus = ngMigration.canMigrate(node.getEntity());
+      if (!migrationStatus.isStatus()) {
+        possible = false;
+        errors.addAll(migrationStatus.getReasons());
+      }
+    }
+    return NGMigrationStatus.builder().status(possible).reasons(errors).build();
+  }
+
+  private void exportImg(
+      Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, Set<CgEntityId>> graph, String filePath) {
     MutableGraph vizGraph = getGraphViz(entities, graph);
     try {
-      Graphviz.fromGraph(vizGraph).render(Format.PNG).toFile(new File(NGMigrationConstants.DISCOVERY_IMAGE_PATH));
+      Graphviz.fromGraph(vizGraph).render(Format.PNG).toFile(new File(filePath));
     } catch (IOException e) {
       log.warn("Unable to write visualization to file");
     }
+  }
+
+  private void exportImg(Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, Set<CgEntityId>> graph) {
+    exportImg(entities, graph, NGMigrationConstants.DISCOVERY_IMAGE_PATH);
   }
 
   public MigrationInputResult migrationInput(DiscoveryResult result) {
@@ -264,6 +339,10 @@ public class DiscoveryService {
     zipFile.getParentFile().mkdirs();
     try (ZipOutputStream out = new ZipOutputStream(new FileOutputStream(zipFile))) {
       for (NGYamlFile file : ngYamlFiles) {
+        if (file.isExists()) {
+          // TODO: @vaibhav.si Add the mapping to the response
+          continue;
+        }
         ZipEntry e = new ZipEntry(file.getFilename());
         out.putNextEntry(e);
         byte[] data = NGYamlUtils.getYamlString(file.getYaml()).getBytes();
@@ -314,7 +393,7 @@ public class DiscoveryService {
       List<CgEntityId> leafNodes = getLeafNodes(leafTracker);
       for (CgEntityId entry : leafNodes) {
         List<NGYamlFile> currentEntity =
-            migrationFactory.getMethod(entry.getType()).getYamls(inputDTO, entities, graph, entry, migratedEntities);
+            migrationFactory.getMethod(entry.getType()).getYaml(inputDTO, entities, graph, entry, migratedEntities);
         if (isNotEmpty(currentEntity)) {
           files.addAll(currentEntity);
         }

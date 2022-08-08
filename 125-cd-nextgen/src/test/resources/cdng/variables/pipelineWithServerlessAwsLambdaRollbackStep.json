@@ -1,0 +1,153 @@
+{
+  "pipeline": {
+    "name": "Serverless Aws Lambda Deployment",
+    "identifier": "Serverless_Aws_Lambda_Deployment",
+    "projectIdentifier": "Serverless_Aws_Lambda",
+    "orgIdentifier": "default",
+    "tags": {
+      "__uuid": "b3AgKP8SQ2qydku9SQHCFg"
+    },
+    "stages": [
+      {
+        "stage": {
+          "name": "Serverless Aws Lambda",
+          "identifier": "Serverless_Aws_Lambda",
+          "description": "",
+          "type": "Deployment",
+          "spec": {
+            "name": "Serverless Aws Lambda",
+            "identifier": "Serverless_Aws_Lambda",
+            "type": "Deployment",
+            "serviceConfig": {
+              "serviceRef": "Serverless_Aws_Lambda",
+              "serviceDefinition": {
+                "type": "ServerlessAwsLambda",
+                "spec": {
+                  "variables": [],
+                  "manifests": [
+                    {
+                      "manifest": {
+                        "identifier": "manifest",
+                        "type": "ServerlessAwsLambda",
+                        "spec": {
+                          "store": {
+                            "type": "Git",
+                            "spec": {
+                              "connectorRef": "account.Sample_Serverless_Aws_Lambda_Manifests",
+                              "gitFetchType": "Branch",
+                              "paths": [
+                                "test/serverlessDeploymentType/serverless/basic/yaml"
+                              ],
+                              "branch": "master",
+                              "__uuid": "7JZdwQ5NRLulFTAZczb2kw"
+                            },
+                            "__uuid": "Bs5hT5vEQmuMlXjZg1fskw"
+                          },
+                          "configOverridePath": "abc.yaml",
+                          "__uuid": "Ue7qykQbTm24IKN4-hEQXg"
+                        },
+                        "__uuid": "-Qcgz3YfSVOMRWBO7BUk8A"
+                      },
+                      "__uuid": "4-4036EjQz6R715rOMC34w"
+                    }
+                  ],
+                  "artifacts": {
+                    "sidecars": [],
+                    "primary": {
+                      "spec": {
+                        "connectorRef": "account.artifactoryRef",
+                        "artifactDirectory": "/",
+                        "artifactPathFilter": "handler.zip",
+                        "repository": "lambda",
+                        "repositoryFormat": "generic",
+                        "__uuid": "G7ETIGlZS_2In242Ad6LWw"
+                      },
+                      "type": "ArtifactoryRegistry",
+                      "__uuid": "ucwi4FLnQVG_6Gn3u92S_Q"
+                    },
+                    "__uuid": "3oIfCGoWRO2q44F_OHr1jQ"
+                  },
+                  "__uuid": "U_jSgZAxScS33HKIYQMmwg"
+                },
+                "__uuid": "edcX5w8TSIO7pweXIScuOw"
+              },
+              "__uuid": "Ch6TUSHCSNKSMQyn9qMwiQ"
+            },
+            "infrastructure": {
+              "infrastructureDefinition": {
+                "type": "ServerlessAwsLambda",
+                "spec": {
+                  "connectorRef": "Serverless_Aws_Lambda_ref",
+                  "region": "us-east-2",
+                  "stage": "dev",
+                  "__uuid": "WN9nuwevTSqQjY253eUv1A"
+                },
+                "__uuid": "SIgHO5Y8SvGrwXCzB4nqbQ"
+              },
+              "allowSimultaneousDeployments": false,
+              "environmentRef": "Test",
+              "__uuid": "Z_WmFkyfRYaGHd5g3eirSQ"
+            },
+            "execution": {
+              "steps": [
+                {
+                  "step": {
+                    "type": "ServerlessAwsLambdaRollback",
+                    "name": "Serverless Aws Lambda Rollback",
+                    "identifier": "serverless_aws_lambda_rollback_step",
+                    "spec": {
+                      "__uuid": "fiEro_a1Tye8GT01W7oAGg"
+                    },
+                    "timeout": "10m",
+                    "__uuid": "3ONAyhZwQZmCpwWfObNhRQ"
+                  },
+                  "__uuid": "-BtiYpFBRVeYG3ez3KuH2Q"
+                }
+              ],
+              "rollbackSteps": [],
+              "__uuid": "bx-GY9g1SqKSB8mQQrn_ZQ"
+            },
+            "serviceDependencies": [],
+            "__uuid": "PRSLd2CRS4WDfEcve_Jhvw"
+          },
+          "tags": {
+            "__uuid": "Ba2kFiu5SE2l1giM8REyrA"
+          },
+          "failureStrategies": [
+            {
+              "onFailure": {
+                "errors": [
+                  "AllErrors"
+                ],
+                "action": {
+                  "type": "StageRollback",
+                  "__uuid": "hpB1Z8NiTU2UYhkeuc6Vug"
+                },
+                "__uuid": "7hNzmlREQQ2ZbxSBc6wjyg"
+              },
+              "__uuid": "IEayXACnRwG2lBuoLwsdVA"
+            }
+          ],
+          "variables": [
+            {
+              "name": "secret",
+              "type": "Secret",
+              "value": "account.plugin",
+              "__uuid": "nFleMoSpQw2pan9NwcqkEw"
+            },
+            {
+              "name": "serviceName",
+              "type": "String",
+              "value": "alpha-service",
+              "__uuid": "NDEdxg5xT3OY91GzWo_Kyw"
+            }
+          ],
+          "__uuid": "iz9HyF-OS3SEscjrKYGYpA"
+        },
+        "__uuid": "ZjbuxCMGTiuROWEW4TiYJA"
+      }
+    ],
+    "__uuid": "IrujTsTGT1OSofWIo13eaA"
+  },
+  "__uuid": "nUbNAfhyTLeBefHXHXuAFg"
+}

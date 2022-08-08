@@ -7,12 +7,19 @@
 
 package io.harness.cvng.governance.services;
 
+import static io.harness.cvng.cdng.services.impl.CVNGStepUtils.PIPELINE;
+import static io.harness.cvng.cdng.services.impl.CVNGStepUtils.SERVICE_CONFIG_KEY;
+import static io.harness.cvng.cdng.services.impl.CVNGStepUtils.STAGE_KEY;
+import static io.harness.cvng.cdng.services.impl.CVNGStepUtils.USE_FROM_STAGE_KEY;
 import static io.harness.cvng.core.beans.params.ServiceEnvironmentParams.builderWithProjectParams;
 import static io.harness.cvng.governance.beans.ExpansionKeysConstants.ENVIRONMENT_REF;
+import static io.harness.cvng.governance.beans.ExpansionKeysConstants.IDENTIFIER;
 import static io.harness.cvng.governance.beans.ExpansionKeysConstants.INFRASTRUCTURE;
+import static io.harness.cvng.governance.beans.ExpansionKeysConstants.SERVICE;
 import static io.harness.cvng.governance.beans.ExpansionKeysConstants.SERVICE_CONFIG;
 import static io.harness.cvng.governance.beans.ExpansionKeysConstants.SERVICE_REF;
 
+import io.harness.cvng.cdng.services.impl.CVNGStepUtils;
 import io.harness.cvng.core.beans.monitoredService.MonitoredServiceResponse;
 import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.core.beans.params.ServiceEnvironmentParams;
@@ -26,31 +33,43 @@ import io.harness.pms.contracts.governance.ExpansionRequestMetadata;
 import io.harness.pms.sdk.core.governance.ExpandedValue;
 import io.harness.pms.sdk.core.governance.ExpansionResponse;
 import io.harness.pms.sdk.core.governance.JsonExpansionHandler;
+import io.harness.pms.yaml.YamlNode;
+import io.harness.pms.yaml.YamlUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.inject.Inject;
+import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 public class SLOPolicyExpansionHandler implements JsonExpansionHandler {
   @Inject SLOHealthIndicatorService sloHealthIndicatorService;
   @Inject MonitoredServiceService monitoredServiceService;
 
   @Override
-  public ExpansionResponse expand(JsonNode fieldValue, ExpansionRequestMetadata metadata) {
+  public ExpansionResponse expand(JsonNode fieldValue, ExpansionRequestMetadata metadata, String fqn) {
     String accountId = metadata.getAccountId();
     String orgId = metadata.getOrgId();
     String projectId = metadata.getProjectId();
     ProjectParams projectParams =
         ProjectParams.builder().accountIdentifier(accountId).projectIdentifier(projectId).orgIdentifier(orgId).build();
-    String serviceRef = fieldValue.get(SERVICE_CONFIG).get(SERVICE_REF).asText();
+    String serviceRef = fetchServiceIdentifier(fieldValue, metadata);
+    if (Objects.isNull(serviceRef)) {
+      return ExpansionResponse.builder()
+          .success(false)
+          .errorMessage("Invalid yaml. Service config or service config reference from other stage not found.")
+          .build();
+    }
     String environmentRef = fieldValue.get(INFRASTRUCTURE).get(ENVIRONMENT_REF).asText();
     ServiceEnvironmentParams serviceEnvironmentParams = builderWithProjectParams(projectParams)
                                                             .serviceIdentifier(serviceRef)
                                                             .environmentIdentifier(environmentRef)
                                                             .build();
-    MonitoredServiceResponse monitoredServiceResponse = monitoredServiceService.get(serviceEnvironmentParams);
+    MonitoredServiceResponse monitoredServiceResponse =
+        monitoredServiceService.getApplicationMonitoredServiceResponse(serviceEnvironmentParams);
 
     SLOPolicyDTO sloPolicyDTO =
         SLOPolicyDTO.builder().statusOfMonitoredService(SLOPolicyDTO.MonitoredServiceStatus.NOT_CONFIGURED).build();
@@ -78,5 +97,26 @@ public class SLOPolicyExpansionHandler implements JsonExpansionHandler {
         .value(value)
         .placement(ExpansionPlacementStrategy.APPEND)
         .build();
+  }
+
+  private String fetchServiceIdentifier(JsonNode fieldValue, ExpansionRequestMetadata metadata) {
+    if (Objects.nonNull(fieldValue.get(SERVICE_CONFIG).get(SERVICE_REF))) {
+      return fieldValue.get(SERVICE_CONFIG).get(SERVICE_REF).asText();
+    } else if (Objects.nonNull(fieldValue.get(SERVICE_CONFIG).get(SERVICE))
+        && Objects.nonNull(fieldValue.get(SERVICE_CONFIG).get(SERVICE).get(IDENTIFIER))) {
+      return fieldValue.get(SERVICE_CONFIG).get(SERVICE).get(IDENTIFIER).asText();
+    } else {
+      try {
+        String useFromStageIdentifier =
+            fieldValue.get(SERVICE_CONFIG_KEY).get(USE_FROM_STAGE_KEY).get(STAGE_KEY).asText();
+        YamlNode yamlNode = YamlUtils.readTree(metadata.getYaml().toStringUtf8()).getNode();
+        YamlNode propagateFromPipeline = yamlNode.getField(PIPELINE).getNode();
+        YamlNode propagateFromStage =
+            CVNGStepUtils.findStageByIdentifier(propagateFromPipeline, useFromStageIdentifier);
+        return CVNGStepUtils.getServiceRefNode(propagateFromStage).asText();
+      } catch (IOException e) {
+        throw new IllegalStateException(e);
+      }
+    }
   }
 }

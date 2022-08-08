@@ -52,7 +52,7 @@ import software.wings.beans.GitFileConfig;
 import software.wings.beans.GraphNode;
 import software.wings.beans.Service;
 import software.wings.beans.ServiceVariable;
-import software.wings.beans.ServiceVariable.Type;
+import software.wings.beans.ServiceVariableType;
 import software.wings.beans.SettingAttribute;
 import software.wings.beans.Workflow;
 import software.wings.beans.WorkflowExecution;
@@ -191,7 +191,7 @@ public class AccountLevelGitConnectorFunctionalTest extends AbstractFunctionalTe
                                            .accountId(getAccount().getUuid())
                                            .value(value.toCharArray())
                                            .name(REPO_NAME_SERVICE_VARIABLE)
-                                           .type(Type.TEXT)
+                                           .type(ServiceVariableType.TEXT)
                                            .entityType(EntityType.SERVICE)
                                            .entityId(service.getUuid())
                                            .build();

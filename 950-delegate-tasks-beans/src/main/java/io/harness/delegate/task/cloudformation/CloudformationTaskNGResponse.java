@@ -24,10 +24,10 @@ import lombok.experimental.NonFinal;
 @Builder
 @OwnedBy(CDP)
 public class CloudformationTaskNGResponse implements DelegateTaskNotifyResponseData {
+  CloudFormationCommandNGResponse cloudFormationCommandNGResponse;
   CommandExecutionStatus commandExecutionStatus;
+  boolean updatedNotPerformed;
   String errorMessage;
   @NonFinal @Setter UnitProgressData unitProgressData;
-  String outputs;
-  String stateFileId;
   @NonFinal @Setter DelegateMetaInfo delegateMetaInfo;
 }

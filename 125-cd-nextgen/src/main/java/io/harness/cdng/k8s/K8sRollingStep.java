@@ -14,6 +14,7 @@ import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.cdng.k8s.K8sRollingBaseStepInfo.K8sRollingBaseStepInfoKeys;
 import io.harness.cdng.k8s.K8sRollingOutcome.K8sRollingOutcomeBuilder;
+import io.harness.cdng.k8s.beans.CustomFetchResponsePassThroughData;
 import io.harness.cdng.k8s.beans.GitFetchResponsePassThroughData;
 import io.harness.cdng.k8s.beans.HelmValuesFetchResponsePassThroughData;
 import io.harness.cdng.k8s.beans.K8sExecutionPassThroughData;
@@ -66,6 +67,7 @@ public class K8sRollingStep extends TaskChainExecutableWithRollbackAndRbac imple
   private final String K8S_ROLLING_DEPLOY_COMMAND_NAME = "Rolling Deploy";
 
   @Inject private K8sStepHelper k8sStepHelper;
+  @Inject private CDStepHelper cdStepHelper;
   @Inject ExecutionSweepingOutputService executionSweepingOutputService;
   @Inject private InstanceInfoService instanceInfoService;
 
@@ -91,7 +93,7 @@ public class K8sRollingStep extends TaskChainExecutableWithRollbackAndRbac imple
       K8sExecutionPassThroughData executionPassThroughData, boolean shouldOpenFetchFilesLogStream,
       UnitProgressData unitProgressData) {
     InfrastructureOutcome infrastructure = executionPassThroughData.getInfrastructure();
-    String releaseName = k8sStepHelper.getReleaseName(ambiance, infrastructure);
+    String releaseName = cdStepHelper.getReleaseName(ambiance, infrastructure);
     K8sRollingStepParameters k8sRollingStepParameters = (K8sRollingStepParameters) stepElementParameters.getSpec();
     boolean skipDryRun = CDStepHelper.getParameterFieldBooleanValue(
         k8sRollingStepParameters.getSkipDryRun(), K8sRollingBaseStepInfoKeys.skipDryRun, stepElementParameters);
@@ -121,15 +123,19 @@ public class K8sRollingStep extends TaskChainExecutableWithRollbackAndRbac imple
             .valuesYamlList(!isOpenshiftTemplate ? manifestFilesContents : Collections.emptyList())
             .openshiftParamList(isOpenshiftTemplate ? manifestFilesContents : Collections.emptyList())
             .kustomizePatchesList(k8sStepHelper.renderPatches(k8sManifestOutcome, ambiance, manifestOverrideContents))
-            .k8sInfraDelegateConfig(k8sStepHelper.getK8sInfraDelegateConfig(infrastructure, ambiance))
-            .manifestDelegateConfig(k8sStepHelper.getManifestDelegateConfig(k8sManifestOutcome, ambiance))
+            .k8sInfraDelegateConfig(cdStepHelper.getK8sInfraDelegateConfig(infrastructure, ambiance))
+            .manifestDelegateConfig(
+                k8sStepHelper.getManifestDelegateConfigWrapper(executionPassThroughData.getZippedManifestId(),
+                    k8sManifestOutcome, ambiance, executionPassThroughData.getManifestFiles()))
             .accountId(accountId)
             .skipResourceVersioning(k8sStepHelper.getSkipResourceVersioning(k8sManifestOutcome))
             .shouldOpenFetchFilesLogStream(shouldOpenFetchFilesLogStream)
             .commandUnitsProgress(UnitProgressDataMapper.toCommandUnitsProgress(unitProgressData))
-            .useLatestKustomizeVersion(k8sStepHelper.isUseLatestKustomizeVersion(accountId))
-            .useNewKubectlVersion(k8sStepHelper.isUseNewKubectlVersion(accountId))
-            .skipAddingTrackSelectorToDeployment(k8sStepHelper.isSkipAddingTrackSelectorToDeployment(accountId))
+            .useLatestKustomizeVersion(cdStepHelper.isUseLatestKustomizeVersion(accountId))
+            .useNewKubectlVersion(cdStepHelper.isUseNewKubectlVersion(accountId))
+            .useK8sApiForSteadyStateCheck(cdStepHelper.shouldUseK8sApiForSteadyStateCheck(accountId))
+            .skipAddingTrackSelectorToDeployment(cdStepHelper.isSkipAddingTrackSelectorToDeployment(accountId))
+            .pruningEnabled(cdStepHelper.isPruningEnabled(accountId))
             .build();
 
     k8sStepHelper.publishReleaseNameStepDetails(ambiance, releaseName);
@@ -153,22 +159,25 @@ public class K8sRollingStep extends TaskChainExecutableWithRollbackAndRbac imple
   public StepResponse finalizeExecutionWithSecurityContext(Ambiance ambiance,
       StepElementParameters stepElementParameters, PassThroughData passThroughData,
       ThrowingSupplier<ResponseData> responseDataSupplier) throws Exception {
+    if (passThroughData instanceof CustomFetchResponsePassThroughData) {
+      return k8sStepHelper.handleCustomTaskFailure((CustomFetchResponsePassThroughData) passThroughData);
+    }
+
     if (passThroughData instanceof GitFetchResponsePassThroughData) {
-      return k8sStepHelper.handleGitTaskFailure((GitFetchResponsePassThroughData) passThroughData);
+      return cdStepHelper.handleGitTaskFailure((GitFetchResponsePassThroughData) passThroughData);
     }
 
     if (passThroughData instanceof HelmValuesFetchResponsePassThroughData) {
       return k8sStepHelper.handleHelmValuesFetchFailure((HelmValuesFetchResponsePassThroughData) passThroughData);
     }
-
     if (passThroughData instanceof StepExceptionPassThroughData) {
-      return k8sStepHelper.handleStepExceptionFailure((StepExceptionPassThroughData) passThroughData);
+      return cdStepHelper.handleStepExceptionFailure((StepExceptionPassThroughData) passThroughData);
     }
 
     log.info("Finalizing execution with passThroughData: " + passThroughData.getClass().getName());
     K8sExecutionPassThroughData k8sExecutionPassThroughData = (K8sExecutionPassThroughData) passThroughData;
     K8sRollingOutcomeBuilder k8sRollingOutcomeBuilder = K8sRollingOutcome.builder().releaseName(
-        k8sStepHelper.getReleaseName(ambiance, k8sExecutionPassThroughData.getInfrastructure()));
+        cdStepHelper.getReleaseName(ambiance, k8sExecutionPassThroughData.getInfrastructure()));
 
     K8sDeployResponse k8sTaskExecutionResponse;
     try {
@@ -190,7 +199,10 @@ public class K8sRollingStep extends TaskChainExecutableWithRollbackAndRbac imple
     K8sRollingDeployResponse k8sTaskResponse =
         (K8sRollingDeployResponse) k8sTaskExecutionResponse.getK8sNGTaskResponse();
     K8sRollingOutcome k8sRollingOutcome =
-        k8sRollingOutcomeBuilder.releaseNumber(k8sTaskResponse.getReleaseNumber()).build();
+        k8sRollingOutcomeBuilder.releaseNumber(k8sTaskResponse.getReleaseNumber())
+            .prunedResourceIds(k8sStepHelper.getPrunedResourcesIds(
+                AmbianceUtils.getAccountId(ambiance), k8sTaskResponse.getPrunedResourceIds()))
+            .build();
     executionSweepingOutputService.consume(
         ambiance, OutcomeExpressionConstants.K8S_ROLL_OUT, k8sRollingOutcome, StepOutcomeGroup.STEP.name());
 

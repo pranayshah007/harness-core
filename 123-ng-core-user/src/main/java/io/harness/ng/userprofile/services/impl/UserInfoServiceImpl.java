@@ -7,8 +7,16 @@
 
 package io.harness.ng.userprofile.services.impl;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.ng.accesscontrol.PlatformPermissions.MANAGE_USER_PERMISSION;
+import static io.harness.ng.accesscontrol.PlatformResourceTypes.USER;
+
+import io.harness.accesscontrol.acl.api.Resource;
+import io.harness.accesscontrol.acl.api.ResourceScope;
+import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.Scope;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.user.PasswordChangeDTO;
 import io.harness.ng.core.user.PasswordChangeResponse;
@@ -35,6 +43,7 @@ import lombok.NoArgsConstructor;
 public class UserInfoServiceImpl implements UserInfoService {
   @Inject private UserClient userClient;
   @Inject private NgUserService ngUserService;
+  @Inject private AccessControlClient accessControlClient;
 
   @Override
   public UserInfo getCurrentUser() {
@@ -48,15 +57,26 @@ public class UserInfoServiceImpl implements UserInfoService {
   }
 
   @Override
-  public UserInfo update(UserInfo userInfo) {
-    Optional<String> userEmail = getUserEmail();
-    if (userEmail.isPresent()) {
-      userInfo.setEmail(userEmail.get());
-      Optional<UserInfo> updatedUserInfo = RestClientUtils.getResponse(userClient.updateUser(userInfo));
-      return updatedUserInfo.get();
-    } else {
-      throw new IllegalStateException("user login required");
+  public UserInfo update(UserInfo userInfo, String accountIdentifier) {
+    if (PrincipalType.USER.equals(SourcePrincipalContextBuilder.getSourcePrincipal().getType())) {
+      validateUserUpdateRequestOfUserPrincipalType(userInfo);
+    } else if (PrincipalType.SERVICE_ACCOUNT.equals(SourcePrincipalContextBuilder.getSourcePrincipal().getType())) {
+      if (isEmpty(userInfo.getEmail())) {
+        throw new InvalidRequestException("Email ID is required to update user details");
+      }
+      Optional<UserInfo> optionalTargetUserInfo =
+          RestClientUtils.getResponse(userClient.getUserByEmailId(userInfo.getEmail()));
+
+      if (!optionalTargetUserInfo.isPresent()) {
+        throw new InvalidRequestException(String.format("User with %s email ID doesn't exist", userInfo.getEmail()));
+      }
+      validateUserUpdateRequestOfServiceAccountPrincipalType(optionalTargetUserInfo.get(), accountIdentifier);
+      accessControlClient.checkForAccessOrThrow(ResourceScope.builder().accountIdentifier(accountIdentifier).build(),
+          Resource.of(USER, optionalTargetUserInfo.get().getUuid()), MANAGE_USER_PERMISSION);
     }
+
+    Optional<UserInfo> updatedUserInfo = RestClientUtils.getResponse(userClient.updateUser(userInfo));
+    return updatedUserInfo.get();
   }
 
   @Override
@@ -121,5 +141,31 @@ public class UserInfoServiceImpl implements UserInfoService {
       throw new InvalidRequestException("Current user can be accessed only by 'USER' principal type");
     }
     return Optional.of(userEmail);
+  }
+
+  private void validateUserUpdateRequestOfUserPrincipalType(UserInfo userInfo) {
+    String userEmail = ((UserPrincipal) (SourcePrincipalContextBuilder.getSourcePrincipal())).getEmail();
+    String userInfoEmail = userInfo.getEmail();
+    if (userInfoEmail == null) {
+      userInfo.setEmail(userEmail);
+    } else if (!userEmail.equals(userInfoEmail)) {
+      throw new InvalidRequestException("Cannot modify details of different user");
+    }
+  }
+
+  private void validateUserUpdateRequestOfServiceAccountPrincipalType(
+      UserInfo targetUserInfo, String accountIdentifier) {
+    if (accountIdentifier == null) {
+      throw new InvalidRequestException("Account Identifier is required to update user details");
+    }
+    if (!verifyUserPartOfAccount(targetUserInfo, accountIdentifier)) {
+      throw new InvalidRequestException(String.format(
+          "User with %s email ID is not a part of the account %s", targetUserInfo.getEmail(), accountIdentifier));
+    }
+  }
+
+  private boolean verifyUserPartOfAccount(UserInfo userInfo, String accountIdentifier) {
+    return ngUserService.isUserAtScope(
+        userInfo.getUuid(), Scope.builder().accountIdentifier(accountIdentifier).build());
   }
 }

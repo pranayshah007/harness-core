@@ -8,6 +8,10 @@
 package software.wings.service.impl;
 
 import static io.harness.annotations.dev.HarnessTeam.DEL;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+
+import static org.apache.commons.lang3.StringUtils.EMPTY;
 
 import io.harness.annotations.dev.BreakDependencyOn;
 import io.harness.annotations.dev.HarnessModule;
@@ -15,10 +19,11 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.Cd1SetupFields;
 import io.harness.beans.DelegateTask;
-import io.harness.beans.FeatureName;
 import io.harness.delegate.beans.Delegate;
 import io.harness.delegate.beans.DelegateSelectionLogParams;
 import io.harness.delegate.beans.DelegateSelectionLogResponse;
+import io.harness.delegate.beans.executioncapability.ExecutionCapability;
+import io.harness.delegate.beans.executioncapability.SelectorCapability;
 import io.harness.ff.FeatureFlagService;
 import io.harness.persistence.HPersistence;
 import io.harness.selection.log.DelegateSelectionLog;
@@ -28,11 +33,13 @@ import io.harness.service.intfc.DelegateCache;
 
 import software.wings.service.intfc.DelegateSelectionLogsService;
 import software.wings.service.intfc.DelegateService;
+import software.wings.service.intfc.DelegateTaskServiceClassic;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import io.fabric8.utils.Lists;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -41,7 +48,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.tuple.Pair;
 
 @Singleton
 @Slf4j
@@ -54,19 +60,21 @@ import org.apache.commons.lang3.tuple.Pair;
 public class DelegateSelectionLogsServiceImpl implements DelegateSelectionLogsService {
   @Inject private HPersistence persistence;
   @Inject private DelegateService delegateService;
+  @Inject private DelegateTaskServiceClassic delegateTaskServiceClassic;
   @Inject private DelegateCache delegateCache;
   @Inject private FeatureFlagService featureFlagService;
 
   private static final String SELECTED = "Selected";
-  private static final String NON_SELECTED = "Non Selected";
+  private static final String NON_SELECTED = "Not Selected";
   private static final String ASSIGNED = "Assigned";
   private static final String REJECTED = "Rejected";
   private static final String BROADCAST = "Broadcast";
   private static final String INFO = "Info";
 
   private static final String TASK_ASSIGNED = "Delegate assigned for task execution";
-  public static final String NO_ELIGIBLE_DELEGATES = "No eligible delegate(s) in account to execute task";
+  public static final String NO_ELIGIBLE_DELEGATES = "No eligible delegate(s) in account to execute task. ";
   public static final String ELIGIBLE_DELEGATES = "Delegate(s) eligible to execute task";
+  public static final String PRE_ASSIGNED_ELIGIBLE_DELEGATES = "Pre assigned delegate(s) eligible to execute task";
   public static final String BROADCASTING_DELEGATES = "Broadcasting to delegate(s)";
   public static final String CAN_NOT_ASSIGN_TASK_GROUP = "Delegate(s) not supported for task type";
   public static final String CAN_NOT_ASSIGN_CG_NG_TASK_GROUP =
@@ -74,18 +82,12 @@ public class DelegateSelectionLogsServiceImpl implements DelegateSelectionLogsSe
   public static final String CAN_NOT_ASSIGN_DELEGATE_SCOPE_GROUP = "Delegate scope(s) mismatched";
   public static final String CAN_NOT_ASSIGN_PROFILE_SCOPE_GROUP = "Delegate profile scope(s) mismatched ";
   public static final String CAN_NOT_ASSIGN_SELECTOR_TASK_GROUP = "No matching selector(s)";
-  public static final String CAN_NOT_ASSIGN_OWNER = "Cannot match task owner with delegate owner";
+  public static final String CAN_NOT_ASSIGN_OWNER = "There are no delegates with the right ownership to execute task\"";
   public static final String TASK_VALIDATION_FAILED =
       "No eligible delegate was able to confirm that it has the capability to execute ";
 
-  public static final List<String> selectionLogOrder =
-      Lists.newArrayList(SELECTED, NON_SELECTED, BROADCAST, ASSIGNED, REJECTED, INFO);
-
   @Override
   public void save(DelegateSelectionLog selectionLog) {
-    if (featureFlagService.isEnabled(FeatureName.DELEGATE_SELECTION_LOGS_DISABLED, selectionLog.getAccountId())) {
-      return;
-    }
     try {
       persistence.save(selectionLog);
     } catch (Exception exception) {
@@ -108,15 +110,17 @@ public class DelegateSelectionLogsServiceImpl implements DelegateSelectionLogsSe
   }
 
   @Override
-  public void logEligibleDelegatesToExecuteTask(Set<String> delegateIds, DelegateTask delegateTask) {
+  public void logEligibleDelegatesToExecuteTask(
+      Set<String> delegateIds, DelegateTask delegateTask, boolean preAssigned) {
     if (!delegateTask.isSelectionLogsTrackingEnabled()) {
       return;
     }
     if (Objects.isNull(delegateIds)) {
       return;
     }
-    String message = String.format("%s : [%s]", ELIGIBLE_DELEGATES,
-        String.join(", ", getDelegateHostNames(delegateTask.getAccountId(), delegateIds)));
+    String message_prefix = preAssigned ? PRE_ASSIGNED_ELIGIBLE_DELEGATES : ELIGIBLE_DELEGATES;
+    String message = String.format(
+        "%s : [%s]", message_prefix, String.join(", ", getDelegateHostNames(delegateTask.getAccountId(), delegateIds)));
     save(DelegateSelectionLog.builder()
              .accountId(delegateTask.getAccountId())
              .taskId(delegateTask.getUuid())
@@ -211,35 +215,12 @@ public class DelegateSelectionLogsServiceImpl implements DelegateSelectionLogsSe
                                                                .filter(DelegateSelectionLogKeys.accountId, accountId)
                                                                .filter(DelegateSelectionLogKeys.taskId, taskId)
                                                                .asList();
-    Map<String, List<DelegateSelectionLog>> logs =
-        delegateSelectionLogsList.stream().collect(Collectors.groupingBy(DelegateSelectionLog::getConclusion));
-    List<DelegateSelectionLog> delegateSelectionLogList = new ArrayList<>();
-    for (String assessment : selectionLogOrder) {
-      if (logs.containsKey(assessment)) {
-        delegateSelectionLogList.addAll(logs.get(assessment));
-      }
-    }
-    return delegateSelectionLogList.stream().map(this::buildSelectionLogParams).collect(Collectors.toList());
-  }
 
-  @Override
-  public List<Pair<String, List<DelegateSelectionLogParams>>> fetchTaskSelectionLogsGroupByAssessment(
-      String accountId, String taskId) {
-    List<DelegateSelectionLog> delegateSelectionLogsList = persistence.createQuery(DelegateSelectionLog.class)
-                                                               .filter(DelegateSelectionLogKeys.accountId, accountId)
-                                                               .filter(DelegateSelectionLogKeys.taskId, taskId)
-                                                               .asList();
-    Map<String, List<DelegateSelectionLog>> logs =
-        delegateSelectionLogsList.stream().collect(Collectors.groupingBy(DelegateSelectionLog::getConclusion));
-    List<Pair<String, List<DelegateSelectionLogParams>>> delegateSelectionLogs = new ArrayList<>();
-    for (String assessment : selectionLogOrder) {
-      if (logs.containsKey(assessment)) {
-        List<DelegateSelectionLogParams> delegateSelectionLogParams =
-            logs.get(assessment).stream().map(this::buildSelectionLogParams).collect(Collectors.toList());
-        delegateSelectionLogs.add(Pair.of(assessment, delegateSelectionLogParams));
-      }
-    }
-    return delegateSelectionLogs;
+    List<DelegateSelectionLog> logList = delegateSelectionLogsList.stream()
+                                             .sorted(Comparator.comparing(DelegateSelectionLog::getEventTimestamp))
+                                             .collect(Collectors.toList());
+
+    return logList.stream().map(this::buildSelectionLogParams).collect(Collectors.toList());
   }
 
   @Override
@@ -282,6 +263,36 @@ public class DelegateSelectionLogsServiceImpl implements DelegateSelectionLogsSe
     return Optional.ofNullable(buildSelectionLogParams(delegateSelectionLog));
   }
 
+  @Override
+  public void logDelegateTaskInfo(DelegateTask delegateTask) {
+    if (!delegateTask.isSelectionLogsTrackingEnabled()) {
+      return;
+    }
+    List<String> info = new ArrayList<>();
+    String delegateSelectorReceived = generateSelectionLogForSelectors(delegateTask.getExecutionCapabilities());
+    if (isNotEmpty(delegateSelectorReceived)) {
+      info.add(delegateSelectorReceived);
+    }
+    if (isNotEmpty(delegateTask.getExecutionCapabilities())) {
+      delegateTask.getExecutionCapabilities().forEach(capability -> {
+        if (isNotEmpty(capability.getCapabilityToString())) {
+          info.add(capability.getCapabilityToString());
+        }
+      });
+    }
+
+    if (isEmpty(info)) {
+      return;
+    }
+    save(DelegateSelectionLog.builder()
+             .accountId(delegateTask.getAccountId())
+             .taskId(delegateTask.getUuid())
+             .conclusion(INFO)
+             .message(info.toString())
+             .eventTimestamp(System.currentTimeMillis())
+             .build());
+  }
+
   private DelegateSelectionLogParams buildSelectionLogParams(DelegateSelectionLog selectionLog) {
     return DelegateSelectionLogParams.builder()
         .conclusion(selectionLog.getConclusion())
@@ -297,5 +308,20 @@ public class DelegateSelectionLogsServiceImpl implements DelegateSelectionLogsSe
                    .map(Delegate::getHostName)
                    .orElse(delegateId))
         .collect(Collectors.toSet());
+  }
+
+  public String generateSelectionLogForSelectors(List<ExecutionCapability> executionCapabilities) {
+    if (isEmpty(executionCapabilities)) {
+      return EMPTY;
+    }
+    List<String> taskSelectors = new ArrayList<>();
+    List<SelectorCapability> selectorCapabilities =
+        delegateTaskServiceClassic.fetchTaskSelectorCapabilities(executionCapabilities);
+    if (isEmpty(selectorCapabilities)) {
+      return EMPTY;
+    }
+    selectorCapabilities.forEach(
+        capability -> taskSelectors.add(capability.getSelectorOrigin().concat(capability.getSelectors().toString())));
+    return String.format("Selector(s) originated from %s ", String.join(", ", taskSelectors));
   }
 }

@@ -10,10 +10,8 @@ package io.harness.telemetry.helpers;
 import static io.harness.ng.core.remote.ProjectMapper.toProject;
 import static io.harness.rule.OwnerRule.TEJAS;
 
+import static junit.framework.TestCase.assertTrue;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
-import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -23,6 +21,7 @@ import io.harness.ng.core.entities.Project;
 import io.harness.rule.Owner;
 import io.harness.telemetry.TelemetryReporter;
 
+import java.util.concurrent.CompletableFuture;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -57,12 +56,9 @@ public class ProjectInstrumentationHelperTest {
     String orgIdentifier = randomAlphabetic(10);
     ProjectDTO projectDTO = createProjectDTO(orgIdentifier, randomAlphabetic(10));
     Project project = toProject(projectDTO);
-    instrumentationHelper.sendProjectCreateEvent(project, accountIdentifier);
-    try {
-      verify(telemetryReporter, times(1)).sendTrackEvent(any(), any(), any(), any(), any());
-    } catch (Exception e) {
-      e.printStackTrace();
-    }
+    CompletableFuture<Void> telemetryTask = instrumentationHelper.sendProjectCreateEvent(project, accountIdentifier);
+    telemetryTask.join();
+    assertTrue(telemetryTask.isDone());
   }
 
   @Test
@@ -73,11 +69,8 @@ public class ProjectInstrumentationHelperTest {
     String orgIdentifier = randomAlphabetic(10);
     ProjectDTO projectDTO = createProjectDTO(orgIdentifier, randomAlphabetic(10));
     Project project = toProject(projectDTO);
-    instrumentationHelper.sendProjectDeleteEvent(project, accountIdentifier);
-    try {
-      verify(telemetryReporter, times(1)).sendTrackEvent(any(), any(), any(), any(), any());
-    } catch (Exception e) {
-      e.printStackTrace();
-    }
+    CompletableFuture<Void> telemetryTask = instrumentationHelper.sendProjectDeleteEvent(project, accountIdentifier);
+    telemetryTask.join();
+    assertTrue(telemetryTask.isDone());
   }
 }

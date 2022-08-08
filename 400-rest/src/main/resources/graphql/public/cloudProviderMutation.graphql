@@ -27,6 +27,7 @@ input CreateCloudProviderInput {
   physicalDataCenterCloudProvider: PhysicalDataCenterCloudProviderInput
   azureCloudProvider: AzureCloudProviderInput
   awsCloudProvider: AwsCloudProviderInput
+  rancherCloudProvider: RancherCloudProviderInput
 }
 
 input UpdateCloudProviderInput {
@@ -40,6 +41,7 @@ input UpdateCloudProviderInput {
   physicalDataCenterCloudProvider: UpdatePhysicalDataCenterCloudProviderInput
   azureCloudProvider: UpdateAzureCloudProviderInput
   awsCloudProvider: UpdateAwsCloudProviderInput
+  rancherCloudProvider: UpdateRancherCloudProviderInput
 }
 
 input DeleteCloudProviderInput {
@@ -102,6 +104,13 @@ input AzureCloudProviderInput {
   keySecretId: String!
 }
 
+input RancherCloudProviderInput {
+  name: String!
+
+  rancherUrl: String!
+  bearerTokenSecretId: String!
+}
+
 input UpdatePcfCloudProviderInput {
   name: String
 
@@ -141,4 +150,11 @@ input UpdateAzureCloudProviderInput {
   clientId: String
   tenantId: String
   keySecretId: String
+}
+
+input UpdateRancherCloudProviderInput {
+  name: String
+
+  rancherUrl: String
+  bearerTokenSecretId: String
 }

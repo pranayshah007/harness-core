@@ -26,6 +26,7 @@ import io.harness.persistence.UuidAware;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.ImmutableList;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -126,11 +127,13 @@ public final class MetricPack implements PersistentEntity, UuidAware, CreatedAtA
     private boolean included;
     @Builder.Default private List<TimeSeriesThreshold> thresholds = new ArrayList<>();
     @JsonIgnore
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     public String getPath() {
       return path;
     }
 
     @JsonIgnore
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     public String getValidationPath() {
       return validationPath;
     }

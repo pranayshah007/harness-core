@@ -10,6 +10,7 @@ package software.wings.helpers.ext.helm;
 import static io.harness.annotations.dev.HarnessModule._930_DELEGATE_TASKS;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.exception.WingsException.USER;
+import static io.harness.helm.HelmCommandType.RELEASE_HISTORY;
 import static io.harness.helm.HelmSubCommandType.TEMPLATE;
 import static io.harness.k8s.model.HelmVersion.V2;
 import static io.harness.k8s.model.HelmVersion.V3;
@@ -43,7 +44,6 @@ import static org.joor.Reflect.on;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyList;
-import static org.mockito.Matchers.anyListOf;
 import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
@@ -67,6 +67,7 @@ import io.harness.delegate.task.helm.CustomManifestFetchTaskHelper;
 import io.harness.delegate.task.helm.HelmChartInfo;
 import io.harness.delegate.task.helm.HelmCommandFlag;
 import io.harness.delegate.task.helm.HelmCommandResponse;
+import io.harness.delegate.task.helm.HelmTaskHelperBase;
 import io.harness.delegate.task.helm.HelmTestConstants;
 import io.harness.delegate.task.k8s.ContainerDeploymentDelegateBaseHelper;
 import io.harness.delegate.task.k8s.K8sTaskHelperBase;
@@ -78,10 +79,12 @@ import io.harness.git.model.GitFile;
 import io.harness.helm.HelmClient;
 import io.harness.helm.HelmClientImpl.HelmCliResponse;
 import io.harness.helm.HelmCommandData;
+import io.harness.helm.HelmCommandType;
 import io.harness.k8s.K8sGlobalConfigService;
 import io.harness.k8s.KubernetesContainerService;
 import io.harness.k8s.kubectl.Kubectl;
 import io.harness.k8s.manifest.ManifestHelper;
+import io.harness.k8s.model.HelmVersion;
 import io.harness.k8s.model.Kind;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.k8s.model.KubernetesResource;
@@ -97,8 +100,8 @@ import software.wings.beans.GitConfig;
 import software.wings.beans.GitFileConfig;
 import software.wings.beans.appmanifest.StoreType;
 import software.wings.beans.command.ExecutionLogCallback;
-import software.wings.beans.command.HelmDummyCommandUnit;
-import software.wings.beans.container.HelmChartSpecification;
+import software.wings.beans.command.HelmDummyCommandUnitConstants;
+import software.wings.beans.dto.HelmChartSpecification;
 import software.wings.beans.yaml.GitFetchFilesResult;
 import software.wings.delegatetasks.ScmFetchFilesHelper;
 import software.wings.delegatetasks.helm.HarnessHelmDeployConfig;
@@ -144,6 +147,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import wiremock.com.google.common.collect.ImmutableMap;
 
 @OwnedBy(CDP)
@@ -154,6 +158,7 @@ public class HelmDeployServiceImplTest extends WingsBaseTest {
   @Mock private TimeLimiter mockTimeLimiter;
   @Mock private EncryptionService encryptionService;
   @Mock private HelmCommandHelper helmCommandHelper;
+  @Spy private HelmTaskHelperBase helmTaskHelperBase;
   @Mock private ExecutionLogCallback logCallback;
   @Mock private HelmTaskHelper helmTaskHelper;
   @Mock private ContainerDeploymentDelegateHelper containerDeploymentDelegateHelper;
@@ -197,7 +202,7 @@ public class HelmDeployServiceImplTest extends WingsBaseTest {
     executionLogCallback = mock(ExecutionLogCallback.class);
     doNothing().when(executionLogCallback).saveExecutionLog(anyString());
     when(encryptionService.decrypt(any(), any(), eq(false))).thenReturn(null);
-    when(gitService.fetchFilesByPath(any(), any(), any(), any(), any(), anyBoolean(), eq(false)))
+    when(gitService.fetchFilesByPath(any(), any(), any(), any(), any(), anyBoolean(), eq(false), any()))
         .thenReturn(GitFetchFilesResult.builder()
                         .files(asList(GitFile.builder().fileContent(HelmTestConstants.GIT_FILE_CONTENT_1_KEY).build(),
                             GitFile.builder().fileContent(HelmTestConstants.GIT_FILE_CONTENT_2_KEY).build()))
@@ -205,6 +210,8 @@ public class HelmDeployServiceImplTest extends WingsBaseTest {
     when(helmCommandHelper.isValidChartSpecification(any())).thenReturn(true);
     when(helmCommandHelper.generateHelmDeployChartSpecFromYaml(any())).thenReturn(Optional.empty());
     when(helmClient.repoUpdate(any())).thenReturn(HelmCliResponse.builder().build());
+    when(helmTaskHelperBase.parseHelmReleaseCommandOutput(eq(""), eq(RELEASE_HISTORY)))
+        .thenReturn(Collections.emptyList());
   }
 
   @Test
@@ -217,13 +224,17 @@ public class HelmDeployServiceImplTest extends WingsBaseTest {
     when(helmClient.releaseHistory(any(), eq(false))).thenReturn(helmCliReleaseHistoryResponse);
     when(helmClient.install(any(), eq(false))).thenReturn(helmCliResponse);
     when(helmClient.listReleases(any(), eq(false))).thenReturn(helmCliListReleasesResponse);
-
     ArgumentCaptor<io.harness.helm.HelmCommandData> argumentCaptor = ArgumentCaptor.forClass(HelmCommandData.class);
     HelmCommandResponse helmCommandResponse = helmDeployService.deploy(helmInstallCommandRequest);
     assertThat(helmCommandResponse.getCommandExecutionStatus()).isEqualTo(SUCCESS);
     verify(helmClient).install(argumentCaptor.capture(), eq(false));
-  }
 
+    // Check if revokeReadPermission function called when Helm Version is V380
+    helmInstallCommandRequest.setHelmVersion(HelmVersion.V380);
+    doNothing().when(helmTaskHelperBase).revokeReadPermission(helmInstallCommandRequest.getKubeConfigLocation());
+    helmDeployService.deploy(helmInstallCommandRequest);
+    verify(helmTaskHelperBase, times(1)).revokeReadPermission(helmInstallCommandRequest.getKubeConfigLocation());
+  }
   @Test
   @Owner(developers = ACASIAN)
   @Category(UnitTests.class)
@@ -252,9 +263,8 @@ public class HelmDeployServiceImplTest extends WingsBaseTest {
     when(helmClient.listReleases(any(), eq(false))).thenReturn(helmCliListReleasesResponse);
     when(containerDeploymentDelegateHelper.useK8sSteadyStateCheck(anyBoolean(), any(), any())).thenReturn(true);
     when(k8sTaskHelperBase.readManifests(any(), any())).thenReturn(resources);
-    when(k8sTaskHelperBase.getContainerInfos(any(), any(), anyString(), anyLong())).thenReturn(containerInfos);
-    when(k8sTaskHelper.doStatusCheckAllResourcesForHelm(any(Kubectl.class), anyList(), anyString(), anyString(),
-             anyString(), anyString(), any(ExecutionLogCallback.class)))
+    when(k8sTaskHelperBase.getContainerInfos(any(), any(), any(), anyLong())).thenReturn(containerInfos);
+    when(k8sTaskHelperBase.doStatusCheckAllResourcesForHelm(any(), anyList(), any(), any(), any(), any(), any()))
         .thenReturn(true);
 
     ArgumentCaptor<io.harness.helm.HelmCommandData> argumentCaptor = ArgumentCaptor.forClass(HelmCommandData.class);
@@ -267,20 +277,20 @@ public class HelmDeployServiceImplTest extends WingsBaseTest {
 
     verify(helmClient).install(argumentCaptor.capture(), eq(false));
 
-    verify(k8sTaskHelper, times(1))
+    verify(k8sTaskHelperBase, times(1))
         .doStatusCheckAllResourcesForHelm(any(Kubectl.class),
             eq(asList(
                 KubernetesResourceId.builder().name("helm-deploy").namespace("default").kind("Deployment").build(),
                 KubernetesResourceId.builder().name("helm-deploy-2").namespace("default").kind("StatefulSet").build())),
-            anyString(), anyString(), eq("default"), anyString(), any(ExecutionLogCallback.class));
-    verify(k8sTaskHelper, times(1))
+            any(), any(), eq("default"), any(), any());
+    verify(k8sTaskHelperBase, times(1))
         .doStatusCheckAllResourcesForHelm(any(Kubectl.class),
             eq(asList(KubernetesResourceId.builder()
                           .name("helm-deploy-1")
                           .namespace("default-1")
                           .kind("StatefulSet")
                           .build())),
-            anyString(), anyString(), eq("default-1"), anyString(), any(ExecutionLogCallback.class));
+            any(), any(), eq("default-1"), any(), any());
   }
 
   @Test
@@ -303,9 +313,9 @@ public class HelmDeployServiceImplTest extends WingsBaseTest {
     when(helmClient.listReleases(any(), eq(false))).thenReturn(helmCliListReleasesResponse);
     when(containerDeploymentDelegateHelper.useK8sSteadyStateCheck(anyBoolean(), any(), any())).thenReturn(true);
     when(k8sTaskHelperBase.readManifests(any(), any())).thenReturn(resources);
-    when(k8sTaskHelperBase.getContainerInfos(any(), any(), anyString(), anyLong())).thenReturn(containerInfos);
-    when(k8sTaskHelper.doStatusCheckAllResourcesForHelm(any(Kubectl.class), anyList(), anyString(), anyString(),
-             eq("default"), anyString(), any(ExecutionLogCallback.class)))
+    when(k8sTaskHelperBase.getContainerInfos(any(), any(), any(), anyLong())).thenReturn(containerInfos);
+    when(
+        k8sTaskHelperBase.doStatusCheckAllResourcesForHelm(any(), anyList(), any(), any(), eq("default"), any(), any()))
         .thenReturn(true);
 
     HelmInstallCommandRequest helmInstallCommandRequest = createHelmInstallCommandRequestNoSourceRepo();
@@ -359,7 +369,7 @@ public class HelmDeployServiceImplTest extends WingsBaseTest {
     HelmCommandResponse response = spyHelmDeployService.deploy(helmInstallCommandRequest);
     assertThat(response.getCommandExecutionStatus()).isEqualTo(FAILURE);
     verify(spyHelmDeployService, never())
-        .getExecutionLogCallback(helmInstallCommandRequest, HelmDummyCommandUnit.WaitForSteadyState);
+        .getExecutionLogCallback(helmInstallCommandRequest, HelmDummyCommandUnitConstants.WaitForSteadyState);
   }
 
   @Test
@@ -473,7 +483,7 @@ public class HelmDeployServiceImplTest extends WingsBaseTest {
 
     when(helmClient.releaseHistory(any(), eq(false))).thenReturn(helmCliReleaseHistoryResponse);
     when(helmClient.install(any(), eq(false))).thenReturn(helmCliResponse);
-    when(gitService.fetchFilesByPath(any(), any(), any(), any(), any(), anyBoolean(), eq(false)))
+    when(gitService.fetchFilesByPath(any(), any(), any(), any(), any(), anyBoolean(), eq(false), any()))
         .thenThrow(new InvalidRequestException("WingsException", USER));
     when(helmClient.listReleases(any(), eq(false))).thenReturn(helmCliListReleasesResponse);
 
@@ -511,7 +521,7 @@ public class HelmDeployServiceImplTest extends WingsBaseTest {
         .build();
   }
   private HelmCliResponse createHelmCliResponse() {
-    return HelmCliResponse.builder().build();
+    return HelmCliResponse.builder().output("").build();
   }
 
   private HelmInstallCommandResponse createHelmInstallCommandResponse() {
@@ -570,7 +580,6 @@ public class HelmDeployServiceImplTest extends WingsBaseTest {
                         .build());
 
     HelmReleaseHistoryCommandResponse response = helmDeployService.releaseHistory(request);
-
     assertThat(response).isNotNull();
     assertThat(response.getCommandExecutionStatus()).isEqualTo(SUCCESS);
     assertThat(response.getReleaseInfoList()).hasSize(5);
@@ -883,8 +892,9 @@ public class HelmDeployServiceImplTest extends WingsBaseTest {
 
     helmDeployService.fetchSourceRepo(request);
 
-    verify(encryptionService, times(1)).decrypt(argumentCaptor.capture(), anyList(), eq(false));
-    verify(gitService, times(1)).downloadFiles(any(GitConfig.class), any(GitFileConfig.class), anyString(), eq(false));
+    verify(encryptionService, times(1)).decrypt(argumentCaptor.capture(), any(), eq(false));
+    verify(gitService, times(1))
+        .downloadFiles(any(GitConfig.class), any(GitFileConfig.class), anyString(), eq(false), any());
 
     GitConfig gitConfig = argumentCaptor.getValue();
     assertThat(gitConfig.getBranch()).isNotEmpty();
@@ -909,9 +919,10 @@ public class HelmDeployServiceImplTest extends WingsBaseTest {
 
     helmDeployService.fetchSourceRepo(request);
 
-    verify(encryptionService, times(1)).decrypt(argumentCaptor.capture(), anyList(), eq(false));
+    verify(encryptionService, times(1)).decrypt(argumentCaptor.capture(), any(), eq(false));
     verify(scmFetchFilesHelper, times(1)).downloadFilesUsingScm(any(), any(), any(), any());
-    verify(gitService, times(0)).downloadFiles(any(GitConfig.class), any(GitFileConfig.class), anyString(), eq(false));
+    verify(gitService, times(0))
+        .downloadFiles(any(GitConfig.class), any(GitFileConfig.class), anyString(), eq(false), any());
 
     GitConfig gitConfig = argumentCaptor.getValue();
     assertThat(gitConfig.getBranch()).isNotEmpty();
@@ -1048,7 +1059,7 @@ public class HelmDeployServiceImplTest extends WingsBaseTest {
   private void validateCreateNewRelease(int releaseNumber) throws Exception {
     ArgumentCaptor<String> releaseHistoryCaptor = ArgumentCaptor.forClass(String.class);
     verify(k8sTaskHelperBase, atLeastOnce())
-        .saveReleaseHistory(any(KubernetesConfig.class), eq("release"), releaseHistoryCaptor.capture(), eq(true));
+        .saveReleaseHistory(any(), eq("release"), releaseHistoryCaptor.capture(), eq(true));
     ReleaseHistory storedHistory = ReleaseHistory.createFromData(releaseHistoryCaptor.getValue());
     assertThat(storedHistory.getRelease(releaseNumber)).isNotNull();
   }
@@ -1075,16 +1086,14 @@ public class HelmDeployServiceImplTest extends WingsBaseTest {
     when(helmClient.rollback(any(HelmCommandData.class), eq(false)))
         .thenReturn(
             HelmCliResponse.builder().output("Rollback was a success.").commandExecutionStatus(SUCCESS).build());
-    when(k8sTaskHelperBase.getReleaseHistoryFromSecret(any(KubernetesConfig.class), eq("release")))
-        .thenReturn(releaseHistory.getAsYaml());
+    when(k8sTaskHelperBase.getReleaseHistoryFromSecret(any(), eq("release"))).thenReturn(releaseHistory.getAsYaml());
     when(k8sTaskHelperBase.getContainerInfos(any(), eq("release"), eq("default-1"), eq(LONG_TIMEOUT_INTERVAL)))
         .thenReturn(containerInfosDefault1);
     when(k8sTaskHelperBase.getContainerInfos(any(), eq("release"), eq("default-2"), eq(LONG_TIMEOUT_INTERVAL)))
         .thenReturn(containerInfosDefault2);
     when(k8sTaskHelperBase.getContainerInfos(any(), eq("release"), eq("default-3"), eq(LONG_TIMEOUT_INTERVAL)))
         .thenReturn(containerInfosDefault3);
-    when(k8sTaskHelper.doStatusCheckAllResourcesForHelm(any(Kubectl.class), anyListOf(KubernetesResourceId.class),
-             anyString(), anyString(), anyString(), anyString(), any(ExecutionLogCallback.class)))
+    when(k8sTaskHelperBase.doStatusCheckAllResourcesForHelm(any(), anyList(), any(), any(), any(), any(), any()))
         .thenReturn(true);
 
     return (HelmInstallCommandResponse) helmDeployService.rollback(request);
@@ -1302,8 +1311,8 @@ public class HelmDeployServiceImplTest extends WingsBaseTest {
         resources.stream().map(KubernetesResource::getResourceId).collect(Collectors.toList());
 
     when(containerDeploymentDelegateHelper.useK8sSteadyStateCheck(anyBoolean(), any(), any())).thenReturn(true);
-    when(k8sTaskHelper.doStatusCheckAllResourcesForHelm(any(Kubectl.class), eq(resourceIds), anyString(), anyString(),
-             anyString(), anyString(), any(ExecutionLogCallback.class)))
+    when(k8sTaskHelperBase.doStatusCheckAllResourcesForHelm(any(Kubectl.class), eq(resourceIds), anyString(),
+             anyString(), anyString(), anyString(), any(ExecutionLogCallback.class)))
         .thenReturn(false);
 
     assertThatExceptionOfType(InvalidRequestException.class)
@@ -1312,7 +1321,7 @@ public class HelmDeployServiceImplTest extends WingsBaseTest {
                             helmInstallCommandRequest, resourceIds, executionLogCallback, LONG_TIMEOUT_INTERVAL))
         .withMessage("Steady state check failed");
 
-    verify(k8sTaskHelper, times(1))
+    verify(k8sTaskHelperBase, times(1))
         .doStatusCheckAllResourcesForHelm(
             any(), any(), any(), anyString(), anyString(), anyString(), any(ExecutionLogCallback.class));
   }
@@ -1431,7 +1440,7 @@ public class HelmDeployServiceImplTest extends WingsBaseTest {
     String chartLocation = "/chart";
     String output = "cli failed";
     List<String> valueOverrides = emptyList();
-    doReturn(HelmCliResponse.builder().commandExecutionStatus(FAILURE).output(output).build())
+    doReturn(HelmCliResponse.builder().commandExecutionStatus(FAILURE).errorStreamOutput(output).build())
         .when(helmClient)
         .renderChart(HelmCommandDataMapper.getHelmCommandData(helmInstallCommandRequest), chartLocation, namespace,
             valueOverrides, false);
@@ -1467,7 +1476,8 @@ public class HelmDeployServiceImplTest extends WingsBaseTest {
         .releaseHistory(HelmCommandDataMapper.getHelmCommandData(helmInstallCommandRequest), false);
     doReturn(gitFiles)
         .when(gitService)
-        .fetchFilesByPath(gitConfig, SETTING_ID, COMMIT_REFERENCE, BRANCH_NAME, singletonList(FILE_PATH), true, false);
+        .fetchFilesByPath(
+            gitConfig, SETTING_ID, COMMIT_REFERENCE, BRANCH_NAME, singletonList(FILE_PATH), true, false, logCallback);
     doReturn(Optional.empty()).when(helmCommandHelper).generateHelmDeployChartSpecFromYaml("values");
     doReturn(Optional.of(HarnessHelmDeployConfig.builder().helmDeployChartSpec(chartSpec).build()))
         .when(helmCommandHelper)
@@ -1505,7 +1515,8 @@ public class HelmDeployServiceImplTest extends WingsBaseTest {
         .releaseHistory(HelmCommandDataMapper.getHelmCommandData(helmInstallCommandRequest), false);
     doReturn(gitFiles)
         .when(gitService)
-        .fetchFilesByPath(gitConfig, SETTING_ID, COMMIT_REFERENCE, BRANCH_NAME, singletonList(FILE_PATH), true, false);
+        .fetchFilesByPath(
+            gitConfig, SETTING_ID, COMMIT_REFERENCE, BRANCH_NAME, singletonList(FILE_PATH), true, false, logCallback);
     doReturn(Optional.of(HarnessHelmDeployConfig.builder().helmDeployChartSpec(chartSpec).build()))
         .when(helmCommandHelper)
         .generateHelmDeployChartSpecFromYaml("chartSpec");
@@ -1714,7 +1725,7 @@ public class HelmDeployServiceImplTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void testRepoUpdateOnDeployNonInstallRequest() throws Exception {
     helmInstallCommandRequest.setRepoConfig(null);
-    helmInstallCommandRequest.setHelmCommandType(HelmCommandRequest.HelmCommandType.LIST_RELEASE);
+    helmInstallCommandRequest.setHelmCommandType(HelmCommandType.LIST_RELEASE);
     doReturn(helmCliReleaseHistoryResponse)
         .when(helmClient)
         .releaseHistory(HelmCommandDataMapper.getHelmCommandData(helmInstallCommandRequest), false);

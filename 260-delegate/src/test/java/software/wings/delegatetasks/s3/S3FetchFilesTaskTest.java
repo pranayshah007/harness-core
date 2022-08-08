@@ -33,6 +33,7 @@ import software.wings.beans.s3.S3File;
 import software.wings.beans.s3.S3FileRequest;
 import software.wings.delegatetasks.DelegateLogService;
 import software.wings.service.impl.AwsHelperService;
+import software.wings.service.intfc.aws.delegate.AwsS3HelperServiceDelegate;
 import software.wings.service.intfc.security.EncryptionService;
 
 import com.amazonaws.services.s3.model.S3Object;
@@ -52,6 +53,7 @@ import org.mockito.Mock;
 public class S3FetchFilesTaskTest extends WingsBaseTest {
   @Mock private EncryptionService encryptionService;
   @Mock private AwsHelperService awsHelperService;
+  @Mock private AwsS3HelperServiceDelegate awsS3HelperServiceDelegate;
   @Mock private DelegateLogService delegateLogService;
   @InjectMocks
   S3FetchFilesTask s3FetchFilesTask =
@@ -83,7 +85,7 @@ public class S3FetchFilesTaskTest extends WingsBaseTest {
   public void testRunS3FetchFileTask() {
     S3Object s3Object = new S3Object();
     s3Object.setObjectContent(new ByteArrayInputStream("s3ObjectContent".getBytes()));
-    doReturn(s3Object).when(awsHelperService).getObjectFromS3(any(), any(), any(), any());
+    doReturn(s3Object).when(awsS3HelperServiceDelegate).getObjectFromS3(any(), any(), any(), any());
     FetchS3FilesExecutionResponse s3FilesExecutionResponse = s3FetchFilesTask.run(params);
 
     assertThat(s3FilesExecutionResponse.getCommandStatus())
@@ -111,10 +113,10 @@ public class S3FetchFilesTaskTest extends WingsBaseTest {
     secondS3Object.setObjectContent(new ByteArrayInputStream("secondS3ObjectContent".getBytes()));
 
     doReturn(secondS3Object)
-        .when(awsHelperService)
+        .when(awsS3HelperServiceDelegate)
         .getObjectFromS3(params.getAwsConfig(), params.getEncryptionDetails(), "BUCKET_NAME_2", "FILE_KEY");
     doReturn(s3Object)
-        .when(awsHelperService)
+        .when(awsS3HelperServiceDelegate)
         .getObjectFromS3(params.getAwsConfig(), params.getEncryptionDetails(), "BUCKET_NAME", "FILE_KEY");
 
     params.getS3FileRequests().add(
@@ -156,10 +158,10 @@ public class S3FetchFilesTaskTest extends WingsBaseTest {
     secondS3Object.setObjectContent(new ByteArrayInputStream("secondS3ObjectContent".getBytes()));
 
     doThrow(new RuntimeException("File not available"))
-        .when(awsHelperService)
+        .when(awsS3HelperServiceDelegate)
         .getObjectFromS3(params.getAwsConfig(), params.getEncryptionDetails(), "BUCKET_NAME_2", "FILE_KEY");
     doReturn(s3Object)
-        .when(awsHelperService)
+        .when(awsS3HelperServiceDelegate)
         .getObjectFromS3(params.getAwsConfig(), params.getEncryptionDetails(), "BUCKET_NAME", "FILE_KEY");
 
     params.getS3FileRequests().add(
@@ -178,7 +180,7 @@ public class S3FetchFilesTaskTest extends WingsBaseTest {
     S3Object s3Object = new S3Object();
     s3Object.setObjectContent(new ByteArrayInputStream("s3ObjectContent".getBytes()));
     doThrow(new RuntimeException("Invalid Credentials"))
-        .when(awsHelperService)
+        .when(awsS3HelperServiceDelegate)
         .getObjectFromS3(any(), any(), any(), any());
 
     FetchS3FilesExecutionResponse s3FilesExecutionResponse = s3FetchFilesTask.run(params);

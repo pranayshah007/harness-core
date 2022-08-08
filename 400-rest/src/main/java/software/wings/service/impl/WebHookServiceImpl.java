@@ -32,6 +32,7 @@ import io.harness.beans.DelegateTask;
 import io.harness.beans.ExecutionStatus;
 import io.harness.beans.FeatureName;
 import io.harness.beans.SecretUsageLog;
+import io.harness.beans.WorkflowType;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.TaskData;
 import io.harness.exception.ExceptionUtils;
@@ -80,6 +81,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -126,13 +128,21 @@ public class WebHookServiceImpl implements WebHookService {
   }
 
   private String getUiUrl(
-      boolean isPipeline, String accountId, String appId, String envId, String workflowExecutionId) {
-    if (isPipeline) {
+      WorkflowType workflowType, String accountId, String appId, String envId, String workflowExecutionId) {
+    if (workflowType == PIPELINE) {
       return format("%s#/account/%s/app/%s/pipeline-execution/%s/workflow-execution/undefined/details", getBaseUrlUI(),
           accountId, appId, workflowExecutionId);
     } else {
       return format("%s#/account/%s/app/%s/env/%s/executions/%s/details", getBaseUrlUI(), accountId, appId, envId,
           workflowExecutionId);
+    }
+  }
+
+  private String getUiSetupUrl(WorkflowType workflowType, String accountId, String appId, String workflowId) {
+    if (workflowType == PIPELINE) {
+      return format("%s#/account/%s/app/%s/pipelines/%s/edit", getBaseUrlUI(), accountId, appId, workflowId);
+    } else {
+      return format("%s#/account/%s/app/%s/workflows/%s/details", getBaseUrlUI(), accountId, appId, workflowId);
     }
   }
 
@@ -474,14 +484,24 @@ public class WebHookServiceImpl implements WebHookService {
 
     Map<String, Object> payLoadMap = JsonUtils.asObject(payload, new TypeReference<Map<String, Object>>() {});
 
-    String branchName = webhookEventUtils.obtainBranchName(webhookSource, httpHeaders, payLoadMap);
+    List<String> branchNames = new ArrayList<>();
+    if (webhookSource == BITBUCKET) {
+      BitBucketEventType bitBucketEventType = webhookEventUtils.getBitBucketEventType(httpHeaders);
+      if (bitBucketEventType == BitBucketEventType.PUSH) {
+        branchNames = webhookEventUtils.obtainBranchNameFromBitBucketPush(payLoadMap);
+      } else {
+        branchNames.add(webhookEventUtils.obtainBranchName(webhookSource, httpHeaders, payLoadMap));
+      }
+    } else {
+      branchNames.add(webhookEventUtils.obtainBranchName(webhookSource, httpHeaders, payLoadMap));
+    }
     String storedBranchRegex = webhookTriggerCondition.getBranchRegex();
-    if (EmptyPredicate.isNotEmpty(storedBranchRegex) && EmptyPredicate.isNotEmpty(branchName)) {
-      validateBranchWithRegex(storedBranchRegex, branchName);
+    if (EmptyPredicate.isNotEmpty(storedBranchRegex) && EmptyPredicate.isNotEmpty(branchNames)) {
+      validateBranchWithRegex(storedBranchRegex, branchNames);
     }
     validateWebHook(webhookSource, trigger, webhookTriggerCondition, payLoadMap, httpHeaders, payload);
     webhookEventDetails.setPayload(payload);
-    webhookEventDetails.setBranchName(branchName);
+    webhookEventDetails.setBranchNames(branchNames);
     webhookEventDetails.setCommitId(webhookEventUtils.obtainCommitId(webhookSource, httpHeaders, payLoadMap));
     webhookEventDetails.setWebhookSource(webhookSource.name());
     webhookEventDetails.setWebhookEventType(webhookEventUtils.obtainEventType(webhookSource, httpHeaders));
@@ -589,13 +609,14 @@ public class WebHookServiceImpl implements WebHookService {
     log.info("Webhook is Authenticated");
   }
 
-  private void validateBranchWithRegex(String storedBranch, String inputBranchName) {
-    if (Pattern.compile(storedBranch).matcher(inputBranchName).matches()) {
+  private void validateBranchWithRegex(String storedBranch, List<String> inputBranchNames) {
+    Pattern branchPattern = Pattern.compile(storedBranch);
+    if (inputBranchNames.stream().anyMatch(inputBranchName -> branchPattern.matcher(inputBranchName).matches())) {
       return;
     }
     String msg = String.format(
         "WebHook event branch name filter [%s] does not match with the trigger condition branch name [%s]",
-        inputBranchName, storedBranch);
+        inputBranchNames, storedBranch);
     throw new InvalidRequestException(msg, WingsException.USER);
   }
 
@@ -694,8 +715,10 @@ public class WebHookServiceImpl implements WebHookService {
                                           .requestId(workflowExecution.getUuid())
                                           .status(workflowExecution.getStatus().name())
                                           .apiUrl(getApiUrl(accountId, appId, workflowExecution.getUuid()))
-                                          .uiUrl(getUiUrl(PIPELINE == workflowExecution.getWorkflowType(), accountId,
-                                              appId, workflowExecution.getEnvId(), workflowExecution.getUuid()))
+                                          .uiUrl(getUiUrl(workflowExecution.getWorkflowType(), accountId, appId,
+                                              workflowExecution.getEnvId(), workflowExecution.getUuid()))
+                                          .uiSetupUrl(getUiSetupUrl(workflowExecution.getWorkflowType(), accountId,
+                                              appId, workflowExecution.getWorkflowId()))
                                           .build();
 
     return prepareResponse(webHookResponse, Response.Status.OK);

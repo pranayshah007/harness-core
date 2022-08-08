@@ -1,0 +1,95 @@
+{
+  "pipeline": {
+    "name": "ds",
+    "identifier": "ds",
+    "allowStageExecutions": false,
+    "projectIdentifier": "CIProject12",
+    "description": "fddf",
+    "orgIdentifier": "default",
+    "tags": {
+      "__uuid": "LPXznVJyRTOyLO5ZuNzQFg"
+    },
+    "stages": [
+      {
+        "stage": {
+          "name": "create-frame-db-updater",
+          "identifier": "setupdb",
+          "type": "CI",
+          "spec": {
+            "cloneCodebase": true,
+            "infrastructure": {
+              "type": "KubernetesDirect",
+              "spec": {
+                "connectorRef": "account.CItestK8sConnectorO71sSNmPL3",
+                "namespace": "harness-qa-delegate",
+                "automountServiceAccountToken": true,
+                "__uuid": "Yp7eGTt1Rl2nwWvhLzUDxA"
+              },
+              "__uuid": "pdq0CyOSTTefa2PMBmV0zg"
+            },
+            "execution": {
+              "steps": [
+                {
+                  "step": {
+                    "type": "Run",
+                    "name": "f",
+                    "identifier": "f",
+                    "spec": {
+                      "connectorRef": "account.CItestDockerConnectoro4pbIFlutb",
+                      "image": "alpine",
+                      "shell": "Sh",
+                      "command": "exit 1",
+                      "outputVariables": [
+                        {
+                          "name": "name",
+                          "__uuid": "QiIY1YwlTXmysO_mQ-ANbA"
+                        },
+                        {
+                          "name": "value",
+                          "__uuid": "Y5aDBRH4Qk6GUhAVsKLLkw"
+                        }
+                      ],
+                      "__uuid": "JdfReTn4RJ-RV3MU5xxPWA"
+                    },
+                    "__uuid": "G5KttixVQK-iMalGjiorvg"
+                  },
+                  "__uuid": "W4RRzy4DTPmi6WaylkIH6g"
+                }
+              ],
+              "__uuid": "6lFVwi9jT0e508NlxUKLjg"
+            },
+            "serviceConfig": {
+              "serviceRef": "",
+              "serviceDefinition": {
+                "type": "Kubernetes",
+                "spec": {
+                  "variables": [],
+                  "__uuid": "Xu9RpUO0TzamNgHNY9kvnw"
+                },
+                "__uuid": "nae9i-OXSl-r_xWjZvrImA"
+              },
+              "__uuid": "n6QFkybXR8ueLIsDP6H1Eg"
+            },
+            "__uuid": "zhBEPasSSo6KtEdypExb4Q"
+          },
+          "__uuid": "fvCGZnHwSiOk_lwHhj6TvA"
+        },
+        "__uuid": "fH5uUZuZSQWMdvBefH8unw"
+      }
+    ],
+    "properties": {
+      "ci": {
+        "codebase": {
+          "connectorRef": "account.CItestGitConnector8fXpmACi3T",
+          "repoName": "springboot",
+          "build": "<+input>",
+          "__uuid": "SgGFSn3_S_CZnSR7WHV4yg"
+        },
+        "__uuid": "0aF-jJIqQqic_vq6hKc1NQ"
+      },
+      "__uuid": "EDTeJnkiQQO_jfPL0XpTRw"
+    },
+    "__uuid": "srqf5XwAQGyEL7d4PA-qSw"
+  },
+  "__uuid": "__WhBRZ_RD2qWWQJjwnDCg"
+}

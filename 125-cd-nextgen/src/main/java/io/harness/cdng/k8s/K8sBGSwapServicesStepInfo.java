@@ -20,10 +20,12 @@ import io.harness.plancreator.steps.common.SpecParameters;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.pms.yaml.YamlNode;
 import io.harness.walktree.visitor.Visitable;
 import io.harness.yaml.YamlSchemaTypes;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.annotations.ApiModelProperty;
 import java.util.List;
@@ -41,11 +43,17 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("k8sBGSwapServicesStepInfo")
 @RecasterAlias("io.harness.cdng.k8s.K8sBGSwapServicesStepInfo")
 public class K8sBGSwapServicesStepInfo implements CDStepInfo, Visitable {
+  @JsonProperty(YamlNode.UUID_FIELD_NAME)
+  @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
+  @ApiModelProperty(hidden = true)
+  private String uuid;
+
   @ApiModelProperty(dataType = SwaggerConstants.BOOLEAN_CLASSPATH) ParameterField<Boolean> skipDryRun;
   @YamlSchemaTypes({runtime})
   @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
   ParameterField<List<TaskSelectorYaml>> delegateSelectors;
   @JsonIgnore String blueGreenStepFqn;
+
   @JsonIgnore String blueGreenSwapServicesStepFqn;
 
   // For Visitor Framework Impl
@@ -69,5 +77,10 @@ public class K8sBGSwapServicesStepInfo implements CDStepInfo, Visitable {
         .blueGreenStepFqn(blueGreenStepFqn)
         .blueGreenSwapServicesFqn(blueGreenSwapServicesStepFqn)
         .build();
+  }
+
+  @Override
+  public ParameterField<List<TaskSelectorYaml>> fetchDelegateSelectors() {
+    return getDelegateSelectors();
   }
 }

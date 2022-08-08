@@ -8,6 +8,7 @@
 package software.wings.service.impl;
 
 import static io.harness.rule.OwnerRule.AMAN;
+import static io.harness.rule.OwnerRule.LUCAS_SALES;
 import static io.harness.rule.OwnerRule.MILOS;
 
 import static org.mockito.Matchers.any;
@@ -26,6 +27,7 @@ import io.harness.rule.Owner;
 
 import software.wings.WingsBaseTest;
 import software.wings.beans.SlackMessage;
+import software.wings.beans.SlackMessageJSON;
 import software.wings.beans.SyncTaskContext;
 import software.wings.beans.notification.SlackNotificationSetting;
 import software.wings.delegatetasks.DelegateProxyFactory;
@@ -35,7 +37,9 @@ import software.wings.service.intfc.NotificationSetupService;
 import software.wings.service.intfc.SlackMessageSender;
 import software.wings.service.intfc.SlackNotificationService;
 
+import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
+import java.util.List;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
@@ -68,6 +72,37 @@ public class SlackNotificationServiceTest extends WingsBaseTest {
     slackNotificationService.sendMessage(
         new SlackNotificationSetting("name", "url"), "abc", "sender", "message", "accountId");
     verify(delegateProxyFactory, times(1)).get(any(), any());
+  }
+
+  @Test
+  @Owner(developers = LUCAS_SALES)
+  @Category(UnitTests.class)
+  public void shouldSendJSONMessageFromDelegate() {
+    when(accountService.isCertValidationRequired(any())).thenReturn(false);
+    when(featureFlagService.isEnabled(any(), anyString())).thenReturn(true);
+    when(featureFlagService.isGlobalEnabled(any())).thenReturn(true);
+    when(delegateProxyFactory.get(any(Class.class), any(SyncTaskContext.class))).thenReturn(slackMessageSender);
+    doNothing().when(slackMessageSender).sendJSON(any(SlackMessageJSON.class));
+
+    List<String> slackWebhookUrls = ImmutableList.of("http://webhook.com");
+    slackNotificationService.sendJSONMessage("message", slackWebhookUrls, "account-id");
+    verify(delegateProxyFactory, times(1)).get(any(), any());
+    verify(slackMessageSender, times(1)).sendJSON(any(SlackMessageJSON.class));
+  }
+
+  @Test
+  @Owner(developers = LUCAS_SALES)
+  @Category(UnitTests.class)
+  public void shouldSendJSONMessageFromManager() {
+    when(accountService.isCertValidationRequired(any())).thenReturn(false);
+    when(featureFlagService.isEnabled(any(), anyString())).thenReturn(false);
+    when(featureFlagService.isGlobalEnabled(any())).thenReturn(false);
+    doNothing().when(slackMessageSender).sendJSON(any(SlackMessageJSON.class));
+
+    List<String> slackWebhookUrls = ImmutableList.of("http://webhook.com");
+    slackNotificationService.sendJSONMessage("message", slackWebhookUrls, "account-id");
+    verify(delegateProxyFactory, times(0)).get(any(), any());
+    verify(slackMessageSender, times(1)).sendJSON(any(SlackMessageJSON.class));
   }
 
   @Test

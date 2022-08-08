@@ -16,6 +16,7 @@ import io.harness.cvng.core.beans.monitoredService.DurationDTO;
 import io.harness.cvng.core.beans.monitoredService.HealthScoreDTO;
 import io.harness.cvng.core.beans.monitoredService.HistoricalTrend;
 import io.harness.cvng.core.beans.monitoredService.MetricDTO;
+import io.harness.cvng.core.beans.monitoredService.MonitoredServiceChangeDetailSLO;
 import io.harness.cvng.core.beans.monitoredService.MonitoredServiceDTO;
 import io.harness.cvng.core.beans.monitoredService.MonitoredServiceListItemDTO;
 import io.harness.cvng.core.beans.monitoredService.MonitoredServiceResponse;
@@ -29,6 +30,7 @@ import io.harness.cvng.core.beans.params.TimeRangeParams;
 import io.harness.cvng.core.beans.params.logsFilterParams.LiveMonitoringLogsFilter;
 import io.harness.cvng.core.entities.MonitoredService;
 import io.harness.cvng.core.services.api.DeleteEntityByHandler;
+import io.harness.cvng.notification.beans.NotificationRuleResponse;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.environment.dto.EnvironmentResponse;
 
@@ -41,11 +43,13 @@ import lombok.NonNull;
 
 public interface MonitoredServiceService extends DeleteEntityByHandler<MonitoredService> {
   MonitoredServiceResponse create(String accountId, MonitoredServiceDTO monitoredServiceDTO);
+  MonitoredServiceResponse createFromYaml(ProjectParams projectParams, String yaml);
+  MonitoredServiceResponse updateFromYaml(ProjectParams projectParams, String identifier, String yaml);
   MonitoredServiceResponse update(String accountId, MonitoredServiceDTO monitoredServiceDTO);
   boolean delete(ProjectParams projectParams, String identifier);
   List<MonitoredServiceResponse> get(ProjectParams projectParams, Set<String> identifier);
   MonitoredServiceResponse get(ProjectParams projectParams, String identifier);
-  @Deprecated MonitoredServiceResponse get(ServiceEnvironmentParams serviceEnvironmentParams);
+  MonitoredServiceResponse getApplicationMonitoredServiceResponse(ServiceEnvironmentParams serviceEnvironmentParams);
   PageResponse<MonitoredServiceResponse> getList(ProjectParams projectParams, List<String> environmentIdentifiers,
       Integer offset, Integer pageSize, String filter);
   List<MonitoredServiceWithHealthSources> getAllWithTimeSeriesHealthSources(ProjectParams projectParams);
@@ -54,7 +58,7 @@ public interface MonitoredServiceService extends DeleteEntityByHandler<Monitored
   // use with MonitoredServiceParams instead
   @Deprecated MonitoredService getMonitoredService(ProjectParams projectParams, String identifier);
   MonitoredService getMonitoredService(MonitoredServiceParams monitoredServiceParams);
-
+  MonitoredServiceDTO getExpandedMonitoredServiceFromYaml(ProjectParams projectParams, String yaml);
   Optional<MonitoredService> getApplicationMonitoredService(ServiceEnvironmentParams serviceEnvironmentParams);
 
   List<MonitoredService> list(
@@ -62,8 +66,11 @@ public interface MonitoredServiceService extends DeleteEntityByHandler<Monitored
 
   List<MonitoredService> list(@NonNull ProjectParams projectParams, List<String> identifiers);
 
+  List<MonitoredService> listWithFilter(@NonNull ProjectParams projectParams, List<String> identifiers, String filter);
+
   PageResponse<MonitoredServiceListItemDTO> list(ProjectParams projectParams, String environmentIdentifiers,
       Integer offset, Integer pageSize, String filter, boolean servicesAtRiskFilter);
+
   List<EnvironmentResponse> listEnvironments(String accountId, String orgIdentifier, String projectIdentifier);
   MonitoredServiceResponse createDefault(
       ProjectParams projectParams, String serviceIdentifier, String environmentIdentifier);
@@ -97,4 +104,12 @@ public interface MonitoredServiceService extends DeleteEntityByHandler<Monitored
       ProjectParams projectParams, List<String> services, List<String> environments);
   PageResponse<CVNGLogDTO> getCVNGLogs(MonitoredServiceParams monitoredServiceParams,
       LiveMonitoringLogsFilter liveMonitoringLogsFilter, PageParams pageParams);
+
+  List<MonitoredServiceChangeDetailSLO> getMonitoredServiceChangeDetails(
+      ProjectParams projectParams, String monitoredServiceIdentifier, Long startTime, Long endTime);
+  void handleNotification(MonitoredService monitoredService);
+  PageResponse<NotificationRuleResponse> getNotificationRules(
+      ProjectParams projectParams, String monitoredServiceIdentifier, PageParams pageParams);
+  void beforeNotificationRuleDelete(ProjectParams projectParams, String notificationRuleRef);
+  long countUniqueEnabledServices(String accountId);
 }

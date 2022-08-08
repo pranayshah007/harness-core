@@ -9,11 +9,10 @@ package software.wings.delegatetasks.azure.arm.deployment.validator;
 
 import static java.lang.String.format;
 
+import io.harness.delegate.task.azure.common.validator.Validator;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.WingsException;
 import io.harness.serializer.JsonUtils;
-
-import software.wings.delegatetasks.azure.common.validator.Validator;
 
 import java.util.Map;
 

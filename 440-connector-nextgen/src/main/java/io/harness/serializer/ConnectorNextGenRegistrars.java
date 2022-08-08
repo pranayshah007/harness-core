@@ -37,7 +37,6 @@ public class ConnectorNextGenRegistrars {
           .addAll(DelegateAgentBeansRegistrars.kryoRegistrars)
           .add(ConnectorNextGenKryoRegistrar.class)
           .addAll(GitSyncSdkRegistrar.kryoRegistrars)
-          .addAll(NGAuditCommonsRegistrars.kryoRegistrars)
           .addAll(DelegateTaskRegistrars.kryoRegistrars)
           .addAll(LicenseBeanRegistrar.kryoRegistrars)
           .addAll(AccessControlClientRegistrars.kryoRegistrars)

@@ -8,6 +8,7 @@
 package io.harness.perpetualtask.ecs;
 
 import static io.harness.ccm.commons.constants.Constants.CLUSTER_ID_IDENTIFIER;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.event.payloads.Lifecycle.EventType.EVENT_TYPE_START;
 import static io.harness.event.payloads.Lifecycle.EventType.EVENT_TYPE_STOP;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
@@ -83,7 +84,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.util.CollectionUtils;
 
 @Singleton
 @Slf4j
@@ -493,7 +493,7 @@ public class EcsPerpetualTaskExecutor implements PerpetualTaskExecutor {
       for (DesiredStatus desiredStatus : desiredStatuses) {
         List<String> taskArns = ecsHelperServiceDelegate.listTasksArnForService(
             awsConfig, encryptionDetails, region, clusterName, service.getServiceArn(), desiredStatus);
-        if (!CollectionUtils.isEmpty(taskArns)) {
+        if (!isEmpty(taskArns)) {
           for (String taskArn : taskArns) {
             taskArnServiceNameMap.put(taskArn, service.getServiceArn());
           }
@@ -520,7 +520,7 @@ public class EcsPerpetualTaskExecutor implements PerpetualTaskExecutor {
 
   private Set<String> fetchEc2InstanceIds(String clusterId, List<ContainerInstance> containerInstances) {
     Set<String> instanceIds = new HashSet<>();
-    if (!CollectionUtils.isEmpty(containerInstances)) {
+    if (!isEmpty(containerInstances)) {
       instanceIds = containerInstances.stream().map(ContainerInstance::getEc2InstanceId).collect(Collectors.toSet());
       instanceIds.addAll(fetchActiveEc2InstanceIds(clusterId));
     }
@@ -529,8 +529,7 @@ public class EcsPerpetualTaskExecutor implements PerpetualTaskExecutor {
 
   private Set<String> fetchActiveEc2InstanceIds(String clusterId) {
     EcsActiveInstancesCache ecsActiveInstancesCache = cache.getIfPresent(clusterId);
-    if (null != ecsActiveInstancesCache
-        && !CollectionUtils.isEmpty(ecsActiveInstancesCache.getActiveEc2InstanceIds())) {
+    if (null != ecsActiveInstancesCache && !isEmpty(ecsActiveInstancesCache.getActiveEc2InstanceIds())) {
       return ecsActiveInstancesCache.getActiveEc2InstanceIds();
     } else {
       return emptySet();
@@ -539,8 +538,7 @@ public class EcsPerpetualTaskExecutor implements PerpetualTaskExecutor {
 
   private Set<String> fetchActiveContainerInstancesArns(String clusterId) {
     EcsActiveInstancesCache ecsActiveInstancesCache = cache.getIfPresent(clusterId);
-    if (null != ecsActiveInstancesCache
-        && !CollectionUtils.isEmpty(ecsActiveInstancesCache.getActiveContainerInstanceArns())) {
+    if (null != ecsActiveInstancesCache && !isEmpty(ecsActiveInstancesCache.getActiveContainerInstanceArns())) {
       return ecsActiveInstancesCache.getActiveContainerInstanceArns();
     } else {
       return emptySet();
@@ -559,7 +557,7 @@ public class EcsPerpetualTaskExecutor implements PerpetualTaskExecutor {
 
   private Set<String> fetchActiveTaskArns(String clusterId) {
     EcsActiveInstancesCache ecsActiveInstancesCache = cache.getIfPresent(clusterId);
-    if (null != ecsActiveInstancesCache && !CollectionUtils.isEmpty(ecsActiveInstancesCache.getActiveTaskArns())) {
+    if (null != ecsActiveInstancesCache && !isEmpty(ecsActiveInstancesCache.getActiveTaskArns())) {
       return ecsActiveInstancesCache.getActiveTaskArns();
     } else {
       return emptySet();
@@ -589,7 +587,7 @@ public class EcsPerpetualTaskExecutor implements PerpetualTaskExecutor {
   private List<Instance> listEc2Instances(
       String region, AwsConfig awsConfig, List<EncryptedDataDetail> encryptionDetails, Set<String> instanceIds) {
     List<Instance> instances = new ArrayList<>();
-    if (!CollectionUtils.isEmpty(instanceIds)) {
+    if (!isEmpty(instanceIds)) {
       instances = ec2ServiceDelegate.listEc2Instances(
           awsConfig, encryptionDetails, new ArrayList<>(instanceIds), region, false);
       instances = instances.stream().filter(instance -> null != instance.getLaunchTime()).collect(Collectors.toList());

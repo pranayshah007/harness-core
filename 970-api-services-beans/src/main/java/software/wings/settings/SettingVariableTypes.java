@@ -294,9 +294,12 @@ public enum SettingVariableTypes {
 
   SSO_SAML("SSO SAML"),
 
+  LDAP("LDAP"),
+
   GCP_SECRETS_MANAGER,
 
-  TRIGGER;
+  TRIGGER,
+  OCI_HELM_REPO("OCI Registry Helm Repository");
 
   @Getter private String displayName;
 

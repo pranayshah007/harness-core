@@ -112,6 +112,22 @@ public class DelegateNgTokenInternalResource {
   }
 
   @GET
+  @Timed
+  @Path("/delegate-token-value")
+  @ExceptionMetered
+  @InternalApi
+  public RestResponse<String> getDelegateTokenValue(
+      @Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.ACCOUNT_KEY) @NotNull String accountIdentifier,
+      @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @Parameter(description = "tokenName") @QueryParam("delegateTokenName") String tokenValue) {
+    return new RestResponse<>(delegateTokenService.getDelegateTokenValue(accountIdentifier, tokenValue));
+  }
+
+  @GET
   @Path("/delegate-groups")
   @Timed
   @ExceptionMetered

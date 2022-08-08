@@ -7,7 +7,8 @@
 
 package io.harness.service;
 
-import static io.harness.cdng.infra.yaml.InfrastructureKind.KUBERNETES_DIRECT;
+import static io.harness.ng.core.infrastructure.InfrastructureKind.KUBERNETES_DIRECT;
+import static io.harness.rule.OwnerRule.ABHISHEK;
 import static io.harness.rule.OwnerRule.JASMEET;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -19,6 +20,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.entities.ArtifactDetails;
 import io.harness.entities.Instance;
 import io.harness.entities.instanceinfo.K8sInstanceInfo;
+import io.harness.models.ActiveServiceInstanceInfo;
 import io.harness.models.BuildsByEnvironment;
 import io.harness.models.EnvBuildInstanceCount;
 import io.harness.models.InstanceDTOsByBuildId;
@@ -49,6 +51,7 @@ public class InstanceDashboardServiceTest extends InstancesTestBase {
   private static final String ORG_IDENTIFIER = "ORG_IDENTIFIER";
   private static final String PROJECT_IDENTIFIER = "PROJECT_IDENTIFIER";
   private static final String SERVICE_IDENTIFIER = "SERVICE_IDENTIFIER";
+  private static final String IMAGE = "harness/todolist-sample";
   private static final EnvironmentType defaultEnvType = EnvironmentType.PreProduction;
 
   private Instance createDummyInstance(String envId, String tag, EnvironmentType envType) {
@@ -61,7 +64,29 @@ public class InstanceDashboardServiceTest extends InstancesTestBase {
         .envName("envName")
         .envType(envType)
         .infrastructureKind(KUBERNETES_DIRECT)
-        .primaryArtifact(ArtifactDetails.builder().tag(tag).build())
+        .primaryArtifact(ArtifactDetails.builder().tag(tag).displayName(String.format("%s:%s", IMAGE, tag)).build())
+        .createdAt(0L)
+        .deletedAt(10L)
+        .createdAt(0L)
+        .lastModifiedAt(0L)
+        .instanceInfo(K8sInstanceInfo.builder().podName("podName").releaseName("releaseName").build())
+        .build();
+  }
+
+  private Instance createDummyInstanceV2(
+      String buildId, String lastPipelineExecutionId, String envId, String infraIdentifier) {
+    return Instance.builder()
+        .accountIdentifier(ACCOUNT_IDENTIFIER)
+        .orgIdentifier(ORG_IDENTIFIER)
+        .projectIdentifier(PROJECT_IDENTIFIER)
+        .serviceIdentifier(SERVICE_IDENTIFIER)
+        .envIdentifier(envId)
+        .lastPipelineExecutionId(lastPipelineExecutionId)
+        .infraIdentifier(infraIdentifier)
+        .envName("envName")
+        .envType(defaultEnvType)
+        .infrastructureKind(KUBERNETES_DIRECT)
+        .primaryArtifact(ArtifactDetails.builder().tag(buildId).build())
         .createdAt(0L)
         .deletedAt(10L)
         .createdAt(0L)
@@ -172,6 +197,8 @@ public class InstanceDashboardServiceTest extends InstancesTestBase {
     for (int i = 0; i < inputBuildIds.size(); i++) {
       assertThat(result.get(i).getBuildId()).isEqualTo(inputBuildIds.get(i));
       assertThat(result.get(i).getInstances().size()).isEqualTo(20);
+      assertThat(result.get(i).getInstances().get(0).getArtifactName())
+          .isEqualTo(String.format("%s:%s", IMAGE, inputBuildIds.get(i)));
     }
   }
 
@@ -201,5 +228,59 @@ public class InstanceDashboardServiceTest extends InstancesTestBase {
     assertThat(instanceCountDetailsByEnvTypeBase.getTotalInstances()).isEqualTo(mockList.size());
     assertThat(instanceCountDetailsByEnvTypeBase.getNonProdInstances()).isEqualTo(3);
     assertThat(instanceCountDetailsByEnvTypeBase.getProdInstances()).isEqualTo(1);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void test_getEnvBuildInstanceCountByServiceIdV2() {
+    Map<String, Map<String, Map<String, Map<String, Integer>>>> mock = new HashMap<>();
+
+    ActiveServiceInstanceInfo instance1 =
+        new ActiveServiceInstanceInfo("infra1", "infraN1", "1", "a", "1", "env1", "envN1", "1", 1);
+    ActiveServiceInstanceInfo instance2 =
+        new ActiveServiceInstanceInfo("infra2", "infraN2", "2", "b", "2", "env2", "envN2", "2", 2);
+    ActiveServiceInstanceInfo instance3 =
+        new ActiveServiceInstanceInfo("infra2", "infraN2", "2", "b", "2", "env2", "envN2", "1", 3);
+
+    List<ActiveServiceInstanceInfo> mockList = Arrays.asList(instance1, instance2, instance3);
+
+    mockList.forEach(mockListItem -> {
+      final String envId = mockListItem.getEnvIdentifier();
+      final String buildId = mockListItem.getTag();
+      final Integer count = mockListItem.getCount();
+      final String lastPipelineExecutionId = mockListItem.getLastPipelineExecutionId();
+      final String infraIdentifier = mockListItem.getInfraIdentifier();
+      if (!mock.containsKey(buildId)) {
+        mock.put(buildId, new HashMap<>());
+      }
+      if (!mock.get(buildId).containsKey(lastPipelineExecutionId)) {
+        mock.get(buildId).put(lastPipelineExecutionId, new HashMap<>());
+      }
+      if (!mock.get(buildId).get(lastPipelineExecutionId).containsKey(envId)) {
+        mock.get(buildId).get(lastPipelineExecutionId).put(envId, new HashMap<>());
+      }
+      mock.get(buildId).get(lastPipelineExecutionId).get(envId).put(infraIdentifier, count);
+      for (int i = 0; i < count; i++) {
+        instanceRepository.save(createDummyInstanceV2(buildId, lastPipelineExecutionId, envId, infraIdentifier));
+      }
+    });
+
+    List<ActiveServiceInstanceInfo> buildPipelineEnvInfraInstanceCounts =
+        instanceDashboardService.getActiveServiceInstanceInfo(
+            ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, SERVICE_IDENTIFIER);
+    assertThat(buildPipelineEnvInfraInstanceCounts.size()).isGreaterThan(0);
+    buildPipelineEnvInfraInstanceCounts.forEach(buildPipelineEnvInfraInstanceCount -> {
+      final String envId = buildPipelineEnvInfraInstanceCount.getEnvIdentifier();
+      final String buildId = buildPipelineEnvInfraInstanceCount.getTag();
+      final int count = buildPipelineEnvInfraInstanceCount.getCount();
+      final String lastPipelineExecutionId = buildPipelineEnvInfraInstanceCount.getLastPipelineExecutionId();
+      final String infraIdentifier = buildPipelineEnvInfraInstanceCount.getInfraIdentifier();
+      final int expectedCount = mock.getOrDefault(buildId, new HashMap<>())
+                                    .getOrDefault(lastPipelineExecutionId, new HashMap<>())
+                                    .getOrDefault(envId, new HashMap<>())
+                                    .getOrDefault(infraIdentifier, 0);
+      assertThat(count).isEqualTo(expectedCount);
+    });
   }
 }

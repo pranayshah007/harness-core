@@ -13,47 +13,55 @@ import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
-import io.harness.managerclient.DelegateAgentManagerClientX509TrustManager;
 import io.harness.managerclient.DelegateAuthInterceptor;
 import io.harness.network.Http;
 import io.harness.network.NoopHostnameVerifier;
 import io.harness.security.TokenGenerator;
+import io.harness.security.X509KeyManagerBuilder;
+import io.harness.security.X509SslContextBuilder;
+import io.harness.security.X509TrustManagerBuilder;
 
-import com.google.common.collect.ImmutableList;
 import com.google.inject.Provider;
 import io.serializer.HObjectMapper;
 import java.util.concurrent.TimeUnit;
 import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLSocketFactory;
-import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509KeyManager;
 import javax.net.ssl.X509TrustManager;
 import okhttp3.ConnectionPool;
 import okhttp3.OkHttpClient;
+import org.apache.commons.lang3.StringUtils;
 import retrofit2.Retrofit;
 import retrofit2.converter.jackson.JacksonConverterFactory;
 
 @TargetModule(HarnessModule._420_DELEGATE_AGENT)
 @OwnedBy(HarnessTeam.CV)
 public class CVNextGenServiceClientFactory implements Provider<CVNextGenServiceClient> {
-  public static final ImmutableList<TrustManager> TRUST_ALL_CERTS =
-      ImmutableList.of(new DelegateAgentManagerClientX509TrustManager());
   private static final ConnectionPool CONNECTION_POOL = new ConnectionPool(0, 10, TimeUnit.MINUTES);
 
-  private String baseUrl;
-  private TokenGenerator tokenGenerator;
+  private final String baseUrl;
+  private final TokenGenerator tokenGenerator;
+  private final String clientCertificateFilePath;
+  private final String clientCertificateKeyFilePath;
 
-  public CVNextGenServiceClientFactory(String baseUrl, TokenGenerator delegateTokenGenerator) {
+  // As of now ignored (always trusts all certs)
+  private final boolean trustAllCertificates;
+
+  public CVNextGenServiceClientFactory(String baseUrl, TokenGenerator delegateTokenGenerator,
+      String clientCertificateFilePath, String clientCertificateKeyFilePath, boolean trustAllCertificates) {
     this.baseUrl = baseUrl;
     this.tokenGenerator = delegateTokenGenerator;
+    this.clientCertificateFilePath = clientCertificateFilePath;
+    this.clientCertificateKeyFilePath = clientCertificateKeyFilePath;
+    this.trustAllCertificates = trustAllCertificates;
   }
 
   @Override
   public CVNextGenServiceClient get() {
-    if (isEmpty(baseUrl)) {
+    if (isEmpty(this.baseUrl)) {
       return null;
     }
     Retrofit retrofit = new Retrofit.Builder()
-                            .baseUrl(baseUrl)
+                            .baseUrl(this.baseUrl)
                             .client(getUnsafeOkHttpClient())
                             .addConverterFactory(JacksonConverterFactory.create(HObjectMapper.NG_DEFAULT_OBJECT_MAPPER))
                             .build();
@@ -62,11 +70,21 @@ public class CVNextGenServiceClientFactory implements Provider<CVNextGenServiceC
 
   private OkHttpClient getUnsafeOkHttpClient() {
     try {
-      // Install the all-trusting trust manager
-      final SSLContext sslContext = SSLContext.getInstance("SSL");
-      sslContext.init(null, TRUST_ALL_CERTS.toArray(new TrustManager[1]), new java.security.SecureRandom());
-      // Create an ssl socket factory with our all-trusting manager
-      final SSLSocketFactory sslSocketFactory = sslContext.getSocketFactory();
+      X509TrustManager trustManager = new X509TrustManagerBuilder().trustAllCertificates().build();
+      X509SslContextBuilder sslContextBuilder =
+          new X509SslContextBuilder().trustManager(trustManager).secureRandom(new java.security.SecureRandom());
+
+      if (StringUtils.isNotEmpty(this.clientCertificateFilePath)
+          && StringUtils.isNotEmpty(this.clientCertificateKeyFilePath)) {
+        X509KeyManager keyManager =
+            new X509KeyManagerBuilder()
+                .withClientCertificateFromFile(this.clientCertificateFilePath, this.clientCertificateKeyFilePath)
+                .build();
+        sslContextBuilder.keyManager(keyManager);
+      }
+
+      SSLContext sslContext = sslContextBuilder.build();
+
       // https://www.baeldung.com/okhttp-timeouts
       return Http.getOkHttpClientWithProxyAuthSetup()
           .connectionPool(CONNECTION_POOL)
@@ -74,8 +92,8 @@ public class CVNextGenServiceClientFactory implements Provider<CVNextGenServiceC
           .readTimeout(10, TimeUnit.SECONDS)
           .writeTimeout(10, TimeUnit.SECONDS) //.callTimeout(60, TimeUnit.SECONDS) // Call timeout is available in 3.12
           .retryOnConnectionFailure(false)
-          .addInterceptor(new DelegateAuthInterceptor(tokenGenerator))
-          .sslSocketFactory(sslSocketFactory, (X509TrustManager) TRUST_ALL_CERTS.get(0))
+          .addInterceptor(new DelegateAuthInterceptor(this.tokenGenerator))
+          .sslSocketFactory(sslContext.getSocketFactory(), trustManager)
           .hostnameVerifier(new NoopHostnameVerifier())
           .build();
     } catch (Exception e) {

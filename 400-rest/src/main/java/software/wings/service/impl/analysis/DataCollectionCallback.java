@@ -26,7 +26,7 @@ import software.wings.service.impl.analysis.DataCollectionTaskResult.DataCollect
 import software.wings.service.intfc.AlertService;
 import software.wings.service.intfc.AppService;
 import software.wings.service.intfc.verification.CVActivityLogService;
-import software.wings.service.intfc.verification.CVActivityLogService.Logger;
+import software.wings.service.intfc.verification.CVActivityLogger;
 import software.wings.service.intfc.verification.CVConfigurationService;
 import software.wings.sm.StateExecutionData;
 import software.wings.sm.StateType;
@@ -83,7 +83,7 @@ public class DataCollectionCallback implements OldNotifyCallback {
   private void activityLog(DataCollectionTaskResult result) {
     String accountId = appService.getAccountIdByAppId(appId);
 
-    Logger activityLogger = cvActivityLogService.getLogger(
+    CVActivityLogger activityLogger = cvActivityLogService.getLogger(
         accountId, cvConfigId, TimeUnit.MILLISECONDS.toMinutes(dataCollectionEndTime), stateExecutionId);
     if (result.getStatus() == DataCollectionTaskStatus.SUCCESS) {
       activityLogger.info(

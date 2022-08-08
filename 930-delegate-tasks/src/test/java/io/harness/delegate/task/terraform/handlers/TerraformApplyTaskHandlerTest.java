@@ -13,7 +13,6 @@ import static io.harness.rule.OwnerRule.TMACARI;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
@@ -48,13 +47,13 @@ import io.harness.encryption.SecretRefData;
 import io.harness.filesystem.FileIo;
 import io.harness.git.GitClientHelper;
 import io.harness.git.GitClientV2;
-import io.harness.git.model.GitBaseRequest;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.rule.Owner;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.EncryptedRecordData;
 import io.harness.security.encryption.SecretDecryptionService;
+import io.harness.terraform.TerraformStepResponse;
 
 import com.google.inject.Inject;
 import java.io.File;
@@ -102,11 +101,9 @@ public class TerraformApplyTaskHandlerTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testApply() throws IOException, TimeoutException, InterruptedException {
     when(secretDecryptionService.decrypt(any(), any())).thenReturn(null);
-    when(terraformBaseHelper.getGitBaseRequestForConfigFile(
-             anyString(), any(GitStoreDelegateConfig.class), any(GitConfigDTO.class)))
-        .thenReturn(any(GitBaseRequest.class));
+    when(terraformBaseHelper.getGitBaseRequestForConfigFile(any(), any(), any())).thenReturn(any());
     when(terraformBaseHelper.fetchConfigFileAndPrepareScriptDir(
-             any(), anyString(), anyString(), anyString(), any(), logCallback, anyString(), anyString()))
+             any(), any(), any(), any(), any(), logCallback, any(), any()))
         .thenReturn("sourceDir");
     doNothing().when(terraformBaseHelper).downloadTfStateFile(null, "accountId", null, "scriptDir");
     when(gitClientHelper.getRepoDirectory(any())).thenReturn("sourceDir");
@@ -115,7 +112,10 @@ public class TerraformApplyTaskHandlerTest extends CategoryTest {
     FileUtils.touch(outputFile);
 
     when(terraformBaseHelper.executeTerraformApplyStep(any()))
-        .thenReturn(CliResponse.builder().commandExecutionStatus(CommandExecutionStatus.SUCCESS).build());
+        .thenReturn(
+            TerraformStepResponse.builder()
+                .cliResponse(CliResponse.builder().commandExecutionStatus(CommandExecutionStatus.SUCCESS).build())
+                .build());
     TerraformTaskNGResponse response = terraformApplyTaskHandler.executeTaskInternal(
         getTerraformTaskParameters(), "delegateId", "taskId", logCallback);
     assertThat(response).isNotNull();
@@ -129,8 +129,7 @@ public class TerraformApplyTaskHandlerTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testApplyWithArtifactoryConfigAndVarFiles() throws IOException, TimeoutException, InterruptedException {
     when(secretDecryptionService.decrypt(any(), any())).thenReturn(null);
-    when(terraformBaseHelper.fetchConfigFileAndPrepareScriptDir(
-             any(), anyString(), anyString(), anyString(), eq(logCallback), anyString()))
+    when(terraformBaseHelper.fetchConfigFileAndPrepareScriptDir(any(), any(), any(), any(), eq(logCallback), any()))
         .thenReturn("sourceDir");
     doNothing().when(terraformBaseHelper).downloadTfStateFile(null, "accountId", null, "scriptDir");
     FileIo.createDirectoryIfDoesNotExist("sourceDir");
@@ -138,7 +137,10 @@ public class TerraformApplyTaskHandlerTest extends CategoryTest {
     FileUtils.touch(outputFile);
     doNothing().when(terraformBaseHelper).addVarFilesCommitIdsToMap(any(), any(), any());
     when(terraformBaseHelper.executeTerraformApplyStep(any()))
-        .thenReturn(CliResponse.builder().commandExecutionStatus(CommandExecutionStatus.SUCCESS).build());
+        .thenReturn(
+            TerraformStepResponse.builder()
+                .cliResponse(CliResponse.builder().commandExecutionStatus(CommandExecutionStatus.SUCCESS).build())
+                .build());
     TerraformTaskNGResponse response = terraformApplyTaskHandler.executeTaskInternal(
         getTerraformTaskParametersWithArtifactoryConfig(), "delegateId", "taskId", logCallback);
     assertThat(response).isNotNull();

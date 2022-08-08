@@ -9,6 +9,7 @@ package io.harness.cdng.provision.terraform;
 
 import static io.harness.cdng.provision.terraform.TerraformPlanCommand.APPLY;
 import static io.harness.delegate.beans.connector.ConnectorType.GITHUB;
+import static io.harness.rule.OwnerRule.ABOSII;
 import static io.harness.rule.OwnerRule.NAMAN_TALAYCHA;
 import static io.harness.rule.OwnerRule.NGONZALEZ;
 import static io.harness.rule.OwnerRule.ROHITKARELIA;
@@ -16,38 +17,49 @@ import static io.harness.rule.OwnerRule.SATYAM;
 import static io.harness.rule.OwnerRule.TMACARI;
 
 import static java.lang.String.format;
+import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.BDDMockito.then;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyString;
+import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.powermock.api.mockito.PowerMockito.doReturn;
-import static org.powermock.api.mockito.PowerMockito.mockStatic;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.cdng.CDStepHelper;
+import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
+import io.harness.cdng.fileservice.FileServiceClient;
 import io.harness.cdng.fileservice.FileServiceClientFactory;
 import io.harness.cdng.k8s.K8sStepHelper;
 import io.harness.cdng.manifest.yaml.ArtifactoryStorageConfigDTO;
 import io.harness.cdng.manifest.yaml.ArtifactoryStoreConfig;
 import io.harness.cdng.manifest.yaml.BitBucketStoreDTO;
 import io.harness.cdng.manifest.yaml.GitLabStoreDTO;
+import io.harness.cdng.manifest.yaml.GitStoreConfig;
 import io.harness.cdng.manifest.yaml.GitStoreConfigDTO;
 import io.harness.cdng.manifest.yaml.GitStoreDTO;
 import io.harness.cdng.manifest.yaml.GithubStore;
 import io.harness.cdng.manifest.yaml.GithubStoreDTO;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigType;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
+import io.harness.cdng.manifest.yaml.storeConfig.moduleSource.ModuleSource;
+import io.harness.cdng.provision.terraform.output.TerraformPlanJsonOutput;
 import io.harness.common.ParameterFieldHelper;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.validator.scmValidators.GitConfigAuthenticationInfoHelper;
+import io.harness.delegate.beans.FileBucket;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryAuthType;
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryAuthenticationDTO;
@@ -70,12 +82,13 @@ import io.harness.ng.core.EntityDetail;
 import io.harness.ng.core.dto.secrets.SSHKeySpecDTO;
 import io.harness.persistence.HPersistence;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.sdk.core.data.ExecutionSweepingOutput;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.yaml.ParameterField;
-import io.harness.remote.client.RestClientUtils;
+import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
 import io.harness.secretmanagerclient.dto.LocalConfigDTO;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
@@ -84,7 +97,8 @@ import io.harness.security.encryption.EncryptionType;
 import com.google.common.collect.ImmutableMap;
 import java.io.File;
 import java.io.IOException;
-import java.util.Arrays;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -92,22 +106,19 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import org.apache.commons.io.FileUtils;
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import retrofit2.Call;
+import retrofit2.Response;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({RestClientUtils.class})
 @OwnedBy(HarnessTeam.CDP)
 public class TerraformStepHelperTest extends CategoryTest {
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
@@ -116,9 +127,12 @@ public class TerraformStepHelperTest extends CategoryTest {
   @Mock private K8sStepHelper mockK8sStepHelper;
   @Mock private ExecutionSweepingOutputService mockExecutionSweepingOutputService;
   @Mock private GitConfigAuthenticationInfoHelper mockGitConfigAuthenticationInfoHelper;
-  @Mock private FileServiceClientFactory mockFileService;
+  @Mock private FileServiceClientFactory mockFileServiceFactory;
+  @Mock private FileServiceClient mockFileService;
   @Mock private SecretManagerClientService mockSecretManagerClientService;
   @Mock private TerraformConfigDAL terraformConfigDAL;
+  @Mock private CDStepHelper cdStepHelper;
+  @Mock private CDFeatureFlagHelper cdFeatureFlagHelper;
   @InjectMocks private TerraformStepHelper helper;
 
   private Ambiance getAmbiance() {
@@ -127,7 +141,20 @@ public class TerraformStepHelperTest extends CategoryTest {
         .putSetupAbstractions("projectIdentifier", "test-project")
         .putSetupAbstractions("orgIdentifier", "test-org")
         .setPlanExecutionId("exec_id")
+        .setPlanId("plan_id")
         .build();
+  }
+
+  @Before
+  public void setup() throws IOException {
+    doReturn(mockFileService).when(mockFileServiceFactory).get();
+    Call<RestResponse<Object>> mockFileServiceResponse = mock(Call.class);
+    doReturn(mockFileServiceResponse).when(mockFileService).getLatestFileId(anyString(), any(FileBucket.class));
+    doReturn(mockFileServiceResponse)
+        .when(mockFileService)
+        .updateParentEntityIdAndVersion(anyString(), anyString(), any(FileBucket.class));
+    doReturn(mockFileServiceResponse).when(mockFileService).deleteFile(anyString(), any(FileBucket.class));
+    doReturn(Response.success(null)).when(mockFileServiceResponse).execute();
   }
 
   @Test
@@ -170,6 +197,45 @@ public class TerraformStepHelperTest extends CategoryTest {
     assertThat(output.getEnvironmentVariables()).isNotNull();
     assertThat(output.getEnvironmentVariables().size()).isEqualTo(1);
     assertThat(output.getEnvironmentVariables().get("KEY")).isEqualTo("VAL");
+  }
+
+  @Test
+  @Owner(developers = NAMAN_TALAYCHA)
+  @Category(UnitTests.class)
+  public void testSaveTerraformInheritOutputWithGithubStoreFFEnabled() {
+    Ambiance ambiance = getAmbiance();
+    TerraformStepDataGenerator.GitStoreConfig gitStoreConfigFiles =
+        TerraformStepDataGenerator.GitStoreConfig.builder()
+            .branch("master")
+            .fetchType(FetchType.BRANCH)
+            .folderPath(ParameterField.createValueField("Config/"))
+            .connectoref(ParameterField.createValueField("terraform"))
+            .build();
+
+    TerraformPlanStepParameters planStepParameters = TerraformStepDataGenerator.generateStepPlanWithVarFiles(
+        StoreConfigType.GITHUB, null, gitStoreConfigFiles, null, true);
+    TerraformTaskNGResponse response =
+        TerraformTaskNGResponse.builder()
+            .commitIdForConfigFilesMap(ImmutableMap.of(TerraformStepHelper.TF_CONFIG_FILES, "commit-1"))
+            .build();
+    doReturn(LocalConfigDTO.builder().encryptionType(EncryptionType.LOCAL).build())
+        .when(mockSecretManagerClientService)
+        .getSecretManager(anyString(), anyString(), anyString(), anyString(), anyBoolean());
+
+    planStepParameters.getConfiguration().getConfigFiles().setModuleSource(
+        ModuleSource.builder().useConnectorCredentials(ParameterField.createValueField(true)).build());
+
+    helper.saveTerraformInheritOutput(planStepParameters, response, ambiance);
+    ArgumentCaptor<TerraformInheritOutput> captor = ArgumentCaptor.forClass(TerraformInheritOutput.class);
+    verify(mockExecutionSweepingOutputService).consume(any(), anyString(), captor.capture(), anyString());
+    TerraformInheritOutput output = captor.getValue();
+    assertThat(output).isNotNull();
+    GitStoreConfig configFiles = output.getConfigFiles();
+    assertThat(configFiles).isNotNull();
+    assertThat(configFiles.getGitFetchType()).isEqualTo(FetchType.COMMIT);
+    String commitId = ParameterFieldHelper.getParameterFieldValue(configFiles.getCommitId());
+    assertThat(commitId).isEqualTo("commit-1");
+    assertThat(output.isUseConnectorCredentials()).isTrue();
   }
 
   @Test
@@ -306,9 +372,10 @@ public class TerraformStepHelperTest extends CategoryTest {
     RemoteTerraformVarFileSpec remoteVarFiles =
         TerraformStepDataGenerator.generateRemoteVarFileSpec(StoreConfigType.GIT, gitStoreVarFiles);
     Map<String, TerraformVarFile> varFilesMap = TerraformStepDataGenerator.generateVarFileSpecs(remoteVarFiles, true);
+    doNothing().when(cdStepHelper).validateGitStoreConfig(any());
     doReturn(
         ConnectorInfoDTO.builder().connectorConfig(GitConfigDTO.builder().gitAuthType(GitAuthType.SSH).build()).build())
-        .when(mockK8sStepHelper)
+        .when(cdStepHelper)
         .getConnector(anyString(), any());
     doReturn(SSHKeySpecDTO.builder().build())
         .when(mockGitConfigAuthenticationInfoHelper)
@@ -317,6 +384,7 @@ public class TerraformStepHelperTest extends CategoryTest {
         .when(mockGitConfigAuthenticationInfoHelper)
         .getEncryptedDataDetails(any(), any(), any());
     List<TerraformVarFileInfo> terraformVarFileInfos = helper.toTerraformVarFileInfo(varFilesMap, ambiance);
+    verify(cdStepHelper, times(1)).validateGitStoreConfig(any());
     assertThat(terraformVarFileInfos).isNotNull();
     assertThat(terraformVarFileInfos.size()).isEqualTo(2);
     TerraformVarFileInfo terraformVarFileInfo = terraformVarFileInfos.get(1);
@@ -370,7 +438,7 @@ public class TerraformStepHelperTest extends CategoryTest {
                                             .name("connectorName")
                                             .connectorConfig(artifactoryConnectorDTO)
                                             .build();
-    doReturn(connectorInfoDTO).when(mockK8sStepHelper).getConnector(anyString(), any());
+    doReturn(connectorInfoDTO).when(cdStepHelper).getConnector(anyString(), any());
     List<TerraformVarFileInfo> terraformVarFileInfos = helper.toTerraformVarFileInfo(varFilesMap, ambiance);
     assertThat(terraformVarFileInfos).isNotNull();
     assertThat(terraformVarFileInfos.size()).isEqualTo(2);
@@ -456,12 +524,14 @@ public class TerraformStepHelperTest extends CategoryTest {
                                             .name("connectorName")
                                             .connectorConfig(artifactoryConnectorDTO)
                                             .build();
-    when(mockK8sStepHelper.getConnector(anyString(), any()))
+    doNothing().when(cdStepHelper).validateGitStoreConfig(any());
+    when(cdStepHelper.getConnector(anyString(), any()))
         .thenReturn(connectorInfoDTO, connectorInfoDTO,
             ConnectorInfoDTO.builder()
                 .connectorConfig(GitConfigDTO.builder().gitAuthType(GitAuthType.SSH).build())
                 .build());
     List<TerraformVarFileInfo> terraformVarFileInfos = helper.toTerraformVarFileInfo(varFilesMap, ambiance);
+    verify(cdStepHelper, times(1)).validateGitStoreConfig(any());
     assertThat(terraformVarFileInfos).isNotNull();
     assertThat(terraformVarFileInfos.size()).isEqualTo(4);
     TerraformVarFileInfo terraformVarFileInfo = terraformVarFileInfos.get(1);
@@ -538,13 +608,14 @@ public class TerraformStepHelperTest extends CategoryTest {
                                                               .build())
                                          .build();
 
-    doReturn(connectorInfo).when(mockK8sStepHelper).getConnector(anyString(), any());
+    doReturn(connectorInfo).when(cdStepHelper).getConnector(anyString(), any());
     doReturn(SSHKeySpecDTO.builder().build())
         .when(mockGitConfigAuthenticationInfoHelper)
         .getSSHKey(any(), anyString(), anyString(), anyString());
     doReturn(Collections.emptyList())
         .when(mockGitConfigAuthenticationInfoHelper)
         .getEncryptedDataDetails(any(), any(), any());
+    doNothing().when(cdStepHelper).validateGitStoreConfig(any());
 
     List<TerraformVarFileConfig> varFileConfigs = new LinkedList<>();
 
@@ -565,6 +636,7 @@ public class TerraformStepHelperTest extends CategoryTest {
     varFileConfigs.add(remoteFileConfig);
 
     List<TerraformVarFileInfo> terraformVarFileInfos = helper.prepareTerraformVarFileInfo(varFileConfigs, ambiance);
+    verify(cdStepHelper, times(1)).validateGitStoreConfig(any());
     assertThat(terraformVarFileInfos.size()).isEqualTo(2);
     for (TerraformVarFileInfo terraformVarFileInfo : terraformVarFileInfos) {
       if (terraformVarFileInfo instanceof InlineTerraformVarFileInfo) {
@@ -596,11 +668,11 @@ public class TerraformStepHelperTest extends CategoryTest {
     ArtifactoryStoreConfig artifactoryStoreConfig =
         ArtifactoryStoreConfig.builder()
             .connectorRef(ParameterField.createValueField("connectorRef"))
-            .artifactPaths(ParameterField.createValueField(Arrays.asList("path1", "path2")))
+            .artifactPaths(ParameterField.createValueField(asList("path1", "path2")))
             .build();
 
-    doReturn(TerraformStepDataGenerator.getConnectorInfoDTO()).when(mockK8sStepHelper).getConnector(any(), any());
-    doNothing().when(mockK8sStepHelper).validateManifest(any(), any(), any());
+    doReturn(TerraformStepDataGenerator.getConnectorInfoDTO()).when(cdStepHelper).getConnector(any(), any());
+    doNothing().when(cdStepHelper).validateManifest(any(), any(), any());
     doReturn(null).when(mockSecretManagerClientService).getEncryptionDetails(any(), any());
     assertThatThrownBy(()
                            -> helper.getFileStoreFetchFilesConfig(
@@ -645,7 +717,7 @@ public class TerraformStepHelperTest extends CategoryTest {
                                             .name("connectorName")
                                             .connectorConfig(artifactoryConnectorDTO)
                                             .build();
-    doReturn(connectorInfoDTO).when(mockK8sStepHelper).getConnector(anyString(), any());
+    doReturn(connectorInfoDTO).when(cdStepHelper).getConnector(anyString(), any());
     List<TerraformVarFileInfo> terraformVarFileInfos = helper.toTerraformVarFileInfo(varFilesMap, ambiance);
     assertThat(terraformVarFileInfos).isNotNull();
     assertThat(terraformVarFileInfos.size()).isEqualTo(2);
@@ -692,8 +764,8 @@ public class TerraformStepHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testGetTerraformPlanName() {
     Ambiance ambiance = getAmbiance();
-    String planName = helper.getTerraformPlanName(APPLY, ambiance);
-    assertThat(planName).isEqualTo("tfPlan-exec-id");
+    String planName = helper.getTerraformPlanName(APPLY, ambiance, "provisionId");
+    assertThat(planName).isEqualTo("tfPlan-exec-id-provisionId");
   }
 
   @Test
@@ -738,7 +810,7 @@ public class TerraformStepHelperTest extends CategoryTest {
     Ambiance ambiance = getAmbiance();
     doReturn(
         ConnectorInfoDTO.builder().connectorConfig(GitConfigDTO.builder().gitAuthType(GitAuthType.SSH).build()).build())
-        .when(mockK8sStepHelper)
+        .when(cdStepHelper)
         .getConnector(anyString(), any());
     doReturn(SSHKeySpecDTO.builder().build())
         .when(mockGitConfigAuthenticationInfoHelper)
@@ -790,7 +862,7 @@ public class TerraformStepHelperTest extends CategoryTest {
     Ambiance ambiance = getAmbiance();
     doReturn(
         ConnectorInfoDTO.builder().connectorConfig(GitConfigDTO.builder().gitAuthType(GitAuthType.SSH).build()).build())
-        .when(mockK8sStepHelper)
+        .when(cdStepHelper)
         .getConnector(anyString(), any());
     doReturn(SSHKeySpecDTO.builder().build())
         .when(mockGitConfigAuthenticationInfoHelper)
@@ -908,13 +980,13 @@ public class TerraformStepHelperTest extends CategoryTest {
   public void testGetLatestFileId() {
     String entityId = "test-account/test-org/test-project/provId_$";
     String str = String.format("Unable to call fileservice to fetch latest file id for entityId: [%s]", entityId);
-    mockStatic(RestClientUtils.class);
     try {
       helper.getLatestFileId(entityId);
-      PowerMockito.verifyStatic(RestClientUtils.class, times(1));
     } catch (InvalidRequestException invalidRequestException) {
       assertThat(invalidRequestException.getMessage()).isEqualTo(str);
     }
+
+    verify(mockFileService).getLatestFileId(entityId, FileBucket.TERRAFORM_STATE);
   }
 
   @Test
@@ -931,18 +1003,19 @@ public class TerraformStepHelperTest extends CategoryTest {
   @Test
   @Owner(developers = NAMAN_TALAYCHA)
   @Category(UnitTests.class)
-  public void testUpdateParentEntityIdAndVersion() {
+  public void testUpdateParentEntityIdAndVersion() throws UnsupportedEncodingException {
     String entityId = "test-account/test-org/test-project/provId_$";
     String stateFileId = "";
-    mockStatic(RestClientUtils.class);
     String str =
         format("Unable to update StateFile version for entityId: [%s], Please try re-running pipeline", entityId);
     try {
       helper.updateParentEntityIdAndVersion(entityId, stateFileId);
-      PowerMockito.verifyStatic(RestClientUtils.class, times(1));
     } catch (InvalidRequestException invalidRequestException) {
       assertThat(invalidRequestException.getMessage()).isEqualTo(str);
     }
+
+    verify(mockFileService)
+        .updateParentEntityIdAndVersion(URLEncoder.encode(entityId, "UTF-8"), stateFileId, FileBucket.TERRAFORM_STATE);
   }
 
   @Test
@@ -1114,5 +1187,101 @@ public class TerraformStepHelperTest extends CategoryTest {
     GitStoreDTO gitStoreDTO = (GitStoreDTO) gitStoreConfigDTO;
     assertThat(gitStoreDTO.getGitFetchType()).isEqualTo(FetchType.COMMIT);
     assertThat(gitStoreDTO.getCommitId()).isEqualTo("commit-2");
+  }
+
+  @Test
+  @Owner(developers = ABOSII)
+  @Category(UnitTests.class)
+  public void testSaveTerraformPlanJsonOutput() {
+    final Ambiance ambiance = getAmbiance();
+    final TerraformTaskNGResponse response = TerraformTaskNGResponse.builder().tfPlanJsonFileId("plan_file").build();
+    final String expectedOutputName = TerraformPlanJsonOutput.getOutputName("provisioner1");
+
+    String outputName = helper.saveTerraformPlanJsonOutput(ambiance, response, "provisioner1");
+
+    ArgumentCaptor<TerraformPlanJsonOutput> outputCaptor = ArgumentCaptor.forClass(TerraformPlanJsonOutput.class);
+    verify(mockExecutionSweepingOutputService)
+        .consume(eq(ambiance), eq(expectedOutputName), outputCaptor.capture(), eq(StepCategory.STEP.name()));
+    TerraformPlanJsonOutput output = outputCaptor.getValue();
+    assertThat(outputName).isEqualTo(expectedOutputName);
+    assertThat(output.getProvisionerIdentifier()).isEqualTo("provisioner1");
+    assertThat(output.getTfPlanFileId()).isEqualTo("plan_file");
+    assertThat(output.getTfPlanFileBucket()).isEqualTo(FileBucket.TERRAFORM_PLAN_JSON.name());
+  }
+
+  @Test
+  @Owner(developers = ABOSII)
+  @Category(UnitTests.class)
+  public void testSaveTerraformPlanJsonOutputNullPlanFileId() {
+    final Ambiance ambiance = getAmbiance();
+    final TerraformTaskNGResponse response = TerraformTaskNGResponse.builder().tfPlanJsonFileId(null).build();
+
+    String outputName = helper.saveTerraformPlanJsonOutput(ambiance, response, "provisioner1");
+
+    verify(mockExecutionSweepingOutputService, never())
+        .consume(eq(ambiance), anyString(), any(ExecutionSweepingOutput.class), anyString());
+
+    assertThat(outputName).isNull();
+  }
+
+  @Test
+  @Owner(developers = ABOSII)
+  @Category(UnitTests.class)
+  public void testCleanupTfPlanJsonForProvisioner() {
+    Ambiance ambiance = getAmbiance();
+    List<String> planStepsFqn =
+        asList("plan1_provisioner1", "plan2_provisioner1", "plan3_provisioner1_different_bucket",
+            "plan4_provisioner1_delete_exception", "plan5_provisioner2", "plan5_no_output");
+
+    doReturn(OptionalSweepingOutput.builder()
+                 .output(TerraformPlanJsonOutput.builder()
+                             .tfPlanFileId("plan1_file1")
+                             .provisionerIdentifier("provisioner1")
+                             .tfPlanFileBucket(FileBucket.TERRAFORM_PLAN_JSON.name())
+                             .build())
+                 .build())
+        .when(mockExecutionSweepingOutputService)
+        .resolveOptional(ambiance,
+            RefObjectUtils.getSweepingOutputRefObject(
+                TerraformPlanJsonOutput.getOutputName("plan1_provisioner1", "provisioner1")));
+
+    setupPlanJsonOutput(ambiance, "plan1_provisioner1", "plan1_file", "provisioner1", FileBucket.TERRAFORM_PLAN_JSON);
+    setupPlanJsonOutput(ambiance, "plan2_provisioner1", "plan2_file", "provisioner1", FileBucket.TERRAFORM_PLAN_JSON);
+    setupPlanJsonOutput(
+        ambiance, "plan3_provisioner1_different_bucket", "plan3_file", "provisioner1", FileBucket.TERRAFORM_PLAN);
+    setupPlanJsonOutput(
+        ambiance, "plan4_provisioner1_delete_exception", "plan4_file", "provisioner1", FileBucket.TERRAFORM_PLAN_JSON);
+    setupPlanJsonOutput(ambiance, "plan5_provisioner2", "plan5_file", "provisioner2", FileBucket.TERRAFORM_PLAN_JSON);
+    doReturn(OptionalSweepingOutput.builder().found(false).build())
+        .when(mockExecutionSweepingOutputService)
+        .resolveOptional(ambiance,
+            RefObjectUtils.getSweepingOutputRefObject(
+                TerraformPlanJsonOutput.getOutputName("plan5_no_output", "provisioner1")));
+
+    doThrow(new RuntimeException("Something went wrong"))
+        .when(mockFileService)
+        .deleteFile("plan4_file", FileBucket.TERRAFORM_PLAN_JSON);
+
+    helper.cleanupTfPlanJsonForProvisioner(getAmbiance(), planStepsFqn, "provisioner1");
+
+    verify(mockFileService).deleteFile("plan1_file", FileBucket.TERRAFORM_PLAN_JSON);
+    verify(mockFileService).deleteFile("plan2_file", FileBucket.TERRAFORM_PLAN_JSON);
+    verify(mockFileService).deleteFile("plan3_file", FileBucket.TERRAFORM_PLAN);
+    verify(mockFileService).deleteFile("plan4_file", FileBucket.TERRAFORM_PLAN_JSON);
+    verify(mockFileService, never()).deleteFile("plan5_file", FileBucket.TERRAFORM_PLAN_JSON);
+  }
+
+  private void setupPlanJsonOutput(Ambiance ambiance, String fqn, String file, String provisioner, FileBucket bucket) {
+    doReturn(OptionalSweepingOutput.builder()
+                 .found(true)
+                 .output(TerraformPlanJsonOutput.builder()
+                             .tfPlanFileId(file)
+                             .provisionerIdentifier(provisioner)
+                             .tfPlanFileBucket(bucket.name())
+                             .build())
+                 .build())
+        .when(mockExecutionSweepingOutputService)
+        .resolveOptional(ambiance,
+            RefObjectUtils.getSweepingOutputRefObject(TerraformPlanJsonOutput.getOutputName(fqn, provisioner)));
   }
 }

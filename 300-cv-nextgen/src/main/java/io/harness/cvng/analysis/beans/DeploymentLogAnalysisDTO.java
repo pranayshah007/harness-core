@@ -14,12 +14,14 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.Builder;
 import lombok.Value;
+import org.apache.commons.collections4.CollectionUtils;
 @Value
 @Builder
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -30,14 +32,15 @@ public class DeploymentLogAnalysisDTO {
   List<HostSummary> hostSummaries;
 
   public enum ClusterType {
-    BASELINE("Baseline"),
-    KNOWN_EVENT("Known"),
-    UNKNOWN_EVENT("Unknown"),
-    UNEXPECTED_FREQUENCY("Unexpected Frequency");
+    BASELINE("Baseline", 3),
+    KNOWN_EVENT("Known", 2),
+    UNEXPECTED_FREQUENCY("Unexpected Frequency", 1),
+    UNKNOWN_EVENT("Unknown", 0);
     private final String displayName;
-
-    ClusterType(String displayName) {
+    private final int sortOrder;
+    ClusterType(String displayName, int sortOrder) {
       this.displayName = displayName;
+      this.sortOrder = sortOrder;
     }
 
     public String getDisplayName() {
@@ -49,6 +52,16 @@ public class DeploymentLogAnalysisDTO {
           .filter(key -> key != ClusterType.BASELINE)
           .collect(Collectors.toList());
     }
+
+    public static List<ClusterType> getValues() {
+      return Arrays.stream(ClusterType.values()).collect(Collectors.toList());
+    }
+
+    private int getSortOrder() {
+      return sortOrder;
+    }
+    public static Comparator<ClusterType> clusterTypeRiskComparator =
+        Comparator.comparingInt(ClusterType::getSortOrder);
   }
 
   public List<Cluster> getClusters() {
@@ -94,7 +107,11 @@ public class DeploymentLogAnalysisDTO {
     int count;
     List<Double> testFrequencyData;
 
+    List<HostFrequencyData> frequencyData;
     public List<Double> getTestFrequencyData() {
+      if (CollectionUtils.isNotEmpty(frequencyData)) {
+        return HostFrequencyData.generateAverageFrequencyList(frequencyData);
+      }
       if (this.testFrequencyData == null) {
         return Collections.emptyList();
       }
@@ -111,26 +128,91 @@ public class DeploymentLogAnalysisDTO {
 
   @Value
   @Builder
+  public static class TimestampFrequencyCount {
+    Long timeStamp;
+    Double count;
+  }
+
+  @Value
+  @Builder
+  public static class HostFrequencyData {
+    List<TimestampFrequencyCount> frequencies;
+    String host;
+    public static List<Double> generateAverageFrequencyList(List<HostFrequencyData> hostFrequencyDataList) {
+      Map<Long, List<TimestampFrequencyCount>> timeStampFrequencyMap =
+          hostFrequencyDataList.stream()
+              .flatMap(hostFrequencyData -> CollectionUtils.emptyIfNull(hostFrequencyData.getFrequencies()).stream())
+              .collect(Collectors.groupingBy(timestampFrequencyCount -> timestampFrequencyCount.getTimeStamp()));
+      return timeStampFrequencyMap.entrySet()
+          .stream()
+          .sorted(Comparator.comparing(entry -> entry.getKey()))
+          .map(entry -> entry.getValue())
+          .map(frequencyList -> frequencyList.stream().mapToDouble(frequency -> frequency.getCount()).average())
+          .map(countAverageOptional -> countAverageOptional.orElseGet(() -> 0.0))
+          .collect(Collectors.toList());
+    }
+
+    public static List<TimestampFrequencyCount> generateAverageTimeFrequencyList(
+        List<HostFrequencyData> hostFrequencyDataList) {
+      Map<Long, List<TimestampFrequencyCount>> timeStampFrequencyMap =
+          hostFrequencyDataList.stream()
+              .flatMap(hostFrequencyData -> CollectionUtils.emptyIfNull(hostFrequencyData.getFrequencies()).stream())
+              .collect(Collectors.groupingBy(timestampFrequencyCount -> timestampFrequencyCount.getTimeStamp()));
+      return timeStampFrequencyMap.entrySet()
+          .stream()
+          .map(entry
+              -> TimestampFrequencyCount.builder()
+                     .timeStamp(entry.getKey())
+                     .count(entry.getValue()
+                                .stream()
+                                .mapToDouble(frequency -> frequency.getCount())
+                                .average()
+                                .orElseGet(() -> 0.0))
+                     .build())
+          .collect(Collectors.toList());
+    }
+  }
+
+  @Value
+  @Builder
+  public static class ClusterHostFrequencyData {
+    List<HostFrequencyData> frequencyData;
+    int label;
+  }
+
+  @Value
+  @Builder
   public static class ResultSummary {
     int risk;
     public Risk getRiskLevel() {
       return Risk.valueOfRiskForDeploymentLogAnalysis(risk);
     }
     double score;
-    List<ControlClusterSummary> controlClusterSummaries;
+    @Deprecated List<ControlClusterSummary> controlClusterSummaries;
+
+    List<ClusterHostFrequencyData> controlClusterHostFrequencies;
+
     List<ClusterSummary> testClusterSummaries;
 
     @JsonIgnore @Builder.Default private static Map<Integer, List<Double>> labelToControlDataMap = new HashMap<>();
 
     public void setLabelToControlDataMap() {
-      if (controlClusterSummaries != null) {
-        labelToControlDataMap.putAll(controlClusterSummaries.stream().collect(
-            Collectors.toMap(ControlClusterSummary::getLabel, ControlClusterSummary::getControlFrequencyData)));
-      }
+      labelToControlDataMap.putAll(getControlClusterSummaries().stream().collect(
+          Collectors.toMap(ControlClusterSummary::getLabel, ControlClusterSummary::getControlFrequencyData)));
     }
 
+    @Deprecated
     public List<ControlClusterSummary> getControlClusterSummaries() {
-      if (controlClusterSummaries == null) {
+      if (CollectionUtils.isNotEmpty(controlClusterHostFrequencies)) {
+        return controlClusterHostFrequencies.stream()
+            .map(clusterHostFrequencyData
+                -> ControlClusterSummary.builder()
+                       .controlFrequencyData(
+                           HostFrequencyData.generateAverageFrequencyList(clusterHostFrequencyData.getFrequencyData()))
+                       .build())
+            .collect(Collectors.toList());
+      }
+      if (controlClusterHostFrequencies == null) {
         return Collections.emptyList();
       }
       return controlClusterSummaries;

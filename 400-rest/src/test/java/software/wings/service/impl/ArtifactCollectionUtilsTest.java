@@ -31,7 +31,7 @@ import static software.wings.beans.artifact.ArtifactStreamType.SFTP;
 import static software.wings.beans.artifact.ArtifactStreamType.SMB;
 import static software.wings.helpers.ext.jenkins.BuildDetails.Builder.aBuildDetails;
 import static software.wings.service.impl.ArtifactoryBuildServiceImpl.MANUAL_PULL_ARTIFACTORY_LIMIT;
-import static software.wings.service.impl.artifact.ArtifactServiceImpl.ARTIFACT_RETENTION_SIZE;
+import static software.wings.service.intfc.BuildService.ARTIFACT_RETENTION_SIZE;
 import static software.wings.utils.ArtifactType.JAR;
 import static software.wings.utils.WingsTestConstants.ACCOUNT_ID;
 import static software.wings.utils.WingsTestConstants.APP_ID;
@@ -66,7 +66,7 @@ import software.wings.beans.SettingAttribute;
 import software.wings.beans.TaskType;
 import software.wings.beans.artifact.AmazonS3ArtifactStream;
 import software.wings.beans.artifact.Artifact;
-import software.wings.beans.artifact.Artifact.ArtifactMetadataKeys;
+import software.wings.beans.artifact.ArtifactMetadataKeys;
 import software.wings.beans.artifact.ArtifactStream;
 import software.wings.beans.artifact.ArtifactStreamCollectionStatus;
 import software.wings.beans.artifact.ArtifactStreamType;
@@ -84,6 +84,7 @@ import software.wings.service.intfc.ArtifactService;
 import software.wings.service.intfc.ArtifactStreamService;
 import software.wings.service.intfc.ArtifactStreamServiceBindingService;
 import software.wings.service.intfc.SettingsService;
+import software.wings.utils.DelegateArtifactCollectionUtils;
 
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
@@ -541,10 +542,10 @@ public class ArtifactCollectionUtilsTest extends WingsBaseTest {
     List<ArtifactStreamType> supported = asList(DOCKER, AMI, ARTIFACTORY, GCR, ECR, ACR, NEXUS, CUSTOM);
     List<ArtifactStreamType> unsupported = asList(JENKINS, BAMBOO, AMAZON_S3, GCS, SMB, SFTP, AZURE_ARTIFACTS);
     for (ArtifactStreamType artifactStreamType : supported) {
-      assertThat(ArtifactCollectionUtils.supportsCleanup(artifactStreamType.name())).isTrue();
+      assertThat(DelegateArtifactCollectionUtils.supportsCleanup(artifactStreamType.name())).isTrue();
     }
     for (ArtifactStreamType artifactStreamType : unsupported) {
-      assertThat(ArtifactCollectionUtils.supportsCleanup(artifactStreamType.name())).isFalse();
+      assertThat(DelegateArtifactCollectionUtils.supportsCleanup(artifactStreamType.name())).isFalse();
     }
   }
 

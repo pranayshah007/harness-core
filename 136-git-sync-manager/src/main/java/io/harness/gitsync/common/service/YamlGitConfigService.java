@@ -46,6 +46,8 @@ public interface YamlGitConfigService {
   List<YamlGitConfigDTO> getByAccountAndRepo(String accountIdentifier, String repo);
 
   YamlGitConfigDTO getByProjectIdAndRepo(String accountId, String orgId, String projectId, String repo);
+  Optional<YamlGitConfigDTO> getByProjectIdAndRepoOptional(
+      String accountId, String orgId, String projectId, String repo);
 
   boolean deleteAll(String accountIdentifier, String orgIdentifier, String projectIdentifier);
 

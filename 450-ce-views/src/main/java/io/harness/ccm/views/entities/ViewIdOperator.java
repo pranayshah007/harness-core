@@ -7,4 +7,4 @@
 
 package io.harness.ccm.views.entities;
 
-public enum ViewIdOperator { IN, NOT_IN, NOT_NULL, NULL }
+public enum ViewIdOperator { NOT_IN, IN, EQUALS, NOT_NULL, NULL, LIKE }

@@ -40,7 +40,8 @@ input CreateDeploymentFreezeWindowInput {
   freezeWindows: [FreezeWindowInput]!
   #Input the time-based entities for the deployment freeze window.
   setup: SetupInput!
-  notifyTo: [String]!
+  notifyTo: [String]
+  userGroupSelection: UserGroupFilterInput
 }
 
 input UpdateDeploymentFreezeWindowInput {
@@ -51,7 +52,8 @@ input UpdateDeploymentFreezeWindowInput {
   description: String
   freezeWindows: [FreezeWindowInput]!
   setup: SetupInput!
-  notifyTo: [String]!
+  notifyTo: [String]
+  userGroupSelection: UserGroupFilterInput
 }
 
 input DeleteDeploymentFreezeWindowInput {
@@ -127,6 +129,7 @@ type DeploymentFreezeWindow {
   notifyTo: [String]
   freezeWindows: [FreezeWindow]
   setup: Setup
+  userGroupSelection: UserGroupFilter
 }
 
 type FreezeWindow {
@@ -193,4 +196,19 @@ input DeploymentFreezeWindowFilter {
 type DeploymentFreezeWindowConnection {
   pageInfo: PageInfo
   nodes: [DeploymentFreezeWindow]
+}
+
+input UserGroupFilterInput {
+  userGroupFilterType: UserGroupFilterType!
+  userGroupIds: [String]
+}
+
+enum UserGroupFilterType {
+  ALL
+  CUSTOM
+}
+
+type UserGroupFilter {
+  userGroupFilterType: UserGroupFilterType!
+  userGroupIds: [String]
 }

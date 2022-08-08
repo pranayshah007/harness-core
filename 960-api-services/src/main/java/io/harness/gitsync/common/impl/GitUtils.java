@@ -50,10 +50,6 @@ public class GitUtils {
     return (host.startsWith("www.")) ? host : ("www." + host);
   }
 
-  public boolean isBitBucketCloud(String url) {
-    return url.contains("bitbucket.org/");
-  }
-
   public static String convertToUrlWithGit(String url) {
     if (isEmpty(url)) {
       return url;

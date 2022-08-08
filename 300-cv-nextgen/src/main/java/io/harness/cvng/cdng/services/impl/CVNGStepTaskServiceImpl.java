@@ -148,14 +148,15 @@ public class CVNGStepTaskServiceImpl implements CVNGStepTaskService {
     Set<HealthSourceDTO> healthSourceDTOS = new HashSet<>();
     List<VerificationJobInstance> verificationJobInstances =
         verificationJobInstanceService.get(Arrays.asList(getByCallBackId(callBackId).getVerificationJobInstanceId()));
-    verificationJobInstances.forEach(verificationJobInstance -> {
-      verificationJobInstance.getCvConfigMap().forEach((s, cvConfig) -> {
-        HealthSourceDTO healthSourceDTO = HealthSourceDTO.toHealthSourceDTO(
-            HealthSourceDTO.toHealthSource(Arrays.asList(cvConfig), dataSourceTypeToHealthSourceTransformerMap));
-        healthSourceDTO.setIdentifier(cvConfig.getFullyQualifiedIdentifier());
-        healthSourceDTOS.add(healthSourceDTO);
-      });
-    });
+    verificationJobInstances.forEach(verificationJobInstance
+        -> verificationJobInstance.getCvConfigMap().forEach(
+            (s, cvConfig)
+                -> healthSourceDTOS.add(HealthSourceDTO.builder()
+                                            .name(cvConfig.getMonitoringSourceName())
+                                            .identifier(cvConfig.getFullyQualifiedIdentifier())
+                                            .type(cvConfig.getType())
+                                            .verificationType(cvConfig.getVerificationType())
+                                            .build())));
     return healthSourceDTOS;
   }
 
@@ -201,9 +202,13 @@ public class CVNGStepTaskServiceImpl implements CVNGStepTaskService {
   }
 
   @Override
-  public List<String> getNodeNames(String accountId, String callBackId) {
-    return deploymentTimeSeriesAnalysisService.getNodeNames(
-        accountId, getByCallBackId(callBackId).getVerificationJobInstanceId());
+  public Set<String> getNodeNames(String accountId, String callBackId) {
+    Set<String> nodeNames = new HashSet<>();
+    nodeNames.addAll(deploymentTimeSeriesAnalysisService.getNodeNames(
+        accountId, getByCallBackId(callBackId).getVerificationJobInstanceId()));
+    nodeNames.addAll(deploymentLogAnalysisService.getNodeNames(
+        accountId, getByCallBackId(callBackId).getVerificationJobInstanceId()));
+    return nodeNames;
   }
 
   @Override

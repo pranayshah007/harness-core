@@ -1,0 +1,219 @@
+{
+  "pipeline": {
+    "name": "deploymentStage",
+    "identifier": "deploymentStage",
+    "allowStageExecutions": false,
+    "stages": [
+    {
+      "stage": {
+        "name": "dep",
+        "identifier": "dep",
+        "description": "",
+        "type": "Deployment",
+        "spec": {
+          "serviceConfig": {
+            "serviceRef": "k8s_docker",
+            "serviceDefinition": {
+              "type": "Kubernetes",
+              "spec": {
+                "variables": [
+                {
+                  "name": "service_var1",
+                  "type": "String",
+                  "value": "value1",
+                  "__uuid": "6z851KQmR9qFYu3mODSrDA"
+                },
+                {
+                  "name": "service_var2",
+                  "type": "Secret",
+                  "value": "snow_admin_pass",
+                  "__uuid": "zhp4aCrXTvyCNpTqhHfnvg"
+                }
+                ],
+                "manifests": [
+                {
+                  "manifest": {
+                    "identifier": "testsvc",
+                    "type": "HelmChart",
+                    "spec": {
+                      "store": {
+                        "type": "Http",
+                        "spec": {
+                          "connectorRef": "helm_stable",
+                          "__uuid": "xyuutZEeSH-RC88bkdlA1A"
+                        },
+                        "__uuid": "FGqoX-NkRZO7Zs4NH8YY-g"
+                      },
+                      "chartName": "redis",
+                      "chartVersion": "",
+                      "helmVersion": "V2",
+                      "skipResourceVersioning": false,
+                      "__uuid": "20_-hratQ6-Lee522TtAJg"
+                    },
+                    "__uuid": "7CIjDh08Tw6ao-sL1lcIAA"
+                  },
+                  "__uuid": "dI_Hh5fQSU-4lkWNrdXWzQ"
+                }
+                ],
+                "artifacts": {
+                  "primary": {
+                    "spec": {
+                      "connectorRef": "docker_harness_dev",
+                      "imagePath": "library/nginx",
+                      "tag": "<+input>",
+                      "__uuid": "7FXtmXOwSKqZbjohpPVJ8g"
+                    },
+                    "type": "DockerRegistry",
+                    "__uuid": "V95Phc0DT8CGO2TWy6JfZQ"
+                  },
+                  "sidecars": [
+                  {
+                    "sidecar": {
+                      "spec": {
+                        "connectorRef": "docker_harness_dev",
+                        "imagePath": "bitnami/postgresql",
+                        "tag": "<+input>",
+                        "__uuid": "6kVGITNMTZSDoinBYws6ig"
+                      },
+                      "identifier": "postgres",
+                      "type": "DockerRegistry",
+                      "__uuid": "6Q6oMIg4SbeH1KhFVLpJQQ"
+                    },
+                    "__uuid": "QEkSK7LbSWKW0n0GS-MMMg"
+                  }
+                  ],
+                  "__uuid": "4l9JpkyZRxyKx2uJSPtjpQ"
+                },
+                "__uuid": "39q3yfuqQE2irqRua77skA"
+              },
+              "__uuid": "YTd5UBIcQMKSYnADSIOOpA"
+            },
+            "__uuid": "tcYhjdGcREy9TqEfsvOsPw"
+          },
+          "infrastructure": {
+            "environmentRef": "qa",
+            "infrastructureDefinition": {
+              "type": "KubernetesDirect",
+              "spec": {
+                "connectorRef": "k8s_cluster",
+                "namespace": "def",
+                "releaseName": "release-<+INFRA_KEY>",
+                "__uuid": "mEmA031ZTxGHa8YbspIOzA"
+              },
+              "provisioner": {
+                "steps": [
+                {
+                  "step": {
+                    "type": "TerraformPlan",
+                    "name": "terraform",
+                    "identifier": "terraform",
+                    "timeout": "10m",
+                    "spec": {
+                      "provisionerIdentifier": "provisioner_id",
+                      "configuration": {
+                        "command": "Apply",
+                        "configFiles": {
+                          "store": {
+                            "spec": {
+                              "connectorRef": "bitbucket_connector",
+                              "repoName": "testRepo",
+                              "gitFetchType": "Branch",
+                              "branch": "master",
+                              "folderPath": "terraform",
+                              "__uuid": "cCEJBKqrT3eUKVKWkf4QAQ"
+                            },
+                            "type": "Bitbucket",
+                            "__uuid": "y0DSkL14TC2vq-3_kvKWcA"
+                          },
+                          "__uuid": "MopT4xYASOK38hri2mYadA"
+                        },
+                        "secretManagerRef": "harnessSecretManager",
+                        "__uuid": "r6Vp_bTbQAGd1ii50eRq8A"
+                      },
+                      "__uuid": "FayRnxh-R0yqOMXHDawmRw"
+                    },
+                    "__uuid": "R9VL1m9eQcuoeS2PH_or0g"
+                  },
+                  "__uuid": "Lvr5zkVhSjqptjLYmYTVKA"
+                }
+                ],
+                "rollbackSteps": [
+                {
+                  "step": {
+                    "type": "TerraformRollback",
+                    "name": "rollback tf",
+                    "identifier": "rollback_tf",
+                    "timeout": "10m",
+                    "spec": {
+                      "provisionerIdentifier": "provisioner_id",
+                      "__uuid": "UcqrJutlSgCqMoPZGebzfQ"
+                    },
+                    "__uuid": "mbSWldzKSzyN-n2VzcV_jg"
+                  },
+                  "__uuid": "n688RJtTQ12lsFFoIMArXQ"
+                }
+                ],
+                "__uuid": "XiFefPbjSm6hh1ZFW0BKPg"
+              },
+              "__uuid": "71Jze5ebRc-e1dC_8iAuXQ"
+            },
+            "allowSimultaneousDeployments": false,
+            "__uuid": "uvlCGOSEScCPv5Y4_-LbVg"
+          },
+          "execution": {
+            "steps": [
+            {
+              "step": {
+                "type": "K8sApply",
+                "name": "app",
+                "identifier": "app",
+                "spec": {
+                  "filePaths": [
+                    "."
+                  ],
+                  "skipSteadyStateCheck": false,
+                  "__uuid": "X7bmoQ-CRaKa1vuC39anRA"
+                },
+                "timeout": "10m",
+                "__uuid": "tEEKCqD_Slez5BtNdVX19g"
+              },
+              "__uuid": "cF62NvyISaO_TfZFmjpgrQ"
+            }
+            ],
+            "rollbackSteps": [],
+            "__uuid": "jN1lz-uVSIW8vFKXWumINA"
+          },
+          "__uuid": "VtPmqPwMTMKUhNNxy-mFsQ"
+        },
+        "tags": {
+          "__uuid": "DBmwTKUXS92jePZ_IzSfvw"
+        },
+        "failureStrategies": [
+        {
+          "onFailure": {
+            "errors": [
+              "AllErrors"
+            ],
+            "action": {
+              "type": "Abort",
+              "__uuid": "CouKGZTKSBqS-3Vpg1HrNw"
+            },
+            "__uuid": "-UJ8c1toQiy1mlY0BElvvw"
+          },
+          "__uuid": "Ykp_MBw0Rwi95yQuVzjasw"
+        }
+        ],
+        "__uuid": "mqD4KLeFTtGPz8olyCHQTA"
+      },
+      "__uuid": "056UbpyWRH62NRbgR8Hdgg"
+    }
+    ],
+    "projectIdentifier": "se",
+    "orgIdentifier": "default",
+    "tags": {
+      "__uuid": "GOt4FhWATayqjH9GtFgzig"
+    },
+    "__uuid": "Jm69rNeHTZysIYD-jJaQ8A"
+  },
+  "__uuid": "kMmdE1WKQxu1LxW2JXVFtw"
+}

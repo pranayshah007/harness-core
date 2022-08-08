@@ -25,6 +25,7 @@ go_test(
         "gitlab_test.go",
     ],
     data = [
+        "testdata/CommitsOfFile.json",
         "testdata/FileCreateNoMatch.json",
         "testdata/FileCreateSource.json",
         "testdata/FileErrorSource.json",

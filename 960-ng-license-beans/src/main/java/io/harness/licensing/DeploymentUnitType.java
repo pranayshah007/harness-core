@@ -18,7 +18,7 @@ public enum DeploymentUnitType {
   @JsonProperty("SERVICE") SERVICE,
   @JsonProperty("FUNCTION") FUNCTION;
 
-  @JsonCreator
+  @JsonCreator(mode = JsonCreator.Mode.DELEGATING)
   public static DeploymentUnitType fromString(String type) {
     for (DeploymentUnitType typeEnum : DeploymentUnitType.values()) {
       if (typeEnum.name().equalsIgnoreCase(type)) {

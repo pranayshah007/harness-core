@@ -45,9 +45,10 @@ import io.harness.persistence.UuidAware;
 import io.harness.reflection.ReflectionUtils;
 
 import software.wings.annotation.EncryptableSetting;
+import software.wings.audit.AuditHeader;
 import software.wings.beans.Base;
 import software.wings.beans.ServiceVariable;
-import software.wings.beans.ServiceVariable.Type;
+import software.wings.beans.ServiceVariableType;
 import software.wings.beans.SettingAttribute;
 import software.wings.beans.User;
 import software.wings.security.UserPermissionInfo;
@@ -366,6 +367,8 @@ public class WingsMongoPersistence extends MongoPersistence implements WingsPers
         UserPermissionInfo userPermissionInfo = userRequestContext.getUserPermissionInfo();
         if (AccountAccess.class.isAssignableFrom(beanClass) && userPermissionInfo.isHasAllAppAccess()) {
           query.field("accountId").equal(userRequestContext.getAccountId());
+        } else if (beanClass == AuditHeader.class) {
+          query.field("entityAuditRecords.appId").in(userRequestContext.getAppIds());
         } else {
           query.field("appId").in(userRequestContext.getAppIds());
         }
@@ -411,7 +414,12 @@ public class WingsMongoPersistence extends MongoPersistence implements WingsPers
     }
     User user = UserThreadLocal.get();
     if (user != null) {
-      log.error("User [{}] doesn't have enough permission to perform operation. ", user);
+      UserPermissionInfo userPermissionInfo = null;
+      if (user.getUserRequestContext() != null && user.getUserRequestContext().getUserPermissionInfo() != null) {
+        userPermissionInfo = user.getUserRequestContext().getUserPermissionInfo();
+      }
+      log.error("User [{}] doesn't have enough permission to perform query [{}]. Current perms [{}].", user, query,
+          userPermissionInfo);
     }
     throw new WingsException(ErrorCode.ACCESS_DENIED, USER);
   }
@@ -476,7 +484,7 @@ public class WingsMongoPersistence extends MongoPersistence implements WingsPers
       Field f, EncryptableSetting savedObject, Map<String, Object> keyValuePairs) {
     List<Field> encryptedFields = savedObject.getEncryptedFields();
     if (savedObject.getClass().equals(ServiceVariable.class)) {
-      return keyValuePairs.get("type") == Type.ENCRYPTED_TEXT;
+      return keyValuePairs.get("type") == ServiceVariableType.ENCRYPTED_TEXT;
     }
     return encryptedFields.contains(f);
   }

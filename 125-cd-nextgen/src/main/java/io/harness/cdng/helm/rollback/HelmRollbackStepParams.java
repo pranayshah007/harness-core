@@ -11,7 +11,7 @@ import io.harness.cdng.helm.HelmSpecParameters;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.pms.yaml.ParameterField;
 
-import software.wings.beans.command.HelmDummyCommandUnit;
+import software.wings.beans.command.HelmDummyCommandUnitConstants;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.util.Arrays;
@@ -28,7 +28,7 @@ public class HelmRollbackStepParams extends HelmRollbackBaseStepInfo implements 
   @Nonnull
   @JsonIgnore
   public List<String> getCommandUnits() {
-    return Arrays.asList(
-        HelmDummyCommandUnit.Init, HelmDummyCommandUnit.Rollback, HelmDummyCommandUnit.WaitForSteadyState);
+    return Arrays.asList(HelmDummyCommandUnitConstants.Init, HelmDummyCommandUnitConstants.Rollback,
+        HelmDummyCommandUnitConstants.WaitForSteadyState);
   }
 }

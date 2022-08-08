@@ -49,7 +49,7 @@ import software.wings.beans.SettingAttribute;
 import software.wings.beans.artifact.Artifact;
 import software.wings.beans.artifact.ArtifactStream;
 import software.wings.beans.artifact.AzureArtifactsArtifactStream;
-import software.wings.beans.artifact.AzureArtifactsArtifactStream.ProtocolType;
+import software.wings.beans.artifact.AzureArtifactsArtifactStreamProtocolType;
 import software.wings.beans.artifact.BambooArtifactStream;
 import software.wings.beans.artifact.JenkinsArtifactStream;
 import software.wings.beans.command.JenkinsTaskParams;
@@ -164,7 +164,7 @@ public class ArtifactCollectEventListenerTest extends WingsBaseTest {
                        .sourceName(ARTIFACT_STREAM_NAME)
                        .appId(APP_ID)
                        .settingId(SETTING_ID)
-                       .protocolType(ProtocolType.maven.name())
+                       .protocolType(AzureArtifactsArtifactStreamProtocolType.maven.name())
                        .project(null)
                        .feed("FEED")
                        .packageId("PKG_ID")

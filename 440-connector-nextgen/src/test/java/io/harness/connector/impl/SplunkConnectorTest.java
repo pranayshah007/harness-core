@@ -12,9 +12,8 @@ import static io.harness.delegate.beans.connector.ConnectorType.SPLUNK;
 import static io.harness.git.model.ChangeType.ADD;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
 
@@ -142,8 +141,7 @@ public class SplunkConnectorTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testGetSplunkConnector() {
     createConnector();
-    when(connectorRepository.findByFullyQualifiedIdentifierAndDeletedNot(
-             anyString(), anyString(), anyString(), anyString(), anyBoolean()))
+    when(connectorRepository.findByFullyQualifiedIdentifierAndDeletedNot(any(), any(), any(), any(), anyBoolean()))
         .thenReturn(Optional.of(connector));
     ConnectorResponseDTO connectorDTO = connectorService.get(accountIdentifier, null, null, identifier).get();
     ensureSplunkConnectorFieldsAreCorrect(connectorDTO);

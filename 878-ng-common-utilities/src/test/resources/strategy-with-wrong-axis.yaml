@@ -1,0 +1,27 @@
+parallel:
+  - step:
+      type: Http
+      name: <+strategy.iterations>
+      identifier: <+strategy.iteration>
+      strategy:
+        parallelism: "as"
+      spec:
+        url: https://www.google.com
+        method: GET
+        headers: []
+        outputVariables: []
+      timeout: 1m
+  - step:
+      type: Http
+      name: bing
+      identifier: bing
+      strategy:
+        matrix:
+          a: ["1", "2", "3"]
+          b: "ssddf"
+      spec:
+        url: https://www.bing.com
+        method: GET
+        headers: []
+        outputVariables: []
+      timeout: 10s

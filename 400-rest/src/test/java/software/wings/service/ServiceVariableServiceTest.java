@@ -25,9 +25,9 @@ import static io.harness.rule.OwnerRule.VUK;
 import static io.harness.rule.OwnerRule.YOGESH;
 
 import static software.wings.beans.ServiceTemplate.Builder.aServiceTemplate;
-import static software.wings.beans.ServiceVariable.Type.ARTIFACT;
-import static software.wings.beans.ServiceVariable.Type.ENCRYPTED_TEXT;
-import static software.wings.beans.ServiceVariable.Type.TEXT;
+import static software.wings.beans.ServiceVariableType.ARTIFACT;
+import static software.wings.beans.ServiceVariableType.ENCRYPTED_TEXT;
+import static software.wings.beans.ServiceVariableType.TEXT;
 import static software.wings.service.intfc.ServiceVariableService.EncryptedFieldMode.OBTAIN_VALUE;
 import static software.wings.utils.WingsTestConstants.ACCOUNT_ID;
 import static software.wings.utils.WingsTestConstants.APP_ID;
@@ -137,6 +137,7 @@ public class ServiceVariableServiceTest extends WingsBaseTest {
     ENCRYPTED_SERVICE_VARIABLE.setUuid(SERVICE_VARIABLE_ID + "2");
     ENCRYPTED_SERVICE_VARIABLE.setAppId(APP_ID);
   }
+
   /**
    * The Query.
    */
@@ -212,7 +213,7 @@ public class ServiceVariableServiceTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void shouldSave() {
     serviceVariableService.save(SERVICE_VARIABLE);
-    verify(wingsPersistence).saveAndGet(ServiceVariable.class, SERVICE_VARIABLE);
+    verify(wingsPersistence).save(SERVICE_VARIABLE);
     verify(mockEntityVersionService)
         .newEntityVersion(APP_ID, EntityType.CONFIG, SERVICE_VARIABLE.getUuid(), SERVICE_VARIABLE.getEntityId(),
             SERVICE_VARIABLE.getName(), ChangeType.CREATED, null);
@@ -684,11 +685,13 @@ public class ServiceVariableServiceTest extends WingsBaseTest {
                                    .name("name")
                                    .type(TEXT)
                                    .value("TestValue".toCharArray())
+                                   .uuid(generateUuid())
                                    .build();
-    when(wingsPersistence.saveAndGet(ServiceVariable.class, variable)).thenReturn(variable);
+    when(wingsPersistence.save(variable)).thenReturn(variable.getUuid());
+    when(wingsPersistence.get(ServiceVariable.class, variable.getUuid())).thenReturn(variable);
 
     serviceVariableService.saveWithChecks(APP_ID, variable);
-    verify(wingsPersistence).saveAndGet(ServiceVariable.class, variable);
+    verify(wingsPersistence).save(variable);
     verify(mockEntityVersionService)
         .newEntityVersion(APP_ID, EntityType.CONFIG, variable.getUuid(), variable.getEntityId(), variable.getName(),
             ChangeType.CREATED, null);
@@ -706,13 +709,15 @@ public class ServiceVariableServiceTest extends WingsBaseTest {
                                    .name("name")
                                    .type(ENCRYPTED_TEXT)
                                    .value("TestValue".toCharArray())
+                                   .uuid(generateUuid())
                                    .build();
-    when(wingsPersistence.saveAndGet(ServiceVariable.class, variable)).thenReturn(variable);
+    when(wingsPersistence.save(variable)).thenReturn(variable.getUuid());
+    when(wingsPersistence.get(ServiceVariable.class, variable.getUuid())).thenReturn(variable);
     when(wingsPersistence.get(eq(EncryptedData.class), anyString()))
         .thenReturn(EncryptedData.builder().encryptedValue("enc".toCharArray()).build());
 
     ServiceVariable savedServiceVariable = serviceVariableService.saveWithChecks(APP_ID, variable);
-    verify(wingsPersistence).saveAndGet(ServiceVariable.class, variable);
+    verify(wingsPersistence).save(variable);
     verify(mockEntityVersionService)
         .newEntityVersion(APP_ID, EntityType.CONFIG, variable.getUuid(), variable.getEntityId(), variable.getName(),
             ChangeType.CREATED, null);
@@ -731,11 +736,13 @@ public class ServiceVariableServiceTest extends WingsBaseTest {
                                    .name("name")
                                    .type(TEXT)
                                    .value("TestValue".toCharArray())
+                                   .uuid(generateUuid())
                                    .build();
-    when(wingsPersistence.saveAndGet(ServiceVariable.class, variable)).thenReturn(variable);
+    when(wingsPersistence.save(variable)).thenReturn(variable.getUuid());
+    when(wingsPersistence.get(ServiceVariable.class, variable.getUuid())).thenReturn(variable);
 
     serviceVariableService.saveWithChecks(APP_ID, variable);
-    verify(wingsPersistence).saveAndGet(ServiceVariable.class, variable);
+    verify(wingsPersistence).save(variable);
     verify(mockEntityVersionService)
         .newEntityVersion(APP_ID, EntityType.CONFIG, variable.getUuid(), variable.getEntityId(), variable.getName(),
             ChangeType.CREATED, null);
@@ -753,13 +760,15 @@ public class ServiceVariableServiceTest extends WingsBaseTest {
                                    .name("name")
                                    .type(ENCRYPTED_TEXT)
                                    .value("TestValue".toCharArray())
+                                   .uuid(generateUuid())
                                    .build();
-    when(wingsPersistence.saveAndGet(ServiceVariable.class, variable)).thenReturn(variable);
+    when(wingsPersistence.save(variable)).thenReturn(variable.getUuid());
+    when(wingsPersistence.get(ServiceVariable.class, variable.getUuid())).thenReturn(variable);
     when(wingsPersistence.get(eq(EncryptedData.class), anyString()))
         .thenReturn(EncryptedData.builder().encryptedValue("enc".toCharArray()).build());
 
     ServiceVariable savedServiceVariable = serviceVariableService.saveWithChecks(APP_ID, variable);
-    verify(wingsPersistence).saveAndGet(ServiceVariable.class, variable);
+    verify(wingsPersistence).save(variable);
     verify(mockEntityVersionService)
         .newEntityVersion(APP_ID, EntityType.CONFIG, variable.getUuid(), variable.getEntityId(), variable.getName(),
             ChangeType.CREATED, null);
@@ -779,11 +788,13 @@ public class ServiceVariableServiceTest extends WingsBaseTest {
                                    .type(TEXT)
                                    .value("TestValue".toCharArray())
                                    .templateId(SERVICE_TEMPLATE_ID)
+                                   .uuid(generateUuid())
                                    .build();
-    when(wingsPersistence.saveAndGet(ServiceVariable.class, variable)).thenReturn(variable);
+    when(wingsPersistence.save(variable)).thenReturn(variable.getUuid());
+    when(wingsPersistence.get(ServiceVariable.class, variable.getUuid())).thenReturn(variable);
 
     serviceVariableService.saveWithChecks(APP_ID, variable);
-    verify(wingsPersistence).saveAndGet(ServiceVariable.class, variable);
+    verify(wingsPersistence).save(variable);
     verify(mockEntityVersionService)
         .newEntityVersion(APP_ID, EntityType.CONFIG, variable.getUuid(), variable.getEntityId(), variable.getName(),
             ChangeType.CREATED, null);
@@ -802,13 +813,15 @@ public class ServiceVariableServiceTest extends WingsBaseTest {
                                    .type(ENCRYPTED_TEXT)
                                    .templateId(SERVICE_TEMPLATE_ID)
                                    .value("TestValue".toCharArray())
+                                   .uuid(generateUuid())
                                    .build();
-    when(wingsPersistence.saveAndGet(ServiceVariable.class, variable)).thenReturn(variable);
+    when(wingsPersistence.save(variable)).thenReturn(variable.getUuid());
+    when(wingsPersistence.get(ServiceVariable.class, variable.getUuid())).thenReturn(variable);
     when(wingsPersistence.get(eq(EncryptedData.class), anyString()))
         .thenReturn(EncryptedData.builder().encryptedValue("enc".toCharArray()).build());
 
     ServiceVariable savedServiceVariable = serviceVariableService.saveWithChecks(APP_ID, variable);
-    verify(wingsPersistence).saveAndGet(ServiceVariable.class, variable);
+    verify(wingsPersistence).save(variable);
     verify(mockEntityVersionService)
         .newEntityVersion(APP_ID, EntityType.CONFIG, variable.getUuid(), variable.getEntityId(), variable.getName(),
             ChangeType.CREATED, null);
@@ -846,6 +859,7 @@ public class ServiceVariableServiceTest extends WingsBaseTest {
         .thenReturn(EncryptedData.builder().encryptedValue("enc".toCharArray()).build());
     when(wingsPersistence.getWithAppId(ServiceVariable.class, APP_ID, SERVICE_VARIABLE_ID)).thenAnswer(new Answer() {
       private int count = 0;
+
       @Override
       public Object answer(InvocationOnMock invocationOnMock) {
         if (count == 0) {
@@ -900,6 +914,7 @@ public class ServiceVariableServiceTest extends WingsBaseTest {
         .thenReturn(EncryptedData.builder().encryptedValue("enc".toCharArray()).build());
     when(wingsPersistence.getWithAppId(ServiceVariable.class, APP_ID, SERVICE_VARIABLE_ID)).thenAnswer(new Answer() {
       private int count = 0;
+
       @Override
       public Object answer(InvocationOnMock invocationOnMock) {
         if (count == 0) {
@@ -942,7 +957,7 @@ public class ServiceVariableServiceTest extends WingsBaseTest {
     variable.setAccountId(ACCOUNT_ID);
     variable.setUuid(SERVICE_VARIABLE_ID);
     when(wingsPersistence.getWithAppId(ServiceVariable.class, APP_ID, SERVICE_VARIABLE_ID)).thenReturn(variable);
-    when(wingsPersistence.get(eq(EncryptedData.class), anyString()))
+    when(wingsPersistence.get(eq(EncryptedData.class), any()))
         .thenReturn(EncryptedData.builder().encryptedValue("enc".toCharArray()).build());
     when(wingsPersistence.delete(any(Query.class))).thenReturn(false);
     when(wingsPersistence.createQuery(ServiceVariable.class)).thenReturn(query);

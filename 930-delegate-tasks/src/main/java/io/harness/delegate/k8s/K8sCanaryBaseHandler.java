@@ -10,6 +10,8 @@ package io.harness.delegate.k8s;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.k8s.manifest.ManifestHelper.getWorkloadsForCanaryAndBG;
 import static io.harness.k8s.manifest.VersionUtils.markVersionedResources;
+import static io.harness.k8s.model.Release.Status.Failed;
+import static io.harness.k8s.model.Release.Status.InProgress;
 import static io.harness.logging.CommandExecutionStatus.FAILURE;
 import static io.harness.logging.LogLevel.ERROR;
 
@@ -23,12 +25,12 @@ import static org.apache.commons.lang3.BooleanUtils.isNotTrue;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.k8s.beans.K8sCanaryHandlerConfig;
 import io.harness.delegate.task.k8s.K8sTaskHelperBase;
-import io.harness.delegate.task.k8s.exception.KubernetesExceptionExplanation;
-import io.harness.delegate.task.k8s.exception.KubernetesExceptionHints;
-import io.harness.delegate.task.k8s.exception.KubernetesExceptionMessages;
 import io.harness.exception.KubernetesTaskException;
 import io.harness.exception.NestedExceptionUtils;
 import io.harness.k8s.K8sConstants;
+import io.harness.k8s.exception.KubernetesExceptionExplanation;
+import io.harness.k8s.exception.KubernetesExceptionHints;
+import io.harness.k8s.exception.KubernetesExceptionMessages;
 import io.harness.k8s.kubectl.Kubectl;
 import io.harness.k8s.model.HarnessAnnotations;
 import io.harness.k8s.model.HarnessLabelValues;
@@ -61,7 +63,7 @@ public class K8sCanaryBaseHandler {
 
   public boolean prepareForCanary(K8sCanaryHandlerConfig canaryHandlerConfig,
       K8sDelegateTaskParams k8sDelegateTaskParams, Boolean skipVersioning, LogCallback logCallback,
-      boolean isErrorFrameworkEnabled) throws Exception {
+      boolean isErrorFrameworkEnabled, boolean cleanUpIncompleteCanaryDeployRelease) throws Exception {
     if (isNotTrue(skipVersioning)) {
       markVersionedResources(canaryHandlerConfig.getResources());
     }
@@ -97,6 +99,14 @@ public class K8sCanaryBaseHandler {
         }
       }
       return false;
+    }
+
+    if (cleanUpIncompleteCanaryDeployRelease) {
+      for (Release release : canaryHandlerConfig.getReleaseHistory().getReleases()) {
+        if (release.getStatus() == InProgress) {
+          release.setStatus(Failed);
+        }
+      }
     }
 
     Release currentRelease =

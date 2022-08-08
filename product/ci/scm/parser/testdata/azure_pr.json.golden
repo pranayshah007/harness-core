@@ -1,11 +1,13 @@
 {
   "pr": {
-    "action": 4,
+    "action": 1,
     "repo": {
       "id": "4bc14d40-c903-45e2-872e-0462c7748079",
       "namespace": "Fabrikam",
-      "name": "4bc14d40-c903-45e2-872e-0462c7748079",
-      "link": "https://dev.azure.com/fabrikam/DefaultCollection/_apis/repos/git/repositories/4bc14d40-c903-45e2-872e-0462c7748079",
+      "name": "Fabrikam",
+      "link": "https://dev.azure.com/fabrikam/DefaultCollection/_git/Fabrikam",
+      "clone": "https://dev.azure.com/fabrikam/DefaultCollection/_git/Fabrikam",
+      "cloneSsh": "git@ssh.dev.azure.com:v3/fabrikam/DefaultCollection/Fabrikam",
       "created": "0001-01-01T00:00:00Z",
       "updated": "0001-01-01T00:00:00Z"
     },
@@ -13,15 +15,17 @@
       "number": 1,
       "title": "my first pull request",
       "body": " - test2\r\n",
-      "sha": "a10bb228-6ba6-4362-abd7-49ea21333dbd",
+      "sha": "53d54ac915144006c2c9e90d2c7d3880920db49c",
       "ref": "refs/heads/mytopic",
-      "source": "refs/heads/mytopic",
-      "target": "refs/heads/master",
+      "source": "mytopic",
+      "target": "master",
       "link": "https://dev.azure.com/fabrikam/DefaultCollection/_apis/repos/git/repositories/4bc14d40-c903-45e2-872e-0462c7748079/pullRequests/1",
+      "closed": false,
+      "merged": false,
       "base": {},
       "head": {},
       "author": {
-        "login": "54d125f7-69f7-4191-904f-c5b96b6261c8",
+        "login": "Jamal Hartnett",
         "name": "Jamal Hartnett",
         "email": "fabrikamfiber4@hotmail.com",
         "avatar": "https://dev.azure.com/fabrikam/DefaultCollection/_api/_common/identityImage?id=54d125f7-69f7-4191-904f-c5b96b6261c8",

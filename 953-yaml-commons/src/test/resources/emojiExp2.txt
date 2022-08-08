@@ -1,0 +1,10 @@
+{
+  "identifier": "PR_ENV",
+  "name": "PR ENV𝘅😴😁⚡︎",
+  "description": "",
+  "type": "PreP💁🏼‍♀️🐍🐢roduction",
+  "accountIdentifier": "kmpySmUISimoRrJL6NL73w",
+  "orgIdentifier": "d🐍🪰🦄efault",
+  "projectIdentifier": "Loc🐿🐀🍀al_Dev",
+  "tags": {}
+}

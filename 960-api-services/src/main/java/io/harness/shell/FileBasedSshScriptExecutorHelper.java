@@ -147,7 +147,7 @@ public class FileBasedSshScriptExecutorHelper {
    * @return the int
    * @throws IOException Signals that an I/O exception has occurred.
    */
-  private static int checkAck(InputStream in, Consumer<String> saveExecutionLogError) throws IOException {
+  static int checkAck(InputStream in, Consumer<String> saveExecutionLogError) throws IOException {
     int b = in.read();
     // b may be 0 for success,
     //          1 for error,
@@ -166,19 +166,22 @@ public class FileBasedSshScriptExecutorHelper {
       int c;
       int totalBytesRead = 0;
       do {
+        if (in.available() <= 0) {
+          break;
+        }
         c = in.read();
         if (c == -1) {
           break;
         }
         totalBytesRead++;
         sb.append((char) c);
-      } while (c != '\n' || totalBytesRead <= ALLOWED_BYTES);
+      } while (c != '\n' && totalBytesRead <= ALLOWED_BYTES);
 
       if (b <= 2) {
         saveExecutionLogError.accept(sb.toString());
         return 1;
       }
-      log.error(sb.toString());
+      log.info("Server response {}", sb);
       return 0;
     }
   }

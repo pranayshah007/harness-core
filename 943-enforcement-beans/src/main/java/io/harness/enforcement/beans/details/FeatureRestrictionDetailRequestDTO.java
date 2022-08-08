@@ -31,5 +31,5 @@ import lombok.experimental.FieldDefaults;
 @Schema(name = "FeatureRestrictionDetailRequest",
     description = "This contains a feature restriction detail request object defined in Harness")
 public class FeatureRestrictionDetailRequestDTO {
-  @NotNull FeatureRestrictionName name;
+  @Schema(description = "Name of the restricted feature.") @NotNull FeatureRestrictionName name;
 }

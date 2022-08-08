@@ -31,7 +31,7 @@ import org.mongodb.morphia.annotations.Id;
 @HarnessEntity(exportable = false)
 @OwnedBy(HarnessTeam.DEL)
 public class DelegateRing implements PersistentEntity {
-  public DelegateRing(String ringName, String delegateImageTag, String upgraderImageTag) {
+  public DelegateRing(final String ringName, final String delegateImageTag, final String upgraderImageTag) {
     this.ringName = ringName;
     this.delegateImageTag = delegateImageTag;
     this.upgraderImageTag = upgraderImageTag;
@@ -40,6 +40,8 @@ public class DelegateRing implements PersistentEntity {
   @Id @NotEmpty private String ringName;
   private String delegateImageTag;
   private String upgraderImageTag;
+
+  // TODO: Convert this List to a String, as soon we start support to bring down older delegate version instantly.
   private List<String> delegateVersions;
-  private List<String> watcherVersions;
+  private String watcherVersions;
 }

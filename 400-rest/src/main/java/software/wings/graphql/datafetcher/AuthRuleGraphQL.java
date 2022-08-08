@@ -11,11 +11,18 @@ import static io.harness.annotations.dev.HarnessTeam.DX;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
+import static software.wings.graphql.utils.GraphQLConstants.ADD_ACCOUNT_PERMISSION;
+import static software.wings.graphql.utils.GraphQLConstants.ADD_APP_PERMISSION;
+import static software.wings.graphql.utils.GraphQLConstants.ADD_USER_TO_USERGROUP;
 import static software.wings.graphql.utils.GraphQLConstants.APP_ID_ARG;
+import static software.wings.graphql.utils.GraphQLConstants.CREATE_API_KEY;
 import static software.wings.graphql.utils.GraphQLConstants.CREATE_APPLICATION_API;
 import static software.wings.graphql.utils.GraphQLConstants.CREATE_USERGROUP_API;
+import static software.wings.graphql.utils.GraphQLConstants.DELETE_API_KEY;
 import static software.wings.graphql.utils.GraphQLConstants.DELETE_APPLICATION_API;
 import static software.wings.graphql.utils.GraphQLConstants.DELETE_USERGROUP_API;
+import static software.wings.graphql.utils.GraphQLConstants.REMOVE_USER_FROM_USERGROUP;
+import static software.wings.graphql.utils.GraphQLConstants.UPDATE_API_KEY;
 import static software.wings.graphql.utils.GraphQLConstants.UPDATE_USERGROUP_API;
 import static software.wings.graphql.utils.GraphQLConstants.UPDATE_USERGROUP_PERMISSIONS_API;
 
@@ -79,7 +86,9 @@ import org.dataloader.DataLoader;
 public class AuthRuleGraphQL<P, T, B extends PersistentEntity> {
   private static final Set<String> apisToEvictUserPermissionRestrictionCache =
       ImmutableSet.of(CREATE_APPLICATION_API, DELETE_APPLICATION_API, CREATE_USERGROUP_API, DELETE_USERGROUP_API,
-          UPDATE_USERGROUP_API, UPDATE_USERGROUP_PERMISSIONS_API);
+          UPDATE_USERGROUP_API, UPDATE_USERGROUP_PERMISSIONS_API, ADD_USER_TO_USERGROUP, REMOVE_USER_FROM_USERGROUP,
+          ADD_ACCOUNT_PERMISSION, ADD_APP_PERMISSION, CREATE_API_KEY, UPDATE_API_KEY, DELETE_API_KEY);
+
   private AuthRuleFilter authRuleFilter;
   private AuthHandler authHandler;
   private AuthService authService;

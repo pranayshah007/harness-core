@@ -24,8 +24,7 @@ import lombok.experimental.UtilityClass;
 public class CDServiceAdviserRegistrar {
   public Map<AdviserType, Class<? extends Adviser>> getEngineAdvisers() {
     Map<AdviserType, Class<? extends Adviser>> advisersMap =
-        new HashMap<>(OrchestrationAdviserRegistrar.getEngineAdvisers());
-    advisersMap.putAll(PipelineServiceUtilAdviserRegistrar.getEngineAdvisers());
+        new HashMap<>(PipelineServiceUtilAdviserRegistrar.getEngineAdvisers());
     advisersMap.put(RollbackCustomAdviser.ADVISER_TYPE, RollbackCustomAdviser.class);
     return advisersMap;
   }

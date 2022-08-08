@@ -53,6 +53,7 @@ import software.wings.service.intfc.datadog.DatadogService;
 import software.wings.sm.ExecutionContext;
 import software.wings.sm.StateType;
 import software.wings.sm.WorkflowStandardParams;
+import software.wings.sm.WorkflowStandardParamsExtensionService;
 import software.wings.stencils.DefaultValue;
 import software.wings.verification.VerificationStateAnalysisExecutionData;
 import software.wings.verification.datadog.DatadogCVServiceConfiguration;
@@ -93,6 +94,8 @@ import org.slf4j.Logger;
 @BreakDependencyOn("software.wings.service.intfc.DelegateService")
 public class DatadogState extends AbstractMetricAnalysisState {
   @Inject @SchemaIgnore private transient DatadogService datadogService;
+  @Inject @SchemaIgnore private transient WorkflowStandardParamsExtensionService workflowStandardParamsExtensionService;
+
   private static final int DATA_COLLECTION_RATE_MINS = 5;
   private static final URL DATADOG_URL = DatadogState.class.getResource("/apm/datadog.yml");
   private static final URL DATADOG_METRICS_URL = DatadogState.class.getResource("/apm/datadog_metrics.yml");
@@ -175,6 +178,7 @@ public class DatadogState extends AbstractMetricAnalysisState {
   @Override
   protected String triggerAnalysisDataCollection(ExecutionContext context, AnalysisContext analysisContext,
       VerificationStateAnalysisExecutionData executionData, Map<String, String> hosts) {
+    resolveExpressionsInMetrics(context);
     List<String> metricNames = metrics != null ? Arrays.asList(metrics.split(",")) : Collections.EMPTY_LIST;
     String hostFilter = getDeploymentType(context) == DeploymentType.ECS ? DD_ECS_HOST_NAME : DD_K8s_HOST_NAME;
     metricAnalysisService.saveMetricTemplates(context.getAppId(), StateType.DATA_DOG,
@@ -184,7 +188,9 @@ public class DatadogState extends AbstractMetricAnalysisState {
                               .values()));
 
     WorkflowStandardParams workflowStandardParams = context.getContextElement(ContextElementType.STANDARD);
-    String envId = workflowStandardParams == null ? null : workflowStandardParams.getEnv().getUuid();
+    String envId = workflowStandardParams == null
+        ? null
+        : workflowStandardParamsExtensionService.getEnv(workflowStandardParams).getUuid();
     String serverConfigId =
         getResolvedConnectorId(context, DatadogStateKeys.analysisServerConfigId, analysisServerConfigId);
     String serviceName = this.datadogServiceName;
@@ -197,7 +203,7 @@ public class DatadogState extends AbstractMetricAnalysisState {
     final DatadogConfig datadogConfig = (DatadogConfig) settingAttribute.getValue();
     final long dataCollectionStartTimeStamp = dataCollectionStartTimestampMillis();
     String accountId = appService.get(context.getAppId()).getAccountId();
-    int timeDurationInInteger = Integer.parseInt(getTimeDuration());
+    int timeDurationInInteger = Integer.parseInt(getTimeDuration(context));
     final APMDataCollectionInfo dataCollectionInfo =
         APMDataCollectionInfo.builder()
             .baseUrl(datadogConfig.getUrl())
@@ -245,7 +251,7 @@ public class DatadogState extends AbstractMetricAnalysisState {
             .stateExecutionId(context.getStateExecutionInstanceId())
             .dataCollectionStartTime(dataCollectionStartTimeStamp)
             .dataCollectionEndTime(
-                dataCollectionStartTimeStamp + TimeUnit.MINUTES.toMillis(Integer.parseInt(getTimeDuration())))
+                dataCollectionStartTimeStamp + TimeUnit.MINUTES.toMillis(Integer.parseInt(getTimeDuration(context))))
             .executionData(executionData)
             .build(),
         waitId);
@@ -637,6 +643,14 @@ public class DatadogState extends AbstractMetricAnalysisState {
     Map<String, MetricInfo> clonedMetricInfos = new HashMap<>();
     metricInfos.forEach((name, metricInfo) -> clonedMetricInfos.put(name, metricInfo.clone()));
     return clonedMetricInfos;
+  }
+
+  private void resolveExpressionsInMetrics(ExecutionContext executionContext) {
+    if (customMetrics != null) {
+      customMetrics.values().stream().flatMap(a -> a.stream()).forEach(metric -> {
+        metric.setMetricName(getResolvedFieldValue(executionContext, "metricName", metric.getMetricName()));
+      });
+    }
   }
 
   @Data

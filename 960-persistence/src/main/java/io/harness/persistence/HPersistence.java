@@ -19,6 +19,7 @@ import com.mongodb.DBObject;
 import com.mongodb.MongoSocketOpenException;
 import com.mongodb.MongoSocketReadException;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -93,7 +94,8 @@ public interface HPersistence extends HealthMonitor {
   }
 
   default AdvancedDatastore getDefaultAnalyticsDatastore(Class cls) {
-    Store classStore = getClassStores().computeIfAbsent(cls,
+    Map<Class, Store> classStores = new HashMap<>(getClassStores());
+    Store classStore = classStores.computeIfAbsent(cls,
         klass
         -> Arrays.stream(cls.getDeclaredAnnotations())
                .filter(annotation -> annotation.annotationType().equals(StoreIn.class))

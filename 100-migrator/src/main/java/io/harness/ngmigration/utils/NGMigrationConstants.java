@@ -11,4 +11,6 @@ public interface NGMigrationConstants {
   String DISCOVERY_IMAGE_PATH = "/tmp/viz-output/viz.png";
   String DEFAULT_ZIP_DIRECTORY = "/tmp/zip-output";
   String ZIP_FILE_PATH = "/yamls.zip";
+  String VIZ_TEMP_DIR_PREFIX = "viz-output";
+  String VIZ_FILE_NAME = "/viz.png";
 }

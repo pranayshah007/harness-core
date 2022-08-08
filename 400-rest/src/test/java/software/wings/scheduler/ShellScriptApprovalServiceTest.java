@@ -12,6 +12,7 @@ import static io.harness.rule.OwnerRule.AGORODETKI;
 import static software.wings.scheduler.approval.ApprovalPollingHandler.TARGET_INTERVAL;
 
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.anyLong;
 
 import io.harness.CategoryTest;
@@ -48,7 +49,7 @@ public class ShellScriptApprovalServiceTest extends CategoryTest {
   public void shouldUpdateNextIteration() {
     Mockito.doReturn(false)
         .when(shellScriptApprovalService)
-        .tryShellScriptApproval(any(), any(), any(), any(), any(), any(), any());
+        .tryShellScriptApproval(any(), any(), any(), any(), any(), any(), any(), anyInt());
     shellScriptApprovalService.handleShellScriptPolling(
         ApprovalPollingJobEntity.builder().retryInterval(RETRY_INTERVAL).approvalId("id").build());
     Mockito.verify(approvalPolingService).updateNextIteration(any(), anyLong());
@@ -60,7 +61,7 @@ public class ShellScriptApprovalServiceTest extends CategoryTest {
   public void shouldNotUpdateNextIterationWhenNotRetryScript() {
     Mockito.doReturn(true)
         .when(shellScriptApprovalService)
-        .tryShellScriptApproval(any(), any(), any(), any(), any(), any(), any());
+        .tryShellScriptApproval(any(), any(), any(), any(), any(), any(), any(), anyInt());
     shellScriptApprovalService.handleShellScriptPolling(
         ApprovalPollingJobEntity.builder().retryInterval(RETRY_INTERVAL).approvalId("id").build());
     Mockito.verify(approvalPolingService, Mockito.never()).updateNextIteration(any(), anyLong());
@@ -72,7 +73,7 @@ public class ShellScriptApprovalServiceTest extends CategoryTest {
   public void shouldNotUpdateNextIterationWhenRetryIntervalIsEqualToTargetInterval() {
     Mockito.doReturn(true)
         .when(shellScriptApprovalService)
-        .tryShellScriptApproval(any(), any(), any(), any(), any(), any(), any());
+        .tryShellScriptApproval(any(), any(), any(), any(), any(), any(), any(), anyInt());
     shellScriptApprovalService.handleShellScriptPolling(
         ApprovalPollingJobEntity.builder().retryInterval(TARGET_INTERVAL.toMillis()).approvalId("id").build());
     Mockito.verify(approvalPolingService, Mockito.never()).updateNextIteration(any(), anyLong());

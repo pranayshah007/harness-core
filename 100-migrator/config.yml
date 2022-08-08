@@ -4,7 +4,7 @@ server:
       port: 9080
       keyStorePath: keystore.jks
       keyStorePassword: password
-      trustStorePath: ${JAVA_HOME}/jre/lib/security/cacerts
+      trustStorePath: ${JAVA_HOME}/lib/security/cacerts
       certAlias: localhost
       validateCerts: false
       maxRequestHeaderSize: 100KiB
@@ -16,7 +16,7 @@ server:
       port: 9081
       keyStorePath: keystore.jks
       keyStorePassword: password
-      trustStorePath: ${JAVA_HOME}/jre/lib/security/cacerts
+      trustStorePath: ${JAVA_HOME}/lib/security/cacerts
       certAlias: localhost
       validateCerts: false
   requestLog:
@@ -93,6 +93,7 @@ cg:
   deploymentClusterName: ""
   bugsnagApiKey: ""
   numberOfRemindersBeforeAccountDeletion: 3
+  agentMtlsSubdomain: ""
 
   jobsFrequencyConfig:
     accountLicenseCheckJobFrequencyInMinutes: 60
@@ -344,7 +345,7 @@ cg:
   envPath: ""
 
   kubectlVersion: v1.13.2
-  scmVersion: 72f01538
+  scmVersion: 36d92fd8
 
   ngAuthUIEnabled: false
 
@@ -628,7 +629,6 @@ cg:
     connectTimeOutSeconds: 15
     readTimeOutSeconds: 15
     enableHttpLogging: ${ENABLE_HTTP_LOGGING:-false}
-
 
   eventsFramework:
     redis:

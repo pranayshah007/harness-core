@@ -1,0 +1,45 @@
+# Any edit in this file should accompany an increment in version.
+name: resourceGroupsConfiguration
+version: 6
+resourceGroups:
+  - identifier: _all_account_level_resources
+    name: All Account Level Resources
+    description: All the resources at this account scope are included in this resource group.
+    includedScopes:
+      - filter: EXCLUDING_CHILD_SCOPES
+    resourceFilter:
+      resources: []
+      includeAllResources: true
+    allowedScopeLevels:
+      - account
+  - identifier: _all_organization_level_resources
+    name: All Organization Level Resources
+    description: All the resources at this organization scope are included in this resource group.
+    includedScopes:
+      - filter: EXCLUDING_CHILD_SCOPES
+    resourceFilter:
+      resources: []
+      includeAllResources: true
+    allowedScopeLevels:
+      - organization
+  - identifier: _all_project_level_resources
+    name: All Project Level Resources
+    description: All the resources at this project scope are included in this resource group.
+    includedScopes:
+      - filter: EXCLUDING_CHILD_SCOPES
+    resourceFilter:
+      resources: []
+      includeAllResources: true
+    allowedScopeLevels:
+      - project
+  - identifier: _all_resources_including_child_scopes
+    name: All Resources Including Child Scopes
+    description: All the resources in this scope as well as the child scopes are included in this resource group.
+    includedScopes:
+      - filter: INCLUDING_CHILD_SCOPES
+    resourceFilter:
+      resources: []
+      includeAllResources: true
+    allowedScopeLevels:
+      - account
+      - organization

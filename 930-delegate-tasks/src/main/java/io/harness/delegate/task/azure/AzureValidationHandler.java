@@ -14,17 +14,19 @@ import io.harness.connector.task.ConnectorValidationHandler;
 import io.harness.delegate.beans.connector.ConnectorValidationParams;
 import io.harness.delegate.beans.connector.azureconnector.AzureValidationParams;
 
+import software.wings.delegatetasks.azure.AzureAsyncTaskHelper;
+
 import com.google.inject.Inject;
 
 @OwnedBy(HarnessTeam.CDP)
 public class AzureValidationHandler implements ConnectorValidationHandler {
-  @Inject private AzureNgHelper azureNgHelper;
+  @Inject private AzureAsyncTaskHelper azureAsyncTaskHelper;
 
   @Override
   public ConnectorValidationResult validate(
       ConnectorValidationParams connectorValidationParams, String accountIdentifier) {
     final AzureValidationParams azureValidationParams = (AzureValidationParams) connectorValidationParams;
-    return azureNgHelper.getConnectorValidationResult(
+    return azureAsyncTaskHelper.getConnectorValidationResult(
         azureValidationParams.getEncryptedDataDetails(), azureValidationParams.getAzureConnectorDTO());
   }
 }

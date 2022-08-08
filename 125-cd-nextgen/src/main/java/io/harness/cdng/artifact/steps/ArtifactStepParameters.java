@@ -14,9 +14,7 @@ import io.harness.cdng.artifact.bean.ArtifactConfig;
 import io.harness.delegate.task.artifacts.ArtifactSourceType;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
 
-import java.util.List;
 import lombok.Builder;
-import lombok.Singular;
 import lombok.Value;
 import org.springframework.data.annotation.TypeAlias;
 
@@ -29,6 +27,5 @@ public class ArtifactStepParameters implements StepParameters {
   String identifier;
   ArtifactSourceType type;
   ArtifactConfig spec;
-  @Singular List<ArtifactConfig> overrideSets;
   ArtifactConfig stageOverride;
 }

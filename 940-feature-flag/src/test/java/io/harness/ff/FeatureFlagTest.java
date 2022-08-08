@@ -173,7 +173,7 @@ public class FeatureFlagTest extends FeatureFlagTestBase {
   @Owner(developers = RUSHABH)
   @Category(UnitTests.class)
   public void testFeatureFlagEnabledInConfig() {
-    featureFlagService.initializeFeatureFlags(DeployMode.ONPREM, FEATURE.name());
+    featureFlagService.initializeFeatureFlags(DeployMode.KUBERNETES_ONPREM, FEATURE.name());
     for (FeatureName featureName : FeatureName.values()) {
       assertThat(featureFlagService.isEnabled(featureName, null)).isEqualTo(featureName == FEATURE);
     }
@@ -194,7 +194,7 @@ public class FeatureFlagTest extends FeatureFlagTestBase {
   @Owner(developers = RUSHABH)
   @Category(UnitTests.class)
   public void testWithBadFlagEnabledValues() {
-    featureFlagService.initializeFeatureFlags(DeployMode.ONPREM, "wrongName");
+    featureFlagService.initializeFeatureFlags(DeployMode.KUBERNETES_ONPREM, "wrongName");
 
     for (FeatureName featureName : FeatureName.values()) {
       if (featureName.getScope() == GLOBAL) {

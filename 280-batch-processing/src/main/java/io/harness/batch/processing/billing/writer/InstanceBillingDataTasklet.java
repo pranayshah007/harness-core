@@ -42,6 +42,7 @@ import io.harness.batch.processing.tasklet.util.InstanceMetaDataUtils;
 import io.harness.batch.processing.writer.constants.K8sCCMConstants;
 import io.harness.ccm.HarnessServiceInfoNG;
 import io.harness.ccm.commons.beans.HarnessServiceInfo;
+import io.harness.ccm.commons.beans.InstanceState;
 import io.harness.ccm.commons.beans.InstanceType;
 import io.harness.ccm.commons.beans.JobConstants;
 import io.harness.ccm.commons.beans.Resource;
@@ -56,6 +57,7 @@ import com.google.inject.Singleton;
 import java.math.BigDecimal;
 import java.math.MathContext;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -172,9 +174,17 @@ public class InstanceBillingDataTasklet implements Tasklet {
       BatchJobType batchJobType, List<InstanceData> instanceDataLists,
       Map<String, InstanceBillingData> claimRefToPVInstanceBillingData, Map<String, MutableInt> pvcClaimCount) {
     Set<String> parentInstanceIds = new HashSet<>();
+    Instant prevStartTime = startTime.minus(3, ChronoUnit.DAYS);
     instanceDataLists.forEach(instanceData -> {
       if (null == instanceData.getActiveInstanceIterator() && null == instanceData.getUsageStopTime()) {
         instanceDataDao.updateInstanceActiveIterationTime(instanceData);
+      }
+
+      if (null != instanceData.getUsageStopTime() && instanceData.getInstanceState() == InstanceState.RUNNING
+          && prevStartTime.compareTo(instanceData.getUsageStopTime()) > 0) {
+        log.info("correcting instance state {} {} {} {}", instanceData.getInstanceId(),
+            instanceData.getActiveInstanceIterator(), instanceData.getUsageStopTime(), instanceData.getInstanceState());
+        instanceDataDao.correctInstanceStateActiveIterationTime(instanceData);
       }
     });
 
@@ -183,7 +193,7 @@ public class InstanceBillingDataTasklet implements Tasklet {
             .filter(this::validInstanceForBilling)
             .collect(Collectors.groupingBy(InstanceData::getClusterId));
     String awsDataSetId = customBillingMetaDataService.getAwsDataSetId(accountId);
-    log.info("AWS data set {}", awsDataSetId);
+    log.debug("AWS data set {}", awsDataSetId);
     if (awsDataSetId != null) {
       Set<String> resourceIds = new HashSet<>();
       Set<String> eksFargateResourceIds = new HashSet<>();
@@ -219,7 +229,7 @@ public class InstanceBillingDataTasklet implements Tasklet {
     }
 
     String azureDataSetId = customBillingMetaDataService.getAzureDataSetId(accountId);
-    log.info("Azure data set {}", azureDataSetId);
+    log.debug("Azure data set {}", azureDataSetId);
     if (azureDataSetId != null) {
       Set<String> resourceIds = new HashSet<>();
       instanceDataLists.forEach(instanceData -> {
@@ -417,7 +427,7 @@ public class InstanceBillingDataTasklet implements Tasklet {
         .memoryMbSeconds(billingData.getMemoryMbSeconds())
         .parentInstanceId(getParentInstanceId(instanceData))
         .launchType(getValueForKeyFromInstanceMetaData(InstanceMetaDataConstants.LAUNCH_TYPE, instanceData))
-        .taskId(getValueForKeyFromInstanceMetaData(InstanceMetaDataConstants.TASK_ID, instanceData))
+        .taskId(getTaskIdOrWorkloadId(instanceData))
         .namespace(namespace)
         .region(firstNonNull(region, "on_prem"))
         .clusterType(getValueForKeyFromInstanceMetaData(InstanceMetaDataConstants.CLUSTER_TYPE, instanceData))
@@ -457,6 +467,14 @@ public class InstanceBillingDataTasklet implements Tasklet {
         .build();
   }
 
+  private String getTaskIdOrWorkloadId(InstanceData instanceData) {
+    String taskId = getValueForKeyFromInstanceMetaData(InstanceMetaDataConstants.TASK_ID, instanceData);
+    if (ImmutableSet.of(InstanceType.K8S_POD, InstanceType.K8S_POD_FARGATE).contains(instanceData.getInstanceType())) {
+      taskId = getValueForKeyFromInstanceMetaData(InstanceMetaDataConstants.WORKLOAD_ID, instanceData);
+    }
+    return taskId;
+  }
+
   private BigDecimal getStorageUnallocatedCost(
       BillingData billingData, UtilizationData utilizationData, InstanceData instanceData) {
     if (K8S_PV == instanceData.getInstanceType()) {
@@ -468,7 +486,7 @@ public class InstanceBillingDataTasklet implements Tasklet {
                 .divide(capacityFromInstanceData, MathContext.DECIMAL128);
       }
       if (storageUnallocatedFraction.compareTo(BigDecimal.ZERO) < 0) {
-        log.warn("-ve storageUnallocatedCost, Request:{}/Capacity:{} {}", utilizationData.getAvgStorageRequestValue(),
+        log.debug("-ve storageUnallocatedCost, Request:{}/Capacity:{} {}", utilizationData.getAvgStorageRequestValue(),
             utilizationData.getAvgStorageCapacityValue(), instanceData.toString());
         return BigDecimal.ZERO;
       }

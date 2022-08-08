@@ -9,19 +9,18 @@ package io.harness.cvng.core.entities.cvnglogs;
 
 import io.harness.cvng.beans.cvnglog.CVNGLogDTO;
 import io.harness.cvng.beans.cvnglog.ExecutionLogDTO;
+import io.harness.cvng.beans.cvnglog.ExecutionLogDTO.LogLevel;
 import io.harness.metrics.service.api.MetricService;
 
 import java.util.Map;
 import lombok.Builder;
 import lombok.Data;
-import lombok.extern.slf4j.Slf4j;
 
 @Data
 @Builder
-@Slf4j
 public class ExecutionLogRecord extends CVNGLogRecord {
   private String log;
-  private ExecutionLogDTO.LogLevel logLevel;
+  private LogLevel logLevel;
 
   public static CVNGLogRecord toCVNGLogRecord(CVNGLogDTO cvngLogDTO) {
     return ExecutionLogRecord.builder()
@@ -37,7 +36,7 @@ public class ExecutionLogRecord extends CVNGLogRecord {
 
   @Override
   public boolean isErrorLog() {
-    return ExecutionLogDTO.LogLevel.ERROR.equals(logLevel);
+    return LogLevel.ERROR.equals(logLevel);
   }
 
   @Override

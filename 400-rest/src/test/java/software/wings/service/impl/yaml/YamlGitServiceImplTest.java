@@ -11,6 +11,7 @@ import static io.harness.microservice.NotifyEngineTarget.GENERAL;
 import static io.harness.rule.OwnerRule.ABHINAV;
 import static io.harness.rule.OwnerRule.ADWAIT;
 import static io.harness.rule.OwnerRule.ANSHUL;
+import static io.harness.rule.OwnerRule.FERNANDOD;
 import static io.harness.rule.OwnerRule.IGOR;
 import static io.harness.rule.OwnerRule.ROHIT_KUMAR;
 import static io.harness.rule.OwnerRule.SATYAM;
@@ -22,6 +23,7 @@ import static software.wings.beans.trigger.WebhookSource.AZURE_DEVOPS;
 import static software.wings.beans.trigger.WebhookSource.GITHUB;
 import static software.wings.service.impl.yaml.YamlGitServiceImpl.PUSH_IF_NOT_HEAD_MAX_RETRY_COUNT;
 import static software.wings.utils.WingsTestConstants.ACCOUNT_ID;
+import static software.wings.utils.WingsTestConstants.APP_ID;
 import static software.wings.utils.WingsTestConstants.SETTING_ID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -38,6 +40,7 @@ import static org.mockito.Mockito.when;
 
 import io.harness.beans.DelegateTask;
 import io.harness.category.element.UnitTests;
+import io.harness.eraro.ErrorCode;
 import io.harness.exception.GeneralException;
 import io.harness.exception.WingsException;
 import io.harness.persistence.HPersistence;
@@ -48,8 +51,11 @@ import software.wings.WingsBaseTest;
 import software.wings.beans.Account;
 import software.wings.beans.GitConfig;
 import software.wings.beans.SettingAttribute;
+import software.wings.beans.alert.AlertType;
+import software.wings.beans.alert.GitConnectionErrorAlert;
 import software.wings.beans.yaml.GitFileChange;
 import software.wings.service.impl.trigger.WebhookEventUtils;
+import software.wings.service.impl.yaml.sync.GitSyncFailureAlertDetails;
 import software.wings.service.intfc.AccountService;
 import software.wings.service.intfc.AlertService;
 import software.wings.service.intfc.DelegateService;
@@ -73,6 +79,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
+import org.mockito.Matchers;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
@@ -361,5 +368,24 @@ public class YamlGitServiceImplTest extends WingsBaseTest {
 
     yamlGitService.save(
         YamlGitConfig.builder().gitConnectorId(gitConfig).repositoryName("should-not-have-repo-name").build(), false);
+  }
+
+  // In some cases delegate throw an exception that don't are showed in UI.
+  // SPG-50/PL-18485
+  @Test
+  @Owner(developers = FERNANDOD)
+  @Category(UnitTests.class)
+  public void shouldRaiseAlertWhenSyncFailureIsGeneralYamlErrorCode() {
+    final GitSyncFailureAlertDetails alertDetails = GitSyncFailureAlertDetails.builder()
+                                                        .gitConnectorId("gitConnectorId")
+                                                        .branchName("master")
+                                                        .errorMessage("a short but beautiful error message")
+                                                        .repositoryName("harness-core")
+                                                        .errorCode(ErrorCode.GENERAL_YAML_ERROR)
+                                                        .build();
+    yamlGitService.raiseAlertForGitFailure(ACCOUNT_ID, APP_ID, alertDetails);
+    verify(alertService)
+        .openAlert(eq(ACCOUNT_ID), eq(APP_ID), eq(AlertType.GitConnectionError),
+            Matchers.notNull(GitConnectionErrorAlert.class));
   }
 }

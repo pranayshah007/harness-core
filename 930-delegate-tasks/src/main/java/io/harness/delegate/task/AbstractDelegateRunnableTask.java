@@ -35,6 +35,7 @@ import io.harness.globalcontex.ErrorHandlingGlobalContextData;
 import io.harness.logging.AccountLogContext;
 import io.harness.logging.ExceptionLogger;
 import io.harness.manage.GlobalContextManager;
+import io.harness.secret.SecretSanitizerThreadLocal;
 
 import com.google.inject.Inject;
 import java.util.EnumSet;
@@ -75,6 +76,7 @@ public abstract class AbstractDelegateRunnableTask implements DelegateRunnableTa
     this.taskType = delegateTaskPackage.getData().getTaskType();
     this.isAsync = delegateTaskPackage.getData().isAsync();
     this.logStreamingTaskClient = logStreamingTaskClient;
+    SecretSanitizerThreadLocal.addAll(delegateTaskPackage.getSecrets());
   }
 
   @Override

@@ -28,11 +28,11 @@ import software.wings.delegatetasks.buildsource.BuildSourceExecutionResponse;
 import software.wings.delegatetasks.buildsource.BuildSourceParameters;
 import software.wings.helpers.ext.jenkins.BuildDetails;
 import software.wings.service.impl.ServiceClassLocator;
-import software.wings.service.impl.artifact.ArtifactCollectionUtils;
 import software.wings.service.intfc.CustomBuildService;
 import software.wings.service.intfc.DockerBuildService;
 import software.wings.service.intfc.JenkinsBuildService;
 import software.wings.service.intfc.security.EncryptionService;
+import software.wings.utils.DelegateArtifactCollectionUtils;
 
 import com.google.inject.Injector;
 import com.google.inject.Key;
@@ -208,9 +208,10 @@ public class ArtifactRepositoryServiceImplTest extends CategoryTest {
 
   private ArtifactsPublishedCache<BuildDetails> getArtifactsPublishedCached(
       BuildSourceParameters buildSourceParameters) {
-    Function<BuildDetails, String> buildDetailsKeyFn = ArtifactCollectionUtils.getBuildDetailsKeyFn(
+    Function<BuildDetails, String> buildDetailsKeyFn = DelegateArtifactCollectionUtils.getBuildDetailsKeyFn(
         buildSourceParameters.getArtifactStreamType(), buildSourceParameters.getArtifactStreamAttributes());
-    boolean enableCleanup = ArtifactCollectionUtils.supportsCleanup(buildSourceParameters.getArtifactStreamType());
+    boolean enableCleanup =
+        DelegateArtifactCollectionUtils.supportsCleanup(buildSourceParameters.getArtifactStreamType());
     return new ArtifactsPublishedCache(
         buildSourceParameters.getSavedBuildDetailsKeys(), buildDetailsKeyFn, enableCleanup);
   }

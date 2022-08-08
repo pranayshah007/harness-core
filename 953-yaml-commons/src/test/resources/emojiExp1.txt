@@ -1,0 +1,15 @@
+{
+  "name": "jira 🤣😄𝘅␅😴␎basic",
+  "identifier": "jira_b😨ℬ😁asic",
+  "description": "",
+  "orgIdentifier": "def☺️😊ault",
+  "projectIdentifier": "Local😁😊_Dev",
+  "tags": {},
+  "type": "Ji🧑‍🏭👩🏽‍🏭👨🏼‍🔧ra",
+  "spec": {
+    "jiraUrl": "👨🏻‍💼🙇🏻‍♂️🙇🏻https://harness.atlassian.net/",
+    "username": "naman🙇🏻vermah",
+    "passwordRef": "nvh_do🐁𝘅🍀cker_pass",
+    "delegateSelectors": []
+  }
+}

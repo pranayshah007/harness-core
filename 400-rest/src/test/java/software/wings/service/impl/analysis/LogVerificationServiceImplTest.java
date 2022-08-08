@@ -30,6 +30,7 @@ import software.wings.service.intfc.analysis.LogVerificationServiceImpl;
 import software.wings.service.intfc.security.SecretManager;
 import software.wings.sm.StateType;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Set;
 import java.util.TreeSet;
@@ -69,7 +70,7 @@ public class LogVerificationServiceImplTest extends CategoryTest {
     when(mockDelegateProxyFactory.get(any(), any())).thenReturn(mockBugsnagDelegateService);
     when(mockSecretManager.getEncryptionDetails(any(EncryptableSetting.class), anyString(), anyString()))
         .thenReturn(null);
-    when(mockBugsnagDelegateService.getOrganizations(config, null, null))
+    when(mockBugsnagDelegateService.getOrganizations(config, new ArrayList<>(), null))
         .thenReturn(new TreeSet<>(Arrays.asList(application)));
 
     // execute
@@ -95,7 +96,7 @@ public class LogVerificationServiceImplTest extends CategoryTest {
     when(mockDelegateProxyFactory.get(any(), any())).thenReturn(mockBugsnagDelegateService);
     when(mockSecretManager.getEncryptionDetails(any(EncryptableSetting.class), anyString(), anyString()))
         .thenReturn(null);
-    when(mockBugsnagDelegateService.getProjects(config, "orgId", null, null))
+    when(mockBugsnagDelegateService.getProjects(config, "orgId", new ArrayList<>(), null))
         .thenReturn(new TreeSet<>(Arrays.asList(application)));
 
     // execute

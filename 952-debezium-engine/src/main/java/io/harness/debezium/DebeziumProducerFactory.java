@@ -20,8 +20,10 @@ import io.harness.redis.RedisConfig;
 import com.google.inject.Inject;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import lombok.extern.slf4j.Slf4j;
 import org.redisson.api.RedissonClient;
 
+@Slf4j
 public class DebeziumProducerFactory {
   private static final Map<String, Producer> producerMap = new ConcurrentHashMap<>();
   private static final Map<RedisConfig, RedissonClient> redissonClientMap = new ConcurrentHashMap<>();
@@ -29,13 +31,18 @@ public class DebeziumProducerFactory {
   @Inject RedisProducerFactory redisProducerFactory;
   @Inject EventsFrameworkConfiguration configuration;
 
-  private RedissonClient getRedissonClient(RedisConfig redisConfig) {
-    if (redissonClientMap.containsKey(redisConfig)) {
-      return redissonClientMap.get(redisConfig);
+  RedissonClient getRedissonClient(RedisConfig redisConfig) {
+    if (redisConfig != null) {
+      if (redissonClientMap.containsKey(redisConfig)) {
+        return redissonClientMap.get(redisConfig);
+      }
+      RedissonClient client = RedisUtils.getClient(redisConfig);
+      redissonClientMap.put(redisConfig, client);
+      return client;
+    } else {
+      log.error("RedisConfig is null");
+      return null;
     }
-    RedissonClient client = RedisUtils.getClient(redisConfig);
-    redissonClientMap.put(redisConfig, client);
-    return client;
   }
 
   public Producer get(String collection) {

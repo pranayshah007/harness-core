@@ -89,15 +89,6 @@ rules:
       - update
 
 ---
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: harness-autostopping-config
-data:
-  account_id: ${accountId}
-  connector_id: ${connectorIdentifier}
-
----
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
@@ -215,6 +206,7 @@ data:
       - name: harness_api_endpoint
         connect_timeout: 0.25s
         type: LOGICAL_DNS
+        dns_lookup_family: V4_ONLY
         lb_policy: ROUND_ROBIN
         load_assignment:
           cluster_name: harness_api_endpoint
@@ -313,7 +305,7 @@ spec:
     spec:
       containers:
       - name: autostopping-controller
-        image: harness/autostopping-controller:1.0.0
+        image: harness/autostopping-controller:1.0.4
         imagePullPolicy: IfNotPresent
         volumeMounts:
         - mountPath: /tmp/k8s-webhook-server/serving-certs
@@ -397,3 +389,15 @@ subjects:
   - kind: ServiceAccount
     name: harness-autostopping-sa
     namespace: harness-autostopping
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: harness-autostopping-enforcement
+  namespace: harness-autostopping
+data:
+  is_active: 'false'
+  dry_run: enabled
+  excluded_namespaces: '[]'
+  notifications_enabled: 'false'
+  notifications_usergroups: '[]'

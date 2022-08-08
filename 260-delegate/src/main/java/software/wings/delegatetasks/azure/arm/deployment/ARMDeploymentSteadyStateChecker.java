@@ -15,7 +15,6 @@ import static io.harness.logging.LogLevel.ERROR;
 import static io.harness.logging.LogLevel.INFO;
 import static io.harness.threading.Morpheus.sleep;
 
-import static com.cronutils.utils.StringUtils.EMPTY;
 import static java.lang.String.format;
 import static java.time.Duration.ofSeconds;
 
@@ -245,7 +244,7 @@ public class ARMDeploymentSteadyStateChecker {
 
     String resourceIds = getJobCreatedResourceIds(deploymentJobResult);
     AzureResourceManagerError deploymentError = deploymentJobResult.getError();
-    String error = deploymentError != null ? deploymentError.getMessage() : EMPTY;
+    String error = deploymentError != null ? deploymentError.getMessage() : "";
     logCallback.saveExecutionLog(format(
         "%n- Job Id: [%s]%n- Job Kind: [%s]%n- Job State: [%s]%n- Job Created Resource IDs: [%s]%n- Job Result Error: [%s]",
         deploymentJob.getJobId(), deploymentJob.getKind(), deploymentJob.getJobState(), resourceIds, error));
@@ -253,7 +252,7 @@ public class ARMDeploymentSteadyStateChecker {
 
   private String getJobCreatedResourceIds(AssignmentDeploymentJobResult deploymentJobResult) {
     if (deploymentJobResult.getResources() == null) {
-      return EMPTY;
+      return "";
     }
     AssignmentJobCreatedResource[] resources = deploymentJobResult.getResources();
     StringJoiner resourceIds = new StringJoiner(",");

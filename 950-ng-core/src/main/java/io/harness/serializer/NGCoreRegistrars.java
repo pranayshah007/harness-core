@@ -28,7 +28,6 @@ public class NGCoreRegistrars {
           .addAll(ConnectorBeansRegistrars.kryoRegistrars)
           .addAll(ScmJavaClientRegistrars.kryoRegistrars)
           .add(NGCoreKryoRegistrar.class)
-          .addAll(NGAuditCommonsRegistrars.kryoRegistrars)
           .addAll(OutboxEventRegistrars.kryoRegistrars)
           .build();
 

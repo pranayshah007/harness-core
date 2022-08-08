@@ -8,6 +8,7 @@
 package io.harness.cvng.servicelevelobjective.beans;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
@@ -20,5 +21,7 @@ public class ServiceLevelIndicatorDTO {
   @NotNull ServiceLevelIndicatorType type;
   @NotNull ServiceLevelIndicatorSpec spec;
   @NotNull SLIMissingDataType sliMissingDataType;
-  @JsonIgnore String healthSourceRef; // TODO: we need to move health source ref to this level.
+  @JsonIgnore
+  @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
+  String healthSourceRef; // TODO: we need to move health source ref to this level.
 }

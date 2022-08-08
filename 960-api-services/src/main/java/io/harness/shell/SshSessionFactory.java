@@ -12,8 +12,11 @@ import static io.harness.shell.AccessType.USER_PASSWORD;
 import static io.harness.shell.AuthenticationScheme.KERBEROS;
 import static io.harness.shell.SshSessionConfig.Builder.aSshSessionConfig;
 
+import static java.util.Collections.emptyMap;
+
 import io.harness.logging.LogCallback;
 import io.harness.logging.NoopExecutionCallback;
+import io.harness.network.Http;
 import io.harness.security.EncryptionUtils;
 import io.harness.ssh.SshHelperUtils;
 
@@ -21,6 +24,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Charsets;
 import com.jcraft.jsch.JSch;
 import com.jcraft.jsch.JSchException;
+import com.jcraft.jsch.ProxyHTTP;
 import com.jcraft.jsch.Session;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -35,6 +39,8 @@ import lombok.extern.slf4j.Slf4j;
 @UtilityClass
 @Slf4j
 public class SshSessionFactory {
+  private static final String SSH_NETWORK_PROXY = "SSH_NETWORK_PROXY";
+
   /**
    * Gets the SSH session with jumpbox.
    *
@@ -104,6 +110,7 @@ public class SshSessionFactory {
     JSch jsch = new JSch();
     log.info("[SshSessionFactory]: SSHSessionConfig is : {}", config);
     Session session;
+
     if (config.getAuthenticationScheme() != null && config.getAuthenticationScheme() == KERBEROS) {
       logCallback.saveExecutionLog("SSH using Kerberos Auth");
       log.info("[SshSessionFactory]: SSH using Kerberos Auth");
@@ -168,9 +175,30 @@ public class SshSessionFactory {
     session.setTimeout(config.getSshSessionTimeout());
     session.setServerAliveInterval(10 * 1000); // Send noop packet every 10 sec
 
+    final String ssh_network_proxy = System.getenv(SSH_NETWORK_PROXY);
+    boolean enableProxy = "true".equals(ssh_network_proxy);
+    log.info("proxy enabled: " + enableProxy + ". Connecting host: " + config.getHost());
+    if (enableProxy) {
+      if (Http.getProxyHostName() != null && !Http.shouldUseNonProxy(config.getHost())) {
+        log.info("Using proxy");
+        ProxyHTTP proxyHTTP = getProxy(config, logCallback);
+        session.setProxy(proxyHTTP);
+      }
+    }
+
     session.connect(config.getSshConnectionTimeout());
 
     return session;
+  }
+
+  private static ProxyHTTP getProxy(SshSessionConfig config, LogCallback logCallback) {
+    String host = Http.getProxyHostName();
+    String port = Http.getProxyPort();
+
+    ProxyHTTP proxyHTTP = new ProxyHTTP(host, Integer.parseInt(port));
+    proxyHTTP.setUserPasswd(Http.getProxyUserName(), Http.getProxyPassword());
+
+    return proxyHTTP;
   }
 
   @VisibleForTesting
@@ -186,7 +214,7 @@ public class SshSessionFactory {
     if (config.getKerberosConfig().isGenerateTGT()) {
       SshHelperUtils.generateTGT(config.getKerberosConfig().getPrincipalWithRealm(),
           config.getPassword() != null ? new String(config.getPassword()) : null,
-          config.getKerberosConfig().getKeyTabFilePath(), logCallback);
+          config.getKerberosConfig().getKeyTabFilePath(), logCallback, emptyMap());
     }
   }
 

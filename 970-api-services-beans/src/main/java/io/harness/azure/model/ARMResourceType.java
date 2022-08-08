@@ -25,7 +25,7 @@ public enum ARMResourceType {
 
   private final String value;
 
-  @JsonCreator
+  @JsonCreator(mode = JsonCreator.Mode.DELEGATING)
   public static ARMResourceType fromString(final String value) {
     for (ARMResourceType type : ARMResourceType.values()) {
       if (type.toString().equalsIgnoreCase(value)) {

@@ -83,6 +83,8 @@ public interface WingsTestConstants {
 
   String ENV_NAME = "ENV_NAME";
 
+  String ENV_PROD_FIELD = "PROD";
+
   String ENVIRONMENT = "ENVIRONMENT";
 
   String ENVIRONMENT_URL = "ENVIRONMENT_URL";

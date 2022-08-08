@@ -7,41 +7,33 @@
 
 package io.harness.cdng.usage.impl;
 
+import static io.harness.licensing.usage.beans.cd.CDLicenseUsageConstants.DISPLAY_NAME;
+
 import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyDouble;
-import static org.mockito.Matchers.anyLong;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.ModuleType;
+import io.harness.aggregates.AggregateNgServiceInstanceStats;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
-import io.harness.cdng.usage.beans.ServiceInstanceUsageDTO;
-import io.harness.cdng.usage.beans.ServiceUsageDTO;
-import io.harness.dtos.InstanceDTO;
-import io.harness.licensing.beans.modules.types.CDLicenseType;
-import io.harness.licensing.usage.beans.ReferenceDTO;
+import io.harness.cd.CDLicenseType;
+import io.harness.cd.NgServiceInfraInfoUtils;
+import io.harness.cd.TimeScaleDAL;
+import io.harness.licensing.usage.beans.cd.ServiceUsageDTO;
 import io.harness.licensing.usage.params.CDUsageRequestParams;
-import io.harness.ng.core.service.services.ServiceEntityService;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
-import io.harness.service.instance.InstanceService;
+import io.harness.timescaledb.tables.pojos.ServiceInfraInfo;
 import io.harness.timescaledb.tables.pojos.Services;
 
 import com.google.inject.Inject;
-import java.time.Instant;
-import java.time.Period;
 import java.util.ArrayList;
 import java.util.List;
-import org.jooq.Table;
+import org.apache.commons.lang3.StringUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -51,18 +43,17 @@ import org.mockito.MockitoAnnotations;
 
 @OwnedBy(HarnessTeam.CDP)
 public class CDLicenseUsageImplTest extends CategoryTest {
-  @Mock private InstanceService instanceService;
-  @Mock private ServiceEntityService serviceEntityService;
-  @Mock CDLicenseUsageDslHelper cdLicenseUsageHelper;
+  @Mock private TimeScaleDAL timeScaleDAL;
   @InjectMocks @Inject private CDLicenseUsageImpl cdLicenseUsage;
 
   private static final String accountIdentifier = "ACCOUNT_ID";
   private static final String orgIdentifier = "ORG_ID";
   private static final String projectIdentifier = "PROJECT_ID";
-  private static final String instanceKey = "INSTANCE";
   private static final String serviceIdentifier = "SERVICE";
-  private static final String envIdentifier = "ENV_ID";
-  private static final long timestamp = 1632066423L;
+  private static final String serviceIdentifier2 = "SERVICE_2";
+  private static final String serviceName = "SERVICE_NAME";
+  private static final String serviceName2 = "SERVICE_NAME_2";
+  private static final long DAYS_30_IN_MILLIS = 2592000000L;
 
   @Before
   public void setup() {
@@ -70,168 +61,385 @@ public class CDLicenseUsageImplTest extends CategoryTest {
   }
 
   @Test
-  @Owner(developers = OwnerRule.TATHAGAT)
+  @Owner(developers = OwnerRule.SHUBHAM_MAHESHWARI)
   @Category(UnitTests.class)
-  public void testGetServiceTypeLicenseUsage() {
-    prepareTestData();
+  public void testGetLicenseUsageOneServiceWithZeroInstances() {
+    long timeInMillis = 1234123412345L;
+    List<ServiceInfraInfo> activeServiceList = new ArrayList<>();
+    activeServiceList.add(new ServiceInfraInfo(null, serviceName, serviceIdentifier, null, null, null, null, null, null,
+        null, null, null, accountIdentifier, orgIdentifier, projectIdentifier, null));
+    when(timeScaleDAL.getDistinctServiceWithExecutionInTimeRange(
+             accountIdentifier, timeInMillis - DAYS_30_IN_MILLIS, timeInMillis))
+        .thenReturn(activeServiceList);
 
-    ServiceUsageDTO cdServiceUsageDTO = (ServiceUsageDTO) cdLicenseUsage.getLicenseUsage(accountIdentifier,
-        ModuleType.CD, timestamp, CDUsageRequestParams.builder().cdLicenseType(CDLicenseType.SERVICES).build());
+    List<AggregateNgServiceInstanceStats> activeServiceWithInstanceCountList = new ArrayList<>();
+    activeServiceWithInstanceCountList.add(
+        new AggregateNgServiceInstanceStats(orgIdentifier, projectIdentifier, serviceIdentifier, 0));
+    when(timeScaleDAL.getServiceWith95PercentileServiceInstanceCount(accountIdentifier, 0.95,
+             timeInMillis - DAYS_30_IN_MILLIS, timeInMillis,
+             NgServiceInfraInfoUtils.getOrgProjectServiceTable(activeServiceList)))
+        .thenReturn(activeServiceWithInstanceCountList);
 
-    verify(instanceService, times(1))
-        .getInstancesDeployedInInterval(eq(accountIdentifier),
-            eq(Instant.ofEpochMilli(timestamp).minus(Period.ofDays(30)).toEpochMilli()), eq(timestamp));
+    List<Services> servicesList = new ArrayList<>();
+    servicesList.add(new Services(
+        null, accountIdentifier, orgIdentifier, projectIdentifier, serviceIdentifier, serviceName, false, null, null));
+    when(timeScaleDAL.getNamesForServiceIds(
+             accountIdentifier, NgServiceInfraInfoUtils.getOrgProjectServiceTable(activeServiceList)))
+        .thenReturn(servicesList);
 
-    assertActiveInstanceUsageDTOOutput(cdServiceUsageDTO);
-    assertActiveServiceDTOOutput(cdServiceUsageDTO);
+    ServiceUsageDTO licenseUsage = (ServiceUsageDTO) cdLicenseUsage.getLicenseUsage(accountIdentifier, ModuleType.CD,
+        timeInMillis, CDUsageRequestParams.builder().cdLicenseType(CDLicenseType.SERVICES).build());
 
-    assertThat(cdServiceUsageDTO.getServiceLicenses()).isNotNull();
-    assertThat(cdServiceUsageDTO.getServiceLicenses().getCount()).isEqualTo(6);
-    assertThat(cdServiceUsageDTO.getServiceLicenses().getReferences()).isNull();
-  }
+    assertThat(licenseUsage.getAccountIdentifier()).isEqualTo(accountIdentifier);
+    assertThat(licenseUsage.getCdLicenseType()).isEqualTo(CDLicenseType.SERVICES);
 
-  private void assertActiveServiceDTOOutput(ServiceUsageDTO cdServiceUsageDTO) {
-    assertThat(cdServiceUsageDTO.getActiveServices()).isNotNull();
-    assertThat(cdServiceUsageDTO.getActiveServices().getCount()).isEqualTo(3);
-    assertThat(cdServiceUsageDTO.getActiveServices().getReferences().size()).isEqualTo(3);
-    assertThat(cdServiceUsageDTO.getActiveServices()).isNotNull();
-    List<ReferenceDTO> activeServiceReferences = cdServiceUsageDTO.getActiveServices().getReferences();
-    ReferenceDTO expectedActiveServiceReference = getExpectedActiveServiceReference();
-    assertThat(activeServiceReferences.get(0))
-        .isEqualToComparingOnlyGivenFields(expectedActiveServiceReference, "identifier", "name", "accountIdentifier",
-            "projectIdentifier", "orgIdentifier");
-  }
+    assertThat(licenseUsage.getActiveServices().getCount()).isEqualTo(1);
+    assertThat(licenseUsage.getActiveServices().getDisplayName()).isEqualTo(DISPLAY_NAME);
+    assertThat(licenseUsage.getActiveServices().getReferences().size()).isEqualTo(1);
+    assertThat(licenseUsage.getActiveServices().getReferences().get(0).getName()).isEqualTo(serviceName);
+    assertThat(licenseUsage.getActiveServices().getReferences().get(0).getIdentifier()).isEqualTo(serviceIdentifier);
+    assertThat(licenseUsage.getActiveServices().getReferences().get(0).getAccountIdentifier())
+        .isEqualTo(accountIdentifier);
+    assertThat(licenseUsage.getActiveServices().getReferences().get(0).getOrgIdentifier()).isEqualTo(orgIdentifier);
+    assertThat(licenseUsage.getActiveServices().getReferences().get(0).getProjectIdentifier())
+        .isEqualTo(projectIdentifier);
 
-  private void assertActiveInstanceUsageDTOOutput(ServiceUsageDTO cdServiceUsageDTO) {
-    assertThat(cdServiceUsageDTO.getActiveServiceInstances()).isNotNull();
-    assertThat(cdServiceUsageDTO.getActiveServiceInstances().getCount()).isEqualTo(90);
-    List<ReferenceDTO> activeServiceInstanceReferences = cdServiceUsageDTO.getActiveServiceInstances().getReferences();
-    assertThat(activeServiceInstanceReferences).hasSize(3);
-    ReferenceDTO expectedInstanceReference = getExpectedInstanceReference();
-    assertThat(activeServiceInstanceReferences.get(0))
-        .isEqualToComparingOnlyGivenFields(
-            expectedInstanceReference, "identifier", "name", "accountIdentifier", "projectIdentifier", "orgIdentifier");
+    assertThat(licenseUsage.getServiceLicenses().getCount()).isEqualTo(1);
+    assertThat(licenseUsage.getServiceLicenses().getDisplayName()).isEqualTo(DISPLAY_NAME);
+    assertThat(licenseUsage.getServiceLicenses().getReferences().size()).isEqualTo(1);
+    assertThat(licenseUsage.getServiceLicenses().getReferences().get(0).getName()).isEqualTo(serviceName);
+    assertThat(licenseUsage.getServiceLicenses().getReferences().get(0).getIdentifier()).isEqualTo(serviceIdentifier);
+    assertThat(licenseUsage.getServiceLicenses().getReferences().get(0).getAccountIdentifier())
+        .isEqualTo(accountIdentifier);
+    assertThat(licenseUsage.getServiceLicenses().getReferences().get(0).getOrgIdentifier()).isEqualTo(orgIdentifier);
+    assertThat(licenseUsage.getServiceLicenses().getReferences().get(0).getProjectIdentifier())
+        .isEqualTo(projectIdentifier);
+    assertThat(licenseUsage.getServiceLicenses().getReferences().get(0).getCount()).isEqualTo(1);
+
+    assertThat(licenseUsage.getActiveServiceInstances().getCount()).isEqualTo(0);
+    assertThat(licenseUsage.getActiveServiceInstances().getDisplayName()).isEqualTo(DISPLAY_NAME);
+    assertThat(licenseUsage.getActiveServiceInstances().getReferences().size()).isEqualTo(1);
+    assertThat(licenseUsage.getActiveServiceInstances().getReferences().get(0).getName()).isEqualTo(serviceName);
+    assertThat(licenseUsage.getActiveServiceInstances().getReferences().get(0).getIdentifier())
+        .isEqualTo(serviceIdentifier);
+    assertThat(licenseUsage.getActiveServiceInstances().getReferences().get(0).getAccountIdentifier())
+        .isEqualTo(accountIdentifier);
+    assertThat(licenseUsage.getActiveServiceInstances().getReferences().get(0).getOrgIdentifier())
+        .isEqualTo(orgIdentifier);
+    assertThat(licenseUsage.getActiveServiceInstances().getReferences().get(0).getProjectIdentifier())
+        .isEqualTo(projectIdentifier);
+    assertThat(licenseUsage.getActiveServiceInstances().getReferences().get(0).getCount()).isEqualTo(0);
   }
 
   @Test
-  @Owner(developers = OwnerRule.TATHAGAT)
+  @Owner(developers = OwnerRule.SHUBHAM_MAHESHWARI)
   @Category(UnitTests.class)
-  public void testGetServiceInstanceTypeLicenseUsage() {
-    prepareTestData();
-    ServiceInstanceUsageDTO cdServiceInstanceUsageDTO =
-        (ServiceInstanceUsageDTO) cdLicenseUsage.getLicenseUsage(accountIdentifier, ModuleType.CD, timestamp,
-            CDUsageRequestParams.builder().cdLicenseType(CDLicenseType.SERVICE_INSTANCES).build());
+  public void testGetLicenseUsageOneServiceWithLt20Instances() {
+    long timeInMillis = 1234123412345L;
+    List<ServiceInfraInfo> activeServiceList = new ArrayList<>();
+    activeServiceList.add(new ServiceInfraInfo(null, serviceName, serviceIdentifier, null, null, null, null, null, null,
+        null, null, null, accountIdentifier, orgIdentifier, projectIdentifier, null));
+    when(timeScaleDAL.getDistinctServiceWithExecutionInTimeRange(
+             accountIdentifier, timeInMillis - DAYS_30_IN_MILLIS, timeInMillis))
+        .thenReturn(activeServiceList);
 
-    verify(instanceService, times(1))
-        .getInstancesDeployedInInterval(eq(accountIdentifier),
-            eq(Instant.ofEpochMilli(timestamp).minus(Period.ofDays(30)).toEpochMilli()), eq(timestamp));
+    List<AggregateNgServiceInstanceStats> activeServiceWithInstanceCountList = new ArrayList<>();
+    activeServiceWithInstanceCountList.add(
+        new AggregateNgServiceInstanceStats(orgIdentifier, projectIdentifier, serviceIdentifier, 18));
+    when(timeScaleDAL.getServiceWith95PercentileServiceInstanceCount(accountIdentifier, 0.95,
+             timeInMillis - DAYS_30_IN_MILLIS, timeInMillis,
+             NgServiceInfraInfoUtils.getOrgProjectServiceTable(activeServiceList)))
+        .thenReturn(activeServiceWithInstanceCountList);
 
-    assertThat(cdServiceInstanceUsageDTO.getActiveServiceInstances()).isNotNull();
-    List<ReferenceDTO> activeServiceInstanceReferences =
-        cdServiceInstanceUsageDTO.getActiveServiceInstances().getReferences();
-    assertThat(activeServiceInstanceReferences).hasSize(3);
-    ReferenceDTO expectedInstanceReference = getExpectedInstanceReference();
-    assertThat(activeServiceInstanceReferences.get(0))
-        .isEqualToComparingOnlyGivenFields(
-            expectedInstanceReference, "identifier", "name", "accountIdentifier", "projectIdentifier", "orgIdentifier");
+    List<Services> servicesList = new ArrayList<>();
+    servicesList.add(new Services(
+        null, accountIdentifier, orgIdentifier, projectIdentifier, serviceIdentifier, serviceName, false, null, null));
+    when(timeScaleDAL.getNamesForServiceIds(
+             accountIdentifier, NgServiceInfraInfoUtils.getOrgProjectServiceTable(activeServiceList)))
+        .thenReturn(servicesList);
 
-    assertThat(cdServiceInstanceUsageDTO.getActiveServices()).isNotNull();
-    assertThat(cdServiceInstanceUsageDTO.getActiveServices().getCount()).isEqualTo(3);
-    assertThat(cdServiceInstanceUsageDTO.getActiveServices().getReferences().size()).isEqualTo(3);
-    assertThat(cdServiceInstanceUsageDTO.getActiveServices()).isNotNull();
-    List<ReferenceDTO> activeServiceReferences = cdServiceInstanceUsageDTO.getActiveServices().getReferences();
-    ReferenceDTO expectedActiveServiceReference = getExpectedActiveServiceReference();
-    assertThat(activeServiceReferences.get(0))
-        .isEqualToComparingOnlyGivenFields(expectedActiveServiceReference, "identifier", "name", "accountIdentifier",
-            "projectIdentifier", "orgIdentifier");
+    ServiceUsageDTO licenseUsage = (ServiceUsageDTO) cdLicenseUsage.getLicenseUsage(accountIdentifier, ModuleType.CD,
+        timeInMillis, CDUsageRequestParams.builder().cdLicenseType(CDLicenseType.SERVICES).build());
+
+    assertThat(licenseUsage.getAccountIdentifier()).isEqualTo(accountIdentifier);
+    assertThat(licenseUsage.getCdLicenseType()).isEqualTo(CDLicenseType.SERVICES);
+
+    assertThat(licenseUsage.getActiveServices().getCount()).isEqualTo(1);
+    assertThat(licenseUsage.getActiveServices().getDisplayName()).isEqualTo(DISPLAY_NAME);
+    assertThat(licenseUsage.getActiveServices().getReferences().size()).isEqualTo(1);
+    assertThat(licenseUsage.getActiveServices().getReferences().get(0).getName()).isEqualTo(serviceName);
+    assertThat(licenseUsage.getActiveServices().getReferences().get(0).getIdentifier()).isEqualTo(serviceIdentifier);
+    assertThat(licenseUsage.getActiveServices().getReferences().get(0).getAccountIdentifier())
+        .isEqualTo(accountIdentifier);
+    assertThat(licenseUsage.getActiveServices().getReferences().get(0).getOrgIdentifier()).isEqualTo(orgIdentifier);
+    assertThat(licenseUsage.getActiveServices().getReferences().get(0).getProjectIdentifier())
+        .isEqualTo(projectIdentifier);
+
+    assertThat(licenseUsage.getServiceLicenses().getCount()).isEqualTo(1);
+    assertThat(licenseUsage.getServiceLicenses().getDisplayName()).isEqualTo(DISPLAY_NAME);
+    assertThat(licenseUsage.getServiceLicenses().getReferences().size()).isEqualTo(1);
+    assertThat(licenseUsage.getServiceLicenses().getReferences().get(0).getName()).isEqualTo(serviceName);
+    assertThat(licenseUsage.getServiceLicenses().getReferences().get(0).getIdentifier()).isEqualTo(serviceIdentifier);
+    assertThat(licenseUsage.getServiceLicenses().getReferences().get(0).getAccountIdentifier())
+        .isEqualTo(accountIdentifier);
+    assertThat(licenseUsage.getServiceLicenses().getReferences().get(0).getOrgIdentifier()).isEqualTo(orgIdentifier);
+    assertThat(licenseUsage.getServiceLicenses().getReferences().get(0).getProjectIdentifier())
+        .isEqualTo(projectIdentifier);
+    assertThat(licenseUsage.getServiceLicenses().getReferences().get(0).getCount()).isEqualTo(1);
+
+    assertThat(licenseUsage.getActiveServiceInstances().getCount()).isEqualTo(18);
+    assertThat(licenseUsage.getActiveServiceInstances().getDisplayName()).isEqualTo(DISPLAY_NAME);
+    assertThat(licenseUsage.getActiveServiceInstances().getReferences().size()).isEqualTo(1);
+    assertThat(licenseUsage.getActiveServiceInstances().getReferences().get(0).getName()).isEqualTo(serviceName);
+    assertThat(licenseUsage.getActiveServiceInstances().getReferences().get(0).getIdentifier())
+        .isEqualTo(serviceIdentifier);
+    assertThat(licenseUsage.getActiveServiceInstances().getReferences().get(0).getAccountIdentifier())
+        .isEqualTo(accountIdentifier);
+    assertThat(licenseUsage.getActiveServiceInstances().getReferences().get(0).getOrgIdentifier())
+        .isEqualTo(orgIdentifier);
+    assertThat(licenseUsage.getActiveServiceInstances().getReferences().get(0).getProjectIdentifier())
+        .isEqualTo(projectIdentifier);
+    assertThat(licenseUsage.getActiveServiceInstances().getReferences().get(0).getCount()).isEqualTo(18);
   }
 
   @Test
-  @Owner(developers = OwnerRule.TATHAGAT)
+  @Owner(developers = OwnerRule.SHUBHAM_MAHESHWARI)
   @Category(UnitTests.class)
-  public void testGetLicenseUsageEmptyAggregateServiceUsageInfo() {
-    when(cdLicenseUsageHelper.getActiveServicesInfoWithPercentileServiceInstanceCount(
-             anyString(), anyDouble(), anyLong(), anyLong(), any(Table.class)))
+  public void testGetLicenseUsageOneServiceWithGt20Instances() {
+    long timeInMillis = 1234123412345L;
+    List<ServiceInfraInfo> activeServiceList = new ArrayList<>();
+    activeServiceList.add(new ServiceInfraInfo(null, serviceName, serviceIdentifier, null, null, null, null, null, null,
+        null, null, null, accountIdentifier, orgIdentifier, projectIdentifier, null));
+    when(timeScaleDAL.getDistinctServiceWithExecutionInTimeRange(
+             accountIdentifier, timeInMillis - DAYS_30_IN_MILLIS, timeInMillis))
+        .thenReturn(activeServiceList);
+
+    List<AggregateNgServiceInstanceStats> activeServiceWithInstanceCountList = new ArrayList<>();
+    activeServiceWithInstanceCountList.add(
+        new AggregateNgServiceInstanceStats(orgIdentifier, projectIdentifier, serviceIdentifier, 41));
+    when(timeScaleDAL.getServiceWith95PercentileServiceInstanceCount(accountIdentifier, 0.95,
+             timeInMillis - DAYS_30_IN_MILLIS, timeInMillis,
+             NgServiceInfraInfoUtils.getOrgProjectServiceTable(activeServiceList)))
+        .thenReturn(activeServiceWithInstanceCountList);
+
+    List<Services> servicesList = new ArrayList<>();
+    servicesList.add(new Services(
+        null, accountIdentifier, orgIdentifier, projectIdentifier, serviceIdentifier, serviceName, false, null, null));
+    when(timeScaleDAL.getNamesForServiceIds(
+             accountIdentifier, NgServiceInfraInfoUtils.getOrgProjectServiceTable(activeServiceList)))
+        .thenReturn(servicesList);
+
+    ServiceUsageDTO licenseUsage = (ServiceUsageDTO) cdLicenseUsage.getLicenseUsage(accountIdentifier, ModuleType.CD,
+        timeInMillis, CDUsageRequestParams.builder().cdLicenseType(CDLicenseType.SERVICES).build());
+
+    assertThat(licenseUsage.getAccountIdentifier()).isEqualTo(accountIdentifier);
+    assertThat(licenseUsage.getCdLicenseType()).isEqualTo(CDLicenseType.SERVICES);
+
+    assertThat(licenseUsage.getActiveServices().getCount()).isEqualTo(1);
+    assertThat(licenseUsage.getActiveServices().getDisplayName()).isEqualTo(DISPLAY_NAME);
+    assertThat(licenseUsage.getActiveServices().getReferences().size()).isEqualTo(1);
+    assertThat(licenseUsage.getActiveServices().getReferences().get(0).getName()).isEqualTo(serviceName);
+    assertThat(licenseUsage.getActiveServices().getReferences().get(0).getIdentifier()).isEqualTo(serviceIdentifier);
+    assertThat(licenseUsage.getActiveServices().getReferences().get(0).getAccountIdentifier())
+        .isEqualTo(accountIdentifier);
+    assertThat(licenseUsage.getActiveServices().getReferences().get(0).getOrgIdentifier()).isEqualTo(orgIdentifier);
+    assertThat(licenseUsage.getActiveServices().getReferences().get(0).getProjectIdentifier())
+        .isEqualTo(projectIdentifier);
+
+    assertThat(licenseUsage.getServiceLicenses().getCount()).isEqualTo(3);
+    assertThat(licenseUsage.getServiceLicenses().getDisplayName()).isEqualTo(DISPLAY_NAME);
+    assertThat(licenseUsage.getServiceLicenses().getReferences().size()).isEqualTo(1);
+    assertThat(licenseUsage.getServiceLicenses().getReferences().get(0).getName()).isEqualTo(serviceName);
+    assertThat(licenseUsage.getServiceLicenses().getReferences().get(0).getIdentifier()).isEqualTo(serviceIdentifier);
+    assertThat(licenseUsage.getServiceLicenses().getReferences().get(0).getAccountIdentifier())
+        .isEqualTo(accountIdentifier);
+    assertThat(licenseUsage.getServiceLicenses().getReferences().get(0).getOrgIdentifier()).isEqualTo(orgIdentifier);
+    assertThat(licenseUsage.getServiceLicenses().getReferences().get(0).getProjectIdentifier())
+        .isEqualTo(projectIdentifier);
+    assertThat(licenseUsage.getServiceLicenses().getReferences().get(0).getCount()).isEqualTo(3);
+
+    assertThat(licenseUsage.getActiveServiceInstances().getCount()).isEqualTo(41);
+    assertThat(licenseUsage.getActiveServiceInstances().getDisplayName()).isEqualTo(DISPLAY_NAME);
+    assertThat(licenseUsage.getActiveServiceInstances().getReferences().size()).isEqualTo(1);
+    assertThat(licenseUsage.getActiveServiceInstances().getReferences().get(0).getName()).isEqualTo(serviceName);
+    assertThat(licenseUsage.getActiveServiceInstances().getReferences().get(0).getIdentifier())
+        .isEqualTo(serviceIdentifier);
+    assertThat(licenseUsage.getActiveServiceInstances().getReferences().get(0).getAccountIdentifier())
+        .isEqualTo(accountIdentifier);
+    assertThat(licenseUsage.getActiveServiceInstances().getReferences().get(0).getOrgIdentifier())
+        .isEqualTo(orgIdentifier);
+    assertThat(licenseUsage.getActiveServiceInstances().getReferences().get(0).getProjectIdentifier())
+        .isEqualTo(projectIdentifier);
+    assertThat(licenseUsage.getActiveServiceInstances().getReferences().get(0).getCount()).isEqualTo(41);
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.SHUBHAM_MAHESHWARI)
+  @Category(UnitTests.class)
+  public void testGetLicenseUsageOneServiceWith20Instances() {
+    long timeInMillis = 1234123412345L;
+    List<ServiceInfraInfo> activeServiceList = new ArrayList<>();
+    activeServiceList.add(new ServiceInfraInfo(null, serviceName, serviceIdentifier, null, null, null, null, null, null,
+        null, null, null, accountIdentifier, orgIdentifier, projectIdentifier, null));
+    when(timeScaleDAL.getDistinctServiceWithExecutionInTimeRange(
+             accountIdentifier, timeInMillis - DAYS_30_IN_MILLIS, timeInMillis))
+        .thenReturn(activeServiceList);
+
+    List<AggregateNgServiceInstanceStats> activeServiceWithInstanceCountList = new ArrayList<>();
+    activeServiceWithInstanceCountList.add(
+        new AggregateNgServiceInstanceStats(orgIdentifier, projectIdentifier, serviceIdentifier, 20));
+    when(timeScaleDAL.getServiceWith95PercentileServiceInstanceCount(accountIdentifier, 0.95,
+             timeInMillis - DAYS_30_IN_MILLIS, timeInMillis,
+             NgServiceInfraInfoUtils.getOrgProjectServiceTable(activeServiceList)))
+        .thenReturn(activeServiceWithInstanceCountList);
+
+    List<Services> servicesList = new ArrayList<>();
+    servicesList.add(new Services(
+        null, accountIdentifier, orgIdentifier, projectIdentifier, serviceIdentifier, serviceName, false, null, null));
+    when(timeScaleDAL.getNamesForServiceIds(
+             accountIdentifier, NgServiceInfraInfoUtils.getOrgProjectServiceTable(activeServiceList)))
+        .thenReturn(servicesList);
+
+    ServiceUsageDTO licenseUsage = (ServiceUsageDTO) cdLicenseUsage.getLicenseUsage(accountIdentifier, ModuleType.CD,
+        timeInMillis, CDUsageRequestParams.builder().cdLicenseType(CDLicenseType.SERVICES).build());
+
+    assertThat(licenseUsage.getAccountIdentifier()).isEqualTo(accountIdentifier);
+    assertThat(licenseUsage.getCdLicenseType()).isEqualTo(CDLicenseType.SERVICES);
+
+    assertThat(licenseUsage.getActiveServices().getCount()).isEqualTo(1);
+    assertThat(licenseUsage.getActiveServices().getDisplayName()).isEqualTo(DISPLAY_NAME);
+    assertThat(licenseUsage.getActiveServices().getReferences().size()).isEqualTo(1);
+    assertThat(licenseUsage.getActiveServices().getReferences().get(0).getName()).isEqualTo(serviceName);
+    assertThat(licenseUsage.getActiveServices().getReferences().get(0).getIdentifier()).isEqualTo(serviceIdentifier);
+    assertThat(licenseUsage.getActiveServices().getReferences().get(0).getAccountIdentifier())
+        .isEqualTo(accountIdentifier);
+    assertThat(licenseUsage.getActiveServices().getReferences().get(0).getOrgIdentifier()).isEqualTo(orgIdentifier);
+    assertThat(licenseUsage.getActiveServices().getReferences().get(0).getProjectIdentifier())
+        .isEqualTo(projectIdentifier);
+
+    assertThat(licenseUsage.getServiceLicenses().getCount()).isEqualTo(1);
+    assertThat(licenseUsage.getServiceLicenses().getDisplayName()).isEqualTo(DISPLAY_NAME);
+    assertThat(licenseUsage.getServiceLicenses().getReferences().size()).isEqualTo(1);
+    assertThat(licenseUsage.getServiceLicenses().getReferences().get(0).getName()).isEqualTo(serviceName);
+    assertThat(licenseUsage.getServiceLicenses().getReferences().get(0).getIdentifier()).isEqualTo(serviceIdentifier);
+    assertThat(licenseUsage.getServiceLicenses().getReferences().get(0).getAccountIdentifier())
+        .isEqualTo(accountIdentifier);
+    assertThat(licenseUsage.getServiceLicenses().getReferences().get(0).getOrgIdentifier()).isEqualTo(orgIdentifier);
+    assertThat(licenseUsage.getServiceLicenses().getReferences().get(0).getProjectIdentifier())
+        .isEqualTo(projectIdentifier);
+    assertThat(licenseUsage.getServiceLicenses().getReferences().get(0).getCount()).isEqualTo(1);
+
+    assertThat(licenseUsage.getActiveServiceInstances().getCount()).isEqualTo(20);
+    assertThat(licenseUsage.getActiveServiceInstances().getDisplayName()).isEqualTo(DISPLAY_NAME);
+    assertThat(licenseUsage.getActiveServiceInstances().getReferences().size()).isEqualTo(1);
+    assertThat(licenseUsage.getActiveServiceInstances().getReferences().get(0).getName()).isEqualTo(serviceName);
+    assertThat(licenseUsage.getActiveServiceInstances().getReferences().get(0).getIdentifier())
+        .isEqualTo(serviceIdentifier);
+    assertThat(licenseUsage.getActiveServiceInstances().getReferences().get(0).getAccountIdentifier())
+        .isEqualTo(accountIdentifier);
+    assertThat(licenseUsage.getActiveServiceInstances().getReferences().get(0).getOrgIdentifier())
+        .isEqualTo(orgIdentifier);
+    assertThat(licenseUsage.getActiveServiceInstances().getReferences().get(0).getProjectIdentifier())
+        .isEqualTo(projectIdentifier);
+    assertThat(licenseUsage.getActiveServiceInstances().getReferences().get(0).getCount()).isEqualTo(20);
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.SHUBHAM_MAHESHWARI)
+  @Category(UnitTests.class)
+  public void testGetLicenseUsageMultipleServices() {
+    long timeInMillis = 1234123412345L;
+    List<ServiceInfraInfo> activeServiceList = new ArrayList<>();
+    activeServiceList.add(new ServiceInfraInfo(null, serviceName, serviceIdentifier, null, null, null, null, null, null,
+        null, null, null, accountIdentifier, orgIdentifier, projectIdentifier, null));
+    activeServiceList.add(new ServiceInfraInfo(null, serviceName2, serviceIdentifier2, null, null, null, null, null,
+        null, null, null, null, accountIdentifier, orgIdentifier, projectIdentifier, null));
+    when(timeScaleDAL.getDistinctServiceWithExecutionInTimeRange(
+             accountIdentifier, timeInMillis - DAYS_30_IN_MILLIS, timeInMillis))
+        .thenReturn(activeServiceList);
+
+    List<AggregateNgServiceInstanceStats> activeServiceWithInstanceCountList = new ArrayList<>();
+    activeServiceWithInstanceCountList.add(
+        new AggregateNgServiceInstanceStats(orgIdentifier, projectIdentifier, serviceIdentifier, 9));
+    when(timeScaleDAL.getServiceWith95PercentileServiceInstanceCount(accountIdentifier, 0.95,
+             timeInMillis - DAYS_30_IN_MILLIS, timeInMillis,
+             NgServiceInfraInfoUtils.getOrgProjectServiceTable(activeServiceList)))
+        .thenReturn(activeServiceWithInstanceCountList);
+
+    List<Services> servicesList = new ArrayList<>();
+    servicesList.add(new Services(
+        null, accountIdentifier, orgIdentifier, projectIdentifier, serviceIdentifier, serviceName, false, null, null));
+    servicesList.add(new Services(null, accountIdentifier, orgIdentifier, projectIdentifier, serviceIdentifier2,
+        serviceName2, false, null, null));
+    when(timeScaleDAL.getNamesForServiceIds(
+             accountIdentifier, NgServiceInfraInfoUtils.getOrgProjectServiceTable(activeServiceList)))
+        .thenReturn(servicesList);
+
+    ServiceUsageDTO licenseUsage = (ServiceUsageDTO) cdLicenseUsage.getLicenseUsage(accountIdentifier, ModuleType.CD,
+        timeInMillis, CDUsageRequestParams.builder().cdLicenseType(CDLicenseType.SERVICES).build());
+
+    assertThat(licenseUsage.getAccountIdentifier()).isEqualTo(accountIdentifier);
+    assertThat(licenseUsage.getCdLicenseType()).isEqualTo(CDLicenseType.SERVICES);
+
+    assertThat(licenseUsage.getActiveServices().getCount()).isEqualTo(2);
+    assertThat(licenseUsage.getActiveServices().getDisplayName()).isEqualTo(DISPLAY_NAME);
+    assertThat(licenseUsage.getActiveServices().getReferences().size()).isEqualTo(2);
+
+    assertThat(licenseUsage.getServiceLicenses().getCount()).isEqualTo(2);
+    assertThat(licenseUsage.getServiceLicenses().getDisplayName()).isEqualTo(DISPLAY_NAME);
+    assertThat(licenseUsage.getServiceLicenses().getReferences().size()).isEqualTo(2);
+
+    assertThat(licenseUsage.getActiveServiceInstances().getCount()).isEqualTo(9);
+    assertThat(licenseUsage.getActiveServiceInstances().getDisplayName()).isEqualTo(DISPLAY_NAME);
+    assertThat(licenseUsage.getActiveServiceInstances().getReferences().size()).isEqualTo(2);
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.SHUBHAM_MAHESHWARI)
+  @Category(UnitTests.class)
+  public void testGetLicenseUsageInvalidTimestamp() {
+    assertThatThrownBy(()
+                           -> cdLicenseUsage.getLicenseUsage(accountIdentifier, ModuleType.CD, 0,
+                               CDUsageRequestParams.builder().cdLicenseType(CDLicenseType.SERVICES).build()))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessage("Invalid timestamp 0 while fetching LicenseUsages.");
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.SHUBHAM_MAHESHWARI)
+  @Category(UnitTests.class)
+  public void testGetLicenseUsageInvalidAccountIdentifier() {
+    assertThatThrownBy(()
+                           -> cdLicenseUsage.getLicenseUsage(StringUtils.EMPTY, ModuleType.CD, 1234123412345L,
+                               CDUsageRequestParams.builder().cdLicenseType(CDLicenseType.SERVICES).build()))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessage("Account Identifier cannot be null or blank");
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.SHUBHAM_MAHESHWARI)
+  @Category(UnitTests.class)
+  public void testGetLicenseUsageWithNoActiveService() {
+    long timeInMillis = 1234123412345L;
+    when(timeScaleDAL.getDistinctServiceWithExecutionInTimeRange(
+             accountIdentifier, timeInMillis - DAYS_30_IN_MILLIS, timeInMillis))
         .thenReturn(emptyList());
+    ServiceUsageDTO licenseUsage = (ServiceUsageDTO) cdLicenseUsage.getLicenseUsage(accountIdentifier, ModuleType.CD,
+        timeInMillis, CDUsageRequestParams.builder().cdLicenseType(CDLicenseType.SERVICES).build());
 
-    ServiceUsageDTO serviceTypeLicenseUsage = (ServiceUsageDTO) cdLicenseUsage.getLicenseUsage(accountIdentifier,
-        ModuleType.CD, timestamp, CDUsageRequestParams.builder().cdLicenseType(CDLicenseType.SERVICES).build());
+    assertThat(licenseUsage.getAccountIdentifier()).isEqualTo(accountIdentifier);
+    assertThat(licenseUsage.getCdLicenseType()).isEqualTo(CDLicenseType.SERVICES);
 
-    verify(instanceService, times(1))
-        .getInstancesDeployedInInterval(eq(accountIdentifier),
-            eq(Instant.ofEpochMilli(timestamp).minus(Period.ofDays(30)).toEpochMilli()), eq(timestamp));
-    verify(serviceEntityService, times(0)).find(anyString(), anyString(), anyString(), anyString(), anyBoolean());
+    assertThat(licenseUsage.getActiveServices().getCount()).isEqualTo(0);
+    assertThat(licenseUsage.getActiveServices().getDisplayName()).isEqualTo(DISPLAY_NAME);
+    assertThat(licenseUsage.getActiveServices().getReferences().size()).isEqualTo(0);
 
-    assertThat(serviceTypeLicenseUsage.getActiveServices().getCount()).isZero();
-    assertThat(serviceTypeLicenseUsage.getActiveServiceInstances().getCount()).isZero();
-    assertThat(serviceTypeLicenseUsage.getServiceLicenses()).isNull();
-  }
+    assertThat(licenseUsage.getServiceLicenses().getCount()).isEqualTo(0);
+    assertThat(licenseUsage.getServiceLicenses().getDisplayName()).isEqualTo(DISPLAY_NAME);
+    assertThat(licenseUsage.getServiceLicenses().getReferences().size()).isEqualTo(0);
 
-  private void prepareTestData() {
-    List<InstanceDTO> testInstanceDTOData = createTestInstanceDTOData(3);
-    List<Services> testServiceData = createTestServiceData(3);
-    List<AggregateServiceUsageInfo> testServiceUsageInfoData = createTestServiceUsageInfoData(3);
-
-    when(cdLicenseUsageHelper.getActiveServicesInfoWithPercentileServiceInstanceCount(
-             anyString(), anyDouble(), anyLong(), anyLong(), any(Table.class)))
-        .thenReturn(testServiceUsageInfoData);
-    when(instanceService.getInstancesDeployedInInterval(anyString(), anyLong(), anyLong()))
-        .thenReturn(testInstanceDTOData);
-    when(cdLicenseUsageHelper.getServiceEntities(any(), any())).thenReturn(testServiceData);
-    when(cdLicenseUsageHelper.getOrgProjectServiceTableFromInstances(any())).thenCallRealMethod();
-    when(cdLicenseUsageHelper.getOrgProjectServiceRows(any())).thenCallRealMethod();
-  }
-
-  private ReferenceDTO getExpectedActiveServiceReference() {
-    return ReferenceDTO.builder()
-        .name("SERVICE0")
-        .identifier("SERVICE0")
-        .accountIdentifier("ACCOUNT_ID")
-        .projectIdentifier("PROJECT_ID0")
-        .orgIdentifier("ORG_ID0")
-        .build();
-  }
-
-  private ReferenceDTO getExpectedInstanceReference() {
-    return ReferenceDTO.builder()
-        .identifier("INSTANCE0")
-        .name("INSTANCE0")
-        .accountIdentifier("ACCOUNT_ID0")
-        .projectIdentifier("PROJECT_ID0")
-        .orgIdentifier("ORG_ID0")
-        .build();
-  }
-
-  List<InstanceDTO> createTestInstanceDTOData(int dataSize) {
-    List<InstanceDTO> instanceDTOList = new ArrayList<>();
-    for (int i = 0; i < dataSize; i++) {
-      instanceDTOList.add(InstanceDTO.builder()
-                              .instanceKey(instanceKey + i)
-                              .accountIdentifier(accountIdentifier + i)
-                              .projectIdentifier(projectIdentifier + i)
-                              .orgIdentifier(orgIdentifier + i)
-                              .envIdentifier(envIdentifier + i)
-                              .serviceIdentifier(serviceIdentifier + i)
-                              .build());
-    }
-    return instanceDTOList;
-  }
-
-  private List<Services> createTestServiceData(int dataSize) {
-    List<Services> services = new ArrayList<>();
-    for (int i = 0; i < dataSize; i++) {
-      services.add(new Services(serviceIdentifier + i, accountIdentifier + i, orgIdentifier + i, projectIdentifier + i,
-          serviceIdentifier + i, serviceIdentifier + i, false, null, null));
-    }
-    return services;
-  }
-
-  private List<AggregateServiceUsageInfo> createTestServiceUsageInfoData(int dataSize) {
-    List<AggregateServiceUsageInfo> serviceUsageInfoList = new ArrayList<>();
-    for (int i = 1; i <= dataSize; i++) {
-      serviceUsageInfoList.add(
-          new AggregateServiceUsageInfo(orgIdentifier, projectIdentifier, serviceIdentifier + i, 15L * i));
-    }
-    return serviceUsageInfoList;
+    assertThat(licenseUsage.getActiveServiceInstances().getCount()).isEqualTo(0);
+    assertThat(licenseUsage.getActiveServiceInstances().getDisplayName()).isEqualTo(DISPLAY_NAME);
+    assertThat(licenseUsage.getActiveServiceInstances().getReferences().size()).isEqualTo(0);
   }
 }

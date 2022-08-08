@@ -114,8 +114,6 @@ public class DatadogMetricHealthSourceSpec extends MetricHealthSourceSpec {
                                            .identifier(identifier)
                                            .connectorIdentifier(getConnectorRef())
                                            .monitoringSourceName(name)
-                                           .envIdentifier(environmentRef)
-                                           .serviceIdentifier(serviceRef)
                                            .productName(feature)
                                            .category(key.getCategory())
                                            .dashboardName(key.getDashboardName())

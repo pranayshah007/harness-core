@@ -19,6 +19,7 @@ import software.wings.search.ElasticsearchServiceImpl;
 import software.wings.search.SearchService;
 import software.wings.search.entities.application.ApplicationSearchEntity;
 import software.wings.search.entities.application.ApplicationTimeScaleEntity;
+import software.wings.search.entities.cloudprovider.CloudProviderTimeScaleEntity;
 import software.wings.search.entities.deployment.DeploymentSearchEntity;
 import software.wings.search.entities.environment.EnvironmentSearchEntity;
 import software.wings.search.entities.environment.EnvironmentTimeScaleEntity;
@@ -27,6 +28,7 @@ import software.wings.search.entities.pipeline.PipelineTimeScaleEntity;
 import software.wings.search.entities.service.ServiceSearchEntity;
 import software.wings.search.entities.service.ServiceTimeScaleEntity;
 import software.wings.search.entities.tags.TagLinksTimeScaleEntity;
+import software.wings.search.entities.user.UserTimeScaleEntity;
 import software.wings.search.entities.workflow.WorkflowSearchEntity;
 import software.wings.search.entities.workflow.WorkflowTimeScaleEntity;
 import software.wings.search.framework.SearchDao;
@@ -102,6 +104,8 @@ public class SearchModule extends AbstractModule {
     timeScaleEntityMultibinder.addBinding().to(WorkflowTimeScaleEntity.class);
     timeScaleEntityMultibinder.addBinding().to(PipelineTimeScaleEntity.class);
     timeScaleEntityMultibinder.addBinding().to(EnvironmentTimeScaleEntity.class);
+    timeScaleEntityMultibinder.addBinding().to(CloudProviderTimeScaleEntity.class);
+    timeScaleEntityMultibinder.addBinding().to(UserTimeScaleEntity.class);
   }
 
   @Provides

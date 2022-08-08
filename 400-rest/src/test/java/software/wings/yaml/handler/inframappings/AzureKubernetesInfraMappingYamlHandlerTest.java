@@ -20,7 +20,6 @@ import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyObject;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.when;
 
@@ -124,8 +123,8 @@ public class AzureKubernetesInfraMappingYamlHandlerTest extends YamlHandlerTestB
     when(appService.get(anyString())).thenReturn(getApplication());
     when(appService.getAppByName(anyString(), anyString())).thenReturn(getApplication());
     when(environmentService.getEnvironmentByName(anyString(), anyString())).thenReturn(getEnvironment());
-    when(containerService.validate(anyObject(), anyBoolean())).thenReturn(true);
-    when(delegateProxyFactory.get(anyObject(), any(SyncTaskContext.class))).thenReturn(containerService);
+    when(containerService.validate(any(), anyBoolean())).thenReturn(true);
+    when(delegateProxyFactory.get(any(), any())).thenReturn(containerService);
     when(serviceResourceService.getServiceByName(anyString(), anyString())).thenReturn(getService());
     when(serviceResourceService.getWithDetails(anyString(), anyString())).thenReturn(getService());
     when(serviceTemplateService.getTemplateRefKeysByService(anyString(), anyString(), anyString()))

@@ -15,8 +15,8 @@ import static io.harness.shell.AccessType.KEY;
 import static io.harness.shell.ScriptType.BASH;
 import static io.harness.shell.ScriptType.POWERSHELL;
 
-import static software.wings.sm.states.ShellScriptState.ConnectionType.SSH;
-import static software.wings.sm.states.ShellScriptState.ConnectionType.WINRM;
+import static software.wings.beans.ConnectionType.SSH;
+import static software.wings.beans.ConnectionType.WINRM;
 import static software.wings.utils.WingsTestConstants.ACCOUNT_ID;
 import static software.wings.utils.WingsTestConstants.ACTIVITY_ID;
 import static software.wings.utils.WingsTestConstants.APP_ID;

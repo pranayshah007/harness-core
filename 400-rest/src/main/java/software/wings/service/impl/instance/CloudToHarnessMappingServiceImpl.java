@@ -32,6 +32,8 @@ import io.harness.ccm.config.GcpBillingAccount;
 import io.harness.ccm.config.GcpBillingAccount.GcpBillingAccountKeys;
 import io.harness.ccm.config.GcpServiceAccount;
 import io.harness.ccm.config.GcpServiceAccount.GcpServiceAccountKeys;
+import io.harness.delegate.beans.Delegate;
+import io.harness.delegate.beans.Delegate.DelegateKeys;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnauthorizedException;
 import io.harness.persistence.HIterator;
@@ -518,5 +520,14 @@ public class CloudToHarnessMappingServiceImpl implements CloudToHarnessMappingSe
   @Override
   public CEMetadataRecord upsertCEMetaDataRecord(CEMetadataRecord ceMetadataRecord) {
     return ceMetadataRecordDao.upsert(ceMetadataRecord);
+  }
+
+  @Override
+  public List<Delegate> obtainDelegateDetails(String accountId, List<String> delegateIds) {
+    return persistence.createQuery(Delegate.class)
+        .filter(DelegateKeys.accountId, accountId)
+        .field(DelegateKeys.uuid)
+        .in(delegateIds)
+        .asList();
   }
 }

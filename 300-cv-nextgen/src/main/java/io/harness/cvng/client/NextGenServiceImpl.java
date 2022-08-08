@@ -23,12 +23,12 @@ import io.harness.ng.core.service.dto.ServiceResponse;
 import io.harness.ng.core.service.dto.ServiceResponseDTO;
 import io.harness.utils.IdentifierRefHelper;
 
+import com.google.common.base.Preconditions;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import com.hazelcast.internal.util.Preconditions;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;

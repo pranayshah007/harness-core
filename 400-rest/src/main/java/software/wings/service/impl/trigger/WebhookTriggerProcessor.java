@@ -12,6 +12,7 @@ import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.validation.Validator.notNullCheck;
 import static io.harness.waiter.OrchestrationNotifyEventListener.ORCHESTRATION;
 
+import static software.wings.beans.trigger.TriggerExecution.WEBHOOK_EVENT_DETAILS_BRANCH_NAMES_KEY;
 import static software.wings.beans.trigger.TriggerExecution.WEBHOOK_EVENT_DETAILS_BRANCH_NAME_KEY;
 import static software.wings.beans.trigger.TriggerExecution.WEBHOOK_EVENT_DETAILS_GIT_CONNECTOR_ID_KEY;
 import static software.wings.beans.trigger.TriggerExecution.WEBHOOK_EVENT_DETAILS_WEBHOOK_SOURCE_KEY;
@@ -47,12 +48,15 @@ import software.wings.service.intfc.trigger.TriggerExecutionService;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import javax.validation.executable.ValidateOnExecution;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.validator.constraints.NotEmpty;
+import org.mongodb.morphia.query.Criteria;
+import org.mongodb.morphia.query.Query;
 
 @OwnedBy(CDC)
 @Singleton
@@ -72,16 +76,21 @@ public class WebhookTriggerProcessor {
 
   public TriggerExecution fetchLastExecutionForContentChanged(Trigger trigger) {
     WebHookTriggerCondition webHookTriggerCondition = (WebHookTriggerCondition) trigger.getCondition();
-    return wingsPersistence.createQuery(TriggerExecution.class)
-        .filter(TriggerExecution.APP_ID_KEY2, trigger.getAppId())
-        .filter(TriggerExecution.TRIGGER_ID_KEY, trigger.getUuid())
-        .filter(TriggerExecution.WEBHOOK_TOKEN_KEY, trigger.getWebHookToken())
-        .filter(TriggerExecution.WORKFLOW_ID_KEY, trigger.getWorkflowId())
-        .filter(WEBHOOK_EVENT_DETAILS_BRANCH_NAME_KEY, webHookTriggerCondition.getBranchName())
-        .filter(WEBHOOK_EVENT_DETAILS_GIT_CONNECTOR_ID_KEY, webHookTriggerCondition.getGitConnectorId())
+    Query<TriggerExecution> query = wingsPersistence.createQuery(TriggerExecution.class)
+                                        .disableValidation()
+                                        .filter(TriggerExecution.APP_ID_KEY2, trigger.getAppId())
+                                        .filter(TriggerExecution.TRIGGER_ID_KEY, trigger.getUuid())
+                                        .filter(TriggerExecution.WEBHOOK_TOKEN_KEY, trigger.getWebHookToken())
+                                        .filter(TriggerExecution.WORKFLOW_ID_KEY, trigger.getWorkflowId());
+    List<Criteria> criterias = new ArrayList<>();
+    criterias.add(query.criteria(WEBHOOK_EVENT_DETAILS_BRANCH_NAME_KEY).equal(webHookTriggerCondition.getBranchName()));
+    criterias.add(
+        query.criteria(WEBHOOK_EVENT_DETAILS_BRANCH_NAMES_KEY).equal(webHookTriggerCondition.getBranchName()));
+    query.or(criterias.toArray(new Criteria[0]));
+    return query.filter(WEBHOOK_EVENT_DETAILS_GIT_CONNECTOR_ID_KEY, webHookTriggerCondition.getGitConnectorId())
         .filter(WEBHOOK_EVENT_DETAILS_WEBHOOK_SOURCE_KEY, webHookTriggerCondition.getWebhookSource().name())
         .field(WorkflowExecutionKeys.status)
-        .in(EnumSet.<TriggerExecution.Status>of(Status.RUNNING, Status.SUCCESS))
+        .in(EnumSet.of(Status.RUNNING, Status.SUCCESS))
         .order("-createdAt")
         .get();
   }
@@ -91,13 +100,13 @@ public class WebhookTriggerProcessor {
     WebHookTriggerCondition webHookTriggerCondition = (WebHookTriggerCondition) trigger.getCondition();
     WebhookEventDetails webhookEventDetails = triggerExecution.getWebhookEventDetails();
     if (webHookTriggerCondition.getBranchName() == null
-        || webHookTriggerCondition.getBranchName().equals(webhookEventDetails.getBranchName())) {
+        || webhookEventDetails.getBranchNames().contains(webHookTriggerCondition.getBranchName())) {
       log.info("Validating branch name completed for the trigger {}", trigger.getUuid());
       return true;
     }
     String msg =
         String.format("WebHook event branch name [%s] does not match with the trigger condition branch name [%s]",
-            webhookEventDetails.getBranchName(), webHookTriggerCondition.getBranchName());
+            webhookEventDetails.getBranchNames(), webHookTriggerCondition.getBranchName());
     log.info(msg);
     throw new InvalidRequestException(msg, WingsException.USER);
   }
@@ -164,7 +173,7 @@ public class WebhookTriggerProcessor {
         .gitConnectorId(webhookEventDetails.getGitConnectorId())
         .currentCommitId(webhookEventDetails.getCommitId())
         .oldCommitId(webhookEventDetails.getPrevCommitId())
-        .branch(webhookEventDetails.getBranchName())
+        .branch(webhookEventDetails.getBranchNames().toString())
         .repoName(gitConfig.getRepoName())
         .filePaths(webhookEventDetails.getFilePaths())
         .gitConfig(gitConfig)

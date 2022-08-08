@@ -13,26 +13,32 @@ import static com.fasterxml.jackson.annotation.JsonTypeInfo.As.EXTERNAL_PROPERTY
 import static com.fasterxml.jackson.annotation.JsonTypeInfo.Id.NAME;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.yaml.core.VariableExpression;
 
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import io.swagger.annotations.ApiModelProperty;
 import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @OwnedBy(CDP)
 @Data
 @NoArgsConstructor
 public class TerraformVarFile {
+  @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String uuid;
+
   @NotNull String type;
-  @NotNull String identifier;
+  @VariableExpression(skipVariableExpression = true) @NotNull String identifier;
 
   @NotNull
   @JsonTypeInfo(use = NAME, property = "type", include = EXTERNAL_PROPERTY, visible = true)
   TerraformVarFileSpec spec;
 
   @Builder
-  public TerraformVarFile(String type, TerraformVarFileSpec spec, String identifier) {
+  public TerraformVarFile(String uuid, String type, TerraformVarFileSpec spec, String identifier) {
+    this.uuid = uuid;
     this.type = type;
     this.spec = spec;
     this.identifier = identifier;

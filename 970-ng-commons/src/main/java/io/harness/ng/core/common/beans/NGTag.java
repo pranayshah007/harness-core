@@ -19,6 +19,6 @@ import lombok.experimental.FieldNameConstants;
 @FieldNameConstants(innerTypeName = "NGTagKeys")
 @Schema(name = "NGTag", description = "This is the view of the tags of the entity.")
 public class NGTag implements Serializable {
-  @NotNull private String key;
-  @NotNull private String value;
+  @NotNull @Schema(description = "Tag key") private String key;
+  @NotNull @Schema(description = "Tag value") private String value;
 }

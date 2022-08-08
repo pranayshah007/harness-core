@@ -9,8 +9,8 @@ package software.wings.delegatetasks.servicenow;
 
 import static io.harness.rule.OwnerRule.AGORODETKI;
 
-import static software.wings.service.impl.servicenow.ServiceNowServiceImpl.ServiceNowTicketType.CHANGE_TASK;
-import static software.wings.service.impl.servicenow.ServiceNowServiceImpl.ServiceNowTicketType.INCIDENT;
+import static software.wings.beans.servicenow.ServiceNowTicketType.CHANGE_TASK;
+import static software.wings.beans.servicenow.ServiceNowTicketType.INCIDENT;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -40,8 +40,8 @@ import software.wings.api.ServiceNowImportSetResponse;
 import software.wings.beans.ServiceNowConfig;
 import software.wings.beans.servicenow.ServiceNowFields;
 import software.wings.beans.servicenow.ServiceNowTaskParameters;
+import software.wings.beans.servicenow.ServiceNowTicketType;
 import software.wings.helpers.ext.servicenow.ServiceNowRestClient;
-import software.wings.service.impl.servicenow.ServiceNowServiceImpl.ServiceNowTicketType;
 import software.wings.service.intfc.security.EncryptionService;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -164,7 +164,7 @@ public class ServicenowTaskTest extends CategoryTest {
   @Owner(developers = AGORODETKI)
   @Category(UnitTests.class)
   public void shouldThrowInvalidRequestExceptionOnAttemptToUpdateAllChangeTaskTickets() {
-    ServiceNowTaskParameters taskParams = getTaskParams(ServiceNowAction.UPDATE, ServiceNowTicketType.CHANGE_TASK);
+    ServiceNowTaskParameters taskParams = getTaskParams(ServiceNowAction.UPDATE, CHANGE_TASK);
     taskParams.setUpdateMultiple(true);
 
     assertThatThrownBy(() -> spySnowTask.run(taskParams))

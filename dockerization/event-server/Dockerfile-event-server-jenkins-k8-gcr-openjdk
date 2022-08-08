@@ -1,8 +1,8 @@
 # to be used when building in Jenkins
-FROM us.gcr.io/platform-205701/alpine:safe-alpine3.12-sec1338
+FROM us.gcr.io/platform-205701/alpine:safe-alpine3.15.4-bt1276-apm
 
 # Add the capsule JAR and config.yml
-COPY event-server-capsule.jar event-service-config.yml key.pem cert.pem protocol.info alpn-boot-8.1.13.v20181017.jar /opt/harness/
+COPY event-server-capsule.jar event-service-config.yml key.pem cert.pem protocol.info /opt/harness/
 
 COPY scripts /opt/harness
 

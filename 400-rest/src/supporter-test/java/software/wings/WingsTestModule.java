@@ -71,8 +71,6 @@ import software.wings.helpers.ext.azure.devops.AzureArtifactsService;
 import software.wings.helpers.ext.azure.devops.AzureArtifactsServiceImpl;
 import software.wings.helpers.ext.bamboo.BambooService;
 import software.wings.helpers.ext.bamboo.BambooServiceImpl;
-import software.wings.helpers.ext.chartmuseum.ChartMuseumClient;
-import software.wings.helpers.ext.chartmuseum.ChartMuseumClientImpl;
 import software.wings.helpers.ext.nexus.NexusService;
 import software.wings.helpers.ext.nexus.NexusServiceImpl;
 import software.wings.provider.NoopDelegateConfigurationServiceProviderImpl;
@@ -220,7 +218,6 @@ public class WingsTestModule extends AbstractModule {
     bind(GitService.class).to(GitServiceImpl.class);
     bind(KustomizeClient.class).to(KustomizeClientImpl.class);
     bind(OpenShiftClient.class).to(OpenShiftClientImpl.class);
-    bind(ChartMuseumClient.class).to(ChartMuseumClientImpl.class);
     bind(CfCliClient.class).to(CfCliClientImpl.class);
     bind(CfSdkClient.class).to(CfSdkClientImpl.class);
     DelegateLogService mockDelegateLogService = mock(DelegateLogService.class);

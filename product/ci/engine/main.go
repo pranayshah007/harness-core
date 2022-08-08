@@ -69,6 +69,7 @@ func main() {
 	// Lite engine logs that are not part of any step are logged with ID engine:main
 	remoteLogger := getRemoteLogger("engine:main")
 	log := remoteLogger.BaseLogger
+	logs.InitLogger(log)
 	procWriter := remoteLogger.Writer
 	defer procWriter.Close() // upload the logs to object store and close the stream
 

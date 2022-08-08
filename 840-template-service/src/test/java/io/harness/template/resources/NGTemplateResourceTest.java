@@ -16,7 +16,6 @@ import static java.lang.Boolean.TRUE;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -47,11 +46,11 @@ import io.harness.template.beans.TemplateResponseDTO;
 import io.harness.template.beans.TemplateWrapperResponseDTO;
 import io.harness.template.entity.TemplateEntity;
 import io.harness.template.entity.TemplateEntity.TemplateEntityKeys;
-import io.harness.template.helpers.TemplateMergeHelper;
 import io.harness.template.helpers.TemplateReferenceHelper;
 import io.harness.template.helpers.TemplateYamlConversionHelper;
 import io.harness.template.services.NGTemplateService;
 import io.harness.template.services.NGTemplateServiceHelper;
+import io.harness.template.services.TemplateMergeService;
 
 import com.google.common.io.Resources;
 import com.google.inject.Inject;
@@ -91,7 +90,7 @@ public class NGTemplateResourceTest extends CategoryTest {
   @Mock NGTemplateService templateService;
   @Mock NGTemplateServiceHelper templateServiceHelper;
   @Mock AccessControlClient accessControlClient;
-  @Mock TemplateMergeHelper templateMergeHelper;
+  @Mock TemplateMergeService templateMergeService;
   @Inject VariablesServiceBlockingStub variablesServiceBlockingStub;
   @Mock TemplateYamlConversionHelper templateYamlConversionHelper;
   @Mock TemplateReferenceHelper templateReferenceHelper;
@@ -140,7 +139,7 @@ public class NGTemplateResourceTest extends CategoryTest {
     variablesServiceBlockingStub = VariablesServiceGrpc.newBlockingStub(channel);
 
     templateResource = new NGTemplateResource(templateService, templateServiceHelper, accessControlClient,
-        templateMergeHelper, variablesServiceBlockingStub, templateYamlConversionHelper, templateReferenceHelper);
+        templateMergeService, variablesServiceBlockingStub, templateYamlConversionHelper, templateReferenceHelper);
     ClassLoader classLoader = this.getClass().getClassLoader();
     String filename = "template.yaml";
     yaml = Resources.toString(Objects.requireNonNull(classLoader.getResource(filename)), StandardCharsets.UTF_8);
@@ -328,7 +327,7 @@ public class NGTemplateResourceTest extends CategoryTest {
     Pageable pageable = PageRequest.of(0, 10, Sort.by(Sort.Direction.DESC, TemplateEntityKeys.createdAt));
     PageImpl<TemplateEntity> templateEntities =
         new PageImpl<>(Collections.singletonList(entityWithMongoVersion), pageable, 1);
-    doReturn(templateEntities).when(templateService).list(any(), any(), any(), any(), any(), anyBoolean());
+    doReturn(templateEntities).when(templateService).list(any(), any(), any(), any(), any(), any());
     List<TemplateSummaryResponseDTO> content =
         templateResource
             .listTemplates(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, 0, 25, null, null, null,

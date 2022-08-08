@@ -225,7 +225,8 @@ public class SubdomainUrlHelperIntfcTest extends WingsBaseTest {
     assertThat(result2).isEqualTo(DELEGATE_METADATA_URL);
     assertThat(subdomainUrlHelper.getDelegateMetadataUrl(ACCOUNT_ID_2, null, null))
         .isEqualTo(DELEGATE_METADATA_URL_WITH_SUBDOMAIN);
-    String result3 = subdomainUrlHelper.getDelegateMetadataUrl(ACCOUNT_ID_1, "testurl", DeployMode.ONPREM.name());
+    String result3 =
+        subdomainUrlHelper.getDelegateMetadataUrl(ACCOUNT_ID_1, "testurl", DeployMode.KUBERNETES_ONPREM.name());
     assertThat(result3).isEqualTo("testurl/storage/wingsdelegates/delegateprod.txt");
   }
 
@@ -239,7 +240,8 @@ public class SubdomainUrlHelperIntfcTest extends WingsBaseTest {
     assertThat(result2).isEqualTo(WATCHER_METADATA_URL);
     assertThat(subdomainUrlHelper.getWatcherMetadataUrl(ACCOUNT_ID_2, null, null))
         .isEqualTo(WATCHER_METADATA_URL_WITH_SUBDOMAIN);
-    String result3 = subdomainUrlHelper.getWatcherMetadataUrl(ACCOUNT_ID_1, "testurl", DeployMode.ONPREM.name());
+    String result3 =
+        subdomainUrlHelper.getWatcherMetadataUrl(ACCOUNT_ID_1, "testurl", DeployMode.KUBERNETES_ONPREM.name());
     assertThat(result3).isEqualTo("testurl/storage/wingswatchers/watcherprod.txt");
   }
 

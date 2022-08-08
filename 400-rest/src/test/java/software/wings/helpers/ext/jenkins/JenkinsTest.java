@@ -34,6 +34,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.artifacts.jenkins.beans.JenkinsInternalConfig;
+import io.harness.artifacts.jenkins.service.JenkinsRegistryUtils;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.artifact.ArtifactFileMetadata;
 import io.harness.exception.ArtifactServerException;
@@ -96,6 +98,8 @@ public class JenkinsTest extends WingsBaseTest {
 
   private String rootUrl;
   private Jenkins jenkins;
+  private JenkinsInternalConfig jenkinsInternalConfig;
+  @Inject private JenkinsRegistryUtils jenkinsRegistryUtils;
 
   @Before
   public void setup() throws URISyntaxException {
@@ -104,6 +108,8 @@ public class JenkinsTest extends WingsBaseTest {
     jenkins = new JenkinsImpl(rootUrl, USERNAME, PASSWORD.toCharArray());
     LoggingInitializer.initializeLogging();
     on(jenkins).set("timeLimiter", new FakeTimeLimiter());
+    jenkinsInternalConfig =
+        JenkinsInternalConfig.builder().jenkinsUrl(rootUrl).username(USERNAME).password(PASSWORD.toCharArray()).build();
   }
 
   /**
@@ -117,6 +123,7 @@ public class JenkinsTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void shouldGetJobFromJenkins() throws IOException {
     assertThat(jenkins.getJobWithDetails("scheduler")).isNotNull();
+    assertThat(jenkinsRegistryUtils.getJobWithDetails(jenkinsInternalConfig, "scheduler")).isNotNull();
   }
 
   /**
@@ -475,15 +482,14 @@ public class JenkinsTest extends WingsBaseTest {
 
     // Tests for GetJob
     Reflect.on(jenkins).set("jenkinsServer", jenkinsServer);
-    when(jenkinsServer.createJob(any(FolderJob.class), eq("randomJob1"), any(JenkinsConfig.class)))
-        .thenThrow(new RuntimeException());
-    assertThatThrownBy(() -> jenkins.getJob("randomJob1", JenkinsConfig.builder().build()))
+    when(jenkinsServer.createJob(any(), eq("randomJob1"), any(JenkinsConfig.class))).thenThrow(new RuntimeException());
+    assertThatThrownBy(() -> jenkins.getJob("randomJob1", JenkinsConfig.builder().build(), 120))
         .isInstanceOf(ArtifactServerException.class);
 
     Reflect.on(jenkins).set("jenkinsServer", jenkinsServer);
-    when(jenkinsServer.createJob(any(FolderJob.class), eq("randomJob2"), any(JenkinsConfig.class)))
+    when(jenkinsServer.createJob(any(), eq("randomJob2"), any(JenkinsConfig.class)))
         .thenThrow(new HttpResponseException(400, "Bad Request"));
-    assertThatThrownBy(() -> jenkins.getJob("randomJob2", JenkinsConfig.builder().build()))
+    assertThatThrownBy(() -> jenkins.getJob("randomJob2", JenkinsConfig.builder().build(), 120))
         .isInstanceOf(ArtifactServerException.class);
   }
 
@@ -506,13 +512,13 @@ public class JenkinsTest extends WingsBaseTest {
 
     // Tests for GetJob
     Job job = new Job();
-    when(jenkinsServer.createJob(any(FolderJob.class), eq("randomJob"), any(JenkinsConfig.class)))
+    when(jenkinsServer.createJob(any(), eq("randomJob"), any(JenkinsConfig.class)))
         .thenThrow(new HttpResponseException(500, "Something went wrong"))
         .thenThrow(new HttpResponseException(400, "Server Error"))
         .thenReturn(job);
-    Job actualJob = jenkins.getJob("randomJob", JenkinsConfig.builder().build());
+    Job actualJob = jenkins.getJob("randomJob", JenkinsConfig.builder().build(), 120);
     assertThat(actualJob).isEqualTo(job);
-    verify(jenkinsServer, times(3)).createJob(any(FolderJob.class), eq("randomJob"), any(JenkinsConfig.class));
+    verify(jenkinsServer, times(3)).createJob(any(), eq("randomJob"), any(JenkinsConfig.class));
   }
 
   @Test

@@ -33,6 +33,7 @@ import static io.harness.ccm.health.CEError.NO_RECENT_EVENTS_PUBLISHED;
 import static io.harness.ccm.health.CEError.PERPETUAL_TASK_CREATION_FAILURE;
 import static io.harness.ccm.health.CEError.PERPETUAL_TASK_NOT_ASSIGNED;
 import static io.harness.ccm.health.CEError.PVC_PERMISSION_ERROR;
+import static io.harness.ccm.health.CEError.TASK_VALIDATION_FAILED;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
@@ -300,6 +301,9 @@ public class HealthStatusServiceImpl implements HealthStatusService {
               break;
             case NO_DELEGATE_INSTALLED:
               errors.add(DELEGATE_NOT_INSTALLED);
+              break;
+            case VALIDATION_TASK_FAILED:
+              errors.add(TASK_VALIDATION_FAILED);
               break;
             default:
               log.warn("Unexpected perpetual task state:{} for empty delegate id",

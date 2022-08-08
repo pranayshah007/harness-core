@@ -7,6 +7,9 @@
 
 package io.harness.cdng.creator.plan.manifest;
 
+import static io.harness.cdng.manifest.ManifestType.HELM_SUPPORTED_MANIFEST_TYPES;
+import static io.harness.cdng.manifest.ManifestType.K8S_SUPPORTED_MANIFEST_TYPES;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.creator.plan.PlanCreatorConstants;
@@ -17,14 +20,15 @@ import io.harness.cdng.manifest.steps.ManifestsStep;
 import io.harness.cdng.manifest.yaml.ManifestAttributes;
 import io.harness.cdng.manifest.yaml.ManifestConfig;
 import io.harness.cdng.manifest.yaml.ManifestConfigWrapper;
-import io.harness.cdng.manifest.yaml.ManifestOverrideSetWrapper;
-import io.harness.cdng.manifest.yaml.ManifestOverrideSets;
 import io.harness.cdng.service.beans.ServiceConfig;
+import io.harness.cdng.service.beans.ServiceDefinitionType;
+import io.harness.cdng.service.beans.StageOverridesConfig;
 import io.harness.cdng.utilities.ManifestsUtility;
 import io.harness.cdng.visitor.YamlTypes;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.exception.InvalidRequestException;
+import io.harness.ng.core.service.yaml.NGServiceV2InfoConfig;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
 import io.harness.pms.contracts.plan.Dependency;
@@ -36,7 +40,6 @@ import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse.PlanCreationResponseBuilder;
 import io.harness.pms.sdk.core.plan.creation.creators.ChildrenPlanCreator;
 import io.harness.pms.yaml.DependenciesUtils;
-import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.serializer.KryoSerializer;
@@ -67,20 +70,37 @@ public class ManifestsPlanCreator extends ChildrenPlanCreator<ManifestsListConfi
       PlanCreationContext ctx, ManifestsListConfigWrapper config) {
     LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap = new LinkedHashMap<>();
 
+    ManifestList manifestList = new ManifestList(new HashMap<>());
     // This is the actual service config passed from service plan creator
-    ServiceConfig serviceConfig = (ServiceConfig) kryoSerializer.asInflatedObject(
-        ctx.getDependency().getMetadataMap().get(YamlTypes.SERVICE_CONFIG).toByteArray());
+    // service v1
+    ServiceDefinitionType serviceDefinitionType = null;
+    if (ctx.getDependency().getMetadataMap().containsKey(YamlTypes.SERVICE_CONFIG)) {
+      ServiceConfig serviceConfig = (ServiceConfig) kryoSerializer.asInflatedObject(
+          ctx.getDependency().getMetadataMap().get(YamlTypes.SERVICE_CONFIG).toByteArray());
 
-    List<ManifestConfigWrapper> manifestListConfig =
-        serviceConfig.getServiceDefinition().getServiceSpec().getManifests();
-    ManifestListBuilder manifestListBuilder = new ManifestListBuilder(manifestListConfig);
-    manifestListBuilder.addOverrideSets(serviceConfig);
-    manifestListBuilder.addStageOverrides(serviceConfig);
-    ManifestList manifestList = manifestListBuilder.build();
+      List<ManifestConfigWrapper> manifestListConfig =
+          serviceConfig.getServiceDefinition().getServiceSpec().getManifests();
+      serviceDefinitionType = serviceConfig.getServiceDefinition().getType();
+      ManifestListBuilder manifestListBuilder = new ManifestListBuilder(manifestListConfig);
+      manifestListBuilder.addStageOverrides(serviceConfig.getStageOverrides());
+      manifestList = manifestListBuilder.build();
+
+    } else if (ctx.getDependency().getMetadataMap().containsKey(YamlTypes.SERVICE_ENTITY)) {
+      NGServiceV2InfoConfig serviceV2InfoConfig = (NGServiceV2InfoConfig) kryoSerializer.asInflatedObject(
+          ctx.getDependency().getMetadataMap().get(YamlTypes.SERVICE_ENTITY).toByteArray());
+
+      List<ManifestConfigWrapper> manifestListConfig =
+          serviceV2InfoConfig.getServiceDefinition().getServiceSpec().getManifests();
+      serviceDefinitionType = serviceV2InfoConfig.getServiceDefinition().getType();
+      ManifestListBuilder manifestListBuilder = new ManifestListBuilder(manifestListConfig);
+      manifestList = manifestListBuilder.build();
+    }
+
     if (EmptyPredicate.isEmpty(manifestList.getManifests())) {
       return planCreationResponseMap;
     }
 
+    validateManifestList(serviceDefinitionType, manifestList);
     YamlField manifestsYamlField = ctx.getCurrentField();
 
     List<YamlNode> yamlNodes = Optional.of(manifestsYamlField.getNode().asArray()).orElse(Collections.emptyList());
@@ -103,7 +123,7 @@ public class ManifestsPlanCreator extends ChildrenPlanCreator<ManifestsListConfi
    */
   public String addDependenciesForIndividualManifest(YamlField manifestsYamlField, String manifestIdentifier,
       ManifestStepParameters stepParameters, Map<String, YamlNode> manifestIdentifierToYamlNodeMap,
-      LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap) {
+      Map<String, PlanCreationResponse> planCreationResponseMap) {
     YamlField individualManifest = ManifestsUtility.fetchIndividualManifestYamlField(
         manifestsYamlField, manifestIdentifier, manifestIdentifierToYamlNodeMap);
 
@@ -163,6 +183,43 @@ public class ManifestsPlanCreator extends ChildrenPlanCreator<ManifestsListConfi
     return Collections.singletonMap(YamlTypes.MANIFEST_LIST_CONFIG, Collections.singleton(PlanCreatorUtils.ANY_TYPE));
   }
 
+  private void validateManifestList(ServiceDefinitionType serviceDefinitionType, ManifestList manifestList) {
+    if (serviceDefinitionType == null) {
+      return;
+    }
+
+    switch (serviceDefinitionType) {
+      case KUBERNETES:
+        validateDuplicateManifests(
+            manifestList, K8S_SUPPORTED_MANIFEST_TYPES, ServiceDefinitionType.KUBERNETES.getYamlName());
+        break;
+      case NATIVE_HELM:
+        validateDuplicateManifests(
+            manifestList, HELM_SUPPORTED_MANIFEST_TYPES, ServiceDefinitionType.NATIVE_HELM.getYamlName());
+        break;
+      default:
+    }
+  }
+
+  private void validateDuplicateManifests(ManifestList manifestList, Set<String> supported, String deploymentType) {
+    Map<String, String> manifestIdTypeMap =
+        manifestList.getManifests()
+            .entrySet()
+            .stream()
+            .filter(entry -> supported.contains(entry.getValue().getParams().getType()))
+            .collect(Collectors.toMap(Map.Entry::getKey, entry -> entry.getValue().getParams().getType()));
+
+    if (manifestIdTypeMap.values().size() > 1) {
+      String manifestIdType = manifestIdTypeMap.entrySet()
+                                  .stream()
+                                  .map(entry -> String.format("%s : %s", entry.getKey(), entry.getValue()))
+                                  .collect(Collectors.joining(", "));
+      throw new InvalidRequestException(String.format(
+          "Multiple manifests found [%s]. %s deployment support only one manifest of one of types: %s. Remove all unused manifests",
+          manifestIdType, deploymentType, String.join(", ", supported)));
+    }
+  }
+
   @Value
   private static class ManifestList {
     Map<String, ManifestInfo> manifests;
@@ -203,40 +260,11 @@ public class ManifestsPlanCreator extends ChildrenPlanCreator<ManifestsListConfi
               : manifests.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().build())));
     }
 
-    void addOverrideSets(ServiceConfig serviceConfig) {
-      if (serviceConfig.getStageOverrides() == null
-          || ParameterField.isNull(serviceConfig.getStageOverrides().getUseManifestOverrideSets())) {
+    void addStageOverrides(StageOverridesConfig stageOverrides) {
+      if (stageOverrides == null || stageOverrides.getManifests() == null) {
         return;
       }
-
-      for (String useManifestOverrideSet : serviceConfig.getStageOverrides().getUseManifestOverrideSets().getValue()) {
-        List<ManifestOverrideSets> manifestOverrideSetsList =
-            serviceConfig.getServiceDefinition()
-                .getServiceSpec()
-                .getManifestOverrideSets()
-                .stream()
-                .map(ManifestOverrideSetWrapper::getOverrideSet)
-                .filter(overrideSet -> overrideSet.getIdentifier().equals(useManifestOverrideSet))
-                .collect(Collectors.toList());
-        if (manifestOverrideSetsList.size() == 0) {
-          throw new InvalidRequestException(
-              String.format("Invalid identifier [%s] in manifest override sets", useManifestOverrideSet));
-        }
-        if (manifestOverrideSetsList.size() > 1) {
-          throw new InvalidRequestException(
-              String.format("Duplicate identifier [%s] in manifest override sets", useManifestOverrideSet));
-        }
-
-        List<ManifestConfigWrapper> manifestConfigList = manifestOverrideSetsList.get(0).getManifests();
-        addOverrides(manifestConfigList, ManifestStepParametersBuilder::overrideSet);
-      }
-    }
-
-    void addStageOverrides(ServiceConfig serviceConfig) {
-      if (serviceConfig.getStageOverrides() == null || serviceConfig.getStageOverrides().getManifests() == null) {
-        return;
-      }
-      List<ManifestConfigWrapper> manifestConfigList = serviceConfig.getStageOverrides().getManifests();
+      List<ManifestConfigWrapper> manifestConfigList = stageOverrides.getManifests();
       addOverrides(manifestConfigList, ManifestStepParametersBuilder::stageOverride);
     }
 

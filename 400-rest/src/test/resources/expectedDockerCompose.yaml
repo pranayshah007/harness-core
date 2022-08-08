@@ -5,12 +5,12 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "0.5"
+          cpus: "1.0"
           memory: 2048M
     image: harness/delegate:latest
     environment:
       - ACCOUNT_ID=ACCOUNT_ID
-      - ACCOUNT_SECRET=ACCOUNT_KEY
+      - DELEGATE_TOKEN=ACCOUNT_KEY
       - MANAGER_HOST_AND_PORT=https://localhost:9090
       - WATCHER_STORAGE_URL=http://localhost:8888
       - WATCHER_CHECK_LOCATION=watcherci.txt

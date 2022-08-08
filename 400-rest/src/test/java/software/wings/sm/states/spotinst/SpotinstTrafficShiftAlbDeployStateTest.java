@@ -99,24 +99,23 @@ public class SpotinstTrafficShiftAlbDeployStateTest extends WingsBaseTest {
     doReturn(dataBag).when(mockSpotinstStateHelper).getDataBag(any());
     PhaseElement mockPhaseElement = mock(PhaseElement.class);
     ExecutionContext mockContext = mock(ExecutionContext.class);
-    doReturn(mockPhaseElement).when(mockContext).getContextElement(any(), anyString());
+    doReturn(mockPhaseElement).when(mockContext).getContextElement(any(), any());
     doReturn(ServiceElement.builder().uuid(SERVICE_ID).build()).when(mockPhaseElement).getServiceElement();
-    doNothing().when(mockStateExecutionService).appendDelegateTaskDetails(anyString(), any());
+    doNothing().when(mockStateExecutionService).appendDelegateTaskDetails(any(), any());
     doReturn(DelegateTask.builder().description("desc").build())
         .when(mockSpotinstStateHelper)
-        .getDelegateTask(anyString(), anyString(), any(), anyString(), anyString(), anyString(), any(), any(),
-            anyString(), eq(true));
+        .getDelegateTask(any(), any(), any(), any(), any(), any(), any(), any(), any(), eq(true));
     doReturn(SpotinstTrafficShiftAlbSetupElement.builder()
                  .oldElastiGroupOriginalConfig(ElastiGroup.builder().id("oldId").name("oldName").build())
                  .newElastiGroupOriginalConfig(ElastiGroup.builder().id("newId").name("newName").build())
                  .timeoutIntervalInMin(10)
                  .build())
         .when(mockSpotinstStateHelper)
-        .getSetupElementFromSweepingOutput(any(), anyString());
+        .getSetupElementFromSweepingOutput(any(), any());
 
     doReturn(Activity.builder().uuid(ACTIVITY_ID).build())
         .when(mockSpotinstStateHelper)
-        .createActivity(any(), any(), anyString(), anyString(), any(), anyList());
+        .createActivity(any(), any(), any(), any(), any(), anyList());
     ExecutionResponse response = state.execute(mockContext);
     assertThat(response).isNotNull();
     assertThat(response.getExecutionStatus()).isEqualTo(SUCCESS);

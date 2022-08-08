@@ -196,7 +196,7 @@ public class GitSyncEntitiesExpiryHandlerTest extends WingsBaseTest {
     GitFileActivitySummary gitFileActivity = GitFileActivitySummary.builder().accountId(account.getUuid()).build();
     gitFileActivity.setUuid("uuid");
     PageResponse pageResponse = aPageResponse().withResponse(Arrays.asList(gitFileActivity)).build();
-    doReturn(pageResponse).when(gitSyncService).fetchGitCommits(any(), anyBoolean(), anyString(), anyString());
+    doReturn(pageResponse).when(gitSyncService).fetchGitCommits(any(), any(), anyString(), anyString());
     gitSyncEntitiesExpiryHandler.handleGitCommitInGitFileActivitySummary(account, 0L);
     ArgumentCaptor<List> argumentCaptor = ArgumentCaptor.forClass(List.class);
     verify(gitSyncService, times(1)).deleteGitCommits(argumentCaptor.capture(), any());

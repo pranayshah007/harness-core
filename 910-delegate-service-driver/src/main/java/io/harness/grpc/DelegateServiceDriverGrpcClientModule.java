@@ -19,7 +19,6 @@ import io.harness.delegateprofile.DelegateProfileServiceGrpc;
 import io.harness.govern.ProviderModule;
 import io.harness.grpc.auth.ServiceAuthCallCredentials;
 import io.harness.security.ServiceTokenGenerator;
-import io.harness.version.VersionInfo;
 import io.harness.version.VersionInfoManager;
 
 import com.google.inject.Provides;
@@ -64,7 +63,7 @@ public class DelegateServiceDriverGrpcClientModule extends ProviderModule {
   @Singleton
   @Provides
   public Channel managerChannel(VersionInfoManager versionInfoManager) throws SSLException {
-    String authorityToUse = computeAuthority(versionInfoManager.getVersionInfo());
+    String authorityToUse = computeAuthority();
     if ("ONPREM".equals(deployMode) || "KUBERNETES_ONPREM".equals(deployMode)) {
       return NettyChannelBuilder.forTarget(target).overrideAuthority(authorityToUse).usePlaintext().build();
     } else {
@@ -73,25 +72,15 @@ public class DelegateServiceDriverGrpcClientModule extends ProviderModule {
     }
   }
 
-  private String computeAuthority(VersionInfo versionInfo) {
+  private String computeAuthority() {
     String defaultAuthority = "default-authority.harness.io";
     String authorityToUse;
     if (!isValidAuthority(authority)) {
       log.info("Authority in config {} is invalid. Using default value {}", authority, defaultAuthority);
       authorityToUse = defaultAuthority;
-    } else if (!("ONPREM".equals(deployMode) || "KUBERNETES_ONPREM".equals(deployMode))) {
-      String versionPrefix = "v-" + versionInfo.getVersion().replace('.', '-') + "-";
-      String versionedAuthority = versionPrefix + authority;
-      if (isValidAuthority(versionedAuthority)) {
-        log.info("Using versioned authority: {}", versionedAuthority);
-        authorityToUse = versionedAuthority;
-      } else {
-        log.info("Versioned authority {} is invalid. Using non-versioned", versionedAuthority);
-        authorityToUse = authority;
-      }
     } else {
-      log.info("Deploy Mode is {}. Using non-versioned authority", deployMode);
       authorityToUse = authority;
+      log.info("Deploy Mode is {}. Using non-versioned authority {}", deployMode, authorityToUse);
     }
     return authorityToUse;
   }

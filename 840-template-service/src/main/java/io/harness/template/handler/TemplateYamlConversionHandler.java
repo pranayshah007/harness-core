@@ -9,8 +9,8 @@ package io.harness.template.handler;
 
 import static io.harness.template.beans.NGTemplateConstants.IDENTIFIER;
 import static io.harness.template.beans.NGTemplateConstants.NAME;
-import static io.harness.template.beans.NGTemplateConstants.SPEC;
 import static io.harness.template.beans.NGTemplateConstants.TEMPLATE_INPUTS;
+import static io.harness.template.beans.NGTemplateConstants.TYPE;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -40,13 +40,13 @@ public class TemplateYamlConversionHandler implements YamlConversionHandler {
     if (rootYamlField == null) {
       throw new NGTemplateException("yamlNode provided doesn not have root yaml field: " + rootYamlFieldName);
     }
-    YamlField specYamlField = rootYamlField.getNode().getField(SPEC);
-    if (specYamlField == null) {
-      throw new NGTemplateException("yamlNode provided doesn not have spec yaml field");
+    YamlField typeYamlField = rootYamlField.getNode().getField(TYPE);
+    if (typeYamlField == null) {
+      throw new NGTemplateException("yamlNode provided doesn not have type yaml field");
     }
     TemplateYamlConversionRecord conversionRecord = TemplateYamlParallelConversionRecord.builder()
                                                         .fieldsToAdd(fieldsToAdd)
-                                                        .path(specYamlField.getYamlPath())
+                                                        .path(typeYamlField.getYamlPath())
                                                         .build();
     return TemplateYamlConversionData.builder()
         .templateYamlConversionRecordList(Collections.singletonList(conversionRecord))

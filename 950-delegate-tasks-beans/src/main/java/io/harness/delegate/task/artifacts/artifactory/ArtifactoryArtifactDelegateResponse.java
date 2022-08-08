@@ -44,14 +44,12 @@ public class ArtifactoryArtifactDelegateResponse extends ArtifactDelegateRespons
 
   @Override
   public String describe() {
-    String buildMetadataUrl = getBuildDetails() != null ? getBuildDetails().getBuildUrl() : null;
     String dockerPullCommand = (RepositoryFormat.docker.name().equals(getRepositoryFormat())
                                    && getBuildDetails() != null && getBuildDetails().getMetadata() != null)
         ? "\nImage pull command: docker pull " + getBuildDetails().getMetadata().get(ArtifactMetadataKeys.IMAGE)
         : null;
-    return "type: " + (getSourceType() != null ? getSourceType().getDisplayName() : null)
-        + "\nbuild metadata url: " + buildMetadataUrl + "\nrepository: " + getRepositoryName()
-        + "\nimagePath: " + getArtifactPath() + "\ntag: " + getTag() + "\nrepository type: " + getRepositoryFormat()
-        + (EmptyPredicate.isNotEmpty(dockerPullCommand) ? dockerPullCommand : "");
+    return "type: " + (getSourceType() != null ? getSourceType().getDisplayName() : null) + "\nrepository: "
+        + getRepositoryName() + "\nimagePath: " + getArtifactPath() + "\ntag: " + getTag() + "\nrepository type: "
+        + getRepositoryFormat() + (EmptyPredicate.isNotEmpty(dockerPullCommand) ? dockerPullCommand : "");
   }
 }

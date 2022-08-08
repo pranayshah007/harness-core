@@ -14,12 +14,13 @@ import static io.harness.cdng.manifest.ManifestType.Kustomize;
 import static io.harness.cdng.manifest.ManifestType.KustomizePatches;
 import static io.harness.cdng.manifest.ManifestType.OpenshiftParam;
 import static io.harness.cdng.manifest.ManifestType.OpenshiftTemplate;
+import static io.harness.cdng.manifest.ManifestType.ReleaseRepo;
+import static io.harness.cdng.manifest.ManifestType.ServerlessAwsLambda;
 import static io.harness.cdng.manifest.ManifestType.VALUES;
 
 import static java.lang.String.format;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.manifest.steps.ManifestStepParameters;
 import io.harness.cdng.manifest.yaml.HelmChartManifestOutcome;
 import io.harness.cdng.manifest.yaml.K8sManifestOutcome;
 import io.harness.cdng.manifest.yaml.KustomizeManifestOutcome;
@@ -28,6 +29,8 @@ import io.harness.cdng.manifest.yaml.ManifestAttributes;
 import io.harness.cdng.manifest.yaml.ManifestOutcome;
 import io.harness.cdng.manifest.yaml.OpenshiftManifestOutcome;
 import io.harness.cdng.manifest.yaml.OpenshiftParamManifestOutcome;
+import io.harness.cdng.manifest.yaml.ReleaseRepoManifestOutcome;
+import io.harness.cdng.manifest.yaml.ServerlessAwsLambdaManifestOutcome;
 import io.harness.cdng.manifest.yaml.ValuesManifestOutcome;
 import io.harness.cdng.manifest.yaml.kinds.HelmChartManifest;
 import io.harness.cdng.manifest.yaml.kinds.K8sManifest;
@@ -35,6 +38,8 @@ import io.harness.cdng.manifest.yaml.kinds.KustomizeManifest;
 import io.harness.cdng.manifest.yaml.kinds.KustomizePatchesManifest;
 import io.harness.cdng.manifest.yaml.kinds.OpenshiftManifest;
 import io.harness.cdng.manifest.yaml.kinds.OpenshiftParamManifest;
+import io.harness.cdng.manifest.yaml.kinds.ReleaseRepoManifest;
+import io.harness.cdng.manifest.yaml.kinds.ServerlessAwsLambdaManifest;
 import io.harness.cdng.manifest.yaml.kinds.ValuesManifest;
 
 import java.util.LinkedList;
@@ -45,14 +50,13 @@ import lombok.experimental.UtilityClass;
 @UtilityClass
 @OwnedBy(CDP)
 public class ManifestOutcomeMapper {
-  public List<ManifestOutcome> toManifestOutcome(
-      List<ManifestAttributes> manifestAttributesList, ManifestStepParameters parameters) {
+  public List<ManifestOutcome> toManifestOutcome(List<ManifestAttributes> manifestAttributesList, int order) {
     return manifestAttributesList.stream()
-        .map(manifest -> toManifestOutcome(manifest, parameters))
+        .map(manifest -> toManifestOutcome(manifest, order))
         .collect(Collectors.toCollection(LinkedList::new));
   }
 
-  public ManifestOutcome toManifestOutcome(ManifestAttributes manifestAttributes, ManifestStepParameters parameters) {
+  public ManifestOutcome toManifestOutcome(ManifestAttributes manifestAttributes, int order) {
     if (manifestAttributes.getStoreConfig() != null) {
       ManifestOutcomeValidator.validateStore(
           manifestAttributes.getStoreConfig(), manifestAttributes.getKind(), manifestAttributes.getIdentifier(), true);
@@ -62,21 +66,33 @@ public class ManifestOutcomeMapper {
       case K8Manifest:
         return getK8sOutcome(manifestAttributes);
       case VALUES:
-        return getValuesOutcome(manifestAttributes, parameters);
+        return getValuesOutcome(manifestAttributes, order);
       case HelmChart:
         return getHelmChartOutcome(manifestAttributes);
       case Kustomize:
         return getKustomizeOutcome(manifestAttributes);
       case KustomizePatches:
-        return getKustomizePatchesOutcome(manifestAttributes, parameters);
+        return getKustomizePatchesOutcome(manifestAttributes, order);
       case OpenshiftTemplate:
         return getOpenshiftOutcome(manifestAttributes);
       case OpenshiftParam:
-        return getOpenshiftParamOutcome(manifestAttributes, parameters);
+        return getOpenshiftParamOutcome(manifestAttributes, order);
+      case ServerlessAwsLambda:
+        return getServerlessAwsOutcome(manifestAttributes, order);
+      case ReleaseRepo:
+        return getReleaseRepoOutcome(manifestAttributes);
       default:
         throw new UnsupportedOperationException(
             format("Unknown Artifact Config type: [%s]", manifestAttributes.getKind()));
     }
+  }
+
+  private static ManifestOutcome getReleaseRepoOutcome(ManifestAttributes manifestAttributes) {
+    ReleaseRepoManifest attributes = (ReleaseRepoManifest) manifestAttributes;
+    return ReleaseRepoManifestOutcome.builder()
+        .identifier(attributes.getIdentifier())
+        .store(attributes.getStoreConfig())
+        .build();
   }
 
   private K8sManifestOutcome getK8sOutcome(ManifestAttributes manifestAttributes) {
@@ -85,16 +101,17 @@ public class ManifestOutcomeMapper {
     return K8sManifestOutcome.builder()
         .identifier(k8sManifest.getIdentifier())
         .store(k8sManifest.getStoreConfig())
+        .valuesPaths(k8sManifest.getValuesPaths())
         .skipResourceVersioning(k8sManifest.getSkipResourceVersioning())
         .build();
   }
 
-  private ValuesManifestOutcome getValuesOutcome(ManifestAttributes manifestAttributes, ManifestStepParameters params) {
+  private ValuesManifestOutcome getValuesOutcome(ManifestAttributes manifestAttributes, int order) {
     ValuesManifest attributes = (ValuesManifest) manifestAttributes;
     return ValuesManifestOutcome.builder()
         .identifier(attributes.getIdentifier())
         .store(attributes.getStoreConfig())
-        .order(params.getOrder())
+        .order(order)
         .build();
   }
 
@@ -107,6 +124,7 @@ public class ManifestOutcomeMapper {
         .chartName(helmChartManifest.getChartName())
         .chartVersion(helmChartManifest.getChartVersion())
         .helmVersion(helmChartManifest.getHelmVersion())
+        .valuesPaths(helmChartManifest.getValuesPaths())
         .skipResourceVersioning(helmChartManifest.getSkipResourceVersioning())
         .commandFlags(helmChartManifest.getCommandFlags())
         .build();
@@ -119,16 +137,17 @@ public class ManifestOutcomeMapper {
         .store(kustomizeManifest.getStoreConfig())
         .skipResourceVersioning(kustomizeManifest.getSkipResourceVersioning())
         .pluginPath(kustomizeManifest.getPluginPath())
+        .patchesPaths(kustomizeManifest.getPatchesPaths())
+        .overlayConfiguration(kustomizeManifest.getOverlayConfiguration())
         .build();
   }
 
-  private KustomizePatchesManifestOutcome getKustomizePatchesOutcome(
-      ManifestAttributes manifestAttributes, ManifestStepParameters params) {
+  private KustomizePatchesManifestOutcome getKustomizePatchesOutcome(ManifestAttributes manifestAttributes, int order) {
     KustomizePatchesManifest attributes = (KustomizePatchesManifest) manifestAttributes;
     return KustomizePatchesManifestOutcome.builder()
         .identifier(attributes.getIdentifier())
         .store(attributes.getStoreConfig())
-        .order(params.getOrder())
+        .order(order)
         .build();
   }
 
@@ -139,17 +158,27 @@ public class ManifestOutcomeMapper {
         .identifier(openshiftManifest.getIdentifier())
         .store(openshiftManifest.getStoreConfig())
         .skipResourceVersioning(openshiftManifest.getSkipResourceVersioning())
+        .paramsPaths(openshiftManifest.getParamsPaths())
         .build();
   }
 
-  private OpenshiftParamManifestOutcome getOpenshiftParamOutcome(
-      ManifestAttributes manifestAttributes, ManifestStepParameters params) {
+  private OpenshiftParamManifestOutcome getOpenshiftParamOutcome(ManifestAttributes manifestAttributes, int order) {
     OpenshiftParamManifest attributes = (OpenshiftParamManifest) manifestAttributes;
 
     return OpenshiftParamManifestOutcome.builder()
         .identifier(attributes.getIdentifier())
         .store(attributes.getStoreConfig())
-        .order(params.getOrder())
+        .order(order)
+        .build();
+  }
+
+  private ServerlessAwsLambdaManifestOutcome getServerlessAwsOutcome(ManifestAttributes manifestAttributes, int order) {
+    ServerlessAwsLambdaManifest attributes = (ServerlessAwsLambdaManifest) manifestAttributes;
+    return ServerlessAwsLambdaManifestOutcome.builder()
+        .identifier(attributes.getIdentifier())
+        .store(attributes.getStoreConfig())
+        .configOverridePath(attributes.getConfigOverridePath())
+        .order(order)
         .build();
   }
 }

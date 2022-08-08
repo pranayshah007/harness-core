@@ -11,7 +11,7 @@ import static io.harness.configuration.DeployMode.DEPLOY_MODE;
 import static io.harness.configuration.DeployMode.isOnPrem;
 import static io.harness.delegate.message.MessageConstants.NEW_WATCHER;
 import static io.harness.delegate.message.MessengerType.WATCHER;
-import static io.harness.grpc.utils.DelegateGrpcConfigExtractor.extractAuthority;
+import static io.harness.grpc.utils.DelegateGrpcConfigExtractor.extractAndPrepareAuthority;
 import static io.harness.grpc.utils.DelegateGrpcConfigExtractor.extractTarget;
 
 import static com.google.common.base.Charsets.UTF_8;
@@ -146,7 +146,7 @@ public class WatcherApplication {
         publishAuthority = configuration.getPublishAuthority();
       } else if (managerHostAndPort != null) {
         publishTarget = extractTarget(managerHostAndPort);
-        publishAuthority = extractAuthority(managerHostAndPort, "events");
+        publishAuthority = extractAndPrepareAuthority(managerHostAndPort, "events", false);
       }
       if (publishTarget != null && publishAuthority != null) {
         modules.add(new TailerModule(Config.builder()

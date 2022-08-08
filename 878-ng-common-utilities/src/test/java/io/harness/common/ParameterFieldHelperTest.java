@@ -8,6 +8,7 @@
 package io.harness.common;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.rule.OwnerRule.IVAN;
 import static io.harness.rule.OwnerRule.NAMAN;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -19,6 +20,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 
+import com.google.common.collect.Lists;
 import java.util.Collections;
 import java.util.List;
 import org.junit.Test;
@@ -82,11 +84,27 @@ public class ParameterFieldHelperTest extends CategoryTest {
   }
 
   @Test
-  @Owner(developers = NAMAN)
+  @Owner(developers = IVAN)
   @Category(UnitTests.class)
-  public void testGetParameterFieldHandleValueNull() {
-    assertThat(ParameterFieldHelper.getParameterFieldHandleValueNull(null)).isNull();
-    assertThat(ParameterFieldHelper.getParameterFieldHandleValueNull(nullField).getValue()).isEqualTo("");
-    assertThat(ParameterFieldHelper.getParameterFieldHandleValueNull(stringField)).isEqualTo(stringField);
+  public void testGetParameterFieldListValue() {
+    ParameterField<List<String>> listWithValue = ParameterField.createValueField(Lists.newArrayList("stringValue"));
+    assertThat(ParameterFieldHelper.getParameterFieldListValue(listWithValue, true)).contains("stringValue");
+
+    ParameterField<List<String>> emptyList = ParameterField.createValueField(Collections.emptyList());
+    assertThat(ParameterFieldHelper.getParameterFieldListValue(emptyList, true)).isEmpty();
+
+    assertThat(ParameterFieldHelper.getParameterFieldListValue(null, true)).isEmpty();
+
+    ParameterField<List<String>> listWithExpression =
+        ParameterField.createValueField(Lists.newArrayList("<+expression.value>"));
+    assertThat(ParameterFieldHelper.getParameterFieldListValue(listWithExpression, true))
+        .contains("<+expression.value>");
+
+    assertThat(ParameterFieldHelper.getParameterFieldListValue(listWithExpression, false)).isEmpty();
+
+    ParameterField<List<String>> listWithInputs = ParameterField.createValueField(Lists.newArrayList("<+input>"));
+    assertThat(ParameterFieldHelper.getParameterFieldListValue(listWithInputs, true)).contains("<+input>");
+
+    assertThat(ParameterFieldHelper.getParameterFieldListValue(listWithInputs, false)).isEmpty();
   }
 }

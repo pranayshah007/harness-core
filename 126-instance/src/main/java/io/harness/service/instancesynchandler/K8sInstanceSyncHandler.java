@@ -14,7 +14,6 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sDirectInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sGcpInfrastructureOutcome;
-import io.harness.cdng.infra.yaml.InfrastructureKind;
 import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
 import io.harness.delegate.beans.instancesync.info.K8sServerInstanceInfo;
 import io.harness.dtos.deploymentinfo.DeploymentInfoDTO;
@@ -25,6 +24,7 @@ import io.harness.entities.InstanceType;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.models.infrastructuredetails.InfrastructureDetails;
 import io.harness.models.infrastructuredetails.K8sInfrastructureDetails;
+import io.harness.ng.core.infrastructure.InfrastructureKind;
 import io.harness.perpetualtask.PerpetualTaskType;
 
 import com.google.inject.Singleton;

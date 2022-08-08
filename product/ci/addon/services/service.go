@@ -152,11 +152,11 @@ func runCmd(cmd exec.Command, svcID string, commands []string, startTime time.Ti
 	}
 
 	err = cmd.Wait()
-	if rusage, e := cmd.ProcessState().SysUsageUnit(); e == nil {
+	if rss, e := cmd.ProcessState().MaxRss(); e == nil {
 		metricLog.Infow(
 			"max RSS memory used by service",
 			"service_id", svcID,
-			"max_rss_memory_kb", rusage.Maxrss)
+			"max_rss_memory_kb", rss)
 	}
 
 	if err != nil {

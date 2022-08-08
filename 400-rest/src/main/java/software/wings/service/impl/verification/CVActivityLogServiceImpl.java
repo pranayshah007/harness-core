@@ -17,6 +17,7 @@ import software.wings.service.impl.analysis.AnalysisContext;
 import software.wings.service.impl.analysis.AnalysisContext.AnalysisContextKeys;
 import software.wings.service.intfc.WorkflowService;
 import software.wings.service.intfc.verification.CVActivityLogService;
+import software.wings.service.intfc.verification.CVActivityLogger;
 import software.wings.verification.CVActivityLog;
 import software.wings.verification.CVActivityLog.CVActivityLogKeys;
 import software.wings.verification.CVActivityLog.LogLevel;
@@ -53,18 +54,19 @@ public class CVActivityLogServiceImpl implements CVActivityLogService {
   }
 
   @Override
-  public Logger getLogger(String accountId, String cvConfigId, long dataCollectionMinute, String stateExecutionId) {
+  public CVActivityLogger getLogger(
+      String accountId, String cvConfigId, long dataCollectionMinute, String stateExecutionId) {
     return Strings.isNullOrEmpty(cvConfigId) ? getLoggerByStateExecutionId(accountId, stateExecutionId)
                                              : getLoggerByCVConfigId(accountId, cvConfigId, dataCollectionMinute);
   }
 
   @Override
-  public Logger getLoggerByCVConfigId(String accountId, String cvConfigId, long dataCollectionMinute) {
+  public CVActivityLogger getLoggerByCVConfigId(String accountId, String cvConfigId, long dataCollectionMinute) {
     return new LoggerImpl(accountId, cvConfigId, dataCollectionMinute);
   }
 
   @Override
-  public Logger getLoggerByStateExecutionId(String accountId, String stateExecutionId) {
+  public CVActivityLogger getLoggerByStateExecutionId(String accountId, String stateExecutionId) {
     return new LoggerImpl(accountId, stateExecutionId);
   }
 
@@ -116,7 +118,7 @@ public class CVActivityLogServiceImpl implements CVActivityLogService {
     return cvActivityLogs;
   }
 
-  private class LoggerImpl implements Logger {
+  private class LoggerImpl implements CVActivityLogger {
     private String cvConfigId;
     private long dataCollectionMinute;
     private String stateExecutionId;

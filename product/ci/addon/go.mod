@@ -17,7 +17,7 @@ require (
 	github.com/ghodss/yaml v1.0.0
 	github.com/go-critic/go-critic v0.4.3 // indirect
 	github.com/go-toolsmith/typep v1.0.2 // indirect
-	github.com/golang/mock v1.4.4
+	github.com/golang/mock v1.6.0
 	github.com/golangci/gocyclo v0.0.0-20180528144436-0a533e8fa43d // indirect
 	github.com/golangci/misspell v0.3.5 // indirect
 	github.com/golangci/revgrep v0.0.0-20180812185044-276a5c0a1039 // indirect
@@ -27,6 +27,9 @@ require (
 	github.com/goreleaser/nfpm v1.3.0 // indirect
 	github.com/gostaticanalysis/analysisutil v0.0.3 // indirect
 	github.com/grpc-ecosystem/go-grpc-middleware v1.2.1
+	github.com/harness/harness-core v0.0.0-20220210161509-69d6cb167b7a
+	github.com/harness/harness-core/commons/go/lib v0.0.0-20220222141117-7659b7eca599
+	github.com/harness/harness-core/product/ci/engine v0.0.0-20220526003445-374c61227e45
 	github.com/hashicorp/go-retryablehttp v0.6.6 // indirect
 	github.com/jirfag/go-printf-func-name v0.0.0-20200119135958-7558a9eaa5af // indirect
 	github.com/mattn/go-colorable v0.1.6 // indirect
@@ -41,20 +44,16 @@ require (
 	github.com/spf13/cast v1.3.1 // indirect
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
 	github.com/spf13/viper v1.7.0 // indirect
-	github.com/stretchr/testify v1.6.1
+	github.com/stretchr/testify v1.7.0
 	github.com/tdakkota/asciicheck v0.0.0-20200416200610-e657995f937b // indirect
 	github.com/tetafro/godot v0.4.2 // indirect
 	github.com/timakin/bodyclose v0.0.0-20200424151742-cb6215831a94 // indirect
 	github.com/tj/assert v0.0.0-20171129193455-018094318fb0
 	github.com/vdemeester/k8s-pkg-credentialprovider v1.18.1-0.20201019120933-f1d16962a4db
-	github.com/harness/harness-core v0.0.0-20220210161509-69d6cb167b7a
-	github.com/harness/harness-core/commons/go/lib v0.0.0-20220222141117-7659b7eca599
-	github.com/harness/harness-core/product/ci/engine v0.0.0-20220222141117-7659b7eca599
 	github.com/xanzy/go-gitlab v0.32.0 // indirect
 	go.uber.org/zap v1.16.0
-	golang.org/x/net v0.0.0-20201110031124-69a78807bb2b
-	google.golang.org/api v0.25.0 // indirect
-	google.golang.org/grpc v1.32.0
+	golang.org/x/net v0.0.0-20220114011407-0dd24b26b47d
+	google.golang.org/grpc v1.43.0
 	gopkg.in/ini.v1 v1.56.0 // indirect
 	honnef.co/go/tools v0.0.1-2020.1.5 // indirect
 	k8s.io/api v0.20.1

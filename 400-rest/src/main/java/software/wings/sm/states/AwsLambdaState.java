@@ -65,10 +65,11 @@ import software.wings.beans.LambdaSpecification.FunctionSpecification;
 import software.wings.beans.Log.Builder;
 import software.wings.beans.Service;
 import software.wings.beans.ServiceVariable;
+import software.wings.beans.ServiceVariableType;
 import software.wings.beans.SettingAttribute;
 import software.wings.beans.Tag;
 import software.wings.beans.artifact.Artifact;
-import software.wings.beans.artifact.Artifact.ArtifactMetadataKeys;
+import software.wings.beans.artifact.ArtifactMetadataKeys;
 import software.wings.beans.artifact.ArtifactStream;
 import software.wings.beans.artifact.ArtifactStreamAttributes;
 import software.wings.beans.artifact.ArtifactStreamType;
@@ -99,6 +100,7 @@ import software.wings.sm.ExecutionContext;
 import software.wings.sm.ExecutionResponse;
 import software.wings.sm.State;
 import software.wings.sm.WorkflowStandardParams;
+import software.wings.sm.WorkflowStandardParamsExtensionService;
 import software.wings.stencils.DefaultValue;
 import software.wings.utils.LambdaConvention;
 
@@ -133,6 +135,7 @@ public class AwsLambdaState extends State {
   @Inject private transient ServiceTemplateHelper serviceTemplateHelper;
   @Inject private transient FeatureFlagService featureFlagService;
   @Inject private WorkflowExecutionService workflowExecutionService;
+  @Inject private transient WorkflowStandardParamsExtensionService workflowStandardParamsExtensionService;
 
   public static final String AWS_LAMBDA_COMMAND_NAME = "Deploy AWS Lambda Function";
 
@@ -262,8 +265,8 @@ public class AwsLambdaState extends State {
     notNullCheck("workflowStandardParams", workflowStandardParams, USER);
     notNullCheck("currentUser", workflowStandardParams.getCurrentUser(), USER);
 
-    Application app = workflowStandardParams.fetchRequiredApp();
-    Environment env = workflowStandardParams.getEnv();
+    Application app = workflowStandardParamsExtensionService.fetchRequiredApp(workflowStandardParams);
+    Environment env = workflowStandardParamsExtensionService.getEnv(workflowStandardParams);
     notNullCheck("env", env, USER);
 
     String envId = env.getUuid();
@@ -431,10 +434,7 @@ public class AwsLambdaState extends State {
         }
         return artifact.getArtifactFileMetadata().get(0).getUrl();
       case ARTIFACTORY:
-        String artifactUrl = artifactStreamAttributes.getMetadata().get(URL);
-        return "."
-            + artifactUrl.substring(artifactUrl.lastIndexOf(artifactStreamAttributes.getJobName())
-                + artifactStreamAttributes.getJobName().length());
+        return artifactStreamAttributes.getMetadata().get("artifactPath");
       default:
         return artifactStreamAttributes.getMetadata().get(URL);
     }
@@ -506,7 +506,7 @@ public class AwsLambdaState extends State {
         serviceTemplateService
             .computeServiceVariables(appId, envId, serviceTemplateId, context.getWorkflowExecutionId(), OBTAIN_VALUE)
             .stream()
-            .filter(serviceVariable -> ServiceVariable.Type.ARTIFACT != serviceVariable.getType())
+            .filter(serviceVariable -> ServiceVariableType.ARTIFACT != serviceVariable.getType())
             .collect(
                 Collectors.toMap(ServiceVariable::getName, sv -> context.renderExpression(new String(sv.getValue()))));
     wfRequestBuilder.serviceVariables(serviceVariables);

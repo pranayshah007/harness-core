@@ -40,4 +40,15 @@ public class EntityMetadataServiceImpl implements EntityMetadataService {
     }
     return accountIdToName;
   }
+
+  @Override
+  public Map<String, String> getAccountIdAndNameByAccountNameFilter(String filterAccountName, String harnessAccountId) {
+    List<CECloudAccount> awsAccounts = cloudAccountDao.getByFilterAccountName(filterAccountName, harnessAccountId);
+    Map<String, String> accountIdToName = new HashMap<>();
+    if (awsAccounts != null) {
+      awsAccounts.forEach(ceCloudAccount
+          -> accountIdToName.putIfAbsent(ceCloudAccount.getInfraAccountId(), ceCloudAccount.getAccountName()));
+    }
+    return accountIdToName;
+  }
 }

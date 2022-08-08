@@ -18,7 +18,6 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.dashboards.DeploymentStatsSummary;
 import io.harness.dashboards.EnvCount;
-import io.harness.dashboards.GroupBy;
 import io.harness.dashboards.LandingDashboardRequestCD;
 import io.harness.dashboards.PipelinesExecutionDashboardInfo;
 import io.harness.dashboards.ProjectsDashboardInfo;
@@ -29,6 +28,7 @@ import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.overview.service.CDLandingDashboardService;
+import io.harness.pms.dashboards.GroupBy;
 import io.harness.security.annotations.NextGenManagerAuth;
 
 import com.google.inject.Inject;

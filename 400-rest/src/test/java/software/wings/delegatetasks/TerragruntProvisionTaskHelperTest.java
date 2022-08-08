@@ -23,6 +23,7 @@ import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyString;
@@ -44,6 +45,9 @@ import io.harness.logging.LogCallback;
 import io.harness.rule.Owner;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.EncryptedRecordData;
+import io.harness.terraform.TerraformClient;
+import io.harness.terraform.beans.TerraformVersion;
+import io.harness.terragrunt.TerragruntCliCommandRequestParams;
 
 import software.wings.api.terraform.TfVarGitSource;
 import software.wings.beans.GitConfig;
@@ -68,6 +72,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeoutException;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.junit.Before;
@@ -86,6 +91,7 @@ public class TerragruntProvisionTaskHelperTest extends CategoryTest {
   @Mock private DelegateFileManager delegateFileManager;
   @Mock private LogCallback logCallback;
   @Mock private BufferedWriter bufferedWriter;
+  @Mock private TerraformClient terraformClient;
 
   @InjectMocks @Inject TerragruntProvisionTaskHelper terragruntProvisionTaskHelper;
 
@@ -356,5 +362,46 @@ public class TerragruntProvisionTaskHelperTest extends CategoryTest {
         new File("tfBackendConfig"), backendConfig, encryptedBackendConfig);
     verify(encryptionService, times(2)).getDecryptedValue(any(EncryptedDataDetail.class), anyBoolean());
     verify(spyTerragruntProvisionTaskHelper, times(4)).saveVariable(any(), any(), any());
+  }
+
+  @Test
+  @Owner(developers = TATHAGAT)
+  @Category(UnitTests.class)
+  public void testGetAutoApproveArguementFfOff() throws IOException, InterruptedException, TimeoutException {
+    assertThat(terragruntProvisionTaskHelper.getTfAutoApproveArgument(
+                   TerragruntCliCommandRequestParams.builder().useAutoApproveFlag(false).build(), "terraform"))
+        .isEqualTo("-force");
+  }
+
+  @Test
+  @Owner(developers = TATHAGAT)
+  @Category(UnitTests.class)
+  public void testGetAutoApproveArguementVersion_1_2_2() throws IOException, InterruptedException, TimeoutException {
+    doReturn(TerraformVersion.builder().major(1).minor(2).patch(2).build())
+        .when(terraformClient)
+        .version(anyString(), anyLong(), anyString());
+    assertThat(terragruntProvisionTaskHelper.getTfAutoApproveArgument(TerragruntCliCommandRequestParams.builder()
+                                                                          .useAutoApproveFlag(true)
+                                                                          .timeoutInMillis(1000L)
+                                                                          .directory("dir")
+                                                                          .build(),
+                   "terraform"))
+        .isEqualTo("-auto-approve");
+  }
+
+  @Test
+  @Owner(developers = TATHAGAT)
+  @Category(UnitTests.class)
+  public void testGetAutoApproveArguementVersion_0_13_2() throws IOException, InterruptedException, TimeoutException {
+    doReturn(TerraformVersion.builder().major(0).minor(13).patch(2).build())
+        .when(terraformClient)
+        .version(anyString(), anyLong(), anyString());
+    assertThat(terragruntProvisionTaskHelper.getTfAutoApproveArgument(TerragruntCliCommandRequestParams.builder()
+                                                                          .useAutoApproveFlag(true)
+                                                                          .timeoutInMillis(1000L)
+                                                                          .directory("dir")
+                                                                          .build(),
+                   "terraform"))
+        .isEqualTo("-force");
   }
 }

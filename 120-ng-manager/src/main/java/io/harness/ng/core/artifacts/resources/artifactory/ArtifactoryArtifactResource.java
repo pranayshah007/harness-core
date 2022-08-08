@@ -7,10 +7,15 @@
 
 package io.harness.ng.core.artifacts.resources.artifactory;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+
 import io.harness.NGCommonEntityConstants;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
+import io.harness.cdng.artifact.bean.ArtifactConfig;
+import io.harness.cdng.artifact.bean.yaml.ArtifactoryRegistryArtifactConfig;
 import io.harness.cdng.artifact.resources.artifactory.dtos.ArtifactoryArtifactBuildDetailsDTO;
 import io.harness.cdng.artifact.resources.artifactory.dtos.ArtifactoryBuildDetailsDTO;
 import io.harness.cdng.artifact.resources.artifactory.dtos.ArtifactoryRepoDetailsDTO;
@@ -22,7 +27,6 @@ import io.harness.ng.core.artifacts.resources.util.ArtifactResourceUtils;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
-import io.harness.pipeline.remote.PipelineServiceClient;
 import io.harness.utils.IdentifierRefHelper;
 
 import com.google.inject.Inject;
@@ -58,7 +62,12 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class ArtifactoryArtifactResource {
   private final ArtifactoryResourceService artifactoryResourceService;
-  private final PipelineServiceClient pipelineServiceClient;
+  private final ArtifactResourceUtils artifactResourceUtils;
+
+  /* Note:
+    This API is used for both Artifactory Docker and Artifactory Generic.
+    For Artifactory Generic this artfactPath Parameter will be artifactDirectory
+  */
 
   @GET
   @Path("getBuildDetails")
@@ -78,6 +87,11 @@ public class ArtifactoryArtifactResource {
     return ResponseDTO.newResponse(buildDetails);
   }
 
+  /* Note:
+  This API is used for both Artifactory Docker and Artifactory Generic.
+  For Artifactory Generic this artfactPath Parameter will be artifactDirectory
+*/
+
   @POST
   @Path("getBuildDetailsV2")
   @ApiOperation(value = "Gets artifactory artifact build details with yaml input for expression resolution",
@@ -92,16 +106,48 @@ public class ArtifactoryArtifactResource {
       @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.PIPELINE_KEY) String pipelineIdentifier,
       @NotNull @QueryParam("fqnPath") String fqnPath, @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo,
-      @NotNull String runtimeInputYaml) {
+      @NotNull String runtimeInputYaml, @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceRef) {
+    if (isNotEmpty(serviceRef)) {
+      final ArtifactConfig artifactSpecFromService = artifactResourceUtils.locateArtifactInService(
+          accountId, orgIdentifier, projectIdentifier, serviceRef, fqnPath);
+      ArtifactoryRegistryArtifactConfig artifactoryRegistryArtifactConfig =
+          (ArtifactoryRegistryArtifactConfig) artifactSpecFromService;
+      if (isEmpty(repository)) {
+        repository = (String) artifactoryRegistryArtifactConfig.getRepository().fetchFinalValue();
+      }
+      // There is an overload in this endpoint so to make things clearer:
+      // artifactPath is the artifactDirectory for Artifactory Generic
+      // artifactPath is the artifactPath for Artifactory Docker
+      if (isEmpty(artifactPath)) {
+        if (artifactoryRegistryArtifactConfig.getRepositoryFormat().fetchFinalValue().equals("docker")) {
+          artifactPath = (String) artifactoryRegistryArtifactConfig.getArtifactPath().fetchFinalValue();
+        } else {
+          artifactPath = (String) artifactoryRegistryArtifactConfig.getArtifactDirectory().fetchFinalValue();
+        }
+      }
+      if (isEmpty(repositoryFormat)) {
+        repositoryFormat = (String) artifactoryRegistryArtifactConfig.getRepositoryFormat().fetchFinalValue();
+      }
+
+      if (isEmpty(artifactRepositoryUrl)) {
+        artifactRepositoryUrl = (String) artifactoryRegistryArtifactConfig.getRepositoryUrl().fetchFinalValue();
+      }
+
+      if (isEmpty(artifactoryConnectorIdentifier)) {
+        artifactoryConnectorIdentifier = artifactoryRegistryArtifactConfig.getConnectorRef().getValue();
+      }
+    }
+
     IdentifierRef connectorRef = IdentifierRefHelper.getIdentifierRef(
         artifactoryConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
-    artifactPath = ArtifactResourceUtils.getResolvedImagePath(pipelineServiceClient, accountId, orgIdentifier,
-        projectIdentifier, pipelineIdentifier, runtimeInputYaml, artifactPath, fqnPath, gitEntityBasicInfo);
+    // todo(hinger): resolve other expressions here
+    artifactPath = artifactResourceUtils.getResolvedImagePath(accountId, orgIdentifier, projectIdentifier,
+        pipelineIdentifier, runtimeInputYaml, artifactPath, fqnPath, gitEntityBasicInfo, serviceRef);
     ArtifactoryResponseDTO buildDetails = artifactoryResourceService.getBuildDetails(connectorRef, repository,
         artifactPath, repositoryFormat, artifactRepositoryUrl, orgIdentifier, projectIdentifier);
     return ResponseDTO.newResponse(buildDetails);
   }
-
+  // unuse
   @POST
   @Path("getLastSuccessfulBuild")
   @ApiOperation(value = "Gets artifactory artifact last successful build",
@@ -140,11 +186,22 @@ public class ArtifactoryArtifactResource {
   @Path("repositoriesDetails")
   @ApiOperation(value = "Gets repository details", nickname = "getRepositoriesDetailsForArtifactory")
   public ResponseDTO<ArtifactoryRepoDetailsDTO> getRepositoriesDetails(
-      @NotNull @QueryParam("connectorRef") String artifactoryConnectorIdentifier,
+      @QueryParam("connectorRef") String artifactoryConnectorIdentifier,
       @QueryParam("repositoryType") @DefaultValue("any") String repositoryType,
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
       @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
-      @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier) {
+      @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @QueryParam("fqnPath") String fqnPath, @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceRef) {
+    if (isNotEmpty(serviceRef)) {
+      final ArtifactConfig artifactSpecFromService = artifactResourceUtils.locateArtifactInService(
+          accountId, orgIdentifier, projectIdentifier, serviceRef, fqnPath);
+      ArtifactoryRegistryArtifactConfig artifactoryRegistryArtifactConfig =
+          (ArtifactoryRegistryArtifactConfig) artifactSpecFromService;
+
+      if (isEmpty(artifactoryConnectorIdentifier)) {
+        artifactoryConnectorIdentifier = artifactoryRegistryArtifactConfig.getConnectorRef().getValue();
+      }
+    }
     IdentifierRef connectorRef = IdentifierRefHelper.getIdentifierRef(
         artifactoryConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
     ArtifactoryRepoDetailsDTO repoDetailsDTO =

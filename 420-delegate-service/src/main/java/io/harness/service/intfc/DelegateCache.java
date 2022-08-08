@@ -10,9 +10,10 @@ package io.harness.service.intfc;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.Delegate;
-import io.harness.delegate.beans.DelegateEntityOwner;
 import io.harness.delegate.beans.DelegateGroup;
 import io.harness.delegate.beans.DelegateProfile;
+
+import java.util.List;
 
 @OwnedBy(HarnessTeam.DEL)
 public interface DelegateCache {
@@ -20,14 +21,9 @@ public interface DelegateCache {
 
   DelegateGroup getDelegateGroup(String accountId, String delegateGroupId);
 
-  DelegateGroup getDelegateGroupByAccountAndOwnerAndIdentifier(
-      String accountId, DelegateEntityOwner owner, String delegateGroupIdentifier);
-
   DelegateProfile getDelegateProfile(String accountId, String delegateProfileId);
 
   void invalidateDelegateProfileCache(String accountId, String delegateProfileId);
 
-  void invalidateDelegateGroupCache(String accountId, String delegateGroupId);
-
-  void invalidateDelegateGroupCacheByIdentifier(String accountId, DelegateEntityOwner owner, String identifier);
+  List<Delegate> getDelegatesForGroup(String accountId, String delegateGroupId);
 }

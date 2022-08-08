@@ -11,13 +11,21 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.MigratedEntityMapping;
+import io.harness.beans.MigrationAsyncTracker;
 import io.harness.beans.SweepingOutput;
 import io.harness.beans.terraform.TerraformPlanParam;
 
+import software.wings.api.ServiceElement;
+import software.wings.beans.AppContainer;
+import software.wings.beans.BaseFile;
 import software.wings.beans.Log;
 import software.wings.beans.TerraGroupProvisioners;
+import software.wings.beans.appmanifest.HelmChart;
+import software.wings.beans.artifact.Artifact;
+import software.wings.beans.artifact.ArtifactFile;
 import software.wings.beans.entityinterface.ApplicationAccess;
 import software.wings.beans.entityinterface.KeywordsAware;
+import software.wings.beans.infrastructure.Host;
 import software.wings.metrics.TimeSeriesMetricDefinition;
 import software.wings.ngmigration.NGMigrationEntity;
 import software.wings.service.impl.ThirdPartyApiCallLog;
@@ -40,11 +48,19 @@ public class CgOrchestrationBeansMorphiaRegistrar implements MorphiaRegistrar {
     set.add(MigratedEntityMapping.class);
     set.add(Log.class);
     set.add(CVActivityLog.class);
+    set.add(Artifact.class);
+    set.add(HelmChart.class);
+    set.add(BaseFile.class);
+    set.add(Host.class);
+    set.add(AppContainer.class);
+    set.add(MigrationAsyncTracker.class);
   }
 
   @Override
   public void registerImplementationClasses(MorphiaRegistrarHelperPut h, MorphiaRegistrarHelperPut w) {
     w.put("metrics.TimeSeriesMetricDefinition", TimeSeriesMetricDefinition.class);
     w.put("api.TerraformPlanParam", TerraformPlanParam.class);
+    w.put("api.ServiceElement", ServiceElement.class);
+    w.put("beans.artifact.ArtifactFile", ArtifactFile.class);
   }
 }

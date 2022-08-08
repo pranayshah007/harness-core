@@ -11,7 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.DEL;
 import static io.harness.rule.OwnerRule.ARPIT;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.MockitoAnnotations.initMocks;
 
 import io.harness.annotations.dev.OwnedBy;
@@ -62,7 +62,8 @@ public class DelegateUpgraderResourceTest extends JerseyTest {
   @Owner(developers = ARPIT)
   @Category(UnitTests.class)
   public void testDelegateImageTag() {
-    when(upgraderService.getDelegateImageTag(ACCOUNT_ID, DELEGATE_IMAGE_TAG))
+    lenient()
+        .when(upgraderService.getDelegateImageTag(ACCOUNT_ID, DELEGATE_IMAGE_TAG))
         .thenReturn(new UpgradeCheckResult(DELEGATE_IMAGE_TAG, false));
 
     final Response response = client()
@@ -79,7 +80,8 @@ public class DelegateUpgraderResourceTest extends JerseyTest {
   @Owner(developers = ARPIT)
   @Category(UnitTests.class)
   public void testUpgraderImageTag() {
-    when(upgraderService.getUpgraderImageTag(ACCOUNT_ID, UPGRADER_IMAGE_TAG))
+    lenient()
+        .when(upgraderService.getUpgraderImageTag(ACCOUNT_ID, UPGRADER_IMAGE_TAG))
         .thenReturn(new UpgradeCheckResult(UPGRADER_IMAGE_TAG, false));
 
     final Response response = client()

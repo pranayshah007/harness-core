@@ -13,8 +13,8 @@ import io.harness.beans.DelegateTask;
 import io.harness.delegate.beans.Delegate;
 import io.harness.delegate.beans.DelegateTaskResponse;
 import io.harness.metrics.AutoMetricContext;
+import io.harness.metrics.beans.DelegateAccountMetricContext;
 import io.harness.metrics.beans.DelegateTaskMetricContext;
-import io.harness.metrics.beans.DelegateTaskResponseMetricContext;
 import io.harness.metrics.beans.DelegateTaskTypeMetricContext;
 import io.harness.metrics.beans.PerpetualTaskMetricContext;
 import io.harness.metrics.intfc.DelegateMetricsService;
@@ -52,6 +52,16 @@ public class DelegateMetricsServiceImpl implements DelegateMetricsService {
   public static final String PERPETUAL_TASK_UNASSIGNED = "perpetual_task_unassigned";
   public static final String TASK_TYPE_SUFFIX = "_by_type";
 
+  public static final String DELEGATE_JWT_CACHE_HIT = "delegate_auth_cache_hit";
+  public static final String DELEGATE_JWT_CACHE_MISS = "delegate_auth_cache_miss";
+  public static final String SECRETS_CACHE_HITS = "delegate_secret_cache_hit";
+  public static final String SECRETS_CACHE_LOOKUPS = "delegate_secret_cache_lookups";
+  public static final String SECRETS_CACHE_INSERTS = "delegate_secret_cache_inserts";
+
+  public static final String IMMUTABLE_DELEGATES = "immutable_delegates";
+
+  public static final String MUTABLE_DELEGATES = "mutable_delegates";
+
   @Inject private MetricService metricService;
   @Inject private DelegateTaskMetricContextBuilder metricContextBuilder;
 
@@ -76,7 +86,7 @@ public class DelegateMetricsServiceImpl implements DelegateMetricsService {
   @Override
   public void recordDelegateTaskResponseMetrics(
       DelegateTask delegateTask, DelegateTaskResponse response, String metricName) {
-    try (DelegateTaskResponseMetricContext ignore = new DelegateTaskResponseMetricContext(delegateTask, response)) {
+    try (DelegateTaskMetricContext ignore = new DelegateTaskMetricContext(delegateTask.getAccountId())) {
       metricService.incCounter(metricName);
     }
   }
@@ -94,6 +104,13 @@ public class DelegateMetricsServiceImpl implements DelegateMetricsService {
   @Override
   public void recordPerpetualTaskMetrics(String accountId, String perpetualTaskType, String metricName) {
     try (PerpetualTaskMetricContext ignore = new PerpetualTaskMetricContext(accountId, perpetualTaskType)) {
+      metricService.incCounter(metricName);
+    }
+  }
+
+  @Override
+  public void recordDelegateMetricsPerAccount(String accountId, String metricName) {
+    try (DelegateAccountMetricContext ignore = new DelegateAccountMetricContext(accountId)) {
       metricService.incCounter(metricName);
     }
   }

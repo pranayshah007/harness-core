@@ -23,6 +23,15 @@ public final class HelmCommandTemplateFactory {
       version = V2;
     }
     switch (commandType) {
+      case OCI_REGISTRY_LOGIN:
+        switch (version) {
+          case V3:
+          case V380:
+            return HelmConstants.V3Commands.HELM_OCI_REGISTRY_LOGIN_COMMAND_TEMPLATE;
+          case V2:
+          default:
+            throw new InvalidRequestException(format("Command Type [%s] is not supported", commandType.toString()));
+        }
       case VERSION:
         switch (version) {
           case V3:

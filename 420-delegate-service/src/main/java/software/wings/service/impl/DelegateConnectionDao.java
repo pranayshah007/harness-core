@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import org.jooq.tools.StringUtils;
 import org.mongodb.morphia.query.Query;
 import org.mongodb.morphia.query.UpdateOperations;
 
@@ -51,14 +52,31 @@ public class DelegateConnectionDao {
     persistence.update(query, updateOperations);
   }
 
-  public long numberOfActiveDelegateConnectionsPerVersion(String version) {
+  public long numberOfActiveDelegateConnectionsPerVersion(String version, String accountId) {
+    if (StringUtils.isEmpty(accountId)) {
+      return createQueryForAllActiveDelegateConnections(version).count();
+    }
+    return createQueryForAllActiveDelegateConnections(version)
+        .filter(DelegateConnectionKeys.accountId, accountId)
+        .count();
+  }
+
+  private Query<DelegateConnection> createQueryForAllActiveDelegateConnections(String version) {
     return persistence.createQuery(DelegateConnection.class, excludeAuthority)
         .field(DelegateConnectionKeys.disconnected)
         .notEqual(Boolean.TRUE)
         .field(DelegateConnectionKeys.lastHeartbeat)
         .greaterThan(currentTimeMillis() - EXPIRY_TIME.toMillis())
-        .filter(DelegateConnectionKeys.version, version)
-        .count();
+        .filter(DelegateConnectionKeys.version, version);
+  }
+
+  public long numberOfDelegateConnectionsPerVersion(String version, String accountId) {
+    Query<DelegateConnection> query = persistence.createQuery(DelegateConnection.class, excludeAuthority)
+                                          .filter(DelegateConnectionKeys.version, version);
+    if (StringUtils.isEmpty(accountId)) {
+      return query.count();
+    }
+    return query.filter(DelegateConnectionKeys.accountId, accountId).count();
   }
 
   public Map<String, List<String>> obtainActiveDelegatesPerAccount(String version) {

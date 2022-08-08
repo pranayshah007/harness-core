@@ -35,9 +35,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyInt;
-import static org.mockito.Matchers.anyList;
-import static org.mockito.Matchers.anyObject;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
@@ -138,7 +135,7 @@ public class EcsContainerServiceImplTest extends WingsBaseTest {
 
   @Before
   public void setUp() throws Exception {
-    when(awsHelperService.validateAndGetAwsConfig(any(SettingAttribute.class), anyObject(), anyBoolean()))
+    when(awsHelperService.validateAndGetAwsConfig(any(SettingAttribute.class), any(), anyBoolean()))
         .thenReturn((AwsConfig) connectorConfig.getValue());
   }
 
@@ -194,7 +191,7 @@ public class EcsContainerServiceImplTest extends WingsBaseTest {
                                                     .withDesiredCount(DESIRED_COUNT);
     Service service =
         new Service().withDesiredCount(DESIRED_COUNT).withRunningCount(DESIRED_COUNT).withServiceArn("SERVICE_ARN");
-    when(awsHelperService.describeServices(anyString(), any(AwsConfig.class), anyObject(), any()))
+    when(awsHelperService.describeServices(any(), any(AwsConfig.class), any(), any()))
         .thenReturn(new DescribeServicesResult().withServices(asList(service)));
 
     when(awsHelperService.createService(US_EAST_1.getName(), awsConfig, Collections.emptyList(), createServiceRequest))
@@ -223,10 +220,10 @@ public class EcsContainerServiceImplTest extends WingsBaseTest {
   @Category(UnitTests.class)
   @Ignore("TODO: please provide clear motivation why this test is ignored")
   public void shouldProvisionTasks() {
-    when(awsHelperService.describeServices(anyString(), any(AwsConfig.class), any(), any()))
+    when(awsHelperService.describeServices(any(), any(AwsConfig.class), any(), any()))
         .thenReturn(new DescribeServicesResult().withServices(
             asList(new Service().withDesiredCount(DESIRED_COUNT).withRunningCount(DESIRED_COUNT))));
-    when(awsHelperService.describeTasks(anyString(), any(AwsConfig.class), any(), any(), anyBoolean()))
+    when(awsHelperService.describeTasks(any(), any(AwsConfig.class), any(), any(), anyBoolean()))
         .thenReturn(new DescribeTasksResult());
     ecsContainerService.provisionTasks(US_EAST_1.getName(), connectorConfig, Collections.emptyList(), CLUSTER_NAME,
         SERVICE_NAME, 0, DESIRED_COUNT, 10, new ExecutionLogCallback(), false);
@@ -237,7 +234,7 @@ public class EcsContainerServiceImplTest extends WingsBaseTest {
                 .withService(SERVICE_NAME)
                 .withDesiredCount(DESIRED_COUNT));
     verify(awsHelperService)
-        .describeTasks(anyString(), any(AwsConfig.class), any(), any(DescribeTasksRequest.class), anyBoolean());
+        .describeTasks(any(), any(AwsConfig.class), any(), any(DescribeTasksRequest.class), anyBoolean());
   }
 
   @Test
@@ -324,12 +321,12 @@ public class EcsContainerServiceImplTest extends WingsBaseTest {
         .when(awsHelperService)
         .updateService(eq(region), eq(awsConfig), eq(encryptionDetails), any());
     HTimeLimiterMocker.mockCallInterruptible(timeLimiter).thenReturn(null);
-    when(awsHelperService.describeTasks(anyString(), any(AwsConfig.class), any(), any(), anyBoolean()))
+    when(awsHelperService.describeTasks(any(), any(AwsConfig.class), any(), any(), anyBoolean()))
         .thenReturn(new DescribeTasksResult());
     ecsContainerService.provisionTasks(
         region, connectorConfig, encryptionDetails, CLUSTER_NAME, SERVICE_NAME, 5, 15, 10 * 1000, logCallback, false);
 
-    verify(awsHelperService).describeTasks(anyString(), any(AwsConfig.class), any(), any(), anyBoolean());
+    verify(awsHelperService).describeTasks(any(), any(AwsConfig.class), any(), any(), anyBoolean());
     HTimeLimiterMocker.mockCallInterruptible(timeLimiter).thenThrow(TimeoutException.class);
     assertThatThrownBy(()
                            -> ecsContainerService.provisionTasks(region, connectorConfig, encryptionDetails,
@@ -360,19 +357,19 @@ public class EcsContainerServiceImplTest extends WingsBaseTest {
         .when(awsHelperService)
         .updateService(eq(region), eq(awsConfig), eq(encryptionDetails), any());
     HTimeLimiterMocker.mockCallInterruptible(timeLimiter).thenReturn(null);
-    when(awsHelperService.describeTasks(anyString(), any(AwsConfig.class), any(), any(), anyBoolean()))
+    when(awsHelperService.describeTasks(any(), any(AwsConfig.class), any(), any(), anyBoolean()))
         .thenReturn(new DescribeTasksResult());
     ecsContainerService.provisionTasks(
         region, connectorConfig, encryptionDetails, CLUSTER_NAME, SERVICE_NAME, 5, 5, 10 * 1000, logCallback, true);
 
     // logic to check if exception is being thrown
-    verify(awsHelperService).describeTasks(anyString(), any(AwsConfig.class), any(), any(), anyBoolean());
+    verify(awsHelperService).describeTasks(any(), any(AwsConfig.class), any(), any(), anyBoolean());
     HTimeLimiterMocker.mockCallInterruptible(timeLimiter).thenThrow(TimeoutException.class);
     assertThatThrownBy(()
                            -> ecsContainerService.provisionTasks(region, connectorConfig, encryptionDetails,
                                CLUSTER_NAME, SERVICE_NAME, 5, 5, 10 * 1000, logCallback, true))
         .isInstanceOf(TimeoutException.class);
-    verify(awsHelperService, times(1)).describeTasks(anyString(), any(AwsConfig.class), any(), any(), anyBoolean());
+    verify(awsHelperService, times(1)).describeTasks(any(), any(AwsConfig.class), any(), any(), anyBoolean());
     verify(awsHelperService, times(2)).updateService(eq(region), eq(awsConfig), eq(encryptionDetails), any());
 
     // logic to check desired == running == 5 and deployment.size() = 1, shouldn't retry
@@ -416,9 +413,9 @@ public class EcsContainerServiceImplTest extends WingsBaseTest {
 
     AwsMetadataApiHelper awsMetadataApiHelper = spy(AwsMetadataApiHelper.class);
     ExecutionLogCallback logCallback = mock(ExecutionLogCallback.class);
-    doNothing().when(logCallback).saveExecutionLog(anyString(), any());
-    doReturn(json).when(awsMetadataApiHelper).getResponseStringFromUrl(anyString());
-    doReturn(false).doReturn(true).when(awsMetadataApiHelper).checkConnectivity(anyString());
+    doNothing().when(logCallback).saveExecutionLog(any(), any());
+    doReturn(json).when(awsMetadataApiHelper).getResponseStringFromUrl(any());
+    doReturn(false).doReturn(true).when(awsMetadataApiHelper).checkConnectivity(any());
     com.amazonaws.services.ec2.model.Instance ec2Instance =
         new com.amazonaws.services.ec2.model.Instance().withPrivateIpAddress("2.0.0.0");
     String dockerId = awsMetadataApiHelper.getDockerIdUsingEc2MetadataEndpointApi(ec2Instance,
@@ -465,9 +462,7 @@ public class EcsContainerServiceImplTest extends WingsBaseTest {
 
     DescribeTaskDefinitionResult describeTaskDefinitionResult = new DescribeTaskDefinitionResult().withTags(tag);
     doReturn(Arrays.asList(containerSideCar, container)).when(task).getContainers();
-    doReturn(describeTaskDefinitionResult)
-        .when(awsHelperService)
-        .describeTaskDefinition(anyString(), any(), anyList(), any());
+    doReturn(describeTaskDefinitionResult).when(awsHelperService).describeTaskDefinition(any(), any(), any(), any());
 
     mainHarnessDeployedContainer =
         ((EcsContainerServiceImpl) ecsContainerService).getMainHarnessDeployedContainer(task, "us", null, null);
@@ -566,8 +561,8 @@ public class EcsContainerServiceImplTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void testGenerateContainerInfos_Fargate() {
     ExecutionLogCallback logCallback = mock(ExecutionLogCallback.class);
-    doNothing().when(logCallback).saveExecutionLog(anyString());
-    doNothing().when(logCallback).saveExecutionLog(anyString(), any(), any());
+    doNothing().when(logCallback).saveExecutionLog(any());
+    doNothing().when(logCallback).saveExecutionLog(any(), any(), any());
     // Main Container
     Container container = new Container();
     container.setName("containerMain");
@@ -591,9 +586,7 @@ public class EcsContainerServiceImplTest extends WingsBaseTest {
     com.amazonaws.services.ecs.model.Tag tag =
         new com.amazonaws.services.ecs.model.Tag().withKey(MAIN_ECS_CONTAINER_NAME_TAG).withValue("containerMain");
     DescribeTaskDefinitionResult describeTaskDefinitionResult = new DescribeTaskDefinitionResult().withTags(tag);
-    doReturn(describeTaskDefinitionResult)
-        .when(awsHelperService)
-        .describeTaskDefinition(anyString(), any(), anyList(), any());
+    doReturn(describeTaskDefinitionResult).when(awsHelperService).describeTaskDefinition(any(), any(), any(), any());
 
     List<ContainerInfo> containerInfos = ((EcsContainerServiceImpl) ecsContainerService)
                                              .generateContainerInfos(Arrays.asList(task), "cl1", "us-east-1", null,
@@ -621,8 +614,8 @@ public class EcsContainerServiceImplTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void testGenerateContainerInfos_ECS_EC2() {
     ExecutionLogCallback logCallback = mock(ExecutionLogCallback.class);
-    doNothing().when(logCallback).saveExecutionLog(anyString());
-    doNothing().when(logCallback).saveExecutionLog(anyString(), any(), any());
+    doNothing().when(logCallback).saveExecutionLog(any());
+    doNothing().when(logCallback).saveExecutionLog(any(), any(), any());
     // Main Container
     Container container = generateMainContainer();
     // Sidecar container
@@ -638,22 +631,18 @@ public class EcsContainerServiceImplTest extends WingsBaseTest {
 
     DescribeContainerInstancesResult containerInstancesResult =
         new DescribeContainerInstancesResult().withContainerInstances(containerInstance);
-    doReturn(containerInstancesResult)
-        .when(awsHelperService)
-        .describeContainerInstances(anyString(), any(), anyList(), any());
+    doReturn(containerInstancesResult).when(awsHelperService).describeContainerInstances(any(), any(), any(), any());
 
     com.amazonaws.services.ec2.model.Instance ec2Instance =
         new com.amazonaws.services.ec2.model.Instance().withPrivateIpAddress("2.0.0.0");
     DescribeInstancesResult describeInstancesResult =
         new DescribeInstancesResult().withReservations(new Reservation().withInstances(ec2Instance));
-    doReturn(describeInstancesResult).when(awsHelperService).describeEc2Instances(any(), anyList(), anyString(), any());
+    doReturn(describeInstancesResult).when(awsHelperService).describeEc2Instances(any(), any(), any(), any());
 
     com.amazonaws.services.ecs.model.Tag tag =
         new com.amazonaws.services.ecs.model.Tag().withKey(MAIN_ECS_CONTAINER_NAME_TAG).withValue("containerMain");
     DescribeTaskDefinitionResult describeTaskDefinitionResult = new DescribeTaskDefinitionResult().withTags(tag);
-    doReturn(describeTaskDefinitionResult)
-        .when(awsHelperService)
-        .describeTaskDefinition(anyString(), any(), anyList(), any());
+    doReturn(describeTaskDefinitionResult).when(awsHelperService).describeTaskDefinition(any(), any(), any(), any());
 
     List<ContainerInfo> containerInfos = ((EcsContainerServiceImpl) ecsContainerService)
                                              .generateContainerInfos(Arrays.asList(task), "cl1", "us-east-1", null,
@@ -682,8 +671,8 @@ public class EcsContainerServiceImplTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void testGenerateContainerInfos_ECS_EC2_AWSVPC() {
     ExecutionLogCallback logCallback = mock(ExecutionLogCallback.class);
-    doNothing().when(logCallback).saveExecutionLog(anyString());
-    doNothing().when(logCallback).saveExecutionLog(anyString(), any(), any());
+    doNothing().when(logCallback).saveExecutionLog(any());
+    doNothing().when(logCallback).saveExecutionLog(any(), any(), any());
     // Main Container
     Container container = generateMainContainer();
     NetworkInterface networkInterface = new NetworkInterface().withPrivateIpv4Address("1.0.0.1");
@@ -701,22 +690,18 @@ public class EcsContainerServiceImplTest extends WingsBaseTest {
 
     DescribeContainerInstancesResult containerInstancesResult =
         new DescribeContainerInstancesResult().withContainerInstances(containerInstance);
-    doReturn(containerInstancesResult)
-        .when(awsHelperService)
-        .describeContainerInstances(anyString(), any(), anyList(), any());
+    doReturn(containerInstancesResult).when(awsHelperService).describeContainerInstances(any(), any(), any(), any());
 
     com.amazonaws.services.ec2.model.Instance ec2Instance =
         new com.amazonaws.services.ec2.model.Instance().withPrivateIpAddress("2.0.0.0");
     DescribeInstancesResult describeInstancesResult =
         new DescribeInstancesResult().withReservations(new Reservation().withInstances(ec2Instance));
-    doReturn(describeInstancesResult).when(awsHelperService).describeEc2Instances(any(), anyList(), anyString(), any());
+    doReturn(describeInstancesResult).when(awsHelperService).describeEc2Instances(any(), any(), any(), any());
 
     com.amazonaws.services.ecs.model.Tag tag =
         new com.amazonaws.services.ecs.model.Tag().withKey(MAIN_ECS_CONTAINER_NAME_TAG).withValue("containerMain");
     DescribeTaskDefinitionResult describeTaskDefinitionResult = new DescribeTaskDefinitionResult().withTags(tag);
-    doReturn(describeTaskDefinitionResult)
-        .when(awsHelperService)
-        .describeTaskDefinition(anyString(), any(), anyList(), any());
+    doReturn(describeTaskDefinitionResult).when(awsHelperService).describeTaskDefinition(any(), any(), any(), any());
 
     List<ContainerInfo> containerInfos = ((EcsContainerServiceImpl) ecsContainerService)
                                              .generateContainerInfos(Arrays.asList(task), "cl1", "us-east-1", null,
@@ -749,11 +734,9 @@ public class EcsContainerServiceImplTest extends WingsBaseTest {
     int serviceSteadyStateTimeout = 10;
     ArrayList<EncryptedDataDetail> encryptionDetails = new ArrayList<>();
 
-    doNothing().when(logCallback).saveExecutionLog(anyString(), any());
-    doNothing().when(logCallback).saveExecutionLog(anyString(), any());
-    doNothing()
-        .when(awsHelperService)
-        .waitTillECSServiceIsStable(anyString(), anyObject(), anyList(), anyObject(), anyInt(), anyObject());
+    doNothing().when(logCallback).saveExecutionLog(any(), any());
+    doNothing().when(logCallback).saveExecutionLog(any(), any());
+    doNothing().when(awsHelperService).waitTillECSServiceIsStable(any(), any(), any(), any(), anyInt(), any());
 
     ecsContainerService.waitForServiceToReachStableState(
         region, awsConfig, encryptionDetails, CLUSTER_NAME, SERVICE_NAME, logCallback, serviceSteadyStateTimeout);

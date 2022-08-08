@@ -34,6 +34,7 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
+import io.harness.beans.ArtifactMetaInfo;
 import io.harness.beans.DelegateTask;
 import io.harness.delegate.beans.TaskData;
 import io.harness.exception.InvalidRequestException;
@@ -57,6 +58,7 @@ import software.wings.beans.artifact.ArtifactStreamAttributes;
 import software.wings.beans.command.GcbTaskParams;
 import software.wings.beans.settings.azureartifacts.AzureArtifactsConfig;
 import software.wings.delegatetasks.DelegateProxyFactory;
+import software.wings.delegatetasks.GcbDelegateResponse;
 import software.wings.helpers.ext.azure.devops.AzureArtifactsFeed;
 import software.wings.helpers.ext.azure.devops.AzureArtifactsPackage;
 import software.wings.helpers.ext.azure.devops.AzureDevopsProject;
@@ -77,10 +79,10 @@ import software.wings.service.intfc.artifact.CustomBuildSourceService;
 import software.wings.service.intfc.security.SecretManager;
 import software.wings.settings.SettingValue;
 import software.wings.settings.SettingVariableTypes;
-import software.wings.sm.states.GcbState;
 import software.wings.utils.RepositoryFormat;
 import software.wings.utils.RepositoryType;
 
+import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -347,7 +349,8 @@ public class BuildSourceServiceImpl implements BuildSourceService {
     String settingId = artifactStream.getSettingId();
     // Collect labels for only DOCKER.
     if (!DOCKER.name().equals(artifactStream.getArtifactStreamType())
-        && !ECR.name().equals(artifactStream.getArtifactStreamType())) {
+        && !ECR.name().equals(artifactStream.getArtifactStreamType())
+        && !ARTIFACTORY.name().equals(artifactStream.getArtifactStreamType())) {
       return Collections.emptyList();
     }
 
@@ -369,6 +372,29 @@ public class BuildSourceServiceImpl implements BuildSourceService {
 
     return getBuildService(settingAttribute, appId)
         .getLabels(artifactStreamAttributes, buildNos, settingValue, encryptedDataDetails);
+  }
+
+  @Override
+  public ArtifactMetaInfo getArtifactMetaInfo(ArtifactStream artifactStream, String buildNo) {
+    String appId = artifactStream.fetchAppId();
+    String artifactStreamId = artifactStream.getUuid();
+    String settingId = artifactStream.getSettingId();
+    // Collect metainfo for only DOCKER.
+    if (Lists.newArrayList(DOCKER).stream().noneMatch(
+            type -> type.name().equals(artifactStream.getArtifactStreamType()))) {
+      return new ArtifactMetaInfo();
+    }
+    SettingAttribute settingAttribute = settingsService.get(settingId);
+    if (settingAttribute == null) {
+      log.warn("Artifact server: [{}] was deleted for artifact stream: [{}]", settingId, artifactStreamId);
+      return new ArtifactMetaInfo();
+    }
+    SettingValue settingValue = getSettingValue(settingAttribute);
+    List<EncryptedDataDetail> encryptedDataDetails = getEncryptedDataDetails((EncryptableSetting) settingValue);
+    Service service = artifactStreamServiceBindingService.getService(appId, artifactStream.getUuid(), true);
+    ArtifactStreamAttributes artifactStreamAttributes = getArtifactStreamAttributes(artifactStream, service);
+    return getBuildService(settingAttribute, appId)
+        .getArtifactMetaInfo(artifactStreamAttributes, buildNo, settingValue, encryptedDataDetails);
   }
 
   private ArtifactStreamAttributes getArtifactStreamAttributes(ArtifactStream artifactStream, Service service) {
@@ -543,6 +569,7 @@ public class BuildSourceServiceImpl implements BuildSourceService {
     SyncTaskContextBuilder syncTaskContextBuilder =
         SyncTaskContext.builder()
             .accountId(settingAttribute.getAccountId())
+            .appId(SCOPE_WILDCARD)
             .timeout(settingAttribute.getValue().getType().equals(SettingVariableTypes.JENKINS.name())
                     ? 120 * 1000
                     : DEFAULT_SYNC_CALL_TIMEOUT);
@@ -758,7 +785,7 @@ public class BuildSourceServiceImpl implements BuildSourceService {
     }
     List<EncryptedDataDetail> encryptedDataDetails = getEncryptedDataDetails((EncryptableSetting) settingValue);
     GcpConfig gcpConfig = (GcpConfig) settingValue;
-    GcbState.GcbDelegateResponse delegateResponseData = null;
+    GcbDelegateResponse delegateResponseData = null;
     try {
       delegateResponseData = delegateService.executeTask(
           DelegateTask.builder()

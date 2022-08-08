@@ -16,6 +16,7 @@ import io.harness.delegate.task.pcf.request.CfInfraMappingDataRequest;
 import io.harness.delegate.task.pcf.response.CfCommandExecutionResponse;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidArgumentsException;
+import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.pcf.model.CfRequestConfig;
 import io.harness.security.encryption.EncryptedDataDetail;
@@ -50,6 +51,7 @@ public class PcfValidationCommandTaskHandler extends PcfCommandTaskHandler {
     CfInfraMappingDataRequest cfInfraMappingDataRequest = (CfInfraMappingDataRequest) cfCommandRequest;
     CfInternalConfig pcfConfig = cfInfraMappingDataRequest.getPcfConfig();
     secretDecryptionService.decrypt(pcfConfig, encryptedDataDetails, false);
+    ExceptionMessageSanitizer.storeAllSecretsForSanitizing(pcfConfig, encryptedDataDetails);
 
     CfCommandExecutionResponse cfCommandExecutionResponse = CfCommandExecutionResponse.builder().build();
     try {
@@ -70,7 +72,8 @@ public class PcfValidationCommandTaskHandler extends PcfCommandTaskHandler {
       log.error("Exception in processing PCF validation task for Account {} ",
           cfInfraMappingDataRequest.getPcfConfig().getAccountId(), e);
       cfCommandExecutionResponse.setCommandExecutionStatus(CommandExecutionStatus.FAILURE);
-      cfCommandExecutionResponse.setErrorMessage(ExceptionUtils.getMessage(e));
+      cfCommandExecutionResponse.setErrorMessage(
+          ExceptionUtils.getMessage(ExceptionMessageSanitizer.sanitizeException(e)));
     }
 
     return cfCommandExecutionResponse;

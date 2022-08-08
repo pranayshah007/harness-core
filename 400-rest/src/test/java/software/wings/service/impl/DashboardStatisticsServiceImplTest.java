@@ -10,11 +10,13 @@ package software.wings.service.impl;
 import static io.harness.annotations.dev.HarnessTeam.DX;
 import static io.harness.beans.PageResponse.PageResponseBuilder.aPageResponse;
 import static io.harness.rule.OwnerRule.ABHINAV;
+import static io.harness.rule.OwnerRule.ABHINAV2;
 import static io.harness.rule.OwnerRule.ALEXANDRU_CIOFU;
 import static io.harness.rule.OwnerRule.DEEPAK_PUTHRAYA;
 import static io.harness.rule.OwnerRule.MEET;
 import static io.harness.rule.OwnerRule.PRABU;
 import static io.harness.rule.OwnerRule.RAMA;
+import static io.harness.rule.OwnerRule.TATHAGAT;
 
 import static software.wings.service.impl.instance.InstanceSyncTestConstants.ACCOUNT_1_ID;
 import static software.wings.service.impl.instance.InstanceSyncTestConstants.ACCOUNT_2_ID;
@@ -132,12 +134,15 @@ import static java.util.Objects.deepEquals;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.ArtifactMetadata;
 import io.harness.beans.EnvironmentType;
 import io.harness.beans.ExecutionStatus;
 import io.harness.beans.FeatureName;
@@ -149,7 +154,6 @@ import io.harness.event.usagemetrics.UsageMetricsHelper;
 import io.harness.ff.FeatureFlagService;
 import io.harness.persistence.HPersistence;
 import io.harness.rule.Owner;
-import io.harness.testlib.RealMongo;
 
 import software.wings.WingsBaseTest;
 import software.wings.beans.Account;
@@ -165,6 +169,7 @@ import software.wings.beans.WorkflowExecution;
 import software.wings.beans.appmanifest.HelmChart;
 import software.wings.beans.appmanifest.ManifestSummary;
 import software.wings.beans.artifact.Artifact;
+import software.wings.beans.execution.WorkflowExecutionInfo;
 import software.wings.beans.infrastructure.instance.Instance;
 import software.wings.beans.infrastructure.instance.Instance.InstanceBuilder;
 import software.wings.beans.infrastructure.instance.InstanceType;
@@ -194,15 +199,18 @@ import software.wings.service.intfc.EnvironmentService;
 import software.wings.service.intfc.InfrastructureMappingService;
 import software.wings.service.intfc.ServiceResourceService;
 import software.wings.service.intfc.WorkflowExecutionService;
+import software.wings.service.intfc.WorkflowService;
 import software.wings.service.intfc.instance.DashboardStatisticsService;
 import software.wings.sm.PipelineSummary;
 
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -223,6 +231,7 @@ public class DashboardStatisticsServiceImplTest extends WingsBaseTest {
   public static final String CHART_NAME = "CHART_NAME";
   public static final String REPO_URL = "REPO_URL";
   @Mock private WorkflowExecutionService workflowExecutionService;
+  @Mock private WorkflowService workflowService;
   @Mock private ServiceResourceService serviceResourceService;
   @Mock private EnvironmentService environmentService;
   @Mock private InfrastructureMappingService infraMappingService;
@@ -254,6 +263,7 @@ public class DashboardStatisticsServiceImplTest extends WingsBaseTest {
   private Instance instance17;
   private User user;
   private long currentTime;
+  private WorkflowExecutionInfo workflowExecutionInfo;
 
   @Before
   public void init() {
@@ -282,8 +292,10 @@ public class DashboardStatisticsServiceImplTest extends WingsBaseTest {
                                    .appIdFilterRequired(true)
                                    .appIds(Sets.newHashSet(APP_1_ID, APP_2_ID, APP_3_ID, APP_4_ID, APP_5_ID))
                                    .build());
+    workflowExecutionInfo = WorkflowExecutionInfo.builder().build();
     UserThreadLocal.set(user);
-    when(featureFlagService.isEnabled(eq(FeatureName.HELM_CHART_AS_ARTIFACT), anyString())).thenReturn(true);
+    when(featureFlagService.isEnabled(eq(FeatureName.HELM_CHART_AS_ARTIFACT), any())).thenReturn(true);
+    when(workflowExecutionService.getWorkflowExecutionInfo(any())).thenReturn(workflowExecutionInfo);
   }
 
   @After
@@ -468,7 +480,6 @@ public class DashboardStatisticsServiceImplTest extends WingsBaseTest {
   @Test
   @Owner(developers = ABHINAV)
   @Category(UnitTests.class)
-  @RealMongo
   public void testUsageMetrics() {
     Map<String, Integer> instanceCountMap = usageMetricsHelper.getAllValidInstanceCounts();
     boolean account1Validation = false;
@@ -492,7 +503,6 @@ public class DashboardStatisticsServiceImplTest extends WingsBaseTest {
   @Test
   @Owner(developers = ABHINAV)
   @Category(UnitTests.class)
-  @RealMongo
   public void shallTestInstanceStats() {
     try {
       List<String> appIdList = asList(APP_1_ID, APP_2_ID, APP_3_ID, APP_4_ID, APP_5_ID);
@@ -553,10 +563,14 @@ public class DashboardStatisticsServiceImplTest extends WingsBaseTest {
   @Test
   @Owner(developers = ABHINAV)
   @Category(UnitTests.class)
-  @RealMongo
   public void shallGetAppInstanceSummaryStatsByService() {
     try {
       List<String> appIdList = asList(APP_1_ID, APP_2_ID, APP_3_ID, APP_4_ID, APP_5_ID);
+      Map<String, String> entry = new HashMap<>();
+      entry.put("service1_id", "updatedService1Name");
+      Set<String> setOfServiceIds = new HashSet<>();
+      setOfServiceIds.add("service1_id");
+      when(serviceResourceService.getServiceNamesWithAccountId(any(), any())).thenReturn(entry);
 
       PageResponse<InstanceSummaryStatsByService> currentAppInstanceStatsByService =
           dashboardService.getAppInstanceSummaryStatsByService(
@@ -570,6 +584,17 @@ public class DashboardStatisticsServiceImplTest extends WingsBaseTest {
       currentAppInstanceStatsByService = dashboardService.getAppInstanceSummaryStatsByService(
           ACCOUNT_1_ID, appIdList, System.currentTimeMillis(), 0, 10);
       assertThat(currentAppInstanceStatsByService.getResponse()).hasSize(7);
+
+      currentAppInstanceStatsByService = dashboardService.getAppInstanceSummaryStatsByService(
+          ACCOUNT_1_ID, appIdList, System.currentTimeMillis(), 0, 10);
+      for (InstanceSummaryStatsByService instanceSummaryStatsByService :
+          currentAppInstanceStatsByService.getResponse()) {
+        if (instanceSummaryStatsByService.getServiceSummary().getId().equals("service1_id")) {
+          assertThat(instanceSummaryStatsByService.getServiceSummary().getName().equals("updatedService1Name"));
+          break;
+        }
+      }
+
     } finally {
       UserThreadLocal.unset();
     }
@@ -578,7 +603,6 @@ public class DashboardStatisticsServiceImplTest extends WingsBaseTest {
   @Test
   @Owner(developers = ABHINAV)
   @Category(UnitTests.class)
-  @RealMongo
   public void shallGetServiceInstanceStats() {
     try {
       List<InstanceStatsByEnvironment> serviceInstances;
@@ -602,7 +626,6 @@ public class DashboardStatisticsServiceImplTest extends WingsBaseTest {
   @Test
   @Owner(developers = RAMA)
   @Category(UnitTests.class)
-  @RealMongo
   public void shallGetServiceInstanceDashboard() {
     try {
       user.setUserRequestContext(UserRequestContext.builder()
@@ -619,11 +642,12 @@ public class DashboardStatisticsServiceImplTest extends WingsBaseTest {
       executionArgs.setArtifacts(asList(Artifact.Builder.anArtifact()
                                             .withAppId(APP_1_ID)
                                             .withDisplayName(ARTIFACT_NAME)
+                                            .withMetadata(new ArtifactMetadata(ImmutableMap.of("buildNo", "v20")))
                                             .withUuid(ARTIFACT_ID)
                                             .withArtifactStreamId(ARTIFACT_STREAM_ID)
                                             .withArtifactSourceName(ARTIFACT_SOURCE_NAME)
                                             .build()));
-
+      Long startTS = 1630969310005L;
       WorkflowExecution workflowExecution = WorkflowExecution.builder()
                                                 .pipelineSummary(pipelineSummary)
                                                 .executionArgs(executionArgs)
@@ -635,7 +659,22 @@ public class DashboardStatisticsServiceImplTest extends WingsBaseTest {
                                                 .workflowId(WORKFLOW_ID)
                                                 .uuid(WORKFLOW_EXECUTION_ID)
                                                 .name(WORKFLOW_NAME)
+                                                .startTs(startTS)
                                                 .build();
+      /*
+        This addition is to test the shouldUpdate() and updateActiveInstanceArtifactDetails() methods
+        as part of this test itself
+       */
+      persistence.save(workflowExecution);
+      Instance instance = buildInstance(INSTANCE_1_ID, ACCOUNT_1_ID, APP_1_ID, SERVICE_1_ID, ENV_1_ID,
+          INFRA_MAPPING_1_ID, INFRA_MAPPING_1_NAME, CONTAINER_1_ID, currentTime);
+      instance.setInstanceInfo(
+          K8sPodInfo.builder()
+              .helmChartInfo(HelmChartInfo.builder().name(CHART_NAME).repoUrl(REPO_URL).version("1").build())
+              .build());
+      instance.setLastWorkflowExecutionId(WORKFLOW_EXECUTION_ID);
+      instance.setLastArtifactBuildNum("v10");
+      persistence.save(instance);
       PageResponse<WorkflowExecution> executionsPageResponse =
           aPageResponse().withResponse(asList(workflowExecution)).build();
       when(workflowExecutionService.listExecutions(any(PageRequest.class), anyBoolean()))
@@ -652,16 +691,16 @@ public class DashboardStatisticsServiceImplTest extends WingsBaseTest {
       Service service2 = Service.builder().uuid(SERVICE_2_ID).name(SERVICE_NAME).appId(APP_1_ID).build();
       serviceList.add(service2);
       PageResponse<Environment> servicesPageResponse = aPageResponse().withResponse(serviceList).build();
-      when(serviceResourceService.list(any(PageRequest.class), anyBoolean(), anyBoolean(), anyBoolean(), anyString()))
+      when(serviceResourceService.list(any(PageRequest.class), anyBoolean(), anyBoolean(), anyBoolean(), any()))
           .thenReturn(servicesPageResponse);
-      when(serviceResourceService.getWithDetails(anyString(), anyString())).thenReturn(service1);
+      when(serviceResourceService.getWithDetails(any(), any())).thenReturn(service1);
       when(artifactStreamServiceBindingService.listArtifactStreamIds(any(Service.class)))
           .thenReturn(asList(ARTIFACT_STREAM_ID));
 
       List<Environment> envList = Lists.newArrayList();
       envList.add(Environment.Builder.anEnvironment().uuid(ENV_1_ID).name(ENV_NAME).appId(APP_1_ID).build());
       PageResponse<Environment> envsPageResponse = aPageResponse().withResponse(envList).build();
-      when(environmentService.list(any(PageRequest.class), anyBoolean(), anyString())).thenReturn(envsPageResponse);
+      when(environmentService.list(any(PageRequest.class), anyBoolean(), any())).thenReturn(envsPageResponse);
 
       List<InfrastructureMapping> infraList = Lists.newArrayList();
       InfrastructureMapping infra1 = new GcpKubernetesInfrastructureMapping();
@@ -730,6 +769,8 @@ public class DashboardStatisticsServiceImplTest extends WingsBaseTest {
       assertThat(serviceInstanceDashboard.getCurrentActiveInstancesList().get(0).getInstanceCount()).isEqualTo(1);
       assertThat(serviceInstanceDashboard.getDeploymentHistoryList()).hasSize(1);
       DeploymentHistory deploymentHistory = serviceInstanceDashboard.getDeploymentHistoryList().get(0);
+      assertThat(deepEquals(serviceInstanceDashboard.getCurrentActiveInstancesList().get(0).getArtifact(),
+          deploymentHistory.getArtifact()));
       assertThat(deepEquals(expectedDeployment.getEnvs(), deploymentHistory.getEnvs())).isTrue();
       assertThat(deepEquals(expectedDeployment.getInframappings(), deploymentHistory.getInframappings())).isTrue();
       assertThat(deepEquals(expectedDeployment.getStatus(), deploymentHistory.getStatus())).isTrue();
@@ -742,7 +783,6 @@ public class DashboardStatisticsServiceImplTest extends WingsBaseTest {
   @Test
   @Owner(developers = PRABU)
   @Category(UnitTests.class)
-  @RealMongo
   public void shouldGetActiveInstancesWithManifest() {
     DashboardStatisticsServiceImpl dashboardStatisticsService = (DashboardStatisticsServiceImpl) dashboardService;
     List<CurrentActiveInstances> activeInstances =
@@ -757,7 +797,6 @@ public class DashboardStatisticsServiceImplTest extends WingsBaseTest {
   @Test
   @Owner(developers = PRABU)
   @Category(UnitTests.class)
-  @RealMongo
   public void shouldUpdateLastWorkflowExecutionAndManifestInActiveInstance() {
     Long startTS = 1630969310005L;
     WorkflowExecution workflowExecution = WorkflowExecution.builder()
@@ -772,6 +811,9 @@ public class DashboardStatisticsServiceImplTest extends WingsBaseTest {
                                               .startTs(startTS)
                                               .build();
     persistence.save(workflowExecution);
+    doReturn(workflowExecution)
+        .when(workflowExecutionService)
+        .getLastSuccessfulWorkflowExecution(any(), any(), any(), any(), any(), any());
     Instance instance = buildInstance(INSTANCE_1_ID, ACCOUNT_1_ID, APP_1_ID, SERVICE_1_ID, ENV_1_ID, INFRA_MAPPING_1_ID,
         INFRA_MAPPING_1_NAME, CONTAINER_1_ID, currentTime);
     instance.setInstanceInfo(
@@ -796,7 +838,6 @@ public class DashboardStatisticsServiceImplTest extends WingsBaseTest {
   @Test
   @Owner(developers = {PRABU, DEEPAK_PUTHRAYA})
   @Category(UnitTests.class)
-  @RealMongo
   public void shallGetDeploymentHistoryWithManifest() {
     ExecutionArgs executionArgs = new ExecutionArgs();
     executionArgs.setArtifacts(asList(Artifact.Builder.anArtifact()
@@ -960,22 +1001,15 @@ public class DashboardStatisticsServiceImplTest extends WingsBaseTest {
   @Test
   @Owner(developers = ALEXANDRU_CIOFU)
   @Category(UnitTests.class)
-  @RealMongo
   public void testLastWorkflowExecutionDate() {
     Long startTS = 1630969310005L;
     Long deployedAt = 1630969317105L;
-    WorkflowExecution workflowExecution = WorkflowExecution.builder()
-                                              .appId(APP_1_ID)
-                                              .status(ExecutionStatus.SUCCESS)
-                                              .envIds(asList(ENV_1_ID))
-                                              .serviceIds(asList(SERVICE_1_ID, SERVICE_2_ID))
-                                              .infraMappingIds(asList(INFRA_MAPPING_1_ID, INFRA_MAPPING_2_ID))
-                                              .workflowId(WORKFLOW_ID)
-                                              .uuid(WORKFLOW_EXECUTION_ID)
-                                              .name(WORKFLOW_NAME)
-                                              .startTs(startTS)
-                                              .build();
+    WorkflowExecution workflowExecution = createWorkflowExecution(WORKFLOW_EXECUTION_ID, startTS);
     persistence.save(workflowExecution);
+    doReturn(workflowExecution)
+        .when(workflowExecutionService)
+        .getLastSuccessfulWorkflowExecution(any(), any(), any(), any(), any(), any());
+
     Instance instance = buildInstance(INSTANCE_1_ID, ACCOUNT_1_ID, APP_1_ID, SERVICE_1_ID, ENV_1_ID, INFRA_MAPPING_1_ID,
         INFRA_MAPPING_1_NAME, CONTAINER_1_ID, currentTime);
     instance.setInstanceInfo(
@@ -991,6 +1025,11 @@ public class DashboardStatisticsServiceImplTest extends WingsBaseTest {
     assertThat(activeInstances).hasSize(1);
     assertThat(activeInstances.get(0).getLastWorkflowExecutionDate().getTime()).isEqualTo(startTS.longValue());
 
+    WorkflowExecution latestWFExecution = createWorkflowExecution(WORKFLOW_EXECUTION_ID + "ABC", deployedAt);
+    persistence.save(latestWFExecution);
+    doReturn(latestWFExecution)
+        .when(workflowExecutionService)
+        .getLastSuccessfulWorkflowExecution(any(), any(), any(), any(), any(), any());
     instance.setLastWorkflowExecutionId(WORKFLOW_EXECUTION_ID + "ABC");
     instance.setLastDeployedAt(deployedAt);
     persistence.save(instance);
@@ -998,5 +1037,76 @@ public class DashboardStatisticsServiceImplTest extends WingsBaseTest {
     activeInstances = dashboardStatisticsService.getCurrentActiveInstances(ACCOUNT_1_ID, APP_1_ID, SERVICE_1_ID);
     assertThat(activeInstances).hasSize(1);
     assertThat(activeInstances.get(0).getLastWorkflowExecutionDate().getTime()).isEqualTo(deployedAt.longValue());
+  }
+
+  @Test
+  @Owner(developers = ABHINAV2)
+  @Category(UnitTests.class)
+  public void testLastDeployedAtTimestampGivenThatLatestExecutionFailed() {
+    long someTime = 1630969310005L;
+    long someTimeLater = 1630969317105L;
+
+    WorkflowExecution oldSuccessfulExecution = createWorkflowExecution(WORKFLOW_EXECUTION_ID + "_old", someTime);
+    WorkflowExecution latestFailedExecution = createWorkflowExecution(WORKFLOW_EXECUTION_ID + "_new", someTimeLater);
+
+    persistence.save(oldSuccessfulExecution);
+    persistence.save(latestFailedExecution);
+
+    Instance instance = buildInstance(INSTANCE_1_ID, ACCOUNT_1_ID, APP_1_ID, SERVICE_1_ID, ENV_1_ID, INFRA_MAPPING_1_ID,
+        INFRA_MAPPING_1_NAME, CONTAINER_1_ID, currentTime);
+    instance.setInstanceInfo(
+        K8sPodInfo.builder()
+            .helmChartInfo(HelmChartInfo.builder().name(CHART_NAME).repoUrl(REPO_URL).version("1").build())
+            .build());
+
+    instance.setLastWorkflowExecutionId(WORKFLOW_EXECUTION_ID + "_new");
+    persistence.save(instance);
+    doReturn(oldSuccessfulExecution)
+        .when(workflowExecutionService)
+        .getLastSuccessfulWorkflowExecution(any(), any(), any(), any(), any(), any());
+
+    DashboardStatisticsServiceImpl dashboardStatisticsService = (DashboardStatisticsServiceImpl) dashboardService;
+    List<CurrentActiveInstances> activeInstances =
+        dashboardStatisticsService.getCurrentActiveInstances(ACCOUNT_1_ID, APP_1_ID, SERVICE_1_ID);
+    assertThat(activeInstances).hasSize(1);
+    assertThat(activeInstances.get(0).getLastWorkflowExecutionDate().getTime()).isEqualTo(someTime);
+  }
+
+  @Test
+  @Owner(developers = TATHAGAT)
+  @Category(UnitTests.class)
+  public void testLastDeployedAtTimestampGivenRetentionPolicy() {
+    Instance instance = buildInstance(INSTANCE_1_ID, ACCOUNT_1_ID, APP_1_ID, SERVICE_1_ID, ENV_1_ID, INFRA_MAPPING_1_ID,
+        INFRA_MAPPING_1_NAME, CONTAINER_1_ID, currentTime);
+    instance.setInstanceInfo(
+        K8sPodInfo.builder()
+            .helmChartInfo(HelmChartInfo.builder().name(CHART_NAME).repoUrl(REPO_URL).version("1").build())
+            .build());
+
+    instance.setLastWorkflowExecutionId(WORKFLOW_EXECUTION_ID + "_new");
+    persistence.save(instance);
+
+    DashboardStatisticsServiceImpl dashboardStatisticsService = (DashboardStatisticsServiceImpl) dashboardService;
+    List<CurrentActiveInstances> activeInstances =
+        dashboardStatisticsService.getCurrentActiveInstances(ACCOUNT_1_ID, APP_1_ID, SERVICE_1_ID);
+
+    verify(workflowExecutionService, never())
+        .getLastSuccessfulWorkflowExecution(any(), any(), any(), any(), any(), any());
+    assertThat(activeInstances).hasSize(1);
+    assertThat(activeInstances.get(0).getLastWorkflowExecutionDate()).isNull();
+  }
+
+  private WorkflowExecution createWorkflowExecution(String uuid, long startTime) {
+    return WorkflowExecution.builder()
+        .appId(APP_1_ID)
+        .status(ExecutionStatus.SUCCESS)
+        .envIds(asList(ENV_1_ID))
+        .serviceIds(asList(SERVICE_1_ID, SERVICE_2_ID))
+        .infraMappingIds(asList(INFRA_MAPPING_1_ID, INFRA_MAPPING_2_ID))
+        .workflowId(WORKFLOW_ID)
+        .uuid(uuid)
+        .name(WORKFLOW_NAME)
+        .startTs(startTime)
+        .build();
   }
 }

@@ -46,7 +46,7 @@ import software.wings.beans.EntityType;
 import software.wings.beans.JenkinsConfig;
 import software.wings.beans.ServiceVariable;
 import software.wings.beans.ServiceVariable.ServiceVariableKeys;
-import software.wings.beans.ServiceVariable.Type;
+import software.wings.beans.ServiceVariableType;
 import software.wings.beans.SettingAttribute;
 import software.wings.beans.SettingAttribute.SettingCategory;
 import software.wings.beans.User;
@@ -725,7 +725,7 @@ public class WingsPersistenceTest extends WingsBaseTest {
                                           .entityId("0Or07BsmSBiF0sOZY80HRg")
                                           .name("foo" + rand)
                                           .value(password)
-                                          .type(Type.ENCRYPTED_TEXT)
+                                          .type(ServiceVariableType.ENCRYPTED_TEXT)
                                           .build();
     serviceVariable.setAppId("myapp");
 
@@ -758,7 +758,7 @@ public class WingsPersistenceTest extends WingsBaseTest {
                                           .entityId("0Or07BsmSBiF0sOZY80HRg")
                                           .name("foo" + rand)
                                           .value(password)
-                                          .type(Type.ENCRYPTED_TEXT)
+                                          .type(ServiceVariableType.ENCRYPTED_TEXT)
                                           .build();
     serviceVariable.setAppId("myapp");
 
@@ -793,7 +793,7 @@ public class WingsPersistenceTest extends WingsBaseTest {
                                           .entityId("0Or07BsmSBiF0sOZY80HRg")
                                           .name("foo" + rand)
                                           .value(password)
-                                          .type(Type.ENCRYPTED_TEXT)
+                                          .type(ServiceVariableType.ENCRYPTED_TEXT)
                                           .build();
     serviceVariable.setAppId("myapp");
 
@@ -834,7 +834,7 @@ public class WingsPersistenceTest extends WingsBaseTest {
                                           .entityId("0Or07BsmSBiF0sOZY80HRg")
                                           .name("foo" + rand)
                                           .value(password)
-                                          .type(Type.ENCRYPTED_TEXT)
+                                          .type(ServiceVariableType.ENCRYPTED_TEXT)
                                           .build();
     serviceVariable.setAppId("myapp");
 
@@ -866,7 +866,7 @@ public class WingsPersistenceTest extends WingsBaseTest {
                                           .entityId("0Or07BsmSBiF0sOZY80HRg")
                                           .name("foo" + rand)
                                           .value(password)
-                                          .type(Type.TEXT)
+                                          .type(ServiceVariableType.TEXT)
                                           .build();
     serviceVariable.setAppId("myapp");
 

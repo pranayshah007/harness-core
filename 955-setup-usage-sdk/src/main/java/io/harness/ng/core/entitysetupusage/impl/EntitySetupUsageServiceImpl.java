@@ -12,6 +12,7 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import io.harness.EntityType;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.Scope;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.DuplicateFieldException;
 import io.harness.exception.InvalidRequestException;
@@ -20,7 +21,6 @@ import io.harness.ng.core.entitysetupusage.EntitySetupUsageQueryFilterHelper;
 import io.harness.ng.core.entitysetupusage.dto.EntityReferencesDTO;
 import io.harness.ng.core.entitysetupusage.dto.EntitySetupUsageBatchDTO;
 import io.harness.ng.core.entitysetupusage.dto.EntitySetupUsageDTO;
-import io.harness.ng.core.entitysetupusage.dto.ReferredEntityDTO;
 import io.harness.ng.core.entitysetupusage.entity.EntitySetupUsage;
 import io.harness.ng.core.entitysetupusage.entity.EntitySetupUsage.EntitySetupUsageKeys;
 import io.harness.ng.core.entitysetupusage.mappers.EntitySetupUsageDTOtoEntity;
@@ -33,6 +33,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -76,6 +77,17 @@ public class EntitySetupUsageServiceImpl implements EntitySetupUsageService {
   }
 
   @Override
+  public Page<EntitySetupUsageDTO> listAllEntityUsage(int page, int size, String accountIdentifier,
+      String referredEntityFQN, EntityType referredEntityType, EntityType referredByEntityType, String searchTerm,
+      Sort sort) {
+    Criteria criteria = entitySetupUsageFilterHelper.createCriteriaFromEntityFilter(
+        accountIdentifier, referredEntityFQN, referredEntityType, referredByEntityType, searchTerm);
+    Pageable pageable = getPageRequest(page, size, sort);
+    Page<EntitySetupUsage> entityReferences = entityReferenceRepository.findAll(criteria, pageable);
+    return entityReferences.map(entityReference -> setupUsageEntityToDTO.createEntityReferenceDTO(entityReference));
+  }
+
+  @Override
   public List<EntitySetupUsageDTO> listAllReferredUsages(int page, int size, String accountIdentifier,
       String referredByEntityFQN, EntityType referredEntityType, String searchTerm) {
     Criteria criteria = entitySetupUsageFilterHelper.createCriteriaForListAllReferredUsages(
@@ -89,10 +101,29 @@ public class EntitySetupUsageServiceImpl implements EntitySetupUsageService {
   }
 
   @Override
+  public List<EntitySetupUsageDTO> listAllReferredUsages(
+      String accountIdentifier, String referredByEntityFQN, EntityType referredEntityType) {
+    Criteria criteria = entitySetupUsageFilterHelper.createCriteriaForListAllReferredUsages(
+        accountIdentifier, referredByEntityFQN, referredEntityType, null);
+    return entityReferenceRepository.findAll(criteria, Pageable.unpaged())
+        .getContent()
+        .stream()
+        .map(entityReference -> setupUsageEntityToDTO.createEntityReferenceDTO(entityReference))
+        .collect(Collectors.toList());
+  }
+
+  @Override
   public Boolean isEntityReferenced(String accountIdentifier, String referredEntityFQN, EntityType referredEntityType) {
     Criteria criteria = entitySetupUsageFilterHelper.createCriteriaToCheckWhetherThisEntityIsReferred(
         accountIdentifier, referredEntityFQN, referredEntityType);
     return entityReferenceRepository.exists(criteria);
+  }
+
+  @Override
+  public Long referredByEntityCount(String accountIdentifier, String referredEntityFQN, EntityType referredEntityType) {
+    Criteria criteria = entitySetupUsageFilterHelper.createCriteriaToCheckWhetherThisEntityIsReferred(
+        accountIdentifier, referredEntityFQN, referredEntityType);
+    return entityReferenceRepository.countAll(criteria);
   }
 
   @Override
@@ -208,16 +239,6 @@ public class EntitySetupUsageServiceImpl implements EntitySetupUsageService {
     return entitySetupUsageBatchDTOList;
   }
 
-  private List<ReferredEntityDTO> getReferredEntityDTOList(List<EntitySetupUsageDTO> referredEntities) {
-    List<ReferredEntityDTO> referredEntityDTOList = new ArrayList<>();
-    referredEntities.forEach(referredEntity -> referredEntityDTOList.add(getReferredEntityDTO(referredEntity)));
-    return referredEntityDTOList;
-  }
-
-  private ReferredEntityDTO getReferredEntityDTO(EntitySetupUsageDTO referredEntity) {
-    return ReferredEntityDTO.builder().referredEntity(referredEntity.getReferredEntity()).build();
-  }
-
   private Boolean saveMultiple(List<EntitySetupUsage> entitySetupUsages) {
     if (isEmpty(entitySetupUsages)) {
       return true;
@@ -232,20 +253,44 @@ public class EntitySetupUsageServiceImpl implements EntitySetupUsageService {
 
   public List<EntitySetupUsage> filterSetupUsageByEntityTypes(
       List<EntitySetupUsage> entitySetupUsages, EntityType entityTypeAllowed) {
-    return EmptyPredicate.isEmpty(entitySetupUsages)
-        ? Collections.emptyList()
-        : entitySetupUsages.stream()
-              .filter(entitySetupUsage -> {
-                if (entitySetupUsage.getReferredEntity() != null) {
-                  return entitySetupUsage.getReferredEntity().getType() == entityTypeAllowed;
-                }
-                return false;
-              })
-              .collect(Collectors.toList());
+    if (EmptyPredicate.isEmpty(entitySetupUsages)) {
+      return Collections.emptyList();
+    }
+    HashSet<EntitySetupUsage> uniqueEntitySetupUsages = new HashSet<>();
+    for (EntitySetupUsage entitySetupUsage : entitySetupUsages) {
+      if (entitySetupUsage.getReferredEntity() != null
+          && entitySetupUsage.getReferredEntity().getType() == entityTypeAllowed) {
+        uniqueEntitySetupUsages.add(entitySetupUsage);
+      }
+    }
+    return new ArrayList<>(uniqueEntitySetupUsages);
   }
 
   @Override
   public long deleteByReferredByEntityType(EntityType referredByEntityType) {
     return entityReferenceRepository.deleteAllByReferredByEntityType(referredByEntityType.getYamlName());
+  }
+
+  @Override
+  public List<EntitySetupUsageDTO> listAllEntityUsagePerReferredEntityScope(Scope scope, String referredEntityFQScope,
+      EntityType referredEntityType, EntityType referredByEntityType, String referredByEntityName, Sort sort) {
+    if (null == referredByEntityType) {
+      return Collections.emptyList();
+    }
+    Criteria criteria = entitySetupUsageFilterHelper.createCriteriaForReferredEntitiesInScope(
+        scope, referredEntityFQScope, referredEntityType, referredByEntityType, referredByEntityName);
+
+    return entityReferenceRepository.findAll(criteria, Pageable.unpaged())
+        .getContent()
+        .stream()
+        .map(entityReference -> setupUsageEntityToDTO.createEntityReferenceDTO(entityReference))
+        .collect(Collectors.toList());
+  }
+
+  @Override
+  public Long countReferredByEntitiesByFQNsIn(String accountIdentifier, List<String> referredEntityFQNs) {
+    Criteria criteria = entitySetupUsageFilterHelper.createCriteriaForReferredEntityFQNIn(
+        accountIdentifier, referredEntityFQNs, EntityType.FILES);
+    return entityReferenceRepository.countAll(criteria);
   }
 }

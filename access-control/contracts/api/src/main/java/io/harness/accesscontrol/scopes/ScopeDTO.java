@@ -9,6 +9,7 @@ package io.harness.accesscontrol.scopes;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
+import io.harness.NGCommonEntityConstants;
 import io.harness.annotations.dev.OwnedBy;
 
 import io.swagger.annotations.ApiModel;
@@ -22,7 +23,7 @@ import lombok.Value;
 @ApiModel(value = "Scope")
 @Schema(name = "Scope")
 public class ScopeDTO {
-  String accountIdentifier;
-  String orgIdentifier;
-  String projectIdentifier;
+  @Schema(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) String accountIdentifier;
+  @Schema(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) String orgIdentifier;
+  @Schema(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) String projectIdentifier;
 }

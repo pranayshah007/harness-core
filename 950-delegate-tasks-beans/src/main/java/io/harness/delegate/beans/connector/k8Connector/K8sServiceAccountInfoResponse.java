@@ -10,7 +10,7 @@ package io.harness.delegate.beans.connector.k8Connector;
 import io.harness.delegate.beans.DelegateMetaInfo;
 import io.harness.delegate.beans.DelegateTaskNotifyResponseData;
 
-import com.hazelcast.internal.util.Preconditions;
+import com.google.common.base.Preconditions;
 import java.util.List;
 import lombok.Builder;
 import lombok.Data;

@@ -35,6 +35,7 @@ public class GitSyncBackgroundMigrationDetails implements MigrationDetails {
     return new ImmutableList.Builder<Pair<Integer, Class<? extends NGMigration>>>()
         .add(Pair.of(1, HandleNullCommitIdInDB.class))
         .add(Pair.of(2, GitSyncErrorCompleteFilePathMigration.class))
+        .add(Pair.of(3, UpdateRepoProviderInConnectivityErrorMigration.class))
         .build();
   }
 }

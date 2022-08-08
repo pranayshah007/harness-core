@@ -7,6 +7,8 @@
 
 package io.harness.delegate.task.executioncapability;
 
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
+
 import io.harness.beans.KeyValuePair;
 import io.harness.capability.CapabilityParameters;
 import io.harness.capability.CapabilitySubjectPermission;
@@ -27,15 +29,21 @@ public class HttpConnectionExecutionCapabilityCheck implements CapabilityCheck, 
     HttpConnectionExecutionCapability httpConnectionExecutionCapability =
         (HttpConnectionExecutionCapability) delegateCapability;
     boolean valid;
-    if (httpConnectionExecutionCapability.getHeaders() != null) {
-      valid = Http.connectableHttpUrlWithHeaders(
-          httpConnectionExecutionCapability.fetchConnectableUrl(), httpConnectionExecutionCapability.getHeaders());
+    boolean isNextGen =
+        isNotBlank(System.getenv().get("NEXT_GEN")) && Boolean.parseBoolean(System.getenv().get("NEXT_GEN"));
+    if (isNextGen) {
+      valid = Http.connectableHttpUrlWithoutFollowingRedirect(httpConnectionExecutionCapability.fetchConnectableUrl());
     } else {
-      if (httpConnectionExecutionCapability.isIgnoreRedirect()) {
-        valid =
-            Http.connectableHttpUrlWithoutFollowingRedirect(httpConnectionExecutionCapability.fetchConnectableUrl());
+      if (httpConnectionExecutionCapability.getHeaders() != null) {
+        valid = Http.connectableHttpUrlWithHeaders(
+            httpConnectionExecutionCapability.fetchConnectableUrl(), httpConnectionExecutionCapability.getHeaders());
       } else {
-        valid = Http.connectableHttpUrl(httpConnectionExecutionCapability.fetchConnectableUrl());
+        if (httpConnectionExecutionCapability.isIgnoreRedirect()) {
+          valid =
+              Http.connectableHttpUrlWithoutFollowingRedirect(httpConnectionExecutionCapability.fetchConnectableUrl());
+        } else {
+          valid = Http.connectableHttpUrl(httpConnectionExecutionCapability.fetchConnectableUrl());
+        }
       }
     }
     return CapabilityResponse.builder().delegateCapability(httpConnectionExecutionCapability).validated(valid).build();

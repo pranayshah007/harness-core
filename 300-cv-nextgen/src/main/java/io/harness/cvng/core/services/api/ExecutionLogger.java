@@ -7,18 +7,18 @@
 
 package io.harness.cvng.core.services.api;
 
-import io.harness.cvng.beans.cvnglog.ExecutionLogDTO;
+import io.harness.cvng.beans.cvnglog.ExecutionLogDTO.LogLevel;
 
 public interface ExecutionLogger {
   default void info(String message) {
-    this.log(ExecutionLogDTO.LogLevel.INFO, message);
+    this.log(LogLevel.INFO, message);
   }
   default void warn(String message) {
-    this.log(ExecutionLogDTO.LogLevel.INFO, message);
+    this.log(LogLevel.INFO, message);
   }
-  default void error(String message) {
-    this.log(ExecutionLogDTO.LogLevel.INFO, message);
+  default void error(String message, String... messages) {
+    this.log(LogLevel.ERROR, message, messages);
   }
 
-  void log(ExecutionLogDTO.LogLevel logLevel, String message);
+  void log(LogLevel logLevel, String message, String... messages);
 }

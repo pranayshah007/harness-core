@@ -27,6 +27,11 @@ public class NoOpGitSyncSdkServiceImpl implements GitSyncSdkService {
   }
 
   @Override
+  public boolean isGitSimplificationEnabled(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
+    return false;
+  }
+
+  @Override
   public boolean isDefaultBranch(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
     return false;
   }

@@ -147,9 +147,9 @@ public final class ApplicationManifestUtilsTest extends WingsBaseTest {
         .thenReturn(GcpKubernetesInfrastructureMapping.builder().envId(ENV_ID).build());
     when(appService.get(APP_ID)).thenReturn(anApplication().uuid(APP_ID).build());
     when(serviceResourceService.get(APP_ID, SERVICE_ID, false)).thenReturn(Service.builder().uuid(SERVICE_ID).build());
-    when(context.renderExpression(anyString())).thenAnswer(invocation -> invocation.getArgumentAt(0, String.class));
+    when(context.renderExpression(anyString())).thenAnswer(invocation -> invocation.getArgument(0, String.class));
     when(context.renderExpression(anyString(), any(StateExecutionContext.class)))
-        .thenAnswer(invocation -> invocation.getArgumentAt(0, String.class));
+        .thenAnswer(invocation -> invocation.getArgument(0, String.class));
   }
 
   @Test
@@ -833,7 +833,7 @@ public final class ApplicationManifestUtilsTest extends WingsBaseTest {
   private void testPopulateRemoteGitConfigFilePathListWith(
       K8sValuesLocation location, ApplicationManifest manifest, String... expectedFiles) {
     final Answer<String> answer = invocation -> {
-      String argument = invocation.getArgumentAt(0, String.class);
+      String argument = invocation.getArgument(0, String.class);
       argument = argument.replace("${expression}", "file");
       argument = argument.replace("${expression1}", "file1");
       argument = argument.replace("${expression2}", "file2");
@@ -866,7 +866,7 @@ public final class ApplicationManifestUtilsTest extends WingsBaseTest {
   public void testPopulateRemoteGitConfigFilePathListInvalidExpressionsWith(
       K8sValuesLocation location, ApplicationManifest manifest) {
     final Answer<String> answer = invocation -> {
-      String argument = invocation.getArgumentAt(0, String.class);
+      String argument = invocation.getArgument(0, String.class);
       argument = argument.replace("${empty}", "");
       argument = argument.replace("${valid}", "file");
       argument = argument.replace("${null}", "null");

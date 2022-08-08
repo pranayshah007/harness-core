@@ -69,4 +69,13 @@ public class CECloudAccountDao {
         .in(accountIds)
         .asList();
   }
+
+  public List<CECloudAccount> getByFilterAccountName(String filterAccountName, String harnessAccountId) {
+    return hPersistence.createQuery(CECloudAccount.class)
+        .field(CECloudAccountKeys.accountId)
+        .equal(harnessAccountId)
+        .field(CECloudAccountKeys.accountName)
+        .containsIgnoreCase(filterAccountName)
+        .asList();
+  }
 }

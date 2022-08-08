@@ -112,7 +112,6 @@ import static org.assertj.core.api.Assertions.fail;
 import static org.assertj.core.api.Assertions.tuple;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyObject;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doNothing;
@@ -216,7 +215,6 @@ import software.wings.service.intfc.InfrastructureProvisionerService;
 import software.wings.service.intfc.NotificationService;
 import software.wings.service.intfc.PipelineService;
 import software.wings.service.intfc.ResourceLookupService;
-import software.wings.service.intfc.ServiceResourceService;
 import software.wings.service.intfc.ServiceTemplateService;
 import software.wings.service.intfc.ServiceVariableService;
 import software.wings.service.intfc.TriggerService;
@@ -330,7 +328,7 @@ public class ServiceResourceServiceTest extends WingsBaseTest {
   @Inject @InjectMocks private CommandHelper commandHelper;
   @Inject @InjectMocks private ResourceLookupService resourceLookupService;
 
-  @Spy @InjectMocks private ServiceResourceService spyServiceResourceService = new ServiceResourceServiceImpl();
+  @Spy @InjectMocks private ServiceResourceServiceImpl spyServiceResourceService;
 
   @Captor
   private ArgumentCaptor<ServiceCommand> serviceCommandArgumentCaptor = ArgumentCaptor.forClass(ServiceCommand.class);
@@ -432,7 +430,7 @@ public class ServiceResourceServiceTest extends WingsBaseTest {
   @Owner(developers = ANUBHAW)
   @Category(UnitTests.class)
   public void shouldSaveService() {
-    when(limitCheckerFactory.getInstance(new Action(Mockito.anyString(), ActionType.CREATE_SERVICE)))
+    when(limitCheckerFactory.getInstance(new Action(any(), ActionType.CREATE_SERVICE)))
         .thenReturn(new MockChecker(true, ActionType.CREATE_SERVICE));
     Service service = serviceBuilder.build();
     doReturn(service).when(spyServiceResourceService).addCommand(any(), any(), any(ServiceCommand.class), eq(true));
@@ -443,7 +441,7 @@ public class ServiceResourceServiceTest extends WingsBaseTest {
     assertThat(savedService.getUuid()).isEqualTo(SERVICE_ID);
     ArgumentCaptor<Service> calledService = ArgumentCaptor.forClass(Service.class);
     verify(mockWingsPersistence).saveAndGet(eq(Service.class), calledService.capture());
-    verify(eventPublishHelper).publishAccountEvent(anyString(), any(AccountEvent.class), anyBoolean(), anyBoolean());
+    verify(eventPublishHelper).publishAccountEvent(any(), any(AccountEvent.class), anyBoolean(), anyBoolean());
     Service calledServiceValue = calledService.getValue();
     assertThat(calledServiceValue)
         .isNotNull()
@@ -513,7 +511,7 @@ public class ServiceResourceServiceTest extends WingsBaseTest {
   public void shouldDeleteService() {
     Query mockQuery = mock(Query.class);
     AuditServiceHelper auditServiceHelper = mock(AuditServiceHelper.class);
-    when(limitCheckerFactory.getInstance(new Action(Mockito.anyString(), ActionType.CREATE_SERVICE)))
+    when(limitCheckerFactory.getInstance(new Action(any(), ActionType.CREATE_SERVICE)))
         .thenReturn(new MockChecker(true, ActionType.CREATE_SERVICE));
     when(mockWingsPersistence.delete(any(), any())).thenReturn(true);
 
@@ -590,7 +588,7 @@ public class ServiceResourceServiceTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void shouldThrowExceptionOnDeleteReferencedByWorkflow() {
     List<String> referencedWorkflows = Collections.singletonList(REFERENCED_WORKFLOW);
-    when(limitCheckerFactory.getInstance(new Action(Mockito.anyString(), ActionType.CREATE_SERVICE)))
+    when(limitCheckerFactory.getInstance(new Action(any(), ActionType.CREATE_SERVICE)))
         .thenReturn(new MockChecker(true, ActionType.CREATE_SERVICE));
     when(mockWingsPersistence.delete(any(), any())).thenReturn(true);
     when(workflowService.obtainWorkflowNamesReferencedByService(APP_ID, SERVICE_ID)).thenReturn(referencedWorkflows);
@@ -606,7 +604,7 @@ public class ServiceResourceServiceTest extends WingsBaseTest {
   @Owner(developers = SRINIVAS)
   @Category(UnitTests.class)
   public void shouldThrowExceptionOnDeleteReferencedByPipeline() {
-    when(limitCheckerFactory.getInstance(new Action(Mockito.anyString(), ActionType.CREATE_SERVICE)))
+    when(limitCheckerFactory.getInstance(new Action(any(), ActionType.CREATE_SERVICE)))
         .thenReturn(new MockChecker(true, ActionType.CREATE_SERVICE));
     when(mockWingsPersistence.delete(any(), any())).thenReturn(true);
     when(workflowService.obtainWorkflowNamesReferencedByService(APP_ID, SERVICE_ID)).thenReturn(asList());
@@ -627,7 +625,7 @@ public class ServiceResourceServiceTest extends WingsBaseTest {
   @Owner(developers = SRINIVAS)
   @Category(UnitTests.class)
   public void shouldThrowExceptionOnDeleteReferencedByTrigger() {
-    when(limitCheckerFactory.getInstance(new Action(Mockito.anyString(), ActionType.CREATE_SERVICE)))
+    when(limitCheckerFactory.getInstance(new Action(any(), ActionType.CREATE_SERVICE)))
         .thenReturn(new MockChecker(true, ActionType.CREATE_SERVICE));
     when(mockWingsPersistence.delete(any(), any())).thenReturn(true);
     when(workflowService.obtainWorkflowNamesReferencedByService(APP_ID, SERVICE_ID)).thenReturn(asList());
@@ -729,7 +727,7 @@ public class ServiceResourceServiceTest extends WingsBaseTest {
 
     when(mockWingsPersistence.saveAndGet(eq(ServiceCommand.class), any(ServiceCommand.class)))
         .thenAnswer(invocation -> {
-          ServiceCommand command = invocation.getArgumentAt(1, ServiceCommand.class);
+          ServiceCommand command = invocation.getArgument(1, ServiceCommand.class);
           command.setUuid(ID_KEY);
           return command;
         });
@@ -746,12 +744,12 @@ public class ServiceResourceServiceTest extends WingsBaseTest {
 
     Query<PcfServiceSpecification> pcfSpecificationQuery = mock(Query.class);
     when(mockWingsPersistence.createQuery(PcfServiceSpecification.class)).thenReturn(pcfSpecificationQuery);
-    when(pcfSpecificationQuery.filter(anyString(), anyObject())).thenReturn(pcfSpecificationQuery);
+    when(pcfSpecificationQuery.filter(anyString(), any())).thenReturn(pcfSpecificationQuery);
     when(pcfSpecificationQuery.get()).thenReturn(null);
 
     Query<HelmChartSpecification> helmQuery = mock(Query.class);
     when(mockWingsPersistence.createQuery(HelmChartSpecification.class)).thenReturn(helmQuery);
-    when(helmQuery.filter(anyString(), anyObject())).thenReturn(helmQuery);
+    when(helmQuery.filter(anyString(), any())).thenReturn(helmQuery);
     when(helmQuery.get()).thenReturn(null);
 
     Service savedClonedService = getClonedService(originalService);
@@ -772,7 +770,7 @@ public class ServiceResourceServiceTest extends WingsBaseTest {
     when(serviceTemplateService.list(any(PageRequest.class), any(Boolean.class), any()))
         .thenReturn(aPageResponse().withResponse(asList(aServiceTemplate().build())).build());
 
-    when(limitCheckerFactory.getInstance(new Action(Mockito.anyString(), ActionType.CREATE_SERVICE)))
+    when(limitCheckerFactory.getInstance(new Action(any(), ActionType.CREATE_SERVICE)))
         .thenReturn(new MockChecker(true, ActionType.CREATE_SERVICE));
 
     when(configService.download(APP_ID, "CONFIG_FILE_ID")).thenReturn(folder.newFile("abc.txt"));
@@ -818,7 +816,7 @@ public class ServiceResourceServiceTest extends WingsBaseTest {
     LambdaSpecification lambdaSpec = createLambdaSpecification();
     Query<LambdaSpecification> lambdaQuery = mock(Query.class);
     when(mockWingsPersistence.createQuery(LambdaSpecification.class)).thenReturn(lambdaQuery);
-    when(lambdaQuery.filter(anyString(), anyObject())).thenReturn(lambdaQuery);
+    when(lambdaQuery.filter(anyString(), any())).thenReturn(lambdaQuery);
     when(lambdaQuery.get()).thenReturn(lambdaSpec);
     when(mockWingsPersistence.saveAndGet(eq(LambdaSpecification.class), any(LambdaSpecification.class)))
         .thenReturn(lambdaSpec);
@@ -840,7 +838,7 @@ public class ServiceResourceServiceTest extends WingsBaseTest {
 
     when(mockWingsPersistence.saveAndGet(eq(ServiceCommand.class), any(ServiceCommand.class)))
         .thenAnswer(invocation -> {
-          ServiceCommand command = invocation.getArgumentAt(1, ServiceCommand.class);
+          ServiceCommand command = invocation.getArgument(1, ServiceCommand.class);
           command.setUuid(ID_KEY);
           return command;
         });
@@ -857,12 +855,12 @@ public class ServiceResourceServiceTest extends WingsBaseTest {
 
     Query<PcfServiceSpecification> pcfSpecificationQuery = mock(Query.class);
     when(mockWingsPersistence.createQuery(PcfServiceSpecification.class)).thenReturn(pcfSpecificationQuery);
-    when(pcfSpecificationQuery.filter(anyString(), anyObject())).thenReturn(pcfSpecificationQuery);
+    when(pcfSpecificationQuery.filter(anyString(), any())).thenReturn(pcfSpecificationQuery);
     when(pcfSpecificationQuery.get()).thenReturn(null);
 
     Query<HelmChartSpecification> helmQuery = mock(Query.class);
     when(mockWingsPersistence.createQuery(HelmChartSpecification.class)).thenReturn(helmQuery);
-    when(helmQuery.filter(anyString(), anyObject())).thenReturn(helmQuery);
+    when(helmQuery.filter(anyString(), any())).thenReturn(helmQuery);
     when(helmQuery.get()).thenReturn(null);
 
     Service savedClonedService = getClonedService(originalService);
@@ -883,7 +881,7 @@ public class ServiceResourceServiceTest extends WingsBaseTest {
     when(serviceTemplateService.list(any(PageRequest.class), any(Boolean.class), any()))
         .thenReturn(aPageResponse().withResponse(asList(aServiceTemplate().build())).build());
 
-    when(limitCheckerFactory.getInstance(new Action(Mockito.anyString(), ActionType.CREATE_SERVICE)))
+    when(limitCheckerFactory.getInstance(new Action(any(), ActionType.CREATE_SERVICE)))
         .thenReturn(new MockChecker(true, ActionType.CREATE_SERVICE));
 
     File invalidFile = getFile();
@@ -916,7 +914,7 @@ public class ServiceResourceServiceTest extends WingsBaseTest {
 
     when(mockWingsPersistence.saveAndGet(eq(ServiceCommand.class), any(ServiceCommand.class)))
         .thenAnswer(invocation -> {
-          ServiceCommand command = invocation.getArgumentAt(1, ServiceCommand.class);
+          ServiceCommand command = invocation.getArgument(1, ServiceCommand.class);
           command.setUuid(ID_KEY);
           return command;
         });
@@ -937,12 +935,12 @@ public class ServiceResourceServiceTest extends WingsBaseTest {
 
     Query<PcfServiceSpecification> pcfSpecificationQuery = mock(Query.class);
     when(mockWingsPersistence.createQuery(PcfServiceSpecification.class)).thenReturn(pcfSpecificationQuery);
-    when(pcfSpecificationQuery.filter(anyString(), anyObject())).thenReturn(pcfSpecificationQuery);
+    when(pcfSpecificationQuery.filter(anyString(), any())).thenReturn(pcfSpecificationQuery);
     when(pcfSpecificationQuery.get()).thenReturn(null);
 
     Query<HelmChartSpecification> helmQuery = mock(Query.class);
     when(mockWingsPersistence.createQuery(HelmChartSpecification.class)).thenReturn(helmQuery);
-    when(helmQuery.filter(anyString(), anyObject())).thenReturn(helmQuery);
+    when(helmQuery.filter(anyString(), any())).thenReturn(helmQuery);
     when(helmQuery.get()).thenReturn(null);
 
     Service savedClonedService = getClonedService(originalService);
@@ -967,7 +965,7 @@ public class ServiceResourceServiceTest extends WingsBaseTest {
     when(serviceTemplateService.list(any(PageRequest.class), any(Boolean.class), any()))
         .thenReturn(aPageResponse().withResponse(asList(aServiceTemplate().build())).build());
 
-    when(limitCheckerFactory.getInstance(new Action(Mockito.anyString(), ActionType.CREATE_SERVICE)))
+    when(limitCheckerFactory.getInstance(new Action(any(), ActionType.CREATE_SERVICE)))
         .thenReturn(new MockChecker(true, ActionType.CREATE_SERVICE));
 
     ContainerTask containerTask = null;
@@ -1002,7 +1000,7 @@ public class ServiceResourceServiceTest extends WingsBaseTest {
 
     when(mockWingsPersistence.saveAndGet(eq(ServiceCommand.class), any(ServiceCommand.class)))
         .thenAnswer(invocation -> {
-          ServiceCommand command = invocation.getArgumentAt(1, ServiceCommand.class);
+          ServiceCommand command = invocation.getArgument(1, ServiceCommand.class);
           command.setUuid(ID_KEY);
           return command;
         });
@@ -1023,12 +1021,12 @@ public class ServiceResourceServiceTest extends WingsBaseTest {
 
     Query<PcfServiceSpecification> pcfSpecificationQuery = mock(Query.class);
     when(mockWingsPersistence.createQuery(PcfServiceSpecification.class)).thenReturn(pcfSpecificationQuery);
-    when(pcfSpecificationQuery.filter(anyString(), anyObject())).thenReturn(pcfSpecificationQuery);
+    when(pcfSpecificationQuery.filter(anyString(), any())).thenReturn(pcfSpecificationQuery);
     when(pcfSpecificationQuery.get()).thenReturn(null);
 
     Query<HelmChartSpecification> helmQuery = mock(Query.class);
     when(mockWingsPersistence.createQuery(HelmChartSpecification.class)).thenReturn(helmQuery);
-    when(helmQuery.filter(anyString(), anyObject())).thenReturn(helmQuery);
+    when(helmQuery.filter(anyString(), any())).thenReturn(helmQuery);
     when(helmQuery.get()).thenReturn(getHelmChartSpecification());
     when(mockWingsPersistence.saveAndGet(eq(HelmChartSpecification.class), any(HelmChartSpecification.class)))
         .thenReturn(getHelmChartSpecification());
@@ -1054,7 +1052,7 @@ public class ServiceResourceServiceTest extends WingsBaseTest {
 
     when(serviceTemplateService.list(any(PageRequest.class), any(Boolean.class), any()))
         .thenReturn(aPageResponse().withResponse(asList(aServiceTemplate().build())).build());
-    when(limitCheckerFactory.getInstance(new Action(Mockito.anyString(), ActionType.CREATE_SERVICE)))
+    when(limitCheckerFactory.getInstance(new Action(any(), ActionType.CREATE_SERVICE)))
         .thenReturn(new MockChecker(true, ActionType.CREATE_SERVICE));
 
     ContainerTask containerTask = getContainerTask(SERVICE_ID);
@@ -1066,7 +1064,7 @@ public class ServiceResourceServiceTest extends WingsBaseTest {
 
     Query<Service> serviceQuery = mock(Query.class);
     when(mockWingsPersistence.createQuery(Service.class)).thenReturn(serviceQuery);
-    when(serviceQuery.filter(anyString(), anyObject())).thenReturn(serviceQuery);
+    when(serviceQuery.filter(anyString(), any())).thenReturn(serviceQuery);
     Key<Service> key = new Key(Service.class, "services", "CLONED_SERVICE_ID");
     when(serviceQuery.getKey()).thenReturn(key);
 
@@ -1206,7 +1204,7 @@ public class ServiceResourceServiceTest extends WingsBaseTest {
   public void shouldAddCommand() {
     when(mockWingsPersistence.saveAndGet(eq(ServiceCommand.class), any(ServiceCommand.class)))
         .thenAnswer(invocation -> {
-          ServiceCommand command = invocation.getArgumentAt(1, ServiceCommand.class);
+          ServiceCommand command = invocation.getArgument(1, ServiceCommand.class);
           command.setServiceId(SERVICE_ID);
           command.setUuid(ID_KEY);
           return command;
@@ -1255,7 +1253,7 @@ public class ServiceResourceServiceTest extends WingsBaseTest {
   public void shouldAddCommandWithTemplateVariables() {
     when(mockWingsPersistence.saveAndGet(eq(ServiceCommand.class), any(ServiceCommand.class)))
         .thenAnswer(invocation -> {
-          ServiceCommand serviceCommand = invocation.getArgumentAt(1, ServiceCommand.class);
+          ServiceCommand serviceCommand = invocation.getArgument(1, ServiceCommand.class);
           serviceCommand.setServiceId(SERVICE_ID);
           serviceCommand.setUuid(ID_KEY);
           Command command = serviceCommand.getCommand();
@@ -1321,7 +1319,7 @@ public class ServiceResourceServiceTest extends WingsBaseTest {
   public void shouldAddCommandWithCommandUnits() {
     when(mockWingsPersistence.saveAndGet(eq(ServiceCommand.class), any(ServiceCommand.class)))
         .thenAnswer(invocation -> {
-          ServiceCommand command = invocation.getArgumentAt(1, ServiceCommand.class);
+          ServiceCommand command = invocation.getArgument(1, ServiceCommand.class);
           command.setUuid(ID_KEY);
           return command;
         });
@@ -1822,6 +1820,7 @@ public class ServiceResourceServiceTest extends WingsBaseTest {
 
     verify(configService).getConfigFilesForEntity(APP_ID, DEFAULT_TEMPLATE_ID, SERVICE_ID);
   }
+
   /**
    * Should not update command nothing changed.
    */
@@ -2087,7 +2086,7 @@ public class ServiceResourceServiceTest extends WingsBaseTest {
 
     verify(mockWingsPersistence, times(2)).getWithAppId(Service.class, APP_ID, SERVICE_ID);
     verify(mockWingsPersistence, times(1)).getWithAppId(ServiceCommand.class, APP_ID, SERVICE_COMMAND_ID);
-    verify(workflowService, times(1)).listWorkflows(any(PageResponse.class));
+    verify(workflowService, times(1)).listWorkflows(any(PageRequest.class));
     verify(mockWingsPersistence, times(1)).createQuery(Command.class);
     verify(mockWingsPersistence, times(1)).delete(any(ServiceCommand.class));
     verify(mockWingsPersistence, times(1)).delete(any(Query.class));
@@ -2106,7 +2105,7 @@ public class ServiceResourceServiceTest extends WingsBaseTest {
             + "Remove reference from the following workflows [ (WORKFLOW_NAME:null:Phase 1) ]");
     verify(mockWingsPersistence).getWithAppId(Service.class, APP_ID, SERVICE_ID);
     verify(mockWingsPersistence).getWithAppId(ServiceCommand.class, APP_ID, SERVICE_COMMAND_ID);
-    verify(workflowService).listWorkflows(any(PageResponse.class));
+    verify(workflowService).listWorkflows(any(PageRequest.class));
   }
 
   @Test
@@ -2122,7 +2121,7 @@ public class ServiceResourceServiceTest extends WingsBaseTest {
 
     verify(mockWingsPersistence, times(2)).getWithAppId(Service.class, APP_ID, SERVICE_ID);
     verify(mockWingsPersistence, times(1)).getWithAppId(ServiceCommand.class, APP_ID, SERVICE_COMMAND_ID);
-    verify(workflowService, times(1)).listWorkflows(any(PageResponse.class));
+    verify(workflowService, times(1)).listWorkflows(any(PageRequest.class));
     verify(mockWingsPersistence, times(1)).createQuery(Command.class);
     verify(mockWingsPersistence, times(1)).delete(any(ServiceCommand.class));
     verify(mockWingsPersistence, times(1)).delete(any(Query.class));
@@ -2580,7 +2579,7 @@ public class ServiceResourceServiceTest extends WingsBaseTest {
   public void shouldAddCommandFromTemplate() {
     when(mockWingsPersistence.saveAndGet(eq(ServiceCommand.class), any(ServiceCommand.class)))
         .thenAnswer(invocation -> {
-          ServiceCommand command = invocation.getArgumentAt(1, ServiceCommand.class);
+          ServiceCommand command = invocation.getArgument(1, ServiceCommand.class);
           command.setUuid(ID_KEY);
           return command;
         });
@@ -2890,7 +2889,7 @@ public class ServiceResourceServiceTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void testCreatePCFV2Service() throws IOException {
     doNothing().when(harnessTagService).attachTag(any());
-    when(limitCheckerFactory.getInstance(new Action(Mockito.anyString(), ActionType.CREATE_SERVICE)))
+    when(limitCheckerFactory.getInstance(new Action(any(), ActionType.CREATE_SERVICE)))
         .thenReturn(new MockChecker(true, ActionType.CREATE_SERVICE));
     Service service = Service.builder()
                           .appId(APP_ID)
@@ -2957,7 +2956,7 @@ public class ServiceResourceServiceTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void testCreatePCFV2ServiceWithExistingAppManifest() {
     doNothing().when(harnessTagService).attachTag(any());
-    when(limitCheckerFactory.getInstance(new Action(Mockito.anyString(), ActionType.CREATE_SERVICE)))
+    when(limitCheckerFactory.getInstance(new Action(any(), ActionType.CREATE_SERVICE)))
         .thenReturn(new MockChecker(true, ActionType.CREATE_SERVICE));
     Service service = Service.builder()
                           .appId(APP_ID)
@@ -3187,7 +3186,7 @@ public class ServiceResourceServiceTest extends WingsBaseTest {
         .thenReturn(anEntityVersion().withVersion(2).build());
     when(mockWingsPersistence.saveAndGet(eq(ServiceCommand.class), any(ServiceCommand.class)))
         .thenAnswer(invocation -> {
-          ServiceCommand command = invocation.getArgumentAt(1, ServiceCommand.class);
+          ServiceCommand command = invocation.getArgument(1, ServiceCommand.class);
           command.setUuid(ID_KEY);
           assertThat(command.getAccountId()).isEqualTo(ACCOUNT_ID);
           return command;
@@ -3203,7 +3202,7 @@ public class ServiceResourceServiceTest extends WingsBaseTest {
         .thenReturn(Service.builder().name(SERVICE_NAME).appId(APP_ID).uuid(SERVICE_ID).build());
     when(workflowExecutionService.runningExecutionsForService(APP_ID, SERVICE_ID))
         .thenReturn(asList(PIPELINE_EXECUTION_ID, WORKFLOW_EXECUTION_ID));
-    when(limitCheckerFactory.getInstance(new Action(Mockito.anyString(), ActionType.CREATE_SERVICE)))
+    when(limitCheckerFactory.getInstance(new Action(any(), ActionType.CREATE_SERVICE)))
         .thenReturn(new MockChecker(true, ActionType.CREATE_SERVICE));
     assertThatThrownBy(() -> srs.delete(APP_ID, SERVICE_ID)).isInstanceOf(InvalidRequestException.class);
   }
@@ -3225,7 +3224,7 @@ public class ServiceResourceServiceTest extends WingsBaseTest {
     doReturn(service).when(spyServiceResourceService).getServiceWithServiceCommands(APP_ID, SERVICE_ID);
     when(mockWingsPersistence.saveAndGet(eq(ServiceCommand.class), any(ServiceCommand.class)))
         .thenAnswer(invocation -> {
-          ServiceCommand svccommand = invocation.getArgumentAt(1, ServiceCommand.class);
+          ServiceCommand svccommand = invocation.getArgument(1, ServiceCommand.class);
           svccommand.setServiceId(SERVICE_ID);
           svccommand.setUuid(ID_KEY);
           return svccommand;

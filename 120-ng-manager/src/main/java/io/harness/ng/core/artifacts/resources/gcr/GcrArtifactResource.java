@@ -8,10 +8,14 @@
 package io.harness.ng.core.artifacts.resources.gcr;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.NGCommonEntityConstants;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
+import io.harness.cdng.artifact.bean.ArtifactConfig;
+import io.harness.cdng.artifact.bean.yaml.GcrArtifactConfig;
 import io.harness.cdng.artifact.resources.gcr.dtos.GcrBuildDetailsDTO;
 import io.harness.cdng.artifact.resources.gcr.dtos.GcrRequestDTO;
 import io.harness.cdng.artifact.resources.gcr.dtos.GcrResponseDTO;
@@ -24,7 +28,6 @@ import io.harness.ng.core.artifacts.resources.util.ArtifactResourceUtils;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
-import io.harness.pipeline.remote.PipelineServiceClient;
 import io.harness.utils.IdentifierRefHelper;
 
 import com.google.inject.Inject;
@@ -58,7 +61,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class GcrArtifactResource {
   private final GcrResourceService gcrResourceService;
-  private final PipelineServiceClient pipelineServiceClient;
+  private final ArtifactResourceUtils artifactResourceUtils;
 
   @GET
   @Path("getBuildDetails")
@@ -80,19 +83,36 @@ public class GcrArtifactResource {
   @POST
   @Path("getBuildDetailsV2")
   @ApiOperation(value = "Gets gcr build details with Yaml expression", nickname = "getBuildDetailsForGcrWithYaml")
-  public ResponseDTO<GcrResponseDTO> getBuildDetails(@NotNull @QueryParam("imagePath") String imagePath,
-      @NotNull @QueryParam("registryHostname") String registryHostname,
-      @NotNull @QueryParam("connectorRef") String gcrConnectorIdentifier,
+  public ResponseDTO<GcrResponseDTO> getBuildDetails(@QueryParam("imagePath") String imagePath,
+      @QueryParam("registryHostname") String registryHostname,
+      @QueryParam("connectorRef") String gcrConnectorIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
       @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.PIPELINE_KEY) String pipelineIdentifier,
       @NotNull @QueryParam("fqnPath") String fqnPath, @NotNull String runtimeInputYaml,
-      @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo) {
+      @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo,
+      @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceRef) {
+    if (isNotEmpty(serviceRef)) {
+      final ArtifactConfig artifactSpecFromService = artifactResourceUtils.locateArtifactInService(
+          accountId, orgIdentifier, projectIdentifier, serviceRef, fqnPath);
+      GcrArtifactConfig gcrArtifactConfig = (GcrArtifactConfig) artifactSpecFromService;
+      if (isEmpty(imagePath)) {
+        imagePath = (String) gcrArtifactConfig.getImagePath().fetchFinalValue();
+      }
+      if (isEmpty(registryHostname)) {
+        registryHostname = (String) gcrArtifactConfig.getRegistryHostname().fetchFinalValue();
+      }
+
+      if (isEmpty(gcrConnectorIdentifier)) {
+        gcrConnectorIdentifier = gcrArtifactConfig.getConnectorRef().getValue();
+      }
+    }
+    // todo(hinger): resolve other expressions here?
     IdentifierRef connectorRef =
         IdentifierRefHelper.getIdentifierRef(gcrConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
-    imagePath = ArtifactResourceUtils.getResolvedImagePath(pipelineServiceClient, accountId, orgIdentifier,
-        projectIdentifier, pipelineIdentifier, runtimeInputYaml, imagePath, fqnPath, gitEntityBasicInfo);
+    imagePath = artifactResourceUtils.getResolvedImagePath(accountId, orgIdentifier, projectIdentifier,
+        pipelineIdentifier, runtimeInputYaml, imagePath, fqnPath, gitEntityBasicInfo, serviceRef);
     GcrResponseDTO buildDetails =
         gcrResourceService.getBuildDetails(connectorRef, imagePath, registryHostname, orgIdentifier, projectIdentifier);
     return ResponseDTO.newResponse(buildDetails);

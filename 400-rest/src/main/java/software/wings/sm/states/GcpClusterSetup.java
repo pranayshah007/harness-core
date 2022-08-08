@@ -35,6 +35,7 @@ import software.wings.sm.ExecutionContext;
 import software.wings.sm.ExecutionResponse;
 import software.wings.sm.State;
 import software.wings.sm.WorkflowStandardParams;
+import software.wings.sm.WorkflowStandardParamsExtensionService;
 
 import com.github.reinert.jjschema.Attributes;
 import com.google.common.collect.ImmutableMap;
@@ -42,6 +43,7 @@ import com.google.inject.Inject;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.mongodb.morphia.annotations.Transient;
+
 /**
  * Created by brett on 4/14/17
  */
@@ -57,6 +59,7 @@ public class GcpClusterSetup extends State {
   @Inject @Transient private transient SettingsService settingsService;
   @Inject @Transient private transient ServiceResourceService serviceResourceService;
   @Inject @Transient private transient InfrastructureMappingService infrastructureMappingService;
+  @Inject @Transient private transient WorkflowStandardParamsExtensionService workflowStandardParamsExtensionService;
 
   @Inject @Transient private transient SecretManager secretManager;
 
@@ -73,8 +76,8 @@ public class GcpClusterSetup extends State {
     String serviceId = phaseElement.getServiceElement().getUuid();
 
     WorkflowStandardParams workflowStandardParams = context.getContextElement(ContextElementType.STANDARD);
-    Application app = workflowStandardParams.getApp();
-    String env = workflowStandardParams.getEnv().getName();
+    Application app = workflowStandardParamsExtensionService.getApp(workflowStandardParams);
+    String env = workflowStandardParamsExtensionService.getEnv(workflowStandardParams).getName();
 
     InfrastructureMapping infrastructureMapping =
         infrastructureMappingService.get(app.getUuid(), context.fetchInfraMappingId());

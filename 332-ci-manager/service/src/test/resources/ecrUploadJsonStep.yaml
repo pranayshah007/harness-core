@@ -1,0 +1,215 @@
+{
+  "pipeline": {
+    "identifier": "cipipelineYFWTDVfaLb",
+    "description": "fdfd",
+    "name": "pipeline with image push with all the options to ECR",
+    "stages": [
+      {
+        "stage": {
+          "identifier": "ecr_build_push",
+          "name": "ecr build push",
+          "type": "CI",
+          "variables": [
+            {
+              "name": "AWS_ACCESS_KEY",
+              "type": "String",
+              "value": "AKIAW7HFSAHLRPFRIXHR",
+              "__uuid": "FNdqymMXSYurYgTDGPNqMA"
+            },
+            {
+              "name": "AWS_SECRET_KEY",
+              "type": "Secret",
+              "value": "account.testCISecretL70gMTevzm",
+              "__uuid": "kzIGxsZsRJGlem4ujbMJoA"
+            }
+          ],
+          "spec": {
+            "execution": {
+              "steps": [
+                {
+                  "step": {
+                    "identifier": "createRepo",
+                    "name": "create repo",
+                    "type": "Run",
+                    "spec": {
+                      "retry": 1,
+                      "command": "aws configure set aws_access_key_id $AWS_ACCESS_KEY\naws configure set aws_secret_access_key $AWS_SECRET_KEY\naws configure set default.region us-east-1\necho \"Deleting repo if it exists\"\naws ecr delete-repository --force --repository-name harnesscie-harnesscie-advanced-testing || true\naws ecr create-repository --repository-name harnesscie-harnesscie-advanced-testing --region us-east-1 >> a.txt\naccount=$(cat a.txt | jq -r '.repository.registryId')\necho $account\n",
+                      "connectorRef": "account.CItestDockerConnectorLsGyi79hax",
+                      "image": "mikesir87/aws-cli",
+                      "outputVariables": [
+                        {
+                          "name": "account",
+                          "__uuid": "f1Vtl05cT_KKS1kJ6A0QuQ"
+                        }
+                      ],
+                      "__uuid": "Q5O-J56USaGziPkIEdFDcA"
+                    },
+                    "__uuid": "c6r6jUsSRGC26-SETFFrnQ"
+                  },
+                  "__uuid": "B3Ivx8TKSMiGlxWsZMq4UQ"
+                },
+                {
+                  "step": {
+                    "identifier": "createDockerFile",
+                    "name": "create docker file",
+                    "type": "Run",
+                    "spec": {
+                      "retry": 1,
+                      "command": "touch harnessDockerfile\ncat > harnessDockerfile <<- EOM\nFROM alpine:latest AS dev-env\nARG foo\nRUN echo \"$foo bar\"\nENTRYPOINT [\"pwd\"]\n\nFROM alpine:latest AS release-env\nARG hello\nRUN echo \"$hello world\"\nENTRYPOINT [\"ls\"]\nEOM\n\ncat harnessDockerfile\n",
+                      "connectorRef": "account.CItestDockerConnectorLsGyi79hax",
+                      "image": "alpine:latest",
+                      "__uuid": "CorQcyeXRRS0rhepxffK0Q"
+                    },
+                    "__uuid": "gSUjsiAGTCWKkB0XQrNKpA"
+                  },
+                  "__uuid": "uZurN4PZQAeySENHKcZMlQ"
+                },
+                {
+                  "step": {
+                    "identifier": "pushECR",
+                    "type": "BuildAndPushECR",
+                    "name": "push ecr",
+                    "spec": {
+                      "region": "us-east-1",
+                      "account": "479370281431",
+                      "imageName": "harnesscie-harnesscie-advanced-testing",
+                      "tags": [
+                        "1.0",
+                        "1.2"
+                      ],
+                      "buildArgs": {
+                        "foo": "bar",
+                        "hello": "world",
+                        "__uuid": "3siUAhrRT628YHHO_Pli0g"
+                      },
+                      "labels": {
+                        "foo": "bar",
+                        "hello": "world",
+                        "__uuid": "HT8ALOUlSB-TLeNnjk7xUw"
+                      },
+                      "target": "dev-env",
+                      "context": ".",
+                      "remoteCacheImage": "harnesscie-harnesscie-advanced-testing",
+                      "connectorRef": "account.testAWSConnectorrzwalmRWkb",
+                      "dockerfile": "harnessDockerfile",
+                      "__uuid": "ii_lk42_RSeEoyjYCFtaqw"
+                    },
+                    "__uuid": "J7JGqwsbT7WT5wXJ2tumMw"
+                  },
+                  "__uuid": "xaE25OX5RQm5hRfOt2kO1g"
+                },
+                {
+                  "step": {
+                    "identifier": "checkRepoExists",
+                    "name": "check repo exists",
+                    "type": "Run",
+                    "spec": {
+                      "retry": 1,
+                      "command": "aws configure set aws_access_key_id $AWS_ACCESS_KEY\naws configure set aws_secret_access_key $AWS_SECRET_KEY\naws configure set default.region us-east-1\naws ecr describe-images --repository-name harnesscie-harnesscie-advanced-testing --image-ids imageTag=1.2 >> output.txt\ntag=$(cat output.txt | jq -r '.imageDetails[0].imageTags[0]')\necho $tag\necho \"Check whether value of tag exists\"\nif [ -z \"$tag\" ]; then\n  echo \"No image was uploaded\"\n  exit 1\nfi\n",
+                      "connectorRef": "account.CItestDockerConnectorLsGyi79hax",
+                      "image": "mikesir87/aws-cli",
+                      "__uuid": "JSF4QM-5RPWm4t0SHYczjw"
+                    },
+                    "__uuid": "YNtP1WzPSEWRlcyipOi17g"
+                  },
+                  "__uuid": "WOuq04L3T6-L_Ew7Jpm3KA"
+                }
+              ],
+              "__uuid": "tq5vTQc-RzSseAqjlp8OqA"
+            },
+            "infrastructure": {
+              "type": "KubernetesDirect",
+              "spec": {
+                "connectorRef": "account.CItestK8sConnectorCMs0vdKHun",
+                "namespace": "harness-qa-delegate",
+                "__uuid": "VK3oHEWKR4yXlZjKbf8bVw"
+              },
+              "__uuid": "z-GpGfugT6WVLcGz__juoA"
+            },
+            "cloneCodebase": false,
+            "__uuid": "uOM84_gZSqiO1HKZTZzfWw"
+          },
+          "__uuid": "cU5fvOgsQ3CcPDRrCHdn_Q"
+        },
+        "__uuid": "IIWIs8DYQeOuxYymOYhQ6g"
+      },
+      {
+        "stage": {
+          "identifier": "test_uploaded_image",
+          "name": "test uploaded image",
+          "type": "CI",
+          "variables": [
+            {
+              "name": "AWS_ACCESS_KEY",
+              "type": "String",
+              "value": "AKIAW7HFSAHLRPFRIXHR",
+              "__uuid": "atujsBF_Q8268LQ_V0UqYQ"
+            },
+            {
+              "name": "AWS_SECRET_KEY",
+              "type": "Secret",
+              "value": "account.testCISecretL70gMTevzm",
+              "__uuid": "ZOUV3qZTTkWuxwA8Ukh5-A"
+            }
+          ],
+          "spec": {
+            "execution": {
+              "steps": [
+                {
+                  "step": {
+                    "identifier": "runUploadedImageContainer",
+                    "name": "run",
+                    "type": "Run",
+                    "spec": {
+                      "retry": 1,
+                      "command": "ls\n",
+                      "connectorRef": "account.testAWSConnectorrzwalmRWkb",
+                      "image": "479370281431.dkr.ecr.us-east-1.amazonaws.com/harnesscie-harnesscie-advanced-testing:1.0",
+                      "__uuid": "kVtP3Z_RSBW1Huot4N27eQ"
+                    },
+                    "__uuid": "D5CiKfqkTXi30a30xzsy_Q"
+                  },
+                  "__uuid": "XKRE428kSAyfI2rH4FHU1g"
+                },
+                {
+                  "step": {
+                    "identifier": "deleteRepo",
+                    "name": "delete repo",
+                    "type": "Run",
+                    "spec": {
+                      "retry": 1,
+                      "command": "aws configure set aws_access_key_id $AWS_ACCESS_KEY\naws configure set aws_secret_access_key $AWS_SECRET_KEY\naws configure set default.region us-east-1\naws ecr delete-repository --force --repository-name harnesscie-harnesscie-advanced-testing || true\n",
+                      "connectorRef": "account.CItestDockerConnectorLsGyi79hax",
+                      "image": "mikesir87/aws-cli",
+                      "__uuid": "q8IfFO2RRpu8e-T86ccLcQ"
+                    },
+                    "__uuid": "VzfCxzPcTWuoeIpFYzKQMg"
+                  },
+                  "__uuid": "5fk1OjzlSRWsjX6V03apCw"
+                }
+              ],
+              "__uuid": "gC4w_LlHS6WffX0HjtfT6w"
+            },
+            "infrastructure": {
+              "type": "KubernetesDirect",
+              "spec": {
+                "connectorRef": "account.CItestK8sConnectorCMs0vdKHun",
+                "namespace": "harness-qa-delegate",
+                "__uuid": "p5YiLZUuRuOWPLGFb5irVA"
+              },
+              "__uuid": "wPTvc0U0TMKFX1PxK7ks2g"
+            },
+            "cloneCodebase": false,
+            "__uuid": "7ULCEv3sSJKfhewKGRrWNg"
+          },
+          "__uuid": "j8bS05eeQOqcsvEY1MKjpQ"
+        },
+        "__uuid": "KfUtOMIDTsGBBcEuNgb1AA"
+      }
+    ],
+    "projectIdentifier": "CITestDemoProP1PcmJEzZ5",
+    "orgIdentifier": "CITestDemoOrgUNtoIHwBY8",
+    "__uuid": "FL1OWzx1RLysIuLiZbfbSA"
+  },
+  "__uuid": "__WhBRZ_RD2qWWQJjwnDCg"
+}

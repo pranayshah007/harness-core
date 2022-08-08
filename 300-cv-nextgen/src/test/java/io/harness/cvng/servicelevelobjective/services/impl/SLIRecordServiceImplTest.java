@@ -12,8 +12,10 @@ import static io.harness.cvng.servicelevelobjective.entities.SLIRecord.SLIState.
 import static io.harness.cvng.servicelevelobjective.entities.SLIRecord.SLIState.NO_DATA;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.persistence.HQuery.excludeAuthority;
+import static io.harness.rule.OwnerRule.ARPITJ;
 import static io.harness.rule.OwnerRule.DEEPAK_CHHIKARA;
 import static io.harness.rule.OwnerRule.KAMAL;
+import static io.harness.rule.OwnerRule.KAPIL;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.data.Offset.offset;
@@ -21,6 +23,7 @@ import static org.mockito.Mockito.when;
 
 import io.harness.CvNextGenTestBase;
 import io.harness.category.element.UnitTests;
+import io.harness.cvng.core.beans.params.TimeRangeParams;
 import io.harness.cvng.core.utils.DateTimeUtils;
 import io.harness.cvng.servicelevelobjective.beans.SLIMissingDataType;
 import io.harness.cvng.servicelevelobjective.beans.SLODashboardWidget.Point;
@@ -284,6 +287,103 @@ public class SLIRecordServiceImplTest extends CvNextGenTestBase {
     testGraphCalculation(sliStates, SLIMissingDataType.BAD, expectedSLITrend, expectedBurndown, 98);
   }
 
+  @Test
+  @Owner(developers = ARPITJ)
+  @Category(UnitTests.class)
+  public void testGetGraphData_customTimePerMinute() {
+    SLIRecordServiceImpl.MAX_NUMBER_OF_POINTS = 15;
+    List<SLIState> sliStates =
+        Arrays.asList(GOOD, NO_DATA, BAD, GOOD, GOOD, NO_DATA, BAD, GOOD, GOOD, NO_DATA, BAD, GOOD);
+    List<Double> expectedSLITrend =
+        Lists.newArrayList(100.0, 100.0, 66.66, 75.0, 80.0, 83.33, 71.42, 75.0, 77.77, 80.0, 72.72, 75.0);
+    List<Double> expectedBurndown =
+        Lists.newArrayList(100.0, 100.0, 99.0, 99.0, 99.0, 99.0, 98.0, 98.0, 98.0, 98.0, 97.0, 97.0);
+    testGraphCalculation(sliStates, SLIMissingDataType.GOOD, expectedSLITrend, expectedBurndown, 97, 0, 0);
+  }
+
+  @Test
+  @Owner(developers = ARPITJ)
+  @Category(UnitTests.class)
+  public void testGetGraphData_AllGood() {
+    SLIRecordServiceImpl.MAX_NUMBER_OF_POINTS = 100;
+    List<SLIState> sliStates = new ArrayList<>();
+    List<Double> expectedSLITrend = new ArrayList<>();
+    List<Double> expectedBurndown = new ArrayList<>();
+    for (int i = 0; i < 65; i++) {
+      sliStates.add(GOOD);
+      if (i < 65) {
+        expectedSLITrend.add(100.0);
+        expectedBurndown.add(100.0);
+      }
+    }
+    testGraphCalculation(sliStates, SLIMissingDataType.GOOD, expectedSLITrend, expectedBurndown, 100, 0, 0);
+  }
+
+  @Test
+  @Owner(developers = ARPITJ)
+  @Category(UnitTests.class)
+  public void testGetGraphData_customStartTimeAllGood() {
+    SLIRecordServiceImpl.MAX_NUMBER_OF_POINTS = 100;
+    List<SLIState> sliStates = new ArrayList<>();
+    List<Double> expectedSLITrend = new ArrayList<>();
+    List<Double> expectedBurndown = new ArrayList<>();
+    for (int i = 0; i < 65; i++) {
+      sliStates.add(GOOD);
+      if (i < 61) {
+        expectedSLITrend.add(100.0);
+        expectedBurndown.add(100.0);
+      }
+    }
+    testGraphCalculation(sliStates, SLIMissingDataType.GOOD, expectedSLITrend, expectedBurndown, 100, 4, 0);
+  }
+
+  @Test
+  @Owner(developers = ARPITJ)
+  @Category(UnitTests.class)
+  public void testGetGraphData_customBothTimeAllGood() {
+    SLIRecordServiceImpl.MAX_NUMBER_OF_POINTS = 100;
+    List<SLIState> sliStates = new ArrayList<>();
+    List<Double> expectedSLITrend = new ArrayList<>();
+    List<Double> expectedBurndown = new ArrayList<>();
+    for (int i = 0; i < 65; i++) {
+      sliStates.add(GOOD);
+      if (i < 57) {
+        expectedSLITrend.add(100.0);
+        expectedBurndown.add(100.0);
+      }
+    }
+    testGraphCalculation(sliStates, SLIMissingDataType.GOOD, expectedSLITrend, expectedBurndown, 100, 4, 5);
+  }
+
+  @Test
+  @Owner(developers = ARPITJ)
+  @Category(UnitTests.class)
+  public void testGetGraphData_customStartAllBad() {
+    SLIRecordServiceImpl.MAX_NUMBER_OF_POINTS = 100;
+    List<SLIState> sliStates = new ArrayList<>();
+    List<Double> expectedSLITrend = new ArrayList<>();
+    List<Double> expectedBurndown = new ArrayList<>();
+    for (int i = 0; i < 65; i++) {
+      sliStates.add(BAD);
+      if (i < 61) {
+        expectedSLITrend.add(0.0);
+        expectedBurndown.add(95.0 - i);
+      }
+    }
+    testGraphCalculation(sliStates, SLIMissingDataType.GOOD, expectedSLITrend, expectedBurndown, 35, 4, 0);
+  }
+
+  @Test
+  @Owner(developers = KAPIL)
+  @Category(UnitTests.class)
+  public void testGetErrorBudgetBurnRate() {
+    Instant startTime = Instant.parse("2020-07-27T10:50:00Z").minus(Duration.ofMinutes(10));
+    List<SLIState> sliStates = Arrays.asList(BAD, GOOD, GOOD, NO_DATA, GOOD, GOOD, BAD, BAD, BAD, BAD);
+    createData(startTime, sliStates);
+    double errorBudgetBurnRate = sliRecordService.getErrorBudgetBurnRate(sliId, Duration.ofMinutes(10).toMillis(), 120);
+    assertThat(errorBudgetBurnRate).isCloseTo(3.333, offset(0.001));
+  }
+
   private void createData(Instant startTime, List<SLIState> sliStates) {
     List<SLIRecordParam> sliRecordParams = getSLIRecordParam(startTime, sliStates);
     sliRecordService.create(sliRecordParams, sliId, verificationTaskId, 0);
@@ -307,31 +407,51 @@ public class SLIRecordServiceImplTest extends CvNextGenTestBase {
 
   private void testGraphCalculation(List<SLIState> sliStates, SLIMissingDataType sliMissingDataType,
       List<Double> expectedSLITrend, List<Double> expectedBurndown, int expectedErrorBudgetRemaining) {
-    Instant startTime =
-        DateTimeUtils.roundDownTo1MinBoundary(clock.instant().minus(Duration.ofMinutes(sliStates.size())));
-    createData(startTime.minus(Duration.ofMinutes(4)), Arrays.asList(GOOD, NO_DATA, BAD, GOOD));
-    createData(startTime, sliStates);
-    SLOGraphData sloGraphData = sliRecordService.getGraphData(
-        sliId, startTime, startTime.plus(Duration.ofMinutes(sliStates.size() + 1)), 100, sliMissingDataType, 0);
-    assertThat(sloGraphData.getSloPerformanceTrend()).hasSize(sliStates.size());
-    List<Point> sloPerformanceTrend = sloGraphData.getSloPerformanceTrend();
-    List<Point> errorBudgetBurndown = sloGraphData.getErrorBudgetBurndown();
-    for (int i = 0; i < expectedSLITrend.size(); i++) {
-      assertThat(sloPerformanceTrend.get(i).getTimestamp())
-          .isEqualTo(startTime.plus(Duration.ofMinutes(i)).toEpochMilli());
-      assertThat(sloPerformanceTrend.get(i).getValue()).isCloseTo(expectedSLITrend.get(i), offset(0.01));
-      assertThat(errorBudgetBurndown.get(i).getTimestamp())
-          .isEqualTo(startTime.plus(Duration.ofMinutes(i)).toEpochMilli());
-      assertThat(errorBudgetBurndown.get(i).getValue()).isCloseTo(expectedBurndown.get(i), offset(0.01));
-    }
-    assertThat(sloGraphData.getErrorBudgetRemainingPercentage())
-        .isCloseTo(expectedBurndown.get(errorBudgetBurndown.size() - 1), offset(0.01));
-    assertThat(sloGraphData.getErrorBudgetRemaining()).isEqualTo(expectedErrorBudgetRemaining);
-    assertThat(sloGraphData.isRecalculatingSLI()).isFalse();
+    testGraphCalculation(
+        sliStates, sliMissingDataType, expectedSLITrend, expectedBurndown, expectedErrorBudgetRemaining, 0, 0);
   }
+
   private void testGraphCalculation(List<SLIState> sliStates, List<Double> expectedSLITrend,
       List<Double> expectedBurndown, int expectedErrorBudgetRemaining) {
     testGraphCalculation(
         sliStates, SLIMissingDataType.GOOD, expectedSLITrend, expectedBurndown, expectedErrorBudgetRemaining);
+  }
+
+  private void testGraphCalculation(List<SLIState> sliStates, SLIMissingDataType sliMissingDataType,
+      List<Double> expectedSLITrend, List<Double> expectedBurndown, int expectedErrorBudgetRemaining,
+      long customMinutesStart, long customMinutesEnd) {
+    Instant startTime =
+        DateTimeUtils.roundDownTo1MinBoundary(clock.instant().minus(Duration.ofMinutes(sliStates.size())));
+    createData(startTime.minus(Duration.ofMinutes(4)), Arrays.asList(GOOD, NO_DATA, BAD, GOOD));
+    createData(startTime, sliStates);
+
+    Instant customStartTime = startTime.plus(Duration.ofMinutes(customMinutesStart));
+    Instant customEndTime = startTime.plus(Duration.ofMinutes(sliStates.size() - customMinutesEnd + 1));
+
+    SLOGraphData sloGraphData =
+        sliRecordService.getGraphData(sliId, startTime, startTime.plus(Duration.ofMinutes(sliStates.size() + 1)), 100,
+            sliMissingDataType, 0, TimeRangeParams.builder().startTime(customStartTime).endTime(customEndTime).build());
+    Duration duration = Duration.between(customStartTime, customEndTime);
+    if (customMinutesEnd == 0) {
+      assertThat(sloGraphData.getSloPerformanceTrend()).hasSize((int) duration.toMinutes() - 1);
+    } else {
+      assertThat(sloGraphData.getSloPerformanceTrend()).hasSize((int) duration.toMinutes());
+    }
+    List<Point> sloPerformanceTrend = sloGraphData.getSloPerformanceTrend();
+    List<Point> errorBudgetBurndown = sloGraphData.getErrorBudgetBurndown();
+
+    for (int i = 1; i < expectedSLITrend.size(); i++) {
+      assertThat(sloPerformanceTrend.get(i).getTimestamp())
+          .isEqualTo(customStartTime.plus(Duration.ofMinutes(i)).toEpochMilli());
+      assertThat(sloPerformanceTrend.get(i).getValue()).isCloseTo(expectedSLITrend.get(i), offset(0.01));
+      assertThat(errorBudgetBurndown.get(i).getTimestamp())
+          .isEqualTo(customStartTime.plus(Duration.ofMinutes(i)).toEpochMilli());
+      assertThat(errorBudgetBurndown.get(i).getValue()).isCloseTo(expectedBurndown.get(i), offset(0.01));
+    }
+
+    assertThat(sloGraphData.getErrorBudgetRemainingPercentage())
+        .isCloseTo(expectedBurndown.get(errorBudgetBurndown.size() - 1), offset(0.01));
+    assertThat(sloGraphData.getErrorBudgetRemaining()).isEqualTo(expectedErrorBudgetRemaining);
+    assertThat(sloGraphData.isRecalculatingSLI()).isFalse();
   }
 }

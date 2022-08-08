@@ -48,6 +48,9 @@ public class PodCountComputationServiceImpl {
   @Autowired private InstanceDataService instanceDataService;
   @Autowired private TimeUtils utils;
 
+  private static final String ACTIVE_POD_COUNT_PURGE_QUERY =
+      "SELECT drop_chunks('active_pod_count', interval '90 days')";
+
   static final String GET_NODE_QUERY =
       "SELECT INSTANCEID, CLUSTERID FROM billing_data where INSTANCETYPE = 'K8S_NODE' AND ACCOUNTID = '%s' AND STARTTIME >= '%s' AND STARTTIME < '%s' GROUP BY INSTANCEID, CLUSTERID";
 
@@ -98,6 +101,29 @@ public class PodCountComputationServiceImpl {
       startTime += FIVE_MINUTES_IN_MILLIS;
     }
     return insertDataInTable(clusterId, accountId, nodeId, jobStartTime, podCount);
+  }
+
+  public boolean purgeActivePodCount() {
+    log.info("Purging old {} data !!", ACTIVE_POD_COUNT_PURGE_QUERY);
+    return executeQuery(ACTIVE_POD_COUNT_PURGE_QUERY);
+  }
+
+  private boolean executeQuery(String query) {
+    boolean result = false;
+    if (timeScaleDBService.isValid()) {
+      int retryCount = 0;
+      while (retryCount < 2 && !result) {
+        try (Connection connection = timeScaleDBService.getDBConnection();
+             Statement statement = connection.createStatement()) {
+          statement.execute(query);
+          result = true;
+        } catch (SQLException e) {
+          log.error("Failed to execute query=[{}]", query, e);
+          retryCount++;
+        }
+      }
+    }
+    return result;
   }
 
   private boolean insertDataInTable(

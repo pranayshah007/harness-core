@@ -10,19 +10,35 @@ package io.harness.ccm.remote.resources.perspectives;
 import static io.harness.NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE;
 import static io.harness.annotations.dev.HarnessTeam.CE;
 import static io.harness.ccm.commons.utils.BigQueryHelper.UNIFIED_TABLE;
+import static io.harness.ccm.remote.resources.TelemetryConstants.DATA_SOURCES;
+import static io.harness.ccm.remote.resources.TelemetryConstants.IS_CLONE;
+import static io.harness.ccm.remote.resources.TelemetryConstants.MODULE;
+import static io.harness.ccm.remote.resources.TelemetryConstants.MODULE_NAME;
+import static io.harness.ccm.remote.resources.TelemetryConstants.PERSPECTIVE_CREATED;
+import static io.harness.ccm.remote.resources.TelemetryConstants.PERSPECTIVE_ID;
+import static io.harness.outbox.TransactionOutboxModule.OUTBOX_TRANSACTION_TEMPLATE;
+import static io.harness.springdata.TransactionUtils.DEFAULT_TRANSACTION_RETRY_POLICY;
+import static io.harness.telemetry.Destination.AMPLITUDE;
 
 import io.harness.NGCommonEntityConstants;
 import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.ccm.audittrails.events.PerspectiveCreateEvent;
+import io.harness.ccm.audittrails.events.PerspectiveDeleteEvent;
+import io.harness.ccm.audittrails.events.PerspectiveUpdateEvent;
 import io.harness.ccm.bigQuery.BigQueryService;
 import io.harness.ccm.budget.BudgetPeriod;
 import io.harness.ccm.commons.utils.BigQueryHelper;
 import io.harness.ccm.graphql.core.budget.BudgetCostService;
 import io.harness.ccm.graphql.core.budget.BudgetService;
+import io.harness.ccm.rbac.CCMRbacHelper;
+import io.harness.ccm.service.intf.CCMNotificationService;
 import io.harness.ccm.utils.LogAccountIdentifier;
 import io.harness.ccm.views.entities.CEView;
+import io.harness.ccm.views.entities.ViewFieldIdentifier;
 import io.harness.ccm.views.entities.ViewType;
 import io.harness.ccm.views.graphql.QLCEView;
+import io.harness.ccm.views.helper.AwsAccountFieldHelper;
 import io.harness.ccm.views.service.CEReportScheduleService;
 import io.harness.ccm.views.service.CEViewService;
 import io.harness.ccm.views.service.ViewCustomFieldService;
@@ -31,12 +47,16 @@ import io.harness.enforcement.constants.FeatureRestrictionName;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.outbox.api.OutboxService;
 import io.harness.security.annotations.NextGenManagerAuth;
+import io.harness.telemetry.Category;
+import io.harness.telemetry.TelemetryReporter;
 
 import com.codahale.metrics.annotation.ExceptionMetered;
 import com.codahale.metrics.annotation.Timed;
 import com.google.cloud.bigquery.BigQuery;
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.v3.oas.annotations.Hidden;
@@ -46,7 +66,10 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.stream.Collectors;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
@@ -60,8 +83,11 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import lombok.extern.slf4j.Slf4j;
+import net.jodah.failsafe.Failsafe;
+import net.jodah.failsafe.RetryPolicy;
 import org.hibernate.validator.constraints.NotBlank;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.support.TransactionTemplate;
 
 @Api("perspective")
 @Path("perspective")
@@ -85,11 +111,22 @@ public class PerspectiveResource {
   private final BigQueryHelper bigQueryHelper;
   private final BudgetCostService budgetCostService;
   private final BudgetService budgetService;
+  private final CCMNotificationService notificationService;
+  private final AwsAccountFieldHelper awsAccountFieldHelper;
+  private final TelemetryReporter telemetryReporter;
+
+  private final RetryPolicy<Object> transactionRetryPolicy = DEFAULT_TRANSACTION_RETRY_POLICY;
+  private final TransactionTemplate transactionTemplate;
+  private final OutboxService outboxService;
+  private final CCMRbacHelper rbacHelper;
 
   @Inject
   public PerspectiveResource(CEViewService ceViewService, CEReportScheduleService ceReportScheduleService,
       ViewCustomFieldService viewCustomFieldService, BigQueryService bigQueryService, BigQueryHelper bigQueryHelper,
-      BudgetCostService budgetCostService, BudgetService budgetService) {
+      BudgetCostService budgetCostService, BudgetService budgetService, CCMNotificationService notificationService,
+      AwsAccountFieldHelper awsAccountFieldHelper, TelemetryReporter telemetryReporter,
+      @Named(OUTBOX_TRANSACTION_TEMPLATE) TransactionTemplate transactionTemplate, OutboxService outboxService,
+      CCMRbacHelper rbacHelper) {
     this.ceViewService = ceViewService;
     this.ceReportScheduleService = ceReportScheduleService;
     this.viewCustomFieldService = viewCustomFieldService;
@@ -97,6 +134,12 @@ public class PerspectiveResource {
     this.bigQueryHelper = bigQueryHelper;
     this.budgetCostService = budgetCostService;
     this.budgetService = budgetService;
+    this.notificationService = notificationService;
+    this.awsAccountFieldHelper = awsAccountFieldHelper;
+    this.telemetryReporter = telemetryReporter;
+    this.transactionTemplate = transactionTemplate;
+    this.outboxService = outboxService;
+    this.rbacHelper = rbacHelper;
   }
 
   @GET
@@ -120,13 +163,13 @@ public class PerspectiveResource {
                        NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @NotNull @Valid @QueryParam("perspectiveId") @Parameter(
           required = true, description = "Unique identifier for the Perspective") String perspectiveId) {
+    rbacHelper.checkPerspectiveViewPermission(accountId, null, null);
     return ResponseDTO.newResponse(ceViewService.getLastMonthCostForPerspective(accountId, perspectiveId));
   }
 
   @GET
   @Path("lastPeriodCost")
   @Timed
-  @Hidden
   @LogAccountIdentifier
   @ExceptionMetered
   @ApiOperation(value = "Get last period cost for perspective", nickname = "getLastPeriodCost")
@@ -144,10 +187,11 @@ public class PerspectiveResource {
       @NotNull @Valid @QueryParam("perspectiveId") @Parameter(
           required = true, description = "The Perspective identifier for which we want the cost") String perspectiveId,
       @NotNull @Valid @QueryParam("startTime") @Parameter(
-          required = true, description = "The Start time (timestamp in millis) for the period") long startTime,
+          required = true, description = "The Start time (timestamp in millis) for the current period") long startTime,
       @NotNull @Valid @QueryParam("period") @Parameter(required = true,
           description = "The period (DAILY, WEEKLY, MONTHLY, QUARTERLY, YEARLY) for which we want the cost")
       BudgetPeriod period) {
+    rbacHelper.checkPerspectiveViewPermission(accountId, null, null);
     return ResponseDTO.newResponse(budgetCostService.getLastPeriodCost(accountId, perspectiveId, startTime, period));
   }
 
@@ -171,6 +215,7 @@ public class PerspectiveResource {
                       NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @Valid @NotNull @Parameter(required = true, description = "Unique identifier for the Perspective") @QueryParam(
           "perspectiveId") String perspectiveId) {
+    rbacHelper.checkPerspectiveViewPermission(accountId, null, null);
     return ResponseDTO.newResponse(ceViewService.getForecastCostForPerspective(accountId, perspectiveId));
   }
 
@@ -199,6 +244,7 @@ public class PerspectiveResource {
       @NotNull @Valid @QueryParam("period") @Parameter(required = true,
           description = "The period (DAILY, WEEKLY, MONTHLY, QUARTERLY, YEARLY) for which we want the forecast cost")
       BudgetPeriod period) {
+    rbacHelper.checkPerspectiveViewPermission(accountId, null, null);
     return ResponseDTO.newResponse(budgetCostService.getForecastCost(accountId, perspectiveId, startTime, period));
   }
 
@@ -225,7 +271,17 @@ public class PerspectiveResource {
           required = true, description = "Set the clone parameter as true to clone a Perspective.") boolean clone,
       @RequestBody(
           required = true, description = "Request body containing Perspective's CEView object") @Valid CEView ceView) {
+    rbacHelper.checkPerspectiveEditPermission(accountId, null, null);
     ceView.setAccountId(accountId);
+    HashMap<String, Object> properties = new HashMap<>();
+    properties.put(MODULE, MODULE_NAME);
+    List<ViewFieldIdentifier> dataSourcesList = ceView.getDataSources();
+    String dataSources = "";
+    if (dataSourcesList != null) {
+      dataSources = dataSourcesList.stream().map(Object::toString).collect(Collectors.joining(","));
+    }
+    properties.put(DATA_SOURCES, dataSources);
+    properties.put(IS_CLONE, clone ? "YES" : "NO");
     if (clone) {
       // reset these fields which gets set downstream appropriately
       ceView.setCreatedBy(null);
@@ -233,7 +289,15 @@ public class PerspectiveResource {
       ceView.setUuid(null);
       ceView.setViewType(ViewType.CUSTOMER);
     }
-    return ResponseDTO.newResponse(updateTotalCost(ceViewService.save(ceView)));
+    CEView ceViewCheck = updateTotalCost(ceViewService.save(ceView, clone));
+    properties.put(PERSPECTIVE_ID, clone ? ceViewCheck.getUuid() : ceView.getUuid());
+    telemetryReporter.sendTrackEvent(
+        PERSPECTIVE_CREATED, null, accountId, properties, Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL);
+    return ResponseDTO.newResponse(
+        Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
+          outboxService.save(new PerspectiveCreateEvent(accountId, ceViewCheck.toDTO()));
+          return ceViewCheck;
+        })));
   }
 
   private CEView updateTotalCost(CEView ceView) {
@@ -263,7 +327,10 @@ public class PerspectiveResource {
           NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @QueryParam("perspectiveId") @Parameter(required = true,
           description = "Unique identifier for the Perspective") @NotBlank @Valid String perspectiveId) {
-    return ResponseDTO.newResponse(ceViewService.get(perspectiveId));
+    rbacHelper.checkPerspectiveViewPermission(accountId, null, null);
+    CEView ceView = ceViewService.get(perspectiveId);
+    awsAccountFieldHelper.mergeAwsAccountNameInAccountRules(ceView.getViewRules(), accountId);
+    return ResponseDTO.newResponse(ceView);
   }
 
   @GET
@@ -284,7 +351,8 @@ public class PerspectiveResource {
   public ResponseDTO<List<QLCEView>>
   getAll(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
       NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId) {
-    return ResponseDTO.newResponse(ceViewService.getAllViews(accountId, true));
+    rbacHelper.checkPerspectiveViewPermission(accountId, null, null);
+    return ResponseDTO.newResponse(ceViewService.getAllViews(accountId, true, null));
   }
 
   @PUT
@@ -307,10 +375,16 @@ public class PerspectiveResource {
   update(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
              NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @Valid @RequestBody(required = true, description = "Perspective's CEView object") CEView ceView) {
+    rbacHelper.checkPerspectiveEditPermission(accountId, null, null);
+    CEView oldPerspective = ceViewService.get(ceView.getUuid());
     ceView.setAccountId(accountId);
     log.info(ceView.toString());
-
-    return ResponseDTO.newResponse(updateTotalCost(ceViewService.update(ceView)));
+    CEView newPerspective = updateTotalCost(ceViewService.update(ceView));
+    return ResponseDTO.newResponse(
+        Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
+          outboxService.save(new PerspectiveUpdateEvent(accountId, newPerspective.toDTO(), oldPerspective.toDTO()));
+          return newPerspective;
+        })));
   }
 
   @DELETE
@@ -331,13 +405,20 @@ public class PerspectiveResource {
              NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @QueryParam("perspectiveId") @Parameter(required = true,
           description = "Unique identifier for the Perspective") @NotNull @Valid String perspectiveId) {
+    rbacHelper.checkPerspectiveDeletePermission(accountId, null, null);
+    CEView perspective = ceViewService.get(perspectiveId);
     ceViewService.delete(perspectiveId, accountId);
 
     ceReportScheduleService.deleteAllByView(perspectiveId, accountId);
     viewCustomFieldService.deleteByViewId(perspectiveId, accountId);
     budgetService.deleteBudgetsForPerspective(accountId, perspectiveId);
+    notificationService.delete(perspectiveId, accountId);
 
-    return ResponseDTO.newResponse("Successfully deleted the view");
+    return ResponseDTO.newResponse(
+        Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
+          outboxService.save(new PerspectiveDeleteEvent(accountId, perspective.toDTO()));
+          return "Successfully deleted the view";
+        })));
   }
 
   @POST
@@ -363,6 +444,20 @@ public class PerspectiveResource {
           "perspectiveId") String perspectiveId,
       @Valid @NotNull @Parameter(required = true, description = "Name for the Perspective clone") @QueryParam(
           "cloneName") String cloneName) {
-    return ResponseDTO.newResponse(updateTotalCost(ceViewService.clone(accountId, perspectiveId, cloneName)));
+    rbacHelper.checkPerspectiveEditPermission(accountId, null, null);
+    HashMap<String, Object> properties = new HashMap<>();
+    properties.put(MODULE, MODULE_NAME);
+    List<ViewFieldIdentifier> dataSourcesList = ceViewService.get(perspectiveId).getDataSources();
+    String dataSources = "";
+    if (dataSourcesList != null) {
+      dataSources = dataSourcesList.stream().map(Object::toString).collect(Collectors.joining(","));
+    }
+    properties.put(DATA_SOURCES, dataSources);
+    properties.put(IS_CLONE, "YES");
+    CEView ceViewCheck = updateTotalCost(ceViewService.clone(accountId, perspectiveId, cloneName));
+    properties.put(PERSPECTIVE_ID, ceViewCheck.getUuid());
+    telemetryReporter.sendTrackEvent(
+        PERSPECTIVE_CREATED, null, accountId, properties, Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL);
+    return ResponseDTO.newResponse(ceViewCheck);
   }
 }

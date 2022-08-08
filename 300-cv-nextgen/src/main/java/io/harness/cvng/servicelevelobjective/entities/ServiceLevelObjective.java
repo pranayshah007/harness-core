@@ -13,11 +13,17 @@ import io.harness.annotation.HarnessEntity;
 import io.harness.annotation.StoreIn;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cvng.notification.beans.NotificationRuleRef;
 import io.harness.cvng.servicelevelobjective.beans.DayOfWeek;
 import io.harness.cvng.servicelevelobjective.beans.SLOCalenderType;
+import io.harness.cvng.servicelevelobjective.beans.SLODashboardDetail.TimeRangeFilter;
+import io.harness.cvng.servicelevelobjective.beans.SLOErrorBudgetResetDTO;
 import io.harness.cvng.servicelevelobjective.beans.SLOTargetType;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorType;
+import io.harness.data.structure.CollectionUtils;
+import io.harness.iterator.PersistentRegularIterable;
 import io.harness.mongo.index.CompoundMongoIndex;
+import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.ng.DbAliases;
 import io.harness.ng.core.common.beans.NGTag;
@@ -36,6 +42,8 @@ import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 import java.time.temporal.TemporalAdjusters;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import javax.validation.constraints.NotNull;
@@ -67,7 +75,7 @@ import org.mongodb.morphia.annotations.Id;
 @OwnedBy(HarnessTeam.CV)
 @StoreIn(DbAliases.CVNG)
 public class ServiceLevelObjective
-    implements PersistentEntity, UuidAware, AccountAccess, UpdatedAtAware, CreatedAtAware {
+    implements PersistentEntity, UuidAware, AccountAccess, UpdatedAtAware, CreatedAtAware, PersistentRegularIterable {
   String accountId;
   String orgIdentifier;
   String projectIdentifier;
@@ -80,22 +88,36 @@ public class ServiceLevelObjective
   String healthSourceIdentifier;
   String monitoredServiceIdentifier;
   List<String> serviceLevelIndicators;
+  List<NotificationRuleRef> notificationRuleRefs;
   SLOTarget sloTarget;
   ServiceLevelIndicatorType type;
+  private boolean enabled;
   private long lastUpdatedAt;
   private long createdAt;
   private Double sloTargetPercentage;
+  @FdIndex private long nextNotificationIteration;
+
   public ZoneOffset getZoneOffset() {
     return ZoneOffset.UTC; // hardcoding it to UTC for now. We need to ask it from user.
   }
 
-  public int getActiveErrorBudgetMinutes(
-      List<Double> orderedErrorBudgetIncrementPercentages, LocalDateTime currentDateTime) {
-    int activeErrorBudget = getTotalErrorBudgetMinutes(currentDateTime);
-    for (Double incrementPercentage : orderedErrorBudgetIncrementPercentages) {
-      activeErrorBudget = activeErrorBudget + (int) Math.floor((activeErrorBudget * incrementPercentage) / 100);
+  public List<NotificationRuleRef> getNotificationRuleRefs() {
+    if (notificationRuleRefs == null) {
+      return Collections.emptyList();
     }
-    return activeErrorBudget;
+    return notificationRuleRefs;
+  }
+
+  public int getActiveErrorBudgetMinutes(
+      List<SLOErrorBudgetResetDTO> sloErrorBudgetResets, LocalDateTime currentDateTime) {
+    int totalErrorBudgetMinutes = getTotalErrorBudgetMinutes(currentDateTime);
+    long totalErrorBudgetIncrementMinutesFromReset =
+        CollectionUtils.emptyIfNull(sloErrorBudgetResets)
+            .stream()
+            .mapToLong(sloErrorBudgetResetDTO -> sloErrorBudgetResetDTO.getErrorBudgetIncrementMinutes())
+            .sum();
+    return Math.toIntExact(Math.min(getCurrentTimeRange(currentDateTime).totalMinutes(),
+        totalErrorBudgetMinutes + totalErrorBudgetIncrementMinutesFromReset));
   }
 
   public int getTotalErrorBudgetMinutes(LocalDateTime currentDateTime) {
@@ -119,6 +141,27 @@ public class ServiceLevelObjective
 
   public TimePeriod getCurrentTimeRange(LocalDateTime currentDateTime) {
     return sloTarget.getCurrentTimeRange(currentDateTime);
+  }
+
+  public List<TimeRangeFilter> getTimeRangeFilters() {
+    return sloTarget.getTimeRangeFilters();
+  }
+
+  @Override
+  public Long obtainNextIteration(String fieldName) {
+    if (ServiceLevelObjectiveKeys.nextNotificationIteration.equals(fieldName)) {
+      return this.nextNotificationIteration;
+    }
+    throw new IllegalArgumentException("Invalid fieldName " + fieldName);
+  }
+
+  @Override
+  public void updateNextIteration(String fieldName, long nextIteration) {
+    if (ServiceLevelObjectiveKeys.nextNotificationIteration.equals(fieldName)) {
+      this.nextNotificationIteration = nextIteration;
+      return;
+    }
+    throw new IllegalArgumentException("Invalid fieldName " + fieldName);
   }
 
   @Value
@@ -168,6 +211,7 @@ public class ServiceLevelObjective
   public abstract static class SLOTarget {
     public abstract TimePeriod getCurrentTimeRange(LocalDateTime currentDateTime);
     public abstract SLOTargetType getType();
+    public abstract List<TimeRangeFilter> getTimeRangeFilters();
   }
   @Data
   @SuperBuilder
@@ -187,6 +231,14 @@ public class ServiceLevelObjective
       LocalDate nextDayOfWeek = dayOfWeek.getNextDayOfWeek(currentDateTime.toLocalDate());
       return TimePeriod.builder().startDate(nextDayOfWeek.minusDays(6)).endDate(nextDayOfWeek.plusDays(1)).build();
     }
+
+    @Override
+    public List<TimeRangeFilter> getTimeRangeFilters() {
+      List<TimeRangeFilter> timeRangeFilterList = new ArrayList<>();
+      timeRangeFilterList.add(TimeRangeFilter.ONE_HOUR_FILTER);
+      timeRangeFilterList.add(TimeRangeFilter.ONE_DAY_FILTER);
+      return timeRangeFilterList;
+    }
   }
 
   @SuperBuilder
@@ -202,6 +254,16 @@ public class ServiceLevelObjective
       LocalDate windowEnd = getWindowEnd(currentDateTime.toLocalDate(), windowEndDayOfMonth).plusDays(1);
       return TimePeriod.builder().startDate(windowStart).endDate(windowEnd).build();
     }
+
+    @Override
+    public List<TimeRangeFilter> getTimeRangeFilters() {
+      List<TimeRangeFilter> timeRangeFilterList = new ArrayList<>();
+      timeRangeFilterList.add(TimeRangeFilter.ONE_HOUR_FILTER);
+      timeRangeFilterList.add(TimeRangeFilter.ONE_DAY_FILTER);
+      timeRangeFilterList.add(TimeRangeFilter.ONE_WEEK_FILTER);
+      return timeRangeFilterList;
+    }
+
     private LocalDate getWindowEnd(LocalDate currentDateTime, int windowEndDayOfMonth) {
       LocalDate windowEnd;
       if (windowEndDayOfMonth > 28) {
@@ -233,6 +295,16 @@ public class ServiceLevelObjective
       LocalDate lastDayOfQuarter = firstDayOfQuarter.plusMonths(2).with(TemporalAdjusters.lastDayOfMonth());
       return TimePeriod.builder().startDate(firstDayOfQuarter).endDate(lastDayOfQuarter.plusDays(1)).build();
     }
+
+    @Override
+    public List<TimeRangeFilter> getTimeRangeFilters() {
+      List<TimeRangeFilter> timeRangeFilterList = new ArrayList<>();
+      timeRangeFilterList.add(TimeRangeFilter.ONE_HOUR_FILTER);
+      timeRangeFilterList.add(TimeRangeFilter.ONE_DAY_FILTER);
+      timeRangeFilterList.add(TimeRangeFilter.ONE_WEEK_FILTER);
+      timeRangeFilterList.add(TimeRangeFilter.ONE_MONTH_FILTER);
+      return timeRangeFilterList;
+    }
   }
 
   @SuperBuilder
@@ -243,8 +315,20 @@ public class ServiceLevelObjective
 
     @Override
     public TimePeriod getCurrentTimeRange(LocalDateTime currentDateTime) {
+      currentDateTime = currentDateTime.truncatedTo(ChronoUnit.MINUTES);
       return TimePeriod.createWithLocalTime(
           currentDateTime.minusMinutes(TimeUnit.DAYS.toMinutes(periodLengthDays)), currentDateTime);
+    }
+
+    @Override
+    public List<TimeRangeFilter> getTimeRangeFilters() {
+      List<TimeRangeFilter> timeRangeFilterList = new ArrayList<>();
+      timeRangeFilterList.add(TimeRangeFilter.ONE_HOUR_FILTER);
+      timeRangeFilterList.add(TimeRangeFilter.ONE_DAY_FILTER);
+      if (this.periodLengthDays > 7) {
+        timeRangeFilterList.add(TimeRangeFilter.ONE_WEEK_FILTER);
+      }
+      return timeRangeFilterList;
     }
   }
 }

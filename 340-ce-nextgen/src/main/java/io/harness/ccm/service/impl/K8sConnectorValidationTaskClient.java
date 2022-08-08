@@ -28,10 +28,10 @@ import io.harness.service.DelegateGrpcClientWrapper;
 
 import software.wings.beans.TaskType;
 
+import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import com.hazelcast.internal.util.Preconditions;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
@@ -108,7 +108,7 @@ public class K8sConnectorValidationTaskClient {
       throw new InvalidRequestException(errorMessage);
     }
 
-    Preconditions.checkInstanceOf(KubernetesConnectionTaskResponse.class, responseData,
+    Preconditions.checkState(responseData instanceof KubernetesConnectionTaskResponse,
         String.format("Please catch new DelegateResponseData type %s", responseData.getClass().toString()));
   }
 }

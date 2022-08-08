@@ -15,6 +15,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.algorithm.IdentifierName;
 import io.harness.exception.CriticalExpressionEvaluationException;
 
+import com.google.common.collect.ImmutableSet;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -25,6 +26,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
@@ -241,6 +243,15 @@ public class ExpressionEvaluatorUtils {
       for (int i = 0; i < l.size(); i++) {
         l.set(i, updateExpressionsInternal(l.get(i), functor, depth - 1, cache));
       }
+      return o;
+    }
+
+    if (o instanceof Set && !(o instanceof ImmutableSet)) {
+      Set l = (Set) o;
+      Object newSet =
+          l.stream().map(ob -> updateExpressionsInternal(ob, functor, depth - 1, cache)).collect(Collectors.toSet());
+      l.clear();
+      l.addAll((Set) newSet);
       return o;
     }
 

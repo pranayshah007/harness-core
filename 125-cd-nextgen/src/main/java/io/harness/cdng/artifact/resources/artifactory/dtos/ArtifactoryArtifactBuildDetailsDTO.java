@@ -17,7 +17,7 @@ import lombok.experimental.FieldDefaults;
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class ArtifactoryArtifactBuildDetailsDTO {
+public class ArtifactoryArtifactBuildDetailsDTO implements ArtifactoryBuildDetailsDTO {
   String artifactName;
   String artifactPath;
 }

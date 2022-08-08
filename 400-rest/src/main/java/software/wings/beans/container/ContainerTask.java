@@ -27,7 +27,6 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.github.reinert.jjschema.SchemaIgnore;
 import com.google.common.collect.ImmutableList;
 import java.util.List;
-import java.util.regex.Pattern;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
@@ -56,13 +55,6 @@ public abstract class ContainerTask extends DeploymentSpecification implements A
                  .build())
         .build();
   }
-
-  static final String DOCKER_IMAGE_NAME_PLACEHOLDER_REGEX = "\\$\\{DOCKER_IMAGE_NAME}";
-  static final String DOCKER_IMAGE_NAME_REGEX = "(\\s*\"?image\"?\\s*:\\s*\"?)";
-  static final String CONTAINER_NAME_PLACEHOLDER_REGEX = "\\$\\{CONTAINER_NAME}";
-
-  static final String DUMMY_DOCKER_IMAGE_NAME = "hv--docker-image-name--hv";
-  static final String DUMMY_CONTAINER_NAME = "hv--container-name--hv";
 
   @NotEmpty private String deploymentType;
   @SchemaIgnore @NotEmpty private String serviceId;
@@ -101,11 +93,6 @@ public abstract class ContainerTask extends DeploymentSpecification implements A
 
   public void setAdvancedConfig(String advancedConfig) {
     this.advancedConfig = trimYaml(advancedConfig);
-  }
-
-  public static Pattern compileRegexPattern(String domainName) {
-    return Pattern.compile(
-        DOCKER_IMAGE_NAME_REGEX + "(" + Pattern.quote(domainName) + "\\/)" + DOCKER_IMAGE_NAME_PLACEHOLDER_REGEX);
   }
 
   @SchemaIgnore

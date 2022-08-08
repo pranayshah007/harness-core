@@ -27,6 +27,7 @@ import io.harness.cvng.beans.DataSourceType;
 import io.harness.cvng.beans.SyncDataCollectionRequest;
 import io.harness.cvng.core.beans.OnboardingRequestDTO;
 import io.harness.cvng.core.beans.OnboardingResponseDTO;
+import io.harness.cvng.core.beans.monitoredService.MonitoredServiceDTO;
 import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.core.beans.sli.SLIOnboardingGraphs;
 import io.harness.cvng.core.entities.CVConfig;
@@ -36,6 +37,7 @@ import io.harness.cvng.core.services.api.DataCollectionSLIInfoMapper;
 import io.harness.cvng.core.services.api.MetricPackService;
 import io.harness.cvng.core.services.api.OnboardingService;
 import io.harness.cvng.core.services.api.monitoredService.HealthSourceService;
+import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
 import io.harness.cvng.servicelevelobjective.beans.SLIMetricType;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorDTO;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorSpec;
@@ -77,11 +79,15 @@ public class ServiceLevelIndicatorServiceImplTest extends CvNextGenTestBase {
   @Inject private MetricPackService metricPackService;
   @Inject HPersistence hPersistence;
   @Inject Clock clock;
+  @Inject private MonitoredServiceService monitoredServiceService;
+  private String monitoredServiceIdentifier;
 
   @Before
   @SneakyThrows
   public void setup() {
     builderFactory = BuilderFactory.getDefault();
+    monitoredServiceIdentifier = "monitoredServiceIdentifier";
+    createMonitoredService();
   }
 
   @Test
@@ -91,7 +97,6 @@ public class ServiceLevelIndicatorServiceImplTest extends CvNextGenTestBase {
     String tracingId = "tracingId";
     ServiceLevelIndicatorDTO serviceLevelIndicatorDTO =
         builderFactory.getThresholdServiceLevelIndicatorDTOBuilder().build();
-    String monitoredServiceIdentifier = "monitoredServiceIdentifier";
     CVConfig cvConfig = builderFactory.appDynamicsCVConfigBuilder()
                             .identifier(HealthSourceService.getNameSpacedIdentifier(
                                 monitoredServiceIdentifier, serviceLevelIndicatorDTO.getHealthSourceRef()))
@@ -105,7 +110,7 @@ public class ServiceLevelIndicatorServiceImplTest extends CvNextGenTestBase {
     ServiceLevelIndicator serviceLevelIndicator =
         serviceLevelIndicatorTransformerMap.get(serviceLevelIndicatorDTO.getSpec().getType())
             .getEntity(builderFactory.getProjectParams(), serviceLevelIndicatorDTO, monitoredServiceIdentifier,
-                serviceLevelIndicatorDTO.getHealthSourceRef());
+                serviceLevelIndicatorDTO.getHealthSourceRef(), true);
     DataCollectionInfo dataCollectionInfo = dataSourceTypeDataCollectionInfoMapperMap.get(cvConfig.getType())
                                                 .toDataCollectionInfo(Arrays.asList(cvConfig), serviceLevelIndicator);
 
@@ -159,7 +164,6 @@ public class ServiceLevelIndicatorServiceImplTest extends CvNextGenTestBase {
     String tracingId = "tracingId";
     ServiceLevelIndicatorDTO serviceLevelIndicatorDTO =
         builderFactory.getThresholdServiceLevelIndicatorDTOBuilder().build();
-    String monitoredServiceIdentifier = "monitoredServiceIdentifier";
     CVConfig cvConfig = builderFactory.appDynamicsCVConfigBuilder()
                             .identifier(HealthSourceService.getNameSpacedIdentifier(
                                 monitoredServiceIdentifier, serviceLevelIndicatorDTO.getHealthSourceRef()))
@@ -192,7 +196,6 @@ public class ServiceLevelIndicatorServiceImplTest extends CvNextGenTestBase {
     String tracingId = "tracingId";
     ServiceLevelIndicatorDTO serviceLevelIndicatorDTO =
         builderFactory.getRatioServiceLevelIndicatorDTOBuilder().build();
-    String monitoredServiceIdentifier = "monitoredServiceIdentifier";
     CVConfig cvConfig = builderFactory.appDynamicsCVConfigBuilder()
                             .identifier(HealthSourceService.getNameSpacedIdentifier(
                                 monitoredServiceIdentifier, serviceLevelIndicatorDTO.getHealthSourceRef()))
@@ -232,8 +235,9 @@ public class ServiceLevelIndicatorServiceImplTest extends CvNextGenTestBase {
   public void testCreateThreshold_success() {
     ServiceLevelIndicatorDTO serviceLevelIndicatorDTO = createServiceLevelIndicator(SLIMetricType.THRESHOLD);
     ProjectParams projectParams = builderFactory.getProjectParams();
-    List<String> serviceLevelIndicatorIdentifiers = serviceLevelIndicatorService.create(projectParams,
-        Collections.singletonList(serviceLevelIndicatorDTO), generateUuid(), generateUuid(), generateUuid());
+    List<String> serviceLevelIndicatorIdentifiers =
+        serviceLevelIndicatorService.create(projectParams, Collections.singletonList(serviceLevelIndicatorDTO),
+            generateUuid(), monitoredServiceIdentifier, generateUuid());
     List<ServiceLevelIndicatorDTO> serviceLevelIndicatorDTOList =
         serviceLevelIndicatorService.get(projectParams, serviceLevelIndicatorIdentifiers);
     assertThat(Collections.singletonList(serviceLevelIndicatorDTO)).isEqualTo(serviceLevelIndicatorDTOList);
@@ -245,11 +249,19 @@ public class ServiceLevelIndicatorServiceImplTest extends CvNextGenTestBase {
   public void testCreateRatio_success() {
     ServiceLevelIndicatorDTO serviceLevelIndicatorDTO = createServiceLevelIndicator(SLIMetricType.RATIO);
     ProjectParams projectParams = builderFactory.getProjectParams();
-    List<String> serviceLevelIndicatorIdentifiers = serviceLevelIndicatorService.create(projectParams,
-        Collections.singletonList(serviceLevelIndicatorDTO), generateUuid(), generateUuid(), generateUuid());
+    List<String> serviceLevelIndicatorIdentifiers =
+        serviceLevelIndicatorService.create(projectParams, Collections.singletonList(serviceLevelIndicatorDTO),
+            generateUuid(), monitoredServiceIdentifier, generateUuid());
     List<ServiceLevelIndicatorDTO> serviceLevelIndicatorDTOList =
         serviceLevelIndicatorService.get(projectParams, serviceLevelIndicatorIdentifiers);
     assertThat(Collections.singletonList(serviceLevelIndicatorDTO)).isEqualTo(serviceLevelIndicatorDTOList);
+  }
+
+  private void createMonitoredService() {
+    MonitoredServiceDTO monitoredServiceDTO =
+        builderFactory.monitoredServiceDTOBuilder().identifier(monitoredServiceIdentifier).build();
+    monitoredServiceDTO.setSources(MonitoredServiceDTO.Sources.builder().build());
+    monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
   }
 
   private ServiceLevelIndicatorDTO createServiceLevelIndicator(SLIMetricType sliMetricType) {

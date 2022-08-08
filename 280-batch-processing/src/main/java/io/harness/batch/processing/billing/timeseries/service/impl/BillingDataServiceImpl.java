@@ -7,6 +7,9 @@
 
 package io.harness.batch.processing.billing.timeseries.service.impl;
 
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkState;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.batch.processing.billing.timeseries.data.InstanceBillingData;
@@ -20,8 +23,11 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.timescaledb.DBUtils;
 import io.harness.timescaledb.TimeScaleDBService;
 
+import software.wings.graphql.datafetcher.ce.recommendation.entity.Cost;
+
 import com.google.common.collect.ImmutableList;
 import com.google.inject.Singleton;
+import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -29,6 +35,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Timestamp;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import javax.validation.constraints.NotNull;
@@ -78,8 +85,13 @@ public class BillingDataServiceImpl {
   private static final String READER_QUERY =
       "SELECT * FROM %s WHERE ACCOUNTID = '%s' AND STARTTIME >= '%s' AND STARTTIME < '%s' ORDER BY accountid, clusterid, instanceid OFFSET %s LIMIT %s;";
 
+  static final String ECS_SERVICE_LAST_DAY_COST =
+      "SELECT SUM(CPUBILLINGAMOUNT), SUM(MEMORYBILLINGAMOUNT) FROM BILLING_DATA WHERE INSTANCETYPE IN ('ECS_TASK_FARGATE', 'ECS_TASK_EC2') AND ACCOUNTID = ? AND CLUSTERID = ? AND CLOUDSERVICENAME = ? AND STARTTIME = (SELECT MAX(STARTTIME) FROM BILLING_DATA WHERE INSTANCETYPE IN ('ECS_TASK_FARGATE', 'ECS_TASK_EC2') AND ACCOUNTID = ? AND CLUSTERID = ? AND CLOUDSERVICENAME = ? AND STARTTIME >= ?)";
+
   public static final String DAILY_BILLING_DATA_TABLE = "BILLING_DATA";
   public static final String HOURLY_BILLING_DATA_TABLE = "BILLING_DATA_HOURLY";
+
+  private static final String BILLING_DATA_PURGE_QUERY = "SELECT drop_chunks('billing_data', interval '60 days')";
 
   private static final List<InstanceType> PREAGG_INSTANCES =
       ImmutableList.of(InstanceType.K8S_POD, InstanceType.ECS_CONTAINER_INSTANCE, InstanceType.ECS_TASK_EC2,
@@ -368,6 +380,41 @@ public class BillingDataServiceImpl {
     return null;
   }
 
+  public Cost getECSServiceLastAvailableDayCost(
+      String accountId, String clusterId, String serviceName, Instant startInclusive) {
+    checkState(timeScaleDBService.isValid());
+    checkArgument(isTruncatedToDay(startInclusive));
+    for (int retryCount = 0; retryCount < 5; retryCount++) {
+      try (Connection connection = timeScaleDBService.getDBConnection();
+           PreparedStatement statement = connection.prepareStatement(ECS_SERVICE_LAST_DAY_COST)) {
+        statement.setString(1, accountId);
+        statement.setString(2, clusterId);
+        statement.setString(3, serviceName);
+        statement.setString(4, accountId);
+        statement.setString(5, clusterId);
+        statement.setString(6, serviceName);
+        statement.setTimestamp(7, new Timestamp(startInclusive.toEpochMilli()));
+        return executeStatementAndGetCost(statement);
+      } catch (SQLException e) {
+        log.error("Failed to fetch cost. retryCount=[{}]", retryCount, e);
+      }
+    }
+    return null;
+  }
+
+  public static Cost executeStatementAndGetCost(PreparedStatement statement) throws SQLException {
+    ResultSet resultSet = statement.executeQuery();
+    if (resultSet.next()) {
+      BigDecimal cpuCost = resultSet.getBigDecimal(1);
+      BigDecimal memoryCost = resultSet.getBigDecimal(2);
+      if (cpuCost == null && memoryCost == null) {
+        return null;
+      }
+      return Cost.builder().cpu(cpuCost).memory(memoryCost).build();
+    }
+    return null;
+  }
+
   private int updateAggregationStatement(
       PreparedStatement statement, String accountId, Instant startTime, Instant endTime) throws SQLException {
     int i = 0;
@@ -501,6 +548,11 @@ public class BillingDataServiceImpl {
     return executeQuery(PURGE_DATA_QUERY);
   }
 
+  public boolean purgeOldBillingData() {
+    log.info("Purging old {} data !!", BILLING_DATA_PURGE_QUERY);
+    return executeQuery(BILLING_DATA_PURGE_QUERY);
+  }
+
   private boolean executeQuery(String query) {
     boolean result = false;
     if (timeScaleDBService.isValid()) {
@@ -517,5 +569,9 @@ public class BillingDataServiceImpl {
       }
     }
     return result;
+  }
+
+  private boolean isTruncatedToDay(Instant instant) {
+    return instant.truncatedTo(ChronoUnit.DAYS).equals(instant);
   }
 }

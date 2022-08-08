@@ -515,7 +515,7 @@ public class ServiceTemplateServiceTest extends WingsBaseTest {
     when(serviceResourceService.getName(APP_ID, SERVICE_ID)).thenReturn(SERVICE_NAME);
     when(environmentService.exist(APP_ID, ENV_ID)).thenReturn(true);
     when(wingsPersistence.saveAndGet(eq(ServiceTemplate.class), any(ServiceTemplate.class)))
-        .thenAnswer(invocation -> invocation.getArgumentAt(1, ServiceTemplate.class));
+        .thenAnswer(invocation -> invocation.getArgument(1, ServiceTemplate.class));
     ServiceTemplate serviceTemplate = templateService.getOrCreate(APP_ID, SERVICE_ID, ENV_ID);
     assertThat(serviceTemplate).isNotNull();
     assertThat(serviceTemplate.getAppId()).isEqualTo(APP_ID);
@@ -531,7 +531,7 @@ public class ServiceTemplateServiceTest extends WingsBaseTest {
   public void shouldSaveWithAccountId() {
     when(wingsPersistence.saveAndGet(eq(ServiceTemplate.class), any(ServiceTemplate.class)))
         .thenAnswer(invocationOnMock -> {
-          ServiceTemplate serviceTemplate = invocationOnMock.getArgumentAt(1, ServiceTemplate.class);
+          ServiceTemplate serviceTemplate = invocationOnMock.getArgument(1, ServiceTemplate.class);
           return serviceTemplate;
         });
     ServiceTemplate template = templateService.save(builder.build());

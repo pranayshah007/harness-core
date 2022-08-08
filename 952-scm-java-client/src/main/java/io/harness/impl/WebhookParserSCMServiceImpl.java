@@ -14,6 +14,7 @@ import static io.harness.constants.Constants.X_AMZ_SNS_MESSAGE_TYPE;
 import static io.harness.constants.Constants.X_BIT_BUCKET_EVENT;
 import static io.harness.constants.Constants.X_GIT_HUB_EVENT;
 import static io.harness.constants.Constants.X_GIT_LAB_EVENT;
+import static io.harness.constants.Constants.X_VSS_HEADER;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.exception.WingsException.USER;
 
@@ -222,10 +223,12 @@ public class WebhookParserSCMServiceImpl implements WebhookParserSCMService {
       return getBitbucketProvider(headerKeys);
     } else if (containsHeaderKey(headerKeys, X_AMZ_SNS_MESSAGE_TYPE)) {
       return GitProvider.CODECOMMIT;
+    } else if (containsHeaderKey(headerKeys, X_VSS_HEADER)) {
+      return GitProvider.AZURE;
     }
 
     throw new InvalidRequestException("Unable to resolve the Webhook Source. "
-            + "One of " + X_GIT_HUB_EVENT + ", " + X_BIT_BUCKET_EVENT + ", " + X_GIT_LAB_EVENT
+            + "One of " + X_GIT_HUB_EVENT + ", " + X_BIT_BUCKET_EVENT + ", " + X_GIT_LAB_EVENT + ", " + X_VSS_HEADER
             + " must be present in Headers",
         USER);
   }

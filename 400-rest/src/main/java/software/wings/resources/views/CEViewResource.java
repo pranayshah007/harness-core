@@ -11,6 +11,7 @@ import static software.wings.graphql.datafetcher.billing.CloudBillingHelper.unif
 
 import io.harness.ccm.bigQuery.BigQueryService;
 import io.harness.ccm.views.entities.CEView;
+import io.harness.ccm.views.helper.AwsAccountFieldHelper;
 import io.harness.ccm.views.service.CEReportScheduleService;
 import io.harness.ccm.views.service.CEViewService;
 import io.harness.ccm.views.service.ViewCustomFieldService;
@@ -44,16 +45,18 @@ public class CEViewResource {
   private ViewCustomFieldService viewCustomFieldService;
   private BigQueryService bigQueryService;
   private CloudBillingHelper cloudBillingHelper;
+  private AwsAccountFieldHelper awsAccountFieldHelper;
 
   @Inject
   public CEViewResource(CEViewService ceViewService, CEReportScheduleService ceReportScheduleService,
       ViewCustomFieldService viewCustomFieldService, BigQueryService bigQueryService,
-      CloudBillingHelper cloudBillingHelper) {
+      CloudBillingHelper cloudBillingHelper, AwsAccountFieldHelper awsAccountFieldHelper) {
     this.ceViewService = ceViewService;
     this.ceReportScheduleService = ceReportScheduleService;
     this.viewCustomFieldService = viewCustomFieldService;
     this.bigQueryService = bigQueryService;
     this.cloudBillingHelper = cloudBillingHelper;
+    this.awsAccountFieldHelper = awsAccountFieldHelper;
   }
 
   @POST
@@ -67,7 +70,7 @@ public class CEViewResource {
       ceView.setCreatedBy(null);
       ceView.setCreatedAt(0);
     }
-    return new RestResponse<>(updateTotalCost(ceViewService.save(ceView)));
+    return new RestResponse<>(updateTotalCost(ceViewService.save(ceView, clone)));
   }
 
   private CEView updateTotalCost(CEView ceView) {
@@ -80,7 +83,9 @@ public class CEViewResource {
   @Timed
   @ExceptionMetered
   public RestResponse<CEView> get(@QueryParam("accountId") String accountId, @QueryParam("viewId") String viewId) {
-    return new RestResponse<>(ceViewService.get(viewId));
+    CEView ceView = ceViewService.get(viewId);
+    awsAccountFieldHelper.mergeAwsAccountNameInAccountRules(ceView.getViewRules(), accountId);
+    return new RestResponse<>(ceView);
   }
 
   @PUT

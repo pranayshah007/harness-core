@@ -19,6 +19,8 @@ public enum AuthorizationServiceHeader {
   NG_MANAGER("NextGenManager"),
   BATCH_PROCESSING("BatchProcessing"),
   CI_MANAGER("CIManager"),
+
+  STO_MANAGER("STOManager"),
   CV_NEXT_GEN("CVNextGen"),
   CE_NEXT_GEN("CENextGen"),
   CUSTOM_DASHBOARDS("CustomDashboards"),
@@ -36,7 +38,9 @@ public enum AuthorizationServiceHeader {
   DEFAULT("Default"),
   DASHBOAD_AGGREGATION_SERVICE("DashboardAggregationService"),
   DMS("DelegateManagementService"),
-  DEBEZIUM_SERVICE("DebeziumService");
+  DEBEZIUM_SERVICE("DebeziumService"),
+  SUBSCRIPTION_SERVICE("SubscriptionService"),
+  CHAOS_SERVICE("ChaosService");
 
   private final String serviceId;
 

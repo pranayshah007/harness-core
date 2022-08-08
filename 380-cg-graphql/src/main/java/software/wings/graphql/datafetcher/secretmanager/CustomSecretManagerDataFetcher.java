@@ -24,7 +24,6 @@ import software.wings.graphql.schema.mutation.secretManager.QLEncryptedDataParam
 import software.wings.graphql.schema.mutation.secretManager.QLUpdateCustomSecretManagerInput;
 import software.wings.graphql.schema.mutation.secretManager.QLUpdateSecretManagerInput;
 import software.wings.graphql.schema.type.secretManagers.QLSecretManager;
-import software.wings.graphql.schema.type.secretManagers.QLSecretManager.QLSecretManagerBuilder;
 import software.wings.graphql.schema.type.secretManagers.QLSecretManagerType;
 import software.wings.security.encryption.secretsmanagerconfigs.CustomSecretsManagerConfig;
 import software.wings.service.intfc.security.CustomSecretsManagerService;
@@ -52,9 +51,7 @@ public class CustomSecretManagerDataFetcher implements SecretManagerMutationData
 
     SecretManagerConfig secretManagerConfig = customSecretsManagerService.getSecretsManager(accountId, uuid);
 
-    final QLSecretManagerBuilder builder = QLSecretManager.builder();
-    secretManagerController.populateSecretManager(secretManagerConfig, builder);
-    return builder.build();
+    return secretManagerController.convertToQLSecretManager(secretManagerConfig);
   }
 
   @Override
@@ -82,10 +79,7 @@ public class CustomSecretManagerDataFetcher implements SecretManagerMutationData
     customSecretsManagerService.updateSecretsManager(accountId, customSecretsManagerConfig);
 
     SecretManagerConfig secretManagerConfig = customSecretsManagerService.getSecretsManager(accountId, secretManagerId);
-
-    final QLSecretManagerBuilder builder = QLSecretManager.builder();
-    secretManagerController.populateSecretManager(secretManagerConfig, builder);
-    return builder.build();
+    return secretManagerController.convertToQLSecretManager(secretManagerConfig);
   }
 
   @Override

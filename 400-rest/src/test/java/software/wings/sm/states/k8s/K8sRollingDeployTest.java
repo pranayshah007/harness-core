@@ -32,6 +32,8 @@ import static software.wings.utils.WingsTestConstants.STATE_NAME;
 import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.joor.Reflect.on;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyListOf;
@@ -84,6 +86,7 @@ import software.wings.sm.ExecutionContextImpl;
 import software.wings.sm.ExecutionResponse;
 import software.wings.sm.StateExecutionInstance;
 import software.wings.sm.WorkflowStandardParams;
+import software.wings.sm.WorkflowStandardParamsExtensionService;
 import software.wings.utils.ApplicationManifestUtils;
 
 import com.google.common.collect.ImmutableMap;
@@ -110,6 +113,7 @@ public class K8sRollingDeployTest extends CategoryTest {
   @Mock private AppService appService;
   @Mock private SweepingOutputService mockedSweepingOutputService;
   @Mock private ActivityService activityService;
+  @Mock private WorkflowStandardParamsExtensionService workflowStandardParamsExtensionService;
   @InjectMocks K8sRollingDeploy k8sRollingDeploy = spy(new K8sRollingDeploy(K8S_DEPLOYMENT_ROLLING.name()));
 
   private StateExecutionInstance stateExecutionInstance = aStateExecutionInstance().displayName(STATE_NAME).build();
@@ -120,6 +124,7 @@ public class K8sRollingDeployTest extends CategoryTest {
   public void setup() {
     MockitoAnnotations.initMocks(this);
     context = new ExecutionContextImpl(stateExecutionInstance);
+    on(context).set("workflowStandardParamsExtensionService", workflowStandardParamsExtensionService);
     k8sRollingDeploy.setStateTimeoutInMinutes(10);
     k8sRollingDeploy.setSkipDryRun(true);
   }
@@ -316,7 +321,7 @@ public class K8sRollingDeployTest extends CategoryTest {
             .k8sTaskResponse(K8sRollingDeployResponse.builder().helmChartInfo(helmChartInfo).build())
             .build();
 
-    doReturn(Application.Builder.anApplication().uuid("uuid").build()).when(appService).get(anyString());
+    doReturn(Application.Builder.anApplication().uuid("uuid").build()).when(appService).get(nullable(String.class));
     doReturn(InstanceElementListParam.builder().build())
         .when(k8sRollingDeploy)
         .fetchInstanceElementListParam(anyListOf(K8sPod.class));
@@ -403,7 +408,7 @@ public class K8sRollingDeployTest extends CategoryTest {
 
     context.pushContextElement(standardParams);
     doReturn(true).when(k8sStateHelper).isExportManifestsEnabled(any());
-    doReturn(app).when(standardParams).getApp();
+    doReturn(app).when(workflowStandardParamsExtensionService).getApp(standardParams);
     doReturn(app).when(appService).get(APP_ID);
     doReturn(ACTIVITY_ID).when(k8sRollingDeploy).fetchActivityId(context);
     doReturn(APP_ID).when(k8sRollingDeploy).fetchAppId(context);

@@ -88,7 +88,7 @@ public class EventDeliveryService {
     }
     CgEventConfig eventConfig =
         eventConfigService.getEventsConfig(event.getAccountId(), event.getAppId(), event.getEventConfigId());
-    if (eventConfig == null || !featureFlagService.isEnabled(FeatureName.APP_TELEMETRY, eventConfig.getAccountId())) {
+    if (eventConfig == null) {
       log.warn(
           "App telemetry feature is disabled or the event config does not exist. Marking the event as skipped. Event ID - {}",
           event.getUuid());

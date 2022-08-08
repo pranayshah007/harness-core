@@ -57,7 +57,8 @@ import javax.ws.rs.Produces;
 public interface ACLResource {
   @POST
   @ApiOperation(value = "Check for access to resources", nickname = "getAccessControlList")
-  @Operation(operationId = "getAccessControlList", summary = "Check for permission on resource(s) for a principal",
+  @Operation(operationId = "getAccessControlList", summary = "Check Permission",
+      description = "Check for permission on resource(s) for a principal",
       responses =
       { @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Result of the access check request") })
   ResponseDTO<AccessCheckResponseDTO>

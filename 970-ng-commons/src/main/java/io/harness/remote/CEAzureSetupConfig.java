@@ -18,4 +18,5 @@ import lombok.Data;
 public class CEAzureSetupConfig {
   private String azureAppClientId;
   @ConfigSecret private String azureAppClientSecret;
+  private boolean enableFileCheckAtSource;
 }

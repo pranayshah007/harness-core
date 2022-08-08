@@ -12,7 +12,7 @@ jobs:
   gobuild:
     if: contains(github.event.pull_request.labels.*.name, 'go') || contains(github.event.pull_request.labels.*.name, 'gojava')
     name: Go Build
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-22.04
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -62,5 +62,5 @@ jobs:
           echo $PATH
           echo $GOPATH
           echo "Adding gocovmerge package... "
-          go get -u github.com/wadey/gocovmerge
+          go install github.com/wadey/gocovmerge@latest
           tools/go/generate_coverage.sh func

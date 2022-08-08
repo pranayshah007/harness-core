@@ -37,5 +37,6 @@
     }
   ],
   "failureDetails":null,
-  "manifests" : []
+  "manifests" : [],
+  "executionUrl":"PORTAL_URL/#/account/ACCOUNT1_ID/app/APP1_ID_ACCOUNT1/env/null/executions/EXECUTION_ID1/details"
 }

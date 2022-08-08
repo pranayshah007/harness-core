@@ -1108,7 +1108,8 @@ public class TriggerServiceImpl implements TriggerService {
     if (isNotEmpty(helmCharts)) {
       executionArgs.setHelmCharts(helmCharts.stream()
                                       .filter(Objects::nonNull)
-                                      .filter(triggerServiceHelper.distinctByKey(HelmChart::getUuid))
+                                      .filter(triggerServiceHelper.distinctByKey(
+                                          helmChart -> helmChart.getApplicationManifestId() + helmChart.getVersion()))
                                       .collect(toList()));
     }
     executionArgs.setOrchestrationId(trigger.getWorkflowId());
@@ -1185,6 +1186,7 @@ public class TriggerServiceImpl implements TriggerService {
         overrideTriggerVariables(trigger, executionArgs, pipeline.getPipelineVariables());
 
     List<Variable> pipelineVariables = pipeline.getPipelineVariables();
+    validateWorkflowVariable(triggerWorkflowVariableValues, pipelineVariables);
     String envId = null;
     String templatizedEnvName = getTemplatizedEnvVariableName(pipelineVariables);
     if (templatizedEnvName != null) {
@@ -1351,11 +1353,13 @@ public class TriggerServiceImpl implements TriggerService {
     Map<String, String> triggerWorkflowVariableValues =
         overrideTriggerVariables(trigger, executionArgs, workflow.getOrchestrationWorkflow().getUserVariables());
 
+    List<Variable> workflowVariables = workflow.getOrchestrationWorkflow().getUserVariables();
+    validateWorkflowVariable(executionArgs.getWorkflowVariables(), workflowVariables);
+
     String envId = null;
     if (BUILD == workflow.getOrchestrationWorkflow().getOrchestrationWorkflowType()) {
       executionArgs.setArtifacts(new ArrayList<>());
     } else {
-      List<Variable> workflowVariables = workflow.getOrchestrationWorkflow().getUserVariables();
       if (workflow.checkEnvironmentTemplatized()) {
         String templatizedEnvName = getTemplatizedEnvVariableName(workflowVariables);
         String envNameOrId = triggerWorkflowVariableValues.get(templatizedEnvName);
@@ -1410,6 +1414,24 @@ public class TriggerServiceImpl implements TriggerService {
           workflowExecutionService.triggerEnvExecution(trigger.getAppId(), envId, executionArgs, trigger);
     }
     return workflowExecution;
+  }
+
+  @VisibleForTesting
+  void validateWorkflowVariable(Map<String, String> nameToVariableValueMap, List<Variable> workflowVariables) {
+    if (isEmpty(nameToVariableValueMap)) {
+      return;
+    }
+    for (Variable variable : workflowVariables) {
+      List<String> allowedValues = variable.getAllowedList();
+      if (isNotEmpty(allowedValues)) {
+        String variableValue = nameToVariableValueMap.get(variable.getName());
+        if (isNotEmpty(variableValue) && !allowedValues.contains(variableValue)) {
+          throw new InvalidRequestException(String.format(
+              "Trigger rejected because passed workflow variable value %s was not present in allowed values list [%s]",
+              variableValue, String.join(",", allowedValues)));
+        }
+      }
+    }
   }
 
   private void validateRequiredArtifacts(
@@ -2249,6 +2271,10 @@ public class TriggerServiceImpl implements TriggerService {
       String appId, String appManifestId, String versionNumber) {
     ApplicationManifest appManifest = applicationManifestService.getById(appId, appManifestId);
     notNullCheck("Application Manifest doesn't exist", appManifest, USER);
+    if (featureFlagService.isEnabled(FeatureName.ADD_MANIFEST_COLLECTION_STEP, appManifest.getAccountId())) {
+      return HelmChart.builder().applicationManifestId(appManifestId).version(versionNumber).build();
+    }
+
     HelmChart helmChart =
         helmChartService.getManifestByVersionNumber(appManifest.getAccountId(), appManifestId, versionNumber);
 

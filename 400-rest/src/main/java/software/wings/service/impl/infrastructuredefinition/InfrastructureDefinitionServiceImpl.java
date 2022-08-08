@@ -977,6 +977,11 @@ public class InfrastructureDefinitionServiceImpl implements InfrastructureDefini
 
       Map<String, Object> resolvedExpressions = infrastructureProvisionerService.resolveExpressions(
           infrastructureDefinition, context.asMap(), infrastructureProvisioner);
+
+      if (!infrastructureProvisionerService.areExpressionsValid(infrastructureProvisioner, resolvedExpressions)) {
+        return false;
+      }
+
       provisionerAwareInfrastructure.applyExpressions(resolvedExpressions, infrastructureDefinition.getAppId(),
           infrastructureDefinition.getEnvId(), infrastructureDefinition.getUuid());
     }

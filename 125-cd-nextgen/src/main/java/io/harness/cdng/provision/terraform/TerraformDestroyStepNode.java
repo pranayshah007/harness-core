@@ -37,6 +37,7 @@ import org.springframework.data.annotation.TypeAlias;
 @RecasterAlias("io.harness.cdng.provision.terraform.TerraformDestroyStepNode")
 public class TerraformDestroyStepNode extends CdAbstractStepNode {
   @JsonProperty("type") @NotNull StepType type = StepType.TerraformDestroy;
+  @NotNull
   @JsonProperty("spec")
   @JsonTypeInfo(use = NAME, property = "type", include = EXTERNAL_PROPERTY, visible = true)
   TerraformDestroyStepInfo terraformDestroyStepInfo;

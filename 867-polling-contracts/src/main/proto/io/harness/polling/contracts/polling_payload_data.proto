@@ -21,6 +21,9 @@ message PollingPayloadData {
     GcrPayload gcrPayload = 8;
     Nexus3RegistryPayload nexus3RegistryPayload = 9;
     ArtifactoryRegistryPayload artifactoryRegistryPayload = 10;
+    AcrPayload acrPayload = 11;
+    AmazonS3Payload amazonS3Payload = 12;
+    JenkinsPayload jenkinsPayload = 13;
   }
 }
 
@@ -34,6 +37,9 @@ enum Type {
   GCR = 6;
   NEXUS3 = 7;
   ARTIFACTORY = 8;
+  ACR = 9;
+  AMAZON_S3 = 10;
+  JENKINS = 11;
 }
 
 message HttpHelmPayload {
@@ -83,5 +89,25 @@ message Nexus3RegistryPayload {
 }
 
 message ArtifactoryRegistryPayload {
-  string artifactPath = 1;
+  string repository = 1;
+  string artifactDirectory = 2;
+  string repositoryFormat = 3;
+  string artifactPath = 4;
+  string repositoryUrl = 5;
+}
+
+message AcrPayload {
+  string subscriptionId = 1;
+  string registry = 2;
+  string repository = 3;
+}
+
+message AmazonS3Payload {
+  string bucketName = 1;
+  string filePathRegex = 2;
+}
+
+message JenkinsPayload {
+  string jobName = 1;
+  string artifactPath = 2;
 }

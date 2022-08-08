@@ -136,20 +136,26 @@ public class RoleAssignmentDaoImpl implements RoleAssignmentDao {
       criteria.and(RoleAssignmentDBOKeys.disabled).in(roleAssignmentFilter.getDisabledFilter());
     }
 
-    if (!roleAssignmentFilter.getPrincipalTypeFilter().isEmpty()) {
-      criteria.and(RoleAssignmentDBOKeys.principalType).in(roleAssignmentFilter.getPrincipalTypeFilter());
+    if (!roleAssignmentFilter.getPrincipalTypeFilter().isEmpty()
+        || !roleAssignmentFilter.getPrincipalScopeLevelFilter().isEmpty()) {
+      if (!roleAssignmentFilter.getPrincipalTypeFilter().isEmpty()) {
+        criteria.and(RoleAssignmentDBOKeys.principalType).in(roleAssignmentFilter.getPrincipalTypeFilter());
+      }
+      if (!roleAssignmentFilter.getPrincipalScopeLevelFilter().isEmpty()) {
+        criteria.and(RoleAssignmentDBOKeys.principalScopeLevel).in(roleAssignmentFilter.getPrincipalScopeLevelFilter());
+      }
     }
 
     else if (!roleAssignmentFilter.getPrincipalFilter().isEmpty()) {
-      // principalScopeLevel changes in next release
-      // include principalScopeLevel in criteria once user group role assignments are migrated
       criteria.orOperator(roleAssignmentFilter.getPrincipalFilter()
                               .stream()
                               .map(principal
                                   -> Criteria.where(RoleAssignmentDBOKeys.principalIdentifier)
                                          .is(principal.getPrincipalIdentifier())
                                          .and(RoleAssignmentDBOKeys.principalType)
-                                         .is(principal.getPrincipalType()))
+                                         .is(principal.getPrincipalType())
+                                         .and(RoleAssignmentDBOKeys.principalScopeLevel)
+                                         .is(principal.getPrincipalScopeLevel()))
                               .toArray(Criteria[] ::new));
     }
     return criteria;

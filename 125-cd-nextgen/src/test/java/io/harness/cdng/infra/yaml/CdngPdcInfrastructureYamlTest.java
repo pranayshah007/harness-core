@@ -28,7 +28,7 @@ import org.junit.experimental.categories.Category;
 public class CdngPdcInfrastructureYamlTest extends CategoryTest {
   private PdcInfrastructure infrastructure =
       PdcInfrastructure.builder()
-          .sshKeyRef(ParameterField.createValueField("some-key-ref"))
+          .credentialsRef(ParameterField.createValueField("some-key-ref"))
           .connectorRef(ParameterField.createValueField("some-connector-ref"))
           .hostFilters(ParameterField.createValueField(Arrays.asList("host-1", "host-2")))
           .delegateSelectors(ParameterField.createValueField(
@@ -41,15 +41,15 @@ public class CdngPdcInfrastructureYamlTest extends CategoryTest {
   public void testApplyOverrides() {
     PdcInfrastructure infrastructureNew =
         PdcInfrastructure.builder()
-            .sshKeyRef(ParameterField.createValueField("another-key-ref"))
+            .credentialsRef(ParameterField.createValueField("another-key-ref"))
             .connectorRef(ParameterField.createValueField("another-connector-ref"))
             .hostFilters(ParameterField.createValueField(Arrays.asList("host-3", "host-4")))
             .build();
 
     assertThat(infrastructure.applyOverrides(infrastructureNew))
-        .extracting(PdcInfrastructure::getSshKeyRef, PdcInfrastructure::getConnectorRef,
+        .extracting(PdcInfrastructure::getCredentialsRef, PdcInfrastructure::getConnectorRef,
             PdcInfrastructure::getHostFilters, PdcInfrastructure::getDelegateSelectors)
-        .containsExactly(infrastructureNew.getSshKeyRef(), infrastructureNew.getConnectorRef(),
+        .containsExactly(infrastructureNew.getCredentialsRef(), infrastructureNew.getConnectorRef(),
             infrastructureNew.getHostFilters(), infrastructure.getDelegateSelectors());
   }
 

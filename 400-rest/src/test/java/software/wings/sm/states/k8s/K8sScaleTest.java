@@ -25,6 +25,7 @@ import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyList;
 import static org.mockito.Matchers.anyListOf;
@@ -236,7 +237,7 @@ public class K8sScaleTest extends CategoryTest {
         .fetchInstanceElementListParam(anyListOf(K8sPod.class));
     doReturn(emptyList()).when(k8sScale).fetchInstanceStatusSummaries(any(), any());
     k8sScale.handleAsyncResponse(context, response);
-    verify(activityService, times(1)).updateStatus(anyString(), anyString(), any(ExecutionStatus.class));
+    verify(activityService, times(1)).updateStatus(nullable(String.class), anyString(), any(ExecutionStatus.class));
   }
 
   @Test
@@ -248,7 +249,7 @@ public class K8sScaleTest extends CategoryTest {
 
     doThrow(exceptionToBeThrown)
         .when(activityService)
-        .updateStatus(anyString(), anyString(), any(ExecutionStatus.class));
+        .updateStatus(nullable(String.class), nullable(String.class), any(ExecutionStatus.class));
 
     assertThatThrownBy(() -> k8sScale.handleAsyncResponse(context, ImmutableMap.of(ACTIVITY_ID, response)))
         .isSameAs(exceptionToBeThrown);
@@ -263,7 +264,7 @@ public class K8sScaleTest extends CategoryTest {
 
     doThrow(exceptionToBeThrown)
         .when(activityService)
-        .updateStatus(anyString(), anyString(), any(ExecutionStatus.class));
+        .updateStatus(nullable(String.class), nullable(String.class), any(ExecutionStatus.class));
 
     assertThatThrownBy(() -> k8sScale.handleAsyncResponse(context, ImmutableMap.of(ACTIVITY_ID, response)))
         .isInstanceOf(InvalidRequestException.class);

@@ -89,6 +89,7 @@ import software.wings.sm.PipelineSummary;
 import software.wings.sm.StateExecutionData;
 import software.wings.sm.StateExecutionInstance;
 import software.wings.sm.WorkflowStandardParams;
+import software.wings.sm.WorkflowStandardParamsExtensionService;
 import software.wings.sm.states.PhaseStepSubWorkflow;
 import software.wings.utils.Utils;
 
@@ -140,6 +141,7 @@ public class InstanceHelper {
   @Inject private PerpetualTaskService perpetualTaskService;
   @Inject private FeatureFlagService featureFlagService;
   @Inject private InstanceSyncPerpetualTaskService instanceSyncPerpetualTaskService;
+  @Inject private WorkflowStandardParamsExtensionService workflowStandardParamsExtensionService;
 
   /**
    * The phaseExecutionData is used to process the instance information that is used by the service and infra
@@ -165,7 +167,8 @@ public class InstanceHelper {
         return;
       }
 
-      Artifact artifact = workflowStandardParams.getArtifactForService(phaseExecutionData.getServiceId());
+      Artifact artifact = workflowStandardParamsExtensionService.getArtifactForService(
+          workflowStandardParams, phaseExecutionData.getServiceId());
       if (artifact == null) {
         log.info("artifact is null for stateExecutionInstance:" + stateExecutionInstanceId);
       }
@@ -662,9 +665,12 @@ public class InstanceHelper {
 
   public boolean shouldSkipIteratorInstanceSync(InfrastructureMapping infrastructureMapping) {
     Optional<InstanceHandler> instanceHandler = getInstanceHandler(infrastructureMapping);
+
     return instanceHandler.isPresent()
-        && featureFlagService.isEnabled(instanceHandler.get().getFeatureFlagToStopIteratorBasedInstanceSync(),
-            infrastructureMapping.getAccountId());
+        && instanceHandler.get()
+               .getFeatureFlagToStopIteratorBasedInstanceSync()
+               .map(featureName -> featureFlagService.isEnabled(featureName, infrastructureMapping.getAccountId()))
+               .orElse(true);
   }
 
   @VisibleForTesting
@@ -685,8 +691,9 @@ public class InstanceHelper {
 
     if (instanceHandler.get() instanceof InstanceSyncByPerpetualTaskHandler) {
       InstanceSyncByPerpetualTaskHandler handler = (InstanceSyncByPerpetualTaskHandler) instanceHandler.get();
-      return featureFlagService.isEnabled(
-          handler.getFeatureFlagToEnablePerpetualTaskForInstanceSync(), infrastructureMapping.getAccountId());
+      return handler.getFeatureFlagToEnablePerpetualTaskForInstanceSync()
+          .map(featureName -> featureFlagService.isEnabled(featureName, infrastructureMapping.getAccountId()))
+          .orElse(true);
     }
 
     return false;

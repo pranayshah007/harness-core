@@ -67,6 +67,7 @@ public class GitFullSyncEntityInfo implements PersistentEntity, PersistentRegula
   int retryCount;
   @FdIndex @NonFinal Long nextRuntime;
   List<String> errorMessage;
+  int fileProcessingSequenceNumber;
 
   @EqualsAndHashCode.Exclude @CreatedDate private long createdAt;
   @EqualsAndHashCode.Exclude @LastModifiedDate private long lastUpdatedAt;

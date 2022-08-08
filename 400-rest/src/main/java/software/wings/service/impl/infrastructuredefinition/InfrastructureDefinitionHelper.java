@@ -29,12 +29,14 @@ import org.jetbrains.annotations.NotNull;
 import org.mongodb.morphia.query.Query;
 
 @Slf4j
-class InfrastructureDefinitionHelper {
+// INFO:
+// public for the purpose of UpdateNameInAwsInfrastructureMappingMigration. Can remove once this is done.
+public class InfrastructureDefinitionHelper {
   @Inject private WingsPersistence wingsPersistence;
 
   // Todo: This method does not handle maps/Lists etc. very well. Works well with Strings as of now. Enhance this to
   // take care of non String fields.
-  String getNameFromInfraDefinition(InfrastructureDefinition infrastructureDefinition, String serviceId) {
+  public String getNameFromInfraDefinition(InfrastructureDefinition infrastructureDefinition, String serviceId) {
     StringBuilder stringBuilder = new StringBuilder()
                                       .append(infrastructureDefinition.getAppId())
                                       .append(infrastructureDefinition.getEnvId())

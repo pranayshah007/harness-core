@@ -1,0 +1,15 @@
+identifier: normalcdpipeline2
+stages:
+  - stage:
+      identifier: normaldeploystage
+      type: Deployment
+      spec:
+        execution:
+          steps:
+            - step:
+                identifier: normalverify
+                type: Verify
+                spec:
+                  type: Rolling
+                  spec:
+                    sensitivity: <+input>

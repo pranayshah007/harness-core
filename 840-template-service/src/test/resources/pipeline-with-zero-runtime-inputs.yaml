@@ -1,0 +1,14 @@
+pipeline:
+    name: p12
+    identifier: p12
+    allowStageExecutions: false
+    projectIdentifier: VT
+    orgIdentifier: default
+    tags: {}
+    stages:
+        - stage:
+              name: s1
+              identifier: s1
+              template:
+                  templateRef: t4
+                  versionLabel: v1

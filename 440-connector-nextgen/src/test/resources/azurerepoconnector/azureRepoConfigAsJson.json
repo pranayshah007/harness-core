@@ -1,0 +1,37 @@
+{
+  "connector": {
+    "name": "name_ph",
+    "identifier": "identifier_ph",
+    "description": "description_ph",
+    "orgIdentifier": "orgIdentifier_ph",
+    "projectIdentifier": "projectIdentifier_ph",
+    "tags": {
+      "company": "Harness",
+      "env": "dev"
+    },
+    "type": "AzureRepo",
+    "spec": {
+      "url": "url",
+      "validationRepo": "validationRepo",
+      "authentication": {
+        "type": "Http",
+        "spec": {
+          "type": "UsernameToken",
+          "spec": {
+            "username": null,
+            "usernameRef": null,
+            "tokenRef": "tokenRef"
+          }
+        }
+      },
+      "apiAccess": {
+        "type": "Token",
+        "spec": {
+          "tokenRef": "tokenRef"
+        }
+      },
+      "delegateSelectors": null,
+      "type": "Project"
+    }
+  }
+}

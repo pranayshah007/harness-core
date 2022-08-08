@@ -38,8 +38,11 @@ import io.harness.beans.PageResponse;
 import io.harness.data.validator.Trimmed;
 import io.harness.delegate.beans.Delegate;
 import io.harness.delegate.beans.DelegateApproval;
+import io.harness.delegate.beans.DelegateApprovalResponse;
+import io.harness.delegate.beans.DelegateSelector;
 import io.harness.delegate.beans.DelegateSetupDetails;
 import io.harness.delegate.beans.DelegateSizeDetails;
+import io.harness.delegate.beans.DelegateTags;
 import io.harness.delegate.task.DelegateLogContext;
 import io.harness.k8s.KubernetesConvention;
 import io.harness.logging.AccountLogContext;
@@ -52,6 +55,7 @@ import io.harness.service.intfc.DelegateCache;
 import software.wings.beans.CEDelegateStatus;
 import software.wings.beans.DelegateStatus;
 import software.wings.helpers.ext.url.SubdomainUrlHelperIntfc;
+import software.wings.security.annotations.ApiKeyAuthorized;
 import software.wings.security.annotations.AuthRule;
 import software.wings.security.annotations.Scope;
 import software.wings.service.intfc.DelegateScopeService;
@@ -73,6 +77,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
+import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.BeanParam;
 import javax.ws.rs.DELETE;
@@ -88,7 +93,6 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import lombok.extern.slf4j.Slf4j;
-import org.hibernate.validator.constraints.NotEmpty;
 
 @Api("/setup/delegates")
 @Path("/setup/delegates")
@@ -184,9 +188,9 @@ public class DelegateSetupResource {
   @Timed
   @ExceptionMetered
   @PublicApi
-  public RestResponse<Double> getConnectedRatioWithPrimary(
-      @QueryParam("targetVersion") @NotEmpty String targetVersion) {
-    return new RestResponse<>(delegateService.getConnectedRatioWithPrimary(targetVersion));
+  public RestResponse<Double> getConnectedRatioWithPrimary(@QueryParam("targetVersion") @NotEmpty String targetVersion,
+      @QueryParam("accountId") String accountId, @QueryParam("ringName") String ringName) {
+    return new RestResponse<>(delegateService.getConnectedRatioWithPrimary(targetVersion, accountId, ringName));
   }
 
   @GET
@@ -329,17 +333,6 @@ public class DelegateSetupResource {
     }
   }
 
-  @VisibleForTesting
-  protected static class DelegateTags {
-    private List<String> tags;
-    public List<String> getTags() {
-      return tags;
-    }
-    public void setTags(List<String> tags) {
-      this.tags = tags;
-    }
-  }
-
   @GET
   @Path("kubernetes-delegates")
   @Timed
@@ -385,6 +378,22 @@ public class DelegateSetupResource {
   }
 
   @GET
+  @Path("delegate-selectors-up-the-hierarchy-v2")
+  @Timed
+  @ExceptionMetered
+  @AuthRule(permissionType = LOGGED_IN)
+  public RestResponse<List<DelegateSelector>> delegateSelectorsUpTheHierarchyV2(@Context HttpServletRequest request,
+      @QueryParam("accountId") @NotEmpty String accountId, @QueryParam("orgId") String orgId,
+      @QueryParam("projectId") String projectId) {
+    accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgId, projectId),
+        Resource.of(DELEGATE_RESOURCE_TYPE, null), DELEGATE_VIEW_PERMISSION);
+
+    try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR)) {
+      return new RestResponse<>(delegateService.getAllDelegateSelectorsUpTheHierarchyV2(accountId, orgId, projectId));
+    }
+  }
+
+  @GET
   @Path("delegate-tags")
   @Timed
   @ExceptionMetered
@@ -423,7 +432,7 @@ public class DelegateSetupResource {
         Resource.of(DELEGATE_RESOURCE_TYPE, null), DELEGATE_EDIT_PERMISSION);
 
     try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR)) {
-      return new RestResponse<>(delegateService.validateKubernetesYaml(accountId, delegateSetupDetails));
+      return new RestResponse<>(delegateService.validateKubernetesSetupDetails(accountId, delegateSetupDetails));
     }
   }
 
@@ -512,6 +521,66 @@ public class DelegateSetupResource {
     }
   }
 
+  @PUT
+  @Path("/delegate-profile/{delegateProfileId}/approve")
+  @Timed
+  @ExceptionMetered
+  @AuthRule(permissionType = MANAGE_DELEGATES)
+  @ApiKeyAuthorized(permissionType = MANAGE_DELEGATES)
+  public RestResponse<DelegateApprovalResponse> approveDelegatesUsingProfile(
+      @PathParam("delegateProfileId") @NotEmpty String delegateProfileId,
+      @QueryParam("accountId") @NotEmpty String accountId) {
+    try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR)) {
+      return new RestResponse<>(
+          delegateService.approveDelegatesUsingProfile(accountId, delegateProfileId, DelegateApproval.ACTIVATE));
+    }
+  }
+
+  @PUT
+  @Path("/delegate-token/{delegateTokenName}/approve")
+  @Timed
+  @ExceptionMetered
+  @AuthRule(permissionType = MANAGE_DELEGATES)
+  @ApiKeyAuthorized(permissionType = MANAGE_DELEGATES)
+  public RestResponse<DelegateApprovalResponse> approveDelegatesUsingToken(
+      @PathParam("delegateTokenName") @NotEmpty String delegateTokenName,
+      @QueryParam("accountId") @NotEmpty String accountId) {
+    try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR)) {
+      return new RestResponse<>(
+          delegateService.approveDelegatesUsingToken(accountId, delegateTokenName, DelegateApproval.ACTIVATE));
+    }
+  }
+
+  @PUT
+  @Path("/delegate-profile/{delegateProfileId}/reject")
+  @Timed
+  @ExceptionMetered
+  @AuthRule(permissionType = MANAGE_DELEGATES)
+  @ApiKeyAuthorized(permissionType = MANAGE_DELEGATES)
+  public RestResponse<DelegateApprovalResponse> rejectDelegatesUsingProfile(
+      @PathParam("delegateProfileId") @NotEmpty String delegateProfileId,
+      @QueryParam("accountId") @NotEmpty String accountId) {
+    try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR)) {
+      return new RestResponse<>(
+          delegateService.approveDelegatesUsingProfile(accountId, delegateProfileId, DelegateApproval.REJECT));
+    }
+  }
+
+  @PUT
+  @Path("/delegate-token/{delegateTokenName}/reject")
+  @Timed
+  @ExceptionMetered
+  @AuthRule(permissionType = MANAGE_DELEGATES)
+  @ApiKeyAuthorized(permissionType = MANAGE_DELEGATES)
+  public RestResponse<DelegateApprovalResponse> rejectDelegatesUsingToken(
+      @PathParam("delegateTokenName") @NotEmpty String delegateTokenName,
+      @QueryParam("accountId") @NotEmpty String accountId) {
+    try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR)) {
+      return new RestResponse<>(
+          delegateService.approveDelegatesUsingToken(accountId, delegateTokenName, DelegateApproval.REJECT));
+    }
+  }
+
   @DELETE
   @Path("{delegateId}")
   @Timed
@@ -559,15 +628,19 @@ public class DelegateSetupResource {
     }
   }
 
+  // TODO: ARPIT remove this api once UI starts using delegateSetupResourceV3 api
+
   @GET
   @Path(DOWNLOAD_URL)
   @Timed
   @ExceptionMetered
   @AuthRule(permissionType = ACCOUNT_MANAGEMENT)
   @AuthRule(permissionType = MANAGE_DELEGATES)
+  @Deprecated
   public RestResponse<Map<String, String>> downloadUrl(
       @Context HttpServletRequest request, @QueryParam("accountId") @NotEmpty String accountId) {
     try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR)) {
+      log.warn("Using a deprecated api to download cg delegates.");
       String url = subdomainUrlHelper.getManagerUrl(request, accountId);
 
       ImmutableMap.Builder<String, String> mapBuilder =

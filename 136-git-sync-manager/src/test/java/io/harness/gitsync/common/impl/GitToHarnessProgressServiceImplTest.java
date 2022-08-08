@@ -20,7 +20,6 @@ import io.harness.gitsync.common.beans.GitToHarnessProcessingStepType;
 import io.harness.gitsync.common.beans.GitToHarnessProgressStatus;
 import io.harness.gitsync.common.beans.YamlChangeSetEventType;
 import io.harness.gitsync.common.dtos.GitToHarnessProgressDTO;
-import io.harness.gitsync.common.service.GitToHarnessProgressService;
 import io.harness.rule.Owner;
 
 import com.google.inject.Inject;
@@ -30,7 +29,7 @@ import org.junit.experimental.categories.Category;
 
 @OwnedBy(HarnessTeam.DX)
 public class GitToHarnessProgressServiceImplTest extends GitSyncTestBase {
-  @Inject GitToHarnessProgressService gitToHarnessProgressService;
+  @Inject GitToHarnessProgressServiceImpl gitToHarnessProgressService;
 
   @Test
   @Owner(developers = DEEPAK)

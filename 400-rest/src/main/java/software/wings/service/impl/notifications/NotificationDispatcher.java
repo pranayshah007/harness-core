@@ -8,10 +8,10 @@
 package software.wings.service.impl.notifications;
 
 import io.harness.exception.ExceptionUtils;
-import io.harness.notifications.NotificationReceiverInfo;
 
 import software.wings.beans.Notification;
 import software.wings.beans.NotificationChannelType;
+import software.wings.beans.NotificationReceiverInfo;
 
 import java.util.List;
 import java.util.Map.Entry;

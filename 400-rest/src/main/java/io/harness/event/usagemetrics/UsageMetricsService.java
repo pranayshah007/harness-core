@@ -108,7 +108,7 @@ public class UsageMetricsService {
         Map properties = new HashMap();
         properties.put(ACCOUNT_ID, account.getUuid());
         properties.put(VERIFICATION_STATE_TYPE, stateType.name());
-        properties.put(IS_24X7_ENABLED, true);
+        properties.put(IS_24X7_ENABLED, "true");
         int count = cvConfigurationList.stream()
                         .filter(cvConfiguration
                             -> cvConfiguration.isEnabled24x7()
@@ -128,8 +128,8 @@ public class UsageMetricsService {
     Preconditions.checkNotNull(properties.get(IS_24X7_ENABLED));
 
     harnessMetricRegistry.recordGaugeValue(VerificationConstants.CV_META_DATA,
-        new String[] {properties.get(ACCOUNT_ID), properties.get(VERIFICATION_STATE_TYPE),
-            String.valueOf(properties.get(IS_24X7_ENABLED))},
+        new String[] {
+            properties.get(ACCOUNT_ID), properties.get(VERIFICATION_STATE_TYPE), properties.get(IS_24X7_ENABLED)},
         metricValue);
   }
 

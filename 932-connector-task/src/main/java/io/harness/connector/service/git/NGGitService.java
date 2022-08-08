@@ -17,6 +17,8 @@ import io.harness.git.model.CommitAndPushResult;
 import io.harness.git.model.FetchFilesResult;
 import io.harness.shell.SshSessionConfig;
 
+import java.io.IOException;
+
 @OwnedBy(HarnessTeam.DX)
 public interface NGGitService {
   void validate(GitConfigDTO gitConfig, String accountId, SshSessionConfig sshSessionConfig);
@@ -27,10 +29,10 @@ public interface NGGitService {
       SshSessionConfig sshSessionConfig);
 
   FetchFilesResult fetchFilesByPath(GitStoreDelegateConfig gitStoreDelegateConfig, String accountId,
-      SshSessionConfig sshSessionConfig, GitConfigDTO gitConfigDTO);
+      SshSessionConfig sshSessionConfig, GitConfigDTO gitConfigDTO) throws IOException;
 
   void downloadFiles(GitStoreDelegateConfig gitStoreDelegateConfig, String manifestFilesDirectory, String accountId,
-      SshSessionConfig sshSessionConfig, GitConfigDTO gitConfigDTO);
+      SshSessionConfig sshSessionConfig, GitConfigDTO gitConfigDTO) throws IOException;
 
   AuthRequest getAuthRequest(GitConfigDTO gitConfig, SshSessionConfig sshSessionConfig);
 }

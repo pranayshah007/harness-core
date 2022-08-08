@@ -7,6 +7,7 @@
 
 package io.harness.cvng.analysis.services.impl;
 
+import static io.harness.cvng.CVNGTestConstants.TIME_FOR_TESTS;
 import static io.harness.cvng.analysis.CVAnalysisConstants.TIMESERIES_SERVICE_GUARD_DATA_LENGTH;
 import static io.harness.cvng.analysis.CVAnalysisConstants.TIMESERIES_SERVICE_GUARD_WINDOW_SIZE;
 import static io.harness.cvng.beans.DataSourceType.APP_DYNAMICS;
@@ -42,32 +43,23 @@ import io.harness.cvng.analysis.entities.TimeSeriesShortTermHistory;
 import io.harness.cvng.analysis.services.api.DeploymentTimeSeriesAnalysisService;
 import io.harness.cvng.analysis.services.api.LearningEngineTaskService;
 import io.harness.cvng.analysis.services.api.TimeSeriesAnalysisService;
-import io.harness.cvng.beans.CVMonitoringCategory;
-import io.harness.cvng.beans.DataSourceType;
 import io.harness.cvng.beans.TimeSeriesMetricType;
-import io.harness.cvng.beans.job.CanaryVerificationJobDTO;
-import io.harness.cvng.beans.job.Sensitivity;
-import io.harness.cvng.beans.job.TestVerificationJobDTO;
-import io.harness.cvng.beans.job.VerificationJobDTO;
 import io.harness.cvng.beans.job.VerificationJobType;
 import io.harness.cvng.core.beans.TimeSeriesMetricDefinition;
 import io.harness.cvng.core.entities.AppDynamicsCVConfig;
 import io.harness.cvng.core.entities.CVConfig;
 import io.harness.cvng.core.entities.MetricPack;
-import io.harness.cvng.core.entities.SplunkCVConfig;
 import io.harness.cvng.core.entities.TimeSeriesRecord;
 import io.harness.cvng.core.services.api.CVConfigService;
 import io.harness.cvng.core.services.api.MetricPackService;
 import io.harness.cvng.core.services.api.VerificationTaskService;
 import io.harness.cvng.dashboard.entities.HeatMap;
 import io.harness.cvng.dashboard.services.api.HeatMapService;
-import io.harness.cvng.models.VerificationType;
 import io.harness.cvng.statemachine.beans.AnalysisInput;
 import io.harness.cvng.verificationjob.entities.TestVerificationJob;
 import io.harness.cvng.verificationjob.entities.VerificationJob;
 import io.harness.cvng.verificationjob.entities.VerificationJobInstance;
 import io.harness.cvng.verificationjob.services.api.VerificationJobInstanceService;
-import io.harness.cvng.verificationjob.services.api.VerificationJobService;
 import io.harness.persistence.HPersistence;
 import io.harness.rule.Owner;
 
@@ -103,7 +95,6 @@ public class TimeSeriesAnalysisServiceImplTest extends CvNextGenTestBase {
   @Inject private VerificationTaskService verificationTaskService;
   @Inject private DeploymentTimeSeriesAnalysisService deploymentTimeSeriesAnalysisService;
   @Inject private VerificationJobInstanceService verificationJobInstanceService;
-  @Inject private VerificationJobService verificationJobService;
   @Inject private HeatMapService heatMapService;
   @Inject private MetricPackService metricPackService;
 
@@ -113,17 +104,13 @@ public class TimeSeriesAnalysisServiceImplTest extends CvNextGenTestBase {
   private String accountId;
   private long deploymentStartTimeMs;
   private Instant instant;
-  private String orgIdentifier;
-  private String projectIdentifier;
   private BuilderFactory builderFactory;
 
   @Before
   public void setUp() throws Exception {
     builderFactory = BuilderFactory.getDefault();
-    accountId = generateUuid();
+    accountId = builderFactory.getContext().getAccountId();
     instant = Instant.parse("2020-07-27T10:44:06.390Z");
-    projectIdentifier = generateUuid();
-    orgIdentifier = generateUuid();
     deploymentStartTimeMs = instant.toEpochMilli();
     CVConfig cvConfig = newCVConfig();
     cvConfigService.save(cvConfig);
@@ -134,10 +121,9 @@ public class TimeSeriesAnalysisServiceImplTest extends CvNextGenTestBase {
     timeSeriesLearningEngineTask.setVerificationTaskId(verificationTaskId);
     timeSeriesLearningEngineTask.setAnalysisStartTime(Instant.now());
     timeSeriesLearningEngineTask.setAnalysisEndTime(Instant.now().plus(Duration.ofMinutes(5)));
+    timeSeriesLearningEngineTask.setPickedAt(Instant.now().plus(Duration.ofMinutes(2)));
     timeSeriesLearningEngineTask.setWindowSize(5);
     learningEngineTaskId = learningEngineTaskService.createLearningEngineTask(timeSeriesLearningEngineTask);
-    orgIdentifier = generateUuid();
-    projectIdentifier = generateUuid();
 
     FieldUtils.writeField(timeSeriesAnalysisService, "heatMapService", heatMapService, true);
   }
@@ -148,8 +134,8 @@ public class TimeSeriesAnalysisServiceImplTest extends CvNextGenTestBase {
   public void testScheduleServiceGuardAnalysis() {
     AnalysisInput input = AnalysisInput.builder()
                               .verificationTaskId(verificationTaskId)
-                              .startTime(Instant.now().minus(10, ChronoUnit.MINUTES))
-                              .endTime(Instant.now())
+                              .startTime(TIME_FOR_TESTS.minus(10, ChronoUnit.MINUTES))
+                              .endTime(TIME_FOR_TESTS)
                               .build();
     List<String> taskIds = timeSeriesAnalysisService.scheduleServiceGuardAnalysis(input);
 
@@ -467,7 +453,8 @@ public class TimeSeriesAnalysisServiceImplTest extends CvNextGenTestBase {
   @Owner(developers = SOWMYA)
   @Category(UnitTests.class)
   public void testScheduleCanaryVerificationTaskAnalysis() {
-    VerificationJobInstance verificationJobInstance = createVerificationJobInstance(VerificationJobType.CANARY);
+    VerificationJobInstance verificationJobInstance =
+        createVerificationJobInstance(builderFactory.canaryVerificationJobBuilder().build());
     cvConfigService.save(newCVConfig());
     AnalysisInput input = AnalysisInput.builder()
                               .verificationTaskId(verificationTaskId)
@@ -532,7 +519,8 @@ public class TimeSeriesAnalysisServiceImplTest extends CvNextGenTestBase {
   @Owner(developers = KAMAL)
   @Category(UnitTests.class)
   public void testScheduleTestVerificationTaskAnalysis() {
-    VerificationJobInstance verificationJobInstance = createVerificationJobInstance(VerificationJobType.TEST);
+    VerificationJobInstance verificationJobInstance =
+        createVerificationJobInstance(builderFactory.testVerificationJobBuilder().build());
     String verificationTaskId = verificationTaskService.getVerificationTaskId(
         verificationJobInstance.getAccountId(), cvConfigId, verificationJobInstance.getUuid());
     cvConfigService.save(newCVConfig());
@@ -568,7 +556,8 @@ public class TimeSeriesAnalysisServiceImplTest extends CvNextGenTestBase {
   @Owner(developers = SOWMYA)
   @Category(UnitTests.class)
   public void testScheduleTestVerificationTaskAnalysis_baselineRun() {
-    VerificationJobInstance verificationJobInstance = createVerificationJobInstance(VerificationJobType.TEST);
+    VerificationJobInstance verificationJobInstance =
+        createVerificationJobInstance(builderFactory.testVerificationJobBuilder().build());
     ((TestVerificationJob) verificationJobInstance.getResolvedJob()).setBaselineVerificationJobInstanceId(null);
     verificationJobInstanceService.create(verificationJobInstance);
     String verificationTaskId = verificationTaskService.getVerificationTaskId(
@@ -614,6 +603,7 @@ public class TimeSeriesAnalysisServiceImplTest extends CvNextGenTestBase {
     fillCommon(task, LearningEngineTaskType.SERVICE_GUARD_TIME_SERIES);
     Instant start = instant.minus(10, ChronoUnit.MINUTES).truncatedTo(ChronoUnit.MINUTES);
     Instant end = start.plus(5, ChronoUnit.MINUTES);
+    task.setPickedAt(end.plus(Duration.ofMinutes(2)));
     task.setAnalysisStartTime(start);
     task.setAnalysisEndTime(end);
 
@@ -729,59 +719,11 @@ public class TimeSeriesAnalysisServiceImplTest extends CvNextGenTestBase {
     }
   }
 
-  private VerificationJobDTO newVerificationJobDTO(VerificationJobType type) {
-    if (type == VerificationJobType.TEST) {
-      TestVerificationJobDTO testVerificationJob = new TestVerificationJobDTO();
-      testVerificationJob.setIdentifier(generateUuid());
-      testVerificationJob.setJobName(generateUuid());
-      testVerificationJob.setDataSources(Lists.newArrayList(DataSourceType.SPLUNK));
-      testVerificationJob.setMonitoringSources(Arrays.asList(generateUuid()));
-      testVerificationJob.setServiceIdentifier(generateUuid());
-      testVerificationJob.setOrgIdentifier(orgIdentifier);
-      testVerificationJob.setProjectIdentifier(projectIdentifier);
-      testVerificationJob.setEnvIdentifier(generateUuid());
-      testVerificationJob.setSensitivity(Sensitivity.MEDIUM.name());
-      testVerificationJob.setDuration("15m");
-      testVerificationJob.setBaselineVerificationJobInstanceId(generateUuid());
-      return testVerificationJob;
-    } else {
-      CanaryVerificationJobDTO canaryVerificationJobDTO = new CanaryVerificationJobDTO();
-      canaryVerificationJobDTO.setIdentifier(generateUuid());
-      canaryVerificationJobDTO.setJobName(generateUuid());
-      canaryVerificationJobDTO.setDataSources(Lists.newArrayList(DataSourceType.SPLUNK));
-      canaryVerificationJobDTO.setMonitoringSources(Arrays.asList(generateUuid()));
-      canaryVerificationJobDTO.setServiceIdentifier(generateUuid());
-      canaryVerificationJobDTO.setOrgIdentifier(orgIdentifier);
-      canaryVerificationJobDTO.setProjectIdentifier(projectIdentifier);
-      canaryVerificationJobDTO.setEnvIdentifier(generateUuid());
-      canaryVerificationJobDTO.setSensitivity(Sensitivity.MEDIUM.name());
-      canaryVerificationJobDTO.setDuration("15m");
-      return canaryVerificationJobDTO;
-    }
+  private CVConfig newCVConfig() {
+    return builderFactory.splunkCVConfigBuilder().build();
   }
 
-  private CVConfig newCVConfig() {
-    SplunkCVConfig cvConfig = new SplunkCVConfig();
-    cvConfig.setQuery("exception");
-    cvConfig.setServiceInstanceIdentifier("serviceInstanceIdentifier");
-    cvConfig.setVerificationType(VerificationType.LOG);
-    cvConfig.setAccountId(accountId);
-    cvConfig.setConnectorIdentifier(generateUuid());
-    cvConfig.setServiceIdentifier(generateUuid());
-    cvConfig.setEnvIdentifier(generateUuid());
-    cvConfig.setOrgIdentifier(orgIdentifier);
-    cvConfig.setProjectIdentifier(projectIdentifier);
-    cvConfig.setIdentifier("groupId");
-    cvConfig.setMonitoringSourceName(generateUuid());
-    cvConfig.setCategory(CVMonitoringCategory.PERFORMANCE);
-    cvConfig.setProductName("productName");
-    return cvConfig;
-  }
-  private VerificationJobInstance createVerificationJobInstance(VerificationJobType type) {
-    VerificationJobDTO verificationJobDTO = newVerificationJobDTO(type);
-    verificationJobService.create(accountId, verificationJobDTO);
-    VerificationJob verificationJob = verificationJobService.getVerificationJob(
-        accountId, orgIdentifier, projectIdentifier, verificationJobDTO.getIdentifier());
+  private VerificationJobInstance createVerificationJobInstance(VerificationJob verificationJob) {
     VerificationJobInstance verificationJobInstance =
         VerificationJobInstance.builder()
             .accountId(accountId)
@@ -790,7 +732,7 @@ public class TimeSeriesAnalysisServiceImplTest extends CvNextGenTestBase {
             .resolvedJob(verificationJob)
             .startTime(Instant.ofEpochMilli(deploymentStartTimeMs + Duration.ofMinutes(2).toMillis()))
             .build();
-    if (type == VerificationJobType.TEST) {
+    if (verificationJob.getType() == VerificationJobType.TEST) {
       verificationJobInstance.setUuid(((TestVerificationJob) verificationJob).getBaselineVerificationJobInstanceId());
     }
     verificationJobInstanceService.create(verificationJobInstance);

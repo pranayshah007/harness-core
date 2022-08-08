@@ -7,13 +7,13 @@
 
 package io.harness.azure.client;
 
-import io.harness.azure.AzureEnvironmentType;
 import io.harness.azure.context.ARMDeploymentSteadyStateContext;
 import io.harness.azure.context.AzureClientContext;
 import io.harness.azure.model.AzureARMRGTemplateExportOptions;
 import io.harness.azure.model.AzureARMTemplate;
 import io.harness.azure.model.AzureConfig;
 import io.harness.azure.model.management.ManagementGroupInfo;
+import io.harness.azure.model.tag.TagDetails;
 
 import com.microsoft.azure.PagedList;
 import com.microsoft.azure.management.resources.Deployment;
@@ -180,25 +180,5 @@ public interface AzureManagementClient {
 
   String getARMDeploymentOutputs(ARMDeploymentSteadyStateContext context);
 
-  /**
-   * Validate azure connection with a provided clientId, tenantId, secret and environment type. Will throw exception if
-   * connection can't be made
-   * @param clientId
-   * @param tenantId
-   * @param secret
-   * @param azureEnvironmentType
-   */
-  void validateAzureConnection(
-      String clientId, String tenantId, String secret, AzureEnvironmentType azureEnvironmentType);
-
-  /**
-   * Validate azure connection with a provided clientId, tenantId, certificate and environment type. Will throw
-   * exception if connection can't be made
-   * @param clientId
-   * @param tenantId
-   * @param cert
-   * @param azureEnvironmentType
-   */
-  void validateAzureConnectionWithCert(
-      String clientId, String tenantId, byte[] cert, AzureEnvironmentType azureEnvironmentType);
+  List<TagDetails> listTags(AzureConfig azureConfig, String subscriptionId);
 }

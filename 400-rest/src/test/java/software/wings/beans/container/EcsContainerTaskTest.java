@@ -54,8 +54,8 @@ public class EcsContainerTaskTest extends CategoryTest {
 
     ecsContainerTask.setContainerDefinitions(asList(containerDefinition));
 
-    TaskDefinition taskDefinition =
-        ecsContainerTask.createTaskDefinition(CONTAINER_NAME, IMAGE_NAME, EXEC_ROLE, DOMAIN_NAME);
+    TaskDefinition taskDefinition = EcsContainerTaskUtils.createTaskDefinition(ecsContainerTask.getAdvancedConfig(),
+        ecsContainerTask.getContainerDefinitions(), CONTAINER_NAME, IMAGE_NAME, EXEC_ROLE, DOMAIN_NAME);
 
     assertThat(taskDefinition).isNotNull();
     assertThat(taskDefinition.getContainerDefinitions()).hasSize(1);
@@ -74,7 +74,8 @@ public class EcsContainerTaskTest extends CategoryTest {
     assertThat(containerDefinitionAws.getPortMappings()).hasSize(1);
     assertThat(containerDefinitionAws.getPortMappings().iterator().next().getContainerPort().intValue()).isEqualTo(80);
 
-    taskDefinition = ecsContainerTask.createTaskDefinition(CONTAINER_NAME, IMAGE_NAME, null, DOMAIN_NAME);
+    taskDefinition = EcsContainerTaskUtils.createTaskDefinition(ecsContainerTask.getAdvancedConfig(),
+        ecsContainerTask.getContainerDefinitions(), CONTAINER_NAME, IMAGE_NAME, null, DOMAIN_NAME);
 
     assertThat(taskDefinition).isNotNull();
     assertThat(taskDefinition.getContainerDefinitions()).hasSize(1);
@@ -98,7 +99,8 @@ public class EcsContainerTaskTest extends CategoryTest {
                               .build();
 
     ecsContainerTask.setContainerDefinitions(asList(containerDefinition));
-    taskDefinition = ecsContainerTask.createTaskDefinition(CONTAINER_NAME, IMAGE_NAME, EXEC_ROLE, DOMAIN_NAME);
+    taskDefinition = EcsContainerTaskUtils.createTaskDefinition(ecsContainerTask.getAdvancedConfig(),
+        ecsContainerTask.getContainerDefinitions(), CONTAINER_NAME, IMAGE_NAME, EXEC_ROLE, DOMAIN_NAME);
     assertThat(taskDefinition).isNotNull();
   }
 
@@ -150,8 +152,8 @@ public class EcsContainerTaskTest extends CategoryTest {
 
     ecsContainerTask.setContainerDefinitions(asList(containerDefinition));
 
-    TaskDefinition taskDefinition =
-        ecsContainerTask.createTaskDefinition(CONTAINER_NAME, IMAGE_NAME, EXEC_ROLE, DOMAIN_NAME);
+    TaskDefinition taskDefinition = EcsContainerTaskUtils.createTaskDefinition(ecsContainerTask.getAdvancedConfig(),
+        ecsContainerTask.getContainerDefinitions(), CONTAINER_NAME, IMAGE_NAME, EXEC_ROLE, DOMAIN_NAME);
 
     assertThat(taskDefinition).isNotNull();
     assertThat(taskDefinition.getContainerDefinitions()).hasSize(1);
@@ -169,7 +171,8 @@ public class EcsContainerTaskTest extends CategoryTest {
     assertThat(containerDefinitionAws.getPortMappings()).hasSize(1);
     assertThat(containerDefinitionAws.getPortMappings().iterator().next().getContainerPort().intValue()).isEqualTo(80);
 
-    taskDefinition = ecsContainerTask.createTaskDefinition(CONTAINER_NAME, IMAGE_NAME, null, DOMAIN_NAME);
+    taskDefinition = EcsContainerTaskUtils.createTaskDefinition(ecsContainerTask.getAdvancedConfig(),
+        ecsContainerTask.getContainerDefinitions(), CONTAINER_NAME, IMAGE_NAME, null, DOMAIN_NAME);
 
     assertThat(taskDefinition).isNotNull();
     assertThat(taskDefinition.getContainerDefinitions()).hasSize(1);
@@ -192,7 +195,8 @@ public class EcsContainerTaskTest extends CategoryTest {
                               .build();
 
     ecsContainerTask.setContainerDefinitions(asList(containerDefinition));
-    taskDefinition = ecsContainerTask.createTaskDefinition(CONTAINER_NAME, IMAGE_NAME, EXEC_ROLE, DOMAIN_NAME);
+    taskDefinition = EcsContainerTaskUtils.createTaskDefinition(ecsContainerTask.getAdvancedConfig(),
+        ecsContainerTask.getContainerDefinitions(), CONTAINER_NAME, IMAGE_NAME, EXEC_ROLE, DOMAIN_NAME);
     assertThat(taskDefinition).isNotNull();
   }
 
@@ -234,8 +238,7 @@ public class EcsContainerTaskTest extends CategoryTest {
         + "  \"memory\" : \"512\"\n"
         + "}";
 
-    EcsContainerTask ecsContainerTask = new EcsContainerTask();
-    str = ecsContainerTask.removeEmptySecretsContainerDefinitionString(str);
+    str = EcsContainerTaskUtils.removeEmptySecretsContainerDefinitionString(str);
     assertThat(!str.contains("\"secrets\" : [ ],")).isTrue();
 
     str = "{\n"
@@ -272,7 +275,7 @@ public class EcsContainerTaskTest extends CategoryTest {
         + "  \"memory\" : \"512\"\n"
         + "}";
 
-    str = ecsContainerTask.removeEmptySecretsContainerDefinitionString(str);
+    str = EcsContainerTaskUtils.removeEmptySecretsContainerDefinitionString(str);
     assertThat(!str.contains("\"secrets\" : [ ],")).isTrue();
 
     str = "{\n"
@@ -309,7 +312,7 @@ public class EcsContainerTaskTest extends CategoryTest {
         + "  \"memory\" : \"512\"\n"
         + "}";
 
-    str = ecsContainerTask.removeEmptySecretsContainerDefinitionString(str);
+    str = EcsContainerTaskUtils.removeEmptySecretsContainerDefinitionString(str);
     assertThat(!str.contains("\"secrets\" : [ ],")).isTrue();
 
     str = "{\n"
@@ -345,7 +348,7 @@ public class EcsContainerTaskTest extends CategoryTest {
         + "  \"memory\" : \"512\"\n"
         + "}";
 
-    str = ecsContainerTask.removeEmptySecretsContainerDefinitionString(str);
+    str = EcsContainerTaskUtils.removeEmptySecretsContainerDefinitionString(str);
     assertThat(!str.contains("\"secrets\" : [ ],")).isTrue();
   }
 
@@ -367,7 +370,8 @@ public class EcsContainerTaskTest extends CategoryTest {
     ecsContainerTask.setContainerDefinitions(asList(containerDefinition));
 
     RegisterTaskDefinitionRequest registerTaskDefinitionRequest =
-        ecsContainerTask.createRegisterTaskDefinitionRequest(CONTAINER_NAME, IMAGE_NAME, EXEC_ROLE, DOMAIN_NAME);
+        EcsContainerTaskUtils.createRegisterTaskDefinitionRequest(ecsContainerTask.getAdvancedConfig(),
+            ecsContainerTask.getContainerDefinitions(), CONTAINER_NAME, IMAGE_NAME, EXEC_ROLE, DOMAIN_NAME);
 
     assertThat(registerTaskDefinitionRequest).isNotNull();
     assertThat(registerTaskDefinitionRequest.getContainerDefinitions()).hasSize(1);
@@ -387,7 +391,8 @@ public class EcsContainerTaskTest extends CategoryTest {
     assertThat(containerDefinitionAws.getPortMappings().iterator().next().getContainerPort().intValue()).isEqualTo(80);
 
     registerTaskDefinitionRequest =
-        ecsContainerTask.createRegisterTaskDefinitionRequest(CONTAINER_NAME, IMAGE_NAME, null, DOMAIN_NAME);
+        EcsContainerTaskUtils.createRegisterTaskDefinitionRequest(ecsContainerTask.getAdvancedConfig(),
+            ecsContainerTask.getContainerDefinitions(), CONTAINER_NAME, IMAGE_NAME, null, DOMAIN_NAME);
 
     assertThat(registerTaskDefinitionRequest).isNotNull();
     assertThat(registerTaskDefinitionRequest.getContainerDefinitions()).hasSize(1);
@@ -413,7 +418,8 @@ public class EcsContainerTaskTest extends CategoryTest {
 
     ecsContainerTask.setContainerDefinitions(asList(containerDefinition));
     registerTaskDefinitionRequest =
-        ecsContainerTask.createRegisterTaskDefinitionRequest(CONTAINER_NAME, IMAGE_NAME, EXEC_ROLE, DOMAIN_NAME);
+        EcsContainerTaskUtils.createRegisterTaskDefinitionRequest(ecsContainerTask.getAdvancedConfig(),
+            ecsContainerTask.getContainerDefinitions(), CONTAINER_NAME, IMAGE_NAME, EXEC_ROLE, DOMAIN_NAME);
     assertThat(registerTaskDefinitionRequest).isNotNull();
   }
 
@@ -434,7 +440,8 @@ public class EcsContainerTaskTest extends CategoryTest {
     ecsContainerTask.setContainerDefinitions(asList(containerDefinition));
 
     RegisterTaskDefinitionRequest registerTaskDefinitionRequest =
-        ecsContainerTask.createRegisterTaskDefinitionRequest(CONTAINER_NAME, IMAGE_NAME, EXEC_ROLE, DOMAIN_NAME);
+        EcsContainerTaskUtils.createRegisterTaskDefinitionRequest(ecsContainerTask.getAdvancedConfig(),
+            ecsContainerTask.getContainerDefinitions(), CONTAINER_NAME, IMAGE_NAME, EXEC_ROLE, DOMAIN_NAME);
 
     assertThat(registerTaskDefinitionRequest).isNotNull();
     assertThat(registerTaskDefinitionRequest.getContainerDefinitions()).hasSize(1);
@@ -454,7 +461,8 @@ public class EcsContainerTaskTest extends CategoryTest {
     assertThat(containerDefinitionAws.getPortMappings().iterator().next().getContainerPort().intValue()).isEqualTo(80);
 
     registerTaskDefinitionRequest =
-        ecsContainerTask.createRegisterTaskDefinitionRequest(CONTAINER_NAME, IMAGE_NAME, null, DOMAIN_NAME);
+        EcsContainerTaskUtils.createRegisterTaskDefinitionRequest(ecsContainerTask.getAdvancedConfig(),
+            ecsContainerTask.getContainerDefinitions(), CONTAINER_NAME, IMAGE_NAME, null, DOMAIN_NAME);
 
     assertThat(registerTaskDefinitionRequest).isNotNull();
     assertThat(registerTaskDefinitionRequest.getContainerDefinitions()).hasSize(1);
@@ -478,7 +486,8 @@ public class EcsContainerTaskTest extends CategoryTest {
 
     ecsContainerTask.setContainerDefinitions(asList(containerDefinition));
     registerTaskDefinitionRequest =
-        ecsContainerTask.createRegisterTaskDefinitionRequest(CONTAINER_NAME, IMAGE_NAME, EXEC_ROLE, DOMAIN_NAME);
+        EcsContainerTaskUtils.createRegisterTaskDefinitionRequest(ecsContainerTask.getAdvancedConfig(),
+            ecsContainerTask.getContainerDefinitions(), CONTAINER_NAME, IMAGE_NAME, EXEC_ROLE, DOMAIN_NAME);
     assertThat(registerTaskDefinitionRequest).isNotNull();
   }
 
@@ -563,7 +572,7 @@ public class EcsContainerTaskTest extends CategoryTest {
             .withInferenceAccelerators(new InferenceAccelerator());
 
     String taskDefinitionJson =
-        EcsContainerTask.convertRegisterTaskDefinitionRequestAsPrettyJson(registerTaskDefinitionRequest);
+        EcsContainerTaskUtils.convertRegisterTaskDefinitionRequestAsPrettyJson(registerTaskDefinitionRequest);
 
     TaskDefinition taskDefinition = JsonUtils.asObject(taskDefinitionJson, TaskDefinition.class);
 

@@ -8,6 +8,7 @@
 package software.wings.graphql.datafetcher.execution;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.beans.FeatureName.PIPELINE_PER_ENV_DEPLOYMENT_PERMISSION;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.USER;
@@ -17,6 +18,7 @@ import static software.wings.graphql.datafetcher.DataFetcherUtils.GENERIC_EXCEPT
 import static software.wings.service.impl.workflow.WorkflowServiceTemplateHelper.getTemplatizedEnvVariableName;
 import static software.wings.sm.states.ApprovalState.APPROVAL_STATE_TYPE_VARIABLE;
 
+import static java.lang.String.format;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
@@ -71,14 +73,16 @@ import software.wings.graphql.schema.type.QLVariable;
 import software.wings.graphql.schema.type.QLWorkflowStageExecution;
 import software.wings.graphql.schema.type.QLWorkflowStageExecution.QLWorkflowStageExecutionBuilder;
 import software.wings.graphql.schema.type.aggregation.deployment.QLDeploymentTag;
+import software.wings.helpers.ext.url.SubdomainUrlHelperIntfc;
 import software.wings.infra.InfrastructureDefinition;
+import software.wings.security.ExecutableElementsFilter;
 import software.wings.security.PermissionAttribute;
 import software.wings.service.impl.AppLogContext;
 import software.wings.service.impl.WorkflowLogContext;
 import software.wings.service.impl.security.auth.AuthHandler;
+import software.wings.service.impl.security.auth.DeploymentAuthHandler;
 import software.wings.service.impl.workflow.WorkflowServiceTemplateHelper;
 import software.wings.service.intfc.AuthService;
-import software.wings.service.intfc.EnvironmentService;
 import software.wings.service.intfc.InfrastructureDefinitionService;
 import software.wings.service.intfc.PipelineService;
 import software.wings.service.intfc.ServiceResourceService;
@@ -90,9 +94,11 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -101,21 +107,26 @@ import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.http.client.utils.URIBuilder;
 
 @OwnedBy(CDC)
 @Singleton
 @Slf4j
 @TargetModule(HarnessModule._380_CG_GRAPHQL)
 public class PipelineExecutionController {
+  @Inject private SubdomainUrlHelperIntfc subdomainUrlHelper;
   @Inject AuthHandler authHandler;
   @Inject AuthService authService;
   @Inject PipelineService pipelineService;
   @Inject WorkflowExecutionService workflowExecutionService;
-  @Inject EnvironmentService environmentService;
   @Inject ServiceResourceService serviceResourceService;
   @Inject InfrastructureDefinitionService infrastructureDefinitionService;
   @Inject ExecutionController executionController;
   @Inject FeatureFlagService featureFlagService;
+  @Inject DeploymentAuthHandler deploymentAuthHandler;
+
+  private static final String EXECUTION_URL_TEMPLATE =
+      "/account/%s/app/%s/pipeline-execution/%s/workflow-execution/undefined/details";
 
   public void populatePipelineExecution(
       @NotNull WorkflowExecution workflowExecution, QLPipelineExecutionBuilder builder) {
@@ -139,6 +150,10 @@ public class PipelineExecutionController {
                   .build();
     }
 
+    final String url = buildAbsoluteUrl(format(EXECUTION_URL_TEMPLATE, workflowExecution.getAccountId(),
+                                            workflowExecution.getAppId(), workflowExecution.getUuid()),
+        workflowExecution.getAccountId());
+
     List<QLDeploymentTag> tags = new ArrayList<>();
     if (isNotEmpty(workflowExecution.getTags())) {
       tags = workflowExecution.getTags()
@@ -160,13 +175,15 @@ public class PipelineExecutionController {
                                           .collect(Collectors.toList()));
     }
     String failureDetails = null;
-    if (workflowExecution.getStatus() == ExecutionStatus.FAILED) {
+    if (workflowExecution.getStatus() == ExecutionStatus.FAILED
+        || workflowExecution.getStatus() == ExecutionStatus.REJECTED) {
       failureDetails =
           workflowExecutionService.fetchFailureDetails(workflowExecution.getAppId(), workflowExecution.getUuid());
     }
 
     builder.id(workflowExecution.getUuid())
         .pipelineId(workflowExecution.getWorkflowId())
+        .executionUrl(url)
         .appId(workflowExecution.getAppId())
         .createdAt(workflowExecution.getCreatedAt())
         .startedAt(workflowExecution.getStartTs())
@@ -266,7 +283,10 @@ public class PipelineExecutionController {
 
       String envId = resolveEnvId(pipeline, variableInputs, true);
       authService.checkIfUserAllowedToDeployPipelineToEnv(appId, envId);
-
+      if (featureFlagService.isEnabled(PIPELINE_PER_ENV_DEPLOYMENT_PERMISSION, pipeline.getAccountId())) {
+        deploymentAuthHandler.authorizeExecutableDeployableInEnv(
+            new HashSet<>(pipeline.getEnvIds()), appId, pipelineId, ExecutableElementsFilter.FilterType.PIPELINE);
+      }
       List<String> extraVariables = new ArrayList<>();
       Map<String, String> variableValues =
           validateAndResolvePipelineVariables(pipeline, variableInputs, envId, extraVariables, false);
@@ -594,6 +614,17 @@ public class PipelineExecutionController {
             pipelineService.fetchDeploymentMetadata(appId, pipeline, variableValues);
         return executionController.getRequiredServiceIds(pipelineId, finalDeploymentMetadata);
       }
+    }
+  }
+
+  private String buildAbsoluteUrl(String fragment, String accountId) {
+    String baseUrl = subdomainUrlHelper.getPortalBaseUrl(accountId);
+    try {
+      URIBuilder uriBuilder = new URIBuilder(baseUrl);
+      uriBuilder.setFragment(fragment);
+      return uriBuilder.toString();
+    } catch (URISyntaxException e) {
+      return baseUrl;
     }
   }
 }

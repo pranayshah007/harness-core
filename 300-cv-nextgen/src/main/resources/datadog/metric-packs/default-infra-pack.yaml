@@ -2,6 +2,6 @@ identifier: Infrastructure
 category: Infrastructure
 metrics:
   - name: Infrastructure
-    identifier: Infrastructure
+    identifier: infrastructure
     type: INFRA
     included: false

@@ -86,8 +86,6 @@ public class CustomHealthSourceLogSpec extends HealthSourceSpec {
               .accountId(accountId)
               .orgIdentifier(orgIdentifier)
               .projectIdentifier(projectIdentifier)
-              .envIdentifier(environmentRef)
-              .serviceIdentifier(serviceRef)
               .monitoringSourceName(name)
               .connectorIdentifier(getConnectorRef())
               .identifier(identifier)

@@ -11,6 +11,8 @@ go_library(
         "//product/ci/scm/gitclient",
         "//product/ci/scm/proto",
         "@com_github_drone_go_scm//scm",
+        "@com_github_drone_go_scm//scm/transport",
+        "@com_github_drone_go_scm//scm/transport/oauth2",
         "@org_uber_go_zap//:zap",
     ],
 )
@@ -26,12 +28,14 @@ go_test(
     ],
     data = [
         "testdata/branches.json",
+        "testdata/branches_with_default.json",
         "testdata/commit.json",
         "testdata/commits.json",
         "testdata/compare.json",
         "testdata/find_pr.json",
         "testdata/pr.json",
         "testdata/pr_files.json",
+        "testdata/repo.json",
         "testdata/repos.json",
         "testdata/user.json",
     ],

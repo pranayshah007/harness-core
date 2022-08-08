@@ -27,8 +27,8 @@ import static software.wings.beans.ConfigFile.DEFAULT_TEMPLATE_ID;
 import static software.wings.beans.Environment.Builder.anEnvironment;
 import static software.wings.beans.PhysicalInfrastructureMapping.Builder.aPhysicalInfrastructureMapping;
 import static software.wings.beans.ServiceTemplate.Builder.aServiceTemplate;
-import static software.wings.beans.ServiceVariable.Type.ENCRYPTED_TEXT;
-import static software.wings.beans.ServiceVariable.Type.TEXT;
+import static software.wings.beans.ServiceVariableType.ENCRYPTED_TEXT;
+import static software.wings.beans.ServiceVariableType.TEXT;
 import static software.wings.beans.appmanifest.ManifestFile.VALUES_YAML_KEY;
 import static software.wings.beans.appmanifest.StoreType.Local;
 import static software.wings.service.intfc.EnvironmentService.DEV_ENV;
@@ -62,6 +62,7 @@ import static org.assertj.core.api.AssertionsForClassTypes.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.doCallRealMethod;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
@@ -145,7 +146,6 @@ import org.mockito.Captor;
 import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Spy;
 import org.mongodb.morphia.Key;
 import org.mongodb.morphia.query.FieldEnd;
 import org.mongodb.morphia.query.Query;
@@ -183,7 +183,7 @@ public class EnvironmentServiceTest extends WingsBaseTest {
   @Inject @InjectMocks private EnvironmentService environmentService;
   @Inject @InjectMocks private ResourceLookupService resourceLookupService;
 
-  @Spy @InjectMocks private EnvironmentServiceImpl spyEnvService = new EnvironmentServiceImpl();
+  @Mock private EnvironmentServiceImpl spyEnvService;
 
   @Mock private BackgroundJobScheduler jobScheduler;
   @Mock private HQuery<Environment> query;
@@ -207,6 +207,9 @@ public class EnvironmentServiceTest extends WingsBaseTest {
     when(appService.get(TARGET_APP_ID)).thenReturn(Application.Builder.anApplication().accountId(ACCOUNT_ID).build());
     when(appService.get(APP_ID)).thenReturn(Application.Builder.anApplication().accountId(ACCOUNT_ID).build());
 
+    when(spyEnvService.getClonedServiceVariable(any(), anyString(), any(), any(), any())).thenCallRealMethod();
+    when(spyEnvService.cloneEnvironment(anyString(), anyString(), any())).thenCallRealMethod();
+    when(spyEnvService.getClonedConfigFile(any(), any(), any(), any(), any())).thenCallRealMethod();
     doNothing().when(auditServiceHelper).reportForAuditingUsingAccountId(anyString(), any(), any(), any());
     doNothing().when(auditServiceHelper).reportDeleteForAuditingUsingAccountId(anyString(), any());
     doNothing().when(auditServiceHelper).reportDeleteForAuditing(anyString(), any());
@@ -343,7 +346,7 @@ public class EnvironmentServiceTest extends WingsBaseTest {
     configFile.setAppId(APP_ID);
     when(configService.getConfigFilesForEntity(eq(APP_ID), eq(DEFAULT_TEMPLATE_ID), eq(ENV_ID)))
         .thenReturn(Collections.singletonList(configFile));
-    when(configService.download(eq(APP_ID), anyString())).thenReturn(new File("file"));
+    when(configService.download(eq(APP_ID), any())).thenReturn(new File("file"));
 
     clonedEnvironment = environmentService.cloneEnvironment(APP_ID, ENV_ID, cloneMetadata);
 
@@ -354,7 +357,7 @@ public class EnvironmentServiceTest extends WingsBaseTest {
     verify(serviceTemplateService).get(APP_ID, serviceTemplate.getEnvId(), serviceTemplate.getUuid(), true, MASKED);
     verify(infrastructureDefinitionService, times(1))
         .cloneInfrastructureDefinitions(APP_ID, ENV_ID, APP_ID, clonedEnvironment.getUuid());
-    verify(configService, times(1)).download(eq(APP_ID), anyString());
+    verify(configService, times(1)).download(eq(APP_ID), any());
   }
 
   private void shouldCloneEnvironmentWithTargetAppId(boolean differentApp) {
@@ -404,14 +407,14 @@ public class EnvironmentServiceTest extends WingsBaseTest {
     configFile.setAppId(APP_ID);
     when(configService.getConfigFilesForEntity(eq(APP_ID), eq(DEFAULT_TEMPLATE_ID), eq(ENV_ID)))
         .thenReturn(Collections.singletonList(configFile));
-    when(configService.download(eq(APP_ID), anyString())).thenReturn(new File("file"));
+    when(configService.download(eq(APP_ID), any())).thenReturn(new File("file"));
 
     environmentService.cloneEnvironment(APP_ID, ENV_ID, cloneMetadata);
 
     verify(wingsPersistence).getWithAppId(Environment.class, APP_ID, ENV_ID);
     verify(wingsPersistence).saveAndGet(any(), any(Environment.class));
     verify(serviceTemplateService).list(pageRequest, false, OBTAIN_VALUE);
-    verify(configService, times(1)).download(eq(APP_ID), anyString());
+    verify(configService, times(1)).download(eq(APP_ID), any());
   }
 
   @Test
@@ -549,6 +552,7 @@ public class EnvironmentServiceTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void shouldCreateDefaultEnvironments() {
     doReturn(anEnvironment().build()).when(spyEnvService).save(any(Environment.class));
+    doCallRealMethod().when(spyEnvService).createDefaultEnvironments(eq(APP_ID));
     spyEnvService.createDefaultEnvironments(APP_ID);
     verify(spyEnvService, times(3)).save(environmentArgumentCaptor.capture());
     assertThat(environmentArgumentCaptor.getAllValues())

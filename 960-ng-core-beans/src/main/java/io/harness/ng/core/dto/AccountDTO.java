@@ -17,6 +17,7 @@ import io.harness.data.validator.NGEntityName;
 import io.harness.ng.core.account.AuthenticationMechanism;
 import io.harness.ng.core.account.DefaultExperience;
 import io.harness.ng.core.account.ServiceAccountConfig;
+import io.harness.yaml.core.VariableExpression;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -35,21 +36,37 @@ import lombok.experimental.FieldDefaults;
 @JsonInclude(NON_NULL)
 @ApiModel(value = "AccountDTO")
 @OwnedBy(PL)
-@Schema(name = "Account", description = "This is the view of an Account defined in Harness")
+@Schema(name = "Account", description = "Account details defined in Harness.")
 public class AccountDTO {
-  @EntityIdentifier(allowBlank = false) String identifier;
-  @NGEntityName String name;
-  String companyName;
+  @Schema(description = "Account Identifier.")
+  @EntityIdentifier(allowBlank = false)
+  @VariableExpression(skipVariableExpression = true)
+  String identifier;
+  @Schema(description = "Name of the Account.") @NGEntityName String name;
+  @Schema(description = "Name of the Company.") String companyName;
+  @Schema(description = "Name of the cluster associated with this Account.")
+  @VariableExpression(skipVariableExpression = true)
   String cluster;
+  @Schema(description = "Default experience of the Account.")
+  @VariableExpression(skipVariableExpression = true)
   DefaultExperience defaultExperience;
+  @Schema(description = "Authentication mechanism associated with the account.")
+  @VariableExpression(skipVariableExpression = true)
   AuthenticationMechanism authenticationMechanism;
+  @Schema(description = "Service Account configuration associated with this Account.")
+  @VariableExpression(skipVariableExpression = true)
   ServiceAccountConfig serviceAccountConfig;
+  @Schema(description = "Specifies if NextGen is enabled for this Account.")
+  @VariableExpression(skipVariableExpression = true)
   boolean isNextGenEnabled;
+  @Schema(description = "Specifies if Account is product-let.")
+  @VariableExpression(skipVariableExpression = true)
+  boolean isProductLed;
 
   @Builder
   public AccountDTO(String identifier, String name, String companyName, String cluster,
       DefaultExperience defaultExperience, AuthenticationMechanism authenticationMechanism,
-      ServiceAccountConfig serviceAccountConfig, boolean isNextGenEnabled) {
+      ServiceAccountConfig serviceAccountConfig, boolean isNextGenEnabled, boolean isProductLed) {
     this.identifier = identifier;
     this.name = name;
     this.companyName = companyName;
@@ -58,5 +75,6 @@ public class AccountDTO {
     this.authenticationMechanism = authenticationMechanism;
     this.isNextGenEnabled = isNextGenEnabled;
     this.serviceAccountConfig = serviceAccountConfig;
+    this.isProductLed = isProductLed;
   }
 }

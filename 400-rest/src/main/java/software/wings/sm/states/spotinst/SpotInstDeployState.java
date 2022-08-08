@@ -67,6 +67,7 @@ import software.wings.sm.InstanceStatusSummary;
 import software.wings.sm.State;
 import software.wings.sm.StateType;
 import software.wings.sm.WorkflowStandardParams;
+import software.wings.sm.WorkflowStandardParamsExtensionService;
 import software.wings.sm.states.AwsStateHelper;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -90,6 +91,7 @@ public class SpotInstDeployState extends State {
   @Inject private transient SpotInstStateHelper spotInstStateHelper;
   @Inject private transient AwsStateHelper awsStateHelper;
   @Inject private transient SweepingOutputService sweepingOutputService;
+  @Inject private transient WorkflowStandardParamsExtensionService workflowStandardParamsExtensionService;
 
   @Getter @Setter private Integer instanceCount;
   @Getter @Setter private InstanceUnitType instanceUnitType = InstanceUnitType.PERCENTAGE;
@@ -137,7 +139,7 @@ public class SpotInstDeployState extends State {
     WorkflowStandardParams workflowStandardParams = context.getContextElement(ContextElementType.STANDARD);
 
     Application app = appService.get(context.getAppId());
-    Environment env = workflowStandardParams.getEnv();
+    Environment env = workflowStandardParamsExtensionService.getEnv(workflowStandardParams);
     notNullCheck("Env cant be null", env);
 
     AwsAmiInfrastructureMapping awsAmiInfrastructureMapping =

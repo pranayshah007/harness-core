@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.SSHTaskParams;
+import io.harness.delegate.beans.WinRmTaskParams;
 import io.harness.ng.core.DecryptableEntityWithEncryptionConsumers;
 import io.harness.ng.core.NGAccessWithEncryptionConsumer;
 import io.harness.ng.core.entities.SampleEncryptableSettingImplementation;
@@ -62,6 +63,7 @@ public class SecretManagerClientKryoRegistrar implements KryoRegistrar {
     kryo.register(GcpKmsConfigUpdateDTO.class, 543221);
 
     kryo.register(SSHTaskParams.class, 543225);
+    kryo.register(WinRmTaskParams.class, 543526);
 
     kryo.register(SampleEncryptableSettingImplementation.class, 54322);
     kryo.register(NGAccessWithEncryptionConsumer.class, 54323);

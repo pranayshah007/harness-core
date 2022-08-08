@@ -10,6 +10,7 @@ package software.wings.graphql.datafetcher.connector;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.exception.InvalidRequestException;
+import io.harness.ff.FeatureFlagService;
 import io.harness.utils.ConstraintViolationHandlerUtils;
 
 import software.wings.beans.CGConstants;
@@ -41,6 +42,7 @@ public class CreateConnectorDataFetcher extends BaseMutatorDataFetcher<QLConnect
   @Inject private ConnectorsController connectorsController;
   @Inject private SecretManager secretManager;
   @Inject private UsageScopeController usageScopeController;
+  @Inject private FeatureFlagService featureFlagService;
 
   public CreateConnectorDataFetcher() {
     super(QLConnectorInput.class, QLCreateConnectorPayload.class);
@@ -58,8 +60,8 @@ public class CreateConnectorDataFetcher extends BaseMutatorDataFetcher<QLConnect
       throw new InvalidRequestException("Invalid connector type provided");
     }
 
-    Connector connector = ConnectorFactory.getConnector(
-        input.getConnectorType(), connectorsController, secretManager, settingsService, usageScopeController);
+    Connector connector = ConnectorFactory.getConnector(input.getConnectorType(), connectorsController, secretManager,
+        settingsService, usageScopeController, featureFlagService);
     connector.checkInputExists(input);
     connector.checkSecrets(input, accountId);
     SettingAttribute settingAttribute = connector.getSettingAttribute(input, accountId);

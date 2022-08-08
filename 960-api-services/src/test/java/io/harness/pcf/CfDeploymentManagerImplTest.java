@@ -19,9 +19,9 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -338,7 +338,7 @@ public class CfDeploymentManagerImplTest extends CategoryTest {
 
     reset(cliClient);
     cfRequestConfig.setUseCFCLI(true);
-    doThrow(PivotalClientApiException.class).when(cliClient).tailLogsForPcf(any(), any());
+    doAnswer(invocation -> { throw new PivotalClientApiException(""); }).when(cliClient).tailLogsForPcf(any(), any());
     deploymentManager.startTailingLogsIfNeeded(cfRequestConfig, logCallback, null);
   }
 
@@ -439,7 +439,7 @@ public class CfDeploymentManagerImplTest extends CategoryTest {
   @Owner(developers = ANIL)
   @Category(UnitTests.class)
   public void testGetOrganizationsFail() throws Exception {
-    doThrow(Exception.class).when(sdkClient).getOrganizations(any());
+    doAnswer(invocation -> { throw new Exception(); }).when(sdkClient).getOrganizations(any());
     assertThatThrownBy(() -> deploymentManager.getOrganizations(CfRequestConfig.builder().build()))
         .isInstanceOf(PivotalClientApiException.class);
   }
@@ -458,7 +458,7 @@ public class CfDeploymentManagerImplTest extends CategoryTest {
   @Owner(developers = ANIL)
   @Category(UnitTests.class)
   public void testGetSpacesForOrganizationFail() throws Exception {
-    doThrow(Exception.class).when(sdkClient).getSpacesForOrganization(any());
+    doAnswer(invocation -> { throw new Exception(); }).when(sdkClient).getSpacesForOrganization(any());
     assertThatThrownBy(() -> deploymentManager.getSpacesForOrganization(CfRequestConfig.builder().build()))
         .isInstanceOf(PivotalClientApiException.class);
   }
@@ -477,7 +477,7 @@ public class CfDeploymentManagerImplTest extends CategoryTest {
   @Owner(developers = ANIL)
   @Category(UnitTests.class)
   public void testGetRouteMapsFail() throws Exception {
-    doThrow(Exception.class).when(sdkClient).getRoutesForSpace(any());
+    doAnswer(invocation -> { throw new Exception(); }).when(sdkClient).getRoutesForSpace(any());
     assertThatThrownBy(() -> deploymentManager.getRouteMaps(CfRequestConfig.builder().build()))
         .isInstanceOf(PivotalClientApiException.class);
   }
@@ -518,7 +518,7 @@ public class CfDeploymentManagerImplTest extends CategoryTest {
   @Owner(developers = ANIL)
   @Category(UnitTests.class)
   public void testCreateApplicationPushApplicationUsingManifestFail() throws Exception {
-    doThrow(Exception.class).when(sdkClient).pushAppBySdk(any(), any(), any());
+    doAnswer(invocation -> { throw new Exception(); }).when(sdkClient).pushAppBySdk(any(), any(), any());
     assertThatThrownBy(
         ()
             -> deploymentManager.createApplication(
@@ -531,7 +531,7 @@ public class CfDeploymentManagerImplTest extends CategoryTest {
   @Owner(developers = ANIL)
   @Category(UnitTests.class)
   public void testCreateApplicationGetApplicationByNameFail() throws Exception {
-    doThrow(Exception.class).when(sdkClient).getApplicationByName(any());
+    doAnswer(invocation -> { throw new Exception(); }).when(sdkClient).getApplicationByName(any());
     assertThatThrownBy(
         () -> deploymentManager.createApplication(CfCreateApplicationRequestData.builder().build(), logCallback))
         .isInstanceOf(PivotalClientApiException.class);
@@ -568,7 +568,7 @@ public class CfDeploymentManagerImplTest extends CategoryTest {
   @Owner(developers = ANIL)
   @Category(UnitTests.class)
   public void testResizeApplicationFail() throws Exception {
-    doThrow(Exception.class).when(sdkClient).scaleApplications(any());
+    doAnswer(invocation -> { throw new Exception(); }).when(sdkClient).scaleApplications(any());
     assertThatThrownBy(() -> deploymentManager.resizeApplication(CfRequestConfig.builder().build()))
         .isInstanceOf(PivotalClientApiException.class);
   }
@@ -588,7 +588,9 @@ public class CfDeploymentManagerImplTest extends CategoryTest {
     verify(sdkClient, times(1)).unmapRoutesForApplication(eq(cfRequestConfig), eq(paths));
 
     reset(sdkClient);
-    doThrow(Exception.class).when(sdkClient).unmapRoutesForApplication(eq(cfRequestConfig), eq(paths));
+    doAnswer(invocation -> { throw new Exception(); })
+        .when(sdkClient)
+        .unmapRoutesForApplication(eq(cfRequestConfig), eq(paths));
     assertThatThrownBy(() -> deploymentManager.unmapRouteMapForApplication(cfRequestConfig, paths, logCallback))
         .isInstanceOf(PivotalClientApiException.class);
   }
@@ -608,7 +610,9 @@ public class CfDeploymentManagerImplTest extends CategoryTest {
     verify(sdkClient, times(1)).mapRoutesForApplication(eq(cfRequestConfig), eq(paths));
 
     reset(sdkClient);
-    doThrow(Exception.class).when(sdkClient).mapRoutesForApplication(eq(cfRequestConfig), eq(paths));
+    doAnswer(invocation -> { throw new Exception(); })
+        .when(sdkClient)
+        .mapRoutesForApplication(eq(cfRequestConfig), eq(paths));
     assertThatThrownBy(() -> deploymentManager.mapRouteMapForApplication(cfRequestConfig, paths, logCallback))
         .isInstanceOf(PivotalClientApiException.class);
   }
@@ -646,7 +650,7 @@ public class CfDeploymentManagerImplTest extends CategoryTest {
     assertThat(deployedServicesWithNonZeroInstances.size()).isEqualTo(1);
 
     reset(sdkClient);
-    doThrow(Exception.class).when(sdkClient).getApplications(eq(cfRequestConfig));
+    doAnswer(invocation -> { throw new Exception(); }).when(sdkClient).getApplications(eq(cfRequestConfig));
     assertThatThrownBy(() -> deploymentManager.getDeployedServicesWithNonZeroInstances(cfRequestConfig, prefix))
         .isInstanceOf(PivotalClientApiException.class);
   }
@@ -708,7 +712,7 @@ public class CfDeploymentManagerImplTest extends CategoryTest {
         .containsExactly(prefix + "__1", prefix + "__2", prefix + "__INACTIVE", prefix);
 
     reset(sdkClient);
-    doThrow(Exception.class).when(sdkClient).getApplications(eq(cfRequestConfig));
+    doAnswer(invocation -> { throw new Exception(); }).when(sdkClient).getApplications(eq(cfRequestConfig));
     assertThatThrownBy(() -> deploymentManager.getPreviousReleases(cfRequestConfig, prefix))
         .isInstanceOf(PivotalClientApiException.class);
   }
@@ -734,7 +738,7 @@ public class CfDeploymentManagerImplTest extends CategoryTest {
     verify(sdkClient, times(1)).deleteApplication(eq(cfRequestConfig));
 
     reset(sdkClient);
-    doThrow(Exception.class).when(sdkClient).deleteApplication(eq(cfRequestConfig));
+    doAnswer(invocation -> { throw new Exception(); }).when(sdkClient).deleteApplication(eq(cfRequestConfig));
     assertThatThrownBy(() -> deploymentManager.deleteApplication(cfRequestConfig))
         .isInstanceOf(PivotalClientApiException.class);
   }
@@ -762,7 +766,7 @@ public class CfDeploymentManagerImplTest extends CategoryTest {
     assertThat(message.contains(appName)).isEqualTo(true);
 
     reset(sdkClient);
-    doThrow(Exception.class).when(sdkClient).stopApplication(eq(cfRequestConfig));
+    doAnswer(invocation -> { throw new Exception(); }).when(sdkClient).stopApplication(eq(cfRequestConfig));
     assertThatThrownBy(() -> deploymentManager.stopApplication(cfRequestConfig))
         .isInstanceOf(PivotalClientApiException.class);
   }
@@ -834,7 +838,7 @@ public class CfDeploymentManagerImplTest extends CategoryTest {
     assertThat(message.equalsIgnoreCase("SUCCESS")).isEqualTo(true);
 
     reset(sdkClient);
-    doThrow(Exception.class).when(sdkClient).getOrganizations(any());
+    doAnswer(invocation -> { throw new Exception(); }).when(sdkClient).getOrganizations(any());
     message = deploymentManager.checkConnectivity(pcfConfig, false, false);
     assertThat(message.equalsIgnoreCase("SUCCESS")).isEqualTo(false);
   }
@@ -889,13 +893,15 @@ public class CfDeploymentManagerImplTest extends CategoryTest {
                                          .build();
     ApplicationDetail applicationDetail = generateApplicationDetail(1, new InstanceDetail[] {instanceDetail1});
     doReturn(applicationDetail).when(deploymentManager).resizeApplication(eq(cfRequestConfig));
-    doThrow(InterruptedException.class).when(sdkClient).getApplicationByName(eq(cfRequestConfig));
+    doAnswer(invocation -> { throw new InterruptedException(); })
+        .when(sdkClient)
+        .getApplicationByName(eq(cfRequestConfig));
     assertThatThrownBy(() -> deploymentManager.upsizeApplicationWithSteadyStateCheck(cfRequestConfig, logCallback))
         .isInstanceOf(PivotalClientApiException.class);
 
     reset(sdkClient);
     doReturn(applicationDetail).when(sdkClient).getApplicationByName(eq(cfRequestConfig));
-    doThrow(Exception.class).when(deploymentManager).destroyProcess(eq(startedProcess));
+    doAnswer(invocation -> { throw new Exception(); }).when(deploymentManager).destroyProcess(eq(startedProcess));
     ApplicationDetail applicationDetail1 =
         deploymentManager.upsizeApplicationWithSteadyStateCheck(cfRequestConfig, logCallback);
     assertThat(applicationDetail1).isNotNull();

@@ -10,6 +10,8 @@ package software.wings.delegatetasks.rancher;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.rule.OwnerRule.SHUBHAM_MAHESHWARI;
 
+import static software.wings.delegatetasks.rancher.RancherResolveClustersTask.COMMAND_UNIT_NAME;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
@@ -29,10 +31,9 @@ import io.harness.logging.LogCallback;
 import io.harness.rule.Owner;
 
 import software.wings.WingsBaseTest;
+import software.wings.beans.ClusterSelectionCriteriaEntry;
 import software.wings.beans.RancherConfig;
 import software.wings.delegatetasks.rancher.RancherClusterDataResponse.ClusterData;
-import software.wings.infra.RancherKubernetesInfrastructure.ClusterSelectionCriteriaEntry;
-import software.wings.sm.states.rancher.RancherResolveState;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -57,7 +58,7 @@ public class RancherResolveClustersTaskTest extends WingsBaseTest {
   @Before
   public void setUp() {
     LogCallback logCallback = spy(LogCallback.class);
-    doReturn(logCallback).when(streamingTaskClient).obtainLogCallback(RancherResolveState.COMMAND_UNIT_NAME);
+    doReturn(logCallback).when(streamingTaskClient).obtainLogCallback(COMMAND_UNIT_NAME);
     doNothing().when(logCallback).saveExecutionLog(anyString(), any());
   }
 

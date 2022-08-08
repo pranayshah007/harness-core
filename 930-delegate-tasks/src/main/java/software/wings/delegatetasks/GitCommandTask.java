@@ -8,6 +8,7 @@
 package software.wings.delegatetasks;
 
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
+import static io.harness.eraro.ErrorCode.GENERAL_YAML_ERROR;
 import static io.harness.eraro.ErrorCode.GIT_CONNECTION_ERROR;
 import static io.harness.eraro.ErrorCode.GIT_DIFF_COMMIT_NOT_IN_ORDER;
 import static io.harness.eraro.ErrorCode.GIT_UNSEEN_REMOTE_HEAD_COMMIT;
@@ -200,6 +201,8 @@ public class GitCommandTask extends AbstractDelegateRunnableTask {
         return GIT_DIFF_COMMIT_NOT_IN_ORDER;
       } else if (GIT_UNSEEN_REMOTE_HEAD_COMMIT == we.getCode()) {
         return GIT_UNSEEN_REMOTE_HEAD_COMMIT;
+      } else if (GENERAL_YAML_ERROR == we.getCode()) {
+        return GENERAL_YAML_ERROR;
       }
     }
     return null;

@@ -17,6 +17,7 @@ import io.harness.expression.ExpressionEvaluator;
 import io.harness.security.encryption.EncryptedDataDetail;
 
 import java.util.List;
+import java.util.Map;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.SuperBuilder;
@@ -29,6 +30,8 @@ public class AzureTaskParams extends ConnectorTaskParams implements TaskParamete
   AzureConnectorDTO azureConnector;
   AzureTaskType azureTaskType;
   List<EncryptedDataDetail> encryptionDetails;
+  Map<AzureAdditionalParams, String> additionalParams;
+  Map<String, Object> params;
 
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {

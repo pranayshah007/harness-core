@@ -10,6 +10,7 @@ package io.harness.repositories.instance;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.entities.Instance;
+import io.harness.models.ActiveServiceInstanceInfo;
 import io.harness.models.CountByServiceIdAndEnvType;
 import io.harness.models.EnvBuildInstanceCount;
 import io.harness.models.InstancesByBuildId;
@@ -44,11 +45,17 @@ public interface InstanceRepositoryCustom {
   List<Instance> getActiveInstancesByServiceId(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId, long timestampInMs);
 
-  List<Instance> getActiveInstancesByInfrastructureMappingId(String accountIdentifier, String orgIdentifier,
-      String projectIdentifier, String infrastructureMappingId, long timestampInMs);
+  List<Instance> getActiveInstancesByServiceId(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId);
+
+  List<Instance> getActiveInstancesByInfrastructureMappingId(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String infrastructureMappingId);
 
   AggregationResults<EnvBuildInstanceCount> getEnvBuildInstanceCountByServiceId(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId, long timestampInMs);
+
+  AggregationResults<ActiveServiceInstanceInfo> getActiveServiceInstanceInfo(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId);
 
   AggregationResults<InstancesByBuildId> getActiveInstancesByServiceIdEnvIdAndBuildIds(String accountIdentifier,
       String orgIdentifier, String projectIdentifier, String serviceId, String envId, List<String> buildIds,

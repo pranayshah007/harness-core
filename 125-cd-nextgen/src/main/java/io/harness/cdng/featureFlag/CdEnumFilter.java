@@ -14,12 +14,20 @@ import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.ff.filters.EnumFeatureFlagFilter;
 
 import com.google.common.collect.Sets;
+import com.google.inject.Inject;
 import com.google.inject.Singleton;
 
 @OwnedBy(HarnessTeam.CDP)
 @Singleton
 public class CdEnumFilter extends EnumFeatureFlagFilter {
+  @Inject private CDFeatureFlagHelper cdFeatureFlagHelper;
+
   public CdEnumFilter() {
     put(FeatureName.SSH_NG, Sets.newHashSet(ServiceDefinitionType.SSH, ServiceDefinitionType.WINRM));
+  }
+
+  @Override
+  public boolean isFeatureFlagEnabled(FeatureName featureName, String accountId) {
+    return cdFeatureFlagHelper.isEnabled(accountId, featureName);
   }
 }

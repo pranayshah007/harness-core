@@ -53,7 +53,7 @@ import software.wings.beans.GraphNode;
 import software.wings.beans.SSHExecutionCredential;
 import software.wings.beans.Service;
 import software.wings.beans.ServiceVariable;
-import software.wings.beans.ServiceVariable.Type;
+import software.wings.beans.ServiceVariableType;
 import software.wings.beans.Workflow;
 import software.wings.beans.WorkflowExecution;
 import software.wings.beans.WorkflowPhase;
@@ -131,7 +131,7 @@ public class ServiceVariablesTest extends AbstractFunctionalTest {
     normalServiceVariable.setValue(NORMAL_TEXT.toCharArray());
     normalServiceVariable.setName(NORMAL_TEXT);
     normalServiceVariable.setEntityType(EntityType.SERVICE);
-    normalServiceVariable.setType(Type.TEXT);
+    normalServiceVariable.setType(ServiceVariableType.TEXT);
     normalServiceVariable.setEntityId(service.getUuid());
 
     ServiceVariable overridableVariables = new ServiceVariable();
@@ -140,7 +140,7 @@ public class ServiceVariablesTest extends AbstractFunctionalTest {
     overridableVariables.setValue(OVERRIDABLE_TEXT.toCharArray());
     overridableVariables.setName(OVERRIDABLE_TEXT);
     overridableVariables.setEntityType(EntityType.SERVICE);
-    overridableVariables.setType(Type.TEXT);
+    overridableVariables.setType(ServiceVariableType.TEXT);
     overridableVariables.setEntityId(service.getUuid());
     ServiceVariable addedNormalServiceVariable = null;
     ServiceVariable addedOverridableServiceVariable = null;

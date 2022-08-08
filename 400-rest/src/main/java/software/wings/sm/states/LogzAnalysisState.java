@@ -105,18 +105,19 @@ public class LogzAnalysisState extends ElkAnalysisState {
               .build();
 
       String waitId = generateUuid();
-      delegateTasks.add(DelegateTask.builder()
-                            .accountId(appService.get(context.getAppId()).getAccountId())
-                            .setupAbstraction(Cd1SetupFields.APP_ID_FIELD, context.getAppId())
-                            .waitId(waitId)
-                            .data(TaskData.builder()
-                                      .async(true)
-                                      .taskType(TaskType.LOGZ_COLLECT_LOG_DATA.name())
-                                      .parameters(new Object[] {dataCollectionInfo})
-                                      .timeout(TimeUnit.MINUTES.toMillis(Integer.parseInt(getTimeDuration()) + 5))
-                                      .build())
-                            .setupAbstraction(Cd1SetupFields.ENV_ID_FIELD, envId)
-                            .build());
+      delegateTasks.add(
+          DelegateTask.builder()
+              .accountId(appService.get(context.getAppId()).getAccountId())
+              .setupAbstraction(Cd1SetupFields.APP_ID_FIELD, context.getAppId())
+              .waitId(waitId)
+              .data(TaskData.builder()
+                        .async(true)
+                        .taskType(TaskType.LOGZ_COLLECT_LOG_DATA.name())
+                        .parameters(new Object[] {dataCollectionInfo})
+                        .timeout(TimeUnit.MINUTES.toMillis(Integer.parseInt(getTimeDuration(context)) + 5))
+                        .build())
+              .setupAbstraction(Cd1SetupFields.ENV_ID_FIELD, envId)
+              .build());
       waitIds[i++] = waitId;
     }
     waitNotifyEngine.waitForAllOn(ORCHESTRATION,
@@ -125,7 +126,7 @@ public class LogzAnalysisState extends ElkAnalysisState {
             .stateExecutionId(context.getStateExecutionInstanceId())
             .dataCollectionStartTime(logCollectionStartTimeStamp)
             .dataCollectionEndTime(
-                logCollectionStartTimeStamp + TimeUnit.MINUTES.toMillis(Integer.parseInt(getTimeDuration())))
+                logCollectionStartTimeStamp + TimeUnit.MINUTES.toMillis(Integer.parseInt(getTimeDuration(context))))
             .executionData(executionData)
             .build(),
         waitIds);

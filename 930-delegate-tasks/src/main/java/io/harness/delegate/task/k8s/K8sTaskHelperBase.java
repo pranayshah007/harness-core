@@ -11,8 +11,11 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.beans.storeconfig.StoreDelegateConfigType.GIT;
+import static io.harness.delegate.beans.storeconfig.StoreDelegateConfigType.HARNESS;
 import static io.harness.delegate.beans.storeconfig.StoreDelegateConfigType.HTTP_HELM;
+import static io.harness.delegate.beans.storeconfig.StoreDelegateConfigType.OCI_HELM;
 import static io.harness.exception.WingsException.USER;
+import static io.harness.filesystem.FileIo.createDirectoryIfDoesNotExist;
 import static io.harness.filesystem.FileIo.getFilesUnderPath;
 import static io.harness.filesystem.FileIo.getFilesUnderPathMatchesFirstLine;
 import static io.harness.helm.HelmConstants.HELM_PATH_PLACEHOLDER;
@@ -45,6 +48,7 @@ import static software.wings.beans.LogColor.Yellow;
 import static software.wings.beans.LogHelper.color;
 import static software.wings.beans.LogWeight.Bold;
 import static software.wings.beans.LogWeight.Normal;
+import static software.wings.delegatetasks.helm.HelmTaskHelper.copyManifestFilesToWorkingDir;
 
 import static com.google.common.base.MoreObjects.firstNonNull;
 import static java.lang.Boolean.FALSE;
@@ -82,19 +86,24 @@ import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.beans.logstreaming.NGDelegateLogCallback;
+import io.harness.delegate.beans.storeconfig.CustomRemoteStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.FetchType;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
+import io.harness.delegate.beans.storeconfig.LocalFileStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.StoreDelegateConfig;
+import io.harness.delegate.beans.storeconfig.StoreDelegateConfigType;
 import io.harness.delegate.expression.DelegateExpressionEvaluator;
 import io.harness.delegate.k8s.kustomize.KustomizeTaskHelper;
 import io.harness.delegate.k8s.openshift.OpenShiftDelegateService;
 import io.harness.delegate.service.ExecutionConfigOverrideFromFileOnDelegate;
 import io.harness.delegate.task.git.ScmFetchFilesHelperNG;
+import io.harness.delegate.task.helm.CustomManifestFetchTaskHelper;
 import io.harness.delegate.task.helm.HelmCommandFlag;
 import io.harness.delegate.task.helm.HelmTaskHelperBase;
-import io.harness.delegate.task.k8s.exception.KubernetesExceptionExplanation;
-import io.harness.delegate.task.k8s.exception.KubernetesExceptionHints;
-import io.harness.delegate.task.k8s.exception.KubernetesExceptionMessages;
+import io.harness.delegate.task.k8s.client.K8sApiClient;
+import io.harness.delegate.task.k8s.client.K8sCliClient;
+import io.harness.delegate.task.k8s.client.K8sClient;
+import io.harness.delegate.task.localstore.ManifestFiles;
 import io.harness.errorhandling.NGErrorHelper;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.HelmClientException;
@@ -109,6 +118,7 @@ import io.harness.exception.KubernetesYamlException;
 import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.WingsException;
 import io.harness.exception.YamlException;
+import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.filesystem.FileIo;
 import io.harness.helm.HelmCliCommandType;
 import io.harness.helm.HelmCommandFlagsUtils;
@@ -119,6 +129,9 @@ import io.harness.k8s.KubernetesContainerService;
 import io.harness.k8s.KubernetesHelperService;
 import io.harness.k8s.ProcessResponse;
 import io.harness.k8s.RetryHelper;
+import io.harness.k8s.exception.KubernetesExceptionExplanation;
+import io.harness.k8s.exception.KubernetesExceptionHints;
+import io.harness.k8s.exception.KubernetesExceptionMessages;
 import io.harness.k8s.kubectl.AbstractExecutable;
 import io.harness.k8s.kubectl.ApplyCommand;
 import io.harness.k8s.kubectl.DeleteCommand;
@@ -151,6 +164,8 @@ import io.harness.k8s.model.response.CEK8sDelegatePrerequisite;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.logging.LogLevel;
+import io.harness.manifest.CustomManifestService;
+import io.harness.manifest.CustomManifestSource;
 import io.harness.ng.core.dto.ErrorDetail;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.SecretDecryptionService;
@@ -158,17 +173,30 @@ import io.harness.serializer.YamlUtils;
 import io.harness.shell.SshSessionConfig;
 import io.harness.yaml.BooleanPatchedRepresenter;
 
-import software.wings.delegatetasks.ExceptionMessageSanitizer;
+import software.wings.beans.LogColor;
+import software.wings.beans.LogWeight;
+import software.wings.beans.command.ExecutionLogCallback;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Maps;
 import com.google.common.util.concurrent.TimeLimiter;
 import com.google.common.util.concurrent.UncheckedTimeoutException;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import io.fabric8.istio.api.networking.v1alpha3.Destination;
+import io.fabric8.istio.api.networking.v1alpha3.DestinationRule;
+import io.fabric8.istio.api.networking.v1alpha3.DestinationRuleList;
+import io.fabric8.istio.api.networking.v1alpha3.HTTPRoute;
+import io.fabric8.istio.api.networking.v1alpha3.HTTPRouteDestination;
+import io.fabric8.istio.api.networking.v1alpha3.PortSelector;
+import io.fabric8.istio.api.networking.v1alpha3.Subset;
+import io.fabric8.istio.api.networking.v1alpha3.TCPRoute;
+import io.fabric8.istio.api.networking.v1alpha3.TLSRoute;
+import io.fabric8.istio.api.networking.v1alpha3.VirtualService;
+import io.fabric8.istio.api.networking.v1alpha3.VirtualServiceList;
 import io.fabric8.kubernetes.api.KubernetesHelper;
-import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.github.resilience4j.retry.Retry;
 import io.kubernetes.client.openapi.ApiException;
@@ -215,19 +243,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import me.snowdrop.istio.api.networking.v1alpha3.Destination;
-import me.snowdrop.istio.api.networking.v1alpha3.DestinationRule;
-import me.snowdrop.istio.api.networking.v1alpha3.DestinationRuleBuilder;
-import me.snowdrop.istio.api.networking.v1alpha3.DestinationWeight;
-import me.snowdrop.istio.api.networking.v1alpha3.DoneableDestinationRule;
-import me.snowdrop.istio.api.networking.v1alpha3.DoneableVirtualService;
-import me.snowdrop.istio.api.networking.v1alpha3.HTTPRoute;
-import me.snowdrop.istio.api.networking.v1alpha3.PortSelector;
-import me.snowdrop.istio.api.networking.v1alpha3.Subset;
-import me.snowdrop.istio.api.networking.v1alpha3.TCPRoute;
-import me.snowdrop.istio.api.networking.v1alpha3.TLSRoute;
-import me.snowdrop.istio.api.networking.v1alpha3.VirtualService;
-import me.snowdrop.istio.api.networking.v1alpha3.VirtualServiceBuilder;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.RandomStringUtils;
@@ -268,6 +283,10 @@ public class K8sTaskHelperBase {
   @Inject private OpenShiftDelegateService openShiftDelegateService;
   @Inject private HelmTaskHelperBase helmTaskHelperBase;
   @Inject private ScmFetchFilesHelperNG scmFetchFilesHelper;
+  @Inject private K8sCliClient kubernetesCliClient;
+  @Inject private K8sApiClient kubernetesApiClient;
+  @Inject private CustomManifestService customManifestService;
+  @Inject private CustomManifestFetchTaskHelper customManifestFetchTaskHelper;
 
   private DelegateExpressionEvaluator delegateExpressionEvaluator = new DelegateExpressionEvaluator();
 
@@ -336,7 +355,7 @@ public class K8sTaskHelperBase {
       return ProcessResponse.builder()
           .processResult(
               command.execute(k8sDelegateTaskParams.getWorkingDirectory(), logOutputStream, logErrorStream, true))
-          .errorMessage(errorCaptureStream.toString())
+          .errorMessage(ExceptionMessageSanitizer.sanitizeMessage(errorCaptureStream.toString()))
           .kubectlPath(k8sDelegateTaskParams.getKubectlPath())
           .printableCommand(getPrintableCommand(command.command()))
           .build();
@@ -643,16 +662,16 @@ public class K8sTaskHelperBase {
     }
   }
 
-  private List<DestinationWeight> generateDestinationWeights(
+  private List<HTTPRouteDestination> generateDestinationWeights(
       List<IstioDestinationWeight> istioDestinationWeights, String host, PortSelector portSelector) throws IOException {
-    List<DestinationWeight> destinationWeights = new ArrayList<>();
+    List<HTTPRouteDestination> destinationWeights = new ArrayList<>();
 
     for (IstioDestinationWeight istioDestinationWeight : istioDestinationWeights) {
       String destinationYaml = getDestinationYaml(istioDestinationWeight.getDestination(), host);
       Destination destination = new YamlUtils().read(destinationYaml, Destination.class);
       destination.setPort(portSelector);
 
-      DestinationWeight destinationWeight = new DestinationWeight();
+      HTTPRouteDestination destinationWeight = new HTTPRouteDestination();
       destinationWeight.setWeight(Integer.parseInt(istioDestinationWeight.getWeight()));
       destinationWeight.setDestination(destination);
 
@@ -662,7 +681,7 @@ public class K8sTaskHelperBase {
     return destinationWeights;
   }
 
-  private String getHostFromRoute(List<DestinationWeight> routes) {
+  private String getHostFromRoute(List<HTTPRouteDestination> routes) {
     if (isEmpty(routes)) {
       throw new InvalidRequestException("No routes exist in VirtualService", USER);
     }
@@ -678,7 +697,7 @@ public class K8sTaskHelperBase {
     return routes.get(0).getDestination().getHost();
   }
 
-  private PortSelector getPortSelectorFromRoute(List<DestinationWeight> routes) {
+  private PortSelector getPortSelectorFromRoute(List<HTTPRouteDestination> routes) {
     return routes.get(0).getDestination().getPort();
   }
 
@@ -737,10 +756,7 @@ public class K8sTaskHelperBase {
     }
 
     KubernetesClient kubernetesClient = kubernetesHelperService.getKubernetesClient(kubernetesConfig);
-    kubernetesClient.customResources(
-        kubernetesContainerService.getCustomResourceDefinition(kubernetesClient, new VirtualServiceBuilder().build()),
-        VirtualService.class, KubernetesResourceList.class, DoneableVirtualService.class);
-
+    kubernetesClient.resources(VirtualService.class, VirtualServiceList.class);
     KubernetesResource kubernetesResource = virtualServiceResources.get(0);
     InputStream inputStream = IOUtils.toInputStream(kubernetesResource.getSpec(), UTF_8);
     VirtualService virtualService = (VirtualService) kubernetesClient.load(inputStream).get().get(0);
@@ -784,9 +800,7 @@ public class K8sTaskHelperBase {
     }
 
     KubernetesClient kubernetesClient = kubernetesHelperService.getKubernetesClient(kubernetesConfig);
-    kubernetesClient.customResources(
-        kubernetesContainerService.getCustomResourceDefinition(kubernetesClient, new DestinationRuleBuilder().build()),
-        DestinationRule.class, KubernetesResourceList.class, DoneableDestinationRule.class);
+    kubernetesClient.resources(DestinationRule.class, DestinationRuleList.class);
 
     KubernetesResource kubernetesResource = destinationRuleResources.get(0);
     InputStream inputStream = IOUtils.toInputStream(kubernetesResource.getSpec(), UTF_8);
@@ -876,7 +890,7 @@ public class K8sTaskHelperBase {
         throw new KubernetesCliTaskRuntimeException(response, KubernetesCliCommandType.APPLY);
       }
 
-      executionLogCallback.saveExecutionLog("\nFailed.", INFO, FAILURE);
+      logExecutableFailed(result, executionLogCallback);
       return false;
     }
 
@@ -898,7 +912,8 @@ public class K8sTaskHelperBase {
     ProcessResponse response = runK8sExecutable(k8sDelegateTaskParams, executionLogCallback, deleteCommand);
     ProcessResult result = response.getProcessResult();
     if (result.getExitValue() != 0) {
-      log.warn("Failed to delete manifests. Error {}", result.getOutput());
+      log.warn("Failed to delete manifests with exit code: {}. Error {}", result.getExitValue(),
+          result.hasOutput() ? result.outputUTF8() : "Empty output");
     }
 
     executionLogCallback.saveExecutionLog("\nDone.", INFO, CommandExecutionStatus.SUCCESS);
@@ -912,8 +927,8 @@ public class K8sTaskHelperBase {
 
   @VisibleForTesting
   public ProcessResult executeCommandUsingUtils(String workingDirectory, LogOutputStream statusInfoStream,
-      LogOutputStream statusErrorStream, String command) throws Exception {
-    return Utils.executeScript(workingDirectory, command, statusInfoStream, statusErrorStream);
+      LogOutputStream statusErrorStream, String command, Map<String, String> environment) throws Exception {
+    return Utils.executeScript(workingDirectory, command, statusInfoStream, statusErrorStream, environment);
   }
 
   public boolean scale(Kubectl client, K8sDelegateTaskParams k8sDelegateTaskParams, KubernetesResourceId resourceId,
@@ -930,8 +945,8 @@ public class K8sTaskHelperBase {
       executionLogCallback.saveExecutionLog("\nDone.", INFO, CommandExecutionStatus.SUCCESS);
       return true;
     } else {
-      executionLogCallback.saveExecutionLog("\nFailed.", INFO, FAILURE);
-      log.warn("Failed to scale workload. Error {}", result.getOutput());
+      logExecutableFailed(result, executionLogCallback);
+      log.warn("Failed to scale workload. Error {}", result.hasOutput() ? result.outputUTF8() : "empty output");
       if (isErrorFrameworkEnabled) {
         throw new KubernetesCliTaskRuntimeException(response, KubernetesCliCommandType.SCALE);
       }
@@ -1037,9 +1052,10 @@ public class K8sTaskHelperBase {
 
   @VisibleForTesting
   public ProcessResult executeCommandUsingUtils(K8sDelegateTaskParams k8sDelegateTaskParams,
-      LogOutputStream statusInfoStream, LogOutputStream statusErrorStream, String command) throws Exception {
+      LogOutputStream statusInfoStream, LogOutputStream statusErrorStream, String command,
+      Map<String, String> environment) throws Exception {
     return executeCommandUsingUtils(
-        k8sDelegateTaskParams.getWorkingDirectory(), statusInfoStream, statusErrorStream, command);
+        k8sDelegateTaskParams.getWorkingDirectory(), statusInfoStream, statusErrorStream, command, environment);
   }
 
   public String getRolloutStatusCommandForDeploymentConfig(
@@ -1067,8 +1083,8 @@ public class K8sTaskHelperBase {
       String rolloutHistoryCommand = getRolloutHistoryCommandForDeploymentConfig(k8sDelegateTaskParams, resourceId);
 
       try (LogOutputStream emptyLogOutputStream = getEmptyLogOutputStream()) {
-        ProcessResult result = executeCommandUsingUtils(
-            k8sDelegateTaskParams, emptyLogOutputStream, emptyLogOutputStream, rolloutHistoryCommand);
+        ProcessResult result = executeCommandUsingUtils(k8sDelegateTaskParams, emptyLogOutputStream,
+            emptyLogOutputStream, rolloutHistoryCommand, Maps.newHashMap());
 
         if (result.getExitValue() == 0) {
           String[] lines = result.outputUTF8().split("\\r?\\n");
@@ -1144,7 +1160,7 @@ public class K8sTaskHelperBase {
       ProcessResponse response = runK8sExecutable(k8sDelegateTaskParams, executionLogCallback, dryrun);
       ProcessResult result = response.getProcessResult();
       if (result.getExitValue() != 0) {
-        executionLogCallback.saveExecutionLog("\nFailed.", INFO, FAILURE);
+        logExecutableFailed(result, executionLogCallback);
         if (isErrorFrameworkEnabled) {
           throw new KubernetesCliTaskRuntimeException(response, KubernetesCliCommandType.DRY_RUN);
         }
@@ -1229,7 +1245,8 @@ public class K8sTaskHelperBase {
 
         executionLogCallback.saveExecutionLog(printableExecutedCommand + "\n");
 
-        result = executeCommandUsingUtils(workingDirectory, statusInfoStream, statusErrorStream, rolloutStatusCommand);
+        result = executeCommandUsingUtils(
+            workingDirectory, statusInfoStream, statusErrorStream, rolloutStatusCommand, Maps.newHashMap());
       } else {
         RolloutStatusCommand rolloutStatusCommand = client.rollout()
                                                         .status()
@@ -1247,12 +1264,13 @@ public class K8sTaskHelperBase {
       if (!success) {
         log.warn(result.outputUTF8());
         if (isErrorFrameworkEnabled) {
-          ProcessResponse processResponse = ProcessResponse.builder()
-                                                .errorMessage(errorCaptureStream.toString())
-                                                .processResult(result)
-                                                .printableCommand(printableExecutedCommand)
-                                                .kubectlPath(kubectlPath)
-                                                .build();
+          ProcessResponse processResponse =
+              ProcessResponse.builder()
+                  .errorMessage(ExceptionMessageSanitizer.sanitizeMessage(errorCaptureStream.toString()))
+                  .processResult(result)
+                  .printableCommand(printableExecutedCommand)
+                  .kubectlPath(kubectlPath)
+                  .build();
           throw new KubernetesCliTaskRuntimeException(processResponse, KubernetesCliCommandType.STEADY_STATE_CHECK);
         }
       }
@@ -1450,8 +1468,8 @@ public class K8sTaskHelperBase {
         printableExecutedCommand = rolloutStatusCommand.substring(rolloutStatusCommand.indexOf("oc --kubeconfig"));
         executionLogCallback.saveExecutionLog(printableExecutedCommand + "\n");
 
-        result =
-            executeCommandUsingUtils(k8sDelegateTaskParams, statusInfoStream, statusErrorStream, rolloutStatusCommand);
+        result = executeCommandUsingUtils(
+            k8sDelegateTaskParams, statusInfoStream, statusErrorStream, rolloutStatusCommand, Maps.newHashMap());
       } else {
         RolloutStatusCommand rolloutStatusCommand = client.rollout()
                                                         .status()
@@ -1470,12 +1488,13 @@ public class K8sTaskHelperBase {
       if (!success) {
         log.warn(result.outputUTF8());
         if (isErrorFrameworkEnabled) {
-          ProcessResponse processResponse = ProcessResponse.builder()
-                                                .errorMessage(errorCaptureStream.toString())
-                                                .processResult(result)
-                                                .printableCommand(printableExecutedCommand)
-                                                .kubectlPath(k8sDelegateTaskParams.getKubectlPath())
-                                                .build();
+          ProcessResponse processResponse =
+              ProcessResponse.builder()
+                  .errorMessage(ExceptionMessageSanitizer.sanitizeMessage(errorCaptureStream.toString()))
+                  .processResult(result)
+                  .printableCommand(printableExecutedCommand)
+                  .kubectlPath(k8sDelegateTaskParams.getKubectlPath())
+                  .build();
           throw new KubernetesCliTaskRuntimeException(processResponse, KubernetesCliCommandType.STEADY_STATE_CHECK);
         }
       }
@@ -2331,18 +2350,35 @@ public class K8sTaskHelperBase {
       case KUSTOMIZE:
         KustomizeManifestDelegateConfig kustomizeManifest = (KustomizeManifestDelegateConfig) manifestDelegateConfig;
 
-        String kustomizePath = Paths.get(manifestFilesDirectory, kustomizeManifest.getKustomizeDirPath()).toString();
+        String kustomizeYamlFolderPath = kustomizeManifest.getKustomizeYamlFolderPath() != null
+            ? kustomizeManifest.getKustomizeYamlFolderPath()
+            : kustomizeManifest.getKustomizeDirPath();
+
+        String kustomizePath = Paths.get(manifestFilesDirectory, kustomizeYamlFolderPath).toString();
         savingPatchesToDirectory(kustomizePath, manifestOverrideFiles, executionLogCallback);
         return kustomizeTaskHelper.build(manifestFilesDirectory, k8sDelegateTaskParams.getKustomizeBinaryPath(),
-            kustomizeManifest.getPluginPath(), kustomizeManifest.getKustomizeDirPath(), executionLogCallback);
+            kustomizeManifest.getPluginPath(), kustomizeYamlFolderPath, executionLogCallback);
 
       case OPENSHIFT_TEMPLATE:
         OpenshiftManifestDelegateConfig openshiftManifestConfig =
             (OpenshiftManifestDelegateConfig) manifestDelegateConfig;
-        GitStoreDelegateConfig otGitStoreDelegateConfig =
-            (GitStoreDelegateConfig) openshiftManifestConfig.getStoreDelegateConfig();
-        return openShiftDelegateService.processTemplatization(manifestFilesDirectory, k8sDelegateTaskParams.getOcPath(),
-            otGitStoreDelegateConfig.getPaths().get(0), executionLogCallback, manifestOverrideFiles);
+        if (openshiftManifestConfig.getStoreDelegateConfig() instanceof GitStoreDelegateConfig) {
+          GitStoreDelegateConfig otGitStoreDelegateConfig =
+              (GitStoreDelegateConfig) openshiftManifestConfig.getStoreDelegateConfig();
+          return openShiftDelegateService.processTemplatization(manifestFilesDirectory,
+              k8sDelegateTaskParams.getOcPath(), otGitStoreDelegateConfig.getPaths().get(0), executionLogCallback,
+              manifestOverrideFiles);
+        } else if (openshiftManifestConfig.getStoreDelegateConfig() instanceof LocalFileStoreDelegateConfig) {
+          LocalFileStoreDelegateConfig localFileStoreDelegateConfig =
+              (LocalFileStoreDelegateConfig) openshiftManifestConfig.getStoreDelegateConfig();
+          return openShiftDelegateService.processTemplatization(manifestFilesDirectory,
+              k8sDelegateTaskParams.getOcPath(),
+              localFileStoreDelegateConfig.getManifestFiles().get(0).getFilePath().substring(1), executionLogCallback,
+              manifestOverrideFiles);
+        } else {
+          throw new UnsupportedOperationException(
+              String.format("Manifest delegate config type: [%s]", manifestType.name()));
+        }
 
       default:
         throw new UnsupportedOperationException(
@@ -2403,19 +2439,72 @@ public class K8sTaskHelperBase {
       throws Exception {
     StoreDelegateConfig storeDelegateConfig = manifestDelegateConfig.getStoreDelegateConfig();
     switch (storeDelegateConfig.getType()) {
+      case HARNESS:
+        return writeManifestFilesToDirectory(storeDelegateConfig, manifestFilesDirectory, executionLogCallback);
+      case CUSTOM_REMOTE:
+        return downloadZippedManifestFilesFormCustomSource(
+            storeDelegateConfig, manifestFilesDirectory, executionLogCallback);
       case GIT:
+        if (manifestDelegateConfig instanceof KustomizeManifestDelegateConfig) {
+          KustomizeManifestDelegateConfig kustomizeManifestDelegateConfig =
+              (KustomizeManifestDelegateConfig) manifestDelegateConfig;
+          if (kustomizeManifestDelegateConfig.getKustomizeYamlFolderPath() != null) {
+            executionLogCallback.saveExecutionLog(color(
+                "\nUsing Optimized File Fetch For Kustomize, will fetch the subset of files needed for Deployment. ",
+                LogColor.White, LogWeight.Bold));
+          }
+        }
         return downloadManifestFilesFromGit(
             storeDelegateConfig, manifestFilesDirectory, executionLogCallback, accountId);
-
       case HTTP_HELM:
       case S3_HELM:
       case GCS_HELM:
+      case OCI_HELM:
         return downloadFilesFromChartRepo(
             manifestDelegateConfig, manifestFilesDirectory, executionLogCallback, timeoutInMillis);
 
       default:
         throw new UnsupportedOperationException(
             String.format("Manifest store config type: [%s]", storeDelegateConfig.getType().name()));
+    }
+  }
+
+  private boolean downloadZippedManifestFilesFormCustomSource(
+      StoreDelegateConfig delegateManifestConfig, String manifestFilesDirectory, LogCallback executionLogCallback) {
+    String tempWorkingDir = null;
+    try {
+      tempWorkingDir = customManifestService.getWorkingDirectory();
+
+      CustomRemoteStoreDelegateConfig customRemoteStoreDelegateConfig =
+          (CustomRemoteStoreDelegateConfig) delegateManifestConfig;
+
+      CustomManifestSource customManifestSource = customRemoteStoreDelegateConfig.getCustomManifestSource();
+      // handleIncorrectConfiguration(customRemoteStoreDelegateConfig);
+      customManifestFetchTaskHelper.downloadAndUnzipCustomSourceManifestFiles(
+          tempWorkingDir, customManifestSource.getZippedManifestFileId(), customManifestSource.getAccountId());
+      File file = new File(tempWorkingDir);
+      if (isEmpty(file.list())) {
+        throw new InvalidRequestException("No manifest files found under working directory", USER);
+      }
+      // preparing legacy directory structure for manifests and values yamls
+      File customManifestFolderPath = file.listFiles(pathname -> !file.isHidden())[0];
+      copyManifestFilesToWorkingDir(customManifestFolderPath, new File(manifestFilesDirectory));
+
+      executionLogCallback.saveExecutionLog(color("Successfully fetched following files:", White, Bold));
+      executionLogCallback.saveExecutionLog(getManifestFileNamesInLogFormat(manifestFilesDirectory));
+      executionLogCallback.saveExecutionLog("Done.", INFO, CommandExecutionStatus.SUCCESS);
+      return true;
+    } catch (IOException e) {
+      log.error("Failed to get files from manifest directory", ExceptionMessageSanitizer.sanitizeException(e));
+      executionLogCallback.saveExecutionLog(
+          "Failed to get manifest files from custom source. " + ExceptionUtils.getMessage(e), ERROR,
+          CommandExecutionStatus.FAILURE);
+      return false;
+    } catch (Exception e) {
+      log.error("Failed to process custom manifest", ExceptionMessageSanitizer.sanitizeException(e));
+      executionLogCallback.saveExecutionLog(
+          "Failed to process custom manifest. " + ExceptionUtils.getMessage(e), ERROR, CommandExecutionStatus.FAILURE);
+      return false;
     }
   }
 
@@ -2527,6 +2616,9 @@ public class K8sTaskHelperBase {
 
       if (HTTP_HELM == manifestDelegateConfig.getStoreDelegateConfig().getType()) {
         helmTaskHelperBase.downloadChartFilesFromHttpRepo(
+            helmChartManifestConfig, destinationDirectory, timeoutInMillis);
+      } else if (OCI_HELM == manifestDelegateConfig.getStoreDelegateConfig().getType()) {
+        helmTaskHelperBase.downloadChartFilesFromOciRepo(
             helmChartManifestConfig, destinationDirectory, timeoutInMillis);
       } else {
         helmTaskHelperBase.downloadChartFilesUsingChartMuseum(
@@ -2841,6 +2933,9 @@ public class K8sTaskHelperBase {
 
   private String getManifestDirectoryForHelmChart(
       String baseManifestDirectory, HelmChartManifestDelegateConfig helmChartManifest) {
+    if (StoreDelegateConfigType.HARNESS.equals(helmChartManifest.getStoreDelegateConfig().getType())) {
+      return baseManifestDirectory;
+    }
     if (GIT != helmChartManifest.getStoreDelegateConfig().getType()) {
       return HelmTaskHelperBase.getChartDirectory(baseManifestDirectory, helmChartManifest.getChartName());
     }
@@ -2859,6 +2954,16 @@ public class K8sTaskHelperBase {
         .collect(toList());
   }
 
+  private void logExecutableFailed(ProcessResult result, LogCallback logCallback) {
+    String output = result.hasOutput() ? result.outputUTF8() : null;
+    if (isNotEmpty(output)) {
+      logCallback.saveExecutionLog(
+          format("\nFailed with exit code: %d and output: %s.", result.getExitValue(), output), INFO, FAILURE);
+    } else {
+      logCallback.saveExecutionLog(format("\nFailed with exit code: %d.", result.getExitValue()), INFO, FAILURE);
+    }
+  }
+
   public List<KubernetesResourceId> getResourcesToBePrunedInOrder(
       List<KubernetesResource> resourcesFromLastSuccessfulRelease, List<KubernetesResource> resources) {
     List<KubernetesResourceId> currentResources =
@@ -2875,6 +2980,76 @@ public class K8sTaskHelperBase {
     } catch (KubernetesYamlException exception) {
       throw NestedExceptionUtils.hintWithExplanationException(
           INVALID_RESOURCE_SPEC_HINT, INVALID_RESOURCE_SPEC_EXPLANATION, exception);
+    }
+  }
+
+  public boolean doStatusCheckAllResourcesForHelm(Kubectl client, List<KubernetesResourceId> resourceIds, String ocPath,
+      String workingDir, String namespace, String kubeconfigPath, ExecutionLogCallback executionLogCallback)
+      throws Exception {
+    return doStatusCheckForAllResources(client, resourceIds,
+        K8sDelegateTaskParams.builder()
+            .ocPath(ocPath)
+            .workingDirectory(workingDir)
+            .kubeconfigPath(kubeconfigPath)
+            .build(),
+        namespace, executionLogCallback, false);
+  }
+
+  public K8sClient getKubernetesClient(boolean useK8sApiForSteadyStateCheck) {
+    if (useK8sApiForSteadyStateCheck) {
+      return kubernetesApiClient;
+    }
+    return kubernetesCliClient;
+  }
+
+  private boolean writeManifestFilesToDirectory(
+      StoreDelegateConfig storeDelegateConfig, String manifestFilesDirectory, LogCallback executionLogCallback) {
+    LocalFileStoreDelegateConfig localFileStoreDelegateConfig = (LocalFileStoreDelegateConfig) storeDelegateConfig;
+    if (isNotEmpty(localFileStoreDelegateConfig.getManifestType())
+        && isNotEmpty(localFileStoreDelegateConfig.getManifestIdentifier())) {
+      executionLogCallback.saveExecutionLog("\n"
+          + color(format("Fetching %s files with identifier: %s", localFileStoreDelegateConfig.getManifestType(),
+                      localFileStoreDelegateConfig.getManifestIdentifier()),
+              White, Bold));
+      executionLogCallback.saveExecutionLog(color(format("Fetching manifest files at path: "), LogColor.White));
+    } else {
+      executionLogCallback.saveExecutionLog("\n" + color("Fetching manifest files", White, Bold));
+    }
+    List<String> scopedFilePathList = localFileStoreDelegateConfig.getFilePaths();
+    printFilesFetchedFromHarnessStore(scopedFilePathList, executionLogCallback);
+    executionLogCallback.saveExecutionLog(
+        color(format("%nSuccessfully fetched following files: "), LogColor.White, LogWeight.Bold));
+    String directoryPath = Paths.get(manifestFilesDirectory).toString();
+    List<ManifestFiles> manifestFiles = localFileStoreDelegateConfig.getManifestFiles();
+    try {
+      for (int i = 0; i < manifestFiles.size(); i++) {
+        ManifestFiles manifestFile = manifestFiles.get(i);
+        if (StringUtils.equals(values_filename, manifestFile.getFileName())) {
+          continue;
+        }
+
+        Path filePath = Paths.get(directoryPath, manifestFile.getFilePath());
+        Path parent = filePath.getParent();
+        if (parent == null) {
+          throw new WingsException("Failed to create file at path " + filePath.toString());
+        }
+
+        createDirectoryIfDoesNotExist(parent.toString());
+        FileIo.writeUtf8StringToFile(filePath.toString(), manifestFile.getFileContent());
+        executionLogCallback.saveExecutionLog(color(format("- %s", manifestFile.getFilePath()), LogColor.White));
+      }
+      executionLogCallback.saveExecutionLog("Done.", INFO, CommandExecutionStatus.SUCCESS);
+      return true;
+    } catch (Exception ex) {
+      executionLogCallback.saveExecutionLog(ExceptionUtils.getMessage(ExceptionMessageSanitizer.sanitizeException(ex)),
+          ERROR, CommandExecutionStatus.FAILURE);
+      return false;
+    }
+  }
+
+  public void printFilesFetchedFromHarnessStore(List<String> scopedFilePathList, LogCallback logCallback) {
+    for (String scopedFilePath : scopedFilePathList) {
+      logCallback.saveExecutionLog(color(format("- %s", scopedFilePath), LogColor.White));
     }
   }
 }

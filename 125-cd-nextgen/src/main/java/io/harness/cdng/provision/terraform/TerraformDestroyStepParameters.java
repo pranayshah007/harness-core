@@ -10,6 +10,7 @@ package io.harness.cdng.provision.terraform;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.SpecParameters;
 import io.harness.pms.yaml.ParameterField;
 
@@ -32,7 +33,8 @@ public class TerraformDestroyStepParameters extends TerraformDestroyBaseStepInfo
 
   @Builder(builderMethodName = "infoBuilder")
   public TerraformDestroyStepParameters(ParameterField<String> provisionerIdentifier,
-      ParameterField<List<String>> delegateSelectors, @NonNull TerraformStepConfigurationParameters configuration) {
+      ParameterField<List<TaskSelectorYaml>> delegateSelectors,
+      @NonNull TerraformStepConfigurationParameters configuration) {
     super(provisionerIdentifier, delegateSelectors);
     this.configuration = configuration;
   }

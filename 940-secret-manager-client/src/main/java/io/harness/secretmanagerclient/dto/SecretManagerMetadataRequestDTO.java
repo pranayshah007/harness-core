@@ -9,6 +9,7 @@ package io.harness.secretmanagerclient.dto;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
+import io.harness.NGCommonEntityConstants;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DecryptableEntity;
 import io.harness.security.encryption.EncryptionType;
@@ -27,11 +28,14 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @Schema(name = "Invite", description = "This is the view of the SecretManagerMetadataRequest entity defined in Harness")
 public class SecretManagerMetadataRequestDTO implements DecryptableEntity {
-  @NotNull private EncryptionType encryptionType;
-  private String orgIdentifier;
-  private String projectIdentifier;
-  @NotNull private String identifier;
+  @Schema(description = "This specifies the type of encryption used by the Secret Manager to encrypt Secrets.")
+  @NotNull
+  private EncryptionType encryptionType;
+  @Schema(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) private String orgIdentifier;
+  @Schema(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) private String projectIdentifier;
+  @Schema(description = "Identifier of the SecretManager metadata.") @NotNull private String identifier;
 
+  @Schema(description = "Spec of the Secret Manager.")
   @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.EXTERNAL_PROPERTY, property = "encryptionType",
       visible = true)
   @JsonSubTypes(value = { @JsonSubTypes.Type(name = "VAULT", value = VaultMetadataRequestSpecDTO.class) })

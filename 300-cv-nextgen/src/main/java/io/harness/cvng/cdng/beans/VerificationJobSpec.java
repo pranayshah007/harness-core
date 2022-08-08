@@ -16,12 +16,15 @@ import io.harness.beans.SwaggerConstants;
 import io.harness.cvng.verificationjob.entities.VerificationJob.RuntimeParameter;
 import io.harness.cvng.verificationjob.entities.VerificationJob.VerificationJobBuilder;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.pms.yaml.YamlNode;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.google.common.base.Preconditions;
 import io.swagger.annotations.ApiModelProperty;
 import javax.validation.constraints.NotNull;
 import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.SuperBuilder;
@@ -33,6 +36,11 @@ import lombok.experimental.SuperBuilder;
 @SuperBuilder
 @NoArgsConstructor
 public abstract class VerificationJobSpec {
+  @JsonProperty(YamlNode.UUID_FIELD_NAME)
+  @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
+  @ApiModelProperty(hidden = true)
+  private String uuid;
+
   @ApiModelProperty(hidden = true) public abstract String getType();
   @NotNull
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH,

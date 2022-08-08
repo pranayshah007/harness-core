@@ -25,8 +25,6 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.ExecutionStatus;
-import io.harness.beans.FeatureName;
-import io.harness.ff.FeatureFlagService;
 import io.harness.persistence.HPersistence;
 
 import software.wings.beans.PipelineStageExecution;
@@ -46,7 +44,6 @@ import org.mongodb.morphia.query.UpdateOperations;
 public class WorkflowStatusPropagatorHelper {
   @Inject WorkflowExecutionService workflowExecutionService;
   @Inject WingsPersistence wingsPersistence;
-  @Inject FeatureFlagService featureFlagService;
 
   WorkflowExecution updateStatus(
       String appId, String uuid, List<ExecutionStatus> allowedFromStatuses, ExecutionStatus toStatus) {
@@ -98,17 +95,14 @@ public class WorkflowStatusPropagatorHelper {
     return execution.getPipelineExecution().getPipelineStageExecutions();
   }
 
-  public void refreshPipelineExecution(String accountId, String appId, String pipelineExecutionId) {
-    if (isNotEmpty(pipelineExecutionId) && featureFlagService.isEnabled(FeatureName.APP_TELEMETRY, accountId)) {
+  public void refreshPipelineExecution(String appId, String pipelineExecutionId) {
+    if (isNotEmpty(pipelineExecutionId)) {
       workflowExecutionService.refreshPipelineExecution(
           workflowExecutionService.getWorkflowExecution(appId, pipelineExecutionId));
     }
   }
 
   public void refreshPipelineExecution(WorkflowExecution workflowExecution) {
-    String accountId = workflowExecution.getAccountId();
-    if (featureFlagService.isEnabled(FeatureName.APP_TELEMETRY, accountId)) {
-      workflowExecutionService.refreshPipelineExecution(workflowExecution);
-    }
+    workflowExecutionService.refreshPipelineExecution(workflowExecution);
   }
 }

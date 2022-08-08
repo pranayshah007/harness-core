@@ -40,8 +40,8 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(HarnessTeam.DEL)
 @TargetModule(HarnessModule._420_DELEGATE_SERVICE)
 public class DelegateTaskExpiryCheckIterator implements MongoPersistenceIterator.Handler<Delegate> {
-  private static final long TASK_EXPIRY_TIMEOUT = 3L;
-  private static final long TASK_EXPIRY_CHECK_INTERVAL_IN_MINUTES = 5L;
+  private static final long TASK_EXPIRY_TIMEOUT = 5L;
+  private static final long TASK_EXPIRY_CHECK_INTERVAL_IN_MINUTES = 8L;
 
   @Inject private io.harness.iterator.PersistenceIteratorFactory persistenceIteratorFactory;
   @Inject private MorphiaPersistenceProvider<Delegate> persistenceProvider;
@@ -53,7 +53,7 @@ public class DelegateTaskExpiryCheckIterator implements MongoPersistenceIterator
     PumpExecutorOptions options = PumpExecutorOptions.builder()
                                       .interval(Duration.ofMinutes(TASK_EXPIRY_CHECK_INTERVAL_IN_MINUTES))
                                       .poolSize(threadPoolSize)
-                                      .name("DelegateCapabilitiesRecordHandler")
+                                      .name("DelegateTaskExpiryCheck")
                                       .build();
 
     persistenceIteratorFactory.createPumpIteratorWithDedicatedThreadPool(options, Delegate.class,
@@ -78,7 +78,6 @@ public class DelegateTaskExpiryCheckIterator implements MongoPersistenceIterator
     if (isDelegateExpiryCheckDoneAlready(delegate)) {
       return;
     }
-
     log.info("Expiring all tasks for delegate [{}], accountId: [{}]", delegate.getUuid(), delegate.getAccountId());
     try (AutoLogContext ignore1 = new DelegateLogContext(delegate.getUuid(), OVERRIDE_ERROR);
          AccountLogContext ignore2 = new AccountLogContext(delegate.getAccountId(), OVERRIDE_ERROR)) {

@@ -13,6 +13,7 @@ import io.harness.encryption.SecretReference;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
 import javax.validation.constraints.NotNull;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -29,6 +30,6 @@ import lombok.experimental.FieldDefaults;
 public class CustomHealthKeyAndValue implements DecryptableEntity {
   @NotNull String key;
   @NotNull boolean isValueEncrypted;
-  @SecretReference SecretRefData encryptedValueRef;
+  @ApiModelProperty(dataType = "string") @SecretReference SecretRefData encryptedValueRef;
   String value;
 }

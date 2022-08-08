@@ -37,12 +37,13 @@ import org.springframework.data.annotation.TypeAlias;
 @RecasterAlias("io.harness.cdng.k8s.K8sCanaryStepNode")
 public class K8sCanaryStepNode extends CdAbstractStepNode {
   @JsonProperty("type") @NotNull StepType type = StepType.K8sCanaryDeploy;
+  @NotNull
   @JsonProperty("spec")
   @JsonTypeInfo(use = NAME, property = "type", include = EXTERNAL_PROPERTY, visible = true)
   K8sCanaryStepInfo k8sCanaryStepInfo;
   @Override
   public String getType() {
-    return StepSpecTypeConstants.K8S_ROLLING_DEPLOY;
+    return StepSpecTypeConstants.K8S_CANARY_DEPLOY;
   }
 
   @Override

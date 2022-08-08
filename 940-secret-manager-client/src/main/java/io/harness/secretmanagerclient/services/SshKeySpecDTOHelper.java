@@ -10,6 +10,7 @@ package io.harness.secretmanagerclient.services;
 import static java.util.Collections.emptyList;
 
 import io.harness.ng.core.NGAccess;
+import io.harness.ng.core.dto.secrets.KerberosBaseConfigDTO;
 import io.harness.ng.core.dto.secrets.KerberosConfigDTO;
 import io.harness.ng.core.dto.secrets.SSHConfigDTO;
 import io.harness.ng.core.dto.secrets.SSHKeyPathCredentialDTO;
@@ -59,8 +60,8 @@ public class SshKeySpecDTOHelper {
     }
   }
 
-  private List<EncryptedDataDetail> getKerberosEncryptionDetails(
-      KerberosConfigDTO kerberosConfigDTO, NGAccess ngAccess) {
+  public List<EncryptedDataDetail> getKerberosEncryptionDetails(
+      KerberosBaseConfigDTO kerberosConfigDTO, NGAccess ngAccess) {
     switch (kerberosConfigDTO.getTgtGenerationMethod()) {
       case Password:
         TGTPasswordSpecDTO tgtPasswordSpecDTO = (TGTPasswordSpecDTO) kerberosConfigDTO.getSpec();

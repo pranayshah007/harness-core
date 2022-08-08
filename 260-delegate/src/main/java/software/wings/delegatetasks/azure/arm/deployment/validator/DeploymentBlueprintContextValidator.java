@@ -10,10 +10,10 @@ package software.wings.delegatetasks.azure.arm.deployment.validator;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
 import io.harness.azure.model.AzureConstants;
+import io.harness.delegate.task.azure.common.validator.Validator;
 import io.harness.exception.InvalidArgumentsException;
 
 import software.wings.delegatetasks.azure.arm.deployment.context.DeploymentBlueprintContext;
-import software.wings.delegatetasks.azure.common.validator.Validator;
 
 public class DeploymentBlueprintContextValidator implements Validator<DeploymentBlueprintContext> {
   @Override

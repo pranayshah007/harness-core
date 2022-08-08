@@ -52,6 +52,9 @@ public class AzureVMSSInstanceSyncPerpetualTaskClientTest extends WingsBaseTest 
 
   @InjectMocks @Inject private AzureVMSSInstanceSyncPerpetualTaskClient client;
 
+  // classloader() -->
+  // paths.. io.hanrness.cd.
+  // paths .. io.XXXXXX.ur6727.
   @Before
   public void setup() {
     AzureVMSSInfrastructureMapping infrastructureMapping = AzureVMSSInfrastructureMapping.builder().build();
@@ -61,9 +64,7 @@ public class AzureVMSSInstanceSyncPerpetualTaskClientTest extends WingsBaseTest 
     infrastructureMapping.setSubscriptionId("subs-id");
     infrastructureMapping.setResourceGroupName("res-name");
     doReturn(infrastructureMapping).when(mockInfraMappingService).get(anyString(), anyString());
-    doReturn(aSettingAttribute().withValue(AzureConfig.builder().build()).build())
-        .when(mockSettingsService)
-        .get(anyString());
+    doReturn(aSettingAttribute().withValue(AzureConfig.builder().build()).build()).when(mockSettingsService).get(any());
     doReturn(emptyList()).when(mockSecretManager).getEncryptionDetails(any(), anyString(), anyString());
   }
 

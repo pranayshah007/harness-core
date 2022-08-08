@@ -52,7 +52,7 @@ public class AdminUserServiceImpl implements AdminUserService {
   public boolean assignAdminRoleToUserInNG(String accountId, String userIdOrEmail) {
     User user = userService.getUserByEmail(userIdOrEmail);
     if (Objects.isNull(user)) {
-      user = userService.getUserByUserId(userIdOrEmail);
+      user = userService.getUserByUserId(accountId, userIdOrEmail);
     }
     String email = userIdOrEmail;
     if (!Objects.isNull(user)) {

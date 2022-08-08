@@ -35,7 +35,11 @@ fi
 
 # 2. Build config.yml
 echo "accountId: $ACCOUNT_ID" >> config.yml
-echo "accountSecret: $ACCOUNT_SECRET" >> config.yml
+if [ ! -e $ACCOUNT_SECRET ]; then
+  echo "delegateToken: $ACCOUNT_SECRET" >> config.yml
+else
+  echo "delegateToken: $DELEGATE_TOKEN" >> config.yml
+fi
 echo "managerUrl: $MANAGER_HOST_AND_PORT/api/" >> config.yml
 echo "verificationServiceUrl: $MANAGER_HOST_AND_PORT/verification/" >> config.yml
 echo "cvNextGenUrl: $MANAGER_HOST_AND_PORT/cv/api/" >> config.yml
@@ -49,6 +53,13 @@ echo "grpcServiceConnectorPort: ${GRPC_SERVICE_CONNECTOR_PORT:-8080}" >> config.
 echo "doUpgrade: false" >> config.yml
 
 append_config "clientToolsDownloadDisabled" $CLIENT_TOOLS_DOWNLOAD_DISABLED
+append_config "installClientToolsInBackground" $INSTALL_CLIENT_TOOLS_IN_BACKGROUND
+append_config "clientCertificateFilePath" $DELEGATE_CLIENT_CERTIFICATE_PATH
+append_config "clientCertificateKeyFilePath" $DELEGATE_CLIENT_CERTIFICATE_KEY_PATH
+append_config "grpcAuthorityModificationDisabled" ${GRPC_AUTHORITY_MODIFICATION_DISABLED:-false}
+# Intended for debugging, has to be set explicitly as its never set in generated yaml.
+append_config "trustAllCertificates" ${TRUST_ALL_CERTIFICATES:-false}
 
 # 3. Start the delegate
-exec java $JAVA_OPTS $PROXY_SYS_PROPS -Xbootclasspath/p:alpn-boot-8.1.13.v20181017.jar -Xmx1536m -XX:+HeapDumpOnOutOfMemoryError -XX:+PrintGCDetails -XX:+PrintGCDateStamps -Xloggc:mygclogfilename.gc -XX:+UseParallelGC -XX:MaxGCPauseMillis=500 -Dfile.encoding=UTF-8 -Dcom.sun.jndi.ldap.object.disableEndpointIdentification=true -DLANG=en_US.UTF-8 -jar delegate.jar server config.yml
+JAVA_OPTS=${JAVA_OPTS//UseCGroupMemoryLimitForHeap/UseContainerSupport}
+exec java $JAVA_OPTS $PROXY_SYS_PROPS -Xmx4096m -XX:+IgnoreUnrecognizedVMOptions -XX:+HeapDumpOnOutOfMemoryError -Xloggc:mygclogfilename.gc -XX:+UseParallelGC -XX:MaxGCPauseMillis=500 -Dfile.encoding=UTF-8 -Dcom.sun.jndi.ldap.object.disableEndpointIdentification=true -DLANG=en_US.UTF-8 -jar delegate.jar server config.yml

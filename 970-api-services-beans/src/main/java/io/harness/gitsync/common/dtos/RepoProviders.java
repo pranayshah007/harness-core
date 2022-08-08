@@ -19,9 +19,11 @@ public enum RepoProviders {
   @JsonProperty("github") GITHUB,
   @JsonProperty("gitlab") GITLAB,
   @JsonProperty("bitbucket") BITBUCKET,
+  @JsonProperty("azure") AZURE,
+  @JsonProperty("bitbucketserver") BITBUCKET_SERVER,
   @JsonProperty("unknown") UNKNOWN;
 
-  @JsonCreator
+  @JsonCreator(mode = JsonCreator.Mode.DELEGATING)
   public static RepoProviders fromString(@JsonProperty("repoProviderName") String repoProvider) {
     for (RepoProviders repoProviderEnum : RepoProviders.values()) {
       if (repoProviderEnum.name().equalsIgnoreCase(repoProvider)) {

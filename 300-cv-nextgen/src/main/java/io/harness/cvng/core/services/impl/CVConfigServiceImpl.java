@@ -17,12 +17,12 @@ import static java.util.stream.Collectors.toList;
 import io.harness.cvng.beans.DataSourceType;
 import io.harness.cvng.core.beans.params.MonitoredServiceParams;
 import io.harness.cvng.core.beans.params.ProjectParams;
+import io.harness.cvng.core.beans.sidekick.VerificationTaskCleanupSideKickData;
 import io.harness.cvng.core.entities.CVConfig;
 import io.harness.cvng.core.entities.CVConfig.CVConfigKeys;
 import io.harness.cvng.core.entities.CVConfig.CVConfigUpdatableEntity;
-import io.harness.cvng.core.entities.DeletedCVConfig;
 import io.harness.cvng.core.services.api.CVConfigService;
-import io.harness.cvng.core.services.api.DeletedCVConfigService;
+import io.harness.cvng.core.services.api.SideKickService;
 import io.harness.cvng.core.services.api.UpdatableEntity;
 import io.harness.cvng.core.services.api.VerificationTaskService;
 import io.harness.encryption.Scope;
@@ -31,6 +31,7 @@ import io.harness.persistence.HPersistence;
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
 import com.mongodb.BasicDBObject;
+import java.time.Clock;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -47,9 +48,10 @@ import org.mongodb.morphia.query.UpdateOperations;
 @Slf4j
 public class CVConfigServiceImpl implements CVConfigService {
   @Inject private HPersistence hPersistence;
-  @Inject private DeletedCVConfigService deletedCVConfigService;
   @Inject private VerificationTaskService verificationTaskService;
   @Inject private Map<DataSourceType, CVConfigUpdatableEntity> dataSourceTypeCVConfigMapBinder;
+  @Inject private SideKickService sideKickService;
+  @Inject private Clock clock;
 
   @Override
   public CVConfig save(CVConfig cvConfig) {
@@ -57,7 +59,7 @@ public class CVConfigServiceImpl implements CVConfigService {
     cvConfig.validate();
     hPersistence.save(cvConfig);
     verificationTaskService.createLiveMonitoringVerificationTask(
-        cvConfig.getAccountId(), cvConfig.getUuid(), cvConfig.getType());
+        cvConfig.getAccountId(), cvConfig.getUuid(), cvConfig.getVerificationTaskTags());
     return cvConfig;
   }
 
@@ -95,8 +97,11 @@ public class CVConfigServiceImpl implements CVConfigService {
     if (cvConfig == null) {
       return;
     }
-    deletedCVConfigService.save(
-        DeletedCVConfig.builder().cvConfig(cvConfig).accountId(cvConfig.getAccountId()).build(), Duration.ofHours(2));
+    String verificationTaskId =
+        verificationTaskService.getServiceGuardVerificationTaskId(cvConfig.getAccountId(), cvConfig.getUuid());
+    sideKickService.schedule(
+        VerificationTaskCleanupSideKickData.builder().verificationTaskId(verificationTaskId).cvConfig(cvConfig).build(),
+        clock.instant().plus(Duration.ofHours(2)));
     hPersistence.delete(CVConfig.class, cvConfigId);
   }
 
@@ -305,23 +310,17 @@ public class CVConfigServiceImpl implements CVConfigService {
   }
 
   @Override
-  public List<CVConfig> listByMonitoringSources(String accountId, String orgIdentifier, String projectIdentifier,
-      String serviceIdentifier, String envIdentifier, List<String> monitoringSources) {
-    Preconditions.checkNotNull(accountId);
-    List<CVConfig> cvConfigs = hPersistence.createQuery(CVConfig.class, excludeAuthority)
-                                   .filter(CVConfigKeys.accountId, accountId)
-                                   .filter(CVConfigKeys.projectIdentifier, projectIdentifier)
-                                   .filter(CVConfigKeys.orgIdentifier, orgIdentifier)
-                                   .filter(CVConfigKeys.serviceIdentifier, serviceIdentifier)
-                                   .filter(CVConfigKeys.envIdentifier, envIdentifier)
-                                   .asList();
-    if (monitoringSources == null) {
+  public List<CVConfig> listByMonitoringSources(
+      MonitoredServiceParams monitoredServiceParams, List<String> healthSourceIdentifiers) {
+    List<CVConfig> cvConfigs = createQuery(monitoredServiceParams).asList();
+    if (healthSourceIdentifiers == null) {
       return cvConfigs;
     }
     return cvConfigs.stream()
-        .filter(cvConfig -> monitoringSources.contains(cvConfig.getIdentifier()))
+        .filter(cvConfig -> healthSourceIdentifiers.contains(cvConfig.getIdentifier()))
         .collect(Collectors.toList());
   }
+
   @Override
   public List<CVConfig> getCVConfigs(MonitoredServiceParams monitoredServiceParams) {
     return hPersistence.createQuery(CVConfig.class, excludeAuthority)

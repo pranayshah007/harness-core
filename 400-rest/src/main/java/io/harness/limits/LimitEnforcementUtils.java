@@ -18,6 +18,7 @@ import io.harness.eraro.Level;
 import io.harness.exception.WingsException;
 import io.harness.limits.checker.StaticLimitCheckerWithDecrement;
 import io.harness.limits.checker.UsageLimitExceededException;
+import io.harness.limits.lib.DeploymentErrorType;
 import io.harness.logging.AccountLogContext;
 import io.harness.logging.AutoLogContext;
 
@@ -48,8 +49,12 @@ public class LimitEnforcementUtils {
       boolean allowed = checker.checkAndConsume();
       if (!allowed) {
         log.info("Resource Usage Limit Reached. Limit: {}", checker.getLimit());
+        DeploymentErrorType errorType = DeploymentErrorType.builder()
+                                            .errorType(DeploymentErrorType.ErrorType.LONG_TERM_DEPLOYMENT_ERROR)
+                                            .limit(1.0)
+                                            .build();
         throw new UsageLimitExceededException(ErrorCode.USAGE_LIMITS_EXCEEDED, Level.ERROR, WingsException.USER,
-            checker.getLimit(), checker.getAction().getAccountId());
+            checker.getLimit(), checker.getAction().getAccountId(), errorType);
       }
 
       try {

@@ -397,7 +397,7 @@ public class PcfStateHelperTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void testSingleManifestSupportFFDisabledEnvironmentLevel() {
     Service service = Service.builder().uuid(SERVICE_ID).isPcfV2(true).build();
-    doReturn(service).when(serviceResourceService).get(anyString());
+    doReturn(service).when(serviceResourceService).get(any());
 
     // FF disabled
     doReturn(false).when(featureFlagService).isEnabled(SINGLE_MANIFEST_SUPPORT, DUMMY_ACCOUNT_ID);
@@ -422,7 +422,7 @@ public class PcfStateHelperTest extends WingsBaseTest {
         .doReturn(Collections.singletonList(
             ManifestFile.builder().fileContent(SAMPLE_APPLICATION_MANIFEST_VALID_ENVIRONMENT_LEVEL).build()))
         .when(applicationManifestService)
-        .getManifestFilesByAppManifestId(anyString(), anyString());
+        .getManifestFilesByAppManifestId(any(), any());
     assertThat(
         pcfStateHelper
             .generateManifestMap(context, envServiceInlineManifestMap, SERVICE_ELEMENT, ACTIVITY_ID, DUMMY_ACCOUNT_ID)
@@ -436,7 +436,7 @@ public class PcfStateHelperTest extends WingsBaseTest {
         .doReturn(
             Collections.singletonList(ManifestFile.builder().fileContent(SAMPLE_APPLICATION_MANIFEST_INVALID).build()))
         .when(applicationManifestService)
-        .getManifestFilesByAppManifestId(anyString(), anyString());
+        .getManifestFilesByAppManifestId(any(), any());
     assertThatThrownBy(()
                            -> pcfStateHelper.generateManifestMap(
                                context, envServiceInlineManifestMap, SERVICE_ELEMENT, ACTIVITY_ID, DUMMY_ACCOUNT_ID))
@@ -485,7 +485,7 @@ public class PcfStateHelperTest extends WingsBaseTest {
     doReturn(Collections.singletonList(
                  ManifestFile.builder().fileContent(SAMPLE_APPLICATION_MANIFEST_VALID_SERVICE_LEVEL).build()))
         .when(applicationManifestService)
-        .getManifestFilesByAppManifestId(anyString(), anyString());
+        .getManifestFilesByAppManifestId(any(), any());
     assertThat(
         pcfStateHelper
             .generateManifestMap(context, envServiceRemoteManifestMap, SERVICE_ELEMENT, ACTIVITY_ID, DUMMY_ACCOUNT_ID)
@@ -517,7 +517,7 @@ public class PcfStateHelperTest extends WingsBaseTest {
     doReturn(Collections.singletonList(
                  ManifestFile.builder().fileContent(SAMPLE_APPLICATION_MANIFEST_VALID_SERVICE_LEVEL).build()))
         .when(applicationManifestService)
-        .getManifestFilesByAppManifestId(anyString(), anyString());
+        .getManifestFilesByAppManifestId(any(), any());
     assertThatThrownBy(()
                            -> pcfStateHelper.generateManifestMap(
                                context, envServiceRemoteManifestMap, SERVICE_ELEMENT, ACTIVITY_ID, DUMMY_ACCOUNT_ID))
@@ -552,7 +552,7 @@ public class PcfStateHelperTest extends WingsBaseTest {
     doReturn(Collections.singletonList(
                  ManifestFile.builder().fileContent(SAMPLE_APPLICATION_MANIFEST_VALID_SERVICE_LEVEL).build()))
         .when(applicationManifestService)
-        .getManifestFilesByAppManifestId(anyString(), anyString());
+        .getManifestFilesByAppManifestId(any(), any());
     assertThat(
         pcfStateHelper
             .generateManifestMap(context, envServiceRemoteManifestMap, SERVICE_ELEMENT, ACTIVITY_ID, DUMMY_ACCOUNT_ID)
@@ -587,7 +587,7 @@ public class PcfStateHelperTest extends WingsBaseTest {
     doReturn(Collections.singletonList(
                  ManifestFile.builder().fileContent(SAMPLE_APPLICATION_MANIFEST_VALID_SERVICE_LEVEL).build()))
         .when(applicationManifestService)
-        .getManifestFilesByAppManifestId(anyString(), anyString());
+        .getManifestFilesByAppManifestId(any(), any());
     assertThatThrownBy(()
                            -> pcfStateHelper.generateManifestMap(
                                context, envServiceRemoteManifestMap, SERVICE_ELEMENT, ACTIVITY_ID, DUMMY_ACCOUNT_ID))
@@ -600,7 +600,7 @@ public class PcfStateHelperTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void testSingleManifestSupportFFDisabledEnvironmentGlobalLevel() {
     Service service = Service.builder().uuid(SERVICE_ID).isPcfV2(true).build();
-    doReturn(service).when(serviceResourceService).get(anyString());
+    doReturn(service).when(serviceResourceService).get(any());
 
     // FF disabled
     doReturn(false).when(featureFlagService).isEnabled(SINGLE_MANIFEST_SUPPORT, DUMMY_ACCOUNT_ID);
@@ -625,7 +625,7 @@ public class PcfStateHelperTest extends WingsBaseTest {
         .doReturn(Collections.singletonList(
             ManifestFile.builder().fileContent(SAMPLE_APPLICATION_MANIFEST_VALID_ENVIRONMENT_LEVEL).build()))
         .when(applicationManifestService)
-        .getManifestFilesByAppManifestId(anyString(), anyString());
+        .getManifestFilesByAppManifestId(any(), any());
     assertThat(pcfStateHelper
                    .generateManifestMap(context, envInlineManifestMap, SERVICE_ELEMENT, ACTIVITY_ID, DUMMY_ACCOUNT_ID)
                    .getManifestYml())
@@ -638,7 +638,7 @@ public class PcfStateHelperTest extends WingsBaseTest {
         .doReturn(
             Collections.singletonList(ManifestFile.builder().fileContent(SAMPLE_APPLICATION_MANIFEST_INVALID).build()))
         .when(applicationManifestService)
-        .getManifestFilesByAppManifestId(anyString(), anyString());
+        .getManifestFilesByAppManifestId(any(), any());
     assertThatThrownBy(()
                            -> pcfStateHelper.generateManifestMap(
                                context, envInlineManifestMap, SERVICE_ELEMENT, ACTIVITY_ID, DUMMY_ACCOUNT_ID))
@@ -687,7 +687,7 @@ public class PcfStateHelperTest extends WingsBaseTest {
     doReturn(Collections.singletonList(
                  ManifestFile.builder().fileContent(SAMPLE_APPLICATION_MANIFEST_VALID_SERVICE_LEVEL).build()))
         .when(applicationManifestService)
-        .getManifestFilesByAppManifestId(anyString(), anyString());
+        .getManifestFilesByAppManifestId(any(), any());
     assertThat(pcfStateHelper
                    .generateManifestMap(context, envRemoteManifestMap, SERVICE_ELEMENT, ACTIVITY_ID, DUMMY_ACCOUNT_ID)
                    .getManifestYml())
@@ -718,7 +718,7 @@ public class PcfStateHelperTest extends WingsBaseTest {
     doReturn(Collections.singletonList(
                  ManifestFile.builder().fileContent(SAMPLE_APPLICATION_MANIFEST_VALID_SERVICE_LEVEL).build()))
         .when(applicationManifestService)
-        .getManifestFilesByAppManifestId(anyString(), anyString());
+        .getManifestFilesByAppManifestId(any(), any());
     assertThatThrownBy(()
                            -> pcfStateHelper.generateManifestMap(
                                context, envRemoteManifestMap, SERVICE_ELEMENT, ACTIVITY_ID, DUMMY_ACCOUNT_ID))
@@ -753,7 +753,7 @@ public class PcfStateHelperTest extends WingsBaseTest {
     doReturn(Collections.singletonList(
                  ManifestFile.builder().fileContent(SAMPLE_APPLICATION_MANIFEST_VALID_SERVICE_LEVEL).build()))
         .when(applicationManifestService)
-        .getManifestFilesByAppManifestId(anyString(), anyString());
+        .getManifestFilesByAppManifestId(any(), any());
     assertThat(pcfStateHelper
                    .generateManifestMap(context, envRemoteManifestMap, SERVICE_ELEMENT, ACTIVITY_ID, DUMMY_ACCOUNT_ID)
                    .getManifestYml())
@@ -787,7 +787,7 @@ public class PcfStateHelperTest extends WingsBaseTest {
     doReturn(Collections.singletonList(
                  ManifestFile.builder().fileContent(SAMPLE_APPLICATION_MANIFEST_VALID_SERVICE_LEVEL).build()))
         .when(applicationManifestService)
-        .getManifestFilesByAppManifestId(anyString(), anyString());
+        .getManifestFilesByAppManifestId(any(), any());
     assertThatThrownBy(()
                            -> pcfStateHelper.generateManifestMap(
                                context, envRemoteManifestMap, SERVICE_ELEMENT, ACTIVITY_ID, DUMMY_ACCOUNT_ID))
@@ -800,7 +800,7 @@ public class PcfStateHelperTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void testSingleManifestSupportFFDisabledServiceLevel() {
     Service service = Service.builder().uuid(SERVICE_ID).isPcfV2(true).build();
-    doReturn(service).when(serviceResourceService).get(anyString());
+    doReturn(service).when(serviceResourceService).get(any());
 
     // FF disabled
     doReturn(false).when(featureFlagService).isEnabled(SINGLE_MANIFEST_SUPPORT, DUMMY_ACCOUNT_ID);
@@ -817,7 +817,7 @@ public class PcfStateHelperTest extends WingsBaseTest {
     doReturn(Collections.singletonList(
                  ManifestFile.builder().fileContent(SAMPLE_APPLICATION_MANIFEST_VALID_SERVICE_LEVEL).build()))
         .when(applicationManifestService)
-        .getManifestFilesByAppManifestId(anyString(), anyString());
+        .getManifestFilesByAppManifestId(any(), any());
 
     assertThat(
         pcfStateHelper.generateManifestMap(context, localManifestMap, SERVICE_ELEMENT, ACTIVITY_ID, DUMMY_ACCOUNT_ID)
@@ -899,7 +899,7 @@ public class PcfStateHelperTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void testSingleManifestSupportFFEnabledEnvironmentLevel() {
     Service service = Service.builder().uuid(SERVICE_ID).isPcfV2(true).build();
-    doReturn(service).when(serviceResourceService).get(anyString());
+    doReturn(service).when(serviceResourceService).get(any());
 
     // FF enabled
     doReturn(true).when(featureFlagService).isEnabled(SINGLE_MANIFEST_SUPPORT, DUMMY_ACCOUNT_ID);
@@ -924,7 +924,7 @@ public class PcfStateHelperTest extends WingsBaseTest {
         .doReturn(Collections.singletonList(
             ManifestFile.builder().fileContent(SAMPLE_APPLICATION_MANIFEST_VALID_ENVIRONMENT_LEVEL).build()))
         .when(applicationManifestService)
-        .getManifestFilesByAppManifestId(anyString(), anyString());
+        .getManifestFilesByAppManifestId(any(), any());
     assertThat(
         pcfStateHelper
             .generateManifestMap(context, envServiceInlineManifestMap, SERVICE_ELEMENT, ACTIVITY_ID, DUMMY_ACCOUNT_ID)
@@ -938,7 +938,7 @@ public class PcfStateHelperTest extends WingsBaseTest {
         .doReturn(
             Collections.singletonList(ManifestFile.builder().fileContent(SAMPLE_APPLICATION_MANIFEST_INVALID).build()))
         .when(applicationManifestService)
-        .getManifestFilesByAppManifestId(anyString(), anyString());
+        .getManifestFilesByAppManifestId(any(), any());
     assertThatThrownBy(()
                            -> pcfStateHelper.generateManifestMap(
                                context, envServiceInlineManifestMap, SERVICE_ELEMENT, ACTIVITY_ID, DUMMY_ACCOUNT_ID))
@@ -987,7 +987,7 @@ public class PcfStateHelperTest extends WingsBaseTest {
     doReturn(Collections.singletonList(
                  ManifestFile.builder().fileContent(SAMPLE_APPLICATION_MANIFEST_VALID_SERVICE_LEVEL).build()))
         .when(applicationManifestService)
-        .getManifestFilesByAppManifestId(anyString(), anyString());
+        .getManifestFilesByAppManifestId(any(), any());
     assertThat(
         pcfStateHelper
             .generateManifestMap(context, envServiceRemoteManifestMap, SERVICE_ELEMENT, ACTIVITY_ID, DUMMY_ACCOUNT_ID)
@@ -1019,7 +1019,7 @@ public class PcfStateHelperTest extends WingsBaseTest {
     doReturn(Collections.singletonList(
                  ManifestFile.builder().fileContent(SAMPLE_APPLICATION_MANIFEST_VALID_SERVICE_LEVEL).build()))
         .when(applicationManifestService)
-        .getManifestFilesByAppManifestId(anyString(), anyString());
+        .getManifestFilesByAppManifestId(any(), any());
     assertThatThrownBy(()
                            -> pcfStateHelper.generateManifestMap(
                                context, envServiceRemoteManifestMap, SERVICE_ELEMENT, ACTIVITY_ID, DUMMY_ACCOUNT_ID))
@@ -1054,7 +1054,7 @@ public class PcfStateHelperTest extends WingsBaseTest {
     doReturn(Collections.singletonList(
                  ManifestFile.builder().fileContent(SAMPLE_APPLICATION_MANIFEST_VALID_SERVICE_LEVEL).build()))
         .when(applicationManifestService)
-        .getManifestFilesByAppManifestId(anyString(), anyString());
+        .getManifestFilesByAppManifestId(any(), any());
     assertThatThrownBy(()
                            -> pcfStateHelper.generateManifestMap(
                                context, envServiceRemoteManifestMap, SERVICE_ELEMENT, ACTIVITY_ID, DUMMY_ACCOUNT_ID))
@@ -1089,7 +1089,7 @@ public class PcfStateHelperTest extends WingsBaseTest {
     doReturn(Collections.singletonList(
                  ManifestFile.builder().fileContent(SAMPLE_APPLICATION_MANIFEST_VALID_SERVICE_LEVEL).build()))
         .when(applicationManifestService)
-        .getManifestFilesByAppManifestId(anyString(), anyString());
+        .getManifestFilesByAppManifestId(any(), any());
     assertThatThrownBy(()
                            -> pcfStateHelper.generateManifestMap(
                                context, envServiceRemoteManifestMap, SERVICE_ELEMENT, ACTIVITY_ID, DUMMY_ACCOUNT_ID))
@@ -1102,7 +1102,7 @@ public class PcfStateHelperTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void testSingleManifestSupportFFEnabledEnvironmentGlobalLevel() {
     Service service = Service.builder().uuid(SERVICE_ID).isPcfV2(true).build();
-    doReturn(service).when(serviceResourceService).get(anyString());
+    doReturn(service).when(serviceResourceService).get(any());
 
     // FF enabled
     doReturn(true).when(featureFlagService).isEnabled(SINGLE_MANIFEST_SUPPORT, DUMMY_ACCOUNT_ID);
@@ -1127,7 +1127,7 @@ public class PcfStateHelperTest extends WingsBaseTest {
         .doReturn(Collections.singletonList(
             ManifestFile.builder().fileContent(SAMPLE_APPLICATION_MANIFEST_VALID_ENVIRONMENT_LEVEL).build()))
         .when(applicationManifestService)
-        .getManifestFilesByAppManifestId(anyString(), anyString());
+        .getManifestFilesByAppManifestId(any(), any());
     assertThat(pcfStateHelper
                    .generateManifestMap(context, envInlineManifestMap, SERVICE_ELEMENT, ACTIVITY_ID, DUMMY_ACCOUNT_ID)
                    .getManifestYml())
@@ -1140,7 +1140,7 @@ public class PcfStateHelperTest extends WingsBaseTest {
         .doReturn(
             Collections.singletonList(ManifestFile.builder().fileContent(SAMPLE_APPLICATION_MANIFEST_INVALID).build()))
         .when(applicationManifestService)
-        .getManifestFilesByAppManifestId(anyString(), anyString());
+        .getManifestFilesByAppManifestId(any(), any());
     assertThatThrownBy(()
                            -> pcfStateHelper.generateManifestMap(
                                context, envInlineManifestMap, SERVICE_ELEMENT, ACTIVITY_ID, DUMMY_ACCOUNT_ID))
@@ -1189,7 +1189,7 @@ public class PcfStateHelperTest extends WingsBaseTest {
     doReturn(Collections.singletonList(
                  ManifestFile.builder().fileContent(SAMPLE_APPLICATION_MANIFEST_VALID_SERVICE_LEVEL).build()))
         .when(applicationManifestService)
-        .getManifestFilesByAppManifestId(anyString(), anyString());
+        .getManifestFilesByAppManifestId(any(), any());
     assertThat(pcfStateHelper
                    .generateManifestMap(context, envRemoteManifestMap, SERVICE_ELEMENT, ACTIVITY_ID, DUMMY_ACCOUNT_ID)
                    .getManifestYml())
@@ -1220,7 +1220,7 @@ public class PcfStateHelperTest extends WingsBaseTest {
     doReturn(Collections.singletonList(
                  ManifestFile.builder().fileContent(SAMPLE_APPLICATION_MANIFEST_VALID_SERVICE_LEVEL).build()))
         .when(applicationManifestService)
-        .getManifestFilesByAppManifestId(anyString(), anyString());
+        .getManifestFilesByAppManifestId(any(), any());
     assertThatThrownBy(()
                            -> pcfStateHelper.generateManifestMap(
                                context, envRemoteManifestMap, SERVICE_ELEMENT, ACTIVITY_ID, DUMMY_ACCOUNT_ID))
@@ -1255,7 +1255,7 @@ public class PcfStateHelperTest extends WingsBaseTest {
     doReturn(Collections.singletonList(
                  ManifestFile.builder().fileContent(SAMPLE_APPLICATION_MANIFEST_VALID_SERVICE_LEVEL).build()))
         .when(applicationManifestService)
-        .getManifestFilesByAppManifestId(anyString(), anyString());
+        .getManifestFilesByAppManifestId(any(), any());
     assertThatThrownBy(()
                            -> pcfStateHelper.generateManifestMap(
                                context, envRemoteManifestMap, SERVICE_ELEMENT, ACTIVITY_ID, DUMMY_ACCOUNT_ID))
@@ -1290,7 +1290,7 @@ public class PcfStateHelperTest extends WingsBaseTest {
     doReturn(Collections.singletonList(
                  ManifestFile.builder().fileContent(SAMPLE_APPLICATION_MANIFEST_VALID_SERVICE_LEVEL).build()))
         .when(applicationManifestService)
-        .getManifestFilesByAppManifestId(anyString(), anyString());
+        .getManifestFilesByAppManifestId(any(), any());
     assertThatThrownBy(()
                            -> pcfStateHelper.generateManifestMap(
                                context, envRemoteManifestMap, SERVICE_ELEMENT, ACTIVITY_ID, DUMMY_ACCOUNT_ID))
@@ -1303,7 +1303,7 @@ public class PcfStateHelperTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void testSingleManifestSupportFFEnabledServiceLevel() {
     Service service = Service.builder().uuid(SERVICE_ID).isPcfV2(true).build();
-    doReturn(service).when(serviceResourceService).get(anyString());
+    doReturn(service).when(serviceResourceService).get(any());
 
     // FF enabled
     doReturn(true).when(featureFlagService).isEnabled(SINGLE_MANIFEST_SUPPORT, DUMMY_ACCOUNT_ID);
@@ -1320,7 +1320,7 @@ public class PcfStateHelperTest extends WingsBaseTest {
     doReturn(Collections.singletonList(
                  ManifestFile.builder().fileContent(SAMPLE_APPLICATION_MANIFEST_VALID_SERVICE_LEVEL).build()))
         .when(applicationManifestService)
-        .getManifestFilesByAppManifestId(anyString(), anyString());
+        .getManifestFilesByAppManifestId(any(), any());
 
     assertThat(
         pcfStateHelper.generateManifestMap(context, localManifestMap, SERVICE_ELEMENT, ACTIVITY_ID, DUMMY_ACCOUNT_ID)
@@ -1861,7 +1861,7 @@ public class PcfStateHelperTest extends WingsBaseTest {
     ExecutionContextImpl context = Mockito.mock(ExecutionContextImpl.class);
     doReturn(anApplication().build()).when(context).getApp();
     doReturn(anEnvironment().build()).when(context).getEnv();
-    doReturn(new PcfInfrastructureMapping()).when(infrastructureMappingService).get(anyString(), anyString());
+    doReturn(new PcfInfrastructureMapping()).when(infrastructureMappingService).get(any(), any());
     doReturn(CustomManifestValuesFetchParams.builder().build())
         .when(applicationManifestUtils)
         .createCustomManifestValuesFetchParams(context, appManifestMap, VARS_YML);
@@ -1879,7 +1879,7 @@ public class PcfStateHelperTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void testGenerateManifestMap() {
     Service service = Service.builder().uuid(SERVICE_ID).isPcfV2(true).build();
-    doReturn(service).when(serviceResourceService).get(anyString());
+    doReturn(service).when(serviceResourceService).get(any());
 
     Map<K8sValuesLocation, ApplicationManifest> map = new HashMap<>();
     map.put(K8sValuesLocation.Service,
@@ -1896,7 +1896,7 @@ public class PcfStateHelperTest extends WingsBaseTest {
 
     doReturn(Arrays.asList(ManifestFile.builder().fileContent(TEST_APP_MANIFEST).build()))
         .when(applicationManifestService)
-        .getManifestFilesByAppManifestId(anyString(), anyString());
+        .getManifestFilesByAppManifestId(any(), any());
 
     PcfManifestsPackage pcfManifestsPackage =
         pcfStateHelper.generateManifestMap(context, map, SERVICE_ELEMENT, ACTIVITY_ID, DUMMY_ACCOUNT_ID);
@@ -2109,7 +2109,7 @@ public class PcfStateHelperTest extends WingsBaseTest {
         .when(settingsService)
         .get("CP2");
 
-    when(workflowExecutionService.checkIfOnDemand(anyString(), anyString())).thenReturn(false);
+    when(workflowExecutionService.checkIfOnDemand(any(), any())).thenReturn(false);
 
     SetupSweepingOutputPcf sweepingOutputPcf = pcfStateHelper.findSetupSweepingOutputPcf(context, false);
     assertThat(sweepingOutputPcf).isNotNull();

@@ -14,9 +14,9 @@ import static io.harness.validation.Validator.notNullCheck;
 
 import io.harness.exception.WingsException;
 
+import software.wings.beans.ApmMetricCollectionInfo;
 import software.wings.beans.yaml.ChangeContext;
 import software.wings.sm.StateType;
-import software.wings.sm.states.APMVerificationState.MetricCollectionInfo;
 import software.wings.verification.apm.APMCVConfigurationYaml;
 import software.wings.verification.apm.APMCVServiceConfiguration;
 
@@ -52,7 +52,7 @@ public class APMCVConfigurationYamlHandler
     super.toBean(changeContext, bean, appId, yamlFilePath);
 
     APMCVConfigurationYaml yaml = changeContext.getYaml();
-    List<MetricCollectionInfo> metrics = yaml.getMetricCollectionInfos();
+    List<ApmMetricCollectionInfo> metrics = yaml.getMetricCollectionInfos();
 
     if (isEmpty(metrics)) {
       throw new WingsException("No metrics found in the yaml");

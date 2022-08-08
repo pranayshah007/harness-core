@@ -11,15 +11,19 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.artifacts.docker.service.DockerRegistryServiceImpl.isSuccessful;
 import static io.harness.exception.WingsException.USER;
 
+import static java.lang.String.format;
+
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.artifacts.docker.DockerRegistryRestClient;
 import io.harness.artifacts.docker.beans.DockerImageManifestResponse;
 import io.harness.artifacts.docker.beans.DockerInternalConfig;
+import io.harness.beans.ArtifactMetaInfo;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidArtifactServerException;
 import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.WingsException;
+import io.harness.k8s.model.ImageDetails;
 
 import com.google.inject.Singleton;
 import java.io.IOException;
@@ -42,6 +46,55 @@ import retrofit2.Response;
 @Slf4j
 public class DockerRegistryUtils {
   protected static final String GITHUB_CONTAINER_REGISTRY = "ghcr.io";
+  private static final String DOCKER_REGISTRY_CREDENTIAL_TEMPLATE =
+      "{\"%s\":{\"username\":\"%s\",\"password\":\"%s\"}}";
+
+  public static String getDockerRegistryCredentials(ImageDetails imageDetails) {
+    return format(DOCKER_REGISTRY_CREDENTIAL_TEMPLATE, imageDetails.getRegistryUrl(), imageDetails.getUsername(),
+        imageDetails.getPassword().replaceAll("\"", "\\\\\""));
+  }
+
+  public ArtifactMetaInfo getArtifactMetaInfo(DockerInternalConfig dockerConfig,
+      DockerRegistryRestClient registryRestClient, Function<Headers, String> getTokenFn, String authHeader,
+      String imageName, String tag) {
+    try {
+      Response<DockerImageManifestResponse> response =
+          registryRestClient.getImageManifest(authHeader, imageName, tag).execute();
+      if (DockerRegistryUtils.fallbackToTokenAuth(response.code(), dockerConfig)) { // unauthorized
+        if (getTokenFn == null) {
+          // We don't want to retry if getTokenFn is null.
+          throw NestedExceptionUtils.hintWithExplanationException("Invalid Credentials",
+              "Check if the provided credentials are correct",
+              new InvalidArtifactServerException("Invalid Docker Registry credentials", USER));
+        }
+        String token = getTokenFn.apply(response.headers());
+        authHeader = "Bearer " + token;
+        response = registryRestClient.getImageManifest(authHeader, imageName, tag).execute();
+        if (response.code() == 401) {
+          // Unauthorized even after retry.
+          throw NestedExceptionUtils.hintWithExplanationException("Invalid Credentials",
+              "Check if the provided credentials are correct",
+              new InvalidArtifactServerException("Invalid Docker Registry credentials", USER));
+        }
+      }
+
+      if (!isSuccessful(response)) {
+        throw NestedExceptionUtils.hintWithExplanationException(
+            "Failed to fetch tags for image. Check if the image details are correct",
+            "Check if the image exists, the permissions are scoped for the authenticated user & check if the right connector chosen for fetching tags for the image",
+            new InvalidArtifactServerException(response.message(), USER));
+      }
+      checkValidImage(imageName, response);
+      DockerImageManifestResponse dockerImageManifestResponse = response.body();
+      if (dockerImageManifestResponse == null) {
+        return null;
+      }
+      return dockerImageManifestResponse.fetchArtifactMetaInfo(response);
+    } catch (Exception e) {
+      log.error("Unable to fetch artifact metainfo", e);
+      return null;
+    }
+  }
 
   public List<Map<String, String>> getLabels(DockerInternalConfig dockerConfig,
       DockerRegistryRestClient registryRestClient, Function<Headers, String> getTokenFn, String authHeader,

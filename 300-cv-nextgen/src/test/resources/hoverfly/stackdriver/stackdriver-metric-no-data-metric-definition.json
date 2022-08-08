@@ -1,0 +1,34 @@
+{
+  "dataSets": [
+    {
+      "timeSeriesFilter": {
+        "filter": "metric.type=\"kubernetes.io/container/cpu/limit_utilization\" resource.label.pod_name=\"123\" resource.type=\"k8s_container\"",
+        "minAlignmentPeriod": "60s",
+        "aggregations": [
+          {
+            "perSeriesAligner": "ALIGN_MEAN",
+            "crossSeriesReducer": "REDUCE_MEAN",
+            "alignmentPeriod": "60s",
+            "groupByFields": []
+          },
+          {
+            "crossSeriesReducer": "REDUCE_NONE",
+            "alignmentPeriod": "60s",
+            "groupByFields": []
+          }
+        ]
+      },
+      "targetAxis": "Y1",
+      "plotType": "LINE"
+    }
+  ],
+  "options": {
+    "mode": "COLOR"
+  },
+  "constantLines": [],
+  "timeshiftDuration": "0s",
+  "y1Axis": {
+    "label": "y1Axis",
+    "scale": "LINEAR"
+  }
+}

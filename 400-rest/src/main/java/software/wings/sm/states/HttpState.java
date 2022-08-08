@@ -34,9 +34,7 @@ import io.harness.beans.KeyValuePair;
 import io.harness.beans.SweepingOutputInstance;
 import io.harness.context.ContextElementType;
 import io.harness.data.algorithm.HashGenerator;
-import io.harness.delegate.beans.DelegateMetaInfo;
 import io.harness.delegate.beans.DelegateResponseData;
-import io.harness.delegate.beans.DelegateTaskNotifyResponseData;
 import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.task.TaskParameters;
@@ -53,6 +51,7 @@ import io.harness.tasks.ResponseData;
 import software.wings.api.HttpStateExecutionData;
 import software.wings.api.HttpStateExecutionData.HttpStateExecutionDataBuilder;
 import software.wings.beans.Activity.Type;
+import software.wings.beans.HttpStateExecutionResponse;
 import software.wings.beans.InfrastructureMapping;
 import software.wings.beans.NameValuePair;
 import software.wings.beans.TaskType;
@@ -78,6 +77,7 @@ import software.wings.sm.StateExecutionContext;
 import software.wings.sm.StateExecutionData;
 import software.wings.sm.StateType;
 import software.wings.sm.WorkflowStandardParams;
+import software.wings.sm.WorkflowStandardParamsExtensionService;
 import software.wings.sm.states.mixin.SweepingOutputStateMixin;
 import software.wings.stencils.DefaultValue;
 
@@ -94,11 +94,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.FieldNameConstants;
 import lombok.extern.slf4j.Slf4j;
@@ -146,6 +142,7 @@ public class HttpState extends State implements SweepingOutputStateMixin {
   @Inject protected transient DelegateService delegateService;
   @Inject @Transient InfrastructureMappingService infrastructureMappingService;
   @Inject @Transient FeatureFlagService featureFlagService;
+  @Inject private transient WorkflowStandardParamsExtensionService workflowStandardParamsExtensionService;
   @Inject private SettingServiceHelper settingServiceHelper;
   @Inject private AccountServiceImpl accountService;
   @Transient @Inject KryoSerializer kryoSerializer;
@@ -479,9 +476,10 @@ public class HttpState extends State implements SweepingOutputStateMixin {
   }
 
   private String obtainEnvId(WorkflowStandardParams workflowStandardParams) {
-    return (workflowStandardParams == null || workflowStandardParams.getEnv() == null)
+    return (workflowStandardParams == null
+               || workflowStandardParamsExtensionService.getEnv(workflowStandardParams) == null)
         ? null
-        : workflowStandardParams.getEnv().getUuid();
+        : workflowStandardParamsExtensionService.getEnv(workflowStandardParams).getUuid();
   }
 
   protected TaskType getTaskType() {
@@ -507,7 +505,8 @@ public class HttpState extends State implements SweepingOutputStateMixin {
       executionData.setAssertionStatement(assertion);
       executionData.setTemplateVariable(templateUtils.processTemplateVariables(context, getTemplateVariables()));
       ExecutionStatus executionStatus = ExecutionStatus.SUCCESS;
-      if (!evaluateAssertion(context, executionData) || executionData.getStatus() == ExecutionStatus.ERROR) {
+      if (!evaluateAssertion(context, executionData) || executionData.getStatus().equals(ExecutionStatus.ERROR)
+          || executionData.getStatus().equals(ExecutionStatus.FAILED)) {
         executionStatus = ExecutionStatus.FAILED;
         appendFailureType(executionResponseBuilder, context, httpStateExecutionResponse);
       }
@@ -814,22 +813,5 @@ public class HttpState extends State implements SweepingOutputStateMixin {
       httpState.setHeaders(headers);
       return httpState;
     }
-  }
-
-  @lombok.Builder
-  @Data
-  @NoArgsConstructor
-  @AllArgsConstructor
-  @EqualsAndHashCode(callSuper = false)
-  public static final class HttpStateExecutionResponse implements DelegateTaskNotifyResponseData {
-    private DelegateMetaInfo delegateMetaInfo;
-    private ExecutionStatus executionStatus;
-    private String errorMessage;
-    private String httpResponseBody;
-    private int httpResponseCode;
-    private String httpMethod;
-    private String httpUrl;
-    private String header;
-    private boolean timedOut;
   }
 }

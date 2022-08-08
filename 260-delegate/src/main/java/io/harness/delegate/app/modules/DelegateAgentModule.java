@@ -8,10 +8,9 @@
 package io.harness.delegate.app.modules;
 
 import static io.harness.configuration.DeployMode.DEPLOY_MODE;
-import static io.harness.configuration.DeployMode.ONPREM;
 import static io.harness.configuration.DeployMode.isOnPrem;
 import static io.harness.delegate.service.DelegateAgentServiceImpl.getDelegateId;
-import static io.harness.grpc.utils.DelegateGrpcConfigExtractor.extractAuthority;
+import static io.harness.grpc.utils.DelegateGrpcConfigExtractor.extractAndPrepareAuthority;
 import static io.harness.grpc.utils.DelegateGrpcConfigExtractor.extractTarget;
 
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
@@ -24,7 +23,6 @@ import io.harness.event.client.impl.appender.AppenderModule;
 import io.harness.event.client.impl.appender.AppenderModule.Config;
 import io.harness.event.client.impl.tailer.DelegateTailerModule;
 import io.harness.grpc.delegateservice.DelegateServiceGrpcAgentClientModule;
-import io.harness.grpc.pingpong.PingPongModule;
 import io.harness.logstreaming.LogStreamingModule;
 import io.harness.managerclient.DelegateManagerClientModule;
 import io.harness.metrics.MetricRegistryModule;
@@ -37,6 +35,7 @@ import com.codahale.metrics.MetricRegistry;
 import com.google.inject.AbstractModule;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 
 @RequiredArgsConstructor
 @Slf4j
@@ -48,28 +47,28 @@ public class DelegateAgentModule extends AbstractModule {
   protected void configure() {
     super.configure();
 
+    if (StringUtils.isNotEmpty(configuration.getClientCertificateFilePath())
+        && StringUtils.isNotEmpty(configuration.getClientCertificateKeyFilePath())) {
+      log.info("Delegate is running with mTLS enabled.");
+    }
+
     install(new DelegateHealthModule());
     install(KryoModule.getInstance());
     install(new DelegateKryoModule());
     install(new MetricRegistryModule(new MetricRegistry()));
 
     install(new DelegateManagerClientModule(configuration.getManagerUrl(), configuration.getVerificationServiceUrl(),
-        configuration.getCvNextGenUrl(), configuration.getAccountId(), configuration.getDelegateToken()));
+        configuration.getCvNextGenUrl(), configuration.getAccountId(), configuration.getDelegateToken(),
+        configuration.getClientCertificateFilePath(), configuration.getClientCertificateKeyFilePath(),
+        configuration.isTrustAllCertificates()));
 
-    install(new LogStreamingModule(configuration.getLogStreamingServiceBaseUrl()));
-    install(new DelegateGrpcClientModule(configuration));
+    install(new LogStreamingModule(configuration.getLogStreamingServiceBaseUrl(),
+        configuration.getClientCertificateFilePath(), configuration.getClientCertificateKeyFilePath(),
+        configuration.isTrustAllCertificates()));
+    install(new DelegateManagerGrpcClientModule(configuration));
 
-    final String deployMode = System.getenv().get(DEPLOY_MODE);
-    if (!ONPREM.name().equals(deployMode)) {
-      install(new PerpetualTaskWorkerModule());
-    }
-
-    if (!isOnPrem(deployMode)) {
-      install(new PingPongModule());
-      configureCcmEventPublishing();
-    } else {
-      log.warn("Skipping event publisher and PingPong configuration for on-prem deployment");
-    }
+    configureCcmEventPublishing();
+    install(new PerpetualTaskWorkerModule());
 
     install(KubernetesClientFactoryModule.getInstance());
     install(KubernetesApiClientFactoryModule.getInstance());
@@ -86,24 +85,27 @@ public class DelegateAgentModule extends AbstractModule {
   }
 
   private void configureCcmEventPublishing() {
-    if (isImmutableDelegate) {
+    final String deployMode = System.getenv(DEPLOY_MODE);
+    if (!isOnPrem(deployMode) && isImmutableDelegate) {
       final String managerHostAndPort = System.getenv("MANAGER_HOST_AND_PORT");
       if (isNotBlank(managerHostAndPort)) {
         log.info("Running immutable delegate, starting CCM event tailer");
         final DelegateTailerModule.Config tailerConfig =
             DelegateTailerModule.Config.builder()
-                .accountId(configuration.getAccountId())
-                .accountSecret(configuration.getDelegateToken())
                 .queueFilePath(configuration.getQueueFilePath())
                 .publishTarget(extractTarget(managerHostAndPort))
-                .publishAuthority(extractAuthority(managerHostAndPort, "events"))
+                .publishAuthority(extractAndPrepareAuthority(
+                    managerHostAndPort, "events", configuration.isGrpcAuthorityModificationDisabled()))
+                .clientCertificateFilePath(configuration.getClientCertificateFilePath())
+                .clientCertificateKeyFilePath(configuration.getClientCertificateKeyFilePath())
+                .trustAllCertificates(configuration.isTrustAllCertificates())
                 .build();
         install(new DelegateTailerModule(tailerConfig));
       } else {
         log.warn("Unable to configure event publisher configs. Event publisher will be disabled");
       }
     } else {
-      log.info("Running mutable delegate, watcher will be running tailer, so skip creating it in delegate");
+      log.info("Skip running tailer by delegate. For mutable it runs in watcher, for on prem we never run it.");
     }
     final Config appenderConfig = Config.builder().queueFilePath(configuration.getQueueFilePath()).build();
     install(new AppenderModule(appenderConfig, () -> getDelegateId().orElse("UNREGISTERED")));

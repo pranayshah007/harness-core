@@ -37,6 +37,8 @@ import software.wings.beans.command.ContainerSetupCommandUnitExecutionData;
 import software.wings.beans.command.ContainerSetupParams;
 import software.wings.beans.command.KubernetesSetupParams;
 import software.wings.beans.container.ContainerTask;
+import software.wings.beans.container.ContainerTaskMapper;
+import software.wings.beans.container.KubernetesContainerTask;
 import software.wings.sm.ExecutionContext;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -91,7 +93,7 @@ public class KubernetesSetupRollback extends ContainerServiceSetup {
         .withClusterName(clusterName)
         .withImageDetails(imageDetails)
         .withNamespace(namespace)
-        .withContainerTask(containerTask)
+        .withContainerTask(ContainerTaskMapper.toKubernetesContainerTaskDTO((KubernetesContainerTask) containerTask))
         .withControllerNamePrefix(rollbackElement.getControllerNamePrefix())
         .withInfraMappingId(infrastructureMapping.getUuid())
         .withServiceSteadyStateTimeout(serviceSteadyStateTimeout)

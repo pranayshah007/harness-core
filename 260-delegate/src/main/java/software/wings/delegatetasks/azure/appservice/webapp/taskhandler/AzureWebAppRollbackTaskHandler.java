@@ -15,11 +15,10 @@ import static io.harness.azure.model.AzureConstants.START_DEPLOYMENT_SLOT;
 import static io.harness.azure.model.AzureConstants.STOP_DEPLOYMENT_SLOT;
 import static io.harness.azure.model.AzureConstants.UPDATE_DEPLOYMENT_SLOT_CONTAINER_SETTINGS;
 import static io.harness.azure.model.AzureConstants.UPDATE_SLOT_CONFIGURATION_SETTINGS;
-
-import static software.wings.delegatetasks.azure.appservice.webapp.AppServiceDeploymentProgress.SAVE_CONFIGURATION;
-import static software.wings.delegatetasks.azure.appservice.webapp.AppServiceDeploymentProgress.STOP_SLOT;
-import static software.wings.delegatetasks.azure.appservice.webapp.AppServiceDeploymentProgress.UPDATE_SLOT_CONFIGURATIONS_SETTINGS;
-import static software.wings.delegatetasks.azure.appservice.webapp.AppServiceDeploymentProgress.UPDATE_SLOT_CONTAINER_SETTINGS;
+import static io.harness.delegate.task.azure.appservice.webapp.AppServiceDeploymentProgress.SAVE_CONFIGURATION;
+import static io.harness.delegate.task.azure.appservice.webapp.AppServiceDeploymentProgress.STOP_SLOT;
+import static io.harness.delegate.task.azure.appservice.webapp.AppServiceDeploymentProgress.UPDATE_SLOT_CONFIGURATIONS_SETTINGS;
+import static io.harness.delegate.task.azure.appservice.webapp.AppServiceDeploymentProgress.UPDATE_SLOT_CONTAINER_SETTINGS;
 
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;
@@ -30,20 +29,20 @@ import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.task.azure.appservice.AzureAppServicePreDeploymentData;
 import io.harness.delegate.task.azure.appservice.AzureAppServiceTaskParameters;
 import io.harness.delegate.task.azure.appservice.AzureAppServiceTaskResponse;
+import io.harness.delegate.task.azure.appservice.deployment.context.AzureAppServiceDeploymentContext;
+import io.harness.delegate.task.azure.appservice.deployment.context.AzureAppServiceDockerDeploymentContext;
+import io.harness.delegate.task.azure.appservice.deployment.context.AzureAppServicePackageDeploymentContext;
+import io.harness.delegate.task.azure.appservice.webapp.AppServiceDeploymentProgress;
 import io.harness.delegate.task.azure.appservice.webapp.request.AzureWebAppRollbackParameters;
 import io.harness.delegate.task.azure.appservice.webapp.response.AzureAppDeploymentData;
 import io.harness.delegate.task.azure.appservice.webapp.response.AzureWebAppSlotSetupResponse;
+import io.harness.delegate.task.azure.common.AutoCloseableWorkingDirectory;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.logging.LogLevel;
 
 import software.wings.beans.artifact.ArtifactStreamAttributes;
-import software.wings.delegatetasks.azure.appservice.deployment.context.AzureAppServiceDeploymentContext;
-import software.wings.delegatetasks.azure.appservice.deployment.context.AzureAppServiceDockerDeploymentContext;
-import software.wings.delegatetasks.azure.appservice.deployment.context.AzureAppServicePackageDeploymentContext;
 import software.wings.delegatetasks.azure.appservice.webapp.AbstractAzureWebAppTaskHandler;
-import software.wings.delegatetasks.azure.appservice.webapp.AppServiceDeploymentProgress;
-import software.wings.delegatetasks.azure.common.AutoCloseableWorkingDirectory;
 
 import com.google.inject.Singleton;
 import java.io.File;
@@ -206,7 +205,7 @@ public class AzureWebAppRollbackTaskHandler extends AbstractAzureWebAppTaskHandl
       AzureAppServiceDeploymentContext deploymentContext) {
     AzureAppServicePreDeploymentData preDeploymentData = rollbackParameters.getPreDeploymentData();
     rollbackSetupSlot(rollbackParameters, deploymentContext);
-    if (!rollbackParameters.isBlueGreen()) {
+    if (!rollbackParameters.isBlueGreen() && !rollbackParameters.isBasicDeployment()) {
       rollbackUpdateSlotTrafficWeight(preDeploymentData, azureWebClientContext, logStreamingTaskClient);
     }
   }
@@ -231,7 +230,7 @@ public class AzureWebAppRollbackTaskHandler extends AbstractAzureWebAppTaskHandl
       ILogStreamingTaskClient logStreamingTaskClient) {
     AzureAppServicePreDeploymentData preDeploymentData = rollbackParameters.getPreDeploymentData();
     return AzureAppServiceDockerDeploymentContext.builder()
-        .logStreamingTaskClient(logStreamingTaskClient)
+        .logCallbackProvider(logCallbackProviderFactory.createCg(logStreamingTaskClient))
         .appSettingsToAdd(AzureAppServiceConfigurationDTOMapper.getAzureAppServiceAppSettings(
             preDeploymentData.getAppSettingsToAdd()))
         .appSettingsToRemove(AzureAppServiceConfigurationDTOMapper.getAzureAppServiceAppSettings(
@@ -260,7 +259,7 @@ public class AzureWebAppRollbackTaskHandler extends AbstractAzureWebAppTaskHandl
 
     AzureAppServicePreDeploymentData preDeploymentData = rollbackParameters.getPreDeploymentData();
     return AzureAppServicePackageDeploymentContext.builder()
-        .logStreamingTaskClient(logStreamingTaskClient)
+        .logCallbackProvider(logCallbackProviderFactory.createCg(logStreamingTaskClient))
         .appSettingsToAdd(AzureAppServiceConfigurationDTOMapper.getAzureAppServiceAppSettings(
             preDeploymentData.getAppSettingsToAdd()))
         .appSettingsToRemove(AzureAppServiceConfigurationDTOMapper.getAzureAppServiceAppSettings(
@@ -283,7 +282,7 @@ public class AzureWebAppRollbackTaskHandler extends AbstractAzureWebAppTaskHandl
     double trafficWeight = preDeploymentData.getTrafficWeight();
     String slotName = preDeploymentData.getSlotName();
     azureAppServiceDeploymentService.rerouteProductionSlotTraffic(
-        azureWebClientContext, slotName, trafficWeight, logStreamingTaskClient);
+        azureWebClientContext, slotName, trafficWeight, logCallbackProviderFactory.createCg(logStreamingTaskClient));
   }
 
   private void markCommandUnitAsDone(

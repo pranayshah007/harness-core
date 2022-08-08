@@ -15,8 +15,10 @@ import io.harness.rest.RestResponse;
 
 import javax.validation.constraints.NotNull;
 import retrofit2.Call;
+import retrofit2.http.DELETE;
 import retrofit2.http.GET;
 import retrofit2.http.POST;
+import retrofit2.http.Path;
 import retrofit2.http.Query;
 
 @OwnedBy(CDP)
@@ -31,4 +33,7 @@ public interface FileServiceClient {
   Call<RestResponse<Boolean>> updateParentEntityIdAndVersion(@Query(value = "entityId") @NotNull String entityId,
       @Query(value = "stateFileId") @NotNull String stateFileId,
       @Query(value = "fileBucket") @NotNull FileBucket fileBucket);
+
+  @DELETE(FILE_SERVICE_API + "/{fileId}")
+  Call<RestResponse<Void>> deleteFile(@Path("fileId") String fileId, @Query("bucket") FileBucket fileBucket);
 }

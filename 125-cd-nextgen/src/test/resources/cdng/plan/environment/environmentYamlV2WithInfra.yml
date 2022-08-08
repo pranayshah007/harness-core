@@ -1,0 +1,5 @@
+deployToAll: false
+environmentRef: envId
+infrastructureDefinitions:
+  - ref: id1
+  - ref: id2

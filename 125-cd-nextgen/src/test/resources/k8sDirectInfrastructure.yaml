@@ -1,0 +1,14 @@
+infrastructureDefinition:
+    name: infra
+    identifier: infra
+    description: ""
+    tags: {}
+    type: KubernetesDirect
+    spec:
+        connectorRef: k8s_cluster
+        namespace: def
+        releaseName: release-<+INFRA_KEY>
+    orgIdentifier: default
+    projectIdentifier: svcenvrefactor
+    environmentRef: environmentVariableTest
+    allowSimultaneousDeployments: false

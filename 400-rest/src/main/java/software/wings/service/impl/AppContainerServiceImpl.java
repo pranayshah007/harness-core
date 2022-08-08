@@ -20,7 +20,6 @@ import io.harness.beans.PageResponse;
 import io.harness.beans.SearchFilter.Operator;
 import io.harness.delegate.beans.FileBucket;
 import io.harness.exception.InvalidRequestException;
-import io.harness.logging.Misc;
 import io.harness.scheduler.PersistentScheduler;
 
 import software.wings.beans.AppContainer;
@@ -97,14 +96,16 @@ public class AppContainerServiceImpl implements AppContainerService {
   @Override
   public AppContainer save(AppContainer appContainer, InputStream in, FileBucket fileBucket) {
     uploadAppContainerFile(appContainer, in, fileBucket);
-    return wingsPersistence.saveAndGet(AppContainer.class, appContainer);
+    String appContainerKey = wingsPersistence.save(appContainer);
+    return wingsPersistence.getWithAppId(AppContainer.class, appContainer.getAppId(), appContainerKey);
   }
   /**
    * {@inheritDoc}
    */
   @Override
   public AppContainer save(AppContainer appContainer) {
-    return wingsPersistence.saveAndGet(AppContainer.class, appContainer);
+    String appContainerKey = wingsPersistence.save(appContainer);
+    return wingsPersistence.getWithAppId(AppContainer.class, appContainer.getAppId(), appContainerKey);
   }
 
   /**
@@ -184,13 +185,18 @@ public class AppContainerServiceImpl implements AppContainerService {
     File tempFile = new File(System.getProperty("java.io.tmpdir"), "appStack" + Thread.currentThread().getId());
     fileService.download(fileId, tempFile, fileBucket);
 
-    Misc.ignoreException(() -> {
-      try (BufferedInputStream bufferedInputStream = new BufferedInputStream(new FileInputStream(tempFile))) {
-        FileType fileType = FileTypeDetector.detectType(bufferedInputStream);
-        appContainer.setFileType(fileType);
-        appContainer.setStackRootDirectory(fileType.getRoot(bufferedInputStream));
+    try (BufferedInputStream bufferedInputStream = new BufferedInputStream(new FileInputStream(tempFile))) {
+      FileType fileType = FileTypeDetector.detectType(bufferedInputStream);
+      if (fileType == FileType.UNKNOWN) {
+        throw new InvalidRequestException("Restricted file type. It must be ZIP or TAR.");
       }
-    });
+      appContainer.setFileType(fileType);
+      appContainer.setStackRootDirectory(fileType.getRoot(bufferedInputStream));
+    } catch (InvalidRequestException e) {
+      throw e;
+    } catch (Exception e) {
+      // do nothing
+    }
   }
 
   @Override

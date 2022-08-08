@@ -29,13 +29,14 @@ import io.harness.delegate.beans.connector.k8Connector.KubernetesCredentialType;
 import io.harness.delegate.task.gcp.helpers.GkeClusterHelper;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.k8s.KubernetesContainerService;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.logging.LogCallback;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.SecretDecryptionService;
 
-import software.wings.delegatetasks.ExceptionMessageSanitizer;
+import software.wings.delegatetasks.azure.AzureAsyncTaskHelper;
 import software.wings.service.intfc.security.EncryptionService;
 
 import com.google.common.cache.CacheBuilder;
@@ -46,6 +47,7 @@ import com.google.inject.Singleton;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.Pod;
 import java.io.File;
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -64,6 +66,7 @@ public class ContainerDeploymentDelegateBaseHelper {
   @Inject private SecretDecryptionService secretDecryptionService;
   @Inject private GkeClusterHelper gkeClusterHelper;
   @Inject private EncryptionService encryptionService;
+  @Inject private AzureAsyncTaskHelper azureAsyncTaskHelper;
 
   public static final LoadingCache<String, Object> lockObjects =
       CacheBuilder.newBuilder().expireAfterAccess(30, TimeUnit.MINUTES).build(CacheLoader.from(Object::new));
@@ -123,6 +126,13 @@ public class ContainerDeploymentDelegateBaseHelper {
       return gkeClusterHelper.getCluster(getGcpServiceAccountKeyFileContent(gcpCredentials),
           gcpCredentials.getGcpCredentialType() == INHERIT_FROM_DELEGATE, gcpK8sInfraDelegateConfig.getCluster(),
           gcpK8sInfraDelegateConfig.getNamespace());
+    } else if (clusterConfigDTO instanceof AzureK8sInfraDelegateConfig) {
+      AzureK8sInfraDelegateConfig azureK8sInfraDelegateConfig = (AzureK8sInfraDelegateConfig) clusterConfigDTO;
+      return azureAsyncTaskHelper.getClusterConfig(azureK8sInfraDelegateConfig.getAzureConnectorDTO(),
+          azureK8sInfraDelegateConfig.getSubscription(), azureK8sInfraDelegateConfig.getResourceGroup(),
+          azureK8sInfraDelegateConfig.getCluster(), azureK8sInfraDelegateConfig.getNamespace(),
+          azureK8sInfraDelegateConfig.getEncryptionDataDetails(),
+          azureK8sInfraDelegateConfig.isUseClusterAdminCredentials());
     } else {
       throw new InvalidRequestException("Unhandled K8sInfraDelegateConfig " + clusterConfigDTO.getClass());
     }
@@ -139,6 +149,15 @@ public class ContainerDeploymentDelegateBaseHelper {
   public String getKubeconfigFileContent(K8sInfraDelegateConfig k8sInfraDelegateConfig) {
     decryptK8sInfraDelegateConfig(k8sInfraDelegateConfig);
     return kubernetesContainerService.getConfigFileContent(createKubernetesConfig(k8sInfraDelegateConfig));
+  }
+
+  public void persistKubernetesConfig(KubernetesConfig kubernetesConfig, String directory) throws IOException {
+    kubernetesContainerService.persistKubernetesConfig(kubernetesConfig, directory);
+  }
+
+  public KubernetesConfig decryptAndGetKubernetesConfig(K8sInfraDelegateConfig k8sInfraDelegateConfig) {
+    decryptK8sInfraDelegateConfig(k8sInfraDelegateConfig);
+    return createKubernetesConfig(k8sInfraDelegateConfig);
   }
 
   public void decryptK8sInfraDelegateConfig(K8sInfraDelegateConfig k8sInfraDelegateConfig) {

@@ -14,6 +14,7 @@ import static io.harness.beans.SearchFilter.Operator.EQ;
 import static io.harness.beans.SearchFilter.Operator.EXISTS;
 import static io.harness.beans.SearchFilter.Operator.GE;
 import static io.harness.beans.SearchFilter.Operator.LT;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.persistence.HQuery.excludeValidate;
 
 import io.harness.annotations.dev.HarnessModule;
@@ -74,7 +75,7 @@ public class K8sWorkloadDao {
   // to get the workloads with at least one of the label(key:value) present (time filters are applied on last updated
   // at)
   public List<K8sWorkload> list(String accountId, long startTime, long endTime, Map<String, List<String>> labels) {
-    if (labels == null) {
+    if (isEmpty(labels)) {
       return new ArrayList<>();
     }
     labels = labels.entrySet().stream().collect(Collectors.toMap(e -> encode(e.getKey()), Map.Entry::getValue));

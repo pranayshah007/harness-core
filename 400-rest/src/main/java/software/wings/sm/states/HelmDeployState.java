@@ -39,7 +39,6 @@ import static software.wings.delegatetasks.GitFetchFilesTask.GIT_FETCH_FILES_TAS
 import static software.wings.sm.ExecutionContextImpl.PHASE_PARAM;
 import static software.wings.sm.StateType.HELM_DEPLOY;
 import static software.wings.sm.StateType.HELM_ROLLBACK;
-import static software.wings.sm.states.k8s.K8sStateHelper.fetchEnvFromExecutionContext;
 import static software.wings.sm.states.k8s.K8sStateHelper.fetchSafeTimeoutInMillis;
 
 import static java.util.Collections.singleton;
@@ -122,7 +121,8 @@ import software.wings.beans.artifact.Artifact;
 import software.wings.beans.command.CommandUnit;
 import software.wings.beans.command.CommandUnitDetails.CommandUnitType;
 import software.wings.beans.command.HelmDummyCommandUnit;
-import software.wings.beans.container.ContainerTask;
+import software.wings.beans.command.HelmDummyCommandUnitConstants;
+import software.wings.beans.container.ContainerTaskCommons;
 import software.wings.beans.container.HelmChartSpecification;
 import software.wings.beans.yaml.GitCommandExecutionResponse;
 import software.wings.beans.yaml.GitCommandExecutionResponse.GitCommandStatus;
@@ -175,10 +175,12 @@ import software.wings.sm.StateExecutionContext;
 import software.wings.sm.StateExecutionContext.StateExecutionContextBuilder;
 import software.wings.sm.StateType;
 import software.wings.sm.WorkflowStandardParams;
+import software.wings.sm.WorkflowStandardParamsExtensionService;
 import software.wings.sm.states.k8s.K8sStateHelper;
 import software.wings.sm.states.utils.StateTimeoutUtils;
 import software.wings.stencils.DefaultValue;
 import software.wings.utils.ApplicationManifestUtils;
+import software.wings.utils.HelmChartSpecificationMapper;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
@@ -236,6 +238,7 @@ public class HelmDeployState extends State {
   @Inject private LogService logService;
   @Inject private SweepingOutputService sweepingOutputService;
   @Inject private EnvironmentService environmentService;
+  @Inject private WorkflowStandardParamsExtensionService workflowStandardParamsExtensionService;
 
   @DefaultValue("10") private int steadyStateTimeout; // Minutes
 
@@ -348,7 +351,7 @@ public class HelmDeployState extends State {
                   .script(customSourceConfig.getScript())
                   .build());
 
-    Environment env = K8sStateHelper.fetchEnvFromExecutionContext(context);
+    Environment env = k8sStateHelper.fetchEnvFromExecutionContext(context);
     ContainerInfrastructureMapping infraMapping = k8sStateHelper.fetchContainerInfrastructureMapping(context);
     final int expressionFunctorToken = HashGenerator.generateIntegerHash();
     String serviceTemplateId = infraMapping == null ? null : serviceTemplateHelper.fetchServiceTemplateId(infraMapping);
@@ -420,14 +423,14 @@ public class HelmDeployState extends State {
     List<CommandUnit> commandUnits = new ArrayList<>();
 
     if (valuesInGit || valuesInHelmChartRepo || isCustomManifestSource) {
-      commandUnits.add(new HelmDummyCommandUnit(HelmDummyCommandUnit.FetchFiles));
+      commandUnits.add(new HelmDummyCommandUnit(HelmDummyCommandUnitConstants.FetchFiles));
     }
 
-    commandUnits.add(new HelmDummyCommandUnit(HelmDummyCommandUnit.Init));
-    commandUnits.add(new HelmDummyCommandUnit(HelmDummyCommandUnit.Prepare));
-    commandUnits.add(new HelmDummyCommandUnit(HelmDummyCommandUnit.InstallUpgrade));
-    commandUnits.add(new HelmDummyCommandUnit(HelmDummyCommandUnit.WaitForSteadyState));
-    commandUnits.add(new HelmDummyCommandUnit(HelmDummyCommandUnit.WrapUp));
+    commandUnits.add(new HelmDummyCommandUnit(HelmDummyCommandUnitConstants.Init));
+    commandUnits.add(new HelmDummyCommandUnit(HelmDummyCommandUnitConstants.Prepare));
+    commandUnits.add(new HelmDummyCommandUnit(HelmDummyCommandUnitConstants.InstallUpgrade));
+    commandUnits.add(new HelmDummyCommandUnit(HelmDummyCommandUnitConstants.WaitForSteadyState));
+    commandUnits.add(new HelmDummyCommandUnit(HelmDummyCommandUnitConstants.WrapUp));
 
     return commandUnits;
   }
@@ -474,7 +477,7 @@ public class HelmDeployState extends State {
             .accountId(accountId)
             .activityId(activityId)
             .commandName(HELM_COMMAND_NAME)
-            .chartSpecification(helmChartSpecification)
+            .chartSpecification(HelmChartSpecificationMapper.helmChartSpecificationDTO(helmChartSpecification))
             .releaseName(releaseName)
             .namespace(containerServiceParams.getNamespace())
             .containerServiceParams(containerServiceParams)
@@ -513,7 +516,7 @@ public class HelmDeployState extends State {
 
   private String getImageName(String yamlFileContent, String imageNameTag, String domainName) {
     if (isNotEmpty(domainName)) {
-      Pattern pattern = ContainerTask.compileRegexPattern(domainName);
+      Pattern pattern = ContainerTaskCommons.compileRegexPattern(domainName);
       Matcher matcher = pattern.matcher(yamlFileContent);
       if (!matcher.find()) {
         imageNameTag = domainName + "/" + imageNameTag;
@@ -964,7 +967,7 @@ public class HelmDeployState extends State {
     WorkflowStandardParams workflowStandardParams = context.getContextElement(ContextElementType.STANDARD);
 
     final Application app = appService.get(context.getAppId());
-    final Environment env = workflowStandardParams.getEnv();
+    final Environment env = workflowStandardParamsExtensionService.getEnv(workflowStandardParams);
     ServiceElement serviceElement = phaseElement.getServiceElement();
     Artifact artifact = ((DeploymentExecutionContext) context).getDefaultArtifactForService(serviceElement.getUuid());
     String artifactStreamId = artifact == null ? null : artifact.getArtifactStreamId();
@@ -1228,7 +1231,7 @@ public class HelmDeployState extends State {
     Log.Builder logBuilder = aLog()
                                  .appId(context.getAppId())
                                  .activityId(activityId)
-                                 .commandUnitName(HelmDummyCommandUnit.Rollback)
+                                 .commandUnitName(HelmDummyCommandUnitConstants.Rollback)
                                  .logLevel(LogLevel.INFO)
                                  .executionResult(CommandExecutionStatus.SUCCESS);
     ManagerExecutionLogCallback executionLogCallback =
@@ -1275,7 +1278,7 @@ public class HelmDeployState extends State {
     ContainerInfrastructureMapping containerInfraMapping = k8sStateHelper.fetchContainerInfrastructureMapping(context);
 
     String waitId = generateUuid();
-    Environment env = fetchEnvFromExecutionContext(context);
+    Environment env = k8sStateHelper.fetchEnvFromExecutionContext(context);
     DelegateTask delegateTask =
         DelegateTask.builder()
             .accountId(app.getAccountId())
@@ -1518,7 +1521,7 @@ public class HelmDeployState extends State {
     ContainerInfrastructureMapping containerInfraMapping =
         (ContainerInfrastructureMapping) infrastructureMappingService.get(app.getUuid(), context.fetchInfraMappingId());
 
-    Environment env = fetchEnvFromExecutionContext(context);
+    Environment env = k8sStateHelper.fetchEnvFromExecutionContext(context);
     DelegateTask delegateTask =
         DelegateTask.builder()
             .accountId(app.getAccountId())
@@ -1639,7 +1642,8 @@ public class HelmDeployState extends State {
         return;
       }
 
-      HelmExecutionSummary summary = helmHelper.prepareHelmExecutionSummary(releaseName, helmChartSpec, repoConfig);
+      HelmExecutionSummary summary = helmHelper.prepareHelmExecutionSummary(
+          releaseName, HelmChartSpecificationMapper.helmChartSpecificationDTO(helmChartSpec), repoConfig);
       workflowExecutionService.refreshHelmExecutionSummary(context.getWorkflowExecutionId(), summary);
     } catch (Exception ex) {
       log.info("Exception while setting helm execution summary", ex);

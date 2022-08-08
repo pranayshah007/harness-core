@@ -45,7 +45,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @OwnedBy(HarnessTeam.DEL)
 @StoreIn(DbAliases.ALL)
 public class WaitInstance implements WaitEngineEntity {
-  public static final Duration TTL = ofDays(30);
+  public static final Duration TTL = ofDays(90);
 
   @Id @org.springframework.data.annotation.Id String uuid;
   @FdIndex List<String> correlationIds;

@@ -55,7 +55,7 @@ import software.wings.beans.GraphNode;
 import software.wings.beans.InfrastructureProvisioner;
 import software.wings.beans.NameValuePair;
 import software.wings.beans.Service;
-import software.wings.beans.ServiceVariable.Type;
+import software.wings.beans.ServiceVariableType;
 import software.wings.beans.SettingAttribute;
 import software.wings.beans.TerraformInfrastructureProvisioner;
 import software.wings.beans.Workflow;
@@ -290,9 +290,9 @@ public class TerraformTest extends AbstractFunctionalTest {
   }
 
   private TerraformInfrastructureProvisioner buildProvisionerObject() {
-    List<NameValuePair> variables =
-        Arrays.asList(NameValuePair.builder().name("access_key").valueType(Type.TEXT.toString()).build(),
-            NameValuePair.builder().name("secret_key").valueType(Type.ENCRYPTED_TEXT.toString()).build());
+    List<NameValuePair> variables = Arrays.asList(
+        NameValuePair.builder().name("access_key").valueType(ServiceVariableType.TEXT.toString()).build(),
+        NameValuePair.builder().name("secret_key").valueType(ServiceVariableType.ENCRYPTED_TEXT.toString()).build());
     return TerraformInfrastructureProvisioner.builder()
         .appId(application.getAppId())
         .name("Terraform Test" + secureRandAlphaNumString(5))

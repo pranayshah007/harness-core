@@ -7,6 +7,7 @@
 
 package io.harness.ccm.graphql.core.perspectives;
 
+import static io.harness.ccm.commons.constants.ViewFieldConstants.AWS_ACCOUNT_FIELD;
 import static io.harness.ccm.views.utils.ClusterTableKeys.AVG_CPU_UTILIZATION_VALUE;
 import static io.harness.ccm.views.utils.ClusterTableKeys.AVG_MEMORY_UTILIZATION_VALUE;
 import static io.harness.ccm.views.utils.ClusterTableKeys.BILLING_AMOUNT;
@@ -34,8 +35,14 @@ import io.harness.ccm.graphql.dto.common.DataPoint.DataPointBuilder;
 import io.harness.ccm.graphql.dto.common.Reference;
 import io.harness.ccm.graphql.dto.common.TimeSeriesDataPoints;
 import io.harness.ccm.graphql.dto.perspectives.PerspectiveTimeSeriesData;
+import io.harness.ccm.views.businessMapping.entities.BusinessMapping;
+import io.harness.ccm.views.businessMapping.entities.UnallocatedCostStrategy;
+import io.harness.ccm.views.businessMapping.service.intf.BusinessMappingService;
 import io.harness.ccm.views.graphql.QLCEViewGroupBy;
 import io.harness.ccm.views.graphql.QLCEViewTimeTruncGroupBy;
+import io.harness.ccm.views.helper.AwsAccountFieldHelper;
+import io.harness.ccm.views.utils.ViewFieldUtils;
+import io.harness.exception.InvalidRequestException;
 
 import com.google.cloud.Timestamp;
 import com.google.cloud.bigquery.Field;
@@ -52,36 +59,46 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
+import javax.annotation.Nullable;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class PerspectiveTimeSeriesHelper {
   @Inject EntityMetadataService entityMetadataService;
-  public static final String nullStringValueConstant = "Others";
-  public static final String OTHERS = "Others";
+  @Inject BusinessMappingService businessMappingService;
+  private static final String OTHERS = "Others";
+  private static final String UNALLOCATED_COST = "Unallocated";
   private static final long ONE_DAY_SEC = 86400;
   private static final long ONE_HOUR_SEC = 3600;
 
-  public PerspectiveTimeSeriesData fetch(TableResult result, long timePeriod) {
-    return fetch(result, timePeriod, null, null);
+  public PerspectiveTimeSeriesData fetch(TableResult result, long timePeriod, List<QLCEViewGroupBy> groupBy) {
+    return fetch(result, timePeriod, null, null, null, groupBy);
   }
 
-  public PerspectiveTimeSeriesData fetch(
-      TableResult result, long timePeriod, String conversionField, String accountId) {
+  public PerspectiveTimeSeriesData fetch(TableResult result, long timePeriod, String conversionField,
+      String businessMappingId, String accountId, List<QLCEViewGroupBy> groupBy) {
+    BusinessMapping businessMapping = businessMappingService.get(businessMappingId);
+    UnallocatedCostStrategy strategy = businessMapping != null && businessMapping.getUnallocatedCost() != null
+        ? businessMapping.getUnallocatedCost().getStrategy()
+        : null;
+    String fieldName = getEntityGroupByFieldName(groupBy);
+
     Schema schema = result.getSchema();
     FieldList fields = schema.getFields();
     Set<String> entityNames = new HashSet<>();
 
-    Map<Timestamp, List<DataPoint>> costDataPointsMap = new LinkedHashMap();
-    Map<Timestamp, List<DataPoint>> cpuLimitDataPointsMap = new LinkedHashMap();
-    Map<Timestamp, List<DataPoint>> cpuRequestDataPointsMap = new LinkedHashMap();
-    Map<Timestamp, List<DataPoint>> cpuUtilizationValueDataPointsMap = new LinkedHashMap();
-    Map<Timestamp, List<DataPoint>> memoryLimitDataPointsMap = new LinkedHashMap();
-    Map<Timestamp, List<DataPoint>> memoryRequestDataPointsMap = new LinkedHashMap();
-    Map<Timestamp, List<DataPoint>> memoryUtilizationValueDataPointsMap = new LinkedHashMap();
+    Map<Timestamp, List<DataPoint>> costDataPointsMap = new LinkedHashMap<>();
+    Map<Timestamp, List<DataPoint>> cpuLimitDataPointsMap = new LinkedHashMap<>();
+    Map<Timestamp, List<DataPoint>> cpuRequestDataPointsMap = new LinkedHashMap<>();
+    Map<Timestamp, List<DataPoint>> cpuUtilizationValueDataPointsMap = new LinkedHashMap<>();
+    Map<Timestamp, List<DataPoint>> memoryLimitDataPointsMap = new LinkedHashMap<>();
+    Map<Timestamp, List<DataPoint>> memoryRequestDataPointsMap = new LinkedHashMap<>();
+    Map<Timestamp, List<DataPoint>> memoryUtilizationValueDataPointsMap = new LinkedHashMap<>();
 
     for (FieldValueList row : result.iterateAll()) {
       Timestamp startTimeTruncatedTimestamp = null;
@@ -104,7 +121,7 @@ public class PerspectiveTimeSeriesHelper {
             startTimeTruncatedTimestamp = Timestamp.ofTimeMicroseconds(row.get(field.getName()).getTimestampValue());
             break;
           case STRING:
-            stringValue = fetchStringValue(row, field);
+            stringValue = fetchStringValue(row, field, fieldName);
             entityNames.add(stringValue);
             type = field.getName();
             id = getUpdatedId(id, stringValue);
@@ -166,20 +183,40 @@ public class PerspectiveTimeSeriesHelper {
         }
       }
 
-      addDataPointToMap(id, stringValue, type, value, costDataPointsMap, startTimeTruncatedTimestamp);
-      addDataPointToMap(id, "LIMIT", "UTILIZATION", cpuLimit, cpuLimitDataPointsMap, startTimeTruncatedTimestamp);
-      addDataPointToMap(id, "REQUEST", "UTILIZATION", cpuRequest, cpuRequestDataPointsMap, startTimeTruncatedTimestamp);
-      addDataPointToMap(
-          id, "AVG", "UTILIZATION", cpuUtilizationValue, cpuUtilizationValueDataPointsMap, startTimeTruncatedTimestamp);
-      addDataPointToMap(id, "MAX", "UTILIZATION", maxCpuUtilizationValue, cpuUtilizationValueDataPointsMap,
-          startTimeTruncatedTimestamp);
-      addDataPointToMap(id, "LIMIT", "UTILIZATION", memoryLimit, memoryLimitDataPointsMap, startTimeTruncatedTimestamp);
-      addDataPointToMap(
-          id, "REQUEST", "UTILIZATION", memoryRequest, memoryRequestDataPointsMap, startTimeTruncatedTimestamp);
-      addDataPointToMap(id, "AVG", "UTILIZATION", memoryUtilizationValue, memoryUtilizationValueDataPointsMap,
-          startTimeTruncatedTimestamp);
-      addDataPointToMap(id, "MAX", "UTILIZATION", maxMemoryUtilizationValue, memoryUtilizationValueDataPointsMap,
-          startTimeTruncatedTimestamp);
+      boolean addDataPoint = true;
+      if (strategy != null && stringValue.equals(ViewFieldUtils.getBusinessMappingUnallocatedCostDefaultName())) {
+        switch (strategy) {
+          case HIDE:
+            addDataPoint = false;
+            break;
+          case DISPLAY_NAME:
+            stringValue = businessMapping.getUnallocatedCost().getLabel();
+            break;
+          case SHARE:
+          default:
+            throw new InvalidRequestException(
+                "Invalid Unallocated Cost Strategy / Unallocated Cost Strategy not supported");
+        }
+      }
+
+      if (addDataPoint) {
+        addDataPointToMap(id, stringValue, type, value, costDataPointsMap, startTimeTruncatedTimestamp);
+        addDataPointToMap(id, "LIMIT", "UTILIZATION", cpuLimit, cpuLimitDataPointsMap, startTimeTruncatedTimestamp);
+        addDataPointToMap(
+            id, "REQUEST", "UTILIZATION", cpuRequest, cpuRequestDataPointsMap, startTimeTruncatedTimestamp);
+        addDataPointToMap(id, "AVG", "UTILIZATION", cpuUtilizationValue, cpuUtilizationValueDataPointsMap,
+            startTimeTruncatedTimestamp);
+        addDataPointToMap(id, "MAX", "UTILIZATION", maxCpuUtilizationValue, cpuUtilizationValueDataPointsMap,
+            startTimeTruncatedTimestamp);
+        addDataPointToMap(
+            id, "LIMIT", "UTILIZATION", memoryLimit, memoryLimitDataPointsMap, startTimeTruncatedTimestamp);
+        addDataPointToMap(
+            id, "REQUEST", "UTILIZATION", memoryRequest, memoryRequestDataPointsMap, startTimeTruncatedTimestamp);
+        addDataPointToMap(id, "AVG", "UTILIZATION", memoryUtilizationValue, memoryUtilizationValueDataPointsMap,
+            startTimeTruncatedTimestamp);
+        addDataPointToMap(id, "MAX", "UTILIZATION", maxMemoryUtilizationValue, memoryUtilizationValueDataPointsMap,
+            startTimeTruncatedTimestamp);
+      }
     }
 
     if (conversionField != null) {
@@ -219,12 +256,12 @@ public class PerspectiveTimeSeriesHelper {
         .collect(Collectors.toList());
   }
 
-  private static String fetchStringValue(FieldValueList row, Field field) {
+  private static String fetchStringValue(FieldValueList row, Field field, String fieldName) {
     Object value = row.get(field.getName()).getValue();
     if (value != null) {
       return value.toString();
     }
-    return nullStringValueConstant;
+    return fieldName;
   }
 
   private double getNumericValue(FieldValueList row, Field field) {
@@ -239,13 +276,16 @@ public class PerspectiveTimeSeriesHelper {
     return Math.round(value * 100D) / 100D;
   }
 
-  public PerspectiveTimeSeriesData postFetch(PerspectiveTimeSeriesData data, Integer limit, boolean includeOthers) {
+  public PerspectiveTimeSeriesData postFetch(PerspectiveTimeSeriesData data, Integer limit, boolean includeOthers,
+      boolean includeUnallocatedCost, @Nullable Map<Long, Double> unallocatedCostMapping) {
     Map<String, Double> aggregatedDataPerUniqueId = new HashMap<>();
-    data.getStats().forEach(dataPoint -> {
+    String type = DEFAULT_STRING_VALUE;
+    for (final TimeSeriesDataPoints dataPoint : data.getStats()) {
       for (DataPoint entry : dataPoint.getValues()) {
         Reference qlReference = entry.getKey();
         if (qlReference != null && qlReference.getId() != null) {
           String key = qlReference.getId();
+          type = qlReference.getType();
           if (aggregatedDataPerUniqueId.containsKey(key)) {
             aggregatedDataPerUniqueId.put(key, entry.getValue().doubleValue() + aggregatedDataPerUniqueId.get(key));
           } else {
@@ -253,14 +293,15 @@ public class PerspectiveTimeSeriesHelper {
           }
         }
       }
-    });
+    }
     if (aggregatedDataPerUniqueId.isEmpty()) {
       return data;
     }
     List<String> selectedIdsAfterLimit = getElementIdsAfterLimit(aggregatedDataPerUniqueId, limit);
 
     return PerspectiveTimeSeriesData.builder()
-        .stats(getDataAfterLimit(data, selectedIdsAfterLimit, includeOthers))
+        .stats(getDataAfterLimit(
+            data, selectedIdsAfterLimit, includeOthers, includeUnallocatedCost, unallocatedCostMapping, type))
         .cpuLimit(data.getCpuLimit())
         .cpuRequest(data.getCpuRequest())
         .cpuUtilValues(data.getCpuUtilValues())
@@ -279,33 +320,39 @@ public class PerspectiveTimeSeriesHelper {
     if (entityIdToName != null) {
       costDataPointsMap.keySet().forEach(timestamp
           -> updatedDataPointsMap.put(
-              timestamp, getUpdatedDataPoints(costDataPointsMap.get(timestamp), entityIdToName)));
+              timestamp, getUpdatedDataPoints(costDataPointsMap.get(timestamp), entityIdToName, fieldName)));
       return updatedDataPointsMap;
     } else {
       return costDataPointsMap;
     }
   }
 
-  private List<DataPoint> getUpdatedDataPoints(List<DataPoint> dataPoints, Map<String, String> entityIdToName) {
+  private List<DataPoint> getUpdatedDataPoints(
+      List<DataPoint> dataPoints, Map<String, String> entityIdToName, String fieldName) {
     List<DataPoint> updatedDataPoints = new ArrayList<>();
 
-    dataPoints.forEach(dataPoint
-        -> updatedDataPoints.add(
-            DataPoint.builder()
-                .value(dataPoint.getValue())
-                .key(getReference(dataPoint.getKey().getId(),
-                    entityIdToName.getOrDefault(dataPoint.getKey().getName(), dataPoint.getKey().getName()),
-                    dataPoint.getKey().getType()))
-                .build()));
+    dataPoints.forEach(dataPoint -> {
+      String name = entityIdToName.getOrDefault(dataPoint.getKey().getName(), dataPoint.getKey().getName());
+      if (AWS_ACCOUNT_FIELD.equals(fieldName)) {
+        name = AwsAccountFieldHelper.mergeAwsAccountIdAndName(
+            dataPoint.getKey().getName(), entityIdToName.get(dataPoint.getKey().getName()));
+      }
+      updatedDataPoints.add(DataPoint.builder()
+                                .value(dataPoint.getValue())
+                                .key(getReference(dataPoint.getKey().getId(), name, dataPoint.getKey().getType()))
+                                .build());
+    });
     return updatedDataPoints;
   }
 
-  private List<TimeSeriesDataPoints> getDataAfterLimit(
-      PerspectiveTimeSeriesData data, List<String> selectedIdsAfterLimit, boolean includeOthers) {
+  private List<TimeSeriesDataPoints> getDataAfterLimit(PerspectiveTimeSeriesData data,
+      List<String> selectedIdsAfterLimit, boolean includeOthers, boolean includeUnallocatedCost,
+      @Nullable Map<Long, Double> unallocatedCostMapping, String type) {
     List<TimeSeriesDataPoints> limitProcessedData = new ArrayList<>();
     data.getStats().forEach(dataPoint -> {
       List<DataPoint> limitProcessedValues = new ArrayList<>();
-      DataPoint others = DataPoint.builder().key(Reference.builder().id(OTHERS).name(OTHERS).build()).value(0).build();
+      DataPoint others =
+          DataPoint.builder().key(Reference.builder().id(OTHERS).name(OTHERS).type(type).build()).value(0D).build();
       for (DataPoint entry : dataPoint.getValues()) {
         String key = entry.getKey().getId();
         if (selectedIdsAfterLimit.contains(key)) {
@@ -315,9 +362,17 @@ public class PerspectiveTimeSeriesHelper {
         }
       }
 
-      if (others.getValue().doubleValue() > 0 && includeOthers) {
+      if (includeOthers) {
         others.setValue(getRoundedDoubleValue(others.getValue().doubleValue()));
         limitProcessedValues.add(others);
+      }
+
+      if (includeUnallocatedCost && Objects.nonNull(unallocatedCostMapping)) {
+        limitProcessedValues.add(
+            DataPoint.builder()
+                .key(Reference.builder().id(UNALLOCATED_COST).name(UNALLOCATED_COST).type(type).build())
+                .value(unallocatedCostMapping.getOrDefault(dataPoint.getTime(), 0D))
+                .build());
       }
 
       limitProcessedData.add(
@@ -341,6 +396,18 @@ public class PerspectiveTimeSeriesHelper {
 
   private Reference getReference(String id, String name, String type) {
     return Reference.builder().id(id).name(name).type(type).build();
+  }
+
+  private static String getEntityGroupByFieldName(final List<QLCEViewGroupBy> groupBy) {
+    String entityGroupByFieldName = OTHERS;
+    final Optional<String> groupByFieldName = groupBy.stream()
+                                                  .filter(entry -> Objects.nonNull(entry.getEntityGroupBy()))
+                                                  .map(entry -> entry.getEntityGroupBy().getFieldName())
+                                                  .findFirst();
+    if (groupByFieldName.isPresent()) {
+      entityGroupByFieldName = "No " + groupByFieldName.get();
+    }
+    return entityGroupByFieldName;
   }
 
   public long getTimePeriod(List<QLCEViewGroupBy> groupBy) {

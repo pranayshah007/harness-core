@@ -29,7 +29,6 @@ import static software.wings.utils.WingsTestConstants.UUID;
 import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
@@ -72,6 +71,7 @@ import software.wings.settings.SettingVariableTypes;
 import software.wings.sm.ExecutionContextImpl;
 import software.wings.sm.ExecutionResponse;
 import software.wings.sm.WorkflowStandardParams;
+import software.wings.sm.WorkflowStandardParamsExtensionService;
 
 import com.google.common.collect.ImmutableMap;
 import java.util.Arrays;
@@ -98,24 +98,25 @@ public class CloudFormationDeleteStackStateTest extends WingsBaseTest {
   @Mock private SettingsService settingsService;
   @Mock private StateExecutionService stateExecutionService;
   @Mock private FeatureFlagService featureFlagService;
+  @Mock private WorkflowStandardParamsExtensionService workflowStandardParamsExtensionService;
 
   @InjectMocks private CloudFormationDeleteStackState state = new CloudFormationDeleteStackState("stateName");
 
   @Before
   public void setUp() {
-    Answer<String> doReturnSameValue = invocation -> invocation.getArgumentAt(0, String.class);
-    doAnswer(doReturnSameValue).when(mockContext).renderExpression(anyString());
+    Answer<String> doReturnSameValue = invocation -> invocation.getArgument(0, String.class);
+    doAnswer(doReturnSameValue).when(mockContext).renderExpression(any());
 
     WorkflowStandardParams mockParams = mock(WorkflowStandardParams.class);
     doReturn(mockParams).when(mockContext).fetchWorkflowStandardParamsFromContext();
     Environment env = anEnvironment().appId(APP_ID).uuid(ENV_ID).name(ENV_NAME).build();
-    doReturn(env).when(mockParams).fetchRequiredEnv();
+    doReturn(env).when(workflowStandardParamsExtensionService).fetchRequiredEnv(mockParams);
 
     Application application = new Application();
     application.setAccountId(ACCOUNT_ID);
     application.setUuid(UUID);
     when(mockContext.getApp()).thenReturn(application);
-    doNothing().when(stateExecutionService).appendDelegateTaskDetails(anyString(), any());
+    doNothing().when(stateExecutionService).appendDelegateTaskDetails(any(), any());
 
     state.useCustomStackName = true;
     state.customStackName = "customStackName";
@@ -128,8 +129,7 @@ public class CloudFormationDeleteStackStateTest extends WingsBaseTest {
   public void testExecuteInternal() {
     CloudFormationInfrastructureProvisioner cloudFormationInfrastructureProvisioner =
         CloudFormationInfrastructureProvisioner.builder().build();
-    when(infrastructureProvisionerService.get(anyString(), anyString()))
-        .thenReturn(cloudFormationInfrastructureProvisioner);
+    when(infrastructureProvisionerService.get(any(), any())).thenReturn(cloudFormationInfrastructureProvisioner);
     TemplateExpression templateExpression = TemplateExpression.builder().build();
     when(templateExpressionProcessor.getTemplateExpression(eq(Arrays.asList(templateExpression)), eq("awsConfigId")))
         .thenReturn(templateExpression);
@@ -148,7 +148,7 @@ public class CloudFormationDeleteStackStateTest extends WingsBaseTest {
     settingAttribute.setValue(AwsConfig.builder().build());
     when(templateExpressionProcessor.getTemplateExpression(eq(Arrays.asList(templateExpression)), eq("awsConfigId")))
         .thenReturn(null);
-    when(settingsService.get(anyString())).thenReturn(settingAttribute);
+    when(settingsService.get(any())).thenReturn(settingAttribute);
     executionResponse = state.executeInternal(mockContext, ACTIVITY_ID);
     verifyDelegate(executionResponse, false, 2);
   }
@@ -181,7 +181,7 @@ public class CloudFormationDeleteStackStateTest extends WingsBaseTest {
   public void testHandleResponse() {
     Query query = mock(Query.class);
     doReturn(query).when(wingsPersistence).createQuery(any());
-    when(query.filter(anyString(), any(Object.class))).thenReturn(query);
+    when(query.filter(any(), any(Object.class))).thenReturn(query);
 
     CloudFormationCommandResponse commandResponse = mock(CloudFormationCommandResponse.class);
     List<CloudFormationElement> cloudFormationElements = state.handleResponse(commandResponse, mockContext);
@@ -196,7 +196,7 @@ public class CloudFormationDeleteStackStateTest extends WingsBaseTest {
   public void testHandleAsyncResponseWithRollbackElements() {
     Query query = mock(Query.class);
     doReturn(query).when(wingsPersistence).createQuery(any());
-    when(query.filter(anyString(), any(Object.class))).thenReturn(query);
+    when(query.filter(any(), any(Object.class))).thenReturn(query);
 
     Map<String, ResponseData> delegateResponse = ImmutableMap.of(ACTIVITY_ID,
         CloudFormationCommandExecutionResponse.builder()

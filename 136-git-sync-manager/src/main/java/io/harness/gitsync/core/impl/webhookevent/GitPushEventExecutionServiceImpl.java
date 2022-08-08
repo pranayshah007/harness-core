@@ -51,6 +51,7 @@ public class GitPushEventExecutionServiceImpl implements GitPushEventExecutionSe
       }
 
       if (isStalePushEvent(scmParsedWebhookResponse)) {
+        log.info("Skipping the webhook {} as it is stale", webhookDTO.getEventId());
         return;
       }
 

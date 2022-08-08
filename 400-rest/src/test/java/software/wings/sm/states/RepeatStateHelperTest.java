@@ -21,6 +21,7 @@ import static org.mockito.Mockito.when;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
+import io.harness.beans.ArtifactMetadata;
 import io.harness.beans.WorkflowType;
 import io.harness.category.element.UnitTests;
 import io.harness.rule.Owner;
@@ -30,7 +31,7 @@ import software.wings.api.InstanceElement;
 import software.wings.beans.ExecutionArgs;
 import software.wings.beans.WorkflowExecution;
 import software.wings.beans.artifact.Artifact;
-import software.wings.beans.artifact.Artifact.ArtifactMetadataKeys;
+import software.wings.beans.artifact.ArtifactMetadataKeys;
 import software.wings.service.intfc.ServiceResourceService;
 import software.wings.service.intfc.WorkflowExecutionService;
 import software.wings.sm.ContextElement;
@@ -75,7 +76,7 @@ public class RepeatStateHelperTest extends WingsBaseTest {
                    .withUuid(artifactId)
                    .withAppId(appId)
                    .withArtifactStreamId(artifactStreamId)
-                   .withMetadata(ImmutableMap.of(ArtifactMetadataKeys.buildNo, "1.2"))
+                   .withMetadata(new ArtifactMetadata(ImmutableMap.of(ArtifactMetadataKeys.buildNo, "1.2")))
                    .withDisplayName("Some artifact")
                    .build();
 
@@ -83,7 +84,7 @@ public class RepeatStateHelperTest extends WingsBaseTest {
                         .withUuid(wrongArtifactId)
                         .withAppId(appId)
                         .withArtifactStreamId(artifactStreamId)
-                        .withMetadata(ImmutableMap.of(ArtifactMetadataKeys.buildNo, "1.3"))
+                        .withMetadata(new ArtifactMetadata(ImmutableMap.of(ArtifactMetadataKeys.buildNo, "1.3")))
                         .withDisplayName("Wrong artifact")
                         .build();
     ExecutionArgs executionArgs = buildExecutionArgs();

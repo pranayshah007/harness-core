@@ -33,6 +33,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import io.harness.beans.ArtifactMetadata;
 import io.harness.category.element.UnitTests;
 import io.harness.ff.FeatureFlagService;
 import io.harness.rule.Owner;
@@ -194,8 +195,10 @@ public class BuildSourceCleanupHelperTest extends WingsBaseTest {
                           .withRevision("1.0")
                           .build();
 
-  private static final Artifact ARTIFACT_1 = anArtifact().withMetadata(Maps.newHashMap("buildNo", "1")).build();
-  private static final Artifact ARTIFACT_2 = anArtifact().withMetadata(Maps.newHashMap("buildNo", "2")).build();
+  private static final Artifact ARTIFACT_1 =
+      anArtifact().withMetadata(new ArtifactMetadata(Maps.newHashMap("buildNo", "1"))).build();
+  private static final Artifact ARTIFACT_2 =
+      anArtifact().withMetadata(new ArtifactMetadata(Maps.newHashMap("buildNo", "2"))).build();
 
   private static final BuildDetails BUILD_DETAILS_1 = aBuildDetails().withNumber("1").withArtifactPath("a").build();
   private static final BuildDetails BUILD_DETAILS_2 = aBuildDetails().withNumber("2").withArtifactPath("b").build();

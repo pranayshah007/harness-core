@@ -1,0 +1,177 @@
+{
+  "pipeline": {
+    "identifier": "p1",
+    "name": "pipeline1",
+    "stages": [
+      {
+        "parallel": [
+          {
+            "stage": {
+              "identifier": "managerDeployment",
+              "type": "deployment",
+              "name": "managerDeployment",
+              "spec": {
+                "service": null,
+                "identifier": "manager",
+                "name": "manager",
+                "serviceDefinition": {
+                  "type": "k8s",
+                  "spec": null,
+                  "field11": "value1",
+                  "field12": "value2",
+                  "__uuid": "ua6w9EAqSD6xqASCQur-Pg"
+                },
+                "infrastructure": null,
+                "environment": {
+                  "identifier": "stagingInfra",
+                  "type": "preProduction",
+                  "name": "staging",
+                  "__uuid": "IwD7J2OtSOiF9iR8zvGkxQ"
+                },
+                "infrastructureDefinition": {
+                  "type": "k8sDirect",
+                  "spec": null,
+                  "connectorRef": "pEIkEiNPSgSUsbWDDyjNKw",
+                  "namespace": "harness",
+                  "releaseName": "testingqa",
+                  "__uuid": "B5fHYUTdSgignk_R3g8hbA"
+                },
+                "execution": null,
+                "steps": [
+                  {
+                    "step": {
+                      "identifier": "managerCanary",
+                      "type": "k8sCanary",
+                      "spec": null,
+                      "field11": "value1",
+                      "field12": "value2",
+                      "__uuid": "vzEe9QyxRYqMxUE9g1lsKw"
+                    },
+                    "__uuid": "9OncxOwTRzWlA4HywZrsTw"
+                  },
+                  {
+                    "step": {
+                      "identifier": "managerVerify",
+                      "type": "appdVerify",
+                      "spec": null,
+                      "field21": "value1",
+                      "field22": "value2",
+                      "__uuid": "0NcDngTXQFSNzQHuASGYLw"
+                    },
+                    "__uuid": "oqF5mz2MQIyjuUL-B7DAUQ"
+                  },
+                  {
+                    "step": {
+                      "identifier": "managerRolling",
+                      "type": "k8sRolling",
+                      "spec": null,
+                      "field31": "value1",
+                      "field32": "value2",
+                      "__uuid": "TjkrTc0MRTygVxQHqo0FAA"
+                    },
+                    "__uuid": "mStNzpNrSbG5IsPNTClK8A"
+                  }
+                ],
+                "__uuid": "5kIlEH4gQu6nu3RLkUax8A"
+              },
+              "__uuid": "J79wvZyYTFacTmbV-98-HQ"
+            },
+            "__uuid": "5EtG2JqNTJeCoh4fj8TiwA"
+          }
+        ],
+        "__uuid": "-AsMCUcLRYixNwLcfw1jrQ"
+      },
+      {
+        "stage": {
+          "identifier": "managerDeployment",
+          "type": "deployment",
+          "name": "managerDeployment",
+          "spec": {
+            "service": {
+              "identifier": "manager",
+              "name": "manager",
+              "serviceDefinition": {
+                "type": "k8s",
+                "spec": {
+                  "field11": "value1",
+                  "field12": "value2",
+                  "__uuid": "VgtldnHrTguqnrrmTq3K2A"
+                },
+                "__uuid": "wfpg79k9RzOAVAwcF7DrAA"
+              },
+              "__uuid": "uf-fIpr8S9-euaJtYRISWQ"
+            },
+            "infrastructure": {
+              "environment": {
+                "identifier": "stagingInfra",
+                "type": "preProduction",
+                "name": "staging",
+                "__uuid": "RjGhwMPNTeqE-b_16cP5KQ"
+              },
+              "infrastructureDefinition": {
+                "type": "k8sDirect",
+                "spec": {
+                  "connectorRef": "pEIkEiNPSgSUsbWDDyjNKw",
+                  "namespace": "harness",
+                  "releaseName": "testingqa",
+                  "__uuid": "b4eXX_SOQE67c1uNXVbX2Q"
+                },
+                "__uuid": "NkhYEk9GQg2UUmGWzBGfUg"
+              },
+              "__uuid": "kAd8At4XS2e18Vg-MInwlg"
+            },
+            "execution": {
+              "steps": [
+                {
+                  "step": {
+                    "identifier": "managerCanary",
+                    "type": "k8sCanary",
+                    "spec": {
+                      "field11": "value1",
+                      "field12": "value2",
+                      "__uuid": "BgRmDLb9QB6an7HdNZgn7w"
+                    },
+                    "__uuid": "ckvww86LRLqU89sEWJy6LQ"
+                  },
+                  "__uuid": "w0_XiWtdRGqDT6MMXnfcIQ"
+                },
+                {
+                  "step": {
+                    "identifier": "managerVerify",
+                    "type": "appdVerify",
+                    "spec": {
+                      "field21": "value1",
+                      "field22": "value2",
+                      "__uuid": "cN5SatDGSmKdn9mPAyF1hw"
+                    },
+                    "__uuid": "mLFfk4l3QxeorjgA7IE-Iw"
+                  },
+                  "__uuid": "-2qedB_PT8WkgS9_bXX9WQ"
+                },
+                {
+                  "step": {
+                    "identifier": "managerRolling",
+                    "type": "k8sRolling",
+                    "spec": {
+                      "field31": "value1",
+                      "field32": "value2",
+                      "__uuid": "uSZKzDolQQuIfAtSV5mh7g"
+                    },
+                    "__uuid": "VJDy3mOuRDWOXTijZTvQGg"
+                  },
+                  "__uuid": "h9gBQWDdT4qDoF7zOyQ0rQ"
+                }
+              ],
+              "__uuid": "PthCMyAjT2yEz7J3gbKzEA"
+            },
+            "__uuid": "O0OjFzM2T7iHLUTWGzOoVw"
+          },
+          "__uuid": "Z7hglsxLT2GDzpYs9QMnWQ"
+        },
+        "__uuid": "O01CqjDMSPS_WH9HWErCHA"
+      }
+    ],
+    "__uuid": "Isxcs6g9RdalBS6gPTPwWg"
+  },
+  "__uuid": "sKSDu1TwQqmM4xuIqh8GSw"
+}

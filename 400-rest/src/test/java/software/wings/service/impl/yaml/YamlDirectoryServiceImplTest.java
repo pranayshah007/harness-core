@@ -119,7 +119,7 @@ public class YamlDirectoryServiceImplTest extends WingsBaseTest {
     TemplateFolder templateFolder = TemplateFolder.builder().uuid("root_folder").name("harness").build();
     doReturn(templateFolder)
         .when(templateService)
-        .getTemplateTree(anyString(), anyString(), anyString(), eq(TemplateConstants.TEMPLATE_TYPES_WITH_YAML_SUPPORT));
+        .getTemplateTree(any(), any(), any(), eq(TemplateConstants.TEMPLATE_TYPES_WITH_YAML_SUPPORT));
     final Template template1 = Template.builder().name("template1").folderId("root_folder").type(SHELL_SCRIPT).build();
     final Template template2 = Template.builder().folderId("root_folder").name("template2").type(SHELL_SCRIPT).build();
     PageResponse<Template> pageResponse = aPageResponse().withResponse(asList(template1, template2)).build();
@@ -157,7 +157,7 @@ public class YamlDirectoryServiceImplTest extends WingsBaseTest {
     TemplateFolder templateFolder = TemplateFolder.builder().uuid("root_folder").name("harness").build();
     doReturn(templateFolder)
         .when(templateService)
-        .getTemplateTree(anyString(), anyString(), anyString(), eq(TemplateConstants.TEMPLATE_TYPES_WITH_YAML_SUPPORT));
+        .getTemplateTree(any(), any(), any(), eq(TemplateConstants.TEMPLATE_TYPES_WITH_YAML_SUPPORT));
     PageResponse<Template> pageResponse = aPageResponse().build();
     doReturn(pageResponse).when(templateService).list(any(PageRequest.class), anyList(), anyString(), anyBoolean());
     doReturn(GalleryKey.ACCOUNT_TEMPLATE_GALLERY).when(templateGalleryService).getAccountGalleryKey();
@@ -195,7 +195,7 @@ public class YamlDirectoryServiceImplTest extends WingsBaseTest {
                                         .build();
     doReturn(templateFolder)
         .when(templateService)
-        .getTemplateTree(anyString(), anyString(), anyString(), eq(TemplateConstants.TEMPLATE_TYPES_WITH_YAML_SUPPORT));
+        .getTemplateTree(any(), any(), any(), eq(TemplateConstants.TEMPLATE_TYPES_WITH_YAML_SUPPORT));
 
     final FolderNode folderNode =
         yamlDirectoryService.doTemplateLibrary(accountid, directoryPath.clone(), GLOBAL_APP_ID,
@@ -513,7 +513,7 @@ public class YamlDirectoryServiceImplTest extends WingsBaseTest {
     List<ManifestFile> manifestFiles = new ArrayList<>();
     manifestFiles.add(ManifestFile.builder().fileName("appsettings").build());
     manifestFiles.add(ManifestFile.builder().fileName("connstrings").build());
-    doReturn(manifestFiles).when(applicationManifestService).getManifestFilesByAppManifestId(anyString(), anyString());
+    doReturn(manifestFiles).when(applicationManifestService).getManifestFilesByAppManifestId(any(), any());
   }
 
   @Owner(developers = ANSHUL)

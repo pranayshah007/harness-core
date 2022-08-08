@@ -105,8 +105,8 @@ public class SafeHttpCallTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testValidateErrorMessageFromErrorBody() throws IOException {
     assertThatThrownBy(()
-                           -> SafeHttpCall.validateResponse(
-                               Response.error(400, ResponseBody.create(MediaType.parse("text/plain"), "MSG"))))
+                           -> SafeHttpCall.validateResponse(Response.error(
+                               ResponseBody.create(MediaType.parse("text/plain"), "MSG"), prepareRawResponse(400))))
         .isInstanceOf(HttpResponseException.class)
         .hasMessage("Unsuccessful HTTP call: status code = 400, message = MSG");
   }

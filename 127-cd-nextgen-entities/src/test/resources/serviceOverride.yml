@@ -1,0 +1,8 @@
+serviceOverrides:
+  environmentRef: envId
+  serviceRef: serviceRef
+  variables:
+    - name: var1
+      type: String
+      value: value2
+

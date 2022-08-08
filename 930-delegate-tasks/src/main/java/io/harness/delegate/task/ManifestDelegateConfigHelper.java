@@ -16,12 +16,12 @@ import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
 import io.harness.delegate.beans.storeconfig.GcsHelmStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.HttpHelmStoreDelegateConfig;
+import io.harness.delegate.beans.storeconfig.OciHelmStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.S3HelmStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.StoreDelegateConfig;
 import io.harness.delegate.task.k8s.ManifestDelegateConfig;
+import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.security.encryption.SecretDecryptionService;
-
-import software.wings.delegatetasks.ExceptionMessageSanitizer;
 
 import com.google.inject.Inject;
 import java.util.List;
@@ -37,6 +37,11 @@ public class ManifestDelegateConfigHelper {
 
     StoreDelegateConfig storeDelegateConfig = manifestDelegateConfig.getStoreDelegateConfig();
     switch (storeDelegateConfig.getType()) {
+      case HARNESS:
+        break;
+      case CUSTOM_REMOTE:
+        // TODO: do we need to decrypt anything here?
+        break;
       case GIT:
         GitStoreDelegateConfig gitStoreDelegateConfig = (GitStoreDelegateConfig) storeDelegateConfig;
         GitConfigDTO gitConfigDTO = ScmConnectorMapper.toGitConfigDTO(gitStoreDelegateConfig.getGitConfigDTO());
@@ -50,6 +55,18 @@ public class ManifestDelegateConfigHelper {
         for (DecryptableEntity entity : httpHelmStoreConfig.getHttpHelmConnector().getDecryptableEntities()) {
           decryptionService.decrypt(entity, httpHelmStoreConfig.getEncryptedDataDetails());
           ExceptionMessageSanitizer.storeAllSecretsForSanitizing(entity, httpHelmStoreConfig.getEncryptedDataDetails());
+        }
+        break;
+
+      case OCI_HELM:
+        OciHelmStoreDelegateConfig ociHelmStoreConfig = (OciHelmStoreDelegateConfig) storeDelegateConfig;
+        if (!ociHelmStoreConfig.isHelmOciEnabled()) {
+          throw new UnsupportedOperationException(
+              String.format("Unsupported Manifest type: [%s]", manifestDelegateConfig.getManifestType().name()));
+        }
+        for (DecryptableEntity entity : ociHelmStoreConfig.getOciHelmConnector().getDecryptableEntities()) {
+          decryptionService.decrypt(entity, ociHelmStoreConfig.getEncryptedDataDetails());
+          ExceptionMessageSanitizer.storeAllSecretsForSanitizing(entity, ociHelmStoreConfig.getEncryptedDataDetails());
         }
         break;
 

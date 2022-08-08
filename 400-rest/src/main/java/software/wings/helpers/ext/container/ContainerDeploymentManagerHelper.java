@@ -50,6 +50,7 @@ import software.wings.service.intfc.security.SecretManager;
 import software.wings.sm.ExecutionContext;
 import software.wings.sm.InstanceStatusSummary;
 import software.wings.sm.WorkflowStandardParams;
+import software.wings.sm.WorkflowStandardParamsExtensionService;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -69,6 +70,7 @@ public class ContainerDeploymentManagerHelper {
   @Inject private SecretManager secretManager;
   @Inject private ServiceTemplateService serviceTemplateService;
   @Inject private ContainerMasterUrlHelper containerMasterUrlHelper;
+  @Inject private WorkflowStandardParamsExtensionService workflowStandardParamsExtensionService;
 
   public List<InstanceStatusSummary> getInstanceStatusSummaryFromContainerInfoList(
       List<ContainerInfo> containerInfos, ServiceTemplateElement serviceTemplateElement) {
@@ -114,7 +116,7 @@ public class ContainerDeploymentManagerHelper {
     String serviceId = phaseElement.getServiceElement().getUuid();
     String appId = context.getAppId();
     WorkflowStandardParams workflowStandardParams = context.getContextElement(ContextElementType.STANDARD);
-    String envId = workflowStandardParams.fetchRequiredEnv().getUuid();
+    String envId = workflowStandardParamsExtensionService.fetchRequiredEnv(workflowStandardParams).getUuid();
 
     Key<ServiceTemplate> serviceTemplateKey =
         serviceTemplateService.getTemplateRefKeysByService(appId, serviceId, envId).get(0);

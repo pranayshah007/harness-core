@@ -16,7 +16,6 @@ import io.harness.serializer.kryo.CgOrchestrationBeansKryoRegistrar;
 import io.harness.serializer.kryo.CommonEntitiesKryoRegistrar;
 import io.harness.serializer.kryo.DelegateBeansKryoRegistrar;
 import io.harness.serializer.kryo.DelegateTasksBeansKryoRegister;
-import io.harness.serializer.kryo.RbacCoreKryoRegistrar;
 import io.harness.serializer.morphia.CommonEntitiesMorphiaRegister;
 import io.harness.serializer.morphia.DelegateTasksBeansMorphiaRegistrar;
 import io.harness.serializer.morphia.converters.CapabilityParametersMorphiaConverter;
@@ -38,7 +37,7 @@ public class DelegateTasksBeansRegistrars {
           .addAll(PersistenceRegistrars.kryoRegistrars)
           .addAll(FileServiceCommonsRegistrars.kryoRegistrars)
           .addAll(LicenseBeanRegistrar.kryoRegistrars)
-          .add(RbacCoreKryoRegistrar.class)
+          .addAll(RbacCoreRegistrars.kryoRegistrars)
           .add(DelegateTasksBeansKryoRegister.class)
           .add(CgOrchestrationBeansKryoRegistrar.class)
           .add(CommonEntitiesKryoRegistrar.class)
@@ -52,6 +51,7 @@ public class DelegateTasksBeansRegistrars {
           .add(DelegateTasksBeansMorphiaRegistrar.class)
           .addAll(ConnectorBeansRegistrars.morphiaRegistrars)
           .addAll(FileServiceCommonsRegistrars.morphiaRegistrars)
+          .addAll(RbacCoreRegistrars.morphiaRegistrars)
           .add(CommonEntitiesMorphiaRegister.class)
           .add(CgOrchestrationBeansMorphiaRegistrar.class)
           .build();

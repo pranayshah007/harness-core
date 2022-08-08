@@ -7,6 +7,7 @@
 
 package software.wings.service.impl.yaml.handler.governance;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.data.structure.EmptyPredicate;
@@ -79,6 +80,12 @@ public class CustomAppFilterYamlHandler extends ApplicationFilterYamlHandler<Cus
     String accountId = changeContext.getChange().getAccountId();
 
     CustomAppFilter.Yaml yaml = changeContext.getYaml();
+    if (isEmpty(yaml.getEnvSelection())) {
+      throw new InvalidRequestException("Environment Selection Missing in Yaml");
+    }
+    if (isEmpty(yaml.getServiceSelection())) {
+      throw new InvalidRequestException("Service Selection Missing in Yaml");
+    }
 
     EnvironmentFilterYamlHandler environmentFilterYamlHandler;
     ServiceFilterYamlHandler serviceFilterYamlHandler = yamlHandlerFactory.getYamlHandler(YamlType.SERVICE_FILTER);
@@ -101,12 +108,10 @@ public class CustomAppFilterYamlHandler extends ApplicationFilterYamlHandler<Cus
     }
 
     List<ServiceFilter> serviceFilters = new ArrayList<>();
-    if (isNotEmpty(yaml.getServiceSelection())) {
-      for (ServiceFilter.Yaml entry : yaml.getServiceSelection()) {
-        ChangeContext clonedContext = cloneFileChangeContext(changeContext, entry).build();
-        clonedContext.getEntityIdMap().put("appId", appIds.get(0));
-        serviceFilters.add(serviceFilterYamlHandler.upsertFromYaml(clonedContext, changeSetContext));
-      }
+    for (ServiceFilter.Yaml entry : yaml.getServiceSelection()) {
+      ChangeContext clonedContext = cloneFileChangeContext(changeContext, entry).build();
+      clonedContext.getEntityIdMap().put("appId", appIds.get(0));
+      serviceFilters.add(serviceFilterYamlHandler.upsertFromYaml(clonedContext, changeSetContext));
     }
 
     bean.setApps(appIds);

@@ -123,7 +123,7 @@ public class BuildSourceCallback implements OldNotifyCallback {
 
   @VisibleForTesting
   void handleResponseForSuccessInternal(DelegateResponseData notifyResponseData, ArtifactStream artifactStream) {
-    log.info(
+    log.debug(
         "{}: Processing response for BuildSourceCallback for accountId:[{}] artifactStreamId:[{}] permitId:[{}] settingId:[{}]",
         CDC_LOG_EXCLUSION, accountId, artifactStreamId, permitId, settingId);
 
@@ -188,7 +188,7 @@ public class BuildSourceCallback implements OldNotifyCallback {
   public void notify(Map<String, ResponseData> response) {
     DelegateResponseData notifyResponseData = (DelegateResponseData) response.values().iterator().next();
     ArtifactStream artifactStream = getArtifactStreamOrThrow();
-    log.info("In notify for artifact stream id: [{}]", artifactStreamId);
+    log.debug("In notify for artifact stream id: [{}]", artifactStreamId);
     try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR);
          AutoLogContext ignore2 = new ArtifactStreamLogContext(
              artifactStream.getUuid(), artifactStream.getArtifactStreamType(), OVERRIDE_ERROR)) {

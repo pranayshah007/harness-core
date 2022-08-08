@@ -19,12 +19,13 @@ import retrofit2.http.Header;
 import retrofit2.http.Headers;
 import retrofit2.http.PATCH;
 import retrofit2.http.POST;
+import retrofit2.http.PUT;
 import retrofit2.http.Path;
 import retrofit2.http.Query;
 
 @OwnedBy(CDC)
 public interface ServiceNowRestClient {
-  @GET("api/now/table/incident?sysparm_limit=1")
+  @GET("api/now/table/task?sysparm_limit=1")
   Call<JsonNode> validateConnection(@Header("Authorization") String authorization);
 
   @Headers("Content-Type: application/json")
@@ -95,4 +96,24 @@ public interface ServiceNowRestClient {
 
   @GET("api/now/ui/meta/{ticketType}")
   Call<JsonNode> getMetadata(@Header("Authorization") String authorization, @Path("ticketType") String ticketType);
+
+  @GET("/api/now/table/sys_template?{ticketType}")
+  Call<JsonNode> getTemplate(@Header("Authorization") String authorization, @Path("ticketType") String ticketType,
+      @Query("sysparm_query") String query, @Query("sysparm_display_value") String displayValue);
+
+  // Scripted API to list templates
+  @GET("/api/x_harne_harness_ap/template/list")
+  Call<JsonNode> getTemplateList(@Header("Authorization") String authorization, @Header("ticketType") String ticketType,
+      @Header("limit") int limit, @Header("offset") int offset, @Header("templateName") String templateName);
+
+  // Scripted API to create ticket using template
+  @POST("/api/x_harne_harness_ap/template/create")
+  Call<JsonNode> createUsingTemplate(@Header("Authorization") String authorization,
+      @Header("ticketType") String ticketType, @Header("templateName") String templateName);
+
+  // Scripted API to update ticket using template
+  @PUT("/api/x_harne_harness_ap/template/update")
+  Call<JsonNode> updateUsingTemplate(@Header("Authorization") String authorization,
+      @Header("ticketType") String ticketType, @Header("templateName") String templateName,
+      @Header("ticketNumber") String ticketNumber);
 }

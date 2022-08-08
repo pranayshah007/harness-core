@@ -7,8 +7,8 @@
 
 package io.harness.cdng.pipeline.helpers;
 
-import static io.harness.instrumentation.ServiceInstrumentationConstants.ACTIVE_SERVICES_COUNT;
-import static io.harness.instrumentation.ServiceInstrumentationConstants.SERVICE_INSTANCES_COUNT;
+import static io.harness.cdng.instrumentation.ServiceInstrumentationConstants.ACTIVE_SERVICES_COUNT;
+import static io.harness.cdng.instrumentation.ServiceInstrumentationConstants.SERVICE_INSTANCES_COUNT;
 import static io.harness.rule.OwnerRule.MLUKIC;
 
 import static org.assertj.core.api.Assertions.assertThat;

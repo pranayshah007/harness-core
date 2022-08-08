@@ -11,15 +11,14 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.rule.OwnerRule.MEENAKSHI;
 import static io.harness.rule.OwnerRule.NISHANT;
 import static io.harness.rule.OwnerRule.PHOENIKX;
+import static io.harness.rule.OwnerRule.UJJAWAL;
 import static io.harness.rule.OwnerRule.VIKAS_M;
 
 import static io.github.benas.randombeans.api.EnhancedRandom.random;
-import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.fail;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.doNothing;
@@ -31,19 +30,28 @@ import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
 
 import io.harness.CategoryTest;
+import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.connector.services.NGConnectorSecretManagerService;
 import io.harness.delegate.beans.FileUploadLimit;
+import io.harness.encryption.SecretRefData;
 import io.harness.eventsframework.api.EventsFrameworkDownException;
 import io.harness.eventsframework.api.Producer;
 import io.harness.eventsframework.producer.Message;
 import io.harness.exception.InvalidRequestException;
-import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.accountsetting.dto.AccountSettingType;
 import io.harness.ng.core.accountsetting.services.NGAccountSettingService;
 import io.harness.ng.core.api.NGEncryptedDataService;
 import io.harness.ng.core.api.NGSecretServiceV2;
+import io.harness.ng.core.dto.secrets.SSHAuthDTO;
+import io.harness.ng.core.dto.secrets.SSHConfigDTO;
+import io.harness.ng.core.dto.secrets.SSHCredentialSpecDTO;
+import io.harness.ng.core.dto.secrets.SSHCredentialType;
+import io.harness.ng.core.dto.secrets.SSHKeyPathCredentialDTO;
+import io.harness.ng.core.dto.secrets.SSHKeyReferenceCredentialDTO;
+import io.harness.ng.core.dto.secrets.SSHKeySpecDTO;
+import io.harness.ng.core.dto.secrets.SSHPasswordCredentialDTO;
 import io.harness.ng.core.dto.secrets.SecretDTOV2;
 import io.harness.ng.core.dto.secrets.SecretFileSpecDTO;
 import io.harness.ng.core.dto.secrets.SecretResponseWrapper;
@@ -53,18 +61,21 @@ import io.harness.ng.core.models.Secret;
 import io.harness.ng.core.models.SecretTextSpec;
 import io.harness.ng.core.remote.SSHKeyValidationMetadata;
 import io.harness.ng.core.remote.SecretValidationResultDTO;
+import io.harness.ng.opa.entities.secret.OpaSecretService;
 import io.harness.rule.Owner;
+import io.harness.secretmanagerclient.SSHAuthScheme;
 import io.harness.secretmanagerclient.SecretType;
 import io.harness.secretmanagerclient.ValueType;
+import io.harness.secretmanagerclient.dto.LocalConfigDTO;
 import io.harness.secretmanagerclient.remote.SecretManagerClient;
 
 import software.wings.settings.SettingVariableTypes;
 
 import com.amazonaws.util.StringInputStream;
-import com.google.common.collect.Lists;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Collections;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import org.junit.Before;
 import org.junit.Test;
@@ -72,8 +83,6 @@ import org.junit.experimental.categories.Category;
 import org.mockito.Answers;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
 
 @OwnedBy(PL)
 public class SecretCrudServiceImplTest extends CategoryTest {
@@ -87,13 +96,18 @@ public class SecretCrudServiceImplTest extends CategoryTest {
   @Mock private NGEncryptedDataService encryptedDataService;
   @Mock private NGAccountSettingService accountSettingService;
   @Mock private NGConnectorSecretManagerService connectorService;
+  @Mock private AccessControlClient accessControlClient;
+  @Mock private OpaSecretService opaSecretService;
 
   @Before
   public void setup() {
     initMocks(this);
-    secretCrudServiceSpy = new SecretCrudServiceImpl(secretEntityReferenceHelper, fileUploadLimit, ngSecretServiceV2,
-        eventProducer, encryptedDataService, accountSettingService, connectorService);
+    secretCrudServiceSpy =
+        new SecretCrudServiceImpl(secretEntityReferenceHelper, fileUploadLimit, ngSecretServiceV2, eventProducer,
+            encryptedDataService, accountSettingService, connectorService, accessControlClient, opaSecretService);
     secretCrudService = spy(secretCrudServiceSpy);
+    when(connectorService.getUsingIdentifier(any(), any(), any(), any(), eq(false))).thenReturn(new LocalConfigDTO());
+    when(opaSecretService.evaluatePoliciesWithEntity(any(), any(), any(), any(), any(), any())).thenReturn(null);
   }
 
   @Test
@@ -104,6 +118,8 @@ public class SecretCrudServiceImplTest extends CategoryTest {
     Secret secret = Secret.builder().build();
     when(encryptedDataService.createSecretText(any(), any())).thenReturn(encryptedDataDTO);
     when(ngSecretServiceV2.create(any(), any(), eq(false))).thenReturn(secret);
+
+    when(connectorService.getUsingIdentifier(any(), any(), any(), any(), eq(false))).thenReturn(new LocalConfigDTO());
 
     SecretDTOV2 secretDTOV2 = SecretDTOV2.builder()
                                   .type(SecretType.SecretText)
@@ -256,7 +272,8 @@ public class SecretCrudServiceImplTest extends CategoryTest {
   @Owner(developers = PHOENIKX)
   @Category(UnitTests.class)
   public void testCreateFile() throws IOException {
-    SecretDTOV2 secretDTOV2 = SecretDTOV2.builder().spec(SecretFileSpecDTO.builder().build()).build();
+    SecretDTOV2 secretDTOV2 =
+        SecretDTOV2.builder().spec(SecretFileSpecDTO.builder().build()).type(SecretType.SecretFile).build();
     Secret secret = Secret.builder().build();
     NGEncryptedData encryptedDataDTO = NGEncryptedData.builder().type(SettingVariableTypes.CONFIG_FILE).build();
     when(encryptedDataService.createSecretFile(any(), any(), any())).thenReturn(encryptedDataDTO);
@@ -264,6 +281,7 @@ public class SecretCrudServiceImplTest extends CategoryTest {
     doNothing()
         .when(secretEntityReferenceHelper)
         .createSetupUsageForSecretManager(any(), any(), any(), any(), any(), any());
+    when(opaSecretService.evaluatePoliciesWithEntity(any(), any(), any(), any(), any(), any())).thenReturn(null);
 
     SecretResponseWrapper created =
         secretCrudService.createFile("account", secretDTOV2, new StringInputStream("string"));
@@ -445,19 +463,6 @@ public class SecretCrudServiceImplTest extends CategoryTest {
   @Test
   @Owner(developers = PHOENIKX)
   @Category(UnitTests.class)
-  public void testList() {
-    when(ngSecretServiceV2.list(any(), anyInt(), anyInt()))
-        .thenReturn(new PageImpl<>(Lists.newArrayList(Secret.builder().build()), PageRequest.of(0, 10), 1));
-    PageResponse<SecretResponseWrapper> secretPage = secretCrudService.list("account", "org", "proj",
-        Collections.emptyList(), singletonList(SecretType.SSHKey), false, "abc", 0, 100, null);
-    assertThat(secretPage.getContent()).isNotEmpty();
-    assertThat(secretPage.getContent().size()).isEqualTo(1);
-    verify(ngSecretServiceV2).list(any(), anyInt(), anyInt());
-  }
-
-  @Test
-  @Owner(developers = PHOENIKX)
-  @Category(UnitTests.class)
   public void testDelete() {
     NGEncryptedData encryptedDataDTO = random(NGEncryptedData.class);
     when(encryptedDataService.get(any(), any(), any(), any())).thenReturn(encryptedDataDTO);
@@ -478,5 +483,125 @@ public class SecretCrudServiceImplTest extends CategoryTest {
     verify(ngSecretServiceV2, atLeastOnce()).delete(any(), any(), any(), any());
     verify(secretEntityReferenceHelper, atLeastOnce())
         .deleteSecretEntityReferenceWhenSecretGetsDeleted(any(), any(), any(), any(), any());
+  }
+
+  @Test
+  @Owner(developers = VIKAS_M)
+  @Category(UnitTests.class)
+  public void testDeleteBatch() {
+    List<String> secretIdentifiers = new ArrayList<>();
+    secretIdentifiers.add("identifier1");
+    secretIdentifiers.add("identifier2");
+    when(ngSecretServiceV2.delete(any(), any(), any(), any())).thenReturn(true);
+    doNothing()
+        .when(secretEntityReferenceHelper)
+        .deleteSecretEntityReferenceWhenSecretGetsDeleted(any(), any(), any(), any(), any());
+    when(ngSecretServiceV2.get(any(), any(), any(), any()))
+        .thenReturn(Optional.of(
+            Secret.builder().type(SecretType.SecretText).secretSpec(SecretTextSpec.builder().build()).build()));
+    secretCrudService.deleteBatch("accountId", "orgId", "projectId", secretIdentifiers);
+    verify(ngSecretServiceV2, times(2)).get(any(), any(), any(), any());
+    verify(secretEntityReferenceHelper, times(2))
+        .deleteSecretEntityReferenceWhenSecretGetsDeleted(any(), any(), any(), any(), any());
+  }
+
+  @Test
+  @Owner(developers = UJJAWAL)
+  @Category(UnitTests.class)
+  public void testSecretMasking() {
+    SecretTextSpecDTO secretTextSpecDTO = SecretTextSpecDTO.builder().value("value").build();
+    SecretDTOV2 secretDTOV2 =
+        SecretDTOV2.builder().name("name").identifier("id").type(SecretType.SecretText).spec(secretTextSpecDTO).build();
+    SecretDTOV2 response = secretCrudService.getMaskedDTOForOpa(secretDTOV2);
+    assertThat(((SecretTextSpecDTO) response.getSpec()).getValue()).isNull();
+    assertThat(((SecretTextSpecDTO) secretDTOV2.getSpec()).getValue()).isNotNull();
+  }
+
+  @Test
+  @Owner(developers = UJJAWAL)
+  @Category(UnitTests.class)
+  public void testSecretMasking2() {
+    SSHCredentialSpecDTO sshCredentialSpecDTO =
+        SSHKeyPathCredentialDTO.builder()
+            .userName("userName")
+            .keyPath("keyPath")
+            .encryptedPassphrase(SecretRefData.builder().decryptedValue("val".toCharArray()).build())
+            .build();
+    SSHConfigDTO sshConfigDTO =
+        SSHConfigDTO.builder().credentialType(SSHCredentialType.KeyPath).spec(sshCredentialSpecDTO).build();
+    SSHAuthDTO sshAuthDTO = SSHAuthDTO.builder().type(SSHAuthScheme.SSH).spec(sshConfigDTO).build();
+    SSHKeySpecDTO secretTextSpecDTO = SSHKeySpecDTO.builder().auth(sshAuthDTO).build();
+    SecretDTOV2 secretDTOV2 =
+        SecretDTOV2.builder().name("name").identifier("id").type(SecretType.SSHKey).spec(secretTextSpecDTO).build();
+
+    SecretDTOV2 response = secretCrudService.getMaskedDTOForOpa(secretDTOV2);
+
+    assertThat(response).isNotNull();
+    SSHCredentialSpecDTO initialSshCredentialSpecDTO =
+        ((SSHConfigDTO) ((SSHKeySpecDTO) secretDTOV2.getSpec()).getAuth().getSpec()).getSpec();
+    assertThat(initialSshCredentialSpecDTO).isNotNull();
+  }
+
+  @Test
+  @Owner(developers = UJJAWAL)
+  @Category(UnitTests.class)
+  public void testSecretMasking3() {
+    SSHKeyReferenceCredentialDTO sshKeyReferenceCredentialDTO =
+        SSHKeyReferenceCredentialDTO.builder()
+            .userName("userName")
+            .key(SecretRefData.builder().decryptedValue("key".toCharArray()).build())
+            .encryptedPassphrase(SecretRefData.builder().decryptedValue("val".toCharArray()).build())
+            .build();
+    SSHConfigDTO sshConfigDTO = SSHConfigDTO.builder()
+                                    .credentialType(SSHCredentialType.KeyReference)
+                                    .spec(sshKeyReferenceCredentialDTO)
+                                    .build();
+    SSHAuthDTO sshAuthDTO = SSHAuthDTO.builder().type(SSHAuthScheme.SSH).spec(sshConfigDTO).build();
+    SSHKeySpecDTO secretTextSpecDTO = SSHKeySpecDTO.builder().auth(sshAuthDTO).build();
+    SecretDTOV2 secretDTOV2 =
+        SecretDTOV2.builder().name("name").identifier("id").type(SecretType.SSHKey).spec(secretTextSpecDTO).build();
+
+    SecretDTOV2 response = secretCrudService.getMaskedDTOForOpa(secretDTOV2);
+
+    assertThat(response).isNotNull();
+    assertThat(
+        ((SSHKeyReferenceCredentialDTO) ((SSHConfigDTO) ((SSHKeySpecDTO) secretDTOV2.getSpec()).getAuth().getSpec())
+                .getSpec())
+            .getEncryptedPassphrase())
+        .isNotNull();
+
+    assertThat(((SSHKeyReferenceCredentialDTO) ((SSHConfigDTO) ((SSHKeySpecDTO) response.getSpec()).getAuth().getSpec())
+                       .getSpec())
+                   .getEncryptedPassphrase())
+        .isNull();
+  }
+
+  @Test
+  @Owner(developers = UJJAWAL)
+  @Category(UnitTests.class)
+  public void testSecretMasking4() {
+    SSHPasswordCredentialDTO sshPasswordCredentialDTO =
+        SSHPasswordCredentialDTO.builder()
+            .userName("user-name")
+            .password(SecretRefData.builder().decryptedValue("val".toCharArray()).build())
+            .build();
+    SSHConfigDTO sshConfigDTO =
+        SSHConfigDTO.builder().credentialType(SSHCredentialType.Password).spec(sshPasswordCredentialDTO).build();
+    SSHAuthDTO sshAuthDTO = SSHAuthDTO.builder().type(SSHAuthScheme.SSH).spec(sshConfigDTO).build();
+    SSHKeySpecDTO secretTextSpecDTO = SSHKeySpecDTO.builder().auth(sshAuthDTO).build();
+    SecretDTOV2 secretDTOV2 =
+        SecretDTOV2.builder().name("name").identifier("id").type(SecretType.SSHKey).spec(secretTextSpecDTO).build();
+
+    SecretDTOV2 response = secretCrudService.getMaskedDTOForOpa(secretDTOV2);
+
+    assertThat(response).isNotNull();
+    SSHPasswordCredentialDTO initialSSHPasswordCredentialDTO =
+        (SSHPasswordCredentialDTO) ((SSHConfigDTO) ((SSHKeySpecDTO) secretDTOV2.getSpec()).getAuth().getSpec())
+            .getSpec();
+    assertThat(initialSSHPasswordCredentialDTO.getPassword()).isNotNull();
+
+    SSHPasswordCredentialDTO finalSSHPasswordCredentialDTO =
+        (SSHPasswordCredentialDTO) ((SSHConfigDTO) ((SSHKeySpecDTO) response.getSpec()).getAuth().getSpec()).getSpec();
+    assertThat(finalSSHPasswordCredentialDTO.getPassword()).isNull();
   }
 }

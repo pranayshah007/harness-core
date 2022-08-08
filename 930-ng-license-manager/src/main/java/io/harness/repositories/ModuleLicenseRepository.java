@@ -20,4 +20,5 @@ import org.springframework.transaction.annotation.Transactional;
 public interface ModuleLicenseRepository extends CrudRepository<ModuleLicense, String> {
   List<ModuleLicense> findByAccountIdentifierAndModuleType(String accountIdentifier, ModuleType moduleType);
   List<ModuleLicense> findByAccountIdentifier(String accountIdentifier);
+  List<ModuleLicense> findByModuleTypeAndExpiryTimeGreaterThanEqual(ModuleType moduleType, long expiryTime);
 }

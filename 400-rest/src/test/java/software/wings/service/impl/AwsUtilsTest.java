@@ -8,6 +8,7 @@
 package software.wings.service.impl;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.rule.OwnerRule.JOHANNES;
 import static io.harness.rule.OwnerRule.SATYAM;
 
 import static software.wings.beans.AwsInfrastructureMapping.Builder.anAwsInfrastructureMapping;
@@ -59,6 +60,35 @@ public class AwsUtilsTest extends WingsBaseTest {
     verify(mockExpressionEvaluator).substitute(anyString(), any());
   }
 
+  /**
+   * This test was added as part of refactoring AwsUtils to ensure that the list of filters returned by
+   * AwsUtils.getFilters(..) when passing
+   *
+   *    AwsInfrastructureMapping.Builder.anAwsInfrastructureMapping().build().getAwsInstanceFilter()
+   *
+   * are similar to the filters returned when passing
+   *
+   *    null
+   */
+  @Test
+  @Owner(developers = JOHANNES)
+  @Category(UnitTests.class)
+  public void testFiltersForEmptyInfrastructureMappingBuilderVsNull() {
+    AwsInfrastructureMapping emptyMapping = anAwsInfrastructureMapping().build();
+
+    List<Filter> filtersFromEmptyMapping = utils.getFilters(null, emptyMapping.getAwsInstanceFilter());
+    List<Filter> filtersFromNull = utils.getFilters(null, null);
+
+    assertThat(filtersFromEmptyMapping.size()).isEqualTo(filtersFromNull.size());
+
+    for (int i = 0; i < filtersFromEmptyMapping.size(); i++) {
+      Filter filterFromEmptyMapping = filtersFromEmptyMapping.get(i);
+      Filter filterFromNull = filtersFromNull.get(i);
+
+      verifyFilter(filterFromEmptyMapping, filterFromNull.getName(), filterFromNull.getValues());
+    }
+  }
+
   @Test
   @Owner(developers = SATYAM)
   @Category(UnitTests.class)
@@ -67,7 +97,7 @@ public class AwsUtilsTest extends WingsBaseTest {
         anAwsInfrastructureMapping()
             .withAwsInstanceFilter(AwsInstanceFilter.builder().vpcIds(Collections.singletonList("vpc-id")).build())
             .build();
-    List<Filter> filters = utils.getAwsFilters(awsInfrastructureMapping, null);
+    List<Filter> filters = utils.getFilters(null, awsInfrastructureMapping.getAwsInstanceFilter());
     assertThat(filters).isNotNull();
     assertThat(filters.size()).isEqualTo(2);
     verifyFilter(filters.get(0), "instance-state-name", Collections.singletonList("running"));

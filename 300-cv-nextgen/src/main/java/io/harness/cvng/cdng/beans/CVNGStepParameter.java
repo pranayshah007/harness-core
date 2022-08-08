@@ -27,6 +27,8 @@ public class CVNGStepParameter implements SpecParameters {
   ParameterField<String> deploymentTag;
   ParameterField<String> sensitivity;
   VerificationJobBuilder verificationJobBuilder;
+  VerificationJobSpec spec;
+  MonitoredServiceNode monitoredService;
 
   public String getServiceIdentifier() {
     Preconditions.checkNotNull(serviceIdentifier.getValue());

@@ -7,13 +7,17 @@
 
 package software.wings.service.intfc.yaml.sync;
 
+import software.wings.service.intfc.ownership.OwnedByAccount;
+import software.wings.service.intfc.ownership.OwnedByApplication;
 import software.wings.yaml.gitSync.YamlGitConfig;
 
 import java.util.List;
 import java.util.Set;
 
-public interface YamlGitConfigService {
+public interface YamlGitConfigService extends OwnedByAccount, OwnedByApplication {
   List<YamlGitConfig> getYamlGitConfigAccessibleToUserWithEntityName(String accountId);
 
   Set<String> getAppIdsForYamlGitConfig(List<String> yamlGitConfigIds);
+
+  YamlGitConfig getYamlGitConfigFromAppId(String appId, String accountId);
 }

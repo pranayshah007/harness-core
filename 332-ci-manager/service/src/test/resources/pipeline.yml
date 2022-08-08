@@ -1,0 +1,69 @@
+pipeline:
+  identifier: cipipeline
+  name: Integration Pipeline
+  description: testDescription
+  stages:
+  - stage:
+      identifier: masterBuildUpload
+      type: CI
+      spec:
+        description: This stage is run hourly to build binaries from master and upload
+        infrastructure:
+          type: KubernetesDirect
+          spec:
+            connectorRef: MyKubeCluster1
+            namespace: ShoppingCart
+        gitConnector:
+          identifier: gitRepo
+          type: git
+          spec:
+            authScheme:
+              type: ssh
+              sshKey: gitSsh
+            repo: master
+        container:
+          identifier: jenkinsSlaveImage
+          connector: "npquotecenter"
+          imagePath: "us.gcr.io/platform-205701/jenkins-slave-portal-oracle-8u191:12" #if version
+        customVariables: #users can specify both in the pipeline & stage level. these vars are available as env vars
+          - name: internalPath
+            type: Text
+            value: "{input}"
+          - name: runTimeVal #will get a value in runtime to be used in a following stage -how?
+            type: Secret
+            value: org.runTimeValSecret
+        execution:
+          steps:
+            - parallel:
+                - step:
+                    identifier: runLint
+                    type: Run
+                    spec:
+                      retry: 2
+                      command: ./run lint
+                - step:
+                    identifier: runUnitTests
+                    type: Run
+                    spec:
+                      retry: 2
+                      command: mvn -U clean package -Dbuild.number=${BUILD_NUMBER} -DgitBranch=master -DforkMode=perthread -DthreadCount=3 -DargLine="-Xmx2048m"
+            - step:
+                identifier: generateReport
+                type: Run
+                spec:
+                  retry: 2
+                  command: ./ci/generate_report.sh
+            - step:
+                identifier: buildMaster
+                type: Run
+                spec:
+                  retry: 2
+                  command: mvn clean install
+            - step:
+                identifier: runUnitTestsIntelligently
+                type: RunTests
+                spec:
+                  retry: 2
+                  args: echo "Running test"
+                  buildTool: maven
+                  language: java

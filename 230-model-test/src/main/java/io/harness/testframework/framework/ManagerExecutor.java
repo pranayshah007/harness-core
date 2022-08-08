@@ -21,7 +21,6 @@ import static java.time.Duration.ofSeconds;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.filesystem.FileIo;
-import io.harness.project.Alpn;
 import io.harness.resource.Project;
 import io.harness.testframework.framework.utils.FileUtils;
 import io.harness.threading.Poller;
@@ -92,8 +91,6 @@ public class ManagerExecutor {
 
     final Path config = Paths.get(directory.getPath(), "360-cg-manager", "modified_config.yml");
 
-    String alpn = Alpn.location();
-
     for (int i = 0; i < 10; i++) {
       log.info("***");
     }
@@ -105,7 +102,6 @@ public class ManagerExecutor {
     addGCVMOptions(command);
 
     command.add("-Dfile.encoding=UTF-8");
-    command.add("-Xbootclasspath/p:" + alpn);
 
     addJacocoAgentVM(jar, command);
 

@@ -9,20 +9,19 @@ package io.harness.ng.core.api.impl;
 
 import static io.harness.beans.Cd1SetupFields.ENV_ID_FIELD;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
+import static io.harness.filter.FilterType.DELEGATEPROFILE;
 
 import static software.wings.beans.Variable.ENV_ID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyList;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.mockito.MockitoAnnotations.initMocks;
 
-import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Cd1SetupFields;
@@ -34,7 +33,6 @@ import io.harness.delegate.beans.DelegateProfile.DelegateProfileKeys;
 import io.harness.delegate.beans.DelegateProfileDetailsNg;
 import io.harness.delegate.beans.ScopingRuleDetailsNg;
 import io.harness.delegate.filter.DelegateProfileFilterPropertiesDTO;
-import io.harness.delegateprofile.DelegateProfileFilterGrpc;
 import io.harness.delegateprofile.DelegateProfileGrpc;
 import io.harness.delegateprofile.DelegateProfilePageResponseGrpc;
 import io.harness.delegateprofile.ProfileId;
@@ -42,7 +40,6 @@ import io.harness.delegateprofile.ProfileScopingRule;
 import io.harness.delegateprofile.ScopingValues;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
-import io.harness.filter.FilterType;
 import io.harness.filter.dto.FilterDTO;
 import io.harness.filter.service.FilterService;
 import io.harness.grpc.DelegateProfileServiceGrpcClient;
@@ -61,7 +58,6 @@ import software.wings.beans.Environment;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
-import com.google.inject.Inject;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -69,34 +65,31 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import org.apache.commons.lang3.reflect.FieldUtils;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
+import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.junit.MockitoJUnitRunner;
 
+@RunWith(MockitoJUnitRunner.class)
 @OwnedBy(HarnessTeam.DEL)
-public class DelegateProfileManagerNgServiceImplTest extends CategoryTest {
+public class DelegateProfileManagerNgServiceImplTest {
   private static final String TEST_ACCOUNT_ID = generateUuid();
   private static final String TEST_DELEGATE_PROFILE_ID = generateUuid();
   public static final String TEST_FILTER_ID = "filterId";
 
   @Mock private DelegateProfileServiceGrpcClient delegateProfileServiceGrpcClient;
-  @Mock private FilterService filterService;
   @Mock private HPersistence hPersistence;
   @Mock private OutboxService outboxService;
-  @InjectMocks @Inject private DelegateProfileManagerNgServiceImpl delegateProfileManagerNgService;
-
-  @Rule public ExpectedException thrown = ExpectedException.none();
+  @Mock private FilterService filterService;
+  private DelegateProfileManagerNgServiceImpl underTest;
 
   @Before
   public void setup() throws IllegalAccessException {
-    initMocks(this);
-    FieldUtils.writeField(delegateProfileManagerNgService, "outboxService", outboxService, true);
+    underTest = new DelegateProfileManagerNgServiceImpl(
+        delegateProfileServiceGrpcClient, hPersistence, outboxService, filterService);
   }
 
   @Test
@@ -117,11 +110,10 @@ public class DelegateProfileManagerNgServiceImplTest extends CategoryTest {
         .thenReturn(delegateProfilePageResponseGrpc);
 
     PageResponse<DelegateProfileDetailsNg> delegateProfileDetailsPageResponse =
-        delegateProfileManagerNgService.list(TEST_ACCOUNT_ID, pageRequest, "orgId", null);
+        underTest.list(TEST_ACCOUNT_ID, pageRequest, "orgId", null);
     assertThat(delegateProfileDetailsPageResponse).isNull();
 
-    delegateProfileDetailsPageResponse =
-        delegateProfileManagerNgService.list(TEST_ACCOUNT_ID, pageRequest, null, "projectId");
+    delegateProfileDetailsPageResponse = underTest.list(TEST_ACCOUNT_ID, pageRequest, null, "projectId");
     assertThat(delegateProfileDetailsPageResponse).isNotNull();
   }
 
@@ -135,12 +127,11 @@ public class DelegateProfileManagerNgServiceImplTest extends CategoryTest {
     DelegateProfilePageResponseGrpc delegateProfilePageResponseGrpc =
         DelegateProfilePageResponseGrpc.newBuilder().build();
 
-    when(delegateProfileServiceGrpcClient.listProfilesV2(
-             eq(""), any(DelegateProfileFilterGrpc.class), any(PageRequestGrpc.class)))
+    when(delegateProfileServiceGrpcClient.listProfilesV2(eq(""), eq(null), any()))
         .thenReturn(delegateProfilePageResponseGrpc);
 
     PageResponse<DelegateProfileDetailsNg> delegateProfileDetailsPageResponse =
-        delegateProfileManagerNgService.listV2(TEST_ACCOUNT_ID, "orgId", "projectId", "", "", null, pageRequest);
+        underTest.listV2(TEST_ACCOUNT_ID, "orgId", "projectId", "", "", null, pageRequest);
     assertThat(delegateProfileDetailsPageResponse).isNotNull();
   }
 
@@ -154,18 +145,15 @@ public class DelegateProfileManagerNgServiceImplTest extends CategoryTest {
     DelegateProfilePageResponseGrpc delegateProfilePageResponseGrpc =
         DelegateProfilePageResponseGrpc.newBuilder().build();
 
-    when(delegateProfileServiceGrpcClient.listProfilesV2(
-             eq(""), any(DelegateProfileFilterGrpc.class), any(PageRequestGrpc.class)))
+    when(delegateProfileServiceGrpcClient.listProfilesV2(eq(""), eq(null), any()))
         .thenReturn(delegateProfilePageResponseGrpc);
-    when(filterService.get(
-             eq(TEST_ACCOUNT_ID), eq("orgId"), eq("projectId"), eq(TEST_FILTER_ID), eq(FilterType.DELEGATEPROFILE)))
+    when(filterService.get(TEST_ACCOUNT_ID, "orgId", "projectId", TEST_FILTER_ID, DELEGATEPROFILE))
         .thenReturn(new FilterDTO());
 
-    PageResponse<DelegateProfileDetailsNg> delegateProfileDetailsPageResponse = delegateProfileManagerNgService.listV2(
-        TEST_ACCOUNT_ID, "orgId", "projectId", TEST_FILTER_ID, "", null, pageRequest);
+    PageResponse<DelegateProfileDetailsNg> delegateProfileDetailsPageResponse =
+        underTest.listV2(TEST_ACCOUNT_ID, "orgId", "projectId", TEST_FILTER_ID, "", null, pageRequest);
 
-    verify(filterService, times(1))
-        .get(eq(TEST_ACCOUNT_ID), eq("orgId"), eq("projectId"), eq(TEST_FILTER_ID), eq(FilterType.DELEGATEPROFILE));
+    verify(filterService).get(TEST_ACCOUNT_ID, "orgId", "projectId", TEST_FILTER_ID, DELEGATEPROFILE);
     assertThat(delegateProfileDetailsPageResponse).isNotNull();
   }
 
@@ -175,8 +163,8 @@ public class DelegateProfileManagerNgServiceImplTest extends CategoryTest {
   public void listV2WithFilterShouldThrowException() {
     PageRequest<DelegateProfileDetailsNg> pageRequest = new PageRequest<>();
     assertThatThrownBy(()
-                           -> delegateProfileManagerNgService.listV2(TEST_ACCOUNT_ID, "orgId", "projectId", "filterId",
-                               "", DelegateProfileFilterPropertiesDTO.builder().build(), pageRequest))
+                           -> underTest.listV2(TEST_ACCOUNT_ID, "orgId", "projectId", "filterId", "",
+                               DelegateProfileFilterPropertiesDTO.builder().build(), pageRequest))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage("Can not apply both filter properties and saved filter together");
   }
@@ -195,11 +183,10 @@ public class DelegateProfileManagerNgServiceImplTest extends CategoryTest {
         .thenReturn(delegateProfileGrpc);
 
     DelegateProfileDetailsNg updatedDelegateProfileDetails =
-        delegateProfileManagerNgService.get(TEST_ACCOUNT_ID, delegateProfileGrpc.getProfileId().getId());
+        underTest.get(TEST_ACCOUNT_ID, delegateProfileGrpc.getProfileId().getId());
     assertThat(updatedDelegateProfileDetails).isNull();
 
-    updatedDelegateProfileDetails =
-        delegateProfileManagerNgService.get(TEST_ACCOUNT_ID, delegateProfileGrpc.getProfileId().getId());
+    updatedDelegateProfileDetails = underTest.get(TEST_ACCOUNT_ID, delegateProfileGrpc.getProfileId().getId());
     assertThat(updatedDelegateProfileDetails).isNotNull();
     assertThat(updatedDelegateProfileDetails.getUuid()).isEqualTo(delegateProfileGrpc.getProfileId().getId());
     assertThat(updatedDelegateProfileDetails.getAccountId()).isEqualTo(delegateProfileGrpc.getAccountId().getId());
@@ -245,14 +232,14 @@ public class DelegateProfileManagerNgServiceImplTest extends CategoryTest {
     when(delegateProfileServiceGrpcClient.getProfile(any(AccountId.class), any(ProfileId.class)))
         .thenReturn(delegateProfileGrpc);
 
-    DelegateProfileDetailsNg updatedDelegateProfileDetails = delegateProfileManagerNgService.update(profileDetail);
+    DelegateProfileDetailsNg updatedDelegateProfileDetails = underTest.update(profileDetail);
     assertThat(updatedDelegateProfileDetails).isNull();
 
     ArgumentCaptor<DelegateConfigurationUpdateEvent> configCaptor =
         ArgumentCaptor.forClass(DelegateConfigurationUpdateEvent.class);
     when(outboxService.save(configCaptor.capture())).thenReturn(null);
 
-    updatedDelegateProfileDetails = delegateProfileManagerNgService.update(profileDetail);
+    updatedDelegateProfileDetails = underTest.update(profileDetail);
     assertThat(updatedDelegateProfileDetails).isNotNull();
     assertThat(updatedDelegateProfileDetails.getUuid()).isEqualTo(delegateProfileGrpc.getProfileId().getId());
     assertThat(updatedDelegateProfileDetails).isEqualToIgnoringGivenFields(profileDetail, "uuid");
@@ -282,7 +269,7 @@ public class DelegateProfileManagerNgServiceImplTest extends CategoryTest {
     ScopingRuleDetailsNg scopingRuleDetail = ScopingRuleDetailsNg.builder().description("test").build();
     profileDetail.setScopingRules(Collections.singletonList(scopingRuleDetail));
 
-    assertThatThrownBy(() -> delegateProfileManagerNgService.update(profileDetail))
+    assertThatThrownBy(() -> underTest.update(profileDetail))
         .isInstanceOf(InvalidArgumentsException.class)
         .hasMessage("The Scoping rule is empty.");
   }
@@ -338,7 +325,7 @@ public class DelegateProfileManagerNgServiceImplTest extends CategoryTest {
         ArgumentCaptor.forClass(DelegateConfigurationCreateEvent.class);
     when(outboxService.save(configCaptor.capture())).thenReturn(null);
 
-    DelegateProfileDetailsNg result = delegateProfileManagerNgService.add(profileDetail);
+    DelegateProfileDetailsNg result = underTest.add(profileDetail);
     assertThat(result).isNotNull().isEqualToIgnoringGivenFields(profileDetail, DelegateProfileKeys.uuid);
 
     DelegateProfileGrpc capturedProfile = captor.getValue();
@@ -388,7 +375,7 @@ public class DelegateProfileManagerNgServiceImplTest extends CategoryTest {
                                                  .build();
     ScopingRuleDetailsNg scopingRuleDetail = ScopingRuleDetailsNg.builder().description("test").build();
     profileDetail.setScopingRules(Collections.singletonList(scopingRuleDetail));
-    assertThatThrownBy(() -> delegateProfileManagerNgService.add(profileDetail))
+    assertThatThrownBy(() -> underTest.add(profileDetail))
         .isInstanceOf(InvalidArgumentsException.class)
         .hasMessage("The Scoping rule is empty.");
   }
@@ -412,11 +399,11 @@ public class DelegateProfileManagerNgServiceImplTest extends CategoryTest {
         .thenReturn(null)
         .thenReturn(delegateProfileGrpc);
 
-    DelegateProfileDetailsNg updatedDelegateProfileDetails = delegateProfileManagerNgService.updateScopingRules(
+    DelegateProfileDetailsNg updatedDelegateProfileDetails = underTest.updateScopingRules(
         TEST_ACCOUNT_ID, delegateProfileGrpc.getProfileId().getId(), Collections.singletonList(scopingRuleDetail));
     assertThat(updatedDelegateProfileDetails).isNull();
 
-    updatedDelegateProfileDetails = delegateProfileManagerNgService.updateScopingRules(
+    updatedDelegateProfileDetails = underTest.updateScopingRules(
         TEST_ACCOUNT_ID, delegateProfileGrpc.getProfileId().getId(), Collections.singletonList(scopingRuleDetail));
     assertThat(updatedDelegateProfileDetails).isNotNull();
     assertThat(updatedDelegateProfileDetails.getUuid()).isEqualTo(delegateProfileGrpc.getProfileId().getId());
@@ -436,7 +423,7 @@ public class DelegateProfileManagerNgServiceImplTest extends CategoryTest {
     ScopingRuleDetailsNg scopingRuleDetail = ScopingRuleDetailsNg.builder().description("test").build();
     profileDetail.setScopingRules(Collections.singletonList(scopingRuleDetail));
     assertThatThrownBy(()
-                           -> delegateProfileManagerNgService.updateScopingRules(
+                           -> underTest.updateScopingRules(
                                TEST_ACCOUNT_ID, generateUuid(), Collections.singletonList(scopingRuleDetail)))
         .isInstanceOf(InvalidArgumentsException.class)
         .hasMessage("The Scoping rule is empty.");
@@ -448,7 +435,7 @@ public class DelegateProfileManagerNgServiceImplTest extends CategoryTest {
   public void shouldDelete() {
     when(delegateProfileServiceGrpcClient.getProfile(any(AccountId.class), any(ProfileId.class)))
         .thenReturn(DelegateProfileGrpc.newBuilder().build());
-    delegateProfileManagerNgService.delete(TEST_ACCOUNT_ID, TEST_DELEGATE_PROFILE_ID);
+    underTest.delete(TEST_ACCOUNT_ID, TEST_DELEGATE_PROFILE_ID);
 
     AccountId accountId = AccountId.newBuilder().setId(TEST_ACCOUNT_ID).build();
     ProfileId profileId = ProfileId.newBuilder().setId(TEST_DELEGATE_PROFILE_ID).build();
@@ -471,12 +458,12 @@ public class DelegateProfileManagerNgServiceImplTest extends CategoryTest {
         .thenReturn(null)
         .thenReturn(delegateProfileGrpc);
 
-    DelegateProfileDetailsNg updatedDelegateProfileDetails = delegateProfileManagerNgService.updateSelectors(
-        TEST_ACCOUNT_ID, delegateProfileGrpc.getProfileId().getId(), selectors);
+    DelegateProfileDetailsNg updatedDelegateProfileDetails =
+        underTest.updateSelectors(TEST_ACCOUNT_ID, delegateProfileGrpc.getProfileId().getId(), selectors);
     assertThat(updatedDelegateProfileDetails).isNull();
 
-    updatedDelegateProfileDetails = delegateProfileManagerNgService.updateSelectors(
-        TEST_ACCOUNT_ID, delegateProfileGrpc.getProfileId().getId(), selectors);
+    updatedDelegateProfileDetails =
+        underTest.updateSelectors(TEST_ACCOUNT_ID, delegateProfileGrpc.getProfileId().getId(), selectors);
 
     assertThat(updatedDelegateProfileDetails).isNotNull();
     assertThat(updatedDelegateProfileDetails.getUuid()).isEqualTo(delegateProfileGrpc.getProfileId().getId());
@@ -494,7 +481,7 @@ public class DelegateProfileManagerNgServiceImplTest extends CategoryTest {
     Map<String, ScopingValues> scopingEntities = new HashMap<>();
     scopingEntities.put(ENV_ID, scopingValuesEnvTypeId);
 
-    String description = delegateProfileManagerNgService.generateScopingRuleDescription(scopingEntities);
+    String description = underTest.generateScopingRuleDescription(scopingEntities);
 
     assertThat(description).isNotNull().isEqualTo("Environment: service1, service2; ");
   }
@@ -513,7 +500,7 @@ public class DelegateProfileManagerNgServiceImplTest extends CategoryTest {
     scopingEntitiesIds.add(retrievedEnvironment.getName());
 
     List<String> retrieveScopingRuleEntitiesNames =
-        delegateProfileManagerNgService.retrieveScopingRuleEntitiesNames(ENV_ID_FIELD, scopingEntitiesIds);
+        underTest.retrieveScopingRuleEntitiesNames(ENV_ID_FIELD, scopingEntitiesIds);
 
     assertThat(retrieveScopingRuleEntitiesNames).isNotNull().containsExactly("qa");
   }

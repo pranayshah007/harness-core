@@ -30,7 +30,7 @@ import static software.wings.beans.Service.ServiceKeys;
 import static software.wings.beans.ServiceTemplate.ServiceTemplateKeys;
 import static software.wings.beans.ServiceVariable.DEFAULT_TEMPLATE_ID;
 import static software.wings.beans.ServiceVariable.ServiceVariableKeys;
-import static software.wings.beans.ServiceVariable.Type.ENCRYPTED_TEXT;
+import static software.wings.beans.ServiceVariableType.ENCRYPTED_TEXT;
 import static software.wings.beans.appmanifest.ManifestFile.VALUES_YAML_KEY;
 import static software.wings.beans.yaml.YamlConstants.CONN_STRINGS_FILE;
 import static software.wings.service.intfc.ServiceVariableService.EncryptedFieldMode.MASKED;
@@ -39,7 +39,6 @@ import static software.wings.yaml.YamlHelper.trimYaml;
 
 import static java.lang.String.format;
 import static java.time.Duration.ofSeconds;
-import static java.util.stream.Collectors.toMap;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.atteo.evo.inflector.English.plural;
@@ -113,7 +112,6 @@ import software.wings.service.intfc.instance.InstanceService;
 import software.wings.service.intfc.ownership.OwnedByEnvironment;
 import software.wings.service.intfc.verification.CVConfigurationService;
 import software.wings.service.intfc.yaml.YamlPushService;
-import software.wings.stencils.DataProvider;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Joiner;
@@ -147,7 +145,7 @@ import ru.vyarus.guice.validator.group.annotation.ValidationGroups;
 @Singleton
 @Slf4j
 @TargetModule(HarnessModule._870_CG_ORCHESTRATION)
-public class EnvironmentServiceImpl implements EnvironmentService, DataProvider {
+public class EnvironmentServiceImpl implements EnvironmentService {
   @Inject private WingsPersistence wingsPersistence;
   // DO NOT DELETE THIS, PRUNE logic needs it
   @Inject private InstanceService instanceService;
@@ -275,16 +273,6 @@ public class EnvironmentServiceImpl implements EnvironmentService, DataProvider 
     pageRequest.addFilter(ServiceTemplateKeys.appId, EQ, environment.getAppId());
     pageRequest.addFilter(ServiceTemplateKeys.envId, EQ, environment.getUuid());
     environment.setServiceTemplates(serviceTemplateService.list(pageRequest, false, OBTAIN_VALUE).getResponse());
-  }
-
-  /**
-   * {@inheritDoc}
-   */
-  @Override
-  public Map<String, String> getData(String appId, Map<String, String> params) {
-    PageRequest<Environment> pageRequest = new PageRequest<>();
-    pageRequest.addFilter(EnvironmentKeys.appId, EQ, appId);
-    return list(pageRequest, false, null).stream().collect(toMap(Environment::getUuid, Environment::getName));
   }
 
   /**

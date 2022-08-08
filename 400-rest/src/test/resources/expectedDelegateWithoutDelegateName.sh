@@ -16,7 +16,7 @@ if [ ! -e start.sh ]; then
   exit 1
 fi
 
-JRE_DIR=jdk8u242-b08-jre
+JRE_DIR=jdk-11.0.14+9-jre
 JRE_BINARY=$JRE_DIR/bin/java
 case "$OSTYPE" in
   solaris*)
@@ -24,7 +24,7 @@ case "$OSTYPE" in
     ;;
   darwin*)
     OS=macosx
-    JRE_DIR=jdk8u242-b08-jre
+    JRE_DIR=jdk-11.0.14+9-jre
     JRE_BINARY=$JRE_DIR/Contents/Home/bin/java
     ;;
   linux*)
@@ -47,9 +47,9 @@ case "$OSTYPE" in
     ;;
 esac
 
-JVM_URL=http://localhost:8888/jre/openjdk-8u242/jre_x64_${OS}_8u242b08.tar.gz
+JVM_URL=http://localhost:53496/jre/openjdk-11.0.14_9/OpenJDK11U-jre_x64_${OS}_hotspot_11.0.14_9.tar.gz
 
-ALPN_BOOT_JAR_URL=http://localhost:8888/tools/alpn/release/8.1.13.v20181017/alpn-boot-8.1.13.v20181017.jar
+ALPN_BOOT_JAR_URL=""
 
 SOURCE="${BASH_SOURCE[0]}"
 while [ -h "$SOURCE" ]; do # resolve $SOURCE until the file is no longer a symlink
@@ -79,6 +79,22 @@ function jar_app_version() {
     VERSION=$(unzip -c $JAR META-INF/MANIFEST.MF | grep Application-Version | cut -d "=" -f2 | tr -d " " | tr -d "\r" | tr -d "\n")
   fi
   echo $VERSION
+}
+
+# url-encodes a given input string - used to encode the proxy password for curl commands.
+# Note:
+#   - We implement the functionality ourselves to avoid dependencies on new packages.
+#   - We encode a superset of the characters defined in the specification, which is explicitly
+#     allowed: https://www.ietf.org/rfc/rfc1738.txt
+url_encode () {
+    local input=$1
+    for (( i=0; i<${#input}; i++ )); do
+        local c=${input:$i:1}
+        case $c in
+            [a-zA-Z0-9-_\.\!\*]) printf "$c" ;;
+            *) printf '%%%02X' "'$c"
+        esac
+    done
 }
 
 if [ -z "$1" ]; then
@@ -125,7 +141,7 @@ if [ -e proxy.config ]; then
       if [[ "$PROXY_PASSWORD_ENC" != "" ]]; then
         export PROXY_PASSWORD=$(echo $PROXY_PASSWORD_ENC | openssl enc -d -a -des-ecb -K 4143434f554e)
       fi
-      export PROXY_CURL="-x "$PROXY_SCHEME"://"$PROXY_USER:$PROXY_PASSWORD@$PROXY_HOST:$PROXY_PORT
+      export PROXY_CURL="-x "$PROXY_SCHEME"://"$PROXY_USER:$(url_encode "$PROXY_PASSWORD")@$PROXY_HOST:$PROXY_PORT
     else
       export PROXY_CURL="-x "$PROXY_SCHEME"://"$PROXY_HOST:$PROXY_PORT
       export http_proxy=$PROXY_SCHEME://$PROXY_HOST:$PROXY_PORT
@@ -198,7 +214,6 @@ if [ ! -e config-delegate.yml ]; then
   echo "accountId: ACCOUNT_ID" > config-delegate.yml
   echo "accountSecret: ACCOUNT_KEY" >> config-delegate.yml
 fi
-test "$(tail -c 1 config-delegate.yml)" && `echo "" >> config-delegate.yml`
 if ! `grep managerUrl config-delegate.yml > /dev/null`; then
   echo "managerUrl: https://localhost:9090/api/" >> config-delegate.yml
 fi
@@ -285,6 +300,14 @@ fi
 
 if [ ! -z "$KUBECTL_PATH" ] && ! `grep kubectlPath config-delegate.yml > /dev/null` ; then
   echo "kubectlPath: $KUBECTL_PATH" >> config-delegate.yml
+fi
+
+if [ ! -z "$HELM3_PATH" ] && ! `grep helm3Path config-delegate.yml > /dev/null` ; then
+  echo "helm3Path: $HELM3_PATH" >> config-delegate.yml
+fi
+
+if [ ! -z "$HELM_PATH" ] && ! `grep helmPath config-delegate.yml > /dev/null` ; then
+  echo "helmPath: $HELM_PATH" >> config-delegate.yml
 fi
 
 if [ ! -z "$CF_CLI6_PATH" ] && ! `grep cfCli6Path config-delegate.yml > /dev/null` ; then

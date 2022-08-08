@@ -15,7 +15,6 @@ import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyLong;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -72,12 +71,10 @@ public class K8sInstanceSyncTaskHandlerTest extends WingsBaseTest {
         .getKubernetesConfig(any(K8sClusterConfig.class), anyBoolean());
 
     List<K8sPod> podsList = Arrays.asList(K8sPod.builder().build());
-    doReturn(podsList)
-        .when(k8sTaskHelperBase)
-        .getPodDetails(any(KubernetesConfig.class), anyString(), anyString(), anyLong());
+    doReturn(podsList).when(k8sTaskHelperBase).getPodDetails(any(), any(), any(), anyLong());
 
     k8sInstanceSyncTaskHandler.executeTaskInternal(getTaskParameters(), K8sDelegateTaskParams.builder().build());
-    verify(k8sTaskHelperBase, times(1)).getPodDetails(any(KubernetesConfig.class), anyString(), anyString(), anyLong());
+    verify(k8sTaskHelperBase, times(1)).getPodDetails(any(), any(), any(), anyLong());
     verify(k8sTaskHelper, times(1))
         .getK8sTaskExecutionResponse(any(K8sTaskResponse.class), any(CommandExecutionStatus.class));
   }
@@ -91,7 +88,7 @@ public class K8sInstanceSyncTaskHandlerTest extends WingsBaseTest {
         .getKubernetesConfig(any(K8sClusterConfig.class), anyBoolean());
 
     k8sInstanceSyncTaskHandler.executeTaskInternal(getTaskParameters(), K8sDelegateTaskParams.builder().build());
-    verify(k8sTaskHelperBase, times(1)).getPodDetails(any(KubernetesConfig.class), anyString(), anyString(), anyLong());
+    verify(k8sTaskHelperBase, times(1)).getPodDetails(any(), any(), any(), anyLong());
     verify(k8sTaskHelper, times(1))
         .getK8sTaskExecutionResponse(any(K8sTaskResponse.class), any(CommandExecutionStatus.class));
   }
@@ -106,12 +103,10 @@ public class K8sInstanceSyncTaskHandlerTest extends WingsBaseTest {
         .getKubernetesConfig(any(K8sClusterConfig.class), anyBoolean());
 
     List<K8sPod> podsList = Arrays.asList(K8sPod.builder().build());
-    doReturn(podsList)
-        .when(k8sTaskHelperBase)
-        .getPodDetails(any(KubernetesConfig.class), anyString(), anyString(), anyLong());
+    doReturn(podsList).when(k8sTaskHelperBase).getPodDetails(any(), any(), any(), anyLong());
 
     k8sInstanceSyncTaskHandler.executeTaskInternal(taskParameters, K8sDelegateTaskParams.builder().build());
-    verify(k8sTaskHelperBase, times(1)).getPodDetails(any(KubernetesConfig.class), anyString(), anyString(), anyLong());
+    verify(k8sTaskHelperBase, times(1)).getPodDetails(any(), any(), any(), anyLong());
     verify(k8sTaskHelper, times(1))
         .getK8sTaskExecutionResponse(any(K8sTaskResponse.class), any(CommandExecutionStatus.class));
   }

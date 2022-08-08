@@ -15,7 +15,6 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.cvng.analysis.beans.LogClusterLevel;
-import io.harness.cvng.analysis.entities.HealthVerificationPeriod;
 import io.harness.cvng.beans.job.VerificationJobType;
 import io.harness.cvng.core.beans.TimeRange;
 import io.harness.cvng.core.entities.CVConfig;
@@ -33,7 +32,6 @@ import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorS
 import io.harness.cvng.statemachine.beans.AnalysisInput;
 import io.harness.cvng.statemachine.beans.AnalysisState;
 import io.harness.cvng.statemachine.beans.AnalysisStatus;
-import io.harness.cvng.statemachine.entities.ActivityVerificationState;
 import io.harness.cvng.statemachine.entities.AnalysisStateMachine;
 import io.harness.cvng.statemachine.entities.AnalysisStateMachine.AnalysisStateMachineKeys;
 import io.harness.cvng.statemachine.entities.CanaryTimeSeriesAnalysisState;
@@ -46,7 +44,7 @@ import io.harness.cvng.statemachine.entities.TestTimeSeriesAnalysisState;
 import io.harness.cvng.statemachine.exception.AnalysisStateMachineException;
 import io.harness.cvng.statemachine.services.api.AnalysisStateExecutor;
 import io.harness.cvng.statemachine.services.api.AnalysisStateMachineService;
-import io.harness.cvng.verificationjob.entities.HealthVerificationJob;
+import io.harness.cvng.verificationjob.entities.VerificationJob;
 import io.harness.cvng.verificationjob.entities.VerificationJobInstance;
 import io.harness.cvng.verificationjob.services.api.VerificationJobInstanceService;
 import io.harness.metrics.AutoMetricContext;
@@ -61,8 +59,10 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections.CollectionUtils;
 import org.mongodb.morphia.query.Sort;
 
 @Slf4j
@@ -152,12 +152,22 @@ public class AnalysisStateMachineServiceImpl implements AnalysisStateMachineServ
 
   @Override
   public AnalysisStatus executeStateMachine(AnalysisStateMachine analysisStateMachine) {
+    if (Instant.ofEpochMilli(analysisStateMachine.getNextAttemptTime()).isAfter(clock.instant())) {
+      log.info("The next attempt time for the statemachine {} is {}. skipping for now", analysisStateMachine.getUuid(),
+          analysisStateMachine.getNextAttemptTime());
+      return analysisStateMachine.getCurrentState().getStatus();
+    }
     log.info("Executing state machine {} for verificationTask {}", analysisStateMachine.getUuid(),
         analysisStateMachine.getVerificationTaskId());
-
     AnalysisState currentState = analysisStateMachine.getCurrentState();
     AnalysisStateExecutor analysisStateExecutor = stateTypeAnalysisStateExecutorMap.get(currentState.getType());
     AnalysisStatus status = analysisStateExecutor.getExecutionStatus(currentState);
+    if (status.equals(AnalysisStatus.RETRY) && !currentState.getStatus().equals(AnalysisStatus.RETRY)) {
+      analysisStateMachine.getCurrentState().setStatus(AnalysisStatus.RETRY);
+      analysisStateMachine.setNextAttemptTimeUsingRetryCount(clock.instant());
+      hPersistence.save(analysisStateMachine);
+      return analysisStateMachine.getCurrentState().getStatus();
+    }
     AnalysisState nextState = null;
     switch (status) {
       case CREATED:
@@ -192,6 +202,7 @@ public class AnalysisStateMachineServiceImpl implements AnalysisStateMachineServ
         log.info("Analysis is going to be RETRIED for {} and analysis range {} to {}. We will call handleRetry.",
             analysisStateMachine.getVerificationTaskId(), analysisStateMachine.getAnalysisStartTime(),
             analysisStateMachine.getAnalysisEndTime());
+        analysisStateMachine.incrementTotalRetryCount();
         nextState = analysisStateExecutor.handleRetry(currentState);
         break;
       case SUCCESS:
@@ -222,8 +233,7 @@ public class AnalysisStateMachineServiceImpl implements AnalysisStateMachineServ
       analysisStateMachine.setStatus(AnalysisStatus.SUCCESS);
       nextStateExecutor.handleFinalStatuses(nextState);
     } else if (AnalysisStatus.getFinalStates().contains(nextState.getStatus())) {
-      analysisStateMachine.setNextAttemptTime(
-          nextStateExecutor.getNextValidAfter(clock.instant(), nextState.getRetryCount()).toEpochMilli());
+      analysisStateMachine.setNextAttemptTimeUsingRetryCount(clock.instant());
       analysisStateMachine.setStatus(nextState.getStatus());
       nextStateExecutor.handleFinalStatuses(nextState);
       try (AutoMetricContext ignore =
@@ -316,19 +326,27 @@ public class AnalysisStateMachineServiceImpl implements AnalysisStateMachineServ
       stateMachine.setAccountId(cvConfig.getAccountId());
       stateMachine.setCurrentState(firstState);
     } else if (TaskType.DEPLOYMENT.equals(verificationTaskType)) {
-      VerificationJobInstance verificationJobInstance = verificationJobInstanceService.getVerificationJobInstance(
-          ((DeploymentInfo) verificationTask.getTaskInfo()).getVerificationJobInstanceId());
-      CVConfig cvConfigForDeployment =
-          cvConfigService.get(((DeploymentInfo) verificationTask.getTaskInfo()).getCvConfigId());
+      DeploymentInfo deploymentInfo = (DeploymentInfo) verificationTask.getTaskInfo();
+      String cvConfigId = deploymentInfo.getCvConfigId();
+      VerificationJobInstance verificationJobInstance =
+          verificationJobInstanceService.getVerificationJobInstance(deploymentInfo.getVerificationJobInstanceId());
       Preconditions.checkNotNull(verificationJobInstance, "verificationJobInstance can not be null");
+      VerificationJob resolvedVerificationJob = verificationJobInstance.getResolvedJob();
+      CVConfig cvConfigForDeployment = null;
+      if (Objects.nonNull(resolvedVerificationJob)) {
+        List<CVConfig> cvConfigs = resolvedVerificationJob.getCvConfigs();
+        if (CollectionUtils.isNotEmpty(cvConfigs)) {
+          cvConfigForDeployment =
+              cvConfigs.stream().filter(cvConfig -> cvConfig.getUuid().equals(cvConfigId)).findFirst().orElse(null);
+        }
+      }
+      if (Objects.isNull(cvConfigForDeployment)) {
+        cvConfigForDeployment = cvConfigService.get(cvConfigId);
+      }
       Preconditions.checkNotNull(cvConfigForDeployment, "cvConfigForDeployment can not be null");
       stateMachine.setAccountId(verificationTask.getAccountId());
       stateMachine.setStateMachineIgnoreMinutes(STATE_MACHINE_IGNORE_MINUTES_DEFAULT);
-      if (verificationJobInstance.getResolvedJob().getType() == VerificationJobType.HEALTH) {
-        createHealthAnalysisState(stateMachine, inputForAnalysis, verificationJobInstance);
-      } else {
-        createDeploymentAnalysisState(stateMachine, inputForAnalysis, verificationJobInstance, cvConfigForDeployment);
-      }
+      createDeploymentAnalysisState(stateMachine, inputForAnalysis, verificationJobInstance, cvConfigForDeployment);
     } else if (TaskType.SLI.equals(verificationTaskType)) {
       String sliId = verificationTaskService.getSliId(inputForAnalysis.getVerificationTaskId());
       ServiceLevelIndicator serviceLevelIndicator = serviceLevelIndicatorService.get(sliId);
@@ -345,21 +363,6 @@ public class AnalysisStateMachineServiceImpl implements AnalysisStateMachineServ
     executionLogService.getLogger(stateMachine)
         .log(stateMachine.getLogLevel(), "Analysis state machine status: " + stateMachine.getStatus());
     return stateMachine;
-  }
-
-  private void createHealthAnalysisState(AnalysisStateMachine stateMachine, AnalysisInput inputForAnalysis,
-      VerificationJobInstance verificationJobInstance) {
-    HealthVerificationJob resolvedJob = (HealthVerificationJob) verificationJobInstance.getResolvedJob();
-    ActivityVerificationState healthAnalysisState = ActivityVerificationState.builder().build();
-    healthAnalysisState.setInputs(inputForAnalysis);
-    healthAnalysisState.setHealthVerificationPeriod(HealthVerificationPeriod.PRE_ACTIVITY);
-    healthAnalysisState.setDuration(verificationJobInstance.getResolvedJob().getDuration());
-    healthAnalysisState.setPreActivityVerificationStartTime(
-        resolvedJob.getPreActivityVerificationStartTime(verificationJobInstance.getStartTime()));
-    healthAnalysisState.setPostActivityVerificationStartTime(
-        resolvedJob.getPostActivityVerificationStartTime(verificationJobInstance.getStartTime()));
-    healthAnalysisState.setStatus(AnalysisStatus.CREATED);
-    stateMachine.setCurrentState(healthAnalysisState);
   }
 
   private void createDeploymentAnalysisState(AnalysisStateMachine stateMachine, AnalysisInput inputForAnalysis,

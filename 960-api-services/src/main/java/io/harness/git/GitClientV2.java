@@ -17,6 +17,8 @@ import io.harness.git.model.FetchFilesByPathRequest;
 import io.harness.git.model.FetchFilesResult;
 import io.harness.git.model.GitBaseRequest;
 
+import java.io.IOException;
+
 public interface GitClientV2 {
   void ensureRepoLocallyClonedAndUpdated(GitBaseRequest request);
 
@@ -24,7 +26,7 @@ public interface GitClientV2 {
 
   void validateOrThrow(GitBaseRequest request);
 
-  FetchFilesResult fetchFilesByPath(FetchFilesByPathRequest request);
+  FetchFilesResult fetchFilesByPath(FetchFilesByPathRequest request) throws IOException;
 
   DiffResult diff(DiffRequest request);
 
@@ -32,5 +34,5 @@ public interface GitClientV2 {
 
   FetchFilesResult fetchFilesBetweenCommits(FetchFilesBwCommitsRequest request);
 
-  void downloadFiles(DownloadFilesRequest request);
+  void downloadFiles(DownloadFilesRequest request) throws IOException;
 }

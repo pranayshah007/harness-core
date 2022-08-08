@@ -21,7 +21,7 @@ import io.harness.rule.Owner;
 
 import software.wings.WingsBaseTest;
 import software.wings.beans.SmbConfig;
-import software.wings.beans.artifact.Artifact.ArtifactMetadataKeys;
+import software.wings.beans.artifact.ArtifactMetadataKeys;
 import software.wings.helpers.ext.jenkins.BuildDetails;
 import software.wings.service.impl.SmbHelperService;
 

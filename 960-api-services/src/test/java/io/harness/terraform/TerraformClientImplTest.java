@@ -10,12 +10,14 @@ package io.harness.terraform;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.provision.TerraformConstants.TERRAFORM_PLAN_FILE_OUTPUT_NAME;
 import static io.harness.rule.OwnerRule.ABOSII;
+import static io.harness.rule.OwnerRule.ARVIND;
 import static io.harness.rule.OwnerRule.BOGDAN;
 import static io.harness.rule.OwnerRule.ROHITKARELIA;
 import static io.harness.terraform.TerraformConstants.DEFAULT_TERRAFORM_COMMAND_TIMEOUT;
 
 import static java.lang.String.format;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.AdditionalMatchers.and;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyLong;
@@ -147,12 +149,12 @@ public class TerraformClientImplTest extends CategoryTest {
   @Test
   @Owner(developers = ROHITKARELIA)
   @Category(UnitTests.class)
-  public void testPlanCommand() throws InterruptedException, IOException, TimeoutException {
+  public void testPlanCommandWithDestroy() throws InterruptedException, IOException, TimeoutException {
     CliResponse cliResponse = getCliResponse();
     TerraformPlanCommandRequest terraformPlanCommandRequest =
         TerraformPlanCommandRequest.builder().destroySet(true).build();
 
-    String command = format("terraform plan -input=false -destroy -out=tfdestroyplan %s %s",
+    String command = format("terraform plan -input=false -detailed-exitcode -destroy -out=tfdestroyplan %s %s",
         TerraformHelperUtils.generateCommandFlagsString(terraformPlanCommandRequest.getTargets(), "-target="),
         TerraformHelperUtils.generateCommandFlagsString(terraformPlanCommandRequest.getVarFilePaths(), "-var-file="));
     doReturn(cliResponse)
@@ -164,6 +166,58 @@ public class TerraformClientImplTest extends CategoryTest {
         DEFAULT_TERRAFORM_COMMAND_TIMEOUT, Collections.emptyMap(), SCRIPT_FILES_DIRECTORY, logCallback);
 
     assertThat(actualResponse).isEqualTo(cliResponse);
+  }
+
+  @Test
+  @Owner(developers = ARVIND)
+  @Category(UnitTests.class)
+  public void testPlanCommand() throws InterruptedException, IOException, TimeoutException {
+    CliResponse cliResponse = getCliResponseWithExitCode(2);
+    String varParams = "-compact-warnings";
+    TerraformPlanCommandRequest terraformPlanCommandRequest =
+        TerraformPlanCommandRequest.builder().varParams(varParams).build();
+
+    String command = format("terraform plan -input=false -detailed-exitcode -out=tfplan %s %s",
+        TerraformHelperUtils.generateCommandFlagsString(terraformPlanCommandRequest.getTargets(), "-target="),
+        TerraformHelperUtils.generateCommandFlagsString(terraformPlanCommandRequest.getVarFilePaths(), "-var-file="));
+    doReturn(cliResponse)
+        .when(cliHelper)
+        .executeCliCommand(and(contains(command), contains(varParams)), eq(DEFAULT_TERRAFORM_COMMAND_TIMEOUT),
+            eq(Collections.emptyMap()), eq(SCRIPT_FILES_DIRECTORY), eq(logCallback), contains(command), any());
+
+    CliResponse actualResponse = terraformClientImpl.plan(terraformPlanCommandRequest,
+        DEFAULT_TERRAFORM_COMMAND_TIMEOUT, Collections.emptyMap(), SCRIPT_FILES_DIRECTORY, logCallback);
+    assertThat(actualResponse.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
+    assertThat(actualResponse.getExitCode()).isEqualTo(2);
+
+    cliResponse.setExitCode(0);
+    actualResponse = terraformClientImpl.plan(terraformPlanCommandRequest, DEFAULT_TERRAFORM_COMMAND_TIMEOUT,
+        Collections.emptyMap(), SCRIPT_FILES_DIRECTORY, logCallback);
+    assertThat(actualResponse.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
+    assertThat(actualResponse.getExitCode()).isEqualTo(0);
+  }
+
+  @Test
+  @Owner(developers = ARVIND)
+  @Category(UnitTests.class)
+  public void testPlanCommandWithFailure() throws InterruptedException, IOException, TimeoutException {
+    CliResponse cliResponse = getCliResponseWithExitCode(1);
+    String varParams = "-compact-warnings";
+    TerraformPlanCommandRequest terraformPlanCommandRequest =
+        TerraformPlanCommandRequest.builder().varParams(varParams).build();
+
+    String command = format("terraform plan -input=false -detailed-exitcode -out=tfplan %s %s",
+        TerraformHelperUtils.generateCommandFlagsString(terraformPlanCommandRequest.getTargets(), "-target="),
+        TerraformHelperUtils.generateCommandFlagsString(terraformPlanCommandRequest.getVarFilePaths(), "-var-file="));
+    doReturn(cliResponse)
+        .when(cliHelper)
+        .executeCliCommand(and(contains(command), contains(varParams)), eq(DEFAULT_TERRAFORM_COMMAND_TIMEOUT),
+            eq(Collections.emptyMap()), eq(SCRIPT_FILES_DIRECTORY), eq(logCallback), contains(command), any());
+
+    assertThatThrownBy(()
+                           -> terraformClientImpl.plan(terraformPlanCommandRequest, DEFAULT_TERRAFORM_COMMAND_TIMEOUT,
+                               Collections.emptyMap(), SCRIPT_FILES_DIRECTORY, logCallback))
+        .isInstanceOf(TerraformCliRuntimeException.class);
   }
 
   @Test
@@ -221,6 +275,14 @@ public class TerraformClientImplTest extends CategoryTest {
     return CliResponse.builder()
         .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
         .output("Command Output")
+        .build();
+  }
+
+  private CliResponse getCliResponseWithExitCode(int exitCode) {
+    return CliResponse.builder()
+        .commandExecutionStatus(exitCode == 0 ? CommandExecutionStatus.SUCCESS : CommandExecutionStatus.FAILURE)
+        .output("Command Output")
+        .exitCode(exitCode)
         .build();
   }
 
@@ -334,6 +396,11 @@ public class TerraformClientImplTest extends CategoryTest {
         .executeCliCommand(and(contains("terraform"), contains("version")), anyLong(),
             anyMapOf(String.class, String.class), anyString(), any(LogCallback.class));
 
+    doReturn(CliResponse.builder().commandExecutionStatus(CommandExecutionStatus.SUCCESS).build())
+        .when(cliHelper)
+        .executeCliCommand(contains("terraform"), anyLong(), anyMapOf(String.class, String.class), anyString(),
+            any(LogCallback.class), contains("terraform"), any(LogOutputStream.class));
+
     terraformClientImpl.show("planName", DEFAULT_TERRAFORM_COMMAND_TIMEOUT, Collections.emptyMap(),
         SCRIPT_FILES_DIRECTORY, logCallback, planJsonLogOutputStream);
 
@@ -353,6 +420,11 @@ public class TerraformClientImplTest extends CategoryTest {
         .when(cliHelper)
         .executeCliCommand(and(contains("terraform"), contains("version")), anyLong(),
             anyMapOf(String.class, String.class), anyString(), any(LogCallback.class));
+
+    doReturn(CliResponse.builder().commandExecutionStatus(CommandExecutionStatus.SUCCESS).build())
+        .when(cliHelper)
+        .executeCliCommand(contains("terraform"), anyLong(), anyMapOf(String.class, String.class), anyString(),
+            any(LogCallback.class), contains("terraform"), any(LogOutputStream.class));
 
     terraformClientImpl.show("planName", DEFAULT_TERRAFORM_COMMAND_TIMEOUT, Collections.emptyMap(),
         SCRIPT_FILES_DIRECTORY, logCallback, planJsonLogOutputStream);

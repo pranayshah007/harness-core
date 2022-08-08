@@ -44,9 +44,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.Mockito;
 
-//
-//@RunWith(PowerMockRunner.class)
-//@PrepareForTest({YamlSchemaUtils.class, IOUtils.class})
 @OwnedBy(HarnessTeam.DX)
 public class YamlSchemaProviderTest extends CategoryTest {
   YamlSchemaProvider yamlSchemaProvider;

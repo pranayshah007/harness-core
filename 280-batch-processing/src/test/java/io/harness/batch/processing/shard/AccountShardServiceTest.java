@@ -57,8 +57,8 @@ public class AccountShardServiceTest extends CategoryTest {
     when(cloudToHarnessMappingService.getCeEnabledAccounts()).thenReturn(accounts);
     when(accountShardMappingDao.getAccountShardMapping())
         .thenReturn(ImmutableList.of(AccountShardMapping.builder().accountId("accountId5").shardId(1).build()));
-    List<Account> ceEnabledAccounts = accountShardService.getCeEnabledAccounts();
-    assertThat(ceEnabledAccounts.stream().map(Account::getUuid).collect(Collectors.toList()))
+    List<AccountLicenseDTO> ceEnabledAccounts = accountShardService.getCeEnabledAccounts();
+    assertThat(ceEnabledAccounts.stream().map(AccountLicenseDTO::getAccountIdentifier).collect(Collectors.toList()))
         .containsExactlyInAnyOrder("accountId2", "accountId4");
   }
 
@@ -75,8 +75,8 @@ public class AccountShardServiceTest extends CategoryTest {
     when(accountShardMappingDao.getAccountShardMapping())
         .thenReturn(ImmutableList.of(AccountShardMapping.builder().accountId("accountId5").shardId(1).build(),
             AccountShardMapping.builder().accountId("accountId6").shardId(1).build()));
-    List<Account> ceEnabledAccounts = accountShardService.getCeEnabledAccounts();
-    assertThat(ceEnabledAccounts.stream().map(Account::getUuid).collect(Collectors.toList()))
+    List<AccountLicenseDTO> ceEnabledAccounts = accountShardService.getCeEnabledAccounts();
+    assertThat(ceEnabledAccounts.stream().map(AccountLicenseDTO::getAccountIdentifier).collect(Collectors.toList()))
         .containsExactlyInAnyOrder("accountId5", "accountId6");
   }
 

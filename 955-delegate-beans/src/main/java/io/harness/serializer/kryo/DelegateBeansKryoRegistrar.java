@@ -14,12 +14,22 @@ import io.harness.delegate.beans.DelegateInstanceStatus;
 import io.harness.delegate.beans.DelegateMetaInfo;
 import io.harness.serializer.KryoRegistrar;
 
+import software.wings.beans.container.ContainerDefinition;
+import software.wings.beans.container.LogConfiguration;
+import software.wings.beans.container.PortMapping;
+import software.wings.beans.container.StorageConfiguration;
+
 import com.esotericsoftware.kryo.Kryo;
 
 @OwnedBy(DEL)
 public class DelegateBeansKryoRegistrar implements KryoRegistrar {
   @Override
   public void register(Kryo kryo) {
+    kryo.register(ContainerDefinition.class, 5162);
+    kryo.register(LogConfiguration.class, 5163);
+    kryo.register(StorageConfiguration.class, 5164);
+    kryo.register(PortMapping.class, 5222);
+    kryo.register(LogConfiguration.LogOption.class, 5223);
     kryo.register(DelegateMetaInfo.class, 5372);
     kryo.register(DelegateInstanceStatus.class, 400133);
   }

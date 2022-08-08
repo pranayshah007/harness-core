@@ -1,0 +1,13 @@
+__uuid: step1
+step:
+    type: Http
+    name: <+strategy.iterations>
+    identifier: <+strategy.iteration>
+    strategy:
+      parallelism: 4
+    spec:
+      url: https://www.google.com
+      method: GET
+      headers: []
+      outputVariables: []
+    timeout: 1m

@@ -8,6 +8,7 @@
 package io.harness.k8s.apiclient;
 
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.k8s.model.KubernetesClusterAuthType.GCP_OAUTH;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
@@ -57,9 +58,13 @@ public class ApiClientFactoryImpl implements ApiClientFactory {
     if (kubernetesConfig.getCaCert() != null) {
       clientBuilder.setCertificateAuthority(decodeIfRequired(kubernetesConfig.getCaCert()));
     }
-    if (kubernetesConfig.getServiceAccountToken() != null) {
-      clientBuilder.setAuthentication(
-          new AccessTokenAuthentication(new String(kubernetesConfig.getServiceAccountToken())));
+    if (kubernetesConfig.getServiceAccountTokenSupplier() != null) {
+      if (GCP_OAUTH == kubernetesConfig.getAuthType()) {
+        clientBuilder.setAuthentication(new GkeTokenAuthentication(kubernetesConfig.getServiceAccountTokenSupplier()));
+      } else {
+        clientBuilder.setAuthentication(
+            new AccessTokenAuthentication(kubernetesConfig.getServiceAccountTokenSupplier().get()));
+      }
     } else if (kubernetesConfig.getUsername() != null && kubernetesConfig.getPassword() != null) {
       clientBuilder.setAuthentication(new UsernamePasswordAuthentication(
           new String(kubernetesConfig.getUsername()), new String(kubernetesConfig.getPassword())));
@@ -68,7 +73,12 @@ public class ApiClientFactoryImpl implements ApiClientFactory {
           decodeIfRequired(kubernetesConfig.getClientCert()), decodeIfRequired(kubernetesConfig.getClientKey())));
     } else if (tokenRetriever != null && KubernetesClusterAuthType.OIDC == kubernetesConfig.getAuthType()) {
       clientBuilder.setAuthentication(new AccessTokenAuthentication(tokenRetriever.getOidcIdToken(kubernetesConfig)));
+    } else if (kubernetesConfig.getAzureConfig() != null && kubernetesConfig.getAzureConfig().getAadIdToken() != null) {
+      //      clientBuilder.setAuthentication(new
+      //      AzureTokenAuthentication(kubernetesConfig.getAzureConfig().getAadIdToken()));
+      clientBuilder.setAuthentication(new AccessTokenAuthentication(kubernetesConfig.getAzureConfig().getAadIdToken()));
     }
+
     ApiClient apiClient = clientBuilder.build();
     // don't timeout on client-side
     OkHttpClient httpClient = apiClient.getHttpClient()

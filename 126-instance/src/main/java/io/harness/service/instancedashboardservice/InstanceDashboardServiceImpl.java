@@ -15,6 +15,7 @@ import io.harness.dtos.InstanceDTO;
 import io.harness.entities.Instance;
 import io.harness.mappers.InstanceDetailsMapper;
 import io.harness.mappers.InstanceMapper;
+import io.harness.models.ActiveServiceInstanceInfo;
 import io.harness.models.BuildsByEnvironment;
 import io.harness.models.EnvBuildInstanceCount;
 import io.harness.models.InstanceDTOsByBuildId;
@@ -127,6 +128,30 @@ public class InstanceDashboardServiceImpl implements InstanceDashboardService {
     });
 
     return envBuildInstanceCounts;
+  }
+
+  @Override
+  public List<ActiveServiceInstanceInfo> getActiveServiceInstanceInfo(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId) {
+    AggregationResults<ActiveServiceInstanceInfo> activeServiceInstanceInfoAggregationResults =
+        instanceService.getActiveServiceInstanceInfo(accountIdentifier, orgIdentifier, projectIdentifier, serviceId);
+    List<ActiveServiceInstanceInfo> activeServiceInstanceInfoList = new ArrayList<>();
+
+    activeServiceInstanceInfoAggregationResults.getMappedResults().forEach(activeServiceInstanceInfo -> {
+      final String infraIdentifier = activeServiceInstanceInfo.getInfraIdentifier();
+      final String infraName = activeServiceInstanceInfo.getInfraName();
+      final String lastPipelineExecutionId = activeServiceInstanceInfo.getLastPipelineExecutionId();
+      final String lastPipelineExecutionName = activeServiceInstanceInfo.getLastPipelineExecutionName();
+      final String lastDeployedAt = activeServiceInstanceInfo.getLastDeployedAt();
+      final String envId = activeServiceInstanceInfo.getEnvIdentifier();
+      final String envName = activeServiceInstanceInfo.getEnvName();
+      final String buildId = activeServiceInstanceInfo.getTag();
+      final Integer count = activeServiceInstanceInfo.getCount();
+      activeServiceInstanceInfoList.add(new ActiveServiceInstanceInfo(infraIdentifier, infraName,
+          lastPipelineExecutionId, lastPipelineExecutionName, lastDeployedAt, envId, envName, buildId, count));
+    });
+
+    return activeServiceInstanceInfoList;
   }
 
   /**

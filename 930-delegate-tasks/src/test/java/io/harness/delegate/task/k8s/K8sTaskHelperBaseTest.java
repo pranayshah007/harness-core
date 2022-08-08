@@ -47,6 +47,7 @@ import static io.harness.rule.OwnerRule.ARVIND;
 import static io.harness.rule.OwnerRule.BOGDAN;
 import static io.harness.rule.OwnerRule.MLUKIC;
 import static io.harness.rule.OwnerRule.NAMAN_TALAYCHA;
+import static io.harness.rule.OwnerRule.PRATYUSH;
 import static io.harness.rule.OwnerRule.SAHIL;
 import static io.harness.rule.OwnerRule.SATYAM;
 import static io.harness.rule.OwnerRule.TATHAGAT;
@@ -65,17 +66,19 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.anyMapOf;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.spy;
@@ -114,6 +117,7 @@ import io.harness.delegate.beans.storeconfig.FetchType;
 import io.harness.delegate.beans.storeconfig.GcsHelmStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.HttpHelmStoreDelegateConfig;
+import io.harness.delegate.beans.storeconfig.LocalFileStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.S3HelmStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.StoreDelegateConfig;
 import io.harness.delegate.k8s.K8sTestHelper;
@@ -123,9 +127,9 @@ import io.harness.delegate.service.ExecutionConfigOverrideFromFileOnDelegate;
 import io.harness.delegate.task.git.ScmFetchFilesHelperNG;
 import io.harness.delegate.task.helm.HelmCommandFlag;
 import io.harness.delegate.task.helm.HelmTaskHelperBase;
-import io.harness.delegate.task.k8s.exception.KubernetesExceptionExplanation;
-import io.harness.delegate.task.k8s.exception.KubernetesExceptionHints;
-import io.harness.delegate.task.k8s.exception.KubernetesExceptionMessages;
+import io.harness.delegate.task.k8s.client.K8sApiClient;
+import io.harness.delegate.task.k8s.client.K8sCliClient;
+import io.harness.delegate.task.localstore.ManifestFiles;
 import io.harness.encryption.SecretRefData;
 import io.harness.errorhandling.NGErrorHelper;
 import io.harness.exception.ExceptionUtils;
@@ -142,6 +146,9 @@ import io.harness.filesystem.FileIo;
 import io.harness.k8s.KubernetesContainerService;
 import io.harness.k8s.KubernetesHelperService;
 import io.harness.k8s.ProcessResponse;
+import io.harness.k8s.exception.KubernetesExceptionExplanation;
+import io.harness.k8s.exception.KubernetesExceptionHints;
+import io.harness.k8s.exception.KubernetesExceptionMessages;
 import io.harness.k8s.kubectl.AbstractExecutable;
 import io.harness.k8s.kubectl.ApplyCommand;
 import io.harness.k8s.kubectl.DeleteCommand;
@@ -185,6 +192,20 @@ import com.google.common.io.Resources;
 import com.google.common.util.concurrent.TimeLimiter;
 import com.google.common.util.concurrent.UncheckedTimeoutException;
 import com.google.inject.Inject;
+import io.fabric8.istio.api.networking.v1alpha3.Destination;
+import io.fabric8.istio.api.networking.v1alpha3.DestinationBuilder;
+import io.fabric8.istio.api.networking.v1alpha3.HTTPRoute;
+import io.fabric8.istio.api.networking.v1alpha3.HTTPRouteBuilder;
+import io.fabric8.istio.api.networking.v1alpha3.HTTPRouteDestination;
+import io.fabric8.istio.api.networking.v1alpha3.HTTPRouteDestinationBuilder;
+import io.fabric8.istio.api.networking.v1alpha3.PortSelectorBuilder;
+import io.fabric8.istio.api.networking.v1alpha3.Subset;
+import io.fabric8.istio.api.networking.v1alpha3.TCPRoute;
+import io.fabric8.istio.api.networking.v1alpha3.TLSRoute;
+import io.fabric8.istio.api.networking.v1alpha3.VirtualService;
+import io.fabric8.istio.api.networking.v1alpha3.VirtualServiceBuilder;
+import io.fabric8.istio.api.networking.v1alpha3.VirtualServiceSpec;
+import io.fabric8.istio.api.networking.v1alpha3.VirtualServiceSpecBuilder;
 import io.fabric8.kubernetes.api.model.ContainerStatusBuilder;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.api.model.Pod;
@@ -236,21 +257,6 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import junitparams.JUnitParamsRunner;
 import lombok.extern.slf4j.Slf4j;
-import me.snowdrop.istio.api.networking.v1alpha3.Destination;
-import me.snowdrop.istio.api.networking.v1alpha3.DestinationBuilder;
-import me.snowdrop.istio.api.networking.v1alpha3.DestinationWeight;
-import me.snowdrop.istio.api.networking.v1alpha3.DestinationWeightBuilder;
-import me.snowdrop.istio.api.networking.v1alpha3.HTTPRoute;
-import me.snowdrop.istio.api.networking.v1alpha3.HTTPRouteBuilder;
-import me.snowdrop.istio.api.networking.v1alpha3.NumberPort;
-import me.snowdrop.istio.api.networking.v1alpha3.PortSelectorBuilder;
-import me.snowdrop.istio.api.networking.v1alpha3.Subset;
-import me.snowdrop.istio.api.networking.v1alpha3.TCPRoute;
-import me.snowdrop.istio.api.networking.v1alpha3.TLSRoute;
-import me.snowdrop.istio.api.networking.v1alpha3.VirtualService;
-import me.snowdrop.istio.api.networking.v1alpha3.VirtualServiceBuilder;
-import me.snowdrop.istio.api.networking.v1alpha3.VirtualServiceSpec;
-import me.snowdrop.istio.api.networking.v1alpha3.VirtualServiceSpecBuilder;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.filefilter.TrueFileFilter;
 import org.jetbrains.annotations.NotNull;
@@ -296,6 +302,8 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
   @Mock private KubernetesHelperService kubernetesHelperService;
   @Mock private ScmFetchFilesHelperNG scmFetchFilesHelper;
   @Mock private NGErrorHelper ngErrorHelper;
+  @Mock private K8sApiClient k8sApiClient;
+  @Mock private K8sCliClient k8sCliClient;
 
   @Inject @InjectMocks private K8sTaskHelperBase k8sTaskHelperBase;
   @Spy @InjectMocks private K8sTaskHelperBase spyK8sTaskHelperBase;
@@ -309,7 +317,7 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
   @Before
   public void setup() throws Exception {
     HTimeLimiterMocker.mockCallInterruptible(mockTimeLimiter)
-        .thenAnswer(invocation -> invocation.getArgumentAt(0, Callable.class).call());
+        .thenAnswer(invocation -> invocation.getArgument(0, Callable.class).call());
   }
 
   @Test
@@ -551,14 +559,18 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
         + "36\t\tComplete\tconfig change";
 
     ProcessResult processResult = new ProcessResult(0, new ProcessOutput(output.getBytes()));
-    doReturn(processResult).when(spyK8sTaskHelperBase).executeCommandUsingUtils(anyString(), any(), any(), anyString());
+    doReturn(processResult)
+        .when(spyK8sTaskHelperBase)
+        .executeCommandUsingUtils(nullable(K8sDelegateTaskParams.class), any(), any(), anyString(), any());
 
     String latestRevision =
         spyK8sTaskHelperBase.getLatestRevision(client, resource.getResourceId(), k8sDelegateTaskParams);
     assertThat(latestRevision).isEqualTo("36");
 
     processResult = new ProcessResult(1, new ProcessOutput("".getBytes()));
-    doReturn(processResult).when(spyK8sTaskHelperBase).executeCommandUsingUtils(anyString(), any(), any(), anyString());
+    doReturn(processResult)
+        .when(spyK8sTaskHelperBase)
+        .executeCommandUsingUtils(nullable(K8sDelegateTaskParams.class), any(), any(), anyString(), any());
 
     latestRevision = spyK8sTaskHelperBase.getLatestRevision(client, resource.getResourceId(), k8sDelegateTaskParams);
     assertThat(latestRevision).isEqualTo("");
@@ -1031,7 +1043,7 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
                      + "139\t\tComplete\tconfig change\n"
                      + "140\t\tComplete\tconfig change\n"))
         .when(spyK8sTaskHelperBase)
-        .executeCommandUsingUtils(any(K8sDelegateTaskParams.class), any(), any(), any());
+        .executeCommandUsingUtils(any(K8sDelegateTaskParams.class), any(), any(), any(), any());
     String latestRevision;
     latestRevision = spyK8sTaskHelperBase.getLatestRevision(Kubectl.client("kubectl", "kubeconfig"),
         K8sTestHelper.deploymentConfig().getResourceId(),
@@ -1047,8 +1059,8 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
                                           .kubeconfigPath("kubeconfig")
                                           .workingDirectory("./working-dir")
                                           .build()),
-            any(), any(),
-            eq("oc --kubeconfig=kubeconfig rollout history DeploymentConfig/test-dc --namespace=default"));
+            any(), any(), eq("oc --kubeconfig=kubeconfig rollout history DeploymentConfig/test-dc --namespace=default"),
+            any());
     assertThat(latestRevision).isEqualTo("140");
   }
 
@@ -1178,14 +1190,16 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
                                                       .build();
 
     ProcessResult processResult = new ProcessResult(0, new ProcessOutput("".getBytes()));
-    doReturn(processResult).when(spyK8sTaskHelperBase).executeCommandUsingUtils(any(String.class), any(), any(), any());
+    doReturn(processResult)
+        .when(spyK8sTaskHelperBase)
+        .executeCommandUsingUtils(any(String.class), any(), any(), any(), any());
 
     final String expectedCommand =
         "oc --kubeconfig=config-path rollout status DeploymentConfig/name --namespace=namespace --watch=true";
     final boolean result =
         spyK8sTaskHelperBase.doStatusCheck(client, resourceId, k8sDelegateTaskParams, executionLogCallback);
 
-    verify(spyK8sTaskHelperBase).executeCommandUsingUtils(eq("."), any(), any(), eq(expectedCommand));
+    verify(spyK8sTaskHelperBase).executeCommandUsingUtils(eq("."), any(), any(), eq(expectedCommand), any());
 
     assertThat(result).isEqualTo(true);
   }
@@ -1211,7 +1225,7 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
     ProcessResult processResult = new ProcessResult(0, new ProcessOutput("".getBytes()));
     doReturn(processResult)
         .when(spyK8sTaskHelperBase)
-        .executeCommandUsingUtils(any(K8sDelegateTaskParams.class), any(), any(), any());
+        .executeCommandUsingUtils(any(K8sDelegateTaskParams.class), any(), any(), any(), any());
 
     List<KubernetesResourceId> resourceIds = new ArrayList<>();
     resourceIds.add(resourceId);
@@ -1220,7 +1234,8 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
         client, resourceIds, k8sDelegateTaskParams, "name", executionLogCallback, false);
     verify(spyK8sTaskHelperBase)
         .executeCommandUsingUtils(eq(k8sDelegateTaskParams), any(), any(),
-            eq("oc --kubeconfig=config-path rollout status DeploymentConfig/name --namespace=namespace --watch=true"));
+            eq("oc --kubeconfig=config-path rollout status DeploymentConfig/name --namespace=namespace --watch=true"),
+            any());
 
     assertThat(result).isEqualTo(false);
   }
@@ -1244,7 +1259,7 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
     ProcessResult processResult = new ProcessResult(1, new ProcessOutput("Something went wrong".getBytes()));
     doReturn(processResult)
         .when(spyK8sTaskHelperBase)
-        .executeCommandUsingUtils(any(K8sDelegateTaskParams.class), any(), any(), any());
+        .executeCommandUsingUtils(any(K8sDelegateTaskParams.class), any(), any(), any(), any());
 
     assertThatThrownBy(()
                            -> spyK8sTaskHelperBase.doStatusCheckForAllResources(client, singletonList(deploymentConfig),
@@ -1277,7 +1292,7 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
     ProcessResult processResult = new ProcessResult(1, new ProcessOutput("Something went wrong".getBytes()));
     doReturn(processResult)
         .when(spyK8sTaskHelperBase)
-        .executeCommandUsingUtils(any(K8sDelegateTaskParams.class), any(), any(), any());
+        .executeCommandUsingUtils(any(K8sDelegateTaskParams.class), any(), any(), any(), any());
 
     assertThatThrownBy(()
                            -> spyK8sTaskHelperBase.doStatusCheckForAllResources(client, singletonList(deploymentConfig),
@@ -1311,7 +1326,7 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
     ProcessResult processResult = new ProcessResult(0, new ProcessOutput("".getBytes()));
     doReturn(processResult)
         .when(spyK8sTaskHelperBase)
-        .executeCommandUsingUtils(any(K8sDelegateTaskParams.class), any(), any(), any());
+        .executeCommandUsingUtils(any(K8sDelegateTaskParams.class), any(), any(), any(), any());
 
     List<KubernetesResourceId> resourceIds = new ArrayList<>();
     resourceIds.add(resourceId);
@@ -1321,7 +1336,8 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
 
     verify(spyK8sTaskHelperBase)
         .executeCommandUsingUtils(eq(k8sDelegateTaskParams), any(), any(),
-            eq("oc --kubeconfig=config-path rollout status DeploymentConfig/name --namespace=namespace --watch=true"));
+            eq("oc --kubeconfig=config-path rollout status DeploymentConfig/name --namespace=namespace --watch=true"),
+            any());
 
     assertThat(result).isEqualTo(false);
   }
@@ -1331,19 +1347,13 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testReadManifestAndOverrideLocalSecrets() throws Exception {
     when(delegateLocalConfigService.replacePlaceholdersWithLocalConfig(anyString()))
-        .thenAnswer(invocationOnMock -> invocationOnMock.getArgumentAt(0, String.class));
+        .thenAnswer(invocationOnMock -> invocationOnMock.getArgument(0, String.class));
     final String workingDirectory = ".";
-    K8sDelegateTaskParams k8sDelegateTaskParams = K8sDelegateTaskParams.builder()
-                                                      .workingDirectory(workingDirectory)
-                                                      .ocPath("oc")
-                                                      .kubectlPath("kubectl")
-                                                      .kubeconfigPath("config-path")
-                                                      .build();
 
     ProcessResult processResult = new ProcessResult(0, new ProcessOutput("".getBytes()));
     doReturn(processResult)
         .when(spyK8sTaskHelperBase)
-        .executeCommandUsingUtils(any(K8sDelegateTaskParams.class), any(), any(), any());
+        .executeCommandUsingUtils(any(K8sDelegateTaskParams.class), any(), any(), any(), any());
 
     final List<FileData> manifestFiles = prepareSomeCorrectManifestFiles();
 
@@ -1392,7 +1402,7 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
     ProcessResult processResult = new ProcessResult(0, new ProcessOutput("".getBytes()));
     doReturn(processResult)
         .when(spyK8sTaskHelperBase)
-        .executeCommandUsingUtils(any(K8sDelegateTaskParams.class), any(), any(), any());
+        .executeCommandUsingUtils(any(K8sDelegateTaskParams.class), any(), any(), any(), any());
 
     final List<FileData> manifestFiles = prepareSomeCorrectManifestFiles();
     final List<KubernetesResource> resources =
@@ -1570,8 +1580,8 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testShouldGetReleaseHistoryConfigMapIfNotFoundInSecretK8sClient() throws IOException {
     KubernetesConfig kubernetesConfig = KubernetesConfig.builder().build();
-    Mockito.when(mockKubernetesContainerService.fetchReleaseHistoryFromSecrets(any(), any())).thenReturn(null);
-    Mockito.when(mockKubernetesContainerService.fetchReleaseHistoryFromConfigMap(any(), any())).thenReturn("configmap");
+    when(mockKubernetesContainerService.fetchReleaseHistoryFromSecrets(any(), any())).thenReturn(null);
+    when(mockKubernetesContainerService.fetchReleaseHistoryFromConfigMap(any(), any())).thenReturn("configmap");
     String releaseHistory = spyK8sTaskHelperBase.getReleaseHistoryData(kubernetesConfig, "release");
     ArgumentCaptor<String> releaseArgumentCaptor = ArgumentCaptor.forClass(String.class);
     verify(mockKubernetesContainerService, times(1)).fetchReleaseHistoryFromSecrets(any(), anyString());
@@ -1587,9 +1597,9 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testShouldGetReleaseHistoryConfigMapIfInvalidRequestExceptionThrown() throws IOException {
     KubernetesConfig kubernetesConfig = KubernetesConfig.builder().build();
-    Mockito.when(mockKubernetesContainerService.fetchReleaseHistoryFromSecrets(any(), any()))
+    when(mockKubernetesContainerService.fetchReleaseHistoryFromSecrets(any(), any()))
         .thenThrow(new InvalidRequestException(""));
-    Mockito.when(mockKubernetesContainerService.fetchReleaseHistoryFromConfigMap(any(), any())).thenReturn("configmap");
+    when(mockKubernetesContainerService.fetchReleaseHistoryFromConfigMap(any(), any())).thenReturn("configmap");
     String releaseHistory = spyK8sTaskHelperBase.getReleaseHistoryData(kubernetesConfig, "release");
     ArgumentCaptor<String> releaseArgumentCaptor = ArgumentCaptor.forClass(String.class);
     verify(mockKubernetesContainerService, times(1)).fetchReleaseHistoryFromSecrets(any(), anyString());
@@ -1611,9 +1621,9 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
             IstioDestinationWeight.builder().destination("host: test\nsubset: default").weight("50").build());
 
     k8sTaskHelperBase.updateVirtualServiceWithDestinationWeights(destinationWeights, service, executionLogCallback);
-    List<DestinationWeight> routes = service.getSpec().getHttp().get(0).getRoute();
-    assertThat(routes.stream().map(DestinationWeight::getWeight)).containsExactly(10, 40, 50);
-    assertThat(routes.stream().map(DestinationWeight::getDestination).map(Destination::getSubset))
+    List<HTTPRouteDestination> routes = service.getSpec().getHttp().get(0).getRoute();
+    assertThat(routes.stream().map(HTTPRouteDestination::getWeight)).containsExactly(10, 40, 50);
+    assertThat(routes.stream().map(HTTPRouteDestination::getDestination).map(Destination::getSubset))
         .containsExactly(HarnessLabelValues.trackCanary, HarnessLabelValues.trackStable, "default");
   }
 
@@ -1689,9 +1699,9 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
     doReturn(asList(service1)).when(resource).get();
     VirtualService result = k8sTaskHelperBase.updateVirtualServiceManifestFilesWithRoutesForCanary(
         resources, KubernetesConfig.builder().build(), executionLogCallback);
-    List<DestinationWeight> routes = result.getSpec().getHttp().get(0).getRoute();
-    assertThat(routes.stream().map(DestinationWeight::getWeight)).containsExactly(100, 0);
-    assertThat(routes.stream().map(DestinationWeight::getDestination).map(Destination::getSubset))
+    List<HTTPRouteDestination> routes = result.getSpec().getHttp().get(0).getRoute();
+    assertThat(routes.stream().map(HTTPRouteDestination::getWeight)).containsExactly(100, 0);
+    assertThat(routes.stream().map(HTTPRouteDestination::getDestination).map(Destination::getSubset))
         .containsExactly(HarnessLabelValues.trackStable, HarnessLabelValues.trackCanary);
   }
 
@@ -1701,15 +1711,13 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
             .stream()
             .map(entry
                 -> new HTTPRouteBuilder()
-                       .withRoute(
-                           new DestinationWeightBuilder()
-                               .withDestination(
-                                   new DestinationBuilder()
-                                       .withHost(entry.getKey())
-                                       .withPort(
-                                           new PortSelectorBuilder().withPort(new NumberPort(entry.getValue())).build())
-                                       .build())
-                               .build())
+                       .withRoute(new HTTPRouteDestinationBuilder()
+                                      .withDestination(
+                                          new DestinationBuilder()
+                                              .withHost(entry.getKey())
+                                              .withPort(new PortSelectorBuilder().withNumber(entry.getValue()).build())
+                                              .build())
+                                      .build())
                        .build())
             .collect(Collectors.toList());
 
@@ -2011,7 +2019,7 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
     doReturn(process).when(startedProcess).getProcess();
     doReturn(process).when(process).destroyForcibly();
 
-    doThrow(new TimeoutException())
+    doAnswer(invocation -> { throw new TimeoutException(); })
         .when(spyK8sTaskHelperBase)
         .doStatusCheckForCustomResources(any(Kubectl.class), any(KubernetesResourceId.class), eq("false"),
             any(K8sDelegateTaskParams.class), any(LogCallback.class), eq(isErrorFrameworkEnabled));
@@ -2729,6 +2737,28 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = PRATYUSH)
+  @Category(UnitTests.class)
+  public void testFetchManifestFilesAndWriteToDirectoryLocalStore() throws Exception {
+    K8sTaskHelperBase spyHelperBase = spy(k8sTaskHelperBase);
+    LocalFileStoreDelegateConfig localFileStoreDelegateConfig =
+        LocalFileStoreDelegateConfig.builder()
+            .filePaths(asList("path/to/k8s/template/deploy.yaml"))
+            .manifestIdentifier("identifier")
+            .manifestType("K8sManifest")
+            .manifestFiles(getManifestFiles())
+            .build();
+
+    K8sManifestDelegateConfig manifestDelegateConfig =
+        K8sManifestDelegateConfig.builder().storeDelegateConfig(localFileStoreDelegateConfig).build();
+
+    assertThatCode(()
+                       -> spyHelperBase.fetchManifestFilesAndWriteToDirectory(
+                           manifestDelegateConfig, "manifest", executionLogCallback, 9000L, "accountId"))
+        .doesNotThrowAnyException();
+  }
+
+  @Test
   @Owner(developers = TMACARI)
   @Category(UnitTests.class)
   public void testFetchManifestFilesAndWriteToDirectoryOptimizedFileFetch() throws Exception {
@@ -2792,7 +2822,7 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
     K8sManifestDelegateConfig manifestDelegateConfig =
         K8sManifestDelegateConfig.builder().storeDelegateConfig(storeDelegateConfig).build();
 
-    doThrow(new RuntimeException("unable to decrypt"))
+    doAnswer(invocation -> { throw new RuntimeException("unable to decrypt"); })
         .when(gitDecryptionHelper)
         .decryptGitConfig(gitConfigDTO, encryptionDataDetails);
 
@@ -3126,7 +3156,9 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
 
     InvalidRequestException exception = new InvalidRequestException("Unable to retrieve k8s version. Code: 401");
 
-    doThrow(exception).when(mockKubernetesContainerService).validateCredentials(kubernetesConfig);
+    doAnswer(invocation -> { throw exception; })
+        .when(mockKubernetesContainerService)
+        .validateCredentials(kubernetesConfig);
     assertThatThrownBy(() -> k8sTaskHelperBase.validate(clusterConfigDTO, emptyList())).isSameAs(exception);
   }
 
@@ -3217,9 +3249,13 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
     doReturn(KUBERNETES_CONFIG)
         .when(mockK8sYamlToDelegateDTOMapper)
         .createKubernetesConfigFromClusterConfig(any(KubernetesClusterConfigDTO.class));
-    doReturn(ErrorDetail.builder().message(DEFAULT).build()).when(ngErrorHelper).createErrorDetail(anyString());
-    doReturn(DEFAULT).when(ngErrorHelper).getErrorSummary(anyString());
-    doThrow(ApiException.class).when(mockKubernetesContainerService).validateMetricsServer(any(KubernetesConfig.class));
+    doReturn(ErrorDetail.builder().message(DEFAULT).build())
+        .when(ngErrorHelper)
+        .createErrorDetail(nullable(String.class));
+    doReturn(DEFAULT).when(ngErrorHelper).getErrorSummary(nullable(String.class));
+    doAnswer(invocation -> { throw new ApiException(); })
+        .when(mockKubernetesContainerService)
+        .validateMetricsServer(any(KubernetesConfig.class));
 
     ConnectorValidationResult result =
         k8sTaskHelperBase.validateCEKubernetesCluster(connector, DEFAULT, emptyList(), emptyList());
@@ -3434,5 +3470,21 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
         .isInstanceOf(ExplanationException.class)
         .getCause()
         .hasMessageContaining("KUBERNETES_YAML_ERROR");
+  }
+
+  @Test
+  @Owner(developers = ABHINAV2)
+  @Category(UnitTests.class)
+  public void testKubernetesClientInstance() {
+    assertThat(k8sTaskHelperBase.getKubernetesClient(true)).isInstanceOf(K8sApiClient.class);
+    assertThat(k8sTaskHelperBase.getKubernetesClient(false)).isInstanceOf(K8sCliClient.class);
+  }
+
+  private List<ManifestFiles> getManifestFiles() {
+    return asList(ManifestFiles.builder()
+                      .fileName("chart.yaml")
+                      .filePath("path/to/helm/chart/chart.yaml")
+                      .fileContent("Test content")
+                      .build());
   }
 }

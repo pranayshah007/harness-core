@@ -20,6 +20,7 @@ import static software.wings.utils.WingsTestConstants.ARTIFACT_STREAM_ID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import io.harness.beans.ArtifactMetadata;
 import io.harness.category.element.UnitTests;
 import io.harness.persistence.HPersistence;
 import io.harness.rule.Owner;
@@ -94,7 +95,7 @@ public class UpdateInstanceInfoWithLastArtifactIdMigrationTest extends WingsBase
 
     Map<String, String> metadata = new HashMap<>();
     metadata.put("image", "image:latest");
-    artifact.setMetadata(metadata);
+    artifact.setMetadata(new ArtifactMetadata(metadata));
     persistence.save(artifact);
 
     instanceInfoMigration.migrate();

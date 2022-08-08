@@ -1,0 +1,182 @@
+{
+  "pipeline": {
+    "name": "K8s Deployment V2",
+    "identifier": "K8s_Deployment_v2",
+    "projectIdentifier": "Kubernetes",
+    "orgIdentifier": "default",
+    "tags": {
+      "__uuid": "4wlikpLUTOOh-1isx6-_MQ"
+    },
+    "stages": [
+      {
+        "stage": {
+          "name": "K8s",
+          "identifier": "K8s",
+          "description": "",
+          "type": "Deployment",
+          "spec": {
+            "name": "K8s",
+            "identifier": "K8s",
+            "type": "Deployment",
+            "serviceConfig": {
+              "serviceRef": "K8s",
+              "serviceDefinition": {
+                "type": "Kubernetes",
+                "spec": {
+                  "variables": [],
+                  "manifests": [
+                    {
+                      "manifest": {
+                        "identifier": "manifest",
+                        "type": "K8sManifest",
+                        "spec": {
+                          "store": {
+                            "type": "Git",
+                            "spec": {
+                              "connectorRef": "account.Sample_K8s_Manifests",
+                              "gitFetchType": "Branch",
+                              "paths": [
+                                "test/k8sDeploymentType/k8s/basic/templates"
+                              ],
+                              "branch": "master",
+                              "__uuid": "byf_0qoXR22ETHuHu7zWeQ"
+                            },
+                            "__uuid": "EuzpBgLFQgCccjX8ckbUOA"
+                          },
+                          "skipResourceVersioning": false,
+                          "__uuid": "qdEwMzbTTqCF5pmmD9qvAQ"
+                        },
+                        "__uuid": "NcgC0NvQRfu52zamqJURlA"
+                      },
+                      "__uuid": "1WPodrYJQDW0OdNcMeJvPQ"
+                    },
+                    {
+                      "manifest": {
+                        "identifier": "values",
+                        "type": "Values",
+                        "spec": {
+                          "store": {
+                            "type": "Git",
+                            "spec": {
+                              "connectorRef": "account.Sample_K8s_Manifests",
+                              "gitFetchType": "Branch",
+                              "paths": [
+                                "test/k8sDeploymentType/k8s/basic/values.yaml"
+                              ],
+                              "branch": "master",
+                              "__uuid": "EkNsPCiVTRmjnlMoLo7w1g"
+                            },
+                            "__uuid": "XzoHMIX-R3uK6NEC2-woQA"
+                          },
+                          "__uuid": "w96WV1YSTjiW1YyDTlpbjw"
+                        },
+                        "__uuid": "w04RYOEeRJS-tJARyI0GsQ"
+                      },
+                      "__uuid": "C7l_TV8vQVal95RMd4FSBA"
+                    }
+                  ],
+                  "artifacts": {
+                    "sidecars": [],
+                    "primary": {
+                      "spec": {
+                        "connectorRef": "account.harnessImage",
+                        "imagePath": "harness/todolist-sample",
+                        "tag": "latest",
+                        "__uuid": "2yTqQn3XRsqbTU5HhRVPIA"
+                      },
+                      "type": "DockerRegistry",
+                      "__uuid": "5SgO7TDtQ12SuLlKsENqnw"
+                    },
+                    "__uuid": "Tq6M3wWDRRCGdxcHfRgG0A"
+                  },
+                  "__uuid": "a78MFeW5S_q4wMsfMkPjRQ"
+                },
+                "__uuid": "oL_g0KZETAONh1VtPCip7Q"
+              },
+              "__uuid": "H1bBm7rpTbqhFGbu_20NIw"
+            },
+            "infrastructure": {
+              "infrastructureDefinition": {
+                "type": "KubernetesDirect",
+                "spec": {
+                  "connectorRef": "Kubernetes_SA",
+                  "namespace": "default",
+                  "releaseName": "release-<+INFRA_KEY>",
+                  "__uuid": "Sz8FPDjRS86RepFkWaBd4A"
+                },
+                "__uuid": "k7VBNHQ-TQ-3iGG5FhXzVQ"
+              },
+              "allowSimultaneousDeployments": false,
+              "environmentRef": "Test",
+              "__uuid": "ojixGYfxShGbMWqmkXZX4w"
+            },
+            "execution": {
+              "steps": [
+                {
+                  "step": {
+                    "type": "K8sBGSwapServices",
+                    "name": "K8s BG Swap Services",
+                    "identifier": "K8s_BG_Swap_Services",
+                    "spec": {
+                      "skipDryRun": false,
+                      "__uuid": "kIFFMd8DTAKRljign3GvBg"
+                    },
+                    "timeout": "10m",
+                    "__uuid": "chhyXvODSu-Bm7xqGHy7aA"
+                  },
+                  "__uuid": "n7BSQzF2Sxeaz-TT9hVM1w"
+                }
+              ],
+              "rollbackSteps": [],
+              "__uuid": "FkpuXBZZTZWZMrHqKChu8A"
+            },
+            "serviceDependencies": [],
+            "__uuid": "rmILPWIOQwWmd9S-mD-kvw"
+          },
+          "tags": {
+            "__uuid": "dWnUpcLlSHazFpNBRaAgiw"
+          },
+          "failureStrategies": [
+            {
+              "onFailure": {
+                "errors": [
+                  "AllErrors"
+                ],
+                "action": {
+                  "type": "StageRollback",
+                  "__uuid": "QNL9hFTmRRekwqvyv5-toA"
+                },
+                "__uuid": "38459AG3TsWLEhOTgF0yUQ"
+              },
+              "__uuid": "9NAuQVX0TWqDtM1OoWMNSQ"
+            }
+          ],
+          "variables": [
+            {
+              "name": "secret",
+              "type": "Secret",
+              "value": "account.testazure",
+              "__uuid": "9xEGPWAnRGyYG4SfV0Lgzw"
+            },
+            {
+              "name": "test",
+              "type": "String",
+              "value": "<+artifact.tag>",
+              "__uuid": "O3X2I_AsTy-g6lWuobkuPw"
+            },
+            {
+              "name": "resourceNamePrefix",
+              "type": "String",
+              "value": "test-resource",
+              "__uuid": "PDaWVkJZTkiNnzUIxbI8EA"
+            }
+          ],
+          "__uuid": "nFRBL9lrQQaDYkPActQn-A"
+        },
+        "__uuid": "Jz8S2GgFR0-C1LGqzJ9OVA"
+      }
+    ],
+    "__uuid": "nVF-O7lhSWqT4DsOhuwEgA"
+  },
+  "__uuid": "7j_6BbbPRHCj7q1b4L-loQ"
+}

@@ -7,10 +7,7 @@
 
 package io.harness.cvng.servicelevelobjective.resources;
 
-import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.accesscontrol.NGAccessControlCheck;
-import io.harness.accesscontrol.OrgIdentifier;
-import io.harness.accesscontrol.ProjectIdentifier;
 import io.harness.annotations.ExposeInternalException;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -28,9 +25,9 @@ import com.codahale.metrics.annotation.Timed;
 import com.google.inject.Inject;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
+import javax.ws.rs.BeanParam;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
@@ -56,15 +53,7 @@ public class UserJourneyResource {
   @Path("/create")
   @ApiOperation(value = "saves user journey", nickname = "saveUserJourney")
   public RestResponse<UserJourneyResponse> saveUserJourney(
-      @ApiParam(required = true) @NotNull @QueryParam("accountId") String accountId,
-      @QueryParam("orgIdentifier") @NotNull String orgIdentifier,
-      @QueryParam("projectIdentifier") @NotNull String projectIdentifier,
-      @NotNull @Valid @Body UserJourneyDTO userJourneyDTO) {
-    ProjectParams projectParams = ProjectParams.builder()
-                                      .accountIdentifier(accountId)
-                                      .orgIdentifier(orgIdentifier)
-                                      .projectIdentifier(projectIdentifier)
-                                      .build();
+      @NotNull @BeanParam ProjectParams projectParams, @NotNull @Valid @Body UserJourneyDTO userJourneyDTO) {
     return new RestResponse<>(userJourneyService.create(projectParams, userJourneyDTO));
   }
 
@@ -73,16 +62,8 @@ public class UserJourneyResource {
   @ExceptionMetered
   @ApiOperation(value = "get all user journeys", nickname = "getAllJourneys")
   @NGAccessControlCheck(resourceType = SLO, permission = VIEW_PERMISSION)
-  public ResponseDTO<PageResponse<UserJourneyResponse>> getAllJourneys(
-      @NotNull @QueryParam("accountId") @AccountIdentifier String accountId,
-      @QueryParam("orgIdentifier") @NotNull @OrgIdentifier String orgIdentifier,
-      @QueryParam("projectIdentifier") @NotNull @ProjectIdentifier String projectIdentifier,
+  public ResponseDTO<PageResponse<UserJourneyResponse>> getAllJourneys(@NotNull @BeanParam ProjectParams projectParams,
       @QueryParam("offset") @NotNull Integer offset, @QueryParam("pageSize") @NotNull Integer pageSize) {
-    ProjectParams projectParams = ProjectParams.builder()
-                                      .accountIdentifier(accountId)
-                                      .orgIdentifier(orgIdentifier)
-                                      .projectIdentifier(projectIdentifier)
-                                      .build();
     return ResponseDTO.newResponse(userJourneyService.getUserJourneys(projectParams, offset, pageSize));
   }
 }

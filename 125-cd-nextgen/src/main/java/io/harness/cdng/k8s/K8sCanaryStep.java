@@ -14,6 +14,7 @@ import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.cdng.k8s.K8sCanaryBaseStepInfo.K8sCanaryBaseStepInfoKeys;
+import io.harness.cdng.k8s.beans.CustomFetchResponsePassThroughData;
 import io.harness.cdng.k8s.beans.GitFetchResponsePassThroughData;
 import io.harness.cdng.k8s.beans.HelmValuesFetchResponsePassThroughData;
 import io.harness.cdng.k8s.beans.K8sCanaryExecutionOutput;
@@ -67,6 +68,7 @@ public class K8sCanaryStep extends TaskChainExecutableWithRollbackAndRbac implem
   private final String K8S_CANARY_DEPLOY_COMMAND_NAME = "Canary Deploy";
 
   @Inject private K8sStepHelper k8sStepHelper;
+  @Inject private CDStepHelper cdStepHelper;
   @Inject ExecutionSweepingOutputService executionSweepingOutputService;
   @Inject private InstanceInfoService instanceInfoService;
 
@@ -96,7 +98,7 @@ public class K8sCanaryStep extends TaskChainExecutableWithRollbackAndRbac implem
       K8sExecutionPassThroughData executionPassThroughData, boolean shouldOpenFetchFilesLogStream,
       UnitProgressData unitProgressData) {
     final InfrastructureOutcome infrastructure = executionPassThroughData.getInfrastructure();
-    final String releaseName = k8sStepHelper.getReleaseName(ambiance, infrastructure);
+    final String releaseName = cdStepHelper.getReleaseName(ambiance, infrastructure);
     final K8sCanaryStepParameters canaryStepParameters = (K8sCanaryStepParameters) stepElementParameters.getSpec();
     final Integer instancesValue = canaryStepParameters.getInstanceSelection().getSpec().getInstances();
     final String accountId = AmbianceUtils.getAccountId(ambiance);
@@ -118,14 +120,18 @@ public class K8sCanaryStep extends TaskChainExecutableWithRollbackAndRbac implem
             .valuesYamlList(!isOpenshiftTemplate ? manifestFilesContents : Collections.emptyList())
             .openshiftParamList(isOpenshiftTemplate ? manifestFilesContents : Collections.emptyList())
             .kustomizePatchesList(k8sStepHelper.renderPatches(k8sManifestOutcome, ambiance, manifestOverrideContents))
-            .k8sInfraDelegateConfig(k8sStepHelper.getK8sInfraDelegateConfig(infrastructure, ambiance))
-            .manifestDelegateConfig(k8sStepHelper.getManifestDelegateConfig(k8sManifestOutcome, ambiance))
+            .k8sInfraDelegateConfig(cdStepHelper.getK8sInfraDelegateConfig(infrastructure, ambiance))
+            .manifestDelegateConfig(
+                k8sStepHelper.getManifestDelegateConfigWrapper(executionPassThroughData.getZippedManifestId(),
+                    k8sManifestOutcome, ambiance, executionPassThroughData.getManifestFiles()))
             .accountId(accountId)
             .skipResourceVersioning(k8sStepHelper.getSkipResourceVersioning(k8sManifestOutcome))
             .shouldOpenFetchFilesLogStream(shouldOpenFetchFilesLogStream)
             .commandUnitsProgress(UnitProgressDataMapper.toCommandUnitsProgress(unitProgressData))
-            .useLatestKustomizeVersion(k8sStepHelper.isUseLatestKustomizeVersion(accountId))
-            .useNewKubectlVersion(k8sStepHelper.isUseNewKubectlVersion(accountId))
+            .useLatestKustomizeVersion(cdStepHelper.isUseLatestKustomizeVersion(accountId))
+            .useNewKubectlVersion(cdStepHelper.isUseNewKubectlVersion(accountId))
+            .cleanUpIncompleteCanaryDeployRelease(cdStepHelper.shouldCleanUpIncompleteCanaryDeployRelease(accountId))
+            .useK8sApiForSteadyStateCheck(cdStepHelper.shouldUseK8sApiForSteadyStateCheck(accountId))
             .build();
 
     k8sStepHelper.publishReleaseNameStepDetails(ambiance, releaseName);
@@ -142,8 +148,12 @@ public class K8sCanaryStep extends TaskChainExecutableWithRollbackAndRbac implem
   public StepResponse finalizeExecutionWithSecurityContext(Ambiance ambiance,
       StepElementParameters stepElementParameters, PassThroughData passThroughData,
       ThrowingSupplier<ResponseData> responseDataSupplier) throws Exception {
+    if (passThroughData instanceof CustomFetchResponsePassThroughData) {
+      return k8sStepHelper.handleCustomTaskFailure((CustomFetchResponsePassThroughData) passThroughData);
+    }
+
     if (passThroughData instanceof GitFetchResponsePassThroughData) {
-      return k8sStepHelper.handleGitTaskFailure((GitFetchResponsePassThroughData) passThroughData);
+      return cdStepHelper.handleGitTaskFailure((GitFetchResponsePassThroughData) passThroughData);
     }
 
     if (passThroughData instanceof HelmValuesFetchResponsePassThroughData) {
@@ -151,7 +161,7 @@ public class K8sCanaryStep extends TaskChainExecutableWithRollbackAndRbac implem
     }
 
     if (passThroughData instanceof StepExceptionPassThroughData) {
-      return k8sStepHelper.handleStepExceptionFailure((StepExceptionPassThroughData) passThroughData);
+      return cdStepHelper.handleStepExceptionFailure((StepExceptionPassThroughData) passThroughData);
     }
 
     K8sExecutionPassThroughData executionPassThroughData = (K8sExecutionPassThroughData) passThroughData;
@@ -166,7 +176,7 @@ public class K8sCanaryStep extends TaskChainExecutableWithRollbackAndRbac implem
       if (k8sCanaryDataException != null) {
         K8sCanaryOutcome k8sCanaryOutcome =
             K8sCanaryOutcome.builder()
-                .releaseName(k8sStepHelper.getReleaseName(ambiance, infrastructure))
+                .releaseName(cdStepHelper.getReleaseName(ambiance, infrastructure))
                 .canaryWorkload(k8sCanaryDataException.getCanaryWorkload())
                 .canaryWorkloadDeployed(k8sCanaryDataException.isCanaryWorkloadDeployed())
                 .build();
@@ -184,7 +194,7 @@ public class K8sCanaryStep extends TaskChainExecutableWithRollbackAndRbac implem
         (K8sCanaryDeployResponse) k8sTaskExecutionResponse.getK8sNGTaskResponse();
 
     K8sCanaryOutcome k8sCanaryOutcome = K8sCanaryOutcome.builder()
-                                            .releaseName(k8sStepHelper.getReleaseName(ambiance, infrastructure))
+                                            .releaseName(cdStepHelper.getReleaseName(ambiance, infrastructure))
                                             .releaseNumber(k8sCanaryDeployResponse.getReleaseNumber())
                                             .targetInstances(k8sCanaryDeployResponse.getCurrentInstances())
                                             .canaryWorkload(k8sCanaryDeployResponse.getCanaryWorkload())

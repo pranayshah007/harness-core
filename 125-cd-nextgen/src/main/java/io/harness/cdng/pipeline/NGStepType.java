@@ -8,6 +8,9 @@
 package io.harness.cdng.pipeline;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.executions.steps.StepSpecTypeConstants.CLOUDFORMATION_CREATE_STACK;
+import static io.harness.executions.steps.StepSpecTypeConstants.CLOUDFORMATION_DELETE_STACK;
+import static io.harness.executions.steps.StepSpecTypeConstants.CLOUDFORMATION_ROLLBACK_STACK;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
@@ -15,7 +18,6 @@ import io.harness.executions.steps.StepSpecTypeConstants;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonValue;
 import java.util.Arrays;
 import java.util.List;
 
@@ -24,6 +26,15 @@ import java.util.List;
  */
 @OwnedBy(CDP)
 public enum NGStepType {
+  // gitops steps
+  @JsonProperty(StepSpecTypeConstants.GITOPS_CREATE_PR)
+  GITOPS_CREATE_PR("Create PR", Arrays.asList(ServiceDefinitionType.KUBERNETES), "Kubernetes",
+      StepSpecTypeConstants.GITOPS_CREATE_PR),
+
+  @JsonProperty(StepSpecTypeConstants.GITOPS_MERGE_PR)
+  GITOPS_MERGE_PR(
+      "Merge PR", Arrays.asList(ServiceDefinitionType.KUBERNETES), "Kubernetes", StepSpecTypeConstants.GITOPS_MERGE_PR),
+
   // k8s steps
   @JsonProperty("APPLY")
   APPLY("Apply", Arrays.asList(ServiceDefinitionType.KUBERNETES), "Kubernetes", StepSpecTypeConstants.PLACEHOLDER),
@@ -72,16 +83,18 @@ public enum NGStepType {
   @JsonProperty(StepSpecTypeConstants.TERRAFORM_ROLLBACK)
   TERRAFORM_ROLLBACK("Terraform Rollback", Arrays.asList(ServiceDefinitionType.values()),
       "Infrastructure Provisioners/Terraform", StepSpecTypeConstants.TERRAFORM_ROLLBACK),
-  @JsonProperty("CREATE_STACK")
-  CREATE_STACK("Create Stack", Arrays.asList(ServiceDefinitionType.values()),
-      "Infrastructure Provisioners/Cloudformation", StepSpecTypeConstants.PLACEHOLDER),
-  @JsonProperty("DELETE_STACK")
-  DELETE_STACK("Delete Stack", Arrays.asList(ServiceDefinitionType.values()),
-      "Infrastructure Provisioners/Cloudformation", StepSpecTypeConstants.PLACEHOLDER),
+  @JsonProperty(CLOUDFORMATION_CREATE_STACK)
+  CF_CREATE_STACK("Create Stack", Arrays.asList(ServiceDefinitionType.values()),
+      "Infrastructure Provisioners/Cloudformation", CLOUDFORMATION_CREATE_STACK),
+  @JsonProperty(CLOUDFORMATION_DELETE_STACK)
+  CF_DELETE_STACK("Delete Stack", Arrays.asList(ServiceDefinitionType.values()),
+      "Infrastructure Provisioners/Cloudformation", CLOUDFORMATION_DELETE_STACK),
+  @JsonProperty(CLOUDFORMATION_ROLLBACK_STACK)
+  CF_ROLLBACK_STACK("Rollback Stack", Arrays.asList(ServiceDefinitionType.values()),
+      "Infrastructure Provisioners/Cloudformation", CLOUDFORMATION_ROLLBACK_STACK),
   @JsonProperty("SHELL_SCRIPT_PROVISIONER")
   SHELL_SCRIPT_PROVISIONER("Shell Script Provisioner", Arrays.asList(ServiceDefinitionType.values()),
       "Infrastructure Provisioners/Shell Script Provisioner", StepSpecTypeConstants.PLACEHOLDER),
-
   // Issue Tracking
   @JsonProperty("JIRA")
   JIRA("Jira", Arrays.asList(ServiceDefinitionType.values()), "Issue Tracking", StepSpecTypeConstants.PLACEHOLDER),
@@ -101,7 +114,25 @@ public enum NGStepType {
       "Utilites/Non-Scripted/", StepSpecTypeConstants.PLACEHOLDER),
   @JsonProperty("TEMPLATIZED_SECRET_MANAGER")
   TEMPLATIZED_SECRET_MANAGER("Templatized Secret Manager", Arrays.asList(ServiceDefinitionType.values()),
-      "Utilites/Non-Scripted/", StepSpecTypeConstants.PLACEHOLDER);
+      "Utilites/Non-Scripted/", StepSpecTypeConstants.PLACEHOLDER),
+
+  // serverless steps
+  @JsonProperty(StepSpecTypeConstants.SERVERLESS_AWS_LAMBDA_DEPLOY)
+  SERVERLESS_AWS_LAMBDA_DEPLOY("Serverless Aws Lambda Deploy",
+      Arrays.asList(ServiceDefinitionType.SERVERLESS_AWS_LAMBDA), "Serverless Aws Lambda",
+      StepSpecTypeConstants.SERVERLESS_AWS_LAMBDA_DEPLOY),
+  @JsonProperty(StepSpecTypeConstants.SERVERLESS_AWS_LAMBDA_ROLLBACK)
+  SERVERLESS_AWS_LAMBDA_ROLLBACK("Serverless Aws Lambda Rollback",
+      Arrays.asList(ServiceDefinitionType.SERVERLESS_AWS_LAMBDA), "Serverless Aws Lambda",
+      StepSpecTypeConstants.SERVERLESS_AWS_LAMBDA_ROLLBACK),
+  // ssh steps
+  @JsonProperty(StepSpecTypeConstants.COMMAND)
+  COMMAND("Command", Arrays.asList(ServiceDefinitionType.SSH, ServiceDefinitionType.WINRM), "Command",
+      StepSpecTypeConstants.COMMAND),
+  // Jenkns Build
+  @JsonProperty(StepSpecTypeConstants.JENKINS_BUILD)
+  JENKINS_BUILD(
+      "Jenkins Build", Arrays.asList(ServiceDefinitionType.values()), "Builds", StepSpecTypeConstants.JENKINS_BUILD);
 
   private String displayName;
   private List<ServiceDefinitionType> serviceDefinitionTypes;
@@ -115,7 +146,7 @@ public enum NGStepType {
     this.yamlName = yamlName;
   }
 
-  @JsonCreator
+  @JsonCreator(mode = JsonCreator.Mode.DELEGATING)
   public static NGStepType getNGStepType(@JsonProperty("type") String yamlName) {
     for (NGStepType ngStepType : NGStepType.values()) {
       if (ngStepType.yamlName.equalsIgnoreCase(yamlName)) {
@@ -137,7 +168,6 @@ public enum NGStepType {
     return ngStepType.category;
   }
 
-  @JsonValue
   public String getYamlName(NGStepType ngStepType) {
     return ngStepType.yamlName;
   }

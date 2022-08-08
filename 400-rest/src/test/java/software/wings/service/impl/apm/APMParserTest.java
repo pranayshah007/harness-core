@@ -23,9 +23,9 @@ import io.harness.serializer.JsonUtils;
 import io.harness.serializer.YamlUtils;
 
 import software.wings.WingsBaseTest;
+import software.wings.beans.ApmMetricCollectionInfo;
 import software.wings.metrics.MetricType;
 import software.wings.service.impl.newrelic.NewRelicMetricDataRecord;
-import software.wings.sm.states.APMVerificationState;
 import software.wings.sm.states.DatadogState;
 
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -404,6 +404,6 @@ public class APMParserTest extends WingsBaseTest {
         + "    timestampJsonPath: series[*].pointlist[*].[0]\n"
         + "    metricValueJsonPath: series[*].pointlist[*].[1]";
     YamlUtils yamlUtils = new YamlUtils();
-    yamlUtils.read(yaml, new TypeReference<List<APMVerificationState.MetricCollectionInfo>>() {});
+    yamlUtils.read(yaml, new TypeReference<List<ApmMetricCollectionInfo>>() {});
   }
 }

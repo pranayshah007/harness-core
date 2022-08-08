@@ -13,7 +13,6 @@ import io.harness.cvng.analysis.beans.ServiceGuardTxnMetricAnalysisDataDTO.Metri
 import io.harness.cvng.analysis.beans.TimeSeriesAnomaliesDTO;
 import io.harness.cvng.analysis.beans.TimeSeriesRecordDTO;
 import io.harness.cvng.analysis.entities.LearningEngineTask.ExecutionStatus;
-import io.harness.cvng.analysis.entities.TimeSeriesRiskSummary;
 import io.harness.cvng.analysis.entities.TimeSeriesRiskSummary.TransactionMetricRisk;
 import io.harness.cvng.analysis.entities.TimeSeriesShortTermHistory;
 import io.harness.cvng.core.beans.TimeSeriesMetricDefinition;
@@ -41,13 +40,8 @@ public interface TimeSeriesAnalysisService {
   void saveAnalysis(String taskId, ServiceGuardTimeSeriesAnalysisDTO analysis);
   void saveAnalysis(String taskId, DeploymentTimeSeriesAnalysisDTO analysis);
 
-  TimeSeriesRiskSummary getLatestTimeSeriesRiskSummary(String verificationTaskId, Instant startTime, Instant endTime);
-
   List<TransactionMetricRisk> getTopTimeSeriesTransactionMetricRisk(
       List<String> verificationTaskIds, Instant startTime, Instant endTime);
-
-  List<TimeSeriesRiskSummary> getRiskSummariesByTimeRange(
-      String verificationTaskId, Instant startTime, Instant endTime);
 
   void saveShortTermHistory(TimeSeriesShortTermHistory shortTermHistory);
 }

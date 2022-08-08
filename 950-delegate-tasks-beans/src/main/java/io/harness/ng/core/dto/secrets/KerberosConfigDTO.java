@@ -7,43 +7,31 @@
 
 package io.harness.ng.core.dto.secrets;
 
+import static io.harness.annotations.dev.HarnessTeam.CDP;
+
+import io.harness.annotations.dev.OwnedBy;
 import io.harness.ng.core.models.BaseSSHSpec;
 import io.harness.ng.core.models.KerberosConfig;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
-import com.fasterxml.jackson.annotation.JsonTypeId;
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeName;
-import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Optional;
-import javax.validation.Valid;
-import javax.validation.constraints.NotNull;
-import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 
 @Data
 @NoArgsConstructor
+@SuperBuilder
 @EqualsAndHashCode(callSuper = true)
 @JsonTypeName("Kerberos")
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(Include.NON_NULL)
-@Schema(name = "KerberosConfig", description = "This is the Kerberos configuration details, defined in Harness.")
-public class KerberosConfigDTO extends BaseSSHSpecDTO {
-  @Schema(description = "This is the authorization role, the user/service has in the realm.")
-  @NotNull
-  private String principal;
-  @Schema(description = "Name of the Realm.") @NotNull private String realm;
-  @JsonTypeId private TGTGenerationMethod tgtGenerationMethod;
-
-  @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.EXTERNAL_PROPERTY,
-      property = "tgtGenerationMethod", visible = true)
-  @Valid
-  private TGTGenerationSpecDTO spec;
-
+@OwnedBy(CDP)
+public class KerberosConfigDTO extends KerberosBaseConfigDTO implements BaseSSHSpecDTO {
   @Override
   public BaseSSHSpec toEntity() {
     return KerberosConfig.builder()
@@ -52,14 +40,5 @@ public class KerberosConfigDTO extends BaseSSHSpecDTO {
         .tgtGenerationMethod(getTgtGenerationMethod())
         .spec(Optional.ofNullable(getSpec()).map(TGTGenerationSpecDTO::toEntity).orElse(null))
         .build();
-  }
-
-  @Builder
-  public KerberosConfigDTO(
-      String principal, String realm, TGTGenerationMethod tgtGenerationMethod, TGTGenerationSpecDTO spec) {
-    this.principal = principal;
-    this.realm = realm;
-    this.tgtGenerationMethod = tgtGenerationMethod;
-    this.spec = spec;
   }
 }

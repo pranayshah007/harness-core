@@ -20,15 +20,21 @@ import java.io.IOException;
 
 @OwnedBy(HarnessTeam.DX)
 public class ScmMacOSManager extends ScmUnixManager {
+  KQueueEventLoopGroup klg;
+
   public ScmMacOSManager() throws IOException {}
 
   public ManagedChannel getChannel() {
-    KQueueEventLoopGroup klg = new KQueueEventLoopGroup();
+    klg = new KQueueEventLoopGroup();
     return NettyChannelBuilder.forAddress(new DomainSocketAddress(socketAddress))
         .eventLoopGroup(klg)
         .channelType(KQueueDomainSocketChannel.class)
         .usePlaintext()
         .withOption(ChannelOption.SO_KEEPALIVE, false)
         .build();
+  }
+
+  void shutdownEventLoopGroup() {
+    klg.shutdownGracefully();
   }
 }

@@ -67,6 +67,8 @@ public interface AccountService {
 
   Boolean updateNextGenEnabled(String accountId, boolean enabled);
 
+  Boolean updateIsProductLed(String accountId, boolean isProductLed);
+
   AccountDetails getAccountDetails(String accountId);
 
   List<Account> getAccounts(List<String> identifiers);
@@ -116,6 +118,8 @@ public interface AccountService {
   List<Account> listAccounts(Set<String> excludedAccountIds);
 
   DelegateConfiguration getDelegateConfiguration(String accountId);
+
+  String getWatcherVersion(String accountId);
 
   String getAccountPrimaryDelegateVersion(String accountId);
 
@@ -178,6 +182,8 @@ public interface AccountService {
   boolean updateAccountName(String accountId, String accountName);
 
   boolean updateCompanyName(String accountId, String companyName);
+
+  boolean updateAccountActivelyUsed(String accountId, boolean accountActivelyUsed);
 
   boolean updateRingName(String accountId, String ringName);
 
@@ -250,4 +256,6 @@ public interface AccountService {
   Void setDefaultExperience(String accountId, DefaultExperience defaultExperience);
 
   AuthenticationInfo getAuthenticationInfo(String accountId);
+
+  boolean isAccountActivelyUsed(String accountId);
 }

@@ -7,6 +7,8 @@
 
 package io.harness.delegate.beans.executioncapability;
 
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+
 import java.time.Duration;
 import lombok.Builder;
 import lombok.NonNull;
@@ -36,5 +38,11 @@ public class SmbConnectionCapability implements ExecutionCapability {
   @Override
   public Duration getPeriodUntilNextValidation() {
     return Duration.ofHours(4);
+  }
+
+  @Override
+  public String getCapabilityToString() {
+    return isNotEmpty(fetchCapabilityBasis()) ? String.format("Capability reach url : %s ", fetchCapabilityBasis())
+                                              : null;
   }
 }

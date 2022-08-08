@@ -145,19 +145,12 @@ public class ChangeEventResource {
   @ApiOperation(
       value = "get ChangeEvent summary for monitored service", nickname = "getMonitoredServiceChangeEventSummary")
   public RestResponse<ChangeSummaryDTO>
-  getSummary(@QueryParam("accountId") @NonNull String accountIdentifier,
-      @QueryParam(CVNextGenConstants.ORG_IDENTIFIER_KEY) @NonNull String orgIdentifier,
-      @QueryParam(CVNextGenConstants.PROJECT_IDENTIFIER_KEY) @NonNull String projectIdentifier,
+  getSummary(@NotNull @BeanParam ProjectParams projectParams,
       @QueryParam("monitoredServiceIdentifier") @NonNull String monitoredServiceIdentifier,
       @QueryParam("changeCategories") List<ChangeCategory> changeCategories,
       @QueryParam("changeSourceTypes") List<ChangeSourceType> changeSourceTypes,
       @ApiParam(required = true) @NotNull @QueryParam("startTime") long startTime,
       @ApiParam(required = true) @NotNull @QueryParam("endTime") long endTime) {
-    ProjectParams projectParams = ProjectParams.builder()
-                                      .accountIdentifier(accountIdentifier)
-                                      .orgIdentifier(orgIdentifier)
-                                      .projectIdentifier(projectIdentifier)
-                                      .build();
     return new RestResponse<>(changeEventService.getChangeSummary(projectParams, monitoredServiceIdentifier,
         changeCategories, changeSourceTypes, Instant.ofEpochMilli(startTime), Instant.ofEpochMilli(endTime)));
   }
@@ -213,17 +206,15 @@ public class ChangeEventResource {
   @ApiOperation(
       value = "get monitored service timeline with durationDTO", nickname = "getMonitoredServiceChangeTimeline")
   public RestResponse<ChangeTimeline>
-  getMonitoredServiceChangeTimeline(@NotNull @QueryParam("accountId") String accountId,
-      @NotNull @QueryParam("orgIdentifier") String orgIdentifier,
-      @NotNull @QueryParam("projectIdentifier") String projectIdentifier,
+  getMonitoredServiceChangeTimeline(@NotNull @BeanParam ProjectParams projectParams,
       @QueryParam("monitoredServiceIdentifier") String monitoredServiceIdentifier,
       @QueryParam("changeSourceTypes") List<ChangeSourceType> changeSourceTypes,
       @QueryParam("searchText") String searchText, @NotNull @QueryParam("duration") DurationDTO durationDTO,
       @NotNull @QueryParam("endTime") Long endTime) {
     MonitoredServiceParams monitoredServiceParams = MonitoredServiceParams.builder()
-                                                        .accountIdentifier(accountId)
-                                                        .orgIdentifier(orgIdentifier)
-                                                        .projectIdentifier(projectIdentifier)
+                                                        .accountIdentifier(projectParams.getAccountIdentifier())
+                                                        .orgIdentifier(projectParams.getOrgIdentifier())
+                                                        .projectIdentifier(projectParams.getProjectIdentifier())
                                                         .monitoredServiceIdentifier(monitoredServiceIdentifier)
                                                         .build();
 

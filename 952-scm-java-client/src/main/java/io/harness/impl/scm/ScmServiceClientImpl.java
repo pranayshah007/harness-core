@@ -18,6 +18,7 @@ import static java.util.stream.Collectors.toList;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FileContentBatchResponse;
+import io.harness.beans.PageRequestDTO;
 import io.harness.beans.gitsync.GitFileDetails;
 import io.harness.beans.gitsync.GitFilePathDetails;
 import io.harness.beans.gitsync.GitPRCreateRequest;
@@ -30,6 +31,7 @@ import io.harness.exception.ExceptionUtils;
 import io.harness.exception.ExplanationException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
+import io.harness.git.GitClientHelper;
 import io.harness.impl.ScmResponseStatusUtils;
 import io.harness.logger.RepoBranchLogContext;
 import io.harness.logging.AutoLogContext;
@@ -70,21 +72,28 @@ import io.harness.product.ci.scm.proto.GetLatestCommitOnFileResponse;
 import io.harness.product.ci.scm.proto.GetLatestCommitRequest;
 import io.harness.product.ci.scm.proto.GetLatestCommitResponse;
 import io.harness.product.ci.scm.proto.GetLatestFileRequest;
+import io.harness.product.ci.scm.proto.GetUserRepoRequest;
+import io.harness.product.ci.scm.proto.GetUserRepoResponse;
 import io.harness.product.ci.scm.proto.GetUserReposRequest;
 import io.harness.product.ci.scm.proto.GetUserReposResponse;
 import io.harness.product.ci.scm.proto.IsLatestFileRequest;
 import io.harness.product.ci.scm.proto.IsLatestFileResponse;
 import io.harness.product.ci.scm.proto.ListBranchesRequest;
 import io.harness.product.ci.scm.proto.ListBranchesResponse;
+import io.harness.product.ci.scm.proto.ListBranchesWithDefaultRequest;
+import io.harness.product.ci.scm.proto.ListBranchesWithDefaultResponse;
 import io.harness.product.ci.scm.proto.ListCommitsInPRRequest;
 import io.harness.product.ci.scm.proto.ListCommitsInPRResponse;
 import io.harness.product.ci.scm.proto.ListCommitsRequest;
 import io.harness.product.ci.scm.proto.ListCommitsResponse;
 import io.harness.product.ci.scm.proto.ListWebhooksRequest;
 import io.harness.product.ci.scm.proto.ListWebhooksResponse;
+import io.harness.product.ci.scm.proto.NativeEvents;
 import io.harness.product.ci.scm.proto.PRFile;
 import io.harness.product.ci.scm.proto.PageRequest;
 import io.harness.product.ci.scm.proto.Provider;
+import io.harness.product.ci.scm.proto.RefreshTokenRequest;
+import io.harness.product.ci.scm.proto.RefreshTokenResponse;
 import io.harness.product.ci.scm.proto.SCMGrpc;
 import io.harness.product.ci.scm.proto.Signature;
 import io.harness.product.ci.scm.proto.UpdateFileResponse;
@@ -93,6 +102,7 @@ import io.harness.service.ScmServiceClient;
 import io.harness.utils.ScmGrpcClientUtils;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Strings;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.ArrayList;
@@ -119,6 +129,9 @@ public class ScmServiceClientImpl implements ScmServiceClient {
         ScmGrpcClientUtils.retryAndProcessException(scmBlockingStub::createFile, fileModifyRequest);
     if (ScmResponseStatusUtils.isSuccessResponse(createFileResponse.getStatus())
         && isEmpty(createFileResponse.getCommitId())) {
+      if (isBitbucketOnPrem(scmConnector)) {
+        return createFileResponse;
+      }
       // In case commit id is empty for any reason, we treat this as an error case even if file got created on git
       return CreateFileResponse.newBuilder()
           .setStatus(Constants.SCM_INTERNAL_SERVER_ERROR_CODE)
@@ -155,8 +168,9 @@ public class ScmServiceClientImpl implements ScmServiceClient {
     }
 
     final FileModifyRequest.Builder fileModifyRequestBuilder = getFileModifyRequest(scmConnector, gitFileDetails);
+    handleUpdateFileRequestIfBBOnPrem(fileModifyRequestBuilder, scmConnector, gitFileDetails);
     final FileModifyRequest fileModifyRequest =
-        fileModifyRequestBuilder.setBlobId(gitFileDetails.getOldFileSha()).build();
+        fileModifyRequestBuilder.setBlobId(Strings.nullToEmpty(gitFileDetails.getOldFileSha())).build();
     UpdateFileResponse updateFileResponse =
         ScmGrpcClientUtils.retryAndProcessException(scmBlockingStub::updateFile, fileModifyRequest);
 
@@ -200,9 +214,9 @@ public class ScmServiceClientImpl implements ScmServiceClient {
     String slug = scmGitProviderHelper.getSlug(scmConnector);
     final GetFileRequest.Builder gitFileRequestBuilder =
         GetFileRequest.newBuilder().setPath(gitFilePathDetails.getFilePath()).setProvider(gitProvider).setSlug(slug);
-    if (gitFilePathDetails.getBranch() != null) {
+    if (isNotEmpty(gitFilePathDetails.getBranch())) {
       gitFileRequestBuilder.setBranch(gitFilePathDetails.getBranch());
-    } else if (gitFilePathDetails.getRef() != null) {
+    } else if (isNotEmpty(gitFilePathDetails.getRef())) {
       gitFileRequestBuilder.setRef(gitFilePathDetails.getRef());
     }
     return ScmGrpcClientUtils.retryAndProcessException(scmBlockingStub::getFile, gitFileRequestBuilder.build());
@@ -297,6 +311,75 @@ public class ScmServiceClientImpl implements ScmServiceClient {
 
   private boolean hasMoreBranches(ListBranchesResponse branchList) {
     return branchList != null && branchList.getPagination() != null && branchList.getPagination().getNext() != 0;
+  }
+
+  @Override
+  public ListBranchesWithDefaultResponse listBranchesWithDefault(
+      ScmConnector scmConnector, PageRequestDTO pageRequest, SCMGrpc.SCMBlockingStub scmBlockingStub) {
+    final String slug = scmGitProviderHelper.getSlug(scmConnector);
+    final Provider provider = scmGitProviderMapper.mapToSCMGitProvider(scmConnector);
+    int pageNumber = 1;
+    ListBranchesWithDefaultRequest listBranchesWithDefaultRequest =
+        ListBranchesWithDefaultRequest.newBuilder()
+            .setSlug(slug)
+            .setProvider(provider)
+            .setPagination(PageRequest.newBuilder().setPage(pageNumber).build())
+            .build();
+    ListBranchesWithDefaultResponse listBranchesWithDefaultResponse = ScmGrpcClientUtils.retryAndProcessException(
+        scmBlockingStub::listBranchesWithDefault, listBranchesWithDefaultRequest);
+    if (isNotEmpty(listBranchesWithDefaultResponse.getError())) {
+      return listBranchesWithDefaultResponse;
+    }
+    return listMoreBranches(scmConnector, listBranchesWithDefaultResponse, pageRequest.getPageSize(), scmBlockingStub);
+  }
+
+  @VisibleForTesting
+  ListBranchesWithDefaultResponse listMoreBranches(ScmConnector scmConnector,
+      ListBranchesWithDefaultResponse listBranchesWithDefaultResponse, int pageSize,
+      SCMGrpc.SCMBlockingStub scmBlockingStub) {
+    final String slug = scmGitProviderHelper.getSlug(scmConnector);
+    final Provider provider = scmGitProviderMapper.mapToSCMGitProvider(scmConnector);
+    ListBranchesResponse listBranchesResponse = null;
+    int branchCount = listBranchesWithDefaultResponse.getBranchesCount();
+    List<String> branchesList = new ArrayList<>();
+
+    branchesList.addAll(new ArrayList<>(listBranchesWithDefaultResponse.getBranchesList()));
+    int pageNumber = listBranchesWithDefaultResponse.getPagination().getNext();
+    while (pageNumber != 0 && branchCount <= pageSize) {
+      ListBranchesRequest listBranchesRequest = ListBranchesRequest.newBuilder()
+                                                    .setSlug(slug)
+                                                    .setProvider(provider)
+                                                    .setPagination(PageRequest.newBuilder().setPage(pageNumber).build())
+                                                    .build();
+      listBranchesResponse =
+          ScmGrpcClientUtils.retryAndProcessException(scmBlockingStub::listBranches, listBranchesRequest);
+      if (isNotEmpty(listBranchesResponse.getError())) {
+        return ListBranchesWithDefaultResponse.newBuilder()
+            .setStatus(listBranchesResponse.getStatus())
+            .setError(listBranchesResponse.getError())
+            .build();
+      }
+      branchesList.addAll(new ArrayList<>(listBranchesResponse.getBranchesList()));
+      pageNumber = listBranchesResponse.getPagination().getNext();
+      branchCount += listBranchesResponse.getBranchesCount();
+    }
+    return prepareListBranchResponse(listBranchesWithDefaultResponse.getDefaultBranch(), branchesList, pageSize);
+  }
+
+  private ListBranchesWithDefaultResponse prepareListBranchResponse(
+      String defaultBranch, List<String> branchesList, int pageSize) {
+    if (branchesList.size() > pageSize) {
+      return ListBranchesWithDefaultResponse.newBuilder()
+          .setStatus(200)
+          .setDefaultBranch(defaultBranch)
+          .addAllBranches(branchesList.subList(0, pageSize))
+          .build();
+    }
+    return ListBranchesWithDefaultResponse.newBuilder()
+        .setStatus(200)
+        .setDefaultBranch(defaultBranch)
+        .addAllBranches(branchesList)
+        .build();
   }
 
   @Override
@@ -600,7 +683,7 @@ public class ScmServiceClientImpl implements ScmServiceClient {
     String slug = scmGitProviderHelper.getSlug(scmConnector);
     Provider gitProvider = scmGitProviderMapper.mapToSCMGitProvider(scmConnector);
     CreateWebhookRequest createWebhookRequest =
-        getCreateWebhookRequest(slug, gitProvider, gitWebhookDetails, scmConnector, null);
+        getCreateWebhookRequest(slug, gitProvider, gitWebhookDetails, scmConnector, null, Collections.emptyList());
     CreateWebhookResponse createWebhookResponse =
         ScmGrpcClientUtils.retryAndProcessException(scmBlockingStub::createWebhook, createWebhookRequest);
     ScmResponseStatusUtils.checkScmResponseStatusAndThrowException(
@@ -609,22 +692,24 @@ public class ScmServiceClientImpl implements ScmServiceClient {
   }
 
   private CreateWebhookResponse createWebhook(ScmConnector scmConnector, GitWebhookDetails gitWebhookDetails,
-      SCMGrpc.SCMBlockingStub scmBlockingStub, WebhookResponse exisitingWebhook) {
+      SCMGrpc.SCMBlockingStub scmBlockingStub, WebhookResponse exisitingWebhook,
+      List<NativeEvents> existingNativeEventsList) {
     String slug = scmGitProviderHelper.getSlug(scmConnector);
     Provider gitProvider = scmGitProviderMapper.mapToSCMGitProvider(scmConnector);
-    CreateWebhookRequest createWebhookRequest =
-        getCreateWebhookRequest(slug, gitProvider, gitWebhookDetails, scmConnector, exisitingWebhook);
+    CreateWebhookRequest createWebhookRequest = getCreateWebhookRequest(
+        slug, gitProvider, gitWebhookDetails, scmConnector, exisitingWebhook, existingNativeEventsList);
     return ScmGrpcClientUtils.retryAndProcessException(scmBlockingStub::createWebhook, createWebhookRequest);
   }
 
   private CreateWebhookRequest getCreateWebhookRequest(String slug, Provider gitProvider,
-      GitWebhookDetails gitWebhookDetails, ScmConnector scmConnector, WebhookResponse identicalTarget) {
+      GitWebhookDetails gitWebhookDetails, ScmConnector scmConnector, WebhookResponse identicalTarget,
+      List<NativeEvents> existingNativeEventsList) {
     final CreateWebhookRequest.Builder createWebhookRequestBuilder = CreateWebhookRequest.newBuilder()
                                                                          .setSlug(slug)
                                                                          .setProvider(gitProvider)
                                                                          .setTarget(gitWebhookDetails.getTarget());
     return ScmGitWebhookHelper.getCreateWebhookRequest(
-        createWebhookRequestBuilder, gitWebhookDetails, scmConnector, identicalTarget);
+        createWebhookRequestBuilder, gitWebhookDetails, scmConnector, identicalTarget, existingNativeEventsList);
   }
 
   @Override
@@ -654,19 +739,28 @@ public class ScmServiceClientImpl implements ScmServiceClient {
     ListWebhooksResponse listWebhooksResponse = listWebhook(scmConnector, scmBlockingStub);
     final List<WebhookResponse> webhooksList = listWebhooksResponse.getWebhooksList();
     WebhookResponse existingWebhook = null;
+
+    List<NativeEvents> allNativeEventsList = isNotEmpty(webhooksList)
+        ? webhooksList.stream().map(WebhookResponse::getNativeEvents).collect(toList())
+        : Collections.emptyList();
+    // This is being used only for Azure since it supports only single event per hook.
+    List<NativeEvents> existingNativeEventsList = new ArrayList<>();
+
     for (WebhookResponse webhookResponse : webhooksList) {
-      if (isIdentical(webhookResponse, gitWebhookDetails, scmConnector)) {
+      if (isIdentical(webhookResponse, gitWebhookDetails, scmConnector, allNativeEventsList)) {
         return CreateWebhookResponse.newBuilder().setWebhook(webhookResponse).setStatus(200).build();
       }
       if (isIdenticalTarget(webhookResponse, gitWebhookDetails)) {
         existingWebhook = webhookResponse;
+        existingNativeEventsList.add(webhookResponse.getNativeEvents());
         final DeleteWebhookResponse deleteWebhookResponse =
             deleteWebhook(scmConnector, webhookResponse.getId(), scmBlockingStub);
         ScmResponseStatusUtils.checkScmResponseStatusAndThrowException(deleteWebhookResponse.getStatus(), null);
       }
     }
+
     CreateWebhookResponse createWebhookResponse =
-        createWebhook(scmConnector, gitWebhookDetails, scmBlockingStub, existingWebhook);
+        createWebhook(scmConnector, gitWebhookDetails, scmBlockingStub, existingWebhook, existingNativeEventsList);
     ScmResponseStatusUtils.checkScmResponseStatusAndThrowException(
         createWebhookResponse.getStatus(), createWebhookResponse.getError());
     return createWebhookResponse;
@@ -714,10 +808,85 @@ public class ScmServiceClientImpl implements ScmServiceClient {
   }
 
   @Override
-  public GetUserReposResponse getUserRepos(ScmConnector scmConnector, SCMGrpc.SCMBlockingStub scmBlockingStub) {
+  public GetUserReposResponse getUserRepos(
+      ScmConnector scmConnector, io.harness.beans.PageRequestDTO pageRequest, SCMGrpc.SCMBlockingStub scmBlockingStub) {
+    Provider gitProvider = scmGitProviderMapper.mapToSCMGitProvider(scmConnector);
+    return ScmGrpcClientUtils.retryAndProcessException(scmBlockingStub::getUserRepos,
+        GetUserReposRequest.newBuilder()
+            .setPagination(PageRequest.newBuilder().setPage(pageRequest.getPageIndex() + 1).build())
+            .setProvider(gitProvider)
+            .setFetchAllRepos(pageRequest.isFetchAll())
+            .build());
+  }
+
+  @Override
+  public GetUserReposResponse getAllUserRepos(ScmConnector scmConnector, SCMGrpc.SCMBlockingStub scmBlockingStub) {
+    Provider gitProvider = scmGitProviderMapper.mapToSCMGitProvider(scmConnector);
+    return ScmGrpcClientUtils.retryAndProcessException(scmBlockingStub::getUserRepos,
+        GetUserReposRequest.newBuilder()
+            .setPagination(PageRequest.newBuilder().build())
+            .setProvider(gitProvider)
+            .setFetchAllRepos(true)
+            .build());
+  }
+
+  @Override
+  public GetUserRepoResponse getRepoDetails(ScmConnector scmConnector, SCMGrpc.SCMBlockingStub scmBlockingStub) {
+    String slug = scmGitProviderHelper.getSlug(scmConnector);
     Provider gitProvider = scmGitProviderMapper.mapToSCMGitProvider(scmConnector);
     return ScmGrpcClientUtils.retryAndProcessException(
-        scmBlockingStub::getUserRepos, GetUserReposRequest.newBuilder().setProvider(gitProvider).build());
+        scmBlockingStub::getUserRepo, GetUserRepoRequest.newBuilder().setSlug(slug).setProvider(gitProvider).build());
+  }
+
+  @Override
+  public CreateBranchResponse createNewBranchV2(
+      ScmConnector scmConnector, String newBranchName, String baseBranchName, SCMGrpc.SCMBlockingStub scmBlockingStub) {
+    String slug = scmGitProviderHelper.getSlug(scmConnector);
+    Provider gitProvider = scmGitProviderMapper.mapToSCMGitProvider(scmConnector);
+    GetLatestCommitResponse latestCommitResponse = ScmGrpcClientUtils.retryAndProcessException(
+        scmBlockingStub::getLatestCommit,
+        GetLatestCommitRequest.newBuilder().setBranch(baseBranchName).setSlug(slug).setProvider(gitProvider).build());
+    if (isFailureResponse(latestCommitResponse.getStatus())) {
+      log.error(String.format("Error while getting latest commit of branch [%s], %s: %s", baseBranchName,
+          latestCommitResponse.getStatus(), latestCommitResponse.getError()));
+      return CreateBranchResponse.newBuilder()
+          .setStatus(latestCommitResponse.getStatus())
+          .setError(latestCommitResponse.getError())
+          .build();
+    }
+    return createNewBranchFromDefault(
+        slug, gitProvider, newBranchName, latestCommitResponse.getCommit().getSha(), scmBlockingStub);
+  }
+
+  @Override
+  public CreatePRResponse createPullRequestV2(ScmConnector scmConnector, String sourceBranchName,
+      String targetBranchName, String prTitle, SCMGrpc.SCMBlockingStub scmBlockingStub) {
+    String slug = scmGitProviderHelper.getSlug(scmConnector);
+    Provider gitProvider = scmGitProviderMapper.mapToSCMGitProvider(scmConnector);
+    return ScmGrpcClientUtils.retryAndProcessException(scmBlockingStub::createPR,
+        CreatePRRequest.newBuilder()
+            .setSlug(slug)
+            .setTitle(prTitle)
+            .setProvider(gitProvider)
+            .setSource(sourceBranchName)
+            .setTarget(targetBranchName)
+            .build());
+  }
+
+  @Override
+  public RefreshTokenResponse refreshToken(ScmConnector scmConnector, String clientId, String clientSecret,
+      String endpoint, String refreshToken, SCMGrpc.SCMBlockingStub scmBlockingStub) {
+    return scmBlockingStub.refreshToken(RefreshTokenRequest.newBuilder()
+                                            .setClientID(clientId)
+                                            .setClientSecret(clientSecret)
+                                            .setRefreshToken(refreshToken)
+                                            .setEndpoint(endpoint)
+                                            .build());
+  }
+
+  public GetLatestCommitOnFileResponse getLatestCommitOnFile(
+      ScmConnector scmConnector, String branchName, String filepath, SCMGrpc.SCMBlockingStub scmBlockingStub) {
+    return getLatestCommitOnFile(scmConnector, scmBlockingStub, branchName, filepath);
   }
 
   private FileContentBatchResponse processListFilesByFilePaths(ScmConnector connector, List<String> filePaths,
@@ -761,19 +930,16 @@ public class ScmServiceClientImpl implements ScmServiceClient {
     }
   }
 
-  private String getGithubToken(Provider gitProvider) {
-    return gitProvider.getGithub().getAccessToken();
-  }
-
   private boolean isIdenticalTarget(WebhookResponse webhookResponse, GitWebhookDetails gitWebhookDetails) {
     // Currently we don't add secret however we receive it in response with empty value
     return webhookResponse.getTarget().replace("&secret=", "").equals(gitWebhookDetails.getTarget());
   }
 
-  private boolean isIdentical(
-      WebhookResponse webhookResponse, GitWebhookDetails gitWebhookDetails, ScmConnector scmConnector) {
+  private boolean isIdentical(WebhookResponse webhookResponse, GitWebhookDetails gitWebhookDetails,
+      ScmConnector scmConnector, List<NativeEvents> allNativeEventsList) {
     return isIdenticalTarget(webhookResponse, gitWebhookDetails)
-        && ScmGitWebhookHelper.isIdenticalEvents(webhookResponse, gitWebhookDetails.getHookEventType(), scmConnector);
+        && ScmGitWebhookHelper.isIdenticalEvents(
+            webhookResponse, gitWebhookDetails.getHookEventType(), scmConnector, allNativeEventsList);
   }
 
   private GetLatestCommitOnFileResponse getLatestCommitOnFile(
@@ -796,6 +962,22 @@ public class ScmServiceClientImpl implements ScmServiceClient {
     if (ConnectorType.BITBUCKET.equals(scmConnector.getConnectorType())) {
       GetLatestCommitOnFileResponse latestCommitResponse = getLatestCommitOnFile(
           scmConnector, scmBlockingStub, gitFileDetails.getBranch(), gitFileDetails.getFilePath());
+      if (isEmpty(latestCommitResponse.getCommitId()) && isBitbucketOnPrem(scmConnector)) {
+        return Optional.of(UpdateFileResponse.newBuilder()
+                               .setStatus(Constants.SCM_INTERNAL_SERVER_ERROR_CODE)
+                               .setError(Constants.SCM_GIT_PROVIDER_ERROR_MESSAGE)
+                               .build());
+      }
+      if (!latestCommitResponse.getCommitId().equals(gitFileDetails.getCommitId())) {
+        return Optional.of(UpdateFileResponse.newBuilder()
+                               .setStatus(Constants.SCM_CONFLICT_ERROR_CODE)
+                               .setError(Constants.SCM_CONFLICT_ERROR_MESSAGE)
+                               .setCommitId(latestCommitResponse.getCommitId())
+                               .build());
+      }
+    } else if (ConnectorType.AZURE_REPO.equals(scmConnector.getConnectorType())) {
+      GetLatestCommitOnFileResponse latestCommitResponse = getLatestCommitOnFile(
+          scmConnector, scmBlockingStub, gitFileDetails.getBranch(), gitFileDetails.getFilePath());
       if (!latestCommitResponse.getCommitId().equals(gitFileDetails.getCommitId())) {
         return Optional.of(UpdateFileResponse.newBuilder()
                                .setStatus(Constants.SCM_CONFLICT_ERROR_CODE)
@@ -805,5 +987,21 @@ public class ScmServiceClientImpl implements ScmServiceClient {
       }
     }
     return Optional.empty();
+  }
+
+  private void handleUpdateFileRequestIfBBOnPrem(
+      FileModifyRequest.Builder fileModifyRequestBuilder, ScmConnector scmConnector, GitFileDetails gitFileDetails) {
+    if (isBitbucketOnPrem(scmConnector)) {
+      fileModifyRequestBuilder.setCommitId(gitFileDetails.getCommitId());
+    }
+  }
+
+  private boolean isFailureResponse(int statusCode) {
+    return statusCode >= 300;
+  }
+
+  private boolean isBitbucketOnPrem(ScmConnector scmConnector) {
+    return ConnectorType.BITBUCKET.equals(scmConnector.getConnectorType())
+        && !GitClientHelper.isBitBucketSAAS(scmConnector.getUrl());
   }
 }

@@ -52,6 +52,7 @@ import software.wings.beans.Activity.ActivityBuilder;
 import software.wings.beans.Activity.Type;
 import software.wings.beans.Application;
 import software.wings.beans.Environment;
+import software.wings.beans.InfrastructureProvisioner;
 import software.wings.beans.NameValuePair;
 import software.wings.beans.TaskType;
 import software.wings.beans.command.Command;
@@ -89,6 +90,7 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.FieldNameConstants;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.mongodb.morphia.annotations.Transient;
 
 @FieldNameConstants(onlyExplicitlyIncluded = true, innerTypeName = "ShellScriptProvisionStateKeys")
@@ -120,8 +122,7 @@ public class ShellScriptProvisionState extends State implements SweepingOutputSt
   @Override
   public ExecutionResponse execute(ExecutionContext context) {
     String activityId = createActivity(context);
-    ShellScriptInfrastructureProvisioner shellScriptProvisioner =
-        infrastructureProvisionerService.getShellScriptProvisioner(context.getAppId(), provisionerId);
+    ShellScriptInfrastructureProvisioner shellScriptProvisioner = resolveProvisionerId(context);
 
     ShellScriptProvisionParameters parameters =
         ShellScriptProvisionParameters.builder()
@@ -169,8 +170,32 @@ public class ShellScriptProvisionState extends State implements SweepingOutputSt
         .build();
   }
 
+  private ShellScriptInfrastructureProvisioner resolveProvisionerId(ExecutionContext context) {
+    String renderedProvisionerName = context.renderExpression(provisionerId);
+    InfrastructureProvisioner provisioner =
+        infrastructureProvisionerService.getByName(context.getAppId(), renderedProvisionerName);
+
+    if (!StringUtils.equals(provisionerId, renderedProvisionerName) && Objects.isNull(provisioner)) {
+      throw new InvalidArgumentsException(
+          "Could not find a Shell Script Provisioner with resolved name: " + renderedProvisionerName);
+    }
+
+    if (Objects.nonNull(provisioner)) {
+      if (provisioner instanceof ShellScriptInfrastructureProvisioner) {
+        provisionerId = provisioner.getUuid();
+        return (ShellScriptInfrastructureProvisioner) provisioner;
+      } else {
+        throw new InvalidArgumentsException(
+            "Resolved Provisioner with name: " + renderedProvisionerName + ", is not of type Shell Script");
+      }
+    }
+
+    return infrastructureProvisionerService.getShellScriptProvisioner(context.getAppId(), provisionerId);
+  }
+
   @Override
   public ExecutionResponse handleAsyncResponse(ExecutionContext context, Map<String, ResponseData> response) {
+    resolveProvisionerId(context);
     Entry<String, ResponseData> responseEntry = response.entrySet().iterator().next();
     String activityId = responseEntry.getKey();
     ShellScriptProvisionExecutionData executionData = (ShellScriptProvisionExecutionData) responseEntry.getValue();

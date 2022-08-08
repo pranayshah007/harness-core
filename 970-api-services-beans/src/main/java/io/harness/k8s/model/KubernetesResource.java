@@ -63,16 +63,19 @@ import io.kubernetes.client.openapi.models.V1VolumeProjection;
 import io.kubernetes.client.openapi.models.V1beta1CronJob;
 import io.kubernetes.client.util.Yaml;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.function.UnaryOperator;
+import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
+import org.yaml.snakeyaml.constructor.ConstructorException;
 
 @Data
 @Builder
@@ -84,6 +87,7 @@ public class KubernetesResource {
   private static final String MISSING_STATEFULSET_SPEC_MSG = "StatefulSet does not have spec";
   private static final String MISSING_DEPLOYMENT_CONFIG_SPEC_MSG = "DeploymentConfig does not have spec";
   private static final String MISSING_CRON_JOB_SPEC_MSG = "CronJob does not have spec";
+  private static final String YAML_CONSTRUCTION_EXCEPTION_MESSAGE_FORMAT = "%s %n%s";
 
   private KubernetesResourceId resourceId;
   private Object value;
@@ -522,10 +526,20 @@ public class KubernetesResource {
           throw new KubernetesYamlException("Unhandled Kubernetes resource " + this.resourceId.getKind());
       }
     } catch (Exception ex) {
-      String exceptionMessage = format("Failed to load spec for resource kind: %s, name: %s %n%s",
-          this.resourceId.getKind(), this.resourceId.getName(), ex.getMessage());
-      throw new KubernetesYamlException(exceptionMessage);
+      String yamlConstructionExceptionMessage =
+          ex instanceof ConstructorException ? extractMessageHeaderWithProblemMarks(ex) : "";
+      String exceptionMessage = format("Failed to load spec for resource kind: %s, name: %s %n",
+          this.resourceId.getKind(), this.resourceId.getName());
+      throw new KubernetesYamlException(exceptionMessage + yamlConstructionExceptionMessage);
     }
+  }
+
+  private String extractMessageHeaderWithProblemMarks(Exception ex) {
+    String messageHeader = ex.getMessage().split("\\{")[0];
+    String problemMarkLine = Arrays.stream(((ConstructorException) ex).getProblemMark().toString().split("\\n"))
+                                 .filter(line -> line.contains("line"))
+                                 .collect(Collectors.joining("\n"));
+    return String.format(YAML_CONSTRUCTION_EXCEPTION_MESSAGE_FORMAT, messageHeader, problemMarkLine);
   }
 
   private void updateConfigMapRef(Object k8sResource, UnaryOperator<Object> transformer) {

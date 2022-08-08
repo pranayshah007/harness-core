@@ -105,7 +105,7 @@ spec:
           value: ""
         - name: NEXT_GEN
           value: "true"
-        - name: ACCOUNT_SECRET
+        - name: DELEGATE_TOKEN
           value: ACCOUNT_KEY
         - name: WATCHER_STORAGE_URL
           value: http://localhost:8888
@@ -118,7 +118,7 @@ spec:
         - name: HELM_DESIRED_VERSION
           value: ""
         - name: JRE_VERSION
-          value: 1.8.0_242
+          value: 11.0.14
         - name: HELM3_PATH
           value: ""
         - name: HELM_PATH

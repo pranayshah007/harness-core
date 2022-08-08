@@ -10,6 +10,7 @@ package io.harness.connector.mappers.githubconnector;
 import static io.harness.delegate.beans.connector.scm.GitAuthType.HTTP;
 import static io.harness.delegate.beans.connector.scm.github.GithubApiAccessType.GITHUB_APP;
 import static io.harness.rule.OwnerRule.ABHINAV;
+import static io.harness.rule.OwnerRule.HEN;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -18,6 +19,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.connector.entities.embedded.githubconnector.GithubAppApiAccess;
 import io.harness.connector.entities.embedded.githubconnector.GithubConnector;
 import io.harness.connector.entities.embedded.githubconnector.GithubHttpAuthentication;
+import io.harness.connector.entities.embedded.githubconnector.GithubOauth;
 import io.harness.connector.entities.embedded.githubconnector.GithubSshAuthentication;
 import io.harness.connector.entities.embedded.githubconnector.GithubTokenApiAccess;
 import io.harness.connector.entities.embedded.githubconnector.GithubUsernamePassword;
@@ -31,6 +33,7 @@ import io.harness.delegate.beans.connector.scm.github.GithubAuthenticationDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubHttpAuthenticationType;
 import io.harness.delegate.beans.connector.scm.github.GithubHttpCredentialsDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubOauthDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubSshCredentialsDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubTokenSpecDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubUsernamePasswordDTO;
@@ -234,5 +237,45 @@ public class GithubDTOToEntityTest extends CategoryTest {
     assertThat(githubConnector.getAuthenticationDetails())
         .isEqualTo(GithubSshAuthentication.builder().sshKeyRef(sshKeyRef).build());
     assertThat(githubConnector.getGithubApiAccess()).isNull();
+  }
+
+  @Test
+  @Owner(developers = HEN)
+  @Category(UnitTests.class)
+  public void testToConnectorEntity_5() {
+    final String url = "url";
+    final String tokenRef = "tokenRef";
+    final GithubAuthenticationDTO githubAuthenticationDTO =
+        GithubAuthenticationDTO.builder()
+            .authType(HTTP)
+            .credentials(GithubHttpCredentialsDTO.builder()
+                             .type(GithubHttpAuthenticationType.OAUTH)
+                             .httpCredentialsSpec(
+                                 GithubOauthDTO.builder().tokenRef(SecretRefHelper.createSecretRef(tokenRef)).build())
+                             .build())
+            .build();
+
+    final GithubApiAccessDTO githubApiAccessDTO =
+        GithubApiAccessDTO.builder()
+            .type(GithubApiAccessType.OAUTH)
+            .spec(GithubOauthDTO.builder().tokenRef(SecretRefHelper.createSecretRef(tokenRef)).build())
+            .build();
+    final GithubConnectorDTO githubConnectorDTO = GithubConnectorDTO.builder()
+                                                      .url(url)
+                                                      .connectionType(GitConnectionType.REPO)
+                                                      .authentication(githubAuthenticationDTO)
+                                                      .apiAccess(githubApiAccessDTO)
+                                                      .build();
+    final GithubConnector githubConnector = githubDTOToEntity.toConnectorEntity(githubConnectorDTO);
+    assertThat(githubConnector).isNotNull();
+    assertThat(githubConnector.getUrl()).isEqualTo(url);
+    assertThat(githubConnector.getApiAccessType()).isEqualTo(GithubApiAccessType.OAUTH);
+    assertThat(githubConnector.getAuthType()).isEqualTo(HTTP);
+    assertThat(githubConnector.getAuthenticationDetails())
+        .isEqualTo(GithubHttpAuthentication.builder()
+                       .type(GithubHttpAuthenticationType.OAUTH)
+                       .auth(GithubOauth.builder().tokenRef(tokenRef).build())
+                       .build());
+    assertThat(githubConnector.getGithubApiAccess()).isEqualTo(GithubOauth.builder().tokenRef(tokenRef).build());
   }
 }

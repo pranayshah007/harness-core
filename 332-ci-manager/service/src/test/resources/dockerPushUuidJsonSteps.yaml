@@ -1,0 +1,115 @@
+{
+  "pipeline": {
+    "identifier": "cipipelineZCQw1jTMYl",
+    "name": "docker build push success",
+    "description": "fddfdddds",
+    "stages": [
+      {
+        "stage": {
+          "identifier": "docker_buildPush_success",
+          "name": "docker build push",
+          "type": "CI",
+          "spec": {
+            "execution": {
+              "steps": [
+                {
+                  "step": {
+                    "identifier": "dockerBuildPush",
+                    "name": "docker build push",
+                    "type": "BuildAndPushDockerRegistry",
+                    "spec": {
+                      "repo": "harness/ci-automation",
+                      "tags": [
+                        "1.0",
+                        "1.2"
+                      ],
+                      "buildArgs": {
+                        "foo": "bar",
+                        "hello": "world",
+                        "__uuid": "rPbsBNeHRxC9X8N5FwuTKw"
+                      },
+                      "labels": {
+                        "foo": "bar",
+                        "hello": "world",
+                        "__uuid": "6bwbOXEUTACs_HOgk-iS9Q"
+                      },
+                      "target": "dev-env",
+                      "context": ".",
+                      "dockerfile": "harnessDockerfile",
+                      "remoteCacheImage": "harness/ci-automation",
+                      "connectorRef": "account.CItestDockerConnectorCsCLIHic49",
+                      "__uuid": "IG_4A7PnTfC86rxfk4OUoQ"
+                    },
+                    "__uuid": "tmYypvnwS9ymS0uPVsD26g"
+                  },
+                  "__uuid": "8_HSs_e0RciRGxDSKsQhqg"
+                }
+              ],
+              "__uuid": "wSYJVsm-QmC8chB1Lf-VSw"
+            },
+            "infrastructure": {
+              "type": "KubernetesDirect",
+              "spec": {
+                "connectorRef": "account.CItestK8sConnectorCMs0vdKHun",
+                "namespace": "harness-qa-delegate",
+                "__uuid": "LtldxlMmQZ25c2fUKwfEmw"
+              },
+              "__uuid": "X90lNonRRjmAGukj5ag7WA"
+            },
+            "cloneCodebase": false,
+            "__uuid": "qvMKkyrOQ_6tBV2PI8ZnXg"
+          },
+          "__uuid": "g6gckhxfScGZdLVv-uLEkw"
+        },
+        "__uuid": "S5aZ6rQ3Rn-P63w8bnsHTQ"
+      },
+      {
+        "stage": {
+          "identifier": "test_docker_uploaded_image",
+          "name": "test docker upload image",
+          "type": "CI",
+          "spec": {
+            "execution": {
+              "steps": [
+                {
+                  "step": {
+                    "identifier": "runUploadedImageContainer",
+                    "name": "run",
+                    "type": "Run",
+                    "spec": {
+                      "retry": 1,
+                      "command": "ls\n",
+                      "connectorRef": "account.CItestDockerConnectorCsCLIHic49",
+                      "image": "harness/ci-automation:1.2",
+                      "__uuid": "je8iR1lJQOiHMks3MhMiIg"
+                    },
+                    "__uuid": "q38o7kA_QnOIp_u1PuVu8w"
+                  },
+                  "__uuid": "KCu5v3YIRNeOx_0-dUbNeA"
+                }
+              ],
+              "__uuid": "hvwup5R9SHuFd2MJqfBUxQ"
+            },
+            "infrastructure": {
+              "type": "KubernetesDirect",
+              "spec": {
+                "connectorRef": "account.CItestK8sConnectorCMs0vdKHun",
+                "namespace": "harness-qa-delegate",
+                "__uuid": "h-NFvRXhRxineYv3zyhykQ"
+              },
+              "__uuid": "e15sZuZ_TBWBbhoQmn6yCQ"
+            },
+            "cloneCodebase": false,
+            "__uuid": "keeM0djqRKm7jQFdz754-w"
+          },
+          "__uuid": "7LfhFtKPRfGmp8AosBftuQ"
+        },
+        "__uuid": "_9zCdmt5T9CqKCljP_pXyg"
+      }
+    ],
+    "projectIdentifier": "CITestDemoProP1PcmJEzZ5",
+    "orgIdentifier": "CITestDemoOrgUNtoIHwBY8",
+    "__uuid": "MeHWkUteRQ6LOBEI7Lh1zw"
+  },
+  "__uuid": "__WhBRZ_RD2qWWQJjwnDCg"
+}

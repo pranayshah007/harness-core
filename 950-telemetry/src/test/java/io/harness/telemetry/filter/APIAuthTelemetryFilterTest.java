@@ -13,6 +13,7 @@ import static io.harness.telemetry.Destination.AMPLITUDE;
 import static io.harness.telemetry.filter.APIAuthTelemetryFilter.ACCOUNT_IDENTIFIER;
 import static io.harness.telemetry.filter.APIAuthTelemetryFilter.API_ENDPOINT;
 import static io.harness.telemetry.filter.APIAuthTelemetryFilter.API_ENDPOINTS_AUTH_SCHEMES;
+import static io.harness.telemetry.filter.APIAuthTelemetryFilter.API_PATTERN;
 import static io.harness.telemetry.filter.APIAuthTelemetryFilter.AUTH_TYPE;
 import static io.harness.telemetry.filter.APIAuthTelemetryFilter.DEFAULT_RATE_LIMIT;
 import static io.harness.telemetry.filter.APIAuthTelemetryFilter.X_API_KEY;
@@ -31,12 +32,15 @@ import io.harness.telemetry.TelemetryReporter;
 
 import io.github.resilience4j.ratelimiter.RateLimiterConfig;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.core.MultivaluedMap;
 import lombok.extern.slf4j.Slf4j;
 import org.glassfish.jersey.server.internal.routing.UriRoutingContext;
+import org.glassfish.jersey.uri.UriTemplate;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -72,12 +76,17 @@ public class APIAuthTelemetryFilterTest {
     when(uriRoutingContext.getPathParameters()).thenReturn(parametersMap);
 
     when(parametersMap.getFirst(NGCommonEntityConstants.ACCOUNT_KEY)).thenReturn(SOME_ACCOUNT_ID);
+    List<UriTemplate> templates = new ArrayList<>();
+    templates.add(new UriTemplate("/id"));
+    templates.add(new UriTemplate("/pipelines"));
+    when(uriRoutingContext.getMatchedTemplates()).thenReturn(templates);
 
     filter = new APIAuthTelemetryFilter(telemetryReporter);
 
     properties.put(ACCOUNT_IDENTIFIER, SOME_ACCOUNT_ID);
     properties.put(API_ENDPOINT, SOME_API_ENDPOINT);
     properties.put(API_TYPE, GET);
+    properties.put(API_PATTERN, "/pipelines/id");
   }
 
   @Test

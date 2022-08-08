@@ -61,6 +61,7 @@ import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -130,6 +131,7 @@ import software.wings.sm.ExecutionResponse;
 import software.wings.sm.InstanceStatusSummary;
 import software.wings.sm.StateExecutionInstance;
 import software.wings.sm.WorkflowStandardParams;
+import software.wings.sm.WorkflowStandardParamsExtensionService;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -175,6 +177,9 @@ public class PcfDeployStateTest extends WingsBaseTest {
 
   @Spy @InjectMocks private PcfDeployState pcfDeployState;
   @InjectMocks private WorkflowStandardParams workflowStandardParams = pcfStateTestHelper.getWorkflowStandardParams();
+
+  // Gets initialized in setup.
+  private WorkflowStandardParamsExtensionService workflowStandardParamsExtensionService;
 
   private ServiceElement serviceElement = pcfStateTestHelper.getServiceElement();
   @InjectMocks private PhaseElement phaseElement = pcfStateTestHelper.getPhaseElement(serviceElement);
@@ -250,8 +255,6 @@ public class PcfDeployStateTest extends WingsBaseTest {
             .withCommand(aCommand().withCommandType(CommandType.RESIZE).withName(COMMAND_NAME).build())
             .build();
     when(serviceResourceService.getCommandByName(APP_ID, SERVICE_ID, ENV_ID, COMMAND_NAME)).thenReturn(serviceCommand);
-    on(workflowStandardParams).set("appService", appService);
-    on(workflowStandardParams).set("environmentService", environmentService);
 
     when(infrastructureMappingService.get(APP_ID, INFRA_MAPPING_ID))
         .thenReturn(pcfStateTestHelper.getPcfInfrastructureMapping(Arrays.asList("R1"), Arrays.asList("R2")));
@@ -284,6 +287,13 @@ public class PcfDeployStateTest extends WingsBaseTest {
                                                       .build()))
         .thenReturn(setupSweepingOutputPcf);
     doNothing().when(stateExecutionService).appendDelegateTaskDetails(anyString(), any());
+
+    workflowStandardParamsExtensionService = spy(
+        new WorkflowStandardParamsExtensionService(appService, null, artifactService, environmentService, null, null));
+
+    on(context).set("workflowStandardParamsExtensionService", workflowStandardParamsExtensionService);
+    FieldUtils.writeField(
+        pcfDeployState, "workflowStandardParamsExtensionService", workflowStandardParamsExtensionService, true);
   }
 
   @Test

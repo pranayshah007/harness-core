@@ -23,6 +23,7 @@ import static software.wings.utils.WingsTestConstants.INFRA_MAPPING_ID;
 import static java.util.Arrays.asList;
 import static junit.framework.TestCase.assertTrue;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.joor.Reflect.on;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyList;
 import static org.mockito.Matchers.anyLong;
@@ -38,6 +39,7 @@ import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.ArtifactMetadata;
 import io.harness.beans.EmbeddedUser;
 import io.harness.beans.EnvironmentType;
 import io.harness.beans.FeatureName;
@@ -64,6 +66,7 @@ import software.wings.api.AwsAutoScalingGroupDeploymentInfo;
 import software.wings.api.AwsCodeDeployDeploymentInfo;
 import software.wings.api.ContainerDeploymentInfoWithLabels;
 import software.wings.api.ContainerDeploymentInfoWithNames;
+import software.wings.api.ContextElementParamMapperFactory;
 import software.wings.api.DeploymentEvent;
 import software.wings.api.DeploymentInfo;
 import software.wings.api.DeploymentSummary;
@@ -114,6 +117,7 @@ import software.wings.sm.ExecutionContext;
 import software.wings.sm.PhaseExecutionSummary;
 import software.wings.sm.PhaseStepExecutionSummary;
 import software.wings.sm.WorkflowStandardParams;
+import software.wings.sm.WorkflowStandardParamsExtensionService;
 import software.wings.sm.states.PhaseStepSubWorkflow;
 import software.wings.utils.WingsTestConstants;
 
@@ -186,6 +190,8 @@ public class InstanceHelperTest extends WingsBaseTest {
   @InjectMocks @Inject private CustomDeploymentInstanceHandler customDeploymentInstanceHandler;
   @InjectMocks @Inject private AzureVMSSInstanceHandler azureVMSSInstanceHandler;
   @InjectMocks @Inject private AzureWebAppInstanceHandler azureWebAppInstanceHandler;
+  @InjectMocks @Inject private ContextElementParamMapperFactory contextElementParamMapperFactory;
+  @InjectMocks @Inject private WorkflowStandardParamsExtensionService workflowStandardParamsExtensionService;
 
   @InjectMocks @Inject private InstanceHelper instanceHelper;
   private WorkflowExecution workflowExecution;
@@ -239,13 +245,13 @@ public class InstanceHelperTest extends WingsBaseTest {
     workflowStandardParams.setAppId(APP_ID);
     workflowStandardParams.setArtifactIds(asList(ARTIFACT_ID_1, ARTIFACT_ID_2));
     when(artifactService.get(anyString())).thenAnswer(invocation -> {
-      if (invocation.getArgumentAt(0, String.class).equals(ARTIFACT_ID_1)) {
+      if (invocation.getArgument(0, String.class).equals(ARTIFACT_ID_1)) {
         return Artifact.Builder.anArtifact()
             .withUuid(ARTIFACT_ID_1)
             .withDisplayName("artifact1")
             .withArtifactStreamId(ARTIFACT_STREAM_ID_1)
             .withArtifactSourceName("sourceName")
-            .withMetadata(Collections.singletonMap("buildNo", "1.0"))
+            .withMetadata(new ArtifactMetadata(Collections.singletonMap("buildNo", "1.0")))
             .build();
       } else {
         return Artifact.Builder.anArtifact()
@@ -253,7 +259,7 @@ public class InstanceHelperTest extends WingsBaseTest {
             .withDisplayName("artifact2")
             .withArtifactStreamId(ARTIFACT_STREAM_ID_2)
             .withArtifactSourceName("sourceName")
-            .withMetadata(Collections.singletonMap("buildNo", "1.0"))
+            .withMetadata(new ArtifactMetadata(Collections.singletonMap("buildNo", "1.0")))
             .build();
       }
     });
@@ -294,6 +300,14 @@ public class InstanceHelperTest extends WingsBaseTest {
 
     AcquiredLock<?> acquiredLock = mock(AcquiredLock.class);
     when(persistentLocker.tryToAcquireLock(any(), any(), any())).thenReturn(acquiredLock);
+
+    on(workflowStandardParamsExtensionService).set("artifactService", artifactService);
+    on(workflowStandardParamsExtensionService)
+        .set("artifactStreamServiceBindingService", artifactStreamServiceBindingService);
+    on(contextElementParamMapperFactory).set("artifactService", artifactService);
+    on(contextElementParamMapperFactory)
+        .set("workflowStandardParamsExtensionService", workflowStandardParamsExtensionService);
+    on(instanceHelper).set("workflowStandardParamsExtensionService", workflowStandardParamsExtensionService);
   }
 
   @Test
@@ -970,8 +984,8 @@ public class InstanceHelperTest extends WingsBaseTest {
           List<DeploymentSummary> deploymentSummaries, boolean rollback, OnDemandRollbackInfo onDemandRollbackInfo) {}
 
       @Override
-      public FeatureName getFeatureFlagToStopIteratorBasedInstanceSync() {
-        return null;
+      public Optional<FeatureName> getFeatureFlagToStopIteratorBasedInstanceSync() {
+        return Optional.empty();
       }
 
       @Override
@@ -1001,14 +1015,14 @@ public class InstanceHelperTest extends WingsBaseTest {
                  .withInfraMappingType(InfrastructureMappingType.PHYSICAL_DATA_CENTER_SSH.name())
                  .build())
         .when(infraMappingService)
-        .get(anyString(), anyString());
+        .get(any(), any());
     final AtomicInteger count = new AtomicInteger(0);
     doAnswer((Answer<Void>) invocationOnMock -> {
       count.incrementAndGet();
       return null;
     })
         .when(instanceService)
-        .updateSyncSuccess(anyString(), anyString(), anyString(), anyString(), anyString(), anyLong());
+        .updateSyncSuccess(any(), any(), any(), any(), any(), anyLong());
     instanceHelper.manualSync(APP_ID, INFRA_MAP_ID);
     assertThat(count.get()).isEqualTo(1);
   }
@@ -1034,8 +1048,8 @@ public class InstanceHelperTest extends WingsBaseTest {
           List<DeploymentSummary> deploymentSummaries, boolean rollback, OnDemandRollbackInfo onDemandRollbackInfo) {}
 
       @Override
-      public FeatureName getFeatureFlagToStopIteratorBasedInstanceSync() {
-        return null;
+      public Optional<FeatureName> getFeatureFlagToStopIteratorBasedInstanceSync() {
+        return Optional.empty();
       }
 
       @Override
@@ -1065,14 +1079,14 @@ public class InstanceHelperTest extends WingsBaseTest {
                  .withInfraMappingType(InfrastructureMappingType.PHYSICAL_DATA_CENTER_SSH.name())
                  .build())
         .when(infraMappingService)
-        .get(anyString(), anyString());
+        .get(any(), any());
     final AtomicInteger count = new AtomicInteger(0);
     doAnswer((Answer<Void>) invocationOnMock -> {
       count.incrementAndGet();
       return null;
     })
         .when(instanceService)
-        .handleSyncFailure(anyString(), anyString(), anyString(), anyString(), anyString(), anyLong(), anyString());
+        .handleSyncFailure(any(), any(), any(), any(), any(), anyLong(), any());
     instanceHelper.manualSync(APP_ID, INFRA_MAP_ID);
     assertThat(count.get()).isEqualTo(1);
   }
@@ -1200,7 +1214,7 @@ public class InstanceHelperTest extends WingsBaseTest {
 
     PcfConfig pcfConfig = mock(PcfConfig.class);
     SettingAttribute settingAttribute = mock(SettingAttribute.class);
-    when(settingsService.get(anyString())).thenReturn(settingAttribute);
+    when(settingsService.get(any())).thenReturn(settingAttribute);
     when(settingAttribute.getValue()).thenReturn(pcfConfig);
 
     instanceHelper.processInstanceSyncResponseFromPerpetualTask(

@@ -20,7 +20,6 @@ import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
 
-import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
 import java.io.IOException;
 import java.util.Collections;
@@ -94,19 +93,6 @@ public class PlanCreatorUtils {
       }
     });
     return stageFields;
-  }
-
-  public List<YamlField> getStepGroupInParallelSectionHavingRollback(YamlField parallelStepGroup) {
-    List<YamlNode> yamlNodes =
-        Optional.of(Preconditions.checkNotNull(parallelStepGroup).getNode().asArray()).orElse(Collections.emptyList());
-    List<YamlField> stepGroupFields = new LinkedList<>();
-    yamlNodes.forEach(yamlNode -> {
-      YamlField stepGroupField = yamlNode.getField(YAMLFieldNameConstants.STEP_GROUP);
-      if (stepGroupField != null && stepGroupField.getNode().getField(YAMLFieldNameConstants.ROLLBACK_STEPS) != null) {
-        stepGroupFields.add(stepGroupField);
-      }
-    });
-    return stepGroupFields;
   }
 
   public List<YamlField> getStepYamlFields(List<YamlNode> stepYamlNodes) {

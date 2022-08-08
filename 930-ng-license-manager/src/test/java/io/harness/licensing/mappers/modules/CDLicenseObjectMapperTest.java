@@ -14,9 +14,9 @@ import static org.mockito.MockitoAnnotations.initMocks;
 
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
+import io.harness.cd.CDLicenseType;
 import io.harness.licensing.beans.modules.CDModuleLicenseDTO;
 import io.harness.licensing.beans.modules.ModuleLicenseDTO;
-import io.harness.licensing.beans.modules.types.CDLicenseType;
 import io.harness.licensing.entities.modules.CDModuleLicense;
 import io.harness.licensing.entities.modules.ModuleLicense;
 import io.harness.rule.Owner;

@@ -35,4 +35,5 @@ public class ReferenceDTO {
   String projectIdentifier;
   String orgIdentifier;
   String accountIdentifier;
+  long count;
 }

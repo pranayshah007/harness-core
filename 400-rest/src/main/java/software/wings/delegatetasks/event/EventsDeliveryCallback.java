@@ -22,7 +22,7 @@ import io.harness.service.EventService;
 import io.harness.tasks.ResponseData;
 import io.harness.waiter.OldNotifyCallback;
 
-import software.wings.sm.states.HttpState.HttpStateExecutionResponse;
+import software.wings.beans.HttpStateExecutionResponse;
 
 import com.google.inject.Inject;
 import java.util.Map;

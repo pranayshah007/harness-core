@@ -24,6 +24,7 @@ import static software.wings.beans.trigger.WebhookParameters.BIT_BUCKET_ON_PREM_
 import static software.wings.beans.trigger.WebhookParameters.BIT_BUCKET_ON_PREM_PULL_REPOSITORY_CLONE_SSH;
 import static software.wings.beans.trigger.WebhookParameters.BIT_BUCKET_ON_PREM_PULL_REPOSITORY_NAME;
 import static software.wings.beans.trigger.WebhookParameters.BIT_BUCKET_PULL_BRANCH_REF;
+import static software.wings.beans.trigger.WebhookParameters.BIT_BUCKET_PUSH_BRANCH_FORMAT;
 import static software.wings.beans.trigger.WebhookParameters.BIT_BUCKET_PUSH_BRANCH_REF;
 import static software.wings.beans.trigger.WebhookParameters.BIT_BUCKET_REFS_CHANGED_REF;
 import static software.wings.beans.trigger.WebhookParameters.BIT_BUCKET_REF_CHANGE_REQUEST_COMMIT_ID;
@@ -70,10 +71,13 @@ import software.wings.expression.ManagerExpressionEvaluator;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import javax.ws.rs.core.HttpHeaders;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -527,7 +531,7 @@ public class WebhookEventUtils {
     }
   }
 
-  private BitBucketEventType getBitBucketEventType(HttpHeaders httpHeaders) {
+  public BitBucketEventType getBitBucketEventType(HttpHeaders httpHeaders) {
     log.info("Bit Bucket event header {}", httpHeaders.getHeaderString(X_BIT_BUCKET_EVENT));
     return BitBucketEventType.find(httpHeaders.getHeaderString(X_BIT_BUCKET_EVENT));
   }
@@ -682,5 +686,18 @@ public class WebhookEventUtils {
       throw new InvalidRequestException(
           "Failed to parse the webhook payload. Error " + ExceptionUtils.getMessage(ex), ex, USER);
     }
+  }
+
+  public List<String> obtainBranchNameFromBitBucketPush(Map<String, Object> payLoadMap) {
+    Map<String, Object> pushPayload = (Map<String, Object>) payLoadMap.get("push");
+    if (pushPayload != null) {
+      List<Object> changes = (List<Object>) pushPayload.get("changes");
+      int branchCount = changes.size();
+      return IntStream.range(0, branchCount)
+          .mapToObj(i -> expressionEvaluator.substitute(String.format(BIT_BUCKET_PUSH_BRANCH_FORMAT, i), payLoadMap))
+          .filter(name -> name != null && !"null".equals(name))
+          .collect(Collectors.toList());
+    }
+    return new ArrayList<>();
   }
 }

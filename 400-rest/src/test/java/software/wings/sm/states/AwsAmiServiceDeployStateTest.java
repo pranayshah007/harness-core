@@ -55,7 +55,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyList;
 import static org.mockito.Matchers.anyMap;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
@@ -126,6 +125,7 @@ import software.wings.sm.ContextElement;
 import software.wings.sm.ExecutionContextImpl;
 import software.wings.sm.ExecutionResponse;
 import software.wings.sm.WorkflowStandardParams;
+import software.wings.sm.WorkflowStandardParamsExtensionService;
 
 import com.amazonaws.services.ec2.model.Instance;
 import com.google.common.collect.ImmutableMap;
@@ -165,6 +165,7 @@ public class AwsAmiServiceDeployStateTest extends WingsBaseTest {
   @Mock private AwsAmiServiceStateHelper awsAmiServiceStateHelper;
   @Mock private StateExecutionService stateExecutionService;
   @Mock private FeatureFlagService mockFeatureFlagService;
+  @Mock private WorkflowStandardParamsExtensionService workflowStandardParamsExtensionService;
 
   @InjectMocks private AwsAmiServiceDeployState state = new AwsAmiServiceDeployState("stateName");
 
@@ -175,7 +176,7 @@ public class AwsAmiServiceDeployStateTest extends WingsBaseTest {
     state.setInstanceUnitType(PERCENTAGE);
     state.setInstanceCount("100");
     ExecutionContextImpl mockContext = mock(ExecutionContextImpl.class);
-    when(mockContext.renderExpression(anyString())).thenAnswer(new Answer<String>() {
+    when(mockContext.renderExpression(any())).thenAnswer(new Answer<String>() {
       @Override
       public String answer(InvocationOnMock invocation) throws Throwable {
         Object[] args = invocation.getArguments();
@@ -201,7 +202,7 @@ public class AwsAmiServiceDeployStateTest extends WingsBaseTest {
             .desiredInstances(2)
             .maxInstances(2)
             .build();
-    doReturn(phaseElement).when(mockContext).getContextElement(any(), anyString());
+    doReturn(phaseElement).when(mockContext).getContextElement(any(), any());
     doReturn(SweepingOutputInquiry.builder()).when(mockContext).prepareSweepingOutputInquiryBuilder();
     WorkflowStandardParams mockParams = mock(WorkflowStandardParams.class);
     doReturn(EmbeddedUser.builder().email("user@harness.io").name("user").build()).when(mockParams).getCurrentUser();
@@ -210,12 +211,12 @@ public class AwsAmiServiceDeployStateTest extends WingsBaseTest {
         .getSetupElementFromSweepingOutput(mockContext, AMI_SERVICE_SETUP_SWEEPING_OUTPUT_NAME);
     doReturn(mockParams).when(mockContext).getContextElement(any());
     Environment environment = anEnvironment().uuid(ENV_ID).environmentType(PROD).name(ENV_NAME).build();
-    doReturn(environment).when(mockParams).getEnv();
+    doReturn(environment).when(workflowStandardParamsExtensionService).getEnv(mockParams);
     doReturn(environment).when(mockContext).fetchRequiredEnvironment();
     Application application = anApplication().uuid(APP_ID).name(APP_NAME).accountId(ACCOUNT_ID).build();
-    doReturn(application).when(mockParams).getApp();
+    doReturn(application).when(workflowStandardParamsExtensionService).getApp(mockParams);
     Service service = Service.builder().uuid(SERVICE_ID).name(SERVICE_NAME).build();
-    doReturn(service).when(mockServiceResourceService).getWithDetails(anyString(), anyString());
+    doReturn(service).when(mockServiceResourceService).getWithDetails(any(), any());
     doReturn(false).when(mockFeatureFlagService).isEnabled(any(), any());
     doReturn(
         Arrays.asList(
@@ -235,25 +236,21 @@ public class AwsAmiServiceDeployStateTest extends WingsBaseTest {
                 .build()))
         .when(sweepingOutputService)
         .findSweepingOutputsWithNamePrefix(any(), any());
-    doNothing().when(stateExecutionService).appendDelegateTaskDetails(anyString(), any());
+    doNothing().when(stateExecutionService).appendDelegateTaskDetails(any(), any());
 
     String revision = "ami-1234";
     Artifact artifact = anArtifact().withRevision(revision).build();
-    doReturn(artifact).when(mockContext).getDefaultArtifactForService(anyString());
+    doReturn(artifact).when(mockContext).getDefaultArtifactForService(any());
     ArtifactStream artifactStream =
         AmiArtifactStream.builder().uuid(ARTIFACT_STREAM_ID).sourceName(ARTIFACT_SOURCE_NAME).build();
-    doReturn(artifactStream).when(mockArtifactStreamService).get(anyString());
+    doReturn(artifactStream).when(mockArtifactStreamService).get(any());
     Command command = aCommand().withName("Ami-Command").withCommandType(ENABLE).build();
     ServiceCommand serviceCommand = aServiceCommand().withCommand(command).build();
-    doReturn(serviceCommand)
-        .when(mockServiceResourceService)
-        .getCommandByName(anyString(), anyString(), anyString(), anyString());
+    doReturn(serviceCommand).when(mockServiceResourceService).getCommandByName(any(), any(), any(), any());
     AmiCommandUnit commandUnit = new AmiCommandUnit();
     commandUnit.setName("Ami-Command-Unit");
     List<CommandUnit> commandUnits = singletonList(commandUnit);
-    doReturn(commandUnits)
-        .when(mockServiceResourceService)
-        .getFlattenCommandUnitList(anyString(), anyString(), anyString(), anyString());
+    doReturn(commandUnits).when(mockServiceResourceService).getFlattenCommandUnitList(any(), any(), any(), any());
     Activity activity = Activity.builder().uuid(ACTIVITY_ID).appId(APP_ID).build();
     doReturn(activity).when(mockActivityService).save(any());
     String classicLb = "classicLb";
@@ -271,14 +268,14 @@ public class AwsAmiServiceDeployStateTest extends WingsBaseTest {
                                                             .withStageTargetGroupArns(stageTgs)
                                                             .withAutoScalingGroupName(baseAsg)
                                                             .build();
-    doReturn(infrastructureMapping).when(mockInfrastructureMappingService).get(anyString(), anyString());
+    doReturn(infrastructureMapping).when(mockInfrastructureMappingService).get(any(), any());
     SettingAttribute cloudProvider = aSettingAttribute().withValue(AwsConfig.builder().build()).build();
-    doReturn(cloudProvider).when(mockSettingsService).get(anyString());
-    doReturn(emptyList()).when(mockSecretManager).getEncryptionDetails(any(), anyString(), anyString());
+    doReturn(cloudProvider).when(mockSettingsService).get(any());
+    doReturn(emptyList()).when(mockSecretManager).getEncryptionDetails(any(), any(), any());
     doReturn(ImmutableMap.of(asg1, 1, asg3, 0))
         .when(mockAwsAsgHelperServiceManager)
-        .getDesiredCapacitiesOfAsgs(any(), anyList(), anyString(), anyList(), anyString());
-    doReturn(0).when(mockAwsStateHelper).fetchRequiredAsgCapacity(anyMap(), anyString());
+        .getDesiredCapacitiesOfAsgs(any(), anyList(), any(), anyList(), any());
+    doReturn(0).when(mockAwsStateHelper).fetchRequiredAsgCapacity(anyMap(), any());
     ExecutionResponse response = state.execute(mockContext);
     ArgumentCaptor<DelegateTask> captor = ArgumentCaptor.forClass(DelegateTask.class);
     verify(mockDelegateService, times(1)).queueTask(captor.capture());
@@ -321,7 +318,7 @@ public class AwsAmiServiceDeployStateTest extends WingsBaseTest {
 
     ArgumentCaptor<List> gpNamesCaptor = ArgumentCaptor.forClass(List.class);
     verify(mockAwsAsgHelperServiceManager, times(2))
-        .getDesiredCapacitiesOfAsgs(any(), any(), anyString(), gpNamesCaptor.capture(), anyString());
+        .getDesiredCapacitiesOfAsgs(any(), any(), any(), gpNamesCaptor.capture(), any());
     List gpNames = gpNamesCaptor.getValue();
     assertThat(gpNames).isNotEmpty();
     assertThat(gpNames.size()).isEqualTo(1);
@@ -359,7 +356,7 @@ public class AwsAmiServiceDeployStateTest extends WingsBaseTest {
                                               .withPrivateDnsName("private.dns")))
             .build();
     Activity activity = Activity.builder().uuid(ACTIVITY_ID).appId(APP_ID).build();
-    doReturn(activity).when(mockActivityService).get(anyString(), anyString());
+    doReturn(activity).when(mockActivityService).get(any(), any());
     AmiServiceSetupElement serviceSetupElement = AmiServiceSetupElement.builder().build();
     PhaseElement phaseElement =
         PhaseElement.builder().serviceElement(ServiceElement.builder().uuid(SERVICE_ID).build()).build();
@@ -368,33 +365,33 @@ public class AwsAmiServiceDeployStateTest extends WingsBaseTest {
         .when(awsAmiServiceStateHelper)
         .getSetupElementFromSweepingOutput(mockContext, AMI_SERVICE_SETUP_SWEEPING_OUTPUT_NAME);
     doReturn(mockParams).when(mockContext).getContextElement(any());
-    doReturn(phaseElement).when(mockContext).getContextElement(any(), anyString());
+    doReturn(phaseElement).when(mockContext).getContextElement(any(), any());
     Application application = anApplication().uuid(APP_ID).name(APP_NAME).accountId(ACCOUNT_ID).build();
-    doReturn(application).when(mockParams).getApp();
-    doReturn(true).when(mockLogService).batchedSaveCommandUnitLogs(anyString(), anyString(), any());
+    doReturn(application).when(workflowStandardParamsExtensionService).getApp(mockParams);
+    doReturn(true).when(mockLogService).batchedSaveCommandUnitLogs(any(), any(), any());
     AwsAmiInfrastructureMapping infrastructureMapping =
         anAwsAmiInfrastructureMapping().withUuid(INFRA_MAPPING_ID).withEnvId(ENV_ID).withRegion("us-east-1").build();
-    doReturn(infrastructureMapping).when(mockInfrastructureMappingService).get(anyString(), anyString());
+    doReturn(infrastructureMapping).when(mockInfrastructureMappingService).get(any(), any());
     Environment environment = anEnvironment().uuid(ENV_ID).name(ENV_NAME).build();
-    doReturn(environment).when(mockParams).getEnv();
+    doReturn(environment).when(workflowStandardParamsExtensionService).getEnv(mockParams);
     Service service = Service.builder().uuid(SERVICE_ID).name(SERVICE_NAME).build();
-    doReturn(service).when(mockServiceResourceService).getWithDetails(anyString(), anyString());
+    doReturn(service).when(mockServiceResourceService).getWithDetails(any(), any());
     Key<ServiceTemplate> serviceTemplateKey = new Key<>(ServiceTemplate.class, "collection", "id");
     doReturn(singletonList(serviceTemplateKey))
         .when(mockServiceTemplateService)
-        .getTemplateRefKeysByService(anyString(), anyString(), anyString());
+        .getTemplateRefKeysByService(any(), any(), any());
     String revision = "ami-1234";
     Artifact artifact = anArtifact().withRevision(revision).build();
-    doReturn(artifact).when(mockContext).getDefaultArtifactForService(anyString());
+    doReturn(artifact).when(mockContext).getDefaultArtifactForService(any());
     doReturn(SERVICE_TEMPLATE_ID).when(mockServiceTemplateHelper).fetchServiceTemplateId(any());
     Map<String, Object> contextMap = newHashMap();
     doReturn(contextMap).when(mockContext).asMap();
-    doReturn("hostName").when(mockAwsHelperService).getHostnameFromConvention(anyMap(), anyString());
+    doReturn("hostName").when(mockAwsHelperService).getHostnameFromConvention(anyMap(), any());
     Host host = aHost().withUuid(HOST_ID).build();
     doReturn(host).when(mockHostService).saveHost(any());
     doReturn(null).when(sweepingOutputService).save(any());
     doReturn(SweepingOutputInstance.builder()).when(mockContext).prepareSweepingOutputBuilder(any());
-    doReturn("").when(mockContext).appendStateExecutionId(anyString());
+    doReturn("").when(mockContext).appendStateExecutionId(any());
     ExecutionResponse response = state.handleAsyncResponse(mockContext, ImmutableMap.of(ACTIVITY_ID, delegateResponse));
     assertThat(response).isNotNull();
     assertThat(response.getExecutionStatus()).isEqualTo(SUCCESS);
@@ -412,7 +409,7 @@ public class AwsAmiServiceDeployStateTest extends WingsBaseTest {
     assertThat(instanceElements.get(0).getHostName()).isEqualTo("hostName");
 
     // Exception Scenario
-    doThrow(new InvalidRequestException("Failed")).when(mockInfrastructureMappingService).get(anyString(), anyString());
+    doThrow(new InvalidRequestException("Failed")).when(mockInfrastructureMappingService).get(any(), any());
     doReturn(mockParams).when(mockContext).getContextElement(any());
     response = state.handleAsyncResponse(mockContext, ImmutableMap.of(ACTIVITY_ID, delegateResponse));
     assertThat(response.getExecutionStatus()).isEqualTo(FAILED);

@@ -24,6 +24,7 @@ import io.harness.event.client.EventPublisher;
 import io.harness.event.payloads.CeExceptionMessage;
 import io.harness.grpc.utils.HTimestamps;
 import io.harness.perpetualtask.k8s.informer.ClusterDetails;
+import io.harness.perpetualtask.k8s.utils.K8sWatcherHelper;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
@@ -48,14 +49,15 @@ import io.kubernetes.client.openapi.models.V1PodStatus;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.util.CallGeneratorParams;
 import java.time.Instant;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListSet;
 import lombok.extern.slf4j.Slf4j;
-import org.joda.time.DateTime;
 
 @OwnedBy(HarnessTeam.CE)
 @Slf4j
@@ -111,12 +113,19 @@ public class PodWatcher implements ResourceEventHandler<V1Pod> {
         .sharedIndexInformerFor(
             (CallGeneratorParams callGeneratorParams)
                 -> {
+              log.info("Pod watcher :: Resource version: {}, timeoutSeconds: {}, watch: {}",
+                  callGeneratorParams.resourceVersion, callGeneratorParams.timeoutSeconds, callGeneratorParams.watch);
+              if (!"0".equals(callGeneratorParams.resourceVersion)
+                  && Objects.nonNull(callGeneratorParams.timeoutSeconds)) {
+                K8sWatcherHelper.updateLastSeen(
+                    String.format(K8sWatcherHelper.POD_WATCHER_PREFIX, clusterId), Instant.now());
+              }
               try {
                 return coreV1Api.listPodForAllNamespacesCall(null, null, null, null, null, null,
                     callGeneratorParams.resourceVersion, null, callGeneratorParams.timeoutSeconds,
                     callGeneratorParams.watch, null);
-              } catch (ApiException e) {
-                log.error("Unknown exception occurred", e);
+              } catch (Exception e) {
+                log.error("Unknown exception occurred for listPodForAllNamespacesCall", e);
                 throw e;
               }
             },
@@ -128,8 +137,9 @@ public class PodWatcher implements ResourceEventHandler<V1Pod> {
   public void onAdd(V1Pod pod) {
     try {
       log.debug(POD_EVENT_MSG, pod.getMetadata().getUid(), EventType.ADDED);
-      DateTime creationTimestamp = pod.getMetadata().getCreationTimestamp();
-      if (!isClusterSeen || creationTimestamp == null || creationTimestamp.isAfter(DateTime.now().minusHours(2))) {
+      OffsetDateTime creationTimestamp = pod.getMetadata().getCreationTimestamp();
+      if (!isClusterSeen || creationTimestamp == null
+          || creationTimestamp.isAfter(OffsetDateTime.now().minusHours(2))) {
         eventReceived(pod);
       } else {
         publishedPods.add(pod.getMetadata().getUid());
@@ -166,7 +176,8 @@ public class PodWatcher implements ResourceEventHandler<V1Pod> {
     V1PodCondition podScheduledCondition = getPodScheduledCondition(pod);
 
     if (podScheduledCondition != null && !publishedPods.contains(uid)) {
-      Timestamp creationTimestamp = HTimestamps.fromMillis(pod.getMetadata().getCreationTimestamp().getMillis());
+      Timestamp creationTimestamp =
+          HTimestamps.fromMillis(pod.getMetadata().getCreationTimestamp().toInstant().toEpochMilli());
 
       PodInfo podInfo =
           PodInfo.newBuilder(podInfoPrototype)
@@ -201,7 +212,7 @@ public class PodWatcher implements ResourceEventHandler<V1Pod> {
     }
 
     if (isPodDeleted(pod)) {
-      Timestamp timestamp = HTimestamps.fromMillis(pod.getMetadata().getDeletionTimestamp().getMillis());
+      Timestamp timestamp = HTimestamps.fromMillis(pod.getMetadata().getDeletionTimestamp().toInstant().toEpochMilli());
       PodEvent podEvent = PodEvent.newBuilder(podEventPrototype)
                               .setPodUid(uid)
                               .setType(EVENT_TYPE_TERMINATED)

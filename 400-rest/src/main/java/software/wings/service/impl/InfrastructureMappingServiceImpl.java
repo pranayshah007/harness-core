@@ -99,6 +99,7 @@ import software.wings.beans.AwsAmiInfrastructureMapping;
 import software.wings.beans.AwsAmiInfrastructureMapping.AwsAmiInfrastructureMappingKeys;
 import software.wings.beans.AwsConfig;
 import software.wings.beans.AwsInfrastructureMapping;
+import software.wings.beans.AwsInfrastructureMapping.AwsInfrastructureMappingKeys;
 import software.wings.beans.AwsLambdaInfraStructureMapping;
 import software.wings.beans.AzureConfig;
 import software.wings.beans.AzureInfrastructureMapping;
@@ -138,11 +139,13 @@ import software.wings.beans.SettingAttribute;
 import software.wings.beans.SyncTaskContext;
 import software.wings.beans.container.ContainerTask;
 import software.wings.beans.container.KubernetesContainerTask;
+import software.wings.beans.container.KubernetesContainerTaskUtils;
 import software.wings.beans.infrastructure.Host;
 import software.wings.common.InfrastructureConstants;
 import software.wings.delegatetasks.DelegateProxyFactory;
 import software.wings.dl.WingsPersistence;
 import software.wings.expression.ManagerExpressionEvaluator;
+import software.wings.helpers.ext.azure.AzureDelegateHelperService;
 import software.wings.helpers.ext.azure.AzureHelperService;
 import software.wings.helpers.ext.container.ContainerMasterUrlHelper;
 import software.wings.prune.PruneEntityListener;
@@ -264,6 +267,7 @@ public class InfrastructureMappingServiceImpl implements InfrastructureMappingSe
   @Inject private AwsAsgHelperServiceManager awsAsgHelperServiceManager;
   @Inject private YamlPushService yamlPushService;
   @Inject private AzureHelperService azureHelperService;
+  @Inject private AzureDelegateHelperService azureDelegateHelperService;
   @Inject private TriggerService triggerService;
   @Inject private PipelineService pipelineService;
   @Inject private AuditServiceHelper auditServiceHelper;
@@ -534,6 +538,8 @@ public class InfrastructureMappingServiceImpl implements InfrastructureMappingSe
       }
     }
 
+    updateMissingFields(infraMapping, savedInfraMapping);
+
     String accountId = appService.getAccountIdByAppId(infraMapping.getAppId());
     if (!savedInfraMapping.isSample()) {
       eventPublishHelper.publishAccountEvent(
@@ -550,6 +556,20 @@ public class InfrastructureMappingServiceImpl implements InfrastructureMappingSe
     }
 
     return savedInfraMapping;
+  }
+
+  private void updateMissingFields(InfrastructureMapping infraMapping, InfrastructureMapping savedInfraMapping) {
+    if (savedInfraMapping instanceof AwsInfrastructureMapping && infraMapping instanceof AwsInfrastructureMapping
+        && ((AwsInfrastructureMapping) savedInfraMapping).getAwsInstanceFilter() == null
+        && ((AwsInfrastructureMapping) infraMapping).getAwsInstanceFilter() != null) {
+      try {
+        wingsPersistence.updateField(AwsInfrastructureMapping.class, savedInfraMapping.getUuid(),
+            AwsInfrastructureMappingKeys.awsInstanceFilter,
+            ((AwsInfrastructureMapping) infraMapping).getAwsInstanceFilter());
+      } catch (Exception e) {
+        log.error("Encountered exception while updating AwsInfrastructureMapping {}.", savedInfraMapping.getUuid(), e);
+      }
+    }
   }
 
   @Override
@@ -1749,7 +1769,7 @@ public class InfrastructureMappingServiceImpl implements InfrastructureMappingSe
     if (AZURE.name().equals(computeProviderSetting.getValue().getType())) {
       try {
         AzureConfig azureConfig = validateAndGetAzureConfig(computeProviderSetting);
-        return azureHelperService.listTagsBySubscription(
+        return azureDelegateHelperService.listTagsBySubscription(
             subscriptionId, azureConfig, secretManager.getEncryptionDetails(azureConfig, null, null));
       } catch (Exception e) {
         log.warn(ExceptionUtils.getMessage(e), e);
@@ -1767,7 +1787,7 @@ public class InfrastructureMappingServiceImpl implements InfrastructureMappingSe
     if (AZURE.name().equals(computeProviderSetting.getValue().getType())) {
       try {
         AzureConfig azureConfig = validateAndGetAzureConfig(computeProviderSetting);
-        return azureHelperService.listResourceGroups(
+        return azureDelegateHelperService.listResourceGroups(
             azureConfig, secretManager.getEncryptionDetails(azureConfig, null, null), subscriptionId);
       } catch (Exception e) {
         log.warn(ExceptionUtils.getMessage(e), e);
@@ -2333,7 +2353,7 @@ public class InfrastructureMappingServiceImpl implements InfrastructureMappingSe
         app.getUuid(), service.getUuid(), deploymentType.name());
     if (containerTask instanceof KubernetesContainerTask) {
       KubernetesContainerTask kubernetesContainerTask = (KubernetesContainerTask) containerTask;
-      isStatefulSet = kubernetesContainerTask.checkStatefulSet();
+      isStatefulSet = KubernetesContainerTaskUtils.checkStatefulSet(kubernetesContainerTask.getAdvancedConfig());
     }
 
     String kubernetesName;
@@ -2627,6 +2647,21 @@ public class InfrastructureMappingServiceImpl implements InfrastructureMappingSe
       } else {
         return null;
       }
+    }
+    return null;
+  }
+
+  @Override
+  public InfrastructureMapping getInfraMappingWithDeploymentType(
+      String appId, String serviceId, String infraDefinitionId) {
+    if (isNotEmpty(serviceId) && isNotEmpty(infraDefinitionId)) {
+      return wingsPersistence.createQuery(InfrastructureMapping.class)
+          .filter(InfrastructureMappingKeys.appId, appId)
+          .filter(InfrastructureMappingKeys.serviceId, serviceId)
+          .filter(InfrastructureMappingKeys.infrastructureDefinitionId, infraDefinitionId)
+          .project(InfrastructureMappingKeys.uuid, true)
+          .project(InfrastructureMappingKeys.deploymentType, true)
+          .get();
     }
     return null;
   }

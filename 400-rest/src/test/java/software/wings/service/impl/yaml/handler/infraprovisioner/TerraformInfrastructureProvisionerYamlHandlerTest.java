@@ -19,7 +19,6 @@ import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -36,7 +35,7 @@ import software.wings.beans.Application;
 import software.wings.beans.KmsConfig;
 import software.wings.beans.NameValuePair;
 import software.wings.beans.Service;
-import software.wings.beans.ServiceVariable.Type;
+import software.wings.beans.ServiceVariableType;
 import software.wings.beans.SettingAttribute;
 import software.wings.beans.TerraformInfrastructureProvisioner;
 import software.wings.beans.TerraformInfrastructureProvisioner.Yaml;
@@ -108,18 +107,18 @@ public class TerraformInfrastructureProvisionerYamlHandlerTest extends YamlHandl
     ChangeContext<Yaml> changeContext = getChangeContext();
     Yaml yaml = (Yaml) getYaml(validYamlContent, Yaml.class);
     changeContext.setYaml(yaml);
-    doReturn(APP_ID).when(mockYamlHelper).getAppId(anyString(), anyString());
-    doReturn(null).when(mockInfrastructureProvisionerService).getByName(anyString(), anyString());
+    doReturn(APP_ID).when(mockYamlHelper).getAppId(any(), any());
+    doReturn(null).when(mockInfrastructureProvisionerService).getByName(any(), any());
     Service service = Service.builder().name("ServiceName").uuid(SERVICE_ID).build();
-    doReturn(service).when(mockServiceResourceService).get(anyString(), anyString());
-    doReturn(service).when(mockServiceResourceService).getServiceByName(anyString(), anyString());
+    doReturn(service).when(mockServiceResourceService).get(any(), any());
+    doReturn(service).when(mockServiceResourceService).getServiceByName(any(), any());
     SettingAttribute settingAttribute =
         SettingAttribute.Builder.aSettingAttribute().withUuid(SETTING_ID).withName("TERRAFORM_TEST_GIT_REPO").build();
     SecretManagerConfig secretManagerConfig = KmsConfig.builder().uuid("KMSID").name("SECRET_MANAGER").build();
-    doReturn(settingAttribute).when(mockSettingsService).getSettingAttributeByName(anyString(), anyString());
-    doReturn(settingAttribute).when(mockSettingsService).get(anyString(), anyString());
+    doReturn(settingAttribute).when(mockSettingsService).getSettingAttributeByName(any(), any());
+    doReturn(settingAttribute).when(mockSettingsService).get(any(), any());
     doReturn(Application.Builder.anApplication().uuid(APP_ID).build()).when(appService).get(any());
-    doReturn(secretManagerConfig).when(secretManager).getSecretManager(anyString(), anyString());
+    doReturn(secretManagerConfig).when(secretManager).getSecretManager(any(), any());
     doReturn(secretManagerConfig).when(secretManager).getSecretManagerByName(any(), any());
     handler.upsertFromYaml(changeContext, asList(changeContext));
     ArgumentCaptor<TerraformInfrastructureProvisioner> captor =
@@ -137,9 +136,9 @@ public class TerraformInfrastructureProvisionerYamlHandlerTest extends YamlHandl
     String yamlContent = getYamlContent(yamlFromObject);
     assertThat(yamlContent).isEqualTo(validYamlContent);
 
-    List<NameValuePair> variables =
-        Arrays.asList(NameValuePair.builder().name("access_key").valueType(Type.TEXT.toString()).build(),
-            NameValuePair.builder().name("secret_key").valueType(Type.ENCRYPTED_TEXT.toString()).build());
+    List<NameValuePair> variables = Arrays.asList(
+        NameValuePair.builder().name("access_key").valueType(ServiceVariableType.TEXT.toString()).build(),
+        NameValuePair.builder().name("secret_key").valueType(ServiceVariableType.ENCRYPTED_TEXT.toString()).build());
     TerraformInfrastructureProvisioner provisioner = TerraformInfrastructureProvisioner.builder()
                                                          .appId(APP_ID)
                                                          .uuid("UUID1")
@@ -164,7 +163,7 @@ public class TerraformInfrastructureProvisionerYamlHandlerTest extends YamlHandl
     TerraformInfrastructureProvisioner provisioner1 = captor.getValue();
     assertThat(provisioner).isEqualToIgnoringGivenFields(provisioner1, "uuid", "name", "description");
 
-    doReturn(null).when(secretManager).getSecretManager(anyString(), anyString());
+    doReturn(null).when(secretManager).getSecretManager(any(), any());
     assertThatThrownBy(() -> handler.toYaml(provisioner, APP_ID))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessageContaining("No secret manager found");
@@ -177,18 +176,18 @@ public class TerraformInfrastructureProvisionerYamlHandlerTest extends YamlHandl
     ChangeContext<Yaml> changeContext = getChangeContext();
     Yaml yaml = (Yaml) getYaml(inValidYamlContent, Yaml.class);
     changeContext.setYaml(yaml);
-    doReturn(APP_ID).when(mockYamlHelper).getAppId(anyString(), anyString());
-    doReturn(null).when(mockInfrastructureProvisionerService).getByName(anyString(), anyString());
+    doReturn(APP_ID).when(mockYamlHelper).getAppId(any(), any());
+    doReturn(null).when(mockInfrastructureProvisionerService).getByName(any(), any());
     Service service = Service.builder().name("ServiceName").uuid(SERVICE_ID).build();
-    doReturn(service).when(mockServiceResourceService).get(anyString(), anyString());
-    doReturn(service).when(mockServiceResourceService).getServiceByName(anyString(), anyString());
+    doReturn(service).when(mockServiceResourceService).get(any(), any());
+    doReturn(service).when(mockServiceResourceService).getServiceByName(any(), any());
     SettingAttribute settingAttribute =
         SettingAttribute.Builder.aSettingAttribute().withUuid(SETTING_ID).withName("TERRAFORM_TEST_GIT_REPO").build();
     SecretManagerConfig secretManagerConfig = KmsConfig.builder().uuid("KMSID").name("SECRET_MANAGER").build();
-    doReturn(settingAttribute).when(mockSettingsService).getSettingAttributeByName(anyString(), anyString());
-    doReturn(settingAttribute).when(mockSettingsService).get(anyString(), anyString());
+    doReturn(settingAttribute).when(mockSettingsService).getSettingAttributeByName(any(), any());
+    doReturn(settingAttribute).when(mockSettingsService).get(any(), any());
     doReturn(Application.Builder.anApplication().uuid(APP_ID).build()).when(appService).get(any());
-    doReturn(secretManagerConfig).when(secretManager).getSecretManager(anyString(), anyString());
+    doReturn(secretManagerConfig).when(secretManager).getSecretManager(any(), any());
     doReturn(secretManagerConfig).when(secretManager).getSecretManagerByName(any(), any());
 
     handler.upsertFromYaml(changeContext, asList(changeContext));
@@ -204,9 +203,9 @@ public class TerraformInfrastructureProvisionerYamlHandlerTest extends YamlHandl
     assertThat(tfYaml.getBackendConfigs()).isNull();
     assertThat(tfYaml.getEnvironmentVariables()).isNull();
 
-    List<NameValuePair> envVariables =
-        Arrays.asList(NameValuePair.builder().name("access_key").valueType(Type.TEXT.toString()).build(),
-            NameValuePair.builder().name("secret_key").valueType(Type.ENCRYPTED_TEXT.toString()).build());
+    List<NameValuePair> envVariables = Arrays.asList(
+        NameValuePair.builder().name("access_key").valueType(ServiceVariableType.TEXT.toString()).build(),
+        NameValuePair.builder().name("secret_key").valueType(ServiceVariableType.ENCRYPTED_TEXT.toString()).build());
     TerraformInfrastructureProvisioner provisioner = TerraformInfrastructureProvisioner.builder()
                                                          .appId(APP_ID)
                                                          .uuid("UUID1")

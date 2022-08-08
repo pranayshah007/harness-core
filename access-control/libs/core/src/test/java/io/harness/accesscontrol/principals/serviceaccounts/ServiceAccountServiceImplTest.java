@@ -1,3 +1,10 @@
+/*
+ * Copyright 2022 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
+
 package io.harness.accesscontrol.principals.serviceaccounts;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
@@ -15,6 +22,7 @@ import static org.mockito.Mockito.when;
 import io.harness.accesscontrol.AccessControlCoreTestBase;
 import io.harness.accesscontrol.principals.serviceaccounts.persistence.ServiceAccountDao;
 import io.harness.accesscontrol.roleassignments.RoleAssignmentService;
+import io.harness.accesscontrol.scopes.core.ScopeService;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.ng.beans.PageRequest;
@@ -33,14 +41,16 @@ public class ServiceAccountServiceImplTest extends AccessControlCoreTestBase {
   private RoleAssignmentService roleAssignmentService;
   private TransactionTemplate transactionTemplate;
   private ServiceAccountService serviceAccountService;
+  private ScopeService scopeService;
 
   @Before
   public void setup() {
     serviceAccountDao = mock(ServiceAccountDao.class);
     roleAssignmentService = mock(RoleAssignmentService.class);
     transactionTemplate = mock(TransactionTemplate.class);
+    scopeService = mock(ScopeService.class);
     serviceAccountService =
-        spy(new ServiceAccountServiceImpl(serviceAccountDao, transactionTemplate, roleAssignmentService));
+        spy(new ServiceAccountServiceImpl(serviceAccountDao, transactionTemplate, roleAssignmentService, scopeService));
   }
 
   @Test
@@ -85,7 +95,7 @@ public class ServiceAccountServiceImplTest extends AccessControlCoreTestBase {
     String scopeIdentifier = randomAlphabetic(10);
     Optional<ServiceAccount> serviceAccountOptional = Optional.of(ServiceAccount.builder().build());
     when(serviceAccountDao.get(identifier, scopeIdentifier)).thenReturn(serviceAccountOptional);
-    when(transactionTemplate.execute(any())).thenReturn(1L);
+    when(transactionTemplate.execute(any())).thenReturn(serviceAccountOptional);
     assertEquals(serviceAccountOptional, serviceAccountService.deleteIfPresent(identifier, scopeIdentifier));
     verify(serviceAccountDao, times(1)).get(identifier, scopeIdentifier);
     verify(transactionTemplate, times(1)).execute(any());

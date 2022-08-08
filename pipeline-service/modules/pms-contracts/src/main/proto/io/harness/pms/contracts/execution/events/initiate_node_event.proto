@@ -1,0 +1,27 @@
+// Copyright 2021 Harness Inc. All rights reserved.
+// Use of this source code is governed by the PolyForm Shield 1.0.0 license
+// that can be found in the licenses directory at the root of this repository, also available at
+// https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
+
+syntax = "proto3";
+
+package io.harness.pms.contracts.execution.events;
+
+import "io/harness/pms/contracts/execution/executable_response.proto";
+import "io/harness/pms/contracts/ambiance/ambiance.proto";
+
+option java_multiple_files = true;
+
+message InitiateNodeEvent {
+  io.harness.pms.contracts.ambiance.Ambiance ambiance = 1;
+  string nodeId = 2;
+  string runtimeId = 3;
+  io.harness.pms.contracts.execution.StrategyMetadata strategyMetadata = 4;
+  InitiateMode initiateMode = 5;
+}
+
+enum InitiateMode {
+  UNKNOWN_MODE = 0;
+  CREATE_AND_START = 1;
+  CREATE = 2;
+}

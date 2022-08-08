@@ -12,6 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
+import io.harness.beans.ArtifactMetaInfo;
 
 import software.wings.beans.AzureContainerRegistry;
 import software.wings.beans.AzureImageDefinition;
@@ -193,6 +194,10 @@ public interface BuildSourceService {
   }
 
   default List<Map<String, String>> getLabels(ArtifactStream artifactStream, List<String> buildNos) {
+    throw new UnsupportedOperationException();
+  }
+
+  default ArtifactMetaInfo getArtifactMetaInfo(ArtifactStream artifactStream, String buildNo) {
     throw new UnsupportedOperationException();
   }
 

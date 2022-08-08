@@ -27,6 +27,7 @@ import io.harness.connector.heartbeat.JiraValidationParamsProvider;
 import io.harness.connector.heartbeat.K8sConnectorValidationParamsProvider;
 import io.harness.connector.heartbeat.NexusValidationParamsProvider;
 import io.harness.connector.heartbeat.NoOpConnectorValidationParamsProvider;
+import io.harness.connector.heartbeat.OciHelmConnectorValidationParamsProvider;
 import io.harness.connector.heartbeat.PhysicalDataCenterConnectorValidationParamsProvider;
 import io.harness.connector.heartbeat.ScmConnectorValidationParamsProvider;
 import io.harness.connector.heartbeat.ServiceNowValidationParamsProvider;
@@ -43,6 +44,8 @@ import io.harness.connector.mappers.awsmapper.AwsDTOToEntity;
 import io.harness.connector.mappers.awsmapper.AwsEntityToDTO;
 import io.harness.connector.mappers.azuremapper.AzureDTOToEntity;
 import io.harness.connector.mappers.azuremapper.AzureEntityToDTO;
+import io.harness.connector.mappers.azurerepomapper.AzureRepoDTOToEntity;
+import io.harness.connector.mappers.azurerepomapper.AzureRepoEntityToDTO;
 import io.harness.connector.mappers.bitbucketconnectormapper.BitbucketDTOToEntity;
 import io.harness.connector.mappers.bitbucketconnectormapper.BitbucketEntityToDTO;
 import io.harness.connector.mappers.ceawsmapper.CEAwsDTOToEntity;
@@ -73,6 +76,10 @@ import io.harness.connector.mappers.gitlabconnector.GitlabDTOToEntity;
 import io.harness.connector.mappers.gitlabconnector.GitlabEntityToDTO;
 import io.harness.connector.mappers.helm.HttpHelmDTOToEntity;
 import io.harness.connector.mappers.helm.HttpHelmEntityToDTO;
+import io.harness.connector.mappers.helm.OciHelmDTOToEntity;
+import io.harness.connector.mappers.helm.OciHelmEntityToDTO;
+import io.harness.connector.mappers.jenkins.JenkinsDTOToEntity;
+import io.harness.connector.mappers.jenkins.JenkinsEntityToDTO;
 import io.harness.connector.mappers.jira.JiraDTOToEntity;
 import io.harness.connector.mappers.jira.JiraEntityToDTO;
 import io.harness.connector.mappers.kubernetesMapper.KubernetesDTOToEntity;
@@ -107,13 +114,14 @@ import io.harness.connector.mappers.sumologicmapper.SumoLogicDTOToEntity;
 import io.harness.connector.mappers.sumologicmapper.SumoLogicEntityToDTO;
 import io.harness.connector.task.ConnectorValidationHandler;
 import io.harness.connector.task.NotSupportedValidationHandler;
+import io.harness.connector.task.aws.AwsValidationHandler;
+import io.harness.connector.task.azure.AzureValidationHandler;
+import io.harness.connector.task.gcp.GcpValidationTaskHandler;
 import io.harness.connector.task.git.GitValidationHandler;
 import io.harness.connector.validator.ArtifactoryConnectionValidator;
 import io.harness.connector.validator.AwsConnectorValidator;
 import io.harness.connector.validator.AzureConnectorValidator;
-import io.harness.connector.validator.CEAwsConnectorValidator;
-import io.harness.connector.validator.CEAzureConnectorValidator;
-import io.harness.connector.validator.CEGcpConnectorValidator;
+import io.harness.connector.validator.CCMConnectorValidator;
 import io.harness.connector.validator.CEKubernetesConnectionValidator;
 import io.harness.connector.validator.CVConnectorValidator;
 import io.harness.connector.validator.ConnectionValidator;
@@ -121,17 +129,21 @@ import io.harness.connector.validator.DockerConnectionValidator;
 import io.harness.connector.validator.ErrorTrackingConnectorValidator;
 import io.harness.connector.validator.GcpConnectorValidator;
 import io.harness.connector.validator.HttpHelmRepoConnectionValidator;
+import io.harness.connector.validator.JenkinsConnectionValidator;
 import io.harness.connector.validator.JiraConnectorValidator;
 import io.harness.connector.validator.KubernetesConnectionValidator;
 import io.harness.connector.validator.NexusConnectorValidator;
+import io.harness.connector.validator.OciHelmRepoConnectionValidator;
 import io.harness.connector.validator.PhysicalDataCenterConnectorValidator;
 import io.harness.connector.validator.SecretManagerConnectorValidator;
 import io.harness.connector.validator.ServiceNowConnectorValidator;
 import io.harness.connector.validator.scmValidators.AwsCodeCommitValidator;
+import io.harness.connector.validator.scmValidators.AzureRepoConnectorValidator;
 import io.harness.connector.validator.scmValidators.BitbucketConnectorValidator;
 import io.harness.connector.validator.scmValidators.GitConnectorValidator;
 import io.harness.connector.validator.scmValidators.GithubConnectorValidator;
 import io.harness.connector.validator.scmValidators.GitlabConnectorValidator;
+import io.harness.connector.validator.scmValidators.JenkinsConnectorValidationsParamsProvider;
 import io.harness.delegate.beans.connector.ConnectorType;
 
 import java.util.HashMap;
@@ -213,17 +225,16 @@ public class ConnectorRegistryFactory {
     registrar.put(ConnectorType.GCP,
         new ConnectorRegistrar(ConnectorCategory.CLOUD_PROVIDER, GcpConnectorValidator.class,
             GcpValidationParamsProvider.class, GcpDTOToEntity.class, GcpEntityToDTO.class,
-            NotSupportedValidationHandler.class));
+            GcpValidationTaskHandler.class));
     registrar.put(ConnectorType.AWS,
         new ConnectorRegistrar(ConnectorCategory.CLOUD_PROVIDER, AwsConnectorValidator.class,
-            AwsValidationParamsProvider.class, AwsDTOToEntity.class, AwsEntityToDTO.class,
-            NotSupportedValidationHandler.class));
+            AwsValidationParamsProvider.class, AwsDTOToEntity.class, AwsEntityToDTO.class, AwsValidationHandler.class));
     registrar.put(ConnectorType.AZURE,
         new ConnectorRegistrar(ConnectorCategory.CLOUD_PROVIDER, AzureConnectorValidator.class,
             AzureValidationParamsProvider.class, AzureDTOToEntity.class, AzureEntityToDTO.class,
-            NotSupportedValidationHandler.class));
+            AzureValidationHandler.class));
     registrar.put(ConnectorType.CE_AWS,
-        new ConnectorRegistrar(ConnectorCategory.CLOUD_COST, CEAwsConnectorValidator.class,
+        new ConnectorRegistrar(ConnectorCategory.CLOUD_COST, CCMConnectorValidator.class,
             NoOpConnectorValidationParamsProvider.class, CEAwsDTOToEntity.class, CEAwsEntityToDTO.class,
             NotSupportedValidationHandler.class));
     registrar.put(ConnectorType.ARTIFACTORY,
@@ -255,16 +266,20 @@ public class ConnectorRegistryFactory {
             NoOpConnectorValidationParamsProvider.class, AwsCodeCommitDTOToEntity.class, AwsCodeCommitEntityToDTO.class,
             NotSupportedValidationHandler.class));
     registrar.put(ConnectorType.CE_AZURE,
-        new ConnectorRegistrar(ConnectorCategory.CLOUD_COST, CEAzureConnectorValidator.class,
+        new ConnectorRegistrar(ConnectorCategory.CLOUD_COST, CCMConnectorValidator.class,
             NoOpConnectorValidationParamsProvider.class, CEAzureDTOToEntity.class, CEAzureEntityToDTO.class,
             NotSupportedValidationHandler.class));
     registrar.put(ConnectorType.GCP_CLOUD_COST,
-        new ConnectorRegistrar(ConnectorCategory.CLOUD_COST, CEGcpConnectorValidator.class,
+        new ConnectorRegistrar(ConnectorCategory.CLOUD_COST, CCMConnectorValidator.class,
             NoOpConnectorValidationParamsProvider.class, GcpCloudCostDTOToEntity.class, GcpCloudCostEntityToDTO.class,
             NotSupportedValidationHandler.class));
     registrar.put(ConnectorType.HTTP_HELM_REPO,
         new ConnectorRegistrar(ConnectorCategory.ARTIFACTORY, HttpHelmRepoConnectionValidator.class,
             HttpHelmConnectorValidationParamsProvider.class, HttpHelmDTOToEntity.class, HttpHelmEntityToDTO.class,
+            NotSupportedValidationHandler.class));
+    registrar.put(ConnectorType.OCI_HELM_REPO,
+        new ConnectorRegistrar(ConnectorCategory.ARTIFACTORY, OciHelmRepoConnectionValidator.class,
+            OciHelmConnectorValidationParamsProvider.class, OciHelmDTOToEntity.class, OciHelmEntityToDTO.class,
             NotSupportedValidationHandler.class));
     registrar.put(ConnectorType.PAGER_DUTY,
         new ConnectorRegistrar(ConnectorCategory.MONITORING, CVConnectorValidator.class,
@@ -282,10 +297,18 @@ public class ConnectorRegistryFactory {
         new ConnectorRegistrar(ConnectorCategory.MONITORING, ErrorTrackingConnectorValidator.class,
             CVConnectorParamsProvider.class, ErrorTrackingDTOToEntity.class, ErrorTrackingEntityToDTO.class,
             NotSupportedValidationHandler.class));
+    registrar.put(ConnectorType.AZURE_REPO,
+        new ConnectorRegistrar(ConnectorCategory.CODE_REPO, AzureRepoConnectorValidator.class,
+            ScmConnectorValidationParamsProvider.class, AzureRepoDTOToEntity.class, AzureRepoEntityToDTO.class,
+            NotSupportedValidationHandler.class));
     registrar.put(ConnectorType.PDC,
         new ConnectorRegistrar(ConnectorCategory.CLOUD_PROVIDER, PhysicalDataCenterConnectorValidator.class,
             PhysicalDataCenterConnectorValidationParamsProvider.class, PhysicalDataCenterDTOToEntity.class,
             PhysicalDataCenterEntityToDTO.class, NotSupportedValidationHandler.class));
+    registrar.put(ConnectorType.JENKINS,
+        new ConnectorRegistrar(ConnectorCategory.ARTIFACTORY, JenkinsConnectionValidator.class,
+            JenkinsConnectorValidationsParamsProvider.class, JenkinsDTOToEntity.class, JenkinsEntityToDTO.class,
+            NotSupportedValidationHandler.class));
   }
 
   public static Class<? extends ConnectionValidator> getConnectorValidator(ConnectorType connectorType) {

@@ -10,14 +10,16 @@ package io.harness.delegate.task.terraform;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cli.CliResponse;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
 import io.harness.delegate.beans.storeconfig.ArtifactoryStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
 import io.harness.git.model.GitBaseRequest;
 import io.harness.logging.LogCallback;
+import io.harness.logging.PlanLogOutputStream;
+import io.harness.provision.TerraformPlanSummary;
 import io.harness.security.encryption.EncryptedRecordData;
 import io.harness.security.encryption.EncryptionConfig;
+import io.harness.terraform.TerraformStepResponse;
 import io.harness.terraform.request.TerraformExecuteStepRequest;
 
 import java.io.File;
@@ -32,16 +34,18 @@ public interface TerraformBaseHelper {
       throws IOException;
   List<String> parseOutput(String workspaceOutput);
 
-  CliResponse executeTerraformApplyStep(TerraformExecuteStepRequest terraformExecuteStepRequest)
+  TerraformStepResponse executeTerraformApplyStep(TerraformExecuteStepRequest terraformExecuteStepRequest)
       throws InterruptedException, IOException, TimeoutException;
 
-  CliResponse executeTerraformPlanStep(TerraformExecuteStepRequest terraformExecuteStepRequest)
+  TerraformStepResponse executeTerraformPlanStep(TerraformExecuteStepRequest terraformExecuteStepRequest)
       throws InterruptedException, IOException, TimeoutException;
 
-  CliResponse executeTerraformDestroyStep(TerraformExecuteStepRequest terraformExecuteStepRequest)
+  TerraformStepResponse executeTerraformDestroyStep(TerraformExecuteStepRequest terraformExecuteStepRequest)
       throws InterruptedException, IOException, TimeoutException;
 
-  String resolveBaseDir(String accountId, String provisionerId);
+  String resolveBaseDir(String accountId, String entityId);
+
+  String activityIdBasedBaseDir(String accountId, String entityId, String activityId);
 
   String resolveScriptDirectory(String workingDir, String scriptPath);
 
@@ -82,6 +86,15 @@ public interface TerraformBaseHelper {
 
   String getBaseDir(String entityId);
 
+  void configureCredentialsForModuleSource(TerraformTaskNGParameters taskParameters,
+      GitStoreDelegateConfig conFileFileGitStore, LogCallback logCallback) throws IOException;
+
   String uploadTfPlanJson(String accountId, String delegateId, String taskId, String entityId, String planName,
       String localFilePath) throws IOException;
+
+  TerraformPlanSummary processTerraformPlanSummary(
+      int exitCode, LogCallback logCallback, PlanLogOutputStream planLogOutputStream);
+
+  TerraformPlanSummary generateTerraformPlanSummary(
+      int exitCode, LogCallback logCallback, PlanLogOutputStream planLogOutputStream);
 }

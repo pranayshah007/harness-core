@@ -13,8 +13,6 @@ import static io.harness.rule.OwnerRule.SATYAM;
 
 import static org.joor.Reflect.on;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyList;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.verify;
 
 import io.harness.annotations.dev.HarnessModule;
@@ -65,21 +63,21 @@ public class AwsElbTaskTest extends WingsBaseTest {
   public void testRun() {
     AwsElbRequest request = AwsElbListClassicElbsRequest.builder().build();
     task.run(new Object[] {request});
-    verify(mockElbHelperServiceDelegate).listClassicLoadBalancers(any(), anyList(), anyString());
+    verify(mockElbHelperServiceDelegate).listClassicLoadBalancers(any(), any(), any());
     request = AwsElbListAppElbsRequest.builder().build();
     task.run(new Object[] {request});
-    verify(mockElbHelperServiceDelegate).listApplicationLoadBalancerDetails(any(), anyList(), anyString());
+    verify(mockElbHelperServiceDelegate).listApplicationLoadBalancerDetails(any(), any(), any());
     request = AwsElbListTargetGroupsRequest.builder().build();
     task.run(new Object[] {request});
-    verify(mockElbHelperServiceDelegate).listTargetGroupsForAlb(any(), anyList(), anyString(), anyString());
+    verify(mockElbHelperServiceDelegate).listTargetGroupsForAlb(any(), any(), any(), any());
     request = AwsElbListElbsRequest.builder().build();
     task.run(new Object[] {request});
-    verify(mockElbHelperServiceDelegate).listElasticLoadBalancerDetails(any(), anyList(), anyString());
+    verify(mockElbHelperServiceDelegate).listElasticLoadBalancerDetails(any(), any(), any());
     request = AwsElbListNetworkElbsRequest.builder().build();
     task.run(new Object[] {request});
-    verify(mockElbHelperServiceDelegate).listNetworkLoadBalancerDetails(any(), anyList(), anyString());
+    verify(mockElbHelperServiceDelegate).listNetworkLoadBalancerDetails(any(), any(), any());
     request = AwsElbListListenerRequest.builder().build();
     task.run(new Object[] {request});
-    verify(mockElbHelperServiceDelegate).getElbListenersForLoadBalaner(any(), anyList(), anyString(), anyString());
+    verify(mockElbHelperServiceDelegate).getElbListenersForLoadBalaner(any(), any(), any(), any());
   }
 }

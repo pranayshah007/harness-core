@@ -1,0 +1,118 @@
+{
+  "pipeline": {
+    "identifier": "cipipelineqEfa0l9XYj",
+    "description": "ds",
+    "name": "security pipeline",
+    "stages": [
+      {
+        "stage": {
+          "identifier": "security",
+          "name": "run sto pipeline",
+          "type": "CI",
+          "spec": {
+            "execution": {
+              "steps": [
+                {
+                  "step": {
+                    "identifier": "sto",
+                    "name": "sto",
+                    "type": "Security",
+                    "spec": {
+                      "settings": {
+                        "source": "https://github.com/drone/drone-cli/releases/download/v0.8.5/drone_linux_amd64.tar.gz",
+                        "destination": "drone_linux.tar.gz",
+                        "__uuid": "QUmmZw5FTKGwTLxUhditMg"
+                      },
+                      "envVariables": {
+                        "foo": "bar",
+                        "secret": "<+stage.variables.stageVar>",
+                        "__uuid": "7Nv--kzuTzeJcRa6dmEo1w"
+                      },
+                      "outputVariables": [
+                        {
+                          "name": "hello",
+                          "__uuid": "DHZLn3_cQFyrMjBymjRmZw"
+                        }
+                      ],
+                      "resources": {
+                        "limits": {
+                          "memory": "0.6Gi",
+                          "cpu": "0.5",
+                          "__uuid": "SSOUiFRQRYeNW9j5w9r6Yg"
+                        },
+                        "__uuid": "YA_fKXoQTlSdR8ZJgz_6AA"
+                      },
+                      "__uuid": "ZGMx6Q_VRfuTLpLZVMomCA"
+                    },
+                    "__uuid": "9HYJWqpmTXGoqTlvotSzKQ"
+                  },
+                  "__uuid": "-e8VbOdkSYG_SQWwrm-cRQ"
+                },
+                {
+                  "step": {
+                    "identifier": "testoutputVar",
+                    "name": "test-output-variable",
+                    "type": "Run",
+                    "spec": {
+                      "command": "y=<+steps.ti.output.outputVariables.hello>\nif [[ $y == bar ]]; then\n  echo success $y\nelse\n  exit 1\nfi\n",
+                      "connectorRef": "account.CItestDockerConnectorLsGyi79hax",
+                      "image": "alpine",
+                      "__uuid": "LwMCYk1hSm2oYU7sLLu_zA"
+                    },
+                    "__uuid": "f8EQ-oEGSoiHVmEe_Kwx_A"
+                  },
+                  "__uuid": "CUnpXIZOQQG922b7rNhd8Q"
+                }
+              ],
+              "__uuid": "qcnJfz9gQT-LbKmFnX6SPg"
+            },
+            "infrastructure": {
+              "type": "KubernetesDirect",
+              "spec": {
+                "connectorRef": "account.CItestK8sConnectorCMs0vdKHun",
+                "namespace": "harness-qa-delegate",
+                "__uuid": "pueCIt17SLa7sd54GsZkjA"
+              },
+              "__uuid": "pvk-CGf6S8qn9kyYke7XfQ"
+            },
+            "cloneCodebase": true,
+            "__uuid": "Vdc2qNbJTA6YNj7uQgtoxA"
+          },
+          "variables": [
+            {
+              "name": "stageVar",
+              "type": "Secret",
+              "value": "account.testCISecret9eXcHQaQ6q",
+              "__uuid": "QmDPq0uGR42fJqeVFAKBHw"
+            }
+          ],
+          "__uuid": "Sj9V8g0PSAesr_Rp5IlUTQ"
+        },
+        "__uuid": "juaJmnZ8Ql65w9dn5aS89A"
+      }
+    ],
+    "properties": {
+      "ci": {
+        "codebase": {
+          "connectorRef": "account.CItestGitConnectorXNRBQiZX37",
+          "repoName": "jhttp",
+          "build": {
+            "type": "branch",
+            "spec": {
+              "branch": "master",
+              "__uuid": "2_nmdY4JTYKlne-SOed46g"
+            },
+            "__uuid": "dJJoy-suQv-4IlIDlKhE7Q"
+          },
+          "__uuid": "95-H7J6BSQ-s6skZMiB1Wg"
+        },
+        "__uuid": "tgcnYl12TZ-gwS5vUNG6FA"
+      },
+      "__uuid": "Q--J9AlHS5Oe4ZUoXkAV4Q"
+    },
+    "projectIdentifier": "CITestDemoProP1PcmJEzZ5",
+    "orgIdentifier": "CITestDemoOrgUNtoIHwBY8",
+    "__uuid": "gYWzhOh7TdCuttn7t6ffUQ"
+  },
+  "__uuid": "__WhBRZ_RD2qWWQJjwnDCg"
+}

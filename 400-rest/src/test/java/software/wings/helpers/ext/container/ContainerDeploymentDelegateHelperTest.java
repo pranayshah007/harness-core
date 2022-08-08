@@ -15,6 +15,7 @@ import static io.harness.rule.OwnerRule.SHUBHAM_MAHESHWARI;
 
 import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyList;
 import static org.mockito.Matchers.anyString;
@@ -41,6 +42,7 @@ import software.wings.beans.KubernetesClusterConfig;
 import software.wings.beans.RancherConfig;
 import software.wings.beans.SettingAttribute;
 import software.wings.beans.command.ExecutionLogCallback;
+import software.wings.cloudprovider.gke.GkeClusterService;
 import software.wings.delegatetasks.rancher.RancherTaskHelper;
 import software.wings.helpers.ext.k8s.request.K8sClusterConfig;
 import software.wings.service.impl.ContainerServiceParams;
@@ -49,6 +51,7 @@ import software.wings.service.intfc.security.EncryptionService;
 import com.github.scribejava.apis.openid.OpenIdOAuth2AccessToken;
 import java.io.IOException;
 import java.util.Collections;
+import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -61,6 +64,7 @@ public class ContainerDeploymentDelegateHelperTest extends WingsBaseTest {
   @Mock LogCallback logCallback;
   @Mock private EncryptionService encryptionService;
   @Mock private RancherTaskHelper rancherTaskHelper;
+  @Mock private GkeClusterService gkeClusterService;
   @Spy @InjectMocks private OidcTokenRetriever oidcTokenRetriever;
   @Spy @InjectMocks ContainerDeploymentDelegateBaseHelper containerDeploymentDelegateBaseHelper;
   @Spy @InjectMocks ContainerDeploymentDelegateHelper containerDeploymentDelegateHelper;
@@ -75,33 +79,6 @@ public class ContainerDeploymentDelegateHelperTest extends WingsBaseTest {
   @Owner(developers = ADWAIT)
   @Category(UnitTests.class)
   public void testGetConfigFileContent() throws Exception {
-    String expected = "apiVersion: v1\n"
-        + "clusters:\n"
-        + "- cluster:\n"
-        + "    server: masterUrl\n"
-        + "    insecure-skip-tls-verify: true\n"
-        + "  name: CLUSTER_NAME\n"
-        + "contexts:\n"
-        + "- context:\n"
-        + "    cluster: CLUSTER_NAME\n"
-        + "    user: HARNESS_USER\n"
-        + "    namespace: namespace\n"
-        + "  name: CURRENT_CONTEXT\n"
-        + "current-context: CURRENT_CONTEXT\n"
-        + "kind: Config\n"
-        + "preferences: {}\n"
-        + "users:\n"
-        + "- name: HARNESS_USER\n"
-        + "  user:\n"
-        + "    auth-provider:\n"
-        + "      config:\n"
-        + "        client-id: clientId\n"
-        + "        client-secret: secret\n"
-        + "        id-token: id_token\n"
-        + "        refresh-token: refresh_token\n"
-        + "        idp-issuer-url: url\n"
-        + "      name: oidc\n";
-
     OpenIdOAuth2AccessToken accessToken = mock(OpenIdOAuth2AccessToken.class);
     doReturn("id_token").when(accessToken).getOpenIdToken();
     doReturn(3600).when(accessToken).getExpiresIn();
@@ -280,7 +257,7 @@ public class ContainerDeploymentDelegateHelperTest extends WingsBaseTest {
     doReturn(rancherConfig).when(settingAttribute).getValue();
     doThrow(new RuntimeException("some exception message"))
         .when(rancherTaskHelper)
-        .createKubeconfig(any(RancherConfig.class), anyList(), anyString(), anyString());
+        .createKubeconfig(any(RancherConfig.class), nullable(List.class), anyString(), anyString());
     KubernetesConfig kubernetesConfig = containerDeploymentDelegateHelper.getKubernetesConfig(params);
   }
 

@@ -179,7 +179,7 @@ public class HttpHelmValidationHandlerTest extends CategoryTest {
     doReturn(HttpHelmUsernamePasswordDTO.builder().build()).when(decryptionService).decrypt(any(), anyList());
     doThrow(new HelmClientException(errorMessage, USER, HelmCliCommandType.REPO_ADD))
         .when(helmTaskHelperBase)
-        .addRepo(anyString(), anyString(), anyString(), anyString(), any(), anyString(), any(), anyLong(), anyString());
+        .addRepo(anyString(), anyString(), anyString(), any(), any(), anyString(), any(), anyLong(), anyString());
 
     doReturn(generalError).when(ngErrorHelper).getErrorSummary(generalError);
     doReturn(ErrorDetail.builder().message(generalError).build()).when(ngErrorHelper).createErrorDetail(generalError);

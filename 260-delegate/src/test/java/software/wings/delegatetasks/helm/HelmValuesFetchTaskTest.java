@@ -14,8 +14,10 @@ import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyLong;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
@@ -29,7 +31,6 @@ import io.harness.logging.CommandExecutionStatus;
 import io.harness.rule.Owner;
 
 import software.wings.WingsBaseTest;
-import software.wings.delegatetasks.DelegateLogService;
 import software.wings.helpers.ext.helm.request.HelmChartConfigParams;
 import software.wings.helpers.ext.helm.request.HelmValuesFetchTaskParameters;
 import software.wings.helpers.ext.helm.response.HelmValuesFetchTaskResponse;
@@ -48,12 +49,11 @@ import org.mockito.Mock;
 @OwnedBy(CDP)
 public class HelmValuesFetchTaskTest extends WingsBaseTest {
   @Mock private HelmTaskHelper helmTaskHelper;
-  @Mock private DelegateLogService delegateLogService;
 
   @InjectMocks
-  HelmValuesFetchTask task = new HelmValuesFetchTask(
+  HelmValuesFetchTask task = spy(new HelmValuesFetchTask(
       DelegateTaskPackage.builder().delegateId("delegateId").data(TaskData.builder().async(false).build()).build(),
-      null, notifyResponseData -> {}, () -> true);
+      null, notifyResponseData -> {}, () -> true));
 
   @Test
   @Owner(developers = ABOSII)
@@ -69,6 +69,7 @@ public class HelmValuesFetchTaskTest extends WingsBaseTest {
     Map<String, List<String>> mapK8sValuesLocationToContent = new HashMap<>();
     mapK8sValuesLocationToContent.put(K8sValuesLocation.Service.name(), singletonList(valuesYamlFileContent));
 
+    doNothing().when(task).printHelmBinaryPathAndVersion(any(), any());
     doReturn(mapK8sValuesLocationToContent)
         .when(helmTaskHelper)
         .getValuesYamlFromChart(any(HelmChartConfigParams.class), anyLong(), any(), any());
@@ -97,6 +98,7 @@ public class HelmValuesFetchTaskTest extends WingsBaseTest {
             .helmChartConfigTaskParams(HelmChartConfigParams.builder().chartName("chart").build())
             .build();
 
+    doNothing().when(task).printHelmBinaryPathAndVersion(any(), any());
     doThrow(new RuntimeException("Unable to fetch Values.yaml"))
         .when(helmTaskHelper)
         .getValuesYamlFromChart(any(HelmChartConfigParams.class), anyLong(), any(), any());

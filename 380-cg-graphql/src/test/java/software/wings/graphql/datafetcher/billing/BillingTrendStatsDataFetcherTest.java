@@ -107,7 +107,7 @@ public class BillingTrendStatsDataFetcherTest extends AbstractDataFetcherTestBas
     when(billingDataHelper.getTotalCostFormattedDate(END_TIME, false)).thenReturn("Oct 19");
     when(billingDataHelper.getStartInstantForForecastCost()).thenReturn(START_TIME);
     when(billingDataHelper.getEndInstantForForecastCost(filters)).thenReturn(END_TIME);
-    when(billingDataHelper.formatNumber(anyDouble())).then(i -> String.valueOf(i.getArgumentAt(0, Double.class)));
+    when(billingDataHelper.formatNumber(anyDouble())).then(i -> String.valueOf(i.getArgument(0, Double.class)));
     doNothing().when(accountChecker).checkIsCeEnabled(anyString());
     mockResultSet();
   }

@@ -1,6 +1,6 @@
 <#macro mutable>
-        - name: ACCOUNT_SECRET
-          value: ${accountSecret}
+        - name: DELEGATE_TOKEN
+          value: ${delegateToken}
         - name: WATCHER_STORAGE_URL
           value: ${watcherStorageUrl}
         - name: WATCHER_CHECK_LOCATION

@@ -5,6 +5,10 @@ if [ -z "$1" ]; then
   exit 0
 fi
 
+if [ -e config-delegate.yml ]; then
+  rm config-delegate.yml
+fi
+
 ULIM=$(ulimit -n)
 echo "ulimit -n is set to $ULIM"
 if [[ "$ULIM" == "unlimited" || $ULIM -lt 10000 ]]; then
@@ -44,7 +48,7 @@ if [ -e proxy.config ]; then
       if [[ "$PROXY_PASSWORD_ENC" != "" ]]; then
         export PROXY_PASSWORD=$(echo $PROXY_PASSWORD_ENC | openssl enc -d -a -des-ecb -K ${hexkey})
       fi
-      export PROXY_CURL="-x "$PROXY_SCHEME"://"$PROXY_USER:$PROXY_PASSWORD@$PROXY_HOST:$PROXY_PORT
+      export PROXY_CURL="-x "$PROXY_SCHEME"://"$PROXY_USER:$(url_encode "$PROXY_PASSWORD")@$PROXY_HOST:$PROXY_PORT
     else
       export PROXY_CURL="-x "$PROXY_SCHEME"://"$PROXY_HOST:$PROXY_PORT
       export http_proxy=$PROXY_SCHEME://$PROXY_HOST:$PROXY_PORT
@@ -121,13 +125,17 @@ fi
 
 if [ ! -e config-delegate.yml ]; then
   echo "accountId: ${accountId}" > config-delegate.yml
-  <#if delegateToken??>
-  echo "delegateToken: ${delegateToken}" >> config-delegate.yml
-  <#else>
-  echo "delegateToken: ${accountSecret}" >> config-delegate.yml
-  </#if>
 fi
 test "$(tail -c 1 config-delegate.yml)" && `echo "" >> config-delegate.yml`
+<#if delegateToken??>
+if ! `grep delegateToken config-delegate.yml > /dev/null`; then
+  echo "delegateToken: ${delegateToken}" >> config-delegate.yml
+fi
+<#else>
+if ! `grep delegateToken config-delegate.yml > /dev/null`; then
+  echo "delegateToken: ${accountSecret}" >> config-delegate.yml
+fi
+</#if>
 if ! `grep dynamicHandlingOfRequestEnabled config-delegate.yml > /dev/null`; then
   echo "dynamicHandlingOfRequestEnabled: ${dynamicHandlingOfRequestEnabled}" >> config-delegate.yml
 fi
@@ -164,6 +172,8 @@ fi
 if ! `grep pollForTasks config-delegate.yml > /dev/null`; then
   if [ "$DEPLOY_MODE" == "ONPREM" ]; then
       echo "pollForTasks: true" >> config-delegate.yml
+  elif [[ ! -z "$POLL_FOR_TASKS" ]]; then
+      echo "pollForTasks: $POLL_FOR_TASKS" >> config-delegate.yml
   else
       echo "pollForTasks: false" >> config-delegate.yml
   fi
@@ -232,6 +242,14 @@ if [ ! -z "$KUBECTL_PATH" ] && ! `grep kubectlPath config-delegate.yml > /dev/nu
   echo "kubectlPath: $KUBECTL_PATH" >> config-delegate.yml
 fi
 
+if [ ! -z "$HELM3_PATH" ] && ! `grep helm3Path config-delegate.yml > /dev/null` ; then
+  echo "helm3Path: $HELM3_PATH" >> config-delegate.yml
+fi
+
+if [ ! -z "$HELM_PATH" ] && ! `grep helmPath config-delegate.yml > /dev/null` ; then
+  echo "helmPath: $HELM_PATH" >> config-delegate.yml
+fi
+
 if [ ! -z "$CF_CLI6_PATH" ] && ! `grep cfCli6Path config-delegate.yml > /dev/null` ; then
   echo "cfCli6Path: $CF_CLI6_PATH" >> config-delegate.yml
 fi
@@ -261,16 +279,22 @@ if [[ ! -z $INSTRUMENTATION ]]; then
   export JRE_BINARY=$JDK_BINARY
 fi
 
-if [ ! -e alpn-boot-8.1.13.v20181017.jar ]; then
+if [ ! -e alpn-boot-8.1.13.v20181017.jar -a -n "$ALPN_BOOT_JAR_URL" ]; then
   curl $MANAGER_PROXY_CURL -ks $ALPN_BOOT_JAR_URL -o alpn-boot-8.1.13.v20181017.jar
+  ALPN_CMD="-Xbootclasspath/p:alpn-boot-8.1.13.v20181017.jar"
+else
+  ALPN_CMD=""
 fi
-
+# Strip JAVA_OPTS that is not recognized by JRE11
+<#noparse>
+JAVA_OPTS=${JAVA_OPTS//UseCGroupMemoryLimitForHeap/UseContainerSupport}
+</#noparse>
 if [[ $DEPLOY_MODE == "KUBERNETES" ]]; then
   echo "Starting delegate - version $2 with java $JRE_BINARY"
-  $JRE_BINARY $INSTRUMENTATION $PROXY_SYS_PROPS $OVERRIDE_TMP_PROPS -DACCOUNT_ID="${accountId}" -DMANAGER_HOST_AND_PORT="${managerHostAndPort}" -Ddelegatesourcedir="$DIR" ${delegateXmx} -XX:+HeapDumpOnOutOfMemoryError -XX:+PrintGCDetails -XX:+PrintGCDateStamps -Xloggc:mygclogfilename.gc -XX:+UseParallelGC -XX:MaxGCPauseMillis=500 -Dfile.encoding=UTF-8 -Dcom.sun.jndi.ldap.object.disableEndpointIdentification=true -DLANG=en_US.UTF-8 $JAVA_OPTS -Xbootclasspath/p:alpn-boot-8.1.13.v20181017.jar -jar $2/delegate.jar config-delegate.yml watched $1
+  $JRE_BINARY $INSTRUMENTATION $PROXY_SYS_PROPS $OVERRIDE_TMP_PROPS -DACCOUNT_ID="${accountId}" -DMANAGER_HOST_AND_PORT="${managerHostAndPort}" -Ddelegatesourcedir="$DIR" ${delegateXmx} -XX:+IgnoreUnrecognizedVMOptions -XX:+HeapDumpOnOutOfMemoryError -XX:+PrintGCDetails -Xloggc:mygclogfilename.gc -XX:+UseParallelGC -XX:MaxGCPauseMillis=500 -Dfile.encoding=UTF-8 -Dcom.sun.jndi.ldap.object.disableEndpointIdentification=true -DLANG=en_US.UTF-8 $JAVA_OPTS $ALPN_CMD -jar $2/delegate.jar config-delegate.yml watched $1
 else
   echo "Starting delegate - version $REMOTE_DELEGATE_VERSION with java $JRE_BINARY"
-  $JRE_BINARY $INSTRUMENTATION $PROXY_SYS_PROPS $OVERRIDE_TMP_PROPS -DACCOUNT_ID="${accountId}" -DMANAGER_HOST_AND_PORT="${managerHostAndPort}" -Ddelegatesourcedir="$DIR" ${delegateXmx} -XX:+HeapDumpOnOutOfMemoryError -XX:+PrintGCDetails -XX:+PrintGCDateStamps -Xloggc:mygclogfilename.gc -XX:+UseParallelGC -XX:MaxGCPauseMillis=500 -Dfile.encoding=UTF-8 -Dcom.sun.jndi.ldap.object.disableEndpointIdentification=true -DLANG=en_US.UTF-8 $JAVA_OPTS -Xbootclasspath/p:alpn-boot-8.1.13.v20181017.jar -jar delegate.jar config-delegate.yml watched $1
+  $JRE_BINARY $INSTRUMENTATION $PROXY_SYS_PROPS $OVERRIDE_TMP_PROPS -DACCOUNT_ID="${accountId}" -DMANAGER_HOST_AND_PORT="${managerHostAndPort}" -Ddelegatesourcedir="$DIR" ${delegateXmx} -XX:+IgnoreUnrecognizedVMOptions -XX:+HeapDumpOnOutOfMemoryError -XX:+PrintGCDetails -Xloggc:mygclogfilename.gc -XX:+UseParallelGC -XX:MaxGCPauseMillis=500 -Dfile.encoding=UTF-8 -Dcom.sun.jndi.ldap.object.disableEndpointIdentification=true -DLANG=en_US.UTF-8 $JAVA_OPTS $ALPN_CMD -jar delegate.jar config-delegate.yml watched $1
 fi
 
 sleep 3

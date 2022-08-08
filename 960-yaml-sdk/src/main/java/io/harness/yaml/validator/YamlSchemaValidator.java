@@ -9,12 +9,12 @@ package io.harness.yaml.validator;
 
 import static io.harness.annotations.dev.HarnessTeam.DX;
 import static io.harness.yaml.schema.beans.SchemaConstants.PARALLEL_NODE;
-import static io.harness.yaml.schema.beans.SchemaConstants.PIPELINE_NODE;
-import static io.harness.yaml.schema.beans.SchemaConstants.STAGES_NODE;
 
 import io.harness.EntityType;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.ngexception.beans.yamlschema.YamlSchemaErrorDTO;
+import io.harness.exception.ngexception.beans.yamlschema.YamlSchemaErrorWrapperDTO;
 import io.harness.yaml.schema.beans.YamlSchemaRootClass;
 import io.harness.yaml.utils.SchemaValidationUtils;
 
@@ -30,6 +30,7 @@ import com.networknt.schema.SpecVersion;
 import com.networknt.schema.ValidationMessage;
 import com.networknt.schema.ValidatorTypeCode;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -82,13 +83,9 @@ public class YamlSchemaValidator {
   }
 
   public Set<String> validate(String yaml, String stringSchema, boolean shouldValidateParallelStageCount,
-      int allowedParallelStages) throws IOException {
+      int allowedParallelStages, String pathToJsonNode) throws IOException {
     JsonNode jsonNode = mapper.readTree(yaml);
-    try {
-      validateParallelStagesCount(jsonNode, shouldValidateParallelStageCount, allowedParallelStages);
-    } catch (Exception e) {
-      return Collections.singleton(e.getMessage());
-    }
+    validateParallelStagesCount(jsonNode, shouldValidateParallelStageCount, allowedParallelStages, pathToJsonNode);
     JsonSchemaFactory factory =
         JsonSchemaFactory.builder(JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V7)).build();
     JsonSchema schema = factory.getSchema(stringSchema);
@@ -97,15 +94,49 @@ public class YamlSchemaValidator {
       log.error(validateMsg.stream().map(ValidationMessage::getMessage).collect(Collectors.joining("\n")));
     }
     Set<ValidationMessage> processValidationMessages = processValidationMessages(validateMsg, jsonNode);
-    return processValidationMessages.stream().map(ValidationMessage::getMessage).collect(Collectors.toSet());
+    StringBuilder combinedValidationMessage = new StringBuilder();
+    if (!processValidationMessages.isEmpty()) {
+      List<YamlSchemaErrorDTO> errorDTOS = new ArrayList<>();
+      for (ValidationMessage validationMessage : processValidationMessages) {
+        errorDTOS.add(YamlSchemaErrorDTO.builder()
+                          .messageWithFQN(validationMessage.getMessage())
+                          .message(removeFqnFromErrorMessage(validationMessage.getMessage()))
+                          .stageInfo(SchemaValidationUtils.getStageErrorInfo(validationMessage.getPath(), jsonNode))
+                          .stepInfo(SchemaValidationUtils.getStepErrorInfo(validationMessage.getPath(), jsonNode))
+                          .fqn(validationMessage.getPath())
+                          .build());
+        combinedValidationMessage.append(validationMessage.getMessage());
+      }
+      YamlSchemaErrorWrapperDTO errorWrapperDTO = YamlSchemaErrorWrapperDTO.builder().schemaErrors(errorDTOS).build();
+      throw new InvalidYamlException(combinedValidationMessage.toString(), errorWrapperDTO);
+    }
+    return Collections.emptySet();
+  }
+
+  private String removeFqnFromErrorMessage(String message) {
+    String pathInMessage = message.split(":")[0];
+    String[] pathComponents = pathInMessage.split("\\.");
+    return message.replace(pathInMessage, pathComponents[pathComponents.length - 1]);
   }
 
   protected void validateParallelStagesCount(
-      JsonNode yaml, boolean shouldValidateParallelStageCount, int allowedParallelStages) {
+      JsonNode yaml, boolean shouldValidateParallelStageCount, int allowedParallelStages, String pathToJsonNode) {
     if (shouldValidateParallelStageCount) {
       return;
     }
-    ArrayNode stages = (ArrayNode) yaml.get(PIPELINE_NODE).get(STAGES_NODE);
+    String[] pathToStageNode = pathToJsonNode.split("/");
+    JsonNode stagesNode = yaml;
+    for (String s : pathToStageNode) {
+      if (stagesNode == null) {
+        return;
+      } else {
+        stagesNode = stagesNode.get(s);
+      }
+    }
+    ArrayNode stages = (ArrayNode) stagesNode;
+    if (stages == null) {
+      return;
+    }
     for (int index = 0; index < stages.size(); index++) {
       JsonNode parallelNode = stages.get(index).get(PARALLEL_NODE);
       if (parallelNode == null) {
@@ -140,6 +171,10 @@ public class YamlSchemaValidator {
 
   protected Set<ValidationMessage> processValidationMessages(
       Collection<ValidationMessage> validationMessages, JsonNode jsonNode) {
+    // Skipping Additional properties messages until Library Upgrade.
+    validationMessages = validationMessages.stream()
+                             .filter(o -> !o.getCode().equals(ValidatorTypeCode.ADDITIONAL_PROPERTIES.getErrorCode()))
+                             .collect(Collectors.toList());
     Map<String, List<ValidationMessage>> validationMessageCodeMap =
         SchemaValidationUtils.getValidationMessageCodeMap(validationMessages);
     Set<ValidationMessage> validationMessageList = new HashSet<>();
@@ -152,6 +187,6 @@ public class YamlSchemaValidator {
         validationMessageList.addAll(validationEntry.getValue());
       }
     }
-    return validationMessageList;
+    return SchemaValidationUtils.filterErrorsIfMoreSpecificErrorIsPresent(validationMessageList);
   }
 }

@@ -48,7 +48,7 @@ public class PerpetualTaskRecordDao {
 
   public void appointDelegate(String taskId, String delegateId, long lastContextUpdated) {
     try (DelegateLogContext ignore = new DelegateLogContext(delegateId, OVERRIDE_ERROR)) {
-      log.info("Appoint perpetual task: {}");
+      log.info("Appoint perpetual task: {}", taskId);
       Query<PerpetualTaskRecord> query =
           persistence.createQuery(PerpetualTaskRecord.class).filter(PerpetualTaskRecordKeys.uuid, taskId);
       UpdateOperations<PerpetualTaskRecord> updateOperations =
@@ -183,6 +183,25 @@ public class PerpetualTaskRecordDao {
 
     Query<PerpetualTaskRecord> query =
         persistence.createQuery(PerpetualTaskRecord.class).field(PerpetualTaskRecordKeys.accountId).equal(accountId);
+    try (HIterator<PerpetualTaskRecord> tasksIterator = new HIterator<>(query.fetch())) {
+      while (tasksIterator.hasNext()) {
+        perpetualTaskRecords.add(tasksIterator.next());
+      }
+    }
+
+    return perpetualTaskRecords;
+  }
+
+  public List<PerpetualTaskRecord> listValidK8sWatchPerpetualTasksForAccount(String accountId) {
+    List<PerpetualTaskRecord> perpetualTaskRecords = new ArrayList<>();
+
+    Query<PerpetualTaskRecord> query = persistence.createQuery(PerpetualTaskRecord.class)
+                                           .field(PerpetualTaskRecordKeys.accountId)
+                                           .equal(accountId)
+                                           .field(PerpetualTaskRecordKeys.perpetualTaskType)
+                                           .equal("K8S_WATCH")
+                                           .field(PerpetualTaskRecordKeys.state)
+                                           .notEqual(TASK_UNASSIGNED);
     try (HIterator<PerpetualTaskRecord> tasksIterator = new HIterator<>(query.fetch())) {
       while (tasksIterator.hasNext()) {
         perpetualTaskRecords.add(tasksIterator.next());

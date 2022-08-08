@@ -24,6 +24,7 @@ import io.harness.enforcement.client.EnforcementClientConfiguration;
 import io.harness.eventsframework.EventsFrameworkConfiguration;
 import io.harness.ff.FeatureFlagConfig;
 import io.harness.file.FileServiceConfiguration;
+import io.harness.gitops.GitopsResourceClientConfig;
 import io.harness.gitsync.GitSdkConfiguration;
 import io.harness.grpc.client.GrpcClientConfig;
 import io.harness.grpc.server.GrpcServerConfig;
@@ -33,6 +34,7 @@ import io.harness.mongo.MongoConfig;
 import io.harness.notification.NotificationClientConfiguration;
 import io.harness.opaclient.OpaServiceConfiguration;
 import io.harness.outbox.OutboxPollConfiguration;
+import io.harness.pms.redisConsumer.DebeziumConsumerConfig;
 import io.harness.redis.RedisConfig;
 import io.harness.reflection.HarnessReflections;
 import io.harness.remote.CEAwsSetupConfig;
@@ -44,15 +46,29 @@ import io.harness.resourcegroupclient.remote.ResourceGroupClientConfig;
 import io.harness.secret.ConfigSecret;
 import io.harness.secret.SecretsConfiguration;
 import io.harness.signup.SignupNotificationConfiguration;
+import io.harness.subscription.SubscriptionConfig;
 import io.harness.telemetry.segment.SegmentConfiguration;
 import io.harness.threading.ThreadPoolConfig;
 import io.harness.timescaledb.TimeScaleDBConfig;
 
+import software.wings.security.authentication.oauth.GitlabConfig;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.Lists;
 import io.dropwizard.Configuration;
 import io.federecio.dropwizard.swagger.SwaggerBundleConfiguration;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.integration.SwaggerConfiguration;
+import io.swagger.v3.oas.integration.api.OpenAPIConfiguration;
+import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.info.Contact;
+import io.swagger.v3.oas.models.info.Info;
+import io.swagger.v3.oas.models.servers.Server;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -82,12 +98,14 @@ public class NextGenConfiguration extends Configuration {
   public static final String MOCKSERVER_PACKAGE = "io.harness.ng.core.acl.mockserver";
   public static final String ACCOUNT_PACKAGE = "io.harness.account.resource";
   public static final String LICENSE_PACKAGE = "io.harness.licensing.api.resource";
+  public static final String SUBSCRIPTION_PACKAGE = "io.harness.subscription.resource";
   public static final String POLLING_PACKAGE = "io.harness.polling.resource";
   public static final String ENFORCEMENT_PACKAGE = "io.harness.enforcement.resource";
   public static final String ENFORCEMENT_CLIENT_PACKAGE = "io.harness.enforcement.client.resources";
   public static final String ARTIFACTS_PACKAGE = "io.harness.ng.core.artifacts.resources";
   public static final String AUTHENTICATION_SETTINGS_PACKAGE = "io.harness.ng.authenticationsettings.resources";
   public static final String SERVICE_PACKAGE = "io.harness.ng.core.service.resources";
+  public static final String VARIABLE_RESOURCE_PACKAGE = "io.harness.ng.core.variable.resources";
   public static final String CD_OVERVIEW_PACKAGE = "io.harness.ng.overview.resource";
   public static final String ACTIVITY_HISTORY_PACKAGE = "io.harness.ng.core.activityhistory.resource";
   public static final String SERVICE_ACCOUNTS_PACKAGE = "io.harness.ng.serviceaccounts.resource";
@@ -102,6 +120,7 @@ public class NextGenConfiguration extends Configuration {
   public static final String ENTITYSETUP_PACKAGE = "io.harness.ng.core.entitysetupusage.resource";
   public static final String SCHEMA_PACKAGE = "io.harness.ng.core.schema.resource";
   public static final String DELEGATE_PACKAGE = "io.harness.ng.core.delegate.resources";
+  public static final String AGENT_PACKAGE = "io.harness.ng.core.agent.resources";
   public static final String ACCESS_CONTROL_PACKAGE = "io.harness.ng.accesscontrol.resources";
   public static final String FEEDBACK_PACKAGE = "io.harness.ng.feedback.resources";
   public static final String INSTANCE_SYNC_PACKAGE = "io.harness.ng.instancesync.resources";
@@ -113,6 +132,16 @@ public class NextGenConfiguration extends Configuration {
   public static final String ACCOUNT_SETTING_PACKAGE = "io.harness.ng.core.accountsetting.resources";
   public static final String ENV_GROUP_RESOURCE = "io.harness.ng.core.envGroup.resource";
   public static final String NG_GLOBAL_KMS_RESOURCE_PACKAGE = "io.harness.ng.core.globalkms.resource";
+  public static final String AZURE_RESOURCES_PACKAGE = "io.harness.ng.core.resources.azure";
+  public static final String NG_TRIAL_SIGNUP_PACKAGE = "io.harness.ng.trialsignup";
+  public static final String AWS_PACKAGE = "io.harness.ng.core.aws.resources";
+  public static final String FILE_STORE_RESOURCE_PACKAGE = "io.harness.filestore.resource";
+  public static final String GITOPS_RESOURCE_PACKAGE = "io.harness.ng.gitops.resource";
+  public static final String INFRA_RESOURCE_PACKAGE = "io.harness.ng.core.infrastructure.resource";
+  public static final String OAUTH_RESOURCE_PACKAGE = "io.harness.ng.oauth";
+  public static final String LDAP_PACKAGE = "io.harness.ldap.resource";
+  public static final String CHAOS_PACKAGE = "io.harness.ng.chaos";
+  public static final String SETTINGS_RESOURCE_PACKAGE = "io.harness.ngsettings.remote";
   public static final Collection<Class<?>> HARNESS_RESOURCE_CLASSES = getResourceClasses();
 
   @JsonProperty("swagger") private SwaggerBundleConfiguration swaggerBundleConfiguration;
@@ -134,7 +163,10 @@ public class NextGenConfiguration extends Configuration {
   @JsonProperty("pipelineServiceClientConfig") private ServiceHttpClientConfig pipelineServiceClientConfig;
   @JsonProperty("auditClientConfig") private ServiceHttpClientConfig auditClientConfig;
   @JsonProperty("ceNextGenClientConfig") private ServiceHttpClientConfig ceNextGenClientConfig;
+  @JsonProperty("cvngClientConfig") private ServiceHttpClientConfig cvngClientConfig;
   @JsonProperty("lightwingClientConfig") private ServiceHttpClientConfig lightwingClientConfig;
+  @JsonProperty("templateServiceClientConfig") private ServiceHttpClientConfig templateServiceClientConfig;
+  @JsonProperty("chaosServiceClientConfig") private ServiceHttpClientConfig chaosServiceClientConfig;
   @JsonProperty("eventsFramework") @ConfigSecret private EventsFrameworkConfiguration eventsFrameworkConfiguration;
   @JsonProperty("redisLockConfig") @ConfigSecret private RedisConfig redisLockConfig;
   @JsonProperty(value = "enableAuth", defaultValue = "true") private boolean enableAuth;
@@ -143,7 +175,7 @@ public class NextGenConfiguration extends Configuration {
   @JsonProperty("ceAzureSetupConfig") @ConfigSecret private CEAzureSetupConfig ceAzureSetupConfig;
   @JsonProperty("ceGcpSetupConfig") private CEGcpSetupConfig ceGcpSetupConfig;
   @JsonProperty(value = "enableAudit") private boolean enableAudit;
-  @JsonProperty(value = "ngAuthUIEnabled") private boolean isNGAuthUIEnabled;
+  @JsonProperty(value = "ngAuthUIEnabled") private boolean isNgAuthUIEnabled;
   @JsonProperty("pmsSdkGrpcServerConfig") private GrpcServerConfig pmsSdkGrpcServerConfig;
   @JsonProperty("pmsGrpcClientConfig") private GrpcClientConfig pmsGrpcClientConfig;
   @JsonProperty("shouldConfigureWithPMS") private Boolean shouldConfigureWithPMS;
@@ -155,6 +187,8 @@ public class NextGenConfiguration extends Configuration {
   @ConfigSecret
   private LogStreamingServiceConfiguration logStreamingServiceConfig;
   private OpaServiceConfiguration opaServerConfig;
+  private String policyManagerSecret;
+  private ServiceHttpClientConfig opaClientConfig;
   @JsonProperty("gitSyncServerConfig") private GrpcServerConfig gitSyncGrpcServerConfig;
   @JsonProperty("gitGrpcClientConfigs") private Map<Microservice, GrpcClientConfig> gitGrpcClientConfigs;
   @JsonProperty("shouldDeployWithGitSync") private Boolean shouldDeployWithGitSync;
@@ -167,6 +201,7 @@ public class NextGenConfiguration extends Configuration {
   private AccessControlAdminClientConfiguration accessControlAdminClientConfiguration;
   @JsonProperty("outboxPollConfig") private OutboxPollConfiguration outboxPollConfig;
   @JsonProperty("segmentConfiguration") @ConfigSecret private SegmentConfiguration segmentConfiguration;
+  @JsonProperty("subscriptionConfig") @ConfigSecret private SubscriptionConfig subscriptionConfig;
   @JsonProperty("gitSdkConfiguration") private GitSdkConfiguration gitSdkConfiguration;
   @JsonProperty("fileServiceConfiguration") private FileServiceConfiguration fileServiceConfiguration;
   @JsonProperty("baseUrls") private BaseUrls baseUrls;
@@ -180,13 +215,20 @@ public class NextGenConfiguration extends Configuration {
   private SignupNotificationConfiguration signupNotificationConfiguration;
   @JsonProperty("cacheConfig") private CacheConfig cacheConfig;
   @JsonProperty(value = "scopeAccessCheckEnabled", defaultValue = "false") private boolean isScopeAccessCheckEnabled;
-  @JsonProperty("hostname") String hostname;
-  @JsonProperty("basePathPrefix") String basePathPrefix;
+  @JsonProperty(value = "signupTargetEnv") private String signupTargetEnv;
+  @JsonProperty(value = "delegateStatusEndpoint") private String delegateStatusEndpoint;
+  @JsonProperty(value = "gitlabConfig") private GitlabConfig gitlabConfig;
+  @JsonProperty(value = "oauthRefreshFrequency") private long oauthRefreshFrequency;
+  @JsonProperty(value = "oauthRefreshEnabled") private boolean oauthRefreshEnabled;
+  @JsonProperty("hostname") String hostname = "localhost";
+  @JsonProperty("basePathPrefix") String basePathPrefix = "";
   @JsonProperty("enforcementClientConfiguration") EnforcementClientConfiguration enforcementClientConfiguration;
   @JsonProperty("ciManagerClientConfig") ServiceHttpClientConfig ciManagerClientConfig;
   @JsonProperty("secretsConfiguration") private SecretsConfiguration secretsConfiguration;
   @JsonProperty("pmsPlanCreatorServicePoolConfig") private ThreadPoolConfig pmsPlanCreatorServicePoolConfig;
   @JsonProperty("ffServerClientConfig") ServiceHttpClientConfig ffServerClientConfig;
+  @ConfigSecret @JsonProperty("gitopsResourceClientConfig") GitopsResourceClientConfig gitopsResourceClientConfig;
+  @JsonProperty("debeziumConsumerConfigs") List<DebeziumConsumerConfig> debeziumConsumerConfigs;
 
   // [secondary-db]: Uncomment this and the corresponding config in yaml file if you want to connect to another database
   //  @JsonProperty("secondary-mongo") MongoConfig secondaryMongoConfig;
@@ -209,17 +251,35 @@ public class NextGenConfiguration extends Configuration {
         .getTypesAnnotatedWith(Path.class)
         .stream()
         .filter(klazz
-            -> StringUtils.startsWithAny(klazz.getPackage().getName(), CORE_PACKAGE, CONNECTOR_PACKAGE,
-                GITOPS_PROVIDER_RESOURCE_PACKAGE, GIT_SYNC_PACKAGE, CDNG_RESOURCES_PACKAGE,
-                OVERLAY_INPUT_SET_RESOURCE_PACKAGE, YAML_PACKAGE, FILTER_PACKAGE, SIGNUP_PACKAGE, MOCKSERVER_PACKAGE,
-                ACCOUNT_PACKAGE, LICENSE_PACKAGE, POLLING_PACKAGE, ENFORCEMENT_PACKAGE, ENFORCEMENT_CLIENT_PACKAGE,
-                ARTIFACTS_PACKAGE, AUTHENTICATION_SETTINGS_PACKAGE, CD_OVERVIEW_PACKAGE, ACTIVITY_HISTORY_PACKAGE,
-                SERVICE_PACKAGE, SERVICE_ACCOUNTS_PACKAGE, BUCKETS_PACKAGE, CLUSTER_GCP_PACKAGE, WEBHOOK_PACKAGE,
-                ENVIRONMENT_PACKAGE, USERPROFILE_PACKAGE, JIRA_PACKAGE, EXECUTION_PACKAGE, ENTITYSETUP_PACKAGE,
-                SCHEMA_PACKAGE, DELEGATE_PACKAGE, ACCESS_CONTROL_PACKAGE, FEEDBACK_PACKAGE, INSTANCE_SYNC_PACKAGE,
-                INVITE_PACKAGE, USER_PACKAGE, INSTANCE_NG_PACKAGE, LICENSING_USAGE_PACKAGE, SMTP_NG_RESOURCE,
-                SERVICENOW_PACKAGE, SCIM_NG_RESOURCE, NG_GLOBAL_KMS_RESOURCE_PACKAGE, ACCOUNT_SETTING_PACKAGE,
-                ENV_GROUP_RESOURCE))
+            -> StringUtils.startsWithAny(klazz.getPackage().getName(), NextGenConfiguration.CORE_PACKAGE,
+                NextGenConfiguration.CONNECTOR_PACKAGE, NextGenConfiguration.GITOPS_PROVIDER_RESOURCE_PACKAGE,
+                NextGenConfiguration.GIT_SYNC_PACKAGE, NextGenConfiguration.CDNG_RESOURCES_PACKAGE,
+                NextGenConfiguration.OVERLAY_INPUT_SET_RESOURCE_PACKAGE, NextGenConfiguration.YAML_PACKAGE,
+                NextGenConfiguration.FILTER_PACKAGE, NextGenConfiguration.SIGNUP_PACKAGE,
+                NextGenConfiguration.MOCKSERVER_PACKAGE, NextGenConfiguration.ACCOUNT_PACKAGE,
+                NextGenConfiguration.LICENSE_PACKAGE, NextGenConfiguration.SUBSCRIPTION_PACKAGE,
+                NextGenConfiguration.POLLING_PACKAGE, NextGenConfiguration.ENFORCEMENT_PACKAGE,
+                NextGenConfiguration.ENFORCEMENT_CLIENT_PACKAGE, NextGenConfiguration.ARTIFACTS_PACKAGE,
+                NextGenConfiguration.AUTHENTICATION_SETTINGS_PACKAGE, NextGenConfiguration.CD_OVERVIEW_PACKAGE,
+                NextGenConfiguration.ACTIVITY_HISTORY_PACKAGE, NextGenConfiguration.SERVICE_PACKAGE,
+                NextGenConfiguration.SERVICE_ACCOUNTS_PACKAGE, NextGenConfiguration.BUCKETS_PACKAGE,
+                NextGenConfiguration.CLUSTER_GCP_PACKAGE, NextGenConfiguration.WEBHOOK_PACKAGE,
+                NextGenConfiguration.ENVIRONMENT_PACKAGE, NextGenConfiguration.USERPROFILE_PACKAGE,
+                NextGenConfiguration.JIRA_PACKAGE, NextGenConfiguration.EXECUTION_PACKAGE,
+                NextGenConfiguration.ENTITYSETUP_PACKAGE, NextGenConfiguration.SCHEMA_PACKAGE,
+                NextGenConfiguration.DELEGATE_PACKAGE, NextGenConfiguration.ACCESS_CONTROL_PACKAGE,
+                NextGenConfiguration.FEEDBACK_PACKAGE, NextGenConfiguration.INSTANCE_SYNC_PACKAGE,
+                NextGenConfiguration.INVITE_PACKAGE, NextGenConfiguration.USER_PACKAGE,
+                NextGenConfiguration.INSTANCE_NG_PACKAGE, NextGenConfiguration.LICENSING_USAGE_PACKAGE,
+                NextGenConfiguration.SMTP_NG_RESOURCE, NextGenConfiguration.SERVICENOW_PACKAGE,
+                NextGenConfiguration.SCIM_NG_RESOURCE, NextGenConfiguration.NG_GLOBAL_KMS_RESOURCE_PACKAGE,
+                NextGenConfiguration.ACCOUNT_SETTING_PACKAGE, NextGenConfiguration.ENV_GROUP_RESOURCE,
+                NextGenConfiguration.AZURE_RESOURCES_PACKAGE, NextGenConfiguration.NG_TRIAL_SIGNUP_PACKAGE,
+                NextGenConfiguration.VARIABLE_RESOURCE_PACKAGE, NextGenConfiguration.FILE_STORE_RESOURCE_PACKAGE,
+                NextGenConfiguration.GITOPS_RESOURCE_PACKAGE, NextGenConfiguration.INFRA_RESOURCE_PACKAGE,
+                NextGenConfiguration.AWS_PACKAGE, NextGenConfiguration.OAUTH_RESOURCE_PACKAGE,
+                NextGenConfiguration.LDAP_PACKAGE, NextGenConfiguration.CHAOS_PACKAGE,
+                NextGenConfiguration.SETTINGS_RESOURCE_PACKAGE, NextGenConfiguration.AGENT_PACKAGE))
         .collect(Collectors.toSet());
   }
 
@@ -229,5 +289,38 @@ public class NextGenConfiguration extends Configuration {
 
   public static Set<String> getUniquePackagesContainingResources() {
     return HARNESS_RESOURCE_CLASSES.stream().map(aClass -> aClass.getPackage().getName()).collect(toSet());
+  }
+
+  @JsonIgnore
+  public OpenAPIConfiguration getOasConfig() {
+    OpenAPI oas = new OpenAPI();
+    Info info =
+        new Info()
+            .title("Harness NextGen Software Delivery Platform API Reference")
+            .description(
+                "This is the Open Api Spec 3 for the NextGen Manager. This is under active development. Beware of the breaking change with respect to the generated code stub")
+            .termsOfService("https://harness.io/terms-of-use/")
+            .version("3.0")
+            .contact(new Contact().email("contact@harness.io"));
+    oas.info(info);
+    try {
+      URL baseurl = new URL("https", hostname, basePathPrefix);
+      Server server = new Server();
+      server.setUrl(baseurl.toString());
+      oas.servers(Collections.singletonList(server));
+    } catch (MalformedURLException e) {
+      log.error("failed to set baseurl for server, {}/{}", hostname, basePathPrefix);
+    }
+    final Set<String> resourceClasses =
+        getOAS3ResourceClassesOnly().stream().map(Class::getCanonicalName).collect(toSet());
+    return new SwaggerConfiguration()
+        .openAPI(oas)
+        .prettyPrint(true)
+        .resourceClasses(resourceClasses)
+        .scannerClass("io.swagger.v3.jaxrs2.integration.JaxrsAnnotationScanner");
+  }
+
+  public static Collection<Class<?>> getOAS3ResourceClassesOnly() {
+    return HARNESS_RESOURCE_CLASSES.stream().filter(x -> x.isAnnotationPresent(Tag.class)).collect(Collectors.toList());
   }
 }

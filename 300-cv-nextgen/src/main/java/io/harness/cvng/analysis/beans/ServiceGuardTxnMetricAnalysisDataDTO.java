@@ -44,7 +44,6 @@ public class ServiceGuardTxnMetricAnalysisDataDTO {
     @JsonProperty("metricName") private String metricIdentifier;
     private double risk;
     private double data;
-
     public MetricSum toMetricSum() {
       return MetricSum.builder().metricIdentifier(metricIdentifier).risk(risk).data(data).build();
     }

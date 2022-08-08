@@ -1,0 +1,63 @@
+{
+  "pipeline": {
+    "name": "PipelineTest",
+    "identifier": "PipelineTest",
+    "projectIdentifier": "defaultproject",
+    "orgIdentifier": "default",
+    "tags": {},
+    "stages": [
+      {
+        "stage": {
+          "name": "Jenkins",
+          "identifier": "Jenkins",
+          "description": "",
+          "type": "Approval",
+          "spec": {
+            "execution": {
+              "steps": [
+                {
+                  "step": {
+                    "type": "JenkinsBuild",
+                    "name": "JenkinsBuild",
+                    "identifier": "JenkinsBuild",
+                    "spec": {
+                      "connectorRef": "Jenkins",
+                      "jobParameter": [
+                        {
+                          "name": "booleankey",
+                          "value": "true",
+                          "type": "String",
+                          "id": "f0e2144d-62cb-4902-adc1-15d526f4e684"
+                        },
+                        {
+                          "name": "name",
+                          "value": "test name",
+                          "type": "String",
+                          "id": "f844fa74-d184-4df1-92b5-72b6741eae4d"
+                        },
+                        {
+                          "name": "test",
+                          "value": "123",
+                          "type": "String",
+                          "id": "8a2fc34d-8ec2-4e47-b57b-44f95d6d6e45"
+                        }
+                      ],
+                      "delegateSelectors": [],
+                      "unstableStatusAsSuccess": false,
+                      "captureEnvironmentVariable": false,
+                      "jobName": "AutomationQA"
+                    },
+                    "timeout": "10s",
+                    "__uuid": "ARCZa12zT7OgE9aeShFb8Q"
+                  }
+                }
+              ]
+            },
+            "serviceDependencies": []
+          },
+          "tags": {}
+        }
+      }
+    ]
+  }
+}

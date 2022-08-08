@@ -41,7 +41,6 @@ public class DelegateServiceRegistrars {
           .add(SMCoreKryoRegistrar.class)
           .add(SecretManagerClientKryoRegistrar.class)
           .add(ProjectAndOrgKryoRegistrar.class)
-          .addAll(NGAuditCommonsRegistrars.kryoRegistrars)
           .addAll(OutboxEventRegistrars.kryoRegistrars)
           .addAll(DelegateTaskRegistrars.kryoRegistrars)
           .build();

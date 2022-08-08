@@ -13,6 +13,7 @@ import static io.harness.mongo.iterator.MongoPersistenceIterator.SchedulingType.
 import static java.time.Duration.ofHours;
 import static java.time.Duration.ofSeconds;
 
+import io.harness.SystemWrapper;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
@@ -63,6 +64,7 @@ public class DeploymentFreezeDeactivationHandler implements Handler<GovernanceCo
     iterator = persistenceIteratorFactory.createIterator(DeploymentFreezeDeactivationHandler.class,
         MongoPersistenceIterator.<GovernanceConfig, MorphiaFilterExpander<GovernanceConfig>>builder()
             .mode(PersistenceIterator.ProcessMode.LOOP)
+            .iteratorName("DeploymentFreezeDeactivation")
             .clazz(GovernanceConfig.class)
             .fieldName(GovernanceConfigKeys.nextCloseIterations)
             .acceptableNoAlertDelay(ofSeconds(60))
@@ -94,7 +96,7 @@ public class DeploymentFreezeDeactivationHandler implements Handler<GovernanceCo
 
   @Override
   public void handle(GovernanceConfig entity) {
-    long iteratorTime = System.currentTimeMillis();
+    long iteratorTime = SystemWrapper.currentTimeMillis();
     List<GovernanceFreezeConfig> governanceFreezeConfigs =
         entity.getTimeRangeBasedFreezeConfigs()
             .stream()

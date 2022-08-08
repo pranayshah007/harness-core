@@ -50,7 +50,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anySet;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -149,7 +148,7 @@ public class PcfInstanceHandlerTest extends WingsBaseTest {
                  .computeProviderSettingId(COMPUTE_PROVIDER_SETTING_ID)
                  .build())
         .when(infraMappingService)
-        .get(anyString(), anyString());
+        .get(any(), any());
 
     // catpure arg
     doReturn(true).when(instanceService).delete(anySet());
@@ -158,19 +157,17 @@ public class PcfInstanceHandlerTest extends WingsBaseTest {
 
     doReturn(Application.Builder.anApplication().name(APP_NAME).uuid(APP_ID).accountId(ACCOUNT_ID).build())
         .when(appService)
-        .get(anyString());
+        .get(any());
 
     doReturn(Environment.Builder.anEnvironment().environmentType(EnvironmentType.PROD).name(ENV_NAME).build())
         .when(environmentService)
-        .get(anyString(), anyString(), anyBoolean());
+        .get(any(), any(), anyBoolean());
 
-    doReturn(Service.builder().name(SERVICE_NAME).build())
-        .when(serviceResourceService)
-        .getWithDetails(anyString(), anyString());
+    doReturn(Service.builder().name(SERVICE_NAME).build()).when(serviceResourceService).getWithDetails(any(), any());
 
     doReturn(SettingAttribute.Builder.aSettingAttribute().withValue(PcfConfig.builder().build()).build())
         .when(settingsService)
-        .get(anyString());
+        .get(any());
   }
 
   // 2 existing PCF instances,
@@ -180,12 +177,10 @@ public class PcfInstanceHandlerTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void testSyncInstances() throws Exception {
     final List<Instance> instances = getInstancesForAppAndInframapping();
-    doReturn(instances).when(instanceService).getInstancesForAppAndInframapping(anyString(), anyString());
+    doReturn(instances).when(instanceService).getInstancesForAppAndInframapping(any(), any());
 
     List<PcfInstanceInfo> pcfInstanceInfos = getPcfInstanceInfos();
-    doReturn(pcfInstanceInfos)
-        .when(pcfHelperService)
-        .getApplicationDetails(anyString(), anyString(), anyString(), any(), any());
+    doReturn(pcfInstanceInfos).when(pcfHelperService).getApplicationDetails(any(), any(), any(), any(), any());
 
     pcfInstanceHandler.syncInstances(APP_ID, INFRA_MAPPING_ID, InstanceSyncFlow.MANUAL);
 
@@ -300,9 +295,7 @@ public class PcfInstanceHandlerTest extends WingsBaseTest {
             .id(PCF_APP_GUID_2 + ":" + PCF_INSTANCE_INDEX_2)
             .build());
 
-    doReturn(pcfInstanceInfos)
-        .when(pcfHelperService)
-        .getApplicationDetails(anyString(), anyString(), anyString(), any(), any());
+    doReturn(pcfInstanceInfos).when(pcfHelperService).getApplicationDetails(any(), any(), any(), any(), any());
 
     OnDemandRollbackInfo onDemandRollbackInfo = OnDemandRollbackInfo.builder().onDemandRollback(false).build();
 
@@ -377,9 +370,7 @@ public class PcfInstanceHandlerTest extends WingsBaseTest {
             .id(PCF_APP_GUID_2 + ":" + PCF_INSTANCE_INDEX_2)
             .build());
 
-    doReturn(pcfInstanceInfos)
-        .when(pcfHelperService)
-        .getApplicationDetails(anyString(), anyString(), anyString(), any(), any());
+    doReturn(pcfInstanceInfos).when(pcfHelperService).getApplicationDetails(any(), any(), any(), any(), any());
 
     doReturn(
         Optional.of(DeploymentSummary.builder()
@@ -448,10 +439,8 @@ public class PcfInstanceHandlerTest extends WingsBaseTest {
     doReturn(pageResponse).when(instanceService).list(any());
     doReturn(getPcfInstanceInfosForNewDeployment())
         .when(pcfHelperService)
-        .getApplicationDetails(anyString(), anyString(), anyString(), any(), any());
-    doReturn(getInstancesForAppAndInframapping())
-        .when(instanceService)
-        .getInstancesForAppAndInframapping(anyString(), anyString());
+        .getApplicationDetails(any(), any(), any(), any(), any());
+    doReturn(getInstancesForAppAndInframapping()).when(instanceService).getInstancesForAppAndInframapping(any(), any());
 
     OnDemandRollbackInfo onDemandRollbackInfo =
         OnDemandRollbackInfo.builder().onDemandRollback(true).rollbackExecutionId(rollbackExecutionId).build();
@@ -503,7 +492,7 @@ public class PcfInstanceHandlerTest extends WingsBaseTest {
     doReturn(pageResponse).when(instanceService).list(any());
     doReturn(getPcfInstanceInfosForNewDeployment())
         .when(pcfHelperService)
-        .getApplicationDetails(anyString(), anyString(), anyString(), any(), any());
+        .getApplicationDetails(any(), any(), any(), any(), any());
 
     OnDemandRollbackInfo onDemandRollbackInfo =
         OnDemandRollbackInfo.builder().onDemandRollback(true).rollbackExecutionId(rollbackExecutionId).build();
@@ -625,12 +614,11 @@ public class PcfInstanceHandlerTest extends WingsBaseTest {
                              .instanceInfo(PcfInstanceInfo.builder().pcfApplicationName(appName).build())
                              .build();
     List<Instance> instances = asList(instance1, instance2);
-    doReturn(instances).when(instanceService).getInstancesForAppAndInframapping(anyString(), anyString());
+    doReturn(instances).when(instanceService).getInstancesForAppAndInframapping(any(), any());
 
     doThrow(new PcfAppNotFoundException("App not found"))
         .when(pcfHelperService)
-        .getApplicationDetails(
-            anyString(), anyString(), anyString(), any(PcfConfig.class), any(CfCommandExecutionResponse.class));
+        .getApplicationDetails(any(), any(), any(), any(), any());
 
     assertThatThrownBy(() -> pcfInstanceHandler.syncInstances("appId", "infraMappingId", ITERATOR))
         .isInstanceOf(InvalidRequestException.class)
@@ -709,12 +697,10 @@ public class PcfInstanceHandlerTest extends WingsBaseTest {
         PcfInfrastructureMapping.builder().appId(APP_ID).uuid(INFRA_MAPPING_ID).build();
 
     final List<Instance> instances = getInstancesForAppAndInframapping();
-    doReturn(instances).when(instanceService).getInstancesForAppAndInframapping(anyString(), anyString());
+    doReturn(instances).when(instanceService).getInstancesForAppAndInframapping(any(), any());
 
     List<PcfInstanceInfo> pcfInstanceInfos = getPcfInstanceInfos();
-    doReturn(pcfInstanceInfos)
-        .when(pcfHelperService)
-        .getApplicationDetails(anyString(), anyString(), anyString(), any(), any());
+    doReturn(pcfInstanceInfos).when(pcfHelperService).getApplicationDetails(any(), any(), any(), any(), any());
     doReturn(true).when(featureFlagService).isEnabled(any(), any());
 
     pcfInstanceHandler.processInstanceSyncResponseFromPerpetualTask(infraMapping, cfCommandExecutionResponse);

@@ -23,6 +23,7 @@ import static org.joor.Reflect.on;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.powermock.api.mockito.PowerMockito.spy;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
@@ -31,6 +32,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.rule.Owner;
 
 import software.wings.WingsBaseTest;
+import software.wings.api.ContextElementParamMapperFactory;
 import software.wings.api.EmailStateExecutionData;
 import software.wings.app.MainConfiguration;
 import software.wings.app.PortalConfig;
@@ -44,6 +46,7 @@ import software.wings.sm.ExecutionContextImpl;
 import software.wings.sm.ExecutionResponse;
 import software.wings.sm.StateExecutionInstance;
 import software.wings.sm.WorkflowStandardParams;
+import software.wings.sm.WorkflowStandardParamsExtensionService;
 
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
@@ -100,13 +103,20 @@ public class PauseStateTest extends WingsBaseTest {
 
     context = new ExecutionContextImpl(stateExecutionInstance, null, injector);
     WorkflowStandardParams workflowStandardParams = new WorkflowStandardParams();
-    on(workflowStandardParams).set("app", anApplication().accountId(ACCOUNT_ID).uuid(APP_ID).build());
-    on(workflowStandardParams).set("env", anEnvironment().uuid(ENV_ID).build());
-    on(workflowStandardParams).set("configuration", configuration);
-    on(workflowStandardParams).set("accountService", accountService);
-    on(workflowStandardParams).set("subdomainUrlHelper", subdomainUrlHelper);
+
+    WorkflowStandardParamsExtensionService workflowStandardParamsExtensionService =
+        spy(new WorkflowStandardParamsExtensionService(null, accountService, null, null, null, null));
+    when(workflowStandardParamsExtensionService.getApp(workflowStandardParams))
+        .thenReturn(anApplication().accountId(ACCOUNT_ID).uuid(APP_ID).build());
+    when(workflowStandardParamsExtensionService.getEnv(workflowStandardParams))
+        .thenReturn(anEnvironment().uuid(ENV_ID).build());
+
+    ContextElementParamMapperFactory contextElementParamMapperFactory = new ContextElementParamMapperFactory(
+        subdomainUrlHelper, null, null, null, null, null, null, workflowStandardParamsExtensionService);
 
     context.pushContextElement(workflowStandardParams);
+    on(context).set("workflowStandardParamsExtensionService", workflowStandardParamsExtensionService);
+    on(context).set("contextElementParamMapperFactory", contextElementParamMapperFactory);
 
     pauseState.setToAddress("to1,to2");
     pauseState.setCcAddress("cc1,cc2");

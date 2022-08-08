@@ -136,6 +136,30 @@ public class PipelineServiceValidator {
     }
   }
 
+  public static void validateUserGroupExpression(Pipeline pipeline) {
+    List<PipelineStage> pipelineStages = pipeline.getPipelineStages();
+    if (pipelineStages != null) {
+      for (PipelineStage pipelineStage : pipelineStages) {
+        for (PipelineStageElement pse : pipelineStage.getPipelineStageElements()) {
+          if (APPROVAL.name().equals(pse.getType())) {
+            Map<String, Object> properties = pse.getProperties();
+            if ((boolean) properties.getOrDefault("userGroupAsExpression", false)) {
+              String userGroupExpression = (String) properties.get("userGroupExpression");
+              if (isEmpty(userGroupExpression)) {
+                throw new InvalidRequestException("User group expression is set but value is not provided", USER);
+              }
+              if (!matchesVariablePattern(userGroupExpression)) {
+                throw new InvalidRequestException("User group expression: [" + userGroupExpression
+                        + "] not in proper format, should start with ${ and end with }, only a-zA-Z0-9_- allowed",
+                    USER);
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
   public static boolean validateTemplateExpressions(Pipeline pipeline) {
     List<PipelineStage> pipelineStages = pipeline.getPipelineStages();
     if (pipelineStages != null) {
@@ -143,8 +167,11 @@ public class PipelineServiceValidator {
         for (PipelineStageElement pse : pipelineStage.getPipelineStageElements()) {
           if (APPROVAL.name().equals(pse.getType())) {
             Map<String, Object> properties = pse.getProperties();
-            List<Map<String, Object>> templateExpressions =
-                (List<Map<String, Object>>) properties.get("templateExpressions");
+            List<Map<String, Object>> templateExpressions = null;
+            Object obj = properties.get("templateExpressions");
+            if (obj instanceof List) {
+              templateExpressions = (List<Map<String, Object>>) obj;
+            }
             if (!isEmpty(templateExpressions)) {
               for (Map<String, Object> templateExpression : templateExpressions) {
                 if (templateExpression != null) {

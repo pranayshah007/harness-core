@@ -10,14 +10,11 @@ package io.harness.cdng.creator.plan.artifact;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.artifact.bean.yaml.SidecarArtifact;
-import io.harness.cdng.artifact.steps.ArtifactStep;
 import io.harness.cdng.artifact.steps.ArtifactStepParameters;
 import io.harness.cdng.creator.plan.PlanCreatorConstants;
 import io.harness.cdng.visitor.YamlTypes;
 import io.harness.delegate.task.artifacts.ArtifactSourceConstants;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
-import io.harness.pms.contracts.facilitators.FacilitatorType;
-import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.sdk.core.plan.PlanNode;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
@@ -44,7 +41,9 @@ public class SideCarArtifactPlanCreator implements PartialPlanCreator<SidecarArt
     return Collections.singletonMap(YamlTypes.SIDECAR_ARTIFACT_CONFIG,
         new HashSet<>(Arrays.asList(ArtifactSourceConstants.DOCKER_REGISTRY_NAME, ArtifactSourceConstants.ECR_NAME,
             ArtifactSourceConstants.GCR_NAME, ArtifactSourceConstants.NEXUS3_REGISTRY_NAME,
-            ArtifactSourceConstants.ARTIFACTORY_REGISTRY_NAME)));
+            ArtifactSourceConstants.ARTIFACTORY_REGISTRY_NAME, ArtifactSourceConstants.ACR_NAME,
+            ArtifactSourceConstants.CUSTOM_ARTIFACT_NAME, ArtifactSourceConstants.AMAZON_S3_NAME,
+            ArtifactSourceConstants.JENKINS_NAME)));
   }
 
   @Override
@@ -57,14 +56,13 @@ public class SideCarArtifactPlanCreator implements PartialPlanCreator<SidecarArt
     PlanNode artifactNode =
         PlanNode.builder()
             .uuid(sideCarArtifactId)
-            .stepType(ArtifactStep.STEP_TYPE)
+            .stepType(ArtifactPlanCreatorHelper.getStepType(stepParameters))
             .name(PlanCreatorConstants.ARTIFACT_NODE_NAME)
             .identifier(stepParameters.getIdentifier())
             .stepParameters(stepParameters)
-            .facilitatorObtainment(
-                FacilitatorObtainment.newBuilder()
-                    .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.TASK).build())
-                    .build())
+            .facilitatorObtainment(FacilitatorObtainment.newBuilder()
+                                       .setType(ArtifactPlanCreatorHelper.getFacilitatorType(stepParameters))
+                                       .build())
             .skipExpressionChain(false)
             .build();
 

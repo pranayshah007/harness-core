@@ -9,6 +9,7 @@ package io.harness.event.usagemetrics;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import io.harness.beans.ArtifactMetadata;
 import io.harness.beans.EmbeddedUser;
 import io.harness.beans.EnvironmentType;
 import io.harness.beans.ExecutionStatus;
@@ -112,7 +113,8 @@ public class UsageMetricsTestUtils {
                         .build()))
                 .build())
         .pipelineExecutionId(UsageMetricsTestUtils.UsageMetricsTestKeys.PIPELINEEXECUTIONID)
-        .artifacts(Lists.newArrayList(Artifact.Builder.anArtifact().withMetadata(artifactBuildNumber).build()))
+        .artifacts(Lists.newArrayList(
+            Artifact.Builder.anArtifact().withMetadata(new ArtifactMetadata(artifactBuildNumber)).build()))
         .serviceIds(Arrays.asList(UsageMetricsTestUtils.UsageMetricsTestKeys.SERVICE1))
         .deployedServices(Arrays.asList(UsageMetricsTestUtils.UsageMetricsTestKeys.SERVICE1))
         .triggeredBy(EmbeddedUser.builder().uuid(UsageMetricsTestUtils.UsageMetricsTestKeys.USER1).build())

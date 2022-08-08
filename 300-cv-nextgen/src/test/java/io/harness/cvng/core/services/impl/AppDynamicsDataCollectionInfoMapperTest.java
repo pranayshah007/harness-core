@@ -111,9 +111,10 @@ public class AppDynamicsDataCollectionInfoMapperTest extends CvNextGenTestBase {
     assertThat(appDynamicsDataCollectionInfo.getCustomMetrics()).hasSize(2);
     assertThat(appDynamicsDataCollectionInfo.getCustomMetrics()
                    .stream()
-                   .map(AppMetricInfoDTO::getMetricPath)
+                   .map(AppMetricInfoDTO::getCompleteMetricPath)
                    .collect(Collectors.toSet()))
-        .isEqualTo(new HashSet<>(Arrays.asList("metricPath4", "metricPath2")));
+        .isEqualTo(
+            new HashSet<>(Arrays.asList("baseFolder4|tier-name|metricPath4", "baseFolder2|tier-name|metricPath2")));
     assertThat(appDynamicsDataCollectionInfo.getCustomMetrics()
                    .stream()
                    .map(AppMetricInfoDTO::getMetricIdentifier)
@@ -124,11 +125,6 @@ public class AppDynamicsDataCollectionInfoMapperTest extends CvNextGenTestBase {
                    .map(AppMetricInfoDTO::getMetricName)
                    .collect(Collectors.toSet()))
         .isEqualTo(new HashSet<>(Arrays.asList("metricName4", "metricName2")));
-    assertThat(appDynamicsDataCollectionInfo.getCustomMetrics()
-                   .stream()
-                   .map(AppMetricInfoDTO::getBaseFolder)
-                   .collect(Collectors.toSet()))
-        .isEqualTo(new HashSet<>(Arrays.asList("baseFolder2", "baseFolder4")));
     assertThat(appDynamicsDataCollectionInfo.getDataCollectionDsl()).isEqualTo("dsl");
   }
 

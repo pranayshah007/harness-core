@@ -1,0 +1,33 @@
+{
+  "pipeline": {
+    "name": "ApprovalStageWithHttStep",
+    "identifier": "ApprovalStageWithHttStep",
+    "projectIdentifier": "ArchitProject",
+    "orgIdentifier": "default",
+    "tags": {
+      "__uuid": "vDSvcNoES8-v2i4PsR_EPg"
+    },
+    "stages": [
+      {
+        "stage": {
+          "name": "stage1",
+          "identifier": "stage1",
+          "description": "",
+          "type": "DummyStageNode",
+          "tags": {
+            "__uuid": "CcTvyLUVSoS18MrrFX4pFQ"
+          },
+          "when": {
+            "pipelineStatus": "All",
+            "condition": "archit",
+            "__uuid": "jc31C2vrTyG9CNRkrBQu7g"
+          },
+          "__uuid": "tGufMZnYTNCcFFLz74wtpA"
+        },
+        "__uuid": "tA9GOy9nR3-spMTx2kpKaw"
+      }
+    ],
+    "__uuid": "CRPECVboRjGi9bHpIqbRyw"
+  },
+  "__uuid": "LYeF7J0hQMuoFf3yBt7HBA"
+}

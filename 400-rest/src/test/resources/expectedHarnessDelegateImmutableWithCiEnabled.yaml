@@ -1,0 +1,232 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: harness-delegate
+
+---
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: harness-delegate-cluster-admin
+subjects:
+  - kind: ServiceAccount
+    name: default
+    namespace: harness-delegate
+roleRef:
+  kind: ClusterRole
+  name: cluster-admin
+  apiGroup: rbac.authorization.k8s.io
+
+---
+
+apiVersion: v1
+kind: Secret
+metadata:
+  name: harness-delegate-account-token
+  namespace: harness-delegate
+type: Opaque
+data:
+  ACCOUNT_SECRET: "QUNDT1VOVF9LRVk="
+
+---
+
+# If delegate needs to use a proxy, please follow instructions available in the documentation
+# https://docs.harness.io/article/pfim3oig7o-configure-delegate-proxy-settings
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    harness.io/name: harness-delegate
+  # Name must contain the six letter account identifier: accoun
+  name: harness-delegate-accoun
+  namespace: harness-delegate
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      harness.io/name: harness-delegate
+  template:
+    metadata:
+      labels:
+        harness.io/name: harness-delegate
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "3460"
+        prometheus.io/path: "/api/metrics"
+    spec:
+      terminationGracePeriodSeconds: 600
+      restartPolicy: Always
+      containers:
+      - image: harness/delegate:latest
+        imagePullPolicy: Always
+        name: delegate
+        ports:
+          - containerPort: 8080
+        resources:
+          limits:
+            cpu: "1.0"
+            memory: "8Gi"
+        livenessProbe:
+          httpGet:
+            path: /api/health
+            port: 3460
+            scheme: HTTP
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          failureThreshold: 2
+        startupProbe:
+          httpGet:
+            path: /api/health
+            port: 3460
+            scheme: HTTP
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          failureThreshold: 15
+        envFrom:
+        - secretRef:
+            name: harness-delegate-account-token
+        env:
+        - name: JAVA_OPTS
+          value: "-Xms64M"
+        - name: ACCOUNT_ID
+          value: ACCOUNT_ID
+        - name: MANAGER_HOST_AND_PORT
+          value: https://localhost:9090
+        - name: DEPLOY_MODE
+          value: KUBERNETES
+        - name: DELEGATE_NAME
+          value: harness-delegate
+        - name: DELEGATE_TYPE
+          value: "KUBERNETES"
+        - name: DELEGATE_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: INIT_SCRIPT
+          value: ""
+        - name: DELEGATE_PROFILE
+          value: ""
+        - name: DELEGATE_GROUP_NAME
+          value: "harness-delegate"
+        - name: CLIENT_TOOLS_DOWNLOAD_DISABLED
+          value: "true"
+        - name: LOG_STREAMING_SERVICE_URL
+          value: "http://localhost:8079"
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: delegate-service
+  namespace: harness-delegate
+spec:
+  type: ClusterIP
+  selector:
+    harness.io/name: harness-delegate
+  ports:
+    - port: 8080
+
+---
+
+kind: Role
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: upgrader-cronjob
+  namespace: harness-delegate
+rules:
+  - apiGroups: ["batch", "apps", "extensions"]
+    resources: ["cronjobs"]
+    verbs: ["get", "list", "watch", "update", "patch"]
+  - apiGroups: ["extensions", "apps"]
+    resources: ["deployments"]
+    verbs: ["get", "list", "watch", "create", "update", "patch"]
+
+---
+
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: harness-delegate-upgrader-cronjob
+  namespace: harness-delegate
+subjects:
+  - kind: ServiceAccount
+    name: upgrader-cronjob-sa
+    namespace: harness-delegate
+roleRef:
+  kind: Role
+  name: upgrader-cronjob
+  apiGroup: ""
+
+---
+
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: upgrader-cronjob-sa
+  namespace: harness-delegate
+
+---
+
+apiVersion: v1
+kind: Secret
+metadata:
+  name: harness-delegate-accoun-upgrader-token
+  namespace: harness-delegate
+type: Opaque
+data:
+  UPGRADER_TOKEN: "QUNDT1VOVF9LRVk="
+
+---
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: harness-delegate-accoun-upgrader-config
+  namespace: harness-delegate
+data:
+  config.yaml: |
+    mode: Delegate
+    dryRun: false
+    workloadName: harness-delegate-accoun
+    namespace: harness-delegate
+    containerName: delegate
+    delegateConfig:
+      accountId: ACCOUNT_ID
+      managerHost: https://localhost:9090
+
+---
+
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  labels:
+    harness.io/name: harness-delegate-accoun-upgrader-job
+  name: harness-delegate-accoun-upgrader-job
+  namespace: harness-delegate
+spec:
+  schedule: "0 */1 * * *"
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 20
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          serviceAccountName: upgrader-cronjob-sa
+          restartPolicy: Never
+          containers:
+          - image: harness/upgrader:latest
+            name: upgrader
+            imagePullPolicy: Always
+            envFrom:
+            - secretRef:
+                name: harness-delegate-accoun-upgrader-token
+            volumeMounts:
+              - name: config-volume
+                mountPath: /etc/config
+          volumes:
+            - name: config-volume
+              configMap:
+                name: harness-delegate-accoun-upgrader-config

@@ -1,0 +1,27 @@
+parallel:
+      - __uuid: parallel1
+        step:
+          __uuid: "test"
+          type: Http
+          name: <+strategy.iterations>
+          identifier: <+strategy.iteration>
+          strategy:
+            parallelism: 4
+          spec:
+            url: https://www.google.com
+            method: GET
+            headers: []
+            outputVariables: []
+          timeout: 1m
+      - __uuid: parallel2
+        step:
+          _uuid: "test1"
+          type: Http
+          name: bing
+          identifier: bing
+          spec:
+            url: https://www.bing.com
+            method: GET
+            headers: []
+            outputVariables: []
+          timeout: 10s

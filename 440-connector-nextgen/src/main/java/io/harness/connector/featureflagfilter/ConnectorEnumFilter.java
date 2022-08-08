@@ -8,19 +8,34 @@
 package io.harness.connector.featureflagfilter;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.beans.FeatureName.AZURE_REPO_CONNECTOR;
+import static io.harness.beans.FeatureName.JENKINS_ARTIFACT;
+import static io.harness.beans.FeatureName.SSH_NG;
+import static io.harness.remote.client.RestClientUtils.getResponse;
 
+import io.harness.account.AccountClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.ff.filters.EnumFeatureFlagFilter;
 
 import com.google.common.collect.Sets;
+import com.google.inject.Inject;
 import com.google.inject.Singleton;
 
 @OwnedBy(CDP)
 @Singleton
 public class ConnectorEnumFilter extends EnumFeatureFlagFilter {
+  @Inject private AccountClient accountClient;
+
   public ConnectorEnumFilter() {
-    put(FeatureName.SSH_NG, Sets.newHashSet(ConnectorType.PDC));
+    put(SSH_NG, Sets.newHashSet(ConnectorType.PDC));
+    put(AZURE_REPO_CONNECTOR, Sets.newHashSet(ConnectorType.AZURE_REPO));
+    put(JENKINS_ARTIFACT, Sets.newHashSet(ConnectorType.JENKINS));
+  }
+
+  @Override
+  public boolean isFeatureFlagEnabled(FeatureName featureName, String accountId) {
+    return getResponse(accountClient.isFeatureFlagEnabled(featureName.name(), accountId));
   }
 }

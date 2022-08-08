@@ -62,6 +62,7 @@ public class LdapGroupScheduledHandler implements Handler<LdapSettings> {
     iterator = persistenceIteratorFactory.createIterator(LdapGroupScheduledHandler.class,
         MongoPersistenceIterator.<LdapSettings, MorphiaFilterExpander<LdapSettings>>builder()
             .mode(PersistenceIterator.ProcessMode.LOOP)
+            .iteratorName("LdapGroupScheduled")
             .clazz(LdapSettings.class)
             .fieldName(SSOSettingsKeys.nextIterations)
             .acceptableNoAlertDelay(ofSeconds(60))

@@ -30,7 +30,7 @@ PROJECTS=$(<$SHDIR/jira-projects.txt)
 
 ghprbPullTitle="$1"
 
-PR_MESSAGE=`echo "${ghprbPullTitle}" | grep -iE "^(${COMMIT_CONTENT}):[\ ]*\[(${PROJECTS})-[0-9]+][:\ ]*"`
+PR_MESSAGE=`echo "${ghprbPullTitle}" | grep -iE "^(${COMMIT_CONTENT}[\ ]*):[\ ]*\[(${PROJECTS})-[0-9]+][:\ ]*"`
 
 if [ -z "$PR_MESSAGE" ]
 then

@@ -25,8 +25,11 @@ import io.harness.beans.DelegateTask;
 import io.harness.delegate.beans.TaskData;
 
 import software.wings.beans.APMVerificationConfig;
+import software.wings.beans.LogCollectionInfo;
+import software.wings.beans.LogResponseMapping;
 import software.wings.beans.SettingAttribute;
 import software.wings.beans.TaskType;
+import software.wings.beans.apm.Method;
 import software.wings.delegatetasks.DelegateStateType;
 import software.wings.delegatetasks.cv.beans.CustomLogResponseMapper;
 import software.wings.service.impl.analysis.AnalysisComparisonStrategy;
@@ -49,10 +52,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 import lombok.experimental.FieldNameConstants;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
@@ -202,7 +201,7 @@ public class CustomLogVerificationState extends AbstractLogAnalysisState {
                       .async(true)
                       .taskType(TaskType.CUSTOM_LOG_COLLECTION_TASK.name())
                       .parameters(new Object[] {dataCollectionInfo})
-                      .timeout(TimeUnit.MINUTES.toMillis(Integer.parseInt(getTimeDuration()) + 120))
+                      .timeout(TimeUnit.MINUTES.toMillis(Integer.parseInt(getTimeDuration(context)) + 120))
                       .build())
             .setupAbstraction(Cd1SetupFields.ENV_ID_FIELD, envId)
             .setupAbstraction(Cd1SetupFields.INFRASTRUCTURE_MAPPING_ID_FIELD, infrastructureMappingId)
@@ -213,7 +212,7 @@ public class CustomLogVerificationState extends AbstractLogAnalysisState {
             .stateExecutionId(context.getStateExecutionInstanceId())
             .dataCollectionStartTime(dataCollectionStartTimeStamp)
             .dataCollectionEndTime(
-                dataCollectionStartTimeStamp + TimeUnit.MINUTES.toMillis(Integer.parseInt(getTimeDuration())))
+                dataCollectionStartTimeStamp + TimeUnit.MINUTES.toMillis(Integer.parseInt(getTimeDuration(context))))
             .executionData(data)
             .build(),
         waitId);
@@ -251,7 +250,7 @@ public class CustomLogVerificationState extends AbstractLogAnalysisState {
   }
 
   private static Map<String, CustomLogResponseMapper> getResponseMappers(LogCollectionInfo logCollectionInfo) {
-    ResponseMapping responseMapping = logCollectionInfo.getResponseMapping();
+    LogResponseMapping responseMapping = logCollectionInfo.getResponseMapping();
     Map<String, CustomLogResponseMapper> responseMappers = new HashMap<>();
 
     // Set the host details (if exists) in the responseMapper
@@ -280,40 +279,4 @@ public class CustomLogVerificationState extends AbstractLogAnalysisState {
 
     return responseMappers;
   }
-
-  @Data
-  @Builder
-  @NoArgsConstructor
-  @AllArgsConstructor
-  public static class LogCollectionInfo {
-    private String collectionUrl;
-    private String collectionBody;
-    private ResponseType responseType;
-    private CustomLogVerificationState.ResponseMapping responseMapping;
-    private Method method;
-  }
-
-  @Data
-  @Builder
-  @NoArgsConstructor
-  @AllArgsConstructor
-  public static class ResponseMapping {
-    private String logMessageJsonPath;
-    private String hostJsonPath;
-    private String hostRegex;
-    private String timestampJsonPath;
-    @Deprecated private String timeStampFormat;
-    private String timestampFormat;
-
-    public void setTimestampFormat(String format) {
-      this.timestampFormat = format;
-    }
-
-    public String getTimestampFormat() {
-      return isNotEmpty(timestampFormat) ? timestampFormat : timeStampFormat;
-    }
-  }
-  public enum ResponseType { JSON }
-
-  public enum Method { POST, GET }
 }

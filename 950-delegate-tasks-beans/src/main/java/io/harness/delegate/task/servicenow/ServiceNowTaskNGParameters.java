@@ -21,6 +21,7 @@ import io.harness.servicenow.ServiceNowActionNG;
 
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -38,6 +39,20 @@ public class ServiceNowTaskNGParameters implements TaskParameters, ExecutionCapa
   ServiceNowActionNG action;
   String ticketType;
   String ticketNumber;
+  String ticketId;
+
+  // paginated template list
+  int templateListLimit;
+  int templateListOffset;
+  String templateListSearchTerm;
+
+  /// Fields sent while creating/updating issue.
+  Map<String, String> fields;
+
+  // templateName
+  String templateName;
+  // use template for creating/updating issues
+  boolean useServiceNowTemplate;
 
   List<String> delegateSelectors;
 

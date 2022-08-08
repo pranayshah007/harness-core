@@ -29,3 +29,21 @@ function jar_app_version() {
   fi
   echo $VERSION
 }
+
+# url-encodes a given input string - used to encode the proxy password for curl commands.
+# Note:
+#   - We implement the functionality ourselves to avoid dependencies on new packages.
+#   - We encode a superset of the characters defined in the specification, which is explicitly
+#     allowed: https://www.ietf.org/rfc/rfc1738.txt
+<#noparse>
+url_encode () {
+    local input=$1
+    for (( i=0; i<${#input}; i++ )); do
+        local c=${input:$i:1}
+        case $c in
+            [a-zA-Z0-9-_\.\!\*]) printf "$c" ;;
+            *) printf '%%%02X' "'$c"
+        esac
+    done
+}
+</#noparse>

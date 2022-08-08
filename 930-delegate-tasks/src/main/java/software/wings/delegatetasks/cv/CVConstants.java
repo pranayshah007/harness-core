@@ -29,4 +29,21 @@ public class CVConstants {
   public static final String DEFAULT_TIME_ZONE = "UTC";
   public static final String DUMMY_HOST_NAME = "dummy";
   public static final long TOTAL_HITS_PER_MIN_THRESHOLD = 1000;
+  public static String AZURE_BASE_URL = "https://api.loganalytics.io/";
+  public static String AZURE_TOKEN_URL = "https://login.microsoftonline.com/";
+  public static final int CRON_POLL_INTERVAL_IN_MINUTES = 15;
+  public static final int CV_DATA_COLLECTION_INTERVAL_IN_MINUTE = CRON_POLL_INTERVAL_IN_MINUTES / 3;
+  public static final String STACKDRIVER_DEFAULT_LOG_MESSAGE_FIELD = "textPayload";
+  public static final String STACKDRIVER_DEFAULT_HOST_NAME_FIELD = "pod_id";
+  public static final String STACK_DRIVER_QUERY_SEPARATER = " AND ";
+  public static final String VERIFICATION_HOST_PLACEHOLDER = "${host}";
+  public static final String DEFAULT_GROUP_NAME = "default";
+  public static final String INSTANA_DOCKER_PLUGIN = "docker";
+  public static final String INSTANA_GROUPBY_TAG_TRACE_NAME = "trace.name";
+  public static final long KB = 1024;
+  public static final long MB = KB * KB;
+  public static final long GB = MB * MB;
+  public static final String LAMBDA_HOST_NAME = "LAMBDA_HOST";
+  public static final String NON_HOST_PREVIOUS_ANALYSIS = "NON_HOST_PREVIOUS_ANALYSIS";
+  public static final String URL_BODY_APPENDER = "__harness-body__";
 }

@@ -12,6 +12,7 @@ import static io.harness.rule.OwnerRule.RAJ;
 import static io.harness.rule.OwnerRule.XIN;
 
 import static junit.framework.TestCase.assertEquals;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
@@ -23,6 +24,8 @@ import io.harness.authenticationservice.beans.AuthenticationInfo;
 import io.harness.cache.HarnessCacheManager;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.DelegateConfiguration;
+import io.harness.delegate.service.DelegateVersionService;
+import io.harness.ff.FeatureFlagService;
 import io.harness.ng.core.account.AuthenticationMechanism;
 import io.harness.ng.core.account.OauthProviderType;
 import io.harness.persistence.HQuery;
@@ -42,6 +45,7 @@ import software.wings.service.intfc.AuthService;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
 import org.junit.Before;
@@ -58,9 +62,11 @@ public class AccountServiceImplTest extends WingsBaseTest {
   @Mock protected AuthService authService;
   @Mock protected HarnessCacheManager harnessCacheManager;
   @Mock private LicenseService licenseService;
+  @Mock private FeatureFlagService featureFlagService;
   @Mock private GenericDbCache dbCache;
   @Mock private SSOSettingServiceImpl ssoSettingService;
   @Mock private SamlClientService samlClientService;
+  @Mock private DelegateVersionService delegateVersionService;
 
   @Mock Query<Account> accountQuery1;
   @Mock Query<Account> accountQuery2;
@@ -76,6 +82,7 @@ public class AccountServiceImplTest extends WingsBaseTest {
   @Before
   public void setup() throws Exception {
     initMocks(this);
+    when(delegateVersionService.getDelegateJarVersions(anyString())).thenReturn(Collections.emptyList());
   }
 
   @Test
@@ -83,6 +90,7 @@ public class AccountServiceImplTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void getDelegateConfigurationFromGlobalAccount() {
     when(licenseService.isAccountDeleted(any())).thenReturn(false);
+    when(featureFlagService.isEnabled(any(), any())).thenReturn(false);
 
     Account account = new Account();
     account.setUuid(INDIVIDUAL_ACCOUNT);
@@ -118,6 +126,7 @@ public class AccountServiceImplTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void getDelegateConfigurationFromIndividualAccount() {
     when(licenseService.isAccountDeleted(any())).thenReturn(false);
+    when(featureFlagService.isEnabled(any(), any())).thenReturn(false);
 
     Account account = new Account();
     account.setUuid(INDIVIDUAL_ACCOUNT);
@@ -126,7 +135,7 @@ public class AccountServiceImplTest extends WingsBaseTest {
     List<String> delegateVersions = new ArrayList<>();
     delegateVersions.add(version);
     DelegateConfiguration individualConfiguration =
-        DelegateConfiguration.builder().delegateVersions(delegateVersions).accountVersion(true).build();
+        DelegateConfiguration.builder().delegateVersions(delegateVersions).build();
     account.setDelegateConfiguration(individualConfiguration);
 
     Account globalAccount = new Account();
@@ -247,6 +256,7 @@ public class AccountServiceImplTest extends WingsBaseTest {
     account.setAppId("testappid");
     wingsPersistence.save(account);
     when(dbCache.get(Account.class, ACCOUNT_ID)).thenReturn(account);
+    when(wingsPersistence.get(any(), any())).thenReturn(account);
     return account;
   }
 }

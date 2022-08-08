@@ -7,12 +7,18 @@
 
 package io.harness.batch.processing.metrics;
 
+import static java.lang.String.format;
+
+import io.harness.ModuleType;
 import io.harness.batch.processing.cloudevents.aws.ecs.service.tasklet.support.ng.NGConnectorHelper;
+import io.harness.batch.processing.config.BatchMainConfig;
+import io.harness.ccm.bigQuery.BigQueryService;
 import io.harness.ccm.budget.dao.BudgetDao;
 import io.harness.ccm.budget.utils.BudgetUtils;
 import io.harness.ccm.commons.beans.recommendation.RecommendationTelemetryStats;
 import io.harness.ccm.commons.dao.recommendation.K8sRecommendationDAO;
 import io.harness.ccm.commons.entities.billing.Budget;
+import io.harness.ccm.commons.utils.CCMLicenseUsageHelper;
 import io.harness.ccm.views.dao.CEReportScheduleDao;
 import io.harness.ccm.views.dao.CEViewDao;
 import io.harness.ccm.views.entities.CEReportSchedule;
@@ -24,10 +30,19 @@ import io.harness.connector.ConnectivityStatus;
 import io.harness.connector.ConnectorResourceClient;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.delegate.beans.connector.ConnectorType;
+import io.harness.licensing.beans.modules.AccountLicenseDTO;
+import io.harness.licensing.remote.NgLicenseHttpClient;
+import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.utils.RestCallToNGManagerClientUtils;
 
+import com.google.cloud.bigquery.BigQuery;
+import com.google.cloud.bigquery.QueryJobConfiguration;
+import com.google.cloud.bigquery.TableResult;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -37,6 +52,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import retrofit2.Call;
 
 @Slf4j
 @Singleton
@@ -48,6 +64,15 @@ public class CENGTelemetryServiceImpl implements CENGTelemetryService {
   @Autowired @Inject private BudgetUtils budgetUtils;
   @Autowired @Inject private CEReportScheduleDao ceReportScheduleDao;
   @Autowired @Inject private NGConnectorHelper ngConnectorHelper;
+  @Autowired @Inject private BigQueryService bigQueryService;
+  @Autowired @Inject private BatchMainConfig config;
+  @Autowired @Inject private NgLicenseHttpClient ngLicenseHttpClient;
+
+  public static final String DATA_SET_NAME = "CE_INTERNAL";
+  public static final String TABLE_NAME = "costAggregated";
+  public static final String QUERY_TEMPLATE =
+      "SELECT SUM(cost) AS cost, TIMESTAMP_TRUNC(day, month) AS month, cloudProvider FROM `%s` "
+      + "WHERE day >= TIMESTAMP_MILLIS(%s) AND day <= TIMESTAMP_MILLIS(%s) AND accountId = '%s' GROUP BY month, cloudProvider";
 
   public HashMap<String, Object> getReportMetrics(String accountId) {
     HashMap<String, Object> properties = new HashMap<>();
@@ -79,9 +104,42 @@ public class CENGTelemetryServiceImpl implements CENGTelemetryService {
     return properties;
   }
 
+  public HashMap<String, Object> getLicenseUtil(String accountIdentifier) {
+    String gcpProjectId = config.getGcpConfig().getGcpProjectId();
+    String cloudProviderTableName = format("%s.%s.%s", gcpProjectId, DATA_SET_NAME, TABLE_NAME);
+    long endOfDay = Instant.now().plus(1, ChronoUnit.DAYS).truncatedTo(ChronoUnit.DAYS).toEpochMilli();
+    String query = format(
+        QUERY_TEMPLATE, cloudProviderTableName, getLicenseStartTime(accountIdentifier), endOfDay, accountIdentifier);
+
+    BigQuery bigQuery = bigQueryService.get();
+    QueryJobConfiguration queryConfig = QueryJobConfiguration.newBuilder(query).build();
+    TableResult result;
+    try {
+      result = bigQuery.query(queryConfig);
+    } catch (InterruptedException e) {
+      log.error("Failed to getActiveSpend for Account:{}, {}", accountIdentifier, e);
+      Thread.currentThread().interrupt();
+      return null;
+    }
+    HashMap<String, Object> properties = new HashMap<>();
+    properties.put("ccm_license_cloud_spend_used", CCMLicenseUsageHelper.computeDeduplicatedActiveSpend(result));
+    return properties;
+  }
+
+  private long getLicenseStartTime(String accountId) {
+    try {
+      Call<ResponseDTO<AccountLicenseDTO>> accountLicensesCall = ngLicenseHttpClient.getAccountLicensesDTO(accountId);
+      AccountLicenseDTO accountLicenseDTO = RestCallToNGManagerClientUtils.execute(accountLicensesCall);
+      return accountLicenseDTO.getAllModuleLicenses().get(ModuleType.CE).get(0).getStartTime();
+    } catch (Exception ex) {
+      log.error("Exception in fetching license startTime for accountId: {}", accountId, ex);
+    }
+    return 0L;
+  }
+
   public HashMap<String, Object> getPerspectivesMetrics(String accountId) {
     HashMap<String, Object> properties = new HashMap<>();
-    List<CEView> viewList = ceViewDao.findByAccountId(accountId);
+    List<CEView> viewList = ceViewDao.findByAccountId(accountId, null);
     viewList = viewList.stream()
                    .filter(view -> ImmutableSet.of(ViewType.SAMPLE, ViewType.CUSTOMER).contains(view.getViewType()))
                    .filter(view -> ImmutableSet.of(ViewState.COMPLETED).contains(view.getViewState()))

@@ -15,8 +15,6 @@ import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
-import io.harness.cdng.variables.beans.NGVariableOverrideSetWrapper;
-import io.harness.cdng.variables.beans.NGVariableOverrideSets;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
@@ -48,30 +46,10 @@ public class ServiceSpecStepTest extends CategoryTest {
         ServiceSpecStepParameters.builder()
             .originalVariables(ParameterField.createValueField(
                 Arrays.asList(prepareVariable("v1", "10"), prepareVariable("v2", "20"), prepareVariable("v3", "30"))))
-            .originalVariableOverrideSets(ParameterField.createValueField(Arrays.asList(
-                NGVariableOverrideSetWrapper.builder()
-                    .overrideSet(NGVariableOverrideSets.builder()
-                                     .identifier("vo1")
-                                     .variables(Arrays.asList(prepareVariable("v1", "11"), prepareVariable("v2", "21")))
-                                     .build())
-                    .build(),
-                NGVariableOverrideSetWrapper.builder()
-                    .overrideSet(NGVariableOverrideSets.builder()
-                                     .identifier("vo2")
-                                     .variables(Collections.singletonList(prepareVariable("v2", "22")))
-                                     .build())
-                    .build(),
-                NGVariableOverrideSetWrapper.builder()
-                    .overrideSet(NGVariableOverrideSets.builder()
-                                     .identifier("vo3")
-                                     .variables(Collections.singletonList(prepareVariable("v2", "23")))
-                                     .build())
-                    .build())))
             .stageOverrideVariables(
                 ParameterField.createValueField(Collections.singletonList(prepareVariable("v1", "12"))))
-            .stageOverridesUseVariableOverrideSets(ParameterField.createValueField(Arrays.asList("vo1", "vo2")))
             .build();
-    Map<String, Object> finalVariables = serviceSpecStep.getFinalVariablesMap(ambiance, stepParameters, null);
+    Map<String, Object> finalVariables = serviceSpecStep.getFinalVariablesMap(ambiance, stepParameters, null, null);
     assertThat(finalVariables).isNotNull();
     assertThat(((ParameterField<?>) finalVariables.get("v1")).getValue()).isEqualTo("10");
     assertThat(((ParameterField<?>) finalVariables.get("v2")).getValue()).isEqualTo("20");
@@ -79,7 +57,7 @@ public class ServiceSpecStepTest extends CategoryTest {
 
     Map<String, Object> output = (Map<String, Object>) finalVariables.get("output");
     assertThat(((ParameterField<?>) output.get("v1")).getValue()).isEqualTo("12");
-    assertThat(((ParameterField<?>) output.get("v2")).getValue()).isEqualTo("22");
+    assertThat(((ParameterField<?>) output.get("v2")).getValue()).isEqualTo("20");
     assertThat(((ParameterField<?>) output.get("v3")).getValue()).isEqualTo("30");
   }
 

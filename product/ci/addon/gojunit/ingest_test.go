@@ -115,6 +115,7 @@ func TestExamplesInTheWild(t *testing.T) {
 				var testcase = Test{
 					Name:       "testStdoutStderr",
 					Classname:  "com.example.FooTest",
+					Filename:   "",
 					DurationMs: 1234560,
 					Result: types.Result{
 						Status: types.StatusFailed,
@@ -143,6 +144,7 @@ func TestExamplesInTheWild(t *testing.T) {
 				var testcase = Test{
 					Name:       "testSomething()",
 					Classname:  "TestClassSample",
+					Filename:   "",
 					DurationMs: 342,
 					Result: types.Result{
 						Status:  types.StatusFailed,
@@ -179,6 +181,7 @@ func TestExamplesInTheWild(t *testing.T) {
 				var testcase = Test{
 					Name:       "testA",
 					Classname:  "SampleTest",
+					Filename:   "/untitled/tests/SampleTest.php",
 					DurationMs: 5,
 					Result: types.Result{
 						Status: types.StatusPassed,

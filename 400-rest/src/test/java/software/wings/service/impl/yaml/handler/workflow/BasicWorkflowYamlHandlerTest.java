@@ -21,6 +21,7 @@ import static software.wings.utils.WingsTestConstants.APP_ID;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 import io.harness.category.element.UnitTests;
@@ -45,7 +46,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 
 /**
  * @author rktummala on 1/9/18
@@ -67,7 +67,7 @@ public class BasicWorkflowYamlHandlerTest extends WorkflowYamlHandlerTestBase {
   @Owner(developers = UJJAWAL)
   @Category(UnitTests.class)
   public void testCRUDAndGet() throws Exception {
-    when(limitCheckerFactory.getInstance(new Action(Mockito.anyString(), ActionType.CREATE_WORKFLOW)))
+    when(limitCheckerFactory.getInstance(new Action(any(), ActionType.CREATE_WORKFLOW)))
         .thenReturn(new MockChecker(true, ActionType.CREATE_WORKFLOW));
 
     testCRUD(readYamlStringInFile(BASIC_VALID_YAML_CONTENT_RESOURCE_PATH), "basic1");

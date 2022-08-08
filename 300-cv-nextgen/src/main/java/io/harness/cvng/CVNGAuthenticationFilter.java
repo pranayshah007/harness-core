@@ -7,6 +7,7 @@
 
 package io.harness.cvng;
 
+import static io.harness.agent.AgentGatewayConstants.HEADER_AGENT_MTLS_AUTHORITY;
 import static io.harness.eraro.ErrorCode.INVALID_CREDENTIAL;
 import static io.harness.exception.WingsException.USER;
 
@@ -59,7 +60,11 @@ public class CVNGAuthenticationFilter
       String accountId = containerRequestContext.getUriInfo().getQueryParameters().getFirst("accountId");
       String token = containerRequestContext.getHeaderString(HttpHeaders.AUTHORIZATION);
       String delegateId = containerRequestContext.getHeaderString("delegateId");
-      validateDelegateToken(accountId, token, delegateId);
+      String delegateTokenName = containerRequestContext.getHeaderString("delegateTokenName");
+      String agentMtlsAuthority = containerRequestContext.getHeaderString(HEADER_AGENT_MTLS_AUTHORITY);
+
+      validateDelegateToken(accountId, token, delegateId, delegateTokenName, agentMtlsAuthority);
+
       return;
     }
 
@@ -67,9 +72,11 @@ public class CVNGAuthenticationFilter
   }
 
   @Override
-  public void validateDelegateToken(String accountId, String tokenString, String delegateId) {
+  public void validateDelegateToken(
+      String accountId, String tokenString, String delegateId, String delegateTokenName, String agentMtlsAuthority) {
     try {
-      if (managerClient.authenticateDelegateRequest(accountId, tokenString, delegateId)
+      if (managerClient
+              .authenticateDelegateRequest(accountId, tokenString, delegateId, delegateTokenName, agentMtlsAuthority)
               .execute()
               .body()
               .getResource()) {

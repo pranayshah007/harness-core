@@ -1,0 +1,23 @@
+pipeline:
+  name: tt
+  identifier: pipeline
+  template:
+    templateRef: newwTewm
+    versionLabel: e
+    templateInputs:
+      stages:
+        - stage:
+            identifier: bdgf
+            type: Approval
+            spec:
+              execution:
+                steps:
+                  - step:
+                      identifier: kjgh
+                      type: HarnessApproval
+                      spec:
+                        approvers:
+                          userGroups: <+input>
+  tags: {}
+  projectIdentifier: proj
+  orgIdentifier: org

@@ -16,7 +16,6 @@ import io.harness.connector.entities.embedded.pdcconnector.PhysicalDataCenterCon
 import io.harness.connector.mappers.ConnectorEntityToDTOMapper;
 import io.harness.delegate.beans.connector.pdcconnector.HostDTO;
 import io.harness.delegate.beans.connector.pdcconnector.PhysicalDataCenterConnectorDTO;
-import io.harness.encryption.SecretRefHelper;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Singleton;
@@ -33,10 +32,7 @@ public class PhysicalDataCenterEntityToDTO
     implements ConnectorEntityToDTOMapper<PhysicalDataCenterConnectorDTO, PhysicalDataCenterConnector> {
   @Override
   public PhysicalDataCenterConnectorDTO createConnectorDTO(PhysicalDataCenterConnector connector) {
-    return PhysicalDataCenterConnectorDTO.builder()
-        .hosts(getHostDTOSFromHosts(connector.getHosts()))
-        .sshKeyRef(SecretRefHelper.createSecretRef(connector.getSshKeyRef()))
-        .build();
+    return PhysicalDataCenterConnectorDTO.builder().hosts(getHostDTOSFromHosts(connector.getHosts())).build();
   }
 
   private List<HostDTO> getHostDTOSFromHosts(List<Host> hosts) {

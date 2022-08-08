@@ -22,6 +22,7 @@ import io.harness.persistence.UuidAware;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.google.common.collect.ImmutableList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import lombok.Builder;
@@ -74,7 +75,12 @@ public final class VerificationTask implements UuidAware, CreatedAtAware, Accoun
   @FdTtlIndex private Date validUntil;
   // TODO: figure out a way to cleanup old/deleted mappings.
   private TaskInfo taskInfo;
-
+  public Map<String, String> getTags() {
+    if (tags == null) {
+      return new HashMap<>();
+    }
+    return tags;
+  }
   public abstract static class TaskInfo {
     public static final String TASK_TYPE_FIELD_NAME = "taskType";
     public abstract TaskType getTaskType();

@@ -104,4 +104,6 @@ public interface NgUserService {
   boolean updateScimUser(String accountId, String userId, ScimUser scimUser);
 
   boolean updateUserDisabled(String accountId, String userId, boolean disabled);
+
+  boolean verifyHarnessSupportGroupUser();
 }

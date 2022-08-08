@@ -9,15 +9,20 @@ package io.harness.polling;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
+import static io.harness.polling.contracts.Type.ACR;
+import static io.harness.polling.contracts.Type.AMAZON_S3;
 import static io.harness.polling.contracts.Type.ARTIFACTORY;
 import static io.harness.polling.contracts.Type.DOCKER_HUB;
 import static io.harness.polling.contracts.Type.ECR;
 import static io.harness.polling.contracts.Type.GCR;
 import static io.harness.polling.contracts.Type.GCS_HELM;
 import static io.harness.polling.contracts.Type.HTTP_HELM;
+import static io.harness.polling.contracts.Type.JENKINS;
 import static io.harness.polling.contracts.Type.NEXUS3;
 import static io.harness.polling.contracts.Type.S3_HELM;
 
+import io.harness.NgAutoLogContext;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.manifest.ManifestType;
@@ -31,18 +36,23 @@ import io.harness.delegate.beans.polling.PollingDelegateResponse;
 import io.harness.delegate.beans.polling.PollingResponseInfc;
 import io.harness.delegate.task.artifacts.response.ArtifactDelegateResponse;
 import io.harness.exception.InvalidRequestException;
+import io.harness.logging.AutoLogContext;
 import io.harness.logging.CommandExecutionStatus;
+import io.harness.logging.NgPollingAutoLogContext;
 import io.harness.polling.artifact.ArtifactCollectionUtilsNg;
 import io.harness.polling.bean.PolledResponseResult;
 import io.harness.polling.bean.PolledResponseResult.PolledResponseResultBuilder;
 import io.harness.polling.bean.PollingDocument;
+import io.harness.polling.bean.artifact.AcrArtifactInfo;
 import io.harness.polling.bean.artifact.ArtifactInfo;
 import io.harness.polling.bean.artifact.ArtifactPolledResponse;
 import io.harness.polling.bean.artifact.ArtifactoryRegistryArtifactInfo;
 import io.harness.polling.bean.artifact.DockerHubArtifactInfo;
 import io.harness.polling.bean.artifact.EcrArtifactInfo;
 import io.harness.polling.bean.artifact.GcrArtifactInfo;
+import io.harness.polling.bean.artifact.JenkinsArtifactInfo;
 import io.harness.polling.bean.artifact.NexusRegistryArtifactInfo;
+import io.harness.polling.bean.artifact.S3ArtifactInfo;
 import io.harness.polling.bean.manifest.HelmChartManifestInfo;
 import io.harness.polling.bean.manifest.ManifestInfo;
 import io.harness.polling.bean.manifest.ManifestPolledResponse;
@@ -57,9 +67,11 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+import lombok.extern.slf4j.Slf4j;
 import org.hibernate.validator.constraints.NotEmpty;
 
 @OwnedBy(HarnessTeam.CDC)
+@Slf4j
 public class PollingResponseHandler {
   private static final int MAX_FAILED_ATTEMPTS = 3500;
   private PollingService pollingService;
@@ -86,10 +98,16 @@ public class PollingResponseHandler {
       pollingService.delete(pollingDocument);
       return;
     }
-    if (executionResponse.getCommandExecutionStatus() == CommandExecutionStatus.SUCCESS) {
-      handleSuccessResponse(pollingDocument, executionResponse.getPollingResponseInfc());
-    } else {
-      handleFailureResponse(pollingDocument);
+    try (AutoLogContext ignore1 = new NgAutoLogContext(
+             pollingDocument.getProjectIdentifier(), pollingDocument.getOrgIdentifier(), accountId, OVERRIDE_ERROR);
+         AutoLogContext ignore2 = new NgPollingAutoLogContext(pollDocId, OVERRIDE_ERROR);) {
+      log.info("Got a polling response {} for perpetual task id {}", executionResponse.getCommandExecutionStatus(),
+          perpetualTaskId);
+      if (executionResponse.getCommandExecutionStatus() == CommandExecutionStatus.SUCCESS) {
+        handleSuccessResponse(pollingDocument, executionResponse.getPollingResponseInfc());
+      } else {
+        handleFailureResponse(pollingDocument);
+      }
     }
   }
 
@@ -139,6 +157,7 @@ public class PollingResponseHandler {
                                        .collect(Collectors.toList());
 
     if (isNotEmpty(newArtifactKeys)) {
+      log.info("Publishing artifact versions {} to topic.", newArtifactKeys);
       PolledResponseResult polledResponseResult =
           getPolledResponseResultForArtifact((ArtifactInfo) pollingDocument.getPollingInfo());
       publishPolledItemToTopic(pollingDocument, newArtifactKeys, polledResponseResult);
@@ -211,6 +230,7 @@ public class PollingResponseHandler {
                                    .collect(Collectors.toList());
 
     if (isNotEmpty(newVersions)) {
+      log.info("Publishing manifest versions {} to topic.", newVersions);
       PolledResponseResult polledResponseResult =
           getPolledResponseResultForManifest((ManifestInfo) pollingDocument.getPollingInfo());
       publishPolledItemToTopic(pollingDocument, newVersions, polledResponseResult);
@@ -271,11 +291,28 @@ public class PollingResponseHandler {
         polledResponseResultBuilder.type(NEXUS3);
         break;
       case ARTIFACTORY_REGISTRY:
-        polledResponseResultBuilder.name(((ArtifactoryRegistryArtifactInfo) artifactInfo).getArtifactPath());
+        if (EmptyPredicate.isNotEmpty(((ArtifactoryRegistryArtifactInfo) artifactInfo).getRepositoryFormat())
+            && ((ArtifactoryRegistryArtifactInfo) artifactInfo).getRepositoryFormat().equals("generic")) {
+          polledResponseResultBuilder.name(((ArtifactoryRegistryArtifactInfo) artifactInfo).getArtifactDirectory());
+        } else {
+          polledResponseResultBuilder.name(((ArtifactoryRegistryArtifactInfo) artifactInfo).getArtifactPath());
+        }
         polledResponseResultBuilder.type(ARTIFACTORY);
         break;
+      case ACR:
+        polledResponseResultBuilder.name(((AcrArtifactInfo) artifactInfo).getRepository());
+        polledResponseResultBuilder.type(ACR);
+        break;
+      case AMAZONS3:
+        polledResponseResultBuilder.name(((S3ArtifactInfo) artifactInfo).getBucketName());
+        polledResponseResultBuilder.type(AMAZON_S3);
+        break;
+      case JENKINS:
+        polledResponseResultBuilder.name(((JenkinsArtifactInfo) artifactInfo).getJobName());
+        polledResponseResultBuilder.type(JENKINS);
+        break;
       default:
-        throw new InvalidRequestException("Unsupported Artifact Type" + artifactInfo.getType().getDisplayName());
+        throw new InvalidRequestException("Unsupported Artifact Type " + artifactInfo.getType().getDisplayName());
     }
     return polledResponseResultBuilder.build();
   }

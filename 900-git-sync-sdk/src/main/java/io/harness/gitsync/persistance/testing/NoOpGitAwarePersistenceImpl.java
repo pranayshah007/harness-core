@@ -70,6 +70,18 @@ public class NoOpGitAwarePersistenceImpl implements GitAwarePersistence {
   }
 
   @Override
+  public <B extends GitSyncableEntity> void delete(
+      B objectToRemove, String yaml, ChangeType changeType, Class<B> entityClass, Supplier functor) {
+    mongoTemplate.remove(objectToRemove);
+  }
+
+  @Override
+  public <B extends GitSyncableEntity, Y extends YamlDTO> void delete(
+      B objectToRemove, ChangeType changeType, Class<B> entityClass) {
+    mongoTemplate.remove(objectToRemove);
+  }
+
+  @Override
   public Criteria getCriteriaWithGitSync(
       String projectIdentifier, String orgIdentifier, String accountId, Class entityClass) {
     return new Criteria();

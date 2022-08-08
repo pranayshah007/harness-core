@@ -79,15 +79,18 @@ public class InstanceBillingAggregationDataTaskletTest extends BatchProcessingTe
         .thenReturn(true);
     when(billingDataService.generatePreAggBillingData(any(), any(), any(), any(), any())).thenReturn(true);
     when(billingDataService.generatePreAggBillingDataWithId(any(), any(), any(), any(), any())).thenReturn(true);
+    long endMillis = END_INSTANT.toEpochMilli();
+    long startMillis = START_INSTANT.toEpochMilli();
 
     RepeatStatus repeatStatus = instanceBillingAggregationDataTasklet.execute(null, chunkContext);
 
     verify(billingDataService, times(1))
-        .cleanPreAggBillingData(
-            eq(ACCOUNT_ID), eq(START_INSTANT), eq(END_INSTANT), eq(BatchJobType.INSTANCE_BILLING_AGGREGATION));
+        .cleanPreAggBillingData(eq(ACCOUNT_ID), eq(Instant.ofEpochMilli(startMillis)),
+            eq(Instant.ofEpochMilli(endMillis)), eq(BatchJobType.INSTANCE_BILLING_AGGREGATION));
     verify(billingDataService, times(1))
-        .generatePreAggBillingData(eq(ACCOUNT_ID), eq(START_INSTANT), eq(END_INSTANT),
-            eq(BatchJobType.INSTANCE_BILLING_AGGREGATION), eq(BatchJobType.INSTANCE_BILLING));
+        .generatePreAggBillingData(eq(ACCOUNT_ID), eq(Instant.ofEpochMilli(startMillis)),
+            eq(Instant.ofEpochMilli(endMillis)), eq(BatchJobType.INSTANCE_BILLING_AGGREGATION),
+            eq(BatchJobType.INSTANCE_BILLING));
 
     assertThat(repeatStatus).isNull();
   }

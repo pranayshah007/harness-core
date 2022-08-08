@@ -9,10 +9,15 @@ package io.harness.mappers;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.service.beans.ServiceSpecType;
 import io.harness.dtos.InstanceDTO;
+import io.harness.dtos.instanceinfo.AzureWebAppInstanceInfoDTO;
+import io.harness.dtos.instanceinfo.GitOpsInstanceInfoDTO;
 import io.harness.dtos.instanceinfo.K8sInstanceInfoDTO;
+import io.harness.dtos.instanceinfo.NativeHelmInstanceInfoDTO;
+import io.harness.dtos.instanceinfo.PdcInstanceInfoDTO;
+import io.harness.dtos.instanceinfo.ServerlessAwsLambdaInstanceInfoDTO;
 import io.harness.models.InstanceDetailsDTO;
+import io.harness.ng.core.k8s.ServiceSpecType;
 import io.harness.service.instancesynchandler.AbstractInstanceSyncHandler;
 import io.harness.service.instancesynchandlerfactory.InstanceSyncHandlerFactoryService;
 
@@ -21,6 +26,7 @@ import com.google.inject.Singleton;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.AllArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
 
 @OwnedBy(HarnessTeam.DX)
 @Singleton
@@ -38,10 +44,13 @@ public class InstanceDetailsMapper {
   }
 
   private InstanceDetailsDTO toInstanceDetailsDTO(InstanceDTO instanceDTO) {
-    AbstractInstanceSyncHandler instanceSyncHandler =
-        instanceSyncHandlerFactoryService.getInstanceSyncHandler(getInstanceInfoDTOType(instanceDTO));
+    AbstractInstanceSyncHandler instanceSyncHandler = instanceSyncHandlerFactoryService.getInstanceSyncHandler(
+        getInstanceInfoDTOType(instanceDTO), instanceDTO.getInfrastructureKind());
+    String artifactDisplayName = instanceDTO.getPrimaryArtifact().getDisplayName();
+    String artifactName =
+        StringUtils.isNotBlank(artifactDisplayName) ? artifactDisplayName : instanceDTO.getPrimaryArtifact().getTag();
     return InstanceDetailsDTO.builder()
-        .artifactName(instanceDTO.getPrimaryArtifact().getTag())
+        .artifactName(artifactName)
         .connectorRef(instanceDTO.getConnectorRef())
         .deployedAt(instanceDTO.getLastDeployedAt())
         .deployedById(instanceDTO.getLastDeployedById())
@@ -57,7 +66,17 @@ public class InstanceDetailsMapper {
   private String getInstanceInfoDTOType(InstanceDTO instanceDTO) {
     if (instanceDTO.getInstanceInfoDTO() instanceof K8sInstanceInfoDTO) {
       return ServiceSpecType.KUBERNETES;
+    } else if (instanceDTO.getInstanceInfoDTO() instanceof ServerlessAwsLambdaInstanceInfoDTO) {
+      return ServiceSpecType.SERVERLESS_AWS_LAMBDA;
+    } else if (instanceDTO.getInstanceInfoDTO() instanceof NativeHelmInstanceInfoDTO) {
+      return ServiceSpecType.NATIVE_HELM;
+    } else if (instanceDTO.getInstanceInfoDTO() instanceof AzureWebAppInstanceInfoDTO) {
+      return ServiceSpecType.AZURE_WEBAPP;
+    } else if (instanceDTO.getInstanceInfoDTO() instanceof GitOpsInstanceInfoDTO) {
+      return ServiceSpecType.GITOPS;
+    } else if (instanceDTO.getInstanceInfoDTO() instanceof PdcInstanceInfoDTO) {
+      return ((PdcInstanceInfoDTO) instanceDTO.getInstanceInfoDTO()).getServiceType();
     }
-    return ServiceSpecType.NATIVE_HELM; // as of now either K8s or NativeHelm
+    return null;
   }
 }

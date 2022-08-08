@@ -74,6 +74,20 @@ public class AnomalyDetectionHelper {
               timeSeries.getAccountId(), time.toString(), timeSeries.getAwsAccount(), timeSeries.getAwsService(),
               timeSeries.getAwsUsageType());
           break;
+        case AZURE_SUBSCRIPTION:
+          log.warn("Invalid Data for TimeSeries :: Azure subs : {} , time : {}  ", timeSeries.getAzureSubscription(),
+              time.toString());
+          break;
+        case AZURE_RESOURCE_GROUP:
+          log.warn("Invalid Data for TimeSeries :: Azure subs : {} , time : {} , resource gp : {} ",
+              timeSeries.getAzureSubscription(), time.toString(), timeSeries.getAzureResourceGroup());
+          break;
+        case AZURE_METER_CATEGORY:
+          log.warn(
+              "Invalid Data for TimeSeries :: Azure subs : {} , time : {} , resource gp : {} , meter category : {} ",
+              timeSeries.getAzureSubscription(), time.toString(), timeSeries.getAzureResourceGroup(),
+              timeSeries.getAzureMeterCategory());
+          break;
         case GCP_REGION:
         case AWS_INSTANCE_TYPE:
         default:
@@ -92,42 +106,56 @@ public class AnomalyDetectionHelper {
       EntityType type = timeSeries.getEntityType();
       switch (type) {
         case CLUSTER:
-          log.info("Valid Data for TimeSeries :: AccountId : {} , time : {} , clusterName : {} , clusterId : {} ",
+          log.debug("Valid Data for TimeSeries :: AccountId : {} , time : {} , clusterName : {} , clusterId : {} ",
               timeSeries.getAccountId(), time.toString(), timeSeries.getClusterName(), timeSeries.getClusterId());
           break;
         case NAMESPACE:
-          log.info(
+          log.debug(
               "Valid Data for TimeSeries :: AccountId : {} , time : {} , clusterName : {} , clusterId : {} , namespace : {} ",
               timeSeries.getAccountId(), time.toString(), timeSeries.getClusterName(), timeSeries.getClusterId(),
               timeSeries.getNamespace());
           break;
         case GCP_PROJECT:
-          log.info("Valid Data for TimeSeries :: AccountId : {} , time : {} , gcpProject : {}  ",
+          log.debug("Valid Data for TimeSeries :: AccountId : {} , time : {} , gcpProject : {}  ",
               timeSeries.getAccountId(), time.toString(), timeSeries.getGcpProject());
           break;
         case GCP_PRODUCT:
-          log.info("Valid Data for TimeSeries :: AccountId : {} , time : {} , gcpProject : {} , gcpProduct : {} ",
+          log.debug("Valid Data for TimeSeries :: AccountId : {} , time : {} , gcpProject : {} , gcpProduct : {} ",
               timeSeries.getAccountId(), time.toString(), timeSeries.getGcpProject(), timeSeries.getGcpProduct());
           break;
         case GCP_SKU_ID:
-          log.info(
+          log.debug(
               "Valid Data for TimeSeries :: AccountId : {} , time : {} , gcpProject : {} , gcpProduct : {} , gcpSkuDescription : {} ",
               timeSeries.getAccountId(), time.toString(), timeSeries.getGcpProject(), timeSeries.getGcpProduct(),
               timeSeries.getGcpSKUDescription());
           break;
         case AWS_ACCOUNT:
-          log.info("Valid Data for TimeSeries :: AccountId : {} , time : {} , awsAccount : {}",
+          log.debug("Valid Data for TimeSeries :: AccountId : {} , time : {} , awsAccount : {}",
               timeSeries.getAccountId(), time.toString(), timeSeries.getAwsAccount());
           break;
         case AWS_SERVICE:
-          log.info("Valid Data for TimeSeries :: AccountId : {} , time : {} , awsAccount : {} , awsService : {} ",
+          log.debug("Valid Data for TimeSeries :: AccountId : {} , time : {} , awsAccount : {} , awsService : {} ",
               timeSeries.getAccountId(), time.toString(), timeSeries.getAwsAccount(), timeSeries.getAwsService());
           break;
         case AWS_USAGE_TYPE:
-          log.warn(
+          log.debug(
               "Valid Data for TimeSeries :: AccountId : {} , time : {} , awsAccount : {} , awsService : {} , awsUsageType : {} ",
               timeSeries.getAccountId(), time.toString(), timeSeries.getAwsAccount(), timeSeries.getAwsService(),
               timeSeries.getAwsUsageType());
+          break;
+        case AZURE_SUBSCRIPTION:
+          log.debug("Valid Data for TimeSeries :: Azure subs : {} , time : {}  ", timeSeries.getAzureSubscription(),
+              time.toString());
+          break;
+        case AZURE_RESOURCE_GROUP:
+          log.debug("Valid Data for TimeSeries :: Azure subs : {} , time : {} , resource gp : {} ",
+              timeSeries.getAzureSubscription(), time.toString(), timeSeries.getAzureResourceGroup());
+          break;
+        case AZURE_METER_CATEGORY:
+          log.debug(
+              "Valid Data for TimeSeries :: Azure subs : {} , time : {} , resource gp : {} , meter category : {} ",
+              timeSeries.getAzureSubscription(), time.toString(), timeSeries.getAzureResourceGroup(),
+              timeSeries.getAzureMeterCategory());
           break;
         case GCP_REGION:
         case AWS_INSTANCE_TYPE:
@@ -151,11 +179,13 @@ public class AnomalyDetectionHelper {
       return AnomalyDetectionHelper.generateHash(
           String.join(",", anomaly.getAnomalyTime().toString(), anomaly.getClusterId(), anomaly.getNamespace(),
               anomaly.getWorkloadName(), anomaly.getGcpProject(), anomaly.getGcpProduct(), anomaly.getGcpSKUId(),
-              anomaly.getAwsAccount(), anomaly.getAwsService(), anomaly.getAwsUsageType()));
+              anomaly.getAwsAccount(), anomaly.getAwsService(), anomaly.getAwsUsageType(),
+              anomaly.getAzureSubscription(), anomaly.getAzureResourceGroup(), anomaly.getAzureMeterCategory()));
     } else {
       return AnomalyDetectionHelper.generateHash(String.join(",", anomaly.getClusterId(), anomaly.getNamespace(),
           anomaly.getWorkloadName(), anomaly.getGcpProject(), anomaly.getGcpProduct(), anomaly.getGcpSKUId(),
-          anomaly.getAwsAccount(), anomaly.getAwsService(), anomaly.getAwsUsageType()));
+          anomaly.getAwsAccount(), anomaly.getAwsService(), anomaly.getAwsUsageType(), anomaly.getAzureSubscription(),
+          anomaly.getAzureResourceGroup(), anomaly.getAzureMeterCategory()));
     }
   }
 }

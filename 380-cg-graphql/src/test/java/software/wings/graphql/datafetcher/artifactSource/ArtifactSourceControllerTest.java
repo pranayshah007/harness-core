@@ -7,6 +7,7 @@
 
 package software.wings.graphql.datafetcher.artifactSource;
 
+import static io.harness.delegate.beans.azure.AzureMachineImageArtifactDTO.ImageType.IMAGE_GALLERY;
 import static io.harness.rule.OwnerRule.AADITI;
 import static io.harness.rule.OwnerRule.DEEPAK_PUTHRAYA;
 import static io.harness.rule.OwnerRule.PRABU;
@@ -611,7 +612,7 @@ public class ArtifactSourceControllerTest extends WingsBaseTest {
             .settingId(SETTING_ID)
             .createdAt(LONG_DEFAULT_VALUE)
             .subscriptionId("subID")
-            .imageType(AzureMachineImageArtifactStream.ImageType.IMAGE_GALLERY)
+            .imageType(IMAGE_GALLERY)
             .imageDefinition(AzureMachineImageArtifactStream.ImageDefinition.builder()
                                  .resourceGroup("resourceGroup")
                                  .imageDefinitionName("imageDefinition")

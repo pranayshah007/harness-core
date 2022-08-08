@@ -157,7 +157,8 @@ public class TokenServiceImplTest extends NgManagerTestBase {
     doReturn(newToken).when(tokenRepository).save(any());
     String tokenString = tokenService.createToken(tokenDTO);
     assertThat(tokenString).startsWith(SERVICE_ACCOUNT.getValue());
-    assertThat(tokenString).contains(token.getUuid());
+    assertThat(tokenString.split("\\.")[1]).isEqualTo(token.getAccountIdentifier());
+    assertThat(tokenString.split("\\.")[2]).isEqualTo(token.getUuid());
   }
 
   @Test
@@ -224,7 +225,8 @@ public class TokenServiceImplTest extends NgManagerTestBase {
         tokenService.rotateToken(accountIdentifier, orgIdentifier, projectIdentifier, ApiKeyType.SERVICE_ACCOUNT,
             parentIdentifier, tokenDTO.getApiKeyIdentifier(), identifier, Instant.now().plusMillis(1000));
     assertThat(tokenString).startsWith(SERVICE_ACCOUNT.getValue());
-    assertThat(tokenString).contains(token.getUuid());
+    assertThat(tokenString.split("\\.")[1]).isEqualTo(token.getAccountIdentifier());
+    assertThat(tokenString.split("\\.")[2]).isEqualTo(token.getUuid());
   }
 
   @Test
@@ -249,7 +251,8 @@ public class TokenServiceImplTest extends NgManagerTestBase {
     doReturn(accountDTO).when(accountService).getAccount(any());
     String tokenString = tokenService.createToken(tokenDTO);
     assertThat(tokenString).startsWith(USER.getValue());
-    assertThat(tokenString).contains(token.getUuid());
+    assertThat(tokenString.split("\\.")[1]).isEqualTo(token.getAccountIdentifier());
+    assertThat(tokenString.split("\\.")[2]).isEqualTo(token.getUuid());
   }
 
   @Test
@@ -279,6 +282,7 @@ public class TokenServiceImplTest extends NgManagerTestBase {
     String tokenString = tokenService.rotateToken(accountIdentifier, orgIdentifier, projectIdentifier, USER,
         parentIdentifier, tokenDTO.getApiKeyIdentifier(), identifier, Instant.now().plusMillis(1000));
     assertThat(tokenString).startsWith(USER.getValue());
-    assertThat(tokenString).contains(token.getUuid());
+    assertThat(tokenString.split("\\.")[1]).isEqualTo(token.getAccountIdentifier());
+    assertThat(tokenString.split("\\.")[2]).isEqualTo(token.getUuid());
   }
 }

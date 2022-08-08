@@ -16,6 +16,7 @@ import io.harness.ccm.anomaly.entities.AnomalyEntity.AnomalyEntityKeys;
 import io.harness.ccm.anomaly.entities.EntityType;
 import io.harness.ccm.anomaly.url.HarnessUrl;
 import io.harness.ccm.anomaly.utility.AnomalyUtility;
+import io.harness.ccm.commons.entities.anomaly.AnomalyData;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidArgumentsException;
 
@@ -118,13 +119,14 @@ public class SlackMessageGenerator {
   public String addClusterInfo(String templateString, AnomalyEntity anomaly) {
     if (EmptyPredicate.isNotEmpty(anomaly.getClusterId())) {
       if (anomaly.getEntityType() == EntityType.CLUSTER) {
-        templateString = templateString + "*Cluster* : <${CLUSTER_URL}|${" + AnomalyEntityKeys.clusterName + "}> ";
+        templateString = templateString + " *Cluster* : <${CLUSTER_URL}|${" + AnomalyEntityKeys.clusterName + "}> ";
       } else {
-        templateString = templateString + "*Cluster* : ${" + AnomalyEntityKeys.clusterName + "}";
+        templateString = templateString + " *Cluster* : ${" + AnomalyEntityKeys.clusterName + "}";
       }
     }
     return templateString;
   }
+
   public String addNamespaceInfo(String templateString, AnomalyEntity anomaly) {
     if (EmptyPredicate.isNotEmpty(anomaly.getNamespace())) {
       if (anomaly.getEntityType().equals(EntityType.NAMESPACE)) {
@@ -136,6 +138,7 @@ public class SlackMessageGenerator {
     }
     return templateString;
   }
+
   public String addWorkloadInfo(String templateString, AnomalyEntity anomaly) {
     if (EmptyPredicate.isNotEmpty(anomaly.getWorkloadName())) {
       if (anomaly.getEntityType().equals(EntityType.WORKLOAD)) {
@@ -147,16 +150,19 @@ public class SlackMessageGenerator {
     }
     return templateString;
   }
+
   public String addGcpProjectInfo(String templateString, AnomalyEntity anomaly) {
     if (EmptyPredicate.isNotEmpty(anomaly.getGcpProject())) {
       if (anomaly.getEntityType().equals(EntityType.GCP_PROJECT)) {
-        templateString = templateString + "*Project* : <${GCP_PROJECT_URL}|${" + AnomalyEntityKeys.gcpProject + "}>";
+        templateString =
+            templateString + "\n> *Project* : <${GCP_PROJECT_URL}|${" + AnomalyEntityKeys.gcpProject + "}>";
       } else {
-        templateString = templateString + "*Project* : ${" + AnomalyEntityKeys.gcpProject + "}";
+        templateString = templateString + "\n> *Project* : ${" + AnomalyEntityKeys.gcpProject + "}";
       }
     }
     return templateString;
   }
+
   public String addGcpProductInfo(String templateString, AnomalyEntity anomaly) {
     if (EmptyPredicate.isNotEmpty(anomaly.getGcpProduct())) {
       if (anomaly.getEntityType().equals(EntityType.GCP_PRODUCT)) {
@@ -168,6 +174,7 @@ public class SlackMessageGenerator {
     }
     return templateString;
   }
+
   public String addGcpSkuInfo(String templateString, AnomalyEntity anomaly) {
     if (EmptyPredicate.isNotEmpty(anomaly.getGcpSKUDescription())) {
       if (anomaly.getEntityType().equals(EntityType.GCP_SKU_ID)) {
@@ -179,16 +186,19 @@ public class SlackMessageGenerator {
     }
     return templateString;
   }
+
   public String addAwsAccountInfo(String templateString, AnomalyEntity anomaly) {
     if (EmptyPredicate.isNotEmpty(anomaly.getAwsAccount())) {
       if (anomaly.getEntityType().equals(EntityType.AWS_ACCOUNT)) {
-        templateString = templateString + "*Account* : <${AWS_ACCOUNT_URL}|${" + AnomalyEntityKeys.awsAccount + "}>";
+        templateString =
+            templateString + "\n> *Account* : <${AWS_ACCOUNT_URL}|${" + AnomalyEntityKeys.awsAccount + "}>";
       } else {
-        templateString = templateString + "*Account* : ${" + AnomalyEntityKeys.awsAccount + "}";
+        templateString = templateString + "\n> *Account* : ${" + AnomalyEntityKeys.awsAccount + "}";
       }
     }
     return templateString;
   }
+
   public String addAwsServiceInfo(String templateString, AnomalyEntity anomaly) {
     if (EmptyPredicate.isNotEmpty(anomaly.getAwsService())) {
       if (anomaly.getEntityType().equals(EntityType.AWS_SERVICE)) {
@@ -217,5 +227,47 @@ public class SlackMessageGenerator {
     templateString = " *`$" + replace(templateString, AnomalyUtility.getEntityMap(anomaly));
     templateString = replace(templateString, AnomalyUtility.getURLMap(anomaly, mainConfiguration.getBaseUrl()));
     return SectionBlock.builder().text(MarkdownTextObject.builder().text(templateString).build()).build();
+  }
+
+  public String getAnomalyDetailsTemplateString(AnomalyData anomaly) {
+    AnomalyEntity anomalyEntity = convertToAnomalyEntity(anomaly);
+
+    String templateString = "${ANOMALY_COST}`* (+${ANOMALY_COST_PERCENTAGE}%)  \n>";
+    templateString = addClusterInfo(templateString, anomalyEntity);
+    templateString = addNamespaceInfo(templateString, anomalyEntity);
+    templateString = addWorkloadInfo(templateString, anomalyEntity);
+    templateString = addGcpProjectInfo(templateString, anomalyEntity);
+    templateString = addGcpProductInfo(templateString, anomalyEntity);
+    templateString = addGcpSkuInfo(templateString, anomalyEntity);
+    templateString = addAwsAccountInfo(templateString, anomalyEntity);
+    templateString = addAwsServiceInfo(templateString, anomalyEntity);
+    templateString = templateString + "\n Total spend of *$ ${" + AnomalyEntityKeys.actualCost
+        + "}* detected. Would be typically at *$ ${" + AnomalyEntityKeys.expectedCost + "}*\n\n";
+
+    templateString = " *`$" + replace(templateString, AnomalyUtility.getEntityMap(anomalyEntity));
+    // Todo: NG Urls here
+    templateString = replace(templateString, AnomalyUtility.getURLMap(anomalyEntity, mainConfiguration.getBaseUrl()));
+    return templateString;
+  }
+
+  private AnomalyEntity convertToAnomalyEntity(AnomalyData anomaly) {
+    return AnomalyEntity.builder()
+        .anomalyTime(Instant.ofEpochMilli(anomaly.getTime()))
+        .awsAccount(anomaly.getEntity().getAwsUsageAccountId())
+        .awsInstanceType(anomaly.getEntity().getAwsInstancetype())
+        .awsService(anomaly.getEntity().getAwsServiceCode())
+        .awsUsageType(anomaly.getEntity().getAwsUsageType())
+        .gcpProduct(anomaly.getEntity().getGcpProduct())
+        .gcpProject(anomaly.getEntity().getGcpProjectId())
+        .gcpSKUDescription(anomaly.getEntity().getGcpSKUDescription())
+        .gcpSKUId(anomaly.getEntity().getGcpSKUId())
+        .clusterId(anomaly.getEntity().getClusterId())
+        .clusterName(anomaly.getEntity().getClusterName())
+        .workloadName(anomaly.getEntity().getWorkloadName())
+        .workloadType(anomaly.getEntity().getWorkloadType())
+        .namespace(anomaly.getEntity().getNamespace())
+        .actualCost(anomaly.getActualAmount())
+        .expectedCost(anomaly.getExpectedAmount())
+        .build();
   }
 }

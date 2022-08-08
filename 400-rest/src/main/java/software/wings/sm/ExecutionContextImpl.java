@@ -24,7 +24,7 @@ import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_NESTS;
 import static io.harness.validation.Validator.notNullCheck;
 
 import static software.wings.beans.CGConstants.GLOBAL_ENV_ID;
-import static software.wings.beans.ServiceVariable.Type.TEXT;
+import static software.wings.beans.ServiceVariableType.TEXT;
 import static software.wings.service.intfc.ServiceVariableService.EncryptedFieldMode.MASKED;
 import static software.wings.service.intfc.ServiceVariableService.EncryptedFieldMode.OBTAIN_VALUE;
 import static software.wings.sm.ContextElement.ARTIFACT;
@@ -65,6 +65,8 @@ import io.harness.security.SimpleEncryption;
 import io.harness.serializer.KryoSerializer;
 import io.harness.terraform.expression.TerraformPlanExpressionInterface;
 
+import software.wings.api.ContextElementParamMapper;
+import software.wings.api.ContextElementParamMapperFactory;
 import software.wings.api.DeploymentType;
 import software.wings.api.InfraMappingElement;
 import software.wings.api.InfraMappingElement.CloudProvider;
@@ -104,7 +106,7 @@ import software.wings.beans.PcfInfrastructureMapping;
 import software.wings.beans.RancherKubernetesInfrastructureMapping;
 import software.wings.beans.ServiceTemplate;
 import software.wings.beans.ServiceVariable;
-import software.wings.beans.ServiceVariable.Type;
+import software.wings.beans.ServiceVariableType;
 import software.wings.beans.SettingAttribute;
 import software.wings.beans.Variable;
 import software.wings.beans.appmanifest.HelmChart;
@@ -115,6 +117,7 @@ import software.wings.common.InfrastructureConstants;
 import software.wings.common.RancherK8sClusterProcessor;
 import software.wings.common.VariableProcessor;
 import software.wings.expression.ArtifactLabelEvaluator;
+import software.wings.expression.ArtifactMetadataEvaluator;
 import software.wings.expression.ManagerExpressionEvaluator;
 import software.wings.expression.SecretFunctor;
 import software.wings.expression.ShellScriptFunctor;
@@ -190,7 +193,7 @@ import org.mongodb.morphia.Key;
 public class ExecutionContextImpl implements DeploymentExecutionContext {
   public static final String PHASE_PARAM = "PHASE_PARAM";
   private static final SecureRandom random = new SecureRandom();
-  private static final Pattern wildCharPattern = Pattern.compile("[-+*/\\\\ &$\"'.|]");
+  private static final Pattern wildCharPattern = Pattern.compile("[-+*/\\\\ &$\"'.|\\(\\)]");
   private static final Pattern argsCharPattern = Pattern.compile("[()\"']");
   private static final String CURRENT_STEP_LITERAL = "currentStep";
 
@@ -216,6 +219,8 @@ public class ExecutionContextImpl implements DeploymentExecutionContext {
   @Inject private transient CustomDeploymentTypeService customDeploymentTypeService;
   @Inject private transient HelmChartService helmChartService;
   @Inject private transient FileService fileService;
+  @Inject private transient ContextElementParamMapperFactory contextElementParamMapperFactory;
+  @Inject private transient WorkflowStandardParamsExtensionService workflowStandardParamsExtensionService;
 
   private StateMachine stateMachine;
   private StateExecutionInstance stateExecutionInstance;
@@ -224,6 +229,7 @@ public class ExecutionContextImpl implements DeploymentExecutionContext {
 
   /**
    * Instantiates a new execution context impl.
+   * Only used for UTs.
    *
    * @param stateExecutionInstance the state execution instance
    */
@@ -244,12 +250,8 @@ public class ExecutionContextImpl implements DeploymentExecutionContext {
     this.stateExecutionInstance = stateExecutionInstance;
     this.stateMachine = stateMachine;
     if (isNotEmpty(stateExecutionInstance.getContextElements())) {
-      stateExecutionInstance.getContextElements().forEach(contextElement -> {
-        injector.injectMembers(contextElement);
-        if (contextElement instanceof ExecutionContextAware) {
-          ((ExecutionContextAware) contextElement).setExecutionContext(this);
-        }
-      });
+      stateExecutionInstance.getContextElements().forEach(
+          contextElement -> { injector.injectMembers(contextElement); });
     }
     if (isNotEmpty(stateExecutionInstance.getExecutionEventAdvisors())) {
       stateExecutionInstance.getExecutionEventAdvisors().forEach(injector::injectMembers);
@@ -268,6 +270,9 @@ public class ExecutionContextImpl implements DeploymentExecutionContext {
                            .buildSourceService(buildSourceService)
                            .artifactStream(artifactStream)
                            .build();
+      ArtifactMetadataEvaluator metadataEvaluator = new ArtifactMetadataEvaluator(
+          artifact.getMetadata(), artifact.getBuildNo(), artifactStream, buildSourceService);
+      artifact.setMetadata(metadataEvaluator);
       map.put(rollbackArtifact ? ROLLBACK_ARTIFACT : ARTIFACT, artifact);
       String artifactFileName = null;
       if (isNotEmpty(artifact.getArtifactFiles())) {
@@ -466,11 +471,11 @@ public class ExecutionContextImpl implements DeploymentExecutionContext {
   @Override
   public List<Artifact> getArtifacts() {
     WorkflowStandardParams workflowStandardParams = fetchWorkflowStandardParamsFromContext();
-    String accountId = workflowStandardParams.fetchRequiredApp().getAccountId();
+    String accountId = workflowStandardParamsExtensionService.fetchRequiredApp(workflowStandardParams).getAccountId();
     if (!featureFlagService.isEnabled(FeatureName.ARTIFACT_STREAM_REFACTOR, accountId)) {
       List<ServiceArtifactElement> artifactElements = getArtifactElements();
       if (isEmpty(artifactElements)) {
-        return workflowStandardParams.getArtifacts();
+        return workflowStandardParamsExtensionService.getArtifacts(workflowStandardParams);
       }
       List<Artifact> list = new ArrayList<>();
       for (ServiceArtifactElement artifactElement : artifactElements) {
@@ -480,7 +485,7 @@ public class ExecutionContextImpl implements DeploymentExecutionContext {
     } else {
       List<ServiceArtifactVariableElement> artifactVariableElements = getArtifactVariableElements();
       if (isEmpty(artifactVariableElements)) {
-        return workflowStandardParams.getArtifacts();
+        return workflowStandardParamsExtensionService.getArtifacts(workflowStandardParams);
       }
       List<Artifact> list = new ArrayList<>();
       for (ServiceArtifactVariableElement artifactVariableElement : artifactVariableElements) {
@@ -497,7 +502,7 @@ public class ExecutionContextImpl implements DeploymentExecutionContext {
       return artifactService.get(artifactElement.get().getUuid());
     } else {
       WorkflowStandardParams workflowStandardParams = fetchWorkflowStandardParamsFromContext();
-      return workflowStandardParams.getArtifactForService(serviceId);
+      return workflowStandardParamsExtensionService.getArtifactForService(workflowStandardParams, serviceId);
     }
   }
 
@@ -698,7 +703,7 @@ public class ExecutionContextImpl implements DeploymentExecutionContext {
 
     List<ServiceHelmElement> helmElements = getHelmChartElements();
     if (isEmpty(helmElements)) {
-      return workflowStandardParams.getHelmCharts();
+      return workflowStandardParamsExtensionService.getHelmCharts(workflowStandardParams);
     }
     List<HelmChart> list = new ArrayList<>();
     for (ServiceHelmElement helmElement : helmElements) {
@@ -710,14 +715,14 @@ public class ExecutionContextImpl implements DeploymentExecutionContext {
   @Override
   public HelmChart getHelmChartForService(String serviceId) {
     WorkflowStandardParams workflowStandardParams = fetchWorkflowStandardParamsFromContext();
-    return workflowStandardParams.getHelmChartForService(serviceId);
+    return workflowStandardParamsExtensionService.getHelmChartForService(workflowStandardParams, serviceId);
   }
 
   @Override
   public Application getApp() {
     WorkflowStandardParams stdParam = getContextElement(ContextElementType.STANDARD);
     if (stdParam != null) {
-      return stdParam.getApp();
+      return workflowStandardParamsExtensionService.getApp(stdParam);
     }
     return null;
   }
@@ -726,7 +731,7 @@ public class ExecutionContextImpl implements DeploymentExecutionContext {
   public Application fetchRequiredApp() {
     WorkflowStandardParams stdParam = getContextElement(ContextElementType.STANDARD);
     if (stdParam != null) {
-      return stdParam.fetchRequiredApp();
+      return workflowStandardParamsExtensionService.fetchRequiredApp(stdParam);
     }
     throw new InvalidRequestException("WorkflowStandardParams cannot be null");
   }
@@ -735,7 +740,7 @@ public class ExecutionContextImpl implements DeploymentExecutionContext {
   public Environment fetchRequiredEnvironment() {
     WorkflowStandardParams stdParam = getContextElement(ContextElementType.STANDARD);
     if (stdParam != null) {
-      return stdParam.fetchRequiredEnv();
+      return workflowStandardParamsExtensionService.fetchRequiredEnv(stdParam);
     }
     throw new InvalidRequestException("WorkflowStandardParams cannot be null");
   }
@@ -743,7 +748,7 @@ public class ExecutionContextImpl implements DeploymentExecutionContext {
   public Environment getEnv() {
     WorkflowStandardParams stdParam = getContextElement(ContextElementType.STANDARD);
     if (stdParam != null) {
-      return stdParam.getEnv();
+      return workflowStandardParamsExtensionService.getEnv(stdParam);
     }
     return null;
   }
@@ -917,7 +922,8 @@ public class ExecutionContextImpl implements DeploymentExecutionContext {
     return context;
   }
 
-  private String normalizeStateName(String name) {
+  @VisibleForTesting
+  String normalizeStateName(String name) {
     Matcher matcher = wildCharPattern.matcher(name);
     return matcher.replaceAll("__");
   }
@@ -926,10 +932,10 @@ public class ExecutionContextImpl implements DeploymentExecutionContext {
       Map<String, Object> variables, boolean adoptDelegateDecryption, int expressionFunctorToken) {
     String variableName = renderExpression(serviceVariable.getName());
 
-    if (!variables.containsKey(variableName) && Type.ARTIFACT != serviceVariable.getType()) {
+    if (!variables.containsKey(variableName) && ServiceVariableType.ARTIFACT != serviceVariable.getType()) {
       if (serviceVariable.getType() == TEXT || encryptedFieldMode == MASKED) {
         variables.put(variableName, renderExpression(new String(serviceVariable.getValue())));
-      } else if (Type.ARTIFACT != serviceVariable.getType()) {
+      } else if (ServiceVariableType.ARTIFACT != serviceVariable.getType()) {
         if (isEmpty(serviceVariable.getAccountId())) {
           Application app = getApp();
           notNullCheck("app", app);
@@ -973,7 +979,8 @@ public class ExecutionContextImpl implements DeploymentExecutionContext {
     while (it.hasNext()) {
       ContextElement contextElement = it.next();
 
-      Map<String, Object> map = contextElement.paramMap(this);
+      ContextElementParamMapper paramMapper = this.contextElementParamMapperFactory.getParamMapper(contextElement);
+      Map<String, Object> map = paramMapper.paramMap(this);
       if (map != null) {
         contextMap.putAll(map);
       }
@@ -1094,8 +1101,13 @@ public class ExecutionContextImpl implements DeploymentExecutionContext {
     List<ContextElement> contextElements = stateExecutionContext.getContextElements();
     if (contextElements != null) {
       for (ContextElement contextElement : contextElements) {
-        map = copyIfNeeded(map);
-        map.putAll(contextElement.paramMap(this));
+        ContextElementParamMapper paramMapper = this.contextElementParamMapperFactory.getParamMapper(contextElement);
+        Map<String, Object> paramMap = paramMapper.paramMap(this);
+
+        if (paramMap != null) {
+          map = copyIfNeeded(map);
+          map.putAll(paramMap);
+        }
       }
     }
     StateExecutionData stateExecutionData = stateExecutionContext.getStateExecutionData();
@@ -1190,7 +1202,7 @@ public class ExecutionContextImpl implements DeploymentExecutionContext {
       return null;
     }
 
-    Application app = ((WorkflowStandardParams) contextElement).getApp();
+    Application app = workflowStandardParamsExtensionService.getApp((WorkflowStandardParams) contextElement);
     notNullCheck("app", app);
     return app.getAccountId();
   }
@@ -1219,7 +1231,7 @@ public class ExecutionContextImpl implements DeploymentExecutionContext {
     Map<String, Object> variables = new HashMap<>();
     if (isNotEmpty(serviceVariables)) {
       serviceVariables.forEach(serviceVariable -> {
-        if (Type.ARTIFACT != serviceVariable.getType()) {
+        if (ServiceVariableType.ARTIFACT != serviceVariable.getType()) {
           String name = renderExpression(serviceVariable.getName());
           if (serviceVariable.isDecrypted()) {
             variables.put(name, SecretString.builder().value(new String(serviceVariable.getValue())).build());
@@ -1640,9 +1652,10 @@ public class ExecutionContextImpl implements DeploymentExecutionContext {
 
   public String getEnvType() {
     WorkflowStandardParams workflowStandardParams = getContextElement(ContextElementType.STANDARD);
-    return (workflowStandardParams == null || workflowStandardParams.getEnv() == null)
+    return (workflowStandardParams == null
+               || workflowStandardParamsExtensionService.getEnv(workflowStandardParams) == null)
         ? null
-        : workflowStandardParams.getEnv().getEnvironmentType().name();
+        : workflowStandardParamsExtensionService.getEnv(workflowStandardParams).getEnvironmentType().name();
   }
   private boolean isEligible(boolean instanceFromNewDeployment, boolean newInstancesOnly) {
     return !newInstancesOnly || instanceFromNewDeployment;

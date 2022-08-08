@@ -37,25 +37,34 @@ import io.harness.beans.DelegateTask;
 import io.harness.beans.EnvironmentType;
 import io.harness.category.element.UnitTests;
 import io.harness.context.ContextElementType;
+import io.harness.ff.FeatureFlagService;
 import io.harness.rule.Owner;
 import io.harness.serializer.YamlUtils;
 import io.harness.waiter.WaitNotifyEngine;
 
 import software.wings.WingsBaseTest;
+import software.wings.api.ContextElementParamMapperFactory;
 import software.wings.api.HostElement;
 import software.wings.beans.APMVerificationConfig;
 import software.wings.beans.Application;
+import software.wings.beans.LogCollectionInfo;
 import software.wings.beans.SettingAttribute;
 import software.wings.delegatetasks.cv.beans.CustomLogResponseMapper;
+import software.wings.helpers.ext.url.SubdomainUrlHelperIntfc;
 import software.wings.service.impl.analysis.CustomLogDataCollectionInfo;
 import software.wings.service.intfc.AppService;
+import software.wings.service.intfc.ApplicationManifestService;
+import software.wings.service.intfc.ArtifactService;
+import software.wings.service.intfc.ArtifactStreamService;
+import software.wings.service.intfc.BuildSourceService;
 import software.wings.service.intfc.DelegateService;
 import software.wings.service.intfc.SettingsService;
+import software.wings.service.intfc.WorkflowExecutionService;
 import software.wings.service.intfc.security.SecretManager;
 import software.wings.sm.ExecutionContextImpl;
 import software.wings.sm.StateExecutionInstance;
 import software.wings.sm.WorkflowStandardParams;
-import software.wings.sm.states.CustomLogVerificationState.LogCollectionInfo;
+import software.wings.sm.WorkflowStandardParamsExtensionService;
 import software.wings.verification.VerificationStateAnalysisExecutionData;
 
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -87,6 +96,7 @@ public class CustomLogVerificationStateTest extends WingsBaseTest {
   @Mock private WaitNotifyEngine waitNotifyEngine;
   @Mock private DelegateService delegateService;
   @Mock private SecretManager secretManager;
+  @Mock private WorkflowStandardParamsExtensionService workflowStandardParamsExtensionService;
 
   private CustomLogVerificationState customLogVerificationState;
   private APMVerificationConfig apmVerificationConfig;
@@ -107,8 +117,9 @@ public class CustomLogVerificationStateTest extends WingsBaseTest {
 
     StateExecutionInstance stateExecutionInstance =
         aStateExecutionInstance().displayName("healthCheck1").uuid(STATE_EXECUTION_ID).build();
-    when(workflowStandardParams.getApp()).thenReturn(anApplication().uuid(APP_ID).name(APP_NAME).build());
-    when(workflowStandardParams.getEnv())
+    when(workflowStandardParamsExtensionService.getApp(workflowStandardParams))
+        .thenReturn(anApplication().uuid(APP_ID).name(APP_NAME).build());
+    when(workflowStandardParamsExtensionService.getEnv(workflowStandardParams))
         .thenReturn(anEnvironment().uuid(ENV_ID).name(ENV_NAME).environmentType(EnvironmentType.NON_PROD).build());
     when(workflowStandardParams.getAppId()).thenReturn(APP_ID);
     when(workflowStandardParams.getEnvId()).thenReturn(ENV_ID);
@@ -117,6 +128,15 @@ public class CustomLogVerificationStateTest extends WingsBaseTest {
     context = new ExecutionContextImpl(stateExecutionInstance, null, injector);
     context.pushContextElement(workflowStandardParams);
     context.pushContextElement(HostElement.builder().hostName("localhost").build());
+    FieldUtils.writeField(
+        context, "workflowStandardParamsExtensionService", workflowStandardParamsExtensionService, true);
+
+    ContextElementParamMapperFactory contextElementParamMapperFactory = new ContextElementParamMapperFactory(
+        injector.getInstance(SubdomainUrlHelperIntfc.class), injector.getInstance(WorkflowExecutionService.class),
+        injector.getInstance(ArtifactService.class), injector.getInstance(ArtifactStreamService.class),
+        injector.getInstance(ApplicationManifestService.class), injector.getInstance(FeatureFlagService.class),
+        injector.getInstance(BuildSourceService.class), workflowStandardParamsExtensionService);
+    FieldUtils.writeField(context, "contextElementParamMapperFactory", contextElementParamMapperFactory, true);
 
     String accountId = generateUuid();
     String appId = generateUuid();
@@ -145,6 +165,8 @@ public class CustomLogVerificationStateTest extends WingsBaseTest {
     FieldUtils.writeField(customLogVerificationState, "waitNotifyEngine", waitNotifyEngine, true);
     FieldUtils.writeField(customLogVerificationState, "delegateService", delegateService, true);
     FieldUtils.writeField(customLogVerificationState, "secretManager", secretManager, true);
+    FieldUtils.writeField(customLogVerificationState, "workflowStandardParamsExtensionService",
+        workflowStandardParamsExtensionService, true);
 
     when(settingsService.get(configId)).thenReturn(settingAttribute);
     when(appService.get(any())).thenReturn(app);
@@ -189,7 +211,7 @@ public class CustomLogVerificationStateTest extends WingsBaseTest {
     state.setLogCollectionInfos(collectionInfos);
     ExecutionContextImpl executionContext = mock(ExecutionContextImpl.class);
     when(executionContext.renderExpression(anyString()))
-        .thenAnswer(invocation -> invocation.getArgumentAt(0, String.class));
+        .thenAnswer(invocation -> invocation.getArgument(0, String.class));
     Map<String, Map<String, CustomLogResponseMapper>> logDefinitions =
         constructLogDefinitions(executionContext, collectionInfos);
     assertThat(logDefinitions).isNotNull();
@@ -220,7 +242,7 @@ public class CustomLogVerificationStateTest extends WingsBaseTest {
     state.setLogCollectionInfos(collectionInfos);
     ExecutionContextImpl executionContext = mock(ExecutionContextImpl.class);
     when(executionContext.renderExpression(anyString()))
-        .thenAnswer(invocation -> invocation.getArgumentAt(0, String.class));
+        .thenAnswer(invocation -> invocation.getArgument(0, String.class));
     when(executionContext.renderExpression("body${workflow.variable.bodyDetails}")).thenReturn("renderedBodyDetails");
     Map<String, Map<String, CustomLogResponseMapper>> logDefinitions =
         constructLogDefinitions(executionContext, collectionInfos);

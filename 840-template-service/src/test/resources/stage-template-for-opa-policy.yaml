@@ -1,0 +1,29 @@
+template:
+  name: stg temp2
+  identifier: stg_temp2
+  versionLabel: "1"
+  type: Stage
+  projectIdentifier: projId
+  orgIdentifier: orgId
+  tags: {}
+  spec:
+    type: Approval
+    spec:
+      execution:
+        steps:
+          - step:
+              type: ShellScript
+              name: shell
+              identifier: shell
+              spec:
+                shell: Bash
+                onDelegate: true
+                source:
+                  type: Inline
+                  spec:
+                    script: <+input>
+                environmentVariables: []
+                outputVariables: []
+                executionTarget: {}
+              timeout: 10m
+      serviceDependencies: []

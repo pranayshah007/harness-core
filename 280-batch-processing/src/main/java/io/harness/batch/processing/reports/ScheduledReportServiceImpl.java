@@ -19,7 +19,6 @@ import io.harness.ccm.views.entities.CEReportSchedule;
 import io.harness.ccm.views.service.impl.CEReportScheduleServiceImpl;
 import io.harness.ccm.views.service.impl.CEReportTemplateBuilderServiceImpl;
 
-import software.wings.beans.Account;
 import software.wings.beans.User;
 import software.wings.graphql.datafetcher.billing.CloudBillingHelper;
 import software.wings.helpers.ext.mail.EmailData;
@@ -34,7 +33,6 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -65,8 +63,7 @@ public class ScheduledReportServiceImpl {
       return;
     }
     // TODO: Change info to debug post integration with UI
-    List<Account> ceEnabledAccounts = accountShardService.getCeEnabledAccounts();
-    List<String> accountIds = ceEnabledAccounts.stream().map(Account::getUuid).collect(Collectors.toList());
+    List<String> accountIds = accountShardService.getCeEnabledAccountIds();
     log.info("ceEnabledAccounts ids list {}", accountIds);
     Date jobTime = new Date();
     log.info("jobTime {}", jobTime.toInstant());
@@ -120,18 +117,29 @@ public class ScheduledReportServiceImpl {
   }
 
   public void setNextExecution(String accountId, CEReportSchedule schedule) {
-    // This is needed to keep lastUpdatedBy same as before.
-    // Get existing user uuid from the record in collection. This can be null.
-    EmbeddedUser euser = schedule.getLastUpdatedBy();
-    // Get User record for this uuid.
-    if (euser != null) {
-      User user = cloudToHarnessMappingService.getUser(euser.getUuid());
+    User userData = getUserData(schedule);
+    if (null != userData) {
       // Set this in threadlocal so that downstream update in Mongo works fine
-      try (UserThreadLocal.Guard guard = userGuard(user)) {
+      try (UserThreadLocal.Guard guard = userGuard(userData)) {
         ceReportScheduleService.updateNextExecution(accountId, schedule);
       }
     } else {
       ceReportScheduleService.updateNextExecution(accountId, schedule);
     }
+  }
+
+  private User getUserData(CEReportSchedule schedule) {
+    try {
+      // This is needed to keep lastUpdatedBy same as before.
+      // Get existing user uuid from the record in collection. This can be null.
+      EmbeddedUser euser = schedule.getLastUpdatedBy();
+      // Get User record for this uuid.
+      if (euser != null) {
+        return cloudToHarnessMappingService.getUser(euser.getUuid());
+      }
+    } catch (Exception ex) {
+      log.error("Exception getting user", ex);
+    }
+    return null;
   }
 }

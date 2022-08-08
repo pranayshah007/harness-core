@@ -1,5 +1,5 @@
 # to be used when building in Jenkins
-FROM harness/alpine:safe-alpine3.12-sec1338
+FROM us.gcr.io/platform-205701/alpine:safe-alpine3.15.4-bt1276
 
 # Add the capsule JAR and config.yml
 COPY event-server-capsule.jar event-service-config.yml key.pem cert.pem /opt/harness/

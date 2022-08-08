@@ -163,7 +163,7 @@ public class AwsCodeDeployInstanceHandlerTest extends WingsBaseTest {
                  .withServiceId(SERVICE_ID)
                  .build())
         .when(infraMappingService)
-        .get(anyString(), anyString());
+        .get(any(), any());
 
     doReturn(asList(encryptedDataDetail)).when(secretManager).getEncryptionDetails(any(), any(), any());
 
@@ -175,7 +175,7 @@ public class AwsCodeDeployInstanceHandlerTest extends WingsBaseTest {
                                 .build())
                  .build())
         .when(settingsService)
-        .get(anyString());
+        .get(any());
 
     // catpure arg
     doReturn(true).when(instanceService).delete(anySet());
@@ -184,15 +184,13 @@ public class AwsCodeDeployInstanceHandlerTest extends WingsBaseTest {
 
     doReturn(Application.Builder.anApplication().name("app").uuid("app_1").accountId(ACCOUNT_ID).build())
         .when(appService)
-        .get(anyString());
+        .get(any());
 
     doReturn(Environment.Builder.anEnvironment().environmentType(EnvironmentType.PROD).name(ENV_NAME).build())
         .when(environmentService)
-        .get(anyString(), anyString(), anyBoolean());
+        .get(any(), any(), anyBoolean());
 
-    doReturn(Service.builder().name(SERVICE_NAME).build())
-        .when(serviceResourceService)
-        .getWithDetails(anyString(), anyString());
+    doReturn(Service.builder().name(SERVICE_NAME).build()).when(serviceResourceService).getWithDetails(any(), any());
   }
 
   // 3 existing instances
@@ -251,7 +249,7 @@ public class AwsCodeDeployInstanceHandlerTest extends WingsBaseTest {
             .instanceInfo(Ec2InstanceInfo.builder().ec2Instance(instance3).hostPublicDns(PUBLIC_DNS_3).build())
             .build());
 
-    doReturn(instances).when(instanceService).getInstancesForAppAndInframapping(anyString(), anyString());
+    doReturn(instances).when(instanceService).getInstancesForAppAndInframapping(any(), any());
 
     DescribeInstancesResult result = new DescribeInstancesResult();
     Collection<Reservation> reservations = new ArrayList<>();
@@ -260,7 +258,7 @@ public class AwsCodeDeployInstanceHandlerTest extends WingsBaseTest {
     doReturn(result).when(awsHelperService).describeEc2Instances(any(), any(), any(), any());
     doReturn(singletonList(instance3))
         .when(mockAwsEc2HelperServiceManager)
-        .listEc2Instances(any(), any(), any(), any(), anyString());
+        .listEc2Instances(any(), any(), any(), any(), any());
 
     awsCodeDeployInstanceHandler.syncInstances(APP_ID, INFRA_MAPPING_ID, InstanceSyncFlow.MANUAL);
     ArgumentCaptor<Set> captor = ArgumentCaptor.forClass(Set.class);
@@ -279,7 +277,7 @@ public class AwsCodeDeployInstanceHandlerTest extends WingsBaseTest {
   @Owner(developers = ADWAIT)
   @Category(UnitTests.class)
   public void testSyncInstances_NewDeployment() throws Exception {
-    doReturn(getInstances()).when(instanceService).getInstancesForAppAndInframapping(anyString(), anyString());
+    doReturn(getInstances()).when(instanceService).getInstancesForAppAndInframapping(any(), any());
     com.amazonaws.services.ec2.model.Instance ec2Instance2 = new com.amazonaws.services.ec2.model.Instance();
     ec2Instance2.setPrivateDnsName(PRIVATE_DNS_3);
     ec2Instance2.setInstanceId(INSTANCE_3_ID);
@@ -287,7 +285,7 @@ public class AwsCodeDeployInstanceHandlerTest extends WingsBaseTest {
 
     doReturn(asList(ec2Instance2))
         .when(mockAwsCodeDeployHelperServiceManager)
-        .listDeploymentInstances(any(), any(), any(), any(), anyString());
+        .listDeploymentInstances(any(), any(), any(), any(), any());
     doReturn(HOST_NAME_IP3).when(awsHelperService).getHostnameFromPrivateDnsName(PRIVATE_DNS_3);
     doReturn(HOST_NAME_IP3).when(mockAwsUtils).getHostnameFromPrivateDnsName(PRIVATE_DNS_3);
 
@@ -299,7 +297,7 @@ public class AwsCodeDeployInstanceHandlerTest extends WingsBaseTest {
     doReturn(result).when(awsHelperService).describeEc2Instances(any(), any(), any(), any());
     doReturn(asList(instance1, instance3))
         .when(mockAwsEc2HelperServiceManager)
-        .listEc2Instances(any(), any(), any(), any(), anyString());
+        .listEc2Instances(any(), any(), any(), any(), any());
     OnDemandRollbackInfo onDemandRollbackInfo = OnDemandRollbackInfo.builder().onDemandRollback(false).build();
     awsCodeDeployInstanceHandler.handleNewDeployment(
         Arrays.asList(DeploymentSummary.builder()
@@ -376,7 +374,7 @@ public class AwsCodeDeployInstanceHandlerTest extends WingsBaseTest {
         .when(deploymentService)
         .get(any(DeploymentSummary.class));
 
-    doReturn(getInstances()).when(instanceService).getInstancesForAppAndInframapping(anyString(), anyString());
+    doReturn(getInstances()).when(instanceService).getInstancesForAppAndInframapping(any(), any());
     com.amazonaws.services.ec2.model.Instance ec2Instance2 = new com.amazonaws.services.ec2.model.Instance();
     ec2Instance2.setPrivateDnsName(PRIVATE_DNS_3);
     ec2Instance2.setInstanceId(INSTANCE_3_ID);
@@ -384,7 +382,7 @@ public class AwsCodeDeployInstanceHandlerTest extends WingsBaseTest {
 
     doReturn(asList(ec2Instance2))
         .when(mockAwsCodeDeployHelperServiceManager)
-        .listDeploymentInstances(any(), any(), any(), any(), anyString());
+        .listDeploymentInstances(any(), any(), any(), any(), any());
     doReturn(HOST_NAME_IP3).when(awsHelperService).getHostnameFromPrivateDnsName(PRIVATE_DNS_3);
     doReturn(HOST_NAME_IP3).when(mockAwsUtils).getHostnameFromPrivateDnsName(PRIVATE_DNS_3);
 
@@ -396,7 +394,7 @@ public class AwsCodeDeployInstanceHandlerTest extends WingsBaseTest {
     doReturn(result).when(awsHelperService).describeEc2Instances(any(), any(), any(), any());
     doReturn(asList(instance1, instance3))
         .when(mockAwsEc2HelperServiceManager)
-        .listEc2Instances(any(), any(), any(), any(), anyString());
+        .listEc2Instances(any(), any(), any(), any(), any());
     OnDemandRollbackInfo onDemandRollbackInfo = OnDemandRollbackInfo.builder().onDemandRollback(false).build();
     awsCodeDeployInstanceHandler.handleNewDeployment(
         Arrays.asList(DeploymentSummary.builder()
@@ -431,7 +429,7 @@ public class AwsCodeDeployInstanceHandlerTest extends WingsBaseTest {
   public void testSyncInstances_ProcessPerpetualTaskResponse() {
     doReturn(true)
         .when(mockFeatureFlagService)
-        .isEnabled(awsCodeDeployInstanceHandler.getFeatureFlagToEnablePerpetualTaskForInstanceSync(), ACCOUNT_ID);
+        .isEnabled(awsCodeDeployInstanceHandler.getFeatureFlagToEnablePerpetualTaskForInstanceSync().get(), ACCOUNT_ID);
     doReturn(getInstances()).when(instanceService).getInstancesForAppAndInframapping(anyString(), anyString());
     AwsCodeDeployListDeploymentInstancesResponse perpetualTaskResponse =
         AwsCodeDeployListDeploymentInstancesResponse.builder()

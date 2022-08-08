@@ -27,7 +27,6 @@ import static java.util.regex.Pattern.quote;
 import static java.util.stream.Collectors.toList;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
-import io.harness.Team;
 import io.harness.accesscontrol.acl.api.Resource;
 import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
@@ -36,6 +35,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Scope;
 import io.harness.exception.DuplicateFieldException;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.UnexpectedException;
 import io.harness.exception.WingsException;
 import io.harness.invites.remote.InviteAcceptResponse;
 import io.harness.mongo.MongoConfig;
@@ -62,6 +62,7 @@ import io.harness.ng.core.invites.utils.InviteUtils;
 import io.harness.ng.core.user.UserInfo;
 import io.harness.ng.core.user.remote.dto.UserMetadataDTO;
 import io.harness.ng.core.user.service.NgUserService;
+import io.harness.notification.Team;
 import io.harness.notification.channeldetails.EmailChannel;
 import io.harness.notification.channeldetails.EmailChannel.EmailChannelBuilder;
 import io.harness.notification.notificationclient.NotificationClient;
@@ -70,6 +71,8 @@ import io.harness.remote.client.RestClientUtils;
 import io.harness.repositories.invites.spring.InviteRepository;
 import io.harness.security.SecurityContextBuilder;
 import io.harness.security.dto.Principal;
+import io.harness.telemetry.Destination;
+import io.harness.telemetry.TelemetryReporter;
 import io.harness.user.remote.UserClient;
 import io.harness.user.remote.UserFilterNG;
 import io.harness.utils.PageUtils;
@@ -88,6 +91,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLEncoder;
 import java.time.Duration;
+import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -97,6 +101,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -127,6 +133,7 @@ public class InviteServiceImpl implements InviteService {
   private static final String NG_ACCOUNT_CREATION_FRAGMENT =
       "accountIdentifier=%s&email=%s&token=%s&returnUrl=%s&generation=NG";
   private static final String ACCEPT_INVITE_PATH = "ng/api/invites/verify";
+  private static final String USER_INVITE = "user_invite";
   private final String jwtPasswordSecret;
   private final JWTGeneratorUtils jwtGeneratorUtils;
   private final NgUserService ngUserService;
@@ -140,6 +147,7 @@ public class InviteServiceImpl implements InviteService {
   private final boolean isNgAuthUIEnabled;
   private final UserClient userClient;
   private final AccountOrgProjectHelper accountOrgProjectHelper;
+  private final TelemetryReporter telemetryReporter;
 
   private final RetryPolicy<Object> transactionRetryPolicy =
       RetryUtils.getRetryPolicy("[Retrying]: Failed to mark previous invites as stale; attempt: {}",
@@ -151,7 +159,8 @@ public class InviteServiceImpl implements InviteService {
       JWTGeneratorUtils jwtGeneratorUtils, NgUserService ngUserService, TransactionTemplate transactionTemplate,
       InviteRepository inviteRepository, NotificationClient notificationClient, AccountClient accountClient,
       OutboxService outboxService, AccessControlClient accessControlClient, UserClient userClient,
-      AccountOrgProjectHelper accountOrgProjectHelper, @Named("isNgAuthUIEnabled") boolean isNgAuthUIEnabled) {
+      AccountOrgProjectHelper accountOrgProjectHelper, @Named("isNgAuthUIEnabled") boolean isNgAuthUIEnabled,
+      TelemetryReporter telemetryReporter) {
     this.jwtPasswordSecret = jwtPasswordSecret;
     this.jwtGeneratorUtils = jwtGeneratorUtils;
     this.ngUserService = ngUserService;
@@ -164,12 +173,13 @@ public class InviteServiceImpl implements InviteService {
     this.isNgAuthUIEnabled = isNgAuthUIEnabled;
     this.accessControlClient = accessControlClient;
     this.accountOrgProjectHelper = accountOrgProjectHelper;
+    this.telemetryReporter = telemetryReporter;
     MongoClientURI uri = new MongoClientURI(mongoConfig.getUri());
     useMongoTransactions = uri.getHosts().size() > 2;
   }
 
   @Override
-  public InviteOperationResponse create(Invite invite, boolean isScimInvite) {
+  public InviteOperationResponse create(Invite invite, boolean isScimInvite, boolean isLdap) {
     if (invite == null) {
       return FAIL;
     }
@@ -195,8 +205,9 @@ public class InviteServiceImpl implements InviteService {
       wrapperForTransactions(this::resendInvite, existingInviteOptional.get());
       return InviteOperationResponse.USER_ALREADY_INVITED;
     }
+    boolean[] scimLdapArray = {isScimInvite, isLdap};
     try {
-      return wrapperForTransactions(this::newInvite, invite, isScimInvite);
+      return wrapperForTransactions(this::newInvite, invite, scimLdapArray);
     } catch (DuplicateKeyException ex) {
       throw new DuplicateFieldException(getExceptionMessage(invite), USER_SRE, ex);
     }
@@ -209,7 +220,7 @@ public class InviteServiceImpl implements InviteService {
     List<Invite> invites = toInviteList(createInviteDTO, accountIdentifier, orgIdentifier, projectIdentifier);
     for (Invite invite : invites) {
       try {
-        InviteOperationResponse response = create(invite, false);
+        InviteOperationResponse response = create(invite, false, false);
         inviteOperationResponses.add(response);
       } catch (DuplicateFieldException ex) {
         log.error("error: ", ex);
@@ -320,6 +331,26 @@ public class InviteServiceImpl implements InviteService {
         completeInvite(inviteOpt);
         return resourceUrl;
       }
+    }
+  }
+
+  @Override
+  public String getInviteLinkFromInviteId(String accountIdentifier, String inviteId) {
+    Invite invite = getInvite(inviteId, false).<InvalidRequestException>orElseThrow(() -> {
+      throw new InvalidRequestException("Invalid or Expired Invite Id");
+    });
+    try {
+      return isNgAuthUIEnabled ? getAcceptInviteUrl(invite) : getInvitationMailEmbedUrl(invite);
+    } catch (URISyntaxException | UnsupportedEncodingException e) {
+      log.error("URL format incorrect. Cannot create invite link. InviteId: " + invite.getId(), e);
+      throw new UnexpectedException("Could not create invite link. Unexpectedly failed due to malformed URL.");
+    }
+  }
+
+  private void checkUserLimit(String accountId, String emailId) {
+    boolean limitHasBeenReached = RestClientUtils.getResponse(userClient.checkUserLimit(accountId, emailId));
+    if (limitHasBeenReached) {
+      throw new InvalidRequestException("The user count limit has been reached in this account");
     }
   }
 
@@ -483,7 +514,8 @@ public class InviteServiceImpl implements InviteService {
         invite.getAccountIdentifier(), invite.getOrgIdentifier(), invite.getProjectIdentifier(), invite.getEmail());
   }
 
-  private InviteOperationResponse newInvite(Invite invite, boolean isScimInvite) {
+  private InviteOperationResponse newInvite(Invite invite, boolean[] scimLdapArray) {
+    checkUserLimit(invite.getAccountIdentifier(), invite.getEmail());
     Invite savedInvite = inviteRepository.save(invite);
     outboxService.save(new UserInviteCreateEvent(
         invite.getAccountIdentifier(), invite.getOrgIdentifier(), invite.getProjectIdentifier(), writeDTO(invite)));
@@ -496,9 +528,10 @@ public class InviteServiceImpl implements InviteService {
     }
     String accountId = invite.getAccountIdentifier();
     String email = invite.getEmail().trim();
-    if (isScimInvite) {
+    if (scimLdapArray[0]) {
       createAndInviteNonPasswordUser(accountId, invite.getInviteToken(), email, true);
-    } else if (RestClientUtils.getResponse(accountClient.checkAutoInviteAcceptanceEnabledForAccount(accountId))) {
+    } else if (scimLdapArray[1]
+        || RestClientUtils.getResponse(accountClient.checkAutoInviteAcceptanceEnabledForAccount(accountId))) {
       createAndInviteNonPasswordUser(accountId, invite.getInviteToken(), email, false);
     }
     return InviteOperationResponse.USER_INVITED_SUCCESSFULLY;
@@ -583,7 +616,62 @@ public class InviteServiceImpl implements InviteService {
     // Adding user to the account for sign in flow to work
     ngUserService.addUserToCG(user.getUuid(), scope);
     markInviteApprovedAndDeleted(invite);
+    // telemetry for adding user to an account
+    sendInviteAcceptTelemetryEvents(user, invite);
     return true;
+  }
+
+  private void sendInviteAcceptTelemetryEvents(UserMetadataDTO user, Invite invite) {
+    String userEmail = user.getEmail();
+    String accountId = invite.getAccountIdentifier();
+
+    String accountName = "";
+    // get the name of the account
+    AccountDTO account = RestClientUtils.getResponse(accountClient.getAccountDTO(accountId));
+    if (account != null) {
+      accountName = account.getName();
+    }
+
+    HashMap<String, Object> properties = new HashMap<>();
+    properties.put("email", userEmail);
+    properties.put("name", user.getName());
+    properties.put("id", user.getUuid());
+    properties.put("startTime", String.valueOf(Instant.now().toEpochMilli()));
+    properties.put("accountId", accountId);
+    properties.put("accountName", accountName);
+    properties.put("source", USER_INVITE);
+
+    // identify event to register new user
+    telemetryReporter.sendIdentifyEvent(userEmail, properties,
+        ImmutableMap.<Destination, Boolean>builder()
+            .put(Destination.MARKETO, true)
+            .put(Destination.AMPLITUDE, true)
+            .build());
+
+    HashMap<String, Object> groupProperties = new HashMap<>();
+    groupProperties.put("group_id", accountId);
+    groupProperties.put("group_type", "Account");
+    groupProperties.put("group_name", accountName);
+
+    // group event to register new signed-up user with new account
+    telemetryReporter.sendGroupEvent(
+        accountId, userEmail, groupProperties, ImmutableMap.<Destination, Boolean>builder().build());
+
+    // flush all events so that event queue is empty
+    telemetryReporter.flush();
+
+    properties.put("platform", "NG");
+    // Wait 20 seconds, to ensure identify is sent before track
+    ScheduledExecutorService tempExecutor = Executors.newSingleThreadScheduledExecutor();
+    tempExecutor.schedule(()
+                              -> telemetryReporter.sendTrackEvent("Invite  Accepted", userEmail, accountId, properties,
+                                  ImmutableMap.<Destination, Boolean>builder()
+                                      .put(Destination.MARKETO, true)
+                                      .put(Destination.AMPLITUDE, true)
+                                      .build(),
+                                  null),
+        20, TimeUnit.SECONDS);
+    log.info("User Invite telemetry sent");
   }
 
   private void markInviteApproved(Invite invite) {

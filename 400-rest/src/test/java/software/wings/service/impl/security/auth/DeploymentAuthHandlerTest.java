@@ -22,15 +22,18 @@ import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.eraro.ErrorCode;
 import io.harness.exception.AccessDeniedException;
 import io.harness.exception.InvalidRequestException;
+import io.harness.ff.FeatureFlagService;
 import io.harness.rule.Owner;
 
 import software.wings.WingsBaseTest;
@@ -62,6 +65,7 @@ public class DeploymentAuthHandlerTest extends WingsBaseTest {
   @Mock private WorkflowExecutionService workflowExecutionService;
   @Mock private WorkflowService workflowService;
   @Mock private PipelineService pipelineService;
+  @Mock private FeatureFlagService featureFlagService;
   @InjectMocks @Inject private DeploymentAuthHandler deploymentAuthHandler;
 
   private static final String appId = generateUuid();
@@ -382,6 +386,9 @@ public class DeploymentAuthHandlerTest extends WingsBaseTest {
       when(workflowService.getWorkflow(appId, entityId)).thenReturn(null);
       when(pipelineService.getPipeline(appId, entityId)).thenReturn(pipeline);
       doNothing().when(authService).authorize(anyString(), anyList(), eq(entityId), any(), anyList());
+      doReturn(false)
+          .when(featureFlagService)
+          .isEnabled(eq(FeatureName.PIPELINE_PER_ENV_DEPLOYMENT_PERMISSION), anyString());
 
       deploymentAuthHandler.authorizeWorkflowOrPipelineForExecution(appId, entityId);
     } catch (Exception e) {

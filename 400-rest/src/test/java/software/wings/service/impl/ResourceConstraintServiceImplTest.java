@@ -10,6 +10,7 @@ package software.wings.service.impl;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.persistence.HQuery.excludeAuthority;
 import static io.harness.rule.OwnerRule.INDER;
+import static io.harness.rule.OwnerRule.LUCAS_SALES;
 import static io.harness.rule.OwnerRule.PRANJAL;
 import static io.harness.rule.OwnerRule.PRASHANT;
 import static io.harness.rule.OwnerRule.YOGESH;
@@ -18,23 +19,28 @@ import static software.wings.infra.InfraDefinitionTestConstants.RESOURCE_CONSTRA
 import static software.wings.utils.WingsTestConstants.ACCOUNT_ID;
 import static software.wings.utils.WingsTestConstants.APP_ID;
 import static software.wings.utils.WingsTestConstants.INFRA_MAPPING_ID;
+import static software.wings.utils.WingsTestConstants.PIPELINE;
 import static software.wings.utils.WingsTestConstants.WORKFLOW_EXECUTION_ID;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 
+import io.harness.beans.FeatureName;
 import io.harness.beans.ResourceConstraint;
 import io.harness.beans.ResourceConstraint.ResourceConstraintKeys;
 import io.harness.category.element.UnitTests;
 import io.harness.distribution.constraint.Constraint.Strategy;
 import io.harness.distribution.constraint.Consumer.State;
 import io.harness.exception.InvalidRequestException;
+import io.harness.ff.FeatureFlagService;
 import io.harness.rule.Owner;
 
 import software.wings.WingsBaseTest;
@@ -43,6 +49,7 @@ import software.wings.beans.ResourceConstraintInstance.ResourceConstraintInstanc
 import software.wings.beans.ResourceConstraintInstance.ResourceConstraintInstanceKeys;
 import software.wings.dl.WingsPersistence;
 import software.wings.service.intfc.ResourceConstraintService;
+import software.wings.service.intfc.WorkflowExecutionService;
 import software.wings.sm.states.HoldingScope;
 
 import com.google.inject.Inject;
@@ -56,6 +63,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mongodb.morphia.query.FieldEnd;
 import org.mongodb.morphia.query.Query;
+import org.mongodb.morphia.query.UpdateOperations;
+import org.mongodb.morphia.query.UpdateResults;
 
 public class ResourceConstraintServiceImplTest extends WingsBaseTest {
   private static final String RESOURCE_CONSTRAINT_ID = "RC_ID";
@@ -65,6 +74,8 @@ public class ResourceConstraintServiceImplTest extends WingsBaseTest {
   @Mock private WingsPersistence wingsPersistence;
   @Mock private Query query;
   @Mock private FieldEnd fieldEnd;
+  @Mock private FeatureFlagService featureFlagService;
+  @Mock private WorkflowExecutionService workflowExecutionService;
 
   @InjectMocks @Inject private ResourceConstraintService resourceConstraintService;
 
@@ -199,5 +210,66 @@ public class ResourceConstraintServiceImplTest extends WingsBaseTest {
     assertThatThrownBy(() -> resourceConstraintService.update(resourceConstraint))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage("Resource Constraint capacity cannot be less than the current usage");
+  }
+
+  @Test
+  @Owner(developers = LUCAS_SALES)
+  @Category(UnitTests.class)
+  public void testUpdateActiveConstraintsForPipeline() {
+    ResourceConstraintInstance resourceConstraintInstance = ResourceConstraintInstance.builder()
+                                                                .resourceConstraintId(RESOURCE_CONSTRAINT_ID)
+                                                                .uuid("uuid")
+                                                                .permits(100)
+                                                                .state(State.ACTIVE.name())
+                                                                .appId("appid")
+                                                                .releaseEntityId("releaseid")
+                                                                .releaseEntityType(PIPELINE)
+                                                                .build();
+
+    FieldEnd fieldEnd = mock(FieldEnd.class);
+    UpdateOperations<ResourceConstraintInstance> mockOps = mock(UpdateOperations.class);
+    UpdateResults updateResults = mock(UpdateResults.class);
+
+    doReturn(query).when(wingsPersistence).createQuery(eq(ResourceConstraintInstance.class));
+    doReturn(query).when(query).filter(eq(ResourceConstraintInstanceKeys.appId), any());
+    doReturn(query).when(query).filter(eq(ResourceConstraintInstanceKeys.uuid), any());
+    doReturn(query).when(query).filter(eq(ResourceConstraintInstanceKeys.resourceUnit), any());
+    doReturn(fieldEnd).when(query).field(ResourceConstraintInstanceKeys.state);
+    doReturn(query).when(fieldEnd).in(any());
+    doReturn(mockOps).when(wingsPersistence).createUpdateOperations(any());
+    doReturn(mockOps).when(mockOps).set(eq(ResourceConstraintInstanceKeys.state), any());
+    doReturn(updateResults).when(wingsPersistence).update(query, mockOps);
+    doReturn(2).when(updateResults).getUpdatedCount();
+    doReturn(true).when(featureFlagService).isEnabled(any(), any());
+    doReturn(true).when(workflowExecutionService).checkWorkflowExecutionInFinalStatus(any(), any());
+
+    boolean response = resourceConstraintService.updateActiveConstraintForInstance(resourceConstraintInstance);
+
+    assertThat(response).isTrue();
+
+    verify(workflowExecutionService)
+        .checkWorkflowExecutionInFinalStatus(
+            eq(resourceConstraintInstance.getAppId()), eq(resourceConstraintInstance.getReleaseEntityId()));
+  }
+
+  @Test
+  @Owner(developers = LUCAS_SALES)
+  @Category(UnitTests.class)
+  public void testUpdateAConstraintsForPipelineWithFFDisabled() {
+    ResourceConstraintInstance resourceConstraintInstance = ResourceConstraintInstance.builder()
+                                                                .resourceConstraintId(RESOURCE_CONSTRAINT_ID)
+                                                                .uuid("uuid")
+                                                                .permits(100)
+                                                                .state(State.ACTIVE.name())
+                                                                .appId("appid")
+                                                                .releaseEntityId("releaseid")
+                                                                .releaseEntityType(PIPELINE)
+                                                                .build();
+
+    doReturn(false).when(featureFlagService).isEnabled(any(FeatureName.class), anyString());
+
+    boolean response = resourceConstraintService.updateActiveConstraintForInstance(resourceConstraintInstance);
+
+    assertThat(response).isFalse();
   }
 }

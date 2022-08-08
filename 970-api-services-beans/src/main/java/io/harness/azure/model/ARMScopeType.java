@@ -27,7 +27,7 @@ public enum ARMScopeType {
 
   private final String value;
 
-  @JsonCreator
+  @JsonCreator(mode = JsonCreator.Mode.DELEGATING)
   public static ARMScopeType fromString(final String value) {
     for (ARMScopeType type : ARMScopeType.values()) {
       if (type.toString().equalsIgnoreCase(value)) {

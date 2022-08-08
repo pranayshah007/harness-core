@@ -7,13 +7,15 @@
 
 package io.harness.accesscontrol.acl;
 
+import io.harness.accesscontrol.ResourceInfo;
 import io.harness.accesscontrol.scopes.core.Scope;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
+import java.util.Map;
+import javax.validation.constraints.NotEmpty;
 import lombok.Builder;
 import lombok.Value;
-import org.hibernate.validator.constraints.NotEmpty;
 
 @OwnedBy(HarnessTeam.PL)
 @Value
@@ -22,5 +24,15 @@ public class PermissionCheck {
   Scope resourceScope;
   @NotEmpty String resourceType;
   String resourceIdentifier;
+  Map<String, String> resourceAttributes;
   @NotEmpty String permission;
+
+  public ResourceInfo getResourceInfo() {
+    return ResourceInfo.builder()
+        .resourceIdentifier(resourceIdentifier)
+        .resourceScope(resourceScope)
+        .resourceType(resourceType)
+        .resourceAttributes(resourceAttributes)
+        .build();
+  }
 }

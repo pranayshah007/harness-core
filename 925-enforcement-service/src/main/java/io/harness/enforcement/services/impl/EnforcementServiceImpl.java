@@ -8,10 +8,14 @@
 package io.harness.enforcement.services.impl;
 
 import static io.harness.beans.FeatureName.FEATURE_ENFORCEMENT_ENABLED;
+import static io.harness.configuration.DeployMode.DEPLOY_MODE;
+import static io.harness.configuration.DeployVariant.DEPLOY_VERSION;
 import static io.harness.enforcement.utils.EnforcementUtils.getRestriction;
 
 import io.harness.ModuleType;
 import io.harness.account.AccountClient;
+import io.harness.configuration.DeployMode;
+import io.harness.configuration.DeployVariant;
 import io.harness.enforcement.bases.AvailabilityRestriction;
 import io.harness.enforcement.bases.FeatureRestriction;
 import io.harness.enforcement.bases.Restriction;
@@ -197,7 +201,7 @@ public class EnforcementServiceImpl implements EnforcementService {
 
     boolean featureFlagEnabled = isFeatureFlagEnabled(accountIdentifier);
     ConversionHandler conversionHandler = conversionHandlerFactory.getConversionHandler(featureFlagEnabled);
-    for (ModuleType moduleType : ModuleType.values()) {
+    for (ModuleType moduleType : ModuleType.getModules()) {
       if (moduleType.isInternal() && !ModuleType.CORE.equals(moduleType)) {
         continue;
       }
@@ -245,8 +249,17 @@ public class EnforcementServiceImpl implements EnforcementService {
     // other module feature
     LicensesWithSummaryDTO licenseInfo = licenseService.getLicenseSummary(accountIdentifier, moduleType);
     if (licenseInfo == null) {
-      log.warn("Account {} has no license on module {}, fallback to free", accountIdentifier, moduleType.name());
-      return Edition.FREE;
+      Edition edition = Edition.FREE;
+      // if licenseInfo is null, and it is on prem + community, fallback on community edition instead of free
+      if (DeployMode.isOnPrem(System.getenv().get(DEPLOY_MODE))) {
+        if (DeployVariant.isCommunity(System.getenv().get(DEPLOY_VERSION))) {
+          edition = Edition.COMMUNITY;
+        } else {
+          edition = Edition.ENTERPRISE;
+        }
+      }
+      log.warn("Account {} has no license on module {}, fallback to {}", accountIdentifier, moduleType.name(), edition);
+      return edition;
     }
 
     //    Expired license won't block user

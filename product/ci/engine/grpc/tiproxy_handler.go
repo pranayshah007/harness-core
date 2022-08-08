@@ -90,7 +90,7 @@ func (h *tiProxyHandler) SelectTests(ctx context.Context, req *pb.SelectTestsReq
 	if err != nil {
 		return nil, err
 	}
-	selection, err := tc.SelectTests(org, project, pipeline, build, stage, step, repo, sha, source, target, body)
+	selection, err := tc.SelectTests(ctx, org, project, pipeline, build, stage, step, repo, sha, source, target, body)
 	if err != nil {
 		return nil, err
 	}
@@ -228,7 +228,7 @@ func (h *tiProxyHandler) UploadCg(ctx context.Context, req *pb.UploadCgRequest) 
 	if err != nil {
 		return res, errors.Wrap(err, "failed to get avro encoded callgraph")
 	}
-	err = client.UploadCg(org, project, pipeline, build, stage, step, repo, sha, source, target, timeMs, encCg)
+	err = client.UploadCg(ctx, org, project, pipeline, build, stage, step, repo, sha, source, target, timeMs, encCg)
 	if err != nil {
 		return res, errors.Wrap(err, "failed to upload cg to ti server")
 	}
@@ -242,11 +242,41 @@ func (h *tiProxyHandler) getCgFiles(dir, ext1, ext2 string) ([]string, []string,
 	}
 	cgFiles, err1 := filepath.Glob(dir + "*." + ext1)
 	visFiles, err2 := filepath.Glob(dir + "*." + ext2)
+	h.log.Infow(fmt.Sprintf(strings.Join(cgFiles, ", ")))
+	h.log.Infow(fmt.Sprintf(strings.Join(visFiles, ", ")))
 
 	if err1 != nil || err2 != nil {
 		h.log.Errorw(fmt.Sprintf("error in getting files list in dir %s", dir), zap.Error(err1), zap.Error(err2))
 	}
 	return cgFiles, visFiles, nil
+}
+
+// DownloadLink calls TI service to provide download link(s) for given input
+func (h *tiProxyHandler) DownloadLink(ctx context.Context, req *pb.DownloadLinkRequest) (*pb.DownloadLinkResponse, error) {
+	var err error
+	tc, err := remoteTiClient()
+	if err != nil {
+		h.log.Errorw("could not create a client to the TI service", zap.Error(err))
+		return nil, err
+	}
+	language := req.GetLanguage()
+	os := req.GetOs()
+	arch := req.GetArch()
+	framework := req.GetFramework()
+	version := req.GetVersion()
+	env := req.GetEnv()
+	link, err := tc.DownloadLink(ctx, language, os, arch, framework, version, env)
+	if err != nil {
+		return nil, err
+	}
+
+	jsonStr, err := json.Marshal(link)
+	if err != nil {
+		return &pb.DownloadLinkResponse{}, err
+	}
+	return &pb.DownloadLinkResponse{
+		Links: string(jsonStr),
+	}, nil
 }
 
 // getEncodedData reads all files of specified format from datadir folder and returns byte array of avro encoded format
@@ -279,4 +309,46 @@ func (h *tiProxyHandler) getEncodedData(req *pb.UploadCgRequest) ([]byte, error)
 		return nil, errors.Wrap(err, "failed to encode callgraph")
 	}
 	return encCg, nil
+}
+
+// GetTestTimes gets the test timing data from the TI service
+func (h *tiProxyHandler) GetTestTimes(ctx context.Context, req *pb.GetTestTimesRequest) (*pb.GetTestTimesResponse, error) {
+	// Create a TI client
+	var err error
+	tc, err := remoteTiClient()
+	if err != nil {
+		h.log.Errorw("could not create a client to the TI service", zap.Error(err))
+		return nil, err
+	}
+
+	// Arguments for TI API
+	org, err := getOrgId()
+	if err != nil {
+		return nil, err
+	}
+	project, err := getProjectId()
+	if err != nil {
+		return nil, err
+	}
+	pipeline, err := getPipelineId()
+	if err != nil {
+		return nil, err
+	}
+	reqBody := req.GetBody()
+
+	// Call TI API
+	timeMap, err := tc.GetTestTimes(ctx, org, project, pipeline, reqBody)
+	if err != nil {
+		return nil, err
+	}
+
+	// Serialize the API output to a string and add
+	// it to the response
+	timeDataMapStr, err := json.Marshal(timeMap)
+	if err != nil {
+		return &pb.GetTestTimesResponse{}, err
+	}
+	return &pb.GetTestTimesResponse{
+		TimeDataMap: string(timeDataMapStr),
+	}, nil
 }

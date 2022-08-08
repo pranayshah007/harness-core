@@ -87,6 +87,7 @@ public final class PersistenceIteratorFactory {
     MongoPersistenceIterator<T, F> iterator = builder.mode(processMode)
                                                   .executorService(instrumentedExecutorService)
                                                   .semaphore(new Semaphore(options.getPoolSize()))
+                                                  .iteratorName(options.getName())
                                                   .build();
     injector.injectMembers(iterator);
     long millis = options.interval.toMillis();

@@ -23,3 +23,7 @@ events-mongo:
 secretsConfiguration:
   secretResolutionEnabled: false
   gcpSecretManagerProject: ccm-play
+
+eventDataBatchQueryConfig:
+  queryBatchSize: 4000
+  enableBatchWrite: true

@@ -11,8 +11,6 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.artifact.bean.ArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.ArtifactListConfig;
-import io.harness.cdng.artifact.bean.yaml.ArtifactOverrideSetWrapper;
-import io.harness.cdng.artifact.bean.yaml.ArtifactOverrideSets;
 import io.harness.cdng.artifact.bean.yaml.PrimaryArtifact;
 import io.harness.cdng.artifact.bean.yaml.SidecarArtifact;
 import io.harness.cdng.artifact.bean.yaml.SidecarArtifactWrapper;
@@ -21,11 +19,12 @@ import io.harness.cdng.artifact.steps.ArtifactStepParameters.ArtifactStepParamet
 import io.harness.cdng.artifact.steps.ArtifactsStep;
 import io.harness.cdng.creator.plan.PlanCreatorConstants;
 import io.harness.cdng.service.beans.ServiceConfig;
+import io.harness.cdng.service.beans.StageOverridesConfig;
 import io.harness.cdng.utilities.PrimaryArtifactsUtility;
 import io.harness.cdng.utilities.SideCarsListArtifactsUtility;
 import io.harness.cdng.visitor.YamlTypes;
 import io.harness.data.structure.EmptyPredicate;
-import io.harness.exception.InvalidRequestException;
+import io.harness.ng.core.service.yaml.NGServiceV2InfoConfig;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
 import io.harness.pms.contracts.plan.Dependency;
@@ -38,7 +37,6 @@ import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse.PlanCreationResponseBuilder;
 import io.harness.pms.sdk.core.plan.creation.creators.ChildrenPlanCreator;
 import io.harness.pms.yaml.DependenciesUtils;
-import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlField;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.fork.ForkStepParameters;
@@ -88,37 +86,57 @@ public class ArtifactsPlanCreator extends ChildrenPlanCreator<ArtifactListConfig
 
     String artifactsId = (String) kryoSerializer.asInflatedObject(
         ctx.getDependency().getMetadataMap().get(YamlTypes.UUID).toByteArray());
-    ServiceConfig serviceConfig = (ServiceConfig) kryoSerializer.asInflatedObject(
-        ctx.getDependency().getMetadataMap().get(YamlTypes.SERVICE_CONFIG).toByteArray());
+    // service v1
+    if (ctx.getDependency().getMetadataMap().containsKey(YamlTypes.SERVICE_CONFIG)) {
+      ServiceConfig serviceConfig = (ServiceConfig) kryoSerializer.asInflatedObject(
+          ctx.getDependency().getMetadataMap().get(YamlTypes.SERVICE_CONFIG).toByteArray());
+      ArtifactListConfig artifactListConfig = serviceConfig.getServiceDefinition().getServiceSpec().getArtifacts();
+      ArtifactListBuilder artifactListBuilder = new ArtifactListBuilder(artifactListConfig);
+      artifactListBuilder.addStageOverrides(serviceConfig.getStageOverrides());
+      ArtifactList artifactList = artifactListBuilder.build();
+      if (artifactList.getPrimary() == null && EmptyPredicate.isEmpty(artifactList.getSidecars())) {
+        return planCreationResponseMap;
+      }
 
-    ArtifactListConfig artifactListConfig = serviceConfig.getServiceDefinition().getServiceSpec().getArtifacts();
-    ArtifactListBuilder artifactListBuilder = new ArtifactListBuilder(artifactListConfig);
-    artifactListBuilder.addOverrideSets(serviceConfig);
-    artifactListBuilder.addStageOverrides(serviceConfig);
-    ArtifactList artifactList = artifactListBuilder.build();
-    if (artifactList.getPrimary() == null && EmptyPredicate.isEmpty(artifactList.getSidecars())) {
-      return planCreationResponseMap;
-    }
+      if (artifactList.getPrimary() != null) {
+        addDependenciesForPrimaryNode(
+            ctx.getCurrentField(), artifactList.getPrimary().getParams(), planCreationResponseMap);
+      }
+      if (EmptyPredicate.isNotEmpty(artifactList.getSidecars())) {
+        addDependenciesForSideCarList(
+            ctx.getCurrentField(), artifactsId, artifactList.getSidecars(), planCreationResponseMap);
+      }
+    } else if (ctx.getDependency().getMetadataMap().containsKey(YamlTypes.SERVICE_ENTITY)) {
+      NGServiceV2InfoConfig serviceV2InfoConfig = (NGServiceV2InfoConfig) kryoSerializer.asInflatedObject(
+          ctx.getDependency().getMetadataMap().get(YamlTypes.SERVICE_ENTITY).toByteArray());
+      ArtifactListConfig artifactListConfig =
+          serviceV2InfoConfig.getServiceDefinition().getServiceSpec().getArtifacts();
+      ArtifactListBuilder artifactListBuilder = new ArtifactListBuilder(artifactListConfig);
+      ArtifactList artifactList = artifactListBuilder.build();
+      if (artifactList.getPrimary() == null && EmptyPredicate.isEmpty(artifactList.getSidecars())) {
+        return planCreationResponseMap;
+      }
 
-    if (artifactList.getPrimary() != null) {
-      String primaryPlanNodeId = addDependenciesForPrimaryNode(
-          ctx.getCurrentField(), artifactList.getPrimary().getParams(), planCreationResponseMap);
-    }
-    if (EmptyPredicate.isNotEmpty(artifactList.getSidecars())) {
-      addDependenciesForSideCarList(
-          ctx.getCurrentField(), artifactsId, artifactList.getSidecars(), planCreationResponseMap);
+      if (artifactList.getPrimary() != null) {
+        addDependenciesForPrimaryNode(
+            ctx.getCurrentField(), artifactList.getPrimary().getParams(), planCreationResponseMap);
+      }
+      if (EmptyPredicate.isNotEmpty(artifactList.getSidecars())) {
+        addDependenciesForSideCarList(
+            ctx.getCurrentField(), artifactsId, artifactList.getSidecars(), planCreationResponseMap);
+      }
     }
     return planCreationResponseMap;
   }
 
   public String addDependenciesForSideCarList(YamlField artifactField, String artifactsId,
-      Map<String, ArtifactInfo> sideCarsInfo, LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap) {
+      Map<String, ArtifactInfo> sideCarsInfo, Map<String, PlanCreationResponse> planCreationResponseMap) {
     YamlUpdates.Builder yamlUpdates = YamlUpdates.newBuilder();
     YamlField sideCarsListYamlField =
         SideCarsListArtifactsUtility.createSideCarsArtifactYamlFieldAndSetYamlUpdate(artifactField, yamlUpdates);
 
     Map<String, ArtifactStepParameters> sideCarsParametersMap =
-        sideCarsInfo.entrySet().stream().collect(Collectors.toMap(e -> e.getKey(), k -> k.getValue().getParams()));
+        sideCarsInfo.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, k -> k.getValue().getParams()));
     String sideCarsListPlanNodeId = "sidecars-" + artifactsId;
     Map<String, ByteString> metadataDependency =
         prepareMetadataForSideCarListArtifactPlanCreator(sideCarsListPlanNodeId, sideCarsParametersMap);
@@ -148,7 +166,7 @@ public class ArtifactsPlanCreator extends ChildrenPlanCreator<ArtifactListConfig
   }
 
   public String addDependenciesForPrimaryNode(YamlField artifactField, ArtifactStepParameters artifactStepParameters,
-      LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap) {
+      Map<String, PlanCreationResponse> planCreationResponseMap) {
     YamlUpdates.Builder yamlUpdates = YamlUpdates.newBuilder();
     YamlField primaryYamlField =
         PrimaryArtifactsUtility.createPrimaryArtifactYamlFieldAndSetYamlUpdate(artifactField, yamlUpdates);
@@ -240,40 +258,11 @@ public class ArtifactsPlanCreator extends ChildrenPlanCreator<ArtifactListConfig
               : sidecars.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().build())));
     }
 
-    void addOverrideSets(ServiceConfig serviceConfig) {
-      if (serviceConfig.getStageOverrides() == null
-          || ParameterField.isNull(serviceConfig.getStageOverrides().getUseArtifactOverrideSets())) {
+    void addStageOverrides(StageOverridesConfig stageOverrides) {
+      if (stageOverrides == null || stageOverrides.getArtifacts() == null) {
         return;
       }
-
-      for (String useArtifactOverrideSet : serviceConfig.getStageOverrides().getUseArtifactOverrideSets().getValue()) {
-        List<ArtifactOverrideSets> artifactOverrideSetsList =
-            serviceConfig.getServiceDefinition()
-                .getServiceSpec()
-                .getArtifactOverrideSets()
-                .stream()
-                .map(ArtifactOverrideSetWrapper::getOverrideSet)
-                .filter(overrideSet -> overrideSet.getIdentifier().equals(useArtifactOverrideSet))
-                .collect(Collectors.toList());
-        if (artifactOverrideSetsList.size() == 0) {
-          throw new InvalidRequestException(
-              String.format("Invalid identifier [%s] in artifact override sets", useArtifactOverrideSet));
-        }
-        if (artifactOverrideSetsList.size() > 1) {
-          throw new InvalidRequestException(
-              String.format("Duplicate identifier [%s] in artifact override sets", useArtifactOverrideSet));
-        }
-
-        ArtifactListConfig artifactListConfig = artifactOverrideSetsList.get(0).getArtifacts();
-        addOverrides(artifactListConfig, ArtifactStepParametersBuilder::overrideSet);
-      }
-    }
-
-    void addStageOverrides(ServiceConfig serviceConfig) {
-      if (serviceConfig.getStageOverrides() == null || serviceConfig.getStageOverrides().getArtifacts() == null) {
-        return;
-      }
-      ArtifactListConfig artifactListConfig = serviceConfig.getStageOverrides().getArtifacts();
+      ArtifactListConfig artifactListConfig = stageOverrides.getArtifacts();
       addOverrides(artifactListConfig, ArtifactStepParametersBuilder::stageOverride);
     }
 

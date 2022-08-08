@@ -17,6 +17,7 @@ public class CIVmConnectionCapability implements ExecutionCapability {
   private final CapabilityType capabilityType = CapabilityType.CI_VM;
 
   private String poolId;
+  private String stageRuntimeId;
 
   @Override
   public EvaluationMode evaluationMode() {
@@ -25,7 +26,7 @@ public class CIVmConnectionCapability implements ExecutionCapability {
 
   @Override
   public String fetchCapabilityBasis() {
-    return String.format(poolId);
+    return String.format("%s-%s", poolId, stageRuntimeId);
   }
 
   @Override

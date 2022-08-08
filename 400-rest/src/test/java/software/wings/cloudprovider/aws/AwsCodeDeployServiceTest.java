@@ -8,13 +8,7 @@
 package software.wings.cloudprovider.aws;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
-import static io.harness.rule.OwnerRule.ADWAIT;
 import static io.harness.rule.OwnerRule.ANUBHAW;
-
-import static java.util.Arrays.asList;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.doReturn;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
@@ -31,16 +25,10 @@ import software.wings.service.impl.AwsHelperService;
 
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.codedeploy.model.CreateDeploymentRequest;
-import com.amazonaws.services.codedeploy.model.ListDeploymentInstancesResult;
 import com.amazonaws.services.codedeploy.model.RevisionLocation;
 import com.amazonaws.services.codedeploy.model.S3Location;
-import com.amazonaws.services.ec2.model.DescribeInstancesRequest;
-import com.amazonaws.services.ec2.model.DescribeInstancesResult;
-import com.amazonaws.services.ec2.model.Instance;
-import com.amazonaws.services.ec2.model.Reservation;
 import com.google.inject.Inject;
 import java.util.Collections;
-import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -116,39 +104,5 @@ public class AwsCodeDeployServiceTest extends WingsBaseTest {
                  .getApplicationRevisionList(Regions.US_EAST_1.getName(), "todolistwar", "todolistwarDG", cloudProvider,
                      Collections.emptyList())
                  .toString());
-  }
-
-  @Test
-  @Owner(developers = ADWAIT)
-  @Category(UnitTests.class)
-  @Ignore("TODO: please provide clear motivation why this test is ignored")
-  public void shouldListDeploymentInstances() {
-    doReturn(AwsConfig.builder().build()).when(awsHelperService).validateAndGetAwsConfig(any(), any(), false);
-
-    ListDeploymentInstancesResult listDeploymentInstancesResult = new ListDeploymentInstancesResult();
-    listDeploymentInstancesResult.setInstancesList(Collections.EMPTY_LIST);
-    listDeploymentInstancesResult.setNextToken(null);
-    doReturn(listDeploymentInstancesResult).when(awsHelperService).listDeploymentInstances(any(), any(), any(), any());
-
-    List<Instance> instanceList =
-        awsCodeDeployService.listDeploymentInstances(Regions.US_EAST_1.getName(), null, null, "deploymentId");
-    assertThat(instanceList).isNotNull();
-    assertThat(instanceList).isEmpty();
-
-    listDeploymentInstancesResult.setInstancesList(Collections.singletonList("Ec2InstanceId"));
-    doReturn(listDeploymentInstancesResult).when(awsHelperService).listDeploymentInstances(any(), any(), any(), any());
-
-    DescribeInstancesRequest request = new DescribeInstancesRequest();
-    doReturn(request).when(awsHelperService).getDescribeInstancesRequestWithRunningFilter();
-
-    DescribeInstancesResult result = new DescribeInstancesResult();
-    result.withReservations(asList(new Reservation().withInstances(new Instance().withPublicDnsName(PUBLIC_DNS_NAME))));
-    doReturn(result).when(awsHelperService).describeEc2Instances(any(), any(), any(), any());
-
-    instanceList =
-        awsCodeDeployService.listDeploymentInstances(Regions.US_EAST_1.getName(), null, null, "deploymentId");
-    assertThat(instanceList).isNotNull();
-    assertThat(instanceList).hasSize(1);
-    assertThat(instanceList.iterator().next().getPublicDnsName()).isEqualTo(PUBLIC_DNS_NAME);
   }
 }

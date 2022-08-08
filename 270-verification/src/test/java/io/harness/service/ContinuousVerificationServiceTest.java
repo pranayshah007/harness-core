@@ -130,7 +130,7 @@ import software.wings.service.intfc.SettingsService;
 import software.wings.service.intfc.analysis.ClusterLevel;
 import software.wings.service.intfc.security.SecretManager;
 import software.wings.service.intfc.verification.CVActivityLogService;
-import software.wings.service.intfc.verification.CVActivityLogService.Logger;
+import software.wings.service.intfc.verification.CVActivityLogger;
 import software.wings.service.intfc.verification.CVConfigurationService;
 import software.wings.service.intfc.verification.CVTaskService;
 import software.wings.sm.StateType;
@@ -221,7 +221,7 @@ public class ContinuousVerificationServiceTest extends VerificationBase {
   @Mock private SecretManager secretManager;
   @Mock private AppService appService;
   @Mock private CVActivityLogService cvActivityLogService;
-  @Mock private Logger activityLogger;
+  @Mock private CVActivityLogger activityLogger;
   @Mock private AccountService accountService;
 
   private SumoConfig sumoConfig;
@@ -324,7 +324,7 @@ public class ContinuousVerificationServiceTest extends VerificationBase {
     writeField(managerVerificationService, "accountService", accountService, true);
 
     writeField(managerVerificationService, "environmentService", environmentService, true);
-    when(environmentService.get(anyString(), anyString()))
+    when(environmentService.get(any(), any()))
         .thenReturn(Environment.Builder.anEnvironment().environmentType(EnvironmentType.PROD).build());
 
     AlertService alertService = new AlertServiceImpl();
@@ -333,7 +333,8 @@ public class ContinuousVerificationServiceTest extends VerificationBase {
     writeField(alertService, "injector", injector, true);
     writeField(alertService, "alertTypeClassMap", alertTypeClassMap, true);
     writeField(managerVerificationService, "alertService", alertService, true);
-    when(cvActivityLogService.getLoggerByStateExecutionId(anyString(), anyString())).thenReturn(mock(Logger.class));
+    when(cvActivityLogService.getLoggerByStateExecutionId(anyString(), anyString()))
+        .thenReturn(mock(CVActivityLogger.class));
     when(cvActivityLogService.getLoggerByCVConfigId(anyString(), anyString(), anyLong())).thenReturn(activityLogger);
     when(verificationManagerClient.triggerCVDataCollection(anyString(), anyObject(), anyLong(), anyLong()))
         .then(invocation -> {
@@ -1391,7 +1392,7 @@ public class ContinuousVerificationServiceTest extends VerificationBase {
   public void testTriggerTimeSeriesAlertIfNecessary() throws Exception {
     ExecutorService spyExecutorService = spy(executorService);
     doAnswer(invocationOnMock -> {
-      invocationOnMock.getArgumentAt(0, Runnable.class).run();
+      invocationOnMock.getArgument(0, Runnable.class).run();
       return null;
     })
         .when(spyExecutorService)
@@ -1681,7 +1682,7 @@ public class ContinuousVerificationServiceTest extends VerificationBase {
     } else {
       when(managerCall.execute()).thenReturn(Response.success(new RestResponse<>(new ArrayList<>())));
     }
-    when(verificationManagerClient.getFeedbackList(anyString(), anyString())).thenReturn(managerCall);
+    when(verificationManagerClient.getFeedbackList(anyString(), any())).thenReturn(managerCall);
 
     writeField(logAnalysisService, "managerClient", verificationManagerClient, true);
     writeField(continuousVerificationService, "logAnalysisService", logAnalysisService, true);
@@ -3205,7 +3206,7 @@ public class ContinuousVerificationServiceTest extends VerificationBase {
                         .dataCollectionInfo(mock(DataCollectionInfoV2.class))
                         .status(ExecutionStatus.QUEUED)
                         .build();
-    when(verificationManagerClient.collectCVData(anyString(), anyObject())).then(invocation -> {
+    when(verificationManagerClient.collectCVData(any(), anyObject())).then(invocation -> {
       Object[] args = invocation.getArguments();
       Call<Boolean> restCall = mock(Call.class);
       when(restCall.clone()).thenReturn(restCall);

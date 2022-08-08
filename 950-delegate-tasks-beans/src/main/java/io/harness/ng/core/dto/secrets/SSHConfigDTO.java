@@ -7,6 +7,9 @@
 
 package io.harness.ng.core.dto.secrets;
 
+import static io.harness.annotations.dev.HarnessTeam.CDP;
+
+import io.harness.annotations.dev.OwnedBy;
 import io.harness.ng.core.models.BaseSSHSpec;
 import io.harness.ng.core.models.SSHConfig;
 
@@ -18,16 +21,15 @@ import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
 @Data
 @NoArgsConstructor
-@EqualsAndHashCode(callSuper = true)
 @JsonTypeName("SSH")
 @JsonIgnoreProperties(ignoreUnknown = true)
 @Schema(name = "SSHConfig", description = "This is the SSH configuration details defined in Harness.")
-public class SSHConfigDTO extends BaseSSHSpecDTO {
+@OwnedBy(CDP)
+public class SSHConfigDTO implements BaseSSHSpecDTO {
   @Schema(description = "This specifies SSH credential type as Password, KeyPath or KeyReference")
   @NotNull
   SSHCredentialType credentialType;

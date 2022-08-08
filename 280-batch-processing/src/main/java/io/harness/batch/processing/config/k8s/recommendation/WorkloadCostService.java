@@ -7,6 +7,8 @@
 
 package io.harness.batch.processing.config.k8s.recommendation;
 
+import static io.harness.batch.processing.billing.timeseries.service.impl.BillingDataServiceImpl.executeStatementAndGetCost;
+
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 
@@ -16,7 +18,6 @@ import io.harness.timescaledb.TimeScaleDBService;
 import software.wings.graphql.datafetcher.ce.recommendation.entity.Cost;
 
 import com.google.common.annotations.VisibleForTesting;
-import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -24,7 +25,6 @@ import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import lombok.extern.slf4j.Slf4j;
-import lombok.val;
 import org.springframework.stereotype.Service;
 
 @Slf4j
@@ -75,16 +75,7 @@ public class WorkloadCostService {
         statement.setString(9, workloadId.getKind());
         statement.setString(10, workloadId.getName());
         statement.setTimestamp(11, new Timestamp(startInclusive.toEpochMilli()));
-        try (val resultSet = statement.executeQuery()) {
-          if (resultSet.next()) {
-            BigDecimal cpuCost = resultSet.getBigDecimal(1);
-            BigDecimal memoryCost = resultSet.getBigDecimal(2);
-            if (cpuCost == null && memoryCost == null) {
-              return null;
-            }
-            return Cost.builder().cpu(cpuCost).memory(memoryCost).build();
-          }
-        }
+        return executeStatementAndGetCost(statement);
       } catch (SQLException e) {
         log.error("Failed to fetch cost. retryCount=[{}]", retryCount, e);
       }

@@ -33,10 +33,10 @@ import static software.wings.utils.WingsTestConstants.SERVICE_ID;
 import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyObject;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
@@ -119,7 +119,7 @@ public class EcsBGUpdateRoute53DNSWeightStateTest extends WingsBaseTest {
                                     .deploymentType("ECS")
                                     .serviceElement(ServiceElement.builder().uuid(SERVICE_ID).build())
                                     .build();
-    doReturn(phaseElement).when(mockContext).getContextElement(any(), anyString());
+    doReturn(phaseElement).when(mockContext).getContextElement(any(), nullable(String.class));
     doReturn(ContainerServiceElement.builder()
                  .infraMappingId(INFRA_MAPPING_ID)
                  .deploymentType(ECS)
@@ -145,7 +145,7 @@ public class EcsBGUpdateRoute53DNSWeightStateTest extends WingsBaseTest {
     doReturn(application).when(mockContext).getApp();
     Activity activity = Activity.builder().uuid(ACTIVITY_ID).build();
     doReturn(activity).when(mockActivityService).save(any());
-    doReturn(application).when(mockAppService).get(anyString());
+    doReturn(application).when(mockAppService).get(nullable(String.class));
     doReturn(false).when(featureFlagService).isEnabled(TIMEOUT_FAILURE_SUPPORT, application.getAccountId());
     EcsInfrastructureMapping mapping = anEcsInfrastructureMapping()
                                            .withUuid(INFRA_MAPPING_ID)
@@ -155,11 +155,13 @@ public class EcsBGUpdateRoute53DNSWeightStateTest extends WingsBaseTest {
                                            .withAssignPublicIp(true)
                                            .withLaunchType("Ec2")
                                            .build();
-    doReturn(mapping).when(mockInfrastructureMappingService).get(anyString(), anyString());
+    doReturn(mapping).when(mockInfrastructureMappingService).get(nullable(String.class), nullable(String.class));
     SettingAttribute cloudProvider = aSettingAttribute().withValue(AwsConfig.builder().build()).build();
-    doReturn(cloudProvider).when(mockSettingsService).get(anyString());
-    doReturn(emptyList()).when(mockSecretManager).getEncryptionDetails(any(), anyString(), anyString());
-    doNothing().when(stateExecutionService).appendDelegateTaskDetails(anyString(), any());
+    doReturn(cloudProvider).when(mockSettingsService).get(nullable(String.class));
+    doReturn(emptyList())
+        .when(mockSecretManager)
+        .getEncryptionDetails(any(), nullable(String.class), nullable(String.class));
+    doNothing().when(stateExecutionService).appendDelegateTaskDetails(nullable(String.class), any());
     ExecutionResponse response = state.execute(mockContext);
     ArgumentCaptor<DelegateTask> captor = ArgumentCaptor.forClass(DelegateTask.class);
     verify(mockDelegateService).queueTask(captor.capture());
@@ -195,7 +197,8 @@ public class EcsBGUpdateRoute53DNSWeightStateTest extends WingsBaseTest {
     EcsRoute53WeightUpdateStateExecutionData data = EcsRoute53WeightUpdateStateExecutionData.builder().build();
     doReturn(data).when(mockContext).getStateExecutionData();
     state.handleAsyncResponse(mockContext, ImmutableMap.of(ACTIVITY_ID, delegateResponse));
-    verify(mockActivityService).updateStatus(anyString(), anyString(), eq(ExecutionStatus.SUCCESS));
+    verify(mockActivityService)
+        .updateStatus(nullable(String.class), nullable(String.class), eq(ExecutionStatus.SUCCESS));
   }
 
   @Test

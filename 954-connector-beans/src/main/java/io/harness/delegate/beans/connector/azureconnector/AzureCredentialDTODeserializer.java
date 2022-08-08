@@ -9,7 +9,6 @@ package io.harness.delegate.beans.connector.azureconnector;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.exception.InvalidRequestException;
 
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
@@ -41,9 +40,7 @@ public class AzureCredentialDTODeserializer extends StdDeserializer<AzureCredent
     if (type == AzureCredentialType.MANUAL_CREDENTIALS) {
       azureCredentialSpecDTO = mapper.readValue(authSpec.toString(), AzureManualDetailsDTO.class);
     } else if (type == AzureCredentialType.INHERIT_FROM_DELEGATE) {
-      if (authSpec != null && !authSpec.isNull()) {
-        throw new InvalidRequestException("No spec should be provided with the inherit from delegate type");
-      }
+      azureCredentialSpecDTO = mapper.readValue(authSpec.toString(), AzureInheritFromDelegateDetailsDTO.class);
     }
 
     return AzureCredentialDTO.builder().azureCredentialType(type).config(azureCredentialSpecDTO).build();

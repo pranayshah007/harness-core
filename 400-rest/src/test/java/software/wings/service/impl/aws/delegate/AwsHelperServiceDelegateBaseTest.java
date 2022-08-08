@@ -125,8 +125,10 @@ public class AwsHelperServiceDelegateBaseTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void testAttachCredentialsAndBackoffPolicyWithIRSA() {
     PowerMockito.mockStatic(System.class);
-    PowerMockito.when(System.getenv(SDKGlobalConfiguration.AWS_ROLE_ARN_ENV_VAR)).thenReturn("abcd");
-    PowerMockito.when(System.getenv(SDKGlobalConfiguration.AWS_WEB_IDENTITY_ENV_VAR)).thenReturn("/jkj");
+    PowerMockito.when(System.getenv(SDKGlobalConfiguration.AWS_ROLE_ARN_ENV_VAR))
+        .thenAnswer(invocationOnMock -> "abcd");
+    PowerMockito.when(System.getenv(SDKGlobalConfiguration.AWS_WEB_IDENTITY_ENV_VAR))
+        .thenAnswer(invocationOnMock -> "/jkj");
     AwsInternalConfig awsInternalConfig = mock(AwsInternalConfig.class);
     when(awsInternalConfig.isUseEc2IamCredentials()).thenReturn(false);
     when(awsInternalConfig.isUseIRSA()).thenReturn(true);

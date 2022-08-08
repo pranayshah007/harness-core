@@ -14,7 +14,7 @@ import io.harness.security.encryption.EncryptedDataDetail;
 import software.wings.beans.EntityType;
 import software.wings.beans.ServiceVariable;
 import software.wings.beans.ServiceVariable.OverrideType;
-import software.wings.beans.ServiceVariable.Type;
+import software.wings.beans.ServiceVariableType;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -49,7 +49,7 @@ class SecurityTestUtils {
                                           .name(UUIDGenerator.generateUuid())
                                           .encryptedValue(UUIDGenerator.generateUuid())
                                           .value(UUIDGenerator.generateUuid().toCharArray())
-                                          .type(Type.ENCRYPTED_TEXT)
+                                          .type(ServiceVariableType.ENCRYPTED_TEXT)
                                           .overrideType(OverrideType.ALL)
                                           .decrypted(false)
                                           .build();

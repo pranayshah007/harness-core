@@ -7,10 +7,12 @@
 
 package io.harness.ng.core.entities;
 
+import static io.harness.expression.Expression.ALLOW_SECRETS;
 import static io.harness.notification.NotificationChannelType.PAGERDUTY;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.expression.Expression;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonTypeName;
@@ -24,7 +26,7 @@ import lombok.EqualsAndHashCode;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @OwnedBy(HarnessTeam.PL)
 public class PagerDutyConfig extends NotificationSettingConfig {
-  String pagerDutyKey;
+  @Expression(ALLOW_SECRETS) String pagerDutyKey;
 
   @Builder
   public PagerDutyConfig(String pagerDutyKey) {

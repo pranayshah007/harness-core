@@ -25,19 +25,25 @@ public class GitSyncApiConstants {
   public static final String RESOLVED_CONFLICT_COMMIT_ID = "resolvedConflictCommitId";
   public static final String FOLDER_PATH = "rootFolder";
   public static final String NEW_BRANCH = "isNewBranch";
+  public static final String FORCE_IMPORT = "isForceImport";
+
   public static final String TARGET_BRANCH_FOR_PR = "targetBranchForPr";
   public static final String DEFAULT_FROM_OTHER_REPO = "getDefaultFromOtherRepo";
   public static final String BASE_BRANCH = "baseBranch";
   public static final String PR_TITLE = "prTitle";
   public static final String ENTITY_TYPE = "entityType";
   public static final String SYNC_STATUS = "syncStatus";
+  public static final String CONNECTOR_REF = "connectorRef";
+  public static final String STORE_TYPE = "storeType";
+  public static final String REPO_NAME = "repoName";
+  public static final String LAST_COMMIT_ID = "lastCommitId";
 
   public static final String BRANCH_PARAM_MESSAGE = "Name of the branch.";
   public static final String FILEPATH_PARAM_MESSAGE = "File Path of the Entity.";
   public static final String REPOID_PARAM_MESSAGE = "Git Sync Config Id.";
   public static final String REPO_URL_PARAM_MESSAGE = "URL of the repository.";
   public static final String REPO_NAME_PARAM_MESSAGE = "Name of the repository.";
-  public static final String FOLDER_PATH_PARAM_MESSAGE = "Path to  the root folder of the Entity.";
+  public static final String FOLDER_PATH_PARAM_MESSAGE = "Path to the root folder of the Entity.";
   public static final String COMMIT_MESSAGE_PARAM_MESSAGE = "Commit Message to use for the merge commit.";
   public static final String DEFAULT_BRANCH_PARAM_MESSAGE = "Name of the default branch.";
   public static final String ENTITY_TYPE_PARAM_MESSAGE = "Entity Type.";
@@ -46,4 +52,9 @@ public class GitSyncApiConstants {
   public static final String SEARCH_TERM_PARAM_MESSAGE = "Search Term.";
   public static final String TRIM_LEADING_TRAILING_SPACES = "Any leading/trailing spaces will be removed.";
   public static final String ENTITY_GIT_URL_DESCRIPTION = "The url of the file in git";
+
+  public static final String GIT_CONNECTOR_REF_PARAM_MESSAGE =
+      "Identifier of Connector needed for CRUD operations on the respective Entity";
+  public static final String STORE_TYPE_PARAM_MESSAGE = "Tells whether the Entity is to be saved on Git or not";
+  public static final String STORE_TYPE_RESPONSE_PARAM_MESSAGE = "Tells whether the Entity is saved on Git or not";
 }

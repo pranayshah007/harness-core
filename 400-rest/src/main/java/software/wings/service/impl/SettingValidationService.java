@@ -88,6 +88,7 @@ import software.wings.beans.SumoConfig;
 import software.wings.beans.SyncTaskContext;
 import software.wings.beans.TaskType;
 import software.wings.beans.ValidationResult;
+import software.wings.beans.WinRmCommandParameter;
 import software.wings.beans.WinRmConnectionAttributes;
 import software.wings.beans.ce.CEAwsConfig;
 import software.wings.beans.ce.CEAzureConfig;
@@ -100,6 +101,7 @@ import software.wings.beans.settings.helm.HelmRepoConfig;
 import software.wings.beans.settings.helm.HelmRepoConfigValidationResponse;
 import software.wings.beans.settings.helm.HelmRepoConfigValidationTaskParams;
 import software.wings.beans.settings.helm.HttpHelmRepoConfig;
+import software.wings.beans.settings.helm.OciHelmRepoConfig;
 import software.wings.delegatetasks.DelegateProxyFactory;
 import software.wings.dl.WingsPersistence;
 import software.wings.helpers.ext.azure.AzureHelperService;
@@ -334,10 +336,14 @@ public class SettingValidationService {
       }
     } else if (settingValue instanceof RancherConfig) {
       validateRancherConfig(settingAttribute);
+    } else if (settingValue instanceof DockerConfig) {
+      if (!((DockerConfig) settingValue).isSkipValidation()) {
+        buildSourceService.getBuildService(settingAttribute, GLOBAL_APP_ID)
+            .validateArtifactServer(settingValue, encryptedDataDetails);
+      }
     } else if (settingValue instanceof JenkinsConfig || settingValue instanceof BambooConfig
-        || settingValue instanceof NexusConfig || settingValue instanceof DockerConfig
-        || settingValue instanceof SmbConfig || settingValue instanceof SftpConfig
-        || settingValue instanceof AzureArtifactsConfig) {
+        || settingValue instanceof NexusConfig || settingValue instanceof SmbConfig
+        || settingValue instanceof SftpConfig || settingValue instanceof AzureArtifactsConfig) {
       buildSourceService.getBuildService(settingAttribute, GLOBAL_APP_ID)
           .validateArtifactServer(settingValue, encryptedDataDetails);
     } else if (settingValue instanceof ArtifactoryConfig) {
@@ -406,6 +412,8 @@ public class SettingValidationService {
       validateCEAwsConfig(settingAttribute);
     } else if (settingValue instanceof CEAzureConfig) {
       validateCEAzureConfig(settingAttribute);
+    } else if (settingValue instanceof WinRmConnectionAttributes) {
+      validateWinRmConnectionAttributes((WinRmConnectionAttributes) settingValue);
     }
 
     if (EncryptableSetting.class.isInstance(settingValue)) {
@@ -507,7 +515,8 @@ public class SettingValidationService {
       rancherHelperService.validateRancherConfig(rancherConfig);
     } catch (Exception e) {
       log.error("Exception while validating RancherConfig", e);
-      throw new InvalidRequestException(ExceptionUtils.getMessage(e), USER);
+      throw new InvalidRequestException(
+          "Please provide the valid Rancher URL and Bearer Token. " + ExceptionUtils.getMessage(e), USER);
     }
     return true;
   }
@@ -595,6 +604,17 @@ public class SettingValidationService {
     }
   }
 
+  private void validateWinRmConnectionAttributes(WinRmConnectionAttributes winRmConnectionAttributes) {
+    List<WinRmCommandParameter> Parameters = winRmConnectionAttributes.getParameters();
+    if (EmptyPredicate.isNotEmpty(Parameters)) {
+      for (WinRmCommandParameter parameter : Parameters) {
+        if (EmptyPredicate.isEmpty(parameter.getParameter())) {
+          throw new InvalidRequestException(
+              "WinRM Command Parameters cannot be empty. Please remove the empty WinRM Command Parameters pairs", USER);
+        }
+      }
+    }
+  }
   private void validateIfSpecifiedSecretsExist(HostConnectionAttributes hostConnectionAttributes) {
     if (isNotEmpty(hostConnectionAttributes.getEncryptedKey())
         && null
@@ -647,6 +667,9 @@ public class SettingValidationService {
             .repoDisplayName(settingAttribute.getName())
             .useLatestChartMuseumVersion(
                 featureFlagService.isEnabled(USE_LATEST_CHARTMUSEUM_VERSION, settingAttribute.getAccountId()))
+            .useOCIHelmRepo(featureFlagService.isEnabled(FeatureName.HELM_OCI_SUPPORT, settingAttribute.getAccountId()))
+            .useNewHelmBinary(
+                featureFlagService.isEnabled(FeatureName.HELM_VERSION_3_8_0, settingAttribute.getAccountId()))
             .build();
 
     String connectorId = ((HelmRepoConfig) settingAttribute.getValue()).getConnectorId();
@@ -692,6 +715,16 @@ public class SettingValidationService {
 
         httpHelmRepoConfig.setChartRepoUrl(getTrimmedValue(httpHelmRepoConfig.getChartRepoUrl()));
         httpHelmRepoConfig.setUsername(getTrimmedValue(httpHelmRepoConfig.getUsername()));
+
+        break;
+      case OCI_HELM_REPO:
+        OciHelmRepoConfig ociHelmRepoConfig = (OciHelmRepoConfig) helmRepoConfig;
+        if (isBlank(ociHelmRepoConfig.getChartRepoUrl())) {
+          throw new InvalidRequestException("OCI Registry based Helm repository URL cannot be empty", USER);
+        }
+
+        ociHelmRepoConfig.setChartRepoUrl(getTrimmedValue(ociHelmRepoConfig.getChartRepoUrl()));
+        ociHelmRepoConfig.setUsername(getTrimmedValue(ociHelmRepoConfig.getUsername()));
 
         break;
       case AMAZON_S3_HELM_REPO:

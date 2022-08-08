@@ -22,6 +22,7 @@ import io.harness.eventsframework.impl.noop.NoOpConsumer;
 import io.harness.eventsframework.impl.redis.RedisConsumer;
 import io.harness.eventsframework.impl.redis.RedisUtils;
 import io.harness.gitsync.beans.YamlDTO;
+import io.harness.gitsync.common.GitSyncEntityOrderComparatorInMsvc;
 import io.harness.gitsync.entityInfo.GitSdkEntityHandlerInterface;
 import io.harness.gitsync.persistance.GitAwareRepository;
 import io.harness.gitsync.persistance.GitSyncableEntity;
@@ -89,6 +90,9 @@ public abstract class AbstractGitSyncSdkModule extends AbstractModule {
           MapBinder.newMapBinder(binder(), EntityType.class, GitSdkEntityHandlerInterface.class);
       gitEntityTypeMapBinder.addBinding(gitSyncEntitiesConfig.getEntityType()).to(entityHelperClass);
     });
+    bind(GitSyncEntityOrderComparatorInMsvc.class)
+        .to(getGitSyncSdkConfiguration().getGitSyncEntitySortComparator())
+        .in(Singleton.class);
   }
 
   <B extends GitSyncableEntity, Y extends YamlDTO> AnnotatedBindingBuilder<GitAwareRepository<B, Y>> bindGitRepository(

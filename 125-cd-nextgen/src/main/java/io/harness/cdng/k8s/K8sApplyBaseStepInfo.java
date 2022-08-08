@@ -14,10 +14,12 @@ import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.string;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
+import io.harness.cdng.manifest.yaml.ManifestConfigWrapper;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.yaml.YamlSchemaTypes;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.annotations.ApiModelProperty;
 import java.util.List;
 import lombok.AllArgsConstructor;
@@ -27,7 +29,7 @@ import lombok.NoArgsConstructor;
 import lombok.experimental.FieldNameConstants;
 import org.springframework.data.annotation.TypeAlias;
 
-@OwnedBy(HarnessTeam.CDC)
+@OwnedBy(HarnessTeam.CDP)
 @Data
 @Builder
 @NoArgsConstructor
@@ -45,4 +47,5 @@ public class K8sApplyBaseStepInfo {
   @YamlSchemaTypes({runtime})
   @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
   ParameterField<List<TaskSelectorYaml>> delegateSelectors;
+  @JsonProperty("overrides") List<ManifestConfigWrapper> overrides;
 }

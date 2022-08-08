@@ -35,6 +35,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.Session;
+import java.io.IOException;
 import javax.validation.executable.ValidateOnExecution;
 import lombok.extern.slf4j.Slf4j;
 import org.eclipse.jgit.transport.JschConfigSessionFactory;
@@ -113,7 +114,7 @@ public class NGGitServiceImpl implements NGGitService {
 
   @Override
   public FetchFilesResult fetchFilesByPath(GitStoreDelegateConfig gitStoreDelegateConfig, String accountId,
-      SshSessionConfig sshSessionConfig, GitConfigDTO gitConfigDTO) {
+      SshSessionConfig sshSessionConfig, GitConfigDTO gitConfigDTO) throws IOException {
     FetchFilesByPathRequest fetchFilesByPathRequest = FetchFilesByPathRequest.builder()
                                                           .authRequest(getAuthRequest(gitConfigDTO, sshSessionConfig))
                                                           .filePaths(gitStoreDelegateConfig.getPaths())
@@ -130,7 +131,7 @@ public class NGGitServiceImpl implements NGGitService {
 
   @Override
   public void downloadFiles(GitStoreDelegateConfig gitStoreDelegateConfig, String destinationDirectory,
-      String accountId, SshSessionConfig sshSessionConfig, GitConfigDTO gitConfigDTO) {
+      String accountId, SshSessionConfig sshSessionConfig, GitConfigDTO gitConfigDTO) throws IOException {
     DownloadFilesRequest downloadFilesRequest = DownloadFilesRequest.builder()
                                                     .authRequest(getAuthRequest(gitConfigDTO, sshSessionConfig))
                                                     .filePaths(gitStoreDelegateConfig.getPaths())

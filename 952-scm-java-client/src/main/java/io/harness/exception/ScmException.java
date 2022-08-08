@@ -18,7 +18,12 @@ public class ScmException extends WingsException {
   public ScmException(ErrorCode errorCode) {
     super("", null, errorCode, Level.ERROR, USER, null);
   }
+
   public ScmException(String message, Throwable cause, ErrorCode errorCode) {
     super(message, cause, errorCode, Level.ERROR, USER, null);
+  }
+
+  public ScmException(String errorMessage, ErrorCode errorCode) {
+    super(errorMessage, null, errorCode, Level.ERROR, USER, null);
   }
 }

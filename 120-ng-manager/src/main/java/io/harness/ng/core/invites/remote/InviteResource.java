@@ -14,7 +14,6 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.ng.accesscontrol.PlatformPermissions.VIEW_USER_PERMISSION;
 import static io.harness.ng.accesscontrol.PlatformResourceTypes.USER;
 import static io.harness.ng.core.invites.mapper.InviteMapper.writeDTO;
-import static io.harness.ng.core.invites.mapper.RoleBindingMapper.validateRoleBindings;
 
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.stripToNull;
@@ -30,7 +29,10 @@ import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SortOrder;
+import io.harness.eraro.ErrorCode;
+import io.harness.exception.AccessDeniedException;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.WingsException;
 import io.harness.invites.remote.InviteAcceptResponse;
 import io.harness.ng.accesscontrol.user.ACLAggregateFilter;
 import io.harness.ng.beans.PageRequest;
@@ -41,12 +43,11 @@ import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.invites.api.InviteService;
-import io.harness.ng.core.invites.dto.CreateInviteDTO;
 import io.harness.ng.core.invites.dto.InviteDTO;
-import io.harness.ng.core.invites.dto.InviteOperationResponse;
 import io.harness.ng.core.invites.entities.Invite;
 import io.harness.ng.core.invites.entities.Invite.InviteKeys;
 import io.harness.ng.core.invites.mapper.InviteMapper;
+import io.harness.ng.core.user.service.NgUserService;
 import io.harness.security.annotations.NextGenManagerAuth;
 import io.harness.security.annotations.PublicApi;
 
@@ -66,7 +67,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URLDecoder;
-import java.util.List;
 import java.util.Optional;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
@@ -113,17 +113,20 @@ import org.springframework.data.mongodb.core.query.Criteria;
 public class InviteResource {
   private final InviteService inviteService;
   private final AccessControlClient accessControlClient;
+  private final NgUserService ngUserService;
 
   @Inject
-  InviteResource(InviteService inviteService, AccessControlClient accessControlClient) {
+  InviteResource(InviteService inviteService, AccessControlClient accessControlClient, NgUserService ngUserService) {
     this.inviteService = inviteService;
     this.accessControlClient = accessControlClient;
+    this.ngUserService = ngUserService;
   }
 
   @GET
   @Path("invite")
   @ApiOperation(value = "Get invite", nickname = "getInvite")
-  @Operation(operationId = "getInvite", summary = "Gets an Invite by either Invite Id or JwtToken",
+  @Operation(operationId = "getInvite", summary = "Get Invite",
+      description = "Gets an Invite by either Invite Id or JwtToken",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "default",
@@ -155,7 +158,8 @@ public class InviteResource {
 
   @GET
   @ApiOperation(value = "Get all invites for the queried project/organization", nickname = "getInvites")
-  @Operation(operationId = "getInvites", summary = "List all the Invites for a Project or Organization",
+  @Operation(operationId = "getInvites", summary = "List Invites",
+      description = "List all the Invites for a Project or Organization",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
@@ -191,7 +195,8 @@ public class InviteResource {
   @POST
   @Path("aggregate")
   @ApiOperation(value = "Get a page of pending users for access control", nickname = "getPendingUsersAggregated")
-  @Operation(operationId = "getPendingUsersAggregated", summary = "List of all the Invites pending users",
+  @Operation(operationId = "getPendingUsersAggregated", summary = "Get pending users",
+      description = "List of all the pending users in a scope",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
@@ -212,30 +217,20 @@ public class InviteResource {
     return ResponseDTO.newResponse(inviteDTOs);
   }
 
-  @POST
-  @ApiOperation(value = "Add a new invite for the specified project/organization", nickname = "sendInvite")
-  @Operation(operationId = "sendInvite",
-      summary =
-          "Send a user Invite to either Project or Organization (Deprecated). Please use the /user/users API to invite users",
-      responses =
-      {
-        @io.swagger.v3.oas.annotations.responses.
-        ApiResponse(responseCode = "default", description = "Returns the Invite Operation Response")
-      })
-  @Deprecated
-  public ResponseDTO<List<InviteOperationResponse>>
-  createInvitations(@Parameter(description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
-                        NGCommonEntityConstants.ACCOUNT_KEY) @NotNull String accountIdentifier,
-      @Parameter(description = ORG_PARAM_MESSAGE) @QueryParam("orgIdentifier") String orgIdentifier,
-      @Parameter(description = PROJECT_PARAM_MESSAGE) @QueryParam("projectIdentifier") String projectIdentifier,
-      @RequestBody(required = true,
-          description = "Details of the Invite to create") @NotNull @Valid CreateInviteDTO createInviteDTO) {
-    projectIdentifier = stripToNull(projectIdentifier);
-    orgIdentifier = stripToNull(orgIdentifier);
-    validateRoleBindings(createInviteDTO.getRoleBindings(), orgIdentifier, projectIdentifier);
-    List<InviteOperationResponse> inviteOperationResponses =
-        inviteService.createInvitations(accountIdentifier, orgIdentifier, projectIdentifier, createInviteDTO);
-    return ResponseDTO.newResponse(inviteOperationResponses);
+  @GET
+  @Hidden
+  @Path("internal/link")
+  @ApiOperation(value = "Get invite link from invite id for Harness User Group Users",
+      nickname = "getInviteLinkInternal", hidden = true)
+  public ResponseDTO<String>
+  getInviteLink(@QueryParam("inviteId") @NotNull String inviteId,
+      @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @NotNull String accountIdentifier) {
+    boolean isHarnessSupportGroupUser = ngUserService.verifyHarnessSupportGroupUser();
+    if (!isHarnessSupportGroupUser) {
+      throw new AccessDeniedException("Only Harness Support Group Users can access this endpoint. Not authorized",
+          ErrorCode.NG_ACCESS_DENIED, WingsException.USER);
+    }
+    return ResponseDTO.newResponse(inviteService.getInviteLinkFromInviteId(accountIdentifier, inviteId));
   }
 
   @GET
@@ -285,7 +280,7 @@ public class InviteResource {
   @PUT
   @Path("{inviteId}")
   @ApiOperation(value = "Resend invite mail", nickname = "updateInvite")
-  @Operation(operationId = "updateInvite", summary = "Resend the Invite email",
+  @Operation(operationId = "updateInvite", summary = "Resend invite", description = "Resend the invite email",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
@@ -306,7 +301,7 @@ public class InviteResource {
   @DELETE
   @Path("{inviteId}")
   @ApiOperation(value = "Delete a invite for the specified project/organization", nickname = "deleteInvite")
-  @Operation(operationId = "deleteInvite", summary = "Delete an Invite by Identifier",
+  @Operation(operationId = "deleteInvite", summary = "Delete Invite", description = "Delete an Invite by Identifier",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.

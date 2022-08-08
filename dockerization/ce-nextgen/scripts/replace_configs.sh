@@ -84,6 +84,11 @@ replace_key_value gcpConfig.gcpAwsConnectorCrudPubSubTopic "$GCP_AWS_CONNECTOR_C
 
 replace_key_value ceAzureSetupConfig.azureAppClientId "$AZURE_APP_CLIENT_ID"
 replace_key_value ceAzureSetupConfig.azureAppClientSecret "$AZURE_APP_CLIENT_SECRET"
+replace_key_value ceAzureSetupConfig.enableFileCheckAtSource "$AZURE_ENABLE_FILE_CHECK_AT_SOURCE"
+
+replace_key_value ceGcpSetupConfig.enableServiceAccountPermissionsCheck "$GCP_ENABLE_SERVICE_ACCOUNT_PERMISSIONS_CHECK"
+
+replace_key_value deploymentClusterName "$DEPLOYMENT_CLUSTER_NAME"
 
 replace_key_value awsConfig.accessKey "$AWS_ACCESS_KEY"
 replace_key_value awsConfig.secretKey "$AWS_SECRET_KEY"
@@ -96,6 +101,7 @@ replace_key_value cfClientConfig.eventUrl "$CF_CLIENT_EVENT_URL"
 replace_key_value cfClientConfig.analyticsEnabled "$CF_CLIENT_ANALYTICS_ENABLED"
 replace_key_value cfClientConfig.connectionTimeout "$CF_CLIENT_CONNECTION_TIMEOUT"
 replace_key_value cfClientConfig.readTimeout "$CF_CLIENT_READ_TIMEOUT"
+replace_key_value cfClientConfig.bufferSize "$CF_CLIENT_BUFFER_SIZE"
 replace_key_value featureFlagConfig.featureFlagSystem "$FEATURE_FLAG_SYSTEM"
 replace_key_value featureFlagConfig.syncFeaturesToCF "$SYNC_FEATURES_TO_CF"
 replace_key_value enforcementClientConfiguration.enforcementCheckEnabled "$ENFORCEMENT_CHECK_ENABLED"
@@ -105,6 +111,17 @@ replace_key_value grpcClient.authority "$MANAGER_AUTHORITY"
 
 replace_key_value secretsConfiguration.gcpSecretManagerProject "$GCP_SECRET_MANAGER_PROJECT"
 replace_key_value secretsConfiguration.secretResolutionEnabled  "$RESOLVE_SECRETS"
+replace_key_value awsConnectorCreatedInstantForPolicyCheck $AWS_CONNECTOR_CREATED_INSTANT_FOR_POLICY_CHECK
+
+replace_key_value accessControlClient.enableAccessControl "$ACCESS_CONTROL_ENABLED"
+replace_key_value accessControlClient.accessControlServiceConfig.baseUrl "$ACCESS_CONTROL_BASE_URL"
+replace_key_value accessControlClient.accessControlServiceSecret "$ACCESS_CONTROL_SECRET"
+replace_key_value accessControlAdminClient.accessControlServiceConfig.baseUrl "$ACCESS_CONTROL_BASE_URL"
+replace_key_value accessControlAdminClient.accessControlServiceSecret "$ACCESS_CONTROL_SECRET"
+
+replace_key_value notificationClient.httpClient.baseUrl "$NOTIFICATION_BASE_URL"
+replace_key_value notificationClient.secrets.notificationClientSecret "$NEXT_GEN_MANAGER_SECRET"
+replace_key_value notificationClient.messageBroker.uri "${NOTIFICATION_MONGO_URI//\\&/&}"
 
 if [[ "" != "$EVENTS_FRAMEWORK_REDIS_SENTINELS" ]]; then
   IFS=',' read -ra SENTINEL_URLS <<< "$EVENTS_FRAMEWORK_REDIS_SENTINELS"
@@ -121,3 +138,25 @@ if [[ "$STACK_DRIVER_LOGGING_ENABLED" == "true" ]]; then
 else
   yq delete -i $CONFIG_FILE 'logging.appenders.(type==gke-console)'
 fi
+
+if [[ "" != "$SEGMENT_ENABLED" ]]; then
+  yq write -i $CONFIG_FILE segmentConfiguration.enabled "$SEGMENT_ENABLED"
+fi
+
+if [[ "" != "$SEGMENT_APIKEY" ]]; then
+  yq write -i $CONFIG_FILE segmentConfiguration.apiKey "$SEGMENT_APIKEY"
+fi
+
+if [[ "" != "$AUDIT_CLIENT_BASEURL" ]]; then
+  yq write -i $CONFIG_FILE auditClientConfig.baseUrl "$AUDIT_CLIENT_BASEURL"
+fi
+
+if [[ "" != "$AUDIT_ENABLED" ]]; then
+  yq write -i $CONFIG_FILE enableAudit "$AUDIT_ENABLED"
+fi
+
+replace_key_value outboxPollConfig.initialDelayInSeconds "$OUTBOX_POLL_INITIAL_DELAY"
+replace_key_value outboxPollConfig.pollingIntervalInSeconds "$OUTBOX_POLL_INTERVAL"
+replace_key_value outboxPollConfig.maximumRetryAttemptsForAnEvent "$OUTBOX_MAX_RETRY_ATTEMPTS"
+
+replace_key_value exportMetricsToStackDriver "$EXPORT_METRICS_TO_STACK_DRIVER"

@@ -42,7 +42,7 @@ import software.wings.beans.Application;
 import software.wings.beans.EntityType;
 import software.wings.beans.Service;
 import software.wings.beans.ServiceVariable;
-import software.wings.beans.ServiceVariable.Type;
+import software.wings.beans.ServiceVariableType;
 import software.wings.exception.WingsExceptionMapper;
 import software.wings.service.impl.security.auth.AuthHandler;
 import software.wings.service.intfc.AppService;
@@ -84,7 +84,7 @@ public class ServiceVariableResourceTest extends CategoryTest {
                                                               .entityType(EntityType.ENVIRONMENT)
                                                               .entityId(TEMPLATE_ID)
                                                               .templateId(TEMPLATE_ID)
-                                                              .type(Type.TEXT)
+                                                              .type(ServiceVariableType.TEXT)
                                                               .value("8080".toCharArray())
                                                               .accountId(ACCOUNT_ID)
                                                               .build();

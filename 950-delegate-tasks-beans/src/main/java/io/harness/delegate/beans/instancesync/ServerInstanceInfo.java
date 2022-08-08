@@ -9,8 +9,11 @@ package io.harness.delegate.beans.instancesync;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.delegate.beans.instancesync.info.AzureWebAppServerInstanceInfo;
 import io.harness.delegate.beans.instancesync.info.K8sServerInstanceInfo;
 import io.harness.delegate.beans.instancesync.info.NativeHelmServerInstanceInfo;
+import io.harness.delegate.beans.instancesync.info.PdcServerInstanceInfo;
+import io.harness.delegate.beans.instancesync.info.ServerlessAwsLambdaServerInstanceInfo;
 
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -22,7 +25,11 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 @JsonSubTypes({
   @JsonSubTypes.Type(value = K8sServerInstanceInfo.class, name = "K8sServerInstanceInfo")
-  , @JsonSubTypes.Type(value = NativeHelmServerInstanceInfo.class, name = "NativeHelmServerInstanceInfo")
+  , @JsonSubTypes.Type(value = NativeHelmServerInstanceInfo.class, name = "NativeHelmServerInstanceInfo"),
+      @JsonSubTypes.Type(
+          value = ServerlessAwsLambdaServerInstanceInfo.class, name = "ServerlessAwsLambdaServerInstanceInfo"),
+      @JsonSubTypes.Type(value = AzureWebAppServerInstanceInfo.class, name = "AzureWebAppServerInstanceInfo"),
+      @JsonSubTypes.Type(value = PdcServerInstanceInfo.class, name = "PdcServerInstanceInfo")
 })
 @OwnedBy(HarnessTeam.DX)
 public abstract class ServerInstanceInfo {}

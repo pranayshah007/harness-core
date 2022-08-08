@@ -186,7 +186,7 @@ public abstract class NodeSelectState extends State {
 
     ServiceInstanceSelectionParams selectionParamsForAllInstances =
         generateSelectionParamsForAllInstances(selectionParams, totalAvailableInstances);
-    final List<ServiceInstance> allServiceInstances = infrastructureMappingService.selectServiceInstances(
+    final List<ServiceInstance> instancesFromInfra = infrastructureMappingService.selectServiceInstances(
         appId, infraMappingId, context.getWorkflowExecutionId(), selectionParamsForAllInstances);
 
     String errorMessage = buildServiceInstancesErrorMessage(
@@ -227,9 +227,10 @@ public abstract class NodeSelectState extends State {
     ServiceInstanceIdsParam serviceIdParamElement =
         aServiceInstanceIdsParam().withInstanceIds(serviceInstancesIds).withServiceId(serviceId).build();
 
-    final List<InstanceElement> instanceElements = getInstanceElements(serviceInstances, allServiceInstances);
+    final List<InstanceElement> instanceElements =
+        getInstanceElements(serviceInstances, instancesFromInfra, specificHosts);
     final List<InstanceDetails> instanceDetails =
-        getInstanceDetails(appId, envId, serviceInstances, allServiceInstances);
+        getInstanceDetails(appId, envId, serviceInstances, instancesFromInfra, specificHosts);
     sweepingOutputService.save(
         context.prepareSweepingOutputBuilder(Scope.WORKFLOW)
             .name(ServiceInstanceIdsParam.SERVICE_INSTANCE_IDS_PARAMS + phaseElement.getPhaseName().trim())
@@ -275,7 +276,13 @@ public abstract class NodeSelectState extends State {
 
   @VisibleForTesting
   List<InstanceElement> getInstanceElements(
-      List<ServiceInstance> serviceInstances, List<ServiceInstance> allServiceInstances) {
+      List<ServiceInstance> serviceInstances, List<ServiceInstance> allServiceInstances, boolean specificHosts) {
+    if (specificHosts) {
+      List<InstanceElement> instanceElements =
+          emptyIfNull(instanceExpressionProcessor.convertToInstanceElements(serviceInstances));
+      instanceElements.forEach(i -> i.setNewInstance(true));
+      return instanceElements;
+    }
     Set<String> newServiceInstanceIds =
         serviceInstances.stream().map(ServiceInstance::getUuid).collect(Collectors.toSet());
     List<InstanceElement> instanceElements =
@@ -300,16 +307,19 @@ public abstract class NodeSelectState extends State {
   }
 
   @VisibleForTesting
-  List<InstanceDetails> getInstanceDetails(
-      String appId, String envId, List<ServiceInstance> serviceInstances, List<ServiceInstance> allServiceInstances) {
+  List<InstanceDetails> getInstanceDetails(String appId, String envId, List<ServiceInstance> serviceInstances,
+      List<ServiceInstance> allServiceInstances, boolean specificHosts) {
+    List<InstanceDetails> instanceDetails =
+        generateInstanceDetailsFromServiceInstances(serviceInstances, appId, envId, true);
+    if (specificHosts) {
+      return instanceDetails;
+    }
     Set<String> newServiceInstanceIds =
         serviceInstances.stream().map(ServiceInstance::getUuid).collect(Collectors.toSet());
     List<ServiceInstance> oldServiceInstances =
         allServiceInstances.stream()
             .filter(serviceInstance -> !newServiceInstanceIds.contains(serviceInstance.getUuid()))
             .collect(toList());
-    List<InstanceDetails> instanceDetails =
-        generateInstanceDetailsFromServiceInstances(serviceInstances, appId, envId, true);
     instanceDetails.addAll(generateInstanceDetailsFromServiceInstances(oldServiceInstances, appId, envId, false));
     return instanceDetails;
   }

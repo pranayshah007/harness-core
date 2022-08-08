@@ -15,10 +15,12 @@ import lombok.ToString;
 
 @Data
 @Builder
-@ToString(exclude = "key")
+@ToString(exclude = {"key", "cert"})
 public class AzureConfig {
   String tenantId;
   String clientId;
   char[] key;
+  byte[] cert;
   private AzureEnvironmentType azureEnvironmentType;
+  @Builder.Default AzureAuthenticationType azureAuthenticationType = AzureAuthenticationType.SERVICE_PRINCIPAL_SECRET;
 }

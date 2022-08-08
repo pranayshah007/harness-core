@@ -9,7 +9,6 @@ package io.harness.ccm.graphql.dto.recommendation;
 
 import io.harness.ccm.commons.beans.recommendation.ResourceType;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import io.leangen.graphql.annotations.GraphQLNonNull;
 import io.swagger.v3.oas.annotations.media.Schema;
 import javax.validation.constraints.NotNull;
@@ -27,5 +26,5 @@ public class RecommendationItemDTO {
   Double monthlySaving;
   Double monthlyCost;
   @GraphQLNonNull @NotNull ResourceType resourceType;
-  @JsonProperty(access = JsonProperty.Access.WRITE_ONLY) RecommendationDetailsDTO recommendationDetails;
+  RecommendationDetailsDTO recommendationDetails;
 }

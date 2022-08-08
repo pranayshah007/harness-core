@@ -67,6 +67,7 @@ public class AwsLambdaVerificationTest extends WingsBaseTest {
   @Mock private SecretManager secretManager;
   @Mock private DelegateService delegateService;
   @Mock private StateExecutionService stateExecutionService;
+  @Mock private WorkflowStandardParamsExtensionService workflowStandardParamsExtensionService;
 
   @InjectMocks private AwsLambdaVerification awsLambdaVerification;
 
@@ -92,8 +93,8 @@ public class AwsLambdaVerificationTest extends WingsBaseTest {
 
     WorkflowStandardParams workflowStandardParams = mock(WorkflowStandardParams.class);
     when(context.getContextElement(ContextElementType.STANDARD)).thenReturn(workflowStandardParams);
-    when(workflowStandardParams.fetchRequiredApp()).thenReturn(app);
-    when(workflowStandardParams.fetchRequiredEnv()).thenReturn(env);
+    when(workflowStandardParamsExtensionService.fetchRequiredApp(workflowStandardParams)).thenReturn(app);
+    when(workflowStandardParamsExtensionService.fetchRequiredEnv(workflowStandardParams)).thenReturn(env);
     when(activityService.save(any())).thenReturn(Activity.builder().build());
     when(context.getContextElement(ContextElementType.AWS_LAMBDA_FUNCTION))
         .thenReturn(AwsLambdaFunctionElement.builder()

@@ -26,6 +26,8 @@ public class PrometheusConfigYamlHandler extends VerificationProviderYamlHandler
                               .harnessApiVersion(getHarnessApiVersion())
                               .type(config.getType())
                               .prometheusUrl(config.getUrl())
+                              .username(config.getUsername())
+                              .password(getEncryptedYamlRef(config.getAccountId(), config.getEncryptedPassword()))
                               .build();
     toYaml(yaml, settingAttribute, appId);
     return yaml;
@@ -38,7 +40,12 @@ public class PrometheusConfigYamlHandler extends VerificationProviderYamlHandler
     PrometheusYaml yaml = changeContext.getYaml();
     String accountId = changeContext.getChange().getAccountId();
 
-    PrometheusConfig config = PrometheusConfig.builder().accountId(accountId).url(yaml.getPrometheusUrl()).build();
+    PrometheusConfig config = PrometheusConfig.builder()
+                                  .accountId(accountId)
+                                  .url(yaml.getPrometheusUrl())
+                                  .username(yaml.getUsername())
+                                  .encryptedPassword(yaml.getPassword())
+                                  .build();
 
     return buildSettingAttribute(accountId, changeContext.getChange().getFilePath(), uuid, config);
   }

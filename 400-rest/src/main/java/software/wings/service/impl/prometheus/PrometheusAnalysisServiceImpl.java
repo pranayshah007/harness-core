@@ -25,6 +25,7 @@ import software.wings.beans.APMValidateCollectorConfig;
 import software.wings.beans.PrometheusConfig;
 import software.wings.beans.SettingAttribute;
 import software.wings.beans.SyncTaskContext;
+import software.wings.beans.apm.Method;
 import software.wings.delegatetasks.DelegateProxyFactory;
 import software.wings.delegatetasks.cv.DataCollectionException;
 import software.wings.metrics.MetricType;
@@ -38,7 +39,6 @@ import software.wings.service.impl.apm.MLServiceUtils;
 import software.wings.service.intfc.SettingsService;
 import software.wings.service.intfc.prometheus.PrometheusAnalysisService;
 import software.wings.service.intfc.security.SecretManager;
-import software.wings.sm.states.APMVerificationState.Method;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.common.base.Charsets;

@@ -7,6 +7,8 @@
 
 package io.harness.aws;
 
+import io.harness.aws.beans.AwsInternalConfig;
+
 import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.auth.policy.Policy;
 import com.amazonaws.services.codecommit.model.Commit;
@@ -14,8 +16,10 @@ import com.amazonaws.services.codecommit.model.RepositoryMetadata;
 import com.amazonaws.services.costandusagereport.model.ReportDefinition;
 import com.amazonaws.services.identitymanagement.model.EvaluationResult;
 import com.amazonaws.services.organizations.AWSOrganizationsClient;
+import com.amazonaws.services.s3.iterable.S3Objects;
 import com.amazonaws.services.s3.model.ObjectListing;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import javax.annotation.Nullable;
 import javax.validation.constraints.NotNull;
@@ -50,6 +54,11 @@ public interface AwsClient {
 
   ObjectListing getBucket(AWSCredentialsProvider credentialsProvider, String s3BucketName, String s3Prefix);
 
+  S3Objects getIterableS3ObjectSummaries(
+      AWSCredentialsProvider credentialsProvider, String s3BucketName, String s3Prefix);
+
   AWSOrganizationsClient getAWSOrganizationsClient(
       String crossAccountRoleArn, String externalId, String awsAccessKey, String awsSecretKey);
+
+  Map<String, String> listIAMRoles(AwsInternalConfig awsInternalConfig);
 }

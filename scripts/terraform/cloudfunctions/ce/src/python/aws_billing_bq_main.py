@@ -106,11 +106,11 @@ def create_dataset_and_tables(jsonData):
             print_("%s table does not exists, creating table..." % table_ref)
             createTable(client, table_ref)
         else:
-            # Remove these after some time.
-            if table_ref == aws_cur_table_ref:
-                alter_awscur_table(jsonData)
-            elif table_ref == unified_table_ref:
-                alter_unified_table(jsonData)
+            # Enable these only when needed.
+            # if table_ref == aws_cur_table_ref:
+            #     alter_awscur_table(jsonData)
+            # elif table_ref == unified_table_ref:
+            #     alter_unified_table(jsonData)
             print_("%s table exists" % table_ref)
 
     return True
@@ -281,21 +281,24 @@ def ingest_data_to_awscur(jsonData):
         print_("Skipping ingesting tags")
         tags_query = "null AS tags "
 
-    desirable_columns = ["resourceid", "usagestartdate", "productname", "productfamily", "servicecode", "blendedrate", "blendedcost",
+    desirable_columns = ["resourceid", "usagestartdate", "productname", "productfamily", "servicecode", "servicename", "blendedrate", "blendedcost",
                       "unblendedrate", "unblendedcost", "region", "availabilityzone", "usageaccountid", "instancetype",
                       "usagetype", "lineitemtype", "effectivecost", "billingentity", "instanceFamily", "marketOption"]
     available_columns = list(set(desirable_columns) & set(jsonData["available_columns"]))
     available_columns = ", ".join(f"{w}" for w in available_columns)
 
+    amortised_cost_query = prep_amortised_cost_query(set(jsonData["available_columns"]))
+    net_amortised_cost_query = prep_net_amortised_cost_query(set(jsonData["available_columns"]))
+
     query = """
     DELETE FROM `%s` WHERE DATE(usagestartdate) >= '%s' AND DATE(usagestartdate) <= '%s' and usageaccountid IN (%s);
-    INSERT INTO `%s` (%s, tags) 
-        SELECT %s, %s 
+    INSERT INTO `%s` (%s, amortisedCost, netAmortisedCost, tags) 
+        SELECT %s, %s, %s, %s
         FROM `%s` table 
         WHERE DATE(usagestartdate) >= '%s' AND DATE(usagestartdate) <= '%s';
      """ % (tableName, date_start, date_end, jsonData["usageaccountid"],
             tableName, available_columns,
-            available_columns, tags_query,
+            available_columns, amortised_cost_query, net_amortised_cost_query, tags_query,
             jsonData["tableId"],
             date_start, date_end)
     # Configure the query job.
@@ -317,6 +320,49 @@ def ingest_data_to_awscur(jsonData):
         raise e
     print_("Loaded into %s table..." % tableName)
 
+def prep_amortised_cost_query(cols):
+    # Prep amortised cost calculation query based on available cols
+    query = """CASE  
+                    WHEN (lineitemtype = 'SavingsPlanNegation') THEN 0
+                    WHEN (lineitemtype = 'SavingsPlanUpfrontFee') THEN 0 
+            """
+    if "SavingsPlanEffectiveCost".lower() in cols:
+        query = query + "WHEN (lineitemtype = 'SavingsPlanCoveredUsage') THEN SavingsPlanEffectiveCost \n"
+    if "TotalCommitmentToDate".lower() in cols and "UsedCommitment".lower() in cols:
+        query = query + "WHEN (lineitemtype = 'SavingsPlanRecurringFee') THEN (TotalCommitmentToDate - UsedCommitment) \n"
+    if "EffectiveCost".lower() in cols:
+        query = query + "WHEN (lineitemtype = 'DiscountedUsage') THEN EffectiveCost \n"
+    if "UnusedAmortizedUpfrontFeeForBillingPeriod".lower() in cols and "UnusedRecurringFee".lower() in cols:
+        query = query + "WHEN (lineitemtype = 'RIFee') THEN (UnusedAmortizedUpfrontFeeForBillingPeriod + UnusedRecurringFee) \n"
+    if "ReservationARN".lower() in cols:
+        query = query + "WHEN ((lineitemtype = 'Fee') AND (ReservationARN <> '')) THEN 0 \n"
+    query = query + " ELSE UnblendedCost END amortisedCost \n"
+    print_(query)
+    return query
+
+def prep_net_amortised_cost_query(cols):
+    # Prep net amortised cost calculation query based on available cols
+    query = """CASE  
+                    WHEN (lineitemtype = 'SavingsPlanNegation') THEN 0
+                    WHEN (lineitemtype = 'SavingsPlanUpfrontFee') THEN 0 
+            """
+    if "NetSavingsPlanEffectiveCost".lower() in cols:
+        query = query + "WHEN (lineitemtype = 'SavingsPlanCoveredUsage') THEN NetSavingsPlanEffectiveCost \n"
+    if "TotalCommitmentToDate".lower() in cols and "UsedCommitment".lower() in cols:
+        query = query + "WHEN (lineitemtype = 'SavingsPlanRecurringFee') THEN (TotalCommitmentToDate - UsedCommitment) \n"
+    if "NetEffectiveCost".lower() in cols:
+        query = query + "WHEN (lineitemtype = 'DiscountedUsage') THEN NetEffectiveCost \n"
+    if "NetUnusedAmortizedUpfrontFeeForBillingPeriod".lower() in cols and "NetUnusedRecurringFee".lower() in cols:
+        query = query + "WHEN (lineitemtype = 'RIFee') THEN (NetUnusedAmortizedUpfrontFeeForBillingPeriod + NetUnusedRecurringFee) \n"
+    if "ReservationARN".lower() in cols:
+        query = query + "WHEN ((lineitemtype = 'Fee') AND (ReservationARN <> '')) THEN 0 \n"
+    if "NetUnblendedCost".lower() in cols:
+        query = query + " ELSE NetUnblendedCost \n"
+    else:
+        query = query + " ELSE 0 \n"
+    query = query + "END netAmortisedCost \n"
+    print_(query)
+    return query
 
 def get_unique_accountids(jsonData):
     # Support for account allowlist. When more usecases arises, we shall move this to a table in BQ
@@ -361,7 +407,7 @@ def ingest_data_to_preagg(jsonData):
 
     select_columns = """TIMESTAMP_TRUNC(usagestartdate, DAY) as startTime, min(blendedrate) AS awsBlendedRate, sum(blendedcost) AS awsBlendedCost,
                     min(unblendedrate) AS awsUnblendedRate, sum(unblendedcost) AS awsUnblendedCost, sum(unblendedcost) AS cost,
-                    productname AS awsServicecode, region, availabilityzone AS awsAvailabilityzone, usageaccountid AS awsUsageaccountid,
+                    servicename AS awsServicecode, region, availabilityzone AS awsAvailabilityzone, usageaccountid AS awsUsageaccountid,
                     usagetype AS awsUsagetype, "AWS" AS cloudProvider"""
 
     group_by = """awsServicecode, region, awsAvailabilityzone, awsUsageaccountid, awsUsagetype, startTime"""
@@ -420,7 +466,7 @@ def ingest_data_to_unified(jsonData):
 
     select_columns = """productname AS product, TIMESTAMP_TRUNC(usagestartdate, DAY) as startTime, 
                     blendedrate AS awsBlendedRate, blendedcost AS awsBlendedCost, unblendedrate AS awsUnblendedRate, 
-                    unblendedcost AS awsUnblendedCost, unblendedcost AS cost, productname AS awsServicecode, region, 
+                    unblendedcost AS awsUnblendedCost, unblendedcost AS cost, servicename AS awsServicecode, region, 
                     availabilityzone AS awsAvailabilityzone, usageaccountid AS awsUsageaccountid, 
                     "AWS" AS cloudProvider, billingentity as awsBillingEntity, tags AS labels"""
 
@@ -485,7 +531,7 @@ def ingest_data_to_costagg(jsonData):
     job_config = bigquery.QueryJobConfig(
         priority=bigquery.QueryPriority.BATCH
     )
-    run_batch_query(client, query, job_config, timeout=120)
+    run_batch_query(client, query, job_config, timeout=180)
 
 
 def alter_unified_table(jsonData):
@@ -511,7 +557,10 @@ def alter_awscur_table(jsonData):
     query = "ALTER TABLE `%s.awscur_%s` \
         ADD COLUMN IF NOT EXISTS billingEntity STRING, \
         ADD COLUMN IF NOT EXISTS instanceFamily STRING, \
-        ADD COLUMN IF NOT EXISTS marketOption STRING;" % (ds, jsonData["awsCurTableSuffix"])
+        ADD COLUMN IF NOT EXISTS marketOption STRING, \
+        ADD COLUMN IF NOT EXISTS amortisedCost FLOAT64, \
+        ADD COLUMN IF NOT EXISTS netAmortisedCost FLOAT64, \
+        ADD COLUMN IF NOT EXISTS serviceName STRING;" % (ds, jsonData["awsCurTableSuffix"])
 
     try:
         print_(query)

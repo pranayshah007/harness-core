@@ -1,0 +1,34 @@
+identifier: qaStage
+  name: "qa stage"
+  type: Deployment
+  spec:
+    service:
+      serviceRef: service1
+    environment:
+      environmentRef: env1
+    execution:
+      steps:
+        - step:
+            name: "Rollout Deployment"
+            identifier: rolloutDeployment
+            type: K8sRollingDeploy
+            spec:
+              timeout: 120000
+              skipDryRun: false
+        - step:
+            name: "http"
+            identifier: http
+            type: Http
+            spec:
+              socketTimeoutMillis: 1000
+              method: GET
+              url: wrongUrl
+        - step:
+            identifier: shellScript
+            type: ShellScript
+            spec:
+              executeOnDelegate: true
+              connectionType: SSH
+              scriptType: BASH
+              script: |
+                echo 'I should not execute'

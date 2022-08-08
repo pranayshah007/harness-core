@@ -7,7 +7,6 @@
 
 package io.harness.accesscontrol.principals.serviceaccounts;
 
-import static io.harness.accesscontrol.scopes.harness.ScopeMapper.fromParams;
 import static io.harness.remote.client.NGRestUtils.getResponse;
 
 import io.harness.accesscontrol.scopes.core.Scope;
@@ -52,32 +51,15 @@ public class HarnessServiceAccountServiceImpl implements HarnessServiceAccountSe
     HarnessScopeParams scopeParams = ScopeMapper.toParams(scope);
     List<String> resourceIds = new ArrayList<>();
     resourceIds.add(identifier);
-    List<ServiceAccountDTO> serviceAccountDTOs = new ArrayList<>();
 
-    // remove in next release, just query for the given scope
-    serviceAccountDTOs.addAll(getResponse(
-        serviceAccountClient.listServiceAccounts(scopeParams.getAccountIdentifier(), null, null, resourceIds)));
-
-    serviceAccountDTOs.addAll(getResponse(serviceAccountClient.listServiceAccounts(
-        scopeParams.getAccountIdentifier(), scopeParams.getOrgIdentifier(), null, resourceIds)));
-
-    serviceAccountDTOs.addAll(getResponse(serviceAccountClient.listServiceAccounts(scopeParams.getAccountIdentifier(),
-        scopeParams.getOrgIdentifier(), scopeParams.getProjectIdentifier(), resourceIds)));
+    List<ServiceAccountDTO> serviceAccountDTOs =
+        getResponse(serviceAccountClient.listServiceAccounts(scopeParams.getAccountIdentifier(),
+            scopeParams.getOrgIdentifier(), scopeParams.getProjectIdentifier(), resourceIds));
 
     if (!serviceAccountDTOs.isEmpty()) {
-      ServiceAccountDTO serviceAccountDTO = serviceAccountDTOs.get(0);
-      Scope serviceAccountScope = fromParams(HarnessScopeParams.builder()
-                                                 .accountIdentifier(serviceAccountDTO.getAccountIdentifier())
-                                                 .orgIdentifier(serviceAccountDTO.getOrgIdentifier())
-                                                 .projectIdentifier(serviceAccountDTO.getProjectIdentifier())
-                                                 .build());
-      Scope currentScope = scope;
-      while (currentScope != null && currentScope.getLevel().getRank() >= serviceAccountScope.getLevel().getRank()) {
-        ServiceAccount serviceAccount =
-            ServiceAccount.builder().identifier(identifier).scopeIdentifier(currentScope.toString()).build();
-        serviceAccountService.createIfNotPresent(serviceAccount);
-        currentScope = currentScope.getParentScope();
-      }
+      ServiceAccount serviceAccount =
+          ServiceAccount.builder().identifier(identifier).scopeIdentifier(scope.toString()).build();
+      serviceAccountService.createIfNotPresent(serviceAccount);
     } else {
       serviceAccountService.deleteIfPresent(identifier, scope.toString());
     }

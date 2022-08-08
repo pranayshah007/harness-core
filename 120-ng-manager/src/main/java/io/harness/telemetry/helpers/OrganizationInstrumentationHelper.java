@@ -20,12 +20,13 @@ import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.HashMap;
+import java.util.concurrent.CompletableFuture;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Singleton
 @OwnedBy(HarnessTeam.PL)
-public class OrganizationInstrumentationHelper {
+public class OrganizationInstrumentationHelper extends InstrumentationHelper {
   @Inject TelemetryReporter telemetryReporter;
   public static final String GLOBAL_ACCOUNT_ID = "__GLOBAL_ACCOUNT_ID__";
   String ACCOUNT_ID = "account_id";
@@ -35,7 +36,7 @@ public class OrganizationInstrumentationHelper {
   String ORGANIZATION_VERSION = "organization_version";
   String HARNESS_MANAGED = "harness_managed";
 
-  public void sendOrganizationCreateEvent(Organization organization, String accountId) {
+  public CompletableFuture sendOrganizationCreateEvent(Organization organization, String accountId) {
     try {
       if (EmptyPredicate.isNotEmpty(accountId) || !accountId.equals(GLOBAL_ACCOUNT_ID)) {
         HashMap<String, Object> map = new HashMap<>();
@@ -45,12 +46,15 @@ public class OrganizationInstrumentationHelper {
         map.put(ORGANIZATION_NAME, organization.getName());
         map.put(ORGANIZATION_VERSION, organization.getVersion());
         map.put(HARNESS_MANAGED, organization.getHarnessManaged());
-        telemetryReporter.sendTrackEvent("organization_creation_finished", map,
-            ImmutableMap.<Destination, Boolean>builder()
-                .put(Destination.AMPLITUDE, true)
-                .put(Destination.ALL, false)
-                .build(),
-            Category.PLATFORM, TelemetryOption.builder().sendForCommunity(true).build());
+        String userId = getUserId();
+        return CompletableFuture.runAsync(
+            ()
+                -> telemetryReporter.sendTrackEvent("organization_creation_finished", userId, accountId, map,
+                    ImmutableMap.<Destination, Boolean>builder()
+                        .put(Destination.AMPLITUDE, true)
+                        .put(Destination.ALL, false)
+                        .build(),
+                    Category.PLATFORM, TelemetryOption.builder().sendForCommunity(true).build()));
       } else {
         log.info("There is no account found for account ID = " + accountId
             + "!. Cannot send Organization Creation Finished event.");
@@ -58,8 +62,9 @@ public class OrganizationInstrumentationHelper {
     } catch (Exception e) {
       log.error("Organization creation event failed for accountID= " + accountId, e);
     }
+    return null;
   }
-  public void sendOrganizationDeleteEvent(Organization organization, String accountId) {
+  public CompletableFuture sendOrganizationDeleteEvent(Organization organization, String accountId) {
     try {
       if (EmptyPredicate.isNotEmpty(accountId) || !accountId.equals(GLOBAL_ACCOUNT_ID)) {
         HashMap<String, Object> map = new HashMap<>();
@@ -69,12 +74,15 @@ public class OrganizationInstrumentationHelper {
         map.put(ORGANIZATION_NAME, organization.getName());
         map.put(ORGANIZATION_VERSION, organization.getVersion());
         map.put(HARNESS_MANAGED, organization.getHarnessManaged());
-        telemetryReporter.sendTrackEvent("organization_deletion", map,
-            ImmutableMap.<Destination, Boolean>builder()
-                .put(Destination.AMPLITUDE, true)
-                .put(Destination.ALL, false)
-                .build(),
-            Category.PLATFORM, TelemetryOption.builder().sendForCommunity(true).build());
+        String userId = getUserId();
+        return CompletableFuture.runAsync(
+            ()
+                -> telemetryReporter.sendTrackEvent("organization_deletion", userId, accountId, map,
+                    ImmutableMap.<Destination, Boolean>builder()
+                        .put(Destination.AMPLITUDE, true)
+                        .put(Destination.ALL, false)
+                        .build(),
+                    Category.PLATFORM, TelemetryOption.builder().sendForCommunity(true).build()));
       } else {
         log.info(
             "There is no account found for account ID = " + accountId + "!. Cannot send Organization Deletion event.");
@@ -82,5 +90,6 @@ public class OrganizationInstrumentationHelper {
     } catch (Exception e) {
       log.error("Organization deletion event failed for accountID= " + accountId, e);
     }
+    return null;
   }
 }

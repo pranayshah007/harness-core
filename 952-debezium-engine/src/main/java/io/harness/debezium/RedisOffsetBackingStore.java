@@ -80,6 +80,7 @@ public class RedisOffsetBackingStore extends MemoryOffsetBackingStore {
       // set the value in Redis
       RMap<byte[], byte[]> offsets_map = redisson.getMap(this.redisKey);
       offsets_map.put(key, value);
+      log.info("Saved offset in Database");
     }
   }
 }

@@ -34,10 +34,12 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import io.harness.CategoryTest;
+import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.eraro.ErrorCode;
+import io.harness.ff.FeatureFlagService;
 import io.harness.git.model.ChangeType;
 import io.harness.rule.Owner;
 import io.harness.tasks.ResponseData;
@@ -71,6 +73,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -90,6 +93,7 @@ public class GitCommandCallbackTest extends CategoryTest {
   @Mock private GitSyncErrorService gitSyncErrorService;
   @Mock private GitSyncService gitSyncService;
   @Mock private GitChangeSetHandler gitChangeSetHandler;
+  @Mock private FeatureFlagService featureFlagService;
 
   @InjectMocks
   private GitCommandCallback commandCallback = new GitCommandCallback(
@@ -118,9 +122,8 @@ public class GitCommandCallbackTest extends CategoryTest {
 
     doReturn(true).when(yamlChangeSetService).updateStatus(anyString(), anyString(), any());
     doNothing().when(yamlGitService).raiseAlertForGitFailure(anyString(), anyString(), any());
-    Map<String, ResponseData> map = new HashMap<>();
-    map.put("key", notifyResponseData);
-
+    Map<String, Supplier<ResponseData>> map = new HashMap<>();
+    map.put("key", () -> notifyResponseData);
     commandCallback.notify(map);
     verify(yamlGitService, times(1))
         .raiseAlertForGitFailure(ACCOUNT_ID, GLOBAL_APP_ID,
@@ -144,12 +147,11 @@ public class GitCommandCallbackTest extends CategoryTest {
     doThrow(new RuntimeException())
         .when(yamlGitService)
         .closeAlertForGitFailureIfOpen(anyString(), anyString(), any(), any());
-    Map<String, ResponseData> map = new HashMap<>();
-    map.put("key", notifyResponseData);
+    Map<String, Supplier<ResponseData>> map = new HashMap<>();
+    map.put("key", () -> notifyResponseData);
 
     try {
       commandCallback.notify(map);
-      assertThat(false).isTrue();
     } catch (RuntimeException e) {
       // the way we are testing here is, for GitCommandStatus.SUCCESS, closeAlertForGitFailureIfOpen() should get
       // called. in mock, we are throwing exception on this method call as this is what we want to test. rest of code
@@ -164,8 +166,8 @@ public class GitCommandCallbackTest extends CategoryTest {
   public void testNotifyOnErrorCase() {
     DelegateResponseData notifyResponseData = ErrorNotifyResponseData.builder().build();
 
-    Map<String, ResponseData> map = new HashMap<>();
-    map.put("key", notifyResponseData);
+    Map<String, Supplier<ResponseData>> map = new HashMap<>();
+    map.put("key", () -> notifyResponseData);
 
     commandCallback.notify(map);
     verify(yamlGitService, never())
@@ -183,8 +185,8 @@ public class GitCommandCallbackTest extends CategoryTest {
                                                   .gitCommandResult(GitCheckoutResult.builder().build())
                                                   .build();
 
-    Map<String, ResponseData> map = new HashMap<>();
-    map.put("key", notifyResponseData);
+    Map<String, Supplier<ResponseData>> map = new HashMap<>();
+    map.put("key", () -> notifyResponseData);
 
     on(commandCallback).set("gitCommandType", GitCommandType.CHECKOUT);
     commandCallback.notify(map);
@@ -244,8 +246,7 @@ public class GitCommandCallbackTest extends CategoryTest {
                                            .build();
     doReturn(Arrays.asList(gitSyncError1, gitSyncError2))
         .when(gitSyncErrorService)
-        .getActiveGitToHarnessSyncErrors(
-            eq(ACCOUNT_ID), eq("gitconnectorid"), eq("branchname"), anyString(), anyLong());
+        .getActiveGitToHarnessSyncErrors(eq(ACCOUNT_ID), eq("gitconnectorid"), eq("branchname"), any(), anyLong());
 
     diffCommandCallback.addActiveGitSyncErrorsToProcessAgain(gitDiffResult, ACCOUNT_ID);
     final List<GitFileChange> modifiedGitFileChangeSetList = gitDiffResult.getGitFileChanges();
@@ -286,8 +287,8 @@ public class GitCommandCallbackTest extends CategoryTest {
         .when(yamlGitService)
         .getYamlGitConfigIds(anyString(), anyString(), anyString(), anyString());
     doReturn(GitCommit.builder().build()).when(yamlGitService).saveCommit(any(GitCommit.class));
-    Map<String, ResponseData> map = new HashMap<>();
-    map.put("key", notifyResponseData);
+    Map<String, Supplier<ResponseData>> map = new HashMap<>();
+    map.put("key", () -> notifyResponseData);
 
     diffCommandCallback.notify(map);
     verify(yamlGitService, times(1)).saveCommit(any(GitCommit.class));
@@ -334,9 +335,9 @@ public class GitCommandCallbackTest extends CategoryTest {
                                                   .gitCommandStatus(GitCommandStatus.FAILURE)
                                                   .errorCode(ErrorCode.GIT_UNSEEN_REMOTE_HEAD_COMMIT)
                                                   .build();
-
-    Map<String, ResponseData> map = new HashMap<>();
-    map.put("key", notifyResponseData);
+    doReturn(false).when(featureFlagService).isEnabled(eq(FeatureName.CG_GIT_POLLING), any());
+    Map<String, Supplier<ResponseData>> map = new HashMap<>();
+    map.put("key", () -> notifyResponseData);
     commandCallback.notify(map);
     verify(yamlChangeSetService, times(1)).updateStatusAndIncrementPushCount(any(), any(), any());
   }

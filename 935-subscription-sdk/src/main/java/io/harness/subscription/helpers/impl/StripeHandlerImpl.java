@@ -7,21 +7,33 @@
 
 package io.harness.subscription.helpers.impl;
 
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+
 import io.harness.exception.InvalidRequestException;
 
 import com.stripe.exception.StripeException;
 import com.stripe.model.Customer;
 import com.stripe.model.Invoice;
 import com.stripe.model.PaymentIntent;
+import com.stripe.model.PaymentMethod;
+import com.stripe.model.PaymentMethodCollection;
 import com.stripe.model.Price;
 import com.stripe.model.PriceCollection;
+import com.stripe.model.PriceSearchResult;
 import com.stripe.model.Subscription;
 import com.stripe.param.CustomerCreateParams;
+import com.stripe.param.CustomerRetrieveParams;
 import com.stripe.param.CustomerUpdateParams;
 import com.stripe.param.InvoiceUpcomingParams;
+import com.stripe.param.PaymentMethodListParams;
 import com.stripe.param.PriceListParams;
+import com.stripe.param.PriceSearchParams;
 import com.stripe.param.SubscriptionCreateParams;
+import com.stripe.param.SubscriptionRetrieveParams;
 import com.stripe.param.SubscriptionUpdateParams;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class StripeHandlerImpl {
   StripeHandlerImpl() {}
@@ -53,8 +65,17 @@ public class StripeHandlerImpl {
   }
 
   Subscription retrieveSubscription(String subscriptionId) {
+    return retrieveSubscription(subscriptionId, null);
+  }
+
+  Subscription retrieveSubscription(String subscriptionId, List<String> expandList) {
     try {
-      return Subscription.retrieve(subscriptionId);
+      SubscriptionRetrieveParams.Builder builder = SubscriptionRetrieveParams.builder();
+
+      if (isNotEmpty(expandList)) {
+        builder.addAllExpand(expandList);
+      }
+      return Subscription.retrieve(subscriptionId, builder.build(), null);
     } catch (StripeException e) {
       throw new InvalidRequestException("Unable to retrieve subscription", e);
     }
@@ -68,6 +89,19 @@ public class StripeHandlerImpl {
     }
   }
 
+  PaymentMethod linkPaymentMethodToCustomer(String customerId, String paymentMethodId) {
+    try {
+      PaymentMethod paymentMethod = PaymentMethod.retrieve(paymentMethodId);
+
+      Map<String, Object> params = new HashMap<>();
+      params.put("customer", customerId);
+
+      return paymentMethod.attach(params);
+    } catch (StripeException e) {
+      throw new InvalidRequestException("Unable to link customer to payment method", e);
+    }
+  }
+
   Customer updateCustomer(String customerId, CustomerUpdateParams customerUpdateParams) {
     try {
       Customer customer = Customer.retrieve(customerId);
@@ -77,11 +111,19 @@ public class StripeHandlerImpl {
     }
   }
 
-  Customer retrieveCustomer(String customerId) {
+  Customer retrieveCustomer(String customerId, CustomerRetrieveParams customerRetrieveParams) {
     try {
-      return Customer.retrieve(customerId);
+      return Customer.retrieve(customerId, customerRetrieveParams, null);
     } catch (StripeException e) {
       throw new InvalidRequestException("Unable to retrieve customer information", e);
+    }
+  }
+
+  PriceSearchResult searchPrices(PriceSearchParams priceSearchParams) {
+    try {
+      return Price.search(priceSearchParams);
+    } catch (StripeException e) {
+      throw new InvalidRequestException("Unable to list prices", e);
     }
   }
 
@@ -101,6 +143,14 @@ public class StripeHandlerImpl {
     }
   }
 
+  Invoice retrieveUpcomingInvoice(Map<String, Object> params) {
+    try {
+      return Invoice.upcoming(params);
+    } catch (StripeException e) {
+      throw new InvalidRequestException("Unable to retrieve invoice", e);
+    }
+  }
+
   Invoice retrieveInvoice(String invoiceId) {
     try {
       return Invoice.retrieve(invoiceId);
@@ -117,11 +167,32 @@ public class StripeHandlerImpl {
     }
   }
 
+  Invoice payInvoice(String invoiceId) {
+    try {
+      Invoice invoice = Invoice.retrieve(invoiceId);
+
+      return invoice.pay();
+    } catch (StripeException e) {
+      throw new InvalidRequestException("Unable to preview upcoming invoice", e);
+    }
+  }
+
   PaymentIntent retrievePaymentIntent(String paymentIntentId) {
     try {
       return PaymentIntent.retrieve(paymentIntentId);
     } catch (StripeException e) {
       throw new InvalidRequestException("Unable to retrieve payment intent invoice", e);
+    }
+  }
+
+  PaymentMethodCollection retrievePaymentMethodsUnderCustomer(String customerId) {
+    try {
+      PaymentMethodListParams paymentMethodListParams =
+          PaymentMethodListParams.builder().setType(PaymentMethodListParams.Type.CARD).setCustomer(customerId).build();
+
+      return PaymentMethod.list(paymentMethodListParams);
+    } catch (StripeException e) {
+      throw new InvalidRequestException("Unable to retrieve payment methods", e);
     }
   }
 }

@@ -44,6 +44,9 @@ public class CIVmInitializeTaskParams
   @NotNull private String tiUrl;
   @NotNull private String tiSvcToken;
 
+  @NotNull private String stoUrl;
+  @NotNull private String stoSvcToken;
+
   @NotNull private String accountID;
   @NotNull private String orgID;
   @NotNull private String projectID;

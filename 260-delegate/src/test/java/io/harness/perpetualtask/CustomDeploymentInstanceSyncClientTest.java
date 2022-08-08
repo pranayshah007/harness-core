@@ -56,7 +56,7 @@ public class CustomDeploymentInstanceSyncClientTest extends WingsBaseTest {
   @Before
   public void setUp() {
     doReturn(Optional.empty()).when(deploymentService).getWithInfraMappingId(ACCOUNT_ID, INFRA_MAPPING_ID);
-    doAnswer(invocation -> invocation.getArgumentAt(0, String.class))
+    doAnswer(invocation -> invocation.getArgument(0, String.class))
         .when(expressionEvaluator)
         .substitute(anyString(), anyMap());
   }

@@ -34,6 +34,7 @@ import software.wings.service.intfc.AppService;
 import software.wings.service.intfc.trigger.TriggerExecutionService;
 
 import com.google.inject.Inject;
+import java.util.Collections;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
@@ -59,7 +60,7 @@ public class TriggerExecutionServiceTest extends WingsBaseTest {
             .workflowExecutionId(WORKFLOW_EXECUTION_ID)
             .status(Status.SUCCESS)
             .webhookToken(webhookToken)
-            .webhookEventDetails(WebhookEventDetails.builder().branchName("master").build())
+            .webhookEventDetails(WebhookEventDetails.builder().branchNames(Collections.singletonList("master")).build())
             .build();
 
     TriggerExecution savedTriggerExecution = triggerExecutionService.save(triggerExecution);

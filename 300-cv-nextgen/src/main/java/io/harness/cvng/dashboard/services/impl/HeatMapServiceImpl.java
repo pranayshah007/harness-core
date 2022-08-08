@@ -9,6 +9,7 @@ package io.harness.cvng.dashboard.services.impl;
 
 import static io.harness.cvng.core.utils.DateTimeUtils.roundDownTo5MinBoundary;
 import static io.harness.cvng.core.utils.DateTimeUtils.roundDownToMinBoundary;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.persistence.HQuery.excludeAuthority;
 
@@ -39,6 +40,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -141,9 +143,10 @@ public class HeatMapServiceImpl implements HeatMapService {
     }
   }
 
-  private List<HeatMap> getLatestHeatMaps(ProjectParams projectParams, List<String> monitoredServiceIdentifiers) {
+  private List<HeatMap> getLatestHeatMaps(
+      ProjectParams projectParams, long riskTimeBufferMins, List<String> monitoredServiceIdentifiers) {
     HeatMapResolution heatMapResolution = HeatMapResolution.FIVE_MIN;
-    Instant bucketEndTime = roundDownTo5MinBoundary(clock.instant()).minus(RISK_TIME_BUFFER_MINS, ChronoUnit.MINUTES);
+    Instant bucketEndTime = roundDownTo5MinBoundary(clock.instant()).minus(riskTimeBufferMins, ChronoUnit.MINUTES);
     Query<HeatMap> heatMapQuery = hPersistence.createQuery(HeatMap.class, excludeAuthority)
                                       .filter(HeatMapKeys.accountId, projectParams.getAccountIdentifier())
                                       .filter(HeatMapKeys.orgIdentifier, projectParams.getOrgIdentifier())
@@ -184,7 +187,7 @@ public class HeatMapServiceImpl implements HeatMapService {
   public Map<String, RiskData> getLatestHealthScore(
       @NonNull ProjectParams projectParams, @NonNull List<String> monitoredServiceIdentifiers) {
     Map<String, RiskData> latestHealthScoresMap = new HashMap<>();
-    List<HeatMap> latestHeatMaps = getLatestHeatMaps(projectParams, monitoredServiceIdentifiers);
+    List<HeatMap> latestHeatMaps = getLatestHeatMaps(projectParams, RISK_TIME_BUFFER_MINS, monitoredServiceIdentifiers);
 
     latestHeatMaps.stream()
         .collect(Collectors.groupingBy(HeatMap::getMonitoredServiceIdentifier))
@@ -301,6 +304,27 @@ public class HeatMapServiceImpl implements HeatMapService {
     });
 
     return monitoredServiceIdentifierToRiskDataMap;
+  }
+
+  @Override
+  public boolean isEveryHeatMapBelowThresholdForRiskTimeBuffer(ProjectParams projectParams,
+      String monitoredServiceIdentifier, double healthScoreThreshold, long riskTimeBufferMins) {
+    Preconditions.checkArgument(monitoredServiceIdentifier != null, "Monitored Service Identifier cannot be null");
+    List<HeatMap> latestHeatMaps =
+        getLatestHeatMaps(projectParams, riskTimeBufferMins, Arrays.asList(monitoredServiceIdentifier));
+    if (isEmpty(latestHeatMaps)) {
+      return false;
+    }
+
+    for (HeatMap latestHeatMap : latestHeatMaps) {
+      for (HeatMapRisk heatMapRisk : latestHeatMap.getHeatMapRisks()) {
+        Integer healthScore = Risk.getHealthScoreFromRiskScore(heatMapRisk.getRiskScore());
+        if (healthScore != null && healthScore >= healthScoreThreshold) {
+          return false;
+        }
+      }
+    }
+    return true;
   }
 
   @Override

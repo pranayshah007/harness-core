@@ -31,6 +31,16 @@ import lombok.extern.slf4j.Slf4j;
 public class NGExpressionUtils {
   private static final Pattern InputSetVariablePattern =
       Pattern.compile(EXPR_START_ESC + "input" + EXPR_END_ESC + ".*");
+
+  public static final String EXPRESSION_INPUT_CONSTANT = "executionInput";
+
+  private static final Pattern ExecutionInputPattern = Pattern.compile(EXPR_START_ESC + "input" + EXPR_END_ESC + ".*"
+      + ".executionInput\\(\\)"
+      + ".*");
+
+  private static final Pattern UpdatedExecutionInputPattern = Pattern.compile(EXPR_START_ESC + "executionInput."
+      + ".*" + EXPR_END_ESC);
+
   public static final String DEFAULT_INPUT_SET_EXPRESSION = EXPR_START + "input" + EXPR_END;
   public static final Pattern GENERIC_EXPRESSIONS_PATTERN =
       Pattern.compile(EXPR_START_ESC + "([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)" + EXPR_END_ESC);
@@ -40,6 +50,26 @@ public class NGExpressionUtils {
       return false;
     }
     return NGExpressionUtils.InputSetVariablePattern.matcher(expression).matches();
+  }
+
+  public boolean matchesExecutionInputPattern(String expression) {
+    if (isEmpty(expression)) {
+      return false;
+    }
+    return NGExpressionUtils.ExecutionInputPattern.matcher(expression).matches();
+  }
+  public boolean matchesUpdatedExecutionInputPattern(String expression) {
+    if (isEmpty(expression)) {
+      return false;
+    }
+    return NGExpressionUtils.UpdatedExecutionInputPattern.matcher(expression).matches();
+  }
+
+  public boolean matchesGenericExpressionPattern(final String expression) {
+    if (isEmpty(expression)) {
+      return false;
+    }
+    return NGExpressionUtils.GENERIC_EXPRESSIONS_PATTERN.matcher(expression).matches();
   }
 
   public boolean matchesPattern(Pattern pattern, String expression) {

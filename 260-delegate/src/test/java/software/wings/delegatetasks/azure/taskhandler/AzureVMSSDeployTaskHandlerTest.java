@@ -14,10 +14,9 @@ import static io.harness.rule.OwnerRule.ANIL;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyInt;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -110,7 +109,7 @@ public class AzureVMSSDeployTaskHandlerTest extends WingsBaseTest {
 
     doReturn(Collections.emptyList())
         .when(deployTaskHandler)
-        .getExistingInstanceIds(any(AzureConfig.class), anyString(), eq(deployTaskParameters));
+        .getExistingInstanceIds(any(AzureConfig.class), any(), eq(deployTaskParameters));
   }
 
   private void mockOldVirtualMachineScaleSetCapacity(VirtualMachineScaleSet oldVirtualMachineScaleSet) {
@@ -160,7 +159,7 @@ public class AzureVMSSDeployTaskHandlerTest extends WingsBaseTest {
   public void testScaleSetDeployFailure() {
     AzureConfig azureConfig = AzureConfig.builder().build();
     AzureVMSSDeployTaskParameters deployTaskParameters = buildDeployTaskParameters();
-    doThrow(Exception.class)
+    doAnswer(invocation -> { throw new Exception(); })
         .when(azureComputeClient)
         .getVirtualMachineScaleSetByName(eq(azureConfig), eq(deployTaskParameters.getSubscriptionId()),
             eq(deployTaskParameters.getResourceGroupName()),
@@ -211,9 +210,9 @@ public class AzureVMSSDeployTaskHandlerTest extends WingsBaseTest {
     AzureVMSSDeployTaskParameters deployTaskParameters = buildDeployTaskParameters();
     deployTaskParameters.setNewDesiredCount(0);
 
-    doThrow(Exception.class)
+    doAnswer(invocation -> { throw new Exception(); })
         .when(azureComputeClient)
-        .deleteVirtualMachineScaleSetById(eq(azureConfig), anyString(), anyString());
+        .deleteVirtualMachineScaleSetById(eq(azureConfig), any(), any());
 
     AzureVMSSTaskExecutionResponse azureVMSSTaskExecutionResponse =
         rollbackTaskHandler.executeTaskInternal(deployTaskParameters, azureConfig);

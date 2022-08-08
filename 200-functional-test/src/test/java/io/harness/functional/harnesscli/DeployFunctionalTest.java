@@ -48,7 +48,6 @@ import software.wings.infra.InfrastructureDefinition;
 import software.wings.service.intfc.ArtifactStreamService;
 import software.wings.service.intfc.WorkflowExecutionService;
 
-import com.fasterxml.jackson.dataformat.yaml.snakeyaml.Yaml;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import java.io.FileWriter;
@@ -65,6 +64,7 @@ import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.yaml.snakeyaml.Yaml;
 
 @OwnedBy(CDC)
 @Slf4j

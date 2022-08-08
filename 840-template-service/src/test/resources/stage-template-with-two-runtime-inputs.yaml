@@ -1,0 +1,29 @@
+template:
+    name: t4
+    identifier: t4
+    versionLabel: v1
+    type: Stage
+    projectIdentifier: VT
+    orgIdentifier: default
+    tags: {}
+    spec:
+        type: Approval
+        spec:
+            execution:
+                steps:
+                    - step:
+                          type: ShellScript
+                          name: ssh
+                          identifier: ssh
+                          spec:
+                              shell: Bash
+                              onDelegate: true
+                              source:
+                                  type: Inline
+                                  spec:
+                                      script: <+input>
+                              environmentVariables: []
+                              outputVariables: []
+                              executionTarget: {}
+                          timeout: <+input>
+            serviceDependencies: []

@@ -1,0 +1,107 @@
+pipeline:
+  identifier: p1
+  name: pipeline1
+  tags:
+    t1: a1
+  properties:
+    ci:
+      codebase:
+        connectorRef: nvh
+        build: <+input>
+  variables:
+    - name: test1
+      type: Number
+      value: 11
+    - name: test2
+      type: String
+      value: archit
+  stages:
+    - parallel:
+        - stage:
+            identifier: managerDeployment
+            type: deployment
+            name: managerDeployment
+            spec:
+              service:
+              identifier: manager
+              name: manager
+              serviceDefinition:
+                type: k8s
+                spec:
+                field11: value1
+                field12: value2
+              infrastructure:
+              environment:
+                identifier: stagingInfra
+                type: preProduction
+                name: staging
+              infrastructureDefinition:
+                type: k8sDirect
+                spec:
+                connectorRef: pEIkEiNPSgSUsbWDDyjNKw
+                namespace: harness
+                releaseName: testingqa
+              execution:
+              steps:
+                - step:
+                    identifier: managerCanary
+                    type: k8sCanary
+                    spec:
+                    field11: value1
+                    field12: value2
+                - step:
+                    identifier: managerVerify
+                    type: appdVerify
+                    spec:
+                    field21: value1
+                    field22: value2
+                - step:
+                    identifier: managerRolling
+                    type: k8sRolling
+                    spec:
+                    field31: value1
+                    field32: value2
+    - stage:
+        identifier: managerDeployment
+        type: deployment
+        name: managerDeployment
+        spec:
+          service:
+            identifier: manager
+            name: manager
+            serviceDefinition:
+              type: k8s
+              spec:
+                field11: value1
+                field12: value2
+          infrastructure:
+            environment:
+              identifier: stagingInfra
+              type: preProduction
+              name: staging
+            infrastructureDefinition:
+              type: k8sDirect
+              spec:
+                connectorRef: pEIkEiNPSgSUsbWDDyjNKw
+                namespace: harness
+                releaseName: testingqa
+          execution:
+            steps:
+              - step:
+                  identifier: managerCanary
+                  type: k8sCanary
+                  spec:
+                    field11: value1
+                    field12: value2
+              - step:
+                  identifier: managerVerify
+                  type: appdVerify
+                  spec:
+                    field21: value1
+                    field22: value2
+              - step:
+                  identifier: managerRolling
+                  type: k8sRolling
+                  spec:
+                    field31: value1
+                    field32: value2

@@ -36,7 +36,7 @@ import software.wings.beans.EntityType;
 import software.wings.beans.Service;
 import software.wings.beans.ServiceVariable;
 import software.wings.beans.ServiceVariable.ServiceVariableKeys;
-import software.wings.beans.ServiceVariable.Type;
+import software.wings.beans.ServiceVariableType;
 import software.wings.beans.Variable;
 import software.wings.beans.VariableType;
 import software.wings.beans.Workflow;
@@ -106,7 +106,7 @@ public class ArtifactStreamServiceBindingServiceImpl implements ArtifactStreamSe
 
     ServiceVariable variable = ServiceVariable.builder()
                                    .name(artifactStreamBinding.getName())
-                                   .type(Type.ARTIFACT)
+                                   .type(ServiceVariableType.ARTIFACT)
                                    .entityType(EntityType.SERVICE)
                                    .entityId(serviceId)
                                    .allowedList(allowedList)
@@ -245,24 +245,26 @@ public class ArtifactStreamServiceBindingServiceImpl implements ArtifactStreamSe
 
   @Override
   public List<ServiceVariable> fetchArtifactServiceVariables(String appId, String serviceId) {
-    return serviceVariableService.list(aPageRequest()
-                                           .addFilter(ServiceVariableKeys.appId, Operator.EQ, appId)
-                                           .addFilter(ServiceVariableKeys.entityType, Operator.EQ, EntityType.SERVICE)
-                                           .addFilter(ServiceVariableKeys.entityId, Operator.EQ, serviceId)
-                                           .addFilter(ServiceVariableKeys.type, Operator.EQ, Type.ARTIFACT)
-                                           .addOrder(ServiceVariableKeys.name, OrderType.ASC)
-                                           .build());
+    return serviceVariableService.list(
+        aPageRequest()
+            .addFilter(ServiceVariableKeys.appId, Operator.EQ, appId)
+            .addFilter(ServiceVariableKeys.entityType, Operator.EQ, EntityType.SERVICE)
+            .addFilter(ServiceVariableKeys.entityId, Operator.EQ, serviceId)
+            .addFilter(ServiceVariableKeys.type, Operator.EQ, ServiceVariableType.ARTIFACT)
+            .addOrder(ServiceVariableKeys.name, OrderType.ASC)
+            .build());
   }
 
   @Override
   public List<ServiceVariable> fetchArtifactServiceVariableByName(String appId, String serviceId, String name) {
-    return serviceVariableService.list(aPageRequest()
-                                           .addFilter(ServiceVariableKeys.appId, Operator.EQ, appId)
-                                           .addFilter(ServiceVariableKeys.entityType, Operator.EQ, EntityType.SERVICE)
-                                           .addFilter(ServiceVariableKeys.entityId, Operator.EQ, serviceId)
-                                           .addFilter(ServiceVariableKeys.type, Operator.EQ, Type.ARTIFACT)
-                                           .addFilter(ServiceVariableKeys.name, Operator.EQ, name)
-                                           .build());
+    return serviceVariableService.list(
+        aPageRequest()
+            .addFilter(ServiceVariableKeys.appId, Operator.EQ, appId)
+            .addFilter(ServiceVariableKeys.entityType, Operator.EQ, EntityType.SERVICE)
+            .addFilter(ServiceVariableKeys.entityId, Operator.EQ, serviceId)
+            .addFilter(ServiceVariableKeys.type, Operator.EQ, ServiceVariableType.ARTIFACT)
+            .addFilter(ServiceVariableKeys.name, Operator.EQ, name)
+            .build());
   }
 
   @Override
@@ -567,7 +569,7 @@ public class ArtifactStreamServiceBindingServiceImpl implements ArtifactStreamSe
     if (isNotEmpty(serviceVariables)) {
       for (ServiceVariable serviceVariable : serviceVariables) {
         List<ArtifactStreamSummary> artifactStreams = new ArrayList<>();
-        if (Type.ARTIFACT == serviceVariable.getType()) {
+        if (ServiceVariableType.ARTIFACT == serviceVariable.getType()) {
           if (isNotEmpty(serviceVariable.getAllowedList())) {
             for (String artifactStreamId : serviceVariable.getAllowedList()) {
               ArtifactStream artifactStream = artifactStreamService.get(artifactStreamId);

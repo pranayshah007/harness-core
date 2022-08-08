@@ -12,6 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.artifacts.beans.BuildDetailsInternal;
 import io.harness.artifacts.docker.beans.DockerInternalConfig;
+import io.harness.beans.ArtifactMetaInfo;
 
 import java.util.List;
 import java.util.Map;
@@ -83,4 +84,6 @@ public interface DockerRegistryService {
    * @return boolean validate
    */
   boolean validateCredentials(DockerInternalConfig dockerConfig);
+
+  ArtifactMetaInfo getArtifactMetaInfo(DockerInternalConfig dockerConfig, String imageName, String tag);
 }

@@ -8,12 +8,13 @@
 package io.harness.delegate.task.k8s;
 
 import io.harness.k8s.model.K8sPod;
+import io.harness.k8s.model.KubernetesResourceId;
 
 import java.util.List;
 import lombok.Builder;
-import lombok.Value;
+import lombok.Data;
 
-@Value
+@Data
 @Builder
 public class K8sBGDeployResponse implements K8sNGTaskResponse {
   Integer releaseNumber;
@@ -22,4 +23,5 @@ public class K8sBGDeployResponse implements K8sNGTaskResponse {
   String stageServiceName;
   String stageColor;
   String primaryColor;
+  List<KubernetesResourceId> prunedResourceIds;
 }

@@ -11,13 +11,14 @@ import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.ANKIT;
 import static io.harness.rule.OwnerRule.BOJANA;
 import static io.harness.rule.OwnerRule.DEEPAK;
+import static io.harness.rule.OwnerRule.LUCAS_SALES;
 import static io.harness.rule.OwnerRule.UTKARSH;
 import static io.harness.rule.OwnerRule.VIKAS;
 import static io.harness.security.encryption.EncryptionType.GCP_KMS;
 import static io.harness.security.encryption.EncryptionType.LOCAL;
 
 import static software.wings.beans.ServiceTemplate.Builder.aServiceTemplate;
-import static software.wings.beans.ServiceVariable.Type.ENCRYPTED_TEXT;
+import static software.wings.beans.ServiceVariableType.ENCRYPTED_TEXT;
 import static software.wings.service.impl.security.SecretManagerImpl.ENCRYPTION_TYPES_REQUIRING_FILE_DOWNLOAD;
 import static software.wings.utils.WingsTestConstants.ENV_ID;
 import static software.wings.utils.WingsTestConstants.SERVICE_VARIABLE_NAME;
@@ -26,6 +27,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.annotations.dev.HarnessModule;
@@ -57,6 +59,7 @@ import software.wings.beans.ServiceVariable;
 import software.wings.beans.ServiceVariable.ServiceVariableKeys;
 import software.wings.beans.User;
 import software.wings.dl.WingsPersistence;
+import software.wings.expression.EncryptedDataDetails;
 import software.wings.security.EnvFilter;
 import software.wings.security.GenericEntityFilter;
 import software.wings.security.UsageRestrictions;
@@ -81,6 +84,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import javax.cache.Cache;
 import org.apache.commons.lang3.reflect.FieldUtils;
 import org.junit.Before;
 import org.junit.Test;
@@ -88,6 +92,7 @@ import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
+
 @OwnedBy(HarnessTeam.PL)
 @TargetModule(HarnessModule._360_CG_MANAGER)
 public class SecretManagerImplTest extends WingsBaseTest {
@@ -97,6 +102,7 @@ public class SecretManagerImplTest extends WingsBaseTest {
   @Mock private FileService fileService;
   @Mock private AppService appService;
   @Mock private EnvironmentService environmentService;
+  @Mock private Cache<String, EncryptedDataDetails> secretsCache;
   @Inject @InjectMocks private GcpSecretsManagerService gcpSecretsManagerService;
   @Inject @InjectMocks private SecretManagerImpl secretManager;
   @Inject private SecretsRBACService secretsRBACService;
@@ -361,6 +367,36 @@ public class SecretManagerImplTest extends WingsBaseTest {
     EncryptedData encryptedDataInDB = wingsPersistence.get(EncryptedData.class, secretId);
     assertThat(encryptedDataInDB).isNotNull();
     assertThat(encryptedDataInDB.isScopedToAccount()).isFalse();
+  }
+
+  @Test
+  @Owner(developers = LUCAS_SALES)
+  @Category(UnitTests.class)
+  public void testUpdateSecretText_shouldInvalidateCache() {
+    Account newAccount = getAccount(AccountType.PAID);
+    String accountId = wingsPersistence.save(newAccount);
+    newAccount.setUuid(accountId);
+    SecretText secretText =
+        SecretText.builder().name("Dummy record").kmsId(accountId).value("value").scopedToAccount(true).build();
+    String secretId = secretManager.saveSecretText(accountId, secretText, true);
+
+    EncryptedData encryptedDataInDB = wingsPersistence.get(EncryptedData.class, secretId);
+    assertThat(encryptedDataInDB).isNotNull();
+    assertThat(encryptedDataInDB.isScopedToAccount()).isTrue();
+
+    Set<AppEnvRestriction> appEnvRestrictions = new HashSet();
+    UsageRestrictions usageRestrictions = UsageRestrictions.builder().appEnvRestrictions(appEnvRestrictions).build();
+    SecretText secretTextUpdate =
+        SecretText.builder().name("Dummy record").kmsId(accountId).usageRestrictions(usageRestrictions).build();
+
+    secretManager.updateSecretText(accountId, secretId, secretTextUpdate, true);
+
+    verify(secretsCache).remove(secretId);
+
+    EncryptedData editedEncryptedDataInDB = wingsPersistence.get(EncryptedData.class, secretId);
+    assertThat(editedEncryptedDataInDB).isNotNull();
+    assertThat(editedEncryptedDataInDB.isScopedToAccount()).isFalse();
+    assertThat(secretId).isEqualTo(secretId);
   }
 
   @Test

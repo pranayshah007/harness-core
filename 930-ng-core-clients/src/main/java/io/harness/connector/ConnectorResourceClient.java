@@ -15,6 +15,7 @@ import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.serializer.kryo.KryoResponse;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import javax.validation.constraints.NotNull;
 import org.hibernate.validator.constraints.NotEmpty;
@@ -60,4 +61,11 @@ public interface ConnectorResourceClient {
       @Query(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
       @Query(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @Query(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier);
+
+  @GET(CONNECTORS_API + "/attributes")
+  Call<ResponseDTO<List<Map<String, String>>>> getConnectorsAttributes(
+      @Query(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
+      @Query(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @Query(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @Query("connectorIdentifiers") List<String> connectorIdentifiers);
 }

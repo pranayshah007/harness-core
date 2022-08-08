@@ -197,7 +197,7 @@ public class WaitNotifyEngine {
   public boolean doneWithWithoutCallback(@NonNull String correlationId) {
     try {
       WaitInstance waitInstance;
-      while ((waitInstance = persistenceWrapper.modifyAndFetchWaitInstance(correlationId)) != null) {
+      while ((waitInstance = modifyAndFetchWaitInstance(correlationId)) != null) {
         if (isEmpty(waitInstance.getWaitingOnCorrelationIds())) {
           persistenceWrapper.deleteWaitInstance(waitInstance);
         }
@@ -207,5 +207,13 @@ public class WaitNotifyEngine {
       log.error("Failed to Noop notify for correlationId: {}", correlationId, exception);
       return false;
     }
+  }
+
+  private WaitInstance modifyAndFetchWaitInstance(String correlationId) {
+    WaitInstance waitInstance = persistenceWrapper.modifyAndFetchWaitInstance(correlationId);
+    if (waitInstance == null) {
+      log.warn("Not found a WaitInstance with correlationId [{}]", correlationId);
+    }
+    return waitInstance;
   }
 }

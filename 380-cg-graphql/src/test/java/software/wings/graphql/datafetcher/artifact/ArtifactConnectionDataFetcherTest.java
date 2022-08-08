@@ -12,8 +12,12 @@ import static io.harness.rule.OwnerRule.PRABU;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -21,10 +25,10 @@ import static org.mockito.Mockito.when;
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.InvalidRequestException;
+import io.harness.ff.FeatureFlagService;
 import io.harness.rule.Owner;
 
 import software.wings.beans.artifact.Artifact;
-import software.wings.dl.WingsPersistence;
 import software.wings.graphql.datafetcher.DataFetcherUtils;
 import software.wings.graphql.schema.query.QLPageQueryParameters;
 import software.wings.graphql.schema.type.QLArtifactConnection;
@@ -45,13 +49,13 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Matchers;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.mongodb.morphia.query.FieldEnd;
 import org.mongodb.morphia.query.Query;
 
 public class ArtifactConnectionDataFetcherTest extends CategoryTest {
-  private DataFetcherUtils utils = Mockito.mock(DataFetcherUtils.class);
+  private DataFetcherUtils utils = mock(DataFetcherUtils.class);
+  @Mock FeatureFlagService featureFlagService;
 
   @InjectMocks @Inject private ArtifactConnectionDataFetcher dataFetcher;
   @Mock private DataFetchingEnvironment dataFetchingEnvironment;
@@ -61,7 +65,7 @@ public class ArtifactConnectionDataFetcherTest extends CategoryTest {
 
   @Before
   public void setUp() {
-    dataFetcher = Mockito.spy(new ArtifactConnectionDataFetcher());
+    dataFetcher = spy(new ArtifactConnectionDataFetcher());
     MockitoAnnotations.initMocks(this);
   }
 
@@ -70,25 +74,17 @@ public class ArtifactConnectionDataFetcherTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testDataFetcher() {
     QLPageInfo page = QLPageInfo.builder().offset(0).hasMore(true).limit(10).total(20).build();
-    Query query = Mockito.mock(Query.class);
+    Query query = mock(Query.class);
 
-    Mockito.doReturn(query)
-        .when(dataFetcher)
-        .populateFilters(
-            Matchers.any(WingsPersistence.class), Matchers.anyList(), Matchers.any(Class.class), Matchers.anyBoolean());
-    when(utils.populate(Matchers.any(QLPageQueryParameters.class), Matchers.any(Query.class),
-             Matchers.any(DataFetcherUtils.Controller.class)))
+    doReturn(query).when(dataFetcher).populateFilters(any(), anyList(), any(Class.class), anyBoolean());
+    when(utils.populate(any(QLPageQueryParameters.class), any(Query.class), any(DataFetcherUtils.Controller.class)))
         .thenReturn(page);
 
     QLArtifactConnection connection = dataFetcher.fetchConnection(
-        Matchers.anyList(), Matchers.any(QLPageQueryParameters.class), (List<QLNoOpSortCriteria>) Matchers.isNull());
+        anyList(), any(QLPageQueryParameters.class), (List<QLNoOpSortCriteria>) Matchers.isNull());
 
-    Mockito.verify(dataFetcher, times(1))
-        .populateFilters(
-            Matchers.any(WingsPersistence.class), Matchers.anyList(), Matchers.any(Class.class), Matchers.anyBoolean());
-    Mockito.verify(utils, times(1))
-        .populate(Matchers.any(QLPageQueryParameters.class), Matchers.any(Query.class),
-            Matchers.any(DataFetcherUtils.Controller.class));
+    verify(dataFetcher, times(1)).populateFilters(any(), any(), any(Class.class), anyBoolean());
+    verify(utils, times(1)).populate(any(), any(), any(DataFetcherUtils.Controller.class));
     assertThat(page.getLimit().intValue()).isEqualTo(10);
     assertThat(page.getTotal().intValue()).isEqualTo(20);
     assertThat(page.getOffset().intValue()).isEqualTo(0);

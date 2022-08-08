@@ -19,9 +19,9 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.SuperBuilder;
+import org.apache.commons.lang3.NotImplementedException;
 import org.mongodb.morphia.query.Query;
 import org.mongodb.morphia.query.UpdateOperations;
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 @Data
 @FieldNameConstants(innerTypeName = "KubernetesActivityKeys")
@@ -37,12 +37,12 @@ public class KubernetesActivity extends Activity {
 
   @Override
   public ActivityType getType() {
-    throw new NotImplementedException();
+    throw new NotImplementedException("not implemented");
   }
 
   @Override
   public void fromDTO(ActivityDTO activityDTO) {
-    throw new NotImplementedException();
+    throw new NotImplementedException("not implemented");
   }
 
   @Override

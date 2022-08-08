@@ -40,6 +40,7 @@ import io.harness.persistence.HIterator;
 import io.harness.serializer.JsonUtils;
 
 import software.wings.beans.Account;
+import software.wings.beans.ApmMetricCollectionInfo;
 import software.wings.beans.Application;
 import software.wings.beans.Environment;
 import software.wings.beans.Event.Type;
@@ -72,7 +73,6 @@ import software.wings.service.intfc.verification.CVConfigurationService;
 import software.wings.service.intfc.yaml.YamlPushService;
 import software.wings.sm.StateType;
 import software.wings.sm.states.APMVerificationState;
-import software.wings.sm.states.APMVerificationState.MetricCollectionInfo;
 import software.wings.sm.states.CloudWatchState;
 import software.wings.sm.states.DatadogState;
 import software.wings.sm.states.PrometheusState;
@@ -999,7 +999,7 @@ public class CVConfigurationServiceImpl implements CVConfigurationService {
 
       case APM_VERIFICATION:
         APMCVServiceConfiguration apmcvServiceConfiguration = (APMCVServiceConfiguration) cvConfiguration;
-        List<MetricCollectionInfo> metricCollectionInfos = apmcvServiceConfiguration.getMetricCollectionInfos();
+        List<ApmMetricCollectionInfo> metricCollectionInfos = apmcvServiceConfiguration.getMetricCollectionInfos();
         metricTemplates = metricDefinitions(
             APMVerificationState.buildMetricInfoMap(metricCollectionInfos, Optional.empty()).values());
         break;

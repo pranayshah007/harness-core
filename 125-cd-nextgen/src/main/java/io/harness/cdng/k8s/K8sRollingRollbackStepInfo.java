@@ -19,9 +19,11 @@ import io.harness.plancreator.steps.common.SpecParameters;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.pms.yaml.YamlNode;
 import io.harness.walktree.visitor.SimpleVisitorHelper;
 import io.harness.walktree.visitor.Visitable;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.annotations.ApiModelProperty;
 import java.util.List;
@@ -41,6 +43,11 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("k8sRollingRollback")
 @RecasterAlias("io.harness.cdng.k8s.K8sRollingRollbackStepInfo")
 public class K8sRollingRollbackStepInfo extends K8sRollingRollbackBaseStepInfo implements CDStepInfo, Visitable {
+  @JsonProperty(YamlNode.UUID_FIELD_NAME)
+  @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
+  @ApiModelProperty(hidden = true)
+  private String uuid;
+
   // For Visitor Framework Impl
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String metadata;
 
@@ -67,5 +74,10 @@ public class K8sRollingRollbackStepInfo extends K8sRollingRollbackBaseStepInfo i
         .delegateSelectors(delegateSelectors)
         .rollingStepFqn(rollingStepFqn)
         .build();
+  }
+
+  @Override
+  public ParameterField<List<TaskSelectorYaml>> fetchDelegateSelectors() {
+    return getDelegateSelectors();
   }
 }

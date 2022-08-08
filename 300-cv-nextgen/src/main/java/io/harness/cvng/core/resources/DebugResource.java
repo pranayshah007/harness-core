@@ -7,9 +7,6 @@
 
 package io.harness.cvng.core.resources;
 
-import io.harness.accesscontrol.AccountIdentifier;
-import io.harness.accesscontrol.OrgIdentifier;
-import io.harness.accesscontrol.ProjectIdentifier;
 import io.harness.accesscontrol.ResourceIdentifier;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -27,12 +24,12 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import javax.validation.constraints.NotNull;
+import javax.ws.rs.BeanParam;
 import javax.ws.rs.GET;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
 
 @Api("debug")
 @Path("debug")
@@ -46,18 +43,8 @@ public class DebugResource {
   @Timed
   @Path("slo/{identifier}")
   @ApiOperation(value = "Gets SLO debug data", nickname = "getSLODebugData")
-  public RestResponse<SLODebugResponse> getSLODebug(
-      @ApiParam(required = true) @NotNull @QueryParam("accountId") @AccountIdentifier String accountId,
-      @ApiParam(required = true) @NotNull @PathParam("identifier") @ResourceIdentifier String identifier,
-      @ApiParam(required = true) @NotNull @QueryParam("orgIdentifier") @OrgIdentifier String orgIdentifier,
-      @ApiParam(required = true) @NotNull @QueryParam(
-          "projectIdentifier") @ProjectIdentifier String projectIdentifier) {
-    ProjectParams projectParams = ProjectParams.builder()
-                                      .accountIdentifier(accountId)
-                                      .orgIdentifier(orgIdentifier)
-                                      .projectIdentifier(projectIdentifier)
-                                      .build();
-
+  public RestResponse<SLODebugResponse> getSLODebug(@NotNull @BeanParam ProjectParams projectParams,
+      @ApiParam(required = true) @NotNull @PathParam("identifier") @ResourceIdentifier String identifier) {
     return new RestResponse<>(debugService.getSLODebugResponse(projectParams, identifier));
   }
 
@@ -65,18 +52,8 @@ public class DebugResource {
   @Timed
   @Path("verify-step/{identifier}")
   @ApiOperation(value = "Gets Verify Step debug data", nickname = "getVerifyStepDebugData")
-  public RestResponse<VerifyStepDebugResponse> getVerifyStepDebug(
-      @ApiParam(required = true) @NotNull @QueryParam("accountId") @AccountIdentifier String accountId,
-      @ApiParam(required = true) @NotNull @PathParam("identifier") @ResourceIdentifier String identifier,
-      @ApiParam(required = true) @NotNull @QueryParam("orgIdentifier") @OrgIdentifier String orgIdentifier,
-      @ApiParam(required = true) @NotNull @QueryParam(
-          "projectIdentifier") @ProjectIdentifier String projectIdentifier) {
-    ProjectParams projectParams = ProjectParams.builder()
-                                      .accountIdentifier(accountId)
-                                      .orgIdentifier(orgIdentifier)
-                                      .projectIdentifier(projectIdentifier)
-                                      .build();
-
+  public RestResponse<VerifyStepDebugResponse> getVerifyStepDebug(@NotNull @BeanParam ProjectParams projectParams,
+      @ApiParam(required = true) @NotNull @PathParam("identifier") @ResourceIdentifier String identifier) {
     return new RestResponse<>(debugService.getVerifyStepDebugResponse(projectParams, identifier));
   }
 
@@ -84,18 +61,8 @@ public class DebugResource {
   @Timed
   @Path("datacollectiontask/{identifier}/retry")
   @ApiOperation(value = "Updates DataCollectionTask for Debugging", nickname = "updateDataCollectionTaskDebugData")
-  public RestResponse<DataCollectionTask> updateDataCollectionTaskDebug(
-      @ApiParam(required = true) @NotNull @QueryParam("accountId") @AccountIdentifier String accountId,
-      @ApiParam(required = true) @NotNull @PathParam("identifier") @ResourceIdentifier String identifier,
-      @ApiParam(required = true) @NotNull @QueryParam("orgIdentifier") @OrgIdentifier String orgIdentifier,
-      @ApiParam(required = true) @NotNull @QueryParam(
-          "projectIdentifier") @ProjectIdentifier String projectIdentifier) {
-    ProjectParams projectParams = ProjectParams.builder()
-                                      .accountIdentifier(accountId)
-                                      .orgIdentifier(orgIdentifier)
-                                      .projectIdentifier(projectIdentifier)
-                                      .build();
-
+  public RestResponse<DataCollectionTask> updateDataCollectionTaskDebug(@NotNull @BeanParam ProjectParams projectParams,
+      @ApiParam(required = true) @NotNull @PathParam("identifier") @ResourceIdentifier String identifier) {
     return new RestResponse<>(debugService.retryDataCollectionTask(projectParams, identifier));
   }
 }

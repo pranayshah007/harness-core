@@ -130,6 +130,9 @@ public abstract class InfrastructureMapping
   @EntityName private String name;
   private String displayName;
 
+  // This is for Migration purpose - will be removed in next release. [CDS-35152]
+  private String nameBk;
+
   // auto populate name
   @SchemaIgnore private boolean autoPopulate = true;
 

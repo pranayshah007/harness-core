@@ -27,6 +27,8 @@ import io.harness.ccm.commons.entities.billing.CECluster;
 import io.harness.ccm.commons.entities.billing.CEGcpServiceAccount;
 import io.harness.ccm.commons.entities.billing.CloudBillingTransferRun;
 import io.harness.ccm.commons.entities.ecs.ECSService;
+import io.harness.ccm.commons.entities.ecs.recommendation.ECSPartialRecommendationHistogram;
+import io.harness.ccm.commons.entities.ecs.recommendation.ECSServiceRecommendation;
 import io.harness.ccm.commons.entities.events.CeExceptionRecord;
 import io.harness.ccm.commons.entities.events.PublishedMessage;
 import io.harness.ccm.commons.entities.k8s.K8sWorkload;
@@ -34,6 +36,7 @@ import io.harness.ccm.commons.entities.k8s.K8sYaml;
 import io.harness.ccm.commons.entities.k8s.recommendation.K8sNodeRecommendation;
 import io.harness.ccm.commons.entities.k8s.recommendation.K8sWorkloadRecommendation;
 import io.harness.ccm.commons.entities.k8s.recommendation.PartialRecommendationHistogram;
+import io.harness.ccm.commons.entities.notifications.CCMNotificationSetting;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.morphia.MorphiaRegistrarHelperPut;
 
@@ -77,6 +80,11 @@ public class CECommonsMorphiaRegistrar implements MorphiaRegistrar {
 
     // ecs
     set.add(ECSService.class);
+    set.add(ECSPartialRecommendationHistogram.class);
+    set.add(ECSServiceRecommendation.class);
+
+    // commons
+    set.add(CCMNotificationSetting.class);
   }
   @Override
   public void registerImplementationClasses(MorphiaRegistrarHelperPut h, MorphiaRegistrarHelperPut w) {

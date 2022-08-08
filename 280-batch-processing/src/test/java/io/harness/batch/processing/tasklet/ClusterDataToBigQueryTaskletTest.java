@@ -7,6 +7,7 @@
 
 package io.harness.batch.processing.tasklet;
 
+import static io.harness.rule.OwnerRule.HITESH;
 import static io.harness.rule.OwnerRule.ROHIT;
 import static io.harness.rule.OwnerRule.TRUNAPUSHPA;
 
@@ -36,13 +37,16 @@ import io.harness.testsupport.BaseTaskletTest;
 import software.wings.security.authentication.BatchQueryConfig;
 
 import com.google.common.collect.ImmutableList;
-import com.sun.istack.internal.NotNull;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import javax.validation.constraints.NotNull;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -63,7 +67,6 @@ public class ClusterDataToBigQueryTaskletTest extends BaseTaskletTest {
   private static final String INSTANCE_ID = "instanceId";
   private static final String CLUSTER_ID = "clusterId";
   private static final String SETTING_ID = "settingId";
-  private static final String UID = "uid";
   private static final String KIND = "kind";
   private static final String NAMESPACE = "namespace";
   private static final String LABEL_KEY = "labelKey";
@@ -114,11 +117,12 @@ public class ClusterDataToBigQueryTaskletTest extends BaseTaskletTest {
   public void testGetLabelMapForGroup() {
     mockGetWorkload();
     final List<InstanceBillingData> instances = ImmutableList.of(createBillingData(NAME_0), createBillingData(NAME_1));
-    Map<K8SWorkloadService.CacheKey, Map<String, String>> labelMap = clusterDataToBigQueryTasklet.getLabelMapForGroup(
-        instances, ClusterDataToBigQueryTasklet.Key.getKeyFromInstanceData(instances.get(0)));
+    Map<K8SWorkloadService.WorkloadUidCacheKey, Map<String, String>> labelMap =
+        clusterDataToBigQueryTasklet.getLabelMapForClusterGroup(instances,
+            ClusterDataToBigQueryTasklet.AccountClusterKey.getAccountClusterKeyFromInstanceData(instances.get(0)));
     verify(workloadRepository, times(1));
     assertEquals(labelMap,
-        Collections.singletonMap(new K8SWorkloadService.CacheKey(ACCOUNT_ID, CLUSTER_ID, NAMESPACE, NAME_0),
+        Collections.singletonMap(new K8SWorkloadService.WorkloadUidCacheKey(ACCOUNT_ID, CLUSTER_ID, NAME_0),
             Collections.singletonMap(LABEL_KEY, LABEL_VALUE)));
   }
 
@@ -128,8 +132,9 @@ public class ClusterDataToBigQueryTaskletTest extends BaseTaskletTest {
   public void testGetLabelMapForGroupEmptyWorkloads() {
     final List<InstanceBillingData> instances = ImmutableList.of(createBillingData(NAME_0), createBillingData(NAME_1));
     when(workloadRepository.getWorkload(any(), any(), any(), any())).thenReturn(Collections.emptyList());
-    Map<K8SWorkloadService.CacheKey, Map<String, String>> labelMap = clusterDataToBigQueryTasklet.getLabelMapForGroup(
-        instances, ClusterDataToBigQueryTasklet.Key.getKeyFromInstanceData(instances.get(0)));
+    Map<K8SWorkloadService.WorkloadUidCacheKey, Map<String, String>> labelMap =
+        clusterDataToBigQueryTasklet.getLabelMapForClusterGroup(instances,
+            ClusterDataToBigQueryTasklet.AccountClusterKey.getAccountClusterKeyFromInstanceData(instances.get(0)));
     verify(workloadRepository, times(1));
     assertEquals(labelMap, Collections.emptyMap());
   }
@@ -140,10 +145,23 @@ public class ClusterDataToBigQueryTaskletTest extends BaseTaskletTest {
   public void testGetClusterBillingDataForBatch() {
     mockGetWorkload();
     final List<InstanceBillingData> instances = ImmutableList.of(createBillingData(NAME_0), createBillingData(NAME_1));
-    List<ClusterBillingData> clusterBillingData = clusterDataToBigQueryTasklet.getClusterBillingDataForBatch(instances);
+    List<ClusterBillingData> clusterBillingData = clusterDataToBigQueryTasklet.getClusterBillingDataForBatch(
+        ACCOUNT_ID, BatchJobType.CLUSTER_DATA_TO_BIG_QUERY, instances);
     assertEquals(clusterBillingData.size(), instances.size());
     assertEquals(clusterBillingData.get(0).getLabels(), Collections.singletonList(new Label(LABEL_KEY, LABEL_VALUE)));
     assertEquals(clusterBillingData.get(1).getLabels(), Collections.emptyList());
+  }
+
+  @Test
+  @Owner(developers = HITESH)
+  @Category(UnitTests.class)
+  public void testAddendLabel() {
+    List<Label> labels = new ArrayList<>();
+    Set<String> labelKeySet = new HashSet<>();
+    clusterDataToBigQueryTasklet.appendLabel("k1", "v1", labelKeySet, labels);
+    clusterDataToBigQueryTasklet.appendLabel("k2", "v2", labelKeySet, labels);
+    clusterDataToBigQueryTasklet.appendLabel("k1", "v3", labelKeySet, labels);
+    assertEquals(labels.size(), 2);
   }
 
   private void mockGetWorkload() {
@@ -153,11 +171,12 @@ public class ClusterDataToBigQueryTaskletTest extends BaseTaskletTest {
                                .settingId(SETTING_ID)
                                .name(NAME_0)
                                .namespace(NAMESPACE)
-                               .uid(UID)
+                               .uid(NAME_0)
                                .kind(KIND)
                                .labels(Collections.singletonMap(LABEL_KEY, LABEL_VALUE))
                                .build();
-    when(workloadRepository.getWorkload(any(), any(), any(), any())).thenReturn(Collections.singletonList(workload));
+    when(workloadRepository.getWorkloadByWorkloadUid(any(), any(), any()))
+        .thenReturn(Collections.singletonList(workload));
   }
 
   private InstanceBillingData createBillingData(@NotNull String name) {
@@ -166,6 +185,7 @@ public class ClusterDataToBigQueryTaskletTest extends BaseTaskletTest {
         .endTimestamp(END_TIME_MILLIS)
         .accountId(ACCOUNT_ID)
         .instanceId(INSTANCE_ID)
+        .taskId(name)
         .clusterId(CLUSTER_ID)
         .instanceType(InstanceType.K8S_POD.name())
         .billingAmount(BigDecimal.ZERO)

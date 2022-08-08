@@ -85,4 +85,24 @@ public class ScmOrchestratorServiceImpl implements ScmOrchestratorService {
     }
     return scmRequest.apply(scmClientDelegateService);
   }
+
+  @Override
+  public <R> R processScmRequestUsingConnectorSettings(Function<ScmClientFacilitatorService, R> scmRequest,
+      String projectIdentifier, String orgIdentifier, String accountId, String connectorIdentifierRef) {
+    final ScmConnector scmConnector =
+        gitSyncConnectorHelper.getScmConnector(accountId, orgIdentifier, projectIdentifier, connectorIdentifierRef);
+    return processScmRequestUsingConnectorSettings(scmRequest, scmConnector);
+  }
+
+  @Override
+  public <R> R processScmRequestUsingConnectorSettings(
+      Function<ScmClientFacilitatorService, R> scmRequest, ScmConnector scmConnector) {
+    if (scmConnector instanceof ManagerExecutable) {
+      final Boolean executeOnDelegate = ((ManagerExecutable) scmConnector).getExecuteOnDelegate();
+      if (executeOnDelegate == Boolean.FALSE) {
+        return scmRequest.apply(scmClientManagerService);
+      }
+    }
+    return scmRequest.apply(scmClientDelegateService);
+  }
 }

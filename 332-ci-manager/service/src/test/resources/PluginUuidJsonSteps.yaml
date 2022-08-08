@@ -1,0 +1,59 @@
+{
+  "pipeline": {
+    "identifier": "cipipelinewu9lucb6gR",
+    "name": "download plugin with success",
+    "description": "fdfd",
+    "stages": [
+      {
+        "stage": {
+          "identifier": "download_plugin_success",
+          "name": "stage 1",
+          "type": "CI",
+          "spec": {
+            "execution": {
+              "steps": [
+                {
+                  "step": {
+                    "identifier": "download",
+                    "name": "download",
+                    "type": "Plugin",
+                    "spec": {
+                      "connectorRef": "account.CItestDockerConnectorLsGyi79hax",
+                      "image": "plugins/download",
+                      "settings": {
+                        "source": "https://github.com/drone/drone-cli/releases/download/v0.8.5/drone_linux_amd64.tar.gz",
+                        "destination": "drone_linux.tar.gz",
+                        "__uuid": "QUmmZw5FTKGwTLxUhditMg"
+                      },
+                      "__uuid": "ZGMx6Q_VRfuTLpLZVMomCA"
+                    },
+                    "__uuid": "9HYJWqpmTXGoqTlvotSzKQ"
+                  },
+                  "__uuid": "-e8VbOdkSYG_SQWwrm-cRQ"
+                }
+              ],
+              "__uuid": "qcnJfz9gQT-LbKmFnX6SPg"
+            },
+            "infrastructure": {
+              "type": "KubernetesDirect",
+              "spec": {
+                "connectorRef": "account.CItestK8sConnectorCMs0vdKHun",
+                "namespace": "harness-qa-delegate",
+                "__uuid": "miGNwdLkS3ym3SyucW4kPQ"
+              },
+              "__uuid": "sKhW-BTiSn-UjTyhBCu3CA"
+            },
+            "cloneCodebase": false,
+            "__uuid": "gCR5PPiITSuUgchz33mcnQ"
+          },
+          "__uuid": "jFJcnjr1S8mIkTkSo1m3Vg"
+        },
+        "__uuid": "PJSOO2kBRT-ODjj6B97WMg"
+      }
+    ],
+    "projectIdentifier": "CITestDemoProP1PcmJEzZ5",
+    "orgIdentifier": "CITestDemoOrgUNtoIHwBY8",
+    "__uuid": "B2pSCTwhRAqJNsY3FLRZsQ"
+  },
+  "__uuid": "__WhBRZ_RD2qWWQJjwnDCg"
+}

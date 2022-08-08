@@ -129,7 +129,7 @@ public class AwsCodeDeployInstanceSyncPerpetualTaskClient implements PerpetualTa
                                                    .withAwsInstanceFilter(null)
                                                    .build();
 
-    return awsUtils.getAwsFilters(awsInfraMapping, deploymentType);
+    return awsUtils.getFilters(deploymentType, awsInfraMapping.getAwsInstanceFilter());
   }
 
   @Data

@@ -10,12 +10,7 @@ package io.harness.cdng.service.steps;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.common.VariablesSweepingOutput;
-import io.harness.cdng.variables.beans.NGVariableOverrideSetWrapper;
-import io.harness.cdng.variables.beans.NGVariableOverrideSets;
-import io.harness.cdng.variables.beans.NGVariableOverrideSets.NGVariableOverrideSetsSweepingOutput;
-import io.harness.cdng.variables.beans.NGVariableOverrideSets.NGVariableOverrideSetsSweepingOutputInner;
 import io.harness.data.structure.EmptyPredicate;
-import io.harness.exception.InvalidRequestException;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.logstreaming.NGLogCallback;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -24,7 +19,8 @@ import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.StatusUtils;
-import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
+import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
+import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.executables.ChildrenExecutable;
 import io.harness.pms.sdk.core.steps.executables.SyncExecutable;
@@ -33,7 +29,9 @@ import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
-import io.harness.steps.StepUtils;
+import io.harness.steps.OutputExpressionConstants;
+import io.harness.steps.SdkCoreStepUtils;
+import io.harness.steps.environment.EnvironmentOutcome;
 import io.harness.tasks.ResponseData;
 import io.harness.yaml.core.variables.NGVariable;
 import io.harness.yaml.utils.NGVariablesUtils;
@@ -87,10 +85,10 @@ public class ServiceSpecStep
   @Override
   public StepResponse handleChildrenResponse(
       Ambiance ambiance, ServiceSpecStepParameters stepParameters, Map<String, ResponseData> responseDataMap) {
-    StepResponse stepResponse = StepUtils.createStepResponseFromChildResponse(responseDataMap);
+    StepResponse stepResponse = SdkCoreStepUtils.createStepResponseFromChildResponse(responseDataMap);
     if (StatusUtils.positiveStatuses().contains(stepResponse.getStatus())) {
       NGLogCallback logCallback = serviceStepsHelper.getServiceLogCallback(ambiance);
-      logCallback.saveExecutionLog("Processed artifacts and manifests...");
+      logCallback.saveExecutionLog("Processed artifacts and manifests");
     }
     return stepResponse;
   }
@@ -106,25 +104,33 @@ public class ServiceSpecStep
       outputObj = new VariablesSweepingOutput();
     }
     executionSweepingOutputResolver.consume(ambiance, YAMLFieldNameConstants.SERVICE_VARIABLES,
-        (VariablesSweepingOutput) outputObj, StepOutcomeGroup.STAGE.name());
+        (VariablesSweepingOutput) outputObj, StepCategory.STAGE.name());
 
-    NGVariableOverrideSetsSweepingOutput overrideSetsSweepingOutput =
-        getVariablesOverrideSetsSweepingOutput(stepParameters);
-    executionSweepingOutputResolver.consume(ambiance, "variableOverrideSets", overrideSetsSweepingOutput, null);
     saveExecutionLog(logCallback, "Processed service variables");
   }
 
   private VariablesSweepingOutput getVariablesSweepingOutput(
       Ambiance ambiance, ServiceSpecStepParameters stepParameters, NGLogCallback logCallback) {
-    Map<String, Object> variables = getFinalVariablesMap(ambiance, stepParameters, logCallback);
+    // env v2 incorporating env variables into service variables
+    OptionalSweepingOutput optionalSweepingOutput = executionSweepingOutputResolver.resolveOptional(
+        ambiance, RefObjectUtils.getSweepingOutputRefObject(OutputExpressionConstants.ENVIRONMENT));
+
+    Map<String, Object> envVariables = new HashMap<>();
+    if (optionalSweepingOutput.isFound()) {
+      EnvironmentOutcome envOutcome = (EnvironmentOutcome) optionalSweepingOutput.getOutput();
+      if (EmptyPredicate.isNotEmpty(envOutcome.getVariables())) {
+        envVariables.putAll(envOutcome.getVariables());
+      }
+    }
+    Map<String, Object> variables = getFinalVariablesMap(ambiance, stepParameters, envVariables, logCallback);
     VariablesSweepingOutput variablesOutcome = new VariablesSweepingOutput();
     variablesOutcome.putAll(variables);
     return variablesOutcome;
   }
 
   @VisibleForTesting
-  Map<String, Object> getFinalVariablesMap(
-      Ambiance ambiance, ServiceSpecStepParameters stepParameters, NGLogCallback logCallback) {
+  Map<String, Object> getFinalVariablesMap(Ambiance ambiance, ServiceSpecStepParameters stepParameters,
+      Map<String, Object> envVariables, NGLogCallback logCallback) {
     ParameterField<List<NGVariable>> variableList = stepParameters.getOriginalVariables();
     Map<String, Object> variables = new HashMap<>();
     Map<String, Object> outputVariables = new VariablesSweepingOutput();
@@ -133,40 +139,9 @@ public class ServiceSpecStep
       variables.putAll(originalVariables);
       outputVariables.putAll(originalVariables);
     }
-    outputVariables = addOverrideSets(ambiance, outputVariables, stepParameters, logCallback);
     outputVariables = addStageOverrides(ambiance, outputVariables, stepParameters, logCallback);
+    addEnvVariables(outputVariables, envVariables, logCallback);
     variables.put("output", outputVariables);
-    return variables;
-  }
-
-  private Map<String, Object> addOverrideSets(Ambiance ambiance, Map<String, Object> variables,
-      ServiceSpecStepParameters stepParameters, NGLogCallback logCallback) {
-    if (ParameterField.isNull(stepParameters.getStageOverridesUseVariableOverrideSets())) {
-      return variables;
-    }
-
-    for (String useVariableOverrideSet : stepParameters.getStageOverridesUseVariableOverrideSets().getValue()) {
-      List<NGVariableOverrideSets> variableOverrideSetsList =
-          stepParameters.getOriginalVariableOverrideSets()
-              .getValue()
-              .stream()
-              .map(NGVariableOverrideSetWrapper::getOverrideSet)
-              .filter(overrideSet -> overrideSet.getIdentifier().equals(useVariableOverrideSet))
-              .collect(Collectors.toList());
-      if (variableOverrideSetsList.isEmpty()) {
-        throw new InvalidRequestException(
-            String.format("Invalid identifier [%s] in variable override sets", useVariableOverrideSet));
-      }
-      if (variableOverrideSetsList.size() > 1) {
-        throw new InvalidRequestException(
-            String.format("Duplicate identifier [%s] in variable override sets", useVariableOverrideSet));
-      }
-
-      saveExecutionLog(
-          logCallback, String.format("Applying service variable overrides set: %s", useVariableOverrideSet));
-      variables = NGVariablesUtils.applyVariableOverrides(
-          variables, variableOverrideSetsList.get(0).getVariables(), ambiance.getExpressionFunctorToken());
-    }
     return variables;
   }
 
@@ -182,17 +157,14 @@ public class ServiceSpecStep
         variables, stepParameters.getStageOverrideVariables().getValue(), ambiance.getExpressionFunctorToken());
   }
 
-  private NGVariableOverrideSetsSweepingOutput getVariablesOverrideSetsSweepingOutput(
-      ServiceSpecStepParameters stepParameters) {
-    NGVariableOverrideSetsSweepingOutput overrideSetsSweepingOutput = new NGVariableOverrideSetsSweepingOutput();
-    if (ParameterField.isNull(stepParameters.getOriginalVariableOverrideSets())) {
-      return overrideSetsSweepingOutput;
+  private void addEnvVariables(
+      Map<String, Object> variables, Map<String, Object> envVariables, NGLogCallback logCallback) {
+    if (EmptyPredicate.isEmpty(envVariables)) {
+      return;
     }
-    stepParameters.getOriginalVariableOverrideSets().getValue().forEach(overrideSets
-        -> overrideSetsSweepingOutput.put(overrideSets.getOverrideSet().getIdentifier(),
-            new NGVariableOverrideSetsSweepingOutputInner(
-                NGVariablesUtils.getMapOfVariables(overrideSets.getOverrideSet().getVariables()))));
-    return overrideSetsSweepingOutput;
+
+    saveExecutionLog(logCallback, "Applying environment variables and service overrides");
+    variables.putAll(envVariables);
   }
 
   private void saveExecutionLog(NGLogCallback logCallback, String line) {

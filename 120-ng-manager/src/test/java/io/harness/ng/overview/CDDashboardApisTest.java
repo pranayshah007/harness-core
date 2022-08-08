@@ -8,11 +8,13 @@
 package io.harness.ng.overview;
 
 import static io.harness.NGDateUtils.getStartTimeOfNextDay;
+import static io.harness.ng.core.activityhistory.dto.TimeGroupType.DAY;
 import static io.harness.ng.overview.service.CDOverviewDashboardServiceImpl.INVALID_CHANGE_RATE;
 import static io.harness.rule.OwnerRule.MEENAKSHI;
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.doReturn;
 
@@ -20,8 +22,10 @@ import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.cd.CDDashboardServiceHelper;
 import io.harness.ng.core.dashboard.AuthorInfo;
 import io.harness.ng.core.dashboard.DashboardExecutionStatusInfo;
+import io.harness.ng.core.dashboard.EnvironmentDeploymentsInfo;
 import io.harness.ng.core.dashboard.ExecutionStatusInfo;
 import io.harness.ng.core.dashboard.GitInfo;
 import io.harness.ng.core.dashboard.ServiceDeploymentInfo;
@@ -55,10 +59,13 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
+import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
@@ -71,8 +78,7 @@ public class CDDashboardApisTest extends CategoryTest {
   @Mock TimeScaleDBService timeScaleDBService;
   @InjectMocks @Spy private CDOverviewDashboardServiceImpl cdOverviewDashboardServiceImpl;
 
-  private List<String> failedStatusList = Arrays.asList(ExecutionStatus.FAILED.name(), ExecutionStatus.ABORTED.name(),
-      ExecutionStatus.EXPIRED.name(), ExecutionStatus.IGNOREFAILED.name(), ExecutionStatus.ERRORED.name());
+  private List<String> failedStatusList = CDDashboardServiceHelper.failedStatusList;
   private List<String> activeStatusList = Arrays.asList(ExecutionStatus.RUNNING.name(),
       ExecutionStatus.ASYNCWAITING.name(), ExecutionStatus.TASKWAITING.name(), ExecutionStatus.TIMEDWAITING.name(),
       ExecutionStatus.PAUSED.name(), ExecutionStatus.PAUSING.name());
@@ -184,6 +190,28 @@ public class CDDashboardApisTest extends CategoryTest {
                              .deployments(Deployment.builder().count(1).build())
                              .build());
 
+    List<DeploymentDateAndCount> activeCountList = new ArrayList<>();
+    activeCountList.add(DeploymentDateAndCount.builder()
+                            .time(1619568000000L)
+                            .deployments(Deployment.builder().count(1).build())
+                            .build());
+    activeCountList.add(DeploymentDateAndCount.builder()
+                            .time(1619654400000L)
+                            .deployments(Deployment.builder().count(0).build())
+                            .build());
+    activeCountList.add(DeploymentDateAndCount.builder()
+                            .time(1619740800000L)
+                            .deployments(Deployment.builder().count(0).build())
+                            .build());
+    activeCountList.add(DeploymentDateAndCount.builder()
+                            .time(1619827200000L)
+                            .deployments(Deployment.builder().count(1).build())
+                            .build());
+    activeCountList.add(DeploymentDateAndCount.builder()
+                            .time(1619913600000L)
+                            .deployments(Deployment.builder().count(0).build())
+                            .build());
+
     HealthDeploymentDashboard expectedHealthDeploymentDashboard =
         HealthDeploymentDashboard.builder()
             .healthDeploymentInfo(
@@ -193,7 +221,6 @@ public class CDDashboardApisTest extends CategoryTest {
                                .production(4L)
                                .nonProduction(6L)
                                .countList(totalCountList)
-
                                .build())
                     .success(DeploymentInfo.builder()
                                  .count(4)
@@ -201,6 +228,7 @@ public class CDDashboardApisTest extends CategoryTest {
                                  .countList(successCountList)
                                  .build())
                     .failure(DeploymentInfo.builder().count(4).rate(0.0).countList(failureCountList).build())
+                    .active(DeploymentInfo.builder().count(2).rate(100.0).countList(activeCountList).build())
                     .build())
             .build();
 
@@ -335,6 +363,11 @@ public class CDDashboardApisTest extends CategoryTest {
     hashMap.put("ServiceId1", "Service1");
     hashMap.put("ServiceId2", "Service2");
     hashMap.put("ServiceId3", "Service3");
+
+    Map<String, Pair<String, AuthorInfo>> temp = new HashMap<>();
+    doReturn(temp)
+        .when(cdOverviewDashboardServiceImpl)
+        .getPipelineExecutionIdToTriggerTypeAndAuthorInfoMapping(anyList());
 
     DashboardWorkloadDeployment dashboardWorkloadDeployment =
         cdOverviewDashboardServiceImpl.getWorkloadDeploymentInfoCalculation(workloadsId, status, timeInterval,
@@ -577,7 +610,10 @@ public class CDDashboardApisTest extends CategoryTest {
   @Test
   @Owner(developers = PRASHANTSHARMA)
   @Category(UnitTests.class)
+  @Ignore("Functional Flakiness fixing. Needs to be fixed")
   public void testGetDeploymentActiveFailedRunningInfo() {
+    Long endInterval = 1622650432000L;
+    endInterval = endInterval + cdOverviewDashboardServiceImpl.getTimeUnitToGroupBy(DAY);
     List<String> objectIdListFailure = Arrays.asList("11", "12", "13", "14", "15", "16", "17", "18");
     List<String> namePipelineListFailure =
         Arrays.asList("name1", "name2", "name3", "name4", "name5", "name1", "name2", "name3");
@@ -674,18 +710,20 @@ public class CDDashboardApisTest extends CategoryTest {
                                                                    .triggerType(triggerTypeList)
                                                                    .build();
 
-    String queryFailed = cdOverviewDashboardServiceImpl.queryBuilderStatus("acc", "orgId", "pro", 10, failedStatusList);
+    String queryFailed = cdOverviewDashboardServiceImpl.queryBuilderStatus(
+        "acc", "orgId", "pro", 10, failedStatusList, 1619626802000L, endInterval);
     String queryIdFailed = cdOverviewDashboardServiceImpl.queryBuilderSelectIdLimitTimeCdTable(
-        "acc", "orgId", "pro", 10, failedStatusList);
+        "acc", "orgId", "pro", 10, failedStatusList, 1619626802000L, endInterval);
 
-    String queryActive = cdOverviewDashboardServiceImpl.queryBuilderStatus("acc", "orgId", "pro", 10, activeStatusList);
+    String queryActive = cdOverviewDashboardServiceImpl.queryBuilderStatus(
+        "acc", "orgId", "pro", 10, activeStatusList, 1619626802000L, endInterval);
     String queryIdActive = cdOverviewDashboardServiceImpl.queryBuilderSelectIdLimitTimeCdTable(
-        "acc", "orgId", "pro", 10, activeStatusList);
+        "acc", "orgId", "pro", 10, activeStatusList, 1619626802000L, endInterval);
 
-    String queryPending =
-        cdOverviewDashboardServiceImpl.queryBuilderStatus("acc", "orgId", "pro", 10, pendingStatusList);
+    String queryPending = cdOverviewDashboardServiceImpl.queryBuilderStatus(
+        "acc", "orgId", "pro", 10, pendingStatusList, 1619626802000L, endInterval);
     String queryIdPending = cdOverviewDashboardServiceImpl.queryBuilderSelectIdLimitTimeCdTable(
-        "acc", "orgId", "pro", 10, pendingStatusList);
+        "acc", "orgId", "pro", 10, pendingStatusList, 1619626802000L, endInterval);
 
     // failure
     doReturn(deploymentStatusInfoListFailure)
@@ -695,6 +733,7 @@ public class CDDashboardApisTest extends CategoryTest {
     String serviveTagQueryFailure = cdOverviewDashboardServiceImpl.queryBuilderServiceTag(queryIdFailed);
 
     HashMap<String, List<ServiceDeploymentInfo>> serviceTagMapFailure = new HashMap<>();
+    HashMap<String, List<EnvironmentDeploymentsInfo>> pipelineToEnvMapFailure = new HashMap<>();
     serviceTagMapFailure.put("11",
         Arrays.asList(ServiceDeploymentInfo.builder().serviceName("serviceF1").serviceTag("tagF1").build(),
             ServiceDeploymentInfo.builder().serviceName("serviceF2").serviceTag(null).build()));
@@ -706,7 +745,14 @@ public class CDDashboardApisTest extends CategoryTest {
         Arrays.asList(ServiceDeploymentInfo.builder().serviceName("serviceF1").serviceTag("tagF1").build(),
             ServiceDeploymentInfo.builder().serviceName("serviceF2").serviceTag("tagF2").build()));
 
-    doReturn(serviceTagMapFailure)
+    pipelineToEnvMapFailure.put("11",
+        Arrays.asList(EnvironmentDeploymentsInfo.builder().envId("1").envName("a").envType("prod").build(),
+            EnvironmentDeploymentsInfo.builder().envId("2").envName("b").envType("prod").build()));
+    pipelineToEnvMapFailure.put(
+        "13", Arrays.asList(EnvironmentDeploymentsInfo.builder().envId("1").envName("a").envType("prod").build()));
+    pipelineToEnvMapFailure.put(
+        "15", Arrays.asList(EnvironmentDeploymentsInfo.builder().envId("1").envName("a").envType("prod").build()));
+    doReturn(new MutablePair<>(serviceTagMapFailure, pipelineToEnvMapFailure))
         .when(cdOverviewDashboardServiceImpl)
         .queryCalculatorServiceTagMag(serviveTagQueryFailure);
 
@@ -719,8 +765,9 @@ public class CDDashboardApisTest extends CategoryTest {
     String serviveTagQueryActive = cdOverviewDashboardServiceImpl.queryBuilderServiceTag(queryIdActive);
 
     HashMap<String, List<ServiceDeploymentInfo>> serviceTagMapActive = new HashMap<>();
+    HashMap<String, List<EnvironmentDeploymentsInfo>> pipelineToEnvMapActive = new HashMap<>();
 
-    doReturn(serviceTagMapActive)
+    doReturn(new MutablePair<>(serviceTagMapActive, pipelineToEnvMapActive))
         .when(cdOverviewDashboardServiceImpl)
         .queryCalculatorServiceTagMag(serviveTagQueryActive);
 
@@ -732,13 +779,23 @@ public class CDDashboardApisTest extends CategoryTest {
     String serviveTagQueryPending = cdOverviewDashboardServiceImpl.queryBuilderServiceTag(queryIdPending);
 
     HashMap<String, List<ServiceDeploymentInfo>> serviceTagMapPending = new HashMap<>();
+    HashMap<String, List<EnvironmentDeploymentsInfo>> pipelineToEnvMapPending = new HashMap<>();
 
-    doReturn(serviceTagMapPending)
+    doReturn(new MutablePair<>(serviceTagMapPending, pipelineToEnvMapPending))
         .when(cdOverviewDashboardServiceImpl)
         .queryCalculatorServiceTagMag(serviveTagQueryPending);
 
+    List<ExecutionStatusInfo> failure =
+        cdOverviewDashboardServiceImpl.getDeploymentStatusInfo(queryFailed, queryIdFailed);
+
+    List<ExecutionStatusInfo> active =
+        cdOverviewDashboardServiceImpl.getDeploymentStatusInfo(queryActive, queryIdActive);
+
+    List<ExecutionStatusInfo> pending =
+        cdOverviewDashboardServiceImpl.getDeploymentStatusInfo(queryPending, queryIdPending);
+
     DashboardExecutionStatusInfo dashboardExecutionStatusInfo =
-        cdOverviewDashboardServiceImpl.getDeploymentActiveFailedRunningInfo("acc", "orgId", "pro", 10);
+        DashboardExecutionStatusInfo.builder().failure(failure).active(active).pending(pending).build();
 
     // failure
 
@@ -754,6 +811,7 @@ public class CDDashboardApisTest extends CategoryTest {
                               .triggerType(triggerTypeList.get(0))
                               .author(authorInfoList.get(0))
                               .serviceInfoList(serviceTagMapFailure.get("11"))
+                              .environmentInfoList(pipelineToEnvMapFailure.get("11"))
                               .build());
     failureStatusInfo.add(ExecutionStatusInfo.builder()
                               .pipelineName("name2")
@@ -777,6 +835,7 @@ public class CDDashboardApisTest extends CategoryTest {
                               .author(authorInfoList.get(0))
                               .status(failedStatusList.get(0))
                               .serviceInfoList(serviceTagMapFailure.get("13"))
+                              .environmentInfoList(pipelineToEnvMapFailure.get("13"))
                               .build());
     failureStatusInfo.add(ExecutionStatusInfo.builder()
                               .pipelineName("name4")
@@ -800,6 +859,7 @@ public class CDDashboardApisTest extends CategoryTest {
                               .author(authorInfoList.get(0))
                               .status(failedStatusList.get(0))
                               .serviceInfoList(serviceTagMapFailure.get("15"))
+                              .environmentInfoList(pipelineToEnvMapFailure.get("15"))
                               .build());
     failureStatusInfo.add(ExecutionStatusInfo.builder()
                               .pipelineName("name1")

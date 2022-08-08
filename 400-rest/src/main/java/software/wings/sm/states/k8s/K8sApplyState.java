@@ -195,6 +195,7 @@ public class K8sApplyState extends AbstractK8sState {
             .skipRendering(skipRendering)
             .useLatestKustomizeVersion(isUseLatestKustomizeVersion(context.getAccountId()))
             .useNewKubectlVersion(featureFlagService.isEnabled(NEW_KUBECTL_VERSION, infraMapping.getAccountId()))
+            .skipSteadyStateCheck(skipSteadyStateCheck)
             .build();
 
     return queueK8sDelegateTask(context, k8sTaskParameters, appManifestMap);

@@ -20,6 +20,7 @@ import io.harness.cvng.core.beans.monitoredService.MonitoredServiceDTO;
 import io.harness.cvng.core.beans.monitoredService.MonitoredServiceDTO.Sources;
 import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.AppDynamicsHealthSourceSpec;
 import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.AppDynamicsHealthSourceSpec.AppDMetricDefinitions;
+import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorService;
 import io.harness.rule.Owner;
 
@@ -33,12 +34,19 @@ import org.junit.experimental.categories.Category;
 public class MonitoredServiceSLIMetricUpdateHandlerTest extends CvNextGenTestBase {
   @Inject private MonitoredServiceSLIMetricUpdateHandler monitoredServiceSLIMetricUpdateHandler;
   @Inject private ServiceLevelIndicatorService serviceLevelIndicatorService;
+  @Inject private MonitoredServiceService monitoredServiceService;
 
   private BuilderFactory builderFactory;
+  private String monitoredServiceIdentifier;
 
   @Before
-  public void setup() {
+  public void setup() throws IllegalAccessException {
     builderFactory = BuilderFactory.getDefault();
+    monitoredServiceIdentifier =
+        builderFactory.getContext().getMonitoredServiceParams().getMonitoredServiceIdentifier();
+    createMonitoredService();
+    /*Mockito.doReturn(MonitoredService.builder().enabled(true).build()).when(monitoredServiceService).getMonitoredService(Mockito.any());
+    FieldUtils.writeField(serviceLevelIndicatorService,"monitoredServiceService",monitoredServiceService,true);*/
   }
 
   @Test
@@ -187,5 +195,12 @@ public class MonitoredServiceSLIMetricUpdateHandlerTest extends CvNextGenTestBas
         existingMonitoredService.getIdentifier(), "healthSourceIdentifier");
     monitoredServiceSLIMetricUpdateHandler.beforeUpdate(
         builderFactory.getProjectParams(), existingMonitoredService, updatingMonitoredService);
+  }
+
+  private void createMonitoredService() {
+    MonitoredServiceDTO monitoredServiceDTO =
+        builderFactory.monitoredServiceDTOBuilder().identifier(monitoredServiceIdentifier).build();
+    monitoredServiceDTO.setSources(MonitoredServiceDTO.Sources.builder().build());
+    monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
   }
 }

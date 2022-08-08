@@ -11,6 +11,7 @@ import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.ABOSII;
 import static io.harness.rule.OwnerRule.ANSHUL;
 import static io.harness.rule.OwnerRule.BRETT;
+import static io.harness.rule.OwnerRule.FERNANDOD;
 import static io.harness.rule.OwnerRule.GARVIT;
 import static io.harness.rule.OwnerRule.GEORGE;
 import static io.harness.rule.OwnerRule.HINGER;
@@ -46,15 +47,16 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.joor.Reflect.on;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyList;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import io.harness.beans.ArtifactMetadata;
 import io.harness.beans.FeatureName;
 import io.harness.beans.SweepingOutput;
 import io.harness.beans.SweepingOutputInstance;
@@ -69,6 +71,7 @@ import io.harness.rule.Owner;
 
 import software.wings.WingsBaseTest;
 import software.wings.api.CommandStateExecutionData;
+import software.wings.api.ContextElementParamMapperFactory;
 import software.wings.api.DeploymentType;
 import software.wings.api.HostElement;
 import software.wings.api.HttpStateExecutionData;
@@ -96,24 +99,30 @@ import software.wings.beans.NameValuePair;
 import software.wings.beans.Service;
 import software.wings.beans.ServiceTemplate;
 import software.wings.beans.ServiceVariable;
-import software.wings.beans.ServiceVariable.Type;
+import software.wings.beans.ServiceVariableType;
 import software.wings.beans.SettingAttribute;
 import software.wings.beans.Variable;
 import software.wings.beans.appmanifest.HelmChart;
 import software.wings.beans.artifact.Artifact;
 import software.wings.beans.customdeployment.CustomDeploymentTypeDTO;
+import software.wings.helpers.ext.url.SubdomainUrlHelperIntfc;
 import software.wings.infra.GoogleKubernetesEngine;
 import software.wings.infra.InfrastructureDefinition;
 import software.wings.scheduler.BackgroundJobScheduler;
+import software.wings.service.intfc.AccountService;
 import software.wings.service.intfc.AppService;
+import software.wings.service.intfc.ApplicationManifestService;
 import software.wings.service.intfc.ArtifactService;
+import software.wings.service.intfc.ArtifactStreamService;
 import software.wings.service.intfc.ArtifactStreamServiceBindingService;
+import software.wings.service.intfc.BuildSourceService;
 import software.wings.service.intfc.EnvironmentService;
 import software.wings.service.intfc.InfrastructureDefinitionService;
 import software.wings.service.intfc.InfrastructureMappingService;
 import software.wings.service.intfc.ServiceResourceService;
 import software.wings.service.intfc.ServiceTemplateService;
 import software.wings.service.intfc.SettingsService;
+import software.wings.service.intfc.WorkflowExecutionService;
 import software.wings.service.intfc.applicationmanifest.HelmChartService;
 import software.wings.service.intfc.customdeployment.CustomDeploymentTypeService;
 import software.wings.service.intfc.sweepingoutput.SweepingOutputInquiry;
@@ -148,10 +157,10 @@ import org.mongodb.morphia.Key;
  * @author Rishi
  */
 public class ExecutionContextImplTest extends WingsBaseTest {
-  @Inject Injector injector;
+  @Inject private Injector injector;
 
-  @Inject @InjectMocks AppService appService;
-  @Inject EnvironmentService environmentService;
+  @Inject @InjectMocks private AppService appService;
+  @Inject private EnvironmentService environmentService;
 
   @Mock private BackgroundJobScheduler jobScheduler;
   @Mock private SettingsService settingsService;
@@ -164,7 +173,7 @@ public class ExecutionContextImplTest extends WingsBaseTest {
   @Mock private SweepingOutputService sweepingOutputService;
   @Mock private CustomDeploymentTypeService customDeploymentTypeService;
   @Mock private InfrastructureMappingService infrastructureMappingService;
-  @Mock HelmChartService helmChartService;
+  @Mock private HelmChartService helmChartService;
   @Mock private InfrastructureDefinitionService infrastructureDefinitionService;
 
   @Before
@@ -248,7 +257,6 @@ public class ExecutionContextImplTest extends WingsBaseTest {
     WorkflowStandardParams std = new WorkflowStandardParams();
     std.setAppId(app.getUuid());
     std.setArtifactIds(asList(ARTIFACT_ID));
-    injector.injectMembers(std);
     context.pushContextElement(std);
 
     assertThat(context.getArtifacts()).isNullOrEmpty();
@@ -284,7 +292,6 @@ public class ExecutionContextImplTest extends WingsBaseTest {
     WorkflowStandardParams std = new WorkflowStandardParams();
     std.setAppId(app.getUuid());
     std.setWorkflowElement(WorkflowElement.builder().pipelineDeploymentUuid(PIPELINE_EXECUTION_ID).build());
-    injector.injectMembers(std);
     context.pushContextElement(std);
 
     context.getArtifacts();
@@ -324,7 +331,6 @@ public class ExecutionContextImplTest extends WingsBaseTest {
     WorkflowStandardParams std = new WorkflowStandardParams();
     std.setAppId(app.getUuid());
     std.setWorkflowElement(WorkflowElement.builder().pipelineDeploymentUuid(PIPELINE_EXECUTION_ID).build());
-    injector.injectMembers(std);
     context.pushContextElement(std);
     context.getArtifacts();
     verify(artifactService).get(eq("u1"));
@@ -338,12 +344,16 @@ public class ExecutionContextImplTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void shouldFetchRequiredApp() {
     WorkflowStandardParams mockParams = mock(WorkflowStandardParams.class);
+    WorkflowStandardParamsExtensionService mockParamsExtensionService =
+        mock(WorkflowStandardParamsExtensionService.class);
     doReturn(ContextElementType.STANDARD).when(mockParams).getElementType();
-    doReturn(anApplication().appId(APP_ID).build()).when(mockParams).fetchRequiredApp();
+    doReturn(anApplication().appId(APP_ID).build()).when(mockParamsExtensionService).fetchRequiredApp(mockParams);
     ExecutionContextImpl context = new ExecutionContextImpl(new StateExecutionInstance());
+    on(context).set("workflowStandardParamsExtensionService", mockParamsExtensionService);
     context.pushContextElement(mockParams);
     assertThat(context.fetchRequiredApp()).isNotNull();
     ExecutionContextImpl context2 = new ExecutionContextImpl(new StateExecutionInstance());
+    on(context2).set("workflowStandardParamsExtensionService", mockParamsExtensionService);
     assertThatThrownBy(context2::fetchRequiredApp).isInstanceOf(InvalidRequestException.class);
   }
 
@@ -352,12 +362,16 @@ public class ExecutionContextImplTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void shouldFetchRequiredEnv() {
     WorkflowStandardParams mockParams = mock(WorkflowStandardParams.class);
+    WorkflowStandardParamsExtensionService mockParamsExtensionService =
+        mock(WorkflowStandardParamsExtensionService.class);
     doReturn(ContextElementType.STANDARD).when(mockParams).getElementType();
-    doReturn(anEnvironment().uuid(ENV_ID).build()).when(mockParams).fetchRequiredEnv();
+    doReturn(anEnvironment().uuid(ENV_ID).build()).when(mockParamsExtensionService).fetchRequiredEnv(mockParams);
     ExecutionContextImpl context = new ExecutionContextImpl(new StateExecutionInstance());
+    on(context).set("workflowStandardParamsExtensionService", mockParamsExtensionService);
     context.pushContextElement(mockParams);
     assertThat(context.fetchRequiredEnvironment()).isNotNull();
     ExecutionContextImpl context2 = new ExecutionContextImpl(new StateExecutionInstance());
+    on(context2).set("workflowStandardParamsExtensionService", mockParamsExtensionService);
     assertThatThrownBy(context2::fetchRequiredEnvironment).isInstanceOf(InvalidRequestException.class);
   }
 
@@ -374,7 +388,6 @@ public class ExecutionContextImplTest extends WingsBaseTest {
 
     WorkflowStandardParams std = new WorkflowStandardParams();
     std.setAppId(app.getUuid());
-    injector.injectMembers(std);
     context.pushContextElement(std);
 
     assertThat(context.getArtifactForService(SERVICE_ID)).isNull();
@@ -406,7 +419,6 @@ public class ExecutionContextImplTest extends WingsBaseTest {
     WorkflowStandardParams std = new WorkflowStandardParams();
     std.setAppId(app.getUuid());
     std.setWorkflowElement(WorkflowElement.builder().pipelineDeploymentUuid(PIPELINE_EXECUTION_ID).build());
-    injector.injectMembers(std);
     context.pushContextElement(std);
 
     context.getArtifactForService("s2");
@@ -443,7 +455,6 @@ public class ExecutionContextImplTest extends WingsBaseTest {
     env = environmentService.save(env);
 
     WorkflowStandardParams std = new WorkflowStandardParams();
-    injector.injectMembers(std);
 
     std.setAppId(app.getUuid());
     std.setEnvId(env.getUuid());
@@ -479,7 +490,7 @@ public class ExecutionContextImplTest extends WingsBaseTest {
 
     ServiceVariable serviceVariable = ServiceVariable.builder()
                                           .serviceId(svc.getUuid())
-                                          .type(Type.TEXT)
+                                          .type(ServiceVariableType.TEXT)
                                           .name("REV")
                                           .value("${artifact.buildNo}".toCharArray())
                                           .build();
@@ -489,14 +500,27 @@ public class ExecutionContextImplTest extends WingsBaseTest {
     when(serviceTemplateService.getTemplateRefKeysByService(
              context.getAppId(), svc.getUuid(), context.getEnv().getUuid()))
         .thenReturn(asList(new Key(ServiceTemplate.class, "serviceTemplates", st.getUuid())));
+    on(context).set("serviceTemplateService", serviceTemplateService);
+
     when(artifactService.get(ARTIFACT_ID)).thenReturn(artifact);
     when(serviceResourceService.get(svc.getUuid()))
         .thenReturn(Service.builder().artifactStreamIds(singletonList(ARTIFACT_STREAM_ID)).build());
     when(artifactStreamServiceBindingService.listArtifactStreamIds(svc.getUuid()))
         .thenReturn(singletonList(ARTIFACT_STREAM_ID));
-    on(std).set("artifactService", artifactService);
-    on(std).set("serviceTemplateService", serviceTemplateService);
-    on(std).set("artifactStreamServiceBindingService", artifactStreamServiceBindingService);
+
+    WorkflowStandardParamsExtensionService workflowStandardParamsExtensionService =
+        new WorkflowStandardParamsExtensionService(appService, injector.getInstance(AccountService.class),
+            artifactService, environmentService, artifactStreamServiceBindingService,
+            injector.getInstance(HelmChartService.class));
+    on(context).set("workflowStandardParamsExtensionService", workflowStandardParamsExtensionService);
+
+    ContextElementParamMapperFactory contextElementParamMapperFactory =
+        new ContextElementParamMapperFactory(injector.getInstance(SubdomainUrlHelperIntfc.class),
+            injector.getInstance(WorkflowExecutionService.class), artifactService,
+            injector.getInstance(ArtifactStreamService.class), injector.getInstance(ApplicationManifestService.class),
+            featureFlagService, injector.getInstance(BuildSourceService.class), workflowStandardParamsExtensionService);
+
+    on(context).set("contextElementParamMapperFactory", contextElementParamMapperFactory);
   }
 
   @Test
@@ -556,8 +580,6 @@ public class ExecutionContextImplTest extends WingsBaseTest {
     ExecutionContextImpl context = prepareContext(stateExecutionInstance);
     ServiceElement svc = context.getContextElement(ContextElementType.SERVICE);
 
-    on(context).set("serviceTemplateService", serviceTemplateService);
-
     final PhaseElement phaseElement = PhaseElement.builder().serviceElement(svc).build();
     injector.injectMembers(phaseElement);
     context.pushContextElement(phaseElement);
@@ -568,7 +590,7 @@ public class ExecutionContextImplTest extends WingsBaseTest {
 
     ServiceVariable serviceVariable = ServiceVariable.builder()
                                           .serviceId(svc1.getUuid())
-                                          .type(Type.TEXT)
+                                          .type(ServiceVariableType.TEXT)
                                           .name(svcVarName)
                                           .value(svcVarValue.toCharArray())
                                           .build();
@@ -578,7 +600,7 @@ public class ExecutionContextImplTest extends WingsBaseTest {
     when(serviceTemplateService.getTemplateRefKeysByService(
              context.getAppId(), svc1.getUuid(), context.getEnv().getUuid()))
         .thenReturn(asList(new Key(ServiceTemplate.class, "serviceTemplates", st.getUuid())));
-    on(std).set("serviceTemplateService", serviceTemplateService);
+    on(context).set("serviceTemplateService", serviceTemplateService);
     return context;
   }
 
@@ -595,15 +617,13 @@ public class ExecutionContextImplTest extends WingsBaseTest {
     ExecutionContextImpl context = prepareContext(stateExecutionInstance);
     ServiceElement svc = context.getContextElement(ContextElementType.SERVICE);
 
-    on(context).set("serviceTemplateService", serviceTemplateService);
-
     final PhaseElement phaseElement = PhaseElement.builder().serviceElement(svc).build();
     injector.injectMembers(phaseElement);
     context.pushContextElement(phaseElement);
 
     Artifact artifact = Artifact.Builder.anArtifact()
                             .withArtifactStreamId(ARTIFACT_STREAM_ID)
-                            .withMetadata(Maps.newHashMap("buildNo", "123-SNAPSHOT"))
+                            .withMetadata(new ArtifactMetadata(Maps.newHashMap("buildNo", "123-SNAPSHOT")))
                             .build();
 
     programServiceTemplateService(context, artifact);
@@ -630,7 +650,9 @@ public class ExecutionContextImplTest extends WingsBaseTest {
     stateExecutionInstance.setDisplayName("http");
     ExecutionContextImpl context = prepareContext(stateExecutionInstance);
 
-    Artifact artifact = Artifact.Builder.anArtifact().withMetadata(Maps.newHashMap("buildNo", "123-SNAPSHOT")).build();
+    Artifact artifact = Artifact.Builder.anArtifact()
+                            .withMetadata(new ArtifactMetadata(Maps.newHashMap("buildNo", "123-SNAPSHOT")))
+                            .build();
 
     programServiceTemplateService(context, artifact);
 
@@ -762,7 +784,6 @@ public class ExecutionContextImplTest extends WingsBaseTest {
 
     ExecutionContextImpl context = prepareContext(stateExecutionInstance);
     ServiceElement svc = context.getContextElement(ContextElementType.SERVICE);
-    on(context).set("serviceTemplateService", serviceTemplateService);
 
     final PhaseElement phaseElement = PhaseElement.builder().serviceElement(svc).build();
     injector.injectMembers(phaseElement);
@@ -770,7 +791,7 @@ public class ExecutionContextImplTest extends WingsBaseTest {
 
     Artifact artifact = Artifact.Builder.anArtifact()
                             .withArtifactStreamId(ARTIFACT_STREAM_ID)
-                            .withMetadata(Maps.newHashMap("buildNo", "123-SNAPSHOT"))
+                            .withMetadata(new ArtifactMetadata(Maps.newHashMap("buildNo", "123-SNAPSHOT")))
                             .build();
     programServiceTemplateService(context, artifact);
 
@@ -997,14 +1018,14 @@ public class ExecutionContextImplTest extends WingsBaseTest {
   @Owner(developers = YOGESH)
   @Category(UnitTests.class)
   public void testRenderExpressionsForInstanceDetails() {
-    ExecutionContextImpl context = Mockito.spy(new ExecutionContextImpl(new StateExecutionInstance()));
+    ExecutionContextImpl context = spy(new ExecutionContextImpl(new StateExecutionInstance()));
     on(context).set("sweepingOutputService", sweepingOutputService);
     List<String> expected = asList("host-1", "host-2");
     List<SweepingOutput> sweepingOutputs = asList(InstanceInfoVariables.builder().build());
 
     doReturn(InstanceApiResponse.builder().instances(expected).build())
         .when(context)
-        .renderExpressionFromInstanceInfoVariables(anyString(), eq(true), any(InstanceInfoVariables.class));
+        .renderExpressionFromInstanceInfoVariables(any(), eq(true), any(InstanceInfoVariables.class));
     doReturn(sweepingOutputs)
         .when(sweepingOutputService)
         .findManyWithNamePrefix(any(SweepingOutputInquiry.class), eq(Scope.PHASE));
@@ -1021,14 +1042,14 @@ public class ExecutionContextImplTest extends WingsBaseTest {
   @Owner(developers = YOGESH)
   @Category(UnitTests.class)
   public void testRenderExpressionsForInstanceDetailsForWorkflow() {
-    ExecutionContextImpl context = Mockito.spy(new ExecutionContextImpl(new StateExecutionInstance()));
+    ExecutionContextImpl context = spy(new ExecutionContextImpl(new StateExecutionInstance()));
     on(context).set("sweepingOutputService", sweepingOutputService);
     List<String> expected = asList("host-1", "host-2");
     List<SweepingOutput> sweepingOutputs = asList(InstanceInfoVariables.builder().build());
 
     doReturn(InstanceApiResponse.builder().instances(expected).build())
         .when(context)
-        .renderExpressionFromInstanceInfoVariables(anyString(), eq(true), any(InstanceInfoVariables.class));
+        .renderExpressionFromInstanceInfoVariables(any(), eq(true), any(InstanceInfoVariables.class));
     doReturn(sweepingOutputs)
         .when(sweepingOutputService)
         .findManyWithNamePrefix(any(SweepingOutputInquiry.class), eq(Scope.WORKFLOW));
@@ -1046,7 +1067,7 @@ public class ExecutionContextImplTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void ensureCloudProviderParamInInfraMappingElement() {
     when(limitCheckerFactory.getInstance(Mockito.any())).thenReturn(mockChecker());
-    ExecutionContextImpl context = Mockito.spy(new ExecutionContextImpl(new StateExecutionInstance()));
+    ExecutionContextImpl context = spy(new ExecutionContextImpl(new StateExecutionInstance()));
     on(context).set("featureFlagService", featureFlagService);
     on(context).set("serviceResourceService", serviceResourceService);
     on(context).set("infrastructureDefinitionService", infrastructureDefinitionService);
@@ -1064,10 +1085,10 @@ public class ExecutionContextImplTest extends WingsBaseTest {
                  .computeProviderName("gcp-name")
                  .build())
         .when(infrastructureMappingService)
-        .get(anyString(), anyString());
+        .get(any(), any());
     doReturn(InfrastructureDefinition.builder().infrastructure(GoogleKubernetesEngine.builder().build()).build())
         .when(infrastructureDefinitionService)
-        .get(anyString(), anyString());
+        .get(any(), any());
     doReturn(SettingAttribute.Builder.aSettingAttribute().withName("gcp-name").build())
         .when(settingsService)
         .get(eq("gcp-id"));
@@ -1093,7 +1114,9 @@ public class ExecutionContextImplTest extends WingsBaseTest {
   public void shouldFetchHelmChartsFromWorkflowStandardParamsIfNoManifestVariable() {
     StateExecutionInstance stateExecutionInstance = mock(StateExecutionInstance.class);
     WorkflowStandardParams workflowStandardParams = new WorkflowStandardParams();
-    on(workflowStandardParams).set("app", anApplication().uuid(APP_ID).build());
+    WorkflowStandardParamsExtensionService spyParamsExtensionService =
+        spy(injector.getInstance(WorkflowStandardParamsExtensionService.class));
+    when(spyParamsExtensionService.getApp(workflowStandardParams)).thenReturn(anApplication().uuid(APP_ID).build());
 
     LinkedList<ContextElement> contextElements = new LinkedList<>();
     contextElements.push(workflowStandardParams);
@@ -1101,8 +1124,11 @@ public class ExecutionContextImplTest extends WingsBaseTest {
 
     when(stateExecutionInstance.getContextElements()).thenReturn(contextElements);
     workflowStandardParams.setHelmChartIds(helmChartId);
-    on(workflowStandardParams).set("helmCharts", asList(HelmChart.builder().uuid(HELM_CHART_ID).name("chart").build()));
+    when(spyParamsExtensionService.getHelmCharts(workflowStandardParams))
+        .thenReturn(asList(HelmChart.builder().uuid(HELM_CHART_ID).name("chart").build()));
+
     ExecutionContextImpl context = new ExecutionContextImpl(new StateExecutionInstance());
+    on(context).set("workflowStandardParamsExtensionService", spyParamsExtensionService);
     on(context).set("stateExecutionInstance", stateExecutionInstance);
     on(context).set("helmChartService", helmChartService);
 
@@ -1116,7 +1142,7 @@ public class ExecutionContextImplTest extends WingsBaseTest {
 
   private void testIfOverridenInInfra() {
     final PhaseElement phaseElement = PhaseElement.builder().deploymentType(DeploymentType.CUSTOM.name()).build();
-    final ExecutionContextImpl context = Mockito.spy(new ExecutionContextImpl(new StateExecutionInstance()));
+    final ExecutionContextImpl context = spy(new ExecutionContextImpl(new StateExecutionInstance()));
     final List<Variable> templateVariables = asList(
         aVariable().name("a1").value("b1").description("variable named a1").build(), aVariable().name("a2").build(),
         aVariable().name("a3").value("").build(), aVariable().name("a4").value("b4").description("variable b4").build(),
@@ -1131,7 +1157,7 @@ public class ExecutionContextImplTest extends WingsBaseTest {
     doReturn(WingsTestConstants.INFRA_MAPPING_ID).when(context).fetchInfraMappingId();
     doReturn(CustomDeploymentTypeDTO.builder().infraVariables(templateVariables).build())
         .when(customDeploymentTypeService)
-        .get(anyString(), anyString(), anyString());
+        .get(any(), any(), any());
     InfraMappingElementBuilder builder = InfraMappingElement.builder();
 
     InfrastructureMapping infra = CustomInfrastructureMapping.builder().infraVariables(infraVariables).build();
@@ -1150,7 +1176,7 @@ public class ExecutionContextImplTest extends WingsBaseTest {
 
   private void testIfNoOverrideInInfra() {
     final PhaseElement phaseElement = PhaseElement.builder().deploymentType(DeploymentType.CUSTOM.name()).build();
-    final ExecutionContextImpl context = Mockito.spy(new ExecutionContextImpl(new StateExecutionInstance()));
+    final ExecutionContextImpl context = spy(new ExecutionContextImpl(new StateExecutionInstance()));
     final List<Variable> templateVariables = asList(aVariable().name("a1").value("b1").build(),
         aVariable().name("a2").build(), aVariable().name("a3").value("").build());
 
@@ -1159,7 +1185,7 @@ public class ExecutionContextImplTest extends WingsBaseTest {
     doReturn(WingsTestConstants.INFRA_MAPPING_ID).when(context).fetchInfraMappingId();
     doReturn(CustomDeploymentTypeDTO.builder().infraVariables(templateVariables).build())
         .when(customDeploymentTypeService)
-        .get(anyString(), anyString(), anyString());
+        .get(any(), any(), any());
     InfraMappingElementBuilder builder = InfraMappingElement.builder();
 
     InfrastructureMapping infra = CustomInfrastructureMapping.builder().infraVariables(emptyList()).build();
@@ -1174,14 +1200,14 @@ public class ExecutionContextImplTest extends WingsBaseTest {
 
   private void testIfVariablesEmpty() {
     final PhaseElement phaseElement = PhaseElement.builder().deploymentType(DeploymentType.CUSTOM.name()).build();
-    final ExecutionContextImpl context = Mockito.spy(new ExecutionContextImpl(new StateExecutionInstance()));
+    final ExecutionContextImpl context = spy(new ExecutionContextImpl(new StateExecutionInstance()));
 
     on(context).set("settingsService", settingsService);
     on(context).set("customDeploymentTypeService", customDeploymentTypeService);
     doReturn(WingsTestConstants.INFRA_MAPPING_ID).when(context).fetchInfraMappingId();
     doReturn(CustomDeploymentTypeDTO.builder().infraVariables(emptyList()).build())
         .when(customDeploymentTypeService)
-        .get(anyString(), anyString(), anyString());
+        .get(any(), any(), any());
     InfraMappingElementBuilder builder = InfraMappingElement.builder();
 
     InfrastructureMapping infra = CustomInfrastructureMapping.builder().infraVariables(emptyList()).build();
@@ -1194,14 +1220,12 @@ public class ExecutionContextImplTest extends WingsBaseTest {
 
   private void testIfVariablesNull() {
     final PhaseElement phaseElement = PhaseElement.builder().deploymentType(DeploymentType.CUSTOM.name()).build();
-    final ExecutionContextImpl context = Mockito.spy(new ExecutionContextImpl(new StateExecutionInstance()));
+    final ExecutionContextImpl context = spy(new ExecutionContextImpl(new StateExecutionInstance()));
 
     on(context).set("settingsService", settingsService);
     on(context).set("customDeploymentTypeService", customDeploymentTypeService);
     doReturn(WingsTestConstants.INFRA_MAPPING_ID).when(context).fetchInfraMappingId();
-    doReturn(CustomDeploymentTypeDTO.builder().build())
-        .when(customDeploymentTypeService)
-        .get(anyString(), anyString(), anyString());
+    doReturn(CustomDeploymentTypeDTO.builder().build()).when(customDeploymentTypeService).get(any(), any(), any());
     InfraMappingElementBuilder builder = InfraMappingElement.builder();
 
     InfrastructureMapping infra = CustomInfrastructureMapping.builder().infraVariables(null).build();
@@ -1217,7 +1241,7 @@ public class ExecutionContextImplTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void shouldPopulateReleaseNameForHelmDeploymentInInfraMappingElement() {
     final PhaseElement phaseElement = PhaseElement.builder().deploymentType(DeploymentType.HELM.name()).build();
-    final ExecutionContextImpl context = Mockito.spy(new ExecutionContextImpl(new StateExecutionInstance()));
+    final ExecutionContextImpl context = spy(new ExecutionContextImpl(new StateExecutionInstance()));
     final InfrastructureMapping infra = CustomInfrastructureMapping.builder().build();
     final InfraMappingElementBuilder builder = InfraMappingElement.builder();
     final String releaseName = "test-12345-release";
@@ -1260,5 +1284,43 @@ public class ExecutionContextImplTest extends WingsBaseTest {
 
     assertThat(stateName).isEqualTo("abc");
     assertThat(stateType).isEqualTo("SHELL_SCRIPT");
+  }
+
+  @Test
+  @Owner(developers = FERNANDOD)
+  @Category(UnitTests.class)
+  public void shouldNormalizeStateNameWithParentheses() {
+    ExecutionContextImpl executionContext = createExecutionContextToNormalizeStateName();
+    assertThat(executionContext.normalizeStateName("Refresh (http)")).isEqualTo("Refresh____http__");
+  }
+
+  @Test
+  @Owner(developers = FERNANDOD)
+  @Category(UnitTests.class)
+  public void shouldNormalizeStateNameWithDash() {
+    ExecutionContextImpl executionContext = createExecutionContextToNormalizeStateName();
+    assertThat(executionContext.normalizeStateName("Refresh em-ma")).isEqualTo("Refresh__em__ma");
+  }
+
+  @Test
+  @Owner(developers = FERNANDOD)
+  @Category(UnitTests.class)
+  public void shouldNormalizeStateName() {
+    // [\\(\\)-+*/\\\\ &$\"'.|]
+    ExecutionContextImpl executionContext = createExecutionContextToNormalizeStateName();
+    // VALIDATE . &
+    assertThat(executionContext.normalizeStateName("1. Drop & Copy")).isEqualTo("1____Drop______Copy");
+    // VALIDATE $ | ' /
+    assertThat(executionContext.normalizeStateName("$MONEY | NOTHING / I'LL"))
+        .isEqualTo("__MONEY______NOTHING______I__LL");
+    // VALIDATE + * \ "
+    assertThat(executionContext.normalizeStateName("1+1=2 \\ 2*0=0 \\ \"CORRECT\""))
+        .isEqualTo("1__1=2______2__0=0________CORRECT__");
+  }
+
+  private ExecutionContextImpl createExecutionContextToNormalizeStateName() {
+    StateExecutionInstance stateExecutionInstance = new StateExecutionInstance();
+    ExecutionContextImpl executionContext = new ExecutionContextImpl(stateExecutionInstance);
+    return executionContext;
   }
 }

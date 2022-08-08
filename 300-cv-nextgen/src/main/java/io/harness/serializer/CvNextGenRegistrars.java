@@ -16,8 +16,9 @@ import io.harness.morphia.MorphiaRegistrar;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.serializer.kryo.PmsContractsKryoRegistrar;
 import io.harness.serializer.kryo.CVNGKryoRegistrar;
+import io.harness.serializer.kryo.NotificationBeansKryoRegistrar;
 import io.harness.serializer.morphia.CVNextGenMorphiaRegister;
-import io.harness.serializer.morphia.NotificationClientRegistrars;
+import io.harness.serializer.morphia.NotificationBeansMorphiaRegistrar;
 import io.harness.yaml.schema.beans.SchemaNamespaceConstants;
 import io.harness.yaml.schema.beans.YamlGroup;
 import io.harness.yaml.schema.beans.YamlSchemaMetadata;
@@ -28,19 +29,19 @@ import com.google.common.collect.ImmutableSet;
 import java.util.Collections;
 import lombok.experimental.UtilityClass;
 import org.mongodb.morphia.converters.TypeConverter;
+import org.springframework.core.convert.converter.Converter;
 
 @UtilityClass
 @OwnedBy(HarnessTeam.CV)
 public class CvNextGenRegistrars {
   public static final ImmutableSet<Class<? extends KryoRegistrar>> kryoRegistrars =
       ImmutableSet.<Class<? extends KryoRegistrar>>builder()
+          .addAll(CvNextGenBeansRegistrars.kryoRegistrars)
           .addAll(CvNextGenCommonsRegistrars.kryoRegistrars)
           .addAll(ConnectorNextGenRegistrars.kryoRegistrars)
           .add(CVNGKryoRegistrar.class)
           .add(PmsContractsKryoRegistrar.class)
-          .addAll(NotificationClientRegistrars.kryoRegistrars)
-          .addAll(OrchestrationBeansRegistrars.kryoRegistrars)
-          .addAll(OrchestrationStepsModuleRegistrars.kryoRegistrars)
+          .add(NotificationBeansKryoRegistrar.class)
           .addAll(AccessControlClientRegistrars.kryoRegistrars)
           .addAll(DelegateTaskRegistrars.kryoRegistrars)
           .addAll(NGCommonModuleRegistrars.kryoRegistrars)
@@ -50,20 +51,15 @@ public class CvNextGenRegistrars {
       ImmutableSet.<Class<? extends MorphiaRegistrar>>builder()
           .addAll(CvNextGenCommonsRegistrars.morphiaRegistrars)
           .add(CVNextGenMorphiaRegister.class)
-          .addAll(NotificationClientRegistrars.morphiaRegistrars)
+          .add(NotificationBeansMorphiaRegistrar.class)
           .addAll(ConnectorBeansRegistrars.morphiaRegistrars)
-          .addAll(OrchestrationBeansRegistrars.morphiaRegistrars)
-          .addAll(OrchestrationStepsModuleRegistrars.morphiaRegistrars)
           .addAll(PrimaryVersionManagerRegistrars.morphiaRegistrars)
           .addAll(DelegateTaskRegistrars.morphiaRegistrars)
           .addAll(NGCommonModuleRegistrars.morphiaRegistrars)
           .build();
 
   public static final ImmutableSet<Class<? extends TypeConverter>> morphiaConverters =
-      ImmutableSet.<Class<? extends TypeConverter>>builder()
-          .addAll(PersistenceRegistrars.morphiaConverters)
-          .addAll(OrchestrationBeansRegistrars.morphiaConverters)
-          .build();
+      ImmutableSet.<Class<? extends TypeConverter>>builder().addAll(PersistenceRegistrars.morphiaConverters).build();
   public static final ImmutableList<YamlSchemaRootClass> yamlSchemaRegistrars =
       ImmutableList.<YamlSchemaRootClass>builder()
           .add(YamlSchemaRootClass.builder()
@@ -79,4 +75,6 @@ public class CvNextGenRegistrars {
                                            .build())
                    .build())
           .build();
+  public static final ImmutableList<Class<? extends Converter<?, ?>>> springConverters =
+      ImmutableList.<Class<? extends Converter<?, ?>>>builder().build();
 }

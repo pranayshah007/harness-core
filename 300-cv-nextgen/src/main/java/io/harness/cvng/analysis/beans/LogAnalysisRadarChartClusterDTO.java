@@ -18,6 +18,7 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class LogAnalysisRadarChartClusterDTO {
   private int label;
+  String clusterId;
   String message;
   Risk risk;
   Double radius;
@@ -37,6 +38,7 @@ public class LogAnalysisRadarChartClusterDTO {
       LogAnalysisRadarChartListDTO logAnalysisRadarChartListDTO) {
     LogAnalysisRadarChartClusterDTOBuilder logAnalysisRadarChartClusterDTOBuilder =
         LogAnalysisRadarChartClusterDTO.builder()
+            .clusterId(logAnalysisRadarChartListDTO.getClusterId())
             .message(logAnalysisRadarChartListDTO.getMessage())
             .clusterType(logAnalysisRadarChartListDTO.getClusterType())
             .angle(logAnalysisRadarChartListDTO.getAngle())

@@ -69,8 +69,8 @@ public class ConnectionContextProvider {
     return Optional.of(ProxyConfiguration.builder()
                            .host(proxyHostName)
                            .port(port)
-                           .password(Optional.ofNullable(Http.getProxyUserName()))
-                           .username(Optional.ofNullable(Http.getProxyPassword()))
+                           .password(Optional.ofNullable(Http.getProxyPassword()))
+                           .username(Optional.ofNullable(Http.getProxyUserName()))
                            .build());
   }
 

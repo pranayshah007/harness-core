@@ -28,6 +28,7 @@ import io.harness.data.structure.UUIDGenerator;
 import io.harness.delegate.beans.ci.pod.SecretVariableDTO;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.FunctorException;
+import io.harness.metrics.intfc.DelegateMetricsService;
 import io.harness.ng.core.BaseNGAccess;
 import io.harness.rule.Owner;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
@@ -48,8 +49,9 @@ import org.mockito.Mock;
 @OwnedBy(CDP)
 public class NgSecretManagerFunctorTest extends WingsBaseTest {
   @Mock private SecretManagerClientService ngSecretService;
+  @Mock private DelegateMetricsService delegateMetricsService;
   @Inject private SecretManager secretManager;
-
+  @Mock private javax.cache.Cache<String, EncryptedDataDetails> secretsCache;
   private static String ORG_ID = "orgId";
   private static String PROJECT_ID = "projectId";
 
@@ -59,8 +61,10 @@ public class NgSecretManagerFunctorTest extends WingsBaseTest {
         .accountId(ACCOUNT_ID)
         .orgId(ORG_ID)
         .projectId(PROJECT_ID)
+        .secretsCache(secretsCache)
         .expressionFunctorToken(token)
         .ngSecretService(ngSecretService)
+        .delegateMetricsService(delegateMetricsService)
         .build();
   }
 
@@ -84,7 +88,6 @@ public class NgSecretManagerFunctorTest extends WingsBaseTest {
 
   private List<EncryptedDataDetail> generateEncryptedDataDetails() {
     VaultConfig vaultConfig = VaultConfig.builder().build();
-    vaultConfig.setUuid(UUIDGenerator.generateUuid());
 
     EncryptedData encryptedData = EncryptedData.builder().accountId(ACCOUNT_ID).build();
     encryptedData.setUuid(UUIDGenerator.generateUuid());
@@ -117,6 +120,27 @@ public class NgSecretManagerFunctorTest extends WingsBaseTest {
     decryptedValue = (String) ngSecretManagerFunctor.obtain(secretName, token);
     assertDelegateDecryptedValue(secretName, ngSecretManagerFunctor, decryptedValue);
     verify(ngSecretService, times(1)).getEncryptionDetails(any(BaseNGAccess.class), any(SecretVariableDTO.class));
+  }
+
+  @Test
+  @Owner(developers = ANSHUL)
+  @Category(UnitTests.class)
+  public void testMultipleEncryptionConfigs() {
+    String[] sampleSecretNames = new String[] {"secret1", "secret2"};
+    int token = HashGenerator.generateIntegerHash();
+    NgSecretManagerFunctor ngSecretManagerFunctor = buildFunctor(token);
+    assertFunctor(ngSecretManagerFunctor);
+
+    List<EncryptedDataDetail> encryptedDataDetails = generateEncryptedDataDetails();
+    when(ngSecretService.getEncryptionDetails(any(BaseNGAccess.class), any(SecretVariableDTO.class)))
+        .thenReturn(encryptedDataDetails);
+
+    for (String secretName : sampleSecretNames) {
+      String decryptedValue = (String) ngSecretManagerFunctor.obtain(secretName, token);
+      assertDelegateDecryptedValue(secretName, ngSecretManagerFunctor, decryptedValue);
+    }
+
+    assertThat(ngSecretManagerFunctor.getEncryptionConfigs().size()).isEqualTo(sampleSecretNames.length);
   }
 
   @Test

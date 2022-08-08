@@ -47,8 +47,7 @@ public class ErrorTrackingHealthSourceSpec extends HealthSourceSpec {
   @Builder
   @FieldDefaults(level = AccessLevel.PRIVATE)
   private static class Key {
-    String serviceIdentifier;
-    String envIdentifier;
+    String monitoredServiceIdentifier;
   }
 
   @Override
@@ -128,9 +127,6 @@ public class ErrorTrackingHealthSourceSpec extends HealthSourceSpec {
   }
 
   private ErrorTrackingHealthSourceSpec.Key getKeyFromCVConfig(@NotNull ErrorTrackingCVConfig cvConfig) {
-    return ErrorTrackingHealthSourceSpec.Key.builder()
-        .envIdentifier(cvConfig.getEnvIdentifier())
-        .serviceIdentifier(cvConfig.getServiceIdentifier())
-        .build();
+    return Key.builder().monitoredServiceIdentifier(cvConfig.getMonitoredServiceIdentifier()).build();
   }
 }

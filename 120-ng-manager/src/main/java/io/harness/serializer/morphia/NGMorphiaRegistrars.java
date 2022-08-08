@@ -28,5 +28,7 @@ public class NGMorphiaRegistrars implements MorphiaRegistrar {
   }
 
   @Override
-  public void registerImplementationClasses(MorphiaRegistrarHelperPut h, MorphiaRegistrarHelperPut w) {}
+  public void registerImplementationClasses(MorphiaRegistrarHelperPut h, MorphiaRegistrarHelperPut w) {
+    // nothing to register
+  }
 }

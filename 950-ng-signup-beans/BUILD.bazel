@@ -10,7 +10,6 @@ java_library(
         "//960-ng-core-beans:module",
         "//960-ng-license-beans:module",
         "//999-annotations:module",
-        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
         "@maven//:com_google_code_findbugs_annotations",
     ],
 )

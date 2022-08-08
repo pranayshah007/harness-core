@@ -110,6 +110,7 @@ input HelmConnectorInput {
   amazonS3PlatformDetails: AmazonS3PlatformInput
   gcsPlatformDetails: GCSPlatformInput
   httpServerPlatformDetails: HttpServerPlatformInput
+  ociPlatformDetails: OCIPlatformInput
 }
 
 input AmazonS3PlatformInput {
@@ -124,6 +125,12 @@ input GCSPlatformInput {
 }
 
 input HttpServerPlatformInput {
+  URL: String!
+  userName: String
+  passwordSecretId: String
+}
+
+input OCIPlatformInput {
   URL: String!
   userName: String
   passwordSecretId: String

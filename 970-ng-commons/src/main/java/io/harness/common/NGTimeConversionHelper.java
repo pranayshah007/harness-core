@@ -9,18 +9,25 @@ package io.harness.common;
 
 import io.harness.exception.InvalidRequestException;
 
+import com.google.common.collect.ImmutableMap;
 import java.util.Map;
 import lombok.experimental.UtilityClass;
-import org.apache.groovy.util.Maps;
 
 @UtilityClass
 public class NGTimeConversionHelper {
-  public Map<String, Double> unitCharactersToMilliSeconds =
-      Maps.of("w", 6.048e8, "d", 8.64e7, "h", 3.6e6, "m", 6e4, "s", 1e3, "ms", 1e0);
+  public Map<String, Double> unitCharactersToMilliSeconds = new ImmutableMap.Builder<String, Double>()
+                                                                .put("w", 6.048e8)
+                                                                .put("d", 8.64e7)
+                                                                .put("h", 3.6e6)
+                                                                .put("m", 6e4)
+                                                                .put("s", 1e3)
+                                                                .put("ms", 1e0)
+                                                                .build();
 
   public long convertTimeStringToMilliseconds(String timeInString) {
     double result = 0;
     double currentValue = 0;
+    timeInString = timeInString.replaceAll("\\s", "");
     StringBuilder currentUnit = new StringBuilder();
     for (Character ch : timeInString.toCharArray()) {
       if (Character.isDigit(ch)) {

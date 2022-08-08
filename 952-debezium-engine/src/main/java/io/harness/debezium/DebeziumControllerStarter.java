@@ -11,33 +11,40 @@
 
 package io.harness.debezium;
 
+import io.harness.cf.client.api.CfClient;
 import io.harness.lock.PersistentLocker;
 import io.harness.redis.RedisConfig;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Singleton
 public class DebeziumControllerStarter {
+  @Inject CfClient cfClient;
   @Inject @Named("DebeziumExecutorService") private ExecutorService debeziumExecutorService;
   @Inject private ChangeConsumerFactory consumerFactory;
 
   @SuppressWarnings({"rawtypes", "unchecked"})
   public void startDebeziumController(DebeziumConfig debeziumConfig, ChangeConsumerConfig changeConsumerConfig,
       PersistentLocker locker, RedisConfig redisLockConfig) {
-    String monitoredDb = debeziumConfig.getDatabaseIncludeList();
-    try {
-      MongoDatabaseChangeConsumer changeConsumer = consumerFactory.get(monitoredDb, changeConsumerConfig);
-      DebeziumController debeziumController =
-          new DebeziumController(DebeziumConfiguration.getDebeziumProperties(debeziumConfig, redisLockConfig),
-              changeConsumer, locker, debeziumExecutorService);
-      debeziumExecutorService.submit(debeziumController);
-    } catch (Exception e) {
-      log.error("Cannot Start Debezium Controller for Database {}", monitoredDb, e);
+    List<String> collections = debeziumConfig.getMonitoredCollections();
+    for (String monitoredCollection : collections) {
+      try {
+        MongoCollectionChangeConsumer changeConsumer = consumerFactory.get(debeziumConfig.getSleepInterval(),
+            monitoredCollection, changeConsumerConfig, debeziumConfig.getProducingCountPerBatch());
+        DebeziumController debeziumController = new DebeziumController(
+            DebeziumConfiguration.getDebeziumProperties(debeziumConfig, redisLockConfig, monitoredCollection),
+            changeConsumer, locker, debeziumExecutorService, cfClient);
+        debeziumExecutorService.submit(debeziumController);
+        log.info("Starting Debezium Controller for Collection {} ...", monitoredCollection);
+      } catch (Exception e) {
+        log.error("Cannot Start Debezium Controller for Collection {}", monitoredCollection, e);
+      }
     }
   }
 }

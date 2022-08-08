@@ -29,6 +29,7 @@ import io.harness.beans.DelegateTask;
 import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
 import io.harness.beans.SortOrder;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.TaskData;
 
 import software.wings.beans.Base;
@@ -52,6 +53,7 @@ import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.mongodb.morphia.query.Query;
 import org.mongodb.morphia.query.Sort;
+import org.mongodb.morphia.query.UpdateOperations;
 
 @Slf4j
 @OwnedBy(HarnessTeam.CDC)
@@ -262,6 +264,24 @@ public class HelmChartServiceImpl implements HelmChartService {
                               .displayName(appManifest.getHelmChartConfig().getChartName() + "-" + versionNumber)
                               .build();
     return create(helmChart);
+  }
+
+  @Override
+  public HelmChart createOrUpdateAppVersion(HelmChart helmChart) {
+    HelmChart existingHelmChart = getManifestByVersionNumber(
+        helmChart.getAccountId(), helmChart.getApplicationManifestId(), helmChart.getVersion());
+    if (existingHelmChart != null) {
+      if (EmptyPredicate.isEmpty(helmChart.getAppVersion())) {
+        return existingHelmChart;
+      }
+      Query<HelmChart> query =
+          wingsPersistence.createQuery(HelmChart.class).filter(HelmChartKeys.uuid, existingHelmChart.getUuid());
+      UpdateOperations<HelmChart> updateOperations = wingsPersistence.createUpdateOperations(HelmChart.class)
+                                                         .set(HelmChartKeys.appVersion, helmChart.getAppVersion());
+      return wingsPersistence.findAndModify(query, updateOperations, WingsPersistence.upsertReturnNewOptions);
+    } else {
+      return create(helmChartService.create(helmChart));
+    }
   }
 
   private HelmCollectChartResponse getHelmCollectChartResponse(String accountId, String appId, String chartVersion,

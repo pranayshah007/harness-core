@@ -11,10 +11,12 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.eraro.ErrorCode.AWS_SECRETS_MANAGER_OPERATION_ERROR;
+import static io.harness.eraro.ErrorCode.VAULT_OPERATION_ERROR;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.exception.WingsException.USER_SRE;
-import static io.harness.helpers.ext.vault.VaultRestClientFactory.getFullPath;
 import static io.harness.threading.Morpheus.sleep;
+
+import static software.wings.helpers.ext.vault.VaultRestClientFactory.getFullPath;
 
 import static java.time.Duration.ofMillis;
 
@@ -52,6 +54,7 @@ import com.amazonaws.services.secretsmanager.model.UpdateSecretRequest;
 import com.amazonaws.services.secretsmanager.model.UpdateSecretResult;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.util.concurrent.TimeLimiter;
+import com.google.common.util.concurrent.UncheckedTimeoutException;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 import com.google.inject.Inject;
@@ -95,8 +98,16 @@ public class AwsSecretsManagerEncryptor implements VaultEncryptor {
         failedAttempts++;
         log.warn("encryption failed. trial num: {}", failedAttempts, e);
         if (failedAttempts == NUM_OF_RETRIES) {
-          String message = "Secret creation failed after " + NUM_OF_RETRIES + " retries" + e.getMessage();
-          throw new SecretManagementDelegateException(AWS_SECRETS_MANAGER_OPERATION_ERROR, message, e, USER);
+          if (e instanceof AWSSecretsManagerException) {
+            log.error("AWS_SECRETS_MANAGER_OPERATION_ERROR : validateSecretManagerConfiguration {}",
+                ((AWSSecretsManagerException) e).getErrorMessage());
+            throw(AWSSecretsManagerException) e;
+          } else if (e instanceof UncheckedTimeoutException) {
+            throw timeoutException(e);
+          } else {
+            String message = "Secret creation failed after " + NUM_OF_RETRIES + " retries. " + e.getMessage();
+            throw new SecretManagementDelegateException(AWS_SECRETS_MANAGER_OPERATION_ERROR, message, e, USER);
+          }
         }
         sleep(ofMillis(1000));
       }
@@ -116,8 +127,16 @@ public class AwsSecretsManagerEncryptor implements VaultEncryptor {
         failedAttempts++;
         log.warn("encryption failed. trial num: {}", failedAttempts, e);
         if (failedAttempts == NUM_OF_RETRIES) {
-          String message = "Secret update failed after " + NUM_OF_RETRIES + " retries" + e.getMessage();
-          throw new SecretManagementDelegateException(AWS_SECRETS_MANAGER_OPERATION_ERROR, message, e, USER);
+          if (e instanceof AWSSecretsManagerException) {
+            log.error("AWS_SECRETS_MANAGER_OPERATION_ERROR : validateSecretManagerConfiguration {}",
+                ((AWSSecretsManagerException) e).getErrorMessage());
+            throw(AWSSecretsManagerException) e;
+          } else if (e instanceof UncheckedTimeoutException) {
+            throw timeoutException(e);
+          } else {
+            String message = "Secret update failed after " + NUM_OF_RETRIES + " retries. " + e.getMessage();
+            throw new SecretManagementDelegateException(AWS_SECRETS_MANAGER_OPERATION_ERROR, message, e, USER);
+          }
         }
         sleep(ofMillis(1000));
       }
@@ -137,8 +156,16 @@ public class AwsSecretsManagerEncryptor implements VaultEncryptor {
         failedAttempts++;
         log.warn("encryption failed. trial num: {}", failedAttempts, e);
         if (failedAttempts == NUM_OF_RETRIES) {
-          String message = "Secret update failed after " + NUM_OF_RETRIES + " retries" + e.getMessage();
-          throw new SecretManagementDelegateException(AWS_SECRETS_MANAGER_OPERATION_ERROR, message, e, USER);
+          if (e instanceof AWSSecretsManagerException) {
+            log.error("AWS_SECRETS_MANAGER_OPERATION_ERROR : validateSecretManagerConfiguration {}",
+                ((AWSSecretsManagerException) e).getErrorMessage());
+            throw(AWSSecretsManagerException) e;
+          } else if (e instanceof UncheckedTimeoutException) {
+            throw timeoutException(e);
+          } else {
+            String message = "Secret update failed after " + NUM_OF_RETRIES + " retries. " + e.getMessage();
+            throw new SecretManagementDelegateException(AWS_SECRETS_MANAGER_OPERATION_ERROR, message, e, USER);
+          }
         }
         sleep(ofMillis(1000));
       }
@@ -180,8 +207,16 @@ public class AwsSecretsManagerEncryptor implements VaultEncryptor {
         failedAttempts++;
         log.warn("encryption failed. trial num: {}", failedAttempts, e);
         if (failedAttempts == NUM_OF_RETRIES) {
-          String message = "Fetching secret failed after " + NUM_OF_RETRIES + " retries";
-          throw new SecretManagementDelegateException(AWS_SECRETS_MANAGER_OPERATION_ERROR, message, e, USER);
+          if (e instanceof AWSSecretsManagerException) {
+            log.error("AWS_SECRETS_MANAGER_OPERATION_ERROR : validateSecretManagerConfiguration {}",
+                ((AWSSecretsManagerException) e).getErrorMessage());
+            throw(AWSSecretsManagerException) e;
+          } else if (e instanceof UncheckedTimeoutException) {
+            throw timeoutException(e);
+          } else {
+            String message = "Fetching secret failed after " + NUM_OF_RETRIES + " retries. " + e.getMessage();
+            throw new SecretManagementDelegateException(AWS_SECRETS_MANAGER_OPERATION_ERROR, message, e, USER);
+          }
         }
         sleep(ofMillis(1000));
       }
@@ -203,6 +238,8 @@ public class AwsSecretsManagerEncryptor implements VaultEncryptor {
     } catch (AWSSecretsManagerException e) {
       log.error("AWS_SECRETS_MANAGER_OPERATION_ERROR : validateSecretManagerConfiguration {}", e.getErrorMessage());
       throw e;
+    } catch (UncheckedTimeoutException e) {
+      throw timeoutException(e);
     }
     log.info("Test connection to AWS Secrets Manager Succeeded for {}", secretsManagerConfig.getName());
     return true;
@@ -355,5 +392,11 @@ public class AwsSecretsManagerEncryptor implements VaultEncryptor {
       secretRef.keyName = parts[1];
     }
     return secretRef;
+  }
+
+  private SecretManagementDelegateException timeoutException(Exception e) {
+    String message =
+        "After " + NUM_OF_RETRIES + " tries, delegate(s) is not able to establish connection to AWS services.";
+    return new SecretManagementDelegateException(VAULT_OPERATION_ERROR, message, e, USER);
   }
 }

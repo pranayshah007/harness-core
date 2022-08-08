@@ -15,8 +15,10 @@ import io.harness.cdng.provision.terraform.TerraformStepConfigurationParameters.
 import io.harness.validation.Validator;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.swagger.annotations.ApiModelProperty;
 import javax.validation.constraints.NotNull;
 import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @OwnedBy(CDP)
@@ -24,6 +26,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @RecasterAlias("io.harness.cdng.provision.terraform.TerraformStepConfiguration")
 public class TerraformStepConfiguration {
+  @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String uuid;
+
   @NotNull @JsonProperty("type") TerraformStepConfigurationType terraformStepConfigurationType;
   @JsonProperty("spec") TerraformExecutionData terraformExecutionData;
 

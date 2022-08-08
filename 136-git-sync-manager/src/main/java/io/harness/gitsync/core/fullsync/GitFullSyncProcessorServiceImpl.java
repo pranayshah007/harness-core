@@ -17,6 +17,8 @@ import static io.harness.gitsync.core.fullsync.entity.GitFullSyncJob.SyncStatus.
 import static io.harness.gitsync.core.fullsync.entity.GitFullSyncJob.SyncStatus.FAILED_WITH_RETRIES_LEFT;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
+import static java.util.stream.Collectors.toList;
+
 import io.harness.EntityType;
 import io.harness.Microservice;
 import io.harness.annotations.dev.OwnedBy;
@@ -46,6 +48,8 @@ import io.harness.security.SecurityContextBuilder;
 import io.harness.security.dto.ServicePrincipal;
 import io.harness.utils.IdentifierRefHelper;
 
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.mongodb.client.result.UpdateResult;
 import java.util.ArrayList;
@@ -55,17 +59,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalInt;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-@AllArgsConstructor(access = AccessLevel.PRIVATE, onConstructor = @__({ @Inject }))
+@AllArgsConstructor(onConstructor = @__({ @Inject }))
 @Slf4j
 @OwnedBy(DX)
-public class GitFullSyncProcessorServiceImpl implements io.harness.gitsync.core.fullsync.GitFullSyncProcessorService {
-  Map<Microservice, FullSyncServiceGrpc.FullSyncServiceBlockingStub> fullSyncServiceBlockingStubMap;
+public class GitFullSyncProcessorServiceImpl implements GitFullSyncProcessorService {
+  private final Map<Microservice, FullSyncServiceGrpc.FullSyncServiceBlockingStub> fullSyncServiceBlockingStubMap;
   YamlGitConfigService yamlGitConfigService;
   EntityDetailRestToProtoMapper entityDetailRestToProtoMapper;
   GitFullSyncEntityService gitFullSyncEntityService;
@@ -75,9 +79,31 @@ public class GitFullSyncProcessorServiceImpl implements io.harness.gitsync.core.
   GitBranchSyncService gitBranchSyncService;
 
   private static int MAX_RETRY_COUNT = 2;
+  private static int MAX_BATCH_SIZE = 20;
 
   @Override
-  public FullSyncMsvcProcessingResponse processFiles(
+  public FullSyncMsvcProcessingResponse processFilesInBatches(
+      Microservice microservice, List<GitFullSyncEntityInfo> entityInfoList) {
+    List<FullSyncFileResponse> fullSyncFileResponses = new ArrayList<>();
+    boolean isSyncFailed = false;
+    List<List<GitFullSyncEntityInfo>> batchList = Lists.partition(emptyIfNull(entityInfoList), MAX_BATCH_SIZE);
+    int batchNumber = 1;
+
+    for (List<GitFullSyncEntityInfo> gitEntityInfoList : batchList) {
+      FullSyncMsvcProcessingResponse fullSyncMsvcProcessingResponse = processFiles(microservice, gitEntityInfoList);
+      fullSyncFileResponses.addAll(fullSyncMsvcProcessingResponse.getFullSyncFileResponses());
+      isSyncFailed = fullSyncMsvcProcessingResponse.isSyncFailed() || isSyncFailed;
+      log.info("Processed [{}] batch files for Msvc [{}] having response [{}]", batchNumber++, microservice,
+          fullSyncMsvcProcessingResponse.isSyncFailed());
+    }
+
+    return FullSyncMsvcProcessingResponse.builder()
+        .fullSyncFileResponses(fullSyncFileResponses)
+        .isSyncFailed(isSyncFailed)
+        .build();
+  }
+
+  private FullSyncMsvcProcessingResponse processFiles(
       Microservice microservice, List<GitFullSyncEntityInfo> entityInfoList) {
     boolean requestfailed = false;
     FullSyncResponse fullSyncResponse = null;
@@ -185,6 +211,8 @@ public class GitFullSyncProcessorServiceImpl implements io.harness.gitsync.core.
 
         allEntitiesToBeSynced = gitFullSyncEntityService.listEntitiesToBeSynced(
             fullSyncJob.getAccountIdentifier(), fullSyncJob.getMessageId());
+        markAlreadyProcessedFilesAsSuccess(fullSyncJob.getAccountIdentifier(), fullSyncJob.getOrgIdentifier(),
+            fullSyncJob.getProjectIdentifier(), fullSyncJob.getMessageId(), allEntitiesToBeSynced);
         markTheGitFullSyncEntityAsQueued(allEntitiesToBeSynced);
         boolean processingFailed = false;
         final List<FullSyncFilesGroupedByMsvc> fullSyncFilesGroupedByMsvcs =
@@ -193,9 +221,9 @@ public class GitFullSyncProcessorServiceImpl implements io.harness.gitsync.core.
           log.info("Number of files is {} for the microservice {}",
               emptyIfNull(fullSyncFilesGroupedByMsvc.getGitFullSyncEntityInfoList()).size(),
               fullSyncFilesGroupedByMsvc.getMicroservice());
-          FullSyncMsvcProcessingResponse fullSyncMsvcProcessingResponse = processFiles(
+          FullSyncMsvcProcessingResponse fullSyncMsvcProcessingResponse = processFilesInBatches(
               fullSyncFilesGroupedByMsvc.getMicroservice(), fullSyncFilesGroupedByMsvc.getGitFullSyncEntityInfoList());
-          processingFailed = fullSyncMsvcProcessingResponse.isSyncFailed();
+          processingFailed = fullSyncMsvcProcessingResponse.isSyncFailed() || processingFailed;
           if (fullSyncFilesGroupedByMsvc.getMicroservice() == Microservice.CORE) {
             setTheRepoBranchForTheGitSyncConnector(fullSyncFilesGroupedByMsvc.getGitFullSyncEntityInfoList(),
                 fullSyncMsvcProcessingResponse.getFullSyncFileResponses());
@@ -229,6 +257,32 @@ public class GitFullSyncProcessorServiceImpl implements io.harness.gitsync.core.
     }
   }
 
+  @VisibleForTesting
+  void markAlreadyProcessedFilesAsSuccess(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      String messageId, List<GitFullSyncEntityInfo> allNewEntitiesToBeSynced) {
+    try {
+      List<GitFullSyncEntityInfo> entitiesBelongingToPrevJobs =
+          gitFullSyncEntityService.getQueuedEntitiesFromPreviousJobs(
+              accountIdentifier, orgIdentifier, projectIdentifier, messageId);
+      if (isEmpty(entitiesBelongingToPrevJobs)) {
+        return;
+      }
+      Set<String> filePathsToBeProcessed = emptyIfNull(allNewEntitiesToBeSynced)
+                                               .stream()
+                                               .map(GitFullSyncEntityInfo::getFilePath)
+                                               .collect(Collectors.toSet());
+      for (GitFullSyncEntityInfo gitFullSyncEntityInfo : entitiesBelongingToPrevJobs) {
+        if (!filePathsToBeProcessed.contains(gitFullSyncEntityInfo.getFilePath())) {
+          gitFullSyncEntityService.updateStatus(
+              accountIdentifier, gitFullSyncEntityInfo.getUuid(), GitFullSyncEntityInfo.SyncStatus.SUCCESS, null);
+          log.info("Marking the full sync entity with uuid {} as successful", gitFullSyncEntityInfo.getUuid());
+        }
+      }
+    } catch (Exception ex) {
+      log.error("Marking the previous queued files as successful, failed", ex);
+    }
+  }
+
   private void syncBranch(List<GitFullSyncEntityInfo> allEntitiesToBeSynced, GitFullSyncJob fullSyncJob) {
     try {
       YamlGitConfigDTO yamlGitConfigDTO = yamlGitConfigService.get(fullSyncJob.getProjectIdentifier(),
@@ -257,7 +311,7 @@ public class GitFullSyncProcessorServiceImpl implements io.harness.gitsync.core.
       List<GitFullSyncEntityInfo> ngCoreFullSyncFiles, List<FullSyncFileResponse> fullSyncMsvcProcessingResponses) {
     List<GitFullSyncEntityInfo> connectors = ngCoreFullSyncFiles.stream()
                                                  .filter(x -> x.getEntityDetail().getType() == EntityType.CONNECTORS)
-                                                 .collect(Collectors.toList());
+                                                 .collect(toList());
     if (isEmpty(connectors)) {
       return;
     }
@@ -346,7 +400,8 @@ public class GitFullSyncProcessorServiceImpl implements io.harness.gitsync.core.
         yamlGitConfigDTO.getGitConnectorsRepo(), yamlGitConfigDTO.getGitConnectorsBranch());
   }
 
-  private List<FullSyncFilesGroupedByMsvc> sortTheFilesInTheProcessingOrder(
+  @VisibleForTesting
+  protected List<FullSyncFilesGroupedByMsvc> sortTheFilesInTheProcessingOrder(
       List<GitFullSyncEntityInfo> allEntitiesToBeSynced) {
     List<FullSyncFilesGroupedByMsvc> filesGroupedByMicroservices = new ArrayList<>();
     Map<String, List<GitFullSyncEntityInfo>> filesGroupedByMsvc =
@@ -357,6 +412,9 @@ public class GitFullSyncProcessorServiceImpl implements io.harness.gitsync.core.
     for (Map.Entry<String, List<GitFullSyncEntityInfo>> entry : filesGroupedByMsvc.entrySet()) {
       Microservice microservice = Microservice.fromString(entry.getKey());
       List<GitFullSyncEntityInfo> filesForThisMicroservice = entry.getValue();
+      if (isNotEmpty(filesForThisMicroservice)) {
+        filesForThisMicroservice.sort(Comparator.comparingInt(GitFullSyncEntityInfo::getFileProcessingSequenceNumber));
+      }
       if (microservice == Microservice.CORE) {
         keepTheFullSyncConnectorAtTheLast(filesForThisMicroservice);
       }
@@ -366,7 +424,8 @@ public class GitFullSyncProcessorServiceImpl implements io.harness.gitsync.core.
                                                                   .build();
       filesGroupedByMicroservices.add(fullSyncFilesGroupedByMsvc);
     }
-    filesGroupedByMicroservices.sort(Comparator.comparingInt(x -> microservicesProcessingOrder.indexOf(x)));
+    filesGroupedByMicroservices.sort(
+        Comparator.comparingInt(x -> microservicesProcessingOrder.indexOf(x.getMicroservice())));
     return filesGroupedByMicroservices;
   }
 

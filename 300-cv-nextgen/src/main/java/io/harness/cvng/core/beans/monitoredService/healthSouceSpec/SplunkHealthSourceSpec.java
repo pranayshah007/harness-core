@@ -60,8 +60,7 @@ public class SplunkHealthSourceSpec extends HealthSourceSpec {
   @Builder
   @FieldDefaults(level = AccessLevel.PRIVATE)
   private static class Key {
-    String serviceIdentifier;
-    String envIdentifier;
+    String monitoredServiceIdentifier;
     String queryName;
   }
 
@@ -119,9 +118,8 @@ public class SplunkHealthSourceSpec extends HealthSourceSpec {
 
   private Key getKeyFromCVConfig(@NotNull SplunkCVConfig cvConfig) {
     return Key.builder()
-        .envIdentifier(cvConfig.getEnvIdentifier())
+        .monitoredServiceIdentifier(cvConfig.getMonitoredServiceIdentifier())
         .queryName(cvConfig.getQueryName())
-        .serviceIdentifier(cvConfig.getServiceIdentifier())
         .build();
   }
 
@@ -138,8 +136,6 @@ public class SplunkHealthSourceSpec extends HealthSourceSpec {
                    .connectorIdentifier(getConnectorRef())
                    .monitoringSourceName(name)
                    .productName(feature)
-                   .envIdentifier(environmentRef)
-                   .serviceIdentifier(serviceRef)
                    .queryName(queryDTO.getName())
                    .query(queryDTO.getQuery())
                    .serviceInstanceIdentifier(queryDTO.getServiceInstanceIdentifier())

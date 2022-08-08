@@ -17,7 +17,7 @@ import io.harness.exception.InvalidRequestException;
 
 import software.wings.annotation.EncryptableSetting;
 import software.wings.beans.artifact.Artifact;
-import software.wings.beans.artifact.Artifact.ArtifactMetadataKeys;
+import software.wings.beans.artifact.ArtifactMetadataKeys;
 import software.wings.beans.artifact.ArtifactStreamAttributes;
 import software.wings.beans.artifact.ArtifactStreamType;
 
@@ -90,9 +90,7 @@ public class ArtifactStreamAttributesMapper extends ArtifactConnectorMapper {
   }
 
   private String getArtifactoryArtifactPath() {
-    String artifactUrl = getArtifactUrlFromStreamMetadata();
-    String jobName = artifactStreamAttributes.getJobName();
-    return "." + artifactUrl.substring(artifactUrl.lastIndexOf(jobName) + jobName.length());
+    return artifactStreamAttributes.getMetadata().get("artifactPath");
   }
 
   public String getArtifactPath() {

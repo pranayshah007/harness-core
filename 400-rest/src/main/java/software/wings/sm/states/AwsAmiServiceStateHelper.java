@@ -36,6 +36,7 @@ import software.wings.service.intfc.sweepingoutput.SweepingOutputInquiry;
 import software.wings.service.intfc.sweepingoutput.SweepingOutputService;
 import software.wings.sm.ExecutionContext;
 import software.wings.sm.WorkflowStandardParams;
+import software.wings.sm.WorkflowStandardParamsExtensionService;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -52,6 +53,7 @@ public class AwsAmiServiceStateHelper {
   @Inject private ServiceResourceService serviceResourceService;
   @Inject private SecretManager secretManager;
   @Inject private SweepingOutputService sweepingOutputService;
+  @Inject private WorkflowStandardParamsExtensionService workflowStandardParamsExtensionService;
 
   public AwsAmiTrafficShiftAlbData populateAlbTrafficShiftSetupData(ExecutionContext context) {
     PhaseElement phaseElement = context.getContextElement(ContextElementType.PARAM, PhaseElement.PHASE_PARAM);
@@ -64,9 +66,9 @@ public class AwsAmiServiceStateHelper {
     Artifact artifact = ((DeploymentExecutionContext) context).getDefaultArtifactForService(serviceId);
     notNullCheck(format("Unable to find artifact for service id: %s", serviceId), artifact);
 
-    Application app = workflowStandardParams.getApp();
+    Application app = workflowStandardParamsExtensionService.getApp(workflowStandardParams);
     notNullCheck("Application cannot be null", app);
-    Environment env = workflowStandardParams.getEnv();
+    Environment env = workflowStandardParamsExtensionService.getEnv(workflowStandardParams);
     Service service = serviceResourceService.getWithDetails(app.getUuid(), serviceId);
 
     AwsAmiInfrastructureMapping infrastructureMapping =

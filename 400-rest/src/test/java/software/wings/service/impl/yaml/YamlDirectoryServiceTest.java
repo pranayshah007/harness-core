@@ -408,11 +408,11 @@ public class YamlDirectoryServiceTest extends WingsBaseTest {
                                     .applicationManifestId(applicationManifest.getUuid())
                                     .build();
     // Mocking stuff
-    doReturn(Arrays.asList()).when(environmentService).getEnvByApp(anyString());
+    doReturn(Arrays.asList()).when(environmentService).getEnvByApp(any());
     when(infrastructureDefinitionService.list(any(PageRequest.class)))
         .thenReturn(aPageResponse().withResponse(Arrays.asList(infraDefinition_1)).build(),
             aPageResponse().withResponse(Arrays.asList(infraDefinition_2)).build());
-    when(environmentService.list(any(), anyBoolean(), anyString()))
+    when(environmentService.list(any(), anyBoolean(), any()))
         .thenReturn(aPageResponse().withResponse(Arrays.asList(environment_1, environment_2)).build());
     when(applicationManifestService.getAllByEnvIdAndKind(
              environment_1.getAppId(), environment_1.getUuid(), AppManifestKind.VALUES))
@@ -907,23 +907,23 @@ public class YamlDirectoryServiceTest extends WingsBaseTest {
                                                   .envId(ENV_ID)
                                                   .serviceId(SERVICE_ID)
                                                   .build();
-    doReturn(emptyList()).when(applicationManifestService).getAllByEnvIdAndKind(anyString(), anyString(), any());
+    doReturn(emptyList()).when(applicationManifestService).getAllByEnvIdAndKind(any(), any(), any());
 
     Environment environment = anEnvironment().name(ENV_NAME).uuid(ENV_ID).build();
     assertThat(yamlDirectoryService.generateEnvPcfOverridesFolder(ACCOUNT_ID, environment, directoryPath)).isNull();
 
-    doReturn(applicationManifest).when(applicationManifestService).getByEnvId(anyString(), anyString(), any());
+    doReturn(applicationManifest).when(applicationManifestService).getByEnvId(any(), any(), any());
 
     doReturn(Arrays.asList(applicationManifest))
         .when(applicationManifestService)
-        .getAllByEnvIdAndKind(anyString(), anyString(), any());
+        .getAllByEnvIdAndKind(any(), any(), any());
     doReturn(Arrays.asList(ManifestFile.builder().fileName("a.yml").fileContent("abc").build()))
         .when(applicationManifestService)
-        .getManifestFilesByAppManifestId(anyString(), anyString());
+        .getManifestFilesByAppManifestId(any(), any());
 
     doReturn(Service.builder().uuid(SERVICE_ID).name(SERVICE_NAME).build())
         .when(serviceResourceService)
-        .get(anyString(), anyString(), anyBoolean());
+        .get(any(), any(), anyBoolean());
 
     DirectoryPath directoryPath = new DirectoryPath("Setup/Applications/App1/Environments/env1");
     FolderNode folderNode = yamlDirectoryService.generateEnvPcfOverridesFolder(ACCOUNT_ID, environment, directoryPath);

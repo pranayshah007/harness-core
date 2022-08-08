@@ -3,7 +3,7 @@
 	"_id": "5f03ff0d285fa07a833541a0",
 	"cvConfigId": "Z6-wzYE-St6SMNjNtmKCrA",
 	"metricName": "Average Response Time (ms)",
-	  "metricIdentifier": "Average Response Time (ms)",
+	"metricIdentifier": "average_response_time_ms",
 	"accountId": "kmpySmUISimoRrJL6NL73w",
 	"metricType": "RESP_TIME",
 	"timeSeriesGroupValues": [
@@ -1538,6 +1538,7 @@
 	"_id": "5f03ff0d285fa07a833541a5",
 	"cvConfigId": "Z6-wzYE-St6SMNjNtmKCrA",
 	"metricName": "Calls per Minute",
+	"metricIdentifier": "calls_per_minute",
 	"metricType": "THROUGHPUT",
 	"accountId": "kmpySmUISimoRrJL6NL73w",
 	"timeSeriesGroupValues": [
@@ -3073,6 +3074,7 @@
 	"accountId": "kmpySmUISimoRrJL6NL73w",
 	"cvConfigId": "YUGpcxq9QLCuRPP6DTPCdA",
 	"metricName": "Errors per Minute",
+	"metricIdentifier": "errors_per_minute",
 	"metricType": "ERROR",
 	"timeSeriesGroupValues": [
 	  {

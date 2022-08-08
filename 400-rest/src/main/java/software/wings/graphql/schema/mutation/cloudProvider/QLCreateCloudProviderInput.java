@@ -37,4 +37,5 @@ public class QLCreateCloudProviderInput implements QLMutationInput {
   private QLPhysicalDataCenterCloudProviderInput physicalDataCenterCloudProvider;
   private QLAzureCloudProviderInput azureCloudProvider;
   private QLAwsCloudProviderInput awsCloudProvider;
+  private QLRancherCloudProviderInput rancherCloudProvider;
 }

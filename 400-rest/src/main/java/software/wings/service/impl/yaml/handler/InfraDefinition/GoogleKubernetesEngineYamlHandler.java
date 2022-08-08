@@ -61,8 +61,10 @@ public class GoogleKubernetesEngineYamlHandler
   private void toBean(GoogleKubernetesEngine bean, ChangeContext<Yaml> changeContext) {
     Yaml yaml = changeContext.getYaml();
     String accountId = changeContext.getChange().getAccountId();
+    String appId = yamlHelper.getAppId(accountId, changeContext.getChange().getFilePath());
     SettingAttribute cloudProvider = settingsService.getSettingAttributeByName(accountId, yaml.getCloudProviderName());
     notNullCheck(format("Cloud Provider with name %s does not exist", yaml.getCloudProviderName()), cloudProvider);
+    settingsService.checkRbacOnSettingAttribute(appId, cloudProvider);
     bean.setCloudProviderId(cloudProvider.getUuid());
     bean.setClusterName(yaml.getClusterName());
     bean.setReleaseName(yaml.getReleaseName());

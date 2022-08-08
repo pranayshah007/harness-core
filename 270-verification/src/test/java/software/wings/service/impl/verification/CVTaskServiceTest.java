@@ -41,7 +41,7 @@ import software.wings.service.impl.analysis.DataCollectionTaskResult;
 import software.wings.service.impl.analysis.DataCollectionTaskResult.DataCollectionTaskStatus;
 import software.wings.service.impl.splunk.SplunkDataCollectionInfoV2;
 import software.wings.service.intfc.verification.CVActivityLogService;
-import software.wings.service.intfc.verification.CVActivityLogService.Logger;
+import software.wings.service.intfc.verification.CVActivityLogger;
 import software.wings.service.intfc.verification.CVTaskService;
 import software.wings.verification.VerificationDataAnalysisResponse;
 import software.wings.verification.VerificationStateAnalysisExecutionData;
@@ -238,7 +238,7 @@ public class CVTaskServiceTest extends VerificationBase {
   @Category(UnitTests.class)
   public void testUpdateTaskStatusWhenTaskResultIsSuccessful() throws IllegalAccessException {
     CVActivityLogService activityLogService = mock(CVActivityLogService.class);
-    Logger logger = mock(Logger.class);
+    CVActivityLogger logger = mock(CVActivityLogger.class);
     when(activityLogService.getLogger(any(), any(), anyLong(), any())).thenReturn(logger);
     FieldUtils.writeField(cvTaskService, "activityLogService", activityLogService, true);
     CVTask cvTask = createAndSaveCVTaskWithStateExecutionId(ExecutionStatus.RUNNING);
@@ -260,7 +260,7 @@ public class CVTaskServiceTest extends VerificationBase {
   @Category(UnitTests.class)
   public void testUpdateTaskStatusWhenTaskHasFailed() throws IllegalAccessException {
     CVActivityLogService activityLogService = mock(CVActivityLogService.class);
-    Logger logger = mock(Logger.class);
+    CVActivityLogger logger = mock(CVActivityLogger.class);
     when(activityLogService.getLogger(any(), any(), anyLong(), any())).thenReturn(logger);
     FieldUtils.writeField(cvTaskService, "activityLogService", activityLogService, true);
     CVTask cvTask = createAndSaveCVTaskWithStateExecutionId(ExecutionStatus.RUNNING);

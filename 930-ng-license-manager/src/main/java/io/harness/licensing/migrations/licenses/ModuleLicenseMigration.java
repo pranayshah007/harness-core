@@ -8,7 +8,7 @@
 package io.harness.licensing.migrations.licenses;
 
 import io.harness.ModuleType;
-import io.harness.licensing.beans.modules.types.CDLicenseType;
+import io.harness.cd.CDLicenseType;
 import io.harness.licensing.entities.modules.CDModuleLicense;
 import io.harness.licensing.entities.modules.ModuleLicense.ModuleLicenseKeys;
 import io.harness.migration.NGMigration;

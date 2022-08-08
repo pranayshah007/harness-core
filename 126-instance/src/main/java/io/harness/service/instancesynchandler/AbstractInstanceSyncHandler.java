@@ -14,6 +14,7 @@ import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
 import io.harness.dtos.InstanceDTO;
 import io.harness.dtos.deploymentinfo.DeploymentInfoDTO;
 import io.harness.dtos.instanceinfo.InstanceInfoDTO;
+import io.harness.dtos.instancesyncperpetualtaskinfo.DeploymentInfoDetailsDTO;
 import io.harness.entities.InstanceType;
 import io.harness.models.infrastructuredetails.InfrastructureDetails;
 
@@ -52,6 +53,12 @@ public abstract class AbstractInstanceSyncHandler implements IInstanceSyncHandle
     return instanceInfoList;
   }
 
+  public final List<InstanceInfoDTO> getInstanceDetailsFromInstances(List<InstanceDTO> serverInstanceInfoList) {
+    List<InstanceInfoDTO> instanceInfoList = new ArrayList<>();
+    serverInstanceInfoList.forEach(serverInstanceInfo -> instanceInfoList.add(serverInstanceInfo.getInstanceInfoDTO()));
+    return instanceInfoList;
+  }
+
   @Override
   public String getInstanceSyncHandlerKey(InstanceInfoDTO instanceInfoDTO) {
     return instanceInfoDTO.prepareInstanceSyncHandlerKey();
@@ -71,5 +78,11 @@ public abstract class AbstractInstanceSyncHandler implements IInstanceSyncHandle
   public InstanceDTO updateInstance(InstanceDTO instanceDTO, InstanceInfoDTO instanceInfoFromServer) {
     // Do nothing, handler should override it if required
     return instanceDTO;
+  }
+
+  @Override
+  public List<ServerInstanceInfo> refreshServerInstanceInfo(
+      List<ServerInstanceInfo> serverInstanceInfoList, List<DeploymentInfoDetailsDTO> deploymentInfoDetailsDTOList) {
+    return serverInstanceInfoList;
   }
 }

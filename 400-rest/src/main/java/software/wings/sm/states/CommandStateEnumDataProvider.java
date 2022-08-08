@@ -26,19 +26,23 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Singleton
 public class CommandStateEnumDataProvider implements DataProvider {
   @Inject private ServiceResourceService serviceResourceService;
 
   @Override
   public Map<String, String> getData(String appId, Map<String, String> params) {
-    String serviceId = params.get(EntityType.SERVICE.name());
     if (appId != null) {
-      List<Service> services;
       if (params.get("NONE") != null) {
         return new HashMap<>();
       }
+      long startTime = -System.currentTimeMillis();
+
+      String serviceId = params.get(EntityType.SERVICE.name());
+      List<Service> services;
       if (isEmpty(serviceId)) {
         services =
             serviceResourceService.list(aPageRequest().addFilter("appId", EQ, appId).build(), false, true, false, null)
@@ -47,12 +51,15 @@ public class CommandStateEnumDataProvider implements DataProvider {
         Service service = serviceResourceService.get(appId, serviceId, true);
         services = service == null ? Collections.EMPTY_LIST : Collections.singletonList(service);
       }
-      return services.stream()
-          .filter(service -> service.getServiceCommands() != null)
-          .flatMap(service -> service.getServiceCommands().stream())
-          .map(ServiceCommand::getName)
-          .distinct()
-          .collect(toMap(Function.identity(), Function.identity()));
+      Map<String, String> collect = services.stream()
+                                        .filter(service -> service.getServiceCommands() != null)
+                                        .flatMap(service -> service.getServiceCommands().stream())
+                                        .map(ServiceCommand::getName)
+                                        .distinct()
+                                        .collect(toMap(Function.identity(), Function.identity()));
+
+      log.info("DataProvider::CommandStateEnumDataProvider take {} ms", startTime + System.currentTimeMillis());
+      return collect;
     }
     return new HashMap<>();
   }

@@ -35,7 +35,7 @@ import software.wings.service.impl.instana.InstanaTagFilter;
 import software.wings.service.intfc.AccountService;
 import software.wings.service.intfc.AppService;
 import software.wings.service.intfc.MetricDataAnalysisService;
-import software.wings.service.intfc.verification.CVActivityLogService;
+import software.wings.service.intfc.verification.CVActivityLogger;
 import software.wings.verification.VerificationStateAnalysisExecutionData;
 
 import com.google.common.collect.Lists;
@@ -58,7 +58,7 @@ public class InstanaStateTest extends APMStateVerificationTestBase {
   private InstanaState instanaState;
   private List<InstanaTagFilter> instanaTagFilters;
   private String analysisServerConfigId;
-  @Mock private CVActivityLogService.Logger activityLogger;
+  @Mock private CVActivityLogger activityLogger;
   @Mock private MetricDataAnalysisService metricAnalysisService;
 
   @Before

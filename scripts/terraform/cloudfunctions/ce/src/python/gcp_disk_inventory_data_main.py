@@ -21,13 +21,13 @@ from util import create_dataset, TABLE_NAME_FORMAT, if_tbl_exists, print_, creat
 {
     "accountId": "kmpySmUISimoRrJL6NL73w",
     "serviceAccount": "harness-ce-harness-kmpys@ccm-play.iam.gserviceaccount.com",
-    "projectId": "ccm-play",
-    "projectNumber": "199539700734"
+    "projectId": "ccm-play"
 }
 """
 
 
 def get_zones(project_id, credentials):
+    print(f"Getting zones for project_id: {project_id}")
     zones = []
     zones_to_region_mapping = dict()
     try:
@@ -128,7 +128,7 @@ def get_snapshot_data_to_insert(snapshots):
     return data
 
 
-def get_data_to_insert(disk, zone, region, project_id, project_number, disk_to_snapshots_mapping):
+def get_data_to_insert(disk, zone, region, project_id, disk_to_snapshots_mapping):
     return {
         "id": disk.get('id'),
         "name": disk.get('name'),
@@ -136,7 +136,6 @@ def get_data_to_insert(disk, zone, region, project_id, project_number, disk_to_s
         "zone": zone,
         "region": region,
         "projectId": project_id,
-        "projectNumber": project_number,
         "sizeGb": disk.get('sizeGb'),
         "status": disk.get('status'),
         "sourceSnapshot": disk.get('sourceSnapshot'),
@@ -157,12 +156,11 @@ def get_data_to_insert(disk, zone, region, project_id, project_number, disk_to_s
         "snapshots": get_snapshot_data_to_insert(disk_to_snapshots_mapping.get(disk.get('id'))),
         "lastAttachTimestamp": disk.get('lastAttachTimestamp'),
         "lastDetachTimestamp": disk.get('lastDetachTimestamp'),
-        "lastUpdatedAt": str(datetime.utcnow()),
-        "projectNumberPartition": int(project_number) % 10000
+        "lastUpdatedAt": str(datetime.utcnow())
     }
 
 
-def get_disk_row_for_deleted_disk(disk_id, project_id, project_number, snapshots):
+def get_disk_row_for_deleted_disk(disk_id, project_id, snapshots):
     disk_name = None
     if snapshots is not None and len(snapshots) > 0:
         disk_name = get_field(snapshots[0], 'sourceDisk')
@@ -170,11 +168,10 @@ def get_disk_row_for_deleted_disk(disk_id, project_id, project_number, snapshots
     return {
         "id": disk_id,
         "name": disk_name,
-        "creationTime": None,
+        "creationTime": str(datetime(1970, 1, 1)),
         "zone": None,
         "region": None,
         "projectId": project_id,
-        "projectNumber": project_number,
         "sizeGb": None,
         "status": 'DELETED',
         "sourceSnapshot": None,
@@ -195,8 +192,7 @@ def get_disk_row_for_deleted_disk(disk_id, project_id, project_number, snapshots
         "snapshots": get_snapshot_data_to_insert(snapshots),
         "lastAttachTimestamp": None,
         "lastDetachTimestamp": None,
-        "lastUpdatedAt": str(datetime.utcnow()),
-        "projectNumberPartition": int(project_number) % 10000
+        "lastUpdatedAt": str(datetime.utcnow())
     }
 
 
@@ -234,11 +230,11 @@ def main(event, context):
 
     # Setting table names for main and temp tables
     gcp_disks_inventory_table_ref = dataset.table("gcpDiskInventory")
-    gcp_disks_inventory_temp_table_ref = dataset.table("gcpDiskInventory_%s" % jsonData["projectNumber"])
+    gcp_disks_inventory_temp_table_ref = dataset.table("gcpDiskInventory_%s" % jsonData["projectId"])
     gcp_disks_inventory_table_name = TABLE_NAME_FORMAT % (
         jsonData["projectName"], jsonData["accountIdBQ"], "gcpDiskInventory")
     gcp_disks_inventory_temp_table_name = TABLE_NAME_FORMAT % (
-        jsonData["projectName"], jsonData["accountIdBQ"], "gcpDiskInventory_%s" % jsonData["projectNumber"])
+        jsonData["projectName"], jsonData["accountIdBQ"], "gcpDiskInventory_%s" % jsonData["projectId"])
 
     # Creating tables if they don't exist
     if not if_tbl_exists(client, gcp_disks_inventory_table_ref):
@@ -263,12 +259,11 @@ def main(event, context):
                 for disk in response['items']:
                     disk_inserted[disk.get('id')] = True
                     data.append(get_data_to_insert(disk, zone, STATIC_ZONES_MAPPING[zone], jsonData["projectId"],
-                                                   jsonData["projectNumber"], disk_to_snapshots_mapping))
+                                                   disk_to_snapshots_mapping))
             request = service.instances().list_next(previous_request=request, previous_response=response)
 
     for disk in disk_to_snapshots_mapping:
         if disk_inserted.get(disk) is None:
-            data.append(get_disk_row_for_deleted_disk(disk, jsonData["projectId"], jsonData["projectNumber"],
-                                                      disk_to_snapshots_mapping.get(disk)))
+            data.append(get_disk_row_for_deleted_disk(disk, jsonData["projectId"], disk_to_snapshots_mapping.get(disk)))
 
     insert_data_in_table(client, data, gcp_disks_inventory_temp_table_name)

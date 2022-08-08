@@ -14,6 +14,8 @@ import static java.lang.String.format;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.exception.ArtifactServerException;
+import io.harness.exception.NestedExceptionUtils;
 
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -109,7 +111,7 @@ public class ArtifactUtilities {
     }
   }
 
-  private static String extractUrl(String dockerRegistryUrl) {
+  public static String extractUrl(String dockerRegistryUrl) {
     try {
       URL url = new URL(dockerRegistryUrl);
       if (url.getPort() != -1) {
@@ -119,6 +121,28 @@ public class ArtifactUtilities {
     } catch (MalformedURLException e) {
       return dockerRegistryUrl;
     }
+  }
+
+  public static String extractRegistryHost(String registryUrl) {
+    try {
+      URL parsedUrl = new URL(registryUrl);
+      if (parsedUrl.getPort() != -1) {
+        return parsedUrl.getHost() + ":" + parsedUrl.getPort();
+      }
+      return parsedUrl.getHost();
+    } catch (MalformedURLException e) {
+      if (isNotEmpty(registryUrl)) {
+        int firstDotIndex = registryUrl.indexOf('.');
+        int slashforwardIndex = registryUrl.indexOf('/', firstDotIndex);
+        int endIndex = slashforwardIndex > 0 ? slashforwardIndex : registryUrl.length();
+        return registryUrl.substring(0, endIndex);
+      }
+    }
+
+    throw NestedExceptionUtils.hintWithExplanationException(
+        "Please check connector configuration or artifact source configuration",
+        "Registry URL must of valid URL format",
+        new ArtifactServerException(String.format("Registry URL is not valid [%s]", registryUrl)));
   }
 
   public static String getBaseUrl(String url) {

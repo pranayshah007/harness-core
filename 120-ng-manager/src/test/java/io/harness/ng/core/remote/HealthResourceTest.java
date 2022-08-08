@@ -47,7 +47,7 @@ public class HealthResourceTest extends CategoryTest {
   @Owner(developers = PHOENIKX)
   @Category(UnitTests.class)
   public void testGet_success() throws Exception {
-    when(MaintenanceController.getMaintenanceFlag()).thenReturn(false);
+    when(MaintenanceController.getMaintenanceFlag()).thenAnswer(value -> false);
     when(healthService.check()).thenReturn(HealthCheck.Result.healthy());
     String healthResponse = healthResource.get().getData();
     Assertions.assertThat(healthResponse).isNotNull();

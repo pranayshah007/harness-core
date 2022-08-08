@@ -275,7 +275,7 @@ public class JenkinsTaskTest extends WingsBaseTest {
     Map<String, String> envVars = new HashMap<>();
     String env1 = "ENV1";
     envVars.put(env1, env1 + "_VAL");
-    when(jenkins.getEnvVars(anyString())).thenReturn(envVars);
+    when(jenkins.getEnvVars(any())).thenReturn(envVars);
     params.setSubTaskType(JenkinsSubTaskType.POLL_TASK);
     response = jenkinsTask.run(params);
     assertThat(response.getDescription()).isEqualTo("test-description");
@@ -308,7 +308,7 @@ public class JenkinsTaskTest extends WingsBaseTest {
     Map<String, String> envVars = new HashMap<>();
     String env1 = "ENV1";
     envVars.put(env1, env1 + "_VAL");
-    when(jenkins.getEnvVars(anyString())).thenThrow(new WingsException(INVALID_ARTIFACT_SERVER, USER));
+    when(jenkins.getEnvVars(any())).thenThrow(new WingsException(INVALID_ARTIFACT_SERVER, USER));
     params.setSubTaskType(JenkinsSubTaskType.POLL_TASK);
     response = jenkinsTask.run(params);
     assertThat(response.getErrorMessage()).isNotBlank();

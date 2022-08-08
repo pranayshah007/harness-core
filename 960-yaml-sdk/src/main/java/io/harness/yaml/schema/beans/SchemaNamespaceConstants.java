@@ -10,8 +10,10 @@ package io.harness.yaml.schema.beans;
 public class SchemaNamespaceConstants {
   public static final String PMS = "";
   public static final String APPROVAL = "approval";
+  public static final String CUSTOM = "custom";
   public static final String CD = "cd";
   public static final String CVNG = "cvng";
   public static final String CI = "ci";
   public static final String CF = "cf";
+  public static final String STO = "security";
 }

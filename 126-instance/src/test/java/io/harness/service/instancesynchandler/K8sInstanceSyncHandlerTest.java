@@ -16,7 +16,6 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.infra.beans.K8sDirectInfrastructureOutcome;
-import io.harness.cdng.infra.yaml.InfrastructureKind;
 import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
 import io.harness.delegate.beans.instancesync.info.K8sServerInstanceInfo;
 import io.harness.dtos.deploymentinfo.DeploymentInfoDTO;
@@ -25,6 +24,7 @@ import io.harness.dtos.instanceinfo.InstanceInfoDTO;
 import io.harness.dtos.instanceinfo.K8sInstanceInfoDTO;
 import io.harness.entities.InstanceType;
 import io.harness.k8s.model.K8sContainer;
+import io.harness.ng.core.infrastructure.InfrastructureKind;
 import io.harness.perpetualtask.PerpetualTaskType;
 import io.harness.rule.Owner;
 

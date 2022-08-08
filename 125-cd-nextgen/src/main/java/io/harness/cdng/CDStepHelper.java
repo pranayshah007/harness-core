@@ -8,18 +8,20 @@
 package io.harness.cdng;
 
 import static io.harness.beans.FeatureName.OPTIMIZED_GIT_FETCH_FILES;
-import static io.harness.cdng.infra.yaml.InfrastructureKind.KUBERNETES_DIRECT;
-import static io.harness.cdng.infra.yaml.InfrastructureKind.KUBERNETES_GCP;
 import static io.harness.common.ParameterFieldHelper.getBooleanParameterFieldValue;
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
-import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.data.structure.HarnessStringUtils.emptyIfNull;
 import static io.harness.data.structure.ListUtils.trimStrings;
+import static io.harness.delegate.beans.connector.scm.bitbucket.BitbucketApiAccessType.USERNAME_AND_TOKEN;
 import static io.harness.eraro.ErrorCode.GENERAL_ERROR;
+import static io.harness.exception.WingsException.USER;
 import static io.harness.logging.CommandExecutionStatus.FAILURE;
 import static io.harness.logging.UnitStatus.RUNNING;
+import static io.harness.ng.core.infrastructure.InfrastructureKind.KUBERNETES_AZURE;
+import static io.harness.ng.core.infrastructure.InfrastructureKind.KUBERNETES_DIRECT;
+import static io.harness.ng.core.infrastructure.InfrastructureKind.KUBERNETES_GCP;
 import static io.harness.validation.Validator.notEmptyCheck;
 
 import static java.lang.String.format;
@@ -28,38 +30,50 @@ import static org.apache.commons.lang3.StringUtils.trimToEmpty;
 
 import io.harness.beans.DecryptableEntity;
 import io.harness.beans.FeatureName;
+import io.harness.cdng.artifact.outcome.ArtifactOutcome;
+import io.harness.cdng.artifact.outcome.ArtifactsOutcome;
+import io.harness.cdng.configfile.steps.ConfigFilesOutcome;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
+import io.harness.cdng.infra.beans.K8sAzureInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sDirectInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sGcpInfrastructureOutcome;
 import io.harness.cdng.k8s.K8sEntityHelper;
 import io.harness.cdng.k8s.beans.GitFetchResponsePassThroughData;
-import io.harness.cdng.k8s.beans.HelmValuesFetchResponsePassThroughData;
 import io.harness.cdng.k8s.beans.StepExceptionPassThroughData;
 import io.harness.cdng.manifest.ManifestStoreType;
 import io.harness.cdng.manifest.ManifestType;
 import io.harness.cdng.manifest.mappers.ManifestOutcomeValidator;
 import io.harness.cdng.manifest.steps.ManifestsOutcome;
-import io.harness.cdng.manifest.yaml.GcsStoreConfig;
 import io.harness.cdng.manifest.yaml.GitStoreConfig;
-import io.harness.cdng.manifest.yaml.HttpStoreConfig;
 import io.harness.cdng.manifest.yaml.ManifestOutcome;
-import io.harness.cdng.manifest.yaml.S3StoreConfig;
-import io.harness.cdng.manifest.yaml.ValuesManifestOutcome;
-import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
+import io.harness.cdng.ssh.SshEntityHelper;
+import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.common.NGTimeConversionHelper;
+import io.harness.common.ParameterFieldHelper;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.helper.GitApiAccessDecryptionHelper;
 import io.harness.connector.services.ConnectorService;
 import io.harness.connector.validator.scmValidators.GitConfigAuthenticationInfoHelper;
+import io.harness.delegate.TaskSelector;
+import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryConnectorDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
 import io.harness.delegate.beans.connector.gcpconnector.GcpConnectorDTO;
 import io.harness.delegate.beans.connector.helm.HttpHelmConnectorDTO;
+import io.harness.delegate.beans.connector.helm.OciHelmConnectorDTO;
 import io.harness.delegate.beans.connector.scm.GitConnectionType;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
 import io.harness.delegate.beans.connector.scm.adapter.ScmConnectorMapper;
+import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectorDTO;
+import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoHttpAuthenticationType;
+import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoHttpCredentialsDTO;
+import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketApiAccessDTO;
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketConnectorDTO;
+import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketHttpAuthenticationType;
+import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketHttpCredentialsDTO;
+import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketUsernamePasswordDTO;
+import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketUsernameTokenApiAccessDTO;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubApiAccessDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubApiAccessType;
@@ -76,22 +90,20 @@ import io.harness.delegate.beans.connector.scm.gitlab.GitlabHttpCredentialsDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabTokenSpecDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabUsernameTokenDTO;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
-import io.harness.delegate.beans.storeconfig.GcsHelmStoreDelegateConfig;
+import io.harness.delegate.beans.storeconfig.FetchType;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
-import io.harness.delegate.beans.storeconfig.HttpHelmStoreDelegateConfig;
-import io.harness.delegate.beans.storeconfig.S3HelmStoreDelegateConfig;
-import io.harness.delegate.beans.storeconfig.StoreDelegateConfig;
 import io.harness.delegate.task.git.GitFetchFilesConfig;
 import io.harness.delegate.task.k8s.K8sInfraDelegateConfig;
+import io.harness.delegate.task.ssh.SshInfraDelegateConfig;
+import io.harness.delegate.task.ssh.WinRmInfraDelegateConfig;
 import io.harness.encryption.SecretRefData;
 import io.harness.eraro.Level;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
-import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.executions.steps.StepConstants;
 import io.harness.expression.EngineExpressionEvaluator;
-import io.harness.k8s.model.HelmVersion;
+import io.harness.filestore.service.FileStoreService;
 import io.harness.logging.LogCallback;
 import io.harness.logging.LogLevel;
 import io.harness.logging.UnitProgress;
@@ -106,51 +118,60 @@ import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.failure.FailureData;
 import io.harness.pms.contracts.execution.failure.FailureInfo;
 import io.harness.pms.contracts.execution.failure.FailureType;
+import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.expression.EngineExpressionService;
 import io.harness.pms.rbac.PipelineRbacHelper;
+import io.harness.pms.sdk.core.data.OptionalOutcome;
+import io.harness.pms.sdk.core.resolver.RefObjectUtils;
+import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.validation.ExpressionUtils;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 import io.harness.security.encryption.EncryptedDataDetail;
+import io.harness.serializer.KryoSerializer;
 import io.harness.steps.EntityReferenceExtractorUtils;
+import io.harness.steps.StepHelper;
+import io.harness.steps.StepUtils;
+import io.harness.validation.Validator;
 
+import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import org.apache.commons.lang3.tuple.Pair;
-import org.hibernate.validator.constraints.NotEmpty;
 
 public class CDStepHelper {
+  private static final Set<String> VALUES_YAML_SUPPORTED_MANIFEST_TYPES =
+      ImmutableSet.of(ManifestType.K8Manifest, ManifestType.HelmChart);
+  public static final String MISSING_INFRASTRUCTURE_ERROR = "Infrastructure section is missing or is not configured";
   @Inject private GitConfigAuthenticationInfoHelper gitConfigAuthenticationInfoHelper;
   @Named("PRIVILEGED") @Inject private SecretManagerClientService secretManagerClientService;
   @Inject protected CDFeatureFlagHelper cdFeatureFlagHelper;
   @Inject private EngineExpressionService engineExpressionService;
   @Named(DEFAULT_CONNECTOR_SERVICE) @Inject private ConnectorService connectorService;
   @Inject private K8sEntityHelper k8sEntityHelper;
+  @Inject private SshEntityHelper sshEntityHelper;
   @Inject private LogStreamingStepClientFactory logStreamingStepClientFactory;
   @Inject private EntityReferenceExtractorUtils entityReferenceExtractorUtils;
   @Inject private PipelineRbacHelper pipelineRbacHelper;
+  @Inject private FileStoreService fileStoreService;
+  @Inject protected OutcomeService outcomeService;
+  @Inject protected KryoSerializer kryoSerializer;
+  @Inject protected StepHelper stepHelper;
 
   public static final String RELEASE_NAME_VALIDATION_REGEX =
       "[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*";
 
   public static final Pattern releaseNamePattern = Pattern.compile(RELEASE_NAME_VALIDATION_REGEX);
-
-  public HelmVersion getHelmVersionBasedOnFF(HelmVersion helmVersion, String accountId) {
-    if (helmVersion == HelmVersion.V2) {
-      return helmVersion;
-    }
-    return cdFeatureFlagHelper.isEnabled(accountId, FeatureName.HELM_VERSION_3_8_0) == true ? HelmVersion.V380
-                                                                                            : HelmVersion.V3;
-  }
 
   // Optimised (SCM based) file fetch methods:
   public boolean isGitlabTokenAuth(ScmConnector scmConnector) {
@@ -166,6 +187,19 @@ public class CDStepHelper {
                .equals(GitlabHttpAuthenticationType.USERNAME_AND_TOKEN);
   }
 
+  public boolean isBitbucketTokenAuth(ScmConnector scmConnector) {
+    return scmConnector instanceof BitbucketConnectorDTO
+        && (((BitbucketConnectorDTO) scmConnector).getApiAccess() != null
+            || isBitbucketUsernameTokenAuth((BitbucketConnectorDTO) scmConnector));
+  }
+
+  public boolean isBitbucketUsernameTokenAuth(BitbucketConnectorDTO bitbucketConnectorDTO) {
+    return bitbucketConnectorDTO.getAuthentication().getCredentials() instanceof BitbucketHttpCredentialsDTO
+        && ((BitbucketHttpCredentialsDTO) bitbucketConnectorDTO.getAuthentication().getCredentials())
+               .getType()
+               .equals(BitbucketHttpAuthenticationType.USERNAME_AND_PASSWORD);
+  }
+
   public boolean isGithubUsernameTokenAuth(GithubConnectorDTO githubConnectorDTO) {
     return githubConnectorDTO.getAuthentication().getCredentials() instanceof GithubHttpCredentialsDTO
         && ((GithubHttpCredentialsDTO) githubConnectorDTO.getAuthentication().getCredentials())
@@ -173,10 +207,23 @@ public class CDStepHelper {
                .equals(GithubHttpAuthenticationType.USERNAME_AND_TOKEN);
   }
 
+  public boolean isAzureRepoUsernameTokenAuth(AzureRepoConnectorDTO azureRepoConnectorDTO) {
+    return azureRepoConnectorDTO.getAuthentication().getCredentials() instanceof AzureRepoHttpCredentialsDTO
+        && ((AzureRepoHttpCredentialsDTO) azureRepoConnectorDTO.getAuthentication().getCredentials())
+               .getType()
+               .equals(AzureRepoHttpAuthenticationType.USERNAME_AND_TOKEN);
+  }
+
   public boolean isGithubTokenAuth(ScmConnector scmConnector) {
     return scmConnector instanceof GithubConnectorDTO
         && (((GithubConnectorDTO) scmConnector).getApiAccess() != null
             || isGithubUsernameTokenAuth((GithubConnectorDTO) scmConnector));
+  }
+
+  public boolean isAzureRepoTokenAuth(ScmConnector scmConnector) {
+    return scmConnector instanceof AzureRepoConnectorDTO
+        && (((AzureRepoConnectorDTO) scmConnector).getApiAccess() != null
+            || isAzureRepoUsernameTokenAuth((AzureRepoConnectorDTO) scmConnector));
   }
 
   public SSHKeySpecDTO getSshKeySpecDTO(GitConfigDTO gitConfigDTO, Ambiance ambiance) {
@@ -186,8 +233,10 @@ public class CDStepHelper {
 
   public boolean isOptimizedFilesFetch(@Nonnull ConnectorInfoDTO connectorDTO, String accountId) {
     return cdFeatureFlagHelper.isEnabled(accountId, OPTIMIZED_GIT_FETCH_FILES)
-        && (isGithubTokenAuth((ScmConnector) connectorDTO.getConnectorConfig())
-            || isGitlabTokenAuth((ScmConnector) connectorDTO.getConnectorConfig()));
+        && ((isGithubTokenAuth((ScmConnector) connectorDTO.getConnectorConfig())
+                || isGitlabTokenAuth((ScmConnector) connectorDTO.getConnectorConfig()))
+            || (isAzureRepoTokenAuth((ScmConnector) connectorDTO.getConnectorConfig()))
+            || (isBitbucketTokenAuth((ScmConnector) connectorDTO.getConnectorConfig())));
   }
 
   public void addApiAuthIfRequired(ScmConnector scmConnector) {
@@ -215,7 +264,30 @@ public class CDStepHelper {
                                             .spec(GitlabTokenSpecDTO.builder().tokenRef(tokenRef).build())
                                             .build();
       gitlabConnectorDTO.setApiAccess(apiAccessDTO);
+    } else if (scmConnector instanceof BitbucketConnectorDTO
+        && ((BitbucketConnectorDTO) scmConnector).getApiAccess() == null
+        && isBitbucketUsernameTokenAuth((BitbucketConnectorDTO) scmConnector)) {
+      addApiAuthIfRequiredBitbucket(scmConnector);
     }
+  }
+
+  public void addApiAuthIfRequiredBitbucket(ScmConnector scmConnector) {
+    BitbucketConnectorDTO bitbucketConnectorDTO = (BitbucketConnectorDTO) scmConnector;
+    BitbucketUsernamePasswordDTO credentials =
+        (BitbucketUsernamePasswordDTO) ((BitbucketHttpCredentialsDTO) bitbucketConnectorDTO.getAuthentication()
+                                            .getCredentials())
+            .getHttpCredentialsSpec();
+    SecretRefData tokenRef = credentials.getPasswordRef();
+    String usernameRef = credentials.getUsername();
+    BitbucketApiAccessDTO apiAccessDTO =
+        BitbucketApiAccessDTO.builder()
+            .type(USERNAME_AND_TOKEN)
+            .spec(BitbucketUsernameTokenApiAccessDTO.builder()
+                      .tokenRef(tokenRef)
+                      .usernameRef(SecretRefData.builder().decryptedValue(usernameRef.toCharArray()).build())
+                      .build())
+            .build();
+    bitbucketConnectorDTO.setApiAccess(apiAccessDTO);
   }
 
   public String getGitRepoUrl(ScmConnector scmConnector, String repoName) {
@@ -249,11 +321,28 @@ public class CDStepHelper {
         gitlabConnectorDTO.setUrl(repoUrl);
         gitlabConnectorDTO.setConnectionType(GitConnectionType.REPO);
       }
+    } else if (scmConnector instanceof BitbucketConnectorDTO) {
+      BitbucketConnectorDTO bitbucketConnectorDTO = (BitbucketConnectorDTO) scmConnector;
+      if (bitbucketConnectorDTO.getConnectionType() == GitConnectionType.ACCOUNT) {
+        String repoUrl = getGitRepoUrl(bitbucketConnectorDTO, repoName);
+        bitbucketConnectorDTO.setUrl(repoUrl);
+        bitbucketConnectorDTO.setConnectionType(GitConnectionType.REPO);
+      }
     }
   }
 
   public GitStoreDelegateConfig getGitStoreDelegateConfig(@Nonnull GitStoreConfig gitstoreConfig,
       @Nonnull ConnectorInfoDTO connectorDTO, ManifestOutcome manifestOutcome, List<String> paths, Ambiance ambiance) {
+    boolean optimizedFilesFetch = isOptimizedFilesFetch(connectorDTO, AmbianceUtils.getAccountId(ambiance))
+        && !ManifestType.Kustomize.equals(manifestOutcome.getType());
+
+    return getGitStoreDelegateConfig(gitstoreConfig, connectorDTO, paths, ambiance, manifestOutcome.getType(),
+        manifestOutcome.getIdentifier(), optimizedFilesFetch);
+  }
+
+  public GitStoreDelegateConfig getGitStoreDelegateConfig(@Nonnull GitStoreConfig gitstoreConfig,
+      @Nonnull ConnectorInfoDTO connectorDTO, List<String> paths, Ambiance ambiance, String manifestType,
+      String manifestIdentifier, boolean optimizedFilesFetch) {
     NGAccess basicNGAccessObject = AmbianceUtils.getNgAccess(ambiance);
     ScmConnector scmConnector;
     List<EncryptedDataDetail> apiAuthEncryptedDataDetails = null;
@@ -263,10 +352,6 @@ public class CDStepHelper {
         gitConfigAuthenticationInfoHelper.getEncryptedDataDetails(gitConfigDTO, sshKeySpecDTO, basicNGAccessObject);
 
     scmConnector = gitConfigDTO;
-
-    boolean optimizedFilesFetch = isOptimizedFilesFetch(connectorDTO, AmbianceUtils.getAccountId(ambiance))
-        && !ManifestType.Kustomize.equals(manifestOutcome.getType());
-
     if (optimizedFilesFetch) {
       scmConnector = (ScmConnector) connectorDTO.getConnectorConfig();
       addApiAuthIfRequired(scmConnector);
@@ -287,27 +372,32 @@ public class CDStepHelper {
         .commitId(trim(getParameterFieldValue(gitstoreConfig.getCommitId())))
         .paths(trimStrings(paths))
         .connectorName(connectorDTO.getName())
-        .manifestType(manifestOutcome.getType())
-        .manifestId(manifestOutcome.getIdentifier())
+        .manifestType(manifestType)
+        .manifestId(manifestIdentifier)
         .optimizedFilesFetch(optimizedFilesFetch)
         .build();
   }
 
   public GitFetchFilesConfig getGitFetchFilesConfig(
-      Ambiance ambiance, StoreConfig store, String validationMessage, ManifestOutcome manifestOutcome) {
-    GitStoreConfig gitStoreConfig = (GitStoreConfig) store;
+      Ambiance ambiance, GitStoreConfig gitStoreConfig, String manifestType, String manifestIdentifier) {
     String connectorId = gitStoreConfig.getConnectorRef().getValue();
     ConnectorInfoDTO connectorDTO = getConnector(connectorId, ambiance);
-    validateManifest(store.getKind(), connectorDTO, validationMessage);
+    List<String> paths = getParameterFieldValue(gitStoreConfig.getPaths());
 
-    List<String> gitFilePaths = getPathsBasedOnManifest(gitStoreConfig, manifestOutcome.getType());
-    GitStoreDelegateConfig gitStoreDelegateConfig =
-        getGitStoreDelegateConfig(gitStoreConfig, connectorDTO, manifestOutcome, gitFilePaths, ambiance);
+    boolean useOptimizedFilesFetch = isOptimizedFilesFetch(connectorDTO, AmbianceUtils.getAccountId(ambiance));
 
+    GitStoreDelegateConfig gitStoreDelegateConfig = getGitStoreDelegateConfig(
+        gitStoreConfig, connectorDTO, paths, ambiance, manifestType, manifestIdentifier, useOptimizedFilesFetch);
+
+    return getGitFetchFilesConfigFromBuilder(manifestIdentifier, manifestType, false, gitStoreDelegateConfig);
+  }
+
+  public GitFetchFilesConfig getGitFetchFilesConfigFromBuilder(String identifier, String manifestType,
+      boolean succeedIfFileNotFound, GitStoreDelegateConfig gitStoreDelegateConfig) {
     return GitFetchFilesConfig.builder()
-        .identifier(manifestOutcome.getIdentifier())
-        .manifestType(manifestOutcome.getType())
-        .succeedIfFileNotFound(false)
+        .identifier(identifier)
+        .manifestType(manifestType)
+        .succeedIfFileNotFound(succeedIfFileNotFound)
         .gitStoreDelegateConfig(gitStoreDelegateConfig)
         .build();
   }
@@ -353,6 +443,10 @@ public class CDStepHelper {
         K8sGcpInfrastructureOutcome k8sGcpInfrastructure = (K8sGcpInfrastructureOutcome) infrastructure;
         releaseName = k8sGcpInfrastructure.getReleaseName();
         break;
+      case KUBERNETES_AZURE:
+        K8sAzureInfrastructureOutcome k8sAzureInfrastructureOutcome = (K8sAzureInfrastructureOutcome) infrastructure;
+        releaseName = k8sAzureInfrastructureOutcome.getReleaseName();
+        break;
       default:
         throw new UnsupportedOperationException(format("Unknown infrastructure type: [%s]", infrastructure.getKind()));
     }
@@ -394,23 +488,6 @@ public class CDStepHelper {
         : stepParameters.getTimeout().getValue();
   }
 
-  // Aggregated Manifest methods
-  public static List<ValuesManifestOutcome> getAggregatedValuesManifests(
-      @NotEmpty List<ManifestOutcome> manifestOutcomeList) {
-    List<ValuesManifestOutcome> aggregateValuesManifests = new ArrayList<>();
-
-    List<ValuesManifestOutcome> serviceValuesManifests =
-        manifestOutcomeList.stream()
-            .filter(manifestOutcome -> ManifestType.VALUES.equals(manifestOutcome.getType()))
-            .map(manifestOutcome -> (ValuesManifestOutcome) manifestOutcome)
-            .collect(Collectors.toList());
-
-    if (isNotEmpty(serviceValuesManifests)) {
-      aggregateValuesManifests.addAll(serviceValuesManifests);
-    }
-    return aggregateValuesManifests;
-  }
-
   // miscellaneous common methods
   public ConnectorInfoDTO getConnector(String connectorId, Ambiance ambiance) {
     NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
@@ -448,6 +525,12 @@ public class CDStepHelper {
               format("Invalid connector selected in %s. Select Http Helm connector", message));
         }
         break;
+      case ManifestStoreType.OCI:
+        if (!(connectorInfoDTO.getConnectorConfig() instanceof OciHelmConnectorDTO)) {
+          throw new InvalidRequestException(
+              format("Invalid connector selected in %s. Select Oci Helm connector", message));
+        }
+        break;
 
       case ManifestStoreType.S3:
         if (!((connectorInfoDTO.getConnectorConfig()) instanceof AwsConnectorDTO)) {
@@ -469,100 +552,24 @@ public class CDStepHelper {
         }
         break;
 
+      case ManifestStoreType.INLINE:
+        break;
       default:
         throw new UnsupportedOperationException(format("Unknown manifest store type: [%s]", manifestStoreType));
     }
   }
 
-  public StoreDelegateConfig getStoreDelegateConfig(
-      StoreConfig storeConfig, Ambiance ambiance, ManifestOutcome manifestOutcome, String validationErrorMessage) {
-    if (ManifestStoreType.isInGitSubset(storeConfig.getKind())) {
-      GitStoreConfig gitStoreConfig = (GitStoreConfig) storeConfig;
-      ConnectorInfoDTO connectorDTO = getConnector(getParameterFieldValue(gitStoreConfig.getConnectorRef()), ambiance);
-      validateManifest(storeConfig.getKind(), connectorDTO, validationErrorMessage);
-
-      List<String> gitFilePaths = getPathsBasedOnManifest(gitStoreConfig, manifestOutcome.getType());
-      return getGitStoreDelegateConfig(gitStoreConfig, connectorDTO, manifestOutcome, gitFilePaths, ambiance);
-    }
-
-    if (ManifestStoreType.HTTP.equals(storeConfig.getKind())) {
-      HttpStoreConfig httpStoreConfig = (HttpStoreConfig) storeConfig;
-      ConnectorInfoDTO helmConnectorDTO =
-          getConnector(getParameterFieldValue(httpStoreConfig.getConnectorRef()), ambiance);
-      validateManifest(storeConfig.getKind(), helmConnectorDTO, validationErrorMessage);
-
-      return HttpHelmStoreDelegateConfig.builder()
-          .repoName(helmConnectorDTO.getIdentifier())
-          .repoDisplayName(helmConnectorDTO.getName())
-          .httpHelmConnector((HttpHelmConnectorDTO) helmConnectorDTO.getConnectorConfig())
-          .encryptedDataDetails(
-              k8sEntityHelper.getEncryptionDataDetails(helmConnectorDTO, AmbianceUtils.getNgAccess(ambiance)))
-          .build();
-    }
-
-    if (ManifestStoreType.S3.equals(storeConfig.getKind())) {
-      S3StoreConfig s3StoreConfig = (S3StoreConfig) storeConfig;
-      ConnectorInfoDTO awsConnectorDTO =
-          getConnector(getParameterFieldValue(s3StoreConfig.getConnectorRef()), ambiance);
-      validateManifest(storeConfig.getKind(), awsConnectorDTO, validationErrorMessage);
-
-      return S3HelmStoreDelegateConfig.builder()
-          .repoName(awsConnectorDTO.getIdentifier())
-          .repoDisplayName(awsConnectorDTO.getName())
-          .bucketName(getParameterFieldValue(s3StoreConfig.getBucketName()))
-          .region(getParameterFieldValue(s3StoreConfig.getRegion()))
-          .folderPath(getParameterFieldValue(s3StoreConfig.getFolderPath()))
-          .awsConnector((AwsConnectorDTO) awsConnectorDTO.getConnectorConfig())
-          .encryptedDataDetails(
-              k8sEntityHelper.getEncryptionDataDetails(awsConnectorDTO, AmbianceUtils.getNgAccess(ambiance)))
-          .useLatestChartMuseumVersion(cdFeatureFlagHelper.isEnabled(
-              AmbianceUtils.getAccountId(ambiance), FeatureName.USE_LATEST_CHARTMUSEUM_VERSION))
-          .build();
-    }
-
-    if (ManifestStoreType.GCS.equals(storeConfig.getKind())) {
-      GcsStoreConfig gcsStoreConfig = (GcsStoreConfig) storeConfig;
-      ConnectorInfoDTO gcpConnectorDTO =
-          getConnector(getParameterFieldValue(gcsStoreConfig.getConnectorRef()), ambiance);
-      validateManifest(storeConfig.getKind(), gcpConnectorDTO, validationErrorMessage);
-
-      return GcsHelmStoreDelegateConfig.builder()
-          .repoName(gcpConnectorDTO.getIdentifier())
-          .repoDisplayName(gcpConnectorDTO.getName())
-          .bucketName(getParameterFieldValue(gcsStoreConfig.getBucketName()))
-          .folderPath(getParameterFieldValue(gcsStoreConfig.getFolderPath()))
-          .gcpConnector((GcpConnectorDTO) gcpConnectorDTO.getConnectorConfig())
-          .encryptedDataDetails(
-              k8sEntityHelper.getEncryptionDataDetails(gcpConnectorDTO, AmbianceUtils.getNgAccess(ambiance)))
-          .useLatestChartMuseumVersion(cdFeatureFlagHelper.isEnabled(
-              AmbianceUtils.getAccountId(ambiance), FeatureName.USE_LATEST_CHARTMUSEUM_VERSION))
-          .build();
-    }
-
-    throw new UnsupportedOperationException(format("Unsupported Store Config type: [%s]", storeConfig.getKind()));
-  }
-
-  public List<String> getPathsBasedOnManifest(GitStoreConfig gitstoreConfig, String manifestType) {
-    List<String> paths = new ArrayList<>();
-    switch (manifestType) {
-      case ManifestType.HelmChart:
-        paths.add(getParameterFieldValue(gitstoreConfig.getFolderPath()));
-        break;
-      case ManifestType.Kustomize:
-        // Set as repository root
-        paths.add("/");
-        break;
-
-      default:
-        paths.addAll(getParameterFieldValue(gitstoreConfig.getPaths()));
-    }
-
-    return paths;
-  }
-
   public K8sInfraDelegateConfig getK8sInfraDelegateConfig(InfrastructureOutcome infrastructure, Ambiance ambiance) {
     NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
     return k8sEntityHelper.getK8sInfraDelegateConfig(infrastructure, ngAccess);
+  }
+
+  public SshInfraDelegateConfig getSshInfraDelegateConfig(InfrastructureOutcome infrastructure, Ambiance ambiance) {
+    return sshEntityHelper.getSshInfraDelegateConfig(infrastructure, ambiance);
+  }
+
+  public WinRmInfraDelegateConfig getWinRmInfraDelegateConfig(InfrastructureOutcome infrastructure, Ambiance ambiance) {
+    return sshEntityHelper.getWinRmInfraDelegateConfig(infrastructure, ambiance);
   }
 
   public boolean isUseLatestKustomizeVersion(String accountId) {
@@ -573,14 +580,24 @@ public class CDStepHelper {
     return cdFeatureFlagHelper.isEnabled(accountId, FeatureName.NEW_KUBECTL_VERSION);
   }
 
+  public boolean isOptimizeFetchFilesKustomize(String accountId) {
+    return cdFeatureFlagHelper.isEnabled(accountId, FeatureName.NG_OPTIMIZE_FETCH_FILES_KUSTOMIZE);
+  }
+
+  public boolean shouldCleanUpIncompleteCanaryDeployRelease(String accountId) {
+    return cdFeatureFlagHelper.isEnabled(accountId, FeatureName.CLEANUP_INCOMPLETE_CANARY_DEPLOY_RELEASE);
+  }
+
+  public boolean shouldUseK8sApiForSteadyStateCheck(String accountId) {
+    return cdFeatureFlagHelper.isEnabled(accountId, FeatureName.USE_K8S_API_FOR_STEADY_STATE_CHECK);
+  }
+
   public boolean isSkipAddingTrackSelectorToDeployment(String accountId) {
     return cdFeatureFlagHelper.isEnabled(accountId, FeatureName.SKIP_ADDING_TRACK_LABEL_SELECTOR_IN_ROLLING);
   }
 
-  public List<String> getValuesFileContents(Ambiance ambiance, List<String> valuesFileContents) {
-    return valuesFileContents.stream()
-        .map(valuesFileContent -> engineExpressionService.renderExpression(ambiance, valuesFileContent, false))
-        .collect(Collectors.toList());
+  public boolean isPruningEnabled(String accountId) {
+    return cdFeatureFlagHelper.isEnabled(accountId, FeatureName.PRUNE_KUBERNETES_RESOURCES_NG);
   }
 
   public LogCallback getLogCallback(String commandUnitName, Ambiance ambiance, boolean shouldOpenStream) {
@@ -588,7 +605,7 @@ public class CDStepHelper {
   }
 
   public UnitProgressData completeUnitProgressData(
-      UnitProgressData currentProgressData, Ambiance ambiance, Exception exception) {
+      UnitProgressData currentProgressData, Ambiance ambiance, String exceptionMessage) {
     if (currentProgressData == null) {
       return UnitProgressData.builder().unitProgresses(new ArrayList<>()).build();
     }
@@ -599,7 +616,7 @@ public class CDStepHelper {
             .map(unitProgress -> {
               if (unitProgress.getStatus() == RUNNING) {
                 LogCallback logCallback = getLogCallback(unitProgress.getUnitName(), ambiance, false);
-                logCallback.saveExecutionLog(ExceptionUtils.getMessage(exception), LogLevel.ERROR, FAILURE);
+                logCallback.saveExecutionLog(exceptionMessage, LogLevel.ERROR, FAILURE);
                 return UnitProgress.newBuilder(unitProgress)
                     .setStatus(UnitStatus.FAILURE)
                     .setEndTime(System.currentTimeMillis())
@@ -619,15 +636,6 @@ public class CDStepHelper {
         .unitProgressList(unitProgressData.getUnitProgresses())
         .status(Status.FAILED)
         .failureInfo(FailureInfo.newBuilder().setErrorMessage(gitFetchResponse.getErrorMsg()).build())
-        .build();
-  }
-
-  public StepResponse handleHelmValuesFetchFailure(HelmValuesFetchResponsePassThroughData helmValuesFetchResponse) {
-    UnitProgressData unitProgressData = helmValuesFetchResponse.getUnitProgressData();
-    return StepResponse.builder()
-        .unitProgressList(unitProgressData.getUnitProgresses())
-        .status(Status.FAILED)
-        .failureInfo(FailureInfo.newBuilder().setErrorMessage(helmValuesFetchResponse.getErrorMsg()).build())
         .build();
   }
 
@@ -657,5 +665,61 @@ public class CDStepHelper {
     });
 
     pipelineRbacHelper.checkRuntimePermissions(ambiance, entityDetails);
+  }
+
+  public void validateGitStoreConfig(GitStoreConfig gitStoreConfig) {
+    Validator.notNullCheck("Git Store Config is null", gitStoreConfig);
+    FetchType gitFetchType = gitStoreConfig.getGitFetchType();
+    switch (gitFetchType) {
+      case BRANCH:
+        Validator.notEmptyCheck("Branch is Empty in Git Store config",
+            ParameterFieldHelper.getParameterFieldValue(gitStoreConfig.getBranch()));
+        break;
+      case COMMIT:
+        Validator.notEmptyCheck("Commit Id is Empty in Git Store config",
+            ParameterFieldHelper.getParameterFieldValue(gitStoreConfig.getCommitId()));
+        break;
+      default:
+        throw new InvalidRequestException(format("Unrecognized git fetch type: [%s]", gitFetchType.name()));
+    }
+  }
+
+  public Optional<ConfigFilesOutcome> getConfigFilesOutcome(Ambiance ambiance) {
+    OptionalOutcome configFilesOutcome = outcomeService.resolveOptional(
+        ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.CONFIG_FILES));
+
+    if (!configFilesOutcome.isFound()) {
+      return Optional.empty();
+    }
+
+    return Optional.of((ConfigFilesOutcome) configFilesOutcome.getOutcome());
+  }
+
+  public InfrastructureOutcome getInfrastructureOutcome(Ambiance ambiance) {
+    OptionalOutcome optionalOutcome = outcomeService.resolveOptional(
+        ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.INFRASTRUCTURE_OUTCOME));
+    if (!optionalOutcome.isFound()) {
+      throw new InvalidRequestException(MISSING_INFRASTRUCTURE_ERROR, USER);
+    }
+
+    return (InfrastructureOutcome) optionalOutcome.getOutcome();
+  }
+
+  public Optional<ArtifactOutcome> resolveArtifactsOutcome(Ambiance ambiance) {
+    OptionalOutcome artifactsOutcomeOption = outcomeService.resolveOptional(
+        ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.ARTIFACTS));
+    if (artifactsOutcomeOption.isFound()) {
+      ArtifactsOutcome artifactsOutcome = (ArtifactsOutcome) artifactsOutcomeOption.getOutcome();
+      if (artifactsOutcome.getPrimary() != null) {
+        return Optional.of(artifactsOutcome.getPrimary());
+      }
+    }
+    return Optional.empty();
+  }
+
+  public TaskRequest prepareTaskRequest(
+      Ambiance ambiance, TaskData taskData, List<String> units, String taskName, List<TaskSelector> selectors) {
+    return StepUtils.prepareCDTaskRequest(
+        ambiance, taskData, kryoSerializer, units, taskName, selectors, stepHelper.getEnvironmentType(ambiance));
   }
 }

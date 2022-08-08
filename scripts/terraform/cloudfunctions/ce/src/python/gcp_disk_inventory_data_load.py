@@ -11,7 +11,7 @@ import re
 import datetime
 
 from google.cloud import bigquery
-from util import print_
+from util import print_, run_batch_query
 
 """
 Scheduler event:
@@ -52,21 +52,15 @@ def update_disk_state(jsonData):
     query = "UPDATE `%s` set status='DELETED' WHERE status != 'DELETED' and lastUpdatedAt < '%s';" % (
         jsonData["targetTableId"], last_updated_at)
 
-    try:
-        query_job = client.query(query)
-        query_job.result()
-    except Exception as e:
-        print_(query)
-        print_(e)
-    else:
-        print_("Finished updating gcpDiskInventory table for any deleted disks")
+    run_batch_query(client, query, None, timeout=180)
+    print_("Finished updating gcpDiskInventory table for any deleted disks")
 
 
 def load_into_main_table(jsonData):
     last_updated_at = datetime.datetime.utcnow()
     query = """MERGE `%s` T
                 USING `%s` S
-                ON T.id = S.id and T.projectNumberPartition = S.projectNumberPartition 
+                ON T.id = S.id and T.creationTime = S.creationTime 
                 WHEN MATCHED THEN
                   UPDATE SET sizeGb = s.sizeGb, status = s.status, options = s.options,
                   type = s.type, provisionedIops = s.provisionedIops, 
@@ -75,21 +69,16 @@ def load_into_main_table(jsonData):
                   lastUpdatedAt = '%s'
                 WHEN NOT MATCHED THEN
                   INSERT (id, name, creationTime, zone, 
-                    region, projectId, projectNumber, sizeGb, status, sourceSnapshot, sourceSnapshotId,
+                    region, projectId, sizeGb, status, sourceSnapshot, sourceSnapshotId,
                     sourceStorageObject, options, sourceImage, sourceImageId, selfLink, type, labels, users,
                     physicalBlockSizeBytes, sourceDisk, sourceDiskId, provisionedIops, satisfiesPzs, snapshots,
-                    lastAttachTimestamp, lastDetachTimestamp, lastUpdatedAt, projectNumberPartition) 
+                    lastAttachTimestamp, lastDetachTimestamp, lastUpdatedAt) 
                   VALUES(id, name, creationTime, zone, 
-                    region, projectId, projectNumber, sizeGb, status, sourceSnapshot, sourceSnapshotId,
+                    region, projectId, sizeGb, status, sourceSnapshot, sourceSnapshotId,
                     sourceStorageObject, options, sourceImage, sourceImageId, selfLink, type, labels, users,
                     physicalBlockSizeBytes, sourceDisk, sourceDiskId, provisionedIops, satisfiesPzs, snapshots,
-                    lastAttachTimestamp, lastDetachTimestamp, lastUpdatedAt, projectNumberPartition)
+                    lastAttachTimestamp, lastDetachTimestamp, lastUpdatedAt)
                 """ % (jsonData["targetTableId"], jsonData["sourceTableId"], last_updated_at)
-    try:
-        query_job = client.query(query)
-        query_job.result()
-    except Exception as e:
-        print_(query)
-        print_(e, "WARN")
-    else:
-        print_("Finished merging into main gcpDiskInventory table")
+
+    run_batch_query(client, query, None, timeout=180)
+    print_("Finished merging into main gcpDiskInventory table")

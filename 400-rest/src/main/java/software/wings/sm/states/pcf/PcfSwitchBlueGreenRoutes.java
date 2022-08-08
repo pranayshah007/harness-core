@@ -62,6 +62,7 @@ import software.wings.sm.ExecutionResponse;
 import software.wings.sm.State;
 import software.wings.sm.StateType;
 import software.wings.sm.WorkflowStandardParams;
+import software.wings.sm.WorkflowStandardParamsExtensionService;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.github.reinert.jjschema.Attributes;
@@ -86,6 +87,7 @@ public class PcfSwitchBlueGreenRoutes extends State {
   @Inject private transient PcfStateHelper pcfStateHelper;
   @Inject private transient SweepingOutputService sweepingOutputService;
   @Inject protected transient FeatureFlagService featureFlagService;
+  @Inject private transient WorkflowStandardParamsExtensionService workflowStandardParamsExtensionService;
 
   @Getter @Setter private List<String> tags;
 
@@ -134,7 +136,7 @@ public class PcfSwitchBlueGreenRoutes extends State {
   protected ExecutionResponse executeInternal(ExecutionContext context) {
     WorkflowStandardParams workflowStandardParams = context.getContextElement(ContextElementType.STANDARD);
     Application app = appService.get(context.getAppId());
-    Environment env = workflowStandardParams.getEnv();
+    Environment env = workflowStandardParamsExtensionService.getEnv(workflowStandardParams);
     notNullCheck("Environment does not exist", env, USER);
 
     PcfInfrastructureMapping pcfInfrastructureMapping =

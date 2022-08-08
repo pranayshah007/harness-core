@@ -180,7 +180,7 @@ public class SlackApprovalUtils {
         .replaceAll("<<<", "*<")
         .replaceAll("\\|-\\|", "|")
         .replaceAll(">>>", ">*")
-        .replaceAll("\\\\n", "\n")
+        .replaceAll("\\n", "\\\\n")
         .replaceAll("\\\\\\*", "*")
         .replaceAll("\\*<\\|>\\*", "");
   }
@@ -215,7 +215,7 @@ public class SlackApprovalUtils {
             appId, workflowExecutionId, stateExecutionId, approvalDetails);
 
     return workflowExecutionService.approveOrRejectExecution(
-        appId, approvalStateExecutionData.getUserGroups(), approvalDetails);
+        appId, approvalStateExecutionData.getUserGroups(), approvalDetails, (String) null);
   }
 
   public static String resetToInitialMessage(String decoratedMessage) {

@@ -22,9 +22,9 @@ import software.wings.graphql.schema.mutation.artifact.ArtifactCleanupInput;
 import software.wings.security.PermissionAttribute;
 import software.wings.security.UserThreadLocal;
 import software.wings.security.annotations.AuthRule;
-import software.wings.service.impl.artifact.ArtifactCollectionUtils;
 import software.wings.service.intfc.ArtifactStreamService;
 import software.wings.service.intfc.AuthService;
+import software.wings.utils.DelegateArtifactCollectionUtils;
 
 import com.google.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
@@ -54,7 +54,7 @@ public class ArtifactCleanupDataFetcher extends BaseMutatorDataFetcher<ArtifactC
       return new ArtifactCleanUpPayload("Artifact stream not found for the id: " + parameter.getArtifactStreamId());
     }
 
-    if (!ArtifactCollectionUtils.supportsCleanup(artifactStream.getArtifactStreamType())) {
+    if (!DelegateArtifactCollectionUtils.supportsCleanup(artifactStream.getArtifactStreamType())) {
       return new ArtifactCleanUpPayload(
           "Clean up not supported for artifact Stream type: " + artifactStream.getArtifactStreamType());
     }

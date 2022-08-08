@@ -37,13 +37,13 @@ import io.harness.delegate.task.k8s.K8sDeleteRequest;
 import io.harness.delegate.task.k8s.K8sDeployRequest;
 import io.harness.delegate.task.k8s.K8sDeployResponse;
 import io.harness.delegate.task.k8s.K8sTaskHelperBase;
-import io.harness.delegate.task.k8s.exception.KubernetesExceptionExplanation;
-import io.harness.delegate.task.k8s.exception.KubernetesExceptionHints;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.KubernetesTaskException;
 import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.WingsException;
+import io.harness.k8s.exception.KubernetesExceptionExplanation;
+import io.harness.k8s.exception.KubernetesExceptionHints;
 import io.harness.k8s.kubectl.Kubectl;
 import io.harness.k8s.manifest.ManifestHelper;
 import io.harness.k8s.model.K8sDelegateTaskParams;
@@ -224,7 +224,7 @@ public class K8sDeleteRequestHandler extends K8sRequestHandler {
     }
 
     if (resourceIdsToDelete.isEmpty()) {
-      executionLogCallback.saveExecutionLog("\nNo resources found to delete.", INFO, SUCCESS);
+      executionLogCallback.saveExecutionLog("\nNo resources found to delete.", INFO);
     } else {
       executionLogCallback.saveExecutionLog(color("\nResources to delete are: ", White, Bold)
           + color(getResourcesInStringFormat(resourceIdsToDelete), Gray));

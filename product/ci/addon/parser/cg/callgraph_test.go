@@ -31,6 +31,7 @@ func TestCallgraph_ToStringMap(t *testing.T) {
 				Class:           "class2",
 				Type:            "test",
 				CallsReflection: true,
+				AlwaysRun:       true,
 			},
 		},
 		TestRelations: []Relation{
@@ -89,6 +90,8 @@ func getCgObject(mp map[string]interface{}) ([]Node, []Relation, []Relation) {
 							node.Class = v.(string)
 						case "callsReflection":
 							node.CallsReflection = v.(bool)
+						case "alwaysRun":
+                            node.AlwaysRun = v.(bool)
 						case "type":
 							node.Type = v.(string)
 						}

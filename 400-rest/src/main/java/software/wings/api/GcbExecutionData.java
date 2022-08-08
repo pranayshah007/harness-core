@@ -16,12 +16,12 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.DelegateTaskNotifyResponseData;
 
 import software.wings.beans.command.GcbTaskParams;
+import software.wings.delegatetasks.GcbDelegateResponse;
 import software.wings.helpers.ext.gcb.models.GcbArtifactObjects;
 import software.wings.helpers.ext.gcb.models.GcbArtifacts;
 import software.wings.helpers.ext.gcb.models.GcbBuildDetails;
 import software.wings.helpers.ext.gcb.models.GcbBuildStatus;
 import software.wings.sm.StateExecutionData;
-import software.wings.sm.states.GcbState;
 
 import java.util.List;
 import java.util.Map;
@@ -59,7 +59,7 @@ public class GcbExecutionData extends StateExecutionData implements DelegateTask
   @Nullable private String gcpConfigId;
 
   @NotNull
-  public GcbExecutionData withDelegateResponse(@NotNull final GcbState.GcbDelegateResponse delegateResponse) {
+  public GcbExecutionData withDelegateResponse(@NotNull final GcbDelegateResponse delegateResponse) {
     GcbTaskParams params = delegateResponse.getParams();
     activityId = delegateResponse.getParams().getActivityId();
     name = params.getBuildName();

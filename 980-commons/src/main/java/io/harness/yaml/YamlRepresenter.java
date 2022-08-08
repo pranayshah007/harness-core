@@ -14,10 +14,6 @@ import static java.util.Arrays.asList;
 
 import io.harness.annotations.dev.OwnedBy;
 
-import com.fasterxml.jackson.dataformat.yaml.snakeyaml.introspector.Property;
-import com.fasterxml.jackson.dataformat.yaml.snakeyaml.nodes.NodeTuple;
-import com.fasterxml.jackson.dataformat.yaml.snakeyaml.nodes.Tag;
-import com.fasterxml.jackson.dataformat.yaml.snakeyaml.representer.Representer;
 import com.google.common.collect.Lists;
 import java.beans.Transient;
 import java.lang.reflect.Field;
@@ -26,12 +22,23 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import javax.annotation.Nonnull;
+import org.yaml.snakeyaml.DumperOptions;
+import org.yaml.snakeyaml.introspector.Property;
+import org.yaml.snakeyaml.nodes.NodeTuple;
+import org.yaml.snakeyaml.nodes.Tag;
+import org.yaml.snakeyaml.representer.Representer;
 
 @OwnedBy(CDP)
 public class YamlRepresenter extends Representer {
   private boolean removeEmptyValues;
 
   public YamlRepresenter(boolean removeEmptyValues) {
+    this(removeEmptyValues, YamlUtils.getDumperOptions());
+  }
+
+  public YamlRepresenter(boolean removeEmptyValues, DumperOptions options) {
+    super(options);
+    defaultScalarStyle = options.getDefaultScalarStyle();
     this.removeEmptyValues = removeEmptyValues;
   }
 

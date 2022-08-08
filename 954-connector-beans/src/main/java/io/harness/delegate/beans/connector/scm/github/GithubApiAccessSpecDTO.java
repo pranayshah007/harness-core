@@ -8,6 +8,7 @@
 package io.harness.delegate.beans.connector.scm.github;
 
 import static io.harness.delegate.beans.connector.scm.github.GithubConnectorConstants.GITHUB_APP;
+import static io.harness.delegate.beans.connector.scm.github.GithubConnectorConstants.OAUTH;
 import static io.harness.delegate.beans.connector.scm.github.GithubConnectorConstants.TOKEN;
 
 import io.harness.beans.DecryptableEntity;
@@ -19,7 +20,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonSubTypes({
   @JsonSubTypes.Type(value = GithubAppSpecDTO.class, name = GITHUB_APP)
-  , @JsonSubTypes.Type(value = GithubTokenSpecDTO.class, name = TOKEN)
+  , @JsonSubTypes.Type(value = GithubTokenSpecDTO.class, name = TOKEN),
+      @JsonSubTypes.Type(value = GithubOauthDTO.class, name = OAUTH)
 })
 @Schema(name = "GithubApiAccessSpec",
     description =

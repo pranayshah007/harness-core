@@ -14,8 +14,8 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import io.harness.delegate.beans.DelegateAsyncTaskResponse;
 import io.harness.delegate.beans.DelegateSyncTaskResponse;
 import io.harness.delegate.beans.DelegateTaskProgressResponse;
+import io.harness.event.metrics.jobs.EventServiceRecordMetrics;
 import io.harness.govern.ProviderModule;
-import io.harness.metrics.jobs.RecordMetricsJob;
 import io.harness.metrics.service.api.MetricService;
 import io.harness.mongo.AbstractMongoModule;
 import io.harness.mongo.MongoConfig;
@@ -140,7 +140,7 @@ public class EventServiceApplication {
     registerStores(config, injector);
     // Initialise metrics collection.
     injector.getInstance(MetricService.class).initializeMetrics();
-    injector.getInstance(RecordMetricsJob.class).scheduleMetricsTasks();
+    injector.getInstance(EventServiceRecordMetrics.class).scheduleMetricsTasks();
 
     ServiceManager serviceManager = injector.getInstance(ServiceManager.class).startAsync();
     serviceManager.awaitHealthy();

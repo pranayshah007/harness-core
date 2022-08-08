@@ -1,0 +1,16 @@
+spec:
+  execution:
+    steps:
+      - step:
+          name: "Approval"
+          identifier: b4675e4d-6b2b-5a86-a5e2-a28f1b4ccd04
+          type: HarnessApproval
+          timeout: 1d
+          spec:
+            approvalMessage: |-
+              Please review the following information
+              and approve the pipeline progression
+            includePipelineExecutionHistory: true
+            approvers:
+              minimumCount: 1
+              disallowPipelineExecutor: false

@@ -21,6 +21,7 @@ import io.harness.ff.FeatureFlagConfig;
 import io.harness.govern.ProviderModule;
 import io.harness.govern.ServersModule;
 import io.harness.lock.DistributedLockImplementation;
+import io.harness.metrics.modules.MetricsModule;
 import io.harness.mongo.MongoPersistence;
 import io.harness.morphia.MorphiaModule;
 import io.harness.morphia.MorphiaRegistrar;
@@ -85,6 +86,7 @@ public class DelegateServiceRule implements MethodRule, InjectorRuleMixin, Mongo
     List<Module> modules = new ArrayList<>();
     modules.add(new ClosingFactoryModule(closingFactory));
     modules.add(KryoModule.getInstance());
+    modules.add(new MetricsModule());
 
     modules.add(new ProviderModule() {
       @Override

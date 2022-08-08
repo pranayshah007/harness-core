@@ -13,7 +13,6 @@ import static io.harness.rule.OwnerRule.TMACARI;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
@@ -50,6 +49,7 @@ import io.harness.rule.Owner;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.EncryptedRecordData;
 import io.harness.security.encryption.SecretDecryptionService;
+import io.harness.terraform.TerraformStepResponse;
 
 import com.google.inject.Inject;
 import java.io.File;
@@ -92,11 +92,10 @@ public class TerraformPlanTaskHandlerTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testPlan() throws IOException, TimeoutException, InterruptedException {
     when(secretDecryptionService.decrypt(any(), any())).thenReturn(null);
-    when(terraformBaseHelper.getGitBaseRequestForConfigFile(
-             anyString(), any(GitStoreDelegateConfig.class), any(GitConfigDTO.class)))
-        .thenReturn(any(GitBaseRequest.class));
+    when(terraformBaseHelper.getGitBaseRequestForConfigFile(any(), any(), any()))
+        .thenReturn(mock(GitBaseRequest.class));
     when(terraformBaseHelper.fetchConfigFileAndPrepareScriptDir(
-             any(), anyString(), anyString(), anyString(), any(), logCallback, anyString(), anyString()))
+             any(), any(), any(), any(), any(), eq(logCallback), any(), any()))
         .thenReturn("sourceDir");
     doNothing().when(terraformBaseHelper).downloadTfStateFile(null, "accountId", null, "scriptDir");
     when(gitClientHelper.getRepoDirectory(any())).thenReturn("sourceDir");
@@ -106,11 +105,16 @@ public class TerraformPlanTaskHandlerTest extends CategoryTest {
     FileUtils.touch(planFile);
     when(terraformBaseHelper.getPlanName(TerraformCommand.APPLY)).thenReturn("tfplan");
     when(terraformBaseHelper.executeTerraformPlanStep(any()))
-        .thenReturn(CliResponse.builder().commandExecutionStatus(CommandExecutionStatus.SUCCESS).build());
+        .thenReturn(
+            TerraformStepResponse.builder()
+                .cliResponse(
+                    CliResponse.builder().commandExecutionStatus(CommandExecutionStatus.SUCCESS).exitCode(2).build())
+                .build());
     TerraformTaskNGResponse response =
         terraformPlanTaskHandler.executeTaskInternal(getTerraformTaskParameters(), "delegateId", "taskId", logCallback);
     assertThat(response).isNotNull();
     assertThat(response.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
+    assertThat(response.getDetailedExitCode()).isEqualTo(2);
     Files.deleteIfExists(Paths.get(outputFile.getPath()));
     Files.deleteIfExists(Paths.get(planFile.getPath()));
     Files.deleteIfExists(Paths.get("sourceDir"));
@@ -121,8 +125,7 @@ public class TerraformPlanTaskHandlerTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testPlanWithArtifactoryConfigAndVarFiles() throws IOException, TimeoutException, InterruptedException {
     when(secretDecryptionService.decrypt(any(), any())).thenReturn(null);
-    when(terraformBaseHelper.fetchConfigFileAndPrepareScriptDir(
-             any(), anyString(), anyString(), anyString(), eq(logCallback), anyString()))
+    when(terraformBaseHelper.fetchConfigFileAndPrepareScriptDir(any(), any(), any(), any(), eq(logCallback), any()))
         .thenReturn("sourceDir");
     doNothing().when(terraformBaseHelper).downloadTfStateFile(null, "accountId", null, "scriptDir");
     when(gitClientHelper.getRepoDirectory(any())).thenReturn("sourceDir");
@@ -132,11 +135,16 @@ public class TerraformPlanTaskHandlerTest extends CategoryTest {
     FileUtils.touch(planFile);
     when(terraformBaseHelper.getPlanName(TerraformCommand.APPLY)).thenReturn("tfplan");
     when(terraformBaseHelper.executeTerraformPlanStep(any()))
-        .thenReturn(CliResponse.builder().commandExecutionStatus(CommandExecutionStatus.SUCCESS).build());
+        .thenReturn(
+            TerraformStepResponse.builder()
+                .cliResponse(
+                    CliResponse.builder().commandExecutionStatus(CommandExecutionStatus.SUCCESS).exitCode(0).build())
+                .build());
     TerraformTaskNGResponse response = terraformPlanTaskHandler.executeTaskInternal(
         getTerraformTaskParametersWithArtifactoryConfig(), "delegateId", "taskId", logCallback);
     assertThat(response).isNotNull();
     assertThat(response.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
+    assertThat(response.getDetailedExitCode()).isEqualTo(0);
     Files.deleteIfExists(Paths.get(outputFile.getPath()));
     Files.deleteIfExists(Paths.get(planFile.getPath()));
     Files.deleteIfExists(Paths.get("sourceDir"));

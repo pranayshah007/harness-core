@@ -2,19 +2,19 @@ identifier: Infrastructure
 category: Infrastructure
 metrics:
   - name: CPU per request
-    identifier: CPU_per_request
+    identifier: cpu_per_request
     type: INFRA
     path: builtin:service.keyRequest.cpu.perRequest
     validationPath: builtin:service.keyRequest.cpu.perRequest
     included: true
   - name: IO time
-    identifier: IO_time
+    identifier: io_time
     type: INFRA
     path: builtin:service.keyRequest.ioTime
     validationPath: builtin:service.keyRequest.ioTime
     included: true
   - name: Time spent in DB calls
-    identifier: Time_spent_in_DB_calls
+    identifier: time_spent_in_db_calls
     type: INFRA
     path: builtin:service.keyRequest.dbChildCallTime
     validationPath: builtin:service.keyRequest.keyRequest.dbChildCallTime

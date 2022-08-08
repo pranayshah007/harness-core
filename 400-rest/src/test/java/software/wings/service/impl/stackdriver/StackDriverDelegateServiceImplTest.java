@@ -53,6 +53,7 @@ import java.util.Collections;
 import java.util.List;
 import org.apache.commons.lang3.reflect.FieldUtils;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -141,6 +142,7 @@ public class StackDriverDelegateServiceImplTest extends WingsBaseTest {
   @Test
   @Owner(developers = RAGHU)
   @Category(UnitTests.class)
+  @Ignore(value = "TODO")
   public void testFetchLogs_whenLogsLimitReachedForServiceGuard() {
     final List<LogEntry> logEntries = stackDriverDelegateService.fetchLogs(
         dataCollectionInfo, System.currentTimeMillis(), System.currentTimeMillis(), true, true);

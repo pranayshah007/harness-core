@@ -9,6 +9,7 @@ package io.harness.ng.core.api.impl;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.rule.OwnerRule.PHOENIKX;
+import static io.harness.rule.OwnerRule.VITALIE;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
@@ -21,9 +22,11 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
+import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.secrets.SSHConfigValidationTaskResponse;
+import io.harness.delegate.beans.secrets.WinRmConfigValidationTaskResponse;
 import io.harness.delegate.utils.TaskSetupAbstractionHelper;
 import io.harness.encryption.SecretRefData;
 import io.harness.ng.core.api.NGSecretActivityService;
@@ -31,6 +34,8 @@ import io.harness.ng.core.dto.secrets.SSHCredentialType;
 import io.harness.ng.core.dto.secrets.SecretDTOV2;
 import io.harness.ng.core.dto.secrets.TGTGenerationMethod;
 import io.harness.ng.core.models.KerberosConfig;
+import io.harness.ng.core.models.KerberosWinRmConfig;
+import io.harness.ng.core.models.NTLMConfig;
 import io.harness.ng.core.models.SSHAuth;
 import io.harness.ng.core.models.SSHConfig;
 import io.harness.ng.core.models.SSHExecutionCredentialSpec;
@@ -39,14 +44,20 @@ import io.harness.ng.core.models.SSHKeyPathCredential;
 import io.harness.ng.core.models.SSHPasswordCredential;
 import io.harness.ng.core.models.Secret;
 import io.harness.ng.core.models.TGTKeyTabFilePathSpec;
+import io.harness.ng.core.models.TGTPasswordSpec;
+import io.harness.ng.core.models.WinRmAuth;
+import io.harness.ng.core.models.WinRmCredentialsSpec;
 import io.harness.ng.core.remote.SSHKeyValidationMetadata;
 import io.harness.ng.core.remote.SecretValidationResultDTO;
+import io.harness.ng.core.remote.WinRmCredentialsValidationMetadata;
 import io.harness.outbox.api.OutboxService;
 import io.harness.repositories.ng.core.spring.SecretRepository;
 import io.harness.rule.Owner;
 import io.harness.secretmanagerclient.SSHAuthScheme;
 import io.harness.secretmanagerclient.SecretType;
+import io.harness.secretmanagerclient.WinRmAuthScheme;
 import io.harness.secretmanagerclient.services.SshKeySpecDTOHelper;
+import io.harness.secretmanagerclient.services.WinRmCredentialsSpecDTOHelper;
 import io.harness.service.DelegateGrpcClientWrapper;
 
 import com.google.common.collect.ImmutableMap;
@@ -55,14 +66,11 @@ import java.util.Optional;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.springframework.data.domain.Page;
-import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.transaction.support.TransactionTemplate;
 
 @OwnedBy(PL)
 public class NGSecretServiceV2ImplTest extends CategoryTest {
   private SecretRepository secretRepository;
-  private SshKeySpecDTOHelper sshKeySpecDTOHelper;
   private DelegateGrpcClientWrapper delegateGrpcClientWrapper;
   private NGSecretServiceV2Impl secretServiceV2;
   private NGSecretServiceV2Impl secretServiceV2Spy;
@@ -70,18 +78,22 @@ public class NGSecretServiceV2ImplTest extends CategoryTest {
   private OutboxService outboxService;
   private TaskSetupAbstractionHelper taskSetupAbstractionHelper;
   private TransactionTemplate transactionTemplate;
-
+  private AccessControlClient accessControlClient;
   @Before
   public void setup() {
     secretRepository = mock(SecretRepository.class);
     delegateGrpcClientWrapper = mock(DelegateGrpcClientWrapper.class);
-    sshKeySpecDTOHelper = mock(SshKeySpecDTOHelper.class);
     ngSecretActivityService = mock(NGSecretActivityService.class);
     outboxService = mock(OutboxService.class);
     transactionTemplate = mock(TransactionTemplate.class);
     taskSetupAbstractionHelper = new TaskSetupAbstractionHelper();
+    accessControlClient = mock(AccessControlClient.class);
+    SshKeySpecDTOHelper sshKeySpecDTOHelper = mock(SshKeySpecDTOHelper.class);
+    WinRmCredentialsSpecDTOHelper winRmCredentialsSpecDTOHelper = mock(WinRmCredentialsSpecDTOHelper.class);
+
     secretServiceV2 = new NGSecretServiceV2Impl(secretRepository, delegateGrpcClientWrapper, sshKeySpecDTOHelper,
-        ngSecretActivityService, outboxService, transactionTemplate, taskSetupAbstractionHelper);
+        ngSecretActivityService, outboxService, transactionTemplate, taskSetupAbstractionHelper,
+        winRmCredentialsSpecDTOHelper, accessControlClient);
     secretServiceV2Spy = spy(secretServiceV2);
   }
 
@@ -155,17 +167,6 @@ public class NGSecretServiceV2ImplTest extends CategoryTest {
   @Test
   @Owner(developers = PHOENIKX)
   @Category(UnitTests.class)
-  public void testList() {
-    when(secretRepository.findAll(any(), any())).thenReturn(Page.empty());
-    Page<Secret> secretPage = secretServiceV2Spy.list(Criteria.where("a").is("b"), 0, 100);
-    assertThat(secretPage).isNotNull();
-    assertThat(secretPage.toList()).isEmpty();
-    verify(secretRepository).findAll(any(), any());
-  }
-
-  @Test
-  @Owner(developers = PHOENIKX)
-  @Category(UnitTests.class)
   public void testValidateForNonSSHType() {
     Secret secret = Secret.builder().type(SecretType.SecretText).build();
     doReturn(Optional.of(secret)).when(secretServiceV2Spy).get(any(), any(), any(), any());
@@ -180,6 +181,14 @@ public class NGSecretServiceV2ImplTest extends CategoryTest {
 
   private Secret getSecret() {
     return Secret.builder().type(SecretType.SSHKey).build();
+  }
+
+  private WinRmCredentialsValidationMetadata getWinRmMetaData() {
+    return WinRmCredentialsValidationMetadata.builder().host("test").build();
+  }
+
+  private Secret getWinRmSecret() {
+    return Secret.builder().type(SecretType.WinRmCredentials).build();
   }
 
   @Test
@@ -280,6 +289,78 @@ public class NGSecretServiceV2ImplTest extends CategoryTest {
         .thenReturn(SSHConfigValidationTaskResponse.builder().connectionSuccessful(true).build());
     SecretValidationResultDTO resultDTO =
         secretServiceV2Spy.validateSecret("account", null, null, "identifier", getMetadata());
+    assertThat(resultDTO.isSuccess()).isEqualTo(true);
+  }
+
+  @Test
+  @Owner(developers = VITALIE)
+  @Category(UnitTests.class)
+  public void testValidationForWinRmNTLM() {
+    Secret secret = getWinRmSecret();
+    secret.setSecretSpec(
+        WinRmCredentialsSpec.builder()
+            .port(5986)
+            .auth(WinRmAuth.builder()
+                      .type(WinRmAuthScheme.NTLM)
+                      .spec(NTLMConfig.builder().username("user").password(SecretRefData.builder().build()).build())
+                      .build())
+            .build());
+    doReturn(Optional.of(secret)).when(secretServiceV2Spy).get(any(), any(), any(), any());
+    when(delegateGrpcClientWrapper.executeSyncTask(any()))
+        .thenReturn(WinRmConfigValidationTaskResponse.builder().connectionSuccessful(true).build());
+    SecretValidationResultDTO resultDTO =
+        secretServiceV2Spy.validateSecret("account", null, null, "identifier", getWinRmMetaData());
+    assertThat(resultDTO.isSuccess()).isEqualTo(true);
+  }
+
+  @Test
+  @Owner(developers = VITALIE)
+  @Category(UnitTests.class)
+  public void testValidationForWinRmKerberosPassword() {
+    Secret secret = getWinRmSecret();
+    secret.setSecretSpec(
+        WinRmCredentialsSpec.builder()
+            .port(5986)
+            .auth(WinRmAuth.builder()
+                      .type(WinRmAuthScheme.Kerberos)
+                      .spec(KerberosWinRmConfig.builder()
+                                .principal("principal")
+                                .realm("realm")
+                                .tgtGenerationMethod(TGTGenerationMethod.Password)
+                                .spec(TGTPasswordSpec.builder().password(SecretRefData.builder().build()).build())
+                                .build())
+                      .build())
+            .build());
+    doReturn(Optional.of(secret)).when(secretServiceV2Spy).get(any(), any(), any(), any());
+    when(delegateGrpcClientWrapper.executeSyncTask(any()))
+        .thenReturn(WinRmConfigValidationTaskResponse.builder().connectionSuccessful(true).build());
+    SecretValidationResultDTO resultDTO =
+        secretServiceV2Spy.validateSecret("account", null, null, "identifier", getWinRmMetaData());
+    assertThat(resultDTO.isSuccess()).isEqualTo(true);
+  }
+
+  @Test
+  @Owner(developers = VITALIE)
+  @Category(UnitTests.class)
+  public void testValidationForWinRmKerberosKeyTab() {
+    Secret secret = getWinRmSecret();
+    secret.setSecretSpec(WinRmCredentialsSpec.builder()
+                             .port(5986)
+                             .auth(WinRmAuth.builder()
+                                       .type(WinRmAuthScheme.Kerberos)
+                                       .spec(KerberosWinRmConfig.builder()
+                                                 .principal("principal")
+                                                 .realm("realm")
+                                                 .tgtGenerationMethod(TGTGenerationMethod.KeyTabFilePath)
+                                                 .spec(TGTKeyTabFilePathSpec.builder().keyPath("/a/b/c").build())
+                                                 .build())
+                                       .build())
+                             .build());
+    doReturn(Optional.of(secret)).when(secretServiceV2Spy).get(any(), any(), any(), any());
+    when(delegateGrpcClientWrapper.executeSyncTask(any()))
+        .thenReturn(WinRmConfigValidationTaskResponse.builder().connectionSuccessful(true).build());
+    SecretValidationResultDTO resultDTO =
+        secretServiceV2Spy.validateSecret("account", null, null, "identifier", getWinRmMetaData());
     assertThat(resultDTO.isSuccess()).isEqualTo(true);
   }
 }

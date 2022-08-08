@@ -8,7 +8,6 @@
 package software.wings.graphql.datafetcher.event;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
-import static io.harness.beans.FeatureName.APP_TELEMETRY;
 
 import static software.wings.security.PermissionAttribute.PermissionType.LOGGED_IN;
 
@@ -16,7 +15,6 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.CgEventConfig;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
-import io.harness.ff.FeatureFlagService;
 import io.harness.service.EventConfigService;
 
 import software.wings.graphql.datafetcher.AbstractObjectDataFetcher;
@@ -34,15 +32,11 @@ import org.apache.commons.lang3.StringUtils;
 @OwnedBy(CDC)
 public class EventsConfigDataFetcher extends AbstractObjectDataFetcher<QLEventsConfig, QLEventsConfigQueryParameters> {
   @Inject EventConfigService eventConfigService;
-  @Inject private FeatureFlagService featureFlagService;
   @Inject private AppService appService;
 
   @Override
   @AuthRule(permissionType = LOGGED_IN, action = PermissionAttribute.Action.READ)
   protected QLEventsConfig fetch(QLEventsConfigQueryParameters qlQuery, String accountId) {
-    if (!featureFlagService.isEnabled(APP_TELEMETRY, accountId)) {
-      throw new InvalidRequestException("Please enable feature flag to configure events");
-    }
     if (!appService.exist(qlQuery.getAppId())) {
       throw new InvalidRequestException("Application does not exist");
     }

@@ -14,8 +14,6 @@ import static io.harness.rule.OwnerRule.SATYAM;
 
 import static org.joor.Reflect.on;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyList;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 
@@ -63,7 +61,7 @@ public class AwsRoute53TaskTest extends WingsBaseTest {
   public void testRun() {
     AwsRoute53Request request = AwsRoute53ListHostedZonesRequest.builder().build();
     task.run(new Object[] {request});
-    verify(mockAwsRoute53HelperServiceDelegate).listHostedZones(any(), anyList(), anyString());
+    verify(mockAwsRoute53HelperServiceDelegate).listHostedZones(any(), any(), any());
   }
 
   @Test(expected = InvalidRequestException.class)
@@ -72,12 +70,12 @@ public class AwsRoute53TaskTest extends WingsBaseTest {
   public void testRunWithInvalidRequestException() {
     doThrow(new RuntimeException("Error msg"))
         .when(mockAwsRoute53HelperServiceDelegate)
-        .listHostedZones(any(), anyList(), anyString());
+        .listHostedZones(any(), any(), any());
 
     AwsRoute53ListHostedZonesRequest request = AwsRoute53ListHostedZonesRequest.builder().build();
     task.run(new Object[] {request});
 
-    verify(mockAwsRoute53HelperServiceDelegate).listHostedZones(any(), anyList(), anyString());
+    verify(mockAwsRoute53HelperServiceDelegate).listHostedZones(any(), any(), any());
   }
 
   @Test(expected = InvalidRequestException.class)
@@ -86,11 +84,11 @@ public class AwsRoute53TaskTest extends WingsBaseTest {
   public void testRunWithWingsException() {
     doThrow(new InvalidRequestException("Error msg"))
         .when(mockAwsRoute53HelperServiceDelegate)
-        .listHostedZones(any(), anyList(), anyString());
+        .listHostedZones(any(), any(), any());
 
     AwsRoute53ListHostedZonesRequest request = AwsRoute53ListHostedZonesRequest.builder().build();
     task.run(new Object[] {request});
 
-    verify(mockAwsRoute53HelperServiceDelegate).listHostedZones(any(), anyList(), anyString());
+    verify(mockAwsRoute53HelperServiceDelegate).listHostedZones(any(), any(), any());
   }
 }

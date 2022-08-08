@@ -64,7 +64,8 @@ public class SLOErrorBudgetReset implements PersistentEntity, UuidAware, Account
   String projectIdentifier;
   @Id String uuid;
   String serviceLevelObjectiveIdentifier;
-  Double errorBudgetIncrementPercentage;
+  @Deprecated Double errorBudgetIncrementPercentage;
+  Integer errorBudgetIncrementMinutes;
   Integer remainingErrorBudgetAtReset;
   Integer errorBudgetAtReset;
   String reason;
@@ -73,4 +74,11 @@ public class SLOErrorBudgetReset implements PersistentEntity, UuidAware, Account
 
   long lastUpdatedAt;
   long createdAt;
+
+  public Integer getErrorBudgetIncrementMinutes() {
+    if (errorBudgetIncrementMinutes != null) {
+      return errorBudgetIncrementMinutes;
+    }
+    return (errorBudgetAtReset * errorBudgetIncrementPercentage.intValue()) / 100;
+  }
 }

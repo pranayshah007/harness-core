@@ -26,7 +26,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.joor.Reflect.on;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyList;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
@@ -91,7 +90,7 @@ public class SpotinstTrafficShiftAlbSwitchRoutesStateTest extends WingsBaseTest 
     doReturn(dataBag).when(mockSpotinstStateHelper).getDataBag(any());
     PhaseElement mockPhaseElement = mock(PhaseElement.class);
     ExecutionContext mockContext = mock(ExecutionContext.class);
-    doReturn(mockPhaseElement).when(mockContext).getContextElement(any(), anyString());
+    doReturn(mockPhaseElement).when(mockContext).getContextElement(any(), any());
     doReturn(ServiceElement.builder().uuid(SERVICE_ID).build()).when(mockPhaseElement).getServiceElement();
     doReturn(SpotinstTrafficShiftAlbSetupElement.builder()
                  .oldElastiGroupOriginalConfig(ElastiGroup.builder().id("oldId").name("oldName").build())
@@ -102,12 +101,11 @@ public class SpotinstTrafficShiftAlbSwitchRoutesStateTest extends WingsBaseTest 
         .getSetupElementFromSweepingOutput(mockContext, SPOTINST_SERVICE_ALB_SETUP_SWEEPING_OUTPUT_NAME);
     doReturn(Activity.builder().uuid(ACTIVITY_ID).build())
         .when(mockSpotinstStateHelper)
-        .createActivity(any(), any(), anyString(), anyString(), any(), anyList());
-    doNothing().when(stateExecutionService).appendDelegateTaskDetails(anyString(), any());
+        .createActivity(any(), any(), any(), any(), any(), anyList());
+    doNothing().when(stateExecutionService).appendDelegateTaskDetails(any(), any());
     doReturn(DelegateTask.builder().description("desc").build())
         .when(mockSpotinstStateHelper)
-        .getDelegateTask(anyString(), anyString(), any(), anyString(), anyString(), anyString(), any(), any(),
-            anyString(), eq(true));
+        .getDelegateTask(any(), any(), any(), any(), any(), any(), any(), any(), any(), eq(true));
     ExecutionResponse response = state.execute(mockContext);
     assertThat(response).isNotNull();
     assertThat(response.getExecutionStatus()).isEqualTo(SUCCESS);
@@ -129,7 +127,7 @@ public class SpotinstTrafficShiftAlbSwitchRoutesStateTest extends WingsBaseTest 
     on(state).set("sweepingOutputService", mock(SweepingOutputService.class));
     ExecutionContext mockContext = mock(ExecutionContext.class);
     doReturn(SweepingOutputInstance.builder()).when(mockContext).prepareSweepingOutputBuilder(Scope.WORKFLOW);
-    doReturn("some-string").when(mockContext).appendStateExecutionId(anyString());
+    doReturn("some-string").when(mockContext).appendStateExecutionId(any());
     SpotinstTrafficShiftAlbSwapRoutesExecutionData data =
         SpotinstTrafficShiftAlbSwapRoutesExecutionData.builder().build();
     doReturn(data).when(mockContext).getStateExecutionData();

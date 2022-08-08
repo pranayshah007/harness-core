@@ -16,6 +16,7 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -33,10 +34,6 @@ import java.util.concurrent.TimeUnit;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 import org.redisson.Redisson;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
@@ -45,8 +42,6 @@ import org.redisson.api.RedissonClient;
  * @author rktummala on 01/07/2020
  */
 @OwnedBy(PL)
-@RunWith(PowerMockRunner.class)
-@PrepareForTest(Redisson.class)
 public class RedisPersistentLockerTest extends PersistenceTestBase {
   private RedisPersistentLocker redisPersistentLocker;
   private RedissonClient client;
@@ -54,7 +49,7 @@ public class RedisPersistentLockerTest extends PersistenceTestBase {
   @Before
   public void setup() {
     initMocks(this);
-    PowerMockito.mockStatic(Redisson.class);
+    mockStatic(Redisson.class);
     RedisConfig config = mock(RedisConfig.class);
     when(config.isSentinel()).thenReturn(true);
     when(config.getReadMode()).thenReturn(SLAVE);

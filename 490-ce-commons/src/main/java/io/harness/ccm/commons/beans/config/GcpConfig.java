@@ -15,4 +15,6 @@ import lombok.Data;
 public class GcpConfig {
   private String gcpProjectId;
   private String gcpAwsConnectorCrudPubSubTopic;
+  private String gcpGcpConnectorCrudPubSubTopic;
+  private String gcpAzureConnectorCrudPubSubTopic;
 }

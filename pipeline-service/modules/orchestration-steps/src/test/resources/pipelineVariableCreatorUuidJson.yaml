@@ -1,0 +1,109 @@
+{
+  "pipeline": {
+    "name": "ApprovalStageWithHttStep",
+    "identifier": "ApprovalStageWithHttStep",
+    "projectIdentifier": "ArchitProject",
+    "orgIdentifier": "default",
+    "tags": {
+      "__uuid": "vDSvcNoES8-v2i4PsR_EPg"
+    },
+    "stages": [
+      {
+        "stage": {
+          "name": "stage1",
+          "identifier": "stage1",
+          "description": "",
+          "type": "Approval",
+          "spec": {
+            "execution": {
+              "steps": [
+                {
+                  "step": {
+                    "type": "Http",
+                    "name": "step1",
+                    "identifier": "step1",
+                    "spec": {
+                      "url": "https://google.com",
+                      "method": "GET",
+                      "headers": [
+                        {
+                          "key": "head1",
+                          "value": "v1",
+                          "__uuid": "gKgQOcjaRMyljDhNPTE1Qg"
+                        },
+                        {
+                          "key": "head2",
+                          "value": "v2",
+                          "__uuid": "hXxogSUSTVemSaNwqIxDrw"
+                        }
+                      ],
+                      "outputVariables": [
+                        {
+                          "name": "o1",
+                          "value": "v1",
+                          "type": "String",
+                          "__uuid": "4G7y3pKAQzW-neREpx2mmQ"
+                        }
+                      ],
+                      "__uuid": "M6HHtApvRa6cscRUnJ5NqA"
+                    },
+                    "timeout": "10s",
+                    "__uuid": "xtkQAaoNRkCgtI5mU8KnEQ"
+                  },
+                  "__uuid": "0Q3hGwmGRHuXL54RAcG9dg"
+                },
+                {
+                  "stepGroup": {
+                    "name": "sg1",
+                    "identifier": "sg1",
+                    "when": {
+                      "stageStatus": "All",
+                      "condition": "archit",
+                      "__uuid": "jc31C2vrTyG9CNRkrBQu7g123"
+                    },
+                    "steps": [
+                      {
+                        "step": {
+                          "type": "Http",
+                          "name": "step2",
+                          "identifier": "step2",
+                          "spec": {
+                            "url": "https://google.com",
+                            "method": "GET",
+                            "headers": [],
+                            "outputVariables": [],
+                            "__uuid": "7Oszx9TqQW2Nkz3_emc5ng"
+                          },
+                          "timeout": "10s",
+                          "__uuid": "VgWSDz31S3eZdAtFvTHHoA"
+                        },
+                        "__uuid": "qOnpI7A_SX6-K6JSr7TKKA"
+                      }
+                    ],
+                    "__uuid": "cX5YIAPUQqOlyuSFyKOVGA"
+                  },
+                  "__uuid": "d2f8dAryRXeX4nY4dssJxQ"
+                }
+              ],
+              "__uuid": "KmxClH1bSKiNstn52Cf6BA"
+            },
+            "serviceDependencies": [],
+            "__uuid": "QI3_RIg8TQeB9QQOEAiM8w"
+          },
+          "tags": {
+            "__uuid": "CcTvyLUVSoS18MrrFX4pFQ"
+          },
+          "when": {
+            "pipelineStatus": "All",
+            "condition": "archit",
+            "__uuid": "jc31C2vrTyG9CNRkrBQu7g"
+          },
+          "__uuid": "tGufMZnYTNCcFFLz74wtpA"
+        },
+        "__uuid": "tA9GOy9nR3-spMTx2kpKaw"
+      }
+    ],
+    "__uuid": "CRPECVboRjGi9bHpIqbRyw"
+  },
+  "__uuid": "LYeF7J0hQMuoFf3yBt7HBA"
+}

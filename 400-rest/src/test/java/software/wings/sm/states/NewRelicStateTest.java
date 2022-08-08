@@ -64,9 +64,10 @@ import software.wings.service.intfc.InfrastructureMappingService;
 import software.wings.service.intfc.MetricDataAnalysisService;
 import software.wings.service.intfc.newrelic.NewRelicService;
 import software.wings.service.intfc.security.SecretManager;
-import software.wings.service.intfc.verification.CVActivityLogService.Logger;
+import software.wings.service.intfc.verification.CVActivityLogger;
 import software.wings.sm.ExecutionResponse;
 import software.wings.sm.StateType;
+import software.wings.sm.WorkflowStandardParamsExtensionService;
 import software.wings.sm.states.NewRelicState.Metric;
 import software.wings.verification.VerificationStateAnalysisExecutionData;
 
@@ -103,6 +104,7 @@ public class NewRelicStateTest extends APMStateVerificationTestBase {
   @Mock private WaitNotifyEngine waitNotifyEngine;
   @Mock private DelegateService delegateService;
   @Mock private SecretManager secretManager;
+  @Mock private WorkflowStandardParamsExtensionService workflowStandardParamsExtensionService;
   private String infraMappingId;
   private NewRelicState newRelicState;
 
@@ -170,7 +172,10 @@ public class NewRelicStateTest extends APMStateVerificationTestBase {
     FieldUtils.writeField(newRelicState, "accountService", accountService, true);
     FieldUtils.writeField(newRelicState, "cvActivityLogService", cvActivityLogService, true);
     FieldUtils.writeField(newRelicState, "workflowVerificationResultService", workflowVerificationResultService, true);
-    when(cvActivityLogService.getLoggerByStateExecutionId(anyString(), anyString())).thenReturn(mock(Logger.class));
+    FieldUtils.writeField(
+        newRelicState, "workflowStandardParamsExtensionService", workflowStandardParamsExtensionService, true);
+    when(cvActivityLogService.getLoggerByStateExecutionId(anyString(), anyString()))
+        .thenReturn(mock(CVActivityLogger.class));
 
     setupCommonMocks();
   }
@@ -305,8 +310,8 @@ public class NewRelicStateTest extends APMStateVerificationTestBase {
         .thenReturn(settingAttribute.getUuid());
     when(executionContext.renderExpression("${workflow.variables.NewRelic_App}")).thenReturn("30444");
     doReturn(Environment.Builder.anEnvironment().uuid(UUID.randomUUID().toString()).build())
-        .when(workflowStandardParams)
-        .getEnv();
+        .when(workflowStandardParamsExtensionService)
+        .getEnv(workflowStandardParams);
     when(executionContext.getContextElement(ContextElementType.STANDARD)).thenReturn(workflowStandardParams);
     doReturn(false).when(spyNewRelicState).isCVTaskEnqueuingEnabled(anyString());
     doReturn(AnalysisTolerance.LOW).when(spyNewRelicState).getAnalysisTolerance();
@@ -498,9 +503,8 @@ public class NewRelicStateTest extends APMStateVerificationTestBase {
     String applicationId = "" + 74878374747L;
 
     String message = "exception occurred";
-    when(newRelicService.resolveApplicationId(anyString(), anyString(), anyString(), anyString()))
-        .thenThrow(new UnexpectedException(message));
-    when(newRelicService.resolveApplicationName(anyString(), anyString(), anyString(), anyString()))
+    when(newRelicService.resolveApplicationId(any(), any(), any(), any())).thenThrow(new UnexpectedException(message));
+    when(newRelicService.resolveApplicationName(any(), any(), any(), any()))
         .thenThrow(new UnexpectedException(message));
     doReturn(applicationId).when(spyState).getResolvedFieldValue(any(), any(), any());
     assertThatThrownBy(() -> spyState.createDataCollectionInfo(executionContext, hosts))

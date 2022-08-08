@@ -21,10 +21,9 @@ import io.harness.delegate.task.gcp.response.GcpClusterListTaskResponse;
 import io.harness.delegate.task.gcp.response.GcpResponse;
 import io.harness.errorhandling.NGErrorHelper;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.security.encryption.SecretDecryptionService;
-
-import software.wings.delegatetasks.ExceptionMessageSanitizer;
 
 import com.google.inject.Inject;
 import java.util.List;

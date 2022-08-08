@@ -24,6 +24,7 @@ import io.harness.ng.beans.PageResponse;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 public interface DeploymentLogAnalysisService {
   void save(DeploymentLogAnalysis deploymentLogAnalysisDTO);
@@ -60,4 +61,6 @@ public interface DeploymentLogAnalysisService {
 
   void addDemoAnalysisData(String verificationTaskId, CVConfig cvConfig,
       VerificationJobInstance verificationJobInstance, String demoTemplatePath);
+
+  Set<String> getNodeNames(String accountId, String verificationJobInstanceId);
 }

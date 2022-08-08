@@ -9,6 +9,7 @@ package software.wings.service.impl.security.customsecretsmanager;
 
 import static io.harness.annotations.dev.HarnessModule._360_CG_MANAGER;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
+import static io.harness.rule.OwnerRule.TEJAS;
 import static io.harness.rule.OwnerRule.UTKARSH;
 import static io.harness.security.encryption.EncryptionType.CUSTOM;
 
@@ -16,6 +17,7 @@ import static software.wings.beans.Account.GLOBAL_ACCOUNT_ID;
 import static software.wings.beans.CGConstants.GLOBAL_APP_ID;
 import static software.wings.beans.command.CommandType.START;
 import static software.wings.beans.command.ExecCommandUnit.Builder.anExecCommandUnit;
+import static software.wings.common.TemplateConstants.COMMAND_PATH;
 import static software.wings.common.TemplateConstants.HARNESS_GALLERY;
 import static software.wings.service.impl.security.customsecretsmanager.CustomSecretsManagerUtils.obtainSSHSettingAttributeConfig;
 import static software.wings.service.impl.security.customsecretsmanager.CustomSecretsManagerUtils.obtainTestVariables;
@@ -24,6 +26,10 @@ import static software.wings.utils.TemplateTestConstants.TEMPLATE_CUSTOM_KEYWORD
 import static software.wings.utils.TemplateTestConstants.TEMPLATE_DESC;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
 
@@ -51,6 +57,7 @@ import software.wings.beans.SettingAttribute;
 import software.wings.beans.template.Template;
 import software.wings.beans.template.command.SshCommandTemplate;
 import software.wings.security.encryption.secretsmanagerconfigs.CustomSecretsManagerConfig;
+import software.wings.security.encryption.secretsmanagerconfigs.CustomSecretsManagerShellScript;
 import software.wings.service.intfc.AccountService;
 import software.wings.service.intfc.security.CustomSecretsManagerService;
 import software.wings.service.intfc.template.TemplateGalleryService;
@@ -58,9 +65,11 @@ import software.wings.service.intfc.template.TemplateService;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.stream.Collectors;
 import org.apache.commons.lang3.reflect.FieldUtils;
 import org.junit.Before;
 import org.junit.Test;
@@ -76,6 +85,7 @@ public class CustomSecretsManagerServiceImplTest extends WingsBaseTest {
   @Inject @InjectMocks private TemplateService templateService;
   @Inject @InjectMocks private TemplateGalleryService templateGalleryService;
   @Inject @InjectMocks private CustomSecretsManagerService customSecretsManagerService;
+  @Inject @InjectMocks private CustomSecretsManagerServiceImpl customSecretsManagerServiceImpl;
   @Inject private HPersistence persistence;
 
   @Before
@@ -708,5 +718,71 @@ public class CustomSecretsManagerServiceImplTest extends WingsBaseTest {
     config.setDefault(false);
     boolean valid = customSecretsManagerService.validateSecretsManager(GLOBAL_ACCOUNT_ID, config);
     assertThat(valid).isTrue();
+  }
+
+  @Test
+  @Owner(developers = TEJAS)
+  @Category(UnitTests.class)
+  public void validateInternalWithSkipValidation() {
+    String connectorId = obtainSshSettingAttribute();
+    String templateId = obtainTemplate(ScriptType.BASH);
+    Set<EncryptedDataParams> testVariables = obtainTestVariables(null);
+    CustomSecretsManagerShellScript customSecretsManagerShellScript =
+        CustomSecretsManagerShellScript.builder()
+            .variables(
+                new ArrayList<>(testVariables.stream().map(EncryptedDataParams::getName).collect(Collectors.toSet())))
+            .scriptType(CustomSecretsManagerShellScript.ScriptType.BASH)
+            .scriptString(COMMAND_PATH)
+            .build();
+    CustomSecretsManagerConfig config = CustomSecretsManagerConfig.builder()
+                                            .name("CustomSecretsManager")
+                                            .accountId(GLOBAL_ACCOUNT_ID)
+                                            .skipValidation(true)
+                                            .templateId(templateId)
+                                            .commandPath(COMMAND_PATH)
+                                            .customSecretsManagerShellScript(customSecretsManagerShellScript)
+                                            .delegateSelectors(obtainDelegateSelectors())
+                                            .executeOnDelegate(false)
+                                            .isConnectorTemplatized(false)
+                                            .host("app.harness.io")
+                                            .connectorId(connectorId)
+                                            .testVariables(testVariables)
+                                            .build();
+
+    customSecretsManagerServiceImpl.validateInternal(config, testVariables, true);
+    verify(customEncryptor, never()).validateReference(any(), any(), any());
+  }
+
+  @Test
+  @Owner(developers = TEJAS)
+  @Category(UnitTests.class)
+  public void validateInternalWithoutSkipValidation() {
+    String connectorId = obtainSshSettingAttribute();
+    String templateId = obtainTemplate(ScriptType.BASH);
+    Set<EncryptedDataParams> testVariables = obtainTestVariables(null);
+    CustomSecretsManagerShellScript customSecretsManagerShellScript =
+        CustomSecretsManagerShellScript.builder()
+            .variables(
+                new ArrayList<>(testVariables.stream().map(EncryptedDataParams::getName).collect(Collectors.toSet())))
+            .scriptType(CustomSecretsManagerShellScript.ScriptType.BASH)
+            .scriptString(COMMAND_PATH)
+            .build();
+    CustomSecretsManagerConfig config = CustomSecretsManagerConfig.builder()
+                                            .name("CustomSecretsManager")
+                                            .accountId(GLOBAL_ACCOUNT_ID)
+                                            .skipValidation(false)
+                                            .templateId(templateId)
+                                            .commandPath(COMMAND_PATH)
+                                            .customSecretsManagerShellScript(customSecretsManagerShellScript)
+                                            .delegateSelectors(obtainDelegateSelectors())
+                                            .executeOnDelegate(false)
+                                            .isConnectorTemplatized(false)
+                                            .host("app.harness.io")
+                                            .connectorId(connectorId)
+                                            .testVariables(testVariables)
+                                            .build();
+
+    customSecretsManagerServiceImpl.validateInternal(config, testVariables, false);
+    verify(customEncryptor, times(1)).validateReference(any(), any(), any());
   }
 }

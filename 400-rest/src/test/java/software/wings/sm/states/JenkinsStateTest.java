@@ -60,6 +60,7 @@ import software.wings.service.intfc.security.SecretManager;
 import software.wings.sm.ExecutionContextImpl;
 import software.wings.sm.ExecutionResponse;
 import software.wings.sm.WorkflowStandardParams;
+import software.wings.sm.WorkflowStandardParamsExtensionService;
 
 import com.google.common.collect.ImmutableMap;
 import java.util.Collections;
@@ -100,6 +101,7 @@ public class JenkinsStateTest extends CategoryTest {
   @Mock private SettingsService settingsService;
   @Mock private InfrastructureMappingService infrastructureMappingService;
   @Mock private StateExecutionService stateExecutionService;
+  @Mock private WorkflowStandardParamsExtensionService workflowStandardParamsExtensionService;
 
   @InjectMocks private JenkinsState jenkinsState = new JenkinsState("jenkins");
 
@@ -114,7 +116,7 @@ public class JenkinsStateTest extends CategoryTest {
     when(activityService.save(any(Activity.class))).thenReturn(ACTIVITY_WITH_ID);
     when(executionContext.getGlobalSettingValue(ACCOUNT_ID, SETTING_ID)).thenReturn(jenkinsConfig);
     when(executionContext.renderExpression(anyString()))
-        .thenAnswer(invocation -> invocation.getArgumentAt(0, String.class));
+        .thenAnswer(invocation -> invocation.getArgument(0, String.class));
     WorkflowStandardParams workflowStandardParams = WorkflowStandardParams.Builder.aWorkflowStandardParams().build();
     workflowStandardParams.setCurrentUser(EmbeddedUser.builder().name("test").email("test@harness.io").build());
     when(executionContext.getContextElement(ContextElementType.STANDARD)).thenReturn(workflowStandardParams);

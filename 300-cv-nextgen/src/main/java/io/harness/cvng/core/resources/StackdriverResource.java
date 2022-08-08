@@ -9,6 +9,7 @@ package io.harness.cvng.core.resources;
 
 import io.harness.annotations.ExposeInternalException;
 import io.harness.cvng.core.beans.TimeSeriesSampleDTO;
+import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.core.beans.stackdriver.StackdriverDashboardDTO;
 import io.harness.cvng.core.beans.stackdriver.StackdriverDashboardDetail;
 import io.harness.cvng.core.services.api.StackdriverService;
@@ -28,6 +29,7 @@ import io.swagger.annotations.ApiResponses;
 import java.util.List;
 import java.util.Set;
 import javax.validation.constraints.NotNull;
+import javax.ws.rs.BeanParam;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
@@ -53,14 +55,13 @@ public class StackdriverResource {
   @ExceptionMetered
   @ApiOperation(value = "get all stackdriver dashboards", nickname = "getStackdriverDashboards")
   public ResponseDTO<PageResponse<StackdriverDashboardDTO>> getStackdriverDashboards(
-      @NotNull @QueryParam("accountId") String accountId,
+      @NotNull @BeanParam ProjectParams projectParams,
       @NotNull @QueryParam("connectorIdentifier") final String connectorIdentifier,
-      @QueryParam("orgIdentifier") @NotNull String orgIdentifier,
-      @QueryParam("projectIdentifier") @NotNull String projectIdentifier, @QueryParam("pageSize") @NotNull int pageSize,
-      @QueryParam("offset") @NotNull int offset, @QueryParam("filter") String filter,
-      @NotNull @QueryParam("tracingId") String tracingId) {
-    return ResponseDTO.newResponse(stackdriverService.listDashboards(
-        accountId, connectorIdentifier, orgIdentifier, projectIdentifier, pageSize, offset, filter, tracingId));
+      @QueryParam("pageSize") @NotNull int pageSize, @QueryParam("offset") @NotNull int offset,
+      @QueryParam("filter") String filter, @NotNull @QueryParam("tracingId") String tracingId) {
+    return ResponseDTO.newResponse(stackdriverService.listDashboards(projectParams.getAccountIdentifier(),
+        connectorIdentifier, projectParams.getOrgIdentifier(), projectParams.getProjectIdentifier(), pageSize, offset,
+        filter, tracingId));
   }
 
   @GET
@@ -69,13 +70,11 @@ public class StackdriverResource {
   @ExceptionMetered
   @ApiOperation(value = "get details about one dashboard", nickname = "getStackdriverDashboardDetail")
   public ResponseDTO<List<StackdriverDashboardDetail>> getStackdriverDashboardDetail(
-      @NotNull @QueryParam("accountId") String accountId,
+      @NotNull @BeanParam ProjectParams projectParams,
       @NotNull @QueryParam("connectorIdentifier") final String connectorIdentifier,
-      @QueryParam("orgIdentifier") @NotNull String orgIdentifier,
-      @QueryParam("projectIdentifier") @NotNull String projectIdentifier, @QueryParam("path") @NotNull String path,
-      @NotNull @QueryParam("tracingId") String tracingId) {
-    return ResponseDTO.newResponse(stackdriverService.getDashboardDetails(
-        accountId, connectorIdentifier, orgIdentifier, projectIdentifier, path, tracingId));
+      @QueryParam("path") @NotNull String path, @NotNull @QueryParam("tracingId") String tracingId) {
+    return ResponseDTO.newResponse(stackdriverService.getDashboardDetails(projectParams.getAccountIdentifier(),
+        connectorIdentifier, projectParams.getOrgIdentifier(), projectParams.getProjectIdentifier(), path, tracingId));
   }
 
   @POST
@@ -83,13 +82,11 @@ public class StackdriverResource {
   @Timed
   @ExceptionMetered
   @ApiOperation(value = "get sample data for one metric", nickname = "getStackdriverSampleData")
-  public ResponseDTO<Set<TimeSeriesSampleDTO>> getStackdriverSampleData(
-      @NotNull @QueryParam("accountId") String accountId,
+  public ResponseDTO<Set<TimeSeriesSampleDTO>> getStackdriverSampleData(@NotNull @BeanParam ProjectParams projectParams,
       @NotNull @QueryParam("connectorIdentifier") final String connectorIdentifier,
-      @QueryParam("orgIdentifier") @NotNull String orgIdentifier,
-      @QueryParam("projectIdentifier") @NotNull String projectIdentifier,
       @NotNull @QueryParam("tracingId") String tracingId, @NotNull Object metricDefinitionDTO) {
-    return ResponseDTO.newResponse(stackdriverService.getSampleData(
-        accountId, connectorIdentifier, orgIdentifier, projectIdentifier, metricDefinitionDTO, tracingId));
+    return ResponseDTO.newResponse(
+        stackdriverService.getSampleData(projectParams.getAccountIdentifier(), connectorIdentifier,
+            projectParams.getOrgIdentifier(), projectParams.getProjectIdentifier(), metricDefinitionDTO, tracingId));
   }
 }

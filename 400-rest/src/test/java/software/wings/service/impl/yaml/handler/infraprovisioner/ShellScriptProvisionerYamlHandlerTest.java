@@ -16,7 +16,6 @@ import static software.wings.utils.WingsTestConstants.SERVICE_ID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.verify;
 
@@ -27,7 +26,7 @@ import software.wings.beans.Application;
 import software.wings.beans.InfrastructureProvisioner;
 import software.wings.beans.NameValuePair;
 import software.wings.beans.Service;
-import software.wings.beans.ServiceVariable.Type;
+import software.wings.beans.ServiceVariableType;
 import software.wings.beans.shellscript.provisioner.ShellScriptInfrastructureProvisioner;
 import software.wings.beans.shellscript.provisioner.ShellScriptInfrastructureProvisioner.Yaml;
 import software.wings.beans.yaml.ChangeContext;
@@ -77,11 +76,11 @@ public class ShellScriptProvisionerYamlHandlerTest extends YamlHandlerTestBase {
   @Before
   public void runBeforeTest() throws IOException {
     doReturn(Application.Builder.anApplication().uuid(APP_ID).build()).when(appService).get(any());
-    doReturn(ACCOUNT_ID).when(appService).getAccountIdByAppId(anyString());
-    doReturn(APP_ID).when(mockYamlHelper).getAppId(anyString(), anyString());
+    doReturn(ACCOUNT_ID).when(appService).getAccountIdByAppId(any());
+    doReturn(APP_ID).when(mockYamlHelper).getAppId(any(), any());
     Service service = Service.builder().name("Test").uuid(SERVICE_ID).build();
-    doReturn(service).when(mockServiceResourceService).getServiceByName(anyString(), anyString());
-    doReturn(service).when(mockServiceResourceService).get(anyString(), anyString());
+    doReturn(service).when(mockServiceResourceService).getServiceByName(any(), any());
+    doReturn(service).when(mockServiceResourceService).get(any(), any());
     doReturn(null).when(mockInfrastructureProvisionerService).save(any());
     readYamlFile();
   }
@@ -119,7 +118,7 @@ public class ShellScriptProvisionerYamlHandlerTest extends YamlHandlerTestBase {
   @Category(UnitTests.class)
   public void testGetSavedProvisioner() {
     ShellScriptInfrastructureProvisioner saved = ShellScriptInfrastructureProvisioner.builder().build();
-    doReturn(saved).when(mockYamlHelper).getInfrastructureProvisioner(anyString(), anyString());
+    doReturn(saved).when(mockYamlHelper).getInfrastructureProvisioner(any(), any());
     ShellScriptInfrastructureProvisioner provisioner = handler.get(ACCOUNT_ID, yamlFilePath);
     assertThat(provisioner).isNotNull();
   }
@@ -130,7 +129,7 @@ public class ShellScriptProvisionerYamlHandlerTest extends YamlHandlerTestBase {
   public void testUpdationFromYaml() {
     ShellScriptInfrastructureProvisioner saved =
         ShellScriptInfrastructureProvisioner.builder().name("name").uuid("uuid").build();
-    doReturn(saved).when(mockInfrastructureProvisionerService).getByName(anyString(), anyString());
+    doReturn(saved).when(mockInfrastructureProvisionerService).getByName(any(), any());
     handler.upsertFromYaml(changeContext, Arrays.asList(changeContext));
     verify(mockInfrastructureProvisionerService).update(captor.capture());
     ShellScriptInfrastructureProvisioner updated = (ShellScriptInfrastructureProvisioner) captor.getValue();
@@ -143,8 +142,8 @@ public class ShellScriptProvisionerYamlHandlerTest extends YamlHandlerTestBase {
     provisioner.setScriptBody(SCRIPT_BODY);
 
     List<NameValuePair> variables =
-        Arrays.asList(NameValuePair.builder().name("var1").valueType(Type.ENCRYPTED_TEXT.name()).build(),
-            NameValuePair.builder().name("var2").valueType(Type.TEXT.name()).build());
+        Arrays.asList(NameValuePair.builder().name("var1").valueType(ServiceVariableType.ENCRYPTED_TEXT.name()).build(),
+            NameValuePair.builder().name("var2").valueType(ServiceVariableType.TEXT.name()).build());
     provisioner.setVariables(variables);
     return provisioner;
   }

@@ -124,7 +124,7 @@ public class ChangeSetRequestTimeFilter {
   }
 
   private boolean isChangeRequestInOrder(GitFileChange gitFileChange, YamlSuccessfulChange yamlSuccessfulChange) {
-    return yamlSuccessfulChange.getChangeRequestTS() < gitFileChange.getCommitTimeMs();
+    return yamlSuccessfulChange.getChangeRequestTS() <= gitFileChange.getCommitTimeMs();
   }
 
   private boolean commitTimeMissing(GitFileChange gitFileChange) {

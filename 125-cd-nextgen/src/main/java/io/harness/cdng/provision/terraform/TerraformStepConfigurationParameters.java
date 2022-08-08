@@ -11,8 +11,10 @@ import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
+import io.swagger.annotations.ApiModelProperty;
 import lombok.Builder;
 import lombok.Data;
+import lombok.Getter;
 import lombok.NonNull;
 
 @Data
@@ -20,6 +22,8 @@ import lombok.NonNull;
 @OwnedBy(HarnessTeam.CDP)
 @RecasterAlias("io.harness.cdng.provision.terraform.TerraformStepConfigurationParameters")
 public class TerraformStepConfigurationParameters {
+  @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String uuid;
+
   @NonNull TerraformStepConfigurationType type;
   TerraformExecutionDataParameters spec;
 }

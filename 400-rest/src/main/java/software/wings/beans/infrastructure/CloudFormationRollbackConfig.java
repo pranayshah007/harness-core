@@ -11,7 +11,9 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotation.HarnessEntity;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdIndex;
+import io.harness.mongo.index.MongoIndex;
 import io.harness.persistence.AccountAccess;
 import io.harness.persistence.CreatedAtAware;
 import io.harness.persistence.PersistentEntity;
@@ -21,6 +23,7 @@ import io.harness.validation.Update;
 import software.wings.beans.NameValuePair;
 
 import com.github.reinert.jjschema.SchemaIgnore;
+import com.google.common.collect.ImmutableList;
 import java.util.List;
 import javax.validation.constraints.NotNull;
 import lombok.Builder;
@@ -42,6 +45,18 @@ public class CloudFormationRollbackConfig implements PersistentEntity, UuidAware
   @FdIndex private String accountId;
   @FdIndex @NotNull @SchemaIgnore protected String appId;
   @SchemaIgnore @FdIndex private long createdAt;
+
+  public static List<MongoIndex> mongoIndexes() {
+    return ImmutableList.<MongoIndex>builder()
+        .add(CompoundMongoIndex.builder()
+                 .field(CloudFormationRollbackConfigKeys.appId)
+                 .field(CloudFormationRollbackConfigKeys.entityId)
+                 .field(CloudFormationRollbackConfigKeys.awsConfigId)
+                 .field(CloudFormationRollbackConfigKeys.createdAt)
+                 .name("byAppAndEntityAndAwsConfig")
+                 .build())
+        .build();
+  }
 
   private String url;
   private String body;

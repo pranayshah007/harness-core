@@ -9,7 +9,7 @@ package software.wings.service.impl.template;
 
 import static java.util.Collections.emptyMap;
 
-import io.harness.commandlibrary.api.dto.CommandDTO;
+import io.harness.commandlibrary.api.dto.CommandEntityDTO;
 import io.harness.commandlibrary.client.CommandLibraryServiceClientUtils;
 import io.harness.commandlibrary.client.CommandLibraryServiceHttpClient;
 import io.harness.exception.InvalidRequestException;
@@ -234,33 +234,33 @@ public class ImportedTemplateServiceImpl implements ImportedTemplateService {
   @Override
   public Template getAndSaveImportedTemplate(
       String version, String commandName, String commandStoreName, String accountId, String appId) {
-    CommandDTO commandDTO = downloadAndGetCommandDTO(commandStoreName, commandName);
-    ImportedTemplate importedTemplate = getImportedTemplate(commandDTO, accountId, appId);
+    CommandEntityDTO commandEntityDTO = downloadAndGetCommandEntityDTO(commandStoreName, commandName);
+    ImportedTemplate importedTemplate = getImportedTemplate(commandEntityDTO, accountId, appId);
     if (importedTemplate == null) {
-      return saveNewCommand(version, commandName, commandStoreName, accountId, commandDTO, appId);
+      return saveNewCommand(version, commandName, commandStoreName, accountId, commandEntityDTO, appId);
     } else {
       return downloadAndSaveVersionOfExistingCommand(
           version, commandName, commandStoreName, accountId, importedTemplate, appId);
     }
   }
 
-  private ImportedTemplate getImportedTemplate(CommandDTO commandDTO, String accountId, String appId) {
-    return get(commandDTO.getName(), commandDTO.getCommandStoreName(), accountId, appId);
+  private ImportedTemplate getImportedTemplate(CommandEntityDTO commandEntityDTO, String accountId, String appId) {
+    return get(commandEntityDTO.getName(), commandEntityDTO.getCommandStoreName(), accountId, appId);
   }
 
   private Template saveNewCommand(String version, String commandName, String commandStoreName, String accountId,
-      CommandDTO commandDTO, String appId) {
+      CommandEntityDTO commandEntityDTO, String appId) {
     ImportedTemplate importedTemplate = ImportedTemplate.builder()
-                                            .commandStoreName(commandDTO.getCommandStoreName())
-                                            .commandName(commandDTO.getName())
+                                            .commandStoreName(commandEntityDTO.getCommandStoreName())
+                                            .commandName(commandEntityDTO.getName())
                                             .accountId(accountId)
                                             .appId(appId)
                                             .templateId(null)
-                                            .description(commandDTO.getDescription())
-                                            .name(commandDTO.getName())
-                                            .imageUrl(commandDTO.getImageUrl())
-                                            .repoUrl(commandDTO.getRepoUrl())
-                                            .tags(commandDTO.getTags())
+                                            .description(commandEntityDTO.getDescription())
+                                            .name(commandEntityDTO.getName())
+                                            .imageUrl(commandEntityDTO.getImageUrl())
+                                            .repoUrl(commandEntityDTO.getRepoUrl())
+                                            .tags(commandEntityDTO.getTags())
                                             .build();
     Template template =
         downloadAndSaveNewCommandVersion(version, commandName, commandStoreName, accountId, importedTemplate, appId);
@@ -296,7 +296,7 @@ public class ImportedTemplateServiceImpl implements ImportedTemplateService {
   }
 
   @VisibleForTesting
-  CommandDTO downloadAndGetCommandDTO(String commandStoreName, String commandName) {
+  CommandEntityDTO downloadAndGetCommandEntityDTO(String commandStoreName, String commandName) {
     return CommandLibraryServiceClientUtils
         .executeHttpRequest(serviceHttpClient.getCommandDetails(commandStoreName, commandName, emptyMap()))
         .getResource();

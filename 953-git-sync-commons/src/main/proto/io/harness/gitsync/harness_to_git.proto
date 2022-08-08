@@ -10,6 +10,7 @@ package io.harness.gitsync;
 import "google/protobuf/wrappers.proto";
 import "970-ng-commons/src/main/proto/io/harness/eventsframework/schemas/entity/entity_detail.proto";
 import "970-ng-commons/src/main/proto/io/harness/eventsframework/schemas/entity/entity_scope_info.proto";
+import "970-ng-commons/src/main/proto/io/harness/scope_identifiers.proto";
 import "io/harness/gitsync/change_type.proto";
 import "980-commons/src/main/proto/io/harness/security/principal.proto";
 
@@ -19,7 +20,14 @@ service HarnessToGitPushInfoService {
   rpc pushFromHarness(PushInfo) returns (PushResponse);
   rpc pushFile(FileInfo) returns (PushFileResponse);
   rpc isGitSyncEnabledForScope(io.harness.eventsframework.schemas.entity.EntityScopeInfo) returns (IsGitSyncEnabled);
+  rpc isGitSimplificationEnabledForScope(io.harness.eventsframework.schemas.entity.EntityScopeInfo)
+      returns (IsGitSimplificationEnabled);
   rpc getDefaultBranch(RepoDetails) returns (BranchDetails);
+  rpc getFile(GetFileRequest) returns (GetFileResponse);
+  rpc createFile(CreateFileRequest) returns (CreateFileResponse);
+  rpc updateFile(UpdateFileRequest) returns (UpdateFileResponse);
+  rpc createPullRequest(CreatePRRequest) returns (CreatePRResponse);
+  rpc getRepoUrl(GetRepoUrlRequest) returns (GetRepoUrlResponse);
 }
 
 message PushInfo {
@@ -73,6 +81,10 @@ message IsGitSyncEnabled {
   bool enabled = 1;
 }
 
+message IsGitSimplificationEnabled {
+  bool enabled = 1;
+}
+
 message RepoDetails {
   string yaml_git_config_id = 1;
   string account_id = 2;
@@ -83,4 +95,110 @@ message RepoDetails {
 
 message BranchDetails {
   string default_branch = 1;
+  string error = 2;
+}
+
+message GetFileRequest {
+  string repoName = 1;
+  string branchName = 2;
+  string filePath = 3;
+  string connectorRef = 5;
+  ScopeIdentifiers scopeIdentifiers = 6;
+  map<string, string> contextMap = 7;
+  io.harness.security.Principal principal = 8;
+}
+
+message GetFileResponse {
+  int32 statusCode = 1;
+  string fileContent = 2;
+  ErrorDetails error = 3;
+  GitMetaData gitMetaData = 4;
+}
+
+message CreateFileRequest {
+  string repoName = 1;
+  string branchName = 2;
+  string filePath = 3;
+  string connectorRef = 4;
+  string fileContent = 5;
+  bool isCommitToNewBranch = 6;
+  string baseBranchName = 7;
+  string commitMessage = 8;
+  ScopeIdentifiers scopeIdentifiers = 12;
+  map<string, string> contextMap = 13;
+  io.harness.security.Principal principal = 14;
+}
+
+message CreateFileResponse {
+  int32 statusCode = 1;
+  ErrorDetails error = 2;
+  GitMetaData gitMetaData = 3;
+}
+
+message UpdateFileRequest {
+  string repoName = 1;
+  string branchName = 2;
+  string filePath = 3;
+  string connectorRef = 4;
+  string fileContent = 5;
+  bool isCommitToNewBranch = 6;
+  string baseBranchName = 7;
+  string commitMessage = 8;
+  string oldFileSha = 9;
+  string oldCommitId = 10;
+  ScopeIdentifiers scopeIdentifiers = 12;
+  map<string, string> contextMap = 13;
+  io.harness.security.Principal principal = 14;
+}
+
+message UpdateFileResponse {
+  int32 statusCode = 1;
+  ErrorDetails error = 2;
+  GitMetaData gitMetaData = 3;
+}
+
+message CreatePRRequest {
+  string sourceBranch = 1;
+  string targetBranch = 2;
+  string title = 3;
+  string repoName = 4;
+  string connectorRef = 5;
+  ScopeIdentifiers scopeIdentifiers = 6;
+  map<string, string> contextMap = 7;
+  io.harness.security.Principal principal = 8;
+}
+
+message CreatePRResponse {
+  int32 statusCode = 1;
+  int32 prNumber = 2;
+  ErrorDetails error = 3;
+}
+
+message GetRepoUrlRequest {
+  string connectorRef = 1;
+  string repoName = 2;
+  ScopeIdentifiers scopeIdentifiers = 3;
+  map<string, string> contextMap = 4;
+}
+
+message GetRepoUrlResponse {
+  int32 statusCode = 1;
+  string repoUrl = 2;
+  ErrorDetails error = 3;
+}
+
+message GitMetaData {
+  string repoName = 1;
+  string branchName = 2;
+  string commitId = 3;
+  string filePath = 4;
+  string blobId = 5;
+  string fileUrl = 6;
+  string repoUrl = 7;
+}
+
+message ErrorDetails {
+  string errorMessage = 1;
+  string explanationMessage = 2;
+  string hintMessage = 3;
 }

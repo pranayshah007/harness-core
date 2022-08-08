@@ -8,6 +8,7 @@
 package software.wings.service.impl;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.beans.FeatureName.RESOURCE_CONSTRAINT_SCOPE_PIPELINE_ENABLED;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.USER;
@@ -16,6 +17,7 @@ import static io.harness.persistence.HQuery.allChecks;
 import static io.harness.persistence.HQuery.excludeAuthority;
 
 import static software.wings.beans.ResourceConstraintInstance.NOT_FINISHED_STATES;
+import static software.wings.sm.states.HoldingScope.PIPELINE;
 import static software.wings.sm.states.HoldingScope.WORKFLOW;
 
 import static java.lang.String.format;
@@ -44,6 +46,7 @@ import io.harness.distribution.constraint.UnableToRegisterConsumerException;
 import io.harness.distribution.constraint.UnableToSaveConstraintException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
+import io.harness.ff.FeatureFlagService;
 import io.harness.persistence.HIterator;
 import io.harness.validation.Create;
 import io.harness.validation.Update;
@@ -94,6 +97,7 @@ import ru.vyarus.guice.validator.group.annotation.ValidationGroups;
 public class ResourceConstraintServiceImpl implements ResourceConstraintService, ConstraintRegistry {
   @Inject private WorkflowExecutionService workflowExecutionService;
   @Inject private StateExecutionService stateExecutionService;
+  @Inject private FeatureFlagService featureFlagService;
 
   @Inject private WaitNotifyEngine waitNotifyEngine;
   @Inject private WingsPersistence wingsPersistence;
@@ -199,8 +203,9 @@ public class ResourceConstraintServiceImpl implements ResourceConstraintService,
       query.filter(ResourceConstraintInstanceKeys.appId, appId);
     }
     if (workflowExecutionId != null) {
-      query.filter(ResourceConstraintInstanceKeys.releaseEntityType, WORKFLOW.name())
-          .filter(ResourceConstraintInstanceKeys.releaseEntityId, workflowExecutionId);
+      query.filter(ResourceConstraintInstanceKeys.releaseEntityId, workflowExecutionId)
+          .field(ResourceConstraintInstanceKeys.releaseEntityType)
+          .in(asList(WORKFLOW.name(), PIPELINE.name()));
     }
 
     Set<String> constraintIds = new HashSet<>();
@@ -221,6 +226,14 @@ public class ResourceConstraintServiceImpl implements ResourceConstraintService,
     final HoldingScope holdingScope = HoldingScope.valueOf(instance.getReleaseEntityType());
     boolean finished = false;
     switch (holdingScope) {
+      case PIPELINE:
+        if (featureFlagService.isEnabled(RESOURCE_CONSTRAINT_SCOPE_PIPELINE_ENABLED, instance.getAccountId())) {
+          finished = workflowExecutionService.checkWorkflowExecutionInFinalStatus(
+              instance.getAppId(), instance.getReleaseEntityId());
+          break;
+        }
+        unhandled(holdingScope);
+        break;
       case WORKFLOW:
         finished = workflowExecutionService.checkWorkflowExecutionInFinalStatus(
             instance.getAppId(), instance.getReleaseEntityId());
@@ -348,6 +361,15 @@ public class ResourceConstraintServiceImpl implements ResourceConstraintService,
 
         HoldingScope scope = HoldingScope.valueOf(instance.getReleaseEntityType());
         switch (scope) {
+          case PIPELINE:
+            if (featureFlagService.isEnabled(RESOURCE_CONSTRAINT_SCOPE_PIPELINE_ENABLED, accountId)) {
+              final WorkflowExecution workflowExecution = workflowExecutionService.fetchWorkflowExecution(
+                  instance.getAppId(), instance.getReleaseEntityId(), WorkflowExecutionKeys.name);
+              builder.releaseEntityName(workflowExecution.getName());
+              break;
+            }
+            unhandled(scope);
+            break;
           case WORKFLOW: {
             final WorkflowExecution workflowExecution = workflowExecutionService.fetchWorkflowExecution(
                 instance.getAppId(), instance.getReleaseEntityId(), WorkflowExecutionKeys.name);

@@ -1,0 +1,11 @@
+{
+  "result": {
+    "queryResponse": [
+      {
+        "name": "test_incident_template",
+        "encodedValue": "impact=1^state=8^urgency=1^description=test1234^short_description=test1234^EQ",
+        "readableValue": "Impact = 1 - High .and. State = Canceled .and. Urgency = 1 - High .and. Description = test1234 .and. Short description = test1234"
+      }
+    ]
+  }
+}

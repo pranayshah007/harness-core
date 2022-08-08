@@ -1,0 +1,12 @@
+serviceOverrides:
+  orgIdentifier: orgIdentifier
+  projectIdentifier: projectIdentifier
+  environmentRef: envIdentifier
+  serviceRef: serviceIdentifier
+  variableOverrides:
+    - name: memory
+      value: 8
+      type: String
+    - name: replicas
+      value: 2
+      type: String

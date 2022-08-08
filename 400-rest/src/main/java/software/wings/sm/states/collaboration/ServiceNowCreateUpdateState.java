@@ -39,10 +39,10 @@ import software.wings.beans.SettingAttribute;
 import software.wings.beans.servicenow.ServiceNowCreateUpdateParams;
 import software.wings.beans.servicenow.ServiceNowFields;
 import software.wings.beans.servicenow.ServiceNowTaskParameters;
+import software.wings.beans.servicenow.ServiceNowTicketType;
 import software.wings.delegatetasks.servicenow.ServiceNowAction;
 import software.wings.dl.WingsPersistence;
 import software.wings.service.impl.ActivityHelperService;
-import software.wings.service.impl.servicenow.ServiceNowServiceImpl.ServiceNowTicketType;
 import software.wings.service.intfc.ActivityService;
 import software.wings.service.intfc.DelegateService;
 import software.wings.service.intfc.SettingsService;
@@ -54,6 +54,7 @@ import software.wings.sm.ExecutionResponse;
 import software.wings.sm.State;
 import software.wings.sm.StateType;
 import software.wings.sm.WorkflowStandardParams;
+import software.wings.sm.WorkflowStandardParamsExtensionService;
 import software.wings.sm.states.mixin.SweepingOutputStateMixin;
 
 import com.google.inject.Inject;
@@ -83,6 +84,7 @@ public class ServiceNowCreateUpdateState extends State implements SweepingOutput
   @Inject private transient SettingsService settingsService;
   @Transient @Inject KryoSerializer kryoSerializer;
   @Inject @Transient private FeatureFlagService featureFlagService;
+  @Inject private transient WorkflowStandardParamsExtensionService workflowStandardParamsExtensionService;
 
   private static final long ASYNC_TASK_TIMEOUT_MILLIS = 60 * 1000;
   private static final String ISSUE_NUMBER = "issueNumber";
@@ -140,9 +142,10 @@ public class ServiceNowCreateUpdateState extends State implements SweepingOutput
     String envId = null;
     String envType = null;
     if (isScopingHonored) {
-      envId = (workflowStandardParams == null || workflowStandardParams.getEnv() == null)
+      envId = (workflowStandardParams == null
+                  || workflowStandardParamsExtensionService.getEnv(workflowStandardParams) == null)
           ? null
-          : workflowStandardParams.getEnv().getUuid();
+          : workflowStandardParamsExtensionService.getEnv(workflowStandardParams).getUuid();
       envType = context.getEnvType();
     }
 
@@ -152,6 +155,7 @@ public class ServiceNowCreateUpdateState extends State implements SweepingOutput
         throw new ServiceNowException("Json Body is not a valid Json: " + serviceNowCreateUpdateParams.getJsonBody(),
             ErrorCode.SERVICENOW_ERROR, WingsException.USER);
       }
+      renderImportSetExpressions(context, serviceNowCreateUpdateParams);
       serviceNowTaskParameters = ServiceNowTaskParameters.builder()
                                      .serviceNowConfig(config)
                                      .encryptionDetails(secretManager.getEncryptionDetails(config,
@@ -226,6 +230,11 @@ public class ServiceNowCreateUpdateState extends State implements SweepingOutput
     }
 
     params.setAdditionalFields(renderedAdditionalFields);
+  }
+
+  protected void renderImportSetExpressions(ExecutionContext context, ServiceNowCreateUpdateParams params) {
+    params.setImportSetTableName(context.renderExpression(params.getImportSetTableName()));
+    params.setJsonBody(context.renderExpression(params.getJsonBody()));
   }
 
   private ServiceNowConfig getSnowConfig(String snowConnectorId, String accountId) {

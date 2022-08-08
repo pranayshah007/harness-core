@@ -17,6 +17,7 @@ import static io.harness.telemetry.Destination.AMPLITUDE;
 import static java.time.Duration.ofHours;
 import static java.time.Duration.ofMinutes;
 
+import io.harness.TelemetryConstants;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.iterator.PersistenceIteratorFactory;
@@ -26,6 +27,10 @@ import io.harness.mongo.iterator.MongoPersistenceIterator;
 import io.harness.mongo.iterator.MongoPersistenceIterator.Handler;
 import io.harness.mongo.iterator.filter.MorphiaFilterExpander;
 import io.harness.mongo.iterator.provider.MorphiaPersistenceProvider;
+import io.harness.security.SourcePrincipalContextBuilder;
+import io.harness.security.dto.Principal;
+import io.harness.security.dto.UserPrincipal;
+import io.harness.telemetry.Category;
 import io.harness.telemetry.TelemetryOption;
 import io.harness.telemetry.TelemetryReporter;
 import io.harness.workers.background.AccountLevelEntityProcessController;
@@ -39,6 +44,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -115,5 +121,22 @@ public class DelegateTelemetryPublisher implements Handler<Account> {
     map.put(COUNT_OF_REGISTERED_DELEGATES, delegateService.getCountOfRegisteredDelegates(accountId));
     telemetryReporter.sendGroupEvent(accountId, null, map, Collections.singletonMap(AMPLITUDE, true),
         TelemetryOption.builder().sendForCommunity(true).build());
+  }
+
+  public void sendTelemetryTrackEvents(String accountId, String delegateType, boolean isNg, String eventName) {
+    HashMap<String, Object> properties = new HashMap<>();
+    properties.put("NG", isNg);
+    properties.put("Type", delegateType);
+    Optional<UserPrincipal> userPrincipal = getUserPrincipalFromSourcePrincipal();
+    telemetryReporter.sendTrackEvent(eventName,
+        userPrincipal.isPresent() ? userPrincipal.get().getEmail()
+                                  : TelemetryConstants.SEGMENT_DUMMY_ACCOUNT_PREFIX + accountId,
+        accountId, properties, null, Category.GLOBAL, TelemetryOption.builder().sendForCommunity(false).build());
+  }
+
+  private Optional<UserPrincipal> getUserPrincipalFromSourcePrincipal() {
+    Principal principal = SourcePrincipalContextBuilder.getSourcePrincipal();
+    UserPrincipal userPrincipal = (UserPrincipal) principal;
+    return Optional.ofNullable(userPrincipal);
   }
 }

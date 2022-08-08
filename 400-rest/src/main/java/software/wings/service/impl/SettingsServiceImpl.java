@@ -266,6 +266,17 @@ public class SettingsServiceImpl implements SettingsService {
 
   private static final String OPEN_SSH = "OPENSSH";
 
+  @Override
+  public List<String> getSettingIdsForAccount(String accountId) {
+    return wingsPersistence.createQuery(SettingAttribute.class)
+        .filter(SettingAttributeKeys.accountId, accountId)
+        .project(SettingAttributeKeys.uuid, true)
+        .asList()
+        .stream()
+        .map(SettingAttribute::getUuid)
+        .collect(toList());
+  }
+
   public List<SettingAttribute> list(String accountId, SettingCategory category) {
     return settingAttributeDao.list(accountId, category);
   }
@@ -1128,6 +1139,17 @@ public class SettingsServiceImpl implements SettingsService {
                                             .get();
     setCertValidationRequired(settingAttribute);
     return settingAttribute;
+  }
+
+  @Override
+  public void checkRbacOnSettingAttribute(String appId, SettingAttribute settingAttribute) {
+    if (featureFlagService.isEnabled(FeatureName.USAGE_SCOPE_RBAC, settingAttribute.getAccountId())) {
+      final List<SettingAttribute> filteredSettingAttributes =
+          getFilteredSettingAttributes(asList(settingAttribute), appId, null, false);
+      if (isEmpty(filteredSettingAttributes)) {
+        throw new InvalidRequestException("Not authorized");
+      }
+    }
   }
 
   private void resetUnchangedEncryptedFields(

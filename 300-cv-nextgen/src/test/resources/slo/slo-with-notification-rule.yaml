@@ -1,0 +1,28 @@
+---
+name: slo
+identifier: slo
+description: ''
+tags: {}
+userJourneyRef: userJourneyRef
+monitoredServiceRef: $monitoredServiceRef
+healthSourceRef: $healthSourceRef
+orgIdentifier: $orgIdentifier
+projectIdentifier: $projectIdentifier
+serviceLevelIndicators:
+  - type: Availability
+    sliMissingDataType: Good
+    spec:
+      type: Threshold
+      spec:
+        thresholdValue: 4
+        thresholdType: <
+        metric1: metric1
+target:
+  type: Rolling
+  sloTargetPercentage: 99
+  spec:
+    periodLength: 8d
+notificationRuleRefs:
+  - notificationRuleRef: $identifier
+    enabled: $enabled
+

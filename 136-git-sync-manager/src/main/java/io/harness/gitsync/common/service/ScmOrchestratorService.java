@@ -10,6 +10,7 @@ package io.harness.gitsync.common.service;
 import static io.harness.annotations.dev.HarnessTeam.DX;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.delegate.beans.connector.scm.ScmConnector;
 
 import java.util.function.Function;
 
@@ -23,6 +24,12 @@ public interface ScmOrchestratorService {
   <R> R processScmRequestUsingConnectorSettings(Function<ScmClientFacilitatorService, R> scmRequest,
       String projectIdentifier, String orgIdentifier, String accountId, String connectorIdentifierRef,
       String connectorRepo, String connectorBranch);
+
+  <R> R processScmRequestUsingConnectorSettings(Function<ScmClientFacilitatorService, R> scmRequest,
+      String projectIdentifier, String orgIdentifier, String accountId, String connectorIdentifierRef);
+
+  <R> R processScmRequestUsingConnectorSettings(
+      Function<ScmClientFacilitatorService, R> scmRequest, ScmConnector scmConnector);
 
   boolean isExecuteOnDelegate(String projectIdentifier, String orgIdentifier, String accountId);
 }

@@ -17,6 +17,7 @@ import static org.mockito.Mockito.when;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.ArtifactMetadata;
 import io.harness.category.element.UnitTests;
 import io.harness.rule.Owner;
 
@@ -89,11 +90,12 @@ public class ResumePipelineControllerTest extends WingsBaseTest {
                             .withUuid("FAtIyyQiQOuVlGoLTV_yLg")
                             .withArtifactStreamId("CchJMhP6Tn6nFyca5lE1zw")
                             .withArtifactSourceName("deepakputhraya/python-hello")
-                            .withMetadata(ImmutableMap.<String, String>builder()
-                                              .put("image", "registry.hub.docker.com/deepakputhraya/python-hello:v3.0")
-                                              .put("tag", "v3.0")
-                                              .put("buildNo", "v3.0")
-                                              .build())
+                            .withMetadata(new ArtifactMetadata(
+                                ImmutableMap.<String, String>builder()
+                                    .put("image", "registry.hub.docker.com/deepakputhraya/python-hello:v3.0")
+                                    .put("tag", "v3.0")
+                                    .put("buildNo", "v3.0")
+                                    .build()))
                             .withDisplayName("deepakputhraya/python-hello_v3.0_1709615")
                             .build();
     ArtifactVariable variable =

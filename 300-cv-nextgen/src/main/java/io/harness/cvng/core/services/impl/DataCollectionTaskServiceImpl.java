@@ -16,6 +16,7 @@ import io.harness.cvng.beans.CVNGPerpetualTaskState;
 import io.harness.cvng.beans.DataCollectionExecutionStatus;
 import io.harness.cvng.beans.DataCollectionTaskDTO;
 import io.harness.cvng.beans.DataCollectionTaskDTO.DataCollectionTaskResult;
+import io.harness.cvng.beans.DataCollectionTaskDTO.DataCollectionTaskResult.ExecutionLog;
 import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.core.entities.CVConfig;
 import io.harness.cvng.core.entities.DataCollectionTask;
@@ -25,6 +26,7 @@ import io.harness.cvng.core.entities.MetricCVConfig;
 import io.harness.cvng.core.services.api.DataCollectionTaskManagementService;
 import io.harness.cvng.core.services.api.DataCollectionTaskService;
 import io.harness.cvng.core.services.api.ExecutionLogService;
+import io.harness.cvng.core.services.api.ExecutionLogger;
 import io.harness.cvng.core.services.api.MetricPackService;
 import io.harness.cvng.core.services.api.MonitoringSourcePerpetualTaskService;
 import io.harness.cvng.metrics.CVNGMetricsUtils;
@@ -179,8 +181,16 @@ public class DataCollectionTaskServiceImpl implements DataCollectionTaskService 
     }
     DataCollectionTask dataCollectionTask = getDataCollectionTask(result.getDataCollectionTaskId());
     recordMetricsOnUpdateStatus(dataCollectionTask);
-    executionLogService.getLogger(dataCollectionTask)
-        .log(dataCollectionTask.getLogLevel(), "Data collection task status: " + dataCollectionTask.getStatus());
+    ExecutionLogger executionLogger = executionLogService.getLogger(dataCollectionTask);
+    executionLogger.log(
+        dataCollectionTask.getLogLevel(), "Data collection task status: " + dataCollectionTask.getStatus());
+    if (result.getException() != null) {
+      executionLogger.log(
+          dataCollectionTask.getLogLevel(), "Data collection task failed with exception: ", result.getException());
+    }
+    for (ExecutionLog executionLog : result.getExecutionLogs()) {
+      executionLogger.log(executionLog.getLogLevel(), executionLog.getLog());
+    }
     if (result.getStatus() == DataCollectionExecutionStatus.SUCCESS) {
       // TODO: make this an atomic operation
       if (dataCollectionTask.shouldCreateNextTask()) {
@@ -245,6 +255,17 @@ public class DataCollectionTaskServiceImpl implements DataCollectionTaskService 
     return hPersistence.createQuery(DataCollectionTask.class)
         .filter(DataCollectionTaskKeys.accountId, accountId)
         .filter(DataCollectionTaskKeys.verificationTaskId, verificationTaskId)
+        .order(Sort.descending(DataCollectionTaskKeys.startTime))
+        .asList();
+  }
+
+  @Override
+  public List<DataCollectionTask> getAllNonFinalDataCollectionTasks(String accountId, String verificationTaskId) {
+    return hPersistence.createQuery(DataCollectionTask.class)
+        .filter(DataCollectionTaskKeys.accountId, accountId)
+        .filter(DataCollectionTaskKeys.verificationTaskId, verificationTaskId)
+        .field(DataCollectionTaskKeys.status)
+        .in(DataCollectionExecutionStatus.getNonFinalStatuses())
         .order(Sort.descending(DataCollectionTaskKeys.startTime))
         .asList();
   }

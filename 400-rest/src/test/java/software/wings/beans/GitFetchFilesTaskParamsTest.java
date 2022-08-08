@@ -11,19 +11,26 @@ import static io.harness.rule.OwnerRule.ANSHUL;
 import static io.harness.rule.OwnerRule.TMACARI;
 
 import static software.wings.beans.SettingAttribute.Builder.aSettingAttribute;
+import static software.wings.utils.WingsTestConstants.ACCOUNT_ID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import io.harness.beans.EncryptedData;
 import io.harness.category.element.UnitTests;
+import io.harness.data.structure.UUIDGenerator;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.HttpConnectionExecutionCapability;
 import io.harness.delegate.beans.executioncapability.SocketConnectivityExecutionCapability;
 import io.harness.rule.Owner;
+import io.harness.security.encryption.EncryptedDataDetail;
+import io.harness.security.encryption.EncryptionType;
 
 import software.wings.WingsBaseTest;
 import software.wings.delegatetasks.validation.capabilities.GitConnectionCapability;
 import software.wings.service.impl.ContainerServiceParams;
+import software.wings.service.intfc.security.SecretManager;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -62,22 +69,43 @@ public class GitFetchFilesTaskParamsTest extends WingsBaseTest {
             .gitConfig(GitConfig.builder().repoUrl("http://hello.world").build())
             .encryptedDataDetails(Collections.emptyList())
             .build());
+
+    EncryptedData encryptedData = EncryptedData.builder()
+                                      .encryptionType(EncryptionType.LOCAL)
+                                      .accountId(ACCOUNT_ID)
+                                      .scopedToAccount(false)
+                                      .build();
+    encryptedData.setUuid(UUIDGenerator.generateUuid());
+
+    List<EncryptedDataDetail> localEncryptedDetails =
+        Arrays.asList(EncryptedDataDetail.builder()
+                          .fieldName("Field Name")
+                          .encryptedData(SecretManager.buildRecordData(encryptedData))
+                          .build());
+
+    gitFetchFilesConfigMap.put("Encrypted Detail",
+        GitFetchFilesConfig.builder()
+            .gitConfig(GitConfig.builder().repoUrl("http://hello.world").build())
+            .encryptedDataDetails(localEncryptedDetails)
+            .build());
     gitFetchFilesTaskParams.setGitFetchFilesConfigMap(gitFetchFilesConfigMap);
 
     gitFetchFilesTaskParams.setBindTaskFeatureSet(false);
     gitFetchFilesTaskParams.setGitHostConnectivityCheck(true);
     executionCapabilities = gitFetchFilesTaskParams.fetchRequiredExecutionCapabilities(null);
 
-    assertThat(executionCapabilities.size()).isEqualTo(2);
+    assertThat(executionCapabilities.size()).isEqualTo(3);
     assertThat(executionCapabilities.get(0)).isInstanceOf(HttpConnectionExecutionCapability.class);
     assertThat(executionCapabilities.get(1)).isInstanceOf(HttpConnectionExecutionCapability.class);
+    assertThat(executionCapabilities.get(2)).isInstanceOf(HttpConnectionExecutionCapability.class);
 
     gitFetchFilesTaskParams.setGitHostConnectivityCheck(false);
     executionCapabilities = gitFetchFilesTaskParams.fetchRequiredExecutionCapabilities(null);
 
-    assertThat(executionCapabilities.size()).isEqualTo(2);
+    assertThat(executionCapabilities.size()).isEqualTo(3);
     assertThat(executionCapabilities.get(0)).isInstanceOf(GitConnectionCapability.class);
     assertThat(executionCapabilities.get(1)).isInstanceOf(GitConnectionCapability.class);
+    assertThat(executionCapabilities.get(2)).isInstanceOf(GitConnectionCapability.class);
   }
 
   @Test

@@ -9,6 +9,7 @@ package io.harness.polling.mapper;
 
 import static io.harness.polling.contracts.Category.ARTIFACT;
 import static io.harness.polling.contracts.Category.MANIFEST;
+import static io.harness.rule.OwnerRule.BUHA;
 import static io.harness.rule.OwnerRule.INDER;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -21,10 +22,12 @@ import io.harness.cdng.manifest.ManifestStoreType;
 import io.harness.cdng.manifest.yaml.GcsStoreConfig;
 import io.harness.cdng.manifest.yaml.S3StoreConfig;
 import io.harness.polling.bean.PollingDocument;
+import io.harness.polling.bean.artifact.AcrArtifactInfo;
 import io.harness.polling.bean.artifact.DockerHubArtifactInfo;
 import io.harness.polling.bean.artifact.EcrArtifactInfo;
 import io.harness.polling.bean.artifact.GcrArtifactInfo;
 import io.harness.polling.bean.manifest.HelmChartManifestInfo;
+import io.harness.polling.contracts.AcrPayload;
 import io.harness.polling.contracts.DockerHubPayload;
 import io.harness.polling.contracts.EcrPayload;
 import io.harness.polling.contracts.GcrPayload;
@@ -207,6 +210,33 @@ public class PollingDocumentMapperTest extends CDNGTestBase {
     DockerHubArtifactInfo dockerHubArtifactInfo = (DockerHubArtifactInfo) pollingDocument.getPollingInfo();
     assertThat(dockerHubArtifactInfo.getImagePath()).isEqualTo("my-image");
     assertThat(dockerHubArtifactInfo.getConnectorRef()).isEqualTo(CONNECTOR_REF);
+  }
+
+  @Test
+  @Owner(developers = BUHA)
+  @Category(UnitTests.class)
+  public void testAcrArtifactInfoMapper() {
+    AcrPayload acrArtifactPayload = AcrPayload.newBuilder()
+                                        .setSubscriptionId("my-subscription")
+                                        .setRegistry("my-registry")
+                                        .setRepository("my-repository")
+                                        .build();
+    PollingPayloadData pollingPayloadData = PollingPayloadData.newBuilder()
+                                                .setConnectorRef(CONNECTOR_REF)
+                                                .setAcrPayload(acrArtifactPayload)
+                                                .setType(Type.ACR)
+                                                .build();
+    PollingItem pollingItem = getPollingItem(ARTIFACT, pollingPayloadData);
+
+    PollingDocument pollingDocument = pollingDocumentMapper.toPollingDocument(pollingItem);
+    assertPollingDocument(pollingDocument);
+    assertThat(pollingDocument.getPollingType()).isEqualTo(io.harness.polling.bean.PollingType.ARTIFACT);
+    assertThat(pollingDocument.getPollingInfo()).isInstanceOf(AcrArtifactInfo.class);
+    AcrArtifactInfo acrArtifactInfo = (AcrArtifactInfo) pollingDocument.getPollingInfo();
+    assertThat(acrArtifactInfo.getSubscriptionId()).isEqualTo("my-subscription");
+    assertThat(acrArtifactInfo.getRegistry()).isEqualTo("my-registry");
+    assertThat(acrArtifactInfo.getRepository()).isEqualTo("my-repository");
+    assertThat(acrArtifactInfo.getConnectorRef()).isEqualTo(CONNECTOR_REF);
   }
 
   private void assertPollingDocument(PollingDocument pollingDocument) {

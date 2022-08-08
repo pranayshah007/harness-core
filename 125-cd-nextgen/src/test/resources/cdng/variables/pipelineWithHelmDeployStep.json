@@ -1,0 +1,120 @@
+{
+  "pipeline": {
+    "name": "Helm Deployment",
+    "identifier": "Helm_Deployment",
+    "allowStageExecutions": false,
+    "projectIdentifier": "Kubernetes",
+    "orgIdentifier": "default",
+    "tags": {
+      "__uuid": "LezrUGi0S--ABYy_QKI27Q"
+    },
+    "stages": [
+      {
+        "stage": {
+          "name": "Deployment",
+          "identifier": "Deployment",
+          "description": "",
+          "type": "Deployment",
+          "spec": {
+            "serviceConfig": {
+              "serviceRef": "Helm",
+              "serviceDefinition": {
+                "type": "NativeHelm",
+                "spec": {
+                  "variables": [],
+                  "manifests": [
+                    {
+                      "manifest": {
+                        "identifier": "manifest",
+                        "type": "HelmChart",
+                        "spec": {
+                          "store": {
+                            "type": "Git",
+                            "spec": {
+                              "connectorRef": "account.Sample_K8s_Manifests",
+                              "gitFetchType": "Branch",
+                              "folderPath": "test/k8sDeploymentType/helm/test",
+                              "branch": "master",
+                              "__uuid": "zQE__l5KS0CXbHvB21NBNg"
+                            },
+                            "__uuid": "_YTa8LElRpuzeusamH6fDg"
+                          },
+                          "skipResourceVersioning": false,
+                          "helmVersion": "V3",
+                          "__uuid": "CaKzUpizQHaucnSgNMmSQA"
+                        },
+                        "__uuid": "BXiWU9JzRqSP-kpMAcYLVQ"
+                      },
+                      "__uuid": "dCQ_uuywTvS_uzfkutsBcQ"
+                    }
+                  ],
+                  "__uuid": "jDQK6UOkSH-yV6suVGXNiw"
+                },
+                "__uuid": "fa2Pf4gyRsaAfdL2n9_uhQ"
+              },
+              "__uuid": "e-yVOGY9RCKXj9LDjLOW1w"
+            },
+            "infrastructure": {
+              "environmentRef": "Helm",
+              "infrastructureDefinition": {
+                "type": "KubernetesDirect",
+                "spec": {
+                  "connectorRef": "account.Kubernetes_Local",
+                  "namespace": "default",
+                  "releaseName": "release-<+INFRA_KEY>",
+                  "__uuid": "LXvxvlOvQayTKrisgYWlIA"
+                },
+                "__uuid": "rGMWKyldRuWKmTGvHPke0A"
+              },
+              "allowSimultaneousDeployments": false,
+              "__uuid": "01oPTRuQT9qtP8ZbSttmlQ"
+            },
+            "execution": {
+              "steps": [
+                {
+                  "step": {
+                    "name": "Helm Deployment",
+                    "identifier": "helmDeployment",
+                    "type": "HelmDeploy",
+                    "timeout": "10m",
+                    "spec": {
+                      "skipDryRun": false,
+                      "__uuid": "366h9pE5TNe3-E3NCeZLhw"
+                    },
+                    "__uuid": "Gr4WSPj5SqibIC8OA9M_dw"
+                  },
+                  "__uuid": "hvvlvKhLSl-xrof7uJ-Fiw"
+                }
+              ],
+              "rollbackSteps": [],
+              "__uuid": "peSOl8waRQGa6zlIyKBimg"
+            },
+            "__uuid": "kqit81FUQ_OXIhJPGPc-HQ"
+          },
+          "tags": {
+            "__uuid": "CO_k__YcRTKWNVsoiXy8Xg"
+          },
+          "failureStrategies": [
+            {
+              "onFailure": {
+                "errors": [
+                  "AllErrors"
+                ],
+                "action": {
+                  "type": "StageRollback",
+                  "__uuid": "QvUmifUURqKuLAx_G6jCiA"
+                },
+                "__uuid": "JRBt5nozQ26IdsHUf5UEFg"
+              },
+              "__uuid": "BaFKKg8lQR2adLEq_uHW_g"
+            }
+          ],
+          "__uuid": "KQQr-DPJSMOs-BNPxzpeCw"
+        },
+        "__uuid": "EamfA0OBQjS348vieP_VVw"
+      }
+    ],
+    "__uuid": "ATx7ui3_QHyv7BpjZSyvrw"
+  },
+  "__uuid": "WOd4tp_6TWa0MPVoChRmfQ"
+}

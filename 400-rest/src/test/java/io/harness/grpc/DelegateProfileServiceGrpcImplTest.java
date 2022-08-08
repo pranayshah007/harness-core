@@ -20,13 +20,13 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import io.harness.MockableTestMixin;
 import io.harness.annotations.dev.BreakDependencyOn;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.HarnessTeam;
@@ -83,8 +83,8 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
+import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
-import org.slf4j.Logger;
 
 @RunWith(MockitoJUnitRunner.class)
 @OwnedBy(HarnessTeam.DEL)
@@ -92,7 +92,7 @@ import org.slf4j.Logger;
 @BreakDependencyOn("software.wings.WingsBaseTest")
 @BreakDependencyOn("software.wings.beans.User")
 @BreakDependencyOn("software.wings.service.intfc.UserService")
-public class DelegateProfileServiceGrpcImplTest extends WingsBaseTest implements MockableTestMixin {
+public class DelegateProfileServiceGrpcImplTest extends WingsBaseTest {
   @Rule public final GrpcCleanupRule grpcCleanup = new GrpcCleanupRule();
 
   private static final String NAME = "name";
@@ -107,17 +107,12 @@ public class DelegateProfileServiceGrpcImplTest extends WingsBaseTest implements
 
   private DelegateProfileServiceGrpcClient delegateProfileServiceGrpcClient;
 
-  private DelegateProfileService delegateProfileService;
+  @Mock private DelegateProfileService delegateProfileService;
 
   @Inject KryoSerializer kryoSerializer;
 
   @Before
   public void setUp() throws Exception {
-    Logger mockClientLogger = mock(Logger.class);
-    Logger mockServerLogger = mock(Logger.class);
-    setStaticFieldValue(DelegateServiceGrpcClient.class, "log", mockClientLogger);
-    setStaticFieldValue(DelegateServiceGrpcClient.class, "log", mockServerLogger);
-
     String serverName = InProcessServerBuilder.generateName();
     Channel channel = grpcCleanup.register(InProcessChannelBuilder.forName(serverName).build());
 
@@ -126,7 +121,7 @@ public class DelegateProfileServiceGrpcImplTest extends WingsBaseTest implements
     delegateProfileServiceGrpcClient =
         new DelegateProfileServiceGrpcClient(delegateProfileServiceBlockingStub, kryoSerializer);
 
-    delegateProfileService = mock(DelegateProfileService.class);
+    //    delegateProfileService = mock(DelegateProfileService.class);
     UserService userService = mock(UserService.class);
     when(userService.getUserFromCacheOrDB(anyString())).thenReturn(new User());
     DelegateProfileServiceGrpcImpl delegateProfileServiceGrpcImpl =
@@ -564,21 +559,17 @@ public class DelegateProfileServiceGrpcImplTest extends WingsBaseTest implements
         .hasMessage(CUSTOM_ERROR_MESSAGE);
 
     // Test update profile selectors
-    try {
-      delegateProfileServiceGrpcClient.updateProfileSelectors(AccountId.newBuilder().setId(accountId).build(),
-          ProfileId.newBuilder().setId(profileId).build(),
-          Collections.singletonList(ProfileSelector.newBuilder().setSelector("test").build()));
+    delegateProfileServiceGrpcClient.updateProfileSelectors(AccountId.newBuilder().setId(accountId).build(),
+        ProfileId.newBuilder().setId(profileId).build(),
+        Collections.singletonList(ProfileSelector.newBuilder().setSelector("test").build()));
 
-      ArgumentCaptor<List> argumentCaptor = ArgumentCaptor.forClass(List.class);
-      verify(delegateProfileService, times(2))
-          .updateDelegateProfileSelectors(eq(profileId), eq(accountId), argumentCaptor.capture());
+    ArgumentCaptor<List> argumentCaptor = ArgumentCaptor.forClass(List.class);
+    verify(delegateProfileService, times(2))
+        .updateDelegateProfileSelectors(eq(profileId), eq(accountId), argumentCaptor.capture());
 
-      List<PermissionAttribute> selectors = argumentCaptor.getValue();
-      assertThat(selectors).hasSize(1);
-      assertThat(selectors.get(0)).isEqualTo("test");
-    } catch (Exception ex) {
-      fail("Unexpected error occurred while testing update of the profile selectors");
-    }
+    List<String> selectors = argumentCaptor.getValue();
+    assertThat(selectors).hasSize(1);
+    assertThat(selectors.get(0)).isEqualTo("test");
   }
 
   @Test
@@ -619,10 +610,10 @@ public class DelegateProfileServiceGrpcImplTest extends WingsBaseTest implements
     verify(delegateProfileService, times(2)).updateScopingRules(eq(accountId), eq(profileId), argumentCaptor.capture());
 
     List<PermissionAttribute> scopingEntities = argumentCaptor.getValue();
-    assertThat(scopingEntities).isNotNull().hasSize(1);
+    assertThat(scopingEntities).hasSize(1);
 
     // Test profile not found
-    when(delegateProfileService.updateScopingRules(accountId, profileId, null)).thenReturn(null);
+    doReturn(null).when(delegateProfileService).updateScopingRules(accountId, profileId, null);
 
     delegateProfileGrpc = delegateProfileServiceGrpcClient.updateProfileScopingRules(
         AccountId.newBuilder().setId(accountId).build(), ProfileId.newBuilder().setId(profileId).build(), null);

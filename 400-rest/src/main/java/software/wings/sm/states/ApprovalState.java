@@ -54,6 +54,7 @@ import io.harness.beans.SweepingOutputInstance.Scope;
 import io.harness.beans.TriggeredBy;
 import io.harness.beans.WorkflowType;
 import io.harness.context.ContextElementType;
+import io.harness.data.algorithm.HashGenerator;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.eraro.ErrorCode;
 import io.harness.eraro.Level;
@@ -62,9 +63,12 @@ import io.harness.exception.HarnessJiraException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.expression.ExpressionEvaluator;
+import io.harness.expression.ExpressionReflectionUtils;
+import io.harness.ff.FeatureFlagService;
 import io.harness.logging.Misc;
 import io.harness.scheduler.PersistentScheduler;
 import io.harness.serializer.KryoSerializer;
+import io.harness.shell.ScriptType;
 import io.harness.tasks.ResponseData;
 
 import software.wings.api.ApprovalStateExecutionData;
@@ -174,7 +178,13 @@ public class ApprovalState extends State implements SweepingOutputStateMixin {
   @Getter @Setter private List<String> userGroups = new ArrayList<>();
   @Getter @Setter private boolean disable;
   @Getter @Setter private String disableAssertion;
+  @Getter @Setter private boolean autoRejectPreviousDeployments;
   @Setter @SchemaIgnore private String stageName;
+  @Getter @Setter private boolean userGroupAsExpression;
+  /**
+   * This should be used to get user groups to approval if {@link #userGroupAsExpression} is set.
+   */
+  @NotNull @Getter @Setter private String userGroupExpression;
 
   @Override
   public KryoSerializer getKryoSerializer() {
@@ -199,6 +209,7 @@ public class ApprovalState extends State implements SweepingOutputStateMixin {
   @Inject private UserGroupService userGroupService;
   @Inject private ServiceResourceService serviceResourceService;
   @Inject private InfrastructureDefinitionService infrastructureDefinitionService;
+  @Inject private FeatureFlagService featureFlagService;
 
   @Inject @Transient private TemplateExpressionProcessor templateExpressionProcessor;
   @Transient @Inject KryoSerializer kryoSerializer;
@@ -209,6 +220,8 @@ public class ApprovalState extends State implements SweepingOutputStateMixin {
   private String SCRIPT_APPROVAL_JOB_GROUP = "SHELL_SCRIPT_APPROVAL_JOB";
   public static final String APPROVAL_STATE_TYPE_VARIABLE = "approvalStateType";
   public static final String USER_GROUPS_VARIABLE = "userGroups";
+  private static final Integer MAXIMUM_TIMEOUT = 2147400049;
+  private static final String TIMEOUT_PROPERTY_KEY = "timeoutMillis";
 
   @Getter @Setter ApprovalStateParams approvalStateParams;
   @Getter @Setter ApprovalStateType approvalStateType = USER_GROUP;
@@ -231,8 +244,10 @@ public class ApprovalState extends State implements SweepingOutputStateMixin {
     ExecutionContextImpl executionContext = (ExecutionContextImpl) context;
     String approvalId = generateUuid();
 
-    if (!isEmpty(getTemplateExpressions())) {
+    if (isNotEmpty(getTemplateExpressions())) {
       resolveUserGroupFromTemplate(context, executionContext);
+    } else if (isUserGroupAsExpression()) {
+      resolveUserGroupFromExpression(context);
     }
 
     WorkflowStandardParams workflowStandardParams = context.getContextElement(ContextElementType.STANDARD);
@@ -241,6 +256,7 @@ public class ApprovalState extends State implements SweepingOutputStateMixin {
                                                    .approvalStateType(approvalStateType)
                                                    .timeoutMillis(getTimeoutMillis())
                                                    .variables(getVariables())
+                                                   .stageName(getStageName())
                                                    .triggeredBy(workflowStandardParams.getCurrentUser())
                                                    .build();
     if (disableAssertion != null) {
@@ -323,8 +339,34 @@ public class ApprovalState extends State implements SweepingOutputStateMixin {
           Level.ERROR, WingsException.USER);
     }
 
-    for (String singleUserGroup : userGroups) {
-      String accountId = executionContext.getApp().getAccountId();
+    userGroups = resolveUserGroup(userGroups, executionContext.getApp().getAccountId());
+  }
+
+  @VisibleForTesting
+  void resolveUserGroupFromExpression(ExecutionContext context) {
+    if (isEmpty(getUserGroupExpression())) {
+      throw new InvalidRequestException("User group expression is set but value is not provided", USER);
+    }
+
+    String expression = getUserGroupExpression();
+    String renderedExpression = context.renderExpression(expression);
+
+    if (isEmpty(renderedExpression)) {
+      log.error("[EMPTY_EXPRESSION] Rendered expression is: [{}]. Original Expression: [{}], Context: [{}]",
+          renderedExpression, expression, context.asMap());
+      throw new InvalidRequestException("User group expression is invalid", USER);
+    }
+
+    List<String> userGroupNames =
+        Arrays.stream(renderedExpression.split(",")).map(String::trim).collect(Collectors.toList());
+
+    userGroups = resolveUserGroup(userGroupNames, context.getAccountId());
+  }
+
+  private List<String> resolveUserGroup(List<String> userGroupNames, String accountId) {
+    List<String> resolvedUserGroup = new ArrayList<>();
+
+    for (String singleUserGroup : userGroupNames) {
       UserGroup userGroup = userGroupService.get(accountId, singleUserGroup);
       if (userGroup == null) {
         userGroup = userGroupService.fetchUserGroupByName(accountId, singleUserGroup);
@@ -335,7 +377,8 @@ public class ApprovalState extends State implements SweepingOutputStateMixin {
       }
       resolvedUserGroup.add(userGroup.getUuid());
     }
-    userGroups = resolvedUserGroup;
+
+    return resolvedUserGroup;
   }
 
   @Nullable
@@ -393,7 +436,15 @@ public class ApprovalState extends State implements SweepingOutputStateMixin {
     if (isDisabled && properties.get(EnvStateKeys.disableAssertion) == null) {
       properties.put(EnvStateKeys.disableAssertion, "true");
     }
+    validateProperties(properties);
     mapApprovalObject(properties, this);
+  }
+
+  private void validateProperties(Map<String, Object> properties) {
+    Number timeoutMillis = (Number) properties.get(TIMEOUT_PROPERTY_KEY);
+    if (timeoutMillis != null && timeoutMillis.longValue() > MAXIMUM_TIMEOUT) {
+      throw new InvalidRequestException("Value exceeded maximum timeout of 3w 3d 20h 30m.");
+    }
   }
 
   /*
@@ -475,7 +526,18 @@ public class ApprovalState extends State implements SweepingOutputStateMixin {
 
   private ExecutionResponse executeShellScriptApproval(ExecutionContext context, String accountId, String appId,
       String approvalId, ShellScriptApprovalParams parameters, ApprovalStateExecutionData executionData) {
-    parameters.setScriptString(context.renderExpression(parameters.getScriptString()));
+    context.resetPreparedCache();
+    int expressionFunctorToken = HashGenerator.generateIntegerHash();
+
+    StateExecutionContext stateExecutionContext = StateExecutionContext.builder()
+                                                      .stateExecutionData(executionData)
+                                                      .scriptType(ScriptType.BASH)
+                                                      .adoptDelegateDecryption(true)
+                                                      .expressionFunctorToken(expressionFunctorToken)
+                                                      .build();
+    ExpressionReflectionUtils.applyExpression(
+        parameters, (secretMode, value) -> context.renderExpression(value, stateExecutionContext));
+
     parameters.setDelegateSelectors(getDelegateSelectors(context, parameters.fetchDelegateSelectors()));
 
     String activityId = createActivity(context);
@@ -495,6 +557,7 @@ public class ApprovalState extends State implements SweepingOutputStateMixin {
             .delegateSelectors(parameters.fetchDelegateSelectors())
             .approvalType(approvalStateType)
             .retryInterval(parameters.getRetryInterval())
+            .expressionFunctorToken(expressionFunctorToken)
             .build();
 
     try {
@@ -865,6 +928,7 @@ public class ApprovalState extends State implements SweepingOutputStateMixin {
       Map<String, String> placeholderValues, String approvalId, ApprovalStateExecutionData executionData, String appId,
       ExecutionContext context) {
     executionData.setUserGroups(userGroups);
+    executionData.setAutoRejectPreviousDeployments(autoRejectPreviousDeployments);
     updatePlaceholderValuesForSlackApproval(approvalId, accountId, placeholderValues, context);
     sendNotificationForUserGroupApproval(userGroups, appId, accountId, APPROVAL_NEEDED_NOTIFICATION, placeholderValues);
 
@@ -1001,8 +1065,8 @@ public class ApprovalState extends State implements SweepingOutputStateMixin {
     }
 
     String displayText = createSlackApprovalMessage(slackApprovalParams, notificationTemplateUrl);
-    String validatedMessage = validateMessageLength(
-        displayText, slackApprovalParams, notificationTemplateUrl, serviceDetails, artifacts, infraDetails);
+    String validatedMessage = validateMessageLength(displayText, slackApprovalParams, notificationTemplateUrl,
+        serviceDetails, artifacts, infraDetails, environments);
     String buttonValue = customData.toString();
     buttonValue = StringEscapeUtils.escapeJson(buttonValue);
     placeHolderValues.put(SlackApprovalMessageKeys.SLACK_APPROVAL_PARAMS, buttonValue);
@@ -1012,27 +1076,54 @@ public class ApprovalState extends State implements SweepingOutputStateMixin {
 
   @VisibleForTesting
   String validateMessageLength(String displayText, SlackApprovalParams slackApprovalParams, URL notificationTemplateUrl,
-      WorkflowNotificationDetails serviceDetails, StringBuilder artifacts, WorkflowNotificationDetails infraDetails) {
+      WorkflowNotificationDetails serviceDetails, StringBuilder artifacts, WorkflowNotificationDetails infraDetails,
+      StringBuilder environments) {
+    // Current caller never send notificationTemplateUrl argument as null
     if (displayText.length() < 1900) {
       return displayText;
     } else {
-      int serviceCount = serviceDetails.getName().split(",").length;
-      boolean areServicesTrimmed = trimNotificationDetails(serviceDetails, serviceCount);
-      int artifactsCount = artifacts.toString().replace("*Artifacts:* ", "").split(", ").length;
-      boolean areArtifactsTrimmed = trimArtifacts(artifacts, artifactsCount);
-      int infraCount = infraDetails.getName().split(",").length;
-      boolean areInfrasTrimmed = trimNotificationDetails(infraDetails, infraCount);
+      int serviceCount = 0;
+      boolean areServicesTrimmed = false;
+      if (serviceDetails != null) {
+        serviceCount = serviceDetails.getName().split(",").length;
+        areServicesTrimmed = trimNotificationDetails(serviceDetails, serviceCount);
+      }
+
+      int artifactsCount = 0;
+      boolean areArtifactsTrimmed = false;
+      if (artifacts != null) {
+        artifactsCount = artifacts.toString().replace("*Artifacts*: ", "").split(", ").length;
+        areArtifactsTrimmed = trimArtifacts(artifacts, artifactsCount);
+      }
+
+      int infraCount = 0;
+      boolean areInfrasTrimmed = false;
+      if (infraDetails != null) {
+        infraCount = infraDetails.getName().split(",").length;
+        areInfrasTrimmed = trimNotificationDetails(infraDetails, infraCount);
+      }
+
+      int envCount = 0;
+      boolean areEnvsTrimmed = false;
+      if (environments != null) {
+        envCount = environments.toString().replace("*Environments*: ", "").split(", ").length;
+        areEnvsTrimmed = trimEnvironments(environments, envCount);
+      }
+
       SlackApprovalParams params =
           slackApprovalParams.toBuilder()
               .servicesInvolved(areServicesTrimmed
                       ? String.format("*Services*: %s... %s more", serviceDetails.getName(), serviceCount - 3)
                       : slackApprovalParams.getServicesInvolved())
               .artifactsInvolved(areArtifactsTrimmed
-                      ? String.format("*Artifacts:* %s... %s more", artifacts.toString(), artifactsCount - 3)
+                      ? String.format("*Artifacts*: %s... %s more", artifacts.toString(), artifactsCount - 3)
                       : slackApprovalParams.getArtifactsInvolved())
               .infraDefinitionsInvolved(areInfrasTrimmed ? String.format("*Infrastructure Definitions*: %s... %s more",
                                             infraDetails.getName(), infraCount - 3)
                                                          : slackApprovalParams.getInfraDefinitionsInvolved())
+              .environmentsInvolved(areEnvsTrimmed
+                      ? String.format("*Environments*: %s... %s more", environments, envCount - 3)
+                      : slackApprovalParams.getEnvironmentsInvolved())
               .build();
       return createSlackApprovalMessage(params, notificationTemplateUrl);
     }
@@ -1041,13 +1132,28 @@ public class ApprovalState extends State implements SweepingOutputStateMixin {
   private boolean trimArtifacts(StringBuilder artifactsDetails, int artifactsCount) {
     if (artifactsCount > 3) {
       String[] trimmedArtifacts =
-          Arrays.copyOfRange(artifactsDetails.toString().replace("*Artifacts:* ", "").split(", "), 0, 3);
+          Arrays.copyOfRange(artifactsDetails.toString().replace("*Artifacts*: ", "").split(", "), 0, 3);
       StringJoiner artifacts = new StringJoiner(", ");
       for (String artifact : trimmedArtifacts) {
         artifacts.add(artifact);
       }
       artifactsDetails.setLength(0);
       artifactsDetails.append(artifacts);
+      return true;
+    }
+    return false;
+  }
+
+  private boolean trimEnvironments(StringBuilder environmentsDetails, int environmentsCount) {
+    if (environmentsCount > 3) {
+      String[] trimmedArtifacts =
+          Arrays.copyOfRange(environmentsDetails.toString().replace("*Environments*: ", "").split(", "), 0, 3);
+      StringJoiner artifacts = new StringJoiner(", ");
+      for (String artifact : trimmedArtifacts) {
+        artifacts.add(artifact);
+      }
+      environmentsDetails.setLength(0);
+      environmentsDetails.append(artifacts);
       return true;
     }
     return false;
@@ -1465,9 +1571,6 @@ public class ApprovalState extends State implements SweepingOutputStateMixin {
 
   @Override
   public boolean isSelectionLogsTrackingForTasksEnabled() {
-    if (approvalStateType == ApprovalStateType.SHELL_SCRIPT) {
-      return true;
-    }
-    return false;
+    return approvalStateType == ApprovalStateType.SHELL_SCRIPT;
   }
 }

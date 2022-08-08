@@ -7,4 +7,4 @@
 
 package software.wings.utils;
 
-public enum RepositoryFormat { docker, maven, nuget, npm }
+public enum RepositoryFormat { docker, maven, nuget, npm, generic }

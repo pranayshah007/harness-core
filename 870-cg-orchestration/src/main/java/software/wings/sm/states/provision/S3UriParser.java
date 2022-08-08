@@ -23,7 +23,7 @@ import org.jetbrains.annotations.NotNull;
 
 @OwnedBy(CDP)
 @Singleton
-class S3UriParser {
+public class S3UriParser {
   @NotNull
   Map<String, List<String>> getBucketsFilesMap(List<String> filePaths) {
     Map<String, List<String>> buckets = new HashMap<>();
@@ -40,7 +40,7 @@ class S3UriParser {
     return buckets;
   }
 
-  private AmazonS3URI parseUrl(String filePath) {
+  public AmazonS3URI parseUrl(String filePath) {
     try {
       return new AmazonS3URI(filePath);
     } catch (IllegalArgumentException e) {

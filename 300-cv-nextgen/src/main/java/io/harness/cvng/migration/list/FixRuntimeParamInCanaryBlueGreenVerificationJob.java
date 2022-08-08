@@ -13,8 +13,8 @@ import io.harness.cvng.beans.job.VerificationJobType;
 import io.harness.cvng.migration.CVNGMigration;
 import io.harness.cvng.migration.beans.ChecklistItem;
 import io.harness.cvng.verificationjob.entities.CanaryBlueGreenVerificationJob;
+import io.harness.cvng.verificationjob.entities.CanaryVerificationJob.CanaryVerificationJobKeys;
 import io.harness.cvng.verificationjob.entities.VerificationJob;
-import io.harness.cvng.verificationjob.entities.VerificationJob.VerificationJobKeys;
 import io.harness.persistence.HPersistence;
 
 import com.google.common.collect.Lists;
@@ -31,7 +31,7 @@ public class FixRuntimeParamInCanaryBlueGreenVerificationJob implements CVNGMigr
   public void migrate() {
     List<VerificationJob> verificationJobList =
         hPersistence.createQuery(VerificationJob.class)
-            .field(VerificationJobKeys.type)
+            .field(CanaryVerificationJobKeys.type)
             .in(Lists.newArrayList(VerificationJobType.CANARY, VerificationJobType.BLUE_GREEN))
             .asList();
 

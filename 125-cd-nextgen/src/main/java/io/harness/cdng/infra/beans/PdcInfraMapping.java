@@ -29,7 +29,7 @@ import org.springframework.data.annotation.TypeAlias;
 public class PdcInfraMapping implements InfraMapping {
   @Id private String uuid;
   private String accountId;
-  private String sshKeyRef;
+  private String credentialsRef;
   private List<String> hosts;
   private String connectorRef;
   private Map<String, String> attributeFilters;

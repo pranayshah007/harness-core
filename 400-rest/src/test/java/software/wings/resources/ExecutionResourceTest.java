@@ -132,7 +132,7 @@ public class ExecutionResourceTest extends CategoryTest {
                                               .workflowType(WorkflowType.ORCHESTRATION)
                                               .build();
     doNothing().when(authService).authorizeAppAccess(anyString(), anyString(), any(User.class), any());
-    when(workflowExecutionService.getExecutionDetails(anyString(), anyString(), anyBoolean(), anyBoolean()))
+    when(workflowExecutionService.getExecutionDetails(any(), any(), anyBoolean(), anyBoolean()))
         .thenReturn(workflowExecution);
 
     RestResponse<WorkflowExecution> actual = resources.client()

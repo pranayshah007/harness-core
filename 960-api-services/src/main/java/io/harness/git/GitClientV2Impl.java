@@ -45,6 +45,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.exception.YamlException;
 import io.harness.exception.runtime.JGitRuntimeException;
+import io.harness.exception.runtime.SCMRuntimeException;
 import io.harness.filesystem.FileIo;
 import io.harness.git.model.AuthInfo;
 import io.harness.git.model.ChangeType;
@@ -70,18 +71,29 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.UnknownHostException;
+import java.nio.channels.AsynchronousCloseException;
+import java.nio.channels.ClosedChannelException;
+import java.nio.channels.FileLock;
+import java.nio.channels.FileLockInterruptionException;
+import java.nio.channels.NonWritableChannelException;
+import java.nio.channels.OverlappingFileLockException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 import lombok.extern.slf4j.Slf4j;
+import net.jodah.failsafe.Failsafe;
+import net.jodah.failsafe.FailsafeException;
+import net.jodah.failsafe.RetryPolicy;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.jgit.api.CheckoutCommand;
@@ -125,6 +137,12 @@ import org.eclipse.jgit.treewalk.CanonicalTreeParser;
 @Slf4j
 @OwnedBy(CDP)
 public class GitClientV2Impl implements GitClientV2 {
+  private static final int GIT_COMMAND_RETRY = 3;
+  private static final String UPLOAD_PACK_ERROR = "git-upload-pack";
+  private static final String INVALID_ADVERTISEMENT_ERROR = "invalid advertisement of";
+  private static final String REDIRECTION_BLOCKED_ERROR = "Redirection blocked";
+  private static final String TIMEOUT_ERROR = "Connection time out";
+
   @Inject private GitClientHelper gitClientHelper;
   /**
    * factory for creating HTTP connections. By default, JGit uses JDKHttpConnectionFactory which doesn't work well with
@@ -323,19 +341,51 @@ public class GitClientV2Impl implements GitClientV2 {
       // Init Git repo
       LsRemoteCommand lsRemoteCommand = Git.lsRemoteRepository();
       lsRemoteCommand = (LsRemoteCommand) getAuthConfiguredCommand(lsRemoteCommand, request);
-      lsRemoteCommand.setRemote(repoUrl).setHeads(true).setTags(true).call();
+      RetryPolicy<Object> retryPolicy = getRetryPolicyForCommand(format("[Retrying failed git validation, attempt: {}"),
+          format("Git validation failed after retrying {} times"));
+      lsRemoteCommand.setRemote(repoUrl).setHeads(true).setTags(true);
+      final LsRemoteCommand finalLsRemoteCommand = lsRemoteCommand;
+      Failsafe.with(retryPolicy).get(() -> finalLsRemoteCommand.call());
       log.info(
           gitClientHelper.getGitLogMessagePrefix(request.getRepoType()) + "Remote branches found, validation success.");
     } catch (Exception e) {
       log.info(gitClientHelper.getGitLogMessagePrefix(request.getRepoType()) + "Git validation failed [{}]", e);
       if (e instanceof GitAPIException) {
         throw new JGitRuntimeException(e.getMessage(), e);
-      } else {
-        throw new GeneralException(e.getMessage(), e);
+      } else if (e instanceof FailsafeException) {
+        String message = e.getMessage();
+        if (containsUrlError(message)) {
+          throw SCMRuntimeException.builder()
+              .message("Couldn't connect to given repo")
+              .errorCode(ErrorCode.GIT_CONNECTION_ERROR)
+              .build();
+        } else if (message.contains(TIMEOUT_ERROR)) {
+          throw SCMRuntimeException.builder()
+              .message("Git connection timed out")
+              .errorCode(ErrorCode.CONNECTION_TIMEOUT)
+              .build();
+        }
       }
+      throw new GeneralException(e.getMessage(), e);
     }
   }
 
+  private boolean containsUrlError(String message) {
+    if (message.contains(UPLOAD_PACK_ERROR) || message.contains(INVALID_ADVERTISEMENT_ERROR)
+        || message.contains(REDIRECTION_BLOCKED_ERROR)) {
+      return true;
+    }
+    return false;
+  }
+
+  private RetryPolicy<Object> getRetryPolicyForCommand(String failedAttemptMessage, String failureMessage) {
+    return new RetryPolicy<>()
+        .handle(Exception.class)
+        .withMaxAttempts(GIT_COMMAND_RETRY)
+        .withBackoff(5, 10, ChronoUnit.SECONDS)
+        .onFailedAttempt(event -> log.info(failedAttemptMessage, event.getAttemptCount(), event.getLastFailure()))
+        .onFailure(event -> log.error(failureMessage, event.getAttemptCount(), event.getFailure()));
+  }
   @Override
   public DiffResult diff(DiffRequest request) {
     String startCommitIdStr = request.getLastProcessedCommitId();
@@ -870,8 +920,12 @@ public class GitClientV2Impl implements GitClientV2 {
       request.setBranch(StringUtils.EMPTY);
     }
 
-    synchronized (gitClientHelper.getLockObject(gitConnectorId)) {
-      try {
+    final File lockFile = gitClientHelper.getLockObject(gitConnectorId);
+    synchronized (lockFile) {
+      log.info("Trying to acquire lock on {}", lockFile);
+      try (FileOutputStream fileOutputStream = new FileOutputStream(lockFile);
+           FileLock lock = fileOutputStream.getChannel().lock()) {
+        log.info("Successfully acquired lock on {}", lockFile);
         log.info(new StringBuilder(128)
                      .append(" Processing Git command: FILES_BETWEEN_COMMITS ")
                      .append("Account: ")
@@ -916,6 +970,7 @@ public class GitClientV2Impl implements GitClientV2 {
         tryResetWorkingDir(request);
         throw e;
       } catch (Exception e) {
+        logPossibleFileLockRelatedExceptions(e);
         tryResetWorkingDir(request);
         log.error(gitClientHelper.getGitLogMessagePrefix(request.getRepoType()) + EXCEPTION_STRING, e);
         throw new YamlException(new StringBuilder()
@@ -934,13 +989,24 @@ public class GitClientV2Impl implements GitClientV2 {
     }
   }
 
+  private void logPossibleFileLockRelatedExceptions(Exception e) {
+    if (e instanceof ClosedChannelException || e instanceof AsynchronousCloseException
+        || e instanceof FileLockInterruptionException || e instanceof OverlappingFileLockException
+        || e instanceof NonWritableChannelException) {
+      log.error("Exception occurred while creating file lock", e);
+    }
+  }
+
   @Override
-  public FetchFilesResult fetchFilesByPath(FetchFilesByPathRequest request) {
+  public FetchFilesResult fetchFilesByPath(FetchFilesByPathRequest request) throws IOException {
     cleanup(request);
     validateRequiredArgs(request);
-
-    synchronized (gitClientHelper.getLockObject(request.getConnectorId())) {
-      try {
+    File lockFile = gitClientHelper.getLockObject(request.getConnectorId());
+    synchronized (lockFile) {
+      log.info("Trying to acquire lock on {}", lockFile);
+      try (FileOutputStream fileOutputStream = new FileOutputStream(lockFile);
+           FileLock lock = fileOutputStream.getChannel().lock()) {
+        log.info("Successfully acquired lock on {}", lockFile);
         checkoutFiles(request);
         List<GitFile> gitFiles = getFilteredGitFiles(request);
         resetWorkingDir(request);
@@ -956,6 +1022,7 @@ public class GitClientV2Impl implements GitClientV2 {
             .build();
 
       } catch (Exception e) {
+        logPossibleFileLockRelatedExceptions(e);
         tryResetWorkingDir(request);
         log.error(gitClientHelper.getGitLogMessagePrefix(request.getRepoType()) + EXCEPTION_STRING, e);
         throw e;
@@ -1011,12 +1078,16 @@ public class GitClientV2Impl implements GitClientV2 {
   }
 
   @Override
-  public void downloadFiles(DownloadFilesRequest request) {
+  public void downloadFiles(DownloadFilesRequest request) throws IOException {
     cleanup(request);
     validateRequiredArgs(request);
 
-    synchronized (gitClientHelper.getLockObject(request.getConnectorId())) {
-      try {
+    final File lockFile = gitClientHelper.getLockObject(request.getConnectorId());
+    synchronized (lockFile) {
+      log.info("Trying to acquire lock on {}", lockFile);
+      try (FileOutputStream fileOutputStream = new FileOutputStream(lockFile);
+           FileLock lock = fileOutputStream.getChannel().lock()) {
+        log.info("Successfully acquired lock on {}", lockFile);
         checkoutFiles(request);
         String repoPath = gitClientHelper.getFileDownloadRepoDirectory(request);
 
@@ -1053,6 +1124,7 @@ public class GitClientV2Impl implements GitClientV2 {
         tryResetWorkingDir(request);
         throw e;
       } catch (Exception e) {
+        logPossibleFileLockRelatedExceptions(e);
         tryResetWorkingDir(request);
         throw new YamlException(new StringBuilder()
                                     .append("Failed while fetching files ")
@@ -1062,6 +1134,8 @@ public class GitClientV2Impl implements GitClientV2 {
                                     .append(request.getFilePaths())
                                     .append(". Reason: ")
                                     .append(e.getMessage())
+                                    .append(", ")
+                                    .append(e.getCause() != null ? e.getCause().getMessage() : "")
                                     .toString(),
             e, USER);
       }
@@ -1090,6 +1164,7 @@ public class GitClientV2Impl implements GitClientV2 {
     }
   }
 
+  // use this method wrapped in inter process file lock to handle multiple delegate version
   private void checkoutFiles(FetchFilesByPathRequest request) {
     synchronized (gitClientHelper.getLockObject(request.getConnectorId())) {
       log.info(new StringBuilder(128)

@@ -9,9 +9,12 @@ package io.harness.azure.client;
 
 import io.harness.azure.model.AzureConfig;
 import io.harness.azure.model.AzureMachineImageArtifact;
+import io.harness.azure.model.AzureOSType;
 import io.harness.azure.model.AzureUserAuthVMInstanceData;
 import io.harness.azure.model.AzureVMSSTagsData;
+import io.harness.azure.model.VirtualMachineData;
 
+import com.microsoft.azure.management.appservice.DeploymentSlot;
 import com.microsoft.azure.management.compute.GalleryImage;
 import com.microsoft.azure.management.compute.VirtualMachineScaleSet;
 import com.microsoft.azure.management.compute.VirtualMachineScaleSetVM;
@@ -20,6 +23,7 @@ import com.microsoft.azure.management.network.VirtualMachineScaleSetNetworkInter
 import com.microsoft.azure.management.network.implementation.PublicIPAddressInner;
 import com.microsoft.azure.management.resources.Subscription;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 public interface AzureComputeClient {
@@ -117,6 +121,29 @@ public interface AzureComputeClient {
    * @return
    */
   List<Subscription> listSubscriptions(AzureConfig azureConfig);
+
+  /**
+   * List Web App Names by Subscription Id and ResourceGroup.
+   *
+   * @param azureConfig
+   * @param subscriptionId
+   * @param resourceGroup
+   * @return
+   */
+  List<String> listWebAppNamesBySubscriptionIdAndResourceGroup(
+      AzureConfig azureConfig, String subscriptionId, String resourceGroup);
+
+  /**
+   * List Web App Deployment slots by Subscription Id, ResourceGroup and Web App name.
+   *
+   * @param azureConfig
+   * @param subscriptionId
+   * @param resourceGroup
+   * @param webAppName
+   * @return
+   */
+  List<DeploymentSlot> listWebAppDeploymentSlots(
+      AzureConfig azureConfig, String subscriptionId, String resourceGroup, String webAppName);
 
   /**
    * List Resource Groups names by Subscription Id
@@ -279,4 +306,17 @@ public interface AzureComputeClient {
    */
   Optional<GalleryImage> getGalleryImage(
       AzureConfig azureConfig, String subscriptionId, String resourceGroupName, String galleryName, String imageName);
+
+  /**
+   * List hosts for resource group by os type and tags
+   *
+   * @param azureConfig
+   * @param subscriptionId
+   * @param resourceGroup
+   * @param osType
+   * @param tags
+   * @return
+   */
+  List<VirtualMachineData> listHosts(AzureConfig azureConfig, String subscriptionId, String resourceGroup,
+      AzureOSType osType, Map<String, String> tags);
 }

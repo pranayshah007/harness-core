@@ -18,6 +18,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.DelegateSyncTaskResponse;
 import io.harness.delegate.beans.DelegateSyncTaskResponse.DelegateSyncTaskResponseKeys;
 import io.harness.delegate.beans.ErrorNotifyResponseData;
+import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.WingsException;
 import io.harness.persistence.HPersistence;
@@ -31,12 +32,15 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLong;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.tuple.Pair;
+import org.jooq.tools.StringUtils;
 
 @Singleton
 @Slf4j
@@ -78,7 +82,8 @@ public class DelegateSyncServiceImpl implements DelegateSyncService {
   }
 
   @Override
-  public <T extends ResponseData> T waitForTask(String taskId, String description, Duration timeout) {
+  public <T extends ResponseData> T waitForTask(
+      String taskId, String description, Duration timeout, List<ExecutionCapability> executionCapabilities) {
     DelegateSyncTaskResponse taskResponse = null;
     try {
       log.info("Start wait sync task {}", taskId);
@@ -98,8 +103,24 @@ public class DelegateSyncServiceImpl implements DelegateSyncService {
     }
 
     if (taskResponse == null) {
-      throw new InvalidArgumentsException(
-          "Task has expired. It wasn't picked up by any delegate or delegate did not have enough time to finish the execution.");
+      List<String> capabilityErrorMsgsList = new ArrayList<>();
+      if (isNotEmpty(executionCapabilities)) {
+        for (ExecutionCapability executionCapability : executionCapabilities) {
+          if (isNotEmpty(executionCapability.getCapabilityToString())) {
+            capabilityErrorMsgsList.add(executionCapability.getCapabilityToString());
+          }
+        }
+      }
+      String errorMsg =
+          "Task has expired. It wasn't picked up by any delegate or delegate did not have enough time to finish the execution";
+      if (CollectionUtils.isNotEmpty(capabilityErrorMsgsList)) {
+        errorMsg = errorMsg
+            + String.format(" or None of the delegate had following capabilities [%s]",
+                StringUtils.join(capabilityErrorMsgsList, ","));
+      } else {
+        errorMsg = errorMsg + ".";
+      }
+      throw new InvalidArgumentsException(errorMsg);
     }
 
     if (disableDeserialization) {

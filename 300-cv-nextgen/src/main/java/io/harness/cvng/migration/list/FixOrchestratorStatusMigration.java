@@ -12,7 +12,7 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import io.harness.cvng.core.services.api.VerificationTaskService;
 import io.harness.cvng.migration.CVNGMigration;
 import io.harness.cvng.migration.beans.ChecklistItem;
-import io.harness.cvng.statemachine.beans.AnalysisStatus;
+import io.harness.cvng.statemachine.beans.AnalysisOrchestratorStatus;
 import io.harness.cvng.statemachine.entities.AnalysisOrchestrator;
 import io.harness.cvng.statemachine.entities.AnalysisOrchestrator.AnalysisOrchestratorKeys;
 import io.harness.persistence.HIterator;
@@ -34,13 +34,13 @@ public class FixOrchestratorStatusMigration implements CVNGMigration {
     log.info("Begin migration for updating the status of Orchestrator");
     Query<AnalysisOrchestrator> orchestratorQuery =
         hPersistence.createQuery(AnalysisOrchestrator.class)
-            .filter(AnalysisOrchestratorKeys.status, AnalysisStatus.CREATED);
+            .filter(AnalysisOrchestratorKeys.status, AnalysisOrchestratorStatus.CREATED);
     List<AnalysisOrchestrator> orchestratorsToUpdate = new ArrayList<>();
     try (HIterator<AnalysisOrchestrator> iterator = new HIterator<>(orchestratorQuery.fetch())) {
       while (iterator.hasNext()) {
         AnalysisOrchestrator orchestrator = iterator.next();
         if (isEmpty(orchestrator.getAnalysisStateMachineQueue())) {
-          orchestrator.setStatus(AnalysisStatus.RUNNING);
+          orchestrator.setStatus(AnalysisOrchestratorStatus.RUNNING);
           orchestratorsToUpdate.add(orchestrator);
         }
       }

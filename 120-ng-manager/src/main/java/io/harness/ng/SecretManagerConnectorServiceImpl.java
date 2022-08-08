@@ -15,6 +15,7 @@ import static io.harness.git.model.ChangeType.NONE;
 import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.common.EntityReference;
+import io.harness.connector.CombineCcmK8sConnectorResponseDTO;
 import io.harness.connector.ConnectorCatalogueResponseDTO;
 import io.harness.connector.ConnectorCategory;
 import io.harness.connector.ConnectorDTO;
@@ -50,6 +51,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import javax.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
@@ -82,6 +84,12 @@ public class SecretManagerConnectorServiceImpl implements ConnectorService {
   public Optional<ConnectorResponseDTO> get(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String connectorIdentifier) {
     return defaultConnectorService.get(accountIdentifier, orgIdentifier, projectIdentifier, connectorIdentifier);
+  }
+
+  @Override
+  public Optional<ConnectorResponseDTO> getByRef(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String connectorRef) {
+    return defaultConnectorService.getByRef(accountIdentifier, orgIdentifier, projectIdentifier, connectorRef);
   }
 
   @Override
@@ -345,6 +353,16 @@ public class SecretManagerConnectorServiceImpl implements ConnectorService {
   }
 
   @Override
+  public Page<CombineCcmK8sConnectorResponseDTO> listCcmK8S(int page, int size, String accountIdentifier,
+      ConnectorFilterPropertiesDTO filterProperties, String orgIdentifier, String projectIdentifier,
+      String filterIdentifier, String searchTerm, Boolean includeAllConnectorsAccessibleAtScope,
+      Boolean getDistinctFromBranches) {
+    return defaultConnectorService.listCcmK8S(page, size, accountIdentifier, filterProperties, orgIdentifier,
+        projectIdentifier, filterIdentifier, searchTerm, includeAllConnectorsAccessibleAtScope,
+        getDistinctFromBranches);
+  }
+
+  @Override
   public boolean markEntityInvalid(String accountIdentifier, EntityReference entityReference, String invalidYaml) {
     return defaultConnectorService.markEntityInvalid(accountIdentifier, entityReference, invalidYaml);
   }
@@ -363,5 +381,11 @@ public class SecretManagerConnectorServiceImpl implements ConnectorService {
   public ConnectorResponseDTO updateGitFilePath(
       ConnectorDTO connectorDTO, String accountIdentifier, String newFilePath) {
     return defaultConnectorService.updateGitFilePath(connectorDTO, accountIdentifier, newFilePath);
+  }
+
+  @Override
+  public List<Map<String, String>> getAttributes(
+      String accountId, String orgIdentifier, String projectIdentifier, List<String> connectorIdentifiers) {
+    return defaultConnectorService.getAttributes(accountId, orgIdentifier, projectIdentifier, connectorIdentifiers);
   }
 }

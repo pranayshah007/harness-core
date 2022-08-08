@@ -15,6 +15,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
+import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Value;
 
@@ -24,7 +25,7 @@ import lombok.Value;
 @ApiModel(value = "RoleResponse")
 @Schema(name = "RoleResponse")
 public class RoleResponseDTO {
-  @ApiModelProperty(required = true) RoleDTO role;
+  @NotNull @ApiModelProperty(required = true) RoleDTO role;
   @ApiModelProperty(required = true) ScopeDTO scope;
   boolean harnessManaged;
   Long createdAt;

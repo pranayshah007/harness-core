@@ -18,6 +18,7 @@ import io.harness.maintenance.MaintenanceController;
 import io.harness.ng.core.exceptionmappers.GenericExceptionMapperV2;
 import io.harness.ng.core.exceptionmappers.JerseyViolationExceptionMapperV2;
 import io.harness.ng.core.exceptionmappers.WingsExceptionMapperV2;
+import io.harness.overviewdashboard.GenerateOpenApiSpecCommand;
 import io.harness.request.RequestContextFilter;
 import io.harness.security.NextGenAuthenticationFilter;
 import io.harness.security.annotations.NextGenManagerAuth;
@@ -44,21 +45,11 @@ import io.federecio.dropwizard.swagger.SwaggerBundle;
 import io.federecio.dropwizard.swagger.SwaggerBundleConfiguration;
 import io.serializer.HObjectMapper;
 import io.swagger.v3.jaxrs2.integration.resources.OpenApiResource;
-import io.swagger.v3.oas.integration.SwaggerConfiguration;
-import io.swagger.v3.oas.integration.api.OpenAPIConfiguration;
-import io.swagger.v3.oas.models.OpenAPI;
-import io.swagger.v3.oas.models.info.Contact;
-import io.swagger.v3.oas.models.info.Info;
-import io.swagger.v3.oas.models.servers.Server;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 import javax.servlet.DispatcherType;
@@ -114,6 +105,8 @@ public class DashboardApplication extends Application<DashboardServiceConfig> {
   @Override
   public void initialize(Bootstrap<DashboardServiceConfig> bootstrap) {
     initializeLogging();
+
+    bootstrap.addCommand(new GenerateOpenApiSpecCommand());
     // Enable variable substitution with environment variables
     bootstrap.setConfigurationSourceProvider(new SubstitutingSourceProvider(
         bootstrap.getConfigurationSourceProvider(), new EnvironmentVariableSubstitutor(false)));
@@ -133,7 +126,7 @@ public class DashboardApplication extends Application<DashboardServiceConfig> {
 
   private void registerOasResource(DashboardServiceConfig appConfig, Environment environment, Injector injector) {
     OpenApiResource openApiResource = injector.getInstance(OpenApiResource.class);
-    openApiResource.setOpenApiConfiguration(getOasConfig(appConfig));
+    openApiResource.setOpenApiConfiguration(appConfig.getOasConfig());
     environment.jersey().register(openApiResource);
   }
 
@@ -150,31 +143,6 @@ public class DashboardApplication extends Application<DashboardServiceConfig> {
         config.getDashboardSecretsConfig().getNgManagerServiceSecret());
     environment.jersey().register(new NextGenAuthenticationFilter(predicate, null, serviceToSecretMapping,
         injector.getInstance(Key.get(TokenClient.class, Names.named("PRIVILEGED")))));
-  }
-
-  private OpenAPIConfiguration getOasConfig(DashboardServiceConfig appConfig) {
-    OpenAPI oas = new OpenAPI();
-    Info info =
-        new Info()
-            .title("NextGen Dashboard Aggregation API Reference")
-            .description(
-                "This is the Open Api Spec 3 for the Dashboard Aggregation Service. This is under active development. Beware of the breaking change with respect to the generated code stub")
-            .termsOfService("https://harness.io/terms-of-use/")
-            .version("3.0")
-            .contact(new Contact().email("contact@harness.io"));
-    oas.info(info);
-    URL baseurl = null;
-    try {
-      baseurl = new URL("https", appConfig.getHostname(), appConfig.getBasePathPrefix());
-      Server server = new Server();
-      server.setUrl(baseurl.toString());
-      oas.servers(Collections.singletonList(server));
-    } catch (MalformedURLException e) {
-      log.error("failed to set baseurl for server, {}/{}", appConfig.hostname, appConfig.getBasePathPrefix());
-    }
-    Set<String> packages = DashboardServiceConfig.getUniquePackagesContainingResources();
-    return new SwaggerConfiguration().openAPI(oas).prettyPrint(true).resourcePackages(packages).scannerClass(
-        "io.swagger.v3.jaxrs2.integration.JaxrsAnnotationScanner");
   }
 
   private void registerCorsFilter(DashboardServiceConfig appConfig, Environment environment) {

@@ -89,6 +89,8 @@ public interface YamlGitService {
   void fullSync(
       @NotEmpty String accountId, @NotEmpty String entityId, @NotNull EntityType entityType, boolean forcePush);
 
+  YamlChangeSet obtainAppYamlChangeSet(String accountId, boolean forcePush, Application app);
+
   /**
    * Perform full sync dry run list.
    *
@@ -96,6 +98,7 @@ public interface YamlGitService {
    * @return the list
    */
   List<GitFileChange> performFullSyncDryRun(String accountId);
+
   void performFullSyncDryRunOnAllAccounts();
 
   List<String> getAllYamlErrorsForAccount(String accountId);
@@ -196,7 +199,8 @@ public interface YamlGitService {
 
   SettingAttribute getAndDecryptSettingAttribute(String sshSettingId);
 
-  List<YamlChangeSet> obtainChangeSetFromFullSyncDryRun(String accountId, boolean onlyGitSyncConfiguredEntities);
+  List<YamlChangeSet> obtainChangeSetFromFullSyncDryRun(
+      String accountId, boolean onlyGitSyncConfiguredEntities, boolean skipAppLevel);
 
   boolean checkApplicationChange(GitFileChange gitFileChange);
 

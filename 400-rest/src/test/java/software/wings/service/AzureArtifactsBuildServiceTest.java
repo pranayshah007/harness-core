@@ -25,7 +25,7 @@ import io.harness.rule.Owner;
 import software.wings.WingsBaseTest;
 import software.wings.beans.artifact.ArtifactStreamAttributes;
 import software.wings.beans.artifact.AzureArtifactsArtifactStream;
-import software.wings.beans.artifact.AzureArtifactsArtifactStream.ProtocolType;
+import software.wings.beans.artifact.AzureArtifactsArtifactStreamProtocolType;
 import software.wings.beans.settings.azureartifacts.AzureArtifactsPATConfig;
 import software.wings.helpers.ext.azure.devops.AzureArtifactsFeed;
 import software.wings.helpers.ext.azure.devops.AzureArtifactsPackage;
@@ -56,7 +56,7 @@ public class AzureArtifactsBuildServiceTest extends WingsBaseTest {
           .settingId(SETTING_ID)
           .autoPopulate(true)
           .serviceId(SERVICE_ID)
-          .protocolType(ProtocolType.maven.name())
+          .protocolType(AzureArtifactsArtifactStreamProtocolType.maven.name())
           .project(null)
           .feed("FEED")
           .packageId("PACKAGE_ID")
@@ -149,10 +149,11 @@ public class AzureArtifactsBuildServiceTest extends WingsBaseTest {
     AzureArtifactsPackage package2 = new AzureArtifactsPackage();
     package2.setId("id2");
     package2.setName("name2");
-    when(azureArtifactsService.listPackages(azureArtifactsPATConfig, null, null, "FEED", ProtocolType.maven.name()))
+    when(azureArtifactsService.listPackages(
+             azureArtifactsPATConfig, null, null, "FEED", AzureArtifactsArtifactStreamProtocolType.maven.name()))
         .thenReturn(Lists.newArrayList(package1, package2));
-    List<AzureArtifactsPackage> packages =
-        azureArtifactsBuildService.getPackages(azureArtifactsPATConfig, null, null, "FEED", ProtocolType.maven.name());
+    List<AzureArtifactsPackage> packages = azureArtifactsBuildService.getPackages(
+        azureArtifactsPATConfig, null, null, "FEED", AzureArtifactsArtifactStreamProtocolType.maven.name());
     assertThat(packages).hasSize(2).extracting(AzureArtifactsPackage::getId).containsExactly("id1", "id2");
   }
 }

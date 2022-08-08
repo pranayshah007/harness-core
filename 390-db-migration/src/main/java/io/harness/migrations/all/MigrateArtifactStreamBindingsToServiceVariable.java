@@ -20,7 +20,7 @@ import software.wings.beans.Service;
 import software.wings.beans.Service.ServiceKeys;
 import software.wings.beans.ServiceVariable;
 import software.wings.beans.ServiceVariable.ServiceVariableKeys;
-import software.wings.beans.ServiceVariable.Type;
+import software.wings.beans.ServiceVariableType;
 import software.wings.beans.artifact.ArtifactStreamBinding;
 import software.wings.beans.artifact.ArtifactStreamSummary;
 import software.wings.dl.WingsPersistence;
@@ -112,7 +112,7 @@ public class MigrateArtifactStreamBindingsToServiceVariable implements Migration
         try {
           if (serviceVariableMap.containsKey(serviceId)) {
             ServiceVariable serviceVariable = serviceVariableMap.get(serviceId);
-            if (Type.ARTIFACT != serviceVariable.getType()) {
+            if (ServiceVariableType.ARTIFACT != serviceVariable.getType()) {
               // A non-artifact service variable exists with the same name. Logging and skipping.
               log.info(
                   "Service variable with name " + ARTIFACT_VARIABLE_NAME + " already exists for service: " + serviceId);

@@ -19,12 +19,15 @@ import io.harness.cdng.infra.beans.InfraUseFromStage;
 import io.harness.cdng.visitor.helpers.pipelineinfrastructure.PipelineInfrastructureVisitorHelper;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.pms.yaml.YamlNode;
 import io.harness.validation.OneOfField;
 import io.harness.walktree.beans.VisitableChildren;
 import io.harness.walktree.visitor.SimpleVisitorHelper;
 import io.harness.walktree.visitor.Visitable;
 import io.harness.yaml.YamlSchemaTypes;
+import io.harness.yaml.core.VariableExpression;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -47,8 +50,13 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("pipelineInfrastructure")
 @RecasterAlias("io.harness.cdng.pipeline.PipelineInfrastructure")
 public class PipelineInfrastructure implements StepParameters, Visitable {
+  @JsonProperty(YamlNode.UUID_FIELD_NAME)
+  @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
+  @ApiModelProperty(hidden = true)
+  private String uuid;
+
   private InfrastructureDef infrastructureDefinition;
-  @Wither private InfraUseFromStage useFromStage;
+  @Wither @VariableExpression(skipVariableExpression = true) private InfraUseFromStage useFromStage;
   private EnvironmentYaml environment;
   @YamlSchemaTypes({string})
   @ApiModelProperty(dataType = SwaggerConstants.BOOLEAN_CLASSPATH)
@@ -58,10 +66,6 @@ public class PipelineInfrastructure implements StepParameters, Visitable {
 
   // For Visitor Framework Impl
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String metadata;
-
-  public PipelineInfrastructure applyUseFromStage(PipelineInfrastructure infrastructureToUseFrom) {
-    return infrastructureToUseFrom.withUseFromStage(this.useFromStage);
-  }
 
   @Override
   public VisitableChildren getChildrenToWalk() {

@@ -14,6 +14,7 @@ import io.harness.delegate.beans.DelegateTaskNotifyResponseData;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.logging.CommandExecutionStatus;
 
+import java.util.Map;
 import lombok.Builder;
 import lombok.Setter;
 import lombok.Value;
@@ -27,5 +28,6 @@ public class HelmValuesFetchResponse implements DelegateTaskNotifyResponseData {
   private String errorMessage;
   private UnitProgressData unitProgressData;
   private String valuesFileContent;
+  private Map<String, HelmFetchFileResult> helmChartValuesFileMapContent;
   @NonFinal @Setter private DelegateMetaInfo delegateMetaInfo;
 }

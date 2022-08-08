@@ -50,9 +50,8 @@ public class TailerModule extends ProviderModule {
 
   @Provides
   @Singleton
-  CallCredentials callCredentials() {
-    return new DelegateAuthCallCredentials(
-        new TokenGenerator(config.accountId, config.accountSecret), config.accountId, true);
+  CallCredentials callCredentials(TokenGenerator tokenGenerator) {
+    return new DelegateAuthCallCredentials(tokenGenerator, config.accountId, true);
   }
 
   @Provides

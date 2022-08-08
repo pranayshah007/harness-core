@@ -49,8 +49,8 @@ public class EnvironmentStep implements SyncExecutableWithRbac<InfraSectionStepP
   public StepResponse executeSyncAfterRbac(Ambiance ambiance, InfraSectionStepParameters stepParameters,
       StepInputPackage inputPackage, PassThroughData passThroughData) {
     log.info("Starting execution for InfraSection Step [{}]", stepParameters);
-    EnvironmentOutcome environmentOutcome = InfraStepUtils.processEnvironment(environmentService, ambiance,
-        stepParameters.getUseFromStage(), stepParameters.getEnvironment(), stepParameters.getEnvironmentRef());
+    EnvironmentOutcome environmentOutcome = InfraStepUtils.processEnvironment(
+        environmentService, ambiance, stepParameters.getEnvironment(), stepParameters.getEnvironmentRef());
     executionSweepingOutputResolver.consume(
         ambiance, OutputExpressionConstants.ENVIRONMENT, environmentOutcome, StepOutcomeGroup.STAGE.name());
     return StepResponse.builder().status(Status.SUCCEEDED).build();

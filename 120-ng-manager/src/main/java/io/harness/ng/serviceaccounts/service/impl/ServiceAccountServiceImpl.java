@@ -28,6 +28,7 @@ import io.harness.accesscontrol.roleassignments.api.RoleAssignmentAggregateRespo
 import io.harness.accesscontrol.roleassignments.api.RoleAssignmentFilterDTO;
 import io.harness.accesscontrol.roles.api.RoleResponseDTO;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.ScopeLevel;
 import io.harness.exception.DuplicateFieldException;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
@@ -239,7 +240,13 @@ public class ServiceAccountServiceImpl implements ServiceAccountService {
       String accountIdentifier, String orgIdentifier, String projectIdentifier, List<String> identifiers) {
     Set<PrincipalDTO> principalDTOSet =
         identifiers.stream()
-            .map(identifier -> PrincipalDTO.builder().identifier(identifier).type(SERVICE_ACCOUNT).build())
+            .map(identifier
+                -> PrincipalDTO.builder()
+                       .identifier(identifier)
+                       .type(SERVICE_ACCOUNT)
+                       .scopeLevel(
+                           ScopeLevel.of(accountIdentifier, orgIdentifier, projectIdentifier).toString().toLowerCase())
+                       .build())
             .collect(Collectors.toSet());
     RoleAssignmentFilterDTO roleAssignmentFilterDTO =
         RoleAssignmentFilterDTO.builder().principalFilter(principalDTOSet).build();

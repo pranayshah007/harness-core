@@ -7,6 +7,7 @@
 
 package io.harness.utils;
 
+import io.harness.exception.InvalidRequestException;
 import io.harness.serializer.AnnotationAwareJsonSubtypeResolver;
 import io.harness.serializer.JsonSubtypeResolver;
 
@@ -89,5 +90,13 @@ public class YamlPipelineUtils {
 
   public String getYamlString(Object value) throws JsonProcessingException {
     return writeString(value).replaceFirst("---\n", "");
+  }
+
+  public String writeYamlString(Object value) {
+    try {
+      return writeString(value).replaceFirst("---\n", "");
+    } catch (JsonProcessingException e) {
+      throw new InvalidRequestException("Couldn't convert object to Yaml");
+    }
   }
 }

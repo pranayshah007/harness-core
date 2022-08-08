@@ -28,7 +28,6 @@ import io.harness.ccm.communication.entities.CommunicationType;
 import io.harness.rule.Owner;
 import io.harness.timescaledb.TimeScaleDBService;
 
-import software.wings.beans.Account;
 import software.wings.service.impl.instance.CloudToHarnessMappingServiceImpl;
 
 import java.sql.Connection;
@@ -86,8 +85,7 @@ public class WeeklyReportServiceImplTest extends CategoryTest {
     when(mockStatement.executeQuery(anyString())).thenReturn(resetCountAndReturnResultSet());
     mockResultSet();
     when(emailNotificationService.send(any())).thenReturn(true);
-    when(accountShardService.getCeEnabledAccounts())
-        .thenReturn(Arrays.asList(Account.Builder.anAccount().withUuid(ACCOUNT_ID).build()));
+    when(accountShardService.getCeEnabledAccountIds()).thenReturn(Arrays.asList(ACCOUNT_ID));
     when(ceCommunicationsService.getEnabledEntries(any(), any()))
         .thenReturn(Arrays.asList(CECommunications.builder().emailId("mailId").build()));
     when(ceSlackWebhookService.getByAccountId(ACCOUNT_ID))

@@ -2,7 +2,7 @@
 
 docker run -d --restart unless-stopped --memory=${delegateXmx} --cpus=${delegateCpu} --hostname=$(hostname -f | head -c 63) \
 -e ACCOUNT_ID=${accountId} \
--e ACCOUNT_SECRET=${accountSecret} \
+-e DELEGATE_TOKEN=${delegateToken} \
 -e MANAGER_HOST_AND_PORT=${managerHostAndPort} \
 -e WATCHER_STORAGE_URL=${watcherStorageUrl} \
 -e WATCHER_CHECK_LOCATION=${watcherCheckLocation} \

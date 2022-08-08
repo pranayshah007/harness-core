@@ -7,10 +7,10 @@
 
 package software.wings.beans.artifact;
 
+import static io.harness.delegate.beans.azure.AzureMachineImageArtifactDTO.ImageType.IMAGE_GALLERY;
 import static io.harness.rule.OwnerRule.DEEPAK_PUTHRAYA;
 
 import static software.wings.beans.artifact.AzureMachineImageArtifactStream.ImageDefinition;
-import static software.wings.beans.artifact.AzureMachineImageArtifactStream.ImageType.IMAGE_GALLERY;
 import static software.wings.beans.artifact.AzureMachineImageArtifactStream.OSType.LINUX;
 import static software.wings.beans.artifact.AzureMachineImageArtifactStream.builder;
 

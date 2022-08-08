@@ -13,6 +13,7 @@ import static io.harness.beans.ExecutionStatus.SUCCESS;
 import static io.harness.beans.FeatureName.ECS_BG_DOWNSIZE;
 import static io.harness.beans.FeatureName.ECS_REGISTER_TASK_DEFINITION_TAGS;
 import static io.harness.beans.FeatureName.ENABLE_ADDING_SERVICE_VARS_TO_ECS_SPEC;
+import static io.harness.beans.FeatureName.FIXED_INSTANCE_ZERO_ALLOW;
 import static io.harness.beans.FeatureName.TIMEOUT_FAILURE_SUPPORT;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -115,8 +116,10 @@ import software.wings.beans.command.EcsSetupParams.EcsSetupParamsBuilder;
 import software.wings.beans.command.PcfDummyCommandUnit;
 import software.wings.beans.container.AwsAutoScalarConfig;
 import software.wings.beans.container.ContainerTask;
+import software.wings.beans.container.ContainerTaskMapper;
 import software.wings.beans.container.EcsContainerTask;
 import software.wings.beans.container.EcsServiceSpecification;
+import software.wings.beans.container.EcsServiceSpecificationMapper;
 import software.wings.helpers.ext.container.ContainerDeploymentManagerHelper;
 import software.wings.helpers.ext.ecs.request.EcsBGListenerUpdateRequest;
 import software.wings.helpers.ext.ecs.request.EcsCommandRequest;
@@ -129,6 +132,7 @@ import software.wings.helpers.ext.ecs.response.EcsDeployRollbackDataFetchRespons
 import software.wings.helpers.ext.ecs.response.EcsServiceDeployResponse;
 import software.wings.helpers.ext.k8s.request.K8sValuesLocation;
 import software.wings.service.impl.artifact.ArtifactCollectionUtils;
+import software.wings.service.impl.aws.manager.AwsHelperServiceManager;
 import software.wings.service.impl.aws.model.AwsEcsAllPhaseRollbackData;
 import software.wings.service.intfc.ActivityService;
 import software.wings.service.intfc.DelegateService;
@@ -147,6 +151,7 @@ import software.wings.sm.ExecutionResponse;
 import software.wings.sm.ExecutionResponse.ExecutionResponseBuilder;
 import software.wings.sm.InstanceStatusSummary;
 import software.wings.sm.WorkflowStandardParams;
+import software.wings.sm.WorkflowStandardParamsExtensionService;
 import software.wings.sm.states.ContainerServiceSetup.ContainerServiceSetupKeys;
 import software.wings.sm.states.EcsSetupContextVariableHolder.EcsSetupContextVariableHolderBuilder;
 import software.wings.utils.EcsConvention;
@@ -180,6 +185,7 @@ public class EcsStateHelper {
   @Inject private FeatureFlagService featureFlagService;
   @Inject private SweepingOutputService sweepingOutputService;
   @Inject private StateExecutionService stateExecutionService;
+  @Inject private WorkflowStandardParamsExtensionService workflowStandardParamsExtensionService;
 
   public ContainerSetupParams buildContainerSetupParams(
       ExecutionContext context, EcsSetupStateConfig ecsSetupStateConfig) {
@@ -232,7 +238,7 @@ public class EcsStateHelper {
         .withServiceName(ecsSetupStateConfig.getServiceName())
         .withClusterName(ecsSetupStateConfig.getClusterName())
         .withImageDetails(ecsSetupStateConfig.getImageDetails())
-        .withContainerTask(containerTask)
+        .withContainerTask(ContainerTaskMapper.toEcsContainerTaskDTO((EcsContainerTask) containerTask))
         .withLoadBalancerName(context.renderExpression(ecsSetupStateConfig.getLoadBalancerName()))
         .withInfraMappingId(ecsSetupStateConfig.getInfrastructureMapping().getUuid())
         .withRoleArn(context.renderExpression(ecsSetupStateConfig.getRoleArn()))
@@ -269,8 +275,8 @@ public class EcsStateHelper {
         .withServiceSteadyStateTimeout(serviceSteadyStateTimeout)
         .withRollback(ecsSetupStateConfig.isRollback())
         .withPreviousEcsServiceSnapshotJson(ecsSetupStateConfig.getPreviousEcsServiceSnapshotJson())
-        .withEcsServiceSpecification(
-            getServiceSpecWithRenderedExpression(ecsSetupStateConfig.getEcsServiceSpecification(), context))
+        .withEcsServiceSpecification(EcsServiceSpecificationMapper.toEcsServiceSpecificationDTO(
+            getServiceSpecWithRenderedExpression(ecsSetupStateConfig.getEcsServiceSpecification(), context)))
         .withEcsServiceArn(ecsSetupStateConfig.getEcsServiceArn())
         .withIsDaemonSchedulingStrategy(ecsSetupStateConfig.isDaemonSchedulingStrategy())
         .withNewAwsAutoScalarConfigList(
@@ -499,9 +505,9 @@ public class EcsStateHelper {
   }
 
   public ContainerServiceElement buildContainerServiceElement(ExecutionContext context,
-      ContainerSetupCommandUnitExecutionData setupExecutionData, ExecutionStatus status, ImageDetails imageDetails,
-      String maxInstanceStr, String fixedInstanceStr, String desiredInstanceCountStr, ResizeStrategy resizeStrategy,
-      int serviceSteadyStateTimeout, Logger logger) {
+      ContainerSetupCommandUnitExecutionData setupExecutionData, ImageDetails imageDetails, String maxInstanceStr,
+      String fixedInstanceStr, String desiredInstanceCountStr, ResizeStrategy resizeStrategy,
+      int serviceSteadyStateTimeout) {
     CommandStateExecutionData executionData = (CommandStateExecutionData) context.getStateExecutionData();
     EcsSetupParams setupParams = (EcsSetupParams) executionData.getContainerSetupParams();
     Integer maxVal = null;
@@ -514,10 +520,22 @@ public class EcsStateHelper {
     }
 
     int evaluatedMaxInstances = maxVal != null ? maxVal : DEFAULT_MAX;
+    if (evaluatedMaxInstances < 0) {
+      throw new InvalidArgumentsException("Max Instances value cannot be negative");
+    }
     int maxInstances = evaluatedMaxInstances == 0 ? DEFAULT_MAX : evaluatedMaxInstances;
     int evaluatedFixedInstances =
         isNotBlank(fixedInstanceStr) ? Integer.parseInt(context.renderExpression(fixedInstanceStr)) : maxInstances;
-    int fixedInstances = evaluatedFixedInstances == 0 ? maxInstances : evaluatedFixedInstances;
+    if (evaluatedFixedInstances < 0) {
+      throw new InvalidArgumentsException("Fixed Instances value cannot be negative");
+    }
+    int fixedInstances = 0;
+    if (featureFlagService.isEnabled(FIXED_INSTANCE_ZERO_ALLOW, context.getAccountId())) {
+      fixedInstances = evaluatedFixedInstances;
+    } else {
+      fixedInstances = evaluatedFixedInstances == 0 ? maxInstances : evaluatedFixedInstances;
+    }
+
     resizeStrategy = resizeStrategy == null ? RESIZE_NEW_FIRST : resizeStrategy;
     serviceSteadyStateTimeout =
         serviceSteadyStateTimeout > 0 ? serviceSteadyStateTimeout : DEFAULT_STEADY_STATE_TIMEOUT;
@@ -559,12 +577,12 @@ public class EcsStateHelper {
 
   public Application getApplicationFromExecutionContext(ExecutionContext executionContext) {
     WorkflowStandardParams workflowStandardParams = executionContext.getContextElement(ContextElementType.STANDARD);
-    return workflowStandardParams.fetchRequiredApp();
+    return workflowStandardParamsExtensionService.fetchRequiredApp(workflowStandardParams);
   }
 
   public Environment getEnvironmentFromExecutionContext(ExecutionContext executionContext) {
     WorkflowStandardParams workflowStandardParams = executionContext.getContextElement(ContextElementType.STANDARD);
-    return workflowStandardParams.getEnv();
+    return workflowStandardParamsExtensionService.getEnv(workflowStandardParams);
   }
 
   public EcsRunTaskDataBag prepareBagForEcsRunTask(ExecutionContext executionContext, Long timeout,
@@ -586,6 +604,7 @@ public class EcsStateHelper {
       throw new InvalidArgumentsException(Pair.of("Cloud Provider", "Must be of type Aws Config"));
     }
     AwsConfig awsConfig = (AwsConfig) settingValue;
+    AwsHelperServiceManager.setAmazonClientSDKDefaultBackoffStrategyIfExists(executionContext, awsConfig);
     List<EncryptedDataDetail> encryptedDataDetails = secretManager.getEncryptionDetails(
         awsConfig, executionContext.getAppId(), executionContext.getWorkflowExecutionId());
 
@@ -616,8 +635,8 @@ public class EcsStateHelper {
 
     ImageDetails imageDetails =
         artifactCollectionUtils.fetchContainerImageDetails(artifact, context.getWorkflowExecutionId());
-    Application app = workflowStandardParams.fetchRequiredApp();
-    Environment env = workflowStandardParams.getEnv();
+    Application app = workflowStandardParamsExtensionService.fetchRequiredApp(workflowStandardParams);
+    Environment env = workflowStandardParamsExtensionService.getEnv(workflowStandardParams);
 
     Service service = serviceResourceService.getWithDetails(app.getUuid(), serviceId);
     ContainerTask containerTask =
@@ -637,6 +656,7 @@ public class EcsStateHelper {
       throw new InvalidArgumentsException(Pair.of("Cloud Provider", "Must be of type Aws Config"));
     }
     AwsConfig awsConfig = (AwsConfig) settingValue;
+    AwsHelperServiceManager.setAmazonClientSDKDefaultBackoffStrategyIfExists(context, awsConfig);
     List<EncryptedDataDetail> encryptedDataDetails =
         secretManager.getEncryptionDetails(awsConfig, context.getAppId(), context.getWorkflowExecutionId());
     EcsServiceSpecification serviceSpecification =
@@ -695,6 +715,8 @@ public class EcsStateHelper {
       executionData.setServiceName(setupExecutionData.getContainerServiceName());
       executionData.setLoadBalancer(containerServiceElement.getLoadBalancer());
       executionData.setPreviousAwsAutoScalarConfigs(setupExecutionData.getPreviousAwsAutoScalarConfigs());
+      executionData.setOldInstanceData(
+          singletonList(ContainerServiceData.builder().name(setupExecutionData.getEcsServiceToBeDownsized()).build()));
 
       containerServiceElement.setPreviousAwsAutoScalarConfigs(setupExecutionData.getPreviousAwsAutoScalarConfigs());
       containerServiceElement.setNewEcsServiceName(setupExecutionData.getContainerServiceName());
@@ -1141,8 +1163,8 @@ public class EcsStateHelper {
       ServiceResourceService serviceResourceService, InfrastructureMappingService infrastructureMappingService,
       SettingsService settingsService, SecretManager secretManager, boolean rollback) {
     WorkflowStandardParams workflowStandardParams = context.getContextElement(ContextElementType.STANDARD);
-    Application app = workflowStandardParams.fetchRequiredApp();
-    Environment env = workflowStandardParams.getEnv();
+    Application app = workflowStandardParamsExtensionService.fetchRequiredApp(workflowStandardParams);
+    Environment env = workflowStandardParamsExtensionService.getEnv(workflowStandardParams);
     PhaseElement phaseElement = context.getContextElement(ContextElementType.PARAM, PhaseElement.PHASE_PARAM);
     String serviceId = phaseElement.getServiceElement().getUuid();
     Service svc = serviceResourceService.getWithDetails(app.getUuid(), serviceId);
@@ -1159,6 +1181,7 @@ public class EcsStateHelper {
       throw new InvalidRequestException(format("Invalid setting value type: [%s]", settingValue.getClass().getName()));
     }
     AwsConfig awsConfig = (AwsConfig) settingValue;
+    AwsHelperServiceManager.setAmazonClientSDKDefaultBackoffStrategyIfExists(context, awsConfig);
     List<EncryptedDataDetail> encryptionDetails =
         secretManager.getEncryptionDetails(awsConfig, context.getAppId(), context.getWorkflowExecutionId());
     String region = ecsInfrastructureMapping.getRegion();

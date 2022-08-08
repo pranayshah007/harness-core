@@ -17,6 +17,7 @@ import static org.powermock.api.mockito.PowerMockito.when;
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
 import io.harness.ccm.commons.beans.recommendation.ResourceType;
+import io.harness.ccm.graphql.dto.recommendation.ECSRecommendationDTO;
 import io.harness.ccm.graphql.dto.recommendation.NodeRecommendationDTO;
 import io.harness.ccm.graphql.dto.recommendation.RecommendationDetailsDTO;
 import io.harness.ccm.graphql.dto.recommendation.RecommendationItemDTO;
@@ -124,6 +125,56 @@ public class RESTWrapperRecommendationDetailsTest extends CategoryTest {
 
     assertThat(workloadRecommendationDTO).isInstanceOf(RecommendationDetailsDTO.class);
     assertThat(workloadRecommendationDTO).isEqualTo(recommendationDetailsDTO);
+
+    assertThat(startTimeCaptor.getValue().toString()).isEqualTo("2022-01-03T00:00Z");
+    assertThat(endTimeCaptor.getValue().toString()).isEqualTo("2022-01-10T00:00Z");
+
+    verify(detailsQuery, times(0)).recommendationDetails(any(RecommendationItemDTO.class), any(), any(), any());
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.TRUNAPUSHPA)
+  @Category(UnitTests.class)
+  public void testECSRecommendationDetailDefaultDateTimeInput() throws Exception {
+    final ArgumentCaptor<OffsetDateTime> startTimeCaptor = ArgumentCaptor.forClass(OffsetDateTime.class);
+    final ArgumentCaptor<OffsetDateTime> endTimeCaptor = ArgumentCaptor.forClass(OffsetDateTime.class);
+
+    RecommendationDetailsDTO recommendationDetailsDTO = ECSRecommendationDTO.builder().id(RECOMMENDATION_ID).build();
+    when(detailsQuery.recommendationDetails(any(String.class), eq(ResourceType.ECS_SERVICE), startTimeCaptor.capture(),
+             endTimeCaptor.capture(), envCaptor.capture()))
+        .thenReturn(recommendationDetailsDTO);
+
+    ECSRecommendationDTO ecsRecommendationDTO =
+        restWrapperRecommendationDetails.ecsRecommendationDetail(ACCOUNT_ID, RECOMMENDATION_ID, null, null).getData();
+
+    assertThat(ecsRecommendationDTO).isInstanceOf(RecommendationDetailsDTO.class);
+    assertThat(ecsRecommendationDTO).isEqualTo(recommendationDetailsDTO);
+
+    assertThat(startTimeCaptor.getValue()).isEqualTo(OffsetDateTime.now().truncatedTo(ChronoUnit.DAYS).minusDays(7));
+    assertThat(endTimeCaptor.getValue()).isEqualTo(OffsetDateTime.now().truncatedTo(ChronoUnit.DAYS));
+
+    verify(detailsQuery, times(0)).recommendationDetails(any(RecommendationItemDTO.class), any(), any(), any());
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.TRUNAPUSHPA)
+  @Category(UnitTests.class)
+  public void testECSRecommendationDetailDateTimeInput() throws Exception {
+    final ArgumentCaptor<OffsetDateTime> startTimeCaptor = ArgumentCaptor.forClass(OffsetDateTime.class);
+    final ArgumentCaptor<OffsetDateTime> endTimeCaptor = ArgumentCaptor.forClass(OffsetDateTime.class);
+
+    RecommendationDetailsDTO recommendationDetailsDTO = ECSRecommendationDTO.builder().id(RECOMMENDATION_ID).build();
+    when(detailsQuery.recommendationDetails(any(String.class), eq(ResourceType.ECS_SERVICE), startTimeCaptor.capture(),
+             endTimeCaptor.capture(), envCaptor.capture()))
+        .thenReturn(recommendationDetailsDTO);
+
+    ECSRecommendationDTO ecsRecommendationDTO =
+        restWrapperRecommendationDetails
+            .ecsRecommendationDetail(ACCOUNT_ID, RECOMMENDATION_ID, "2022-01-03", "2022-01-10")
+            .getData();
+
+    assertThat(ecsRecommendationDTO).isInstanceOf(RecommendationDetailsDTO.class);
+    assertThat(ecsRecommendationDTO).isEqualTo(recommendationDetailsDTO);
 
     assertThat(startTimeCaptor.getValue().toString()).isEqualTo("2022-01-03T00:00Z");
     assertThat(endTimeCaptor.getValue().toString()).isEqualTo("2022-01-10T00:00Z");

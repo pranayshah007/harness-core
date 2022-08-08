@@ -31,9 +31,11 @@ import software.wings.beans.DelegateTaskUsageInsightsEventType;
 import com.google.inject.Inject;
 import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.time.temporal.ChronoField;
 import java.time.temporal.ChronoUnit;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -203,7 +205,8 @@ public class DelegateInsightsSummaryJob implements Runnable {
               .set(DelegateInsightsSummaryKeys.delegateGroupId, accountSummaryKey.getDelegateGroupId())
               .set(DelegateInsightsSummaryKeys.periodStartTime, accountSummaryKey.getPeriodStartTime())
               .set(DelegateInsightsSummaryKeys.insightsType, accountSummaryKey.getInsightsType())
-              .set(DelegateInsightsSummaryKeys.count, accountSummaryData.getValue().get());
+              .set(DelegateInsightsSummaryKeys.count, accountSummaryData.getValue().get())
+              .set(DelegateInsightsSummaryKeys.validUntil, Date.from(OffsetDateTime.now().plusMonths(1).toInstant()));
 
       persistence.upsert(query, updateOperations, HPersistence.upsertReturnNewOptions);
     }

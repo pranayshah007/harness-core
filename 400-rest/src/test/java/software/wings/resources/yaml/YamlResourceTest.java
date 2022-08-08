@@ -8,9 +8,7 @@
 package software.wings.resources.yaml;
 
 import static io.harness.rule.OwnerRule.ABHINAV;
-import static io.harness.rule.OwnerRule.VARDAN_BANSAL;
 
-import static software.wings.security.PermissionAttribute.PermissionType.ACCOUNT_MANAGEMENT;
 import static software.wings.security.PermissionAttribute.PermissionType.MANAGE_CONFIG_AS_CODE;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -47,21 +45,6 @@ public class YamlResourceTest extends CategoryTest {
           continue;
         }
         assertThat(annotation.permissionType()).isNotEqualTo(MANAGE_CONFIG_AS_CODE);
-      }
-    }
-  }
-
-  @Test
-  @Owner(developers = VARDAN_BANSAL)
-  @Category(UnitTests.class)
-  public void checkPermissionsForYAMLCrudApis() {
-    final Method[] methods = YamlResource.class.getMethods();
-    Set<String> methodsWithAccountManagementPermission =
-        new HashSet<>(Arrays.asList("deleteYAMLEntities", "upsertYAMLEntities", "upsertYAMLEntity"));
-    for (Method method : methods) {
-      if (methodsWithAccountManagementPermission.contains(method.getName())) {
-        AuthRule annotation = method.getAnnotation(AuthRule.class);
-        assertThat(annotation.permissionType()).isEqualTo(ACCOUNT_MANAGEMENT);
       }
     }
   }

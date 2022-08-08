@@ -57,7 +57,7 @@ public class ProcessControl {
     }
   }
 
-  private static boolean isProcessRunning(final String pid) throws IOException, InterruptedException, TimeoutException {
+  public static boolean isProcessRunning(final String pid) throws IOException, InterruptedException, TimeoutException {
     final String isRunningCommand = "kill -0 " + pid;
     return new ProcessExecutor().command("/bin/bash", "-c", isRunningCommand).execute().getExitValue() == 0;
   }

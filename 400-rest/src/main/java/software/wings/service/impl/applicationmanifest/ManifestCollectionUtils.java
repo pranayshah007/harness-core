@@ -166,6 +166,8 @@ public class ManifestCollectionUtils {
             .repoName(convertBase64UuidToCanonicalForm(appManifestId))
             .repoDisplayName(settingAttribute.getName())
             .helmVersion(helmVersion)
+            .useLatestChartMuseumVersion(
+                featureFlagService.isEnabled(FeatureName.USE_LATEST_CHARTMUSEUM_VERSION, accountId))
             .bypassHelmFetch(featureFlagService.isEnabled(FeatureName.BYPASS_HELM_FETCH, accountId))
             .helmRepoConfig(helmRepoConfig);
 
@@ -199,6 +201,10 @@ public class ManifestCollectionUtils {
             .repoDisplayName(helmChartCollectionParams.getHelmChartConfigParams().getRepoDisplayName())
             .useLatestChartMuseumVersion(featureFlagService.isEnabled(
                 FeatureName.USE_LATEST_CHARTMUSEUM_VERSION, helmChartCollectionParams.getAccountId()))
+            .useOCIHelmRepo(
+                featureFlagService.isEnabled(FeatureName.HELM_OCI_SUPPORT, helmChartCollectionParams.getAccountId()))
+            .useNewHelmBinary(
+                featureFlagService.isEnabled(FeatureName.HELM_VERSION_3_8_0, helmChartCollectionParams.getAccountId()))
             .connectorEncryptedDataDetails(
                 helmChartCollectionParams.getHelmChartConfigParams().getConnectorEncryptedDataDetails())
             .build();

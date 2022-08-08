@@ -57,6 +57,7 @@ import io.harness.beans.FeatureName;
 import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
 import io.harness.exception.InvalidArgumentsException;
+import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.ff.FeatureFlagService;
 import io.harness.persistence.HIterator;
@@ -64,7 +65,6 @@ import io.harness.queue.QueuePublisher;
 import io.harness.validation.Create;
 import io.harness.validation.Update;
 
-import software.wings.beans.BaseFile;
 import software.wings.beans.artifact.Artifact;
 import software.wings.beans.artifact.Artifact.ArtifactKeys;
 import software.wings.beans.artifact.Artifact.ContentStatus;
@@ -74,6 +74,7 @@ import software.wings.beans.artifact.ArtifactStream;
 import software.wings.beans.artifact.ArtifactStream.ArtifactStreamKeys;
 import software.wings.beans.artifact.ArtifactStreamAttributes;
 import software.wings.beans.artifact.ArtifactStreamType;
+import software.wings.beans.artifact.ArtifactView;
 import software.wings.beans.artifact.ArtifactoryArtifactStream;
 import software.wings.beans.artifact.NexusArtifactStream;
 import software.wings.collect.CollectEvent;
@@ -85,17 +86,22 @@ import software.wings.service.intfc.ArtifactStreamServiceBindingService;
 import software.wings.service.intfc.FileService;
 import software.wings.service.intfc.SettingsService;
 import software.wings.utils.ArtifactType;
+import software.wings.utils.DelegateArtifactCollectionUtils;
 import software.wings.utils.RepositoryFormat;
 import software.wings.utils.RepositoryType;
 
 import com.google.common.base.Preconditions;
+import com.google.common.collect.Iterators;
 import com.google.common.io.Files;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import com.mongodb.BasicDBObject;
+import com.mongodb.BulkWriteOperation;
+import com.mongodb.DBCollection;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -105,7 +111,9 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import javax.validation.Valid;
 import javax.validation.executable.ValidateOnExecution;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.beanutils.BeanUtils;
 import org.mongodb.morphia.query.FindOptions;
 import org.mongodb.morphia.query.Query;
 import org.mongodb.morphia.query.Sort;
@@ -120,6 +128,7 @@ import ru.vyarus.guice.validator.group.annotation.ValidationGroups;
 @ValidateOnExecution
 @Slf4j
 public class ArtifactServiceImpl implements ArtifactService {
+  public static final int DELETE_BATCH_SIZE = 100;
   /**
    * The Auto downloaded.
    */
@@ -178,6 +187,34 @@ public class ArtifactServiceImpl implements ArtifactService {
     }
 
     return listArtifactsForService(pageRequest);
+  }
+
+  @Override
+  public PageResponse<Artifact> listArtifactsForServiceWithCollectionEnabled(
+      String appId, String serviceId, PageRequest<Artifact> pageRequest) {
+    if (isEmpty(serviceId)) {
+      throw new InvalidRequestException("ServiceId is required");
+    }
+
+    List<String> projections = new ArrayList<>();
+    projections.add(ArtifactStreamKeys.uuid);
+    projections.add(ArtifactStreamKeys.collectionEnabled);
+    List<ArtifactStream> artifactStreams =
+        artifactStreamService.getArtifactStreamsForService(appId, serviceId, projections);
+
+    List<String> artifactStreamIds = new ArrayList<>();
+    for (ArtifactStream artifactStream : artifactStreams) {
+      if (!Boolean.FALSE.equals(artifactStream.getCollectionEnabled())) {
+        artifactStreamIds.add(artifactStream.getUuid());
+      }
+    }
+
+    if (isNotEmpty(artifactStreamIds)) {
+      pageRequest.addFilter(ArtifactKeys.artifactStreamId, IN, artifactStreamIds.toArray());
+      return listArtifactsForService(pageRequest);
+    } else {
+      return aPageResponse().withResponse(new ArrayList<Artifact>()).build();
+    }
   }
 
   @Override
@@ -270,7 +307,7 @@ public class ArtifactServiceImpl implements ArtifactService {
     if (AMI.name().equals(artifactStreamType)) {
       key = ArtifactKeys.revision;
       value = artifact.getRevision();
-    } else if (ArtifactCollectionUtils.isGenericArtifactStream(artifactStreamType, artifactStreamAttributes)) {
+    } else if (DelegateArtifactCollectionUtils.isGenericArtifactStream(artifactStreamType, artifactStreamAttributes)) {
       key = ArtifactKeys.metadata_artifactPath;
       value = artifact.getArtifactPath();
     } else {
@@ -298,7 +335,7 @@ public class ArtifactServiceImpl implements ArtifactService {
     String key;
     if (AMI.name().equals(artifactStreamType)) {
       key = ArtifactKeys.revision;
-    } else if (ArtifactCollectionUtils.isGenericArtifactStream(artifactStreamType, artifactStreamAttributes)) {
+    } else if (DelegateArtifactCollectionUtils.isGenericArtifactStream(artifactStreamType, artifactStreamAttributes)) {
       key = ArtifactKeys.metadata_artifactPath;
     } else {
       key = ArtifactKeys.metadata_buildNo;
@@ -385,6 +422,18 @@ public class ArtifactServiceImpl implements ArtifactService {
                                 .filter(ArtifactKeys.uuid, artifact.getUuid()),
         wingsPersistence.createUpdateOperations(Artifact.class).set("displayName", artifact.getDisplayName()));
     return wingsPersistence.get(Artifact.class, artifact.getUuid());
+  }
+
+  @Override
+  public void updateMetadataAndRevision(
+      String artifactId, String accountId, Map<String, String> newMetadata, String revision) {
+    Query<Artifact> query = wingsPersistence.createQuery(Artifact.class)
+                                .filter(ID_KEY, artifactId)
+                                .filter(ArtifactKeys.accountId, accountId);
+    UpdateOperations<Artifact> ops = wingsPersistence.createUpdateOperations(Artifact.class);
+    ops.set(ArtifactKeys.metadata, newMetadata);
+    ops.set(ArtifactKeys.revision, revision);
+    wingsPersistence.update(query, ops);
   }
 
   @Override
@@ -482,11 +531,14 @@ public class ArtifactServiceImpl implements ArtifactService {
         .get();
   }
 
+  @SneakyThrows
   @Override
-  public Artifact getWithServices(String artifactId, String appId) {
+  public ArtifactView getWithServices(String artifactId, String appId) {
     Artifact artifact = wingsPersistence.get(Artifact.class, artifactId);
-    artifact.setServices(artifactStreamServiceBindingService.listServices(appId, artifact.getArtifactStreamId()));
-    return artifact;
+    ArtifactView artifactView = new ArtifactView();
+    BeanUtils.copyProperties(artifactView, artifact);
+    artifactView.setServices(artifactStreamServiceBindingService.listServices(appId, artifact.getArtifactStreamId()));
+    return artifactView;
   }
 
   @Override
@@ -516,11 +568,12 @@ public class ArtifactServiceImpl implements ArtifactService {
     return true;
   }
 
-  @Override
   public void deleteArtifacts(List<Artifact> artifacts) {
     List<String> artifactIds = new ArrayList<>();
     List<String> artifactIdsWithFiles = new ArrayList<>();
     List<String> artifactFileIds = new ArrayList<>();
+    List<String> allArtifactIds = new ArrayList<>();
+
     for (Artifact artifact : artifacts) {
       if (isNotEmpty(artifact.getArtifactFiles())) {
         artifactIdsWithFiles.add(artifact.getUuid());
@@ -532,12 +585,10 @@ public class ArtifactServiceImpl implements ArtifactService {
         artifactIds.add(artifact.getUuid());
       }
     }
-    if (isNotEmpty(artifactIds)) {
-      wingsPersistence.getCollection(DEFAULT_STORE, "artifacts")
-          .remove(new BasicDBObject("_id", new BasicDBObject("$in", artifactIds.toArray())));
-    }
-    if (isNotEmpty(artifactIdsWithFiles)) {
-      deleteArtifacts(artifactIdsWithFiles.toArray(), artifactFileIds);
+    allArtifactIds.addAll(artifactIdsWithFiles);
+    allArtifactIds.addAll(artifactIds);
+    if (isNotEmpty(allArtifactIds)) {
+      deleteArtifacts(allArtifactIds.toArray(), artifactFileIds);
     }
   }
 
@@ -553,6 +604,8 @@ public class ArtifactServiceImpl implements ArtifactService {
     List<String> artifactIds = new ArrayList<>();
     List<String> artifactIdsWithFiles = new ArrayList<>();
     List<String> artifactFileIds = new ArrayList<>();
+    List<String> allArtifactIds = new ArrayList<>();
+
     try (HIterator<Artifact> iterator = new HIterator<>(artifactQuery.fetch())) {
       for (Artifact artifact : iterator) {
         if (isNotEmpty(artifact.getArtifactFiles())) {
@@ -566,12 +619,10 @@ public class ArtifactServiceImpl implements ArtifactService {
         }
       }
     }
-    if (isNotEmpty(artifactIds)) {
-      wingsPersistence.getCollection(DEFAULT_STORE, "artifacts")
-          .remove(new BasicDBObject("_id", new BasicDBObject("$in", artifactIds.toArray())));
-    }
-    if (isNotEmpty(artifactIdsWithFiles)) {
-      deleteArtifacts(artifactIdsWithFiles.toArray(), artifactFileIds);
+    allArtifactIds.addAll(artifactIdsWithFiles);
+    allArtifactIds.addAll(artifactIds);
+    if (isNotEmpty(allArtifactIds)) {
+      deleteArtifacts(allArtifactIds.toArray(), artifactFileIds);
     }
   }
 
@@ -629,6 +680,19 @@ public class ArtifactServiceImpl implements ArtifactService {
     // TODO: ASR: update with accountId
     Query<Artifact> artifactQuery = wingsPersistence.createQuery(Artifact.class, excludeAuthority)
                                         .filter(ArtifactKeys.artifactStreamId, artifactStream.getUuid());
+
+    return artifactQuery.filter(ArtifactKeys.metadata_buildNo, regex ? compile(buildNumber) : buildNumber)
+        .order("-createdAt")
+        .disableValidation()
+        .get();
+  }
+
+  @Override
+  public Artifact getArtifactByBuildNumber(
+      String accountId, String artifactStreamId, String buildNumber, boolean regex) {
+    Query<Artifact> artifactQuery = wingsPersistence.createQuery(Artifact.class, excludeAuthority)
+                                        .filter(ArtifactKeys.accountId, accountId)
+                                        .filter(ArtifactKeys.artifactStreamId, artifactStreamId);
 
     return artifactQuery.filter(ArtifactKeys.metadata_buildNo, regex ? compile(buildNumber) : buildNumber)
         .order("-createdAt")
@@ -816,8 +880,21 @@ public class ArtifactServiceImpl implements ArtifactService {
 
   private void deleteArtifacts(Object[] artifactIds, List<String> artifactFileIds) {
     log.info("Deleting artifactIds of artifacts {}", artifactIds);
-    wingsPersistence.getCollection(DEFAULT_STORE, "artifacts")
-        .remove(new BasicDBObject("_id", new BasicDBObject("$in", artifactIds)));
+
+    final DBCollection dbCollection = wingsPersistence.getCollection(DEFAULT_STORE, "artifacts");
+    Iterator<Object> artifactListIterator = Arrays.stream(artifactIds).iterator();
+    Iterator<List<Object>> chunksOfArtifactIds = Iterators.partition(artifactListIterator, DELETE_BATCH_SIZE);
+    while (chunksOfArtifactIds.hasNext()) {
+      BulkWriteOperation bulkWriteOperation = dbCollection.initializeUnorderedBulkOperation();
+      bulkWriteOperation
+          .find(wingsPersistence.createQuery(Artifact.class)
+                    .field(ArtifactKeys.uuid)
+                    .in(chunksOfArtifactIds.next())
+                    .getQueryObject())
+          .remove();
+      bulkWriteOperation.execute();
+    }
+
     deleteArtifactFiles(artifactFileIds);
   }
 
@@ -834,7 +911,7 @@ public class ArtifactServiceImpl implements ArtifactService {
     return artifacts.stream()
         .flatMap(artifact -> artifact.getArtifactFiles().stream())
         .filter(artifactFile -> artifactFile.getFileUuid() != null)
-        .map(BaseFile::getFileUuid)
+        .map(ArtifactFile::getFileUuid)
         .collect(Collectors.toList());
   }
 

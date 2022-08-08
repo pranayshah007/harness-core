@@ -44,6 +44,7 @@ import software.wings.api.BambooExecutionData;
 import software.wings.api.JenkinsExecutionData;
 import software.wings.beans.Activity;
 import software.wings.beans.BambooConfig;
+import software.wings.delegatetasks.BambooTask.BambooExecutionResponse;
 import software.wings.service.impl.SettingServiceHelper;
 import software.wings.service.intfc.ActivityService;
 import software.wings.service.intfc.DelegateService;
@@ -53,6 +54,7 @@ import software.wings.service.intfc.security.SecretManager;
 import software.wings.sm.ExecutionContextImpl;
 import software.wings.sm.ExecutionResponse;
 import software.wings.sm.WorkflowStandardParams;
+import software.wings.sm.WorkflowStandardParamsExtensionService;
 
 import com.google.common.collect.ImmutableMap;
 import java.util.Collections;
@@ -85,6 +87,7 @@ public class BambooStateTest extends CategoryTest {
   @Mock private SettingServiceHelper settingServiceHelper;
   @Mock private InfrastructureMappingService infrastructureMappingService;
   @Mock private StateExecutionService stateExecutionService;
+  @Mock private WorkflowStandardParamsExtensionService workflowStandardParamsExtensionService;
 
   @InjectMocks private BambooState bambooState = new BambooState("bamboo");
 
@@ -97,7 +100,7 @@ public class BambooStateTest extends CategoryTest {
     when(activityService.save(any(Activity.class))).thenReturn(ACTIVITY_WITH_ID);
     when(executionContext.getGlobalSettingValue(ACCOUNT_ID, SETTING_ID)).thenReturn(getBambooConfig(false));
     when(executionContext.renderExpression(anyString()))
-        .thenAnswer(invocation -> invocation.getArgumentAt(0, String.class));
+        .thenAnswer(invocation -> invocation.getArgument(0, String.class));
 
     WorkflowStandardParams workflowStandardParams = WorkflowStandardParams.Builder.aWorkflowStandardParams().build();
     workflowStandardParams.setCurrentUser(EmbeddedUser.builder().name("test").email("test@harness.io").build());
@@ -126,7 +129,7 @@ public class BambooStateTest extends CategoryTest {
     when(executionContext.getStateExecutionData()).thenReturn(BambooExecutionData.builder().build());
     bambooState.handleAsyncResponse(executionContext,
         ImmutableMap.of(ACTIVITY_ID,
-            BambooState.BambooExecutionResponse.builder()
+            BambooExecutionResponse.builder()
                 .errorMessage("Err")
                 .executionStatus(ExecutionStatus.FAILED)
                 .buildStatus("SUCCESS")

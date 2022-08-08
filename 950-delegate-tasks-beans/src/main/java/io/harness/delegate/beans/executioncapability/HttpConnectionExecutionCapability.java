@@ -98,4 +98,9 @@ public class HttpConnectionExecutionCapability implements ExecutionCapability {
   public Duration getPeriodUntilNextValidation() {
     return Duration.ofHours(4);
   }
+
+  @Override
+  public String getCapabilityToString() {
+    return isNotEmpty(fetchConnectableUrl()) ? String.format("Capability reach URL: %s ", fetchConnectableUrl()) : null;
+  }
 }

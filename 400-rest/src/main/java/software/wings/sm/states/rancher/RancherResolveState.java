@@ -13,7 +13,8 @@ import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.delegate.beans.TaskData.DEFAULT_ASYNC_CALL_TIMEOUT;
 import static io.harness.exception.ExceptionUtils.getMessage;
 
-import static software.wings.infra.RancherKubernetesInfrastructure.ClusterSelectionCriteriaEntry;
+import static software.wings.delegatetasks.rancher.RancherResolveClustersTask.COMMAND_NAME;
+import static software.wings.delegatetasks.rancher.RancherResolveClustersTask.COMMAND_UNIT_NAME;
 import static software.wings.sm.StateExecutionData.StateExecutionDataBuilder.aStateExecutionData;
 import static software.wings.sm.StateType.RANCHER_RESOLVE;
 
@@ -34,6 +35,7 @@ import io.harness.tasks.ResponseData;
 import software.wings.api.RancherClusterElement;
 import software.wings.beans.Activity;
 import software.wings.beans.Application;
+import software.wings.beans.ClusterSelectionCriteriaEntry;
 import software.wings.beans.Environment;
 import software.wings.beans.RancherConfig;
 import software.wings.beans.RancherKubernetesInfrastructureMapping;
@@ -90,8 +92,6 @@ public class RancherResolveState extends State {
   @Inject K8sStateHelper k8sStateHelper;
   @Getter @Setter @Attributes(title = "Timeout (Minutes)") @DefaultValue("10") private Integer stateTimeoutInMinutes;
 
-  public static final String COMMAND_UNIT_NAME = "Execute";
-  public static final String COMMAND_NAME = "Rancher Cluster Resolve";
   private static final long MIN_TASK_TIMEOUT_IN_MINUTES = 1L;
 
   public RancherResolveState(String name) {

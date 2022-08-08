@@ -3,7 +3,7 @@
 # Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
 # that can be found in the licenses directory at the root of this repository, also available at
 # https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
-
+export DEPLOY_MODE="KUBERNETES"
 if [[ -v "{hostname}" ]]; then
    export HOSTNAME=$(hostname)
 fi
@@ -36,7 +36,7 @@ else
     fi
 fi
 
-export JAVA_OPTS="-Xms${MEMORY}m -Xmx${MEMORY}m -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/heapdump -XX:+PrintGCDetails -XX:+PrintGCDateStamps -Xloggc:mygclogfilename.gc $GC_PARAMS $JAVA_ADVANCED_FLAGS"
+export JAVA_OPTS="-Xms${MEMORY}m -Xmx${MEMORY}m -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/heapdump -Xloggc:mygclogfilename.gc $GC_PARAMS $JAVA_ADVANCED_FLAGS"
 
 
 if [[ "${ENABLE_APPDYNAMICS}" == "true" ]] && [[ "${DISABLE_NEW_RELIC}" == "true" ]]; then
@@ -47,10 +47,26 @@ if [[ "${ENABLE_APPDYNAMICS}" == "true" ]] && [[ "${DISABLE_NEW_RELIC}" == "true
     echo "Using Appdynamics java agent"
 fi
 
+if [[ "${ENABLE_OPENTELEMETRY}" == "true" ]] ; then
+    echo "OpenTelemetry is enabled"
+    JAVA_OPTS=$JAVA_OPTS" -javaagent:/opt/harness/opentelemetry-javaagent.jar -Dotel.service.name=${OTEL_SERVICE_NAME:-manager}"
+
+    if [ -n "$OTEL_EXPORTER_OTLP_ENDPOINT" ]; then
+        JAVA_OPTS=$JAVA_OPTS" -Dotel.exporter.otlp.endpoint=$OTEL_EXPORTER_OTLP_ENDPOINT "
+    fi
+    echo "Using OpenTelemetry Java Agent"
+fi
+
 if [[ "${ENABLE_OVEROPS}" == "true" ]] ; then
     echo "OverOps is enabled"
-    JAVA_OPTS=$JAVA_OPTS" -agentpath:/opt/harness/takipi/lib/libTakipiAgent.so -Dtakipi.etl -Dtakipi.application.name=${OVEROPS_APPLICATION_NAME} -Dtakipi.deployment.name=${OVEROPS_DEPLOYMENT_NAME}"
+    JAVA_OPTS=$JAVA_OPTS" -Xshare:off -XX:-UseTypeSpeculation -XX:ReservedCodeCacheSize=512m -agentpath:/opt/harness/harness/lib/libETAgent.so"
     echo "Using Overops Java Agent"
+fi
+
+if [[ "${ENABLE_MONITORING}" == "true" ]] ; then
+    echo "Monitoring  is enabled"
+    JAVA_OPTS="$JAVA_OPTS ${MONITORING_FLAGS}"
+    echo "Using inspectIT Java Agent"
 fi
 
 if [[ "${DISABLE_NEW_RELIC}" != "true" ]]; then

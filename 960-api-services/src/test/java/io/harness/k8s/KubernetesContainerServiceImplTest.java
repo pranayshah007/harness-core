@@ -13,12 +13,15 @@ import static io.harness.data.encoding.EncodingUtils.encodeBase64;
 import static io.harness.data.encoding.EncodingUtils.encodeBase64ToByteArray;
 import static io.harness.k8s.KubernetesConvention.CompressedReleaseHistoryFlag;
 import static io.harness.k8s.KubernetesConvention.ReleaseHistoryKeyName;
+import static io.harness.k8s.model.KubernetesClusterAuthType.GCP_OAUTH;
 import static io.harness.k8s.model.KubernetesClusterAuthType.OIDC;
 import static io.harness.k8s.model.KubernetesClusterAuthType.USER_PASSWORD;
 import static io.harness.rule.OwnerRule.ABHINAV2;
 import static io.harness.rule.OwnerRule.ABOSII;
 import static io.harness.rule.OwnerRule.ACASIAN;
+import static io.harness.rule.OwnerRule.ACHYUTH;
 import static io.harness.rule.OwnerRule.ANSHUL;
+import static io.harness.rule.OwnerRule.BOGDAN;
 import static io.harness.rule.OwnerRule.BRETT;
 import static io.harness.rule.OwnerRule.YOGESH;
 
@@ -28,6 +31,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Fail.fail;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyListOf;
 import static org.mockito.Matchers.anyMapOf;
@@ -46,6 +51,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.concurent.HTimeLimiterMocker;
 import io.harness.container.ContainerInfo;
 import io.harness.exception.InvalidRequestException;
+import io.harness.k8s.model.GcpAccessTokenSupplier;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.k8s.model.OidcGrantType;
 import io.harness.k8s.oidc.OidcTokenRetriever;
@@ -58,15 +64,7 @@ import com.google.gson.reflect.TypeToken;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.ConfigMapList;
-import io.fabric8.kubernetes.api.model.DoneableConfigMap;
-import io.fabric8.kubernetes.api.model.DoneableHorizontalPodAutoscaler;
-import io.fabric8.kubernetes.api.model.DoneableNamespace;
-import io.fabric8.kubernetes.api.model.DoneablePod;
-import io.fabric8.kubernetes.api.model.DoneableReplicationController;
-import io.fabric8.kubernetes.api.model.DoneableSecret;
-import io.fabric8.kubernetes.api.model.DoneableService;
-import io.fabric8.kubernetes.api.model.HorizontalPodAutoscaler;
-import io.fabric8.kubernetes.api.model.HorizontalPodAutoscalerList;
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.Namespace;
 import io.fabric8.kubernetes.api.model.NamespaceList;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
@@ -81,37 +79,32 @@ import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.api.model.SecretList;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServiceList;
+import io.fabric8.kubernetes.api.model.apps.StatefulSet;
+import io.fabric8.kubernetes.api.model.apps.StatefulSetList;
+import io.fabric8.kubernetes.api.model.apps.StatefulSetSpec;
+import io.fabric8.kubernetes.api.model.autoscaling.v1.HorizontalPodAutoscaler;
+import io.fabric8.kubernetes.api.model.autoscaling.v1.HorizontalPodAutoscalerList;
 import io.fabric8.kubernetes.api.model.extensions.DaemonSet;
 import io.fabric8.kubernetes.api.model.extensions.DaemonSetList;
 import io.fabric8.kubernetes.api.model.extensions.DaemonSetSpec;
 import io.fabric8.kubernetes.api.model.extensions.Deployment;
 import io.fabric8.kubernetes.api.model.extensions.DeploymentList;
 import io.fabric8.kubernetes.api.model.extensions.DeploymentSpec;
-import io.fabric8.kubernetes.api.model.extensions.DoneableDaemonSet;
-import io.fabric8.kubernetes.api.model.extensions.DoneableDeployment;
-import io.fabric8.kubernetes.api.model.extensions.DoneableStatefulSet;
-import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
-import io.fabric8.kubernetes.api.model.extensions.StatefulSetList;
-import io.fabric8.kubernetes.api.model.extensions.StatefulSetSpec;
 import io.fabric8.kubernetes.client.AppsAPIGroupClient;
 import io.fabric8.kubernetes.client.ExtensionsAPIGroupClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.kubernetes.client.Watch;
-import io.fabric8.kubernetes.client.Watcher;
 import io.fabric8.kubernetes.client.dsl.FilterWatchListDeletable;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
 import io.fabric8.kubernetes.client.dsl.PodResource;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.dsl.RollableScalableResource;
-import io.fabric8.kubernetes.client.dsl.ScalableResource;
+import io.fabric8.kubernetes.client.dsl.ServiceResource;
 import io.fabric8.openshift.api.model.DeploymentConfig;
 import io.fabric8.openshift.api.model.DeploymentConfigList;
 import io.fabric8.openshift.api.model.DeploymentConfigSpec;
-import io.fabric8.openshift.api.model.DoneableDeploymentConfig;
 import io.fabric8.openshift.client.OpenShiftClient;
 import io.fabric8.openshift.client.dsl.DeployableScalableResource;
-import io.kubernetes.client.openapi.ApiCallback;
 import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.ApiResponse;
@@ -138,7 +131,10 @@ import io.kubernetes.client.openapi.models.VersionInfo;
 import io.kubernetes.client.openapi.models.VersionInfoBuilder;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.Clock;
+import java.time.OffsetDateTime;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -146,7 +142,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import okhttp3.Call;
-import org.joda.time.DateTime;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Rule;
@@ -178,90 +173,77 @@ public class KubernetesContainerServiceImplTest extends CategoryTest {
   @Mock private KubernetesClient kubernetesClient;
   @Mock private OpenShiftClient openShiftClient;
   @Mock
-  private MixedOperation<ReplicationController, ReplicationControllerList, DoneableReplicationController,
-      RollableScalableResource<ReplicationController, DoneableReplicationController>> replicationControllers;
+  private MixedOperation<ReplicationController, ReplicationControllerList,
+      RollableScalableResource<ReplicationController>> replicationControllers;
   @Mock
-  private NonNamespaceOperation<ReplicationController, ReplicationControllerList, DoneableReplicationController,
-      RollableScalableResource<ReplicationController, DoneableReplicationController>> namespacedReplicationControllers;
+  private NonNamespaceOperation<ReplicationController, ReplicationControllerList,
+      RollableScalableResource<ReplicationController>> namespacedReplicationControllers;
 
-  @Mock private MixedOperation<Service, ServiceList, DoneableService, Resource<Service, DoneableService>> services;
-  @Mock private MixedOperation<Secret, SecretList, DoneableSecret, Resource<Secret, DoneableSecret>> secrets;
-  @Mock
-  private MixedOperation<ConfigMap, ConfigMapList, DoneableConfigMap, Resource<ConfigMap, DoneableConfigMap>>
-      configMaps;
-  @Mock
-  private NonNamespaceOperation<Service, ServiceList, DoneableService, Resource<Service, DoneableService>>
-      namespacedServices;
+  @Mock private MixedOperation<Service, ServiceList, ServiceResource<Service>> services;
+  @Mock private MixedOperation<Secret, SecretList, Resource<Secret>> secrets;
+  @Mock private MixedOperation<ConfigMap, ConfigMapList, Resource<ConfigMap>> configMaps;
+  @Mock private NonNamespaceOperation<Service, ServiceList, ServiceResource<Service>> namespacedServices;
 
-  @Mock
-  private NonNamespaceOperation<Secret, SecretList, DoneableSecret, Resource<Secret, DoneableSecret>> namespacedSecrets;
-  @Mock
-  private NonNamespaceOperation<ConfigMap, ConfigMapList, DoneableConfigMap, Resource<ConfigMap, DoneableConfigMap>>
-      namespacedConfigMaps;
+  @Mock private NonNamespaceOperation<Secret, SecretList, Resource<Secret>> namespacedSecrets;
+  @Mock private NonNamespaceOperation<ConfigMap, ConfigMapList, Resource<ConfigMap>> namespacedConfigMaps;
 
-  @Mock
-  private RollableScalableResource<ReplicationController, DoneableReplicationController> scalableReplicationController;
-  @Mock private Resource<Service, DoneableService> serviceResource;
-  @Mock private Resource<Secret, DoneableSecret> secretResource;
-  @Mock private Resource<ConfigMap, DoneableConfigMap> configMapResource;
-  @Mock private MixedOperation<Pod, PodList, DoneablePod, PodResource<Pod, DoneablePod>> pods;
+  @Mock private RollableScalableResource<ReplicationController> scalableReplicationController;
+  @Mock private ServiceResource<Service> serviceResource;
+  @Mock private Resource<Secret> secretResource;
+  @Mock private Resource<ConfigMap> configMapResource;
+  @Mock private MixedOperation<Pod, PodList, PodResource<Pod>> pods;
 
   @Mock
-  private MixedOperation<DeploymentConfig, DeploymentConfigList, DoneableDeploymentConfig,
-      DeployableScalableResource<DeploymentConfig, DoneableDeploymentConfig>> deploymentConfigsOperation;
+  private MixedOperation<DeploymentConfig, DeploymentConfigList, DeployableScalableResource<DeploymentConfig>>
+      deploymentConfigsOperation;
   @Mock
-  private NonNamespaceOperation<DeploymentConfig, DeploymentConfigList, DoneableDeploymentConfig,
-      DeployableScalableResource<DeploymentConfig, DoneableDeploymentConfig>> deploymentConfigs;
+  private NonNamespaceOperation<DeploymentConfig, DeploymentConfigList, DeployableScalableResource<DeploymentConfig>>
+      deploymentConfigs;
   @Mock
 
   // Deployments
-  private MixedOperation<Deployment, DeploymentList, DoneableDeployment,
-      ScalableResource<Deployment, DoneableDeployment>> deploymentOperations;
+  private MixedOperation<Deployment, DeploymentList, RollableScalableResource<Deployment>> deploymentOperations;
   @Mock
-  private NonNamespaceOperation<Deployment, DeploymentList, DoneableDeployment,
-      ScalableResource<Deployment, DoneableDeployment>> namespacedDeployments;
-  @Mock private ScalableResource<Deployment, DoneableDeployment> scalableDeployment;
-  @Mock
-  private FilterWatchListDeletable<Deployment, DeploymentList, Boolean, Watch, Watcher<Deployment>>
-      deploymentFilteredList;
+  private NonNamespaceOperation<Deployment, DeploymentList, RollableScalableResource<Deployment>> namespacedDeployments;
+  @Mock private RollableScalableResource<Deployment> scalableDeployment;
+  @Mock private FilterWatchListDeletable<Deployment, DeploymentList> deploymentFilteredList;
 
   // Statefulsets
   @Mock
-  private MixedOperation<StatefulSet, StatefulSetList, DoneableStatefulSet,
-      RollableScalableResource<StatefulSet, DoneableStatefulSet>> statefulSetOperations;
+  private MixedOperation<StatefulSet, StatefulSetList, RollableScalableResource<StatefulSet>> statefulSetOperations;
   @Mock
-  private NonNamespaceOperation<StatefulSet, StatefulSetList, DoneableStatefulSet,
-      RollableScalableResource<StatefulSet, DoneableStatefulSet>> namespacedStatefulsets;
-  @Mock private RollableScalableResource<StatefulSet, DoneableStatefulSet> statefulSetResource;
+  private NonNamespaceOperation<StatefulSet, StatefulSetList, RollableScalableResource<StatefulSet>>
+      namespacedStatefulsets;
+  @Mock private RollableScalableResource<StatefulSet> statefulSetResource;
 
   // DaemonSet
-  @Mock
-  private MixedOperation<DaemonSet, DaemonSetList, DoneableDaemonSet, Resource<DaemonSet, DoneableDaemonSet>>
-      daemonSetOperations;
-  @Mock
-  private NonNamespaceOperation<DaemonSet, DaemonSetList, DoneableDaemonSet, Resource<DaemonSet, DoneableDaemonSet>>
-      namespacedDaemonSet;
-  @Mock private Resource<DaemonSet, DoneableDaemonSet> daemonSetResource;
+  @Mock private MixedOperation<DaemonSet, DaemonSetList, Resource<DaemonSet>> daemonSetOperations;
+  @Mock private NonNamespaceOperation<DaemonSet, DaemonSetList, Resource<DaemonSet>> namespacedDaemonSet;
+  @Mock private Resource<DaemonSet> daemonSetResource;
 
   // Namespaces
-  @Mock
-  private NonNamespaceOperation<Namespace, NamespaceList, DoneableNamespace, Resource<Namespace, DoneableNamespace>>
-      namespacedNamespaces;
-  @Mock private Resource<Namespace, DoneableNamespace> namespaceResource;
+  @Mock private NonNamespaceOperation<Namespace, NamespaceList, Resource<Namespace>> namespacedNamespaces;
+  @Mock private Resource<Namespace> namespaceResource;
 
   // Secrets
-  @Mock private MixedOperation<Secret, SecretList, DoneableSecret, Resource<Secret, DoneableSecret>> secretOperations;
+  @Mock private MixedOperation<Secret, SecretList, Resource<Secret>> secretOperations;
 
   // ConfigMaps
-  @Mock
-  private MixedOperation<ConfigMap, ConfigMapList, DoneableConfigMap, Resource<ConfigMap, DoneableConfigMap>>
-      configMapOperations;
+  @Mock private MixedOperation<ConfigMap, ConfigMapList, Resource<ConfigMap>> configMapOperations;
 
   // HPA
   @Mock
-  private NonNamespaceOperation<HorizontalPodAutoscaler, HorizontalPodAutoscalerList, DoneableHorizontalPodAutoscaler,
-      Resource<HorizontalPodAutoscaler, DoneableHorizontalPodAutoscaler>> namespacedHpa;
-  @Mock private Resource<HorizontalPodAutoscaler, DoneableHorizontalPodAutoscaler> horizontalPodAutoscalerResource;
+  private NonNamespaceOperation<HorizontalPodAutoscaler, HorizontalPodAutoscalerList, Resource<HorizontalPodAutoscaler>>
+      namespacedHpa;
+
+  @Mock
+  private NonNamespaceOperation<io.fabric8.kubernetes.api.model.autoscaling.v2beta1.HorizontalPodAutoscaler,
+      io.fabric8.kubernetes.api.model.autoscaling.v2beta1.HorizontalPodAutoscalerList,
+      Resource<io.fabric8.kubernetes.api.model.autoscaling.v2beta1.HorizontalPodAutoscaler>> v2Beta1NamespacedHpa;
+  @Mock private Resource<HorizontalPodAutoscaler> horizontalPodAutoscalerResource;
+  @Mock
+  private Resource<io.fabric8.kubernetes.api.model.autoscaling.v2beta1.HorizontalPodAutoscaler>
+      v2Beta1HorizontalPodAutoscalerResource;
 
   @Mock private ExtensionsAPIGroupClient extensionsAPIGroupClient;
   @Mock private AppsAPIGroupClient appsAPIGroupClient;
@@ -311,6 +293,7 @@ public class KubernetesContainerServiceImplTest extends CategoryTest {
   ConfigMap configMap;
   Service service;
   HorizontalPodAutoscaler horizontalPodAutoscaler;
+  io.fabric8.kubernetes.api.model.autoscaling.v2beta1.HorizontalPodAutoscaler v2Beta1HorizontalPodAutoscaler;
 
   @Before
   public void setUp() throws Exception {
@@ -330,7 +313,6 @@ public class KubernetesContainerServiceImplTest extends CategoryTest {
     when(configMaps.inNamespace("default")).thenReturn(namespacedConfigMaps);
     when(replicationControllers.inNamespace("default")).thenReturn(namespacedReplicationControllers);
     when(services.inNamespace(anyString())).thenReturn(namespacedServices);
-    when(namespacedServices.createOrReplaceWithNew()).thenReturn(new DoneableService(item -> item));
     when(namespacedReplicationControllers.withName(anyString())).thenReturn(scalableReplicationController);
     when(namespacedServices.withName(anyString())).thenReturn(serviceResource);
     when(namespacedSecrets.withName(anyString())).thenReturn(secretResource);
@@ -367,13 +349,13 @@ public class KubernetesContainerServiceImplTest extends CategoryTest {
 
     when(kubernetesHelperService.hpaOperations(KUBERNETES_CONFIG)).thenReturn(namespacedHpa);
     when(namespacedHpa.withName(anyString())).thenReturn(horizontalPodAutoscalerResource);
+    when(v2Beta1NamespacedHpa.withName(anyString())).thenReturn(v2Beta1HorizontalPodAutoscalerResource);
 
     when(kubernetesHelperService.getApiClient(KUBERNETES_CONFIG)).thenReturn(k8sApiClient);
-    when(k8sApiClient.buildCall(anyString(), anyString(), anyListOf(Pair.class), anyListOf(Pair.class), any(),
-             anyMapOf(String.class, String.class), anyMapOf(String.class, String.class),
-             anyMapOf(String.class, Object.class), any(String[].class), any(ApiCallback.class)))
+    when(k8sApiClient.buildCall(anyString(), anyString(), anyList(), anyList(), any(), anyMap(), anyMap(), anyMap(),
+             any(String[].class), any()))
         .thenReturn(k8sApiCall);
-    when(k8sApiClient.escapeString(anyString())).thenAnswer(invocation -> invocation.getArgumentAt(0, String.class));
+    when(k8sApiClient.escapeString(anyString())).thenAnswer(invocation -> invocation.getArgument(0, String.class));
     when(k8sApiClient.parameterToPair(anyString(), any())).thenCallRealMethod();
     when(k8sApiClient.parameterToString(any())).thenCallRealMethod();
 
@@ -634,7 +616,7 @@ public class KubernetesContainerServiceImplTest extends CategoryTest {
 
     assertThatThrownBy(() -> kubernetesContainerService.getService(KUBERNETES_CONFIG, "service"))
         .hasMessageContaining(
-            "Unable to get default/Service/service. Code: 403, message: {error: \"unable to get service\"}");
+            "Unable to get default/Service/service. Code: 403, message:  Response body: {error: \"unable to get service\"}");
   }
 
   @Test
@@ -652,20 +634,20 @@ public class KubernetesContainerServiceImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testGetAutoscaler() {
     when(horizontalPodAutoscalerResource.get()).thenReturn(horizontalPodAutoscaler);
-    HorizontalPodAutoscaler autoscaler =
-        kubernetesContainerService.getAutoscaler(KUBERNETES_CONFIG, "autoscalar", "v1");
+    when(v2Beta1HorizontalPodAutoscalerResource.get()).thenReturn(v2Beta1HorizontalPodAutoscaler);
+    HasMetadata autoscaler = kubernetesContainerService.getAutoscaler(KUBERNETES_CONFIG, "autoscalar", "v1");
     assertThat(autoscaler).isEqualTo(horizontalPodAutoscaler);
     verify(horizontalPodAutoscalerResource).get();
     verify(kubernetesHelperService).hpaOperations(KUBERNETES_CONFIG);
     verify(kubernetesHelperService, never()).hpaOperationsForCustomMetricHPA(KUBERNETES_CONFIG, "v1alpha1");
 
     when(kubernetesHelperService.hpaOperationsForCustomMetricHPA(KUBERNETES_CONFIG, "v1alpha1"))
-        .thenReturn(namespacedHpa);
+        .thenReturn(v2Beta1NamespacedHpa);
     autoscaler = kubernetesContainerService.getAutoscaler(KUBERNETES_CONFIG, "autoscalar", "v1alpha1");
-    assertThat(autoscaler).isEqualTo(horizontalPodAutoscaler);
+    assertThat(autoscaler).isEqualTo(v2Beta1HorizontalPodAutoscaler);
     verify(kubernetesHelperService).hpaOperations(KUBERNETES_CONFIG);
     verify(kubernetesHelperService).hpaOperationsForCustomMetricHPA(KUBERNETES_CONFIG, "v1alpha1");
-    verify(horizontalPodAutoscalerResource, times(2)).get();
+    verify(v2Beta1HorizontalPodAutoscalerResource, times(1)).get();
   }
 
   @Test
@@ -681,10 +663,11 @@ public class KubernetesContainerServiceImplTest extends CategoryTest {
 
     when(kubernetesHelperService.trimVersion("autoscaling/v2beta1")).thenReturn("v2beta1");
     when(kubernetesHelperService.hpaOperationsForCustomMetricHPA(KUBERNETES_CONFIG, "v2beta1"))
-        .thenReturn(namespacedHpa);
+        .thenReturn(v2Beta1NamespacedHpa);
     kubernetesContainerService.createOrReplaceAutoscaler(KUBERNETES_CONFIG, autoscalerYaml);
     verify(kubernetesHelperService).hpaOperationsForCustomMetricHPA(KUBERNETES_CONFIG, "v2beta1");
-    verify(namespacedHpa).createOrReplace(any(HorizontalPodAutoscaler.class));
+    verify(v2Beta1NamespacedHpa)
+        .createOrReplace(any(io.fabric8.kubernetes.api.model.autoscaling.v2beta1.HorizontalPodAutoscaler.class));
 
     autoscalerYaml = "apiVersion: autoscaling/v1\n"
         + "kind: HorizontalPodAutoscaler\n"
@@ -697,7 +680,7 @@ public class KubernetesContainerServiceImplTest extends CategoryTest {
     when(kubernetesHelperService.hpaOperations(KUBERNETES_CONFIG)).thenReturn(namespacedHpa);
     kubernetesContainerService.createOrReplaceAutoscaler(KUBERNETES_CONFIG, autoscalerYaml);
     verify(kubernetesHelperService).hpaOperations(KUBERNETES_CONFIG);
-    verify(namespacedHpa, times(2)).createOrReplace(any(HorizontalPodAutoscaler.class));
+    verify(namespacedHpa, times(1)).createOrReplace(any(HorizontalPodAutoscaler.class));
   }
 
   @Test
@@ -821,6 +804,51 @@ public class KubernetesContainerServiceImplTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = BOGDAN)
+  @Category(UnitTests.class)
+  public void testGetGcpKubeConfigContent() {
+    // given
+    String masterUrl = "myMasterUrl";
+    String caData = "myCaData";
+    String namespace = "myNamespace";
+    KubernetesConfig kubernetesConfig = KubernetesConfig.builder()
+                                            .masterUrl(masterUrl)
+                                            .caCert(caData.toCharArray())
+                                            .namespace(namespace)
+                                            .authType(GCP_OAUTH)
+                                            .build();
+
+    String expectedConfigPattern = "apiVersion: v1\n"
+        + "clusters:\n"
+        + "- cluster:\n"
+        + "    server: %s\n"
+        + "    \n"
+        + "    certificate-authority-data: %s\n"
+        + "  name: CLUSTER_NAME\n"
+        + "contexts:\n"
+        + "- context:\n"
+        + "    cluster: CLUSTER_NAME\n"
+        + "    user: HARNESS_USER\n"
+        + "    namespace: %s\n"
+        + "  name: CURRENT_CONTEXT\n"
+        + "current-context: CURRENT_CONTEXT\n"
+        + "kind: Config\n"
+        + "preferences: {}\n"
+        + "users:\n"
+        + "- name: HARNESS_USER\n"
+        + "  user:\n"
+        + "    auth-provider:\n"
+        + "      name: gcp\n";
+    String expectedConfig = String.format(expectedConfigPattern, masterUrl, caData, namespace);
+
+    // when
+    String configFileContent = kubernetesContainerService.getConfigFileContent(kubernetesConfig);
+
+    // then
+    assertThat(configFileContent).isEqualTo(expectedConfig);
+  }
+
+  @Test
   @Owner(developers = ABOSII)
   @Category(UnitTests.class)
   public void testGetConfigFileContentForBasicAuth() {
@@ -894,7 +922,7 @@ public class KubernetesContainerServiceImplTest extends CategoryTest {
                                       .namespace("namespace")
                                       .masterUrl("masterUrl")
                                       .caCert("caCert".toCharArray())
-                                      .serviceAccountToken("serviceAccountToken".toCharArray())
+                                      .serviceAccountTokenSupplier(() -> "serviceAccountToken")
                                       .build();
     String configFileContent = kubernetesContainerService.getConfigFileContent(kubeConfig);
     assertThat(expected).isEqualTo(configFileContent);
@@ -938,7 +966,7 @@ public class KubernetesContainerServiceImplTest extends CategoryTest {
                               .addNewItem() // With deletion timestamp
                               .withNewMetadata()
                               .withName("pod-2")
-                              .withDeletionTimestamp(DateTime.now())
+                              .withDeletionTimestamp(OffsetDateTime.now())
                               .endMetadata()
                               .withStatus(terminatedStatus)
                               .endItem()
@@ -963,7 +991,7 @@ public class KubernetesContainerServiceImplTest extends CategoryTest {
     verify(k8sApiClient, times(1))
         .buildCall(anyString(), eq("GET"), queryParamsCaptor.capture(), anyListOf(Pair.class), any(),
             anyMapOf(String.class, String.class), anyMapOf(String.class, String.class),
-            anyMapOf(String.class, Object.class), any(String[].class), any(ApiCallback.class));
+            anyMapOf(String.class, Object.class), any(String[].class), any());
     assertThat(result).hasSize(1);
     assertThat(result.get(0).getMetadata().getName()).isEqualTo("pod-1");
     Optional<Pair> labelSelector =
@@ -981,7 +1009,8 @@ public class KubernetesContainerServiceImplTest extends CategoryTest {
         .thenThrow(new ApiException(401, emptyMap(), "{\"error\": \"unauthorized\"}"));
 
     assertThatThrownBy(() -> kubernetesContainerService.getRunningPodsWithLabels(KUBERNETES_CONFIG, "default", labels))
-        .hasMessageContaining("Unable to get running pods. Code: 401, message: {\"error\": \"unauthorized\"}");
+        .hasMessageContaining(
+            "Unable to get running pods. Code: 401, message:  Response body: {\"error\": \"unauthorized\"}");
   }
 
   @Test
@@ -1017,7 +1046,46 @@ public class KubernetesContainerServiceImplTest extends CategoryTest {
 
     assertThatThrownBy(() -> kubernetesContainerService.getConfigMap(KUBERNETES_CONFIG, "configmap"))
         .hasMessageContaining(
-            "Failed to get default/ConfigMap/configmap. Code: 403, message: {error: \"cluster not found\"}");
+            "Failed to get default/ConfigMap/configmap. Code: 403, message:  Response body: {error: \"cluster not found\"}");
+  }
+
+  @Test
+  @Owner(developers = ACHYUTH)
+  @Category(UnitTests.class)
+  public void testGetConfigMapNestedException() throws Exception {
+    when(k8sApiClient.execute(k8sApiCall, TypeToken.get(V1ConfigMap.class).getType()))
+        .thenThrow(new ApiException(
+            null, new IOException("Unexpected response code for CONNECT: 403"), 403, emptyMap(), null));
+
+    assertThatThrownBy(() -> kubernetesContainerService.getConfigMap(KUBERNETES_CONFIG, "configmap"))
+        .hasMessageContaining(
+            "Failed to get default/ConfigMap/configmap. Code: 403, message: Unexpected response code for CONNECT: 403");
+  }
+
+  @Test
+  @Owner(developers = ACHYUTH)
+  @Category(UnitTests.class)
+  public void testGetConfigMapNestedExceptionWithRespnseBody() throws Exception {
+    when(k8sApiClient.execute(k8sApiCall, TypeToken.get(V1ConfigMap.class).getType()))
+        .thenThrow(new ApiException(
+            null, new IOException("Unexpected response code for CONNECT: 403"), 403, emptyMap(), "connection issue"));
+
+    assertThatThrownBy(() -> kubernetesContainerService.getConfigMap(KUBERNETES_CONFIG, "configmap"))
+        .hasMessageContaining(
+            "Failed to get default/ConfigMap/configmap. Code: 403, message: Unexpected response code for CONNECT: 403 Response body: connection issue");
+  }
+
+  @Test
+  @Owner(developers = ACHYUTH)
+  @Category(UnitTests.class)
+  public void testGetConfigMapNestedExceptionHasEmptyMessage() throws Exception {
+    when(k8sApiClient.execute(k8sApiCall, TypeToken.get(V1ConfigMap.class).getType()))
+        .thenThrow(
+            new ApiException("Unexpected response code for CONNECT: 403", new IOException(), 403, emptyMap(), null));
+
+    assertThatThrownBy(() -> kubernetesContainerService.getConfigMap(KUBERNETES_CONFIG, "configmap"))
+        .hasMessageContaining(
+            "Failed to get default/ConfigMap/configmap. Code: 403, message: Unexpected response code for CONNECT: 403");
   }
 
   @Test
@@ -1055,7 +1123,7 @@ public class KubernetesContainerServiceImplTest extends CategoryTest {
 
     assertThatThrownBy(() -> kubernetesContainerService.getSecret(KUBERNETES_CONFIG, "secret"))
         .hasMessageContaining(
-            "Failed to get default/Secret/secret. Code: 403, message: {error: \"cluster not found\"}");
+            "Failed to get default/Secret/secret. Code: 403, message:  Response body: {error: \"cluster not found\"}");
   }
 
   @Test
@@ -1455,4 +1523,83 @@ public class KubernetesContainerServiceImplTest extends CategoryTest {
         .thenThrow(new ApiException(404, "Service not found"));
     kubernetesContainerService.replaceService(KUBERNETES_CONFIG, service);
   }
+
+  @Test
+  @Owner(developers = BOGDAN)
+  @Category(UnitTests.class)
+  public void shouldPersistK8sConfig() throws IOException {
+    // given
+    Path workingDir = Files.createTempDirectory("testWorkingDir");
+    KubernetesConfig config = KubernetesConfig.builder().masterUrl("masterUrl").build();
+
+    // when
+    kubernetesContainerService.persistKubernetesConfig(config, workingDir.toString());
+
+    // then
+    byte[] configFile = Files.readAllBytes(workingDir.resolve(K8sConstants.KUBECONFIG_FILENAME));
+    assertThat(configFile).isNotEmpty();
+  }
+
+  @Test
+  @Owner(developers = BOGDAN)
+  @Category(UnitTests.class)
+  public void shouldPersistKubeGcpKubeConfig() throws IOException {
+    // given
+    Path workingDir = Files.createTempDirectory("testWorkingDir");
+    KubernetesConfig config = KubernetesConfig.builder()
+                                  .masterUrl("myMasterUrl")
+                                  .caCert("myCaCert".toCharArray())
+                                  .namespace("myNamespace")
+                                  .authType(GCP_OAUTH)
+                                  .build();
+
+    // when
+    kubernetesContainerService.persistKubernetesConfig(config, workingDir.toString());
+
+    // then
+    byte[] configFile = Files.readAllBytes(workingDir.resolve(K8sConstants.KUBECONFIG_FILENAME));
+    assertThat(configFile).isNotEmpty();
+  }
+
+  @Test
+  @Owner(developers = BOGDAN)
+  @Category(UnitTests.class)
+  public void shouldPersistGoogleAccountKeyInWorkingDir() throws IOException {
+    // given
+    GcpAccessTokenSupplier tokenSupplier = mock(GcpAccessTokenSupplier.class);
+    String expectedGcpKeyJson = "dummy gcp json key file data";
+    when(tokenSupplier.getServiceAccountJsonKey()).thenReturn(Optional.of(expectedGcpKeyJson));
+    KubernetesConfig config =
+        KubernetesConfig.builder().authType(GCP_OAUTH).serviceAccountTokenSupplier(tokenSupplier).build();
+
+    // when
+    Path workingDir = Files.createTempDirectory("testWorkingDir");
+    kubernetesContainerService.persistKubernetesConfig(config, workingDir.toString());
+
+    // then
+    List<String> lines = Files.readAllLines(workingDir.resolve(K8sConstants.GCP_JSON_KEY_FILE_NAME));
+    assertThat(lines.size()).isEqualTo(1);
+    assertThat(lines.get(0)).isEqualTo(expectedGcpKeyJson);
+  }
+
+  private static final String EXPECTED_KUBECONFIG = "apiVersion: v1\n"
+      + "clusters:\n"
+      + "- cluster:\n"
+      + "    server: myMasterUrl\n"
+      + "    certificate-authority-data: myCaCert\n"
+      + "  name: CLUSTER_NAME\n"
+      + "contexts:\n"
+      + "- context:\n"
+      + "    cluster: CLUSTER_NAME\n"
+      + "    user: HARNESS_USER\n"
+      + "    namespace: myNamespace\n"
+      + "  name: CURRENT_CONTEXT\n"
+      + "current-context: CURRENT_CONTEXT\n"
+      + "kind: Config\n"
+      + "preferences: {}\n"
+      + "users:\n"
+      + "- name: HARNESS_USER\n"
+      + "  user:\n"
+      + "    auth-provider:\n"
+      + "      name: gcp\n";
 }

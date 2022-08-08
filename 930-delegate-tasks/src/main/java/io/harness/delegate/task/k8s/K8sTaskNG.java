@@ -13,7 +13,6 @@ import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.filesystem.FileIo.createDirectoryIfDoesNotExist;
 import static io.harness.filesystem.FileIo.deleteDirectoryAndItsContentIfExists;
 import static io.harness.filesystem.FileIo.waitForDirectoryToBeAccessibleOutOfProcess;
-import static io.harness.filesystem.FileIo.writeUtf8StringToFile;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.DelegateTaskPackage;
@@ -27,13 +26,12 @@ import io.harness.delegate.task.AbstractDelegateRunnableTask;
 import io.harness.delegate.task.ManifestDelegateConfigHelper;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.exception.ExceptionUtils;
+import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.k8s.K8sGlobalConfigService;
 import io.harness.k8s.model.HelmVersion;
 import io.harness.k8s.model.K8sDelegateTaskParams;
+import io.harness.k8s.model.KubernetesConfig;
 import io.harness.logging.CommandExecutionStatus;
-import io.harness.secret.SecretSanitizerThreadLocal;
-
-import software.wings.delegatetasks.ExceptionMessageSanitizer;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
@@ -59,8 +57,6 @@ public class K8sTaskNG extends AbstractDelegateRunnableTask {
   public K8sTaskNG(DelegateTaskPackage delegateTaskPackage, ILogStreamingTaskClient logStreamingTaskClient,
       Consumer<DelegateTaskResponse> consumer, BooleanSupplier preExecute) {
     super(delegateTaskPackage, logStreamingTaskClient, consumer, preExecute);
-
-    SecretSanitizerThreadLocal.addAll(delegateTaskPackage.getSecrets());
   }
 
   @Override
@@ -99,12 +95,12 @@ public class K8sTaskNG extends AbstractDelegateRunnableTask {
       K8sRequestHandler requestHandler = k8sTaskTypeToRequestHandler.get(k8sDeployRequest.getTaskType().name());
 
       try {
-        String kubeconfigFileContent = containerDeploymentDelegateBaseHelper.getKubeconfigFileContent(
-            k8sDeployRequest.getK8sInfraDelegateConfig());
-
         createDirectoryIfDoesNotExist(workingDirectory);
         waitForDirectoryToBeAccessibleOutOfProcess(workingDirectory, 10);
-        writeUtf8StringToFile(Paths.get(workingDirectory, KUBECONFIG_FILENAME).toString(), kubeconfigFileContent);
+
+        KubernetesConfig kubernetesConfig = containerDeploymentDelegateBaseHelper.decryptAndGetKubernetesConfig(
+            k8sDeployRequest.getK8sInfraDelegateConfig());
+        containerDeploymentDelegateBaseHelper.persistKubernetesConfig(kubernetesConfig, workingDirectory);
 
         createDirectoryIfDoesNotExist(Paths.get(workingDirectory, MANIFEST_FILES_DIR).toString());
         HelmVersion helmVersion =

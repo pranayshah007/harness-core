@@ -16,6 +16,8 @@ func convertAction(a scm.Action) pb.Action {
 	switch a {
 	case scm.ActionCreate:
 		return pb.Action_CREATE
+	case scm.ActionEdit:
+		return pb.Action_EDIT
 	case scm.ActionUpdate:
 		return pb.Action_UPDATE
 	case scm.ActionDelete:
@@ -34,7 +36,7 @@ func convertAction(a scm.Action) pb.Action {
 		return pb.Action_SYNC
 	case scm.ActionMerge:
 		return pb.Action_MERGE
-	case scm.ActionEdit, scm.ActionUnknown:
+	case scm.ActionUnknown:
 		return pb.Action_UNKNOWN
 	default:
 		return pb.Action_UNKNOWN
@@ -46,6 +48,7 @@ func convertUser(u *scm.User) (*pb.User, error) {
 	createTS := timestamppb.New(u.Created)
 	updateTS := timestamppb.New(u.Updated)
 	return &pb.User{
+		Id: 	 u.ID,
 		Login:   u.Login,
 		Name:    u.Name,
 		Email:   u.Email,
@@ -101,6 +104,14 @@ func ConvertRepo(r *scm.Repository) (*pb.Repository, error) {
 		Link:      r.Link,
 		Created:   createTS,
 		Updated:   updateTS,
+	}, nil
+}
+
+// ConvertRepo converts scm.Repository to protobuf object
+func ConvertsAndMinimiseRepo(r *scm.Repository) (*pb.Repository, error) {
+	return &pb.Repository{
+		Namespace: r.Namespace,
+		Name:      r.Name,
 	}, nil
 }
 

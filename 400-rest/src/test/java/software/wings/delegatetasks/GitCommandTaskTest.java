@@ -7,7 +7,9 @@
 
 package software.wings.delegatetasks;
 
+import static io.harness.exception.WingsException.ADMIN_SRE;
 import static io.harness.rule.OwnerRule.DEEPAK;
+import static io.harness.rule.OwnerRule.FERNANDOD;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
@@ -20,6 +22,7 @@ import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.DelegateTaskResponse;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
+import io.harness.eraro.ErrorCode;
 import io.harness.exception.YamlException;
 import io.harness.rule.Owner;
 
@@ -49,7 +52,7 @@ public class GitCommandTaskTest extends WingsBaseTest {
   @Mock BooleanSupplier preExecute;
   @Mock EncryptionService encryptionService;
 
-  final String accountId = "accountId";
+  static final String accountId = "accountId";
   final DelegateTaskPackage delegateTaskPackage =
       DelegateTaskPackage.builder().data(TaskData.builder().build()).accountId(accountId).build();
 
@@ -74,5 +77,19 @@ public class GitCommandTaskTest extends WingsBaseTest {
     GitCommandExecutionResponse gitCommandResponse =
         gitCommandTask.run(new Object[] {gitCommandType, gitConfig, null, gitCommitRequest});
     assertThat(gitCommandResponse.getErrorMessage()).isEqualTo("Error Message with #######, and again #######");
+  }
+
+  @Test
+  @Owner(developers = FERNANDOD)
+  @Category(UnitTests.class)
+  public void shouldOperationFailureReturnGeneralYamlErrorCode() {
+    GitCommandType gitCommandType = GitCommandType.COMMIT_AND_PUSH;
+    GitConfig gitConfig = GitConfig.builder().password("password".toCharArray()).build();
+    GitCommitRequest gitCommitRequest =
+        GitCommitRequest.builder().yamlGitConfig(YamlGitConfig.builder().build()).build();
+    when(gitService.commitAndPush(any())).thenThrow(new YamlException("AN ERROR MESSAGE", ADMIN_SRE));
+    GitCommandExecutionResponse gitCommandResponse =
+        gitCommandTask.run(new Object[] {gitCommandType, gitConfig, null, gitCommitRequest});
+    assertThat(ErrorCode.GENERAL_YAML_ERROR).isEqualTo(gitCommandResponse.getErrorCode());
   }
 }

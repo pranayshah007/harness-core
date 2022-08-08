@@ -34,6 +34,8 @@ import io.harness.delegate.beans.connector.scm.awscodecommit.AwsCodeCommitAuthen
 import io.harness.delegate.beans.connector.scm.awscodecommit.AwsCodeCommitHttpsAuthType;
 import io.harness.delegate.beans.connector.scm.awscodecommit.AwsCodeCommitHttpsCredentialsDTO;
 import io.harness.delegate.beans.connector.scm.awscodecommit.AwsCodeCommitSecretKeyAccessKeyDTO;
+import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoAuthenticationDTO;
+import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoSshCredentialsDTO;
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketAuthenticationDTO;
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketSshCredentialsDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubAuthenticationDTO;
@@ -43,7 +45,7 @@ import io.harness.delegate.beans.connector.scm.gitlab.GitlabSshCredentialsDTO;
 import io.harness.encryption.SecretRefHelper;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.userprofile.commons.AwsCodeCommitSCMDTO;
-import io.harness.ng.userprofile.commons.AzureDevOpsSCMDTO;
+import io.harness.ng.userprofile.commons.AzureRepoSCMDTO;
 import io.harness.ng.userprofile.commons.BitbucketSCMDTO;
 import io.harness.ng.userprofile.commons.GithubSCMDTO;
 import io.harness.ng.userprofile.commons.GitlabSCMDTO;
@@ -146,7 +148,7 @@ public class SourceCodeManagerServiceImplTest extends NgManagerTestBase {
   @Owner(developers = KANHAIYA)
   @Category(UnitTests.class)
   public void testSaveAzureDevOps() {
-    SourceCodeManagerDTO sourceCodeManagerDTO = azureDevOpsSCMDTOCreate();
+    SourceCodeManagerDTO sourceCodeManagerDTO = azureRepoSCMDTOCreate();
     when(sourceCodeManagerRepository.save(any()))
         .thenReturn(scmMapBinder.get(sourceCodeManagerDTO.getType()).toSCMEntity(sourceCodeManagerDTO));
     SourceCodeManagerDTO savedSourceCodeManager = sourceCodeManagerService.save(sourceCodeManagerDTO);
@@ -294,18 +296,18 @@ public class SourceCodeManagerServiceImplTest extends NgManagerTestBase {
         .build();
   }
 
-  private SourceCodeManagerDTO azureDevOpsSCMDTOCreate() {
-    GithubAuthenticationDTO githubAuthenticationDTO =
-        GithubAuthenticationDTO.builder()
+  private SourceCodeManagerDTO azureRepoSCMDTOCreate() {
+    AzureRepoAuthenticationDTO azureRepoAuthenticationDTO =
+        AzureRepoAuthenticationDTO.builder()
             .authType(GitAuthType.SSH)
             .credentials(
-                GithubSshCredentialsDTO.builder().sshKeyRef(SecretRefHelper.createSecretRef(sshKeyRef)).build())
+                AzureRepoSshCredentialsDTO.builder().sshKeyRef(SecretRefHelper.createSecretRef(sshKeyRef)).build())
             .build();
-    return AzureDevOpsSCMDTO.builder()
+    return AzureRepoSCMDTO.builder()
         .userIdentifier(userIdentifier)
         .name(name)
         .accountIdentifier(accountIdentifier)
-        .authentication(githubAuthenticationDTO)
+        .authentication(azureRepoAuthenticationDTO)
         .build();
   }
 

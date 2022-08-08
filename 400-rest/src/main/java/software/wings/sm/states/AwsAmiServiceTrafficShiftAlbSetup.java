@@ -254,6 +254,8 @@ public class AwsAmiServiceTrafficShiftAlbSetup extends State {
             .name(awsAmiServiceHelper.getSweepingOutputName(context, AMI_ALB_SETUP_SWEEPING_OUTPUT_NAME))
             .value(amiServiceElement)
             .build());
+
+    awsStateHelper.populateAmiVariables(context, amiServiceElement.fetchAmiVariableInfo());
     return createAsyncResponse(activityId, amiServiceSetupResponse, awsAmiExecutionData);
   }
 

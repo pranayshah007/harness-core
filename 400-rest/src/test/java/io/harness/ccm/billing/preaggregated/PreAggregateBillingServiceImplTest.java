@@ -118,8 +118,8 @@ public class PreAggregateBillingServiceImplTest extends CategoryTest {
 
     when(bigQueryService.get()).thenReturn(bigQuery);
     when(bigQuery.query(any(QueryJobConfiguration.class))).thenReturn(tableResult);
-    when(dataHelper.getQuery(anyList(), anyList(), anyList(), anyList(), anyBoolean())).thenReturn(selectQuery);
-    when(dataHelper.getQuery(anyList(), anyList(), anyList(), anyList(), anyBoolean(), anyBoolean(), anyBoolean()))
+    when(dataHelper.getQuery(any(), any(), any(), any(), anyBoolean())).thenReturn(selectQuery);
+    when(dataHelper.getQuery(any(), any(), any(), any(), anyBoolean(), anyBoolean(), anyBoolean()))
         .thenReturn(selectQuery);
     when(selectQuery.toString()).thenReturn(PreAggregatedTableSchema.defaultTableName);
     when(dataHelper.convertToPreAggregatesTimeSeriesData(tableResult))
