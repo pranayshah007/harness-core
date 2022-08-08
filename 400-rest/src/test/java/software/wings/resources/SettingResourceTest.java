@@ -9,14 +9,17 @@ package software.wings.resources;
 
 import static io.harness.beans.FeatureName.CUSTOM_MAX_PAGE_SIZE;
 import static io.harness.rule.OwnerRule.ANSHUL;
+import static io.harness.rule.OwnerRule.RAFAEL;
 import static io.harness.rule.OwnerRule.TMACARI;
 
 import static software.wings.utils.WingsTestConstants.ACCOUNT_ID;
 import static software.wings.utils.WingsTestConstants.APP_ID;
+import static software.wings.utils.WingsTestConstants.ENTITY_TYPE_APP_DEFAULTS;
 import static software.wings.utils.WingsTestConstants.ENV_ID;
 import static software.wings.utils.WingsTestConstants.HARNESS_BAMBOO;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.verify;
 
@@ -24,6 +27,7 @@ import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
 import io.harness.category.element.UnitTests;
 import io.harness.ff.FeatureFlagService;
+import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
 
 import software.wings.WingsBaseTest;
@@ -31,6 +35,7 @@ import software.wings.beans.BambooConfig;
 import software.wings.beans.SettingAttribute;
 import software.wings.beans.SettingAttribute.Builder;
 import software.wings.beans.SettingAttribute.SettingCategory;
+import software.wings.service.impl.SettingServiceHelper;
 import software.wings.service.intfc.SettingsService;
 import software.wings.service.intfc.UsageRestrictionsService;
 import software.wings.service.intfc.security.SecretManager;
@@ -51,6 +56,8 @@ public class SettingResourceTest extends WingsBaseTest {
   @Mock private SettingsService settingsService;
   @Mock private UsageRestrictionsService usageRestrictionsService;
   @Mock private FeatureFlagService featureFlagService;
+
+  @Mock private SettingServiceHelper settingServiceHelper;
 
   @InjectMocks private SettingResource settingResource;
 
@@ -141,5 +148,37 @@ public class SettingResourceTest extends WingsBaseTest {
     settingResource.list(APP_ID, APP_ID, false, ENV_ID, ACCOUNT_ID, new ArrayList<>(), false, false, null, 10000, null,
         null, pageRequest);
     assertThat(pageRequest.getLimit()).isEqualTo(null);
+  }
+
+  @Test
+  @Owner(developers = RAFAEL)
+  @Category(UnitTests.class)
+  public void shouldListSettingWithAccountIdAndAppIdAndEntityTypeAppDefaults() {
+    PageRequest<SettingAttribute> pageRequest = new PageRequest<>();
+    PageResponse<SettingAttribute> pageResponse = new PageResponse<>();
+    pageResponse.add(settingAttribute);
+
+    doReturn(pageResponse).when(settingsService).list(pageRequest, APP_ID, ACCOUNT_ID);
+    doNothing().when(settingServiceHelper).updateSettingAttributeBeforeResponse(settingAttribute, false);
+
+    RestResponse<PageResponse<SettingAttribute>> result = settingResource.list(APP_ID, null, false, null, ACCOUNT_ID,
+        null, false, false, null, 10000, null, ENTITY_TYPE_APP_DEFAULTS, pageRequest);
+
+    assertThat(result.getResource().get(0)).isEqualTo(settingAttribute);
+  }
+
+  @Test
+  @Owner(developers = RAFAEL)
+  @Category(UnitTests.class)
+  public void shouldListEmptySettingWithAccountIdAndAppIdAndNonEntityTypeAppDefaults() {
+    PageRequest<SettingAttribute> pageRequest = new PageRequest<>();
+
+    doReturn(new PageResponse<>()).when(settingsService).list(pageRequest, null, null, false);
+    doNothing().when(settingServiceHelper).updateSettingAttributeBeforeResponse(settingAttribute, false);
+
+    RestResponse<PageResponse<SettingAttribute>> result = settingResource.list(
+        APP_ID, null, false, null, ACCOUNT_ID, null, false, false, null, 10000, null, "", pageRequest);
+
+    assertThat(result.getResponseMessages().isEmpty()).isEqualTo(true);
   }
 }
