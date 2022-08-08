@@ -63,6 +63,7 @@ import software.wings.beans.trigger.WebhookSource;
 import software.wings.helpers.ext.gcb.models.BuildStep;
 import software.wings.helpers.ext.gcb.models.GcbBuildDetails;
 import software.wings.helpers.ext.gcb.models.GcbBuildStatus;
+import software.wings.helpers.ext.k8s.request.K8sValuesLocation;
 import software.wings.metrics.MetricType;
 import software.wings.service.impl.ThirdPartyApiCallLog;
 import software.wings.sm.ExecutionInterruptEffect;
@@ -144,5 +145,6 @@ public class CgOrchestrationBeansKryoRegistrar implements KryoRegistrar {
     kryo.register(Artifact.Status.class, 7194);
     kryo.register(ApprovalDetails.Action.class, 7461);
     kryo.register(ManifestInput.class, 7462);
+    kryo.register(K8sValuesLocation.class, 7463);
   }
 }
