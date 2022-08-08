@@ -14,6 +14,8 @@ import io.harness.mongo.AbstractMongoModule;
 import io.harness.persistence.HPersistence;
 import io.harness.persistence.UserProvider;
 
+import org.springframework.data.mongodb.MongoDatabaseFactory;
+import org.springframework.data.mongodb.core.SimpleMongoClientDatabaseFactory;
 import software.wings.security.ThreadLocalUserProvider;
 
 import lombok.extern.slf4j.Slf4j;
@@ -21,9 +23,7 @@ import org.mongodb.morphia.AdvancedDatastore;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
-import org.springframework.data.mongodb.MongoDbFactory;
 import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.SimpleMongoDbFactory;
 
 @Configuration
 @Slf4j
@@ -37,14 +37,15 @@ public class BatchMongoConfiguration {
 
   @Bean
   @Profile("!test")
-  public MongoDbFactory mongoDbFactory(HPersistence hPersistence, BatchMainConfig config) {
+  public MongoDatabaseFactory mongoDbFactory(HPersistence hPersistence, BatchMainConfig config) {
     registerEventsStore(hPersistence, config);
     AdvancedDatastore eventsDatastore = hPersistence.getDatastore(EVENTS_STORE);
-    return new SimpleMongoDbFactory(eventsDatastore.getMongo(), eventsDatastore.getDB().getName());
+    // TODO (xingchi): fix morphia compat
+    return new SimpleMongoClientDatabaseFactory(null, eventsDatastore.getDB().getName());
   }
 
   @Bean
-  public MongoTemplate mongoTemplate(MongoDbFactory mongoDbFactory) {
+  public MongoTemplate mongoTemplate(MongoDatabaseFactory mongoDbFactory) {
     return new MongoTemplate(mongoDbFactory);
   }
 

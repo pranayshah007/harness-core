@@ -9,29 +9,30 @@ package io.harness.accesscontrol.commons.outbox;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
+import com.mongodb.ConnectionString;
+import com.mongodb.client.MongoClient;
 import io.harness.annotation.HarnessRepo;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.mongo.MongoConfig;
+import io.harness.mongo.MongodbClientCreates;
 import io.harness.reflection.HarnessReflections;
 import io.harness.repositories.outbox.OutboxEventRepository;
 import io.harness.springdata.HMongoTemplate;
 
 import com.google.inject.Inject;
 import com.google.inject.Injector;
-import com.mongodb.MongoClient;
-import com.mongodb.MongoClientOptions;
-import com.mongodb.MongoClientURI;
-import com.mongodb.ReadPreference;
+
 import java.util.Set;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.annotation.TypeAlias;
-import org.springframework.data.mongodb.MongoDbFactory;
+import org.springframework.data.mongodb.MongoDatabaseFactory;
 import org.springframework.data.mongodb.MongoTransactionManager;
-import org.springframework.data.mongodb.config.AbstractMongoConfiguration;
+import org.springframework.data.mongodb.config.AbstractMongoClientConfiguration;
 import org.springframework.data.mongodb.config.EnableMongoAuditing;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.convert.MongoCustomConversions;
 import org.springframework.data.mongodb.repository.config.EnableMongoRepositories;
 
 @OwnedBy(PL)
@@ -39,7 +40,7 @@ import org.springframework.data.mongodb.repository.config.EnableMongoRepositorie
 @EnableMongoRepositories(
     basePackageClasses = {OutboxEventRepository.class}, includeFilters = @ComponentScan.Filter(HarnessRepo.class))
 @EnableMongoAuditing
-public class OutboxPersistenceConfig extends AbstractMongoConfiguration {
+public class OutboxPersistenceConfig extends AbstractMongoClientConfiguration {
   private final MongoConfig mongoBackendConfiguration;
 
   @Inject
@@ -49,27 +50,16 @@ public class OutboxPersistenceConfig extends AbstractMongoConfiguration {
 
   @Override
   public MongoClient mongoClient() {
-    MongoClientOptions primaryMongoClientOptions =
-        MongoClientOptions.builder()
-            .retryWrites(true)
-            .connectTimeout(mongoBackendConfiguration.getConnectTimeout())
-            .serverSelectionTimeout(mongoBackendConfiguration.getServerSelectionTimeout())
-            .maxConnectionIdleTime(mongoBackendConfiguration.getMaxConnectionIdleTime())
-            .connectionsPerHost(mongoBackendConfiguration.getConnectionsPerHost())
-            .readPreference(ReadPreference.primary())
-            .build();
-    MongoClientURI uri =
-        new MongoClientURI(mongoBackendConfiguration.getUri(), MongoClientOptions.builder(primaryMongoClientOptions));
-    return new MongoClient(uri);
+    return MongodbClientCreates.createMongoClient(mongoBackendConfiguration);
   }
 
   @Override
   protected String getDatabaseName() {
-    return new MongoClientURI(mongoBackendConfiguration.getUri()).getDatabase();
+    return new ConnectionString(mongoBackendConfiguration.getUri()).getDatabase();
   }
 
   @Bean
-  MongoTransactionManager transactionManager(MongoDbFactory dbFactory) {
+  MongoTransactionManager transactionManager(MongoDatabaseFactory dbFactory) {
     return new MongoTransactionManager(dbFactory);
   }
 
@@ -80,7 +70,12 @@ public class OutboxPersistenceConfig extends AbstractMongoConfiguration {
 
   @Bean
   public MongoTemplate mongoTemplate() throws Exception {
-    return new HMongoTemplate(mongoDbFactory(), mappingMongoConverter());
+    final MongoCustomConversions mongoCustomConversions = customConversions();
+    final MongoDatabaseFactory mongoDatabaseFactory = mongoDbFactory();
+    return new HMongoTemplate(mongoDatabaseFactory, mappingMongoConverter(
+            mongoDatabaseFactory,
+            mongoCustomConversions,
+            mongoMappingContext(mongoCustomConversions)), mongoBackendConfiguration.getTraceMode());
   }
 
   @Override
