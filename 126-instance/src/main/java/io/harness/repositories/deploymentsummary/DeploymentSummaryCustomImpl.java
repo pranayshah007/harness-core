@@ -9,8 +9,10 @@ package io.harness.repositories.deploymentsummary;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.dtos.InfrastructureMappingDTO;
 import io.harness.entities.DeploymentSummary;
 import io.harness.entities.DeploymentSummary.DeploymentSummaryKeys;
+import io.harness.exception.InvalidArgumentsException;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -29,8 +31,21 @@ public class DeploymentSummaryCustomImpl implements DeploymentSummaryCustom {
   private final MongoTemplate mongoTemplate;
 
   @Override
-  public Optional<DeploymentSummary> fetchNthRecordFromNow(int N, String instanceSyncKey) {
-    Criteria criteria = Criteria.where(DeploymentSummaryKeys.instanceSyncKey).is(instanceSyncKey);
+  public Optional<DeploymentSummary> fetchNthRecordFromNow(
+      int N, String instanceSyncKey, InfrastructureMappingDTO infrastructureMappingDTO) {
+    if (infrastructureMappingDTO == null) {
+      throw new InvalidArgumentsException("InfrastructureMappingDTO is null for instanceKey: {}" + instanceSyncKey);
+    }
+    Criteria criteria = Criteria.where(DeploymentSummaryKeys.instanceSyncKey)
+                            .is(instanceSyncKey)
+                            .and(DeploymentSummaryKeys.accountIdentifier)
+                            .is(infrastructureMappingDTO.getAccountIdentifier())
+                            .and(DeploymentSummaryKeys.orgIdentifier)
+                            .is(infrastructureMappingDTO.getOrgIdentifier())
+                            .and(DeploymentSummaryKeys.projectIdentifier)
+                            .is(infrastructureMappingDTO.getProjectIdentifier())
+                            .and(DeploymentSummaryKeys.infrastructureMappingId)
+                            .is(infrastructureMappingDTO.getId());
     Query query = new Query().addCriteria(criteria);
     query.with(Sort.by(Sort.Direction.DESC, DeploymentSummaryKeys.createdAt));
     query.skip((long) N - 1);
