@@ -18,8 +18,23 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class GithubPackageDTO {
+  /**
+   * Github Package Name
+   */
   String packageName;
+
+  /**
+   * Github Package Type - npm/maven/rubygems/container/nuget
+   */
   String packageType;
+
+  /**
+   * Github Organization(optional)
+   */
   String org;
+
+  /**
+   * Version of the Github Package
+   */
   String version;
 }

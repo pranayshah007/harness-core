@@ -15,9 +15,11 @@ import software.wings.helpers.ext.jenkins.BuildDetails;
 import java.util.List;
 
 public interface GithubPackagesResourceService {
+  // List Packages
   GithubPackagesResponseDTO getPackageDetails(
       IdentifierRef connectorRef, String accountId, String orgIdentifier, String projectIdentifier);
 
+  // List Versions from a Github Package
   List<BuildDetails> getVersionsOfPackage(IdentifierRef connectorRef, String packageName, String versionRegex,
       String accountId, String orgIdentifier, String projectIdentifier);
 }
