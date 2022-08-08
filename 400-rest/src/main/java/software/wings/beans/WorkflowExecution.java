@@ -413,6 +413,10 @@ public class WorkflowExecution implements PersistentRegularIterable, AccountData
     public static final String executionArgs_pipelinePhaseElementId =
         executionArgs + "." + ExecutionArgsKeys.pipelinePhaseElementId;
     public static final String executionArgs_artifacts = executionArgs + "." + ExecutionArgsKeys.artifacts;
+    public static final String executionArgs_artifacts_buildNo = executionArgs_artifacts + "."
+        + "metadata"
+        + "."
+        + "buildNo";
     public static final String executionArgs_artifact_variables =
         executionArgs + "." + ExecutionArgsKeys.artifactVariables;
     public static final String tags_name = tags + "." + NameValuePairKeys.name;
@@ -421,6 +425,8 @@ public class WorkflowExecution implements PersistentRegularIterable, AccountData
     public static final String pipelineExecution_pipelineStageExecutions =
         pipelineExecution + "." + PipelineExecutionKeys.pipelineStageExecutions;
     public static final String executionArgs_helmCharts = executionArgs + "." + ExecutionArgsKeys.helmCharts;
+    public static final String executionArgs_helmCharts_version = executionArgs_helmCharts + "."
+        + "version";
   }
 
   @PrePersist
