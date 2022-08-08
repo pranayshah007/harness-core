@@ -337,6 +337,8 @@ public interface WingsTestConstants {
 
   String ARTIFACT_FILTER = "ARTIFACT_FILTER";
 
+  String ENTITY_TYPE_APP_DEFAULTS = "APP_DEFAULTS";
+
   String ENTITY_ID = "ENTITY_ID";
 
   String VARIABLE_NAME = "VARIABLE_NAME";
