@@ -311,6 +311,8 @@ import io.harness.delegate.task.artifacts.ecr.EcrArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.ecr.EcrArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.gcr.GcrArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.gcr.GcrArtifactDelegateResponse;
+import io.harness.delegate.task.artifacts.githubpackages.GithubPackagesArtifactDelegateRequest;
+import io.harness.delegate.task.artifacts.githubpackages.GithubPackagesArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.jenkins.JenkinsArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.jenkins.JenkinsArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.nexus.NexusArtifactDelegateRequest;
@@ -1647,5 +1649,7 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(AwsSshInfraDelegateConfig.class, 55417);
     kryo.register(AwsWinrmInfraDelegateConfig.class, 55418);
     kryo.register(PdcServerInstanceInfo.class, 55501);
+    kryo.register(GithubPackagesArtifactDelegateRequest.class, 5541);
+    kryo.register(GithubPackagesArtifactDelegateResponse.class, 5541);
   }
 }
