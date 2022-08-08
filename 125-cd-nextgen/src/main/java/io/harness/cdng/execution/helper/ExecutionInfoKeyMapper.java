@@ -29,7 +29,8 @@ public class ExecutionInfoKeyMapper {
       InfrastructureOutcome infrastructureOutcome) {
     if (InfrastructureKind.PDC.equals(infrastructureKind)
         || InfrastructureKind.SSH_WINRM_AZURE.equals(infrastructureKind)
-        || InfrastructureKind.SSH_WINRM_AWS.equals(infrastructureKind)) {
+        || InfrastructureKind.SSH_WINRM_AWS.equals(infrastructureKind)
+        || InfrastructureKind.AZURE_WEB_APP.equals(infrastructureKind)) {
       return Optional.of(
           ExecutionInfoKey.builder()
               .scope(Scope.of(AmbianceUtils.getAccountId(ambiance), AmbianceUtils.getOrgIdentifier(ambiance),

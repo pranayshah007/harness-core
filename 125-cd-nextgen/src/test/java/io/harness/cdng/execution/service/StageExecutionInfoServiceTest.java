@@ -9,6 +9,7 @@ package io.harness.cdng.execution.service;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.rule.OwnerRule.IVAN;
+import static io.harness.rule.OwnerRule.TMACARI;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.eq;
@@ -28,6 +29,8 @@ import io.harness.rule.Owner;
 import io.harness.utils.StageStatus;
 
 import com.mongodb.client.result.UpdateResult;
+import java.util.HashMap;
+import java.util.Map;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -78,6 +81,20 @@ public class StageExecutionInfoServiceTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = TMACARI)
+  @Category(UnitTests.class)
+  public void testUpdate() {
+    Map<String, Object> updates = new HashMap<>();
+    Scope scope = Scope.of(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER);
+    when(stageExecutionInfoRepository.update(scope, EXECUTION_ID, updates))
+        .thenReturn(UpdateResult.acknowledged(1, null, null));
+
+    stageExecutionInfoService.update(scope, EXECUTION_ID, updates);
+
+    verify(stageExecutionInfoRepository).update(scope, EXECUTION_ID, updates);
+  }
+
+  @Test
   @Owner(developers = IVAN)
   @Category(UnitTests.class)
   public void testUpdateStatusWithUnacknowledged() {
@@ -114,6 +131,21 @@ public class StageExecutionInfoServiceTest extends CategoryTest {
 
     verify(stageExecutionInfoRepository)
         .listSucceededStageExecutionNotIncludeCurrent(executionInfoKey, EXECUTION_ID, 1);
+  }
+
+  @Test
+  @Owner(developers = TMACARI)
+  @Category(UnitTests.class)
+  public void testListLatestSuccessfulStageExecutionInfo() {
+    ExecutionInfoKey executionInfoKey = ExecutionInfoKey.builder()
+                                            .envIdentifier(ENV_IDENTIFIER)
+                                            .infraIdentifier(INFRA_IDENTIFIER)
+                                            .serviceIdentifier(SERVICE_IDENTIFIER)
+                                            .build();
+    stageExecutionInfoService.listLatestSuccessfulStageExecutionInfo(executionInfoKey, EXECUTION_ID, 2);
+
+    verify(stageExecutionInfoRepository)
+        .listSucceededStageExecutionNotIncludeCurrent(executionInfoKey, EXECUTION_ID, 2);
   }
 
   @Test

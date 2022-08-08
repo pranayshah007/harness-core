@@ -5,19 +5,26 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.cdng.ssh;
+package io.harness.cdng.execution.azure.webapps;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.rollback.RollbackDeploymentInfo;
+import io.harness.cdng.execution.ExecutionDetails;
+import io.harness.delegate.task.azure.artifact.AzureArtifactConfig;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import lombok.Builder;
 import lombok.Data;
+import lombok.experimental.FieldNameConstants;
 
 @OwnedBy(CDP)
 @Data
 @Builder
-@JsonTypeName("CommandStepRollbackInfo")
-public class CommandStepRollbackDeploymentInfo implements RollbackDeploymentInfo {}
+@FieldNameConstants(innerTypeName = "AzureWebAppsStageExecutionDetailsKeys")
+@JsonTypeName("AzureWebAppsStageExecutionDetails")
+public class AzureWebAppsStageExecutionDetails implements ExecutionDetails {
+  String pipelineExecutionId;
+  String targetSlot;
+  private AzureArtifactConfig artifactConfig;
+}

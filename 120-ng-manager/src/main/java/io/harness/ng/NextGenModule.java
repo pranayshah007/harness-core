@@ -248,7 +248,6 @@ import io.harness.scim.service.ScimUserService;
 import io.harness.secretmanagerclient.SecretManagementClientModule;
 import io.harness.secrets.SecretNGManagerClientModule;
 import io.harness.security.ServiceTokenGenerator;
-import io.harness.serializer.CDNGRegistrars;
 import io.harness.serializer.KryoRegistrar;
 import io.harness.serializer.ManagerRegistrars;
 import io.harness.serializer.NGLdapServiceRegistrars;
@@ -632,7 +631,6 @@ public class NextGenModule extends AbstractModule {
       List<Class<? extends Converter<?, ?>>> springConverters() {
         return ImmutableList.<Class<? extends Converter<?, ?>>>builder()
             .addAll(ManagerRegistrars.springConverters)
-            .addAll(CDNGRegistrars.springConverters)
             .build();
       }
 
