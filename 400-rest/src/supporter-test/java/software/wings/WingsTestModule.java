@@ -18,6 +18,8 @@ import io.harness.artifacts.docker.service.DockerRegistryService;
 import io.harness.artifacts.docker.service.DockerRegistryServiceImpl;
 import io.harness.artifacts.gcr.service.GcrApiService;
 import io.harness.artifacts.gcr.service.GcrApiServiceImpl;
+import io.harness.artifacts.githubpackages.client.GithubPackagesRestClientFactory;
+import io.harness.artifacts.githubpackages.client.GithubPackagesRestClientFactoryImpl;
 import io.harness.aws.AWSCloudformationClient;
 import io.harness.aws.AWSCloudformationClientImpl;
 import io.harness.azure.client.AzureAutoScaleSettingsClient;
@@ -206,6 +208,7 @@ public class WingsTestModule extends AbstractModule {
     bind(DockerRegistryService.class).to(DockerRegistryServiceImpl.class);
     bind(DockerRestClientFactory.class).to(DockerRestClientFactoryImpl.class);
     bind(GcrApiService.class).to(GcrApiServiceImpl.class);
+    bind(GithubPackagesRestClientFactory.class).to(GithubPackagesRestClientFactoryImpl.class);
     bind(EcrBuildService.class).to(EcrBuildServiceImpl.class);
     bind(ContainerService.class).to(ContainerServiceImpl.class);
     bind(AwsAppAutoScalingHelperServiceDelegate.class).to(AwsAppAutoScalingHelperServiceDelegateImpl.class);
