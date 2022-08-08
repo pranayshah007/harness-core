@@ -215,6 +215,10 @@ public class VaultRestClientFactory {
 
       Response<VaultReadResponseV2> result =
           vaultRestClient.readSecret(authToken, namespace, secretEngine, pathAndKey.path).execute();
+      if (result != null) {
+        log.info("V2Impl-readSecret {} result: isSuccessful: {}, message: {}, code: {}", fullPath,
+            result.isSuccessful(), result.message(), result.code());
+      }
       if (result.isSuccessful()) {
         VaultReadResponseV2 response = result.body();
         return response == null || response.getData() == null ? null
@@ -243,11 +247,11 @@ public class VaultRestClientFactory {
     if (!response.isSuccessful()) {
       String message;
       if (response.errorBody() != null) {
-        message = response.errorBody().string();
+        message = String.format("%s %s", response.message(), response.errorBody().string());
       } else {
         message = response.message() + response.body();
       }
-      log.error("Could not {} secret in the vault due to the following error {}", action, message);
+      log.error("Could not {} secret in the vault due to the following error: {}", action, message);
       if (throwError) {
         throw new HashiCorpVaultRuntimeException(message);
       }
