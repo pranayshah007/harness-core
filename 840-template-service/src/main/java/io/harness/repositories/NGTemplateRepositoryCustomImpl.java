@@ -8,7 +8,6 @@
 package io.harness.repositories;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
-import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import static java.lang.String.format;
 import static org.springframework.data.mongodb.core.query.Query.query;
@@ -247,7 +246,7 @@ public class NGTemplateRepositoryCustomImpl implements NGTemplateRepositoryCusto
       // fetch yaml from git
       GitEntityInfo gitEntityInfo = GitAwareContextHelper.getGitRequestParamsInfo();
       String branchName = gitEntityInfo.getBranch();
-      if (isNotEmpty(gitEntityInfo.getParentEntityRepoURL())
+      if (!GitAwareContextHelper.isNullOrDefault(gitEntityInfo.getParentEntityRepoURL())
           && !gitEntityInfo.getParentEntityRepoURL().equals(savedEntity.getRepoURL())) {
         branchName = "";
       }
