@@ -14,14 +14,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DecryptableEntity;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.artifact.bean.ArtifactConfig;
-import io.harness.cdng.artifact.bean.yaml.AcrArtifactConfig;
-import io.harness.cdng.artifact.bean.yaml.AmazonS3ArtifactConfig;
-import io.harness.cdng.artifact.bean.yaml.ArtifactoryRegistryArtifactConfig;
-import io.harness.cdng.artifact.bean.yaml.DockerHubArtifactConfig;
-import io.harness.cdng.artifact.bean.yaml.EcrArtifactConfig;
-import io.harness.cdng.artifact.bean.yaml.GcrArtifactConfig;
-import io.harness.cdng.artifact.bean.yaml.JenkinsArtifactConfig;
-import io.harness.cdng.artifact.bean.yaml.NexusRegistryArtifactConfig;
+import io.harness.cdng.artifact.bean.yaml.*;
 import io.harness.cdng.artifact.mappers.ArtifactConfigToDelegateReqMapper;
 import io.harness.cdng.artifact.steps.ArtifactStepParameters;
 import io.harness.connector.ConnectorInfoDTO;
@@ -42,6 +35,7 @@ import io.harness.delegate.beans.connector.docker.DockerConnectorDTO;
 import io.harness.delegate.beans.connector.gcpconnector.GcpConnectorDTO;
 import io.harness.delegate.beans.connector.jenkins.JenkinsConnectorDTO;
 import io.harness.delegate.beans.connector.nexusconnector.NexusConnectorDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.delegate.task.artifacts.ArtifactSourceDelegateRequest;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidConnectorTypeException;
@@ -108,6 +102,22 @@ public class ArtifactStepHelper {
         }
         return ArtifactConfigToDelegateReqMapper.getAmazonS3DelegateRequest(amazonS3ArtifactConfig, awsConnectorDTO,
             encryptedDataDetails, amazonS3ArtifactConfig.getConnectorRef().getValue());
+      case GITHUB_PACKAGES:
+        GithubPackagesArtifactConfig githubPackagesArtifactConfig = (GithubPackagesArtifactConfig) artifactConfig;
+        connectorDTO = getConnector(githubPackagesArtifactConfig.getConnectorRef().getValue(), ambiance);
+        if (!(connectorDTO.getConnectorConfig() instanceof GithubConnectorDTO)) {
+          throw new InvalidConnectorTypeException("provided Connector "
+                  + githubPackagesArtifactConfig.getConnectorRef().getValue() + " is not compatible with "
+                  + githubPackagesArtifactConfig.getSourceType() + " Artifact",
+              WingsException.USER);
+        }
+        GithubConnectorDTO githubConnectorDTO = (GithubConnectorDTO) connectorDTO.getConnectorConfig();
+        if (githubConnectorDTO.getAuthentication().getCredentials() != null) {
+          encryptedDataDetails = secretManagerClientService.getEncryptionDetails(
+              ngAccess, githubConnectorDTO.getAuthentication().getCredentials());
+        }
+        return ArtifactConfigToDelegateReqMapper.getGithubPackagesDelegateRequest(githubPackagesArtifactConfig,
+            githubConnectorDTO, encryptedDataDetails, githubPackagesArtifactConfig.getConnectorRef().getValue());
       case GCR:
         GcrArtifactConfig gcrArtifactConfig = (GcrArtifactConfig) artifactConfig;
         connectorDTO = getConnector(gcrArtifactConfig.getConnectorRef().getValue(), ambiance);
@@ -252,6 +262,8 @@ public class ArtifactStepHelper {
         return TaskType.AMAZON_S3_ARTIFACT_TASK_NG;
       case JENKINS:
         return TaskType.JENKINS_ARTIFACT_TASK_NG;
+      case GITHUB_PACKAGES:
+        return TaskType.GITHUB_PACKAGES_TASK_NG;
       default:
         throw new UnsupportedOperationException(
             String.format("Unknown Artifact Config type: [%s]", artifactConfig.getSourceType()));
@@ -322,6 +334,14 @@ public class ArtifactStepHelper {
         JenkinsArtifactConfig jenkinsArtifactConfig = (JenkinsArtifactConfig) artifactConfig;
         connectorDTO = getConnector(jenkinsArtifactConfig.getConnectorRef().getValue(), ambiance);
         return TaskSelectorYaml.toTaskSelector(((JenkinsConnectorDTO) connectorDTO.getConnectorConfig())
+                                                   .getDelegateSelectors()
+                                                   .stream()
+                                                   .map(TaskSelectorYaml::new)
+                                                   .collect(Collectors.toList()));
+      case GITHUB_PACKAGES:
+        GithubPackagesArtifactConfig githubPackagesArtifactConfig = (GithubPackagesArtifactConfig) artifactConfig;
+        connectorDTO = getConnector(githubPackagesArtifactConfig.getConnectorRef().getValue(), ambiance);
+        return TaskSelectorYaml.toTaskSelector(((GithubConnectorDTO) connectorDTO.getConnectorConfig())
                                                    .getDelegateSelectors()
                                                    .stream()
                                                    .map(TaskSelectorYaml::new)

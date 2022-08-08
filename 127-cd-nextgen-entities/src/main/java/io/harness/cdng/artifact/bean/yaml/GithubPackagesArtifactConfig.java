@@ -51,7 +51,7 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("githubPackageArtifactConfig")
 @OneOfField(fields = {"version", "versionRegex"})
 @RecasterAlias("io.harness.cdng.artifact.bean.yaml.GithubPackageArtifactConfig")
-public class GithubPackageArtifactConfig implements ArtifactConfig, Visitable, WithConnectorRef {
+public class GithubPackagesArtifactConfig implements ArtifactConfig, Visitable, WithConnectorRef {
   /**
    * Git connector.
    */
@@ -106,25 +106,25 @@ public class GithubPackageArtifactConfig implements ArtifactConfig, Visitable, W
 
   @Override
   public ArtifactConfig applyOverrides(ArtifactConfig overrideConfig) {
-    GithubPackageArtifactConfig githubPackageArtifactConfig = (GithubPackageArtifactConfig) overrideConfig;
-    GithubPackageArtifactConfig resultantConfig = this;
-    if (!ParameterField.isNull(githubPackageArtifactConfig.getConnectorRef())) {
-      resultantConfig = resultantConfig.withConnectorRef(githubPackageArtifactConfig.getConnectorRef());
+    GithubPackagesArtifactConfig githubPackagesArtifactConfig = (GithubPackagesArtifactConfig) overrideConfig;
+    GithubPackagesArtifactConfig resultantConfig = this;
+    if (!ParameterField.isNull(githubPackagesArtifactConfig.getConnectorRef())) {
+      resultantConfig = resultantConfig.withConnectorRef(githubPackagesArtifactConfig.getConnectorRef());
     }
-    if (!ParameterField.isNull(githubPackageArtifactConfig.getPackageType())) {
-      resultantConfig = resultantConfig.withPackageType(githubPackageArtifactConfig.getPackageType());
+    if (!ParameterField.isNull(githubPackagesArtifactConfig.getPackageType())) {
+      resultantConfig = resultantConfig.withPackageType(githubPackagesArtifactConfig.getPackageType());
     }
-    if (!ParameterField.isNull(githubPackageArtifactConfig.getPackageName())) {
-      resultantConfig = resultantConfig.withPackageName(githubPackageArtifactConfig.getPackageName());
+    if (!ParameterField.isNull(githubPackagesArtifactConfig.getPackageName())) {
+      resultantConfig = resultantConfig.withPackageName(githubPackagesArtifactConfig.getPackageName());
     }
-    if (!ParameterField.isNull(githubPackageArtifactConfig.getOrg())) {
-      resultantConfig = resultantConfig.withOrg(githubPackageArtifactConfig.getOrg());
+    if (!ParameterField.isNull(githubPackagesArtifactConfig.getOrg())) {
+      resultantConfig = resultantConfig.withOrg(githubPackagesArtifactConfig.getOrg());
     }
-    if (!ParameterField.isNull(githubPackageArtifactConfig.getVersion())) {
-      resultantConfig = resultantConfig.withVersion(githubPackageArtifactConfig.getVersion());
+    if (!ParameterField.isNull(githubPackagesArtifactConfig.getVersion())) {
+      resultantConfig = resultantConfig.withVersion(githubPackagesArtifactConfig.getVersion());
     }
-    if (!ParameterField.isNull(githubPackageArtifactConfig.getVersionRegex())) {
-      resultantConfig = resultantConfig.withVersionRegex(githubPackageArtifactConfig.getVersionRegex());
+    if (!ParameterField.isNull(githubPackagesArtifactConfig.getVersionRegex())) {
+      resultantConfig = resultantConfig.withVersionRegex(githubPackagesArtifactConfig.getVersionRegex());
     }
     return resultantConfig;
   }

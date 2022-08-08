@@ -12,6 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
+import io.harness.delegate.Task;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.TaskGroup;
 import io.harness.delegate.beans.ci.docker.CIDockerCleanupStepRequest;
@@ -300,6 +301,7 @@ public enum TaskType {
   NEXUS_ARTIFACT_TASK_NG(TaskGroup.ARTIFACT_COLLECT_NG),
   ARTIFACTORY_ARTIFACT_TASK_NG(TaskGroup.ARTIFACT_COLLECT_NG),
   AMAZON_S3_ARTIFACT_TASK_NG(TaskGroup.ARTIFACT_COLLECT_NG),
+  GITHUB_PACKAGES_TASK_NG(TaskGroup.ARTIFACT_COLLECT_NG),
   AWS_ROUTE53_TASK(TaskGroup.AWS),
   SHELL_SCRIPT_APPROVAL(TaskGroup.SCRIPT),
   CUSTOM_GET_BUILDS(TaskGroup.CUSTOM),
