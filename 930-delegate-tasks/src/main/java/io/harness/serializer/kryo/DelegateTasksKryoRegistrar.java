@@ -238,7 +238,6 @@ import software.wings.helpers.ext.external.comm.EmailRequest;
 import software.wings.helpers.ext.helm.HelmCommandExecutionResponse;
 import software.wings.helpers.ext.helm.request.HelmChartCollectionParams;
 import software.wings.helpers.ext.helm.request.HelmChartConfigParams;
-import software.wings.helpers.ext.helm.request.HelmCommandRequest.HelmCommandType;
 import software.wings.helpers.ext.helm.request.HelmInstallCommandRequest;
 import software.wings.helpers.ext.helm.request.HelmReleaseHistoryCommandRequest;
 import software.wings.helpers.ext.helm.request.HelmRollbackCommandRequest;
@@ -582,7 +581,6 @@ public class DelegateTasksKryoRegistrar implements KryoRegistrar {
     kryo.register(ConnectionType.class, 5254);
     kryo.register(HelmInstallCommandRequest.class, 5259);
     kryo.register(HelmCommandExecutionResponse.class, 5260);
-    kryo.register(HelmCommandType.class, 5262);
     kryo.register(HelmReleaseHistoryCommandRequest.class, 5265);
     kryo.register(HelmRollbackCommandRequest.class, 5268);
     kryo.register(HelmReleaseHistoryCommandResponse.class, 5266);

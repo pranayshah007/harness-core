@@ -34,6 +34,14 @@ public interface NGVaultService {
 
   SecretManagerMetadataDTO getListOfEngines(String accountIdentifier, SecretManagerMetadataRequestDTO requestDTO);
 
+  /**
+   * Login to vault using APP_ROLE authentication technique for the given connector. Login result would contain
+   * authentication token, which would be created/updated in the secret manager.
+   * @param connectorDTO connector to login.
+   * @param existingConnectorConfigDTO existing connectorDTO, if we are just renewing the app role client token.
+   * @param accountIdentifier of the account to which the connector belongs.
+   * @param create the new secret, set it to false for renewals.
+   */
   void processAppRole(ConnectorDTO connectorDTO, ConnectorConfigDTO existingConnectorConfigDTO,
       String accountIdentifier, boolean create);
 }

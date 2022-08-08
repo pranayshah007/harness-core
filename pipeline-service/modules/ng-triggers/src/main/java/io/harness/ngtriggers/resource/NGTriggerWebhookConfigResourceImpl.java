@@ -15,6 +15,7 @@ import io.harness.beans.HeaderConfig;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ngtriggers.beans.dto.WebhookEventProcessingDetails;
+import io.harness.ngtriggers.beans.dto.WebhookExecutionDetails;
 import io.harness.ngtriggers.beans.entity.TriggerWebhookEvent;
 import io.harness.ngtriggers.beans.source.WebhookTriggerType;
 import io.harness.ngtriggers.beans.source.webhook.WebhookAction;
@@ -146,5 +147,27 @@ public class NGTriggerWebhookConfigResourceImpl implements NGTriggerWebhookConfi
   public ResponseDTO<WebhookEventProcessingDetails> fetchWebhookDetails(
       @NotNull String accountIdentifier, @NotNull String eventId) {
     return ResponseDTO.newResponse(ngTriggerService.fetchTriggerEventHistory(accountIdentifier, eventId));
+  }
+
+  public ResponseDTO<WebhookExecutionDetails> fetchWebhookExecutionDetails(
+      @NotNull String eventId, @NotNull String accountIdentifier) {
+    WebhookEventProcessingDetails webhookProcessingDetails =
+        ngTriggerService.fetchTriggerEventHistory(accountIdentifier, eventId);
+    if (!webhookProcessingDetails.isEventFound()) {
+      throw new InvalidRequestException(String.format("Trigger event history %s does not exist", eventId));
+    }
+    Object executionDetails = null;
+    try {
+      executionDetails =
+          ngTriggerService.fetchExecutionSummaryV2(webhookProcessingDetails.getPipelineExecutionId(), accountIdentifier,
+              webhookProcessingDetails.getOrgIdentifier(), webhookProcessingDetails.getProjectIdentifier());
+    } catch (InvalidRequestException e) {
+      log.error(
+          String.format("Unable to find execution details for custom trigger with eventCorrelationId %s", eventId), e);
+    }
+    return ResponseDTO.newResponse(WebhookExecutionDetails.builder()
+                                       .webhookProcessingDetails(webhookProcessingDetails)
+                                       .executionDetails(executionDetails)
+                                       .build());
   }
 }

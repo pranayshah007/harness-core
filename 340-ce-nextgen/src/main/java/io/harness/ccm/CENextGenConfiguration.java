@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CE;
 
 import static java.util.stream.Collectors.toSet;
 
+import io.harness.AccessControlClientConfiguration;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ccm.commons.beans.config.AwsConfig;
 import io.harness.ccm.commons.beans.config.GcpConfig;
@@ -90,6 +91,9 @@ public class CENextGenConfiguration extends Configuration {
   @JsonProperty("jwtAuthSecret") @ConfigSecret private String jwtAuthSecret;
   @JsonProperty("jwtIdentityServiceSecret") @ConfigSecret private String jwtIdentityServiceSecret;
   @JsonProperty("enforcementClientConfiguration") EnforcementClientConfiguration enforcementClientConfiguration;
+  @JsonProperty("accessControlClient")
+  @ConfigSecret
+  private AccessControlClientConfiguration accessControlClientConfiguration;
 
   @JsonProperty(defaultValue = "KUBERNETES") private DeployMode deployMode = DeployMode.KUBERNETES;
   @JsonProperty(value = "featureFlagsEnabled", defaultValue = "") private String featureFlagsEnabled;
@@ -104,6 +108,8 @@ public class CENextGenConfiguration extends Configuration {
   @JsonProperty(value = "awsConfig") @ConfigSecret private AwsConfig awsConfig;
 
   @JsonProperty("segmentConfiguration") @ConfigSecret private SegmentConfiguration segmentConfiguration;
+
+  @JsonProperty("deploymentClusterName") private String deploymentClusterName;
 
   @JsonProperty("auditClientConfig") private ServiceHttpClientConfig auditClientConfig;
   @JsonProperty(value = "enableAudit") private boolean enableAudit;

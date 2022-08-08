@@ -108,7 +108,7 @@ public class AzureClient {
     }
 
     throw NestedExceptionUtils.hintWithExplanationException("Check your Azure credentials",
-        "Failed to connect to Azure", new AzureAuthenticationException(message, WingsException.USER, e));
+        "Failed to connect to Azure", new AzureAuthenticationException(message, WingsException.USER, null));
   }
 
   protected AzureManagementRestClient getAzureManagementRestClient(AzureEnvironmentType azureEnvironmentType) {

@@ -10,18 +10,15 @@ package io.harness.pms.approval.custom;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.delegate.task.shell.ShellScriptTaskNG.COMMAND_UNIT;
 
-import static software.wings.beans.TaskType.SHELL_SCRIPT_TASK_NG;
-
-import static com.google.protobuf.Duration.newBuilder;
 import static java.lang.String.format;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
 import io.harness.OrchestrationPublisherName;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.delegate.TaskDetails;
-import io.harness.delegate.TaskMode;
+import io.harness.data.structure.CollectionUtils;
 import io.harness.delegate.TaskSelector;
-import io.harness.delegate.TaskType;
+import io.harness.delegate.beans.TaskData;
+import io.harness.delegate.task.shell.ShellScriptTaskNG;
 import io.harness.delegate.task.shell.ShellScriptTaskParametersNG;
 import io.harness.engine.pms.tasks.NgDelegate2TaskExecutor;
 import io.harness.exception.ExceptionUtils;
@@ -38,6 +35,7 @@ import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.gitsync.PmsGitSyncBranchContextGuard;
 import io.harness.pms.gitsync.PmsGitSyncHelper;
 import io.harness.serializer.KryoSerializer;
+import io.harness.steps.StepHelper;
 import io.harness.steps.StepUtils;
 import io.harness.steps.approval.step.ApprovalInstanceService;
 import io.harness.steps.approval.step.custom.CustomApprovalHelperService;
@@ -53,11 +51,10 @@ import software.wings.beans.LogColor;
 import software.wings.beans.LogHelper;
 import software.wings.beans.LogWeight;
 
-import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
-import com.google.protobuf.ByteString;
 import java.time.Duration;
+import java.util.Collections;
 import java.util.List;
 import javax.annotation.Nonnull;
 import lombok.extern.slf4j.Slf4j;
@@ -73,12 +70,14 @@ public class CustomApprovalHelperServiceImpl implements CustomApprovalHelperServ
   private final PmsGitSyncHelper pmsGitSyncHelper;
   private final ShellScriptHelperService shellScriptHelperService;
   private final ApprovalInstanceService approvalInstanceService;
+  private final StepHelper stepHelper;
 
   @Inject
   public CustomApprovalHelperServiceImpl(NgDelegate2TaskExecutor ngDelegate2TaskExecutor, KryoSerializer kryoSerializer,
       WaitNotifyEngine waitNotifyEngine, LogStreamingStepClientFactory logStreamingStepClientFactory,
       @Named(OrchestrationPublisherName.PUBLISHER_NAME) String publisherName, PmsGitSyncHelper pmsGitSyncHelper,
-      ShellScriptHelperService shellScriptHelperService, ApprovalInstanceService approvalInstanceService) {
+      ShellScriptHelperService shellScriptHelperService, ApprovalInstanceService approvalInstanceService,
+      StepHelper stepHelper) {
     this.ngDelegate2TaskExecutor = ngDelegate2TaskExecutor;
     this.kryoSerializer = kryoSerializer;
     this.waitNotifyEngine = waitNotifyEngine;
@@ -87,6 +86,7 @@ public class CustomApprovalHelperServiceImpl implements CustomApprovalHelperServ
     this.pmsGitSyncHelper = pmsGitSyncHelper;
     this.shellScriptHelperService = shellScriptHelperService;
     this.approvalInstanceService = approvalInstanceService;
+    this.stepHelper = stepHelper;
   }
 
   @Override
@@ -152,20 +152,17 @@ public class CustomApprovalHelperServiceImpl implements CustomApprovalHelperServ
 
   private TaskRequest prepareCustomApprovalTaskRequest(
       Ambiance ambiance, CustomApprovalInstance instance, ShellScriptTaskParametersNG stepParameters) {
-    TaskDetails taskDetails =
-        TaskDetails.newBuilder()
-            .setKryoParameters(ByteString.copyFrom(kryoSerializer.asDeflatedBytes(stepParameters) == null
-                    ? new byte[] {}
-                    : kryoSerializer.asDeflatedBytes(stepParameters)))
-            .setExecutionTimeout(
-                newBuilder().setSeconds(instance.getScriptTimeout().getValue().getTimeoutInMillis() / 1000).build())
-            .setMode(TaskMode.ASYNC)
-            .setParked(false)
-            .setType(TaskType.newBuilder().setType(SHELL_SCRIPT_TASK_NG.name()).build())
-            .build();
-
+    TaskData taskData = TaskData.builder()
+                            .async(true)
+                            .taskType(software.wings.beans.TaskType.SHELL_SCRIPT_TASK_NG.name())
+                            .parameters(new Object[] {stepParameters})
+                            .timeout(instance.getScriptTimeout().getValue().getTimeoutInMillis())
+                            .build();
     List<TaskSelector> selectors = TaskSelectorYaml.toTaskSelector(instance.getDelegateSelectors());
-    return StepUtils.prepareTaskRequest(ambiance, taskDetails, Lists.newArrayList(COMMAND_UNIT), selectors, null, true);
+    return StepUtils.prepareCDTaskRequest(ambiance, taskData, kryoSerializer,
+        CollectionUtils.emptyIfNull(StepUtils.generateLogKeys(
+            StepUtils.generateLogAbstractions(ambiance), Collections.singletonList(ShellScriptTaskNG.COMMAND_UNIT))),
+        null, null, selectors, stepHelper.getEnvironmentType(ambiance));
   }
 
   private void validateField(String name, String value) {

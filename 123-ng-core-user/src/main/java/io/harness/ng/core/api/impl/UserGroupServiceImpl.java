@@ -15,7 +15,6 @@ import static io.harness.exception.WingsException.GROUP;
 import static io.harness.exception.WingsException.USER_SRE;
 import static io.harness.ng.accesscontrol.PlatformPermissions.VIEW_USERGROUP_PERMISSION;
 import static io.harness.ng.accesscontrol.PlatformResourceTypes.USERGROUP;
-import static io.harness.ng.core.user.UserMembershipUpdateSource.SYSTEM;
 import static io.harness.ng.core.usergroups.filter.UserGroupFilterType.INCLUDE_INHERITED_GROUPS;
 import static io.harness.ng.core.utils.UserGroupMapper.toDTO;
 import static io.harness.ng.core.utils.UserGroupMapper.toEntity;
@@ -26,7 +25,6 @@ import static io.harness.springdata.TransactionUtils.DEFAULT_TRANSACTION_RETRY_P
 import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
 import static java.util.Collections.emptyList;
-import static java.util.Collections.singletonList;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.accesscontrol.AccessControlAdminClient;
@@ -61,7 +59,6 @@ import io.harness.ng.core.entities.NotificationSettingConfig;
 import io.harness.ng.core.events.UserGroupCreateEvent;
 import io.harness.ng.core.events.UserGroupDeleteEvent;
 import io.harness.ng.core.events.UserGroupUpdateEvent;
-import io.harness.ng.core.invites.dto.RoleBinding;
 import io.harness.ng.core.user.entities.UserGroup;
 import io.harness.ng.core.user.entities.UserGroup.UserGroupKeys;
 import io.harness.ng.core.user.remote.dto.LastAdminCheckFilter;
@@ -97,7 +94,6 @@ import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.Failsafe;
 import net.jodah.failsafe.RetryPolicy;
-import org.apache.commons.lang3.StringUtils;
 import org.hibernate.validator.constraints.NotBlank;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.domain.Page;
@@ -153,43 +149,6 @@ public class UserGroupServiceImpl implements UserGroupService {
           String.format("Try using different user group identifier, [%s] cannot be used", userGroupDTO.getIdentifier()),
           USER_SRE, ex);
     }
-  }
-
-  private void addUsersOfGroupToScope(UserGroupDTO userGroupDTO, ScopeDTO scope) {
-    if (isNotEmpty(userGroupDTO.getUsers())) {
-      for (String userId : userGroupDTO.getUsers()) {
-        ngUserService.addUserToScope(userId,
-            Scope.builder()
-                .accountIdentifier(scope.getAccountIdentifier())
-                .orgIdentifier(scope.getOrgIdentifier())
-                .projectIdentifier(scope.getProjectIdentifier())
-                .build(),
-            singletonList(RoleBinding.builder().build()), emptyList(), SYSTEM);
-      }
-    }
-  }
-
-  @Override
-  public boolean copy(String accountIdentifier, String userGroupIdentifier, List<ScopeDTO> scopePairs) {
-    Optional<UserGroup> userGroupOptional = get(accountIdentifier, null, null, userGroupIdentifier);
-    if (!userGroupOptional.isPresent()) {
-      throw new InvalidRequestException("The user group doesnt exist at account level for copying");
-    }
-
-    UserGroupDTO userGroupDTO = toDTO(userGroupOptional.get());
-    for (ScopeDTO scope : scopePairs) {
-      if (StringUtils.isEmpty(scope.getAccountIdentifier()) || StringUtils.isEmpty(scope.getOrgIdentifier())) {
-        throw new InvalidRequestException("Invalid scope provided for copying user group " + userGroupIdentifier);
-      }
-      addUsersOfGroupToScope(userGroupDTO, scope);
-
-      log.info("Copying usergroup {} at scope {}", userGroupIdentifier, scope);
-      userGroupDTO.setOrgIdentifier(scope.getOrgIdentifier());
-      userGroupDTO.setProjectIdentifier(scope.getProjectIdentifier());
-      create(userGroupDTO);
-      log.info("Successfully copied usergroup {} at scope {}", userGroupIdentifier, scope);
-    }
-    return true;
   }
 
   @Override

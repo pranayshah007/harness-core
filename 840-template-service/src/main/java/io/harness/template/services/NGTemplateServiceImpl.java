@@ -407,10 +407,9 @@ public class NGTemplateServiceImpl implements NGTemplateService {
           "Template with identifier [%s] and versionLabel [%s], under Project[%s], Organization [%s] is a stable template, thus cannot delete it.",
           templateIdentifier, versionLabel, projectIdentifier, orgIdentifier));
     }
-    TemplateEntity withDeleted = templateToDelete.withLastUpdatedTemplate(false).withDeleted(true);
     try {
-      return templateServiceHelper.deleteTemplate(accountId, orgIdentifier, projectIdentifier, templateIdentifier,
-          templateToDelete, versionLabel, withDeleted, comments);
+      return templateServiceHelper.deleteTemplate(
+          accountId, orgIdentifier, projectIdentifier, templateIdentifier, templateToDelete, versionLabel, comments);
     } catch (Exception e) {
       log.error(String.format("Error while deleting template with identifier [%s] and versionLabel [%s]",
                     templateIdentifier, versionLabel),

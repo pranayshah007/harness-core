@@ -88,4 +88,11 @@ public interface PipelineServiceClient {
       @Query(value = NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @Query(value = NGCommonEntityConstants.PIPELINE_KEY) String pipelineIdentifier,
       @Query(GitSyncApiConstants.BRANCH_KEY) String branch, @Body MergeInputSetRequestDTOPMS mergeInputSetRequestDTO);
+
+  // TODO: Move `PipelineExecutionDetailDTO` and its inner DTO's to another package so it can be imported here.
+  @GET(PIPELINE_ENDPOINT + "execution/v2/{planExecutionId}")
+  Call<ResponseDTO<Object>> getExecutionDetailV2(@Path(value = NGCommonEntityConstants.PLAN_KEY) String planExecutionId,
+      @Query(value = NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
+      @Query(value = NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @Query(value = NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier);
 }

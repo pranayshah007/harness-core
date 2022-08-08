@@ -13,6 +13,7 @@ import io.harness.cdng.artifact.bean.artifactsource.ArtifactSource;
 import io.harness.cdng.artifact.bean.artifactsource.DockerArtifactSource;
 import io.harness.cdng.artifact.steps.ArtifactStepParameters;
 import io.harness.cdng.envGroup.beans.EnvironmentGroupEntity;
+import io.harness.cdng.execution.StageExecutionInfo;
 import io.harness.cdng.infra.beans.AzureWebAppInfraMapping;
 import io.harness.cdng.infra.beans.InfraMapping;
 import io.harness.cdng.infra.beans.InfraUseFromStage;
@@ -58,6 +59,7 @@ public class NGMorphiaRegistrar implements MorphiaRegistrar {
     set.add(AzureWebAppInfraMapping.class);
     set.add(CdTelemetrySentStatus.class);
     set.add(RollbackData.class);
+    set.add(StageExecutionInfo.class);
   }
 
   @Override
@@ -71,5 +73,6 @@ public class NGMorphiaRegistrar implements MorphiaRegistrar {
     h.put("io.harness.cdng.provision.cloudformation.beans.CloudformationConfig", CloudformationConfig.class);
     h.put("io.harness.polling.bean.PollingDocument", PollingDocument.class);
     h.put("io.harness.cdng.rollback.RollbackData", RollbackData.class);
+    h.put("io.harness.cdng.execution.StageExecutionInfo", StageExecutionInfo.class);
   }
 }

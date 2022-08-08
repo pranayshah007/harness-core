@@ -19,6 +19,7 @@ import io.harness.ccm.graphql.core.budget.BudgetService;
 import io.harness.ccm.graphql.dto.budget.BudgetSummary;
 import io.harness.ccm.graphql.utils.GraphQLUtils;
 import io.harness.ccm.graphql.utils.annotations.GraphQLApi;
+import io.harness.ccm.rbac.CCMRbacHelper;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -40,6 +41,7 @@ public class BudgetsQuery {
   @Inject private BudgetDao budgetDao;
   @Inject private BudgetService budgetService;
   @Inject private BudgetCostService budgetCostService;
+  @Inject private CCMRbacHelper rbacHelper;
 
   @GraphQLQuery(name = "budgetSummary", description = "Budget card for perspectives")
   public BudgetSummary budgetSummaryForPerspective(@GraphQLArgument(name = "perspectiveId") String perspectiveId,
@@ -79,6 +81,7 @@ public class BudgetsQuery {
       @GraphQLArgument(name = "offset", defaultValue = "0") Integer offset,
       @GraphQLEnvironment final ResolutionEnvironment env) {
     final String accountId = graphQLUtils.getAccountIdentifier(env);
+    rbacHelper.checkBudgetViewPermission(accountId, null, null);
     List<BudgetSummary> budgetSummaryList = new ArrayList<>();
     List<Budget> budgets = budgetDao.list(accountId, limit, offset);
     if (fetchOnlyPerspectiveBudgets) {

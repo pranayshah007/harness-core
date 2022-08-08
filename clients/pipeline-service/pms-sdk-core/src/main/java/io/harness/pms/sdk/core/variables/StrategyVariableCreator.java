@@ -40,6 +40,7 @@ public class StrategyVariableCreator implements VariableCreator<StrategyConfig> 
     Map<String, YamlProperties> yamlPropertiesMap = new HashMap<>();
     if (config.getMatrixConfig() != null) {
       Set<String> axisKeys = ((MatrixConfig) config.getMatrixConfig()).getAxes().keySet();
+      axisKeys.addAll(((MatrixConfig) config.getMatrixConfig()).getExpressionAxes().keySet());
       String placeHolder = "matrix.%s";
       for (String axis : axisKeys) {
         String qualifiedName = String.format(placeHolder, axis);

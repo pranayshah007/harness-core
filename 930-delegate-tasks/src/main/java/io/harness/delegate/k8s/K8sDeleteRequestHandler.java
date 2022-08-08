@@ -224,7 +224,7 @@ public class K8sDeleteRequestHandler extends K8sRequestHandler {
     }
 
     if (resourceIdsToDelete.isEmpty()) {
-      executionLogCallback.saveExecutionLog("\nNo resources found to delete.", INFO, SUCCESS);
+      executionLogCallback.saveExecutionLog("\nNo resources found to delete.", INFO);
     } else {
       executionLogCallback.saveExecutionLog(color("\nResources to delete are: ", White, Bold)
           + color(getResourcesInStringFormat(resourceIdsToDelete), Gray));

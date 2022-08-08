@@ -2456,7 +2456,6 @@ public class K8sTaskHelperBase {
         }
         return downloadManifestFilesFromGit(
             storeDelegateConfig, manifestFilesDirectory, executionLogCallback, accountId);
-
       case HTTP_HELM:
       case S3_HELM:
       case GCS_HELM:

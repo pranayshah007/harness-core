@@ -356,8 +356,12 @@ if [[ "" != "$GITLAB_OAUTH_CALLBACK_URL" ]]; then
   yq write -i $CONFIG_FILE gitlabConfig.callbackUrl "$GITLAB_OAUTH_CALLBACK_URL"
 fi
 
-if [[ "" != "$DELEGATE_STATUS_ENDPOINT" ]]; then
+if [[ "" != "$OAUTH_REFRESH_FREQUECY" ]]; then
   yq write -i $CONFIG_FILE oauthRefreshFrequency "$OAUTH_REFRESH_FREQUECY"
+fi
+
+if [[ "" != "$OAUTH_REFRESH_ENABLED" ]]; then
+  yq write -i $CONFIG_FILE oauthRefreshEnabled "$OAUTH_REFRESH_ENABLED"
 fi
 
 if [[ "" != "$DELEGATE_STATUS_ENDPOINT" ]]; then

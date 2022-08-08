@@ -15,6 +15,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.annotations.ApiModel;
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.util.List;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Value;
@@ -34,4 +35,6 @@ public class InputSetYamlDiffDTO {
   @Schema(description = "Tells whether the Input Set provides any values after removing invalid fields")
   boolean isInputSetEmpty;
   @Schema(description = "Tells whether any Input Set can provide any new values") boolean noUpdatePossible;
+  @Schema(description = "List of references in an OverlayInputSet that exist but are invalid")
+  List<String> invalidReferences;
 }

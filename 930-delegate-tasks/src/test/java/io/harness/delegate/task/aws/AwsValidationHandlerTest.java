@@ -18,6 +18,8 @@ import io.harness.aws.AwsClient;
 import io.harness.category.element.UnitTests;
 import io.harness.connector.ConnectivityStatus;
 import io.harness.connector.ConnectorValidationResult;
+import io.harness.connector.task.aws.AwsNgConfigMapper;
+import io.harness.connector.task.aws.AwsValidationHandler;
 import io.harness.delegate.beans.connector.ConnectorValidationParams;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsCredentialDTO;
@@ -41,7 +43,7 @@ public class AwsValidationHandlerTest extends CategoryTest {
   @Mock private SecretDecryptionService secretDecryptionService;
   @Mock private NGErrorHelper ngErrorHelper;
   @Mock private AwsClient awsClient;
-  @Mock private AwsNgConfigMapper ngConfigMapper;
+  @Mock private AwsNgConfigMapper awsNgConfigMapper;
   @InjectMocks AwsValidationHandler awsValidationHandler;
   private final String accountIdentifier = "accountIdentifier";
 

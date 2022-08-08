@@ -7,6 +7,7 @@
 
 package io.harness.ng;
 
+import static io.harness.AuthorizationServiceHeader.CHAOS_SERVICE;
 import static io.harness.AuthorizationServiceHeader.NG_MANAGER;
 import static io.harness.audit.ResourceTypeConstants.API_KEY;
 import static io.harness.audit.ResourceTypeConstants.CONNECTOR;
@@ -684,20 +685,19 @@ public class NextGenModule extends AbstractModule {
       }
     });
     install(new AbstractChaosModule() {
-      // todo: implement this
       @Override
       public ServiceHttpClientConfig chaosClientConfig() {
-        return null;
+        return appConfig.getChaosServiceClientConfig();
       }
 
       @Override
       public String serviceSecret() {
-        return null;
+        return appConfig.getNextGenConfig().getChaosServiceSecret();
       }
 
       @Override
       public String clientId() {
-        return null;
+        return CHAOS_SERVICE.name();
       }
     });
 

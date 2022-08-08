@@ -16,7 +16,9 @@ public interface DelegateRingService {
 
   List<String> getDelegateVersions(String accountId);
 
-  List<String> getDelegateVersionsForRing(String ringName);
+  List<String> getDelegateVersionsForRing(String ringName, boolean skipCache);
 
   String getWatcherVersions(String accountId);
+
+  String getWatcherVersionsForRing(String ringName, boolean skipCache);
 }

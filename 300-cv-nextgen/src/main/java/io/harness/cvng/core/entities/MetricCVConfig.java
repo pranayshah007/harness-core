@@ -173,7 +173,7 @@ public abstract class MetricCVConfig<I extends AnalysisInfo> extends CVConfig {
       metricThresholds.add(
           TimeSeriesMetricPackDTO.MetricThreshold.builder()
               .metricName(baseMetricThreshold.getMetricName())
-              .groupName(baseMetricThreshold.getMetricGroupName())
+              .groupName(maybeGetGroupName().orElse(baseMetricThreshold.getMetricGroupName()))
               .metricIdentifier(baseMetricThreshold.getMetricIdentifier())
               .type(MetricThresholdActionType.getMetricThresholdActionType(customThresholds.get(0).getAction()))
               .spec(MetricThresholdSpecDTOTransformer.getDto(baseMetricThreshold))

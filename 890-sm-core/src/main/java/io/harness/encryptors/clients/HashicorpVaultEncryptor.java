@@ -167,7 +167,11 @@ public class HashicorpVaultEncryptor implements VaultEncryptor {
         String oldFullPath = getFullPath(vaultConfig.getBasePath(), existingRecord.getEncryptionKey());
         if (!oldFullPath.equals(fullPath)) {
           if (deleteRequired) {
-            deleteSecret(accountId, existingRecord, vaultConfig);
+            try {
+              deleteSecret(accountId, existingRecord, vaultConfig);
+            } catch (Exception e) {
+              log.error("Delete secret failed in rename secret call with the following error {}", e.getMessage());
+            }
           }
         }
       }

@@ -60,8 +60,6 @@ public interface NGTemplateRepositoryCustom {
   TemplateEntity updateTemplateYaml(TemplateEntity templateEntity, TemplateEntity oldTemplateEntity,
       ChangeType changeType, String comments, TemplateUpdateEventType templateUpdateEventType, boolean skipAudits);
 
-  TemplateEntity deleteTemplateForOldGitSync(TemplateEntity templateToDelete, String comments);
-
   void hardDeleteTemplateForOldGitSync(TemplateEntity templateEntity, String comments);
 
   void deleteTemplate(TemplateEntity templateEntity, String comments);
