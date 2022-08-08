@@ -12,13 +12,17 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
+import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.ExecutionCapabilityDemander;
 import io.harness.delegate.task.TaskParameters;
+import io.harness.expression.ExpressionEvaluator;
 
 import software.wings.annotation.EncryptableSetting;
 import software.wings.beans.config.ArtifactSourceable;
 import software.wings.settings.SettingValue;
 
+import com.fasterxml.jackson.annotation.JsonTypeName;
+import java.util.List;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -32,4 +36,22 @@ import lombok.ToString;
 @EqualsAndHashCode(callSuper = false)
 @TargetModule(HarnessModule._957_CG_BEANS)
 public class GithubPackagesConfig extends SettingValue
-    implements EncryptableSetting, ArtifactSourceable, TaskParameters, ExecutionCapabilityDemander {}
+    implements EncryptableSetting, ArtifactSourceable, TaskParameters, ExecutionCapabilityDemander {
+  @Override
+  public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {
+    return null;
+  }
+
+  @Override
+  public String fetchResourceCategory() {
+    return null;
+  }
+
+  @Override
+  public String getAccountId() {
+    return null;
+  }
+
+  @Override
+  public void setAccountId(String accountId) {}
+}
