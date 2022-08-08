@@ -24,6 +24,8 @@ import io.harness.artifacts.docker.service.DockerRegistryService;
 import io.harness.artifacts.docker.service.DockerRegistryServiceImpl;
 import io.harness.artifacts.gcr.service.GcrApiService;
 import io.harness.artifacts.gcr.service.GcrApiServiceImpl;
+import io.harness.artifacts.githubpackages.client.GithubPackagesRestClientFactory;
+import io.harness.artifacts.githubpackages.client.GithubPackagesRestClientFactoryImpl;
 import io.harness.aws.AWSCloudformationClient;
 import io.harness.aws.AWSCloudformationClientImpl;
 import io.harness.aws.AwsClient;
@@ -158,6 +160,7 @@ import io.harness.delegate.task.artifacts.docker.DockerArtifactTaskHandler;
 import io.harness.delegate.task.artifacts.docker.DockerArtifactTaskNG;
 import io.harness.delegate.task.artifacts.ecr.EcrArtifactTaskNG;
 import io.harness.delegate.task.artifacts.gcr.GcrArtifactTaskNG;
+import io.harness.delegate.task.artifacts.githubpackages.GithubPackagesArtifactTaskNG;
 import io.harness.delegate.task.artifacts.jenkins.JenkinsArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.jenkins.JenkinsArtifactTaskHandler;
 import io.harness.delegate.task.artifacts.jenkins.JenkinsArtifactTaskNG;
@@ -1236,6 +1239,7 @@ public class DelegateModule extends AbstractModule {
     bind(BitbucketService.class).to(BitbucketServiceImpl.class);
     bind(AzureRepoService.class).to(AzureRepoServiceImpl.class);
     bind(DockerRestClientFactory.class).to(DockerRestClientFactoryImpl.class);
+    bind(GithubPackagesRestClientFactory.class).to(GithubPackagesRestClientFactoryImpl.class);
 
     MapBinder<Class<? extends ArtifactSourceDelegateRequest>, Class<? extends DelegateArtifactTaskHandler>>
         artifactServiceMapBinder =
@@ -1668,6 +1672,7 @@ public class DelegateModule extends AbstractModule {
     mapBinder.addBinding(TaskType.DOCKER_ARTIFACT_TASK_NG).toInstance(DockerArtifactTaskNG.class);
     mapBinder.addBinding(TaskType.AMAZON_S3_ARTIFACT_TASK_NG).toInstance(S3ArtifactTaskNG.class);
     mapBinder.addBinding(TaskType.JENKINS_ARTIFACT_TASK_NG).toInstance(JenkinsArtifactTaskNG.class);
+    mapBinder.addBinding(TaskType.GITHUB_PACKAGES_TASK_NG).toInstance(GithubPackagesArtifactTaskNG.class);
     mapBinder.addBinding(TaskType.GCR_ARTIFACT_TASK_NG).toInstance(GcrArtifactTaskNG.class);
     mapBinder.addBinding(TaskType.ECR_ARTIFACT_TASK_NG).toInstance(EcrArtifactTaskNG.class);
     mapBinder.addBinding(TaskType.ACR_ARTIFACT_TASK_NG).toInstance(AcrArtifactTaskNG.class);
