@@ -336,8 +336,8 @@ public class InstanceSyncServiceImpl implements InstanceSyncService {
     prepareInstancesToBeDeleted(instancesToBeModified, instancesInDBMap, instanceInfosFromServerMap);
     prepareInstancesToBeAdded(instanceSyncHandler, infrastructureMappingDTO, instancesInDB, instanceSyncKey,
         instancesToBeModified, instancesInDBMap, instanceInfosFromServerMap, !isNewDeploymentSync);
-    prepareInstancesToBeUpdated(instanceSyncHandler, instancesInDBMap, instanceInfosFromServerMap,
-        instancesToBeModified, instanceSyncKey, isNewDeploymentSync);
+    prepareInstancesToBeUpdated(instanceSyncHandler, infrastructureMappingDTO, instancesInDBMap,
+        instanceInfosFromServerMap, instancesToBeModified, instanceSyncKey, isNewDeploymentSync);
   }
 
   private void prepareInstancesToBeDeleted(Map<OperationsOnInstances, List<InstanceDTO>> instancesToBeModified,
@@ -365,7 +365,8 @@ public class InstanceSyncServiceImpl implements InstanceSyncService {
     log.info("prepareInstancesToBeAdded, instancesInDBMap: {}", instancesInDBMap.keySet());
     log.info("prepareInstancesToBeAdded, Instances to be added: {}", instancesToBeAdded);
 
-    DeploymentSummaryDTO deploymentSummaryDTO = getDeploymentSummary(instanceSyncKey, instancesInDB, isAutoScaled);
+    DeploymentSummaryDTO deploymentSummaryDTO =
+        getDeploymentSummary(instanceSyncKey, infrastructureMappingDTO, isAutoScaled, instancesInDB);
     instancesToBeModified.get(OperationsOnInstances.ADD)
         .addAll(buildInstances(instanceSyncHandler,
             instancesToBeAdded.stream().map(instanceInfosFromServerMap::get).collect(Collectors.toList()),
@@ -373,7 +374,8 @@ public class InstanceSyncServiceImpl implements InstanceSyncService {
   }
 
   private void prepareInstancesToBeUpdated(AbstractInstanceSyncHandler instanceSyncHandler,
-      Map<String, InstanceDTO> instancesInDBMap, Map<String, InstanceInfoDTO> instanceInfosFromServerMap,
+      InfrastructureMappingDTO infrastructureMappingDTO, Map<String, InstanceDTO> instancesInDBMap,
+      Map<String, InstanceInfoDTO> instanceInfosFromServerMap,
       Map<OperationsOnInstances, List<InstanceDTO>> instancesToBeModified, String instanceSyncKey,
       boolean isNewDeploymentSync) {
     Sets.SetView<String> instancesToBeUpdated =
@@ -385,7 +387,7 @@ public class InstanceSyncServiceImpl implements InstanceSyncService {
 
     // updating deployedAt field in accordance with pipeline execution time
     if (isNewDeploymentSync) {
-      long deployedAt = getDeploymentSummaryFromDB(instanceSyncKey).getDeployedAt();
+      long deployedAt = getDeploymentSummaryFromDB(instanceSyncKey, infrastructureMappingDTO).getDeployedAt();
       instancesToBeUpdated.forEach(instanceKey -> instancesInDBMap.get(instanceKey).setLastDeployedAt(deployedAt));
     }
 
@@ -531,8 +533,8 @@ public class InstanceSyncServiceImpl implements InstanceSyncService {
     return instanceDTOBuilder.build();
   }
 
-  private DeploymentSummaryDTO getDeploymentSummary(
-      String instanceSyncKey, List<InstanceDTO> instancesInDB, boolean isAutoScaled) {
+  private DeploymentSummaryDTO getDeploymentSummary(String instanceSyncKey,
+      InfrastructureMappingDTO infrastructureMappingDTO, boolean isAutoScaled, List<InstanceDTO> instancesInDB) {
     // Fur new deployment/rollback, fetch deployment summary from local cache
     // For autoscaled instances, first try to create deployment summary from present instances, otherwise fetch from DB
     // Required to put in metadata information for artifacts into the new instances to be created
@@ -540,7 +542,7 @@ public class InstanceSyncServiceImpl implements InstanceSyncService {
       DeploymentSummaryDTO deploymentSummaryDTO = InstanceSyncLocalCacheManager.getDeploymentSummary(instanceSyncKey);
       if (deploymentSummaryDTO == null) {
         log.warn("Couldn't find deployment summary in local cache for new deployment / rollback case");
-        return getDeploymentSummaryFromDB(instanceSyncKey);
+        return getDeploymentSummaryFromDB(instanceSyncKey, infrastructureMappingDTO);
       } else {
         return deploymentSummaryDTO;
       }
@@ -548,13 +550,14 @@ public class InstanceSyncServiceImpl implements InstanceSyncService {
     if (!instancesInDB.isEmpty()) {
       return generateDeploymentSummaryFromExistingInstance(instancesInDB.get(0));
     } else {
-      return getDeploymentSummaryFromDB(instanceSyncKey);
+      return getDeploymentSummaryFromDB(instanceSyncKey, infrastructureMappingDTO);
     }
   }
 
-  private DeploymentSummaryDTO getDeploymentSummaryFromDB(String instanceSyncKey) {
+  private DeploymentSummaryDTO getDeploymentSummaryFromDB(
+      String instanceSyncKey, InfrastructureMappingDTO infrastructureMappingDTO) {
     Optional<DeploymentSummaryDTO> deploymentSummaryDTOOptional =
-        deploymentSummaryService.getLatestByInstanceKey(instanceSyncKey);
+        deploymentSummaryService.getLatestByInstanceKey(instanceSyncKey, infrastructureMappingDTO);
     if (deploymentSummaryDTOOptional.isPresent()) {
       return deploymentSummaryDTOOptional.get();
     } else {
