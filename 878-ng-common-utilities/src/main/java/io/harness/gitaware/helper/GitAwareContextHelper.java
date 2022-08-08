@@ -98,4 +98,14 @@ public class GitAwareContextHelper {
   public boolean isNullOrDefault(String val) {
     return EmptyPredicate.isEmpty(val) || val.equals(DEFAULT);
   }
+
+  public String getWorkingBranch(String entityRepoURL) {
+    GitEntityInfo gitEntityInfo = GitAwareContextHelper.getGitRequestParamsInfo();
+    String branchName = gitEntityInfo.getBranch();
+    if (!GitAwareContextHelper.isNullOrDefault(gitEntityInfo.getParentEntityRepoURL())
+        && !gitEntityInfo.getParentEntityRepoURL().equals(entityRepoURL)) {
+      branchName = "";
+    }
+    return branchName;
+  }
 }
