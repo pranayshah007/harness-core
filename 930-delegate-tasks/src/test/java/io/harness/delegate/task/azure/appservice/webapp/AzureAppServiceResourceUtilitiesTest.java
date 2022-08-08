@@ -8,6 +8,7 @@
 package io.harness.delegate.task.azure.appservice.webapp;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.azure.model.AzureConstants.FETCH_ARTIFACT_FILE;
 import static io.harness.rule.OwnerRule.TMACARI;
 import static io.harness.rule.OwnerRule.VLICA;
 
@@ -24,6 +25,9 @@ import io.harness.category.element.UnitTests;
 import io.harness.delegate.task.azure.appservice.AzureAppServiceResourceUtilities;
 import io.harness.delegate.task.azure.appservice.deployment.AzureAppServiceDeploymentService;
 import io.harness.delegate.task.azure.appservice.deployment.context.AzureAppServiceDeploymentContext;
+import io.harness.delegate.task.azure.artifact.ArtifactDownloadContext;
+import io.harness.delegate.task.azure.artifact.AzurePackageArtifactConfig;
+import io.harness.delegate.task.azure.common.AutoCloseableWorkingDirectory;
 import io.harness.delegate.task.azure.common.AzureLogCallbackProvider;
 import io.harness.rule.Owner;
 
@@ -41,6 +45,24 @@ public class AzureAppServiceResourceUtilitiesTest extends CategoryTest {
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
   @Mock private AzureAppServiceDeploymentService azureAppServiceDeploymentService;
   @InjectMocks AzureAppServiceResourceUtilities azureWebAppTaskHelper;
+
+  @Test
+  @Owner(developers = TMACARI)
+  @Category(UnitTests.class)
+  public void testToArtifactNgDownloadContext() {
+    AzureLogCallbackProvider azureLogCallbackProvider = mock(AzureLogCallbackProvider.class);
+    AzurePackageArtifactConfig artifactConfig = AzurePackageArtifactConfig.builder().build();
+    AutoCloseableWorkingDirectory autoCloseableWorkingDirectory =
+        new AutoCloseableWorkingDirectory("repositoryPath", "rootWorkingDirPath");
+
+    ArtifactDownloadContext artifactDownloadContext = azureWebAppTaskHelper.toArtifactNgDownloadContext(
+        artifactConfig, autoCloseableWorkingDirectory, azureLogCallbackProvider);
+
+    assertThat(artifactDownloadContext.getArtifactConfig()).isEqualTo(artifactConfig);
+    assertThat(artifactDownloadContext.getWorkingDirectory().getPath()).startsWith("rootWorkingDirPath");
+    assertThat(artifactDownloadContext.getLogCallbackProvider()).isEqualTo(azureLogCallbackProvider);
+    assertThat(artifactDownloadContext.getCommandUnitName()).isEqualTo(FETCH_ARTIFACT_FILE);
+  }
 
   @Test
   @Owner(developers = TMACARI)

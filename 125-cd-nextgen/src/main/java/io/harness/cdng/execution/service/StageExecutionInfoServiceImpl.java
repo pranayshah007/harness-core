@@ -25,6 +25,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.mongodb.client.result.UpdateResult;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
@@ -60,6 +61,14 @@ public class StageExecutionInfoServiceImpl implements StageExecutionInfoService 
     }
   }
 
+  @Override
+  public void update(Scope scope, String stageExecutionId, Map<String, Object> updates) {
+    UpdateResult updateResult = stageExecutionInfoRepository.update(scope, stageExecutionId, updates);
+    if (!updateResult.wasAcknowledged()) {
+      throw new InvalidRequestException("Unable to update StageExecutionInfo");
+    }
+  }
+
   public Optional<StageExecutionInfo> getLatestSuccessfulStageExecutionInfo(
       @NotNull @Valid ExecutionInfoKey executionInfoKey, @NotNull final String executionId) {
     if (isEmpty(executionId)) {
@@ -71,5 +80,14 @@ public class StageExecutionInfoServiceImpl implements StageExecutionInfoService 
             executionInfoKey, executionId, LATEST_ITEM_LIMIT);
     return isEmpty(latestSucceededStageExecutionInfo) ? Optional.empty()
                                                       : Optional.ofNullable(latestSucceededStageExecutionInfo.get(0));
+  }
+
+  public List<StageExecutionInfo> listLatestSuccessfulStageExecutionInfo(
+      @NotNull @Valid ExecutionInfoKey executionInfoKey, @NotNull final String executionId, int limit) {
+    if (isEmpty(executionId)) {
+      throw new InvalidArgumentsException("Execution id cannot be null or empty");
+    }
+    return stageExecutionInfoRepository.listSucceededStageExecutionNotIncludeCurrent(
+        executionInfoKey, executionId, limit);
   }
 }

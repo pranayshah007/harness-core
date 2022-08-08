@@ -20,7 +20,6 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Scope;
 import io.harness.cdng.execution.service.StageExecutionInfoService;
-import io.harness.cdng.rollback.service.RollbackDataServiceImpl;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.executions.steps.StepSpecTypeConstants;
@@ -61,7 +60,6 @@ public class CdngPipelineExecutionUpdateEventHandler implements OrchestrationEve
   @Inject private LogStreamingStepClientFactory logStreamingStepClientFactory;
   @Inject private StepHelper stepHelper;
   @Inject private AccountService accountService;
-  @Inject private RollbackDataServiceImpl rollbackDataService;
   @Inject private StageExecutionInfoService stageExecutionInfoService;
 
   @Override
@@ -101,7 +99,6 @@ public class CdngPipelineExecutionUpdateEventHandler implements OrchestrationEve
       String projectIdentifier = AmbianceUtils.getProjectIdentifier(ambiance);
 
       try {
-        rollbackDataService.updateStatus(stageExecutionId, stageStatus);
         stageExecutionInfoService.updateStatus(
             Scope.of(accountIdentifier, orgIdentifier, projectIdentifier), stageExecutionId, stageStatus);
       } catch (Exception ex) {

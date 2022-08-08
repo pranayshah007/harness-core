@@ -20,6 +20,7 @@ import io.harness.utils.StageStatus;
 import com.google.inject.Inject;
 import com.mongodb.client.result.UpdateResult;
 import java.util.List;
+import java.util.Map;
 import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
@@ -31,6 +32,16 @@ import org.springframework.data.mongodb.core.query.Update;
 @OwnedBy(HarnessTeam.CDP)
 public class StageExecutionInfoRepositoryCustomImpl implements StageExecutionInfoRepositoryCustom {
   private final MongoTemplate mongoTemplate;
+
+  @Override
+  public UpdateResult update(Scope scope, String stageExecutionId, Map<String, Object> updates) {
+    Criteria criteria = createScopeCriteria(scope).and(StageExecutionInfoKeys.stageExecutionId).is(stageExecutionId);
+    Query query = new Query();
+    query.addCriteria(criteria);
+    Update update = new Update();
+    updates.forEach(update::set);
+    return mongoTemplate.updateMulti(query, update, StageExecutionInfo.class);
+  }
 
   @Override
   public UpdateResult updateStatus(Scope scope, String stageExecutionId, StageStatus status) {
@@ -58,6 +69,7 @@ public class StageExecutionInfoRepositoryCustomImpl implements StageExecutionInf
     criteria.and(StageExecutionInfoKeys.stageStatus).is(StageStatus.SUCCEEDED);
 
     Query query = new Query();
+    query.addCriteria(criteria);
     query.limit(limit).with(Sort.by(Sort.Direction.DESC, StageExecutionInfoKeys.createdAt));
     return mongoTemplate.find(query, StageExecutionInfo.class);
   }

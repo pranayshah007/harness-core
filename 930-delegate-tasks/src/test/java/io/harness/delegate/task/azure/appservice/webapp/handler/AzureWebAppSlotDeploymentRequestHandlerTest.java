@@ -174,6 +174,10 @@ public class AzureWebAppSlotDeploymentRequestHandlerTest extends CategoryTest {
         .when(azureAppServiceService)
         .fetchDeploymentData(any(AzureWebClientContext.class), eq(DEPLOYMENT_SLOT));
 
+    doReturn(ArtifactDownloadContext.builder().build())
+        .when(azureAppServiceResourceUtilities)
+        .toArtifactNgDownloadContext(any(), any(), any());
+
     doReturn(AzureArtifactDownloadResponse.builder().artifactFile(artifactFile).artifactType(ArtifactType.JAR).build())
         .when(artifactDownloadService)
         .download(any(ArtifactDownloadContext.class));
