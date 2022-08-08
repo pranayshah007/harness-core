@@ -28,25 +28,39 @@ import org.springframework.data.annotation.TypeAlias;
 @OwnedBy(CDC)
 @RecasterAlias("io.harness.ngpipeline.artifact.bean.GithubPackagesArtifactOutcome")
 public class GithubPackagesArtifactOutcome implements ArtifactOutcome {
-  /** Github connector. */
+  /**
+   * Github connector.
+   */
   String connectorRef;
 
-  /** Package in repos */
+  /**
+   * Package in repos
+   */
   String packageName;
 
-  /** version of the package*/
+  /**
+   * version of the package.
+   */
   String version;
 
-  /** version regex is used to get latest artifacts from builds matching the regex. */
+  /**
+   * version regex is used to get latest artifacts from builds matching the regex.
+   */
   String versionRegex;
 
-  /** Identifier for artifact. */
+  /**
+   * Identifier for artifact.
+   */
   String identifier;
 
-  /** Artifact type. */
+  /**
+   * rtifact type.
+   */
   String type;
 
-  /** Whether this config corresponds to primary artifact.*/
+  /**
+   * Whether this config corresponds to primary artifact.
+   */
   boolean primaryArtifact;
 
   @Override

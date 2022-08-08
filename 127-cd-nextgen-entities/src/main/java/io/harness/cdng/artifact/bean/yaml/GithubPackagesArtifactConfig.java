@@ -87,7 +87,9 @@ public class GithubPackagesArtifactConfig implements ArtifactConfig, Visitable, 
    */
   @EntityIdentifier @VariableExpression(skipVariableExpression = true) String identifier;
 
-  /** Whether this config corresponds to primary artifact.*/
+  /**
+   * Whether this config corresponds to primary artifact.
+   */
   @VariableExpression(skipVariableExpression = true) boolean primaryArtifact;
 
   // For Visitor Framework Impl
@@ -107,32 +109,42 @@ public class GithubPackagesArtifactConfig implements ArtifactConfig, Visitable, 
   @Override
   public ArtifactConfig applyOverrides(ArtifactConfig overrideConfig) {
     GithubPackagesArtifactConfig githubPackagesArtifactConfig = (GithubPackagesArtifactConfig) overrideConfig;
+
     GithubPackagesArtifactConfig resultantConfig = this;
+
     if (!ParameterField.isNull(githubPackagesArtifactConfig.getConnectorRef())) {
       resultantConfig = resultantConfig.withConnectorRef(githubPackagesArtifactConfig.getConnectorRef());
     }
+
     if (!ParameterField.isNull(githubPackagesArtifactConfig.getPackageType())) {
       resultantConfig = resultantConfig.withPackageType(githubPackagesArtifactConfig.getPackageType());
     }
+
     if (!ParameterField.isNull(githubPackagesArtifactConfig.getPackageName())) {
       resultantConfig = resultantConfig.withPackageName(githubPackagesArtifactConfig.getPackageName());
     }
+
     if (!ParameterField.isNull(githubPackagesArtifactConfig.getOrg())) {
       resultantConfig = resultantConfig.withOrg(githubPackagesArtifactConfig.getOrg());
     }
+
     if (!ParameterField.isNull(githubPackagesArtifactConfig.getVersion())) {
       resultantConfig = resultantConfig.withVersion(githubPackagesArtifactConfig.getVersion());
     }
+
     if (!ParameterField.isNull(githubPackagesArtifactConfig.getVersionRegex())) {
       resultantConfig = resultantConfig.withVersionRegex(githubPackagesArtifactConfig.getVersionRegex());
     }
+
     return resultantConfig;
   }
 
   @Override
   public Map<String, ParameterField<String>> extractConnectorRefs() {
     Map<String, ParameterField<String>> connectorRefMap = new HashMap<>();
+
     connectorRefMap.put(YAMLFieldNameConstants.CONNECTOR_REF, connectorRef);
+
     return connectorRefMap;
   }
 }

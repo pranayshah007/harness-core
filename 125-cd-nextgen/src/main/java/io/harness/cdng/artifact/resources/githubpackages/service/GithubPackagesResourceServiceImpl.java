@@ -107,6 +107,7 @@ public class GithubPackagesResourceServiceImpl implements GithubPackagesResource
       throw new HintException(
           String.format(HintException.DELEGATE_NOT_AVAILABLE, DocumentLinksConstants.DELEGATE_INSTALLATION_LINK),
           new DelegateNotAvailableException(ex.getCause().getMessage(), WingsException.USER));
+
     } catch (ExplanationException e) {
       throw new HintException(
           HintException.HINT_GITHUB_ACCESS_DENIED, new InvalidRequestException(e.getMessage(), USER));
@@ -127,15 +128,20 @@ public class GithubPackagesResourceServiceImpl implements GithubPackagesResource
                                                         .artifactTaskType(artifactTaskType)
                                                         .attributes(delegateRequest)
                                                         .build();
+
     Map<String, String> owner = getNGTaskSetupAbstractionsWithOwner(
         ngAccess.getAccountIdentifier(), ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier());
+
     Map<String, String> abstractions = new HashMap<>(owner);
+
     if (ngAccess.getOrgIdentifier() != null) {
       abstractions.put("orgIdentifier", ngAccess.getOrgIdentifier());
     }
+
     if (ngAccess.getProjectIdentifier() != null && ngAccess.getOrgIdentifier() != null) {
       abstractions.put("projectIdentifier", ngAccess.getProjectIdentifier());
     }
+
     final DelegateTaskRequest delegateTaskRequest =
         DelegateTaskRequest.builder()
             .accountId(ngAccess.getAccountIdentifier())
@@ -153,9 +159,12 @@ public class GithubPackagesResourceServiceImpl implements GithubPackagesResource
       DelegateResponseData responseData, String ifFailedMessage) {
     if (responseData instanceof ErrorNotifyResponseData) {
       ErrorNotifyResponseData errorNotifyResponseData = (ErrorNotifyResponseData) responseData;
+
       throw new ArtifactServerException(ifFailedMessage + " - " + errorNotifyResponseData.getErrorMessage());
+
     } else if (responseData instanceof RemoteMethodReturnValueData) {
       RemoteMethodReturnValueData remoteMethodReturnValueData = (RemoteMethodReturnValueData) responseData;
+
       if (remoteMethodReturnValueData.getException() instanceof InvalidRequestException) {
         throw(InvalidRequestException)(remoteMethodReturnValueData.getException());
       } else {
@@ -164,11 +173,14 @@ public class GithubPackagesResourceServiceImpl implements GithubPackagesResource
             WingsException.USER);
       }
     }
+
     ArtifactTaskResponse artifactTaskResponse = (ArtifactTaskResponse) responseData;
+
     if (artifactTaskResponse.getCommandExecutionStatus() != SUCCESS) {
       throw new ArtifactServerException(ifFailedMessage + " - " + artifactTaskResponse.getErrorMessage()
           + " with error code: " + artifactTaskResponse.getErrorCode());
     }
+
     return artifactTaskResponse.getArtifactTaskExecutionResponse();
   }
 
@@ -183,7 +195,9 @@ public class GithubPackagesResourceServiceImpl implements GithubPackagesResource
                                             connectorRef.getIdentifier(), connectorRef.getScope()),
           WingsException.USER);
     }
+
     ConnectorInfoDTO connectors = connectorDTO.get().getConnector();
+
     return (GithubConnectorDTO) connectors.getConnectorConfig();
   }
 
@@ -206,6 +220,7 @@ public class GithubPackagesResourceServiceImpl implements GithubPackagesResource
       return secretManagerClientService.getEncryptionDetails(
           ngAccess, githubConnectorDTO.getAuthentication().getCredentials());
     }
+
     return new ArrayList<>();
   }
 }
