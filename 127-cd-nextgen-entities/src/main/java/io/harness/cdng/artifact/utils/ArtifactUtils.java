@@ -15,16 +15,7 @@ import io.harness.NGConstants;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.artifact.bean.ArtifactConfig;
-import io.harness.cdng.artifact.bean.yaml.AcrArtifactConfig;
-import io.harness.cdng.artifact.bean.yaml.AmazonS3ArtifactConfig;
-import io.harness.cdng.artifact.bean.yaml.ArtifactListConfig;
-import io.harness.cdng.artifact.bean.yaml.ArtifactoryRegistryArtifactConfig;
-import io.harness.cdng.artifact.bean.yaml.CustomArtifactConfig;
-import io.harness.cdng.artifact.bean.yaml.DockerHubArtifactConfig;
-import io.harness.cdng.artifact.bean.yaml.EcrArtifactConfig;
-import io.harness.cdng.artifact.bean.yaml.GcrArtifactConfig;
-import io.harness.cdng.artifact.bean.yaml.JenkinsArtifactConfig;
-import io.harness.cdng.artifact.bean.yaml.NexusRegistryArtifactConfig;
+import io.harness.cdng.artifact.bean.yaml.*;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.task.artifacts.ArtifactSourceType;
 import io.harness.exception.InvalidRequestException;
@@ -168,6 +159,12 @@ public class ArtifactUtils {
         return String.format(placeholder, sourceType, jenkinsArtifactConfig.getJobName().getValue(),
             jenkinsArtifactConfig.getArtifactPath().getValue(), jenkinsArtifactConfig.getBuild().getValue(),
             jenkinsArtifactConfig.getConnectorRef().getValue());
+      case GITHUB_PACKAGES:
+        GithubPackagesArtifactConfig githubPackagesArtifactConfig = (GithubPackagesArtifactConfig) artifactConfig;
+        return String.format(placeholder, sourceType, githubPackagesArtifactConfig.getPackageName().getValue(),
+            githubPackagesArtifactConfig.getVersion().getValue(),
+            githubPackagesArtifactConfig.getVersionRegex().getValue(),
+            githubPackagesArtifactConfig.getConnectorRef().getValue());
       default:
         throw new UnsupportedOperationException(String.format("Unknown Artifact Config type: [%s]", sourceType));
     }
