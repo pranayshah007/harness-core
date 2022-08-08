@@ -19,12 +19,12 @@ import io.harness.cdng.execution.ExecutionDetails;
 import io.harness.cdng.execution.ExecutionInfoKey;
 import io.harness.cdng.execution.StageExecutionInfo;
 import io.harness.cdng.execution.StageExecutionInfo.StageExecutionInfoBuilder;
+import io.harness.cdng.execution.azure.webapps.AzureWebAppsStageExecutionDetails;
 import io.harness.cdng.execution.service.StageExecutionInfoService;
 import io.harness.cdng.execution.sshwinrm.SshWinRmStageExecutionDetails;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.ng.core.infrastructure.InfrastructureKind;
 import io.harness.pms.contracts.ambiance.Ambiance;
-import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.utils.StageStatus;
 
 import com.google.inject.Inject;
@@ -63,16 +63,17 @@ public class StageExecutionHelper {
   private boolean shouldSaveStageExecutionInfo(String infrastructureKind) {
     return InfrastructureKind.PDC.equals(infrastructureKind)
         || InfrastructureKind.SSH_WINRM_AZURE.equals(infrastructureKind)
-        || InfrastructureKind.SSH_WINRM_AWS.equals(infrastructureKind);
+        || InfrastructureKind.SSH_WINRM_AWS.equals(infrastructureKind)
+        || InfrastructureKind.AZURE_WEB_APP.equals(infrastructureKind);
   }
 
   private void saveStageExecutionInfo(
       Ambiance ambiance, ExecutionInfoKey executionInfoKey, ExecutionDetails executionDetails) {
     StageExecutionInfoBuilder stageExecutionInfoBuilder =
         StageExecutionInfo.builder()
-            .accountIdentifier(AmbianceUtils.getAccountId(ambiance))
-            .orgIdentifier(AmbianceUtils.getOrgIdentifier(ambiance))
-            .projectIdentifier(AmbianceUtils.getProjectIdentifier(ambiance))
+            .accountIdentifier(executionInfoKey.getScope().getAccountIdentifier())
+            .orgIdentifier(executionInfoKey.getScope().getOrgIdentifier())
+            .projectIdentifier(executionInfoKey.getScope().getProjectIdentifier())
             .envIdentifier(executionInfoKey.getEnvIdentifier())
             .infraIdentifier(executionInfoKey.getInfraIdentifier())
             .serviceIdentifier(executionInfoKey.getServiceIdentifier())
@@ -96,6 +97,8 @@ public class StageExecutionHelper {
           .artifactOutcome(cdStepHelper.resolveArtifactsOutcome(ambiance).orElse(null))
           .configFilesOutcome(cdStepHelper.getConfigFilesOutcome(ambiance).orElse(null))
           .build();
+    } else if (InfrastructureKind.AZURE_WEB_APP.equals(infrastructureKind)) {
+      return AzureWebAppsStageExecutionDetails.builder().pipelineExecutionId(ambiance.getPlanExecutionId()).build();
     }
 
     return null;
