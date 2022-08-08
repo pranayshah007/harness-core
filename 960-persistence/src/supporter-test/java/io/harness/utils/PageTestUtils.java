@@ -57,6 +57,12 @@ public class PageTestUtils {
       public boolean hasPrevious() {
         return false;
       }
+
+      @Override
+      public Pageable withPage(int pageNumber) {
+        return null;
+      }
+
     }, total);
   }
 }

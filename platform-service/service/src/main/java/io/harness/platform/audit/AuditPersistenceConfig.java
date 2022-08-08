@@ -9,6 +9,11 @@ package io.harness.platform.audit;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
+import com.mongodb.ConnectionString;
+import com.mongodb.MongoClientSettings;
+import com.mongodb.ReadPreference;
+import com.mongodb.client.MongoClient;
+import com.mongodb.client.MongoClients;
 import io.harness.annotation.HarnessRepo;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.mongo.MongoConfig;
@@ -19,22 +24,21 @@ import io.harness.springdata.HMongoTemplate;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.google.inject.Key;
-import com.mongodb.MongoClient;
-import com.mongodb.MongoClientOptions;
-import com.mongodb.MongoClientURI;
-import com.mongodb.ReadPreference;
+
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.annotation.TypeAlias;
+import org.springframework.data.mongodb.MongoDatabaseFactory;
 import org.springframework.data.mongodb.MongoDbFactory;
 import org.springframework.data.mongodb.MongoTransactionManager;
-import org.springframework.data.mongodb.config.AbstractMongoConfiguration;
+import org.springframework.data.mongodb.config.AbstractMongoClientConfiguration;
 import org.springframework.data.mongodb.config.EnableMongoAuditing;
 import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.SimpleMongoDbFactory;
 import org.springframework.data.mongodb.core.convert.DbRefResolver;
 import org.springframework.data.mongodb.core.convert.DefaultDbRefResolver;
 import org.springframework.data.mongodb.core.convert.MappingMongoConverter;
@@ -46,7 +50,7 @@ import org.springframework.data.mongodb.repository.config.EnableMongoRepositorie
 @EnableMongoRepositories(basePackages = {"io.harness.audit.repositories", "io.harness.repositories"},
     includeFilters = @ComponentScan.Filter(HarnessRepo.class))
 @EnableMongoAuditing
-public class AuditPersistenceConfig extends AbstractMongoConfiguration {
+public class AuditPersistenceConfig extends AbstractMongoClientConfiguration {
   private final MongoConfig mongoBackendConfiguration;
 
   @Inject
@@ -57,23 +61,24 @@ public class AuditPersistenceConfig extends AbstractMongoConfiguration {
 
   @Override
   public MongoClient mongoClient() {
-    MongoClientOptions primaryMongoClientOptions =
-        MongoClientOptions.builder()
+    MongoClientSettings mongoClientSettings = MongoClientSettings.builder()
+            .applyConnectionString(new ConnectionString(mongoBackendConfiguration.getUri()))
             .retryWrites(true)
-            .connectTimeout(mongoBackendConfiguration.getConnectTimeout())
-            .serverSelectionTimeout(mongoBackendConfiguration.getServerSelectionTimeout())
-            .maxConnectionIdleTime(mongoBackendConfiguration.getMaxConnectionIdleTime())
-            .connectionsPerHost(mongoBackendConfiguration.getConnectionsPerHost())
-            .readPreference(ReadPreference.primary())
+            .applyToConnectionPoolSettings(builder -> {
+              builder.maxConnectionIdleTime(mongoBackendConfiguration.getMaxConnectionIdleTime(), TimeUnit.MILLISECONDS);
+              builder.maxSize(mongoBackendConfiguration.getConnectionsPerHost());
+            }).applyToSocketSettings(builder -> {
+              builder.connectTimeout(mongoBackendConfiguration.getConnectTimeout(), TimeUnit.MILLISECONDS);
+            }).applyToClusterSettings(builder -> {
+              builder.serverSelectionTimeout(mongoBackendConfiguration.getServerSelectionTimeout(), TimeUnit.MILLISECONDS);
+            }).readPreference(ReadPreference.primary())
             .build();
-    MongoClientURI uri =
-        new MongoClientURI(mongoBackendConfiguration.getUri(), MongoClientOptions.builder(primaryMongoClientOptions));
-    return new MongoClient(uri);
+    return MongoClients.create(mongoClientSettings);
   }
 
   @Override
   protected String getDatabaseName() {
-    return new MongoClientURI(mongoBackendConfiguration.getUri()).getDatabase();
+    return new ConnectionString(mongoBackendConfiguration.getUri()).getDatabase();
   }
 
   @Bean
@@ -88,25 +93,17 @@ public class AuditPersistenceConfig extends AbstractMongoConfiguration {
 
   @Bean
   public MongoTemplate mongoTemplate() throws Exception {
-    MongoClientOptions primaryMongoClientOptions =
-        MongoClientOptions.builder()
-            .retryWrites(true)
-            .connectTimeout(mongoBackendConfiguration.getConnectTimeout())
-            .serverSelectionTimeout(mongoBackendConfiguration.getServerSelectionTimeout())
-            .maxConnectionIdleTime(mongoBackendConfiguration.getMaxConnectionIdleTime())
-            .connectionsPerHost(mongoBackendConfiguration.getConnectionsPerHost())
-            .readPreference(ReadPreference.primary())
-            .build();
-    MongoClientURI uri =
-        new MongoClientURI(mongoBackendConfiguration.getUri(), MongoClientOptions.builder(primaryMongoClientOptions));
+    // TO-DbCheck: why this.mongoDbFactory() ?
     DbRefResolver dbRefResolver = new DefaultDbRefResolver(this.mongoDbFactory());
-    MongoDbFactory mongoDbFactory =
-        new SimpleMongoDbFactory(new MongoClient(uri), Objects.requireNonNull(uri.getDatabase()));
-    MongoMappingContext mappingContext = this.mongoMappingContext();
+    MongoDatabaseFactory mongoDbFactory = mongoDbFactory();
+    MongoMappingContext mappingContext = mongoMappingContext(customConversions());
     mappingContext.setAutoIndexCreation(false);
     MappingMongoConverter converter = new MappingMongoConverter(dbRefResolver, mappingContext);
     converter.setCodecRegistryProvider(mongoDbFactory);
     converter.afterPropertiesSet();
-    return new HMongoTemplate(mongoDbFactory, mappingMongoConverter());
+    // TO-DbCheck: why created new converter while there is already a converter constructed?
+    // TO-DbCheck: why not use the inherited mappingMongoConverter(..), why new?
+    // (will remove this comment before merge)
+    return new HMongoTemplate(mongoDbFactory, converter);
   }
 }

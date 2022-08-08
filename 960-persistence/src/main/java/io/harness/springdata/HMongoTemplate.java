@@ -24,12 +24,12 @@ import java.util.List;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.OptimisticLockingFailureException;
-import org.springframework.data.mongodb.MongoDbFactory;
+import org.springframework.data.mongodb.MongoDatabaseFactory;
 import org.springframework.data.mongodb.core.FindAndModifyOptions;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.convert.MongoConverter;
 import org.springframework.data.mongodb.core.query.Query;
-import org.springframework.data.mongodb.core.query.Update;
+import org.springframework.data.mongodb.core.query.UpdateDefinition;
 import org.springframework.lang.Nullable;
 
 @SuppressWarnings("NullableProblems")
@@ -47,18 +47,18 @@ public class HMongoTemplate extends MongoTemplate implements HealthMonitor {
 
   @Getter private final Subject<Tracer> tracerSubject = new Subject<>();
 
-  public HMongoTemplate(MongoDbFactory mongoDbFactory, MongoConverter mongoConverter) {
+  public HMongoTemplate(MongoDatabaseFactory mongoDbFactory, MongoConverter mongoConverter) {
     this(mongoDbFactory, mongoConverter, TraceMode.DISABLED);
   }
 
-  public HMongoTemplate(MongoDbFactory mongoDbFactory, MongoConverter mongoConverter, TraceMode traceMode) {
+  public HMongoTemplate(MongoDatabaseFactory mongoDbFactory, MongoConverter mongoConverter, TraceMode traceMode) {
     super(mongoDbFactory, mongoConverter);
     this.traceMode = traceMode;
   }
 
   @Nullable
   @Override
-  public <T> T findAndModify(Query query, Update update, Class<T> entityClass) {
+  public <T> T findAndModify(Query query, UpdateDefinition update, Class<T> entityClass) {
     traceQuery(query, entityClass);
     return retry(
         () -> findAndModify(query, update, new FindAndModifyOptions(), entityClass, getCollectionName(entityClass)));
@@ -66,7 +66,7 @@ public class HMongoTemplate extends MongoTemplate implements HealthMonitor {
 
   @Nullable
   @Override
-  public <T> T findAndModify(Query query, Update update, FindAndModifyOptions options, Class<T> entityClass) {
+  public <T> T findAndModify(Query query, UpdateDefinition update, FindAndModifyOptions options, Class<T> entityClass) {
     traceQuery(query, entityClass);
     return retry(() -> findAndModify(query, update, options, entityClass, getCollectionName(entityClass)));
   }

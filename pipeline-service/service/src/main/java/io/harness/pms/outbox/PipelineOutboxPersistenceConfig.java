@@ -9,28 +9,29 @@ package io.harness.pms.outbox;
 
 import static io.harness.mongo.MongoConfig.DOT_REPLACEMENT;
 
+import com.mongodb.ConnectionString;
 import io.harness.annotation.HarnessRepo;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.mongo.MongoConfig;
+import io.harness.mongo.MongodbClientCreates;
 import io.harness.repositories.outbox.OutboxEventRepository;
 import io.harness.springdata.HMongoTemplate;
 
 import com.google.inject.Inject;
 import com.google.inject.Injector;
-import com.mongodb.MongoClient;
-import com.mongodb.MongoClientOptions;
-import com.mongodb.MongoClientURI;
 import com.mongodb.ReadPreference;
+import com.mongodb.client.MongoClient;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.data.mongodb.MongoDbFactory;
+import org.springframework.data.mongodb.MongoDatabaseFactory;
 import org.springframework.data.mongodb.MongoTransactionManager;
-import org.springframework.data.mongodb.config.AbstractMongoConfiguration;
+import org.springframework.data.mongodb.config.AbstractMongoClientConfiguration;
 import org.springframework.data.mongodb.config.EnableMongoAuditing;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.convert.MappingMongoConverter;
+import org.springframework.data.mongodb.core.convert.MongoCustomConversions;
 import org.springframework.data.mongodb.repository.config.EnableMongoRepositories;
 import org.springframework.guice.annotation.GuiceModule;
 
@@ -40,7 +41,7 @@ import org.springframework.guice.annotation.GuiceModule;
     includeFilters = @ComponentScan.Filter(HarnessRepo.class), mongoTemplateRef = "pipeline-outbox-secondary")
 @EnableMongoAuditing
 @OwnedBy(HarnessTeam.PIPELINE)
-public class PipelineOutboxPersistenceConfig extends AbstractMongoConfiguration {
+public class PipelineOutboxPersistenceConfig extends AbstractMongoClientConfiguration {
   protected final MongoConfig mongoConfig;
 
   @Inject
@@ -50,35 +51,29 @@ public class PipelineOutboxPersistenceConfig extends AbstractMongoConfiguration 
 
   @Override
   public MongoClient mongoClient() {
-    MongoClientOptions mongoClientOptions = MongoClientOptions.builder()
-                                                .retryWrites(true)
-                                                .connectTimeout(mongoConfig.getConnectTimeout())
-                                                .serverSelectionTimeout(mongoConfig.getServerSelectionTimeout())
-                                                .maxConnectionIdleTime(mongoConfig.getMaxConnectionIdleTime())
-                                                .connectionsPerHost(mongoConfig.getConnectionsPerHost())
-                                                .readPreference(ReadPreference.secondary())
-                                                .build();
-    MongoClientURI uri = new MongoClientURI(mongoConfig.getUri(), MongoClientOptions.builder(mongoClientOptions));
-    return new MongoClient(uri);
+    return MongodbClientCreates.createMongoClient(mongoConfig);
   }
 
   @Override
   protected String getDatabaseName() {
-    return new MongoClientURI(mongoConfig.getUri()).getDatabase();
+    return new ConnectionString(mongoConfig.getUri()).getDatabase();
   }
 
   @Bean(name = "pipeline-outbox-secondary")
   public MongoTemplate mongoTemplate() throws Exception {
-    MappingMongoConverter mappingMongoConverter = mappingMongoConverter();
+    final MongoDatabaseFactory mongoDatabaseFactory = mongoDbFactory();
+    final MongoCustomConversions mongoCustomConversions = customConversions();
+    MappingMongoConverter mappingMongoConverter = mappingMongoConverter(
+            mongoDatabaseFactory, mongoCustomConversions, mongoMappingContext(mongoCustomConversions));
     mappingMongoConverter.setMapKeyDotReplacement(DOT_REPLACEMENT);
     MongoTemplate mongoTemplate =
-        new HMongoTemplate(mongoDbFactory(), mappingMongoConverter, mongoConfig.getTraceMode());
+        new HMongoTemplate(mongoDatabaseFactory, mappingMongoConverter, mongoConfig.getTraceMode());
     mongoTemplate.setReadPreference(ReadPreference.secondary());
     return mongoTemplate;
   }
 
   @Bean
-  MongoTransactionManager transactionManager(MongoDbFactory dbFactory) {
+  MongoTransactionManager transactionManager(MongoDatabaseFactory dbFactory) {
     return new MongoTransactionManager(dbFactory);
   }
 
