@@ -1649,7 +1649,7 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(AwsSshInfraDelegateConfig.class, 55417);
     kryo.register(AwsWinrmInfraDelegateConfig.class, 55418);
     kryo.register(PdcServerInstanceInfo.class, 55501);
-    kryo.register(GithubPackagesArtifactDelegateRequest.class, 5541);
-    kryo.register(GithubPackagesArtifactDelegateResponse.class, 5541);
+    kryo.register(GithubPackagesArtifactDelegateRequest.class, 55511);
+    kryo.register(GithubPackagesArtifactDelegateResponse.class, 55512);
   }
 }
