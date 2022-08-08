@@ -576,6 +576,42 @@ public class HashicorpVaultEncryptorTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = VIKAS_M)
+  @Category(UnitTests.class)
+  public void testDeleteSecret_withDeletePermissions_shouldPass() throws IOException {
+    String encryptionKey = UUIDGenerator.generateUuid();
+    String fullPath = vaultConfig.getBasePath() + "/" + encryptionKey;
+    EncryptedRecord oldRecord = EncryptedRecordData.builder()
+                                    .encryptedValue(UUIDGenerator.generateUuid().toCharArray())
+                                    .encryptionKey(encryptionKey)
+                                    .build();
+    when(vaultRestClient.deleteSecretPermanentely(
+             vaultConfig.getAuthToken(), vaultConfig.getSecretEngineName(), fullPath))
+        .thenReturn(true);
+    boolean deleted = hashicorpVaultEncryptor.deleteSecret(vaultConfig.getAccountId(), oldRecord, vaultConfig);
+    assertThat(deleted).isEqualTo(true);
+    verify(vaultRestClient, times(1)).deleteSecretPermanentely(any(), any(), any());
+  }
+
+  @Test
+  @Owner(developers = VIKAS_M)
+  @Category(UnitTests.class)
+  public void testDeleteSecret_withoutDeletePermissions_shouldPass() throws IOException {
+    String encryptionKey = UUIDGenerator.generateUuid();
+    String fullPath = vaultConfig.getBasePath() + "/" + encryptionKey;
+    EncryptedRecord oldRecord = EncryptedRecordData.builder()
+                                    .encryptedValue(UUIDGenerator.generateUuid().toCharArray())
+                                    .encryptionKey(encryptionKey)
+                                    .build();
+    when(vaultRestClient.deleteSecretPermanentely(
+             vaultConfig.getAuthToken(), vaultConfig.getSecretEngineName(), fullPath))
+        .thenThrow(new HashiCorpVaultRuntimeException("error: Permission denied"));
+    boolean deleted = hashicorpVaultEncryptor.deleteSecret(vaultConfig.getAccountId(), oldRecord, vaultConfig);
+    assertThat(deleted).isEqualTo(false);
+    verify(vaultRestClient, times(1)).deleteSecretPermanentely(any(), any(), any());
+  }
+
+  @Test
   @Owner(developers = UTKARSH)
   @Category(UnitTests.class)
   public void testFetchSecret() throws IOException {
