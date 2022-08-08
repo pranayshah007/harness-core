@@ -205,7 +205,7 @@ public class MatrixConfigService implements StrategyConfigService {
     }
 
     int i = 0;
-    for (Object val : (List<Object>) axisValues.getExpression()) {
+    for (Object val : (List<Object>) value) {
       if (val instanceof Map) {
         currentCombinationRef.put(key, JsonUtils.asJson(val));
       } else if (val instanceof String) {

@@ -31,7 +31,7 @@ public class ChaosClientModule extends AbstractModule {
   }
 
   @Provides
-  private ChaosHttpClientFactory accountClientFactory(KryoConverterFactory kryoConverterFactory) {
+  private ChaosHttpClientFactory chaosHttpClientFactory(KryoConverterFactory kryoConverterFactory) {
     return new ChaosHttpClientFactory(
         serviceHttpClientConfig, serviceSecret, new ServiceTokenGenerator(), kryoConverterFactory, clientId);
   }

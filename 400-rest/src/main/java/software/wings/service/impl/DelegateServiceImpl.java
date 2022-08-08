@@ -36,6 +36,8 @@ import static io.harness.metrics.impl.DelegateMetricsServiceImpl.DELEGATE_DESTRO
 import static io.harness.metrics.impl.DelegateMetricsServiceImpl.DELEGATE_DISCONNECTED;
 import static io.harness.metrics.impl.DelegateMetricsServiceImpl.DELEGATE_REGISTRATION_FAILED;
 import static io.harness.metrics.impl.DelegateMetricsServiceImpl.DELEGATE_RESTARTED;
+import static io.harness.metrics.impl.DelegateMetricsServiceImpl.IMMUTABLE_DELEGATES;
+import static io.harness.metrics.impl.DelegateMetricsServiceImpl.MUTABLE_DELEGATES;
 import static io.harness.mongo.MongoUtils.setUnset;
 import static io.harness.obfuscate.Obfuscator.obfuscate;
 import static io.harness.persistence.HQuery.excludeAuthority;
@@ -2591,6 +2593,10 @@ public class DelegateServiceImpl implements DelegateService {
 
     log.info("Registering delegate for Hostname: {} IP: {}", delegateParams.getHostName(), delegateParams.getIp());
 
+    // publish delegateType metrics at account level.
+    String delegateTypeMetric = delegateParams.isImmutable() ? IMMUTABLE_DELEGATES : MUTABLE_DELEGATES;
+    delegateMetricsService.recordDelegateMetricsPerAccount(delegateParams.getAccountId(), delegateTypeMetric);
+
     String delegateGroupId = delegateParams.getDelegateGroupId();
     if (isBlank(delegateGroupId) && isNotBlank(delegateParams.getDelegateGroupName())) {
       final DelegateGroup delegateGroup =
@@ -2674,6 +2680,7 @@ public class DelegateServiceImpl implements DelegateService {
                                   .ceEnabled(delegateParams.isCeEnabled())
                                   .delegateTokenName(delegateTokenName.orElse(null))
                                   .heartbeatAsObject(delegateParams.isHeartbeatAsObject())
+                                  .immutable(delegateParams.isImmutable())
                                   .build();
 
     if (ECS.equals(delegateParams.getDelegateType())) {

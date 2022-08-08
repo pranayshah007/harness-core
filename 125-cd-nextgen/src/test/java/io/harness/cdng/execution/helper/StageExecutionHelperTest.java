@@ -18,6 +18,7 @@ import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.Scope;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.artifact.outcome.ArtifactoryArtifactOutcome;
@@ -69,6 +70,8 @@ public class StageExecutionHelperTest extends CategoryTest {
                             .setStageExecutionId(EXECUTION_ID)
                             .build();
 
+    Scope scope = Scope.of(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER);
+
     ArtifactoryArtifactOutcome artifactOutcome = ArtifactoryArtifactOutcome.builder().build();
     ConfigFilesOutcome configFilesOutcome = new ConfigFilesOutcome();
 
@@ -77,6 +80,7 @@ public class StageExecutionHelperTest extends CategoryTest {
 
     stageExecutionHelper.saveStageExecutionInfo(ambiance,
         ExecutionInfoKey.builder()
+            .scope(scope)
             .envIdentifier(ENV_IDENTIFIER)
             .infraIdentifier(INFRA_IDENTIFIER)
             .serviceIdentifier(SERVICE_IDENTIFIER)

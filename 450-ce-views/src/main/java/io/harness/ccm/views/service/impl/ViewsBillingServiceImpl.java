@@ -503,13 +503,15 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
             }
           }
         }
+      } else {
+        dataSourceCondition = true;
+        ruleCondition = isClusterPerspectiveRules(getRuleFilters(filters));
       }
     }
     for (ViewRule rule : viewRuleList) {
       for (ViewCondition condition : rule.getViewConditions()) {
         ViewIdCondition viewIdCondition = (ViewIdCondition) condition;
-        ViewFieldIdentifier viewFieldIdentifier = viewIdCondition.getViewField().getIdentifier();
-        if (!(viewFieldIdentifier.equals(CLUSTER) || viewFieldIdentifier.equals(LABEL))) {
+        if (isNotClusterPerspective(viewIdCondition.getViewField().getIdentifier())) {
           ruleCondition = false;
           break;
         }
@@ -517,6 +519,23 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
     }
 
     return dataSourceCondition && ruleCondition;
+  }
+
+  private boolean isClusterPerspectiveRules(final List<QLCEViewRule> qlCEViewRules) {
+    boolean ruleCondition = true;
+    for (final QLCEViewRule qlCEViewRule : qlCEViewRules) {
+      for (final QLCEViewFilter qlCEViewFilter : qlCEViewRule.getConditions()) {
+        if (isNotClusterPerspective(qlCEViewFilter.getField().getIdentifier())) {
+          ruleCondition = false;
+          break;
+        }
+      }
+    }
+    return ruleCondition;
+  }
+
+  private boolean isNotClusterPerspective(final ViewFieldIdentifier viewFieldIdentifier) {
+    return !(viewFieldIdentifier.equals(CLUSTER) || viewFieldIdentifier.equals(LABEL));
   }
 
   @Override

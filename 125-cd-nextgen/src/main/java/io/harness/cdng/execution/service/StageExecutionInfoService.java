@@ -15,6 +15,8 @@ import io.harness.cdng.execution.ExecutionInfoKey;
 import io.harness.cdng.execution.StageExecutionInfo;
 import io.harness.utils.StageStatus;
 
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @OwnedBy(CDP)
@@ -37,6 +39,15 @@ public interface StageExecutionInfoService {
   void updateStatus(Scope scope, String executionId, StageStatus stageStatus);
 
   /**
+   * Update stage execution info.
+   *
+   * @param scope the scope
+   * @param stageExecutionId stage execution id
+   * @param updates updates map
+   */
+  void update(Scope scope, String stageExecutionId, Map<String, Object> updates);
+
+  /**
    *  Get the latest successful stage execution info.
    *
    * @param executionInfoKey the stage execution key
@@ -45,4 +56,15 @@ public interface StageExecutionInfoService {
    */
   Optional<StageExecutionInfo> getLatestSuccessfulStageExecutionInfo(
       ExecutionInfoKey executionInfoKey, String executionId);
+
+  /**
+   *  List the latest successful stage execution info.
+   *
+   * @param executionInfoKey the stage execution key
+   * @param executionId execution id
+   * @param limit response limit
+   * @return stage execution info
+   */
+  List<StageExecutionInfo> listLatestSuccessfulStageExecutionInfo(
+      ExecutionInfoKey executionInfoKey, String executionId, int limit);
 }

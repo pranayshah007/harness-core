@@ -21,6 +21,7 @@ import io.harness.ccm.graphql.dto.recommendation.K8sRecommendationFilterDTO;
 import io.harness.ccm.graphql.dto.recommendation.RecommendationsDTO;
 import io.harness.ccm.graphql.query.recommendation.RecommendationsOverviewQueryV2;
 import io.harness.ccm.graphql.utils.GraphQLUtils;
+import io.harness.ccm.rbac.CCMRbacHelper;
 import io.harness.ccm.remote.beans.recommendation.CCMRecommendationFilterPropertiesDTO;
 import io.harness.ccm.remote.beans.recommendation.FilterValuesDTO;
 import io.harness.rule.Owner;
@@ -43,6 +44,7 @@ import org.mockito.runners.MockitoJUnitRunner;
 @RunWith(MockitoJUnitRunner.class)
 public class RESTWrapperRecommendationOverviewTest extends CategoryTest {
   @Mock private RecommendationsOverviewQueryV2 overviewQueryV2;
+  @Mock private CCMRbacHelper rbacHelper;
   @InjectMocks private RESTWrapperRecommendationOverview restWrapperRecommendationOverview;
 
   private ArgumentCaptor<ResolutionEnvironment> envCaptor;

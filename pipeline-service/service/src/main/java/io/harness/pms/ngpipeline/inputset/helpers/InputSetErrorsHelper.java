@@ -37,6 +37,8 @@ import lombok.experimental.UtilityClass;
 @OwnedBy(PIPELINE)
 @UtilityClass
 public class InputSetErrorsHelper {
+  public final String INVALID_INPUT_SET_MESSAGE = "Reference is an invalid Input Set";
+
   public InputSetErrorWrapperDTOPMS getErrorMap(String pipelineYaml, String inputSetYaml) {
     String pipelineComp = getPipelineComponent(inputSetYaml);
     String templateYaml = createTemplateFromPipeline(pipelineYaml);
@@ -90,20 +92,26 @@ public class InputSetErrorsHelper {
   }
 
   public Map<String, String> getInvalidInputSetReferences(
-      List<Optional<InputSetEntity>> inputSets, List<String> identifiers) {
+      List<Optional<InputSetEntity>> inputSets, List<String> identifiers, String pipelineYaml) {
     Map<String, String> res = new LinkedHashMap<>();
     for (int i = 0; i < identifiers.size(); i++) {
       String identifier = identifiers.get(i);
-      Optional<InputSetEntity> entity = inputSets.get(i);
-      if (!entity.isPresent()) {
+      Optional<InputSetEntity> optionalEntity = inputSets.get(i);
+      if (!optionalEntity.isPresent()) {
         res.put(identifier, "Reference does not exist");
         continue;
       }
-      if (entity.get().getInputSetEntityType() == InputSetEntityType.OVERLAY_INPUT_SET) {
+      InputSetEntity inputSetEntity = optionalEntity.get();
+      if (inputSetEntity.getInputSetEntityType() == InputSetEntityType.OVERLAY_INPUT_SET) {
         res.put(identifier, "References can't be other overlay input sets");
-      }
-      if (entity.get().getIsInvalid()) {
+      } else if (inputSetEntity.getIsInvalid()) {
         res.put(identifier, "Reference is an outdated input set");
+      } else {
+        String inputSetYaml = inputSetEntity.getYaml();
+        InputSetErrorWrapperDTOPMS errorMap = getErrorMap(pipelineYaml, inputSetYaml);
+        if (errorMap != null) {
+          res.put(identifier, INVALID_INPUT_SET_MESSAGE);
+        }
       }
     }
     return res;

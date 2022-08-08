@@ -40,7 +40,8 @@ import org.springframework.data.mongodb.core.query.Criteria;
 @OwnedBy(PIPELINE)
 @UtilityClass
 public class OverlayInputSetValidationHelper {
-  public void validateOverlayInputSet(PMSInputSetService inputSetService, InputSetEntity inputSetEntity) {
+  public void validateOverlayInputSet(
+      PMSInputSetService inputSetService, InputSetEntity inputSetEntity, String pipelineYaml) {
     String accountId = inputSetEntity.getAccountId();
     String orgIdentifier = inputSetEntity.getOrgIdentifier();
     String projectIdentifier = inputSetEntity.getProjectIdentifier();
@@ -65,7 +66,7 @@ public class OverlayInputSetValidationHelper {
     List<Optional<InputSetEntity>> inputSets = findAllReferredInputSets(
         inputSetService, inputSetReferences, accountId, orgIdentifier, projectIdentifier, pipelineIdentifier);
     Map<String, String> invalidReferences =
-        InputSetErrorsHelper.getInvalidInputSetReferences(inputSets, inputSetReferences);
+        InputSetErrorsHelper.getInvalidInputSetReferences(inputSets, inputSetReferences, pipelineYaml);
     if (!invalidReferences.isEmpty()) {
       OverlayInputSetErrorWrapperDTOPMS overlayInputSetErrorWrapperDTOPMS =
           OverlayInputSetErrorWrapperDTOPMS.builder().invalidReferences(invalidReferences).build();
@@ -109,8 +110,8 @@ public class OverlayInputSetValidationHelper {
     return inputSets;
   }
 
-  public static InputSetYamlDiffDTO getYAMLDiffForOverlayInputSet(
-      GitSyncSdkService gitSyncSdkService, PMSInputSetService inputSetService, InputSetEntity inputSetEntity) {
+  public static InputSetYamlDiffDTO getYAMLDiffForOverlayInputSet(GitSyncSdkService gitSyncSdkService,
+      PMSInputSetService inputSetService, InputSetEntity inputSetEntity, String pipelineYaml) {
     String accountId = inputSetEntity.getAccountId();
     String orgIdentifier = inputSetEntity.getOrgIdentifier();
     String projectIdentifier = inputSetEntity.getProjectIdentifier();
@@ -120,8 +121,14 @@ public class OverlayInputSetValidationHelper {
     List<String> currentReferences = InputSetYamlHelper.getReferencesFromOverlayInputSetYaml(yaml);
     List<Optional<InputSetEntity>> inputSets = findAllReferredInputSetsInternal(
         inputSetService, currentReferences, accountId, orgIdentifier, projectIdentifier, pipelineIdentifier);
-    Set<String> invalidReferences =
-        InputSetErrorsHelper.getInvalidInputSetReferences(inputSets, currentReferences).keySet();
+    Map<String, String> invalidReferencesWithErrors =
+        InputSetErrorsHelper.getInvalidInputSetReferences(inputSets, currentReferences, pipelineYaml);
+    List<String> existingButInvalidReferences =
+        invalidReferencesWithErrors.keySet()
+            .stream()
+            .filter(ref -> invalidReferencesWithErrors.get(ref).equals(InputSetErrorsHelper.INVALID_INPUT_SET_MESSAGE))
+            .collect(Collectors.toList());
+    Set<String> invalidReferences = invalidReferencesWithErrors.keySet();
     List<String> validReferences =
         currentReferences.stream().filter(ref -> !invalidReferences.contains(ref)).collect(Collectors.toList());
     if (EmptyPredicate.isNotEmpty(validReferences)) {
@@ -131,6 +138,7 @@ public class OverlayInputSetValidationHelper {
           .newYAML(newYaml)
           .isInputSetEmpty(false)
           .noUpdatePossible(false)
+          .invalidReferences(existingButInvalidReferences)
           .build();
     }
 
@@ -145,9 +153,17 @@ public class OverlayInputSetValidationHelper {
     }
     boolean hasInputSets = EmptyPredicate.isNotEmpty(inputSetService.list(criteria));
     if (hasInputSets) {
-      return InputSetYamlDiffDTO.builder().isInputSetEmpty(true).noUpdatePossible(false).build();
+      return InputSetYamlDiffDTO.builder()
+          .isInputSetEmpty(true)
+          .noUpdatePossible(false)
+          .invalidReferences(existingButInvalidReferences)
+          .build();
     } else {
-      return InputSetYamlDiffDTO.builder().isInputSetEmpty(true).noUpdatePossible(true).build();
+      return InputSetYamlDiffDTO.builder()
+          .isInputSetEmpty(true)
+          .noUpdatePossible(true)
+          .invalidReferences(existingButInvalidReferences)
+          .build();
     }
   }
 }

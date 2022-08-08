@@ -47,8 +47,6 @@ import io.harness.cdng.k8s.resources.azure.service.AzureResourceService;
 import io.harness.cdng.k8s.resources.azure.service.AzureResourceServiceImpl;
 import io.harness.cdng.k8s.resources.gcp.service.GcpResourceService;
 import io.harness.cdng.k8s.resources.gcp.service.impl.GcpResourceServiceImpl;
-import io.harness.cdng.rollback.service.RollbackDataService;
-import io.harness.cdng.rollback.service.RollbackDataServiceImpl;
 import io.harness.cdng.servicenow.resources.service.ServiceNowResourceService;
 import io.harness.cdng.servicenow.resources.service.ServiceNowResourceServiceImpl;
 import io.harness.cdng.usage.impl.CDLicenseUsageImpl;
@@ -132,7 +130,6 @@ public class NGModule extends AbstractModule {
                 .setNameFormat("Cd-ng-telemetry-publisher-Thread-%d")
                 .setPriority(Thread.NORM_PRIORITY)
                 .build()));
-    bind(RollbackDataService.class).to(RollbackDataServiceImpl.class);
     bind(StageExecutionInfoService.class).to(StageExecutionInfoServiceImpl.class);
 
     MapBinder<String, FilterPropertiesMapper> filterPropertiesMapper =

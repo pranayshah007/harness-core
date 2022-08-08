@@ -174,7 +174,7 @@ public class DeploymentEventListenerTest extends InstancesTestBase {
     when(outcomeService.resolveOptional(
              ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.ARTIFACTS)))
         .thenReturn(optionalOutcome);
-    deploymentSummaryDTO.setArtifactDetails(ArtifactDetails.builder().artifactId("").tag("").build());
+    deploymentSummaryDTO.setArtifactDetails(ArtifactDetails.builder().artifactId("").tag("").displayName("").build());
     when(deploymentSummaryService.save(any())).thenReturn(deploymentSummaryDTO1);
     deploymentSummaryDTO1.setServerInstanceInfoList(Arrays.asList(serverInstanceInfo));
     deploymentSummaryDTO1.setInfrastructureMapping(infrastructureMappingDTO);

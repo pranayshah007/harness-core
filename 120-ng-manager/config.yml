@@ -177,8 +177,7 @@ templateServiceClientConfig:
   readTimeOutSeconds: 15
 
 chaosServiceClientConfig:
-  # todo confirm endpoint
-  baseUrl: http://localhost:15001/api/
+  baseUrl: http://localhost:9000
   connectTimeOutSeconds: 15
   readTimeOutSeconds: 15
 
