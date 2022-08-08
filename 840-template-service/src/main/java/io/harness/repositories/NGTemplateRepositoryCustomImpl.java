@@ -303,27 +303,41 @@ public class NGTemplateRepositoryCustomImpl implements NGTemplateRepositoryCusto
   }
 
   @Override
-  public TemplateEntity deleteTemplate(TemplateEntity templateToDelete, String comments) {
-    Supplier<OutboxEvent> supplier = null;
-    if (shouldLogAudits(templateToDelete.getAccountId(), templateToDelete.getOrgIdentifier(),
-            templateToDelete.getProjectIdentifier())) {
-      supplier = ()
-          -> outboxService.save(
-              new TemplateDeleteEvent(templateToDelete.getAccountIdentifier(), templateToDelete.getOrgIdentifier(),
-                  templateToDelete.getProjectIdentifier(), templateToDelete, comments));
-    }
-    return gitAwarePersistence.save(
-        templateToDelete, templateToDelete.getYaml(), ChangeType.DELETE, TemplateEntity.class, supplier);
-  }
-
-  @Override
-  public void hardDeleteTemplate(TemplateEntity templateToDelete, String comments) {
+  public void hardDeleteTemplateForOldGitSync(TemplateEntity templateToDelete, String comments) {
     String accountId = templateToDelete.getAccountId();
     String orgIdentifier = templateToDelete.getOrgIdentifier();
     String projectIdentifier = templateToDelete.getProjectIdentifier();
     gitAwarePersistence.delete(templateToDelete, ChangeType.DELETE, TemplateEntity.class);
     outboxService.save(
         new TemplateDeleteEvent(accountId, orgIdentifier, projectIdentifier, templateToDelete, comments));
+  }
+
+  @Override
+  public void deleteTemplate(TemplateEntity templateToDelete, String comments) {
+    Criteria criteria = buildCriteriaForDelete(templateToDelete);
+    Query query = new Query(criteria);
+    TemplateEntity deletedTemplateEntity = mongoTemplate.findAndRemove(query, TemplateEntity.class);
+    if (shouldLogAudits(templateToDelete.getAccountId(), templateToDelete.getOrgIdentifier(),
+            templateToDelete.getProjectIdentifier())) {
+      outboxService.save(
+          new TemplateDeleteEvent(templateToDelete.getAccountIdentifier(), templateToDelete.getOrgIdentifier(),
+              templateToDelete.getProjectIdentifier(), deletedTemplateEntity, comments));
+    }
+  }
+
+  private Criteria buildCriteriaForDelete(TemplateEntity templateEntity) {
+    return Criteria.where(TemplateEntityKeys.deleted)
+        .is(false)
+        .where(TemplateEntityKeys.accountId)
+        .is(templateEntity.getAccountId())
+        .and(TemplateEntityKeys.orgIdentifier)
+        .is(templateEntity.getOrgIdentifier())
+        .and(TemplateEntityKeys.projectIdentifier)
+        .is(templateEntity.getProjectIdentifier())
+        .and(TemplateEntityKeys.identifier)
+        .is(templateEntity.getIdentifier())
+        .and(TemplateEntityKeys.versionLabel)
+        .is(templateEntity.getVersionLabel());
   }
 
   @Override
@@ -340,6 +354,15 @@ public class NGTemplateRepositoryCustomImpl implements NGTemplateRepositoryCusto
         ()
             -> gitAwarePersistence.count(
                 criteria, projectIdentifier, orgIdentifier, accountIdentifier, TemplateEntity.class));
+  }
+
+  @Override
+  public Page<TemplateEntity> findAll(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, Criteria criteria, Pageable pageable) {
+    Query query = new Query(criteria).with(pageable);
+    List<TemplateEntity> templateEntities = mongoTemplate.find(query, TemplateEntity.class);
+    return PageableExecutionUtils.getPage(templateEntities, pageable,
+        () -> mongoTemplate.count(Query.of(query).limit(-1).skip(-1), TemplateEntity.class));
   }
 
   @Override

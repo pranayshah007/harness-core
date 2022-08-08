@@ -18,7 +18,8 @@ import static io.harness.pms.contracts.execution.Status.EXPIRED;
 import io.harness.account.services.AccountService;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.rollback.service.RollbackDataServiceImpl;
+import io.harness.beans.Scope;
+import io.harness.cdng.execution.service.StageExecutionInfoService;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.executions.steps.StepSpecTypeConstants;
@@ -59,7 +60,7 @@ public class CdngPipelineExecutionUpdateEventHandler implements OrchestrationEve
   @Inject private LogStreamingStepClientFactory logStreamingStepClientFactory;
   @Inject private StepHelper stepHelper;
   @Inject private AccountService accountService;
-  @Inject private RollbackDataServiceImpl rollbackDataService;
+  @Inject private StageExecutionInfoService stageExecutionInfoService;
 
   @Override
   public void handleEvent(OrchestrationEvent event) {
@@ -93,10 +94,20 @@ public class CdngPipelineExecutionUpdateEventHandler implements OrchestrationEve
     if (StatusUtils.isFinalStatus(status)) {
       String stageExecutionId = ambiance.getStageExecutionId();
       StageStatus stageStatus = status.equals(Status.SUCCEEDED) ? StageStatus.SUCCEEDED : StageStatus.FAILED;
+      String accountIdentifier = AmbianceUtils.getAccountId(ambiance);
+      String orgIdentifier = AmbianceUtils.getOrgIdentifier(ambiance);
+      String projectIdentifier = AmbianceUtils.getProjectIdentifier(ambiance);
+
       try {
-        rollbackDataService.updateStatus(stageExecutionId, stageStatus);
+        stageExecutionInfoService.updateStatus(
+            Scope.of(accountIdentifier, orgIdentifier, projectIdentifier), stageExecutionId, stageStatus);
       } catch (Exception ex) {
-        log.error("Unable to process deployment stage event", ex);
+        log.error(
+            String.format(
+                "Unable to update stage execution status, accountIdentifier: %s, orgIdentifier: %s, projectIdentifier: %s, "
+                    + "stageExecutionId: %s, stageStatus: %s",
+                accountIdentifier, orgIdentifier, projectIdentifier, stageExecutionId, stageStatus),
+            ex);
       }
     }
   }

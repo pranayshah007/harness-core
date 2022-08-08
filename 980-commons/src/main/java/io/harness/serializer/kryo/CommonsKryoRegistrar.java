@@ -56,6 +56,7 @@ import io.harness.exception.ShellExecutionException;
 import io.harness.exception.TerraformCommandExecutionException;
 import io.harness.exception.UnresolvedExpressionsException;
 import io.harness.exception.VerificationOperationException;
+import io.harness.exception.ngexception.AzureAppServiceTaskException;
 import io.harness.exception.runtime.SshCommandExecutionException;
 import io.harness.exception.runtime.serverless.ServerlessAwsLambdaRuntimeException;
 import io.harness.exception.runtime.serverless.ServerlessCommandExecutionException;
@@ -149,5 +150,6 @@ public class CommonsKryoRegistrar implements KryoRegistrar {
     kryo.register(SshCommandExecutionException.class, 980029);
     kryo.register(InterruptedRuntimeException.class, 980030);
     kryo.register(InvalidIdentifierRefException.class, 980031);
+    kryo.register(AzureAppServiceTaskException.class, 980032);
   }
 }

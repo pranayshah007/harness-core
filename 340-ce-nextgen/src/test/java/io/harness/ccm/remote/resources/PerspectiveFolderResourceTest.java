@@ -22,6 +22,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.ccm.audittrails.events.PerspectiveFolderCreateEvent;
 import io.harness.ccm.audittrails.events.PerspectiveFolderDeleteEvent;
 import io.harness.ccm.audittrails.events.PerspectiveFolderUpdateEvent;
+import io.harness.ccm.rbac.CCMRbacHelper;
 import io.harness.ccm.remote.resources.perspectives.PerspectiveFolderResource;
 import io.harness.ccm.views.dto.CreatePerspectiveFolderDTO;
 import io.harness.ccm.views.dto.MovePerspectiveDTO;
@@ -56,6 +57,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 public class PerspectiveFolderResourceTest extends CategoryTest {
   private CEViewService ceViewService = mock(CEViewService.class);
   private CEViewFolderService ceViewFolderService = mock(CEViewFolderService.class);
+  private CCMRbacHelper rbacHelper = mock(CCMRbacHelper.class);
   private TransactionTemplate transactionTemplate = mock(TransactionTemplate.class);
   private OutboxService outboxService = mock(OutboxService.class);
   private PerspectiveFolderResource perspectiveFolderResource;
@@ -106,7 +108,7 @@ public class PerspectiveFolderResourceTest extends CategoryTest {
         .thenReturn(Collections.singletonList(perspective));
     when(ceViewFolderService.delete(any(), any())).thenReturn(true);
     perspectiveFolderResource = new PerspectiveFolderResource(
-        ceViewFolderService, ceViewService, telemetryReporter, transactionTemplate, outboxService);
+        ceViewFolderService, ceViewService, telemetryReporter, transactionTemplate, outboxService, rbacHelper);
     perspectiveFolderDTO = perspectiveFolder.toDTO();
   }
 

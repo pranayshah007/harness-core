@@ -9,7 +9,6 @@ package io.harness.metrics.impl;
 
 import static io.harness.persistence.HQuery.excludeAuthority;
 
-import io.harness.beans.DelegateTask;
 import io.harness.delegate.beans.Delegate;
 import io.harness.delegate.beans.Delegate.DelegateKeys;
 import io.harness.delegate.beans.DelegateInstanceStatus;
@@ -37,11 +36,11 @@ public class DelegateMetricsPublisher implements MetricsPublisher {
 
   @Override
   public void recordMetrics() {
-    sendTaskStatusMetrics();
+    sendActiveDelegateCountMetrics();
   }
 
   @VisibleForTesting
-  void sendTaskStatusMetrics() {
+  void sendActiveDelegateCountMetrics() {
     log.info("Starting getting delegate metrics.");
     long startTime = Instant.now().toEpochMilli();
 
@@ -64,7 +63,7 @@ public class DelegateMetricsPublisher implements MetricsPublisher {
       }
     });
 
-    log.info("Total time taken to collect metrics for class {} {} (ms)", DelegateTask.class.getSimpleName(),
+    log.info("Total time taken to collect metrics for active delegates count: {} (ms)",
         Instant.now().toEpochMilli() - startTime);
   }
 

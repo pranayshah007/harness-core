@@ -38,20 +38,20 @@ public class GitlabConnector extends Connector implements PersistentRegularItera
   boolean hasApiAccess;
   GitlabApiAccessType apiAccessType;
   GitlabApiAccess gitlabApiAccess;
-  @NonFinal Long nextTokenIteration;
+  @NonFinal Long nextTokenRenewIteration;
 
   @Override
   public Long obtainNextIteration(String fieldName) {
-    if (GitlabConnectorKeys.nextTokenIteration.equals(fieldName)) {
-      return nextTokenIteration;
+    if (GitlabConnectorKeys.nextTokenRenewIteration.equals(fieldName)) {
+      return nextTokenRenewIteration;
     }
     throw new IllegalArgumentException("Invalid fieldName " + fieldName);
   }
 
   @Override
   public void updateNextIteration(String fieldName, long nextIteration) {
-    if (GitlabConnectorKeys.nextTokenIteration.equals(fieldName)) {
-      this.nextTokenIteration = nextIteration;
+    if (GitlabConnectorKeys.nextTokenRenewIteration.equals(fieldName)) {
+      this.nextTokenRenewIteration = nextIteration;
       return;
     }
     throw new IllegalArgumentException("Invalid fieldName " + fieldName);

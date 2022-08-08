@@ -24,10 +24,12 @@ import static software.wings.service.impl.yaml.sync.GitSyncErrorUtils.getYamlCon
 import static org.apache.commons.collections4.ListUtils.emptyIfNull;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
+import io.harness.beans.FeatureName;
 import io.harness.delegate.beans.NoAvailableDelegatesException;
 import io.harness.delegate.beans.NoInstalledDelegatesException;
 import io.harness.eraro.ErrorCode;
 import io.harness.exception.UnexpectedException;
+import io.harness.ff.FeatureFlagService;
 import io.harness.git.model.ChangeType;
 import io.harness.logging.AccountLogContext;
 import io.harness.logging.AutoLogContext;
@@ -102,6 +104,7 @@ public class GitCommandCallback implements NotifyCallbackWithErrorHandling {
   @Transient @Inject GitSyncService gitSyncService;
   @Transient @Inject private GitSyncErrorService gitSyncErrorService;
   @Transient @Inject GitChangeSetHandler gitChangeSetHandler;
+  @Transient @Inject FeatureFlagService featureFlagService;
 
   public void notify(ResponseData notifyResponseData) {
     try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR);
@@ -196,6 +199,9 @@ public class GitCommandCallback implements NotifyCallbackWithErrorHandling {
   private void handleCommitAndPushFailureWhenUnseenHead(String accountId, String changeSetId) {
     log.info("Remote head commit did not match local head commit. Requeuing changeset [{}] again.", changeSetId);
     if (changeSetId != null) {
+      if (featureFlagService.isEnabled(FeatureName.CG_GIT_POLLING, accountId)) {
+        yamlChangeSetService.pushYamlChangeSetForGitToHarness(accountId, branchName, gitConnectorId, repositoryName);
+      }
       yamlChangeSetService.updateStatusAndIncrementPushCount(accountId, changeSetId, Status.QUEUED);
     }
   }

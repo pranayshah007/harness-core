@@ -175,14 +175,16 @@ public class DeploymentEventListener implements OrchestrationEventHandler {
     OptionalOutcome optionalOutcome = outcomeService.resolveOptional(
         ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.ARTIFACTS));
     if (!optionalOutcome.isFound()) {
-      deploymentSummaryDTO.setArtifactDetails(ArtifactDetails.builder().artifactId("").tag("").build());
+      deploymentSummaryDTO.setArtifactDetails(ArtifactDetails.builder().artifactId("").tag("").displayName("").build());
       return;
     }
     ArtifactsOutcome artifactsOutcome = (ArtifactsOutcome) optionalOutcome.getOutcome();
-    deploymentSummaryDTO.setArtifactDetails(ArtifactDetails.builder()
-                                                .tag(artifactsOutcome.getPrimary().getTag())
-                                                .artifactId(artifactsOutcome.getPrimary().getIdentifier())
-                                                .build());
+    deploymentSummaryDTO.setArtifactDetails(
+        ArtifactDetails.builder()
+            .tag(artifactsOutcome.getPrimary().getTag())
+            .artifactId(artifactsOutcome.getPrimary().getIdentifier())
+            .displayName(artifactsOutcome.getPrimary().getArtifactSummary().getDisplayName())
+            .build());
   }
 
   private ServiceStepOutcome getServiceOutcomeFromAmbiance(Ambiance ambiance) {

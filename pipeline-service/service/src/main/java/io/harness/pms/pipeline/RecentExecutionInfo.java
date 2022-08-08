@@ -27,4 +27,5 @@ public class RecentExecutionInfo {
   @Setter @NonFinal Status status;
   Long startTs;
   @Setter @NonFinal Long endTs;
+  Integer runSequence;
 }

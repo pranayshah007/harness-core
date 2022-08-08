@@ -13,6 +13,8 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.task.helm.HelmTaskHelperBase.getChartDirectory;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.filesystem.FileIo.deleteDirectoryAndItsContentIfExists;
+import static io.harness.helm.HelmCommandType.LIST_RELEASE;
+import static io.harness.helm.HelmCommandType.RELEASE_HISTORY;
 import static io.harness.helm.HelmConstants.DEFAULT_TILLER_CONNECTION_TIMEOUT_MILLIS;
 import static io.harness.logging.LogLevel.INFO;
 import static io.harness.validation.Validator.notNullCheck;
@@ -48,6 +50,7 @@ import io.harness.git.model.GitRepositoryType;
 import io.harness.helm.HelmClient;
 import io.harness.helm.HelmClientImpl.HelmCliResponse;
 import io.harness.helm.HelmCommandResponseMapper;
+import io.harness.helm.HelmCommandType;
 import io.harness.k8s.K8sGlobalConfigService;
 import io.harness.k8s.KubernetesContainerService;
 import io.harness.k8s.kubectl.Kubectl;
@@ -80,7 +83,6 @@ import software.wings.delegatetasks.helm.HelmTaskHelper;
 import software.wings.helpers.ext.container.ContainerDeploymentDelegateHelper;
 import software.wings.helpers.ext.helm.request.HelmChartConfigParams;
 import software.wings.helpers.ext.helm.request.HelmCommandRequest;
-import software.wings.helpers.ext.helm.request.HelmCommandRequest.HelmCommandType;
 import software.wings.helpers.ext.helm.request.HelmInstallCommandRequest;
 import software.wings.helpers.ext.helm.request.HelmReleaseHistoryCommandRequest;
 import software.wings.helpers.ext.helm.request.HelmRollbackCommandRequest;
@@ -170,6 +172,14 @@ public class HelmDeployServiceImpl implements HelmDeployService {
 
       HelmCliResponse helmCliResponse =
           helmClient.releaseHistory(HelmCommandDataMapper.getHelmCommandData(commandRequest), false);
+
+      List<ReleaseInfo> releaseInfoList =
+          helmTaskHelperBase.parseHelmReleaseCommandOutput(helmCliResponse.getOutput(), RELEASE_HISTORY);
+
+      if (!isEmpty(releaseInfoList)) {
+        helmTaskHelperBase.processHelmReleaseHistOutput(releaseInfoList.get(releaseInfoList.size() - 1));
+      }
+
       executionLogCallback.saveExecutionLog(
           preProcessReleaseHistoryCommandOutput(helmCliResponse, commandRequest.getReleaseName()));
 
@@ -759,7 +769,7 @@ public class HelmDeployServiceImpl implements HelmDeployService {
       HelmCliResponse helmCliResponse =
           helmClient.listReleases(HelmCommandDataMapper.getHelmCommandData(helmCommandRequest), false);
       List<ReleaseInfo> releaseInfoList =
-          parseHelmReleaseCommandOutput(helmCliResponse.getOutput(), HelmCommandType.LIST_RELEASE);
+          helmTaskHelperBase.parseHelmReleaseCommandOutput(helmCliResponse.getOutput(), LIST_RELEASE);
       return HelmListReleasesCommandResponse.builder()
           .commandExecutionStatus(helmCliResponse.getCommandExecutionStatus())
           .output(helmCliResponse.getOutputWithErrorStream())
@@ -781,46 +791,14 @@ public class HelmDeployServiceImpl implements HelmDeployService {
     try {
       HelmCliResponse helmCliResponse =
           helmClient.releaseHistory(HelmCommandDataMapper.getHelmCommandData(helmCommandRequest), false);
-      releaseInfoList =
-          parseHelmReleaseCommandOutput(helmCliResponse.getOutput(), helmCommandRequest.getHelmCommandType());
+      releaseInfoList = helmTaskHelperBase.parseHelmReleaseCommandOutput(
+          helmCliResponse.getOutput(), helmCommandRequest.getHelmCommandType());
     } catch (Exception e) {
       log.error("Helm list releases failed", ExceptionMessageSanitizer.sanitizeException(e));
     }
     return HelmReleaseHistoryCommandResponse.builder()
         .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
         .releaseInfoList(releaseInfoList)
-        .build();
-  }
-
-  private List<ReleaseInfo> parseHelmReleaseCommandOutput(String listReleaseOutput, HelmCommandType helmCommandType)
-      throws IOException {
-    if (isEmpty(listReleaseOutput)) {
-      return new ArrayList<>();
-    }
-    CSVFormat csvFormat = CSVFormat.RFC4180.withFirstRecordAsHeader().withDelimiter('\t').withTrim();
-    return CSVParser.parse(listReleaseOutput, csvFormat)
-        .getRecords()
-        .stream()
-        .map(helmCommandType == HelmCommandType.RELEASE_HISTORY ? this::releaseHistoryCsvRecordToReleaseInfo
-                                                                : this::listReleaseCsvRecordToReleaseInfo)
-        .collect(Collectors.toList());
-  }
-
-  private ReleaseInfo listReleaseCsvRecordToReleaseInfo(CSVRecord releaseRecord) {
-    return ReleaseInfo.builder()
-        .name(releaseRecord.get("NAME"))
-        .revision(releaseRecord.get("REVISION"))
-        .status(releaseRecord.get("STATUS"))
-        .chart(releaseRecord.get("CHART"))
-        .namespace(releaseRecord.get("NAMESPACE"))
-        .build();
-  }
-
-  private ReleaseInfo releaseHistoryCsvRecordToReleaseInfo(CSVRecord releaseRecord) {
-    return ReleaseInfo.builder()
-        .revision(releaseRecord.get("REVISION"))
-        .status(releaseRecord.get("STATUS"))
-        .chart(releaseRecord.get("CHART"))
         .build();
   }
 
@@ -845,7 +823,6 @@ public class HelmDeployServiceImpl implements HelmDeployService {
     if (helmCliResponse.getCommandExecutionStatus() == CommandExecutionStatus.FAILURE) {
       return "Release: \"" + releaseName + "\" not found\n";
     }
-
     return helmCliResponse.getOutputWithErrorStream();
   }
 
@@ -1009,7 +986,7 @@ public class HelmDeployServiceImpl implements HelmDeployService {
   private void addRepoForCommand(HelmCommandRequest helmCommandRequest) throws Exception {
     LogCallback executionLogCallback = helmCommandRequest.getExecutionLogCallback();
 
-    if (helmCommandRequest.getHelmCommandType() != HelmCommandType.INSTALL) {
+    if (helmCommandRequest.getHelmCommandType() != io.harness.helm.HelmCommandType.INSTALL) {
       return;
     }
 

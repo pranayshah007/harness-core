@@ -18,10 +18,12 @@ import io.harness.delegate.beans.DelegateResponseData;
 import software.wings.beans.InfrastructureMapping;
 import software.wings.service.InstanceSyncPerpetualTaskCreator;
 
+import java.util.Optional;
+
 @OwnedBy(PL)
 @TargetModule(HarnessModule._441_CG_INSTANCE_SYNC)
 public interface InstanceSyncByPerpetualTaskHandler {
-  FeatureName getFeatureFlagToEnablePerpetualTaskForInstanceSync();
+  Optional<FeatureName> getFeatureFlagToEnablePerpetualTaskForInstanceSync();
 
   InstanceSyncPerpetualTaskCreator getInstanceSyncPerpetualTaskCreator();
 

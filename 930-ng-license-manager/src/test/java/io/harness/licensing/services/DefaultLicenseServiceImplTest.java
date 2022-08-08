@@ -10,6 +10,7 @@ package io.harness.licensing.services;
 import static io.harness.ModuleType.CD;
 import static io.harness.ModuleType.CE;
 import static io.harness.ModuleType.CF;
+import static io.harness.ModuleType.CHAOS;
 import static io.harness.ModuleType.CI;
 import static io.harness.ModuleType.CV;
 import static io.harness.ModuleType.STO;
@@ -116,6 +117,7 @@ public class DefaultLicenseServiceImplTest extends CategoryTest {
                                    .put(CD, Lists.newArrayList())
                                    .put(CE, Lists.newArrayList())
                                    .put(CF, Lists.newArrayList())
+                                   .put(CHAOS, Lists.newArrayList())
                                    .put(CV, Lists.newArrayList())
                                    .put(STO, Lists.newArrayList())
                                    .build())

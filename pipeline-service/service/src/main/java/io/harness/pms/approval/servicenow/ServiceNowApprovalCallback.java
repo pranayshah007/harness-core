@@ -7,6 +7,7 @@
 
 package io.harness.pms.approval.servicenow;
 
+import static io.harness.delegate.task.shell.ShellScriptTaskNG.COMMAND_UNIT;
 import static io.harness.exception.WingsException.USER_SRE;
 
 import static java.util.Objects.isNull;
@@ -64,7 +65,7 @@ public class ServiceNowApprovalCallback extends AbstractApprovalCallback impleme
 
   private void pushInternal(Map<String, ResponseData> response, ServiceNowApprovalInstance instance) {
     Ambiance ambiance = instance.getAmbiance();
-    NGLogCallback logCallback = new NGLogCallback(logStreamingStepClientFactory, ambiance, null, false);
+    NGLogCallback logCallback = new NGLogCallback(logStreamingStepClientFactory, ambiance, COMMAND_UNIT, false);
 
     if (instance.hasExpired()) {
       updateApprovalInstanceAndLog(logCallback, "Approval instance has expired", LogColor.Red,

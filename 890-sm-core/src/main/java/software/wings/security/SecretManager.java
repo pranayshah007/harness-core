@@ -79,8 +79,6 @@ public class SecretManager {
         return configuration.getJwtIdentityServiceSecret();
       case NEXT_GEN_MANAGER_SECRET:
         return configuration.getJwtNextGenManagerSecret();
-      case MANAGER_SECRET:
-        return configuration.getJwtManagerServiceSecret();
       default:
         return configuration.getJwtMultiAuthSecret();
     }

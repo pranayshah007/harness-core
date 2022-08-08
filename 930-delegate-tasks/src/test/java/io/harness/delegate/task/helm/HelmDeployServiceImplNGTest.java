@@ -8,6 +8,12 @@
 package io.harness.delegate.task.helm;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.delegate.task.helm.HelmTestConstants.LIST_RELEASE_V2;
+import static io.harness.delegate.task.helm.HelmTestConstants.LIST_RELEASE_V3;
+import static io.harness.delegate.task.helm.HelmTestConstants.RELEASE_HIST_V2;
+import static io.harness.delegate.task.helm.HelmTestConstants.RELEASE_HIST_V3;
+import static io.harness.helm.HelmCommandType.LIST_RELEASE;
+import static io.harness.helm.HelmCommandType.RELEASE_HISTORY;
 import static io.harness.k8s.model.HelmVersion.V2;
 import static io.harness.k8s.model.HelmVersion.V3;
 import static io.harness.logging.CommandExecutionStatus.FAILURE;
@@ -116,6 +122,7 @@ import com.google.common.util.concurrent.TimeLimiter;
 import com.google.common.util.concurrent.UncheckedTimeoutException;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -493,7 +500,7 @@ public class HelmDeployServiceImplNGTest extends CategoryTest {
     initForDeploy();
     doReturn(Collections.emptyList()).when(spyHelmDeployService).printHelmChartKubernetesResources(any());
     helmCliReleaseHistoryResponse.setCommandExecutionStatus(SUCCESS);
-    helmCliListReleasesResponse.setOutput(HelmTestConstants.LIST_RELEASE_V2);
+    helmCliListReleasesResponse.setOutput(LIST_RELEASE_V2);
     helmCliListReleasesResponse.setCommandExecutionStatus(SUCCESS);
     helmCliResponse.setCommandExecutionStatus(SUCCESS);
 
@@ -501,6 +508,14 @@ public class HelmDeployServiceImplNGTest extends CategoryTest {
     when(helmClient.upgrade(any(), eq(true))).thenReturn(helmCliResponse);
     when(helmClient.listReleases(any(), eq(true))).thenReturn(helmCliListReleasesResponse);
     when(helmClient.renderChart(any(), anyString(), anyString(), anyList(), eq(true))).thenReturn(helmCliResponse);
+    when(helmTaskHelperBase.parseHelmReleaseCommandOutput(anyString(), eq(LIST_RELEASE)))
+        .thenReturn(Arrays.asList(ReleaseInfo.builder()
+                                      .name("helm-release-name")
+                                      .revision("85")
+                                      .namespace("default")
+                                      .status("DEPLOYED")
+                                      .chart("todolist-0.1.0")
+                                      .build()));
 
     ArgumentCaptor<io.harness.helm.HelmCommandData> argumentCaptor = ArgumentCaptor.forClass(HelmCommandData.class);
     assertThatCode(() -> spyHelmDeployService.deploy(helmInstallCommandRequestNG)).doesNotThrowAnyException();
@@ -588,10 +603,14 @@ public class HelmDeployServiceImplNGTest extends CategoryTest {
 
   private void initForRollback() throws Exception {
     doReturn(helmCliResponse).when(helmClient).rollback(any(), eq(true));
-    doReturn(
-        HelmCliResponse.builder().commandExecutionStatus(SUCCESS).output(HelmTestConstants.RELEASE_HIST_V3).build())
+    doReturn(HelmCliResponse.builder().commandExecutionStatus(SUCCESS).output(RELEASE_HIST_V3).build())
         .when(helmClient)
         .releaseHistory(any(), eq(true));
+    HelmTaskHelperBase helmTaskHelperBaseInternal = new HelmTaskHelperBase();
+    List<ReleaseInfo> releaseInfoList =
+        helmTaskHelperBaseInternal.parseHelmReleaseCommandOutput(RELEASE_HIST_V3, RELEASE_HISTORY);
+    when(helmTaskHelperBase.parseHelmReleaseCommandOutput(anyString(), eq(RELEASE_HISTORY)))
+        .thenReturn(releaseInfoList);
   }
 
   private HelmCommandResponseNG executeRollbackWithReleaseHistory(ReleaseHistory releaseHistory, int version)
@@ -859,6 +878,11 @@ public class HelmDeployServiceImplNGTest extends CategoryTest {
                         .commandExecutionStatus(SUCCESS)
                         .output(HelmTestConstants.RELEASE_HIST_V2)
                         .build());
+    HelmTaskHelperBase helmTaskHelperBaseInternal = new HelmTaskHelperBase();
+    List<ReleaseInfo> releaseInfoList =
+        helmTaskHelperBaseInternal.parseHelmReleaseCommandOutput(RELEASE_HIST_V2, RELEASE_HISTORY);
+    when(helmTaskHelperBase.parseHelmReleaseCommandOutput(anyString(), eq(RELEASE_HISTORY)))
+        .thenReturn(releaseInfoList);
 
     HelmReleaseHistoryCmdResponseNG response = helmDeployService.releaseHistory(request);
 
@@ -879,10 +903,12 @@ public class HelmDeployServiceImplNGTest extends CategoryTest {
     request.setHelmVersion(V3);
 
     when(helmClient.releaseHistory(HelmCommandDataMapperNG.getHelmCmdDataNG(request), true))
-        .thenReturn(HelmCliResponse.builder()
-                        .commandExecutionStatus(SUCCESS)
-                        .output(HelmTestConstants.RELEASE_HIST_V3)
-                        .build());
+        .thenReturn(HelmCliResponse.builder().commandExecutionStatus(SUCCESS).output(RELEASE_HIST_V3).build());
+    HelmTaskHelperBase helmTaskHelperBaseInternal = new HelmTaskHelperBase();
+    List<ReleaseInfo> releaseInfoList =
+        helmTaskHelperBaseInternal.parseHelmReleaseCommandOutput(RELEASE_HIST_V3, RELEASE_HISTORY);
+    when(helmTaskHelperBase.parseHelmReleaseCommandOutput(anyString(), eq(RELEASE_HISTORY)))
+        .thenReturn(releaseInfoList);
 
     HelmReleaseHistoryCmdResponseNG response = helmDeployService.releaseHistory(request);
 
@@ -923,10 +949,11 @@ public class HelmDeployServiceImplNGTest extends CategoryTest {
     helmInstallCommandRequestNG.setHelmVersion(V2);
 
     when(helmClient.listReleases(HelmCommandDataMapperNG.getHelmCmdDataNG(helmInstallCommandRequestNG), true))
-        .thenReturn(HelmCliResponse.builder()
-                        .commandExecutionStatus(SUCCESS)
-                        .output(HelmTestConstants.LIST_RELEASE_V2)
-                        .build());
+        .thenReturn(HelmCliResponse.builder().commandExecutionStatus(SUCCESS).output(LIST_RELEASE_V2).build());
+    HelmTaskHelperBase helmTaskHelperBaseInternal = new HelmTaskHelperBase();
+    List<ReleaseInfo> releaseInfoList =
+        helmTaskHelperBaseInternal.parseHelmReleaseCommandOutput(LIST_RELEASE_V2, LIST_RELEASE);
+    when(helmTaskHelperBase.parseHelmReleaseCommandOutput(anyString(), eq(LIST_RELEASE))).thenReturn(releaseInfoList);
 
     HelmListReleaseResponseNG response = helmDeployService.listReleases(helmInstallCommandRequestNG);
 
@@ -942,10 +969,11 @@ public class HelmDeployServiceImplNGTest extends CategoryTest {
 
   private void shouldListReleaseV3() throws Exception {
     when(helmClient.listReleases(HelmCommandDataMapperNG.getHelmCmdDataNG(helmInstallCommandRequestNG), true))
-        .thenReturn(HelmCliResponse.builder()
-                        .commandExecutionStatus(SUCCESS)
-                        .output(HelmTestConstants.LIST_RELEASE_V3)
-                        .build());
+        .thenReturn(HelmCliResponse.builder().commandExecutionStatus(SUCCESS).output(LIST_RELEASE_V3).build());
+    HelmTaskHelperBase helmTaskHelperBaseInternal = new HelmTaskHelperBase();
+    List<ReleaseInfo> releaseInfoList =
+        helmTaskHelperBaseInternal.parseHelmReleaseCommandOutput(LIST_RELEASE_V3, LIST_RELEASE);
+    when(helmTaskHelperBase.parseHelmReleaseCommandOutput(anyString(), eq(LIST_RELEASE))).thenReturn(releaseInfoList);
 
     HelmListReleaseResponseNG response = helmDeployService.listReleases(helmInstallCommandRequestNG);
 

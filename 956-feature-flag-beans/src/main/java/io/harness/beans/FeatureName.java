@@ -54,7 +54,6 @@ public enum FeatureName {
   CUSTOM_APM_24_X_7_CV_TASK,
   CUSTOM_APM_CV_TASK,
   CUSTOM_DASHBOARD,
-  CUSTOM_DEPLOYMENT,
   CUSTOM_DEPLOYMENT_ARTIFACT_FROM_INSTANCE_JSON,
   NG_DEPLOYMENT_TEMPLATE,
   CUSTOM_MAX_PAGE_SIZE,
@@ -121,7 +120,6 @@ public enum FeatureName {
   MOVE_CONTAINER_INSTANCE_SYNC_TO_PERPETUAL_TASK,
   MOVE_PCF_INSTANCE_SYNC_TO_PERPETUAL_TASK,
   PDC_PERPETUAL_TASK,
-  NEW_INSTANCE_TIMESERIES,
   NEW_RELIC_CV_TASK,
   NEWRELIC_24_7_CV_TASK,
   NG_DASHBOARDS("", HarnessTeam.CE),
@@ -135,7 +133,6 @@ public enum FeatureName {
   REJECT_TRIGGER_IF_ARTIFACTS_NOT_MATCH,
   ROLLBACK_NONE_ARTIFACT,
   SCIM_INTEGRATION,
-  SEARCH(Scope.GLOBAL),
   SEARCH_REQUEST,
   SEND_LOG_ANALYSIS_COMPRESSED,
   SEND_SLACK_NOTIFICATION_FROM_DELEGATE,
@@ -159,7 +156,6 @@ public enum FeatureName {
   TRIGGER_YAML,
   UI_ALLOW_K8S_V1,
   USE_NEXUS3_PRIVATE_APIS,
-  WEEKLY_WINDOW,
   ENABLE_CVNG_INTEGRATION,
   DYNATRACE_MULTI_SERVICE,
   REFACTOR_STATEMACHINEXECUTOR,
@@ -199,6 +195,7 @@ public enum FeatureName {
   ECS_BG_DOWNSIZE,
   LIMITED_ACCESS_FOR_HARNESS_USER_GROUP,
   REMOVE_STENCIL_MANUAL_INTERVENTION,
+  CI_OVERVIEW_PAGE("UI flag to show CI overview page", HarnessTeam.CI),
   SKIP_BASED_ON_STACK_STATUSES,
   WF_VAR_MULTI_SELECT_ALLOWED_VALUES,
   LDAP_GROUP_SYNC_JOB_ITERATOR,
@@ -230,7 +227,6 @@ public enum FeatureName {
   MANIFEST_INHERIT_FROM_CANARY_TO_PRIMARY_PHASE,
   USE_LATEST_CHARTMUSEUM_VERSION,
   KUBERNETES_EXPORT_MANIFESTS,
-  NG_TEMPLATES,
   NEW_KUSTOMIZE_BINARY,
   KUSTOMIZE_PATCHES_CG,
   SSH_JSCH_LOGS,
@@ -321,7 +317,6 @@ public enum FeatureName {
   LDAP_SECRET_AUTH,
   WORKFLOW_EXECUTION_REFRESH_STATUS,
   SERVERLESS_SUPPORT,
-  TF_MODULE_SOURCE_INHERIT_SSH,
   TRIGGERS_PAGE_PAGINATION,
   CVNG_NOTIFICATION_UI,
   STALE_FLAGS_FFM_1510,
@@ -380,10 +375,13 @@ public enum FeatureName {
   QUEUED_COUNT_FOR_QUEUEKEY("Used to display the count of the queue in CG git sync", HarnessTeam.SPG),
   NG_EMAIL_STEP,
   PRUNE_KUBERNETES_RESOURCES_NG,
-  CI_STEP_GROUP_ENABLED,
+  DISABLE_PIPELINE_SCHEMA_VALIDATION(
+      "Used to disable pipeline yaml schema as We saw some intermittent issue in Schema Validation due to invalid schema generation. Will keep this FF until root cause is found and fixed.",
+      HarnessTeam.PIPELINE),
   GIT_SIMPLIFICATION_DISABLED,
   USE_K8S_API_FOR_STEADY_STATE_CHECK,
   WINRM_ASG_ROLLBACK("Used for Collect remaining instances rollback step", HarnessTeam.CDP),
+  NEW_LEFT_NAVBAR_SETTINGS("Used for new left navbar configuration", HarnessTeam.PL),
 
   SAVE_ARTIFACT_TO_DB("Saves artifact to db and proceed in artifact collection step if not found", HarnessTeam.CDC),
   NG_INLINE_MANIFEST,
@@ -411,7 +409,10 @@ public enum FeatureName {
   USE_PAGINATED_ENCRYPT_FOR_VARIABLE_OVERRIDES(
       "Enables PaginatedComponent & Formik for VariableOverrides in CG-UI", HarnessTeam.PL),
   ON_DEMAND_ROLLBACK_WITH_DIFFERENT_ARTIFACT(
-      "Used to do on demand rollback to previously deployed different artifact on same inframapping", HarnessTeam.CDC);
+      "Used to do on demand rollback to previously deployed different artifact on same inframapping", HarnessTeam.CDC),
+  CG_GIT_POLLING("Poll git based on account config for git sync in CG.", HarnessTeam.SPG),
+  GRAPHQL_WORKFLOW_EXECUTION_OPTIMIZATION(
+      "Making multiple optimizations for workflow execution graphql in CG", HarnessTeam.SPG);
   @Deprecated
   FeatureName() {
     scope = Scope.PER_ACCOUNT;

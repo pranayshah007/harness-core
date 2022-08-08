@@ -20,6 +20,7 @@ import io.harness.cvng.beans.TimeSeriesMetricType;
 import io.harness.cvng.core.beans.PrometheusMetricDefinition;
 import io.harness.cvng.core.beans.PrometheusMetricDefinition.PrometheusFilter;
 import io.harness.cvng.core.beans.monitoredService.TimeSeriesMetricPackDTO;
+import io.harness.cvng.core.constant.MonitoredServiceConstants;
 import io.harness.cvng.core.entities.PrometheusCVConfig.MetricInfo;
 import io.harness.cvng.core.utils.analysisinfo.AnalysisInfoUtility;
 import io.harness.cvng.core.utils.analysisinfo.DevelopmentVerificationTransformer;
@@ -180,9 +181,6 @@ public class PrometheusCVConfig extends MetricCVConfig<MetricInfo> {
       Set<TimeSeriesThreshold> thresholds =
           getThresholdsToCreateOnSaveForCustomProviders(prometheusMetricDefinition.getMetricName(), metricType,
               prometheusMetricDefinition.getRiskProfile().getThresholdTypes());
-
-      thresholds.addAll(
-          getMetricThresholds(timeSeriesMetricPacks, metricType, prometheusMetricDefinition.getMetricName()));
       metricPack.addToMetrics(MetricPack.MetricDefinition.builder()
                                   .thresholds(new ArrayList<>(thresholds))
                                   .type(metricType)
@@ -194,33 +192,40 @@ public class PrometheusCVConfig extends MetricCVConfig<MetricInfo> {
     this.setMetricPack(metricPack);
   }
 
-  private List<TimeSeriesThreshold> getMetricThresholds(
-      Set<TimeSeriesMetricPackDTO> timeSeriesMetricPacks, TimeSeriesMetricType metricType, String metricName) {
-    List<TimeSeriesThreshold> timeSeriesThresholds = new ArrayList<>();
+  public void addMetricThresholds(Set<TimeSeriesMetricPackDTO> timeSeriesMetricPacks) {
     if (isEmpty(timeSeriesMetricPacks)) {
-      return timeSeriesThresholds;
+      return;
     }
-    Optional<TimeSeriesMetricPackDTO> customsMetricPack =
-        timeSeriesMetricPacks.stream()
-            .filter(timeSeriesMetricPack -> timeSeriesMetricPack.getIdentifier().equalsIgnoreCase("Custom"))
-            .findFirst();
-    customsMetricPack.ifPresent(timeSeriesMetricPackDTO
-        -> timeSeriesMetricPackDTO.getMetricThresholds()
-               .stream()
-               .filter(metricPack -> metricPack.getMetricName().equalsIgnoreCase(metricName))
-               .forEach(metricPack
-                   -> metricPack.getTimeSeriesThresholdCriteria().forEach(criteria
-                       -> timeSeriesThresholds.add(TimeSeriesThreshold.builder()
-                                                       .accountId(getAccountId())
-                                                       .projectIdentifier(getProjectIdentifier())
-                                                       .dataSourceType(getType())
-                                                       .metricType(metricType)
-                                                       .metricName(metricName)
-                                                       .action(metricPack.getType().getTimeSeriesThresholdActionType())
-                                                       .criteria(criteria)
-                                                       .thresholdConfigType(ThresholdConfigType.CUSTOMER)
-                                                       .build()))));
-    return timeSeriesThresholds;
+    getMetricPack().getMetrics().forEach(metric -> {
+      timeSeriesMetricPacks.stream()
+          .filter(timeSeriesMetricPack
+              -> timeSeriesMetricPack.getIdentifier().equalsIgnoreCase(MonitoredServiceConstants.CUSTOM_METRIC_PACK))
+          .forEach(timeSeriesMetricPackDTO -> {
+            if (!isEmpty(timeSeriesMetricPackDTO.getMetricThresholds())) {
+              timeSeriesMetricPackDTO.getMetricThresholds()
+                  .stream()
+                  .filter(metricPackDTO -> metric.getName().equals(metricPackDTO.getMetricName()))
+                  .forEach(metricPackDTO -> metricPackDTO.getTimeSeriesThresholdCriteria().forEach(criteria -> {
+                    List<TimeSeriesThreshold> timeSeriesThresholds =
+                        metric.getThresholds() != null ? metric.getThresholds() : new ArrayList<>();
+                    TimeSeriesThreshold timeSeriesThreshold =
+                        TimeSeriesThreshold.builder()
+                            .accountId(getAccountId())
+                            .projectIdentifier(getProjectIdentifier())
+                            .dataSourceType(getType())
+                            .metricIdentifier(metric.getIdentifier())
+                            .metricType(metric.getType())
+                            .metricName(metricPackDTO.getMetricName())
+                            .action(metricPackDTO.getType().getTimeSeriesThresholdActionType())
+                            .criteria(criteria)
+                            .thresholdConfigType(ThresholdConfigType.CUSTOMER)
+                            .build();
+                    timeSeriesThresholds.add(timeSeriesThreshold);
+                    metric.setThresholds(timeSeriesThresholds);
+                  }));
+            }
+          });
+    });
   }
 
   @Override

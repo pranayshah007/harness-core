@@ -18,7 +18,9 @@ extend type Query {
 
 input ExecutionFilter {
   execution: IdFilter
+  # application: IdFilter is deprecated please use applicationId: String instead.
   application: IdFilter
+  applicationId: String
   service: IdFilter
   cloudProvider: IdFilter
   environment: IdFilter

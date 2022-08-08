@@ -202,6 +202,7 @@ public class PMSPipelineDtoMapper {
         .startTs(recentExecutionInfo.getStartTs())
         .endTs(recentExecutionInfo.getEndTs())
         .executorInfo(executorInfo)
+        .runSequence(recentExecutionInfo.getRunSequence())
         .build();
   }
 

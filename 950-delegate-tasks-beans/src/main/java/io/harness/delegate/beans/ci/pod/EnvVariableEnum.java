@@ -23,5 +23,5 @@ public enum EnvVariableEnum {
   AZURE_APP_ID,
   AZURE_TENANT_ID,
   AZURE_APP_SECRET,
-  AZURE_CERT_PATH,
+  AZURE_CERT,
 }

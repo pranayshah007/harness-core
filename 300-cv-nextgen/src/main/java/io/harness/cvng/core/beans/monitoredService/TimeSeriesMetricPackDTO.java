@@ -62,6 +62,7 @@ public class TimeSeriesMetricPackDTO {
     String groupName;
     String metricName;
     String metricIdentifier;
+    String metricType;
     @JsonProperty(METRIC_THRESHOLD_METRIC_TYPE) MetricThresholdActionType type;
 
     @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = METRIC_THRESHOLD_METRIC_TYPE,

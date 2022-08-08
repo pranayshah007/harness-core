@@ -266,8 +266,8 @@ public class CustomDeploymentInstanceHandler extends InstanceHandler implements 
   }
 
   @Override
-  public FeatureName getFeatureFlagToStopIteratorBasedInstanceSync() {
-    return FeatureName.CUSTOM_DEPLOYMENT;
+  public Optional<FeatureName> getFeatureFlagToStopIteratorBasedInstanceSync() {
+    return Optional.empty();
   }
 
   @Override
@@ -303,8 +303,8 @@ public class CustomDeploymentInstanceHandler extends InstanceHandler implements 
   }
 
   @Override
-  public FeatureName getFeatureFlagToEnablePerpetualTaskForInstanceSync() {
-    return FeatureName.CUSTOM_DEPLOYMENT;
+  public Optional<FeatureName> getFeatureFlagToEnablePerpetualTaskForInstanceSync() {
+    return Optional.empty();
   }
 
   @Override
