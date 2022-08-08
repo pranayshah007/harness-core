@@ -65,6 +65,7 @@ fi
 
 if [[ "${ENABLE_OPENTELEMETRY}" == "true" ]] ; then
     echo "OpenTelemetry is enabled"
+    wget https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/download/v1.13.0/opentelemetry-javaagent.jar -O /opt/harness/opentelemetry-javaagent.jar
     JAVA_OPTS=$JAVA_OPTS" -javaagent:/opt/harness/opentelemetry-javaagent.jar -Dotel.service.name=${OTEL_SERVICE_NAME:-manager}"
 
     if [ -n "$OTEL_EXPORTER_OTLP_ENDPOINT" ]; then
