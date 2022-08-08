@@ -1588,7 +1588,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
   private void watcherUpgrade(boolean heartbeatTimedOut) {
     String watcherVersion = messageService.getData(WATCHER_DATA, WATCHER_VERSION, String.class);
     log.info("Trying to fetch watcher versinon");
-    String expectedVersion = findExpectedWatcherVersion();
+    String expectedVersion = substringBefore(findExpectedWatcherVersion(), "-").trim();
     log.info("watcher versinon fetched {}, current version {}", expectedVersion, watcherVersion);
     if (expectedVersion == null || StringUtils.equals(expectedVersion, watcherVersion)) {
       watcherVersionMatchedAt = clock.millis();
