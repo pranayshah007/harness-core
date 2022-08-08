@@ -111,7 +111,7 @@ public class ArtifactConfigToDelegateReqMapper {
         garArtifactConfig.getRepositoryName().getValue(), garArtifactConfig.getProject().getValue(),
         garArtifactConfig.getPkg().getValue(), garArtifactConfig.getVersion().getValue(),
         garArtifactConfig.getVersionRegex().getValue(), gcpConnectorDTO, encryptedDataDetails,
-        ArtifactSourceType.GOOGLE_ARTIFACT_REGISTRY);
+        ArtifactSourceType.GOOGLE_ARTIFACT_REGISTRY, Integer.MAX_VALUE);
   }
 
   public EcrArtifactDelegateRequest getEcrDelegateRequest(EcrArtifactConfig ecrArtifactConfig,

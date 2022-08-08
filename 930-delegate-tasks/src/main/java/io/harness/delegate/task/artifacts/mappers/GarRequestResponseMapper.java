@@ -24,6 +24,7 @@ public class GarRequestResponseMapper {
     return GarDelegateResponse.builder()
         .buildDetails(ArtifactBuildDetailsMapper.toBuildDetailsNG(buildDetailsInternal))
         .sourceType(ArtifactSourceType.GOOGLE_ARTIFACT_REGISTRY)
+        .version(buildDetailsInternal.getNumber())
         .build();
   }
 }

@@ -182,7 +182,11 @@ public class ArtifactResponseToOutcomeMapper {
   private static GarArtifactOutcome getGarArtifactOutcome(GoogleArtifactRegistryConfig googleArtifactRegistryConfig,
       GarDelegateResponse garDelegateResponse, boolean useDelegateResponse) {
     return GarArtifactOutcome.builder()
-        .version(garDelegateResponse.getVersion())
+        .version(useDelegateResponse ? garDelegateResponse.getVersion()
+                                     : (googleArtifactRegistryConfig.getVersion() != null
+                                             ? googleArtifactRegistryConfig.getVersion().getValue()
+                                             : null))
+        .registryHostname(garDelegateResponse.getBuildDetails().getMetadata().get("registryHostname"))
         .connectorRef(googleArtifactRegistryConfig.getConnectorRef().getValue())
         .pkg(googleArtifactRegistryConfig.getPkg().getValue())
         .project(googleArtifactRegistryConfig.getProject().getValue())
@@ -192,6 +196,8 @@ public class ArtifactResponseToOutcomeMapper {
         .type(ArtifactSourceType.GOOGLE_ARTIFACT_REGISTRY.getDisplayName())
         .identifier(googleArtifactRegistryConfig.getIdentifier())
         .primaryArtifact(googleArtifactRegistryConfig.isPrimaryArtifact())
+        .image(getImageValue(garDelegateResponse))
+        .imagePullSecret(createImagePullSecret(ArtifactUtils.getArtifactKey(googleArtifactRegistryConfig)))
         .build();
   }
 

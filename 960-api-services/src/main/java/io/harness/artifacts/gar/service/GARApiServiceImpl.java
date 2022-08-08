@@ -23,6 +23,7 @@ import io.harness.network.Http;
 
 import com.google.inject.Singleton;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -89,9 +90,17 @@ public class GARApiServiceImpl implements GarApiService {
           garRestClient.getversioninfo(garinternalConfig.getBearerToken(), project, region, repositories, pkg, version)
               .execute();
       GarTags garTags = response.body();
+      int index = garTags.getName().lastIndexOf("/");
+      String tagFinal = garTags.getName().substring(index + 1);
+      Map<String, String> metadata = new HashMap();
+      String registryHostname = String.format("%s-docker.pkg.dev", region);
+      String image = String.format("%s-docker.pkg.dev/%s/%s/%s:%s", region, project, repositories, pkg, tagFinal);
+      metadata.put(ArtifactMetadataKeys.IMAGE, image);
+      metadata.put("registryHostname", registryHostname);
       return BuildDetailsInternal.builder()
-          .uiDisplayName("Tag# " + garTags.getVersion())
-          .number(garTags.getVersion())
+          .uiDisplayName("Tag# " + tagFinal)
+          .number(tagFinal)
+          .metadata(metadata)
           .build();
     } catch (IOException ie) {
       // todo @vivek
@@ -102,7 +111,7 @@ public class GARApiServiceImpl implements GarApiService {
 
   private List<BuildDetailsInternal> paginate(GarInternalConfig garinternalConfig, GarRestClient garRestClient,
       String versionRegex, int maxNumberOfBuilds) throws IOException {
-    List<BuildDetailsInternal> details = Collections.<BuildDetailsInternal>emptyList(); // TODO
+    List<BuildDetailsInternal> details = new ArrayList<>();
 
     String nextPage = "";
     String project = garinternalConfig.getProject();
@@ -124,15 +133,11 @@ public class GARApiServiceImpl implements GarApiService {
 
       GarPackageVersionResponse page = response.body();
       List<BuildDetailsInternal> pageDetails = processPage(page, versionRegex);
-      if (details.isEmpty()) {
-        details = pageDetails;
-      } else {
-        details.addAll(pageDetails);
-      }
+      details.addAll(pageDetails);
 
       if (details.size() >= maxNumberOfBuilds || page == null || StringUtils.isBlank(page.getNextPageToken())) {
         break;
-      } // TODO -1
+      }
 
       nextPage = StringUtils.isBlank(page.getNextPageToken()) ? null : page.getNextPageToken();
     } while (StringUtils.isNotBlank(nextPage));

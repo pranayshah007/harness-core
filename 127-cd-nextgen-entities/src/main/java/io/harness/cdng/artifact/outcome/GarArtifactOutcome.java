@@ -6,6 +6,7 @@ import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.artifact.ArtifactSummary;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
@@ -24,11 +25,14 @@ public class GarArtifactOutcome implements ArtifactOutcome {
   String project;
   String repositoryName;
   String region;
-  String pkg;
+  @JsonProperty("package") String pkg;
   String version;
   String versionRegex;
   String type;
   String identifier;
+  String image;
+  String registryHostname;
+  String imagePullSecret;
   boolean primaryArtifact;
   @Override
   public ArtifactSummary getArtifactSummary() {

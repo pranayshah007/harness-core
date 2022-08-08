@@ -62,6 +62,7 @@ public class GARResourceServiceImpl implements GARResourceService {
   private final ConnectorService connectorService;
   private final SecretManagerClientService secretManagerClientService;
   private static final int TIMEOUTINSEC = 30;
+  private static final int MAXBUILDS = -1;
   @Inject private DelegateGrpcClientWrapper delegateGrpcClientWrapper;
 
   @Inject
@@ -80,7 +81,7 @@ public class GARResourceServiceImpl implements GARResourceService {
     List<EncryptedDataDetail> encryptionDetails = getEncryptionDetails(connector, baseNGAccess);
     GarDelegateRequest googleArtifactDelegateRequest =
         ArtifactDelegateRequestUtils.getGoogleArtifactDelegateRequest(region, repositoryName, project, pkg, version,
-            versionRegex, connector, encryptionDetails, ArtifactSourceType.GOOGLE_ARTIFACT_REGISTRY);
+            versionRegex, connector, encryptionDetails, ArtifactSourceType.GOOGLE_ARTIFACT_REGISTRY, MAXBUILDS);
 
     try {
       ArtifactTaskExecutionResponse artifactTaskExecutionResponse = executeSyncTask(googleArtifactDelegateRequest,

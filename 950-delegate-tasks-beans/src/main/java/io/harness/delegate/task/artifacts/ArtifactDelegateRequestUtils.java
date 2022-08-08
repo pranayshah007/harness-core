@@ -76,11 +76,11 @@ public class ArtifactDelegateRequestUtils {
   }
   public GarDelegateRequest getGoogleArtifactDelegateRequest(String region, String repositoryName, String project,
       String pkg, String version, String versionRegex, GcpConnectorDTO gcpConnectorDTO,
-      List<EncryptedDataDetail> encryptedDataDetails, ArtifactSourceType sourceType) {
+      List<EncryptedDataDetail> encryptedDataDetails, ArtifactSourceType sourceType, int MAXBUILDS) {
     return GarDelegateRequest.builder()
         .region(trim(region))
         .project(trim(project))
-        .maxBuilds(1000)
+        .maxBuilds(MAXBUILDS == -1 ? Integer.MAX_VALUE : MAXBUILDS)
         .repositoryName(trim(repositoryName))
         .gcpConnectorDTO(gcpConnectorDTO)
         .sourceType(sourceType)
