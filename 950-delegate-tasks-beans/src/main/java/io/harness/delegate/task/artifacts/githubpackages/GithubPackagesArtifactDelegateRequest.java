@@ -58,13 +58,10 @@ public class GithubPackagesArtifactDelegateRequest implements ArtifactSourceDele
         new ArrayList<>(EncryptedDataDetailsCapabilityHelper.fetchExecutionCapabilitiesForEncryptedDataDetails(
             encryptedDataDetails, maskingEvaluator));
     if (githubConnectorDTO.getAuthentication().getCredentials() != null) {
-      if (githubConnectorDTO.getAuthentication().getAuthType() == GitAuthType.HTTP
-          || githubConnectorDTO.getAuthentication().getAuthType() == GitAuthType.SSH) {
+      if (githubConnectorDTO.getAuthentication().getAuthType() == GitAuthType.HTTP) {
         populateDelegateSelectorCapability(capabilities, githubConnectorDTO.getDelegateSelectors());
-        if (githubConnectorDTO.getAuthentication().getAuthType() == GitAuthType.HTTP) {
-          capabilities.add(HttpConnectionExecutionCapabilityGenerator.buildHttpConnectionExecutionCapability(
-              githubConnectorDTO.getGitConnectionUrl(), maskingEvaluator));
-        }
+        capabilities.add(HttpConnectionExecutionCapabilityGenerator.buildHttpConnectionExecutionCapability(
+            githubConnectorDTO.getGitConnectionUrl(), maskingEvaluator));
       } else {
         throw new UnknownEnumTypeException(
             "Github Credential Type", String.valueOf(githubConnectorDTO.getAuthentication().getAuthType()));
