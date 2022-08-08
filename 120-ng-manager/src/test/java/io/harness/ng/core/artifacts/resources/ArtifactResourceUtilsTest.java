@@ -7,7 +7,6 @@
 
 package io.harness.ng.core.artifacts.resources;
 
-import static io.harness.rule.OwnerRule.HINGER;
 import static io.harness.rule.OwnerRule.INDER;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -163,60 +162,6 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
       + "          type: String\n"
       + "          value: <+input>\n";
 
-  private static final String pipelineWithServiceEnvRef = "pipeline:\n"
-      + "    name: artifactTestV2\n"
-      + "    identifier: artifactTestV2\n"
-      + "    projectIdentifier: svcenvrefactor\n"
-      + "    orgIdentifier: default\n"
-      + "    tags: {}\n"
-      + "    stages:\n"
-      + "        - stage:\n"
-      + "              name: test\n"
-      + "              identifier: test\n"
-      + "              description: \"\"\n"
-      + "              type: Deployment\n"
-      + "              spec:\n"
-      + "                  deploymentType: Kubernetes\n"
-      + "                  service:\n"
-      + "                      serviceRef: variableTestSvc\n"
-      + "                      serviceInputs:\n"
-      + "                          serviceDefinition:\n"
-      + "                              type: Kubernetes\n"
-      + "                              spec:\n"
-      + "                                  artifacts:\n"
-      + "                                      primary:\n"
-      + "                                          type: DockerRegistry\n"
-      + "                                          spec:\n"
-      + "                                              tag: <+input>\n"
-      + "                  environment:\n"
-      + "                      environmentRef: newV2Env\n"
-      + "                      deployToAll: false\n"
-      + "                      infrastructureDefinitions:\n"
-      + "                          - identifier: infra\n"
-      + "                  execution:\n"
-      + "                      steps:\n"
-      + "                          - step:\n"
-      + "                                name: Rollout Deployment\n"
-      + "                                identifier: rolloutDeployment\n"
-      + "                                type: K8sRollingDeploy\n"
-      + "                                timeout: 10m\n"
-      + "                                spec:\n"
-      + "                                    skipDryRun: false\n"
-      + "                      rollbackSteps:\n"
-      + "                          - step:\n"
-      + "                                name: Rollback Rollout Deployment\n"
-      + "                                identifier: rollbackRolloutDeployment\n"
-      + "                                type: K8sRollingRollback\n"
-      + "                                timeout: 10m\n"
-      + "                                spec: {}\n"
-      + "              tags: {}\n"
-      + "              failureStrategies:\n"
-      + "                  - onFailure:\n"
-      + "                        errors:\n"
-      + "                            - AllErrors\n"
-      + "                        action:\n"
-      + "                            type: StageRollback\n";
-
   @Test
   @Owner(developers = INDER)
   @Category(UnitTests.class)
@@ -271,82 +216,107 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
   }
 
   @Test
-  @Owner(developers = HINGER)
+  @Owner(developers = INDER)
   @Category(UnitTests.class)
-  public void testGetResolvedPathWithImagePathAsServiceExpression() throws IOException {
-    Call<ResponseDTO<MergeInputSetResponseDTOPMS>> mergeInputSetCall = mock(Call.class);
-    when(pipelineServiceClient.getMergeInputSetFromPipelineTemplate(
-             any(), any(), any(), any(), any(), any(), any(), any(), any(), any()))
-        .thenReturn(mergeInputSetCall);
-    when(mergeInputSetCall.execute())
-        .thenReturn(Response.success(ResponseDTO.newResponse(MergeInputSetResponseDTOPMS.builder()
-                                                                 .isErrorResponse(false)
-                                                                 .completePipelineYaml(pipelineYamlWithoutTemplates)
-                                                                 .build())));
+  public void testGetResolvedPathWithImagePathAsServiceAndEnvExpression() throws IOException {
+    String yaml = readFile("artifacts/pipeline-without-ser-env-refactoring.yaml");
+    mockMergeInputSetCall(yaml);
+    mockServiceGetCall();
+    mockEnvironmentGetCall();
 
-    when(serviceEntityService.get(anyString(), anyString(), anyString(), anyString(), anyBoolean()))
-        .thenReturn(Optional.of(ServiceEntity.builder()
-                                    .name("svc1")
-                                    .identifier("svc1")
-                                    .yaml("service:\n"
-                                        + "    name: svc1\n"
-                                        + "    identifier: svc1\n"
-                                        + "    tags: {}")
-                                    .build()));
-
-    // resolve expressions like <+service.name>
+    // resolve expressions like <+service.name> in normal stage
     String imagePath = artifactResourceUtils.getResolvedImagePath(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, "",
         "<+service.name>", "pipeline.stages.test.spec.serviceConfig.serviceDefinition.spec.artifacts.primary.spec.tag",
         GitEntityFindInfoDTO.builder().build(), "");
     assertThat(imagePath).isEqualTo("svc1");
-  }
 
-  @Test
-  @Owner(developers = HINGER)
-  @Category(UnitTests.class)
-  public void testGetResolvedPathWithSideCarImagePathAsServiceExpression() throws IOException {
-    Call<ResponseDTO<MergeInputSetResponseDTOPMS>> mergeInputSetCall = mock(Call.class);
-    when(pipelineServiceClient.getMergeInputSetFromPipelineTemplate(
-             any(), any(), any(), any(), any(), any(), any(), any(), any(), any()))
-        .thenReturn(mergeInputSetCall);
-    when(mergeInputSetCall.execute())
-        .thenReturn(Response.success(ResponseDTO.newResponse(MergeInputSetResponseDTOPMS.builder()
-                                                                 .isErrorResponse(false)
-                                                                 .completePipelineYaml(pipelineYamlWithoutTemplates)
-                                                                 .build())));
+    // resolve expressions like <+service.name> in parallel stage
+    imagePath = artifactResourceUtils.getResolvedImagePath(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, "",
+        "<+service.name>", "pipeline.stages.test2.spec.serviceConfig.serviceDefinition.spec.artifacts.primary.spec.tag",
+        GitEntityFindInfoDTO.builder().build(), "");
+    assertThat(imagePath).isEqualTo("svc1");
 
-    when(serviceEntityService.get(anyString(), anyString(), anyString(), anyString(), anyBoolean()))
-        .thenReturn(Optional.of(ServiceEntity.builder()
-                                    .name("svc1")
-                                    .identifier("svc1")
-                                    .yaml("service:\n"
-                                        + "    name: svc1\n"
-                                        + "    identifier: svc1\n"
-                                        + "    tags: {}")
-                                    .build()));
-
-    // resolve expressions like <+service.name>
-    String imagePath =
+    // fqnPath is for sidecar tag in normal stage
+    imagePath =
         artifactResourceUtils.getResolvedImagePath(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, "", "<+service.name>",
             "pipeline.stages.test.spec.serviceConfig.serviceDefinition.spec.artifacts.sidecars.sidecar_id.spec.tag",
             GitEntityFindInfoDTO.builder().build(), "");
     assertThat(imagePath).isEqualTo("svc1");
+
+    // fqnPath is for sidecar tag in parallel stage
+    imagePath =
+        artifactResourceUtils.getResolvedImagePath(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, "", "<+service.name>",
+            "pipeline.stages.test2.spec.serviceConfig.serviceDefinition.spec.artifacts.sidecars.sidecar_id.spec.tag",
+            GitEntityFindInfoDTO.builder().build(), "");
+    assertThat(imagePath).isEqualTo("svc1");
+
+    // resolve env expressions in normal stage
+    imagePath =
+        artifactResourceUtils.getResolvedImagePath(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, "", "<+env.name>",
+            "pipeline.stages.test.spec.serviceConfig.serviceDefinition.spec.artifacts.sidecars.sidecar_id.spec.tag",
+            GitEntityFindInfoDTO.builder().build(), "");
+    assertThat(imagePath).isEqualTo("env1");
+
+    // resolve env expressions in parallel stage
+    imagePath = artifactResourceUtils.getResolvedImagePath(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, "",
+        "<+env.name>", "pipeline.stages.test2.spec.serviceConfig.serviceDefinition.spec.artifacts.primary.spec.tag",
+        GitEntityFindInfoDTO.builder().build(), "");
+    assertThat(imagePath).isEqualTo("env1");
   }
 
   @Test
-  @Owner(developers = HINGER)
+  @Owner(developers = INDER)
   @Category(UnitTests.class)
-  public void testGetResolvedPathWithImagePathAs_EnvironmentExpression() throws IOException {
-    Call<ResponseDTO<MergeInputSetResponseDTOPMS>> mergeInputSetCall = mock(Call.class);
-    when(pipelineServiceClient.getMergeInputSetFromPipelineTemplate(
-             any(), any(), any(), any(), any(), any(), any(), any(), any(), any()))
-        .thenReturn(mergeInputSetCall);
-    when(mergeInputSetCall.execute())
-        .thenReturn(Response.success(ResponseDTO.newResponse(MergeInputSetResponseDTOPMS.builder()
-                                                                 .isErrorResponse(false)
-                                                                 .completePipelineYaml(pipelineYamlWithoutTemplates)
-                                                                 .build())));
+  public void testGetResolvedPathWithImagePathAsServiceAndEnvExpressionAfterSerEnvRefactoring() throws IOException {
+    String yaml = readFile("artifacts/pipeline-with-service-env-ref.yaml");
+    mockMergeInputSetCall(yaml);
+    mockServiceV2GetCall();
+    mockEnvironmentV2GetCall();
 
+    // resolve expressions like <+service.name> in normal stage
+    String imagePath =
+        artifactResourceUtils.getResolvedImagePath(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, "", "<+service.name>",
+            "pipeline.stages.test.spec.service.serviceInputs.serviceDefinition.spec.artifacts.primary.spec.tag",
+            GitEntityFindInfoDTO.builder().build(), "");
+    assertThat(imagePath).isEqualTo("svc1");
+
+    // resolve expressions like <+service.name> in parallel stage
+    imagePath =
+        artifactResourceUtils.getResolvedImagePath(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, "", "<+service.name>",
+            "pipeline.stages.test2.spec.service.serviceInputs.serviceDefinition.spec.artifacts.primary.spec.tag",
+            GitEntityFindInfoDTO.builder().build(), "");
+    assertThat(imagePath).isEqualTo("svc1");
+
+    // fqnPath is for sidecar tag in normal stage
+    imagePath = artifactResourceUtils.getResolvedImagePath(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, "",
+        "<+service.name>",
+        "pipeline.stages.test.spec.service.serviceInputs.serviceDefinition.spec.artifacts.sidecars.sidecar_id.spec.tag",
+        GitEntityFindInfoDTO.builder().build(), "");
+    assertThat(imagePath).isEqualTo("svc1");
+
+    // fqnPath is for sidecar tag in parallel stage
+    imagePath = artifactResourceUtils.getResolvedImagePath(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, "",
+        "<+service.name>",
+        "pipeline.stages.test2.spec.service.serviceInputs.serviceDefinition.spec.artifacts.sidecars.sidecar_id.spec.tag",
+        GitEntityFindInfoDTO.builder().build(), "");
+    assertThat(imagePath).isEqualTo("svc1");
+
+    // resolve env expressions in normal stage
+    imagePath = artifactResourceUtils.getResolvedImagePath(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, "",
+        "<+env.name>",
+        "pipeline.stages.test.spec.service.serviceInputs.serviceDefinition.spec.artifacts.sidecars.sidecar_id.spec.tag",
+        GitEntityFindInfoDTO.builder().build(), "");
+    assertThat(imagePath).isEqualTo("env1");
+
+    // resolve env expressions in parallel stage
+    imagePath =
+        artifactResourceUtils.getResolvedImagePath(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, "", "<+env.name>",
+            "pipeline.stages.test2.spec.service.serviceInputs.serviceDefinition.spec.artifacts.primary.spec.tag",
+            GitEntityFindInfoDTO.builder().build(), "");
+    assertThat(imagePath).isEqualTo("env1");
+  }
+
+  private void mockEnvironmentGetCall() {
     when(environmentService.get(anyString(), anyString(), anyString(), anyString(), anyBoolean()))
         .thenReturn(Optional.of(Environment.builder()
                                     .name("env1")
@@ -357,29 +327,21 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
                                         + "    orgIdentifier: org\n"
                                         + "    tags: {}")
                                     .build()));
-
-    // resolve <+env.name>
-    String imagePath =
-        artifactResourceUtils.getResolvedImagePath(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, "", "<+env.name>",
-            "pipeline.stages.test.spec.serviceConfig.serviceDefinition.spec.artifacts.sidecars.sidecar_id.spec.tag",
-            GitEntityFindInfoDTO.builder().build(), "");
-    assertThat(imagePath).isEqualTo("env1");
   }
 
-  @Test
-  @Owner(developers = HINGER)
-  @Category(UnitTests.class)
-  public void testGetResolvedPathWithImagePath_WithServiceEnvV2_EnvExpression() throws IOException {
-    Call<ResponseDTO<MergeInputSetResponseDTOPMS>> mergeInputSetCall = mock(Call.class);
-    when(pipelineServiceClient.getMergeInputSetFromPipelineTemplate(
-             any(), any(), any(), any(), any(), any(), any(), any(), any(), any()))
-        .thenReturn(mergeInputSetCall);
-    when(mergeInputSetCall.execute())
-        .thenReturn(Response.success(ResponseDTO.newResponse(MergeInputSetResponseDTOPMS.builder()
-                                                                 .isErrorResponse(false)
-                                                                 .completePipelineYaml(pipelineWithServiceEnvRef)
-                                                                 .build())));
+  private void mockServiceGetCall() {
+    when(serviceEntityService.get(anyString(), anyString(), anyString(), anyString(), anyBoolean()))
+        .thenReturn(Optional.of(ServiceEntity.builder()
+                                    .name("svc1")
+                                    .identifier("svc1")
+                                    .yaml("service:\n"
+                                        + "    name: svc1\n"
+                                        + "    identifier: svc1\n"
+                                        + "    tags: {}")
+                                    .build()));
+  }
 
+  private void mockEnvironmentV2GetCall() {
     when(environmentService.get(anyString(), anyString(), anyString(), anyString(), anyBoolean()))
         .thenReturn(Optional.of(Environment.builder()
                                     .name("env1")
@@ -394,64 +356,54 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
                                         + "    projectIdentifier: org\n"
                                         + "    variables: []")
                                     .build()));
-
-    // resolve image path for env and pipeline yaml with env ref
-    String imagePath =
-        artifactResourceUtils.getResolvedImagePath(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, "", "<+env.name>",
-            "pipeline.stages.test.spec.service.serviceInputs.serviceDefinition.spec.artifacts.primary.spec.tag",
-            GitEntityFindInfoDTO.builder().build(), "");
-    assertThat(imagePath).isEqualTo("env1");
   }
 
-  @Test
-  @Owner(developers = HINGER)
-  @Category(UnitTests.class)
-  public void testGetResolvedPathWithImagePath_WithServiceEnvV2_ServiceExpression() throws IOException {
-    Call<ResponseDTO<MergeInputSetResponseDTOPMS>> mergeInputSetCall = mock(Call.class);
-    when(pipelineServiceClient.getMergeInputSetFromPipelineTemplate(
-             any(), any(), any(), any(), any(), any(), any(), any(), any(), any()))
-        .thenReturn(mergeInputSetCall);
-    when(mergeInputSetCall.execute())
-        .thenReturn(Response.success(ResponseDTO.newResponse(MergeInputSetResponseDTOPMS.builder()
-                                                                 .isErrorResponse(false)
-                                                                 .completePipelineYaml(pipelineWithServiceEnvRef)
-                                                                 .build())));
-
+  private void mockServiceV2GetCall() {
     when(serviceEntityService.get(anyString(), anyString(), anyString(), anyString(), anyBoolean()))
         .thenReturn(Optional.of(ServiceEntity.builder()
                                     .name("svc1")
                                     .identifier("svc1")
                                     .yaml("service:\n"
-                                        + "    name: svc1\n"
-                                        + "    identifier: svc1\n"
-                                        + "    tags: {}\n"
-                                        + "    serviceDefinition:\n"
-                                        + "        spec:\n"
-                                        + "            artifacts:\n"
-                                        + "                sidecars: []\n"
-                                        + "                primary:\n"
-                                        + "                    spec:\n"
-                                        + "                        connectorRef: account.harnessImage\n"
-                                        + "                        imagePath: library/nginx\n"
-                                        + "                        tag: <+input>\n"
-                                        + "                    type: DockerRegistry\n"
-                                        + "            variables:\n"
-                                        + "                - name: svar1\n"
-                                        + "                  type: String\n"
-                                        + "                  value: ServiceVariable1\n"
-                                        + "                - name: svar2\n"
-                                        + "                  type: String\n"
-                                        + "                  value: ServiceVariable2\n"
-                                        + "        type: Kubernetes\n"
-                                        + "    gitOpsEnabled: false\n")
+                                        + "  name: svc1\n"
+                                        + "  identifier: svc1\n"
+                                        + "  tags: {}\n"
+                                        + "  serviceDefinition:\n"
+                                        + "    spec:\n"
+                                        + "      artifacts:\n"
+                                        + "        sidecars:\n"
+                                        + "          - sidecar:\n"
+                                        + "              spec:\n"
+                                        + "                connectorRef: Docker_Connector\n"
+                                        + "                imagePath: <+service.name>\n"
+                                        + "                tag: <+input>\n"
+                                        + "              identifier: sidecar_id\n"
+                                        + "              type: DockerRegistry\n"
+                                        + "        primary:\n"
+                                        + "          spec:\n"
+                                        + "            connectorRef: account.harnessImage\n"
+                                        + "            imagePath: library/nginx\n"
+                                        + "            tag: <+input>\n"
+                                        + "          type: DockerRegistry\n"
+                                        + "      variables:\n"
+                                        + "        - name: svar1\n"
+                                        + "          type: String\n"
+                                        + "          value: ServiceVariable1\n"
+                                        + "        - name: svar2\n"
+                                        + "          type: String\n"
+                                        + "          value: ServiceVariable2\n"
+                                        + "    type: Kubernetes\n"
+                                        + "  gitOpsEnabled: false")
                                     .build()));
+  }
 
-    // resolve image path for service and pipeline yaml with service,env refs
-    String imagePath =
-        artifactResourceUtils.getResolvedImagePath(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, "", "<+service.name>",
-            "pipeline.stages.test.spec.service.serviceInputs.serviceDefinition.spec.artifacts.primary.spec.tag",
-            GitEntityFindInfoDTO.builder().build(), "svc1");
-    assertThat(imagePath).isEqualTo("svc1");
+  private void mockMergeInputSetCall(String yaml) throws IOException {
+    Call<ResponseDTO<MergeInputSetResponseDTOPMS>> mergeInputSetCall = mock(Call.class);
+    when(pipelineServiceClient.getMergeInputSetFromPipelineTemplate(
+             any(), any(), any(), any(), any(), any(), any(), any(), any(), any()))
+        .thenReturn(mergeInputSetCall);
+    when(mergeInputSetCall.execute())
+        .thenReturn(Response.success(ResponseDTO.newResponse(
+            MergeInputSetResponseDTOPMS.builder().isErrorResponse(false).completePipelineYaml(yaml).build())));
   }
 
   private String readFile(String filename) {
