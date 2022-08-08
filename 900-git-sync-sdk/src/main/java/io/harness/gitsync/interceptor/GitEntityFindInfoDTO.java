@@ -42,4 +42,7 @@ public class GitEntityFindInfoDTO {
   @Parameter(description = "if true, return all the default entities")
   @QueryParam(GitSyncApiConstants.DEFAULT_FROM_OTHER_REPO)
   Boolean defaultFromOtherRepo;
+  @Parameter(description = "if true, return all the default entities", hidden = true)
+  @QueryParam(GitSyncApiConstants.DEFAULT_FROM_OTHER_REPO)
+  Boolean parentEntityRepoURL;
 }

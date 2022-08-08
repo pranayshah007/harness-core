@@ -8,6 +8,7 @@
 package io.harness.repositories;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import static java.lang.String.format;
 import static org.springframework.data.mongodb.core.query.Query.query;
@@ -245,10 +246,16 @@ public class NGTemplateRepositoryCustomImpl implements NGTemplateRepositoryCusto
     if (savedEntity.getStoreType() == StoreType.REMOTE) {
       // fetch yaml from git
       GitEntityInfo gitEntityInfo = GitAwareContextHelper.getGitRequestParamsInfo();
+      String branchName = gitEntityInfo.getBranch();
+      if (isNotEmpty(gitEntityInfo.getParentEntityRepoURL())
+          && !gitEntityInfo.getParentEntityRepoURL().equals(savedEntity.getRepoURL())) {
+        branchName = "";
+      }
+
       savedEntity = (TemplateEntity) gitAwareEntityHelper.fetchEntityFromRemote(savedEntity,
           Scope.of(accountId, orgIdentifier, projectIdentifier),
           GitContextRequestParams.builder()
-              .branchName(gitEntityInfo.getBranch())
+              .branchName(branchName)
               .connectorRef(savedEntity.getConnectorRef())
               .filePath(savedEntity.getFilePath())
               .repoName(savedEntity.getRepo())
@@ -513,5 +520,9 @@ public class NGTemplateRepositoryCustomImpl implements NGTemplateRepositoryCusto
         new TemplateUpdateEvent(templateToUpdate.getAccountIdentifier(), templateToUpdate.getOrgIdentifier(),
             templateToUpdate.getProjectIdentifier(), templateToUpdate, oldTemplateEntity, comments,
             templateUpdateEventType != null ? templateUpdateEventType : TemplateUpdateEventType.OTHERS_EVENT));
+  }
+
+  private String getWorkingBranch(String parentContextRepoURL, ) {
+    return null;
   }
 }
