@@ -16,7 +16,6 @@ import io.harness.network.Http;
 import com.google.inject.Singleton;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.OkHttpClient;
-import retrofit2.Response;
 import retrofit2.Retrofit;
 import retrofit2.converter.jackson.JacksonConverterFactory;
 
@@ -24,8 +23,6 @@ import retrofit2.converter.jackson.JacksonConverterFactory;
 @Singleton
 @Slf4j
 public class GithubPackagesRestClientFactoryImpl implements GithubPackagesRestClientFactory {
-  private static final int Page_Size = 50;
-
   @Override
   public GithubPackagesRestClient getGithubPackagesRestClient(
       GithubPackagesInternalConfig githubPackagesInternalConfig) {

@@ -18,15 +18,7 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
-import io.harness.cdng.artifact.outcome.AcrArtifactOutcome;
-import io.harness.cdng.artifact.outcome.ArtifactOutcome;
-import io.harness.cdng.artifact.outcome.ArtifactoryArtifactOutcome;
-import io.harness.cdng.artifact.outcome.DockerArtifactOutcome;
-import io.harness.cdng.artifact.outcome.EcrArtifactOutcome;
-import io.harness.cdng.artifact.outcome.GcrArtifactOutcome;
-import io.harness.cdng.artifact.outcome.JenkinsArtifactOutcome;
-import io.harness.cdng.artifact.outcome.NexusArtifactOutcome;
-import io.harness.cdng.artifact.outcome.S3ArtifactOutcome;
+import io.harness.cdng.artifact.outcome.*;
 import io.harness.cdng.azure.AzureHelperService;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
@@ -59,6 +51,7 @@ import io.harness.delegate.beans.connector.jenkins.JenkinsUserNamePasswordDTO;
 import io.harness.delegate.beans.connector.nexusconnector.NexusAuthType;
 import io.harness.delegate.beans.connector.nexusconnector.NexusConnectorDTO;
 import io.harness.delegate.beans.connector.nexusconnector.NexusUsernamePasswordAuthDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.delegate.task.artifacts.ArtifactDelegateRequestUtils;
 import io.harness.delegate.task.artifacts.ArtifactSourceConstants;
 import io.harness.delegate.task.artifacts.ArtifactSourceType;
@@ -130,6 +123,10 @@ public class ImagePullSecretUtils {
       case ArtifactSourceConstants.JENKINS_NAME:
         getBuildDetailsFromJenkins((JenkinsArtifactOutcome) artifactOutcome, imageDetailsBuilder, ambiance);
         break;
+      case ArtifactSourceConstants.GITHUB_PACKAGES_NAME:
+        getImageDetailsFromGithubPackages(
+            (GithubPackagesArtifactOutcome) artifactOutcome, imageDetailsBuilder, ambiance);
+        break;
       default:
         throw new UnsupportedOperationException(
             String.format("Unknown Artifact Config type: [%s]", artifactOutcome.getArtifactType()));
@@ -160,6 +157,15 @@ public class ImagePullSecretUtils {
       }
       imageDetailsBuilder.username(credentials.getAccessKey());
       imageDetailsBuilder.password(getPasswordExpression(passwordRef, ambiance));
+    }
+  }
+
+  private void getImageDetailsFromGithubPackages(
+      GithubPackagesArtifactOutcome artifactOutcome, ImageDetailsBuilder imageDetailsBuilder, Ambiance ambiance) {
+    String connectorRef = artifactOutcome.getConnectorRef();
+    ConnectorInfoDTO connectorDTO = getConnector(connectorRef, ambiance);
+    GithubConnectorDTO connectorConfig = (GithubConnectorDTO) connectorDTO.getConnectorConfig();
+    if (connectorConfig.getAuthentication() != null && connectorConfig.getAuthentication().getCredentials() != null) {
     }
   }
 
