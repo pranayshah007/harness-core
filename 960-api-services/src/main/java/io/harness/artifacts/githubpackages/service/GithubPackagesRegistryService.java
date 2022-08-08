@@ -19,8 +19,6 @@ import java.util.List;
 
 @OwnedBy(CDC)
 public interface GithubPackagesRegistryService {
-  int MAX_NO_OF_TAGS_PER_IMAGE = 10000;
-
   /**
    * Gets builds.
    * @return the builds

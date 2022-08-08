@@ -41,8 +41,6 @@ import retrofit2.Response;
 @Slf4j
 public class GithubPackagesRegistryServiceImpl implements GithubPackagesRegistryService {
   @Inject private GithubPackagesRestClientFactory githubPackagesRestClientFactory;
-  private static final String AUTHENTICATE_HEADER = "Www-Authenticate";
-  private static final int MAX_NUMBER_OF_BUILDS = 250;
 
   @Override
   public List<BuildDetails> getBuilds(
