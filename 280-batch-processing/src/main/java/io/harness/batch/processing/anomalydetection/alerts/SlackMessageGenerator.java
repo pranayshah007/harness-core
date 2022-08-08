@@ -119,9 +119,9 @@ public class SlackMessageGenerator {
   public String addClusterInfo(String templateString, AnomalyEntity anomaly) {
     if (EmptyPredicate.isNotEmpty(anomaly.getClusterId())) {
       if (anomaly.getEntityType() == EntityType.CLUSTER) {
-        templateString = templateString + " *Cluster* : <${CLUSTER_URL}|${" + AnomalyEntityKeys.clusterName + "}> ";
+        templateString = templateString + "\n> *Cluster* : <${CLUSTER_URL}|${" + AnomalyEntityKeys.clusterName + "}> ";
       } else {
-        templateString = templateString + " *Cluster* : ${" + AnomalyEntityKeys.clusterName + "}";
+        templateString = templateString + "\n> *Cluster* : ${" + AnomalyEntityKeys.clusterName + "}";
       }
     }
     return templateString;
@@ -212,7 +212,7 @@ public class SlackMessageGenerator {
   }
 
   public LayoutBlock fromAnomaly(AnomalyEntity anomaly) {
-    String templateString = "${ANOMALY_COST}`* (+${ANOMALY_COST_PERCENTAGE}%)  \n>";
+    String templateString = "${ANOMALY_COST}`* (+${ANOMALY_COST_PERCENTAGE}%) ";
     templateString = addClusterInfo(templateString, anomaly);
     templateString = addNamespaceInfo(templateString, anomaly);
     templateString = addWorkloadInfo(templateString, anomaly);
@@ -232,7 +232,7 @@ public class SlackMessageGenerator {
   public String getAnomalyDetailsTemplateString(AnomalyData anomaly) {
     AnomalyEntity anomalyEntity = convertToAnomalyEntity(anomaly);
 
-    String templateString = "${ANOMALY_COST}`* (+${ANOMALY_COST_PERCENTAGE}%)  \n>";
+    String templateString = "${ANOMALY_COST}`* (+${ANOMALY_COST_PERCENTAGE}%)  ";
     templateString = addClusterInfo(templateString, anomalyEntity);
     templateString = addNamespaceInfo(templateString, anomalyEntity);
     templateString = addWorkloadInfo(templateString, anomalyEntity);
