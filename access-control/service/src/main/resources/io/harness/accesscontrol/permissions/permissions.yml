@@ -1,10 +1,10 @@
 # Any edit in this file should accompany an increment in version.
 name: permissionsConfiguration
-version: 34
+version: 35
 permissions:
   - identifier: core_project_delete
     name: Delete Project
-    status: ACTIVE
+    status: EXPERIMENTAL
     includeInAllRoles: false
     allowedScopeLevels:
       - account
@@ -12,7 +12,7 @@ permissions:
       - project
   - identifier: core_project_view
     name: View Project
-    status: ACTIVE
+    status: EXPERIMENTAL
     includeInAllRoles: false
     allowedScopeLevels:
       - account
@@ -20,7 +20,7 @@ permissions:
       - project
   - identifier: core_project_edit
     name: Edit a Project
-    status: ACTIVE
+    status: EXPERIMENTAL
     includeInAllRoles: false
     allowedScopeLevels:
       - account
@@ -28,53 +28,53 @@ permissions:
       - project
   - identifier: core_project_create
     name: Create a Project
-    status: ACTIVE
+    status: EXPERIMENTAL
     includeInAllRoles: false
     allowedScopeLevels:
       - account
       - organization
   - identifier: core_organization_delete
     name: Delete Organization
-    status: ACTIVE
+    status: EXPERIMENTAL
     includeInAllRoles: false
     allowedScopeLevels:
       - account
       - organization
   - identifier: core_organization_view
     name: View Organization
-    status: ACTIVE
+    status: EXPERIMENTAL
     includeInAllRoles: false
     allowedScopeLevels:
       - account
       - organization
   - identifier: core_organization_edit
     name: Edit an Organization
-    status: ACTIVE
+    status: EXPERIMENTAL
     includeInAllRoles: false
     allowedScopeLevels:
       - account
       - organization
   - identifier: core_organization_create
     name: Create an Organization
-    status: ACTIVE
+    status: EXPERIMENTAL
     includeInAllRoles: false
     allowedScopeLevels:
       - account
   - identifier: core_account_edit
     name: Edit Account
-    status: ACTIVE
+    status: EXPERIMENTAL
     includeInAllRoles: false
     allowedScopeLevels:
       - account
   - identifier: core_account_view
     name: View Account
-    status: ACTIVE
+    status: EXPERIMENTAL
     includeInAllRoles: false
     allowedScopeLevels:
       - account
   - identifier: core_secret_delete
     name: Delete Secret
-    status: ACTIVE
+    status: EXPERIMENTAL
     includeInAllRoles: false
     allowedScopeLevels:
       - account
@@ -82,7 +82,7 @@ permissions:
       - project
   - identifier: core_secret_view
     name: View Secret
-    status: ACTIVE
+    status: EXPERIMENTAL
     includeInAllRoles: false
     allowedScopeLevels:
       - account
@@ -90,7 +90,7 @@ permissions:
       - project
   - identifier: core_secret_edit
     name: Create or Edit a Secret
-    status: ACTIVE
+    status: EXPERIMENTAL
     includeInAllRoles: false
     allowedScopeLevels:
       - account
@@ -98,7 +98,7 @@ permissions:
       - project
   - identifier: core_secret_access
     name: Runtime Access on a secret
-    status: ACTIVE
+    status: EXPERIMENTAL
     includeInAllRoles: false
     allowedScopeLevels:
       - account
@@ -106,7 +106,7 @@ permissions:
       - project
   - identifier: core_connector_access
     name: Access a Connector
-    status: ACTIVE
+    status: EXPERIMENTAL
     includeInAllRoles: false
     allowedScopeLevels:
       - account
@@ -114,7 +114,7 @@ permissions:
       - project
   - identifier: core_connector_view
     name: View Connector
-    status: ACTIVE
+    status: EXPERIMENTAL
     includeInAllRoles: false
     allowedScopeLevels:
       - account
@@ -122,7 +122,7 @@ permissions:
       - project
   - identifier: core_connector_edit
     name: Create or Edit a Connector
-    status: ACTIVE
+    status: EXPERIMENTAL
     includeInAllRoles: false
     allowedScopeLevels:
       - account
@@ -130,7 +130,7 @@ permissions:
       - project
   - identifier: core_connector_delete
     name: Delete Connector
-    status: ACTIVE
+    status: EXPERIMENTAL
     includeInAllRoles: false
     allowedScopeLevels:
       - account
@@ -138,25 +138,25 @@ permissions:
       - project
   - identifier: core_smtp_view
     name: View SMTP Config
-    status: ACTIVE
+    status: EXPERIMENTAL
     includeInAllRoles: false
     allowedScopeLevels:
       - account
   - identifier: core_smtp_edit
     name: Create or Edit a SMTP Config
-    status: ACTIVE
+    status: EXPERIMENTAL
     includeInAllRoles: false
     allowedScopeLevels:
       - account
   - identifier: core_smtp_delete
     name: Delete SMTP Config
-    status: ACTIVE
+    status: EXPERIMENTAL
     includeInAllRoles: false
     allowedScopeLevels:
       - account
   - identifier: core_delegate_view
     name: View Delegates
-    status: ACTIVE
+    status: EXPERIMENTAL
     includeInAllRoles: false
     allowedScopeLevels:
       - account
@@ -164,7 +164,7 @@ permissions:
       - project
   - identifier: core_delegate_edit
     name: Create or Edit a Delegate
-    status: ACTIVE
+    status: EXPERIMENTAL
     includeInAllRoles: false
     allowedScopeLevels:
       - account
@@ -172,7 +172,7 @@ permissions:
       - project
   - identifier: core_delegate_delete
     name: Delete Delegate
-    status: ACTIVE
+    status: EXPERIMENTAL
     includeInAllRoles: false
     allowedScopeLevels:
       - account
@@ -180,7 +180,7 @@ permissions:
       - project
   - identifier: core_delegateconfiguration_view
     name: View Delegate Configurations
-    status: ACTIVE
+    status: EXPERIMENTAL
     includeInAllRoles: false
     allowedScopeLevels:
       - account
@@ -188,7 +188,7 @@ permissions:
       - project
   - identifier: core_delegateconfiguration_edit
     name: Create or Edit a Delegate Configuration
-    status: ACTIVE
+    status: EXPERIMENTAL
     includeInAllRoles: false
     allowedScopeLevels:
       - account
@@ -196,7 +196,7 @@ permissions:
       - project
   - identifier: core_delegateconfiguration_delete
     name: Delete Delegate Configuration
-    status: ACTIVE
+    status: EXPERIMENTAL
     includeInAllRoles: false
     allowedScopeLevels:
       - account
@@ -204,7 +204,7 @@ permissions:
       - project
   - identifier: core_pipeline_view
     name: View Pipeline
-    status: ACTIVE
+    status: EXPERIMENTAL
     includeInAllRoles: false
     allowedScopeLevels:
       - account
@@ -212,7 +212,7 @@ permissions:
       - project
   - identifier: core_pipeline_edit
     name: Create or Edit Pipeline
-    status: ACTIVE
+    status: EXPERIMENTAL
     includeInAllRoles: false
     allowedScopeLevels:
       - account
@@ -220,7 +220,7 @@ permissions:
       - project
   - identifier: core_pipeline_delete
     name: Delete Pipeline
-    status: ACTIVE
+    status: EXPERIMENTAL
     includeInAllRoles: false
     allowedScopeLevels:
       - account
@@ -228,7 +228,7 @@ permissions:
       - project
   - identifier: core_pipeline_execute
     name: Run Pipeline
-    status: ACTIVE
+    status: EXPERIMENTAL
     includeInAllRoles: false
     allowedScopeLevels:
       - account
@@ -236,7 +236,7 @@ permissions:
       - project
   - identifier: core_service_view
     name: View Service
-    status: ACTIVE
+    status: EXPERIMENTAL
     includeInAllRoles: false
     allowedScopeLevels:
       - account
@@ -244,7 +244,7 @@ permissions:
       - project
   - identifier: core_service_edit
     name: Create or Edit Service
-    status: ACTIVE
+    status: EXPERIMENTAL
     includeInAllRoles: false
     allowedScopeLevels:
       - account
@@ -252,7 +252,7 @@ permissions:
       - project
   - identifier: core_service_delete
     name: Delete Service
-    status: ACTIVE
+    status: EXPERIMENTAL
     includeInAllRoles: false
     allowedScopeLevels:
       - account
@@ -260,7 +260,7 @@ permissions:
       - project
   - identifier: core_service_access
     name: Runtime Access to Service
-    status: ACTIVE
+    status: EXPERIMENTAL
     includeInAllRoles: false
     allowedScopeLevels:
       - account
@@ -268,7 +268,7 @@ permissions:
       - project
   - identifier: core_environment_view
     name: View Environment
-    status: ACTIVE
+    status: EXPERIMENTAL
     includeInAllRoles: false
     allowedScopeLevels:
       - account
@@ -276,7 +276,7 @@ permissions:
       - project
   - identifier: core_environment_edit
     name: Create or Edit Environment
-    status: ACTIVE
+    status: EXPERIMENTAL
     includeInAllRoles: false
     allowedScopeLevels:
       - account
@@ -284,7 +284,7 @@ permissions:
       - project
   - identifier: core_environment_delete
     name: Delete Environment
-    status: ACTIVE
+    status: EXPERIMENTAL
     includeInAllRoles: false
     allowedScopeLevels:
       - account
@@ -292,7 +292,7 @@ permissions:
       - project
   - identifier: core_environment_access
     name: Runtime Access to Environment
-    status: ACTIVE
+    status: EXPERIMENTAL
     includeInAllRoles: false
     allowedScopeLevels:
       - account
@@ -300,7 +300,7 @@ permissions:
       - project
   - identifier: core_environmentgroup_view
     name: View Environment Group
-    status: ACTIVE
+    status: EXPERIMENTAL
     includeInAllRoles: false
     allowedScopeLevels:
       - account
@@ -308,7 +308,7 @@ permissions:
       - project
   - identifier: core_environmentgroup_edit
     name: Create or Edit Environment Group
-    status: ACTIVE
+    status: EXPERIMENTAL
     includeInAllRoles: false
     allowedScopeLevels:
       - account
@@ -316,7 +316,7 @@ permissions:
       - project
   - identifier: core_environmentgroup_delete
     name: Delete Environment Group
-    status: ACTIVE
+    status: EXPERIMENTAL
     includeInAllRoles: false
     allowedScopeLevels:
       - account
@@ -324,7 +324,7 @@ permissions:
       - project
   - identifier: core_environmentgroup_access
     name: Access Environment Group
-    status: ACTIVE
+    status: EXPERIMENTAL
     includeInAllRoles: false
     allowedScopeLevels:
       - account
@@ -332,7 +332,7 @@ permissions:
       - project
   - identifier: core_audit_view
     name: View Audits
-    status: ACTIVE
+    status: EXPERIMENTAL
     includeInAllRoles: false
     allowedScopeLevels:
       - account
@@ -340,7 +340,7 @@ permissions:
       - project
   - identifier: core_usergroup_view
     name: View User Groups
-    status: ACTIVE
+    status: EXPERIMENTAL
     includeInAllRoles: false
     allowedScopeLevels:
       - account
@@ -348,7 +348,7 @@ permissions:
       - project
   - identifier: core_usergroup_manage
     name: Manage User Groups
-    status: ACTIVE
+    status: EXPERIMENTAL
     includeInAllRoless: false
     allowedScopeLevels:
       - account
@@ -356,7 +356,7 @@ permissions:
       - project
   - identifier: core_user_view
     name: View Users
-    status: ACTIVE
+    status: EXPERIMENTAL
     includeInAllRoles: false
     allowedScopeLevels:
       - account
@@ -364,7 +364,7 @@ permissions:
       - project
   - identifier: core_user_manage
     name: Manage Users
-    status: ACTIVE
+    status: EXPERIMENTAL
     includeInAllRoles: false
     allowedScopeLevels:
       - account
@@ -372,7 +372,7 @@ permissions:
       - project
   - identifier: core_role_view
     name: View Roles
-    status: ACTIVE
+    status: EXPERIMENTAL
     includeInAllRoles: false
     allowedScopeLevels:
       - account
@@ -380,7 +380,7 @@ permissions:
       - project
   - identifier: core_role_edit
     name: Create or Edit Role
-    status: ACTIVE
+    status: EXPERIMENTAL
     includeInAllRoles: false
     allowedScopeLevels:
       - account
@@ -388,7 +388,7 @@ permissions:
       - project
   - identifier: core_role_delete
     name: Delete Role
-    status: ACTIVE
+    status: EXPERIMENTAL
     includeInAllRoles: false
     allowedScopeLevels:
       - account
@@ -396,7 +396,7 @@ permissions:
       - project
   - identifier: core_resourcegroup_view
     name: View Resource Groups
-    status: ACTIVE
+    status: EXPERIMENTAL
     includeInAllRoles: false
     allowedScopeLevels:
       - account
@@ -404,7 +404,7 @@ permissions:
       - project
   - identifier: core_resourcegroup_edit
     name: Create or Edit Resource Group
-    status: ACTIVE
+    status: EXPERIMENTAL
     includeInAllRoles: false
     allowedScopeLevels:
       - account
@@ -412,7 +412,7 @@ permissions:
       - project
   - identifier: core_resourcegroup_delete
     name: Delete Resource Group
-    status: ACTIVE
+    status: EXPERIMENTAL
     includeInAllRoles: false
     allowedScopeLevels:
       - account
@@ -420,7 +420,7 @@ permissions:
       - project
   - identifier: core_user_invite
     name: Invite a user
-    status: ACTIVE
+    status: EXPERIMENTAL
     includeInAllRoles: false
     allowedScopeLevels:
       - account
@@ -428,19 +428,19 @@ permissions:
       - project
   - identifier: core_license_view
     name: View Licenses
-    status: ACTIVE
+    status: EXPERIMENTAL
     includeInAllRoles: false
     allowedScopeLevels:
       - account
   - identifier: core_license_edit
     name: Edit Licenses
-    status: ACTIVE
+    status: EXPERIMENTAL
     includeInAllRoles: false
     allowedScopeLevels:
       - account
   - identifier: core_serviceaccount_view
     name: View ServiceAccount details
-    status: ACTIVE
+    status: EXPERIMENTAL
     includeInAllRoles: false
     allowedScopeLevels:
       - account
@@ -448,7 +448,7 @@ permissions:
       - project
   - identifier: core_serviceaccount_edit
     name: Create or Edit ServiceAccount
-    status: ACTIVE
+    status: EXPERIMENTAL
     includeInAllRoles: false
     allowedScopeLevels:
       - account
@@ -456,7 +456,7 @@ permissions:
       - project
   - identifier: core_serviceaccount_delete
     name: Delete ServiceAccount
-    status: ACTIVE
+    status: EXPERIMENTAL
     includeInAllRoles: false
     allowedScopeLevels:
       - account
@@ -464,7 +464,7 @@ permissions:
       - project
   - identifier: core_serviceaccount_manageapikey
     name: Manage API keys for Service Account
-    status: ACTIVE
+    status: EXPERIMENTAL
     includeInAllRoles: false
     allowedScopeLevels:
       - account
@@ -472,137 +472,137 @@ permissions:
       - project
   - identifier: core_authsetting_view
     name: View Auth setting
-    status: ACTIVE
+    status: EXPERIMENTAL
     includeInAllRoles: false
     allowedScopeLevels:
       - account
   - identifier: core_authsetting_edit
     name: Edit Auth setting
-    status: ACTIVE
+    status: EXPERIMENTAL
     includeInAllRoles: false
     allowedScopeLevels:
       - account
   - identifier: core_authsetting_delete
     name: Edit Auth setting
-    status: ACTIVE
+    status: EXPERIMENTAL
     includeInAllRoles: false
     allowedScopeLevels:
       - account
   - identifier: ff_featureflag_edit
     name: Create or edit Feature Flags
-    status: ACTIVE
+    status: EXPERIMENTAL
     allowedScopeLevels:
       - account
       - organization
       - project
   - identifier: ff_featureflag_delete
     name: Delete Feature Flags
-    status: ACTIVE
+    status: EXPERIMENTAL
     allowedScopeLevels:
       - account
       - organization
       - project
   - identifier: ff_featureflag_view
     name: View Feature Flags
-    status: ACTIVE
+    status: EXPERIMENTAL
     allowedScopeLevels:
       - account
       - organization
       - project
   - identifier: ff_targetgroup_view
     name: View Target Groups
-    status: ACTIVE
+    status: EXPERIMENTAL
     allowedScopeLevels:
       - account
       - organization
       - project
   - identifier: ff_targetgroup_edit
     name: Create or Edit Target Groups
-    status: ACTIVE
+    status: EXPERIMENTAL
     allowedScopeLevels:
       - account
       - organization
       - project
   - identifier: ff_targetgroup_delete
     name: Delete Target Groups
-    status: ACTIVE
+    status: EXPERIMENTAL
     allowedScopeLevels:
       - account
       - organization
       - project
   - identifier: ff_environment_targetGroupEdit
     name: Edit Target Groups
-    status: ACTIVE
+    status: EXPERIMENTAL
     allowedScopeLevels:
       - account
       - organization
       - project
   - identifier: ff_target_view
     name: View Targets
-    status: ACTIVE
+    status: EXPERIMENTAL
     allowedScopeLevels:
       - account
       - organization
       - project
   - identifier: ff_environment_apiKeyView
     name: View Feature Flag Environment API Keys
-    status: ACTIVE
+    status: EXPERIMENTAL
     allowedScopeLevels:
       - account
       - organization
       - project
   - identifier: ff_environment_apiKeyCreate
     name: Create Feature Flag Environment API Keys
-    status: ACTIVE
+    status: EXPERIMENTAL
     allowedScopeLevels:
       - account
       - organization
       - project
   - identifier: ff_environment_apiKeyDelete
     name: Delete Feature Flag API Keys
-    status: ACTIVE
+    status: EXPERIMENTAL
     allowedScopeLevels:
       - account
       - organization
       - project
   - identifier: ff_environment_edit
     name: Edit Feature Flag Environment Configuration
-    status: ACTIVE
+    status: EXPERIMENTAL
     allowedScopeLevels:
       - account
       - organization
       - project
   - identifier: ff_environment_view
     name: View Feature Flag Environment Configuration
-    status: ACTIVE
+    status: EXPERIMENTAL
     allowedScopeLevels:
       - account
       - organization
       - project
   - identifier: ff_featureflag_toggle
     name: Toggle a Feature Flag On or Off
-    status: ACTIVE
+    status: EXPERIMENTAL
     allowedScopeLevels:
       - account
       - organization
       - project
   - identifier: core_dashboards_view
     name: View Dashboards
-    status: ACTIVE
+    status: EXPERIMENTAL
     includeInAllRoles: false
     allowedScopeLevels:
       - account
       - organization
   - identifier: core_dashboards_edit
     name: Edit Dashboards
-    status: ACTIVE
+    status: EXPERIMENTAL
     includeInAllRoles: false
     allowedScopeLevels:
       - account
       - organization
   - identifier: core_template_view
     name: View Templates
-    status: ACTIVE
+    status: EXPERIMENTAL
     includeInAllRoles: false
     allowedScopeLevels:
       - account
@@ -610,7 +610,7 @@ permissions:
       - project
   - identifier: core_template_edit
     name: Edit a Template
-    status: ACTIVE
+    status: EXPERIMENTAL
     includeInAllRoles: false
     allowedScopeLevels:
       - account
@@ -618,7 +618,7 @@ permissions:
       - project
   - identifier: core_template_delete
     name: Delete Template
-    status: ACTIVE
+    status: EXPERIMENTAL
     includeInAllRoles: false
     allowedScopeLevels:
       - account
@@ -626,7 +626,7 @@ permissions:
       - project
   - identifier: core_template_access
     name: Access a Template
-    status: ACTIVE
+    status: EXPERIMENTAL
     includeInAllRoles: false
     allowedScopeLevels:
       - account
@@ -634,56 +634,56 @@ permissions:
       - project
   - identifier: core_governancePolicy_edit
     name: Create or Edit Policies
-    status: ACTIVE
+    status: EXPERIMENTAL
     allowedScopeLevels:
       - account
       - organization
       - project
   - identifier: core_governancePolicy_view
     name: View Policies
-    status: ACTIVE
+    status: EXPERIMENTAL
     allowedScopeLevels:
       - account
       - organization
       - project
   - identifier: core_governancePolicy_delete
     name: Delete Policies
-    status: ACTIVE
+    status: EXPERIMENTAL
     allowedScopeLevels:
       - account
       - organization
       - project
   - identifier: core_governancePolicySets_edit
     name: Create or Edit Policy Sets
-    status: ACTIVE
+    status: EXPERIMENTAL
     allowedScopeLevels:
       - account
       - organization
       - project
   - identifier: core_governancePolicySets_view
     name: View Policy Sets
-    status: ACTIVE
+    status: EXPERIMENTAL
     allowedScopeLevels:
       - account
       - organization
       - project
   - identifier: core_governancePolicySets_delete
     name: Delete Policy Sets
-    status: ACTIVE
+    status: EXPERIMENTAL
     allowedScopeLevels:
       - account
       - organization
       - project
   - identifier: core_governancePolicySets_evaluate
     name: Evaluate Policy Sets
-    status: ACTIVE
+    status: EXPERIMENTAL
     allowedScopeLevels:
       - account
       - organization
       - project
   - identifier: chi_monitoredservice_view
     name: View Monitored Service
-    status: ACTIVE
+    status: EXPERIMENTAL
     includeInAllRoles: false
     allowedScopeLevels:
       - account
@@ -691,7 +691,7 @@ permissions:
       - project
   - identifier: chi_monitoredservice_edit
     name: Create or Edit a Monitored Service
-    status: ACTIVE
+    status: EXPERIMENTAL
     includeInAllRoles: false
     allowedScopeLevels:
       - account
@@ -699,7 +699,7 @@ permissions:
       - project
   - identifier: chi_monitoredservice_delete
     name: Delete a Monitored Service
-    status: ACTIVE
+    status: EXPERIMENTAL
     includeInAllRoles: false
     allowedScopeLevels:
       - account
@@ -707,7 +707,7 @@ permissions:
       - project
   - identifier: chi_monitoredservice_toggle
     name: Toggle a Monitored Service On or Off
-    status: ACTIVE
+    status: EXPERIMENTAL
     includeInAllRoles: false
     allowedScopeLevels:
       - account
@@ -715,7 +715,7 @@ permissions:
       - project
   - identifier: chi_slo_view
     name: View SLO
-    status: ACTIVE
+    status: EXPERIMENTAL
     includeInAllRoles: false
     allowedScopeLevels:
       - account
@@ -723,7 +723,7 @@ permissions:
       - project
   - identifier: chi_slo_edit
     name: Create or Edit a SLO
-    status: ACTIVE
+    status: EXPERIMENTAL
     includeInAllRoles: false
     allowedScopeLevels:
       - account
@@ -731,7 +731,7 @@ permissions:
       - project
   - identifier: chi_slo_delete
     name: Delete a SLO
-    status: ACTIVE
+    status: EXPERIMENTAL
     includeInAllRoles: false
     allowedScopeLevels:
       - account
@@ -739,7 +739,7 @@ permissions:
       - project
   - identifier: gitops_agent_view
     name: View a Gitops Agent
-    status: ACTIVE
+    status: EXPERIMENTAL
     includeInAllRoles: false
     allowedScopeLevels:
       - account
@@ -747,7 +747,7 @@ permissions:
       - project
   - identifier: gitops_agent_edit
     name: Edit a Gitops Agent
-    status: ACTIVE
+    status: EXPERIMENTAL
     includeInAllRoles: false
     allowedScopeLevels:
       - account
@@ -755,7 +755,7 @@ permissions:
       - project
   - identifier: gitops_agent_delete
     name: Delete a Gitops agent
-    status: ACTIVE
+    status: EXPERIMENTAL
     includeInAllRoles: false
     allowedScopeLevels:
       - account
@@ -763,7 +763,7 @@ permissions:
       - project
   - identifier: gitops_application_view
     name: View a Gitops Application
-    status: ACTIVE
+    status: EXPERIMENTAL
     includeInAllRoles: false
     allowedScopeLevels:
       - account
@@ -771,7 +771,7 @@ permissions:
       - project
   - identifier: gitops_application_edit
     name: Edit a Gitops Application
-    status: ACTIVE
+    status: EXPERIMENTAL
     includeInAllRoles: false
     allowedScopeLevels:
       - account
@@ -779,7 +779,7 @@ permissions:
       - project
   - identifier: gitops_application_delete
     name: Delete a Gitops Application
-    status: ACTIVE
+    status: EXPERIMENTAL
     includeInAllRoles: false
     allowedScopeLevels:
       - account
@@ -787,7 +787,7 @@ permissions:
       - project
   - identifier: gitops_application_sync
     name: Sync a Gitops Application
-    status: ACTIVE
+    status: EXPERIMENTAL
     includeInAllRoles: false
     allowedScopeLevels:
       - account
@@ -795,7 +795,7 @@ permissions:
       - project
   - identifier: gitops_repository_view
     name: View a Gitops Repository
-    status: ACTIVE
+    status: EXPERIMENTAL
     includeInAllRoles: false
     allowedScopeLevels:
       - account
@@ -803,7 +803,7 @@ permissions:
       - project
   - identifier: gitops_repository_edit
     name: Edit a Gitops Repository
-    status: ACTIVE
+    status: EXPERIMENTAL
     includeInAllRoles: false
     allowedScopeLevels:
       - account
@@ -811,7 +811,7 @@ permissions:
       - project
   - identifier: gitops_repository_delete
     name: Delete a Gitops Repository
-    status: ACTIVE
+    status: EXPERIMENTAL
     includeInAllRoles: false
     allowedScopeLevels:
       - account
@@ -819,7 +819,7 @@ permissions:
       - project
   - identifier: gitops_cluster_view
     name: View a Gitops Cluster
-    status: ACTIVE
+    status: EXPERIMENTAL
     includeInAllRoles: false
     allowedScopeLevels:
       - account
@@ -827,7 +827,7 @@ permissions:
       - project
   - identifier: gitops_cluster_edit
     name: Edit a Gitops Cluster
-    status: ACTIVE
+    status: EXPERIMENTAL
     includeInAllRoles: false
     allowedScopeLevels:
       - account
@@ -835,7 +835,7 @@ permissions:
       - project
   - identifier: gitops_cluster_delete
     name: Delete a Gitops Cluster
-    status: ACTIVE
+    status: EXPERIMENTAL
     includeInAllRoles: false
     allowedScopeLevels:
       - account
@@ -843,7 +843,7 @@ permissions:
       - project
   - identifier: gitops_gpgkey_view
     name: View a Gitops Gpgkey
-    status: ACTIVE
+    status: EXPERIMENTAL
     includeInAllRoles: false
     allowedScopeLevels:
       - account
@@ -851,7 +851,7 @@ permissions:
       - project
   - identifier: gitops_gpgkey_edit
     name: Edit a Gitops Gpgkey
-    status: ACTIVE
+    status: EXPERIMENTAL
     includeInAllRoles: false
     allowedScopeLevels:
       - account
@@ -859,7 +859,7 @@ permissions:
       - project
   - identifier: gitops_gpgkey_delete
     name: Delete a Gitops Gpgkey
-    status: ACTIVE
+    status: EXPERIMENTAL
     includeInAllRoles: false
     allowedScopeLevels:
       - account
@@ -867,7 +867,7 @@ permissions:
       - project
   - identifier: gitops_cert_view
     name: View a Gitops Cert
-    status: ACTIVE
+    status: EXPERIMENTAL
     includeInAllRoles: false
     allowedScopeLevels:
       - account
@@ -875,7 +875,7 @@ permissions:
       - project
   - identifier: gitops_cert_edit
     name: Edit a Gitops Cert
-    status: ACTIVE
+    status: EXPERIMENTAL
     includeInAllRoles: false
     allowedScopeLevels:
       - account
@@ -883,7 +883,7 @@ permissions:
       - project
   - identifier: gitops_cert_delete
     name: Delete a Gitops Cert
-    status: ACTIVE
+    status: EXPERIMENTAL
     includeInAllRoles: false
     allowedScopeLevels:
       - account
@@ -891,7 +891,7 @@ permissions:
       - project
   - identifier: sto_testtarget_view
     name: View test targets
-    status: ACTIVE
+    status: EXPERIMENTAL
     includeInAllRoles: false
     allowedScopeLevels:
       - account
@@ -899,7 +899,7 @@ permissions:
       - project
   - identifier: sto_testtarget_edit
     name: Edit test targets
-    status: ACTIVE
+    status: EXPERIMENTAL
     includeInAllRoles: false
     allowedScopeLevels:
       - account
@@ -907,7 +907,7 @@ permissions:
       - project
   - identifier: sto_exemption_view
     name: View exemptions
-    status: ACTIVE
+    status: EXPERIMENTAL
     includeInAllRoles: false
     allowedScopeLevels:
       - account
@@ -915,7 +915,7 @@ permissions:
       - project
   - identifier: sto_exemption_create
     name: Create exemption
-    status: ACTIVE
+    status: EXPERIMENTAL
     includeInAllRoles: false
     allowedScopeLevels:
       - account
@@ -923,7 +923,7 @@ permissions:
       - project
   - identifier: sto_exemption_approve
     name: Approve exemption
-    status: ACTIVE
+    status: EXPERIMENTAL
     includeInAllRoles: false
     allowedScopeLevels:
       - account
@@ -931,7 +931,7 @@ permissions:
       - project
   - identifier: sto_issue_view
     name: View security issue
-    status: ACTIVE
+    status: EXPERIMENTAL
     includeInAllRoles: false
     allowedScopeLevels:
       - account
@@ -939,7 +939,7 @@ permissions:
       - project
   - identifier: sto_scan_view
     name: View security scan
-    status: ACTIVE
+    status: EXPERIMENTAL
     includeInAllRoles: false
     allowedScopeLevels:
       - account
@@ -947,7 +947,7 @@ permissions:
       - project
   - identifier: core_file_view
     name: View Files
-    status: ACTIVE
+    status: EXPERIMENTAL
     includeInAllRoles: false
     allowedScopeLevels:
       - account
@@ -955,7 +955,7 @@ permissions:
       - project
   - identifier: core_file_edit
     name: Edit a File
-    status: ACTIVE
+    status: EXPERIMENTAL
     includeInAllRoles: false
     allowedScopeLevels:
       - account
@@ -963,7 +963,7 @@ permissions:
       - project
   - identifier: core_file_delete
     name: Delete File
-    status: ACTIVE
+    status: EXPERIMENTAL
     includeInAllRoles: false
     allowedScopeLevels:
       - account
@@ -971,7 +971,7 @@ permissions:
       - project
   - identifier: core_file_access
     name: Access a File
-    status: ACTIVE
+    status: EXPERIMENTAL
     includeInAllRoles: false
     allowedScopeLevels:
       - account
@@ -979,7 +979,7 @@ permissions:
       - project
   - identifier: core_variable_view
     name: View a Variable
-    status: ACTIVE
+    status: EXPERIMENTAL
     includeInAllRoles: false
     allowedScopeLevels:
       - account
@@ -987,7 +987,7 @@ permissions:
       - project
   - identifier: core_variable_edit
     name: Edit a Variable
-    status: ACTIVE
+    status: EXPERIMENTAL
     includeInAllRoles: false
     allowedScopeLevels:
       - account
@@ -995,7 +995,7 @@ permissions:
       - project
   - identifier: core_variable_delete
     name: Delete a Variable
-    status: ACTIVE
+    status: EXPERIMENTAL
     includeInAllRoles: false
     allowedScopeLevels:
       - account
@@ -1003,7 +1003,7 @@ permissions:
       - project
   - identifier: chaos_chaoshub_view
     name: View a Chaos Hub
-    status: ACTIVE
+    status: EXPERIMENTAL
     includeInAllRoles: false
     allowedScopeLevels:
       - account
@@ -1011,7 +1011,7 @@ permissions:
       - project
   - identifier: chaos_chaoshub_edit
     name: Edit a Chaos Hub
-    status: ACTIVE
+    status: EXPERIMENTAL
     includeInAllRoles: false
     allowedScopeLevels:
       - account
@@ -1019,7 +1019,7 @@ permissions:
       - project
   - identifier: chaos_chaoshub_delete
     name: Delete a Chaos Hub
-    status: ACTIVE
+    status: EXPERIMENTAL
     includeInAllRoles: false
     allowedScopeLevels:
       - account
@@ -1027,7 +1027,7 @@ permissions:
       - project
   - identifier: chaos_chaosagent_view
     name: View a Chaos Agent
-    status: ACTIVE
+    status: EXPERIMENTAL
     includeInAllRoles: false
     allowedScopeLevels:
       - account
@@ -1035,7 +1035,7 @@ permissions:
       - project
   - identifier: chaos_chaosagent_edit
     name: Edit a Chaos Agent
-    status: ACTIVE
+    status: EXPERIMENTAL
     includeInAllRoles: false
     allowedScopeLevels:
       - account
@@ -1043,7 +1043,7 @@ permissions:
       - project
   - identifier: chaos_chaosagent_delete
     name: Delete a Chaos Agent
-    status: ACTIVE
+    status: EXPERIMENTAL
     includeInAllRoles: false
     allowedScopeLevels:
       - account
@@ -1051,7 +1051,7 @@ permissions:
       - project
   - identifier: chaos_chaosgitops_view
     name: View Gitops
-    status: ACTIVE
+    status: EXPERIMENTAL
     includeInAllRoles: false
     allowedScopeLevels:
       - account
@@ -1059,7 +1059,7 @@ permissions:
       - project
   - identifier: chaos_chaosgitops_edit
     name: Edit Gitops
-    status: ACTIVE
+    status: EXPERIMENTAL
     includeInAllRoles: false
     allowedScopeLevels:
       - account
@@ -1067,7 +1067,7 @@ permissions:
       - project
   - identifier: chaos_chaosworkflow_view
     name: View a Chaos Workflow
-    status: ACTIVE
+    status: EXPERIMENTAL
     includedInAllRoles: false
     allowedScopeLevels:
       - account
@@ -1075,7 +1075,7 @@ permissions:
       - project
   - identifier: chaos_chaosworkflow_edit
     name: Edit a Chaos Workflow
-    status: ACTIVE
+    status: EXPERIMENTAL
     includedInAllRoles: false
     allowedScopeLevels:
       - account
@@ -1083,7 +1083,7 @@ permissions:
       - project
   - identifier: chaos_chaosworkflow_delete
     name: Delete a Chaos Workflow
-    status: ACTIVE
+    status: EXPERIMENTAL
     includedInAllRoles: false
     allowedScopeLevels:
       - account
@@ -1091,7 +1091,7 @@ permissions:
       - project
   - identifier: core_setting_view
     name: View Settings
-    status: ACTIVE
+    status: EXPERIMENTAL
     includeInAllRoles: false
     allowedScopeLevels:
       - account
@@ -1099,7 +1099,7 @@ permissions:
       - project
   - identifier: core_setting_edit
     name: Edit a Setting
-    status: ACTIVE
+    status: EXPERIMENTAL
     includeInAllRoles: false
     allowedScopeLevels:
       - account
