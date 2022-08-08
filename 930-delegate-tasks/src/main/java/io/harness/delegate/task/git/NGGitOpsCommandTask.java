@@ -34,6 +34,7 @@ import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabConnectorDTO;
 import io.harness.delegate.beans.gitapi.GitApiMergePRTaskResponse;
+import io.harness.delegate.beans.gitapi.GitApiTaskParams;
 import io.harness.delegate.beans.gitapi.GitApiTaskResponse;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
@@ -45,6 +46,7 @@ import io.harness.delegate.task.AbstractDelegateRunnableTask;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.gitapi.client.impl.AzureRepoApiClient;
 import io.harness.delegate.task.gitapi.client.impl.GithubApiClient;
+import io.harness.delegate.task.gitapi.client.impl.GitlabApiClient;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.git.model.CommitAndPushRequest;
@@ -100,6 +102,7 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
   @Inject private GitDecryptionHelper gitDecryptionHelper;
   @Inject private NGGitService ngGitService;
   @Inject private GithubApiClient githubApiClient;
+  @Inject private GitlabApiClient gitlabApiClient;
   @Inject private AzureRepoApiClient azureRepoApiClient;
 
   public static final String FetchFiles = "Fetch Files";
@@ -143,15 +146,18 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
     try {
       log.info("Running Merge PR Task for activityId {}", gitOpsTaskParams.getActivityId());
       logCallback = new NGDelegateLogCallback(getLogStreamingTaskClient(), MergePR, true, commandUnitsProgress);
-
+      GitApiTaskParams taskParams = gitOpsTaskParams.getGitApiTaskParams();
       ConnectorType connectorType = gitOpsTaskParams.connectorInfoDTO.getConnectorType();
       GitApiTaskResponse responseData;
       switch (connectorType) {
         case GITHUB:
-          responseData = (GitApiTaskResponse) githubApiClient.mergePR(gitOpsTaskParams.getGitApiTaskParams());
+          responseData = (GitApiTaskResponse) githubApiClient.mergePR(taskParams);
+          break;
+        case GITLAB:
+          responseData = (GitApiTaskResponse) gitlabApiClient.mergePR(taskParams);
           break;
         case AZURE_REPO:
-          responseData = (GitApiTaskResponse) azureRepoApiClient.mergePR(gitOpsTaskParams.getGitApiTaskParams());
+          responseData = (GitApiTaskResponse) azureRepoApiClient.mergePR(taskParams);
           break;
 
         default:
