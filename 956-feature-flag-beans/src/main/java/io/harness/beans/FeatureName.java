@@ -413,7 +413,8 @@ public enum FeatureName {
   CG_GIT_POLLING("Poll git based on account config for git sync in CG.", HarnessTeam.SPG),
   GRAPHQL_WORKFLOW_EXECUTION_OPTIMIZATION(
       "Making multiple optimizations for workflow execution graphql in CG", HarnessTeam.SPG),
-  NG_ENABLE_LDAP_CHECK("Enables NG Ldap in NG-UI", HarnessTeam.PL);
+  NG_ENABLE_LDAP_CHECK("Enables NG Ldap in NG-UI", HarnessTeam.PL),
+  CUSTOM_SECRET_MANAGER_NG("Enable Custom Secret Manager in NG", HarnessTeam.PL);
 
   @Deprecated
   FeatureName() {
