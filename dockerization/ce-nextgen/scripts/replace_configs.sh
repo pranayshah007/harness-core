@@ -113,6 +113,12 @@ replace_key_value secretsConfiguration.gcpSecretManagerProject "$GCP_SECRET_MANA
 replace_key_value secretsConfiguration.secretResolutionEnabled  "$RESOLVE_SECRETS"
 replace_key_value awsConnectorCreatedInstantForPolicyCheck $AWS_CONNECTOR_CREATED_INSTANT_FOR_POLICY_CHECK
 
+replace_key_value accessControlClient.enableAccessControl "$ACCESS_CONTROL_ENABLED"
+replace_key_value accessControlClient.accessControlServiceConfig.baseUrl "$ACCESS_CONTROL_BASE_URL"
+replace_key_value accessControlClient.accessControlServiceSecret "$ACCESS_CONTROL_SECRET"
+replace_key_value accessControlAdminClient.accessControlServiceConfig.baseUrl "$ACCESS_CONTROL_BASE_URL"
+replace_key_value accessControlAdminClient.accessControlServiceSecret "$ACCESS_CONTROL_SECRET"
+
 replace_key_value notificationClient.httpClient.baseUrl "$NOTIFICATION_BASE_URL"
 replace_key_value notificationClient.secrets.notificationClientSecret "$NEXT_GEN_MANAGER_SECRET"
 replace_key_value notificationClient.messageBroker.uri "${NOTIFICATION_MONGO_URI//\\&/&}"

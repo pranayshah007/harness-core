@@ -2798,8 +2798,11 @@ public class DelegateServiceImpl implements DelegateService {
     Query<Delegate> delegateQuery = persistence.createQuery(Delegate.class)
                                         .filter(DelegateKeys.accountId, registeredDelegate.getAccountId())
                                         .filter(DelegateKeys.uuid, registeredDelegate.getUuid());
-    persistence.update(
-        delegateQuery, persistence.createUpdateOperations(Delegate.class).set(DelegateKeys.tags, delegateTags));
+
+    UpdateOperations<Delegate> updateOperations = persistence.createUpdateOperations(Delegate.class);
+    setUnset(updateOperations, DelegateKeys.tags, delegateTags);
+
+    persistence.update(delegateQuery, updateOperations);
     registeredDelegate.setTags(delegateTags);
   }
 

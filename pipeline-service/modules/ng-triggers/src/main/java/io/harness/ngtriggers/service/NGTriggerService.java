@@ -66,4 +66,5 @@ public interface NGTriggerService {
   Map<String, Map<String, String>> generateErrorMap(InputSetErrorWrapperDTOPMS inputSetErrorWrapperDTOPMS);
   TriggerDetails fetchTriggerEntity(
       String accountId, String orgId, String projectId, String pipelineId, String triggerId, String newYaml);
+  Object fetchExecutionSummaryV2(String planExecutionId, String accountId, String orgId, String projectId);
 }

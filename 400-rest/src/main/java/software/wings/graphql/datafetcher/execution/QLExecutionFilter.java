@@ -36,9 +36,10 @@ public class QLExecutionFilter extends QLBaseExecutionFilter {
   public QLExecutionFilter(QLIdFilter execution, QLIdFilter application, QLIdFilter service, QLIdFilter cloudProvider,
       QLIdFilter environment, QLEnvironmentTypeFilter environmentType, QLIdFilter status, QLTimeFilter endTime,
       QLTimeFilter startTime, QLNumberFilter duration, QLIdFilter triggeredBy, QLIdFilter trigger, QLIdFilter workflow,
-      QLIdFilter pipeline, QLTimeFilter creationTime, QLDeploymentTagFilter tag, QLIdFilter pipelineExecutionId) {
+      QLIdFilter pipeline, QLTimeFilter creationTime, QLDeploymentTagFilter tag, QLIdFilter pipelineExecutionId,
+      String applicationId) {
     super(execution, application, service, cloudProvider, environment, environmentType, status, endTime, startTime,
-        duration, triggeredBy, trigger, workflow, pipeline, creationTime, tag);
+        duration, triggeredBy, trigger, workflow, pipeline, creationTime, tag, applicationId);
     this.pipelineExecutionId = pipelineExecutionId;
   }
 }
