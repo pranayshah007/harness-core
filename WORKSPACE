@@ -4966,7 +4966,7 @@ plain_artifacts = [
     "org.projectlombok:lombok:1.18.18",
     "org.quartz-scheduler:quartz:2.3.2",
     "org.reactivestreams:reactive-streams:1.0.2",
-    "org.redisson:redisson:3.17.1",
+    "org.redisson:redisson:3.17.5",
     "org.reflections:reflections:0.9.12-SNAPSHOT",
     "org.simpleframework:simple-xml:2.7.1",
     "org.slf4j:jcl-over-slf4j:1.7.30",
@@ -5025,12 +5025,12 @@ plain_artifacts = [
 
 amazon_artifacts = [
     maven.artifact(
-        group = "com.amazonaws",
         artifact = x,
-        version = "1.12.220",
         exclusions = [
             "commons-logging:commons-logging",
         ],
+        group = "com.amazonaws",
+        version = "1.12.220",
     )
     for x in [
         "aws-java-sdk-applicationautoscaling",
@@ -5065,10 +5065,10 @@ amazon_artifacts = [
 
 powermock_artifacts = [
     maven.artifact(
-        group = "org.powermock",
-        artifact = x,
-        version = "2.0.2",
         testonly = True,
+        artifact = x,
+        group = "org.powermock",
+        version = "2.0.2",
     )
     for x in [
         "powermock-api-mockito2",
@@ -5084,94 +5084,94 @@ maven_install(
     name = "maven",
     artifacts = plain_artifacts + amazon_artifacts + powermock_artifacts + [
         maven.artifact(
-            group = "io.netty",
             artifact = "netty-transport-native-kqueue",
-            version = "4.1.77.Final",
             classifier = "osx-x86_64",
+            group = "io.netty",
+            version = "4.1.77.Final",
         ),
         maven.artifact(
-            group = "com.github.reinert",
             artifact = "jjschema",
-            version = "1.0",
             exclusions = [
                 "javax.ws.rs:jsr311-api",
             ],
+            group = "com.github.reinert",
+            version = "1.0",
         ),
         maven.artifact(
-            group = "com.google.apis",
             artifact = "google-api-services-container",
-            version = "v1-rev48-1.23.0",
             exclusions = [
                 "com.google.guava:guava-jdk5",
             ],
+            group = "com.google.apis",
+            version = "v1-rev48-1.23.0",
         ),
         maven.artifact(
-            group = "com.microsoft.azure",
             artifact = "azure",
-            version = "1.31.1",
             exclusions = [
                 "org.slf4j:slf4j-simple",
             ],
+            group = "com.microsoft.azure",
+            version = "1.31.1",
         ),
         maven.artifact(
-            group = "org.clojure",
             artifact = "clojure",
+            exclusions = [
+                "org.clojure:clojure",
+            ],
+            group = "org.clojure",
             version = "1.9.0",
-            exclusions = [
-                "org.clojure:clojure",
-            ],
         ),
         maven.artifact(
-            group = "org.clojure",
             artifact = "core.specs.alpha",
-            version = "0.1.24",
             exclusions = [
                 "org.clojure:clojure",
             ],
-        ),
-        maven.artifact(
             group = "org.clojure",
+            version = "0.1.24",
+        ),
+        maven.artifact(
             artifact = "spec.alpha",
-            version = "0.1.143",
             exclusions = [
                 "org.clojure:clojure",
             ],
+            group = "org.clojure",
+            version = "0.1.143",
         ),
         maven.artifact(
-            group = "io.debezium",
             artifact = "debezium-embedded",
+            exclusions = [
+                "log4j:log4j",
+                "org.slf4j:slf4j-log4j12",
+            ],
+            group = "io.debezium",
             version = "1.7.2.Final",
-            exclusions = [
-                "log4j:log4j",
-                "org.slf4j:slf4j-log4j12",
-            ],
         ),
         maven.artifact(
-            group = "org.apache.kafka",
             artifact = "connect-runtime",
-            version = "2.8.1",
             exclusions = [
                 "log4j:log4j",
                 "org.slf4j:slf4j-log4j12",
             ],
+            group = "org.apache.kafka",
+            version = "2.8.1",
         ),
         maven.artifact(
-            group = "org.opensaml",
             artifact = "opensaml-saml-impl",
-            version = "3.4.3",
             exclusions = [
                 "org.apache.velocity:velocity-engine-core",
                 "org.apache.velocity:velocity",
             ],
+            group = "org.opensaml",
+            version = "3.4.3",
         ),
         maven.artifact(
-            group = "com.coveo",
             artifact = "saml-client",
-            version = "3.0.2",
             exclusions = [
                 "org.apache.velocity:velocity-engine-core",
                 "org.apache.velocity:velocity",
             ],
+            group = "com.coveo",
+            version = "3.0.2",
         ),
         maven_test_artifact("com.github.tomakehurst:wiremock-jre8-standalone:2.27.2"),
         maven_test_artifact("com.icegreen:greenmail:1.5.0"),
@@ -5290,13 +5290,13 @@ maven_install(
         "io.debezium:debezium-connector-mongodb:1.8.0.Final",
         "io.debezium:debezium-core:1.8.0.Final",
         maven.artifact(
-            group = "io.debezium",
             artifact = "debezium-embedded",
-            version = "1.8.0.Final",
             exclusions = [
                 "log4j:log4j",
                 "org.slf4j:slf4j-log4j12",
             ],
+            group = "io.debezium",
+            version = "1.8.0.Final",
         ),
     ],
     repositories = [
