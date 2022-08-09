@@ -52,6 +52,7 @@ type runTask struct {
 	procWriter        io.Writer
 	fs                filesystem.FileSystem
 	cmdContextFactory exec.CmdContextFactory
+	detach            bool
 }
 
 // NewRunTask creates a run step executor
@@ -87,6 +88,7 @@ func NewRunTask(step *pb.UnitStep, prevStepOutputs map[string]*pb.StepOutput, tm
 		fs:                fs,
 		procWriter:        w,
 		addonLogger:       addonLogger,
+		detach:			   r.GetDetach(),
 	}
 }
 
@@ -95,7 +97,12 @@ func (r *runTask) Run(ctx context.Context) (map[string]string, int32, error) {
 	var err error
 	var o map[string]string
 	for i := int32(1); i <= r.numRetries; i++ {
-		if o, err = r.execute(ctx, i); err == nil {
+		if r.detach {
+			o, err = r.executeAsync(ctx, i)
+		} else {
+			o, err = r.execute(ctx, i)
+		}
+		if err == nil {
 			st := time.Now()
 			err = collectTestReports(ctx, r.reports, r.id, r.log)
 			if err != nil {
@@ -170,6 +177,59 @@ func (r *runTask) execute(ctx context.Context, retryCount int32) (map[string]str
 		"elapsed_time_ms", utils.TimeSince(start),
 	)
 	return stepOutput, nil
+}
+
+func (r *runTask) executeAsync(ctx context.Context, retryCount int32) (map[string]string, error) {
+	go func(ctx context.Context, retryCount int32) {
+		start := time.Now()
+		ctx, cancel := context.WithTimeout(ctx, time.Second*time.Duration(r.timeoutSecs))
+		defer cancel()
+
+		outputFile := filepath.Join(r.tmpFilePath, fmt.Sprintf("%s%s", r.id, outputEnvSuffix))
+		cmdToExecute, err := r.getScript(ctx, outputFile)
+		if err != nil {
+			return
+		}
+
+		envVars, err := resolveExprInEnv(r.environment)
+		if err != nil {
+			return
+		}
+
+		shell, entrypointArg, err := r.getEntrypoint()
+		if err != nil {
+			return
+		}
+		cmdArgs := []string{entrypointArg, cmdToExecute}
+
+		cmd := r.cmdContextFactory.CmdContextWithSleep(ctx, cmdExitWaitTime, shell, cmdArgs...).
+			WithStdout(r.procWriter).WithStderr(r.procWriter).WithEnvVarsMap(envVars)
+		err = runCmd(ctx, cmd, r.id, cmdArgs, retryCount, start, r.logMetrics, r.addonLogger)
+		if err != nil {
+			return
+		}
+
+		stepOutput := make(map[string]string)
+		if len(r.envVarOutputs) != 0 {
+			var err error
+			outputVars, err := fetchOutputVariables(outputFile, r.fs, r.log)
+			if err != nil {
+				logCommandExecErr(r.log, "error encountered while fetching output of run step", r.id, cmdToExecute, retryCount, start, err)
+				return
+			}
+
+			stepOutput = outputVars
+		}
+
+		r.addonLogger.Infow(
+			"Successfully executed run step",
+			"arguments", cmdToExecute,
+			"output", stepOutput,
+			"elapsed_time_ms", utils.TimeSince(start),
+		)
+	}(ctx, retryCount)
+
+	return make(map[string]string), nil
 }
 
 func (r *runTask) getScript(ctx context.Context, outputVarFile string) (string, error) {

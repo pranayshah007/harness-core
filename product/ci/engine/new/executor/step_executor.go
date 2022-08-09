@@ -77,7 +77,16 @@ func (e *stepExecutor) Run(ctx context.Context, step *pb.UnitStep) error {
 	// Stops the addon container if step executed successfully.
 	// If step fails, then it can be retried on the same container.
 	// Hence, not stopping failed step containers.
-	if err == nil {
+	detach := false
+	switch step.GetStep().(type) {
+	case *pb.UnitStep_Run:
+		detach = step.GetRun().GetDetach()
+		break
+	default:
+		break
+	}
+
+	if err == nil && detach == false {
 		stopAddon(context.Background(), step.GetId(), step.GetContainerPort(), e.log)
 	}
 
