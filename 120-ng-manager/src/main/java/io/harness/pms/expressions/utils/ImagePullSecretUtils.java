@@ -133,6 +133,7 @@ public class ImagePullSecretUtils {
         break;
       case ArtifactSourceConstants.GOOGLE_ARTIFACT_REGISTRY_NAME:
         getImageDetailsFromGar((GarArtifactOutcome) artifactOutcome, imageDetailsBuilder, ambiance);
+        break;
       default:
         throw new UnsupportedOperationException(
             String.format("Unknown Artifact Config type: [%s]", artifactOutcome.getArtifactType()));
@@ -214,12 +215,9 @@ public class ImagePullSecretUtils {
     String connectorRef = garArtifactOutcome.getConnectorRef();
     ConnectorInfoDTO connectorInfoDTO = getConnector(connectorRef, ambiance);
     GcpConnectorDTO connectorConfig = (GcpConnectorDTO) connectorInfoDTO.getConnectorConfig();
-    //   String imageName
-    //   =String.format("%s/%s/%s/%s:%s",garArtifactOutcome.getRegistryHostname(),garArtifactOutcome.getProject(),garArtifactOutcome.getRepositoryName(),
-    //           garArtifactOutcome.getPkg(),garArtifactOutcome.getVersion());
     String imageName = garArtifactOutcome.getImage();
     imageDetailsBuilder.registryUrl(imageName);
-    imageDetailsBuilder.username("oauth2accesstoken");
+    imageDetailsBuilder.username("_json_key");
     if (connectorConfig.getCredential() != null
         && connectorConfig.getCredential().getGcpCredentialType() == GcpCredentialType.MANUAL_CREDENTIALS) {
       GcpManualDetailsDTO config = (GcpManualDetailsDTO) connectorConfig.getCredential().getConfig();
