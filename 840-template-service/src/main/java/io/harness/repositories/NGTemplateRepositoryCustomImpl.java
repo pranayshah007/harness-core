@@ -249,11 +249,11 @@ public class NGTemplateRepositoryCustomImpl implements NGTemplateRepositoryCusto
     }
     if (savedEntity.getStoreType() == StoreType.REMOTE) {
       // fetch yaml from git
-      GitEntityInfo gitEntityInfo = GitAwareContextHelper.getGitRequestParamsInfo();
+      String branchName = GitAwareContextHelper.getWorkingBranch(savedEntity.getRepoURL());
       savedEntity = (TemplateEntity) gitAwareEntityHelper.fetchEntityFromRemote(savedEntity,
           Scope.of(accountId, orgIdentifier, projectIdentifier),
           GitContextRequestParams.builder()
-              .branchName(gitEntityInfo.getBranch())
+              .branchName(branchName)
               .connectorRef(savedEntity.getConnectorRef())
               .filePath(savedEntity.getFilePath())
               .repoName(savedEntity.getRepo())
