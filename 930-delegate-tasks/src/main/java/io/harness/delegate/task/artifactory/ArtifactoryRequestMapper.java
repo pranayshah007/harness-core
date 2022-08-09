@@ -7,6 +7,8 @@
 
 package io.harness.delegate.task.artifactory;
 
+import static io.harness.utils.FieldWithPlainTextOrSecretValueHelper.getSecretAsStringFromPlainTextOrSecretRef;
+
 import io.harness.artifactory.ArtifactoryConfigRequest;
 import io.harness.artifactory.ArtifactoryConfigRequest.ArtifactoryConfigRequestBuilder;
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryAuthType;
@@ -27,7 +29,7 @@ public class ArtifactoryRequestMapper {
           (ArtifactoryUsernamePasswordAuthDTO) artifactoryConnector.getAuth().getCredentials();
       artifactoryConfigRequestBuilder.hasCredentials(true)
           .password(credentials.getPasswordRef().getDecryptedValue())
-          .username(credentials.getUsername());
+          .username(getSecretAsStringFromPlainTextOrSecretRef(credentials.getUsername(), credentials.getUsernameRef()));
     }
     return artifactoryConfigRequestBuilder.build();
   }

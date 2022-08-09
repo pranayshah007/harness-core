@@ -140,9 +140,6 @@ public class InstanceSyncServiceImpl implements InstanceSyncService {
             }
           }
 
-          deploymentSummaryDTO.setServerInstanceInfoList(
-              abstractInstanceSyncHandler.refreshServerInstanceInfo(deploymentSummaryDTO.getServerInstanceInfoList(),
-                  instanceSyncPerpetualTaskInfoDTO.getDeploymentInfoDetailsDTOList()));
           InstanceSyncLocalCacheManager.setDeploymentSummary(
               deploymentSummaryDTO.getInstanceSyncKey(), deploymentSummaryDTO);
 
@@ -244,7 +241,7 @@ public class InstanceSyncServiceImpl implements InstanceSyncService {
    * instances to be added / deleted / updated
    * Also, update deployment info status in instance sync perpetual task info based on instances from server
    */
-  Map<OperationsOnInstances, List<InstanceDTO>> handleInstanceSync(
+  private Map<OperationsOnInstances, List<InstanceDTO>> handleInstanceSync(
       InstanceSyncPerpetualTaskInfoDTO instanceSyncPerpetualTaskInfoDTO,
       InfrastructureMappingDTO infrastructureMappingDTO, List<ServerInstanceInfo> serverInstanceInfoList,
       AbstractInstanceSyncHandler instanceSyncHandler, boolean isNewDeploymentSync) {
