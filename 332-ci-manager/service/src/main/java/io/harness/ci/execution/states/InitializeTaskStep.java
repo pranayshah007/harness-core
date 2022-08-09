@@ -137,13 +137,16 @@ public class InitializeTaskStep implements TaskExecutableWithRbac<StepElementPar
 
     CIInitializeTaskParams buildSetupTaskParams =
         buildSetupUtils.getBuildSetupTaskParams(initializeStepInfo, ambiance, logPrefix);
+    boolean executeOnHarnessHostedDelegates = false;
     // Secrets are in decrypted format for DLITE_VM type
     if (buildSetupTaskParams.getType() != DLITE_VM) {
       log.info("Created params for build task: {}", buildSetupTaskParams);
+    } else {
+      executeOnHarnessHostedDelegates = true;
     }
 
-    return StepUtils.prepareTaskRequest(
-        ambiance, getTaskData(stepElementParameters, buildSetupTaskParams), kryoSerializer);
+    return StepUtils.prepareTaskRequest(ambiance, getTaskData(stepElementParameters, buildSetupTaskParams),
+        kryoSerializer, executeOnHarnessHostedDelegates);
   }
 
   @Override

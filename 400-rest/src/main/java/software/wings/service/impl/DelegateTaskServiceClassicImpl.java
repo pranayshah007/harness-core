@@ -1070,8 +1070,8 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
 
       delegateTaskObserverSubject.fireInform(
           DelegateTaskObserver::onTaskAssigned, delegateTask.getAccountId(), taskId, delegateId);
-      remoteObserverInformer.sendEvent(
-          ReflectionUtils.getMethod(DelegateTaskObserver.class, "onTaskAssigned", String.class, String.class, String.class),
+      remoteObserverInformer.sendEvent(ReflectionUtils.getMethod(DelegateTaskObserver.class, "onTaskAssigned",
+                                           String.class, String.class, String.class),
           DelegateTaskServiceClassicImpl.class, delegateTask.getAccountId(), taskId);
 
       delegateMetricsService.recordDelegateTaskMetrics(delegateTask, DELEGATE_TASK_ACQUIRE);

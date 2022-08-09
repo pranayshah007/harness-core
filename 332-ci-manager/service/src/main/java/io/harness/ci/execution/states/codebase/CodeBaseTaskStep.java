@@ -116,7 +116,7 @@ public class CodeBaseTaskStep implements TaskExecutable<CodeBaseTaskStepParamete
                                   .build();
 
     log.info("Created delegate task to fetch codebase info");
-    return StepUtils.prepareTaskRequest(ambiance, taskData, kryoSerializer);
+    return StepUtils.prepareTaskRequest(ambiance, taskData, kryoSerializer, false);
   }
 
   @Override

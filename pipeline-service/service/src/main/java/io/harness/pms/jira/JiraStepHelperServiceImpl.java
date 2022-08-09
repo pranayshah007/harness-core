@@ -99,7 +99,7 @@ public class JiraStepHelperServiceImpl implements JiraStepHelperService {
             .stream()
             .map(s -> TaskSelector.newBuilder().setSelector(s).build())
             .collect(Collectors.toList()),
-        Scope.PROJECT, EnvironmentType.ALL);
+        Scope.PROJECT, EnvironmentType.ALL, false);
   }
 
   @Override

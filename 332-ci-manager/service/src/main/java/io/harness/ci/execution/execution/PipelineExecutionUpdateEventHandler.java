@@ -146,13 +146,16 @@ public class PipelineExecutionUpdateEventHandler implements OrchestrationEventHa
     Map<String, String> abstractions = buildAbstractions(ambiance, Scope.PROJECT);
     String taskType = "CI_CLEANUP";
     SerializationFormat serializationFormat = SerializationFormat.KRYO;
+    boolean executeOnHarnessHostedDelegates = false;
     if (ciCleanupTaskParams.getType() == CICleanupTaskParams.Type.DLITE_VM) {
       taskType = TaskType.DLITE_CI_VM_CLEANUP_TASK.getDisplayName();
+      executeOnHarnessHostedDelegates = true;
       serializationFormat = SerializationFormat.JSON;
     }
 
     return DelegateTaskRequest.builder()
         .accountId(accountId)
+        .executeOnHarnessHostedDelegates(executeOnHarnessHostedDelegates)
         .taskSelectors(taskSelectors.stream().map(TaskSelector::getSelector).collect(Collectors.toList()))
         .taskSetupAbstractions(abstractions)
         .executionTimeout(java.time.Duration.ofSeconds(900))

@@ -103,7 +103,7 @@ public class CleanupStep implements TaskExecutable<CleanupStepInfo, K8sTaskExecu
                                   .parameters(new Object[] {cik8CleanupTaskParams})
                                   .build();
 
-    return StepUtils.prepareTaskRequest(ambiance, taskData, kryoSerializer);
+    return StepUtils.prepareTaskRequest(ambiance, taskData, kryoSerializer, false);
   }
 
   @Override
