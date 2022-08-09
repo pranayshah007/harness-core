@@ -12,6 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DecryptableEntity;
 import io.harness.connector.DelegateSelectable;
+import io.harness.connector.ManagerExecutable;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.exception.InvalidRequestException;
 
@@ -38,10 +39,11 @@ import org.hibernate.validator.constraints.NotBlank;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @ApiModel("ArtifactoryConnector")
 @Schema(name = "ArtifactoryConnector", description = "This entity contains the details of the Artifactory Connectors")
-public class ArtifactoryConnectorDTO extends ConnectorConfigDTO implements DelegateSelectable {
+public class ArtifactoryConnectorDTO extends ConnectorConfigDTO implements DelegateSelectable, ManagerExecutable {
   @NotNull @NotBlank String artifactoryServerUrl;
   @Valid ArtifactoryAuthenticationDTO auth;
   Set<String> delegateSelectors;
+  @Builder.Default Boolean executeOnDelegate = true;
 
   @Override
   public List<DecryptableEntity> getDecryptableEntities() {
