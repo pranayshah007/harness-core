@@ -3008,7 +3008,7 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
 
     List<FileData> result = spyHelper.renderTemplateForGivenFiles(
         K8sDelegateTaskParams.builder().helmPath(helmPath).build(), manifestDelegateConfig, "manifest", filesToRender,
-        valuesList, "release", "namespace", executionLogCallback, 10);
+        valuesList, "release", "namespace", executionLogCallback, 10, false);
 
     assertThat(result).isEqualTo(renderedFiles);
     verify(spyHelper, times(1))
@@ -3065,7 +3065,7 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
             kustomizePath, kustomizePluginPath, "manifest", fileList, true, emptyList(), executionLogCallback);
 
     List<FileData> result = k8sTaskHelperBase.renderTemplateForGivenFiles(delegateTaskParams, manifestDelegateConfig,
-        "manifest", fileList, valuesList, "release", "namespace", executionLogCallback, 10);
+        "manifest", fileList, valuesList, "release", "namespace", executionLogCallback, 10, false);
 
     assertThat(result).isEqualTo(renderedFiles);
     verify(kustomizeTaskHelper, times(1))

@@ -11,7 +11,6 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.beans.storeconfig.StoreDelegateConfigType.GIT;
-import static io.harness.delegate.beans.storeconfig.StoreDelegateConfigType.HARNESS;
 import static io.harness.delegate.beans.storeconfig.StoreDelegateConfigType.HTTP_HELM;
 import static io.harness.delegate.beans.storeconfig.StoreDelegateConfigType.OCI_HELM;
 import static io.harness.delegate.clienttools.ClientTool.OC;
@@ -2398,13 +2397,16 @@ public class K8sTaskHelperBase {
   public List<FileData> renderTemplateForGivenFiles(K8sDelegateTaskParams k8sDelegateTaskParams,
       ManifestDelegateConfig manifestDelegateConfig, String manifestFilesDirectory, @NotEmpty List<String> filesList,
       List<String> manifestOverrideFiles, String releaseName, String namespace, LogCallback executionLogCallback,
-      Integer timeoutInMin) throws Exception {
+      Integer timeoutInMin, boolean skipRendering) throws Exception {
     ManifestType manifestType = manifestDelegateConfig.getManifestType();
     long timeoutInMillis = K8sTaskHelperBase.getTimeoutMillisFromMinutes(timeoutInMin);
 
     switch (manifestType) {
       case K8S_MANIFEST:
         List<FileData> manifestFiles = readFilesFromDirectory(manifestFilesDirectory, filesList, executionLogCallback);
+        if (skipRendering) {
+          return manifestFiles;
+        }
         return renderManifestFilesForGoTemplate(
             k8sDelegateTaskParams, manifestFiles, manifestOverrideFiles, executionLogCallback, timeoutInMillis);
 
@@ -2430,9 +2432,10 @@ public class K8sTaskHelperBase {
   public List<KubernetesResource> getResourcesFromManifests(K8sDelegateTaskParams k8sDelegateTaskParams,
       ManifestDelegateConfig manifestDelegateConfig, String manifestFilesDirectory, @NotEmpty List<String> filesList,
       List<String> manifestOverrideFiles, String releaseName, String namespace, LogCallback logCallback,
-      Integer timeoutInMin) throws Exception {
-    List<FileData> manifestFiles = renderTemplateForGivenFiles(k8sDelegateTaskParams, manifestDelegateConfig,
-        manifestFilesDirectory, filesList, manifestOverrideFiles, releaseName, namespace, logCallback, timeoutInMin);
+      Integer timeoutInMin, boolean skipRendering) throws Exception {
+    List<FileData> manifestFiles =
+        renderTemplateForGivenFiles(k8sDelegateTaskParams, manifestDelegateConfig, manifestFilesDirectory, filesList,
+            manifestOverrideFiles, releaseName, namespace, logCallback, timeoutInMin, skipRendering);
     if (isEmpty(manifestFiles)) {
       return new ArrayList<>();
     }
