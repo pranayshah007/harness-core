@@ -23,8 +23,10 @@ import static org.mockito.Mockito.verify;
 import static org.powermock.api.mockito.PowerMockito.when;
 
 import io.harness.beans.DelegateTask;
+import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.TaskData;
+import io.harness.ff.FeatureFlagService;
 import io.harness.rule.Owner;
 import io.harness.waiter.WaitNotifyEngine;
 
@@ -70,6 +72,7 @@ public class PrometheusStateTest extends APMStateVerificationTestBase {
   @Mock WaitNotifyEngine waitNotifyEngine;
   @Mock DelegateService delegateService;
   @Mock AccountService accountService;
+  @Mock FeatureFlagService featureFlagService;
 
   @Before
   public void setup() throws Exception {
@@ -78,6 +81,8 @@ public class PrometheusStateTest extends APMStateVerificationTestBase {
     setupCommonMocks();
     FieldUtils.writeField(prometheusState, "prometheusAnalysisService", prometheusAnalysisService, true);
     FieldUtils.writeField(prometheusState, "secretManager", secretManager, true);
+    FieldUtils.writeField(prometheusState, "featureFlagService", featureFlagService, true);
+    when(featureFlagService.isEnabled(FeatureName.CV_AWS_PROMETHEUS, accountId)).thenReturn(false);
   }
 
   @Test

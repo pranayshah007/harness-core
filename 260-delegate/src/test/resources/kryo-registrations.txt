@@ -1773,6 +1773,7 @@
 83077:io.harness.delegate.beans.connector.awsconnector.AwsListTagsTaskResponse
 83078:io.harness.delegate.beans.connector.awsconnector.AwsListLoadBalancersTaskResponse
 83079:io.harness.delegate.beans.connector.awsconnector.AwsListASGNamesTaskResponse
+90001:software.wings.service.impl.apm.AWSPrometheusInfo
 95001:io.harness.delegate.beans.logstreaming.UnitProgressData
 95002:io.harness.waiter.WaitInstanceTimeoutCallback
 96001:io.harness.springdata.exceptions.WingsTransactionFailureException

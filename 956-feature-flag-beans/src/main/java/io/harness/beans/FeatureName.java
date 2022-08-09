@@ -413,8 +413,8 @@ public enum FeatureName {
   GRAPHQL_WORKFLOW_EXECUTION_OPTIMIZATION(
       "Making multiple optimizations for workflow execution graphql in CG", HarnessTeam.SPG),
   NG_ENABLE_LDAP_CHECK("Enables NG Ldap in NG-UI", HarnessTeam.PL),
-  CUSTOM_SECRET_MANAGER_NG("Enable Custom Secret Manager in NG", HarnessTeam.PL);
-
+  CUSTOM_SECRET_MANAGER_NG("Enable Custom Secret Manager in NG", HarnessTeam.PL),
+  CV_AWS_PROMETHEUS("Enable AWS Prometheus for CV State", HarnessTeam.CV);
   @Deprecated
   FeatureName() {
     scope = Scope.PER_ACCOUNT;
