@@ -15,7 +15,6 @@ import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.beans.connector.docker.DockerAuthCredentialsDTO;
 import io.harness.delegate.beans.connector.docker.DockerConnectorDTO;
 import io.harness.delegate.beans.connector.docker.DockerTestConnectionTaskParams;
-import io.harness.delegate.beans.connector.docker.DockerTestConnectionTaskResponse;
 import io.harness.delegate.task.TaskParameters;
 
 import com.google.inject.Singleton;
@@ -23,7 +22,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Singleton
-public class DockerConnectionValidator extends AbstractConnectorValidator {
+public class DockerConnectionValidator extends AbstractArtifactConnectorValidator {
   @Override
   public <T extends ConnectorConfigDTO> TaskParameters getTaskParameters(
       T connectorConfig, String accountIdentifier, String orgIdentifier, String projectIdentifier) {
@@ -45,9 +44,7 @@ public class DockerConnectionValidator extends AbstractConnectorValidator {
   @Override
   public ConnectorValidationResult validate(ConnectorConfigDTO dockerConnector, String accountIdentifier,
       String orgIdentifier, String projectIdentifier, String identifier) {
-    DockerTestConnectionTaskResponse responseData = (DockerTestConnectionTaskResponse) super.validateConnector(
-        dockerConnector, accountIdentifier, orgIdentifier, projectIdentifier, identifier);
-    return responseData.getConnectorValidationResult();
+    return super.validate(dockerConnector, accountIdentifier, orgIdentifier, projectIdentifier, identifier);
   }
 
   @Override
