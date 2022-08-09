@@ -383,3 +383,6 @@ io.harness.plancreator.steps.TaskSelectorYaml
 io.harness.plancreator.strategy.ExpressionAxisConfig
 io.harness.cdng.service.beans.ServiceUseFromStageV2
 io.harness.cdng.execution.ExecutionInfoKeyOutput
+io.harness.ngpipeline.artifact.bean.GithubPackagesArtifactOutcome
+io.harness.ngpipeline.pipeline.executions.beans.GithubPackagesArtifactSummary
+io.harness.cdng.artifact.bean.yaml.GithubPackageArtifactConfig

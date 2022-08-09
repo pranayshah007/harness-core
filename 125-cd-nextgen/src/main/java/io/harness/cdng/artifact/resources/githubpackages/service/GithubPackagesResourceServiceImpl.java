@@ -23,8 +23,13 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.delegate.beans.RemoteMethodReturnValueData;
+import io.harness.delegate.beans.ci.pod.ConnectorDetails;
+import io.harness.delegate.beans.ci.pod.SSHKeyDetails;
 import io.harness.delegate.beans.connector.ConnectorType;
+import io.harness.delegate.beans.connector.scm.GitAuthType;
 import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubHttpCredentialsDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubSshCredentialsDTO;
 import io.harness.delegate.task.artifacts.ArtifactDelegateRequestUtils;
 import io.harness.delegate.task.artifacts.ArtifactSourceType;
 import io.harness.delegate.task.artifacts.ArtifactTaskType;
@@ -40,6 +45,7 @@ import io.harness.exception.HintException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.exception.exceptionmanager.exceptionhandler.DocumentLinksConstants;
+import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.ng.core.BaseNGAccess;
 import io.harness.ng.core.NGAccess;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
@@ -64,7 +70,7 @@ public class GithubPackagesResourceServiceImpl implements GithubPackagesResource
   private final ConnectorService connectorService;
   private final SecretManagerClientService secretManagerClientService;
   @Inject private DelegateGrpcClientWrapper delegateGrpcClientWrapper;
-  @VisibleForTesting static final int timeoutInSecs = 30;
+  @VisibleForTesting static final int timeoutInSecs = 90;
 
   @Inject
   public GithubPackagesResourceServiceImpl(@Named(DEFAULT_CONNECTOR_SERVICE) ConnectorService connectorService,
@@ -129,26 +135,16 @@ public class GithubPackagesResourceServiceImpl implements GithubPackagesResource
                                                         .attributes(delegateRequest)
                                                         .build();
 
-    Map<String, String> owner = getNGTaskSetupAbstractionsWithOwner(
-        ngAccess.getAccountIdentifier(), ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier());
-
-    Map<String, String> abstractions = new HashMap<>(owner);
-
-    if (ngAccess.getOrgIdentifier() != null) {
-      abstractions.put("orgIdentifier", ngAccess.getOrgIdentifier());
-    }
-
-    if (ngAccess.getProjectIdentifier() != null && ngAccess.getOrgIdentifier() != null) {
-      abstractions.put("projectIdentifier", ngAccess.getProjectIdentifier());
-    }
-
     final DelegateTaskRequest delegateTaskRequest =
         DelegateTaskRequest.builder()
             .accountId(ngAccess.getAccountIdentifier())
             .taskType(NGTaskType.GITHUB_PACKAGES_TASK_NG.name())
             .taskParameters(artifactTaskParameters)
             .executionTimeout(java.time.Duration.ofSeconds(timeoutInSecs))
-            .taskSetupAbstractions(abstractions)
+            .taskSetupAbstraction("orgIdentifier", ngAccess.getOrgIdentifier())
+            .taskSetupAbstraction("ng", "true")
+            .taskSetupAbstraction("owner", ngAccess.getOrgIdentifier() + "/" + ngAccess.getProjectIdentifier())
+            .taskSetupAbstraction("projectIdentifier", ngAccess.getProjectIdentifier())
             .taskSelectors(delegateRequest.getGithubConnectorDTO().getDelegateSelectors())
             .build();
 
@@ -217,10 +213,38 @@ public class GithubPackagesResourceServiceImpl implements GithubPackagesResource
       @Nonnull GithubConnectorDTO githubConnectorDTO, @Nonnull NGAccess ngAccess) {
     if (githubConnectorDTO.getAuthentication() != null
         && githubConnectorDTO.getAuthentication().getCredentials() != null) {
-      return secretManagerClientService.getEncryptionDetails(
-          ngAccess, githubConnectorDTO.getAuthentication().getCredentials());
+      List<EncryptedDataDetail> encryptedDataDetails = getGithubEncryptionDetails(githubConnectorDTO, ngAccess);
+
+      return encryptedDataDetails;
     }
 
     return new ArrayList<>();
+  }
+
+  private List<EncryptedDataDetail> getGithubEncryptionDetails(
+      GithubConnectorDTO githubConnectorDTO, NGAccess ngAccess) {
+    List<EncryptedDataDetail> encryptedDataDetails = new ArrayList<>();
+
+    if (githubConnectorDTO.getAuthentication().getAuthType() == GitAuthType.HTTP) {
+      GithubHttpCredentialsDTO githubHttpCredentialsDTO =
+          (GithubHttpCredentialsDTO) githubConnectorDTO.getAuthentication().getCredentials();
+
+      encryptedDataDetails =
+          secretManagerClientService.getEncryptionDetails(ngAccess, githubHttpCredentialsDTO.getHttpCredentialsSpec());
+
+      if (githubConnectorDTO.getApiAccess() != null && githubConnectorDTO.getApiAccess().getSpec() != null) {
+        encryptedDataDetails.addAll(
+            secretManagerClientService.getEncryptionDetails(ngAccess, githubConnectorDTO.getApiAccess().getSpec()));
+      }
+    } else if (githubConnectorDTO.getAuthentication().getAuthType() == GitAuthType.SSH) {
+      if (githubConnectorDTO.getApiAccess() != null && githubConnectorDTO.getApiAccess().getSpec() != null) {
+        encryptedDataDetails =
+            secretManagerClientService.getEncryptionDetails(ngAccess, githubConnectorDTO.getApiAccess().getSpec());
+      }
+    } else {
+      throw new InvalidRequestException("Cannot get Encrypted Details for the Github Connector");
+    }
+
+    return encryptedDataDetails;
   }
 }
