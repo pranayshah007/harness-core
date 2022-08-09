@@ -10,7 +10,6 @@ package io.harness.cdng.artifact.resources.githubpackages.service;
 import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
-import static io.harness.utils.DelegateOwner.getNGTaskSetupAbstractionsWithOwner;
 
 import io.harness.beans.DelegateTaskRequest;
 import io.harness.beans.IdentifierRef;
@@ -23,13 +22,10 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.delegate.beans.RemoteMethodReturnValueData;
-import io.harness.delegate.beans.ci.pod.ConnectorDetails;
-import io.harness.delegate.beans.ci.pod.SSHKeyDetails;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.scm.GitAuthType;
 import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubHttpCredentialsDTO;
-import io.harness.delegate.beans.connector.scm.github.GithubSshCredentialsDTO;
 import io.harness.delegate.task.artifacts.ArtifactDelegateRequestUtils;
 import io.harness.delegate.task.artifacts.ArtifactSourceType;
 import io.harness.delegate.task.artifacts.ArtifactTaskType;
@@ -45,7 +41,6 @@ import io.harness.exception.HintException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.exception.exceptionmanager.exceptionhandler.DocumentLinksConstants;
-import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.ng.core.BaseNGAccess;
 import io.harness.ng.core.NGAccess;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
@@ -58,9 +53,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import javax.annotation.Nonnull;
 import javax.validation.Valid;
@@ -211,14 +204,14 @@ public class GithubPackagesResourceServiceImpl implements GithubPackagesResource
 
   private List<EncryptedDataDetail> getEncryptionDetails(
       @Nonnull GithubConnectorDTO githubConnectorDTO, @Nonnull NGAccess ngAccess) {
+    List<EncryptedDataDetail> encryptedDataDetails = new ArrayList<>();
+
     if (githubConnectorDTO.getAuthentication() != null
         && githubConnectorDTO.getAuthentication().getCredentials() != null) {
-      List<EncryptedDataDetail> encryptedDataDetails = getGithubEncryptionDetails(githubConnectorDTO, ngAccess);
-
-      return encryptedDataDetails;
+      encryptedDataDetails = getGithubEncryptionDetails(githubConnectorDTO, ngAccess);
     }
 
-    return new ArrayList<>();
+    return encryptedDataDetails;
   }
 
   private List<EncryptedDataDetail> getGithubEncryptionDetails(
