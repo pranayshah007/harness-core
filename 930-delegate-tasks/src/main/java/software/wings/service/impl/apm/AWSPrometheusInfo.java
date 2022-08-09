@@ -5,11 +5,15 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.ccm.rbac;
+package software.wings.service.impl.apm;
 
-public interface CCMResources {
-  String FOLDER = "CCM_FOLDER";
-  String PERSPECTIVE = "CCM_PERSPECTIVE";
-  String BUDGET = "CCM_BUDGET";
-  String COST_CATEGORY = "CCM_COSTCATEGORY";
+import lombok.Builder;
+import lombok.Data;
+
+@Data
+@Builder
+public class AWSPrometheusInfo {
+  private String awsService;
+  private String awsRegion;
+  private String accessKey;
 }
