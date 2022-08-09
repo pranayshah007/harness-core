@@ -611,7 +611,6 @@ public class ExecutionHelperTest extends CategoryTest {
                                         .build();
     when(featureFlagService.isEnabled(pipelineEntity.getAccountId(), FeatureName.OPA_PIPELINE_GOVERNANCE))
         .thenReturn(false);
-    when(featureFlagService.isEnabled(pipelineEntity.getAccountId(), FeatureName.NG_TEMPLATES)).thenReturn(true);
     TemplateMergeResponseDTO templateMergeResponse =
         TemplateMergeResponseDTO.builder().mergedPipelineYaml(yamlWithTempRef).build();
 

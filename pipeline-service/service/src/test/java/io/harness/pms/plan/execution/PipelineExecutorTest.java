@@ -10,8 +10,10 @@ package io.harness.pms.plan.execution;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.rule.OwnerRule.NAMAN;
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
+import static io.harness.rule.OwnerRule.SOUMYAJIT;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyString;
@@ -24,6 +26,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.engine.executions.retry.RetryExecutionParameters;
+import io.harness.exception.InvalidRequestException;
 import io.harness.execution.PlanExecution;
 import io.harness.execution.PlanExecutionMetadata;
 import io.harness.gitsync.sdk.EntityGitDetails;
@@ -248,5 +251,19 @@ public class PipelineExecutorTest extends CategoryTest {
     assertThat(retryExecutionParameters.getRetryStagesIdentifier()).isEqualTo(stagesIdentifier);
     assertThat(retryExecutionParameters.getIdentifierOfSkipStages()).isEqualTo(identifierOfSkippedStages);
     assertThat(retryExecutionParameters.getPreviousProcessedYaml()).isEqualTo(processedYaml);
+  }
+
+  @Test
+  @Owner(developers = SOUMYAJIT)
+  @Category(UnitTests.class)
+  public void testDraftExecution() {
+    pipelineEntity.setIsDraft(true);
+    doReturn(pipelineEntity).when(executionHelper).fetchPipelineEntity(accountId, orgId, projectId, pipelineId);
+    assertThatThrownBy(()
+                           -> pipelineExecutor.runPipelineWithInputSetPipelineYaml(
+                               accountId, orgId, projectId, pipelineId, moduleType, runtimeInputYaml, useV2))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(
+            String.format("Cannot execute a Draft Pipeline with PipelineID: %s, ProjectID %s", pipelineId, projectId));
   }
 }

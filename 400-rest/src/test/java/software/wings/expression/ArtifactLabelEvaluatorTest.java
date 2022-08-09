@@ -87,7 +87,7 @@ public class ArtifactLabelEvaluatorTest extends WingsBaseTest {
     arrayList.add(labels);
 
     when(buildSourceService.getLabels(any(), any())).thenReturn(arrayList);
-    assertEquals(artifactLabelEvaluator.get("foo1"), "foo1");
+    assertEquals(artifactLabelEvaluator.get("foo1"), null);
   }
 
   @Test
@@ -101,6 +101,6 @@ public class ArtifactLabelEvaluatorTest extends WingsBaseTest {
                                                         .build();
 
     when(buildSourceService.getLabels(any(), any())).thenReturn(null);
-    assertEquals(artifactLabelEvaluator.get("foo1"), "foo1");
+    assertEquals(artifactLabelEvaluator.get("foo1"), null);
   }
 }

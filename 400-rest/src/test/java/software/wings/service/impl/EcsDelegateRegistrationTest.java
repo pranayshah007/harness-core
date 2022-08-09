@@ -351,7 +351,8 @@ public class EcsDelegateRegistrationTest {
   public void testGetInactiveDelegateSequenceConfigToReplace() {
     List<DelegateSequenceConfig> existingDelegateSequenceConfigs = getExistingDelegateSequenceConfigs();
 
-    Delegate delegate = Delegate.builder().delegateType("ECS").hostName("hostname").build();
+    Delegate delegate =
+        Delegate.builder().delegateType("ECS").hostName("hostname").tags(Arrays.asList("newtag1", "newtag2")).build();
 
     doReturn(Delegate.builder().uuid("12345").tags(Arrays.asList("tag1", "tag2")).build())
         .doReturn(null)
@@ -368,8 +369,8 @@ public class EcsDelegateRegistrationTest {
 
     assertThat(delegate.getTags()).isNotNull();
     assertThat(delegate.getTags()).hasSize(2);
-    assertThat(delegate.getTags().contains("tag1")).isTrue();
-    assertThat(delegate.getTags().contains("tag2")).isTrue();
+    assertThat(delegate.getTags().contains("newtag1")).isTrue();
+    assertThat(delegate.getTags().contains("newtag2")).isTrue();
     assertThat(delegate.getHostName()).isEqualTo("hostname_1");
 
     ArgumentCaptor<String> captor = ArgumentCaptor.forClass(String.class);

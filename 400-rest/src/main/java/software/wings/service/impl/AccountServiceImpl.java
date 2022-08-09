@@ -990,7 +990,7 @@ public class AccountServiceImpl implements AccountService {
     if (licenseService.isAccountDeleted(accountId)) {
       throw new InvalidRequestException("Deleted AccountId: " + accountId);
     }
-    log.info("Getting delegate configuration from Delegate ring");
+    log.debug("Getting delegate configuration from Delegate ring");
 
     // Prefer using delegateConfiguration from DelegateRing.
     List<String> delegateVersionFromRing = delegateVersionService.getDelegateJarVersions(accountId);

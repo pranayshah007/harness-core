@@ -16,6 +16,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
@@ -31,6 +32,7 @@ import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntity;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntityType;
 import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetYamlDiffDTO;
 import io.harness.pms.ngpipeline.inputset.exceptions.InvalidOverlayInputSetException;
+import io.harness.pms.ngpipeline.inputset.helpers.InputSetErrorsHelper;
 import io.harness.rule.Owner;
 
 import com.google.common.io.Resources;
@@ -44,8 +46,12 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
+import org.powermock.core.classloader.annotations.PrepareForTest;
 
+@PrepareForTest({InputSetErrorsHelper.class})
 @OwnedBy(PIPELINE)
 public class OverlayInputSetValidationHelperTest extends CategoryTest {
   @Mock PMSInputSetService inputSetService;
@@ -74,7 +80,8 @@ public class OverlayInputSetValidationHelperTest extends CategoryTest {
                                         .yaml(overlayInputSetYamlWithoutReferences)
                                         .inputSetEntityType(InputSetEntityType.OVERLAY_INPUT_SET)
                                         .build();
-    assertThatThrownBy(() -> OverlayInputSetValidationHelper.validateOverlayInputSet(inputSetService, inputSetEntity))
+    assertThatThrownBy(
+        () -> OverlayInputSetValidationHelper.validateOverlayInputSet(inputSetService, inputSetEntity, null))
         .hasMessage("Input Set References can't be empty");
   }
 
@@ -91,7 +98,8 @@ public class OverlayInputSetValidationHelperTest extends CategoryTest {
                                         .yaml(overlayInputSetYamlWithoutOrgId)
                                         .inputSetEntityType(InputSetEntityType.OVERLAY_INPUT_SET)
                                         .build();
-    assertThatThrownBy(() -> OverlayInputSetValidationHelper.validateOverlayInputSet(inputSetService, inputSetEntity))
+    assertThatThrownBy(
+        () -> OverlayInputSetValidationHelper.validateOverlayInputSet(inputSetService, inputSetEntity, null))
         .hasMessage("Organization identifier is missing in the YAML. Please give a valid Organization identifier");
   }
 
@@ -108,7 +116,8 @@ public class OverlayInputSetValidationHelperTest extends CategoryTest {
                                         .yaml(overlayInputSetYamlWithoutProjectId)
                                         .inputSetEntityType(InputSetEntityType.OVERLAY_INPUT_SET)
                                         .build();
-    assertThatThrownBy(() -> OverlayInputSetValidationHelper.validateOverlayInputSet(inputSetService, inputSetEntity))
+    assertThatThrownBy(
+        () -> OverlayInputSetValidationHelper.validateOverlayInputSet(inputSetService, inputSetEntity, null))
         .hasMessage("Project identifier is missing in the YAML. Please give a valid Project identifier");
   }
 
@@ -125,7 +134,8 @@ public class OverlayInputSetValidationHelperTest extends CategoryTest {
                                         .yaml(overlayInputSetYamlWithoutPipelineId)
                                         .inputSetEntityType(InputSetEntityType.OVERLAY_INPUT_SET)
                                         .build();
-    assertThatThrownBy(() -> OverlayInputSetValidationHelper.validateOverlayInputSet(inputSetService, inputSetEntity))
+    assertThatThrownBy(
+        () -> OverlayInputSetValidationHelper.validateOverlayInputSet(inputSetService, inputSetEntity, null))
         .hasMessage("Pipeline identifier is missing in the YAML. Please give a valid Pipeline identifier");
   }
 
@@ -158,15 +168,20 @@ public class OverlayInputSetValidationHelperTest extends CategoryTest {
                                         .yaml(overlayInputSetYaml)
                                         .inputSetEntityType(InputSetEntityType.OVERLAY_INPUT_SET)
                                         .build();
-    OverlayInputSetValidationHelper.validateOverlayInputSet(inputSetService, inputSetEntity);
+    MockedStatic<InputSetErrorsHelper> mockSettings = Mockito.mockStatic(InputSetErrorsHelper.class);
+    when(InputSetErrorsHelper.getInvalidInputSetReferences(any(), any(), any())).thenCallRealMethod();
+    when(InputSetErrorsHelper.getErrorMap(any(), any())).thenReturn(null);
+    OverlayInputSetValidationHelper.validateOverlayInputSet(inputSetService, inputSetEntity, null);
 
     InputSetEntity inputSetEntityInvalid =
         InputSetEntity.builder().inputSetEntityType(INPUT_SET).yaml(inputSetYaml2).isInvalid(true).build();
     doReturn(Optional.of(inputSetEntityInvalid))
         .when(inputSetService)
         .getWithoutValidations(accountId, orgId, projectId, pipelineId, identifier2, false);
-    assertThatThrownBy(() -> OverlayInputSetValidationHelper.validateOverlayInputSet(inputSetService, inputSetEntity))
+    assertThatThrownBy(
+        () -> OverlayInputSetValidationHelper.validateOverlayInputSet(inputSetService, inputSetEntity, null))
         .isInstanceOf(InvalidOverlayInputSetException.class);
+    mockSettings.close();
   }
 
   @Test
@@ -186,7 +201,8 @@ public class OverlayInputSetValidationHelperTest extends CategoryTest {
     doReturn(Optional.empty())
         .when(inputSetService)
         .getWithoutValidations(accountId, orgId, projectId, pipelineId, nonExistentReference, false);
-    assertThatThrownBy(() -> OverlayInputSetValidationHelper.validateOverlayInputSet(inputSetService, inputSetEntity))
+    assertThatThrownBy(
+        () -> OverlayInputSetValidationHelper.validateOverlayInputSet(inputSetService, inputSetEntity, null))
         .isInstanceOf(InvalidOverlayInputSetException.class);
   }
 
@@ -212,7 +228,8 @@ public class OverlayInputSetValidationHelperTest extends CategoryTest {
                                         .inputSetEntityType(InputSetEntityType.OVERLAY_INPUT_SET)
                                         .build();
 
-    assertThatThrownBy(() -> OverlayInputSetValidationHelper.validateOverlayInputSet(inputSetService, inputSetEntity))
+    assertThatThrownBy(
+        () -> OverlayInputSetValidationHelper.validateOverlayInputSet(inputSetService, inputSetEntity, null))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage("Empty Input Set Identifier not allowed in Input Set References");
   }
@@ -231,7 +248,7 @@ public class OverlayInputSetValidationHelperTest extends CategoryTest {
                                         .yaml(yaml)
                                         .inputSetEntityType(InputSetEntityType.OVERLAY_INPUT_SET)
                                         .build();
-    assertThatThrownBy(() -> OverlayInputSetValidationHelper.validateOverlayInputSet(null, inputSetEntity))
+    assertThatThrownBy(() -> OverlayInputSetValidationHelper.validateOverlayInputSet(null, inputSetEntity, null))
         .hasMessage("Overlay Input Set identifier length cannot be more that 63 characters.");
   }
 
@@ -246,6 +263,10 @@ public class OverlayInputSetValidationHelperTest extends CategoryTest {
     doReturn(Optional.empty())
         .when(inputSetService)
         .getWithoutValidations(accountId, orgId, projectId, pipelineId, "thisInputSetIsWrong", false);
+
+    MockedStatic<InputSetErrorsHelper> mockSettings = Mockito.mockStatic(InputSetErrorsHelper.class);
+    when(InputSetErrorsHelper.getInvalidInputSetReferences(any(), any(), any())).thenCallRealMethod();
+    when(InputSetErrorsHelper.getErrorMap("randomPipelineYaml", null)).thenReturn(null);
     InputSetYamlDiffDTO yamlDiffForOverlayInputSet =
         OverlayInputSetValidationHelper.getYAMLDiffForOverlayInputSet(null, inputSetService,
             InputSetEntity.builder()
@@ -255,13 +276,15 @@ public class OverlayInputSetValidationHelperTest extends CategoryTest {
                 .pipelineIdentifier(pipelineId)
                 .yaml(yaml)
                 .inputSetEntityType(InputSetEntityType.OVERLAY_INPUT_SET)
-                .build());
+                .build(),
+            "randomPipelineYaml");
     assertThat(yamlDiffForOverlayInputSet.getOldYAML()).isEqualTo(yaml);
     List<String> newReferences =
         InputSetYamlHelper.getReferencesFromOverlayInputSetYaml(yamlDiffForOverlayInputSet.getNewYAML());
     assertThat(newReferences).containsExactly("input1");
     assertThat(yamlDiffForOverlayInputSet.isInputSetEmpty()).isFalse();
     assertThat(yamlDiffForOverlayInputSet.isNoUpdatePossible()).isFalse();
+    mockSettings.close();
   }
 
   @Test
@@ -287,20 +310,20 @@ public class OverlayInputSetValidationHelperTest extends CategoryTest {
                                         .build();
 
     InputSetYamlDiffDTO yamlDiffForOverlayInputSet = OverlayInputSetValidationHelper.getYAMLDiffForOverlayInputSet(
-        gitSyncSdkService, inputSetService, inputSetEntity);
+        gitSyncSdkService, inputSetService, inputSetEntity, null);
     assertThat(yamlDiffForOverlayInputSet.isInputSetEmpty()).isTrue();
     assertThat(yamlDiffForOverlayInputSet.isNoUpdatePossible()).isTrue();
 
     doReturn(Collections.singletonList(inputSetEntity)).when(inputSetService).list(any());
     yamlDiffForOverlayInputSet = OverlayInputSetValidationHelper.getYAMLDiffForOverlayInputSet(
-        gitSyncSdkService, inputSetService, inputSetEntity);
+        gitSyncSdkService, inputSetService, inputSetEntity, null);
     assertThat(yamlDiffForOverlayInputSet.isInputSetEmpty()).isTrue();
     assertThat(yamlDiffForOverlayInputSet.isNoUpdatePossible()).isFalse();
 
     doReturn(true).when(gitSyncSdkService).isGitSyncEnabled(accountId, orgId, projectId);
     setupGitContext(GitEntityInfo.builder().branch("random").yamlGitConfigId("random").build());
     yamlDiffForOverlayInputSet = OverlayInputSetValidationHelper.getYAMLDiffForOverlayInputSet(
-        gitSyncSdkService, inputSetService, inputSetEntity);
+        gitSyncSdkService, inputSetService, inputSetEntity, null);
     assertThat(yamlDiffForOverlayInputSet.isInputSetEmpty()).isTrue();
     assertThat(yamlDiffForOverlayInputSet.isNoUpdatePossible()).isFalse();
   }

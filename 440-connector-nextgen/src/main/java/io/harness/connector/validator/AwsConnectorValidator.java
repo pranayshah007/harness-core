@@ -17,10 +17,9 @@ import io.harness.delegate.beans.connector.awsconnector.AwsCredentialType;
 import io.harness.delegate.beans.connector.awsconnector.AwsManualConfigSpecDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsTaskParams;
 import io.harness.delegate.beans.connector.awsconnector.AwsTaskType;
-import io.harness.delegate.beans.connector.awsconnector.AwsValidateTaskResponse;
 import io.harness.delegate.task.TaskParameters;
 
-public class AwsConnectorValidator extends AbstractConnectorValidator {
+public class AwsConnectorValidator extends AbstractCloudProviderConnectorValidator {
   @Override
   public <T extends ConnectorConfigDTO> TaskParameters getTaskParameters(
       T connectorConfig, String accountIdentifier, String orgIdentifier, String projectIdentifier) {
@@ -45,9 +44,7 @@ public class AwsConnectorValidator extends AbstractConnectorValidator {
   @Override
   public ConnectorValidationResult validate(ConnectorConfigDTO connectorDTO, String accountIdentifier,
       String orgIdentifier, String projectIdentifier, String identifier) {
-    AwsValidateTaskResponse responseData = (AwsValidateTaskResponse) super.validateConnector(
-        connectorDTO, accountIdentifier, orgIdentifier, projectIdentifier, identifier);
-    return responseData.getConnectorValidationResult();
+    return super.validate(connectorDTO, accountIdentifier, orgIdentifier, projectIdentifier, identifier);
   }
 
   @Override

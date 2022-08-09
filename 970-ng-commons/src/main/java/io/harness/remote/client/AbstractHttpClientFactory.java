@@ -302,8 +302,4 @@ public abstract class AbstractHttpClientFactory {
     }
     throw new InvalidRequestException("No secret key for client for " + clientId);
   }
-
-  protected ServiceHttpClientConfig getServiceHttpClientConfig() {
-    return serviceHttpClientConfig;
-  }
 }

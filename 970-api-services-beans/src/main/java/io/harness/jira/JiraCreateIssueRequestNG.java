@@ -38,7 +38,7 @@ public class JiraCreateIssueRequestNG {
     this.fields.put(JiraConstantsNG.PROJECT_KEY, singletonMap("key", project.getKey()));
     this.fields.put(JiraConstantsNG.ISSUE_TYPE_KEY, singletonMap("id", issueType.getId()));
     if (EmptyPredicate.isEmpty(fields)) {
-      return;
+      fields = new HashMap<>();
     }
 
     fields = new HashMap<>(fields);

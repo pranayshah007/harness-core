@@ -180,15 +180,15 @@ public class UserGroupResource {
       description = "Copy a User Group in an account/org/project",
       responses =
       { @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Returns whether the copy was successful") })
+  @Deprecated
   public ResponseDTO<Boolean>
   copy(@Parameter(description = ACCOUNT_PARAM_MESSAGE, required = true) @NotEmpty @QueryParam(
            NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
       @Parameter(description = GROUP_IDENTIFIER_KEY, required = true) @QueryParam(
           NGCommonEntityConstants.GROUP_IDENTIFIER_KEY) String userGroupIdentifier,
       @RequestBody(description = "List of scopes", required = true) List<ScopeDTO> scopes) {
-    accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, null, null),
-        Resource.of(USERGROUP, userGroupIdentifier), MANAGE_USERGROUP_PERMISSION);
-    return ResponseDTO.newResponse(userGroupService.copy(accountIdentifier, userGroupIdentifier, scopes));
+    throw new InvalidRequestException(
+        "This feature is no longer available. You can now directly assign role assignments at project/organization to user groups linked in the account.");
   }
 
   @GET

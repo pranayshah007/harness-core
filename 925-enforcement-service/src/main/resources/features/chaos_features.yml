@@ -1,0 +1,36 @@
+moduleType: CHAOS
+clients:
+  - name: chaos
+    clientConfig: chaosServiceClientConfig
+    secretConfig: nextGenConfig.chaosServiceSecret
+features:
+  - name: MAX_CHAOS_SCENARIO_RUNS_PER_MONTH
+    description: The max chaos scenarios runs per month
+    restrictions:
+      FREE:
+        restrictionType: STATIC_LIMIT
+        limit: 60
+        clientName: chaos
+      TEAM:
+        restrictionType: LICENSE_STATIC_LIMIT
+        fieldName: totalChaosScenarioRun
+        clientName: chaos
+      ENTERPRISE:
+        restrictionType: LICENSE_STATIC_LIMIT
+        fieldName: totalChaosScenarioRun
+        clientName: chaos
+  - name: MAX_CHAOS_DELEGATES
+    description: Maximum Chaos Delegates
+    restrictions:
+      FREE:
+        restrictionType: STATIC_LIMIT
+        limit: 2
+        clientName: chaos
+      TEAM:
+        restrictionType: LICENSE_STATIC_LIMIT
+        fieldName: totalChaosDelegates
+        clientName: chaos
+      ENTERPRISE:
+        restrictionType: LICENSE_STATIC_LIMIT
+        fieldName: totalChaosDelegates
+        clientName: chaos

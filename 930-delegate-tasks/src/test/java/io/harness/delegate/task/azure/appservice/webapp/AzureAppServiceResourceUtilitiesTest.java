@@ -8,7 +8,9 @@
 package io.harness.delegate.task.azure.appservice.webapp;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.azure.model.AzureConstants.FETCH_ARTIFACT_FILE;
 import static io.harness.rule.OwnerRule.TMACARI;
+import static io.harness.rule.OwnerRule.VLICA;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.eq;
@@ -23,6 +25,9 @@ import io.harness.category.element.UnitTests;
 import io.harness.delegate.task.azure.appservice.AzureAppServiceResourceUtilities;
 import io.harness.delegate.task.azure.appservice.deployment.AzureAppServiceDeploymentService;
 import io.harness.delegate.task.azure.appservice.deployment.context.AzureAppServiceDeploymentContext;
+import io.harness.delegate.task.azure.artifact.ArtifactDownloadContext;
+import io.harness.delegate.task.azure.artifact.AzurePackageArtifactConfig;
+import io.harness.delegate.task.azure.common.AutoCloseableWorkingDirectory;
 import io.harness.delegate.task.azure.common.AzureLogCallbackProvider;
 import io.harness.rule.Owner;
 
@@ -40,6 +45,24 @@ public class AzureAppServiceResourceUtilitiesTest extends CategoryTest {
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
   @Mock private AzureAppServiceDeploymentService azureAppServiceDeploymentService;
   @InjectMocks AzureAppServiceResourceUtilities azureWebAppTaskHelper;
+
+  @Test
+  @Owner(developers = TMACARI)
+  @Category(UnitTests.class)
+  public void testToArtifactNgDownloadContext() {
+    AzureLogCallbackProvider azureLogCallbackProvider = mock(AzureLogCallbackProvider.class);
+    AzurePackageArtifactConfig artifactConfig = AzurePackageArtifactConfig.builder().build();
+    AutoCloseableWorkingDirectory autoCloseableWorkingDirectory =
+        new AutoCloseableWorkingDirectory("repositoryPath", "rootWorkingDirPath");
+
+    ArtifactDownloadContext artifactDownloadContext = azureWebAppTaskHelper.toArtifactNgDownloadContext(
+        artifactConfig, autoCloseableWorkingDirectory, azureLogCallbackProvider);
+
+    assertThat(artifactDownloadContext.getArtifactConfig()).isEqualTo(artifactConfig);
+    assertThat(artifactDownloadContext.getWorkingDirectory().getPath()).startsWith("rootWorkingDirPath");
+    assertThat(artifactDownloadContext.getLogCallbackProvider()).isEqualTo(azureLogCallbackProvider);
+    assertThat(artifactDownloadContext.getCommandUnitName()).isEqualTo(FETCH_ARTIFACT_FILE);
+  }
 
   @Test
   @Owner(developers = TMACARI)
@@ -66,6 +89,33 @@ public class AzureAppServiceResourceUtilitiesTest extends CategoryTest {
     assertThat(azureAppServiceDeploymentContext.getAzureWebClientContext()).isEqualTo(azureWebClientContext);
     assertThat(azureAppServiceDeploymentContext.getLogCallbackProvider()).isEqualTo(azureLogCallbackProvider);
     assertThat(azureAppServiceDeploymentContext.getSlotName()).isEqualTo("deploymentSlot");
+    assertThat(azureAppServiceDeploymentContext.getSteadyStateTimeoutInMin()).isEqualTo(10);
+  }
+
+  @Test
+  @Owner(developers = VLICA)
+  @Category(UnitTests.class)
+  public void testExecuteSwapSlotsWhenSourceSlotIsProduction() {
+    AzureLogCallbackProvider azureLogCallbackProvider = mock(AzureLogCallbackProvider.class);
+    AzureWebClientContext azureWebClientContext = AzureWebClientContext.builder()
+                                                      .resourceGroupName("resourceGroupName")
+                                                      .subscriptionId("subscriptionId")
+                                                      .azureConfig(AzureConfig.builder().build())
+                                                      .build();
+
+    azureWebAppTaskHelper.swapSlots(azureWebClientContext, azureLogCallbackProvider, "production", "testing", 10);
+
+    ArgumentCaptor<AzureAppServiceDeploymentContext> azureAppServiceDeploymentContextCaptor =
+        ArgumentCaptor.forClass(AzureAppServiceDeploymentContext.class);
+
+    verify(azureAppServiceDeploymentService)
+        .swapSlotsUsingCallback(
+            azureAppServiceDeploymentContextCaptor.capture(), eq("production"), eq(azureLogCallbackProvider));
+    AzureAppServiceDeploymentContext azureAppServiceDeploymentContext =
+        azureAppServiceDeploymentContextCaptor.getValue();
+    assertThat(azureAppServiceDeploymentContext.getAzureWebClientContext()).isEqualTo(azureWebClientContext);
+    assertThat(azureAppServiceDeploymentContext.getLogCallbackProvider()).isEqualTo(azureLogCallbackProvider);
+    assertThat(azureAppServiceDeploymentContext.getSlotName()).isEqualTo("testing");
     assertThat(azureAppServiceDeploymentContext.getSteadyStateTimeoutInMin()).isEqualTo(10);
   }
 }

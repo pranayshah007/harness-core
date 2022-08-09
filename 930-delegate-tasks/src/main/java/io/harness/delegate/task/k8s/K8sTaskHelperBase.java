@@ -35,6 +35,7 @@ import static io.harness.k8s.model.K8sExpressions.canaryDestinationExpression;
 import static io.harness.k8s.model.K8sExpressions.stableDestinationExpression;
 import static io.harness.k8s.model.Release.Status.Failed;
 import static io.harness.logging.CommandExecutionStatus.FAILURE;
+import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 import static io.harness.logging.LogLevel.ERROR;
 import static io.harness.logging.LogLevel.INFO;
 import static io.harness.logging.LogLevel.WARN;
@@ -269,6 +270,7 @@ public class K8sTaskHelperBase {
   public static final String patchYaml = "patches-%d.yaml";
   public static final String kustomizePatchesDirPrefix = "kustomizePatches-";
   public static final String VALUE_MISSING_REPLACEMENT = "<no value>";
+  public static final String NOT_FOUND = "not found";
 
   @Inject private TimeLimiter timeLimiter;
   @Inject private KubernetesContainerService kubernetesContainerService;
@@ -895,7 +897,7 @@ public class K8sTaskHelperBase {
     }
 
     if (denoteOverallSuccess) {
-      executionLogCallback.saveExecutionLog("\nDone.", INFO, CommandExecutionStatus.SUCCESS);
+      executionLogCallback.saveExecutionLog("\nDone.", INFO, SUCCESS);
     }
 
     return true;
@@ -916,7 +918,7 @@ public class K8sTaskHelperBase {
           result.hasOutput() ? result.outputUTF8() : "Empty output");
     }
 
-    executionLogCallback.saveExecutionLog("\nDone.", INFO, CommandExecutionStatus.SUCCESS);
+    executionLogCallback.saveExecutionLog("\nDone.", INFO, SUCCESS);
   }
 
   @VisibleForTesting
@@ -942,7 +944,7 @@ public class K8sTaskHelperBase {
     ProcessResponse response = runK8sExecutable(k8sDelegateTaskParams, executionLogCallback, scaleCommand);
     ProcessResult result = response.getProcessResult();
     if (result.getExitValue() == 0) {
-      executionLogCallback.saveExecutionLog("\nDone.", INFO, CommandExecutionStatus.SUCCESS);
+      executionLogCallback.saveExecutionLog("\nDone.", INFO, SUCCESS);
       return true;
     } else {
       logExecutableFailed(result, executionLogCallback);
@@ -996,12 +998,15 @@ public class K8sTaskHelperBase {
       ProcessResult result = executeDeleteCommand(client, k8sDelegateTaskParams, executionLogCallback, resourceId);
       if (result.getExitValue() != 0) {
         log.warn("Failed to delete resource {}. Error {}", resourceId.kindNameRef(), result.getOutput());
+        String reultOutput = result.outputUTF8().toLowerCase();
+        // if result contains "not found" then we don't fail else we fail the step
+        if (!reultOutput.contains(NOT_FOUND)) {
+          denoteOverallSuccess = false;
+        }
       }
     }
 
-    if (denoteOverallSuccess) {
-      executionLogCallback.saveExecutionLog("Done", INFO, CommandExecutionStatus.SUCCESS);
-    }
+    executionLogCallback.saveExecutionLog("Done", INFO, denoteOverallSuccess == true ? SUCCESS : FAILURE);
   }
 
   public List<KubernetesResourceId> executeDeleteHandlingPartialExecution(Kubectl client,
@@ -1018,7 +1023,7 @@ public class K8sTaskHelperBase {
     }
 
     if (denoteOverallSuccess) {
-      executionLogCallback.saveExecutionLog("Done", INFO, CommandExecutionStatus.SUCCESS);
+      executionLogCallback.saveExecutionLog("Done", INFO, SUCCESS);
     }
     return deletedResources;
   }
@@ -1177,7 +1182,7 @@ public class K8sTaskHelperBase {
       return false;
     }
 
-    executionLogCallback.saveExecutionLog("\nDone.", INFO, CommandExecutionStatus.SUCCESS);
+    executionLogCallback.saveExecutionLog("\nDone.", INFO, SUCCESS);
     return true;
   }
 
@@ -1288,7 +1293,7 @@ public class K8sTaskHelperBase {
         eventWatchProcess.getProcess().destroyForcibly().waitFor();
       }
       if (success) {
-        executionLogCallback.saveExecutionLog("\nDone.", INFO, CommandExecutionStatus.SUCCESS);
+        executionLogCallback.saveExecutionLog("\nDone.", INFO, SUCCESS);
 
       } else {
         executionLogCallback.saveExecutionLog("\nFailed.", INFO, FAILURE);
@@ -1603,7 +1608,7 @@ public class K8sTaskHelperBase {
       }
       if (success) {
         if (denoteOverallSuccess) {
-          executionLogCallback.saveExecutionLog("\nDone.", INFO, CommandExecutionStatus.SUCCESS);
+          executionLogCallback.saveExecutionLog("\nDone.", INFO, SUCCESS);
         }
       } else {
         executionLogCallback.saveExecutionLog(
@@ -2150,7 +2155,7 @@ public class K8sTaskHelperBase {
       }
       if (success) {
         if (denoteOverallSuccess) {
-          executionLogCallback.saveExecutionLog("\nDone.", INFO, CommandExecutionStatus.SUCCESS);
+          executionLogCallback.saveExecutionLog("\nDone.", INFO, SUCCESS);
         }
       } else {
         executionLogCallback.saveExecutionLog(
@@ -2456,7 +2461,6 @@ public class K8sTaskHelperBase {
         }
         return downloadManifestFilesFromGit(
             storeDelegateConfig, manifestFilesDirectory, executionLogCallback, accountId);
-
       case HTTP_HELM:
       case S3_HELM:
       case GCS_HELM:
@@ -2493,7 +2497,7 @@ public class K8sTaskHelperBase {
 
       executionLogCallback.saveExecutionLog(color("Successfully fetched following files:", White, Bold));
       executionLogCallback.saveExecutionLog(getManifestFileNamesInLogFormat(manifestFilesDirectory));
-      executionLogCallback.saveExecutionLog("Done.", INFO, CommandExecutionStatus.SUCCESS);
+      executionLogCallback.saveExecutionLog("Done.", INFO, SUCCESS);
       return true;
     } catch (IOException e) {
       log.error("Failed to get files from manifest directory", ExceptionMessageSanitizer.sanitizeException(e));
@@ -2546,7 +2550,7 @@ public class K8sTaskHelperBase {
 
       executionLogCallback.saveExecutionLog(color("Successfully fetched following files:", White, Bold));
       executionLogCallback.saveExecutionLog(getManifestFileNamesInLogFormat(manifestFilesDirectory));
-      executionLogCallback.saveExecutionLog("Done.", INFO, CommandExecutionStatus.SUCCESS);
+      executionLogCallback.saveExecutionLog("Done.", INFO, SUCCESS);
 
       return true;
     } catch (YamlException e) {
@@ -2628,7 +2632,7 @@ public class K8sTaskHelperBase {
 
       logCallback.saveExecutionLog(color("Successfully fetched following files:", White, Bold));
       logCallback.saveExecutionLog(getManifestFileNamesInLogFormat(destinationDirectory));
-      logCallback.saveExecutionLog("Done.", INFO, CommandExecutionStatus.SUCCESS);
+      logCallback.saveExecutionLog("Done.", INFO, SUCCESS);
 
     } catch (HelmClientException e) {
       String errorMsg = format("Failed to download manifest files from %s repo. ",
@@ -3039,7 +3043,7 @@ public class K8sTaskHelperBase {
         FileIo.writeUtf8StringToFile(filePath.toString(), manifestFile.getFileContent());
         executionLogCallback.saveExecutionLog(color(format("- %s", manifestFile.getFilePath()), LogColor.White));
       }
-      executionLogCallback.saveExecutionLog("Done.", INFO, CommandExecutionStatus.SUCCESS);
+      executionLogCallback.saveExecutionLog("Done.", INFO, SUCCESS);
       return true;
     } catch (Exception ex) {
       executionLogCallback.saveExecutionLog(ExceptionUtils.getMessage(ExceptionMessageSanitizer.sanitizeException(ex)),

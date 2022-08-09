@@ -23,6 +23,7 @@ import io.harness.azure.AzureEnvironmentType;
 import io.harness.category.element.UnitTests;
 import io.harness.connector.ConnectivityStatus;
 import io.harness.connector.ConnectorValidationResult;
+import io.harness.connector.task.azure.AzureValidationHandler;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.TaskData;
@@ -87,6 +88,7 @@ public class AzureTaskTest {
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
 
   @Mock private AzureAsyncTaskHelper azureAsyncTaskHelper;
+  @Mock private AzureValidationHandler azureValidationHandler;
 
   @InjectMocks
   private AzureTask task =
@@ -123,7 +125,7 @@ public class AzureTaskTest {
                                                               .testedAt(System.currentTimeMillis())
                                                               .build();
 
-    doReturn(connectorValidationResult).when(azureAsyncTaskHelper).getConnectorValidationResult(any(), any());
+    doReturn(connectorValidationResult).when(azureValidationHandler).validate(any());
 
     DelegateResponseData delegateResponseData = task.run(taskParameters);
 

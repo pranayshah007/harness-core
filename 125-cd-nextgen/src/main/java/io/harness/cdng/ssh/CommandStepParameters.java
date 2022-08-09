@@ -33,10 +33,10 @@ public class CommandStepParameters extends CommandBaseStepInfo implements SshSpe
   Map<String, Object> outputVariables;
 
   @Builder(builderMethodName = "infoBuilder")
-  public CommandStepParameters(ParameterField<Boolean> onDelegate,
+  public CommandStepParameters(String uuid, ParameterField<Boolean> onDelegate,
       ParameterField<List<TaskSelectorYaml>> delegateSelectors, Map<String, Object> environmentVariables,
       List<CommandUnitWrapper> commandUnits, Map<String, Object> outputVariables, ParameterField<String> host) {
-    super(onDelegate, delegateSelectors, commandUnits, host);
+    super(uuid, onDelegate, delegateSelectors, commandUnits, host);
     this.environmentVariables = environmentVariables;
     this.outputVariables = outputVariables;
   }

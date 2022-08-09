@@ -24,11 +24,15 @@ import static java.util.Collections.emptyMap;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.Scope;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.azure.webapp.beans.AzureSlotDeploymentPassThroughData;
 import io.harness.cdng.azure.webapp.beans.AzureSlotDeploymentPassThroughData.AzureSlotDeploymentPassThroughDataBuilder;
 import io.harness.cdng.azure.webapp.beans.AzureWebAppPreDeploymentDataOutput;
 import io.harness.cdng.azure.webapp.beans.AzureWebAppSlotDeploymentDataOutput;
+import io.harness.cdng.execution.StageExecutionInfo.StageExecutionInfoKeys;
+import io.harness.cdng.execution.azure.webapps.AzureWebAppsStageExecutionDetails.AzureWebAppsStageExecutionDetailsKeys;
+import io.harness.cdng.execution.service.StageExecutionInfoService;
 import io.harness.cdng.infra.beans.AzureWebAppInfrastructureOutcome;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.instance.info.InstanceInfoService;
@@ -40,12 +44,15 @@ import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.delegate.beans.instancesync.mapper.AzureWebAppToServerInstanceInfoMapper;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
+import io.harness.delegate.task.azure.appservice.AzureAppServicePreDeploymentData;
 import io.harness.delegate.task.azure.appservice.settings.AppSettingsFile;
 import io.harness.delegate.task.azure.appservice.webapp.ng.request.AzureWebAppFetchPreDeploymentDataRequest;
 import io.harness.delegate.task.azure.appservice.webapp.ng.request.AzureWebAppSlotDeploymentRequest;
 import io.harness.delegate.task.azure.appservice.webapp.ng.response.AzureWebAppFetchPreDeploymentDataResponse;
 import io.harness.delegate.task.azure.appservice.webapp.ng.response.AzureWebAppSlotDeploymentResponse;
 import io.harness.delegate.task.azure.appservice.webapp.ng.response.AzureWebAppTaskResponse;
+import io.harness.delegate.task.azure.artifact.AzureArtifactConfig;
+import io.harness.delegate.task.azure.artifact.AzureArtifactType;
 import io.harness.delegate.task.git.GitFetchResponse;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.executions.steps.ExecutionNodeType;
@@ -71,6 +78,7 @@ import software.wings.beans.TaskType;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -89,6 +97,7 @@ public class AzureWebAppSlotDeploymentStep extends TaskChainExecutableWithRollba
   @Inject private CDStepHelper cdStepHelper;
   @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
   @Inject private InstanceInfoService instanceInfoService;
+  @Inject private StageExecutionInfoService stageExecutionInfoService;
 
   @Override
   public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {}
@@ -183,12 +192,35 @@ public class AzureWebAppSlotDeploymentStep extends TaskChainExecutableWithRollba
             .deploymentProgressMarker(slotDeploymentResponse.getDeploymentProgressMarker())
             .build(),
         StepCategory.STEP.name());
+    AzureSlotDeploymentPassThroughData azureSlotDeploymentPassThroughData =
+        (AzureSlotDeploymentPassThroughData) passThroughData;
+    AzureArtifactConfig azureArtifactConfig = azureWebAppStepHelper.getPrimaryArtifactConfig(
+        ambiance, azureSlotDeploymentPassThroughData.getPrimaryArtifactOutcome());
+
+    if (azureArtifactConfig.getArtifactType().equals(AzureArtifactType.PACKAGE)) {
+      updateStageExecutionDetails(
+          ambiance, azureArtifactConfig, azureSlotDeploymentPassThroughData.getPreDeploymentData());
+    }
 
     StepResponse.StepOutcome stepOutcome = instanceInfoService.saveServerInstancesIntoSweepingOutput(ambiance,
         AzureWebAppToServerInstanceInfoMapper.toServerInstanceInfoList(
             slotDeploymentResponse.getAzureAppDeploymentData()));
 
     return stepResponseBuilder.stepOutcome(stepOutcome).build();
+  }
+
+  private void updateStageExecutionDetails(
+      Ambiance ambiance, AzureArtifactConfig azureArtifactConfig, AzureAppServicePreDeploymentData preDeploymentData) {
+    Scope scope = Scope.of(AmbianceUtils.getAccountId(ambiance), AmbianceUtils.getOrgIdentifier(ambiance),
+        AmbianceUtils.getProjectIdentifier(ambiance));
+    Map<String, Object> updates = new HashMap<>();
+    updates.put(StageExecutionInfoKeys.deploymentIdentifier,
+        azureWebAppStepHelper.getDeploymentIdentifier(
+            ambiance, preDeploymentData.getAppName(), preDeploymentData.getSlotName()));
+    updates.put(String.format("%s.%s", StageExecutionInfoKeys.executionDetails,
+                    AzureWebAppsStageExecutionDetailsKeys.artifactConfig),
+        azureArtifactConfig);
+    stageExecutionInfoService.update(scope, ambiance.getStageExecutionId(), updates);
   }
 
   @Override

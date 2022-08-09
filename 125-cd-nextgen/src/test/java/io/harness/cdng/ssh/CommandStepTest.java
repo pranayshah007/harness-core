@@ -91,20 +91,20 @@ public class CommandStepTest extends CategoryTest {
   private final CommandStepParameters commandStepParameters =
       CommandStepParameters.infoBuilder()
           .host(ParameterField.createValueField(localhost))
-          .commandUnits(Arrays.asList(
-              CommandUnitWrapper.builder()
-                  .commandUnit(
-                      StepCommandUnit.builder().spec(ScriptCommandUnitSpec.builder().build()).name("test").build())
-                  .build()))
+          .commandUnits(Arrays.asList(CommandUnitWrapper.builder()
+                                          .type("Script")
+                                          .spec(ScriptCommandUnitSpec.builder().build())
+                                          .name("test")
+                                          .build()))
           .build();
 
   private final CommandStepParameters commandStepParametersNoHosts =
       CommandStepParameters.infoBuilder()
-          .commandUnits(Arrays.asList(
-              CommandUnitWrapper.builder()
-                  .commandUnit(
-                      StepCommandUnit.builder().spec(ScriptCommandUnitSpec.builder().build()).name("test").build())
-                  .build()))
+          .commandUnits(Arrays.asList(CommandUnitWrapper.builder()
+                                          .type("Script")
+                                          .spec(ScriptCommandUnitSpec.builder().build())
+                                          .name("test")
+                                          .build()))
           .build();
   private SshCommandTaskParameters sshCommandTaskParameters =
       SshCommandTaskParameters.builder()

@@ -7,6 +7,7 @@
 
 package io.harness.cdng.envGroup.resource;
 
+import static io.harness.exception.WingsException.USER;
 import static io.harness.utils.PageUtils.getNGPageResponse;
 
 import static java.lang.Long.parseLong;
@@ -25,6 +26,7 @@ import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.cdng.envGroup.beans.EnvironmentGroupEntity;
 import io.harness.cdng.envGroup.beans.EnvironmentGroupEntity.EnvironmentGroupKeys;
 import io.harness.cdng.envGroup.beans.EnvironmentGroupFilterPropertiesDTO;
@@ -50,6 +52,7 @@ import io.harness.ng.core.environment.services.EnvironmentService;
 import io.harness.pms.rbac.NGResourceType;
 import io.harness.rbac.CDNGRbacPermissions;
 import io.harness.security.annotations.NextGenManagerAuth;
+import io.harness.utils.NGFeatureFlagHelperService;
 import io.harness.utils.PageUtils;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -63,6 +66,7 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
 import java.util.Optional;
 import javax.validation.Valid;
@@ -93,13 +97,13 @@ import org.springframework.data.mongodb.core.query.Criteria;
 @Produces({"application/json", "application/yaml"})
 @Consumes({"application/json", "application/yaml"})
 @AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor = @__({ @Inject }))
+@Tag(name = "EnvironmentGroup",
+    description = "This contains APIs related to EnvironmentGroup. Please enable Feature flag ENV_GROUP to use them")
 @ApiResponses(value =
     {
       @ApiResponse(code = 400, response = FailureDTO.class, message = "Bad Request")
       , @ApiResponse(code = 500, response = ErrorDTO.class, message = "Internal server error")
     })
-// TODO: Need to uncomment this for customer to use the apis: @Tag(name = "EnvironmentGroup", description = "This
-// contains APIs related to EnvironmentGroup")
 @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = NGCommonEntityConstants.BAD_REQUEST_CODE,
     description = NGCommonEntityConstants.BAD_REQUEST_PARAM_MESSAGE,
     content =
@@ -126,6 +130,9 @@ public class EnvironmentGroupResource {
   private final EnvironmentGroupService environmentGroupService;
   private final EnvironmentService environmentService;
   private final AccessControlClient accessControlClient;
+
+  private final NGFeatureFlagHelperService featureFlagHelperService;
+
   public static final String ENVIRONMENT_GROUP_PARAM_MESSAGE = "Environment Group Identifier for the entity";
 
   @GET
@@ -151,6 +158,8 @@ public class EnvironmentGroupResource {
       @Parameter(description = "Specify whether Environment is deleted or not") @QueryParam(
           NGCommonEntityConstants.DELETED_KEY) @DefaultValue("false") boolean deleted,
       @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo) {
+    checkFForThrow(accountId);
+
     Optional<EnvironmentGroupEntity> environmentGroupEntity =
         environmentGroupService.get(accountId, orgIdentifier, projectIdentifier, envGroupId, deleted);
 
@@ -179,6 +188,8 @@ public class EnvironmentGroupResource {
       @Parameter(description = "Details of the Environment Group to be created")
       @Valid EnvironmentGroupRequestDTO environmentGroupRequestDTO,
       @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo) {
+    checkFForThrow(accountId);
+
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, environmentGroupRequestDTO.getOrgIdentifier(),
                                                   environmentGroupRequestDTO.getProjectIdentifier()),
         Resource.of(NGResourceType.ENVIRONMENT_GROUP, null), CDNGRbacPermissions.ENVIRONMENT_GROUP_CREATE_PERMISSION);
@@ -225,6 +236,8 @@ public class EnvironmentGroupResource {
           NGResourceFilterConstants.FILTER_KEY) String filterIdentifier,
       @RequestBody(description = "This is the body for the filter properties for listing Environment Groups")
       FilterPropertiesDTO filterProperties, @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo) {
+    checkFForThrow(accountId);
+
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgIdentifier, projectIdentifier),
         Resource.of(NGResourceType.ENVIRONMENT_GROUP, null), CDNGRbacPermissions.ENVIRONMENT_GROUP_VIEW_PERMISSION);
     Criteria criteria = environmentGroupService.formCriteria(accountId, orgIdentifier, projectIdentifier, false,
@@ -265,6 +278,8 @@ public class EnvironmentGroupResource {
       @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @NotNull @QueryParam(
           NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier,
       @BeanParam GitEntityDeleteInfoDTO entityDeleteInfo) {
+    checkFForThrow(accountId);
+
     // TODO: set up usages of env group as well as env linked with it
     log.info(String.format("Delete Environment group Api %s", envGroupId));
     EnvironmentGroupEntity deletedEntity = environmentGroupService.delete(
@@ -289,6 +304,8 @@ public class EnvironmentGroupResource {
           description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) String accountId,
       @Parameter(description = "Details of the Environment Group to be updated")
       @Valid EnvironmentGroupRequestDTO environmentGroupRequestDTO, @BeanParam GitEntityUpdateInfoDTO gitEntityInfo) {
+    checkFForThrow(accountId);
+
     log.info(String.format("Updating Environment Group with identifier %s in project %s, org %s, account %s",
         envGroupId, environmentGroupRequestDTO.getProjectIdentifier(), environmentGroupRequestDTO.getOrgIdentifier(),
         accountId));
@@ -322,7 +339,7 @@ public class EnvironmentGroupResource {
 
   @VisibleForTesting
   List<EnvironmentResponse> getEnvironmentResponses(EnvironmentGroupEntity groupEntity) {
-    List<EnvironmentResponse> envResponseList = null;
+    List<EnvironmentResponse> envResponseList;
 
     List<Environment> envList =
         environmentService.fetchesNonDeletedEnvironmentFromListOfIdentifiers(groupEntity.getAccountId(),
@@ -342,5 +359,11 @@ public class EnvironmentGroupResource {
     envIdentifiers.forEach(envId
         -> accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgId, projectId),
             Resource.of(NGResourceType.ENVIRONMENT, envId), CDNGRbacPermissions.ENVIRONMENT_VIEW_PERMISSION));
+  }
+
+  private void checkFForThrow(String accountId) {
+    if (!featureFlagHelperService.isEnabled(accountId, FeatureName.ENV_GROUP)) {
+      throw new InvalidRequestException("Please enable feature flag ENV_GROUP to use this API", USER);
+    }
   }
 }

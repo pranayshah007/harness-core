@@ -51,6 +51,7 @@ public class InstanceDashboardServiceTest extends InstancesTestBase {
   private static final String ORG_IDENTIFIER = "ORG_IDENTIFIER";
   private static final String PROJECT_IDENTIFIER = "PROJECT_IDENTIFIER";
   private static final String SERVICE_IDENTIFIER = "SERVICE_IDENTIFIER";
+  private static final String IMAGE = "harness/todolist-sample";
   private static final EnvironmentType defaultEnvType = EnvironmentType.PreProduction;
 
   private Instance createDummyInstance(String envId, String tag, EnvironmentType envType) {
@@ -63,7 +64,7 @@ public class InstanceDashboardServiceTest extends InstancesTestBase {
         .envName("envName")
         .envType(envType)
         .infrastructureKind(KUBERNETES_DIRECT)
-        .primaryArtifact(ArtifactDetails.builder().tag(tag).build())
+        .primaryArtifact(ArtifactDetails.builder().tag(tag).displayName(String.format("%s:%s", IMAGE, tag)).build())
         .createdAt(0L)
         .deletedAt(10L)
         .createdAt(0L)
@@ -196,6 +197,8 @@ public class InstanceDashboardServiceTest extends InstancesTestBase {
     for (int i = 0; i < inputBuildIds.size(); i++) {
       assertThat(result.get(i).getBuildId()).isEqualTo(inputBuildIds.get(i));
       assertThat(result.get(i).getInstances().size()).isEqualTo(20);
+      assertThat(result.get(i).getInstances().get(0).getArtifactName())
+          .isEqualTo(String.format("%s:%s", IMAGE, inputBuildIds.get(i)));
     }
   }
 

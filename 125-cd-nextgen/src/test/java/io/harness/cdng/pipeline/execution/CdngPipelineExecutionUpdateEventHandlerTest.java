@@ -10,14 +10,15 @@ package io.harness.cdng.pipeline.execution;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.rule.OwnerRule.TMACARI;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.cdng.execution.service.StageExecutionInfoService;
 import io.harness.cdng.pipeline.executions.CdngPipelineExecutionUpdateEventHandler;
-import io.harness.cdng.rollback.service.RollbackDataServiceImpl;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
@@ -37,7 +38,7 @@ import org.mockito.MockitoAnnotations;
 @OwnedBy(CDP)
 public class CdngPipelineExecutionUpdateEventHandlerTest extends CategoryTest {
   private static final String STAGE_EXECUTION_ID = "stageExecutionId";
-  @Mock private RollbackDataServiceImpl rollbackDataService;
+  @Mock private StageExecutionInfoService stageExecutionInfoService;
   @InjectMocks private CdngPipelineExecutionUpdateEventHandler cdngPipelineExecutionUpdateEventHandler;
 
   @Before
@@ -61,7 +62,7 @@ public class CdngPipelineExecutionUpdateEventHandlerTest extends CategoryTest {
                                          .build())
                           .build())
             .build());
-    verify(rollbackDataService).updateStatus(eq(STAGE_EXECUTION_ID), eq(StageStatus.SUCCEEDED));
+    verify(stageExecutionInfoService).updateStatus(any(), eq(STAGE_EXECUTION_ID), eq(StageStatus.SUCCEEDED));
   }
 
   @Test
@@ -80,6 +81,6 @@ public class CdngPipelineExecutionUpdateEventHandlerTest extends CategoryTest {
                                          .build())
                           .build())
             .build());
-    verify(rollbackDataService).updateStatus(eq(STAGE_EXECUTION_ID), eq(StageStatus.FAILED));
+    verify(stageExecutionInfoService).updateStatus(any(), eq(STAGE_EXECUTION_ID), eq(StageStatus.FAILED));
   }
 }
