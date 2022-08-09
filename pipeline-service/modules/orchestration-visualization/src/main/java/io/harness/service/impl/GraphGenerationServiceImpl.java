@@ -44,6 +44,7 @@ import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.execution.utils.StatusUtils;
 import io.harness.pms.plan.execution.ExecutionSummaryUpdateUtils;
+import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 import io.harness.pms.plan.execution.service.PmsExecutionSummaryService;
 import io.harness.repositories.orchestrationEventLog.OrchestrationEventLogRepository;
 import io.harness.service.GraphGenerationService;
@@ -246,6 +247,13 @@ public class GraphGenerationServiceImpl implements GraphGenerationService {
     } catch (Exception ex) {
       orchestrationGraph = buildOrchestrationGraph(planExecutionId);
       return generatePartialGraph(startingNodeId, orchestrationGraph);
+    }
+  }
+
+  @Override
+  public void sendUpdateEventIfAny(PipelineExecutionSummaryEntity executionSummaryEntity) {
+    if (!StatusUtils.isFinalStatus(executionSummaryEntity.getStatus().getEngineStatus())) {
+      orchestrationLogPublisher.sendLogEvent(executionSummaryEntity.getPlanExecutionId());
     }
   }
 
