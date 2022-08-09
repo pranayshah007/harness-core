@@ -29,6 +29,7 @@ java_binary(
         "@maven//:org_eclipse_jgit_org_eclipse_jgit_ssh_jsch",
         "@maven//:org_mockito_mockito_core",
         "@maven//:org_slf4j_slf4j_api",
+        "@maven//:software_amazon_awssdk_ecs",
     ],
 )
 

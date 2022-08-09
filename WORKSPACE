@@ -5083,9 +5083,31 @@ powermock_artifacts = [
     ]
 ]
 
+amazon_v2_artifacts = [
+    maven.artifact(
+        group = "software.amazon.awssdk",
+        artifact = x,
+        version = "2.17.220",
+        exclusions = [
+            "commons-logging:commons-logging",
+        ],
+    )
+    for x in [
+         "ecs",
+#        "applicationautoscaling",
+#        "aws-core",
+#        "core",
+#        "auth",
+#        "sts",
+#        "sdk-core",
+#        "health"
+    ]
+]
+
+
 maven_install(
     name = "maven",
-    artifacts = plain_artifacts + amazon_artifacts + powermock_artifacts + [
+    artifacts = plain_artifacts + amazon_artifacts + amazon_v2_artifacts + powermock_artifacts + [
         maven.artifact(
             group = "io.netty",
             artifact = "netty-transport-native-kqueue",
