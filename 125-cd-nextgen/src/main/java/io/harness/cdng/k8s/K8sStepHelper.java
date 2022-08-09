@@ -707,15 +707,14 @@ public class K8sStepHelper extends K8sHelmCommonStepHelper {
       ManifestOutcome k8sManifest) {
     CustomManifestValuesFetchResponse customManifestValuesFetchResponse =
         (CustomManifestValuesFetchResponse) responseData;
+
     if (customManifestValuesFetchResponse.getCommandExecutionStatus() != SUCCESS) {
-      if (customManifestValuesFetchResponse.getCommandExecutionStatus() != SUCCESS) {
-        CustomFetchResponsePassThroughData customFetchResponsePassThroughData =
-            CustomFetchResponsePassThroughData.builder()
-                .errorMsg(customManifestValuesFetchResponse.getErrorMessage())
-                .unitProgressData(customManifestValuesFetchResponse.getUnitProgressData())
-                .build();
-        return TaskChainResponse.builder().chainEnd(true).passThroughData(customFetchResponsePassThroughData).build();
-      }
+      CustomFetchResponsePassThroughData customFetchResponsePassThroughData =
+          CustomFetchResponsePassThroughData.builder()
+              .errorMsg(customManifestValuesFetchResponse.getErrorMessage())
+              .unitProgressData(customManifestValuesFetchResponse.getUnitProgressData())
+              .build();
+      return TaskChainResponse.builder().chainEnd(true).passThroughData(customFetchResponsePassThroughData).build();
     }
 
     K8sStepPassThroughData updatedK8sStepPassThroughData =
