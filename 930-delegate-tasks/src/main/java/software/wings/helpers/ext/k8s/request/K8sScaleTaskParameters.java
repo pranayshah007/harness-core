@@ -41,7 +41,7 @@ public class K8sScaleTaskParameters extends K8sTaskParameters {
       boolean useLatestChartMuseumVersion, boolean useLatestKustomizeVersion, boolean useNewKubectlVersion) {
     super(accountId, appId, commandName, activityId, k8sClusterConfig, workflowExecutionId, releaseName,
         timeoutIntervalInMin, k8sTaskType, helmVersion, delegateSelectors, useLatestChartMuseumVersion,
-        useLatestKustomizeVersion, useNewKubectlVersion);
+        useLatestKustomizeVersion, useNewKubectlVersion, null);
     this.workload = workload;
     this.instances = instances;
     this.instanceUnitType = instanceUnitType;
