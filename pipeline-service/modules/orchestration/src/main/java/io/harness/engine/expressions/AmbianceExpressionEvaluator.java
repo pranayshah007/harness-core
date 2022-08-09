@@ -26,6 +26,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.execution.PlanExecution;
 import io.harness.expression.EngineExpressionEvaluator;
 import io.harness.expression.ExpressionEvaluatorUtils;
+import io.harness.expression.ExpressionMode;
 import io.harness.expression.RegexFunctor;
 import io.harness.expression.ResolveObjectResponse;
 import io.harness.expression.VariableResolverTracker;
@@ -185,19 +186,25 @@ public class AmbianceExpressionEvaluator extends EngineExpressionEvaluator {
   }
 
   @Override
+  @Deprecated
   public Object resolve(Object o, boolean skipUnresolvedExpressionsCheck) {
+    return resolve(o, calculateExpressionMode(skipUnresolvedExpressionsCheck));
+  }
+
+  @Override
+  public Object resolve(Object o, ExpressionMode expressionMode) {
     return ExpressionEvaluatorUtils.updateExpressions(
-        o, new AmbianceResolveFunctorImpl(this, skipUnresolvedExpressionsCheck, inputSetValidatorFactory));
+        o, new AmbianceResolveFunctorImpl(this, inputSetValidatorFactory, expressionMode));
   }
 
   public static class AmbianceResolveFunctorImpl extends ResolveFunctorImpl {
     private final ParameterFieldProcessor parameterFieldProcessor;
 
     public AmbianceResolveFunctorImpl(AmbianceExpressionEvaluator expressionEvaluator,
-        boolean skipUnresolvedExpressionsCheck, InputSetValidatorFactory inputSetValidatorFactory) {
-      super(expressionEvaluator, skipUnresolvedExpressionsCheck);
-      this.parameterFieldProcessor = new ParameterFieldProcessor(
-          getExpressionEvaluator(), isSkipUnresolvedExpressionsCheck(), inputSetValidatorFactory);
+        InputSetValidatorFactory inputSetValidatorFactory, ExpressionMode expressionMode) {
+      super(expressionEvaluator, expressionMode);
+      this.parameterFieldProcessor =
+          new ParameterFieldProcessor(getExpressionEvaluator(), inputSetValidatorFactory, expressionMode);
     }
 
     @Override
