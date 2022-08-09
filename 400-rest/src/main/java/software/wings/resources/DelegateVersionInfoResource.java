@@ -11,7 +11,7 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.exception.InvalidRequestException;
 import io.harness.rest.RestResponse;
-import io.harness.security.annotations.DelegateAuth2;
+import io.harness.security.annotations.DelegateAuth;
 
 import software.wings.service.intfc.AccountService;
 
@@ -39,7 +39,7 @@ public class DelegateVersionInfoResource {
   @Path("/delegate")
   @Timed
   @ExceptionMetered
-  @DelegateAuth2
+  @DelegateAuth
   public RestResponse<List<String>> getDelegateVersion(@QueryParam("accountId") @NotEmpty String accountId) {
     return new RestResponse<>(accountService.getDelegateConfiguration(accountId).getDelegateVersions());
   }
@@ -48,7 +48,7 @@ public class DelegateVersionInfoResource {
   @Path("/watcher")
   @Timed
   @ExceptionMetered
-  @DelegateAuth2
+  @DelegateAuth
   public RestResponse<String> getWatcherVersion(@QueryParam("accountId") @NotEmpty String accountId) {
     final String watcherVersion = accountService.getWatcherVersion(accountId);
     if (isNotEmpty(watcherVersion)) {
