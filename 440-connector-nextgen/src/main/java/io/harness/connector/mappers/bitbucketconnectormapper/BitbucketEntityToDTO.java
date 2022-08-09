@@ -13,6 +13,7 @@ import io.harness.connector.entities.embedded.bitbucketconnector.BitbucketAuthen
 import io.harness.connector.entities.embedded.bitbucketconnector.BitbucketConnector;
 import io.harness.connector.entities.embedded.bitbucketconnector.BitbucketHttpAuth;
 import io.harness.connector.entities.embedded.bitbucketconnector.BitbucketHttpAuthentication;
+import io.harness.connector.entities.embedded.bitbucketconnector.BitbucketOauth;
 import io.harness.connector.entities.embedded.bitbucketconnector.BitbucketSshAuthentication;
 import io.harness.connector.entities.embedded.bitbucketconnector.BitbucketUsernamePassword;
 import io.harness.connector.entities.embedded.bitbucketconnector.BitbucketUsernamePasswordApiAccess;
@@ -27,12 +28,14 @@ import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketCredentialsDTO
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketHttpAuthenticationType;
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketHttpCredentialsDTO;
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketHttpCredentialsSpecDTO;
+import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketOauthDTO;
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketSshCredentialsDTO;
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketUsernamePasswordDTO;
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketUsernameTokenApiAccessDTO;
 import io.harness.encryption.SecretRefData;
 import io.harness.encryption.SecretRefHelper;
 import io.harness.exception.UnknownEnumTypeException;
+import io.harness.govern.Switch;
 
 @OwnedBy(HarnessTeam.DX)
 public class BitbucketEntityToDTO implements ConnectorEntityToDTOMapper<BitbucketConnectorDTO, BitbucketConnector> {
@@ -106,20 +109,37 @@ public class BitbucketEntityToDTO implements ConnectorEntityToDTOMapper<Bitbucke
   }
 
   private BitbucketApiAccessDTO buildApiAccess(BitbucketConnector connector) {
-    final BitbucketUsernamePasswordApiAccess bitbucketTokenApiAccess = connector.getBitbucketApiAccess();
-    SecretRefData usernameRef = bitbucketTokenApiAccess.getUsernameRef() != null
-        ? SecretRefHelper.createSecretRef(bitbucketTokenApiAccess.getUsernameRef())
-        : null;
-    final BitbucketApiAccessSpecDTO bitbucketTokenSpecDTO =
+    switch (connector.getApiAccessType()) {
+      case USERNAME_AND_TOKEN:
+        final BitbucketUsernamePasswordApiAccess bitbucketApiAccessType =
+            (BitbucketUsernamePasswordApiAccess) connector.getBitbucketApiAccess();
+        SecretRefData usernameRef = bitbucketApiAccessType.getUsernameRef() != null
+            ? SecretRefHelper.createSecretRef(bitbucketApiAccessType.getUsernameRef())
+            : null;
+        final BitbucketApiAccessSpecDTO bitbucketTokenSpecDTO =
 
-        BitbucketUsernameTokenApiAccessDTO.builder()
-            .username(bitbucketTokenApiAccess.getUsername())
-            .usernameRef(usernameRef)
-            .tokenRef(SecretRefHelper.createSecretRef(bitbucketTokenApiAccess.getTokenRef()))
+            BitbucketUsernameTokenApiAccessDTO.builder()
+                .username(bitbucketApiAccessType.getUsername())
+                .usernameRef(usernameRef)
+                .tokenRef(SecretRefHelper.createSecretRef(bitbucketApiAccessType.getTokenRef()))
+                .build();
+        return BitbucketApiAccessDTO.builder()
+            .type(BitbucketApiAccessType.USERNAME_AND_TOKEN)
+            .spec(bitbucketTokenSpecDTO)
             .build();
-    return BitbucketApiAccessDTO.builder()
-        .type(BitbucketApiAccessType.USERNAME_AND_TOKEN)
-        .spec(bitbucketTokenSpecDTO)
-        .build();
+      case OAUTH:
+        final BitbucketOauth bitbucketApiAccess = (BitbucketOauth) connector.getBitbucketApiAccess();
+
+        final BitbucketApiAccessSpecDTO bitbucketOauthDTO =
+            BitbucketOauthDTO.builder()
+                .tokenRef(SecretRefHelper.createSecretRef(bitbucketApiAccess.getTokenRef()))
+                .refreshTokenRef(SecretRefHelper.createSecretRef(bitbucketApiAccess.getRefreshTokenRef()))
+                .build();
+
+        return BitbucketApiAccessDTO.builder().type(BitbucketApiAccessType.OAUTH).spec(bitbucketOauthDTO).build();
+      default:
+        Switch.unhandled(connector.getApiAccessType());
+        return null;
+    }
   }
 }

@@ -15,6 +15,7 @@ import io.harness.migration.NGMigration;
 import io.harness.migration.beans.MigrationType;
 import io.harness.ng.core.migration.DeleteCVSetupUsageEventsMigration;
 import io.harness.ng.core.migration.NGAccountSettingsMigration;
+import io.harness.ng.core.migration.NGBitbucketConnectorMigration;
 import io.harness.ng.core.migration.NGDefaultOrgNameMigration;
 import io.harness.ng.core.migration.NGDefaultSMNameMigration;
 import io.harness.ng.core.migration.NGGitlabConnectorMigration;
@@ -46,6 +47,7 @@ public class NGCoreMigrationDetails implements MigrationDetails {
         .add(Pair.of(6, NGDefaultOrgNameMigration.class))
         .add(Pair.of(7, NGAccountSettingsMigration.class))
         .add(Pair.of(8, NGGitlabConnectorMigration.class))
+        .add(Pair.of(9, NGBitbucketConnectorMigration.class))
         .build();
   }
 }

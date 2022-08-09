@@ -8,13 +8,18 @@
 package io.harness.connector.entities.embedded.bitbucketconnector;
 
 import io.harness.connector.entities.Connector;
+import io.harness.connector.entities.embedded.gitlabconnector.GitlabApiAccess;
 import io.harness.delegate.beans.connector.scm.GitAuthType;
 import io.harness.delegate.beans.connector.scm.GitConnectionType;
 
+import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketApiAccess;
+import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketApiAccessType;
+import io.harness.delegate.beans.connector.scm.gitlab.GitlabApiAccessType;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Value;
 import lombok.experimental.FieldNameConstants;
+import lombok.experimental.NonFinal;
 import org.mongodb.morphia.annotations.Entity;
 import org.springframework.data.annotation.Persistent;
 import org.springframework.data.annotation.TypeAlias;
@@ -33,5 +38,8 @@ public class BitbucketConnector extends Connector {
   GitAuthType authType;
   BitbucketAuthentication authenticationDetails;
   boolean hasApiAccess;
-  BitbucketUsernamePasswordApiAccess bitbucketApiAccess;
+  BitbucketApiAccessType apiAccessType;
+  BitbucketApiAccess bitbucketApiAccess;
+  @NonFinal
+  Long nextTokenRenewIteration;
 }

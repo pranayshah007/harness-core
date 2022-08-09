@@ -7,6 +7,7 @@
 
 package io.harness.connector.entities.embedded.bitbucketconnector;
 
+import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketApiAccess;
 import lombok.Builder;
 import lombok.Value;
 import org.springframework.data.annotation.TypeAlias;
@@ -14,7 +15,7 @@ import org.springframework.data.annotation.TypeAlias;
 @Value
 @Builder
 @TypeAlias("io.harness.connector.entities.embedded.bitbucketconnector.BitbucketUsernamePasswordApiAccess")
-public class BitbucketUsernamePasswordApiAccess {
+public class BitbucketUsernamePasswordApiAccess implements BitbucketApiAccess {
   String username;
   String usernameRef;
   String tokenRef;
