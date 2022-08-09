@@ -156,6 +156,8 @@ redisAtmosphereConfig:
   readMode: MASTER
   nettyThreads: 16
   useScriptCache: true
+  subscriptionsPerConnection: 5
+  subscriptionConnectionPoolSize: 50
 
 githubConfig:
   clientId: githubClientId

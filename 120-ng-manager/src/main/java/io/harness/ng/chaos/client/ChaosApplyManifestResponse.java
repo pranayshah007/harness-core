@@ -5,13 +5,14 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.cdng.rollback;
+package io.harness.ng.chaos.client;
 
-import static io.harness.annotations.dev.HarnessTeam.CDP;
+import lombok.Builder;
+import lombok.Value;
 
-import io.harness.annotations.dev.OwnedBy;
-
-@OwnedBy(CDP)
-public interface RollbackDeploymentInfoKey {
-  String getKey();
+@Value
+@Builder
+public class ChaosApplyManifestResponse {
+  String taskId;
+  String status; // SUCCESS FAILED
 }

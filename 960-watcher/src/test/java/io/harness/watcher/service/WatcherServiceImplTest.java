@@ -371,7 +371,7 @@ public class WatcherServiceImplTest {
     watcherService.checkForWatcherUpgrade();
 
     verify(watcherService).upgradeWatcher(CURRENT_VERSION, VALID_FIVE_DIGITS_VERSION);
-    verify(watcherService, times(2)).getVersion();
+    verify(watcherService, times(3)).getVersion();
   }
 
   @Test
@@ -386,8 +386,8 @@ public class WatcherServiceImplTest {
 
     watcherService.checkForWatcherUpgrade();
 
-    verify(watcherService).upgradeWatcher(CURRENT_VERSION, VALID_FIVE_DIGITS_WITH_HYPHEN);
-    verify(watcherService, times(2)).getVersion();
+    verify(watcherService).upgradeWatcher(CURRENT_VERSION, VALID_FIVE_DIGITS_VERSION);
+    verify(watcherService, times(3)).getVersion();
   }
 
   @Test
@@ -403,7 +403,7 @@ public class WatcherServiceImplTest {
     watcherService.checkForWatcherUpgrade();
 
     verify(watcherService).upgradeWatcher(CURRENT_VERSION, VALID_SIX_DIGITS_VERSION);
-    verify(watcherService, times(2)).getVersion();
+    verify(watcherService, times(3)).getVersion();
   }
 
   @Test
@@ -418,8 +418,8 @@ public class WatcherServiceImplTest {
 
     watcherService.checkForWatcherUpgrade();
 
-    verify(watcherService).upgradeWatcher(CURRENT_VERSION, VALID_SIX_DIGITS_VERSION_WITH_HYPHEN);
-    verify(watcherService, times(2)).getVersion();
+    verify(watcherService).upgradeWatcher(CURRENT_VERSION, VALID_SIX_DIGITS_VERSION);
+    verify(watcherService, times(3)).getVersion();
   }
 
   @Test

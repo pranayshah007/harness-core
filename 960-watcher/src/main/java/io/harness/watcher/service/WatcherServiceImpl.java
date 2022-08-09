@@ -1343,22 +1343,21 @@ public class WatcherServiceImpl implements WatcherService {
     try {
       // TODO - if multiVersion use manager endpoint
       boolean upgrade = false;
-      String latestVersion = "";
+      String latestWatcherVersion = "";
       if (!watcherConfiguration.getDelegateCheckLocation().startsWith("file://")) {
-        String watcherMetadata = fetchLatestWatcherVersion();
-        latestVersion = substringBefore(watcherMetadata, " ").trim();
-        if (Pattern.matches("\\d\\.\\d\\.\\d{5,7}(-\\d{3})?", latestVersion)) {
-          upgrade = !StringUtils.equals(getVersion(), latestVersion);
+        latestWatcherVersion = substringBefore(fetchLatestWatcherVersion(), "-").trim();
+        if (Pattern.matches("\\d\\.\\d\\.\\d{5,7}(-\\d{3})?", latestWatcherVersion)) {
+          upgrade = !StringUtils.equals(getVersion(), latestWatcherVersion);
         }
       }
       if (upgrade) {
-        log.info("[Old] Upgrading watcher");
+        log.info("[Old] Upgrading watcher from version {} to version {}", getVersion(), latestWatcherVersion);
         working.set(true);
         final boolean isDownloaded = downloadRunScriptsBeforeRestartingDelegateAndWatcher();
         if (isDownloaded) {
-          upgradeWatcher(getVersion(), latestVersion);
+          upgradeWatcher(getVersion(), latestWatcherVersion);
         } else {
-          log.error("Failed to download run scripts before upgrading watcher to {}", latestVersion);
+          log.error("Failed to download run scripts before upgrading watcher to {}", latestWatcherVersion);
         }
       } else {
         log.info("Watcher up to date");
@@ -1384,7 +1383,9 @@ public class WatcherServiceImpl implements WatcherService {
         log.warn("Failed to fetch watcher version from Manager ", e);
       }
     }
-    return Http.getResponseStringFromUrl(watcherConfiguration.getUpgradeCheckLocation(), 10, 10);
+    final String watcherMetadata =
+        Http.getResponseStringFromUrl(watcherConfiguration.getUpgradeCheckLocation(), 10, 10);
+    return substringBefore(watcherMetadata, " ").trim();
   }
 
   private static void logConfigWatcherYml() {

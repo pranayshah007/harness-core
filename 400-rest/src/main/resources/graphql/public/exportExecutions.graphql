@@ -24,6 +24,8 @@ input ExportExecutionFilter {
   pipeline: IdFilter
   creationTime: TimeFilter
   tag: DeploymentTagFilter
+  artifactBuildNo: IdFilter
+  helmChartVersion: IdFilter
 }
 
 input ExportExecutionsInput {

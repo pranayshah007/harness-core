@@ -11,9 +11,12 @@ import io.harness.security.encryption.EncryptedDataDetail;
 
 import java.util.List;
 import java.util.Map;
+import org.json.JSONObject;
 
 public interface GitlabService {
   boolean sendStatus(GitlabConfig bitbucketConfig, String userName, String token,
       List<EncryptedDataDetail> encryptionDetails, String sha, String owner, String repo,
       Map<String, Object> bodyObjectMap);
+
+  JSONObject mergePR(String apiUrl, String slug, String token, String prNumber);
 }
