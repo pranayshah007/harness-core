@@ -202,8 +202,8 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
   @Override
   public Optional<PipelineEntity> get(
       String accountId, String orgIdentifier, String projectIdentifier, String identifier, boolean deleted) {
-    Optional<PipelineEntity> optionalPipelineEntity =
-        getWithoutPerformingValidations(accountId, orgIdentifier, projectIdentifier, identifier, deleted);
+    Optional<PipelineEntity> optionalPipelineEntity = getPipelineMetadataWithoutPerformingValidations(
+        accountId, orgIdentifier, projectIdentifier, identifier, deleted);
     if (!optionalPipelineEntity.isPresent()) {
       throw new EntityNotFoundException(
           PipelineCRUDErrorResponse.errorMessageForPipelineNotFound(orgIdentifier, projectIdentifier, identifier));
@@ -227,7 +227,7 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
   }
 
   @Override
-  public Optional<PipelineEntity> getWithoutPerformingValidations(
+  public Optional<PipelineEntity> getPipelineMetadataWithoutPerformingValidations(
       String accountId, String orgIdentifier, String projectIdentifier, String identifier, boolean deleted) {
     Optional<PipelineEntity> optionalPipelineEntity;
     try {
@@ -236,7 +236,7 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
             pmsPipelineRepository.findForOldGitSync(accountId, orgIdentifier, projectIdentifier, identifier, !deleted);
       } else {
         optionalPipelineEntity =
-            pmsPipelineRepository.find(accountId, orgIdentifier, projectIdentifier, identifier, !deleted, false);
+            pmsPipelineRepository.find(accountId, orgIdentifier, projectIdentifier, identifier, !deleted, true);
       }
     } catch (ExplanationException | HintException | ScmException e) {
       log.error(String.format("Error while retrieving pipeline [%s]", identifier), e);

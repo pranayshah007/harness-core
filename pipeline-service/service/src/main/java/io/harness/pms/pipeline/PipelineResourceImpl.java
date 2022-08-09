@@ -314,7 +314,8 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
             pipelineId, projectId, orgId, accountId));
 
     Optional<PipelineEntity> pipelineEntity;
-    pipelineEntity = pmsPipelineService.getWithoutPerformingValidations(accountId, orgId, projectId, pipelineId, false);
+    pipelineEntity = pmsPipelineService.getPipelineMetadataWithoutPerformingValidations(
+        accountId, orgId, projectId, pipelineId, false);
 
     PMSPipelineSummaryResponseDTO pipelineSummary =
         PMSPipelineDtoMapper.preparePipelineSummary(pipelineEntity.orElseThrow(

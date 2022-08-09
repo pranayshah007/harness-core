@@ -69,6 +69,17 @@ public class PMSPipelineDtoMapper {
         : null;
   }
 
+  private EntityGitDetails getEntityGitDetailsForMetadataResponse(PipelineEntity pipelineEntity) {
+    EntityGitDetails entityGitDetails = pipelineEntity.getStoreType() == null
+        ? EntityGitDetailsMapper.mapEntityGitDetails(pipelineEntity)
+        : pipelineEntity.getStoreType() == StoreType.REMOTE ? GitAwareContextHelper.getEntityGitDetails(pipelineEntity)
+                                                            : null;
+    if (entityGitDetails != null) {
+      entityGitDetails.setRepoUrl(pipelineEntity.getRepoURL());
+    }
+    return entityGitDetails;
+  }
+
   public EntityValidityDetails getEntityValidityDetails(PipelineEntity pipelineEntity) {
     return pipelineEntity.getStoreType() != null || !pipelineEntity.isEntityInvalid()
         ? EntityValidityDetails.builder().valid(true).build()
@@ -130,7 +141,7 @@ public class PMSPipelineDtoMapper {
   }
 
   public PMSPipelineSummaryResponseDTO preparePipelineSummary(PipelineEntity pipelineEntity) {
-    return preparePipelineSummary(pipelineEntity, getEntityGitDetails(pipelineEntity));
+    return preparePipelineSummary(pipelineEntity, getEntityGitDetailsForMetadataResponse(pipelineEntity));
   }
 
   public PMSPipelineSummaryResponseDTO preparePipelineSummaryForListView(
@@ -138,10 +149,7 @@ public class PMSPipelineDtoMapper {
     // For List View, getEntityGitDetails(...) method cant be used because for REMOTE pipelines. That is because
     // GitAwareContextHelper.getEntityGitDetailsFromScmGitMetadata() cannot be used, because there won't be any
     // SCM Context set in the List call.
-    EntityGitDetails entityGitDetails = pipelineEntity.getStoreType() == null
-        ? EntityGitDetailsMapper.mapEntityGitDetails(pipelineEntity)
-        : pipelineEntity.getStoreType() == StoreType.REMOTE ? GitAwareContextHelper.getEntityGitDetails(pipelineEntity)
-                                                            : null;
+    EntityGitDetails entityGitDetails = getEntityGitDetailsForMetadataResponse(pipelineEntity);
     PMSPipelineSummaryResponseDTO pmsPipelineSummaryResponseDTO =
         preparePipelineSummary(pipelineEntity, entityGitDetails);
     List<RecentExecutionInfoDTO> recentExecutionsInfo =
@@ -154,9 +162,6 @@ public class PMSPipelineDtoMapper {
       PipelineEntity pipelineEntity, EntityGitDetails entityGitDetails) {
     if (pipelineEntity.getIsDraft() == null) {
       pipelineEntity.setIsDraft(false);
-    }
-    if (entityGitDetails != null) {
-      entityGitDetails.setRepoUrl(pipelineEntity.getRepoURL());
     }
     return PMSPipelineSummaryResponseDTO.builder()
         .identifier(pipelineEntity.getIdentifier())

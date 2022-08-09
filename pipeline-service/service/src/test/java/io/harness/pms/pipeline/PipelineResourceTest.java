@@ -437,7 +437,8 @@ public class PipelineResourceTest extends CategoryTest {
   public void testGetPipelineSummary() {
     doReturn(Optional.of(entityWithVersion))
         .when(pmsPipelineService)
-        .getWithoutPerformingValidations(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, false);
+        .getPipelineMetadataWithoutPerformingValidations(
+            ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, false);
     ResponseDTO<PMSPipelineSummaryResponseDTO> pipelineSummary =
         pipelineResource.getPipelineSummary(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, null);
     assertThat(pipelineSummary.getData().getName()).isEqualTo(PIPELINE_IDENTIFIER);
@@ -457,7 +458,7 @@ public class PipelineResourceTest extends CategoryTest {
 
     doReturn(Optional.empty())
         .when(pmsPipelineService)
-        .getWithoutPerformingValidations(
+        .getPipelineMetadataWithoutPerformingValidations(
             ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, incorrectPipelineIdentifier, false);
 
     assertThatThrownBy(()
