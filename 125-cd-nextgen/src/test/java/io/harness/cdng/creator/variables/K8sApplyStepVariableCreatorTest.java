@@ -57,6 +57,7 @@ public class K8sApplyStepVariableCreatorTest extends CategoryTest {
             "pipeline.stages.K8s.spec.execution.steps.K8s_Apply_Step.spec.filePaths",
             "pipeline.stages.K8s.spec.execution.steps.K8s_Apply_Step.spec.skipDryRun",
             "pipeline.stages.K8s.spec.execution.steps.K8s_Apply_Step.spec.delegateSelectors",
-            "pipeline.stages.K8s.spec.execution.steps.K8s_Apply_Step.spec.skipSteadyStateCheck");
+            "pipeline.stages.K8s.spec.execution.steps.K8s_Apply_Step.spec.skipSteadyStateCheck",
+            "pipeline.stages.K8s.spec.execution.steps.K8s_Apply_Step.spec.skipRendering");
   }
 }
