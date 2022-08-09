@@ -74,19 +74,20 @@ public class GithubPackagesArtifactResource {
 
   // GET Api to fetch Versions for a Github Package
   @GET
-  @Path("package/{packageName}/versions")
+  @Path("versions")
   @ApiOperation(value = "Gets Versions from Packages", nickname = "getVersionsFromPackages")
-  public ResponseDTO<List<BuildDetails>> getVersionsOfPackage(@QueryParam("connectorRef") String gitConnectorIdentifier,
+  public ResponseDTO<List<BuildDetails>> getVersionsOfPackage(
+      @NotNull @QueryParam("connectorRef") String gitConnectorIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
-      @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
-      @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
-      @NotNull @QueryParam("packageName") String packageName, @QueryParam("versionRegex") String versionRegex,
-      @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo) {
+      @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @NotNull @QueryParam("packageName") String packageName, @NotNull @QueryParam("packageType") String packageType,
+      @QueryParam("versionRegex") String versionRegex, @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo) {
     IdentifierRef connectorRef =
         IdentifierRefHelper.getIdentifierRef(gitConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
 
     List<BuildDetails> response = githubPackagesResourceService.getVersionsOfPackage(
-        connectorRef, packageName, versionRegex, accountId, orgIdentifier, projectIdentifier);
+        connectorRef, packageName, packageType, versionRegex, accountId, orgIdentifier, projectIdentifier);
 
     return ResponseDTO.newResponse(response);
   }

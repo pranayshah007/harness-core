@@ -80,8 +80,8 @@ public class GithubPackagesResourceServiceImpl implements GithubPackagesResource
   }
 
   @Override
-  public List<BuildDetails> getVersionsOfPackage(IdentifierRef connectorRef, String packageName, String versionRegex,
-      String accountId, String orgIdentifier, String projectIdentifier) {
+  public List<BuildDetails> getVersionsOfPackage(IdentifierRef connectorRef, String packageName, String packageType,
+      String versionRegex, String accountId, String orgIdentifier, String projectIdentifier) {
     if (EmptyPredicate.isEmpty(versionRegex)) {
       return null;
     }
@@ -93,8 +93,8 @@ public class GithubPackagesResourceServiceImpl implements GithubPackagesResource
     List<EncryptedDataDetail> encryptionDetails = getEncryptionDetails(githubConnector, baseNGAccess);
 
     GithubPackagesArtifactDelegateRequest githubPackagesArtifactDelegateRequest =
-        ArtifactDelegateRequestUtils.getGithubPackagesDelegateRequest(packageName, null, versionRegex, null,
-            githubConnector, encryptionDetails, ArtifactSourceType.GITHUB_PACKAGES);
+        ArtifactDelegateRequestUtils.getGithubPackagesDelegateRequest(packageName, packageType, null, versionRegex,
+            connectorRef.getIdentifier(), githubConnector, encryptionDetails, ArtifactSourceType.GITHUB_PACKAGES);
 
     try {
       ArtifactTaskExecutionResponse artifactTaskExecutionResponse =

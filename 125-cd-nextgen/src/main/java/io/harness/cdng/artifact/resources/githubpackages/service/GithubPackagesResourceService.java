@@ -20,6 +20,6 @@ public interface GithubPackagesResourceService {
       IdentifierRef connectorRef, String accountId, String orgIdentifier, String projectIdentifier);
 
   // List Versions from a Github Package
-  List<BuildDetails> getVersionsOfPackage(IdentifierRef connectorRef, String packageName, String versionRegex,
-      String accountId, String orgIdentifier, String projectIdentifier);
+  List<BuildDetails> getVersionsOfPackage(IdentifierRef connectorRef, String packageName, String packageType,
+      String versionRegex, String accountId, String orgIdentifier, String projectIdentifier);
 }

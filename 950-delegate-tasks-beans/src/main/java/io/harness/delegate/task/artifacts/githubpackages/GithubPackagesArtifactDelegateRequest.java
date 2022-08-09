@@ -93,7 +93,7 @@ public class GithubPackagesArtifactDelegateRequest implements ArtifactSourceDele
         populateDelegateSelectorCapability(capabilities, githubConnectorDTO.getDelegateSelectors());
 
         capabilities.add(HttpConnectionExecutionCapabilityGenerator.buildHttpConnectionExecutionCapability(
-            githubConnectorDTO.getGitConnectionUrl(), maskingEvaluator));
+            githubConnectorDTO.getUrl(), maskingEvaluator));
       } else {
         throw new UnknownEnumTypeException(
             "Github Credential Type", String.valueOf(githubConnectorDTO.getAuthentication().getAuthType()));
