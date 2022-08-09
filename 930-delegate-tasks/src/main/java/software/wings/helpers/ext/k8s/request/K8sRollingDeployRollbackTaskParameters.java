@@ -38,7 +38,7 @@ public class K8sRollingDeployRollbackTaskParameters extends K8sTaskParameters {
       boolean useLatestKustomizeVersion, boolean useNewKubectlVersion) {
     super(accountId, appId, commandName, activityId, k8sClusterConfig, workflowExecutionId, releaseName,
         timeoutIntervalInMin, k8sTaskType, helmVersion, delegateSelectors, useLatestChartMuseumVersion,
-        useLatestKustomizeVersion, useNewKubectlVersion);
+        useLatestKustomizeVersion, useNewKubectlVersion, null);
     this.releaseNumber = releaseNumber;
     this.prunedResourcesIds = prunedResourcesIds;
     this.isPruningEnabled = isPruningEnabled;

@@ -9,6 +9,7 @@ package software.wings.helpers.ext.k8s.request;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.expression.Expression.ALLOW_SECRETS;
 import static io.harness.expression.Expression.DISALLOW_SECRETS;
 
 import io.harness.annotations.dev.HarnessModule;
@@ -53,6 +54,7 @@ public class K8sTaskParameters implements TaskParameters, ActivityAccess, Execut
   private boolean useLatestChartMuseumVersion;
   private boolean useLatestKustomizeVersion;
   private boolean useNewKubectlVersion;
+  @Expression(ALLOW_SECRETS) private K8sDelegateManifestConfig k8sDelegateManifestConfig;
 
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {
