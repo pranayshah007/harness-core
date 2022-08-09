@@ -224,6 +224,9 @@ public class VerificationJobInstanceServiceImpl implements VerificationJobInstan
             verificationJobInstance.getExtraTimeTakenToFinish(clock.instant()));
       }
       // mark the next state machines in the orchestrator queue as terminated here
+      
+      // Also, mark the related orchestrators and their corresponding state machines of other verificationTaskIds as terminated as well.
+      //- This should be logged clearly and probably propogated in the execution logs as well. 
     }
   }
 
