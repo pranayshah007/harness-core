@@ -17,12 +17,16 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.Cd1SetupFields;
 import io.harness.beans.DelegateTask;
+import io.harness.beans.FeatureName;
 import io.harness.delegate.beans.TaskData;
+import io.harness.security.encryption.EncryptedDataDetail;
 
+import software.wings.beans.AwsConfig;
 import software.wings.beans.PrometheusConfig;
 import software.wings.beans.SettingAttribute;
 import software.wings.beans.TaskType;
 import software.wings.delegatetasks.DelegateStateType;
+import software.wings.delegatetasks.cv.DataCollectionException;
 import software.wings.metrics.MetricType;
 import software.wings.metrics.TimeSeriesMetricDefinition;
 import software.wings.resources.PrometheusResource;
@@ -31,11 +35,13 @@ import software.wings.service.impl.analysis.DataCollectionCallback;
 import software.wings.service.impl.analysis.TimeSeries;
 import software.wings.service.impl.apm.APMDataCollectionInfo;
 import software.wings.service.impl.apm.APMMetricInfo;
+import software.wings.service.impl.apm.AWSPrometheusInfo;
 import software.wings.service.intfc.prometheus.PrometheusAnalysisService;
 import software.wings.sm.ExecutionContext;
 import software.wings.sm.StateType;
 import software.wings.verification.VerificationStateAnalysisExecutionData;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.github.reinert.jjschema.Attributes;
 import com.github.reinert.jjschema.SchemaIgnore;
 import com.google.common.base.Preconditions;
@@ -70,6 +76,19 @@ public class PrometheusState extends AbstractMetricAnalysisState {
 
   private List<TimeSeries> timeSeriesToAnalyze;
 
+  private String awsPrometheusUrl;
+  private boolean isAwsPrometheus;
+  private String awsPrometheusRegion;
+
+  @JsonProperty(value = "isAwsPrometheus")
+  public boolean isAwsPrometheus() {
+    return isAwsPrometheus;
+  }
+
+  public void setIsAwsPrometheus(boolean isAwsPrometheus) {
+    this.isAwsPrometheus = isAwsPrometheus;
+  }
+
   public PrometheusState(String name) {
     super(name, StateType.PROMETHEUS);
   }
@@ -83,14 +102,17 @@ public class PrometheusState extends AbstractMetricAnalysisState {
   @Override
   protected String triggerAnalysisDataCollection(ExecutionContext context, AnalysisContext analysisContext,
       VerificationStateAnalysisExecutionData executionData, Map<String, String> hosts) {
+    if (!featureFlagService.isEnabled(FeatureName.CV_AWS_PROMETHEUS, context.getAccountId()) && isAwsPrometheus()) {
+      log.error("Trying to access AWS Prometheus when the Feature flag is not turned on.");
+      throw new DataCollectionException("Trying to access AWS Prometheus when the Feature flag is not turned on.: "
+          + context.getStateExecutionInstanceId());
+    }
     String envId = getEnvId(context);
     String resolvedAnalysisServerConfigId =
         getResolvedConnectorId(context, PrometheusStateKeys.analysisServerConfigId, analysisServerConfigId);
     final SettingAttribute settingAttribute = settingsService.get(resolvedAnalysisServerConfigId);
     Preconditions.checkNotNull(
         settingAttribute, "No prometheus setting with id: " + resolvedAnalysisServerConfigId + " found");
-
-    final PrometheusConfig prometheusConfig = (PrometheusConfig) settingAttribute.getValue();
 
     metricAnalysisService.saveMetricTemplates(context.getAppId(), StateType.PROMETHEUS,
         context.getStateExecutionInstanceId(), null, createMetricTemplates(timeSeriesToAnalyze));
@@ -100,15 +122,37 @@ public class PrometheusState extends AbstractMetricAnalysisState {
         prometheusAnalysisService.apmMetricEndPointsFetchInfo(timeSeriesToAnalyze);
     final long dataCollectionStartTimeStamp = dataCollectionStartTimestampMillis();
     String accountId = appService.getAccountIdByAppId(context.getAppId());
+    List<EncryptedDataDetail> encryptedDataDetails;
+    String baseUrl;
+    Map<String, String> headers = new HashMap<>();
+    PrometheusConfig prometheusConfig = null;
+    AWSPrometheusInfo awsPrometheusInfo = null;
+    if (!isAwsPrometheus()) {
+      prometheusConfig = (PrometheusConfig) settingAttribute.getValue();
+      encryptedDataDetails =
+          secretManager.getEncryptionDetails(prometheusConfig, context.getAppId(), context.getWorkflowExecutionId());
+      baseUrl = prometheusConfig.getUrl();
+      headers = prometheusConfig.generateHeaders();
+    } else {
+      AwsConfig awsConfig = (AwsConfig) settingAttribute.getValue();
+      encryptedDataDetails =
+          secretManager.getEncryptionDetails(awsConfig, context.getAppId(), context.getWorkflowExecutionId());
+      baseUrl = awsPrometheusUrl;
+      awsPrometheusInfo =
+          AWSPrometheusInfo.builder()
+              .accessKey(awsConfig.getEncryptedAccessKey() == null ? new String(awsConfig.getAccessKey()) : null)
+              .awsRegion(awsPrometheusRegion)
+              .awsService("aps")
+              .build();
+    }
     final APMDataCollectionInfo dataCollectionInfo =
         APMDataCollectionInfo.builder()
-            .baseUrl(prometheusConfig.getUrl())
+            .baseUrl(baseUrl)
             .validationUrl(PrometheusConfig.VALIDATION_URL)
-            .encryptedDataDetails(secretManager.getEncryptionDetails(
-                prometheusConfig, context.getAppId(), context.getWorkflowExecutionId()))
+            .encryptedDataDetails(encryptedDataDetails)
             .hosts(hosts)
-            .base64EncodingRequired(prometheusConfig.usesBasicAuth())
-            .headers(prometheusConfig.generateHeaders())
+            .base64EncodingRequired(!isAwsPrometheus && prometheusConfig.usesBasicAuth())
+            .headers(headers)
             .stateType(DelegateStateType.PROMETHEUS)
             .applicationId(context.getAppId())
             .stateExecutionId(context.getStateExecutionInstanceId())
@@ -117,6 +161,8 @@ public class PrometheusState extends AbstractMetricAnalysisState {
             .serviceId(getPhaseServiceId(context))
             .startTime(dataCollectionStartTimeStamp)
             .dataCollectionMinute(0)
+            .awsRestCall(true)
+            .prometheusInfo(awsPrometheusInfo)
             .metricEndpoints(metricEndpoints)
             .accountId(accountId)
             .strategy(getComparisonStrategy())
