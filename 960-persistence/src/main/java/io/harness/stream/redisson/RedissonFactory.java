@@ -37,8 +37,12 @@ public class RedissonFactory {
     Config config = new Config();
     if (!redisConfig.isSentinel()) {
       config.useSingleServer().setAddress(redisConfig.getRedisUrl());
-      config.useSingleServer().setSubscriptionsPerConnection(redisConfig.getSubscriptionsPerConnection());
-      config.useSingleServer().setSubscriptionConnectionPoolSize(redisConfig.getSubscriptionConnectionPoolSize());
+      if (redisConfig.getSubscriptionsPerConnection() != 0) {
+        config.useSingleServer().setSubscriptionsPerConnection(redisConfig.getSubscriptionsPerConnection());
+      }
+      if (redisConfig.getSubscriptionConnectionPoolSize() != 0) {
+        config.useSingleServer().setSubscriptionConnectionPoolSize(redisConfig.getSubscriptionConnectionPoolSize());
+      }
     } else {
       config.useSentinelServers().setMasterName(redisConfig.getMasterName());
       for (String sentinelUrl : redisConfig.getSentinelUrls()) {
