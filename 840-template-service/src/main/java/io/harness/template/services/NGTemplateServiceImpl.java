@@ -333,7 +333,7 @@ public class NGTemplateServiceImpl implements NGTemplateService {
     enforcementClientService.checkAvailability(FeatureRestrictionName.TEMPLATE_SERVICE, accountId);
     try {
       return templateServiceHelper.getTemplate(
-          accountId, orgIdentifier, projectIdentifier, templateIdentifier, versionLabel, deleted);
+          accountId, orgIdentifier, projectIdentifier, templateIdentifier, versionLabel, deleted, false);
     } catch (Exception e) {
       log.error(String.format("Error while retrieving template with identifier [%s] and versionLabel [%s]",
                     templateIdentifier, versionLabel),
@@ -809,7 +809,7 @@ public class NGTemplateServiceImpl implements NGTemplateService {
       String templateIdentifier, String updatedStableTemplateVersion) {
     NGTemplateServiceHelper.validatePresenceOfRequiredFields(accountIdentifier, templateIdentifier);
     Optional<TemplateEntity> optionalTemplateEntity = templateServiceHelper.getStableTemplate(
-        accountIdentifier, orgIdentifier, projectIdentifier, templateIdentifier, false);
+        accountIdentifier, orgIdentifier, projectIdentifier, templateIdentifier, false, true);
     if (optionalTemplateEntity.isPresent()) {
       // make previous stable template as false.
       TemplateEntity oldTemplate = optionalTemplateEntity.get();
@@ -843,7 +843,7 @@ public class NGTemplateServiceImpl implements NGTemplateService {
       String projectIdentifier, String templateIdentifier, String currentTemplateVersion) {
     NGTemplateServiceHelper.validatePresenceOfRequiredFields(accountIdentifier, templateIdentifier);
     Optional<TemplateEntity> optionalTemplateEntity = templateServiceHelper.getLastUpdatedTemplate(
-        accountIdentifier, orgIdentifier, projectIdentifier, templateIdentifier);
+        accountIdentifier, orgIdentifier, projectIdentifier, templateIdentifier, true);
     if (optionalTemplateEntity.isPresent()) {
       // make previous last updated template as false.
       TemplateEntity oldTemplate = optionalTemplateEntity.get();
@@ -908,7 +908,7 @@ public class NGTemplateServiceImpl implements NGTemplateService {
     try (TemplateGitSyncBranchContextGuard ignored =
              templateServiceHelper.getTemplateGitContextForGivenTemplate(null, null, "")) {
       Optional<TemplateEntity> optionalTemplate = templateServiceHelper.getTemplateWithVersionLabel(
-          accountId, orgIdentifier, projectIdentifier, templateIdentifier, versionLabel, false);
+          accountId, orgIdentifier, projectIdentifier, templateIdentifier, versionLabel, false, false);
       if (!optionalTemplate.isPresent()) {
         throw new InvalidRequestException(format(
             "Template with identifier [%s] and versionLabel [%s] under Project[%s], Organization [%s] doesn't exist.",
@@ -930,7 +930,7 @@ public class NGTemplateServiceImpl implements NGTemplateService {
       TemplateEntity templateEntity, String oldOrgIdentifier, String oldProjectIdentifier) {
     Optional<TemplateEntity> optionalTemplate =
         templateServiceHelper.getTemplateWithVersionLabel(templateEntity.getAccountId(), oldOrgIdentifier,
-            oldProjectIdentifier, templateEntity.getIdentifier(), templateEntity.getVersionLabel(), false);
+            oldProjectIdentifier, templateEntity.getIdentifier(), templateEntity.getVersionLabel(), false, false);
 
     if (!optionalTemplate.isPresent()) {
       throw new InvalidRequestException(format(
