@@ -80,6 +80,7 @@ import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
@@ -120,6 +121,8 @@ import io.harness.delegate.beans.storeconfig.HttpHelmStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.LocalFileStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.S3HelmStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.StoreDelegateConfig;
+import io.harness.delegate.clienttools.ClientTool;
+import io.harness.delegate.clienttools.InstallUtils;
 import io.harness.delegate.k8s.K8sTestHelper;
 import io.harness.delegate.k8s.kustomize.KustomizeTaskHelper;
 import io.harness.delegate.k8s.openshift.OpenShiftDelegateService;
@@ -269,10 +272,12 @@ import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
+import org.powermock.api.mockito.PowerMockito;
 import org.zeroturnaround.exec.ProcessOutput;
 import org.zeroturnaround.exec.ProcessResult;
 import org.zeroturnaround.exec.StartedProcess;
@@ -563,6 +568,8 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
         .when(spyK8sTaskHelperBase)
         .executeCommandUsingUtils(nullable(K8sDelegateTaskParams.class), any(), any(), anyString(), any());
 
+    MockedStatic<InstallUtils> mock = mockStatic(InstallUtils.class);
+    PowerMockito.when(InstallUtils.getLatestVersionPath(ClientTool.OC)).thenReturn("oc");
     String latestRevision =
         spyK8sTaskHelperBase.getLatestRevision(client, resource.getResourceId(), k8sDelegateTaskParams);
     assertThat(latestRevision).isEqualTo("36");
@@ -573,6 +580,7 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
         .executeCommandUsingUtils(nullable(K8sDelegateTaskParams.class), any(), any(), anyString(), any());
 
     latestRevision = spyK8sTaskHelperBase.getLatestRevision(client, resource.getResourceId(), k8sDelegateTaskParams);
+    mock.close();
     assertThat(latestRevision).isEqualTo("");
   }
 
@@ -602,12 +610,15 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
     reset(spyK8sTaskHelperBase);
 
     doReturn(response).when(spyK8sTaskHelperBase).runK8sExecutable(any(), any(), any());
+    MockedStatic<InstallUtils> mock = mockStatic(InstallUtils.class);
+    PowerMockito.when(InstallUtils.getLatestVersionPath(ClientTool.OC)).thenReturn("oc");
     spyK8sTaskHelperBase.dryRunManifests(client,
         asList(KubernetesResource.builder()
                    .spec("")
                    .resourceId(KubernetesResourceId.builder().kind("Route").build())
                    .build()),
         k8sDelegateTaskParams, executionLogCallback, false);
+    mock.close();
     verify(spyK8sTaskHelperBase, times(1)).runK8sExecutable(any(), any(), captor.capture());
     assertThat(captor.getValue().command())
         .isEqualTo("oc --kubeconfig=config-path apply --filename=manifests-dry-run.yaml --dry-run");
@@ -670,12 +681,15 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
     reset(spyK8sTaskHelperBase);
 
     doReturn(response).when(spyK8sTaskHelperBase).runK8sExecutable(any(), any(), any(AbstractExecutable.class));
+    MockedStatic<InstallUtils> mock = mockStatic(InstallUtils.class);
+    PowerMockito.when(InstallUtils.getLatestVersionPath(ClientTool.OC)).thenReturn("oc");
     spyK8sTaskHelperBase.applyManifests(client,
         asList(KubernetesResource.builder()
                    .spec("")
                    .resourceId(KubernetesResourceId.builder().kind("Route").build())
                    .build()),
         k8sDelegateTaskParams, executionLogCallback, true);
+    mock.close();
     verify(spyK8sTaskHelperBase, times(1)).runK8sExecutable(any(), any(), captor.capture());
     assertThat(captor.getValue().command())
         .isEqualTo("oc --kubeconfig=config-path apply --filename=manifests.yaml --record");
@@ -742,12 +756,15 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
     reset(spyK8sTaskHelperBase);
 
     doReturn(response).when(spyK8sTaskHelperBase).runK8sExecutable(any(), any(), any(AbstractExecutable.class));
+    MockedStatic<InstallUtils> mock = mockStatic(InstallUtils.class);
+    PowerMockito.when(InstallUtils.getLatestVersionPath(ClientTool.OC)).thenReturn("oc");
     spyK8sTaskHelperBase.deleteManifests(client,
         asList(KubernetesResource.builder()
                    .spec("")
                    .resourceId(KubernetesResourceId.builder().kind("Route").build())
                    .build()),
         k8sDelegateTaskParams, executionLogCallback);
+    mock.close();
     verify(spyK8sTaskHelperBase, times(1)).runK8sExecutable(any(), any(), captor.capture());
     assertThat(captor.getValue().command()).isEqualTo("oc --kubeconfig=config-path delete --filename=manifests.yaml");
   }
@@ -1044,6 +1061,8 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
                      + "140\t\tComplete\tconfig change\n"))
         .when(spyK8sTaskHelperBase)
         .executeCommandUsingUtils(any(K8sDelegateTaskParams.class), any(), any(), any(), any());
+    MockedStatic<InstallUtils> mock = mockStatic(InstallUtils.class);
+    PowerMockito.when(InstallUtils.getLatestVersionPath(ClientTool.OC)).thenReturn("oc");
     String latestRevision;
     latestRevision = spyK8sTaskHelperBase.getLatestRevision(Kubectl.client("kubectl", "kubeconfig"),
         K8sTestHelper.deploymentConfig().getResourceId(),
@@ -1052,6 +1071,7 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
             .kubeconfigPath("kubeconfig")
             .workingDirectory("./working-dir")
             .build());
+    mock.close();
 
     verify(spyK8sTaskHelperBase, times(1))
         .executeCommandUsingUtils(eq(K8sDelegateTaskParams.builder()
@@ -1168,8 +1188,11 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
     K8sDelegateTaskParams k8sDelegateTaskParams =
         K8sDelegateTaskParams.builder().ocPath(".").workingDirectory(".").build();
 
+    MockedStatic<InstallUtils> mock = mockStatic(InstallUtils.class);
+    PowerMockito.when(InstallUtils.getLatestVersionPath(ClientTool.OC)).thenReturn("oc");
     final boolean result =
         spyK8sTaskHelperBase.doStatusCheck(client, resourceId, k8sDelegateTaskParams, executionLogCallback);
+    mock.close();
 
     assertThat(result).isEqualTo(false);
   }
@@ -1196,8 +1219,11 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
 
     final String expectedCommand =
         "oc --kubeconfig=config-path rollout status DeploymentConfig/name --namespace=namespace --watch=true";
+    MockedStatic<InstallUtils> mock = mockStatic(InstallUtils.class);
+    PowerMockito.when(InstallUtils.getLatestVersionPath(ClientTool.OC)).thenReturn("oc");
     final boolean result =
         spyK8sTaskHelperBase.doStatusCheck(client, resourceId, k8sDelegateTaskParams, executionLogCallback);
+    mock.close();
 
     verify(spyK8sTaskHelperBase).executeCommandUsingUtils(eq("."), any(), any(), eq(expectedCommand), any());
 
@@ -1230,8 +1256,11 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
     List<KubernetesResourceId> resourceIds = new ArrayList<>();
     resourceIds.add(resourceId);
     resourceIds.add(resourceId2);
+    MockedStatic<InstallUtils> mock = mockStatic(InstallUtils.class);
+    PowerMockito.when(InstallUtils.getLatestVersionPath(ClientTool.OC)).thenReturn("oc");
     final boolean result = spyK8sTaskHelperBase.doStatusCheckForAllResources(
         client, resourceIds, k8sDelegateTaskParams, "name", executionLogCallback, false);
+    mock.close();
     verify(spyK8sTaskHelperBase)
         .executeCommandUsingUtils(eq(k8sDelegateTaskParams), any(), any(),
             eq("oc --kubeconfig=config-path rollout status DeploymentConfig/name --namespace=namespace --watch=true"),
@@ -1261,6 +1290,8 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
         .when(spyK8sTaskHelperBase)
         .executeCommandUsingUtils(any(K8sDelegateTaskParams.class), any(), any(), any(), any());
 
+    MockedStatic<InstallUtils> mock = mockStatic(InstallUtils.class);
+    PowerMockito.when(InstallUtils.getLatestVersionPath(ClientTool.OC)).thenReturn("oc");
     assertThatThrownBy(()
                            -> spyK8sTaskHelperBase.doStatusCheckForAllResources(client, singletonList(deploymentConfig),
                                k8sDelegateTaskParams, "name", executionLogCallback, false, true))
@@ -1271,6 +1302,7 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
           assertThat(taskException.getProcessResponse().getProcessResult().getExitValue()).isEqualTo(1);
           return true;
         });
+    mock.close();
   }
 
   @Test
@@ -1331,8 +1363,11 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
     List<KubernetesResourceId> resourceIds = new ArrayList<>();
     resourceIds.add(resourceId);
     resourceIds.add(resourceId1);
+    MockedStatic<InstallUtils> mock = mockStatic(InstallUtils.class);
+    PowerMockito.when(InstallUtils.getLatestVersionPath(ClientTool.OC)).thenReturn("oc");
     final boolean result = spyK8sTaskHelperBase.doStatusCheckForAllResources(
         client, resourceIds, k8sDelegateTaskParams, "name", executionLogCallback, false);
+    mock.close();
 
     verify(spyK8sTaskHelperBase)
         .executeCommandUsingUtils(eq(k8sDelegateTaskParams), any(), any(),
@@ -1503,7 +1538,10 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
                                                       .kubeconfigPath("config-path")
                                                       .build();
 
+    MockedStatic<InstallUtils> mock = mockStatic(InstallUtils.class);
+    PowerMockito.when(InstallUtils.getLatestVersionPath(ClientTool.OC)).thenReturn("oc");
     final String result = spyK8sTaskHelperBase.getOcCommandPrefix(k8sDelegateTaskParams);
+    mock.close();
 
     assertThat(result).isEqualTo("oc --kubeconfig=config-path");
   }

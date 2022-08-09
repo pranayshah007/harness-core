@@ -14,6 +14,7 @@ import static io.harness.delegate.beans.storeconfig.StoreDelegateConfigType.GIT;
 import static io.harness.delegate.beans.storeconfig.StoreDelegateConfigType.HARNESS;
 import static io.harness.delegate.beans.storeconfig.StoreDelegateConfigType.HTTP_HELM;
 import static io.harness.delegate.beans.storeconfig.StoreDelegateConfigType.OCI_HELM;
+import static io.harness.delegate.clienttools.ClientTool.OC;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.filesystem.FileIo.createDirectoryIfDoesNotExist;
 import static io.harness.filesystem.FileIo.getFilesUnderPath;
@@ -93,6 +94,7 @@ import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.LocalFileStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.StoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.StoreDelegateConfigType;
+import io.harness.delegate.clienttools.InstallUtils;
 import io.harness.delegate.expression.DelegateExpressionEvaluator;
 import io.harness.delegate.k8s.kustomize.KustomizeTaskHelper;
 import io.harness.delegate.k8s.openshift.OpenShiftDelegateService;
@@ -381,7 +383,8 @@ public class K8sTaskHelperBase {
   }
 
   public static String getOcCommandPrefix(K8sDelegateTaskParams k8sDelegateTaskParams) {
-    return getOcCommandPrefix(k8sDelegateTaskParams.getOcPath(), k8sDelegateTaskParams.getKubeconfigPath());
+    String ocPath = getLatestVersionOcPath();
+    return getOcCommandPrefix(ocPath, k8sDelegateTaskParams.getKubeconfigPath());
   }
 
   @VisibleForTesting
@@ -853,7 +856,7 @@ public class K8sTaskHelperBase {
       return client;
     }
 
-    return Kubectl.client(k8sDelegateTaskParams.getOcPath(), k8sDelegateTaskParams.getKubeconfigPath());
+    return Kubectl.client(getLatestVersionOcPath(), k8sDelegateTaskParams.getKubeconfigPath());
   }
 
   @VisibleForTesting
@@ -1190,7 +1193,7 @@ public class K8sTaskHelperBase {
       KubernetesResourceId resourceId, LogCallback executionLogCallback, boolean isErrorFrameworkEnabled)
       throws Exception {
     String workingDirectory = k8sDelegateTaskParams.getWorkingDirectory();
-    String ocPath = k8sDelegateTaskParams.getOcPath();
+    String ocPath = getLatestVersionOcPath();
     String kubeconfigPath = k8sDelegateTaskParams.getKubeconfigPath();
     String kubectlPath = k8sDelegateTaskParams.getKubectlPath();
     final String eventFormat = "%-7s: %s";
@@ -1467,8 +1470,9 @@ public class K8sTaskHelperBase {
       String printableExecutedCommand;
 
       if (Kind.DeploymentConfig.name().equals(resourceId.getKind())) {
-        String rolloutStatusCommand = getRolloutStatusCommandForDeploymentConfig(
-            k8sDelegateTaskParams.getOcPath(), k8sDelegateTaskParams.getKubeconfigPath(), resourceId);
+        String ocPath = getLatestVersionOcPath();
+        String rolloutStatusCommand =
+            getRolloutStatusCommandForDeploymentConfig(ocPath, k8sDelegateTaskParams.getKubeconfigPath(), resourceId);
 
         printableExecutedCommand = rolloutStatusCommand.substring(rolloutStatusCommand.indexOf("oc --kubeconfig"));
         executionLogCallback.saveExecutionLog(printableExecutedCommand + "\n");
@@ -3056,5 +3060,15 @@ public class K8sTaskHelperBase {
     for (String scopedFilePath : scopedFilePathList) {
       logCallback.saveExecutionLog(color(format("- %s", scopedFilePath), LogColor.White));
     }
+  }
+
+  private static String getLatestVersionOcPath() {
+    String ocPath = "oc";
+    try {
+      ocPath = InstallUtils.getLatestVersionPath(OC);
+    } catch (Exception ex) {
+      log.warn("Unable to fetch OC binary path from delegate. Kindly ensure it is configured as env variable." + ex);
+    }
+    return ocPath;
   }
 }

@@ -169,7 +169,6 @@ public class HelmCommandTaskNG extends AbstractDelegateRunnableTask {
     String configLocation = containerDeploymentDelegateBaseHelper.createKubeConfig(
         containerDeploymentDelegateBaseHelper.createKubernetesConfig(commandRequestNG.getK8sInfraDelegateConfig()));
     commandRequestNG.setKubeConfigLocation(configLocation);
-    commandRequestNG.setOcPath(k8sGlobalConfigService.getOcPath());
     logCallback.saveExecutionLog(
         "Setting KubeConfig\nKUBECONFIG_PATH=" + configLocation, LogLevel.INFO, CommandExecutionStatus.RUNNING);
 
