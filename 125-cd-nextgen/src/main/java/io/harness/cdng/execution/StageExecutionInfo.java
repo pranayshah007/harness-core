@@ -56,8 +56,7 @@ public class StageExecutionInfo implements PersistentEntity, UuidAware {
   @NotNull private String orgIdentifier;
   @NotNull private String projectIdentifier;
   @NotNull private String envIdentifier;
-  // infraIdentifier can be null for v1
-  @Nullable private String infraIdentifier;
+  @NotNull private String infraIdentifier;
   @NotNull private String serviceIdentifier;
   @NotNull private String stageExecutionId;
   @NotNull private StageStatus stageStatus;

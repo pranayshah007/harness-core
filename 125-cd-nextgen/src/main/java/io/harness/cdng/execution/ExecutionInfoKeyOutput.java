@@ -9,21 +9,17 @@ package io.harness.cdng.execution;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.Scope;
+import io.harness.pms.sdk.core.data.ExecutionSweepingOutput;
 
-import javax.annotation.Nullable;
-import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Value;
 
-@OwnedBy(CDP)
 @Value
 @Builder
-public class ExecutionInfoKey {
-  @NotNull Scope scope;
-  @NotNull String envIdentifier;
-  @NotNull String infraIdentifier;
-  @NotNull String serviceIdentifier;
-  @Nullable String deploymentIdentifier;
+@OwnedBy(CDP)
+@RecasterAlias("io.harness.cdng.execution.ExecutionInfoKeyOutput")
+public class ExecutionInfoKeyOutput implements ExecutionSweepingOutput {
+  ExecutionInfoKey executionInfoKey;
 }
