@@ -62,7 +62,6 @@ import java.util.Collections;
 import java.util.List;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Null;
 import javax.ws.rs.BeanParam;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
@@ -103,7 +102,7 @@ public class MonitoredServiceResource {
   }
 
   @POST
-  @Path("/yaml/V2")
+  @Path("/yaml/v2")
   @Timed
   @ExceptionMetered
   @ApiOperation(
@@ -112,9 +111,9 @@ public class MonitoredServiceResource {
   public RestResponse<MonitoredServiceResponse>
   saveMonitoredServiceFromYamlV2(@ApiParam(required = true) @NotNull @BeanParam ProjectParams projectParam,
       @NotNull @Valid @Body String yaml,
-      @QueryParam("templateAccountIdentifier") @Null @AccountIdentifier String templateAccountIdentifier,
-      @QueryParam("templateOrgIdentifier") @Null @OrgIdentifier String templateOrgIdentifier,
-      @QueryParam("templateProjectIdentifier") @Null @ProjectIdentifier String templateProjectIdentifier) {
+      @QueryParam("templateAccountIdentifier") @AccountIdentifier String templateAccountIdentifier,
+      @QueryParam("templateOrgIdentifier") @OrgIdentifier String templateOrgIdentifier,
+      @QueryParam("templateProjectIdentifier") @ProjectIdentifier String templateProjectIdentifier) {
     return new RestResponse<>(monitoredServiceService.createFromYamlV2(
         projectParam, templateAccountIdentifier, templateOrgIdentifier, templateProjectIdentifier, yaml));
   }

@@ -302,7 +302,7 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
   @SneakyThrows
   @Override
   public MonitoredServiceDTO getExpandedMonitoredServiceFromYamlV2(
-      ProjectParams projectParams, String accountId, String orgIdentifier, String projectIdenfier, String yaml) {
+      ProjectParams projectParams, String accountId, String orgIdentifier, String projectIdentifier, String yaml) {
     String templateResolvedYaml = templateFacade.resolveYaml(projectParams, yaml);
     MonitoredServiceYamlExpressionEvaluator yamlExpressionEvaluator =
         new MonitoredServiceYamlExpressionEvaluator(templateResolvedYaml);
@@ -311,8 +311,9 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
         YamlUtils.read(templateResolvedYaml, MonitoredServiceYamlDTO.class).getMonitoredServiceDTO();
     monitoredServiceDTO = (MonitoredServiceDTO) yamlExpressionEvaluator.resolve(monitoredServiceDTO, false);
 
-    monitoredServiceDTO.setProjectIdentifier(
-        Objects.nonNull(projectParams.getProjectIdentifier()) ? projectParams.getProjectIdentifier() : projectIdenfier);
+    monitoredServiceDTO.setProjectIdentifier(Objects.nonNull(projectParams.getProjectIdentifier())
+            ? projectParams.getProjectIdentifier()
+            : projectIdentifier);
     monitoredServiceDTO.setOrgIdentifier(
         Objects.nonNull(projectParams.getOrgIdentifier()) ? projectParams.getOrgIdentifier() : orgIdentifier);
     return monitoredServiceDTO;
