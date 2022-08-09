@@ -83,6 +83,7 @@ public enum FeatureName {
   FFM_2134_FF_PIPELINES_TRIGGER,
   FFM_3938_STALE_FLAGS_ACTIVE_CARD_HIDE_SHOW,
   FFM_4117_INTEGRATE_SRM("Enable Feature Flags to send events to the SRM module", HarnessTeam.CF),
+  FFM_3961_ENHANCED_ONBOARDING("Enable new onboarding experience for FeatureFlags", HarnessTeam.CF),
   WINRM_COPY_CONFIG_OPTIMIZE,
   ECS_MULTI_LBS,
   ENTITY_AUDIT_RECORD,
