@@ -1510,6 +1510,14 @@ go_repository(
 )
 
 go_repository(
+    name = "com_github_docker_cli",
+    importpath = "github.com/docker/cli",
+    strip_prefix = "cli-a8ff7f821017ae3d5347392c82718d6cba221681",
+    type = "zip",
+    urls = ["https://github.com/docker/cli/archive/a8ff7f821017ae3d5347392c82718d6cba221681.zip"],
+)
+
+go_repository(
     name = "com_github_docker_distribution",
     importpath = "github.com/docker/distribution",
     sum = "h1:a5mlkVzth6W5A4fOsS3D2EO5BUmsJpcB+cRlLU7cSug=",
