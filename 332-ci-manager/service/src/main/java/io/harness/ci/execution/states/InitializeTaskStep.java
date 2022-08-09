@@ -146,7 +146,7 @@ public class InitializeTaskStep implements TaskExecutableWithRbac<StepElementPar
     }
 
     return StepUtils.prepareTaskRequest(ambiance, getTaskData(stepElementParameters, buildSetupTaskParams),
-        kryoSerializer, executeOnHarnessHostedDelegates);
+        kryoSerializer, executeOnHarnessHostedDelegates, new ArrayList<>());
   }
 
   @Override

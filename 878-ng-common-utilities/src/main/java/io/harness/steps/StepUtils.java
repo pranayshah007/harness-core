@@ -130,83 +130,86 @@ public class StepUtils {
     return generateLogAbstractions(ambiance, null);
   }
 
-  public static TaskRequest prepareTaskRequest(
-      Ambiance ambiance, TaskData taskData, KryoSerializer kryoSerializer, boolean executeOnHarnessHostedDelegates) {
+  public static TaskRequest prepareTaskRequest(Ambiance ambiance, TaskData taskData, KryoSerializer kryoSerializer,
+      boolean executeOnHarnessHostedDelegates, List<String> eligibleToExecuteDelegateIds) {
     return prepareTaskRequest(ambiance, taskData, kryoSerializer, TaskCategory.DELEGATE_TASK_V2,
-        Collections.emptyList(), true, null, executeOnHarnessHostedDelegates);
+        Collections.emptyList(), true, null, executeOnHarnessHostedDelegates, eligibleToExecuteDelegateIds);
   }
 
   public static TaskRequest prepareTaskRequestWithTaskSelector(
       Ambiance ambiance, TaskData taskData, KryoSerializer kryoSerializer, List<TaskSelector> selectors) {
     return prepareTaskRequest(ambiance, taskData, kryoSerializer, TaskCategory.DELEGATE_TASK_V2,
-        Collections.emptyList(), true, null, selectors, Scope.PROJECT, EnvironmentType.ALL, false);
+        Collections.emptyList(), true, null, selectors, Scope.PROJECT, EnvironmentType.ALL, false,
+        Collections.emptyList());
   }
 
   public static TaskRequest prepareTaskRequestWithTaskSelector(Ambiance ambiance, TaskData taskData,
       KryoSerializer kryoSerializer, String taskName, List<TaskSelector> selectors) {
     return prepareTaskRequest(ambiance, taskData, kryoSerializer, TaskCategory.DELEGATE_TASK_V2,
-        Collections.emptyList(), true, taskName, selectors, Scope.PROJECT, EnvironmentType.ALL, false);
+        Collections.emptyList(), true, taskName, selectors, Scope.PROJECT, EnvironmentType.ALL, false,
+        Collections.emptyList());
   }
 
   public static TaskRequest prepareTaskRequestWithTaskSelector(Ambiance ambiance, TaskData taskData,
       KryoSerializer kryoSerializer, List<String> units, String taskName, List<TaskSelector> selectors) {
     return prepareTaskRequest(ambiance, taskData, kryoSerializer, TaskCategory.DELEGATE_TASK_V2, units, true, taskName,
-        selectors, Scope.PROJECT, EnvironmentType.ALL, false);
+        selectors, Scope.PROJECT, EnvironmentType.ALL, false, Collections.emptyList());
   }
 
   public static TaskRequest prepareCDTaskRequest(Ambiance ambiance, TaskData taskData, KryoSerializer kryoSerializer,
       List<String> units, String taskName, List<TaskSelector> selectors, EnvironmentType environmentType) {
     return prepareTaskRequest(ambiance, taskData, kryoSerializer, TaskCategory.DELEGATE_TASK_V2, units, true, taskName,
-        selectors, Scope.PROJECT, environmentType, false);
+        selectors, Scope.PROJECT, environmentType, false, Collections.emptyList());
   }
 
   public static TaskRequest prepareCDTaskRequest(Ambiance ambiance, TaskData taskData, KryoSerializer kryoSerializer,
       List<String> keys, List<String> units, String taskName, List<TaskSelector> selectors,
       EnvironmentType environmentType) {
     return prepareTaskRequest(ambiance, taskData, kryoSerializer, TaskCategory.DELEGATE_TASK_V2, keys, units, true,
-        taskName, selectors, Scope.PROJECT, environmentType, false);
+        taskName, selectors, Scope.PROJECT, environmentType, false, Collections.emptyList());
   }
 
   public static TaskRequest prepareTaskRequestWithoutLogs(
       Ambiance ambiance, TaskData taskData, KryoSerializer kryoSerializer) {
-    return prepareTaskRequest(
-        ambiance, taskData, kryoSerializer, TaskCategory.DELEGATE_TASK_V2, Collections.emptyList(), false, null, false);
+    return prepareTaskRequest(ambiance, taskData, kryoSerializer, TaskCategory.DELEGATE_TASK_V2,
+        Collections.emptyList(), false, null, false, Collections.emptyList());
   }
 
   public static TaskRequest prepareTaskRequest(
       Ambiance ambiance, TaskData taskData, KryoSerializer kryoSerializer, List<String> units, String taskName) {
-    return prepareTaskRequest(
-        ambiance, taskData, kryoSerializer, TaskCategory.DELEGATE_TASK_V2, units, true, taskName, false);
+    return prepareTaskRequest(ambiance, taskData, kryoSerializer, TaskCategory.DELEGATE_TASK_V2, units, true, taskName,
+        false, Collections.emptyList());
   }
 
   public static TaskRequest prepareTaskRequestWithTaskSelector(Ambiance ambiance, TaskData taskData,
       KryoSerializer kryoSerializer, TaskCategory taskCategory, List<String> units, boolean withLogs, String taskName,
       List<TaskSelector> selectors) {
     return prepareTaskRequest(ambiance, taskData, kryoSerializer, taskCategory, units, withLogs, taskName, selectors,
-        Scope.PROJECT, EnvironmentType.ALL, false);
+        Scope.PROJECT, EnvironmentType.ALL, false, Collections.emptyList());
   }
 
   public static TaskRequest prepareTaskRequest(Ambiance ambiance, TaskData taskData, KryoSerializer kryoSerializer,
       TaskCategory taskCategory, List<String> units, boolean withLogs, String taskName,
-      boolean executeOnHarnessHostedDelegates) {
+      boolean executeOnHarnessHostedDelegates, List<String> eligibleToExecuteDelegateIds) {
     return prepareTaskRequest(ambiance, taskData, kryoSerializer, taskCategory, units, withLogs, taskName, null,
-        Scope.PROJECT, EnvironmentType.ALL, executeOnHarnessHostedDelegates);
+        Scope.PROJECT, EnvironmentType.ALL, executeOnHarnessHostedDelegates, eligibleToExecuteDelegateIds);
   }
 
   public static TaskRequest prepareTaskRequest(Ambiance ambiance, TaskData taskData, KryoSerializer kryoSerializer,
       TaskCategory taskCategory, List<String> units, boolean withLogs, String taskName, List<TaskSelector> selectors,
-      Scope taskScope, EnvironmentType environmentType, boolean executeOnHarnessHostedDelegates) {
+      Scope taskScope, EnvironmentType environmentType, boolean executeOnHarnessHostedDelegates,
+      List<String> eligibleToExecuteDelegateIds) {
     LinkedHashMap<String, String> logAbstractionMap =
         withLogs ? generateLogAbstractions(ambiance) : new LinkedHashMap<>();
     return prepareTaskRequest(ambiance, taskData, kryoSerializer, taskCategory,
         CollectionUtils.emptyIfNull(generateLogKeys(logAbstractionMap, units)), units, withLogs, taskName, selectors,
-        taskScope, environmentType, executeOnHarnessHostedDelegates);
+        taskScope, environmentType, executeOnHarnessHostedDelegates, eligibleToExecuteDelegateIds);
   }
 
   public static TaskRequest prepareTaskRequest(Ambiance ambiance, TaskData taskData, KryoSerializer kryoSerializer,
       TaskCategory taskCategory, List<String> keys, List<String> units, boolean withLogs, String taskName,
       List<TaskSelector> selectors, Scope taskScope, EnvironmentType environmentType,
-      boolean executeOnHarnessHostedDelegates) {
+      boolean executeOnHarnessHostedDelegates, List<String> eligibleToExecuteDelegateIds) {
     String accountId = Preconditions.checkNotNull(ambiance.getSetupAbstractionsMap().get("accountId"));
     TaskParameters taskParameters = (TaskParameters) taskData.getParameters()[0];
     List<ExecutionCapability> capabilities = new ArrayList<>();
@@ -264,6 +267,10 @@ public class StepUtils {
                                  : kryoSerializer.asDeflatedBytes(capability)))
                          .build())
               .collect(toList()));
+    }
+
+    if (isNotEmpty(eligibleToExecuteDelegateIds)) {
+      requestBuilder.addAllEligibleToExecuteDelegateIds(eligibleToExecuteDelegateIds.stream().collect(toList()));
     }
 
     DelegateTaskRequest delegateTaskRequest = DelegateTaskRequest.newBuilder()

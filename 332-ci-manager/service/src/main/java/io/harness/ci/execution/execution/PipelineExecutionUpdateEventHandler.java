@@ -17,6 +17,7 @@ import static java.lang.String.format;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DelegateTaskRequest;
+import io.harness.beans.outcomes.VmDetailsOutcome;
 import io.harness.ci.logserviceclient.CILogServiceUtils;
 import io.harness.ci.states.codebase.CodeBaseTaskStep;
 import io.harness.delegate.TaskSelector;
@@ -28,8 +29,11 @@ import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.execution.utils.AmbianceUtils;
+import io.harness.pms.sdk.core.data.OptionalOutcome;
 import io.harness.pms.sdk.core.events.OrchestrationEvent;
 import io.harness.pms.sdk.core.events.OrchestrationEventHandler;
+import io.harness.pms.sdk.core.resolver.RefObjectUtils;
+import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
 import io.harness.service.DelegateGrpcClientWrapper;
 import io.harness.steps.StepUtils;
 
@@ -40,6 +44,7 @@ import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -52,6 +57,7 @@ import net.jodah.failsafe.RetryPolicy;
 @Slf4j
 @OwnedBy(HarnessTeam.CI)
 public class PipelineExecutionUpdateEventHandler implements OrchestrationEventHandler {
+  @Inject private OutcomeService outcomeService;
   @Inject private GitBuildStatusUtility gitBuildStatusUtility;
   @Inject private StageCleanupUtility stageCleanupUtility;
   @Inject private CILogServiceUtils ciLogServiceUtils;
@@ -147,7 +153,19 @@ public class PipelineExecutionUpdateEventHandler implements OrchestrationEventHa
     String taskType = "CI_CLEANUP";
     SerializationFormat serializationFormat = SerializationFormat.KRYO;
     boolean executeOnHarnessHostedDelegates = false;
+    List<String> eligibleToExecuteDelegateIds = new ArrayList<>();
     if (ciCleanupTaskParams.getType() == CICleanupTaskParams.Type.DLITE_VM) {
+      // Figure out the delegate ID where the initialise happened so we can route the cleanup to the same
+      // delegate.
+      OptionalOutcome optionalOutput = outcomeService.resolveOptional(
+          ambiance, RefObjectUtils.getOutcomeRefObject(VmDetailsOutcome.VM_DETAILS_OUTCOME));
+      VmDetailsOutcome vmDetailsOutcome = (VmDetailsOutcome) optionalOutput.getOutcome();
+      if (isEmpty(vmDetailsOutcome.getDelegateId())) {
+        log.error(
+            "VM details outcome is empty for ambiance: {}. VM cleanup could be routed to the wrong delegate", ambiance);
+      } else {
+        eligibleToExecuteDelegateIds.add(vmDetailsOutcome.getDelegateId());
+      }
       taskType = TaskType.DLITE_CI_VM_CLEANUP_TASK.getDisplayName();
       executeOnHarnessHostedDelegates = true;
       serializationFormat = SerializationFormat.JSON;
@@ -156,6 +174,7 @@ public class PipelineExecutionUpdateEventHandler implements OrchestrationEventHa
     return DelegateTaskRequest.builder()
         .accountId(accountId)
         .executeOnHarnessHostedDelegates(executeOnHarnessHostedDelegates)
+        .eligibleToExecuteDelegateIds(eligibleToExecuteDelegateIds)
         .taskSelectors(taskSelectors.stream().map(TaskSelector::getSelector).collect(Collectors.toList()))
         .taskSetupAbstractions(abstractions)
         .executionTimeout(java.time.Duration.ofSeconds(900))
