@@ -16,6 +16,8 @@ public interface TemplateMergeService {
   String getTemplateInputs(
       String accountId, String orgIdentifier, String projectIdentifier, String templateIdentifier, String versionLabel);
 
+  String getTemplateInputs(String yaml);
+
   TemplateMergeResponseDTO applyTemplatesToYaml(
       String accountId, String orgId, String projectId, String yaml, boolean getMergedYamlWithTemplateField);
 

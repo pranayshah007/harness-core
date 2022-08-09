@@ -66,6 +66,11 @@ public class TemplateMergeServiceImpl implements TemplateMergeService {
   }
 
   @Override
+  public String getTemplateInputs(String yaml) {
+    return templateMergeServiceHelper.createTemplateInputsFromTemplate(yaml);
+  }
+
+  @Override
   /**
    * The method replaces all template occurrences in yaml with information present under template.spec in
    * template yaml. Before we replace template occurrence in yaml, we merge template inputs provided in

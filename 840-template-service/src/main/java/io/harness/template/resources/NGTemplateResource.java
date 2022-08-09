@@ -573,6 +573,38 @@ public class NGTemplateResource {
         templateMergeService.getTemplateInputs(accountId, orgId, projectId, templateIdentifier, templateLabel));
   }
 
+  @GET
+  @Path("/templateInputsFromYaml/{yaml}")
+  @ApiOperation(value = "Gets template input set for a given yaml", nickname = "getTemplateInputSet")
+  @Operation(operationId = "getTemplateInputs", summary = "Gets Template Input Set for a given YAML",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "Returns the Template Input Set YAML")
+      })
+  @Hidden
+  public ResponseDTO<String>
+  getTemplateInputs(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
+                        NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
+      @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgId,
+      @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectId,
+      @Parameter(description = TEMPLATE_PARAM_MESSAGE) @QueryParam("templateIdentifier") String templateIdentifier,
+      @Parameter(description = "Template YAML") @PathParam("templateIdentifier") @ResourceIdentifier String yaml,
+      @Parameter(description = "Template Label") @NotNull @QueryParam(
+          NGCommonEntityConstants.VERSION_LABEL_KEY) String templateLabel,
+      @Parameter(
+          description = "This contains details of Git Entity") @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo) {
+    accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgId, projectId),
+        Resource.of(TEMPLATE, templateIdentifier), PermissionTypes.TEMPLATE_VIEW_PERMISSION);
+    // if label not given, then consider stable template label
+    // returns templateInputs yaml
+    log.info(String.format("Get Template inputs for template with identifier %s in project %s, org %s, account %s",
+        templateIdentifier, projectId, orgId, accountId));
+    return ResponseDTO.newResponse(templateMergeService.getTemplateInputs(yaml));
+  }
+
   @POST
   @Path("/applyTemplates")
   @ApiOperation(value = "Gets complete yaml with templateRefs resolved", nickname = "getYamlWithTemplateRefsResolved")
