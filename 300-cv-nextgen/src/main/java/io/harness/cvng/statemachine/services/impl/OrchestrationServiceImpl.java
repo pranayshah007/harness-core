@@ -215,6 +215,9 @@ public class OrchestrationServiceImpl implements OrchestrationService {
         case TIMEOUT:
           orchestrateFailedStateMachine(currentlyExecutingStateMachine);
           break;
+        case TERMINATED:
+          markTerminated();
+          break;
         case COMPLETED:
           log.info("Analysis for the entire duration is done. Time to close down");
           markCompleted(orchestrator.getVerificationTaskId());

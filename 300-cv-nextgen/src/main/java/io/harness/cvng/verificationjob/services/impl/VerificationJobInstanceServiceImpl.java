@@ -206,7 +206,7 @@ public class VerificationJobInstanceServiceImpl implements VerificationJobInstan
       UpdateOperations<VerificationJobInstance> verificationJobInstanceUpdateOperations =
           hPersistence.createUpdateOperations(VerificationJobInstance.class)
               .addToSet(VerificationJobInstanceKeys.progressLogs, progressLog);
-      if (progressLog.shouldUpdateJobStatus()) {
+      if (progressLog.shouldUpdateJobStatus() || isFailfast) {
         ExecutionStatus executionStatus = progressLog.getVerificationJobExecutionStatus();
         metricService.incCounter(CVNGMetricsUtils.getVerificationJobInstanceStatusMetricName(executionStatus));
         verificationJobInstanceUpdateOperations.set(VerificationJobInstanceKeys.executionStatus, executionStatus);
@@ -223,6 +223,7 @@ public class VerificationJobInstanceServiceImpl implements VerificationJobInstan
         metricService.recordDuration(VERIFICATION_JOB_INSTANCE_HEALTH_SOURCE_EXTRA_TIME,
             verificationJobInstance.getExtraTimeTakenToFinish(clock.instant()));
       }
+      // mark the next state machines in the orchestrator queue as terminated here
     }
   }
 
