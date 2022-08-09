@@ -2,8 +2,8 @@
 # container
 #
 # Build the ci-addon docker image using:
-# > bazel build --platforms=@io_bazel_rules_go//go/toolchain:linux_arm64 //product/ci/addon:ci-addon
-# > bazel build --platforms=@io_bazel_rules_go//go/toolchain:linux_arm64 //product/ci/split_tests:split_tests
+# > bazel build --workspace_status_command=/bin/true --platforms=@io_bazel_rules_go//go/toolchain:linux_arm64 //product/ci/addon:ci-addon
+# > bazel build --workspace_status_command=/bin/true --platforms=@io_bazel_rules_go//go/toolchain:linux_arm64 //product/ci/split_tests:split_tests
 # > mvn clean install -pl 980-java-agent; cp ~/.m2/repository/software/wings/980-java-agent/0.0.1-SNAPSHOT/980-java-agent-0.0.1-SNAPSHOT.jar $(bazel info bazel-bin)/product/ci/addon/java-agent.jar
 # > cp $(bazel info bazel-bin)/product/ci/split_tests/split_tests_/split_tests $(bazel info bazel-bin)/product/ci/addon/split_tests
 # > docker build -t harness/ci-addon:tag1.0 -f product/ci/addon/Dockerfile $(bazel info bazel-bin)/product/ci/addon/
