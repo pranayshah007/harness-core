@@ -161,8 +161,14 @@ public class EngineExpressionEvaluator {
    */
   // TODO(archit):Replace skipUnresolvedExpressionsCheck with enum to get unresolved variable value to be replaced with
   // like empty string, null or original expression.
+  @Deprecated
   public Object resolve(Object o, boolean skipUnresolvedExpressionsCheck) {
-    return ExpressionEvaluatorUtils.updateExpressions(o, new ResolveFunctorImpl(this, true));
+    return ExpressionEvaluatorUtils.updateExpressions(
+        o, new ResolveFunctorImpl(this, ExpressionMode.RETURN_NULL_IF_UNRESOLVED));
+  }
+
+  public Object resolve(Object o, ExpressionMode expressionMode) {
+    return ExpressionEvaluatorUtils.updateExpressions(o, new ResolveFunctorImpl(this, expressionMode));
   }
 
   public PartialEvaluateResult partialResolve(Object o) {
@@ -171,31 +177,44 @@ public class EngineExpressionEvaluator {
     return PartialEvaluateResult.createCompleteResult(res, partialCtx);
   }
 
+  @Deprecated
   public String renderExpression(String expression) {
-    return renderExpression(expression, true);
+    return renderExpression(expression, ExpressionMode.RETURN_NULL_IF_UNRESOLVED);
   }
 
+  @Deprecated
   public String renderExpression(String expression, boolean skipUnresolvedExpressionsCheck) {
-    return renderExpression(expression, null, skipUnresolvedExpressionsCheck);
+    return renderExpression(expression, null, calculateExpressionMode(skipUnresolvedExpressionsCheck));
   }
 
+  public String renderExpression(String expression, ExpressionMode expressionMode) {
+    return renderExpression(expression, null, expressionMode);
+  }
+
+  @Deprecated
   public String renderExpression(String expression, Map<String, Object> ctx) {
-    return renderExpression(expression, ctx, true);
+    return renderExpression(expression, ctx, ExpressionMode.RETURN_NULL_IF_UNRESOLVED);
   }
 
+  @Deprecated
   public String renderExpression(String expression, Map<String, Object> ctx, boolean skipUnresolvedExpressionsCheck) {
+    return renderExpression(expression, ctx, calculateExpressionMode(skipUnresolvedExpressionsCheck));
+  }
+
+  public String renderExpression(String expression, Map<String, Object> ctx, ExpressionMode expressionMode) {
     if (!hasExpressions(expression)) {
       return expression;
     }
-    return renderExpressionInternal(expression, prepareContext(ctx), skipUnresolvedExpressionsCheck, MAX_DEPTH);
+    return renderExpressionInternal(expression, prepareContext(ctx), MAX_DEPTH, expressionMode);
   }
 
   public String renderExpressionInternal(
-      @NotNull String expression, @NotNull EngineJexlContext ctx, boolean skipUnresolvedExpressionsCheck, int depth) {
+      @NotNull String expression, @NotNull EngineJexlContext ctx, int depth, ExpressionMode expressionMode) {
     checkDepth(depth, expression);
-    RenderExpressionResolver resolver = new RenderExpressionResolver(this, ctx, depth);
+    RenderExpressionResolver resolver = new RenderExpressionResolver(this, ctx, depth, expressionMode);
     String finalExpression = runStringReplacer(expression, resolver);
-    if (!skipUnresolvedExpressionsCheck && EmptyPredicate.isNotEmpty(resolver.getUnresolvedExpressions())) {
+    if (expressionMode == ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED
+        && EmptyPredicate.isNotEmpty(resolver.getUnresolvedExpressions())) {
       throw new UnresolvedExpressionsException(new ArrayList<>(resolver.getUnresolvedExpressions()));
     }
     return finalExpression;
@@ -239,14 +258,20 @@ public class EngineExpressionEvaluator {
   }
 
   public PartialEvaluateResult partialRenderExpression(String expression, Map<String, Object> ctx) {
+    return partialRenderExpression(expression, ctx, ExpressionMode.RETURN_NULL_IF_UNRESOLVED);
+  }
+
+  public PartialEvaluateResult partialRenderExpression(
+      String expression, Map<String, Object> ctx, ExpressionMode expressionMode) {
     if (!hasExpressions(expression)) {
       return PartialEvaluateResult.createCompleteResult(expression);
     }
-    return partialRenderExpressionInternal(expression, prepareContext(ctx), new HashMap<>(), MAX_DEPTH);
+    return partialRenderExpressionInternal(expression, prepareContext(ctx), new HashMap<>(), MAX_DEPTH, expressionMode);
   }
 
-  private PartialEvaluateResult partialRenderExpressionInternal(
-      @NotNull String expression, @NotNull EngineJexlContext ctx, @NotNull Map<String, Object> partialCtx, int depth) {
+  private PartialEvaluateResult partialRenderExpressionInternal(@NotNull String expression,
+      @NotNull EngineJexlContext ctx, @NotNull Map<String, Object> partialCtx, int depth,
+      ExpressionMode expressionMode) {
     checkDepth(depth, expression);
     PartialEvaluateExpressionResolver resolver = new PartialEvaluateExpressionResolver(this, ctx, partialCtx, depth);
     String finalExpression = runStringReplacer(expression, resolver);
@@ -259,10 +284,12 @@ public class EngineExpressionEvaluator {
     boolean hasNonInternalVariables = variables != null
         && variables.stream().anyMatch(v -> !v.startsWith(EXPR_START + HARNESS_INTERNAL_VARIABLE_PREFIX));
     if (hasNonInternalVariables) {
-      finalExpression = runStringReplacer(finalExpression, new HarnessInternalRenderExpressionResolver(partialCtx));
+      finalExpression =
+          runStringReplacer(finalExpression, new HarnessInternalRenderExpressionResolver(partialCtx, expressionMode));
       return PartialEvaluateResult.createPartialResult(finalExpression, partialCtx);
     } else {
-      return PartialEvaluateResult.createCompleteResult(renderExpressionInternal(expression, ctx, true, depth));
+      return PartialEvaluateResult.createCompleteResult(
+          renderExpressionInternal(expression, ctx, depth, expressionMode));
     }
   }
 
@@ -502,6 +529,11 @@ public class EngineExpressionEvaluator {
     }
   }
 
+  public static ExpressionMode calculateExpressionMode(boolean skipUnresolvedExpressionsCheck) {
+    return skipUnresolvedExpressionsCheck ? ExpressionMode.RETURN_NULL_IF_UNRESOLVED
+                                          : ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED;
+  }
+
   private static String runStringReplacer(@NotNull String expression, @NotNull ExpressionResolver resolver) {
     StringReplacer replacer = new StringReplacer(resolver, EXPR_START, EXPR_END);
     return replacer.replace(expression);
@@ -546,15 +578,23 @@ public class EngineExpressionEvaluator {
     private final EngineJexlContext ctx;
     private final int depth;
     @Getter private final Set<String> unresolvedExpressions = new HashSet<>();
+    private final ExpressionMode expressionMode;
 
-    RenderExpressionResolver(EngineExpressionEvaluator engineExpressionEvaluator, EngineJexlContext ctx, int depth) {
+    RenderExpressionResolver(EngineExpressionEvaluator engineExpressionEvaluator, EngineJexlContext ctx, int depth,
+        ExpressionMode expressionMode) {
       this.engineExpressionEvaluator = engineExpressionEvaluator;
       this.ctx = ctx;
       this.depth = depth;
+      this.expressionMode = expressionMode;
     }
 
     @Override
-    public String resolve(String expression) {
+    public ExpressionMode getExpressionMode() {
+      return expressionMode;
+    }
+
+    @Override
+    public String resolveInternal(String expression) {
       try {
         Object value = engineExpressionEvaluator.evaluateExpressionBlock(expression, ctx, depth);
         if (value == null) {
@@ -586,7 +626,7 @@ public class EngineExpressionEvaluator {
     }
 
     @Override
-    public String resolve(String expression) {
+    public String resolveInternal(String expression) {
       try {
         Object value = engineExpressionEvaluator.evaluateExpressionBlock(expression, ctx, depth - 1);
         // In case of unresolved expression, identified by null value, we are not returning early but storing the
@@ -621,7 +661,7 @@ public class EngineExpressionEvaluator {
     }
 
     @Override
-    public String resolve(String expression) {
+    public String resolveInternal(String expression) {
       PartialEvaluateResult result =
           engineExpressionEvaluator.partialEvaluateExpressionBlock(expression, ctx, partialCtx, depth - 1);
       if (result.isPartial()) {
@@ -636,13 +676,20 @@ public class EngineExpressionEvaluator {
 
   private static class HarnessInternalRenderExpressionResolver implements ExpressionResolver {
     private final Map<String, Object> partialCtx;
+    private final ExpressionMode expressionMode;
 
-    HarnessInternalRenderExpressionResolver(Map<String, Object> partialCtx) {
+    HarnessInternalRenderExpressionResolver(Map<String, Object> partialCtx, ExpressionMode expressionMode) {
       this.partialCtx = partialCtx;
+      this.expressionMode = expressionMode;
     }
 
     @Override
-    public String resolve(String expression) {
+    public ExpressionMode getExpressionMode() {
+      return expressionMode;
+    }
+
+    @Override
+    public String resolveInternal(String expression) {
       if (partialCtx.containsKey(expression)) {
         return String.valueOf(partialCtx.get(expression));
       } else {
@@ -654,16 +701,16 @@ public class EngineExpressionEvaluator {
   @Getter
   public static class ResolveFunctorImpl implements ExpressionResolveFunctor {
     private final EngineExpressionEvaluator expressionEvaluator;
-    private final boolean skipUnresolvedExpressionsCheck;
+    private ExpressionMode expressionMode;
 
-    public ResolveFunctorImpl(EngineExpressionEvaluator expressionEvaluator, boolean skipUnresolvedExpressionsCheck) {
+    public ResolveFunctorImpl(EngineExpressionEvaluator expressionEvaluator, ExpressionMode expressionMode) {
       this.expressionEvaluator = expressionEvaluator;
-      this.skipUnresolvedExpressionsCheck = skipUnresolvedExpressionsCheck;
+      this.expressionMode = expressionMode;
     }
 
     @Override
     public String processString(String expression) {
-      return expressionEvaluator.renderExpression(expression, skipUnresolvedExpressionsCheck);
+      return expressionEvaluator.renderExpression(expression, expressionMode);
     }
   }
 

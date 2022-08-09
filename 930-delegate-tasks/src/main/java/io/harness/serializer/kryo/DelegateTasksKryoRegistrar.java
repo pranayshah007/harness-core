@@ -292,6 +292,7 @@ import software.wings.service.impl.analysis.LogElement;
 import software.wings.service.impl.analysis.SetupTestNodeData;
 import software.wings.service.impl.apm.APMDataCollectionInfo;
 import software.wings.service.impl.apm.APMMetricInfo;
+import software.wings.service.impl.apm.AWSPrometheusInfo;
 import software.wings.service.impl.apm.CustomAPMDataCollectionInfo;
 import software.wings.service.impl.appdynamics.AppDynamicsDataCollectionInfoV2;
 import software.wings.service.impl.appdynamics.AppdynamicsDataCollectionInfo;
@@ -992,5 +993,6 @@ public class DelegateTasksKryoRegistrar implements KryoRegistrar {
     kryo.register(EcsDeployRollbackDataFetchRequest.class, 8086);
     kryo.register(HelmChartSpecification.class, 5269);
     kryo.register(ManifestFile.class, 5539);
+    kryo.register(AWSPrometheusInfo.class, 90001);
   }
 }

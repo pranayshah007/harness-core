@@ -16,7 +16,8 @@
       "providerType": "DockerHub",
       "auth": {
         "type": "Anonymous"
-      }
+      },
+      "executeOnDelegate": true
     }
   }
 }

@@ -15,6 +15,8 @@ import io.harness.cdng.execution.ExecutionInfoKey;
 import io.harness.cdng.execution.StageExecutionInfo;
 import io.harness.utils.StageStatus;
 
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @OwnedBy(CDP)
@@ -31,10 +33,39 @@ public interface StageExecutionInfoService {
    * Update stage execution status.
    *
    * @param scope the scope
-   * @param executionId execution id
+   * @param stageExecutionId execution id
    * @param stageStatus stage status
    */
-  void updateStatus(Scope scope, String executionId, StageStatus stageStatus);
+  void updateStatus(Scope scope, String stageExecutionId, StageStatus stageStatus);
+
+  /**
+   * Update stage execution info.
+   *
+   * @param scope the scope
+   * @param stageExecutionId stage execution id
+   * @param updates updates map
+   */
+  void update(Scope scope, String stageExecutionId, Map<String, Object> updates);
+
+  /**
+   * Update stage execution info only once per stage execution id.
+   *
+   * @param scope the scope
+   * @param stageExecutionId stage execution id
+   * @param updates updates map
+   */
+  void updateOnce(Scope scope, String stageExecutionId, Map<String, Object> updates);
+
+  /**
+   * Delete stage status keys lock. This method works in correlation with updateOnce.
+   * When calling updateOnce method, the lock in the concurrent map will be created and needs to be deleted when it is
+   * not needed anymore. However, if the caller forgets to call the following method the lock will be auto-deleted after
+   * the expired time set on the map
+   *
+   * @param scope the scope
+   * @param stageExecutionId stage execution id
+   */
+  void deleteStageStatusKeyLock(Scope scope, String stageExecutionId);
 
   /**
    *  Get the latest successful stage execution info.
@@ -45,4 +76,15 @@ public interface StageExecutionInfoService {
    */
   Optional<StageExecutionInfo> getLatestSuccessfulStageExecutionInfo(
       ExecutionInfoKey executionInfoKey, String executionId);
+
+  /**
+   *  List the latest successful stage execution info.
+   *
+   * @param executionInfoKey the stage execution key
+   * @param stageExecutionId execution id
+   * @param limit response limit
+   * @return stage execution info
+   */
+  List<StageExecutionInfo> listLatestSuccessfulStageExecutionInfo(
+      ExecutionInfoKey executionInfoKey, String stageExecutionId, int limit);
 }

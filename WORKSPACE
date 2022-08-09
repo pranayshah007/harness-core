@@ -5252,9 +5252,13 @@ maven_install(
     name = "ce-nextgen",
     artifacts = [
         "com.azure:azure-core:1.25.0",
+        "com.azure:azure-core-management:1.5.2",
         "com.azure:azure-identity:1.4.4",
         "com.azure:azure-storage-blob:12.14.4",
         "com.azure:azure-storage-common:12.14.3",
+        "com.azure.resourcemanager:azure-resourcemanager:2.12.0",
+        "com.azure.resourcemanager:azure-resourcemanager-authorization:2.12.0",
+        "com.azure.resourcemanager:azure-resourcemanager-resources:2.12.0",
     ],
     repositories = [
         "http://jfrogdev.dev.harness.io:80/artifactory/portal-maven",

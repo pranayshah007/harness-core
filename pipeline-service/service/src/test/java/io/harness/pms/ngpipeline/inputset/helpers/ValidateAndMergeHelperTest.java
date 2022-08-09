@@ -21,7 +21,9 @@ import io.harness.category.element.UnitTests;
 import io.harness.exception.InvalidRequestException;
 import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntity;
+import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntityType;
 import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetTemplateResponseDTOPMS;
+import io.harness.pms.ngpipeline.inputset.exceptions.InvalidInputSetException;
 import io.harness.pms.ngpipeline.inputset.service.PMSInputSetService;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.service.PMSPipelineService;
@@ -92,17 +94,32 @@ public class ValidateAndMergeHelperTest extends PipelineServiceTestBase {
         + "  - stage:\n"
         + "      identifier: s2\n"
         + "      description: <+input>\n";
+    String validInputSetYaml = "inputSet:\n"
+        + "  pipeline:\n"
+        + "    stages:\n"
+        + "    - stage:\n"
+        + "        identifier: s1\n"
+        + "        description: desc\n";
     PipelineEntity pipelineEntity = PipelineEntity.builder().yaml(pipelineYaml).build();
     doReturn(Optional.of(pipelineEntity)).when(pmsPipelineService).get(accountId, orgId, projectId, pipelineId, false);
 
     String invalidIdentifier = "invalidIdentifier";
-    InputSetEntity invalidEntity = InputSetEntity.builder().isInvalid(true).identifier(invalidIdentifier).build();
+    InputSetEntity invalidEntity = InputSetEntity.builder()
+                                       .isInvalid(true)
+                                       .identifier(invalidIdentifier)
+                                       .inputSetEntityType(InputSetEntityType.INPUT_SET)
+                                       .build();
     doReturn(Optional.of(invalidEntity))
         .when(pmsInputSetService)
         .getWithoutValidations(accountId, orgId, projectId, pipelineId, invalidIdentifier, false);
 
     String validIdentifier = "validIdentifier";
-    InputSetEntity validEntity = InputSetEntity.builder().isInvalid(false).identifier(validIdentifier).build();
+    InputSetEntity validEntity = InputSetEntity.builder()
+                                     .isInvalid(false)
+                                     .identifier(validIdentifier)
+                                     .inputSetEntityType(InputSetEntityType.INPUT_SET)
+                                     .yaml(validInputSetYaml)
+                                     .build();
     doReturn(Optional.of(validEntity))
         .when(pmsInputSetService)
         .getWithoutValidations(accountId, orgId, projectId, pipelineId, validIdentifier, false);
@@ -110,8 +127,8 @@ public class ValidateAndMergeHelperTest extends PipelineServiceTestBase {
     assertThatThrownBy(()
                            -> validateAndMergeHelper.getMergeInputSetFromPipelineTemplate(accountId, orgId, projectId,
                                pipelineId, Arrays.asList(invalidIdentifier, validIdentifier), branch, repoId, null))
-        .isInstanceOf(InvalidRequestException.class)
-        .hasMessage("invalidIdentifier is invalid. Pipeline update has made this input set outdated");
+        .isInstanceOf(InvalidInputSetException.class)
+        .hasMessage("Some of the references provided are invalid");
   }
 
   @Test

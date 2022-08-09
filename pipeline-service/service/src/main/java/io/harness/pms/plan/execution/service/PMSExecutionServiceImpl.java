@@ -321,6 +321,11 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
   }
 
   @Override
+  public void sendGraphUpdateEvent(PipelineExecutionSummaryEntity pipelineExecutionSummaryEntity) {
+    graphGenerationService.sendUpdateEventIfAny(pipelineExecutionSummaryEntity);
+  }
+
+  @Override
   public OrchestrationGraphDTO getOrchestrationGraph(
       String stageNodeId, String planExecutionId, String stageNodeExecutionId) {
     if (EmptyPredicate.isEmpty(stageNodeId)) {

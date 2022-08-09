@@ -594,6 +594,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
               .sampleDelegate(isSample)
               .location(Paths.get("").toAbsolutePath().toString())
               .heartbeatAsObject(true)
+              .immutable(isImmutableDelegate)
               .ceEnabled(Boolean.parseBoolean(System.getenv("ENABLE_CE")));
 
       delegateId = registerDelegate(builder);
@@ -1587,7 +1588,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
 
   private void watcherUpgrade(boolean heartbeatTimedOut) {
     String watcherVersion = messageService.getData(WATCHER_DATA, WATCHER_VERSION, String.class);
-    String expectedVersion = findExpectedWatcherVersion();
+    String expectedVersion = substringBefore(findExpectedWatcherVersion(), "-").trim();
     if (expectedVersion == null || StringUtils.equals(expectedVersion, watcherVersion)) {
       watcherVersionMatchedAt = clock.millis();
     }

@@ -1,5 +1,13 @@
+/*
+ * Copyright 2022 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
+
 package io.harness.ng.oauth;
 
+import static io.harness.AuthorizationServiceHeader.NG_MANAGER;
 import static io.harness.connector.entities.embedded.gitlabconnector.GitlabConnector.GitlabConnectorKeys;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.mongo.iterator.MongoPersistenceIterator.SchedulingType.REGULAR;
@@ -34,6 +42,9 @@ import io.harness.ng.core.dto.secrets.SecretTextSpecDTO;
 import io.harness.ng.core.models.Secret;
 import io.harness.product.ci.scm.proto.RefreshTokenResponse;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
+import io.harness.security.SecurityContextBuilder;
+import io.harness.security.dto.Principal;
+import io.harness.security.dto.ServicePrincipal;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.service.ScmClient;
 
@@ -115,6 +126,11 @@ public class OAuthTokenRefresher implements Handler<GitlabConnector> {
     log.info("[OAuth refresh] Working on {}", entity.getAccountIdentifier() + ":" + entity.getIdentifier());
 
     try {
+      Principal principal = SecurityContextBuilder.getPrincipal();
+      if (principal == null) {
+        principal = new ServicePrincipal(NG_MANAGER.getServiceId());
+        SecurityContextBuilder.setContext(principal);
+      }
       GitlabOauthDTO gitlabOauthDTO = getGitlabOauthDecrypted(entity);
 
       SecretDTOV2 tokenDTO = getSecretSecretValue(entity, gitlabOauthDTO.getTokenRef());

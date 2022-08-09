@@ -83,6 +83,7 @@ public enum FeatureName {
   FFM_2134_FF_PIPELINES_TRIGGER,
   FFM_3938_STALE_FLAGS_ACTIVE_CARD_HIDE_SHOW,
   FFM_4117_INTEGRATE_SRM("Enable Feature Flags to send events to the SRM module", HarnessTeam.CF),
+  FFM_3961_ENHANCED_ONBOARDING("Enable new onboarding experience for FeatureFlags", HarnessTeam.CF),
   WINRM_COPY_CONFIG_OPTIMIZE,
   ECS_MULTI_LBS,
   ENTITY_AUDIT_RECORD,
@@ -132,7 +133,6 @@ public enum FeatureName {
   PRUNE_KUBERNETES_RESOURCES,
   REJECT_TRIGGER_IF_ARTIFACTS_NOT_MATCH,
   ROLLBACK_NONE_ARTIFACT,
-  SCIM_INTEGRATION,
   SEARCH_REQUEST,
   SEND_LOG_ANALYSIS_COMPRESSED,
   SEND_SLACK_NOTIFICATION_FROM_DELEGATE,
@@ -295,7 +295,6 @@ public enum FeatureName {
   SERVICENOW_CREATE_UPDATE_NG,
   OUTCOME_GRAPHQL_WITH_INFRA_DEF,
   AUTO_REJECT_PREVIOUS_APPROVALS,
-  ENABLE_K8S_AUTH_IN_VAULT,
   BIND_CUSTOM_VALUE_AND_MANIFEST_FETCH_TASK,
   AZURE_BLOB_SM,
   CONSIDER_ORIGINAL_STATE_VERSION,
@@ -378,10 +377,10 @@ public enum FeatureName {
   DISABLE_PIPELINE_SCHEMA_VALIDATION(
       "Used to disable pipeline yaml schema as We saw some intermittent issue in Schema Validation due to invalid schema generation. Will keep this FF until root cause is found and fixed.",
       HarnessTeam.PIPELINE),
-  CI_STEP_GROUP_ENABLED,
   GIT_SIMPLIFICATION_DISABLED,
   USE_K8S_API_FOR_STEADY_STATE_CHECK,
   WINRM_ASG_ROLLBACK("Used for Collect remaining instances rollback step", HarnessTeam.CDP),
+  NEW_LEFT_NAVBAR_SETTINGS("Used for new left navbar configuration", HarnessTeam.PL),
 
   SAVE_ARTIFACT_TO_DB("Saves artifact to db and proceed in artifact collection step if not found", HarnessTeam.CDC),
   NG_INLINE_MANIFEST,
@@ -412,7 +411,10 @@ public enum FeatureName {
       "Used to do on demand rollback to previously deployed different artifact on same inframapping", HarnessTeam.CDC),
   CG_GIT_POLLING("Poll git based on account config for git sync in CG.", HarnessTeam.SPG),
   GRAPHQL_WORKFLOW_EXECUTION_OPTIMIZATION(
-      "Making multiple optimizations for workflow execution graphql in CG", HarnessTeam.SPG);
+      "Making multiple optimizations for workflow execution graphql in CG", HarnessTeam.SPG),
+  NG_ENABLE_LDAP_CHECK("Enables NG Ldap in NG-UI", HarnessTeam.PL),
+  CUSTOM_SECRET_MANAGER_NG("Enable Custom Secret Manager in NG", HarnessTeam.PL),
+  CV_AWS_PROMETHEUS("Enable AWS Prometheus for CV State", HarnessTeam.CV);
   @Deprecated
   FeatureName() {
     scope = Scope.PER_ACCOUNT;

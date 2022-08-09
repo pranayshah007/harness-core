@@ -41,9 +41,11 @@ import io.harness.pms.stages.StagesExpressionExtractor;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -198,37 +200,48 @@ public class ValidateAndMergeHelper {
       throw new InvalidRequestException(
           "Pipeline " + pipelineIdentifier + " does not have any runtime input. All existing input sets are invalid");
     }
+
+    Set<String> invalidReferences = new HashSet<>();
     List<String> inputSetYamlList = new ArrayList<>();
     inputSetReferences.forEach(identifier -> {
       Optional<InputSetEntity> entity = pmsInputSetService.getWithoutValidations(
           accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, identifier, false);
       if (!entity.isPresent()) {
-        throw new InvalidRequestException(identifier + " does not exist");
+        invalidReferences.add(identifier);
+        return;
       }
       InputSetEntity inputSet = entity.get();
       if (inputSet.getIsInvalid()) {
-        throw new InvalidRequestException(identifier + " is invalid. Pipeline update has made this input set outdated");
+        invalidReferences.add(identifier);
+        return;
       }
       if (inputSet.getInputSetEntityType() == InputSetEntityType.INPUT_SET) {
-        inputSetYamlList.add(entity.get().getYaml());
+        inputSetYamlList.add(inputSet.getYaml());
+        if (InputSetErrorsHelper.getErrorMap(pipelineTemplate, inputSet.getYaml()) != null) {
+          invalidReferences.add(identifier);
+        }
       } else {
         List<String> overlayReferences = inputSet.getInputSetReferences();
         overlayReferences.forEach(id -> {
           Optional<InputSetEntity> entity2 = pmsInputSetService.getWithoutValidations(
               accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, id, false);
           if (!entity2.isPresent()) {
-            throw new InvalidRequestException(id + " does not exist");
+            invalidReferences.add(identifier);
+          } else {
+            inputSetYamlList.add(entity2.get().getYaml());
+            if (InputSetErrorsHelper.getErrorMap(pipelineTemplate, entity2.get().getYaml()) != null) {
+              invalidReferences.add(identifier);
+            }
           }
-          inputSetYamlList.add(entity2.get().getYaml());
         });
       }
     });
-    for (String inputSetYaml : inputSetYamlList) {
-      InputSetErrorWrapperDTOPMS errorMap = InputSetErrorsHelper.getErrorMap(pipelineTemplate, inputSetYaml);
-      if (errorMap != null) {
-        throw new InvalidInputSetException("Some fields are not valid", errorMap);
-      }
+
+    if (EmptyPredicate.isNotEmpty(invalidReferences)) {
+      throw new InvalidInputSetException("Some of the references provided are invalid",
+          InputSetErrorWrapperDTOPMS.builder().invalidInputSetReferences(new ArrayList<>(invalidReferences)).build());
     }
+
     if (EmptyPredicate.isEmpty(stageIdentifiers)) {
       return mergeInputSets(pipelineTemplate, inputSetYamlList, false);
     }

@@ -10,6 +10,7 @@ package io.harness.pms.yaml.validation;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.expression.EngineExpressionEvaluator;
+import io.harness.expression.ExpressionMode;
 
 import java.util.Arrays;
 import java.util.List;
@@ -30,14 +31,12 @@ import java.util.stream.Collectors;
 @OwnedBy(HarnessTeam.PIPELINE)
 public class AllowedValuesValidator implements RuntimeValidator {
   private final EngineExpressionEvaluator engineExpressionEvaluator;
-  private final boolean skipUnresolvedExpressionsCheck;
-
+  private final ExpressionMode expressionMode;
   private static final Pattern JEXL_PATTERN = Pattern.compile("jexl\\(");
 
-  public AllowedValuesValidator(
-      EngineExpressionEvaluator engineExpressionEvaluator, boolean skipUnresolvedExpressionsCheck) {
+  public AllowedValuesValidator(EngineExpressionEvaluator engineExpressionEvaluator, ExpressionMode expressionMode) {
     this.engineExpressionEvaluator = engineExpressionEvaluator;
-    this.skipUnresolvedExpressionsCheck = skipUnresolvedExpressionsCheck;
+    this.expressionMode = expressionMode;
   }
 
   @Override
@@ -58,7 +57,7 @@ public class AllowedValuesValidator implements RuntimeValidator {
     if (isJexlExpression) {
       parameters = (String) engineExpressionEvaluator.evaluateExpression(parameters);
     } else {
-      parameters = engineExpressionEvaluator.renderExpression(parameters, skipUnresolvedExpressionsCheck);
+      parameters = engineExpressionEvaluator.renderExpression(parameters, expressionMode);
     }
 
     String[] parametersList = parameters.split(",");

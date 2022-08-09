@@ -38,4 +38,6 @@ public class RedisConfig {
   @ConfigSecret private String password;
   @ConfigSecret private String userName;
   @ConfigSecret private RedisSSLConfig sslConfig;
+  private int subscriptionsPerConnection;
+  private int subscriptionConnectionPoolSize;
 }

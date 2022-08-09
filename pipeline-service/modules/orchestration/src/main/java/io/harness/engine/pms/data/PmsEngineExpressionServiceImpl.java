@@ -11,6 +11,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.engine.expressions.ExpressionEvaluatorProvider;
 import io.harness.expression.EngineExpressionEvaluator;
+import io.harness.expression.ExpressionMode;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
 
@@ -36,9 +37,15 @@ public class PmsEngineExpressionServiceImpl implements PmsEngineExpressionServic
   }
 
   @Override
+  @Deprecated
   public Object resolve(Ambiance ambiance, Object o, boolean skipUnresolvedExpressionsCheck) {
+    return resolve(ambiance, o, EngineExpressionEvaluator.calculateExpressionMode(skipUnresolvedExpressionsCheck));
+  }
+
+  @Override
+  public Object resolve(Ambiance ambiance, Object o, ExpressionMode expressionMode) {
     EngineExpressionEvaluator evaluator = prepareExpressionEvaluator(ambiance);
-    return evaluator.resolve(o, skipUnresolvedExpressionsCheck);
+    return evaluator.resolve(o, expressionMode);
   }
 
   @Override

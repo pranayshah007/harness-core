@@ -10,6 +10,7 @@ package software.wings.helpers.ext.helm;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.delegate.clienttools.ClientTool.OC;
 import static io.harness.delegate.task.helm.HelmTaskHelperBase.getChartDirectory;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.filesystem.FileIo.deleteDirectoryAndItsContentIfExists;
@@ -34,6 +35,7 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.FileData;
 import io.harness.concurrent.HTimeLimiter;
 import io.harness.container.ContainerInfo;
+import io.harness.delegate.clienttools.InstallUtils;
 import io.harness.delegate.task.helm.CustomManifestFetchTaskHelper;
 import io.harness.delegate.task.helm.HelmChartInfo;
 import io.harness.delegate.task.helm.HelmCommandResponse;
@@ -56,6 +58,7 @@ import io.harness.k8s.KubernetesContainerService;
 import io.harness.k8s.kubectl.Kubectl;
 import io.harness.k8s.manifest.ManifestHelper;
 import io.harness.k8s.model.HelmVersion;
+import io.harness.k8s.model.Kind;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.k8s.model.KubernetesResource;
 import io.harness.k8s.model.KubernetesResourceId;
@@ -294,6 +297,10 @@ public class HelmDeployServiceImpl implements HelmDeployService {
     for (Map.Entry<String, List<KubernetesResourceId>> entry : namespacewiseResources.entrySet()) {
       if (success) {
         final String namespace = entry.getKey();
+        Optional<String> ocPath = setupPathOfOcBinaries(entry.getValue());
+        if (ocPath.isPresent()) {
+          commandRequest.setOcPath(ocPath.get());
+        }
         success = success
             && k8sTaskHelperBase.doStatusCheckAllResourcesForHelm(client, entry.getValue(), commandRequest.getOcPath(),
                 commandRequest.getWorkingDir(), namespace, commandRequest.getKubeConfigLocation(),
@@ -1168,5 +1175,25 @@ public class HelmDeployServiceImpl implements HelmDeployService {
         .chartVersion(releaseRecord.get("CHART VERSION"))
         .appVersion(releaseRecord.get("APP VERSION"))
         .build();
+  }
+
+  private Optional<String> setupPathOfOcBinaries(List<KubernetesResourceId> resourceIds) {
+    if (isEmpty(resourceIds)) {
+      return Optional.empty();
+    }
+
+    for (KubernetesResourceId kubernetesResourceId : resourceIds) {
+      if (Kind.DeploymentConfig.name().equals(kubernetesResourceId.getKind())) {
+        String ocPath = null;
+        try {
+          ocPath = InstallUtils.getLatestVersionPath(OC);
+        } catch (Exception ex) {
+          log.warn(
+              "Unable to fetch OC binary path from delegate. Kindly ensure it is configured as env variable." + ex);
+        }
+        return Optional.ofNullable(ocPath);
+      }
+    }
+    return Optional.empty();
   }
 }

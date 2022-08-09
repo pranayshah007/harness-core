@@ -17,9 +17,12 @@ import io.harness.utils.StageStatus;
 
 import com.mongodb.client.result.UpdateResult;
 import java.util.List;
+import java.util.Map;
 
 @OwnedBy(CDP)
 public interface StageExecutionInfoRepositoryCustom {
+  UpdateResult update(Scope scope, String stageExecutionId, Map<String, Object> updates);
+
   UpdateResult updateStatus(Scope scope, String stageExecutionId, StageStatus status);
 
   List<StageExecutionInfo> listSucceededStageExecutionNotIncludeCurrent(

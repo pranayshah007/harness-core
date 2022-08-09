@@ -73,6 +73,10 @@ public class ExecutionQueryHelperTest extends WingsBaseTest {
     filter.setTrigger(QLIdFilter.builder().operator(QLIdOperator.EQUALS).values(new String[] {"TRIGGER"}).build());
     filter.setWorkflow(QLIdFilter.builder().operator(QLIdOperator.EQUALS).values(new String[] {"WF"}).build());
     filter.setPipeline(QLIdFilter.builder().operator(QLIdOperator.EQUALS).values(new String[] {"PIPELINE"}).build());
+    filter.setArtifactBuildNo(
+        QLIdFilter.builder().operator(QLIdOperator.EQUALS).values(new String[] {"ARTIFACT_ID"}).build());
+    filter.setHelmChartVersion(
+        QLIdFilter.builder().operator(QLIdOperator.EQUALS).values(new String[] {"HELM_CHART_VERSION"}).build());
 
     Query query = Mockito.mock(Query.class);
     FieldEnd fieldEnd = Mockito.mock(FieldEnd.class);
@@ -93,6 +97,8 @@ public class ExecutionQueryHelperTest extends WingsBaseTest {
     Mockito.verify(query, Mockito.times(1)).field(WorkflowExecutionKeys.createdAt);
     Mockito.verify(query, Mockito.times(1)).field(WorkflowExecutionKeys.envIds);
     Mockito.verify(query, Mockito.never()).field(WorkflowExecutionKeys.pipelineExecutionId);
+    Mockito.verify(query, Mockito.times(1)).field(WorkflowExecutionKeys.executionArgs_artifacts_buildNo);
+    Mockito.verify(query, Mockito.times(1)).field(WorkflowExecutionKeys.executionArgs_helmCharts_version);
   }
 
   @Test
@@ -121,6 +127,10 @@ public class ExecutionQueryHelperTest extends WingsBaseTest {
     filter.setPipeline(QLIdFilter.builder().operator(QLIdOperator.EQUALS).values(new String[] {"PIPELINE"}).build());
     filter.setPipelineExecutionId(
         QLIdFilter.builder().operator(QLIdOperator.EQUALS).values(new String[] {"PIPE_EXEC_ID"}).build());
+    filter.setArtifactBuildNo(
+        QLIdFilter.builder().operator(QLIdOperator.EQUALS).values(new String[] {"ARTIFACT_ID"}).build());
+    filter.setHelmChartVersion(
+        QLIdFilter.builder().operator(QLIdOperator.EQUALS).values(new String[] {"HELM_CHART_VERSION"}).build());
 
     Query query = Mockito.mock(Query.class);
     FieldEnd fieldEnd = Mockito.mock(FieldEnd.class);
@@ -144,6 +154,8 @@ public class ExecutionQueryHelperTest extends WingsBaseTest {
     Mockito.verify(utils, Mockito.times(1))
         .setIdFilter(eq(query.field(WorkflowExecutionKeys.pipelineExecutionId)),
             eq(QLIdFilter.builder().operator(QLIdOperator.EQUALS).values(new String[] {"PIPE_EXEC_ID"}).build()));
+    Mockito.verify(query, Mockito.times(1)).field(WorkflowExecutionKeys.executionArgs_artifacts_buildNo);
+    Mockito.verify(query, Mockito.times(1)).field(WorkflowExecutionKeys.executionArgs_helmCharts_version);
   }
 
   @Test

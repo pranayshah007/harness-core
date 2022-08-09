@@ -41,4 +41,5 @@ public class OutcomeExpressionConstants {
   public final String STARTUP_COMMAND = "startupCommand";
   public final String APPLICATION_SETTINGS = "applicationSettings";
   public final String CONNECTION_STRINGS = "connectionStrings";
+  public final String ROLLBACK_ARTIFACT = "rollbackArtifact";
 }

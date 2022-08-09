@@ -8,6 +8,7 @@
 package io.harness.ngmigration.service.entity;
 
 import io.harness.beans.MigratedEntityMapping;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.gitsync.beans.YamlDTO;
 import io.harness.ngmigration.beans.BaseEntityInput;
 import io.harness.ngmigration.beans.MigrationInputDTO;
@@ -21,6 +22,7 @@ import io.harness.persistence.HPersistence;
 import software.wings.beans.Application;
 import software.wings.beans.Pipeline;
 import software.wings.beans.Pipeline.PipelineKeys;
+import software.wings.beans.Service;
 import software.wings.ngmigration.CgEntityId;
 import software.wings.ngmigration.CgEntityNode;
 import software.wings.ngmigration.DiscoveryNode;
@@ -28,10 +30,13 @@ import software.wings.ngmigration.NGMigrationEntity;
 import software.wings.ngmigration.NGMigrationEntityType;
 import software.wings.ngmigration.NGMigrationStatus;
 import software.wings.service.intfc.AppService;
+import software.wings.service.intfc.EnvironmentService;
+import software.wings.service.intfc.ServiceResourceService;
 
 import com.google.inject.Inject;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -40,6 +45,8 @@ import java.util.stream.Collectors;
 public class AppMigrationService extends NgMigrationService {
   @Inject private AppService appService;
   @Inject private HPersistence hPersistence;
+  @Inject private EnvironmentService environmentService;
+  @Inject private ServiceResourceService serviceResourceService;
 
   @Override
   public MigratedEntityMapping generateMappingEntity(NGYamlFile yamlFile) {
@@ -53,11 +60,37 @@ public class AppMigrationService extends NgMigrationService {
     }
     Application application = (Application) entity;
     String appId = application.getUuid();
+
+    Set<CgEntityId> children = new HashSet<>();
+
     List<Pipeline> pipelines = hPersistence.createQuery(Pipeline.class)
                                    .filter(PipelineKeys.accountId, application.getAccountId())
                                    .filter(PipelineKeys.appId, appId)
                                    .project(PipelineKeys.uuid, true)
                                    .asList();
+    children.addAll(pipelines.stream()
+                        .map(Pipeline::getUuid)
+                        .distinct()
+                        .map(id -> CgEntityId.builder().id(id).type(NGMigrationEntityType.PIPELINE).build())
+                        .collect(Collectors.toSet()));
+
+    List<Service> services = serviceResourceService.findServicesByAppInternal(appId);
+    if (EmptyPredicate.isNotEmpty(services)) {
+      children.addAll(services.stream()
+                          .map(Service::getUuid)
+                          .distinct()
+                          .map(id -> CgEntityId.builder().id(id).type(NGMigrationEntityType.SERVICE).build())
+                          .collect(Collectors.toSet()));
+    }
+
+    List<String> environments = environmentService.getEnvIdsByApp(appId);
+    if (EmptyPredicate.isNotEmpty(environments)) {
+      children.addAll(environments.stream()
+                          .distinct()
+                          .map(id -> CgEntityId.builder().id(id).type(NGMigrationEntityType.ENVIRONMENT).build())
+                          .collect(Collectors.toSet()));
+    }
+
     return DiscoveryNode.builder()
         .entityNode(CgEntityNode.builder()
                         .id(appId)
@@ -65,11 +98,7 @@ public class AppMigrationService extends NgMigrationService {
                         .entity(entity)
                         .entityId(CgEntityId.builder().type(NGMigrationEntityType.APPLICATION).id(appId).build())
                         .build())
-        .children(pipelines.stream()
-                      .map(Pipeline::getUuid)
-                      .distinct()
-                      .map(id -> CgEntityId.builder().id(id).type(NGMigrationEntityType.PIPELINE).build())
-                      .collect(Collectors.toSet()))
+        .children(children)
         .build();
   }
 

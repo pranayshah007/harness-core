@@ -57,7 +57,7 @@ public class EngineExpressionSecretUtils {
     }
 
     @Override
-    public String resolve(String expression) {
+    public String resolveInternal(String expression) {
       try {
         JexlExpression jexlExpression = engine.createExpression(expression);
         Object value = jexlExpression.evaluate(ctx);

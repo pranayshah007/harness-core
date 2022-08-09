@@ -9,7 +9,6 @@ package io.harness.delegate.task.azure.appservice.webapp.handler;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.azure.model.AzureConstants.AZURE_APP_SVC_ARTIFACT_DOWNLOAD_DIR_PATH;
-import static io.harness.azure.model.AzureConstants.FETCH_ARTIFACT_FILE;
 import static io.harness.azure.model.AzureConstants.REPOSITORY_DIR_PATH;
 
 import static java.lang.String.format;
@@ -94,8 +93,8 @@ public class AzureWebAppSlotDeploymentRequestHandler
     try (AutoCloseableWorkingDirectory autoCloseableWorkingDirectory =
              new AutoCloseableWorkingDirectory(REPOSITORY_DIR_PATH, AZURE_APP_SVC_ARTIFACT_DOWNLOAD_DIR_PATH)) {
       AzurePackageArtifactConfig artifactConfig = (AzurePackageArtifactConfig) taskRequest.getArtifact();
-      ArtifactDownloadContext downloadContext =
-          toArtifactNgDownloadContext(artifactConfig, autoCloseableWorkingDirectory, logCallbackProvider);
+      ArtifactDownloadContext downloadContext = azureResourceUtilities.toArtifactNgDownloadContext(
+          artifactConfig, autoCloseableWorkingDirectory, logCallbackProvider);
       AzureArtifactDownloadResponse artifactResponse = artifactDownloaderService.download(downloadContext);
       AzureWebClientContext azureWebClientContext =
           buildAzureWebClientContext(taskRequest.getInfrastructure(), azureConfig);
@@ -113,15 +112,5 @@ public class AzureWebAppSlotDeploymentRequestHandler
     } catch (Exception e) {
       throw new AzureWebAppSlotDeploymentExceptionData(preDeploymentData.getDeploymentProgressMarker(), e);
     }
-  }
-
-  private ArtifactDownloadContext toArtifactNgDownloadContext(AzurePackageArtifactConfig artifactConfig,
-      AutoCloseableWorkingDirectory workingDirectory, AzureLogCallbackProvider logCallbackProvider) {
-    return ArtifactDownloadContext.builder()
-        .artifactConfig(artifactConfig)
-        .commandUnitName(FETCH_ARTIFACT_FILE)
-        .workingDirectory(workingDirectory.workingDir())
-        .logCallbackProvider(logCallbackProvider)
-        .build();
   }
 }
