@@ -74,6 +74,7 @@ import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepOutcome;
+import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.steps.EntityReferenceExtractorUtils;
 import io.harness.steps.OutputExpressionConstants;
@@ -90,7 +91,6 @@ import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 
 @OwnedBy(CDC)
@@ -108,7 +108,7 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
   @Inject private OutcomeService outcomeService;
   @Inject private CDStepHelper cdStepHelper;
   @Inject ExecutionSweepingOutputService executionSweepingOutputService;
-  @Inject StageExecutionHelper stageExecutionHelper;
+  @Inject private StageExecutionHelper stageExecutionHelper;
 
   @Override
   public Class<Infrastructure> getStepParametersClass() {
@@ -158,18 +158,26 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
     saveExecutionLog(logCallback, color("Environment information fetched", Green));
 
     publishInfraDelegateConfigOutput(serviceOutcome, infrastructureOutcome, ambiance);
-    Optional<ExecutionInfoKey> executionInfoKey = ExecutionInfoKeyMapper.getExecutionInfoKey(
-        ambiance, infrastructure.getKind(), environmentOutcome, serviceOutcome, infrastructureOutcome);
-    executionInfoKey.ifPresent(
-        infoKey -> stageExecutionHelper.saveStageExecutionInfo(ambiance, infoKey, infrastructure.getKind()));
+
+    StepResponseBuilder stepResponseBuilder = StepResponse.builder();
+    String infrastructureKind = infrastructure.getKind();
+    if (stageExecutionHelper.shouldSaveStageExecutionInfo(infrastructureKind)) {
+      ExecutionInfoKey executionInfoKey = ExecutionInfoKeyMapper.getExecutionInfoKey(
+          ambiance, infrastructureKind, environmentOutcome, serviceOutcome, infrastructureOutcome);
+      stageExecutionHelper.saveStageExecutionInfoAndPublishExecutionInfoKey(
+          ambiance, executionInfoKey, infrastructureKind);
+      if (stageExecutionHelper.isRollbackArtifactRequiredPerInfrastructure(infrastructureKind)) {
+        stageExecutionHelper.addRollbackArtifactToStageOutcomeIfPresent(
+            ambiance, stepResponseBuilder, executionInfoKey, infrastructureKind);
+      }
+    }
 
     if (logCallback != null) {
       logCallback.saveExecutionLog(
           color("Completed infrastructure step", Green), LogLevel.INFO, CommandExecutionStatus.SUCCESS);
     }
 
-    return StepResponse.builder()
-        .status(Status.SUCCEEDED)
+    return stepResponseBuilder.status(Status.SUCCEEDED)
         .stepOutcome(StepOutcome.builder()
                          .outcome(infrastructureOutcome)
                          .name(OutcomeExpressionConstants.OUTPUT)

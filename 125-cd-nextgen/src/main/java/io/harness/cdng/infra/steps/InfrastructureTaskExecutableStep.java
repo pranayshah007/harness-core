@@ -22,6 +22,9 @@ import static java.lang.String.format;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.CDStepHelper;
+import io.harness.cdng.execution.ExecutionInfoKey;
+import io.harness.cdng.execution.helper.ExecutionInfoKeyMapper;
+import io.harness.cdng.execution.helper.StageExecutionHelper;
 import io.harness.cdng.infra.InfrastructureMapper;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.infra.yaml.Infrastructure;
@@ -80,6 +83,7 @@ import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
+import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.EntityReferenceExtractorUtils;
@@ -125,6 +129,7 @@ public class InfrastructureTaskExecutableStep implements TaskExecutableWithRbac<
   @Inject ExecutionSweepingOutputService executionSweepingOutputService;
   @Inject private KryoSerializer kryoSerializer;
   @Inject private StepHelper stepHelper;
+  @Inject private StageExecutionHelper stageExecutionHelper;
 
   @Override
   public void validateResources(Ambiance ambiance, Infrastructure stepParameters) {
@@ -149,6 +154,8 @@ public class InfrastructureTaskExecutableStep implements TaskExecutableWithRbac<
         ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.SERVICE));
     InfrastructureOutcome infrastructureOutcome =
         InfrastructureMapper.toOutcome(stepParameters, environmentOutcome, serviceOutcome);
+    ExecutionInfoKey executionInfoKey = ExecutionInfoKeyMapper.getExecutionInfoKey(
+        ambiance, stepParameters.getKind(), environmentOutcome, serviceOutcome, infrastructureOutcome);
 
     NGLogCallback logCallback = infrastructureStepHelper.getInfrastructureLogCallback(ambiance, "Execute");
     DelegateResponseData responseData;
@@ -160,10 +167,11 @@ public class InfrastructureTaskExecutableStep implements TaskExecutableWithRbac<
     }
 
     if (responseData instanceof AzureHostsResponse) {
-      return handleAzureHostResponse(responseData, ambiance, logCallback, infrastructureOutcome, startTime);
+      return handleAzureHostResponse(
+          responseData, ambiance, logCallback, infrastructureOutcome, executionInfoKey, startTime);
     } else if (responseData instanceof AwsListEC2InstancesTaskResponse) {
       return handleAwsListEC2InstancesTaskResponse(
-          responseData, ambiance, logCallback, infrastructureOutcome, startTime);
+          responseData, ambiance, logCallback, infrastructureOutcome, executionInfoKey, startTime);
     }
 
     return buildFailureStepResponse(
@@ -171,7 +179,8 @@ public class InfrastructureTaskExecutableStep implements TaskExecutableWithRbac<
   }
 
   private StepResponse handleAzureHostResponse(DelegateResponseData responseData, Ambiance ambiance,
-      NGLogCallback logCallback, InfrastructureOutcome infrastructureOutcome, long startTime) {
+      NGLogCallback logCallback, InfrastructureOutcome infrastructureOutcome, ExecutionInfoKey executionInfoKey,
+      long startTime) {
     AzureHostsResponse azureHostsResponse = (AzureHostsResponse) responseData;
     switch (azureHostsResponse.getCommandExecutionStatus()) {
       case SUCCESS:
@@ -179,7 +188,8 @@ public class InfrastructureTaskExecutableStep implements TaskExecutableWithRbac<
           return buildFailureStepResponse(
               startTime, "No instance(s) were found for specified infrastructure", logCallback);
         }
-        return publishAzureHosts(azureHostsResponse, ambiance, logCallback, infrastructureOutcome, startTime);
+        return publishAzureHosts(
+            azureHostsResponse, ambiance, logCallback, infrastructureOutcome, executionInfoKey, startTime);
       case FAILURE:
         return buildFailureStepResponse(
             startTime, HarnessStringUtils.emptyIfNull(azureHostsResponse.getErrorSummary()), logCallback);
@@ -191,7 +201,8 @@ public class InfrastructureTaskExecutableStep implements TaskExecutableWithRbac<
   }
 
   private StepResponse handleAwsListEC2InstancesTaskResponse(DelegateResponseData responseData, Ambiance ambiance,
-      NGLogCallback logCallback, InfrastructureOutcome infrastructureOutcome, long startTime) {
+      NGLogCallback logCallback, InfrastructureOutcome infrastructureOutcome, ExecutionInfoKey executionInfoKey,
+      long startTime) {
     AwsListEC2InstancesTaskResponse awsListEC2InstancesTaskResponse = (AwsListEC2InstancesTaskResponse) responseData;
     switch (awsListEC2InstancesTaskResponse.getCommandExecutionStatus()) {
       case SUCCESS:
@@ -200,7 +211,7 @@ public class InfrastructureTaskExecutableStep implements TaskExecutableWithRbac<
               startTime, "No instance(s) were found for specified infrastructure", logCallback);
         }
         return publishAwsHosts(
-            awsListEC2InstancesTaskResponse, ambiance, logCallback, infrastructureOutcome, startTime);
+            awsListEC2InstancesTaskResponse, ambiance, logCallback, infrastructureOutcome, executionInfoKey, startTime);
       case FAILURE:
         return buildFailureStepResponse(startTime, "Error getting EC2 instances", logCallback);
       default:
@@ -212,7 +223,8 @@ public class InfrastructureTaskExecutableStep implements TaskExecutableWithRbac<
   }
 
   private StepResponse publishAzureHosts(AzureHostsResponse azureHostsResponse, Ambiance ambiance,
-      NGLogCallback logCallback, InfrastructureOutcome infrastructureOutcome, long startTime) {
+      NGLogCallback logCallback, InfrastructureOutcome infrastructureOutcome, ExecutionInfoKey executionInfoKey,
+      long startTime) {
     List<String> hostNames =
         azureHostsResponse.getHosts().stream().map(AzureHostResponse::getHostName).collect(Collectors.toList());
     infrastructureStepHelper.saveExecutionLog(
@@ -220,11 +232,12 @@ public class InfrastructureTaskExecutableStep implements TaskExecutableWithRbac<
     executionSweepingOutputService.consume(ambiance, OutputExpressionConstants.OUTPUT,
         HostsOutput.builder().hosts(hostNames).build(), StepCategory.STAGE.name());
 
-    return buildSuccessStepResponse(infrastructureOutcome, logCallback, startTime);
+    return buildSuccessStepResponse(ambiance, infrastructureOutcome, logCallback, executionInfoKey, startTime);
   }
 
   private StepResponse publishAwsHosts(AwsListEC2InstancesTaskResponse awsListEC2InstancesTaskResponse,
-      Ambiance ambiance, NGLogCallback logCallback, InfrastructureOutcome infrastructureOutcome, long startTime) {
+      Ambiance ambiance, NGLogCallback logCallback, InfrastructureOutcome infrastructureOutcome,
+      ExecutionInfoKey executionInfoKey, long startTime) {
     List<String> hostNames = awsListEC2InstancesTaskResponse.getInstances()
                                  .stream()
                                  .map(AwsEC2Instance::getPublicDnsName)
@@ -234,7 +247,7 @@ public class InfrastructureTaskExecutableStep implements TaskExecutableWithRbac<
     executionSweepingOutputService.consume(ambiance, OutputExpressionConstants.OUTPUT,
         HostsOutput.builder().hosts(hostNames).build(), StepCategory.STAGE.name());
 
-    return buildSuccessStepResponse(infrastructureOutcome, logCallback, startTime);
+    return buildSuccessStepResponse(ambiance, infrastructureOutcome, logCallback, executionInfoKey, startTime);
   }
 
   private StepResponse handleTaskException(long startTime, Exception e, NGLogCallback logCallback) throws Exception {
@@ -246,15 +259,21 @@ public class InfrastructureTaskExecutableStep implements TaskExecutableWithRbac<
         startTime, HarnessStringUtils.emptyIfNull(ExceptionUtils.getMessage(e)), logCallback);
   }
 
-  private StepResponse buildSuccessStepResponse(
-      InfrastructureOutcome infrastructureOutcome, NGLogCallback logCallback, long startTime) {
+  private StepResponse buildSuccessStepResponse(Ambiance ambiance, InfrastructureOutcome infrastructureOutcome,
+      NGLogCallback logCallback, ExecutionInfoKey executionInfoKey, long startTime) {
     if (logCallback != null) {
       logCallback.saveExecutionLog(
           color("Completed infrastructure step", Green), LogLevel.INFO, CommandExecutionStatus.SUCCESS);
     }
 
-    return StepResponse.builder()
-        .status(Status.SUCCEEDED)
+    StepResponseBuilder stepResponseBuilder = StepResponse.builder().status(Status.SUCCEEDED);
+    String infrastructureKind = infrastructureOutcome.getKind();
+    stageExecutionHelper.saveStageExecutionInfoAndPublishExecutionInfoKey(
+        ambiance, executionInfoKey, infrastructureKind);
+    stageExecutionHelper.addRollbackArtifactToStageOutcomeIfPresent(
+        ambiance, stepResponseBuilder, executionInfoKey, infrastructureKind);
+
+    return stepResponseBuilder
         .stepOutcome(StepResponse.StepOutcome.builder()
                          .outcome(infrastructureOutcome)
                          .name(OutcomeExpressionConstants.OUTPUT)
