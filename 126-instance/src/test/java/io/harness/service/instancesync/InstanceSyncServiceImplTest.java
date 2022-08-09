@@ -171,7 +171,9 @@ public class InstanceSyncServiceImplTest extends InstancesTestBase {
             .serverInstanceInfoList(Arrays.asList(
                 AzureSshWinrmServerInstanceInfo.builder().infrastructureKey(INFRASTRUCTURE_KEY).host(HOST3).build()))
             .build();
-    doReturn(Optional.of(deploymentSummaryDTO)).when(deploymentSummaryService).getLatestByInstanceKey(anyString());
+    doReturn(Optional.of(deploymentSummaryDTO))
+        .when(deploymentSummaryService)
+        .getLatestByInstanceKey(anyString(), any());
 
     RollbackInfo rollbackInfo = RollbackInfo.builder().build();
     InfrastructureOutcome infrastructureOutcome = SshWinRmAzureInfrastructureOutcome.builder().build();
