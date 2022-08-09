@@ -6,5 +6,5 @@ resources()
 
 filegroup(
     name = "resource",
-    srcs = glob(["**/*"]),
+    srcs = glob(["**"]),
 )

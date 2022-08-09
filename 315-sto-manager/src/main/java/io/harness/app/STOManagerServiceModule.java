@@ -183,6 +183,7 @@ public class STOManagerServiceModule extends AbstractModule {
   @Override
   protected void configure() {
     install(VersionModule.getInstance());
+    install(new CICacheRegistrar());
     bind(STOManagerConfiguration.class).toInstance(stoManagerConfiguration);
     bind(HPersistence.class).to(MongoPersistence.class).in(Singleton.class);
     bind(STOYamlSchemaService.class).to(STOYamlSchemaServiceImpl.class).in(Singleton.class);

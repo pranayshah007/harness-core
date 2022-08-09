@@ -95,6 +95,7 @@ public interface Constants {
   String ECR = "Ecr";
   String HELM_CHART = "HelmChart";
   String ACR = "Acr";
+  String JENKINS = "Jenkins";
   String AMAZON_S3 = "AmazonS3";
 
   String MANIFEST_VERSION = "<+trigger.manifest.version>";

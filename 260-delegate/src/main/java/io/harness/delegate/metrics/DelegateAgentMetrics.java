@@ -7,8 +7,10 @@
 
 package io.harness.delegate.metrics;
 
+import static io.harness.annotations.dev.HarnessTeam.DEL;
 import static io.harness.delegate.metrics.DelegateMetricsConstants.DELEGATE_AGENT_METRIC_MAP;
 
+import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.service.DelegateAgentService;
 import io.harness.metrics.HarnessMetricRegistry;
 
@@ -22,6 +24,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Singleton
 @Slf4j
+@OwnedBy(DEL)
 public class DelegateAgentMetrics {
   private static final int METRICS_POLL_DELAY_SECONDS = 30;
   @Inject @Named("delegateAgentMetricsExecutor") protected ScheduledExecutorService executorService;

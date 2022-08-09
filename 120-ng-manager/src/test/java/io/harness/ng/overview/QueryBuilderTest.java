@@ -124,10 +124,15 @@ public class QueryBuilderTest extends CategoryTest {
     List<String> pendingStatusList =
         Arrays.asList(ExecutionStatus.INTERVENTIONWAITING.name(), ExecutionStatus.APPROVALWAITING.name());
 
-    String expectedQueryResult =
-        "select service_name,tag,env_id,env_name,env_type,artifact_image,pipeline_execution_summary_cd_id, infrastructureidentifier, infrastructureName from service_infra_info where pipeline_execution_summary_cd_id in (abc) and service_name is not null;";
-    String queryResult = new CDOverviewDashboardServiceImpl().queryBuilderServiceTag("abc");
-    assertThat(queryResult).isEqualTo(expectedQueryResult);
+    String expectedQueryResult1 =
+        "select service_name,service_id,tag,env_id,env_name,env_type,artifact_image,pipeline_execution_summary_cd_id, infrastructureidentifier, infrastructureName from service_infra_info where pipeline_execution_summary_cd_id in (abc) and service_name is not null and service_id='serviceId';";
+    String queryResult1 = new CDOverviewDashboardServiceImpl().queryBuilderServiceTag("abc", "serviceId");
+    assertThat(queryResult1).isEqualTo(expectedQueryResult1);
+
+    String expectedQueryResult2 =
+        "select service_name,service_id,tag,env_id,env_name,env_type,artifact_image,pipeline_execution_summary_cd_id, infrastructureidentifier, infrastructureName from service_infra_info where pipeline_execution_summary_cd_id in (abc) and service_name is not null;";
+    String queryResult2 = new CDOverviewDashboardServiceImpl().queryBuilderServiceTag("abc", null);
+    assertThat(queryResult2).isEqualTo(expectedQueryResult2);
   }
 
   @Test

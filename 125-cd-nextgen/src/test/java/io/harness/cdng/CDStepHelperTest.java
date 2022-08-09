@@ -17,6 +17,7 @@ import static io.harness.rule.OwnerRule.ANSHUL;
 import static io.harness.rule.OwnerRule.NAMAN_TALAYCHA;
 import static io.harness.rule.OwnerRule.NGONZALEZ;
 import static io.harness.rule.OwnerRule.PRATYUSH;
+import static io.harness.rule.OwnerRule.TARUN_UBA;
 import static io.harness.rule.OwnerRule.TMACARI;
 import static io.harness.rule.OwnerRule.VAIBHAV_SI;
 import static io.harness.rule.OwnerRule.VIKAS_S;
@@ -44,6 +45,7 @@ import io.harness.cdng.k8s.K8sEntityHelper;
 import io.harness.cdng.k8s.beans.StepExceptionPassThroughData;
 import io.harness.cdng.manifest.ManifestStoreType;
 import io.harness.cdng.manifest.ManifestType;
+import io.harness.cdng.manifest.yaml.BitbucketStore;
 import io.harness.cdng.manifest.yaml.GitStoreConfig;
 import io.harness.cdng.manifest.yaml.GithubStore;
 import io.harness.cdng.manifest.yaml.InheritFromManifestStoreConfig;
@@ -58,6 +60,13 @@ import io.harness.connector.services.ConnectorService;
 import io.harness.connector.validator.scmValidators.GitConfigAuthenticationInfoHelper;
 import io.harness.delegate.beans.connector.scm.GitAuthType;
 import io.harness.delegate.beans.connector.scm.GitConnectionType;
+import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketApiAccessDTO;
+import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketAuthenticationDTO;
+import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketConnectorDTO;
+import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketHttpAuthenticationType;
+import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketHttpCredentialsDTO;
+import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketUsernamePasswordDTO;
+import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketUsernameTokenApiAccessDTO;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubApiAccessDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubAuthenticationDTO;
@@ -812,5 +821,101 @@ public class CDStepHelperTest extends CategoryTest {
     assertThat(helmFetchFileConfigList.get(0).getIdentifier().equals(id));
     assertThat(helmFetchFileConfigList.get(0).getManifestType().equals(ManifestType.VALUES));
     assertThat(helmFetchFileConfigList.get(0).getFilePaths().equals(paths));
+  }
+
+  @Test
+  @Owner(developers = TARUN_UBA)
+  @Category(UnitTests.class)
+  public void shouldGetBitbucketStoreDelegateConfigFFEnabledGithubApiAccess() {
+    List<String> paths = asList("path/to");
+    GitStoreConfig gitStoreConfig = BitbucketStore.builder()
+                                        .repoName(ParameterField.createValueField("parent-repo/module"))
+                                        .paths(ParameterField.createValueField(paths))
+                                        .build();
+    ConnectorInfoDTO connectorInfoDTO = ConnectorInfoDTO.builder().build();
+    SSHKeySpecDTO sshKeySpecDTO = SSHKeySpecDTO.builder().build();
+    List<EncryptedDataDetail> apiEncryptedDataDetails = new ArrayList<>();
+    BitbucketConnectorDTO bitbucketConnectorDTO =
+        BitbucketConnectorDTO.builder()
+            .connectionType(GitConnectionType.ACCOUNT)
+            .url("http://localhost")
+            .apiAccess(
+                BitbucketApiAccessDTO.builder().spec(BitbucketUsernameTokenApiAccessDTO.builder().build()).build())
+            .authentication(BitbucketAuthenticationDTO.builder()
+                                .authType(GitAuthType.HTTP)
+                                .credentials(BitbucketHttpCredentialsDTO.builder()
+                                                 .type(BitbucketHttpAuthenticationType.USERNAME_AND_PASSWORD)
+                                                 .httpCredentialsSpec(BitbucketUsernamePasswordDTO.builder()
+                                                                          .username("usermane")
+                                                                          .passwordRef(SecretRefData.builder().build())
+                                                                          .build())
+                                                 .build())
+                                .build())
+            .build();
+    connectorInfoDTO.setConnectorConfig(bitbucketConnectorDTO);
+
+    doReturn(true).when(cdFeatureFlagHelper).isEnabled(any(), eq(OPTIMIZED_GIT_FETCH_FILES));
+    doReturn(sshKeySpecDTO).when(gitConfigAuthenticationInfoHelper).getSSHKey(any(), any(), any(), any());
+    doReturn(apiEncryptedDataDetails).when(secretManagerClientService).getEncryptionDetails(any(), any());
+
+    GitStoreDelegateConfig gitStoreDelegateConfig = CDStepHelper.getGitStoreDelegateConfig(
+        gitStoreConfig, connectorInfoDTO, K8sManifestOutcome.builder().build(), paths, ambiance);
+
+    assertThat(gitStoreDelegateConfig).isNotNull();
+    assertThat(gitStoreDelegateConfig.isOptimizedFilesFetch()).isTrue();
+    assertThat(gitStoreDelegateConfig.getGitConfigDTO()).isInstanceOf(BitbucketConnectorDTO.class);
+    assertThat(gitStoreDelegateConfig.getApiAuthEncryptedDataDetails()).isEqualTo(apiEncryptedDataDetails);
+    BitbucketConnectorDTO convertedBitbucketConnectorDTO =
+        (BitbucketConnectorDTO) gitStoreDelegateConfig.getGitConfigDTO();
+    assertThat(convertedBitbucketConnectorDTO.getUrl()).isEqualTo("http://localhost/parent-repo/module");
+    assertThat(convertedBitbucketConnectorDTO.getConnectionType()).isEqualTo(GitConnectionType.REPO);
+    assertThat(convertedBitbucketConnectorDTO.getApiAccess()).isNotNull();
+  }
+
+  @Test
+  @Owner(developers = TARUN_UBA)
+  @Category(UnitTests.class)
+  public void shouldGetBitbucketStoreDelegateConfigFFEnabledGithubUsernameTokenAuth() {
+    List<String> paths = asList("path/to");
+    GitStoreConfig gitStoreConfig = BitbucketStore.builder()
+                                        .repoName(ParameterField.createValueField("parent-repo/module"))
+                                        .paths(ParameterField.createValueField(paths))
+                                        .build();
+    ConnectorInfoDTO connectorInfoDTO = ConnectorInfoDTO.builder().build();
+    SSHKeySpecDTO sshKeySpecDTO = SSHKeySpecDTO.builder().build();
+    List<EncryptedDataDetail> apiEncryptedDataDetails = new ArrayList<>();
+    BitbucketConnectorDTO bitbucketConnectorDTO =
+        BitbucketConnectorDTO.builder()
+            .connectionType(GitConnectionType.ACCOUNT)
+            .url("http://localhost")
+            .authentication(BitbucketAuthenticationDTO.builder()
+                                .authType(GitAuthType.HTTP)
+                                .credentials(BitbucketHttpCredentialsDTO.builder()
+                                                 .type(BitbucketHttpAuthenticationType.USERNAME_AND_PASSWORD)
+                                                 .httpCredentialsSpec(BitbucketUsernamePasswordDTO.builder()
+                                                                          .username("usermane")
+                                                                          .passwordRef(SecretRefData.builder().build())
+                                                                          .build())
+                                                 .build())
+                                .build())
+            .build();
+    connectorInfoDTO.setConnectorConfig(bitbucketConnectorDTO);
+
+    doReturn(true).when(cdFeatureFlagHelper).isEnabled(any(), eq(OPTIMIZED_GIT_FETCH_FILES));
+    doReturn(sshKeySpecDTO).when(gitConfigAuthenticationInfoHelper).getSSHKey(any(), any(), any(), any());
+    doReturn(apiEncryptedDataDetails).when(secretManagerClientService).getEncryptionDetails(any(), any());
+
+    GitStoreDelegateConfig gitStoreDelegateConfig = CDStepHelper.getGitStoreDelegateConfig(
+        gitStoreConfig, connectorInfoDTO, K8sManifestOutcome.builder().build(), paths, ambiance);
+
+    assertThat(gitStoreDelegateConfig).isNotNull();
+    assertThat(gitStoreDelegateConfig.isOptimizedFilesFetch()).isTrue();
+    assertThat(gitStoreDelegateConfig.getGitConfigDTO()).isInstanceOf(BitbucketConnectorDTO.class);
+    assertThat(gitStoreDelegateConfig.getApiAuthEncryptedDataDetails()).isEqualTo(apiEncryptedDataDetails);
+    BitbucketConnectorDTO convertedBitbucketConnectorDTO =
+        (BitbucketConnectorDTO) gitStoreDelegateConfig.getGitConfigDTO();
+    assertThat(convertedBitbucketConnectorDTO.getUrl()).isEqualTo("http://localhost/parent-repo/module");
+    assertThat(convertedBitbucketConnectorDTO.getConnectionType()).isEqualTo(GitConnectionType.REPO);
+    assertThat(convertedBitbucketConnectorDTO.getApiAccess()).isNotNull();
   }
 }

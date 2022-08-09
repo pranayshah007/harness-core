@@ -58,6 +58,10 @@ public class DelegateMetricsServiceImpl implements DelegateMetricsService {
   public static final String SECRETS_CACHE_LOOKUPS = "delegate_secret_cache_lookups";
   public static final String SECRETS_CACHE_INSERTS = "delegate_secret_cache_inserts";
 
+  public static final String IMMUTABLE_DELEGATES = "immutable_delegates";
+
+  public static final String MUTABLE_DELEGATES = "mutable_delegates";
+
   @Inject private MetricService metricService;
   @Inject private DelegateTaskMetricContextBuilder metricContextBuilder;
 

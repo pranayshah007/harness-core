@@ -103,21 +103,18 @@ public class GithubApiClient implements GitApiClient {
       GithubConnectorDTO gitConfigDTO = (GithubConnectorDTO) gitConnector.getConnectorConfig();
       String token = retrieveAuthToken(gitConnector);
       String gitApiURL = getGitApiURL(gitConfigDTO.getUrl());
-
-      JSONObject mergePRResponse = githubService.mergePR(
-          gitApiURL, token, gitApiTaskParams.getOwner(), gitApiTaskParams.getRepo(), gitApiTaskParams.getPrNumber());
+      String repo = gitApiTaskParams.getRepo();
+      String prNumber = gitApiTaskParams.getPrNumber();
+      JSONObject mergePRResponse = githubService.mergePR(gitApiURL, token, gitApiTaskParams.getOwner(), repo, prNumber);
       if (mergePRResponse != null) {
         responseBuilder.commandExecutionStatus(CommandExecutionStatus.SUCCESS)
-            .gitApiResult(GitApiMergePRTaskResponse.builder()
-                              .sha(mergePRResponse.get("sha").toString())
-                              .merged(Boolean.parseBoolean(mergePRResponse.get("merged").toString()))
-                              .message(mergePRResponse.get("message").toString())
-                              .build());
+            .gitApiResult(GitApiMergePRTaskResponse.builder().sha(mergePRResponse.get("sha").toString()).build());
       } else {
-        responseBuilder.commandExecutionStatus(FAILURE).errorMessage("Merging PR encountered a problem");
+        responseBuilder.commandExecutionStatus(FAILURE).errorMessage(
+            format("Merging PR encountered a problem. URL:%s Repo:%s PrNumber:%s", gitApiURL, repo, prNumber));
       }
     } catch (Exception e) {
-      log.error(new StringBuilder("failed while merging PR using connector: ")
+      log.error(new StringBuilder("Failed while merging PR using connector: ")
                     .append(gitConnector.getIdentifier())
                     .toString(),
           e);

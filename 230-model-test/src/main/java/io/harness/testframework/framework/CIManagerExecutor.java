@@ -41,7 +41,7 @@ import org.zeroturnaround.exec.ProcessExecutor;
 @UtilityClass
 @Slf4j
 public class CIManagerExecutor {
-  public static final String MODULE = "310-ci-manager";
+  public static final String MODULE = "332-ci-manager/config";
   public static final String CONFIG_YML = "ci-manager-config.yml";
   private static boolean failedAlready;
   private static final Duration waiting = ofMinutes(5);

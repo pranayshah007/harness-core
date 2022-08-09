@@ -531,7 +531,7 @@ public class UserResource {
    * @return the rest response
    */
   @GET
-  @Path("accounts")
+  @Path("userAccounts")
   @Scope(value = ResourceType.USER, scope = LOGGED_IN)
   @Timed
   @ExceptionMetered

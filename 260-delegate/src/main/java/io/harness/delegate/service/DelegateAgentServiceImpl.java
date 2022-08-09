@@ -446,6 +446,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
   @SuppressWarnings("unchecked")
   public void run(final boolean watched, final boolean isImmutableDelegate) {
     this.isImmutableDelegate = isImmutableDelegate;
+    delegateConfiguration.setImmutable(isImmutableDelegate);
 
     try {
       // Initialize delegate process in background.
@@ -593,6 +594,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
               .sampleDelegate(isSample)
               .location(Paths.get("").toAbsolutePath().toString())
               .heartbeatAsObject(true)
+              .immutable(isImmutableDelegate)
               .ceEnabled(Boolean.parseBoolean(System.getenv("ENABLE_CE")));
 
       delegateId = registerDelegate(builder);
@@ -1586,7 +1588,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
 
   private void watcherUpgrade(boolean heartbeatTimedOut) {
     String watcherVersion = messageService.getData(WATCHER_DATA, WATCHER_VERSION, String.class);
-    String expectedVersion = findExpectedWatcherVersion();
+    String expectedVersion = substringBefore(findExpectedWatcherVersion(), "-").trim();
     if (expectedVersion == null || StringUtils.equals(expectedVersion, watcherVersion)) {
       watcherVersionMatchedAt = clock.millis();
     }
@@ -1970,8 +1972,13 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
         DelegateTaskPackage delegateTaskPackage = executeRestCall(
             delegateAgentManagerClient.acquireTask(delegateId, delegateTaskId, accountId, delegateInstanceId));
         if (delegateTaskPackage == null || delegateTaskPackage.getData() == null) {
-          log.warn("Delegate task data not available for task: {} - accountId: {}", delegateTaskId,
-              delegateTaskEvent.getAccountId());
+          if (delegateTaskPackage == null) {
+            log.warn("Delegate task package is null for task: {} - accountId: {}", delegateTaskId,
+                delegateTaskEvent.getAccountId());
+          } else {
+            log.warn("Delegate task data not available for task: {} - accountId: {}", delegateTaskId,
+                delegateTaskEvent.getAccountId());
+          }
           return;
         } else {
           log.info("received task package {} for delegateInstance {}", delegateTaskPackage, delegateInstanceId);

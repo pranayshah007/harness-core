@@ -76,6 +76,8 @@ import io.harness.data.parser.CsvParser;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.event.handler.impl.EventPublishHelper;
 import io.harness.exception.ExceptionUtils;
+import io.harness.exception.InvalidArgumentsException;
+import io.harness.exception.InvalidCredentialsException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnauthorizedUsageRestrictionsException;
 import io.harness.exception.WingsException;
@@ -283,6 +285,24 @@ public class SettingsServiceImpl implements SettingsService {
 
   @Override
   public PageResponse<SettingAttribute> list(
+      PageRequest<SettingAttribute> req, String appIdFromRequest, String accountIdFromRequest) {
+    try {
+      PageResponse<SettingAttribute> pageResponse = wingsPersistence.query(SettingAttribute.class, req);
+      List<SettingAttribute> listSettings = pageResponse.getResponse();
+      RestrictionsAndAppEnvMap restrictionsAndAppEnvMap =
+          usageRestrictionsService.getRestrictionsAndAppEnvMapFromCache(accountIdFromRequest, Action.READ);
+      Map<String, Set<String>> appEnvMapFromUserPermissions = restrictionsAndAppEnvMap.getAppEnvMap();
+      if (isEmpty(appEnvMapFromUserPermissions) || !appEnvMapFromUserPermissions.containsKey(appIdFromRequest)) {
+        listSettings = Collections.emptyList();
+      }
+      return aPageResponse().withResponse(listSettings).withTotal(pageResponse.getTotal()).build();
+    } catch (Exception e) {
+      throw new InvalidRequestException(ExceptionUtils.getMessage(e), e);
+    }
+  }
+
+  @Override
+  public PageResponse<SettingAttribute> list(
       PageRequest<SettingAttribute> req, String appIdFromRequest, String envIdFromRequest, boolean forUsageInNewApp) {
     try {
       long timestamp = System.currentTimeMillis();
@@ -294,7 +314,7 @@ public class SettingsServiceImpl implements SettingsService {
           pageResponse.getResponse(), appIdFromRequest, envIdFromRequest, forUsageInNewApp);
       log.info("Total time taken in filtering setting records:  {}.", System.currentTimeMillis() - timestamp);
       return aPageResponse().withResponse(filteredSettingAttributes).withTotal(pageResponse.getTotal()).build();
-    } catch (Exception e) {
+    } catch (InvalidRequestException | InvalidCredentialsException | InvalidArgumentsException e) {
       throw new InvalidRequestException(ExceptionUtils.getMessage(e), e);
     }
   }
@@ -475,8 +495,8 @@ public class SettingsServiceImpl implements SettingsService {
     for (SettingAttribute settingAttribute : inputSettingAttributes) {
       PermissionAttribute.PermissionType permissionType = settingServiceHelper.getPermissionType(settingAttribute);
       isAccountAdmin = userService.hasPermission(accountId, permissionType);
-      boolean isRefereincing = isSettingAttributeReferencingCloudProvider(settingAttribute);
-      if (isRefereincing) {
+      boolean isReferring = isSettingAttributeReferencingCloudProvider(settingAttribute);
+      if (isReferring) {
         helmRepoSettingAttributes.add(settingAttribute);
       } else {
         if (isFilteredSettingAttribute(appIdFromRequest, envIdFromRequest, accountId, forUsageInNewApp,
@@ -570,6 +590,7 @@ public class SettingsServiceImpl implements SettingsService {
     }
 
     UsageRestrictions usageRestrictionsFromEntity = settingAttributeWithUsageRestrictions.getUsageRestrictions();
+
     if (usageRestrictionsService.hasAccess(accountId, isAccountAdmin, appIdFromRequest, envIdFromRequest,
             forUsageInNewApp, usageRestrictionsFromEntity, restrictionsFromUserPermissions,
             appEnvMapFromUserPermissions, appIdEnvMap, false)) {

@@ -94,7 +94,11 @@ java_library(
     name = "lombok",
     exported_plugins = [":lombok_plugin"],
     visibility = ["//visibility:public"],
-    exports = ["@maven//:org_projectlombok_lombok"],
+    exports = [
+        "@maven//:com_google_code_findbugs_annotations",
+        "@maven//:org_projectlombok_lombok",
+        "@maven//:org_slf4j_slf4j_api",
+    ],
 )
 
 filegroup(

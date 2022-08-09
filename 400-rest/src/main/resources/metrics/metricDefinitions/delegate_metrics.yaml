@@ -22,4 +22,12 @@ metrics:
     metricDefinition: Delegate self destruct
     type: Count
     unit: "1"
+  - metricName: immutable_delegates
+    metricDefinition: Immutable delegate count
+    type: Count
+    unit: "1"
+  - metricName: mutable_delegates
+    metricDefinition: Mutable delegate count
+    type: Count
+    unit: "1"
 

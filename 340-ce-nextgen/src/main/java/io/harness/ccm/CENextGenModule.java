@@ -19,6 +19,7 @@ import static io.harness.eventsframework.EventsFrameworkConstants.ENTITY_CRUD;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.CONNECTOR_ENTITY;
 import static io.harness.lock.DistributedLockImplementation.MONGO;
 
+import io.harness.AccessControlClientModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.retry.MethodExecutionHelper;
 import io.harness.annotations.retry.RetryOnException;
@@ -51,6 +52,8 @@ import io.harness.ccm.graphql.core.budget.BudgetCostServiceImpl;
 import io.harness.ccm.graphql.core.budget.BudgetService;
 import io.harness.ccm.graphql.core.budget.BudgetServiceImpl;
 import io.harness.ccm.perpetualtask.K8sWatchTaskResourceClientModule;
+import io.harness.ccm.rbac.CCMRbacHelper;
+import io.harness.ccm.rbac.CCMRbacHelperImpl;
 import io.harness.ccm.remote.mapper.anomaly.AnomalyFilterPropertiesMapper;
 import io.harness.ccm.remote.mapper.recommendation.CCMRecommendationFilterPropertiesMapper;
 import io.harness.ccm.service.impl.AWSBucketPolicyHelperServiceImpl;
@@ -266,6 +269,8 @@ public class CENextGenModule extends AbstractModule {
         configuration.getNgManagerServiceSecret(), CE_NEXT_GEN.getServiceId(),
         configuration.getEnforcementClientConfiguration()));
     install(new MetricsModule());
+    install(AccessControlClientModule.getInstance(
+        configuration.getAccessControlClientConfiguration(), CE_NEXT_GEN.getServiceId()));
 
     install(new SecretNGManagerClientModule(configuration.getNgManagerClientConfig(),
         configuration.getNgManagerServiceSecret(), CE_NEXT_GEN.getServiceId()));
@@ -313,6 +318,7 @@ public class CENextGenModule extends AbstractModule {
     bind(FilterService.class).to(FilterServiceImpl.class);
     registerOutboxEventHandlers();
     bind(OutboxEventHandler.class).to(CENextGenOutboxEventHandler.class);
+    bind(CCMRbacHelper.class).to(CCMRbacHelperImpl.class);
 
     registerEventsFrameworkMessageListeners();
 

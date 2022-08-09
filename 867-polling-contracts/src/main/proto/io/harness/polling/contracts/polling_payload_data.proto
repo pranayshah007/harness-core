@@ -23,6 +23,7 @@ message PollingPayloadData {
     ArtifactoryRegistryPayload artifactoryRegistryPayload = 10;
     AcrPayload acrPayload = 11;
     AmazonS3Payload amazonS3Payload = 12;
+    JenkinsPayload jenkinsPayload = 13;
   }
 }
 
@@ -38,6 +39,7 @@ enum Type {
   ARTIFACTORY = 8;
   ACR = 9;
   AMAZON_S3 = 10;
+  JENKINS = 11;
 }
 
 message HttpHelmPayload {
@@ -103,4 +105,9 @@ message AcrPayload {
 message AmazonS3Payload {
   string bucketName = 1;
   string filePathRegex = 2;
+}
+
+message JenkinsPayload {
+  string jobName = 1;
+  string artifactPath = 2;
 }

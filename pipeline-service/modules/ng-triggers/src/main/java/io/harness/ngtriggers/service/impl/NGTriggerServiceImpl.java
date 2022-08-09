@@ -885,4 +885,9 @@ public class NGTriggerServiceImpl implements NGTriggerService {
     return pipelineBranch.startsWith(EngineExpressionEvaluator.EXPR_START)
         && pipelineBranch.endsWith(EngineExpressionEvaluator.EXPR_END);
   }
+
+  public Object fetchExecutionSummaryV2(String planExecutionId, String accountId, String orgId, String projectId) {
+    return NGRestUtils.getResponse(
+        pipelineServiceClient.getExecutionDetailV2(planExecutionId, accountId, orgId, projectId));
+  }
 }

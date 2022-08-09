@@ -18,8 +18,8 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.eventsframework.schemas.entity.InputSetReferenceProtoDTO;
 import io.harness.exception.DuplicateFieldException;
+import io.harness.exception.DuplicateFileImportException;
 import io.harness.exception.ExplanationException;
-import io.harness.exception.GitYamlException;
 import io.harness.exception.HintException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ScmException;
@@ -554,7 +554,7 @@ public class PMSInputSetServiceImpl implements PMSInputSetService {
                    accountIdentifier, repoURL, gitEntityInfo.getFilePath())) {
       String error = "The Requested YAML with InputSet Id: " + inputSetIdentifier + ", RepoURl: " + repoURL
           + ", FilePath: " + gitEntityInfo.getFilePath() + " already exists.";
-      throw new GitYamlException(error);
+      throw new DuplicateFileImportException(error);
     }
     return repoURL;
   }

@@ -138,3 +138,4 @@ io.harness.steps.approval.step.harness.beans.EmbeddedUserDTO
 io.harness.plancreator.steps.TaskSelectorYaml
 io.harness.logging.CommandExecutionStatus
 io.harness.steps.approval.step.harness.beans.HarnessApprovalAction
+io.harness.plancreator.strategy.ExpressionAxisConfig

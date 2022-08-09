@@ -19,7 +19,7 @@ DASHBOARD_SERVICE_T=0
 bazel build ${BAZEL_ARGS} -- //290-dashboard-service:module_deploy.jar || DASHBOARD_SERVICE_T=$?
 echo "BUILD CI_MANAGER"
 CI_MANAGER_T=0
-bazel build ${BAZEL_ARGS} -- //310-ci-manager:module_deploy.jar || CI_MANAGER_T=$?
+bazel build ${BAZEL_ARGS} -- //332-ci-manager/app:module_deploy.jar || CI_MANAGER_T=$?
 echo "BUILD CE_NEXTGEN"
 CE_NEXTGEN_T=0
 bazel build ${BAZEL_ARGS} -- //340-ce-nextgen:module_deploy.jar || CE_NEXTGEN_T=$?
@@ -69,7 +69,7 @@ fi
 if [ $CI_MANAGER_T -eq 0 ]
 then
     echo "====Generating CI-Manager Target-Branch Api Spec===="
-    java -jar bazel-bin/310-ci-manager/module_deploy.jar generate-openapi-spec target/310_target.json  310-ci-manager/ci-manager-config.yml || CI_MANAGER_T=$?
+    java -jar bazel-bin/332-ci-manager/app/module_deploy.jar generate-openapi-spec target/310_target.json  332-ci-manager/config/ci-manager-config.yml || CI_MANAGER_T=$?
 fi
 
 if [ $CE_NEXTGEN_T -eq 0 ]
@@ -139,7 +139,7 @@ if [ $CI_MANAGER_T -eq 0 ]
 then
     echo "BUILD CI_MANAGER"
     CI_MANAGER_S=0
-    bazel build ${BAZEL_ARGS} -- //310-ci-manager:module_deploy.jar || CI_MANAGER_S=$?
+    bazel build ${BAZEL_ARGS} -- //332-ci-manager/app:module_deploy.jar || CI_MANAGER_S=$?
 else
     CI_MANAGER_S=1
 fi
@@ -222,7 +222,7 @@ fi
 if [ $CI_MANAGER_S -eq 0 ]
 then
     echo "====Generating CI-Manager Source-Branch Api Spec===="
-    java -jar bazel-bin/310-ci-manager/module_deploy.jar generate-openapi-spec target/310_source.json 310-ci-manager/ci-manager-config.yml || CI_MANAGER_S=$?
+    java -jar bazel-bin/332-ci-manager/app/module_deploy.jar generate-openapi-spec target/310_source.json 332-ci-manager/config/ci-manager-config.yml || CI_MANAGER_S=$?
 fi
 
 if [ $DASHBOARD_SERVICE_S -eq 0 ]
@@ -316,7 +316,7 @@ else
 fi
 
 rc=0
-echo 310-CI-MANAGER
+echo 332-CI-MANAGER
 if [[ $CI_MANAGER_S -eq 0 ]] && [[ $CI_MANAGER_T -eq 0 ]]
 then
     java -jar $3 target/310_target.json target/310_source.json --fail-on-incompatible || rc=$?
@@ -325,15 +325,15 @@ then
         if [ $rc -eq 1 ]
         then
             exit_code=1
-            issues+="310-CI-MANAGER "
+            issues+="332-CI-MANAGER "
         else
-            other+="310-CI-MANAGER "
+            other+="332-CI-MANAGER "
         fi
     else
-        success+="310-CI-MANAGER "
+        success+="332-CI-MANAGER "
     fi
 else
-    comp+="310-CI-MANAGER "
+    comp+="332-CI-MANAGER "
 fi
 
 rc=0

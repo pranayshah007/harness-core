@@ -7,6 +7,7 @@
 
 package software.wings.graphql.datafetcher.execution;
 
+import static io.harness.rule.OwnerRule.LUCAS_SALES;
 import static io.harness.rule.OwnerRule.PRABU;
 import static io.harness.rule.OwnerRule.VARDAN_BANSAL;
 
@@ -308,6 +309,60 @@ public class ExecutionConnectionDataFetcherTest extends AbstractDataFetcherTestB
                                  .operator(QLEnumOperator.IN)
                                  .values(new QLEnvironmentType[] {QLEnvironmentType.NON_PROD})
                                  .build())
+            .build();
+    when(dataFetchingEnvironment.getArguments())
+        .thenReturn(Collections.singletonMap(ExecutionConnectionDataFetcher.INDIRECT_EXECUTION_FIELD, true));
+
+    List<QLExecutionFilter> filters = Arrays.asList(executionFilter);
+    QLPageQueryParameterImpl pageQueryParams = QLPageQueryParameterImpl.builder()
+                                                   .limit(100)
+                                                   .selectionSet(mockSelectionSet)
+                                                   .dataFetchingEnvironment(dataFetchingEnvironment)
+                                                   .build();
+    QLExecutionConnection connection = executionConnectionDataFetcher.fetchConnection(filters, pageQueryParams, null);
+    assertThat(connection).isNotNull();
+    assertThat(connection.getNodes()).hasSize(1);
+    assertThat(connection.getNodes().get(0)).isInstanceOf(QLWorkflowExecution.class);
+    assertThat((((QLWorkflowExecution) connection.getNodes().get(0))).getWorkflowId()).isEqualTo(WORKFLOW1);
+  }
+
+  @Test
+  @Owner(developers = LUCAS_SALES)
+  @Category(UnitTests.class)
+  public void testExecutionConnectionWithArtifactBuildNo() {
+    array[0] = pipelineExecutionId;
+    QLExecutionFilter executionFilter =
+        QLExecutionFilter.builder()
+            .application(
+                QLIdFilter.builder().operator(QLIdOperator.EQUALS).values(new String[] {APP1_ID_ACCOUNT1}).build())
+            .artifactBuildNo(QLIdFilter.builder().operator(QLIdOperator.EQUALS).values(new String[] {"1"}).build())
+            .build();
+    when(dataFetchingEnvironment.getArguments())
+        .thenReturn(Collections.singletonMap(ExecutionConnectionDataFetcher.INDIRECT_EXECUTION_FIELD, true));
+
+    List<QLExecutionFilter> filters = Arrays.asList(executionFilter);
+    QLPageQueryParameterImpl pageQueryParams = QLPageQueryParameterImpl.builder()
+                                                   .limit(100)
+                                                   .selectionSet(mockSelectionSet)
+                                                   .dataFetchingEnvironment(dataFetchingEnvironment)
+                                                   .build();
+    QLExecutionConnection connection = executionConnectionDataFetcher.fetchConnection(filters, pageQueryParams, null);
+    assertThat(connection).isNotNull();
+    assertThat(connection.getNodes()).hasSize(1);
+    assertThat(connection.getNodes().get(0)).isInstanceOf(QLWorkflowExecution.class);
+    assertThat((((QLWorkflowExecution) connection.getNodes().get(0))).getWorkflowId()).isEqualTo(WORKFLOW1);
+  }
+
+  @Test
+  @Owner(developers = LUCAS_SALES)
+  @Category(UnitTests.class)
+  public void testExecutionConnectionWithHelmChartVersion() {
+    array[0] = pipelineExecutionId;
+    QLExecutionFilter executionFilter =
+        QLExecutionFilter.builder()
+            .application(
+                QLIdFilter.builder().operator(QLIdOperator.EQUALS).values(new String[] {APP1_ID_ACCOUNT1}).build())
+            .helmChartVersion(QLIdFilter.builder().operator(QLIdOperator.EQUALS).values(new String[] {"helm1"}).build())
             .build();
     when(dataFetchingEnvironment.getArguments())
         .thenReturn(Collections.singletonMap(ExecutionConnectionDataFetcher.INDIRECT_EXECUTION_FIELD, true));

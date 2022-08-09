@@ -64,12 +64,13 @@ public class DelegateStreamHandler extends AtmosphereHandlerAdapter {
   @Override
   public void onRequest(AtmosphereResource resource) throws IOException {
     AtmosphereRequest req = resource.getRequest();
-
     if (req.getMethod().equals("GET")) {
+      String accountId;
+      String delegateId;
       try {
         List<String> pathSegments = SPLITTER.splitToList(req.getPathInfo());
-        String accountId = pathSegments.get(1);
-        String delegateId = req.getParameter("delegateId");
+        accountId = pathSegments.get(1);
+        delegateId = req.getParameter("delegateId");
         String delegateTokenName = req.getParameter("delegateTokenName");
         String agentMtlsAuthority = req.getHeader(HEADER_AGENT_MTLS_AUTHORITY);
 
@@ -115,7 +116,10 @@ public class DelegateStreamHandler extends AtmosphereHandlerAdapter {
         sendError(resource, UNKNOWN_ERROR);
         return;
       }
-      resource.suspend();
+      try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR);
+           AutoLogContext ignore2 = new DelegateLogContext(delegateId, OVERRIDE_ERROR)) {
+        resource.suspend();
+      }
     } else if (req.getMethod().equalsIgnoreCase("POST")) {
       List<String> pathSegments = SPLITTER.splitToList(req.getPathInfo());
       String accountId = pathSegments.get(1);
