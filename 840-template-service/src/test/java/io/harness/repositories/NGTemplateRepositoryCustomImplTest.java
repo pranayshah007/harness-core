@@ -9,6 +9,7 @@ package io.harness.repositories;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.rule.OwnerRule.ADITHYA;
+import static io.harness.rule.OwnerRule.MOHIT_GARG;
 import static io.harness.rule.OwnerRule.UTKARSH_CHOUBEY;
 
 import static junit.framework.TestCase.assertFalse;
