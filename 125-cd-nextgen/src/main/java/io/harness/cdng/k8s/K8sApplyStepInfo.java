@@ -55,8 +55,8 @@ public class K8sApplyStepInfo extends K8sApplyBaseStepInfo implements CDStepInfo
   @Builder(builderMethodName = "infoBuilder")
   public K8sApplyStepInfo(ParameterField<Boolean> skipDryRun, ParameterField<Boolean> skipSteadyStateCheck,
       ParameterField<List<String>> filePaths, ParameterField<List<TaskSelectorYaml>> delegateSelectors,
-      List<ManifestConfigWrapper> overrides) {
-    super(skipDryRun, skipSteadyStateCheck, filePaths, delegateSelectors, overrides);
+      List<ManifestConfigWrapper> overrides, ParameterField<Boolean> skipRendering) {
+    super(skipDryRun, skipSteadyStateCheck, filePaths, delegateSelectors, overrides, skipRendering);
   }
 
   @Override
@@ -77,6 +77,7 @@ public class K8sApplyStepInfo extends K8sApplyBaseStepInfo implements CDStepInfo
         .skipSteadyStateCheck(skipSteadyStateCheck)
         .delegateSelectors(delegateSelectors)
         .overrides(overrides)
+        .skipRendering(skipRendering)
         .build();
   }
 
