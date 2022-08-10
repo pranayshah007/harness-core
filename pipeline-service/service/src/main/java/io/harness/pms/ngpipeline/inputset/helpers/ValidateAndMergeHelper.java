@@ -194,8 +194,13 @@ public class ValidateAndMergeHelper {
   public String getMergeInputSetFromPipelineTemplate(String accountId, String orgIdentifier, String projectIdentifier,
       String pipelineIdentifier, List<String> inputSetReferences, String pipelineBranch, String pipelineRepoID,
       List<String> stageIdentifiers) {
-    String pipelineTemplate = getPipelineTemplate(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
-        pipelineBranch, pipelineRepoID, stageIdentifiers);
+    String pipelineYaml = getPipelineYaml(
+        accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, pipelineBranch, pipelineRepoID, false);
+    String pipelineTemplateForValidations = createTemplateFromPipeline(pipelineYaml);
+    String pipelineTemplate = EmptyPredicate.isEmpty(stageIdentifiers)
+        ? pipelineTemplateForValidations
+        : createTemplateFromPipelineForGivenStages(pipelineYaml, stageIdentifiers);
+
     if (EmptyPredicate.isEmpty(pipelineTemplate)) {
       throw new InvalidRequestException(
           "Pipeline " + pipelineIdentifier + " does not have any runtime input. All existing input sets are invalid");
@@ -217,7 +222,7 @@ public class ValidateAndMergeHelper {
       }
       if (inputSet.getInputSetEntityType() == InputSetEntityType.INPUT_SET) {
         inputSetYamlList.add(inputSet.getYaml());
-        if (InputSetErrorsHelper.getErrorMap(pipelineTemplate, inputSet.getYaml()) != null) {
+        if (InputSetErrorsHelper.getErrorMap(pipelineTemplateForValidations, inputSet.getYaml()) != null) {
           invalidReferences.add(identifier);
         }
       } else {
@@ -229,7 +234,7 @@ public class ValidateAndMergeHelper {
             invalidReferences.add(identifier);
           } else {
             inputSetYamlList.add(entity2.get().getYaml());
-            if (InputSetErrorsHelper.getErrorMap(pipelineTemplate, entity2.get().getYaml()) != null) {
+            if (InputSetErrorsHelper.getErrorMap(pipelineTemplateForValidations, entity2.get().getYaml()) != null) {
               invalidReferences.add(identifier);
             }
           }
