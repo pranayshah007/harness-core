@@ -71,7 +71,7 @@ public class K8sResourceValidatorImpl implements K8sResourceValidator {
                                            .withResourceAttributes(v1ResourceAttributes)
                                            .endSpec()
                                            .build(),
-            null, null, null)
+            null, null, null, null)
         .getStatus();
   }
 
@@ -227,30 +227,30 @@ public class K8sResourceValidatorImpl implements K8sResourceValidator {
     final List<V1Status> statusList = new ArrayList<>();
     Optional<V1Status> status;
 
-    status = getReasonOnApiException(() -> coreV1Api.readNamespace("harness-autostopping", null, null, null));
+    status = getReasonOnApiException(() -> coreV1Api.readNamespace("harness-autostopping", null));
     status.ifPresent(statusList::add);
 
-    status = getReasonOnApiException(() -> coreV1Api.readNamespace("harness-autostopping", null, null, null));
+    status = getReasonOnApiException(() -> coreV1Api.readNamespace("harness-autostopping", null));
     status.ifPresent(statusList::add);
 
-    status = getReasonOnApiException(
-        () -> coreV1Api.readNamespacedSecret("harness-api-key", "harness-autostopping", null, null, null));
-    status.ifPresent(statusList::add);
-
-    status = getReasonOnApiException(
-        () -> coreV1Api.readNamespacedService("autostopping-router", "harness-autostopping", null, null, null));
+    status =
+        getReasonOnApiException(() -> coreV1Api.readNamespacedSecret("harness-api-key", "harness-autostopping", null));
     status.ifPresent(statusList::add);
 
     status = getReasonOnApiException(
-        () -> appsV1Api.readNamespacedDeployment("autostopping-router", "harness-autostopping", null, null, null));
+        () -> coreV1Api.readNamespacedService("autostopping-router", "harness-autostopping", null));
     status.ifPresent(statusList::add);
 
     status = getReasonOnApiException(
-        () -> coreV1Api.readNamespacedService("autostopping-controller", "harness-autostopping", null, null, null));
+        () -> appsV1Api.readNamespacedDeployment("autostopping-router", "harness-autostopping", null));
     status.ifPresent(statusList::add);
 
     status = getReasonOnApiException(
-        () -> appsV1Api.readNamespacedDeployment("autostopping-controller", "harness-autostopping", null, null, null));
+        () -> coreV1Api.readNamespacedService("autostopping-controller", "harness-autostopping", null));
+    status.ifPresent(statusList::add);
+
+    status = getReasonOnApiException(
+        () -> appsV1Api.readNamespacedDeployment("autostopping-controller", "harness-autostopping", null));
     status.ifPresent(statusList::add);
 
     return statusList;
@@ -264,7 +264,7 @@ public class K8sResourceValidatorImpl implements K8sResourceValidator {
         new V1SelfSubjectAccessReviewSpecBuilder().withResourceAttributes(attributes).build();
     final V1SelfSubjectAccessReview accessReview = new V1SelfSubjectAccessReview().spec(spec);
 
-    return authorizationV1Api.createSelfSubjectAccessReview(accessReview, null, null, null);
+    return authorizationV1Api.createSelfSubjectAccessReview(accessReview, null, null, null, null);
   }
 
   private List<V1SelfSubjectAccessReview> subjectAccessReviewForAllRequiredVerbs(

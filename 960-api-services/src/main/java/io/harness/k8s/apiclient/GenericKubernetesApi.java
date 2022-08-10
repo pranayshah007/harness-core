@@ -316,8 +316,8 @@ public class GenericKubernetesApi<ApiType extends KubernetesObject, ApiListType 
   public KubernetesApiResponse<ApiListType> list(final ListOptions listOptions) {
     return executeCall(customObjectsApi.getApiClient(), apiListTypeClass, () -> {
       return customObjectsApi.listClusterCustomObjectCall(this.apiGroup, this.apiVersion, this.resourcePlural, null,
-          listOptions.getContinue(), listOptions.getFieldSelector(), listOptions.getLabelSelector(),
-          listOptions.getLimit(), listOptions.getResourceVersion(), listOptions.getTimeoutSeconds(), false, null);
+          false, listOptions.getContinue(), listOptions.getFieldSelector(), listOptions.getLabelSelector(),
+          listOptions.getLimit(), listOptions.getResourceVersion(), null, listOptions.getTimeoutSeconds(), false, null);
     });
   }
 
@@ -334,8 +334,8 @@ public class GenericKubernetesApi<ApiType extends KubernetesObject, ApiListType 
     }
     return executeCall(customObjectsApi.getApiClient(), apiListTypeClass, () -> {
       return customObjectsApi.listNamespacedCustomObjectCall(this.apiGroup, this.apiVersion, namespace,
-          this.resourcePlural, null, listOptions.getContinue(), listOptions.getFieldSelector(),
-          listOptions.getLabelSelector(), listOptions.getLimit(), listOptions.getResourceVersion(),
+          this.resourcePlural, null, false, listOptions.getContinue(), listOptions.getFieldSelector(),
+          listOptions.getLabelSelector(), listOptions.getLimit(), listOptions.getResourceVersion(), null,
           listOptions.getTimeoutSeconds(), null, null);
     });
   }
@@ -503,8 +503,8 @@ public class GenericKubernetesApi<ApiType extends KubernetesObject, ApiListType 
    */
   public Watchable<ApiType> watch(final ListOptions listOptions) throws ApiException {
     Call call = customObjectsApi.listClusterCustomObjectCall(this.apiGroup, this.apiVersion, this.resourcePlural, null,
-        listOptions.getContinue(), listOptions.getFieldSelector(), listOptions.getLabelSelector(),
-        listOptions.getLimit(), listOptions.getResourceVersion(), listOptions.getTimeoutSeconds(), true, null);
+        false, listOptions.getContinue(), listOptions.getFieldSelector(), listOptions.getLabelSelector(),
+        listOptions.getLimit(), listOptions.getResourceVersion(), null, listOptions.getTimeoutSeconds(), true, null);
 
     call = tweakCallForCoreV1Group(call);
     return Watch.createWatch(customObjectsApi.getApiClient(), call,
@@ -523,10 +523,10 @@ public class GenericKubernetesApi<ApiType extends KubernetesObject, ApiListType 
     if (Strings.isNullOrEmpty(namespace)) {
       throw new IllegalArgumentException("invalid namespace");
     }
-    Call call =
-        customObjectsApi.listNamespacedCustomObjectCall(this.apiGroup, this.apiVersion, namespace, this.resourcePlural,
-            null, listOptions.getContinue(), listOptions.getFieldSelector(), listOptions.getLabelSelector(),
-            listOptions.getLimit(), listOptions.getResourceVersion(), listOptions.getTimeoutSeconds(), true, null);
+    Call call = customObjectsApi.listNamespacedCustomObjectCall(this.apiGroup, this.apiVersion, namespace,
+        this.resourcePlural, null, false, listOptions.getContinue(), listOptions.getFieldSelector(),
+        listOptions.getLabelSelector(), listOptions.getLimit(), listOptions.getResourceVersion(), null,
+        listOptions.getTimeoutSeconds(), true, null);
 
     return Watch.createWatch(customObjectsApi.getApiClient(), call,
         TypeToken.getParameterized(Watch.Response.class, apiTypeClass).getType());

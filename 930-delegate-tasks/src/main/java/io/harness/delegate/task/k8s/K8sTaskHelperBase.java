@@ -254,6 +254,7 @@ import org.hibernate.validator.constraints.NotEmpty;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.Yaml;
 import org.zeroturnaround.exec.ProcessExecutor;
 import org.zeroturnaround.exec.ProcessResult;
@@ -1822,8 +1823,8 @@ public class K8sTaskHelperBase {
 
   public String convertJsonToYaml(JSONObject jsonObject) {
     String prettyJSONString = jsonObject.toString();
-    Yaml yaml =
-        new Yaml(new io.kubernetes.client.util.Yaml.CustomConstructor(Object.class), new BooleanPatchedRepresenter());
+    Yaml yaml = new Yaml(new io.kubernetes.client.util.Yaml.CustomConstructor(Object.class, new LoaderOptions()),
+        new BooleanPatchedRepresenter());
     Map<String, Object> map = yaml.load(prettyJSONString);
     return yaml.dump(map);
   }
