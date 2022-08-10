@@ -91,7 +91,7 @@ public class CIK8JavaClientHandlerTest extends CategoryTest {
 
   private V1Pod getPodWithSate(String runningState) {
     V1PodStatusBuilder podStatus = new V1PodStatusBuilder();
-    podStatus.withNewPhase(runningState);
+    podStatus.withPhase(runningState);
     podStatus.withHostIP("123.12.11.11");
 
     podStatus.withContainerStatuses(Arrays.asList(getPendingContainerStatus()));
@@ -108,7 +108,7 @@ public class CIK8JavaClientHandlerTest extends CategoryTest {
 
   private V1Pod getPodWithSuccessSate(String runningState) {
     V1PodStatusBuilder podStatus = new V1PodStatusBuilder();
-    podStatus.withNewPhase(runningState);
+    podStatus.withPhase(runningState);
     podStatus.withHostIP("123.12.11.11");
     podStatus.withPodIP("123.12.11.11");
 
@@ -139,7 +139,7 @@ public class CIK8JavaClientHandlerTest extends CategoryTest {
     when(imageSecretBuilder.getJSONEncodedImageCredentials(any())).thenReturn("fdfd");
 
     cik8JavaClientHandler.createRegistrySecret(coreV1Api, namespace, secretName, imageDetailsWithConnector);
-    verify(coreV1Api, times(1)).createNamespacedSecret(any(), any(), any(), any(), any());
+    verify(coreV1Api, times(1)).createNamespacedSecret(any(), any(), any(), any(), any(), any());
   }
 
   @Test
@@ -156,7 +156,7 @@ public class CIK8JavaClientHandlerTest extends CategoryTest {
                     .endMetadata()
                     .build();
 
-    when(coreV1Api.createNamespacedPod(any(), any(), any(), any(), any())).thenReturn(pod);
+    when(coreV1Api.createNamespacedPod(any(), any(), any(), any(), any(), any())).thenReturn(pod);
 
     assertEquals(pod, cik8JavaClientHandler.createOrReplacePod(coreV1Api, pod, namespace));
   }
@@ -200,8 +200,7 @@ public class CIK8JavaClientHandlerTest extends CategoryTest {
   @Owner(developers = SHUBHAM)
   @Category(UnitTests.class)
   public void waitUntilPodIsReadyWithPodNotPresent() throws TimeoutException, InterruptedException, ApiException {
-    when(coreV1Api.readNamespacedPod(any(), any(), any(), any(), any()))
-        .thenThrow(new PodNotFoundException("not found"));
+    when(coreV1Api.readNamespacedPod(any(), any(), any())).thenThrow(new PodNotFoundException("not found"));
     cik8JavaClientHandler.waitUntilPodIsReady(coreV1Api, podName, namespace, podWaitTimeoutSecs);
   }
 
@@ -211,7 +210,7 @@ public class CIK8JavaClientHandlerTest extends CategoryTest {
   public void waitUntilPodIsReadyWithSuccess() throws TimeoutException, InterruptedException, ApiException {
     V1Pod pod = getPodWithSuccessSate(POD_RUNNING_PHASE);
 
-    when(coreV1Api.readNamespacedPod(any(), any(), any(), any(), any())).thenReturn(pod);
+    when(coreV1Api.readNamespacedPod(any(), any(), any())).thenReturn(pod);
     assertEquals(RUNNING,
         cik8JavaClientHandler.waitUntilPodIsReady(coreV1Api, podName, namespace, podWaitTimeoutSecs).getStatus());
   }
@@ -222,7 +221,7 @@ public class CIK8JavaClientHandlerTest extends CategoryTest {
   public void waitUntilPodIsReadyWithSuccessAfterOneRetry() throws InterruptedException, ApiException {
     V1Pod pod1 = getPodWithSuccessSate(POD_RUNNING_PHASE);
 
-    when(coreV1Api.readNamespacedPod(any(), any(), any(), any(), any())).thenReturn(pod1);
+    when(coreV1Api.readNamespacedPod(any(), any(), any())).thenReturn(pod1);
 
     assertEquals(RUNNING,
         cik8JavaClientHandler.waitUntilPodIsReady(coreV1Api, podName, namespace, podWaitTimeoutSecs).getStatus());
@@ -247,7 +246,7 @@ public class CIK8JavaClientHandlerTest extends CategoryTest {
             .withData(data)
             .build();
 
-    when(coreV1Api.createNamespacedSecret(any(), any(), any(), any(), any())).thenReturn(secret);
+    when(coreV1Api.createNamespacedSecret(any(), any(), any(), any(), any(), any())).thenReturn(secret);
     V1Secret secret1 = cik8JavaClientHandler.createOrReplaceSecret(coreV1Api, secret, namespace);
     assertThat(secret1).isEqualTo(secret);
   }
@@ -262,7 +261,7 @@ public class CIK8JavaClientHandlerTest extends CategoryTest {
     Map<String, String> selector = new HashMap<>();
     selector.put("foo", "bar");
     cik8JavaClientHandler.createService(coreV1Api, namespace, serviceName, selector, ports);
-    verify(coreV1Api).createNamespacedService(any(), any(), any(), any(), any());
+    verify(coreV1Api).createNamespacedService(any(), any(), any(), any(), any(), any());
   }
 
   @Test()
