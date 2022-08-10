@@ -230,10 +230,7 @@ public class UserGroupServiceImpl implements UserGroupService {
   @Override
   public boolean exists(Scope scope, String userGroupIdentifier) {
      Optional<UserGroup> optionalUserGroup =  get(scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier(), userGroupIdentifier);
-     if (optionalUserGroup.isPresent()) {
-       return  true;
-     }
-     return false;
+    return optionalUserGroup.isPresent();
   }
 
   @Override
@@ -862,7 +859,10 @@ public class UserGroupServiceImpl implements UserGroupService {
             .roleIdentifier(roleIdentifier)
             .disabled(false)
             .managed(managed)
-            .principal(PrincipalDTO.builder().identifier(userGroupIdentifier).scopeLevel(ScopeLevel.of(scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier()).name().toLowerCase()).type(USER_GROUP).build())
+            .principal(PrincipalDTO.builder().identifier(userGroupIdentifier)
+                    .scopeLevel(ScopeLevel.of(scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier()).name().toLowerCase())
+                    .type(USER_GROUP)
+                    .build())
             .build());
 
     RoleAssignmentCreateRequestDTO roleAssignmentCreateRequestDTO = RoleAssignmentCreateRequestDTO.builder()
