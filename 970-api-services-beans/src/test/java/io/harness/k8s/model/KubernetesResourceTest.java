@@ -52,6 +52,7 @@ import org.apache.commons.io.IOUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.yaml.snakeyaml.LoaderOptions;
 
 @OwnedBy(CDP)
 public class KubernetesResourceTest extends CategoryTest {
@@ -689,8 +690,8 @@ public class KubernetesResourceTest extends CategoryTest {
     URL resultUrl = this.getClass().getResource("/deployment-after-dump.yaml");
     String resultContents = Resources.toString(resultUrl, Charsets.UTF_8);
 
-    org.yaml.snakeyaml.Yaml yaml =
-        new org.yaml.snakeyaml.Yaml(new Yaml.CustomConstructor(Object.class), new BooleanPatchedRepresenter());
+    org.yaml.snakeyaml.Yaml yaml = new org.yaml.snakeyaml.Yaml(
+        new Yaml.CustomConstructor(Object.class, new LoaderOptions()), new BooleanPatchedRepresenter());
 
     assertThat(yaml.dump(k8sResource)).isEqualTo(resultContents);
   }
