@@ -44,7 +44,13 @@ public class ConnectorsHealthUpdateService {
     log.info("accounts size: {}", accountIds.size());
     for (String accountId : accountIds) {
       log.info("Fetching connectors for  account id {}", accountId);
-      List<ConnectorResponseDTO> nextGenConnectorResponses = getNextGenConnectorResponses(accountId);
+      List<ConnectorResponseDTO> nextGenConnectorResponses;
+      try {
+        nextGenConnectorResponses = getNextGenConnectorResponses(accountId);
+      } catch (Exception e) {
+        log.error("Exception fetching nextGenConnectorResponses for account id: {}", accountId, e);
+        continue;
+      }
       for (ConnectorResponseDTO connector : nextGenConnectorResponses) {
         ConnectorInfoDTO connectorInfo = connector.getConnector();
         try {
