@@ -10,7 +10,6 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.beans.ExecutionStatus.FAILED;
 import static io.harness.beans.ExecutionStatus.REJECTED;
 import static io.harness.beans.ExecutionStatus.SUCCESS;
-import static io.harness.beans.FeatureName.RESOLVE_DEPLOYMENT_TAGS_BEFORE_EXECUTION;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.ExecutionContext.MANAGER;
@@ -470,8 +469,7 @@ public class EnvState extends State implements WorkflowState {
       }
     }
 
-    if (context.getWorkflowType() == WorkflowType.PIPELINE
-        && featureFlagService.isEnabled(RESOLVE_DEPLOYMENT_TAGS_BEFORE_EXECUTION, context.getApp().getAccountId())) {
+    if (context.getWorkflowType() == WorkflowType.PIPELINE) {
       executionUpdate.setAppId(context.getAppId());
       executionUpdate.setWorkflowExecutionId(context.getWorkflowExecutionId());
       final String workflowId = context.getWorkflowId(); // this will be pipelineId in case of pipeline

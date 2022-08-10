@@ -35,7 +35,6 @@ import static io.harness.beans.FeatureName.HELM_CHART_AS_ARTIFACT;
 import static io.harness.beans.FeatureName.INFRA_MAPPING_BASED_ROLLBACK_ARTIFACT;
 import static io.harness.beans.FeatureName.NEW_DEPLOYMENT_FREEZE;
 import static io.harness.beans.FeatureName.PIPELINE_PER_ENV_DEPLOYMENT_PERMISSION;
-import static io.harness.beans.FeatureName.RESOLVE_DEPLOYMENT_TAGS_BEFORE_EXECUTION;
 import static io.harness.beans.FeatureName.WEBHOOK_TRIGGER_AUTHORIZATION;
 import static io.harness.beans.FeatureName.WORKFLOW_EXECUTION_REFRESH_STATUS;
 import static io.harness.beans.PageRequest.PageRequestBuilder.aPageRequest;
@@ -2299,14 +2298,14 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
     if (workflowExecution.getWorkflowType() == PIPELINE) {
       savePipelineSweepingOutPut(workflowExecution, pipeline, savedWorkflowExecution);
     }
-    if (featureFlagService.isEnabled(RESOLVE_DEPLOYMENT_TAGS_BEFORE_EXECUTION, app.getAccountId())) {
-      ExecutionContextImpl context = new ExecutionContextImpl(stateExecutionInstance, stateMachine, injector);
-      injector.injectMembers(workflowExecutionUpdate);
-      // workflowId or pipelineId
-      final String workflowId = context.getWorkflowId();
-      List<NameValuePair> tags = workflowExecutionUpdate.resolveDeploymentTags(context, workflowId);
-      workflowExecutionUpdate.addTagsToWorkflowExecution(tags);
-    }
+
+    ExecutionContextImpl context = new ExecutionContextImpl(stateExecutionInstance, stateMachine, injector);
+    injector.injectMembers(workflowExecutionUpdate);
+    // workflowId or pipelineId
+    final String workflowId = context.getWorkflowId();
+    List<NameValuePair> tags = workflowExecutionUpdate.resolveDeploymentTags(context, workflowId);
+    workflowExecutionUpdate.addTagsToWorkflowExecution(tags);
+
     stateMachineExecutor.startExecution(stateMachine, stateExecutionInstance);
     updateStartStatus(workflowExecution.getAppId(), workflowExecution.getUuid(), RUNNING, false);
     savedWorkflowExecution = wingsPersistence.getWithAppId(
@@ -3911,8 +3910,7 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
 
     LinkedList<ContextElement> contextElements = stateExecutionInstance.getContextElements();
 
-    if (featureFlagService.isEnabled(RESOLVE_DEPLOYMENT_TAGS_BEFORE_EXECUTION, pipelineExecution.getAccountId())
-        && workflowStandardParams.getWorkflowElement() != null) {
+    if (workflowStandardParams.getWorkflowElement() != null) {
       Map<String, Object> pipelineVars = workflowStandardParams.getWorkflowElement().getVariables();
       Map<String, String> stagePipelineVars = executionArgs.getWorkflowVariables();
 

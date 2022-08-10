@@ -356,8 +356,6 @@ public class EnvStateTest extends WingsBaseTest {
     when(workflowExecutionService.getStateExecutionInstances(APP_ID, WORKFLOW_EXECUTION_ID))
         .thenReturn(Collections.emptyList());
     when(featureFlagService.isEnabled(FeatureName.ARTIFACT_STREAM_REFACTOR, ACCOUNT_ID)).thenReturn(true);
-    when(featureFlagService.isEnabled(FeatureName.RESOLVE_DEPLOYMENT_TAGS_BEFORE_EXECUTION, ACCOUNT_ID))
-        .thenReturn(true);
 
     envState.handleAsyncResponse(
         context, ImmutableMap.of("", new EnvState.EnvExecutionResponseData(WORKFLOW_EXECUTION_ID, SUCCESS)));
