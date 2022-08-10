@@ -266,6 +266,8 @@ public class PmsExecutionSummaryServiceImpl implements PmsExecutionSummaryServic
     update.set(baseKey + GraphLayoutNodeDTOKeys.edgeLayoutList, graphLayoutNodeDTO.getEdgeLayoutList());
     update.set(baseKey + GraphLayoutNodeDTOKeys.skipInfo, graphLayoutNodeDTO.getSkipInfo());
     update.set(baseKey + GraphLayoutNodeDTOKeys.nodeRunInfo, graphLayoutNodeDTO.getNodeRunInfo());
+    update.set(
+        baseKey + GraphLayoutNodeDTOKeys.executionInputConfigured, graphLayoutNodeDTO.getExecutionInputConfigured());
     update.set(baseKey + GraphLayoutNodeDTOKeys.nodeIdentifier, nodeExecution.getIdentifier());
     update.set(baseKey + GraphLayoutNodeDTOKeys.name, nodeExecution.getName());
     update.set(baseKey + GraphLayoutNodeDTOKeys.nodeUuid, nodeExecution.getNodeId());
