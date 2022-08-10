@@ -101,9 +101,10 @@ import io.harness.ng.core.event.NGEventConsumerService;
 import io.harness.ng.core.exceptionmappers.GenericExceptionMapperV2;
 import io.harness.ng.core.exceptionmappers.JerseyViolationExceptionMapperV2;
 import io.harness.ng.core.exceptionmappers.NotFoundExceptionMapper;
+import io.harness.ng.core.exceptionmappers.NotSupportedExceptionMapper;
 import io.harness.ng.core.exceptionmappers.OptimisticLockingFailureExceptionMapper;
 import io.harness.ng.core.exceptionmappers.WingsExceptionMapperV2;
-import io.harness.ng.core.filter.BadRequestResponseFilter;
+import io.harness.ng.core.filter.ApiResponseFilter;
 import io.harness.ng.core.handler.NGVaultSecretManagerRenewalHandler;
 import io.harness.ng.core.migration.NGBeanMigrationProvider;
 import io.harness.ng.core.migration.ProjectMigrationProvider;
@@ -387,7 +388,7 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
     registerJerseyProviders(environment, injector);
     registerJerseyFeatures(environment);
     registerCharsetResponseFilter(environment, injector);
-    registerBadRequestResponseFilter(environment, injector);
+    registerApiResponseFilter(environment, injector);
     registerCorrelationFilter(environment, injector);
     registerEtagFilter(environment, injector);
     registerScheduleJobs(injector);
@@ -740,6 +741,7 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
     environment.jersey().register(NGAccessDeniedExceptionMapper.class);
     environment.jersey().register(WingsExceptionMapperV2.class);
     environment.jersey().register(GenericExceptionMapperV2.class);
+    environment.jersey().register(NotSupportedExceptionMapper.class);
   }
 
   private void registerJerseyFeatures(Environment environment) {
@@ -750,8 +752,8 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
     environment.jersey().register(injector.getInstance(CharsetResponseFilter.class));
   }
 
-  private void registerBadRequestResponseFilter(Environment environment, Injector injector) {
-    environment.jersey().register(injector.getInstance(BadRequestResponseFilter.class));
+  private void registerApiResponseFilter(Environment environment, Injector injector) {
+    environment.jersey().register(injector.getInstance(ApiResponseFilter.class));
   }
 
   private void registerCorrelationFilter(Environment environment, Injector injector) {
