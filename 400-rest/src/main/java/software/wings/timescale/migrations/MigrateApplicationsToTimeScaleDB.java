@@ -25,6 +25,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.mongodb.morphia.query.FindOptions;
 
@@ -45,6 +46,8 @@ public class MigrateApplicationsToTimeScaleDB {
 
   private static final String query_statement = "SELECT * FROM CG_APPLICATIONS WHERE ID=?";
 
+  private static final String delete_statement = "DELETE FROM CG_APPLICATIONS WHERE ID=?";
+
   public boolean runTimeScaleMigration(String accountId) {
     if (!timeScaleDBService.isValid()) {
       log.info("TimeScaleDB not found, not migrating data to TimeScaleDB");
@@ -62,7 +65,7 @@ public class MigrateApplicationsToTimeScaleDB {
                                    .fetch(findOptions_applications))) {
         while (iterator.hasNext()) {
           Application application = iterator.next();
-          prepareTimeScaleQueries(application);
+          saveToTimeScale(application);
           count++;
         }
       }
@@ -75,7 +78,7 @@ public class MigrateApplicationsToTimeScaleDB {
     return true;
   }
 
-  private void prepareTimeScaleQueries(Application application) {
+  public void saveToTimeScale(Application application) {
     long startTime = System.currentTimeMillis();
     boolean successful = false;
     int retryCount = 0;
@@ -150,5 +153,34 @@ public class MigrateApplicationsToTimeScaleDB {
     updateStatement.setString(7, application.getAppId());
 
     updateStatement.execute();
+  }
+
+  public void deleteFromTimescale(String id) {
+    long startTime = System.currentTimeMillis();
+    boolean successful = false;
+    int retryCount = 0;
+    while (!successful && retryCount < MAX_RETRY) {
+      ResultSet queryResult = null;
+
+      try (Connection connection = timeScaleDBService.getDBConnection();
+           PreparedStatement deleteStatement = connection.prepareStatement(delete_statement)) {
+        deleteStatement.setString(1, id);
+        queryResult = deleteStatement.executeQuery();
+        successful = true;
+      } catch (SQLException e) {
+        if (retryCount > MAX_RETRY) {
+          log.error("Failed to save application,[{}]", id, e);
+        } else {
+          log.info("Failed to save application,[{}],retryCount=[{}]", id, retryCount);
+        }
+        retryCount++;
+      } catch (Exception e) {
+        log.error("Failed to save application,[{}]", id, e);
+        retryCount = MAX_RETRY + 1;
+      } finally {
+        DBUtils.close(queryResult);
+        log.info("Total time =[{}] for application:[{}]", System.currentTimeMillis() - startTime, id);
+      }
+    }
   }
 }

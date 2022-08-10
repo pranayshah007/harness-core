@@ -5,14 +5,16 @@
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 
-package io.harness.event.reconciliation.deployment;
+package io.harness.event.reconciliation;
 
 public enum ReconcilationAction {
   NONE,
   ADD_MISSING_RECORDS,
   DUPLICATE_REMOVAL,
+  DELETED_REMOVAL,
   STATUS_RECONCILIATION,
   DUPLICATE_REMOVAL_ADD_MISSING_RECORDS,
+  DELETED_REMOVAL_ADD_MISSING_RECORDS,
   DUPLICATE_REMOVAL_STATUS_RECONCILIATION,
   ADD_MISSING_RECORDS_STATUS_RECONCILIATION,
   DUPLICATE_REMOVAL_ADD_MISSING_RECORDS_STATUS_RECONCILIATION

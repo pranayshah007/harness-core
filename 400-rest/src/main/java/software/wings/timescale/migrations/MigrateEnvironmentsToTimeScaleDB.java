@@ -60,7 +60,7 @@ public class MigrateEnvironmentsToTimeScaleDB {
                                    .fetch(findOptions_environments))) {
         while (iterator.hasNext()) {
           Environment environment = iterator.next();
-          prepareTimeScaleQueries(environment);
+          saveToTimeScale(environment);
           count++;
         }
       }
@@ -73,7 +73,7 @@ public class MigrateEnvironmentsToTimeScaleDB {
     return true;
   }
 
-  private void prepareTimeScaleQueries(Environment environment) {
+  public void saveToTimeScale(Environment environment) {
     long startTime = System.currentTimeMillis();
     boolean successful = false;
     int retryCount = 0;

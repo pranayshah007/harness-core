@@ -36,10 +36,10 @@ import static org.mockito.Mockito.when;
 
 import io.harness.beans.ExecutionStatus;
 import io.harness.category.element.UnitTests;
+import io.harness.event.reconciliation.DetectionStatus;
+import io.harness.event.reconciliation.ReconcilationAction;
+import io.harness.event.reconciliation.ReconciliationStatus;
 import io.harness.event.reconciliation.deployment.DeploymentReconRecord;
-import io.harness.event.reconciliation.deployment.DetectionStatus;
-import io.harness.event.reconciliation.deployment.ReconcilationAction;
-import io.harness.event.reconciliation.deployment.ReconciliationStatus;
 import io.harness.persistence.HPersistence;
 import io.harness.rule.Owner;
 import io.harness.timescaledb.TimeScaleDBService;

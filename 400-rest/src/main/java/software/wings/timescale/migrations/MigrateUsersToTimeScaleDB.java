@@ -64,7 +64,7 @@ public class MigrateUsersToTimeScaleDB {
                                                           .fetch(findOptions_users))) {
         while (iterator.hasNext()) {
           User user = iterator.next();
-          prepareTimeScaleQueries(user);
+          saveToTimeScale(user);
           count++;
         }
       }
@@ -77,7 +77,7 @@ public class MigrateUsersToTimeScaleDB {
     return true;
   }
 
-  private void prepareTimeScaleQueries(User user) {
+  public void saveToTimeScale(User user) {
     long startTime = System.currentTimeMillis();
     boolean successful = false;
     int retryCount = 0;

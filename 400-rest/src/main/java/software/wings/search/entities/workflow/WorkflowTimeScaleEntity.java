@@ -7,6 +7,8 @@
 
 package software.wings.search.entities.workflow;
 
+import io.harness.event.reconciliation.service.LookerEntityReconService;
+import io.harness.event.reconciliation.service.WorkflowEntityReconServiceImpl;
 import io.harness.persistence.PersistentEntity;
 
 import software.wings.beans.Workflow;
@@ -19,6 +21,7 @@ import java.util.Set;
 
 public class WorkflowTimeScaleEntity implements TimeScaleEntity<Workflow> {
   @Inject private WorkflowTimescaleChangeHandler workflowTimescaleChangeHandler;
+  @Inject private WorkflowEntityReconServiceImpl workflowEntityReconService;
   @Inject private MigrateWorkflowsToTimeScaleDB migrateWorkflowsToTimeScaleDB;
 
   public static final Class<Workflow> SOURCE_ENTITY_CLASS = Workflow.class;
@@ -34,6 +37,11 @@ public class WorkflowTimeScaleEntity implements TimeScaleEntity<Workflow> {
   }
 
   @Override
+  public LookerEntityReconService getReconService() {
+    return workflowEntityReconService;
+  }
+
+  @Override
   public boolean toProcessChangeEvent(Set<String> accountIds, PersistentEntity entity) {
     Workflow workflow = (Workflow) entity;
 
@@ -44,4 +52,10 @@ public class WorkflowTimeScaleEntity implements TimeScaleEntity<Workflow> {
   public boolean runMigration(String accountId) {
     return migrateWorkflowsToTimeScaleDB.runTimeScaleMigration(accountId);
   }
+
+  @Override
+  public void savetoTimescale(Workflow entity) {}
+
+  @Override
+  public void deleteFromTimescale(String id) {}
 }

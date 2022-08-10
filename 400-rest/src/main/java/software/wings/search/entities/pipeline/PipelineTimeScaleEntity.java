@@ -7,6 +7,8 @@
 
 package software.wings.search.entities.pipeline;
 
+import io.harness.event.reconciliation.service.LookerEntityReconService;
+import io.harness.event.reconciliation.service.PipelineEntityReconServiceImpl;
 import io.harness.persistence.PersistentEntity;
 
 import software.wings.beans.Pipeline;
@@ -19,6 +21,7 @@ import java.util.Set;
 
 public class PipelineTimeScaleEntity implements TimeScaleEntity<Pipeline> {
   @Inject private PipelineTimescaleChangeDataHandler pipelineTimescaleChangeDataHandler;
+  @Inject private PipelineEntityReconServiceImpl pipelineEntityReconService;
   @Inject private MigratePipelinesToTimeScaleDB migratePipelinesToTimeScaleDB;
 
   public static final Class<Pipeline> SOURCE_ENTITY_CLASS = Pipeline.class;
@@ -34,6 +37,11 @@ public class PipelineTimeScaleEntity implements TimeScaleEntity<Pipeline> {
   }
 
   @Override
+  public LookerEntityReconService getReconService() {
+    return pipelineEntityReconService;
+  }
+
+  @Override
   public boolean toProcessChangeEvent(Set<String> accountIds, PersistentEntity entity) {
     Pipeline pipeline = (Pipeline) entity;
 
@@ -44,4 +52,10 @@ public class PipelineTimeScaleEntity implements TimeScaleEntity<Pipeline> {
   public boolean runMigration(String accountId) {
     return migratePipelinesToTimeScaleDB.runTimeScaleMigration(accountId);
   }
+
+  @Override
+  public void savetoTimescale(Pipeline entity) {}
+
+  @Override
+  public void deleteFromTimescale(String id) {}
 }

@@ -64,7 +64,7 @@ public class MigrateServicesToTimeScaleDB {
                                                              .fetch(findOptions_services))) {
         while (iterator.hasNext()) {
           Service service = iterator.next();
-          prepareTimeScaleQueries(service);
+          saveToTimeScale(service);
           count++;
         }
       }
@@ -77,7 +77,7 @@ public class MigrateServicesToTimeScaleDB {
     return true;
   }
 
-  private void prepareTimeScaleQueries(Service service) {
+  public void saveToTimeScale(Service service) {
     long startTime = System.currentTimeMillis();
     boolean successful = false;
     int retryCount = 0;

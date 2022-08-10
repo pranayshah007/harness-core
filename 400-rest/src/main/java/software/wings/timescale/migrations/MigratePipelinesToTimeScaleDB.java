@@ -69,7 +69,7 @@ public class MigratePipelinesToTimeScaleDB {
                                                               .fetch(findOptions_pipelines))) {
         while (iterator.hasNext()) {
           Pipeline pipeline = iterator.next();
-          prepareTimeScaleQueries(pipeline);
+          saveToTimeScale(pipeline);
           count++;
         }
       }
@@ -82,7 +82,7 @@ public class MigratePipelinesToTimeScaleDB {
     return true;
   }
 
-  private void prepareTimeScaleQueries(Pipeline pipeline) {
+  public void saveToTimeScale(Pipeline pipeline) {
     long startTime = System.currentTimeMillis();
     boolean successful = false;
     int retryCount = 0;

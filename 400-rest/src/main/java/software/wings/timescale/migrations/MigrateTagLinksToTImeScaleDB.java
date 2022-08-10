@@ -64,7 +64,7 @@ public class MigrateTagLinksToTImeScaleDB {
                                    .fetch(findOptionsTagLinks))) {
         while (iterator.hasNext()) {
           HarnessTagLink HarnessTagLink = iterator.next();
-          prepareTimeScaleQueries(HarnessTagLink);
+          saveToTimeScale(HarnessTagLink);
           count++;
         }
       }
@@ -77,7 +77,7 @@ public class MigrateTagLinksToTImeScaleDB {
     return true;
   }
 
-  private void prepareTimeScaleQueries(HarnessTagLink harnessTagLink) {
+  public void saveToTimeScale(HarnessTagLink harnessTagLink) {
     long startTime = System.currentTimeMillis();
     boolean successful = false;
     int retryCount = 0;

@@ -7,6 +7,8 @@
 
 package software.wings.search.entities.cloudprovider;
 
+import io.harness.event.reconciliation.service.CloudProviderReconServiceImpl;
+import io.harness.event.reconciliation.service.LookerEntityReconService;
 import io.harness.persistence.PersistentEntity;
 
 import software.wings.beans.SettingAttribute;
@@ -19,6 +21,7 @@ import java.util.Set;
 
 public class CloudProviderTimeScaleEntity implements TimeScaleEntity<SettingAttribute> {
   @Inject private CloudProviderTimescaleChangeHandler cloudProviderTimescaleChangeHandler;
+  @Inject private CloudProviderReconServiceImpl cloudProviderReconService;
   @Inject private MigrateCloudProvidersToTimescaleDB migrateCloudProvidersToTimescaleDB;
 
   public static final Class<SettingAttribute> SOURCE_ENTITY_CLASS = SettingAttribute.class;
@@ -43,5 +46,16 @@ public class CloudProviderTimeScaleEntity implements TimeScaleEntity<SettingAttr
   @Override
   public boolean runMigration(String accountId) {
     return migrateCloudProvidersToTimescaleDB.runTimeScaleMigration(accountId);
+  }
+
+  @Override
+  public void savetoTimescale(SettingAttribute entity) {}
+
+  @Override
+  public void deleteFromTimescale(String id) {}
+
+  @Override
+  public LookerEntityReconService getReconService() {
+    return cloudProviderReconService;
   }
 }

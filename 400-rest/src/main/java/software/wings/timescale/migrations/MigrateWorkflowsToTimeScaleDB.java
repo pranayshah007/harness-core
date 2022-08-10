@@ -66,7 +66,7 @@ public class MigrateWorkflowsToTimeScaleDB {
                                                               .fetch(findOptions_workflows))) {
         while (iterator.hasNext()) {
           Workflow workflow = iterator.next();
-          prepareTimeScaleQueries(workflow);
+          saveToTimeScale(workflow);
           count++;
         }
       }
@@ -79,7 +79,7 @@ public class MigrateWorkflowsToTimeScaleDB {
     return true;
   }
 
-  private void prepareTimeScaleQueries(Workflow workflow) {
+  public void saveToTimeScale(Workflow workflow) {
     long startTime = System.currentTimeMillis();
     boolean successful = false;
     int retryCount = 0;

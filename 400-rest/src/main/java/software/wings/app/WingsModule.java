@@ -1338,6 +1338,11 @@ public class WingsModule extends AbstractModule implements ServersModule {
             new ThreadFactoryBuilder().setNameFormat("DeploymentReconTaskExecutor-%d").build()));
 
     bind(ExecutorService.class)
+        .annotatedWith(Names.named("LookerEntityReconTaskExecutor"))
+        .toInstance(ThreadPool.create(8, 16, 10, TimeUnit.SECONDS,
+            new ThreadFactoryBuilder().setNameFormat("LookerEntityReconTaskExecutor-%d").build()));
+
+    bind(ExecutorService.class)
         .annotatedWith(Names.named("BuildSourceCallbackExecutor"))
         .toInstance(new ThreadPoolExecutor(5, 10, 5, TimeUnit.SECONDS, new LinkedBlockingQueue<>(25000),
             new ThreadFactoryBuilder().setNameFormat("BuildSourceCallbackExecutor-%d").build()));

@@ -63,7 +63,7 @@ public class MigrateCloudProvidersToTimescaleDB {
                                    .fetch(findOptions_cloud_providers))) {
         while (iterator.hasNext()) {
           SettingAttribute settingAttribute = iterator.next();
-          prepareTimeScaleQueries(settingAttribute);
+          saveToTimeScale(settingAttribute);
           count++;
         }
       }
@@ -76,7 +76,7 @@ public class MigrateCloudProvidersToTimescaleDB {
     return true;
   }
 
-  private void prepareTimeScaleQueries(SettingAttribute settingAttribute) {
+  public void saveToTimeScale(SettingAttribute settingAttribute) {
     long startTime = System.currentTimeMillis();
     boolean successful = false;
     int retryCount = 0;

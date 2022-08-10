@@ -7,6 +7,7 @@
 
 package software.wings.search.framework;
 
+import io.harness.event.reconciliation.service.LookerEntityReconService;
 import io.harness.persistence.PersistentEntity;
 
 import java.util.Set;
@@ -14,6 +15,9 @@ import java.util.Set;
 public interface TimeScaleEntity<T extends PersistentEntity> {
   Class<T> getSourceEntityClass();
   ChangeHandler getChangeHandler();
+  LookerEntityReconService getReconService();
   boolean toProcessChangeEvent(Set<String> accountIds, PersistentEntity entity);
   boolean runMigration(String accountId);
+  void savetoTimescale(T entity);
+  void deleteFromTimescale(String id);
 }
