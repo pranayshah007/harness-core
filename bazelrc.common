@@ -29,6 +29,9 @@ build --test_env=TEST_OWNERS_ROOT_DIR
 build --test_env=TEST_MONGO_URI
 build --test_output=all
 build --test_env=LC_ALL="en_US.UTF-8"
+build --test_summary=detailed
+build --verbose_test_summary
+build --flaky_test_attempts=1
 
 # Test Intelligence flag
 test --define=HARNESS_ARGS=
