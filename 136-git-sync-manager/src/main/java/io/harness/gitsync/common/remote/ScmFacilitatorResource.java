@@ -396,4 +396,26 @@ public class ScmFacilitatorResource {
     return ResponseDTO.newResponse(scmFacilitatorService.listBranchesV2(accountIdentifier, orgIdentifier,
         projectIdentifier, connectorRef, repoName, PageRequest.builder().pageSize(listSize).build(), searchTerm));
   }
+
+  @GET
+  @Path("repo-url")
+  @ApiOperation(value = "Get repo url", nickname = "getRepoURL")
+  @Hidden
+  public ResponseDTO<String> getRepoURL(@Parameter(description = ACCOUNT_PARAM_MESSAGE) @NotBlank @QueryParam(
+                                            NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
+      @Parameter(description = ORG_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgIdentifier,
+      @Parameter(description = PROJECT_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier,
+      @Parameter(description = GitSyncApiConstants.REPO_NAME_PARAM_MESSAGE) @NotBlank @QueryParam(
+          NGCommonEntityConstants.REPO_NAME) String repoName,
+      @Parameter(description = GitSyncApiConstants.GIT_CONNECTOR_REF_PARAM_MESSAGE) @NotBlank @QueryParam(
+          GitSyncApiConstants.CONNECTOR_REF) String connectorRef) {
+    Scope scope = Scope.builder()
+                      .accountIdentifier(accountIdentifier)
+                      .orgIdentifier(orgIdentifier)
+                      .projectIdentifier(projectIdentifier)
+                      .build();
+    return ResponseDTO.newResponse(scmFacilitatorService.getRepoUrl(scope, connectorRef, repoName));
+  }
 }
