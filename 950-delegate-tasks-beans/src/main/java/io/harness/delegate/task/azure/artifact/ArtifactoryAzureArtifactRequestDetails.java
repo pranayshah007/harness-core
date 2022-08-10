@@ -16,6 +16,7 @@ import io.harness.exception.InvalidArgumentsException;
 import io.harness.expression.Expression;
 
 import com.google.common.collect.ImmutableMap;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
 import lombok.Builder;
@@ -30,7 +31,7 @@ public class ArtifactoryAzureArtifactRequestDetails implements AzureArtifactRequ
   @Expression(ALLOW_SECRETS) private List<String> artifactPaths;
 
   public Map<String, String> toMetadata() {
-    String artifactPath = getArtifactPath();
+    String artifactPath = Paths.get(repository, getArtifactPath()).toString();
 
     return ImmutableMap.of(
         ArtifactMetadataKeys.artifactName, artifactPath, ArtifactMetadataKeys.artifactPath, artifactPath);
