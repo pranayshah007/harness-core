@@ -62,10 +62,12 @@ public class CDNGPipelineConfigurationResourceTest extends CategoryTest {
         .isEqualTo(Lists.newArrayList(ExecutionStrategyType.ROLLING, ExecutionStrategyType.DEFAULT));
 
     assertThat(executionStrategyResponse.get(ServiceDefinitionType.SSH))
-        .isEqualTo(Lists.newArrayList(ExecutionStrategyType.DEFAULT));
+        .isEqualTo(Lists.newArrayList(ExecutionStrategyType.DEFAULT, ExecutionStrategyType.BASIC,
+            ExecutionStrategyType.ROLLING, ExecutionStrategyType.CANARY));
 
     assertThat(executionStrategyResponse.get(ServiceDefinitionType.WINRM))
-        .isEqualTo(Lists.newArrayList(ExecutionStrategyType.DEFAULT));
+        .isEqualTo(Lists.newArrayList(ExecutionStrategyType.DEFAULT, ExecutionStrategyType.BASIC,
+            ExecutionStrategyType.ROLLING, ExecutionStrategyType.CANARY));
 
     assertThat(executionStrategyResponse.get(ServiceDefinitionType.SERVERLESS_AWS_LAMBDA))
         .isEqualTo(Lists.newArrayList(ExecutionStrategyType.BASIC, ExecutionStrategyType.DEFAULT));
