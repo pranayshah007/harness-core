@@ -116,7 +116,6 @@ public class ServiceDependencyGraphServiceImplTest extends CvNextGenTestBase {
     MonitoredServiceDTO monitoredServiceDTO =
         builderFactory.monitoredServiceDTOBuilder().sources(Sources.builder().build()).build();
     monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
-
     HeatMap heatMap = builderFactory.heatMapBuilder()
                           .monitoredServiceIdentifier(monitoredServiceDTO.getIdentifier())
                           .heatMapResolution(FIVE_MIN)
@@ -420,10 +419,10 @@ public class ServiceDependencyGraphServiceImplTest extends CvNextGenTestBase {
     hPersistence.save(heatMap);
 
     ServiceDependencyGraphDTO graphDTO =
-        serviceDependencyGraphService.getDependencyGraph(context.getProjectParams(), null, false, "base");
+        serviceDependencyGraphService.getDependencyGraph(context.getProjectParams(), null, false, "service");
 
     assertThat(graphDTO).isNotNull();
-    assertThat(graphDTO.getNodes().size()).isEqualTo(3);
+    assertThat(graphDTO.getNodes().size()).isEqualTo(4);
     assertThat(graphDTO.getEdges().size()).isEqualTo(2);
   }
 
@@ -467,11 +466,11 @@ public class ServiceDependencyGraphServiceImplTest extends CvNextGenTestBase {
     setStartTimeEndTimeAndRiskScoreWith5MinBucket(heatMap, endTime, 0.15, 0.25);
     hPersistence.save(heatMap);
 
-    ServiceDependencyGraphDTO graphDTO =
-        serviceDependencyGraphService.getDependencyGraph(context.getProjectParams(), null, false, "vice3");
+    ServiceDependencyGraphDTO graphDTO = serviceDependencyGraphService.getDependencyGraph(
+        context.getProjectParams(), null, false, "Non Matching search");
 
     assertThat(graphDTO).isNotNull();
-    assertThat(graphDTO.getNodes().size()).isEqualTo(1);
+    assertThat(graphDTO.getNodes().size()).isEqualTo(0);
     assertThat(graphDTO.getEdges().size()).isEqualTo(0);
   }
 
@@ -521,6 +520,57 @@ public class ServiceDependencyGraphServiceImplTest extends CvNextGenTestBase {
     assertThat(graphDTO).isNotNull();
     assertThat(graphDTO.getNodes().size()).isEqualTo(4);
     assertThat(graphDTO.getEdges().size()).isEqualTo(2);
+  }
+
+  @Test
+  @Owner(developers = ARPITJ)
+  @Category(UnitTests.class)
+  public void testGetDependencyGraph_withFilterEnv() {
+    Instant endTime = roundDownTo5MinBoundary(clock.instant());
+    MonitoredServiceDTO monitoredServiceDTO =
+        builderFactory.monitoredServiceDTOBuilder().sources(Sources.builder().build()).name("base service").build();
+    monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
+
+    MonitoredServiceDTO edgeDTO = builderFactory.monitoredServiceDTOBuilder()
+                                      .sources(Sources.builder().build())
+                                      .dependencies(new HashSet<>())
+                                      .build();
+    edgeDTO.setIdentifier("service2");
+    edgeDTO.setServiceRef("service2");
+    edgeDTO.setEnvironmentRef("env");
+    edgeDTO.setName("service2");
+    monitoredServiceService.create(builderFactory.getContext().getAccountId(), edgeDTO);
+
+    edgeDTO.setIdentifier("service1");
+    edgeDTO.setServiceRef("service1");
+    edgeDTO.setEnvironmentRef("test");
+    edgeDTO.setName("service1");
+    monitoredServiceService.create(builderFactory.getContext().getAccountId(), edgeDTO);
+
+    MonitoredServiceDTO monitoredServiceDTO1 = builderFactory.monitoredServiceDTOBuilder()
+                                                   .sources(Sources.builder().build())
+                                                   .dependencies(new HashSet<>())
+                                                   .serviceRef("service3")
+                                                   .identifier("service3")
+                                                   .environmentRef("prod")
+                                                   .name("service3")
+                                                   .build();
+    monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO1);
+
+    HeatMap heatMap = builderFactory.heatMapBuilder().heatMapResolution(FIVE_MIN).build();
+    setStartTimeEndTimeAndRiskScoreWith5MinBucket(heatMap, endTime, 0.15, 0.25);
+    hPersistence.save(heatMap);
+    heatMap =
+        builderFactory.heatMapBuilder().heatMapResolution(FIVE_MIN).category(CVMonitoringCategory.PERFORMANCE).build();
+    setStartTimeEndTimeAndRiskScoreWith5MinBucket(heatMap, endTime, 0.15, 0.25);
+    hPersistence.save(heatMap);
+
+    ServiceDependencyGraphDTO graphDTO =
+        serviceDependencyGraphService.getDependencyGraph(context.getProjectParams(), null, false, "test");
+
+    assertThat(graphDTO).isNotNull();
+    assertThat(graphDTO.getNodes().size()).isEqualTo(1);
+    assertThat(graphDTO.getEdges().size()).isEqualTo(0);
   }
 
   @Test
