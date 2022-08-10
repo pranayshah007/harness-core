@@ -138,11 +138,13 @@ public class InstallUtils {
       return Paths.get(customPathStr).normalize().toAbsolutePath();
     }
 
-    // 2. Check if the tool is on $PATH
-    final Path toolName = Paths.get(tool.getBinaryName());
-    if (runToolCommand(toolName, tool.getValidateCommandArgs())) {
-      log.info("{} Tool is found on $PATH", tool.getBinaryName());
-      return toolName;
+    // 2. Check if the tool is on $PATH (only for immutable delegate)
+    if (configuration.isImmutable()) {
+      final Path toolName = Paths.get(tool.getBinaryName());
+      if (runToolCommand(toolName, tool.getValidateCommandArgs())) {
+        log.info("{} Tool is found on $PATH", tool.getBinaryName());
+        return toolName;
+      }
     }
 
     // 3. Check if tool is already installed

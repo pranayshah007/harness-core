@@ -20,6 +20,7 @@ import io.harness.ccm.commons.entities.anomaly.AnomalyWidgetData;
 import io.harness.ccm.commons.entities.anomaly.PerspectiveAnomalyData;
 import io.harness.ccm.graphql.dto.recommendation.FilterStatsDTO;
 import io.harness.ccm.helper.AnomalyQueryHelper;
+import io.harness.ccm.rbac.CCMRbacHelper;
 import io.harness.ccm.remote.beans.anomaly.AnomalyFilterPropertiesDTO;
 import io.harness.ccm.service.intf.AnomalyService;
 import io.harness.ccm.utils.LogAccountIdentifier;
@@ -70,6 +71,7 @@ import org.springframework.stereotype.Service;
     content = { @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ErrorDTO.class)) })
 public class AnomalyResource {
   @Inject private AnomalyService anomalyService;
+  @Inject private CCMRbacHelper rbacHelper;
 
   @POST
   @Timed
@@ -87,6 +89,7 @@ public class AnomalyResource {
   listAnomalies(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
                     NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @RequestBody(description = "Anomaly Filter Properties") AnomalyFilterPropertiesDTO anomalyFilterPropertiesDTO) {
+    rbacHelper.checkAnomalyViewPermission(accountId, null, null);
     return ResponseDTO.newResponse(anomalyService.listAnomalies(
         accountId, AnomalyQueryHelper.buildAnomalyQueryFromFilterProperties(anomalyFilterPropertiesDTO)));
   }
@@ -111,6 +114,7 @@ public class AnomalyResource {
                             NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @RequestBody(required = true, description = "List of Anomaly columns whose unique values will be fetched")
       List<String> anomalyColumnsList) {
+    rbacHelper.checkAnomalyViewPermission(accountId, null, null);
     return ResponseDTO.newResponse(anomalyService.getAnomalyFilterStats(accountId, anomalyColumnsList));
   }
 
@@ -134,6 +138,7 @@ public class AnomalyResource {
       @Parameter(required = true, description = "Unique identifier for perspective") @PathParam(
           "perspectiveId") String perspectiveId,
       @RequestBody(required = true, description = "Perspective Query") PerspectiveQueryDTO perspectiveQueryDTO) {
+    rbacHelper.checkAnomalyViewPermission(accountId, null, null);
     return ResponseDTO.newResponse(
         anomalyService.listPerspectiveAnomalies(accountId, perspectiveId, perspectiveQueryDTO));
   }
@@ -156,6 +161,7 @@ public class AnomalyResource {
                             NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @Parameter(required = true, description = "Unique identifier for perspective") @QueryParam("anomalyId")
       String anomalyId, @RequestBody(required = true, description = "Feedback") AnomalyFeedbackDTO feedback) {
+    rbacHelper.checkAnomalyViewPermission(accountId, null, null);
     return ResponseDTO.newResponse(anomalyService.updateAnomalyFeedback(accountId, anomalyId, feedback));
   }
 
@@ -176,6 +182,7 @@ public class AnomalyResource {
   getAnomaliesSummary(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
                           NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @RequestBody(description = "Anomaly Filter Properties") AnomalyFilterPropertiesDTO anomalyFilterPropertiesDTO) {
+    rbacHelper.checkAnomalyViewPermission(accountId, null, null);
     return ResponseDTO.newResponse(anomalyService.getAnomalySummary(
         accountId, AnomalyQueryHelper.buildAnomalyQueryFromFilterProperties(anomalyFilterPropertiesDTO)));
   }
@@ -198,6 +205,7 @@ public class AnomalyResource {
   getAnomalyWidgetsData(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
                             NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @RequestBody(description = "Anomaly Filter Properties") AnomalyFilterPropertiesDTO anomalyFilterPropertiesDTO) {
+    rbacHelper.checkAnomalyViewPermission(accountId, null, null);
     return ResponseDTO.newResponse(anomalyService.getAnomalyWidgetData(
         accountId, AnomalyQueryHelper.buildAnomalyQueryFromFilterProperties(anomalyFilterPropertiesDTO)));
   }

@@ -15,9 +15,13 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.azure.utility.AzureResourceUtility;
+import io.harness.beans.Scope;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.azure.webapp.beans.AzureWebAppPreDeploymentDataOutput;
 import io.harness.cdng.azure.webapp.beans.AzureWebAppSwapSlotsDataOutput;
+import io.harness.cdng.execution.StageExecutionInfo.StageExecutionInfoKeys;
+import io.harness.cdng.execution.azure.webapps.AzureWebAppsStageExecutionDetails.AzureWebAppsStageExecutionDetailsKeys;
+import io.harness.cdng.execution.service.StageExecutionInfoService;
 import io.harness.delegate.task.azure.appservice.AzureAppServicePreDeploymentData;
 import io.harness.delegate.task.azure.appservice.webapp.AppServiceDeploymentProgress;
 import io.harness.delegate.task.azure.appservice.webapp.ng.AzureWebAppInfraDelegateConfig;
@@ -45,6 +49,8 @@ import software.wings.beans.TaskType;
 
 import com.google.inject.Inject;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.CDP)
@@ -57,6 +63,7 @@ public class AzureWebAppSwapSlotStep extends TaskExecutableWithRollbackAndRbac<A
   @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
   @Inject private CDStepHelper cdStepHelper;
   @Inject private AzureWebAppStepHelper stepHelper;
+  @Inject private StageExecutionInfoService stageExecutionInfoService;
 
   @Override
   public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
@@ -119,9 +126,24 @@ public class AzureWebAppSwapSlotStep extends TaskExecutableWithRollbackAndRbac<A
             .targetSlot(getParameterFieldValue(azureWebAppSwapSlotStepParameters.getTargetSlot()))
             .build(),
         StepCategory.STEP.name());
+
+    if (stepHelper.isPackageArtifactType(stepHelper.getPrimaryArtifactOutcome(ambiance))) {
+      updateTargetSlot(ambiance, getParameterFieldValue(azureWebAppSwapSlotStepParameters.getTargetSlot()));
+    }
+
     builder.unitProgressList(response.getCommandUnitsProgress().getUnitProgresses());
     builder.status(Status.SUCCEEDED);
     return builder.build();
+  }
+
+  private void updateTargetSlot(Ambiance ambiance, String targetSlot) {
+    Scope scope = Scope.of(AmbianceUtils.getAccountId(ambiance), AmbianceUtils.getOrgIdentifier(ambiance),
+        AmbianceUtils.getProjectIdentifier(ambiance));
+    Map<String, Object> updates = new HashMap<>();
+    updates.put(String.format(
+                    "%s.%s", StageExecutionInfoKeys.executionDetails, AzureWebAppsStageExecutionDetailsKeys.targetSlot),
+        targetSlot);
+    stageExecutionInfoService.update(scope, ambiance.getStageExecutionId(), updates);
   }
 
   @Override

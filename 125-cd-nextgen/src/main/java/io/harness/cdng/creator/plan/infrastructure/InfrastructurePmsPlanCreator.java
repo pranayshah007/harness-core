@@ -88,7 +88,8 @@ public class InfrastructurePmsPlanCreator {
   }
 
   private boolean isTaskStep(Infrastructure pipelineInfrastructure) {
-    return InfrastructureKind.SSH_WINRM_AZURE.equals(pipelineInfrastructure.getKind());
+    return InfrastructureKind.SSH_WINRM_AZURE.equals(pipelineInfrastructure.getKind())
+        || InfrastructureKind.SSH_WINRM_AWS.equals(pipelineInfrastructure.getKind());
   }
 
   public static LinkedHashMap<String, PlanCreationResponse> createPlanForInfraSectionV2(YamlNode infraSectionNode,

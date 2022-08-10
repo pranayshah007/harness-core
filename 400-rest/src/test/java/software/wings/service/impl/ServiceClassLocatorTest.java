@@ -45,6 +45,7 @@ import software.wings.service.intfc.security.SecretManager;
 import software.wings.service.intfc.template.TemplateGalleryService;
 import software.wings.service.intfc.template.TemplateService;
 import software.wings.service.intfc.verification.CVConfigurationService;
+import software.wings.service.intfc.yaml.sync.YamlGitConfigService;
 
 import com.google.inject.Inject;
 import java.util.List;
@@ -83,6 +84,7 @@ public class ServiceClassLocatorTest extends WingsBaseTest {
   @Inject private WhitelistService whitelistService;
   @Inject private DelegateTaskServiceClassicImpl delegateTaskServiceClassic;
   @Inject private DelegateNgTokenService delegateNgTokenService;
+  @Inject private YamlGitConfigService yamlGitConfigService;
 
   @Test
   @Owner(developers = GEORGE)
@@ -105,7 +107,7 @@ public class ServiceClassLocatorTest extends WingsBaseTest {
               limitConfigurationServiceMongo, loginSettingsService, notificationRuleService, notificationSetupService,
               profileService, resourceConstraintService, roleService, secretManager, encryptedSettingAttributes,
               settingsService, ssoSettingService, templateGalleryService, templateService, userGroupService,
-              userService, whitelistService, delegateTaskServiceClassic);
+              userService, whitelistService, delegateTaskServiceClassic, yamlGitConfigService);
     }
   }
 }

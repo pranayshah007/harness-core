@@ -36,7 +36,9 @@ import io.harness.manage.GlobalContextManager;
 import io.harness.outbox.api.OutboxService;
 import io.harness.rule.Owner;
 import io.harness.template.entity.TemplateEntity;
+import io.harness.template.entity.TemplateEntity.TemplateEntityKeys;
 import io.harness.template.events.TemplateUpdateEventType;
+import io.harness.template.services.NGTemplateServiceHelper;
 import io.harness.template.utils.NGTemplateFeatureFlagHelperService;
 
 import java.util.Arrays;
@@ -45,13 +47,22 @@ import java.util.Optional;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
 
 @OwnedBy(PL)
 public class NGTemplateRepositoryCustomImplTest {
   NGTemplateRepositoryCustomImpl ngTemplateRepositoryCustom;
+  @InjectMocks NGTemplateServiceHelper templateServiceHelper;
   @Mock GitAwarePersistence gitAwarePersistence;
   @Mock GitSyncSdkService gitSyncSdkService;
   @Mock GitAwareEntityHelper gitAwareEntityHelper;
@@ -288,7 +299,7 @@ public class NGTemplateRepositoryCustomImplTest {
     Optional<TemplateEntity> optionalPipelineEntity =
         ngTemplateRepositoryCustom
             .findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndIsStableAndDeletedNot(
-                accountIdentifier, orgIdentifier, projectIdentifier, templateId, true);
+                accountIdentifier, orgIdentifier, projectIdentifier, templateId, true, false);
     assertThat(optionalPipelineEntity.isPresent()).isTrue();
     assertThat(optionalPipelineEntity.get()).isEqualTo(templateEntity);
     verify(gitAwareEntityHelper, times(1)).fetchEntityFromRemote(any(), any(), any(), any());
@@ -313,7 +324,7 @@ public class NGTemplateRepositoryCustomImplTest {
     Optional<TemplateEntity> optionalPipelineEntity =
         ngTemplateRepositoryCustom
             .findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndIsStableAndDeletedNot(
-                accountIdentifier, orgIdentifier, projectIdentifier, templateId, true);
+                accountIdentifier, orgIdentifier, projectIdentifier, templateId, true, true);
     assertThat(optionalPipelineEntity.isPresent()).isTrue();
     assertThat(optionalPipelineEntity.get()).isEqualTo(templateEntity);
     verify(gitAwareEntityHelper, times(0)).fetchEntityFromRemote(any(), any(), any(), any());
@@ -338,7 +349,7 @@ public class NGTemplateRepositoryCustomImplTest {
     Optional<TemplateEntity> optionalPipelineEntity =
         ngTemplateRepositoryCustom
             .findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndVersionLabelAndDeletedNot(
-                accountIdentifier, orgIdentifier, projectIdentifier, templateId, templateVersion, true);
+                accountIdentifier, orgIdentifier, projectIdentifier, templateId, templateVersion, true, false);
     assertThat(optionalPipelineEntity.isPresent()).isTrue();
     assertThat(optionalPipelineEntity.get()).isEqualTo(templateEntity);
     verify(gitAwareEntityHelper, times(1)).fetchEntityFromRemote(any(), any(), any(), any());
@@ -363,7 +374,7 @@ public class NGTemplateRepositoryCustomImplTest {
     Optional<TemplateEntity> optionalPipelineEntity =
         ngTemplateRepositoryCustom
             .findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndVersionLabelAndDeletedNot(
-                accountIdentifier, orgIdentifier, projectIdentifier, templateId, templateVersion, true);
+                accountIdentifier, orgIdentifier, projectIdentifier, templateId, templateVersion, true, true);
     assertThat(optionalPipelineEntity.isPresent()).isTrue();
     assertThat(optionalPipelineEntity.get()).isEqualTo(templateEntity);
     verify(gitAwareEntityHelper, times(0)).fetchEntityFromRemote(any(), any(), any(), any());
@@ -388,7 +399,7 @@ public class NGTemplateRepositoryCustomImplTest {
     Optional<TemplateEntity> optionalPipelineEntity =
         ngTemplateRepositoryCustom
             .findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndIsLastUpdatedAndDeletedNot(
-                accountIdentifier, orgIdentifier, projectIdentifier, templateId, true);
+                accountIdentifier, orgIdentifier, projectIdentifier, templateId, true, false);
     assertThat(optionalPipelineEntity.isPresent()).isTrue();
     assertThat(optionalPipelineEntity.get()).isEqualTo(templateEntity);
     verify(gitAwareEntityHelper, times(1)).fetchEntityFromRemote(any(), any(), any(), any());
@@ -413,7 +424,7 @@ public class NGTemplateRepositoryCustomImplTest {
     Optional<TemplateEntity> optionalPipelineEntity =
         ngTemplateRepositoryCustom
             .findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndIsLastUpdatedAndDeletedNot(
-                accountIdentifier, orgIdentifier, projectIdentifier, templateId, true);
+                accountIdentifier, orgIdentifier, projectIdentifier, templateId, true, true);
     assertThat(optionalPipelineEntity.isPresent()).isTrue();
     assertThat(optionalPipelineEntity.get()).isEqualTo(templateEntity);
     verify(gitAwareEntityHelper, times(0)).fetchEntityFromRemote(any(), any(), any(), any());
@@ -499,5 +510,55 @@ public class NGTemplateRepositoryCustomImplTest {
     assertThat(updatedEntity.getName()).isEqualTo("new name");
     assertThat(updatedEntity.getDescription()).isEqualTo("new desc");
     verify(gitAwareEntityHelper, times(1)).updateEntityOnGit(any(), any(), any());
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testListMetadataRemote() {
+    String newYaml = "template: new yaml";
+
+    TemplateEntity templateEntity = TemplateEntity.builder()
+                                        .accountId(accountIdentifier)
+                                        .orgIdentifier(orgIdentifier)
+                                        .projectIdentifier(projectIdentifier)
+                                        .identifier(templateId)
+                                        .name("old name")
+                                        .description("old desc")
+                                        .yaml(newYaml)
+                                        .storeType(StoreType.REMOTE)
+                                        .version(1L)
+                                        .build();
+
+    doReturn(Arrays.asList(templateEntity)).when(mongoTemplate).find(any(Query.class), any());
+    Criteria criteria = templateServiceHelper.formCriteria(
+        accountIdentifier, orgIdentifier, projectIdentifier, null, null, false, "", false);
+    criteria.and(TemplateEntityKeys.isLastUpdatedTemplate).is(true);
+    Pageable pageRequest = PageRequest.of(0, 10, Sort.by(Sort.Direction.DESC, TemplateEntityKeys.lastUpdatedAt));
+    Page<TemplateEntity> templateEntities =
+        ngTemplateRepositoryCustom.findAll(accountIdentifier, orgIdentifier, projectIdentifier, criteria, pageRequest);
+    assertThat(templateEntities.getContent()).isNotNull();
+    assertThat(templateEntities.getContent().size()).isEqualTo(1);
+    assertThat(templateEntities.getContent().get(0).getIdentifier()).isEqualTo(templateId);
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testDeleteTemplate() {
+    Update update = new Update();
+    update.set(TemplateEntityKeys.deleted, true);
+    TemplateEntity templateEntity = TemplateEntity.builder()
+                                        .accountId(accountIdentifier)
+                                        .orgIdentifier(orgIdentifier)
+                                        .projectIdentifier(projectIdentifier)
+                                        .identifier(templateId)
+                                        .yaml(pipelineYaml)
+                                        .deleted(true)
+                                        .build();
+    doReturn(templateEntity).when(mongoTemplate).findAndRemove(any(), any());
+    ngTemplateRepositoryCustom.deleteTemplate(templateEntity, "");
+    verify(mongoTemplate, times(1)).findAndRemove(any(), any());
+    verify(outboxService, times(1)).save(any());
   }
 }

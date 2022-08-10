@@ -169,6 +169,7 @@ templatesNG {"name": "accountId_organizationId_projectId_identifier_isStable_rep
 templatesNG {"name": "accountId_organizationId_projectId_identifier_label_isDefault", "background": true} {"accountId": 1, "orgIdentifier": 1, "projectIdentifier": 1, "identifier": 1, "versionLabel": 1, "isFromDefaultBranch": 1, "createdAt": -1}
 templatesNG {"name": "accountId_project_org_isDefault", "background": true} {"accountId": 1, "projectIdentifier": 1, "orgIdentifier": 1, "isFromDefaultBranch": 1, "createdAt": -1}
 templatesNG {"name": "accountId_project_org_repo_branch", "background": true} {"accountId": 1, "projectIdentifier": 1, "orgIdentifier": 1, "yamlGitConfigRef": 1, "branch": 1, "createdAt": -1}
+templatesNG {"name": "accountId_repoURL_filePath", "background": true} {"accountId": 1, "repoURL": 1, "filePath": 1}
 templatesNG {"name": "createdAt_1", "background": true} {"createdAt": 1}
 templatesNG {"name": "lastUpdatedAt_idx", "background": true} {"lastUpdatedAt": 1}
 templatesNG {"name": "unique_accountId_organizationId_projectId_identifier_label_repo_branch", "unique": true} {"accountId": 1, "orgIdentifier": 1, "projectIdentifier": 1, "identifier": 1, "versionLabel": 1, "yamlGitConfigRef": 1, "branch": 1}

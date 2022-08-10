@@ -14,7 +14,6 @@ import static software.wings.beans.TaskType.NG_ARTIFACTORY_TASK;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.ConnectorValidationResult;
 import io.harness.delegate.beans.artifactory.ArtifactoryTaskParams;
-import io.harness.delegate.beans.artifactory.ArtifactoryTaskResponse;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryConnectorDTO;
 import io.harness.delegate.task.TaskParameters;
@@ -24,7 +23,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Singleton
-public class ArtifactoryConnectionValidator extends AbstractConnectorValidator {
+public class ArtifactoryConnectionValidator extends AbstractArtifactConnectorValidator {
   @Override
   public <T extends ConnectorConfigDTO> TaskParameters getTaskParameters(
       T connectorConfig, String accountIdentifier, String orgIdentifier, String projectIdentifier) {
@@ -46,9 +45,7 @@ public class ArtifactoryConnectionValidator extends AbstractConnectorValidator {
   @Override
   public ConnectorValidationResult validate(ConnectorConfigDTO connectorDTO, String accountIdentifier,
       String orgIdentifier, String projectIdentifier, String identifier) {
-    ArtifactoryTaskResponse responseData = (ArtifactoryTaskResponse) super.validateConnector(
-        connectorDTO, accountIdentifier, orgIdentifier, projectIdentifier, identifier);
-    return responseData.getConnectorValidationResult();
+    return super.validate(connectorDTO, accountIdentifier, orgIdentifier, projectIdentifier, identifier);
   }
 
   @Override

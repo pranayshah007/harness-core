@@ -34,12 +34,15 @@ import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.changestream.ChangeStreamDocument;
 import com.mongodb.client.model.changestream.OperationType;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import lombok.extern.slf4j.Slf4j;
 import org.mongodb.morphia.annotations.Entity;
 
@@ -157,13 +160,33 @@ public class ChangeTracker {
         || changeStreamDocument.getOperationType() == OperationType.DELETE;
   }
 
+  private <T extends PersistentEntity> boolean hasTrackedFieldBeenChanged(
+      ChangeEvent<T> changeEvent, Class<T> subscribedClass) {
+    ChangeDataCapture[] annotations = subscribedClass.getAnnotationsByType(ChangeDataCapture.class);
+    Set<String> subscribedFields =
+        Arrays.stream(annotations).map(ChangeDataCapture::fields).flatMap(Stream::of).collect(Collectors.toSet());
+
+    if (subscribedFields.isEmpty()) {
+      return true;
+    }
+
+    if (changeEvent.getChangeType() == ChangeType.UPDATE && changeEvent.getChanges() != null) {
+      Set<String> changedFields = changeEvent.getChanges().keySet();
+      return !Collections.disjoint(changedFields, subscribedFields);
+    }
+
+    return true;
+  }
+
   private <T extends PersistentEntity> ChangeStreamSubscriber getChangeStreamSubscriber(
       ChangeTrackingInfo<T> changeTrackingInfo) {
     return changeStreamDocument -> {
       if (shouldProcessChange(changeStreamDocument)) {
         ChangeEvent<T> changeEvent =
             changeEventFactory.fromChangeStreamDocument(changeStreamDocument, changeTrackingInfo.getMorphiaClass());
-        changeTrackingInfo.getChangeSubscriber().onChange(changeEvent);
+        if (hasTrackedFieldBeenChanged(changeEvent, changeTrackingInfo.getMorphiaClass())) {
+          changeTrackingInfo.getChangeSubscriber().onChange(changeEvent);
+        }
       }
     };
   }

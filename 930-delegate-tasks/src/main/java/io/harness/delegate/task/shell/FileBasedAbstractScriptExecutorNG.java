@@ -61,7 +61,7 @@ public abstract class FileBasedAbstractScriptExecutorNG implements FileBasedScri
           "Unsupported artifact type provided: %s", context.getArtifactDelegateConfig().getArtifactType().name()));
     }
     Map<String, String> metadata = context.getArtifactMetadata();
-    return scpOneFile(context.getDestinationPath(), new AbstractScriptExecutor.FileProvider() {
+    return scpOneFile(context.getEvaluatedDestinationPath(), new AbstractScriptExecutor.FileProvider() {
       @Override
       public Pair<String, Long> getInfo() {
         if (!metadata.containsKey(ArtifactMetadataKeys.artifactFileSize)) {
@@ -123,5 +123,9 @@ public abstract class FileBasedAbstractScriptExecutorNG implements FileBasedScri
 
   protected void saveExecutionLogError(String line) {
     SshHelperUtils.checkAndSaveExecutionLogError(line, logCallback, shouldSaveExecutionLogs);
+  }
+
+  public LogCallback getLogCallback() {
+    return logCallback;
   }
 }

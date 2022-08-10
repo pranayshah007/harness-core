@@ -34,12 +34,14 @@ import io.harness.git.model.ChangeType;
 import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.interceptor.GitSyncBranchContext;
 import io.harness.gitsync.persistance.GitSyncSdkService;
+import io.harness.ng.core.common.beans.NGTag;
 import io.harness.ng.core.common.beans.NGTag.NGTagKeys;
 import io.harness.ng.core.mapper.TagMapper;
 import io.harness.ng.core.template.TemplateListType;
 import io.harness.repositories.NGTemplateRepository;
 import io.harness.springdata.SpringDataMongoUtils;
 import io.harness.template.TemplateFilterPropertiesDTO;
+import io.harness.template.beans.TemplateFilterProperties;
 import io.harness.template.entity.TemplateEntity;
 import io.harness.template.entity.TemplateEntity.TemplateEntityKeys;
 import io.harness.template.events.TemplateUpdateEventType;
@@ -59,6 +61,8 @@ import javax.validation.constraints.NotNull;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.query.Criteria;
 
 @Singleton
@@ -74,7 +78,7 @@ public class NGTemplateServiceHelper {
       String projectIdentifier, String templateIdentifier, String versionLabel, boolean deleted) {
     try {
       Optional<TemplateEntity> optionalTemplate =
-          getTemplate(accountId, orgIdentifier, projectIdentifier, templateIdentifier, versionLabel, deleted);
+          getTemplate(accountId, orgIdentifier, projectIdentifier, templateIdentifier, versionLabel, deleted, false);
       if (optionalTemplate.isPresent() && optionalTemplate.get().isEntityInvalid()) {
         throw new NGTemplateException(
             "Invalid Template yaml cannot be used. Please correct the template version yaml.");
@@ -158,6 +162,45 @@ public class NGTemplateServiceHelper {
     return criteria;
   }
 
+  public Criteria formCriteria(String accountId, String orgId, String projectId, String filterIdentifier,
+      boolean deleted, TemplateFilterProperties filterProperties, String searchTerm,
+      Boolean includeAllTemplatesAccessibleAtScope) {
+    Criteria criteria = new Criteria();
+    criteria.and(TemplateEntityKeys.accountId).is(accountId);
+
+    Criteria includeAllTemplatesCriteria = null;
+    if (includeAllTemplatesAccessibleAtScope != null && includeAllTemplatesAccessibleAtScope) {
+      includeAllTemplatesCriteria = getCriteriaToReturnAllTemplatesAccessible(orgId, projectId);
+    } else {
+      criteria.and(TemplateEntityKeys.orgIdentifier).is(orgId);
+      criteria.and(TemplateEntityKeys.projectIdentifier).is(projectId);
+    }
+
+    criteria.and(TemplateEntityKeys.deleted).is(deleted);
+
+    if (EmptyPredicate.isNotEmpty(filterIdentifier) && filterProperties != null) {
+      throw new InvalidRequestException("Can not apply both filter properties and saved filter together");
+    } else if (EmptyPredicate.isNotEmpty(filterIdentifier) && filterProperties == null) {
+      populateFilterUsingIdentifier(
+          criteria, accountId, orgId, projectId, filterIdentifier, searchTerm, includeAllTemplatesCriteria);
+    } else if (EmptyPredicate.isEmpty(filterIdentifier) && filterProperties != null) {
+      NGTemplateServiceHelper.populateFilter(criteria, filterProperties, searchTerm, includeAllTemplatesCriteria);
+    } else {
+      List<Criteria> criteriaList = new ArrayList<>();
+      if (includeAllTemplatesCriteria != null) {
+        criteriaList.add(includeAllTemplatesCriteria);
+      }
+      Criteria searchTermCriteria = getSearchTermCriteria(searchTerm);
+      if (searchTermCriteria != null) {
+        criteriaList.add(searchTermCriteria);
+      }
+      if (criteriaList.size() != 0) {
+        criteria.andOperator(criteriaList.toArray(new Criteria[0]));
+      }
+    }
+    return criteria;
+  }
+
   private void populateFilterUsingIdentifier(Criteria criteria, String accountIdentifier, String orgIdentifier,
       String projectIdentifier, @NotNull String filterIdentifier, String searchTerm,
       Criteria includeAllTemplatesCriteria) {
@@ -172,6 +215,34 @@ public class NGTemplateServiceHelper {
   }
 
   private static void populateFilter(Criteria criteria, @NotNull TemplateFilterPropertiesDTO templateFilter,
+      String searchTerm, Criteria includeAllTemplatesCriteria) {
+    populateInFilter(criteria, TemplateEntityKeys.identifier, templateFilter.getTemplateIdentifiers());
+    List<Criteria> criteriaList = new ArrayList<>();
+
+    if (includeAllTemplatesCriteria != null) {
+      criteriaList.add(includeAllTemplatesCriteria);
+    }
+    Criteria nameFilter = getCaseInsensitiveFilter(TemplateEntityKeys.name, templateFilter.getTemplateNames());
+    if (nameFilter != null) {
+      criteriaList.add(nameFilter);
+    }
+    Criteria descriptionFilter = getDescriptionFilter(templateFilter.getDescription());
+    if (descriptionFilter != null) {
+      criteriaList.add(descriptionFilter);
+    }
+    Criteria searchTermCriteria = getSearchTermCriteria(searchTerm);
+    if (searchTermCriteria != null) {
+      criteriaList.add(searchTermCriteria);
+    }
+    if (criteriaList.size() != 0) {
+      criteria.andOperator(criteriaList.toArray(new Criteria[0]));
+    }
+    populateTagsFilter(criteria, templateFilter.getTags());
+    populateInFilter(criteria, TemplateEntityKeys.templateEntityType, templateFilter.getTemplateEntityTypes());
+    populateInFilter(criteria, TemplateEntityKeys.childType, templateFilter.getChildTypes());
+  }
+
+  private static void populateFilter(Criteria criteria, @NotNull TemplateFilterProperties templateFilter,
       String searchTerm, Criteria includeAllTemplatesCriteria) {
     populateInFilter(criteria, TemplateEntityKeys.identifier, templateFilter.getTemplateIdentifiers());
     List<Criteria> criteriaList = new ArrayList<>();
@@ -250,6 +321,13 @@ public class NGTemplateServiceHelper {
     criteria.and(TemplateEntityKeys.tags).in(TagMapper.convertToList(tags));
   }
 
+  private static void populateTagsFilter(Criteria criteria, List<NGTag> tags) {
+    if (isEmpty(tags)) {
+      return;
+    }
+    criteria.and(TemplateEntityKeys.tags).in(tags.stream().map(NGTag::getValue).collect(Collectors.toList()));
+  }
+
   private Criteria getCriteriaToReturnAllTemplatesAccessible(String orgIdentifier, String projectIdentifier) {
     if (EmptyPredicate.isNotEmpty(projectIdentifier)) {
       return new Criteria().orOperator(Criteria.where(TemplateEntityKeys.templateScope)
@@ -273,18 +351,19 @@ public class NGTemplateServiceHelper {
   }
 
   public Optional<TemplateEntity> getTemplate(String accountId, String orgIdentifier, String projectIdentifier,
-      String templateIdentifier, String versionLabel, boolean deleted) {
+      String templateIdentifier, String versionLabel, boolean deleted, boolean getMetadataOnly) {
     if (EmptyPredicate.isEmpty(versionLabel)) {
-      return getStableTemplate(accountId, orgIdentifier, projectIdentifier, templateIdentifier, deleted);
+      return getStableTemplate(
+          accountId, orgIdentifier, projectIdentifier, templateIdentifier, deleted, getMetadataOnly);
 
     } else {
       return getTemplateWithVersionLabel(
-          accountId, orgIdentifier, projectIdentifier, templateIdentifier, versionLabel, deleted);
+          accountId, orgIdentifier, projectIdentifier, templateIdentifier, versionLabel, deleted, getMetadataOnly);
     }
   }
 
-  public Optional<TemplateEntity> getStableTemplate(
-      String accountId, String orgIdentifier, String projectIdentifier, String templateIdentifier, boolean deleted) {
+  public Optional<TemplateEntity> getStableTemplate(String accountId, String orgIdentifier, String projectIdentifier,
+      String templateIdentifier, boolean deleted, boolean getMetadataOnly) {
     if (isOldGitSync(accountId, orgIdentifier, projectIdentifier)) {
       return templateRepository
           .findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndIsStableAndDeletedNotForOldGitSync(
@@ -292,12 +371,13 @@ public class NGTemplateServiceHelper {
     } else {
       return templateRepository
           .findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndIsStableAndDeletedNot(
-              accountId, orgIdentifier, projectIdentifier, templateIdentifier, !deleted);
+              accountId, orgIdentifier, projectIdentifier, templateIdentifier, !deleted, getMetadataOnly);
     }
   }
 
   public Optional<TemplateEntity> getTemplateWithVersionLabel(String accountId, String orgIdentifier,
-      String projectIdentifier, String templateIdentifier, String versionLabel, boolean deleted) {
+      String projectIdentifier, String templateIdentifier, String versionLabel, boolean deleted,
+      boolean getMetadataOnly) {
     if (isOldGitSync(accountId, orgIdentifier, projectIdentifier)) {
       return templateRepository
           .findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndVersionLabelAndDeletedNotForOldGitSync(
@@ -305,12 +385,12 @@ public class NGTemplateServiceHelper {
     } else {
       return templateRepository
           .findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndVersionLabelAndDeletedNot(
-              accountId, orgIdentifier, projectIdentifier, templateIdentifier, versionLabel, !deleted);
+              accountId, orgIdentifier, projectIdentifier, templateIdentifier, versionLabel, !deleted, getMetadataOnly);
     }
   }
 
-  public Optional<TemplateEntity> getLastUpdatedTemplate(
-      String accountId, String orgIdentifier, String projectIdentifier, String templateIdentifier) {
+  public Optional<TemplateEntity> getLastUpdatedTemplate(String accountId, String orgIdentifier,
+      String projectIdentifier, String templateIdentifier, boolean getMetadataOnly) {
     if (isOldGitSync(accountId, orgIdentifier, projectIdentifier)) {
       return templateRepository
           .findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndIsLastUpdatedAndDeletedNotForOldGitSync(
@@ -318,7 +398,7 @@ public class NGTemplateServiceHelper {
     } else {
       return templateRepository
           .findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndIsLastUpdatedAndDeletedNot(
-              accountId, orgIdentifier, projectIdentifier, templateIdentifier, true);
+              accountId, orgIdentifier, projectIdentifier, templateIdentifier, true, getMetadataOnly);
     }
   }
 
@@ -386,6 +466,38 @@ public class NGTemplateServiceHelper {
           "Unexpected exception occurred while updating template with identifier [%s] and versionLabel [%s], under Project[%s], Organization [%s] : %s",
           templateToUpdate.getIdentifier(), templateToUpdate.getVersionLabel(), templateToUpdate.getProjectIdentifier(),
           templateToUpdate.getOrgIdentifier(), e.getMessage()));
+    }
+  }
+
+  public Page<TemplateEntity> listTemplate(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      Criteria criteria, Pageable pageable, boolean getDistinctFromBranches) {
+    if (isOldGitSync(accountIdentifier, orgIdentifier, projectIdentifier)) {
+      if (Boolean.TRUE.equals(getDistinctFromBranches)
+          && gitSyncSdkService.isGitSyncEnabled(accountIdentifier, orgIdentifier, projectIdentifier)) {
+        return templateRepository.findAll(
+            criteria, pageable, accountIdentifier, orgIdentifier, projectIdentifier, true);
+      }
+      return templateRepository.findAll(criteria, pageable, accountIdentifier, orgIdentifier, projectIdentifier, false);
+    } else {
+      return templateRepository.findAll(accountIdentifier, orgIdentifier, projectIdentifier, criteria, pageable);
+    }
+  }
+
+  public boolean deleteTemplate(String accountId, String orgIdentifier, String projectIdentifier,
+      String templateIdentifier, TemplateEntity templateToDelete, String versionLabel, String comments) {
+    try {
+      if (isOldGitSync(templateToDelete)) {
+        templateRepository.hardDeleteTemplateForOldGitSync(templateToDelete, comments);
+      } else {
+        templateRepository.deleteTemplate(templateToDelete, comments);
+      }
+      return true;
+    } catch (Exception e) {
+      String errorMessage = format(
+          "Template with identifier [%s] and versionLabel [%s], under Project[%s], Organization [%s], Account [%s], couldn't be deleted : %s",
+          templateIdentifier, versionLabel, projectIdentifier, orgIdentifier, accountId, e.getMessage());
+      log.error(errorMessage, e);
+      return false;
     }
   }
 }

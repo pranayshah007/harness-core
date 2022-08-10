@@ -19,6 +19,7 @@ import io.harness.exception.UnexpectedException;
 import io.harness.ng.core.infrastructure.InfrastructureKind;
 import io.harness.ng.core.k8s.ServiceSpecType;
 import io.harness.rule.Owner;
+import io.harness.service.instancesynchandler.AzureSshWinrmInstanceSyncHandler;
 import io.harness.service.instancesynchandler.AzureWebAppInstanceSyncHandler;
 import io.harness.service.instancesynchandler.K8sInstanceSyncHandler;
 import io.harness.service.instancesynchandler.NativeHelmInstanceSyncHandler;
@@ -35,6 +36,7 @@ public class InstanceSyncHandlerFactoryServiceImplTest extends InstancesTestBase
   @Mock NativeHelmInstanceSyncHandler nativeHelmInstanceSyncHandler;
   @Mock ServerlessAwsLambdaInstanceSyncHandler serverlessAwsLambdaInstanceSyncHandler;
   @Mock PdcInstanceSyncHandler pdcInstanceSyncHandler;
+  @Mock AzureSshWinrmInstanceSyncHandler azureSshWinrmInstanceSyncHandler;
   @Mock AzureWebAppInstanceSyncHandler azureWebAppInstanceSyncHandler;
   @InjectMocks InstanceSyncHandlerFactoryServiceImpl instanceSyncHandlerFactoryService;
 
@@ -85,5 +87,17 @@ public class InstanceSyncHandlerFactoryServiceImplTest extends InstancesTestBase
         .isEqualTo(pdcInstanceSyncHandler);
     assertThat(instanceSyncHandlerFactoryService.getInstanceSyncHandler(ServiceSpecType.WINRM, InfrastructureKind.PDC))
         .isEqualTo(pdcInstanceSyncHandler);
+  }
+
+  @Test
+  @Owner(developers = ARVIND)
+  @Category(UnitTests.class)
+  public void getInstanceSyncHandlerTestWhenDeploymentTypeIsAzureTraditional() {
+    assertThat(instanceSyncHandlerFactoryService.getInstanceSyncHandler(
+                   ServiceSpecType.SSH, InfrastructureKind.SSH_WINRM_AZURE))
+        .isEqualTo(azureSshWinrmInstanceSyncHandler);
+    assertThat(instanceSyncHandlerFactoryService.getInstanceSyncHandler(
+                   ServiceSpecType.WINRM, InfrastructureKind.SSH_WINRM_AZURE))
+        .isEqualTo(azureSshWinrmInstanceSyncHandler);
   }
 }

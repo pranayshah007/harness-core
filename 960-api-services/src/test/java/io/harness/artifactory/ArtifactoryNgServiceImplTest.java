@@ -127,12 +127,12 @@ public class ArtifactoryNgServiceImplTest extends CategoryTest {
 
     Map<String, String> resultmaven = artifactoryNgService.getRepositories(artifactoryConfigRequest, "maven");
 
-    verify(artifactoryClient, times(2)).getRepositories(any(), any());
     assertThat(resultmaven).isEqualTo(repositories);
-    doReturn(repositories).when(artifactoryClient).getRepositoriesByRepoType(any(), any());
+
     Map<String, String> resultgeneric = artifactoryNgService.getRepositories(artifactoryConfigRequest, "generic");
-    verify(artifactoryClient, times(1)).getRepositoriesByRepoType(any(), any());
+
     assertThat(resultgeneric).isEqualTo(repositories);
+    verify(artifactoryClient, times(3)).getRepositories(any(), any());
   }
 
   @Test

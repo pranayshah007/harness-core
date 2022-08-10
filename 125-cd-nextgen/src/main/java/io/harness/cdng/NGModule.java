@@ -7,10 +7,8 @@
 
 package io.harness.cdng;
 
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
-import com.google.inject.AbstractModule;
-import com.google.inject.multibindings.MapBinder;
-import com.google.inject.name.Names;
+import static io.harness.annotations.dev.HarnessTeam.CDP;
+
 import io.harness.WalkTreeModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.artifact.resources.acr.service.AcrResourceService;
@@ -39,6 +37,8 @@ import io.harness.cdng.envGroup.mappers.EnvironmentGroupFilterPropertiesMapper;
 import io.harness.cdng.envGroup.services.EnvironmentGroupService;
 import io.harness.cdng.envGroup.services.EnvironmentGroupServiceImpl;
 import io.harness.cdng.environment.EnvironmentFilterPropertiesMapper;
+import io.harness.cdng.execution.service.StageExecutionInfoService;
+import io.harness.cdng.execution.service.StageExecutionInfoServiceImpl;
 import io.harness.cdng.gitops.ClusterServiceImpl;
 import io.harness.cdng.gitops.service.ClusterService;
 import io.harness.cdng.instance.info.InstanceInfoService;
@@ -49,8 +49,6 @@ import io.harness.cdng.k8s.resources.azure.service.AzureResourceService;
 import io.harness.cdng.k8s.resources.azure.service.AzureResourceServiceImpl;
 import io.harness.cdng.k8s.resources.gcp.service.GcpResourceService;
 import io.harness.cdng.k8s.resources.gcp.service.impl.GcpResourceServiceImpl;
-import io.harness.cdng.rollback.service.RollbackDataService;
-import io.harness.cdng.rollback.service.RollbackDataServiceImpl;
 import io.harness.cdng.servicenow.resources.service.ServiceNowResourceService;
 import io.harness.cdng.servicenow.resources.service.ServiceNowResourceServiceImpl;
 import io.harness.cdng.usage.impl.CDLicenseUsageImpl;
@@ -73,13 +71,15 @@ import io.harness.ng.core.serviceoverride.services.ServiceOverrideService;
 import io.harness.ng.core.serviceoverride.services.impl.ServiceOverrideServiceImpl;
 import io.harness.service.instance.InstanceService;
 import io.harness.service.instance.InstanceServiceImpl;
-import lombok.extern.slf4j.Slf4j;
 
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import com.google.inject.AbstractModule;
+import com.google.inject.multibindings.MapBinder;
+import com.google.inject.name.Names;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicReference;
-
-import static io.harness.annotations.dev.HarnessTeam.CDP;
+import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(CDP)
 @Slf4j
@@ -132,7 +132,7 @@ public class NGModule extends AbstractModule {
                 .setNameFormat("Cd-ng-telemetry-publisher-Thread-%d")
                 .setPriority(Thread.NORM_PRIORITY)
                 .build()));
-    bind(RollbackDataService.class).to(RollbackDataServiceImpl.class);
+    bind(StageExecutionInfoService.class).to(StageExecutionInfoServiceImpl.class);
     bind(GARResourceService.class).to(GARResourceServiceImpl.class);
     MapBinder<String, FilterPropertiesMapper> filterPropertiesMapper =
         MapBinder.newMapBinder(binder(), String.class, FilterPropertiesMapper.class);

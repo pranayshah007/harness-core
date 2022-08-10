@@ -114,7 +114,8 @@ public class GithubServiceImpl implements GithubService {
         json.put("message", ((LinkedHashMap) response.body()).get("message"));
         return json;
       } else {
-        return null;
+        log.warn("Merge Request for merging PR returned with response code {}", prNumber, response.code());
+        return new JSONObject();
       }
     } catch (Exception e) {
       log.error("Failed to merge PR for github url {} and prNum {} ", apiUrl, prNumber, e);

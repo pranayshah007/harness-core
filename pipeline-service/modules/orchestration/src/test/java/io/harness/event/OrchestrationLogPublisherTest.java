@@ -10,6 +10,7 @@ package io.harness.event;
 import static io.harness.data.structure.HarnessStringUtils.emptyIfNull;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.ALEXEI;
+import static io.harness.rule.OwnerRule.FERNANDOD;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
@@ -21,6 +22,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.OrchestrationEventLog;
 import io.harness.category.element.UnitTests;
+import io.harness.engine.observers.NodeStartInfo;
 import io.harness.engine.observers.NodeUpdateInfo;
 import io.harness.engine.observers.StepDetailsUpdateInfo;
 import io.harness.eventsframework.api.Producer;
@@ -38,6 +40,7 @@ import com.google.common.collect.ImmutableMap;
 import java.sql.Date;
 import java.time.Duration;
 import java.time.OffsetDateTime;
+import java.util.Map;
 import org.apache.commons.lang3.reflect.FieldUtils;
 import org.junit.Before;
 import org.junit.Test;
@@ -125,6 +128,55 @@ public class OrchestrationLogPublisherTest extends OrchestrationTestBase {
 
     publisher.onStepDetailsUpdate(stepDetailsUpdateInfo);
     shouldTestOnNodeInternally(OrchestrationEventType.STEP_DETAILS_UPDATE);
+  }
+
+  @Test
+  @Owner(developers = FERNANDOD)
+  @Category(UnitTests.class)
+  public void verifyOnStepInputsAdd() {
+    StepDetailsUpdateInfo stepDetailsUpdateInfo =
+        StepDetailsUpdateInfo.builder().planExecutionId(planExecutionId).nodeExecutionId(nodeExecutionId).build();
+
+    OrchestrationEventLog orchestrationEventLog = getOrchestrationEventLog(OrchestrationEventType.STEP_INPUTS_UPDATE);
+
+    when(repository.save(any())).thenReturn(orchestrationEventLog);
+
+    publisher.onStepInputsAdd(stepDetailsUpdateInfo);
+    shouldTestOnNodeInternally(OrchestrationEventType.STEP_INPUTS_UPDATE);
+  }
+
+  @Test
+  @Owner(developers = FERNANDOD)
+  @Category(UnitTests.class)
+  public void verifyOnNodeStart() {
+    NodeStartInfo nodeStartInfo =
+        NodeStartInfo.builder()
+            .nodeExecution(NodeExecution.builder()
+                               .uuid(nodeExecutionId)
+                               .ambiance(Ambiance.newBuilder().setPlanExecutionId(planExecutionId).build())
+                               .build())
+            .build();
+
+    OrchestrationEventLog orchestrationEventLog = getOrchestrationEventLog(OrchestrationEventType.NODE_EXECUTION_START);
+
+    when(repository.save(any())).thenReturn(orchestrationEventLog);
+
+    publisher.onNodeStart(nodeStartInfo);
+    shouldTestOnNodeInternally(OrchestrationEventType.NODE_EXECUTION_START);
+  }
+
+  @Test
+  @Owner(developers = FERNANDOD)
+  @Category(UnitTests.class)
+  public void shouldSendLogEvent() {
+    publisher.sendLogEvent(planExecutionId);
+
+    ArgumentCaptor<Message> messageArgumentCaptor = ArgumentCaptor.forClass(Message.class);
+    verify(producer).send(messageArgumentCaptor.capture());
+
+    Message message = messageArgumentCaptor.getValue();
+    assertThat(message.getData()).isEqualTo(orchestrationLogEvent.toByteString());
+    assertThat(message.getMetadataMap()).containsOnly(Map.entry("planExecutionId", planExecutionId));
   }
 
   private void shouldTestOnNodeInternally(OrchestrationEventType eventType) {

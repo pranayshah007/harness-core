@@ -24,11 +24,13 @@ import io.harness.ngtriggers.service.NGTriggerYamlSchemaService;
 import io.harness.ngtriggers.service.impl.NGTriggerServiceImpl;
 import io.harness.ngtriggers.service.impl.NGTriggerWebhookRegistrationServiceImpl;
 import io.harness.ngtriggers.service.impl.NGTriggerYamlSchemaServiceImpl;
+import io.harness.ngtriggers.service.impl.SecretDecryptorViaNg;
 import io.harness.ngtriggers.utils.AwsCodeCommitDataObtainer;
 import io.harness.ngtriggers.utils.GitProviderBaseDataObtainer;
 import io.harness.ngtriggers.utils.SCMDataObtainer;
 import io.harness.pipeline.remote.PipelineRemoteClientModule;
 import io.harness.remote.client.ServiceHttpClientConfig;
+import io.harness.secrets.SecretDecryptor;
 import io.harness.webhook.WebhookConfigProvider;
 
 import com.google.inject.AbstractModule;
@@ -72,6 +74,7 @@ public class NGTriggersModule extends AbstractModule {
     bind(NGTriggerYamlSchemaService.class).to(NGTriggerYamlSchemaServiceImpl.class);
     bind(NGTriggerResource.class).to(NGTriggerResourceImpl.class);
     bind(NGTriggerWebhookConfigResource.class).to(NGTriggerWebhookConfigResourceImpl.class);
+    bind(SecretDecryptor.class).to(SecretDecryptorViaNg.class);
     bind(WebhookConfigProvider.class).toInstance(new WebhookConfigProvider() {
       @Override
       public String getCustomApiBaseUrl() {

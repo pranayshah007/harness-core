@@ -138,6 +138,11 @@ public class ExecutionQueryHelper {
         utils.setTimeFilter(field, timeFilter);
       }
 
+      if (filter.getApplicationId() != null) {
+        field = query.field(WorkflowExecutionKeys.appId);
+        field.equal(filter.getApplicationId());
+      }
+
       if (filter.getTag() != null) {
         QLDeploymentTagFilter tagFilter = filter.getTag();
         List<QLTagInput> tags = tagFilter.getTags();
@@ -164,6 +169,18 @@ public class ExecutionQueryHelper {
             log.error("EntityType {} not supported in execution query", tagFilter.getEntityType());
             throw new InvalidRequestException("Error while compiling execution query", WingsException.USER);
         }
+      }
+
+      if (filter.getArtifactBuildNo() != null) {
+        field = query.field(WorkflowExecutionKeys.executionArgs_artifacts_buildNo);
+        QLIdFilter artifactBuildNoFilter = filter.getArtifactBuildNo();
+        utils.setIdFilter(field, artifactBuildNoFilter);
+      }
+
+      if (filter.getHelmChartVersion() != null) {
+        field = query.field(WorkflowExecutionKeys.executionArgs_helmCharts_version);
+        QLIdFilter helmChartVersionFilter = filter.getHelmChartVersion();
+        utils.setIdFilter(field, helmChartVersionFilter);
       }
     });
   }

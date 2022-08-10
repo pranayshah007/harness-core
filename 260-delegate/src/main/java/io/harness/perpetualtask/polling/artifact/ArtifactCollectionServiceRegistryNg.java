@@ -16,6 +16,7 @@ import io.harness.delegate.task.artifacts.azure.AcrArtifactTaskHandler;
 import io.harness.delegate.task.artifacts.docker.DockerArtifactTaskHandler;
 import io.harness.delegate.task.artifacts.ecr.EcrArtifactTaskHandler;
 import io.harness.delegate.task.artifacts.gcr.GcrArtifactTaskHandler;
+import io.harness.delegate.task.artifacts.jenkins.JenkinsArtifactTaskHandler;
 import io.harness.delegate.task.artifacts.nexus.NexusArtifactTaskHandler;
 import io.harness.delegate.task.artifacts.s3.S3ArtifactTaskHandler;
 import io.harness.exception.InvalidRequestException;
@@ -51,6 +52,8 @@ public class ArtifactCollectionServiceRegistryNg {
         return AcrArtifactTaskHandler.class;
       case AMAZONS3:
         return S3ArtifactTaskHandler.class;
+      case JENKINS:
+        return JenkinsArtifactTaskHandler.class;
       default:
         throw new InvalidRequestException("Unknown artifact source type: " + artifactSourceType);
     }

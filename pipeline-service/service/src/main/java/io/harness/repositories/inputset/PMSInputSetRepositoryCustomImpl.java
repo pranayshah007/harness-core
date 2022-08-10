@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Scope;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.git.model.ChangeType;
 import io.harness.gitaware.dto.GitContextRequestParams;
@@ -116,6 +117,7 @@ public class PMSInputSetRepositoryCustomImpl implements PMSInputSetRepositoryCus
       entityToSave.setConnectorRef(gitEntityInfo.getConnectorRef());
       entityToSave.setRepo(gitEntityInfo.getRepoName());
       entityToSave.setFilePath(gitEntityInfo.getFilePath());
+      setRepoUrlForSave(entityToSave);
       gitAwareEntityHelper.createEntityOnGit(entityToSave, yamlToPush, scope);
     } else {
       entityToSave.setStoreType(StoreType.INLINE);
@@ -142,6 +144,7 @@ public class PMSInputSetRepositoryCustomImpl implements PMSInputSetRepositoryCus
     GitEntityInfo gitEntityInfo = GitAwareContextHelper.getGitRequestParamsInfo();
     String yamlToPush = entityToSave.getYaml();
     entityToSave.setStoreType(StoreType.REMOTE);
+    setRepoUrlForSave(entityToSave);
     entityToSave.setConnectorRef(gitEntityInfo.getConnectorRef());
     entityToSave.setRepo(gitEntityInfo.getRepoName());
     entityToSave.setFilePath(gitEntityInfo.getFilePath());
@@ -381,5 +384,24 @@ public class PMSInputSetRepositoryCustomImpl implements PMSInputSetRepositoryCus
         .withMaxAttempts(MAX_ATTEMPTS)
         .onFailedAttempt(event -> log.info(failedAttemptMessage, event.getAttemptCount(), event.getLastFailure()))
         .onFailure(event -> log.error(failureMessage, event.getAttemptCount(), event.getFailure()));
+  }
+
+  @Override
+  public boolean checkIfInputSetWithGivenFilePathExists(String accountIdentifier, String repoURL, String filePath) {
+    Criteria criteria = Criteria.where(InputSetEntityKeys.accountId)
+                            .is(accountIdentifier)
+                            .and(InputSetEntityKeys.repoURL)
+                            .is(repoURL)
+                            .and(InputSetEntityKeys.filePath)
+                            .is(filePath);
+    List<InputSetEntity> listOfInputSetEntities = findAll(criteria);
+    return !listOfInputSetEntities.isEmpty();
+  }
+
+  void setRepoUrlForSave(InputSetEntity entityToSave) {
+    if (EmptyPredicate.isEmpty(entityToSave.getRepoURL())) {
+      entityToSave.setRepoURL(gitAwareEntityHelper.getRepoUrl(
+          entityToSave.getAccountId(), entityToSave.getOrgIdentifier(), entityToSave.getProjectIdentifier()));
+    }
   }
 }

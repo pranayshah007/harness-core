@@ -222,7 +222,9 @@ public class StripeHelperImpl implements StripeHelper {
     creationParamsBuilder.setCustomer(subscriptionParams.getCustomerId())
         .setPaymentBehavior(SubscriptionCreateParams.PaymentBehavior.DEFAULT_INCOMPLETE)
         .addAllExpand(subscriptionExpandList)
-        .setProrationBehavior(SubscriptionCreateParams.ProrationBehavior.ALWAYS_INVOICE);
+        .setProrationBehavior(SubscriptionCreateParams.ProrationBehavior.ALWAYS_INVOICE)
+        .setCollectionMethod(SubscriptionCreateParams.CollectionMethod.SEND_INVOICE)
+        .setDaysUntilDue(7L);
 
     // Register subscription items
     subscriptionParams.getItems().forEach(item

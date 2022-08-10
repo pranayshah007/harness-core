@@ -18,6 +18,7 @@ import static io.harness.polling.contracts.Type.ECR;
 import static io.harness.polling.contracts.Type.GCR;
 import static io.harness.polling.contracts.Type.GCS_HELM;
 import static io.harness.polling.contracts.Type.HTTP_HELM;
+import static io.harness.polling.contracts.Type.JENKINS;
 import static io.harness.polling.contracts.Type.NEXUS3;
 import static io.harness.polling.contracts.Type.S3_HELM;
 
@@ -49,6 +50,7 @@ import io.harness.polling.bean.artifact.ArtifactoryRegistryArtifactInfo;
 import io.harness.polling.bean.artifact.DockerHubArtifactInfo;
 import io.harness.polling.bean.artifact.EcrArtifactInfo;
 import io.harness.polling.bean.artifact.GcrArtifactInfo;
+import io.harness.polling.bean.artifact.JenkinsArtifactInfo;
 import io.harness.polling.bean.artifact.NexusRegistryArtifactInfo;
 import io.harness.polling.bean.artifact.S3ArtifactInfo;
 import io.harness.polling.bean.manifest.HelmChartManifestInfo;
@@ -304,6 +306,10 @@ public class PollingResponseHandler {
       case AMAZONS3:
         polledResponseResultBuilder.name(((S3ArtifactInfo) artifactInfo).getBucketName());
         polledResponseResultBuilder.type(AMAZON_S3);
+        break;
+      case JENKINS:
+        polledResponseResultBuilder.name(((JenkinsArtifactInfo) artifactInfo).getJobName());
+        polledResponseResultBuilder.type(JENKINS);
         break;
       default:
         throw new InvalidRequestException("Unsupported Artifact Type " + artifactInfo.getType().getDisplayName());

@@ -12,6 +12,7 @@ import io.harness.cistatus.StatusCreationResponse;
 import retrofit2.Call;
 import retrofit2.http.Header;
 import retrofit2.http.POST;
+import retrofit2.http.PUT;
 import retrofit2.http.Path;
 import retrofit2.http.Query;
 
@@ -19,5 +20,9 @@ public interface GitlabRestClient {
   @POST("v4/projects/{id}/statuses/{sha}/")
   Call<StatusCreationResponse> createStatus(@Header("Authorization") String authorization, @Path("id") String id,
       @Path("sha") String sha, @Query("state") String state, @Query("context") String context,
-      @Query("description") String description);
+      @Query("description") String description, @Query("target_url") String target_url);
+
+  @PUT("v4/projects/{project}/merge_requests/{prNumber}/merge?should_remove_source_branch=true")
+  Call<Object> mergePR(
+      @Header("PRIVATE-TOKEN") String token, @Path("project") String project, @Path("prNumber") String prNumber);
 }

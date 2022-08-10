@@ -347,6 +347,13 @@ public class InviteServiceImpl implements InviteService {
     }
   }
 
+  private void checkUserLimit(String accountId, String emailId) {
+    boolean limitHasBeenReached = RestClientUtils.getResponse(userClient.checkUserLimit(accountId, emailId));
+    if (limitHasBeenReached) {
+      throw new InvalidRequestException("The user count limit has been reached in this account");
+    }
+  }
+
   private void createAndInviteNonPasswordUser(
       String accountIdentifier, String jwtToken, String email, boolean isScimInvite) {
     UserInviteDTO userInviteDTO =
@@ -508,6 +515,7 @@ public class InviteServiceImpl implements InviteService {
   }
 
   private InviteOperationResponse newInvite(Invite invite, boolean[] scimLdapArray) {
+    checkUserLimit(invite.getAccountIdentifier(), invite.getEmail());
     Invite savedInvite = inviteRepository.save(invite);
     outboxService.save(new UserInviteCreateEvent(
         invite.getAccountIdentifier(), invite.getOrgIdentifier(), invite.getProjectIdentifier(), writeDTO(invite)));

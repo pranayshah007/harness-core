@@ -25,6 +25,8 @@ import io.harness.beans.FileContentBatchResponse;
 import io.harness.category.element.UnitTests;
 import io.harness.connector.service.scm.ScmDelegateClient;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
+import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketConnectorDTO;
+import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketUsernameTokenApiAccessDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubTokenSpecDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabConnectorDTO;
@@ -99,6 +101,7 @@ public class ScmFetchFilesHelperTest extends WingsBaseTest {
     GitFileConfig gitFileConfigDotRootPath = GitFileConfig.builder().filePath(".").build();
     doReturn(GithubConnectorDTO.builder().build()).when(spyScmFetchFilesHelper).getScmConnector(any());
     doReturn(GitlabConnectorDTO.builder().build()).when(spyScmFetchFilesHelper).getScmConnector(any());
+    doReturn(BitbucketConnectorDTO.builder().build()).when(spyScmFetchFilesHelper).getScmConnector(any());
     when(scmDelegateClient.processScmRequest(any()))
         .thenReturn(FileContentBatchResponse.builder()
                         .fileBatchContentResponse(FileBatchContentResponse.newBuilder()
@@ -212,6 +215,9 @@ public class ScmFetchFilesHelperTest extends WingsBaseTest {
     assertThat(scmFetchFilesHelper.shouldUseScm(
                    true, GitConfig.builder().sshSettingAttribute(null).providerType(ProviderType.GIT).build()))
         .isFalse();
+    assertThat(scmFetchFilesHelper.shouldUseScm(
+                   true, GitConfig.builder().sshSettingAttribute(null).providerType(ProviderType.BITBUCKET).build()))
+        .isTrue();
     assertThat(scmFetchFilesHelper.shouldUseScm(false,
                    GitConfig.builder()
                        .sshSettingAttribute(SettingAttribute.Builder.aSettingAttribute().build())
@@ -224,11 +230,20 @@ public class ScmFetchFilesHelperTest extends WingsBaseTest {
                        .providerType(ProviderType.GITLAB)
                        .build()))
         .isFalse();
+    assertThat(scmFetchFilesHelper.shouldUseScm(false,
+                   GitConfig.builder()
+                       .sshSettingAttribute(SettingAttribute.Builder.aSettingAttribute().build())
+                       .providerType(ProviderType.BITBUCKET)
+                       .build()))
+        .isFalse();
     assertThat(scmFetchFilesHelper.shouldUseScm(
                    false, GitConfig.builder().sshSettingAttribute(null).providerType(ProviderType.GITHUB).build()))
         .isFalse();
     assertThat(scmFetchFilesHelper.shouldUseScm(
                    false, GitConfig.builder().sshSettingAttribute(null).providerType(ProviderType.GITLAB).build()))
+        .isFalse();
+    assertThat(scmFetchFilesHelper.shouldUseScm(
+                   false, GitConfig.builder().sshSettingAttribute(null).providerType(ProviderType.BITBUCKET).build()))
         .isFalse();
   }
 
@@ -260,5 +275,23 @@ public class ScmFetchFilesHelperTest extends WingsBaseTest {
 
     assertThat(scmFetchFilesHelper.getScmConnector(GitConfig.builder().providerType(ProviderType.GIT).build()))
         .isNull();
+
+    ScmConnector bitBucketScmConnector = scmFetchFilesHelper.getScmConnector(GitConfig.builder()
+                                                                                 .repoUrl("BitbucketURL")
+                                                                                 .password("password".toCharArray())
+                                                                                 .username("username")
+                                                                                 .providerType(ProviderType.BITBUCKET)
+                                                                                 .build());
+    assertThat(bitBucketScmConnector.getUrl()).isEqualTo("BitbucketURL");
+    assertThat(
+        ((BitbucketUsernameTokenApiAccessDTO) ((BitbucketConnectorDTO) bitBucketScmConnector).getApiAccess().getSpec())
+            .getTokenRef()
+            .getDecryptedValue())
+        .isEqualTo("password".toCharArray());
+    assertThat(
+        ((BitbucketUsernameTokenApiAccessDTO) ((BitbucketConnectorDTO) bitBucketScmConnector).getApiAccess().getSpec())
+            .getUsernameRef()
+            .getDecryptedValue())
+        .isEqualTo("username".toCharArray());
   }
 }

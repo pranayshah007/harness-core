@@ -800,7 +800,7 @@ public class ArtifactStreamServiceImpl implements ArtifactStreamService {
       deletePerpetualTask(artifactStream);
     } else {
       if (shouldDeleteArtifactsOnSourceChanged(existingArtifactStream, finalArtifactStream)
-          || shouldDeleteArtifactsOnServerChanged(existingArtifactStream)) {
+          || shouldDeleteArtifactsOnServerChanged(existingArtifactStream, finalArtifactStream)) {
         deleteArtifacts(accountId, finalArtifactStream);
       } else {
         resetPerpetualTask(finalArtifactStream);
@@ -1114,10 +1114,11 @@ public class ArtifactStreamServiceImpl implements ArtifactStreamService {
     }
   }
 
-  private boolean shouldDeleteArtifactsOnServerChanged(ArtifactStream oldArtifactStream) {
+  private boolean shouldDeleteArtifactsOnServerChanged(
+      ArtifactStream oldArtifactStream, ArtifactStream updatedArtifactStream) {
     ArtifactStreamType artifactStreamType = ArtifactStreamType.valueOf(oldArtifactStream.getArtifactStreamType());
     if (artifactStreamType != CUSTOM) {
-      return oldArtifactStream.artifactServerChanged(oldArtifactStream);
+      return oldArtifactStream.artifactServerChanged(updatedArtifactStream);
     }
     return false;
   }

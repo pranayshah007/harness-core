@@ -89,7 +89,7 @@ public class ScmPathFilterEvaluationTask extends AbstractDelegateRunnableTask {
       GitlabConnectorDTO gitlabConnectorDTO = (GitlabConnectorDTO) connector;
       secretDecryptionService.decrypt(
           gitlabConnectorDTO.getApiAccess().getSpec(), filterQueryParams.getEncryptedDataDetails());
-    } else if (BitbucketConnectorDTO.class.isAssignableFrom(BitbucketConnectorDTO.class)) {
+    } else if (BitbucketConnectorDTO.class.isAssignableFrom(connector.getClass())) {
       BitbucketConnectorDTO bitbucketConnectorDTO = (BitbucketConnectorDTO) connector;
       secretDecryptionService.decrypt(
           bitbucketConnectorDTO.getApiAccess().getSpec(), filterQueryParams.getEncryptedDataDetails());

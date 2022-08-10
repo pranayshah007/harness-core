@@ -382,6 +382,8 @@ public interface UserService extends OwnedByAccount {
    */
   InviteOperationResponse completeInvite(UserInvite userInvite);
 
+  boolean checkIfUserLimitHasReached(String accountId, String email);
+
   /**
    * Complete NG invite and create user
    *

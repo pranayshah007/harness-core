@@ -11,6 +11,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.InvalidRequestException;
 import io.harness.expression.EngineExpressionEvaluator;
+import io.harness.expression.ExpressionMode;
 
 import com.google.inject.Inject;
 import com.google.inject.Injector;
@@ -22,14 +23,14 @@ public class InputSetValidatorFactory {
   @Inject private Injector injector;
 
   public RuntimeValidator obtainValidator(InputSetValidator inputSetValidator,
-      EngineExpressionEvaluator engineExpressionEvaluator, boolean skipUnresolvedExpressionsCheck) {
+      EngineExpressionEvaluator engineExpressionEvaluator, ExpressionMode expressionMode) {
     RuntimeValidator runtimeValidator;
     switch (inputSetValidator.getValidatorType()) {
       case ALLOWED_VALUES:
-        runtimeValidator = new AllowedValuesValidator(engineExpressionEvaluator, skipUnresolvedExpressionsCheck);
+        runtimeValidator = new AllowedValuesValidator(engineExpressionEvaluator, expressionMode);
         break;
       case REGEX:
-        runtimeValidator = new RegexValidator(engineExpressionEvaluator, skipUnresolvedExpressionsCheck);
+        runtimeValidator = new RegexValidator(engineExpressionEvaluator, expressionMode);
         break;
       default:
         throw new InvalidRequestException(

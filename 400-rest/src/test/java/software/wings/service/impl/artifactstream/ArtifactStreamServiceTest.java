@@ -20,6 +20,7 @@ import static io.harness.rule.OwnerRule.ANIL;
 import static io.harness.rule.OwnerRule.DEEPAK_PUTHRAYA;
 import static io.harness.rule.OwnerRule.GARVIT;
 import static io.harness.rule.OwnerRule.INDER;
+import static io.harness.rule.OwnerRule.LUCAS_SALES;
 import static io.harness.rule.OwnerRule.PRABU;
 import static io.harness.rule.OwnerRule.ROHITKARELIA;
 import static io.harness.rule.OwnerRule.SRINIVAS;
@@ -438,6 +439,23 @@ public class ArtifactStreamServiceTest extends WingsBaseTest {
         .build();
   }
 
+  @Test
+  @Owner(developers = LUCAS_SALES)
+  @Category(UnitTests.class)
+  public void shouldUpdateSettingIdOnArtifactStreamAndDeleteArtifacts() {
+    JenkinsArtifactStream jenkinsArtifactStream = getJenkinsStream();
+    ArtifactStream savedArtifactSteam = createArtifactStream(jenkinsArtifactStream);
+    JenkinsArtifactStream savedJenkinsArtifactStream = validateJenkinsArtifactStream(savedArtifactSteam, APP_ID);
+    savedJenkinsArtifactStream.setSettingId(ANOTHER_SETTING_ID);
+
+    ArtifactStream updatedArtifactStream = artifactStreamService.update(savedJenkinsArtifactStream);
+
+    verify(appService, times(2)).getAccountIdByAppId(APP_ID);
+    verify(yamlPushService, times(2))
+        .pushYamlChangeSet(any(String.class), any(), any(ArtifactStream.class), any(), anyBoolean(), anyBoolean());
+    verify(artifactService).deleteByArtifactStreamId(APP_ID, savedJenkinsArtifactStream.getUuid());
+    assertThat(updatedArtifactStream.getCollectionStatus()).isEqualTo(UNSTABLE.name());
+  }
   @Test
   @Owner(developers = SRINIVAS)
   @Category(UnitTests.class)
