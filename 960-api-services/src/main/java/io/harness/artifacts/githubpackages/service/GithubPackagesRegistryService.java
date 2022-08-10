@@ -27,12 +27,12 @@ public interface GithubPackagesRegistryService {
   /**
    * Get last successful build
    */
-  BuildDetails getLastSuccessfulBuildFromRegex(
-      GithubPackagesInternalConfig toGithubPackagesInternalConfig, String packageName, String versionRegex);
+  BuildDetails getLastSuccessfulBuildFromRegex(GithubPackagesInternalConfig toGithubPackagesInternalConfig,
+      String packageName, String packageType, String versionRegex);
 
   /**
    * Get build
    */
-  BuildDetails getBuild(
-      GithubPackagesInternalConfig toGithubPackagesInternalConfig, String packageName, String version);
+  BuildDetails getBuild(GithubPackagesInternalConfig toGithubPackagesInternalConfig, String packageName,
+      String packageType, String version);
 }

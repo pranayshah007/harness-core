@@ -10,6 +10,7 @@ package io.harness.artifacts.githubpackages.client;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.artifacts.githubpackages.beans.GithubPackagesVersion;
 import io.harness.artifacts.githubpackages.beans.GithubPackagesVersionsResponse;
 
 import retrofit2.Call;
@@ -23,4 +24,10 @@ public interface GithubPackagesRestClient {
   Call<GithubPackagesVersionsResponse> listVersionsForPackages(@Header("Authorization") String bearerAuthHeader,
       @Path(value = "packageName", encoded = true) String packageName,
       @Path(value = "packageType", encoded = true) String packageType);
+
+  @GET("/user/packages/{packageType}/{packageName}/versions/{versionId}")
+  Call<GithubPackagesVersion> getVersion(@Header("Authorization") String bearerAuthHeader,
+      @Path(value = "packageName", encoded = true) String packageName,
+      @Path(value = "packageType", encoded = true) String packageType,
+      @Path(value = "packageType", encoded = true) Integer versionId);
 }

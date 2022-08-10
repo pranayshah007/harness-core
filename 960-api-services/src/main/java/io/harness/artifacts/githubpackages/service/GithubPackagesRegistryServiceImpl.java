@@ -15,6 +15,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.artifact.ArtifactMetadataKeys;
 import io.harness.artifacts.comparator.BuildDetailsComparatorDescending;
 import io.harness.artifacts.githubpackages.beans.GithubPackagesInternalConfig;
+import io.harness.artifacts.githubpackages.beans.GithubPackagesVersion;
 import io.harness.artifacts.githubpackages.beans.GithubPackagesVersionsResponse;
 import io.harness.artifacts.githubpackages.client.GithubPackagesRestClient;
 import io.harness.artifacts.githubpackages.client.GithubPackagesRestClientFactory;
@@ -60,19 +61,71 @@ public class GithubPackagesRegistryServiceImpl implements GithubPackagesRegistry
           new ArtifactServerException(ExceptionUtils.getMessage(e), e, WingsException.USER));
     }
 
+    // Version Regex Filtering - TODO
+
     return buildDetails.stream().sorted(new BuildDetailsComparatorAscending()).collect(toList());
   }
 
   @Override
-  public BuildDetails getLastSuccessfulBuildFromRegex(
-      GithubPackagesInternalConfig toGithubPackagesInternalConfig, String packageName, String versionRegex) {
-    return null;
+  public BuildDetails getLastSuccessfulBuildFromRegex(GithubPackagesInternalConfig githubPackagesInternalConfig,
+      String packageName, String packageType, String versionRegex) {
+    List<BuildDetails> buildDetails;
+
+    try {
+      buildDetails = getBuildDetails(githubPackagesInternalConfig, packageName, packageType);
+    } catch (GithubPackagesServerRuntimeException ex) {
+      throw ex;
+    } catch (Exception e) {
+      throw NestedExceptionUtils.hintWithExplanationException("Could not fetch the version for the package",
+          "Check if the package and the version exists and if the permissions are scoped for the authenticated user",
+          new ArtifactServerException(ExceptionUtils.getMessage(e), e, WingsException.USER));
+    }
+
+    BuildDetails build = buildDetails.get(0);
+
+    return build;
   }
 
   @Override
-  public BuildDetails getBuild(
-      GithubPackagesInternalConfig toGithubPackagesInternalConfig, String packageName, String version) {
-    return null;
+  public BuildDetails getBuild(GithubPackagesInternalConfig githubPackagesInternalConfig, String packageName,
+      String packageType, String version) {
+    BuildDetails build = null;
+
+    try {
+      build = getBuildForAVersion(githubPackagesInternalConfig, packageName, packageType, version);
+    } catch (GithubPackagesServerRuntimeException ex) {
+      throw ex;
+    } catch (Exception e) {
+      throw NestedExceptionUtils.hintWithExplanationException("Could not fetch the version for the package",
+          "Check if the package and the version exists and if the permissions are scoped for the authenticated user",
+          new ArtifactServerException(ExceptionUtils.getMessage(e), e, WingsException.USER));
+    }
+
+    return build;
+  }
+
+  private BuildDetails getBuildForAVersion(GithubPackagesInternalConfig githubPackagesInternalConfig,
+      String packageName, String packageType, String version) throws IOException {
+    GithubPackagesRestClient githubPackagesRestClient =
+        githubPackagesRestClientFactory.getGithubPackagesRestClient(githubPackagesInternalConfig);
+
+    String basicAuthHeader = Credentials.basic(
+        githubPackagesInternalConfig.getUsername(), githubPackagesInternalConfig.getPassword().toString());
+
+    Integer versionId = Integer.parseInt(version);
+
+    Response<GithubPackagesVersion> response =
+        githubPackagesRestClient.getVersion(basicAuthHeader, packageName, packageType, versionId).execute();
+
+    GithubPackagesVersion githubPackagesVersion = response.body();
+
+    BuildDetails build = new BuildDetails();
+
+    build.setUiDisplayName("Tag# " + githubPackagesVersion.getVersion());
+    build.setNumber(githubPackagesVersion.getVersion());
+    build.setBuildDisplayName(packageName);
+
+    return build;
   }
 
   private List<BuildDetails> getBuildDetails(GithubPackagesInternalConfig githubPackagesInternalConfig,
@@ -84,8 +137,6 @@ public class GithubPackagesRegistryServiceImpl implements GithubPackagesRegistry
         githubPackagesInternalConfig.getUsername(), githubPackagesInternalConfig.getPassword().toString());
 
     List<BuildDetails> buildDetails = new ArrayList<>();
-
-    String token = null;
 
     Response<GithubPackagesVersionsResponse> response =
         githubPackagesRestClient.listVersionsForPackages(basicAuthHeader, packageName, packageType).execute();

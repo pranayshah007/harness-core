@@ -19,10 +19,8 @@ import software.wings.helpers.ext.jenkins.BuildDetails;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import com.google.inject.name.Named;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -37,7 +35,6 @@ public class GithubPackagesArtifactTaskHandler
 
   private final SecretDecryptionService secretDecryptionService;
   private final GithubPackagesRegistryService githubPackagesRegistryService;
-  @Inject @Named("githubPackagesExecutor") private ExecutorService executor;
 
   public ArtifactTaskExecutionResponse getBuilds(GithubPackagesArtifactDelegateRequest attributes) {
     List<BuildDetails> builds = githubPackagesRegistryService.getBuilds(
@@ -59,12 +56,12 @@ public class GithubPackagesArtifactTaskHandler
     if (isRegex(attributesRequest)) {
       lastSuccessfulBuild = githubPackagesRegistryService.getLastSuccessfulBuildFromRegex(
           GithubPackagesRequestResponseMapper.toGithubPackagesInternalConfig(attributesRequest),
-          attributesRequest.getPackageName(), attributesRequest.getVersionRegex());
+          attributesRequest.getPackageName(), attributesRequest.getPackageType(), attributesRequest.getVersionRegex());
 
     } else {
       lastSuccessfulBuild = githubPackagesRegistryService.getBuild(
           GithubPackagesRequestResponseMapper.toGithubPackagesInternalConfig(attributesRequest),
-          attributesRequest.getPackageName(), attributesRequest.getVersion());
+          attributesRequest.getPackageName(), attributesRequest.getPackageType(), attributesRequest.getVersion());
     }
 
     GithubPackagesArtifactDelegateResponse githubPackagesArtifactDelegateResponse =
