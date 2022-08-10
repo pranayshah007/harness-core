@@ -21,8 +21,8 @@ public interface GithubPackagesRegistryService {
   /**
    * Get builds
    */
-  List<BuildDetails> getBuilds(
-      GithubPackagesInternalConfig githubPackagesInternalConfig, String packageName, int maxNoOfTagsPerImage);
+  List<BuildDetails> getBuilds(GithubPackagesInternalConfig githubPackagesInternalConfig, String packageName,
+      String packageType, int maxNoOfTagsPerImage);
 
   /**
    * Get last successful build

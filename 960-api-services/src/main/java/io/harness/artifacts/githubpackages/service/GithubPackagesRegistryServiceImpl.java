@@ -46,12 +46,12 @@ public class GithubPackagesRegistryServiceImpl implements GithubPackagesRegistry
   @Inject private GithubPackagesRestClientFactory githubPackagesRestClientFactory;
 
   @Override
-  public List<BuildDetails> getBuilds(
-      GithubPackagesInternalConfig githubPackagesInternalConfig, String packageName, int maxNoOfVersionsPerPackage) {
+  public List<BuildDetails> getBuilds(GithubPackagesInternalConfig githubPackagesInternalConfig, String packageName,
+      String packageType, int maxNoOfVersionsPerPackage) {
     List<BuildDetails> buildDetails;
 
     try {
-      buildDetails = getBuildDetails(githubPackagesInternalConfig, packageName);
+      buildDetails = getBuildDetails(githubPackagesInternalConfig, packageName, packageType);
     } catch (GithubPackagesServerRuntimeException ex) {
       throw ex;
     } catch (Exception e) {
@@ -75,8 +75,8 @@ public class GithubPackagesRegistryServiceImpl implements GithubPackagesRegistry
     return null;
   }
 
-  private List<BuildDetails> getBuildDetails(
-      GithubPackagesInternalConfig githubPackagesInternalConfig, String packageName) throws IOException {
+  private List<BuildDetails> getBuildDetails(GithubPackagesInternalConfig githubPackagesInternalConfig,
+      String packageName, String packageType) throws IOException {
     GithubPackagesRestClient githubPackagesRestClient =
         githubPackagesRestClientFactory.getGithubPackagesRestClient(githubPackagesInternalConfig);
 
@@ -88,7 +88,7 @@ public class GithubPackagesRegistryServiceImpl implements GithubPackagesRegistry
     String token = null;
 
     Response<GithubPackagesVersionsResponse> response =
-        githubPackagesRestClient.listVersionsForPackages(basicAuthHeader, packageName).execute();
+        githubPackagesRestClient.listVersionsForPackages(basicAuthHeader, packageName, packageType).execute();
 
     buildDetails = processPage(response.body(), packageName);
 

@@ -19,7 +19,8 @@ import retrofit2.http.Path;
 
 @OwnedBy(CDC)
 public interface GithubPackagesRestClient {
-  @GET("/user/packages/container/{packageName}/versions")
+  @GET("/user/packages/{packageType}/{packageName}/versions")
   Call<GithubPackagesVersionsResponse> listVersionsForPackages(@Header("Authorization") String bearerAuthHeader,
-      @Path(value = "packageName", encoded = true) String packageName);
+      @Path(value = "packageName", encoded = true) String packageName,
+      @Path(value = "packageType", encoded = true) String packageType);
 }

@@ -42,7 +42,7 @@ public class GithubPackagesArtifactTaskHandler
   public ArtifactTaskExecutionResponse getBuilds(GithubPackagesArtifactDelegateRequest attributes) {
     List<BuildDetails> builds = githubPackagesRegistryService.getBuilds(
         GithubPackagesRequestResponseMapper.toGithubPackagesInternalConfig(attributes), attributes.getPackageName(),
-        MAX_NO_OF_TAGS_PER_IMAGE);
+        attributes.getPackageType(), MAX_NO_OF_TAGS_PER_IMAGE);
 
     List<GithubPackagesArtifactDelegateResponse> githubPackagesArtifactDelegateResponses =
         builds.stream()
