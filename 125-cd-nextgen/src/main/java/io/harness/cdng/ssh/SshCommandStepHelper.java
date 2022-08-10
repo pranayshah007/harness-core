@@ -10,6 +10,7 @@ package io.harness.cdng.ssh;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.cdng.execution.ExecutionInfoUtility.getScope;
 import static io.harness.cdng.ssh.utils.CommandStepUtils.getEnvironmentVariables;
+import static io.harness.cdng.ssh.utils.CommandStepUtils.getHarnessBuiltInEnvVariables;
 import static io.harness.cdng.ssh.utils.CommandStepUtils.getHost;
 import static io.harness.cdng.ssh.utils.CommandStepUtils.getOutputVariables;
 import static io.harness.cdng.ssh.utils.CommandStepUtils.getWorkingDirectory;
@@ -26,6 +27,7 @@ import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.artifact.outcome.ArtifactOutcome;
 import io.harness.cdng.configfile.steps.ConfigFilesOutcome;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
+import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.service.steps.ServiceStepOutcome;
 import io.harness.cdng.ssh.rollback.CommandStepRollbackHelper;
 import io.harness.cdng.ssh.rollback.SshWinRmRollbackData;
@@ -80,20 +82,22 @@ public class SshCommandStepHelper extends CDStepHelper {
       @Nonnull Ambiance ambiance, @Nonnull CommandStepParameters commandStepParameters) {
     ServiceStepOutcome serviceOutcome = (ServiceStepOutcome) outcomeService.resolve(
         ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.SERVICE));
+    InfrastructureOutcome infrastructure = getInfrastructureOutcome(ambiance);
+    Map<String, String> builtInEnvVariables = getHarnessBuiltInEnvVariables(infrastructure, serviceOutcome);
 
     switch (serviceOutcome.getType()) {
       case ServiceSpecType.SSH:
-        return buildSshCommandTaskParameters(ambiance, commandStepParameters);
+        return buildSshCommandTaskParameters(ambiance, commandStepParameters, builtInEnvVariables);
       case ServiceSpecType.WINRM:
-        return buildWinRmTaskParameters(ambiance, commandStepParameters);
+        return buildWinRmTaskParameters(ambiance, commandStepParameters, builtInEnvVariables);
       default:
         throw new UnsupportedOperationException(
             format("Unsupported service type: [%s] selected for command step", serviceOutcome.getType()));
     }
   }
 
-  private SshCommandTaskParameters buildSshCommandTaskParameters(
-      @Nonnull Ambiance ambiance, @Nonnull CommandStepParameters commandStepParameters) {
+  private SshCommandTaskParameters buildSshCommandTaskParameters(@Nonnull Ambiance ambiance,
+      @Nonnull CommandStepParameters commandStepParameters, Map<String, String> builtInEnvVariables) {
     OptionalSweepingOutput optionalInfraOutput = executionSweepingOutputService.resolveOptional(ambiance,
         RefObjectUtils.getSweepingOutputRefObject(OutputExpressionConstants.SSH_INFRA_DELEGATE_CONFIG_OUTPUT_NAME));
     if (!optionalInfraOutput.isFound()) {
@@ -111,7 +115,8 @@ public class SshCommandStepHelper extends CDStepHelper {
     if (commandStepParameters.isRollback) {
       String stageExecutionId = ambiance.getStageExecutionId();
       log.info("Start getting rollback data from DB, stageExecutionId: {}", stageExecutionId);
-      Optional<SshWinRmRollbackData> rollbackData = commandStepRollbackHelper.getRollbackData(ambiance);
+      Optional<SshWinRmRollbackData> rollbackData =
+          commandStepRollbackHelper.getRollbackData(ambiance, builtInEnvVariables);
       if (!rollbackData.isPresent()) {
         log.info("Not found rollback data from DB, hence skipping rollback, stageExecutionId: {}", stageExecutionId);
         throw new InvalidRequestException(
@@ -129,7 +134,8 @@ public class SshCommandStepHelper extends CDStepHelper {
           commandStepParameters.getEnvironmentVariables(), commandStepParameters.getOutputVariables());
       artifactDelegateConfig = getArtifactDelegateConfig(ambiance);
       fileDelegateConfig = getFileDelegateConfig(ambiance);
-      environmentVariables = getEnvironmentVariables(commandStepParameters.getEnvironmentVariables());
+      environmentVariables =
+          getEnvironmentVariables(commandStepParameters.getEnvironmentVariables(), builtInEnvVariables);
       outputVars = getOutputVariables(commandStepParameters.getOutputVariables());
     }
 
@@ -148,8 +154,8 @@ public class SshCommandStepHelper extends CDStepHelper {
         .build();
   }
 
-  private WinrmTaskParameters buildWinRmTaskParameters(
-      @Nonnull Ambiance ambiance, @Nonnull CommandStepParameters commandStepParameters) {
+  private WinrmTaskParameters buildWinRmTaskParameters(@Nonnull Ambiance ambiance,
+      @Nonnull CommandStepParameters commandStepParameters, Map<String, String> builtInEnvVariables) {
     OptionalSweepingOutput optionalInfraOutput = executionSweepingOutputService.resolveOptional(ambiance,
         RefObjectUtils.getSweepingOutputRefObject(OutputExpressionConstants.WINRM_INFRA_DELEGATE_CONFIG_OUTPUT_NAME));
     if (!optionalInfraOutput.isFound()) {
@@ -168,7 +174,8 @@ public class SshCommandStepHelper extends CDStepHelper {
     if (commandStepParameters.isRollback) {
       String stageExecutionId = ambiance.getStageExecutionId();
       log.info("Start getting rollback data from DB, stageExecutionId: {}", stageExecutionId);
-      Optional<SshWinRmRollbackData> rollbackData = commandStepRollbackHelper.getRollbackData(ambiance);
+      Optional<SshWinRmRollbackData> rollbackData =
+          commandStepRollbackHelper.getRollbackData(ambiance, builtInEnvVariables);
       if (!rollbackData.isPresent()) {
         log.info("Not found rollback data from DB, hence skipping rollback, stageExecutionId: {}", stageExecutionId);
         throw new InvalidRequestException(
@@ -186,7 +193,8 @@ public class SshCommandStepHelper extends CDStepHelper {
           commandStepParameters.getEnvironmentVariables(), commandStepParameters.getOutputVariables());
       artifactDelegateConfig = getArtifactDelegateConfig(ambiance);
       fileDelegateConfig = getFileDelegateConfig(ambiance);
-      environmentVariables = getEnvironmentVariables(commandStepParameters.getEnvironmentVariables());
+      environmentVariables =
+          getEnvironmentVariables(commandStepParameters.getEnvironmentVariables(), builtInEnvVariables);
       outputVars = getOutputVariables(commandStepParameters.getOutputVariables());
     }
 

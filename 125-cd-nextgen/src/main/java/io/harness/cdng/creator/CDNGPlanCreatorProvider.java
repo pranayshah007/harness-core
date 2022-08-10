@@ -386,7 +386,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
             .setType(StepSpecTypeConstants.COMMAND)
             .setFeatureRestrictionName(FeatureRestrictionName.COMMAND.name())
             .setFeatureFlag(FeatureName.SSH_NG.name())
-            .setStepMetaData(StepMetaData.newBuilder().addCategory("Ssh").addFolderPaths("Ssh").build())
+            .setStepMetaData(StepMetaData.newBuilder().addCategory("SshWinRM").addFolderPaths("SSH or WinRM").build())
             .build();
 
     StepInfo serverlessDeploy =
