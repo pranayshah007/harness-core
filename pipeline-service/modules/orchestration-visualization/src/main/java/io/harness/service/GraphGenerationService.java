@@ -11,6 +11,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.OrchestrationGraph;
 import io.harness.dto.OrchestrationGraphDTO;
+import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 public interface GraphGenerationService {
@@ -22,7 +23,7 @@ public interface GraphGenerationService {
 
   OrchestrationGraphDTO generatePartialOrchestrationGraphFromSetupNodeIdAndExecutionId(
       String startingSetupNodeId, String planExecutionId, String startingExecutionId);
-
+  void sendUpdateEventIfAny(PipelineExecutionSummaryEntity executionSummaryEntity);
   OrchestrationGraph buildOrchestrationGraph(String planExecutionId);
 
   boolean updateGraph(String planExecutionId);

@@ -14,6 +14,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.pms.yaml.ParameterField;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.util.List;
 import java.util.Map;
 import lombok.Builder;
@@ -31,13 +32,16 @@ import org.springframework.data.annotation.TypeAlias;
 public class CommandStepParameters extends CommandBaseStepInfo implements SshSpecParameters {
   Map<String, Object> environmentVariables;
   Map<String, Object> outputVariables;
+  @JsonIgnore boolean isRollback;
 
   @Builder(builderMethodName = "infoBuilder")
-  public CommandStepParameters(ParameterField<Boolean> onDelegate,
+  public CommandStepParameters(String uuid, ParameterField<Boolean> onDelegate,
       ParameterField<List<TaskSelectorYaml>> delegateSelectors, Map<String, Object> environmentVariables,
-      List<CommandUnitWrapper> commandUnits, Map<String, Object> outputVariables, ParameterField<String> host) {
-    super(onDelegate, delegateSelectors, commandUnits, host);
+      List<CommandUnitWrapper> commandUnits, Map<String, Object> outputVariables, ParameterField<String> host,
+      boolean isRollback) {
+    super(uuid, onDelegate, delegateSelectors, commandUnits, host);
     this.environmentVariables = environmentVariables;
     this.outputVariables = outputVariables;
+    this.isRollback = isRollback;
   }
 }

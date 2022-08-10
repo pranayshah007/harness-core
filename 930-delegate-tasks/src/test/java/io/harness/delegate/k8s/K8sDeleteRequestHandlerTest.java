@@ -436,7 +436,7 @@ public class K8sDeleteRequestHandlerTest extends CategoryTest {
                 .build());
 
     when(k8sTaskHelperBase.getResourcesFromManifests(delegateTaskParams, manifestDelegateConfig, manifestFileDirectory,
-             deleteFilePaths, valuesYaml, releaseName, namespace, logCallback, timeoutIntervalInMin))
+             deleteFilePaths, valuesYaml, releaseName, namespace, logCallback, timeoutIntervalInMin, false))
         .thenReturn(kubernetesResources);
     doNothing()
         .when(k8sTaskHelperBase)
@@ -448,7 +448,8 @@ public class K8sDeleteRequestHandlerTest extends CategoryTest {
     assertThat(response.getCommandExecutionStatus()).isEqualTo(SUCCESS);
     verify(k8sTaskHelperBase, times(1))
         .getResourcesFromManifests(eq(delegateTaskParams), eq(manifestDelegateConfig), eq(manifestFileDirectory),
-            eq(deleteFilePaths), anyList(), eq(releaseName), eq(namespace), eq(logCallback), eq(timeoutIntervalInMin));
+            eq(deleteFilePaths), anyList(), eq(releaseName), eq(namespace), eq(logCallback), eq(timeoutIntervalInMin),
+            eq(false));
     verify(k8sTaskHelperBase, times(1))
         .deleteManifests(any(Kubectl.class), eq(kubernetesResources), eq(delegateTaskParams), eq(logCallback));
   }
@@ -490,7 +491,7 @@ public class K8sDeleteRequestHandlerTest extends CategoryTest {
       assertThat(response).isNull();
       verify(k8sTaskHelperBase, times(0))
           .getResourcesFromManifests(any(K8sDelegateTaskParams.class), any(ManifestDelegateConfig.class), anyString(),
-              anyList(), anyList(), anyString(), anyString(), any(), anyInt());
+              anyList(), anyList(), anyString(), anyString(), any(), anyInt(), eq(false));
       verify(k8sTaskHelperBase, times(1))
           .deleteManifests(any(Kubectl.class), eq(null), eq(delegateTaskParams), eq(logCallback));
     }
@@ -526,7 +527,7 @@ public class K8sDeleteRequestHandlerTest extends CategoryTest {
     assertThat(response.getCommandExecutionStatus()).isEqualTo(SUCCESS);
     verify(k8sTaskHelperBase, times(0))
         .getResourcesFromManifests(
-            any(), any(), anyString(), anyList(), anyList(), anyString(), anyString(), any(), anyInt());
+            any(), any(), anyString(), anyList(), anyList(), anyString(), anyString(), any(), anyInt(), eq(false));
     verify(k8sTaskHelperBase, times(1)).deleteManifests(any(Kubectl.class), any(), any(), any());
   }
 
@@ -566,7 +567,7 @@ public class K8sDeleteRequestHandlerTest extends CategoryTest {
                 .build());
 
     when(k8sTaskHelperBase.getResourcesFromManifests(delegateTaskParams, manifestDelegateConfig, manifestFileDirectory,
-             deleteFilePaths, valuesYaml, releaseName, namespace, logCallback, timeoutIntervalInMin))
+             deleteFilePaths, valuesYaml, releaseName, namespace, logCallback, timeoutIntervalInMin, false))
         .thenReturn(kubernetesResources);
     doNothing()
         .when(k8sTaskHelperBase)
@@ -578,7 +579,8 @@ public class K8sDeleteRequestHandlerTest extends CategoryTest {
     assertThat(response.getCommandExecutionStatus()).isEqualTo(SUCCESS);
     verify(k8sTaskHelperBase, times(1))
         .getResourcesFromManifests(eq(delegateTaskParams), eq(manifestDelegateConfig), eq(manifestFileDirectory),
-            eq(deleteFilePaths), anyList(), eq(releaseName), eq(namespace), eq(logCallback), eq(timeoutIntervalInMin));
+            eq(deleteFilePaths), anyList(), eq(releaseName), eq(namespace), eq(logCallback), eq(timeoutIntervalInMin),
+            eq(false));
     verify(k8sTaskHelperBase, times(1))
         .deleteManifests(any(Kubectl.class), eq(kubernetesResources), eq(delegateTaskParams), eq(logCallback));
   }
@@ -609,7 +611,7 @@ public class K8sDeleteRequestHandlerTest extends CategoryTest {
 
     List<String> deleteFilePaths = Arrays.asList("deployment.yaml", "service.yaml");
     when(k8sTaskHelperBase.getResourcesFromManifests(delegateTaskParams, manifestDelegateConfig, manifestFileDirectory,
-             deleteFilePaths, valuesYaml, releaseName, namespace, logCallback, timeoutIntervalInMin))
+             deleteFilePaths, valuesYaml, releaseName, namespace, logCallback, timeoutIntervalInMin, false))
         .thenThrow(new RuntimeException("Something went wrong"));
 
     K8sDeployResponse response = null;
@@ -621,8 +623,8 @@ public class K8sDeleteRequestHandlerTest extends CategoryTest {
       assertThat(response).isNull();
       verify(k8sTaskHelperBase, times(1))
           .getResourcesFromManifests(eq(delegateTaskParams), eq(manifestDelegateConfig), eq(manifestFileDirectory),
-              eq(deleteFilePaths), anyList(), eq(releaseName), eq(namespace), eq(logCallback),
-              eq(timeoutIntervalInMin));
+              eq(deleteFilePaths), anyList(), eq(releaseName), eq(namespace), eq(logCallback), eq(timeoutIntervalInMin),
+              eq(false));
       verify(k8sTaskHelperBase, times(0)).deleteManifests(any(), any(), any(), any());
     }
   }

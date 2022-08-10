@@ -12,6 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.DX;
 import static software.wings.beans.Account.Builder.anAccount;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.ArtifactMetadata;
 import io.harness.beans.EnvironmentType;
 import io.harness.beans.ExecutionStatus;
 import io.harness.beans.WorkflowType;
@@ -34,6 +35,7 @@ import software.wings.beans.Application.Builder;
 import software.wings.beans.BuildWorkflow;
 import software.wings.beans.EntityType;
 import software.wings.beans.Environment;
+import software.wings.beans.ExecutionArgs;
 import software.wings.beans.HarnessTag;
 import software.wings.beans.HarnessTagLink;
 import software.wings.beans.LicenseInfo;
@@ -45,6 +47,8 @@ import software.wings.beans.SettingAttribute.SettingCategory;
 import software.wings.beans.Workflow;
 import software.wings.beans.Workflow.WorkflowBuilder;
 import software.wings.beans.WorkflowExecution;
+import software.wings.beans.appmanifest.HelmChart;
+import software.wings.beans.artifact.Artifact;
 import software.wings.beans.infrastructure.instance.Instance;
 import software.wings.beans.infrastructure.instance.InstanceType;
 import software.wings.beans.trigger.Trigger;
@@ -70,6 +74,9 @@ import software.wings.settings.SettingValue;
 import software.wings.settings.SettingVariableTypes;
 
 import com.google.inject.Inject;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @OwnedBy(DX)
 public abstract class AbstractDataFetcherTestBase extends WingsBaseTest {
@@ -210,14 +217,22 @@ public abstract class AbstractDataFetcherTestBase extends WingsBaseTest {
 
   public String createWorkflowExecution(
       String accountId, String appId, String workflowId, EnvironmentType environmentType) {
-    WorkflowExecution workflowExecution = WorkflowExecution.builder()
-                                              .workflowId(workflowId)
-                                              .workflowType(WorkflowType.ORCHESTRATION)
-                                              .status(ExecutionStatus.SUCCESS)
-                                              .accountId(accountId)
-                                              .appId(appId)
-                                              .envType(environmentType)
-                                              .build();
+    Map<String, String> metadata = new HashMap<>();
+    metadata.put("buildNo", "1");
+    WorkflowExecution workflowExecution =
+        WorkflowExecution.builder()
+            .workflowId(workflowId)
+            .workflowType(WorkflowType.ORCHESTRATION)
+            .status(ExecutionStatus.SUCCESS)
+            .accountId(accountId)
+            .appId(appId)
+            .envType(environmentType)
+            .executionArgs(ExecutionArgs.builder()
+                               .artifacts(List.of(
+                                   Artifact.Builder.anArtifact().withMetadata(new ArtifactMetadata(metadata)).build()))
+                               .helmCharts(List.of(HelmChart.builder().version("helm1").build()))
+                               .build())
+            .build();
     return wingsPersistence.insert(workflowExecution);
   }
 

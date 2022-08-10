@@ -13,6 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.encryption.Scope;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.git.model.ChangeType;
+import io.harness.ng.core.template.TemplateMergeResponseDTO;
 import io.harness.template.beans.FilterParamsDTO;
 import io.harness.template.beans.PageParamsDTO;
 import io.harness.template.entity.TemplateEntity;
@@ -64,6 +65,9 @@ public interface NGTemplateService {
       String templateIdentifier, String versionLabel);
 
   TemplateEntity updateGitFilePath(TemplateEntity templateEntity, String newFilePath);
+
+  void checkLinkedTemplateAccess(
+      String accountId, String orgId, String projectId, TemplateMergeResponseDTO templateMergeResponseDTO);
 
   boolean deleteAllTemplatesInAProject(String accountId, String orgId, String projectId);
 

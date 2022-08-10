@@ -257,7 +257,7 @@ def syncDataset(jsonData):
 
 
 def doBQTransfer(jsonData):
-    print_("Doing bq data transfer operation")
+    print_("Doing bq data transfer operation as the region is not 'US'")
     dtDisplayName = "ccm_gcp_dataset_copy_%s_%s" % (jsonData["accountId"], jsonData["connectorId"])
     # Get the full path to your project.
     parent = dt_client.common_project_path(PROJECTID)
@@ -435,7 +435,7 @@ def ingest_data_to_costagg(jsonData):
 
 def update_datatransfer_job_config(jsonData):
     query = """INSERT INTO `%s.%s.%s` (accountId, connectorId, dataTransferConfig, createdAt, sourceGcpTableName) 
-                VALUES ('%s', '%s', '%s', '%s')
+                VALUES ('%s', '%s', '%s', '%s', '%s')
             """ % ( PROJECTID, CEINTERNALDATASET, GCPCONNECTORINFOTABLE,
                     jsonData["accountId"], jsonData["connectorId"], jsonData["dtName"], datetime.datetime.utcnow(), jsonData["sourceGcpTableName"])
 

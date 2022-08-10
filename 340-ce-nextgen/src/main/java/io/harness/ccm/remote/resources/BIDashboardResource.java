@@ -15,6 +15,7 @@ import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ccm.CENextGenConfiguration;
 import io.harness.ccm.bigQuery.BigQueryService;
+import io.harness.ccm.graphql.core.overview.CCMMetaDataService;
 import io.harness.ccm.helper.BIDashboardQueryHelper;
 import io.harness.ccm.remote.beans.BIDashboardSummary;
 import io.harness.ccm.utils.LogAccountIdentifier;
@@ -63,6 +64,7 @@ import org.springframework.stereotype.Service;
     content = { @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ErrorDTO.class)) })
 public class BIDashboardResource {
   @Inject private BigQueryService bigQueryService;
+  @Inject private CCMMetaDataService ccmMetaDataService;
   @Inject private CENextGenConfiguration configuration;
 
   @GET
@@ -81,12 +83,12 @@ public class BIDashboardResource {
   public ResponseDTO<List<BIDashboardSummary>>
   list(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
       NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId) {
-    String query = String.format(
-        BIDashboardQueryHelper.BQ_CCM_LIST_BI_DASHBOARDS_QUERY, configuration.getGcpConfig().getGcpProjectId());
+    String query = BIDashboardQueryHelper.createQueryToListDashboards(configuration.getGcpConfig().getGcpProjectId(),
+        configuration.getDeploymentClusterName(), ccmMetaDataService.getCCMMetaData(accountId));
     QueryJobConfiguration queryConfig = QueryJobConfiguration.newBuilder(query).build();
     List<BIDashboardSummary> dashboardSummaries = new ArrayList<>();
     try {
-      log.info("Querying BQ to fetch CCM BI Dashboards..");
+      log.info("Querying BQ to fetch CCM BI Dashboards: {}", query);
       TableResult result = bigQueryService.get().query(queryConfig);
       dashboardSummaries = BIDashboardQueryHelper.extractDashboardSummaries(result, accountId);
     } catch (Exception e) {

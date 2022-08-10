@@ -86,8 +86,7 @@ public class TemplateFullGitSyncHelperTest extends CategoryTest {
     String filename = "template.yaml";
     yaml = Resources.toString(Objects.requireNonNull(classLoader.getResource(filename)), StandardCharsets.UTF_8);
 
-    templateServiceHelper = new NGTemplateServiceHelper(
-        filterService, templateRepository, gitSyncSdkService, ngTemplateFeatureFlagHelperService);
+    templateServiceHelper = new NGTemplateServiceHelper(filterService, templateRepository, gitSyncSdkService);
     Reflect.on(templateFullGitSyncHelper).set("templateServiceHelper", templateServiceHelper);
 
     entityDetailProtoDTO = EntityDetailProtoDTO.newBuilder().setType(EntityTypeProtoEnum.TEMPLATE).build();

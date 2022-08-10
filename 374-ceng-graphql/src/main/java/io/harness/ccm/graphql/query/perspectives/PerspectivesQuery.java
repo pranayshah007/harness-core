@@ -28,6 +28,7 @@ import io.harness.ccm.graphql.dto.perspectives.PerspectiveTimeSeriesData;
 import io.harness.ccm.graphql.dto.perspectives.PerspectiveTrendStats;
 import io.harness.ccm.graphql.utils.GraphQLUtils;
 import io.harness.ccm.graphql.utils.annotations.GraphQLApi;
+import io.harness.ccm.rbac.CCMRbacHelper;
 import io.harness.ccm.views.entities.ViewQueryParams;
 import io.harness.ccm.views.graphql.QLCEViewAggregation;
 import io.harness.ccm.views.graphql.QLCEViewFilterWrapper;
@@ -69,6 +70,7 @@ public class PerspectivesQuery {
   @Inject PerspectiveOverviewStatsHelper perspectiveOverviewStatsHelper;
   @Inject PerspectiveTimeSeriesHelper perspectiveTimeSeriesHelper;
   @Inject PerspectiveFieldsHelper perspectiveFieldsHelper;
+  @Inject CCMRbacHelper rbacHelper;
 
   @GraphQLQuery(name = "perspectiveTrendStats", description = "Trend stats for perspective")
   public PerspectiveTrendStats perspectiveTrendStats(
@@ -223,6 +225,7 @@ public class PerspectivesQuery {
       @GraphQLArgument(name = "sortCriteria") QLCEViewSortCriteria sortCriteria,
       @GraphQLEnvironment final ResolutionEnvironment env) {
     final String accountId = graphQLUtils.getAccountIdentifier(env);
+    rbacHelper.checkPerspectiveViewPermission(accountId, null, null);
     if (StringUtils.isEmpty(folderId)) {
       return PerspectiveData.builder().customerViews(viewService.getAllViews(accountId, true, sortCriteria)).build();
     }

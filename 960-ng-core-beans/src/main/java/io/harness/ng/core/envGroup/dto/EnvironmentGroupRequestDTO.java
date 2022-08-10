@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL;
 
+import io.harness.NGCommonEntityConstants;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.validator.EntityIdentifier;
 import io.harness.validator.NGRegexValidatorConstants;
@@ -33,9 +34,12 @@ import lombok.experimental.FieldDefaults;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @Schema(name = "EnvironmentGroupRequest", description = "This is the EnvironmentGroupRequest entity defined in Harness")
 public class EnvironmentGroupRequestDTO {
-  String orgIdentifier;
-  String projectIdentifier;
-  @Pattern(regexp = NGRegexValidatorConstants.IDENTIFIER_PATTERN) @EntityIdentifier String identifier;
-  String color;
-  @NotNull String yaml;
+  @Schema(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) String orgIdentifier;
+  @Schema(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) String projectIdentifier;
+  @Pattern(regexp = NGRegexValidatorConstants.IDENTIFIER_PATTERN)
+  @Schema(description = "Identifier of the Environment Group.")
+  @EntityIdentifier
+  String identifier;
+  @Schema(description = "Color of the Environment Group.") String color;
+  @Schema(description = "Yaml of the Environment Group.") @NotNull String yaml;
 }

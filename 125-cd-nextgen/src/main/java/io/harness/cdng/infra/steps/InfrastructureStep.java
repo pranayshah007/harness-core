@@ -9,6 +9,7 @@ package io.harness.cdng.infra.steps;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import static software.wings.beans.LogColor.Green;
 import static software.wings.beans.LogColor.Yellow;
@@ -19,6 +20,9 @@ import static java.lang.String.format;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.CDStepHelper;
+import io.harness.cdng.execution.ExecutionInfoKey;
+import io.harness.cdng.execution.helper.ExecutionInfoKeyMapper;
+import io.harness.cdng.execution.helper.StageExecutionHelper;
 import io.harness.cdng.infra.InfrastructureMapper;
 import io.harness.cdng.infra.beans.InfraMapping;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
@@ -70,6 +74,7 @@ import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepOutcome;
+import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.steps.EntityReferenceExtractorUtils;
 import io.harness.steps.OutputExpressionConstants;
@@ -103,6 +108,7 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
   @Inject private OutcomeService outcomeService;
   @Inject private CDStepHelper cdStepHelper;
   @Inject ExecutionSweepingOutputService executionSweepingOutputService;
+  @Inject private StageExecutionHelper stageExecutionHelper;
 
   @Override
   public Class<Infrastructure> getStepParametersClass() {
@@ -153,13 +159,25 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
 
     publishInfraDelegateConfigOutput(serviceOutcome, infrastructureOutcome, ambiance);
 
+    StepResponseBuilder stepResponseBuilder = StepResponse.builder();
+    String infrastructureKind = infrastructure.getKind();
+    if (stageExecutionHelper.shouldSaveStageExecutionInfo(infrastructureKind)) {
+      ExecutionInfoKey executionInfoKey = ExecutionInfoKeyMapper.getExecutionInfoKey(
+          ambiance, infrastructureKind, environmentOutcome, serviceOutcome, infrastructureOutcome);
+      stageExecutionHelper.saveStageExecutionInfoAndPublishExecutionInfoKey(
+          ambiance, executionInfoKey, infrastructureKind);
+      if (stageExecutionHelper.isRollbackArtifactRequiredPerInfrastructure(infrastructureKind)) {
+        stageExecutionHelper.addRollbackArtifactToStageOutcomeIfPresent(
+            ambiance, stepResponseBuilder, executionInfoKey, infrastructureKind);
+      }
+    }
+
     if (logCallback != null) {
       logCallback.saveExecutionLog(
           color("Completed infrastructure step", Green), LogLevel.INFO, CommandExecutionStatus.SUCCESS);
     }
 
-    return StepResponse.builder()
-        .status(Status.SUCCEEDED)
+    return stepResponseBuilder.status(Status.SUCCEEDED)
         .stepOutcome(StepOutcome.builder()
                          .outcome(infrastructureOutcome)
                          .name(OutcomeExpressionConstants.OUTPUT)
@@ -207,6 +225,9 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
         SshInfraDelegateConfigOutput.builder().sshInfraDelegateConfig(sshInfraDelegateConfig).build();
     executionSweepingOutputService.consume(ambiance, OutputExpressionConstants.SSH_INFRA_DELEGATE_CONFIG_OUTPUT_NAME,
         sshInfraDelegateConfigOutput, StepCategory.STAGE.name());
+    if (EmptyPredicate.isEmpty(sshInfraDelegateConfig.getHosts())) {
+      throw new InvalidRequestException("No hosts were provided for specified infrastructure");
+    }
     executionSweepingOutputService.consume(ambiance, OutputExpressionConstants.OUTPUT,
         HostsOutput.builder().hosts(sshInfraDelegateConfig.getHosts()).build(), StepCategory.STAGE.name());
   }
@@ -219,6 +240,9 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
         WinRmInfraDelegateConfigOutput.builder().winRmInfraDelegateConfig(winRmInfraDelegateConfig).build();
     executionSweepingOutputService.consume(ambiance, OutputExpressionConstants.WINRM_INFRA_DELEGATE_CONFIG_OUTPUT_NAME,
         winRmInfraDelegateConfigOutput, StepCategory.STAGE.name());
+    if (EmptyPredicate.isEmpty(winRmInfraDelegateConfig.getHosts())) {
+      throw new InvalidRequestException("No hosts were provided for specified infrastructure");
+    }
     executionSweepingOutputService.consume(ambiance, OutputExpressionConstants.OUTPUT,
         HostsOutput.builder().hosts(winRmInfraDelegateConfig.getHosts()).build(), StepCategory.STAGE.name());
   }
@@ -364,7 +388,7 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
   public void validateResources(Ambiance ambiance, Infrastructure infrastructure) {
     ExecutionPrincipalInfo executionPrincipalInfo = ambiance.getMetadata().getPrincipalInfo();
     String principal = executionPrincipalInfo.getPrincipal();
-    if (EmptyPredicate.isEmpty(principal)) {
+    if (isEmpty(principal)) {
       return;
     }
     Set<EntityDetailProtoDTO> entityDetails =

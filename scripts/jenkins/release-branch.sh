@@ -146,6 +146,34 @@ git commit -m "Branching to release/${PURPOSE}/${VERSION}xx. New version ${NEW_V
 git push origin develop
 print_err "$?" "Pushing build.properties to develop branch failed"
 
+# Bumping version in delegate's build.properties in develop branch.
+# TODO: This will be separated to different release-branch.sh in 260-delegate when we separate release branch for delegate.
+echo "STEP3: INFO: Bumping version in delegate's build.properties in develop branch."
+git fetch origin refs/heads/develop; git checkout develop && git branch
+check_branch_name "develop"
+
+export DELEGATE_VERSION_FILE=260-delegate/build.properties
+
+export VERSION=`cat ${DELEGATE_VERSION_FILE} | grep 'build.number=' | sed -e 's: *build.number=::g'`
+export MAJOR_VERSION=`cat ${DELEGATE_VERSION_FILE} | grep 'build.majorVersion=' | sed -e 's: *build.majorVersion=::g'`
+export MINOR_VERSION=`cat ${DELEGATE_VERSION_FILE} | grep 'build.minorVersion=' | sed -e 's: *build.minorVersion=::g'`
+
+YEAR=$(date +%y)
+MONTH=$(date +%m)
+
+export VERSION=${VERSION%??}
+export NEW_VERSION=$(( ${VERSION}+1 ))
+
+sed -i "s:build.number=${VERSION}00:build.number=${NEW_VERSION}00:g" ${DELEGATE_VERSION_FILE}
+sed -i "s:build.majorVersion=${MAJOR_VERSION}:build.majorVersion=${YEAR}:g" ${DELEGATE_VERSION_FILE}
+sed -i "s:build.minorVersion=${MINOR_VERSION}:build.minorVersion=${MONTH}:g" ${DELEGATE_VERSION_FILE}
+
+
+git add ${DELEGATE_VERSION_FILE}
+git commit -m "Branching to release/${PURPOSE}/${VERSION}xx. New version ${NEW_VERSION}xx"
+git push origin develop
+print_err "$?" "Pushing delegate build.properties to develop branch failed"
+
 # Update jira issues
 echo "STEP4: INFO: Update jira issues"
 git fetch origin refs/heads/master; git checkout master && git branch

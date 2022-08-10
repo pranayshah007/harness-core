@@ -40,6 +40,8 @@ import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.common.beans.SetupAbstractionKeys;
 import io.harness.cdng.environment.yaml.EnvironmentYaml;
+import io.harness.cdng.execution.ExecutionInfoKey;
+import io.harness.cdng.execution.helper.StageExecutionHelper;
 import io.harness.cdng.infra.beans.InfraMapping;
 import io.harness.cdng.infra.beans.K8sAzureInfraMapping;
 import io.harness.cdng.infra.beans.K8sDirectInfraMapping;
@@ -74,6 +76,7 @@ import io.harness.logstreaming.NGLogCallback;
 import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.environment.beans.EnvironmentType;
 import io.harness.ng.core.environment.services.EnvironmentService;
+import io.harness.ng.core.infrastructure.InfrastructureKind;
 import io.harness.ng.core.k8s.ServiceSpecType;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.steps.StepCategory;
@@ -116,6 +119,7 @@ public class InfrastructureStepTest extends CategoryTest {
   @Mock CDStepHelper cdStepHelper;
   @Mock K8sInfraDelegateConfig k8sInfraDelegateConfig;
   @Mock InfrastructureStepHelper infrastructureStepHelper;
+  @Mock StageExecutionHelper stageExecutionHelper;
   @Mock NGLogCallback ngLogCallback;
   @Mock NGLogCallback ngLogCallbackOpen;
 
@@ -188,7 +192,8 @@ public class InfrastructureStepTest extends CategoryTest {
   public void testExecSyncAfterRbacWithPdcInfra() {
     Ambiance ambiance = Ambiance.newBuilder().putSetupAbstractions(SetupAbstractionKeys.accountId, ACCOUNT_ID).build();
 
-    PdcSshInfraDelegateConfig pdcSshInfraDelegateConfig = PdcSshInfraDelegateConfig.builder().build();
+    PdcSshInfraDelegateConfig pdcSshInfraDelegateConfig =
+        PdcSshInfraDelegateConfig.builder().hosts(Arrays.asList("host1")).build();
     Infrastructure infrastructureSpec = PdcInfrastructure.builder()
                                             .credentialsRef(ParameterField.createValueField("sshKeyRef"))
                                             .hosts(ParameterField.createValueField(Arrays.asList("host1", "host2")))
@@ -200,6 +205,9 @@ public class InfrastructureStepTest extends CategoryTest {
     when(outcomeService.resolve(any(), eq(RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.SERVICE))))
         .thenReturn(ServiceStepOutcome.builder().type(ServiceSpecType.SSH).build());
     when(cdStepHelper.getSshInfraDelegateConfig(any(), eq(ambiance))).thenReturn(pdcSshInfraDelegateConfig);
+    doNothing()
+        .when(stageExecutionHelper)
+        .saveStageExecutionInfo(eq(ambiance), any(ExecutionInfoKey.class), eq(InfrastructureKind.PDC));
 
     infrastructureStep.executeSyncAfterRbac(ambiance, infrastructureSpec, StepInputPackage.builder().build(), null);
 
@@ -219,7 +227,8 @@ public class InfrastructureStepTest extends CategoryTest {
   public void testExecSyncAfterRbacWithPdcInfraWinRm() {
     Ambiance ambiance = Ambiance.newBuilder().putSetupAbstractions(SetupAbstractionKeys.accountId, ACCOUNT_ID).build();
 
-    PdcWinRmInfraDelegateConfig pdcWinRmInfraDelegateConfig = PdcWinRmInfraDelegateConfig.builder().build();
+    PdcWinRmInfraDelegateConfig pdcWinRmInfraDelegateConfig =
+        PdcWinRmInfraDelegateConfig.builder().hosts(Arrays.asList("host1")).build();
     Infrastructure infrastructureSpec = PdcInfrastructure.builder()
                                             .credentialsRef(ParameterField.createValueField("sshKeyRef"))
                                             .hosts(ParameterField.createValueField(Arrays.asList("host1", "host2")))

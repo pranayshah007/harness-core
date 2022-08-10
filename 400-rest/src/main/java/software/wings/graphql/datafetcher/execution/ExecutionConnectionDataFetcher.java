@@ -13,9 +13,12 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
+import io.harness.beans.FeatureName;
 import io.harness.beans.WorkflowType;
+import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnexpectedException;
 import io.harness.exception.WingsException;
+import io.harness.ff.FeatureFlagService;
 
 import software.wings.beans.WorkflowExecution;
 import software.wings.beans.WorkflowExecution.WorkflowExecutionKeys;
@@ -52,6 +55,7 @@ public class ExecutionConnectionDataFetcher
   @Inject private PipelineExecutionController pipelineExecutionController;
   @Inject private ExecutionQueryHelper executionQueryHelper;
   @Inject private AppService appService;
+  @Inject private FeatureFlagService featureFlagService;
 
   static final String INDIRECT_EXECUTION_FIELD = "includeIndirectExecutions";
 
@@ -113,6 +117,10 @@ public class ExecutionConnectionDataFetcher
   private List<QLExecutionFilter> addAppIdValidation(List<QLExecutionFilter> filters) {
     List<QLExecutionFilter> updatedFilters = filters != null ? new ArrayList<>(filters) : new ArrayList<>();
     boolean appIdFilterFound = false;
+    if (featureFlagService.isEnabled(FeatureName.GRAPHQL_WORKFLOW_EXECUTION_OPTIMIZATION, getAccountId())) {
+      validateQlExecutionFiltersWhenOnlyOneAppIsAllowed(filters);
+      return filters;
+    }
     if (isNotEmpty(filters)) {
       for (QLExecutionFilter filter : filters) {
         if (filter.getApplication() != null) {
@@ -131,6 +139,29 @@ public class ExecutionConnectionDataFetcher
     }
 
     return updatedFilters;
+  }
+
+  private void validateQlExecutionFiltersWhenOnlyOneAppIsAllowed(List<QLExecutionFilter> filters) {
+    boolean appIdFilterFound = false;
+    boolean applicationFilterFound = false;
+    if (isNotEmpty(filters)) {
+      for (QLExecutionFilter filter : filters) {
+        if (isNotEmpty(filter.getApplicationId())) {
+          appIdFilterFound = true;
+        }
+        if (filter.getApplication() != null) {
+          applicationFilterFound = true;
+          if (!filter.getApplication().getOperator().equals(QLIdOperator.EQUALS)) {
+            throw new InvalidRequestException("Application filter is required and should be EQUALS");
+          }
+        }
+      }
+    }
+    if (applicationFilterFound && appIdFilterFound) {
+      throw new InvalidRequestException("Only one of application Id and application filter can be passed.");
+    } else if (!applicationFilterFound && !appIdFilterFound) {
+      throw new InvalidRequestException("Application Id filter is required");
+    }
   }
 
   @Override

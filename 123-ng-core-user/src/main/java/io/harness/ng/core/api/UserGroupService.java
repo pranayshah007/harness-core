@@ -9,7 +9,6 @@ package io.harness.ng.core.api;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
-import io.harness.accesscontrol.scopes.ScopeDTO;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Scope;
 import io.harness.ng.accesscontrol.scopes.ScopeNameDTO;
@@ -35,8 +34,6 @@ import org.springframework.data.mongodb.core.query.Criteria;
 @OwnedBy(PL)
 public interface UserGroupService {
   UserGroup create(UserGroupDTO userGroup);
-
-  boolean copy(String accountIdentifier, String userGroupIdentifier, List<ScopeDTO> scopes);
 
   Optional<UserGroup> get(String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier);
 

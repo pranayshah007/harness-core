@@ -34,8 +34,10 @@ import io.harness.cimanager.serializer.CIContractsMorphiaRegistrar;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.serializer.kryo.CIBeansKryoRegistrar;
+import io.harness.serializer.kryo.NgPersistenceKryoRegistrar;
 import io.harness.serializer.kryo.NotificationBeansKryoRegistrar;
 import io.harness.serializer.morphia.CIBeansMorphiaRegistrar;
+import io.harness.serializer.morphia.NgPersistenceMorphiaRegistrar;
 import io.harness.serializer.morphia.NotificationBeansMorphiaRegistrar;
 import io.harness.serializer.morphia.YamlMorphiaRegistrar;
 import io.harness.yaml.schema.beans.SchemaNamespaceConstants;
@@ -64,6 +66,8 @@ public class CiBeansRegistrars {
           .addAll(DelegateTaskRegistrars.kryoRegistrars)
           .addAll(SMCoreRegistrars.kryoRegistrars)
           .addAll(ConnectorNextGenRegistrars.kryoRegistrars)
+          .addAll(LicenseManagerRegistrars.kryoRegistrars)
+          .add(NgPersistenceKryoRegistrar.class)
           .add(CIBeansKryoRegistrar.class)
           .add(CIContractsKryoRegistrar.class)
           .add(NotificationBeansKryoRegistrar.class)
@@ -83,11 +87,14 @@ public class CiBeansRegistrars {
           .addAll(DelegateTaskRegistrars.morphiaRegistrars)
           .addAll(CommonsRegistrars.morphiaRegistrars)
           .addAll(ConnectorNextGenRegistrars.morphiaRegistrars)
+          .addAll(LicenseManagerRegistrars.morphiaRegistrars)
+          .addAll(PrimaryVersionManagerRegistrars.morphiaRegistrars)
           .add(NotificationBeansMorphiaRegistrar.class)
           .add(CIBeansMorphiaRegistrar.class)
           .add(CIContractsMorphiaRegistrar.class)
           .add(CIExecutionMorphiaRegistrar.class)
           .add(YamlMorphiaRegistrar.class)
+          .add(NgPersistenceMorphiaRegistrar.class)
           .build();
 
   public static final ImmutableList<YamlSchemaRootClass> yamlSchemaRegistrars =

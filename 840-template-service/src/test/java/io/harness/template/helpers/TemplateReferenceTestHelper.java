@@ -32,9 +32,9 @@ import java.util.Map;
 
 @OwnedBy(HarnessTeam.CDC)
 public class TemplateReferenceTestHelper extends EntityReferenceServiceGrpc.EntityReferenceServiceImplBase {
-  static final String ACCOUNT_ID = "accountId";
-  static final String ORG_ID = "orgId";
-  static final String PROJECT_ID = "projectId";
+  public static final String ACCOUNT_ID = "accountId";
+  public static final String ORG_ID = "orgId";
+  public static final String PROJECT_ID = "projectId";
 
   static final String IDENTIFIER_PROJECT_SCOPE = "projectLevelIdentifier";
 
@@ -42,13 +42,13 @@ public class TemplateReferenceTestHelper extends EntityReferenceServiceGrpc.Enti
       + "  spec:\n"
       + "    connector: abc";
 
-  private static final String DUMMY_INVALID_IDENTIFIER_REF_YAML = "Dummy:\n"
+  public static final String DUMMY_INVALID_IDENTIFIER_REF_YAML = "Dummy:\n"
       + "  connector: \"abc\"\n";
 
   public static final String INVALID_YAML = "template:\n"
       + "  spec: {}";
 
-  private static final String DUMMY_INVALID_YAML = "Dummy: {}\n";
+  public static final String DUMMY_INVALID_YAML = "Dummy: {}\n";
 
   public static final Map<String, String> metadata_StepTemplate =
       new HashMap<>(Collections.singletonMap(PreFlightCheckMetadata.FQN, "spec.connector"));

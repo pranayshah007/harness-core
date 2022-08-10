@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.ConnectorValidationResult;
+import io.harness.connector.task.gcp.GcpValidationTaskHandler;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.DelegateTaskResponse;
@@ -19,7 +20,6 @@ import io.harness.delegate.task.AbstractDelegateRunnableTask;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.gcp.request.GcpRequest;
 import io.harness.delegate.task.gcp.request.GcpTaskParameters;
-import io.harness.delegate.task.gcp.response.GcpResponse;
 import io.harness.delegate.task.gcp.response.GcpValidationTaskResponse;
 import io.harness.delegate.task.gcp.taskHandlers.TaskHandler;
 import io.harness.exception.InvalidRequestException;
@@ -33,6 +33,7 @@ import java.util.function.Consumer;
 @OwnedBy(CDP)
 public class GcpTask extends AbstractDelegateRunnableTask {
   @Inject private Map<GcpTaskType, TaskHandler> gcpTaskTypeToTaskHandlerMap;
+  @Inject private GcpValidationTaskHandler gcpValidationTaskHandler;
 
   public GcpTask(DelegateTaskPackage delegateTaskPackage, ILogStreamingTaskClient logStreamingTaskClient,
       Consumer<DelegateTaskResponse> consumer, BooleanSupplier preExecute) {
@@ -54,13 +55,9 @@ public class GcpTask extends AbstractDelegateRunnableTask {
 
     switch (gcpTaskParameters.getGcpTaskType()) {
       case VALIDATE:
-        GcpResponse gcpResponse =
-            gcpTaskTypeToTaskHandlerMap.get(gcpTaskParameters.getGcpTaskType()).executeRequest(gcpRequest);
-        ConnectorValidationResult connectorValidationResult =
-            ((GcpValidationTaskResponse) gcpResponse).getConnectorValidationResult();
+        ConnectorValidationResult connectorValidationResult = gcpValidationTaskHandler.validate(gcpRequest);
         connectorValidationResult.setDelegateId(getDelegateId());
-        return gcpResponse;
-
+        return GcpValidationTaskResponse.builder().connectorValidationResult(connectorValidationResult).build();
       case LIST_CLUSTERS:
       case LIST_BUCKETS:
         TaskHandler taskHandler = gcpTaskTypeToTaskHandlerMap.get(gcpTaskParameters.getGcpTaskType());

@@ -9,6 +9,7 @@ package io.harness.cdng.ssh;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.rule.OwnerRule.ACASIAN;
+import static io.harness.rule.OwnerRule.ARVIND;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -24,10 +25,12 @@ import io.harness.beans.EnvironmentType;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.infra.beans.PdcInfrastructureOutcome;
+import io.harness.cdng.infra.beans.SshWinRmAzureInfrastructureOutcome;
 import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.cdng.service.steps.ServiceStepOutcome;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
+import io.harness.delegate.beans.instancesync.info.AzureSshWinrmServerInstanceInfo;
 import io.harness.delegate.beans.instancesync.info.PdcServerInstanceInfo;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.task.shell.CommandTaskResponse;
@@ -91,20 +94,20 @@ public class CommandStepTest extends CategoryTest {
   private final CommandStepParameters commandStepParameters =
       CommandStepParameters.infoBuilder()
           .host(ParameterField.createValueField(localhost))
-          .commandUnits(Arrays.asList(
-              CommandUnitWrapper.builder()
-                  .commandUnit(
-                      StepCommandUnit.builder().spec(ScriptCommandUnitSpec.builder().build()).name("test").build())
-                  .build()))
+          .commandUnits(Arrays.asList(CommandUnitWrapper.builder()
+                                          .type("Script")
+                                          .spec(ScriptCommandUnitSpec.builder().build())
+                                          .name("test")
+                                          .build()))
           .build();
 
   private final CommandStepParameters commandStepParametersNoHosts =
       CommandStepParameters.infoBuilder()
-          .commandUnits(Arrays.asList(
-              CommandUnitWrapper.builder()
-                  .commandUnit(
-                      StepCommandUnit.builder().spec(ScriptCommandUnitSpec.builder().build()).name("test").build())
-                  .build()))
+          .commandUnits(Arrays.asList(CommandUnitWrapper.builder()
+                                          .type("Script")
+                                          .spec(ScriptCommandUnitSpec.builder().build())
+                                          .name("test")
+                                          .build()))
           .build();
   private SshCommandTaskParameters sshCommandTaskParameters =
       SshCommandTaskParameters.builder()
@@ -149,7 +152,7 @@ public class CommandStepTest extends CategoryTest {
   @Test
   @Owner(developers = ACASIAN)
   @Category(UnitTests.class)
-  public void testHandleTaskResultWithSecurityContextSuccess() throws Exception {
+  public void testHandleTaskResultWithSecurityContextSuccessPdc() throws Exception {
     final StepElementParameters stepElementParameters = StepElementParameters.builder()
                                                             .spec(commandStepParameters)
                                                             .timeout(ParameterField.createValueField("30m"))
@@ -182,6 +185,46 @@ public class CommandStepTest extends CategoryTest {
     assertThat(((PdcServerInstanceInfo) serverInstanceInfoList.get(0)).getHost()).isEqualTo(localhost);
     assertThat(((PdcServerInstanceInfo) serverInstanceInfoList.get(0)).getInfrastructureKey()).isEqualTo(infraKey);
     assertThat(((PdcServerInstanceInfo) serverInstanceInfoList.get(0)).getServiceType()).isEqualTo(ServiceSpecType.SSH);
+  }
+
+  @Test
+  @Owner(developers = ARVIND)
+  @Category(UnitTests.class)
+  public void testHandleTaskResultWithSecurityContextSuccessAzure() throws Exception {
+    final StepElementParameters stepElementParameters = StepElementParameters.builder()
+                                                            .spec(commandStepParameters)
+                                                            .timeout(ParameterField.createValueField("30m"))
+                                                            .build();
+    doReturn(ServiceStepOutcome.builder().type(ServiceSpecType.SSH).build())
+        .when(outcomeService)
+        .resolve(ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.SERVICE));
+
+    doReturn(SshWinRmAzureInfrastructureOutcome.builder().infrastructureKey(infraKey).build())
+        .when(cdStepHelper)
+        .getInfrastructureOutcome(ambiance);
+
+    List<UnitProgress> unitProgresses = Collections.singletonList(UnitProgress.newBuilder().build());
+    UnitProgressData unitProgressData = UnitProgressData.builder().unitProgresses(unitProgresses).build();
+
+    CommandTaskResponse commandTaskResponse =
+        CommandTaskResponse.builder().status(CommandExecutionStatus.SUCCESS).unitProgressData(unitProgressData).build();
+
+    StepResponse stepResponse =
+        commandStep.handleTaskResultWithSecurityContext(ambiance, stepElementParameters, () -> commandTaskResponse);
+    assertThat(stepResponse).isNotNull();
+    assertThat(stepResponse.getStatus()).isEqualTo(Status.SUCCEEDED);
+    assertThat(stepResponse.getUnitProgressList()).containsAll(unitProgresses);
+    assertThat(stepResponse.getStepOutcomes()).hasSize(1);
+
+    verify(instanceInfoService)
+        .saveServerInstancesIntoSweepingOutput(eq(ambiance), serverInstanceInfoListCaptor.capture());
+    List<ServerInstanceInfo> serverInstanceInfoList = serverInstanceInfoListCaptor.getValue();
+    assertThat(serverInstanceInfoList).hasSize(1);
+    assertThat(((AzureSshWinrmServerInstanceInfo) serverInstanceInfoList.get(0)).getHost()).isEqualTo(localhost);
+    assertThat(((AzureSshWinrmServerInstanceInfo) serverInstanceInfoList.get(0)).getInfrastructureKey())
+        .isEqualTo(infraKey);
+    assertThat(((AzureSshWinrmServerInstanceInfo) serverInstanceInfoList.get(0)).getServiceType())
+        .isEqualTo(ServiceSpecType.SSH);
   }
 
   @Test

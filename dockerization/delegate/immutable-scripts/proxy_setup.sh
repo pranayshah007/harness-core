@@ -4,6 +4,14 @@
 # that can be found in the licenses directory at the root of this repository, also available at
 # https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
 
+if [[ $KUBERNETES_SERVICE_HOST != "" ]]; then
+  if [[ $NO_PROXY == "" ]]; then
+    export NO_PROXY=$KUBERNETES_SERVICE_HOST
+  else
+    export NO_PROXY="$NO_PROXY,$KUBERNETES_SERVICE_HOST"
+  fi
+fi
+
 if [ ! -e proxy.config ]; then
   echo "PROXY_HOST='$PROXY_HOST'" > proxy.config
   echo "PROXY_PORT='$PROXY_PORT'" >> proxy.config

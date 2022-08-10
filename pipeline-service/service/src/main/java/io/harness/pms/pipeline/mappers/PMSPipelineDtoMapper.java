@@ -155,6 +155,9 @@ public class PMSPipelineDtoMapper {
     if (pipelineEntity.getIsDraft() == null) {
       pipelineEntity.setIsDraft(false);
     }
+    if (entityGitDetails != null) {
+      entityGitDetails.setRepoUrl(pipelineEntity.getRepoURL());
+    }
     return PMSPipelineSummaryResponseDTO.builder()
         .identifier(pipelineEntity.getIdentifier())
         .description(pipelineEntity.getDescription())
@@ -202,6 +205,7 @@ public class PMSPipelineDtoMapper {
         .startTs(recentExecutionInfo.getStartTs())
         .endTs(recentExecutionInfo.getEndTs())
         .executorInfo(executorInfo)
+        .runSequence(recentExecutionInfo.getRunSequence())
         .build();
   }
 

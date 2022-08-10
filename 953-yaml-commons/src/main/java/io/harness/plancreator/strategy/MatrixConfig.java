@@ -20,6 +20,7 @@ import io.harness.common.NGExpressionUtils;
 import io.harness.exception.InvalidYamlException;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
+import io.harness.serializer.JsonUtils;
 import io.harness.yaml.YamlSchemaTypes;
 
 import com.fasterxml.jackson.annotation.JsonAnySetter;
@@ -47,13 +48,20 @@ import lombok.experimental.FieldDefaults;
 @RecasterAlias("io.harness.plancreator.strategy.MatrixConfig")
 public class MatrixConfig implements MatrixConfigInterface {
   private static String EXCLUDE_KEYWORD = "exclude";
-  private static String BATCH_SIZE = "batchSize";
 
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)
   String uuid;
+
+  // This stores all key/value pair except expressions defined as axis in matrix
   @ApiModelProperty(hidden = true) @Builder.Default Map<String, AxisConfig> axes = new LinkedHashMap<>();
+
+  // This stores key/value pair in which value is an expression
+  @ApiModelProperty(hidden = true)
+  @Builder.Default
+  Map<String, ExpressionAxisConfig> expressionAxes = new LinkedHashMap<>();
+
   @YamlSchemaTypes(value = {runtime, list}) ParameterField<List<ExcludeConfig>> exclude;
 
   @ApiModelProperty(dataType = INTEGER_CLASSPATH)
@@ -64,34 +72,61 @@ public class MatrixConfig implements MatrixConfigInterface {
   @JsonAnySetter
   void setAxis(String key, Object value) {
     try {
-      if (axes == null) {
-        axes = new HashMap<>();
-      }
+      populateMapsIfNull();
       if (key.equals(YamlNode.UUID_FIELD_NAME)) {
         return;
       }
+
+      // Value can be either a list or string only. It cannot be other than that.
       if (value instanceof List) {
-        List<String> stringList = new ArrayList<>();
-        for (Object val : (List<Object>) value) {
-          stringList.add(String.valueOf(val));
-        }
-        axes.put(key, new AxisConfig(ParameterField.createValueField(stringList)));
+        handleList(key, value);
       } else if (value instanceof String) {
-        if (NGExpressionUtils.matchesPattern(GENERIC_EXPRESSIONS_PATTERN, value.toString())) {
-          axes.put(key, new AxisConfig(ParameterField.createExpressionField(true, (String) value, null, false)));
-        } else {
-          throw new InvalidYamlException(String.format(
-              "Value provided for axes [%s] is string. It should either be a List or an Expression.", key));
-        }
+        handleString(key, value);
       }
     } catch (Exception ex) {
       throw new InvalidYamlException("Unable to parse Matrix yaml. Please ensure that it is in correct format", ex);
     }
   }
 
+  private void populateMapsIfNull() {
+    if (axes == null) {
+      axes = new HashMap<>();
+    }
+    if (expressionAxes == null) {
+      expressionAxes = new HashMap<>();
+    }
+  }
+
+  private void handleList(String key, Object value) {
+    List<String> stringList = new ArrayList<>();
+
+    for (Object val : (List<Object>) value) {
+      // If val is a map then we should treat it as an object else as a string
+      if (val instanceof Map) {
+        Map<String, Object> map = (Map<String, Object>) val;
+        map.remove(YamlNode.UUID_FIELD_NAME);
+        stringList.add(JsonUtils.asJson(map));
+      } else {
+        stringList.add(String.valueOf(val));
+      }
+    }
+    axes.put(key, new AxisConfig(ParameterField.createValueField(stringList)));
+  }
+
+  private void handleString(String key, Object value) {
+    if (NGExpressionUtils.matchesPattern(GENERIC_EXPRESSIONS_PATTERN, value.toString())) {
+      expressionAxes.put(
+          key, new ExpressionAxisConfig(ParameterField.createExpressionField(true, (String) value, null, false)));
+    } else {
+      throw new InvalidYamlException(
+          String.format("Value provided for axes [%s] is string. It should either be a List or an Expression.", key));
+    }
+  }
+
   @JsonValue
   public Map<String, Object> getJsonValue() {
     Map<String, Object> jsonMap = new HashMap<>(axes);
+    jsonMap.putAll(expressionAxes);
     jsonMap.put("exclude", exclude);
     jsonMap.put("maxConcurrency", maxConcurrency);
     return jsonMap;

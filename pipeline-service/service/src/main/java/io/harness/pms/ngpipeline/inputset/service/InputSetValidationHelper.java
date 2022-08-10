@@ -59,7 +59,8 @@ public class InputSetValidationHelper {
             "Some fields in the Input Set are invalid.", errorWrapperDTO, inputSetEntity);
       }
     } else {
-      OverlayInputSetValidationHelper.validateOverlayInputSet(inputSetService, inputSetEntity);
+      OverlayInputSetValidationHelper.validateOverlayInputSet(
+          inputSetService, inputSetEntity, pipelineEntity.getYaml());
     }
   }
 
@@ -126,23 +127,22 @@ public class InputSetValidationHelper {
     String pipelineIdentifier = inputSetEntity.getPipelineIdentifier();
     String yaml = inputSetEntity.getYaml();
     InputSetEntityType type = inputSetEntity.getInputSetEntityType();
+    String pipelineYaml = getPipelineYamlForOldGitSyncFlow(pipelineService, accountId, orgIdentifier, projectIdentifier,
+        pipelineIdentifier, pipelineBranch, pipelineRepoID);
     if (type.equals(InputSetEntityType.INPUT_SET)) {
-      InputSetErrorWrapperDTOPMS errorWrapperDTO = validateInputSetForOldGitSync(pipelineService, accountId,
-          orgIdentifier, projectIdentifier, pipelineIdentifier, yaml, pipelineBranch, pipelineRepoID);
+      InputSetErrorWrapperDTOPMS errorWrapperDTO =
+          validateInputSetForOldGitSync(pipelineYaml, orgIdentifier, projectIdentifier, pipelineIdentifier, yaml);
       if (errorWrapperDTO != null) {
         throw new InvalidInputSetException(
             "Some fields in the Input Set are invalid.", errorWrapperDTO, inputSetEntity);
       }
     } else {
-      OverlayInputSetValidationHelper.validateOverlayInputSet(inputSetService, inputSetEntity);
+      OverlayInputSetValidationHelper.validateOverlayInputSet(inputSetService, inputSetEntity, pipelineYaml);
     }
   }
 
-  InputSetErrorWrapperDTOPMS validateInputSetForOldGitSync(PMSPipelineService pmsPipelineService, String accountId,
-      String orgIdentifier, String projectIdentifier, String pipelineIdentifier, String yaml, String pipelineBranch,
-      String pipelineRepoID) {
-    String pipelineYaml = getPipelineYamlForOldGitSyncFlow(pmsPipelineService, accountId, orgIdentifier,
-        projectIdentifier, pipelineIdentifier, pipelineBranch, pipelineRepoID);
+  InputSetErrorWrapperDTOPMS validateInputSetForOldGitSync(
+      String pipelineYaml, String orgIdentifier, String projectIdentifier, String pipelineIdentifier, String yaml) {
     validateIdentifyingFieldsInYAML(orgIdentifier, projectIdentifier, pipelineIdentifier, yaml);
     return InputSetErrorsHelper.getErrorMap(pipelineYaml, yaml);
   }
@@ -200,23 +200,6 @@ public class InputSetValidationHelper {
           String.format("InputSet with the given ID: %s does not exist or has been deleted", inputSetIdentifier));
     }
     InputSetEntity inputSetEntity = optionalInputSetEntity.get();
-    if (inputSetEntity.getInputSetEntityType() == InputSetEntityType.INPUT_SET) {
-      return getYAMLDiffForInputSet(
-          gitSyncSdkService, pipelineService, validateAndMergeHelper, inputSetEntity, pipelineBranch, pipelineRepoID);
-    } else {
-      return OverlayInputSetValidationHelper.getYAMLDiffForOverlayInputSet(
-          gitSyncSdkService, inputSetService, inputSetEntity);
-    }
-  }
-
-  InputSetYamlDiffDTO getYAMLDiffForInputSet(GitSyncSdkService gitSyncSdkService, PMSPipelineService pipelineService,
-      ValidateAndMergeHelper validateAndMergeHelper, InputSetEntity inputSetEntity, String pipelineBranch,
-      String pipelineRepoID) {
-    String accountId = inputSetEntity.getAccountId();
-    String orgIdentifier = inputSetEntity.getOrgIdentifier();
-    String projectIdentifier = inputSetEntity.getProjectIdentifier();
-    String pipelineIdentifier = inputSetEntity.getPipelineIdentifier();
-    String inputSetYaml = inputSetEntity.getYaml();
     boolean isOldGitSyncFlow = gitSyncSdkService.isGitSyncEnabled(accountId, orgIdentifier, projectIdentifier);
     String pipelineYaml;
     if (isOldGitSyncFlow) {
@@ -227,6 +210,22 @@ public class InputSetValidationHelper {
           getPipelineEntity(pipelineService, accountId, orgIdentifier, projectIdentifier, pipelineIdentifier);
       pipelineYaml = pipelineEntity.getYaml();
     }
+    if (inputSetEntity.getInputSetEntityType() == InputSetEntityType.INPUT_SET) {
+      return getYAMLDiffForInputSet(
+          validateAndMergeHelper, inputSetEntity, pipelineBranch, pipelineRepoID, pipelineYaml);
+    } else {
+      return OverlayInputSetValidationHelper.getYAMLDiffForOverlayInputSet(
+          gitSyncSdkService, inputSetService, inputSetEntity, pipelineYaml);
+    }
+  }
+
+  InputSetYamlDiffDTO getYAMLDiffForInputSet(ValidateAndMergeHelper validateAndMergeHelper,
+      InputSetEntity inputSetEntity, String pipelineBranch, String pipelineRepoID, String pipelineYaml) {
+    String accountId = inputSetEntity.getAccountId();
+    String orgIdentifier = inputSetEntity.getOrgIdentifier();
+    String projectIdentifier = inputSetEntity.getProjectIdentifier();
+    String pipelineIdentifier = inputSetEntity.getPipelineIdentifier();
+    String inputSetYaml = inputSetEntity.getYaml();
     String newInputSetYaml = InputSetSanitizer.sanitizeInputSetAndUpdateInputSetYAML(pipelineYaml, inputSetYaml);
     if (EmptyPredicate.isEmpty(newInputSetYaml)) {
       String pipelineTemplate = validateAndMergeHelper.getPipelineTemplate(

@@ -61,6 +61,7 @@ public class RecentExecutionsInfoHelper {
                                                .planExecutionId(planExecution.getUuid())
                                                .status(Status.RUNNING)
                                                .startTs(planExecution.getStartTs())
+                                               .runSequence(executionMetadata.getRunSequence())
                                                .build();
     Informant0<List<RecentExecutionInfo>> subject = (List<RecentExecutionInfo> recentExecutionInfoList) -> {
       if (recentExecutionInfoList == null) {

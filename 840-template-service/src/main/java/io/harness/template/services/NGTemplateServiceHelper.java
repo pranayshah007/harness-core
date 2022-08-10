@@ -21,7 +21,6 @@ import static org.springframework.data.mongodb.core.query.Criteria.where;
 
 import io.harness.NGResourceFilterConstants;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.ExplanationException;
 import io.harness.exception.HintException;
@@ -47,7 +46,6 @@ import io.harness.template.entity.TemplateEntity;
 import io.harness.template.entity.TemplateEntity.TemplateEntityKeys;
 import io.harness.template.events.TemplateUpdateEventType;
 import io.harness.template.gitsync.TemplateGitSyncBranchContextGuard;
-import io.harness.template.utils.NGTemplateFeatureFlagHelperService;
 
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
@@ -75,13 +73,12 @@ public class NGTemplateServiceHelper {
   private final FilterService filterService;
   private final NGTemplateRepository templateRepository;
   private GitSyncSdkService gitSyncSdkService;
-  private final NGTemplateFeatureFlagHelperService ngTemplateFeatureFlagHelperService;
 
   public Optional<TemplateEntity> getOrThrowExceptionIfInvalid(String accountId, String orgIdentifier,
       String projectIdentifier, String templateIdentifier, String versionLabel, boolean deleted) {
     try {
       Optional<TemplateEntity> optionalTemplate =
-          getTemplate(accountId, orgIdentifier, projectIdentifier, templateIdentifier, versionLabel, deleted);
+          getTemplate(accountId, orgIdentifier, projectIdentifier, templateIdentifier, versionLabel, deleted, false);
       if (optionalTemplate.isPresent() && optionalTemplate.get().isEntityInvalid()) {
         throw new NGTemplateException(
             "Invalid Template yaml cannot be used. Please correct the template version yaml.");
@@ -354,18 +351,19 @@ public class NGTemplateServiceHelper {
   }
 
   public Optional<TemplateEntity> getTemplate(String accountId, String orgIdentifier, String projectIdentifier,
-      String templateIdentifier, String versionLabel, boolean deleted) {
+      String templateIdentifier, String versionLabel, boolean deleted, boolean getMetadataOnly) {
     if (EmptyPredicate.isEmpty(versionLabel)) {
-      return getStableTemplate(accountId, orgIdentifier, projectIdentifier, templateIdentifier, deleted);
+      return getStableTemplate(
+          accountId, orgIdentifier, projectIdentifier, templateIdentifier, deleted, getMetadataOnly);
 
     } else {
       return getTemplateWithVersionLabel(
-          accountId, orgIdentifier, projectIdentifier, templateIdentifier, versionLabel, deleted);
+          accountId, orgIdentifier, projectIdentifier, templateIdentifier, versionLabel, deleted, getMetadataOnly);
     }
   }
 
-  public Optional<TemplateEntity> getStableTemplate(
-      String accountId, String orgIdentifier, String projectIdentifier, String templateIdentifier, boolean deleted) {
+  public Optional<TemplateEntity> getStableTemplate(String accountId, String orgIdentifier, String projectIdentifier,
+      String templateIdentifier, boolean deleted, boolean getMetadataOnly) {
     if (isOldGitSync(accountId, orgIdentifier, projectIdentifier)) {
       return templateRepository
           .findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndIsStableAndDeletedNotForOldGitSync(
@@ -373,12 +371,13 @@ public class NGTemplateServiceHelper {
     } else {
       return templateRepository
           .findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndIsStableAndDeletedNot(
-              accountId, orgIdentifier, projectIdentifier, templateIdentifier, !deleted);
+              accountId, orgIdentifier, projectIdentifier, templateIdentifier, !deleted, getMetadataOnly);
     }
   }
 
   public Optional<TemplateEntity> getTemplateWithVersionLabel(String accountId, String orgIdentifier,
-      String projectIdentifier, String templateIdentifier, String versionLabel, boolean deleted) {
+      String projectIdentifier, String templateIdentifier, String versionLabel, boolean deleted,
+      boolean getMetadataOnly) {
     if (isOldGitSync(accountId, orgIdentifier, projectIdentifier)) {
       return templateRepository
           .findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndVersionLabelAndDeletedNotForOldGitSync(
@@ -386,12 +385,12 @@ public class NGTemplateServiceHelper {
     } else {
       return templateRepository
           .findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndVersionLabelAndDeletedNot(
-              accountId, orgIdentifier, projectIdentifier, templateIdentifier, versionLabel, !deleted);
+              accountId, orgIdentifier, projectIdentifier, templateIdentifier, versionLabel, !deleted, getMetadataOnly);
     }
   }
 
-  public Optional<TemplateEntity> getLastUpdatedTemplate(
-      String accountId, String orgIdentifier, String projectIdentifier, String templateIdentifier) {
+  public Optional<TemplateEntity> getLastUpdatedTemplate(String accountId, String orgIdentifier,
+      String projectIdentifier, String templateIdentifier, boolean getMetadataOnly) {
     if (isOldGitSync(accountId, orgIdentifier, projectIdentifier)) {
       return templateRepository
           .findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndIsLastUpdatedAndDeletedNotForOldGitSync(
@@ -399,7 +398,7 @@ public class NGTemplateServiceHelper {
     } else {
       return templateRepository
           .findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndIsLastUpdatedAndDeletedNot(
-              accountId, orgIdentifier, projectIdentifier, templateIdentifier, true);
+              accountId, orgIdentifier, projectIdentifier, templateIdentifier, true, getMetadataOnly);
     }
   }
 
@@ -485,29 +484,20 @@ public class NGTemplateServiceHelper {
   }
 
   public boolean deleteTemplate(String accountId, String orgIdentifier, String projectIdentifier,
-      String templateIdentifier, TemplateEntity templateToDelete, String versionLabel, TemplateEntity withDeleted,
-      String comments) {
-    if (isOldGitSync(templateToDelete)) {
-      if (isHardDeleteEntitiesFeatureFlagEnabled(accountId)) {
+      String templateIdentifier, TemplateEntity templateToDelete, String versionLabel, String comments) {
+    try {
+      if (isOldGitSync(templateToDelete)) {
         templateRepository.hardDeleteTemplateForOldGitSync(templateToDelete, comments);
-        return true;
       } else {
-        TemplateEntity deletedTemplate = templateRepository.deleteTemplateForOldGitSync(withDeleted, comments);
-        if (deletedTemplate.getDeleted()) {
-          return true;
-        } else {
-          throw new InvalidRequestException(format(
-              "Template with identifier [%s] and versionLabel [%s], under Project[%s], Organization [%s] couldn't be deleted.",
-              templateIdentifier, versionLabel, projectIdentifier, orgIdentifier));
-        }
+        templateRepository.deleteTemplate(templateToDelete, comments);
       }
-    } else {
-      templateRepository.deleteTemplate(templateToDelete, comments);
       return true;
+    } catch (Exception e) {
+      String errorMessage = format(
+          "Template with identifier [%s] and versionLabel [%s], under Project[%s], Organization [%s], Account [%s], couldn't be deleted : %s",
+          templateIdentifier, versionLabel, projectIdentifier, orgIdentifier, accountId, e.getMessage());
+      log.error(errorMessage, e);
+      return false;
     }
-  }
-
-  public boolean isHardDeleteEntitiesFeatureFlagEnabled(String accountId) {
-    return ngTemplateFeatureFlagHelperService.isEnabled(accountId, FeatureName.HARD_DELETE_ENTITIES);
   }
 }
