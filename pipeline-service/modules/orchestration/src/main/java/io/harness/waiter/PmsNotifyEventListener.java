@@ -14,6 +14,7 @@ import io.harness.OrchestrationPublisherName;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.config.PublisherConfiguration;
+import io.harness.mongo.queue.NgQueueFactory;
 import io.harness.mongo.queue.QueueFactory;
 import io.harness.queue.QueueConsumer;
 import io.harness.version.VersionInfoManager;
@@ -39,7 +40,7 @@ public final class PmsNotifyEventListener extends NotifyEventListener {
 
   private static QueueConsumer<NotifyEvent> getNgQueueConsumer(
       Injector injector, VersionInfoManager versionInfoManager, PublisherConfiguration config) {
-    return QueueFactory.createNgQueueConsumer(injector, NotifyEvent.class, ofSeconds(10),
+    return NgQueueFactory.createNgQueueConsumer(injector, NotifyEvent.class, ofSeconds(10),
         asList(asList(versionInfoManager.getVersionInfo().getVersion()), asList(PMS_ORCHESTRATION)), config,
         injector.getInstance(MongoTemplate.class));
   }

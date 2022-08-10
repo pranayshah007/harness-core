@@ -10,9 +10,6 @@ package io.harness.springdata;
 import static io.harness.mongo.MongoConfig.DOT_REPLACEMENT;
 import static io.harness.springdata.PersistenceStoreUtils.getMatchingEntities;
 
-import static com.google.inject.Key.get;
-import static com.google.inject.name.Names.named;
-
 import io.harness.annotation.HarnessRepo;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -23,11 +20,13 @@ import io.harness.reflection.HarnessReflections;
 
 import com.google.inject.Injector;
 import com.mongodb.MongoClient;
+import com.mongodb.MongoClientOptions;
+import com.mongodb.MongoClientURI;
+import com.mongodb.ReadPreference;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
-import org.mongodb.morphia.AdvancedDatastore;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
@@ -54,25 +53,32 @@ import org.springframework.guice.annotation.GuiceModule;
 @OwnedBy(HarnessTeam.PL)
 public class SpringPersistenceConfig extends AbstractMongoConfiguration {
   protected final Injector injector;
-  protected final AdvancedDatastore advancedDatastore;
   protected final List<Class<? extends Converter<?, ?>>> springConverters;
   protected final MongoConfig mongoConfig;
 
   public SpringPersistenceConfig(Injector injector, List<Class<? extends Converter<?, ?>>> springConverters) {
     this.injector = injector;
-    this.advancedDatastore = injector.getProvider(get(AdvancedDatastore.class, named("primaryDatastore"))).get();
     this.springConverters = springConverters;
     this.mongoConfig = injector.getInstance(MongoConfig.class);
   }
 
   @Override
   public MongoClient mongoClient() {
-    return advancedDatastore.getMongo();
+    MongoClientOptions options = MongoClientOptions.builder()
+                                     .retryWrites(true)
+                                     .connectTimeout(mongoConfig.getConnectTimeout())
+                                     .serverSelectionTimeout(mongoConfig.getServerSelectionTimeout())
+                                     .maxConnectionIdleTime(mongoConfig.getMaxConnectionIdleTime())
+                                     .connectionsPerHost(mongoConfig.getConnectionsPerHost())
+                                     .readPreference(ReadPreference.primary())
+                                     .build();
+    MongoClientURI uri = new MongoClientURI(mongoConfig.getUri(), MongoClientOptions.builder(options));
+    return new MongoClient(uri);
   }
 
   @Override
   protected String getDatabaseName() {
-    return advancedDatastore.getDB().getName();
+    return new MongoClientURI(mongoConfig.getUri()).getDatabase();
   }
 
   @Bean(name = "primary")

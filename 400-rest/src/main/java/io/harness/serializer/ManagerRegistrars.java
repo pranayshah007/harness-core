@@ -20,6 +20,7 @@ import io.harness.serializer.kryo.DelegateServiceKryoRegister;
 import io.harness.serializer.kryo.EventEntitiesKryoRegistrar;
 import io.harness.serializer.kryo.ManagerKryoRegistrar;
 import io.harness.serializer.kryo.NgAuthenticationServiceKryoRegistrar;
+import io.harness.serializer.kryo.NgPersistenceKryoRegistrar;
 import io.harness.serializer.kryo.NotificationBeansKryoRegistrar;
 import io.harness.serializer.kryo.NotificationDelegateTasksKryoRegistrar;
 import io.harness.serializer.kryo.ProjectAndOrgKryoRegistrar;
@@ -31,6 +32,7 @@ import io.harness.serializer.morphia.EventEntitiesMorphiaRegister;
 import io.harness.serializer.morphia.EventMorphiaRegistrar;
 import io.harness.serializer.morphia.LimitsMorphiaRegistrar;
 import io.harness.serializer.morphia.ManagerMorphiaRegistrar;
+import io.harness.serializer.morphia.NgPersistenceMorphiaRegistrar;
 import io.harness.serializer.morphia.NotificationBeansMorphiaRegistrar;
 import io.harness.serializer.morphia.ProjectAndOrgMorphiaRegistrar;
 
@@ -72,6 +74,7 @@ public class ManagerRegistrars {
           .add(EventEntitiesKryoRegistrar.class)
           .addAll(DelegateTaskRegistrars.kryoRegistrars)
           .add(NgAuthenticationServiceKryoRegistrar.class)
+          .add(NgPersistenceKryoRegistrar.class)
           .build();
 
   public static final ImmutableSet<Class<? extends MorphiaRegistrar>> morphiaRegistrars =
@@ -102,6 +105,7 @@ public class ManagerRegistrars {
           .addAll(NGAuditCommonsRegistrars.morphiaRegistrars)
           .addAll(OutboxEventRegistrars.morphiaRegistrars)
           .add(EventEntitiesMorphiaRegister.class)
+          .add(NgPersistenceMorphiaRegistrar.class)
           .addAll(DelegateTaskRegistrars.morphiaRegistrars)
           .build();
 
