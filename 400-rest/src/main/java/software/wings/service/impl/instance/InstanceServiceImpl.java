@@ -492,9 +492,15 @@ public class InstanceServiceImpl implements InstanceService {
     PageRequest<Instance> pageRequest = new PageRequest<>();
     pageRequest.addFilter(InstanceKeys.infraMappingId, Operator.EQ, infrastructureDefinitionId);
     pageRequest.addFilter(InstanceKeys.appId, Operator.EQ, appId);
-    pageRequest.addFilter(InstanceKeys.lastWorkflowExecutionId, Operator.EXISTS);
     pageRequest.addOrder(SortOrder.Builder.aSortOrder().withField(InstanceKeys.lastUpdatedAt, OrderType.DESC).build());
     pageRequest.setLimit("1");
-    return wingsPersistence.convertToQuery(Instance.class, pageRequest).get();
+    Instance instance = wingsPersistence.convertToQuery(Instance.class, pageRequest).get();
+    if (instance.getLastWorkflowExecutionId() == null) {
+      log.error("Got last workflow execution Id null which is not expected. Details: appid:{}, inframapping id: {}.",
+          appId, infrastructureDefinitionId);
+      pageRequest.addFilter(InstanceKeys.lastWorkflowExecutionId, Operator.EXISTS);
+      instance = wingsPersistence.convertToQuery(Instance.class, pageRequest).get();
+    }
+    return instance;
   }
 }
