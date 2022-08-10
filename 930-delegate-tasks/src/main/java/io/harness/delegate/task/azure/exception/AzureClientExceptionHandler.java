@@ -11,6 +11,7 @@ import static java.lang.String.format;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.exception.FailureType;
 import io.harness.exception.GeneralException;
 import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.WingsException;
@@ -19,6 +20,7 @@ import io.harness.exception.ngexception.AzureAppServiceTaskException;
 
 import com.google.common.collect.ImmutableSet;
 import com.microsoft.aad.adal4j.AuthenticationException;
+import java.util.EnumSet;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -81,6 +83,6 @@ public class AzureClientExceptionHandler implements ExceptionHandler {
     String errorCodeUriHelpMessage = extractErrorCodeUriHelpMessage(message);
 
     return NestedExceptionUtils.hintWithExplanationException(hint, explanation + ". " + errorCodeUriHelpMessage,
-        new AzureAppServiceTaskException(AUTHENTICATION_ERROR_MESSAGE));
+        new AzureAppServiceTaskException(AUTHENTICATION_ERROR_MESSAGE, EnumSet.of(FailureType.AUTHENTICATION)));
   }
 }
