@@ -501,7 +501,7 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
 
     YamlNode service;
     try {
-      service = YamlNode.fromYamlPath(entity.get().getYaml(), "service");
+      service = YamlNode.fromYamlPath(entity.get().fetchNonEmptyYaml(), "service");
     } catch (IOException e) {
       throw new InvalidRequestException("Service entity yaml must be rooted at \"service\"");
     }

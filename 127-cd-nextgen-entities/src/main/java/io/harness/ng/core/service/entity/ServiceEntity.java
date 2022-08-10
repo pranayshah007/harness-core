@@ -13,6 +13,7 @@ import io.harness.annotation.StoreIn;
 import io.harness.annotations.ChangeDataCapture;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.data.validator.EntityIdentifier;
 import io.harness.data.validator.EntityName;
 import io.harness.data.validator.Trimmed;
@@ -20,6 +21,8 @@ import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.ng.DbAliases;
 import io.harness.ng.core.common.beans.NGTag;
+import io.harness.ng.core.service.mappers.NGServiceEntityMapper;
+import io.harness.ng.core.service.yaml.NGServiceConfig;
 import io.harness.persistence.PersistentEntity;
 
 import com.google.common.collect.ImmutableList;
@@ -100,4 +103,12 @@ public class ServiceEntity implements PersistentEntity {
   @Setter @NonFinal String yamlGitConfigRef;
   @Setter @NonFinal String filePath;
   @Setter @NonFinal String rootFolder;
+
+  public String fetchNonEmptyYaml() {
+    if (EmptyPredicate.isEmpty(yaml)) {
+      NGServiceConfig ngServiceConfig = NGServiceEntityMapper.toNGServiceConfig(this);
+      return NGServiceEntityMapper.toYaml(ngServiceConfig);
+    }
+    return yaml;
+  }
 }
