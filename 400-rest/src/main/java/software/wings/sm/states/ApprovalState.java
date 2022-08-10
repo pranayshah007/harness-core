@@ -477,7 +477,9 @@ public class ApprovalState extends State implements SweepingOutputStateMixin {
         if (workflowStandardParams.getWorkflowElement() == null) {
           workflowStandardParams.setWorkflowElement(WorkflowElement.builder().variables(workflowVariables).build());
         } else {
-          workflowStandardParams.getWorkflowElement().setVariables(workflowVariables);
+          Map<String, Object> allStepWorkflowVariables = workflowStandardParams.getWorkflowElement().getVariables();
+          allStepWorkflowVariables.putAll(workflowVariables);
+          workflowStandardParams.getWorkflowElement().setVariables(allStepWorkflowVariables);
         }
       }
     }
