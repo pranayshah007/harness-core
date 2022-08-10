@@ -202,6 +202,7 @@ public class K8sWorkloadRecommendationsDataFetcher extends AbstractConnectionV2D
   }
 
   private Yaml getYaml() {
+    log.info("Snake Yaml LoaderOptions");
     DumperOptions options = new DumperOptions();
     options.setIndent(2);
     options.setPrettyFlow(false);
