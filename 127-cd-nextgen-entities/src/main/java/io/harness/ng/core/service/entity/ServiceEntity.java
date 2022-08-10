@@ -52,6 +52,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Document("servicesNG")
 @TypeAlias("io.harness.ng.core.service.entity.ServiceEntity")
 @ChangeDataCapture(table = "services", dataStore = "ng-harness", fields = {}, handler = "Services")
+@ChangeDataCapture(table = "tags_info", dataStore = "ng-harness", fields = {}, handler = "TagsInfoCD")
 @StoreIn(DbAliases.NG_MANAGER)
 public class ServiceEntity implements PersistentEntity {
   public static List<MongoIndex> mongoIndexes() {
