@@ -20,6 +20,7 @@ import software.wings.helpers.ext.jenkins.BuildDetails;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
@@ -52,8 +53,24 @@ public class GithubPackagesArtifactTaskHandler
     return getSuccessTaskExecutionResponse(githubPackagesArtifactDelegateResponses);
   }
 
-  public ArtifactTaskExecutionResponse getLastSuccessfulBuild(GithubPackagesArtifactDelegateRequest attributes) {
-    return null;
+  public ArtifactTaskExecutionResponse getLastSuccessfulBuild(GithubPackagesArtifactDelegateRequest attributesRequest) {
+    BuildDetails lastSuccessfulBuild;
+
+    if (isRegex(attributesRequest)) {
+      lastSuccessfulBuild = githubPackagesRegistryService.getLastSuccessfulBuildFromRegex(
+          GithubPackagesRequestResponseMapper.toGithubPackagesInternalConfig(attributesRequest),
+          attributesRequest.getPackageName(), attributesRequest.getVersionRegex());
+
+    } else {
+      lastSuccessfulBuild = githubPackagesRegistryService.getBuild(
+          GithubPackagesRequestResponseMapper.toGithubPackagesInternalConfig(attributesRequest),
+          attributesRequest.getPackageName(), attributesRequest.getVersion());
+    }
+
+    GithubPackagesArtifactDelegateResponse githubPackagesArtifactDelegateResponse =
+        GithubPackagesRequestResponseMapper.toGithubPackagesResponse(lastSuccessfulBuild, attributesRequest);
+
+    return getSuccessTaskExecutionResponse(Collections.singletonList(githubPackagesArtifactDelegateResponse));
   }
 
   public void decryptRequestDTOs(GithubPackagesArtifactDelegateRequest attributes) {

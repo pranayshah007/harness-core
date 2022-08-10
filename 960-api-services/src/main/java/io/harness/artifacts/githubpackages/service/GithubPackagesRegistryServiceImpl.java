@@ -63,6 +63,18 @@ public class GithubPackagesRegistryServiceImpl implements GithubPackagesRegistry
     return buildDetails.stream().sorted(new BuildDetailsComparatorAscending()).collect(toList());
   }
 
+  @Override
+  public BuildDetails getLastSuccessfulBuildFromRegex(
+      GithubPackagesInternalConfig toGithubPackagesInternalConfig, String packageName, String versionRegex) {
+    return null;
+  }
+
+  @Override
+  public BuildDetails getBuild(
+      GithubPackagesInternalConfig toGithubPackagesInternalConfig, String packageName, String version) {
+    return null;
+  }
+
   private List<BuildDetails> getBuildDetails(
       GithubPackagesInternalConfig githubPackagesInternalConfig, String packageName) throws IOException {
     GithubPackagesRestClient githubPackagesRestClient =

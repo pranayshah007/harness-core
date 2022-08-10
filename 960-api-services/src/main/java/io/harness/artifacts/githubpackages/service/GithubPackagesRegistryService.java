@@ -23,4 +23,16 @@ public interface GithubPackagesRegistryService {
    */
   List<BuildDetails> getBuilds(
       GithubPackagesInternalConfig githubPackagesInternalConfig, String packageName, int maxNoOfTagsPerImage);
+
+  /**
+   * Get last successful build
+   */
+  BuildDetails getLastSuccessfulBuildFromRegex(
+      GithubPackagesInternalConfig toGithubPackagesInternalConfig, String packageName, String versionRegex);
+
+  /**
+   * Get build
+   */
+  BuildDetails getBuild(
+      GithubPackagesInternalConfig toGithubPackagesInternalConfig, String packageName, String version);
 }
