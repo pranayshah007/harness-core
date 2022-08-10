@@ -7,6 +7,8 @@
 
 package io.harness.delegate.task.shell.ssh;
 
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
@@ -42,4 +44,26 @@ public class SshExecutorFactoryContext {
   private final String destinationPath;
   private final SshWinRmArtifactDelegateConfig artifactDelegateConfig;
   private final Map<String, String> artifactMetadata = new HashMap<>();
+  private final Map<String, String> environmentVariables = new HashMap<>();
+
+  public String evaluateVariable(String text) {
+    if (isNotBlank(text)) {
+      for (Map.Entry<String, String> entry : environmentVariables.entrySet()) {
+        String key = entry.getKey();
+        String value = entry.getValue();
+        text = text.replaceAll("\\$" + key, value);
+      }
+    }
+    return text;
+  }
+
+  public void addEnvVariables(Map<String, String> envVariables) {
+    for (Map.Entry<String, String> envVariable : envVariables.entrySet()) {
+      this.environmentVariables.put(envVariable.getKey(), evaluateVariable(envVariable.getValue()));
+    }
+  }
+
+  public String getEvaluatedDestinationPath() {
+    return evaluateVariable(destinationPath);
+  }
 }

@@ -8,18 +8,25 @@
 package io.harness.cdng.creator.plan.steps;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.pms.yaml.YAMLFieldNameConstants.REPEAT;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.ROLLBACK_STEPS;
+import static io.harness.pms.yaml.YAMLFieldNameConstants.STEP_GROUP;
+import static io.harness.pms.yaml.YAMLFieldNameConstants.STRATEGY;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.ssh.CommandStepNode;
 import io.harness.cdng.ssh.CommandStepParameters;
+import io.harness.exception.InvalidRequestException;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.plancreator.steps.common.StepElementParameters;
+import io.harness.plancreator.strategy.StrategyConfig;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlUtils;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.collect.Sets;
 import java.util.Set;
 
@@ -40,14 +47,48 @@ public class CommandStepPlanCreator extends CDPMSStepPlanCreatorV2<CommandStepNo
     return super.createPlanForField(ctx, stepElement);
   }
 
+  @Override
   protected StepParameters getStepParameters(PlanCreationContext ctx, CommandStepNode stepElement) {
     final StepParameters stepParameters = super.getStepParameters(ctx, stepElement);
-    boolean isStepInsideRollback = YamlUtils.findParentNode(ctx.getCurrentField().getNode(), ROLLBACK_STEPS) != null;
-
     CommandStepParameters commandStepParameters =
         (CommandStepParameters) ((StepElementParameters) stepParameters).getSpec();
+
+    if (shouldIncludeRepeatSyntax(ctx, stepElement)) {
+      // TODO @sahil make a constant file for these expressions
+      commandStepParameters.setHost(ParameterField.createValueField("<+repeat.item>"));
+    }
+
+    boolean isStepInsideRollback = YamlUtils.findParentNode(ctx.getCurrentField().getNode(), ROLLBACK_STEPS) != null;
     commandStepParameters.setRollback(isStepInsideRollback);
 
     return stepParameters;
+  }
+
+  private boolean shouldIncludeRepeatSyntax(PlanCreationContext ctx, CommandStepNode stepElement) {
+    boolean isStepInsideStepGroup = YamlUtils.findParentNode(ctx.getCurrentField().getNode(), STEP_GROUP) != null;
+    if (isStepInsideStepGroup) {
+      JsonNode stepGroupJsonNode =
+          YamlUtils.findParentNode(ctx.getCurrentField().getNode(), STEP_GROUP).getCurrJsonNode();
+      JsonNode strategyNode = stepGroupJsonNode.findValue(STRATEGY);
+      if (strategyNode == null) {
+        throw new InvalidRequestException("Missing looping strategy for step group");
+      }
+
+      JsonNode repeatNode = strategyNode.findValue(REPEAT);
+      if (repeatNode == null) {
+        throw new InvalidRequestException("Only repeat looping strategy is supported for Command Step step groups");
+      }
+
+    } else {
+      StrategyConfig strategyConfig = stepElement.getStrategy();
+      if (strategyConfig == null) {
+        throw new InvalidRequestException("Missing looping strategy for Command Step");
+      }
+      if (strategyConfig.getRepeat() == null) {
+        throw new InvalidRequestException("Only repeat looping strategy is supported for Command Step");
+      }
+    }
+
+    return true;
   }
 }

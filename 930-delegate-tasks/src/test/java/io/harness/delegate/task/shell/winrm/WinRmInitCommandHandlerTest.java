@@ -32,6 +32,7 @@ import software.wings.core.winrm.executors.WinRmExecutor;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -45,6 +46,7 @@ public class WinRmInitCommandHandlerTest {
   @Mock private WinRmExecutorFactoryNG winRmExecutorFactoryNG;
   @Mock private WinRmConfigAuthEnhancer winRmConfigAuthEnhancer;
   @Mock private ILogStreamingTaskClient iLogStreamingTaskClient;
+  @Mock private Map<String, Object> taskContext;
 
   @InjectMocks private WinRmInitCommandHandler winRmInitCommandHandler;
 
@@ -65,8 +67,8 @@ public class WinRmInitCommandHandlerTest {
     WinRmExecutor executor = mock(WinRmExecutor.class);
     when(winRmExecutorFactoryNG.getExecutor(any(), anyBoolean(), any(), any())).thenReturn(executor);
     when(executor.executeCommandString(any(), anyBoolean())).thenReturn(CommandExecutionStatus.SUCCESS);
-    CommandExecutionStatus result = winRmInitCommandHandler.handle(
-        winrmTaskParameters, initCommandUnit, iLogStreamingTaskClient, CommandUnitsProgress.builder().build());
+    CommandExecutionStatus result = winRmInitCommandHandler.handle(winrmTaskParameters, initCommandUnit,
+        iLogStreamingTaskClient, CommandUnitsProgress.builder().build(), taskContext);
     assertThat(result).isEqualTo(CommandExecutionStatus.SUCCESS);
   }
 }
