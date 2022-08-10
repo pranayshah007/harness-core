@@ -13,7 +13,6 @@ import io.harness.ChangeHandler;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.changehandlers.ServicesChangeDataHandler;
 import io.harness.ng.core.service.entity.ServiceEntity;
-import io.harness.persistence.PersistentEntity;
 
 import com.google.inject.Inject;
 
@@ -27,7 +26,7 @@ public class ServiceCDCEntity implements CDCEntity<ServiceEntity> {
   }
 
   @Override
-  public Class<? extends PersistentEntity> getSubscriptionEntity() {
+  public Class<ServiceEntity> getSubscriptionEntity() {
     return ServiceEntity.class;
   }
 }
