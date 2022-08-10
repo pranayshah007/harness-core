@@ -19,15 +19,16 @@ import java.time.Duration;
 import java.util.List;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.mongodb.core.MongoTemplate;
 
 @UtilityClass
 @Slf4j
-public class QueueFactory {
-  public static <T extends Queuable> QueuePublisher<T> createQueuePublisher(
-      Injector injector, Class<T> klass, List<String> topicPrefixElements, PublisherConfiguration configuration) {
+public class NgQueueFactory {
+  public static <T extends Queuable> QueuePublisher<T> createNgQueuePublisher(Injector injector, Class<T> klass,
+      List<String> topicPrefixElements, PublisherConfiguration configuration, MongoTemplate mongoTemplate) {
     if (configuration.isPublisherActive(klass)) {
-      final MongoQueuePublisher mongoQueuePublisher =
-          new MongoQueuePublisher(klass.getSimpleName(), topicPrefixElements);
+      final io.harness.mongo.queue.NGMongoQueuePublisher mongoQueuePublisher =
+          new NGMongoQueuePublisher(klass.getSimpleName(), topicPrefixElements, mongoTemplate);
       injector.injectMembers(mongoQueuePublisher);
       return mongoQueuePublisher;
     } else {
@@ -36,10 +37,12 @@ public class QueueFactory {
     }
   }
 
-  public static <T extends Queuable> QueueConsumer<T> createQueueConsumer(Injector injector, Class<T> klass,
-      Duration heartbeat, List<List<String>> topicExpression, PublisherConfiguration configuration) {
+  public static <T extends Queuable> QueueConsumer<T> createNgQueueConsumer(Injector injector, Class<T> klass,
+      Duration heartbeat, List<List<String>> topicExpression, PublisherConfiguration configuration,
+      MongoTemplate mongoTemplate) {
     if (configuration.isPublisherActive(klass)) {
-      final MongoQueueConsumer mongoQueueConsumer = new MongoQueueConsumer(klass, heartbeat, topicExpression);
+      final io.harness.mongo.queue.NGMongoQueueConsumer mongoQueueConsumer =
+          new NGMongoQueueConsumer(klass, heartbeat, topicExpression, mongoTemplate);
       injector.injectMembers(mongoQueueConsumer);
       return mongoQueueConsumer;
     } else {

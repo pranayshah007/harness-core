@@ -89,7 +89,7 @@ public class SpringMongoStore implements DistributedStore {
       }
       query.fields().include(SpringCacheEntityKeys.entityUpdatedAt).include(SpringCacheEntityKeys.contextValue);
 
-      final SpringCacheEntity cacheEntity = mongoTemplate.findOne(query, SpringCacheEntity.class);
+      final io.harness.cache.SpringCacheEntity cacheEntity = mongoTemplate.findOne(query, SpringCacheEntity.class);
 
       if (cacheEntity == null) {
         return null;
@@ -112,7 +112,7 @@ public class SpringMongoStore implements DistributedStore {
         query.addCriteria(where(SpringCacheEntityKeys.contextValue).is(contextValue));
       }
 
-      final SpringCacheEntity cacheEntity = mongoTemplate.findOne(query, SpringCacheEntity.class);
+      final io.harness.cache.SpringCacheEntity cacheEntity = mongoTemplate.findOne(query, SpringCacheEntity.class);
 
       if (cacheEntity == null) {
         return null;
