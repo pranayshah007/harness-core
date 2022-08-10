@@ -102,6 +102,15 @@ public class BitbucketEntityToDTO implements ConnectorEntityToDTOMapper<Bitbucke
                 .usernameRef(usernameRef)
                 .build();
         break;
+      case OAUTH:
+        final BitbucketOauth bitbucketOauth = (BitbucketOauth) auth;
+
+        bitbucketHttpCredentialsSpecDTO =
+            BitbucketOauthDTO.builder()
+                .tokenRef(SecretRefHelper.createSecretRef(bitbucketOauth.getTokenRef()))
+                .refreshTokenRef(SecretRefHelper.createSecretRef(bitbucketOauth.getRefreshTokenRef()))
+                .build();
+
       default:
         throw new UnknownEnumTypeException("Bitbucket Http Auth Type", String.valueOf(type.getDisplayName()));
     }

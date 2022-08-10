@@ -1459,7 +1459,8 @@
         "type": {
           "type": "string",
           "enum": [
-            "UsernameToken"
+            "UsernameToken",
+            "OAuth"
           ]
         }
       },
@@ -1602,7 +1603,8 @@
             "type": {
               "type": "string",
               "enum": [
-                "UsernamePassword"
+                "UsernamePassword",
+                "OAuth"
               ]
             }
           }

@@ -9,10 +9,12 @@ package io.harness.delegate.beans.connector.scm.bitbucket;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonValue;
+import io.harness.delegate.beans.connector.scm.github.GithubConnectorConstants;
 
 public enum BitbucketHttpAuthenticationType {
   @JsonProperty(BitbucketConnectorConstants.USERNAME_AND_PASSWORD)
-  USERNAME_AND_PASSWORD(BitbucketConnectorConstants.USERNAME_AND_PASSWORD);
+  USERNAME_AND_PASSWORD(BitbucketConnectorConstants.USERNAME_AND_PASSWORD),
+  @JsonProperty(BitbucketConnectorConstants.OAUTH) OAUTH(BitbucketConnectorConstants.OAUTH);
 
   private final String displayName;
 

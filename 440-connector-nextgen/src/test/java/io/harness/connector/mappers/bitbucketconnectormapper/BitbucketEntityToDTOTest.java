@@ -91,6 +91,7 @@ public class BitbucketEntityToDTOTest extends CategoryTest {
             .validationRepo(validationRepo)
             .bitbucketApiAccess(
                 BitbucketUsernamePasswordApiAccess.builder().usernameRef(privateKeyRef).tokenRef(privateKeyRef).build())
+            .apiAccessType(BitbucketApiAccessType.USERNAME_AND_TOKEN)
             .connectionType(GitConnectionType.ACCOUNT)
             .authType(HTTP)
             .authenticationDetails(

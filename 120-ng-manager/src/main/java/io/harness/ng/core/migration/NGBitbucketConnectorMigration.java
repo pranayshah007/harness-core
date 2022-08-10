@@ -2,6 +2,7 @@ package io.harness.ng.core.migration;
 
 import io.harness.connector.entities.Connector;
 import io.harness.connector.entities.embedded.bitbucketconnector.BitbucketConnector;
+import io.harness.connector.entities.embedded.bitbucketconnector.BitbucketConnector.BitbucketConnectorKeys;
 import io.harness.connector.entities.embedded.bitbucketconnector.BitbucketUsernamePasswordApiAccess;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketApiAccessType;
@@ -19,18 +20,18 @@ import org.springframework.data.mongodb.core.query.Update;
 public class NGBitbucketConnectorMigration implements NGMigration {
   @Inject private ConnectorRepository connectorRepository;
   private static final int BATCH_SIZE = 100;
-  private static final String classField = BitbucketConnector.BitbucketConnectorKeys.bitbucketApiAccess + "._class";
+  private static final String classField = BitbucketConnectorKeys.bitbucketApiAccess + "._class";
 
   @Override
   public void migrate() {
     try {
       Criteria criteria = Criteria.where(Connector.ConnectorKeys.type)
                               .is(ConnectorType.BITBUCKET)
-                              .and(BitbucketConnector.BitbucketConnectorKeys.hasApiAccess)
+                              .and(BitbucketConnectorKeys.hasApiAccess)
                               .is(Boolean.TRUE)
                               .and(classField)
                               .exists(false)
-                              .and(BitbucketConnector.BitbucketConnectorKeys.apiAccessType)
+                              .and(BitbucketConnectorKeys.apiAccessType)
                               .exists(false);
       Query query = new Query(criteria);
       query.cursorBatchSize(BATCH_SIZE);

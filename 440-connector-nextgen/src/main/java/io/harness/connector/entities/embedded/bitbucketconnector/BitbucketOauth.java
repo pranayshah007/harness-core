@@ -8,7 +8,7 @@ import org.springframework.data.annotation.TypeAlias;
 
 @Value
 @Builder
-@TypeAlias("io.harness.connector.entities.embedded.bitbucketconnector.BitbucketOauth")
+@TypeAlias("io.harness.connector.entities.embedded.bitbucketconnector.GitlabOauth")
 public class BitbucketOauth implements BitbucketHttpAuth, BitbucketApiAccess {
   String tokenRef;
   String refreshTokenRef;
