@@ -75,6 +75,16 @@ public class GithubPackagesArtifactTaskHelper {
                   + " artifacts");
 
           break;
+        case GET_LAST_SUCCESSFUL_BUILD:
+
+          saveLogs(executionLogCallback, "Fetching last successful artifact details");
+
+          artifactTaskResponse =
+              getSuccessTaskResponse(githubPackagesArtifactTaskHandler.getLastSuccessfulBuild(attributes));
+
+          saveLogs(executionLogCallback, "Fetched last successful artifact");
+
+          break;
         default:
 
           saveLogs(executionLogCallback,

@@ -52,6 +52,10 @@ public class GithubPackagesArtifactTaskHandler
     return getSuccessTaskExecutionResponse(githubPackagesArtifactDelegateResponses);
   }
 
+  public ArtifactTaskExecutionResponse getLastSuccessfulBuild(GithubPackagesArtifactDelegateRequest attributes) {
+    return null;
+  }
+
   public void decryptRequestDTOs(GithubPackagesArtifactDelegateRequest attributes) {
     if (attributes.getGithubConnectorDTO().getAuthentication() != null) {
       secretDecryptionService.decrypt(attributes.getGithubConnectorDTO().getAuthentication().getCredentials(),
