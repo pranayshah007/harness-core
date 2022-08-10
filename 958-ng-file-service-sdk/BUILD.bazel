@@ -10,7 +10,7 @@ java_library(
     deps = [
         "//:lombok",
         "//959-file-service-commons:module",
-        "//960-persistence:module",
+        "//959-ng-persistence:module",
         "//980-commons:module",
         "@maven//:org_slf4j_slf4j_api",
     ],
