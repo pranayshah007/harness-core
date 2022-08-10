@@ -69,7 +69,7 @@ public class CIExecutionConstants {
       "mkdir -p /addon/bin; mkdir -p /addon/tmp; chmod -R 776 /addon/tmp; cp /usr/local/bin/ci-addon-linux-amd64 /addon/bin/ci-addon; chmod +x /addon/bin/ci-addon; cp /usr/local/bin/java-agent.jar /addon/bin/java-agent.jar; chmod +x /addon/bin/java-agent.jar; cp /usr/local/bin/split_tests /addon/bin/split_tests; chmod +x /addon/bin/split_tests; export PATH=$PATH:/addon/bin";
 
   public static final String WIN_SETUP_ADDON_ARGS =
-      "mkdir /addon/bin; mkdir /addon/tmp; cp C:/addon.exe /addon/bin/addon.exe";
+      "mkdir /addon/bin; mkdir /addon/tmp; cp C:/addon.exe /addon/bin/addon.exe; cp C:/split_tests.exe /addon/bin/split_tests.exe";
 
   public static final String ADDON_VOLUME = "addon";
   public static final String ADDON_VOL_MOUNT_PATH = "/addon";
@@ -127,6 +127,11 @@ public class CIExecutionConstants {
   public static final String PLUGIN_REGISTRY = "PLUGIN_REGISTRY";
   public static final String PLUGIN_ACCESS_KEY = "PLUGIN_ACCESS_KEY";
   public static final String PLUGIN_SECRET_KEY = "PLUGIN_SECRET_KEY";
+
+  public static final String CLIENT_SECRET = "CLIENT_SECRET";
+  public static final String TENANT_ID = "TENANT_ID";
+  public static final String CLIENT_CERTIFICATE = "CLIENT_CERTIFICATE";
+  public static final String CLIENT_ID = "CLIENT_ID";
   public static final String PLUGIN_ASSUME_ROLE = "PLUGIN_ASSUME_ROLE";
   public static final String PLUGIN_EXTERNAL_ID = "PLUGIN_EXTERNAL_ID";
 
@@ -150,4 +155,7 @@ public class CIExecutionConstants {
   public static final String PLUGIN_ARTIFACT_FILE_VALUE = "/addon/tmp/.plugin/artifact";
 
   public static final String AZURE_REPO_BASE_URL = "azure.com";
+
+  public static final String MEMORY = "MEMORY";
+  public static final String CPU = "CPU";
 }

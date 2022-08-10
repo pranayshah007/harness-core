@@ -143,6 +143,11 @@ public class Instance extends Base implements AccountAccess, ApplicationAccess {
                  .field(InstanceKeys.lastWorkflowExecutionId)
                  .descSortField(InstanceKeys.lastUpdatedAt)
                  .build())
+        .add(SortCompoundMongoIndex.builder()
+                 .name("inframapping_lastUpdated")
+                 .field(InstanceKeys.infraMappingId)
+                 .descSortField(InstanceKeys.lastUpdatedAt)
+                 .build())
         .build();
   }
 

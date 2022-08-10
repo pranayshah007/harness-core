@@ -493,7 +493,7 @@ public class DelegateTaskServiceClassicTest extends WingsBaseTest {
     // other instance should not acquire
     delegateTaskPackage =
         delegateTaskServiceClassic.acquireDelegateTask(ACCOUNT_ID, DELEGATE_ID, delegateTask.getUuid(), generateUuid());
-    assertThat(delegateTaskPackage).isNull();
+    assertThat(delegateTaskPackage.getData()).isNull();
   }
 
   @Cache
@@ -525,7 +525,8 @@ public class DelegateTaskServiceClassicTest extends WingsBaseTest {
     delegate.setUuid(DELEGATE_ID);
     persistence.save(delegate);
     DelegateTask delegateTask = saveDelegateTask(true, emptySet(), QUEUED);
-    assertThat(delegateTaskServiceClassic.acquireDelegateTask(ACCOUNT_ID, DELEGATE_ID, delegateTask.getUuid(), null))
+    assertThat(
+        delegateTaskServiceClassic.acquireDelegateTask(ACCOUNT_ID, DELEGATE_ID, delegateTask.getUuid(), null).getData())
         .isNull();
   }
 
@@ -541,7 +542,8 @@ public class DelegateTaskServiceClassicTest extends WingsBaseTest {
     delegate.setUuid(DELEGATE_ID);
     persistence.save(delegate);
     DelegateTask delegateTask = saveDelegateTask(true, emptySet(), QUEUED);
-    assertThat(delegateTaskServiceClassic.acquireDelegateTask(ACCOUNT_ID, DELEGATE_ID, delegateTask.getUuid(), null))
+    assertThat(
+        delegateTaskServiceClassic.acquireDelegateTask(ACCOUNT_ID, DELEGATE_ID, delegateTask.getUuid(), null).getData())
         .isNull();
   }
 
@@ -555,7 +557,8 @@ public class DelegateTaskServiceClassicTest extends WingsBaseTest {
     persistence.save(delegate);
     DelegateTask delegateTask = saveDelegateTask(true, emptySet(), QUEUED);
     assertThat(
-        delegateTaskServiceClassic.acquireDelegateTask(ACCOUNT_ID, DELEGATE_ID + "1", delegateTask.getUuid(), null))
+        delegateTaskServiceClassic.acquireDelegateTask(ACCOUNT_ID, DELEGATE_ID + "1", delegateTask.getUuid(), null)
+            .getData())
         .isNull();
   }
 
@@ -574,13 +577,13 @@ public class DelegateTaskServiceClassicTest extends WingsBaseTest {
 
     DelegateTaskPackage delegateTaskPackage =
         delegateTaskServiceClassic.acquireDelegateTask(accountId, delegateId, generateUuid(), null);
-    assertThat(delegateTaskPackage).isNull();
+    assertThat(delegateTaskPackage.getData()).isNull();
 
     delegate.setStatus(DelegateInstanceStatus.DELETED);
     persistence.save(delegate);
 
     delegateTaskPackage = delegateTaskServiceClassic.acquireDelegateTask(accountId, delegateId, generateUuid(), null);
-    assertThat(delegateTaskPackage).isNull();
+    assertThat(delegateTaskPackage.getData()).isNull();
   }
 
   @Test
@@ -589,7 +592,7 @@ public class DelegateTaskServiceClassicTest extends WingsBaseTest {
   public void shouldNotAcquireTaskIfDelegateNotFoundInDb() {
     DelegateTaskPackage delegateTaskPackage =
         delegateTaskServiceClassic.acquireDelegateTask(ACCOUNT_ID, generateUuid(), generateUuid(), null);
-    assertThat(delegateTaskPackage).isNull();
+    assertThat(delegateTaskPackage.getData()).isNull();
   }
 
   @Test

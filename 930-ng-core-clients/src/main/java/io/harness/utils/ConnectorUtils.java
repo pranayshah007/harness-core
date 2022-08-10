@@ -23,6 +23,7 @@ import io.harness.connector.ConnectorDTO;
 import io.harness.connector.ConnectorResourceClient;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails.ConnectorDetailsBuilder;
+import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryAuthType;
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryConnectorDTO;
@@ -192,6 +193,18 @@ public class ConnectorUtils {
       decryptableEntities.forEach(
           entity -> encryptedDataDetails.addAll(secretManagerClientService.getEncryptionDetails(ngAccess, entity)));
     }
+
+    ConnectorConfigDTO connectorConfigDTO = connectorDTO.getConnectorInfo().getConnectorConfig();
+
+    switch (connectorDTO.getConnectorInfo().getConnectorType()) {
+      case GITHUB:
+        GithubConnectorDTO githubConnectorDTO = (GithubConnectorDTO) connectorConfigDTO;
+        connectorDetailsBuilder.executeOnDelegate(githubConnectorDTO.getExecuteOnDelegate());
+        break;
+      default:
+        break;
+    }
+
     return connectorDetailsBuilder.encryptedDataDetails(encryptedDataDetails).build();
   }
 

@@ -33,6 +33,7 @@ import java.util.Map;
 public class GitAwareEntityHelper {
   @Inject SCMGitSyncHelper scmGitSyncHelper;
   public static final String DEFAULT = "__default__";
+  public static final String HARNESS_FOLDER_EXTENSION_WITH_SEPARATOR = ".harness/";
 
   public GitAware fetchEntityFromRemote(
       GitAware entity, Scope scope, GitContextRequestParams gitContextRequestParams, Map<String, String> contextMap) {
@@ -189,5 +190,22 @@ public class GitAwareEntityHelper {
 
   private boolean isNullOrDefault(String val) {
     return EmptyPredicate.isEmpty(val) || val.equals(DEFAULT);
+  }
+
+  public String getRepoUrl(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
+    GitEntityInfo gitEntityInfo = GitAwareContextHelper.getGitRequestParamsInfo();
+    Scope scope = Scope.of(accountIdentifier, orgIdentifier, projectIdentifier);
+    return scmGitSyncHelper
+        .getRepoUrl(scope, gitEntityInfo.getRepoName(), gitEntityInfo.getConnectorRef(), Collections.emptyMap())
+        .getRepoUrl();
+  }
+
+  public void checkRootFolder() {
+    GitEntityInfo gitEntityInfo = GitAwareContextHelper.getGitRequestParamsInfo();
+    String filePath = gitEntityInfo.getFilePath();
+    String key = GitAwareEntityHelper.HARNESS_FOLDER_EXTENSION_WITH_SEPARATOR;
+    if (!filePath.startsWith(key)) {
+      throw new InvalidRequestException("The Requested YAML path should begin with \".harness/\"");
+    }
   }
 }

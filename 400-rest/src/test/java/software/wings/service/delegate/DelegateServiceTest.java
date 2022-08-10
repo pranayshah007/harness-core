@@ -1324,6 +1324,7 @@ public class DelegateServiceTest extends WingsBaseTest {
                             .proxy(false)
                             .polllingModeEnabled(false)
                             .sampleDelegate(false)
+                            .tags(Arrays.asList("existingTag1", "existingTag2"))
                             .build();
     DelegateProfile primaryDelegateProfile =
         createDelegateProfileBuilder().accountId(delegate.getAccountId()).primary(true).build();
@@ -1347,6 +1348,7 @@ public class DelegateServiceTest extends WingsBaseTest {
                                 .proxy(true)
                                 .pollingModeEnabled(true)
                                 .sampleDelegate(false)
+                                .tags(Arrays.asList("newTag1", "newTag2"))
                                 .build();
 
     delegateService.register(params);
@@ -1363,6 +1365,8 @@ public class DelegateServiceTest extends WingsBaseTest {
     assertThat(delegateFromDb.isProxy()).isEqualTo(params.isProxy());
     assertThat(delegateFromDb.isPolllingModeEnabled()).isEqualTo(params.isPollingModeEnabled());
     assertThat(delegateFromDb.isSampleDelegate()).isEqualTo(params.isSampleDelegate());
+    assertThat(delegate.getTags()).isEqualTo(Arrays.asList("existingTag1", "existingTag2"));
+    assertThat(delegateFromDb.getTags()).isEqualTo(Arrays.asList("newTag1", "newTag2"));
   }
 
   @Test
@@ -1382,6 +1386,7 @@ public class DelegateServiceTest extends WingsBaseTest {
                             .ng(false)
                             .polllingModeEnabled(false)
                             .sampleDelegate(false)
+                            .tags(Arrays.asList("existingTag1", "existingTag2"))
                             .build();
     DelegateProfile primaryDelegateProfile =
         createDelegateProfileBuilder().accountId(delegate.getAccountId()).primary(true).build();
@@ -1406,6 +1411,7 @@ public class DelegateServiceTest extends WingsBaseTest {
                                 .proxy(true)
                                 .pollingModeEnabled(true)
                                 .sampleDelegate(false)
+                                .tags(Arrays.asList("newTag1", "newTag2"))
                                 .build();
 
     delegateService.register(params);
@@ -1422,6 +1428,8 @@ public class DelegateServiceTest extends WingsBaseTest {
     assertThat(delegateFromDb.isPolllingModeEnabled()).isEqualTo(params.isPollingModeEnabled());
     assertThat(delegateFromDb.isSampleDelegate()).isEqualTo(params.isSampleDelegate());
     assertThat(delegateFromDb.isNg()).isEqualTo(params.isNg());
+    assertThat(delegate.getTags()).isEqualTo(Arrays.asList("existingTag1", "existingTag2"));
+    assertThat(delegateFromDb.getTags()).isEqualTo(Arrays.asList("newTag1", "newTag2"));
   }
 
   @Test
@@ -3782,7 +3790,7 @@ public class DelegateServiceTest extends WingsBaseTest {
   public void shouldGenerateNgHelmValuesYamlFile() throws IOException {
     when(accountService.get(ACCOUNT_ID))
         .thenReturn(anAccount().withAccountKey("ACCOUNT_KEY").withUuid(ACCOUNT_ID).build());
-    when(delegateVersionService.getDelegateImageTagForNgHelmDelegates(ACCOUNT_ID)).thenReturn(DELEGATE_IMAGE_TAG);
+    when(delegateVersionService.getImmutableDelegateImageTag(ACCOUNT_ID)).thenReturn(DELEGATE_IMAGE_TAG);
     when(delegateVersionService.getUpgraderImageTag(ACCOUNT_ID, HELM_DELEGATE)).thenReturn(UPGRADER_IMAGE_TAG);
     DelegateSetupDetails setupDetails =
         DelegateSetupDetails.builder()

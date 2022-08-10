@@ -12,7 +12,7 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.cvng.core.beans.HealthSourceMetricDefinition;
 import io.harness.cvng.core.beans.RiskProfile;
-import io.harness.cvng.core.beans.monitoredService.MetricPackDTO;
+import io.harness.cvng.core.beans.monitoredService.TimeSeriesMetricPackDTO;
 import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.NewRelicHealthSourceSpec;
 import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.NewRelicHealthSourceSpec.NewRelicMetricDefinition;
 import io.harness.cvng.core.entities.NewRelicCVConfig;
@@ -83,7 +83,7 @@ public class NewRelicHealthSourceSpecTransformer
         .feature(cvConfigs.get(0).getProductName())
         .newRelicMetricDefinitions(newRelicMetricDefinitions)
         .metricPacks(configsWithoutCustom.stream()
-                         .map(cv -> MetricPackDTO.toMetricPackDTO(cv.getMetricPack()))
+                         .map(cv -> TimeSeriesMetricPackDTO.toMetricPackDTO(cv.getMetricPack()))
                          .collect(Collectors.toSet()))
         .build();
   }

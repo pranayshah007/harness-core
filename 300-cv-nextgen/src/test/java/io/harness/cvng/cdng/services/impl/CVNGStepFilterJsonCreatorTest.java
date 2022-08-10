@@ -54,7 +54,8 @@ import org.mockito.MockitoAnnotations;
 
 public class CVNGStepFilterJsonCreatorTest extends CvNextGenTestBase {
   private static final List<String> YAML_FILE_PATHS = Arrays.asList("pipeline/pipeline-with-verify.yaml",
-      "pipeline/pipeline-canary-with-verify.yaml", "pipeline/pipeline-service-propagation-with-verify.yaml");
+      "pipeline/pipeline-canary-with-verify.yaml", "pipeline/pipeline-service-propagation-with-verify.yaml",
+      "pipeline/pipeline-with-service-as-serviceConfig-with-verify.yaml");
   private static final List<String> CONFIGURED_YAML_FILE_PATHS =
       Arrays.asList("pipeline/pipeline-with-verify-configured-monitored-service.yaml");
   @Inject private CVNGStepFilterJsonCreator cvngStepFilterJsonCreator;

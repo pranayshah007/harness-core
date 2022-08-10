@@ -8,7 +8,7 @@ shared_deps = [
 ] + [
     "//940-primary-version-manager:module",
     "//953-events-api:module",
-    "//960-persistence:module",
+    "//959-ng-persistence:module",
     "//980-commons:module",
     "@maven//:com_google_inject_guice",
     "@maven//:com_fasterxml_jackson_core_jackson_annotations",

@@ -8,6 +8,7 @@
 package io.harness.delegate.task.azure.appservice.webapp.handler;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.azure.model.AzureConstants.DEPLOYMENT_SLOT_PRODUCTION_NAME;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.azure.context.AzureWebClientContext;
@@ -17,11 +18,15 @@ import io.harness.azure.model.AzureAppServiceConnectionString;
 import io.harness.azure.utility.AzureResourceUtility;
 import io.harness.delegate.task.azure.appservice.AzureAppServiceResourceUtilities;
 import io.harness.delegate.task.azure.appservice.deployment.context.AzureAppServiceDockerDeploymentContext;
+import io.harness.delegate.task.azure.appservice.deployment.context.AzureAppServicePackageDeploymentContext;
 import io.harness.delegate.task.azure.appservice.webapp.ng.AzureWebAppInfraDelegateConfig;
 import io.harness.delegate.task.azure.appservice.webapp.ng.request.AbstractSlotDataRequest;
+import io.harness.delegate.task.azure.artifact.AzureArtifactDownloadResponse;
 import io.harness.delegate.task.azure.artifact.AzureContainerArtifactConfig;
 import io.harness.delegate.task.azure.artifact.AzureRegistrySettingsAdapter;
 import io.harness.delegate.task.azure.common.AzureLogCallbackProvider;
+
+import software.wings.utils.ArtifactType;
 
 import com.google.inject.Inject;
 import java.util.Map;
@@ -69,6 +74,42 @@ public abstract class AbstractSlotDataRequestHandler<T extends AbstractSlotDataR
         .imagePathAndTag(imagePathAndTag)
         .steadyStateTimeoutInMin(azureResourceUtilities.getTimeoutIntervalInMin(taskRequest.getTimeoutIntervalInMin()))
         .skipTargetSlotValidation(true)
+        .isBasicDeployment(DEPLOYMENT_SLOT_PRODUCTION_NAME.equalsIgnoreCase(infrastructure.getDeploymentSlot()))
+        .build();
+  }
+
+  protected AzureAppServicePackageDeploymentContext toAzureAppServicePackageDeploymentContext(T taskRequest,
+      AzureWebClientContext clientContext, AzureArtifactDownloadResponse artifactResponse,
+      AzureLogCallbackProvider logCallbackProvider) {
+    AzureAppServiceConfiguration appServiceConfiguration =
+        AzureAppServiceConfiguration.builder()
+            .connStringsJSON(taskRequest.getConnectionStrings() != null
+                    ? taskRequest.getConnectionStrings().fetchFileContent()
+                    : null)
+            .appSettingsJSON(taskRequest.getApplicationSettings() != null
+                    ? taskRequest.getApplicationSettings().fetchFileContent()
+                    : null)
+            .build();
+
+    Map<String, AzureAppServiceApplicationSetting> appSettingsToAdd =
+        azureResourceUtilities.getAppSettingsToAdd(appServiceConfiguration.getAppSettings());
+    Map<String, AzureAppServiceConnectionString> connSettingsToAdd =
+        azureResourceUtilities.getConnectionSettingsToAdd(appServiceConfiguration.getConnStrings());
+
+    return AzureAppServicePackageDeploymentContext.builder()
+        .logCallbackProvider(logCallbackProvider)
+        .appSettingsToAdd(appSettingsToAdd)
+        .connSettingsToAdd(connSettingsToAdd)
+        .slotName(taskRequest.getInfrastructure().getDeploymentSlot())
+        .azureWebClientContext(clientContext)
+        .startupCommand(
+            taskRequest.getStartupCommand() != null ? taskRequest.getStartupCommand().fetchFileContent() : null)
+        .artifactFile(artifactResponse != null ? artifactResponse.getArtifactFile() : null)
+        .artifactType(artifactResponse != null ? artifactResponse.getArtifactType() : ArtifactType.ZIP)
+        .steadyStateTimeoutInMin(azureResourceUtilities.getTimeoutIntervalInMin(taskRequest.getTimeoutIntervalInMin()))
+        .skipTargetSlotValidation(true)
+        .isBasicDeployment(
+            DEPLOYMENT_SLOT_PRODUCTION_NAME.equalsIgnoreCase(taskRequest.getInfrastructure().getDeploymentSlot()))
         .build();
   }
 }

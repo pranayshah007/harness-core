@@ -15,7 +15,8 @@
       "artifactoryServerUrl" : "https://artifactoryurl",
       "auth" : {
         "type" : "Anonymous"
-      }
+      },
+      "executeOnDelegate": true
     }
   }
 }

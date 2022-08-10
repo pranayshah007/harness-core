@@ -9,12 +9,14 @@ package io.harness.polling.artifact;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.delegate.task.artifacts.S3ArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.artifactory.ArtifactoryArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.artifactory.ArtifactoryGenericArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.azure.AcrArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.docker.DockerArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.ecr.EcrArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.gcr.GcrArtifactDelegateResponse;
+import io.harness.delegate.task.artifacts.jenkins.JenkinsArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.nexus.NexusArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.response.ArtifactDelegateResponse;
 import io.harness.exception.InvalidRequestException;
@@ -43,6 +45,10 @@ public class ArtifactCollectionUtilsNg {
         }
       case ACR:
         return ((AcrArtifactDelegateResponse) artifactDelegateResponse).getTag();
+      case AMAZONS3:
+        return ((S3ArtifactDelegateResponse) artifactDelegateResponse).getFilePath();
+      case JENKINS:
+        return ((JenkinsArtifactDelegateResponse) artifactDelegateResponse).getBuild();
       default:
         throw new InvalidRequestException(
             String.format("Source type %s not supported", artifactDelegateResponse.getSourceType()));

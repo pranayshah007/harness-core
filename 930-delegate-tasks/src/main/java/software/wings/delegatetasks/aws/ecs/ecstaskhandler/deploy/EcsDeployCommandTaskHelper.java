@@ -543,19 +543,30 @@ public class EcsDeployCommandTaskHelper {
   /**
    * Logic to find downsize count of older service(s)
    * <p>
-   * If downsizeInstanceCount is not provided, downsize by removing all old instances for last step
-   * or downsize equally (number of upsize instances == number of downsize instances)
-   * <pre>
-   * eg: upsizeDesiredCount = 5, upsizePreviousCount = 4, totalOtherInstances = 100 then downsize = 5-4 = 1, reducing
-   * older instances count to 99. if last step: downsize = 100, reducing older instances count to 0.
+   * If downsizeInstanceCount is not provided & totalTargetInstances != 0, downsize by removing all old instances for
+   * last step or downsize equally (number of upsize instances == number of downsize instances) <pre> eg: If
+   * totalTargetInstances != 0, upsizeDesiredCount = 5, upsizePreviousCount = 4, totalOtherInstances = 100 then downsize
+   * = 5-4 = 1, reducing older instances count to 99. if last step: downsize = 100, reducing older instances count to 0.
    * </pre>
+   *
+   * If downsizeInstanceCount is not provided &  totalTargetInstances == 0, then downsize by the upsizeInstanceCount
+   * values <pre> eg: If totalTargetInstances = 0, totalOtherInstances = 100, upsizeInstanceCount = 40 %, then reduce
+   * older instances by 40. If totalTargetInstances = 0, totalOtherInstances = 100, upsizeInstanceCount = 30, then
+   * reduce older instances by 30.
+   * </pre>
+   *
    * <p>
-   * If downsizeInstanceCount is provided in upgrade step, downsize by <code>downsizeInstanceCount</code> and for
-   * percentage, by <code>(downsizeInstanceCount% * total new instances)/100</code>
-   * <p>
-   * <pre>
-   * eg: downsizeInstanceCount = 5, totalOtherInstances = 100, reduce older instances to 95 downsizeInstanceCount = 5%,
-   * total new instances = 50, reduce by 5% of 50 = 3
+   * If downsizeInstanceCount is provided in upgrade step & totalTargetInstances != 0, downsize by
+   * <code>downsizeInstanceCount</code> and for percentage, by <code>(downsizeInstanceCount% *
+   * totaltargetinstances)/100</code> <pre> eg: downsizeInstanceCount = 5, totalTargetInstances != 0,
+   * totalOtherInstances = 100, reduce older instances by 95 downsizeInstanceCount = 5%, total new instances = 50,
+   * reduce by 5% of 50 = 3
+   * </pre>
+   *
+   * If downsizeInstanceCount is provided in upgrade step & totalTargetInstances == 0, downsize by
+   * <code>downsizeInstanceCount</code> and for percentage, by <code>(downsizeInstanceCount% *
+   * totalotherinstances)/100</code> <pre> eg: downsizeInstanceCount = 5, totalTargetInstances = 0, totalOtherInstances
+   * = 100, reduce older instances by 95 downsizeInstanceCount = 5%, reduce by 5% of 100 = 5
    * </pre>
    *
    * @param contextData         context data
@@ -571,18 +582,34 @@ public class EcsDeployCommandTaskHelper {
     }
 
     EcsResizeParams resizeParams = contextData.getResizeParams();
+    int totalTargetInstances =
+        resizeParams.isUseFixedInstances() ? resizeParams.getFixedInstances() : resizeParams.getMaxInstances();
     Integer downsizeDesiredCount = resizeParams.getDownsizeInstanceCount();
+
     if (downsizeDesiredCount != null) {
       int downsizeInstanceCount = resizeParams.getDownsizeInstanceCount();
-      int totalTargetInstances =
-          resizeParams.isUseFixedInstances() ? resizeParams.getFixedInstances() : resizeParams.getMaxInstances();
-      int downsizeToCount = resizeParams.getDownsizeInstanceUnitType() == PERCENTAGE
-          ? (int) Math.round(Math.min(downsizeInstanceCount, 100) * totalTargetInstances / 100.0)
-          : Math.min(downsizeInstanceCount, totalTargetInstances);
+      int downsizeToCount;
+      if (totalTargetInstances == 0) {
+        downsizeToCount = resizeParams.getDownsizeInstanceUnitType() == PERCENTAGE
+            ? (int) Math.round(Math.min(downsizeInstanceCount, 100) * totalOtherInstances / 100.0)
+            : Math.min(downsizeInstanceCount, totalOtherInstances);
+      } else {
+        downsizeToCount = resizeParams.getDownsizeInstanceUnitType() == PERCENTAGE
+            ? (int) Math.round(Math.min(downsizeInstanceCount, 100) * totalTargetInstances / 100.0)
+            : Math.min(downsizeInstanceCount, totalTargetInstances);
+      }
       return Math.max(totalOtherInstances - downsizeToCount, 0);
     } else {
-      return contextData.isDeployingToHundredPercent() ? totalOtherInstances
-                                                       : Math.max(upsizeDesiredCount - upsizePreviousCount, 0);
+      if (totalTargetInstances == 0) {
+        int instanceCount = resizeParams.getInstanceCount();
+        return resizeParams.getInstanceUnitType() == PERCENTAGE
+            ? (int) Math.round(Math.min(instanceCount, 100) * totalOtherInstances / 100.0)
+            : Math.min(totalOtherInstances, instanceCount);
+      } else {
+        return contextData.isDeployingToHundredPercent()
+            ? totalOtherInstances
+            : Math.min(Math.max(upsizeDesiredCount - upsizePreviousCount, 0), totalOtherInstances);
+      }
     }
   }
 

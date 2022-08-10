@@ -17,6 +17,7 @@ import static io.harness.helm.HelmConstants.HELM_HOME_PATH_FLAG;
 import static io.harness.k8s.model.HelmVersion.V2;
 import static io.harness.k8s.model.HelmVersion.V3;
 import static io.harness.rule.OwnerRule.ABOSII;
+import static io.harness.rule.OwnerRule.ACHYUTH;
 import static io.harness.rule.OwnerRule.INDER;
 import static io.harness.rule.OwnerRule.NAMAN_TALAYCHA;
 import static io.harness.rule.OwnerRule.YOGESH;
@@ -72,6 +73,8 @@ import io.harness.k8s.K8sGlobalConfigService;
 import io.harness.k8s.model.HelmVersion;
 import io.harness.logging.LogCallback;
 import io.harness.rule.Owner;
+
+import software.wings.helpers.ext.helm.response.ReleaseInfo;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -129,6 +132,21 @@ public class HelmTaskHelperBaseTest extends CategoryTest {
     chartMuseumServer =
         ChartMuseumServer.builder().port(CHARTMUSEUM_SERVER_PORT).startedProcess(chartmuseumStartedProcess).build();
     doReturn(chartMuseumServer).when(chartmuseumClient).start();
+  }
+
+  @Test
+  @Owner(developers = ACHYUTH)
+  @Category(UnitTests.class)
+  public void testProcessHelmReleaseHistOutput() {
+    ReleaseInfo releaseInfo =
+        ReleaseInfo.builder()
+            .chart("nginx-0.1.0")
+            .status("failed")
+            .description("failed due to Forbidden: spec.persistentvolumesource is immutable after creation")
+            .build();
+    assertThatThrownBy(() -> helmTaskHelperBase.processHelmReleaseHistOutput(releaseInfo))
+        .isInstanceOf(HelmClientException.class)
+        .hasMessageContaining("immutable after creation");
   }
 
   @Test

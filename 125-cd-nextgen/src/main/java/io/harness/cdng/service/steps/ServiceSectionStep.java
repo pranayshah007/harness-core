@@ -24,6 +24,7 @@ import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.executables.ChildExecutable;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
+import io.harness.steps.SdkCoreStepUtils;
 import io.harness.steps.StepUtils;
 import io.harness.tasks.ResponseData;
 
@@ -64,7 +65,7 @@ public class ServiceSectionStep implements ChildExecutable<ServiceSectionStepPar
   @Override
   public StepResponse handleChildResponse(
       Ambiance ambiance, ServiceSectionStepParameters stepParameters, Map<String, ResponseData> responseDataMap) {
-    StepResponse stepResponse = StepUtils.createStepResponseFromChildResponse(responseDataMap);
+    StepResponse stepResponse = SdkCoreStepUtils.createStepResponseFromChildResponse(responseDataMap);
     NGLogCallback logCallback = serviceStepsHelper.getServiceLogCallback(ambiance);
     if (StatusUtils.brokeStatuses().contains(stepResponse.getStatus())) {
       logCallback.saveExecutionLog(LogHelper.color("Failed to complete service step", LogColor.Red), LogLevel.INFO,

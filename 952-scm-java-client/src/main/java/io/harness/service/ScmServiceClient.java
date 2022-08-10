@@ -41,6 +41,7 @@ import io.harness.product.ci.scm.proto.ListBranchesWithDefaultResponse;
 import io.harness.product.ci.scm.proto.ListCommitsInPRResponse;
 import io.harness.product.ci.scm.proto.ListCommitsResponse;
 import io.harness.product.ci.scm.proto.ListWebhooksResponse;
+import io.harness.product.ci.scm.proto.RefreshTokenResponse;
 import io.harness.product.ci.scm.proto.SCMGrpc;
 import io.harness.product.ci.scm.proto.UpdateFileResponse;
 
@@ -143,6 +144,9 @@ public interface ScmServiceClient {
 
   CreatePRResponse createPullRequestV2(ScmConnector scmConnector, String sourceBranchName, String targetBranchName,
       String prTitle, SCMGrpc.SCMBlockingStub scmBlockingStub);
+
+  RefreshTokenResponse refreshToken(ScmConnector scmConnector, String clientId, String clientSecret, String endpoint,
+      String refreshToken, SCMGrpc.SCMBlockingStub scmBlockingStub);
 
   GetLatestCommitOnFileResponse getLatestCommitOnFile(
       ScmConnector scmConnector, String branchName, String filepath, SCMGrpc.SCMBlockingStub scmBlockingStub);

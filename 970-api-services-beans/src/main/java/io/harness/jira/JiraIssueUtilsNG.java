@@ -80,7 +80,7 @@ public class JiraIssueUtilsNG {
         fields.keySet().stream().filter(k -> !finalIssueTypeFields.containsKey(k)).collect(Collectors.toSet());
     if (EmptyPredicate.isNotEmpty(invalidFields)) {
       throw new JiraClientException(
-          String.format("Some fields are invalid for this jira issue type: %s", String.join(", ", invalidFields)),
+          String.format("Fields {%s} are invalid for the provided jira issue type", String.join(", ", invalidFields)),
           true);
     }
 
@@ -96,7 +96,7 @@ public class JiraIssueUtilsNG {
               .filter(f -> !finalFields.containsKey(f))
               .collect(Collectors.toSet());
       if (EmptyPredicate.isNotEmpty(requiredFieldsNotPresent)) {
-        throw new JiraClientException(String.format("Some required fields for this jira issue type are missing: %s",
+        throw new JiraClientException(String.format("Required fields {%s} for the provided jira issue type are missing",
                                           String.join(", ", requiredFieldsNotPresent)),
             true);
       }

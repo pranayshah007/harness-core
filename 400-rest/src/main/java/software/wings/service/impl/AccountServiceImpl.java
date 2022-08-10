@@ -64,7 +64,6 @@ import io.harness.beans.PageResponse.PageResponseBuilder;
 import io.harness.cache.HarnessCacheManager;
 import io.harness.ccm.license.CeLicenseInfo;
 import io.harness.cdlicense.impl.CgCdLicenseUsageService;
-import io.harness.configuration.DeployMode;
 import io.harness.cvng.beans.ServiceGuardLimitDTO;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.data.structure.UUIDGenerator;
@@ -506,9 +505,10 @@ public class AccountServiceImpl implements AccountService {
     } else if (account.isCreatedFromNG()) {
       updateNextGenEnabled(account.getUuid(), true);
     }
-    if (!DeployMode.isOnPrem(mainConfiguration.getDeployMode().name())) {
-      featureFlagService.enableAccount(FeatureName.USE_IMMUTABLE_DELEGATE, account.getUuid());
-    }
+    // TODO: MARKO uncomment this when immutable UI has been completely developed
+    //    if (!DeployMode.isOnPrem(mainConfiguration.getDeployMode().name())) {
+    //      featureFlagService.enableAccount(FeatureName.USE_IMMUTABLE_DELEGATE, account.getUuid());
+    //    }
   }
 
   List<Role> createDefaultRoles(Account account) {
@@ -563,6 +563,15 @@ public class AccountServiceImpl implements AccountService {
   public Boolean updateNextGenEnabled(String accountId, boolean enabled) {
     Account account = get(accountId);
     account.setNextGenEnabled(enabled);
+    update(account);
+    publishAccountChangeEventViaEventFramework(accountId, UPDATE_ACTION);
+    return true;
+  }
+
+  @Override
+  public Boolean updateIsProductLed(String accountId, boolean isProductLed) {
+    Account account = get(accountId);
+    account.setProductLed(isProductLed);
     update(account);
     publishAccountChangeEventViaEventFramework(accountId, UPDATE_ACTION);
     return true;
@@ -981,7 +990,7 @@ public class AccountServiceImpl implements AccountService {
     if (licenseService.isAccountDeleted(accountId)) {
       throw new InvalidRequestException("Deleted AccountId: " + accountId);
     }
-    log.info("Getting delegate configuration from Delegate ring");
+    log.debug("Getting delegate configuration from Delegate ring");
 
     // Prefer using delegateConfiguration from DelegateRing.
     List<String> delegateVersionFromRing = delegateVersionService.getDelegateJarVersions(accountId);

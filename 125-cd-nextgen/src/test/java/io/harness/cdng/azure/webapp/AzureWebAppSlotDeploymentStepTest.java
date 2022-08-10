@@ -13,9 +13,10 @@ import static io.harness.azure.model.AzureConstants.SAVE_EXISTING_CONFIGURATIONS
 import static io.harness.azure.model.AzureConstants.UPDATE_SLOT_CONFIGURATION_SETTINGS;
 import static io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants.APPLICATION_SETTINGS;
 import static io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants.CONNECTION_STRINGS;
-import static io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants.STARTUP_SCRIPT;
+import static io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants.STARTUP_COMMAND;
 import static io.harness.k8s.K8sCommandUnitConstants.FetchFiles;
 import static io.harness.rule.OwnerRule.ABOSII;
+import static io.harness.rule.OwnerRule.TMACARI;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyMap;
@@ -34,9 +35,11 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDNGTestBase;
 import io.harness.cdng.CDStepHelper;
+import io.harness.cdng.artifact.outcome.ArtifactOutcome;
 import io.harness.cdng.azure.webapp.beans.AzureSlotDeploymentPassThroughData;
 import io.harness.cdng.azure.webapp.beans.AzureWebAppPreDeploymentDataOutput;
 import io.harness.cdng.azure.webapp.beans.AzureWebAppSlotDeploymentDataOutput;
+import io.harness.cdng.execution.service.StageExecutionInfoService;
 import io.harness.cdng.infra.beans.AzureWebAppInfrastructureOutcome;
 import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.cdng.manifest.yaml.BitbucketStore;
@@ -56,6 +59,8 @@ import io.harness.delegate.task.azure.appservice.webapp.ng.response.AzureWebAppS
 import io.harness.delegate.task.azure.appservice.webapp.ng.response.AzureWebAppTaskResponse;
 import io.harness.delegate.task.azure.appservice.webapp.response.AzureAppDeploymentData;
 import io.harness.delegate.task.azure.artifact.AzureArtifactConfig;
+import io.harness.delegate.task.azure.artifact.AzureContainerArtifactConfig;
+import io.harness.delegate.task.azure.artifact.AzurePackageArtifactConfig;
 import io.harness.delegate.task.git.GitFetchResponse;
 import io.harness.git.model.FetchFilesResult;
 import io.harness.git.model.GitFile;
@@ -99,11 +104,13 @@ public class AzureWebAppSlotDeploymentStepTest extends CDNGTestBase {
   @Mock private CDStepHelper cdStepHelper;
   @Mock private ExecutionSweepingOutputService executionSweepingOutputService;
   @Mock private InstanceInfoService instanceInfoService;
+  @Mock private StageExecutionInfoService stageExecutionInfoService;
 
   @InjectMocks private AzureWebAppSlotDeploymentStep slotDeploymentStep;
 
   @Mock private AzureArtifactConfig azureArtifactConfig;
   @Mock private AzureWebAppInfraDelegateConfig infraDelegateConfig;
+  @Mock private ArtifactOutcome primaryArtifactOutcome;
   private final AzureWebAppInfrastructureOutcome infrastructure = AzureWebAppInfrastructureOutcome.builder().build();
   private final Ambiance ambiance =
       Ambiance.newBuilder().putSetupAbstractions(SetupAbstractionKeys.accountId, "accountId").build();
@@ -113,7 +120,10 @@ public class AzureWebAppSlotDeploymentStepTest extends CDNGTestBase {
 
   @Before
   public void setupTest() {
-    doReturn(azureArtifactConfig).when(azureWebAppStepHelper).getPrimaryArtifactConfig(ambiance);
+    doReturn(primaryArtifactOutcome).when(azureWebAppStepHelper).getPrimaryArtifactOutcome(ambiance);
+    doReturn(azureArtifactConfig)
+        .when(azureWebAppStepHelper)
+        .getPrimaryArtifactConfig(ambiance, primaryArtifactOutcome);
     doReturn(infrastructure).when(cdStepHelper).getInfrastructureOutcome(ambiance);
     doReturn(infraDelegateConfig)
         .when(azureWebAppStepHelper)
@@ -237,7 +247,7 @@ public class AzureWebAppSlotDeploymentStepTest extends CDNGTestBase {
             .build();
     final AzureSlotDeploymentPassThroughData passThroughData =
         AzureSlotDeploymentPassThroughData.builder()
-            .configs(ImmutableMap.of(STARTUP_SCRIPT, AppSettingsFile.create("echo 'test'")))
+            .configs(ImmutableMap.of(STARTUP_COMMAND, AppSettingsFile.create("echo 'test'")))
             .unprocessedConfigs(emptyMap())
             .build();
 
@@ -256,7 +266,7 @@ public class AzureWebAppSlotDeploymentStepTest extends CDNGTestBase {
     assertThat(taskChainResponse.getPassThroughData()).isInstanceOf(AzureSlotDeploymentPassThroughData.class);
     AzureSlotDeploymentPassThroughData newPassThroughData =
         (AzureSlotDeploymentPassThroughData) taskChainResponse.getPassThroughData();
-    assertThat(newPassThroughData.getConfigs()).containsKeys(APPLICATION_SETTINGS, CONNECTION_STRINGS, STARTUP_SCRIPT);
+    assertThat(newPassThroughData.getConfigs()).containsKeys(APPLICATION_SETTINGS, CONNECTION_STRINGS, STARTUP_COMMAND);
     assertThat(newPassThroughData.getConfigs().values().stream().map(AppSettingsFile::fetchFileContent))
         .containsExactlyInAnyOrder(APP_SETTINGS_FILE_CONTENT, CONN_STRINGS_FILE_CONTENT, STARTUP_SCRIPT_FILE_CONTENT);
   }
@@ -270,7 +280,7 @@ public class AzureWebAppSlotDeploymentStepTest extends CDNGTestBase {
         ImmutableMap.of(APPLICATION_SETTINGS, createTestGitStoreConfig());
     final Map<String, StoreConfig> allUnprocessedConfigs = ImmutableMap.<String, StoreConfig>builder()
                                                                .putAll(unprocessedGitConfigs)
-                                                               .put(STARTUP_SCRIPT, createTestHarnessStore())
+                                                               .put(STARTUP_COMMAND, createTestHarnessStore())
                                                                .build();
 
     final AzureSlotDeploymentPassThroughData passThroughData =
@@ -289,7 +299,7 @@ public class AzureWebAppSlotDeploymentStepTest extends CDNGTestBase {
     assertThat(taskChainResponse.getPassThroughData()).isInstanceOf(AzureSlotDeploymentPassThroughData.class);
     AzureSlotDeploymentPassThroughData newPassThroughData =
         (AzureSlotDeploymentPassThroughData) taskChainResponse.getPassThroughData();
-    assertThat(newPassThroughData.getUnprocessedConfigs()).containsKeys(STARTUP_SCRIPT);
+    assertThat(newPassThroughData.getUnprocessedConfigs()).containsKeys(STARTUP_COMMAND);
   }
 
   @Test
@@ -345,6 +355,7 @@ public class AzureWebAppSlotDeploymentStepTest extends CDNGTestBase {
                                                                    .configs(emptyMap())
                                                                    .unprocessedConfigs(emptyMap())
                                                                    .infrastructure(infrastructure)
+                                                                   .primaryArtifactOutcome(primaryArtifactOutcome)
                                                                    .build();
     final AzureAppServicePreDeploymentData preDeploymentData = AzureAppServicePreDeploymentData.builder().build();
     final AzureWebAppTaskResponse azureWebAppTaskResponse =
@@ -399,6 +410,9 @@ public class AzureWebAppSlotDeploymentStepTest extends CDNGTestBase {
     final AzureSlotDeploymentPassThroughData passThroughData = AzureSlotDeploymentPassThroughData.builder().build();
     final ArgumentCaptor<AzureWebAppSlotDeploymentDataOutput> slotDeploymentDataOutputArgumentCaptor =
         ArgumentCaptor.forClass(AzureWebAppSlotDeploymentDataOutput.class);
+    doReturn(AzureContainerArtifactConfig.builder().build())
+        .when(azureWebAppStepHelper)
+        .getPrimaryArtifactConfig(any(), any());
 
     StepResponse stepResponse = slotDeploymentStep.finalizeExecutionWithSecurityContext(
         ambiance, stepElementParameters, passThroughData, () -> azureWebAppTaskResponse);
@@ -412,6 +426,49 @@ public class AzureWebAppSlotDeploymentStepTest extends CDNGTestBase {
     AzureWebAppSlotDeploymentDataOutput slotDeploymentDataOutput = slotDeploymentDataOutputArgumentCaptor.getValue();
     assertThat(slotDeploymentDataOutput.getDeploymentProgressMarker()).isEqualTo(deploymentProgressMarker);
     verify(instanceInfoService, times(1)).saveServerInstancesIntoSweepingOutput(any(), anyList());
+  }
+
+  @Test
+  @Owner(developers = TMACARI)
+  @Category(UnitTests.class)
+  public void testFinalizeExecutionWithPackageArtifact() throws Exception {
+    AzurePackageArtifactConfig artifactConfig = AzurePackageArtifactConfig.builder().build();
+    final StepElementParameters stepElementParameters = createTestStepElementParameters();
+    final String deploymentProgressMarker = "TestSlotDeployProgressMarker";
+    final List<AzureAppDeploymentData> appDeploymentData =
+        asList(AzureAppDeploymentData.builder().build(), AzureAppDeploymentData.builder().build());
+    final List<UnitProgress> unitProgresses = singletonList(UnitProgress.newBuilder().build());
+    final UnitProgressData unitProgressData = UnitProgressData.builder().unitProgresses(unitProgresses).build();
+    final AzureWebAppTaskResponse azureWebAppTaskResponse =
+        AzureWebAppTaskResponse.builder()
+            .requestResponse(AzureWebAppSlotDeploymentResponse.builder()
+                                 .deploymentProgressMarker(deploymentProgressMarker)
+                                 .azureAppDeploymentData(appDeploymentData)
+                                 .build())
+            .commandUnitsProgress(unitProgressData)
+            .build();
+    final AzureSlotDeploymentPassThroughData passThroughData =
+        AzureSlotDeploymentPassThroughData.builder()
+            .preDeploymentData(AzureAppServicePreDeploymentData.builder().build())
+            .build();
+    final ArgumentCaptor<AzureWebAppSlotDeploymentDataOutput> slotDeploymentDataOutputArgumentCaptor =
+        ArgumentCaptor.forClass(AzureWebAppSlotDeploymentDataOutput.class);
+    doReturn(artifactConfig).when(azureWebAppStepHelper).getPrimaryArtifactConfig(any(), any());
+    doReturn("rollbackDeploymentInfoKey").when(azureWebAppStepHelper).getDeploymentIdentifier(any(), any(), any());
+
+    StepResponse stepResponse = slotDeploymentStep.finalizeExecutionWithSecurityContext(
+        ambiance, stepElementParameters, passThroughData, () -> azureWebAppTaskResponse);
+
+    verify(executionSweepingOutputService)
+        .consume(eq(ambiance), eq(AzureWebAppSlotDeploymentDataOutput.OUTPUT_NAME),
+            slotDeploymentDataOutputArgumentCaptor.capture(), eq(StepCategory.STEP.name()));
+    verify(instanceInfoService, times(1)).saveServerInstancesIntoSweepingOutput(any(), anyList());
+    verify(stageExecutionInfoService, times(1)).update(any(), any(), any());
+
+    assertThat(stepResponse.getStatus()).isEqualTo(Status.SUCCEEDED);
+    assertThat(stepResponse.getUnitProgressList()).isEqualTo(unitProgresses);
+    AzureWebAppSlotDeploymentDataOutput slotDeploymentDataOutput = slotDeploymentDataOutputArgumentCaptor.getValue();
+    assertThat(slotDeploymentDataOutput.getDeploymentProgressMarker()).isEqualTo(deploymentProgressMarker);
   }
 
   private StepElementParameters createTestStepElementParameters() {

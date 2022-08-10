@@ -27,6 +27,7 @@ import io.harness.exception.InvalidArgumentsException;
 import io.harness.rule.Owner;
 
 import java.util.Collections;
+import java.util.Optional;
 import javax.cache.Cache;
 import javax.cache.CacheException;
 import javax.cache.CacheManager;
@@ -57,7 +58,7 @@ public class HarnessCacheManagerImplTest extends CategoryTest {
                                   .cacheNamespace("test")
                                   .disabledCaches(Collections.singleton(DISABLED_CACHE_NAME))
                                   .build();
-    this.harnessCacheManager = new HarnessCacheManagerImpl(cacheManager, cacheConfig);
+    this.harnessCacheManager = new HarnessCacheManagerImpl(cacheManager, Optional.empty(), cacheConfig);
     this.cacheNamespace = isEmpty(cacheConfig.getCacheNamespace())
         ? CACHE_PREFIX
         : cacheConfig.getCacheNamespace().concat("/").concat(CACHE_PREFIX);

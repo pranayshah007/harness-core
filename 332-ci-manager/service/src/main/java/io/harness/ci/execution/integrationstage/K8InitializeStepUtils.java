@@ -12,8 +12,10 @@ import static io.harness.beans.serializer.RunTimeInputHandler.resolveIntegerPara
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveMapParameter;
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveStringParameter;
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveStringParameterWithDefaultValue;
+import static io.harness.ci.commonconstants.CIExecutionConstants.CPU;
 import static io.harness.ci.commonconstants.CIExecutionConstants.DEFAULT_CONTAINER_CPU_POV;
 import static io.harness.ci.commonconstants.CIExecutionConstants.DEFAULT_CONTAINER_MEM_POV;
+import static io.harness.ci.commonconstants.CIExecutionConstants.MEMORY;
 import static io.harness.ci.commonconstants.CIExecutionConstants.STEP_PREFIX;
 import static io.harness.ci.commonconstants.CIExecutionConstants.STEP_REQUEST_MEMORY_MIB;
 import static io.harness.ci.commonconstants.CIExecutionConstants.STEP_REQUEST_MILLI_CPU;
@@ -37,6 +39,7 @@ import io.harness.beans.stages.IntegrationStageConfig;
 import io.harness.beans.stages.IntegrationStageConfigImpl;
 import io.harness.beans.steps.CIStepInfo;
 import io.harness.beans.steps.CIStepInfoType;
+import io.harness.beans.steps.stepinfo.InitializeStepInfo;
 import io.harness.beans.steps.stepinfo.PluginStepInfo;
 import io.harness.beans.steps.stepinfo.RunStepInfo;
 import io.harness.beans.steps.stepinfo.RunTestsStepInfo;
@@ -67,6 +70,7 @@ import io.harness.plancreator.steps.StepGroupElementConfig;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.steps.matrix.StrategyExpansionData;
 import io.harness.utils.TimeoutUtils;
 import io.harness.yaml.core.variables.NGVariableType;
 import io.harness.yaml.core.variables.SecretNGVariable;
@@ -79,11 +83,13 @@ import io.fabric8.utils.Strings;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.tuple.Pair;
 
 @Singleton
 @Slf4j
@@ -94,77 +100,18 @@ public class K8InitializeStepUtils {
   @Inject private ConnectorUtils connectorUtils;
   private final String AXA_ACCOUNT_ID = "UVxMDMhNQxOCvroqqImWdQ";
 
-  public List<ContainerDefinitionInfo> createStepContainerDefinitions(List<ExecutionWrapperConfig> steps,
-      StageElementConfig integrationStage, CIExecutionArgs ciExecutionArgs, PortFinder portFinder, String accountId,
-      OSType os) {
-    List<ContainerDefinitionInfo> containerDefinitionInfos = new ArrayList<>();
-    if (steps == null) {
-      return containerDefinitionInfos;
-    }
-
-    Integer stageMemoryRequest = getStageMemoryRequest(steps, accountId);
-    Integer stageCpuRequest = getStageCpuRequest(steps, accountId);
-
-    int stepIndex = 0;
-    for (ExecutionWrapperConfig executionWrapper : steps) {
-      if (executionWrapper.getStep() != null && !executionWrapper.getStep().isNull()) {
-        StepElementConfig stepElementConfig = IntegrationStageUtils.getStepElementConfig(executionWrapper);
-        stepIndex++;
-        if (stepElementConfig.getTimeout() != null && stepElementConfig.getTimeout().isExpression()) {
-          throw new InvalidRequestException(
-              "Timeout field must be resolved in step: " + stepElementConfig.getIdentifier());
-        }
-
-        ContainerResource containerResource = getContainerResource(stepElementConfig);
-        Integer extraMemoryPerStep = Math.max(
-            0, stageMemoryRequest - getContainerMemoryLimit(containerResource, "stepType", "stepId", accountId));
-        Integer extraCPUPerStep =
-            Math.max(0, stageCpuRequest - getContainerCpuLimit(containerResource, "stepType", "stepId", accountId));
-        ContainerDefinitionInfo containerDefinitionInfo =
-            createStepContainerDefinition(stepElementConfig, integrationStage, ciExecutionArgs, portFinder, stepIndex,
-                accountId, os, extraMemoryPerStep, extraCPUPerStep);
-        if (containerDefinitionInfo != null) {
-          containerDefinitionInfos.add(containerDefinitionInfo);
-        }
-      } else if (executionWrapper.getParallel() != null && !executionWrapper.getParallel().isNull()) {
-        ParallelStepElementConfig parallelStepElementConfig =
-            IntegrationStageUtils.getParallelStepElementConfig(executionWrapper);
-        if (isNotEmpty(parallelStepElementConfig.getSections())) {
-          Integer extraMemoryPerStep =
-              calculateExtraMemoryForParallelStep(parallelStepElementConfig, accountId, stageMemoryRequest);
-          Integer extraCPUPerStep =
-              calculateExtraCPUForParallelStep(parallelStepElementConfig, accountId, stageCpuRequest);
-          for (ExecutionWrapperConfig executionWrapperInParallel : parallelStepElementConfig.getSections()) {
-            if (executionWrapperInParallel.getStep() == null || executionWrapperInParallel.getStep().isNull()) {
-              continue;
-            }
-
-            stepIndex++;
-            StepElementConfig stepElementConfig =
-                IntegrationStageUtils.getStepElementConfig(executionWrapperInParallel);
-            ContainerDefinitionInfo containerDefinitionInfo =
-                createStepContainerDefinition(stepElementConfig, integrationStage, ciExecutionArgs, portFinder,
-                    stepIndex, accountId, os, extraMemoryPerStep, extraCPUPerStep);
-            if (containerDefinitionInfo != null) {
-              containerDefinitionInfos.add(containerDefinitionInfo);
-            }
-          }
-        }
-      }
-    }
-    return containerDefinitionInfos;
-  }
-
-  public List<ContainerDefinitionInfo> createStepContainerDefinitionsStepGroupWithFF(List<ExecutionWrapperConfig> steps,
+  public List<ContainerDefinitionInfo> createStepContainerDefinitions(InitializeStepInfo initializeStepInfo,
       StageElementConfig integrationStage, CIExecutionArgs ciExecutionArgs, PortFinder portFinder, String accountId,
       OSType os, int stepIndex) {
+    List<ExecutionWrapperConfig> steps = initializeStepInfo.getExecutionElementConfig().getSteps();
     List<ContainerDefinitionInfo> containerDefinitionInfos = new ArrayList<>();
     if (steps == null) {
       return containerDefinitionInfos;
     }
 
-    Integer stageMemoryRequest = getStageMemoryRequest(steps, accountId);
-    Integer stageCpuRequest = getStageCpuRequest(steps, accountId);
+    Pair<Integer, Integer> wrapperRequests = getStageRequest(initializeStepInfo, accountId);
+    Integer stageCpuRequest = wrapperRequests.getLeft();
+    Integer stageMemoryRequest = wrapperRequests.getRight();
 
     for (ExecutionWrapperConfig executionWrapper : steps) {
       if (executionWrapper.getStep() != null && !executionWrapper.getStep().isNull()) {
@@ -210,8 +157,14 @@ public class K8InitializeStepUtils {
       stepElementConfig.setIdentifier(stepGroupIdOfParent + "_" + stepElementConfig.getIdentifier());
     }
 
-    Integer extraMemoryPerStep = calculateExtraMemory(executionWrapper, accountId, maxAllocatableMemoryRequest);
-    Integer extraCPUPerStep = calculateExtraCPU(executionWrapper, accountId, maxAllocatableCpuRequest);
+    Integer extraMemoryPerStep = 0;
+    Integer extraCPUPerStep = 0;
+
+    if (stepElementConfig.getStrategy() == null) {
+      extraMemoryPerStep = calculateExtraMemory(executionWrapper, accountId, maxAllocatableMemoryRequest);
+      extraCPUPerStep = calculateExtraCPU(executionWrapper, accountId, maxAllocatableCpuRequest);
+    }
+
     return createStepContainerDefinition(stepElementConfig, integrationStage, ciExecutionArgs, portFinder, stepIndex,
         accountId, os, extraMemoryPerStep, extraCPUPerStep);
   }
@@ -313,6 +266,7 @@ public class K8InitializeStepUtils {
             extraCPUPerStep);
       case DOCKER:
       case ECR:
+      case ACR:
       case GCR:
       case SAVE_CACHE_S3:
       case RESTORE_CACHE_S3:
@@ -345,6 +299,7 @@ public class K8InitializeStepUtils {
     switch (stepType) {
       case DOCKER:
       case ECR:
+      case ACR:
       case GCR:
         throw new CIStageExecutionException(format("%s step not allowed in windows kubernetes builds", stepType));
       default:
@@ -403,6 +358,7 @@ public class K8InitializeStepUtils {
         && stage.getInfrastructure().getType() == Infrastructure.Type.KUBERNETES_HOSTED) {
       switch (stepInfo.getNonYamlInfo().getStepInfoType()) {
         case ECR:
+        case ACR:
         case GCR:
         case DOCKER:
           envVarMap.put("container", "docker");
@@ -609,6 +565,114 @@ public class K8InitializeStepUtils {
     return stageMemoryRequest;
   }
 
+  /*
+    Since this calculation can be a little hard to understand, here is a wiki with explanation
+    https://harness.atlassian.net/wiki/spaces/~47984263/pages/21130641597/Resource+allocation+for+strategy+in+CI
+  */
+  public Integer getStageRequestWithStrategy(List<ExecutionWrapperConfig> steps,
+      Map<String, StrategyExpansionData> strategy, String accountId, String resource) {
+    return getRequestForSerialSteps(steps, strategy, accountId, resource);
+  }
+
+  public Integer getRequestForSerialSteps(List<ExecutionWrapperConfig> steps,
+      Map<String, StrategyExpansionData> strategy, String accountId, String resource) {
+    Integer executionWrapperRequest = 0;
+
+    Map<String, List<ExecutionWrapperConfig>> uuidStepsMap = getUUIDStepsMap(steps);
+    for (String uuid : uuidStepsMap.keySet()) {
+      List<ExecutionWrapperConfig> stepsWithSameUUID = uuidStepsMap.get(uuid);
+      Integer request = getResourceRequestForStepsWithUUID(stepsWithSameUUID, uuid, strategy, accountId, resource);
+      executionWrapperRequest = Math.max(executionWrapperRequest, request);
+    }
+
+    // For parallel steps, as they don't have uuid field
+    for (ExecutionWrapperConfig step : steps) {
+      if (Strings.isNullOrBlank(step.getUuid())) {
+        Integer request = getExecutionWrapperRequestWithStrategy(step, strategy, accountId, resource);
+        executionWrapperRequest = Math.max(executionWrapperRequest, request);
+      }
+    }
+    return executionWrapperRequest;
+  }
+
+  public Integer getExecutionWrapperRequestWithStrategy(ExecutionWrapperConfig executionWrapper,
+      Map<String, StrategyExpansionData> strategy, String accountId, String resource) {
+    Integer executionWrapperRequest = 0;
+
+    if (executionWrapper.getStep() != null && !executionWrapper.getStep().isNull()) {
+      StepElementConfig stepElementConfig = IntegrationStageUtils.getStepElementConfig(executionWrapper);
+      if (resource.equals(MEMORY)) {
+        executionWrapperRequest = getStepMemoryLimit(stepElementConfig, accountId);
+      } else if (resource.equals(CPU)) {
+        executionWrapperRequest = getStepCpuLimit(stepElementConfig, accountId);
+      } else {
+        throw new InvalidRequestException("Invalid resource type : " + resource);
+      }
+    } else if (executionWrapper.getParallel() != null && !executionWrapper.getParallel().isNull()) {
+      ParallelStepElementConfig parallel = IntegrationStageUtils.getParallelStepElementConfig(executionWrapper);
+      List<ExecutionWrapperConfig> steps = parallel.getSections();
+      if (isNotEmpty(steps)) {
+        Map<String, List<ExecutionWrapperConfig>> uuidStepsMap = getUUIDStepsMap(steps);
+        for (String uuid : uuidStepsMap.keySet()) {
+          List<ExecutionWrapperConfig> stepsWithSameUUID = uuidStepsMap.get(uuid);
+          Integer request = getResourceRequestForStepsWithUUID(stepsWithSameUUID, uuid, strategy, accountId, resource);
+          executionWrapperRequest += request;
+        }
+      }
+    } else if (executionWrapper.getStepGroup() != null && !executionWrapper.getStepGroup().isNull()) {
+      StepGroupElementConfig stepGroupElementConfig = IntegrationStageUtils.getStepGroupElementConfig(executionWrapper);
+
+      List<ExecutionWrapperConfig> steps = stepGroupElementConfig.getSteps();
+      if (isNotEmpty(steps)) {
+        executionWrapperRequest = getRequestForSerialSteps(steps, strategy, accountId, resource);
+      }
+    } else {
+      throw new InvalidRequestException("Only Parallel, StepElement and StepGroup are supported");
+    }
+
+    return executionWrapperRequest;
+  }
+
+  /*
+    This method calculates the maximum resource required for a particular UUID.
+   */
+  private Integer getResourceRequestForStepsWithUUID(List<ExecutionWrapperConfig> steps, String uuid,
+      Map<String, StrategyExpansionData> strategy, String accountId, String resource) {
+    List<ExecutionWrapperConfig> sortedSteps = decreasingSortWithResource(steps, accountId, resource);
+    Integer maxConcurrency = strategy.get(uuid).getMaxConcurrency();
+
+    Integer request = 0;
+    for (int i = 0; i < Math.min(maxConcurrency, sortedSteps.size()); i++) {
+      request += getExecutionWrapperRequestWithStrategy(sortedSteps.get(i), strategy, accountId, resource);
+    }
+    return request;
+  }
+
+  public List<ExecutionWrapperConfig> decreasingSortWithResource(
+      List<ExecutionWrapperConfig> steps, String accountId, String resource) {
+    if (resource.equals(MEMORY)) {
+      steps = decreasingSortWithMemory(steps, accountId);
+    } else if (resource.equals(CPU)) {
+      steps = decreasingSortWithCpu(steps, accountId);
+    } else {
+      throw new InvalidRequestException("Invalid resource type : " + resource);
+    }
+    return steps;
+  }
+
+  public Map<String, List<ExecutionWrapperConfig>> getUUIDStepsMap(List<ExecutionWrapperConfig> steps) {
+    Map<String, List<ExecutionWrapperConfig>> map = new HashMap<>();
+    for (ExecutionWrapperConfig step : steps) {
+      if (Strings.isNotBlank(step.getUuid())) {
+        if (!map.containsKey(step.getUuid())) {
+          map.put(step.getUuid(), new ArrayList<>());
+        }
+        map.get(step.getUuid()).add(step);
+      }
+    }
+    return map;
+  }
+
   private Integer getExecutionWrapperMemoryRequest(ExecutionWrapperConfig executionWrapper, String accountId) {
     if (executionWrapper == null) {
       return 0;
@@ -667,6 +731,23 @@ public class K8InitializeStepUtils {
     return memoryLimit;
   }
 
+  public Pair<Integer, Integer> getStageRequest(InitializeStepInfo initializeStepInfo, String accountId) {
+    Integer stageCpuRequest = 0;
+    Integer stageMemoryRequest = 0;
+
+    if (isEmpty(initializeStepInfo.getStrategyExpansionMap())) {
+      stageCpuRequest = getStageCpuRequest(initializeStepInfo.getExecutionElementConfig().getSteps(), accountId);
+      stageMemoryRequest = getStageMemoryRequest(initializeStepInfo.getExecutionElementConfig().getSteps(), accountId);
+    } else {
+      stageCpuRequest = getStageRequestWithStrategy(initializeStepInfo.getExecutionElementConfig().getSteps(),
+          initializeStepInfo.getStrategyExpansionMap(), accountId, CPU);
+      stageMemoryRequest = getStageRequestWithStrategy(initializeStepInfo.getExecutionElementConfig().getSteps(),
+          initializeStepInfo.getStrategyExpansionMap(), accountId, MEMORY);
+    }
+
+    return Pair.of(stageCpuRequest, stageMemoryRequest);
+  }
+
   public Integer getStageCpuRequest(List<ExecutionWrapperConfig> steps, String accountId) {
     Integer stageCpuRequest = 0;
     for (ExecutionWrapperConfig step : steps) {
@@ -674,6 +755,32 @@ public class K8InitializeStepUtils {
       stageCpuRequest = Math.max(stageCpuRequest, executionWrapperCpuRequest);
     }
     return stageCpuRequest;
+  }
+
+  public List<ExecutionWrapperConfig> decreasingSortWithMemory(List<ExecutionWrapperConfig> steps, String accountId) {
+    Comparator<ExecutionWrapperConfig> decreasingSortWithMemory = (a, b) -> {
+      if (getExecutionWrapperMemoryRequest(a, accountId) < getExecutionWrapperMemoryRequest(b, accountId)) {
+        return 1;
+      } else {
+        return -1;
+      }
+    };
+    Collections.sort(steps, decreasingSortWithMemory);
+
+    return steps;
+  }
+
+  public List<ExecutionWrapperConfig> decreasingSortWithCpu(List<ExecutionWrapperConfig> steps, String accountId) {
+    Comparator<ExecutionWrapperConfig> decreasingSortWithCpu = (a, b) -> {
+      if (getExecutionWrapperCpuRequest(a, accountId) < getExecutionWrapperCpuRequest(b, accountId)) {
+        return 1;
+      } else {
+        return -1;
+      }
+    };
+    Collections.sort(steps, decreasingSortWithCpu);
+
+    return steps;
   }
 
   private Integer getExecutionWrapperCpuRequest(ExecutionWrapperConfig executionWrapper, String accountId) {
@@ -724,6 +831,7 @@ public class K8InitializeStepUtils {
             stepElement.getIdentifier(), accountId);
       case GCR:
       case ECR:
+      case ACR:
       case DOCKER:
       case UPLOAD_ARTIFACTORY:
       case UPLOAD_GCS:
@@ -767,6 +875,7 @@ public class K8InitializeStepUtils {
         return ((RunTestsStepInfo) ciStepInfo).getResources();
       case GCR:
       case ECR:
+      case ACR:
       case DOCKER:
       case UPLOAD_ARTIFACTORY:
       case UPLOAD_GCS:
@@ -940,6 +1049,7 @@ public class K8InitializeStepUtils {
         return ((RunStepInfo) ciStepInfo).getResources();
       case DOCKER:
       case ECR:
+      case ACR:
       case GCR:
       case SAVE_CACHE_S3:
       case RESTORE_CACHE_S3:

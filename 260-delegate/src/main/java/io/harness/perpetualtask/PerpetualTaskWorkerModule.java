@@ -26,6 +26,7 @@ import io.harness.perpetualtask.instancesync.AwsAmiInstanceSyncPerpetualTaskPara
 import io.harness.perpetualtask.instancesync.AwsCodeDeployInstanceSyncPerpetualTaskParams;
 import io.harness.perpetualtask.instancesync.AwsLambdaInstanceSyncPerpetualTaskParams;
 import io.harness.perpetualtask.instancesync.AwsSshInstanceSyncPerpetualTaskParams;
+import io.harness.perpetualtask.instancesync.AzureSshInstanceSyncPerpetualTaskParamsNg;
 import io.harness.perpetualtask.instancesync.AzureVmssInstanceSyncPerpetualTaskParams;
 import io.harness.perpetualtask.instancesync.AzureWebAppInstanceSyncPerpetualProtoTaskParams;
 import io.harness.perpetualtask.instancesync.AzureWebAppNGInstanceSyncPerpetualTaskParams;
@@ -35,6 +36,7 @@ import io.harness.perpetualtask.instancesync.K8sInstanceSyncPerpetualTaskParams;
 import io.harness.perpetualtask.instancesync.NativeHelmInstanceSyncPerpetualTaskParams;
 import io.harness.perpetualtask.instancesync.PcfInstanceSyncPerpetualTaskParams;
 import io.harness.perpetualtask.instancesync.PdcInstanceSyncPerpetualTaskParams;
+import io.harness.perpetualtask.instancesync.PdcPerpetualTaskParamsNg;
 import io.harness.perpetualtask.instancesync.ServerlessAwsLambdaInstanceSyncPerpetualTaskParams;
 import io.harness.perpetualtask.instancesync.SpotinstAmiInstanceSyncPerpetualTaskParams;
 import io.harness.perpetualtask.k8s.watch.K8SWatchTaskExecutor;
@@ -113,6 +115,9 @@ public class PerpetualTaskWorkerModule extends AbstractModule {
         .to(ServerlessAwsLambdaInstanceSyncPerpetualTaskExecutor.class);
     mapBinder.addBinding(AzureWebAppNGInstanceSyncPerpetualTaskParams.class.getSimpleName())
         .to(AzureWebAppInstanceSyncPerpetualTaskExecutor.class);
+    mapBinder.addBinding(PdcPerpetualTaskParamsNg.class.getSimpleName()).to(PdcPerpetualTaskExecutorNg.class);
+    mapBinder.addBinding(AzureSshInstanceSyncPerpetualTaskParamsNg.class.getSimpleName())
+        .to(AzureSshWinrmInstanceSyncPerpetualTaskExecutor.class);
 
     install(new FactoryModuleBuilder()
                 .implement(PodWatcher.class, PodWatcher.class)

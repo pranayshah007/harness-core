@@ -10,6 +10,7 @@ package io.harness.cdng.infra.yaml;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.beans.SwaggerConstants.STRING_MAP_CLASSPATH;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.string;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
@@ -66,7 +67,7 @@ public class PdcInfrastructure
   @Wither
   ParameterField<String> credentialsRef;
 
-  @YamlSchemaTypes({runtime})
+  @YamlSchemaTypes({string})
   @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
   @Wither
   ParameterField<List<String>> hosts;

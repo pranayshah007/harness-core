@@ -48,6 +48,7 @@ func convertUser(u *scm.User) (*pb.User, error) {
 	createTS := timestamppb.New(u.Created)
 	updateTS := timestamppb.New(u.Updated)
 	return &pb.User{
+		Id: 	 u.ID,
 		Login:   u.Login,
 		Name:    u.Name,
 		Email:   u.Email,

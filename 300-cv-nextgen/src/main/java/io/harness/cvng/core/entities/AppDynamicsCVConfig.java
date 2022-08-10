@@ -8,13 +8,17 @@
 package io.harness.cvng.core.entities;
 
 import static io.harness.cvng.core.utils.ErrorMessageUtils.generateErrorMessageFromParam;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import io.harness.cvng.beans.CVMonitoringCategory;
 import io.harness.cvng.beans.DataSourceType;
+import io.harness.cvng.beans.ThresholdConfigType;
 import io.harness.cvng.beans.TimeSeriesMetricType;
+import io.harness.cvng.core.beans.monitoredService.TimeSeriesMetricPackDTO;
 import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.AppDynamicsHealthSourceSpec.AppDMetricDefinitions;
+import io.harness.cvng.core.constant.MonitoredServiceConstants;
 import io.harness.cvng.core.entities.AppDynamicsCVConfig.MetricInfo;
 import io.harness.cvng.core.services.CVNextGenConstants;
 import io.harness.cvng.core.utils.analysisinfo.AnalysisInfoUtility;
@@ -164,7 +168,6 @@ public class AppDynamicsCVConfig extends MetricCVConfig<MetricInfo> {
       this.metricInfos.add(metricInfo);
       Set<TimeSeriesThreshold> thresholds = getThresholdsToCreateOnSaveForCustomProviders(
           metricInfo.getMetricName(), metricInfo.getMetricType(), md.getRiskProfile().getThresholdTypes());
-
       metricPack.addToMetrics(MetricPack.MetricDefinition.builder()
                                   .thresholds(new ArrayList<>(thresholds))
                                   .type(metricInfo.getMetricType())
@@ -175,6 +178,43 @@ public class AppDynamicsCVConfig extends MetricCVConfig<MetricInfo> {
     });
     this.setMetricPack(metricPack);
     populateCompleteMetricPaths();
+  }
+
+  public void addMetricThresholds(Set<TimeSeriesMetricPackDTO> timeSeriesMetricPacks) {
+    if (isEmpty(timeSeriesMetricPacks)) {
+      return;
+    }
+    getMetricPack().getMetrics().forEach(metric -> {
+      timeSeriesMetricPacks.forEach(timeSeriesMetricPackDTO -> {
+        if (!isEmpty(timeSeriesMetricPackDTO.getMetricThresholds())) {
+          timeSeriesMetricPackDTO.getMetricThresholds()
+              .stream()
+              .filter(metricPackDTO -> metric.getName().equals(metricPackDTO.getMetricName()))
+              .forEach(metricPackDTO -> metricPackDTO.getTimeSeriesThresholdCriteria().forEach(criteria -> {
+                List<TimeSeriesThreshold> timeSeriesThresholds =
+                    metric.getThresholds() != null ? metric.getThresholds() : new ArrayList<>();
+                TimeSeriesThreshold timeSeriesThreshold =
+                    TimeSeriesThreshold.builder()
+                        .accountId(getAccountId())
+                        .projectIdentifier(getProjectIdentifier())
+                        .dataSourceType(getType())
+                        .metricType(metric.getType())
+                        .metricIdentifier(metric.getIdentifier())
+                        .metricName(metricPackDTO.getMetricName())
+                        .action(metricPackDTO.getType().getTimeSeriesThresholdActionType())
+                        .criteria(criteria)
+                        .thresholdConfigType(ThresholdConfigType.CUSTOMER)
+                        .build();
+                if (!MonitoredServiceConstants.CUSTOM_METRIC_PACK.equalsIgnoreCase(
+                        timeSeriesMetricPackDTO.getIdentifier())) {
+                  timeSeriesThreshold.setMetricGroupName(metricPackDTO.getGroupName());
+                }
+                timeSeriesThresholds.add(timeSeriesThreshold);
+                metric.setThresholds(timeSeriesThresholds);
+              }));
+        }
+      });
+    });
   }
 
   @Data

@@ -46,7 +46,16 @@ public class SchemaConstants {
   public static final String ITEMS_NODE = "items";
   public static final String PATTERN_NODE = "pattern";
   public static final String MIN_LENGTH_NODE = "minLength";
-  public static final String RUNTIME_INPUT_PATTERN = "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$";
+  // Should match runtime input as well as execution input pattern. default, allowedValues and regex are allowed after
+  // <+input>
+  public static final String RUNTIME_INPUT_PATTERN =
+      "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$";
+
+  // Only runtime input pattern. should not match execution input string. So doing negative lookahead for
+  // .executionInput().
+  // default, allowedValues and regex are allowed after <+input>
+  public static final String RUNTIME_BUT_NOT_EXECUTION_TIME_PATTERN =
+      "^<\\+input>((?!.*\\.executionInput\\(\\))(\\.)(allowedValues|default|regex)\\(.+?\\))*$";
   public static final String INPUT_SET_PATTERN = "^" + EXPR_START_ESC + "input" + EXPR_END_ESC + ".*";
   public static final String EXPRESSION_PATTERN =
       "(^" + EXPR_START_ESC + "([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)" + EXPR_END_ESC + "$|" + INPUT_SET_PATTERN + ")";

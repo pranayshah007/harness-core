@@ -15,6 +15,7 @@ import static io.harness.delegate.beans.connector.ConnectorType.CODECOMMIT;
 import static io.harness.delegate.beans.connector.ConnectorType.GIT;
 import static io.harness.delegate.beans.connector.ConnectorType.GITHUB;
 import static io.harness.delegate.beans.connector.ConnectorType.GITLAB;
+import static io.harness.delegate.beans.connector.azureconnector.AzureCredentialType.MANUAL_CREDENTIALS;
 import static io.harness.exception.WingsException.USER;
 
 import static java.lang.String.format;
@@ -44,6 +45,9 @@ import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsCredentialDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsCredentialType;
 import io.harness.delegate.beans.connector.awsconnector.AwsManualConfigSpecDTO;
+import io.harness.delegate.beans.connector.azureconnector.AzureConnectorDTO;
+import io.harness.delegate.beans.connector.azureconnector.AzureCredentialDTO;
+import io.harness.delegate.beans.connector.azureconnector.AzureManualDetailsDTO;
 import io.harness.delegate.beans.connector.docker.DockerAuthType;
 import io.harness.delegate.beans.connector.docker.DockerConnectorDTO;
 import io.harness.delegate.beans.connector.gcpconnector.GcpConnectorCredentialDTO;
@@ -282,6 +286,9 @@ public class ConnectorUtils {
       case AWS:
         connectorDetails = getAwsConnectorDetails(ngAccess, connectorDTO, connectorDetailsBuilder);
         break;
+      case AZURE:
+        connectorDetails = getAzureConnectorDetails(ngAccess, connectorDTO, connectorDetailsBuilder);
+        break;
       case ARTIFACTORY:
         connectorDetails = getArtifactoryConnectorDetails(ngAccess, connectorDTO, connectorDetailsBuilder);
         break;
@@ -418,6 +425,21 @@ public class ConnectorUtils {
     }
     throw new InvalidArgumentsException(format("Unsupported aws credential type:[%s] on connector:[%s]",
         awsCredentialDTO.getAwsCredentialType(), awsConnectorDTO));
+  }
+
+  private ConnectorDetails getAzureConnectorDetails(
+      NGAccess ngAccess, ConnectorDTO connectorDTO, ConnectorDetailsBuilder connectorDetailsBuilder) {
+    List<EncryptedDataDetail> encryptedDataDetails;
+    AzureConnectorDTO azureConnectorDTO = (AzureConnectorDTO) connectorDTO.getConnectorInfo().getConnectorConfig();
+    AzureCredentialDTO credentialDTO = azureConnectorDTO.getCredential();
+    if (credentialDTO.getAzureCredentialType() == MANUAL_CREDENTIALS) {
+      AzureManualDetailsDTO config = (AzureManualDetailsDTO) credentialDTO.getConfig();
+      encryptedDataDetails =
+          secretManagerClientService.getEncryptionDetails(ngAccess, config.getAuthDTO().getCredentials());
+      return connectorDetailsBuilder.encryptedDataDetails(encryptedDataDetails).build();
+    } else {
+      return connectorDetailsBuilder.build();
+    }
   }
 
   private ConnectorDetails getGcpConnectorDetails(

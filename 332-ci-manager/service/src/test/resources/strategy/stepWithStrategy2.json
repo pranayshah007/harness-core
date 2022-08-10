@@ -1,0 +1,26 @@
+{
+  "uuid": "MAB-xgo2QTyxGP5ER1ZHdg",
+  "step": {
+    "type": "Run",
+    "spec": {
+      "connectorRef": "account.CItestDockerConnectorTXOk8jdmqC",
+      "image": "alpine",
+      "shell": "Sh",
+      "command": "echo run4",
+      "__uuid": "zEq7abtjR_i289vpPtl5IA"
+    },
+    "strategy": {
+      "repeat": {
+        "times": 3,
+        "maxConcurrency": 2,
+        "__uuid": "SAzPtB3QRluNMwUvi8NmWg"
+      },
+      "__uuid": "A0_VOKh3Td6wS-F3ofKuRQ"
+    },
+    "__uuid": "a1pnnwNxR36enzMrnA7rMQ",
+    "identifier": "run4_1",
+    "name": "run4_1"
+  },
+  "parallel": null,
+  "stepGroup": null
+}

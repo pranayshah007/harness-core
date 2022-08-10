@@ -13,11 +13,17 @@ import static io.harness.ccm.remote.resources.TelemetryConstants.FOLDER_CREATED;
 import static io.harness.ccm.remote.resources.TelemetryConstants.FOLDER_ID;
 import static io.harness.ccm.remote.resources.TelemetryConstants.MODULE;
 import static io.harness.ccm.remote.resources.TelemetryConstants.MODULE_NAME;
+import static io.harness.outbox.TransactionOutboxModule.OUTBOX_TRANSACTION_TEMPLATE;
+import static io.harness.springdata.TransactionUtils.DEFAULT_TRANSACTION_RETRY_POLICY;
 import static io.harness.telemetry.Destination.AMPLITUDE;
 
 import io.harness.NGCommonEntityConstants;
 import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.ccm.audittrails.events.PerspectiveFolderCreateEvent;
+import io.harness.ccm.audittrails.events.PerspectiveFolderDeleteEvent;
+import io.harness.ccm.audittrails.events.PerspectiveFolderUpdateEvent;
+import io.harness.ccm.rbac.CCMRbacHelper;
 import io.harness.ccm.utils.LogAccountIdentifier;
 import io.harness.ccm.views.dto.CreatePerspectiveFolderDTO;
 import io.harness.ccm.views.dto.MovePerspectiveDTO;
@@ -32,6 +38,7 @@ import io.harness.enforcement.constants.FeatureRestrictionName;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.outbox.api.OutboxService;
 import io.harness.security.annotations.NextGenManagerAuth;
 import io.harness.telemetry.Category;
 import io.harness.telemetry.TelemetryReporter;
@@ -39,6 +46,7 @@ import io.harness.telemetry.TelemetryReporter;
 import com.codahale.metrics.annotation.ExceptionMetered;
 import com.codahale.metrics.annotation.Timed;
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.v3.oas.annotations.Operation;
@@ -47,6 +55,8 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -63,8 +73,11 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import lombok.extern.slf4j.Slf4j;
+import net.jodah.failsafe.Failsafe;
+import net.jodah.failsafe.RetryPolicy;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.support.TransactionTemplate;
 
 @Api("perspectiveFolders")
 @Path("perspectiveFolders")
@@ -84,13 +97,22 @@ public class PerspectiveFolderResource {
   private final CEViewFolderService ceViewFolderService;
   private final CEViewService ceViewService;
   private final TelemetryReporter telemetryReporter;
+  private final CCMRbacHelper rbacHelper;
+
+  private final RetryPolicy<Object> transactionRetryPolicy = DEFAULT_TRANSACTION_RETRY_POLICY;
+  private final TransactionTemplate transactionTemplate;
+  private final OutboxService outboxService;
 
   @Inject
-  public PerspectiveFolderResource(
-      CEViewFolderService ceViewFolderService, CEViewService ceViewService, TelemetryReporter telemetryReporter) {
+  public PerspectiveFolderResource(CEViewFolderService ceViewFolderService, CEViewService ceViewService,
+      TelemetryReporter telemetryReporter, @Named(OUTBOX_TRANSACTION_TEMPLATE) TransactionTemplate transactionTemplate,
+      OutboxService outboxService, CCMRbacHelper rbacHelper) {
     this.ceViewFolderService = ceViewFolderService;
     this.ceViewService = ceViewService;
     this.telemetryReporter = telemetryReporter;
+    this.transactionTemplate = transactionTemplate;
+    this.outboxService = outboxService;
+    this.rbacHelper = rbacHelper;
   }
 
   @POST
@@ -114,11 +136,12 @@ public class PerspectiveFolderResource {
              NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @RequestBody(required = true, description = "Request body containing Perspective's CEViewFolder object")
       @Valid CreatePerspectiveFolderDTO createPerspectiveFolderDTO) {
+    rbacHelper.checkFolderEditPermission(accountId, null, null);
     CEViewFolder ceViewFolder = createPerspectiveFolderDTO.getCeViewFolder();
     ceViewFolder.setAccountId(accountId);
     ceViewFolder.setPinned(false);
     ceViewFolder.setViewType(ViewType.CUSTOMER);
-    ceViewFolder = ceViewFolderService.save(ceViewFolder);
+    CEViewFolder ceViewFolderFinal = ceViewFolderService.save(ceViewFolder);
     HashMap<String, Object> properties = new HashMap<>();
     properties.put(MODULE, MODULE_NAME);
     properties.put(FOLDER_ID, ceViewFolder.getUuid());
@@ -129,7 +152,11 @@ public class PerspectiveFolderResource {
     }
     telemetryReporter.sendTrackEvent(
         FOLDER_CREATED, null, accountId, properties, Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL);
-    return ResponseDTO.newResponse(ceViewFolder);
+    return ResponseDTO.newResponse(
+        Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
+          outboxService.save(new PerspectiveFolderCreateEvent(accountId, ceViewFolderFinal.toDTO()));
+          return ceViewFolderFinal;
+        })));
   }
 
   @GET
@@ -148,6 +175,7 @@ public class PerspectiveFolderResource {
   public ResponseDTO<List<CEViewFolder>>
   getFolders(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
       NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId) {
+    rbacHelper.checkFolderViewPermission(accountId, null, null);
     List<CEViewFolder> ceViewFolders;
     ceViewFolders = ceViewFolderService.getFolders(accountId);
     return ResponseDTO.newResponse(ceViewFolders);
@@ -173,6 +201,7 @@ public class PerspectiveFolderResource {
                       NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @Parameter(required = true, description = "Unique identifier for folder") @PathParam(
           "folderId") String folderId) {
+    rbacHelper.checkFolderViewPermission(accountId, null, null);
     return ResponseDTO.newResponse(ceViewService.getAllViews(accountId, folderId, true, null));
   }
 
@@ -193,7 +222,18 @@ public class PerspectiveFolderResource {
                    NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @RequestBody(required = true,
           description = "Request body containing ceViewFolder object") @Valid CEViewFolder ceViewFolder) {
-    return ResponseDTO.newResponse(ceViewFolderService.updateFolder(accountId, ceViewFolder));
+    rbacHelper.checkFolderEditPermission(accountId, null, null);
+    List<CEViewFolder> oldPerspectiveFolder =
+        ceViewFolderService.getFolders(accountId, new ArrayList<>(Arrays.asList(ceViewFolder.getUuid())));
+    CEViewFolder newPerspectiveFolder = ceViewFolderService.updateFolder(accountId, ceViewFolder);
+    return ResponseDTO.newResponse(
+        Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
+          if (oldPerspectiveFolder.size() > 0) {
+            outboxService.save(new PerspectiveFolderUpdateEvent(
+                accountId, newPerspectiveFolder.toDTO(), oldPerspectiveFolder.get(0).toDTO()));
+          }
+          return newPerspectiveFolder;
+        })));
   }
 
   @POST
@@ -215,6 +255,7 @@ public class PerspectiveFolderResource {
                        NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @RequestBody(required = true, description = "Request body containing perspectiveIds to be moved and newFolderId")
       @Valid MovePerspectiveDTO movePerspectiveDTO) {
+    rbacHelper.checkFolderEditPermission(accountId, null, null);
     List<String> perspectiveIds = movePerspectiveDTO.getPerspectiveIds();
     String newFolderId = movePerspectiveDTO.getNewFolderId();
     return ResponseDTO.newResponse(ceViewFolderService.moveMultipleCEViews(accountId, perspectiveIds, newFolderId));
@@ -239,6 +280,16 @@ public class PerspectiveFolderResource {
              NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @PathParam("folderId") @Parameter(required = true,
           description = "Unique identifier for the Perspective folder") @NotNull @Valid String folderId) {
-    return ResponseDTO.newResponse(ceViewFolderService.delete(accountId, folderId));
+    rbacHelper.checkFolderDeletePermission(accountId, null, null);
+    List<CEViewFolder> perspectiveFolder =
+        ceViewFolderService.getFolders(accountId, new ArrayList<>(Arrays.asList(folderId)));
+    boolean result = ceViewFolderService.delete(accountId, folderId);
+    return ResponseDTO.newResponse(
+        Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
+          if (perspectiveFolder.size() > 0) {
+            outboxService.save(new PerspectiveFolderDeleteEvent(accountId, perspectiveFolder.get(0).toDTO()));
+          }
+          return result;
+        })));
   }
 }

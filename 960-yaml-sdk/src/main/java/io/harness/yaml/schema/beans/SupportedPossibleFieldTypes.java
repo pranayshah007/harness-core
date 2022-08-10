@@ -19,8 +19,11 @@ public enum SupportedPossibleFieldTypes {
   list,
   map,
   expression,
+  runtimeButNotExecutionTime, // to support execution input field type, like <+input>.executionInput(). It also includes
+                              // runtime inputs.
   numberString,
-  runtime, // to support runtime field type, like <+input>
+  runtime, // to support runtime field type, like <+input>. It also includes executionInput field, like
+           // <+input>.executionInput()
   /**
    * Only used for setting default.
    */

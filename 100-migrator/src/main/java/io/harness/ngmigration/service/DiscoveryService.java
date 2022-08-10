@@ -92,6 +92,12 @@ public class DiscoveryService {
     CgEntityNode currentNode = discoveryNode.getEntityNode();
     Set<CgEntityId> chilldren = discoveryNode.getChildren();
 
+    if (graph.containsKey(currentNode.getEntityId()) && parent != null) {
+      // We have already discovered and traversed the children. We do not need to process the children again
+      graph.get(parent).add(currentNode.getEntityId());
+      return;
+    }
+
     // To ensure that appId is present in case of account level discovery
     if (NGMigrationEntityType.APPLICATION.equals(currentNode.getType())) {
       appId = currentNode.getId();

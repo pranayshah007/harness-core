@@ -11,6 +11,7 @@
     },
     "type": "Azure",
     "spec": {
+      "executeOnDelegate": true,
       "delegateSelectors": null,
       "azureEnvironmentType": "AZURE",
       "credential": {

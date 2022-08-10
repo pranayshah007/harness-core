@@ -32,14 +32,16 @@ import org.springframework.data.annotation.TypeAlias;
 public class CommandStepParameters extends CommandBaseStepInfo implements SshSpecParameters {
   Map<String, Object> environmentVariables;
   Map<String, Object> outputVariables;
-  @JsonIgnore String host;
+  @JsonIgnore boolean isRollback;
 
   @Builder(builderMethodName = "infoBuilder")
-  public CommandStepParameters(ParameterField<Boolean> onDelegate,
+  public CommandStepParameters(String uuid, ParameterField<Boolean> onDelegate,
       ParameterField<List<TaskSelectorYaml>> delegateSelectors, Map<String, Object> environmentVariables,
-      List<CommandUnitWrapper> commandUnits, Map<String, Object> outputVariables) {
-    super(onDelegate, delegateSelectors, commandUnits);
+      List<CommandUnitWrapper> commandUnits, Map<String, Object> outputVariables, ParameterField<String> host,
+      boolean isRollback) {
+    super(uuid, onDelegate, delegateSelectors, commandUnits, host);
     this.environmentVariables = environmentVariables;
     this.outputVariables = outputVariables;
+    this.isRollback = isRollback;
   }
 }

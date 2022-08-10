@@ -80,10 +80,6 @@ aeriform("//300-cv-nextgen:module")
 
 aeriform("//300-cv-nextgen:tests")
 
-aeriform("//310-ci-manager:module")
-
-aeriform("//310-ci-manager:tests")
-
 aeriform("//315-sto-manager:module")
 
 aeriform("//315-sto-manager:tests")
@@ -96,9 +92,17 @@ aeriform("//325-sto-beans:module")
 
 aeriform("//325-sto-beans:tests")
 
+aeriform("//332-ci-manager/app:module")
+
+aeriform("//332-ci-manager/app:tests")
+
 aeriform("//332-ci-manager/service:module")
 
 aeriform("//332-ci-manager/service:tests")
+
+aeriform("//332-ci-manager/contracts:module")
+
+aeriform("//332-ci-manager/contracts:tests")
 
 aeriform("//340-ce-nextgen:module")
 
@@ -177,10 +181,6 @@ aeriform("//480-pricing-service:module")
 aeriform("//490-ce-commons:module")
 
 aeriform("//490-ce-commons:tests")
-
-aeriform("//800-pipeline-service:module")
-
-aeriform("//800-pipeline-service:tests")
 
 aeriform("//815-cg-triggers:module")
 

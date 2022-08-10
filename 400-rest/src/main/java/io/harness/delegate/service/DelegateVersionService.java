@@ -73,7 +73,7 @@ public class DelegateVersionService {
    * @param accountId
    * @return
    */
-  public String getDelegateImageTagForNgHelmDelegates(final String accountId) {
+  public String getImmutableDelegateImageTag(final String accountId) {
     final VersionOverride versionOverride = getVersionOverride(accountId, DELEGATE_IMAGE_TAG);
     if (versionOverride != null && isNotBlank(versionOverride.getVersion())) {
       return versionOverride.getVersion();
@@ -83,12 +83,7 @@ public class DelegateVersionService {
     if (isNotBlank(ringImage)) {
       return ringImage;
     }
-
-    final String managerConfigImage = mainConfiguration.getPortal().getDelegateDockerImage();
-    if (isNotBlank(managerConfigImage)) {
-      return managerConfigImage;
-    }
-    return DEFAULT_DELEGATE_IMAGE_TAG;
+    throw new IllegalStateException("No immutable delegate image tag found in ring");
   }
 
   public String getUpgraderImageTag(final String accountId, final String delegateType) {
@@ -130,7 +125,7 @@ public class DelegateVersionService {
       }
     }
 
-    final List<String> ringVersion = delegateRingService.getDelegateVersionsForRing(ringName);
+    final List<String> ringVersion = delegateRingService.getDelegateVersionsForRing(ringName, true);
     if (!CollectionUtils.isEmpty(ringVersion)) {
       return ringVersion;
     }

@@ -18,5 +18,5 @@ import lombok.Value;
 @Value
 @Builder
 public class DeploymentsInfo {
-  private List<ExecutionStatusInfo> deployments;
+  List<ExecutionStatusInfo> deployments;
 }

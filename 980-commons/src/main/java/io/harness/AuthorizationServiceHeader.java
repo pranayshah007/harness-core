@@ -39,7 +39,8 @@ public enum AuthorizationServiceHeader {
   DASHBOAD_AGGREGATION_SERVICE("DashboardAggregationService"),
   DMS("DelegateManagementService"),
   DEBEZIUM_SERVICE("DebeziumService"),
-  SUBSCRIPTION_SERVICE("SubscriptionService");
+  SUBSCRIPTION_SERVICE("SubscriptionService"),
+  CHAOS_SERVICE("ChaosService");
 
   private final String serviceId;
 

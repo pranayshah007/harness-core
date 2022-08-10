@@ -31,7 +31,6 @@ import software.wings.service.intfc.BuildSourceService;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.time.Duration;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -54,6 +53,7 @@ public class ArtifactCollectionServiceImpl implements ArtifactCollectionService 
   @Inject private ArtifactCollectionUtils artifactCollectionUtils;
 
   public static final Duration timeout = Duration.ofMinutes(10);
+  public static final Duration waitTimeout = Duration.ofMinutes(9);
 
   @Override
   public Artifact collectArtifact(String artifactStreamId, BuildDetails buildDetails) {
@@ -93,12 +93,13 @@ public class ArtifactCollectionServiceImpl implements ArtifactCollectionService 
   }
 
   @Override
-  public List<Artifact> collectNewArtifacts(String appId, String artifactStreamId) {
-    try (AcquiredLock ignored = persistentLocker.acquireLock(ArtifactStream.class, artifactStreamId, timeout)) {
+  public void collectNewArtifacts(String appId, String artifactStreamId) {
+    try (AcquiredLock ignored =
+             persistentLocker.waitToAcquireLock(ArtifactStream.class, artifactStreamId, timeout, waitTimeout)) {
       ArtifactStream artifactStream = artifactStreamService.get(artifactStreamId);
       if (artifactStream == null) {
         log.info("Artifact stream: [{}] does not exist. Returning", artifactStreamId);
-        return new ArrayList<>();
+        return;
       }
 
       log.info("Collecting build details for artifact stream: [{}], type: [{}] and source name: [{}]",
@@ -106,15 +107,18 @@ public class ArtifactCollectionServiceImpl implements ArtifactCollectionService 
       List<BuildDetails> builds = buildSourceService.getNewBuilds(
           artifactStream.fetchAppId(), artifactStream.getUuid(), artifactStream.getSettingId());
       if (isEmpty(builds)) {
-        return new ArrayList<>();
+        return;
       }
 
       // New build are filtered at the delegate. So all the builds coming in the BuildSourceExecutionResponse are the
       // ones not present in the DB.
-      return builds.stream()
+      builds.stream()
           .map(
               buildDetails -> artifactService.create(artifactCollectionUtils.getArtifact(artifactStream, buildDetails)))
           .collect(Collectors.toList());
+    } catch (Exception e) {
+      log.error(
+          "Not able to fetch the artifact collection for appId: {} , artifactStreamId: {}", appId, artifactStreamId, e);
     }
   }
 }

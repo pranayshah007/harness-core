@@ -30,9 +30,7 @@ public enum ModuleType {
   @JsonProperty("PMS") PMS("Pipelines", true, false),
   @JsonProperty("TEMPLATESERVICE") TEMPLATESERVICE("TemplateService", true, false),
   @JsonProperty("GOVERNANCE") GOVERNANCE("Governance", true, true),
-
-  // TODO (prashant) : Setting this internal and ignored for now change when chaos integrates with license
-  @JsonProperty("CHAOS") CHAOS("Chaos Engineering", true, true);
+  @JsonProperty("CHAOS") CHAOS("Chaos Engineering");
 
   String displayName;
   boolean internal;

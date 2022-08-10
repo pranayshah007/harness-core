@@ -9,7 +9,6 @@ package software.wings.service.impl;
 
 import static io.harness.annotations.dev.HarnessTeam.DEL;
 import static io.harness.beans.FeatureName.DELEGATE_ENABLE_DYNAMIC_HANDLING_OF_REQUEST;
-import static io.harness.beans.FeatureName.JDK11_WATCHER;
 import static io.harness.beans.FeatureName.REDUCE_DELEGATE_MEMORY_SIZE;
 import static io.harness.beans.FeatureName.USE_IMMUTABLE_DELEGATE;
 import static io.harness.configuration.DeployVariant.DEPLOY_VERSION;
@@ -37,6 +36,8 @@ import static io.harness.metrics.impl.DelegateMetricsServiceImpl.DELEGATE_DESTRO
 import static io.harness.metrics.impl.DelegateMetricsServiceImpl.DELEGATE_DISCONNECTED;
 import static io.harness.metrics.impl.DelegateMetricsServiceImpl.DELEGATE_REGISTRATION_FAILED;
 import static io.harness.metrics.impl.DelegateMetricsServiceImpl.DELEGATE_RESTARTED;
+import static io.harness.metrics.impl.DelegateMetricsServiceImpl.IMMUTABLE_DELEGATES;
+import static io.harness.metrics.impl.DelegateMetricsServiceImpl.MUTABLE_DELEGATES;
 import static io.harness.mongo.MongoUtils.setUnset;
 import static io.harness.obfuscate.Obfuscator.obfuscate;
 import static io.harness.persistence.HQuery.excludeAuthority;
@@ -1394,7 +1395,7 @@ public class DelegateServiceImpl implements DelegateService {
       final String base64Secret = Base64.getEncoder().encodeToString(accountSecret.getBytes());
       // Ng helm delegates always use immutable image irrespective of FF
       final String delegateDockerImage = (isNgDelegate && HELM_DELEGATE.equals(templateParameters.getDelegateType()))
-          ? delegateVersionService.getDelegateImageTagForNgHelmDelegates(templateParameters.getAccountId())
+          ? delegateVersionService.getImmutableDelegateImageTag(templateParameters.getAccountId())
           : delegateVersionService.getDelegateImageTag(
               templateParameters.getAccountId(), templateParameters.getDelegateType());
       ImmutableMap.Builder<String, String> params =
@@ -1724,8 +1725,21 @@ public class DelegateServiceImpl implements DelegateService {
   }
 
   private boolean isJdk11Watcher(final String accountId) {
-    return DeployMode.isOnPrem(mainConfiguration.getDeployMode().name())
-        || featureFlagService.isEnabledReloadCache(JDK11_WATCHER, accountId);
+    if (DeployMode.isOnPrem(mainConfiguration.getDeployMode().name())) {
+      return true;
+    }
+    final String watcherVersion =
+        substringBefore(delegateVersionService.getWatcherJarVersions(accountId), "-").trim().split("\\.")[2];
+    try {
+      final int jdk11_base_watcher_version = 75276;
+      if (Integer.parseInt(watcherVersion) < jdk11_base_watcher_version) {
+        return false;
+      }
+      return true;
+    } catch (Exception e) {
+      log.error("Unable to get watcher version, will start watcher with jdk8 ", e);
+      return false;
+    }
   }
 
   /**
@@ -2521,6 +2535,7 @@ public class DelegateServiceImpl implements DelegateService {
       delegateMetricsService.recordDelegateMetrics(delegate, DELEGATE_REGISTRATION_FAILED);
       return DelegateRegisterResponse.builder().action(DelegateRegisterResponse.Action.SELF_DESTRUCT).build();
     }
+
     if (existingDelegate != null) {
       log.debug("Delegate {} already registered for Hostname with : {} IP: {}", delegate.getUuid(),
           delegate.getHostName(), delegate.getIp());
@@ -2578,6 +2593,10 @@ public class DelegateServiceImpl implements DelegateService {
 
     log.info("Registering delegate for Hostname: {} IP: {}", delegateParams.getHostName(), delegateParams.getIp());
 
+    // publish delegateType metrics at account level.
+    String delegateTypeMetric = delegateParams.isImmutable() ? IMMUTABLE_DELEGATES : MUTABLE_DELEGATES;
+    delegateMetricsService.recordDelegateMetricsPerAccount(delegateParams.getAccountId(), delegateTypeMetric);
+
     String delegateGroupId = delegateParams.getDelegateGroupId();
     if (isBlank(delegateGroupId) && isNotBlank(delegateParams.getDelegateGroupName())) {
       final DelegateGroup delegateGroup =
@@ -2609,17 +2628,19 @@ public class DelegateServiceImpl implements DelegateService {
                                                     .tokenName(delegateTokenName.orElse(null))
                                                     .build();
 
+    // TODO: ARPIT for cg grouped delegates we should save tags only in delegateGroup
+
     if (delegateParams.isNg()) {
       final DelegateGroup delegateGroup =
           upsertDelegateGroup(delegateParams.getDelegateName(), delegateParams.getAccountId(), delegateSetupDetails);
       delegateGroupId = delegateGroup.getUuid();
       delegateGroupName = delegateGroup.getName();
-    }
 
-    if (isNotBlank(delegateGroupId) && isNotEmpty(delegateParams.getTags())) {
       persistence.update(persistence.createQuery(DelegateGroup.class).filter(DelegateGroupKeys.uuid, delegateGroupId),
           persistence.createUpdateOperations(DelegateGroup.class)
-              .set(DelegateGroupKeys.tags, new HashSet<>(delegateParams.getTags())));
+              .set(DelegateGroupKeys.tags,
+                  isEmpty(delegateParams.getTags()) ? Collections.emptySet()
+                                                    : new HashSet<>(delegateParams.getTags())));
     }
 
     final DelegateEntityOwner owner = DelegateEntityOwnerHelper.buildOwner(orgIdentifier, projectIdentifier);
@@ -2659,6 +2680,7 @@ public class DelegateServiceImpl implements DelegateService {
                                   .ceEnabled(delegateParams.isCeEnabled())
                                   .delegateTokenName(delegateTokenName.orElse(null))
                                   .heartbeatAsObject(delegateParams.isHeartbeatAsObject())
+                                  .immutable(delegateParams.isImmutable())
                                   .build();
 
     if (ECS.equals(delegateParams.getDelegateType())) {
@@ -2758,6 +2780,11 @@ public class DelegateServiceImpl implements DelegateService {
       } else {
         registeredDelegate = update(delegate);
       }
+
+      // this condition is satisfied only while registering for the first time after delegate starts/restarts
+      if (delegateSetupDetails != null) {
+        updateDelegateTagsAfterReRegistering(registeredDelegate, delegate.getTags());
+      }
     }
 
     // Not needed to be done when polling is enabled for delegate
@@ -2772,6 +2799,18 @@ public class DelegateServiceImpl implements DelegateService {
       }
     }
     return registeredDelegate;
+  }
+
+  private void updateDelegateTagsAfterReRegistering(Delegate registeredDelegate, List<String> delegateTags) {
+    Query<Delegate> delegateQuery = persistence.createQuery(Delegate.class)
+                                        .filter(DelegateKeys.accountId, registeredDelegate.getAccountId())
+                                        .filter(DelegateKeys.uuid, registeredDelegate.getUuid());
+
+    UpdateOperations<Delegate> updateOperations = persistence.createUpdateOperations(Delegate.class);
+    setUnset(updateOperations, DelegateKeys.tags, delegateTags);
+
+    persistence.update(delegateQuery, updateOperations);
+    registeredDelegate.setTags(delegateTags);
   }
 
   private void broadcastDelegateHeartBeatResponse(Delegate delegate, Delegate registeredDelegate) {
@@ -3663,7 +3702,6 @@ public class DelegateServiceImpl implements DelegateService {
     delegate.setExcludeScopes(existingInactiveDelegate.getExcludeScopes());
     delegate.setIncludeScopes(existingInactiveDelegate.getIncludeScopes());
     delegate.setDelegateProfileId(existingInactiveDelegate.getDelegateProfileId());
-    delegate.setTags(existingInactiveDelegate.getTags());
     delegate.setKeywords(existingInactiveDelegate.getKeywords());
     delegate.setDescription(existingInactiveDelegate.getDescription());
   }

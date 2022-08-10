@@ -7,6 +7,7 @@
 
 package software.wings.service.impl.yaml;
 
+import static io.harness.beans.FeatureName.REMOVE_HINT_YAML_GIT_COMMITS;
 import static io.harness.beans.PageRequest.PageRequestBuilder.aPageRequest;
 import static io.harness.beans.PageRequest.UNLIMITED;
 import static io.harness.beans.SearchFilter.Operator.EQ;
@@ -647,7 +648,7 @@ public class YamlGitServiceImpl implements YamlGitService {
             USER);
       }
 
-      ensureValidNameSyntax(gitFileChanges);
+      ensureValidNameSyntax(gitFileChanges, yamlChangeSet);
 
       gitConfigHelperService.convertToRepoGitConfig(gitConfig, yamlGitConfig.getRepositoryName());
 
@@ -705,9 +706,10 @@ public class YamlGitServiceImpl implements YamlGitService {
    * Check filePath is valid.
    *
    * @param gitFileChanges
+   * @param yamlChangeSet
    */
   @VisibleForTesting
-  void ensureValidNameSyntax(List<GitFileChange> gitFileChanges) {
+  void ensureValidNameSyntax(List<GitFileChange> gitFileChanges, YamlChangeSet yamlChangeSet) {
     if (isEmpty(gitFileChanges)) {
       return;
     }
@@ -722,10 +724,11 @@ public class YamlGitServiceImpl implements YamlGitService {
     gitFileChanges.forEach(gitFileChange
         -> matchPathPrefix(gitFileChange.getFilePath().charAt(0) == '/' ? gitFileChange.getFilePath().substring(1)
                                                                         : gitFileChange.getFilePath(),
-            folderYamlTypes));
+            folderYamlTypes, yamlChangeSet, gitFileChange));
   }
 
-  private void matchPathPrefix(String filePath, List<YamlType> folderYamlTypes) {
+  private void matchPathPrefix(
+      String filePath, List<YamlType> folderYamlTypes, YamlChangeSet yamlChangeSet, GitFileChange gitFileChange) {
     // only check for file and not directories
 
     if (Pattern.compile(YamlType.MANIFEST_FILE.getPathExpression()).matcher(filePath).matches()
@@ -758,8 +761,11 @@ public class YamlGitServiceImpl implements YamlGitService {
     if (filePath.endsWith(YamlConstants.YAML_EXTENSION)) {
       if (folderYamlTypes.stream().noneMatch(
               yamlType -> Pattern.compile(yamlType.getPathExpression()).matcher(filePath).matches())) {
-        throw new WingsException(
-            "Invalid entity name, entity can not contain / in the name. Caused invalid file path: " + filePath, USER);
+        String message =
+            "Invalid entity name, entity can not contain / in the name. Caused invalid file path: " + filePath;
+        gitSyncErrorService.upsertGitSyncErrors(
+            gitFileChange, message, yamlChangeSet.isFullSync(), yamlChangeSet.isGitToHarness());
+        throw new WingsException(message, USER);
       }
     }
   }
@@ -1343,7 +1349,9 @@ public class YamlGitServiceImpl implements YamlGitService {
     // After MultiGit support gitCommit record would have list of yamlGitConfigs.
 
     FindOptions findOptions = new FindOptions();
-    findOptions.modifier("$hint", "gitCommitAccountIdStatusYgcLastUpdatedIdx");
+    if (featureFlagService.isNotEnabled(REMOVE_HINT_YAML_GIT_COMMITS, accountId)) {
+      findOptions.modifier("$hint", "gitCommitAccountIdStatusYgcLastUpdatedIdx");
+    }
 
     GitCommit gitCommit = wingsPersistence.createQuery(GitCommit.class)
                               .filter(GitCommitKeys.accountId, accountId)

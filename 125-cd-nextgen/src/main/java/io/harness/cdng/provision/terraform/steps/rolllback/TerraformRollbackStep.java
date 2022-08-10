@@ -153,9 +153,7 @@ public class TerraformRollbackStep extends TaskExecutableWithRollbackAndRbac<Ter
       if (rollbackConfig.getConfigFiles() != null) {
         builder.configFile(terraformStepHelper.getGitFetchFilesConfig(
             rollbackConfig.getConfigFiles().toGitStoreConfig(), ambiance, TerraformStepHelper.TF_CONFIG_FILES));
-        builder.tfModuleSourceInheritSSH(cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance),
-                                             FeatureName.TF_MODULE_SOURCE_INHERIT_SSH)
-            && rollbackConfig.isUseConnectorCredentials());
+        builder.tfModuleSourceInheritSSH(rollbackConfig.isUseConnectorCredentials());
       }
       if (rollbackConfig.getFileStoreConfig() != null) {
         builder.fileStoreConfigFiles(terraformStepHelper.getFileStoreFetchFilesConfig(

@@ -13,7 +13,6 @@ io.harness.when.beans.StageWhenCondition
 io.harness.beans.steps.stepinfo.SaveCacheGCSStepInfo
 io.harness.beans.steps.stepinfo.SaveCacheS3StepInfo
 io.harness.beans.outcomes.DependencyOutcome
-io.harness.beans.common.VariablesSweepingOutput
 io.harness.beans.sweepingoutputs.StepLogKeyDetails
 io.harness.pms.sdk.core.data.StringOutcome
 io.harness.beans.steps.outcome.CIStepOutcome
@@ -35,6 +34,7 @@ io.harness.beans.steps.stepinfo.RunTestsStepInfo
 io.harness.beans.sweepingoutputs.StepTaskDetails
 io.harness.beans.stages.IntegrationStageStepParametersPMS
 io.harness.beans.steps.stepinfo.GCRStepInfo
+io.harness.beans.steps.stepinfo.ACRStepInfo
 io.harness.beans.steps.stepinfo.UploadToGCSStepInfo
 io.harness.plancreator.steps.common.StepElementParameters
 io.harness.beans.steps.stepinfo.UploadToArtifactoryStepInfo
@@ -76,6 +76,7 @@ io.harness.beans.steps.nodes.RunTestsStepNode
 io.harness.beans.steps.nodes.ArtifactoryUploadNode
 io.harness.beans.steps.nodes.BuildAndPushDockerNode
 io.harness.beans.steps.nodes.BuildAndPushGCRNode
+io.harness.beans.steps.nodes.BuildAndPushACRNode
 io.harness.beans.steps.nodes.BuildAndPushECRNode
 io.harness.beans.steps.nodes.GCSUploadNode
 io.harness.beans.steps.nodes.PluginStepNode
@@ -105,7 +106,6 @@ io.harness.plancreator.strategy.ExcludeConfig
 io.harness.plancreator.strategy.MatrixConfig
 io.harness.plancreator.strategy.StrategyConfig
 io.harness.plancreator.strategy.HarnessForConfig
-io.harness.ng.core.envGroup.EnvironmentGroupOutcome
 io.harness.beans.yaml.extended.ArchiveFormat
 io.harness.beans.execution.BranchWebhookEvent
 io.harness.beans.sweepingoutputs.Build
@@ -183,3 +183,4 @@ io.harness.beans.execution.WebhookGitUser
 io.harness.ci.beans.entities.CITelemetrySentStatus
 io.harness.plancreator.steps.TaskSelectorYaml
 io.harness.logging.CommandExecutionStatus
+io.harness.plancreator.strategy.ExpressionAxisConfig

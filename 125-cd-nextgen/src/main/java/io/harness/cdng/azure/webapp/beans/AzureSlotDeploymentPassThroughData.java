@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.artifact.outcome.ArtifactOutcome;
 import io.harness.cdng.infra.beans.AzureWebAppInfrastructureOutcome;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
@@ -34,4 +35,5 @@ public class AzureSlotDeploymentPassThroughData implements PassThroughData {
   Map<String, StoreConfig> unprocessedConfigs;
   AzureAppServicePreDeploymentData preDeploymentData;
   CommandUnitsProgress commandUnitsProgress;
+  ArtifactOutcome primaryArtifactOutcome;
 }

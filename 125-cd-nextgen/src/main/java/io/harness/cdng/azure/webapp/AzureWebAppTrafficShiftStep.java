@@ -7,6 +7,7 @@
 
 package io.harness.cdng.azure.webapp;
 
+import static io.harness.azure.model.AzureConstants.DEPLOYMENT_SLOT_PRODUCTION_NAME;
 import static io.harness.azure.model.AzureConstants.SLOT_TRAFFIC_PERCENTAGE;
 import static io.harness.azure.model.AzureConstants.TRAFFIC_WEIGHT_IN_PERCENTAGE_INVALID_ERROR_MSG;
 
@@ -78,6 +79,10 @@ public class AzureWebAppTrafficShiftStep extends TaskExecutableWithRollbackAndRb
 
       if (trafficPercent > 100.0 || trafficPercent < 0) {
         throw new InvalidArgumentsException(TRAFFIC_WEIGHT_IN_PERCENTAGE_INVALID_ERROR_MSG);
+      }
+      if (DEPLOYMENT_SLOT_PRODUCTION_NAME.equalsIgnoreCase(azureAppServicePreDeploymentData.getSlotName())) {
+        throw new InvalidArgumentsException(
+            "Traffic shift is supposed to shift traffic from PRODUCTION slot to deployment slot. Traffic shift is not applicable when deployment slot is PRODUCTION.");
       }
 
       AzureWebAppTrafficShiftRequest azureWebAppTrafficShiftRequest =

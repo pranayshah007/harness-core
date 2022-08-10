@@ -19,7 +19,7 @@ public class DummyExpressionResolver implements ExpressionResolver {
   private int index = 0;
 
   @Override
-  public String resolve(String expression) {
+  public String resolveInternal(String expression) {
     expressions.add(expression);
     index++;
     return String.valueOf(index);

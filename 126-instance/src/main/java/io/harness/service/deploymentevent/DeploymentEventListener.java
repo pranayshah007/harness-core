@@ -122,8 +122,8 @@ public class DeploymentEventListener implements OrchestrationEventHandler {
   private DeploymentSummaryDTO createDeploymentSummary(Ambiance ambiance, ServiceStepOutcome serviceOutcome,
       InfrastructureOutcome infrastructureOutcome, InfrastructureMappingDTO infrastructureMappingDTO,
       List<ServerInstanceInfo> serverInstanceInfoList) {
-    AbstractInstanceSyncHandler abstractInstanceSyncHandler =
-        instanceSyncHandlerFactoryService.getInstanceSyncHandler(serviceOutcome.getType());
+    AbstractInstanceSyncHandler abstractInstanceSyncHandler = instanceSyncHandlerFactoryService.getInstanceSyncHandler(
+        serviceOutcome.getType(), infrastructureOutcome.getKind());
     DeploymentInfoDTO deploymentInfoDTO =
         abstractInstanceSyncHandler.getDeploymentInfo(infrastructureOutcome, serverInstanceInfoList);
 
@@ -137,9 +137,12 @@ public class DeploymentEventListener implements OrchestrationEventHandler {
             .deployedByName(ambiance.getMetadata().getTriggerInfo().getTriggeredBy().getIdentifier())
             .deployedById(ambiance.getMetadata().getTriggerInfo().getTriggeredBy().getUuid())
             .infrastructureMappingId(infrastructureMappingDTO.getId())
+            .infrastructureMapping(infrastructureMappingDTO)
             .instanceSyncKey(deploymentInfoDTO.prepareInstanceSyncHandlerKey())
             .deploymentInfoDTO(deploymentInfoDTO)
             .deployedAt(AmbianceUtils.getCurrentLevelStartTs(ambiance))
+            .infrastructureIdentifier(infrastructureOutcome.getInfraIdentifier())
+            .infrastructureName(infrastructureOutcome.getInfraName())
             .build();
     setArtifactDetails(ambiance, deploymentSummaryDTO);
     deploymentSummaryDTO = deploymentSummaryService.save(deploymentSummaryDTO);
@@ -158,7 +161,8 @@ public class DeploymentEventListener implements OrchestrationEventHandler {
        * be the last stable one
        */
       Optional<DeploymentSummaryDTO> deploymentSummaryDTOOptional =
-          deploymentSummaryService.getNthDeploymentSummaryFromNow(2, deploymentSummaryDTO.getInstanceSyncKey());
+          deploymentSummaryService.getNthDeploymentSummaryFromNow(
+              2, deploymentSummaryDTO.getInstanceSyncKey(), deploymentSummaryDTO.getInfrastructureMapping());
       if (deploymentSummaryDTOOptional.isPresent()) {
         deploymentSummaryDTO.setArtifactDetails(deploymentSummaryDTOOptional.get().getArtifactDetails());
         deploymentSummaryDTO.setRollbackDeployment(true);
@@ -173,14 +177,16 @@ public class DeploymentEventListener implements OrchestrationEventHandler {
     OptionalOutcome optionalOutcome = outcomeService.resolveOptional(
         ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.ARTIFACTS));
     if (!optionalOutcome.isFound()) {
-      deploymentSummaryDTO.setArtifactDetails(ArtifactDetails.builder().artifactId("").tag("").build());
+      deploymentSummaryDTO.setArtifactDetails(ArtifactDetails.builder().artifactId("").tag("").displayName("").build());
       return;
     }
     ArtifactsOutcome artifactsOutcome = (ArtifactsOutcome) optionalOutcome.getOutcome();
-    deploymentSummaryDTO.setArtifactDetails(ArtifactDetails.builder()
-                                                .tag(artifactsOutcome.getPrimary().getTag())
-                                                .artifactId(artifactsOutcome.getPrimary().getIdentifier())
-                                                .build());
+    deploymentSummaryDTO.setArtifactDetails(
+        ArtifactDetails.builder()
+            .tag(artifactsOutcome.getPrimary().getTag())
+            .artifactId(artifactsOutcome.getPrimary().getIdentifier())
+            .displayName(artifactsOutcome.getPrimary().getArtifactSummary().getDisplayName())
+            .build());
   }
 
   private ServiceStepOutcome getServiceOutcomeFromAmbiance(Ambiance ambiance) {

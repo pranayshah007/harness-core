@@ -101,6 +101,9 @@ public class ConnectorMigrationService extends NgMigrationService {
 
   @Override
   public DiscoveryNode discover(NGMigrationEntity entity) {
+    if (entity == null) {
+      return null;
+    }
     SettingAttribute settingAttribute = (SettingAttribute) entity;
     String entityId = settingAttribute.getUuid();
     CgEntityId connectorEntityId = CgEntityId.builder().type(NGMigrationEntityType.CONNECTOR).id(entityId).build();

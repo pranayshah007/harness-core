@@ -36,6 +36,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.validator.constraints.NotEmpty;
 import org.springframework.data.annotation.TypeAlias;
 
 @OwnedBy(HarnessTeam.CDP)
@@ -55,7 +56,7 @@ public class AzureWebAppTrafficShiftStepInfo
   // For Visitor Framework Impl
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String metadata;
 
-  @NotNull @YamlSchemaTypes(value = {string, number}) ParameterField<String> traffic;
+  @NotNull @NotEmpty @YamlSchemaTypes(value = {string, number}) ParameterField<String> traffic;
 
   @Builder(builderMethodName = "infoBuilder")
   public AzureWebAppTrafficShiftStepInfo(ParameterField<List<TaskSelectorYaml>> delegateSelectors,

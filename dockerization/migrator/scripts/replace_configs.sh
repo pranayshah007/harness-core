@@ -327,7 +327,6 @@ if [[ "" != "$jwtNextGenManagerSecret" ]]; then
   yq write -i $CONFIG_FILE cg.portal.jwtNextGenManagerSecret "$jwtNextGenManagerSecret"
 fi
 
-
 if [[ "" != "$FEATURES" ]]; then
   yq write -i $CONFIG_FILE cg.featuresEnabled "$FEATURES"
 fi

@@ -111,6 +111,7 @@ io.harness.cdng.artifact.bean.yaml.AmazonS3ArtifactConfig
 io.harness.steps.shellscript.K8sInfraDelegateConfigOutput
 io.harness.steps.shellscript.SshInfraDelegateConfigOutput
 io.harness.steps.shellscript.WinRmInfraDelegateConfigOutput
+io.harness.steps.shellscript.HostsOutput
 io.harness.cdng.infra.beans.K8sGcpInfraMapping
 io.harness.cdng.infra.beans.K8sAzureInfraMapping
 io.harness.cdng.infra.beans.PdcInfraMapping
@@ -250,10 +251,10 @@ io.harness.cdng.ssh.CommandStepNode
 io.harness.cdng.ssh.CommandStepParameters
 io.harness.cdng.ssh.TailFilePattern
 io.harness.cdng.ssh.CommandUnitWrapper
-io.harness.cdng.ssh.StepCommandUnit
 io.harness.cdng.ssh.ScriptCommandUnitSpec
 io.harness.cdng.ssh.CopyCommandUnitSpec
 io.harness.cdng.ssh.CommandUnitSourceType
+io.harness.cdng.ssh.CommandStepOutcome
 io.harness.yaml.core.failurestrategy.abort.AbortFailureActionConfig
 io.harness.yaml.core.failurestrategy.ignore.IgnoreFailureActionConfig
 io.harness.yaml.core.failurestrategy.manualintervention.ManualFailureSpecConfig
@@ -365,10 +366,10 @@ io.harness.cdng.azure.webapp.beans.AzureSlotDeploymentPassThroughData
 io.harness.cdng.service.steps.ServiceSectionStepOutcome
 io.harness.cdng.azure.webapp.ApplicationSettingsParameters
 io.harness.cdng.azure.webapp.ConnectionStringsParameters
-io.harness.cdng.azure.webapp.StartupScriptParameters
+io.harness.cdng.azure.webapp.StartupCommandParameters
 io.harness.cdng.azure.config.ApplicationSettingsOutcome
 io.harness.cdng.azure.config.ConnectionStringsOutcome
-io.harness.cdng.azure.config.StartupScriptOutcome
+io.harness.cdng.azure.config.StartupCommandOutcome
 io.harness.cdng.service.beans.AzureWebAppServiceSpec
 io.harness.cdng.k8s.beans.CustomFetchResponsePassThroughData
 JenkinsBuildStepNode
@@ -379,3 +380,6 @@ io.harness.ngpipeline.artifact.bean.JenkinsArtifactOutcome
 io.harness.cdng.artifact.JenkinsArtifactSummary
 io.harness.logging.CommandExecutionStatus
 io.harness.plancreator.steps.TaskSelectorYaml
+io.harness.plancreator.strategy.ExpressionAxisConfig
+io.harness.cdng.service.beans.ServiceUseFromStageV2
+io.harness.cdng.execution.ExecutionInfoKeyOutput

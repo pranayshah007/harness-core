@@ -65,7 +65,7 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 
-@Api(value = "/v2/resourcegroup", hidden = true)
+@Api(value = "/v2/resourcegroup")
 @Path("/v2/resourcegroup")
 @Produces({"application/json", "application/yaml"})
 @Consumes({"application/json", "application/yaml"})

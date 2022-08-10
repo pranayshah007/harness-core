@@ -45,6 +45,7 @@ public class CIExecutionConfig implements PersistentEntity, UuidAware, CreatedAt
   @NotBlank String securityImage;
   @NotBlank String buildAndPushDockerRegistryImage;
   @NotBlank String buildAndPushECRImage;
+  @NotBlank String buildAndPushACRImage;
   @NotBlank String buildAndPushGCRImage;
   @NotBlank String gcsUploadImage;
   @NotBlank String s3UploadImage;

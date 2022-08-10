@@ -26,9 +26,12 @@ import io.harness.ng.overview.dto.ServiceDeploymentInfoDTO;
 import io.harness.ng.overview.dto.ServiceDeploymentListInfo;
 import io.harness.ng.overview.dto.ServiceDetailsInfoDTO;
 import io.harness.ng.overview.dto.ServiceHeaderInfo;
+import io.harness.ng.overview.dto.ServicePipelineInfo;
 import io.harness.ng.overview.dto.TimeValuePairListDTO;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 @OwnedBy(HarnessTeam.CDC)
 public interface CDOverviewDashboardService {
@@ -91,4 +94,12 @@ public interface CDOverviewDashboardService {
 
   ServiceHeaderInfo getServiceHeaderInfo(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId);
+
+  Map<String, String> getLastPipeline(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, List<String> serviceIds);
+
+  Map<String, String> getLastPipeline(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      Set<String> serviceIds, Set<String> envIds);
+
+  Map<String, ServicePipelineInfo> getPipelineExecutionDetails(List<String> pipelineExecutionIdList);
 }

@@ -7,4 +7,4 @@
 
 package io.harness.cvng.statemachine.beans;
 
-public enum AnalysisOrchestratorStatus { @Deprecated CREATED, RUNNING, WAITING, COMPLETED }
+public enum AnalysisOrchestratorStatus { @Deprecated CREATED, RUNNING, WAITING, COMPLETED, TERMINATED }

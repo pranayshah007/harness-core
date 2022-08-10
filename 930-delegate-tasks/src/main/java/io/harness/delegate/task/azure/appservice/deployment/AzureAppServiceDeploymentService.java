@@ -93,6 +93,7 @@ import io.harness.delegate.task.azure.appservice.webapp.AppServiceDeploymentProg
 import io.harness.delegate.task.azure.common.AzureLogCallbackProvider;
 import io.harness.delegate.task.azure.common.validator.Validators;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.runtime.azure.AzureAppServicesDeployArtifactFileException;
 import io.harness.logging.LogCallback;
 
 import software.wings.delegatetasks.azure.AzureTimeLimiter;
@@ -487,7 +488,8 @@ public class AzureAppServiceDeploymentService {
       deployment.await(context.getSteadyStateTimeoutInMin(), TimeUnit.MINUTES);
     } catch (Exception exception) {
       deployLog.saveExecutionLog(String.format(FAIL_DEPLOYMENT, exception.getMessage()), ERROR, FAILURE);
-      throw exception;
+      throw new AzureAppServicesDeployArtifactFileException(
+          context.getArtifactFile().toPath(), context.getArtifactType().name(), exception);
     }
   }
 

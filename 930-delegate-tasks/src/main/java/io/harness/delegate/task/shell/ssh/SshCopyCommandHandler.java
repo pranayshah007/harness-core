@@ -7,6 +7,9 @@
 
 package io.harness.delegate.task.shell.ssh;
 
+import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.ARTIFACT_CONFIGURATION_NOT_FOUND;
+import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.ARTIFACT_CONFIGURATION_NOT_FOUND_EXPLANATION;
+import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.ARTIFACT_CONFIGURATION_NOT_FOUND_HINT;
 import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.NO_CONFIG_FILE_PROVIDED;
 import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.NO_CONFIG_FILE_PROVIDED_EXPLANATION;
 import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.NO_CONFIG_FILE_PROVIDED_HINT;
@@ -35,6 +38,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.runtime.SshCommandExecutionException;
 import io.harness.logging.CommandExecutionStatus;
+import io.harness.logging.LogLevel;
 import io.harness.security.encryption.SecretDecryptionService;
 import io.harness.ssh.FileSourceType;
 
@@ -43,6 +47,7 @@ import com.google.inject.Singleton;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -54,7 +59,8 @@ public class SshCopyCommandHandler implements CommandHandler {
 
   @Override
   public CommandExecutionStatus handle(CommandTaskParameters parameters, NgCommandUnit commandUnit,
-      ILogStreamingTaskClient logStreamingTaskClient, CommandUnitsProgress commandUnitsProgress) {
+      ILogStreamingTaskClient logStreamingTaskClient, CommandUnitsProgress commandUnitsProgress,
+      Map<String, Object> taskContext) {
     if (!(parameters instanceof SshCommandTaskParameters)) {
       throw new InvalidRequestException("Invalid task parameters submitted for command task.");
     }
@@ -82,6 +88,8 @@ public class SshCopyCommandHandler implements CommandHandler {
             .destinationPath(copyCommandUnit.getDestinationPath())
             .build();
 
+    context.getEnvironmentVariables().putAll((Map<String, String>) taskContext.get(RESOLVED_ENV_VARIABLES_KEY));
+
     if (EmptyPredicate.isEmpty(copyCommandUnit.getDestinationPath())) {
       log.info("Destination path no provided for copy command unit");
       throw NestedExceptionUtils.hintWithExplanationException(
@@ -95,9 +103,15 @@ public class SshCopyCommandHandler implements CommandHandler {
         (FileBasedAbstractScriptExecutorNG) sshScriptExecutorFactory.getFileBasedExecutor(context);
     if (FileSourceType.ARTIFACT.equals(copyCommandUnit.getSourceType())) {
       log.info("About to copy artifact");
+      if (sshCommandTaskParameters.getArtifactDelegateConfig() == null) {
+        throw NestedExceptionUtils.hintWithExplanationException(ARTIFACT_CONFIGURATION_NOT_FOUND_HINT,
+            ARTIFACT_CONFIGURATION_NOT_FOUND_EXPLANATION,
+            new SshCommandExecutionException(ARTIFACT_CONFIGURATION_NOT_FOUND));
+      }
       result = executor.copyFiles(context);
+      executor.getLogCallback().saveExecutionLog("Command finished with status " + result, LogLevel.INFO, result);
       if (result == CommandExecutionStatus.FAILURE) {
-        log.info(
+        log.error(
             "Failed to copy artifact with id: " + sshCommandTaskParameters.getArtifactDelegateConfig().getIdentifier());
       }
       return result;
@@ -115,12 +129,13 @@ public class SshCopyCommandHandler implements CommandHandler {
           configFile.setFileContent(fileData);
           configFile.setFileSize(fileData.getBytes(StandardCharsets.UTF_8).length);
         }
-        result = executor.copyConfigFiles(copyCommandUnit.getDestinationPath(), configFile);
+        result = executor.copyConfigFiles(context.getEvaluatedDestinationPath(), configFile);
         if (result == CommandExecutionStatus.FAILURE) {
-          log.info("Failed to copy config file: " + configFile.getFileName());
+          log.error("Failed to copy config file: " + configFile.getFileName());
           break;
         }
       }
+      executor.getLogCallback().saveExecutionLog("Command finished with status " + result, LogLevel.INFO, result);
     }
 
     return result;

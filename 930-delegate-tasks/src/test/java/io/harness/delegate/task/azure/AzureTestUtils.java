@@ -26,11 +26,14 @@ import io.harness.delegate.beans.connector.docker.DockerAuthType;
 import io.harness.delegate.beans.connector.docker.DockerAuthenticationDTO;
 import io.harness.delegate.beans.connector.docker.DockerConnectorDTO;
 import io.harness.delegate.beans.connector.docker.DockerUserNamePasswordDTO;
+import io.harness.delegate.task.artifacts.ArtifactSourceType;
 import io.harness.delegate.task.azure.appservice.AzureAppServicePreDeploymentData;
 import io.harness.delegate.task.azure.appservice.webapp.AppServiceDeploymentProgress;
 import io.harness.delegate.task.azure.appservice.webapp.ng.AzureWebAppInfraDelegateConfig;
+import io.harness.delegate.task.azure.artifact.ArtifactoryAzureArtifactRequestDetails;
 import io.harness.delegate.task.azure.artifact.AzureArtifactConfig;
 import io.harness.delegate.task.azure.artifact.AzureContainerArtifactConfig;
+import io.harness.delegate.task.azure.artifact.AzurePackageArtifactConfig;
 import io.harness.encryption.SecretRefData;
 
 import java.util.Collections;
@@ -55,6 +58,8 @@ public class AzureTestUtils {
   public static final String IMAGE = "image";
   public static final String REGISTRY_HOSTNAME = "test.registry.io";
   public static final String TEST_REGION = "test-region";
+  public static final String ARTIFACT_PATH = "artifact";
+  public static final String ARTIFACT_REPOSITORY = "repository";
 
   public AzureContainerArtifactConfig createTestContainerArtifactConfig() {
     return createTestContainerArtifactConfig(null);
@@ -68,6 +73,16 @@ public class AzureTestUtils {
         .registryType(AzureRegistryType.DOCKER_HUB_PRIVATE)
         .registryHostname(REGISTRY_HOSTNAME)
         .region(TEST_REGION)
+        .build();
+  }
+
+  public AzureArtifactConfig createTestPackageArtifactConfig() {
+    return AzurePackageArtifactConfig.builder()
+        .sourceType(ArtifactSourceType.ARTIFACTORY_REGISTRY)
+        .artifactDetails(ArtifactoryAzureArtifactRequestDetails.builder()
+                             .artifactPaths(Collections.singletonList(ARTIFACT_PATH))
+                             .repository(ARTIFACT_REPOSITORY)
+                             .build())
         .build();
   }
 

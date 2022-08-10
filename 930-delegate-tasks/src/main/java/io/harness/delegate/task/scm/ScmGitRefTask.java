@@ -187,10 +187,10 @@ public class ScmGitRefTask extends AbstractDelegateRunnableTask {
       case GET_LATEST_COMMIT_ON_FILE: {
         final GetLatestCommitOnFileResponse getLatestCommitOnFileResponse = scmDelegateClient.processScmRequest(c
             -> scmServiceClient.getLatestCommitOnFile(scmGitRefTaskParams.getScmConnector(),
-                scmGitRefTaskParams.getBranch(), scmGitRefTaskParams.getBaseBranch(), SCMGrpc.newBlockingStub(c)));
+                scmGitRefTaskParams.getBranch(), scmGitRefTaskParams.getFilePath(), SCMGrpc.newBlockingStub(c)));
         return ScmGitRefTaskResponseData.builder()
             .gitRefType(scmGitRefTaskParams.getGitRefType())
-            .getLatestCommitResponse(getLatestCommitOnFileResponse.toByteArray())
+            .getLatestCommitOnFileResponse(getLatestCommitOnFileResponse.toByteArray())
             .build();
       }
       default:

@@ -54,6 +54,7 @@ import software.wings.sm.states.HelmDeployState.HelmDeployStateKeys;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -96,7 +97,8 @@ public class WorkflowServiceTemplateHelper {
     phaseStep.getSteps().forEach(step -> {
       if (step.getType().equals(APPROVAL.name())) {
         Number timeoutMillis = (Number) step.getProperties().get(TIMEOUT_PROPERTY_KEY);
-        if (timeoutMillis != null && timeoutMillis.longValue() > MAXIMUM_TIMEOUT) {
+        if (timeoutMillis != null
+            && (timeoutMillis instanceof BigInteger || timeoutMillis.longValue() > MAXIMUM_TIMEOUT)) {
           throw new InvalidRequestException("Value exceeded maximum timeout of 3w 3d 20h 30m.");
         }
       }

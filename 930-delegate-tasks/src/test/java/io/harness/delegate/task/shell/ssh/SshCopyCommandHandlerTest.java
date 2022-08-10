@@ -8,6 +8,7 @@
 package io.harness.delegate.task.shell.ssh;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.delegate.task.shell.ssh.CommandHandler.RESOLVED_ENV_VARIABLES_KEY;
 import static io.harness.rule.OwnerRule.ACASIAN;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -39,8 +40,10 @@ import io.harness.delegate.task.ssh.config.ConfigFileParameters;
 import io.harness.delegate.task.ssh.config.FileDelegateConfig;
 import io.harness.delegate.task.ssh.config.SecretConfigFile;
 import io.harness.encryption.SecretRefData;
+import io.harness.exception.HintException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.logging.CommandExecutionStatus;
+import io.harness.logging.LogCallback;
 import io.harness.ng.core.dto.secrets.SSHKeySpecDTO;
 import io.harness.rule.Owner;
 import io.harness.security.encryption.EncryptedDataDetail;
@@ -51,6 +54,7 @@ import com.google.inject.Inject;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -70,6 +74,8 @@ public class SshCopyCommandHandlerTest extends CategoryTest {
   @Mock SshScriptExecutorFactory sshScriptExecutorFactory;
   @Mock SecretDecryptionService secretDecryptionService;
   @Mock EncryptedDataDetail encryptedDataDetail;
+  @Mock LogCallback logCallback;
+  @Mock Map<String, Object> taskContext;
 
   final SSHKeySpecDTO SSH_KEY_SPEC = SSHKeySpecDTO.builder().build();
   final List<EncryptedDataDetail> encryptedDataDetailList = Collections.emptyList();
@@ -86,6 +92,9 @@ public class SshCopyCommandHandlerTest extends CategoryTest {
   @Before
   public void setup() {
     MockitoAnnotations.initMocks(this);
+    doReturn(logCallback).when(fileBasedSshScriptExecutorNG).getLogCallback();
+    doReturn(logCallback).when(fileBasedProcessScriptExecutorNG).getLogCallback();
+    doReturn(Collections.emptyMap()).when(taskContext).get(RESOLVED_ENV_VARIABLES_KEY);
   }
 
   @Test
@@ -96,7 +105,7 @@ public class SshCopyCommandHandlerTest extends CategoryTest {
     when(fileBasedSshScriptExecutorNG.copyFiles(any())).thenReturn(CommandExecutionStatus.SUCCESS);
 
     CommandExecutionStatus status = sshCopyCommandHandler.handle(
-        getParameters(false), copyCommandUnit, logStreamingTaskClient, commandUnitsProgress);
+        getParameters(false, true), copyCommandUnit, logStreamingTaskClient, commandUnitsProgress, taskContext);
     assertThat(status).isEqualTo(CommandExecutionStatus.SUCCESS);
     ArgumentCaptor<SshExecutorFactoryContext> contextArgumentCaptor =
         ArgumentCaptor.forClass(SshExecutorFactoryContext.class);
@@ -112,12 +121,40 @@ public class SshCopyCommandHandlerTest extends CategoryTest {
     when(fileBasedProcessScriptExecutorNG.copyFiles(any())).thenReturn(CommandExecutionStatus.SUCCESS);
 
     CommandExecutionStatus status = sshCopyCommandHandler.handle(
-        getParameters(true), copyCommandUnit, logStreamingTaskClient, commandUnitsProgress);
+        getParameters(true, true), copyCommandUnit, logStreamingTaskClient, commandUnitsProgress, taskContext);
     assertThat(status).isEqualTo(CommandExecutionStatus.SUCCESS);
     ArgumentCaptor<SshExecutorFactoryContext> contextArgumentCaptor =
         ArgumentCaptor.forClass(SshExecutorFactoryContext.class);
     verify(fileBasedProcessScriptExecutorNG).copyFiles(contextArgumentCaptor.capture());
     assertContextData(contextArgumentCaptor.getValue(), true);
+  }
+
+  @Test
+  @Owner(developers = ACASIAN)
+  @Category(UnitTests.class)
+  public void testShouldFailCopyArtifactWithSshFileExecutorIfNoArtifact() {
+    doReturn(fileBasedSshScriptExecutorNG).when(sshScriptExecutorFactory).getFileBasedExecutor(any());
+    when(fileBasedSshScriptExecutorNG.copyFiles(any())).thenReturn(CommandExecutionStatus.SUCCESS);
+
+    assertThatThrownBy(()
+                           -> sshCopyCommandHandler.handle(getParameters(false, false), copyCommandUnit,
+                               logStreamingTaskClient, commandUnitsProgress, taskContext))
+        .isInstanceOf(HintException.class)
+        .hasMessage("Please provide artifact details with the service definition");
+  }
+
+  @Test
+  @Owner(developers = ACASIAN)
+  @Category(UnitTests.class)
+  public void testShouldFailCopyArtifactWithSshFileExecutorOnDelegateIfNoArtifact() {
+    doReturn(fileBasedProcessScriptExecutorNG).when(sshScriptExecutorFactory).getFileBasedExecutor(any());
+    when(fileBasedProcessScriptExecutorNG.copyFiles(any())).thenReturn(CommandExecutionStatus.SUCCESS);
+
+    assertThatThrownBy(()
+                           -> sshCopyCommandHandler.handle(getParameters(true, false), copyCommandUnit,
+                               logStreamingTaskClient, commandUnitsProgress, taskContext))
+        .isInstanceOf(HintException.class)
+        .hasMessage("Please provide artifact details with the service definition");
   }
 
   @Test
@@ -135,7 +172,7 @@ public class SshCopyCommandHandlerTest extends CategoryTest {
                         .build());
 
     CommandExecutionStatus status = sshCopyCommandHandler.handle(
-        getParameters(false), copyConfigCommandUnit, logStreamingTaskClient, commandUnitsProgress);
+        getParameters(false, false), copyConfigCommandUnit, logStreamingTaskClient, commandUnitsProgress, taskContext);
     assertThat(status).isEqualTo(CommandExecutionStatus.SUCCESS);
     ArgumentCaptor<ConfigFileParameters> configFileArgumentCaptor = ArgumentCaptor.forClass(ConfigFileParameters.class);
     verify(fileBasedSshScriptExecutorNG, times(2)).copyConfigFiles(eq("/test"), configFileArgumentCaptor.capture());
@@ -157,7 +194,7 @@ public class SshCopyCommandHandlerTest extends CategoryTest {
                         .build());
 
     CommandExecutionStatus status = sshCopyCommandHandler.handle(
-        getParameters(true), copyConfigCommandUnit, logStreamingTaskClient, commandUnitsProgress);
+        getParameters(true, false), copyConfigCommandUnit, logStreamingTaskClient, commandUnitsProgress, taskContext);
     assertThat(status).isEqualTo(CommandExecutionStatus.SUCCESS);
     ArgumentCaptor<ConfigFileParameters> configFileArgumentCaptor = ArgumentCaptor.forClass(ConfigFileParameters.class);
     verify(fileBasedProcessScriptExecutorNG, times(2)).copyConfigFiles(eq("/test"), configFileArgumentCaptor.capture());
@@ -170,18 +207,19 @@ public class SshCopyCommandHandlerTest extends CategoryTest {
   public void testShouldHandleInvalidArguments() {
     assertThatThrownBy(()
                            -> sshCopyCommandHandler.handle(WinrmTaskParameters.builder().build(), copyCommandUnit,
-                               logStreamingTaskClient, commandUnitsProgress))
+                               logStreamingTaskClient, commandUnitsProgress, taskContext))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage("Invalid task parameters submitted for command task.");
 
-    assertThatThrownBy(()
-                           -> sshCopyCommandHandler.handle(getParameters(false), NgInitCommandUnit.builder().build(),
-                               logStreamingTaskClient, commandUnitsProgress))
+    assertThatThrownBy(
+        ()
+            -> sshCopyCommandHandler.handle(getParameters(false, true), NgInitCommandUnit.builder().build(),
+                logStreamingTaskClient, commandUnitsProgress, taskContext))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage("Invalid command unit specified for command task.");
   }
 
-  private CommandTaskParameters getParameters(boolean onDelegate) {
+  private CommandTaskParameters getParameters(boolean onDelegate, boolean withArtifact) {
     return SshCommandTaskParameters.builder()
         .accountId("testAccount")
         .executeOnDelegate(onDelegate)
@@ -190,7 +228,7 @@ public class SshCopyCommandHandlerTest extends CategoryTest {
                                     .encryptionDataDetails(encryptedDataDetailList)
                                     .sshKeySpecDto(SSH_KEY_SPEC)
                                     .build())
-        .artifactDelegateConfig(ArtifactoryArtifactDelegateConfig.builder().build())
+        .artifactDelegateConfig(withArtifact ? ArtifactoryArtifactDelegateConfig.builder().build() : null)
         .fileDelegateConfig(
             FileDelegateConfig.builder()
                 .stores(Arrays.asList(

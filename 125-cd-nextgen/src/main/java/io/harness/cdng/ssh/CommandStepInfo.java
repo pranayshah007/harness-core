@@ -47,9 +47,10 @@ public class CommandStepInfo extends CommandBaseStepInfo implements CDStepInfo, 
   @VariableExpression(skipVariableExpression = true) List<NGVariable> outputVariables;
 
   @Builder(builderMethodName = "infoBuilder")
-  public CommandStepInfo(ParameterField<Boolean> onDelegate, ParameterField<List<TaskSelectorYaml>> delegateSelectors,
-      List<NGVariable> environmentVariables, List<NGVariable> outputVariables, List<CommandUnitWrapper> commandUnits) {
-    super(onDelegate, delegateSelectors, commandUnits);
+  public CommandStepInfo(String uuid, ParameterField<Boolean> onDelegate,
+      ParameterField<List<TaskSelectorYaml>> delegateSelectors, List<NGVariable> environmentVariables,
+      List<NGVariable> outputVariables, List<CommandUnitWrapper> commandUnits, ParameterField<String> host) {
+    super(uuid, onDelegate, delegateSelectors, commandUnits, host);
     this.environmentVariables = environmentVariables;
     this.outputVariables = outputVariables;
   }
@@ -74,6 +75,7 @@ public class CommandStepInfo extends CommandBaseStepInfo implements CDStepInfo, 
         .environmentVariables(NGVariablesUtils.getMapOfVariables(environmentVariables, 0L))
         .outputVariables(NGVariablesUtils.getMapOfVariables(outputVariables, 0L))
         .commandUnits(getCommandUnits())
+        .host(host)
         .build();
   }
 

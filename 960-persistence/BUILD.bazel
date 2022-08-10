@@ -19,6 +19,7 @@ java_library(
         "//999-annotations:module",
         "@maven//:com_cronutils_cron_utils",
         "@maven//:com_deftlabs_mongo_java_distributed_lock",
+        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
         "@maven//:com_google_cloud_google_cloud_datastore",
         "@maven//:com_novemberain_quartz_mongodb_harness_mongo_ssl",
         "@maven//:commons_dbcp_commons_dbcp",
@@ -27,9 +28,6 @@ java_library(
         "@maven//:org_json_json",
         "@maven//:org_jsr107_ri_cache_annotations_ri_guice",
         "@maven//:org_redisson_redisson",
-        "@maven//:org_springframework_data_spring_data_mongodb",
-        "@maven//:org_springframework_guice_spring_guice",
-        "@maven//:org_springframework_spring_tx",
     ],
 )
 
@@ -53,7 +51,6 @@ java_library(
         "@maven//:org_mongodb_mongo_java_driver",
         "@maven//:org_mongodb_morphia_morphia",
         "@maven//:org_slf4j_slf4j_api",
-        "@maven//:org_springframework_data_spring_data_commons",
     ],
 )
 
@@ -93,7 +90,6 @@ java_library(
         "@maven//:org_quartz_scheduler_quartz",
         "@maven//:org_redisson_redisson",
         "@maven//:org_slf4j_slf4j_api",
-        "@maven//:org_springframework_data_spring_data_commons",
     ],
 )
 
