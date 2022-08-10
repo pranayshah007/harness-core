@@ -35,6 +35,7 @@ public class EntityGitDetails {
   @Schema(description = "Name of the repo") String repoName;
   @Schema(description = "Latest Commit ID") String commitId;
   @Schema(description = "File Url of the entity") String fileUrl;
+  @Schema(description = "Repo url of the entity") String repoUrl;
 
   public GitSyncBranchContext toGitSyncBranchContext() {
     GitEntityInfo gitEntityInfo = GitEntityInfo.builder()
