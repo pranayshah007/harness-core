@@ -4969,7 +4969,7 @@ plain_artifacts = [
     "org.projectlombok:lombok:1.18.18",
     "org.quartz-scheduler:quartz:2.3.2",
     "org.reactivestreams:reactive-streams:1.0.2",
-    "org.redisson:redisson:3.17.1",
+    "org.redisson:redisson:3.13.3",
     "org.reflections:reflections:0.9.12-SNAPSHOT",
     "org.simpleframework:simple-xml:2.7.1",
     "org.slf4j:jcl-over-slf4j:1.7.30",
