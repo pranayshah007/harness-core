@@ -68,7 +68,8 @@ public class RedisUtils {
       }
 
       // Default retry interval is 1500 milliseconds
-      serverConfig.setRetryAttempts(10);
+      serverConfig.setRetryAttempts(3);
+      serverConfig.setRetryInterval(500);
 
       serverConfig.setConnectionMinimumIdleSize(
           Math.max(DEFAULT_MIN_CONNECTION_IDLE_SIZE, redisConfig.getConnectionMinimumIdleSize()));
