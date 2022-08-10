@@ -87,18 +87,11 @@ public class GithubPackagesArtifactDelegateRequest implements ArtifactSourceDele
     List<ExecutionCapability> capabilities =
         new ArrayList<>(EncryptedDataDetailsCapabilityHelper.fetchExecutionCapabilitiesForEncryptedDataDetails(
             encryptedDataDetails, maskingEvaluator));
+    populateDelegateSelectorCapability(capabilities, githubConnectorDTO.getDelegateSelectors());
 
-    if (githubConnectorDTO.getAuthentication().getCredentials() != null) {
-      if (githubConnectorDTO.getAuthentication().getAuthType() == GitAuthType.HTTP) {
-        populateDelegateSelectorCapability(capabilities, githubConnectorDTO.getDelegateSelectors());
+    capabilities.add(HttpConnectionExecutionCapabilityGenerator.buildHttpConnectionExecutionCapability(
+        "https://api.github.com", maskingEvaluator));
 
-        capabilities.add(HttpConnectionExecutionCapabilityGenerator.buildHttpConnectionExecutionCapability(
-            githubConnectorDTO.getUrl(), maskingEvaluator));
-      } else {
-        throw new UnknownEnumTypeException(
-            "Github Credential Type", String.valueOf(githubConnectorDTO.getAuthentication().getAuthType()));
-      }
-    }
     return capabilities;
   }
 
