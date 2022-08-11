@@ -238,7 +238,8 @@ public class CodebaseUtils {
       case HTTP:
         BitbucketHttpCredentialsDTO gitAuth =
             (BitbucketHttpCredentialsDTO) gitConfigDTO.getAuthentication().getCredentials();
-        if (gitAuth.getType() != BitbucketHttpAuthenticationType.USERNAME_AND_PASSWORD) {
+        if (gitAuth.getType() != BitbucketHttpAuthenticationType.USERNAME_AND_PASSWORD
+            && gitAuth.getType() != BitbucketHttpAuthenticationType.OAUTH) {
           throw new CIStageExecutionException("Unsupported bitbucket connector auth type" + gitAuth.getType());
         }
         break;

@@ -16,6 +16,7 @@ import static java.lang.String.format;
 import io.harness.beans.DecryptableEntity;
 import io.harness.cistatus.service.GithubAppConfig;
 import io.harness.cistatus.service.GithubService;
+import io.harness.connector.entities.embedded.bitbucketconnector.BitbucketOauth;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoApiAccessSpecDTO;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoApiAccessType;
@@ -23,6 +24,7 @@ import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectorDTO;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoTokenSpecDTO;
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketApiAccessType;
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketConnectorDTO;
+import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketOauthDTO;
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketUsernameTokenApiAccessDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubApiAccessSpecDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubApiAccessType;
@@ -133,7 +135,13 @@ public class GitTokenRetriever {
       DecryptableEntity decryptableEntity =
           secretDecryptor.decrypt(bitbucketTokenSpecDTO, gitConnector.getEncryptedDataDetails());
       return new String(((BitbucketUsernameTokenApiAccessDTO) decryptableEntity).getTokenRef().getDecryptedValue());
-    } else {
+    } else if (bitbucketConnectorDTO.getApiAccess().getType() == BitbucketApiAccessType.OAUTH) {
+      BitbucketOauthDTO bitbucketOauthDTO = (BitbucketOauthDTO) bitbucketConnectorDTO.getApiAccess().getSpec();
+      DecryptableEntity decryptableEntity =
+          secretDecryptor.decrypt(bitbucketOauthDTO, gitConnector.getEncryptedDataDetails());
+      return new String(((BitbucketOauthDTO) decryptableEntity).getTokenRef().getDecryptedValue());
+    }
+    {
       throw new CIStageExecutionException(
           format("Unsupported access type %s for gitlab status", bitbucketConnectorDTO.getApiAccess().getType()));
     }
