@@ -168,8 +168,7 @@ public class SshCommandStepHelper extends CDStepHelper {
           commandStepRollbackHelper.getRollbackData(ambiance, builtInEnvVariables);
       if (!rollbackData.isPresent()) {
         log.info("Not found rollback data from DB, hence skipping rollback, stageExecutionId: {}", stageExecutionId);
-        throw new InvalidRequestException(
-            format("Not found previous successful rollback data, hence skipping rollback, %s", stageExecutionId));
+        throw new InvalidRequestException("Not found previous successful rollback data, hence skipping rollback");
       }
 
       log.info("Found rollback data in DB, stageExecutionId: {}", stageExecutionId);
@@ -227,8 +226,7 @@ public class SshCommandStepHelper extends CDStepHelper {
           commandStepRollbackHelper.getRollbackData(ambiance, builtInEnvVariables);
       if (!rollbackData.isPresent()) {
         log.info("Not found rollback data from DB, hence skipping rollback, stageExecutionId: {}", stageExecutionId);
-        throw new InvalidRequestException(
-            format("Not found previous successful rollback data, hence skipping rollback, %s", stageExecutionId));
+        throw new InvalidRequestException("Not found previous successful rollback data, hence skipping rollback");
       }
 
       log.info("Found rollback data in DB, stageExecutionId: {}", stageExecutionId);
