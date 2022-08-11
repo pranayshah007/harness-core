@@ -14,6 +14,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DecryptableEntity;
 import io.harness.connector.DelegateSelectable;
+import io.harness.connector.ManagerExecutable;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.scm.GitAuthType;
@@ -52,7 +53,8 @@ import org.hibernate.validator.constraints.NotBlank;
 @ApiModel("AzureRepoConnector")
 @OwnedBy(HarnessTeam.PL)
 @Schema(name = "AzureRepoConfig", description = "This contains details of AzureRepo connector")
-public class AzureRepoConnectorDTO extends ConnectorConfigDTO implements ScmConnector, DelegateSelectable {
+public class AzureRepoConnectorDTO
+    extends ConnectorConfigDTO implements ScmConnector, DelegateSelectable, ManagerExecutable {
   @NotNull
   @JsonProperty("type")
   @Schema(description = "Project | Repository connector type")
@@ -68,19 +70,21 @@ public class AzureRepoConnectorDTO extends ConnectorConfigDTO implements ScmConn
   @Schema(description = "API access details, to be used in Harness Triggers and Git Experience")
   AzureRepoApiAccessDTO apiAccess;
   @Schema(description = "Selected Connectivity Modes") Set<String> delegateSelectors;
+  Boolean executeOnDelegate = true;
   @Schema(description = "Connection URL for connecting Azure Repo") String gitConnectionUrl;
   private static final String AZURE_REPO_NAME_SEPARATOR = "_git/";
 
   @Builder
   public AzureRepoConnectorDTO(AzureRepoConnectionTypeDTO connectionType, String url, String validationRepo,
       AzureRepoAuthenticationDTO authentication, AzureRepoApiAccessDTO apiAccess, Set<String> delegateSelectors,
-      boolean executeOnDelegate) {
+      Boolean executeOnDelegate) {
     this.connectionType = connectionType;
     this.url = url;
     this.validationRepo = validationRepo;
     this.authentication = authentication;
     this.apiAccess = apiAccess;
     this.delegateSelectors = delegateSelectors;
+    this.executeOnDelegate = executeOnDelegate;
   }
 
   @Override
