@@ -882,9 +882,13 @@ public class NGTemplateServiceImpl implements NGTemplateService {
                templateToUpdate, GitContextHelper.getGitEntityInfo(),
                format("Template with identifier [%s] and versionLabel [%s] marking last updated template as true.",
                    templateToUpdate, templateToUpdate.getVersionLabel()))) {
-        TemplateEntity withLastUpdatedTemplate = templateToUpdate.withLastUpdatedTemplate(true);
-        templateServiceHelper.makeTemplateUpdateCall(withLastUpdatedTemplate, templateToUpdate, ChangeType.MODIFY, "",
-            TemplateUpdateEventType.TEMPLATE_LAST_UPDATED_TRUE_EVENT, true);
+        if (templateServiceHelper.isOldGitSync(templateToUpdate)) {
+          TemplateEntity withLastUpdatedTemplate = templateToUpdate.withLastUpdatedTemplate(true);
+          templateServiceHelper.makeTemplateUpdateCall(withLastUpdatedTemplate, templateToUpdate, ChangeType.MODIFY, "",
+              TemplateUpdateEventType.TEMPLATE_LAST_UPDATED_TRUE_EVENT, true);
+        } else {
+          templateRepository.updateIsLastUpdatedTemplate(templateToUpdate, true);
+        }
       }
     }
   }
