@@ -13,6 +13,7 @@ import static io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstan
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.azure.AzureHelperService;
 import io.harness.cdng.azure.config.ConnectionStringsOutcome;
+import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
 import io.harness.cdng.service.steps.ServiceStepsHelper;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.logstreaming.NGLogCallback;
@@ -53,17 +54,16 @@ public class ConnectionStringsStep implements SyncExecutable<ConnectionStringsPa
       StepInputPackage inputPackage, PassThroughData passThroughData) {
     NGLogCallback logCallback = serviceStepsHelper.getServiceLogCallback(ambiance);
     logCallback.saveExecutionLog("Processing connection strings...");
-    azureHelperService.validateSettingsStoreReferences(stepParameters.getConnectionStrings(), ambiance, ENTITY_TYPE);
+    StoreConfigWrapper storeConfig = stepParameters.getConnectionStrings().getStore();
+    azureHelperService.validateSettingsStoreReferences(storeConfig, ambiance, ENTITY_TYPE);
     logCallback.saveExecutionLog("Processed connection strings");
     return StepResponse.builder()
         .status(Status.SUCCEEDED)
-        .stepOutcome(
-            StepResponse.StepOutcome.builder()
-                .name(CONNECTION_STRINGS)
-                .outcome(
-                    ConnectionStringsOutcome.builder().store(stepParameters.getConnectionStrings().getSpec()).build())
-                .group(StepOutcomeGroup.STAGE.name())
-                .build())
+        .stepOutcome(StepResponse.StepOutcome.builder()
+                         .name(CONNECTION_STRINGS)
+                         .outcome(ConnectionStringsOutcome.builder().store(storeConfig.getSpec()).build())
+                         .group(StepOutcomeGroup.STAGE.name())
+                         .build())
         .build();
   }
 }
