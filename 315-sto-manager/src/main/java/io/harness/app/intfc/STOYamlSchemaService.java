@@ -7,4 +7,6 @@
 
 package io.harness.app.intfc;
 
+import io.harness.ci.app.intfc.StageYamlSchemaService;
+
 public interface STOYamlSchemaService extends StageYamlSchemaService {}
