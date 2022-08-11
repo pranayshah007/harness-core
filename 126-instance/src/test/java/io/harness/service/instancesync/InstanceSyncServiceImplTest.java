@@ -11,9 +11,12 @@ import static io.harness.rule.OwnerRule.ARVIND;
 import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -40,6 +43,7 @@ import io.harness.dtos.instanceinfo.InstanceInfoDTO;
 import io.harness.dtos.instancesyncperpetualtaskinfo.DeploymentInfoDetailsDTO;
 import io.harness.dtos.instancesyncperpetualtaskinfo.InstanceSyncPerpetualTaskInfoDTO;
 import io.harness.helper.InstanceSyncHelper;
+import io.harness.instancesyncmonitoring.service.InstanceSyncMonitoringService;
 import io.harness.lock.AcquiredLock;
 import io.harness.lock.PersistentLocker;
 import io.harness.models.DeploymentEvent;
@@ -63,6 +67,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.ArgumentCaptor;
@@ -84,6 +89,7 @@ public class InstanceSyncServiceImplTest extends InstancesTestBase {
   @Mock InstanceSyncHelper instanceSyncHelper;
   @Spy @InjectMocks InstanceSyncServiceUtils instanceSyncServiceUtils;
   @InjectMocks InstanceSyncServiceImpl instanceSyncService;
+  @Mock private InstanceSyncMonitoringService instanceSyncMonitoringService;
 
   private final String ACCOUNT_IDENTIFIER = "acc";
   private final String PERPETUAL_TASK = "perp";
@@ -98,6 +104,11 @@ public class InstanceSyncServiceImplTest extends InstancesTestBase {
   private final String HOST1 = "host1";
   private final String HOST2 = "host2";
   private final String HOST3 = "host3";
+
+  @Before
+  public void setup() {
+    doNothing().when(instanceSyncMonitoringService).recordMetrics(any(), anyBoolean(), anyLong());
+  }
 
   @Test
   @Owner(developers = PIYUSH_BHUWALKA)
