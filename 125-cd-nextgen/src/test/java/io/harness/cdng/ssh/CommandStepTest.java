@@ -16,6 +16,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
@@ -42,10 +43,12 @@ import io.harness.delegate.task.ssh.ScriptCommandUnit;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.UnitProgress;
+import io.harness.logging.UnitStatus;
 import io.harness.ng.core.k8s.ServiceSpecType;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
+import io.harness.pms.contracts.execution.failure.FailureInfo;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
@@ -57,6 +60,7 @@ import io.harness.serializer.KryoSerializer;
 import io.harness.serializer.kryo.ApiServiceBeansKryoRegister;
 import io.harness.serializer.kryo.DelegateTasksBeansKryoRegister;
 import io.harness.steps.StepHelper;
+import io.harness.supplier.ThrowingSupplier;
 
 import software.wings.beans.TaskType;
 
@@ -83,6 +87,7 @@ public class CommandStepTest extends CategoryTest {
 
   @Mock private CDStepHelper cdStepHelper;
   @Mock private InstanceInfoService instanceInfoService;
+  @Mock private ThrowingSupplier exceptionThrowingSupplier;
   @Captor private ArgumentCaptor<List<ServerInstanceInfo>> serverInstanceInfoListCaptor;
 
   @InjectMocks private CommandStep commandStep;
@@ -259,6 +264,43 @@ public class CommandStepTest extends CategoryTest {
     assertThat(stepResponse.getStatus()).isEqualTo(Status.FAILED);
     assertThat(stepResponse.getUnitProgressList()).containsAll(unitProgresses);
     assertThat(stepResponse.getFailureInfo().getErrorMessage()).isEqualTo("Something went wrong");
+    verify(instanceInfoService, times(0)).saveServerInstancesIntoSweepingOutput(any(), any());
+  }
+
+  @Test
+  @Owner(developers = ACASIAN)
+  @Category(UnitTests.class)
+  public void testHandleTaskResultWithSecurityContextErrorFromDelegate() throws Exception {
+    final StepElementParameters stepElementParameters = StepElementParameters.builder()
+                                                            .spec(commandStepParameters)
+                                                            .timeout(ParameterField.createValueField("30m"))
+                                                            .build();
+
+    List<UnitProgress> unitProgresses =
+        Arrays.asList(UnitProgress.newBuilder().setStatus(UnitStatus.RUNNING).setUnitName("Init").build());
+
+    doReturn(ServiceStepOutcome.builder().type(ServiceSpecType.SSH).build())
+        .when(outcomeService)
+        .resolve(ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.SERVICE));
+
+    doReturn(PdcInfrastructureOutcome.builder().infrastructureKey(infraKey).build())
+        .when(cdStepHelper)
+        .getInfrastructureOutcome(ambiance);
+
+    doReturn(StepResponse.builder()
+                 .status(Status.FAILED)
+                 .failureInfo(FailureInfo.newBuilder().build())
+                 .unitProgressList(unitProgresses)
+                 .build())
+        .when(sshCommandStepHelper)
+        .handleTaskException(eq(ambiance), any(), any());
+    doThrow(new RuntimeException("Failed to execute the task")).when(exceptionThrowingSupplier).get();
+
+    StepResponse stepResponse =
+        commandStep.handleTaskResultWithSecurityContext(ambiance, stepElementParameters, exceptionThrowingSupplier);
+    assertThat(stepResponse).isNotNull();
+    assertThat(stepResponse.getStatus()).isEqualTo(Status.FAILED);
+    assertThat(stepResponse.getUnitProgressList()).containsAll(unitProgresses);
     verify(instanceInfoService, times(0)).saveServerInstancesIntoSweepingOutput(any(), any());
   }
 
