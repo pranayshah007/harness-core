@@ -406,8 +406,19 @@ public class InstanceSyncServiceImpl implements InstanceSyncService {
 
     // updating deployedAt field in accordance with pipeline execution time
     if (isNewDeploymentSync) {
-      long deployedAt = getDeploymentSummaryFromDB(instanceSyncKey, infrastructureMappingDTO).getDeployedAt();
-      instancesToBeUpdated.forEach(instanceKey -> instancesInDBMap.get(instanceKey).setLastDeployedAt(deployedAt));
+      DeploymentSummaryDTO deploymentSummaryFromDB =
+          getDeploymentSummaryFromDB(instanceSyncKey, infrastructureMappingDTO);
+      instancesToBeUpdated.forEach(instanceKey -> {
+        InstanceDTO instanceDTO = instancesInDBMap.get(instanceKey);
+        instanceDTO.setLastDeployedAt(deploymentSummaryFromDB.getDeployedAt());
+        instanceDTO.setLastDeployedById(deploymentSummaryFromDB.getDeployedById());
+        instanceDTO.setLastPipelineExecutionId(deploymentSummaryFromDB.getPipelineExecutionId());
+        instanceDTO.setPrimaryArtifact(deploymentSummaryFromDB.getArtifactDetails());
+        instanceDTO.setLastDeployedByName(deploymentSummaryFromDB.getDeployedByName());
+        instanceDTO.setLastPipelineExecutionName(deploymentSummaryFromDB.getPipelineExecutionName());
+        // known corner limitation for optimisations: We don't update Service name and environment name in case it is
+        // updated.
+      });
     }
 
     instancesToBeUpdated.forEach(instanceKey
