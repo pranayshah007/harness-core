@@ -77,6 +77,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.git.GitClientHelper;
+import io.harness.jackson.JsonNodeUtils;
 import io.harness.k8s.model.ImageDetails;
 import io.harness.ng.core.BaseNGAccess;
 import io.harness.plancreator.execution.ExecutionWrapperConfig;
@@ -98,12 +99,18 @@ import io.harness.yaml.extended.ci.codebase.CodeBase;
 import io.harness.yaml.extended.ci.codebase.impl.BranchBuildSpec;
 import io.harness.yaml.extended.ci.codebase.impl.PRBuildSpec;
 import io.harness.yaml.extended.ci.codebase.impl.TagBuildSpec;
+import io.harness.yaml.utils.JsonPipelineUtils;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import org.apache.commons.lang3.StringUtils;
 
@@ -416,6 +423,54 @@ public class IntegrationStageUtils {
       }
     }
     return stepElementConfigs;
+  }
+
+  public static void injectLoopEnvVariables(ExecutionWrapperConfig config) {
+    if (config == null) {
+      return;
+    }
+    // Read the envVariables from config, and inject Looping
+    // releated environment variables.
+    if (config.getStep() != null && !config.getStep().isNull()) {
+      JsonNode stepNode = config.getStep();
+      ObjectNode spec = (ObjectNode) stepNode.get("spec");
+      if (spec == null) {
+        return;
+      }
+      ObjectNode envVariables = (ObjectNode) spec.get("envVariables");
+      HashMap<String, String> envMap = new HashMap<>();
+      envMap.put("HARNESS_STAGE_INDEX", "<+stage.iteration>");
+      envMap.put("HARNESS_STAGE_TOTAL", "<+stage.iterations>");
+      envMap.put("HARNESS_STEP_INDEX", "<+step.iteration>");
+      envMap.put("HARNESS_STEP_TOTAL", "<+step.iterations>");
+      envMap.put("HARNESS_NODE_INDEX", "<+strategy.iteration>");
+      envMap.put("HARNESS_NODE_TOTAL", "<+strategy.iterations>");
+      if (envVariables == null) {
+        ObjectMapper mapper = new ObjectMapper();
+        JsonNode env = mapper.valueToTree(envMap);
+        spec.set("envVariables", env);
+      } else {
+        JsonNodeUtils.upsertPropertiesInJsonNode((ObjectNode) envVariables, envMap);
+      }
+    } else if (config.getParallel() != null && !config.getParallel().isNull()) {
+      ParallelStepElementConfig parallelStepElementConfig = getParallelStepElementConfig(config);
+      for (ExecutionWrapperConfig section : parallelStepElementConfig.getSections()) {
+        injectLoopEnvVariables(section);
+      }
+      JsonNode parallelNode = JsonPipelineUtils.asTree(parallelStepElementConfig);
+      ArrayNode arrayNode = JsonPipelineUtils.getMapper().createArrayNode();
+      for (ExecutionWrapperConfig section : parallelStepElementConfig.getSections()) {
+        arrayNode.add(JsonPipelineUtils.asTree(section));
+      }
+      config.setParallel(arrayNode);
+    } else if (config.getStepGroup() != null && !config.getStepGroup().isNull()) {
+      StepGroupElementConfig stepGroupElementConfig = getStepGroupElementConfig(config);
+      for (ExecutionWrapperConfig step : stepGroupElementConfig.getSteps()) {
+        injectLoopEnvVariables(step);
+      }
+      JsonNode stepGroupNode = JsonPipelineUtils.asTree(stepGroupElementConfig);
+      config.setStepGroup(stepGroupNode);
+    }
   }
 
   public static List<TIBuildDetails> getTiBuildDetails(InitializeStepInfo initializeStepInfo) {

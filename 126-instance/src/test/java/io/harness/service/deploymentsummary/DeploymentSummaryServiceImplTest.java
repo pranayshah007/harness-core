@@ -17,11 +17,13 @@ import static org.mockito.Mockito.when;
 import io.harness.InstancesTestBase;
 import io.harness.category.element.UnitTests;
 import io.harness.dtos.DeploymentSummaryDTO;
+import io.harness.dtos.InfrastructureMappingDTO;
 import io.harness.dtos.deploymentinfo.DeploymentInfoDTO;
 import io.harness.dtos.deploymentinfo.K8sDeploymentInfoDTO;
 import io.harness.entities.DeploymentSummary;
 import io.harness.entities.deploymentinfo.DeploymentInfo;
 import io.harness.entities.deploymentinfo.K8sDeploymentInfo;
+import io.harness.ng.core.infrastructure.InfrastructureKind;
 import io.harness.repositories.deploymentsummary.DeploymentSummaryRepository;
 import io.harness.rule.Owner;
 
@@ -32,6 +34,13 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 
 public class DeploymentSummaryServiceImplTest extends InstancesTestBase {
+  private static final String INFRA_MAPPING_ID = "TEST_INFRA_MAPPING_ID";
+  private static final String ACCOUNT_ID = "TEST_ACCOUNT_ID";
+  private static final String ORG_ID = "TEST_ORG_ID";
+  private static final String PROJECT_ID = "TEST_PROJECT_ID";
+  private static final String ENV_ID = "TEST_ENV_ID";
+  private static final String SERVICE_ID = "TEST_SERVICE_ID";
+  private static final String INFRA_KEY = "TEST_INFRA_KEY";
   private final String DEPLOYMENT_SUMMARY_ID = "id";
   private final String INSTANCE_SYNC_KEY = "key";
   @Mock DeploymentSummaryRepository deploymentSummaryRepository;
@@ -68,15 +77,15 @@ public class DeploymentSummaryServiceImplTest extends InstancesTestBase {
   @Owner(developers = PIYUSH_BHUWALKA)
   @Category(UnitTests.class)
   public void getNthDeploymentSummaryFromNowTest() {
+    InfrastructureMappingDTO infrastructureMappingDTO = mockInfraMappingDTO();
     DeploymentInfoDTO deploymentInfoDTO = K8sDeploymentInfoDTO.builder().build();
-    DeploymentSummaryDTO deploymentSummaryDTO =
-        DeploymentSummaryDTO.builder().deploymentInfoDTO(deploymentInfoDTO).build();
     DeploymentInfo deploymentInfo = K8sDeploymentInfo.builder().build();
     DeploymentSummary deploymentSummary = DeploymentSummary.builder().deploymentInfo(deploymentInfo).build();
-    when(deploymentSummaryRepository.fetchNthRecordFromNow(2, INSTANCE_SYNC_KEY))
+    when(deploymentSummaryRepository.fetchNthRecordFromNow(2, INSTANCE_SYNC_KEY, infrastructureMappingDTO))
         .thenReturn(Optional.of(deploymentSummary));
-    assertThat(
-        deploymentSummaryService.getNthDeploymentSummaryFromNow(2, INSTANCE_SYNC_KEY).get().getDeploymentInfoDTO())
+    assertThat(deploymentSummaryService.getNthDeploymentSummaryFromNow(2, INSTANCE_SYNC_KEY, infrastructureMappingDTO)
+                   .get()
+                   .getDeploymentInfoDTO())
         .isEqualTo(deploymentInfoDTO);
   }
 
@@ -84,14 +93,25 @@ public class DeploymentSummaryServiceImplTest extends InstancesTestBase {
   @Owner(developers = PIYUSH_BHUWALKA)
   @Category(UnitTests.class)
   public void getLatestByInstanceKeyTest() {
-    DeploymentInfoDTO deploymentInfoDTO = K8sDeploymentInfoDTO.builder().build();
-    DeploymentSummaryDTO deploymentSummaryDTO =
-        DeploymentSummaryDTO.builder().deploymentInfoDTO(deploymentInfoDTO).build();
+    InfrastructureMappingDTO infrastructureMappingDTO = mockInfraMappingDTO();
     DeploymentInfo deploymentInfo = K8sDeploymentInfo.builder().build();
     DeploymentSummary deploymentSummary = DeploymentSummary.builder().deploymentInfo(deploymentInfo).build();
-    when(deploymentSummaryRepository.fetchNthRecordFromNow(1, INSTANCE_SYNC_KEY))
+    when(deploymentSummaryRepository.fetchNthRecordFromNow(1, INSTANCE_SYNC_KEY, infrastructureMappingDTO))
         .thenReturn(Optional.of(deploymentSummary));
-    deploymentSummaryService.getLatestByInstanceKey(INSTANCE_SYNC_KEY);
-    verify(deploymentSummaryRepository, times(1)).fetchNthRecordFromNow(1, INSTANCE_SYNC_KEY);
+    deploymentSummaryService.getLatestByInstanceKey(INSTANCE_SYNC_KEY, infrastructureMappingDTO);
+    verify(deploymentSummaryRepository, times(1)).fetchNthRecordFromNow(1, INSTANCE_SYNC_KEY, infrastructureMappingDTO);
+  }
+
+  private InfrastructureMappingDTO mockInfraMappingDTO() {
+    return InfrastructureMappingDTO.builder()
+        .id(INFRA_MAPPING_ID)
+        .accountIdentifier(ACCOUNT_ID)
+        .orgIdentifier(ORG_ID)
+        .projectIdentifier(PROJECT_ID)
+        .infrastructureKind(InfrastructureKind.KUBERNETES_DIRECT)
+        .envIdentifier(ENV_ID)
+        .serviceIdentifier(SERVICE_ID)
+        .infrastructureKey(INFRA_KEY)
+        .build();
   }
 }

@@ -9,6 +9,7 @@ package io.harness.mappers.instanceinfo;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.dtos.instanceinfo.AzureSshWinrmInstanceInfoDTO;
 import io.harness.dtos.instanceinfo.AzureWebAppInstanceInfoDTO;
 import io.harness.dtos.instanceinfo.GitOpsInstanceInfoDTO;
 import io.harness.dtos.instanceinfo.InstanceInfoDTO;
@@ -17,6 +18,7 @@ import io.harness.dtos.instanceinfo.NativeHelmInstanceInfoDTO;
 import io.harness.dtos.instanceinfo.PdcInstanceInfoDTO;
 import io.harness.dtos.instanceinfo.ReferenceInstanceInfoDTO;
 import io.harness.dtos.instanceinfo.ServerlessAwsLambdaInstanceInfoDTO;
+import io.harness.entities.instanceinfo.AzureSshWinrmInstanceInfo;
 import io.harness.entities.instanceinfo.AzureWebAppNGInstanceInfo;
 import io.harness.entities.instanceinfo.GitopsInstanceInfo;
 import io.harness.entities.instanceinfo.InstanceInfo;
@@ -47,6 +49,8 @@ public class InstanceInfoMapper {
       return AzureWebAppInstanceInfoMapper.toDTO((AzureWebAppNGInstanceInfo) instanceInfo);
     } else if (instanceInfo instanceof PdcInstanceInfo) {
       return PdcInstanceInfoMapper.toDTO((PdcInstanceInfo) instanceInfo);
+    } else if (instanceInfo instanceof AzureSshWinrmInstanceInfo) {
+      return AzureSshWinrmInstanceInfoMapper.toDTO((AzureSshWinrmInstanceInfo) instanceInfo);
     }
     throw new InvalidRequestException("No InstanceInfoMapper toDTO found for instanceInfo : {}" + instanceInfo);
   }
@@ -66,6 +70,8 @@ public class InstanceInfoMapper {
       return AzureWebAppInstanceInfoMapper.toEntity((AzureWebAppInstanceInfoDTO) instanceInfoDTO);
     } else if (instanceInfoDTO instanceof PdcInstanceInfoDTO) {
       return PdcInstanceInfoMapper.toEntity((PdcInstanceInfoDTO) instanceInfoDTO);
+    } else if (instanceInfoDTO instanceof AzureSshWinrmInstanceInfoDTO) {
+      return AzureSshWinrmInstanceInfoMapper.toEntity((AzureSshWinrmInstanceInfoDTO) instanceInfoDTO);
     }
     throw new InvalidRequestException(
         "No InstanceInfoMapper toEntity found for instanceInfoDTO : {}" + instanceInfoDTO);

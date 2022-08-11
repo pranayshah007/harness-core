@@ -22,24 +22,18 @@ import io.harness.dtos.deploymentinfo.DeploymentInfoDTO;
 import io.harness.dtos.deploymentinfo.PdcDeploymentInfoDTO;
 import io.harness.dtos.instanceinfo.InstanceInfoDTO;
 import io.harness.dtos.instanceinfo.PdcInstanceInfoDTO;
-import io.harness.dtos.instancesyncperpetualtaskinfo.DeploymentInfoDetailsDTO;
 import io.harness.models.infrastructuredetails.InfrastructureDetails;
 import io.harness.models.infrastructuredetails.PdcInfrastructureDetails;
 import io.harness.ng.core.k8s.ServiceSpecType;
 import io.harness.rule.Owner;
 
-import java.util.Arrays;
 import java.util.Collections;
-import java.util.List;
-import java.util.stream.Collectors;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 
 @OwnedBy(HarnessTeam.CDP)
 public class PdcInstanceSyncHandlerTest extends InstancesTestBase {
-  @InjectMocks private K8sInstanceSyncHandler k8sInstanceSyncHandler;
-
   private static final String INFRASTRUCTURE_KEY = "INFRA_KEY";
   private static final String HOST = "HOST";
   private static final String SSH_SERVICE = ServiceSpecType.SSH;
@@ -85,32 +79,5 @@ public class PdcInstanceSyncHandlerTest extends InstancesTestBase {
     assertThat(deploymentInfo.getType()).isEqualTo(SSH_SERVICE);
     assertThat(((PdcDeploymentInfoDTO) deploymentInfo).getHost()).isEqualTo(HOST);
     assertThat(((PdcDeploymentInfoDTO) deploymentInfo).getInfrastructureKey()).isEqualTo(INFRASTRUCTURE_KEY);
-  }
-
-  @Test
-  @Owner(developers = ARVIND)
-  @Category(UnitTests.class)
-  public void testRefreshServerInstanceInfo() {
-    DeploymentInfoDetailsDTO info1 = DeploymentInfoDetailsDTO.builder()
-                                         .deploymentInfoDTO(PdcDeploymentInfoDTO.builder()
-                                                                .infrastructureKey(INFRASTRUCTURE_KEY)
-                                                                .serviceType(SSH_SERVICE)
-                                                                .host(HOST + 1)
-                                                                .build())
-                                         .build();
-
-    DeploymentInfoDetailsDTO info2 = DeploymentInfoDetailsDTO.builder()
-                                         .deploymentInfoDTO(PdcDeploymentInfoDTO.builder()
-                                                                .infrastructureKey(INFRASTRUCTURE_KEY)
-                                                                .serviceType(SSH_SERVICE)
-                                                                .host(HOST + 2)
-                                                                .build())
-                                         .build();
-    List<ServerInstanceInfo> serverInstanceInfos =
-        pdcInstanceSyncHandler.refreshServerInstanceInfo(null, Arrays.asList(info1, info2));
-    assertThat(serverInstanceInfos).hasSize(2);
-    assertThat(
-        serverInstanceInfos.stream().map(info -> ((PdcServerInstanceInfo) info).getHost()).collect(Collectors.toList()))
-        .containsExactlyInAnyOrder(HOST + 1, HOST + 2);
   }
 }

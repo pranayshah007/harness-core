@@ -137,6 +137,7 @@ public class DeploymentEventListener implements OrchestrationEventHandler {
             .deployedByName(ambiance.getMetadata().getTriggerInfo().getTriggeredBy().getIdentifier())
             .deployedById(ambiance.getMetadata().getTriggerInfo().getTriggeredBy().getUuid())
             .infrastructureMappingId(infrastructureMappingDTO.getId())
+            .infrastructureMapping(infrastructureMappingDTO)
             .instanceSyncKey(deploymentInfoDTO.prepareInstanceSyncHandlerKey())
             .deploymentInfoDTO(deploymentInfoDTO)
             .deployedAt(AmbianceUtils.getCurrentLevelStartTs(ambiance))
@@ -160,7 +161,8 @@ public class DeploymentEventListener implements OrchestrationEventHandler {
        * be the last stable one
        */
       Optional<DeploymentSummaryDTO> deploymentSummaryDTOOptional =
-          deploymentSummaryService.getNthDeploymentSummaryFromNow(2, deploymentSummaryDTO.getInstanceSyncKey());
+          deploymentSummaryService.getNthDeploymentSummaryFromNow(
+              2, deploymentSummaryDTO.getInstanceSyncKey(), deploymentSummaryDTO.getInfrastructureMapping());
       if (deploymentSummaryDTOOptional.isPresent()) {
         deploymentSummaryDTO.setArtifactDetails(deploymentSummaryDTOOptional.get().getArtifactDetails());
         deploymentSummaryDTO.setRollbackDeployment(true);

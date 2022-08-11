@@ -8,10 +8,13 @@
 package io.harness.expression;
 
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
+import static io.harness.rule.OwnerRule.BRIJESH;
 import static io.harness.rule.OwnerRule.GARVIT;
 import static io.harness.rule.OwnerRule.SAHIL;
+import static io.harness.text.resolver.ExpressionResolver.nullStringValue;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.joor.Reflect.on;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.when;
@@ -24,6 +27,7 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.engine.executions.plan.PlanExecutionService;
 import io.harness.engine.expressions.AmbianceExpressionEvaluator;
 import io.harness.engine.expressions.functors.StrategyFunctor;
+import io.harness.exception.UnresolvedExpressionsException;
 import io.harness.expression.field.dummy.DummyOrchestrationField;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
@@ -312,6 +316,56 @@ public class AmbianceExpressionEvaluatorTest extends OrchestrationTestBase {
     assertThat(inner2).isNotNull();
     assertThat(inner2.getStrVal()).isEqualTo("q");
     assertThat(inner.getStrVal2().getValue()).isEqualTo("str1");
+  }
+
+  @Test
+  @Owner(developers = BRIJESH)
+  @Category(UnitTests.class)
+  public void testStringReplacerWithExpressionModes() {
+    EngineExpressionEvaluator expressionEvaluator = prepareEngineExpressionEvaluator(ImmutableMap.of("key1", "val1"));
+
+    // key1 is set in context, so for each mode the returned value would be val1.
+    assertThat(expressionEvaluator.resolve("<+key1>", ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED))
+        .isEqualTo("val1");
+    assertThat(expressionEvaluator.resolve("<+key1>", ExpressionMode.RETURN_NULL_IF_UNRESOLVED)).isEqualTo("val1");
+    assertThat(expressionEvaluator.resolve("<+key1>", ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED)).isEqualTo("val1");
+
+    // expression will not be resolved, and mode is RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED, so original expression
+    // will be returned.
+    assertThat(expressionEvaluator.resolve("<+invalidKey>", ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED))
+        .isEqualTo("<+invalidKey>");
+    // expression will not be resolved, and mode is RETURN_NULL_IF_UNRESOLVED, so null value would be returned.
+    assertThat(expressionEvaluator.resolve("<+invalidKey>", ExpressionMode.RETURN_NULL_IF_UNRESOLVED))
+        .isEqualTo(nullStringValue);
+    // expression will not be resolved, and mode is THROW_EXCEPTION_IF_UNRESOLVED, so it will throw
+    // UnresolvedExpressionsException exception.
+    assertThatThrownBy(() -> expressionEvaluator.resolve("<+invalidKey>", ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED))
+        .isInstanceOf(UnresolvedExpressionsException.class);
+
+    // expression will be resolved, so val1 will replace the expression in input string.
+    assertThat(expressionEvaluator.resolve("abc<+key1> def", ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED))
+        .isEqualTo("abcval1 def");
+    assertThat(expressionEvaluator.resolve("abc<+key1> def", ExpressionMode.RETURN_NULL_IF_UNRESOLVED))
+        .isEqualTo("abcval1 def");
+    assertThat(expressionEvaluator.resolve("abc<+key1> def", ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED))
+        .isEqualTo("abcval1 def");
+
+    // expression will not be resolved, and mode is RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED, so input string would be
+    // as is.
+    assertThat(
+        expressionEvaluator.resolve("abc<+invalidKey> def", ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED))
+        .isEqualTo("abc<+invalidKey> def");
+
+    // expression will not be resolved, and mode is RETURN_NULL_IF_UNRESOLVED, so null value will replace the expression
+    // in input string.
+    assertThat(expressionEvaluator.resolve("abc<+invalidKey> def", ExpressionMode.RETURN_NULL_IF_UNRESOLVED))
+        .isEqualTo("abc" + nullStringValue + " def");
+
+    // expression will not be resolved, and mode is THROW_EXCEPTION_IF_UNRESOLVED, so it will throw
+    // UnresolvedExpressionsException exception.
+    assertThatThrownBy(
+        () -> expressionEvaluator.resolve("abc<+invalidKey> def", ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED))
+        .isInstanceOf(UnresolvedExpressionsException.class);
   }
 
   private Pair<Map<String, Object>, Object> executeResolve(EngineExpressionEvaluator evaluator, Object o) {

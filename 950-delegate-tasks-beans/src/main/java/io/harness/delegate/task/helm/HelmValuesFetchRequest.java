@@ -25,7 +25,7 @@ import io.harness.delegate.beans.storeconfig.StoreDelegateConfig;
 import io.harness.delegate.capability.EncryptedDataDetailsCapabilityHelper;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.k8s.HelmChartManifestDelegateConfig;
-import io.harness.delegate.task.mixin.HttpConnectionExecutionCapabilityGenerator;
+import io.harness.delegate.task.mixin.SocketConnectivityCapabilityGenerator;
 import io.harness.expression.ExpressionEvaluator;
 import io.harness.k8s.model.HelmVersion;
 
@@ -68,8 +68,13 @@ public class HelmValuesFetchRequest implements TaskParameters, ExecutionCapabili
       case HTTP_HELM:
         HttpHelmStoreDelegateConfig httpHelmStoreConfig = (HttpHelmStoreDelegateConfig) storeDelegateConfig;
         if (httpHelmStoreConfig.getHttpHelmConnector().getHelmRepoUrl() != null) {
-          capabilities.add(HttpConnectionExecutionCapabilityGenerator.buildHttpConnectionExecutionCapability(
-              httpHelmStoreConfig.getHttpHelmConnector().getHelmRepoUrl(), maskingEvaluator));
+          /*
+          We are henceforth using SocketConnectivityExecutionCapability instead of HttpConnectionExecutionCapability
+          this is to ensure that we don't fail Helm Repo Connector Validation in case the url returns 400
+          ref: https://harness.atlassian.net/browse/CDS-36189
+          */
+          SocketConnectivityCapabilityGenerator.addSocketConnectivityExecutionCapability(
+              httpHelmStoreConfig.getHttpHelmConnector().getHelmRepoUrl(), capabilities);
         }
         capabilities.addAll(EncryptedDataDetailsCapabilityHelper.fetchExecutionCapabilitiesForEncryptedDataDetails(
             httpHelmStoreConfig.getEncryptedDataDetails(), maskingEvaluator));

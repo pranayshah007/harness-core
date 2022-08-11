@@ -13,6 +13,7 @@ import static io.harness.delegate.beans.connector.docker.DockerAuthType.ANONYMOU
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DecryptableEntity;
 import io.harness.connector.DelegateSelectable;
+import io.harness.connector.ManagerExecutable;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.exception.InvalidRequestException;
 
@@ -41,11 +42,12 @@ import org.hibernate.validator.constraints.NotBlank;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Schema(name = "DockerConnector", description = "Docker Connector details.")
-public class DockerConnectorDTO extends ConnectorConfigDTO implements DelegateSelectable {
+public class DockerConnectorDTO extends ConnectorConfigDTO implements DelegateSelectable, ManagerExecutable {
   @NotNull @NotBlank String dockerRegistryUrl;
   @NotNull DockerRegistryProviderType providerType;
   @Valid DockerAuthenticationDTO auth;
   Set<String> delegateSelectors;
+  @Builder.Default Boolean executeOnDelegate = true;
 
   @Override
   public List<DecryptableEntity> getDecryptableEntities() {

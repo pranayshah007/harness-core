@@ -1,0 +1,119 @@
+spec:
+  execution:
+    steps:
+      - stepGroup:
+          identifier: Step_Group_<+phase>
+          name: "Step Group"
+          strategy:
+            repeat:
+              items: <+stage.output.hosts>
+              start: <+start>
+              end: <+end>
+              unit: <+unit>
+          steps:
+            - step:
+                name: "Deploy"
+                identifier: Deploy_<+phase>
+                type: Command
+                timeout: 10m
+                spec:
+                  host: <+repeat.item>
+                  onDelegate: false
+                  environmentVariables: [ ]
+                  outputVariables: [ ]
+                  commandUnits:
+                    - identifier: Setup_Runtime_Paths_<+phase>
+                      name: Setup Runtime Paths
+                      type: Script
+                      spec:
+                        shell: Bash
+                        source:
+                          type: Inline
+                          spec:
+                            script: |-
+                                    <+setup_runtime_paths_script>
+                    - identifier: Stop_Service_<+phase>
+                      name: "Stop Service"
+                      type: Script
+                      spec:
+                        workingDirectory: $HARNESS_RUNTIME_PATH/tomcat/bin
+                        shell: Bash
+                        source:
+                          type: Inline
+                          spec:
+                            script: "# [ -f ./shutdown.sh ] && ./shutdown.sh  || true"
+                    - identifier: Process_Stopped_<+phase>
+                      name: "Process Stopped"
+                      type: Script
+                      spec:
+                        workingDirectory: $HARNESS_RUNTIME_PATH/tomcat/bin
+                        shell: Bash
+                        source:
+                          type: Inline
+                          spec:
+                            script: |-
+                                    <+process_stop_script>
+                    - identifier: Port_Cleared_<+phase>
+                      name: "Port Cleared"
+                      type: Script
+                      spec:
+                        workingDirectory: $HARNESS_RUNTIME_PATH/tomcat/bin
+                        shell: Bash
+                        source:
+                          type: Inline
+                          spec:
+                            script: |-
+                                    <+port_cleared_script>
+                    - identifier: Copy_Artifact_<+phase>
+                      name: "Copy Artifact"
+                      type: Copy
+                      spec:
+                        sourceType: Artifact
+                        destinationPath: $HARNESS_RUNTIME_PATH
+                    - identifier: Expand_Artifact_<+phase>
+                      name: "Expand Artifact"
+                      type: Script
+                      spec:
+                        shell: Bash
+                        workingDirectory: $HARNESS_RUNTIME_PATH
+                        source:
+                          type: Inline
+                          spec:
+                            script: |-
+                                    # rm -rf tomcat
+                                    # rm -rf ${TomcatBinaryName}
+                                    # tar xzvf ${TomcatBinaryName}.tar.gz
+                                    # ln -s ${TomcatBinaryName} tomcat
+                                    # chmod +x tomcat/bin/*
+                    - identifier: Start_Service_<+phase>
+                      name: "Start Service"
+                      type: Script
+                      spec:
+                        workingDirectory: $HARNESS_RUNTIME_PATH/tomcat/bin
+                        shell: Bash
+                        source:
+                          type: Inline
+                          spec:
+                            script: "# ./startup.sh"
+                    - identifier: Process_Running_<+phase>
+                      name: "Process Running"
+                      type: Script
+                      spec:
+                        workingDirectory: $HARNESS_RUNTIME_PATH/tomcat/bin
+                        shell: Bash
+                        source:
+                          type: Inline
+                          spec:
+                            script: |-
+                                    <+process_run_script>
+                    - identifier: Port_Listening_<+phase>
+                      name: "Port Listening"
+                      type: Script
+                      spec:
+                        workingDirectory: $HARNESS_RUNTIME_PATH/tomcat/bin
+                        shell: Bash
+                        source:
+                          type: Inline
+                          spec:
+                            script: |-
+                                    <+port_listening_script>

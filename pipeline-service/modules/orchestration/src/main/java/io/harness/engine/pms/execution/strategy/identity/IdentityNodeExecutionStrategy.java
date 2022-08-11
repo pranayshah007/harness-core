@@ -106,6 +106,7 @@ public class IdentityNodeExecutionStrategy
                                   .interruptHistories(originalExecution.getInterruptHistories())
                                   .resolvedParams(originalExecution.getResolvedParams())
                                   .resolvedInputs(originalExecution.getResolvedInputs())
+                                  .executionInputConfigured(originalExecution.getExecutionInputConfigured())
                                   .build();
     NodeExecution nodeExecution = nodeExecutionService.save(execution);
     pmsGraphStepDetailsService.copyStepDetailsForRetry(

@@ -232,7 +232,8 @@ public class ExecutionSummaryUpdateUtilsTest extends CategoryTest {
     Set<String> stringSet = ((Document) update.getUpdateObject().get("$set")).keySet();
     assertThat(stringSet).containsOnly(prefixLayoutNodeMap + ".status", prefixLayoutNodeMap + ".startTs",
         prefixLayoutNodeMap + ".nodeRunInfo", prefixLayoutNodeMap + ".endTs", prefixLayoutNodeMap + ".failureInfo",
-        prefixLayoutNodeMap + ".failureInfoDTO", prefixLayoutNodeMap + ".nodeExecutionId");
+        prefixLayoutNodeMap + ".failureInfoDTO", prefixLayoutNodeMap + ".nodeExecutionId",
+        prefixLayoutNodeMap + ".executionInputConfigured");
   }
 
   @Data

@@ -579,8 +579,8 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
     pipelineEventConsumerController.register(injector.getInstance(NodeAdviseEventRedisConsumer.class), 2);
     pipelineEventConsumerController.register(injector.getInstance(NodeResumeEventRedisConsumer.class), 2);
     pipelineEventConsumerController.register(injector.getInstance(CreatePartialPlanRedisConsumer.class), 2);
-    pipelineEventConsumerController.register(injector.getInstance(PipelineExecutionSummaryCDRedisEventConsumer.class),
-        appConfig.getDebeziumConsumerConfigs().get(0).getNumberOfThreads());
+    pipelineEventConsumerController.register(
+        injector.getInstance(PipelineExecutionSummaryCDRedisEventConsumer.class), 1);
   }
 
   private void registerYamlSdk(Injector injector) {

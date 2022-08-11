@@ -764,13 +764,13 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
       if (delegate == null || DelegateInstanceStatus.ENABLED != delegate.getStatus()) {
         log.warn("Delegate rejected to acquire task, because it was not found to be in {} status.",
             DelegateInstanceStatus.ENABLED);
-        return null;
+        return DelegateTaskPackage.builder().build();
       }
 
       log.debug("Acquiring delegate task");
       DelegateTask delegateTask = getUnassignedDelegateTask(accountId, taskId, delegateInstanceId);
       if (delegateTask == null) {
-        return null;
+        return DelegateTaskPackage.builder().build();
       }
 
       try (AutoLogContext ignore = new TaskLogContext(taskId, delegateTask.getData().getTaskType(),
@@ -782,7 +782,7 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
           return assignTask(delegateId, taskId, delegateTask, delegateInstanceId);
         }
         log.info("Delegate {} is blacklisted for task {}", delegateId, taskId);
-        return null;
+        return DelegateTaskPackage.builder().build();
       }
     } finally {
       if (log.isDebugEnabled()) {
@@ -923,6 +923,8 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
 
       ExpressionReflectionUtils.applyExpression(delegateTask.getData().getParameters()[0], (secretMode, value) -> {
         if (value == null) {
+          log.error("Unable to assign task {} due to error on ManagerPreExecutionExpressionEvaluator , value is null",
+              delegateTask.getUuid());
           return null;
         }
         return managerPreExecutionExpressionEvaluator.substitute(value, new HashMap<>());
@@ -936,6 +938,8 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
       });
 
       if (secretManagerFunctor == null && ngSecretManagerFunctor == null) {
+        log.error(
+            "Unable to assign task {} due to Error on ManagerPreExecutionExpressionEvaluator", delegateTask.getUuid());
         return null;
       }
 

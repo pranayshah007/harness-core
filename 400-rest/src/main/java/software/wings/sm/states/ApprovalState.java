@@ -441,9 +441,19 @@ public class ApprovalState extends State implements SweepingOutputStateMixin {
   }
 
   private void validateProperties(Map<String, Object> properties) {
-    Number timeoutMillis = (Number) properties.get(TIMEOUT_PROPERTY_KEY);
-    if (timeoutMillis != null && timeoutMillis.longValue() > MAXIMUM_TIMEOUT) {
-      throw new InvalidRequestException("Value exceeded maximum timeout of 3w 3d 20h 30m.");
+    Object timeoutMillis = properties.get(TIMEOUT_PROPERTY_KEY);
+    if (timeoutMillis != null) {
+      try {
+        Integer timeoutMillisNumber = Integer.valueOf(timeoutMillis.toString());
+        if (timeoutMillisNumber > MAXIMUM_TIMEOUT) {
+          throw new InvalidRequestException("Value exceeded maximum timeout of 3w 3d 20h 30m.");
+        } else if (timeoutMillisNumber < 0) {
+          throw new InvalidRequestException("Timeout value should be positive");
+        }
+      } catch (NumberFormatException ex) {
+        throw new InvalidRequestException(
+            "Invalid value for timeoutMillis or value exceeded maximum timeout of 3w 3d 20h 30m.");
+      }
     }
   }
 
@@ -477,7 +487,9 @@ public class ApprovalState extends State implements SweepingOutputStateMixin {
         if (workflowStandardParams.getWorkflowElement() == null) {
           workflowStandardParams.setWorkflowElement(WorkflowElement.builder().variables(workflowVariables).build());
         } else {
-          workflowStandardParams.getWorkflowElement().setVariables(workflowVariables);
+          Map<String, Object> allStepWorkflowVariables = workflowStandardParams.getWorkflowElement().getVariables();
+          allStepWorkflowVariables.putAll(workflowVariables);
+          workflowStandardParams.getWorkflowElement().setVariables(allStepWorkflowVariables);
         }
       }
     }

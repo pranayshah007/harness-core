@@ -83,6 +83,7 @@ public class AzureWebAppFetchPreDeploymentDataRequestHandlerTest extends Categor
     assertThat(response).isInstanceOf(AzureWebAppFetchPreDeploymentDataResponse.class);
     AzureWebAppFetchPreDeploymentDataResponse preDeploymentDataResponse =
         (AzureWebAppFetchPreDeploymentDataResponse) response;
+    verify(azureSecretHelper).encryptAzureAppServicePreDeploymentData(any(), any());
     assertThat(preDeploymentDataResponse.getPreDeploymentData()).isSameAs(preDeploymentData);
   }
 
@@ -109,6 +110,7 @@ public class AzureWebAppFetchPreDeploymentDataRequestHandlerTest extends Categor
     assertThat(response).isInstanceOf(AzureWebAppFetchPreDeploymentDataResponse.class);
     AzureWebAppFetchPreDeploymentDataResponse preDeploymentDataResponse =
         (AzureWebAppFetchPreDeploymentDataResponse) response;
+    verify(azureSecretHelper).encryptAzureAppServicePreDeploymentData(any(), any());
     assertThat(preDeploymentDataResponse.getPreDeploymentData()).isSameAs(preDeploymentData);
   }
 }

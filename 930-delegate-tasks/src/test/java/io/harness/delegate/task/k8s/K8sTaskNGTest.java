@@ -234,7 +234,10 @@ public class K8sTaskNGTest extends CategoryTest {
         .when(rollingRequestHandler)
         .executeTask(eq(k8sDeployRequest), any(K8sDelegateTaskParams.class), eq(logStreamingTaskClient),
             eq(emptyCommandUnitsProgress));
-
+    doReturn(null)
+        .doReturn(K8sManifestDelegateConfig.builder().build())
+        .when(k8sDeployRequest)
+        .getManifestDelegateConfig();
     K8sDeployResponse result = k8sTaskNG.run(k8sDeployRequest);
 
     verify(rollingRequestHandler)
@@ -311,7 +314,6 @@ public class K8sTaskNGTest extends CategoryTest {
                     .build())
             .helmVersion(HelmVersion.V3)
             .build();
-
     testRunWithManifest(manifestConfig, HelmVersion.V3);
 
     verify(decryptionService).decrypt(manualConfigSpecDTO, encryptedDataDetails);
@@ -335,7 +337,6 @@ public class K8sTaskNGTest extends CategoryTest {
                     .build())
             .helmVersion(HelmVersion.V3)
             .build();
-
     testRunWithManifest(manifestConfig, HelmVersion.V3);
 
     verify(decryptionService, never()).decrypt(any(DecryptableEntity.class), eq(encryptedDataDetails));
@@ -406,6 +407,10 @@ public class K8sTaskNGTest extends CategoryTest {
         .when(rollingRequestHandler)
         .executeTask(eq(k8sDeployRequest), any(K8sDelegateTaskParams.class), eq(logStreamingTaskClient),
             eq(emptyCommandUnitsProgress));
+    doReturn(manifest)
+        .doReturn(manifest == null ? K8sManifestDelegateConfig.builder().build() : manifest)
+        .when(k8sDeployRequest)
+        .getManifestDelegateConfig();
 
     Reflect.on(manifestDelegateConfigHelper).set("gitDecryptionHelper", gitDecryptionHelper);
     Reflect.on(manifestDelegateConfigHelper).set("decryptionService", decryptionService);
@@ -420,7 +425,7 @@ public class K8sTaskNGTest extends CategoryTest {
 
     K8sDelegateTaskParams k8sDelegateTaskParams = delegateTaskParamsCaptor.getValue();
     assertCleanupWorkingDirectory(k8sDelegateTaskParams);
-    assertClientPaths(k8sDelegateTaskParams, usedHelmVersion);
+    assertClientPaths(manifest, k8sDelegateTaskParams, usedHelmVersion);
     assertThat(result).isEqualTo(taskResponse);
   }
 
@@ -433,18 +438,29 @@ public class K8sTaskNGTest extends CategoryTest {
     }
   }
 
-  private void assertClientPaths(K8sDelegateTaskParams delegateTaskParams, HelmVersion helmVersion) {
+  private void assertClientPaths(
+      ManifestDelegateConfig manifest, K8sDelegateTaskParams delegateTaskParams, HelmVersion helmVersion) {
     assertThat(delegateTaskParams.getKubeconfigPath()).isEqualTo(KUBECONFIG_FILENAME);
     assertThat(delegateTaskParams.getKubectlPath()).isEqualTo(kubectlPath);
-    assertThat(delegateTaskParams.getGoTemplateClientPath()).isEqualTo(goTemplateClientPath);
-    assertThat(delegateTaskParams.getOcPath()).isEqualTo(ocPath);
-    assertThat(delegateTaskParams.getKustomizeBinaryPath()).isEqualTo(kustomizePath);
-    if (null == helmVersion) {
-      assertThat(delegateTaskParams.getHelmPath()).isNull();
-    } else if (HelmVersion.V2 == helmVersion) {
-      assertThat(delegateTaskParams.getHelmPath()).isEqualTo(helmV2Path);
-    } else if (HelmVersion.V3 == helmVersion) {
-      assertThat(delegateTaskParams.getHelmPath()).isEqualTo(helmV3Path);
+    if (manifest != null) {
+      if (manifest.getManifestType().equals(ManifestType.K8S_MANIFEST)) {
+        assertThat(delegateTaskParams.getGoTemplateClientPath()).isEqualTo(goTemplateClientPath);
+      }
+      if (manifest.getManifestType().equals(ManifestType.HELM_CHART)) {
+        if (null == helmVersion) {
+          assertThat(delegateTaskParams.getHelmPath()).isNull();
+        } else if (HelmVersion.V2 == helmVersion) {
+          assertThat(delegateTaskParams.getHelmPath()).isEqualTo(helmV2Path);
+        } else if (HelmVersion.V3 == helmVersion) {
+          assertThat(delegateTaskParams.getHelmPath()).isEqualTo(helmV3Path);
+        }
+      }
+      if (manifest.getManifestType().equals(ManifestType.KUSTOMIZE)) {
+        assertThat(delegateTaskParams.getKustomizeBinaryPath()).isEqualTo(kustomizePath);
+      }
+      if (manifest.getManifestType().equals(ManifestType.OPENSHIFT_TEMPLATE)) {
+        assertThat(delegateTaskParams.getOcPath()).isEqualTo(ocPath);
+      }
     }
   }
 }

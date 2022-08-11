@@ -13,7 +13,6 @@ import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
 import io.harness.dtos.InstanceDTO;
 import io.harness.dtos.deploymentinfo.DeploymentInfoDTO;
 import io.harness.dtos.instanceinfo.InstanceInfoDTO;
-import io.harness.dtos.instancesyncperpetualtaskinfo.DeploymentInfoDetailsDTO;
 
 import java.util.List;
 
@@ -33,9 +32,4 @@ public interface IInstanceSyncHandler {
   // Update and return instance with its corresponding instance info from server, if required
   // It will be no-op by default, responsibility on handler to implement it if required
   InstanceDTO updateInstance(InstanceDTO instanceDTO, InstanceInfoDTO instanceInfoFromServer);
-
-  // Refresh Server Instance Info list coming after deployment Event is received. This is essential for Command Step
-  // deployments as we have to merge and gather all Server Instance Info individual events while saving Instance(s).
-  List<ServerInstanceInfo> refreshServerInstanceInfo(
-      List<ServerInstanceInfo> serverInstanceInfoList, List<DeploymentInfoDetailsDTO> deploymentInfoDetailsDTOList);
 }

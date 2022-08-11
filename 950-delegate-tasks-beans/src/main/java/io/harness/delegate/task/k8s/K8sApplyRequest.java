@@ -36,6 +36,7 @@ public class K8sApplyRequest implements K8sDeployRequest {
   boolean deprecateFabric8Enabled;
   String accountId;
   boolean skipSteadyStateCheck;
+  boolean skipRendering;
   List<String> filePaths;
   @Builder.Default boolean shouldOpenFetchFilesLogStream = true;
   CommandUnitsProgress commandUnitsProgress;

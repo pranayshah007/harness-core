@@ -29,6 +29,7 @@ import io.harness.shell.ScriptType;
 import io.harness.shell.SshSessionManager;
 
 import com.google.inject.Inject;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
@@ -96,9 +97,11 @@ public class CommandTaskNG extends AbstractDelegateRunnableTask {
   private CommandTaskResponse getTaskResponse(
       CommandTaskParameters parameters, CommandUnitsProgress commandUnitsProgress, ScriptType scriptType) {
     CommandExecutionStatus status = CommandExecutionStatus.FAILURE;
+    Map<String, Object> taskContext = new LinkedHashMap<>();
     for (NgCommandUnit commandUnit : parameters.getCommandUnits()) {
       CommandHandler handler = commandUnitHandlers.get(Pair.of(commandUnit.getCommandUnitType(), scriptType.name()));
-      status = handler.handle(parameters, commandUnit, this.getLogStreamingTaskClient(), commandUnitsProgress);
+      status =
+          handler.handle(parameters, commandUnit, this.getLogStreamingTaskClient(), commandUnitsProgress, taskContext);
       if (CommandExecutionStatus.FAILURE.equals(status)) {
         break;
       }

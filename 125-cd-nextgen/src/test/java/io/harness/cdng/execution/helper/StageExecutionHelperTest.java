@@ -10,14 +10,15 @@ package io.harness.cdng.execution.helper;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.rule.OwnerRule.IVAN;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.Scope;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.artifact.outcome.ArtifactoryArtifactOutcome;
@@ -33,10 +34,12 @@ import io.harness.pms.plan.execution.SetupAbstractionKeys;
 import io.harness.rule.Owner;
 import io.harness.utils.StageStatus;
 
+import com.google.common.collect.Lists;
 import java.util.Optional;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
@@ -69,6 +72,8 @@ public class StageExecutionHelperTest extends CategoryTest {
                             .setStageExecutionId(EXECUTION_ID)
                             .build();
 
+    Scope scope = Scope.of(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER);
+
     ArtifactoryArtifactOutcome artifactOutcome = ArtifactoryArtifactOutcome.builder().build();
     ConfigFilesOutcome configFilesOutcome = new ConfigFilesOutcome();
 
@@ -77,6 +82,7 @@ public class StageExecutionHelperTest extends CategoryTest {
 
     stageExecutionHelper.saveStageExecutionInfo(ambiance,
         ExecutionInfoKey.builder()
+            .scope(scope)
             .envIdentifier(ENV_IDENTIFIER)
             .infraIdentifier(INFRA_IDENTIFIER)
             .serviceIdentifier(SERVICE_IDENTIFIER)
@@ -94,7 +100,7 @@ public class StageExecutionHelperTest extends CategoryTest {
                   .stageStatus(StageStatus.IN_PROGRESS)
                   .stageExecutionId(EXECUTION_ID)
                   .executionDetails(SshWinRmStageExecutionDetails.builder()
-                                        .artifactOutcome(artifactOutcome)
+                                        .artifactsOutcome(Lists.newArrayList(artifactOutcome))
                                         .configFilesOutcome(configFilesOutcome)
                                         .build())
                   .build());
@@ -108,13 +114,19 @@ public class StageExecutionHelperTest extends CategoryTest {
 
     stageExecutionHelper.saveStageExecutionInfo(ambiance,
         ExecutionInfoKey.builder()
+            .scope(Scope.of(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
             .envIdentifier(ENV_IDENTIFIER)
             .infraIdentifier(INFRA_IDENTIFIER)
             .serviceIdentifier(SERVICE_IDENTIFIER)
             .build(),
         InfrastructureKind.KUBERNETES_GCP);
 
-    verify(stageExecutionInfoService, never()).save(any());
+    ArgumentCaptor<StageExecutionInfo> stageExecutionInfoArgumentCaptor =
+        ArgumentCaptor.forClass(StageExecutionInfo.class);
+    verify(stageExecutionInfoService, times(1)).save(stageExecutionInfoArgumentCaptor.capture());
+
+    StageExecutionInfo value = stageExecutionInfoArgumentCaptor.getValue();
+    assertThat(value.getExecutionDetails()).isNull();
   }
 
   @Test

@@ -8,7 +8,9 @@
 package io.harness.serializer;
 
 import io.harness.morphia.MorphiaRegistrar;
+import io.harness.serializer.kryo.NgPersistenceKryoRegistrar;
 import io.harness.serializer.kryo.TimeoutEngineKryoRegistrar;
+import io.harness.serializer.morphia.NgPersistenceMorphiaRegistrar;
 import io.harness.serializer.morphia.TimeoutEngineMorphiaRegistrar;
 
 import com.google.common.collect.ImmutableList;
@@ -21,6 +23,7 @@ public class TimeoutEngineRegistrars {
   public static final ImmutableSet<Class<? extends KryoRegistrar>> kryoRegistrars =
       ImmutableSet.<Class<? extends KryoRegistrar>>builder()
           .add(TimeoutEngineKryoRegistrar.class)
+          .add(NgPersistenceKryoRegistrar.class)
           .addAll(PersistenceRegistrars.kryoRegistrars)
           .build();
 
@@ -28,6 +31,7 @@ public class TimeoutEngineRegistrars {
       ImmutableSet.<Class<? extends MorphiaRegistrar>>builder()
           .addAll(PersistenceRegistrars.morphiaRegistrars)
           .add(TimeoutEngineMorphiaRegistrar.class)
+          .add(NgPersistenceMorphiaRegistrar.class)
           .build();
 
   public static final ImmutableList<Class<? extends Converter<?, ?>>> springConverters =

@@ -21,7 +21,6 @@ import io.harness.dtos.deploymentinfo.DeploymentInfoDTO;
 import io.harness.dtos.deploymentinfo.PdcDeploymentInfoDTO;
 import io.harness.dtos.instanceinfo.InstanceInfoDTO;
 import io.harness.dtos.instanceinfo.PdcInstanceInfoDTO;
-import io.harness.dtos.instancesyncperpetualtaskinfo.DeploymentInfoDetailsDTO;
 import io.harness.entities.InstanceType;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.models.infrastructuredetails.InfrastructureDetails;
@@ -31,7 +30,6 @@ import io.harness.ng.core.k8s.ServiceSpecType;
 import io.harness.perpetualtask.PerpetualTaskType;
 
 import com.google.inject.Singleton;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
@@ -113,20 +111,5 @@ public class PdcInstanceSyncHandler extends AbstractInstanceSyncHandler {
         .infrastructureKey(infrastructureOutcome.getInfrastructureKey())
         .host(pdcServerInstanceInfo.getHost())
         .build();
-  }
-
-  @Override
-  public List<ServerInstanceInfo> refreshServerInstanceInfo(
-      List<ServerInstanceInfo> serverInstanceInfoList, List<DeploymentInfoDetailsDTO> deploymentInfoDetailsDTOList) {
-    List<ServerInstanceInfo> result = new ArrayList<>();
-    deploymentInfoDetailsDTOList.forEach(info -> {
-      PdcDeploymentInfoDTO deploymentInfoDTO = (PdcDeploymentInfoDTO) info.getDeploymentInfoDTO();
-      result.add(PdcServerInstanceInfo.builder()
-                     .infrastructureKey(deploymentInfoDTO.getInfrastructureKey())
-                     .host(deploymentInfoDTO.getHost())
-                     .serviceType(deploymentInfoDTO.getServiceType())
-                     .build());
-    });
-    return result;
   }
 }

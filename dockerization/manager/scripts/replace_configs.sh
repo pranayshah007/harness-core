@@ -751,6 +751,14 @@ if [[ "$REDIS_SCRIPT_CACHE" == "false" ]]; then
   yq write -i $REDISSON_CACHE_FILE useScriptCache false
 fi
 
+if [[ "" != "$REDIS_SUBSCRIPTIONS_PER_CONNECTION" ]]; then
+  yq write -i $CONFIG_FILE redisAtmosphereConfig.subscriptionsPerConnection "$REDIS_SUBSCRIPTIONS_PER_CONNECTION"
+fi
+
+if [[ "" != "$REDIS_SUBSCRIPTION_CONNECTION_POOL_SIZE" ]]; then
+  yq write -i $CONFIG_FILE redisAtmosphereConfig.subscriptionConnectionPoolSize "$REDIS_SUBSCRIPTION_CONNECTION_POOL_SIZE"
+fi
+
 if [[ "" != "$CACHE_NAMESPACE" ]]; then
     yq write -i $CONFIG_FILE cacheConfig.cacheNamespace "$CACHE_NAMESPACE"
 fi

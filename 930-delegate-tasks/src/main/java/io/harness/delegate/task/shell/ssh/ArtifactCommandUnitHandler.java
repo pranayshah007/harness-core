@@ -79,7 +79,6 @@ public abstract class ArtifactCommandUnitHandler {
       log.info("check if artifact:[{}] exists at location: [{}]", key, file.getAbsolutePath());
       if (!file.isDirectory() && file.exists()) {
         log.info("artifact:[{}] found locally", key);
-        logCallback.saveExecutionLog(format("artifact: [%s] found locally", key));
         return new FileInputStream(file);
       }
       log.info("file:[{}] doesn't exist locally. Downloading from artifactory", key);

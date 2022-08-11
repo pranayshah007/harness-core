@@ -117,6 +117,9 @@
               "items": {
                 "type": "string"
               }
+            },
+            "executeOnDelegate": {
+              "type": "boolean"
             }
           }
         }
@@ -1246,6 +1249,9 @@
                 "type": "string"
               }
             },
+            "executeOnDelegate": {
+              "type": "boolean"
+            },
             "type": {
               "type": "string",
               "enum": [
@@ -1560,6 +1566,9 @@
               "items": {
                 "type": "string"
               }
+            },
+            "executeOnDelegate": {
+              "type": "boolean"
             },
             "type": {
               "type": "string",
@@ -2732,6 +2741,9 @@
             "dockerRegistryUrl": {
               "type": "string"
             },
+            "executeOnDelegate": {
+              "type": "boolean"
+            },
             "providerType": {
               "type": "string",
               "enum": [
@@ -3721,6 +3733,9 @@
               "items": {
                 "type": "string"
               }
+            },
+            "executeOnDelegate": {
+              "type": "boolean"
             },
             "type": {
               "type": "string",

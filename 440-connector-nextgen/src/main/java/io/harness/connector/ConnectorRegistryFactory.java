@@ -114,8 +114,10 @@ import io.harness.connector.mappers.sumologicmapper.SumoLogicDTOToEntity;
 import io.harness.connector.mappers.sumologicmapper.SumoLogicEntityToDTO;
 import io.harness.connector.task.ConnectorValidationHandler;
 import io.harness.connector.task.NotSupportedValidationHandler;
+import io.harness.connector.task.artifactory.ArtifactoryValidationHandler;
 import io.harness.connector.task.aws.AwsValidationHandler;
 import io.harness.connector.task.azure.AzureValidationHandler;
+import io.harness.connector.task.docker.DockerValidationHandler;
 import io.harness.connector.task.gcp.GcpValidationTaskHandler;
 import io.harness.connector.task.git.GitValidationHandler;
 import io.harness.connector.validator.ArtifactoryConnectionValidator;
@@ -221,7 +223,7 @@ public class ConnectorRegistryFactory {
     registrar.put(ConnectorType.DOCKER,
         new ConnectorRegistrar(ConnectorCategory.ARTIFACTORY, DockerConnectionValidator.class,
             DockerConnectorValidationParamsProvider.class, DockerDTOToEntity.class, DockerEntityToDTO.class,
-            NotSupportedValidationHandler.class));
+            DockerValidationHandler.class));
     registrar.put(ConnectorType.GCP,
         new ConnectorRegistrar(ConnectorCategory.CLOUD_PROVIDER, GcpConnectorValidator.class,
             GcpValidationParamsProvider.class, GcpDTOToEntity.class, GcpEntityToDTO.class,
@@ -240,7 +242,7 @@ public class ConnectorRegistryFactory {
     registrar.put(ConnectorType.ARTIFACTORY,
         new ConnectorRegistrar(ConnectorCategory.ARTIFACTORY, ArtifactoryConnectionValidator.class,
             ArtifactoryValidationParamsProvider.class, ArtifactoryDTOToEntity.class, ArtifactoryEntityToDTO.class,
-            NotSupportedValidationHandler.class));
+            ArtifactoryValidationHandler.class));
     registrar.put(ConnectorType.JIRA,
         new ConnectorRegistrar(ConnectorCategory.TICKETING, JiraConnectorValidator.class,
             JiraValidationParamsProvider.class, JiraDTOToEntity.class, JiraEntityToDTO.class,
@@ -256,11 +258,11 @@ public class ConnectorRegistryFactory {
     registrar.put(ConnectorType.GITLAB,
         new ConnectorRegistrar(ConnectorCategory.CODE_REPO, GitlabConnectorValidator.class,
             ScmConnectorValidationParamsProvider.class, GitlabDTOToEntity.class, GitlabEntityToDTO.class,
-            NotSupportedValidationHandler.class));
+            GitValidationHandler.class));
     registrar.put(ConnectorType.BITBUCKET,
         new ConnectorRegistrar(ConnectorCategory.CODE_REPO, BitbucketConnectorValidator.class,
             ScmConnectorValidationParamsProvider.class, BitbucketDTOToEntity.class, BitbucketEntityToDTO.class,
-            NotSupportedValidationHandler.class));
+            GitValidationHandler.class));
     registrar.put(ConnectorType.CODECOMMIT,
         new ConnectorRegistrar(ConnectorCategory.CODE_REPO, AwsCodeCommitValidator.class,
             NoOpConnectorValidationParamsProvider.class, AwsCodeCommitDTOToEntity.class, AwsCodeCommitEntityToDTO.class,
@@ -300,7 +302,7 @@ public class ConnectorRegistryFactory {
     registrar.put(ConnectorType.AZURE_REPO,
         new ConnectorRegistrar(ConnectorCategory.CODE_REPO, AzureRepoConnectorValidator.class,
             ScmConnectorValidationParamsProvider.class, AzureRepoDTOToEntity.class, AzureRepoEntityToDTO.class,
-            NotSupportedValidationHandler.class));
+            GitValidationHandler.class));
     registrar.put(ConnectorType.PDC,
         new ConnectorRegistrar(ConnectorCategory.CLOUD_PROVIDER, PhysicalDataCenterConnectorValidator.class,
             PhysicalDataCenterConnectorValidationParamsProvider.class, PhysicalDataCenterDTOToEntity.class,

@@ -12,6 +12,7 @@ import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 import io.harness.artifactory.ArtifactoryConfigRequest;
 import io.harness.artifactory.ArtifactoryNgService;
 import io.harness.connector.ConnectorValidationResult;
+import io.harness.connector.task.artifactory.ArtifactoryValidationHandler;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.DelegateTaskResponse;
