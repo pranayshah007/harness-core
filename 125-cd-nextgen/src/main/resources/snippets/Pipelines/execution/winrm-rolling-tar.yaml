@@ -6,10 +6,12 @@ spec:
           identifier: Deploy
           type: Command
           timeout: 10m
-          sstrategy:
+          strategy:
             repeat:
               items: <+stage.output.hosts>
-              maxConcurency: <+maxConcurrency>
+              maxConcurrency: <+maxConcurrency>
+              start: 0
+              end: <+end>
               unit: <+unit>
           spec:
             host: <+repeat.item>
