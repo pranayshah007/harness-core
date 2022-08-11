@@ -35,8 +35,6 @@ import io.harness.beans.plugin.compatible.PluginCompatibleStep;
 import io.harness.beans.quantity.unit.DecimalQuantityUnit;
 import io.harness.beans.quantity.unit.StorageQuantityUnit;
 import io.harness.beans.serializer.RunTimeInputHandler;
-import io.harness.beans.stages.IntegrationStageConfig;
-import io.harness.beans.stages.IntegrationStageConfigImpl;
 import io.harness.beans.steps.CIStepInfo;
 import io.harness.beans.steps.CIStepInfoType;
 import io.harness.beans.steps.stepinfo.InitializeStepInfo;
@@ -54,6 +52,7 @@ import io.harness.ci.ff.CIFeatureFlagService;
 import io.harness.ci.utils.CIStepInfoUtils;
 import io.harness.ci.utils.PortFinder;
 import io.harness.ci.utils.QuantityUtils;
+import io.harness.cimanager.stages.IntegrationStageConfig;
 import io.harness.delegate.beans.ci.pod.CIContainerType;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.ci.pod.ContainerResourceParams;
@@ -353,7 +352,7 @@ public class K8InitializeStepUtils {
 
   private void setEnvVariablesForHostedBuids(
       StageElementConfig integrationStage, PluginCompatibleStep stepInfo, Map<String, String> envVarMap) {
-    IntegrationStageConfigImpl stage = (IntegrationStageConfigImpl) integrationStage.getStageType();
+    IntegrationStageConfig stage = (IntegrationStageConfig) integrationStage.getStageType();
     if (stage != null && stage.getInfrastructure() != null
         && stage.getInfrastructure().getType() == Infrastructure.Type.KUBERNETES_HOSTED) {
       switch (stepInfo.getNonYamlInfo().getStepInfoType()) {

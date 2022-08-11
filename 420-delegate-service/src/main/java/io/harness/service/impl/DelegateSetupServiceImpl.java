@@ -407,6 +407,7 @@ public class DelegateSetupServiceImpl implements DelegateSetupService {
     String delegateConfigurationId = delegateGroup != null ? delegateGroup.getDelegateConfigurationId() : null;
     String delegateGroupIdentifier = delegateGroup != null ? delegateGroup.getIdentifier() : null;
     Set<String> groupCustomSelectors = delegateGroup != null ? delegateGroup.getTags() : null;
+    long upgraderLastUpdated = delegateGroup != null ? delegateGroup.getUpgraderLastUpdated() : 0;
 
     // pick any connected delegateId to check whether grpc is active or not
     AtomicReference<String> delegateId = new AtomicReference<>();
@@ -455,6 +456,8 @@ public class DelegateSetupServiceImpl implements DelegateSetupService {
         .delegateGroupIdentifier(delegateGroupIdentifier)
         .delegateType(delegateType)
         .groupName(groupName)
+        .autoUpgrade(setAutoUpgrader(upgraderLastUpdated))
+        .upgraderLastUpdated(upgraderLastUpdated)
         .delegateDescription(delegateDescription)
         .delegateConfigurationId(delegateConfigurationId)
         .groupImplicitSelectors(retrieveDelegateGroupImplicitSelectors(delegateGroup))
@@ -466,6 +469,10 @@ public class DelegateSetupServiceImpl implements DelegateSetupService {
         .activelyConnected(!connectivityStatus.equals(GROUP_STATUS_DISCONNECTED))
         .tokenActive(isDelegateTokenActiveAtGroupLevel.get())
         .build();
+  }
+
+  private boolean setAutoUpgrader(long upgraderLastUpdated) {
+    return TimeUnit.MILLISECONDS.toHours(System.currentTimeMillis() - upgraderLastUpdated) <= 1;
   }
 
   private boolean isGrpcActive(String accountId, String delegateId) {

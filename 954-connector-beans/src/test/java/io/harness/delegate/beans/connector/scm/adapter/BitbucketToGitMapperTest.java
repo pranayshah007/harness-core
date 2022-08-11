@@ -80,10 +80,12 @@ public class BitbucketToGitMapperTest extends CategoryTest {
                                                             .connectionType(GitConnectionType.ACCOUNT)
                                                             .authentication(bitbucketAuthenticationDTO)
                                                             .delegateSelectors(delegateSelectors)
+                                                            .executeOnDelegate(false)
                                                             .build();
     GitConfigDTO gitConfigDTO = BitbucketToGitMapper.mapToGitConfigDTO(bitbucketConnectorDTO);
     assertThat(gitConfigDTO).isNotNull();
     assertThat(gitConfigDTO.getGitAuthType()).isEqualTo(HTTP);
+    assertThat(gitConfigDTO.getExecuteOnDelegate()).isEqualTo(false);
     assertThat(gitConfigDTO.getDelegateSelectors()).isEqualTo(delegateSelectors);
     GitHTTPAuthenticationDTO gitAuthentication = (GitHTTPAuthenticationDTO) gitConfigDTO.getGitAuth();
     assertThat(gitConfigDTO.getGitConnectionType()).isEqualTo(ACCOUNT);

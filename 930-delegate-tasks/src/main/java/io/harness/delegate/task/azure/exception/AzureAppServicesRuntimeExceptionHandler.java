@@ -36,6 +36,8 @@ import retrofit2.adapter.rxjava.HttpException;
 public class AzureAppServicesRuntimeExceptionHandler implements ExceptionHandler {
   private static final Pattern PORT_DIDNT_RESPOND_PATTERN =
       Pattern.compile("Container ([A-z-_0-9]+) didn't respond to HTTP pings on port: (\\d+)");
+  private static final Pattern STOPPING_SITE_CONTAINER_PATTERN =
+      Pattern.compile("Stopping site ([A-z-_0-9]+) because it failed during startup");
 
   private static final String HINT_WEBAPP_NOT_FOUND =
       "Check to make sure web app '%s' exists under resource group '%s'";
@@ -45,6 +47,8 @@ public class AzureAppServicesRuntimeExceptionHandler implements ExceptionHandler
   private static final String HINT_CONFIGURE_WEBSISTES_PORT =
       "If container listens to a different port than 80 or 8080 configure WEBSISTES_PORT in application settings";
   private static final String HINT_CHECK_CONTAINER_LOGS = "Check container logs for more details";
+  private static final String HINT_CONTAINER_FAILED_DURING_STARTUP =
+      "Verify docker image configuration and credentials";
 
   private static final String EXPLANATION_WEBAPP_NOT_FOUND =
       "Unable to find web app with name '%s' in resource group '%s'";
@@ -54,6 +58,8 @@ public class AzureAppServicesRuntimeExceptionHandler implements ExceptionHandler
       "HTTP request %s %s failed with error code '%d' while uploading artifact file '%s'";
   private static final String EXPLANATION_PORT_DIDNT_RESPOND = "Container %s didn't response to HTTP pings on port: %s";
   private static final String EXPLANATION_CONTAINER_FAILS_START = "Container failed to start with error log: %s";
+  private static final String EXPLANATION_STOPPING_CONTAINER =
+      "Site container was stopped because it failed during startup";
 
   public static Set<Class<? extends Exception>> exceptions() {
     return ImmutableSet.<Class<? extends Exception>>builder().add(AzureAppServicesRuntimeException.class).build();
@@ -125,6 +131,12 @@ public class AzureAppServicesRuntimeExceptionHandler implements ExceptionHandler
       return NestedExceptionUtils.hintWithExplanationException(HINT_CONFIGURE_WEBSISTES_PORT,
           format(EXPLANATION_PORT_DIDNT_RESPOND, containerName, port),
           new AzureAppServiceTaskException(slotSteadyStateException.getMessage()));
+    }
+
+    Matcher stoppingContainerMatcher = STOPPING_SITE_CONTAINER_PATTERN.matcher(slotSteadyStateException.getMessage());
+    if (stoppingContainerMatcher.find()) {
+      return NestedExceptionUtils.hintWithExplanationException(HINT_CONTAINER_FAILED_DURING_STARTUP,
+          EXPLANATION_STOPPING_CONTAINER, new AzureAppServiceTaskException(slotSteadyStateException.getMessage()));
     }
 
     return NestedExceptionUtils.hintWithExplanationException(HINT_CHECK_CONTAINER_LOGS,

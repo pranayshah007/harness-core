@@ -11,7 +11,9 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.serializer.kryo.NGCoreKryoRegistrar;
+import io.harness.serializer.kryo.NgPersistenceKryoRegistrar;
 import io.harness.serializer.morphia.NGCoreMorphiaClassesRegistrar;
+import io.harness.serializer.morphia.NgPersistenceMorphiaRegistrar;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -28,6 +30,7 @@ public class NGCoreRegistrars {
           .addAll(ConnectorBeansRegistrars.kryoRegistrars)
           .addAll(ScmJavaClientRegistrars.kryoRegistrars)
           .add(NGCoreKryoRegistrar.class)
+          .add(NgPersistenceKryoRegistrar.class)
           .addAll(OutboxEventRegistrars.kryoRegistrars)
           .build();
 
@@ -38,6 +41,7 @@ public class NGCoreRegistrars {
           .addAll(ConnectorBeansRegistrars.morphiaRegistrars)
           .addAll(ScmJavaClientRegistrars.morphiaRegistrars)
           .add(NGCoreMorphiaClassesRegistrar.class)
+          .add(NgPersistenceMorphiaRegistrar.class)
           .addAll(NGAuditCommonsRegistrars.morphiaRegistrars)
           .addAll(OutboxEventRegistrars.morphiaRegistrars)
           .build();

@@ -49,7 +49,7 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("SshWinRmAzureInfrastructure")
 @RecasterAlias("io.harness.cdng.infra.yaml.SshWinRmAzureInfrastructure")
 public class SshWinRmAzureInfrastructure
-    extends InfrastructureDetailsAbstract implements Infrastructure, Visitable, WithConnectorRef {
+    extends InfrastructureDetailsAbstract implements Infrastructure, Visitable, WithConnectorRef, AzureInfrastructure {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)

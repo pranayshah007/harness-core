@@ -316,6 +316,29 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
     assertThat(imagePath).isEqualTo("env1");
   }
 
+  @Test
+  @Owner(developers = INDER)
+  @Category(UnitTests.class)
+  public void testGetResolvedPathWhenServiceAndEnvironmentDoesNotHaveYaml() throws IOException {
+    String yaml = readFile("artifacts/pipeline-without-ser-env-refactoring.yaml");
+    mockMergeInputSetCall(yaml);
+    when(serviceEntityService.get(anyString(), anyString(), anyString(), anyString(), anyBoolean()))
+        .thenReturn(Optional.of(ServiceEntity.builder().name("svc1").identifier("svc1").build()));
+
+    when(environmentService.get(anyString(), anyString(), anyString(), anyString(), anyBoolean()))
+        .thenReturn(Optional.of(Environment.builder().name("env1").identifier("env1").build()));
+
+    String imagePath = artifactResourceUtils.getResolvedImagePath(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, "",
+        "<+service.name>", "pipeline.stages.test.spec.serviceConfig.serviceDefinition.spec.artifacts.primary.spec.tag",
+        GitEntityFindInfoDTO.builder().build(), "");
+    assertThat(imagePath).isEqualTo("svc1");
+
+    imagePath = artifactResourceUtils.getResolvedImagePath(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, "",
+        "<+env.name>", "pipeline.stages.test2.spec.serviceConfig.serviceDefinition.spec.artifacts.primary.spec.tag",
+        GitEntityFindInfoDTO.builder().build(), "");
+    assertThat(imagePath).isEqualTo("env1");
+  }
+
   private void mockEnvironmentGetCall() {
     when(environmentService.get(anyString(), anyString(), anyString(), anyString(), anyBoolean()))
         .thenReturn(Optional.of(Environment.builder()

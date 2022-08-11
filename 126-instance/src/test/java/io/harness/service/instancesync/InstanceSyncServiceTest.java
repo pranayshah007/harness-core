@@ -12,6 +12,7 @@ import static io.harness.rule.OwnerRule.VIKYATH_HAREKAL;
 import static junit.framework.TestCase.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.never;
@@ -39,6 +40,7 @@ import io.harness.dtos.instancesyncperpetualtaskinfo.DeploymentInfoDetailsDTO;
 import io.harness.dtos.instancesyncperpetualtaskinfo.InstanceSyncPerpetualTaskInfoDTO;
 import io.harness.entities.InstanceType;
 import io.harness.helper.InstanceSyncHelper;
+import io.harness.instancesyncmonitoring.service.InstanceSyncMonitoringService;
 import io.harness.k8s.model.K8sContainer;
 import io.harness.lock.PersistentLocker;
 import io.harness.models.DeploymentEvent;
@@ -119,6 +121,7 @@ public class InstanceSyncServiceTest extends InstancesTestBase {
   @Mock private EnvironmentService environmentService;
   @Mock private DeploymentSummaryService deploymentSummaryService;
   @Mock private InstanceSyncServiceUtils instanceSyncServiceUtils;
+  @Mock private InstanceSyncMonitoringService instanceSyncMonitoringService;
 
   @Before
   public void setUp() throws Exception {
@@ -128,7 +131,8 @@ public class InstanceSyncServiceTest extends InstancesTestBase {
         instanceSyncPerpetualTaskService, serviceEntityService, environmentService);
     instanceSyncService = new InstanceSyncServiceImpl(persistentLocker, instanceSyncPerpetualTaskService,
         instanceSyncPerpetualTaskInfoService, instanceSyncHandlerFactoryService, infrastructureMappingService,
-        instanceService, deploymentSummaryService, instanceSyncHelper, instanceSyncServiceUtils);
+        instanceService, deploymentSummaryService, instanceSyncHelper, instanceSyncServiceUtils,
+        instanceSyncMonitoringService);
 
     ServiceEntity serviceEntity = ServiceEntity.builder().name(TEST_SERVICE_NAME).identifier(TEST_SERVICE_ID).build();
     when(serviceEntityService.get(anyString(), anyString(), anyString(), anyString(), anyBoolean()))
@@ -137,6 +141,7 @@ public class InstanceSyncServiceTest extends InstancesTestBase {
         Environment.builder().identifier(TEST_ENV_ID).type(EnvironmentType.PreProduction).name(TEST_ENV_NAME).build();
     when(environmentService.get(anyString(), anyString(), anyString(), anyString(), anyBoolean()))
         .thenReturn(Optional.of(environment));
+    doNothing().when(instanceSyncMonitoringService).recordMetrics(any(), anyBoolean(), anyLong());
   }
 
   @After

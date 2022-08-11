@@ -93,11 +93,10 @@ public class PVWatcher implements ResourceEventHandler<V1PersistentVolume> {
                                 .build();
 
     this.storageV1Api = new StorageV1Api(apiClient);
-    this.storageClassParamsCache =
-        Caffeine.newBuilder()
-            .maximumSize(20)
-            .expireAfterWrite(1, TimeUnit.DAYS)
-            .build(key -> this.storageV1Api.readStorageClass(key, null, null, null).getParameters());
+    this.storageClassParamsCache = Caffeine.newBuilder()
+                                       .maximumSize(20)
+                                       .expireAfterWrite(1, TimeUnit.DAYS)
+                                       .build(key -> this.storageV1Api.readStorageClass(key, null).getParameters());
 
     CoreV1Api coreV1Api = new CoreV1Api(apiClient);
     sharedInformerFactory

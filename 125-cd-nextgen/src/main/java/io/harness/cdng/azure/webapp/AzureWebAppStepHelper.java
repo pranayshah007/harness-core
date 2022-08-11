@@ -215,6 +215,12 @@ public class AzureWebAppStepHelper {
 
   public TaskRequest prepareTaskRequest(StepElementParameters stepElementParameters, Ambiance ambiance,
       TaskParameters taskParameters, TaskType taskType, List<String> units) {
+    return prepareTaskRequest(
+        stepElementParameters, ambiance, taskParameters, taskType, taskType.getDisplayName(), units);
+  }
+
+  public TaskRequest prepareTaskRequest(StepElementParameters stepElementParameters, Ambiance ambiance,
+      TaskParameters taskParameters, TaskType taskType, String displayName, List<String> units) {
     AzureWebAppStepParameters stepSpec = (AzureWebAppStepParameters) stepElementParameters.getSpec();
     List<TaskSelectorYaml> taskSelectors = stepSpec.getDelegateSelectors().getValue();
 
@@ -225,8 +231,8 @@ public class AzureWebAppStepHelper {
                                   .parameters(new Object[] {taskParameters})
                                   .build();
 
-    return cdStepHelper.prepareTaskRequest(ambiance, taskData, units, taskType.getDisplayName(),
-        TaskSelectorYaml.toTaskSelector(emptyIfNull(taskSelectors)));
+    return cdStepHelper.prepareTaskRequest(
+        ambiance, taskData, units, displayName, TaskSelectorYaml.toTaskSelector(emptyIfNull(taskSelectors)));
   }
 
   public Map<String, AppSettingsFile> fetchWebAppConfigsFromHarnessStore(

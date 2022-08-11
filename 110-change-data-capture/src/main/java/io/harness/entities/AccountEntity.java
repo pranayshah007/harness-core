@@ -9,7 +9,6 @@ package io.harness.entities;
 
 import io.harness.ChangeHandler;
 import io.harness.changehandlers.AccountChangeDataHandler;
-import io.harness.persistence.PersistentEntity;
 
 import software.wings.beans.Account;
 
@@ -24,7 +23,7 @@ public class AccountEntity implements CDCEntity<Account> {
   }
 
   @Override
-  public Class<? extends PersistentEntity> getSubscriptionEntity() {
+  public Class<Account> getSubscriptionEntity() {
     return Account.class;
   }
 }

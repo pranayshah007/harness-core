@@ -60,7 +60,7 @@ public class CommandStepRollbackHelper extends CDStepHelper {
   @Inject private SshWinRmConfigFileHelper sshWinRmConfigFileHelper;
   @Inject private SshWinRmArtifactHelper sshWinRmArtifactHelper;
 
-  public Optional<SshWinRmRollbackData> getRollbackData(Ambiance ambiance) {
+  public Optional<SshWinRmRollbackData> getRollbackData(Ambiance ambiance, Map<String, String> builtInEnvVariables) {
     OptionalSweepingOutput executionInfoKeyOptional = executionSweepingOutputService.resolveOptional(
         ambiance, RefObjectUtils.getSweepingOutputRefObject(OutputExpressionConstants.EXECUTION_INFO_KEY_OUTPUT_NAME));
     if (!executionInfoKeyOptional.isFound()) {
@@ -69,6 +69,7 @@ public class CommandStepRollbackHelper extends CDStepHelper {
           AmbianceUtils.getAccountId(ambiance), AmbianceUtils.getOrgIdentifier(ambiance),
           AmbianceUtils.getProjectIdentifier(ambiance), ambiance.getStageExecutionId()));
     }
+
     ExecutionInfoKeyOutput executionInfoKeyOutput = (ExecutionInfoKeyOutput) executionInfoKeyOptional.getOutput();
     ExecutionInfoKey executionInfoKey = executionInfoKeyOutput.getExecutionInfoKey();
     log.info("Found execution info key for rollback, executionInfoKey: {}, stageExecutionId: {}", executionInfoKey,
@@ -87,7 +88,8 @@ public class CommandStepRollbackHelper extends CDStepHelper {
         : null;
     FileDelegateConfig fileDelegateConfig =
         sshWinRmConfigFileHelper.getFileDelegateConfig(sshWinRmExecutionDetails.getConfigFilesOutcome(), ambiance);
-    Map<String, String> environmentVariables = getEnvironmentVariables(sshWinRmExecutionDetails.getEnvVariables());
+    Map<String, String> environmentVariables =
+        getEnvironmentVariables(sshWinRmExecutionDetails.getEnvVariables(), builtInEnvVariables);
     List<String> outputVariables = getOutputVariables(sshWinRmExecutionDetails.getOutVariables());
 
     return Optional.of(SshWinRmRollbackData.builder()

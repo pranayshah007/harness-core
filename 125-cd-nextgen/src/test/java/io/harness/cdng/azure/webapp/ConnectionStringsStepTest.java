@@ -20,6 +20,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDNGTestBase;
 import io.harness.cdng.azure.AzureHelperService;
 import io.harness.cdng.azure.config.ConnectionStringsOutcome;
+import io.harness.cdng.azure.config.yaml.ConnectionStringsConfiguration;
 import io.harness.cdng.k8s.beans.StepExceptionPassThroughData;
 import io.harness.cdng.manifest.yaml.GitStore;
 import io.harness.cdng.manifest.yaml.harness.HarnessStore;
@@ -81,7 +82,9 @@ public class ConnectionStringsStepTest extends CDNGTestBase {
     StoreConfigWrapper storeConfigWrapper = getStoreConfigWrapper();
 
     ConnectionStringsParameters stepParameters =
-        ConnectionStringsParameters.builder().connectionStrings(storeConfigWrapper).build();
+        ConnectionStringsParameters.builder()
+            .connectionStrings(ConnectionStringsConfiguration.builder().store(storeConfigWrapper).build())
+            .build();
     StepResponse response =
         connectionStringsStep.executeSync(ambiance, stepParameters, getStepInputPackage(), getPassThroughData());
 
@@ -109,7 +112,9 @@ public class ConnectionStringsStepTest extends CDNGTestBase {
 
     StoreConfigWrapper storeConfigWrapper = getStoreConfigWrapperWithGitStore();
     ConnectionStringsParameters stepParameters =
-        ConnectionStringsParameters.builder().connectionStrings(storeConfigWrapper).build();
+        ConnectionStringsParameters.builder()
+            .connectionStrings(ConnectionStringsConfiguration.builder().store(storeConfigWrapper).build())
+            .build();
 
     StepResponse response =
         connectionStringsStep.executeSync(ambiance, stepParameters, getStepInputPackage(), getPassThroughData());
