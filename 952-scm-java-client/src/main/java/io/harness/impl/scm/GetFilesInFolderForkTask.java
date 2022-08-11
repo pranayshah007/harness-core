@@ -28,6 +28,7 @@ import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.RecursiveTask;
 import lombok.Builder;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * This is a fork and join task which we are using to get all files belonging in
@@ -149,9 +150,27 @@ public class GetFilesInFolderForkTask extends RecursiveTask<List<FileChange>> {
     }
     List<FileChange> allFiles = new ArrayList<>();
     for (GetFilesInFolderForkTask task : tasks) {
-      allFiles.addAll(emptyIfNull(task.join()));
+      List<FileChange> fileChangesList = task.join();
+
+      // Bitbucket onprem server was giving relative path for files, CI-5019
+      if (provider.hasBitbucketServer()) {
+        fileChangesList = appendFolderPath(fileChangesList, task.folderPath);
+      }
+      allFiles.addAll(emptyIfNull(fileChangesList));
     }
     return allFiles;
+  }
+
+  public List<FileChange> appendFolderPath(List<FileChange> files, String folderPath) {
+    if (folderPath.endsWith("/")) {
+      folderPath = StringUtils.chop(folderPath);
+    }
+    List<FileChange> modifiedFiles = new ArrayList<>();
+    for (FileChange file : files) {
+      FileChange modifiedFile = FileChange.newBuilder(file).setPath(folderPath + "/" + file.getPath()).build();
+      modifiedFiles.add(modifiedFile);
+    }
+    return modifiedFiles;
   }
 
   private FindFilesInBranchRequest.Builder prepareRequestBuilder(String path) {
