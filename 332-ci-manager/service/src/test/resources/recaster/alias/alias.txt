@@ -140,7 +140,7 @@ io.harness.beans.yaml.extended.volumes.EmptyDirYaml
 io.harness.beans.GCPArtifactUploadInfo
 io.harness.beans.yaml.extended.volumes.HostPathYaml
 io.harness.beans.yaml.extended.ImagePullPolicy
-io.harness.beans.stages.IntegrationStageConfigImpl
+io.harness.cimanager.stages.IntegrationStageConfigImpl
 io.harness.beans.yaml.extended.reports.JUnitTestReport
 io.harness.beans.environment.K8BuildJobEnvInfo
 io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml
