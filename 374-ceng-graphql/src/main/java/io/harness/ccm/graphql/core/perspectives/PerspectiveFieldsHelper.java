@@ -9,7 +9,6 @@ package io.harness.ccm.graphql.core.perspectives;
 
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
-import io.harness.beans.FeatureName;
 import io.harness.ccm.bigQuery.BigQueryService;
 import io.harness.ccm.commons.dao.CEMetadataRecordDao;
 import io.harness.ccm.commons.entities.batch.CEMetadataRecord;
@@ -60,7 +59,6 @@ public class PerspectiveFieldsHelper {
       Caffeine.newBuilder().expireAfterWrite(1, TimeUnit.DAYS).maximumSize(CACHE_SIZE).build(this::getAzureFields);
 
   public PerspectiveFieldsData fetch(String accountId, List<QLCEViewFilterWrapper> filters) {
-    final boolean isBusinessMappingEnabled = featureFlagService.isEnabled(FeatureName.BUSINESS_MAPPING, accountId);
     List<ViewField> customFields = new ArrayList<>();
     Optional<QLCEViewFilterWrapper> viewMetadataFilter = getViewMetadataFilter(filters);
     boolean isExplorerQuery = false;
@@ -76,9 +74,7 @@ public class PerspectiveFieldsHelper {
     List<QLCEViewFieldIdentifierData> fieldIdentifierData = new ArrayList<>();
     fieldIdentifierData.add(getViewField(ViewFieldUtils.getCommonFields(), ViewFieldIdentifier.COMMON));
     fieldIdentifierData.add(getViewCustomField(customFields));
-    if (isBusinessMappingEnabled) {
-      fieldIdentifierData.add(getBusinessMappingFields(businessMappingService.getBusinessMappingViewFields(accountId)));
-    }
+    fieldIdentifierData.add(getBusinessMappingFields(businessMappingService.getBusinessMappingViewFields(accountId)));
 
     Set<ViewFieldIdentifier> viewFieldIdentifierSetFromCustomFields = new HashSet<>();
     for (ViewField customField : customFields) {
