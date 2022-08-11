@@ -148,17 +148,17 @@ public class OAuthTokenRefresher implements Handler<GitlabConnector> {
             configuration.getGitlabConfig().getClientSecret(), "https://gitlab.com/oauth/token",
             String.valueOf(gitlabOauthDTO.getRefreshTokenRef().getDecryptedValue()));
       } catch (Exception e) {
+        String refreshToken = String.valueOf(gitlabOauthDTO.getRefreshTokenRef().getDecryptedValue());
         log.error("[OAuth refresh] Error from SCM for refreshing token for connector: {}, "
                 + "clientID:{}, Client Secret:{}, refresh token: {}, Account:{}, Error:{}",
-            entity.getIdentifier(), configuration.getGitlabConfig().getClientId(),
-            configuration.getGitlabConfig().getClientSecret(),
-            String.valueOf(gitlabOauthDTO.getRefreshTokenRef().getDecryptedValue()), entity.getAccountIdentifier(),
+            entity.getIdentifier(), configuration.getGitlabConfig().getClientId().substring(0,3),
+            configuration.getGitlabConfig().getClientSecret().substring(0,3),
+                refreshToken.substring(0, Math.min(refreshToken.length(), 3)), entity.getAccountIdentifier(),
             e.getMessage());
         return;
       }
 
-      log.info("[OAuth refresh]:" + entity.getName() + " New AccessToken: " + refreshTokenResponse.getAccessToken()
-          + " New RefreshToken:" + refreshTokenResponse.getRefreshToken());
+      log.info("[OAuth refresh]:" + entity.getName() + ". New Access Token and New Refresh Token Received");
 
       updateSecretSecretValue(entity, tokenDTO, refreshTokenResponse.getAccessToken());
       updateSecretSecretValue(entity, refreshTokenDTO, refreshTokenResponse.getRefreshToken());
