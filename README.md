@@ -118,7 +118,7 @@ Official steps to install docker on mac: [docker.com](https://docs.docker.com/de
    *   DEVELOPMENT - set this when you building for development purposes
    *   PR_CHECK    - set this when you building for executing check for the pr
    *   FEATURE     - set this when you building for internal feature testing
-   *   RELEASE     - set this when you building for release
+   *   RELEASE     - set this when you building for release 
    
    if you seting up the project to build locally, you should simply add to your .bash_profile file: 
    ```
