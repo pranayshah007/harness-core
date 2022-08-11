@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.rule.OwnerRule.ACASIAN;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.eq;
@@ -32,8 +33,10 @@ import io.harness.cdng.service.steps.ServiceStepOutcome;
 import io.harness.cdng.ssh.rollback.CommandStepRollbackHelper;
 import io.harness.cdng.ssh.utils.CommandStepUtils;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
+import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.beans.storeconfig.HarnessStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.StoreDelegateConfig;
+import io.harness.delegate.exception.TaskNGDataException;
 import io.harness.delegate.task.shell.CommandTaskParameters;
 import io.harness.delegate.task.shell.SshCommandTaskParameters;
 import io.harness.delegate.task.shell.WinrmTaskParameters;
@@ -49,9 +52,13 @@ import io.harness.delegate.task.ssh.config.FileDelegateConfig;
 import io.harness.delegate.task.ssh.config.SecretConfigFile;
 import io.harness.encryption.Scope;
 import io.harness.encryption.SecretRefData;
+import io.harness.logging.UnitStatus;
+import io.harness.logstreaming.NGLogCallback;
 import io.harness.ng.core.api.NGEncryptedDataService;
 import io.harness.plancreator.steps.TaskSelectorYaml;
+import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.refobjects.RefObject;
 import io.harness.pms.contracts.refobjects.RefType;
 import io.harness.pms.data.OrchestrationRefType;
@@ -60,6 +67,7 @@ import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
+import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 import io.harness.security.encryption.EncryptedDataDetail;
@@ -85,6 +93,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
+import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
@@ -103,8 +112,9 @@ public class SshCommandStepHelperTest extends CategoryTest {
   @Mock private SshWinRmArtifactHelper sshWinRmArtifactHelper;
   @Mock private SshWinRmConfigFileHelper sshWinRmConfigFileHelper;
   @Mock private CommandStepRollbackHelper commandStepRollbackHelper;
+  @Mock private NGLogCallback ngLogCallback;
 
-  @InjectMocks private SshCommandStepHelper helper;
+  @InjectMocks @Spy private SshCommandStepHelper helper;
 
   private final String workingDir = "/tmp";
   private final String accountId = "test";
@@ -376,6 +386,41 @@ public class SshCommandStepHelperTest extends CategoryTest {
     assertThat(winRmTaskParameters.getWinRmInfraDelegateConfig()).isEqualTo(pdcWinRmInfraDelegateConfig);
   }
 
+  @Test
+  @Owner(developers = ACASIAN)
+  @Category(UnitTests.class)
+  public void testHandleTaskException() throws Exception {
+    RuntimeException runtimeException = new RuntimeException("Failed to execute the task");
+
+    doReturn(ngLogCallback).when(helper).getLogCallback(any(), any(), anyBoolean());
+
+    StepResponse response = helper.handleTaskException(ambiance,
+        StepElementParameters.builder().spec(buildScriptCommandStepParams(Collections.emptyMap())).build(),
+        runtimeException);
+    assertThat(response).isNotNull();
+    assertThat(response.getStatus()).isEqualTo(Status.FAILED);
+    assertThat(response.getUnitProgressList()).isNotEmpty();
+    assertThat(response.getUnitProgressList().get(0).getUnitName()).isEqualTo("Execute");
+    assertThat(response.getUnitProgressList().get(0).getStatus()).isEqualTo(UnitStatus.FAILURE);
+    assertThat(response.getFailureInfo()).isNotNull();
+    assertThat(response.getFailureInfo().getErrorMessage()).isEqualTo("RuntimeException: Failed to execute the task");
+  }
+
+  @Test
+  @Owner(developers = ACASIAN)
+  @Category(UnitTests.class)
+  public void testHandleTaskDataException() {
+    TaskNGDataException taskNGDataException =
+        new TaskNGDataException(UnitProgressData.builder().build(), new RuntimeException("Failure"));
+
+    assertThatThrownBy(
+        ()
+            -> helper.handleTaskException(ambiance,
+                StepElementParameters.builder().spec(buildScriptCommandStepParams(Collections.emptyMap())).build(),
+                taskNGDataException))
+        .isInstanceOf(TaskNGDataException.class);
+  }
+
   private void assertScriptTaskParameters(CommandTaskParameters taskParameters, Map<String, String> taskEnv) {
     assertThat(taskParameters).isNotNull();
     assertThat(taskParameters.getAccountId()).isEqualTo(accountId);
@@ -440,6 +485,7 @@ public class SshCommandStepHelperTest extends CategoryTest {
         .commandUnits(Arrays.asList(
             CommandUnitWrapper.builder()
                 .type(CommandUnitSpecType.SCRIPT)
+                .name("Execute")
                 .spec(ScriptCommandUnitSpec.builder()
                           .tailFiles(Arrays.asList(TailFilePattern.builder()
                                                        .tailFile(ParameterField.createValueField("nohup.out"))
