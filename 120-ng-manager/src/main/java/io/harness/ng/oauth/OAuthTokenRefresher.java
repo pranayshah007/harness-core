@@ -123,7 +123,7 @@ public class OAuthTokenRefresher implements Handler<GitlabConnector> {
 
   @Override
   public void handle(GitlabConnector entity) {
-    log.info("[OAuth refresh] Working on {}", entity.getAccountIdentifier() + ":" + entity.getIdentifier());
+    log.info("[OAuth refresh] Working on: {}", entity.getAccountIdentifier() + " , " + entity.getIdentifier());
 
     try {
       Principal principal = SecurityContextBuilder.getPrincipal();
@@ -148,9 +148,11 @@ public class OAuthTokenRefresher implements Handler<GitlabConnector> {
             configuration.getGitlabConfig().getClientSecret(), "https://gitlab.com/oauth/token",
             String.valueOf(gitlabOauthDTO.getRefreshTokenRef().getDecryptedValue()));
       } catch (Exception e) {
-        log.error(
-            "[OAuth refresh] Error from SCM for refreshing token for connector:{}, clientID:{}, Account:{}, Error:{}",
-            entity.getIdentifier(), configuration.getGitlabConfig().getClientId(), entity.getAccountIdentifier(),
+        log.error("[OAuth refresh] Error from SCM for refreshing token for connector: {}, "
+                + "clientID:{}, Client Secret:{}, refresh token: {}, Account:{}, Error:{}",
+            entity.getIdentifier(), configuration.getGitlabConfig().getClientId(),
+            configuration.getGitlabConfig().getClientSecret(),
+            String.valueOf(gitlabOauthDTO.getRefreshTokenRef().getDecryptedValue()), entity.getAccountIdentifier(),
             e.getMessage());
         return;
       }
