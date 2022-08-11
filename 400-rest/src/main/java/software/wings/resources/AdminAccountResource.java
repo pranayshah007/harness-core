@@ -190,6 +190,13 @@ public class AdminAccountResource {
     return new RestResponse<>(adminAccountService.createAccount(account, adminUserEmail));
   }
 
+  @POST
+  @Path("/global")
+  public RestResponse<Account> createGlobalDelegateAccount(
+      @Body Account account, @QueryParam("adminUserEmail") String adminUserEmail) {
+    return new RestResponse<>(adminAccountService.createAccount(account, adminUserEmail));
+  }
+
   @PUT
   @Path("/{accountId}/enable")
   public RestResponse<Boolean> enableAccount(@PathParam("accountId") String accountId) {

@@ -2051,6 +2051,11 @@ public class AccountServiceImpl implements AccountService {
   }
 
   @Override
+  public Optional<Account> getHarnessHostedGlobalDelegateAccountDetails() {
+    return Optional.empty();
+  }
+
+  @Override
   public boolean updateAccountActivelyUsed(String accountId, boolean accountActivelyUsed) {
     Account account = getFromCache(accountId);
     if (account == null) {
