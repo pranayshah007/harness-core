@@ -27,13 +27,14 @@ import io.harness.category.element.UnitTests;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.ngexception.beans.templateservice.TemplateInputsErrorMetadataDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.template.RefreshRequestDTO;
 import io.harness.ng.core.template.RefreshResponseDTO;
 import io.harness.ng.core.template.TemplateApplyRequestDTO;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
 import io.harness.ng.core.template.TemplateReferenceRequestDTO;
-import io.harness.ng.core.template.exception.NGTemplateResolveExceptionV2;
+import io.harness.ng.core.template.exception.NGTemplateResolveException;
 import io.harness.pms.helpers.PmsFeatureFlagHelper;
 import io.harness.rule.Owner;
 import io.harness.template.beans.refresh.ErrorNodeSummary;
@@ -45,6 +46,7 @@ import com.google.common.io.Resources;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
 import org.junit.Before;
@@ -94,8 +96,8 @@ public class PMSPipelineTemplateHelperTest extends CategoryTest {
     Call<ResponseDTO<TemplateMergeResponseDTO>> callRequest = mock(Call.class);
     doReturn(callRequest)
         .when(templateResourceClient)
-        .applyTemplatesOnGivenYamlV2(
-            anyString(), anyString(), anyString(), any(), any(), any(), any(), any(TemplateApplyRequestDTO.class));
+        .applyTemplatesOnGivenYaml(
+            anyString(), anyString(), anyString(), any(), any(), any(), any(TemplateApplyRequestDTO.class));
     when(callRequest.execute())
         .thenReturn(Response.success(
             ResponseDTO.newResponse(TemplateMergeResponseDTO.builder().mergedPipelineYaml(givenYaml).build())));
@@ -115,16 +117,17 @@ public class PMSPipelineTemplateHelperTest extends CategoryTest {
     Call<ResponseDTO<TemplateMergeResponseDTO>> callRequest = mock(Call.class);
     doReturn(callRequest)
         .when(templateResourceClient)
-        .applyTemplatesOnGivenYamlV2(ACCOUNT_ID, ORG_ID, PROJECT_ID, null, null, null, null,
+        .applyTemplatesOnGivenYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, null, null, null,
             TemplateApplyRequestDTO.builder().originalEntityYaml(givenYaml).build());
-    ValidateTemplateInputsResponseDTO validateTemplateInputsResponseDTO =
-        ValidateTemplateInputsResponseDTO.builder().build();
+    TemplateInputsErrorMetadataDTO templateInputsErrorMetadataDTO =
+        new TemplateInputsErrorMetadataDTO(errorYaml, new HashMap<>());
     when(callRequest.execute())
-        .thenThrow(new NGTemplateResolveExceptionV2(
-            "Exception in resolving template refs in given yaml.", USER, validateTemplateInputsResponseDTO));
+        .thenThrow(new NGTemplateResolveException(
+            "Exception in resolving template refs in given yaml.", USER, templateInputsErrorMetadataDTO));
+
     assertThatThrownBy(
         () -> pipelineTemplateHelper.resolveTemplateRefsInPipeline(ACCOUNT_ID, ORG_ID, PROJECT_ID, givenYaml))
-        .isInstanceOf(NGTemplateResolveExceptionV2.class)
+        .isInstanceOf(NGTemplateResolveException.class)
         .hasMessage("Exception in resolving template refs in given yaml.");
   }
 

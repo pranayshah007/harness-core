@@ -19,14 +19,9 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.TemplateServiceTestBase;
-import io.harness.accesscontrol.acl.api.Resource;
-import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
@@ -50,7 +45,6 @@ import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
 import io.harness.springdata.TransactionHelper;
 import io.harness.template.TemplateFilterPropertiesDTO;
-import io.harness.template.beans.PermissionTypes;
 import io.harness.template.beans.refresh.ErrorNodeSummary;
 import io.harness.template.beans.refresh.ValidateTemplateInputsResponseDTO;
 import io.harness.template.beans.yaml.NGTemplateConfig;
@@ -58,7 +52,6 @@ import io.harness.template.entity.TemplateEntity;
 import io.harness.template.entity.TemplateEntity.TemplateEntityKeys;
 import io.harness.template.helpers.TemplateReferenceHelper;
 import io.harness.template.mappers.NGTemplateDtoMapper;
-import io.harness.template.resources.NGTemplateResource;
 import io.harness.utils.YamlPipelineUtils;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -773,52 +766,6 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
             "The template with identifier %s and version label %s already exists in the account %s, org %s, project %s",
             entity.getIdentifier(), entity.getVersionLabel(), entity.getAccountId(), entity.getOrgIdentifier(),
             entity.getProjectIdentifier()));
-  }
-
-  @Test
-  @Owner(developers = INDER)
-  @Category(UnitTests.class)
-  public void shouldCreateUpdateForNestedTemplates() {
-    String stepYaml = readFile("service/shell-step-template.yaml");
-    TemplateEntity stepTemplate = entity.withYaml(stepYaml);
-    TemplateEntity createdEntity = templateService.create(stepTemplate, false, "");
-    assertSavedTemplateEntity(createdEntity, TEMPLATE_IDENTIFIER);
-    assertThat(createdEntity.getVersion()).isEqualTo(0L);
-    verify(accessControlClient, never())
-        .checkForAccessOrThrow(ResourceScope.of(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER),
-            Resource.of(NGTemplateResource.TEMPLATE, TEMPLATE_IDENTIFIER), PermissionTypes.TEMPLATE_ACCESS_PERMISSION);
-
-    String stageTemplateIdentifier = "template2";
-    String stageYamlWithMissingInputs = readFile("service/updated-stage-template-with-step-template.yaml");
-    TemplateEntity stageTemplateWithMissingInputs =
-        entity.withYaml(stageYamlWithMissingInputs).withIdentifier(stageTemplateIdentifier);
-    testShouldThrowExceptionWithInvalidTemplateInputs(
-        () -> templateService.create(stageTemplateWithMissingInputs, false, ""));
-
-    String stageYaml = readFile("service/stage-template-with-step-template.yaml");
-    TemplateEntity stageTemplate = entity.withYaml(stageYaml).withIdentifier(stageTemplateIdentifier);
-    TemplateEntity createdStageTemplate = templateService.create(stageTemplate, false, "");
-    assertSavedTemplateEntity(createdStageTemplate, stageTemplateIdentifier);
-    verify(accessControlClient, times(1))
-        .checkForAccessOrThrow(ResourceScope.of(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER),
-            Resource.of(NGTemplateResource.TEMPLATE, TEMPLATE_IDENTIFIER), PermissionTypes.TEMPLATE_ACCESS_PERMISSION);
-    assertThat(createdStageTemplate.getVersion()).isEqualTo(0L);
-
-    String updatedStepYaml = readFile("service/updated-shell-step-template.yaml");
-    TemplateEntity updatedStepTemplate = entity.withYaml(updatedStepYaml);
-    TemplateEntity updatedStepEntity =
-        templateService.updateTemplateEntity(updatedStepTemplate, ChangeType.MODIFY, false, "");
-    assertSavedTemplateEntity(updatedStepEntity, TEMPLATE_IDENTIFIER);
-
-    testShouldThrowExceptionWithInvalidTemplateInputs(
-        () -> templateService.updateTemplateEntity(stageTemplate, ChangeType.MODIFY, false, ""));
-
-    TemplateEntity updatedStageEntityWithMissingInputs =
-        templateService.updateTemplateEntity(stageTemplateWithMissingInputs, ChangeType.MODIFY, false, "");
-    assertSavedTemplateEntity(updatedStageEntityWithMissingInputs, stageTemplateIdentifier);
-    verify(accessControlClient, times(2))
-        .checkForAccessOrThrow(ResourceScope.of(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER),
-            Resource.of(NGTemplateResource.TEMPLATE, TEMPLATE_IDENTIFIER), PermissionTypes.TEMPLATE_ACCESS_PERMISSION);
   }
 
   private void assertSavedTemplateEntity(TemplateEntity createdEntity, String templateIdentifier) {
