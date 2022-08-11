@@ -38,7 +38,7 @@ spec:
                               New-Item -Path "$HARNESS_RUNTIME_PATH" -ItemType Directory
                               New-Item -Path "$HARNESS_RUNTIME_PATH" -ItemType Directory
                               New-Item -Path "$HARNESS_RUNTIME_PATH" -ItemType Directory
-                    - identifier: Stop
+                    - identifier: Stop_<+phase>
                       name: "Stop"
                       type: Script
                       spec:

@@ -210,7 +210,8 @@ public class CDNGPipelineExecutionStrategyHelper {
       Map<String, Object> templateParams =
           ImmutableMap.<String, Object>builder()
               .put("failureStrategies", failureStrategiesSnippet)
-              .put("maxConcurrency", strategyParameters.getInstances())
+              .put("maxConcurrency", 1)
+              .put("end", strategyParameters.getInstances())
               .put("rollingSnippet", rollingSnippet)
               .put("unitType",
                   NGInstanceUnitType.PERCENTAGE.equals(strategyParameters.getUnitType()) ? "Percentage" : "Count")

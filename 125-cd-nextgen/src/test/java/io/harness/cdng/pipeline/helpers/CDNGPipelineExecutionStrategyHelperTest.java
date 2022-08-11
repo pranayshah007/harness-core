@@ -48,17 +48,65 @@ public class CDNGPipelineExecutionStrategyHelperTest extends CategoryTest {
     String result =
         cdngPipelineExecutionStrategyHelper.generateCanaryYaml(ServiceDefinitionType.SSH, strategyParameters, false);
     assertThat(result).contains(STRATEGY);
+    assertThat(result).contains("start: 0");
+    assertThat(result).contains("end: 50");
+    assertThat(result).contains("start: 50");
+    assertThat(result).contains("end: 100");
+    assertThat(result).contains("unit: Percentage");
   }
 
   @Test
   @Owner(developers = VLAD)
   @Category(UnitTests.class)
-  public void testGenerateRollingYaml() throws IOException {
-    StrategyParameters strategyParameters =
-        StrategyParameters.builder().instances(5).artifactType(ArtifactType.JAR).build();
+  public void testGenerateRollingYamlPercentage() throws IOException {
+    StrategyParameters strategyParameters = StrategyParameters.builder()
+                                                .instances(50)
+                                                .unitType(NGInstanceUnitType.PERCENTAGE)
+                                                .artifactType(ArtifactType.JAR)
+                                                .build();
+    String result =
+        cdngPipelineExecutionStrategyHelper.generateRollingYaml(ServiceDefinitionType.SSH, strategyParameters, false);
+    assertThat(result).contains(STRATEGY);
+    assertThat(result).contains("maxConcurrency: 1");
+    assertThat(result).contains("start: 0");
+    assertThat(result).contains("end: 50");
+    assertThat(result).contains("unit: Percentage");
+  }
+
+  @Test
+  @Owner(developers = VLAD)
+  @Category(UnitTests.class)
+  public void testGenerateRollingYamlWarPercentage() throws IOException {
+    StrategyParameters strategyParameters = StrategyParameters.builder()
+                                                .instances(50)
+                                                .unitType(NGInstanceUnitType.PERCENTAGE)
+                                                .artifactType(ArtifactType.WAR)
+                                                .build();
+    String result =
+        cdngPipelineExecutionStrategyHelper.generateRollingYaml(ServiceDefinitionType.SSH, strategyParameters, false);
+    assertThat(result).contains(STRATEGY);
+    assertThat(result).contains("maxConcurrency: 1");
+    assertThat(result).contains("start: 0");
+    assertThat(result).contains("end: 50");
+    assertThat(result).contains("unit: Percentage");
+  }
+
+  @Test
+  @Owner(developers = VLAD)
+  @Category(UnitTests.class)
+  public void testGenerateRollingYamlCount() throws IOException {
+    StrategyParameters strategyParameters = StrategyParameters.builder()
+                                                .instances(1)
+                                                .unitType(NGInstanceUnitType.COUNT)
+                                                .artifactType(ArtifactType.JAR)
+                                                .build();
     String result =
         cdngPipelineExecutionStrategyHelper.generateRollingYaml(ServiceDefinitionType.WINRM, strategyParameters, false);
     assertThat(result).contains(STRATEGY);
+    assertThat(result).contains("maxConcurrency: 1");
+    assertThat(result).contains("start: 0");
+    assertThat(result).contains("end: 1");
+    assertThat(result).contains("unit: Count");
   }
 
   @Test
@@ -74,5 +122,10 @@ public class CDNGPipelineExecutionStrategyHelperTest extends CategoryTest {
     String result =
         cdngPipelineExecutionStrategyHelper.generateCanaryYaml(ServiceDefinitionType.WINRM, strategyParameters, false);
     assertThat(result).contains(STRATEGY);
+    assertThat(result).contains("start: 0");
+    assertThat(result).contains("end: 50");
+    assertThat(result).contains("start: 50");
+    assertThat(result).contains("end: 100");
+    assertThat(result).contains("unit: Percentage");
   }
 }
