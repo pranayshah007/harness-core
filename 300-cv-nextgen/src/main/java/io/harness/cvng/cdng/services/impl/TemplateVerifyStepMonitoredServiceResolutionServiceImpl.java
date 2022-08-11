@@ -51,8 +51,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 
+@Slf4j
 public class TemplateVerifyStepMonitoredServiceResolutionServiceImpl
     implements VerifyStepMonitoredServiceResolutionService {
   @Inject private Clock clock;
@@ -118,6 +120,20 @@ public class TemplateVerifyStepMonitoredServiceResolutionServiceImpl
         getTemplateYaml(templateMonitoredServiceSpec));
     if (Objects.nonNull(monitoredServiceDTO) && Objects.nonNull(monitoredServiceDTO.getSources())
         && CollectionUtils.isNotEmpty(monitoredServiceDTO.getSources().getHealthSources())) {
+      try {
+        if (Objects.isNull(
+                monitoredServiceService.get(ProjectParams.builder()
+                                                .projectIdentifier(serviceEnvironmentParams.getProjectIdentifier())
+                                                .orgIdentifier(serviceEnvironmentParams.getOrgIdentifier())
+                                                .accountIdentifier(serviceEnvironmentParams.getAccountIdentifier())
+                                                .build(),
+                    monitoredServiceDTO.getIdentifier()))) {
+          monitoredServiceService.create(serviceEnvironmentParams.getAccountIdentifier(), monitoredServiceDTO);
+        }
+      } catch (Exception e) {
+        log.error(e.getMessage() + " Failed to persist monitored service");
+        log.error(e.getStackTrace().toString());
+      }
       populateCvConfigAndHealSourceData(serviceEnvironmentParams, monitoredServiceDTO.getSources().getHealthSources(),
           resolvedCVConfigInfoBuilder, executionIdentifier);
     } else {
