@@ -584,6 +584,7 @@ resourceConstraintInstances {"name": "accountId_1", "background": true} {"accoun
 resourceConstraintInstances {"name": "app_release_entity", "background": true} {"appId": 1, "releaseEntityType": 1, "releaseEntityId": 1}
 resourceConstraintInstances {"name": "constraintStateUnitOrderIdx", "background": true} {"resourceConstraintId": 1, "state": 1, "resourceUnit": 1, "order": 1}
 resourceConstraintInstances {"name": "iterationIndex", "background": true} {"state": 1, "nextIteration": 1}
+resourceConstraintInstances {"name": "releaseEntity_state", "background": true} {"releaseEntityId": 1, "state": 1}
 resourceConstraintInstances {"name": "uniqueUnitOrder", "unique": true} {"resourceConstraintId": 1, "resourceUnit": 1, "order": 1}
 resourceConstraintInstances {"name": "usageIndex", "background": true} {"resourceConstraintId": 1, "order": 1}
 resourceConstraintInstances {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
