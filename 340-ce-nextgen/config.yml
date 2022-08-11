@@ -126,6 +126,8 @@ featureFlagConfig:
   featureFlagSystem: LOCAL
   syncFeaturesToCF: false
 
+deploymentClusterName: ""
+
 gcpConfig:
   gcpProjectId: gcpProjectIdPlaceHolder
   gcpAwsConnectorCrudPubSubTopic: "ce-aws-connector-crud"
@@ -176,6 +178,14 @@ segmentConfiguration:
   enabled: true
   url: https://api.segment.io/v1/
   apiKey: UvSVfxy6KzApDrrlhCqSjJBlgPeEDBdf
+
+accessControlClient:
+  enableAccessControl: true
+  accessControlServiceConfig:
+    baseUrl: http://localhost:9006
+    connectTimeOutSeconds: 15
+    readTimeOutSeconds: 15
+  accessControlServiceSecret: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
 
 auditClientConfig:
   baseUrl: http://localhost:9005/api/

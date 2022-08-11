@@ -288,6 +288,7 @@ public class OwnerRule implements TestRule {
   public static final String SOURABH = "sourabh.awashti";
   public static final String VIKYATH_HAREKAL = "vikyath.harekal";
   public static final String VINICIUS = "vinicius.calasans";
+  public static final String GAURAV_NANDA = "gaurav.nanda";
   public static final String ANKIT_TIWARI = "ankit.tiwari";
   @Deprecated public static final String UNKNOWN = "unknown";
 
@@ -508,6 +509,7 @@ public class OwnerRule implements TestRule {
           .put(SOURABH, defaultUserInfo(SOURABH).slack("U03J4CFGQH1").team(CDP).build())
           .put(VIKYATH_HAREKAL, defaultUserInfo(VIKYATH_HAREKAL).slack("U03JNRMSLSK").team(CDP).build())
           .put(VINICIUS, defaultUserInfo(VINICIUS).slack("U03N9NKBLS3").team(SPG).build())
+          .put(GAURAV_NANDA, defaultUserInfo(GAURAV_NANDA).slack("U03E7JHB70C").team(PL).build())
           .put(ANKIT_TIWARI, defaultUserInfo(ANKIT_TIWARI).slack("U03S7RGTEBS").team(CDC).build())
           .build();
 

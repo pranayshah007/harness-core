@@ -50,6 +50,8 @@ public class InitializeStepGenerator {
     boolean pipelineMatrixEnabled = ciFeatureFlagService.isEnabled(FeatureName.PIPELINE_MATRIX, accountId);
     if (pipelineMatrixEnabled) {
       for (ExecutionWrapperConfig config : executionElement.getSteps()) {
+        // Inject the envVariables before calling strategy expansion
+        IntegrationStageUtils.injectLoopEnvVariables(config);
         ExpandedExecutionWrapperInfo expandedExecutionWrapperInfo = strategyHelper.expandExecutionWrapperConfig(config);
         expandedExecutionElement.addAll(expandedExecutionWrapperInfo.getExpandedExecutionConfigs());
         strategyExpansionMap.putAll(expandedExecutionWrapperInfo.getUuidToStrategyExpansionData());

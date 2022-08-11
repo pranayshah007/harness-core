@@ -415,7 +415,6 @@ public class K8sTaskHelper {
       case Local:
         return writeManifestFilesToDirectory(
             delegateManifestConfig.getManifestFiles(), manifestFilesDirectory, executionLogCallback);
-
       case OC_TEMPLATES:
       case Remote:
       case HelmSourceRepo:

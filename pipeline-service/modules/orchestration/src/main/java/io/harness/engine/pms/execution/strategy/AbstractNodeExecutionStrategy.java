@@ -23,6 +23,7 @@ import io.harness.pms.contracts.execution.events.InitiateMode;
 import io.harness.pms.contracts.execution.events.SdkResponseEventProto;
 import io.harness.pms.execution.utils.AmbianceUtils;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import java.util.concurrent.ExecutorService;
@@ -71,7 +72,8 @@ public abstract class AbstractNodeExecutionStrategy<P extends Node, M extends Pm
     }
   }
 
-  private NodeExecution createAndRunNodeExecution(
+  @VisibleForTesting
+  NodeExecution createAndRunNodeExecution(
       Ambiance ambiance, P node, M metadata, String notifyId, String parentId, String previousId) {
     NodeExecution savedExecution = createNodeExecution(ambiance, node, metadata, notifyId, parentId, previousId);
     if (pmsFeatureFlagService.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.NG_EXECUTION_INPUT)

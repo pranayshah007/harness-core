@@ -199,6 +199,7 @@ public class AppDynamicsCVConfig extends MetricCVConfig<MetricInfo> {
                         .projectIdentifier(getProjectIdentifier())
                         .dataSourceType(getType())
                         .metricType(metric.getType())
+                        .metricIdentifier(metric.getIdentifier())
                         .metricName(metricPackDTO.getMetricName())
                         .action(metricPackDTO.getType().getTimeSeriesThresholdActionType())
                         .criteria(criteria)

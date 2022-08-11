@@ -11,7 +11,6 @@ import io.harness.ChangeHandler;
 import io.harness.changehandlers.ProjectsChangeDataHandler;
 import io.harness.changehandlers.TagsInfoCDChangeDataHandler;
 import io.harness.ng.core.entities.Project;
-import io.harness.persistence.PersistentEntity;
 
 import com.google.inject.Inject;
 
@@ -28,7 +27,7 @@ public class ProjectEntity implements CDCEntity<Project> {
   }
 
   @Override
-  public Class<? extends PersistentEntity> getSubscriptionEntity() {
+  public Class<Project> getSubscriptionEntity() {
     return Project.class;
   }
 }

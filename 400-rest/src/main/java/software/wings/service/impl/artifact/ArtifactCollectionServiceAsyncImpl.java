@@ -236,7 +236,7 @@ public class ArtifactCollectionServiceAsyncImpl implements ArtifactCollectionSer
   }
 
   @Override
-  public List<Artifact> collectNewArtifacts(String appId, String artifactStreamId) {
+  public void collectNewArtifacts(String appId, String artifactStreamId) {
     throw new InvalidRequestException("Method not supported");
   }
 }

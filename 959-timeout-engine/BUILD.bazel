@@ -10,8 +10,8 @@ java_library(
     visibility = ["//visibility:public"],
     deps = [
         "//:lombok",
+        "//959-ng-persistence:module",
         "//959-timeout-engine/src/main/proto:950_timeout_engine_java_proto",
-        "//960-persistence:module",
         "//980-commons:module",
         "//999-annotations:module",
     ],
@@ -25,7 +25,7 @@ java_library(
     deps = [
         ":module",
         "//:lombok",
-        "//960-persistence:module",
+        "//959-ng-persistence:module",
         "//960-persistence:supporter-test",
         "//980-commons:module",
         "//990-commons-test:module",

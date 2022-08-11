@@ -17,6 +17,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.EmbeddedUser;
 import io.harness.data.validator.Trimmed;
+import io.harness.iterator.PersistentRegularIterable;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.MongoIndex;
@@ -62,7 +63,7 @@ import org.mongodb.morphia.annotations.Transient;
 @HarnessEntity(exportable = true)
 @FieldNameConstants(innerTypeName = "YamlGitConfigKeys")
 public class YamlGitConfig implements EncryptableSetting, PersistentEntity, UuidAware, CreatedAtAware, CreatedByAware,
-                                      UpdatedAtAware, UpdatedByAware, ApplicationAccess {
+                                      UpdatedAtAware, UpdatedByAware, ApplicationAccess, PersistentRegularIterable {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
         .add(CompoundMongoIndex.builder()
@@ -113,10 +114,26 @@ public class YamlGitConfig implements EncryptableSetting, PersistentEntity, Uuid
   @NotEmpty private String entityId;
   @NotNull private EntityType entityType;
   @Transient private String entityName;
+  private long gitPollingIterator;
 
   @Override
   public SettingVariableTypes getSettingType() {
     return YAML_GIT_SYNC;
+  }
+
+  @Override
+  public Long obtainNextIteration(String fieldName) {
+    if (YamlGitConfigKeys.gitPollingIterator.equals(fieldName)) {
+      return this.gitPollingIterator;
+    }
+    throw new IllegalArgumentException("Invalid fieldName " + fieldName);
+  }
+
+  @Override
+  public void updateNextIteration(String fieldName, long nextIteration) {
+    if (YamlGitConfigKeys.gitPollingIterator.equals(fieldName)) {
+      this.gitPollingIterator = nextIteration;
+    }
   }
 
   public enum SyncMode { GIT_TO_HARNESS, HARNESS_TO_GIT, BOTH, NONE }

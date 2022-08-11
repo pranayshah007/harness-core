@@ -31,7 +31,6 @@ import io.harness.template.TemplateFilterPropertiesDTO;
 import io.harness.template.entity.TemplateEntity;
 import io.harness.template.entity.TemplateEntity.TemplateEntityKeys;
 import io.harness.template.gitsync.TemplateGitSyncBranchContextGuard;
-import io.harness.template.utils.NGTemplateFeatureFlagHelperService;
 
 import java.util.Collections;
 import java.util.List;
@@ -52,8 +51,6 @@ public class NGTemplateServiceHelperTest extends CategoryTest {
   @Mock NGTemplateRepository templateRepository;
   @Mock GitSyncSdkService gitSyncSdkService;
 
-  @Mock NGTemplateFeatureFlagHelperService ngTemplateFeatureFlagHelperService;
-
   private final String ACCOUNT_ID = "account_id";
   private final String ORG_IDENTIFIER = "orgId";
   private final String PROJ_IDENTIFIER = "projId";
@@ -63,8 +60,7 @@ public class NGTemplateServiceHelperTest extends CategoryTest {
   @Before
   public void setUp() {
     MockitoAnnotations.initMocks(this);
-    templateServiceHelper = new NGTemplateServiceHelper(
-        filterService, templateRepository, gitSyncSdkService, ngTemplateFeatureFlagHelperService);
+    templateServiceHelper = new NGTemplateServiceHelper(filterService, templateRepository, gitSyncSdkService);
   }
 
   @Test

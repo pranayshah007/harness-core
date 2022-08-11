@@ -28,6 +28,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDNGTestBase;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.common.beans.SetupAbstractionKeys;
+import io.harness.cdng.execution.service.StageExecutionInfoService;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.azure.appservice.AzureAppServicePreDeploymentData;
@@ -62,7 +63,8 @@ import org.mockito.Mock;
 public class AzureWebAppSwapSlotStepTest extends CDNGTestBase {
   @Mock private CDStepHelper cdStepHelper;
   @Mock private AzureWebAppStepHelper stepHelper;
-  @Mock ExecutionSweepingOutputService executionSweepingOutputService;
+  @Mock private ExecutionSweepingOutputService executionSweepingOutputService;
+  @Mock private StageExecutionInfoService stageExecutionInfoService;
 
   @InjectMocks private AzureWebAppSwapSlotStep azureWebAppSwapSlotStep;
 
@@ -143,6 +145,34 @@ public class AzureWebAppSwapSlotStepTest extends CDNGTestBase {
 
     assertThat(stepResponse.getStatus()).isEqualTo(Status.SUCCEEDED);
     assertThat(stepResponse.getStepOutcomes()).isNotNull();
+    verify(executionSweepingOutputService, times(1)).consume(eq(ambiance), eq(OUTPUT_NAME), any(), any());
+  }
+
+  @Test
+  @Owner(developers = TMACARI)
+  @Category(UnitTests.class)
+  public void testHandleResponseWithSecurityContextPackageDeployment() throws Exception {
+    List<UnitProgress> unitProgresses = singletonList(UnitProgress.newBuilder().build());
+    UnitProgressData unitProgressData = UnitProgressData.builder().unitProgresses(unitProgresses).build();
+    AzureWebAppTaskResponse azureWebAppTaskResponse =
+        AzureWebAppTaskResponse.builder()
+            .commandUnitsProgress(unitProgressData)
+            .requestResponse(AzureWebAppSwapSlotsResponseNG.builder().deploymentProgressMarker(SLOT_SWAP).build())
+            .build();
+    doReturn(true).when(stepHelper).isPackageArtifactType(any());
+    doReturn(AzureAppServicePreDeploymentData.builder().appName("webAppName").slotName("slotName").build())
+        .when(stepHelper)
+        .getPreDeploymentData(any(), any());
+
+    StepResponse stepResponse = azureWebAppSwapSlotStep.handleTaskResultWithSecurityContext(
+        ambiance, stepElementParameters, () -> azureWebAppTaskResponse);
+
+    assertThat(stepResponse.getStatus()).isEqualTo(Status.SUCCEEDED);
+    assertThat(stepResponse.getStepOutcomes()).isNotNull();
+
+    verify(stepHelper, times(1)).getPrimaryArtifactOutcome(eq(ambiance));
+    verify(stepHelper, times(1)).isPackageArtifactType(any());
+    verify(stageExecutionInfoService, times(1)).update(any(), any(), any());
     verify(executionSweepingOutputService, times(1)).consume(eq(ambiance), eq(OUTPUT_NAME), any(), any());
   }
 

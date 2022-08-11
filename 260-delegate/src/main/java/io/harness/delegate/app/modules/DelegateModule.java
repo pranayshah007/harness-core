@@ -66,6 +66,11 @@ import io.harness.connector.service.git.NGGitService;
 import io.harness.connector.service.git.NGGitServiceImpl;
 import io.harness.connector.service.scm.ScmDelegateClient;
 import io.harness.connector.task.ConnectorValidationHandler;
+import io.harness.connector.task.artifactory.ArtifactoryValidationHandler;
+import io.harness.connector.task.aws.AwsValidationHandler;
+import io.harness.connector.task.azure.AzureValidationHandler;
+import io.harness.connector.task.docker.DockerValidationHandler;
+import io.harness.connector.task.gcp.GcpValidationTaskHandler;
 import io.harness.connector.task.git.GitValidationHandler;
 import io.harness.cvng.CVNGDataCollectionDelegateServiceImpl;
 import io.harness.cvng.K8InfoDataServiceImpl;
@@ -140,7 +145,6 @@ import io.harness.delegate.task.MicrosoftTeamsSenderDelegateTask;
 import io.harness.delegate.task.PagerDutySenderDelegateTask;
 import io.harness.delegate.task.SlackSenderDelegateTask;
 import io.harness.delegate.task.artifactory.ArtifactoryDelegateTask;
-import io.harness.delegate.task.artifactory.ArtifactoryValidationHandler;
 import io.harness.delegate.task.artifacts.ArtifactSourceDelegateRequest;
 import io.harness.delegate.task.artifacts.DelegateArtifactTaskHandler;
 import io.harness.delegate.task.artifacts.artifactory.ArtifactoryArtifactDelegateRequest;
@@ -167,9 +171,7 @@ import io.harness.delegate.task.artifacts.s3.S3ArtifactTaskNG;
 import io.harness.delegate.task.aws.AwsCodeCommitApiDelegateTask;
 import io.harness.delegate.task.aws.AwsCodeCommitDelegateTask;
 import io.harness.delegate.task.aws.AwsDelegateTask;
-import io.harness.delegate.task.aws.AwsValidationHandler;
 import io.harness.delegate.task.aws.S3FetchFilesTaskNG;
-import io.harness.delegate.task.azure.AzureValidationHandler;
 import io.harness.delegate.task.azure.appservice.AzureAppServiceTaskParameters.AzureAppServiceTaskType;
 import io.harness.delegate.task.azure.appservice.webapp.AzureWebAppTaskNG;
 import io.harness.delegate.task.azure.appservice.webapp.handler.AzureWebAppFetchPreDeploymentDataRequestHandler;
@@ -183,6 +185,8 @@ import io.harness.delegate.task.azure.appservice.webapp.ng.request.AzureWebAppTa
 import io.harness.delegate.task.azure.arm.AzureARMTaskParameters;
 import io.harness.delegate.task.azure.artifact.AzureArtifactDownloadService;
 import io.harness.delegate.task.azure.artifact.AzureArtifactDownloadServiceImpl;
+import io.harness.delegate.task.azure.exception.AzureAppServicesRuntimeExceptionHandler;
+import io.harness.delegate.task.azure.exception.AzureClientExceptionHandler;
 import io.harness.delegate.task.azure.resource.operation.AzureResourceProvider;
 import io.harness.delegate.task.cek8s.CEKubernetesTestConnectionDelegateTask;
 import io.harness.delegate.task.cek8s.CEKubernetesValidationHandler;
@@ -201,13 +205,11 @@ import io.harness.delegate.task.cloudformation.handlers.CloudformationCreateStac
 import io.harness.delegate.task.cloudformation.handlers.CloudformationDeleteStackTaskHandler;
 import io.harness.delegate.task.cvng.CVConnectorValidationHandler;
 import io.harness.delegate.task.docker.DockerTestConnectionDelegateTask;
-import io.harness.delegate.task.docker.DockerValidationHandler;
 import io.harness.delegate.task.executioncapability.BatchCapabilityCheckTask;
 import io.harness.delegate.task.gcp.GcpTask;
 import io.harness.delegate.task.gcp.GcpTaskType;
 import io.harness.delegate.task.gcp.taskHandlers.GcpListBucketsTaskHandler;
 import io.harness.delegate.task.gcp.taskHandlers.GcpListClustersTaskHandler;
-import io.harness.delegate.task.gcp.taskHandlers.GcpValidationTaskHandler;
 import io.harness.delegate.task.gcp.taskHandlers.TaskHandler;
 import io.harness.delegate.task.git.GitFetchTaskNG;
 import io.harness.delegate.task.git.NGGitCommandTask;
@@ -1291,7 +1293,6 @@ public class DelegateModule extends AbstractModule {
 
     MapBinder<GcpTaskType, TaskHandler> gcpTaskTypeToTaskHandlerMap =
         MapBinder.newMapBinder(binder(), GcpTaskType.class, TaskHandler.class);
-    gcpTaskTypeToTaskHandlerMap.addBinding(GcpTaskType.VALIDATE).to(GcpValidationTaskHandler.class);
     gcpTaskTypeToTaskHandlerMap.addBinding(GcpTaskType.LIST_CLUSTERS).to(GcpListClustersTaskHandler.class);
     gcpTaskTypeToTaskHandlerMap.addBinding(GcpTaskType.LIST_BUCKETS).to(GcpListBucketsTaskHandler.class);
 
@@ -1923,5 +1924,9 @@ public class DelegateModule extends AbstractModule {
         exception -> exceptionHandlerMapBinder.addBinding(exception).to(TerraformRuntimeExceptionHandler.class));
     KubernetesCliRuntimeExceptionHandler.exceptions().forEach(
         exception -> exceptionHandlerMapBinder.addBinding(exception).to(KubernetesCliRuntimeExceptionHandler.class));
+    AzureAppServicesRuntimeExceptionHandler.exceptions().forEach(
+        exception -> exceptionHandlerMapBinder.addBinding(exception).to(AzureAppServicesRuntimeExceptionHandler.class));
+    AzureClientExceptionHandler.exceptions().forEach(
+        exception -> exceptionHandlerMapBinder.addBinding(exception).to(AzureClientExceptionHandler.class));
   }
 }

@@ -22,6 +22,7 @@ import io.harness.shell.AbstractScriptExecutor;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.util.Map;
 
 @OwnedBy(CDP)
 @Singleton
@@ -30,7 +31,8 @@ public class SshCleanupCommandHandler implements CommandHandler {
 
   @Override
   public CommandExecutionStatus handle(CommandTaskParameters parameters, NgCommandUnit commandUnit,
-      ILogStreamingTaskClient logStreamingTaskClient, CommandUnitsProgress commandUnitsProgress) {
+      ILogStreamingTaskClient logStreamingTaskClient, CommandUnitsProgress commandUnitsProgress,
+      Map<String, Object> taskContext) {
     if (!(parameters instanceof SshCommandTaskParameters)) {
       throw new InvalidRequestException("Invalid task parameters submitted for command task.");
     }
@@ -54,6 +56,7 @@ public class SshCleanupCommandHandler implements CommandHandler {
             .executeOnDelegate(sshCommandTaskParameters.isExecuteOnDelegate())
             .host(sshCommandTaskParameters.getHost())
             .build();
+    context.getEnvironmentVariables().putAll((Map<String, String>) taskContext.get(RESOLVED_ENV_VARIABLES_KEY));
 
     AbstractScriptExecutor executor = sshScriptExecutorFactory.getExecutor(context);
 

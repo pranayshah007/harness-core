@@ -8,6 +8,7 @@
 package io.harness.ccm.views.graphql;
 
 import io.leangen.graphql.annotations.GraphQLNonNull;
+import io.swagger.annotations.ApiModelProperty;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Value;
@@ -18,6 +19,8 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class QLCEViewFilter {
   @GraphQLNonNull QLCEViewFieldInput field;
-  @GraphQLNonNull QLCEViewFilterOperator operator;
+  @ApiModelProperty(allowableValues = "NOT_IN,IN,EQUALS,NOT_NULL,NULL,LIKE")
+  @GraphQLNonNull
+  QLCEViewFilterOperator operator;
   @GraphQLNonNull String[] values;
 }

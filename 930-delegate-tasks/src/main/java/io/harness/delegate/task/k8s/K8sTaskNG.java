@@ -10,9 +10,12 @@ package io.harness.delegate.task.k8s;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.UUIDGenerator.convertBase64UuidToCanonicalForm;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
+import static io.harness.delegate.clienttools.ClientTool.OC;
 import static io.harness.filesystem.FileIo.createDirectoryIfDoesNotExist;
 import static io.harness.filesystem.FileIo.deleteDirectoryAndItsContentIfExists;
 import static io.harness.filesystem.FileIo.waitForDirectoryToBeAccessibleOutOfProcess;
+
+import static java.util.Objects.isNull;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.DelegateTaskPackage;
@@ -20,6 +23,7 @@ import io.harness.delegate.beans.DelegateTaskResponse;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
+import io.harness.delegate.clienttools.InstallUtils;
 import io.harness.delegate.exception.TaskNGDataException;
 import io.harness.delegate.k8s.K8sRequestHandler;
 import io.harness.delegate.task.AbstractDelegateRunnableTask;
@@ -30,6 +34,7 @@ import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.k8s.K8sGlobalConfigService;
 import io.harness.k8s.model.HelmVersion;
 import io.harness.k8s.model.K8sDelegateTaskParams;
+import io.harness.k8s.model.K8sDelegateTaskParams.K8sDelegateTaskParamsBuilder;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.logging.CommandExecutionStatus;
 
@@ -109,17 +114,13 @@ public class K8sTaskNG extends AbstractDelegateRunnableTask {
             ? ((HelmChartManifestDelegateConfig) k8sDeployRequest.getManifestDelegateConfig()).getHelmVersion()
             : null;
 
-        K8sDelegateTaskParams k8SDelegateTaskParams =
-            K8sDelegateTaskParams.builder()
-                .kubectlPath(k8sGlobalConfigService.getKubectlPath(k8sDeployRequest.isUseNewKubectlVersion()))
-                .kubeconfigPath(KUBECONFIG_FILENAME)
-                .workingDirectory(workingDirectory)
-                .goTemplateClientPath(k8sGlobalConfigService.getGoTemplateClientPath())
-                .helmPath(k8sGlobalConfigService.getHelmPath(helmVersion))
-                .ocPath(k8sGlobalConfigService.getOcPath())
-                .kustomizeBinaryPath(
-                    k8sGlobalConfigService.getKustomizePath(k8sDeployRequest.isUseLatestKustomizeVersion()))
-                .build();
+        ManifestType manifestType = k8sDeployRequest.getManifestDelegateConfig() != null
+            ? k8sDeployRequest.getManifestDelegateConfig().getManifestType()
+            : null;
+        K8sDelegateTaskParams k8SDelegateTaskParams = getK8sDelegateTaskParamsBasedOnManifestType(workingDirectory,
+            helmVersion, k8sDeployRequest.isUseNewKubectlVersion(), k8sDeployRequest.isUseLatestKustomizeVersion(),
+            manifestType);
+
         // TODO: @anshul/vaibhav , fix this
         //        logK8sVersion(k8sDeployRequest, k8SDelegateTaskParams, commandUnitsProgress);
 
@@ -184,5 +185,40 @@ public class K8sTaskNG extends AbstractDelegateRunnableTask {
   @Override
   public boolean isSupportingErrorFramework() {
     return true;
+  }
+
+  public K8sDelegateTaskParams getK8sDelegateTaskParamsBasedOnManifestType(String workingDirectory,
+      HelmVersion helmVersion, boolean isUseNewKubectlVersion, boolean isUseLatestKustomizeVersion,
+      ManifestType manifestType) {
+    K8sDelegateTaskParamsBuilder k8sDelegateTaskParamsBuilder =
+        K8sDelegateTaskParams.builder()
+            .kubectlPath(k8sGlobalConfigService.getKubectlPath(isUseNewKubectlVersion))
+            .kubeconfigPath(KUBECONFIG_FILENAME)
+            .workingDirectory(workingDirectory);
+
+    if (!isNull(manifestType)) {
+      switch (manifestType) {
+        case K8S_MANIFEST:
+          k8sDelegateTaskParamsBuilder.goTemplateClientPath(k8sGlobalConfigService.getGoTemplateClientPath());
+          break;
+
+        case HELM_CHART:
+          k8sDelegateTaskParamsBuilder.helmPath(k8sGlobalConfigService.getHelmPath(helmVersion));
+          break;
+
+        case OPENSHIFT_TEMPLATE:
+          k8sDelegateTaskParamsBuilder.ocPath(InstallUtils.getLatestVersionPath(OC));
+          break;
+
+        case KUSTOMIZE:
+          k8sDelegateTaskParamsBuilder.kustomizeBinaryPath(
+              k8sGlobalConfigService.getKustomizePath(isUseLatestKustomizeVersion));
+          break;
+
+        default:
+          return k8sDelegateTaskParamsBuilder.build();
+      }
+    }
+    return k8sDelegateTaskParamsBuilder.build();
   }
 }

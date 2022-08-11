@@ -23,5 +23,6 @@ public class NGTemplateResolveExceptionV2 extends NGTemplateException {
   public NGTemplateResolveExceptionV2(String message, EnumSet<ReportTarget> reportTarget,
       ValidateTemplateInputsResponseDTO validateTemplateInputsResponseDTO) {
     super(message, reportTarget, validateTemplateInputsResponseDTO);
+    this.validateTemplateInputsResponseDTO = validateTemplateInputsResponseDTO;
   }
 }

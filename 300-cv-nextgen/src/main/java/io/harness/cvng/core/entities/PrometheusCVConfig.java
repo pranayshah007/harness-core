@@ -213,6 +213,7 @@ public class PrometheusCVConfig extends MetricCVConfig<MetricInfo> {
                             .accountId(getAccountId())
                             .projectIdentifier(getProjectIdentifier())
                             .dataSourceType(getType())
+                            .metricIdentifier(metric.getIdentifier())
                             .metricType(metric.getType())
                             .metricName(metricPackDTO.getMetricName())
                             .action(metricPackDTO.getType().getTimeSeriesThresholdActionType())

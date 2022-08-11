@@ -51,6 +51,7 @@ import io.harness.globalcontex.DelegateTokenGlobalContextData;
 import io.harness.globalcontex.EntityOperationIdentifier;
 import io.harness.globalcontex.PurgeGlobalContextData;
 import io.harness.helm.HelmCliCommandType;
+import io.harness.helm.HelmCommandType;
 import io.harness.helm.HelmSubCommandType;
 import io.harness.jira.JiraAction;
 import io.harness.jira.JiraActionNG;
@@ -433,5 +434,6 @@ public class ApiServiceBeansKryoRegister implements KryoRegistrar {
     kryo.register(ServiceNowTemplate.class, 97113);
     kryo.register(FileSourceType.class, 97115);
     kryo.register(DockerRegistryProviderType.class, 19434);
+    kryo.register(HelmCommandType.class, 98400);
   }
 }

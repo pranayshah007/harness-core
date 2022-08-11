@@ -11,7 +11,6 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.exception.WingsException.USER;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.enforcement.constants.FeatureRestrictionName;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.exception.InvalidRequestException;
@@ -26,12 +25,14 @@ import io.harness.ng.core.template.TemplateApplyRequestDTO;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
 import io.harness.ng.core.template.TemplateReferenceRequestDTO;
 import io.harness.ng.core.template.exception.NGTemplateResolveException;
+import io.harness.ng.core.template.exception.NGTemplateResolveExceptionV2;
 import io.harness.pms.helpers.PmsFeatureFlagHelper;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.template.beans.refresh.ValidateTemplateInputsResponseDTO;
 import io.harness.template.beans.refresh.YamlFullRefreshResponseDTO;
 import io.harness.template.remote.TemplateResourceClient;
+import io.harness.template.yaml.TemplateRefHelper;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -68,23 +69,24 @@ public class PMSPipelineTemplateHelper {
 
   public TemplateMergeResponseDTO resolveTemplateRefsInPipeline(String accountId, String orgId, String projectId,
       String yaml, boolean checkForTemplateAccess, boolean getMergedTemplateWithTemplateReferences) {
-    if (pmsFeatureFlagHelper.isEnabled(accountId, FeatureName.NG_TEMPLATES)
+    if (TemplateRefHelper.hasTemplateRef(yaml)
         && pipelineEnforcementService.isFeatureRestricted(accountId, FeatureRestrictionName.TEMPLATE_SERVICE.name())) {
       String TEMPLATE_RESOLVE_EXCEPTION_MSG = "Exception in resolving template refs in given pipeline yaml.";
       long start = System.currentTimeMillis();
       try {
         GitEntityInfo gitEntityInfo = GitContextHelper.getGitEntityInfo();
         if (gitEntityInfo != null) {
-          return NGRestUtils.getResponse(templateResourceClient.applyTemplatesOnGivenYaml(accountId, orgId, projectId,
-              gitEntityInfo.getBranch(), gitEntityInfo.getYamlGitConfigId(), true,
-              TemplateApplyRequestDTO.builder()
-                  .originalEntityYaml(yaml)
-                  .checkForAccess(checkForTemplateAccess)
-                  .getMergedYamlWithTemplateField(getMergedTemplateWithTemplateReferences)
-                  .build()));
+          return NGRestUtils.getResponse(
+              templateResourceClient.applyTemplatesOnGivenYamlV2(accountId, orgId, projectId, gitEntityInfo.getBranch(),
+                  gitEntityInfo.getYamlGitConfigId(), true, gitEntityInfo.getParentEntityRepoURL(),
+                  TemplateApplyRequestDTO.builder()
+                      .originalEntityYaml(yaml)
+                      .checkForAccess(checkForTemplateAccess)
+                      .getMergedYamlWithTemplateField(getMergedTemplateWithTemplateReferences)
+                      .build()));
         }
         return NGRestUtils.getResponse(
-            templateResourceClient.applyTemplatesOnGivenYaml(accountId, orgId, projectId, null, null, null,
+            templateResourceClient.applyTemplatesOnGivenYamlV2(accountId, orgId, projectId, null, null, null, null,
                 TemplateApplyRequestDTO.builder()
                     .originalEntityYaml(yaml)
                     .checkForAccess(checkForTemplateAccess)
@@ -94,11 +96,16 @@ public class PMSPipelineTemplateHelper {
         if (e.getMetadata() instanceof TemplateInputsErrorMetadataDTO) {
           throw new NGTemplateResolveException(
               TEMPLATE_RESOLVE_EXCEPTION_MSG, USER, (TemplateInputsErrorMetadataDTO) e.getMetadata());
+        } else if (e.getMetadata() instanceof ValidateTemplateInputsResponseDTO) {
+          throw new NGTemplateResolveExceptionV2(
+              TEMPLATE_RESOLVE_EXCEPTION_MSG, USER, (ValidateTemplateInputsResponseDTO) e.getMetadata());
         } else {
           throw new NGTemplateException(e.getMessage(), e);
         }
       } catch (NGTemplateResolveException e) {
         throw new NGTemplateResolveException(e.getMessage(), USER, e.getErrorResponseDTO());
+      } catch (NGTemplateResolveExceptionV2 e) {
+        throw new NGTemplateResolveExceptionV2(e.getMessage(), USER, e.getValidateTemplateInputsResponseDTO());
       } catch (UnexpectedException e) {
         log.error("Error connecting to Template Service", e);
         throw new NGTemplateException(TEMPLATE_RESOLVE_EXCEPTION_MSG, e);

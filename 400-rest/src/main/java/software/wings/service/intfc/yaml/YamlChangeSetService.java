@@ -96,4 +96,7 @@ public interface YamlChangeSetService {
 
   List<YamlChangeSet> getChangeSetsWithStatus(String accountId, String appId, YamlGitConfig yamlGitConfig,
       int displayCount, List<YamlChangeSet.Status> statuses, Boolean gitToHarness);
+
+  YamlChangeSet pushYamlChangeSetForGitToHarness(
+      String accountId, String branchName, String connectorId, String repositoryName);
 }

@@ -146,6 +146,9 @@ public class HashicorpVaultEncryptor implements VaultEncryptor {
     } catch (IOException e) {
       String message = "Deletion of Vault secret at " + existingRecord.getEncryptionKey() + " failed";
       throw new SecretManagementDelegateException(VAULT_OPERATION_ERROR, message, e, USER);
+    } catch (HashiCorpVaultRuntimeException e) {
+      log.error("Failed to delete secret in Vault : {}", e.getMessage());
+      return false;
     }
   }
 
@@ -167,7 +170,11 @@ public class HashicorpVaultEncryptor implements VaultEncryptor {
         String oldFullPath = getFullPath(vaultConfig.getBasePath(), existingRecord.getEncryptionKey());
         if (!oldFullPath.equals(fullPath)) {
           if (deleteRequired) {
-            deleteSecret(accountId, existingRecord, vaultConfig);
+            try {
+              deleteSecret(accountId, existingRecord, vaultConfig);
+            } catch (Exception e) {
+              log.error("Delete secret failed in rename secret call with the following error {}", e.getMessage());
+            }
           }
         }
       }

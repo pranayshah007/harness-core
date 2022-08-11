@@ -22,6 +22,8 @@ import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.category.element.UnitTests;
+import io.harness.delegate.clienttools.ClientTool;
+import io.harness.delegate.clienttools.InstallUtils;
 import io.harness.delegate.task.git.ScmFetchFilesHelperNG;
 import io.harness.delegate.task.k8s.K8sTaskHelperBase;
 import io.harness.k8s.kubectl.Kubectl;
@@ -48,6 +50,7 @@ import org.junit.experimental.categories.Category;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.powermock.api.mockito.PowerMockito;
 import org.zeroturnaround.exec.ProcessOutput;
 import org.zeroturnaround.exec.ProcessResult;
@@ -65,6 +68,7 @@ public class K8sTaskHelperSecondaryTest extends WingsBaseTest {
   @Mock private ExecutionLogCallback executionLogCallback;
   @Mock private ScmFetchFilesHelperNG scmFetchFilesHelper;
   @InjectMocks private K8sTaskHelperBase k8sTaskHelperBase;
+  private static MockedStatic<Utils> mockUtil;
 
   @Test
   @Owner(developers = YOGESH)
@@ -152,16 +156,16 @@ public class K8sTaskHelperSecondaryTest extends WingsBaseTest {
   }
 
   private void setupForDoStatusCheckForAllResources() throws Exception {
-    mockStatic(Utils.class);
+    mockUtil = mockStatic(Utils.class);
     ProcessResult processResult = new ProcessResult(0, new ProcessOutput(" ".getBytes()));
-    when(Utils.executeScript(anyString(), anyString(), any(), any(), any())).thenReturn(processResult);
+    PowerMockito.when(Utils.executeScript(anyString(), anyString(), any(), any(), any())).thenReturn(processResult);
 
-    when(Utils.encloseWithQuotesIfNeeded("kubectl")).thenReturn("kubectl");
-    when(Utils.encloseWithQuotesIfNeeded("oc")).thenReturn("oc");
-    when(Utils.encloseWithQuotesIfNeeded("config-path")).thenReturn("config-path");
+    PowerMockito.when(Utils.encloseWithQuotesIfNeeded("kubectl")).thenReturn("kubectl");
+    PowerMockito.when(Utils.encloseWithQuotesIfNeeded("oc")).thenReturn("oc");
+    PowerMockito.when(Utils.encloseWithQuotesIfNeeded("config-path")).thenReturn("config-path");
 
     when(process.destroyForcibly()).thenReturn(process);
-    when(Utils.startScript(any(), any(), any(), any(), any())).thenReturn(startedProcess);
+    PowerMockito.when(Utils.startScript(any(), any(), any(), any(), any())).thenReturn(startedProcess);
     when(startedProcess.getProcess()).thenReturn(process);
   }
 
@@ -178,16 +182,20 @@ public class K8sTaskHelperSecondaryTest extends WingsBaseTest {
                                                       .build();
     Kubectl client = Kubectl.client("kubectl", "config-path");
 
+    MockedStatic<InstallUtils> mock = mockStatic(InstallUtils.class);
+    PowerMockito.when(InstallUtils.getLatestVersionPath(ClientTool.OC)).thenReturn("oc");
     if (allResources) {
       k8sTaskHelperBase.doStatusCheckForAllResources(client, Arrays.asList(resource.getResourceId()),
           k8sDelegateTaskParams, "default", executionLogCallback, true);
     } else {
       k8sTaskHelperBase.doStatusCheck(client, resource.getResourceId(), k8sDelegateTaskParams, executionLogCallback);
     }
+    mock.close();
 
     ArgumentCaptor<String> captor = ArgumentCaptor.forClass(String.class);
     PowerMockito.verifyStatic(Utils.class);
     Utils.executeScript(any(), captor.capture(), any(), any(), any());
     assertThat(captor.getValue()).isEqualTo(expectedOutput);
+    mockUtil.close();
   }
 }

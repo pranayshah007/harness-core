@@ -10,6 +10,7 @@ package io.harness.service.deploymentsummary;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.dtos.DeploymentSummaryDTO;
+import io.harness.dtos.InfrastructureMappingDTO;
 
 import java.util.Optional;
 
@@ -19,7 +20,9 @@ public interface DeploymentSummaryService {
 
   Optional<DeploymentSummaryDTO> getByDeploymentSummaryId(String deploymentSummaryId);
 
-  Optional<DeploymentSummaryDTO> getNthDeploymentSummaryFromNow(int N, String instanceSyncKey);
+  Optional<DeploymentSummaryDTO> getNthDeploymentSummaryFromNow(
+      int N, String instanceSyncKey, InfrastructureMappingDTO infrastructureMappingDTO);
 
-  Optional<DeploymentSummaryDTO> getLatestByInstanceKey(String instanceSyncKey);
+  Optional<DeploymentSummaryDTO> getLatestByInstanceKey(
+      String instanceSyncKey, InfrastructureMappingDTO infrastructureMappingDTO);
 }

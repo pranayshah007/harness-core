@@ -125,7 +125,7 @@ public class DelegateVersionService {
       }
     }
 
-    final List<String> ringVersion = delegateRingService.getDelegateVersionsForRing(ringName);
+    final List<String> ringVersion = delegateRingService.getDelegateVersionsForRing(ringName, true);
     if (!CollectionUtils.isEmpty(ringVersion)) {
       return ringVersion;
     }

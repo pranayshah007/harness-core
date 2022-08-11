@@ -8,7 +8,6 @@
 package io.harness.serializer.morphia;
 
 import io.harness.cache.CacheEntity;
-import io.harness.cache.SpringCacheEntity;
 import io.harness.dataretention.AccountDataRetentionEntity;
 import io.harness.iterator.PersistentCronIterable;
 import io.harness.iterator.PersistentFibonacciIterable;
@@ -64,7 +63,6 @@ public class PersistenceMorphiaRegistrar implements MorphiaRegistrar {
     set.add(PersistentRegularIterable.class);
     set.add(Queuable.class);
     set.add(WithMonitoring.class);
-    set.add(SpringCacheEntity.class);
     set.add(UpdatedAtAccess.class);
     set.add(UpdatedAtAware.class);
     set.add(UpdatedByAccess.class);

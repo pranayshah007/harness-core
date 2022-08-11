@@ -44,6 +44,7 @@ import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.times;
@@ -53,6 +54,8 @@ import static org.mockito.Mockito.when;
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.delegate.clienttools.ClientTool;
+import io.harness.delegate.clienttools.InstallUtils;
 import io.harness.delegate.k8s.K8sRollingRollbackBaseHandler.ResourceRecreationStatus;
 import io.harness.delegate.k8s.beans.K8sRollingRollbackHandlerConfig;
 import io.harness.delegate.task.k8s.K8sTaskHelperBase;
@@ -80,8 +83,10 @@ import org.junit.experimental.categories.Category;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
+import org.powermock.api.mockito.PowerMockito;
 import org.zeroturnaround.exec.ProcessOutput;
 import org.zeroturnaround.exec.ProcessResult;
 import org.zeroturnaround.exec.stream.LogOutputStream;
@@ -153,9 +158,12 @@ public class K8sRollingRollbackBaseHandlerTest extends CategoryTest {
         .when(k8sRollingRollbackBaseHandler)
         .runK8sExecutable(eq(k8sDelegateTaskParams), eq(logCallback), any(RolloutUndoCommand.class));
     doReturn(previousEligibleRelease).when(releaseHistory).getPreviousRollbackEligibleRelease(releaseNumber);
+    MockedStatic<InstallUtils> mock = mockStatic(InstallUtils.class);
+    PowerMockito.when(InstallUtils.getLatestVersionPath(ClientTool.OC)).thenReturn("oc");
 
     boolean rollback = k8sRollingRollbackBaseHandler.rollback(
         rollbackHandlerConfig, k8sDelegateTaskParams, releaseNumber, logCallback, emptySet(), false);
+    mock.close();
     assertThat(rollback).isTrue();
   }
 
@@ -380,9 +388,12 @@ public class K8sRollingRollbackBaseHandlerTest extends CategoryTest {
     releaseHistory.getReleases().add(buildReleaseMultipleManagedWorkloads(Succeeded));
     rollbackHandlerConfig.setRelease(releaseHistory.getLatestRelease());
     rollbackHandlerConfig.setReleaseHistory(releaseHistory);
+    MockedStatic<InstallUtils> mock = mockStatic(InstallUtils.class);
+    PowerMockito.when(InstallUtils.getLatestVersionPath(ClientTool.OC)).thenReturn("oc");
 
     final boolean success = k8sRollingRollbackBaseHandler.rollback(rollbackHandlerConfig,
         K8sDelegateTaskParams.builder().kubeconfigPath("kubeconfig").build(), 2, logCallback, emptySet(), false);
+    mock.close();
 
     ArgumentCaptor<RolloutUndoCommand> captor = ArgumentCaptor.forClass(RolloutUndoCommand.class);
     ArgumentCaptor<String> stringArgumentCaptor = ArgumentCaptor.forClass(String.class);

@@ -24,7 +24,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.engine.GovernanceService;
-import io.harness.exception.GitYamlException;
+import io.harness.exception.DuplicateFileImportException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.filter.FilterType;
 import io.harness.filter.dto.FilterDTO;
@@ -328,7 +328,7 @@ public class PMSPipelineServiceHelperTest extends CategoryTest {
     assertThatThrownBy(()
                            -> pmsPipelineServiceHelper.getRepoUrlAndCheckForFileUniqueness(
                                accountIdentifier, orgIdentifier, projectIdentifier, pipelineIdentifier, false))
-        .isInstanceOf(GitYamlException.class);
+        .isInstanceOf(DuplicateFileImportException.class);
     assertThat(pmsPipelineServiceHelper.getRepoUrlAndCheckForFileUniqueness(
                    accountIdentifier, orgIdentifier, projectIdentifier, pipelineIdentifier, true))
         .isEqualTo(repoUrl);

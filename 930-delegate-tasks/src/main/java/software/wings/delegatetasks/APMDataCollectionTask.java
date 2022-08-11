@@ -34,6 +34,8 @@ import io.harness.serializer.JsonUtils;
 import io.harness.time.Timestamp;
 
 import software.wings.beans.TaskType;
+import software.wings.delegatetasks.cv.CVAWSAuthHeaderSigner;
+import software.wings.delegatetasks.cv.CVAWSS4SignerBase;
 import software.wings.delegatetasks.cv.RequestExecutor;
 import software.wings.helpers.ext.apm.APMRestClient;
 import software.wings.service.impl.ThirdPartyApiCallLog;
@@ -54,6 +56,8 @@ import com.google.common.collect.HashBiMap;
 import com.google.common.collect.TreeBasedTable;
 import com.google.inject.Inject;
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -65,6 +69,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.StringTokenizer;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BooleanSupplier;
@@ -391,6 +396,82 @@ public class APMDataCollectionTask extends AbstractDelegateDataCollectionTask {
       return header;
     }
 
+    private Map<String, String> getQueryMapFromUrl(URL url) {
+      final Map<String, String> res = new HashMap<>();
+      final String query = url.getQuery();
+      if (null != query) {
+        final StringTokenizer st = new StringTokenizer(query, "&");
+        while (st.hasMoreTokens()) {
+          final String tok = st.nextToken();
+          final int delimPos = tok.indexOf('=');
+          final String key = tok.substring(0, delimPos).trim();
+          final String value = tok.substring(delimPos + 1).trim();
+
+          res.put(key, value);
+        }
+      }
+      return res;
+    }
+
+    // This is ugly String manipulation. But there's no other way around it for now. AWS requires some params be
+    // encoded.
+    private String getEncodedUrl(URL endpointUrl, Map<String, String> options) {
+      StringBuilder queryParams = new StringBuilder();
+      options.forEach((k, v) -> {
+        try {
+          queryParams.append(k);
+          queryParams.append('=');
+          queryParams.append(URLEncoder.encode(v, "UTF-8"));
+          queryParams.append('&');
+        } catch (Exception ex) {
+          log.error("Exception while processing the query in AWS Prometheus", ex);
+        }
+      });
+      String finalQparam = queryParams.toString();
+
+      if (finalQparam.endsWith("&")) {
+        finalQparam = finalQparam.substring(0, finalQparam.length() - 1);
+      }
+      return endpointUrl.getProtocol() + "://" + endpointUrl.getHost() + endpointUrl.getPath() + "?" + finalQparam;
+    }
+
+    private String getAwsAuthHeader(
+        BiMap<String, Object> headersBiMap, BiMap<String, Object> optionsBiMap, String url) {
+      URL endpoint = null;
+      log.info("In getAwsAuthHeader for AWS Prometheus");
+      try {
+        endpoint = new URL(url);
+        // make query params as a map
+        Map<String, String> queryMap = getQueryMapFromUrl(endpoint);
+
+        String secretKey = decryptedFields.get("secretKey");
+        String accessKey = dataCollectionInfo.getPrometheusInfo().getAccessKey();
+        if (accessKey == null) {
+          accessKey = decryptedFields.get("accessKey");
+        }
+        Map<String, String> headerMap = new HashMap<>();
+        optionsBiMap.forEach((k, v) -> queryMap.put(k, (String) v));
+        // headersBiMap.forEach((k, v) -> headerMap.put(k, (String) v));
+
+        // this is exclusively written for AWS Managed Prometheus. So we're assuming a GET method.
+        // encode the endpoint and it's query params.
+        String encodedUrlStr = getEncodedUrl(endpoint, queryMap);
+        URL encodedUrl = new URL(encodedUrlStr);
+
+        CVAWSAuthHeaderSigner signer =
+            new CVAWSAuthHeaderSigner(encodedUrl, "GET", dataCollectionInfo.getPrometheusInfo().getAwsService(),
+                dataCollectionInfo.getPrometheusInfo().getAwsRegion());
+
+        String authSign =
+            signer.computeSignature(headerMap, queryMap, CVAWSS4SignerBase.EMPTY_BODY_SHA256, accessKey, secretKey);
+        headersBiMap.putAll(headerMap);
+        headersBiMap.put("Authorization", authSign);
+        return encodedUrlStr.replace(dataCollectionInfo.getBaseUrl(), "");
+      } catch (MalformedURLException e) {
+        log.error("Exception while parsing URL in AWS Prometheus", e);
+      }
+      return null;
+    }
     private List<APMResponseParser.APMResponseData> collect(String baseUrl, boolean validateCert,
         Map<String, String> headers, Map<String, String> options, String initialUrl, List<APMMetricInfo> metricInfos,
         AnalysisComparisonStrategy strategy) throws IOException {
@@ -456,6 +537,7 @@ public class APMDataCollectionTask extends AbstractDelegateDataCollectionTask {
           // This is not a batch query
           for (String host : dataCollectionInfo.getHosts().keySet()) {
             List<String> curUrls = resolveDollarReferences(initialUrl, host, strategy);
+
             if (!isEmpty(body)) {
               String resolvedBody = resolvedUrl(body, host, lastEndTime, System.currentTimeMillis());
               Map<String, Object> bodyMap =
@@ -469,13 +551,21 @@ public class APMDataCollectionTask extends AbstractDelegateDataCollectionTask {
                                           .postCollect(curUrl, headersBiMap, optionsBiMap, bodyMap)),
                               metricInfos)));
             } else {
-              curUrls.forEach(curUrl
-                  -> callabels.add(
-                      ()
-                          -> new APMResponseParser.APMResponseData(host, dataCollectionInfo.getHosts().get(host),
-                              collect(
-                                  getAPMRestClient(baseUrl, validateCert).collect(curUrl, headersBiMap, optionsBiMap)),
-                              metricInfos)));
+              curUrls.forEach(curUrl -> {
+                // ADD AWS Header here since the entire URL has been formed - For Amazon Managed Prometheus
+                String urlToCall = curUrl;
+                if (dataCollectionInfo.isAwsRestCall()) {
+                  urlToCall = getAwsAuthHeader(headersBiMap, optionsBiMap, baseUrl + curUrl);
+                }
+                String finalUrl = urlToCall;
+                Map<String, Object> headerMap = new HashMap<>();
+                headersBiMap.forEach((k, v) -> headerMap.put(k, v));
+                callabels.add(
+                    ()
+                        -> new APMResponseParser.APMResponseData(host, dataCollectionInfo.getHosts().get(host),
+                            collect(getAPMRestClient(baseUrl, validateCert).collect(finalUrl, headerMap, optionsBiMap)),
+                            metricInfos));
+              });
             }
           }
         }

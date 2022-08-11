@@ -128,6 +128,8 @@ public class Delegate implements PersistentEntity, UuidAware, CreatedAtAware, Ac
   private long expiringAt;
   private boolean immutable;
 
+  private boolean immutable;
+
   @Override
   public void updateNextIteration(String fieldName, long nextIteration) {
     if (DelegateKeys.taskExpiryCheckNextIteration.equals(fieldName)) {

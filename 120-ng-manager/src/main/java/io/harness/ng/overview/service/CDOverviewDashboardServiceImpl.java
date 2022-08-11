@@ -431,14 +431,22 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
   }
 
   public String queryBuilderServiceTag(String queryIdCdTable) {
+    return queryBuilderServiceTag(queryIdCdTable, null);
+  }
+
+  public String queryBuilderServiceTag(String queryIdCdTable, String serviceId) {
     String selectStatusQuery =
-        "select service_name,tag,env_id,env_name,env_type,artifact_image,pipeline_execution_summary_cd_id, infrastructureidentifier, infrastructureName from "
+        "select service_name,service_id,tag,env_id,env_name,env_type,artifact_image,pipeline_execution_summary_cd_id, infrastructureidentifier, infrastructureName from "
         + tableNameServiceAndInfra + " where ";
     StringBuilder totalBuildSqlBuilder = new StringBuilder(20480);
 
     totalBuildSqlBuilder.append(String.format(
-        selectStatusQuery + "pipeline_execution_summary_cd_id in (%s) and service_name is not null;", queryIdCdTable));
+        selectStatusQuery + "pipeline_execution_summary_cd_id in (%s) and service_name is not null", queryIdCdTable));
 
+    if (serviceId != null) {
+      totalBuildSqlBuilder.append(String.format(" and service_id='%s'", serviceId));
+    }
+    totalBuildSqlBuilder.append(';');
     return totalBuildSqlBuilder.toString();
   }
 
@@ -670,6 +678,7 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
         while (resultSet != null && resultSet.next()) {
           String pipeline_execution_summary_cd_id = resultSet.getString("pipeline_execution_summary_cd_id");
           String service_name = resultSet.getString("service_name");
+          String service_id = resultSet.getString("service_id");
           String tag = resultSet.getString("tag");
           String envId = resultSet.getString("env_id");
           String envName = resultSet.getString("env_name");
@@ -678,10 +687,11 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
           String infrastructureIdentifier = resultSet.getString("infrastructureidentifier");
           String infrastructureName = resultSet.getString("infrastructureName");
           if (serviceTagMap.containsKey(pipeline_execution_summary_cd_id)) {
-            serviceTagMap.get(pipeline_execution_summary_cd_id).add(getServiceDeployment(service_name, tag, image));
+            serviceTagMap.get(pipeline_execution_summary_cd_id)
+                .add(getServiceDeployment(service_name, tag, image, service_id));
           } else {
             List<ServiceDeploymentInfo> serviceDeploymentInfos = new ArrayList<>();
-            serviceDeploymentInfos.add(getServiceDeployment(service_name, tag, image));
+            serviceDeploymentInfos.add(getServiceDeployment(service_name, tag, image, service_id));
             serviceTagMap.put(pipeline_execution_summary_cd_id, serviceDeploymentInfos);
           }
           envIdToNameAndTypeMap.putIfAbsent(
@@ -1409,7 +1419,7 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
         .build();
   }
 
-  public List<ExecutionStatusInfo> getDeploymentStatusInfo(String queryStatus, String queryServiceNameTagId) {
+  public List<ExecutionStatusInfo> getDeploymentStatusInfo(String queryStatus, String queryServiceTag) {
     List<String> objectIdList = new ArrayList<>();
     List<String> namePipelineList = new ArrayList<>();
     List<Long> startTs = new ArrayList<>();
@@ -1439,8 +1449,6 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
     triggerType = deploymentStatusInfoList.getTriggerType();
     author = deploymentStatusInfoList.getAuthor();
 
-    String queryServiceTag = queryBuilderServiceTag(queryServiceNameTagId);
-
     Pair<HashMap<String, List<ServiceDeploymentInfo>>, HashMap<String, List<EnvironmentDeploymentsInfo>>>
         deploymentInfo = queryCalculatorServiceTagMag(queryServiceTag);
     serviceTagMap = deploymentInfo.getKey();
@@ -1468,6 +1476,7 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
         accountId, orgId, projectId, days, CDDashboardServiceHelper.failedStatusList, startInterval, endInterval);
     String queryServiceNameTagIdFailed = queryBuilderSelectIdLimitTimeCdTableNew(
         accountId, orgId, projectId, days, CDDashboardServiceHelper.failedStatusList, startInterval, endInterval);
+    queryServiceNameTagIdFailed = queryBuilderServiceTag(queryServiceNameTagIdFailed);
     List<ExecutionStatusInfo> failure = getDeploymentStatusInfo(queryFailed, queryServiceNameTagIdFailed);
 
     // active
@@ -1475,6 +1484,7 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
         queryBuilderStatusNew(accountId, orgId, projectId, days, activeStatusList, startInterval, endInterval);
     String queryServiceNameTagIdActive = queryBuilderSelectIdLimitTimeCdTableNew(
         accountId, orgId, projectId, days, activeStatusList, startInterval, endInterval);
+    queryServiceNameTagIdActive = queryBuilderServiceTag(queryServiceNameTagIdActive);
     List<ExecutionStatusInfo> active = getDeploymentStatusInfo(queryActive, queryServiceNameTagIdActive);
 
     // pending
@@ -1482,6 +1492,7 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
         queryBuilderStatusNew(accountId, orgId, projectId, days, pendingStatusList, startInterval, endInterval);
     String queryServiceNameTagIdPending = queryBuilderSelectIdLimitTimeCdTableNew(
         accountId, orgId, projectId, days, pendingStatusList, startInterval, endInterval);
+    queryServiceNameTagIdPending = queryBuilderServiceTag(queryServiceNameTagIdPending);
     List<ExecutionStatusInfo> pending = getDeploymentStatusInfo(queryPending, queryServiceNameTagIdPending);
 
     return DashboardExecutionStatusInfo.builder().failure(failure).active(active).pending(pending).build();
@@ -1506,12 +1517,17 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
         .build();
   }
 
-  private ServiceDeploymentInfo getServiceDeployment(String service_name, String tag, String image) {
+  private ServiceDeploymentInfo getServiceDeployment(String service_name, String tag, String image, String serviceId) {
     if (service_name != null) {
       if (image != null) {
-        return ServiceDeploymentInfo.builder().serviceName(service_name).serviceTag(tag).image(image).build();
+        return ServiceDeploymentInfo.builder()
+            .serviceName(service_name)
+            .serviceId(serviceId)
+            .serviceTag(tag)
+            .image(image)
+            .build();
       }
-      return ServiceDeploymentInfo.builder().serviceName(service_name).build();
+      return ServiceDeploymentInfo.builder().serviceName(service_name).serviceId(serviceId).build();
     }
     return ServiceDeploymentInfo.builder().build();
   }
@@ -2024,7 +2040,8 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
     endTimeInMs = getStartTimeOfNextDay(endTimeInMs);
     String query = queryBuilderDeployments(
         accountIdentifier, orgIdentifier, projectIdentifier, serviceId, startTimeInMs, endTimeInMs);
-    String queryServiceNameTagId = queryToGetId(accountIdentifier, orgIdentifier, projectIdentifier, serviceId);
+    String queryServiceNameTagId =
+        queryBuilderServiceTag(queryToGetId(accountIdentifier, orgIdentifier, projectIdentifier, serviceId), serviceId);
     List<ExecutionStatusInfo> deployments = getDeploymentStatusInfo(query, queryServiceNameTagId);
     return DeploymentsInfo.builder().deployments(deployments).build();
   }

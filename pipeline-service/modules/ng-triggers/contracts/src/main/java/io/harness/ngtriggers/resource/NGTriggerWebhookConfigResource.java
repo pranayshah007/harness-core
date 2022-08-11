@@ -16,6 +16,7 @@ import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ngtriggers.beans.dto.WebhookEventProcessingDetails;
+import io.harness.ngtriggers.beans.dto.WebhookExecutionDetails;
 import io.harness.ngtriggers.beans.source.WebhookTriggerType;
 import io.harness.ngtriggers.beans.source.webhook.WebhookAction;
 import io.harness.ngtriggers.beans.source.webhook.WebhookEvent;
@@ -44,6 +45,7 @@ import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
@@ -261,4 +263,19 @@ public interface NGTriggerWebhookConfigResource {
   ResponseDTO<WebhookEventProcessingDetails>
   fetchWebhookDetails(@NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
       @NotNull @QueryParam("eventId") String eventId);
+
+  @GET
+  @Operation(operationId = "fetchWebhookExecutionDetails",
+      summary = "Gets webhook event processing details for input eventId.",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(
+            responseCode = "default", description = "Returns webhook event processing details for input eventId.")
+      })
+  @Path("/triggerExecutionDetails/{eventId}")
+  @ApiOperation(value = "fetch webhook event details with execution summary", nickname = "triggerExecutionDetails")
+  @PublicApi
+  ResponseDTO<WebhookExecutionDetails>
+  fetchWebhookExecutionDetails(@NotNull @PathParam("eventId") String eventId,
+      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier);
 }

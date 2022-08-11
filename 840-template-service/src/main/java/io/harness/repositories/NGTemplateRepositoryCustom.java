@@ -34,22 +34,24 @@ public interface NGTemplateRepositoryCustom {
 
   Optional<TemplateEntity> findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndVersionLabelAndDeletedNot(
       String accountId, String orgIdentifier, String projectIdentifier, String templateIdentifier, String versionLabel,
-      boolean notDeleted);
+      boolean notDeleted, boolean getMetadataOnly);
 
   Optional<TemplateEntity>
   findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndIsStableAndDeletedNotForOldGitSync(
       String accountId, String orgIdentifier, String projectIdentifier, String templateIdentifier, boolean notDeleted);
 
   Optional<TemplateEntity> findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndIsStableAndDeletedNot(
-      String accountId, String orgIdentifier, String projectIdentifier, String templateIdentifier, boolean notDeleted);
+      String accountId, String orgIdentifier, String projectIdentifier, String templateIdentifier, boolean notDeleted,
+      boolean getMetadataOnly);
 
   Optional<TemplateEntity>
   findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndIsLastUpdatedAndDeletedNotForOldGitSync(
       String accountId, String orgIdentifier, String projectIdentifier, String templateIdentifier, boolean notDeleted);
 
   Optional<TemplateEntity>
-  findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndIsLastUpdatedAndDeletedNot(
-      String accountId, String orgIdentifier, String projectIdentifier, String templateIdentifier, boolean notDeleted);
+  findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndIsLastUpdatedAndDeletedNot(String accountId,
+      String orgIdentifier, String projectIdentifier, String templateIdentifier, boolean notDeleted,
+      boolean getMetadataOnly);
 
   TemplateEntity updateTemplateYamlForOldGitSync(TemplateEntity templateEntity, TemplateEntity oldTemplateEntity,
       ChangeType changeType, String comments, TemplateUpdateEventType templateUpdateEventType, boolean skipAudits);
@@ -59,8 +61,6 @@ public interface NGTemplateRepositoryCustom {
 
   TemplateEntity updateTemplateYaml(TemplateEntity templateEntity, TemplateEntity oldTemplateEntity,
       ChangeType changeType, String comments, TemplateUpdateEventType templateUpdateEventType, boolean skipAudits);
-
-  TemplateEntity deleteTemplateForOldGitSync(TemplateEntity templateToDelete, String comments);
 
   void hardDeleteTemplateForOldGitSync(TemplateEntity templateEntity, String comments);
 
