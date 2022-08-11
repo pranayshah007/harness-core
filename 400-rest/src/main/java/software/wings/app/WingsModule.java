@@ -145,6 +145,8 @@ import io.harness.governance.pipeline.service.evaluators.WorkflowStatusEvaluator
 import io.harness.grpc.DelegateServiceClassicGrpcClientModule;
 import io.harness.grpc.DelegateServiceDriverGrpcClientModule;
 import io.harness.instancesync.InstanceSyncResourceClientModule;
+import io.harness.instancesyncmonitoring.service.InstanceSyncMonitoringService;
+import io.harness.instancesyncmonitoring.service.InstanceSyncMonitoringServiceImpl;
 import io.harness.invites.NgInviteClientModule;
 import io.harness.k8s.K8sGlobalConfigService;
 import io.harness.k8s.KubernetesContainerService;
@@ -1191,6 +1193,7 @@ public class WingsModule extends AbstractModule implements ServersModule {
     bind(ExperimentalMetricAnalysisRecordService.class).to(ExperimentalMetricAnalysisRecordServiceImpl.class);
     bind(GitSyncService.class).to(GitSyncServiceImpl.class);
     bind(SecretDecryptionService.class).to(SecretDecryptionServiceImpl.class);
+    bind(InstanceSyncMonitoringService.class).to(InstanceSyncMonitoringServiceImpl.class);
 
     MapBinder<String, InfrastructureProvider> infrastructureProviderMapBinder =
         MapBinder.newMapBinder(binder(), String.class, InfrastructureProvider.class);
