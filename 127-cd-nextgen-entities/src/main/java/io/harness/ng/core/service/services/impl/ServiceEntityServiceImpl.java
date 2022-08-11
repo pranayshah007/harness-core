@@ -25,6 +25,7 @@ import io.harness.EntityType;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.visitor.YamlTypes;
+import io.harness.cdng.yaml.CdYamlSchemaService;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.eventsframework.EventsFrameworkMetadataConstants;
 import io.harness.eventsframework.api.EventsFrameworkDownException;
@@ -110,6 +111,7 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
   private final NGFeatureFlagHelperService ngFeatureFlagHelperService;
   private final ServiceOverrideService serviceOverrideService;
   private final ServiceEntitySetupUsageHelper entitySetupUsageHelper;
+  private final CdYamlSchemaService cdYamlSchemaService;
 
   private static final String DUP_KEY_EXP_FORMAT_STRING_FOR_PROJECT =
       "Service [%s] under Project[%s], Organization [%s] in Account [%s] already exists";
@@ -121,7 +123,7 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
   public ServiceEntityServiceImpl(ServiceRepository serviceRepository, EntitySetupUsageService entitySetupUsageService,
       @Named(ENTITY_CRUD) Producer eventProducer, OutboxService outboxService, TransactionTemplate transactionTemplate,
       NGFeatureFlagHelperService ngFeatureFlagHelperService, ServiceOverrideService serviceOverrideService,
-      ServiceEntitySetupUsageHelper entitySetupUsageHelper) {
+      ServiceEntitySetupUsageHelper entitySetupUsageHelper, CdYamlSchemaService cdYamlSchemaService) {
     this.serviceRepository = serviceRepository;
     this.entitySetupUsageService = entitySetupUsageService;
     this.eventProducer = eventProducer;
@@ -130,6 +132,7 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
     this.ngFeatureFlagHelperService = ngFeatureFlagHelperService;
     this.serviceOverrideService = serviceOverrideService;
     this.entitySetupUsageHelper = entitySetupUsageHelper;
+    this.cdYamlSchemaService = cdYamlSchemaService;
   }
 
   void validatePresenceOfRequiredFields(Object... fields) {
@@ -142,6 +145,7 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
       validatePresenceOfRequiredFields(serviceEntity.getAccountId(), serviceEntity.getIdentifier());
       setNameIfNotPresent(serviceEntity);
       modifyServiceRequest(serviceEntity);
+      cdYamlSchemaService.validateSchema(EntityType.SERVICE, serviceEntity.getYaml());
       ServiceEntity createdService =
           Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
             ServiceEntity service = serviceRepository.save(serviceEntity);
@@ -182,6 +186,7 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
         get(requestService.getAccountId(), requestService.getOrgIdentifier(), requestService.getProjectIdentifier(),
             requestService.getIdentifier(), false);
     if (serviceEntityOptional.isPresent()) {
+      cdYamlSchemaService.validateSchema(EntityType.SERVICE, requestService.getYaml());
       ServiceEntity oldService = serviceEntityOptional.get();
       ServiceEntity updatedService =
           Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
@@ -218,6 +223,7 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
     validatePresenceOfRequiredFields(requestService.getAccountId(), requestService.getIdentifier());
     setNameIfNotPresent(requestService);
     modifyServiceRequest(requestService);
+    cdYamlSchemaService.validateSchema(EntityType.SERVICE, requestService.getYaml());
     Criteria criteria = getServiceEqualityCriteria(requestService, requestService.getDeleted());
     ServiceEntity upsertedService =
         Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {

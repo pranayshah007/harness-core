@@ -19,6 +19,7 @@ import io.harness.beans.FeatureFlag;
 import io.harness.cdng.creator.plan.stage.DeploymentStageConfig;
 import io.harness.cdng.creator.plan.stage.DeploymentStageNode;
 import io.harness.encryption.Scope;
+import io.harness.exception.JsonSchemaValidationException;
 import io.harness.jackson.JsonNodeUtils;
 import io.harness.plancreator.steps.ParallelStepElementConfig;
 import io.harness.plancreator.steps.StepElementConfig;
@@ -36,6 +37,7 @@ import io.harness.yaml.schema.beans.SwaggerDefinitionsMetaInfo;
 import io.harness.yaml.schema.beans.YamlSchemaRootClass;
 import io.harness.yaml.schema.beans.YamlSchemaWithDetails;
 import io.harness.yaml.utils.YamlSchemaUtils;
+import io.harness.yaml.validator.YamlSchemaValidator;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -45,6 +47,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedSet;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
+import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.Collections;
 import java.util.HashMap;
@@ -69,17 +72,19 @@ public class CdYamlSchemaServiceImpl implements CdYamlSchemaService {
   private final FeatureRestrictionsGetter featureRestrictionsGetter;
   private final Map<Class<?>, Set<Class<?>>> yamlSchemaSubtypes;
   private final List<YamlSchemaRootClass> yamlSchemaRootClasses;
+  private final YamlSchemaValidator yamlSchemaValidator;
   @Inject
   public CdYamlSchemaServiceImpl(YamlSchemaProvider yamlSchemaProvider, YamlSchemaGenerator yamlSchemaGenerator,
       @Named("yaml-schema-subtypes") Map<Class<?>, Set<Class<?>>> yamlSchemaSubtypes,
       List<YamlSchemaRootClass> yamlSchemaRootClasses, AccountClient accountClient,
-      FeatureRestrictionsGetter featureRestrictionsGetter) {
+      FeatureRestrictionsGetter featureRestrictionsGetter, YamlSchemaValidator yamlSchemaValidator) {
     this.yamlSchemaProvider = yamlSchemaProvider;
     this.yamlSchemaGenerator = yamlSchemaGenerator;
     this.yamlSchemaSubtypes = yamlSchemaSubtypes;
     this.yamlSchemaRootClasses = yamlSchemaRootClasses;
     this.accountClient = accountClient;
     this.featureRestrictionsGetter = featureRestrictionsGetter;
+    this.yamlSchemaValidator = yamlSchemaValidator;
   }
 
   @Override
@@ -105,6 +110,16 @@ public class CdYamlSchemaServiceImpl implements CdYamlSchemaService {
   @Override
   public JsonNode getIndividualYamlSchema(EntityType entityType, String orgId, String projectId, Scope scope) {
     return yamlSchemaProvider.getYamlSchema(entityType, orgId, projectId, scope);
+  }
+
+  @Override
+  public Set<String> validateSchema(EntityType entityType, String yaml) {
+    try {
+      return yamlSchemaValidator.validate(yaml, entityType);
+    } catch (Exception e) {
+      log.error(e.getMessage(), e);
+      throw new JsonSchemaValidationException(e.getMessage(), e);
+    }
   }
 
   @Override

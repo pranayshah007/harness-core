@@ -14,6 +14,7 @@ import io.harness.yaml.schema.beans.YamlSchemaWithDetails;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import java.util.List;
+import java.util.Set;
 
 public interface CdYamlSchemaService {
   List<PartialSchemaDTO> getDeploymentStageYamlSchema(
@@ -23,4 +24,6 @@ public interface CdYamlSchemaService {
   List<YamlSchemaWithDetails> getDeploymentStageYamlSchemaWithDetails(
       String accountIdentifier, String projectIdentifier, String orgIdentifier, Scope scope);
   JsonNode getIndividualYamlSchema(EntityType entityType, String orgId, String projectId, Scope scope);
+
+  Set<String> validateSchema(EntityType entityType, String yaml);
 }
