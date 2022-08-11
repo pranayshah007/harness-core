@@ -29,6 +29,7 @@ public enum AnalysisStatus {
       case SUCCESS:
         return ExecutionStatus.SUCCESS;
       case FAILED:
+      case TERMINATED:
         return ExecutionStatus.FAILED;
       case TIMEOUT:
         return ExecutionStatus.TIMEOUT;
@@ -39,10 +40,10 @@ public enum AnalysisStatus {
   }
 
   public static List<AnalysisStatus> getFinalStates() {
-    return Arrays.asList(COMPLETED, FAILED, TIMEOUT, IGNORED);
+    return Arrays.asList(COMPLETED, FAILED, TIMEOUT, IGNORED, TERMINATED);
   }
   public static List<AnalysisStatus> getFailedStatuses() {
-    return Arrays.asList(FAILED, TIMEOUT);
+    return Arrays.asList(FAILED, TIMEOUT, TERMINATED);
   }
   public static List<AnalysisStatus> getCountMetricsNonFinalStatuses() {
     return Arrays.asList(CREATED, RUNNING, TRANSITION);
