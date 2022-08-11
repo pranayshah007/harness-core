@@ -9,19 +9,14 @@ package io.harness.instancesyncmonitoring.module;
 
 import io.harness.instancesyncmonitoring.service.InstanceSyncMonitoringService;
 import io.harness.instancesyncmonitoring.service.InstanceSyncMonitoringServiceImpl;
-import io.harness.metrics.service.api.MetricService;
-import io.harness.metrics.service.impl.MetricServiceImpl;
 
 import com.google.inject.AbstractModule;
 import lombok.NoArgsConstructor;
 
 @NoArgsConstructor
 public class InstanceSyncMonitoringModule extends AbstractModule {
-  private static final int exportIntervalMins = 1;
-
   @Override
   protected void configure() {
-    bind(MetricService.class).toInstance(new MetricServiceImpl(exportIntervalMins));
     bind(InstanceSyncMonitoringService.class).to(InstanceSyncMonitoringServiceImpl.class);
   }
 }
