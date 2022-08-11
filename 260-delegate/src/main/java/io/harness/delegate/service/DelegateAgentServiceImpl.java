@@ -630,7 +630,6 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
                 new Function<Exception>() { // Do not change this, wasync doesn't like lambdas
                   @Override
                   public void on(Exception e) {
-                    log.error("Exception on websocket", e);
                     handleError(e);
                   }
                 })
@@ -652,12 +651,6 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
               @Override
               public void on(IOException ioe) {
                 log.error("Error occured while starting Delegate", ioe);
-              }
-            })
-            .on(new Function<TransportNotSupported>() {
-              public void on(TransportNotSupported ex) {
-                log.error("Connection was terminated forcefully (most likely), trying to reconnect", ex);
-                trySocketReconnect();
               }
             });
 
@@ -823,63 +816,61 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
   }
 
   private void handleClose(Object o) {
-    log.info("Event:{}, message:[{}] trying to reconnect", Event.CLOSE.name(), o.toString());
+    log.info("Event:{}, message:[{}]", Event.CLOSE.name(), o.toString());
     // TODO(brett): Disabling the fallback to poll for tasks as it can cause too much traffic to ingress controller
     // pollingForTasks.set(true);
-    trySocketReconnect();
+    if (!closingSocket.get() && reconnectingSocket.compareAndSet(false, true)) {
+      try {
+        trySocketReconnect();
+      } finally {
+        reconnectingSocket.set(false);
+      }
+    }
   }
 
   private void handleError(final Exception e) {
     log.info("Event:{}, message:[{}]", Event.ERROR.name(), e.getMessage());
-    if (!reconnectingSocket.get()) { // Don't restart if we are trying to reconnect
-      if (e instanceof SSLException || e instanceof TransportNotSupported) {
-        log.warn("Reopening connection to manager because of exception", e);
-        trySocketReconnect();
-      } else if (e instanceof ConnectException) {
-        log.warn("Failed to connect.", e);
-        restartNeeded.set(true);
-      } else if (e instanceof ConcurrentModificationException) {
-        log.warn("ConcurrentModificationException on WebSocket ignoring");
-        log.debug("ConcurrentModificationException on WebSocket.", e);
-      } else {
-        log.error("Exception: ", e);
-        try {
-          finalizeSocket();
-        } catch (final Exception ex) {
-          log.error("Failed closing the socket!", ex);
+    if (reconnectingSocket.compareAndSet(false, true)) {
+      try {
+        if (e instanceof SSLException || e instanceof TransportNotSupported) {
+          log.warn("Reopening connection to manager because of exception", e);
+          try {
+            socket.close();
+          } catch (final Exception ex) {
+            log.error("Failed closing the socket!", ex);
+          }
+          trySocketReconnect();
+        } else if (e instanceof ConnectException) {
+          log.warn("Failed to connect.", e);
+          restartNeeded.set(true);
+        } else if (e instanceof ConcurrentModificationException) {
+          log.warn("ConcurrentModificationException on WebSocket ignoring");
+          log.debug("ConcurrentModificationException on WebSocket.", e);
+        } else {
+          log.error("Exception: ", e);
+          try {
+            finalizeSocket();
+          } catch (final Exception ex) {
+            log.error("Failed closing the socket!", ex);
+          }
+          restartNeeded.set(true);
         }
-        restartNeeded.set(true);
+      } finally {
+        reconnectingSocket.set(false);
       }
     }
   }
 
   private void trySocketReconnect() {
-    if (!closingSocket.get() && reconnectingSocket.compareAndSet(false, true)) {
-      try {
-        log.info("Starting socket reconnecting");
-        FibonacciBackOff.executeForEver(() -> {
-          final RequestBuilder requestBuilder = prepareRequestBuilder();
-          try {
-            final Socket skt = socket.open(requestBuilder.build(), 15, TimeUnit.SECONDS);
-            log.info("Socket status: {}", socket.status().toString());
-            if (socket.status() == STATUS.CLOSE || socket.status() == STATUS.ERROR) {
-              throw new IllegalStateException("Socket not opened");
-            }
-            return skt;
-          } catch (Exception e) {
-            log.error("Failed to reconnect to socket, trying again: ", e);
-            throw new IOException("Try reconnect again");
-          }
-        });
-      } catch (IOException ex) {
-        log.error("Unable to open socket", ex);
-      } finally {
-        reconnectingSocket.set(false);
-        log.info("Finished socket reconnecting");
-      }
-    } else {
-      log.warn("Socket already reconnecting {} or closing {}, will not start the reconnect procedure again",
-          closingSocket.get(), reconnectingSocket.get());
+    try {
+      FibonacciBackOff.executeForEver(() -> {
+        RequestBuilder requestBuilder = prepareRequestBuilder();
+        Socket skt = socket.open(requestBuilder.build());
+        log.info("Socket status: {}", socket.status().toString());
+        return skt;
+      });
+    } catch (IOException ex) {
+      log.error("Unable to open socket", ex);
     }
   }
 
