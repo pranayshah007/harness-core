@@ -18,9 +18,10 @@ package io.harness.stream.redisson;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.metrics.impl.PersistenceMetricsServiceImpl.REDIS_SUBSCRIPTION_CNT;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.metrics.intfc.DelegateMetricsService;
+import io.harness.metrics.impl.PersistenceMetricsServiceImpl;
 import io.harness.redis.RedisConfig;
 
 import com.google.inject.Inject;
@@ -47,7 +48,7 @@ import org.redisson.api.RedissonClient;
 public class RedissonBroadcaster extends AbstractBroadcasterProxy {
   private static volatile RedissonClient redissonClient;
   private RedisConfig redisAtmosphereConfig;
-  private DelegateMetricsService metricsService;
+  private PersistenceMetricsServiceImpl metricsService;
   private final AtomicBoolean isClosed = new AtomicBoolean();
   private RTopic topic;
   private Integer messageListenerRegistrationId;
@@ -55,7 +56,7 @@ public class RedissonBroadcaster extends AbstractBroadcasterProxy {
 
   @Inject
   public RedissonBroadcaster(
-      @Named("atmosphere") final RedisConfig redisAtmosphereConfig, final DelegateMetricsService metricsService) {
+      @Named("atmosphere") final RedisConfig redisAtmosphereConfig, final PersistenceMetricsServiceImpl metricsService) {
     this.redisAtmosphereConfig = redisAtmosphereConfig;
     this.metricsService = metricsService;
   }
@@ -101,7 +102,7 @@ public class RedissonBroadcaster extends AbstractBroadcasterProxy {
       messageListenerRegistrationId =
           topic.addListener(Object.class, (channel, message) -> broadcastReceivedMessage(message));
 
-      metricsService.recordRedisSubscription(getID(), topic.countListeners());
+      metricsService.recordRedisMetric(REDIS_SUBSCRIPTION_CNT, getID(), topic.countListeners());
       log.info("Added message listener to topic {}", getID());
     }
   }
@@ -110,7 +111,7 @@ public class RedissonBroadcaster extends AbstractBroadcasterProxy {
     if (isEmpty(getAtmosphereResources()) && messageListenerRegistrationId != null && topic != null) {
       topic.removeListener(messageListenerRegistrationId);
 
-      metricsService.recordRedisSubscription(getID(), topic.countListeners());
+      metricsService.recordRedisMetric(REDIS_SUBSCRIPTION_CNT, getID(), topic.countListeners());
       messageListenerRegistrationId = null;
       log.info("Removed message listener from topic {}", getID());
     }

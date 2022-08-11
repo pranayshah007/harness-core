@@ -23,9 +23,11 @@ import io.harness.metrics.service.api.MetricService;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Singleton
+@RequiredArgsConstructor(onConstructor_ = @Inject)
 @Slf4j
 @OwnedBy(HarnessTeam.DEL)
 public class DelegateMetricsServiceImpl implements DelegateMetricsService {
@@ -58,10 +60,9 @@ public class DelegateMetricsServiceImpl implements DelegateMetricsService {
   public static final String SECRETS_CACHE_HITS = "delegate_secret_cache_hit";
   public static final String SECRETS_CACHE_LOOKUPS = "delegate_secret_cache_lookups";
   public static final String SECRETS_CACHE_INSERTS = "delegate_secret_cache_inserts";
-  public static final String REDIS_SUBSCRIPTION_CNT = "redis_subscription_cnt";
 
-  @Inject private MetricService metricService;
-  @Inject private DelegateTaskMetricContextBuilder metricContextBuilder;
+  private final MetricService metricService;
+  private final DelegateTaskMetricContextBuilder metricContextBuilder;
 
   @Override
   public void recordDelegateTaskMetrics(DelegateTask task, String metricName) {
@@ -110,13 +111,6 @@ public class DelegateMetricsServiceImpl implements DelegateMetricsService {
   public void recordDelegateMetricsPerAccount(String accountId, String metricName) {
     try (DelegateAccountMetricContext ignore = new DelegateAccountMetricContext(accountId)) {
       metricService.incCounter(metricName);
-    }
-  }
-
-  @Override
-  public void recordRedisSubscription(final String topicName, final double value) {
-    try (RedisTopicContext ignore = new RedisTopicContext(topicName)) {
-      metricService.recordMetric(REDIS_SUBSCRIPTION_CNT, value);
     }
   }
 }

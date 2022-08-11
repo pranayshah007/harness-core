@@ -1,5 +1,5 @@
 name: Delegate Redis Metrics
-identifier: delegate_redis_metrics
+identifier: redis_metrics
 metricGroup: redis
 metrics:
   - metricName: redis_subscription_cnt
