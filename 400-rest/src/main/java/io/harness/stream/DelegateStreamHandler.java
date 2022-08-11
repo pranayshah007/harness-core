@@ -25,6 +25,7 @@ import io.harness.eraro.ResponseMessage;
 import io.harness.exception.WingsException;
 import io.harness.logging.AccountLogContext;
 import io.harness.logging.AutoLogContext;
+import io.harness.metrics.impl.CachedMetricsPublisher;
 import io.harness.serializer.JsonUtils;
 import io.harness.service.intfc.DelegateCache;
 
@@ -36,6 +37,7 @@ import com.google.common.io.CharStreams;
 import com.google.inject.Inject;
 import java.io.IOException;
 import java.util.List;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.atmosphere.cache.UUIDBroadcasterCache;
 import org.atmosphere.config.service.AtmosphereHandlerService;
@@ -51,15 +53,18 @@ import org.atmosphere.interceptor.AtmosphereResourceLifecycleInterceptor;
  * Created by peeyushaggarwal on 8/15/16.
  */
 @Slf4j
+
+@RequiredArgsConstructor(onConstructor_ = @Inject)
 @AtmosphereHandlerService(path = "/stream/delegate/{accountId}",
     interceptors = {AtmosphereResourceLifecycleInterceptor.class}, broadcasterCache = UUIDBroadcasterCache.class,
     broadcastFilters = {DelegateEventFilter.class})
 public class DelegateStreamHandler extends AtmosphereHandlerAdapter {
   public static final Splitter SPLITTER = Splitter.on("/").omitEmptyStrings();
 
-  @Inject private AuthService authService;
-  @Inject private DelegateService delegateService;
-  @Inject private DelegateCache delegateCache;
+  private final AuthService authService;
+  private final DelegateService delegateService;
+  private final DelegateCache delegateCache;
+  private final CachedMetricsPublisher cachedMetrics;
 
   @Override
   public void onRequest(AtmosphereResource resource) throws IOException {
@@ -74,6 +79,7 @@ public class DelegateStreamHandler extends AtmosphereHandlerAdapter {
         String delegateTokenName = req.getParameter("delegateTokenName");
         String agentMtlsAuthority = req.getHeader(HEADER_AGENT_MTLS_AUTHORITY);
 
+        cachedMetrics.incrementMetric(accountId, delegateId);
         authService.validateDelegateToken(
             accountId, req.getParameter("token"), delegateId, delegateTokenName, agentMtlsAuthority, false);
         try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR);
@@ -125,6 +131,7 @@ public class DelegateStreamHandler extends AtmosphereHandlerAdapter {
       String accountId = pathSegments.get(1);
       String delegateId = req.getParameter("delegateId");
 
+      cachedMetrics.incrementMetric(accountId, delegateId);
       try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR);
            AutoLogContext ignore2 = new DelegateLogContext(delegateId, OVERRIDE_ERROR)) {
         String delegateConnectionId = req.getParameter("delegateConnectionId");

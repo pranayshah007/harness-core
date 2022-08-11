@@ -20,6 +20,7 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.metrics.intfc.DelegateMetricsService;
 import io.harness.redis.RedisConfig;
 
 import com.google.inject.Inject;
@@ -46,14 +47,17 @@ import org.redisson.api.RedissonClient;
 public class RedissonBroadcaster extends AbstractBroadcasterProxy {
   private static volatile RedissonClient redissonClient;
   private RedisConfig redisAtmosphereConfig;
+  private DelegateMetricsService metricsService;
   private final AtomicBoolean isClosed = new AtomicBoolean();
   private RTopic topic;
   private Integer messageListenerRegistrationId;
   private static final String BROADCASTER_PREFIX = "hStreams";
 
   @Inject
-  public RedissonBroadcaster(@Named("atmosphere") RedisConfig redisAtmosphereConfig) {
+  public RedissonBroadcaster(
+      @Named("atmosphere") final RedisConfig redisAtmosphereConfig, final DelegateMetricsService metricsService) {
     this.redisAtmosphereConfig = redisAtmosphereConfig;
+    this.metricsService = metricsService;
   }
 
   @Override
@@ -76,8 +80,10 @@ public class RedissonBroadcaster extends AbstractBroadcasterProxy {
         ? BROADCASTER_PREFIX
         : redisAtmosphereConfig.getEnvNamespace().concat(":").concat(BROADCASTER_PREFIX);
     String topicName = String.format("%s:%s", broadcasterNamespace, getID());
+    log.info("Creating topic {}", topicName);
     topic = redissonClient.getTopic(topicName, redissonClient.getConfig().getCodec());
     config.shutdownHook(() -> {
+      log.info("Shutting down the redisson broadcaster for topic {}", topicName);
       redissonClient.shutdown();
       isClosed.set(true);
     });
@@ -94,15 +100,19 @@ public class RedissonBroadcaster extends AbstractBroadcasterProxy {
     if (isNotEmpty(getAtmosphereResources()) && messageListenerRegistrationId == null && topic != null) {
       messageListenerRegistrationId =
           topic.addListener(Object.class, (channel, message) -> broadcastReceivedMessage(message));
-      log.info("Added message listener to topic");
+
+      metricsService.recordRedisSubscription(getID(), topic.countListeners());
+      log.info("Added message listener to topic {}", getID());
     }
   }
 
   private synchronized void removeMessageListener() {
     if (isEmpty(getAtmosphereResources()) && messageListenerRegistrationId != null && topic != null) {
       topic.removeListener(messageListenerRegistrationId);
+
+      metricsService.recordRedisSubscription(getID(), topic.countListeners());
       messageListenerRegistrationId = null;
-      log.info("Removed message listener from topic");
+      log.info("Removed message listener from topic {}", getID());
     }
   }
 
@@ -122,6 +132,7 @@ public class RedissonBroadcaster extends AbstractBroadcasterProxy {
 
   @Override
   public synchronized void destroy() {
+    log.info("Destroying broadcaster with topic {}", getID());
     if (!isClosed.get()) {
       topic.removeAllListeners();
       topic = null;

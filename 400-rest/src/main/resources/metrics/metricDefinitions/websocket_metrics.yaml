@@ -1,0 +1,8 @@
+name: Websocket Metrics
+identifier: websocket_metrics
+metricGroup: delegate_id
+metrics:
+  - metricName: websocket_requests
+    metricDefinition: Websocket Request Count
+    type: Count
+    unit: "1"

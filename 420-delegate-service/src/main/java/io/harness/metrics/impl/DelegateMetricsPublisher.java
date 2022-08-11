@@ -25,15 +25,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
+@RequiredArgsConstructor(onConstructor_ = @Inject)
 public class DelegateMetricsPublisher implements MetricsPublisher {
-  @Inject private MetricService metricService;
-  @Inject private HPersistence persistence;
   private static final String ACTIVE_DELEGATES_COUNT = "active_delegates_count";
+
+  private final MetricService metricService;
+  private final HPersistence persistence;
 
   @Override
   public void recordMetrics() {
@@ -69,9 +71,8 @@ public class DelegateMetricsPublisher implements MetricsPublisher {
   }
 
   @Data
-  @AllArgsConstructor
   private static class DelegateLabel {
-    String accountId;
-    String version;
+    private final String accountId;
+    private final String version;
   }
 }

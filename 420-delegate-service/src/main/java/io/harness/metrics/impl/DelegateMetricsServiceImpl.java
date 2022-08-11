@@ -17,6 +17,7 @@ import io.harness.metrics.beans.DelegateAccountMetricContext;
 import io.harness.metrics.beans.DelegateTaskMetricContext;
 import io.harness.metrics.beans.DelegateTaskTypeMetricContext;
 import io.harness.metrics.beans.PerpetualTaskMetricContext;
+import io.harness.metrics.beans.RedisTopicContext;
 import io.harness.metrics.intfc.DelegateMetricsService;
 import io.harness.metrics.service.api.MetricService;
 
@@ -57,6 +58,7 @@ public class DelegateMetricsServiceImpl implements DelegateMetricsService {
   public static final String SECRETS_CACHE_HITS = "delegate_secret_cache_hit";
   public static final String SECRETS_CACHE_LOOKUPS = "delegate_secret_cache_lookups";
   public static final String SECRETS_CACHE_INSERTS = "delegate_secret_cache_inserts";
+  public static final String REDIS_SUBSCRIPTION_CNT = "redis_subscription_cnt";
 
   @Inject private MetricService metricService;
   @Inject private DelegateTaskMetricContextBuilder metricContextBuilder;
@@ -108,6 +110,13 @@ public class DelegateMetricsServiceImpl implements DelegateMetricsService {
   public void recordDelegateMetricsPerAccount(String accountId, String metricName) {
     try (DelegateAccountMetricContext ignore = new DelegateAccountMetricContext(accountId)) {
       metricService.incCounter(metricName);
+    }
+  }
+
+  @Override
+  public void recordRedisSubscription(final String topicName, final double value) {
+    try (RedisTopicContext ignore = new RedisTopicContext(topicName)) {
+      metricService.recordMetric(REDIS_SUBSCRIPTION_CNT, value);
     }
   }
 }
