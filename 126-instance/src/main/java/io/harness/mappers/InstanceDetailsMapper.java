@@ -10,6 +10,7 @@ package io.harness.mappers;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.dtos.InstanceDTO;
+import io.harness.dtos.instanceinfo.AzureSshWinrmInstanceInfoDTO;
 import io.harness.dtos.instanceinfo.AzureWebAppInstanceInfoDTO;
 import io.harness.dtos.instanceinfo.GitOpsInstanceInfoDTO;
 import io.harness.dtos.instanceinfo.K8sInstanceInfoDTO;
@@ -76,6 +77,8 @@ public class InstanceDetailsMapper {
       return ServiceSpecType.GITOPS;
     } else if (instanceDTO.getInstanceInfoDTO() instanceof PdcInstanceInfoDTO) {
       return ((PdcInstanceInfoDTO) instanceDTO.getInstanceInfoDTO()).getServiceType();
+    } else if (instanceDTO.getInstanceInfoDTO() instanceof AzureSshWinrmInstanceInfoDTO) {
+      return ((AzureSshWinrmInstanceInfoDTO) instanceDTO.getInstanceInfoDTO()).getServiceType();
     }
     return null;
   }

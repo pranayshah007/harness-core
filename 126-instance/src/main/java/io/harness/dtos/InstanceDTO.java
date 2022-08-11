@@ -39,12 +39,12 @@ public class InstanceDTO {
   String infraIdentifier;
   String infraName;
   String connectorRef;
-  ArtifactDetails primaryArtifact;
-  String lastDeployedById;
-  String lastDeployedByName;
+  @NonFinal @Setter ArtifactDetails primaryArtifact;
+  @NonFinal @Setter String lastDeployedById;
+  @NonFinal @Setter String lastDeployedByName;
   @NonFinal @Setter long lastDeployedAt;
   @NonFinal @Setter String lastPipelineExecutionId;
-  @Setter String lastPipelineExecutionName;
+  @NonFinal @Setter String lastPipelineExecutionName;
   InstanceInfoDTO instanceInfoDTO;
   boolean isDeleted;
   long deletedAt;
