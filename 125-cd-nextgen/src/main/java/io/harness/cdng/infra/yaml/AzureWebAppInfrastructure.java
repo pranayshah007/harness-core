@@ -42,7 +42,7 @@ import org.springframework.data.annotation.TypeAlias;
 @OwnedBy(HarnessTeam.CDP)
 @RecasterAlias("io.harness.cdng.infra.yaml.AzureWebAppInfrastructure")
 public class AzureWebAppInfrastructure
-    extends InfrastructureDetailsAbstract implements Infrastructure, Visitable, WithConnectorRef {
+    extends InfrastructureDetailsAbstract implements Infrastructure, Visitable, WithConnectorRef, AzureInfrastructure {
   @NotNull
   @NotEmpty
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
