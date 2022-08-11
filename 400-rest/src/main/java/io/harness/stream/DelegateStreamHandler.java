@@ -74,6 +74,7 @@ public class DelegateStreamHandler extends AtmosphereHandlerAdapter {
         String delegateTokenName = req.getParameter("delegateTokenName");
         String agentMtlsAuthority = req.getHeader(HEADER_AGENT_MTLS_AUTHORITY);
 
+        log.info("Received websocket open request for {}", delegateId);
         authService.validateDelegateToken(
             accountId, req.getParameter("token"), delegateId, delegateTokenName, agentMtlsAuthority, false);
         try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR);
@@ -106,6 +107,13 @@ public class DelegateStreamHandler extends AtmosphereHandlerAdapter {
                 delegateService.register(delegate);
                 delegateService.delegateDisconnected(accountId, delegateId, delegateConnectionId);
               }
+              log.info("Received websocket disconnected request for delegate with ID {} for account {}", delegateId,
+                  accountId);
+            }
+            @Override
+            public void onClose(AtmosphereResourceEvent event) {
+              log.info(
+                  "Received websocket close request for delegate with ID {} for account {}", delegateId, accountId);
             }
           });
         }
