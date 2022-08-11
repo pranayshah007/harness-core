@@ -225,7 +225,7 @@ public class SshEntityHelper {
     }
   }
 
-  private Map<String, String> filterInfraTags(Map<String, String> infraTags) {
+  public Map<String, String> filterInfraTags(Map<String, String> infraTags) {
     if (isEmpty(infraTags)) {
       return infraTags;
     }
