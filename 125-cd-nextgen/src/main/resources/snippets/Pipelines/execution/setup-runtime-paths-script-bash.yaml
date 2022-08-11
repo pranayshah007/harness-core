@@ -12,3 +12,4 @@
                         mkdir -p $HARNESS_RUNTIME_PATH
                         mkdir -p $HARNESS_BACKUP_PATH
                         mkdir -p $HARNESS_STAGING_PATH
+                        mkdir -p $HARNESS_RUNTIME_PATH/tomcat/bin
