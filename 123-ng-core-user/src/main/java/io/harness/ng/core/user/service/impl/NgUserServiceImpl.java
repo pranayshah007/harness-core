@@ -553,23 +553,20 @@ public class NgUserServiceImpl implements NgUserService {
     addUserToParentScope(userId, scope, source, isAccountBasicFeatureFlagEnabled);
     createRoleAssignments(
         userId, scope, createRoleAssignmentDTOs(roleBindings, userId, scope), isAccountBasicFeatureFlagEnabled);
-    addUserToDefaultUserGroup(scope, userGroups);
+    addUserToDefaultUserGroups(scope, userId);
     userGroupService.addUserToUserGroups(scope, userId, getValidUserGroups(scope, userGroups));
   }
 
-  private void addUserToDefaultUserGroup(Scope scope, List<String> userGroups) {
-    if (isEmpty(userGroups)) {
-      userGroups = new ArrayList<>();
-    }
+  private void addUserToDefaultUserGroups(Scope scope, String userId) {
+    List<String> userGroups = new ArrayList<>();
     if (!isEmpty(scope.getProjectIdentifier())) {
       userGroups.add(DEFAULT_PROJECT_LEVEL_USER_GROUP_IDENTIFIER);
     }
-    else if (!isEmpty(scope.getOrgIdentifier())) {
+    if (!isEmpty(scope.getOrgIdentifier())) {
       userGroups.add(DEFAULT_ORGANIZATION_LEVEL_USER_GROUP_IDENTIFIER);
     }
-    else {
-      userGroups.add(DEFAULT_ACCOUNT_LEVEL_USER_GROUP_IDENTIFIER);
-    }
+    userGroups.add(DEFAULT_ACCOUNT_LEVEL_USER_GROUP_IDENTIFIER);
+    userGroupService.addUserToUserGroups(scope, userId, getValidUserGroups(scope, userGroups));
   }
 
   private List<String> getValidUserGroups(Scope scope, List<String> userGroupIdentifiers) {
