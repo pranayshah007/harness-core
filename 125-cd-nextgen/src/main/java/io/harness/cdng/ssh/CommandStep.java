@@ -114,7 +114,19 @@ public class CommandStep extends TaskExecutableWithRollbackAndRbac<CommandTaskRe
   public StepResponse handleTaskResultWithSecurityContext(Ambiance ambiance, StepElementParameters stepParameters,
       ThrowingSupplier<CommandTaskResponse> responseDataSupplier) throws Exception {
     StepResponseBuilder stepResponseBuilder = StepResponse.builder();
-    CommandTaskResponse taskResponse = responseDataSupplier.get();
+    CommandTaskResponse taskResponse;
+    try {
+      taskResponse = responseDataSupplier.get();
+    } catch (Exception ex) {
+      log.error("Error while processing Command Task response: {}", ex.getMessage(), ex);
+      return sshCommandStepHelper.handleTaskException(ambiance, stepParameters, ex);
+    }
+
+    if (taskResponse == null) {
+      return sshCommandStepHelper.handleTaskException(
+          ambiance, stepParameters, new InvalidArgumentsException("Failed to process Command Task response"));
+    }
+
     List<UnitProgress> unitProgresses = taskResponse.getUnitProgressData() == null
         ? emptyList()
         : taskResponse.getUnitProgressData().getUnitProgresses();

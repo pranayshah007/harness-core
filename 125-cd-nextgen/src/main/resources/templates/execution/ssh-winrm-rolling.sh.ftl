@@ -1,6 +1,7 @@
 ${failureStrategies}
 ${rollingSnippet
 ?replace("<+maxConcurrency>", maxConcurrency)
+?replace("<+end>", end)
 ?replace("<+unit>", unitType)
 ?replace("<+setup_runtime_paths_script>", setupRuntimePathsScript)
 ?replace("<+process_stop_script>", processStopScript)

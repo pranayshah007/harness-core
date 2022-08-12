@@ -90,6 +90,8 @@ public class TerraformTaskNGParameters
       }
     }
     if (fileStoreConfigFiles != null) {
+      capabilities.addAll(ProcessExecutionCapabilityHelper.generateExecutionCapabilitiesForTerraform(
+          fileStoreConfigFiles.getEncryptedDataDetails(), maskingEvaluator));
       switch (fileStoreConfigFiles.getManifestStoreType()) {
         case "Artifactory":
           capabilities.addAll(ArtifactoryCapabilityHelper.fetchRequiredExecutionCapabilities(

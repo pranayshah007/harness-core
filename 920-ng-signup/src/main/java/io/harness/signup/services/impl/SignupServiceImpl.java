@@ -64,7 +64,6 @@ import io.harness.user.remote.UserClient;
 import io.harness.version.VersionInfoManager;
 
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
@@ -82,7 +81,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -476,16 +474,13 @@ public class SignupServiceImpl implements SignupService {
 
   private void enableModuleLicense(
       ModuleType intent, Edition edition, SignupAction signupAction, String accountIdentifier) {
-    Set<ModuleType> moduleTypeSet = Sets.newHashSet(ModuleType.CD, ModuleType.CI, ModuleType.CF, ModuleType.CE);
-    if (signupAction != null && edition != null && intent != null && signupAction.equals(SignupAction.TRIAL)
-        && moduleTypeSet.contains(intent)) {
-      StartTrialDTO startTrialDTO = StartTrialDTO.builder().edition(edition).moduleType(intent).build();
-      licenseService.startTrialLicense(accountIdentifier, startTrialDTO);
-      moduleTypeSet.remove(intent);
-    }
-
-    for (ModuleType moduleType : moduleTypeSet) {
-      licenseService.startFreeLicense(accountIdentifier, moduleType);
+    if (intent != null) {
+      if (signupAction != null && edition != null && signupAction.equals(SignupAction.TRIAL)) {
+        StartTrialDTO startTrialDTO = StartTrialDTO.builder().edition(edition).moduleType(intent).build();
+        licenseService.startTrialLicense(accountIdentifier, startTrialDTO);
+        return;
+      }
+      licenseService.startFreeLicense(accountIdentifier, intent);
     }
   }
 

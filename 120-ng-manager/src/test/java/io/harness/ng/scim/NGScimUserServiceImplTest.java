@@ -9,10 +9,12 @@ package io.harness.ng.scim;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
+import static io.harness.rule.OwnerRule.BOOPESH;
 import static io.harness.rule.OwnerRule.UJJAWAL;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -32,6 +34,7 @@ import io.harness.ng.core.user.UserMembershipUpdateSource;
 import io.harness.ng.core.user.remote.dto.UserMetadataDTO;
 import io.harness.ng.core.user.service.NgUserService;
 import io.harness.rule.Owner;
+import io.harness.scim.ScimListResponse;
 import io.harness.scim.ScimUser;
 import io.harness.utils.featureflaghelper.NGFeatureFlagHelperService;
 
@@ -180,5 +183,50 @@ public class NGScimUserServiceImplTest extends NgManagerTestBase {
     verify(ngUserService, times(1))
         .addUserToScope(
             userMetadataDTO.getUuid(), Scope.of(accountId, null, null), null, null, UserMembershipUpdateSource.SYSTEM);
+  }
+
+  @Test
+  @Owner(developers = BOOPESH)
+  @Category(UnitTests.class)
+  public void testNGScimSearchForCGUser() {
+    ScimUser scimUser = new ScimUser();
+    scimUser.setUserName("randomEmail.com");
+    scimUser.setDisplayName("randomDisplayname");
+    ScimListResponse<ScimUser> scimUserScimListResponse = new ScimListResponse<>();
+    List<ScimUser> resources = new ArrayList<>();
+    resources.add(scimUser);
+    scimUserScimListResponse.setResources(resources);
+    scimUserScimListResponse.setTotalResults(1);
+    when(ngUserService.searchScimUsersByEmailQuery(anyString(), anyString(), any(), any()))
+        .thenReturn(scimUserScimListResponse);
+    when(ngUserService.getUserByEmail(anyString(), anyBoolean())).thenReturn(Optional.empty());
+    ScimListResponse<ScimUser> result = scimUserService.searchUser("accountId", "filter", 1, 0);
+    assertThat(result.getTotalResults()).isEqualTo(0);
+    assertThat(result.getResources().size()).isEqualTo(0);
+  }
+
+  @Test
+  @Owner(developers = BOOPESH)
+  @Category(UnitTests.class)
+  public void testNGScimSearchForNGUser() {
+    ScimUser scimUser = new ScimUser();
+    scimUser.setUserName("randomEmail.com");
+    scimUser.setDisplayName("randomDisplayname");
+    ScimListResponse<ScimUser> scimUserScimListResponse = new ScimListResponse<>();
+    List<ScimUser> resources = new ArrayList<>();
+    resources.add(scimUser);
+    scimUserScimListResponse.setResources(resources);
+    scimUserScimListResponse.setTotalResults(1);
+    UserMetadataDTO userMetadataDTO = new UserMetadataDTO();
+    userMetadataDTO.setEmail("randomEmail.com");
+    userMetadataDTO.setUuid("random");
+    when(ngUserService.searchScimUsersByEmailQuery(anyString(), anyString(), any(), any()))
+        .thenReturn(scimUserScimListResponse);
+    when(ngUserService.getUserByEmail(anyString(), anyBoolean())).thenReturn(Optional.ofNullable(userMetadataDTO));
+    ScimListResponse<ScimUser> result = scimUserService.searchUser("accountId", "filter", 1, 0);
+    assertThat(result.getTotalResults()).isEqualTo(1);
+    assertThat(result.getResources().size()).isEqualTo(1);
+    assertThat(result.getResources().get(0).getDisplayName()).isEqualTo("randomDisplayname");
+    assertThat(result.getResources().get(0).getUserName()).isEqualTo("randomEmail.com");
   }
 }

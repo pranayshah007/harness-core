@@ -50,6 +50,7 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ngtriggers.beans.entity.NGTriggerEntity;
+import io.harness.ngtriggers.beans.entity.metadata.status.TriggerStatus;
 import io.harness.ngtriggers.beans.entity.metadata.status.WebhookAutoRegistrationStatus;
 import io.harness.pms.contracts.triggers.ParsedPayload;
 import io.harness.pms.contracts.triggers.SourceType;
@@ -188,6 +189,11 @@ public class TriggerHelper {
 
   public static void stampWebhookRegistrationInfo(
       NGTriggerEntity ngTriggerEntity, WebhookAutoRegistrationStatus registrationStatus) {
-    ngTriggerEntity.getTriggerStatus().setWebhookAutoRegistrationStatus(registrationStatus);
+    if (ngTriggerEntity.getTriggerStatus() == null) {
+      ngTriggerEntity.setTriggerStatus(
+          TriggerStatus.builder().webhookAutoRegistrationStatus(registrationStatus).build());
+    } else {
+      ngTriggerEntity.getTriggerStatus().setWebhookAutoRegistrationStatus(registrationStatus);
+    }
   }
 }
