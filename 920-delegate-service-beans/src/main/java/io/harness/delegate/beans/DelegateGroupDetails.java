@@ -14,6 +14,7 @@ import software.wings.beans.SelectorType;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -40,4 +41,8 @@ public class DelegateGroupDetails {
   private boolean grpcActive;
   private List<DelegateGroupListing.DelegateInner> delegateInstanceDetails;
   private boolean tokenActive;
+  private boolean autoUpgrade;
+  private Date expirationTime;
+  private String delegateVersion;
+  private long upgraderLastUpdated;
 }

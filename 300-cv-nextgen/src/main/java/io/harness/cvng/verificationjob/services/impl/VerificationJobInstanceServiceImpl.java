@@ -223,6 +223,18 @@ public class VerificationJobInstanceServiceImpl implements VerificationJobInstan
         metricService.recordDuration(VERIFICATION_JOB_INSTANCE_HEALTH_SOURCE_EXTRA_TIME,
             verificationJobInstance.getExtraTimeTakenToFinish(clock.instant()));
       }
+      if (progressLog.shouldTerminate()) {
+        terminate(verificationJobInstanceId);
+      }
+    }
+  }
+
+  public void terminate(String verificationJobInstanceId) {
+    List<String> verificationTaskIds =
+        verificationTaskService.maybeGetVerificationTaskIds(Collections.singletonList(verificationJobInstanceId));
+    dataCollectionTaskService.abortDeploymentDataCollectionTasks(verificationTaskIds);
+    for (String verificationTaskId : verificationTaskIds) {
+      orchestrationService.markStateMachineTerminated(verificationTaskId);
     }
   }
 
@@ -288,12 +300,13 @@ public class VerificationJobInstanceServiceImpl implements VerificationJobInstan
             .getVerificationTaskIds(verificationJobInstance.getAccountId(), verificationJobInstance.getUuid())
             .size();
     if (verificationJobInstance.getProgressLogs()
-            .stream()
-            .filter(progressLog -> progressLog.isLastProgressLog(verificationJobInstance))
-            .map(ProgressLog::getVerificationTaskId)
-            .distinct()
-            .count()
-        == verificationTaskCount) {
+                .stream()
+                .filter(progressLog -> progressLog.isLastProgressLog(verificationJobInstance))
+                .map(ProgressLog::getVerificationTaskId)
+                .distinct()
+                .count()
+            == verificationTaskCount
+        || verificationJobInstance.getProgressLogs().stream().anyMatch(ProgressLog::shouldTerminate)) {
       verificationJobInstance.setExecutionStatus(ExecutionStatus.SUCCESS);
       ActivityVerificationStatus activityVerificationStatus = getDeploymentVerificationStatus(verificationJobInstance);
       metricService.incCounter(CVNGMetricsUtils.getVerificationJobInstanceStatusMetricName(activityVerificationStatus));

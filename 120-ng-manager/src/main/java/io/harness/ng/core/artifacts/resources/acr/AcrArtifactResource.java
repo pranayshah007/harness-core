@@ -19,6 +19,8 @@ import io.harness.cdng.artifact.bean.yaml.AcrArtifactConfig;
 import io.harness.cdng.artifact.resources.acr.dtos.AcrRegistriesDTO;
 import io.harness.cdng.artifact.resources.acr.dtos.AcrRepositoriesDTO;
 import io.harness.cdng.artifact.resources.acr.service.AcrResourceService;
+import io.harness.cdng.k8s.resources.azure.dtos.AzureSubscriptionsDTO;
+import io.harness.cdng.k8s.resources.azure.service.AzureResourceService;
 import io.harness.delegate.beans.azure.AcrResponseDTO;
 import io.harness.gitsync.interceptor.GitEntityFindInfoDTO;
 import io.harness.ng.core.artifacts.resources.util.ArtifactResourceUtils;
@@ -60,6 +62,31 @@ import lombok.extern.slf4j.Slf4j;
 public class AcrArtifactResource {
   private final AcrResourceService acrResourceService;
   private final ArtifactResourceUtils artifactResourceUtils;
+  private final AzureResourceService azureResourceService;
+
+  @GET
+  @Path("subscriptions")
+  @ApiOperation(value = "Gets azure subscriptions for ACR artifact", nickname = "getAzureSubscriptionsForAcrArtifact")
+  public ResponseDTO<AzureSubscriptionsDTO> getAzureSubscriptions(
+      @QueryParam("connectorRef") String azureConnectorIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
+      @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @NotNull @QueryParam("fqnPath") String fqnPath,
+      @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceRef) {
+    if (isNotEmpty(serviceRef)) {
+      final ArtifactConfig artifactSpecFromService = artifactResourceUtils.locateArtifactInService(
+          accountId, orgIdentifier, projectIdentifier, serviceRef, fqnPath);
+      AcrArtifactConfig acrArtifactConfig = (AcrArtifactConfig) artifactSpecFromService;
+      if (isEmpty(azureConnectorIdentifier)) {
+        azureConnectorIdentifier = acrArtifactConfig.getConnectorRef().getValue();
+      }
+    }
+    IdentifierRef connectorRef =
+        IdentifierRefHelper.getIdentifierRef(azureConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
+    return ResponseDTO.newResponse(
+        azureResourceService.getSubscriptions(connectorRef, orgIdentifier, projectIdentifier));
+  }
 
   @GET
   @Path("container-registries")
@@ -77,6 +104,33 @@ public class AcrArtifactResource {
   }
 
   @GET
+  @Path("v2/container-registries")
+  @ApiOperation(value = "Gets ACR registries", nickname = "getACRRegistriesForService")
+  public ResponseDTO<AcrRegistriesDTO> getRegistriesBySubscription(
+      @QueryParam("connectorRef") String azureConnectorIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
+      @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @QueryParam("subscriptionId") String subscriptionId, @NotNull @QueryParam("fqnPath") String fqnPath,
+      @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceRef) {
+    if (isNotEmpty(serviceRef)) {
+      final ArtifactConfig artifactSpecFromService = artifactResourceUtils.locateArtifactInService(
+          accountId, orgIdentifier, projectIdentifier, serviceRef, fqnPath);
+      AcrArtifactConfig acrArtifactConfig = (AcrArtifactConfig) artifactSpecFromService;
+      if (isEmpty(azureConnectorIdentifier)) {
+        azureConnectorIdentifier = acrArtifactConfig.getConnectorRef().getValue();
+      }
+      if (isEmpty(subscriptionId)) {
+        subscriptionId = acrArtifactConfig.getSubscriptionId().getValue();
+      }
+    }
+    IdentifierRef connectorRef =
+        IdentifierRefHelper.getIdentifierRef(azureConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
+    return ResponseDTO.newResponse(
+        acrResourceService.getRegistries(connectorRef, orgIdentifier, projectIdentifier, subscriptionId));
+  }
+
+  @GET
   @Path("container-registries/{registry}/repositories")
   @ApiOperation(
       value = "Gets ACR repositories by subscription and container registry name ", nickname = "getACRRepositories")
@@ -86,6 +140,37 @@ public class AcrArtifactResource {
       @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @NotNull @QueryParam("subscriptionId") String subscriptionId, @PathParam("registry") String registry) {
+    IdentifierRef connectorRef =
+        IdentifierRefHelper.getIdentifierRef(azureConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
+    return ResponseDTO.newResponse(
+        acrResourceService.getRepositories(connectorRef, orgIdentifier, projectIdentifier, subscriptionId, registry));
+  }
+
+  @GET
+  @Path("v2/repositories")
+  @ApiOperation(value = "Gets ACR repositories", nickname = "getACRRepositoriesForService")
+  public ResponseDTO<AcrRepositoriesDTO> getAzureRepositories(
+      @QueryParam("connectorRef") String azureConnectorIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
+      @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @QueryParam("subscriptionId") String subscriptionId, @QueryParam("registry") String registry,
+      @NotNull @QueryParam("fqnPath") String fqnPath,
+      @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceRef) {
+    if (isNotEmpty(serviceRef)) {
+      final ArtifactConfig artifactSpecFromService = artifactResourceUtils.locateArtifactInService(
+          accountId, orgIdentifier, projectIdentifier, serviceRef, fqnPath);
+      AcrArtifactConfig acrArtifactConfig = (AcrArtifactConfig) artifactSpecFromService;
+      if (isEmpty(azureConnectorIdentifier)) {
+        azureConnectorIdentifier = acrArtifactConfig.getConnectorRef().getValue();
+      }
+      if (isEmpty(subscriptionId)) {
+        subscriptionId = acrArtifactConfig.getSubscriptionId().getValue();
+      }
+      if (isEmpty(registry)) {
+        registry = acrArtifactConfig.getRegistry().getValue();
+      }
+    }
     IdentifierRef connectorRef =
         IdentifierRefHelper.getIdentifierRef(azureConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
     return ResponseDTO.newResponse(
@@ -132,11 +217,9 @@ public class AcrArtifactResource {
       if (isEmpty(registry)) {
         registry = (String) acrArtifactConfig.getRegistry().fetchFinalValue();
       }
-
       if (isEmpty(repository)) {
-        registry = (String) acrArtifactConfig.getRepository().fetchFinalValue();
+        repository = (String) acrArtifactConfig.getRepository().fetchFinalValue();
       }
-
       if (isEmpty(azureConnectorIdentifier)) {
         azureConnectorIdentifier = acrArtifactConfig.getConnectorRef().getValue();
       }

@@ -135,6 +135,10 @@ if [[ "" != "$VM_S3_CACHE_IMAGE" ]]; then
   yq write -i $CONFIG_FILE ciExecutionServiceConfig.stepConfig.vmImageConfig.cacheS3 "$VM_S3_CACHE_IMAGE"
 fi
 
+if [[ "" != "$VM_SECURITY_IMAGE" ]]; then
+  yq write -i $CONFIG_FILE ciExecutionServiceConfig.stepConfig.vmImageConfig.security "$VM_SECURITY_IMAGE"
+fi
+
 if [[ "" != "$DEFAULT_MEMORY_LIMIT" ]]; then
   yq write -i $CONFIG_FILE ciExecutionServiceConfig.defaultMemoryLimit "$DEFAULT_MEMORY_LIMIT"
 fi

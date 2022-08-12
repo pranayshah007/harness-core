@@ -1249,6 +1249,9 @@
                 "type": "string"
               }
             },
+            "executeOnDelegate": {
+              "type": "boolean"
+            },
             "type": {
               "type": "string",
               "enum": [
@@ -1563,6 +1566,9 @@
               "items": {
                 "type": "string"
               }
+            },
+            "executeOnDelegate": {
+              "type": "boolean"
             },
             "type": {
               "type": "string",
@@ -3727,6 +3733,9 @@
               "items": {
                 "type": "string"
               }
+            },
+            "executeOnDelegate": {
+              "type": "boolean"
             },
             "type": {
               "type": "string",

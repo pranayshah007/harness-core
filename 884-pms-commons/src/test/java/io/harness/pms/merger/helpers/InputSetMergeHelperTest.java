@@ -120,6 +120,28 @@ public class InputSetMergeHelperTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = NAMAN)
+  @Category(UnitTests.class)
+  public void testMergeInputSetsForGivenStagesWithNoValueForGivenStages() {
+    String pipelineYaml = "pipeline:\n"
+        + "  stages:\n"
+        + "  - stage:\n"
+        + "      identifier: s2\n"
+        + "      key1: <+input>\n"
+        + "      key2: <+input>\n"
+        + "      key3: <+input>";
+    String yamlForS1 = "inputSet:\n"
+        + "  pipeline:\n"
+        + "    stages:\n"
+        + "    - stage:\n"
+        + "        identifier: s1\n"
+        + "        key: s1Value1";
+    String mergedYaml = InputSetMergeHelper.mergeInputSetsForGivenStages(
+        pipelineYaml, Collections.singletonList(yamlForS1), false, Collections.singletonList("s2"));
+    assertThat(mergedYaml).isEqualTo(pipelineYaml);
+  }
+
+  @Test
   @Owner(developers = GARVIT)
   @Category(UnitTests.class)
   public void testMergeInputSetIntoPipelineInputSetValidator() {

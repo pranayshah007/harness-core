@@ -13,7 +13,7 @@ import static java.util.Arrays.asList;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.config.PublisherConfiguration;
-import io.harness.mongo.queue.QueueFactory;
+import io.harness.mongo.queue.NgQueueFactory;
 import io.harness.version.VersionInfoManager;
 import io.harness.waiter.NotifyEvent;
 import io.harness.waiter.NotifyEventListener;
@@ -34,7 +34,7 @@ public final class NgOrchestrationNotifyEventListener extends NotifyEventListene
   @Inject
   public NgOrchestrationNotifyEventListener(
       Injector injector, VersionInfoManager versionInfoManager, PublisherConfiguration config) {
-    super(QueueFactory.createNgQueueConsumer(injector, NotifyEvent.class, ofSeconds(5),
+    super(NgQueueFactory.createNgQueueConsumer(injector, NotifyEvent.class, ofSeconds(5),
         asList(asList(versionInfoManager.getVersionInfo().getVersion()), asList(NG_ORCHESTRATION)), config,
         injector.getInstance(MongoTemplate.class)));
   }

@@ -7,8 +7,6 @@
 
 package io.harness.ci.integrationstage;
 
-import io.harness.beans.stages.IntegrationStageConfig;
-import io.harness.beans.stages.IntegrationStageConfigImpl;
 import io.harness.beans.steps.stepinfo.InitializeStepInfo;
 import io.harness.beans.yaml.extended.infrastrucutre.OSType;
 import io.harness.beans.yaml.extended.infrastrucutre.RunsOnInfra;
@@ -16,6 +14,8 @@ import io.harness.beans.yaml.extended.infrastrucutre.RunsOnInfra.RunOnInfraSpec;
 import io.harness.beans.yaml.extended.infrastrucutre.VmInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.VmPoolYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.VmPoolYaml.VmPoolYamlSpec;
+import io.harness.cimanager.stages.IntegrationStageConfig;
+import io.harness.cimanager.stages.IntegrationStageConfigImpl;
 import io.harness.pms.yaml.ParameterField;
 
 import java.util.Arrays;

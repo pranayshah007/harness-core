@@ -9,7 +9,9 @@ spec:
           strategy:
             repeat:
               items: <+stage.output.hosts>
-              maxConcurency: <+maxConcurrency>
+              maxConcurrency: <+maxConcurrency>
+              start: 0
+              end: <+end>
               unit: <+unit>
           spec:
             host: <+repeat.item>
@@ -42,13 +44,13 @@ spec:
                 type: Copy
                 spec:
                   sourceType: Artifact
-                  destinationPath: %%HARNESS_RUNTIME_PATH
+                  destinationPath: $HARNESS_RUNTIME_PATH
               - identifier: Copy_Config
                 name: "Copy Config"
                 type: Copy
                 spec:
                   sourceType: Config
-                  destinationPath: %%HARNESS_RUNTIME_PATH
+                  destinationPath: $HARNESS_RUNTIME_PATH
       - step:
           type: Verify
           name: Verify

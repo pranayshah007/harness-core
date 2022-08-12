@@ -36,15 +36,21 @@ public class BitbucketToGitMapper {
           ((BitbucketHttpCredentialsDTO) bitbucketConnectorDTO.getAuthentication().getCredentials())
               .getHttpCredentialsSpec();
       final BitbucketUsernamePasswordDTO usernamePasswordDTO = (BitbucketUsernamePasswordDTO) httpCredentialsSpec;
-      return GitConfigCreater.getGitConfigForHttp(connectionType, url, validationRepo,
+
+      GitConfigDTO gitConfigForHttp = GitConfigCreater.getGitConfigForHttp(connectionType, url, validationRepo,
           usernamePasswordDTO.getUsername(), usernamePasswordDTO.getUsernameRef(), usernamePasswordDTO.getPasswordRef(),
           bitbucketConnectorDTO.getDelegateSelectors());
+      gitConfigForHttp.setExecuteOnDelegate(bitbucketConnectorDTO.getExecuteOnDelegate());
+      return gitConfigForHttp;
     } else if (authType == GitAuthType.SSH) {
       final BitbucketSshCredentialsDTO sshCredentials =
           (BitbucketSshCredentialsDTO) bitbucketConnectorDTO.getAuthentication().getCredentials();
       final SecretRefData sshKeyRef = sshCredentials.getSshKeyRef();
-      return GitConfigCreater.getGitConfigForSsh(
+
+      GitConfigDTO gitConfigForSsh = GitConfigCreater.getGitConfigForSsh(
           connectionType, url, validationRepo, sshKeyRef, bitbucketConnectorDTO.getDelegateSelectors());
+      gitConfigForSsh.setExecuteOnDelegate(bitbucketConnectorDTO.getExecuteOnDelegate());
+      return gitConfigForSsh;
     }
     throw new InvalidRequestException("Unknown auth type: " + authType);
   }

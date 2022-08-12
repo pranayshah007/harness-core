@@ -32,7 +32,7 @@ spec:
                           spec:
                             script: |-
                               <+setup_runtime_paths_script>
-                    - identifier: Stop
+                    - identifier: Stop_<+phase>
                       name: "Stop"
                       type: Script
                       spec:

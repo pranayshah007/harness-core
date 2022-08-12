@@ -7,6 +7,7 @@
 
 package io.harness.cdng.creator.filters;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import static java.lang.String.format;
@@ -249,10 +250,19 @@ public class DeploymentStageFilterJsonCreatorV2 extends GenericStageFilterJsonCr
 
   private void addFiltersFromServiceV2(FilterCreationContext filterCreationContext, CdFilterBuilder filterBuilder,
       ServiceYamlV2 service, ServiceDefinitionType deploymentType) {
+    if (service.getUseFromStage() != null) {
+      if (isEmpty(service.getUseFromStage().getStage())) {
+        throw new InvalidYamlRuntimeException(format(
+            "stage identifier should be present in stage [%s] when propagating service from a different stage. Please add it and try again",
+            YamlUtils.getFullyQualifiedName(filterCreationContext.getCurrentField().getNode())));
+      }
+      return;
+    }
+
     final ParameterField<String> serviceEntityRef = service.getServiceRef();
     if (serviceEntityRef == null || serviceEntityRef.fetchFinalValue() == null) {
       throw new InvalidYamlRuntimeException(format(
-          "serviceConfigRef should be present in stage [%s] when referring to a service entity. Please add it and try again",
+          "serviceRef should be present in stage [%s] when referring to a service entity. Please add it and try again",
           YamlUtils.getFullyQualifiedName(filterCreationContext.getCurrentField().getNode())));
     }
 

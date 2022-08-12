@@ -423,7 +423,10 @@ java_library(
     resources = [
         "//332-ci-manager/service/src/main/resources:resource",
     ],
-    visibility = ["//visibility:public"],
+    visibility = [
+        "//325-sto-beans:__subpackages__",
+        "//332-ci-manager/app:__subpackages__",
+    ],
     deps = shared_dependencies + [
         "//:lombok",
     ],

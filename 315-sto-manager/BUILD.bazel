@@ -10,8 +10,6 @@ shared_dependencies = [
 ] + [
     "//323-sto-utilities:module",
     "//325-sto-beans:module",
-    "//332-ci-manager/contracts:module",
-    "//332-ci-manager/service:module",
     "//440-connector-nextgen:module",
     "//870-cg-orchestration:module",
     "//940-primary-version-manager:module",

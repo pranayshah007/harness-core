@@ -14,7 +14,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.ExceptionUtils;
 import io.harness.health.HealthMonitor;
 import io.harness.mongo.tracing.TraceMode;
-import io.harness.mongo.tracing.Tracer;
+import io.harness.ng.persistence.tracer.NgTracer;
 import io.harness.observer.Subject;
 
 import com.mongodb.MongoSocketOpenException;
@@ -45,7 +45,7 @@ public class HMongoTemplate extends MongoTemplate implements HealthMonitor {
 
   private final TraceMode traceMode;
 
-  @Getter private final Subject<Tracer> tracerSubject = new Subject<>();
+  @Getter private final Subject<NgTracer> tracerSubject = new Subject<>();
 
   public HMongoTemplate(MongoDbFactory mongoDbFactory, MongoConverter mongoConverter) {
     this(mongoDbFactory, mongoConverter, TraceMode.DISABLED);
@@ -100,7 +100,7 @@ public class HMongoTemplate extends MongoTemplate implements HealthMonitor {
 
   private <T> void traceQuery(Query query, Class<T> entityClass) {
     if (traceMode == TraceMode.ENABLED) {
-      tracerSubject.fireInform(Tracer::traceSpringQuery, query, entityClass, this);
+      tracerSubject.fireInform(NgTracer::traceSpringQuery, query, entityClass, this);
     }
   }
 

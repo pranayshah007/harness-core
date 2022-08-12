@@ -40,10 +40,10 @@ spec:
                 type: Copy
                 spec:
                   sourceType: Artifact
-                  destinationPath: %%HARNESS_RUNTIME_PATH
+                  destinationPath: $HARNESS_RUNTIME_PATH
               - identifier: Copy_Config
                 name: "Copy Config"
                 type: Copy
                 spec:
                   sourceType: Config
-                  destinationPath: %%HARNESS_RUNTIME_PATH
+                  destinationPath: $HARNESS_RUNTIME_PATH
