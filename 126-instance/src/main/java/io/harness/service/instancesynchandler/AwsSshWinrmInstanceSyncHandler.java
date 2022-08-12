@@ -14,12 +14,12 @@ import static java.lang.String.format;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
-import io.harness.cdng.infra.beans.SshWinRmAzureInfrastructureOutcome;
+import io.harness.cdng.infra.beans.SshWinRmAwsInfrastructureOutcome;
 import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
-import io.harness.delegate.beans.instancesync.info.AzureSshWinrmServerInstanceInfo;
-import io.harness.dtos.deploymentinfo.AzureSshWinrmDeploymentInfoDTO;
+import io.harness.delegate.beans.instancesync.info.AwsSshWinrmServerInstanceInfo;
+import io.harness.dtos.deploymentinfo.AwsSshWinrmDeploymentInfoDTO;
 import io.harness.dtos.deploymentinfo.DeploymentInfoDTO;
-import io.harness.dtos.instanceinfo.AzureSshWinrmInstanceInfoDTO;
+import io.harness.dtos.instanceinfo.AwsSshWinrmInstanceInfoDTO;
 import io.harness.dtos.instanceinfo.InstanceInfoDTO;
 import io.harness.entities.InstanceType;
 import io.harness.exception.InvalidArgumentsException;
@@ -37,47 +37,47 @@ import org.apache.commons.lang3.tuple.Pair;
 
 @OwnedBy(HarnessTeam.CDP)
 @Singleton
-public class AzureSshWinrmInstanceSyncHandler extends AbstractInstanceSyncHandler {
+public class AwsSshWinrmInstanceSyncHandler extends AbstractInstanceSyncHandler {
   private static final Set<String> VALID_SERVICE_TYPES = ImmutableSet.of(ServiceSpecType.SSH, ServiceSpecType.WINRM);
 
   @Override
   public String getPerpetualTaskType() {
-    return PerpetualTaskType.AZURE_SSH_WINRM_INSTANCE_SYNC_NG;
+    return PerpetualTaskType.AWS_SSH_WINRM_INSTANCE_SYNC_NG;
   }
 
   @Override
   public InstanceType getInstanceType() {
-    return InstanceType.AZURE_SSH_WINRM_INSTANCE;
+    return InstanceType.AWS_SSH_WINRM_INSTANCE;
   }
 
   @Override
   public String getInfrastructureKind() {
-    return InfrastructureKind.SSH_WINRM_AZURE;
+    return InfrastructureKind.SSH_WINRM_AWS;
   }
 
   @Override
   public InfrastructureDetails getInfrastructureDetails(InstanceInfoDTO instanceInfoDTO) {
-    if (!(instanceInfoDTO instanceof AzureSshWinrmInstanceInfoDTO)) {
+    if (!(instanceInfoDTO instanceof AwsSshWinrmInstanceInfoDTO)) {
       throw new InvalidArgumentsException(
-          Pair.of("instanceInfoDTO", "Must be instance of " + AzureSshWinrmInstanceInfoDTO.class));
+          Pair.of("instanceInfoDTO", "Must be instance of " + AwsSshWinrmInstanceInfoDTO.class));
     }
 
-    AzureSshWinrmInstanceInfoDTO pdcInstanceInfoDTO = (AzureSshWinrmInstanceInfoDTO) instanceInfoDTO;
-    return SshWinrmInfrastructureDetails.builder().host(pdcInstanceInfoDTO.getHost()).build();
+    AwsSshWinrmInstanceInfoDTO awsSshWinrmInstanceInfoDTO = (AwsSshWinrmInstanceInfoDTO) instanceInfoDTO;
+    return SshWinrmInfrastructureDetails.builder().host(awsSshWinrmInstanceInfoDTO.getHost()).build();
   }
 
   @Override
   protected InstanceInfoDTO getInstanceInfoForServerInstance(ServerInstanceInfo serverInstanceInfo) {
-    if (!(serverInstanceInfo instanceof AzureSshWinrmServerInstanceInfo)) {
+    if (!(serverInstanceInfo instanceof AwsSshWinrmServerInstanceInfo)) {
       throw new InvalidArgumentsException(
-          Pair.of("serverInstanceInfo", "Must be instance of " + AzureSshWinrmServerInstanceInfo.class));
+          Pair.of("serverInstanceInfo", "Must be instance of " + AwsSshWinrmServerInstanceInfo.class));
     }
 
-    AzureSshWinrmServerInstanceInfo pdcServerInstanceInfo = (AzureSshWinrmServerInstanceInfo) serverInstanceInfo;
-    return AzureSshWinrmInstanceInfoDTO.builder()
-        .serviceType(pdcServerInstanceInfo.getServiceType())
-        .host(pdcServerInstanceInfo.getHost())
-        .infrastructureKey(pdcServerInstanceInfo.getInfrastructureKey())
+    AwsSshWinrmServerInstanceInfo awsSshWinrmServerInstanceInfo = (AwsSshWinrmServerInstanceInfo) serverInstanceInfo;
+    return AwsSshWinrmInstanceInfoDTO.builder()
+        .serviceType(awsSshWinrmServerInstanceInfo.getServiceType())
+        .host(awsSshWinrmServerInstanceInfo.getHost())
+        .infrastructureKey(awsSshWinrmServerInstanceInfo.getInfrastructureKey())
         .build();
   }
 
@@ -87,27 +87,27 @@ public class AzureSshWinrmInstanceSyncHandler extends AbstractInstanceSyncHandle
     if (isEmpty(serverInstanceInfoList)) {
       throw new InvalidArgumentsException("Parameter serverInstanceInfoList cannot be null or empty");
     }
-    if (!(infrastructureOutcome instanceof SshWinRmAzureInfrastructureOutcome)) {
+    if (!(infrastructureOutcome instanceof SshWinRmAwsInfrastructureOutcome)) {
       throw new InvalidArgumentsException(
-          Pair.of("infrastructureOutcome", "Must be instance of " + SshWinRmAzureInfrastructureOutcome.class));
+          Pair.of("infrastructureOutcome", "Must be instance of " + SshWinRmAwsInfrastructureOutcome.class));
     }
-    if (!(serverInstanceInfoList.get(0) instanceof AzureSshWinrmServerInstanceInfo)) {
+    if (!(serverInstanceInfoList.get(0) instanceof AwsSshWinrmServerInstanceInfo)) {
       throw new InvalidArgumentsException(
-          Pair.of("serverInstanceInfo", "Must be instance of " + AzureSshWinrmServerInstanceInfo.class));
+          Pair.of("serverInstanceInfo", "Must be instance of " + AwsSshWinrmServerInstanceInfo.class));
     }
 
-    List<AzureSshWinrmServerInstanceInfo> serverInstanceInfos =
-        (List<AzureSshWinrmServerInstanceInfo>) (List<?>) serverInstanceInfoList;
-    AzureSshWinrmServerInstanceInfo serverInstanceInfo = serverInstanceInfos.get(0);
-    if (!VALID_SERVICE_TYPES.contains(serverInstanceInfo.getServiceType())) {
+    List<AwsSshWinrmServerInstanceInfo> awsSshWinrmServerInstanceInfos =
+        (List<AwsSshWinrmServerInstanceInfo>) (List<?>) serverInstanceInfoList;
+    AwsSshWinrmServerInstanceInfo awsSshWinrmServerInstanceInfo = awsSshWinrmServerInstanceInfos.get(0);
+    if (!VALID_SERVICE_TYPES.contains(awsSshWinrmServerInstanceInfo.getServiceType())) {
       throw new InvalidArgumentsException(format("Invalid serviceType provided %s . Must be one of %s",
-          serverInstanceInfo.getServiceType(), VALID_SERVICE_TYPES));
+          awsSshWinrmServerInstanceInfo.getServiceType(), VALID_SERVICE_TYPES));
     }
 
-    return AzureSshWinrmDeploymentInfoDTO.builder()
-        .serviceType(serverInstanceInfo.getServiceType())
+    return AwsSshWinrmDeploymentInfoDTO.builder()
+        .serviceType(awsSshWinrmServerInstanceInfo.getServiceType())
         .infrastructureKey(infrastructureOutcome.getInfrastructureKey())
-        .host(serverInstanceInfo.getHost())
+        .host(awsSshWinrmServerInstanceInfo.getHost())
         .build();
   }
 }

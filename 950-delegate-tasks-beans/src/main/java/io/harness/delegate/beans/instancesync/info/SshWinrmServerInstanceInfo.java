@@ -5,17 +5,22 @@
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 
-package io.harness.models.infrastructuredetails;
+package io.harness.delegate.beans.instancesync.info;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
 
-import lombok.Builder;
-import lombok.Value;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
 
+@Data
+@AllArgsConstructor
+@EqualsAndHashCode(callSuper = true)
 @OwnedBy(HarnessTeam.CDP)
-@Value
-@Builder
-public class AzureSshWinrmInfrastructureDetails extends InfrastructureDetails {
-  String host;
+public abstract class SshWinrmServerInstanceInfo extends ServerInstanceInfo {
+  private String serviceType;
+  private String infrastructureKey;
+  private String host;
 }

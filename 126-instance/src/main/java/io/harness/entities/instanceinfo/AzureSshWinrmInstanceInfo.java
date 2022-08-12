@@ -10,17 +10,14 @@ package io.harness.entities.instanceinfo;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
-import javax.validation.constraints.NotNull;
 import lombok.Builder;
-import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 @OwnedBy(HarnessTeam.DX)
-@Data
-@Builder
 @EqualsAndHashCode(callSuper = true)
-public class AzureSshWinrmInstanceInfo extends InstanceInfo {
-  @NotNull private String host;
-  @NotNull private String serviceType;
-  private String infrastructureKey;
+public class AzureSshWinrmInstanceInfo extends SshWinrmInstanceInfo {
+  @Builder
+  public AzureSshWinrmInstanceInfo(String serviceType, String infrastructureKey, String host) {
+    super(serviceType, infrastructureKey, host);
+  }
 }
