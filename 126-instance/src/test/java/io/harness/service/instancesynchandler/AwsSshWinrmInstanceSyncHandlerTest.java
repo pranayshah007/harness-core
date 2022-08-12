@@ -7,7 +7,7 @@
 
 package io.harness.service.instancesynchandler;
 
-import static io.harness.rule.OwnerRule.ARVIND;
+import static io.harness.rule.OwnerRule.VITALIE;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -15,12 +15,12 @@ import io.harness.InstancesTestBase;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
-import io.harness.cdng.infra.beans.SshWinRmAzureInfrastructureOutcome;
+import io.harness.cdng.infra.beans.SshWinRmAwsInfrastructureOutcome;
 import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
-import io.harness.delegate.beans.instancesync.info.AzureSshWinrmServerInstanceInfo;
-import io.harness.dtos.deploymentinfo.AzureSshWinrmDeploymentInfoDTO;
+import io.harness.delegate.beans.instancesync.info.AwsSshWinrmServerInstanceInfo;
+import io.harness.dtos.deploymentinfo.AwsSshWinrmDeploymentInfoDTO;
 import io.harness.dtos.deploymentinfo.DeploymentInfoDTO;
-import io.harness.dtos.instanceinfo.AzureSshWinrmInstanceInfoDTO;
+import io.harness.dtos.instanceinfo.AwsSshWinrmInstanceInfoDTO;
 import io.harness.dtos.instanceinfo.InstanceInfoDTO;
 import io.harness.models.infrastructuredetails.InfrastructureDetails;
 import io.harness.models.infrastructuredetails.SshWinrmInfrastructureDetails;
@@ -33,23 +33,23 @@ import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 
 @OwnedBy(HarnessTeam.CDP)
-public class AzureSshWinrmInstanceSyncHandlerTest extends InstancesTestBase {
+public class AwsSshWinrmInstanceSyncHandlerTest extends InstancesTestBase {
   private static final String INFRASTRUCTURE_KEY = "INFRA_KEY";
   private static final String HOST = "HOST";
   private static final String SSH_SERVICE = ServiceSpecType.SSH;
-  private ServerInstanceInfo serverInstanceInfo = AzureSshWinrmServerInstanceInfo.builder()
+  private ServerInstanceInfo serverInstanceInfo = AwsSshWinrmServerInstanceInfo.builder()
                                                       .serviceType(SSH_SERVICE)
                                                       .host(HOST)
                                                       .infrastructureKey(INFRASTRUCTURE_KEY)
                                                       .build();
-  @InjectMocks public AzureSshWinrmInstanceSyncHandler azureSshWinrmInstanceSyncHandler;
+  @InjectMocks public AwsSshWinrmInstanceSyncHandler azureSshWinrmInstanceSyncHandler;
 
   @Test
-  @Owner(developers = ARVIND)
+  @Owner(developers = VITALIE)
   @Category(UnitTests.class)
   public void testGetInfrastructureDetails() {
-    AzureSshWinrmInstanceInfoDTO instanceInfoDTO =
-        AzureSshWinrmInstanceInfoDTO.builder().infrastructureKey(INFRASTRUCTURE_KEY).host(HOST).build();
+    AwsSshWinrmInstanceInfoDTO instanceInfoDTO =
+        AwsSshWinrmInstanceInfoDTO.builder().infrastructureKey(INFRASTRUCTURE_KEY).host(HOST).build();
     InfrastructureDetails infrastructureDetails =
         azureSshWinrmInstanceSyncHandler.getInfrastructureDetails(instanceInfoDTO);
     assertThat(infrastructureDetails).isInstanceOf(SshWinrmInfrastructureDetails.class);
@@ -57,15 +57,15 @@ public class AzureSshWinrmInstanceSyncHandlerTest extends InstancesTestBase {
   }
 
   @Test
-  @Owner(developers = ARVIND)
+  @Owner(developers = VITALIE)
   @Category(UnitTests.class)
   public void testGetInstanceInfoForServerInstance() {
     InstanceInfoDTO instanceInfoDTO =
         azureSshWinrmInstanceSyncHandler.getInstanceInfoForServerInstance(serverInstanceInfo);
-    assertThat(instanceInfoDTO).isInstanceOf(AzureSshWinrmInstanceInfoDTO.class);
-    assertThat(((AzureSshWinrmInstanceInfoDTO) instanceInfoDTO).getHost()).isEqualTo(HOST);
-    assertThat(((AzureSshWinrmInstanceInfoDTO) instanceInfoDTO).getInfrastructureKey()).isEqualTo(INFRASTRUCTURE_KEY);
-    assertThat(((AzureSshWinrmInstanceInfoDTO) instanceInfoDTO).getServiceType()).isEqualTo(SSH_SERVICE);
+    assertThat(instanceInfoDTO).isInstanceOf(AwsSshWinrmInstanceInfoDTO.class);
+    assertThat(((AwsSshWinrmInstanceInfoDTO) instanceInfoDTO).getHost()).isEqualTo(HOST);
+    assertThat(((AwsSshWinrmInstanceInfoDTO) instanceInfoDTO).getInfrastructureKey()).isEqualTo(INFRASTRUCTURE_KEY);
+    assertThat(((AwsSshWinrmInstanceInfoDTO) instanceInfoDTO).getServiceType()).isEqualTo(SSH_SERVICE);
 
     InfrastructureDetails infrastructureDetails =
         azureSshWinrmInstanceSyncHandler.getInfrastructureDetails(instanceInfoDTO);
@@ -74,16 +74,16 @@ public class AzureSshWinrmInstanceSyncHandlerTest extends InstancesTestBase {
   }
 
   @Test
-  @Owner(developers = ARVIND)
+  @Owner(developers = VITALIE)
   @Category(UnitTests.class)
   public void testGetDeploymentInfo() {
-    SshWinRmAzureInfrastructureOutcome outcome =
-        SshWinRmAzureInfrastructureOutcome.builder().infrastructureKey(INFRASTRUCTURE_KEY).build();
+    SshWinRmAwsInfrastructureOutcome outcome =
+        SshWinRmAwsInfrastructureOutcome.builder().infrastructureKey(INFRASTRUCTURE_KEY).build();
     DeploymentInfoDTO deploymentInfo =
         azureSshWinrmInstanceSyncHandler.getDeploymentInfo(outcome, Collections.singletonList(serverInstanceInfo));
-    assertThat(deploymentInfo).isInstanceOf(AzureSshWinrmDeploymentInfoDTO.class);
+    assertThat(deploymentInfo).isInstanceOf(AwsSshWinrmDeploymentInfoDTO.class);
     assertThat(deploymentInfo.getType()).isEqualTo(SSH_SERVICE);
-    assertThat(((AzureSshWinrmDeploymentInfoDTO) deploymentInfo).getHost()).isEqualTo(HOST);
-    assertThat(((AzureSshWinrmDeploymentInfoDTO) deploymentInfo).getInfrastructureKey()).isEqualTo(INFRASTRUCTURE_KEY);
+    assertThat(((AwsSshWinrmDeploymentInfoDTO) deploymentInfo).getHost()).isEqualTo(HOST);
+    assertThat(((AwsSshWinrmDeploymentInfoDTO) deploymentInfo).getInfrastructureKey()).isEqualTo(INFRASTRUCTURE_KEY);
   }
 }
