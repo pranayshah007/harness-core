@@ -7,6 +7,7 @@
 
 package io.harness.accesscontrol.acl.api;
 
+import static io.harness.rule.OwnerRule.JIMIT_GANDHI;
 import static io.harness.rule.OwnerRule.UTKARSH;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -20,12 +21,17 @@ import io.harness.accesscontrol.roleassignments.privileged.PrivilegedRoleAssignm
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.rule.Owner;
 
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 @OwnedBy(HarnessTeam.PL)
 public class ACLResourceImplTest extends AccessControlTestBase {
@@ -52,5 +58,18 @@ public class ACLResourceImplTest extends AccessControlTestBase {
     assertThat(principal).isEqualTo(accessCheckResponse.getData().getPrincipal());
     assertThat(accessCheckResponse.getData().getAccessControlList()).isNotNull();
     assertThat(accessCheckResponse.getData().getAccessControlList()).isEmpty();
+  }
+
+  @Test(expected = InvalidRequestException.class)
+  @Owner(developers = JIMIT_GANDHI)
+  @Category(UnitTests.class)
+  public void testAccessCheck_WithBothResourceAttributesAndIdentifier_ThrowsInvalidRequestException() {
+    Map<String, String> map = new HashMap<String,String>();
+    map.put("testKey",  "testValue");
+    PermissionCheckDTO permissionCheckDTO = PermissionCheckDTO.builder().resourceAttributes(map)
+            .resourceIdentifier("testIdentifier").build();
+AccessCheckRequestDTO accessCheckRequestDTO = AccessCheckRequestDTO.builder().
+        permissions(Collections.singletonList(permissionCheckDTO)).build();
+    aclResource.get(accessCheckRequestDTO);
   }
 }
