@@ -9,8 +9,11 @@ package io.harness.delegate.k8s;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
-import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.k8s.K8sRollingBaseHandler.HARNESS_TRACK_STABLE_SELECTOR;
+import static io.harness.delegate.k8s.releasehistory.ReleaseConstants.RELEASE_HARNESS_SECRET_TYPE;
+import static io.harness.delegate.k8s.releasehistory.ReleaseConstants.RELEASE_KEY;
+import static io.harness.delegate.k8s.releasehistory.ReleaseConstants.RELEASE_OWNER_LABEL_KEY;
+import static io.harness.delegate.k8s.releasehistory.ReleaseConstants.RELEASE_OWNER_LABEL_VALUE;
 import static io.harness.delegate.task.k8s.K8sTaskHelperBase.getTimeoutMillisFromMinutes;
 import static io.harness.k8s.K8sCommandUnitConstants.Apply;
 import static io.harness.k8s.K8sCommandUnitConstants.FetchFiles;
@@ -21,8 +24,8 @@ import static io.harness.k8s.K8sCommandUnitConstants.WaitForSteadyState;
 import static io.harness.k8s.K8sCommandUnitConstants.WrapUp;
 import static io.harness.k8s.K8sConstants.MANIFEST_FILES_DIR;
 import static io.harness.k8s.manifest.ManifestHelper.getCustomResourceDefinitionWorkloads;
+import static io.harness.k8s.manifest.ManifestHelper.getNonManagedResources;
 import static io.harness.k8s.manifest.ManifestHelper.getWorkloads;
-import static io.harness.k8s.manifest.VersionUtils.markVersionedResources;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 import static io.harness.logging.LogLevel.INFO;
 import static io.harness.logging.LogLevel.WARN;
@@ -40,6 +43,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FileData;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
+import io.harness.delegate.k8s.releasehistory.ReleaseHistoryServiceImpl;
 import io.harness.delegate.task.k8s.ContainerDeploymentDelegateBaseHelper;
 import io.harness.delegate.task.k8s.K8sDeployRequest;
 import io.harness.delegate.task.k8s.K8sDeployResponse;
@@ -68,14 +72,16 @@ import software.wings.beans.LogWeight;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
-import java.io.IOException;
+import io.kubernetes.client.openapi.models.V1Secret;
 import java.nio.file.Paths;
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.ListUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 
 @OwnedBy(CDP)
@@ -86,6 +92,7 @@ public class K8sRollingRequestHandler extends K8sRequestHandler {
   @Inject private K8sTaskHelperBase k8sTaskHelperBase;
   @Inject K8sRollingBaseHandler k8sRollingBaseHandler;
   @Inject private ContainerDeploymentDelegateBaseHelper containerDeploymentDelegateBaseHelper;
+  @Inject private ReleaseHistoryServiceImpl releaseHistoryService;
 
   private KubernetesConfig kubernetesConfig;
   private Kubectl client;
@@ -93,10 +100,14 @@ public class K8sRollingRequestHandler extends K8sRequestHandler {
   Release release;
   List<KubernetesResource> customWorkloads;
   List<KubernetesResource> managedWorkloads;
+  List<KubernetesResource> nonManagedResources;
   List<KubernetesResource> resources;
+  List<V1Secret> releaseList;
   private String releaseName;
   private String manifestFilesDirectory;
   private boolean shouldSaveReleaseHistory;
+  private V1Secret currentRelease;
+  int currentReleaseNumber;
 
   @Override
   protected K8sDeployResponse executeTaskInternal(K8sDeployRequest k8sDeployRequest,
@@ -124,9 +135,8 @@ public class K8sRollingRequestHandler extends K8sRequestHandler {
 
     LogCallback prepareLogCallback =
         k8sTaskHelperBase.getLogCallback(logStreamingTaskClient, Prepare, true, commandUnitsProgress);
-    prepareForRolling(k8sDelegateTaskParams, prepareLogCallback, k8sRollingDeployRequest.isInCanaryWorkflow(),
-        k8sRollingDeployRequest.isSkipResourceVersioning(),
-        k8sRollingDeployRequest.isSkipAddingTrackSelectorToDeployment(), k8sRollingDeployRequest.isPruningEnabled());
+    prepareForRolling(prepareLogCallback, k8sRollingDeployRequest.isInCanaryWorkflow(),
+        k8sRollingDeployRequest.isSkipAddingTrackSelectorToDeployment());
 
     List<KubernetesResource> allWorkloads = ListUtils.union(managedWorkloads, customWorkloads);
     List<K8sPod> existingPodList = k8sRollingBaseHandler.getExistingPods(
@@ -140,40 +150,27 @@ public class K8sRollingRequestHandler extends K8sRequestHandler {
       k8sTaskHelperBase.getLogCallback(logStreamingTaskClient, WaitForSteadyState, true, commandUnitsProgress)
           .saveExecutionLog("Skipping Status Check since there is no Managed Workload.", INFO, SUCCESS);
     } else {
-      k8sRollingBaseHandler.setManagedWorkloadsInRelease(k8sDelegateTaskParams, managedWorkloads, release, client);
-      k8sRollingBaseHandler.setCustomWorkloadsInRelease(customWorkloads, release);
-
-      kubernetesContainerService.saveReleaseHistory(kubernetesConfig, k8sRollingDeployRequest.getReleaseName(),
-          releaseHistory.getAsYaml(), !customWorkloads.isEmpty());
-
       List<KubernetesResourceId> managedWorkloadKubernetesResourceIds =
           managedWorkloads.stream().map(KubernetesResource::getResourceId).collect(Collectors.toList());
       LogCallback waitForeSteadyStateLogCallback =
           k8sTaskHelperBase.getLogCallback(logStreamingTaskClient, WaitForSteadyState, true, commandUnitsProgress);
 
-      try {
-        K8sSteadyStateDTO k8sSteadyStateDTO = K8sSteadyStateDTO.builder()
-                                                  .request(k8sDeployRequest)
-                                                  .resourceIds(managedWorkloadKubernetesResourceIds)
-                                                  .executionLogCallback(waitForeSteadyStateLogCallback)
-                                                  .k8sDelegateTaskParams(k8sDelegateTaskParams)
-                                                  .namespace(kubernetesConfig.getNamespace())
-                                                  .denoteOverallSuccess(customWorkloads.isEmpty())
-                                                  .isErrorFrameworkEnabled(true)
-                                                  .build();
+      K8sSteadyStateDTO k8sSteadyStateDTO = K8sSteadyStateDTO.builder()
+                                                .request(k8sDeployRequest)
+                                                .resourceIds(managedWorkloadKubernetesResourceIds)
+                                                .executionLogCallback(waitForeSteadyStateLogCallback)
+                                                .k8sDelegateTaskParams(k8sDelegateTaskParams)
+                                                .namespace(kubernetesConfig.getNamespace())
+                                                .denoteOverallSuccess(customWorkloads.isEmpty())
+                                                .isErrorFrameworkEnabled(true)
+                                                .build();
 
-        K8sClient k8sClient =
-            k8sTaskHelperBase.getKubernetesClient(k8sRollingDeployRequest.isUseK8sApiForSteadyStateCheck());
-        k8sClient.performSteadyStateCheck(k8sSteadyStateDTO);
+      K8sClient k8sClient =
+          k8sTaskHelperBase.getKubernetesClient(k8sRollingDeployRequest.isUseK8sApiForSteadyStateCheck());
+      k8sClient.performSteadyStateCheck(k8sSteadyStateDTO);
 
-        k8sTaskHelperBase.doStatusCheckForAllCustomResources(client, customWorkloads, k8sDelegateTaskParams,
-            waitForeSteadyStateLogCallback, true, steadyStateTimeoutInMillis, true);
-      } finally {
-        // We have to update the DeploymentConfig revision again as the rollout history command sometimes gives the
-        // older revision. There seems to be delay in handling of the DeploymentConfig where it still gives older
-        // revision even after the apply command has successfully run
-        k8sRollingBaseHandler.updateManagedWorkloadsRevision(k8sDelegateTaskParams, release, client);
-      }
+      k8sTaskHelperBase.doStatusCheckForAllCustomResources(client, customWorkloads, k8sDelegateTaskParams,
+          waitForeSteadyStateLogCallback, true, steadyStateTimeoutInMillis, true);
     }
 
     LogCallback executionLogCallback =
@@ -183,22 +180,24 @@ public class K8sRollingRequestHandler extends K8sRequestHandler {
     String loadBalancer = k8sTaskHelperBase.getLoadBalancerEndpoint(kubernetesConfig, resources);
     K8sRollingDeployResponse rollingSetupResponse =
         K8sRollingDeployResponse.builder()
-            .releaseNumber(release.getNumber())
+            .releaseNumber(currentReleaseNumber)
             .k8sPodList(k8sTaskHelperBase.tagNewPods(
                 k8sRollingBaseHandler.getPods(steadyStateTimeoutInMillis, allWorkloads, kubernetesConfig, releaseName),
                 existingPodList))
             .loadBalancer(loadBalancer)
             .build();
 
-    saveRelease(k8sRollingDeployRequest, Status.Succeeded);
+    releaseHistoryService.updateReleaseStatus(currentRelease, Status.Succeeded.name());
+    releaseHistoryService.saveRelease(currentRelease, kubernetesConfig);
     executionLogCallback.saveExecutionLog("\nDone.", INFO, CommandExecutionStatus.SUCCESS);
 
     if (k8sRollingDeployRequest.isPruningEnabled()) {
-      Release previousSuccessfulRelease = releaseHistory.getPreviousRollbackEligibleRelease(release.getNumber());
+      V1Secret lastSuccessfulRelease =
+          releaseHistoryService.getLastSuccessfulRelease(releaseList, currentReleaseNumber);
       LogCallback pruneResourcesLogCallback =
           k8sTaskHelperBase.getLogCallback(logStreamingTaskClient, Prune, true, commandUnitsProgress);
       List<KubernetesResourceId> prunedResourceIds =
-          prune(k8sDelegateTaskParams, previousSuccessfulRelease, pruneResourcesLogCallback);
+          prune(k8sDelegateTaskParams, lastSuccessfulRelease, pruneResourcesLogCallback);
       rollingSetupResponse.setPrunedResourceIds(prunedResourceIds);
     }
 
@@ -209,27 +208,35 @@ public class K8sRollingRequestHandler extends K8sRequestHandler {
   }
 
   public List<KubernetesResourceId> prune(K8sDelegateTaskParams k8sDelegateTaskParams,
-      Release previousSuccessfulRelease, LogCallback executionLogCallback) throws Exception {
-    if (previousSuccessfulRelease == null || isEmpty(previousSuccessfulRelease.getResourcesWithSpec())) {
-      String logCallbackMessage = previousSuccessfulRelease == null
-          ? "No previous successful deployment found, So no pruning required"
-          : "Previous successful deployment executed with pruning disabled, Pruning can't be done";
+      V1Secret previousSuccessfulRelease, LogCallback executionLogCallback) throws Exception {
+    if (previousSuccessfulRelease == null) {
+      String logCallbackMessage = "No previous successful deployment found, So no pruning required";
       executionLogCallback.saveExecutionLog(logCallbackMessage, WARN, CommandExecutionStatus.SUCCESS);
       return emptyList();
     }
 
-    List<KubernetesResourceId> resourceIdsToBePruned = k8sTaskHelperBase.getResourcesToBePrunedInOrder(
-        previousSuccessfulRelease.getResourcesWithSpec(), release.getResourcesWithSpec());
-    if (isEmpty(resourceIdsToBePruned)) {
+    List<KubernetesResource> resourcesFromPreviousSuccessfulRelease =
+        releaseHistoryService.getResourcesFromRelease(previousSuccessfulRelease);
+
+    if (isEmpty(resourcesFromPreviousSuccessfulRelease)) {
+      String logCallbackMessage =
+          "Previous successful deployment executed with pruning disabled, Pruning can't be done";
+      executionLogCallback.saveExecutionLog(logCallbackMessage, WARN, CommandExecutionStatus.SUCCESS);
+      return emptyList();
+    }
+
+    List<KubernetesResourceId> resourcesToPrune =
+        k8sTaskHelperBase.getResourcesToBePrunedInOrder(resourcesFromPreviousSuccessfulRelease, resources);
+    if (isEmpty(resourcesToPrune)) {
       executionLogCallback.saveExecutionLog(
-          format("No resource is eligible to be pruned from last successful release: %s, So no pruning required",
-              previousSuccessfulRelease.getNumber()),
+          format("No resource is eligible to be pruned from last successful release %s, So no pruning required",
+              previousSuccessfulRelease.getMetadata() != null ? previousSuccessfulRelease.getMetadata().getName() : ""),
           INFO, CommandExecutionStatus.SUCCESS);
       return emptyList();
     }
 
     List<KubernetesResourceId> prunedResources = k8sTaskHelperBase.executeDeleteHandlingPartialExecution(
-        client, k8sDelegateTaskParams, resourceIdsToBePruned, executionLogCallback, false);
+        client, k8sDelegateTaskParams, resourcesToPrune, executionLogCallback, false);
     executionLogCallback.saveExecutionLog("Pruning step completed", INFO, SUCCESS);
     return prunedResources;
   }
@@ -237,15 +244,9 @@ public class K8sRollingRequestHandler extends K8sRequestHandler {
   @Override
   protected void handleTaskFailure(K8sDeployRequest request, Exception exception) throws Exception {
     if (shouldSaveReleaseHistory) {
-      K8sRollingDeployRequest k8sRollingDeployRequest = (K8sRollingDeployRequest) request;
-      saveRelease(k8sRollingDeployRequest, Status.Failed);
+      releaseHistoryService.updateReleaseStatus(currentRelease, Status.Failed.name());
+      releaseHistoryService.saveRelease(currentRelease, kubernetesConfig);
     }
-  }
-
-  private void saveRelease(K8sRollingDeployRequest k8sRollingDeployRequest, Status status) throws IOException {
-    releaseHistory.setReleaseStatus(status);
-    kubernetesContainerService.saveReleaseHistory(kubernetesConfig, k8sRollingDeployRequest.getReleaseName(),
-        releaseHistory.getAsYaml(), !customWorkloads.isEmpty());
   }
 
   @VisibleForTesting
@@ -257,9 +258,10 @@ public class K8sRollingRequestHandler extends K8sRequestHandler {
         containerDeploymentDelegateBaseHelper.createKubernetesConfig(request.getK8sInfraDelegateConfig());
     client = Kubectl.client(k8sDelegateTaskParams.getKubectlPath(), k8sDelegateTaskParams.getKubeconfigPath());
 
-    String releaseHistoryData = k8sTaskHelperBase.getReleaseHistoryData(kubernetesConfig, request.getReleaseName());
-    releaseHistory = (StringUtils.isEmpty(releaseHistoryData)) ? ReleaseHistory.createNew()
-                                                               : ReleaseHistory.createFromData(releaseHistoryData);
+    releaseList = releaseHistoryService.getReleaseHistory(kubernetesConfig,
+        Map.of(RELEASE_KEY, request.getReleaseName(), RELEASE_OWNER_LABEL_KEY, RELEASE_OWNER_LABEL_VALUE),
+        RELEASE_HARNESS_SECRET_TYPE);
+    currentReleaseNumber = releaseHistoryService.getCurrentReleaseNumber(releaseList);
 
     k8sTaskHelperBase.deleteSkippedManifestFiles(manifestFilesDirectory, executionLogCallback);
 
@@ -282,6 +284,9 @@ public class K8sRollingRequestHandler extends K8sRequestHandler {
 
     executionLogCallback.saveExecutionLog(ManifestHelper.toYamlForLogs(resources));
 
+    currentRelease = releaseHistoryService.createRelease(
+        releaseName, currentReleaseNumber, ManifestHelper.toYaml(resources), Status.InProgress.name());
+
     if (request.isSkipDryRun()) {
       executionLogCallback.saveExecutionLog(color("\nSkipping Dry Run", Yellow, Bold), INFO);
       executionLogCallback.saveExecutionLog("\nDone.", INFO, CommandExecutionStatus.SUCCESS);
@@ -292,39 +297,25 @@ public class K8sRollingRequestHandler extends K8sRequestHandler {
         client, resources, k8sDelegateTaskParams, executionLogCallback, true, request.isUseNewKubectlVersion());
   }
 
-  private void prepareForRolling(K8sDelegateTaskParams k8sDelegateTaskParams, LogCallback executionLogCallback,
-      boolean inCanaryWorkflow, boolean skipResourceVersioning, boolean skipAddingTrackSelectorToDeployment,
-      boolean pruningEnabled) throws Exception {
+  private void prepareForRolling(LogCallback executionLogCallback, boolean inCanaryWorkflow,
+      boolean skipAddingTrackSelectorToDeployment) throws Exception {
     managedWorkloads = getWorkloads(resources);
-    if (isNotEmpty(managedWorkloads) && !skipResourceVersioning) {
-      markVersionedResources(resources);
-    }
 
     executionLogCallback.saveExecutionLog(
         "Manifests processed. Found following resources: \n" + k8sTaskHelperBase.getResourcesInTableFormat(resources));
 
-    if (pruningEnabled) {
-      setResourcesWithPruningEnabledInRelease(inCanaryWorkflow);
-    } else {
-      setResourcesInRelease(inCanaryWorkflow);
-    }
+    executionLogCallback.saveExecutionLog("\nCurrent release number is: " + currentReleaseNumber);
 
-    executionLogCallback.saveExecutionLog("\nCurrent release number is: " + release.getNumber());
-
-    k8sTaskHelperBase.cleanup(client, k8sDelegateTaskParams, releaseHistory, executionLogCallback);
+    releaseHistoryService.cleanReleases(kubernetesConfig, releaseName, currentReleaseNumber, releaseList);
 
     customWorkloads = getCustomResourceDefinitionWorkloads(resources);
+    nonManagedResources = getNonManagedResources(resources, managedWorkloads, customWorkloads);
 
     if (isEmpty(managedWorkloads) && isEmpty(customWorkloads)) {
       executionLogCallback.saveExecutionLog(color("\nNo Managed Workload found.", Yellow, Bold));
     } else {
       executionLogCallback.saveExecutionLog(color("\nFound following Managed Workloads: \n", Cyan, Bold)
           + k8sTaskHelperBase.getResourcesInTableFormat(ListUtils.union(managedWorkloads, customWorkloads)));
-
-      if (!skipResourceVersioning) {
-        executionLogCallback.saveExecutionLog("\nVersioning resources.");
-        k8sTaskHelperBase.addRevisionNumber(resources, release.getNumber());
-      }
 
       final List<KubernetesResource> deploymentContainingTrackStableSelector = skipAddingTrackSelectorToDeployment
           ? k8sTaskHelperBase.getDeploymentContainingTrackStableSelector(
@@ -336,28 +327,10 @@ public class K8sRollingRequestHandler extends K8sRequestHandler {
       k8sRollingBaseHandler.addLabelsInDeploymentSelectorForCanary(inCanaryWorkflow,
           skipAddingTrackSelectorToDeployment, managedWorkloads, deploymentContainingTrackStableSelector);
     }
-  }
 
-  private void setResourcesInRelease(boolean inCanaryWorkflow) {
-    if (!inCanaryWorkflow) {
-      release = releaseHistory.createNewRelease(
-          resources.stream().map(KubernetesResource::getResourceId).collect(Collectors.toList()));
-    } else {
-      release = releaseHistory.getLatestRelease();
-      release.setResources(resources.stream().map(KubernetesResource::getResourceId).collect(Collectors.toList()));
-    }
-  }
-
-  private void setResourcesWithPruningEnabledInRelease(boolean inCanaryWorkflow) {
-    List<KubernetesResource> resourcesWithPruningEnabled =
-        resources.stream().filter(resource -> !resource.isSkipPruning()).collect(Collectors.toList());
-    if (!inCanaryWorkflow) {
-      release = releaseHistory.createNewReleaseWithResourceMap(resourcesWithPruningEnabled);
-    } else {
-      release = releaseHistory.getLatestRelease();
-      release.setResources(
-          resourcesWithPruningEnabled.stream().map(KubernetesResource::getResourceId).collect(Collectors.toList()));
-      release.setResourcesWithSpec(resourcesWithPruningEnabled);
-    }
+    resources = Stream.of(managedWorkloads, customWorkloads, nonManagedResources)
+                    .flatMap(Collection::stream)
+                    .collect(Collectors.toList());
+    releaseHistoryService.setResourcesInRelease(currentRelease, resources);
   }
 }

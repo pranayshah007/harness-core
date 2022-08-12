@@ -14,6 +14,8 @@ import io.harness.k8s.model.KubernetesResource;
 import io.harness.k8s.model.Release;
 import io.harness.k8s.model.ReleaseHistory;
 
+import io.kubernetes.client.openapi.models.V1Secret;
+import java.util.List;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -21,8 +23,13 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 public class K8sCanaryHandlerConfig extends K8sHandlerConfig {
+  // TODO remove older release history vars once migration is complete
   private ReleaseHistory releaseHistory;
   private Release currentRelease;
   private KubernetesResource canaryWorkload;
   private Integer targetInstances;
+
+  private List<V1Secret> releaseHistoryV2;
+  private V1Secret currentReleaseSecret;
+  private int currentReleaseNumber;
 }

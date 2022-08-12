@@ -167,6 +167,7 @@ import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodList;
 import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1SecretBuilder;
+import io.kubernetes.client.openapi.models.V1SecretList;
 import io.kubernetes.client.openapi.models.V1SelfSubjectAccessReview;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1Status;
@@ -2069,6 +2070,37 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
       }
     });
     return podSupplier.get();
+  }
+
+  @Override
+  public List<V1Secret> getSecretsWithLabelsAndFields(KubernetesConfig kubernetesConfig, String labels, String fields) {
+    final Supplier<List<V1Secret>> secretSupplier = Retry.decorateSupplier(retry, () -> {
+      ApiClient apiClient = kubernetesHelperService.getApiClient(kubernetesConfig);
+      try {
+        V1SecretList secrets = new CoreV1Api(apiClient).listNamespacedSecret(
+            kubernetesConfig.getNamespace(), null, null, null, fields, labels, null, null, null, null, null);
+        return secrets.getItems();
+      } catch (ApiException e) {
+        throw new InvalidRequestException(
+            String.format("Unable to get secret list. Code: %s, message: %s", e.getCode(), getErrorMessage(e)));
+      }
+    });
+    return secretSupplier.get();
+  }
+
+  @Override
+  public V1Status deleteSecrets(KubernetesConfig kubernetesConfig, String labels, String fields) {
+    final Supplier<V1Status> secretSupplier = Retry.decorateSupplier(retry, () -> {
+      ApiClient apiClient = kubernetesHelperService.getApiClient(kubernetesConfig);
+      try {
+        return new CoreV1Api(apiClient).deleteCollectionNamespacedSecret(kubernetesConfig.getNamespace(), null, null,
+            null, fields, null, labels, null, null, null, null, null, null, null);
+      } catch (ApiException e) {
+        throw new InvalidRequestException(
+            String.format("Unable to delete secrets. Code: %s, message: %s", e.getCode(), getErrorMessage(e)));
+      }
+    });
+    return secretSupplier.get();
   }
 
   @Override

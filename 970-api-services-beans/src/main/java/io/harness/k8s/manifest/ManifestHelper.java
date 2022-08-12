@@ -280,7 +280,15 @@ public class ManifestHelper {
   public static List<KubernetesResource> getCustomResourceDefinitionWorkloads(List<KubernetesResource> resources) {
     return resources.stream()
         .filter(resource -> !allManagedWorkloadKinds.contains(resource.getResourceId().getKind()))
-        .filter(resource -> resource.isManagedWorkload())
+        .filter(KubernetesResource::isManagedWorkload)
+        .collect(Collectors.toList());
+  }
+
+  public List<KubernetesResource> getNonManagedResources(List<KubernetesResource> resources,
+      List<KubernetesResource> managedWorkloads, List<KubernetesResource> customWorkloads) {
+    return resources.stream()
+        .filter(resource -> !managedWorkloads.contains(resource))
+        .filter(resource -> !customWorkloads.contains(resource))
         .collect(Collectors.toList());
   }
 

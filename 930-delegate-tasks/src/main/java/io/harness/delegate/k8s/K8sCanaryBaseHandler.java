@@ -8,8 +8,8 @@
 package io.harness.delegate.k8s;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.delegate.k8s.releasehistory.ReleaseConstants.RELEASE_STATUS_LABEL_KEY;
 import static io.harness.k8s.manifest.ManifestHelper.getWorkloadsForCanaryAndBG;
-import static io.harness.k8s.manifest.VersionUtils.markVersionedResources;
 import static io.harness.k8s.model.Release.Status.Failed;
 import static io.harness.k8s.model.Release.Status.InProgress;
 import static io.harness.logging.CommandExecutionStatus.FAILURE;
@@ -20,10 +20,10 @@ import static software.wings.beans.LogWeight.Bold;
 
 import static java.lang.String.format;
 import static java.util.Arrays.asList;
-import static org.apache.commons.lang3.BooleanUtils.isNotTrue;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.k8s.beans.K8sCanaryHandlerConfig;
+import io.harness.delegate.k8s.releasehistory.ReleaseHistoryServiceImpl;
 import io.harness.delegate.task.k8s.K8sTaskHelperBase;
 import io.harness.exception.KubernetesTaskException;
 import io.harness.exception.NestedExceptionUtils;
@@ -32,6 +32,7 @@ import io.harness.k8s.exception.KubernetesExceptionExplanation;
 import io.harness.k8s.exception.KubernetesExceptionHints;
 import io.harness.k8s.exception.KubernetesExceptionMessages;
 import io.harness.k8s.kubectl.Kubectl;
+import io.harness.k8s.manifest.ManifestHelper;
 import io.harness.k8s.model.HarnessAnnotations;
 import io.harness.k8s.model.HarnessLabelValues;
 import io.harness.k8s.model.HarnessLabels;
@@ -49,6 +50,7 @@ import software.wings.beans.LogColor;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import io.kubernetes.client.openapi.models.V1Secret;
 import java.io.IOException;
 import java.util.List;
 import java.util.Set;
@@ -60,14 +62,11 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class K8sCanaryBaseHandler {
   @Inject private K8sTaskHelperBase k8sTaskHelperBase;
+  @Inject private ReleaseHistoryServiceImpl releaseHistoryService;
 
   public boolean prepareForCanary(K8sCanaryHandlerConfig canaryHandlerConfig,
       K8sDelegateTaskParams k8sDelegateTaskParams, Boolean skipVersioning, LogCallback logCallback,
       boolean isErrorFrameworkEnabled, boolean cleanUpIncompleteCanaryDeployRelease) throws Exception {
-    if (isNotTrue(skipVersioning)) {
-      markVersionedResources(canaryHandlerConfig.getResources());
-    }
-
     logCallback.saveExecutionLog("Manifests processed. Found following resources: \n"
         + k8sTaskHelperBase.getResourcesInTableFormat(canaryHandlerConfig.getResources()));
 
@@ -102,33 +101,30 @@ public class K8sCanaryBaseHandler {
     }
 
     if (cleanUpIncompleteCanaryDeployRelease) {
-      for (Release release : canaryHandlerConfig.getReleaseHistory().getReleases()) {
-        if (release.getStatus() == InProgress) {
-          release.setStatus(Failed);
+      for (V1Secret release : canaryHandlerConfig.getReleaseHistoryV2()) {
+        if (release.getMetadata() != null && release.getMetadata().getLabels() != null
+            && InProgress.name().equals(release.getMetadata().getLabels().get(RELEASE_STATUS_LABEL_KEY))) {
+          releaseHistoryService.updateReleaseStatus(release, Failed.name());
+          releaseHistoryService.saveRelease(release, canaryHandlerConfig.getKubernetesConfig());
         }
       }
     }
 
-    Release currentRelease =
-        canaryHandlerConfig.getReleaseHistory().createNewRelease(canaryHandlerConfig.getResources()
-                                                                     .stream()
-                                                                     .map(KubernetesResource::getResourceId)
-                                                                     .collect(Collectors.toList()));
-    canaryHandlerConfig.setCurrentRelease(currentRelease);
+    int currentReleaseNumber = releaseHistoryService.getCurrentReleaseNumber(canaryHandlerConfig.getReleaseHistoryV2());
+    V1Secret currentRelease =
+        releaseHistoryService.createRelease(canaryHandlerConfig.getReleaseName(), currentReleaseNumber,
+            ManifestHelper.toYaml(canaryHandlerConfig.getResources()), Release.Status.InProgress.name());
 
-    logCallback.saveExecutionLog("\nCurrent release number is: " + currentRelease.getNumber());
-    logCallback.saveExecutionLog("\nVersioning resources.");
+    canaryHandlerConfig.setCurrentReleaseSecret(currentRelease);
+    canaryHandlerConfig.setCurrentReleaseNumber(currentReleaseNumber);
 
-    if (isNotTrue(skipVersioning)) {
-      k8sTaskHelperBase.addRevisionNumber(canaryHandlerConfig.getResources(), currentRelease.getNumber());
-    }
+    logCallback.saveExecutionLog("\nCurrent release number is: " + currentReleaseNumber);
 
     KubernetesResource canaryWorkload = workloads.get(0);
     canaryHandlerConfig.setCanaryWorkload(canaryWorkload);
 
-    k8sTaskHelperBase.cleanup(
-        canaryHandlerConfig.getClient(), k8sDelegateTaskParams, canaryHandlerConfig.getReleaseHistory(), logCallback);
-
+    releaseHistoryService.cleanReleases(canaryHandlerConfig.getKubernetesConfig(), canaryHandlerConfig.getReleaseName(),
+        currentReleaseNumber, canaryHandlerConfig.getReleaseHistoryV2());
     return true;
   }
 

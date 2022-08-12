@@ -104,8 +104,7 @@ public class K8sRollingRollbackRequestHandler extends K8sRequestHandler {
     K8sRollingDeployRollbackResponse response =
         K8sRollingDeployRollbackResponse.builder()
             .k8sPodList(rollbackBaseHandler.getPods(k8sRollingRollbackDeployRequest.getTimeoutIntervalInMin(),
-                rollbackHandlerConfig.getPreviousManagedWorkloads(),
-                rollbackHandlerConfig.getPreviousCustomManagedWorkloads(), rollbackHandlerConfig.getKubernetesConfig(),
+                rollbackHandlerConfig.getPreviousResources(), rollbackHandlerConfig.getKubernetesConfig(),
                 k8sRollingRollbackDeployRequest.getReleaseName()))
             .recreatedResourceIds(recreatedResourceIds)
             .build();
