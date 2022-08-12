@@ -7,6 +7,8 @@
 
 package io.harness.connector.task.azure;
 
+import static io.harness.exception.WingsException.ExecutionContext.MANAGER;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.azure.client.AzureAuthorizationClient;
@@ -18,27 +20,33 @@ import io.harness.delegate.beans.connector.ConnectorValidationParams;
 import io.harness.delegate.beans.connector.azureconnector.AzureConnectorDTO;
 import io.harness.delegate.beans.connector.azureconnector.AzureTaskParams;
 import io.harness.delegate.beans.connector.azureconnector.AzureValidationParams;
-import io.harness.errorhandling.NGErrorHelper;
+import io.harness.exception.AzureAuthenticationException;
+import io.harness.exception.NestedExceptionUtils;
+import io.harness.exception.exceptionmanager.ExceptionManager;
 import io.harness.security.encryption.EncryptedDataDetail;
 
 import com.google.inject.Inject;
-import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.TimeoutException;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @OwnedBy(HarnessTeam.CI)
 public class AzureValidationHandler implements ConnectorValidationHandler {
   @Inject AzureNgConfigMapper azureNgConfigMapper;
   @Inject private AzureAuthorizationClient azureAuthorizationClient;
-  @Inject private NGErrorHelper ngErrorHelper;
+  @Inject ExceptionManager exceptionManager;
 
   @Override
   public ConnectorValidationResult validate(
       ConnectorValidationParams connectorValidationParams, String accountIdentifier) {
-    final AzureValidationParams azureValidationParams = (AzureValidationParams) connectorValidationParams;
-    final AzureConnectorDTO azureConnectorDTO = azureValidationParams.getAzureConnectorDTO();
-    final List<EncryptedDataDetail> encryptedDataDetails = azureValidationParams.getEncryptedDataDetails();
-    return validateInternal(azureConnectorDTO, encryptedDataDetails);
+    try {
+      final AzureValidationParams azureValidationParams = (AzureValidationParams) connectorValidationParams;
+      final AzureConnectorDTO azureConnectorDTO = azureValidationParams.getAzureConnectorDTO();
+      final List<EncryptedDataDetail> encryptedDataDetails = azureValidationParams.getEncryptedDataDetails();
+      return validateInternal(azureConnectorDTO, encryptedDataDetails);
+    } catch (Exception e) {
+      throw exceptionManager.processException(e, MANAGER, log);
+    }
   }
 
   public ConnectorValidationResult validate(AzureTaskParams azureTaskParams) {
@@ -49,25 +57,16 @@ public class AzureValidationHandler implements ConnectorValidationHandler {
 
   private ConnectorValidationResult validateInternal(
       AzureConnectorDTO azureConnectorDTO, List<EncryptedDataDetail> encryptedDataDetails) {
-    ConnectorValidationResult connectorValidationResult = ConnectorValidationResult.builder()
-                                                              .status(ConnectivityStatus.SUCCESS)
-                                                              .testedAt(System.currentTimeMillis())
-                                                              .build();
-    try {
-      AzureConfig azureConfig =
-          azureNgConfigMapper.mapAzureConfigWithDecryption(azureConnectorDTO, encryptedDataDetails);
-      if (!azureAuthorizationClient.validateAzureConnection(azureConfig)) {
-        throw new TimeoutException("Testing connection to Azure has timed out.");
-      }
-    } catch (Exception e) {
-      String errorMessage = e.getMessage();
-      connectorValidationResult = ConnectorValidationResult.builder()
-                                      .status(ConnectivityStatus.FAILURE)
-                                      .errors(Collections.singletonList(ngErrorHelper.createErrorDetail(errorMessage)))
-                                      .errorSummary(ngErrorHelper.getErrorSummary(errorMessage))
-                                      .testedAt(System.currentTimeMillis())
-                                      .build();
+    AzureConfig azureConfig = azureNgConfigMapper.mapAzureConfigWithDecryption(azureConnectorDTO, encryptedDataDetails);
+    if (azureAuthorizationClient.validateAzureConnection(azureConfig)) {
+      return ConnectorValidationResult.builder()
+          .status(ConnectivityStatus.SUCCESS)
+          .testedAt(System.currentTimeMillis())
+          .build();
     }
-    return connectorValidationResult;
+
+    String errorMessage = "Testing connection to Azure has timed out.";
+    throw NestedExceptionUtils.hintWithExplanationException("Failed to validate connection for Azure connector",
+        "Please check you Azure connector configuration.", new AzureAuthenticationException(errorMessage));
   }
 }
