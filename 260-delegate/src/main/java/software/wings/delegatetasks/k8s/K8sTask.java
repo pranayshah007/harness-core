@@ -39,12 +39,18 @@ import io.harness.logging.CommandExecutionStatus;
 import software.wings.beans.appmanifest.StoreType;
 import software.wings.delegatetasks.k8s.taskhandler.K8sTaskHandler;
 import software.wings.helpers.ext.container.ContainerDeploymentDelegateHelper;
+import software.wings.helpers.ext.k8s.request.K8sApplyTaskParameters;
+import software.wings.helpers.ext.k8s.request.K8sBlueGreenDeployTaskParameters;
+import software.wings.helpers.ext.k8s.request.K8sCanaryDeployTaskParameters;
+import software.wings.helpers.ext.k8s.request.K8sDeleteTaskParameters;
+import software.wings.helpers.ext.k8s.request.K8sRollingDeployTaskParameters;
 import software.wings.helpers.ext.k8s.request.K8sTaskParameters;
 import software.wings.helpers.ext.k8s.response.K8sTaskExecutionResponse;
 
 import com.google.inject.Inject;
 import java.nio.file.Paths;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import lombok.extern.slf4j.Slf4j;
@@ -103,12 +109,10 @@ public class K8sTask extends AbstractDelegateRunnableTask {
 
         createDirectoryIfDoesNotExist(Paths.get(workingDirectory, K8sConstants.MANIFEST_FILES_DIR).toString());
 
-        StoreType storeType = k8sTaskParameters.getK8sDelegateManifestConfig() != null
-            ? k8sTaskParameters.getK8sDelegateManifestConfig().getManifestStoreTypes()
-            : null;
-        K8sDelegateTaskParams k8SDelegateTaskParams =
-            getK8sDelegateTaskParamsBasedOnManifestType(workingDirectory, k8sTaskParameters.getHelmVersion(),
-                k8sTaskParameters.isUseNewKubectlVersion(), k8sTaskParameters.isUseLatestKustomizeVersion(), storeType);
+        Optional<StoreType> optionalStoreType = getStoreTypeFromK8sTaskParameters(k8sTaskParameters);
+        K8sDelegateTaskParams k8SDelegateTaskParams = getK8sDelegateTaskParamsBasedOnManifestType(workingDirectory,
+            k8sTaskParameters.getHelmVersion(), k8sTaskParameters.isUseNewKubectlVersion(),
+            k8sTaskParameters.isUseLatestKustomizeVersion(), optionalStoreType.orElse(null));
 
         logK8sVersion(k8sTaskParameters, k8SDelegateTaskParams);
 
@@ -184,5 +188,40 @@ public class K8sTask extends AbstractDelegateRunnableTask {
       }
     }
     return k8sDelegateTaskParamsBuilder.build();
+  }
+
+  private Optional<StoreType> getStoreTypeFromK8sTaskParameters(K8sTaskParameters k8sTaskParameters) {
+    if (k8sTaskParameters instanceof K8sApplyTaskParameters) {
+      K8sApplyTaskParameters k8sApplyTaskParameters = (K8sApplyTaskParameters) k8sTaskParameters;
+      if (k8sApplyTaskParameters.getK8sDelegateManifestConfig() != null) {
+        return Optional.ofNullable(k8sApplyTaskParameters.getK8sDelegateManifestConfig().getManifestStoreTypes());
+      }
+    } else if (k8sTaskParameters instanceof K8sBlueGreenDeployTaskParameters) {
+      K8sBlueGreenDeployTaskParameters k8sBlueGreenDeployTaskParameters =
+          (K8sBlueGreenDeployTaskParameters) k8sTaskParameters;
+      if (k8sBlueGreenDeployTaskParameters.getK8sDelegateManifestConfig() != null) {
+        return Optional.ofNullable(
+            k8sBlueGreenDeployTaskParameters.getK8sDelegateManifestConfig().getManifestStoreTypes());
+      }
+    } else if (k8sTaskParameters instanceof K8sCanaryDeployTaskParameters) {
+      K8sCanaryDeployTaskParameters k8sCanaryDeployTaskParameters = (K8sCanaryDeployTaskParameters) k8sTaskParameters;
+      if (k8sCanaryDeployTaskParameters.getK8sDelegateManifestConfig() != null) {
+        return Optional.ofNullable(
+            k8sCanaryDeployTaskParameters.getK8sDelegateManifestConfig().getManifestStoreTypes());
+      }
+    } else if (k8sTaskParameters instanceof K8sDeleteTaskParameters) {
+      K8sDeleteTaskParameters k8sDeleteTaskParameters = (K8sDeleteTaskParameters) k8sTaskParameters;
+      if (k8sDeleteTaskParameters.getK8sDelegateManifestConfig() != null) {
+        return Optional.ofNullable(k8sDeleteTaskParameters.getK8sDelegateManifestConfig().getManifestStoreTypes());
+      }
+    } else if (k8sTaskParameters instanceof K8sRollingDeployTaskParameters) {
+      K8sRollingDeployTaskParameters k8sRollingDeployTaskParameters =
+          (K8sRollingDeployTaskParameters) k8sTaskParameters;
+      if (k8sRollingDeployTaskParameters.getK8sDelegateManifestConfig() != null) {
+        return Optional.ofNullable(
+            k8sRollingDeployTaskParameters.getK8sDelegateManifestConfig().getManifestStoreTypes());
+      }
+    }
+    return Optional.empty();
   }
 }
