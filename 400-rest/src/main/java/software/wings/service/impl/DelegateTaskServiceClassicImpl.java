@@ -153,6 +153,7 @@ import software.wings.expression.SweepingOutputSecretFunctor;
 import software.wings.helpers.ext.url.SubdomainUrlHelperIntfc;
 import software.wings.service.impl.artifact.ArtifactCollectionUtils;
 import software.wings.service.impl.infra.InfraDownloadService;
+import software.wings.service.intfc.AccountService;
 import software.wings.service.intfc.AlertService;
 import software.wings.service.intfc.AssignDelegateService;
 import software.wings.service.intfc.ConfigService;
@@ -270,6 +271,7 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
   @Inject private DelegateSetupService delegateSetupService;
   @Inject private AuditHelper auditHelper;
   @Inject private DelegateMetricsService delegateMetricsService;
+  @Inject private AccountService accountService;
   @Inject @Named(SECRET_CACHE) Cache<String, EncryptedDataDetails> secretsCache;
   @Inject @Getter private Subject<DelegateObserver> subject = new Subject<>();
 
