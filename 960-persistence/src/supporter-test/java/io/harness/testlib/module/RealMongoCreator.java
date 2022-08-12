@@ -9,12 +9,14 @@ package io.harness.testlib.module;
 
 import static java.time.Duration.ofMillis;
 
+import com.mongodb.ConnectionString;
+import com.mongodb.MongoClientURI;
+import com.mongodb.client.MongoClients;
 import io.harness.exception.GeneralException;
 import io.harness.threading.Morpheus;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
-import com.mongodb.MongoClient;
-import com.mongodb.MongoClientURI;
+import com.mongodb.client.MongoClient;
 import de.flapdoodle.embed.mongo.Command;
 import de.flapdoodle.embed.mongo.MongodExecutable;
 import de.flapdoodle.embed.mongo.MongodStarter;
@@ -56,13 +58,14 @@ class RealMongoCreator {
   static class RealMongo implements Closeable {
     MongodExecutable mongodExecutable;
     MongoClient mongoClient;
+    com.mongodb.MongoClient mongoClientLegacy;
     String temporaryDatabaseName;
 
     @Override
     public void close() {
       executorService.submit(() -> {
         if (temporaryDatabaseName != null) {
-          mongoClient.dropDatabase(temporaryDatabaseName);
+          mongoClient.getDatabase(temporaryDatabaseName).drop();
         }
 
         mongoClient.close();
@@ -77,10 +80,12 @@ class RealMongoCreator {
     String testMongoUri = System.getenv("TEST_MONGO_URI");
     if (testMongoUri != null) {
       MongoClientURI mongoClientURI = new MongoClientURI(testMongoUri + "/" + databaseName);
+      ConnectionString connectionString = new ConnectionString(String.format("%s/%s", testMongoUri, databaseName));
       return RealMongo.builder()
           .mongodExecutable(null)
           .temporaryDatabaseName(databaseName)
-          .mongoClient(new MongoClient(mongoClientURI))
+          .mongoClient(MongoClients.create(connectionString))
+          .mongoClientLegacy(new com.mongodb.MongoClient(mongoClientURI))
           .build();
     }
 
@@ -107,8 +112,13 @@ class RealMongoCreator {
           mongodExecutable = starter.prepare(mongodConfig);
           mongodExecutable.start();
         }
-        MongoClient mongoClient = new MongoClient("localhost", port);
-        return RealMongo.builder().mongodExecutable(mongodExecutable).mongoClient(mongoClient).build();
+        MongoClient mongoClient =
+            MongoClients.create(new ConnectionString(String.format("mongodb://localhost:%d", port)));
+        return RealMongo.builder()
+                .mongodExecutable(mongodExecutable)
+                .mongoClient(mongoClient)
+                .mongoClientLegacy(new com.mongodb.MongoClient("localhost", port))
+                .build();
       } catch (Exception e) {
         // Note this handles race int the port, but also in the starter prepare
         Morpheus.sleep(ofMillis(250));

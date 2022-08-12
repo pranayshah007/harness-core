@@ -10,6 +10,7 @@ package io.harness.aggregator;
 import static com.google.inject.Key.get;
 import static com.google.inject.name.Names.named;
 
+import com.google.inject.name.Names;
 import com.mongodb.client.MongoClient;
 import io.harness.annotation.HarnessRepo;
 import io.harness.annotations.dev.HarnessTeam;
@@ -44,26 +45,26 @@ import org.springframework.guice.annotation.GuiceModule;
     includeFilters = @ComponentScan.Filter(HarnessRepo.class), mongoTemplateRef = "primary")
 public class AggregatorPersistenceTestConfig extends AbstractMongoClientConfiguration {
   protected final Injector injector;
-  protected final AdvancedDatastore advancedDatastore;
+  protected final MongoClient mongoClient;
+  protected final String databaseName;
   protected final List<Class<? extends Converter<?, ?>>> springConverters;
-  protected final MongoConfig mongoConfig;
 
   public AggregatorPersistenceTestConfig(Injector injector, List<Class<? extends Converter<?, ?>>> springConverters) {
     this.injector = injector;
-    this.advancedDatastore = injector.getProvider(get(AdvancedDatastore.class, named("primaryDatastore"))).get();
     this.springConverters = springConverters;
-    this.mongoConfig = injector.getInstance(MongoConfig.class);
+    this.mongoClient = injector.getProvider(get(MongoClient.class, named("fakeMongoClient"))).get();
+    this.databaseName = injector.getInstance(get(String.class, Names.named("databaseName")));
   }
 
   @Override
   public MongoClient mongoClient() {
-    // [test]TODO (xingchi): upgrade morphia and take the mongo client from morphia.
-    return MongodbClientCreates.createMongoClient(mongoConfig);
+    // [test]TODO (xingchi)--: upgrade morphia and take the mongo client from morphia.
+    return mongoClient;
   }
 
   @Override
   protected String getDatabaseName() {
-    return advancedDatastore.getDB().getName();
+    return databaseName;
   }
 
   @Bean(name = "primary")

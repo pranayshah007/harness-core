@@ -25,7 +25,7 @@ import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import com.google.inject.multibindings.MapBinder;
 import com.google.inject.name.Named;
-import com.mongodb.MongoClient;
+import com.mongodb.client.MongoClient;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.mongodb.morphia.AdvancedDatastore;
@@ -75,6 +75,21 @@ public class TestMongoModule extends AbstractModule implements MongoRuleMixin {
   }
 
   @Provides
+  @Named("realMongoLegacyClient")
+  @Singleton
+  public com.mongodb.MongoClient realMongoLegacyClientProvider(@Named("databaseName") String databaseName, ClosingFactory closingFactory)
+          throws Exception {
+    return realMongoLegacyClient(closingFactory, databaseName);
+  }
+
+  @Provides
+  @Named("fakeMongoLegacyClient")
+  @Singleton
+  public com.mongodb.MongoClient fakeMongoLegacyClientProvider(ClosingFactory closingFactory) throws Exception {
+    return fakeMongoLegacyClient(closingFactory);
+  }
+
+  @Provides
   @Named("locksMongoClient")
   @Singleton
   public MongoClient locksMongoClient(@Named("realMongoClient") MongoClient mongoClient) throws Exception {
@@ -85,9 +100,9 @@ public class TestMongoModule extends AbstractModule implements MongoRuleMixin {
   @Named("primaryDatastore")
   @Singleton
   AdvancedDatastore datastore(@Named("databaseName") String databaseName, MongoType type,
-      @Named("realMongoClient") Provider<MongoClient> realMongoClient,
-      @Named("fakeMongoClient") Provider<MongoClient> fakeMongoClient, Morphia morphia, ObjectFactory objectFactory) {
-    MongoClient mongoClient = null;
+      @Named("realMongoLegacyClient") Provider<com.mongodb.MongoClient> realMongoClient,
+      @Named("fakeMongoLegacyClient") Provider<com.mongodb.MongoClient> fakeMongoClient, Morphia morphia, ObjectFactory objectFactory) {
+    com.mongodb.MongoClient mongoClient = null;
     switch (type) {
       case REAL:
         mongoClient = realMongoClient.get();

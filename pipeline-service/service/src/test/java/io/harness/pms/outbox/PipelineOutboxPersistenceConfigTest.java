@@ -41,6 +41,8 @@ import java.lang.annotation.Annotation;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -71,16 +73,21 @@ public class PipelineOutboxPersistenceConfigTest extends CategoryTest {
     /**
      *  TODO (xingchi): 3.12 client.MongoClient doesn't provide getter anymore to MongoSetting
      *  (equivalent to MongoClientOptions in 3.4 java driver)
-     *
+     */
     on(persistenceConfig).set("mongoConfig", mongoConfig);
     MongoClient mongoClient = persistenceConfig.mongoClient();
 
-    assertEquals(mongoClient.getConnectTimeout(), connectTimeout);
-    assertEquals(mongoClient.getMongoClientOptions().getServerSelectionTimeout(), serverSelectionTimeout);
+    //assertEquals(mongoClient.getClusterDescription().getServerSettings().
+
+    assertEquals(
+        mongoClient.getClusterDescription().getClusterSettings().getServerSelectionTimeout(TimeUnit.MILLISECONDS),
+        serverSelectionTimeout);
+    /*
     assertEquals(mongoClient.getMongoClientOptions().getMaxConnectionIdleTime(), maxConnectionIdleTime);
     assertEquals(mongoClient.getMongoClientOptions().getConnectionsPerHost(), connectionsPerHost);
     assertEquals(mongoClient.getMongoClientOptions().getReadPreference(), ReadPreference.secondary());
     assertTrue(mongoClient.getMongoClientOptions().getRetryWrites());
+
      */
   }
 

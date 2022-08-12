@@ -17,7 +17,7 @@ import io.harness.testlib.RealMongo;
 import com.google.inject.Module;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
-import com.mongodb.MongoClient;
+import com.mongodb.client.MongoClient;
 import java.lang.annotation.Annotation;
 import java.util.List;
 import java.util.Random;
@@ -52,5 +52,17 @@ public interface MongoRuleMixin {
     RealMongoCreator.RealMongo realMongo = takeRealMongo(databaseName);
     closingFactory.addServer(realMongo);
     return realMongo.getMongoClient();
+  }
+
+  default com.mongodb.MongoClient fakeMongoLegacyClient(ClosingFactory closingFactory) {
+    FakeMongoCreator.FakeMongo fakeMongo = takeFakeMongo();
+    closingFactory.addServer(fakeMongo);
+    return fakeMongo.getMongoClientLegacy();
+  }
+
+  default com.mongodb.MongoClient realMongoLegacyClient(ClosingFactory closingFactory, String databaseName) {
+    RealMongoCreator.RealMongo realMongo = takeRealMongo(databaseName);
+    closingFactory.addServer(realMongo);
+    return realMongo.getMongoClientLegacy();
   }
 }

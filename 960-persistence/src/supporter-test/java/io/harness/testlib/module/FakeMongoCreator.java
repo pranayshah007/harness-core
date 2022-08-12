@@ -7,11 +7,13 @@
 
 package io.harness.testlib.module;
 
+import com.mongodb.ConnectionString;
+import com.mongodb.ServerAddress;
+import com.mongodb.client.MongoClients;
 import io.harness.exception.GeneralException;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
-import com.mongodb.MongoClient;
-import com.mongodb.ServerAddress;
+import com.mongodb.client.MongoClient;
 import de.bwaldvogel.mongo.MongoServer;
 import de.bwaldvogel.mongo.backend.memory.MemoryBackend;
 import java.io.Closeable;
@@ -22,6 +24,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+
 import lombok.Builder;
 import lombok.Value;
 
@@ -34,6 +37,7 @@ public class FakeMongoCreator {
   static class FakeMongo implements Closeable {
     MongoServer mongoServer;
     MongoClient mongoClient;
+    com.mongodb.MongoClient mongoClientLegacy;
 
     @Override
     public void close() {
@@ -48,8 +52,13 @@ public class FakeMongoCreator {
     MongoServer mongoServer = new MongoServer(new MemoryBackend());
     mongoServer.bind("localhost", 0);
     InetSocketAddress serverAddress = mongoServer.getLocalAddress();
-    MongoClient mongoClient = new MongoClient(new ServerAddress(serverAddress));
-    return FakeMongo.builder().mongoServer(mongoServer).mongoClient(mongoClient).build();
+    com.mongodb.MongoClient mongoClientLegacy = new com.mongodb.MongoClient(new ServerAddress(serverAddress));
+    MongoClient mongoClient = MongoClients.create(new ConnectionString("mongodb://localhost:0"));
+
+    return FakeMongo.builder()
+            .mongoServer(mongoServer)
+            .mongoClient(mongoClient)
+            .mongoClientLegacy(mongoClientLegacy).build();
   }
 
   private static Queue<Future<FakeMongo>> futureFakeMongoClient = new ArrayDeque<>();
