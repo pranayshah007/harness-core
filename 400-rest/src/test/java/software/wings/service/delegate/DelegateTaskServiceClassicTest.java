@@ -146,6 +146,7 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -1133,6 +1134,8 @@ public class DelegateTaskServiceClassicTest extends WingsBaseTest {
             .build();
     when(assignDelegateService.getEligibleDelegatesToExecuteTask(any(DelegateTask.class)))
         .thenReturn(new ArrayList<>(singletonList(DELEGATE_ID)));
+    Account globalAccount = anAccount().withUuid(GLOBAL_DELEGATE_ACCOUNT_ID).build();
+    when(accountService.getGlobalDelegateAccount()).thenReturn(Optional.of(globalAccount));
     when(assignDelegateService.getConnectedDelegateList(any(), any()))
         .thenReturn(new ArrayList<>(singletonList(DELEGATE_ID)));
     delegateTaskServiceClassic.scheduleSyncTask(delegateTask);
