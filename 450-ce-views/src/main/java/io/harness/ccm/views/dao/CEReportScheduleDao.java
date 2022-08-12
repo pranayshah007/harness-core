@@ -54,6 +54,16 @@ public class CEReportScheduleDao {
     return query.asList();
   }
 
+  public List<CEReportSchedule> getReportSettingByViewIds(List<String> viewsIds, String accountId) {
+    log.info("Retrieving all report schedules for viewsIds {} and accountId {}", viewsIds.size(), accountId);
+    Query<CEReportSchedule> query = persistence.createQuery(CEReportSchedule.class)
+                                        .field(CEReportScheduleKeys.accountId)
+                                        .equal(accountId)
+                                        .field(CEReportScheduleKeys.viewsId)
+                                        .in(viewsIds);
+    return query.asList();
+  }
+
   public List<CEReportSchedule> getAllByAccount(String accountId) {
     log.info("Retrieving all report schedules for  accountId", accountId);
     Query<CEReportSchedule> query =

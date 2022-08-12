@@ -32,6 +32,7 @@ import software.wings.core.winrm.executors.WinRmExecutor;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.util.Map;
 
 @OwnedBy(CDP)
 @Singleton
@@ -41,7 +42,8 @@ public class WinRmInitCommandHandler implements CommandHandler {
 
   @Override
   public CommandExecutionStatus handle(CommandTaskParameters parameters, NgCommandUnit commandUnit,
-      ILogStreamingTaskClient logStreamingTaskClient, CommandUnitsProgress commandUnitsProgress) {
+      ILogStreamingTaskClient logStreamingTaskClient, CommandUnitsProgress commandUnitsProgress,
+      Map<String, Object> taskContext) {
     if (!(parameters instanceof WinrmTaskParameters)) {
       throw new InvalidRequestException("Invalid task parameters submitted for command task.");
     }

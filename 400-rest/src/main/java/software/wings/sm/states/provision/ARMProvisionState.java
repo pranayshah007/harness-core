@@ -207,7 +207,8 @@ public class ARMProvisionState extends State {
                       .async(true)
                       .taskType(GIT_FETCH_FILES_TASK.name())
                       .parameters(new Object[] {taskParams})
-                      .timeout(TimeUnit.MINUTES.toMillis(GIT_FETCH_FILES_TASK_ASYNC_TIMEOUT))
+                      .timeout(TimeUnit.MINUTES.toMillis(Math.max(
+                          GIT_FETCH_FILES_TASK_ASYNC_TIMEOUT, helper.renderTimeout(timeoutExpression, context))))
                       .build())
             .build();
     delegateService.queueTask(delegateTask);

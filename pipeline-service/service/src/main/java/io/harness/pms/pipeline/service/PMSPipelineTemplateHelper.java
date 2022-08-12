@@ -76,16 +76,17 @@ public class PMSPipelineTemplateHelper {
       try {
         GitEntityInfo gitEntityInfo = GitContextHelper.getGitEntityInfo();
         if (gitEntityInfo != null) {
-          return NGRestUtils.getResponse(templateResourceClient.applyTemplatesOnGivenYamlV2(accountId, orgId, projectId,
-              gitEntityInfo.getBranch(), gitEntityInfo.getYamlGitConfigId(), true,
-              TemplateApplyRequestDTO.builder()
-                  .originalEntityYaml(yaml)
-                  .checkForAccess(checkForTemplateAccess)
-                  .getMergedYamlWithTemplateField(getMergedTemplateWithTemplateReferences)
-                  .build()));
+          return NGRestUtils.getResponse(
+              templateResourceClient.applyTemplatesOnGivenYamlV2(accountId, orgId, projectId, gitEntityInfo.getBranch(),
+                  gitEntityInfo.getYamlGitConfigId(), true, gitEntityInfo.getParentEntityRepoURL(),
+                  TemplateApplyRequestDTO.builder()
+                      .originalEntityYaml(yaml)
+                      .checkForAccess(checkForTemplateAccess)
+                      .getMergedYamlWithTemplateField(getMergedTemplateWithTemplateReferences)
+                      .build()));
         }
         return NGRestUtils.getResponse(
-            templateResourceClient.applyTemplatesOnGivenYamlV2(accountId, orgId, projectId, null, null, null,
+            templateResourceClient.applyTemplatesOnGivenYamlV2(accountId, orgId, projectId, null, null, null, null,
                 TemplateApplyRequestDTO.builder()
                     .originalEntityYaml(yaml)
                     .checkForAccess(checkForTemplateAccess)

@@ -17,6 +17,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.eventsframework.api.Producer;
 import io.harness.eventsframework.producer.Message;
 import io.harness.mongo.tracing.Tracer;
+import io.harness.ng.persistence.tracer.NgTracer;
 import io.harness.persistence.HQuery;
 import io.harness.serializer.JsonUtils;
 import io.harness.tracing.shapedetector.QueryShapeDetector;
@@ -38,7 +39,7 @@ import org.springframework.data.mongodb.core.query.Query;
 
 @Slf4j
 @OwnedBy(HarnessTeam.PIPELINE)
-public class MongoRedisTracer implements Tracer {
+public class MongoRedisTracer implements Tracer, NgTracer {
   private static final int SAMPLE_SIZE = 120; // Consider only 1 sample out of 120 invocations
 
   @Inject @Named(PersistenceTracerConstants.TRACING_THREAD_POOL) private ExecutorService executorService;

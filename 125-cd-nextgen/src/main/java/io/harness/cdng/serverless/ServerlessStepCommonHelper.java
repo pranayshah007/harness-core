@@ -112,7 +112,7 @@ public class ServerlessStepCommonHelper extends ServerlessStepUtils {
   private static final String PRIMARY_ARTIFACT_PATH_FOR_ECR = "<+artifact.image>";
   @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
   private static final String ARTIFACT_ACTUAL_PATH = "harnessArtifact/artifactFile";
-  private static final String SIDECAR_ARTIFACT_PATH_PREFIX = "<+sidecar.artifact.";
+  private static final String SIDECAR_ARTIFACT_PATH_PREFIX = "<+artifacts.sidecars.";
   private static final String SIDECAR_ARTIFACT_FILE_NAME_PREFIX = "harnessArtifact/sidecar-artifact-";
 
   public TaskChainResponse startChainLink(

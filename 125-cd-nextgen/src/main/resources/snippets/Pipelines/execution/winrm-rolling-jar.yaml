@@ -1,0 +1,110 @@
+spec:
+  execution:
+    steps:
+      - step:
+          name: "Deploy"
+          identifier: Deploy
+          type: Command
+          timeout: 10m
+          strategy:
+            repeat:
+              items: <+stage.output.hosts>
+              maxConcurrency: <+maxConcurrency>
+              start: 0
+              end: <+end>
+              unit: <+unit>
+          spec:
+            host: <+repeat.item>
+            onDelegate: false
+            environmentVariables: [ ]
+            outputVariables: [ ]
+            commandUnits:
+              - identifier: Setup_Runtime_Paths
+                name: Setup Runtime Paths
+                type: Script
+                spec:
+                  shell: PowerShell
+                  source:
+                    type: Inline
+                    spec:
+                      script: |-
+                        # Env variables are defined with the following values: 
+                        # HARNESS_RUNTIME_PATH: deployment_type/service_name/env_name/runtime
+                        # HARNESS_BACKUP_PATH: deployment_type/service_name/env_name/backup
+                        # HARNESS_STAGING_PATH: deployment_type/service_name/env_name/staging
+                        New-Item -Path "$HARNESS_RUNTIME_PATH" -ItemType Directory
+                        New-Item -Path "$HARNESS_RUNTIME_PATH" -ItemType Directory
+                        New-Item -Path "$HARNESS_RUNTIME_PATH" -ItemType Directory
+                        New-Item -Path "$HARNESS_RUNTIME_PATH\tomcat\bin" -ItemType Directory
+              - identifier: Stop_Service
+                name: "Stop Service"
+                type: Script
+                spec:
+                  workingDirectory: $HARNESS_RUNTIME_PATH\tomcat\bin
+                  shell: PowerShell
+                  source:
+                    type: Inline
+                    spec:
+                      script: Write-Host "Stopping Service..."
+              - identifier: Process_Stopped
+                name: "Process Stopped"
+                type: Script
+                spec:
+                  workingDirectory: $HARNESS_RUNTIME_PATH\tomcat\bin
+                  shell: PowerShell
+                  source:
+                    type: Inline
+                    spec:
+                      script: Write-Host "Process Stopped."
+              - identifier: Port_Cleared
+                name: "Port Cleared"
+                type: Script
+                spec:
+                  workingDirectory: $HARNESS_RUNTIME_PATH\tomcat\bin
+                  shell: PowerShell
+                  source:
+                    type: Inline
+                    spec:
+                      script: Write-Host "Clearing Port..."
+              - identifier: Copy_Artifact
+                name: "Copy Artifact"
+                type: Copy
+                spec:
+                  sourceType: Artifact
+                  destinationPath: $HARNESS_RUNTIME_PATH
+              - identifier: Copy_Config
+                name: "Copy Config"
+                type: Copy
+                spec:
+                  sourceType: Config
+                  destinationPath: $HARNESS_RUNTIME_PATH
+              - identifier: Start_Service
+                name: "Start Service"
+                type: Script
+                spec:
+                  workingDirectory: $HARNESS_RUNTIME_PATH\tomcat\bin
+                  shell: PowerShell
+                  source:
+                    type: Inline
+                    spec:
+                      script: Write-Host "Starting Service..."
+              - identifier: Process_Running
+                name: "Process Running"
+                type: Script
+                spec:
+                  workingDirectory: $HARNESS_RUNTIME_PATH\tomcat\bin
+                  shell: PowerShell
+                  source:
+                    type: Inline
+                    spec:
+                      script: Write-Host "Process Running..."
+              - identifier: Port_Listening
+                name: "Port Listening"
+                type: Script
+                spec:
+                  workingDirectory: $HARNESS_RUNTIME_PATH\tomcat\bin
+                  shell: PowerShell
+                  source:
+                    type: Inline
+                    spec:
+                      script: Write-Host "Port Listening..."

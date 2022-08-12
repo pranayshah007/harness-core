@@ -29,10 +29,16 @@ public enum ServiceDefinitionType {
       Lists.newArrayList(ExecutionStrategyType.ROLLING, ExecutionStrategyType.DEFAULT), ServiceSpecType.NATIVE_HELM),
 
   @JsonProperty(ServiceSpecType.SSH)
-  SSH(ServiceSpecType.SSH, Lists.newArrayList(ExecutionStrategyType.DEFAULT), ServiceSpecType.SSH),
+  SSH(ServiceSpecType.SSH,
+      Lists.newArrayList(ExecutionStrategyType.DEFAULT, ExecutionStrategyType.BASIC, ExecutionStrategyType.ROLLING,
+          ExecutionStrategyType.CANARY),
+      ServiceSpecType.SSH),
 
   @JsonProperty(ServiceSpecType.WINRM)
-  WINRM(ServiceSpecType.WINRM, Lists.newArrayList(ExecutionStrategyType.DEFAULT), ServiceSpecType.WINRM),
+  WINRM(ServiceSpecType.WINRM,
+      Lists.newArrayList(ExecutionStrategyType.DEFAULT, ExecutionStrategyType.BASIC, ExecutionStrategyType.ROLLING,
+          ExecutionStrategyType.CANARY),
+      ServiceSpecType.WINRM),
 
   @JsonProperty(ServiceSpecType.SERVERLESS_AWS_LAMBDA)
   SERVERLESS_AWS_LAMBDA("Serverless Aws Lambda",

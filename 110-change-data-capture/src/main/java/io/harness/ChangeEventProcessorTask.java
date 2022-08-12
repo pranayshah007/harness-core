@@ -113,20 +113,22 @@ public class ChangeEventProcessorTask implements Runnable {
   }
 
   private void saveCDCStateEntityToken(Class<? extends PersistentEntity> sourceClass, ChangeEvent<?> changeEvent) {
-    String sourceClassName = sourceClass.getCanonicalName();
+    if (changeEvent.getToken() != null) {
+      String sourceClassName = sourceClass.getCanonicalName();
 
-    Query<CDCStateEntity> query = wingsPersistence.createQuery(CDCStateEntity.class)
-                                      .field(cdcStateEntityKeys.sourceEntityClass)
-                                      .equal(sourceClassName);
+      Query<CDCStateEntity> query = wingsPersistence.createQuery(CDCStateEntity.class)
+                                        .field(cdcStateEntityKeys.sourceEntityClass)
+                                        .equal(sourceClassName);
 
-    UpdateOperations<CDCStateEntity> updateOperations =
-        wingsPersistence.createUpdateOperations(CDCStateEntity.class)
-            .set(cdcStateEntityKeys.lastSyncedToken, changeEvent.getToken());
+      UpdateOperations<CDCStateEntity> updateOperations =
+          wingsPersistence.createUpdateOperations(CDCStateEntity.class)
+              .set(cdcStateEntityKeys.lastSyncedToken, changeEvent.getToken());
 
-    CDCStateEntity cdcStateEntity = wingsPersistence.upsert(query, updateOperations, upsertReturnNewOptions);
-    if (cdcStateEntity == null || !cdcStateEntity.getLastSyncedToken().equals(changeEvent.getToken())) {
-      log.error(
-          "Failed to save resume token for, entity={}, changeEvent={}", sourceClass.getCanonicalName(), changeEvent);
+      CDCStateEntity cdcStateEntity = wingsPersistence.upsert(query, updateOperations, upsertReturnNewOptions);
+      if (cdcStateEntity == null || !cdcStateEntity.getLastSyncedToken().equals(changeEvent.getToken())) {
+        log.error(
+            "Failed to save resume token for, entity={}, changeEvent={}", sourceClass.getCanonicalName(), changeEvent);
+      }
     }
   }
 

@@ -15,6 +15,7 @@ import static io.harness.azure.model.AzureConstants.TIME_STAMP_REGEX;
 import static io.harness.azure.model.AzureConstants.containerSuccessPattern;
 import static io.harness.azure.model.AzureConstants.deploymentLogPattern;
 import static io.harness.azure.model.AzureConstants.failureContainerLogPattern;
+import static io.harness.azure.model.AzureConstants.failureContainerSetupPattern;
 import static io.harness.azure.model.AzureConstants.tomcatSuccessPattern;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.logging.LogLevel.ERROR;
@@ -163,7 +164,12 @@ public class SlotContainerLogStreamer {
 
   private boolean operationFailed(String logLine) {
     Matcher matcher = failureContainerLogPattern.matcher(logLine);
-    return matcher.find();
+    if (!matcher.find()) {
+      Matcher stoppingSiteMatcher = failureContainerSetupPattern.matcher(logLine);
+      return stoppingSiteMatcher.find();
+    }
+
+    return true;
   }
 
   public String getErrorLog() {

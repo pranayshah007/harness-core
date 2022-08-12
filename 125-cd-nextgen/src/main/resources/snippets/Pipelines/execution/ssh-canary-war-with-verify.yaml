@@ -1,0 +1,71 @@
+spec:
+  execution:
+    steps:
+      - stepGroup:
+          identifier: Step_Group_<+phase>
+          name: "Step Group"
+          strategy:
+            repeat:
+              items: <+stage.output.hosts>
+              start: <+start>
+              end: <+end>
+              unit: <+unit>
+          steps:
+            - step:
+                name: "Deploy"
+                identifier: Deploy_<+phase>
+                type: Command
+                timeout: 10m
+                spec:
+                  host: <+repeat.item>
+                  onDelegate: false
+                  environmentVariables: [ ]
+                  outputVariables: [ ]
+                  commandUnits:
+                    - identifier: Setup_Runtime_Paths_<+phase>
+                      name: Setup Runtime Paths
+                      type: Script
+                      spec:
+                        shell: Bash
+                        source:
+                          type: Inline
+                          spec:
+                            script: |-
+                              <+setup_runtime_paths_script>
+                    - identifier: Stop_<+phase>
+                      name: "Stop"
+                      type: Script
+                      spec:
+                        workingDirectory: $HARNESS_RUNTIME_PATH
+                        shell: Bash
+                        source:
+                          type: Inline
+                          spec:
+                            script: echo "Stopping..."
+                    - identifier: Copy_Artifact_<+phase>
+                      name: Copy Artifact
+                      type: Copy
+                      spec:
+                        sourceType: Artifact
+                        destinationPath: $HARNESS_RUNTIME_PATH
+                    - identifier: Copy_Config_<+phase>
+                      name: Copy Config
+                      type: Copy
+                      spec:
+                        sourceType: Config
+                        destinationPath: $HARNESS_RUNTIME_PATH
+                    - identifier: Start_<+phase>
+                      name: Start
+                      type: Script
+                      spec:
+                        shell: Bash
+                        source:
+                          type: Inline
+                          spec:
+                            script: echo "Starting..."
+            - step:
+                type: Verify
+                name: Verify
+                identifier: Verify_<+phase>
+                timeout: 2h
+                spec: { }
