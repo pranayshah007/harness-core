@@ -186,7 +186,7 @@ public class DelegateServiceImplTest extends WingsBaseTest {
   private static final String TEST_DELEGATE_GROUP_NAME = "testDelegateGroupName";
   private static final String TEST_DELEGATE_GROUP_NAME_IDENTIFIER = "_testDelegateGroupName";
   private static final String TOKEN_NAME = "tokenName";
-  public static final String GLOBAL_DELEGATE_ACCOUNT_ID = "__GLOBAL_DELEGATE_ACCOUNT_ID__";
+  public static final String GLOBAL_DELEGATE_ACCOUNT_ID = "GLOBAL_DELEGATE_ACCOUNT_ID";
 
   @Mock private UsageLimitedFeature delegatesFeature;
   @Mock private Broadcaster broadcaster;
