@@ -19,6 +19,7 @@ import io.harness.cvng.cdng.beans.TemplateMonitoredServiceSpec;
 import io.harness.cvng.cdng.services.api.VerifyStepMonitoredServiceResolutionService;
 import io.harness.cvng.core.beans.monitoredService.HealthSource;
 import io.harness.cvng.core.beans.monitoredService.MonitoredServiceDTO;
+import io.harness.cvng.core.beans.params.MonitoredServiceParams;
 import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.core.beans.params.ServiceEnvironmentParams;
 import io.harness.cvng.core.beans.sidekick.VerificationJobInstanceCleanupSideKickData;
@@ -121,13 +122,13 @@ public class TemplateVerifyStepMonitoredServiceResolutionServiceImpl
     if (Objects.nonNull(monitoredServiceDTO) && Objects.nonNull(monitoredServiceDTO.getSources())
         && CollectionUtils.isNotEmpty(monitoredServiceDTO.getSources().getHealthSources())) {
       try {
-        if (Objects.isNull(
-                monitoredServiceService.get(ProjectParams.builder()
-                                                .projectIdentifier(serviceEnvironmentParams.getProjectIdentifier())
-                                                .orgIdentifier(serviceEnvironmentParams.getOrgIdentifier())
-                                                .accountIdentifier(serviceEnvironmentParams.getAccountIdentifier())
-                                                .build(),
-                    monitoredServiceDTO.getIdentifier()))) {
+        if (Objects.isNull(monitoredServiceService.getMonitoredService(
+                MonitoredServiceParams.builder()
+                    .projectIdentifier(serviceEnvironmentParams.getProjectIdentifier())
+                    .orgIdentifier(serviceEnvironmentParams.getOrgIdentifier())
+                    .accountIdentifier(serviceEnvironmentParams.getAccountIdentifier())
+                    .monitoredServiceIdentifier(monitoredServiceDTO.getIdentifier())
+                    .build()))) {
           monitoredServiceService.create(serviceEnvironmentParams.getAccountIdentifier(), monitoredServiceDTO);
         }
       } catch (Exception e) {
