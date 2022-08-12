@@ -18,7 +18,7 @@ import static org.mockito.Mockito.doReturn;
 import io.harness.DelegateTestBase;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
-import io.harness.delegate.beans.instancesync.PdcInstanceSyncPerpetualTaskResponse;
+import io.harness.delegate.beans.instancesync.SshWinrmInstanceSyncPerpetualTaskResponse;
 import io.harness.delegate.beans.instancesync.info.PdcServerInstanceInfo;
 import io.harness.managerclient.DelegateAgentManagerClient;
 import io.harness.ng.core.k8s.ServiceSpecType;
@@ -54,7 +54,7 @@ public class PdcPerpetualTaskExecutorNgTest extends DelegateTestBase {
   @Mock private HostValidationService hostValidationService;
 
   @InjectMocks private PdcPerpetualTaskExecutorNg pdcPerpetualTaskExecutorNg;
-  @Captor private ArgumentCaptor<PdcInstanceSyncPerpetualTaskResponse> perpetualTaskResponseCaptor;
+  @Captor private ArgumentCaptor<SshWinrmInstanceSyncPerpetualTaskResponse> perpetualTaskResponseCaptor;
   private static final String SUCCESS = "success";
   private static final String PERPETUAL_TASK_ID = "perpetualTaskId";
   private static final String ACCOUNT_ID = "ACCOUNT_ID";
@@ -83,8 +83,8 @@ public class PdcPerpetualTaskExecutorNgTest extends DelegateTestBase {
     PerpetualTaskResponse perpetualTaskResponse = pdcPerpetualTaskExecutorNg.runOnce(
         PerpetualTaskId.newBuilder().setId(PERPETUAL_TASK_ID).build(), perpetualTaskExecutionParams, Instant.EPOCH);
 
-    assertThat(perpetualTaskResponseCaptor.getValue()).isInstanceOf(PdcInstanceSyncPerpetualTaskResponse.class);
-    PdcInstanceSyncPerpetualTaskResponse value = perpetualTaskResponseCaptor.getValue();
+    assertThat(perpetualTaskResponseCaptor.getValue()).isInstanceOf(SshWinrmInstanceSyncPerpetualTaskResponse.class);
+    SshWinrmInstanceSyncPerpetualTaskResponse value = perpetualTaskResponseCaptor.getValue();
     System.out.println(value);
     assertThat(value.getServerInstanceDetails()
                    .stream()

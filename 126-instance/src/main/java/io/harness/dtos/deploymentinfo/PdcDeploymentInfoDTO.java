@@ -10,31 +10,17 @@ package io.harness.dtos.deploymentinfo;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.util.InstanceSyncKey;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import javax.validation.constraints.NotNull;
 import lombok.Builder;
-import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-@Data
-@Builder
 @EqualsAndHashCode(callSuper = true)
 @OwnedBy(CDP)
-public class PdcDeploymentInfoDTO extends DeploymentInfoDTO {
-  @NotNull private String infrastructureKey;
-  @NotNull private String host;
-  @NotNull private String serviceType;
-
-  @Override
-  public String prepareInstanceSyncHandlerKey() {
-    return InstanceSyncKey.builder().part(host).part(infrastructureKey).build().toString();
-  }
-
-  @Override
-  public String getType() {
-    return serviceType;
+public class PdcDeploymentInfoDTO extends SshWinrmDeploymentInfoDTO {
+  @Builder
+  public PdcDeploymentInfoDTO(String serviceType, String infrastructureKey, String host) {
+    super(serviceType, infrastructureKey, host);
   }
 }
