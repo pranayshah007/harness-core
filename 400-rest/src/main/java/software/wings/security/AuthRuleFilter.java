@@ -121,7 +121,8 @@ public class AuthRuleFilter implements ContainerRequestFilter {
       "executions/workflow-variables", "executions/nodeSubGraphs", "executions/deployment-metadata",
       "setup-as-code/yaml/internal/template-yaml-sync", "infrastructure-definitions/list",
       "usageRestrictions/references", "setup/delegates/ng/v2", "custom-dashboard/deployment-recon-per-account",
-      "custom-dashboard/deployment-recon-all-accounts", "custom-dashboard/instance-recon-per-account"};
+      "custom-dashboard/deployment-recon-all-accounts", "custom-dashboard/instance-recon-per-account",
+      "custom-dashboard/looker-entity-recon-per-account"};
   private static final String[] EXEMPTED_URI_SUFFIXES = new String[] {"sales-contacts", "addSubdomainUrl"};
   private static final String USER_NOT_AUTHORIZED = "User not authorized";
   private static final String X_FORWARDED_FOR = "X-Forwarded-For";

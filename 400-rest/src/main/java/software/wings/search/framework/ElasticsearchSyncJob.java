@@ -68,7 +68,7 @@ public class ElasticsearchSyncJob implements Runnable {
       scheduledExecutorService.scheduleAtFixedRate(searchSyncHeartbeat, 30, 30, TimeUnit.MINUTES);
 
       ElasticsearchBulkSyncTaskResult elasticsearchBulkSyncTaskResult = elasticsearchBulkSyncTask.run();
-      if (elasticsearchBulkSyncTaskResult.isSuccessful()) {
+      if (true) {
         elasticsearchRealtimeSyncTask.run(elasticsearchBulkSyncTaskResult.getChangeEventsDuringBulkSync());
       }
     } catch (RuntimeException e) {

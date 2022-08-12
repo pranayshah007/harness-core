@@ -42,7 +42,7 @@ public class LookerEntityReconTask implements Runnable {
       List<Account> accountList = accountService.listAllAccountWithDefaultsWithoutLicenseInfo();
       Set<String> accountIds = featureFlagService.getAccountIds(FeatureName.TIME_SCALE_CG_SYNC);
       for (Account account : accountList) {
-        if (accountIds.contains(account)) {
+        if (accountIds.contains(account.getUuid())) {
           for (TimeScaleEntity timeScaleEntity : timeScaleEntities) {
             lookerEntityReconService = timeScaleEntity.getReconService();
             executorService.submit(() -> {

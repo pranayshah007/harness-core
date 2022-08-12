@@ -99,6 +99,8 @@ public class CustomDashboardResource {
   private IInstanceReconService instanceReconService;
   private DeploymentEventProcessor deploymentEventProcessor;
 
+  @Inject private Set<TimeScaleEntity<?>> timeScaleEntities;
+
   @Inject
   public CustomDashboardResource(DashboardSettingsService dashboardSettingsService,
       FeatureFlagService featureFlagService, DashboardAuthHandler dashboardAuthHandler,
@@ -571,17 +573,15 @@ public class CustomDashboardResource {
   public RestResponse performLookerEntityReconciliationSingleAccountSingleEntity(
       @QueryParam("targetAccountId") @NotEmpty String targetAccountId,
       @QueryParam("durationStartTs") Long durationStartTs, @QueryParam("durationEndTs") Long durationEndTs,
-      TimeScaleEntity entity) {
+      @QueryParam("entity") String lookerEntity) {
     User authUser = UserThreadLocal.get();
 
     String deployMode = System.getenv(DeployMode.DEPLOY_MODE);
     if (DeployMode.isOnPrem(deployMode) || harnessUserGroupService.isHarnessSupportUser(authUser.getUuid())) {
       if (durationEndTs == null || durationStartTs == null || durationStartTs <= 0 || durationEndTs <= 0) {
         return Builder.aRestResponse()
-            .withResponseMessages(Lists.newArrayList(ResponseMessage.builder()
-                                                         .message("durationStartTs or endTs is null or invalid")
-
-                                                         .build()))
+            .withResponseMessages(Lists.newArrayList(
+                ResponseMessage.builder().message("durationStartTs or endTs is null or invalid").build()))
             .build();
       }
 
@@ -594,6 +594,21 @@ public class CustomDashboardResource {
                                                          .build()))
             .build();
       }
+      TimeScaleEntity entity = null;
+      for (TimeScaleEntity timeScaleEntity : timeScaleEntities) {
+        if (timeScaleEntity.getSourceEntityClass().equals(lookerEntity)) {
+          entity = timeScaleEntity;
+          break;
+        }
+      }
+
+      if (entity == null) {
+        return Builder.aRestResponse()
+            .withResponseMessages(Lists.newArrayList(
+                ResponseMessage.builder().message("The entity: " + lookerEntity + " not supported").build()))
+            .build();
+      }
+
       ReconciliationStatus status =
           lookerEntityReconService.performReconciliation(targetAccountId, durationStartTs, durationEndTs, entity);
       return Builder.aRestResponse()
