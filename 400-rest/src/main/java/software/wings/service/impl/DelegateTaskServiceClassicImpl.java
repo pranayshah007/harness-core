@@ -60,6 +60,7 @@ import io.harness.capability.CapabilityRequirement;
 import io.harness.capability.CapabilityTaskSelectionDetails;
 import io.harness.capability.service.CapabilityService;
 import io.harness.delegate.NoEligibleDelegatesInAccountException;
+import io.harness.delegate.NoGlobalDelegateAccountException;
 import io.harness.delegate.beans.Delegate;
 import io.harness.delegate.beans.Delegate.DelegateKeys;
 import io.harness.delegate.beans.DelegateInstanceStatus;
@@ -92,6 +93,7 @@ import io.harness.delegate.task.pcf.request.CfCommandTaskParameters;
 import io.harness.delegate.task.pcf.request.CfCommandTaskParameters.CfCommandTaskParametersBuilder;
 import io.harness.delegate.task.pcf.request.CfRunPluginCommandRequest;
 import io.harness.environment.SystemEnvironment;
+import io.harness.eraro.ErrorCode;
 import io.harness.event.handler.impl.EventPublishHelper;
 import io.harness.exception.CriticalExpressionEvaluationException;
 import io.harness.exception.DelegateNotAvailableException;
@@ -435,6 +437,9 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
       if (accountService.getGlobalDelegateAccount().isPresent()) {
         String globalDelegateAccount = accountService.getGlobalDelegateAccount().get().getUuid();
         task.setAccountId(globalDelegateAccount);
+      } else {
+        throw new NoGlobalDelegateAccountException(
+            "No Global Delegate Account Found", ErrorCode.NO_GLOBAL_DELEGATE_ACCOUNT);
       }
     }
 
