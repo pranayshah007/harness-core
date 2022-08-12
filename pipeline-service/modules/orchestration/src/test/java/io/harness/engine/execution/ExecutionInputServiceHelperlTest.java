@@ -10,6 +10,7 @@ package io.harness.engine.execution;
 import static io.harness.rule.OwnerRule.BRIJESH;
 
 import static junit.framework.TestCase.assertEquals;
+import static junit.framework.TestCase.assertTrue;
 
 import io.harness.OrchestrationTestBase;
 import io.harness.annotations.dev.HarnessTeam;
@@ -21,6 +22,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
+import java.util.ArrayList;
 import java.util.Map;
 import org.junit.Before;
 import org.junit.Test;
@@ -91,6 +93,27 @@ public class ExecutionInputServiceHelperlTest extends OrchestrationTestBase {
     assertEquals(getValueInMap("stage.variables.var1", responseMap), "echo ExecutionInputValue");
     assertEquals(getValueInMap("stage.variables.var2", responseMap), 1.2);
     assertEquals(getValueInMap("stage.variables.var3", responseMap), true);
+
+    // Testing the list as execution input value.
+    template = "step:\n"
+        + "  identifier: \"approval_step\"\n"
+        + "  type: \"HarnessApproval\"\n"
+        + "  spec:\n"
+        + "    approvers:\n"
+        + "      userGroups: \"<+input>.executionInput()\"\n";
+    inputYaml = "step:\n"
+        + "  identifier: approval_step\n"
+        + "  type: HarnessApproval\n"
+        + "  spec:\n"
+        + "    approvers:\n"
+        + "      userGroups:\n"
+        + "        - account.LocalUserGroup\n";
+    inputJsonNode = objectMapper.readTree(inputYaml);
+    responseMap = executionInputServiceHelper.getExecutionInputMap(template, inputJsonNode);
+    assertTrue(getValueInMap("step.spec.approvers.userGroups", responseMap) instanceof ArrayList);
+    assertEquals(((ArrayList<?>) getValueInMap("step.spec.approvers.userGroups", responseMap)).size(), 1);
+    assertEquals(
+        ((ArrayList<?>) getValueInMap("step.spec.approvers.userGroups", responseMap)).get(0), "account.LocalUserGroup");
   }
 
   private Object getValueInMap(String fqn, Map<String, Object> map) {
