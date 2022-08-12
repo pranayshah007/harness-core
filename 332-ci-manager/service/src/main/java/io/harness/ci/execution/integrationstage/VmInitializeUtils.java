@@ -172,7 +172,7 @@ public class VmInitializeUtils {
 
   public OSType getOS(Infrastructure infrastructure) {
     // Only linux is supported now for runs on infrastructure
-    if (infrastructure.getType() == Infrastructure.Type.RUNS_ON) {
+    if (infrastructure.getType() == Infrastructure.Type.HOSTED_VM) {
       return OSType.Linux;
     }
 
