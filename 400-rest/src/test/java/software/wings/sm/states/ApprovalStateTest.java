@@ -771,6 +771,26 @@ public class ApprovalStateTest extends WingsBaseTest {
   }
 
   @Test
+  @Owner(developers = LUCAS_SALES)
+  @Category(UnitTests.class)
+  public void testParsePropertiesWithTimeoutAsString() {
+    final Map<String, Object> properties = new HashMap<>();
+    Integer timeout = 50934043;
+    properties.put("timeoutMillis", timeout.toString());
+    approvalState.parseProperties(properties);
+    assertThat(approvalState.getTimeoutMillis()).isEqualTo(timeout);
+  }
+
+  @Test
+  @Owner(developers = LUCAS_SALES)
+  @Category(UnitTests.class)
+  public void testParsePropertiesWithNegativeTimeout() {
+    final Map<String, Object> properties = new HashMap<>();
+    properties.put("timeoutMillis", "-543423");
+    assertThatThrownBy(() -> approvalState.parseProperties(properties)).isInstanceOf(InvalidRequestException.class);
+  }
+
+  @Test
   @Owner(developers = ROHIT_KUMAR)
   @Category(UnitTests.class)
   public void testSetPipelineVariables() {
