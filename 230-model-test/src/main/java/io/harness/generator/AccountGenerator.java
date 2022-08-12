@@ -115,7 +115,7 @@ public class AccountGenerator {
 
   public static final String ACCOUNT_ID = "kmpySmUISimoRrJL6NL73w";
 
-  public enum Accounts { GENERIC_TEST, HARNESS_TEST, RBAC_TEST, GLOBAL_DELEGATE }
+  public enum Accounts { GENERIC_TEST, HARNESS_TEST, RBAC_TEST }
 
   public Account ensurePredefined(Randomizer.Seed seed, Owners owners, Accounts predefined) {
     switch (predefined) {
@@ -125,8 +125,6 @@ public class AccountGenerator {
         return owners.obtainAccount(() -> ensureHarnessTest());
       case RBAC_TEST:
         return owners.obtainAccount(() -> ensureRbacTest());
-      case GLOBAL_DELEGATE:
-        return owners.obtainAccount(() -> ensureHarnessGlobalDelegateAccount());
       default:
         unhandled(predefined);
     }
@@ -172,14 +170,6 @@ public class AccountGenerator {
   private Account ensureRbacTest() {
     Account account =
         ensureAccount(getOrCreateAccount("BAC4567890123456789012", "Rbac Test", "Harness", AccountType.PAID));
-    ensureTestUser(account);
-    return account;
-  }
-
-  private Account ensureHarnessGlobalDelegateAccount() {
-    Account account = ensureAccount(
-        getOrCreateAccount("__GLOBAL_DELEGATE_ACCOUNT_ID__", "Harness Global Delegate", "Harness", AccountType.PAID));
-    account = ensureAccount(account);
     ensureTestUser(account);
     return account;
   }
