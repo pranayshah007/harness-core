@@ -1,0 +1,67 @@
+pipeline:
+  identifier: "Test_Pipline11"
+  variables:
+    - name: "port1"
+      type: "String"
+      value: "<+input>.executionInput()"
+    - name: "port2"
+      type: "String"
+      value: "<+input>"
+  stages:
+    - parallel:
+        - stage:
+            identifier: "qaStage1"
+            type: "Deployment"
+            spec:
+              service:
+                identifier: "manager"
+                serviceDefinition:
+                  type: "Kubernetes"
+                  spec:
+                    manifests: "<+input>"
+              execution:
+                steps:
+                  - step:
+                      identifier: "httpStep5"
+                      type: "Http"
+                      spec:
+                        method: "<+input>"
+        - stage:
+            identifier: "qaStage2"
+            type: "Deployment"
+            spec:
+              service:
+                identifier: "manager"
+                serviceDefinition:
+                  type: "Kubernetes"
+                  spec:
+                    manifests: "<+input>"
+              execution:
+                steps:
+                  - step:
+                      identifier: "httpStep5"
+                      type: "Http"
+                      spec:
+                        method: "<+input>.executionInput()"
+    - stage:
+        identifier: "qaStage3"
+        type: "Deployment"
+        spec:
+          execution:
+            steps:
+              - step:
+                  identifier: "httpStep9"
+                  type: "Http"
+                  spec:
+                    url: "<+input>"
+    - stage:
+        identifier: "qaStage4"
+        type: "Deployment"
+        spec:
+          execution:
+            steps:
+              - step:
+                  identifier: "httpStep9"
+                  type: "Http"
+                  spec:
+                    url: "<+input>.executionInput()"
