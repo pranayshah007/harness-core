@@ -174,6 +174,8 @@ public class Account extends Base implements PersistentRegularIterable, NGMigrat
 
   @Getter @Setter ServiceAccountConfig serviceAccountConfig;
 
+  @FdIndex @Getter @Setter boolean globalDelegateAccount;
+
   private transient Map<String, String> defaults = new HashMap<>();
   /**
    * Default mechanism is USER_PASSWORD

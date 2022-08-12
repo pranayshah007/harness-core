@@ -2051,6 +2051,14 @@ public class AccountServiceImpl implements AccountService {
   }
 
   @Override
+  public Optional<Account> getGlobalDelegateAccount() {
+    Account account = wingsPersistence.createQuery(Account.class, excludeAuthorityCount)
+                          .filter(AccountKeys.globalDelegateAccount, true)
+                          .get();
+    return Optional.ofNullable(account);
+  }
+
+  @Override
   public boolean updateAccountActivelyUsed(String accountId, boolean accountActivelyUsed) {
     Account account = getFromCache(accountId);
     if (account == null) {

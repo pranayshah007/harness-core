@@ -198,4 +198,12 @@ public class AdminAccountServiceImpl implements AdminAccountService {
   public boolean updateRingName(String accountId, String ringName) {
     return accountService.updateRingName(accountId, ringName);
   }
+
+  @Override
+  public Account createGlobalDelegateAccount(Account account, String adminUserEmail) {
+    if (accountService.getGlobalDelegateAccount().isPresent()) {
+      return null;
+    }
+    return createAccount(account, adminUserEmail);
+  }
 }

@@ -153,6 +153,7 @@ import software.wings.expression.SweepingOutputSecretFunctor;
 import software.wings.helpers.ext.url.SubdomainUrlHelperIntfc;
 import software.wings.service.impl.artifact.ArtifactCollectionUtils;
 import software.wings.service.impl.infra.InfraDownloadService;
+import software.wings.service.intfc.AccountService;
 import software.wings.service.intfc.AlertService;
 import software.wings.service.intfc.AssignDelegateService;
 import software.wings.service.intfc.ConfigService;
@@ -270,13 +271,12 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
   @Inject private DelegateSetupService delegateSetupService;
   @Inject private AuditHelper auditHelper;
   @Inject private DelegateMetricsService delegateMetricsService;
+  Inject private AccountService accountService;
   @Inject @Named(SECRET_CACHE) Cache<String, EncryptedDataDetails> secretsCache;
   @Inject @Getter private Subject<DelegateObserver> subject = new Subject<>();
 
   private static final SecureRandom random = new SecureRandom();
   private HarnessCacheManager harnessCacheManager;
-  public static final String GLOBAL_DELEGATE_ACCOUNT_ID = "__GLOBAL_DELEGATE_ACCOUNT_ID__";
-
   private Supplier<Long> taskCountCache = Suppliers.memoizeWithExpiration(this::fetchTaskCount, 1, TimeUnit.MINUTES);
   @Inject @Getter private Subject<DelegateTaskStatusObserver> delegateTaskStatusObserverSubject;
   @Inject @Getter private Subject<DelegateTaskObserver> delegateTaskObserverSubject = new Subject<>();
@@ -432,7 +432,10 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
     task.setLastBroadcastAt(clock.millis());
     if (task.isExecuteOnHarnessHostedDelegates()) {
       task.setSecondaryAccountId(task.getAccountId());
-      task.setAccountId(GLOBAL_DELEGATE_ACCOUNT_ID);
+      if (accountService.getGlobalDelegateAccount().isPresent()) {
+        String globalDelegateAccount = accountService.getGlobalDelegateAccount().get().getUuid();
+        task.setAccountId(globalDelegateAccount);
+      }
     }
 
     // For forward compatibility set the wait id to the uuid
@@ -1074,8 +1077,8 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
 
       delegateTaskObserverSubject.fireInform(
           DelegateTaskObserver::onTaskAssigned, delegateTask.getAccountId(), taskId, delegateId);
-      remoteObserverInformer.sendEvent(
-          ReflectionUtils.getMethod(DelegateTaskObserver.class, "onTaskAssigned", String.class, String.class, String.class),
+      remoteObserverInformer.sendEvent(ReflectionUtils.getMethod(DelegateTaskObserver.class, "onTaskAssigned",
+                                           String.class, String.class, String.class),
           DelegateTaskServiceClassicImpl.class, delegateTask.getAccountId(), taskId);
 
       delegateMetricsService.recordDelegateTaskMetrics(delegateTask, DELEGATE_TASK_ACQUIRE);
