@@ -7,10 +7,10 @@
 
 package io.harness.connector.validator;
 
-import static io.harness.connector.ConnectivityStatus.FAILURE;
 import static io.harness.connector.ConnectivityStatus.SUCCESS;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.joor.Reflect.on;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
@@ -39,7 +39,8 @@ import io.harness.delegate.beans.connector.gcpconnector.GcpManualDetailsDTO;
 import io.harness.delegate.task.gcp.response.GcpValidationTaskResponse;
 import io.harness.encryption.Scope;
 import io.harness.encryption.SecretRefData;
-import io.harness.errorhandling.NGErrorHelper;
+import io.harness.exception.WingsException;
+import io.harness.exception.exceptionmanager.ExceptionManager;
 import io.harness.gcp.client.GcpClient;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
@@ -64,10 +65,10 @@ public class GcpConnectorValidatorTest extends CategoryTest {
   @Mock private DecryptionHelper decryptionHelper;
   @Mock private GcpClient gcpClient;
   @Mock private DefaultConnectorServiceImpl connectorService;
-  @InjectMocks private NGErrorHelper ngErrorHelper;
   @InjectMocks private GcpConnectorValidator gcpConnectorValidator;
   @Mock private Map<String, ConnectorValidationHandler> connectorTypeToConnectorValidationHandlerMap;
   @Mock private Map<String, ConnectorValidationParamsProvider> connectorValidationParamsProviderMap;
+  @Mock private ExceptionManager exceptionManager;
 
   @Before
   public void setUp() throws Exception {
@@ -176,7 +177,13 @@ public class GcpConnectorValidatorTest extends CategoryTest {
     when(ngSecretService.getEncryptionDetails(any(), any())).thenReturn(null);
     when(encryptionHelper.getEncryptionDetail(any(), any(), any(), any())).thenReturn(null);
     GcpValidationTaskHandler gcpValidationTaskHandler = mock(GcpValidationTaskHandler.class);
-    on(gcpValidationTaskHandler).set("ngErrorHelper", ngErrorHelper);
+    on(gcpValidationTaskHandler).set("exceptionManager", exceptionManager);
+    when(exceptionManager.processException(any(), any(), any()))
+        .thenReturn(
+            WingsException.builder()
+                .message(
+                    "Connector with credential type InheritFromDelegate does not support validation through harness")
+                .build());
     when(gcpValidationTaskHandler.validate(any(), any())).thenCallRealMethod();
     when(connectorTypeToConnectorValidationHandlerMap.get(Matchers.eq("Gcp"))).thenReturn(gcpValidationTaskHandler);
 
@@ -192,11 +199,10 @@ public class GcpConnectorValidatorTest extends CategoryTest {
                                                    .orgIdentifier("orgIdentifier")
                                                    .build())
                                     .build()));
-    ConnectorValidationResult connectorValidationResult = gcpConnectorValidator.validate(
-        gcpConnectorDTO, "accountIdentifier", "orgIdentifier", "projectIdentifier", "identifier");
-    assertThat(connectorValidationResult.getStatus()).isEqualTo(FAILURE);
-    assertThat(connectorValidationResult.getErrorSummary())
-        .isEqualTo(
-            "Error Encountered (Connector with credential type InheritFromDelegate does not support validation through harness)");
+    assertThatThrownBy(()
+                           -> gcpConnectorValidator.validate(gcpConnectorDTO, "accountIdentifier", "orgIdentifier",
+                               "projectIdentifier", "identifier"))
+        .isInstanceOf(WingsException.class)
+        .hasMessage("Connector with credential type InheritFromDelegate does not support validation through harness");
   }
 }
