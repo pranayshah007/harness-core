@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 
-package io.harness.dtos.instanceinfo;
+package io.harness.entities.deploymentinfo;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -13,16 +13,11 @@ import io.harness.annotations.dev.OwnedBy;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
 
-@OwnedBy(HarnessTeam.CDP)
 @EqualsAndHashCode(callSuper = true)
-public class PdcInstanceInfoDTO extends SshWinrmInstanceInfoDTO {
+@OwnedBy(HarnessTeam.CDP)
+public class AwsSshWinrmDeploymentInfo extends SshWinrmDeploymentInfo {
   @Builder
-  public PdcInstanceInfoDTO(String serviceType, String infrastructureKey, String host) {
+  public AwsSshWinrmDeploymentInfo(String serviceType, String infrastructureKey, String host) {
     super(serviceType, infrastructureKey, host);
-  }
-
-  @Override
-  public String getType() {
-    return "Pdc";
   }
 }

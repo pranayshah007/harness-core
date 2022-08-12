@@ -16,6 +16,6 @@ import lombok.Value;
 @OwnedBy(HarnessTeam.CDP)
 @Value
 @Builder
-public class PdcInfrastructureDetails extends InfrastructureDetails {
+public class SshWinrmInfrastructureDetails extends InfrastructureDetails {
   String host;
 }
