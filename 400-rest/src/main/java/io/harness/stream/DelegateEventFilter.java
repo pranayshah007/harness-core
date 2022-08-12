@@ -16,13 +16,13 @@ import io.harness.beans.DelegateHeartbeatResponseStreaming;
 import io.harness.delegate.beans.DelegateTaskAbortEvent;
 import io.harness.serializer.JsonUtils;
 
-import lombok.extern.slf4j.Slf4j;
 import software.wings.beans.DelegateTaskBroadcast;
 import software.wings.beans.PerpetualTaskBroadcastEvent;
 import software.wings.service.intfc.DelegateService;
 import software.wings.service.intfc.DelegateTaskServiceClassic;
 
 import com.google.inject.Inject;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.atmosphere.cpr.AtmosphereRequest;
 import org.atmosphere.cpr.AtmosphereResource;
@@ -59,7 +59,8 @@ public class DelegateEventFilter extends BroadcastFilterAdapter {
       if (!delegateService.filter(broadcast.getAccountId(), delegateId)) {
         return abort(message);
       }
-      log.info("Broadcasting task {} to account: {} delegate: {} by {}", broadcast.getTaskId(), broadcast.getAccountId(), delegateId, broadcasterId);
+      log.info("Broadcasting task {} to account: {} delegate: {} by {}", broadcast.getTaskId(),
+          broadcast.getAccountId(), delegateId, broadcasterId);
       return new BroadcastAction(JsonUtils.asJson(aDelegateTaskEvent()
                                                       .withDelegateTaskId(broadcast.getTaskId())
                                                       .withSync(!broadcast.isAsync())
