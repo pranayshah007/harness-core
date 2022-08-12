@@ -7,7 +7,9 @@
 
 package io.harness.ci.integrationstage;
 
+import static io.harness.beans.serializer.RunTimeInputHandler.resolveArchType;
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveMapParameter;
+import static io.harness.beans.serializer.RunTimeInputHandler.resolveOSType;
 import static io.harness.beans.sweepingoutputs.StageInfraDetails.STAGE_INFRA_DETAILS;
 import static io.harness.data.encoding.EncodingUtils.decodeBase64;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
@@ -34,12 +36,14 @@ import io.harness.beans.sweepingoutputs.ContextElement;
 import io.harness.beans.sweepingoutputs.DliteVmStageInfraDetails;
 import io.harness.beans.sweepingoutputs.StageDetails;
 import io.harness.beans.sweepingoutputs.VmStageInfraDetails;
+import io.harness.beans.yaml.extended.infrastrucutre.HostedVmInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.beans.yaml.extended.infrastrucutre.OSType;
-import io.harness.beans.yaml.extended.infrastrucutre.RunsOnInfra;
 import io.harness.beans.yaml.extended.infrastrucutre.VmInfraSpec;
 import io.harness.beans.yaml.extended.infrastrucutre.VmInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.VmPoolYaml;
+import io.harness.beans.yaml.extended.platform.ArchType;
+import io.harness.beans.yaml.extended.platform.Platform;
 import io.harness.ci.buildstate.CodebaseUtils;
 import io.harness.ci.buildstate.ConnectorUtils;
 import io.harness.ci.ff.CIFeatureFlagService;
@@ -117,8 +121,8 @@ public class VmInitializeTaskParamsBuilder {
 
   public DliteVmInitializeTaskParams getHostedVmInitializeTaskParams(
       InitializeStepInfo initializeStepInfo, Ambiance ambiance) {
-    RunsOnInfra runsOnInfra = (RunsOnInfra) initializeStepInfo.getInfrastructure();
-    String poolId = runsOnInfra.getSpec().getRunsOn();
+    HostedVmInfraYaml hostedVmInfraYaml = (HostedVmInfraYaml) initializeStepInfo.getInfrastructure();
+    String poolId = getHostedPoolId(hostedVmInfraYaml.getSpec().getPlatform());
 
     CIVmInitializeTaskParams params = getVmInitializeParams(initializeStepInfo, ambiance, poolId);
     SetupVmRequest setupVmRequest = convertHostedSetupParams(params);
@@ -223,7 +227,7 @@ public class VmInitializeTaskParamsBuilder {
       throw new CIStageExecutionException("Input infrastructure can not be empty");
     }
 
-    if (infrastructure.getType() == Infrastructure.Type.RUNS_ON) {
+    if (infrastructure.getType() == Infrastructure.Type.HOSTED_VM) {
       return;
     }
 
@@ -262,7 +266,7 @@ public class VmInitializeTaskParamsBuilder {
               .harnessImageConnectorRef(harnessImageConnectorRef)
               .build(),
           STAGE_INFRA_DETAILS);
-    } else if (infraType == Infrastructure.Type.RUNS_ON) {
+    } else if (infraType == Infrastructure.Type.HOSTED_VM) {
       consumeSweepingOutput(ambiance,
           DliteVmStageInfraDetails.builder()
               .poolId(poolId)
@@ -420,6 +424,21 @@ public class VmInitializeTaskParamsBuilder {
   private String getLogPrefix(Ambiance ambiance) {
     LinkedHashMap<String, String> logAbstractions = StepUtils.generateLogAbstractions(ambiance, "STAGE");
     return LogStreamingHelper.generateLogBaseKey(logAbstractions);
+  }
+
+  private String getHostedPoolId(ParameterField<Platform> platform) {
+    OSType os = OSType.Linux;
+    ArchType arch = ArchType.Amd64;
+    if (platform != null && platform.getValue() != null) {
+      os = resolveOSType(platform.getValue().getOs());
+      arch = resolveArchType(platform.getValue().getArch());
+    }
+
+    if (os != OSType.Linux || arch != ArchType.Amd64) {
+      throw new CIStageExecutionException("Only linux amd64 platform is supported for hosted builds");
+    }
+
+    return format("%s-%s", os.toString().toLowerCase(), arch.toString().toLowerCase());
   }
 
   private SetupVmRequest convertHostedSetupParams(CIVmInitializeTaskParams params) {

@@ -20,7 +20,7 @@ import org.springframework.data.annotation.TypeAlias;
   , @JsonSubTypes.Type(value = UseFromStageInfraYaml.class, name = "UseFromStage"),
       @JsonSubTypes.Type(value = VmInfraYaml.class, name = "VM"),
       @JsonSubTypes.Type(value = K8sHostedInfraYaml.class, name = "KubernetesHosted"),
-      @JsonSubTypes.Type(value = RunsOnInfra.class, name = "RunsOn"),
+      @JsonSubTypes.Type(value = HostedVmInfraYaml.class, name = "HostedVm"),
 })
 
 public interface Infrastructure {
@@ -30,7 +30,7 @@ public interface Infrastructure {
     @JsonProperty("UseFromStage") USE_FROM_STAGE("UseFromStage"),
     @JsonProperty("VM") VM("VM"),
     @JsonProperty("KubernetesHosted") KUBERNETES_HOSTED("KubernetesHosted"),
-    @JsonProperty("RunsOn") RUNS_ON("RunsOn");
+    @JsonProperty("HostedVm") HOSTED_VM("HostedVm");
 
     private final String yamlName;
 
