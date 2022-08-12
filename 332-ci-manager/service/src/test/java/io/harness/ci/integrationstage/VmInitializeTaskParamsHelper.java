@@ -8,12 +8,14 @@
 package io.harness.ci.integrationstage;
 
 import io.harness.beans.steps.stepinfo.InitializeStepInfo;
+import io.harness.beans.yaml.extended.infrastrucutre.HostedVmInfraYaml;
+import io.harness.beans.yaml.extended.infrastrucutre.HostedVmInfraYaml.HostedVmInfraSpec;
 import io.harness.beans.yaml.extended.infrastrucutre.OSType;
-import io.harness.beans.yaml.extended.infrastrucutre.RunsOnInfra;
-import io.harness.beans.yaml.extended.infrastrucutre.RunsOnInfra.RunOnInfraSpec;
 import io.harness.beans.yaml.extended.infrastrucutre.VmInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.VmPoolYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.VmPoolYaml.VmPoolYamlSpec;
+import io.harness.beans.yaml.extended.platform.ArchType;
+import io.harness.beans.yaml.extended.platform.Platform;
 import io.harness.cimanager.stages.IntegrationStageConfig;
 import io.harness.cimanager.stages.IntegrationStageConfigImpl;
 import io.harness.pms.yaml.ParameterField;
@@ -36,12 +38,22 @@ public class VmInitializeTaskParamsHelper {
   }
 
   public static InitializeStepInfo getHostedVmInitializeStep() {
-    RunsOnInfra runsOnInfra = RunsOnInfra.builder().spec(RunOnInfraSpec.builder().runsOn(POOL_NAME).build()).build();
+    Platform platform = Platform.builder()
+                            .os(ParameterField.createValueField(OSType.Linux))
+                            .arch(ParameterField.createValueField(ArchType.Amd64))
+                            .build();
+    HostedVmInfraYaml hostedVmInfraYaml =
+        HostedVmInfraYaml.builder()
+            .spec(HostedVmInfraSpec.builder().platform(ParameterField.createValueField(platform)).build())
+            .build();
     IntegrationStageConfig integrationStageConfig =
         IntegrationStageConfigImpl.builder()
             .sharedPaths(ParameterField.createValueField(Arrays.asList("/shared")))
             .build();
-    return InitializeStepInfo.builder().infrastructure(runsOnInfra).stageElementConfig(integrationStageConfig).build();
+    return InitializeStepInfo.builder()
+        .infrastructure(hostedVmInfraYaml)
+        .stageElementConfig(integrationStageConfig)
+        .build();
   }
 
   private static VmPoolYaml getPoolWithName(String poolName) {
