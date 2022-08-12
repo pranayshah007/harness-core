@@ -15,12 +15,15 @@ import io.harness.pms.merger.YamlConfig;
 import io.harness.pms.merger.fqn.FQN;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.BooleanNode;
 import com.fasterxml.jackson.databind.node.NumericNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 import com.google.inject.Singleton;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 
@@ -75,6 +78,12 @@ public class ExecutionInputServiceHelper {
       return ((NumericNode) objectNode).doubleValue();
     } else if (objectNode instanceof BooleanNode) {
       return ((BooleanNode) objectNode).booleanValue();
+    } else if (objectNode instanceof ArrayNode) {
+      List<Object> response = new ArrayList<>();
+      for (int i = 0; i < ((ArrayNode) objectNode).size(); i++) {
+        response.add(getValueFromJsonNode(((ArrayNode) objectNode).get(i)));
+      }
+      return response;
     } else {
       return objectNode.toString().replace("\\\"", "").replace("\"", "");
     }
