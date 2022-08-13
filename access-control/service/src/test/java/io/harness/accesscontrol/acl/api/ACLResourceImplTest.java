@@ -11,6 +11,8 @@ import static io.harness.rule.OwnerRule.JIMIT_GANDHI;
 import static io.harness.rule.OwnerRule.UTKARSH;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.failBecauseExceptionWasNotThrown;
+import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
 
 import io.harness.accesscontrol.AccessControlTestBase;
@@ -26,8 +28,10 @@ import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.rule.Owner;
 
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.rules.ExpectedException;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -60,16 +64,31 @@ public class ACLResourceImplTest extends AccessControlTestBase {
     assertThat(accessCheckResponse.getData().getAccessControlList()).isEmpty();
   }
 
-  @Test(expected = InvalidRequestException.class)
+  @Test()
   @Owner(developers = JIMIT_GANDHI)
   @Category(UnitTests.class)
-  public void testAccessCheck_WithBothResourceAttributesAndIdentifier_ThrowsInvalidRequestException() {
+  public void testAccessCheck_WithNoPrincipalInContext_ThrowsInvalidRequestException() {
     Map<String, String> map = new HashMap<String,String>();
     map.put("testKey",  "testValue");
     PermissionCheckDTO permissionCheckDTO = PermissionCheckDTO.builder().resourceAttributes(map)
             .resourceIdentifier("testIdentifier").build();
 AccessCheckRequestDTO accessCheckRequestDTO = AccessCheckRequestDTO.builder().
         permissions(Collections.singletonList(permissionCheckDTO)).build();
-    aclResource.get(accessCheckRequestDTO);
+    try {
+      aclResource.get(accessCheckRequestDTO);
+      fail("InvalidRequestException not thrown");
+    }
+    catch (InvalidRequestException exception) {
+      assertThat(exception.getMessage()).isEqualTo("Missing principal in context or User doesn't have permission to check access for a different principal");
+    }
+  }
+
+  @Test
+  @Owner(developers = JIMIT_GANDHI)
+  @Category(UnitTests.class)
+  public void testAccessCheck_WithBothResourceAttributesAndIdentifier_ThrowsInvalidRequestException() {
+// Following as recommended here:
+// https://github.com/junit-team/junit4/wiki/Exception-testing
+    
   }
 }
