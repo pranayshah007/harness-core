@@ -35,10 +35,10 @@ public class JavaBinary {
     response.append(INDENTATION).append("visibility = [\"//visibility:public\"],\n");
 
     // Add runtime_deps.
-    WriteUtil.updateResponseWithSet(runTimeDeps, "runtime_deps", response);
+    WriteUtil.updateResponseWithSet(runTimeDeps, "runtime_deps", response, true);
 
     // Add deps.
-    WriteUtil.updateResponseWithSet(deps, "deps", response);
+    WriteUtil.updateResponseWithSet(deps, "deps", response, true);
 
     response.append(")");
     return response.toString();

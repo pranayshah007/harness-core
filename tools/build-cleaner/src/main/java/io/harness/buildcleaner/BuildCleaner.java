@@ -3,6 +3,7 @@ package io.harness.buildcleaner;
 import io.harness.buildcleaner.bazel.BuildFile;
 import io.harness.buildcleaner.bazel.JavaBinary;
 import io.harness.buildcleaner.bazel.JavaLibrary;
+import io.harness.buildcleaner.bazel.WriteUtil;
 import io.harness.buildcleaner.javaparser.ClassMetadata;
 import io.harness.buildcleaner.javaparser.ClasspathParser;
 import io.harness.buildcleaner.javaparser.PackageParser;
@@ -18,7 +19,10 @@ import java.nio.file.PathMatcher;
 import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Stream;
@@ -78,11 +82,52 @@ public class BuildCleaner {
         .forEach(path -> {
           try {
             Path modulePath = workspace().relativize(path);
+            logger.info("ModulePath: " + modulePath);
             Optional<BuildFile> buildFile = generateBuildForModule(modulePath, harnessSymbolMap);
+            Path packagePath = workspace().resolve(path);
+            logger.info("PackagePath: " + packagePath);
+            Path buildFilePath = Paths.get(packagePath.toString() + "/BUILD.bazel");
+            logger.info("BuildFilePath: " + buildFilePath);
+            if (Files.exists(buildFilePath)) {
+              logger.info("BuildFile already exists" + buildFilePath);
+              // Need to update the existing file with new content, after replacing the dependencies.
+	      // TODO:
+	      // 1. Make this a util method
+	      // 2. Redo this for JavaBinaryList
+	      // 3. Support cases where there are multiple tarets in an existing BUILD.bazel file
+	      // 4. Support case where "deps" section was empty in file but not in buildFile.deps
+              List<JavaLibrary> javaLibraryList = buildFile.get().getJavaLibraryList();
+              String replacedString = "";
+              for (JavaLibrary javaLibrary : javaLibraryList) {
+                logger.info("Library Name: " + javaLibrary.getName());
+                logger.info("Library Deps: " + javaLibrary.getDepsSection());
+                replacedString = javaLibrary.getDepsSection();
+              }
 
-            if (buildFile.isPresent()) {
-              logger.info("Writing Build file for Module: " + path);
-              buildFile.get().writeToPackage(workspace().resolve(path));
+              String javaLibPattern = "java_library\\([\\S\\s]+(deps =[\\S\\s]+)\\)";
+              Pattern pattern = Pattern.compile(javaLibPattern, Pattern.MULTILINE);
+              String currContent = Files.readString(buildFilePath);
+              Matcher matcher = pattern.matcher(currContent);
+              StringBuilder builder = new StringBuilder();
+              builder.append(currContent);
+              String replacedFileContent = "";
+              while (matcher.find()) {
+                String textToReplace = matcher.group(1);
+                logger.info("found text to replace: " + textToReplace);
+                replacedFileContent = builder.replace(matcher.start(1), matcher.end(1), replacedString)
+                        .toString();
+                logger.info("Replaced file content: " + replacedFileContent);
+              }
+              if (!replacedFileContent.equalsIgnoreCase("")) {
+                // Overwrite a file only if we are able to replace.
+                WriteUtil.writeUpdatedFile(buildFilePath, replacedFileContent);
+              }
+              logger.info("There are " + matcher.groupCount() + " groups in the pattern!");
+            } else {
+              if (buildFile.isPresent()) {
+                logger.info("Writing Build file for Module: " + path);
+                buildFile.get().writeToPackage(workspace().resolve(path));
+              }
             }
           } catch (IOException e) {
             throw new RuntimeException(e);

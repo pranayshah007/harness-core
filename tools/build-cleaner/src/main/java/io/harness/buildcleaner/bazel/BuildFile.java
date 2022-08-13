@@ -1,12 +1,20 @@
 package io.harness.buildcleaner.bazel;
 
+import static java.nio.file.StandardOpenOption.TRUNCATE_EXISTING;
+
+import java.io.BufferedReader;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.PrintWriter;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class BuildFile {
   private Set<LoadStatement> loadStatementSet = new TreeSet<>();
@@ -23,6 +31,16 @@ public class BuildFile {
   public void addJavaBinary(JavaBinary javaBinary) {
     loadStatementSet.add(new LoadStatement("@rules_java//java:defs.bzl", "java_binary"));
     javaBinaryList.add(javaBinary);
+  }
+
+  /* Given a target name get all the dependencies */
+  public String getDependencies(String targetName) {
+    for (JavaLibrary javaLibrary : javaLibraryList) {
+      if (javaLibrary.getName().equalsIgnoreCase(targetName)) {
+        return javaLibrary.getDepsSection();
+      }
+    }
+    return "";
   }
 
   public String toString() {
