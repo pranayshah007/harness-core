@@ -69,7 +69,9 @@ import io.harness.capability.HttpConnectionParameters;
 import io.harness.capability.service.CapabilityService;
 import io.harness.category.element.UnitTests;
 import io.harness.configuration.DeployMode;
+import io.harness.delegate.DelegateGlobalAccountController;
 import io.harness.delegate.NoEligibleDelegatesInAccountException;
+import io.harness.delegate.NoGlobalDelegateAccountException;
 import io.harness.delegate.beans.Delegate;
 import io.harness.delegate.beans.Delegate.DelegateBuilder;
 import io.harness.delegate.beans.DelegateConfiguration;
@@ -118,6 +120,7 @@ import software.wings.beans.TaskType;
 import software.wings.cdn.CdnConfig;
 import software.wings.delegatetasks.cv.RateLimitExceededException;
 import software.wings.delegatetasks.validation.DelegateConnectionResult;
+import software.wings.events.TestUtils;
 import software.wings.helpers.ext.url.SubdomainUrlHelperIntfc;
 import software.wings.jre.JreConfig;
 import software.wings.service.impl.DelegateObserver;
@@ -146,7 +149,6 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -188,6 +190,7 @@ public class DelegateTaskServiceClassicTest extends WingsBaseTest {
 
   @Inject private FeatureTestHelper featureTestHelper;
   @Inject private KryoSerializer kryoSerializer;
+  @Inject private TestUtils testUtils;
 
   private int port = LocalhostUtils.findFreePort();
   @Rule public WireMockRule wireMockRule = new WireMockRule(port);
@@ -198,6 +201,7 @@ public class DelegateTaskServiceClassicTest extends WingsBaseTest {
   @InjectMocks @Inject private DelegateTaskServiceClassicImpl delegateTaskServiceClassic;
   @InjectMocks @Inject private DelegateTaskService delegateTaskService;
   @InjectMocks @Inject private DelegateTaskBroadcastHelper broadcastHelper;
+  @InjectMocks @Inject private DelegateGlobalAccountController delegateGlobalAccountController;
 
   @Inject private HPersistence persistence;
 
@@ -1119,7 +1123,7 @@ public class DelegateTaskServiceClassicTest extends WingsBaseTest {
     DelegateTask delegateTask =
         DelegateTask.builder()
             .uuid(generateUuid())
-            .accountId(ACCOUNT_ID)
+            .accountId("CUSTOMER_ACCOUNT_ID")
             .waitId(generateUuid())
             .setupAbstraction(Cd1SetupFields.APP_ID_FIELD, APP_ID)
             .executeOnHarnessHostedDelegates(true)
@@ -1134,19 +1138,48 @@ public class DelegateTaskServiceClassicTest extends WingsBaseTest {
             .build();
     when(assignDelegateService.getEligibleDelegatesToExecuteTask(any(DelegateTask.class)))
         .thenReturn(new ArrayList<>(singletonList(DELEGATE_ID)));
-    Account globalAccount = anAccount().withUuid(GLOBAL_DELEGATE_ACCOUNT_ID).build();
-    when(accountService.getGlobalDelegateAccount()).thenReturn(Optional.of(globalAccount));
+    Account globalAccount = testUtils.createAccount();
+    globalAccount.setGlobalDelegateAccount(true);
+    persistence.save(globalAccount);
     when(assignDelegateService.getConnectedDelegateList(any(), any()))
         .thenReturn(new ArrayList<>(singletonList(DELEGATE_ID)));
     delegateTaskServiceClassic.scheduleSyncTask(delegateTask);
     DelegateTask task = persistence.get(DelegateTask.class, delegateTask.getUuid());
     assertThat(task).isNotNull();
     assertThat(task.getStatus()).isEqualTo(QUEUED);
-    assertThat(task.getAccountId()).isEqualTo(GLOBAL_DELEGATE_ACCOUNT_ID);
-    assertThat(task.getSecondaryAccountId()).isEqualTo(ACCOUNT_ID);
+    assertThat(task.getAccountId()).isEqualTo(ACCOUNT_ID);
+    assertThat(task.getSecondaryAccountId()).isEqualTo("CUSTOMER_ACCOUNT_ID");
     assertThat(task.getEligibleToExecuteDelegateIds()).contains(DELEGATE_ID);
   }
 
+  @Test
+  @Owner(developers = JENNY)
+  @Category(UnitTests.class)
+  public void processDelegateTask_ForGlobalDelegateAccount_ButNoGlobalAccount() {
+    DelegateTask delegateTask =
+        DelegateTask.builder()
+            .uuid(generateUuid())
+            .accountId("CUSTOMER_ACCOUNT_ID")
+            .waitId(generateUuid())
+            .setupAbstraction(Cd1SetupFields.APP_ID_FIELD, APP_ID)
+            .executeOnHarnessHostedDelegates(true)
+            .version(VERSION)
+            .data(TaskData.builder()
+                      .async(false)
+                      .taskType(TaskType.HTTP.name())
+                      .parameters(new Object[] {HttpTaskParameters.builder().url("https://www.google.com").build()})
+                      .timeout(DEFAULT_ASYNC_CALL_TIMEOUT)
+                      .build())
+            .tags(new ArrayList<>())
+            .build();
+    when(assignDelegateService.getEligibleDelegatesToExecuteTask(any(DelegateTask.class)))
+        .thenReturn(new ArrayList<>(singletonList(DELEGATE_ID)));
+    when(assignDelegateService.getConnectedDelegateList(any(), any()))
+        .thenReturn(new ArrayList<>(singletonList(DELEGATE_ID)));
+    assertThatThrownBy(() -> delegateTaskServiceClassic.scheduleSyncTask(delegateTask))
+        .isInstanceOf(NoGlobalDelegateAccountException.class)
+        .hasMessage("No Global Delegate Account Found");
+  }
   private CapabilityRequirement buildCapabilityRequirement() {
     return CapabilityRequirement.builder()
         .accountId(generateUuid())

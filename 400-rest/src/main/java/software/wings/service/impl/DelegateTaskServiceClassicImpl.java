@@ -103,6 +103,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.expression.ExpressionEvaluator;
 import io.harness.expression.ExpressionReflectionUtils;
 import io.harness.ff.FeatureFlagService;
+import io.harness.delegate.DelegateGlobalAccountController;
 import io.harness.lock.PersistentLocker;
 import io.harness.logging.AccountLogContext;
 import io.harness.logging.AutoLogContext;
@@ -155,7 +156,6 @@ import software.wings.expression.SweepingOutputSecretFunctor;
 import software.wings.helpers.ext.url.SubdomainUrlHelperIntfc;
 import software.wings.service.impl.artifact.ArtifactCollectionUtils;
 import software.wings.service.impl.infra.InfraDownloadService;
-import software.wings.service.intfc.AccountService;
 import software.wings.service.intfc.AlertService;
 import software.wings.service.intfc.AssignDelegateService;
 import software.wings.service.intfc.ConfigService;
@@ -273,7 +273,7 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
   @Inject private DelegateSetupService delegateSetupService;
   @Inject private AuditHelper auditHelper;
   @Inject private DelegateMetricsService delegateMetricsService;
-  @Inject private AccountService accountService;
+  @Inject private DelegateGlobalAccountController delegateGlobalAccountController;
   @Inject @Named(SECRET_CACHE) Cache<String, EncryptedDataDetails> secretsCache;
   @Inject @Getter private Subject<DelegateObserver> subject = new Subject<>();
 
@@ -434,8 +434,8 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
     task.setLastBroadcastAt(clock.millis());
     if (task.isExecuteOnHarnessHostedDelegates()) {
       task.setSecondaryAccountId(task.getAccountId());
-      if (accountService.getGlobalDelegateAccount().isPresent()) {
-        String globalDelegateAccount = accountService.getGlobalDelegateAccount().get().getUuid();
+      if (delegateGlobalAccountController.getGlobalAccount().isPresent()) {
+        String globalDelegateAccount = delegateGlobalAccountController.getGlobalAccount().get().getUuid();
         task.setAccountId(globalDelegateAccount);
       } else {
         throw new NoGlobalDelegateAccountException(

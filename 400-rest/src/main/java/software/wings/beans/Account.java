@@ -600,6 +600,7 @@ public class Account extends Base implements PersistentRegularIterable, NGMigrat
     private boolean isProductLed;
     private boolean accountActivelyUsed;
     private ServiceAccountConfig serviceAccountConfig;
+    private boolean globalDelegateAccount;
 
     private Builder() {}
 
@@ -769,6 +770,11 @@ public class Account extends Base implements PersistentRegularIterable, NGMigrat
 
     public Builder withServiceAccountConfig(ServiceAccountConfig serviceAccountConfig) {
       this.serviceAccountConfig = serviceAccountConfig;
+      return this;
+    }
+
+    public Builder withGlobalDelegateAccount(boolean globalDelegateAccount) {
+      this.globalDelegateAccount = globalDelegateAccount;
       return this;
     }
 
