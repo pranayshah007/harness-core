@@ -65,6 +65,7 @@ import io.harness.beans.DelegateTask;
 import io.harness.beans.ExecutionStatus;
 import io.harness.beans.FeatureFlag;
 import io.harness.category.element.UnitTests;
+import io.harness.delegate.DelegateGlobalAccountController;
 import io.harness.delegate.NoEligibleDelegatesInAccountException;
 import io.harness.delegate.beans.Delegate;
 import io.harness.delegate.beans.Delegate.DelegateBuilder;
@@ -127,6 +128,7 @@ import software.wings.beans.HttpStateExecutionResponse;
 import software.wings.beans.KmsConfig;
 import software.wings.beans.TaskType;
 import software.wings.beans.VaultConfig;
+import software.wings.events.TestUtils;
 import software.wings.expression.ManagerPreviewExpressionEvaluator;
 import software.wings.features.api.UsageLimitedFeature;
 import software.wings.helpers.ext.mail.EmailData;
@@ -204,6 +206,7 @@ public class DelegateServiceImplTest extends WingsBaseTest {
   @InjectMocks @Inject private DelegateTaskServiceClassicImpl delegateTaskServiceClassic;
   @InjectMocks @Inject private DelegateSyncServiceImpl delegateSyncService;
   @InjectMocks @Inject private DelegateTaskServiceImpl delegateTaskService;
+  @InjectMocks @Inject private DelegateGlobalAccountController delegateGlobalAccountController;
 
   @Mock private AssignDelegateService assignDelegateService;
   @Mock private SettingsService settingsService;
@@ -214,6 +217,7 @@ public class DelegateServiceImplTest extends WingsBaseTest {
   @Mock private Subject<DelegateTaskRetryObserver> retryObserverSubject;
   @Inject private HPersistence persistence;
   @Inject private OutboxService outboxService;
+  @Inject private TestUtils testUtils;
   @Rule public ExpectedException thrown = ExpectedException.none();
 
   @Before
@@ -1721,6 +1725,9 @@ public class DelegateServiceImplTest extends WingsBaseTest {
                       .build())
             .tags(new ArrayList<>())
             .build();
+    Account globalAccount = testUtils.createAccount();
+    globalAccount.setGlobalDelegateAccount(true);
+    persistence.save(globalAccount);
     when(assignDelegateService.getEligibleDelegatesToExecuteTask(any()))
         .thenReturn(new ArrayList<>(singletonList(DELEGATE_ID)));
     when(assignDelegateService.getConnectedDelegateList(any(), any()))
