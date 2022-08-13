@@ -20,7 +20,7 @@ public class DelegateGlobalAccountController {
   public DelegateGlobalAccountController() {}
 
   public Optional<Account> getGlobalAccount() {
-    if (globalDelegateAccountRef.get() ==null || !globalDelegateAccountRef.get().isPresent()) {
+    if (globalDelegateAccountRef.get() == null || !globalDelegateAccountRef.get().isPresent()) {
       Account account = persistence.createQuery(Account.class, excludeAuthorityCount)
                             .filter(AccountKeys.globalDelegateAccount, true)
                             .get();
