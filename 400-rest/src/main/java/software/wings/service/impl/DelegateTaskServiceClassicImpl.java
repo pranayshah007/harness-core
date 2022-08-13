@@ -59,6 +59,7 @@ import io.harness.cache.HarnessCacheManager;
 import io.harness.capability.CapabilityRequirement;
 import io.harness.capability.CapabilityTaskSelectionDetails;
 import io.harness.capability.service.CapabilityService;
+import io.harness.delegate.DelegateGlobalAccountController;
 import io.harness.delegate.NoEligibleDelegatesInAccountException;
 import io.harness.delegate.NoGlobalDelegateAccountException;
 import io.harness.delegate.beans.Delegate;
@@ -103,7 +104,6 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.expression.ExpressionEvaluator;
 import io.harness.expression.ExpressionReflectionUtils;
 import io.harness.ff.FeatureFlagService;
-import io.harness.delegate.DelegateGlobalAccountController;
 import io.harness.lock.PersistentLocker;
 import io.harness.logging.AccountLogContext;
 import io.harness.logging.AutoLogContext;
@@ -281,7 +281,7 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
   private HarnessCacheManager harnessCacheManager;
   private Supplier<Long> taskCountCache = Suppliers.memoizeWithExpiration(this::fetchTaskCount, 1, TimeUnit.MINUTES);
   @Inject @Getter private Subject<DelegateTaskStatusObserver> delegateTaskStatusObserverSubject;
-  @Inject @Getter private Subject<DelegateTaskObserver> delegateTaskObserverSubject = new Subject<>();
+  @Inject @Getter private Subject<DelegateTaskObserver> delegateTaskObserverSubject;
   @Inject private RemoteObserverInformer remoteObserverInformer;
 
   private LoadingCache<String, String> logStreamingAccountTokenCache =
