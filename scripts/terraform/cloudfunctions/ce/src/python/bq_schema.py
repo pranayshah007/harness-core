@@ -1561,3 +1561,304 @@ gcpDiskInventorySchema = [
         "type": "TIMESTAMP"
     }
 ]
+
+azureVMInventorySchema = [
+    {
+        "mode": "REQUIRED",
+        "name": "vmId",
+        "type": "STRING"
+    },
+    {
+        "mode": "REQUIRED",
+        "name": "name",
+        "type": "STRING"
+    },
+    {
+        "mode": "NULLABLE",
+        "name": "creationTime",
+        "type": "TIMESTAMP"
+    },
+    {
+        "mode": "NULLABLE",
+        "name": "tenantId",
+        "type": "STRING"
+    },
+    {
+        "mode": "NULLABLE",
+        "name": "type",
+        "type": "STRING"
+    },
+    {
+        "mode": "NULLABLE",
+        "name": "location",
+        "type": "STRING"
+    },
+    {
+        "mode": "NULLABLE",
+        "name": "resourceGroup",
+        "type": "STRING"
+    },
+    {
+        "mode": "NULLABLE",
+        "name": "subscriptionId",
+        "type": "STRING"
+    },
+    {
+        "mode": "NULLABLE",
+        "name": "managedBy",
+        "type": "STRING"
+    },
+    {
+        "mode": "NULLABLE",
+        "name": "lastUpdatedAt",
+        "type": "TIMESTAMP"
+    },
+    {
+        "mode": "NULLABLE",
+        "name": "kind",
+        "type": "STRING"
+    },
+    {
+        "fields": [
+            {
+                "name": "key",
+                "type": "STRING"
+            },
+            {
+                "name": "value",
+                "type": "STRING"
+            }
+        ],
+        "mode": "REPEATED",
+        "name": "tags",
+        "type": "RECORD"
+    },
+    {
+        "mode": "NULLABLE",
+        "name": "provisioningState",
+        "type": "STRING"
+    },
+    {
+        "mode": "NULLABLE",
+        "name": "networkInterfaces",
+        "type": "INTEGER"
+    },
+    {
+        "mode": "NULLABLE",
+        "name": "osType",
+        "type": "STRING"
+    },
+    {
+        "mode": "NULLABLE",
+        "name": "publisher",
+        "type": "STRING"
+    },
+    {
+        "mode": "NULLABLE",
+        "name": "offer",
+        "type": "STRING"
+    },
+    {
+        "mode": "NULLABLE",
+        "name": "sku",
+        "type": "STRING"
+    },
+    {
+        "mode": "NULLABLE",
+        "name": "displayStatus",
+        "type": "STRING"
+    },
+    {
+        "mode": "NULLABLE",
+        "name": "vmSize",
+        "type": "STRING"
+    },
+    {
+        "mode": "NULLABLE",
+        "name": "computerName",
+        "type": "STRING"
+    },
+    {
+        "mode": "NULLABLE",
+        "name": "hyperVGeneration",
+        "type": "STRING"
+    },
+    {
+        "mode": "REPEATED",
+        "name": "publicIps",
+        "type": "STRING"
+    },
+    {
+        "mode": "REPEATED",
+        "name": "privateIps",
+        "type": "STRING"
+    }
+]
+
+azureVMInventoryCPUSchema = [
+    {
+        "mode": "REQUIRED",
+        "name": "vmId",
+        "type": "STRING"
+    },
+    {
+        "mode": "NULLABLE",
+        "name": "metricName",
+        "type": "STRING"
+    },
+    {
+        "mode": "NULLABLE",
+        "name": "average",
+        "type": "FLOAT"
+    },
+    {
+        "mode": "NULLABLE",
+        "name": "minimum",
+        "type": "FLOAT"
+    },
+    {
+        "mode": "NULLABLE",
+        "name": "maximum",
+        "type": "FLOAT"
+    },
+    {
+        "mode": "NULLABLE",
+        "name": "addedAt",
+        "type": "TIMESTAMP"
+    },
+    {
+        "mode": "NULLABLE",
+        "name": "metricStartTime",
+        "type": "TIMESTAMP"
+    },
+    {
+        "mode": "NULLABLE",
+        "name": "metricEndTime",
+        "type": "TIMESTAMP"
+    },
+]
+
+# These column names should not be altered without updating the `azure_column_mapping`
+# in pubsub msg sent to azure_cost_bq_main CF
+azure_cost_table_schema = [
+    {
+        "mode": "NULLABLE",
+        "name": "azureSubscriptionGuid",
+        "type": "STRING"
+    },
+    {
+        "mode": "NULLABLE",
+        "name": "azureResourceGroup",
+        "type": "STRING"
+    },
+    {
+        "mode": "NULLABLE",
+        "name": "ResourceLocation",
+        "type": "STRING"
+    },
+    {
+        "mode": "NULLABLE",
+        "name": "startTime",
+        "type": "DATE"
+    },
+    {
+        "mode": "NULLABLE",
+        "name": "MeterCategory",
+        "type": "STRING"
+    },
+    {
+        "mode": "NULLABLE",
+        "name": "MeterSubcategory",
+        "type": "STRING"
+    },
+    {
+        "mode": "NULLABLE",
+        "name": "MeterId",
+        "type": "STRING"
+    },
+    {
+        "mode": "NULLABLE",
+        "name": "MeterName",
+        "type": "STRING"
+    },
+    {
+        "mode": "NULLABLE",
+        "name": "MeterRegion",
+        "type": "STRING"
+    },
+    {
+        "mode": "NULLABLE",
+        "name": "UsageQuantity",
+        "type": "FLOAT64"
+    },
+    {
+        "mode": "NULLABLE",
+        "name": "azureResourceRate",
+        "type": "FLOAT64"
+    },
+    {
+        "mode": "NULLABLE",
+        "name": "cost",
+        "type": "FLOAT64"
+    },
+    {
+        "mode": "NULLABLE",
+        "name": "ConsumedService",
+        "type": "STRING"
+    },
+    {
+        "mode": "NULLABLE",
+        "name": "ResourceType",
+        "type": "STRING"
+    },
+    {
+        "mode": "NULLABLE",
+        "name": "azureInstanceId",
+        "type": "STRING"
+    },
+    {
+        "mode": "NULLABLE",
+        "name": "Tags",
+        "type": "STRING"
+    },
+    {
+        "mode": "NULLABLE",
+        "name": "OfferId",
+        "type": "STRING"
+    },
+    {
+        "mode": "NULLABLE",
+        "name": "AdditionalInfo",
+        "type": "STRING"
+    },
+    {
+        "mode": "NULLABLE",
+        "name": "ServiceInfo1",
+        "type": "STRING"
+    },
+    {
+        "mode": "NULLABLE",
+        "name": "ServiceInfo2",
+        "type": "STRING"
+    },
+    {
+        "mode": "NULLABLE",
+        "name": "ServiceName",
+        "type": "STRING"
+    },
+    {
+        "mode": "NULLABLE",
+        "name": "ServiceTier",
+        "type": "STRING"
+    },
+    {
+        "mode": "NULLABLE",
+        "name": "Currency",
+        "type": "STRING"
+    },
+    {
+        "mode": "NULLABLE",
+        "name": "UnitOfMeasure",
+        "type": "STRING"
+    }
+]

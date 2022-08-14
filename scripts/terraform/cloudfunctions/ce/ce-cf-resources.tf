@@ -95,6 +95,12 @@ resource "google_pubsub_topic" "ce-azure-billing-cf-topic" {
   project = "${var.projectId}"
 }
 
+# PubSub topic for AZURE data pipeline. ce-azure-billing-cost-bq cloudfunction pushes into this
+resource "google_pubsub_topic" "ce-azure-billing-cost-cf-topic" {
+  name = "ce-azure-billing-cost-cf"
+  project = "${var.projectId}"
+}
+
 # PubSub topic for AZURE data pipeline. Azure GCS data transfer job ingests into this
 resource "google_pubsub_topic" "ce-azure-billing-gcs-topic" {
   name = "ce-azure-billing-gcs"
@@ -134,6 +140,18 @@ resource "google_pubsub_topic" "ce-gcp-disk-inventory-data-load-topic" {
 # PubSub topic for generating dynamic schema for Azure billing data. CF pushes into this
 resource "google_pubsub_topic" "ce-azure-billing-schema-topic" {
   name = "ce-azure-billing-schema"
+  project = "${var.projectId}"
+}
+
+# PubSub topic for loading Azure VM Inventory data into main bq table. scheduler pushes into this
+resource "google_pubsub_topic" "ce-azure-vm-inventory-data-load-topic" {
+  name = "ce-azure-vm-inventory-data-load-scheduler"
+  project = "${var.projectId}"
+}
+
+# PubSub topic for fetching metric data for Azure VM Inventory and storing it in BQ. Scheduler pushes into this
+resource "google_pubsub_topic" "ce-azure-vm-inventory-metric-data-topic" {
+  name = "ce-azure-vm-inventory-metric-data-scheduler"
   project = "${var.projectId}"
 }
 
@@ -292,6 +310,27 @@ data "archive_file" "ce-azure-billing-bq" {
   output_path = "${path.module}/files/ce-azure-billing-bq.zip"
   source {
     content  = "${file("${path.module}/src/python/azure_billing_bq_main.py")}"
+    filename = "main.py"
+  }
+  source {
+    content  = "${file("${path.module}/src/python/bq_schema.py")}"
+    filename = "bq_schema.py"
+  }
+  source {
+    content  = "${file("${path.module}/src/python/util.py")}"
+    filename = "util.py"
+  }
+  source {
+    content  = "${file("${path.module}/src/python/requirements.txt")}"
+    filename = "requirements.txt"
+  }
+}
+
+data "archive_file" "ce-azure-billing-cost-bq" {
+  type        = "zip"
+  output_path = "${path.module}/files/ce-azure-billing-cost-bq.zip"
+  source {
+    content  = "${file("${path.module}/src/python/azure_billing_cost_bq_main.py")}"
     filename = "main.py"
   }
   source {
@@ -609,6 +648,77 @@ data "archive_file" "ce-gcp-disk-inventory-data-load" {
   }
 }
 
+data "archive_file" "ce-azure-vm-inventory-data" {
+  type        = "zip"
+  output_path = "${path.module}/files/ce-azure-vm-inventory-data.zip"
+  source {
+    content  = "${file("${path.module}/src/python/azure_vm_inventory_data_main.py")}"
+    filename = "main.py"
+  }
+  source {
+    content  = "${file("${path.module}/src/python/util.py")}"
+    filename = "util.py"
+  }
+  source {
+    content  = "${file("${path.module}/src/python/azure_util.py")}"
+    filename = "azure_util.py"
+  }
+  source {
+    content  = "${file("${path.module}/src/python/bq_schema.py")}"
+    filename = "bq_schema.py"
+  }
+  source {
+    content  = "${file("${path.module}/src/python/requirements.txt")}"
+    filename = "requirements.txt"
+  }
+}
+
+data "archive_file" "ce-azure-vm-inventory-data-load" {
+  type        = "zip"
+  output_path = "${path.module}/files/ce-azure-vm-inventory-data-load.zip"
+  source {
+    content  = "${file("${path.module}/src/python/azure_vm_inventory_data_load.py")}"
+    filename = "main.py"
+  }
+  source {
+    content  = "${file("${path.module}/src/python/util.py")}"
+    filename = "util.py"
+  }
+  source {
+    content  = "${file("${path.module}/src/python/bq_schema.py")}"
+    filename = "bq_schema.py"
+  }
+  source {
+    content  = "${file("${path.module}/src/python/requirements.txt")}"
+    filename = "requirements.txt"
+  }
+}
+
+data "archive_file" "ce-azure-vm-inventory-metric-data" {
+  type        = "zip"
+  output_path = "${path.module}/files/ce-azure-vm-inventory-metric-data.zip"
+  source {
+    content  = "${file("${path.module}/src/python/azure_vm_inventory_metric_data_main.py")}"
+    filename = "main.py"
+  }
+  source {
+    content  = "${file("${path.module}/src/python/util.py")}"
+    filename = "util.py"
+  }
+  source {
+    content  = "${file("${path.module}/src/python/azure_util.py")}"
+    filename = "azure_util.py"
+  }
+  source {
+    content  = "${file("${path.module}/src/python/bq_schema.py")}"
+    filename = "bq_schema.py"
+  }
+  source {
+    content  = "${file("${path.module}/src/python/requirements.txt")}"
+    filename = "requirements.txt"
+  }
+}
+
 resource "google_storage_bucket_object" "ce-clusterdata-archive" {
   name   = "ce-clusterdata.${data.archive_file.ce-clusterdata.output_md5}.zip"
   bucket = "${google_storage_bucket.bucket1.name}"
@@ -649,6 +759,34 @@ resource "google_storage_bucket_object" "ce-azure-billing-bq-archive" {
   bucket = "${google_storage_bucket.bucket1.name}"
   source = "${path.module}/files/ce-azure-billing-bq.zip"
   depends_on = ["data.archive_file.ce-azure-billing-bq"]
+}
+
+resource "google_storage_bucket_object" "ce-azure-billing-cost-bq-archive" {
+  name = "ce-azure-billing.${data.archive_file.ce-azure-billing-cost-bq.output_md5}.zip"
+  bucket = "${google_storage_bucket.bucket1.name}"
+  source = "${path.module}/files/ce-azure-billing-cost-bq.zip"
+  depends_on = ["data.archive_file.ce-azure-billing-cost-bq"]
+}
+
+resource "google_storage_bucket_object" "ce-azure-vm-inventory-data-archive" {
+  name = "ce-azure-billing.${data.archive_file.ce-azure-vm-inventory-data.output_md5}.zip"
+  bucket = "${google_storage_bucket.bucket1.name}"
+  source = "${path.module}/files/ce-azure-vm-inventory-data.zip"
+  depends_on = ["data.archive_file.ce-azure-vm-inventory-data"]
+}
+
+resource "google_storage_bucket_object" "ce-azure-vm-inventory-data-load-archive" {
+  name = "ce-azure-billing.${data.archive_file.ce-azure-vm-inventory-data-load.output_md5}.zip"
+  bucket = "${google_storage_bucket.bucket1.name}"
+  source = "${path.module}/files/ce-azure-vm-inventory-data-load.zip"
+  depends_on = ["data.archive_file.ce-azure-vm-inventory-data-load"]
+}
+
+resource "google_storage_bucket_object" "ce-azure-vm-inventory-metric-data-archive" {
+  name = "ce-azure-billing.${data.archive_file.ce-azure-vm-inventory-metric-data.output_md5}.zip"
+  bucket = "${google_storage_bucket.bucket1.name}"
+  source = "${path.module}/files/ce-azure-vm-inventory-metric-data.zip"
+  depends_on = ["data.archive_file.ce-azure-vm-inventory-metric-data"]
 }
 
 resource "google_storage_bucket_object" "ce-azure-billing-schema-archive" {
@@ -889,10 +1027,37 @@ resource "google_cloudfunctions_function" "ce-azure-billing-bq-function" {
     enable_for_accounts = ""
     GCP_PROJECT = "${var.projectId}"
     AZURESCHEMATOPIC = "${google_pubsub_topic.ce-azure-billing-schema-topic.name}"
+    AZURECOSTCFTOPIC = "${google_pubsub_topic.ce-azure-billing-cost-cf-topic.name}"
   }
   event_trigger {
     event_type = "google.pubsub.topic.publish"
     resource   = "${google_pubsub_topic.ce-azure-billing-cf-topic.name}"
+    failure_policy {
+      retry = false
+    }
+  }
+}
+
+resource "google_cloudfunctions_function" "ce-azure-billing-cost-bq-function" {
+  name                      = "ce-azure-billing-cost-bq-terraform"
+  description               = "This cloudfunction gets triggered when cloud scheduler sends an event in pubsub topic"
+  entry_point               = "main"
+  available_memory_mb       = 256
+  timeout                   = 540
+  runtime                   = "python38"
+  project                   = "${var.projectId}"
+  region                    = "${var.region}"
+  source_archive_bucket     = "${google_storage_bucket.bucket1.name}"
+  source_archive_object     = "${google_storage_bucket_object.ce-azure-billing-cost-bq-archive.name}"
+
+  environment_variables = {
+    disabled = "false"
+    enable_for_accounts = ""
+    GCP_PROJECT = "${var.projectId}"
+  }
+  event_trigger {
+    event_type = "google.pubsub.topic.publish"
+    resource   = "${google_pubsub_topic.ce-azure-billing-cost-cf-topic.name}"
     failure_policy {
       retry = false
     }
@@ -1352,6 +1517,90 @@ resource "google_cloudfunctions_function" "ce-gcp-disk-inventory-data-load-funct
   event_trigger {
     event_type = "google.pubsub.topic.publish"
     resource   = "${google_pubsub_topic.ce-gcp-disk-inventory-data-load-topic.name}"
+    failure_policy {
+      retry = false
+    }
+  }
+}
+
+resource "google_cloudfunctions2_function" "ce-azure-vm-inventory-data-function" {
+  provider = google-beta
+  name = "ce-azure-vm-inventory-data-terraform"
+  location = "${var.region}"
+  project = "${var.projectId}"
+  description = "This cloudfunction gets triggered with an http request to function URI"
+
+  build_config {
+    runtime = "python38"
+    entry_point = "main"
+    source {
+      storage_source {
+        bucket = "${google_storage_bucket.bucket1.name}"
+        object = "${google_storage_bucket_object.ce-azure-vm-inventory-data-archive.name}"
+      }
+    }
+  }
+  service_config {
+    max_instance_count = 1000
+    available_memory   = "2Gi"
+    timeout_seconds    = 2700
+    environment_variables = {
+        disabled = "false"
+        enable_for_accounts = ""
+        GCP_PROJECT = "${var.projectId}"
+    }
+  }
+}
+
+
+resource "google_cloudfunctions_function" "ce-azure-vm-inventory-data-load-function" {
+  name                      = "ce-azure-vm-inventory-data-load-terraform"
+  description               = "This cloudfunction gets triggered upon event in a pubsub topic"
+  entry_point               = "main"
+  available_memory_mb       = 256
+  timeout                   = 540
+  runtime                   = "python38"
+  project                   = "${var.projectId}"
+  region                    = "${var.region}"
+  source_archive_bucket     = "${google_storage_bucket.bucket1.name}"
+  source_archive_object     = "${google_storage_bucket_object.ce-azure-vm-inventory-data-load-archive.name}"
+
+  environment_variables = {
+    disabled = "false"
+    enable_for_accounts = ""
+    GCP_PROJECT = "${var.projectId}"
+  }
+
+  event_trigger {
+    event_type = "google.pubsub.topic.publish"
+    resource   = "${google_pubsub_topic.ce-azure-vm-inventory-data-load-topic.name}"
+    failure_policy {
+      retry = false
+    }
+  }
+}
+
+resource "google_cloudfunctions_function" "ce-azure-vm-inventory-metric-data-function" {
+  name                      = "ce-azure-vm-inventory-metric-data-terraform"
+  description               = "This cloudfunction gets triggered upon event in a pubsub topic"
+  entry_point               = "main"
+  available_memory_mb       = 1024
+  timeout                   = 540
+  runtime                   = "python38"
+  project                   = "${var.projectId}"
+  region                    = "${var.region}"
+  source_archive_bucket     = "${google_storage_bucket.bucket1.name}"
+  source_archive_object     = "${google_storage_bucket_object.ce-azure-vm-inventory-metric-data-archive.name}"
+
+  environment_variables = {
+    disabled = "false"
+    enable_for_accounts = ""
+    GCP_PROJECT = "${var.projectId}"
+  }
+
+  event_trigger {
+    event_type = "google.pubsub.topic.publish"
+    resource   = "${google_pubsub_topic.ce-azure-vm-inventory-metric-data-topic.name}"
     failure_policy {
       retry = false
     }
