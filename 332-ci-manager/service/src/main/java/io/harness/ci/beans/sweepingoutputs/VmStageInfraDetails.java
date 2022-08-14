@@ -7,20 +7,22 @@
 
 package io.harness.beans.sweepingoutputs;
 
-import static io.harness.annotations.dev.HarnessTeam.CI;
-
-import io.harness.annotation.RecasterAlias;
-import io.harness.annotations.dev.OwnedBy;
-import io.harness.validation.Update;
-
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.github.reinert.jjschema.SchemaIgnore;
-import java.util.Map;
-import javax.validation.constraints.NotNull;
+import io.harness.annotation.RecasterAlias;
+import io.harness.annotations.dev.OwnedBy;
+import io.harness.delegate.beans.ci.InfraInfo;
+import io.harness.validation.Update;
 import lombok.Builder;
+import lombok.Getter;
 import lombok.Value;
 import org.mongodb.morphia.annotations.Id;
 import org.springframework.data.annotation.TypeAlias;
+
+import javax.validation.constraints.NotNull;
+import java.util.Map;
+
+import static io.harness.annotations.dev.HarnessTeam.CI;
 
 @Value
 @Builder
@@ -36,6 +38,7 @@ public class VmStageInfraDetails implements StageInfraDetails {
   @Id @NotNull(groups = {Update.class}) @SchemaIgnore private String uuid;
 
   @Builder.Default @NotNull private Type type = Type.VM;
+  @NotNull @Getter private InfraInfo infraInfo;
 
   @Override
   public StageInfraDetails.Type getType() {

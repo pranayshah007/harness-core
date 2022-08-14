@@ -7,20 +7,12 @@
 
 package io.harness.ci.integrationstage;
 
-import static io.harness.beans.serializer.RunTimeInputHandler.resolveArchType;
-import static io.harness.beans.serializer.RunTimeInputHandler.resolveMapParameter;
-import static io.harness.beans.serializer.RunTimeInputHandler.resolveOSType;
+import static io.harness.beans.serializer.RunTimeInputHandler.*;
 import static io.harness.beans.sweepingoutputs.StageInfraDetails.STAGE_INFRA_DETAILS;
 import static io.harness.data.encoding.EncodingUtils.decodeBase64;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.vm.CIVMConstants.DRONE_COMMIT_BRANCH;
-import static io.harness.vm.CIVMConstants.DRONE_COMMIT_LINK;
-import static io.harness.vm.CIVMConstants.DRONE_COMMIT_SHA;
-import static io.harness.vm.CIVMConstants.DRONE_REMOTE_URL;
-import static io.harness.vm.CIVMConstants.DRONE_SOURCE_BRANCH;
-import static io.harness.vm.CIVMConstants.DRONE_TARGET_BRANCH;
-import static io.harness.vm.CIVMConstants.NETWORK_ID;
+import static io.harness.vm.CIVMConstants.*;
 
 import static java.lang.String.format;
 
@@ -36,16 +28,12 @@ import io.harness.beans.sweepingoutputs.ContextElement;
 import io.harness.beans.sweepingoutputs.DliteVmStageInfraDetails;
 import io.harness.beans.sweepingoutputs.StageDetails;
 import io.harness.beans.sweepingoutputs.VmStageInfraDetails;
-import io.harness.beans.yaml.extended.infrastrucutre.HostedVmInfraYaml;
-import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
-import io.harness.beans.yaml.extended.infrastrucutre.OSType;
-import io.harness.beans.yaml.extended.infrastrucutre.VmInfraSpec;
-import io.harness.beans.yaml.extended.infrastrucutre.VmInfraYaml;
-import io.harness.beans.yaml.extended.infrastrucutre.VmPoolYaml;
+import io.harness.beans.yaml.extended.infrastrucutre.*;
 import io.harness.beans.yaml.extended.platform.ArchType;
 import io.harness.beans.yaml.extended.platform.Platform;
 import io.harness.ci.buildstate.CodebaseUtils;
 import io.harness.ci.buildstate.ConnectorUtils;
+import io.harness.ci.buildstate.InfraInfoUtils;
 import io.harness.ci.ff.CIFeatureFlagService;
 import io.harness.ci.logserviceclient.CILogServiceUtils;
 import io.harness.ci.tiserviceclient.TIServiceUtils;
@@ -55,6 +43,9 @@ import io.harness.ci.utils.InfrastructureUtils;
 import io.harness.ci.utils.ValidationUtils;
 import io.harness.cimanager.stages.IntegrationStageConfig;
 import io.harness.connector.SecretSpecBuilder;
+import io.harness.delegate.beans.ci.DockerInfraInfo;
+import io.harness.delegate.beans.ci.InfraInfo;
+import io.harness.delegate.beans.ci.VmInfraInfo;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.ci.pod.SecretParams;
 import io.harness.delegate.beans.ci.vm.CIVmInitializeTaskParams;
@@ -82,13 +73,7 @@ import io.harness.yaml.utils.NGVariablesUtils;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.Failsafe;
 import net.jodah.failsafe.RetryPolicy;
@@ -149,13 +134,16 @@ public class VmInitializeTaskParamsBuilder {
     return getVmInitializeParams(initializeStepInfo, ambiance, poolId);
   }
 
-  private CIVmInitializeTaskParams getVmInitializeParams(
+  public CIVmInitializeTaskParams getVmInitializeParams(
       InitializeStepInfo initializeStepInfo, Ambiance ambiance, String poolId) {
     Infrastructure infrastructure = initializeStepInfo.getInfrastructure();
+    if (infrastructure == null) {
+      throw new CIStageExecutionException("Input infrastructure can not be empty");
+    }
+
+    InfraInfo infraInfo = InfraInfoUtils.validateInfrastructureAndGetInfraInfo(infrastructure);
+
     String accountID = AmbianceUtils.getAccountId(ambiance);
-
-    validateInfrastructure(infrastructure);
-
     IntegrationStageConfig integrationStageConfig = initializeStepInfo.getStageElementConfig();
     vmInitializeUtils.validateStageConfig(integrationStageConfig, accountID);
 
@@ -171,8 +159,7 @@ public class VmInitializeTaskParamsBuilder {
       harnessImageConnectorRef = optionalHarnessImageConnectorRef.get().getValue();
     }
 
-    saveStageInfraDetails(ambiance, poolId, workDir, harnessImageConnectorRef, volToMountPath,
-        initializeStepInfo.getInfrastructure().getType());
+    saveStageInfraDetails(ambiance, poolId, workDir, harnessImageConnectorRef, volToMountPath, infraInfo);
     StageDetails stageDetails = getStageDetails(ambiance);
 
     CIExecutionArgs ciExecutionArgs = CIExecutionArgs.builder()
@@ -221,20 +208,17 @@ public class VmInitializeTaskParamsBuilder {
         .volToMountPath(volToMountPath)
         .serviceDependencies(getServiceDependencies(ambiance, integrationStageConfig))
         .tags(vmInitializeUtils.getBuildTags(ambiance, stageDetails))
+        .infraInfo(infraInfo)
         .build();
   }
 
-  public void validateInfrastructure(Infrastructure infrastructure) {
+  public static void validateInfrastructure(Infrastructure infrastructure) {
     if (infrastructure == null) {
-      throw new CIStageExecutionException("Input infrastructure can not be empty");
-    }
-
-    if (infrastructure.getType() == Infrastructure.Type.HOSTED_VM) {
-      return;
+      throw new CIStageExecutionException("Input infrastructure for vm can not be empty");
     }
 
     if (((VmInfraYaml) infrastructure).getSpec() == null) {
-      throw new CIStageExecutionException("Input infrastructure can not be empty");
+      throw new CIStageExecutionException("VM input infrastructure can not be empty");
     }
 
     VmInfraYaml vmInfraYaml = (VmInfraYaml) infrastructure;
@@ -244,7 +228,16 @@ public class VmInitializeTaskParamsBuilder {
     }
   }
 
-  private String getPoolName(VmPoolYaml vmPoolYaml) {
+  public static InfraInfo validateInfrastructureAndGetInfraInfo(Infrastructure infrastructure) {
+    validateInfrastructure(infrastructure);
+
+    VmPoolYaml vmPoolYaml = (VmPoolYaml) ((VmInfraYaml) infrastructure).getSpec();
+    String poolId = VmInitializeTaskParamsBuilder.getPoolName(vmPoolYaml);
+
+    return VmInfraInfo.builder().poolId(poolId).build();
+  }
+
+  public static String getPoolName(VmPoolYaml vmPoolYaml) {
     String poolName = vmPoolYaml.getSpec().getPoolName().getValue();
     if (isNotEmpty(poolName)) {
       return poolName;
@@ -258,23 +251,26 @@ public class VmInitializeTaskParamsBuilder {
   }
 
   private void saveStageInfraDetails(Ambiance ambiance, String poolId, String workDir, String harnessImageConnectorRef,
-      Map<String, String> volToMountPath, Infrastructure.Type infraType) {
-    if (infraType == Infrastructure.Type.VM) {
+      Map<String, String> volToMountPath, InfraInfo infraInfo) {
+    InfraInfo.Type type = infraInfo.getType();
+    if (type == InfraInfo.Type.VM || type == InfraInfo.Type.DOCKER) {
       consumeSweepingOutput(ambiance,
           VmStageInfraDetails.builder()
               .poolId(poolId)
               .workDir(workDir)
               .volToMountPathMap(volToMountPath)
               .harnessImageConnectorRef(harnessImageConnectorRef)
+              .infraInfo(infraInfo)
               .build(),
           STAGE_INFRA_DETAILS);
-    } else if (infraType == Infrastructure.Type.HOSTED_VM) {
+    } else if (type == InfraInfo.Type.DLITE_VM) {
       consumeSweepingOutput(ambiance,
           DliteVmStageInfraDetails.builder()
               .poolId(poolId)
               .workDir(workDir)
               .volToMountPathMap(volToMountPath)
               .harnessImageConnectorRef(harnessImageConnectorRef)
+              .infraInfo(infraInfo)
               .build(),
           STAGE_INFRA_DETAILS);
     }
@@ -482,6 +478,7 @@ public class VmInitializeTaskParamsBuilder {
         .poolID(params.getPoolID())
         .config(config)
         .logKey(params.getLogKey())
+        .infraType(Infrastructure.Type.HOSTED_VM.toString())
         .build();
   }
 

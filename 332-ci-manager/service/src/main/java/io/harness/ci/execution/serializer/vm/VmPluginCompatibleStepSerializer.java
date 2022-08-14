@@ -7,6 +7,8 @@
 
 package io.harness.ci.serializer.vm;
 
+import static java.lang.String.format;
+
 import io.harness.beans.plugin.compatible.PluginCompatibleStep;
 import io.harness.beans.sweepingoutputs.StageInfraDetails;
 import io.harness.beans.sweepingoutputs.StageInfraDetails.Type;
@@ -25,6 +27,7 @@ import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.utils.TimeoutUtils;
 import io.harness.yaml.core.timeout.Timeout;
+import io.harness.exception.ngexception.CIStageExecutionException;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -41,10 +44,15 @@ public class VmPluginCompatibleStepSerializer {
       StageInfraDetails stageInfraDetails, String identifier, ParameterField<Timeout> parameterFieldTimeout,
       String stepName) {
     long timeout = TimeoutUtils.getTimeoutInSeconds(parameterFieldTimeout, pluginCompatibleStep.getDefaultTimeout());
+    StageInfraDetails.Type type = stageInfraDetails.getType();
+    if (type != Type.VM && type != Type.DOCKER) {
+      throw new CIStageExecutionException(format("Unrecognized type %s for VmPluginStep", type));
+    }
+
     Map<String, String> envVars = pluginSettingUtils.getPluginCompatibleEnvVariables(
-        pluginCompatibleStep, identifier, timeout, ambiance, Type.VM);
+            pluginCompatibleStep, identifier, timeout, ambiance, Type.VM);
     String image = CIStepInfoUtils.getPluginCustomStepImage(
-        pluginCompatibleStep, ciExecutionConfigService, Type.VM, AmbianceUtils.getAccountId(ambiance));
+        pluginCompatibleStep, ciExecutionConfigService, type, AmbianceUtils.getAccountId(ambiance));
     String connectorRef = PluginSettingUtils.getConnectorRef(pluginCompatibleStep);
 
     NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);

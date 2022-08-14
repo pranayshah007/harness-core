@@ -10,13 +10,7 @@ package io.harness.delegate.task.citasks.vm;
 import static io.harness.data.encoding.EncodingUtils.decodeBase64;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.vm.CIVMConstants.DRONE_COMMIT_BRANCH;
-import static io.harness.vm.CIVMConstants.DRONE_COMMIT_LINK;
-import static io.harness.vm.CIVMConstants.DRONE_COMMIT_SHA;
-import static io.harness.vm.CIVMConstants.DRONE_REMOTE_URL;
-import static io.harness.vm.CIVMConstants.DRONE_SOURCE_BRANCH;
-import static io.harness.vm.CIVMConstants.DRONE_TARGET_BRANCH;
-import static io.harness.vm.CIVMConstants.NETWORK_ID;
+import static io.harness.vm.CIVMConstants.*;
 
 import static java.lang.String.format;
 
@@ -24,6 +18,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.SecretSpecBuilder;
 import io.harness.delegate.beans.ci.CIInitializeTaskParams;
+import io.harness.delegate.beans.ci.InfraInfo;
 import io.harness.delegate.beans.ci.pod.SecretParams;
 import io.harness.delegate.beans.ci.vm.CIVmInitializeTaskParams;
 import io.harness.delegate.beans.ci.vm.VmServiceStatus;
@@ -149,10 +144,11 @@ public class CIVmInitializeTaskHandler implements CIInitializeTaskHandler {
                                            .commitLink(env.getOrDefault(DRONE_COMMIT_LINK, ""))
                                            .build();
 
+    String stageId = params.getStageRuntimeId();
     SetupVmRequest.Config config = SetupVmRequest.Config.builder()
                                        .envs(env)
                                        .secrets(secrets)
-                                       .network(SetupVmRequest.Network.builder().id(NETWORK_ID).build())
+                                       .network(SetupVmRequest.Network.builder().id(NETWORK_ID + "-" + stageId).build())
                                        .logConfig(SetupVmRequest.LogConfig.builder()
                                                       .url(params.getLogStreamUrl())
                                                       .token(params.getLogSvcToken())
@@ -162,13 +158,17 @@ public class CIVmInitializeTaskHandler implements CIInitializeTaskHandler {
                                        .tiConfig(tiConfig)
                                        .volumes(getVolumes(params.getVolToMountPath()))
                                        .build();
+
+    InfraInfo infraInfo = params.getInfraInfo();
+
     return SetupVmRequest.builder()
-        .id(params.getStageRuntimeId())
+        .id(stageId)
         .correlationID(taskId)
         .poolID(params.getPoolID())
         .config(config)
         .logKey(params.getLogKey())
         .tags(params.getTags())
+        .infraType(infraInfo.getType().toString())
         .build();
   }
 

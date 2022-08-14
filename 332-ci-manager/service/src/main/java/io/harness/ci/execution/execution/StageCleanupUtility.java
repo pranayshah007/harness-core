@@ -13,18 +13,14 @@ import static io.harness.k8s.KubernetesConvention.getAccountIdentifier;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.sweepingoutputs.ContextElement;
-import io.harness.beans.sweepingoutputs.DliteVmStageInfraDetails;
-import io.harness.beans.sweepingoutputs.K8StageInfraDetails;
-import io.harness.beans.sweepingoutputs.PodCleanupDetails;
-import io.harness.beans.sweepingoutputs.StageDetails;
-import io.harness.beans.sweepingoutputs.StageInfraDetails;
-import io.harness.beans.sweepingoutputs.VmStageInfraDetails;
+import io.harness.beans.sweepingoutputs.*;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml;
 import io.harness.ci.buildstate.ConnectorUtils;
+import io.harness.ci.buildstate.InfraInfoUtils;
 import io.harness.delegate.TaskSelector;
 import io.harness.delegate.beans.ci.CICleanupTaskParams;
+import io.harness.delegate.beans.ci.InfraInfo;
 import io.harness.delegate.beans.ci.k8s.CIK8CleanupTaskParams;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.ci.vm.CIVmCleanupTaskParams;
@@ -71,10 +67,11 @@ public class StageCleanupUtility {
       stageInfraDetails = (StageInfraDetails) optionalSweepingOutput.getOutput();
     }
 
-    if (stageInfraDetails.getType() == StageInfraDetails.Type.K8) {
+    StageInfraDetails.Type type = stageInfraDetails.getType();
+    if (type == StageInfraDetails.Type.K8) {
       K8StageInfraDetails k8StageInfraDetails = (K8StageInfraDetails) stageInfraDetails;
       return buildK8CleanupParameters(k8StageInfraDetails, ambiance);
-    } else if (stageInfraDetails.getType() == StageInfraDetails.Type.VM) {
+    } else if (type == StageInfraDetails.Type.VM || type == StageInfraDetails.Type.DOCKER) {
       VmStageInfraDetails vmStageInfraDetails = (VmStageInfraDetails) stageInfraDetails;
       return buildVmCleanupParameters(ambiance, vmStageInfraDetails);
     } else if (stageInfraDetails.getType() == StageInfraDetails.Type.DLITE_VM) {
@@ -129,9 +126,12 @@ public class StageCleanupUtility {
     }
 
     StageDetails stageDetails = (StageDetails) optionalSweepingOutput.getOutput();
+    InfraInfo infraInfo = vmStageInfraDetails.getInfraInfo();
+
     return CIVmCleanupTaskParams.builder()
         .stageRuntimeId(stageDetails.getStageRuntimeID())
         .poolId(vmStageInfraDetails.getPoolId())
+        .infraInfo(infraInfo)
         .build();
   }
 

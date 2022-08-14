@@ -1,14 +1,7 @@
 package io.harness.ci.plan.creator.filter;
 
-import static io.harness.beans.yaml.extended.infrastrucutre.Infrastructure.Type.KUBERNETES_DIRECT;
-import static io.harness.beans.yaml.extended.infrastrucutre.Infrastructure.Type.VM;
-import static io.harness.filters.FilterCreatorHelper.convertToEntityDetailProtoDTO;
-import static io.harness.git.GitClientHelper.getGitRepo;
-import static io.harness.pms.yaml.YAMLFieldNameConstants.CI;
-import static io.harness.pms.yaml.YAMLFieldNameConstants.CI_CODE_BASE;
-import static io.harness.pms.yaml.YAMLFieldNameConstants.PROPERTIES;
-import static io.harness.walktree.visitor.utilities.VisitorParentPathUtils.PATH_CONNECTOR;
-
+import com.google.common.collect.ImmutableSet;
+import com.google.inject.Inject;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.stages.IntegrationStageNode;
@@ -33,20 +26,21 @@ import io.harness.filters.GenericStageFilterJsonCreatorV2;
 import io.harness.ng.core.BaseNGAccess;
 import io.harness.pms.pipeline.filter.PipelineFilter;
 import io.harness.pms.sdk.core.filter.creation.beans.FilterCreationContext;
-import io.harness.pms.yaml.ParameterField;
-import io.harness.pms.yaml.YAMLFieldNameConstants;
-import io.harness.pms.yaml.YamlField;
-import io.harness.pms.yaml.YamlNode;
-import io.harness.pms.yaml.YamlUtils;
+import io.harness.pms.yaml.*;
 import io.harness.walktree.visitor.SimpleVisitorFactory;
 import io.harness.yaml.extended.ci.codebase.CodeBase;
+import lombok.extern.slf4j.Slf4j;
 
-import com.google.common.collect.ImmutableSet;
-import com.google.inject.Inject;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
-import lombok.extern.slf4j.Slf4j;
+
+import static io.harness.beans.yaml.extended.infrastrucutre.Infrastructure.Type.KUBERNETES_DIRECT;
+import static io.harness.beans.yaml.extended.infrastrucutre.Infrastructure.Type.VM;
+import static io.harness.filters.FilterCreatorHelper.convertToEntityDetailProtoDTO;
+import static io.harness.git.GitClientHelper.getGitRepo;
+import static io.harness.pms.yaml.YAMLFieldNameConstants.*;
+import static io.harness.walktree.visitor.utilities.VisitorParentPathUtils.PATH_CONNECTOR;
 
 @Slf4j
 @OwnedBy(HarnessTeam.CI)
@@ -117,21 +111,28 @@ public class CIStageFilterJsonCreatorV2 extends GenericStageFilterJsonCreatorV2<
     return ciFilterBuilder.build();
   }
 
+  private void validateRuntime(IntegrationStageConfig integrationStageConfig) {
+    Runtime runtime = integrationStageConfig.getRuntime();
+    if (runtime != null && (runtime.getType() == Runtime.Type.CLOUD || runtime.getType() == Runtime.Type.DOCKER)) {
+      return;
+    } else {
+      throw new CIStageExecutionException(
+              "Infrastructure or runtime field with type Cloud (for vm) or type Docker (for docker) is mandatory for execution");
+    }
+  }
+
   private void validateStage(IntegrationStageNode stageNode) {
     IntegrationStageConfig integrationStageConfig = stageNode.getIntegrationStageConfig();
 
     Infrastructure infrastructure = integrationStageConfig.getInfrastructure();
     if (infrastructure == null) {
-      Runtime runtime = integrationStageConfig.getRuntime();
-      if (runtime == null || runtime.getType() != Runtime.Type.CLOUD) {
-        throw new CIStageExecutionException(
-            "Infrastructure or runtime field with type Cloud is mandatory for execution");
-      }
+      validateRuntime(integrationStageConfig);
     } else {
-      if (infrastructure.getType() == Infrastructure.Type.VM) {
+      Infrastructure.Type type = infrastructure.getType();
+      if (type == Infrastructure.Type.VM || type == Infrastructure.Type.DOCKER) {
         validationUtils.validateVmInfraDependencies(integrationStageConfig.getServiceDependencies().getValue());
       }
-      if (infrastructure.getType() == KUBERNETES_DIRECT
+      if (type == KUBERNETES_DIRECT
           && k8InitializeTaskUtils.getOS(infrastructure) == OSType.Windows) {
         validationUtils.validateWindowsK8Stage(integrationStageConfig.getExecution());
       }
@@ -167,11 +168,7 @@ public class CIStageFilterJsonCreatorV2 extends GenericStageFilterJsonCreatorV2<
 
     IntegrationStageConfig integrationStage = stageNode.getIntegrationStageConfig();
     if (integrationStage.getInfrastructure() == null) {
-      Runtime runtime = integrationStage.getRuntime();
-      if (runtime == null || runtime.getType() != Runtime.Type.CLOUD) {
-        throw new CIStageExecutionException(
-            "Infrastructure or runtime field with type Cloud is mandatory for execution");
-      }
+      validateRuntime(integrationStage);
     } else {
       if (integrationStage.getInfrastructure().getType() == KUBERNETES_DIRECT) {
         K8sDirectInfraYaml k8sDirectInfraYaml = (K8sDirectInfraYaml) integrationStage.getInfrastructure();

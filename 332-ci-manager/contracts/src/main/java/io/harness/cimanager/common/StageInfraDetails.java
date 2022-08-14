@@ -13,6 +13,7 @@ import io.harness.annotation.HarnessEntity;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.delegate.beans.ci.InfraInfo;
 import io.harness.ng.DbAliases;
 import io.harness.pms.sdk.core.data.ExecutionSweepingOutput;
 
@@ -30,7 +31,7 @@ import org.springframework.data.annotation.TypeAlias;
 @OwnedBy(CI)
 @RecasterAlias("io.harness.beans.sweepingoutputs.StageInfraDetails")
 public interface StageInfraDetails extends ExecutionSweepingOutput {
-  enum Type { K8, VM, DLITE_VM }
+  enum Type { K8, VM, DLITE_VM, DOCKER }
 
   StageInfraDetails.Type getType();
   String STAGE_INFRA_DETAILS = "stageInfraDetails";

@@ -683,6 +683,41 @@
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "DockerRuntime": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/Runtime"
+        },
+        {
+          "type": "object",
+          "required": [
+            "spec",
+            "type"
+          ],
+          "properties": {
+            "spec": {
+              "$ref": "#/definitions/DockerRuntimeSpec"
+            },
+            "type": {
+              "type": "string",
+              "enum": [
+                "Cloud"
+              ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "DockerRuntimeSpec": {
+      "type": "object",
+      "properties": {
+        "size": {
+          "type": "string"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "CodeBase": {
       "type": "object",
       "required": [
@@ -1762,7 +1797,50 @@
                 "KubernetesDirect",
                 "UseFromStage",
                 "VM",
-                "KubernetesHosted"
+                "KubernetesHosted",
+                "DOCKER"
+              ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "DockerInfraSpec": {
+      "type": "object",
+      "required": [
+        "platform"
+      ],
+      "properties": {
+        "platform": {
+          "$ref": "#/definitions/ParameterFieldPlatform"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "DockerInfraYaml": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/Infrastructure"
+        },
+        {
+          "type": "object",
+          "required": [
+            "spec",
+            "type"
+          ],
+          "properties": {
+            "spec": {
+              "$ref": "#/definitions/DockerInfraSpec"
+            },
+            "type": {
+              "type": "string",
+              "enum": [
+                "KubernetesDirect",
+                "UseFromStage",
+                "VM",
+                "KubernetesHosted",
+                "DOCKER"
               ]
             }
           }
@@ -1832,7 +1910,8 @@
             "KubernetesDirect",
             "UseFromStage",
             "VM",
-            "KubernetesHosted"
+            "KubernetesHosted",
+            "DOCKER"
           ]
         }
       },
@@ -1963,6 +2042,9 @@
               "$ref": "#/definitions/HostedVmInfraYaml"
             },
             {
+              "$ref": "#/definitions/DockerInfraYaml"
+            },
+            {
               "$ref": "#/definitions/K8sDirectInfraYaml"
             },
             {
@@ -1991,7 +2073,8 @@
         "runtime": {
           "oneOf": [
             {
-              "$ref": "#/definitions/CloudRuntime"
+              "$ref": "#/definitions/CloudRuntime",
+              "$ref": "#/definitions/DockerRuntime"
             }
           ]
         },
@@ -2200,7 +2283,8 @@
                 "KubernetesDirect",
                 "UseFromStage",
                 "VM",
-                "KubernetesHosted"
+                "KubernetesHosted",
+                "DOCKER"
               ]
             }
           }
@@ -2382,7 +2466,8 @@
                 "KubernetesDirect",
                 "UseFromStage",
                 "VM",
-                "KubernetesHosted"
+                "KubernetesHosted",
+                "DOCKER"
               ]
             }
           }
@@ -4084,7 +4169,8 @@
         "type": {
           "type": "string",
           "enum": [
-            "Cloud"
+            "Cloud",
+            "Docker"
           ]
         }
       },
@@ -5348,7 +5434,8 @@
                 "KubernetesDirect",
                 "UseFromStage",
                 "VM",
-                "KubernetesHosted"
+                "KubernetesHosted",
+                "DOCKER"
               ]
             }
           }

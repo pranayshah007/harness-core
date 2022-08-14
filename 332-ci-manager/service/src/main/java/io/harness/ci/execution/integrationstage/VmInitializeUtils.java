@@ -39,6 +39,7 @@ import io.harness.beans.yaml.extended.infrastrucutre.OSType;
 import io.harness.beans.yaml.extended.infrastrucutre.VmInfraSpec;
 import io.harness.beans.yaml.extended.infrastrucutre.VmInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.VmPoolYaml;
+import io.harness.ci.buildstate.InfraInfoUtils;
 import io.harness.ci.buildstate.PluginSettingUtils;
 import io.harness.cimanager.stages.IntegrationStageConfig;
 import io.harness.exception.InvalidRequestException;
@@ -187,25 +188,12 @@ public class VmInitializeUtils {
 
   public static OSType getOS(Infrastructure infrastructure) {
     // Only linux is supported now for runs on infrastructure
-    if (infrastructure.getType() == Infrastructure.Type.HOSTED_VM) {
+    Infrastructure.Type infraType = infrastructure.getType();
+    if (infraType == Infrastructure.Type.HOSTED_VM) {
       return OSType.Linux;
     }
 
-    if (infrastructure.getType() != Infrastructure.Type.VM) {
-      throw new CIStageExecutionException(format("Invalid infrastructure type: %s", infrastructure.getType()));
-    }
-
-    VmInfraYaml vmInfraYaml = (VmInfraYaml) infrastructure;
-    if (vmInfraYaml.getSpec() == null) {
-      throw new CIStageExecutionException("Infrastructure spec should not be empty");
-    }
-
-    if (vmInfraYaml.getSpec().getType() != VmInfraSpec.Type.POOL) {
-      throw new CIStageExecutionException(format("Invalid VM type: %s", vmInfraYaml.getSpec().getType()));
-    }
-
-    VmPoolYaml vmPoolYaml = (VmPoolYaml) vmInfraYaml.getSpec();
-    return resolveOSType(vmPoolYaml.getSpec().getOs());
+    return InfraInfoUtils.getInfraOS(infrastructure);
   }
 
   public Map<String, String> getBuildTags(Ambiance ambiance, StageDetails stageDetails) {

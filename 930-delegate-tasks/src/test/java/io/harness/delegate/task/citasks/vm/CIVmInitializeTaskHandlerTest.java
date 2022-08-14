@@ -17,6 +17,7 @@ import static org.mockito.Mockito.when;
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.ci.vm.CIVmInitializeTaskParams;
 import io.harness.delegate.beans.ci.vm.VmTaskExecutionResponse;
@@ -53,7 +54,7 @@ public class CIVmInitializeTaskHandlerTest extends CategoryTest {
   @Owner(developers = SHUBHAM)
   @Category(UnitTests.class)
   public void executeTaskInternal() throws IOException {
-    CIVmInitializeTaskParams params = CIVmInitializeTaskParams.builder().stageRuntimeId("stage").build();
+    CIVmInitializeTaskParams params = CIVmInitializeTaskParams.builder().stageRuntimeId("stage").infraType(CIVmInitializeTaskParams.Type.VM).build();
     Response<SetupVmResponse> setupResponse =
         Response.success(SetupVmResponse.builder().instanceID("test").ipAddress("1.1.1.1").build());
     when(httpHelper.setupStageWithRetries(any())).thenReturn(setupResponse);
@@ -66,7 +67,7 @@ public class CIVmInitializeTaskHandlerTest extends CategoryTest {
   @Owner(developers = SHUBHAM)
   @Category(UnitTests.class)
   public void executeTaskInternalFailure() throws IOException {
-    CIVmInitializeTaskParams params = CIVmInitializeTaskParams.builder().stageRuntimeId("stage").build();
+    CIVmInitializeTaskParams params = CIVmInitializeTaskParams.builder().stageRuntimeId("stage").infraType(CIVmInitializeTaskParams.Type.VM).build();
     ResponseBody body = mock(ResponseBody.class);
     Response<SetupVmResponse> setupResponse = Response.error(400, body);
     when(httpHelper.setupStageWithRetries(any())).thenReturn(setupResponse);

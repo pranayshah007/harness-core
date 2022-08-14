@@ -8,7 +8,9 @@
 package io.harness.delegate.beans.ci.vm;
 
 import io.harness.delegate.beans.ci.CICleanupTaskParams;
+import io.harness.delegate.beans.ci.InfraInfo;
 import io.harness.delegate.beans.executioncapability.CIVmConnectionCapability;
+import io.harness.delegate.beans.executioncapability.CapabilityType;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.ExecutionCapabilityDemander;
 import io.harness.expression.ExpressionEvaluator;
@@ -19,6 +21,7 @@ import java.util.List;
 import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
+import lombok.Getter;
 import lombok.experimental.SuperBuilder;
 
 @Data
@@ -27,6 +30,7 @@ import lombok.experimental.SuperBuilder;
 public class CIVmCleanupTaskParams implements CICleanupTaskParams, ExecutionCapabilityDemander {
   @NotNull private String stageRuntimeId;
   @NotNull private String poolId;
+  @NotNull @Getter private InfraInfo infraInfo;
 
   @Builder.Default private static final CICleanupTaskParams.Type type = CICleanupTaskParams.Type.VM;
 
@@ -37,7 +41,6 @@ public class CIVmCleanupTaskParams implements CICleanupTaskParams, ExecutionCapa
 
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {
-    return Collections.singletonList(
-        CIVmConnectionCapability.builder().poolId(poolId).stageRuntimeId(stageRuntimeId).build());
+    return infraInfo.fetchExecutionCapabilities();
   }
 }

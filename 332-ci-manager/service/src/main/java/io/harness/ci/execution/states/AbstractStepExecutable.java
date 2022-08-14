@@ -47,13 +47,10 @@ import io.harness.beans.sweepingoutputs.StepArtifactSweepingOutput;
 import io.harness.beans.sweepingoutputs.VmStageInfraDetails;
 import io.harness.beans.yaml.extended.infrastrucutre.OSType;
 import io.harness.ci.buildstate.ConnectorUtils;
+import io.harness.ci.buildstate.InfraInfoUtils;
 import io.harness.ci.config.CIExecutionServiceConfig;
 import io.harness.ci.integrationstage.IntegrationStageUtils;
-import io.harness.ci.serializer.BackgroundStepProtobufSerializer;
-import io.harness.ci.serializer.PluginCompatibleStepSerializer;
-import io.harness.ci.serializer.PluginStepProtobufSerializer;
-import io.harness.ci.serializer.RunStepProtobufSerializer;
-import io.harness.ci.serializer.RunTestsStepProtobufSerializer;
+import io.harness.ci.serializer.*;
 import io.harness.ci.serializer.vm.VmStepSerializer;
 import io.harness.ci.utils.GithubApiFunctor;
 import io.harness.ci.utils.GithubApiTokenEvaluator;
@@ -63,6 +60,7 @@ import io.harness.delegate.TaskSelector;
 import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.ci.CIExecuteStepTaskParams;
+import io.harness.delegate.beans.ci.InfraInfo;
 import io.harness.delegate.beans.ci.k8s.CIK8ExecuteStepTaskParams;
 import io.harness.delegate.beans.ci.k8s.K8sTaskExecutionResponse;
 import io.harness.delegate.beans.ci.vm.CIVmExecuteStepTaskParams;
@@ -70,11 +68,7 @@ import io.harness.delegate.beans.ci.vm.VmTaskExecutionResponse;
 import io.harness.delegate.beans.ci.vm.dlite.DliteVmExecuteStepTaskParams;
 import io.harness.delegate.beans.ci.vm.steps.VmStepInfo;
 import io.harness.delegate.task.HDelegateTask;
-import io.harness.delegate.task.stepstatus.StepExecutionStatus;
-import io.harness.delegate.task.stepstatus.StepMapOutput;
-import io.harness.delegate.task.stepstatus.StepStatus;
-import io.harness.delegate.task.stepstatus.StepStatusTaskParameters;
-import io.harness.delegate.task.stepstatus.StepStatusTaskResponseData;
+import io.harness.delegate.task.stepstatus.*;
 import io.harness.delegate.task.stepstatus.artifact.ArtifactMetadata;
 import io.harness.encryption.Scope;
 import io.harness.eraro.Level;
@@ -117,12 +111,7 @@ import software.wings.beans.TaskType;
 
 import com.google.inject.Inject;
 import io.fabric8.utils.Strings;
-import java.util.ArrayList;
-import java.util.EnumSet;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
@@ -217,7 +206,8 @@ public abstract class AbstractStepExecutable implements AsyncExecutableWithRbac<
     if (stageInfraType == StageInfraDetails.Type.K8) {
       return executeK8AsyncAfterRbac(ambiance, stepIdentifier, runtimeId, ciStepInfo, stepParametersName, accountId,
           logKey, timeoutInMillis, stringTimeout, (K8StageInfraDetails) stageInfraDetails);
-    } else if (stageInfraType == StageInfraDetails.Type.VM || stageInfraType == StageInfraDetails.Type.DLITE_VM) {
+    } else if (stageInfraType == StageInfraDetails.Type.VM || stageInfraType == StageInfraDetails.Type.DLITE_VM
+        || stageInfraType == StageInfraDetails.Type.DOCKER) {
       return executeVmAsyncAfterRbac(ambiance, stepIdentifier, runtimeId, ciStepInfo, accountId, logKey,
           timeoutInMillis, stringTimeout, stageInfraDetails);
     } else {
@@ -302,24 +292,28 @@ public abstract class AbstractStepExecutable implements AsyncExecutableWithRbac<
   private CIExecuteStepTaskParams getVmTaskParams(Ambiance ambiance, VmStepInfo vmStepInfo, Set<String> secrets,
       StageInfraDetails stageInfraDetails, StageDetails stageDetails, VmDetailsOutcome vmDetailsOutcome,
       String runtimeId, String stepIdentifier, String logKey) {
-    if (stageInfraDetails.getType() != StageInfraDetails.Type.VM
-        && stageInfraDetails.getType() != StageInfraDetails.Type.DLITE_VM) {
-      throw new CIStageExecutionException("Invalid stage infra details for vm");
+    StageInfraDetails.Type type = stageInfraDetails.getType();
+    if (type != StageInfraDetails.Type.VM && type != StageInfraDetails.Type.DLITE_VM
+        && type != StageInfraDetails.Type.DOCKER) {
+      throw new CIStageExecutionException("Invalid stage infra details type for vm or docker");
     }
 
-    String poolId;
     String workingDir;
     Map<String, String> volToMountPath;
-    if (stageInfraDetails.getType() == StageInfraDetails.Type.VM) {
+    String poolId;
+    InfraInfo infraInfo;
+    if (type == StageInfraDetails.Type.VM || type == StageInfraDetails.Type.DOCKER) {
       VmStageInfraDetails infraDetails = (VmStageInfraDetails) stageInfraDetails;
       poolId = infraDetails.getPoolId();
       volToMountPath = infraDetails.getVolToMountPathMap();
       workingDir = infraDetails.getWorkDir();
+      infraInfo = infraDetails.getInfraInfo();
     } else {
       DliteVmStageInfraDetails infraDetails = (DliteVmStageInfraDetails) stageInfraDetails;
       poolId = infraDetails.getPoolId();
       volToMountPath = infraDetails.getVolToMountPathMap();
       workingDir = infraDetails.getWorkDir();
+      infraInfo = infraDetails.getInfraInfo();
     }
 
     CIVmExecuteStepTaskParams ciVmExecuteStepTaskParams = CIVmExecuteStepTaskParams.builder()
@@ -333,8 +327,9 @@ public abstract class AbstractStepExecutable implements AsyncExecutableWithRbac<
                                                               .secrets(new ArrayList<>(secrets))
                                                               .logKey(logKey)
                                                               .workingDir(workingDir)
+                                                              .infraInfo(infraInfo)
                                                               .build();
-    if (stageInfraDetails.getType() == StageInfraDetails.Type.VM) {
+    if (type == StageInfraDetails.Type.VM || type == StageInfraDetails.Type.DOCKER) {
       return ciVmExecuteStepTaskParams;
     }
 
@@ -384,7 +379,8 @@ public abstract class AbstractStepExecutable implements AsyncExecutableWithRbac<
     StageInfraDetails.Type stageInfraType = stageInfraDetails.getType();
     if (stageInfraType == StageInfraDetails.Type.K8) {
       return handleK8AsyncResponse(ambiance, stepParameters, responseDataMap);
-    } else if (stageInfraType == StageInfraDetails.Type.VM || stageInfraType == StageInfraDetails.Type.DLITE_VM) {
+    } else if (stageInfraType == StageInfraDetails.Type.VM || stageInfraType == StageInfraDetails.Type.DLITE_VM
+        || stageInfraType == StageInfraDetails.Type.DOCKER) {
       return handleVmStepResponse(stepIdentifier, responseDataMap);
     } else {
       throw new CIStageExecutionException(format("Invalid infra type: %s", stageInfraType));

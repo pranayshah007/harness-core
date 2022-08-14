@@ -5,17 +5,15 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.beans.yaml.extended.infrastrucutre;
+package io.harness.beans.yaml.extended.runtime;
 
 import static io.harness.annotations.dev.HarnessTeam.CI;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.yaml.extended.platform.Platform;
-import io.harness.pms.yaml.ParameterField;
-import io.harness.beans.yaml.extended.runtime.Runtime;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
+import io.swagger.annotations.ApiModelProperty;
 import javax.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -27,19 +25,17 @@ import org.springframework.data.annotation.TypeAlias;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@JsonTypeName("HostedVm")
-@TypeAlias("HostedVmInfra")
+@JsonTypeName("Docker")
+@TypeAlias("DockerRuntime")
 @OwnedBy(CI)
-@RecasterAlias("io.harness.beans.yaml.extended.infrastrucutre.HostedVmInfraYaml")
-public class HostedVmInfraYaml implements Infrastructure {
-  @Builder.Default @NotNull private Type type = Type.HOSTED_VM;
-  @NotNull private HostedVmInfraSpec spec;
+@RecasterAlias("io.harness.beans.yaml.extended.runtime.DockerRuntime")
+public class DockerRuntime implements Runtime {
+  @Builder.Default @NotNull @ApiModelProperty(allowableValues = "Docker") private Type type = Type.DOCKER;
+  @NotNull private DockerRuntimeSpec spec;
 
   @Data
   @Builder
   @NoArgsConstructor
-  @AllArgsConstructor
-  public static class HostedVmInfraSpec {
-    @NotNull private ParameterField<Platform> platform;
+  public static class DockerRuntimeSpec {
   }
 }

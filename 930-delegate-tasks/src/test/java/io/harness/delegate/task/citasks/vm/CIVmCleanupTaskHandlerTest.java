@@ -18,6 +18,7 @@ import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.delegate.beans.ci.CICleanupTaskParams;
 import io.harness.delegate.beans.ci.vm.CIVmCleanupTaskParams;
 import io.harness.delegate.beans.ci.vm.VmTaskExecutionResponse;
 import io.harness.delegate.task.citasks.vm.helper.HttpHelper;
@@ -50,7 +51,7 @@ public class CIVmCleanupTaskHandlerTest extends CategoryTest {
   @Owner(developers = SHUBHAM)
   @Category(UnitTests.class)
   public void executeTaskInternal() throws IOException {
-    CIVmCleanupTaskParams params = CIVmCleanupTaskParams.builder().stageRuntimeId("stage").build();
+    CIVmCleanupTaskParams params = CIVmCleanupTaskParams.builder().stageRuntimeId("stage").infraType(CICleanupTaskParams.Type.VM).build();
     Response<Void> cleanupResponse = Response.success(null);
     when(httpHelper.cleanupStageWithRetries(any())).thenReturn(cleanupResponse);
     VmTaskExecutionResponse response = ciVmCleanupTaskHandler.executeTaskInternal(params, "");
@@ -61,7 +62,7 @@ public class CIVmCleanupTaskHandlerTest extends CategoryTest {
   @Owner(developers = SHUBHAM)
   @Category(UnitTests.class)
   public void executeTaskInternalFailure() {
-    CIVmCleanupTaskParams params = CIVmCleanupTaskParams.builder().stageRuntimeId("stage").build();
+    CIVmCleanupTaskParams params = CIVmCleanupTaskParams.builder().stageRuntimeId("stage").infraType(CICleanupTaskParams.Type.VM).build();
     ResponseBody body = mock(ResponseBody.class);
     Response<Void> cleanupResponse = Response.error(400, body);
     when(httpHelper.cleanupStageWithRetries(any())).thenReturn(cleanupResponse);
