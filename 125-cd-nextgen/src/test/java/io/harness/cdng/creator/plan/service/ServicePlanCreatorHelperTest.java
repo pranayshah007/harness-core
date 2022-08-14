@@ -9,7 +9,6 @@ package io.harness.cdng.creator.plan.service;
 
 import static io.harness.rule.OwnerRule.INDER;
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
-
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Matchers.any;
