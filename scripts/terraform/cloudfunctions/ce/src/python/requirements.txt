@@ -5,8 +5,13 @@ google.cloud.bigquery
 google.cloud.storage
 google.cloud.scheduler
 google-cloud-secret-manager
+google-cloud-functions
 google-cloud-bigquery-datatransfer
 boto3==1.17.24
 google-cloud-pubsub==2.5.0
 google-api-python-client
+azure-identity
+azure-mgmt-resourcegraph
+azure-monitor-query
+azure-mgmt-resource
 bigquery-schema-generator==1.5
