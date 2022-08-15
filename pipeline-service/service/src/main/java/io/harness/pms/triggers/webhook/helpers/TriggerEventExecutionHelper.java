@@ -105,8 +105,12 @@ public class TriggerEventExecutionHelper {
           if (triggerEntity.getVersion() != null) {
             criteria.and(NGTriggerEntityKeys.version).is(triggerEntity.getVersion());
           }
-          TriggerHelper.stampWebhookRegistrationInfo(triggerEntity,
-              WebhookAutoRegistrationStatus.builder().registrationResult(WebhookRegistrationStatus.SUCCESS).build());
+          try {
+            TriggerHelper.stampWebhookRegistrationInfo(triggerEntity,
+                WebhookAutoRegistrationStatus.builder().registrationResult(WebhookRegistrationStatus.SUCCESS).build());
+          } catch (Exception ex) {
+            log.error("Webhook registration status update failed", ex);
+          }
           ngTriggerRepository.updateValidationStatus(criteria, triggerEntity);
           eventResponses.add(triggerPipelineExecution(triggerWebhookEvent, triggerDetails,
               getTriggerPayloadForWebhookTrigger(webhookEventMappingResponse, triggerWebhookEvent, yamlVersion),

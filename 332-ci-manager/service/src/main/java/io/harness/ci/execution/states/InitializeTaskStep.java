@@ -374,7 +374,8 @@ public class InitializeTaskStep implements TaskExecutableWithRbac<StepElementPar
 
     List<String> connectorRefs =
         IntegrationStageUtils.getStageConnectorRefs(initializeStepInfo.getStageElementConfig());
-    if (infrastructure.getType() == Infrastructure.Type.VM || infrastructure.getType() == Infrastructure.Type.RUNS_ON) {
+    if (infrastructure.getType() == Infrastructure.Type.VM
+        || infrastructure.getType() == Infrastructure.Type.HOSTED_VM) {
       if (!isEmpty(connectorRefs)) {
         entityDetails.addAll(
             connectorRefs.stream()
