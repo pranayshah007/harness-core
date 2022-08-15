@@ -116,7 +116,8 @@ public class CEAzureConnectorValidator extends io.harness.ccm.connectors.Abstrac
       if (featuresEnabled.contains(CEFeatures.OPTIMIZATION)) {
         requiredRoles.add(AZURE_RBAC_CONTRIBUTOR_ROLE);
       } else if (featuresEnabled.contains(CEFeatures.VISIBILITY)) {
-        requiredRoles.add(AZURE_RBAC_READER_ROLE);
+        // requiredRoles.add(AZURE_RBAC_READER_ROLE);
+        log.info("VISIBILITY permissions check is disabled.");
       }
       errorList.addAll(validateServiceAccountPermissions(tenantId, subscriptionId, requiredRoles));
       if (!errorList.isEmpty()) {

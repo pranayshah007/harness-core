@@ -21,7 +21,6 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.beans.plugin.compatible.PluginCompatibleStep;
-import io.harness.beans.stages.IntegrationStageConfig;
 import io.harness.beans.steps.CIStepInfo;
 import io.harness.beans.steps.stepinfo.RunStepInfo;
 import io.harness.beans.steps.stepinfo.RunTestsStepInfo;
@@ -32,6 +31,7 @@ import io.harness.beans.yaml.extended.infrastrucutre.VmInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.VmPoolYaml;
 import io.harness.ci.buildstate.PluginSettingUtils;
 import io.harness.ci.ff.CIFeatureFlagService;
+import io.harness.cimanager.stages.IntegrationStageConfig;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.plancreator.execution.ExecutionWrapperConfig;
@@ -172,7 +172,7 @@ public class VmInitializeUtils {
 
   public OSType getOS(Infrastructure infrastructure) {
     // Only linux is supported now for runs on infrastructure
-    if (infrastructure.getType() == Infrastructure.Type.RUNS_ON) {
+    if (infrastructure.getType() == Infrastructure.Type.HOSTED_VM) {
       return OSType.Linux;
     }
 

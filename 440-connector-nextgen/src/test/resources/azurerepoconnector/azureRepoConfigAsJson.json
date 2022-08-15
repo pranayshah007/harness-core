@@ -30,6 +30,7 @@
           "tokenRef": "tokenRef"
         }
       },
+      "executeOnDelegate": null,
       "delegateSelectors": null,
       "type": "Project"
     }

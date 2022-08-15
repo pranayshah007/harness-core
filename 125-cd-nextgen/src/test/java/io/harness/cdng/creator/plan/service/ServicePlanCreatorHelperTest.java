@@ -157,8 +157,8 @@ public class ServicePlanCreatorHelperTest extends CategoryTest {
         ServiceEntity.builder().name(SERVICE_IDENTIFIER).name(SERVICE_IDENTIFIER).yaml(serviceYaml).build();
     when(serviceEntityService.get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, SERVICE_IDENTIFIER, false))
         .thenReturn(Optional.of(serviceEntity));
-    YamlField serviceFieldForV2 =
-        ServicePlanCreatorHelper.getResolvedServiceFieldForV2(stageNode, serviceEntityService, specField, context);
+    YamlField serviceFieldForV2 = ServicePlanCreatorHelper.getResolvedServiceFieldForV2(
+        null, stageNode, serviceEntityService, specField, context);
     assertThat(serviceFieldForV2).isNotNull();
     assertThat(serviceFieldForV2.getNode().getField(YamlTypes.SERVICE_DEFINITION)).isNotNull();
   }
@@ -222,8 +222,8 @@ public class ServicePlanCreatorHelperTest extends CategoryTest {
         ServiceEntity.builder().name(SERVICE_IDENTIFIER).name(SERVICE_IDENTIFIER).yaml(serviceYaml).build();
     when(serviceEntityService.get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, SERVICE_IDENTIFIER, false))
         .thenReturn(Optional.of(serviceEntity));
-    YamlField serviceFieldForV2 =
-        ServicePlanCreatorHelper.getResolvedServiceFieldForV2(stageNode, serviceEntityService, specField, context);
+    YamlField serviceFieldForV2 = ServicePlanCreatorHelper.getResolvedServiceFieldForV2(
+        null, stageNode, serviceEntityService, specField, context);
     assertThat(serviceFieldForV2).isNotNull();
     assertThat(serviceFieldForV2.getNode().getField(YamlTypes.SERVICE_DEFINITION)).isNotNull();
   }

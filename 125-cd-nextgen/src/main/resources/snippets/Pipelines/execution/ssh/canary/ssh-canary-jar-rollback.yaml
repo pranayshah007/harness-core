@@ -1,0 +1,110 @@
+spec:
+  execution:
+    rollbackSteps:
+      - stepGroup:
+          identifier: Step_Group_Rollback_<+phase>
+          name: "Step Group Rollback"
+          strategy:
+            repeat:
+              items: <+stage.output.hosts>
+              start: <+start>
+              end: <+end>
+              unit: <+unit>
+          steps:
+            - step:
+                name: "Rollback"
+                identifier: Deploy_Rollback_<+phase>
+                type: Command
+                timeout: 10m
+                spec:
+                  host: <+repeat.item>
+                  onDelegate: false
+                  environmentVariables: [ ]
+                  outputVariables: [ ]
+                  commandUnits:
+                    - identifier: Stop_Service_Rollback_<+phase>
+                      name: "Stop Service Rollback"
+                      type: Script
+                      spec:
+                        workingDirectory: $HARNESS_RUNTIME_PATH/tomcat/bin
+                        shell: Bash
+                        source:
+                          type: Inline
+                          spec:
+                            script: "# [ -f ./shutdown.sh ] && ./shutdown.sh  || true"
+                    - identifier: Process_Stopped_Rollback_<+phase>
+                      name: "Process Stopped Rollback"
+                      type: Script
+                      spec:
+                        workingDirectory: $HARNESS_RUNTIME_PATH/tomcat/bin
+                        shell: Bash
+                        source:
+                          type: Inline
+                          spec:
+                            script: |-
+                              <+process_stop_script>
+                    - identifier: Port_Cleared_Rollback_<+phase>
+                      name: "Port Cleared Rollback"
+                      type: Script
+                      spec:
+                        workingDirectory: $HARNESS_RUNTIME_PATH/tomcat/bin
+                        shell: Bash
+                        source:
+                          type: Inline
+                          spec:
+                            script: |-
+                              <+port_cleared_script>
+                    - identifier: Setup_Runtime_Paths_Rollback_<+phase>
+                      name: "Setup Runtime Paths Rollback"
+                      type: Script
+                      spec:
+                        shell: Bash
+                        source:
+                          type: Inline
+                          spec:
+                            script: |-
+                              <+setup_runtime_paths_script>
+                    - identifier: Copy_Artifact_Rollback_<+phase>
+                      name: "Copy Artifact Rollback"
+                      type: Copy
+                      spec:
+                        sourceType: Artifact
+                        destinationPath: $HARNESS_RUNTIME_PATH
+                    - identifier: Copy_Config_Rollback_<+phase>
+                      name: "Copy Config Rollback"
+                      type: Copy
+                      spec:
+                        sourceType: Config
+                        destinationPath: $HARNESS_RUNTIME_PATH
+                    - identifier: Start_Service_Rollback_<+phase>
+                      name: "Start Service Rollback"
+                      type: Script
+                      spec:
+                        workingDirectory: $HARNESS_RUNTIME_PATH/tomcat/bin
+                        shell: Bash
+                        source:
+                          type: Inline
+                          spec:
+                            script: "# ./startup.sh"
+                    - identifier: Process_Running_Rollback_<+phase>
+                      name: "Process Running Rollback"
+                      type: Script
+                      spec:
+                        workingDirectory: $HARNESS_RUNTIME_PATH/tomcat/bin
+                        shell: Bash
+                        source:
+                          type: Inline
+                          spec:
+                            script: |-
+                              <+process_run_script>
+                    - identifier: Port_Listening_Rollback_<+phase>
+                      name: "Port Listening Rollback"
+                      type: Script
+                      spec:
+                        workingDirectory: $HARNESS_RUNTIME_PATH/tomcat/bin
+                        shell: Bash
+                        source:
+                          type: Inline
+                          spec:
+                            script: |-
+                              <+port_listening_script>

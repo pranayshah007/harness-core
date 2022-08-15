@@ -56,24 +56,15 @@ public class GraphQLProvider implements QueryLanguageProvider<GraphQL> {
 
   @Inject
   public void init() {
-    if (privateGraphQL == null) {
-      String[] allPaths = new String[] {GRAPHQL_SCHEMA_PRIVATE_DIRECTORY_PATH, GRAPHQL_SCHEMA_PUBLIC_DIRECTORY_PATH};
-      privateGraphQL = getGraphQL(allPaths);
-    }
-
-    if (publicGraphQL == null) {
-      String[] allPaths = new String[] {GRAPHQL_SCHEMA_PUBLIC_DIRECTORY_PATH};
-      publicGraphQL = getGraphQL(allPaths);
-    }
+    TypeDefinitionRegistry typeDefinitionRegistry = new TypeDefinitionRegistry();
+    publicGraphQL = getGraphQL(GRAPHQL_SCHEMA_PUBLIC_DIRECTORY_PATH, typeDefinitionRegistry);
+    privateGraphQL = getGraphQL(GRAPHQL_SCHEMA_PRIVATE_DIRECTORY_PATH, typeDefinitionRegistry);
   }
 
-  private GraphQL getGraphQL(String[] paths) {
+  private GraphQL getGraphQL(String path, TypeDefinitionRegistry typeDefinitionRegistry) {
     SchemaParser schemaParser = new SchemaParser();
-    TypeDefinitionRegistry typeDefinitionRegistry = new TypeDefinitionRegistry();
 
-    for (String path : paths) {
-      loadSchemaForEnv(path, typeDefinitionRegistry, schemaParser);
-    }
+    loadSchemaForEnv(path, typeDefinitionRegistry, schemaParser);
     RuntimeWiring runtimeWiring = buildRuntimeWiring();
 
     SchemaGenerator schemaGenerator = new SchemaGenerator();

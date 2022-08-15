@@ -491,7 +491,9 @@ public class ConnectorUtils {
         encryptedDataDetails.addAll(
             secretManagerClientService.getEncryptionDetails(ngAccess, gitConfigDTO.getApiAccess().getSpec()));
       }
-      return connectorDetailsBuilder.encryptedDataDetails(encryptedDataDetails).build();
+      return connectorDetailsBuilder.encryptedDataDetails(encryptedDataDetails)
+          .executeOnDelegate(gitConfigDTO.getExecuteOnDelegate())
+          .build();
     } else if (gitConfigDTO.getAuthentication().getAuthType() == GitAuthType.SSH) {
       AzureRepoSshCredentialsDTO azureRepoSshCredentialsDTO =
           (AzureRepoSshCredentialsDTO) gitConfigDTO.getAuthentication().getCredentials();
@@ -506,7 +508,7 @@ public class ConnectorUtils {
             secretManagerClientService.getEncryptionDetails(ngAccess, gitConfigDTO.getApiAccess().getSpec());
         connectorDetailsBuilder.encryptedDataDetails(encryptedDataDetails);
       }
-      return connectorDetailsBuilder.build();
+      return connectorDetailsBuilder.executeOnDelegate(gitConfigDTO.getExecuteOnDelegate()).build();
     } else {
       throw new CIStageExecutionException(
           "Unsupported git connector auth" + gitConfigDTO.getAuthentication().getAuthType());
@@ -526,7 +528,9 @@ public class ConnectorUtils {
         encryptedDataDetails.addAll(
             secretManagerClientService.getEncryptionDetails(ngAccess, gitConfigDTO.getApiAccess().getSpec()));
       }
-      return connectorDetailsBuilder.encryptedDataDetails(encryptedDataDetails).build();
+      return connectorDetailsBuilder.executeOnDelegate(gitConfigDTO.getExecuteOnDelegate())
+          .encryptedDataDetails(encryptedDataDetails)
+          .build();
     } else if (gitConfigDTO.getAuthentication().getAuthType() == GitAuthType.SSH) {
       GitlabSshCredentialsDTO gitlabSshCredentialsDTO =
           (GitlabSshCredentialsDTO) gitConfigDTO.getAuthentication().getCredentials();
@@ -541,7 +545,7 @@ public class ConnectorUtils {
             secretManagerClientService.getEncryptionDetails(ngAccess, gitConfigDTO.getApiAccess().getSpec());
         connectorDetailsBuilder.encryptedDataDetails(encryptedDataDetails);
       }
-      return connectorDetailsBuilder.build();
+      return connectorDetailsBuilder.executeOnDelegate(gitConfigDTO.getExecuteOnDelegate()).build();
     } else {
       throw new CIStageExecutionException(
           "Unsupported git connector auth" + gitConfigDTO.getAuthentication().getAuthType());
@@ -579,7 +583,7 @@ public class ConnectorUtils {
             secretManagerClientService.getEncryptionDetails(ngAccess, gitConfigDTO.getApiAccess().getSpec());
         connectorDetailsBuilder.encryptedDataDetails(encryptedDataDetails);
       }
-      return connectorDetailsBuilder.build();
+      return connectorDetailsBuilder.executeOnDelegate(gitConfigDTO.getExecuteOnDelegate()).build();
     } else {
       throw new CIStageExecutionException(
           "Unsupported git connector auth" + gitConfigDTO.getAuthentication().getAuthType());
@@ -599,7 +603,9 @@ public class ConnectorUtils {
         encryptedDataDetails.addAll(
             secretManagerClientService.getEncryptionDetails(ngAccess, gitConfigDTO.getApiAccess().getSpec()));
       }
-      return connectorDetailsBuilder.encryptedDataDetails(encryptedDataDetails).build();
+      return connectorDetailsBuilder.executeOnDelegate(gitConfigDTO.getExecuteOnDelegate())
+          .encryptedDataDetails(encryptedDataDetails)
+          .build();
     } else if (gitConfigDTO.getAuthentication().getAuthType() == GitAuthType.SSH) {
       BitbucketSshCredentialsDTO bitbucketSshCredentialsDTO =
           (BitbucketSshCredentialsDTO) gitConfigDTO.getAuthentication().getCredentials();
@@ -614,7 +620,7 @@ public class ConnectorUtils {
             secretManagerClientService.getEncryptionDetails(ngAccess, gitConfigDTO.getApiAccess().getSpec());
         connectorDetailsBuilder.encryptedDataDetails(encryptedDataDetails);
       }
-      return connectorDetailsBuilder.build();
+      return connectorDetailsBuilder.executeOnDelegate(gitConfigDTO.getExecuteOnDelegate()).build();
     } else {
       throw new CIStageExecutionException(
           "Unsupported git connector auth" + gitConfigDTO.getAuthentication().getAuthType());

@@ -59,7 +59,7 @@ public class AzureRepoToGitMapper {
     validationRepo = GIT + validationRepo;
     GitConfigDTO gitConfigForHttp = GitConfigCreater.getGitConfigForHttp(connectionType, url, validationRepo, username,
         usernameRef, tokenRef, azureRepoConnectorDTO.getDelegateSelectors());
-    gitConfigForHttp.setExecuteOnDelegate(true);
+    gitConfigForHttp.setExecuteOnDelegate(azureRepoConnectorDTO.getExecuteOnDelegate());
     return gitConfigForHttp;
   }
 
@@ -70,7 +70,7 @@ public class AzureRepoToGitMapper {
     final SecretRefData sshKeyRef = credentials.getSshKeyRef();
     GitConfigDTO gitConfigForSsh = GitConfigCreater.getGitConfigForSsh(
         connectionType, url, validationRepo, sshKeyRef, azureRepoConnectorDTO.getDelegateSelectors());
-    gitConfigForSsh.setExecuteOnDelegate(true);
+    gitConfigForSsh.setExecuteOnDelegate(azureRepoConnectorDTO.getExecuteOnDelegate());
     return gitConfigForSsh;
   }
 

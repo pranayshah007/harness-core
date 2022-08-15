@@ -8,6 +8,7 @@
 package io.harness.connector.validator;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.joor.Reflect.on;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doNothing;
@@ -42,7 +43,8 @@ import io.harness.delegate.beans.connector.awsconnector.AwsValidateTaskResponse;
 import io.harness.delegate.beans.connector.awsconnector.CrossAccountAccessDTO;
 import io.harness.encryption.Scope;
 import io.harness.encryption.SecretRefData;
-import io.harness.errorhandling.NGErrorHelper;
+import io.harness.exception.WingsException;
+import io.harness.exception.exceptionmanager.ExceptionManager;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
@@ -70,7 +72,7 @@ public class AwsConnectorValidatorTest extends CategoryTest {
   @Mock private DefaultConnectorServiceImpl connectorService;
   @InjectMocks private AwsConnectorValidator awsConnectorValidator;
   @InjectMocks private AwsNgConfigMapper ngConfigMapper;
-  @InjectMocks private NGErrorHelper ngErrorHelper;
+  @Mock private ExceptionManager exceptionManager;
   @Mock private Map<String, ConnectorValidationHandler> connectorTypeToConnectorValidationHandlerMap;
   @Mock private Map<String, ConnectorValidationParamsProvider> connectorValidationParamsProviderMap;
 
@@ -199,7 +201,13 @@ public class AwsConnectorValidatorTest extends CategoryTest {
 
     AwsValidationHandler awsValidationHandler = mock(AwsValidationHandler.class);
     on(awsValidationHandler).set("ngConfigMapper", ngConfigMapper);
-    on(awsValidationHandler).set("ngErrorHelper", ngErrorHelper);
+    on(awsValidationHandler).set("exceptionManager", exceptionManager);
+    when(exceptionManager.processException(any(), any(), any()))
+        .thenReturn(
+            WingsException.builder()
+                .message(
+                    "Connector with credential type INHERIT_FROM_DELEGATE does not support validation through harness")
+                .build());
     when(awsValidationHandler.validate((ConnectorValidationParams) any(), any())).thenCallRealMethod();
     when(connectorTypeToConnectorValidationHandlerMap.get(Matchers.eq("Aws"))).thenReturn(awsValidationHandler);
 
@@ -215,11 +223,10 @@ public class AwsConnectorValidatorTest extends CategoryTest {
                                                    .orgIdentifier("orgIdentifier")
                                                    .build())
                                     .build()));
-    ConnectorValidationResult connectorValidationResult = awsConnectorValidator.validate(
-        awsConnectorDTO, "accountIdentifier", "orgIdentifier", "projectIdentifier", "identifier");
-    assertThat(connectorValidationResult.getStatus()).isEqualTo(ConnectivityStatus.FAILURE);
-    assertThat(connectorValidationResult.getErrorSummary())
-        .isEqualTo(
-            "Error Encountered (Connector with credential type InheritFromDelegate does not support validation through harness)");
+    assertThatThrownBy(()
+                           -> awsConnectorValidator.validate(awsConnectorDTO, "accountIdentifier", "orgIdentifier",
+                               "projectIdentifier", "identifier"))
+        .isInstanceOf(WingsException.class)
+        .hasMessage("Connector with credential type INHERIT_FROM_DELEGATE does not support validation through harness");
   }
 }

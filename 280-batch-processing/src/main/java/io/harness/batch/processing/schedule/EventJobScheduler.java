@@ -224,17 +224,17 @@ public class EventJobScheduler {
     }
   }
 
-  @Scheduled(cron = "0 0 6 * * ?")
-  public void runAccountExpiryCleanup() {
-    boolean masterPod = accountShardService.isMasterPod();
-    if (masterPod) {
-      try {
-        accountExpiryCleanupService.execute();
-      } catch (Exception ex) {
-        log.error("Exception while running runAccountExpiryCleanup {}", ex);
-      }
-    }
-  }
+  //  @Scheduled(cron = "0 0 6 * * ?")
+  //  public void runAccountExpiryCleanup() {
+  //    boolean masterPod = accountShardService.isMasterPod();
+  //    if (masterPod) {
+  //      try {
+  //        accountExpiryCleanupService.execute();
+  //      } catch (Exception ex) {
+  //        log.error("Exception while running runAccountExpiryCleanup {}", ex);
+  //      }
+  //    }
+  //  }
 
   @Scheduled(cron = "${scheduler-jobs-config.weeklyReportsJobCron}")
   public void runWeeklyReportJob() {

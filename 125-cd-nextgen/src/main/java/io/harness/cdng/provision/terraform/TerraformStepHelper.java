@@ -400,24 +400,28 @@ public class TerraformStepHelper {
     switch (storeConfig.getKind()) {
       case ManifestStoreType.BITBUCKET: {
         BitbucketStore bitbucketStore = (BitbucketStore) gitStoreConfig;
+        bitbucketStore.setBranch(ParameterField.ofNull());
         bitbucketStore.setGitFetchType(FetchType.COMMIT);
         bitbucketStore.setCommitId(commitIdField);
         break;
       }
       case ManifestStoreType.GITLAB: {
         GitLabStore gitLabStore = (GitLabStore) gitStoreConfig;
+        gitLabStore.setBranch(ParameterField.ofNull());
         gitLabStore.setGitFetchType(FetchType.COMMIT);
         gitLabStore.setCommitId(commitIdField);
         break;
       }
       case ManifestStoreType.GIT: {
         GitStore gitStore = (GitStore) gitStoreConfig;
+        gitStore.setBranch(ParameterField.ofNull());
         gitStore.setGitFetchType(FetchType.COMMIT);
         gitStore.setCommitId(commitIdField);
         break;
       }
       case ManifestStoreType.GITHUB: {
         GithubStore githubStore = (GithubStore) gitStoreConfig;
+        githubStore.setBranch(ParameterField.ofNull());
         githubStore.setGitFetchType(FetchType.COMMIT);
         githubStore.setCommitId(commitIdField);
         break;

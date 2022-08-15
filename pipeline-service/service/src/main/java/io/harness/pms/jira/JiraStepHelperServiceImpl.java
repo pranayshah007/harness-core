@@ -53,6 +53,7 @@ public class JiraStepHelperServiceImpl implements JiraStepHelperService {
   private final ConnectorResourceClient connectorResourceClient;
   private final SecretManagerClientService secretManagerClientService;
   private final KryoSerializer kryoSerializer;
+  private static final String NULL_VALUE = "null";
 
   @Inject
   public JiraStepHelperServiceImpl(ConnectorResourceClient connectorResourceClient,
@@ -68,6 +69,13 @@ public class JiraStepHelperServiceImpl implements JiraStepHelperService {
     NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
     IdentifierRef identifierRef = IdentifierRefHelper.getIdentifierRef(
         connectorRef, ngAccess.getAccountIdentifier(), ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier());
+    if (NULL_VALUE.equals(identifierRef.getIdentifier())) {
+      throw new InvalidRequestException(
+          String.format(
+              "Error retrieving connector information : [%s]. Please check if the connector in the step is valid",
+              connectorRef),
+          WingsException.USER);
+    }
     Optional<ConnectorDTO> connectorDTOOptional = NGRestUtils.getResponse(
         connectorResourceClient.get(identifierRef.getIdentifier(), identifierRef.getAccountIdentifier(),
             identifierRef.getOrgIdentifier(), identifierRef.getProjectIdentifier()));

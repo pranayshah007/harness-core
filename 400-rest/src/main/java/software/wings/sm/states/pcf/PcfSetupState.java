@@ -480,6 +480,10 @@ public class PcfSetupState extends State {
       case ARTIFACTORY:
         return artifactStreamAttributes.getMetadata().get("artifactPath");
       default:
+        if (isEmpty(artifactStreamAttributes.getMetadata())
+            || isEmpty(artifactStreamAttributes.getMetadata().get(URL))) {
+          throw new InvalidRequestException("artifact url is required");
+        }
         return artifactStreamAttributes.getMetadata().get(URL);
     }
   }

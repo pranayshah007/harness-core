@@ -95,7 +95,7 @@ public class PMSPipelineTemplateHelperTest extends CategoryTest {
     doReturn(callRequest)
         .when(templateResourceClient)
         .applyTemplatesOnGivenYamlV2(
-            anyString(), anyString(), anyString(), any(), any(), any(), any(TemplateApplyRequestDTO.class));
+            anyString(), anyString(), anyString(), any(), any(), any(), any(), any(TemplateApplyRequestDTO.class));
     when(callRequest.execute())
         .thenReturn(Response.success(
             ResponseDTO.newResponse(TemplateMergeResponseDTO.builder().mergedPipelineYaml(givenYaml).build())));
@@ -115,7 +115,7 @@ public class PMSPipelineTemplateHelperTest extends CategoryTest {
     Call<ResponseDTO<TemplateMergeResponseDTO>> callRequest = mock(Call.class);
     doReturn(callRequest)
         .when(templateResourceClient)
-        .applyTemplatesOnGivenYamlV2(ACCOUNT_ID, ORG_ID, PROJECT_ID, null, null, null,
+        .applyTemplatesOnGivenYamlV2(ACCOUNT_ID, ORG_ID, PROJECT_ID, null, null, null, null,
             TemplateApplyRequestDTO.builder().originalEntityYaml(givenYaml).build());
     ValidateTemplateInputsResponseDTO validateTemplateInputsResponseDTO =
         ValidateTemplateInputsResponseDTO.builder().build();

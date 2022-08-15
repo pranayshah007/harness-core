@@ -62,7 +62,8 @@ public class StageExecutionHelper {
   public boolean shouldSaveStageExecutionInfo(String infrastructureKind) {
     return InfrastructureKind.PDC.equals(infrastructureKind)
         || InfrastructureKind.SSH_WINRM_AZURE.equals(infrastructureKind)
-        || InfrastructureKind.SSH_WINRM_AWS.equals(infrastructureKind);
+        || InfrastructureKind.SSH_WINRM_AWS.equals(infrastructureKind)
+        || InfrastructureKind.AZURE_WEB_APP.equals(infrastructureKind);
   }
 
   public boolean isRollbackArtifactRequiredPerInfrastructure(String infrastructureKind) {
