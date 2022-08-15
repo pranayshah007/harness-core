@@ -10,6 +10,7 @@ package io.harness.delegate.authenticator;
 import static io.harness.annotations.dev.HarnessTeam.DEL;
 import static io.harness.rule.OwnerRule.ANUBHAW;
 import static io.harness.rule.OwnerRule.BRETT;
+import static io.harness.rule.OwnerRule.JENNY;
 import static io.harness.rule.OwnerRule.JOHANNES;
 import static io.harness.rule.OwnerRule.LUCAS;
 import static io.harness.rule.OwnerRule.MARKO;
@@ -68,6 +69,8 @@ import org.mongodb.morphia.query.Query;
 @TargetModule(HarnessModule._420_DELEGATE_SERVICE)
 public class DelegateTokenAuthenticatorImplTest extends WingsBaseTest {
   private static final String GLOBAL_ACCOUNT_ID = "__GLOBAL_ACCOUNT_ID__";
+  public static final String GLOBAL_DELEGATE_ACCOUNT_ID = "__GLOBAL_DELEGATE_ACCOUNT_ID__";
+
   private static final String FQDN = "agent.some-fqdn.harness.io";
 
   @Mock LoadingCache<String, String> keyCache;
@@ -323,6 +326,27 @@ public class DelegateTokenAuthenticatorImplTest extends WingsBaseTest {
     assertThatThrownBy(
         () -> delegateTokenAuthenticator.validateDelegateToken(ACCOUNT_ID, getDelegateToken(), null, null, null, false))
         .isInstanceOf(InvalidTokenException.class);
+  }
+
+  @Test
+  @Owner(developers = JENNY)
+  @Category(UnitTests.class)
+  public void shouldValidateTokenForGlobalDelegate() {
+    DelegateToken delegateToken = DelegateToken.builder()
+                                      .accountId(GLOBAL_DELEGATE_ACCOUNT_ID)
+                                      .name("default")
+                                      .value(accountKey)
+                                      .status(DelegateTokenStatus.ACTIVE)
+                                      .build();
+
+    createPersistenceMocksForDelegateToken(delegateToken);
+    TokenGenerator tokenGenerator = new TokenGenerator(ACCOUNT_ID, accountKey);
+
+    delegateTokenAuthenticator.validateDelegateToken(
+        ACCOUNT_ID, tokenGenerator.getToken("https", "localhost", 9090, "hostname"), null, null, FQDN, false);
+
+    verify(this.agentMtlsVerifier, times(1)).isValidRequest(anyString(), anyString());
+    verify(this.agentMtlsVerifier, times(1)).isValidRequest(ACCOUNT_ID, FQDN);
   }
 
   private void createPersistenceMocksForDelegateToken(DelegateToken delegateToken) {
