@@ -6659,21 +6659,6 @@
               "type": "string",
               "minLength": 1
             },
-            "delegateSelectors": {
-              "oneOf": [
-                {
-                  "type": "array",
-                  "items": {
-                    "type": "string"
-                  }
-                },
-                {
-                  "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-                  "minLength": 1
-                }
-              ]
-            },
             "hostNameConvention": {
               "oneOf": [
                 {
@@ -6721,21 +6706,6 @@
             "credentialsRef": {
               "type": "string",
               "minLength": 1
-            },
-            "delegateSelectors": {
-              "oneOf": [
-                {
-                  "type": "array",
-                  "items": {
-                    "type": "string"
-                  }
-                },
-                {
-                  "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-                  "minLength": 1
-                }
-              ]
             },
             "hostNameConvention": {
               "oneOf": [

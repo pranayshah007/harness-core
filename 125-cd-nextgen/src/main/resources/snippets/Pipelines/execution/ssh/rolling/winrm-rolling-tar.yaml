@@ -124,6 +124,10 @@ spec:
           strategy:
             repeat:
               items: <+stage.output.hosts>
+              maxConcurrency: <+maxConcurrency>
+              start: 0
+              end: <+end>
+              unit: <+unit>
           spec:
             host: <+repeat.item>
             onDelegate: false

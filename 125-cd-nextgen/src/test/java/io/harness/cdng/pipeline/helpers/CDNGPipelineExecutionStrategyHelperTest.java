@@ -60,6 +60,7 @@ public class CDNGPipelineExecutionStrategyHelperTest extends CategoryTest {
     assertThat(result).contains("start: 50");
     assertThat(result).contains("end: 100");
     assertThat(result).contains("unit: Percentage");
+    assertThat(result).contains("maxConcurrency: 1");
   }
 
   @Test
@@ -134,5 +135,6 @@ public class CDNGPipelineExecutionStrategyHelperTest extends CategoryTest {
     assertThat(result).contains("start: 50");
     assertThat(result).contains("end: 100");
     assertThat(result).contains("unit: Percentage");
+    assertThat(result).contains("maxConcurrency: 1");
   }
 }
