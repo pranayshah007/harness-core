@@ -95,6 +95,14 @@
           valueFrom:
             fieldRef:
               fieldPath: metadata.namespace
+        - name: DELEGATE_POD_ID
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.uid
+        - name: DELEGATE_POD_NAME
+           valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
         - name: INIT_SCRIPT
           value: ""
 </#macro>
