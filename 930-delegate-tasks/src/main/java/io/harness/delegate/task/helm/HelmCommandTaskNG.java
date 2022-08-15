@@ -84,6 +84,9 @@ public class HelmCommandTaskNG extends AbstractDelegateRunnableTask {
   public HelmCmdExecResponseNG run(TaskParameters parameters) {
     helmDeployServiceNG.setLogStreamingClient(this.getLogStreamingTaskClient());
     HelmCommandRequestNG helmCommandRequestNG = (HelmCommandRequestNG) parameters;
+    if (helmCommandRequestNG.getCommandUnitsProgress() == null) {
+      helmCommandRequestNG.setCommandUnitsProgress(CommandUnitsProgress.builder().build());
+    }
     HelmCommandResponseNG helmCommandResponseNG;
 
     String workingDirectory = Paths.get(WORKING_DIR_BASE, convertBase64UuidToCanonicalForm(generateUuid()))
@@ -166,7 +169,6 @@ public class HelmCommandTaskNG extends AbstractDelegateRunnableTask {
     String configLocation = containerDeploymentDelegateBaseHelper.createKubeConfig(
         containerDeploymentDelegateBaseHelper.createKubernetesConfig(commandRequestNG.getK8sInfraDelegateConfig()));
     commandRequestNG.setKubeConfigLocation(configLocation);
-    commandRequestNG.setOcPath(k8sGlobalConfigService.getOcPath());
     logCallback.saveExecutionLog(
         "Setting KubeConfig\nKUBECONFIG_PATH=" + configLocation, LogLevel.INFO, CommandExecutionStatus.RUNNING);
 

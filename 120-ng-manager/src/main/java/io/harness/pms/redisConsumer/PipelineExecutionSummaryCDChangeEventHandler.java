@@ -11,7 +11,6 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.pms.plan.execution.PipelineExecutionSummaryKeys;
 import io.harness.redisHandler.RedisAbstractHandler;
-import io.harness.timescaledb.DBUtils;
 import io.harness.timescaledb.Tables;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -176,14 +175,13 @@ public class PipelineExecutionSummaryCDChangeEventHandler extends RedisAbstractH
       dsl.insertInto(Tables.PIPELINE_EXECUTION_SUMMARY_CD)
           .set(record)
           .onConflict(Tables.PIPELINE_EXECUTION_SUMMARY_CD.ID, Tables.PIPELINE_EXECUTION_SUMMARY_CD.STARTTS)
-          .doNothing()
+          .doUpdate()
+          .set(record)
           .execute();
-      log.info("Successfully inserted data for id {}", id);
+      log.debug("Successfully inserted data for id {}", id);
     } catch (DataAccessException ex) {
       log.error("Caught Exception while inserting data", ex);
-      if (DBUtils.isConnectionError(ex)) {
-        return false;
-      }
+      return false;
     }
     return true;
   }
@@ -192,12 +190,10 @@ public class PipelineExecutionSummaryCDChangeEventHandler extends RedisAbstractH
   public boolean handleDeleteEvent(String id) {
     try {
       dsl.delete(Tables.PIPELINE_EXECUTION_SUMMARY_CD).where(Tables.PIPELINE_EXECUTION_SUMMARY_CD.ID.eq(id)).execute();
-      log.info("Successfully deleted data for id {}", id);
+      log.debug("Successfully deleted data for id {}", id);
     } catch (DataAccessException ex) {
       log.error("Caught Exception while deleting data", ex);
-      if (DBUtils.isConnectionError(ex)) {
-        return false;
-      }
+      return false;
     }
     return true;
   }
@@ -215,12 +211,10 @@ public class PipelineExecutionSummaryCDChangeEventHandler extends RedisAbstractH
           .doUpdate()
           .set(record)
           .execute();
-      log.info("Successfully updated data for id {}", id);
+      log.debug("Successfully updated data for id {}", id);
     } catch (DataAccessException ex) {
       log.error("Caught Exception while updating data", ex);
-      if (DBUtils.isConnectionError(ex)) {
-        return false;
-      }
+      return false;
     }
     return true;
   }

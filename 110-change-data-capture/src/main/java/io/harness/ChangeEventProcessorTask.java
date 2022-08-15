@@ -19,17 +19,17 @@ import io.harness.persistence.PersistentEntity;
 
 import software.wings.dl.WingsPersistence;
 
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Set;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Collectors;
+import jodd.util.concurrent.ThreadFactoryBuilder;
 import lombok.extern.slf4j.Slf4j;
 import org.bouncycastle.util.Strings;
 import org.mongodb.morphia.query.Query;
@@ -39,9 +39,11 @@ import org.mongodb.morphia.query.UpdateOperations;
 @OwnedBy(HarnessTeam.CE)
 public class ChangeEventProcessorTask implements Runnable {
   private ExecutorService executorService;
-  private Set<CDCEntity<?>> cdcEntities;
-  private BlockingQueue<ChangeEvent<?>> changeEventQueue;
-  private WingsPersistence wingsPersistence;
+  private final Set<CDCEntity<?>> cdcEntities;
+  private final BlockingQueue<ChangeEvent<?>> changeEventQueue;
+  private final WingsPersistence wingsPersistence;
+  private final AtomicInteger processing = new AtomicInteger(0);
+  private final AtomicLong completed = new AtomicLong(0);
 
   ChangeEventProcessorTask(Set<CDCEntity<?>> cdcEntities, BlockingQueue<ChangeEvent<?>> changeEventQueue,
       WingsPersistence wingsPersistence) {
@@ -52,14 +54,32 @@ public class ChangeEventProcessorTask implements Runnable {
 
   @Override
   public void run() {
-    executorService =
-        Executors.newFixedThreadPool(8, new ThreadFactoryBuilder().setNameFormat("change-processor-%d").build());
+    executorService = Executors.newFixedThreadPool(
+        cdcEntities.size(), ThreadFactoryBuilder.create().setNameFormat("change-processor-%d").get());
+    Set<Future<?>> futures =
+        cdcEntities.stream().map(cdcEntity -> executorService.submit(this::listenToQueue)).collect(Collectors.toSet());
+    waitForTasks(futures);
+  }
+
+  private void waitForTasks(Set<Future<?>> futures) {
+    for (Future<?> future : futures) {
+      try {
+        future.get();
+      } catch (InterruptedException | ExecutionException e) {
+        log.error("ChangeEvent processor task stopped", e);
+      }
+    }
+  }
+
+  public void listenToQueue() {
     try {
-      boolean isRunningSuccessfully = true;
-      while (isRunningSuccessfully) {
+      while (!executorService.isShutdown()) {
         ChangeEvent<?> changeEvent = changeEventQueue.poll(Integer.MAX_VALUE, TimeUnit.MINUTES);
         if (changeEvent != null) {
-          isRunningSuccessfully = processChange(changeEvent);
+          processing.incrementAndGet();
+          processChange(changeEvent);
+          processing.decrementAndGet();
+          completed.incrementAndGet();
         }
       }
     } catch (InterruptedException e) {
@@ -71,15 +91,7 @@ public class ChangeEventProcessorTask implements Runnable {
     }
   }
 
-  private Callable<Boolean> getProcessChangeEventTask(
-      ChangeHandler changeHandler, ChangeEvent changeEvent, ChangeDataCapture changeDataCapture) {
-    return ()
-               -> changeHandler.handleChange(
-                   changeEvent, Strings.toLowerCase(changeDataCapture.table()), changeDataCapture.fields());
-  }
-
-  private boolean processChange(ChangeEvent<?> changeEvent) {
-    List<Future<Boolean>> processChangeEventTaskFutures = new ArrayList<>();
+  private void processChange(ChangeEvent<?> changeEvent) {
     Class<? extends PersistentEntity> clazz = changeEvent.getEntityType();
     ChangeDataCapture[] dataCaptures = clazz.getAnnotationsByType(ChangeDataCapture.class);
 
@@ -88,9 +100,8 @@ public class ChangeEventProcessorTask implements Runnable {
         for (ChangeDataCapture changeDataCapture : dataCaptures) {
           ChangeHandler changeHandler = cdcEntity.getChangeHandler(changeDataCapture.handler());
           if (changeHandler != null) {
-            Callable<Boolean> processChangeEventTask =
-                getProcessChangeEventTask(changeHandler, changeEvent, changeDataCapture);
-            processChangeEventTaskFutures.add(executorService.submit(processChangeEventTask));
+            changeHandler.handleChange(
+                changeEvent, Strings.toLowerCase(changeDataCapture.table()), changeDataCapture.fields());
           } else {
             log.info("ChangeHandler for {} is null.", changeDataCapture.handler());
           }
@@ -98,45 +109,34 @@ public class ChangeEventProcessorTask implements Runnable {
       }
     }
 
-    for (Future<Boolean> processChangeEventFuture : processChangeEventTaskFutures) {
-      boolean isChangeHandled = false;
-      try {
-        isChangeHandled = processChangeEventFuture.get();
-      } catch (InterruptedException e) {
-        Thread.currentThread().interrupt();
-        log.error("Change Event thread interrupted", e);
-      } catch (ExecutionException e) {
-        log.error("Change event thread interrupted due to exception", e.getCause());
-      }
-      if (!isChangeHandled) {
-        log.error("Could not process changeEvent {}", changeEvent.toString());
-        return false;
-      }
-    }
-
-    boolean isSaved = saveCDCStateEntityToken(clazz, changeEvent.getToken());
-    if (!isSaved) {
-      log.error("Could not save token. ChangeEvent {} could not be processed for entity {}", changeEvent.toString(),
-          clazz.getCanonicalName());
-    }
-    return isSaved;
+    saveCDCStateEntityToken(clazz, changeEvent);
   }
 
-  private boolean saveCDCStateEntityToken(Class<? extends PersistentEntity> sourceClass, String token) {
-    String sourceClassName = sourceClass.getCanonicalName();
+  private void saveCDCStateEntityToken(Class<? extends PersistentEntity> sourceClass, ChangeEvent<?> changeEvent) {
+    if (changeEvent.getToken() != null) {
+      String sourceClassName = sourceClass.getCanonicalName();
 
-    Query<CDCStateEntity> query = wingsPersistence.createQuery(CDCStateEntity.class)
-                                      .field(cdcStateEntityKeys.sourceEntityClass)
-                                      .equal(sourceClassName);
+      Query<CDCStateEntity> query = wingsPersistence.createQuery(CDCStateEntity.class)
+                                        .field(cdcStateEntityKeys.sourceEntityClass)
+                                        .equal(sourceClassName);
 
-    UpdateOperations<CDCStateEntity> updateOperations =
-        wingsPersistence.createUpdateOperations(CDCStateEntity.class).set(cdcStateEntityKeys.lastSyncedToken, token);
+      UpdateOperations<CDCStateEntity> updateOperations =
+          wingsPersistence.createUpdateOperations(CDCStateEntity.class)
+              .set(cdcStateEntityKeys.lastSyncedToken, changeEvent.getToken());
 
-    CDCStateEntity cdcStateEntity = wingsPersistence.upsert(query, updateOperations, upsertReturnNewOptions);
-    if (cdcStateEntity == null || !cdcStateEntity.getLastSyncedToken().equals(token)) {
-      log.error(String.format("Search Entity %s token %s could not be updated", sourceClass.getCanonicalName(), token));
-      return false;
+      CDCStateEntity cdcStateEntity = wingsPersistence.upsert(query, updateOperations, upsertReturnNewOptions);
+      if (cdcStateEntity == null || !cdcStateEntity.getLastSyncedToken().equals(changeEvent.getToken())) {
+        log.error(
+            "Failed to save resume token for, entity={}, changeEvent={}", sourceClass.getCanonicalName(), changeEvent);
+      }
     }
-    return true;
+  }
+
+  public int getActiveCount() {
+    return processing.get();
+  }
+
+  public long getCompletedTaskCount() {
+    return completed.get();
   }
 }

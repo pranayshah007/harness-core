@@ -24,7 +24,8 @@ PROJECTID = os.environ.get('GCP_PROJECT', 'ccm-play')
 INVENTORY_TYPE = ["ebs", "ec2", "rds"]
 sc_client = scheduler.CloudSchedulerClient()
 publisher = pubsub_v1.PublisherClient()
-parent = f"projects/{PROJECTID}/locations/us-central1"
+regions = ["us-central1", "us-east1"]
+parent = None
 
 
 def main(event, context):
@@ -44,9 +45,38 @@ def main(event, context):
 def manage_scheduler_jobs(event_json):
     for event in event_json:
         for inventory_type in INVENTORY_TYPE:
+            update_parent_region_for_job("ce-aws-%s-%s-%s" % (inventory_type, event["accountId"], event["connectorId"]))
             manage_inventory_scheduler_job(event, inventory_type)
+
+            update_parent_region_for_job("ce-aws-%s-load-%s" % (inventory_type, event["accountId"]))
             manage_inventory_load_scheduler_job(event, inventory_type)
+
+            update_parent_region_for_job("ce-aws-%s-metric-%s-%s" % (inventory_type, event["accountId"], event["connectorId"]))
             manage_inventory_metric_scheduler_job(event, inventory_type)
+
+
+def update_parent_region_for_job(job_id):
+    global parent
+    parent = None
+    for region in regions:
+        possible_parent = f"projects/{PROJECTID}/locations/{region}"
+        try:
+            request = scheduler.GetJobRequest(
+                name=f"{possible_parent}/jobs/{job_id}"
+            )
+            response = sc_client.get_job(request=request)
+            parent = possible_parent
+            print(f"Cloud Scheduler {job_id} already exists in {region}. Using it.")
+            break
+
+        except Exception as e:
+            print(e)
+            # job was not found in this region
+
+    if not parent:
+        # job was not found in any region, update region to any region whose quota is not exhausted: us-east1
+        print(f"Cloud Scheduler {job_id} not found in any region. Using us-east1 region for this scheduler.")
+        parent = f"projects/{PROJECTID}/locations/us-east1"
 
 
 def manage_inventory_scheduler_job(event, inventory_type):

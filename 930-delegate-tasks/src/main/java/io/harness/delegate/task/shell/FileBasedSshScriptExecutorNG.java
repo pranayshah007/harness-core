@@ -12,7 +12,6 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.task.shell.ssh.ArtifactCommandUnitHandler;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
-import io.harness.logging.LogLevel;
 import io.harness.shell.AbstractScriptExecutor;
 import io.harness.shell.FileBasedSshScriptExecutorHelper;
 import io.harness.shell.SshSessionConfig;
@@ -31,9 +30,7 @@ public class FileBasedSshScriptExecutorNG extends FileBasedAbstractScriptExecuto
 
   @Override
   public CommandExecutionStatus scpOneFile(String remoteFilePath, AbstractScriptExecutor.FileProvider fileProvider) {
-    CommandExecutionStatus status = FileBasedSshScriptExecutorHelper.scpOneFile(
+    return FileBasedSshScriptExecutorHelper.scpOneFile(
         remoteFilePath, fileProvider, config, logCallback, shouldSaveExecutionLogs);
-    logCallback.saveExecutionLog("Command finished with status " + status, LogLevel.INFO, status);
-    return status;
   }
 }

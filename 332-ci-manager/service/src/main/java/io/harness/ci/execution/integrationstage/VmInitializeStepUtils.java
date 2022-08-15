@@ -26,7 +26,6 @@ import io.harness.beans.environment.BuildJobEnvInfo;
 import io.harness.beans.environment.VmBuildJobInfo;
 import io.harness.beans.executionargs.CIExecutionArgs;
 import io.harness.beans.plugin.compatible.PluginCompatibleStep;
-import io.harness.beans.stages.IntegrationStageConfig;
 import io.harness.beans.steps.CIStepInfo;
 import io.harness.beans.steps.stepinfo.PluginStepInfo;
 import io.harness.beans.steps.stepinfo.RunStepInfo;
@@ -39,6 +38,7 @@ import io.harness.beans.yaml.extended.infrastrucutre.VmPoolYaml;
 import io.harness.ci.buildstate.PluginSettingUtils;
 import io.harness.ci.ff.CIFeatureFlagService;
 import io.harness.ci.utils.ValidationUtils;
+import io.harness.cimanager.stages.IntegrationStageConfig;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.plancreator.execution.ExecutionWrapperConfig;
@@ -217,6 +217,7 @@ public class VmInitializeStepUtils {
               ((RunTestsStepInfo) ciStepInfo).getConnectorRef(), ciStepInfo.getIdentifier());
         case DOCKER:
         case ECR:
+        case ACR:
         case GCR:
         case SAVE_CACHE_S3:
         case RESTORE_CACHE_S3:

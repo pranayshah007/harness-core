@@ -7,6 +7,7 @@
 
 package io.harness.delegate.task.azure;
 
+import static io.harness.rule.OwnerRule.ACASIAN;
 import static io.harness.rule.OwnerRule.MLUKIC;
 import static io.harness.rule.OwnerRule.VLICA;
 
@@ -22,6 +23,7 @@ import io.harness.azure.AzureEnvironmentType;
 import io.harness.category.element.UnitTests;
 import io.harness.connector.ConnectivityStatus;
 import io.harness.connector.ConnectorValidationResult;
+import io.harness.connector.task.azure.AzureValidationHandler;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.TaskData;
@@ -29,6 +31,8 @@ import io.harness.delegate.beans.azure.response.AzureAcrTokenTaskResponse;
 import io.harness.delegate.beans.azure.response.AzureClustersResponse;
 import io.harness.delegate.beans.azure.response.AzureDeploymentSlotResponse;
 import io.harness.delegate.beans.azure.response.AzureDeploymentSlotsResponse;
+import io.harness.delegate.beans.azure.response.AzureHostResponse;
+import io.harness.delegate.beans.azure.response.AzureHostsResponse;
 import io.harness.delegate.beans.azure.response.AzureRegistriesResponse;
 import io.harness.delegate.beans.azure.response.AzureRepositoriesResponse;
 import io.harness.delegate.beans.azure.response.AzureResourceGroupsResponse;
@@ -57,6 +61,7 @@ import io.harness.rule.Owner;
 import software.wings.delegatetasks.azure.AzureAsyncTaskHelper;
 import software.wings.delegatetasks.azure.AzureTask;
 
+import com.google.common.collect.ImmutableMap;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -83,6 +88,7 @@ public class AzureTaskTest {
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
 
   @Mock private AzureAsyncTaskHelper azureAsyncTaskHelper;
+  @Mock private AzureValidationHandler azureValidationHandler;
 
   @InjectMocks
   private AzureTask task =
@@ -119,7 +125,7 @@ public class AzureTaskTest {
                                                               .testedAt(System.currentTimeMillis())
                                                               .build();
 
-    doReturn(connectorValidationResult).when(azureAsyncTaskHelper).getConnectorValidationResult(any(), any());
+    doReturn(connectorValidationResult).when(azureValidationHandler).validate(any());
 
     DelegateResponseData delegateResponseData = task.run(taskParameters);
 
@@ -459,6 +465,33 @@ public class AzureTaskTest {
         .hasMessage("Container registry name not provided");
   }
 
+  @Test
+  @Owner(developers = ACASIAN)
+  @Category(UnitTests.class)
+  public void testSuccessfulListHostsTaskType() {
+    Map<AzureAdditionalParams, String> additionalParamsStringMap = new HashMap<>();
+    additionalParamsStringMap.put(AzureAdditionalParams.SUBSCRIPTION_ID, subscriptionId);
+    additionalParamsStringMap.put(AzureAdditionalParams.RESOURCE_GROUP, resourceGroup);
+    additionalParamsStringMap.put(AzureAdditionalParams.OS_TYPE, "LINUX");
+
+    TaskParameters taskParameters = getAzureTaskParams(AzureTaskType.LIST_HOSTS, additionalParamsStringMap);
+
+    List<AzureHostResponse> hosts = new ArrayList<>();
+    hosts.add(AzureHostResponse.builder().hostName("host1").build());
+    hosts.add(AzureHostResponse.builder().hostName("host2").build());
+    AzureHostsResponse result = AzureHostsResponse.builder().hosts(hosts).build();
+
+    doReturn(result).when(azureAsyncTaskHelper).listHosts(any(), any(), any(), any(), any(), any());
+
+    DelegateResponseData delegateResponseData = task.run(taskParameters);
+
+    assertThat(delegateResponseData).isInstanceOf(AzureHostsResponse.class);
+
+    AzureHostsResponse response = (AzureHostsResponse) delegateResponseData;
+    assertThat(response).isNotNull();
+    assertThat(response.getHosts().size()).isEqualTo(2);
+  }
+
   private TaskParameters getAzureTaskParams(
       AzureTaskType taskType, Map<AzureAdditionalParams, String> additionalParamsStringMap) {
     return AzureTaskParams.builder()
@@ -466,6 +499,7 @@ public class AzureTaskTest {
         .encryptionDetails(null)
         .azureConnector(getAzureConnectorDTO())
         .additionalParams(additionalParamsStringMap)
+        .params(ImmutableMap.of("ENV", "Dev"))
         .build();
   }
 

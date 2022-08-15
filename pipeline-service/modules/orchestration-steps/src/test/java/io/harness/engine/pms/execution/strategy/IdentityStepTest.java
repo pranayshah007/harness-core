@@ -8,7 +8,9 @@
 package io.harness.engine.pms.execution.strategy;
 
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
+import static io.harness.rule.OwnerRule.SHALINI;
 
+import static junit.framework.TestCase.assertEquals;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doReturn;
@@ -26,10 +28,13 @@ import io.harness.engine.pms.execution.strategy.identity.IdentityStep;
 import io.harness.engine.pms.steps.identity.IdentityStepParameters;
 import io.harness.execution.NodeExecution;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.ChildExecutableResponse;
 import io.harness.pms.contracts.execution.ChildrenExecutableResponse;
 import io.harness.pms.contracts.execution.ExecutableResponse;
 import io.harness.pms.contracts.execution.Status;
+import io.harness.pms.contracts.steps.StepCategory;
+import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.plan.execution.SetupAbstractionKeys;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.rule.Owner;
@@ -144,5 +149,42 @@ public class IdentityStepTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testGetStepParameters() {
     assertThat(identityStep.getStepParametersClass()).isEqualTo(IdentityStepParameters.class);
+  }
+
+  @Test
+  @Owner(developers = SHALINI)
+  @Category(UnitTests.class)
+  public void testModifyAmbiance() {
+    Ambiance ambiance = Ambiance.newBuilder()
+                            .addLevels(Level.newBuilder()
+                                           .setRuntimeId("RID")
+                                           .setStepType(StepType.newBuilder().getDefaultInstanceForType())
+                                           .build())
+                            .build();
+    Ambiance ambiance1 = IdentityStep.modifyAmbiance(ambiance);
+    assertEquals(ambiance1.getLevels(0).getStepType().getType(), "IDENTITY_STEP");
+    assertEquals(ambiance1.getLevels(0).getStepType().getStepCategory(), StepCategory.STEP);
+    ambiance = Ambiance.newBuilder()
+                   .addLevels(Level.newBuilder()
+                                  .setRuntimeId("RID")
+                                  .setStepType(StepType.newBuilder().setStepCategory(StepCategory.STRATEGY))
+                                  .build())
+                   .build();
+    ambiance1 = IdentityStep.modifyAmbiance(ambiance);
+    assertEquals(ambiance1.getLevels(0).getStepType().getType(), "IDENTITY_STRATEGY");
+    assertEquals(ambiance1.getLevels(0).getStepType().getStepCategory(), StepCategory.STRATEGY);
+    ambiance = Ambiance.newBuilder()
+                   .addLevels(Level.newBuilder()
+                                  .setRuntimeId("RID")
+                                  .setStepType(StepType.newBuilder().setStepCategory(StepCategory.STRATEGY))
+                                  .build())
+                   .addLevels(Level.newBuilder()
+                                  .setRuntimeId("RID")
+                                  .setStepType(StepType.newBuilder().setStepCategory(StepCategory.STEP))
+                                  .build())
+                   .build();
+    ambiance1 = IdentityStep.modifyAmbiance(ambiance);
+    assertEquals(ambiance1.getLevels(1).getStepType().getType(), "IDENTITY_STRATEGY_INTERNAL");
+    assertEquals(ambiance1.getLevels(0).getStepType().getStepCategory(), StepCategory.STRATEGY);
   }
 }

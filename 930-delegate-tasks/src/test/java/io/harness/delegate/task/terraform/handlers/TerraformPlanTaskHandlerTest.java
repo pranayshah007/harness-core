@@ -49,6 +49,7 @@ import io.harness.rule.Owner;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.EncryptedRecordData;
 import io.harness.security.encryption.SecretDecryptionService;
+import io.harness.terraform.TerraformStepResponse;
 
 import com.google.inject.Inject;
 import java.io.File;
@@ -104,7 +105,11 @@ public class TerraformPlanTaskHandlerTest extends CategoryTest {
     FileUtils.touch(planFile);
     when(terraformBaseHelper.getPlanName(TerraformCommand.APPLY)).thenReturn("tfplan");
     when(terraformBaseHelper.executeTerraformPlanStep(any()))
-        .thenReturn(CliResponse.builder().commandExecutionStatus(CommandExecutionStatus.SUCCESS).exitCode(2).build());
+        .thenReturn(
+            TerraformStepResponse.builder()
+                .cliResponse(
+                    CliResponse.builder().commandExecutionStatus(CommandExecutionStatus.SUCCESS).exitCode(2).build())
+                .build());
     TerraformTaskNGResponse response =
         terraformPlanTaskHandler.executeTaskInternal(getTerraformTaskParameters(), "delegateId", "taskId", logCallback);
     assertThat(response).isNotNull();
@@ -130,7 +135,11 @@ public class TerraformPlanTaskHandlerTest extends CategoryTest {
     FileUtils.touch(planFile);
     when(terraformBaseHelper.getPlanName(TerraformCommand.APPLY)).thenReturn("tfplan");
     when(terraformBaseHelper.executeTerraformPlanStep(any()))
-        .thenReturn(CliResponse.builder().commandExecutionStatus(CommandExecutionStatus.SUCCESS).exitCode(0).build());
+        .thenReturn(
+            TerraformStepResponse.builder()
+                .cliResponse(
+                    CliResponse.builder().commandExecutionStatus(CommandExecutionStatus.SUCCESS).exitCode(0).build())
+                .build());
     TerraformTaskNGResponse response = terraformPlanTaskHandler.executeTaskInternal(
         getTerraformTaskParametersWithArtifactoryConfig(), "delegateId", "taskId", logCallback);
     assertThat(response).isNotNull();

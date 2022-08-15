@@ -7,6 +7,7 @@
 
 package io.harness.ng;
 
+import static io.harness.AuthorizationServiceHeader.CHAOS_SERVICE;
 import static io.harness.AuthorizationServiceHeader.NG_MANAGER;
 import static io.harness.audit.ResourceTypeConstants.API_KEY;
 import static io.harness.audit.ResourceTypeConstants.CONNECTOR;
@@ -18,6 +19,7 @@ import static io.harness.audit.ResourceTypeConstants.PROJECT;
 import static io.harness.audit.ResourceTypeConstants.SECRET;
 import static io.harness.audit.ResourceTypeConstants.SERVICE;
 import static io.harness.audit.ResourceTypeConstants.SERVICE_ACCOUNT;
+import static io.harness.audit.ResourceTypeConstants.SETTING;
 import static io.harness.audit.ResourceTypeConstants.TOKEN;
 import static io.harness.audit.ResourceTypeConstants.USER;
 import static io.harness.audit.ResourceTypeConstants.VARIABLE;
@@ -219,6 +221,7 @@ import io.harness.ng.webhook.services.api.WebhookEventService;
 import io.harness.ng.webhook.services.api.WebhookService;
 import io.harness.ng.webhook.services.impl.WebhookEventProcessingServiceImpl;
 import io.harness.ng.webhook.services.impl.WebhookServiceImpl;
+import io.harness.ngsettings.outbox.SettingEventHandler;
 import io.harness.notification.module.NotificationClientModule;
 import io.harness.opaclient.OpaClientModule;
 import io.harness.outbox.TransactionOutboxModule;
@@ -630,6 +633,7 @@ public class NextGenModule extends AbstractModule {
             .addAll(ManagerRegistrars.springConverters)
             .build();
       }
+
       @Provides
       @Singleton
       List<YamlSchemaRootClass> yamlSchemaRootClasses() {
@@ -679,20 +683,19 @@ public class NextGenModule extends AbstractModule {
       }
     });
     install(new AbstractChaosModule() {
-      // todo: implement this
       @Override
       public ServiceHttpClientConfig chaosClientConfig() {
-        return null;
+        return appConfig.getChaosServiceClientConfig();
       }
 
       @Override
       public String serviceSecret() {
-        return null;
+        return appConfig.getNextGenConfig().getChaosServiceSecret();
       }
 
       @Override
       public String clientId() {
-        return null;
+        return CHAOS_SERVICE.name();
       }
     });
 
@@ -834,6 +837,7 @@ public class NextGenModule extends AbstractModule {
     outboxEventHandlerMapBinder.addBinding(API_KEY).to(ApiKeyEventHandler.class);
     outboxEventHandlerMapBinder.addBinding(TOKEN).to(TokenEventHandler.class);
     outboxEventHandlerMapBinder.addBinding(VARIABLE).to(VariableEventHandler.class);
+    outboxEventHandlerMapBinder.addBinding(SETTING).to(SettingEventHandler.class);
   }
 
   private void registerEventsFrameworkMessageListeners() {

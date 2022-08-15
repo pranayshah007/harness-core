@@ -24,7 +24,9 @@ import software.wings.beans.Base;
 import software.wings.beans.Variable;
 import software.wings.beans.entityinterface.KeywordsAware;
 import software.wings.beans.template.dto.ImportedTemplateDetails;
+import software.wings.ngmigration.NGMigrationEntity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.github.reinert.jjschema.SchemaIgnore;
 import com.google.common.collect.ImmutableList;
@@ -47,7 +49,7 @@ import org.mongodb.morphia.annotations.Entity;
 @FieldNameConstants(innerTypeName = "TemplateKeys")
 @Entity(value = "templates", noClassnameStored = true)
 @HarnessEntity(exportable = true)
-public class Template extends Base implements KeywordsAware, NameAccess {
+public class Template extends Base implements KeywordsAware, NameAccess, NGMigrationEntity {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
         .add(CompoundMongoIndex.builder()
@@ -143,5 +145,11 @@ public class Template extends Base implements KeywordsAware, NameAccess {
     public static final String name = "name";
     public static final String appId = "appId";
     public static final String accountId = "accountId";
+  }
+
+  @JsonIgnore
+  @Override
+  public String getMigrationEntityName() {
+    return getName();
   }
 }

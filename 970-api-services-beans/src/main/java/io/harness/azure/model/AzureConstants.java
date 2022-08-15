@@ -13,6 +13,7 @@ import java.util.regex.Pattern;
 public interface AzureConstants {
   Pattern failureContainerLogPattern =
       Pattern.compile("ERROR - Container .* didn't respond to HTTP pings on port:", Pattern.CASE_INSENSITIVE);
+  Pattern failureContainerSetupPattern = Pattern.compile("Stopping site .* because it failed during startup");
   Pattern deploymentLogPattern = Pattern.compile("Deployment successful\\.", Pattern.CASE_INSENSITIVE);
   Pattern containerSuccessPattern =
       Pattern.compile("initialized successfully and is ready to serve requests\\.", Pattern.CASE_INSENSITIVE);
@@ -287,6 +288,7 @@ public interface AzureConstants {
   String START_DEPLOYMENT_SLOT = "Start Slot";
   String SLOT_TRAFFIC_PERCENTAGE = "Update Slot Traffic Percentage";
   String SLOT_SWAP = "Swap Slots";
+  String FETCH_ARTIFACT_FILE = "Download artifact file";
   long SLOT_STARTING_STATUS_CHECK_INTERVAL = TimeUnit.SECONDS.toSeconds(15);
   long SLOT_STOPPING_STATUS_CHECK_INTERVAL = TimeUnit.SECONDS.toSeconds(15);
   long ARM_DEPLOYMENT_STATUS_CHECK_INTERVAL = TimeUnit.SECONDS.toSeconds(15);

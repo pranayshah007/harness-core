@@ -10,6 +10,8 @@ package io.harness.delegate.task.aws;
 import static io.harness.rule.OwnerRule.MEENAKSHI;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.joor.Reflect.on;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doThrow;
 
@@ -18,6 +20,8 @@ import io.harness.aws.AwsClient;
 import io.harness.category.element.UnitTests;
 import io.harness.connector.ConnectivityStatus;
 import io.harness.connector.ConnectorValidationResult;
+import io.harness.connector.task.aws.AwsNgConfigMapper;
+import io.harness.connector.task.aws.AwsValidationHandler;
 import io.harness.delegate.beans.connector.ConnectorValidationParams;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsCredentialDTO;
@@ -27,6 +31,8 @@ import io.harness.delegate.beans.connector.awsconnector.AwsValidationParams;
 import io.harness.encryption.Scope;
 import io.harness.encryption.SecretRefData;
 import io.harness.errorhandling.NGErrorHelper;
+import io.harness.exception.HintException;
+import io.harness.exception.exceptionmanager.ExceptionManager;
 import io.harness.rule.Owner;
 import io.harness.security.encryption.SecretDecryptionService;
 
@@ -41,13 +47,15 @@ public class AwsValidationHandlerTest extends CategoryTest {
   @Mock private SecretDecryptionService secretDecryptionService;
   @Mock private NGErrorHelper ngErrorHelper;
   @Mock private AwsClient awsClient;
-  @Mock private AwsNgConfigMapper ngConfigMapper;
+  @Mock private AwsNgConfigMapper awsNgConfigMapper;
   @InjectMocks AwsValidationHandler awsValidationHandler;
+  @InjectMocks ExceptionManager exceptionManager;
   private final String accountIdentifier = "accountIdentifier";
 
   @Before
   public void setUp() throws Exception {
     MockitoAnnotations.initMocks(this);
+    on(awsValidationHandler).set("exceptionManager", exceptionManager);
   }
 
   @Test
@@ -109,7 +117,7 @@ public class AwsValidationHandlerTest extends CategoryTest {
                                                               .encryptedDataDetails(null)
                                                               .build();
 
-    ConnectorValidationResult result = awsValidationHandler.validate(connectorValidationParams, accountIdentifier);
-    assertThat(result.getStatus()).isEqualTo(ConnectivityStatus.FAILURE);
+    assertThatThrownBy(() -> awsValidationHandler.validate(connectorValidationParams, accountIdentifier))
+        .isInstanceOf(HintException.class);
   }
 }

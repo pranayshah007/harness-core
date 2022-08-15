@@ -37,13 +37,13 @@ import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
 import io.harness.pms.yaml.DependenciesUtils;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
+import io.harness.serializer.JsonUtils;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.matrix.StrategyConstants;
 import io.harness.steps.matrix.StrategyMetadata;
 import io.harness.strategy.StrategyValidationUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.protobuf.ByteString;
@@ -226,8 +226,6 @@ public class StrategyUtils {
     String newName = jsonNode.get(NAME).asText() + "_" + String.join("_", combinations);
     JsonNodeUtils.updatePropertyInObjectNode(jsonNode, IDENTIFIER, newIdentifier);
     JsonNodeUtils.updatePropertyInObjectNode(jsonNode, NAME, newName);
-    // Remove strategy node so that we don't calculate strategy on it again in the future.
-    JsonNodeUtils.deletePropertiesInJsonNode((ObjectNode) jsonNode, "strategy");
   }
 
   public String replaceExpressions(
@@ -284,12 +282,24 @@ public class StrategyUtils {
    */
   public Map<String, Object> fetchStrategyObjectMap(List<Level> levelsWithStrategyMetadata) {
     Map<String, Object> strategyObjectMap = new HashMap<>();
-    Map<String, String> matrixValuesMap = new HashMap<>();
+    Map<String, Object> matrixValuesMap = new HashMap<>();
     Map<String, String> repeatValuesMap = new HashMap<>();
 
     for (Level level : levelsWithStrategyMetadata) {
       if (level.getStrategyMetadata().hasMatrixMetadata()) {
-        matrixValuesMap.putAll(level.getStrategyMetadata().getMatrixMetadata().getMatrixValuesMap());
+        // MatrixMapLocal can contain either a string as value or a json as value.
+        Map<String, String> matrixMapLocal = level.getStrategyMetadata().getMatrixMetadata().getMatrixValuesMap();
+        Map<String, Object> objectMap = new HashMap<>();
+        for (Map.Entry<String, String> entry : matrixMapLocal.entrySet()) {
+          // We are trying to check if it is a valid json or not. If yes, then we add it as map inside our object
+          // else store it as string
+          try {
+            objectMap.put(entry.getKey(), JsonUtils.asMap(entry.getValue()));
+          } catch (Exception ex) {
+            objectMap.put(entry.getKey(), entry.getValue());
+          }
+        }
+        matrixValuesMap.putAll(objectMap);
       }
       if (level.getStrategyMetadata().hasForMetadata()) {
         repeatValuesMap.put(ITEM, level.getStrategyMetadata().getForMetadata().getValue());

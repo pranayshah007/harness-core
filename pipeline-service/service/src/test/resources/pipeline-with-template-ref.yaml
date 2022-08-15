@@ -1,0 +1,32 @@
+pipeline:
+  name: uyt
+  identifier: uyt
+  projectIdentifier: edw
+  orgIdentifier: default
+  tags: {}
+  stages:
+    - stage:
+        name: rewr
+        identifier: rewr
+        template:
+          templateRef: account.jaan1
+          versionLabel: "1"
+          templateInputs:
+            type: Deployment
+            spec:
+              serviceConfig:
+                serviceRef: <+input>
+              infrastructure:
+                environmentRef: <+input>
+                infrastructureDefinition:
+                  type: KubernetesDirect
+                  spec:
+                    connectorRef: <+input>
+                    namespace: <+input>
+              execution:
+                steps:
+                  - step:
+                      identifier: weq
+                      type: K8sApply
+                      spec:
+                        filePaths: <+input>

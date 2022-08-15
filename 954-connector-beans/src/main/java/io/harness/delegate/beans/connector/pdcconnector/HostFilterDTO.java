@@ -14,12 +14,12 @@ import io.harness.annotations.dev.OwnedBy;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.annotations.ApiModel;
+import lombok.Builder;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 
 @OwnedBy(CDP)
 @Data
-@NoArgsConstructor
+@Builder
 @JsonIgnoreProperties(ignoreUnknown = true)
 @ApiModel("HostFilterDTO")
 public class HostFilterDTO {

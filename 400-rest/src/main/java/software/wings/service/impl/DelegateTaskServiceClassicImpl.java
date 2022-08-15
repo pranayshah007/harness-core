@@ -36,7 +36,6 @@ import static io.harness.metrics.impl.DelegateMetricsServiceImpl.DELEGATE_TASK_V
 import static io.harness.persistence.HQuery.excludeAuthority;
 
 import static software.wings.app.ManagerCacheRegistrar.SECRET_CACHE;
-import static software.wings.expression.SecretManagerModule.EXPRESSION_EVALUATOR_EXECUTOR;
 import static software.wings.service.impl.AssignDelegateServiceImpl.PIPELINE;
 import static software.wings.service.impl.AssignDelegateServiceImpl.STAGE;
 import static software.wings.service.impl.AssignDelegateServiceImpl.STEP;
@@ -270,7 +269,6 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
   @Inject private AuditHelper auditHelper;
   @Inject private DelegateMetricsService delegateMetricsService;
   @Inject @Named(SECRET_CACHE) Cache<String, EncryptedDataDetails> secretsCache;
-  @Inject @Named(EXPRESSION_EVALUATOR_EXECUTOR) java.util.concurrent.ExecutorService expressionEvaluatorExecutor;
   @Inject @Getter private Subject<DelegateObserver> subject = new Subject<>();
 
   private static final SecureRandom random = new SecureRandom();
@@ -766,13 +764,13 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
       if (delegate == null || DelegateInstanceStatus.ENABLED != delegate.getStatus()) {
         log.warn("Delegate rejected to acquire task, because it was not found to be in {} status.",
             DelegateInstanceStatus.ENABLED);
-        return null;
+        return DelegateTaskPackage.builder().build();
       }
 
       log.debug("Acquiring delegate task");
       DelegateTask delegateTask = getUnassignedDelegateTask(accountId, taskId, delegateInstanceId);
       if (delegateTask == null) {
-        return null;
+        return DelegateTaskPackage.builder().build();
       }
 
       try (AutoLogContext ignore = new TaskLogContext(taskId, delegateTask.getData().getTaskType(),
@@ -784,7 +782,7 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
           return assignTask(delegateId, taskId, delegateTask, delegateInstanceId);
         }
         log.info("Delegate {} is blacklisted for task {}", delegateId, taskId);
-        return null;
+        return DelegateTaskPackage.builder().build();
       }
     } finally {
       if (log.isDebugEnabled()) {
@@ -870,7 +868,7 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
               artifactCollectionUtils, featureFlagService, managerDecryptionService, secretManager,
               delegateTask.getAccountId(), delegateTask.getWorkflowExecutionId(),
               delegateTask.getData().getExpressionFunctorToken(), ngSecretService, delegateTask.getSetupAbstractions(),
-              secretsCache, delegateMetricsService, expressionEvaluatorExecutor);
+              secretsCache, delegateMetricsService);
 
       List<ExecutionCapability> executionCapabilityList = emptyList();
       if (isNotEmpty(delegateTask.getExecutionCapabilities())) {
@@ -925,6 +923,8 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
 
       ExpressionReflectionUtils.applyExpression(delegateTask.getData().getParameters()[0], (secretMode, value) -> {
         if (value == null) {
+          log.error("Unable to assign task {} due to error on ManagerPreExecutionExpressionEvaluator , value is null",
+              delegateTask.getUuid());
           return null;
         }
         return managerPreExecutionExpressionEvaluator.substitute(value, new HashMap<>());
@@ -938,6 +938,8 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
       });
 
       if (secretManagerFunctor == null && ngSecretManagerFunctor == null) {
+        log.error(
+            "Unable to assign task {} due to Error on ManagerPreExecutionExpressionEvaluator", delegateTask.getUuid());
         return null;
       }
 

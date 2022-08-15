@@ -14,6 +14,9 @@ import static io.harness.beans.serializer.RunTimeInputHandler.resolveJsonNodeMap
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveListParameter;
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveMapParameter;
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveStringParameter;
+import static io.harness.ci.commonconstants.CIExecutionConstants.CLIENT_CERTIFICATE;
+import static io.harness.ci.commonconstants.CIExecutionConstants.CLIENT_ID;
+import static io.harness.ci.commonconstants.CIExecutionConstants.CLIENT_SECRET;
 import static io.harness.ci.commonconstants.CIExecutionConstants.PLUGIN_ACCESS_KEY;
 import static io.harness.ci.commonconstants.CIExecutionConstants.PLUGIN_ARTIFACT_FILE_VALUE;
 import static io.harness.ci.commonconstants.CIExecutionConstants.PLUGIN_ASSUME_ROLE;
@@ -22,6 +25,7 @@ import static io.harness.ci.commonconstants.CIExecutionConstants.PLUGIN_PASSW;
 import static io.harness.ci.commonconstants.CIExecutionConstants.PLUGIN_SECRET_KEY;
 import static io.harness.ci.commonconstants.CIExecutionConstants.PLUGIN_URL;
 import static io.harness.ci.commonconstants.CIExecutionConstants.PLUGIN_USERNAME;
+import static io.harness.ci.commonconstants.CIExecutionConstants.TENANT_ID;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
@@ -34,6 +38,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.plugin.compatible.PluginCompatibleStep;
 import io.harness.beans.serializer.RunTimeInputHandler;
 import io.harness.beans.steps.CIStepInfoType;
+import io.harness.beans.steps.stepinfo.ACRStepInfo;
 import io.harness.beans.steps.stepinfo.DockerStepInfo;
 import io.harness.beans.steps.stepinfo.ECRStepInfo;
 import io.harness.beans.steps.stepinfo.GCRStepInfo;
@@ -55,10 +60,13 @@ import com.fasterxml.jackson.databind.JsonNode;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.apache.commons.lang3.StringUtils;
 
 @OwnedBy(HarnessTeam.CI)
 public class PluginSettingUtils {
   public static final String PLUGIN_REGISTRY = "PLUGIN_REGISTRY";
+
+  public static final String REPOSITORY = "REPOSITORY";
   public static final String PLUGIN_REPO = "PLUGIN_REPO";
   public static final String PLUGIN_TAGS = "PLUGIN_TAGS";
   public static final String PLUGIN_DOCKERFILE = "PLUGIN_DOCKERFILE";
@@ -98,6 +106,8 @@ public class PluginSettingUtils {
     switch (stepInfo.getNonYamlInfo().getStepInfoType()) {
       case ECR:
         return getECRStepInfoEnvVariables((ECRStepInfo) stepInfo, identifier, infraType);
+      case ACR:
+        return getACRStepInfoEnvVariables((ACRStepInfo) stepInfo, identifier, infraType);
       case GCR:
         return getGCRStepInfoEnvVariables((GCRStepInfo) stepInfo, identifier, infraType);
       case DOCKER:
@@ -151,6 +161,12 @@ public class PluginSettingUtils {
         map.put(EnvVariableEnum.AWS_ACCESS_KEY, PLUGIN_ACCESS_KEY);
         map.put(EnvVariableEnum.AWS_SECRET_KEY, PLUGIN_SECRET_KEY);
         map.put(EnvVariableEnum.AWS_CROSS_ACCOUNT_ROLE_ARN, PLUGIN_ASSUME_ROLE);
+        return map;
+      case ACR:
+        map.put(EnvVariableEnum.AZURE_APP_SECRET, CLIENT_SECRET);
+        map.put(EnvVariableEnum.AZURE_APP_ID, CLIENT_ID);
+        map.put(EnvVariableEnum.AZURE_TENANT_ID, TENANT_ID);
+        map.put(EnvVariableEnum.AZURE_CERT, CLIENT_CERTIFICATE);
         return map;
       case GCR:
       case RESTORE_CACHE_GCS:
@@ -240,6 +256,70 @@ public class PluginSettingUtils {
     }
 
     return map;
+  }
+
+  private static Map<String, String> getACRStepInfoEnvVariables(
+      ACRStepInfo stepInfo, String identifier, Type infraType) {
+    Map<String, String> map = new HashMap<>();
+    String pluginRepo =
+        resolveStringParameter(REPOSITORY, "BuildAndPushACR", identifier, stepInfo.getRepository(), true);
+    String pluginRegistry = StringUtils.substringBefore(pluginRepo, "/");
+    setMandatoryEnvironmentVariable(map, PLUGIN_REGISTRY, pluginRegistry);
+    setMandatoryEnvironmentVariable(map, PLUGIN_REPO, pluginRepo);
+
+    setMandatoryEnvironmentVariable(map, PLUGIN_TAGS,
+        listToStringSlice(resolveListParameter("tags", "BuildAndPushECR", identifier, stepInfo.getTags(), true)));
+
+    String dockerfile =
+        resolveStringParameter("dockerfile", "BuildAndPushACR", identifier, stepInfo.getDockerfile(), false);
+    if (dockerfile != null && !dockerfile.equals(UNRESOLVED_PARAMETER)) {
+      setOptionalEnvironmentVariable(map, PLUGIN_DOCKERFILE, dockerfile);
+    }
+
+    String context = resolveStringParameter("context", "BuildAndPushACR", identifier, stepInfo.getContext(), false);
+    if (context != null && !context.equals(UNRESOLVED_PARAMETER)) {
+      setOptionalEnvironmentVariable(map, PLUGIN_CONTEXT, context);
+    }
+
+    String target = resolveStringParameter("target", "BuildAndPushACR", identifier, stepInfo.getTarget(), false);
+    if (target != null && !target.equals(UNRESOLVED_PARAMETER)) {
+      setOptionalEnvironmentVariable(map, PLUGIN_TARGET, target);
+    }
+
+    Map<String, String> buildArgs =
+        resolveMapParameter("buildArgs", "BuildAndPushACR", identifier, stepInfo.getBuildArgs(), false);
+    if (isNotEmpty(buildArgs)) {
+      setOptionalEnvironmentVariable(map, PLUGIN_BUILD_ARGS, mapToStringSlice(buildArgs));
+    }
+
+    Map<String, String> labels =
+        resolveMapParameter("labels", "BuildAndPushACR", identifier, stepInfo.getLabels(), false);
+    if (isNotEmpty(labels)) {
+      setOptionalEnvironmentVariable(map, PLUGIN_CUSTOM_LABELS, mapToStringSlice(labels));
+    }
+
+    if (infraType == Type.K8) {
+      getACRStepInfoVariablesForK8s(stepInfo, identifier, map);
+    } else if (infraType == Type.VM) {
+      setMandatoryEnvironmentVariable(map, PLUGIN_DAEMON_OFF, "true");
+    }
+    return map;
+  }
+
+  private static void getACRStepInfoVariablesForK8s(ACRStepInfo stepInfo, String identifier, Map<String, String> map) {
+    boolean optimize = resolveBooleanParameter(stepInfo.getOptimize(), true);
+    if (optimize) {
+      setOptionalEnvironmentVariable(map, PLUGIN_SNAPSHOT_MODE, REDO_SNAPSHOT_MODE);
+    }
+
+    String remoteCacheImage = resolveStringParameter(
+        "remoteCacheImage", "BuildAndPushACR", identifier, stepInfo.getRemoteCacheImage(), false);
+    if (remoteCacheImage != null && !remoteCacheImage.equals(UNRESOLVED_PARAMETER)) {
+      setOptionalEnvironmentVariable(map, PLUGIN_ENABLE_CACHE, "true");
+      setOptionalEnvironmentVariable(map, PLUGIN_CACHE_REPO, remoteCacheImage);
+    }
+
+    setOptionalEnvironmentVariable(map, PLUGIN_ARTIFACT_FILE, PLUGIN_ARTIFACT_FILE_VALUE);
   }
 
   private static Map<String, String> getECRStepInfoEnvVariables(

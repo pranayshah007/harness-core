@@ -13,11 +13,13 @@ import static io.harness.ngtriggers.Constants.CHANGED_FILES;
 import static io.harness.ngtriggers.conditionchecker.ConditionOperator.EQUALS;
 import static io.harness.ngtriggers.conditionchecker.ConditionOperator.REGEX;
 import static io.harness.rule.OwnerRule.ADWAIT;
+import static io.harness.rule.OwnerRule.RAGHAV_GUPTA;
 
 import static software.wings.beans.TaskType.SCM_PATH_FILTER_EVALUATION_TASK;
 
 import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.joor.Reflect.on;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doReturn;
@@ -65,9 +67,13 @@ import io.harness.ngtriggers.beans.entity.metadata.WebhookMetadata;
 import io.harness.ngtriggers.beans.scm.WebhookPayloadData;
 import io.harness.ngtriggers.beans.source.WebhookTriggerType;
 import io.harness.ngtriggers.beans.source.webhook.v2.TriggerEventDataCondition;
+import io.harness.ngtriggers.conditionchecker.ConditionEvaluator;
 import io.harness.ngtriggers.eventmapper.filters.dto.FilterRequestData;
 import io.harness.ngtriggers.mapper.NGTriggerElementMapper;
 import io.harness.ngtriggers.service.NGTriggerService;
+import io.harness.ngtriggers.utils.SCMFilePathEvaluatorFactory;
+import io.harness.ngtriggers.utils.SCMFilePathEvaluatorOnDelegate;
+import io.harness.ngtriggers.utils.SCMFilePathEvaluatorOnManager;
 import io.harness.ngtriggers.utils.TaskExecutionUtils;
 import io.harness.product.ci.scm.proto.Commit;
 import io.harness.product.ci.scm.proto.ParseWebhookResponse;
@@ -75,6 +81,7 @@ import io.harness.product.ci.scm.proto.PullRequest;
 import io.harness.product.ci.scm.proto.PullRequestHook;
 import io.harness.product.ci.scm.proto.PushHook;
 import io.harness.rule.Owner;
+import io.harness.secrets.SecretDecryptor;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.serializer.KryoSerializer;
 import io.harness.tasks.BinaryResponseData;
@@ -83,23 +90,35 @@ import io.harness.utils.ConnectorUtils;
 import com.google.inject.Inject;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
 
 @OwnedBy(PIPELINE)
+@RunWith(PowerMockRunner.class)
+@PrepareForTest({ConditionEvaluator.class})
 public class TriggerFilePathConditionFilterTest extends CategoryTest {
   @Mock private TaskExecutionUtils taskExecutionUtils;
   @Mock private NGTriggerElementMapper ngTriggerElementMapper;
   @Mock private NGTriggerService ngTriggerService;
   @Mock private KryoSerializer kryoSerializer;
   @Mock private ConnectorUtils connectorUtils;
+  @Mock private SecretDecryptor secretDecryptor;
   @Inject @InjectMocks private FilepathTriggerFilter filter;
+  @Mock private SCMFilePathEvaluatorOnDelegate scmFilePathEvaluatorOnDelegate;
+  @Mock private SCMFilePathEvaluatorOnManager scmFilePathEvaluatorOnManager;
+  @InjectMocks private SCMFilePathEvaluatorFactory scmFilePathEvaluatorFactory;
   private static List<NGTriggerEntity> triggerEntities;
 
   String pushPayload = "{\"commits\": [\n"
@@ -162,6 +181,10 @@ public class TriggerFilePathConditionFilterTest extends CategoryTest {
   @Before
   public void setUp() throws Exception {
     initMocks(this);
+    on(filter).set("scmFilePathEvaluatorFactory", scmFilePathEvaluatorFactory);
+    on(scmFilePathEvaluatorOnManager).set("secretDecryptor", secretDecryptor);
+    on(scmFilePathEvaluatorOnDelegate).set("taskExecutionUtils", taskExecutionUtils);
+    on(scmFilePathEvaluatorOnDelegate).set("kryoSerializer", kryoSerializer);
   }
 
   @Test
@@ -184,7 +207,7 @@ public class TriggerFilePathConditionFilterTest extends CategoryTest {
   @Test
   @Owner(developers = ADWAIT)
   @Category(UnitTests.class)
-  public void testInitiateDeleteTaskAndEvaluateForPR() {
+  public void testInitiateDelegateTaskAndEvaluateForPR() {
     // Init Data
     TriggerDetails triggerDetails = generateTriggerDetails();
 
@@ -226,6 +249,10 @@ public class TriggerFilePathConditionFilterTest extends CategoryTest {
         .when(connectorUtils)
         .getConnectorDetails(any(NGAccess.class), eq("account.conn"));
 
+    when(scmFilePathEvaluatorOnDelegate.getScmPathFilterEvaluationTaskParams(any(), any(), any(), any()))
+        .thenCallRealMethod();
+    when(scmFilePathEvaluatorOnDelegate.execute(any(), any(), any(), any())).thenCallRealMethod();
+
     byte[] data = new byte[0];
     when(taskExecutionUtils.executeSyncTask(any(DelegateTaskRequest.class)))
         .thenReturn(BinaryResponseData.builder().data(data).build());
@@ -234,7 +261,7 @@ public class TriggerFilePathConditionFilterTest extends CategoryTest {
         .asInflatedObject(data);
 
     ArgumentCaptor<DelegateTaskRequest> argumentCaptor = ArgumentCaptor.forClass(DelegateTaskRequest.class);
-    assertThat(filter.initiateDeleteTaskAndEvaluate(filterRequestData, triggerDetails, pathCondition)).isTrue();
+    assertThat(filter.initiateSCMTaskAndEvaluate(filterRequestData, triggerDetails, pathCondition)).isTrue();
     verify(taskExecutionUtils, times(1)).executeSyncTask(argumentCaptor.capture());
 
     // Assert Delegate Task request object generated
@@ -257,7 +284,61 @@ public class TriggerFilePathConditionFilterTest extends CategoryTest {
     doReturn(ErrorNotifyResponseData.builder().errorMessage("error").build())
         .when(kryoSerializer)
         .asInflatedObject(data);
-    assertThat(filter.initiateDeleteTaskAndEvaluate(filterRequestData, triggerDetails, pathCondition)).isFalse();
+    assertThat(filter.initiateSCMTaskAndEvaluate(filterRequestData, triggerDetails, pathCondition)).isFalse();
+  }
+
+  @Test
+  @Owner(developers = RAGHAV_GUPTA)
+  @Category(UnitTests.class)
+  public void testInitiateManagerTaskAndEvaluateForPR() {
+    TriggerDetails triggerDetails = generateTriggerDetails();
+    GithubConnectorDTO githubConnectorDTO =
+        GithubConnectorDTO.builder()
+            .connectionType(GitConnectionType.ACCOUNT)
+            .url("http://localhost")
+            .apiAccess(GithubApiAccessDTO.builder().spec(GithubTokenSpecDTO.builder().build()).build())
+            .authentication(GithubAuthenticationDTO.builder()
+                                .authType(GitAuthType.HTTP)
+                                .credentials(GithubHttpCredentialsDTO.builder()
+                                                 .type(GithubHttpAuthenticationType.USERNAME_AND_PASSWORD)
+                                                 .httpCredentialsSpec(GithubUsernamePasswordDTO.builder()
+                                                                          .username("usermane")
+                                                                          .passwordRef(SecretRefData.builder().build())
+                                                                          .build())
+                                                 .build())
+                                .build())
+            .build();
+
+    List<EncryptedDataDetail> encryptedDataDetails = emptyList();
+    TriggerEventDataCondition pathCondition =
+        TriggerEventDataCondition.builder().key(CHANGED_FILES).operator(EQUALS).value("test").build();
+    ParseWebhookResponse parseWebhookResponse =
+        ParseWebhookResponse.newBuilder()
+            .setPr(PullRequestHook.newBuilder().setPr(PullRequest.newBuilder().setNumber(2).build()).build())
+            .build();
+    WebhookPayloadData webhookPayloadData =
+        WebhookPayloadData.builder().parseWebhookResponse(parseWebhookResponse).build();
+    FilterRequestData filterRequestData =
+        FilterRequestData.builder().accountId("acc").webhookPayloadData(webhookPayloadData).build();
+
+    doReturn(ConnectorDetails.builder()
+                 .connectorConfig(githubConnectorDTO)
+                 .connectorType(ConnectorType.GITHUB)
+                 .encryptedDataDetails(encryptedDataDetails)
+                 .executeOnDelegate(false)
+                 .build())
+        .when(connectorUtils)
+        .getConnectorDetails(any(NGAccess.class), eq("account.conn"));
+
+    when(scmFilePathEvaluatorOnManager.execute(any(), any(), any(), any())).thenCallRealMethod();
+    when(scmFilePathEvaluatorOnManager.getScmPathFilterEvaluationTaskParams(any(), any(), any(), any()))
+        .thenCallRealMethod();
+    when(scmFilePathEvaluatorOnManager.getChangedFileset(any(), any(), any()))
+        .thenReturn(new HashSet<>(Collections.singletonList("file")));
+
+    PowerMockito.mockStatic(ConditionEvaluator.class);
+    when(ConditionEvaluator.evaluate(any(), any(), any())).thenReturn(true);
+    assertThat(filter.initiateSCMTaskAndEvaluate(filterRequestData, triggerDetails, pathCondition)).isTrue();
   }
 
   private TriggerDetails generateTriggerDetails() {
@@ -279,7 +360,7 @@ public class TriggerFilePathConditionFilterTest extends CategoryTest {
   @Test
   @Owner(developers = ADWAIT)
   @Category(UnitTests.class)
-  public void testInitiateDeleteTaskAndEvaluateForPush() {
+  public void testInitiateDelegateTaskAndEvaluateForPush() {
     // Init Data
     final String url = "url";
     final String validationRepo = "validationRepo";
@@ -333,6 +414,10 @@ public class TriggerFilePathConditionFilterTest extends CategoryTest {
         .when(connectorUtils)
         .getConnectorDetails(any(NGAccess.class), eq("account.conn"));
 
+    when(scmFilePathEvaluatorOnDelegate.getScmPathFilterEvaluationTaskParams(any(), any(), any(), any()))
+        .thenCallRealMethod();
+    when(scmFilePathEvaluatorOnDelegate.execute(any(), any(), any(), any())).thenCallRealMethod();
+
     byte[] data = new byte[0];
     when(taskExecutionUtils.executeSyncTask(any(DelegateTaskRequest.class)))
         .thenReturn(BinaryResponseData.builder().data(data).build());
@@ -341,7 +426,7 @@ public class TriggerFilePathConditionFilterTest extends CategoryTest {
         .asInflatedObject(data);
 
     ArgumentCaptor<DelegateTaskRequest> argumentCaptor = ArgumentCaptor.forClass(DelegateTaskRequest.class);
-    assertThat(filter.initiateDeleteTaskAndEvaluate(filterRequestData, triggerDetails, pathCondition)).isTrue();
+    assertThat(filter.initiateSCMTaskAndEvaluate(filterRequestData, triggerDetails, pathCondition)).isTrue();
     verify(taskExecutionUtils, times(1)).executeSyncTask(argumentCaptor.capture());
 
     // Assert Delegate Task request object generated
@@ -361,6 +446,63 @@ public class TriggerFilePathConditionFilterTest extends CategoryTest {
     assertThat(params.getBranch()).isEqualTo("ref");
     assertThat(params.getOperator()).isEqualTo(EQUALS.getValue());
     assertThat(params.getStandard()).isEqualTo("test");
+  }
+
+  @Test
+  @Owner(developers = RAGHAV_GUPTA)
+  @Category(UnitTests.class)
+  public void testInitiateManagerTaskAndEvaluateForPush() {
+    TriggerDetails triggerDetails = generateTriggerDetails();
+
+    GithubConnectorDTO githubConnectorDTO =
+        GithubConnectorDTO.builder()
+            .connectionType(GitConnectionType.ACCOUNT)
+            .url("http://localhost")
+            .apiAccess(GithubApiAccessDTO.builder().spec(GithubTokenSpecDTO.builder().build()).build())
+            .authentication(GithubAuthenticationDTO.builder()
+                                .authType(GitAuthType.HTTP)
+                                .credentials(GithubHttpCredentialsDTO.builder()
+                                                 .type(GithubHttpAuthenticationType.USERNAME_AND_PASSWORD)
+                                                 .httpCredentialsSpec(GithubUsernamePasswordDTO.builder()
+                                                                          .username("usermane")
+                                                                          .passwordRef(SecretRefData.builder().build())
+                                                                          .build())
+                                                 .build())
+                                .build())
+            .build();
+
+    List<EncryptedDataDetail> encryptedDataDetails = emptyList();
+    TriggerEventDataCondition pathCondition =
+        TriggerEventDataCondition.builder().key(CHANGED_FILES).operator(EQUALS).value("test").build();
+    ParseWebhookResponse parseWebhookResponse =
+        ParseWebhookResponse.newBuilder()
+            .setPush(PushHook.newBuilder().setBefore("before").setAfter("after").setRef("ref").build())
+            .build();
+    WebhookPayloadData webhookPayloadData =
+        WebhookPayloadData.builder().parseWebhookResponse(parseWebhookResponse).build();
+    FilterRequestData filterRequestData =
+        FilterRequestData.builder().accountId("acc").webhookPayloadData(webhookPayloadData).build();
+
+    doReturn(ConnectorDetails.builder()
+                 .connectorConfig(githubConnectorDTO)
+                 .orgIdentifier("org")
+                 .connectorType(ConnectorType.GITHUB)
+                 .projectIdentifier("proj")
+                 .encryptedDataDetails(encryptedDataDetails)
+                 .executeOnDelegate(false)
+                 .build())
+        .when(connectorUtils)
+        .getConnectorDetails(any(NGAccess.class), eq("account.conn"));
+
+    when(scmFilePathEvaluatorOnManager.execute(any(), any(), any(), any())).thenCallRealMethod();
+    when(scmFilePathEvaluatorOnManager.getScmPathFilterEvaluationTaskParams(any(), any(), any(), any()))
+        .thenCallRealMethod();
+    when(scmFilePathEvaluatorOnManager.getChangedFileset(any(), any(), any()))
+        .thenReturn(new HashSet<>(Collections.singletonList("file")));
+
+    PowerMockito.mockStatic(ConditionEvaluator.class);
+    when(ConditionEvaluator.evaluate(any(), any(), any())).thenReturn(true);
+    assertThat(filter.initiateSCMTaskAndEvaluate(filterRequestData, triggerDetails, pathCondition)).isTrue();
   }
 
   @Test
@@ -387,7 +529,7 @@ public class TriggerFilePathConditionFilterTest extends CategoryTest {
   @Test
   @Owner(developers = ADWAIT)
   @Category(UnitTests.class)
-  public void shouldEvaluateOnDelegate() {
+  public void shouldEvaluateOnSCM() {
     ParseWebhookResponse parseWebhookResponse =
         ParseWebhookResponse.newBuilder().setPr(PullRequestHook.newBuilder().build()).build();
     TriggerWebhookEvent triggerWebhookEvent =
@@ -400,7 +542,7 @@ public class TriggerFilePathConditionFilterTest extends CategoryTest {
     FilterRequestData filterRequestData = FilterRequestData.builder().webhookPayloadData(webhookPayloadData).build();
 
     // PR
-    assertThat(filter.shouldEvaluateOnDelegate(filterRequestData)).isTrue();
+    assertThat(filter.shouldEvaluateOnSCM(filterRequestData)).isTrue();
 
     // Push Github , commits < 20
     List<Commit> commits = Arrays.asList(Commit.newBuilder().build(), Commit.newBuilder().build());
@@ -411,7 +553,7 @@ public class TriggerFilePathConditionFilterTest extends CategoryTest {
                              .parseWebhookResponse(parseWebhookResponse)
                              .build();
     filterRequestData = FilterRequestData.builder().webhookPayloadData(webhookPayloadData).build();
-    assertThat(filter.shouldEvaluateOnDelegate(filterRequestData)).isFalse();
+    assertThat(filter.shouldEvaluateOnSCM(filterRequestData)).isFalse();
 
     // Push gitlab , commits < 20
     parseWebhookResponse =
@@ -422,7 +564,7 @@ public class TriggerFilePathConditionFilterTest extends CategoryTest {
                              .parseWebhookResponse(parseWebhookResponse)
                              .build();
     filterRequestData = FilterRequestData.builder().webhookPayloadData(webhookPayloadData).build();
-    assertThat(filter.shouldEvaluateOnDelegate(filterRequestData)).isFalse();
+    assertThat(filter.shouldEvaluateOnSCM(filterRequestData)).isFalse();
 
     // Push Bitbucket , commits < 20
     commits = emptyList();
@@ -434,7 +576,7 @@ public class TriggerFilePathConditionFilterTest extends CategoryTest {
                              .parseWebhookResponse(parseWebhookResponse)
                              .build();
     filterRequestData = FilterRequestData.builder().webhookPayloadData(webhookPayloadData).build();
-    assertThat(filter.shouldEvaluateOnDelegate(filterRequestData)).isTrue();
+    assertThat(filter.shouldEvaluateOnSCM(filterRequestData)).isTrue();
 
     commits = new ArrayList<>();
     Commit commit = Commit.newBuilder().build();
@@ -450,7 +592,7 @@ public class TriggerFilePathConditionFilterTest extends CategoryTest {
                              .parseWebhookResponse(parseWebhookResponse)
                              .build();
     filterRequestData = FilterRequestData.builder().webhookPayloadData(webhookPayloadData).build();
-    assertThat(filter.shouldEvaluateOnDelegate(filterRequestData)).isTrue();
+    assertThat(filter.shouldEvaluateOnSCM(filterRequestData)).isTrue();
 
     // Push gitlab , commits > 20
     parseWebhookResponse =
@@ -461,7 +603,7 @@ public class TriggerFilePathConditionFilterTest extends CategoryTest {
                              .parseWebhookResponse(parseWebhookResponse)
                              .build();
     filterRequestData = FilterRequestData.builder().webhookPayloadData(webhookPayloadData).build();
-    assertThat(filter.shouldEvaluateOnDelegate(filterRequestData)).isTrue();
+    assertThat(filter.shouldEvaluateOnSCM(filterRequestData)).isTrue();
   }
 
   @Test

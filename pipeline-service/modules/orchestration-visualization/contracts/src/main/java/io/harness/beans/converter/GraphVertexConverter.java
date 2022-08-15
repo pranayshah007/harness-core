@@ -56,7 +56,6 @@ public class GraphVertexConverter {
         .failureInfo(nodeExecution.getFailureInfo())
         .skipInfo(nodeExecution.getSkipInfo())
         .nodeRunInfo(nodeExecution.getNodeRunInfo())
-        .stepParameters(nodeExecution.getPmsStepParameters())
         .mode(nodeExecution.getMode())
         .executableResponses(CollectionUtils.emptyIfNull(nodeExecution.getExecutableResponses()))
         .interruptHistories(nodeExecution.getInterruptHistories())
@@ -65,6 +64,7 @@ public class GraphVertexConverter {
         .unitProgresses(nodeExecution.getUnitProgresses())
         .progressData(nodeExecution.getPmsProgressData())
         .graphDelegateSelectionLogParams(graphDelegateSelectionLogParamsList)
+        .executionInputConfigured(nodeExecution.getExecutionInputConfigured())
         .build();
   }
 
@@ -97,6 +97,7 @@ public class GraphVertexConverter {
         .retryIds(nodeExecution.getRetryIds())
         .skipType(nodeExecution.getSkipGraphType())
         .outcomeDocuments(outcomes)
+        .executionInputConfigured(nodeExecution.getExecutionInputConfigured())
         .unitProgresses(nodeExecution.getUnitProgresses())
         .progressData(nodeExecution.getPmsProgressData())
         .graphDelegateSelectionLogParams(graphDelegateSelectionLogParamsList)

@@ -549,6 +549,85 @@ public class DelegateServiceTest extends WingsBaseTest {
   }
 
   @Test
+  @Owner(developers = ANUPAM)
+  @Category(UnitTests.class)
+  public void shouldGetDelegateStatusWithScalingGroupForImmutableDelegates() {
+    String accountId = generateUuid();
+    when(accountService.getDelegateConfiguration(anyString()))
+        .thenReturn(DelegateConfiguration.builder().delegateVersions(singletonList(VERSION)).build());
+
+    Delegate deletedDelegate = createDelegateBuilder().build();
+    deletedDelegate.setAccountId(accountId);
+    deletedDelegate.setStatus(DelegateInstanceStatus.DELETED);
+
+    // these two delegates should be returned
+    Delegate delegateWithScalingGroup1 = createDelegateBuilder().build();
+    delegateWithScalingGroup1.setAccountId(accountId);
+    delegateWithScalingGroup1.setDelegateGroupName("test1");
+    DelegateGroup scalingGroup1 = DelegateGroup.builder()
+                                      .accountId(accountId)
+                                      .name("test1")
+                                      .status(DelegateGroupStatus.ENABLED)
+                                      .upgraderLastUpdated(123)
+                                      .ng(false)
+                                      .build();
+
+    Delegate delegateWithScalingGroup2 = createDelegateBuilder().build();
+    delegateWithScalingGroup2.setAccountId(accountId);
+    delegateWithScalingGroup2.setDelegateGroupName("test2");
+    DelegateGroup scalingGroup2 = DelegateGroup.builder()
+                                      .accountId(accountId)
+                                      .name("test2")
+                                      .status(DelegateGroupStatus.ENABLED)
+                                      .ng(false)
+                                      .build();
+
+    // these two delegates should not appear.
+    Delegate delegateWithScalingGroup4 = createDelegateBuilder().build();
+    delegateWithScalingGroup4.setAccountId(accountId);
+    delegateWithScalingGroup4.setDelegateGroupName("test2");
+    // this delegate should cause an empty group to be returned
+    Delegate delegateWithScalingGroup5 = createDelegateBuilder().build();
+    delegateWithScalingGroup5.setAccountId(accountId);
+    delegateWithScalingGroup5.setDelegateGroupName("test3");
+
+    persistence.save(Arrays.asList(deletedDelegate, delegateWithScalingGroup1, delegateWithScalingGroup2,
+        delegateWithScalingGroup4, delegateWithScalingGroup5));
+    persistence.save(Arrays.asList(scalingGroup1, scalingGroup2));
+    delegateService.registerHeartbeat(accountId, delegateWithScalingGroup1.getUuid(),
+        DelegateConnectionHeartbeat.builder().delegateConnectionId(generateUuid()).version(VERSION).build(),
+        ConnectionMode.POLLING);
+    delegateService.registerHeartbeat(accountId, delegateWithScalingGroup2.getUuid(),
+        DelegateConnectionHeartbeat.builder().delegateConnectionId(generateUuid()).version(VERSION).build(),
+        ConnectionMode.POLLING);
+
+    DelegateStatus delegateStatus = delegateService.getDelegateStatusWithScalingGroups(accountId);
+
+    assertThat(delegateStatus.getPublishedVersions()).hasSize(1).contains(VERSION);
+
+    assertThat(delegateStatus.getScalingGroups()).hasSize(3);
+    assertThat(delegateStatus.getScalingGroups())
+        .extracting(DelegateScalingGroup::getGroupName)
+        .containsOnly("test1", "test2", "test3");
+
+    for (DelegateScalingGroup group : delegateStatus.getScalingGroups()) {
+      if (group.getGroupName().equals("test1")) {
+        assertThat(group.getDelegates()).hasSize(1);
+        assertThat(group.getDelegates())
+            .extracting(DelegateStatus.DelegateInner::getUuid)
+            .containsOnly(delegateWithScalingGroup1.getUuid());
+        assertThat(group.getUpgraderLastUpdated()).isEqualTo(123);
+      } else if (group.getGroupName().equals("test2")) {
+        assertThat(group.getDelegates()).hasSize(1);
+        assertThat(group.getDelegates().get(0).getUuid()).isEqualTo(delegateWithScalingGroup2.getUuid());
+        assertThat(group.getUpgraderLastUpdated()).isEqualTo(0);
+      } else if (group.getGroupName().equals("test3")) {
+        assertThat(group.getDelegates()).hasSize(0);
+      }
+    }
+  }
+
+  @Test
   @Owner(developers = SANJA)
   @Category(UnitTests.class)
   public void shouldGetDelegateStatus2ScalingGroupEmpty() {
@@ -1324,6 +1403,7 @@ public class DelegateServiceTest extends WingsBaseTest {
                             .proxy(false)
                             .polllingModeEnabled(false)
                             .sampleDelegate(false)
+                            .tags(Arrays.asList("existingTag1", "existingTag2"))
                             .build();
     DelegateProfile primaryDelegateProfile =
         createDelegateProfileBuilder().accountId(delegate.getAccountId()).primary(true).build();
@@ -1347,6 +1427,7 @@ public class DelegateServiceTest extends WingsBaseTest {
                                 .proxy(true)
                                 .pollingModeEnabled(true)
                                 .sampleDelegate(false)
+                                .tags(Arrays.asList("newTag1", "newTag2"))
                                 .build();
 
     delegateService.register(params);
@@ -1363,6 +1444,8 @@ public class DelegateServiceTest extends WingsBaseTest {
     assertThat(delegateFromDb.isProxy()).isEqualTo(params.isProxy());
     assertThat(delegateFromDb.isPolllingModeEnabled()).isEqualTo(params.isPollingModeEnabled());
     assertThat(delegateFromDb.isSampleDelegate()).isEqualTo(params.isSampleDelegate());
+    assertThat(delegate.getTags()).isEqualTo(Arrays.asList("existingTag1", "existingTag2"));
+    assertThat(delegateFromDb.getTags()).isEqualTo(Arrays.asList("newTag1", "newTag2"));
   }
 
   @Test
@@ -1382,6 +1465,7 @@ public class DelegateServiceTest extends WingsBaseTest {
                             .ng(false)
                             .polllingModeEnabled(false)
                             .sampleDelegate(false)
+                            .tags(Arrays.asList("existingTag1", "existingTag2"))
                             .build();
     DelegateProfile primaryDelegateProfile =
         createDelegateProfileBuilder().accountId(delegate.getAccountId()).primary(true).build();
@@ -1406,6 +1490,7 @@ public class DelegateServiceTest extends WingsBaseTest {
                                 .proxy(true)
                                 .pollingModeEnabled(true)
                                 .sampleDelegate(false)
+                                .tags(Arrays.asList("newTag1", "newTag2"))
                                 .build();
 
     delegateService.register(params);
@@ -1422,6 +1507,8 @@ public class DelegateServiceTest extends WingsBaseTest {
     assertThat(delegateFromDb.isPolllingModeEnabled()).isEqualTo(params.isPollingModeEnabled());
     assertThat(delegateFromDb.isSampleDelegate()).isEqualTo(params.isSampleDelegate());
     assertThat(delegateFromDb.isNg()).isEqualTo(params.isNg());
+    assertThat(delegate.getTags()).isEqualTo(Arrays.asList("existingTag1", "existingTag2"));
+    assertThat(delegateFromDb.getTags()).isEqualTo(Arrays.asList("newTag1", "newTag2"));
   }
 
   @Test

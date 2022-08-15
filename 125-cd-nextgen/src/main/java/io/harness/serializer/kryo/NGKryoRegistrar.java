@@ -17,6 +17,7 @@ import io.harness.cdng.azure.webapp.ApplicationSettingsParameters;
 import io.harness.cdng.azure.webapp.ConnectionStringsParameters;
 import io.harness.cdng.azure.webapp.StartupCommandParameters;
 import io.harness.cdng.configfile.steps.ConfigFileStepParameters;
+import io.harness.cdng.configfile.steps.ConfigFilesOutcome;
 import io.harness.cdng.environment.yaml.EnvironmentYaml;
 import io.harness.cdng.gitops.CreatePRStepInfo;
 import io.harness.cdng.gitops.CreatePRStepParams;
@@ -183,5 +184,6 @@ public class NGKryoRegistrar implements KryoRegistrar {
     kryo.register(MergePRStepInfo.class, 12605);
 
     kryo.register(CustomFetchResponsePassThroughData.class, 12705);
+    kryo.register(ConfigFilesOutcome.class, 12608);
   }
 }

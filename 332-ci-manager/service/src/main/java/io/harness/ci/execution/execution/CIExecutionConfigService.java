@@ -100,6 +100,9 @@ public class CIExecutionConfigService {
       case BUILD_PUSH_ECR:
         executionConfig.setBuildAndPushECRImage(value);
         break;
+      case BUILD_PUSH_ACR:
+        executionConfig.setBuildAndPushACRImage(value);
+        break;
       case BUILD_PUSH_GCR:
         executionConfig.setBuildAndPushGCRImage(value);
         break;
@@ -141,6 +144,9 @@ public class CIExecutionConfigService {
         break;
       case BUILD_PUSH_DOCKER_REGISTRY:
         vmImageConfig.setBuildAndPushDockerRegistry(value);
+        break;
+      case BUILD_PUSH_ACR:
+        vmImageConfig.setBuildAndPushACR(value);
         break;
       case BUILD_PUSH_ECR:
         vmImageConfig.setBuildAndPushECR(value);
@@ -221,6 +227,9 @@ public class CIExecutionConfigService {
     if (Strings.isNotBlank(overriddenConfig.getBuildAndPushDockerRegistryTag())) {
       defaultConfig.setBuildAndPushDockerRegistryTag(overriddenConfig.getBuildAndPushDockerRegistryTag());
     }
+    if (Strings.isNotBlank(overriddenConfig.getBuildAndPushACRTag())) {
+      defaultConfig.setBuildAndPushACRTag(overriddenConfig.getBuildAndPushACRTag());
+    }
     if (Strings.isNotBlank(overriddenConfig.getBuildAndPushECRTag())) {
       defaultConfig.setBuildAndPushECRTag(overriddenConfig.getBuildAndPushECRTag());
     }
@@ -257,6 +266,7 @@ public class CIExecutionConfigService {
         .buildAndPushDockerRegistryTag(vmImageConfig.getBuildAndPushDockerRegistry())
         .gitCloneTag(vmImageConfig.getGitClone())
         .buildAndPushECRTag(vmImageConfig.getBuildAndPushECR())
+        .buildAndPushACRTag(vmImageConfig.getBuildAndPushACR())
         .buildAndPushGCRTag(vmImageConfig.getBuildAndPushGCR())
         .gcsUploadTag(vmImageConfig.getGcsUpload())
         .s3UploadTag(vmImageConfig.getS3Upload())
@@ -305,6 +315,7 @@ public class CIExecutionConfigService {
         .gitCloneTag(vmImageConfig.getGitClone())
         .buildAndPushECRTag(vmImageConfig.getBuildAndPushECR())
         .buildAndPushGCRTag(vmImageConfig.getBuildAndPushGCR())
+        .buildAndPushACRTag(vmImageConfig.getBuildAndPushACR())
         .gcsUploadTag(vmImageConfig.getGcsUpload())
         .s3UploadTag(vmImageConfig.getS3Upload())
         .artifactoryUploadTag(vmImageConfig.getArtifactoryUpload())
@@ -325,6 +336,7 @@ public class CIExecutionConfigService {
         .gitCloneTag(config.getGitCloneConfig().getImage())
         .buildAndPushECRTag(config.getBuildAndPushECRConfig().getImage())
         .buildAndPushGCRTag(config.getBuildAndPushGCRConfig().getImage())
+        .buildAndPushACRTag(config.getBuildAndPushACRConfig().getImage())
         .gcsUploadTag(config.getGcsUploadConfig().getImage())
         .s3UploadTag(config.getS3UploadConfig().getImage())
         .artifactoryUploadTag(config.getArtifactoryUploadConfig().getImage())
@@ -342,6 +354,7 @@ public class CIExecutionConfigService {
         .gitCloneTag(config.getGitCloneImage())
         .buildAndPushECRTag(config.getBuildAndPushECRImage())
         .buildAndPushGCRTag(config.getBuildAndPushGCRImage())
+        .buildAndPushACRTag(config.getBuildAndPushACRImage())
         .gcsUploadTag(config.getGcsUploadImage())
         .s3UploadTag(config.getS3UploadImage())
         .artifactoryUploadTag(config.getArtifactoryUploadTag())
@@ -409,6 +422,11 @@ public class CIExecutionConfigService {
           image = ciExecutionConfig.getBuildAndPushECRImage();
         }
         break;
+      case ACR:
+        if (Strings.isNotBlank(ciExecutionConfig.getBuildAndPushACRImage())) {
+          image = ciExecutionConfig.getBuildAndPushACRImage();
+        }
+        break;
       case RESTORE_CACHE_S3:
       case SAVE_CACHE_S3:
         if (Strings.isNotBlank(ciExecutionConfig.getCacheS3Tag())) {
@@ -465,6 +483,8 @@ public class CIExecutionConfigService {
         return ciExecutionServiceConfig.getStepConfig().getBuildAndPushGCRConfig();
       case ECR:
         return ciExecutionServiceConfig.getStepConfig().getBuildAndPushECRConfig();
+      case ACR:
+        return ciExecutionServiceConfig.getStepConfig().getBuildAndPushACRConfig();
       case RESTORE_CACHE_S3:
       case SAVE_CACHE_S3:
         return ciExecutionServiceConfig.getStepConfig().getCacheS3Config();
@@ -513,6 +533,11 @@ public class CIExecutionConfigService {
       case ECR:
         if (Strings.isNotBlank(vmImageConfig.getBuildAndPushECR())) {
           image = vmImageConfig.getBuildAndPushECR();
+        }
+        break;
+      case ACR:
+        if (Strings.isNotBlank(vmImageConfig.getBuildAndPushACR())) {
+          image = vmImageConfig.getBuildAndPushACR();
         }
         break;
       case RESTORE_CACHE_S3:
@@ -568,6 +593,8 @@ public class CIExecutionConfigService {
         return vmImageConfig.getBuildAndPushGCR();
       case ECR:
         return vmImageConfig.getBuildAndPushECR();
+      case ACR:
+        return vmImageConfig.getBuildAndPushACR();
       case RESTORE_CACHE_S3:
       case SAVE_CACHE_S3:
         return vmImageConfig.getCacheS3();

@@ -46,8 +46,7 @@ public class ManagerPreExecutionExpressionEvaluator extends ExpressionEvaluator 
       FeatureFlagService featureFlagService, ManagerDecryptionService managerDecryptionService,
       SecretManager secretManager, String accountId, String workflowExecutionId, int expressionFunctorToken,
       SecretManagerClientService ngSecretService, Map<String, String> taskSetupAbstractions,
-      Cache<String, EncryptedDataDetails> secretsCache, DelegateMetricsService delegateMetricsService,
-      java.util.concurrent.ExecutorService expressionEvaluatorExecutor) {
+      Cache<String, EncryptedDataDetails> secretsCache, DelegateMetricsService delegateMetricsService) {
     String appId = taskSetupAbstractions == null ? null : taskSetupAbstractions.get(Cd1SetupFields.APP_ID_FIELD);
     String envId = taskSetupAbstractions == null ? null : taskSetupAbstractions.get(Cd1SetupFields.ENV_ID_FIELD);
     String serviceTemplateId =
@@ -84,20 +83,17 @@ public class ManagerPreExecutionExpressionEvaluator extends ExpressionEvaluator 
                                .workflowExecutionId(workflowExecutionId)
                                .expressionFunctorToken(expressionFunctorToken)
                                .delegateMetricsService(delegateMetricsService)
-                               .expressionEvaluatorExecutor(expressionEvaluatorExecutor)
                                .build();
     addFunctor(SecretManagerFunctorInterface.FUNCTOR_NAME, secretManagerFunctor);
 
-    NgSecretManagerFunctorBuilder ngSecretManagerFunctorBuilder =
-        NgSecretManagerFunctor.builder()
-            .mode(mode)
-            .accountId(accountId)
-            .expressionFunctorToken(expressionFunctorToken)
-            .secretManager(secretManager)
-            .secretsCache(secretsCache)
-            .delegateMetricsService(delegateMetricsService)
-            .ngSecretService(ngSecretService)
-            .expressionEvaluatorExecutor(expressionEvaluatorExecutor);
+    NgSecretManagerFunctorBuilder ngSecretManagerFunctorBuilder = NgSecretManagerFunctor.builder()
+                                                                      .mode(mode)
+                                                                      .accountId(accountId)
+                                                                      .expressionFunctorToken(expressionFunctorToken)
+                                                                      .secretManager(secretManager)
+                                                                      .secretsCache(secretsCache)
+                                                                      .delegateMetricsService(delegateMetricsService)
+                                                                      .ngSecretService(ngSecretService);
 
     if (EmptyPredicate.isNotEmpty(taskSetupAbstractions)) {
       ngSecretManagerFunctorBuilder.orgId(taskSetupAbstractions.get("orgIdentifier"))

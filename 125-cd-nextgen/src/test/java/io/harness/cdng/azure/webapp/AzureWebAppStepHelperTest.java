@@ -31,8 +31,10 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.Scope;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDNGTestBase;
 import io.harness.cdng.CDStepHelper;
@@ -43,6 +45,7 @@ import io.harness.cdng.azure.config.ApplicationSettingsOutcome;
 import io.harness.cdng.azure.config.ConnectionStringsOutcome;
 import io.harness.cdng.azure.config.StartupCommandOutcome;
 import io.harness.cdng.azure.webapp.beans.AzureWebAppPreDeploymentDataOutput;
+import io.harness.cdng.execution.ExecutionInfoKey;
 import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.infra.beans.AzureWebAppInfrastructureOutcome;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
@@ -51,6 +54,7 @@ import io.harness.cdng.manifest.yaml.GitStore;
 import io.harness.cdng.manifest.yaml.GitStoreConfig;
 import io.harness.cdng.manifest.yaml.harness.HarnessStore;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
+import io.harness.cdng.service.steps.ServiceStepOutcome;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.azure.registry.AzureRegistryType;
@@ -96,6 +100,7 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 import io.harness.security.encryption.EncryptedDataDetail;
+import io.harness.steps.environment.EnvironmentOutcome;
 
 import software.wings.beans.TaskType;
 
@@ -148,6 +153,55 @@ public class AzureWebAppStepHelperTest extends CDNGTestBase {
         .when(engineExpressionService)
         .renderExpression(eq(ambiance), anyString());
     doAnswer(invocation -> invocation.getArgument(1)).when(cdExpressionResolver).updateExpressions(eq(ambiance), any());
+  }
+
+  @Test
+  @Owner(developers = TMACARI)
+  @Category(UnitTests.class)
+  public void testGetExecutionInfoKey() {
+    String appName = "appName";
+    String deploymentSlot = "deploymentSlot";
+    String subscription = "subscription";
+    String resourceGroup = "resourceGroup";
+    AzureWebAppInfrastructureOutcome azureWebAppInfrastructureOutcome =
+        AzureWebAppInfrastructureOutcome.builder()
+            .resourceGroup(resourceGroup)
+            .environment(EnvironmentOutcome.builder().identifier("environmentId").build())
+            .subscription(subscription)
+            .build();
+    azureWebAppInfrastructureOutcome.setInfraIdentifier("infraId");
+
+    when(outcomeService.resolve(any(), any())).thenReturn(ServiceStepOutcome.builder().identifier("serviceId").build());
+    doReturn(azureWebAppInfrastructureOutcome).when(cdStepHelper).getInfrastructureOutcome(any());
+
+    ExecutionInfoKey executionInfoKey = stepHelper.getExecutionInfoKey(
+        ambiance, AzureWebAppInfraDelegateConfig.builder().appName(appName).deploymentSlot(deploymentSlot).build());
+
+    assertThat(executionInfoKey.getServiceIdentifier()).isEqualTo("serviceId");
+    assertThat(executionInfoKey.getInfraIdentifier()).isEqualTo("infraId");
+    assertThat(executionInfoKey.getEnvIdentifier()).isEqualTo("environmentId");
+
+    Scope scope = executionInfoKey.getScope();
+    assertThat(scope.getOrgIdentifier()).isEqualTo(ORG_ID);
+    assertThat(scope.getAccountIdentifier()).isEqualTo(ACCOUNT_ID);
+    assertThat(scope.getProjectIdentifier()).isEqualTo(PROJECT_ID);
+  }
+
+  @Test
+  @Owner(developers = TMACARI)
+  @Category(UnitTests.class)
+  public void testGetDeploymentIdentifier() {
+    String appName = "appName";
+    String deploymentSlot = "deploymentSlot";
+    String subscription = "subscription";
+    String resourceGroup = "resourceGroup";
+    AzureWebAppInfrastructureOutcome azureWebAppInfrastructureOutcome =
+        AzureWebAppInfrastructureOutcome.builder().resourceGroup(resourceGroup).subscription(subscription).build();
+    doReturn(azureWebAppInfrastructureOutcome).when(cdStepHelper).getInfrastructureOutcome(any());
+
+    String deploymentIdentifier = stepHelper.getDeploymentIdentifier(ambiance, appName, deploymentSlot);
+    assertThat(deploymentIdentifier)
+        .isEqualTo(String.format("%s-%s-%s-%s", subscription, resourceGroup, appName, deploymentSlot));
   }
 
   @Test
@@ -467,10 +521,9 @@ public class AzureWebAppStepHelperTest extends CDNGTestBase {
     final ConnectorInfoDTO connectorInfoDTO =
         ConnectorInfoDTO.builder().connectorType(ConnectorType.DOCKER).connectorConfig(dockerConnectorDTO).build();
 
-    doReturn(Optional.of(dockerArtifactOutcome)).when(cdStepHelper).resolveArtifactsOutcome(ambiance);
     doReturn(connectorInfoDTO).when(cdStepHelper).getConnector("docker", ambiance);
 
-    AzureArtifactConfig azureArtifactConfig = stepHelper.getPrimaryArtifactConfig(ambiance);
+    AzureArtifactConfig azureArtifactConfig = stepHelper.getPrimaryArtifactConfig(ambiance, dockerArtifactOutcome);
     assertThat(azureArtifactConfig.getArtifactType()).isEqualTo(AzureArtifactType.CONTAINER);
     AzureContainerArtifactConfig containerArtifactConfig = (AzureContainerArtifactConfig) azureArtifactConfig;
     assertThat(containerArtifactConfig.getConnectorConfig()).isEqualTo(dockerConnectorDTO);
@@ -505,13 +558,12 @@ public class AzureWebAppStepHelperTest extends CDNGTestBase {
                                                   .build();
     final List<EncryptedDataDetail> encryptedDataDetails = singletonList(EncryptedDataDetail.builder().build());
 
-    doReturn(Optional.of(artifactoryArtifactOutcome)).when(cdStepHelper).resolveArtifactsOutcome(ambiance);
     doReturn(connectorInfoDTO).when(cdStepHelper).getConnector("artifactory", ambiance);
     doReturn(encryptedDataDetails)
         .when(secretManagerClientService)
         .getEncryptionDetails(any(NGAccess.class), eq(usernamePasswordAuthDTO));
 
-    AzureArtifactConfig azureArtifactConfig = stepHelper.getPrimaryArtifactConfig(ambiance);
+    AzureArtifactConfig azureArtifactConfig = stepHelper.getPrimaryArtifactConfig(ambiance, artifactoryArtifactOutcome);
     assertThat(azureArtifactConfig.getArtifactType()).isEqualTo(AzureArtifactType.CONTAINER);
     AzureContainerArtifactConfig containerArtifactConfig = (AzureContainerArtifactConfig) azureArtifactConfig;
     assertThat(containerArtifactConfig.getConnectorConfig()).isEqualTo(artifactoryConnectorDTO);

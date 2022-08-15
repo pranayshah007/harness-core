@@ -31,7 +31,6 @@ import org.mongodb.morphia.query.UpdateOperations;
 import org.mongodb.morphia.query.UpdateResults;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.dao.OptimisticLockingFailureException;
 
 public interface HPersistence extends HealthMonitor {
   String ANALYTICS_STORE_NAME = "analytic";
@@ -403,7 +402,7 @@ public interface HPersistence extends HealthMonitor {
     for (int i = 1; i < RETRIES; ++i) {
       try {
         return executor.execute();
-      } catch (MongoSocketOpenException | MongoSocketReadException | OptimisticLockingFailureException e) {
+      } catch (MongoSocketOpenException | MongoSocketReadException e) {
         logger().error("Exception ignored on retry ", e);
         continue;
       } catch (RuntimeException exception) {

@@ -648,7 +648,7 @@ public class CloudformationStepHelper {
     try {
       parameters = mapper.readValue(renderValue(ambiance, parametersJson), new TypeReference<List<Parameter>>() {});
     } catch (IOException e) {
-      throw new InvalidArgumentsException("Failed to Deserialize json" + e);
+      throw new InvalidArgumentsException("Failed to Deserialize json \n" + e.getMessage());
     }
     parameters.forEach(parameter -> parametersMap.put(parameter.getParameterKey(), parameter.getParameterValue()));
     return parametersMap;

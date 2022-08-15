@@ -15,15 +15,17 @@ import static io.harness.azure.model.AzureConstants.TIME_STAMP_REGEX;
 import static io.harness.azure.model.AzureConstants.containerSuccessPattern;
 import static io.harness.azure.model.AzureConstants.deploymentLogPattern;
 import static io.harness.azure.model.AzureConstants.failureContainerLogPattern;
+import static io.harness.azure.model.AzureConstants.failureContainerSetupPattern;
 import static io.harness.azure.model.AzureConstants.tomcatSuccessPattern;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
-import static io.harness.logging.CommandExecutionStatus.FAILURE;
 import static io.harness.logging.LogLevel.ERROR;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.azure.client.AzureWebClient;
 import io.harness.azure.context.AzureWebClientContext;
-import io.harness.exception.InvalidRequestException;
+import io.harness.exception.runtime.azure.AzureAppServicesDeploymentSlotNotFoundException;
+import io.harness.exception.runtime.azure.AzureAppServicesSlotSteadyStateException;
+import io.harness.exception.runtime.azure.AzureAppServicesWebAppNotFoundException;
 import io.harness.logging.LogCallback;
 
 import com.microsoft.azure.management.appservice.DeploymentSlot;
@@ -98,13 +100,15 @@ public class SlotContainerLogStreamer {
     if (DEPLOYMENT_SLOT_PRODUCTION_NAME.equalsIgnoreCase(slotName)) {
       Optional<WebApp> azureApp = azureWebClient.getWebAppByName(azureWebClientContext);
       if (!azureApp.isPresent()) {
-        throw new IllegalArgumentException("WebApp not found - " + azureWebClientContext.getAppName());
+        throw new AzureAppServicesWebAppNotFoundException(
+            azureWebClientContext.getAppName(), azureWebClientContext.getResourceGroupName());
       }
       containerLogs = new String(azureApp.get().getContainerLogs());
     } else {
       Optional<DeploymentSlot> slot = azureWebClient.getDeploymentSlotByName(azureWebClientContext, slotName);
       if (!slot.isPresent()) {
-        throw new IllegalArgumentException("Slot not found - " + slotName);
+        throw new AzureAppServicesDeploymentSlotNotFoundException(slotName, azureWebClientContext.getAppName(),
+            azureWebClientContext.getResourceGroupName(), azureWebClientContext.getSubscriptionId());
       }
       containerLogs = new String(slot.get().getContainerLogs());
     }
@@ -148,8 +152,8 @@ public class SlotContainerLogStreamer {
     if (operationFailed(logLine)) {
       hasFailed = true;
       errorLog = logLine;
-      logCallback.saveExecutionLog(String.format(FAIL_DEPLOYMENT_ERROR_MSG, slotName, logLine), ERROR, FAILURE);
-      throw new InvalidRequestException(errorLog);
+      logCallback.saveExecutionLog(String.format(FAIL_DEPLOYMENT_ERROR_MSG, slotName, logLine), ERROR);
+      throw new AzureAppServicesSlotSteadyStateException(errorLog);
     }
     Matcher deploymentLogMatcher = deploymentLogPattern.matcher(logLine);
     Matcher containerLogMatcher = containerSuccessPattern.matcher(logLine);
@@ -160,7 +164,12 @@ public class SlotContainerLogStreamer {
 
   private boolean operationFailed(String logLine) {
     Matcher matcher = failureContainerLogPattern.matcher(logLine);
-    return matcher.find();
+    if (!matcher.find()) {
+      Matcher stoppingSiteMatcher = failureContainerSetupPattern.matcher(logLine);
+      return stoppingSiteMatcher.find();
+    }
+
+    return true;
   }
 
   public String getErrorLog() {

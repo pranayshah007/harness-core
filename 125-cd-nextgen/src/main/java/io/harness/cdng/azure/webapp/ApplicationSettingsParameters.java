@@ -10,7 +10,7 @@ package io.harness.cdng.azure.webapp;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
+import io.harness.cdng.azure.config.yaml.ApplicationSettingsConfiguration;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
 
 import lombok.Builder;
@@ -23,5 +23,5 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("applicationSettingsParameters")
 @RecasterAlias("io.harness.cdng.azure.webapp.ApplicationSettingsParameters")
 public class ApplicationSettingsParameters implements StepParameters {
-  StoreConfigWrapper applicationSettings;
+  ApplicationSettingsConfiguration applicationSettings;
 }

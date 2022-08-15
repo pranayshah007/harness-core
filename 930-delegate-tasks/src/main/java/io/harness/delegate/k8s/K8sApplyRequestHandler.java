@@ -179,10 +179,11 @@ public class K8sApplyRequestHandler extends K8sRequestHandler {
 
     List<String> manifestOverrideFiles = getManifestOverrideFlies(request);
 
-    k8sApplyHandlerConfig.setResources(k8sTaskHelperBase.getResourcesFromManifests(k8sDelegateTaskParams,
-        request.getManifestDelegateConfig(), k8sApplyHandlerConfig.getManifestFilesDirectory(), applyFilePaths,
-        manifestOverrideFiles, k8sApplyHandlerConfig.getReleaseName(),
-        k8sApplyHandlerConfig.getKubernetesConfig().getNamespace(), logCallback, request.getTimeoutIntervalInMin()));
+    k8sApplyHandlerConfig.setResources(
+        k8sTaskHelperBase.getResourcesFromManifests(k8sDelegateTaskParams, request.getManifestDelegateConfig(),
+            k8sApplyHandlerConfig.getManifestFilesDirectory(), applyFilePaths, manifestOverrideFiles,
+            k8sApplyHandlerConfig.getReleaseName(), k8sApplyHandlerConfig.getKubernetesConfig().getNamespace(),
+            logCallback, request.getTimeoutIntervalInMin(), request.isSkipRendering()));
 
     logCallback.saveExecutionLog(color("\nManifests [Post template rendering] :\n", White, Bold));
     logCallback.saveExecutionLog(ManifestHelper.toYamlForLogs(k8sApplyHandlerConfig.getResources()));

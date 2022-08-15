@@ -41,6 +41,7 @@ import io.harness.pms.sdk.core.steps.io.StepResponseNotifyData;
 import io.harness.springdata.TransactionHelper;
 import io.harness.waiter.WaitNotifyEngine;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.protobuf.ByteString;
 import java.util.ArrayList;
@@ -105,6 +106,7 @@ public class IdentityNodeExecutionStrategy
                                   .interruptHistories(originalExecution.getInterruptHistories())
                                   .resolvedParams(originalExecution.getResolvedParams())
                                   .resolvedInputs(originalExecution.getResolvedInputs())
+                                  .executionInputConfigured(originalExecution.getExecutionInputConfigured())
                                   .build();
     NodeExecution nodeExecution = nodeExecutionService.save(execution);
     pmsGraphStepDetailsService.copyStepDetailsForRetry(
@@ -153,7 +155,8 @@ public class IdentityNodeExecutionStrategy
     }
   }
 
-  private void handleLeafNodes(Ambiance ambiance, NodeExecution nodeExecution, Status status) {
+  @VisibleForTesting
+  void handleLeafNodes(Ambiance ambiance, NodeExecution nodeExecution, Status status) {
     transactionHelper.performTransaction(() -> {
       // Copy outcomes
       pmsOutcomeService.cloneForRetryExecution(ambiance, nodeExecution.getOriginalNodeExecutionId());

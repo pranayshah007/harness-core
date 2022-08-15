@@ -10,6 +10,8 @@ package io.harness.perpetualtask;
 import java.time.Instant;
 
 public interface PerpetualTaskExecutor {
+  String SUCCESS_RESPONSE_MSG = "success";
+
   // Specify what should be done in a single iteration of the task.
   PerpetualTaskResponse runOnce(PerpetualTaskId taskId, PerpetualTaskExecutionParams params, Instant heartbeatTime);
 

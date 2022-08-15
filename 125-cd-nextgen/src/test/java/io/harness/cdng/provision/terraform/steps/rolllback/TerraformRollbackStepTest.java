@@ -53,7 +53,6 @@ import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
-import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
@@ -225,9 +224,6 @@ public class TerraformRollbackStepTest extends CategoryTest {
 
     doReturn("fullId").when(terraformStepHelper).generateFullIdentifier("id", ambiance);
     doReturn(EnvironmentType.PROD).when(stepHelper).getEnvironmentType(ambiance);
-    doReturn(true)
-        .when(cdFeatureFlagHelper)
-        .isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.TF_MODULE_SOURCE_INHERIT_SSH);
     HIterator<TerraformConfig> iterator = mock(HIterator.class);
     doReturn(iterator).when(terraformConfigHelper).getIterator(ambiance, "fullId");
     when(iterator.hasNext()).thenReturn(true, true, false);

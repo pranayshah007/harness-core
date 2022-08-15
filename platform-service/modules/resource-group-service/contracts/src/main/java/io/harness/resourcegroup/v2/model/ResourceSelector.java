@@ -6,6 +6,7 @@
  */
 
 package io.harness.resourcegroup.v2.model;
+
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL;
@@ -15,7 +16,6 @@ import io.harness.annotations.dev.OwnedBy;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 import javax.validation.constraints.NotNull;
@@ -35,5 +35,5 @@ public class ResourceSelector {
   @NotNull String resourceType;
   List<String> identifiers;
 
-  @ApiModelProperty(hidden = true) AttributeFilter attributeFilter;
+  AttributeFilter attributeFilter;
 }

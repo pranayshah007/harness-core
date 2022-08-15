@@ -294,6 +294,7 @@ import software.wings.sm.StateMachineExecutor;
 import software.wings.sm.StateStatusUpdate;
 import software.wings.yaml.gitSync.GitChangeSetRunnable;
 import software.wings.yaml.gitSync.GitSyncEntitiesExpiryHandler;
+import software.wings.yaml.gitSync.GitSyncPollingIterator;
 
 import com.codahale.metrics.MetricRegistry;
 import com.fasterxml.jackson.databind.DeserializationFeature;
@@ -1489,6 +1490,7 @@ public class WingsApplication extends Application<MainConfiguration> {
     injector.getInstance(TimeoutEngine.class)
         .registerIterators(
             IteratorConfig.builder().enabled(true).targetIntervalInSeconds(10).threadPoolCount(5).build());
+    injector.getInstance(GitSyncPollingIterator.class).registerIterators();
   }
 
   private void registerCronJobs(Injector injector) {

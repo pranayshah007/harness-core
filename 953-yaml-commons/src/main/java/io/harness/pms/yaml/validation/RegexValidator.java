@@ -10,6 +10,7 @@ package io.harness.pms.yaml.validation;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.expression.EngineExpressionEvaluator;
+import io.harness.expression.ExpressionMode;
 
 import java.util.regex.Pattern;
 
@@ -22,11 +23,11 @@ import java.util.regex.Pattern;
 @OwnedBy(HarnessTeam.PIPELINE)
 public class RegexValidator implements RuntimeValidator {
   private final EngineExpressionEvaluator engineExpressionEvaluator;
-  private final boolean skipUnresolvedExpressionsCheck;
+  private final ExpressionMode expressionMode;
 
-  public RegexValidator(EngineExpressionEvaluator engineExpressionEvaluator, boolean skipUnresolvedExpressionsCheck) {
+  public RegexValidator(EngineExpressionEvaluator engineExpressionEvaluator, ExpressionMode expressionMode) {
     this.engineExpressionEvaluator = engineExpressionEvaluator;
-    this.skipUnresolvedExpressionsCheck = skipUnresolvedExpressionsCheck;
+    this.expressionMode = expressionMode;
   }
 
   @Override
@@ -35,7 +36,7 @@ public class RegexValidator implements RuntimeValidator {
       return RuntimeValidatorResponse.builder().errorMessage("Current value is null").build();
     }
 
-    String regex = engineExpressionEvaluator.renderExpression(parameters, skipUnresolvedExpressionsCheck);
+    String regex = engineExpressionEvaluator.renderExpression(parameters, expressionMode);
     if (currentValue instanceof String) {
       if (!ExpressionUtils.matchesPattern(Pattern.compile(regex), (String) currentValue)) {
         return RuntimeValidatorResponse.builder()

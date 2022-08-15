@@ -53,8 +53,6 @@ import io.harness.beans.execution.WebhookEvent;
 import io.harness.beans.execution.WebhookExecutionSource;
 import io.harness.beans.executionargs.CIExecutionArgs;
 import io.harness.beans.script.ScriptInfo;
-import io.harness.beans.stages.IntegrationStageConfig;
-import io.harness.beans.stages.IntegrationStageConfigImpl;
 import io.harness.beans.steps.stepinfo.InitializeStepInfo;
 import io.harness.beans.yaml.extended.CustomSecretVariable;
 import io.harness.beans.yaml.extended.CustomTextVariable;
@@ -69,6 +67,8 @@ import io.harness.beans.yaml.extended.volumes.HostPathYaml.HostPathYamlSpec;
 import io.harness.beans.yaml.extended.volumes.PersistentVolumeClaimYaml;
 import io.harness.beans.yaml.extended.volumes.PersistentVolumeClaimYaml.PersistentVolumeClaimYamlSpec;
 import io.harness.ci.commonconstants.CIExecutionConstants;
+import io.harness.cimanager.stages.IntegrationStageConfig;
+import io.harness.cimanager.stages.IntegrationStageConfigImpl;
 import io.harness.connector.ConnectorDTO;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.delegate.beans.ci.pod.CIK8ContainerParams;
@@ -294,6 +294,7 @@ public class CIExecutionPlanTestHelper {
         .executionElementConfig(getExecutionElementConfig())
         .ciCodebase(getCICodebase())
         .infrastructure(getInfrastructureWithVolume())
+        .strategyExpansionMap(new HashMap<>())
         .timeout(600000)
         .build();
   }
@@ -333,6 +334,7 @@ public class CIExecutionPlanTestHelper {
         .stageElementConfig((IntegrationStageConfig) stageElementConfig.getStageType())
         .executionElementConfig(getExecutionElementConfig())
         .infrastructure(getInfrastructureWithVolume())
+        .strategyExpansionMap(new HashMap<>())
         .timeout(600000)
         .build();
   }

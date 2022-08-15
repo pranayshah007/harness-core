@@ -49,7 +49,6 @@ import io.harness.beans.plugin.compatible.PluginCompatibleStep;
 import io.harness.beans.quantity.unit.DecimalQuantityUnit;
 import io.harness.beans.quantity.unit.StorageQuantityUnit;
 import io.harness.beans.serializer.RunTimeInputHandler;
-import io.harness.beans.stages.IntegrationStageConfig;
 import io.harness.beans.steps.CIStepInfo;
 import io.harness.beans.steps.CIStepInfoType;
 import io.harness.beans.steps.stepinfo.PluginStepInfo;
@@ -72,6 +71,7 @@ import io.harness.ci.utils.CIStepInfoUtils;
 import io.harness.ci.utils.ExceptionUtility;
 import io.harness.ci.utils.PortFinder;
 import io.harness.ci.utils.QuantityUtils;
+import io.harness.cimanager.stages.IntegrationStageConfig;
 import io.harness.delegate.beans.ci.pod.CIContainerType;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.ci.pod.ContainerResourceParams;
@@ -352,6 +352,7 @@ public class K8InitializeStepInfoBuilder implements InitializeStepInfoBuilder {
       case DOCKER:
       case ECR:
       case GCR:
+      case ACR:
       case SAVE_CACHE_S3:
       case RESTORE_CACHE_S3:
       case RESTORE_CACHE_GCS:
@@ -382,6 +383,7 @@ public class K8InitializeStepInfoBuilder implements InitializeStepInfoBuilder {
     switch (stepType) {
       case DOCKER:
       case ECR:
+      case ACR:
       case GCR:
         throw new CIStageExecutionException(format("%s step not allowed in windows kubernetes builds", stepType));
       default:
@@ -780,6 +782,7 @@ public class K8InitializeStepInfoBuilder implements InitializeStepInfoBuilder {
             stepElement.getIdentifier(), accountId);
       case GCR:
       case ECR:
+      case ACR:
       case DOCKER:
       case UPLOAD_ARTIFACTORY:
       case UPLOAD_GCS:
@@ -845,6 +848,7 @@ public class K8InitializeStepInfoBuilder implements InitializeStepInfoBuilder {
             stepElement.getIdentifier(), accountId);
       case GCR:
       case ECR:
+      case ACR:
       case DOCKER:
       case UPLOAD_ARTIFACTORY:
       case UPLOAD_GCS:

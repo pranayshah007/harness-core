@@ -12,6 +12,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.plugin.compatible.PluginCompatibleStep;
 import io.harness.beans.steps.nodes.ArtifactoryUploadNode;
+import io.harness.beans.steps.nodes.BuildAndPushACRNode;
 import io.harness.beans.steps.nodes.BuildAndPushDockerNode;
 import io.harness.beans.steps.nodes.BuildAndPushECRNode;
 import io.harness.beans.steps.nodes.BuildAndPushGCRNode;
@@ -64,6 +65,7 @@ public class CIExecutionServiceModule extends AbstractModule {
       add(BuildAndPushDockerNode.class);
       add(BuildAndPushECRNode.class);
       add(BuildAndPushGCRNode.class);
+      add(BuildAndPushACRNode.class);
       add(SaveCacheS3Node.class);
       add(SaveCacheGCSNode.class);
       add(RestoreCacheGCSNode.class);

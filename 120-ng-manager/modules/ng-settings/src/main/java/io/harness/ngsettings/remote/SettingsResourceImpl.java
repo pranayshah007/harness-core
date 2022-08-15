@@ -7,6 +7,15 @@
 
 package io.harness.ngsettings.remote;
 
+import static io.harness.ngsettings.SettingPermissions.SETTING_EDIT_PERMISSION;
+import static io.harness.ngsettings.SettingPermissions.SETTING_RESOURCE_TYPE;
+import static io.harness.ngsettings.SettingPermissions.SETTING_VIEW_PERMISSION;
+
+import io.harness.accesscontrol.AccountIdentifier;
+import io.harness.accesscontrol.NGAccessControlCheck;
+import io.harness.accesscontrol.OrgIdentifier;
+import io.harness.accesscontrol.ProjectIdentifier;
+import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.beans.FeatureName;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.dto.ResponseDTO;
@@ -27,9 +36,11 @@ public class SettingsResourceImpl implements SettingsResource {
   public static final String FEATURE_NOT_AVAILABLE = "Feature not available for your account- %s";
   SettingsService settingsService;
   FeatureFlagHelper featureFlagHelper;
+  private final AccessControlClient accessControlClient;
   @Override
-  public ResponseDTO<SettingValueResponseDTO> get(
-      String identifier, String accountIdentifier, String orgIdentifier, String projectIdentifier) {
+  @NGAccessControlCheck(resourceType = SETTING_RESOURCE_TYPE, permission = SETTING_VIEW_PERMISSION)
+  public ResponseDTO<SettingValueResponseDTO> get(String identifier, @AccountIdentifier String accountIdentifier,
+      @OrgIdentifier String orgIdentifier, @ProjectIdentifier String projectIdentifier) {
     if (!isSettingsFeatureEnabled(accountIdentifier)) {
       throw new InvalidRequestException(String.format(FEATURE_NOT_AVAILABLE, accountIdentifier));
     }
@@ -38,8 +49,10 @@ public class SettingsResourceImpl implements SettingsResource {
   }
 
   @Override
-  public ResponseDTO<List<SettingResponseDTO>> list(String accountIdentifier, String orgIdentifier,
-      String projectIdentifier, SettingCategory category, String groupIdentifier) {
+  @NGAccessControlCheck(resourceType = SETTING_RESOURCE_TYPE, permission = SETTING_VIEW_PERMISSION)
+  public ResponseDTO<List<SettingResponseDTO>> list(@AccountIdentifier String accountIdentifier,
+      @OrgIdentifier String orgIdentifier, @ProjectIdentifier String projectIdentifier, SettingCategory category,
+      String groupIdentifier) {
     if (!isSettingsFeatureEnabled(accountIdentifier)) {
       throw new InvalidRequestException(String.format(FEATURE_NOT_AVAILABLE, accountIdentifier));
     }
@@ -48,8 +61,10 @@ public class SettingsResourceImpl implements SettingsResource {
   }
 
   @Override
-  public ResponseDTO<List<SettingUpdateResponseDTO>> update(String accountIdentifier, String orgIdentifier,
-      String projectIdentifier, List<SettingRequestDTO> settingRequestDTOList) {
+  @NGAccessControlCheck(resourceType = SETTING_RESOURCE_TYPE, permission = SETTING_EDIT_PERMISSION)
+  public ResponseDTO<List<SettingUpdateResponseDTO>> update(@AccountIdentifier String accountIdentifier,
+      @OrgIdentifier String orgIdentifier, @ProjectIdentifier String projectIdentifier,
+      List<SettingRequestDTO> settingRequestDTOList) {
     if (!isSettingsFeatureEnabled(accountIdentifier)) {
       throw new InvalidRequestException(String.format(FEATURE_NOT_AVAILABLE, accountIdentifier));
     }

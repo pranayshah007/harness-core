@@ -10,6 +10,7 @@ package io.harness.ccm.views.graphql;
 import static io.harness.annotations.dev.HarnessTeam.CE;
 import static io.harness.ccm.commons.constants.ViewFieldConstants.AWS_ACCOUNT_FIELD;
 import static io.harness.ccm.views.entities.ViewFieldIdentifier.BUSINESS_MAPPING;
+import static io.harness.ccm.views.entities.ViewFieldIdentifier.COMMON;
 import static io.harness.ccm.views.graphql.QLCEViewAggregateOperation.SUM;
 import static io.harness.ccm.views.graphql.QLCEViewTimeGroupType.DAY;
 import static io.harness.ccm.views.graphql.ViewsMetaDataFields.LABEL_KEY;
@@ -202,7 +203,7 @@ public class ViewsQueryBuilder {
       decorateQueryWithSortCriteria(selectQuery, sortCriteriaList);
     }
 
-    log.info("Query for view {}", selectQuery.toString());
+    log.info("Query for view {}", selectQuery);
     return selectQuery;
   }
 
@@ -313,7 +314,7 @@ public class ViewsQueryBuilder {
     selectQueryOuter.addCustomFromTable("(" + selectQueryInner.toString() + ")");
     selectQueryOuter.addCustomColumns(Converter.toCustomColumnSqlObject(count, COUNT));
 
-    log.info("Total count query for view {}", selectQueryOuter.toString());
+    log.info("Total count query for view {}", selectQueryOuter);
     return selectQueryOuter;
   }
 
@@ -574,7 +575,7 @@ public class ViewsQueryBuilder {
     }
 
     for (QLCEViewFilter filter : filters) {
-      QLCEViewFieldInput viewFieldInput = filter.getField();
+      QLCEViewFieldInput viewFieldInput = getModifiedQLCEViewFieldInput(filter.getField(), isClusterTable);
       String searchString = "";
       if (filter.getValues().length != 0) {
         searchString = filter.getValues()[0];
@@ -650,9 +651,24 @@ public class ViewsQueryBuilder {
       }
       fields.add(filter.getField());
     }
-    log.info("Query for view filter {}", query.toString());
+    log.info("Query for view filter {}", query);
 
     return ViewsQueryMetadata.builder().query(query).fields(fields).build();
+  }
+
+  public QLCEViewFieldInput getModifiedQLCEViewFieldInput(
+      final QLCEViewFieldInput viewFieldInput, final boolean isClusterTable) {
+    QLCEViewFieldInput modifiedQLCEViewFieldInput = viewFieldInput;
+    if (isClusterTable && COMMON.equals(viewFieldInput.getIdentifier())
+        && "product".equals(viewFieldInput.getFieldId())) {
+      modifiedQLCEViewFieldInput = QLCEViewFieldInput.builder()
+                                       .fieldId("clustername")
+                                       .fieldName("Cluster Name")
+                                       .identifier(COMMON)
+                                       .identifierName("Common")
+                                       .build();
+    }
+    return modifiedQLCEViewFieldInput;
   }
 
   private boolean getIsLabelsKeyFilterQuery(List<QLCEViewFilter> filters) {
@@ -1068,7 +1084,7 @@ public class ViewsQueryBuilder {
     return QLCEViewFilter.builder()
         .field(getViewFieldInput(condition.getViewField()))
         .operator(mapViewIdOperatorToQLCEViewFilterOperator(condition.getViewOperator()))
-        .values(getStringArray(condition.getValues()))
+        .values(getStringArray(Objects.isNull(condition.getValues()) ? ImmutableList.of("") : condition.getValues()))
         .build();
   }
 
@@ -1228,6 +1244,9 @@ public class ViewsQueryBuilder {
         return UnaryCondition.isNull(conditionKey);
       case LIKE:
         return new CustomCondition(String.format(regexFilter, conditionKey, filter.getValues()[0]));
+      case SEARCH:
+        // Searching capability for idFilters only
+        return new CustomCondition(String.format(searchFilter, conditionKey, filter.getValues()[0]));
       default:
         throw new InvalidRequestException("Invalid View Filter operator: " + operator);
     }

@@ -64,6 +64,7 @@ import io.harness.cdng.creator.plan.steps.azure.webapp.AzureWebAppSlotSwapSlotPl
 import io.harness.cdng.creator.plan.steps.azure.webapp.AzureWebAppTrafficShiftStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.serverless.ServerlessAwsLambdaDeployStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.serverless.ServerlessAwsLambdaRollbackStepPlanCreator;
+import io.harness.cdng.creator.variables.CommandStepVariableCreator;
 import io.harness.cdng.creator.variables.DeploymentStageVariableCreator;
 import io.harness.cdng.creator.variables.GitOpsCreatePRStepVariableCreator;
 import io.harness.cdng.creator.variables.GitOpsMergePRStepVariableCreator;
@@ -80,7 +81,6 @@ import io.harness.cdng.creator.variables.K8sRollingStepVariableCreator;
 import io.harness.cdng.creator.variables.K8sScaleStepVariableCreator;
 import io.harness.cdng.creator.variables.ServerlessAwsLambdaDeployStepVariableCreator;
 import io.harness.cdng.creator.variables.ServerlessAwsLambdaRollbackStepVariableCreator;
-import io.harness.cdng.creator.variables.SshVariableCreator;
 import io.harness.cdng.jenkins.jenkinsstep.JenkinsBuildStepVariableCreator;
 import io.harness.cdng.jenkins.jenkinsstep.JenkinsCreateStepPlanCreator;
 import io.harness.cdng.provision.cloudformation.variablecreator.CloudformationCreateStepVariableCreator;
@@ -92,6 +92,7 @@ import io.harness.cdng.provision.terraform.variablecreator.TerraformPlanStepVari
 import io.harness.cdng.provision.terraform.variablecreator.TerraformRollbackStepVariableCreator;
 import io.harness.enforcement.constants.FeatureRestrictionName;
 import io.harness.executions.steps.StepSpecTypeConstants;
+import io.harness.filters.ExecutionPMSFilterJsonCreator;
 import io.harness.plancreator.stages.parallel.ParallelPlanCreator;
 import io.harness.plancreator.steps.SpecNodePlanCreator;
 import io.harness.plancreator.steps.StepGroupPMSPlanCreator;
@@ -190,6 +191,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     filterJsonCreators.add(new DeploymentStageFilterJsonCreatorV2());
     filterJsonCreators.add(new CDPMSStepFilterJsonCreator());
     filterJsonCreators.add(new CDPMSStepFilterJsonCreatorV2());
+    filterJsonCreators.add(new ExecutionPMSFilterJsonCreator());
     injectorUtils.injectMembers(filterJsonCreators);
 
     return filterJsonCreators;
@@ -222,7 +224,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     variableCreators.add(new CloudformationCreateStepVariableCreator());
     variableCreators.add(new CloudformationDeleteStepVariableCreator());
     variableCreators.add(new CloudformationRollbackStepVariableCreator());
-    variableCreators.add(new SshVariableCreator());
+    variableCreators.add(new CommandStepVariableCreator());
     variableCreators.add(new AzureWebAppSlotDeploymentStepVariableCreator());
     variableCreators.add(new AzureWebAppTrafficShiftStepVariableCreator());
     variableCreators.add(new AzureWebAppSwapSlotStepVariableCreator());
@@ -384,7 +386,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
             .setType(StepSpecTypeConstants.COMMAND)
             .setFeatureRestrictionName(FeatureRestrictionName.COMMAND.name())
             .setFeatureFlag(FeatureName.SSH_NG.name())
-            .setStepMetaData(StepMetaData.newBuilder().addCategory("Ssh").addFolderPaths("Ssh").build())
+            .setStepMetaData(StepMetaData.newBuilder().addCategory("SshWinRM").addFolderPaths("SSH or WinRM").build())
             .build();
 
     StepInfo serverlessDeploy =

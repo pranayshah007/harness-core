@@ -286,6 +286,17 @@ public class NGTriggerResourceImplTest extends CategoryTest {
         ngTriggerResource.get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, IDENTIFIER).getData();
     assertThat(responseDTO).isEqualTo(ngTriggerResponseDTO);
   }
+  @Test(expected = InvalidRequestException.class)
+  @Owner(developers = SRIDHAR)
+  @Category(UnitTests.class)
+  public void testGetException() {
+    doReturn(Optional.empty())
+        .when(ngTriggerService)
+        .get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, IDENTIFIER, false);
+    NGTriggerResponseDTO responseDTO =
+        ngTriggerResource.get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, IDENTIFIER).getData();
+    assertThat(responseDTO).isEqualTo(ngTriggerResponseDTO);
+  }
 
   @Test
   @Owner(developers = NAMAN)

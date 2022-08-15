@@ -13,11 +13,9 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static com.fasterxml.jackson.annotation.JsonTypeInfo.As.EXTERNAL_PROPERTY;
 import static com.fasterxml.jackson.annotation.JsonTypeInfo.Id.NAME;
 
-import io.harness.NGCommonEntityConstants;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.artifact.bean.ArtifactConfig;
-import io.harness.cdng.visitor.YamlTypes;
 import io.harness.common.NGExpressionUtils;
 import io.harness.delegate.task.artifacts.ArtifactSourceType;
 import io.harness.evaluators.CDYamlExpressionEvaluator;
@@ -33,6 +31,8 @@ import io.harness.ng.core.template.TemplateMergeResponseDTO;
 import io.harness.pipeline.remote.PipelineServiceClient;
 import io.harness.pms.inputset.MergeInputSetResponseDTOPMS;
 import io.harness.pms.inputset.MergeInputSetTemplateRequestDTO;
+import io.harness.pms.merger.YamlConfig;
+import io.harness.pms.merger.fqn.FQN;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
@@ -47,7 +47,7 @@ import com.google.inject.Inject;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
+import java.util.Map;
 import java.util.Optional;
 import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
@@ -108,13 +108,15 @@ public class ArtifactResourceUtils {
       }
       String[] split = fqnPath.split("\\.");
       String stageIdentifier = split[2];
-      String stageIndex = getStageIndex(mergedCompleteYaml, stageIdentifier);
+      YamlConfig yamlConfig = new YamlConfig(mergedCompleteYaml);
+      Map<FQN, Object> fqnObjectMap = yamlConfig.getFqnToValueMap();
+
       if (isEmpty(serviceId)) {
         // pipelines with inline service definitions
-        serviceId = getServiceRef(mergedCompleteYaml, stageIndex);
+        serviceId = getServiceRef(fqnObjectMap, stageIdentifier);
       }
       // get environment ref
-      String environmentId = getEnvironmentRef(mergedCompleteYaml, stageIndex);
+      String environmentId = getEnvironmentRef(fqnObjectMap, stageIdentifier);
       List<YamlField> aliasYamlField =
           getAliasYamlFields(accountId, orgIdentifier, projectIdentifier, serviceId, environmentId);
       CDYamlExpressionEvaluator CDYamlExpressionEvaluator =
@@ -125,76 +127,39 @@ public class ArtifactResourceUtils {
   }
 
   /**
-   * Returns the serviceRef using stage index and pipeline yaml.
-   * Two ways to reach environment ref node
-   * pipeline/stages/[0]/stage/spec/serviceConfig/serviceRef
-   * pipeline/stages/[0]/stage/spec/service/serviceRef
-   * get Service ref node from pipeline yaml
+   * Returns the serviceRef using stage identifier and fqnToObjectMap.
+   * Field name should be serviceRef and fqn should have stage identifier to get the value of serviceRef
    *
-   * @param mergedCompleteYaml pipeline yaml with templates applied
-   * @param stageIndex stage index to build fqn
+   * @param fqnToObjectMap fqn to object map depicting yaml tree as key value pair
+   * @param stageIdentifier stage identifier to fetch serviceRef from
    * @return String
    */
-  private String getServiceRef(String mergedCompleteYaml, String stageIndex) {
-    String postStageFqnV1 = "/stage/spec/serviceConfig/serviceRef";
-    String postStageFqnV2 = "/stage/spec/service/serviceRef";
-
-    YamlNode service;
-    try {
-      service = YamlNode.fromYamlPath(mergedCompleteYaml, preStageFqn + stageIndex + postStageFqnV1);
-      if (service == null) {
-        service = YamlNode.fromYamlPath(mergedCompleteYaml, preStageFqn + stageIndex + postStageFqnV2);
+  private String getServiceRef(Map<FQN, Object> fqnToObjectMap, String stageIdentifier) {
+    for (Map.Entry<FQN, Object> mapEntry : fqnToObjectMap.entrySet()) {
+      String nodeStageIdentifier = mapEntry.getKey().getStageIdentifier();
+      String fieldName = mapEntry.getKey().getFieldName();
+      if (stageIdentifier.equals(nodeStageIdentifier) && "serviceRef".equals(fieldName)) {
+        return mapEntry.getValue().toString();
       }
-    } catch (IOException e) {
-      throw new InvalidRequestException("Exception while resolving serviceRef from pipeline yaml");
     }
-    return service != null ? service.asText() : null;
+    return null;
   }
 
   /**
-   * Returns the environmentRef using stage index and pipeline yaml.
-   * Two ways to reach environment ref node
-   * pipeline/stages/[0]/stage/spec/infrastructure/environmentRef
-   * pipeline/stages/[0]/stage/spec/environment/environmentRef
-   * get Env ref node from pipeline yaml
+   * Returns the environmentRef using stage identifier and fqnToObjectMap.
+   * Field name should be environmentRef and fqn should have stage identifier to get the value of environmentRef
    *
-   * @param mergedCompleteYaml pipeline yaml with templates applied
-   * @param stageIndex stage index to build fqn
+   * @param fqnToObjectMap fqn to object map depicting yaml tree as key value pair
+   * @param stageIdentifier stage identifier to fetch serviceRef from
    * @return String
    */
-  private String getEnvironmentRef(String mergedCompleteYaml, String stageIndex) {
-    String postStageFqnV1 = "/stage/spec/infrastructure/environmentRef";
-    String postStageFqnV2 = "/stage/spec/environment/environmentRef";
-
-    YamlNode environment;
-    try {
-      environment = YamlNode.fromYamlPath(mergedCompleteYaml, preStageFqn + stageIndex + postStageFqnV1);
-      if (environment == null) {
-        environment = YamlNode.fromYamlPath(mergedCompleteYaml, preStageFqn + stageIndex + postStageFqnV2);
+  private String getEnvironmentRef(Map<FQN, Object> fqnToObjectMap, String stageIdentifier) {
+    for (Map.Entry<FQN, Object> mapEntry : fqnToObjectMap.entrySet()) {
+      String nodeStageIdentifier = mapEntry.getKey().getStageIdentifier();
+      String fieldName = mapEntry.getKey().getFieldName();
+      if (stageIdentifier.equals(nodeStageIdentifier) && "environmentRef".equals(fieldName)) {
+        return mapEntry.getValue().toString();
       }
-    } catch (IOException e) {
-      throw new InvalidRequestException("Exception while resolving environmentRef from pipeline yaml");
-    }
-    return environment != null ? environment.asText() : null;
-  }
-
-  private String getStageIndex(String mergedCompleteYaml, String stageIdentifier) {
-    try {
-      YamlNode stages = YamlNode.fromYamlPath(mergedCompleteYaml, preStageFqn);
-      List<YamlNode> stageNodes = Objects.requireNonNull(stages).asArray();
-      for (YamlNode stageNode : stageNodes) {
-        String pipelineStageIndex = stageNode.getField(YamlTypes.STAGE)
-                                        .getNode()
-                                        .getField(NGCommonEntityConstants.IDENTIFIER_KEY)
-                                        .getNode()
-                                        .asText();
-        if (isNotEmpty(pipelineStageIndex) && pipelineStageIndex.equals(stageIdentifier)) {
-          return stageNode.getFieldName();
-        }
-      }
-    } catch (Exception ex) {
-      throw new InvalidRequestException(
-          String.format("Exception while fetching stage index for stage: [%s]", stageIdentifier));
     }
     return null;
   }
@@ -206,13 +171,13 @@ public class ArtifactResourceUtils {
       Optional<ServiceEntity> optionalService =
           serviceEntityService.get(accountId, orgIdentifier, projectIdentifier, serviceId, false);
       optionalService.ifPresent(
-          service -> yamlFields.add(getYamlField(service.getYaml(), YAMLFieldNameConstants.SERVICE)));
+          service -> yamlFields.add(getYamlField(service.fetchNonEmptyYaml(), YAMLFieldNameConstants.SERVICE)));
     }
     if (isNotEmpty(environmentId)) {
       Optional<Environment> optionalEnvironment =
           environmentService.get(accountId, orgIdentifier, projectIdentifier, environmentId, false);
-      optionalEnvironment.ifPresent(
-          environment -> yamlFields.add(getYamlField(environment.getYaml(), YAMLFieldNameConstants.ENVIRONMENT)));
+      optionalEnvironment.ifPresent(environment
+          -> yamlFields.add(getYamlField(environment.fetchNonEmptyYaml(), YAMLFieldNameConstants.ENVIRONMENT)));
     }
     return yamlFields;
   }

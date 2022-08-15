@@ -129,6 +129,10 @@ func (h *handler) CreatePR(ctx context.Context, in *pb.CreatePRRequest) (*pb.Cre
 	return git.CreatePR(ctx, in, h.log)
 }
 
+func (h *handler) RefreshToken(ctx context.Context, in *pb.RefreshTokenRequest) (*pb.RefreshTokenResponse, error) {
+	return git.RefreshToken(ctx, in, h.log)
+}
+
 // FindFilesInPR lists the files in a PR.
 func (h *handler) FindFilesInPR(ctx context.Context, in *pb.FindFilesInPRRequest) (*pb.FindFilesInPRResponse, error) {
 	return git.FindFilesInPR(ctx, in, h.log)

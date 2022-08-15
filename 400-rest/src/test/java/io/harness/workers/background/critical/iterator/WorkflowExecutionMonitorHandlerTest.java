@@ -12,10 +12,12 @@ import static io.harness.beans.ExecutionStatus.EXPIRED;
 import static io.harness.beans.ExecutionStatus.PREPARING;
 import static io.harness.rule.OwnerRule.AADITI;
 import static io.harness.rule.OwnerRule.AGORODETKI;
+import static io.harness.rule.OwnerRule.LUCAS_SALES;
 import static io.harness.rule.OwnerRule.PRABU;
 import static io.harness.rule.OwnerRule.YOGESH;
 
 import static software.wings.sm.StateExecutionInstance.Builder.aStateExecutionInstance;
+import static software.wings.sm.StateType.SHELL_SCRIPT;
 import static software.wings.utils.WingsTestConstants.ACCOUNT_ID;
 import static software.wings.utils.WingsTestConstants.APP_ID;
 import static software.wings.utils.WingsTestConstants.WORKFLOW_EXECUTION_ID;
@@ -128,6 +130,20 @@ public class WorkflowExecutionMonitorHandlerTest extends WingsBaseTest {
     return expiredStateExecutionInstance;
   }
 
+  private StateExecutionInstance createExpiredSSHStateExecutionInstance() {
+    StateExecutionInstance expiredStateExecutionInstance = aStateExecutionInstance()
+                                                               .appId(APP_ID)
+                                                               .executionUuid(WORKFLOW_EXECUTION_ID)
+                                                               .stateType(SHELL_SCRIPT.getName())
+                                                               .status(ExecutionStatus.RUNNING)
+                                                               .build();
+    expiredStateExecutionInstance.setActionOnTimeout(RepairActionCode.MANUAL_INTERVENTION);
+    Duration sshExpireThreshold = Duration.ofSeconds(10);
+    expiredStateExecutionInstance.setExpiryTs(System.currentTimeMillis() - sshExpireThreshold.toMillis() - 1);
+    persistence.save(expiredStateExecutionInstance);
+    return expiredStateExecutionInstance;
+  }
+
   private StateExecutionInstance createSuccessStateExecutionInstance() {
     StateExecutionInstance successStateExecutionInstance = aStateExecutionInstance()
                                                                .appId(APP_ID)
@@ -221,6 +237,20 @@ public class WorkflowExecutionMonitorHandlerTest extends WingsBaseTest {
     verify(executionInterruptManager, times(1)).registerExecutionInterrupt(executionInterruptArgumentCaptor.capture());
     ExecutionInterrupt executionInterrupt = executionInterruptArgumentCaptor.getValue();
     assertThat(executionInterrupt.getExecutionInterruptType()).isEqualTo(ExecutionInterruptType.CONTINUE_WITH_DEFAULTS);
+    persistence.delete(expiredStateExecutionInstance);
+  }
+
+  @Test
+  @Owner(developers = LUCAS_SALES)
+  @Category(UnitTests.class)
+  public void shouldExpireSSHStateWhenItPassesThresold() {
+    StateExecutionInstance expiredStateExecutionInstance = createExpiredSSHStateExecutionInstance();
+    ArgumentCaptor<ExecutionInterrupt> executionInterruptArgumentCaptor =
+        ArgumentCaptor.forClass(ExecutionInterrupt.class);
+    workflowExecutionMonitorHandler.handle(workflowExecution);
+    verify(executionInterruptManager, times(1)).registerExecutionInterrupt(executionInterruptArgumentCaptor.capture());
+    ExecutionInterrupt executionInterrupt = executionInterruptArgumentCaptor.getValue();
+    assertThat(executionInterrupt.getExecutionInterruptType()).isEqualTo(ExecutionInterruptType.MARK_EXPIRED);
     persistence.delete(expiredStateExecutionInstance);
   }
 }

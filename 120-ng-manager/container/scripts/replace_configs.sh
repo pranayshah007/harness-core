@@ -344,6 +344,26 @@ if [[ "" != "$LOCK_CONFIG_REDIS_URL" ]]; then
   yq write -i $REDISSON_CACHE_FILE singleServerConfig.address "$LOCK_CONFIG_REDIS_URL"
 fi
 
+if [[ "" != "$GITLAB_OAUTH_CLIENT" ]]; then
+  yq write -i $CONFIG_FILE gitlabConfig.clientId "$GITLAB_OAUTH_CLIENT"
+fi
+
+if [[ "" != "$GITLAB_OAUTH_SECRET" ]]; then
+  yq write -i $CONFIG_FILE gitlabConfig.clientSecret "$GITLAB_OAUTH_SECRET"
+fi
+
+if [[ "" != "$GITLAB_OAUTH_CALLBACK_URL" ]]; then
+  yq write -i $CONFIG_FILE gitlabConfig.callbackUrl "$GITLAB_OAUTH_CALLBACK_URL"
+fi
+
+if [[ "" != "$OAUTH_REFRESH_FREQUECY" ]]; then
+  yq write -i $CONFIG_FILE oauthRefreshFrequency "$OAUTH_REFRESH_FREQUECY"
+fi
+
+if [[ "" != "$OAUTH_REFRESH_ENABLED" ]]; then
+  yq write -i $CONFIG_FILE oauthRefreshEnabled "$OAUTH_REFRESH_ENABLED"
+fi
+
 if [[ "" != "$DELEGATE_STATUS_ENDPOINT" ]]; then
   yq write -i $CONFIG_FILE delegateStatusEndpoint "$DELEGATE_STATUS_ENDPOINT"
 fi

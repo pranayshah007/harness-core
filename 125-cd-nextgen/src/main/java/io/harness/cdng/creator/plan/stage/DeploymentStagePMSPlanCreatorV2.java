@@ -183,7 +183,6 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
       // Validate Stage Failure strategy.
       validateFailureStrategy(stageNode);
 
-      Map<String, YamlField> dependenciesNodeMap = new HashMap<>();
       Map<String, ByteString> metadataMap = new HashMap<>();
 
       YamlField specField =

@@ -15,6 +15,7 @@ import static io.harness.delegate.beans.connector.ConnectorType.CODECOMMIT;
 import static io.harness.delegate.beans.connector.ConnectorType.GIT;
 import static io.harness.delegate.beans.connector.ConnectorType.GITHUB;
 import static io.harness.delegate.beans.connector.ConnectorType.GITLAB;
+import static io.harness.delegate.beans.connector.azureconnector.AzureCredentialType.MANUAL_CREDENTIALS;
 import static io.harness.exception.WingsException.USER;
 
 import static java.lang.String.format;
@@ -44,6 +45,9 @@ import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsCredentialDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsCredentialType;
 import io.harness.delegate.beans.connector.awsconnector.AwsManualConfigSpecDTO;
+import io.harness.delegate.beans.connector.azureconnector.AzureConnectorDTO;
+import io.harness.delegate.beans.connector.azureconnector.AzureCredentialDTO;
+import io.harness.delegate.beans.connector.azureconnector.AzureManualDetailsDTO;
 import io.harness.delegate.beans.connector.docker.DockerAuthType;
 import io.harness.delegate.beans.connector.docker.DockerConnectorDTO;
 import io.harness.delegate.beans.connector.gcpconnector.GcpConnectorCredentialDTO;
@@ -282,6 +286,9 @@ public class ConnectorUtils {
       case AWS:
         connectorDetails = getAwsConnectorDetails(ngAccess, connectorDTO, connectorDetailsBuilder);
         break;
+      case AZURE:
+        connectorDetails = getAzureConnectorDetails(ngAccess, connectorDTO, connectorDetailsBuilder);
+        break;
       case ARTIFACTORY:
         connectorDetails = getArtifactoryConnectorDetails(ngAccess, connectorDTO, connectorDetailsBuilder);
         break;
@@ -420,6 +427,21 @@ public class ConnectorUtils {
         awsCredentialDTO.getAwsCredentialType(), awsConnectorDTO));
   }
 
+  private ConnectorDetails getAzureConnectorDetails(
+      NGAccess ngAccess, ConnectorDTO connectorDTO, ConnectorDetailsBuilder connectorDetailsBuilder) {
+    List<EncryptedDataDetail> encryptedDataDetails;
+    AzureConnectorDTO azureConnectorDTO = (AzureConnectorDTO) connectorDTO.getConnectorInfo().getConnectorConfig();
+    AzureCredentialDTO credentialDTO = azureConnectorDTO.getCredential();
+    if (credentialDTO.getAzureCredentialType() == MANUAL_CREDENTIALS) {
+      AzureManualDetailsDTO config = (AzureManualDetailsDTO) credentialDTO.getConfig();
+      encryptedDataDetails =
+          secretManagerClientService.getEncryptionDetails(ngAccess, config.getAuthDTO().getCredentials());
+      return connectorDetailsBuilder.encryptedDataDetails(encryptedDataDetails).build();
+    } else {
+      return connectorDetailsBuilder.build();
+    }
+  }
+
   private ConnectorDetails getGcpConnectorDetails(
       NGAccess ngAccess, ConnectorDTO connectorDTO, ConnectorDetailsBuilder connectorDetailsBuilder) {
     List<EncryptedDataDetail> encryptedDataDetails;
@@ -469,7 +491,9 @@ public class ConnectorUtils {
         encryptedDataDetails.addAll(
             secretManagerClientService.getEncryptionDetails(ngAccess, gitConfigDTO.getApiAccess().getSpec()));
       }
-      return connectorDetailsBuilder.encryptedDataDetails(encryptedDataDetails).build();
+      return connectorDetailsBuilder.encryptedDataDetails(encryptedDataDetails)
+          .executeOnDelegate(gitConfigDTO.getExecuteOnDelegate())
+          .build();
     } else if (gitConfigDTO.getAuthentication().getAuthType() == GitAuthType.SSH) {
       AzureRepoSshCredentialsDTO azureRepoSshCredentialsDTO =
           (AzureRepoSshCredentialsDTO) gitConfigDTO.getAuthentication().getCredentials();
@@ -484,7 +508,7 @@ public class ConnectorUtils {
             secretManagerClientService.getEncryptionDetails(ngAccess, gitConfigDTO.getApiAccess().getSpec());
         connectorDetailsBuilder.encryptedDataDetails(encryptedDataDetails);
       }
-      return connectorDetailsBuilder.build();
+      return connectorDetailsBuilder.executeOnDelegate(gitConfigDTO.getExecuteOnDelegate()).build();
     } else {
       throw new CIStageExecutionException(
           "Unsupported git connector auth" + gitConfigDTO.getAuthentication().getAuthType());
@@ -504,7 +528,9 @@ public class ConnectorUtils {
         encryptedDataDetails.addAll(
             secretManagerClientService.getEncryptionDetails(ngAccess, gitConfigDTO.getApiAccess().getSpec()));
       }
-      return connectorDetailsBuilder.encryptedDataDetails(encryptedDataDetails).build();
+      return connectorDetailsBuilder.executeOnDelegate(gitConfigDTO.getExecuteOnDelegate())
+          .encryptedDataDetails(encryptedDataDetails)
+          .build();
     } else if (gitConfigDTO.getAuthentication().getAuthType() == GitAuthType.SSH) {
       GitlabSshCredentialsDTO gitlabSshCredentialsDTO =
           (GitlabSshCredentialsDTO) gitConfigDTO.getAuthentication().getCredentials();
@@ -519,7 +545,7 @@ public class ConnectorUtils {
             secretManagerClientService.getEncryptionDetails(ngAccess, gitConfigDTO.getApiAccess().getSpec());
         connectorDetailsBuilder.encryptedDataDetails(encryptedDataDetails);
       }
-      return connectorDetailsBuilder.build();
+      return connectorDetailsBuilder.executeOnDelegate(gitConfigDTO.getExecuteOnDelegate()).build();
     } else {
       throw new CIStageExecutionException(
           "Unsupported git connector auth" + gitConfigDTO.getAuthentication().getAuthType());
@@ -557,7 +583,7 @@ public class ConnectorUtils {
             secretManagerClientService.getEncryptionDetails(ngAccess, gitConfigDTO.getApiAccess().getSpec());
         connectorDetailsBuilder.encryptedDataDetails(encryptedDataDetails);
       }
-      return connectorDetailsBuilder.build();
+      return connectorDetailsBuilder.executeOnDelegate(gitConfigDTO.getExecuteOnDelegate()).build();
     } else {
       throw new CIStageExecutionException(
           "Unsupported git connector auth" + gitConfigDTO.getAuthentication().getAuthType());
@@ -577,7 +603,9 @@ public class ConnectorUtils {
         encryptedDataDetails.addAll(
             secretManagerClientService.getEncryptionDetails(ngAccess, gitConfigDTO.getApiAccess().getSpec()));
       }
-      return connectorDetailsBuilder.encryptedDataDetails(encryptedDataDetails).build();
+      return connectorDetailsBuilder.executeOnDelegate(gitConfigDTO.getExecuteOnDelegate())
+          .encryptedDataDetails(encryptedDataDetails)
+          .build();
     } else if (gitConfigDTO.getAuthentication().getAuthType() == GitAuthType.SSH) {
       BitbucketSshCredentialsDTO bitbucketSshCredentialsDTO =
           (BitbucketSshCredentialsDTO) gitConfigDTO.getAuthentication().getCredentials();
@@ -592,7 +620,7 @@ public class ConnectorUtils {
             secretManagerClientService.getEncryptionDetails(ngAccess, gitConfigDTO.getApiAccess().getSpec());
         connectorDetailsBuilder.encryptedDataDetails(encryptedDataDetails);
       }
-      return connectorDetailsBuilder.build();
+      return connectorDetailsBuilder.executeOnDelegate(gitConfigDTO.getExecuteOnDelegate()).build();
     } else {
       throw new CIStageExecutionException(
           "Unsupported git connector auth" + gitConfigDTO.getAuthentication().getAuthType());

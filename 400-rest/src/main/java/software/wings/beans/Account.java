@@ -10,6 +10,7 @@ package software.wings.beans;
 import static io.harness.annotations.dev.HarnessTeam.DX;
 import static io.harness.delegate.beans.DelegateConfiguration.DelegateConfigurationKeys;
 
+import static software.wings.beans.Account.AccountKeys;
 import static software.wings.beans.CGConstants.GLOBAL_APP_ID;
 import static software.wings.common.VerificationConstants.SERVICE_GUAARD_LIMIT;
 
@@ -67,7 +68,7 @@ import org.mongodb.morphia.annotations.Transient;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @Entity(value = "accounts", noClassnameStored = true)
 @HarnessEntity(exportable = true)
-@ChangeDataCapture(table = "accounts", fields = {}, handler = "Account")
+@ChangeDataCapture(table = "accounts", fields = {AccountKeys.accountName, AccountKeys.createdAt}, handler = "")
 public class Account extends Base implements PersistentRegularIterable, NGMigrationEntity {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
@@ -127,6 +128,8 @@ public class Account extends Base implements PersistentRegularIterable, NGMigrat
   @Getter @Setter boolean createdFromNG;
 
   @Getter @Setter private boolean accountActivelyUsed;
+
+  @Getter @Setter boolean isProductLed;
 
   /**
    * If this flag is set, all encryption/decryption activities will go through LOCAL security manager.
@@ -592,6 +595,7 @@ public class Account extends Base implements PersistentRegularIterable, NGMigrat
     private AccountPreferences accountPreferences;
     private DefaultExperience defaultExperience;
     private boolean createdFromNG;
+    private boolean isProductLed;
     private boolean accountActivelyUsed;
     private ServiceAccountConfig serviceAccountConfig;
 
@@ -623,6 +627,11 @@ public class Account extends Base implements PersistentRegularIterable, NGMigrat
 
     public Builder withCreatedFromNG(boolean createdFromNG) {
       this.createdFromNG = createdFromNG;
+      return this;
+    }
+
+    public Builder withIsProductLed(boolean isProductLed) {
+      this.isProductLed = isProductLed;
       return this;
     }
 
@@ -788,6 +797,7 @@ public class Account extends Base implements PersistentRegularIterable, NGMigrat
           .withBackgroundJobsDisabled(backgroundJobsDisabled)
           .withDefaultExperience(defaultExperience)
           .withCreatedFromNG(createdFromNG)
+          .withIsProductLed(isProductLed)
           .withAccountActivelyUsed(accountActivelyUsed)
           .withAccountPreferences(accountPreferences)
           .withServiceAccountConfig(serviceAccountConfig);
@@ -823,6 +833,7 @@ public class Account extends Base implements PersistentRegularIterable, NGMigrat
       account.setBackgroundJobsDisabled(backgroundJobsDisabled);
       account.setDefaultExperience(defaultExperience);
       account.setCreatedFromNG(createdFromNG);
+      account.setProductLed(isProductLed);
       account.setAccountActivelyUsed(accountActivelyUsed);
       account.setAccountPreferences(accountPreferences);
       account.setNextGenEnabled(nextGenEnabled);

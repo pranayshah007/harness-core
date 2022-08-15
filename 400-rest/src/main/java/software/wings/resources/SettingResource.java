@@ -116,6 +116,8 @@ public class SettingResource {
   private static final String CUSTOM_MAX_LIMIT = "1200";
   private static final String LARGE_PAGE_SIZE_LIMIT = "3000";
 
+  private static final String ENTITY_TYPE_APP_DEFAULTS = "APP_DEFAULTS";
+
   @Inject private SettingsService settingsService;
   @Inject private BuildSourceService buildSourceService;
   @Inject private UsageRestrictionsService usageRestrictionsService;
@@ -190,7 +192,11 @@ public class SettingResource {
         pageRequest.setLimit(limit);
       }
 
-      result = settingsService.list(pageRequest, currentAppId, currentEnvId, Boolean.TRUE.equals(forUsageInNewApp));
+      if (ENTITY_TYPE_APP_DEFAULTS.equals(entityType)) {
+        result = settingsService.list(pageRequest, appId, accountId);
+      } else {
+        result = settingsService.list(pageRequest, currentAppId, currentEnvId, Boolean.TRUE.equals(forUsageInNewApp));
+      }
     }
     result.forEach(
         settingAttribute -> settingServiceHelper.updateSettingAttributeBeforeResponse(settingAttribute, true));

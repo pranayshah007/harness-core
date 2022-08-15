@@ -12,7 +12,6 @@ import static io.harness.cdng.provision.terraform.TerraformPlanCommand.DESTROY;
 import io.harness.EntityType;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.common.ParameterFieldHelper;
@@ -145,7 +144,7 @@ public class TerraformDestroyStep extends TaskExecutableWithRollbackAndRbac<Terr
         .terraformCommandUnit(TerraformCommandUnit.Destroy)
         .entityId(entityId)
         .tfModuleSourceInheritSSH(helper.isExportCredentialForSourceModule(
-            ambiance, configuration.getSpec().getConfigFiles(), stepElementParameters.getType()))
+            configuration.getSpec().getConfigFiles(), stepElementParameters.getType()))
         .workspace(ParameterFieldHelper.getParameterFieldValue(spec.getWorkspace()))
         .configFile(helper.getGitFetchFilesConfig(
             spec.getConfigFiles().getStore().getSpec(), ambiance, TerraformStepHelper.TF_CONFIG_FILES))
@@ -189,9 +188,7 @@ public class TerraformDestroyStep extends TaskExecutableWithRollbackAndRbac<Terr
     builder.workspace(inheritOutput.getWorkspace())
         .configFile(helper.getGitFetchFilesConfig(
             inheritOutput.getConfigFiles(), ambiance, TerraformStepHelper.TF_CONFIG_FILES))
-        .tfModuleSourceInheritSSH(cdFeatureFlagHelper.isEnabled(
-                                      AmbianceUtils.getAccountId(ambiance), FeatureName.TF_MODULE_SOURCE_INHERIT_SSH)
-            && inheritOutput.isUseConnectorCredentials())
+        .tfModuleSourceInheritSSH(inheritOutput.isUseConnectorCredentials())
         .fileStoreConfigFiles(helper.getFileStoreFetchFilesConfig(
             inheritOutput.getFileStoreConfig(), ambiance, TerraformStepHelper.TF_CONFIG_FILES))
         .varFileInfos(helper.prepareTerraformVarFileInfo(inheritOutput.getVarFileConfigs(), ambiance))
@@ -243,9 +240,7 @@ public class TerraformDestroyStep extends TaskExecutableWithRollbackAndRbac<Terr
     if (terraformConfig.getConfigFiles() != null) {
       builder.configFile(helper.getGitFetchFilesConfig(
           terraformConfig.getConfigFiles().toGitStoreConfig(), ambiance, TerraformStepHelper.TF_CONFIG_FILES));
-      builder.tfModuleSourceInheritSSH(
-          cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.TF_MODULE_SOURCE_INHERIT_SSH)
-          && terraformConfig.isUseConnectorCredentials());
+      builder.tfModuleSourceInheritSSH(terraformConfig.isUseConnectorCredentials());
     }
     if (terraformConfig.getFileStoreConfig() != null) {
       builder.fileStoreConfigFiles(

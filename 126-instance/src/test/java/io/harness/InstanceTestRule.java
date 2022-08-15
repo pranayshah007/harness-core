@@ -13,6 +13,8 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.factory.ClosingFactory;
 import io.harness.govern.ProviderModule;
 import io.harness.govern.ServersModule;
+import io.harness.instancesyncmonitoring.module.InstanceSyncMonitoringModule;
+import io.harness.metrics.modules.MetricsModule;
 import io.harness.mongo.MongoPersistence;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.persistence.HPersistence;
@@ -68,6 +70,8 @@ public class InstanceTestRule implements InjectorRuleMixin, MethodRule, MongoRul
         bind(InstanceSyncHandlerFactoryService.class).to(InstanceSyncHandlerFactoryServiceImpl.class);
         bind(InstanceDashboardService.class).to(InstanceDashboardServiceImpl.class);
         bind(InstanceService.class).to(InstanceServiceImpl.class);
+        install(new MetricsModule());
+        install(new InstanceSyncMonitoringModule());
       }
     });
 

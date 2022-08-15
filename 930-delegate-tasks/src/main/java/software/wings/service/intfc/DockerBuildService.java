@@ -50,4 +50,9 @@ public interface DockerBuildService extends BuildService<DockerConfig> {
   @DelegateTaskType(TaskType.DOCKER_GET_ARTIFACT_META_INFO)
   ArtifactMetaInfo getArtifactMetaInfo(ArtifactStreamAttributes artifactStreamAttributes, String buildNo,
       DockerConfig dockerConfig, List<EncryptedDataDetail> encryptionDetails);
+
+  @Override
+  @DelegateTaskType(TaskType.DOCKER_GET_BUILDS)
+  BuildDetails getBuild(String appId, ArtifactStreamAttributes artifactStreamAttributes, DockerConfig config,
+      List<EncryptedDataDetail> encryptionDetails, String buildNo);
 }

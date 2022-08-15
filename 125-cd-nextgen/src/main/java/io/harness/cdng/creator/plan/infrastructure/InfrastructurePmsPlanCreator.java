@@ -17,6 +17,7 @@ import io.harness.cdng.environment.yaml.EnvironmentPlanCreatorConfig;
 import io.harness.cdng.infra.steps.InfraSectionStepParameters;
 import io.harness.cdng.infra.steps.InfrastructureSectionStep;
 import io.harness.cdng.infra.steps.InfrastructureStep;
+import io.harness.cdng.infra.steps.InfrastructureTaskExecutableStep;
 import io.harness.cdng.infra.yaml.Infrastructure;
 import io.harness.cdng.infra.yaml.InfrastructureDefinitionConfig;
 import io.harness.cdng.pipeline.PipelineInfrastructure;
@@ -28,6 +29,7 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.YamlException;
+import io.harness.ng.core.infrastructure.InfrastructureKind;
 import io.harness.plancreator.execution.ExecutionElementConfig;
 import io.harness.pms.contracts.advisers.AdviserObtainment;
 import io.harness.pms.contracts.advisers.AdviserType;
@@ -72,13 +74,22 @@ public class InfrastructurePmsPlanCreator {
         .uuid(UUIDGenerator.generateUuid())
         .name(PlanCreatorConstants.INFRA_NODE_NAME)
         .identifier(PlanCreatorConstants.SPEC_IDENTIFIER)
-        .stepType(InfrastructureStep.STEP_TYPE)
+        .stepType(isTaskStep(pipelineInfrastructure) ? InfrastructureTaskExecutableStep.STEP_TYPE
+                                                     : InfrastructureStep.STEP_TYPE)
         .stepParameters(pipelineInfrastructure)
         .facilitatorObtainment(
             FacilitatorObtainment.newBuilder()
-                .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.SYNC).build())
+                .setType(FacilitatorType.newBuilder()
+                             .setType(isTaskStep(pipelineInfrastructure) ? OrchestrationFacilitatorType.TASK
+                                                                         : OrchestrationFacilitatorType.SYNC)
+                             .build())
                 .build())
         .build();
+  }
+
+  private boolean isTaskStep(Infrastructure pipelineInfrastructure) {
+    return InfrastructureKind.SSH_WINRM_AZURE.equals(pipelineInfrastructure.getKind())
+        || InfrastructureKind.SSH_WINRM_AWS.equals(pipelineInfrastructure.getKind());
   }
 
   public static LinkedHashMap<String, PlanCreationResponse> createPlanForInfraSectionV2(YamlNode infraSectionNode,

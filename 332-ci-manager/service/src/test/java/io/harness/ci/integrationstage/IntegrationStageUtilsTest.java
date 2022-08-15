@@ -9,8 +9,6 @@ package io.harness.ci.integrationstage;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import io.harness.beans.stages.IntegrationStageConfig;
-import io.harness.beans.stages.IntegrationStageConfigImpl;
 import io.harness.beans.steps.stepinfo.InitializeStepInfo;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.category.element.UnitTests;
@@ -20,12 +18,16 @@ import io.harness.ci.pipeline.executions.beans.CIImageDetails;
 import io.harness.ci.pipeline.executions.beans.CIInfraDetails;
 import io.harness.ci.pipeline.executions.beans.CIScmDetails;
 import io.harness.ci.pipeline.executions.beans.TIBuildDetails;
+import io.harness.cimanager.stages.IntegrationStageConfig;
+import io.harness.cimanager.stages.IntegrationStageConfigImpl;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.connector.scm.GitConnectionType;
 import io.harness.plancreator.execution.ExecutionElementConfig;
 import io.harness.plancreator.execution.ExecutionWrapperConfig;
 import io.harness.plancreator.steps.StepElementConfig;
+import io.harness.pms.sdk.core.steps.io.StepParameters;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.yaml.core.StepSpecType;
 import io.harness.yaml.extended.ci.codebase.CodeBase;
 
 import java.util.ArrayList;
@@ -168,5 +170,44 @@ public class IntegrationStageUtilsTest {
     assertThat(refs.size()).isEqualTo(8);
     assertThat(refs.contains("account.harnessImage")).isTrue();
     assertThat(refs.contains("run")).isTrue();
+  }
+
+  @Test
+  @Category(UnitTests.class)
+  public void testInjectLoopEnvVariables() throws Exception {
+    List<ExecutionWrapperConfig> wrapperConfigs =
+        K8InitializeStepUtilsHelper.getExecutionWrapperConfigListWithStepGroup1();
+    for (ExecutionWrapperConfig config : wrapperConfigs) {
+      IntegrationStageUtils.injectLoopEnvVariables(config);
+    }
+    List<StepElementConfig> steps = IntegrationStageUtils.getAllSteps(wrapperConfigs);
+    for (StepElementConfig step : steps) {
+      StepSpecType spec = step.getStepSpecType();
+      StepParameters params = spec.getStepParameters();
+      String stepJson = params.toString();
+      assertThat(stepJson.contains("\"HARNESS_STAGE_INDEX\": \"<+stage.iteration>\""));
+      assertThat(stepJson.contains("\"HARNESS_STAGE_TOTAL\": \"<+stage.iterations>\""));
+      assertThat(stepJson.contains("\"HARNESS_STEP_INDEX\": \"<+step.iteration>\""));
+      assertThat(stepJson.contains("\"HARNESS_STEP_TOTAL\": \"<+step.iterations>\""));
+      assertThat(stepJson.contains("\"HARNESS_NODE_INDEX\": \"<+strategy.iterations>\""));
+      assertThat(stepJson.contains("\"HARNESS_NODE_TOTAL\": \"<+strategy.iterations>\""));
+    }
+
+    wrapperConfigs = K8InitializeStepUtilsHelper.getExecutionWrapperConfigListWithStepGroup2();
+    for (ExecutionWrapperConfig config : wrapperConfigs) {
+      IntegrationStageUtils.injectLoopEnvVariables(config);
+    }
+    steps = IntegrationStageUtils.getAllSteps(wrapperConfigs);
+    for (StepElementConfig step : steps) {
+      StepSpecType spec = step.getStepSpecType();
+      StepParameters params = spec.getStepParameters();
+      String stepJson = params.toString();
+      assertThat(stepJson.contains("\"HARNESS_STAGE_INDEX\": \"<+stage.iteration>\""));
+      assertThat(stepJson.contains("\"HARNESS_STAGE_TOTAL\": \"<+stage.iterations>\""));
+      assertThat(stepJson.contains("\"HARNESS_STEP_INDEX\": \"<+step.iteration>\""));
+      assertThat(stepJson.contains("\"HARNESS_STEP_TOTAL\": \"<+step.iterations>\""));
+      assertThat(stepJson.contains("\"HARNESS_NODE_INDEX\": \"<+strategy.iterations>\""));
+      assertThat(stepJson.contains("\"HARNESS_NODE_TOTAL\": \"<+strategy.iterations>\""));
+    }
   }
 }

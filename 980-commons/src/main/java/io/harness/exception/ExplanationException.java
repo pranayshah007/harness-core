@@ -75,6 +75,8 @@ public class ExplanationException extends WingsException {
   public static String AUTHORIZATION_FAILURE = "Provided credentials are unauthorized.";
   public static String DELEGATE_TO_HOST_SOCKET_CONNECTION_FAILED =
       "Delegate(s) is(are) not able to establish socket connection to host(s)";
+  public static String EXPLANATION_FILE_CREATION_ERROR = "Unable to create a new file";
+
   public ExplanationException(String message, Throwable cause) {
     super(message, cause, EXPLANATION, INFO, USER_SRE, null);
     super.excludeReportTarget(EXPLANATION, EnumSet.of(ReportTarget.LOG_SYSTEM));

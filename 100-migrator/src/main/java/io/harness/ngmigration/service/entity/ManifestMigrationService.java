@@ -93,6 +93,9 @@ public class ManifestMigrationService extends NgMigrationService {
 
   @Override
   public DiscoveryNode discover(NGMigrationEntity entity) {
+    if (entity == null) {
+      return null;
+    }
     ApplicationManifest appManifest = (ApplicationManifest) entity;
     CgEntityId cgEntityId = CgEntityId.builder().id(appManifest.getUuid()).type(NGMigrationEntityType.MANIFEST).build();
     CgEntityNode cgEntityNode = CgEntityNode.builder()

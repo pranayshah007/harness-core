@@ -10,13 +10,17 @@ package io.harness.strategy;
 import io.harness.exception.InvalidYamlException;
 import io.harness.plancreator.strategy.AxisConfig;
 import io.harness.plancreator.strategy.ExcludeConfig;
+import io.harness.plancreator.strategy.ExpressionAxisConfig;
 import io.harness.plancreator.strategy.MatrixConfig;
 import io.harness.plancreator.strategy.StrategyConfig;
 import io.harness.pms.yaml.ParameterField;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import lombok.experimental.UtilityClass;
+import org.apache.commons.lang3.StringUtils;
 
 @UtilityClass
 public class StrategyValidationUtils {
@@ -25,21 +29,19 @@ public class StrategyValidationUtils {
 
   public void validateStrategyNode(StrategyConfig config) {
     if (config.getMatrixConfig() != null) {
+      validateAxes(config);
+      Set<String> validKeys = new HashSet<>();
       Map<String, AxisConfig> axisConfig = ((MatrixConfig) config.getMatrixConfig()).getAxes();
-      if (axisConfig == null || axisConfig.size() == 0) {
-        throw new InvalidYamlException("No Axes defined in matrix. Please define at least one axis");
-      }
-      for (Map.Entry<String, AxisConfig> entry : axisConfig.entrySet()) {
-        if (!entry.getValue().getAxisValue().isExpression() && entry.getValue().getAxisValue().getValue().isEmpty()) {
-          throw new InvalidYamlException(String.format(
-              "Axis is empty for key [%s]. Please provide at least one value in the axis.", entry.getKey()));
-        }
-      }
+      Map<String, ExpressionAxisConfig> expressionAxisConfig =
+          ((MatrixConfig) config.getMatrixConfig()).getExpressionAxes();
+      validKeys.addAll(axisConfig.keySet());
+      validKeys.addAll(expressionAxisConfig.keySet());
+
       if (!ParameterField.isBlank(((MatrixConfig) config.getMatrixConfig()).getExclude())
           && ((MatrixConfig) config.getMatrixConfig()).getExclude().getValue() != null) {
         List<ExcludeConfig> excludeConfigs = ((MatrixConfig) config.getMatrixConfig()).getExclude().getValue();
         for (ExcludeConfig excludeConfig : excludeConfigs) {
-          if (!axisConfig.keySet().containsAll(excludeConfig.getExclude().keySet())) {
+          if (!validKeys.containsAll(excludeConfig.getExclude().keySet())) {
             throw new InvalidYamlException(
                 "Values defined in the exclude are not correct. Please make sure exclude contains all the valid keys defined as axes.");
           }
@@ -55,6 +57,28 @@ public class StrategyValidationUtils {
         && config.getParallelism().getValue() == 0) {
       throw new InvalidYamlException(
           "Parallelism can not be [zero]. Please provide some positive Integer for Parallelism");
+    }
+  }
+
+  private void validateAxes(StrategyConfig config) {
+    Map<String, AxisConfig> axisConfig = ((MatrixConfig) config.getMatrixConfig()).getAxes();
+    Map<String, ExpressionAxisConfig> expressionAxisConfig =
+        ((MatrixConfig) config.getMatrixConfig()).getExpressionAxes();
+    int sizeOfAxis = axisConfig.size() + expressionAxisConfig.size();
+    if (sizeOfAxis == 0) {
+      throw new InvalidYamlException("No Axes defined in matrix. Please define at least one axis");
+    }
+    for (Map.Entry<String, AxisConfig> entry : axisConfig.entrySet()) {
+      if (!entry.getValue().getAxisValue().isExpression() && entry.getValue().getAxisValue().getValue().isEmpty()) {
+        throw new InvalidYamlException(String.format(
+            "Axis is empty for key [%s]. Please provide at least one value in the axis.", entry.getKey()));
+      }
+    }
+    for (Map.Entry<String, ExpressionAxisConfig> entry : expressionAxisConfig.entrySet()) {
+      if (StringUtils.isEmpty(entry.getValue().getExpression().getExpressionValue())) {
+        throw new InvalidYamlException(String.format(
+            "Axis is empty for key [%s]. Please provide at least one value in the axis.", entry.getKey()));
+      }
     }
   }
 }

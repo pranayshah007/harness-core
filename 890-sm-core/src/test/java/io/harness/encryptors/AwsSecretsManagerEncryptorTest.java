@@ -9,6 +9,7 @@ package io.harness.encryptors;
 
 import static io.harness.rule.OwnerRule.PIYUSH;
 import static io.harness.rule.OwnerRule.UTKARSH;
+import static io.harness.rule.OwnerRule.VIKAS_M;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
@@ -44,6 +45,7 @@ import com.amazonaws.services.secretsmanager.model.ResourceNotFoundException;
 import com.amazonaws.services.secretsmanager.model.Tag;
 import com.amazonaws.services.secretsmanager.model.UpdateSecretRequest;
 import com.amazonaws.services.secretsmanager.model.UpdateSecretResult;
+import com.google.common.util.concurrent.UncheckedTimeoutException;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -94,6 +96,84 @@ public class AwsSecretsManagerEncryptorTest extends CategoryTest {
         awsSecretsManagerConfig.getAccountId(), secretName, plainTextValue, awsSecretsManagerConfig);
     assertThat(encryptedRecord.getEncryptedValue()).isEqualTo(createSecretResult.getARN().toCharArray());
     assertThat(encryptedRecord.getEncryptionKey()).isEqualTo(fullSecretName);
+  }
+
+  @Test
+  @Owner(developers = VIKAS_M)
+  @Category(UnitTests.class)
+  public void testCreateSecret_throwsAwsSecretManagerException() {
+    String plainTextValue = UUIDGenerator.generateUuid();
+    String secretName = UUIDGenerator.generateUuid();
+    String fullSecretName = awsSecretsManagerConfig.getSecretNamePrefix() + "/" + secretName;
+    // Create the secret with proper tags.
+    CreateSecretRequest createSecretRequest = new CreateSecretRequest()
+                                                  .withName(fullSecretName)
+                                                  .withSecretString(plainTextValue)
+                                                  .withTags(new Tag().withKey("createdBy").withValue("Harness"));
+    when(awsSecretsManager.createSecret(createSecretRequest))
+        .thenThrow(new AWSSecretsManagerException("Mock AWS exception"));
+    GetSecretValueRequest getSecretRequest = new GetSecretValueRequest().withSecretId(fullSecretName);
+    when(awsSecretsManager.getSecretValue(getSecretRequest))
+        .thenThrow(new ResourceNotFoundException("Secret not found mock exception"));
+
+    try {
+      awsSecretsManagerEncryptor.createSecret(
+          awsSecretsManagerConfig.getAccountId(), secretName, plainTextValue, awsSecretsManagerConfig);
+    } catch (AWSSecretsManagerException ex) {
+      assertThat(ex.getErrorMessage()).isEqualTo("Mock AWS exception");
+    }
+  }
+
+  @Test
+  @Owner(developers = VIKAS_M)
+  @Category(UnitTests.class)
+  public void testCreateSecret_throwsTimeOutException() {
+    String plainTextValue = UUIDGenerator.generateUuid();
+    String secretName = UUIDGenerator.generateUuid();
+    String fullSecretName = awsSecretsManagerConfig.getSecretNamePrefix() + "/" + secretName;
+    // Create the secret with proper tags.
+    CreateSecretRequest createSecretRequest = new CreateSecretRequest()
+                                                  .withName(fullSecretName)
+                                                  .withSecretString(plainTextValue)
+                                                  .withTags(new Tag().withKey("createdBy").withValue("Harness"));
+    when(awsSecretsManager.createSecret(createSecretRequest)).thenThrow(new UncheckedTimeoutException("Time out"));
+    GetSecretValueRequest getSecretRequest = new GetSecretValueRequest().withSecretId(fullSecretName);
+    when(awsSecretsManager.getSecretValue(getSecretRequest))
+        .thenThrow(new ResourceNotFoundException("Secret not found mock exception"));
+
+    try {
+      awsSecretsManagerEncryptor.createSecret(
+          awsSecretsManagerConfig.getAccountId(), secretName, plainTextValue, awsSecretsManagerConfig);
+    } catch (SecretManagementDelegateException ex) {
+      assertThat(ex.getMessage())
+          .isEqualTo("After 3 tries, delegate(s) is not able to establish connection to AWS services.");
+    }
+  }
+
+  @Test
+  @Owner(developers = VIKAS_M)
+  @Category(UnitTests.class)
+  public void testCreateSecret_throwsException() {
+    String plainTextValue = UUIDGenerator.generateUuid();
+    String secretName = UUIDGenerator.generateUuid();
+    String fullSecretName = awsSecretsManagerConfig.getSecretNamePrefix() + "/" + secretName;
+    // Create the secret with proper tags.
+    CreateSecretRequest createSecretRequest = new CreateSecretRequest()
+                                                  .withName(fullSecretName)
+                                                  .withSecretString(plainTextValue)
+                                                  .withTags(new Tag().withKey("createdBy").withValue("Harness"));
+    when(awsSecretsManager.createSecret(createSecretRequest))
+        .thenThrow(new RuntimeException("Random runtime exception"));
+    GetSecretValueRequest getSecretRequest = new GetSecretValueRequest().withSecretId(fullSecretName);
+    when(awsSecretsManager.getSecretValue(getSecretRequest))
+        .thenThrow(new ResourceNotFoundException("Secret not found mock exception"));
+
+    try {
+      awsSecretsManagerEncryptor.createSecret(
+          awsSecretsManagerConfig.getAccountId(), secretName, plainTextValue, awsSecretsManagerConfig);
+    } catch (SecretManagementDelegateException ex) {
+      assertThat(ex.getMessage()).isEqualTo("Secret creation failed after 3 retries. Random runtime exception");
+    }
   }
 
   @Test
@@ -178,6 +258,99 @@ public class AwsSecretsManagerEncryptorTest extends CategoryTest {
         awsSecretsManagerConfig.getAccountId(), secretName, plainTextValue, oldRecord, awsSecretsManagerConfig);
     assertThat(encryptedRecord.getEncryptedValue()).isEqualTo(updateSecretResult.getARN().toCharArray());
     assertThat(encryptedRecord.getEncryptionKey()).isEqualTo(fullSecretName);
+  }
+
+  @Test
+  @Owner(developers = VIKAS_M)
+  @Category(UnitTests.class)
+  public void testUpdateSecret_throwsAwsSecretManagerException() {
+    String plainTextValue = UUIDGenerator.generateUuid();
+    String secretName = UUIDGenerator.generateUuid();
+    String fullSecretName = awsSecretsManagerConfig.getSecretNamePrefix() + "/" + secretName;
+    // Create the secret with proper tags.
+    UpdateSecretRequest updateSecretRequest =
+        new UpdateSecretRequest().withSecretId(fullSecretName).withSecretString(plainTextValue);
+    when(awsSecretsManager.updateSecret(updateSecretRequest))
+        .thenThrow(new AWSSecretsManagerException("Mock AWS exception"));
+    GetSecretValueRequest getSecretRequest = new GetSecretValueRequest().withSecretId(fullSecretName);
+    GetSecretValueResult getSecretValueResult =
+        new GetSecretValueResult().withSecretString(UUIDGenerator.generateUuid());
+    when(awsSecretsManager.getSecretValue(getSecretRequest)).thenReturn(getSecretValueResult);
+
+    EncryptedRecord oldRecord = EncryptedRecordData.builder()
+                                    .name(UUIDGenerator.generateUuid())
+                                    .encryptionKey(UUIDGenerator.generateUuid())
+                                    .encryptedValue(UUIDGenerator.generateUuid().toCharArray())
+                                    .build();
+
+    try {
+      awsSecretsManagerEncryptor.updateSecret(
+          awsSecretsManagerConfig.getAccountId(), secretName, plainTextValue, oldRecord, awsSecretsManagerConfig);
+    } catch (AWSSecretsManagerException ex) {
+      assertThat(ex.getErrorMessage()).isEqualTo("Mock AWS exception");
+    }
+  }
+
+  @Test
+  @Owner(developers = VIKAS_M)
+  @Category(UnitTests.class)
+  public void testUpdateSecret_throwsTimeOutException() {
+    String plainTextValue = UUIDGenerator.generateUuid();
+    String secretName = UUIDGenerator.generateUuid();
+    String fullSecretName = awsSecretsManagerConfig.getSecretNamePrefix() + "/" + secretName;
+    // Create the secret with proper tags.
+    UpdateSecretRequest updateSecretRequest =
+        new UpdateSecretRequest().withSecretId(fullSecretName).withSecretString(plainTextValue);
+    when(awsSecretsManager.updateSecret(updateSecretRequest)).thenThrow(new UncheckedTimeoutException("Time out"));
+    GetSecretValueRequest getSecretRequest = new GetSecretValueRequest().withSecretId(fullSecretName);
+    GetSecretValueResult getSecretValueResult =
+        new GetSecretValueResult().withSecretString(UUIDGenerator.generateUuid());
+    when(awsSecretsManager.getSecretValue(getSecretRequest)).thenReturn(getSecretValueResult);
+
+    EncryptedRecord oldRecord = EncryptedRecordData.builder()
+                                    .name(UUIDGenerator.generateUuid())
+                                    .encryptionKey(UUIDGenerator.generateUuid())
+                                    .encryptedValue(UUIDGenerator.generateUuid().toCharArray())
+                                    .build();
+
+    try {
+      awsSecretsManagerEncryptor.updateSecret(
+          awsSecretsManagerConfig.getAccountId(), secretName, plainTextValue, oldRecord, awsSecretsManagerConfig);
+    } catch (SecretManagementDelegateException ex) {
+      assertThat(ex.getMessage())
+          .isEqualTo("After 3 tries, delegate(s) is not able to establish connection to AWS services.");
+    }
+  }
+
+  @Test
+  @Owner(developers = VIKAS_M)
+  @Category(UnitTests.class)
+  public void testUpdateSecret_throwsException() {
+    String plainTextValue = UUIDGenerator.generateUuid();
+    String secretName = UUIDGenerator.generateUuid();
+    String fullSecretName = awsSecretsManagerConfig.getSecretNamePrefix() + "/" + secretName;
+    // Create the secret with proper tags.
+    UpdateSecretRequest updateSecretRequest =
+        new UpdateSecretRequest().withSecretId(fullSecretName).withSecretString(plainTextValue);
+    when(awsSecretsManager.updateSecret(updateSecretRequest))
+        .thenThrow(new RuntimeException("Random runtime exception"));
+    GetSecretValueRequest getSecretRequest = new GetSecretValueRequest().withSecretId(fullSecretName);
+    GetSecretValueResult getSecretValueResult =
+        new GetSecretValueResult().withSecretString(UUIDGenerator.generateUuid());
+    when(awsSecretsManager.getSecretValue(getSecretRequest)).thenReturn(getSecretValueResult);
+
+    EncryptedRecord oldRecord = EncryptedRecordData.builder()
+                                    .name(UUIDGenerator.generateUuid())
+                                    .encryptionKey(UUIDGenerator.generateUuid())
+                                    .encryptedValue(UUIDGenerator.generateUuid().toCharArray())
+                                    .build();
+
+    try {
+      awsSecretsManagerEncryptor.updateSecret(
+          awsSecretsManagerConfig.getAccountId(), secretName, plainTextValue, oldRecord, awsSecretsManagerConfig);
+    } catch (SecretManagementDelegateException ex) {
+      assertThat(ex.getMessage()).isEqualTo("Secret update failed after 3 retries. Random runtime exception");
+    }
   }
 
   @Test
@@ -378,9 +551,8 @@ public class AwsSecretsManagerEncryptorTest extends CategoryTest {
       awsSecretsManagerEncryptor.createSecret(
           awsSecretsManagerConfig.getAccountId(), secretName, plainTextValue, awsSecretsManagerConfig);
       fail("Create Secret should have failed");
-    } catch (SecretManagementDelegateException e) {
-      assertThat(e.getMessage()).contains("Secret creation failed after 3 retries");
-      assertThat(e.getCause()).isOfAnyClassIn(AWSSecretsManagerException.class);
+    } catch (AWSSecretsManagerException e) {
+      assertThat(e.getErrorMessage()).isEqualTo("Dummy exception");
     }
   }
 
@@ -399,9 +571,8 @@ public class AwsSecretsManagerEncryptorTest extends CategoryTest {
       awsSecretsManagerEncryptor.updateSecret(awsSecretsManagerConfig.getAccountId(), secretName, plainTextValue,
           mock(EncryptedRecord.class), awsSecretsManagerConfig);
       fail("Update Secret should have failed");
-    } catch (SecretManagementDelegateException e) {
-      assertThat(e.getMessage()).contains("Secret update failed after 3 retries");
-      assertThat(e.getCause()).isOfAnyClassIn(AWSSecretsManagerException.class);
+    } catch (AWSSecretsManagerException e) {
+      assertThat(e.getErrorMessage()).isEqualTo("Dummy exception");
     }
   }
 
@@ -421,9 +592,9 @@ public class AwsSecretsManagerEncryptorTest extends CategoryTest {
       awsSecretsManagerEncryptor.renameSecret(
           awsSecretsManagerConfig.getAccountId(), secretName, encryptedRecord, awsSecretsManagerConfig);
       fail("Rename Secret should have failed");
-    } catch (SecretManagementDelegateException e) {
-      assertThat(e.getMessage()).contains("Secret update failed after 3 retries");
-      assertThat(e.getCause()).isOfAnyClassIn(ResourceNotFoundException.class);
+    } catch (AWSSecretsManagerException e) {
+      assertThat(e.getErrorMessage()).isEqualTo("Secret not found mock exception");
+      assertThat(e).isInstanceOf(ResourceNotFoundException.class);
     }
   }
 
@@ -448,7 +619,7 @@ public class AwsSecretsManagerEncryptorTest extends CategoryTest {
   @Test
   @Owner(developers = UTKARSH)
   @Category(UnitTests.class)
-  public void testFetchSecret_shouldThrowException() {
+  public void testFetchSecret_throwsAwsSecretManagerException() {
     String path = UUIDGenerator.generateUuid();
     GetSecretValueRequest getSecretRequest = new GetSecretValueRequest().withSecretId(path);
     when(awsSecretsManager.getSecretValue(getSecretRequest))
@@ -458,9 +629,45 @@ public class AwsSecretsManagerEncryptorTest extends CategoryTest {
       awsSecretsManagerEncryptor.fetchSecretValue(
           awsSecretsManagerConfig.getAccountId(), encryptedRecord, awsSecretsManagerConfig);
       fail("fetch secret value should throw exception");
-    } catch (SecretManagementDelegateException e) {
-      assertThat(e.getMessage()).isEqualTo("Fetching secret failed after 3 retries");
-      assertThat(e.getCause()).isOfAnyClassIn(ResourceNotFoundException.class);
+    } catch (AWSSecretsManagerException e) {
+      assertThat(e.getErrorMessage()).isEqualTo("Secret not found mock exception");
+      assertThat(e).isInstanceOf(ResourceNotFoundException.class);
+    }
+  }
+
+  @Test
+  @Owner(developers = VIKAS_M)
+  @Category(UnitTests.class)
+  public void testFetchSecret_throwsTimeOutException() {
+    String path = UUIDGenerator.generateUuid();
+    GetSecretValueRequest getSecretRequest = new GetSecretValueRequest().withSecretId(path);
+    when(awsSecretsManager.getSecretValue(getSecretRequest)).thenThrow(new UncheckedTimeoutException("Time out"));
+    EncryptedRecord encryptedRecord = EncryptedRecordData.builder().path(path).build();
+    try {
+      awsSecretsManagerEncryptor.fetchSecretValue(
+          awsSecretsManagerConfig.getAccountId(), encryptedRecord, awsSecretsManagerConfig);
+      fail("fetch secret value should throw exception");
+    } catch (SecretManagementDelegateException ex) {
+      assertThat(ex.getMessage())
+          .isEqualTo("After 3 tries, delegate(s) is not able to establish connection to AWS services.");
+    }
+  }
+
+  @Test
+  @Owner(developers = VIKAS_M)
+  @Category(UnitTests.class)
+  public void testFetchSecret_throwsException() {
+    String path = UUIDGenerator.generateUuid();
+    GetSecretValueRequest getSecretRequest = new GetSecretValueRequest().withSecretId(path);
+    when(awsSecretsManager.getSecretValue(getSecretRequest))
+        .thenThrow(new RuntimeException("Random runtime exception"));
+    EncryptedRecord encryptedRecord = EncryptedRecordData.builder().path(path).build();
+    try {
+      awsSecretsManagerEncryptor.fetchSecretValue(
+          awsSecretsManagerConfig.getAccountId(), encryptedRecord, awsSecretsManagerConfig);
+      fail("fetch secret value should throw exception");
+    } catch (SecretManagementDelegateException ex) {
+      assertThat(ex.getMessage()).isEqualTo("Fetching secret failed after 3 retries. Random runtime exception");
     }
   }
 

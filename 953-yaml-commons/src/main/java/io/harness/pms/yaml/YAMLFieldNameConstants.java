@@ -78,4 +78,7 @@ public class YAMLFieldNameConstants {
   public final String PIPELINE_IDENTIFIER = "pipelineIdentifier";
   public final String USE_FROM_STAGE = "useFromStage";
   public final String SERVICE = "service";
+
+  public final String INPUT_SET_REFERENCES = "inputSetReferences";
+  public final String REPEAT = "repeat";
 }

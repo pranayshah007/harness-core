@@ -15,6 +15,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DecryptableEntity;
 import io.harness.connector.DelegateSelectable;
+import io.harness.connector.ManagerExecutable;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.scm.GitAuthType;
@@ -56,7 +57,8 @@ import org.hibernate.validator.constraints.NotBlank;
 @Slf4j
 @OwnedBy(HarnessTeam.DX)
 @Schema(name = "BitbucketConnector", description = "This contains details of Bitbucket connectors")
-public class BitbucketConnectorDTO extends ConnectorConfigDTO implements ScmConnector, DelegateSelectable {
+public class BitbucketConnectorDTO
+    extends ConnectorConfigDTO implements ScmConnector, DelegateSelectable, ManagerExecutable {
   @NotNull
   @JsonProperty("type")
   @Schema(type = "string", allowableValues = {"Account", "Repo"})
@@ -66,17 +68,20 @@ public class BitbucketConnectorDTO extends ConnectorConfigDTO implements ScmConn
   @Valid @NotNull private BitbucketAuthenticationDTO authentication;
   @Valid private BitbucketApiAccessDTO apiAccess;
   private Set<String> delegateSelectors;
+  Boolean executeOnDelegate = true;
   private String gitConnectionUrl;
 
   @Builder
   public BitbucketConnectorDTO(GitConnectionType connectionType, String url, String validationRepo,
-      BitbucketAuthenticationDTO authentication, BitbucketApiAccessDTO apiAccess, Set<String> delegateSelectors) {
+      BitbucketAuthenticationDTO authentication, BitbucketApiAccessDTO apiAccess, Set<String> delegateSelectors,
+      Boolean executeOnDelegate) {
     this.connectionType = connectionType;
     this.url = url;
     this.validationRepo = validationRepo;
     this.authentication = authentication;
     this.apiAccess = apiAccess;
     this.delegateSelectors = delegateSelectors;
+    this.executeOnDelegate = executeOnDelegate;
   }
 
   @Override

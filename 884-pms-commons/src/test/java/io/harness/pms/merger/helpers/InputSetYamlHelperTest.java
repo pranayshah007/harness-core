@@ -19,6 +19,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.rule.Owner;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import org.junit.Test;
@@ -149,6 +150,22 @@ public class InputSetYamlHelperTest extends CategoryTest {
     String yaml3 = getInputSetYaml(true);
     assertThatThrownBy(() -> InputSetYamlHelper.getReferencesFromOverlayInputSetYaml(yaml3))
         .hasMessage("Yaml provided is not an overlay input set yaml.");
+  }
+
+  @Test
+  @Owner(developers = NAMAN)
+  @Category(UnitTests.class)
+  public void testSetReferencesFromOverlayInputSetYaml() {
+    String yaml = getOverlayInputSetYaml(false, true);
+    List<String> newReferences = Arrays.asList("ref1", "ref2", "ref1NotAgain");
+    String newYaml = InputSetYamlHelper.setReferencesFromOverlayInputSetYaml(yaml, newReferences);
+    assertThat(newYaml).isEqualTo("overlayInputSet:\n"
+        + "  name: \"n1\"\n"
+        + "  identifier: \"n1\"\n"
+        + "  inputSetReferences:\n"
+        + "  - \"ref1\"\n"
+        + "  - \"ref2\"\n"
+        + "  - \"ref1NotAgain\"\n");
   }
 
   @Test

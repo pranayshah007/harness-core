@@ -91,9 +91,17 @@ public class PipelineExecutionUpdateEventHandler implements OrchestrationEventHa
           log.info("Submitted cleanup request with taskId {} for planExecutionId {}, stage {}", taskId,
               ambiance.getPlanExecutionId(), level.getIdentifier());
 
+          String logKey = getLogKey(ambiance);
+
+          // Append '/' at the end of the prefix if it's not present so that it doesn't close log streams
+          // for a different key.
+          if (!logKey.endsWith("/")) {
+            logKey = logKey + "/";
+          }
+
           // If there are any leftover logs still in the stream (this might be possible in specific cases
           // like in k8s node pressure evictions) - then this is where we move all of them to blob storage.
-          ciLogServiceUtils.closeLogStream(AmbianceUtils.getAccountId(ambiance), getLogKey(ambiance), true, true);
+          ciLogServiceUtils.closeLogStream(AmbianceUtils.getAccountId(ambiance), logKey, true, true);
         }
       });
     } catch (Exception ex) {

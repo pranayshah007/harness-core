@@ -17,6 +17,7 @@ import io.harness.AccessControlClientConfiguration;
 import io.harness.account.AccountClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.callback.DelegateCallbackToken;
+import io.harness.concurrent.HTimeLimiter;
 import io.harness.connector.helper.DecryptionHelper;
 import io.harness.connector.helper.DecryptionHelperViaManager;
 import io.harness.connector.impl.ConnectorActivityServiceImpl;
@@ -69,6 +70,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.util.concurrent.TimeLimiter;
 import com.google.inject.AbstractModule;
 import com.google.inject.Injector;
 import com.google.inject.Module;
@@ -108,6 +110,7 @@ public class ConnectorTestRule implements InjectorRuleMixin, MethodRule, MongoRu
     modules.add(new AbstractModule() {
       @Override
       protected void configure() {
+        bind(TimeLimiter.class).toInstance(HTimeLimiter.create());
         bind(HPersistence.class).to(MongoPersistence.class);
         bind(ConnectorActivityService.class).to(ConnectorActivityServiceImpl.class);
         bind(ProjectService.class).toInstance(mock(ProjectService.class));

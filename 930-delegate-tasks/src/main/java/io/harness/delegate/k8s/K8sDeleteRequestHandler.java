@@ -174,7 +174,7 @@ public class K8sDeleteRequestHandler extends K8sRequestHandler {
         resources = k8sTaskHelperBase.getResourcesFromManifests(k8sDelegateTaskParams,
             k8sDeleteRequest.getManifestDelegateConfig(), manifestFilesDirectory, deleteFilePaths,
             manifestOverrideFiles, releaseName, k8sDeleteRequest.getK8sInfraDelegateConfig().getNamespace(),
-            executionLogCallback, k8sDeleteRequest.getTimeoutIntervalInMin());
+            executionLogCallback, k8sDeleteRequest.getTimeoutIntervalInMin(), false);
 
         executionLogCallback.saveExecutionLog(color("\nManifests [Post template rendering] :\n", White, Bold));
         executionLogCallback.saveExecutionLog(ManifestHelper.toYamlForLogs(resources));
@@ -224,7 +224,7 @@ public class K8sDeleteRequestHandler extends K8sRequestHandler {
     }
 
     if (resourceIdsToDelete.isEmpty()) {
-      executionLogCallback.saveExecutionLog("\nNo resources found to delete.", INFO, SUCCESS);
+      executionLogCallback.saveExecutionLog("\nNo resources found to delete.", INFO);
     } else {
       executionLogCallback.saveExecutionLog(color("\nResources to delete are: ", White, Bold)
           + color(getResourcesInStringFormat(resourceIdsToDelete), Gray));

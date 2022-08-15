@@ -16,7 +16,7 @@
         },
         {
           "type": "string",
-          "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
+          "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
           "minLength": 1
         }
       ]
@@ -87,6 +87,118 @@
     }
   ],
   "definitions": {
+    "ACRStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "required": [
+            "connectorRef",
+            "repository",
+            "tags"
+          ],
+          "properties": {
+            "baseImageConnectorRefs": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "buildArgs": {
+              "oneOf": [
+                {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "connectorRef": {
+              "type": "string"
+            },
+            "context": {
+              "type": "string"
+            },
+            "dockerfile": {
+              "type": "string"
+            },
+            "labels": {
+              "oneOf": [
+                {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "optimize": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "remoteCacheImage": {
+              "type": "string"
+            },
+            "repository": {
+              "type": "string"
+            },
+            "resources": {
+              "$ref": "#/definitions/ContainerResource"
+            },
+            "runAsUser": {
+              "oneOf": [
+                {
+                  "type": "integer",
+                  "format": "int32"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "tags": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "target": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "AbortFailureActionConfig": {
       "allOf": [
         {
@@ -303,7 +415,7 @@
             },
             {
               "type": "string",
-              "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
               "minLength": 1
             }
           ]
@@ -318,7 +430,7 @@
             },
             {
               "type": "string",
-              "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
               "minLength": 1
             }
           ]
@@ -347,6 +459,41 @@
           }
         }
       ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "CloudRuntime": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/Runtime"
+        },
+        {
+          "type": "object",
+          "required": [
+            "spec",
+            "type"
+          ],
+          "properties": {
+            "spec": {
+              "$ref": "#/definitions/CloudRuntimeSpec"
+            },
+            "type": {
+              "type": "string",
+              "enum": [
+                "Cloud"
+              ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "CloudRuntimeSpec": {
+      "type": "object",
+      "properties": {
+        "size": {
+          "type": "string"
+        }
+      },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "CodeBase": {
@@ -1295,6 +1442,47 @@
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "HostedVmInfraSpec": {
+      "type": "object",
+      "required": [
+        "platform"
+      ],
+      "properties": {
+        "platform": {
+          "$ref": "#/definitions/ParameterFieldPlatform"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "HostedVmInfraYaml": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/Infrastructure"
+        },
+        {
+          "type": "object",
+          "required": [
+            "spec",
+            "type"
+          ],
+          "properties": {
+            "spec": {
+              "$ref": "#/definitions/HostedVmInfraSpec"
+            },
+            "type": {
+              "type": "string",
+              "enum": [
+                "KubernetesDirect",
+                "UseFromStage",
+                "VM",
+                "KubernetesHosted"
+              ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "IgnoreFailureActionConfig": {
       "allOf": [
         {
@@ -1404,6 +1592,12 @@
             "stageIdentifier": {
               "type": "string"
             },
+            "strategyExpansionMap": {
+              "type": "object",
+              "additionalProperties": {
+                "$ref": "#/definitions/StrategyExpansionData"
+              }
+            },
             "variables": {
               "type": "array",
               "items": {
@@ -1443,8 +1637,11 @@
         "infrastructure": {
           "$ref": "#/definitions/Infrastructure"
         },
-        "runsOn": {
-          "$ref": "#/definitions/ParameterFieldString"
+        "platform": {
+          "$ref": "#/definitions/ParameterFieldPlatform"
+        },
+        "runtime": {
+          "$ref": "#/definitions/Runtime"
         },
         "serviceDependencies": {
           "$ref": "#/definitions/ParameterFieldListDependencyElement"
@@ -1569,7 +1766,7 @@
             },
             {
               "type": "string",
-              "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
               "minLength": 1
             }
           ]
@@ -1584,7 +1781,7 @@
             },
             {
               "type": "string",
-              "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
               "minLength": 1
             }
           ]
@@ -1621,7 +1818,7 @@
             },
             {
               "type": "string",
-              "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
               "minLength": 1
             }
           ]
@@ -1638,7 +1835,7 @@
             },
             {
               "type": "string",
-              "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
               "minLength": 1
             }
           ]
@@ -1670,7 +1867,7 @@
             },
             {
               "type": "string",
-              "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
               "minLength": 1
             }
           ]
@@ -1685,7 +1882,7 @@
             },
             {
               "type": "string",
-              "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
               "minLength": 1
             }
           ]
@@ -1861,7 +2058,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
                   "minLength": 1
                 }
               ]
@@ -2444,11 +2641,11 @@
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
-    "ParameterFieldString": {
+    "ParameterFieldPlatform": {
       "type": "object",
       "properties": {
         "defaultValue": {
-          "type": "string"
+          "$ref": "#/definitions/Platform"
         },
         "executionInput": {
           "type": "boolean"
@@ -2472,7 +2669,7 @@
           "type": "boolean"
         },
         "value": {
-          "type": "string"
+          "$ref": "#/definitions/Platform"
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -2524,6 +2721,44 @@
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "Platform": {
+      "type": "object",
+      "properties": {
+        "arch": {
+          "oneOf": [
+            {
+              "type": "string",
+              "enum": [
+                "Amd64"
+              ]
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
+        },
+        "os": {
+          "oneOf": [
+            {
+              "type": "string",
+              "enum": [
+                "Linux",
+                "MacOS",
+                "Windows"
+              ]
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "PluginStepInfo": {
       "allOf": [
         {
@@ -2554,7 +2789,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
                   "minLength": 1
                 }
               ]
@@ -2566,7 +2801,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
                   "minLength": 1
                 }
               ]
@@ -2578,7 +2813,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
                   "minLength": 1
                 }
               ]
@@ -2764,7 +2999,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
                   "minLength": 1
                 }
               ]
@@ -2834,7 +3069,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
                   "minLength": 1
                 }
               ]
@@ -2949,18 +3184,6 @@
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
-    "RunOnInfraSpec": {
-      "type": "object",
-      "required": [
-        "runsOn"
-      ],
-      "properties": {
-        "runsOn": {
-          "type": "string"
-        }
-      },
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
     "RunStepInfo": {
       "allOf": [
         {
@@ -3006,7 +3229,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
                   "minLength": 1
                 }
               ]
@@ -3021,7 +3244,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
                   "minLength": 1
                 }
               ]
@@ -3033,7 +3256,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
                   "minLength": 1
                 }
               ]
@@ -3045,7 +3268,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
                   "minLength": 1
                 }
               ]
@@ -3077,7 +3300,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
                   "minLength": 1
                 }
               ]
@@ -3114,7 +3337,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
                   "minLength": 1
                 }
               ]
@@ -3133,7 +3356,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
                   "minLength": 1
                 }
               ]
@@ -3165,7 +3388,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
                   "minLength": 1
                 }
               ]
@@ -3185,7 +3408,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
                   "minLength": 1
                 }
               ]
@@ -3201,7 +3424,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
                   "minLength": 1
                 }
               ]
@@ -3219,7 +3442,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
                   "minLength": 1
                 }
               ]
@@ -3240,7 +3463,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
                   "minLength": 1
                 }
               ]
@@ -3252,7 +3475,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
                   "minLength": 1
                 }
               ]
@@ -3294,7 +3517,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
                   "minLength": 1
                 }
               ]
@@ -3307,33 +3530,17 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
-    "RunsOnInfra": {
-      "allOf": [
-        {
-          "$ref": "#/definitions/Infrastructure"
-        },
-        {
-          "type": "object",
-          "required": [
-            "spec",
-            "type"
-          ],
-          "properties": {
-            "spec": {
-              "$ref": "#/definitions/RunOnInfraSpec"
-            },
-            "type": {
-              "type": "string",
-              "enum": [
-                "KubernetesDirect",
-                "UseFromStage",
-                "VM",
-                "KubernetesHosted"
-              ]
-            }
-          }
+    "Runtime": {
+      "type": "object",
+      "discriminator": "type",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "Cloud"
+          ]
         }
-      ],
+      },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "SaveCacheGCSStepInfo": {
@@ -3361,7 +3568,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
                   "minLength": 1
                 }
               ]
@@ -3445,7 +3652,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
                   "minLength": 1
                 }
               ]
@@ -3562,7 +3769,7 @@
             },
             {
               "type": "string",
-              "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
               "minLength": 1
             }
           ]
@@ -3577,7 +3784,7 @@
             },
             {
               "type": "string",
-              "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
               "minLength": 1
             }
           ]
@@ -3592,7 +3799,7 @@
             },
             {
               "type": "string",
-              "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
               "minLength": 1
             }
           ]
@@ -3605,7 +3812,7 @@
             },
             {
               "type": "string",
-              "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
               "minLength": 1
             }
           ]
@@ -3617,7 +3824,7 @@
             },
             {
               "type": "string",
-              "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
               "minLength": 1
             }
           ]
@@ -3649,7 +3856,7 @@
             },
             {
               "type": "string",
-              "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
               "minLength": 1
             }
           ]
@@ -3660,13 +3867,13 @@
         "infrastructure": {
           "oneOf": [
             {
+              "$ref": "#/definitions/HostedVmInfraYaml"
+            },
+            {
               "$ref": "#/definitions/K8sDirectInfraYaml"
             },
             {
               "$ref": "#/definitions/K8sHostedInfraYaml"
-            },
-            {
-              "$ref": "#/definitions/RunsOnInfra"
             },
             {
               "$ref": "#/definitions/UseFromStageInfraYaml"
@@ -3676,8 +3883,24 @@
             }
           ]
         },
-        "runsOn": {
-          "type": "string"
+        "platform": {
+          "oneOf": [
+            {
+              "$ref": "#/definitions/Platform"
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
+        },
+        "runtime": {
+          "oneOf": [
+            {
+              "$ref": "#/definitions/CloudRuntime"
+            }
+          ]
         },
         "serviceDependencies": {
           "oneOf": [
@@ -3689,7 +3912,7 @@
             },
             {
               "type": "string",
-              "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
               "minLength": 1
             }
           ]
@@ -3728,7 +3951,7 @@
             },
             {
               "type": "string",
-              "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
               "minLength": 1
             }
           ]
@@ -3822,7 +4045,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
                   "minLength": 1
                 }
               ]
@@ -3837,7 +4060,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
                   "minLength": 1
                 }
               ]
@@ -3849,7 +4072,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
                   "minLength": 1
                 }
               ]
@@ -3978,6 +4201,22 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/UploadToArtifactoryStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "BuildAndPushACR"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/ACRStepInfo"
               }
             }
           }
@@ -4210,7 +4449,7 @@
             },
             {
               "type": "string",
-              "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
               "minLength": 1
             }
           ]
@@ -4343,6 +4582,16 @@
           ]
         }
       ]
+    },
+    "StrategyExpansionData": {
+      "type": "object",
+      "properties": {
+        "maxConcurrency": {
+          "type": "integer",
+          "format": "int32"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "StringNGVariable": {
       "allOf": [
@@ -4754,7 +5003,7 @@
             },
             {
               "type": "string",
-              "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
               "minLength": 1
             }
           ]

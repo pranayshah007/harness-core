@@ -115,10 +115,16 @@ public class ArtifactoryArtifactResource {
       if (isEmpty(repository)) {
         repository = (String) artifactoryRegistryArtifactConfig.getRepository().fetchFinalValue();
       }
+      // There is an overload in this endpoint so to make things clearer:
+      // artifactPath is the artifactDirectory for Artifactory Generic
+      // artifactPath is the artifactPath for Artifactory Docker
       if (isEmpty(artifactPath)) {
-        artifactPath = (String) artifactoryRegistryArtifactConfig.getArtifactPath().fetchFinalValue();
+        if (artifactoryRegistryArtifactConfig.getRepositoryFormat().fetchFinalValue().equals("docker")) {
+          artifactPath = (String) artifactoryRegistryArtifactConfig.getArtifactPath().fetchFinalValue();
+        } else {
+          artifactPath = (String) artifactoryRegistryArtifactConfig.getArtifactDirectory().fetchFinalValue();
+        }
       }
-
       if (isEmpty(repositoryFormat)) {
         repositoryFormat = (String) artifactoryRegistryArtifactConfig.getRepositoryFormat().fetchFinalValue();
       }
@@ -180,11 +186,22 @@ public class ArtifactoryArtifactResource {
   @Path("repositoriesDetails")
   @ApiOperation(value = "Gets repository details", nickname = "getRepositoriesDetailsForArtifactory")
   public ResponseDTO<ArtifactoryRepoDetailsDTO> getRepositoriesDetails(
-      @NotNull @QueryParam("connectorRef") String artifactoryConnectorIdentifier,
+      @QueryParam("connectorRef") String artifactoryConnectorIdentifier,
       @QueryParam("repositoryType") @DefaultValue("any") String repositoryType,
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
       @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
-      @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier) {
+      @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @QueryParam("fqnPath") String fqnPath, @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceRef) {
+    if (isNotEmpty(serviceRef)) {
+      final ArtifactConfig artifactSpecFromService = artifactResourceUtils.locateArtifactInService(
+          accountId, orgIdentifier, projectIdentifier, serviceRef, fqnPath);
+      ArtifactoryRegistryArtifactConfig artifactoryRegistryArtifactConfig =
+          (ArtifactoryRegistryArtifactConfig) artifactSpecFromService;
+
+      if (isEmpty(artifactoryConnectorIdentifier)) {
+        artifactoryConnectorIdentifier = artifactoryRegistryArtifactConfig.getConnectorRef().getValue();
+      }
+    }
     IdentifierRef connectorRef = IdentifierRefHelper.getIdentifierRef(
         artifactoryConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
     ArtifactoryRepoDetailsDTO repoDetailsDTO =

@@ -64,7 +64,7 @@ def load_into_main_table(jsonData):
                     AllocatedStorage = s.AllocatedStorage, Iops = s.Iops, AvailabilityZone = s.AvailabilityZone, MultiAZ = s.MultiAZ,
                     PubliclyAccessible = s.PubliclyAccessible, StorageType = s.StorageType, StorageEncrypted = s.StorageEncrypted, 
                     KmsKeyId = s.KmsKeyId, MaxAllocatedStorage = s.MaxAllocatedStorage, DeletionProtection = s.DeletionProtection,
-                    tags = s.tags
+                    tags = s.tags, DBInstanceClass = s.DBInstanceClass
                 WHEN NOT MATCHED THEN
                   INSERT (linkedAccountId, region, DBInstanceIdentifier, DBInstanceClass, Engine, EngineVersion, DBInstanceStatus, AllocatedStorage, 
                   Iops, AvailabilityZone, MultiAZ, PubliclyAccessible, StorageType, DBClusterIdentifier, StorageEncrypted, KmsKeyId, DBInstanceArn,

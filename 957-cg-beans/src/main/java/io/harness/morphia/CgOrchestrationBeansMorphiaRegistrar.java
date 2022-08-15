@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.MigratedEntityMapping;
+import io.harness.beans.MigrationAsyncTracker;
 import io.harness.beans.SweepingOutput;
 import io.harness.beans.terraform.TerraformPlanParam;
 
@@ -52,6 +53,7 @@ public class CgOrchestrationBeansMorphiaRegistrar implements MorphiaRegistrar {
     set.add(BaseFile.class);
     set.add(Host.class);
     set.add(AppContainer.class);
+    set.add(MigrationAsyncTracker.class);
   }
 
   @Override

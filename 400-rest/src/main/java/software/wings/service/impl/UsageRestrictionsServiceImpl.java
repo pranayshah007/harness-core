@@ -144,17 +144,14 @@ public class UsageRestrictionsServiceImpl implements UsageRestrictionsService {
       if (hasNoRestrictions || isScopedToAccount) {
         return false;
       }
-
       Map<String, Set<String>> appEnvMapFromEntityRestrictions =
           getAppEnvMap(entityUsageRestrictions.getAppEnvRestrictions(), appIdEnvMap);
       if (isNotEmpty(envIdFromRequest)) {
         // Restrict it to both app and env
         Set<String> envIds = appEnvMapFromEntityRestrictions.get(appIdFromRequest);
-
         if (isEmpty(envIds)) {
           return false;
         }
-
         return envIds.contains(envIdFromRequest);
       } else {
         // Restrict it to app
@@ -164,23 +161,18 @@ public class UsageRestrictionsServiceImpl implements UsageRestrictionsService {
       if (hasNoRestrictions || isScopedToAccount) {
         return false;
       }
-
       return hasUsageRestrictionsForNewApp(entityUsageRestrictions.getAppEnvRestrictions());
     } else {
       User user = UserThreadLocal.get();
-
       if (user == null) {
         return true;
       }
-
       if (isScopedToAccount) {
         return isAccountAdmin || hasAllEnvAccess(restrictionsFromUserPermissions);
       }
-
       if (hasNoRestrictions) {
         return isAccountAdmin;
       }
-
       Map<String, Set<String>> appEnvMapFromEntityRestrictions =
           getAppEnvMap(entityUsageRestrictions.getAppEnvRestrictions(), appIdEnvMap);
       return hasAccess(isAccountAdmin, appEnvMapFromEntityRestrictions, entityUsageRestrictions,

@@ -8,6 +8,7 @@
 package io.harness.delegate.task.shell.ssh;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.delegate.task.shell.ssh.CommandHandler.RESOLVED_ENV_VARIABLES_KEY;
 import static io.harness.rule.OwnerRule.ACASIAN;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -42,6 +43,7 @@ import com.google.inject.Inject;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -59,6 +61,7 @@ public class SshCleanupCommandHandlerTest extends CategoryTest {
   @Mock ScriptSshExecutor scriptSshExecutor;
   @Mock ScriptProcessExecutor scriptProcessExecutor;
   @Mock SshScriptExecutorFactory sshScriptExecutorFactory;
+  @Mock Map<String, Object> taskContext;
 
   final SSHKeySpecDTO SSH_KEY_SPEC = SSHKeySpecDTO.builder().build();
   final List<EncryptedDataDetail> encryptedDataDetailList = Collections.emptyList();
@@ -71,6 +74,7 @@ public class SshCleanupCommandHandlerTest extends CategoryTest {
   @Before
   public void setup() {
     MockitoAnnotations.initMocks(this);
+    doReturn(Collections.emptyMap()).when(taskContext).get(RESOLVED_ENV_VARIABLES_KEY);
   }
 
   @Test
@@ -82,7 +86,7 @@ public class SshCleanupCommandHandlerTest extends CategoryTest {
         .thenReturn(CommandExecutionStatus.SUCCESS);
 
     CommandExecutionStatus status = sshCleanupCommandHandler.handle(
-        getParameters(false), cleanupCommandUnit, logStreamingTaskClient, commandUnitsProgress);
+        getParameters(false), cleanupCommandUnit, logStreamingTaskClient, commandUnitsProgress, taskContext);
     assertThat(status).isEqualTo(CommandExecutionStatus.SUCCESS);
 
     ArgumentCaptor<SshExecutorFactoryContext> contextArgumentCaptor =
@@ -100,7 +104,7 @@ public class SshCleanupCommandHandlerTest extends CategoryTest {
         .thenReturn(CommandExecutionStatus.SUCCESS);
 
     CommandExecutionStatus status = sshCleanupCommandHandler.handle(
-        getParameters(true), cleanupCommandUnit, logStreamingTaskClient, commandUnitsProgress);
+        getParameters(true), cleanupCommandUnit, logStreamingTaskClient, commandUnitsProgress, taskContext);
     assertThat(status).isEqualTo(CommandExecutionStatus.SUCCESS);
 
     ArgumentCaptor<SshExecutorFactoryContext> contextArgumentCaptor =
@@ -115,13 +119,13 @@ public class SshCleanupCommandHandlerTest extends CategoryTest {
   public void testShouldHandleInvalidArguments() {
     assertThatThrownBy(()
                            -> sshCleanupCommandHandler.handle(WinrmTaskParameters.builder().build(), cleanupCommandUnit,
-                               logStreamingTaskClient, commandUnitsProgress))
+                               logStreamingTaskClient, commandUnitsProgress, taskContext))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage("Invalid task parameters submitted for command task.");
 
     assertThatThrownBy(()
                            -> sshCleanupCommandHandler.handle(getParameters(false), NgInitCommandUnit.builder().build(),
-                               logStreamingTaskClient, commandUnitsProgress))
+                               logStreamingTaskClient, commandUnitsProgress, taskContext))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage("Invalid command unit specified for command task.");
   }

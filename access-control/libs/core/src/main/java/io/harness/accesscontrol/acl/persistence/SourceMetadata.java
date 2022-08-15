@@ -13,6 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Data;
+import lombok.Getter;
 import lombok.experimental.FieldDefaults;
 import lombok.experimental.FieldNameConstants;
 
@@ -27,4 +28,9 @@ public class SourceMetadata {
   String roleIdentifier;
   String roleAssignmentIdentifier;
   String resourceGroupIdentifier;
+  @Getter(value = AccessLevel.NONE) Boolean implicitlyCreatedForScopeAccess;
+
+  public boolean getImplicitlyCreatedForScopeAccess() {
+    return Boolean.TRUE.equals(implicitlyCreatedForScopeAccess);
+  }
 }

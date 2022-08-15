@@ -15,6 +15,7 @@ import static io.harness.rule.OwnerRule.ARVIND;
 import static io.harness.rule.OwnerRule.KARAN;
 import static io.harness.rule.OwnerRule.MEET;
 import static io.harness.rule.OwnerRule.VIKAS_M;
+import static io.harness.rule.OwnerRule.VINICIUS;
 import static io.harness.utils.PageTestUtils.getPage;
 
 import static io.github.benas.randombeans.api.EnhancedRandom.random;
@@ -439,5 +440,18 @@ public class ProjectServiceImplTest extends CategoryTest {
     assertEquals(projectIdentifier, argumentCaptor.getValue());
     verify(transactionTemplate, times(1)).execute(any());
     verify(outboxService, times(1)).save(any());
+  }
+
+  @Test
+  @Owner(developers = VINICIUS)
+  @Category(UnitTests.class)
+  public void shouldGetProjectIdentifierCaseInsensitive() {
+    String accountIdentifier = "accountIdentifier";
+    String orgIdentifier = "orgIdentifier";
+    String projectIdentifier = "projectIdentifier";
+    projectService.get(accountIdentifier, orgIdentifier, projectIdentifier);
+    verify(projectRepository, times(1))
+        .findByAccountIdentifierAndOrgIdentifierAndIdentifierIgnoreCaseAndDeletedNot(
+            accountIdentifier, orgIdentifier, projectIdentifier, true);
   }
 }

@@ -422,7 +422,6 @@
 5259:software.wings.helpers.ext.helm.request.HelmInstallCommandRequest
 5260:software.wings.helpers.ext.helm.HelmCommandExecutionResponse
 5261:io.harness.delegate.task.helm.HelmCommandResponse
-5262:software.wings.helpers.ext.helm.request.HelmCommandRequest.HelmCommandType
 5263:software.wings.helpers.ext.helm.response.HelmInstallCommandResponse
 5265:software.wings.helpers.ext.helm.request.HelmReleaseHistoryCommandRequest
 5266:software.wings.helpers.ext.helm.response.HelmReleaseHistoryCommandResponse
@@ -963,6 +962,7 @@
 7460:software.wings.beans.GitConfig.UrlType
 7461:software.wings.beans.ApprovalDetails.Action
 7462:software.wings.beans.appmanifest.ManifestInput
+7463:software.wings.helpers.ext.k8s.request.K8sValuesLocation
 7464:software.wings.helpers.ext.gcb.models.GcbArtifactObjects
 7467:software.wings.sm.states.azure.AzureVMSSSetupContextElement
 7470:software.wings.service.impl.analysis.SetupTestNodeData.Instance
@@ -1731,6 +1731,18 @@
 55407:io.harness.delegate.task.azure.appservice.settings.AppSettingsFile
 55408:io.harness.delegate.task.azure.appservice.settings.EncryptedAppSettingsFile
 55409:io.harness.delegate.task.azure.appservice.webapp.ng.exception.AzureWebAppSlotDeploymentExceptionData
+55410:io.harness.delegate.task.azure.artifact.AzurePackageArtifactConfig
+55411:io.harness.delegate.task.azure.artifact.AzureArtifactRequestDetails
+55412:io.harness.delegate.task.azure.artifact.ArtifactoryAzureArtifactRequestDetails
+55413:io.harness.delegate.task.ssh.AzureInfraDelegateConfig
+55414:io.harness.delegate.task.ssh.AzureSshInfraDelegateConfig
+55415:io.harness.delegate.task.ssh.AzureWinrmInfraDelegateConfig
+55416:io.harness.delegate.task.ssh.AwsInfraDelegateConfig
+55417:io.harness.delegate.task.ssh.AwsSshInfraDelegateConfig
+55418:io.harness.delegate.task.ssh.AwsWinrmInfraDelegateConfig
+55501:io.harness.delegate.beans.instancesync.info.PdcServerInstanceInfo
+55502:io.harness.delegate.beans.instancesync.info.AzureSshWinrmServerInstanceInfo
+55503:io.harness.delegate.beans.instancesync.info.AwsSshWinrmServerInstanceInfo
 56403:io.harness.delegate.beans.storeconfig.CustomRemoteStoreDelegateConfig
 70001:io.harness.accesscontrol.commons.exceptions.AccessDeniedErrorDTO
 70002:io.harness.accesscontrol.acl.api.PermissionCheckDTO
@@ -1762,6 +1774,7 @@
 83077:io.harness.delegate.beans.connector.awsconnector.AwsListTagsTaskResponse
 83078:io.harness.delegate.beans.connector.awsconnector.AwsListLoadBalancersTaskResponse
 83079:io.harness.delegate.beans.connector.awsconnector.AwsListASGNamesTaskResponse
+90001:software.wings.service.impl.apm.AWSPrometheusInfo
 95001:io.harness.delegate.beans.logstreaming.UnitProgressData
 95002:io.harness.waiter.WaitInstanceTimeoutCallback
 96001:io.harness.springdata.exceptions.WingsTransactionFailureException
@@ -1808,7 +1821,7 @@
 97114:io.harness.aws.AwsCFTemplatesType
 97115:io.harness.ssh.FileSourceType
 98399:io.harness.delegate.task.helm.HelmCommandRequestNG
-98400:io.harness.delegate.task.helm.HelmCommandRequestNG.HelmCommandType
+98400:io.harness.helm.HelmCommandType
 98401:io.harness.delegate.task.helm.HelmInstallCommandRequestNG
 98402:io.harness.delegate.task.helm.HelmRollbackCommandRequestNG
 98403:io.harness.delegate.task.helm.HelmReleaseHistoryCommandRequestNG
@@ -2244,4 +2257,7 @@
 980028:io.harness.exception.AzureAKSException
 980029:io.harness.exception.runtime.SshCommandExecutionException
 980030:io.harness.exception.InterruptedRuntimeException
+980031:io.harness.exception.InvalidIdentifierRefException
+980032:io.harness.exception.ngexception.AzureAppServiceTaskException
 9800001:io.harness.beans.RecasterMap
+9800002:io.harness.licensing.beans.modules.ChaosModuleLicenseDTO
