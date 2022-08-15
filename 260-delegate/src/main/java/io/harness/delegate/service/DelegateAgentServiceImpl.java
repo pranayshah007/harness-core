@@ -87,11 +87,8 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.apache.commons.lang3.StringUtils.substringBefore;
 
-import io.harness.annotations.dev.BreakDependencyOn;
-import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.DelegateHeartbeatResponse;
 import io.harness.beans.DelegateHeartbeatResponseStreaming;
 import io.harness.beans.DelegateTaskEventsResponse;
@@ -195,7 +192,6 @@ import java.io.Reader;
 import java.io.StringReader;
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryMXBean;
-import java.net.ConnectException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
@@ -206,7 +202,6 @@ import java.time.Clock;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.ConcurrentModificationException;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -230,7 +225,6 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.annotation.Nullable;
-import javax.net.ssl.SSLException;
 import javax.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -267,21 +261,6 @@ import retrofit2.Response;
 
 @Singleton
 @Slf4j
-@TargetModule(HarnessModule._420_DELEGATE_AGENT)
-@BreakDependencyOn("software.wings.delegatetasks.validation.DelegateConnectionResult")
-@BreakDependencyOn("io.harness.delegate.beans.Delegate")
-@BreakDependencyOn("io.harness.delegate.beans.DelegateScripts")
-@BreakDependencyOn("io.harness.delegate.beans.FileBucket")
-@BreakDependencyOn("io.harness.delegate.message.Message")
-@BreakDependencyOn("io.harness.delegate.message.MessageConstants")
-@BreakDependencyOn("io.harness.delegate.message.MessageService")
-@BreakDependencyOn("io.harness.delegate.message.MessengerType")
-@BreakDependencyOn("software.wings.beans.DelegateTaskFactory")
-@BreakDependencyOn("software.wings.beans.command.Command")
-@BreakDependencyOn("software.wings.delegatetasks.validation.DelegateValidateTask")
-@BreakDependencyOn("software.wings.delegatetasks.LogSanitizer")
-@BreakDependencyOn("software.wings.service.intfc.security.EncryptionService")
-@BreakDependencyOn("io.harness.perpetualtask.PerpetualTaskWorker")
 @OwnedBy(HarnessTeam.DEL)
 public class DelegateAgentServiceImpl implements DelegateAgentService {
   private static final int POLL_INTERVAL_SECONDS = 3;
@@ -391,8 +370,6 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
   private final AtomicBoolean selfDestruct = new AtomicBoolean(false);
   private final AtomicBoolean multiVersionWatcherStarted = new AtomicBoolean(false);
   private final AtomicBoolean switchStorage = new AtomicBoolean(false);
-  private final AtomicBoolean reconnectingSocket = new AtomicBoolean(false);
-  private final AtomicBoolean closingSocket = new AtomicBoolean(false);
   private final AtomicBoolean sentFirstHeartbeat = new AtomicBoolean(false);
 
   private Client client;
@@ -616,7 +593,12 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
 
         RequestBuilder requestBuilder = prepareRequestBuilder();
 
-        Options clientOptions = client.newOptionsBuilder().runtime(asyncHttpClient, true).reconnect(true).build();
+        Options clientOptions = client.newOptionsBuilder()
+                                    .runtime(asyncHttpClient, true)
+                                    .reconnect(true)
+                                    .reconnectAttempts(Integer.MAX_VALUE)
+                                    .pauseBeforeReconnectInSeconds(5)
+                                    .build();
         socket = client.create(clientOptions);
         socket
             .on(Event.MESSAGE,
@@ -651,6 +633,11 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
               @Override
               public void on(IOException ioe) {
                 log.error("Error occured while starting Delegate", ioe);
+              }
+            })
+            .on(new Function<TransportNotSupported>() {
+              public void on(TransportNotSupported ex) {
+                log.error("Connection was terminated forcefully (most likely), trying to reconnect", ex);
               }
             });
 
@@ -816,66 +803,14 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
   }
 
   private void handleClose(Object o) {
-    log.info("Event:{}, message:[{}]", Event.CLOSE.name(), o.toString());
-    // TODO(brett): Disabling the fallback to poll for tasks as it can cause too much traffic to ingress controller
-    // pollingForTasks.set(true);
-    if (!closingSocket.get() && reconnectingSocket.compareAndSet(false, true)) {
-      try {
-        trySocketReconnect();
-      } finally {
-        reconnectingSocket.set(false);
-      }
-    }
+    log.info("Event:{}, message:[{}] trying to reconnect", Event.CLOSE.name(), o.toString());
   }
 
   private void handleError(final Exception e) {
     log.info("Event:{}, message:[{}]", Event.ERROR.name(), e.getMessage());
-    if (reconnectingSocket.compareAndSet(false, true)) {
-      try {
-        if (e instanceof SSLException || e instanceof TransportNotSupported) {
-          log.warn("Reopening connection to manager because of exception", e);
-          try {
-            socket.close();
-          } catch (final Exception ex) {
-            log.error("Failed closing the socket!", ex);
-          }
-          trySocketReconnect();
-        } else if (e instanceof ConnectException) {
-          log.warn("Failed to connect.", e);
-          restartNeeded.set(true);
-        } else if (e instanceof ConcurrentModificationException) {
-          log.warn("ConcurrentModificationException on WebSocket ignoring");
-          log.debug("ConcurrentModificationException on WebSocket.", e);
-        } else {
-          log.error("Exception: ", e);
-          try {
-            finalizeSocket();
-          } catch (final Exception ex) {
-            log.error("Failed closing the socket!", ex);
-          }
-          restartNeeded.set(true);
-        }
-      } finally {
-        reconnectingSocket.set(false);
-      }
-    }
-  }
-
-  private void trySocketReconnect() {
-    try {
-      FibonacciBackOff.executeForEver(() -> {
-        RequestBuilder requestBuilder = prepareRequestBuilder();
-        Socket skt = socket.open(requestBuilder.build());
-        log.info("Socket status: {}", socket.status().toString());
-        return skt;
-      });
-    } catch (IOException ex) {
-      log.error("Unable to open socket", ex);
-    }
   }
 
   private void finalizeSocket() {
-    closingSocket.set(true);
     socket.close();
   }
 
