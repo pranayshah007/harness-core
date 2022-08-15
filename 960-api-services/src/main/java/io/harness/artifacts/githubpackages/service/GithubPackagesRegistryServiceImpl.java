@@ -81,9 +81,7 @@ public class GithubPackagesRegistryServiceImpl implements GithubPackagesRegistry
           new ArtifactServerException(ExceptionUtils.getMessage(e), e, WingsException.USER));
     }
 
-    BuildDetails build = buildDetails.get(0);
-
-    return build;
+    return buildDetails.get(0);
   }
 
   @Override
