@@ -22,6 +22,7 @@ import io.harness.artifacts.githubpackages.beans.GithubPackagesVersionsResponse;
 import io.harness.artifacts.githubpackages.client.GithubPackagesRestClient;
 import io.harness.artifacts.githubpackages.client.GithubPackagesRestClientFactory;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.delegate.beans.connector.scm.github.GithubHttpAuthenticationType;
 import io.harness.exception.ArtifactServerException;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidArtifactServerException;
@@ -133,8 +134,20 @@ public class GithubPackagesRegistryServiceImpl implements GithubPackagesRegistry
     GithubPackagesRestClient githubPackagesRestClient =
         githubPackagesRestClientFactory.getGithubPackagesRestClient(githubPackagesInternalConfig);
 
-    String basicAuthHeader =
-        Credentials.basic(githubPackagesInternalConfig.getUsername(), githubPackagesInternalConfig.getPassword());
+    String authType = githubPackagesInternalConfig.getAuthMechanism();
+
+    String basicAuthHeader = "";
+
+    if (authType == GithubHttpAuthenticationType.USERNAME_AND_PASSWORD.getDisplayName()) {
+      basicAuthHeader =
+          Credentials.basic(githubPackagesInternalConfig.getUsername(), githubPackagesInternalConfig.getPassword());
+    } else if (authType == GithubHttpAuthenticationType.USERNAME_AND_TOKEN.getDisplayName()) {
+      basicAuthHeader =
+          Credentials.basic(githubPackagesInternalConfig.getUsername(), githubPackagesInternalConfig.getToken());
+    } else if (authType == GithubHttpAuthenticationType.OAUTH.getDisplayName()) {
+      basicAuthHeader =
+          Credentials.basic(githubPackagesInternalConfig.getUsername(), githubPackagesInternalConfig.getToken());
+    }
 
     List<BuildDetails> buildDetails = new ArrayList<>();
 

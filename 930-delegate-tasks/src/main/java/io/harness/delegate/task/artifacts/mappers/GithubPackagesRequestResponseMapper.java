@@ -71,6 +71,7 @@ public class GithubPackagesRequestResponseMapper {
           }
         }
       } else if (request.getGithubConnectorDTO().getAuthentication().getAuthType() == GitAuthType.SSH) {
+        // Note - We are not going to enable the ssh authentication as of now.
         GithubSshCredentialsDTO sshDTO =
             (GithubSshCredentialsDTO) request.getGithubConnectorDTO().getAuthentication().getCredentials();
 
@@ -84,7 +85,9 @@ public class GithubPackagesRequestResponseMapper {
 
     return GithubPackagesInternalConfig.builder()
         .githubPackagesUrl(request.getGithubConnectorDTO().getUrl())
-        .authMechanism(request.getGithubConnectorDTO().getAuthentication().getAuthType().getDisplayName())
+        .authMechanism(((GithubHttpCredentialsDTO) request.getGithubConnectorDTO().getAuthentication().getCredentials())
+                           .getType()
+                           .getDisplayName())
         .username(username)
         .password(password)
         .token(token)
