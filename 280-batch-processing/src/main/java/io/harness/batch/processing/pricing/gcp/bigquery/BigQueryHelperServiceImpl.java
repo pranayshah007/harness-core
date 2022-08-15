@@ -316,6 +316,12 @@ public class BigQueryHelperServiceImpl implements BigQueryHelperService {
     return query(formattedQuery, "AZURE");
   }
 
+  @Override
+  public Map<String, VMInstanceBillingData> getGcpVMBillingData(
+      List<String> resourceIds, Instant startTime, Instant endTime, String dataSetId) {
+    return null;
+  }
+
   public FieldList getFieldList(TableResult result) {
     Schema schema = result.getSchema();
     return schema.getFields();

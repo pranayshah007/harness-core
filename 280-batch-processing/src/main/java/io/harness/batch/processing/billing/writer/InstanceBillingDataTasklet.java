@@ -248,6 +248,25 @@ public class InstanceBillingDataTasklet implements Tasklet {
       }
     }
 
+    String gcpDataSetId = customBillingMetaDataService.getGcpDataSetId(accountId);
+    if (gcpDataSetId != null) {
+      Set<String> resourceIds = new HashSet<>();
+      instanceDataLists.forEach(instanceData -> {
+        addParentInstanceId(instanceData, parentInstanceIds);
+        String resourceId =
+            getValueForKeyFromInstanceMetaData(InstanceMetaDataConstants.CLOUD_PROVIDER_INSTANCE_ID, instanceData);
+        String cloudProvider =
+            getValueForKeyFromInstanceMetaData(InstanceMetaDataConstants.CLOUD_PROVIDER, instanceData);
+        if (null != resourceId && cloudProvider.equals(CloudProvider.GCP.name())) {
+          resourceIds.add(resourceId);
+        }
+      });
+      if (isNotEmpty(resourceIds)) {
+        azureCustomBillingService.updateAzureVMBillingDataCache(
+            new ArrayList<>(resourceIds), startTime, endTime, azureDataSetId);
+      }
+    }
+
     List<InstanceBillingData> instanceBillingDataList = new ArrayList<>();
     instanceDataGroupedCluster.forEach((clusterRecordId, instanceDataList) -> {
       InstanceData firstInstanceData = instanceDataList.get(0);

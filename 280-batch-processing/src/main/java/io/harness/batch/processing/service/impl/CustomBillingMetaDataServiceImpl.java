@@ -51,6 +51,9 @@ public class CustomBillingMetaDataServiceImpl implements CustomBillingMetaDataSe
   private LoadingCache<String, String> azureBillingMetaDataCache =
       Caffeine.newBuilder().expireAfterWrite(4, TimeUnit.HOURS).build(this::getAzureBillingMetaData);
 
+  private LoadingCache<String, String> gcpBillingMetaDataCache =
+      Caffeine.newBuilder().expireAfterWrite(4, TimeUnit.HOURS).build(this::getGcpBillingMetaData);
+
   private LoadingCache<CacheKey, Boolean> pipelineJobStatusCache =
       Caffeine.newBuilder()
           .expireAfterWrite(4, TimeUnit.HOURS)
@@ -86,6 +89,11 @@ public class CustomBillingMetaDataServiceImpl implements CustomBillingMetaDataSe
   }
 
   @Override
+  public String getGcpDataSetId(String accountId) {
+    return gcpBillingMetaDataCache.get(accountId);
+  }
+
+  @Override
   public Boolean checkPipelineJobFinished(String accountId, Instant startTime, Instant endTime) {
     CacheKey cacheKey = new CacheKey(accountId, startTime, endTime);
     return pipelineJobStatusCache.get(cacheKey);
@@ -117,6 +125,15 @@ public class CustomBillingMetaDataServiceImpl implements CustomBillingMetaDataSe
     CEMetadataRecord ceMetadataRecord = ceMetadataRecordDao.getByAccountId(accountId);
     if (null != ceMetadataRecord && null != ceMetadataRecord.getAzureDataPresent()
         && ceMetadataRecord.getAzureDataPresent()) {
+      return cloudBillingHelper.getDataSetId(accountId);
+    }
+    return null;
+  }
+
+  private String getGcpBillingMetaData(String accountId) {
+    CEMetadataRecord ceMetadataRecord = ceMetadataRecordDao.getByAccountId(accountId);
+    if (null != ceMetadataRecord && null != ceMetadataRecord.getGcpDataPresent()
+        && ceMetadataRecord.getGcpDataPresent()) {
       return cloudBillingHelper.getDataSetId(accountId);
     }
     return null;

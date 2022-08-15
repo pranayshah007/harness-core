@@ -30,4 +30,7 @@ public interface BigQueryHelperService {
 
   Map<String, VMInstanceBillingData> getAzureVMBillingData(
       List<String> resourceIds, Instant startTime, Instant endTime, String dataSetId);
+
+  Map<String, VMInstanceBillingData> getGcpVMBillingData(
+      List<String> resourceIds, Instant startTime, Instant endTime, String dataSetId);
 }

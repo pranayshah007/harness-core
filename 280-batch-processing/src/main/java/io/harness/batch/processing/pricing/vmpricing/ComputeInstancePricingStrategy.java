@@ -16,6 +16,7 @@ import io.harness.batch.processing.pricing.fargatepricing.EcsFargateInstancePric
 import io.harness.batch.processing.pricing.pricingprofile.PricingProfileService;
 import io.harness.batch.processing.pricing.service.intfc.AwsCustomBillingService;
 import io.harness.batch.processing.pricing.service.intfc.AzureCustomBillingService;
+import io.harness.batch.processing.pricing.service.intfc.GcpCustomBillingService;
 import io.harness.batch.processing.pricing.service.support.GCPCustomInstanceDetailProvider;
 import io.harness.batch.processing.service.intfc.CustomBillingMetaDataService;
 import io.harness.batch.processing.service.intfc.InstanceResourceService;
@@ -46,6 +47,7 @@ public class ComputeInstancePricingStrategy implements InstancePricingStrategy {
   private final VMPricingService vmPricingService;
   private final AwsCustomBillingService awsCustomBillingService;
   private final AzureCustomBillingService azureCustomBillingService;
+  private final GcpCustomBillingService gcpCustomBillingService;
   private final InstanceResourceService instanceResourceService;
   private final EcsFargateInstancePricingStrategy ecsFargateInstancePricingStrategy;
   private final CustomBillingMetaDataService customBillingMetaDataService;
@@ -54,7 +56,7 @@ public class ComputeInstancePricingStrategy implements InstancePricingStrategy {
   @Autowired
   public ComputeInstancePricingStrategy(VMPricingService vmPricingService,
       AwsCustomBillingService awsCustomBillingService, AzureCustomBillingService azureCustomBillingService,
-      InstanceResourceService instanceResourceService,
+      GcpCustomBillingService gcpCustomBillingService, InstanceResourceService instanceResourceService,
       EcsFargateInstancePricingStrategy ecsFargateInstancePricingStrategy,
       CustomBillingMetaDataService customBillingMetaDataService, PricingProfileService pricingProfileService) {
     this.vmPricingService = vmPricingService;
@@ -64,6 +66,7 @@ public class ComputeInstancePricingStrategy implements InstancePricingStrategy {
     this.customBillingMetaDataService = customBillingMetaDataService;
     this.pricingProfileService = pricingProfileService;
     this.azureCustomBillingService = azureCustomBillingService;
+    this.gcpCustomBillingService = gcpCustomBillingService;
   }
 
   @Override
@@ -156,11 +159,15 @@ public class ComputeInstancePricingStrategy implements InstancePricingStrategy {
 
     String awsDataSetId = customBillingMetaDataService.getAwsDataSetId(instanceData.getAccountId());
     String azureDataSetId = customBillingMetaDataService.getAzureDataSetId(instanceData.getAccountId());
+    String gcpDataSetId = customBillingMetaDataService.getGcpDataSetId(instanceData.getAccountId());
     if (cloudProvider == CloudProvider.AWS && null != awsDataSetId) {
       vmInstanceBillingData = awsCustomBillingService.getComputeVMPricingInfo(instanceData, startTime, endTime);
     } else if (cloudProvider == CloudProvider.AZURE && null != azureDataSetId) {
       vmInstanceBillingData = azureCustomBillingService.getComputeVMPricingInfo(instanceData, startTime, endTime);
+    } else if (cloudProvider == CloudProvider.GCP && null != gcpDataSetId) {
+      vmInstanceBillingData = gcpCustomBillingService.getComputeVMPricingInfo(instanceData, startTime, endTime);
     }
+
     if (null != vmInstanceBillingData && !Double.isNaN(vmInstanceBillingData.getComputeCost())) {
       double pricePerHr = (vmInstanceBillingData.getComputeCost() * 3600) / parentInstanceActiveSecond;
       if (!Double.isNaN(vmInstanceBillingData.getRate()) && vmInstanceBillingData.getRate() > 0.0) {
