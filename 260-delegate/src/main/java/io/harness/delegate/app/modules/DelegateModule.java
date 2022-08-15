@@ -163,6 +163,8 @@ import io.harness.delegate.task.artifacts.docker.DockerArtifactTaskHandler;
 import io.harness.delegate.task.artifacts.docker.DockerArtifactTaskNG;
 import io.harness.delegate.task.artifacts.ecr.EcrArtifactTaskNG;
 import io.harness.delegate.task.artifacts.gcr.GcrArtifactTaskNG;
+import io.harness.delegate.task.artifacts.githubpackages.GithubPackagesArtifactDelegateRequest;
+import io.harness.delegate.task.artifacts.githubpackages.GithubPackagesArtifactTaskHandler;
 import io.harness.delegate.task.artifacts.githubpackages.GithubPackagesArtifactTaskNG;
 import io.harness.delegate.task.artifacts.jenkins.JenkinsArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.jenkins.JenkinsArtifactTaskHandler;
@@ -1256,6 +1258,13 @@ public class DelegateModule extends AbstractModule {
             MapBinder.newMapBinder(binder(), new TypeLiteral<Class<? extends ArtifactSourceDelegateRequest>>() {},
                 new TypeLiteral<Class<? extends DelegateArtifactTaskHandler>>() {});
     s3ArtifactServiceMapBinder.addBinding(S3ArtifactDelegateRequest.class).toInstance(S3ArtifactTaskHandler.class);
+
+    MapBinder<Class<? extends ArtifactSourceDelegateRequest>, Class<? extends DelegateArtifactTaskHandler>>
+        githubPackagesArtifactServiceMapBinder =
+            MapBinder.newMapBinder(binder(), new TypeLiteral<Class<? extends ArtifactSourceDelegateRequest>>() {},
+                new TypeLiteral<Class<? extends DelegateArtifactTaskHandler>>() {});
+    githubPackagesArtifactServiceMapBinder.addBinding(GithubPackagesArtifactDelegateRequest.class)
+        .toInstance(GithubPackagesArtifactTaskHandler.class);
 
     MapBinder<Class<? extends ArtifactSourceDelegateRequest>, Class<? extends DelegateArtifactTaskHandler>>
         jenkinsArtifactServiceMapBinder =

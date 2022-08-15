@@ -21,6 +21,7 @@ import io.harness.artifacts.githubpackages.service.GithubPackagesRegistryService
 import io.harness.artifacts.githubpackages.service.GithubPackagesRegistryServiceImpl;
 import io.harness.delegate.task.artifacts.artifactory.ArtifactoryArtifactTaskHandler;
 import io.harness.delegate.task.artifacts.docker.DockerArtifactTaskHandler;
+import io.harness.delegate.task.artifacts.githubpackages.GithubPackagesArtifactTaskHandler;
 import io.harness.delegate.task.artifacts.nexus.NexusArtifactTaskHandler;
 import io.harness.delegate.task.artifacts.s3.S3ArtifactTaskHandler;
 import io.harness.http.HttpService;
@@ -42,6 +43,7 @@ public class NGDelegateModule extends AbstractModule {
     bind(GithubPackagesRegistryService.class).to(GithubPackagesRegistryServiceImpl.class);
     bind(HttpService.class).to(HttpServiceImpl.class);
     bind(DockerArtifactTaskHandler.class);
+    bind(GithubPackagesArtifactTaskHandler.class);
     bind(S3ArtifactTaskHandler.class);
     bind(NexusArtifactTaskHandler.class);
     bind(ArtifactoryArtifactTaskHandler.class);
