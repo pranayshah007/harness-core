@@ -23,8 +23,8 @@ import lombok.Value;
 public class GithubPackagesInternalConfig {
   String githubPackagesUrl;
   String username;
-  char[] password;
-  char[] token;
+  String password;
+  String token;
   String authMechanism;
   boolean isCertValidationRequired;
   private boolean useConnectorUrlForJobExecution;

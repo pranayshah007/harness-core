@@ -86,8 +86,8 @@ public class GithubPackagesRequestResponseMapper {
         .githubPackagesUrl(request.getGithubConnectorDTO().getUrl())
         .authMechanism(request.getGithubConnectorDTO().getAuthentication().getAuthType().getDisplayName())
         .username(username)
-        .password(password.toCharArray())
-        .token(token.toCharArray())
+        .password(password)
+        .token(token)
         .build();
   }
 
