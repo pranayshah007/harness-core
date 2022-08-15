@@ -8,6 +8,7 @@
 package io.harness.accesscontrol;
 
 import static io.harness.AuthorizationServiceHeader.ACCESS_CONTROL_SERVICE;
+import static io.harness.AuthorizationServiceHeader.MANAGER;
 import static io.harness.accesscontrol.principals.PrincipalType.SERVICE_ACCOUNT;
 import static io.harness.accesscontrol.principals.PrincipalType.USER;
 import static io.harness.accesscontrol.principals.PrincipalType.USER_GROUP;
@@ -99,6 +100,7 @@ import io.harness.eventsframework.impl.redis.RedisConsumer;
 import io.harness.eventsframework.impl.redis.RedisUtils;
 import io.harness.eventsframework.impl.redis.monitoring.publisher.RedisEventMetricPublisher;
 import io.harness.ff.FeatureFlagClientModule;
+import io.harness.licensing.remote.NgLicenseHttpClientModule;
 import io.harness.lock.DistributedLockImplementation;
 import io.harness.lock.PersistentLockModule;
 import io.harness.metrics.modules.MetricsModule;
@@ -259,6 +261,9 @@ public class AccessControlModule extends AbstractModule {
 
     install(new AccountClientModule(config.getAccountClientConfiguration().getAccountServiceConfig(),
         config.getAccountClientConfiguration().getAccountServiceSecret(), ACCESS_CONTROL_SERVICE.toString()));
+
+    install(NgLicenseHttpClientModule.getInstance(config.getNgManagerServiceConfiguration().getNgManagerServiceConfig(),
+        config.getNgManagerServiceConfiguration().getNgManagerServiceSecret(), MANAGER.getServiceId()));
 
     install(new ProjectClientModule(config.getProjectClientConfiguration().getProjectServiceConfig(),
         config.getProjectClientConfiguration().getProjectServiceSecret(), ACCESS_CONTROL_SERVICE.getServiceId()));

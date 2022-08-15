@@ -6,6 +6,7 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import static org.springframework.data.mongodb.core.query.Update.update;
 
+import io.harness.accesscontrol.commons.helpers.AccountHelperService;
 import io.harness.accesscontrol.roleassignments.persistence.RoleAssignmentDBO;
 import io.harness.accesscontrol.roleassignments.persistence.repositories.RoleAssignmentRepository;
 import io.harness.accesscontrol.scopes.core.ScopeService;
@@ -31,14 +32,16 @@ import org.springframework.data.mongodb.core.query.Criteria;
 public class CCMAdminRoleAssignmentAdditionMigration implements NGMigration {
   private final RoleAssignmentRepository roleAssignmentRepository;
   private final ScopeService scopeService;
+  private final AccountHelperService accountHelperService;
   private static final String ACCOUNT_VIEWER = "_account_viewer";
   private static final String CCM_ADMIN = "_ccm_admin";
 
   @Inject
-  public CCMAdminRoleAssignmentAdditionMigration(
-      RoleAssignmentRepository roleAssignmentRepository, ScopeService scopeService) {
+  public CCMAdminRoleAssignmentAdditionMigration(RoleAssignmentRepository roleAssignmentRepository,
+      ScopeService scopeService, AccountHelperService accountHelperService) {
     this.roleAssignmentRepository = roleAssignmentRepository;
     this.scopeService = scopeService;
+    this.accountHelperService = accountHelperService;
   }
 
   @Override
@@ -63,6 +66,8 @@ public class CCMAdminRoleAssignmentAdditionMigration implements NGMigration {
               .findAll(
                   criteria, pageable, Sort.by(Sort.Direction.ASC, RoleAssignmentDBO.RoleAssignmentDBOKeys.createdAt))
               .getContent();
+
+      List<String> ceEnabledAccountIds = accountHelperService.getCeEnabledNgAccounts();
       if (isEmpty(roleAssignmentList)) {
         break;
       }
@@ -70,18 +75,20 @@ public class CCMAdminRoleAssignmentAdditionMigration implements NGMigration {
         if (roleAssignment.isManaged()) {
           String accountId =
               scopeService.buildScopeFromScopeIdentifier(roleAssignment.getScopeIdentifier()).getInstanceId();
-          try {
-            RoleAssignmentDBO newRoleAssignmentDBO = buildRoleAssignmentDBO(roleAssignment);
+          if (ceEnabledAccountIds.contains(accountId)) {
             try {
-              roleAssignmentRepository.save(newRoleAssignmentDBO);
-            } catch (DuplicateKeyException e) {
-              log.error("Corresponding ccm admin was already created {}", newRoleAssignmentDBO.toString(), e);
-            }
-            roleAssignmentRepository.updateById(
-                roleAssignment.getId(), update(RoleAssignmentDBO.RoleAssignmentDBOKeys.managed, false));
+              RoleAssignmentDBO newRoleAssignmentDBO = buildRoleAssignmentDBO(roleAssignment);
+              try {
+                roleAssignmentRepository.save(newRoleAssignmentDBO);
+              } catch (DuplicateKeyException e) {
+                log.error("Corresponding ccm admin was already created {}", newRoleAssignmentDBO.toString(), e);
+              }
+              roleAssignmentRepository.updateById(
+                  roleAssignment.getId(), update(RoleAssignmentDBO.RoleAssignmentDBOKeys.managed, false));
 
-          } catch (Exception exception) {
-            log.error("[CCMAdminRoleAssignmentAdditionMigration] Unexpected error occurred.", exception);
+            } catch (Exception exception) {
+              log.error("[CCMAdminRoleAssignmentAdditionMigration] Unexpected error occurred.", exception);
+            }
           }
         }
       }
