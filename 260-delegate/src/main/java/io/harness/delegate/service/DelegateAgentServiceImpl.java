@@ -612,6 +612,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
                 new Function<Exception>() { // Do not change this, wasync doesn't like lambdas
                   @Override
                   public void on(Exception e) {
+                    log.error("Exception on websocket", e);
                     handleError(e);
                   }
                 })
