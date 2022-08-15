@@ -881,7 +881,7 @@ public class UserGroupServiceImpl implements UserGroupService {
 
   private void validateIsNotHarnessManagedGroup(Optional<UserGroup> userGroupOptional) {
     if (userGroupOptional.isPresent() && userGroupOptional.get().isHarnessManaged()) {
-      throw new InvalidRequestException("Cannot deleted a managed user group");
+      throw new InvalidRequestException("Cannot delete a harness managed user group");
     }
   }
 }
