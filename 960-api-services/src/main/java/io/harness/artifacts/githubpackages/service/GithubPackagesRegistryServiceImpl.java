@@ -110,8 +110,20 @@ public class GithubPackagesRegistryServiceImpl implements GithubPackagesRegistry
     GithubPackagesRestClient githubPackagesRestClient =
         githubPackagesRestClientFactory.getGithubPackagesRestClient(githubPackagesInternalConfig);
 
-    String basicAuthHeader =
-        Credentials.basic(githubPackagesInternalConfig.getUsername(), githubPackagesInternalConfig.getPassword());
+    String authType = githubPackagesInternalConfig.getAuthMechanism();
+
+    String basicAuthHeader = "";
+
+    if (authType == GithubHttpAuthenticationType.USERNAME_AND_PASSWORD.getDisplayName()) {
+      basicAuthHeader =
+          Credentials.basic(githubPackagesInternalConfig.getUsername(), githubPackagesInternalConfig.getPassword());
+    } else if (authType == GithubHttpAuthenticationType.USERNAME_AND_TOKEN.getDisplayName()) {
+      basicAuthHeader =
+          Credentials.basic(githubPackagesInternalConfig.getUsername(), githubPackagesInternalConfig.getToken());
+    } else if (authType == GithubHttpAuthenticationType.OAUTH.getDisplayName()) {
+      basicAuthHeader =
+          Credentials.basic(githubPackagesInternalConfig.getUsername(), githubPackagesInternalConfig.getToken());
+    }
 
     Integer versionId = Integer.parseInt(version);
 
