@@ -172,6 +172,10 @@ if [[ "" != "$STOMANAGER_MONGO_URI" ]]; then
   yq write -i $CONFIG_FILE stomanager-mongo.uri "$STOMANAGER_MONGO_URI"
 fi
 
+if [[ "" != "$SCM_SERVICE_URI" ]]; then
+  yq write -i $CONFIG_FILE scmConnectionConfig.url "$SCM_SERVICE_URI"
+fi
+
 if [[ "" != "$LOG_SERVICE_ENDPOINT" ]]; then
   yq write -i $CONFIG_FILE logServiceConfig.baseUrl "$LOG_SERVICE_ENDPOINT"
 fi
