@@ -258,6 +258,4 @@ public interface AccountService {
   AuthenticationInfo getAuthenticationInfo(String accountId);
 
   boolean isAccountActivelyUsed(String accountId);
-
-  Optional<Account> getGlobalDelegateAccount();
 }
