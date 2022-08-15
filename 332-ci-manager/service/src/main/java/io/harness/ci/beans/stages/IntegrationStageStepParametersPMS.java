@@ -7,18 +7,18 @@
 
 package io.harness.beans.stages;
 
-import static io.harness.data.structure.EmptyPredicate.isEmpty;
-
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.build.BuildStatusUpdateParameter;
 import io.harness.beans.dependencies.DependencyElement;
+import io.harness.beans.yaml.extended.infrastrucutre.HostedVmInfraYaml;
+import io.harness.beans.yaml.extended.infrastrucutre.HostedVmInfraYaml.HostedVmInfraSpec;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure.Type;
-import io.harness.beans.yaml.extended.infrastrucutre.RunsOnInfra;
-import io.harness.beans.yaml.extended.infrastrucutre.RunsOnInfra.RunOnInfraSpec;
 import io.harness.beans.yaml.extended.infrastrucutre.UseFromStageInfraYaml;
+import io.harness.beans.yaml.extended.runtime.Runtime;
+import io.harness.cimanager.stages.IntegrationStageConfig;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.plancreator.execution.ExecutionWrapperConfig;
@@ -81,12 +81,15 @@ public class IntegrationStageStepParametersPMS implements SpecParameters, StepPa
 
     Infrastructure infrastructure = integrationStageConfig.getInfrastructure();
     if (infrastructure == null) {
-      String runsOn = integrationStageConfig.getRunsOn().getValue();
-      if (isEmpty(runsOn)) {
-        throw new CIStageExecutionException("Infrastructure or runsOn field is mandatory for execution");
+      Runtime runtime = integrationStageConfig.getRuntime();
+      if (runtime == null || runtime.getType() != Runtime.Type.CLOUD) {
+        throw new CIStageExecutionException(
+            "Infrastructure or runtime field with Cloud type is mandatory for execution");
       }
 
-      infrastructure = RunsOnInfra.builder().spec(RunOnInfraSpec.builder().runsOn(runsOn).build()).build();
+      infrastructure = HostedVmInfraYaml.builder()
+                           .spec(HostedVmInfraSpec.builder().platform(integrationStageConfig.getPlatform()).build())
+                           .build();
     } else if (integrationStageConfig.getInfrastructure().getType() == Type.USE_FROM_STAGE) {
       UseFromStageInfraYaml useFromStageInfraYaml = (UseFromStageInfraYaml) integrationStageConfig.getInfrastructure();
       if (useFromStageInfraYaml.getUseFromStage() != null) {

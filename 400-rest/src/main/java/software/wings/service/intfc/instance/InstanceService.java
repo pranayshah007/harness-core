@@ -108,6 +108,8 @@ public interface InstanceService
    */
   PageResponse<Instance> list(PageRequest<Instance> pageRequest);
 
+  List<Instance> listV2(Query<Instance> query);
+
   List<Instance> listInstancesNotRemovedFully(Query<Instance> query);
 
   /**

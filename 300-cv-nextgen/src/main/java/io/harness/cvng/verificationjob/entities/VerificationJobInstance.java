@@ -54,8 +54,10 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.Getter;
 import lombok.Setter;
 import lombok.Value;
+import lombok.experimental.Accessors;
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.SuperBuilder;
 import org.mongodb.morphia.annotations.Entity;
@@ -194,6 +196,7 @@ public final class VerificationJobInstance
     Instant startTime;
     Instant endTime;
     boolean isFinalState;
+    @Accessors(fluent = true) @Getter boolean shouldTerminate;
     String log;
     private String verificationTaskId;
     private Instant createdAt;
@@ -209,7 +212,7 @@ public final class VerificationJobInstance
       return isFailedStatus();
     }
     public boolean isLastProgressLog(VerificationJobInstance verificationJobInstance) {
-      return getEndTime().equals(verificationJobInstance.getEndTime()) && isFinalState();
+      return (getEndTime().equals(verificationJobInstance.getEndTime()) && isFinalState()) || shouldTerminate();
     }
     public Duration getTimeTakenToFinish() {
       return Duration.between(getStartTime(), getEndTime());

@@ -317,6 +317,7 @@ public class NGVaultServiceImpl implements NGVaultService {
                                   .vaultUrl(vaultConnectorDTO.getVaultUrl())
                                   .appRoleId(vaultConnectorDTO.getAppRoleId())
                                   .secretId(String.valueOf(secretRefData.getDecryptedValue()))
+                                  .namespace(vaultConnectorDTO.getNamespace())
                                   .ngMetadata(NGSecretManagerMetadata.builder()
                                                   .accountIdentifier(accountIdentifier)
                                                   .orgIdentifier(orgIdentifier)

@@ -22,6 +22,7 @@ import io.harness.exception.WingsException;
 import io.harness.exception.ngexception.AzureAppServiceTaskException;
 import io.harness.exception.runtime.azure.AzureAppServicesDeployArtifactFileException;
 import io.harness.exception.runtime.azure.AzureAppServicesDeploymentSlotNotFoundException;
+import io.harness.exception.runtime.azure.AzureAppServicesSlotSteadyStateException;
 import io.harness.exception.runtime.azure.AzureAppServicesWebAppNotFoundException;
 import io.harness.rule.Owner;
 
@@ -99,6 +100,31 @@ public class AzureAppServicesRuntimeExceptionHandlerTest extends CategoryTest {
     WingsException result = exceptionHandler.handleException(artifactFileException);
     assertExceptionMessage(result, "Check if deployed artifact 'artifact.zip' is packaged 'WAR' file",
         "Failed to deploy artifact file: artifact.zip", "Failed to deploy artifact file: artifact.zip");
+  }
+
+  @Test
+  @Owner(developers = ABOSII)
+  @Category(UnitTests.class)
+  public void testHandlePortDidntRespondException() {
+    final AzureAppServicesSlotSteadyStateException steadyStateException = new AzureAppServicesSlotSteadyStateException(
+        "Container test-container didn't respond to HTTP pings on port: 8989");
+    WingsException result = exceptionHandler.handleException(steadyStateException);
+    assertExceptionMessage(result,
+        "If container listens to a different port than 80 or 8080 configure WEBSISTES_PORT in application settings",
+        "Container test-container didn't response to HTTP pings on port: 8989",
+        "Container test-container didn't respond to HTTP pings on port: 8989");
+  }
+
+  @Test
+  @Owner(developers = ABOSII)
+  @Category(UnitTests.class)
+  public void testHandleContainerFailedDuringStartupException() {
+    final AzureAppServicesSlotSteadyStateException steadyStateException =
+        new AzureAppServicesSlotSteadyStateException("Stopping site test-container because it failed during startup");
+    WingsException result = exceptionHandler.handleException(steadyStateException);
+    assertExceptionMessage(result, "Verify docker image configuration and credentials",
+        "Site container was stopped because it failed during startup",
+        "Stopping site test-container because it failed during startup");
   }
 
   private void assertExceptionMessage(

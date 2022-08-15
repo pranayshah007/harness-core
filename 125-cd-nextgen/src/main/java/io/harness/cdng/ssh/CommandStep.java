@@ -17,12 +17,17 @@ import static java.util.Collections.emptyList;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
+import io.harness.cdng.infra.beans.PdcInfrastructureOutcome;
+import io.harness.cdng.infra.beans.SshWinRmAwsInfrastructureOutcome;
+import io.harness.cdng.infra.beans.SshWinRmAzureInfrastructureOutcome;
 import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.cdng.service.steps.ServiceStepOutcome;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.common.ParameterFieldHelper;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
+import io.harness.delegate.beans.instancesync.mapper.AwsSshWinrmToServiceInstanceInfoMapper;
+import io.harness.delegate.beans.instancesync.mapper.AzureSshWinrmToServiceInstanceInfoMapper;
 import io.harness.delegate.beans.instancesync.mapper.PdcToServiceInstanceInfoMapper;
 import io.harness.delegate.task.shell.CommandTaskParameters;
 import io.harness.delegate.task.shell.CommandTaskResponse;
@@ -111,7 +116,19 @@ public class CommandStep extends TaskExecutableWithRollbackAndRbac<CommandTaskRe
   public StepResponse handleTaskResultWithSecurityContext(Ambiance ambiance, StepElementParameters stepParameters,
       ThrowingSupplier<CommandTaskResponse> responseDataSupplier) throws Exception {
     StepResponseBuilder stepResponseBuilder = StepResponse.builder();
-    CommandTaskResponse taskResponse = responseDataSupplier.get();
+    CommandTaskResponse taskResponse;
+    try {
+      taskResponse = responseDataSupplier.get();
+    } catch (Exception ex) {
+      log.error("Error while processing Command Task response: {}", ex.getMessage(), ex);
+      return sshCommandStepHelper.handleTaskException(ambiance, stepParameters, ex);
+    }
+
+    if (taskResponse == null) {
+      return sshCommandStepHelper.handleTaskException(
+          ambiance, stepParameters, new InvalidArgumentsException("Failed to process Command Task response"));
+    }
+
     List<UnitProgress> unitProgresses = taskResponse.getUnitProgressData() == null
         ? emptyList()
         : taskResponse.getUnitProgressData().getUnitProgresses();
@@ -138,8 +155,20 @@ public class CommandStep extends TaskExecutableWithRollbackAndRbac<CommandTaskRe
     CommandStepOutcome commandStepOutcome = CommandStepOutcome.builder().host(host).build();
     InfrastructureOutcome infrastructure = cdStepHelper.getInfrastructureOutcome(ambiance);
 
-    ServerInstanceInfo serverInstanceInfo =
-        PdcToServiceInstanceInfoMapper.toServerInstanceInfo(serviceType, host, infrastructure.getInfrastructureKey());
+    ServerInstanceInfo serverInstanceInfo;
+    if (infrastructure instanceof PdcInfrastructureOutcome) {
+      serverInstanceInfo =
+          PdcToServiceInstanceInfoMapper.toServerInstanceInfo(serviceType, host, infrastructure.getInfrastructureKey());
+    } else if (infrastructure instanceof SshWinRmAzureInfrastructureOutcome) {
+      serverInstanceInfo = AzureSshWinrmToServiceInstanceInfoMapper.toServerInstanceInfo(
+          serviceType, host, infrastructure.getInfrastructureKey());
+    } else if (infrastructure instanceof SshWinRmAwsInfrastructureOutcome) {
+      serverInstanceInfo = AwsSshWinrmToServiceInstanceInfoMapper.toServerInstanceInfo(
+          serviceType, host, infrastructure.getInfrastructureKey());
+    } else {
+      throw new InvalidArgumentsException(
+          "Invalid infrastructure outcome found " + infrastructure.getClass().getSimpleName());
+    }
 
     if (CommandExecutionStatus.SUCCESS.equals(taskResponse.getStatus())) {
       instanceInfoService.saveServerInstancesIntoSweepingOutput(

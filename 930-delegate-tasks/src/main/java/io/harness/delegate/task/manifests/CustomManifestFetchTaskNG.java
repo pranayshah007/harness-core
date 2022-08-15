@@ -35,6 +35,7 @@ import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.beans.logstreaming.NGDelegateLogCallback;
 import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
+import io.harness.delegate.exception.TaskNGDataException;
 import io.harness.delegate.task.AbstractDelegateRunnableTask;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.helm.CustomManifestFetchTaskHelper;
@@ -81,6 +82,10 @@ public class CustomManifestFetchTaskNG extends AbstractDelegateRunnableTask {
   public DelegateResponseData run(Object[] parameters) {
     throw new NotImplementedException("not implemented");
   }
+  @Override
+  public boolean isSupportingErrorFramework() {
+    return true;
+  }
 
   @Override
   public DelegateResponseData run(TaskParameters parameters) {
@@ -109,10 +114,8 @@ public class CustomManifestFetchTaskNG extends AbstractDelegateRunnableTask {
         logCallback.saveExecutionLog(k8sTaskHelperBase.getManifestFileNamesInLogFormat(defaultSourceWorkingDirectory));
 
         if (!isManifestsFilesSizeAllowed(logCallback, defaultSourceWorkingDirectory)) {
-          return CustomManifestValuesFetchResponse.builder()
-              .errorMessage("Custom Manifest File size exceeds allowed max size of 25Mb")
-              .commandExecutionStatus(FAILURE)
-              .build();
+          throw new TaskNGDataException(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress),
+              new InvalidRequestException("Custom Manifest File size exceeds allowed max size of 25Mb"));
         }
 
       } catch (ShellScriptException e) {
@@ -120,18 +123,12 @@ public class CustomManifestFetchTaskNG extends AbstractDelegateRunnableTask {
         log.error("Failed to execute shell script", e);
         logCallback.saveExecutionLog(
             "Failed to execute custom manifest script. " + getMessage(e), ERROR, CommandExecutionStatus.FAILURE);
-        return CustomManifestValuesFetchResponse.builder()
-            .commandExecutionStatus(FAILURE)
-            .errorMessage(getMessage(e))
-            .build();
+        throw new TaskNGDataException(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress), e);
       } catch (Exception e) {
         cleanup(defaultSourceWorkingDirectory);
         log.error("Failed to process custom manifest", e);
         logCallback.saveExecutionLog("Custom source script execution task failed. " + getMessage(e), ERROR, FAILURE);
-        return CustomManifestValuesFetchResponse.builder()
-            .commandExecutionStatus(FAILURE)
-            .errorMessage(getMessage(e))
-            .build();
+        throw new TaskNGDataException(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress), e);
       }
 
       try {
@@ -141,17 +138,11 @@ public class CustomManifestFetchTaskNG extends AbstractDelegateRunnableTask {
         log.error("Failed to get files from manifest directory", e);
         logCallback.saveExecutionLog(
             "Failed to get manifest files from custom source. " + getMessage(e), ERROR, CommandExecutionStatus.FAILURE);
-        return CustomManifestValuesFetchResponse.builder()
-            .commandExecutionStatus(FAILURE)
-            .errorMessage(getMessage(e))
-            .build();
+        throw new TaskNGDataException(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress), e);
       } catch (Exception e) {
         cleanup(defaultSourceWorkingDirectory);
         logCallback.saveExecutionLog("Failed to process custom manifest files." + getMessage(e), ERROR, FAILURE);
-        return CustomManifestValuesFetchResponse.builder()
-            .commandExecutionStatus(FAILURE)
-            .errorMessage(getMessage(e))
-            .build();
+        throw new TaskNGDataException(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress), e);
       }
     }
 
@@ -165,10 +156,7 @@ public class CustomManifestFetchTaskNG extends AbstractDelegateRunnableTask {
       log.error("Fetch values from custom manifest failed", e);
       logCallback.saveExecutionLog("Unknown error while trying to fetch values from custom manifest. " + e.getMessage(),
           LogLevel.ERROR, FAILURE);
-      return CustomManifestValuesFetchResponse.builder()
-          .commandExecutionStatus(FAILURE)
-          .errorMessage(getMessage(e))
-          .build();
+      throw new TaskNGDataException(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress), e);
     } finally {
       cleanup(defaultSourceWorkingDirectory);
     }

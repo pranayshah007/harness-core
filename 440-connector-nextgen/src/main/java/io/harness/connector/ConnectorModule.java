@@ -11,6 +11,8 @@ import static io.harness.AuthorizationServiceHeader.CE_NEXT_GEN;
 import static io.harness.annotations.dev.HarnessTeam.DX;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.artifacts.docker.client.DockerRestClientFactory;
+import io.harness.artifacts.docker.client.DockerRestClientFactoryImpl;
 import io.harness.aws.AwsClient;
 import io.harness.aws.AwsClientImpl;
 import io.harness.azure.client.AzureAuthorizationClient;
@@ -120,6 +122,7 @@ public class ConnectorModule extends AbstractModule {
     bind(GcpClient.class).to(GcpClientImpl.class);
     bind(AzureAuthorizationClient.class).to(AzureAuthorizationClientImpl.class);
     bind(NGGitService.class).to(NGGitServiceImpl.class);
+    bind(DockerRestClientFactory.class).to(DockerRestClientFactoryImpl.class);
     bind(GitClientV2.class).to(GitClientV2Impl.class);
     bind(ScmDelegateClient.class).to(ScmDelegateClientImpl.class);
     bind(NGConnectorSecretManagerService.class).to(NGConnectorSecretManagerServiceImpl.class);

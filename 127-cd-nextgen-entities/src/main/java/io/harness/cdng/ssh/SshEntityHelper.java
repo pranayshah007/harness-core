@@ -24,10 +24,7 @@ import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.joining;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.DecryptableEntity;
 import io.harness.beans.IdentifierRef;
-import io.harness.cdng.artifact.outcome.ArtifactOutcome;
-import io.harness.cdng.artifact.outcome.ArtifactoryGenericArtifactOutcome;
 import io.harness.cdng.azure.AzureHelperService;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.infra.beans.PdcInfrastructureOutcome;
@@ -40,7 +37,6 @@ import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.services.ConnectorService;
 import io.harness.connector.services.NGHostService;
 import io.harness.data.structure.EmptyPredicate;
-import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryConnectorDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
 import io.harness.delegate.beans.connector.azureconnector.AzureConnectorDTO;
 import io.harness.delegate.beans.connector.pdcconnector.HostDTO;
@@ -55,8 +51,6 @@ import io.harness.delegate.task.ssh.PdcSshInfraDelegateConfig;
 import io.harness.delegate.task.ssh.PdcWinRmInfraDelegateConfig;
 import io.harness.delegate.task.ssh.SshInfraDelegateConfig;
 import io.harness.delegate.task.ssh.WinRmInfraDelegateConfig;
-import io.harness.delegate.task.ssh.artifact.ArtifactoryArtifactDelegateConfig;
-import io.harness.delegate.task.ssh.artifact.SshWinRmArtifactDelegateConfig;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.beans.PageRequest;
 import io.harness.ng.core.NGAccess;
@@ -70,7 +64,6 @@ import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.secretmanagerclient.services.SshKeySpecDTOHelper;
 import io.harness.secretmanagerclient.services.WinRmCredentialsSpecDTOHelper;
-import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 import io.harness.secrets.remote.SecretNGManagerClient;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.utils.IdentifierRefHelper;
@@ -86,7 +79,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import javax.annotation.Nonnull;
 import org.springframework.data.domain.Page;
 
 @Singleton
@@ -94,7 +86,6 @@ import org.springframework.data.domain.Page;
 public class SshEntityHelper {
   @Named(DEFAULT_CONNECTOR_SERVICE) @Inject private ConnectorService connectorService;
   @Inject @Named("PRIVILEGED") private SecretNGManagerClient secretManagerClient;
-  @Named("PRIVILEGED") @Inject private SecretManagerClientService secretManagerClientService;
   @Inject private SshKeySpecDTOHelper sshKeySpecDTOHelper;
   @Inject private WinRmCredentialsSpecDTOHelper winRmCredentialsSpecDTOHelper;
   @Inject private NGHostService ngHostService;
@@ -234,7 +225,7 @@ public class SshEntityHelper {
     }
   }
 
-  private Map<String, String> filterInfraTags(Map<String, String> infraTags) {
+  public Map<String, String> filterInfraTags(Map<String, String> infraTags) {
     if (isEmpty(infraTags)) {
       return infraTags;
     }
@@ -375,46 +366,5 @@ public class SshEntityHelper {
       throw new InvalidRequestException(format("Connector not found for identifier : [%s]", connectorId), USER);
     }
     return connectorDTO.get().getConnector();
-  }
-
-  public SshWinRmArtifactDelegateConfig getArtifactDelegateConfigConfig(
-      ArtifactOutcome artifactOutcome, Ambiance ambiance) {
-    NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
-    ConnectorInfoDTO connectorDTO;
-    if (artifactOutcome instanceof ArtifactoryGenericArtifactOutcome) {
-      ArtifactoryGenericArtifactOutcome artifactoryGenericArtifactOutcome =
-          (ArtifactoryGenericArtifactOutcome) artifactOutcome;
-      connectorDTO = getConnectorInfoDTO(artifactoryGenericArtifactOutcome.getConnectorRef(), ngAccess);
-      return ArtifactoryArtifactDelegateConfig.builder()
-          .repositoryName(artifactoryGenericArtifactOutcome.getRepositoryName())
-          .identifier(artifactoryGenericArtifactOutcome.getIdentifier())
-          .connectorDTO(connectorDTO)
-          .encryptedDataDetails(getArtifactEncryptionDataDetails(connectorDTO, ngAccess))
-          .artifactDirectory(artifactoryGenericArtifactOutcome.getArtifactDirectory())
-          .artifactPath(artifactoryGenericArtifactOutcome.getArtifactPath())
-          .repositoryFormat(artifactoryGenericArtifactOutcome.getRepositoryFormat())
-          .build();
-    } else {
-      throw new UnsupportedOperationException(
-          format("Unsupported Artifact type: [%s]", artifactOutcome.getArtifactType()));
-    }
-  }
-
-  public List<EncryptedDataDetail> getArtifactEncryptionDataDetails(
-      @Nonnull ConnectorInfoDTO connectorDTO, @Nonnull NGAccess ngAccess) {
-    switch (connectorDTO.getConnectorType()) {
-      case ARTIFACTORY:
-        ArtifactoryConnectorDTO artifactoryConnectorDTO = (ArtifactoryConnectorDTO) connectorDTO.getConnectorConfig();
-        List<DecryptableEntity> artifactoryDecryptableEntities = artifactoryConnectorDTO.getDecryptableEntities();
-        if (isNotEmpty(artifactoryDecryptableEntities)) {
-          return secretManagerClientService.getEncryptionDetails(
-              ngAccess, artifactoryConnectorDTO.getAuth().getCredentials());
-        } else {
-          return emptyList();
-        }
-      default:
-        throw new UnsupportedOperationException(
-            format("Unsupported connector type : [%s]", connectorDTO.getConnectorType()));
-    }
   }
 }

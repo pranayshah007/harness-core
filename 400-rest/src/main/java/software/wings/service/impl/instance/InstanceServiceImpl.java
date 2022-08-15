@@ -349,6 +349,12 @@ public class InstanceServiceImpl implements InstanceService {
   }
 
   @Override
+  public List<Instance> listV2(Query<Instance> query) {
+    query.filter(InstanceKeys.isDeleted, false);
+    return query.asList();
+  }
+
+  @Override
   public List<Instance> listInstancesNotRemovedFully(Query<Instance> query) {
     long twoDaysOldTimeInMills = System.currentTimeMillis() - TimeUnit.DAYS.toMillis(2);
     query.and(query.or(query.criteria(InstanceKeys.deletedAt).greaterThanOrEq(twoDaysOldTimeInMills),
@@ -464,18 +470,17 @@ public class InstanceServiceImpl implements InstanceService {
   }
 
   public List<Instance> getInstancesForAppAndInframapping(String appId, String infraMappingId) {
-    PageRequest<Instance> pageRequest = new PageRequest<>();
-    pageRequest.addFilter("infraMappingId", Operator.EQ, infraMappingId);
-    pageRequest.addFilter("appId", Operator.EQ, appId);
-    return wingsMongoPersistence.getAllEntities(pageRequest, () -> list(pageRequest));
+    Query<Instance> query = wingsPersistence.createQuery(Instance.class)
+                                .filter(InstanceKeys.infraMappingId, infraMappingId)
+                                .filter(InstanceKeys.appId, appId);
+    return listV2(query);
   }
 
   public List<Instance> getInstancesForAppAndInframappingNotRemovedFully(String appId, String infraMappingId) {
-    PageRequest<Instance> pageRequest = new PageRequest<>();
-    pageRequest.addFilter("infraMappingId", Operator.EQ, infraMappingId);
-    pageRequest.addFilter("appId", Operator.EQ, appId);
-    Query<Instance> pageRequestQuery = wingsPersistence.convertToQuery(Instance.class, pageRequest);
-    return listInstancesNotRemovedFully(pageRequestQuery);
+    Query<Instance> query = wingsPersistence.createQuery(Instance.class)
+                                .filter(InstanceKeys.infraMappingId, infraMappingId)
+                                .filter(InstanceKeys.appId, appId);
+    return listInstancesNotRemovedFully(query);
   }
 
   @Override
@@ -492,9 +497,15 @@ public class InstanceServiceImpl implements InstanceService {
     PageRequest<Instance> pageRequest = new PageRequest<>();
     pageRequest.addFilter(InstanceKeys.infraMappingId, Operator.EQ, infrastructureDefinitionId);
     pageRequest.addFilter(InstanceKeys.appId, Operator.EQ, appId);
-    pageRequest.addFilter(InstanceKeys.lastWorkflowExecutionId, Operator.EXISTS);
     pageRequest.addOrder(SortOrder.Builder.aSortOrder().withField(InstanceKeys.lastUpdatedAt, OrderType.DESC).build());
     pageRequest.setLimit("1");
-    return wingsPersistence.convertToQuery(Instance.class, pageRequest).get();
+    Instance instance = wingsPersistence.convertToQuery(Instance.class, pageRequest).get();
+    if (instance.getLastWorkflowExecutionId() == null) {
+      log.error("Got last workflow execution Id null which is not expected. Details: appid:{}, inframapping id: {}.",
+          appId, infrastructureDefinitionId);
+      pageRequest.addFilter(InstanceKeys.lastWorkflowExecutionId, Operator.EXISTS);
+      instance = wingsPersistence.convertToQuery(Instance.class, pageRequest).get();
+    }
+    return instance;
   }
 }

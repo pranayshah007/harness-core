@@ -1,0 +1,190 @@
+pipeline:
+  name: image expression test
+  identifier: image_expression_test
+  projectIdentifier: projectId
+  orgIdentifier: orgId
+  storeType: ""
+  tags: {}
+  stages:
+    - stage:
+        name: test
+        identifier: test
+        description: ""
+        type: Deployment
+        spec:
+          serviceConfig:
+            serviceRef: svc1
+            serviceDefinition:
+              spec:
+                variables: []
+                artifacts:
+                  primary:
+                    spec:
+                      connectorRef: docker_test
+                      imagePath: <+pipeline.variables.image_path>
+                      tag: <+input>
+                    type: DockerRegistry
+                  sidecars:
+                    - sidecar:
+                        spec:
+                          connectorRef: Docker_Connector
+                          imagePath: <+service.name>
+                          tag: <+input>
+                        identifier: sidecar_id
+                        type: DockerRegistry
+              type: Kubernetes
+          infrastructure:
+            environmentRef: env1
+            infrastructureDefinition:
+              type: KubernetesDirect
+              spec:
+                connectorRef: cdcd
+                namespace: deafult
+                releaseName: release-<+INFRA_KEY>
+            allowSimultaneousDeployments: false
+          execution:
+            steps:
+              - step:
+                  name: Rollout Deployment
+                  identifier: rolloutDeployment
+                  type: K8sRollingDeploy
+                  timeout: 10m
+                  spec:
+                    skipDryRun: false
+            rollbackSteps:
+              - step:
+                  name: Rollback Rollout Deployment
+                  identifier: rollbackRolloutDeployment
+                  type: K8sRollingRollback
+                  timeout: 10m
+                  spec: {}
+        tags: {}
+        failureStrategies:
+          - onFailure:
+              errors:
+                - AllErrors
+              action:
+                type: StageRollback
+    - parallel:
+        - stage:
+            name: test2
+            identifier: test2
+            description: ""
+            type: Deployment
+            spec:
+              serviceConfig:
+                serviceRef: svc1
+                serviceDefinition:
+                  spec:
+                    variables: [ ]
+                    artifacts:
+                      primary:
+                        spec:
+                          connectorRef: docker_test
+                          imagePath: <+pipeline.variables.image_path>
+                          tag: <+input>
+                        type: DockerRegistry
+                      sidecars:
+                        - sidecar:
+                            spec:
+                              connectorRef: Docker_Connector
+                              imagePath: <+service.name>
+                              tag: <+input>
+                            identifier: sidecar_id
+                            type: DockerRegistry
+                  type: Kubernetes
+              infrastructure:
+                environmentRef: env1
+                infrastructureDefinition:
+                  type: KubernetesDirect
+                  spec:
+                    connectorRef: cdcd
+                    namespace: deafult
+                    releaseName: release-<+INFRA_KEY>
+                allowSimultaneousDeployments: false
+              execution:
+                steps:
+                  - step:
+                      name: Rollout Deployment
+                      identifier: rolloutDeployment
+                      type: K8sRollingDeploy
+                      timeout: 10m
+                      spec:
+                        skipDryRun: false
+                rollbackSteps:
+                  - step:
+                      name: Rollback Rollout Deployment
+                      identifier: rollbackRolloutDeployment
+                      type: K8sRollingRollback
+                      timeout: 10m
+                      spec: { }
+            tags: { }
+            failureStrategies:
+              - onFailure:
+                  errors:
+                    - AllErrors
+                  action:
+                    type: StageRollback
+        - stage:
+            name: test3
+            identifier: test3
+            description: ""
+            type: Deployment
+            spec:
+              serviceConfig:
+                serviceRef: svc1
+                serviceDefinition:
+                  spec:
+                    variables: [ ]
+                    artifacts:
+                      primary:
+                        spec:
+                          connectorRef: docker_test
+                          imagePath: <+pipeline.variables.image_path>
+                          tag: <+input>
+                        type: DockerRegistry
+                      sidecars:
+                        - sidecar:
+                            spec:
+                              connectorRef: Docker_Connector
+                              imagePath: <+service.name>
+                              tag: <+input>
+                            identifier: sidecar_id
+                            type: DockerRegistry
+                  type: Kubernetes
+              infrastructure:
+                environmentRef: env1
+                infrastructureDefinition:
+                  type: KubernetesDirect
+                  spec:
+                    connectorRef: cdcd
+                    namespace: deafult
+                    releaseName: release-<+INFRA_KEY>
+                allowSimultaneousDeployments: false
+              execution:
+                steps:
+                  - step:
+                      name: Rollout Deployment
+                      identifier: rolloutDeployment
+                      type: K8sRollingDeploy
+                      timeout: 10m
+                      spec:
+                        skipDryRun: false
+                rollbackSteps:
+                  - step:
+                      name: Rollback Rollout Deployment
+                      identifier: rollbackRolloutDeployment
+                      type: K8sRollingRollback
+                      timeout: 10m
+                      spec: { }
+            tags: { }
+            failureStrategies:
+              - onFailure:
+                  errors:
+                    - AllErrors
+                  action:
+                    type: StageRollback
+  variables:
+    - name: image_path
+      type: String
+      value: library/nginx

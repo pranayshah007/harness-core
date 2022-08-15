@@ -1,0 +1,68 @@
+failureStrategies:
+  - onFailure:
+      errors:
+        - AllErrors
+      action:
+        type: StageRollback
+spec:
+  execution:
+    steps:
+      - step:
+          name: "Deploy"
+          identifier: Deploy
+          type: Command
+          timeout: 10m
+          strategy:
+            repeat:
+              items: <+stage.output.hosts>
+              maxConcurrency: 1
+              start: 0
+              end: 100
+              unit: Percentage
+          spec:
+            host: <+repeat.item>
+            onDelegate: false
+            environmentVariables: [ ]
+            outputVariables: [ ]
+            commandUnits:
+              - identifier: Setup_Runtime_Paths
+                name: Setup Runtime Paths
+                type: Script
+                spec:
+                  shell: Bash
+                  source:
+                    type: Inline
+                    spec:
+                      script: |-
+                        # Execute as root and pass environment variables
+                        # su -p -
+                        
+                        # Execute as root via user credentials (with root privileges)
+                        # sudo -E su -p -
+                        
+                        # Env variables are defined with the following values: 
+                        # HARNESS_RUNTIME_PATH: deployment_type/service_name/env_name/runtime
+                        # HARNESS_BACKUP_PATH: deployment_type/service_name/env_name/backup
+                        # HARNESS_STAGING_PATH: deployment_type/service_name/env_name/staging
+                        
+                        mkdir -p $HARNESS_RUNTIME_PATH
+                        mkdir -p $HARNESS_BACKUP_PATH
+                        mkdir -p $HARNESS_STAGING_PATH
+              - identifier: Copy_Artifact
+                name: "Copy Artifact"
+                type: Copy
+                spec:
+                  sourceType: Artifact
+                  destinationPath: $HARNESS_RUNTIME_PATH
+              - identifier: Copy_Config
+                name: "Copy Config"
+                type: Copy
+                spec:
+                  sourceType: Config
+                  destinationPath: $HARNESS_RUNTIME_PATH
+      - step:
+          type: Verify
+          name: Verify
+          identifier: Verify
+          timeout: 2h
+          spec: { }

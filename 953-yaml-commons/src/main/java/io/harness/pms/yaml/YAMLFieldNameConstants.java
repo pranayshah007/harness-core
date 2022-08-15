@@ -80,4 +80,5 @@ public class YAMLFieldNameConstants {
   public final String SERVICE = "service";
 
   public final String INPUT_SET_REFERENCES = "inputSetReferences";
+  public final String REPEAT = "repeat";
 }

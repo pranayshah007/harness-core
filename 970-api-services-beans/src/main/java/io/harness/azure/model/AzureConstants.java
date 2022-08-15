@@ -13,6 +13,7 @@ import java.util.regex.Pattern;
 public interface AzureConstants {
   Pattern failureContainerLogPattern =
       Pattern.compile("ERROR - Container .* didn't respond to HTTP pings on port:", Pattern.CASE_INSENSITIVE);
+  Pattern failureContainerSetupPattern = Pattern.compile("Stopping site .* because it failed during startup");
   Pattern deploymentLogPattern = Pattern.compile("Deployment successful\\.", Pattern.CASE_INSENSITIVE);
   Pattern containerSuccessPattern =
       Pattern.compile("initialized successfully and is ready to serve requests\\.", Pattern.CASE_INSENSITIVE);

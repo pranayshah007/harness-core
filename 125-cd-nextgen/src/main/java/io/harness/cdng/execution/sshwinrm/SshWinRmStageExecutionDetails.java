@@ -11,10 +11,12 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.artifact.outcome.ArtifactOutcome;
-import io.harness.cdng.configfile.steps.ConfigFilesOutcome;
+import io.harness.cdng.configfile.ConfigFileOutcome;
 import io.harness.cdng.execution.ExecutionDetails;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
+import java.util.List;
+import java.util.Map;
 import lombok.Builder;
 import lombok.Data;
 
@@ -23,6 +25,8 @@ import lombok.Data;
 @Builder
 @JsonTypeName("SshWinRmStageExecutionDetails")
 public class SshWinRmStageExecutionDetails implements ExecutionDetails {
-  private ArtifactOutcome artifactOutcome;
-  private ConfigFilesOutcome configFilesOutcome;
+  private List<ArtifactOutcome> artifactsOutcome;
+  private Map<String, ConfigFileOutcome> configFilesOutcome;
+  private Map<String, Object> envVariables;
+  private Map<String, Object> outVariables;
 }

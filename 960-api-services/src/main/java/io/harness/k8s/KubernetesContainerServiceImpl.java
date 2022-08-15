@@ -629,7 +629,7 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
     AuthenticationV1Api api = new AuthenticationV1Api(apiClient);
     try {
       V1TokenReview tokenReview = api.createTokenReview(
-          new V1TokenReviewBuilder().withNewSpec().withNewToken(token).endSpec().build(), null, null, null);
+          new V1TokenReviewBuilder().withNewSpec().withToken(token).endSpec().build(), null, null, null, null);
 
       log.info("V1TokenReviewStatus: [{}]", tokenReview.getStatus());
 
@@ -1119,7 +1119,7 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
       ApiClient apiClient = kubernetesHelperService.getApiClient(kubernetesConfig);
       try {
         return new CoreV1Api(apiClient).createNamespacedService(
-            kubernetesConfig.getNamespace(), definition, null, null, null);
+            kubernetesConfig.getNamespace(), definition, null, null, null, null);
       } catch (ApiException exception) {
         String serviceDef = definition.getMetadata() != null && isNotEmpty(definition.getMetadata().getName())
             ? format("%s/Service/%s", kubernetesConfig.getNamespace(), definition.getMetadata().getName())
@@ -1141,7 +1141,7 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
       ApiClient apiClient = kubernetesHelperService.getApiClient(kubernetesConfig);
       try {
         return new CoreV1Api(apiClient).replaceNamespacedService(
-            name, kubernetesConfig.getNamespace(), definition, null, null, null);
+            name, kubernetesConfig.getNamespace(), definition, null, null, null, null);
       } catch (ApiException exception) {
         String serviceDef = definition.getMetadata() != null && isNotEmpty(definition.getMetadata().getName())
             ? format("%s/Service/%s", kubernetesConfig.getNamespace(), definition.getMetadata().getName())
@@ -1174,7 +1174,7 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
     final Supplier<V1Service> v1ServiceSupplier = Retry.decorateSupplier(retry, () -> {
       try {
         ApiClient apiClient = kubernetesHelperService.getApiClient(kubernetesConfig);
-        return new CoreV1Api(apiClient).readNamespacedService(name, namespace, null, null, null);
+        return new CoreV1Api(apiClient).readNamespacedService(name, namespace, null);
       } catch (ApiException exception) {
         if (isResourceNotFoundException(exception.getCode())) {
           return null;
@@ -1286,7 +1286,7 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
       ApiClient apiClient = kubernetesHelperService.getApiClient(kubernetesConfig);
       try {
         return new CoreV1Api(apiClient).replaceNamespacedConfigMap(
-            name, kubernetesConfig.getNamespace(), definition, null, null, null);
+            name, kubernetesConfig.getNamespace(), definition, null, null, null, null);
       } catch (ApiException exception) {
         String configMapDef = definition.getMetadata() != null && isNotEmpty(definition.getMetadata().getName())
             ? format("%s/ConfigMap/%s", kubernetesConfig.getNamespace(), definition.getMetadata().getName())
@@ -1308,7 +1308,7 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
       ApiClient apiClient = kubernetesHelperService.getApiClient(kubernetesConfig);
       try {
         return new CoreV1Api(apiClient).createNamespacedConfigMap(
-            kubernetesConfig.getNamespace(), definition, null, null, null);
+            kubernetesConfig.getNamespace(), definition, null, null, null, null);
       } catch (ApiException exception) {
         String configMapDef = definition.getMetadata() != null && isNotEmpty(definition.getMetadata().getName())
             ? format("%s/ConfigMap/%s", kubernetesConfig.getNamespace(), definition.getMetadata().getName())
@@ -1342,8 +1342,7 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
     final Supplier<V1ConfigMap> v1ConfigMapSupplier = Retry.decorateSupplier(retry, () -> {
       try {
         ApiClient apiClient = kubernetesHelperService.getApiClient(kubernetesConfig);
-        return new CoreV1Api(apiClient).readNamespacedConfigMap(
-            name, kubernetesConfig.getNamespace(), null, null, null);
+        return new CoreV1Api(apiClient).readNamespacedConfigMap(name, kubernetesConfig.getNamespace(), null);
       } catch (ApiException exception) {
         if (isResourceNotFoundException(exception.getCode())) {
           return null;
@@ -1552,8 +1551,7 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
     final Supplier<V1Secret> v1SecretSupplier = Retry.decorateSupplier(retry, () -> {
       ApiClient apiClient = kubernetesHelperService.getApiClient(kubernetesConfig);
       try {
-        return new CoreV1Api(apiClient).readNamespacedSecret(
-            secretName, kubernetesConfig.getNamespace(), null, null, null);
+        return new CoreV1Api(apiClient).readNamespacedSecret(secretName, kubernetesConfig.getNamespace(), null);
       } catch (ApiException exception) {
         if (isResourceNotFoundException(exception.getCode())) {
           return null;
@@ -1616,7 +1614,7 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
       ApiClient apiClient = kubernetesHelperService.getApiClient(kubernetesConfig);
       try {
         return new CoreV1Api(apiClient).createNamespacedSecret(
-            kubernetesConfig.getNamespace(), secret, null, null, null);
+            kubernetesConfig.getNamespace(), secret, null, null, null, null);
       } catch (ApiException exception) {
         String secretDef = secret.getMetadata() != null && isNotEmpty(secret.getMetadata().getName())
             ? format("%s/Secret/%s", kubernetesConfig.getNamespace(), secret.getMetadata().getName())
@@ -1637,7 +1635,7 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
     ApiClient apiClient = kubernetesHelperService.getApiClient(kubernetesConfig);
     try {
       return new CoreV1Api(apiClient).replaceNamespacedSecret(
-          name, kubernetesConfig.getNamespace(), secret, null, null, null);
+          name, kubernetesConfig.getNamespace(), secret, null, null, null, null);
     } catch (ApiException exception) {
       String secretDef = secret.getMetadata() != null && isNotEmpty(secret.getMetadata().getName())
           ? format("%s/Secret/%s", kubernetesConfig.getNamespace(), secret.getMetadata().getName())
@@ -2080,7 +2078,7 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
       try {
         ApiClient apiClient = kubernetesHelperService.getApiClient(kubernetesConfig);
 
-        return new AppsV1Api(apiClient).readNamespacedDeployment(name, namespace, null, null, null);
+        return new AppsV1Api(apiClient).readNamespacedDeployment(name, namespace, null);
       } catch (ApiException exception) {
         if (isResourceNotFoundException(exception.getCode())) {
           return null;

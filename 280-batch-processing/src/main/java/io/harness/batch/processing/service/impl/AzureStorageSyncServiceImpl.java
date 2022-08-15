@@ -104,8 +104,8 @@ public class AzureStorageSyncServiceImpl implements AzureStorageSyncService {
             azureStorageSyncRecord.getAccountId(), azureStorageSyncRecord.getSettingId(),
             azureStorageSyncRecord.getTenantId());
       }
-      sourcePathWithToken = sourcePath + "?" + sourceSasToken;
-      destinationPathWithToken = destinationPath + "?" + destinationSasToken;
+      sourcePathWithToken = sourcePath + "/?" + sourceSasToken;
+      destinationPathWithToken = destinationPath + "/?" + destinationSasToken;
       log.info("azcopy sync source {}, destination {}", sourcePath, destinationPath);
       final ArrayList<String> cmd =
           Lists.newArrayList("azcopy", "sync", sourcePathWithToken, destinationPathWithToken, "--recursive");

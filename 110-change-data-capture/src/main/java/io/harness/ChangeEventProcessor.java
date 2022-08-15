@@ -16,6 +16,7 @@ import software.wings.dl.WingsPersistence;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.inject.Inject;
+import com.google.inject.Singleton;
 import java.time.Duration;
 import java.util.Set;
 import java.util.concurrent.BlockingQueue;
@@ -29,6 +30,7 @@ import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
+@Singleton
 @OwnedBy(HarnessTeam.CE)
 class ChangeEventProcessor {
   @Inject private Set<CDCEntity<?>> subscribedClasses;
@@ -43,9 +45,11 @@ class ChangeEventProcessor {
   private ChangeEventProcessorTask changeEventProcessorTask;
 
   void startProcessingChangeEvents() {
-    changeEventProcessorTask = new ChangeEventProcessorTask(subscribedClasses, changeEventQueue, wingsPersistence);
-    changeEventProcessorTaskFuture = changeEventExecutorService.submit(changeEventProcessorTask);
-    changeEventProcessorWatcher.submit(this::watchChangeEventQueue);
+    if (changeEventProcessorTask == null) {
+      changeEventProcessorTask = new ChangeEventProcessorTask(subscribedClasses, changeEventQueue, wingsPersistence);
+      changeEventProcessorTaskFuture = changeEventExecutorService.submit(changeEventProcessorTask);
+      changeEventProcessorWatcher.submit(this::watchChangeEventQueue);
+    }
   }
 
   boolean processChangeEvent(ChangeEvent<?> changeEvent) {
@@ -67,8 +71,9 @@ class ChangeEventProcessor {
       LockSupport.parkNanos(Duration.ofSeconds(30).toNanos());
       int waiting = changeEventQueue.size();
       int processing = changeEventProcessorTask.getActiveCount();
+      long completed = changeEventProcessorTask.getCompletedTaskCount();
       log.info("ChangeEventProcessor stats, processing={}, waiting={}, completed={}, total={}", processing, waiting,
-          changeEventProcessorTask.getCompletedTaskCount(), total.get());
+          completed, total.get());
       if ((processing + waiting) > 10) {
         changeEventQueue.stream()
             .collect(Collectors.groupingBy(ChangeEvent::getEntityType, Collectors.counting()))
@@ -77,6 +82,12 @@ class ChangeEventProcessor {
                     count) -> log.info("ChangeEventProcessor stats breakdown, entity={}, waiting={}", entity, count));
       }
     }
+  }
+
+  boolean isWorking() {
+    int waiting = changeEventQueue.size();
+    int processing = changeEventProcessorTask.getActiveCount();
+    return (waiting + processing) > 0;
   }
 
   boolean isAlive() {

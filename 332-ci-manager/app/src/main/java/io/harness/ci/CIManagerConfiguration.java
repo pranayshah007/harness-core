@@ -68,6 +68,8 @@ import org.apache.commons.lang3.StringUtils;
 @Slf4j
 public class CIManagerConfiguration extends Configuration implements AssetsBundleConfiguration {
   public static final String BASE_PACKAGE = "io.harness.app.resources";
+
+  public static final String CI_API_PACKAGE = "io.harness.ci.api";
   public static final String NG_PIPELINE_PACKAGE = "io.harness.ngpipeline";
   public static final String ENFORCEMENT_CLIENT_PACKAGE = "io.harness.enforcement.client.resources";
   public static final Collection<Class<?>> HARNESS_RESOURCE_CLASSES = getResourceClasses();
@@ -122,8 +124,8 @@ public class CIManagerConfiguration extends Configuration implements AssetsBundl
         .getTypesAnnotatedWith(Path.class)
         .stream()
         .filter(klazz
-            -> StringUtils.startsWithAny(
-                klazz.getPackage().getName(), BASE_PACKAGE, NG_PIPELINE_PACKAGE, ENFORCEMENT_CLIENT_PACKAGE))
+            -> StringUtils.startsWithAny(klazz.getPackage().getName(), BASE_PACKAGE, CI_API_PACKAGE,
+                NG_PIPELINE_PACKAGE, ENFORCEMENT_CLIENT_PACKAGE))
         .collect(Collectors.toSet());
   }
 

@@ -37,7 +37,6 @@ public enum FeatureName {
   AZURE_ARM,
   AUDIT_TRAIL_ENHANCEMENT,
   BIND_FETCH_FILES_TASK_TO_DELEGATE,
-  BUSINESS_MAPPING("Cost Category Feature in CCM Module", HarnessTeam.CE),
   CCM_SUSTAINABILITY("Sustainability Feature in CCM Module", HarnessTeam.CE),
   CDNG_ENABLED,
   CENG_ENABLED("Enable the CCM module on NG", HarnessTeam.CE),
@@ -83,6 +82,7 @@ public enum FeatureName {
   FFM_2134_FF_PIPELINES_TRIGGER,
   FFM_3938_STALE_FLAGS_ACTIVE_CARD_HIDE_SHOW,
   FFM_4117_INTEGRATE_SRM("Enable Feature Flags to send events to the SRM module", HarnessTeam.CF),
+  FFM_3961_ENHANCED_ONBOARDING("Enable new onboarding experience for FeatureFlags", HarnessTeam.CF),
   WINRM_COPY_CONFIG_OPTIMIZE,
   ECS_MULTI_LBS,
   ENTITY_AUDIT_RECORD,
@@ -123,7 +123,6 @@ public enum FeatureName {
   NEW_RELIC_CV_TASK,
   NEWRELIC_24_7_CV_TASK,
   NG_DASHBOARDS("", HarnessTeam.CE),
-  CI_TI_DASHBOARDS_ENABLED,
   NODE_RECOMMENDATION_AGGREGATE("K8S Node recommendation Feature in CCM", HarnessTeam.CE),
   ON_NEW_ARTIFACT_TRIGGER_WITH_LAST_COLLECTED_FILTER,
   OUTAGE_CV_DISABLE,
@@ -132,7 +131,6 @@ public enum FeatureName {
   PRUNE_KUBERNETES_RESOURCES,
   REJECT_TRIGGER_IF_ARTIFACTS_NOT_MATCH,
   ROLLBACK_NONE_ARTIFACT,
-  SCIM_INTEGRATION,
   SEARCH_REQUEST,
   SEND_LOG_ANALYSIS_COMPRESSED,
   SEND_SLACK_NOTIFICATION_FROM_DELEGATE,
@@ -295,7 +293,6 @@ public enum FeatureName {
   SERVICENOW_CREATE_UPDATE_NG,
   OUTCOME_GRAPHQL_WITH_INFRA_DEF,
   AUTO_REJECT_PREVIOUS_APPROVALS,
-  ENABLE_K8S_AUTH_IN_VAULT,
   BIND_CUSTOM_VALUE_AND_MANIFEST_FETCH_TASK,
   AZURE_BLOB_SM,
   CONSIDER_ORIGINAL_STATE_VERSION,
@@ -313,7 +310,6 @@ public enum FeatureName {
   APPLICATION_DROPDOWN_MULTISELECT,
   NG_AZURE,
   NG_GIT_EXPERIENCE,
-  CIE_HOSTED_BUILDS,
   LDAP_SECRET_AUTH,
   WORKFLOW_EXECUTION_REFRESH_STATUS,
   SERVERLESS_SUPPORT,
@@ -412,7 +408,10 @@ public enum FeatureName {
       "Used to do on demand rollback to previously deployed different artifact on same inframapping", HarnessTeam.CDC),
   CG_GIT_POLLING("Poll git based on account config for git sync in CG.", HarnessTeam.SPG),
   GRAPHQL_WORKFLOW_EXECUTION_OPTIMIZATION(
-      "Making multiple optimizations for workflow execution graphql in CG", HarnessTeam.SPG);
+      "Making multiple optimizations for workflow execution graphql in CG", HarnessTeam.SPG),
+  NG_ENABLE_LDAP_CHECK("Enables NG Ldap in NG-UI", HarnessTeam.PL),
+  CUSTOM_SECRET_MANAGER_NG("Enable Custom Secret Manager in NG", HarnessTeam.PL),
+  CV_AWS_PROMETHEUS("Enable AWS Prometheus for CV State", HarnessTeam.CV);
   @Deprecated
   FeatureName() {
     scope = Scope.PER_ACCOUNT;

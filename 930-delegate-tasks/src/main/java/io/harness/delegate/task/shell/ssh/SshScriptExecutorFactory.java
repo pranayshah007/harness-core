@@ -72,7 +72,7 @@ public class SshScriptExecutorFactory {
         .accountId(context.getAccountId())
         .executionId(context.getExecutionId())
         .commandUnitName(context.getCommandUnitName())
-        .workingDirectory(context.getWorkingDirectory())
+        .workingDirectory(context.evaluateVariable(context.getWorkingDirectory()))
         .environment(context.getEnvironment())
         .scriptType(ScriptType.BASH)
         .build();
@@ -85,7 +85,7 @@ public class SshScriptExecutorFactory {
     sshSessionConfig.setAccountId(context.getAccountId());
     sshSessionConfig.setExecutionId(context.getExecutionId());
     sshSessionConfig.setHost(context.getHost());
-    sshSessionConfig.setWorkingDirectory(context.getWorkingDirectory());
+    sshSessionConfig.setWorkingDirectory(context.evaluateVariable(context.getWorkingDirectory()));
     sshSessionConfig.setCommandUnitName(context.getCommandUnitName());
 
     return sshSessionConfig;

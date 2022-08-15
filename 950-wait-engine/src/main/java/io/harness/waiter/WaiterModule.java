@@ -13,6 +13,7 @@ import io.harness.TimeoutEngineModule;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.config.PublisherConfiguration;
+import io.harness.mongo.queue.NgQueueFactory;
 import io.harness.mongo.queue.QueueFactory;
 import io.harness.queue.QueueModule;
 import io.harness.queue.QueuePublisher;
@@ -47,7 +48,7 @@ public class WaiterModule extends AbstractModule {
       return QueueFactory.createQueuePublisher(
           injector, NotifyEvent.class, asList(versionInfoManager.getVersionInfo().getVersion()), config);
     } else {
-      return QueueFactory.createNgQueuePublisher(injector, NotifyEvent.class,
+      return NgQueueFactory.createNgQueuePublisher(injector, NotifyEvent.class,
           asList(versionInfoManager.getVersionInfo().getVersion()), config, injector.getInstance(MongoTemplate.class));
     }
   }

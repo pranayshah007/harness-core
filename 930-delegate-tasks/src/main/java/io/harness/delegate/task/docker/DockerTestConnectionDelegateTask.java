@@ -8,6 +8,7 @@
 package io.harness.delegate.task.docker;
 
 import io.harness.connector.ConnectorValidationResult;
+import io.harness.connector.task.docker.DockerValidationHandler;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.DelegateTaskResponse;
 import io.harness.delegate.beans.connector.docker.DockerConnectorDTO;
