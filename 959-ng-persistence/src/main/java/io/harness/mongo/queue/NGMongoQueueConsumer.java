@@ -79,9 +79,18 @@ public class NGMongoQueueConsumer<T extends Queuable> implements QueueConsumer<T
                         .addCriteria(Criteria.where(QueuableKeys.earliestGet).lte(now))
                         .with(Sort.by(Direction.ASC, QueuableKeys.earliestGet));
 
+      List<T> documents = persistence.find(query, klass);
+      log.info("Before findAndModify" + documents);
+
       Update update = new Update().set(QueuableKeys.earliestGet, new Date(now.getTime() + heartbeat().toMillis()));
 
       T message = HPersistence.retry(() -> persistence.findAndModify(query, update, klass));
+
+      documents = persistence.find(query, klass);
+      log.info("After findAndModify" + documents);
+
+      log.info(String.valueOf(message));
+
       if (message != null) {
         return message;
       }
