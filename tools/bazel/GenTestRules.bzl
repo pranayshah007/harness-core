@@ -28,7 +28,7 @@ def run_tests(**kwargs):
             size = "enormous",
             jvm_flags = [
                 "$(HARNESS_ARGS)",
-                "-Xmx32G",
+                "-Xmx4G",
                 "-XX:+HeapDumpOnOutOfMemoryError",
                 "-XX:HeapDumpPath=$${TEST_WARNINGS_OUTPUT_FILE}/../heap.hprof",
             ],
@@ -132,6 +132,7 @@ EOF""" % code,
         )
 
         target_name = package + ".tests" + index
+        tags = "exclusive"
         native.java_test(
             name = package + ".tests" + index,
             test_class = package + "." + test_class,
@@ -207,6 +208,7 @@ def optimized_package_test(combined_tests_target_index, package, index, test_cla
         return []
 
     target_name = package + ".tests" + index
+    tags = "exclusive"
     native.java_test(
         name = target_name,
         test_class = package + "." + test_class,
