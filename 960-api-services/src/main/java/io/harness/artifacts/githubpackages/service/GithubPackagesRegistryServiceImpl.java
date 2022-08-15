@@ -8,6 +8,8 @@
 package io.harness.artifacts.githubpackages.service;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.artifacts.docker.service.DockerRegistryServiceImpl.isSuccessful;
+import static io.harness.exception.WingsException.USER;
 
 import static java.util.stream.Collectors.toList;
 
@@ -22,8 +24,8 @@ import io.harness.artifacts.githubpackages.client.GithubPackagesRestClientFactor
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.ArtifactServerException;
 import io.harness.exception.ExceptionUtils;
+import io.harness.exception.InvalidArtifactServerException;
 import io.harness.exception.NestedExceptionUtils;
-import io.harness.exception.WingsException;
 import io.harness.exception.runtime.GithubPackagesServerRuntimeException;
 
 import software.wings.common.BuildDetailsComparatorAscending;
@@ -58,7 +60,7 @@ public class GithubPackagesRegistryServiceImpl implements GithubPackagesRegistry
     } catch (Exception e) {
       throw NestedExceptionUtils.hintWithExplanationException("Could not fetch versions for the package",
           "Check if the package exists and if the permissions are scoped for the authenticated user",
-          new ArtifactServerException(ExceptionUtils.getMessage(e), e, WingsException.USER));
+          new ArtifactServerException(ExceptionUtils.getMessage(e), e, USER));
     }
 
     // Version Regex Filtering - TODO
@@ -78,7 +80,7 @@ public class GithubPackagesRegistryServiceImpl implements GithubPackagesRegistry
     } catch (Exception e) {
       throw NestedExceptionUtils.hintWithExplanationException("Could not fetch the version for the package",
           "Check if the package and the version exists and if the permissions are scoped for the authenticated user",
-          new ArtifactServerException(ExceptionUtils.getMessage(e), e, WingsException.USER));
+          new ArtifactServerException(ExceptionUtils.getMessage(e), e, USER));
     }
 
     return buildDetails.get(0);
@@ -96,7 +98,7 @@ public class GithubPackagesRegistryServiceImpl implements GithubPackagesRegistry
     } catch (Exception e) {
       throw NestedExceptionUtils.hintWithExplanationException("Could not fetch the version for the package",
           "Check if the package and the version exists and if the permissions are scoped for the authenticated user",
-          new ArtifactServerException(ExceptionUtils.getMessage(e), e, WingsException.USER));
+          new ArtifactServerException(ExceptionUtils.getMessage(e), e, USER));
     }
 
     return build;
@@ -138,6 +140,12 @@ public class GithubPackagesRegistryServiceImpl implements GithubPackagesRegistry
 
     Response<GithubPackagesVersionsResponse> response =
         githubPackagesRestClient.listVersionsForPackages(basicAuthHeader, packageName, packageType).execute();
+
+    if (!isSuccessful(response)) {
+      throw NestedExceptionUtils.hintWithExplanationException("Unable to fetch the versions for the package",
+          "Check if the package exists and if the permissions are scoped for the authenticated user",
+          new InvalidArtifactServerException(response.message(), USER));
+    }
 
     buildDetails = processPage(response.body(), packageName);
 
