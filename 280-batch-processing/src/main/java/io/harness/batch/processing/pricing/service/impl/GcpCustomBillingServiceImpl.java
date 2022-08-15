@@ -63,9 +63,9 @@ public class GcpCustomBillingServiceImpl implements GcpCustomBillingService {
   @Override
   public void updateGcpVMBillingDataCache(
       List<String> resourceIds, Instant startTime, Instant endTime, String dataSetId) {
-    Map<String, VMInstanceBillingData> azureVMBillingData =
+    Map<String, VMInstanceBillingData> gcpVMBillingData =
         bigQueryHelperService.getGcpVMBillingData(resourceIds, startTime, endTime, dataSetId);
-    azureVMBillingData.forEach(
+    gcpVMBillingData.forEach(
         (resourceId, vmInstanceBillingData)
             -> gcpResourceBillingCache.put(new CacheKey(resourceId, startTime, endTime), vmInstanceBillingData));
   }

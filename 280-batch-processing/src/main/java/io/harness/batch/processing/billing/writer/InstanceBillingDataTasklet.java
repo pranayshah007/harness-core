@@ -36,6 +36,7 @@ import io.harness.batch.processing.config.BatchMainConfig;
 import io.harness.batch.processing.dao.intfc.InstanceDataDao;
 import io.harness.batch.processing.pricing.service.intfc.AwsCustomBillingService;
 import io.harness.batch.processing.pricing.service.intfc.AzureCustomBillingService;
+import io.harness.batch.processing.pricing.service.intfc.GcpCustomBillingService;
 import io.harness.batch.processing.service.intfc.CustomBillingMetaDataService;
 import io.harness.batch.processing.service.intfc.InstanceDataService;
 import io.harness.batch.processing.tasklet.util.InstanceMetaDataUtils;
@@ -85,6 +86,7 @@ public class InstanceBillingDataTasklet implements Tasklet {
   @Autowired private InstanceDataService instanceDataService;
   @Autowired private AwsCustomBillingService awsCustomBillingService;
   @Autowired private AzureCustomBillingService azureCustomBillingService;
+  @Autowired private GcpCustomBillingService gcpCustomBillingService;
   @Autowired private CustomBillingMetaDataService customBillingMetaDataService;
   @Autowired private InstanceDataDao instanceDataDao;
   @Autowired private BatchMainConfig config;
@@ -262,8 +264,8 @@ public class InstanceBillingDataTasklet implements Tasklet {
         }
       });
       if (isNotEmpty(resourceIds)) {
-        azureCustomBillingService.updateAzureVMBillingDataCache(
-            new ArrayList<>(resourceIds), startTime, endTime, azureDataSetId);
+        gcpCustomBillingService.updateGcpVMBillingDataCache(
+            new ArrayList<>(resourceIds), startTime, endTime, gcpDataSetId);
       }
     }
 
