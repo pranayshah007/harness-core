@@ -22,7 +22,6 @@ import io.harness.artifacts.githubpackages.beans.GithubPackagesVersionsResponse;
 import io.harness.artifacts.githubpackages.client.GithubPackagesRestClient;
 import io.harness.artifacts.githubpackages.client.GithubPackagesRestClientFactory;
 import io.harness.data.structure.EmptyPredicate;
-import io.harness.delegate.beans.connector.scm.github.GithubHttpAuthenticationType;
 import io.harness.exception.ArtifactServerException;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidArtifactServerException;
@@ -48,6 +47,10 @@ import retrofit2.Response;
 @Slf4j
 public class GithubPackagesRegistryServiceImpl implements GithubPackagesRegistryService {
   @Inject private GithubPackagesRestClientFactory githubPackagesRestClientFactory;
+
+  private final String USERNAME_PASSWORD = "UsernamePassword";
+  private final String USERNAME_TOKEN = "UsernameToken";
+  private final String OAUTH = "OAuth";
 
   @Override
   public List<BuildDetails> getBuilds(GithubPackagesInternalConfig githubPackagesInternalConfig, String packageName,
@@ -114,13 +117,13 @@ public class GithubPackagesRegistryServiceImpl implements GithubPackagesRegistry
 
     String basicAuthHeader = "";
 
-    if (authType == GithubHttpAuthenticationType.USERNAME_AND_PASSWORD.getDisplayName()) {
+    if (authType == USERNAME_PASSWORD) {
       basicAuthHeader =
           Credentials.basic(githubPackagesInternalConfig.getUsername(), githubPackagesInternalConfig.getPassword());
-    } else if (authType == GithubHttpAuthenticationType.USERNAME_AND_TOKEN.getDisplayName()) {
+    } else if (authType == USERNAME_TOKEN) {
       basicAuthHeader =
           Credentials.basic(githubPackagesInternalConfig.getUsername(), githubPackagesInternalConfig.getToken());
-    } else if (authType == GithubHttpAuthenticationType.OAUTH.getDisplayName()) {
+    } else if (authType == OAUTH) {
       basicAuthHeader =
           Credentials.basic(githubPackagesInternalConfig.getUsername(), githubPackagesInternalConfig.getToken());
     }
@@ -150,13 +153,13 @@ public class GithubPackagesRegistryServiceImpl implements GithubPackagesRegistry
 
     String basicAuthHeader = "";
 
-    if (authType == GithubHttpAuthenticationType.USERNAME_AND_PASSWORD.getDisplayName()) {
+    if (authType == USERNAME_PASSWORD) {
       basicAuthHeader =
           Credentials.basic(githubPackagesInternalConfig.getUsername(), githubPackagesInternalConfig.getPassword());
-    } else if (authType == GithubHttpAuthenticationType.USERNAME_AND_TOKEN.getDisplayName()) {
+    } else if (authType == USERNAME_TOKEN) {
       basicAuthHeader =
           Credentials.basic(githubPackagesInternalConfig.getUsername(), githubPackagesInternalConfig.getToken());
-    } else if (authType == GithubHttpAuthenticationType.OAUTH.getDisplayName()) {
+    } else if (authType == OAUTH) {
       basicAuthHeader =
           Credentials.basic(githubPackagesInternalConfig.getUsername(), githubPackagesInternalConfig.getToken());
     }
