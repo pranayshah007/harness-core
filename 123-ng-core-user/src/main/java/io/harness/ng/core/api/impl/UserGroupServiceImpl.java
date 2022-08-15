@@ -366,9 +366,7 @@ public class UserGroupServiceImpl implements UserGroupService {
 
     Optional<UserGroup> userGroupOptional =
         get(scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier(), identifier);
-    if (userGroupOptional.isPresent() && userGroupOptional.get().isHarnessManaged()) {
-      throw new InvalidRequestException("Cannot deleted a managed user group");
-    }
+    validateIsNotHarnessManagedGroup(userGroupOptional);
     Criteria criteria = createUserGroupFetchCriteria(
         scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier(), identifier);
     return Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
@@ -878,6 +876,12 @@ public class UserGroupServiceImpl implements UserGroupService {
     boolean isAccountBasicFeatureFlagEnabled = ngFeatureFlagHelperService.isEnabled(scope.getAccountIdentifier(), FeatureName.ACCOUNT_BASIC_ROLE);
     if (!isAccountBasicFeatureFlagEnabled) {
       createRoleAssignment(principalIdentifier, scope, false, ACCOUNT_VIEWER_ROLE, DEFAULT_ACCOUNT_LEVEL_RESOURCE_GROUP_IDENTIFIER);
+    }
+  }
+
+  private void validateIsNotHarnessManagedGroup(Optional<UserGroup> userGroupOptional) {
+    if (userGroupOptional.isPresent() && userGroupOptional.get().isHarnessManaged()) {
+      throw new InvalidRequestException("Cannot deleted a managed user group");
     }
   }
 }
