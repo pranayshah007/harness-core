@@ -241,6 +241,7 @@ public class DelegateSetupServiceTest extends DelegateServiceTestBase {
                           .activelyConnected(delegate3.getLastHeartBeat()
                               > System.currentTimeMillis() - HEARTBEAT_EXPIRY_TIME.toMillis())
                           .hostName(delegate3.getHostName())
+                          .version("1.0.0")
                           .tokenActive(true)
                           .build());
       }
