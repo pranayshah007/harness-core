@@ -1,5 +1,4 @@
 FROM harness/java-docker-base:smp_jdk11
-EXPOSE 5005
 
 COPY --chown=65534:65534 redisson-jcache.yaml /opt/harness/
 COPY --chown=65534:65534 enterprise-redisson-jcache.yaml /opt/harness/
