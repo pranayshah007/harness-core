@@ -25,12 +25,37 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class GithubPackagesVersion {
   /**
-   * Package Name
+   * Version ID
    */
-  String name;
+  String versionId;
 
   /**
-   * Version of the Github Package
+   * Version Name(SHA-256 Value)
    */
-  String version;
+  String versionName;
+
+  /**
+   * Version URL
+   */
+  String versionUrl;
+
+  /**
+   * Package URL
+   */
+  String packageUrl;
+
+  /**
+   * Created At
+   */
+  String createdAt;
+
+  /**
+   * Last Updated At
+   */
+  String lastUpdatedAt;
+
+  /**
+   * Metadata
+   */
+  VersionTagMetadata metadata;
 }

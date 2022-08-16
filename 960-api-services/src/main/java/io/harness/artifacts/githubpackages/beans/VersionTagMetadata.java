@@ -12,7 +12,6 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 import io.harness.annotations.dev.OwnedBy;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -24,9 +23,14 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class GithubPackagesVersionsResponse {
+public class VersionTagMetadata {
   /**
-   * List of Versions for a Github Package
+   * Package Type
    */
-  List<GithubPackagesVersion> versionDetails;
+  String packageType;
+
+  /**
+   * Tags Info
+   */
+  TagsInfo tags;
 }

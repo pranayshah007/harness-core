@@ -24,9 +24,6 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class GithubPackagesVersionsResponse {
-  /**
-   * List of Versions for a Github Package
-   */
-  List<GithubPackagesVersion> versionDetails;
+public class TagsInfo {
+  List<String> tags;
 }

@@ -13,6 +13,8 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.artifacts.githubpackages.beans.GithubPackagesVersion;
 import io.harness.artifacts.githubpackages.beans.GithubPackagesVersionsResponse;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import java.util.List;
 import retrofit2.Call;
 import retrofit2.http.GET;
 import retrofit2.http.Header;
@@ -21,7 +23,7 @@ import retrofit2.http.Path;
 @OwnedBy(CDC)
 public interface GithubPackagesRestClient {
   @GET("/user/packages/{packageType}/{packageName}/versions")
-  Call<GithubPackagesVersionsResponse> listVersionsForPackages(@Header("Authorization") String bearerAuthHeader,
+  Call<List<JsonNode>> listVersionsForPackages(@Header("Authorization") String bearerAuthHeader,
       @Path(value = "packageName", encoded = true) String packageName,
       @Path(value = "packageType", encoded = true) String packageType);
 

@@ -13,8 +13,6 @@ import static io.harness.exception.WingsException.USER;
 import static java.util.stream.Collectors.toList;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.artifact.ArtifactMetadataKeys;
-import io.harness.artifacts.comparator.BuildDetailsComparatorDescending;
 import io.harness.artifacts.githubpackages.beans.GithubPackagesInternalConfig;
 import io.harness.artifacts.githubpackages.beans.GithubPackagesVersion;
 import io.harness.artifacts.githubpackages.beans.GithubPackagesVersionsResponse;
@@ -31,13 +29,12 @@ import io.harness.exception.runtime.GithubPackagesServerRuntimeException;
 import software.wings.common.BuildDetailsComparatorAscending;
 import software.wings.helpers.ext.jenkins.BuildDetails;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.Credentials;
 import org.apache.commons.lang3.StringUtils;
@@ -70,7 +67,7 @@ public class GithubPackagesRegistryServiceImpl implements GithubPackagesRegistry
 
     // Version Regex Filtering - TODO
 
-    return buildDetails.stream().sorted(new BuildDetailsComparatorAscending()).collect(toList());
+    return buildDetails;
   }
 
   @Override
@@ -137,11 +134,7 @@ public class GithubPackagesRegistryServiceImpl implements GithubPackagesRegistry
 
     BuildDetails build = new BuildDetails();
 
-    build.setUiDisplayName("Tag# " + githubPackagesVersion.getVersion());
-    build.setNumber(githubPackagesVersion.getVersion());
-    build.setBuildDisplayName(packageName);
-
-    return build;
+    return null;
   }
 
   private List<BuildDetails> getBuildDetails(GithubPackagesInternalConfig githubPackagesInternalConfig,
@@ -165,7 +158,7 @@ public class GithubPackagesRegistryServiceImpl implements GithubPackagesRegistry
 
     List<BuildDetails> buildDetails = new ArrayList<>();
 
-    Response<GithubPackagesVersionsResponse> response =
+    Response<List<JsonNode>> response =
         githubPackagesRestClient.listVersionsForPackages(basicAuthHeader, packageName, packageType).execute();
 
     if (!isSuccessful(response)) {
@@ -179,37 +172,16 @@ public class GithubPackagesRegistryServiceImpl implements GithubPackagesRegistry
     return buildDetails;
   }
 
-  private List<BuildDetails> processPage(GithubPackagesVersionsResponse response, String packageName) {
-    if (response != null && EmptyPredicate.isNotEmpty(response.getVersions())) {
-      int index = response.getVersions().get(0).getName().lastIndexOf("/");
-
-      List<BuildDetails> buildDetails = response.getVersions()
-                                            .stream()
-                                            .map(version -> {
-                                              String finalVersion = version.getName().substring(index + 1);
-                                              Map<String, String> metadata = new HashMap();
-                                              metadata.put(ArtifactMetadataKeys.IMAGE, packageName);
-                                              metadata.put(ArtifactMetadataKeys.TAG, finalVersion);
-
-                                              BuildDetails build = new BuildDetails();
-                                              build.setUiDisplayName("Tag# " + finalVersion);
-                                              build.setNumber(finalVersion);
-                                              build.setBuildDisplayName(packageName);
-
-                                              return build;
-                                            })
-                                            .collect(toList());
-
-      return buildDetails.stream().sorted(new BuildDetailsComparatorDescending()).collect(toList());
-
+  private List<BuildDetails> processPage(List<JsonNode> response, String packageName) {
+    if (response != null) {
     } else {
       if (response == null) {
         log.warn("Github Packages Version response was null.");
       } else {
         log.warn("Github Packages Version response was empty.");
       }
-      return null;
     }
+    return null;
   }
 
   public static boolean isSuccessful(Response<?> response) {
