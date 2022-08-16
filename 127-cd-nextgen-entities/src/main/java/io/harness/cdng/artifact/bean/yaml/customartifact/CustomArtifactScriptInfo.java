@@ -34,6 +34,5 @@ public class CustomArtifactScriptInfo {
   @ApiModelProperty(hidden = true)
   String uuid;
   @NotNull ShellType shell;
-  long timeout;
   @NotNull CustomArtifactScriptSourceWrapper source;
 }

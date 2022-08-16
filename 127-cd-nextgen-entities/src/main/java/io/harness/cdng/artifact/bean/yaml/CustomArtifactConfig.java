@@ -64,6 +64,11 @@ public class CustomArtifactConfig implements ArtifactConfig, Visitable {
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) @Wither ParameterField<String> versionRegex;
 
   /**
+   * Script timeout
+   */
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) @Wither ParameterField<String> timeout;
+
+  /**
    * Scripts Details
    */
   @Wither CustomArtifactScripts scripts;

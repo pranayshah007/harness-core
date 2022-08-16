@@ -37,7 +37,7 @@ import org.zeroturnaround.exec.stream.LogOutputStream;
 @Slf4j
 public class ShellExecutionServiceImpl implements ShellExecutionService {
   private static final String defaultParentWorkingDirectory = "./local-scripts/";
-  private static final String ARTIFACT_RESULT_PATH = "ARTIFACT_RESULT_PATH";
+  private static final String ARTIFACT_RESULT_PATH = "HARNESS_ARTIFACT_RESULT_PATH";
   private static final Pattern pattern = Pattern.compile("harness-(.*).sh: line ([0-9]*):");
 
   @Override

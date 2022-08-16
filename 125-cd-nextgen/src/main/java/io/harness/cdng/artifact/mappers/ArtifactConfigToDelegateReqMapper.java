@@ -106,8 +106,7 @@ public class ArtifactConfigToDelegateReqMapper {
         NGVariablesUtils.getStringMapVariables(artifactConfig.getScripts().getFetchAllArtifacts().getAttributes(), 0L),
         NGVariablesUtils.getStringMapVariables(artifactConfig.getInputs(), 0L), artifactConfig.getVersion().getValue(),
         AmbianceUtils.obtainCurrentRuntimeId(ambiance),
-        artifactConfig.getScripts().getFetchAllArtifacts().getShellScriptBaseStepInfo().getTimeout(),
-        AmbianceUtils.getAccountId(ambiance));
+        Long.valueOf(artifactConfig.getTimeout().getValue()).longValue(), AmbianceUtils.getAccountId(ambiance));
   }
 
   public GcrArtifactDelegateRequest getGcrDelegateRequest(GcrArtifactConfig gcrArtifactConfig,
