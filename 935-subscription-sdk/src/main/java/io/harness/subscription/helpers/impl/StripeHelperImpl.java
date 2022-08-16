@@ -368,6 +368,11 @@ public class StripeHelperImpl implements StripeHelper {
     return toPaymentMethodCollectionDTO(paymentMethodCollection);
   }
 
+  @Override
+  public InvoiceDetailDTO finalizeInvoice(String invoiceId) {
+    return toInvoiceDetailDTO(stripeHandler.finalizeInvoice(invoiceId));
+  }
+
   private InvoiceDetailDTO toInvoiceDetailDTO(Invoice invoice) {
     if (invoice == null) {
       return null;
