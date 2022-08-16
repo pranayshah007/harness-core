@@ -8,7 +8,6 @@
 package io.harness.artifacts.githubpackages.service;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
-import static io.harness.artifacts.docker.service.DockerRegistryServiceImpl.isSuccessful;
 import static io.harness.exception.WingsException.USER;
 
 import static java.util.stream.Collectors.toList;
@@ -26,6 +25,7 @@ import io.harness.exception.ArtifactServerException;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidArtifactServerException;
 import io.harness.exception.NestedExceptionUtils;
+import io.harness.exception.WingsException;
 import io.harness.exception.runtime.GithubPackagesServerRuntimeException;
 
 import software.wings.common.BuildDetailsComparatorAscending;
@@ -40,6 +40,7 @@ import java.util.List;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.Credentials;
+import org.apache.commons.lang3.StringUtils;
 import retrofit2.Response;
 
 @OwnedBy(CDC)
@@ -121,8 +122,7 @@ public class GithubPackagesRegistryServiceImpl implements GithubPackagesRegistry
       basicAuthHeader =
           Credentials.basic(githubPackagesInternalConfig.getUsername(), githubPackagesInternalConfig.getPassword());
     } else if (authType == USERNAME_TOKEN) {
-      basicAuthHeader =
-          Credentials.basic(githubPackagesInternalConfig.getUsername(), githubPackagesInternalConfig.getToken());
+      basicAuthHeader = "token " + githubPackagesInternalConfig.getToken();
     } else if (authType == OAUTH) {
       basicAuthHeader =
           Credentials.basic(githubPackagesInternalConfig.getUsername(), githubPackagesInternalConfig.getToken());
@@ -157,8 +157,7 @@ public class GithubPackagesRegistryServiceImpl implements GithubPackagesRegistry
       basicAuthHeader =
           Credentials.basic(githubPackagesInternalConfig.getUsername(), githubPackagesInternalConfig.getPassword());
     } else if (authType == USERNAME_TOKEN) {
-      basicAuthHeader =
-          Credentials.basic(githubPackagesInternalConfig.getUsername(), githubPackagesInternalConfig.getToken());
+      basicAuthHeader = "token " + githubPackagesInternalConfig.getToken();
     } else if (authType == OAUTH) {
       basicAuthHeader =
           Credentials.basic(githubPackagesInternalConfig.getUsername(), githubPackagesInternalConfig.getToken());
@@ -211,5 +210,36 @@ public class GithubPackagesRegistryServiceImpl implements GithubPackagesRegistry
       }
       return null;
     }
+  }
+
+  public static boolean isSuccessful(Response<?> response) {
+    if (response == null) {
+      throw new InvalidArtifactServerException("Null response found", USER);
+    }
+
+    if (response.isSuccessful()) {
+      return true;
+    }
+
+    log.error("Request not successful. Reason: {}", response);
+    int code = response.code();
+    switch (code) {
+      case 404:
+      case 400:
+        return false;
+      case 401:
+        throw unauthorizedException();
+      default:
+        throw new InvalidArtifactServerException(StringUtils.isNotBlank(response.message())
+                ? response.message()
+                : String.format("Server responded with the following error code - %d", code),
+            USER);
+    }
+  }
+
+  public static WingsException unauthorizedException() {
+    return NestedExceptionUtils.hintWithExplanationException("Update the credentials",
+        "Check if the provided credentials are correct",
+        new InvalidArtifactServerException("Invalid Github Packages Registry credentials", USER));
   }
 }
