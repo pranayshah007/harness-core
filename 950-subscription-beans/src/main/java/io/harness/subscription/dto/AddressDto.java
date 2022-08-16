@@ -21,12 +21,11 @@ import lombok.experimental.FieldDefaults;
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class FfSubscriptionDTO {
-  private String accountId;
-  private int numberOfMau;
-  private int numberOfDevelopers;
-  private String paymentFreq;
-  private String edition;
-  private boolean premiumSupport;
-  private CustomerDTO customer;
+public class AddressDto {
+  private String line1;
+  private String line2;
+  private String city;
+  private String state;
+  private String country;
+  private String postalCode;
 }
