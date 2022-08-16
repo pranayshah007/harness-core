@@ -566,7 +566,7 @@ public class NgUserServiceImpl implements NgUserService {
       userGroups.add(DEFAULT_ORGANIZATION_LEVEL_USER_GROUP_IDENTIFIER);
     }
     userGroups.add(DEFAULT_ACCOUNT_LEVEL_USER_GROUP_IDENTIFIER);
-    userGroupService.addUserToDefaultUserGroups(scope, userId, getValidUserGroups(scope, userGroups));
+    userGroupService.addUserToDefaultUserGroups(scope, userId, userGroups);
   }
 
   private List<String> getValidUserGroups(Scope scope, List<String> userGroupIdentifiers) {

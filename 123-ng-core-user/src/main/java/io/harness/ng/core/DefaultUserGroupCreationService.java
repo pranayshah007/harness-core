@@ -2,19 +2,16 @@ package io.harness.ng.core;
 
 import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
-import io.harness.account.AccountClient;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Scope;
 import io.harness.exception.DuplicateFieldException;
 import io.harness.ng.core.api.UserGroupService;
-import io.harness.ng.core.dto.AccountDTO;
 import io.harness.ng.core.entities.Organization;
 import io.harness.ng.core.entities.Project;
 import io.harness.ng.core.services.OrganizationService;
 import io.harness.ng.core.services.ProjectService;
 import io.harness.ng.core.user.entities.UserGroup;
-import io.harness.remote.client.RestClientUtils;
 import io.harness.repositories.user.spring.UserMembershipRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
@@ -23,11 +20,11 @@ import org.springframework.data.mongodb.core.query.Criteria;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import static io.harness.NGConstants.DEFAULT_ACCOUNT_LEVEL_USER_GROUP_IDENTIFIER;
 import static io.harness.NGConstants.DEFAULT_ORGANIZATION_LEVEL_USER_GROUP_IDENTIFIER;
 import static io.harness.NGConstants.DEFAULT_PROJECT_LEVEL_USER_GROUP_IDENTIFIER;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.ng.core.utils.UserGroupMapper.toDTO;
 
@@ -35,7 +32,6 @@ import static io.harness.ng.core.utils.UserGroupMapper.toDTO;
 @OwnedBy(HarnessTeam.PL)
 public class DefaultUserGroupCreationService implements Runnable {
     private final UserGroupService userGroupService;
-    private final AccountClient accountClient;
     private final OrganizationService organizationService;
     private final ProjectService projectService;
     private final UserMembershipRepository userMembershipRepository;
@@ -43,10 +39,9 @@ public class DefaultUserGroupCreationService implements Runnable {
     private static final String DEBUG_MESSAGE = "DefaultUserGroupCreationService: ";
 
     @Inject
-    public DefaultUserGroupCreationService(UserGroupService userGroupService, AccountClient accountClient, OrganizationService organizationService,
+    public DefaultUserGroupCreationService(UserGroupService userGroupService, OrganizationService organizationService,
                                            ProjectService projectService, UserMembershipRepository userMembershipRepository) {
         this.userGroupService = userGroupService;
-        this.accountClient = accountClient;
         this.organizationService = organizationService;
         this.projectService = projectService;
         this.userMembershipRepository = userMembershipRepository;
@@ -61,11 +56,10 @@ public class DefaultUserGroupCreationService implements Runnable {
         log.info(DEBUG_MESSAGE + "User Groups creation started.");
 
         try {
-            List<AccountDTO> accountDTOList = RestClientUtils.getResponse(accountClient.getAllAccounts());
-            List<String> accountIdsToBeInserted = accountDTOList.stream()
-                    .filter(AccountDTO::isNextGenEnabled)
-                    .map(AccountDTO::getIdentifier)
-                    .collect(Collectors.toList());
+            List<String> accountIdsToBeInserted = organizationService.getDistinctAccounts();
+            if (isEmpty(accountIdsToBeInserted)) {
+                return;
+            }
             createUserGroupForAccounts(accountIdsToBeInserted);
         } catch (Exception ex) {
             log.error(DEBUG_MESSAGE + " Fetching all accounts failed : ", ex);
@@ -98,7 +92,7 @@ public class DefaultUserGroupCreationService implements Runnable {
             Pageable pageable = PageRequest.of(pageIndex, pageSize);
             Criteria criteria = Criteria.where("accountIdentifier").is(accountId);
             List<Organization> organizations = organizationService.list(criteria, pageable).getContent();
-            if (organizations.isEmpty()) {
+            if (isEmpty(organizations)) {
                 break;
             }
             for (Organization organization : organizations) {
@@ -126,7 +120,7 @@ public class DefaultUserGroupCreationService implements Runnable {
             Pageable pageable = PageRequest.of(pageIndex, pageSize);
             Criteria criteria = Criteria.where("accountIdentifier").is(accountId).and("organizationId").is(organizationId);
             List<Project> projects = projectService.list(criteria, pageable).getContent();
-            if (projects.isEmpty()) {
+            if (isEmpty(projects)) {
                 break;
             }
             for (Project project : projects) {
@@ -159,7 +153,7 @@ public class DefaultUserGroupCreationService implements Runnable {
                 criteria = criteria.and("scope.projectIdentifier").is(scope.getProjectIdentifier());
             }
             List<String> userIds = userMembershipRepository.findAllUserIds(criteria, pageable).getContent();
-            if (userIds.isEmpty()) {
+            if (isEmpty(userIds)) {
                 break;
             }
             Optional<UserGroup> userGroupOptional = Optional.empty();
