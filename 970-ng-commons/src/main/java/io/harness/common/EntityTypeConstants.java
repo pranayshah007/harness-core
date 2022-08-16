@@ -107,4 +107,5 @@ public interface EntityTypeConstants {
   String AZURE_WEBAPP_ROLLBACK = "AzureWebAppRollback";
   String QUEUE = "Queue";
   String JENKINS_BUILD = "JenkinsBuild";
+  String AZURE_CREATE_ARM_RESOURCE_STEP = "AzureCreateARMResource";
 }
