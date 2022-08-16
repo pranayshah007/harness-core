@@ -13,6 +13,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
+import io.harness.batch.processing.billing.timeseries.service.impl.BillingDataServiceImpl;
 import io.harness.batch.processing.config.BatchMainConfig;
 import io.harness.batch.processing.dao.intfc.BillingDataPipelineRecordDao;
 import io.harness.batch.processing.pricing.gcp.bigquery.BigQueryHelperService;
@@ -49,6 +50,7 @@ public class CustomBillingMetaDataServiceImplTest extends CategoryTest {
   @Mock CEMetadataRecordDao ceMetadataRecordDao;
   @Mock CloudBillingHelper cloudBillingHelper;
   @Mock private BatchMainConfig mainConfig;
+  @Mock private BillingDataServiceImpl billingDataService;
   @InjectMocks private CustomBillingMetaDataServiceImpl customBillingMetaDataService;
 
   private static final String ACCOUNT_ID = "zEaak-FLS425IEO7OLzMUg";
@@ -80,6 +82,7 @@ public class CustomBillingMetaDataServiceImplTest extends CategoryTest {
         .thenReturn(CEMetadataRecord.builder().accountId(ACCOUNT_ID).awsDataPresent(true).build());
     when(customBillingMetaDataService.getAwsDataSetId(ACCOUNT_ID)).thenReturn(AWS_DATA_SETID);
     when(bigQueryHelperService.getAwsBillingData(START_TIME, END_TIME, AWS_DATA_SETID)).thenReturn(null);
+    when(billingDataService.isAWSClusterDataPresent(ACCOUNT_ID, START_TIME.minus(3, ChronoUnit.DAYS))).thenReturn(true);
     Boolean jobFinished = customBillingMetaDataService.checkPipelineJobFinished(ACCOUNT_ID, START_TIME, END_TIME);
     assertThat(jobFinished).isFalse();
   }
@@ -98,6 +101,7 @@ public class CustomBillingMetaDataServiceImplTest extends CategoryTest {
     when(customBillingMetaDataService.getAwsDataSetId(ACCOUNT_ID)).thenReturn(AWS_DATA_SETID);
     when(bigQueryHelperService.getAwsBillingData(START_TIME, END_TIME, AWS_DATA_SETID))
         .thenReturn(vmInstanceBillingDataMap);
+    when(billingDataService.isAWSClusterDataPresent(ACCOUNT_ID, START_TIME.minus(3, ChronoUnit.DAYS))).thenReturn(true);
     Boolean jobFinished = customBillingMetaDataService.checkPipelineJobFinished(ACCOUNT_ID, START_TIME, END_TIME);
     assertThat(jobFinished).isTrue();
   }
