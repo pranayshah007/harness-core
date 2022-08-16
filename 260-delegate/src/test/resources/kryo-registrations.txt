@@ -1740,6 +1740,8 @@
 55416:io.harness.delegate.task.ssh.AwsInfraDelegateConfig
 55417:io.harness.delegate.task.ssh.AwsSshInfraDelegateConfig
 55418:io.harness.delegate.task.ssh.AwsWinrmInfraDelegateConfig
+55419:io.harness.delegate.task.artifacts.gar.GarDelegateRequest
+55420:io.harness.delegate.task.artifacts.gar.GarDelegateResponse
 55501:io.harness.delegate.beans.instancesync.info.PdcServerInstanceInfo
 55502:io.harness.delegate.beans.instancesync.info.AzureSshWinrmServerInstanceInfo
 55503:io.harness.delegate.beans.instancesync.info.AwsSshWinrmServerInstanceInfo
