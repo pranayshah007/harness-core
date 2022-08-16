@@ -25,6 +25,7 @@ import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.cdng.yaml.CdYamlSchemaService;
 import io.harness.ng.core.OrgAndProjectValidationHelper;
 import io.harness.ng.core.service.dto.ServiceRequestDTO;
 import io.harness.ng.core.service.entity.ServiceEntity;
@@ -51,6 +52,7 @@ public class ServiceResourceV2Test extends CategoryTest {
   @InjectMocks ServiceResourceV2 serviceResourceV2;
   @Mock OrgAndProjectValidationHelper orgAndProjectValidationHelper;
   @Mock AccessControlClient accessControlClient;
+  @Mock CdYamlSchemaService cdYamlSchemaService;
 
   private final String ACCOUNT_ID = "account_id";
   private final String ORG_IDENTIFIER = "orgId";
