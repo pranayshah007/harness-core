@@ -19,7 +19,6 @@ import io.harness.serializer.DelegateTaskRegistrars;
 import io.harness.serializer.KryoRegistrar;
 import io.harness.serializer.NGCoreClientRegistrars;
 import io.harness.serializer.OutboxEventRegistrars;
-import io.harness.serializer.ProjectAndOrgRegistrars;
 import io.harness.serializer.SMCoreRegistrars;
 import io.harness.serializer.WaitEngineRegistrars;
 import io.harness.serializer.kryo.DelegateServiceBeansKryoRegistrar;
@@ -36,7 +35,6 @@ public class ResourceGroupSerializer {
   public final ImmutableSet<Class<? extends KryoRegistrar>> kryoRegistrars =
       ImmutableSet.<Class<? extends KryoRegistrar>>builder()
           .add(DelegateTasksBeansKryoRegister.class)
-          .addAll(ProjectAndOrgRegistrars.kryoRegistrars)
           .addAll(WaitEngineRegistrars.kryoRegistrars)
           .add(NGCoreKryoRegistrar.class)
           .addAll(SMCoreRegistrars.kryoRegistrars)

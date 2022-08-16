@@ -1,25 +1,24 @@
 load("@rules_java//java:defs.bzl", "java_binary")
 load("//:tools/bazel/GenTestRules.bzl", "run_tests")
 load("//:tools/bazel/macros.bzl", "run_analysis")
-load("//:tools/bazel/JavaPackageRules.bzl", "java_package")
-
-HarnessTeam = "DEL"
 
 java_library(
     name = "module",
     srcs = glob(["src/main/java/**/*.java"]),
+    resources = [
+    ],
     visibility = ["//visibility:public"],
     deps = [
         "//:lombok",
-        "//890-sm-delegate:module",
-        "//910-delegate-task-grpc-service:module",
         "//920-delegate-agent-beans:module",
         "//930-delegate-tasks:module",
-        "//950-log-client:module",
-        "//960-expression-service:module",
+        "//980-commons:module",
         "//999-annotations:module",
-        "@maven//:com_squareup_retrofit2_converter_protobuf",
+        "@maven//:com_google_cloud_google_cloud_kms",
+        "@maven//:org_threeten_threetenbp",
     ],
 )
+
+run_tests()
 
 run_analysis()

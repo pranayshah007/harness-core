@@ -119,7 +119,7 @@ public class OAuthTokenRefresher implements Handler<GitlabConnector> {
     secretSpecDTO.setValue(newSecret);
     secretDTOV2.setSpec(secretSpecDTO);
 
-    Secret secret = secretDTOV2.toEntity();
+    Secret secret = Secret.fromDTO(secretDTOV2);
     ngSecretCrudService.update(entity.getAccountIdentifier(), secret.getOrgIdentifier(), secret.getProjectIdentifier(),
         secretDTOV2.getIdentifier(), secretDTOV2);
   }
