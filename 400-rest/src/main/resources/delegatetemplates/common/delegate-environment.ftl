@@ -61,6 +61,10 @@
           value: "true"
         - name: LOG_STREAMING_SERVICE_URL
           value: "${logStreamingServiceBaseUrl}"
+        - name: DELEGATE_POD_ID
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.uid
 </#macro>
 <#macro cgSpecific>
         - name: DELEGATE_PROFILE
@@ -95,14 +99,6 @@
           valueFrom:
             fieldRef:
               fieldPath: metadata.namespace
-        - name: DELEGATE_POD_ID
-          valueFrom:
-            fieldRef:
-              fieldPath: metadata.uid
-        - name: DELEGATE_POD_NAME
-           valueFrom:
-            fieldRef:
-              fieldPath: metadata.name
         - name: INIT_SCRIPT
           value: ""
 </#macro>
