@@ -47,6 +47,7 @@ import java.util.Scanner;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
@@ -57,6 +58,8 @@ public class ServicePlanCreatorHelperTest extends CategoryTest {
   private final String ORG_IDENTIFIER = "orgId";
   private final String PROJ_IDENTIFIER = "projId";
   private final String SERVICE_IDENTIFIER = "service1";
+
+  @InjectMocks private ServicePlanCreatorHelper servicePlanCreatorHelper;
 
   @Before
   public void setUp() {
@@ -72,14 +75,14 @@ public class ServicePlanCreatorHelperTest extends CategoryTest {
     String serviceNodeId = serviceField.getNode().getUuid();
     byte[] dummyValue = new byte[10];
     doReturn(dummyValue).when(kryoSerializer).asDeflatedBytes(any());
-    Dependencies dependencies = ServicePlanCreatorHelper.getDependenciesForService(serviceField,
+    Dependencies dependencies = servicePlanCreatorHelper.getDependenciesForService(serviceField,
         DeploymentStageNode.builder()
             .deploymentStageConfig(DeploymentStageConfig.builder()
                                        .serviceConfig(ServiceConfig.builder().build())
                                        .infrastructure(PipelineInfrastructure.builder().build())
                                        .build())
             .build(),
-        "environmentUuid", "infraSectionUuid", kryoSerializer);
+        "environmentUuid", "infraSectionUuid");
     assertThat(dependencies).isNotEqualTo(null);
     assertThat(dependencies.getDependenciesMap().containsKey(serviceNodeId)).isEqualTo(true);
     assertThat(dependencies.getDependencyMetadataMap()
@@ -157,8 +160,8 @@ public class ServicePlanCreatorHelperTest extends CategoryTest {
         ServiceEntity.builder().name(SERVICE_IDENTIFIER).name(SERVICE_IDENTIFIER).yaml(serviceYaml).build();
     when(serviceEntityService.get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, SERVICE_IDENTIFIER, false))
         .thenReturn(Optional.of(serviceEntity));
-    YamlField serviceFieldForV2 = ServicePlanCreatorHelper.getResolvedServiceFieldForV2(
-        null, stageNode, serviceEntityService, specField, context);
+    YamlField serviceFieldForV2 =
+        servicePlanCreatorHelper.getResolvedServiceFieldForV2(null, stageNode, specField, context);
     assertThat(serviceFieldForV2).isNotNull();
     assertThat(serviceFieldForV2.getNode().getField(YamlTypes.SERVICE_DEFINITION)).isNotNull();
   }
@@ -222,8 +225,8 @@ public class ServicePlanCreatorHelperTest extends CategoryTest {
         ServiceEntity.builder().name(SERVICE_IDENTIFIER).name(SERVICE_IDENTIFIER).yaml(serviceYaml).build();
     when(serviceEntityService.get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, SERVICE_IDENTIFIER, false))
         .thenReturn(Optional.of(serviceEntity));
-    YamlField serviceFieldForV2 = ServicePlanCreatorHelper.getResolvedServiceFieldForV2(
-        null, stageNode, serviceEntityService, specField, context);
+    YamlField serviceFieldForV2 =
+        servicePlanCreatorHelper.getResolvedServiceFieldForV2(null, stageNode, specField, context);
     assertThat(serviceFieldForV2).isNotNull();
     assertThat(serviceFieldForV2.getNode().getField(YamlTypes.SERVICE_DEFINITION)).isNotNull();
   }
