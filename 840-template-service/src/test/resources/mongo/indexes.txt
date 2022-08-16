@@ -61,6 +61,12 @@ delegateTokens {"name": "validUntil_1", "background": true, "expireAfterSeconds"
 delegateTokensNG {"name": "byAccountAndStatus", "background": true} {"accountId": 1, "owner": 1, "status": 1}
 delegateTokensNG {"name": "byAccountOwnerAndName", "unique": true} {"accountId": 1, "owner": 1, "name": 1}
 delegateTokensNG {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
+delegates {"name": "accountId_1", "background": true} {"accountId": 1}
+delegates {"name": "byAcctNgGroupIdOwner", "background": true} {"accountId": 1, "ng": 1, "delegateGroupId": 1, "owner": 1}
+delegates {"name": "capabilitiesCheckNextIteration_1", "background": true} {"capabilitiesCheckNextIteration": 1}
+delegates {"name": "createdAt_1", "background": true} {"createdAt": 1}
+delegates {"name": "taskExpiryCheckNextIteration_1", "background": true} {"taskExpiryCheckNextIteration": 1}
+delegates {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
 emailQueue2 {"name": "earliestGet_1", "background": true, "expireAfterSeconds": 86400} {"earliestGet": 1}
 emailQueue2 {"name": "next4", "background": true} {"topic": 1, "earliestGet": 1}
 encryptedRecords {"name": "acctKmsIdx", "background": true} {"accountId": 1, "kmsId": 1}
