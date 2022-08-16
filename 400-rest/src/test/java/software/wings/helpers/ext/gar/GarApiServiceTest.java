@@ -1,6 +1,16 @@
 package software.wings.helpers.ext.gar;
 
+import static io.harness.rule.OwnerRule.vivekveman;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+import io.harness.category.element.UnitTests;
+import io.harness.rule.Owner;
+
 import software.wings.WingsBaseTest;
+
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 public class GarApiServiceTest extends WingsBaseTest {
   //     GARApiServiceImpl garApiServiceImpl = spy(new GARApiServiceImpl());
@@ -38,4 +48,10 @@ public class GarApiServiceTest extends WingsBaseTest {
   //
   //         when(gcrService.getUrl(anyString())).thenReturn("http://" + url);
   //     }
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void garTest() {
+    assertThat(true).isEqualTo(true);
+  }
 }

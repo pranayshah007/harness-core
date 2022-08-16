@@ -10,6 +10,7 @@ import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.capability.EncryptedDataDetailsCapabilityHelper;
 import io.harness.delegate.task.artifacts.ArtifactSourceDelegateRequest;
 import io.harness.delegate.task.artifacts.ArtifactSourceType;
+import io.harness.delegate.task.mixin.HttpConnectionExecutionCapabilityGenerator;
 import io.harness.exception.UnknownEnumTypeException;
 import io.harness.expression.ExpressionEvaluator;
 import io.harness.security.encryption.EncryptedDataDetail;
@@ -50,9 +51,10 @@ public class GarDelegateRequest implements ArtifactSourceDelegateRequest {
       if (gcpConnectorDTO.getCredential().getGcpCredentialType() == GcpCredentialType.INHERIT_FROM_DELEGATE) {
         populateDelegateSelectorCapability(capabilities, gcpConnectorDTO.getDelegateSelectors());
       } else if (gcpConnectorDTO.getCredential().getGcpCredentialType() == GcpCredentialType.MANUAL_CREDENTIALS) {
-        //        populateDelegateSelectorCapability(capabilities, gcpConnectorDTO.getDelegateSelectors());
-        //        capabilities.add(HttpConnectionExecutionCapabilityGenerator.buildHttpConnectionExecutionCapability(
-        //            "https://" + registryHostname, maskingEvaluator));
+        String registryHostname = String.format("%s-docker.pkg.dev", region);
+        populateDelegateSelectorCapability(capabilities, gcpConnectorDTO.getDelegateSelectors());
+        capabilities.add(HttpConnectionExecutionCapabilityGenerator.buildHttpConnectionExecutionCapability(
+            "https://" + registryHostname, maskingEvaluator));
       } else {
         throw new UnknownEnumTypeException(
             "Gcr Credential Type", String.valueOf(gcpConnectorDTO.getCredential().getGcpCredentialType()));
