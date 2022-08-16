@@ -113,9 +113,9 @@ public class DelegateTokenAuthenticatorImpl implements DelegateTokenAuthenticato
 
     final String tokenHash = DigestUtils.md5Hex(tokenString);
 
-    // we should validate from cache first, when watcher 754xx is deployed.
+    // we should validate from cache first and change this log from debug to warn, when watcher 754xx is deployed.
     if (isEmpty(delegateTokenName)) {
-      log.warn("Delegate token name is empty.");
+      log.debug("Delegate token name is empty.");
     } else if (validateDelegateJWTFromCache(accountId, tokenHash, shouldSetTokenNameInGlobalContext)) {
       return;
     }
