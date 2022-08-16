@@ -82,6 +82,7 @@ function copy_ng_manager_jars(){
 	cp ../../120-ng-manager/key.pem .
 	cp ../../120-ng-manager/cert.pem .
 	cp ../../120-ng-manager/src/main/resources/redisson-jcache.yaml .
+	cp ../../120-ng-manager/src/main/resources/enterprise-redisson-jcache.yaml .
 
 	cp ../../dockerization/ng-manager/Dockerfile-ng-manager-jenkins-k8-openjdk ./Dockerfile
 	cp ../../dockerization/ng-manager/Dockerfile-ng-manager-cie-jdk ./Dockerfile-cie-jdk
