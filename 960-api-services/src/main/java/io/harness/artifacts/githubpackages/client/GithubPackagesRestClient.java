@@ -11,7 +11,6 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.artifacts.githubpackages.beans.GithubPackagesVersion;
-import io.harness.artifacts.githubpackages.beans.GithubPackagesVersionsResponse;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import java.util.List;

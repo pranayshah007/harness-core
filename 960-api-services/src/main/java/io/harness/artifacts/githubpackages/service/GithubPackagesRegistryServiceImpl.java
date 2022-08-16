@@ -10,15 +10,11 @@ package io.harness.artifacts.githubpackages.service;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.exception.WingsException.USER;
 
-import static java.util.stream.Collectors.toList;
-
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.artifacts.githubpackages.beans.GithubPackagesInternalConfig;
 import io.harness.artifacts.githubpackages.beans.GithubPackagesVersion;
-import io.harness.artifacts.githubpackages.beans.GithubPackagesVersionsResponse;
 import io.harness.artifacts.githubpackages.client.GithubPackagesRestClient;
 import io.harness.artifacts.githubpackages.client.GithubPackagesRestClientFactory;
-import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.ArtifactServerException;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidArtifactServerException;
@@ -26,7 +22,6 @@ import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.WingsException;
 import io.harness.exception.runtime.GithubPackagesServerRuntimeException;
 
-import software.wings.common.BuildDetailsComparatorAscending;
 import software.wings.helpers.ext.jenkins.BuildDetails;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -172,16 +167,19 @@ public class GithubPackagesRegistryServiceImpl implements GithubPackagesRegistry
     return buildDetails;
   }
 
-  private List<BuildDetails> processPage(List<JsonNode> response, String packageName) {
-    if (response != null) {
+  private List<BuildDetails> processPage(List<JsonNode> versionDetails, String packageName) {
+    List<BuildDetails> buildDetails = new ArrayList<>();
+
+    if (versionDetails != null) {
     } else {
-      if (response == null) {
+      if (versionDetails == null) {
         log.warn("Github Packages Version response was null.");
       } else {
         log.warn("Github Packages Version response was empty.");
       }
+      return null;
     }
-    return null;
+    return buildDetails;
   }
 
   public static boolean isSuccessful(Response<?> response) {
