@@ -965,7 +965,8 @@ public class AssignDelegateServiceImpl implements AssignDelegateService, Delegat
   }
 
   private boolean isActiveImmutableDelegate(Delegate delegate) {
-    return delegate.getExpiringAt() == 0 || delegate.getExpiringAt() > System.currentTimeMillis();
+    // Return true if image expiration is not set or image is not expired.
+    return delegate.getExpirationTime() == 0 || delegate.getExpirationTime() > System.currentTimeMillis();
   }
 
   private List<Delegate> getDelegatesWithOwnerShipCriteriaMatch(DelegateTask task, List<Delegate> delegates) {

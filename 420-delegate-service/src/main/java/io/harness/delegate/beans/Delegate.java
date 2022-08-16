@@ -126,7 +126,6 @@ public class Delegate implements PersistentEntity, UuidAware, CreatedAtAware, Ac
   private String delegateTokenName;
 
   private boolean heartbeatAsObject;
-  private long expiringAt;
   private boolean immutable;
 
   @Override
