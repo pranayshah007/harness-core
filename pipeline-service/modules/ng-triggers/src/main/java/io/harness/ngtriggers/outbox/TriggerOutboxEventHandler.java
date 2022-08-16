@@ -45,7 +45,7 @@ public class TriggerOutboxEventHandler implements OutboxEventHandler {
     TriggerCreateEvent event = objectMapper.readValue(outboxEvent.getEventData(), TriggerCreateEvent.class);
     AuditEntry auditEntry = AuditEntry.builder()
                                 .action(Action.CREATE)
-                                .module(ModuleType.CORE)
+                                .module(ModuleType.PMS)
                                 .newYaml(event.getTriggerEntity().getYaml())
                                 .timestamp(outboxEvent.getCreatedAt())
                                 .resource(ResourceDTO.fromResource(outboxEvent.getResource()))
@@ -60,7 +60,7 @@ public class TriggerOutboxEventHandler implements OutboxEventHandler {
     TriggerUpdateEvent event = objectMapper.readValue(outboxEvent.getEventData(), TriggerUpdateEvent.class);
     AuditEntry auditEntry = AuditEntry.builder()
                                 .action(Action.UPDATE)
-                                .module(ModuleType.CORE)
+                                .module(ModuleType.PMS)
                                 .newYaml(event.getNewTriggerEntity().getYaml())
                                 .oldYaml(event.getOldTriggerEntity().getYaml())
                                 .timestamp(outboxEvent.getCreatedAt())
@@ -76,7 +76,7 @@ public class TriggerOutboxEventHandler implements OutboxEventHandler {
     TriggerDeleteEvent event = objectMapper.readValue(outboxEvent.getEventData(), TriggerDeleteEvent.class);
     AuditEntry auditEntry = AuditEntry.builder()
                                 .action(Action.DELETE)
-                                .module(ModuleType.CORE)
+                                .module(ModuleType.PMS)
                                 .oldYaml(event.getTriggerEntity().getYaml())
                                 .timestamp(outboxEvent.getCreatedAt())
                                 .resource(ResourceDTO.fromResource(outboxEvent.getResource()))
