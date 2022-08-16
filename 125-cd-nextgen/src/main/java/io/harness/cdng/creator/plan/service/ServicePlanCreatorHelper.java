@@ -35,34 +35,37 @@ import io.harness.serializer.KryoSerializer;
 import io.harness.utils.YamlPipelineUtils;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.inject.Inject;
 import com.google.protobuf.ByteString;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import javax.validation.constraints.NotNull;
-import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 
 /**
  * Contains method useful for service plan creator
  */
-@UtilityClass
 @Slf4j
 public class ServicePlanCreatorHelper {
-  public YamlField getResolvedServiceField(YamlField parentSpecField, DeploymentStageNode stageNode,
-      ServicePlanCreator servicePlanCreator, ServiceEntityService serviceEntityService, PlanCreationContext ctx) {
+  @Inject private KryoSerializer kryoSerializer;
+  @Inject private ServiceEntityService serviceEntityService;
+  @Inject private ServicePlanCreator servicePlanCreator;
+
+  public YamlField getResolvedServiceField(
+      YamlField parentSpecField, DeploymentStageNode stageNode, PlanCreationContext ctx) {
     YamlField serviceField = parentSpecField.getNode().getField(YamlTypes.SERVICE_CONFIG);
     if (serviceField != null) {
-      return getResolvedServiceFieldForV1(serviceField, servicePlanCreator);
+      return getResolvedServiceFieldForV1(serviceField);
     } else {
       YamlField serviceV2Field = parentSpecField.getNode().getField(YamlTypes.SERVICE_ENTITY);
-      return getResolvedServiceFieldForV2(serviceV2Field, stageNode, serviceEntityService, parentSpecField, ctx);
+      return getResolvedServiceFieldForV2(serviceV2Field, stageNode, parentSpecField, ctx);
     }
   }
 
-  public Dependencies getDependenciesForService(YamlField serviceField, DeploymentStageNode stageNode,
-      String environmentUuid, String infraSectionUuid, KryoSerializer kryoSerializer) {
+  public Dependencies getDependenciesForService(
+      YamlField serviceField, DeploymentStageNode stageNode, String environmentUuid, String infraSectionUuid) {
     Map<String, YamlField> serviceYamlFieldMap = new HashMap<>();
     String serviceNodeUuid = serviceField.getNode().getUuid();
     serviceYamlFieldMap.put(serviceNodeUuid, serviceField);
@@ -92,7 +95,7 @@ public class ServicePlanCreatorHelper {
         .build();
   }
 
-  private YamlField getResolvedServiceFieldForV1(YamlField serviceField, ServicePlanCreator servicePlanCreator) {
+  private YamlField getResolvedServiceFieldForV1(YamlField serviceField) {
     ServiceConfig serviceConfig;
     try {
       serviceConfig = YamlUtils.read(serviceField.getNode().toString(), ServiceConfig.class);
@@ -114,8 +117,8 @@ public class ServicePlanCreatorHelper {
   }
 
   @VisibleForTesting
-  YamlField getResolvedServiceFieldForV2(YamlField serviceV2Field, DeploymentStageNode stageNode,
-      ServiceEntityService serviceEntityService, YamlField parentSpecField, PlanCreationContext ctx) {
+  YamlField getResolvedServiceFieldForV2(
+      YamlField serviceV2Field, DeploymentStageNode stageNode, YamlField parentSpecField, PlanCreationContext ctx) {
     final ServiceYamlV2 serviceYamlV2 = stageNode.getDeploymentStageConfig().getService().getUseFromStage() != null
         ? useServiceYamlFromStage(stageNode.getDeploymentStageConfig().getService().getUseFromStage(), serviceV2Field)
         : stageNode.getDeploymentStageConfig().getService();
@@ -127,11 +130,11 @@ public class ServicePlanCreatorHelper {
       throw new InvalidRequestException("ServiceRef cannot be expression or runtime input during execution");
     }
 
-    String accountIdentifier = ctx.getMetadata().getAccountIdentifier();
-    String orgIdentifier = ctx.getMetadata().getOrgIdentifier();
-    String projectIdentifier = ctx.getMetadata().getProjectIdentifier();
-    String serviceRef = serviceYamlV2.getServiceRef().getValue();
-    Optional<ServiceEntity> serviceEntity =
+    final String accountIdentifier = ctx.getMetadata().getAccountIdentifier();
+    final String orgIdentifier = ctx.getMetadata().getOrgIdentifier();
+    final String projectIdentifier = ctx.getMetadata().getProjectIdentifier();
+    final String serviceRef = serviceYamlV2.getServiceRef().getValue();
+    final Optional<ServiceEntity> serviceEntity =
         serviceEntityService.get(accountIdentifier, orgIdentifier, projectIdentifier, serviceRef, false);
 
     if (serviceEntity.isEmpty()) {
