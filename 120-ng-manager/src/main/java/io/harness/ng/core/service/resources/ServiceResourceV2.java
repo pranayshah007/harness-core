@@ -22,6 +22,7 @@ import static java.lang.Long.parseLong;
 import static javax.ws.rs.core.HttpHeaders.IF_MATCH;
 import static org.apache.commons.lang3.StringUtils.isNumeric;
 
+import io.harness.EntityType;
 import io.harness.NGCommonEntityConstants;
 import io.harness.NGResourceFilterConstants;
 import io.harness.accesscontrol.AccountIdentifier;
@@ -38,6 +39,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.artifact.ArtifactSummary;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
+import io.harness.cdng.yaml.CdYamlSchemaService;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.beans.PageResponse;
@@ -137,6 +139,7 @@ public class ServiceResourceV2 {
   private final AccessControlClient accessControlClient;
   private final ServiceEntityManagementService serviceEntityManagementService;
   private final OrgAndProjectValidationHelper orgAndProjectValidationHelper;
+  private final CdYamlSchemaService cdYamlSchemaService;
 
   public static final String SERVICE_PARAM_MESSAGE = "Service Identifier for the entity";
 
@@ -194,6 +197,7 @@ public class ServiceResourceV2 {
         ResourceScope.of(accountId, serviceRequestDTO.getOrgIdentifier(), serviceRequestDTO.getProjectIdentifier()),
         Resource.of(NGResourceType.SERVICE, null), SERVICE_CREATE_PERMISSION);
     ServiceEntity serviceEntity = ServiceElementMapper.toServiceEntity(accountId, serviceRequestDTO);
+    cdYamlSchemaService.validateSchema(EntityType.SERVICE, serviceEntity.fetchNonEmptyYaml());
     orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(
         serviceEntity.getOrgIdentifier(), serviceEntity.getProjectIdentifier(), serviceEntity.getAccountId());
     ServiceEntity createdService = serviceEntityService.create(serviceEntity);
@@ -228,6 +232,8 @@ public class ServiceResourceV2 {
     serviceEntities.forEach(serviceEntity
         -> orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(
             serviceEntity.getOrgIdentifier(), serviceEntity.getProjectIdentifier(), serviceEntity.getAccountId()));
+    serviceEntities.forEach(
+        serviceEntity -> cdYamlSchemaService.validateSchema(EntityType.SERVICE, serviceEntity.fetchNonEmptyYaml()));
     Page<ServiceEntity> createdServices = serviceEntityService.bulkCreate(accountId, serviceEntities);
     return ResponseDTO.newResponse(getNGPageResponse(createdServices.map(ServiceElementMapper::toResponseWrapper)));
   }
@@ -268,6 +274,7 @@ public class ServiceResourceV2 {
         Resource.of(NGResourceType.SERVICE, serviceRequestDTO.getIdentifier()), SERVICE_UPDATE_PERMISSION);
     ServiceEntity requestService = ServiceElementMapper.toServiceEntity(accountId, serviceRequestDTO);
     requestService.setVersion(isNumeric(ifMatch) ? parseLong(ifMatch) : null);
+    cdYamlSchemaService.validateSchema(EntityType.SERVICE, requestService.fetchNonEmptyYaml());
     ServiceEntity updatedService = serviceEntityService.update(requestService);
     return ResponseDTO.newResponse(
         updatedService.getVersion().toString(), ServiceElementMapper.toResponseWrapper(updatedService));
@@ -291,6 +298,7 @@ public class ServiceResourceV2 {
     requestService.setVersion(isNumeric(ifMatch) ? parseLong(ifMatch) : null);
     orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(
         requestService.getOrgIdentifier(), requestService.getProjectIdentifier(), requestService.getAccountId());
+    cdYamlSchemaService.validateSchema(EntityType.SERVICE, requestService.fetchNonEmptyYaml());
     ServiceEntity upsertService = serviceEntityService.upsert(requestService, UpsertOptions.DEFAULT);
     return ResponseDTO.newResponse(
         upsertService.getVersion().toString(), ServiceElementMapper.toResponseWrapper(upsertService));
