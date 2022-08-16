@@ -188,6 +188,9 @@ import com.google.inject.Injector;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import com.sun.management.OperatingSystemMXBean;
+import io.fabric8.kubernetes.api.model.Pod;
+import io.fabric8.kubernetes.client.DefaultKubernetesClient;
+import io.fabric8.kubernetes.client.KubernetesClient;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
@@ -421,6 +424,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
   private double maxProcessRSSThresholdMB;
   private double maxPodRSSThresholdMB;
   private final AtomicBoolean rejectRequest = new AtomicBoolean(false);
+  private KubernetesClient kubernetesClient = new DefaultKubernetesClient();
 
   public static Optional<String> getDelegateId() {
     return Optional.ofNullable(delegateId);
@@ -548,6 +552,12 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       String delegateProfile = System.getenv().get("DELEGATE_PROFILE");
       if (isNotBlank(delegateProfile)) {
         log.info("Registering delegate with delegate profile: {}", delegateProfile);
+      }
+
+      if (DeployMode.KUBERNETES.name().equals(System.getenv().get(DeployMode.DEPLOY_MODE))) {
+        Pod kp = kubernetesClient.pods().withName(HOST_NAME).get();
+        log.info("Delegate Pod id from pod {}", kp.getMetadata().getUid());
+        log.info("Delegate Pod name from pod {}", kp.getMetadata().getName());
       }
 
       boolean isSample = "true".equals(System.getenv().get("SAMPLE_DELEGATE"));
