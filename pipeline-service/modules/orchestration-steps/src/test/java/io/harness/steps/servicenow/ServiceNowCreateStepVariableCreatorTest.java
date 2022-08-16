@@ -106,5 +106,41 @@ public class ServiceNowCreateStepVariableCreatorTest extends CategoryTest {
             "pipeline.stages.stage1.spec.execution.steps.snow_create.startTs",
             "pipeline.stages.stage1.spec.execution.steps.snow_create.endTs",
             "pipeline.stages.stage1.spec.execution.steps.snow_create.when");
+    List<YamlProperties> outputProperties = variablesForParentNodeV2.getYamlExtraProperties()
+                                                .get("-sAzEwZxQ6akzAzTfrdQyw") // uuid for step node
+                                                .getOutputPropertiesList();
+    List<YamlProperties> properties = variablesForParentNodeV2.getYamlExtraProperties()
+                                          .get("-sAzEwZxQ6akzAzTfrdQyw") // uuid for step node
+                                          .getPropertiesList();
+    assertThat(outputProperties).hasSize(3);
+    assertThat(properties).hasSize(5);
+    assertYamlProperties(outputProperties.get(0),
+        "pipeline.stages.stage1.spec.execution.steps.snow_create.ticket.ticketUrl",
+        "execution.steps.snow_create.ticket.ticketUrl", "", true);
+    assertYamlProperties(outputProperties.get(1),
+        "pipeline.stages.stage1.spec.execution.steps.snow_create.ticket.ticketNumber",
+        "execution.steps.snow_create.ticket.ticketNumber", "", true);
+    assertYamlProperties(outputProperties.get(2),
+        "pipeline.stages.stage1.spec.execution.steps.snow_create.ticket.fields",
+        "execution.steps.snow_create.ticket.fields", "", true);
+    assertYamlProperties(properties.get(0), "pipeline.stages.stage1.spec.execution.steps.snow_create.type",
+        "execution.steps.snow_create.type", "type", true);
+    assertYamlProperties(properties.get(1), "pipeline.stages.stage1.spec.execution.steps.snow_create.identifier",
+        "execution.steps.snow_create.identifier", "identifier", true);
+    assertYamlProperties(properties.get(2), "pipeline.stages.stage1.spec.execution.steps.snow_create.when",
+        "execution.steps.snow_create.when", "when", true);
+    assertYamlProperties(properties.get(3), "pipeline.stages.stage1.spec.execution.steps.snow_create.startTs",
+        "execution.steps.snow_create.startTs", "", false);
+    assertYamlProperties(properties.get(4), "pipeline.stages.stage1.spec.execution.steps.snow_create.endTs",
+        "execution.steps.snow_create.endTs", "", false);
+  }
+
+  private void assertYamlProperties(
+      YamlProperties yaml, String fqn, String localName, String variableName, boolean visible) {
+    assertThat(yaml).isNotNull();
+    assertThat(yaml.getFqn()).isEqualTo(fqn);
+    assertThat(yaml.getLocalName()).isEqualTo(localName);
+    assertThat(yaml.getVisible()).isEqualTo(visible);
+    assertThat(yaml.getVariableName()).isEqualTo(variableName);
   }
 }

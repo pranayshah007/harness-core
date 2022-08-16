@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 
-package io.harness.polling.resource;
+package io.harness.ng.webhook.resources;
 
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
@@ -18,8 +18,8 @@ import io.harness.logging.AutoLogContext;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.ng.webhook.polling.PollingResponseHandler;
 import io.harness.perpetualtask.PerpetualTaskLogContext;
-import io.harness.polling.PollingResponseHandler;
 import io.harness.polling.contracts.PollingItem;
 import io.harness.polling.contracts.service.PollingDocument;
 import io.harness.polling.service.intfc.PollingService;
@@ -36,34 +36,31 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.hibernate.validator.constraints.NotEmpty;
 
 @Api("polling")
 @Path("polling")
 @Produces({"application/json", "text/yaml", "text/html"})
 @InternalApi
-@ApiOperation(hidden = true, value = "Communication APIs for polling framework.")
+@AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor = @__({ @Inject }))
 @ApiResponses(value =
     {
       @ApiResponse(code = 400, response = FailureDTO.class, message = "Bad Request")
       , @ApiResponse(code = 500, response = ErrorDTO.class, message = "Internal server error")
     })
+@Slf4j
 @OwnedBy(HarnessTeam.CDC)
 public class PollingResource {
   private KryoSerializer kryoSerializer;
   private PollingResponseHandler pollingResponseHandler;
   private PollingService pollingService;
 
-  @Inject
-  public PollingResource(
-      KryoSerializer kryoSerializer, PollingResponseHandler pollingResponseHandler, PollingService pollingService) {
-    this.kryoSerializer = kryoSerializer;
-    this.pollingResponseHandler = pollingResponseHandler;
-    this.pollingService = pollingService;
-  }
-
   @POST
   @Path("delegate-response/{perpetualTaskId}")
+  @ApiOperation(hidden = true, value = "Communication APIs for polling framework.", nickname = "processPollingResult")
   public void processPollingResultNg(@PathParam("perpetualTaskId") @NotEmpty String perpetualTaskId,
       @QueryParam("accountId") @NotEmpty String accountId, byte[] serializedExecutionResponse) {
     try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR);
@@ -76,6 +73,7 @@ public class PollingResource {
 
   @POST
   @Path("subscribe")
+  @ApiOperation(hidden = true, value = "Subscribe API for polling framework.", nickname = "subscribePolling")
   public ResponseDTO<PollingResponseDTO> subscribe(byte[] pollingItem) {
     String pollingDocId = pollingService.subscribe((PollingItem) kryoSerializer.asObject(pollingItem));
     return ResponseDTO.newResponse(
@@ -86,6 +84,7 @@ public class PollingResource {
 
   @POST
   @Path("unsubscribe")
+  @ApiOperation(hidden = true, value = "Unsubscribe API for polling framework.", nickname = "unsubscribePolling")
   public Boolean unsubscribe(byte[] pollingItem) {
     return pollingService.unsubscribe((PollingItem) kryoSerializer.asObject(pollingItem));
   }

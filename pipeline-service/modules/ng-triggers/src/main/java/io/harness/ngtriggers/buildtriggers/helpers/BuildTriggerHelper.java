@@ -206,6 +206,10 @@ public class BuildTriggerHelper {
         .build();
   }
 
+  public BuildTriggerOpsData generateBuildTriggerOpsDataForGitPolling(TriggerDetails triggerDetails) throws Exception {
+    return BuildTriggerOpsData.builder().triggerDetails(triggerDetails).build();
+  }
+
   public String fetchStoreTypeForHelm(BuildTriggerOpsData buildTriggerOpsData) {
     EngineExpressionEvaluator engineExpressionEvaluator = new EngineExpressionEvaluator(null);
     Object evaluateExpression =

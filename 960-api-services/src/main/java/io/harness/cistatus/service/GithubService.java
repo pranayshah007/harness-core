@@ -7,6 +7,9 @@
 
 package io.harness.cistatus.service;
 
+import io.harness.gitpolling.github.GitPollingWebhookData;
+
+import java.util.List;
 import java.util.Map;
 import org.json.JSONObject;
 
@@ -19,4 +22,6 @@ public interface GithubService {
   String findPR(String apiUrl, String token, String owner, String repo, String prNumber);
 
   JSONObject mergePR(String apiUrl, String token, String owner, String repo, String prNumber);
+  List<GitPollingWebhookData> getWebhookRecentDeliveryEvents(
+      String apiUrl, String token, String repoOwner, String repoName, String webhookId);
 }

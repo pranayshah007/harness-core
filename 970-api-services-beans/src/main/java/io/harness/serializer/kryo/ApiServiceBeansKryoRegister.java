@@ -46,6 +46,7 @@ import io.harness.git.model.GitFile;
 import io.harness.git.model.GitFileChange;
 import io.harness.git.model.GitRepositoryType;
 import io.harness.git.model.PushResultGit;
+import io.harness.gitpolling.github.GitPollingWebhookData;
 import io.harness.globalcontex.AuditGlobalContextData;
 import io.harness.globalcontex.DelegateTokenGlobalContextData;
 import io.harness.globalcontex.EntityOperationIdentifier;
@@ -206,6 +207,7 @@ import com.mongodb.BasicDBList;
 import com.mongodb.BasicDBObject;
 import com.sumologic.client.SumoServerException;
 import io.fabric8.kubernetes.client.KubernetesClientException;
+import javax.ws.rs.core.MultivaluedHashMap;
 import org.json.JSONException;
 
 @OwnedBy(DEL)
@@ -435,5 +437,7 @@ public class ApiServiceBeansKryoRegister implements KryoRegistrar {
     kryo.register(FileSourceType.class, 97115);
     kryo.register(DockerRegistryProviderType.class, 19434);
     kryo.register(HelmCommandType.class, 98400);
+    kryo.register(GitPollingWebhookData.class, 73001);
+    kryo.register(MultivaluedHashMap.class, 73002);
   }
 }

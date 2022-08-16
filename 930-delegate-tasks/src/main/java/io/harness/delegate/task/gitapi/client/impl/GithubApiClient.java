@@ -33,13 +33,16 @@ import io.harness.delegate.beans.gitapi.GitApiTaskParams;
 import io.harness.delegate.beans.gitapi.GitApiTaskResponse;
 import io.harness.delegate.beans.gitapi.GitApiTaskResponse.GitApiTaskResponseBuilder;
 import io.harness.delegate.task.gitapi.client.GitApiClient;
+import io.harness.delegate.task.gitpolling.github.GitHubPollingDelegateRequest;
 import io.harness.exception.GitClientException;
 import io.harness.exception.InvalidRequestException;
+import io.harness.gitpolling.github.GitPollingWebhookData;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.security.encryption.SecretDecryptionService;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import lombok.AllArgsConstructor;
@@ -124,6 +127,22 @@ public class GithubApiClient implements GitApiClient {
     return responseBuilder.build();
   }
 
+  public List<GitPollingWebhookData> getWebhookRecentDeliveryEvents(GitHubPollingDelegateRequest attributesRequest) {
+    ConnectorDetails gitConnector = attributesRequest.getConnectorDetails();
+    if (gitConnector == null
+        || !gitConnector.getConnectorConfig().getClass().isAssignableFrom(GithubConnectorDTO.class)) {
+      throw new InvalidRequestException(format("Invalid Connector %s, Need GithubConfig: ", gitConnector));
+    }
+    GithubConnectorDTO gitConfigDTO = (GithubConnectorDTO) gitConnector.getConnectorConfig();
+    String gitApiURL = getGitApiURL(gitConfigDTO.getUrl());
+    String repoOwner = gitConfigDTO.getGitRepositoryDetails().getOrg();
+    String repoName = gitConfigDTO.getGitRepositoryDetails().getName();
+    String webhookId = attributesRequest.getWebhookId();
+    String token = retrieveAuthToken(gitConnector);
+
+    return githubService.getWebhookRecentDeliveryEvents(gitApiURL, token, repoOwner, repoName, webhookId);
+  }
+
   private String getGitApiURL(String url) {
     Pattern GIT_URL = Pattern.compile(GIT_URL_REGEX);
     Matcher m = GIT_URL.matcher(url);
@@ -155,7 +174,7 @@ public class GithubApiClient implements GitApiClient {
     GithubConnectorDTO gitConfigDTO = (GithubConnectorDTO) gitConnector.getConnectorConfig();
     if (gitConfigDTO.getApiAccess() == null || gitConfigDTO.getApiAccess().getType() == null) {
       throw new InvalidRequestException(
-          format("Failed to retrieve token info for github connector: ", gitConnector.getIdentifier()));
+          format("Failed to retrieve token info for github connector: %s", gitConnector.getIdentifier()));
     }
 
     GithubApiAccessSpecDTO spec = gitConfigDTO.getApiAccess().getSpec();
