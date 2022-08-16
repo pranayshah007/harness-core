@@ -13,6 +13,7 @@ import static io.harness.exception.WingsException.USER;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.artifacts.githubpackages.beans.GithubPackagesInternalConfig;
 import io.harness.artifacts.githubpackages.beans.GithubPackagesVersion;
+import io.harness.artifacts.githubpackages.beans.GithubPackagesVersionsResponse;
 import io.harness.artifacts.githubpackages.client.GithubPackagesRestClient;
 import io.harness.artifacts.githubpackages.client.GithubPackagesRestClientFactory;
 import io.harness.exception.ArtifactServerException;
@@ -151,7 +152,7 @@ public class GithubPackagesRegistryServiceImpl implements GithubPackagesRegistry
           Credentials.basic(githubPackagesInternalConfig.getUsername(), githubPackagesInternalConfig.getToken());
     }
 
-    List<BuildDetails> buildDetails = new ArrayList<>();
+    GithubPackagesVersionsResponse githubPackagesVersionsResponse = GithubPackagesVersionsResponse.builder().build();
 
     Response<List<JsonNode>> response =
         githubPackagesRestClient.listVersionsForPackages(basicAuthHeader, packageName, packageType).execute();
@@ -162,15 +163,58 @@ public class GithubPackagesRegistryServiceImpl implements GithubPackagesRegistry
           new InvalidArtifactServerException(response.message(), USER));
     }
 
-    buildDetails = processPage(response.body(), packageName);
+    githubPackagesVersionsResponse = processResponse(response.body(), packageName);
+
+    List<BuildDetails> builds = processBuildDetails(githubPackagesVersionsResponse);
+
+    return builds;
+  }
+
+  private List<BuildDetails> processBuildDetails(GithubPackagesVersionsResponse githubPackagesVersionsResponse) {
+    List<GithubPackagesVersion> versions = githubPackagesVersionsResponse.getVersionDetails();
+
+    List<BuildDetails> buildDetails = new ArrayList<>();
+
+    for (GithubPackagesVersion v : versions) {
+      BuildDetails build = new BuildDetails();
+
+      String tag = v.getTags().get(0);
+
+      build.setBuildDisplayName(tag);
+      build.setUiDisplayName(tag);
+      build.setNumber(v.getVersionId());
+      build.setBuildUrl(v.getVersionUrl());
+
+      buildDetails.add(build);
+    }
 
     return buildDetails;
   }
 
-  private List<BuildDetails> processPage(List<JsonNode> versionDetails, String packageName) {
-    List<BuildDetails> buildDetails = new ArrayList<>();
+  private GithubPackagesVersionsResponse processResponse(List<JsonNode> versionDetails, String packageName) {
+    List<GithubPackagesVersion> versions = new ArrayList<>();
 
     if (versionDetails != null) {
+      for (JsonNode node : versionDetails) {
+        JsonNode metadata = node.get("metadata");
+
+        JsonNode container = metadata.get("container");
+
+        List<String> tags = container.findValuesAsText("tags");
+
+        GithubPackagesVersion version = GithubPackagesVersion.builder()
+                                            .versionId(node.get("id").asText())
+                                            .versionName(node.get("name").asText())
+                                            .versionUrl(node.get("url").asText())
+                                            .packageUrl(node.get("package_html_url").asText())
+                                            .createdAt(node.get("created_at").asText())
+                                            .lastUpdatedAt(node.get("updated_at").asText())
+                                            .packageType(metadata.get("package_type").asText())
+                                            .tags(tags)
+                                            .build();
+
+        versions.add(version);
+      }
     } else {
       if (versionDetails == null) {
         log.warn("Github Packages Version response was null.");
@@ -179,7 +223,11 @@ public class GithubPackagesRegistryServiceImpl implements GithubPackagesRegistry
       }
       return null;
     }
-    return buildDetails;
+
+    GithubPackagesVersionsResponse finalResponse =
+        GithubPackagesVersionsResponse.builder().versionDetails(versions).build();
+
+    return finalResponse;
   }
 
   public static boolean isSuccessful(Response<?> response) {

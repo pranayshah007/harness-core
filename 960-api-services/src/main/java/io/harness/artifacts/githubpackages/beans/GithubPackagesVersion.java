@@ -12,6 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 import io.harness.annotations.dev.OwnedBy;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -55,7 +56,12 @@ public class GithubPackagesVersion {
   String lastUpdatedAt;
 
   /**
-   * Metadata
+   * Package Type
    */
-  VersionTagMetadata metadata;
+  String packageType;
+
+  /**
+   * Tags
+   */
+  List<String> tags;
 }
