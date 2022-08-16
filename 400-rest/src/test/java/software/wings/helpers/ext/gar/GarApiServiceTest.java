@@ -14,6 +14,7 @@ import org.junit.experimental.categories.Category;
 
 public class GarApiServiceTest extends WingsBaseTest {
   //     GARApiServiceImpl garApiServiceImpl = spy(new GARApiServiceImpl());
+
   //
   //     @Rule
   //     public WireMockRule wireMockRule = new WireMockRule(
