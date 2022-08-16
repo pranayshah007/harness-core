@@ -16,6 +16,7 @@ import io.harness.mongo.changestreams.ChangeTrackingInfo;
 import io.harness.persistence.PersistentEntity;
 
 import software.wings.dl.WingsPersistence;
+import software.wings.search.entities.deployment.DeploymentSearchEntity;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
@@ -42,6 +43,8 @@ class ElasticsearchSyncHelper {
     Set<Class<? extends PersistentEntity>> subscribedClasses = new HashSet<>();
     searchEntities.forEach(searchEntity -> subscribedClasses.addAll(searchEntity.getSubscriptionEntities()));
     timeScaleEntities.forEach(timeScaleEntity -> subscribedClasses.add(timeScaleEntity.getSourceEntityClass()));
+
+    subscribedClasses.remove(DeploymentSearchEntity.SOURCE_ENTITY_CLASS);
 
     Set<ChangeTrackingInfo<?>> changeTrackingInfos = new HashSet<>();
 

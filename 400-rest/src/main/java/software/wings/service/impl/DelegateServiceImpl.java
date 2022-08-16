@@ -841,16 +841,40 @@ public class DelegateServiceImpl implements DelegateService {
             .hasAnyOf(Arrays.asList(DelegateInstanceStatus.ENABLED, DelegateInstanceStatus.WAITING_FOR_APPROVAL))
             .asList();
 
+    List<DelegateGroup> delegateGroupList = persistence.createQuery(DelegateGroup.class)
+                                                .filter(DelegateGroupKeys.accountId, accountId)
+                                                .filter(DelegateGroupKeys.ng, false)
+                                                .project(DelegateGroupKeys.upgraderLastUpdated, true)
+                                                .project(DelegateGroupKeys.name, true)
+                                                .asList();
+
+    Map<String, Long> delegateGroupMap = delegateGroupList.stream().collect(
+        Collectors.toMap(DelegateGroup::getName, DelegateGroup::getUpgraderLastUpdated));
+
     return activeDelegates.stream()
         .collect(groupingBy(Delegate::getDelegateGroupName))
         .entrySet()
         .stream()
-        .map(entry
-            -> DelegateScalingGroup.builder()
-                   .groupName(entry.getKey())
-                   .delegates(buildInnerDelegates(accountId, entry.getValue(), activeDelegateConnections, true))
-                   .build())
+        .map(entry -> {
+          return DelegateScalingGroup.builder()
+              .groupName(entry.getKey())
+              .upgraderLastUpdated(delegateGroupMap.getOrDefault(entry.getKey(), 0L))
+              .autoUpgrade(setAutoUpgrade(delegateGroupMap.getOrDefault(entry.getKey(), 0L)))
+              .delegateGroupExpirationTime(setDelegateScalingGroupExpiration(entry.getValue()))
+              .delegates(buildInnerDelegates(accountId, entry.getValue(), activeDelegateConnections, true))
+              .build();
+        })
         .collect(toList());
+  }
+
+  private long setDelegateScalingGroupExpiration(List<Delegate> delegates) {
+    return isNotEmpty(delegates)
+        ? delegates.stream().max(Comparator.comparing(Delegate::getExpirationTime)).get().getExpirationTime()
+        : 0;
+  }
+
+  private boolean setAutoUpgrade(Long upgraderLastUpdated) {
+    return TimeUnit.MILLISECONDS.toMinutes(System.currentTimeMillis() - upgraderLastUpdated) <= 1;
   }
 
   private List<Delegate> getDelegatesWithoutScalingGroup(String accountId) {
@@ -912,6 +936,7 @@ public class DelegateServiceImpl implements DelegateService {
               .tokenActive(delegate.getDelegateTokenName() == null
                   || (delegateTokenStatusMap.containsKey(delegate.getDelegateTokenName())
                       && delegateTokenStatusMap.get(delegate.getDelegateTokenName())))
+              .delegateExpirationTime(delegate.getExpirationTime())
               .build();
         })
         .collect(toList());

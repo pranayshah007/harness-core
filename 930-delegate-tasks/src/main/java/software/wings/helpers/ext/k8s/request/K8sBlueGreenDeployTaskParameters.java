@@ -34,6 +34,7 @@ import lombok.EqualsAndHashCode;
 @TargetModule(HarnessModule._950_DELEGATE_TASKS_BEANS)
 @OwnedBy(CDP)
 public class K8sBlueGreenDeployTaskParameters extends K8sTaskParameters implements ManifestAwareTaskParams {
+  @Expression(ALLOW_SECRETS) private K8sDelegateManifestConfig k8sDelegateManifestConfig;
   @Expression(ALLOW_SECRETS) private List<String> valuesYamlList;
   private boolean skipDryRun;
   private Boolean skipVersioningForAllK8sObjects;
@@ -52,8 +53,8 @@ public class K8sBlueGreenDeployTaskParameters extends K8sTaskParameters implemen
       boolean useLatestKustomizeVersion, boolean useNewKubectlVersion) {
     super(accountId, appId, commandName, activityId, k8sClusterConfig, workflowExecutionId, releaseName,
         timeoutIntervalInMin, k8sTaskType, helmVersion, delegateSelectors, useLatestChartMuseumVersion,
-        useLatestKustomizeVersion, useNewKubectlVersion, k8sDelegateManifestConfig);
-
+        useLatestKustomizeVersion, useNewKubectlVersion);
+    this.k8sDelegateManifestConfig = k8sDelegateManifestConfig;
     this.valuesYamlList = valuesYamlList;
     this.skipDryRun = skipDryRun;
     this.skipVersioningForAllK8sObjects = skipVersioningForAllK8sObjects;
@@ -68,7 +69,7 @@ public class K8sBlueGreenDeployTaskParameters extends K8sTaskParameters implemen
     List<ExecutionCapability> capabilities =
         new ArrayList<>(super.fetchRequiredExecutionCapabilities(maskingEvaluator));
 
-    Set<String> delegateSelectors = getDelegateSelectorsFromConfigs(getK8sDelegateManifestConfig());
+    Set<String> delegateSelectors = getDelegateSelectorsFromConfigs(k8sDelegateManifestConfig);
     if (isNotEmpty(delegateSelectors)) {
       capabilities.add(SelectorCapability.builder().selectors(delegateSelectors).build());
     }

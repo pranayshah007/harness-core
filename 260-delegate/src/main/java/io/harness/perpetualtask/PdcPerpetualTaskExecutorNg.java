@@ -17,8 +17,8 @@ import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.delegate.beans.instancesync.InstanceSyncPerpetualTaskResponse;
-import io.harness.delegate.beans.instancesync.PdcInstanceSyncPerpetualTaskResponse;
 import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
+import io.harness.delegate.beans.instancesync.SshWinrmInstanceSyncPerpetualTaskResponse;
 import io.harness.delegate.beans.instancesync.info.PdcServerInstanceInfo;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.grpc.utils.AnyUtils;
@@ -30,11 +30,10 @@ import io.harness.perpetualtask.instancesync.PdcPerpetualTaskParamsNg;
 import software.wings.beans.HostReachabilityInfo;
 import software.wings.utils.HostValidationService;
 
+import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
 import java.time.Instant;
-import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -44,10 +43,7 @@ import lombok.extern.slf4j.Slf4j;
 @TargetModule(HarnessModule._930_DELEGATE_TASKS)
 @OwnedBy(CDP)
 public class PdcPerpetualTaskExecutorNg implements PerpetualTaskExecutor {
-  private static final String SUCCESS_RESPONSE_MSG = "success";
-
-  private static final Set<String> VALID_SERVICE_TYPES =
-      Collections.unmodifiableSet(new HashSet(Arrays.asList(ServiceSpecType.SSH, ServiceSpecType.WINRM)));
+  private static final Set<String> VALID_SERVICE_TYPES = ImmutableSet.of(ServiceSpecType.SSH, ServiceSpecType.WINRM);
 
   @Inject private DelegateAgentManagerClient delegateAgentManagerClient;
   @Inject private HostValidationService hostValidationService;
@@ -93,7 +89,7 @@ public class PdcPerpetualTaskExecutorNg implements PerpetualTaskExecutor {
 
   private String publishInstanceSyncResult(
       PerpetualTaskId taskId, String accountId, List<ServerInstanceInfo> serverInstanceInfos, String serviceType) {
-    InstanceSyncPerpetualTaskResponse instanceSyncResponse = PdcInstanceSyncPerpetualTaskResponse.builder()
+    InstanceSyncPerpetualTaskResponse instanceSyncResponse = SshWinrmInstanceSyncPerpetualTaskResponse.builder()
                                                                  .serviceType(serviceType)
                                                                  .serverInstanceDetails(serverInstanceInfos)
                                                                  .commandExecutionStatus(CommandExecutionStatus.SUCCESS)

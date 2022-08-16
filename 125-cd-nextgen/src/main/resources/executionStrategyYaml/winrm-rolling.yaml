@@ -15,8 +15,10 @@ spec:
           strategy:
             repeat:
               items: <+stage.output.hosts>
-              maxConcurency: 1
-              unit: Count
+              maxConcurrency: 1
+              start: 0
+              end: 100
+              unit: Percentage
           spec:
             host: <+repeat.item>
             onDelegate: false
@@ -48,10 +50,10 @@ spec:
                 type: Copy
                 spec:
                   sourceType: Artifact
-                  destinationPath: %%HARNESS_RUNTIME_PATH
+                  destinationPath: $HARNESS_RUNTIME_PATH
               - identifier: Copy_Config
                 name: "Copy Config"
                 type: Copy
                 spec:
                   sourceType: Config
-                  destinationPath: %%HARNESS_RUNTIME_PATH
+                  destinationPath: $HARNESS_RUNTIME_PATH

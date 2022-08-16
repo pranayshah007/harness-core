@@ -119,6 +119,10 @@ if [[ "" != "$VM_S3_UPLOAD_IMAGE" ]]; then
   yq write -i $CONFIG_FILE ciExecutionServiceConfig.stepConfig.vmImageConfig.s3Upload "$VM_S3_UPLOAD_IMAGE"
 fi
 
+if [[ "" != "$VM_SECURITY_IMAGE" ]]; then
+  yq write -i $CONFIG_FILE ciExecutionServiceConfig.stepConfig.vmImageConfig.security "$VM_SECURITY_IMAGE"
+fi
+
 if [[ "" != "$VM_ARTIFACTORY_UPLOAD_IMAGE" ]]; then
   yq write -i $CONFIG_FILE ciExecutionServiceConfig.stepConfig.vmImageConfig.artifactoryUpload "$VM_ARTIFACTORY_UPLOAD_IMAGE"
 fi
@@ -166,6 +170,10 @@ fi
 
 if [[ "" != "$STOMANAGER_MONGO_URI" ]]; then
   yq write -i $CONFIG_FILE stomanager-mongo.uri "$STOMANAGER_MONGO_URI"
+fi
+
+if [[ "" != "$SCM_SERVICE_URI" ]]; then
+  yq write -i $CONFIG_FILE scmConnectionConfig.url "$SCM_SERVICE_URI"
 fi
 
 if [[ "" != "$LOG_SERVICE_ENDPOINT" ]]; then

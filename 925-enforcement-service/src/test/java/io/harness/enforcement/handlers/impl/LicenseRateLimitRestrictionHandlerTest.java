@@ -30,7 +30,7 @@ import io.harness.licensing.Edition;
 import io.harness.licensing.LicenseType;
 import io.harness.licensing.beans.summary.CDLicenseSummaryDTO;
 import io.harness.licensing.services.LicenseService;
-import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.remote.client.NGRestUtils;
 import io.harness.rule.Owner;
 
 import java.io.IOException;
@@ -38,9 +38,10 @@ import java.time.temporal.ChronoUnit;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import retrofit2.Call;
-import retrofit2.Response;
+import org.mockito.Mockito;
+import org.powermock.core.classloader.annotations.PrepareForTest;
 
+@PrepareForTest({NGRestUtils.class})
 public class LicenseRateLimitRestrictionHandlerTest extends CategoryTest {
   private LicenseRateLimitRestrictionHandler handler;
   private LicenseService licenseService;
@@ -64,12 +65,10 @@ public class LicenseRateLimitRestrictionHandlerTest extends CategoryTest {
 
     handler = new LicenseRateLimitRestrictionHandler(licenseService);
     client = mock(EnforcementSdkClient.class);
-    Call<ResponseDTO<FeatureRestrictionUsageDTO>> usageCall = mock(Call.class);
-    when(usageCall.execute())
-        .thenReturn(Response.success(ResponseDTO.newResponse(FeatureRestrictionUsageDTO.builder().count(10).build())));
-    when(client.getRestrictionUsage(any(), any(), any())).thenReturn(usageCall);
     restriction = new LicenseRateLimitRestriction(
         RestrictionType.LICENSE_RATE_LIMIT, "totalWorkload", new TimeUnit(ChronoUnit.DAYS, 1), client);
+    Mockito.mockStatic(NGRestUtils.class);
+    when(NGRestUtils.getResponseWithRetry(any())).thenReturn(FeatureRestrictionUsageDTO.builder().count(10).build());
   }
 
   @Test

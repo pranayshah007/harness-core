@@ -33,6 +33,7 @@ import org.springframework.data.annotation.TypeAlias;
 public class JiraApprovalSpecParameters implements SpecParameters {
   @NotNull ParameterField<String> connectorRef;
   @NotNull ParameterField<String> issueKey;
+  String issueType;
   @NotNull CriteriaSpecWrapper approvalCriteria;
   CriteriaSpecWrapper rejectionCriteria;
   ParameterField<List<TaskSelectorYaml>> delegateSelectors;

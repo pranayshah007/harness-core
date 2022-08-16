@@ -49,7 +49,9 @@ public class PerpetualTaskServiceAgentClient {
       PerpetualTaskContextResponse response = DelegateRestUtils.executeRestCall(perpetualTaskContextResponseCall);
       if (response != null && response.getPerpetualTaskContext() != null) {
         PerpetualTaskExecutionContext perpetualTaskExecutionContext = response.getPerpetualTaskContext();
-        log.info("PT Context params: {}", perpetualTaskExecutionContext);
+        if (!perpetualTaskExecutionContext.hasTaskParams()) {
+          log.warn("No Task params for PT task {}", taskId);
+        }
         return perpetualTaskExecutionContext;
       } else {
         log.warn("PT Context missing {}", taskId.getId());

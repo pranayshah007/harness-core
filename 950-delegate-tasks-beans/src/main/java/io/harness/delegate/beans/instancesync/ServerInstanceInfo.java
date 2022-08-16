@@ -9,6 +9,7 @@ package io.harness.delegate.beans.instancesync;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.delegate.beans.instancesync.info.AwsSshWinrmServerInstanceInfo;
 import io.harness.delegate.beans.instancesync.info.AzureSshWinrmServerInstanceInfo;
 import io.harness.delegate.beans.instancesync.info.AzureWebAppServerInstanceInfo;
 import io.harness.delegate.beans.instancesync.info.K8sServerInstanceInfo;
@@ -31,7 +32,8 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
           value = ServerlessAwsLambdaServerInstanceInfo.class, name = "ServerlessAwsLambdaServerInstanceInfo"),
       @JsonSubTypes.Type(value = AzureWebAppServerInstanceInfo.class, name = "AzureWebAppServerInstanceInfo"),
       @JsonSubTypes.Type(value = PdcServerInstanceInfo.class, name = "PdcServerInstanceInfo"),
-      @JsonSubTypes.Type(value = AzureSshWinrmServerInstanceInfo.class, name = "AzureSshWinrmServerInstanceInfo")
+      @JsonSubTypes.Type(value = AzureSshWinrmServerInstanceInfo.class, name = "AzureSshWinrmServerInstanceInfo"),
+      @JsonSubTypes.Type(value = AwsSshWinrmServerInstanceInfo.class, name = "AwsSshWinrmServerInstanceInfo")
 })
 @OwnedBy(HarnessTeam.DX)
 public abstract class ServerInstanceInfo {}
