@@ -27,7 +27,10 @@ import io.harness.delegate.beans.connector.scm.gitlab.GitlabHttpCredentialsDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabOauthDTO;
 import io.harness.encryption.Scope;
 import io.harness.encryption.SecretRefData;
+import io.harness.gitsync.interceptor.GitEntityInfo;
+import io.harness.gitsync.interceptor.GitSyncBranchContext;
 import io.harness.iterator.PersistenceIteratorFactory;
+import io.harness.manage.GlobalContextManager;
 import io.harness.mongo.iterator.MongoPersistenceIterator;
 import io.harness.mongo.iterator.MongoPersistenceIterator.Handler;
 import io.harness.mongo.iterator.filter.SpringFilterExpander;
@@ -121,16 +124,24 @@ public class OAuthTokenRefresher implements Handler<GitlabConnector> {
         secretDTOV2.getIdentifier(), secretDTOV2);
   }
 
+  private void updateContext() {
+    Principal principal = SecurityContextBuilder.getPrincipal();
+    if (principal == null) {
+      principal = new ServicePrincipal(NG_MANAGER.getServiceId());
+      SecurityContextBuilder.setContext(principal);
+    }
+    final GitEntityInfo emptyInfo = GitEntityInfo.builder().build();
+    try (GlobalContextManager.GlobalContextGuard guard = GlobalContextManager.ensureGlobalContextGuard()) {
+      GlobalContextManager.upsertGlobalContextRecord(GitSyncBranchContext.builder().gitBranchInfo(emptyInfo).build());
+    }
+  }
+
   @Override
   public void handle(GitlabConnector entity) {
-    log.info("[OAuth refresh] Working on {}", entity.getAccountIdentifier() + ":" + entity.getIdentifier());
+    log.info("[OAuth refresh] Working on: {}", entity.getAccountIdentifier() + " , " + entity.getIdentifier());
 
     try {
-      Principal principal = SecurityContextBuilder.getPrincipal();
-      if (principal == null) {
-        principal = new ServicePrincipal(NG_MANAGER.getServiceId());
-        SecurityContextBuilder.setContext(principal);
-      }
+      updateContext();
       GitlabOauthDTO gitlabOauthDTO = getGitlabOauthDecrypted(entity);
 
       SecretDTOV2 tokenDTO = getSecretSecretValue(entity, gitlabOauthDTO.getTokenRef());
