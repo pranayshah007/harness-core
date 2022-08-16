@@ -1,6 +1,6 @@
 package io.harness.ng.core;
 
-import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -17,7 +17,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.query.Criteria;
+import io.harness.ng.core.user.entities.UserMembership.UserMembershipKeys;
 
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 
@@ -145,12 +148,12 @@ public class DefaultUserGroupCreationService implements Runnable {
         int pageSize = 1000;
         do {
             Pageable pageable = PageRequest.of(pageIndex, pageSize);
-            Criteria criteria = Criteria.where("scope.accountIdentifier").is(scope.getAccountIdentifier());
+            Criteria criteria = Criteria.where(UserMembershipKeys.ACCOUNT_IDENTIFIER_KEY).is(scope.getAccountIdentifier());
             if (isNotEmpty(scope.getOrgIdentifier())) {
-                criteria = criteria.and("scope.orgIdentifier").is(scope.getOrgIdentifier());
+                criteria = criteria.and(UserMembershipKeys.ORG_IDENTIFIER_KEY).is(scope.getOrgIdentifier());
             }
             if (isNotEmpty(scope.getProjectIdentifier())) {
-                criteria = criteria.and("scope.projectIdentifier").is(scope.getProjectIdentifier());
+                criteria = criteria.and(UserMembershipKeys.PROJECT_IDENTIFIER_KEY).is(scope.getProjectIdentifier());
             }
             List<String> userIds = userMembershipRepository.findAllUserIds(criteria, pageable).getContent();
             if (isEmpty(userIds)) {
@@ -160,18 +163,28 @@ public class DefaultUserGroupCreationService implements Runnable {
             try {
                 userGroupOptional = userGroupService.get(scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier(), getDefaultUserGroupId(scope));
             } catch (Exception ex) {
-                log.error("Unable to fetch User Group at scope:" + scope.toString(), ex);
+                log.error("Unable to fetch User Group at scope:" + scope, ex);
             }
             try {
                 if (userGroupOptional.isPresent()) {
                     UserGroup userGroup = userGroupOptional.get();
-                    List<String> users = ImmutableList.copyOf(userGroup.getUsers());
-                    users.addAll(userIds);
-                    userGroup.setUsers(users);
-                    userGroupService.update(toDTO(userGroup));
+                    List<String> currentUsers = userGroup.getUsers();
+                    HashSet<String> existingUsers = new HashSet<>(currentUsers);
+                    HashSet<String> users = new HashSet<>(userIds);
+                    HashSet<String> usersToAdd =  new HashSet<>(Sets.difference(existingUsers, users));
+                    if(isNotEmpty(usersToAdd))
+                    {
+                        log.info(DEBUG_MESSAGE + String.format("Existing %s users in user group at scope %s", currentUsers.size());
+                        log.info(DEBUG_MESSAGE + String.format("Adding %s users to user group at scope %s", usersToAdd.size(), scope));
+                        currentUsers = new ArrayList<>(currentUsers);
+                        currentUsers.addAll(usersToAdd);
+                        userGroup.setUsers(currentUsers);
+                        userGroupService.update(toDTO(userGroup));
+                        log.info(DEBUG_MESSAGE + String.format("Added %s users to user group at scope %s", usersToAdd.size(), scope));
+                    }
                 }
             } catch (Exception ex) {
-                log.error("Failed to update User Group at scope: " + scope.toString(), ex);
+                log.error("Failed to update User Group at scope: " + scope, ex);
             }
             pageIndex++;
         }
