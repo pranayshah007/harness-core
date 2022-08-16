@@ -390,4 +390,14 @@ io.harness.cdng.azure.config.yaml.StartupCommandConfiguration
 io.harness.ngpipeline.artifact.bean.GithubPackagesArtifactOutcome
 io.harness.ngpipeline.pipeline.executions.beans.GithubPackagesArtifactSummary
 io.harness.cdng.artifact.bean.yaml.GithubPackageArtifactConfig
-
+io.harness.cdng.provision.azure.AzureSubscriptionSpec
+io.harness.cdng.provision.azure.AzureTenantSpec
+io.harness.cdng.provision.azure.AzureResourceGroupSpec
+io.harness.cdng.provision.azure.AzureManagementSpec
+io.harness.cdng.provision.azure.AzureCreateARMResourceStepInfo
+io.harness.cdng.provision.azure.beans.AzureCreateARMResourcePassThroughData
+io.harness.cdng.provision.azure.AzureCreateARMResourceStepConfigurationParameters
+io.harness.cdng.provision.azure.AzureCreateARMResourceStepNode
+io.harness.cdng.provision.azure.AzureCreateARMResourceStepConfiguration
+io.harness.cdng.provision.azure.AzureCreateARMResourceStepScope
+io.harness.cdng.provision.azure.AzureCreateARMResourceStepParameters
