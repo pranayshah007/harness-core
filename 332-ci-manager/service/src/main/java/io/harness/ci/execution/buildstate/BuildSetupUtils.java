@@ -36,7 +36,7 @@ public class BuildSetupUtils {
         return k8InitializeTaskParamsBuilder.getK8InitializeTaskParams(initializeStepInfo, ambiance, logPrefix);
       case VM:
         return vmInitializeTaskParamsBuilder.getDirectVmInitializeTaskParams(initializeStepInfo, ambiance);
-      case RUNS_ON:
+      case HOSTED_VM:
         return vmInitializeTaskParamsBuilder.getHostedVmInitializeTaskParams(initializeStepInfo, ambiance);
       default:
         unhandled(initializeStepInfo.getBuildJobEnvInfo().getType());

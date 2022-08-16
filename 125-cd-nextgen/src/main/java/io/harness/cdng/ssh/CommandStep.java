@@ -18,6 +18,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.infra.beans.PdcInfrastructureOutcome;
+import io.harness.cdng.infra.beans.SshWinRmAwsInfrastructureOutcome;
 import io.harness.cdng.infra.beans.SshWinRmAzureInfrastructureOutcome;
 import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.cdng.service.steps.ServiceStepOutcome;
@@ -25,6 +26,7 @@ import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.common.ParameterFieldHelper;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
+import io.harness.delegate.beans.instancesync.mapper.AwsSshWinrmToServiceInstanceInfoMapper;
 import io.harness.delegate.beans.instancesync.mapper.AzureSshWinrmToServiceInstanceInfoMapper;
 import io.harness.delegate.beans.instancesync.mapper.PdcToServiceInstanceInfoMapper;
 import io.harness.delegate.task.shell.CommandTaskParameters;
@@ -153,16 +155,22 @@ public class CommandStep extends TaskExecutableWithRollbackAndRbac<CommandTaskRe
     CommandStepOutcome commandStepOutcome = CommandStepOutcome.builder().host(host).build();
     InfrastructureOutcome infrastructure = cdStepHelper.getInfrastructureOutcome(ambiance);
 
-    ServerInstanceInfo serverInstanceInfo = null;
+    ServerInstanceInfo serverInstanceInfo;
     if (infrastructure instanceof PdcInfrastructureOutcome) {
       serverInstanceInfo =
           PdcToServiceInstanceInfoMapper.toServerInstanceInfo(serviceType, host, infrastructure.getInfrastructureKey());
     } else if (infrastructure instanceof SshWinRmAzureInfrastructureOutcome) {
       serverInstanceInfo = AzureSshWinrmToServiceInstanceInfoMapper.toServerInstanceInfo(
           serviceType, host, infrastructure.getInfrastructureKey());
+    } else if (infrastructure instanceof SshWinRmAwsInfrastructureOutcome) {
+      serverInstanceInfo = AwsSshWinrmToServiceInstanceInfoMapper.toServerInstanceInfo(
+          serviceType, host, infrastructure.getInfrastructureKey());
+    } else {
+      throw new InvalidArgumentsException(
+          "Invalid infrastructure outcome found " + infrastructure.getClass().getSimpleName());
     }
 
-    if (null != serverInstanceInfo && CommandExecutionStatus.SUCCESS.equals(taskResponse.getStatus())) {
+    if (CommandExecutionStatus.SUCCESS.equals(taskResponse.getStatus())) {
       instanceInfoService.saveServerInstancesIntoSweepingOutput(
           ambiance, Collections.singletonList(serverInstanceInfo));
     }
