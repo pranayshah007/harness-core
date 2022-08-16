@@ -28,7 +28,7 @@ import org.springframework.data.annotation.TypeAlias;
 public class ShellScriptBaseSource {
   @NotNull String type;
 
-  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) @NotNull ParameterField<String> script;
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> script;
 
   public String getType() {
     return type;

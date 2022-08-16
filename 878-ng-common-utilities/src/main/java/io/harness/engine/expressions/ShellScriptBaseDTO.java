@@ -22,9 +22,9 @@ import org.springframework.data.annotation.TypeAlias;
 @AllArgsConstructor
 @TypeAlias("io.harness.engine.expressions.ShellScriptBaseDTO")
 public class ShellScriptBaseDTO {
-  @EntityIdentifier String orgIdentifier;
+  @ApiModelProperty(required = true) @NotNull @EntityIdentifier String orgIdentifier;
 
-  @EntityIdentifier String projectIdentifier;
+  @ApiModelProperty(required = true) @NotNull @EntityIdentifier String projectIdentifier;
 
   @ApiModelProperty(required = true) @NotNull @EntityIdentifier String identifier;
 
