@@ -31,8 +31,8 @@ public class DefaultUserGroupsCreationJob implements Managed {
     @Override
     public void start() throws Exception {
         log.info(DEBUG_MESSAGE + "started...");
-        defaultUserGroupJobFuture = executorService.scheduleAtFixedRate(defaultUserGroupCreationService, 1,
-                720, TimeUnit.MINUTES);
+        defaultUserGroupJobFuture = executorService.scheduleWithFixedDelay(defaultUserGroupCreationService, 1,
+                360, TimeUnit.MINUTES);
     }
 
     @Override
