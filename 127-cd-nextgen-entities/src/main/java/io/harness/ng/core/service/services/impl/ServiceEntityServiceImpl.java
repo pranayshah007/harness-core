@@ -145,7 +145,7 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
       validatePresenceOfRequiredFields(serviceEntity.getAccountId(), serviceEntity.getIdentifier());
       setNameIfNotPresent(serviceEntity);
       modifyServiceRequest(serviceEntity);
-      cdYamlSchemaService.validateSchema(EntityType.SERVICE, serviceEntity.getYaml());
+      cdYamlSchemaService.validateSchema(EntityType.SERVICE, serviceEntity.fetchNonEmptyYaml());
       ServiceEntity createdService =
           Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
             ServiceEntity service = serviceRepository.save(serviceEntity);
@@ -186,7 +186,7 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
         get(requestService.getAccountId(), requestService.getOrgIdentifier(), requestService.getProjectIdentifier(),
             requestService.getIdentifier(), false);
     if (serviceEntityOptional.isPresent()) {
-      cdYamlSchemaService.validateSchema(EntityType.SERVICE, requestService.getYaml());
+      cdYamlSchemaService.validateSchema(EntityType.SERVICE, requestService.fetchNonEmptyYaml());
       ServiceEntity oldService = serviceEntityOptional.get();
       ServiceEntity updatedService =
           Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
@@ -223,7 +223,7 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
     validatePresenceOfRequiredFields(requestService.getAccountId(), requestService.getIdentifier());
     setNameIfNotPresent(requestService);
     modifyServiceRequest(requestService);
-    cdYamlSchemaService.validateSchema(EntityType.SERVICE, requestService.getYaml());
+    cdYamlSchemaService.validateSchema(EntityType.SERVICE, requestService.fetchNonEmptyYaml());
     Criteria criteria = getServiceEqualityCriteria(requestService, requestService.getDeleted());
     ServiceEntity upsertedService =
         Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
@@ -392,6 +392,8 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
       validateTheServicesList(serviceEntities);
       populateDefaultNameIfNotPresent(serviceEntities);
       modifyServiceRequestBatch(serviceEntities);
+      serviceEntities.forEach(
+          serviceEntity -> cdYamlSchemaService.validateSchema(EntityType.SERVICE, serviceEntity.fetchNonEmptyYaml()));
       List<ServiceEntity> outputServiceEntitiesList = (List<ServiceEntity>) serviceRepository.saveAll(serviceEntities);
       for (ServiceEntity serviceEntity : serviceEntities) {
         publishEvent(serviceEntity.getAccountId(), serviceEntity.getOrgIdentifier(),
