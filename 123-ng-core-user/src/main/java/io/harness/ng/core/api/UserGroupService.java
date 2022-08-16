@@ -79,6 +79,8 @@ public interface UserGroupService {
 
   void addUserToUserGroups(Scope scope, String userId, List<String> userGroups);
 
+  void addUserToDefaultUserGroups(Scope scope, String userId, List<String> userGroups);
+
   UserGroup removeMember(Scope scope, String userGroupIdentifier, String userIdentifier);
 
   void removeMemberAll(@NotNull String accountIdentifier, String orgIdentifier, String projectIdentifier,
@@ -92,6 +94,7 @@ public interface UserGroupService {
       @NotBlank String userGroupId, boolean retainMembers);
 
   void sanitize(Scope scope, String identifier);
+
   void setUpDefaultUserGroup(Scope scope);
 
   boolean exists(Scope scope, String userGroupIdentifier);
