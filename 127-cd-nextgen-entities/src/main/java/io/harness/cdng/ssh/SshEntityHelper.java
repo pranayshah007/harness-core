@@ -11,8 +11,6 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.delegate.task.ssh.AwsSshInfraDelegateConfig.AwsSshInfraDelegateConfigBuilder;
-import static io.harness.delegate.task.ssh.AwsWinrmInfraDelegateConfig.AwsWinrmInfraDelegateConfigBuilder;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.ng.core.infrastructure.InfrastructureKind.PDC;
 import static io.harness.ng.core.infrastructure.InfrastructureKind.SSH_WINRM_AWS;
@@ -36,7 +34,6 @@ import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.services.ConnectorService;
 import io.harness.connector.services.NGHostService;
-import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
 import io.harness.delegate.beans.connector.azureconnector.AzureConnectorDTO;
 import io.harness.delegate.beans.connector.pdcconnector.HostDTO;
@@ -137,22 +134,15 @@ public class SshEntityHelper {
         encryptionDetails = serverlessEntityHelper.getEncryptionDataDetails(connectorDTO, ngAccess);
         sshKeySpecDto = getSshKeySpecDto(awsInfrastructureOutcome.getCredentialsRef(), ambiance);
 
-        AwsSshInfraDelegateConfigBuilder awsSshInfraDelegateConfigBuilder =
-            AwsSshInfraDelegateConfig.sshAwsBuilder()
-                .awsConnectorDTO(awsConnectorDTO)
-                .connectorEncryptionDataDetails(encryptionDetails)
-                .sshKeySpecDto(sshKeySpecDto)
-                .encryptionDataDetails(sshKeySpecDTOHelper.getSSHKeyEncryptionDetails(sshKeySpecDto, ngAccess))
-                .region(awsInfrastructureOutcome.getRegion());
-
-        if (EmptyPredicate.isEmpty(awsInfrastructureOutcome.getAutoScalingGroupName())) {
-          awsSshInfraDelegateConfigBuilder.vpcIds(awsInfrastructureOutcome.getAwsInstanceFilter().getVpcs())
-              .tags(filterInfraTags(awsInfrastructureOutcome.getAwsInstanceFilter().getTags()));
-        } else {
-          awsSshInfraDelegateConfigBuilder.autoScalingGroupName(awsInfrastructureOutcome.getAutoScalingGroupName());
-        }
-
-        return awsSshInfraDelegateConfigBuilder.build();
+        return AwsSshInfraDelegateConfig.sshAwsBuilder()
+            .awsConnectorDTO(awsConnectorDTO)
+            .connectorEncryptionDataDetails(encryptionDetails)
+            .sshKeySpecDto(sshKeySpecDto)
+            .encryptionDataDetails(sshKeySpecDTOHelper.getSSHKeyEncryptionDetails(sshKeySpecDto, ngAccess))
+            .region(awsInfrastructureOutcome.getRegion())
+            .vpcIds(awsInfrastructureOutcome.getAwsInstanceFilter().getVpcs())
+            .tags(filterInfraTags(awsInfrastructureOutcome.getAwsInstanceFilter().getTags()))
+            .build();
 
       default:
         throw new UnsupportedOperationException(
@@ -202,23 +192,15 @@ public class SshEntityHelper {
         encryptionDetails = serverlessEntityHelper.getEncryptionDataDetails(connectorDTO, ngAccess);
         winRmCredentials = getWinRmCredentials(awsInfrastructureOutcome.getCredentialsRef(), ambiance);
 
-        AwsWinrmInfraDelegateConfigBuilder awsWinrmInfraDelegateConfigBuilder =
-            AwsWinrmInfraDelegateConfig.winrmAwsBuilder()
-                .awsConnectorDTO(awsConnectorDTO)
-                .connectorEncryptionDataDetails(encryptionDetails)
-                .winRmCredentials(winRmCredentials)
-                .encryptionDataDetails(
-                    winRmCredentialsSpecDTOHelper.getWinRmEncryptionDetails(winRmCredentials, ngAccess))
-                .region(awsInfrastructureOutcome.getRegion());
-
-        if (EmptyPredicate.isEmpty(awsInfrastructureOutcome.getAutoScalingGroupName())) {
-          awsWinrmInfraDelegateConfigBuilder.vpcIds(awsInfrastructureOutcome.getAwsInstanceFilter().getVpcs())
-              .tags(filterInfraTags(awsInfrastructureOutcome.getAwsInstanceFilter().getTags()));
-        } else {
-          awsWinrmInfraDelegateConfigBuilder.autoScalingGroupName(awsInfrastructureOutcome.getAutoScalingGroupName());
-        }
-
-        return awsWinrmInfraDelegateConfigBuilder.build();
+        return AwsWinrmInfraDelegateConfig.winrmAwsBuilder()
+            .awsConnectorDTO(awsConnectorDTO)
+            .connectorEncryptionDataDetails(encryptionDetails)
+            .winRmCredentials(winRmCredentials)
+            .encryptionDataDetails(winRmCredentialsSpecDTOHelper.getWinRmEncryptionDetails(winRmCredentials, ngAccess))
+            .region(awsInfrastructureOutcome.getRegion())
+            .vpcIds(awsInfrastructureOutcome.getAwsInstanceFilter().getVpcs())
+            .tags(filterInfraTags(awsInfrastructureOutcome.getAwsInstanceFilter().getTags()))
+            .build();
       default:
         throw new UnsupportedOperationException(
             format("Unsupported Infrastructure type: [%s]", infrastructure.getKind()));
