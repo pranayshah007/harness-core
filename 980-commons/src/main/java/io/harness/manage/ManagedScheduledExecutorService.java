@@ -18,7 +18,10 @@ import java.util.concurrent.TimeUnit;
 
 public class ManagedScheduledExecutorService extends ManagedExecutorService implements ScheduledExecutorService {
   private static ScheduledThreadPoolExecutor createScheduledThreadPoolExecutor(String name) {
-    return new ScheduledThreadPoolExecutor(1, new ThreadFactoryBuilder().setNameFormat(name).build());
+    ScheduledThreadPoolExecutor scheduledThreadPoolExecutor =
+        new ScheduledThreadPoolExecutor(1, new ThreadFactoryBuilder().setNameFormat(name).build());
+    scheduledThreadPoolExecutor.setRemoveOnCancelPolicy(true);
+    return scheduledThreadPoolExecutor;
   }
 
   /**
