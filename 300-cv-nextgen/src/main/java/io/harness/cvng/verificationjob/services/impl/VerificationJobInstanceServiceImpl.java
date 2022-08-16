@@ -223,8 +223,50 @@ public class VerificationJobInstanceServiceImpl implements VerificationJobInstan
         metricService.recordDuration(VERIFICATION_JOB_INSTANCE_HEALTH_SOURCE_EXTRA_TIME,
             verificationJobInstance.getExtraTimeTakenToFinish(clock.instant()));
       }
-      if (progressLog.shouldTerminate()) {
-        terminate(verificationJobInstanceId);
+    }
+  }
+
+  private void updateStatusIfDone(VerificationJobInstance verificationJobInstance) {
+    if (verificationJobInstance.getExecutionStatus() != ExecutionStatus.RUNNING) {
+      // If the last update already updated the status.
+      return;
+    }
+    int verificationTaskCount =
+        verificationTaskService
+            .getVerificationTaskIds(verificationJobInstance.getAccountId(), verificationJobInstance.getUuid())
+            .size();
+    boolean hasAllVerificationTaskCompleted =
+        verificationJobInstance.getProgressLogs()
+            .stream()
+            .filter(progressLog -> progressLog.isLastProgressLog(verificationJobInstance))
+            .map(ProgressLog::getVerificationTaskId)
+            .distinct()
+            .count()
+        == verificationTaskCount;
+    boolean hasAnyVerificationTaskTerminated =
+        verificationJobInstance.getProgressLogs().stream().anyMatch(ProgressLog::shouldTerminate);
+    if (hasAllVerificationTaskCompleted || hasAnyVerificationTaskTerminated) {
+      verificationJobInstance.setExecutionStatus(ExecutionStatus.SUCCESS);
+      ActivityVerificationStatus activityVerificationStatus = getDeploymentVerificationStatus(verificationJobInstance);
+      metricService.incCounter(CVNGMetricsUtils.getVerificationJobInstanceStatusMetricName(activityVerificationStatus));
+      metricService.incCounter(CVNGMetricsUtils.getVerificationJobInstanceStatusMetricName(ExecutionStatus.SUCCESS));
+      metricService.recordDuration(
+          VERIFICATION_JOB_INSTANCE_EXTRA_TIME, verificationJobInstance.getExtraTimeTakenToFinish(clock.instant()));
+      UpdateOperations<VerificationJobInstance> verificationJobInstanceUpdateOperations =
+          hPersistence.createUpdateOperations(VerificationJobInstance.class);
+      verificationJobInstanceUpdateOperations.set(VerificationJobInstanceKeys.executionStatus, SUCCESS)
+          .set(VerificationJobInstanceKeys.verificationStatus, activityVerificationStatus);
+      hPersistence.getDatastore(VerificationJobInstance.class)
+          .update(hPersistence.createQuery(VerificationJobInstance.class)
+                      .filter(VerificationJobInstanceKeys.uuid, verificationJobInstance.getUuid()),
+              verificationJobInstanceUpdateOperations, new UpdateOptions());
+
+      Set<String> verificationTaskIds = verificationTaskService.getVerificationTaskIds(
+          verificationJobInstance.getAccountId(), verificationJobInstance.getUuid());
+      if (hasAnyVerificationTaskTerminated) {
+        terminate(verificationJobInstance.getUuid());
+      } else {
+        orchestrationService.markCompleted(verificationTaskIds);
       }
     }
   }
@@ -288,44 +330,6 @@ public class VerificationJobInstanceServiceImpl implements VerificationJobInstan
   @Override
   public List<ProgressLog> getProgressLogs(String verificationJobInstanceId) {
     return getVerificationJobInstance(verificationJobInstanceId).getProgressLogs();
-  }
-
-  private void updateStatusIfDone(VerificationJobInstance verificationJobInstance) {
-    if (verificationJobInstance.getExecutionStatus() != ExecutionStatus.RUNNING) {
-      // If the last update already updated the status.
-      return;
-    }
-    int verificationTaskCount =
-        verificationTaskService
-            .getVerificationTaskIds(verificationJobInstance.getAccountId(), verificationJobInstance.getUuid())
-            .size();
-    if (verificationJobInstance.getProgressLogs()
-                .stream()
-                .filter(progressLog -> progressLog.isLastProgressLog(verificationJobInstance))
-                .map(ProgressLog::getVerificationTaskId)
-                .distinct()
-                .count()
-            == verificationTaskCount
-        || verificationJobInstance.getProgressLogs().stream().anyMatch(ProgressLog::shouldTerminate)) {
-      verificationJobInstance.setExecutionStatus(ExecutionStatus.SUCCESS);
-      ActivityVerificationStatus activityVerificationStatus = getDeploymentVerificationStatus(verificationJobInstance);
-      metricService.incCounter(CVNGMetricsUtils.getVerificationJobInstanceStatusMetricName(activityVerificationStatus));
-      metricService.incCounter(CVNGMetricsUtils.getVerificationJobInstanceStatusMetricName(ExecutionStatus.SUCCESS));
-      metricService.recordDuration(
-          VERIFICATION_JOB_INSTANCE_EXTRA_TIME, verificationJobInstance.getExtraTimeTakenToFinish(clock.instant()));
-      UpdateOperations<VerificationJobInstance> verificationJobInstanceUpdateOperations =
-          hPersistence.createUpdateOperations(VerificationJobInstance.class);
-      verificationJobInstanceUpdateOperations.set(VerificationJobInstanceKeys.executionStatus, SUCCESS)
-          .set(VerificationJobInstanceKeys.verificationStatus, activityVerificationStatus);
-      hPersistence.getDatastore(VerificationJobInstance.class)
-          .update(hPersistence.createQuery(VerificationJobInstance.class)
-                      .filter(VerificationJobInstanceKeys.uuid, verificationJobInstance.getUuid()),
-              verificationJobInstanceUpdateOperations, new UpdateOptions());
-
-      Set<String> verificationTaskIds = verificationTaskService.getVerificationTaskIds(
-          verificationJobInstance.getAccountId(), verificationJobInstance.getUuid());
-      orchestrationService.markCompleted(verificationTaskIds);
-    }
   }
 
   @Override
