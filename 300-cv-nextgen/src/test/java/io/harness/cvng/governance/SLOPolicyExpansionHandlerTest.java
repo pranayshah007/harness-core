@@ -7,6 +7,7 @@
 
 package io.harness.cvng.governance;
 
+import static io.harness.rule.OwnerRule.ARPITJ;
 import static io.harness.rule.OwnerRule.DEEPAK_CHHIKARA;
 
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
@@ -34,12 +35,13 @@ import com.google.common.base.Charsets;
 import com.google.inject.Inject;
 import com.google.protobuf.ByteString;
 import java.io.IOException;
-;
 import org.apache.commons.io.IOUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.MockitoAnnotations;
+
+;
 
 public class SLOPolicyExpansionHandlerTest extends CvNextGenTestBase {
   @Inject SLOPolicyExpansionHandler sloPolicyExpansionHandler;
@@ -77,6 +79,30 @@ public class SLOPolicyExpansionHandlerTest extends CvNextGenTestBase {
                                     .build();
     final String yaml = IOUtils.resourceToString(
         "governance/SLOPolicyExpansionHandlerInput.json", Charsets.UTF_8, this.getClass().getClassLoader());
+    JsonNode jsonNode = JsonUtils.asObject(yaml, JsonNode.class);
+    ExpansionRequestMetadata metadataProject =
+        ExpansionRequestMetadata.newBuilder()
+            .setAccountId(builderFactory.getProjectParams().getAccountIdentifier())
+            .setOrgId(builderFactory.getProjectParams().getOrgIdentifier())
+            .setProjectId(builderFactory.getProjectParams().getProjectIdentifier())
+            .build();
+    ExpansionResponse expansionResponse = sloPolicyExpansionHandler.expand(jsonNode, metadataProject, null);
+    assertThat(expansionResponse.isSuccess()).isTrue();
+    assertThat(expansionResponse.getKey()).isEqualTo("sloPolicy");
+    assertThat(expansionResponse.getValue().toJson()).isEqualTo(JsonUtils.asJson(sloPolicyDTO));
+    assertThat(expansionResponse.getPlacement()).isEqualTo(ExpansionPlacementStrategy.APPEND);
+  }
+
+  @Test
+  @Owner(developers = ARPITJ)
+  @Category(UnitTests.class)
+  public void testExpand_withServiceKeyInput() throws IOException {
+    SLOPolicyDTO sloPolicyDTO = SLOPolicyDTO.builder()
+                                    .sloErrorBudgetRemainingPercentage(100D)
+                                    .statusOfMonitoredService(MonitoredServiceStatus.CONFIGURED)
+                                    .build();
+    final String yaml = IOUtils.resourceToString(
+        "governance/SLOPolicyExpansionHandlerWithServiceKey.json", Charsets.UTF_8, this.getClass().getClassLoader());
     JsonNode jsonNode = JsonUtils.asObject(yaml, JsonNode.class);
     ExpansionRequestMetadata metadataProject =
         ExpansionRequestMetadata.newBuilder()
