@@ -63,6 +63,9 @@ message SubmitTaskRequest {
 
   bool force_execute = 10;
   repeated string eligibleToExecuteDelegateIds = 11;
+
+  // Used for hosted builds
+  bool execute_on_harness_hosted_delegates = 12;
 }
 
 message SubmitTaskResponse {

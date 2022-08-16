@@ -426,7 +426,7 @@ public class VmInitializeTaskParamsBuilder {
     return LogStreamingHelper.generateLogBaseKey(logAbstractions);
   }
 
-  private String getHostedPoolId(ParameterField<Platform> platform) {
+  public String getHostedPoolId(ParameterField<Platform> platform) {
     OSType os = OSType.Linux;
     ArchType arch = ArchType.Amd64;
     if (platform != null && platform.getValue() != null) {
