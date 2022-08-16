@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 
-package io.harness.polling;
+package io.harness.ng.webhook.polling;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -31,11 +31,13 @@ import io.harness.cdng.manifest.yaml.HttpStoreConfig;
 import io.harness.cdng.manifest.yaml.S3StoreConfig;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.polling.ArtifactPollingDelegateResponse;
+import io.harness.delegate.beans.polling.GitPollingDelegateResponse;
 import io.harness.delegate.beans.polling.ManifestPollingDelegateResponse;
 import io.harness.delegate.beans.polling.PollingDelegateResponse;
 import io.harness.delegate.beans.polling.PollingResponseInfc;
 import io.harness.delegate.task.artifacts.response.ArtifactDelegateResponse;
 import io.harness.exception.InvalidRequestException;
+import io.harness.gitpolling.github.GitPollingWebhookData;
 import io.harness.logging.AutoLogContext;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.NgPollingAutoLogContext;
@@ -53,12 +55,12 @@ import io.harness.polling.bean.artifact.GcrArtifactInfo;
 import io.harness.polling.bean.artifact.JenkinsArtifactInfo;
 import io.harness.polling.bean.artifact.NexusRegistryArtifactInfo;
 import io.harness.polling.bean.artifact.S3ArtifactInfo;
+import io.harness.polling.bean.gitpolling.GitPollingPolledResponse;
 import io.harness.polling.bean.manifest.HelmChartManifestInfo;
 import io.harness.polling.bean.manifest.ManifestInfo;
 import io.harness.polling.bean.manifest.ManifestPolledResponse;
 import io.harness.polling.contracts.BuildInfo;
 import io.harness.polling.contracts.PollingResponse;
-import io.harness.polling.service.PolledItemPublisher;
 import io.harness.polling.service.intfc.PollingPerpetualTaskService;
 import io.harness.polling.service.intfc.PollingService;
 
@@ -126,6 +128,9 @@ public class PollingResponseHandler {
       case ARTIFACT:
         handleArtifactResponse(pollingDocument, pollingResponseInfc);
         break;
+      case WEBHOOK_POLLING:
+        handleGitPollingResponse(pollingDocument, pollingResponseInfc);
+        break;
       default:
         throw new InvalidRequestException(
             "Not implemented yet for " + pollingDocument.getPollingType() + " polling type");
@@ -190,6 +195,60 @@ public class PollingResponseHandler {
             .setType(polledResponseResult.getType())
             .addAllSignatures(pollingDocument.getSignatures())
             .build());
+  }
+  private void handleGitPollingResponse(PollingDocument pollingDocument, PollingResponseInfc pollingResponseInfc) {
+    GitPollingDelegateResponse response = (GitPollingDelegateResponse) pollingResponseInfc;
+    GitPollingPolledResponse savedResponse = (GitPollingPolledResponse) pollingDocument.getPolledResponse();
+    String accountId = pollingDocument.getAccountId();
+    String pollDocId = pollingDocument.getUuid();
+    List<GitPollingWebhookData> gitPollingWebhookEventDeliveries = response.getUnpublishedEvents();
+    List<String> unpublishedWebhookDeliveryIds = gitPollingWebhookEventDeliveries.stream()
+                                                     .map(GitPollingWebhookData::getDeliveryId)
+                                                     .collect(Collectors.toList());
+
+    // If polled response is null, it means it was first time collecting output from perpetual task
+    // There is no need to publish collected new keys in this case.
+    if (savedResponse == null) {
+      pollingService.updatePolledResponse(accountId, pollDocId,
+          GitPollingPolledResponse.builder().allPolledKeys(new HashSet<>(unpublishedWebhookDeliveryIds)).build());
+      return;
+    }
+
+    // find if there are any new keys which are not in db. This is required because of delegate rebalancing,
+    // delegate can lose context of latest keys.
+    Set<String> savedWebHookDeliveryIds = savedResponse.getAllPolledKeys();
+    List<String> newWebhookDeliveryIds = unpublishedWebhookDeliveryIds.stream()
+                                             .filter(deliveryId -> !savedWebHookDeliveryIds.contains(deliveryId))
+                                             .collect(Collectors.toList());
+
+    if (isNotEmpty(newWebhookDeliveryIds)) {
+      List<GitPollingWebhookData> result = gitPollingWebhookEventDeliveries.stream()
+                                               .filter(item -> newWebhookDeliveryIds.contains(item.getDeliveryId()))
+                                               .collect(Collectors.toList());
+
+      publishPolledItemToWebhook(accountId, result);
+      log.info("Published the webhook redelivery event to trigger for account {} ", accountId);
+    }
+
+    // after publishing event, update database as well.
+    // if delegate rebalancing happened, unpublishedArtifactKeys are now the new versions. We might have to delete few
+    // key from db.
+    Set<String> toBeDeletedKeys = response.getToBeDeletedIds();
+    Set<String> unpublishedGitPollingKeySet = new HashSet<>(unpublishedWebhookDeliveryIds);
+    if (response.isFirstCollectionOnDelegate() && isEmpty(toBeDeletedKeys)) {
+      toBeDeletedKeys = savedWebHookDeliveryIds.stream()
+                            .filter(savedArtifactKey -> !unpublishedGitPollingKeySet.contains(savedArtifactKey))
+                            .collect(Collectors.toSet());
+    }
+    savedWebHookDeliveryIds.removeAll(toBeDeletedKeys);
+    savedWebHookDeliveryIds.addAll(unpublishedGitPollingKeySet);
+    GitPollingPolledResponse pollingPolledResponse =
+        GitPollingPolledResponse.builder().allPolledKeys(savedWebHookDeliveryIds).build();
+    pollingService.updatePolledResponse(accountId, pollDocId, pollingPolledResponse);
+  }
+
+  private void publishPolledItemToWebhook(String accountId, List<GitPollingWebhookData> redeliveries) {
+    polledItemPublisher.sendWebhookRequest(accountId, redeliveries);
   }
 
   private void handleFailureResponse(PollingDocument pollingDocument) {
