@@ -14,11 +14,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doCallRealMethod;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.connector.ConnectorValidationResult;
+import io.harness.connector.helper.DecryptionHelper;
+import io.harness.connector.task.gcp.GcpValidationTaskHandler;
 import io.harness.delegate.beans.connector.ConnectorValidationParams;
 import io.harness.delegate.beans.connector.gcp.GcpValidationParams;
 import io.harness.delegate.beans.connector.gcpconnector.GcpConnectorCredentialDTO;
@@ -27,9 +30,7 @@ import io.harness.delegate.beans.connector.gcpconnector.GcpCredentialType;
 import io.harness.delegate.beans.connector.gcpconnector.GcpManualDetailsDTO;
 import io.harness.delegate.task.gcp.GcpRequestMapper;
 import io.harness.delegate.task.gcp.request.GcpValidationRequest;
-import io.harness.delegate.task.gcp.response.GcpValidationTaskResponse;
 import io.harness.encryption.SecretRefData;
-import io.harness.errorhandling.NGErrorHelper;
 import io.harness.gcp.client.GcpClient;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
@@ -49,7 +50,7 @@ import org.mockito.MockitoAnnotations;
 public class GcpValidationTaskHandlerTest extends CategoryTest {
   @Mock private GcpClient gcpClient;
   @Mock private SecretDecryptionService secretDecryptionService;
-  @Mock private NGErrorHelper ngErrorHelper;
+  @Mock private DecryptionHelper decryptionHelper;
   @Mock private GcpRequestMapper gcpRequestMapper;
   @InjectMocks private GcpValidationTaskHandler taskHandler;
   private String accountIdentifier = "accountIdentifier";
@@ -63,9 +64,7 @@ public class GcpValidationTaskHandlerTest extends CategoryTest {
   @Owner(developers = OwnerRule.YOGESH)
   @Category(UnitTests.class)
   public void executeRequestSuccess() {
-    final GcpValidationTaskResponse response =
-        (GcpValidationTaskResponse) taskHandler.executeRequest(buildGcpValidationRequest());
-    ConnectorValidationResult connectorValidationResult = response.getConnectorValidationResult();
+    final ConnectorValidationResult connectorValidationResult = taskHandler.validate(buildGcpValidationRequest());
     assertThat(connectorValidationResult.getStatus()).isEqualTo(SUCCESS);
   }
 
@@ -74,7 +73,7 @@ public class GcpValidationTaskHandlerTest extends CategoryTest {
   @Category(UnitTests.class)
   public void executeRequestFailure() {
     doThrow(new RuntimeException("No Default Credentials found")).when(gcpClient).validateDefaultCredentials();
-    taskHandler.executeRequest(buildGcpValidationRequest());
+    taskHandler.validate(buildGcpValidationRequest());
   }
 
   private GcpValidationRequest buildGcpValidationRequest() {
@@ -85,9 +84,10 @@ public class GcpValidationTaskHandlerTest extends CategoryTest {
   @Owner(developers = OwnerRule.ABHINAV)
   @Category(UnitTests.class)
   public void executeRequestSuccessForSecretKey() {
-    final GcpValidationTaskResponse response =
-        (GcpValidationTaskResponse) taskHandler.executeRequest(buildGcpValidationRequestWithSecretKey());
-    ConnectorValidationResult connectorValidationResult = response.getConnectorValidationResult();
+    when(decryptionHelper.decrypt(any(), any()))
+        .thenReturn(GcpManualDetailsDTO.builder().secretKeyRef(SecretRefData.builder().build()).build());
+    final ConnectorValidationResult connectorValidationResult =
+        taskHandler.validate(buildGcpValidationRequestWithSecretKey());
     assertThat(connectorValidationResult.getStatus()).isEqualTo(SUCCESS);
   }
 
@@ -95,8 +95,10 @@ public class GcpValidationTaskHandlerTest extends CategoryTest {
   @Owner(developers = OwnerRule.ABHINAV)
   @Category(UnitTests.class)
   public void executeRequestFailureForSecretKey() {
+    when(decryptionHelper.decrypt(any(), any()))
+        .thenReturn(GcpManualDetailsDTO.builder().secretKeyRef(SecretRefData.builder().build()).build());
     doThrow(new RuntimeException("No Credentials found")).when(gcpClient).getGkeContainerService(any());
-    taskHandler.executeRequest(buildGcpValidationRequestWithSecretKey());
+    taskHandler.validate(buildGcpValidationRequestWithSecretKey());
   }
 
   private GcpValidationRequest buildGcpValidationRequestWithSecretKey() {
@@ -110,6 +112,8 @@ public class GcpValidationTaskHandlerTest extends CategoryTest {
   @Owner(developers = OwnerRule.MEENAKSHI)
   @Category(UnitTests.class)
   public void validateSuccess() {
+    when(decryptionHelper.decrypt(any(), any()))
+        .thenReturn(GcpManualDetailsDTO.builder().secretKeyRef(SecretRefData.builder().build()).build());
     doCallRealMethod().when(gcpRequestMapper).toGcpRequest(any());
     GcpManualDetailsDTO config = GcpManualDetailsDTO.builder().secretKeyRef(SecretRefData.builder().build()).build();
     GcpConnectorCredentialDTO gcpConnectorCredentialDTO = GcpConnectorCredentialDTO.builder()
@@ -133,6 +137,8 @@ public class GcpValidationTaskHandlerTest extends CategoryTest {
   @Owner(developers = OwnerRule.MEENAKSHI)
   @Category(UnitTests.class)
   public void validateFailure() {
+    when(decryptionHelper.decrypt(any(), any()))
+        .thenReturn(GcpManualDetailsDTO.builder().secretKeyRef(SecretRefData.builder().build()).build());
     doThrow(new RuntimeException("No Credentials found")).when(gcpClient).getGkeContainerService(any());
     doCallRealMethod().when(gcpRequestMapper).toGcpRequest(any());
     GcpManualDetailsDTO config = GcpManualDetailsDTO.builder().secretKeyRef(SecretRefData.builder().build()).build();

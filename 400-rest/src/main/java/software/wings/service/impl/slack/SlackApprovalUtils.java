@@ -180,7 +180,7 @@ public class SlackApprovalUtils {
         .replaceAll("<<<", "*<")
         .replaceAll("\\|-\\|", "|")
         .replaceAll(">>>", ">*")
-        .replaceAll("\\\\n", "\n")
+        .replaceAll("\\n", "\\\\n")
         .replaceAll("\\\\\\*", "*")
         .replaceAll("\\*<\\|>\\*", "");
   }

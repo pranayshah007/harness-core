@@ -26,7 +26,9 @@ import io.harness.ngtriggers.buildtriggers.helpers.generator.EcrPollingItemGener
 import io.harness.ngtriggers.buildtriggers.helpers.generator.GCSHelmPollingItemGenerator;
 import io.harness.ngtriggers.buildtriggers.helpers.generator.GcrPollingItemGenerator;
 import io.harness.ngtriggers.buildtriggers.helpers.generator.GeneratorFactory;
+import io.harness.ngtriggers.buildtriggers.helpers.generator.GitPollingItemGenerator;
 import io.harness.ngtriggers.buildtriggers.helpers.generator.HttpHelmPollingItemGenerator;
+import io.harness.ngtriggers.buildtriggers.helpers.generator.JenkinsPollingItemGenerator;
 import io.harness.ngtriggers.buildtriggers.helpers.generator.PollingItemGenerator;
 import io.harness.ngtriggers.buildtriggers.helpers.generator.S3HelmPollingItemGenerator;
 import io.harness.ngtriggers.buildtriggers.helpers.generator.S3PollingItemGenerator;
@@ -54,6 +56,8 @@ public class GeneratorFactoryTest extends CategoryTest {
   private EcrPollingItemGenerator ecrPollingItemGenerator;
   private DockerRegistryPollingItemGenerator dockerRegistryPollingItemGenerator;
   private ArtifactoryRegistryPollingItemGenerator artifactoryRegistryPollingItemGenerator;
+  private JenkinsPollingItemGenerator jenkinsPollingItemGenerator;
+  private GitPollingItemGenerator gitPollingItemGenerator;
   private GeneratorFactory generatorFactory;
   @InjectMocks private NGTriggerElementMapper ngTriggerElementMapper;
   private ClassLoader classLoader;
@@ -70,13 +74,14 @@ public class GeneratorFactoryTest extends CategoryTest {
     EcrPollingItemGenerator ecrPollingItemGenerator = new EcrPollingItemGenerator(buildTriggerHelper);
     DockerRegistryPollingItemGenerator dockerRegistryPollingItemGenerator =
         new DockerRegistryPollingItemGenerator(buildTriggerHelper);
+    JenkinsPollingItemGenerator jenkinsPollingItemGenerator = new JenkinsPollingItemGenerator(buildTriggerHelper);
     AcrPollingItemGenerator acrPollingItemGenerator = new AcrPollingItemGenerator(buildTriggerHelper);
     ArtifactoryRegistryPollingItemGenerator artifactoryRegistryPollingItemGenerator =
         new ArtifactoryRegistryPollingItemGenerator(buildTriggerHelper);
-    generatorFactory =
-        new GeneratorFactory(buildTriggerHelper, httpHelmPollingItemGenerator, s3HelmPollingItemGenerator,
-            s3PollingItemGenerator, gcsHelmPollingItemGenerator, gcrPollingItemGenerator, ecrPollingItemGenerator,
-            dockerRegistryPollingItemGenerator, artifactoryRegistryPollingItemGenerator, acrPollingItemGenerator);
+    generatorFactory = new GeneratorFactory(buildTriggerHelper, httpHelmPollingItemGenerator,
+        s3HelmPollingItemGenerator, s3PollingItemGenerator, gcsHelmPollingItemGenerator, gcrPollingItemGenerator,
+        ecrPollingItemGenerator, dockerRegistryPollingItemGenerator, artifactoryRegistryPollingItemGenerator,
+        acrPollingItemGenerator, jenkinsPollingItemGenerator, gitPollingItemGenerator);
     classLoader = getClass().getClassLoader();
   }
 

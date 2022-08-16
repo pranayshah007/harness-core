@@ -20,6 +20,7 @@ import io.harness.cvng.beans.TimeSeriesMetricType;
 import io.harness.cvng.core.beans.PrometheusMetricDefinition;
 import io.harness.cvng.core.beans.PrometheusMetricDefinition.PrometheusFilter;
 import io.harness.cvng.core.beans.monitoredService.TimeSeriesMetricPackDTO;
+import io.harness.cvng.core.constant.MonitoredServiceConstants;
 import io.harness.cvng.core.entities.PrometheusCVConfig.MetricInfo;
 import io.harness.cvng.core.utils.analysisinfo.AnalysisInfoUtility;
 import io.harness.cvng.core.utils.analysisinfo.DevelopmentVerificationTransformer;
@@ -197,7 +198,8 @@ public class PrometheusCVConfig extends MetricCVConfig<MetricInfo> {
     }
     getMetricPack().getMetrics().forEach(metric -> {
       timeSeriesMetricPacks.stream()
-          .filter(timeSeriesMetricPack -> timeSeriesMetricPack.getIdentifier().equalsIgnoreCase("Custom"))
+          .filter(timeSeriesMetricPack
+              -> timeSeriesMetricPack.getIdentifier().equalsIgnoreCase(MonitoredServiceConstants.CUSTOM_METRIC_PACK))
           .forEach(timeSeriesMetricPackDTO -> {
             if (!isEmpty(timeSeriesMetricPackDTO.getMetricThresholds())) {
               timeSeriesMetricPackDTO.getMetricThresholds()
@@ -211,6 +213,7 @@ public class PrometheusCVConfig extends MetricCVConfig<MetricInfo> {
                             .accountId(getAccountId())
                             .projectIdentifier(getProjectIdentifier())
                             .dataSourceType(getType())
+                            .metricIdentifier(metric.getIdentifier())
                             .metricType(metric.getType())
                             .metricName(metricPackDTO.getMetricName())
                             .action(metricPackDTO.getType().getTimeSeriesThresholdActionType())

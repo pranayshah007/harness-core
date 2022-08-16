@@ -394,6 +394,8 @@ public class MigrationBackgroundList {
         .add(Pair.of(228, DeleteStaleDelegateInsightsSummaryMigration.class))
         .add(Pair.of(229, TimeSeriesRiskSummaryTTLMigration.class))
         .add(Pair.of(230, TimeSeriesMLScoresTTLMigration.class))
+        .add(Pair.of(231, TimeSeriesRiskSummaryTTLMigration.class))
+        .add(Pair.of(232, TimeSeriesMLScoresTTLMigration.class))
         .build();
   }
 }

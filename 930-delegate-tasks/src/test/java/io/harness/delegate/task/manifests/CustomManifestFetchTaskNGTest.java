@@ -8,7 +8,6 @@
 package io.harness.delegate.task.manifests;
 
 import static io.harness.eraro.ErrorCode.GIT_ERROR;
-import static io.harness.logging.CommandExecutionStatus.FAILURE;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 import static io.harness.rule.OwnerRule.ACHYUTH;
 
@@ -35,6 +34,7 @@ import io.harness.delegate.beans.DelegateTaskResponse;
 import io.harness.delegate.beans.FileBucket;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
+import io.harness.delegate.exception.TaskNGDataException;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.helm.CustomManifestFetchTaskHelper;
 import io.harness.delegate.task.k8s.K8sTaskHelperBase;
@@ -136,10 +136,10 @@ public class CustomManifestFetchTaskNGTest extends CategoryTest {
     doThrow(new NullPointerException("generated exception"))
         .when(customManifestFetchTaskHelper)
         .fetchValuesTask(eq(taskParams), any(LogCallback.class), eq(null), eq(false));
-    CustomManifestValuesFetchResponse response = doRun(taskParams);
 
-    assertThat(response.getCommandExecutionStatus()).isEqualTo(FAILURE);
-    assertThat(response.getErrorMessage()).isEqualTo("NullPointerException: generated exception");
+    assertThatThrownBy(() -> doRun(taskParams))
+        .extracting(ex -> ((TaskNGDataException) ex).getCause().getMessage())
+        .isEqualTo("generated exception");
   }
 
   @Test
@@ -214,14 +214,9 @@ public class CustomManifestFetchTaskNGTest extends CategoryTest {
         .executeCustomSourceScript(
             eq(taskParams.getActivityId()), any(LogCallback.class), eq(customManifestSource), eq(false));
 
-    CustomManifestValuesFetchResponse response = doRun(taskParams);
-    assertThat(response.getCommandExecutionStatus()).isEqualTo(FAILURE);
-    assertThat(response.getErrorMessage()).isEqualTo("GIT_ERROR");
-
-    doThrow(new InvalidRequestException("auth failed"))
-        .when(customManifestService)
-        .executeCustomSourceScript(
-            eq(taskParams.getActivityId()), any(LogCallback.class), eq(customManifestSource), eq(false));
+    assertThatThrownBy(() -> doRun(taskParams))
+        .extracting(ex -> ((TaskNGDataException) ex).getCause().getMessage())
+        .isEqualTo("shell script failed");
 
     verify(delegateFileManagerBase, never()).uploadAsFile(any(DelegateFile.class), any(File.class));
     verify(customManifestService, never()).fetchValues(any(), any(), any(), any(), eq(true));
@@ -248,10 +243,9 @@ public class CustomManifestFetchTaskNGTest extends CategoryTest {
     doThrow(new AccessDeniedException("access denied", WingsException.USER))
         .when(delegateFileManagerBase)
         .uploadAsFile(any(), any());
-
-    CustomManifestValuesFetchResponse response = doRun(taskParams);
-    assertThat(response.getCommandExecutionStatus()).isEqualTo(FAILURE);
-    assertThat(response.getErrorMessage()).isEqualTo("ACCESS_DENIED");
+    assertThatThrownBy(() -> doRun(taskParams))
+        .extracting(ex -> ((TaskNGDataException) ex).getCause().getMessage())
+        .isEqualTo("access denied");
   }
 
   private static CustomManifestValuesFetchParams createTaskParams(

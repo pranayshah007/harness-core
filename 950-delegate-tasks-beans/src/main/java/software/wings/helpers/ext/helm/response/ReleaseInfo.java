@@ -22,4 +22,5 @@ public class ReleaseInfo {
   private String status;
   private String chart;
   private String namespace;
+  private String description;
 }

@@ -57,6 +57,7 @@ public class ExecutionGraphMapper {
         .interruptHistories(InterruptConfigDTOMapper.toInterruptEffectDTOList(graphVertex.getInterruptHistories()))
         .stepDetails(graphVertex.getOrchestrationMapStepDetails())
         .strategyMetadata(graphVertex.getStrategyMetadata())
+        .executionInputConfigured(graphVertex.getExecutionInputConfigured())
         .build();
   }
 

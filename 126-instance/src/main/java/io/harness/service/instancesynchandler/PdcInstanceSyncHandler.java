@@ -21,20 +21,16 @@ import io.harness.dtos.deploymentinfo.DeploymentInfoDTO;
 import io.harness.dtos.deploymentinfo.PdcDeploymentInfoDTO;
 import io.harness.dtos.instanceinfo.InstanceInfoDTO;
 import io.harness.dtos.instanceinfo.PdcInstanceInfoDTO;
-import io.harness.dtos.instancesyncperpetualtaskinfo.DeploymentInfoDetailsDTO;
 import io.harness.entities.InstanceType;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.models.infrastructuredetails.InfrastructureDetails;
-import io.harness.models.infrastructuredetails.PdcInfrastructureDetails;
+import io.harness.models.infrastructuredetails.SshWinrmInfrastructureDetails;
 import io.harness.ng.core.infrastructure.InfrastructureKind;
 import io.harness.ng.core.k8s.ServiceSpecType;
 import io.harness.perpetualtask.PerpetualTaskType;
 
+import com.google.common.collect.ImmutableSet;
 import com.google.inject.Singleton;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import org.apache.commons.lang3.tuple.Pair;
@@ -42,8 +38,7 @@ import org.apache.commons.lang3.tuple.Pair;
 @OwnedBy(HarnessTeam.CDP)
 @Singleton
 public class PdcInstanceSyncHandler extends AbstractInstanceSyncHandler {
-  private static final Set<String> VALID_SERVICE_TYPES =
-      Collections.unmodifiableSet(new HashSet(Arrays.asList(ServiceSpecType.SSH, ServiceSpecType.WINRM)));
+  private static final Set<String> VALID_SERVICE_TYPES = ImmutableSet.of(ServiceSpecType.SSH, ServiceSpecType.WINRM);
 
   @Override
   public String getPerpetualTaskType() {
@@ -68,7 +63,7 @@ public class PdcInstanceSyncHandler extends AbstractInstanceSyncHandler {
     }
 
     PdcInstanceInfoDTO pdcInstanceInfoDTO = (PdcInstanceInfoDTO) instanceInfoDTO;
-    return PdcInfrastructureDetails.builder().host(pdcInstanceInfoDTO.getHost()).build();
+    return SshWinrmInfrastructureDetails.builder().host(pdcInstanceInfoDTO.getHost()).build();
   }
 
   @Override
@@ -113,20 +108,5 @@ public class PdcInstanceSyncHandler extends AbstractInstanceSyncHandler {
         .infrastructureKey(infrastructureOutcome.getInfrastructureKey())
         .host(pdcServerInstanceInfo.getHost())
         .build();
-  }
-
-  @Override
-  public List<ServerInstanceInfo> refreshServerInstanceInfo(
-      List<ServerInstanceInfo> serverInstanceInfoList, List<DeploymentInfoDetailsDTO> deploymentInfoDetailsDTOList) {
-    List<ServerInstanceInfo> result = new ArrayList<>();
-    deploymentInfoDetailsDTOList.forEach(info -> {
-      PdcDeploymentInfoDTO deploymentInfoDTO = (PdcDeploymentInfoDTO) info.getDeploymentInfoDTO();
-      result.add(PdcServerInstanceInfo.builder()
-                     .infrastructureKey(deploymentInfoDTO.getInfrastructureKey())
-                     .host(deploymentInfoDTO.getHost())
-                     .serviceType(deploymentInfoDTO.getServiceType())
-                     .build());
-    });
-    return result;
   }
 }

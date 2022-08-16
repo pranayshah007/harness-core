@@ -91,7 +91,7 @@ public class MergeHelper {
           if (NGExpressionUtils.matchesExecutionInputPattern(templateValueText)) {
             ParameterField<?> inputSetParameterField =
                 RuntimeInputValuesValidator.getInputSetParameterField(((JsonNode) value).asText());
-            if (inputSetParameterField != null) {
+            if (inputSetParameterField != null && inputSetParameterField.getValue() != null) {
               value = inputSetParameterField.getValue();
             }
           }

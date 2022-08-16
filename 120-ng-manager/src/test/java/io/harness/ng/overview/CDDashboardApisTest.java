@@ -785,9 +785,17 @@ public class CDDashboardApisTest extends CategoryTest {
         .when(cdOverviewDashboardServiceImpl)
         .queryCalculatorServiceTagMag(serviveTagQueryPending);
 
+    List<ExecutionStatusInfo> failure =
+        cdOverviewDashboardServiceImpl.getDeploymentStatusInfo(queryFailed, queryIdFailed);
+
+    List<ExecutionStatusInfo> active =
+        cdOverviewDashboardServiceImpl.getDeploymentStatusInfo(queryActive, queryIdActive);
+
+    List<ExecutionStatusInfo> pending =
+        cdOverviewDashboardServiceImpl.getDeploymentStatusInfo(queryPending, queryIdPending);
+
     DashboardExecutionStatusInfo dashboardExecutionStatusInfo =
-        cdOverviewDashboardServiceImpl.getDeploymentActiveFailedRunningInfo(
-            "acc", "orgId", "pro", 10, 1619626802000L, 1622650432000L);
+        DashboardExecutionStatusInfo.builder().failure(failure).active(active).pending(pending).build();
 
     // failure
 

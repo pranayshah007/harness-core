@@ -73,6 +73,7 @@ import io.harness.cvng.core.services.api.SideKickService;
 import io.harness.cvng.exception.BadRequestExceptionMapper;
 import io.harness.cvng.exception.ConstraintViolationExceptionMapper;
 import io.harness.cvng.exception.NotFoundExceptionMapper;
+import io.harness.cvng.exception.ServiceCallExceptionMapper;
 import io.harness.cvng.governance.beans.ExpansionKeysConstants;
 import io.harness.cvng.governance.services.SLOPolicyExpansionHandler;
 import io.harness.cvng.licenserestriction.MaxServiceRestrictionUsageImpl;
@@ -1043,6 +1044,7 @@ public class VerificationApplication extends Application<VerificationConfigurati
     jersey.register(ConstraintViolationExceptionMapper.class);
     jersey.register(NotFoundExceptionMapper.class);
     jersey.register(BadRequestExceptionMapper.class);
+    jersey.register(ServiceCallExceptionMapper.class);
     jersey.register(WingsExceptionMapperV2.class);
     jersey.register(GenericExceptionMapperV2.class);
   }

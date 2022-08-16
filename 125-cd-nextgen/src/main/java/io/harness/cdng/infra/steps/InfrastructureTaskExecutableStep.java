@@ -10,6 +10,7 @@ package io.harness.cdng.infra.steps;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.eraro.ErrorCode.GENERAL_ERROR;
+import static io.harness.ng.core.infrastructure.InfrastructureKind.SSH_WINRM_AWS;
 import static io.harness.ng.core.infrastructure.InfrastructureKind.SSH_WINRM_AZURE;
 
 import static software.wings.beans.LogColor.Green;
@@ -21,6 +22,9 @@ import static java.lang.String.format;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.CDStepHelper;
+import io.harness.cdng.execution.ExecutionInfoKey;
+import io.harness.cdng.execution.helper.ExecutionInfoKeyMapper;
+import io.harness.cdng.execution.helper.StageExecutionHelper;
 import io.harness.cdng.infra.InfrastructureMapper;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.infra.yaml.Infrastructure;
@@ -37,11 +41,18 @@ import io.harness.delegate.beans.azure.response.AzureHostResponse;
 import io.harness.delegate.beans.azure.response.AzureHostsResponse;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
+import io.harness.delegate.beans.connector.awsconnector.AwsListASGInstancesTaskParamsRequest;
+import io.harness.delegate.beans.connector.awsconnector.AwsListEC2InstancesTaskParamsRequest;
+import io.harness.delegate.beans.connector.awsconnector.AwsListEC2InstancesTaskResponse;
+import io.harness.delegate.beans.connector.awsconnector.AwsTaskParams;
+import io.harness.delegate.beans.connector.awsconnector.AwsTaskType;
 import io.harness.delegate.beans.connector.azureconnector.AzureAdditionalParams;
 import io.harness.delegate.beans.connector.azureconnector.AzureConnectorDTO;
 import io.harness.delegate.beans.connector.azureconnector.AzureTaskParams;
 import io.harness.delegate.beans.connector.azureconnector.AzureTaskType;
 import io.harness.delegate.exception.TaskNGDataException;
+import io.harness.delegate.task.ssh.AwsInfraDelegateConfig;
+import io.harness.delegate.task.ssh.AwsWinrmInfraDelegateConfig;
 import io.harness.delegate.task.ssh.AzureInfraDelegateConfig;
 import io.harness.delegate.task.ssh.SshInfraDelegateConfig;
 import io.harness.delegate.task.ssh.WinRmInfraDelegateConfig;
@@ -55,7 +66,6 @@ import io.harness.logging.LogLevel;
 import io.harness.logging.UnitProgress;
 import io.harness.logging.UnitStatus;
 import io.harness.logstreaming.NGLogCallback;
-import io.harness.ng.core.infrastructure.InfrastructureKind;
 import io.harness.ng.core.k8s.ServiceSpecType;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -73,6 +83,7 @@ import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
+import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.EntityReferenceExtractorUtils;
@@ -87,6 +98,7 @@ import io.harness.steps.shellscript.WinRmInfraDelegateConfigOutput;
 import io.harness.supplier.ThrowingSupplier;
 
 import software.wings.beans.TaskType;
+import software.wings.service.impl.aws.model.AwsEC2Instance;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
@@ -117,6 +129,7 @@ public class InfrastructureTaskExecutableStep implements TaskExecutableWithRbac<
   @Inject ExecutionSweepingOutputService executionSweepingOutputService;
   @Inject private KryoSerializer kryoSerializer;
   @Inject private StepHelper stepHelper;
+  @Inject private StageExecutionHelper stageExecutionHelper;
 
   @Override
   public void validateResources(Ambiance ambiance, Infrastructure stepParameters) {
@@ -141,6 +154,8 @@ public class InfrastructureTaskExecutableStep implements TaskExecutableWithRbac<
         ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.SERVICE));
     InfrastructureOutcome infrastructureOutcome =
         InfrastructureMapper.toOutcome(stepParameters, environmentOutcome, serviceOutcome);
+    ExecutionInfoKey executionInfoKey = ExecutionInfoKeyMapper.getExecutionInfoKey(
+        ambiance, stepParameters.getKind(), environmentOutcome, serviceOutcome, infrastructureOutcome);
 
     NGLogCallback logCallback = infrastructureStepHelper.getInfrastructureLogCallback(ambiance, "Execute");
     DelegateResponseData responseData;
@@ -152,7 +167,11 @@ public class InfrastructureTaskExecutableStep implements TaskExecutableWithRbac<
     }
 
     if (responseData instanceof AzureHostsResponse) {
-      return handleAzureHostResponse(responseData, ambiance, logCallback, infrastructureOutcome, startTime);
+      return handleAzureHostResponse(
+          responseData, ambiance, logCallback, infrastructureOutcome, executionInfoKey, startTime);
+    } else if (responseData instanceof AwsListEC2InstancesTaskResponse) {
+      return handleAwsListEC2InstancesTaskResponse(
+          responseData, ambiance, logCallback, infrastructureOutcome, executionInfoKey, startTime);
     }
 
     return buildFailureStepResponse(
@@ -160,11 +179,17 @@ public class InfrastructureTaskExecutableStep implements TaskExecutableWithRbac<
   }
 
   private StepResponse handleAzureHostResponse(DelegateResponseData responseData, Ambiance ambiance,
-      NGLogCallback logCallback, InfrastructureOutcome infrastructureOutcome, long startTime) {
+      NGLogCallback logCallback, InfrastructureOutcome infrastructureOutcome, ExecutionInfoKey executionInfoKey,
+      long startTime) {
     AzureHostsResponse azureHostsResponse = (AzureHostsResponse) responseData;
     switch (azureHostsResponse.getCommandExecutionStatus()) {
       case SUCCESS:
-        return publishAzureHosts(azureHostsResponse, ambiance, logCallback, infrastructureOutcome, startTime);
+        if (EmptyPredicate.isEmpty(azureHostsResponse.getHosts())) {
+          return buildFailureStepResponse(
+              startTime, "No instance(s) were found for specified infrastructure", logCallback);
+        }
+        return publishAzureHosts(
+            azureHostsResponse, ambiance, logCallback, infrastructureOutcome, executionInfoKey, startTime);
       case FAILURE:
         return buildFailureStepResponse(
             startTime, HarnessStringUtils.emptyIfNull(azureHostsResponse.getErrorSummary()), logCallback);
@@ -175,8 +200,31 @@ public class InfrastructureTaskExecutableStep implements TaskExecutableWithRbac<
     }
   }
 
+  private StepResponse handleAwsListEC2InstancesTaskResponse(DelegateResponseData responseData, Ambiance ambiance,
+      NGLogCallback logCallback, InfrastructureOutcome infrastructureOutcome, ExecutionInfoKey executionInfoKey,
+      long startTime) {
+    AwsListEC2InstancesTaskResponse awsListEC2InstancesTaskResponse = (AwsListEC2InstancesTaskResponse) responseData;
+    switch (awsListEC2InstancesTaskResponse.getCommandExecutionStatus()) {
+      case SUCCESS:
+        if (EmptyPredicate.isEmpty(awsListEC2InstancesTaskResponse.getInstances())) {
+          return buildFailureStepResponse(
+              startTime, "No instance(s) were found for specified infrastructure", logCallback);
+        }
+        return publishAwsHosts(
+            awsListEC2InstancesTaskResponse, ambiance, logCallback, infrastructureOutcome, executionInfoKey, startTime);
+      case FAILURE:
+        return buildFailureStepResponse(startTime, "Error getting EC2 instances", logCallback);
+      default:
+        return buildFailureStepResponse(startTime,
+            format("Unhandled command execution status: %s received",
+                awsListEC2InstancesTaskResponse.getCommandExecutionStatus()),
+            logCallback);
+    }
+  }
+
   private StepResponse publishAzureHosts(AzureHostsResponse azureHostsResponse, Ambiance ambiance,
-      NGLogCallback logCallback, InfrastructureOutcome infrastructureOutcome, long startTime) {
+      NGLogCallback logCallback, InfrastructureOutcome infrastructureOutcome, ExecutionInfoKey executionInfoKey,
+      long startTime) {
     List<String> hostNames =
         azureHostsResponse.getHosts().stream().map(AzureHostResponse::getHostName).collect(Collectors.toList());
     infrastructureStepHelper.saveExecutionLog(
@@ -184,7 +232,22 @@ public class InfrastructureTaskExecutableStep implements TaskExecutableWithRbac<
     executionSweepingOutputService.consume(ambiance, OutputExpressionConstants.OUTPUT,
         HostsOutput.builder().hosts(hostNames).build(), StepCategory.STAGE.name());
 
-    return buildSuccessStepResponse(infrastructureOutcome, logCallback, startTime);
+    return buildSuccessStepResponse(ambiance, infrastructureOutcome, logCallback, executionInfoKey, startTime);
+  }
+
+  private StepResponse publishAwsHosts(AwsListEC2InstancesTaskResponse awsListEC2InstancesTaskResponse,
+      Ambiance ambiance, NGLogCallback logCallback, InfrastructureOutcome infrastructureOutcome,
+      ExecutionInfoKey executionInfoKey, long startTime) {
+    List<String> hostNames = awsListEC2InstancesTaskResponse.getInstances()
+                                 .stream()
+                                 .map(AwsEC2Instance::getPublicDnsName)
+                                 .collect(Collectors.toList());
+    infrastructureStepHelper.saveExecutionLog(
+        logCallback, color(format("Successfully fetched %s instance(s)", hostNames.size()), Green));
+    executionSweepingOutputService.consume(ambiance, OutputExpressionConstants.OUTPUT,
+        HostsOutput.builder().hosts(hostNames).build(), StepCategory.STAGE.name());
+
+    return buildSuccessStepResponse(ambiance, infrastructureOutcome, logCallback, executionInfoKey, startTime);
   }
 
   private StepResponse handleTaskException(long startTime, Exception e, NGLogCallback logCallback) throws Exception {
@@ -196,15 +259,21 @@ public class InfrastructureTaskExecutableStep implements TaskExecutableWithRbac<
         startTime, HarnessStringUtils.emptyIfNull(ExceptionUtils.getMessage(e)), logCallback);
   }
 
-  private StepResponse buildSuccessStepResponse(
-      InfrastructureOutcome infrastructureOutcome, NGLogCallback logCallback, long startTime) {
+  private StepResponse buildSuccessStepResponse(Ambiance ambiance, InfrastructureOutcome infrastructureOutcome,
+      NGLogCallback logCallback, ExecutionInfoKey executionInfoKey, long startTime) {
     if (logCallback != null) {
       logCallback.saveExecutionLog(
           color("Completed infrastructure step", Green), LogLevel.INFO, CommandExecutionStatus.SUCCESS);
     }
 
-    return StepResponse.builder()
-        .status(Status.SUCCEEDED)
+    StepResponseBuilder stepResponseBuilder = StepResponse.builder().status(Status.SUCCEEDED);
+    String infrastructureKind = infrastructureOutcome.getKind();
+    stageExecutionHelper.saveStageExecutionInfoAndPublishExecutionInfoKey(
+        ambiance, executionInfoKey, infrastructureKind);
+    stageExecutionHelper.addRollbackArtifactToStageOutcomeIfPresent(
+        ambiance, stepResponseBuilder, executionInfoKey, infrastructureKind);
+
+    return stepResponseBuilder
         .stepOutcome(StepResponse.StepOutcome.builder()
                          .outcome(infrastructureOutcome)
                          .name(OutcomeExpressionConstants.OUTPUT)
@@ -307,6 +376,8 @@ public class InfrastructureTaskExecutableStep implements TaskExecutableWithRbac<
     switch (infrastructureOutcome.getKind()) {
       case SSH_WINRM_AZURE:
         return buildAzureTaskRequest((AzureInfraDelegateConfig) sshInfraDelegateConfig, ambiance);
+      case SSH_WINRM_AWS:
+        return buildAwsTaskRequest((AwsInfraDelegateConfig) sshInfraDelegateConfig, ambiance);
       default:
         throw new UnsupportedOperationException(
             format("Specified infrastructure: %s is not supported for following infrastructure step",
@@ -321,7 +392,8 @@ public class InfrastructureTaskExecutableStep implements TaskExecutableWithRbac<
     switch (infrastructureOutcome.getKind()) {
       case SSH_WINRM_AZURE:
         return buildAzureTaskRequest((AzureInfraDelegateConfig) winRmInfraDelegateConfig, ambiance);
-
+      case SSH_WINRM_AWS:
+        return buildAwsTaskRequest((AwsInfraDelegateConfig) winRmInfraDelegateConfig, ambiance);
       default:
         throw new UnsupportedOperationException(
             format("Specified infrastructure: %s is not supported for following infrastructure step",
@@ -356,6 +428,49 @@ public class InfrastructureTaskExecutableStep implements TaskExecutableWithRbac<
             .build();
 
     List<TaskSelectorYaml> taskSelectorYamlList = azureInfraDelegateConfig.getAzureConnectorDTO()
+                                                      .getDelegateSelectors()
+                                                      .stream()
+                                                      .map(delegateSelector -> new TaskSelectorYaml(delegateSelector))
+                                                      .collect(Collectors.toList());
+
+    return StepUtils.prepareCDTaskRequest(ambiance, taskData, kryoSerializer, Collections.singletonList("Execute"),
+        taskData.getTaskType(), TaskSelectorYaml.toTaskSelector(emptyIfNull(taskSelectorYamlList)),
+        stepHelper.getEnvironmentType(ambiance));
+  }
+
+  private TaskRequest buildAwsTaskRequest(AwsInfraDelegateConfig awsInfraDelegateConfig, Ambiance ambiance) {
+    boolean isWinRm = awsInfraDelegateConfig instanceof AwsWinrmInfraDelegateConfig;
+    final AwsTaskParams awsTaskParams;
+
+    if (EmptyPredicate.isEmpty(awsInfraDelegateConfig.getAutoScalingGroupName())) {
+      awsTaskParams = AwsListEC2InstancesTaskParamsRequest.builder()
+                          .awsConnector(awsInfraDelegateConfig.getAwsConnectorDTO())
+                          .awsTaskType(AwsTaskType.LIST_EC2_INSTANCES)
+                          .encryptionDetails(awsInfraDelegateConfig.getConnectorEncryptionDataDetails())
+                          .region(awsInfraDelegateConfig.getRegion())
+                          .vpcIds(awsInfraDelegateConfig.getVpcIds())
+                          .tags(awsInfraDelegateConfig.getTags())
+                          .winRm(isWinRm)
+                          .build();
+    } else {
+      awsTaskParams = AwsListASGInstancesTaskParamsRequest.builder()
+                          .awsConnector(awsInfraDelegateConfig.getAwsConnectorDTO())
+                          .awsTaskType(AwsTaskType.LIST_ASG_INSTANCES)
+                          .encryptionDetails(awsInfraDelegateConfig.getConnectorEncryptionDataDetails())
+                          .region(awsInfraDelegateConfig.getRegion())
+                          .autoScalingGroupName(awsInfraDelegateConfig.getAutoScalingGroupName())
+                          .build();
+    }
+
+    TaskData taskData =
+        TaskData.builder()
+            .async(true)
+            .taskType(TaskType.NG_AWS_TASK.name())
+            .timeout(StepUtils.getTimeoutMillis(ParameterField.createValueField("10m"), DEFAULT_TIMEOUT))
+            .parameters(new Object[] {awsTaskParams})
+            .build();
+
+    List<TaskSelectorYaml> taskSelectorYamlList = awsInfraDelegateConfig.getAwsConnectorDTO()
                                                       .getDelegateSelectors()
                                                       .stream()
                                                       .map(delegateSelector -> new TaskSelectorYaml(delegateSelector))
@@ -408,7 +523,7 @@ public class InfrastructureTaskExecutableStep implements TaskExecutableWithRbac<
           ConnectorType.AZURE.name()));
     }
 
-    if (InfrastructureKind.SSH_WINRM_AWS.equals(infrastructure.getKind())
+    if (SSH_WINRM_AWS.equals(infrastructure.getKind())
         && !(connectorInfo.getConnectorConfig() instanceof AwsConnectorDTO)) {
       throw new InvalidRequestException(format("Invalid connector type [%s] for identifier: [%s], expected [%s]",
           connectorInfo.getConnectorType().name(), infrastructure.getConnectorReference().getValue(),
@@ -431,7 +546,7 @@ public class InfrastructureTaskExecutableStep implements TaskExecutableWithRbac<
             sshWinRmAzureInfrastructure.getCredentialsRef());
         break;
 
-      case InfrastructureKind.SSH_WINRM_AWS:
+      case SSH_WINRM_AWS:
         SshWinRmAwsInfrastructure sshWinRmAwsInfrastructure = (SshWinRmAwsInfrastructure) infrastructure;
         infrastructureStepHelper.validateExpression(sshWinRmAwsInfrastructure.getConnectorRef(),
             sshWinRmAwsInfrastructure.getCredentialsRef(), sshWinRmAwsInfrastructure.getRegion());

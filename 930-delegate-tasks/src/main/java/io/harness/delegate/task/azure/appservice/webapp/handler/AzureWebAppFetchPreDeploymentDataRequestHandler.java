@@ -67,6 +67,7 @@ public class AzureWebAppFetchPreDeploymentDataRequestHandler
         toAzureAppServicePackageDeploymentContext(taskRequest, azureWebClientContext, null, logCallbackProvider);
     AzureAppServicePreDeploymentData preDeploymentData =
         azureAppServiceService.getPackageDeploymentPreDeploymentData(packageDeploymentContext);
+    azureSecretHelper.encryptAzureAppServicePreDeploymentData(preDeploymentData, taskRequest.getAccountId());
     return AzureWebAppFetchPreDeploymentDataResponse.builder().preDeploymentData(preDeploymentData).build();
   }
 }

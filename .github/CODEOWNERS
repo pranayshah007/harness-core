@@ -14,10 +14,11 @@ bazel* diptiman.adak@harness.io udham.singh@harness.io
 /125-cd-nextgen/src/main/java/io/harness/cdng/creator/CDNGPlanCreatorProvider.java prashant.sharma@harness.io vaibhav.si@harness.io
 /pipeline-service/service/src/main/java/io/harness/pms/plan/creation/PipelineServiceInternalInfoProvider.java prashant.sharma@harness.io vaibhav.si@harness.io archit.singla@harness.io
 /320-ci-execution/src/main/java/io/harness/ci/plan/creator/CIPipelineServiceInfoProvider.java prashant.sharma@harness.io vaibhav.si@harness.io
-/300-cv-nextgen/src/main/java* praveen.sugavanam@harness.io abhijith.pradeep@harness.io deepak.chhikara@harness.io kapil.choudhary@harness.io
+/300-cv-nextgen/src/main/java* praveen.sugavanam@harness.io abhijith.pradeep@harness.io deepak.chhikara@harness.io
 /pipeline-service/service/src/main/java/**/*Resource*.java vaibhav.si@harness.io prashant.pal@harness.io archit.singla@harness.io
 
 /pipeline-service/ vaibhav.si@harness.io archit.singla@harness.io sahil.hindwani@harness.io sanyasi.naidu@harness.io
+/dockerization/pipeline-service/ prashant.sharma@harness.io archit.singla@harness.io sanyasi.naidu@harness.io
 
 /315-sto-manager/ @harness/sto
 /323-sto-utilities/ @harness/sto
@@ -87,3 +88,4 @@ bazel* diptiman.adak@harness.io udham.singh@harness.io
 /platform-service/modules/audit-service/contracts/BUILD.bazel johannes@harness.io raghu@harness.io jenny.james@harness.io marko.milic@harness.io gaurav.jain@harness.io
 /platform-service/modules/notification-service/contracts/BUILD.bazel johannes@harness.io raghu@harness.io jenny.james@harness.io marko.milic@harness.io gaurav.jain@harness.io
 /platform-service/modules/notification-service/delegate-tasks/BUILD.bazel johannes@harness.io raghu@harness.io jenny.james@harness.io marko.milic@harness.io gaurav.jain@harness.io
+/pipeline-service/modules/orchestration-steps/ vaibhav.si@harness.io archit.singla@harness.io sahil.hindwani@harness.io sanyasi.naidu@harness.io deepak.puthraya@harness.io abhinav.mittal@harness.io pooja.singhal@harness.io

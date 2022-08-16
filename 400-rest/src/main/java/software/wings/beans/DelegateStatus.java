@@ -62,6 +62,7 @@ public class DelegateStatus {
     private boolean sampleDelegate;
     private boolean grpcActive;
     private boolean tokenActive;
+    private long delegateExpirationTime;
     List<DelegateConnectionDetails> connections;
   }
 }

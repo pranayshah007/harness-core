@@ -17,6 +17,8 @@ import io.harness.ng.core.entities.Organization;
 import io.harness.ng.core.entities.Organization.OrganizationKeys;
 import io.harness.ng.core.entities.Project;
 import io.harness.ng.core.entities.Project.ProjectKeys;
+import io.harness.ng.core.service.entity.ServiceEntity;
+import io.harness.ng.core.service.entity.ServiceEntity.ServiceEntityKeys;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.PipelineEntity.PipelineEntityKeys;
 
@@ -70,6 +72,9 @@ public class TagsInfoCDChangeDataHandler extends AbstractChangeDataHandler {
       return dbObject.get(OrganizationKeys.identifier).toString();
     } else if (changeEvent.getEntityType() == Project.class && dbObject.get(ProjectKeys.identifier) != null) {
       return dbObject.get(ProjectKeys.identifier).toString();
+    } else if (
+        changeEvent.getEntityType() == ServiceEntity.class && dbObject.get(ServiceEntityKeys.identifier) != null) {
+      return dbObject.get(ServiceEntityKeys.identifier).toString();
     }
     return null;
   }
@@ -81,6 +86,9 @@ public class TagsInfoCDChangeDataHandler extends AbstractChangeDataHandler {
       return "ORGANIZATION";
     } else if (changeEvent.getEntityType() == Project.class && dbObject.get(ProjectKeys.identifier) != null) {
       return "PROJECT";
+    } else if (
+        changeEvent.getEntityType() == ServiceEntity.class && dbObject.get(ServiceEntityKeys.identifier) != null) {
+      return "SERVICE";
     }
     return null;
   }
@@ -97,6 +105,11 @@ public class TagsInfoCDChangeDataHandler extends AbstractChangeDataHandler {
     } else if (changeEvent.getEntityType() == Project.class && dbObject.get(ProjectKeys.identifier) != null) {
       if (dbObject.get(ProjectKeys.tags) != null) {
         return (BasicDBList) dbObject.get(ProjectKeys.tags);
+      }
+    } else if (
+        changeEvent.getEntityType() == ServiceEntity.class && dbObject.get(ServiceEntityKeys.identifier) != null) {
+      if (dbObject.get(ServiceEntityKeys.tags) != null) {
+        return (BasicDBList) dbObject.get(ServiceEntityKeys.tags);
       }
     }
     return null;

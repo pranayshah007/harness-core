@@ -17,6 +17,7 @@ import io.harness.cvng.core.beans.PrometheusMetricDefinition;
 import io.harness.cvng.core.beans.RiskProfile;
 import io.harness.cvng.core.beans.monitoredService.TimeSeriesMetricPackDTO;
 import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.PrometheusHealthSourceSpec;
+import io.harness.cvng.core.constant.MonitoredServiceConstants;
 import io.harness.cvng.core.entities.AnalysisInfo.DeploymentVerification;
 import io.harness.cvng.core.entities.AnalysisInfo.LiveMonitoring;
 import io.harness.cvng.core.entities.AnalysisInfo.SLI;
@@ -73,7 +74,7 @@ public class PrometheusHealthSourceSpecTransformer
     });
 
     cvConfigs.forEach(prometheusCVConfig -> {
-      String identifier = prometheusCVConfig.getMetricPack().getIdentifier();
+      String identifier = MonitoredServiceConstants.CUSTOM_METRIC_PACK;
       List<TimeSeriesMetricPackDTO.MetricThreshold> metricThresholds = prometheusCVConfig.getMetricThresholdDTOs();
       if (isNotEmpty(metricThresholds)) {
         metricThresholds.forEach(metricThreshold -> metricThreshold.setMetricType(identifier));

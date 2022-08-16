@@ -31,4 +31,5 @@ public class RecentExecutionInfoDTO {
   ExecutionStatus status;
   Long startTs;
   Long endTs;
+  Integer runSequence;
 }

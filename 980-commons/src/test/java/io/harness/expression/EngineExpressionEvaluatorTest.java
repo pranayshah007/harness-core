@@ -7,6 +7,7 @@
 
 package io.harness.expression;
 
+import static io.harness.rule.OwnerRule.BRIJESH;
 import static io.harness.rule.OwnerRule.GARVIT;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -398,6 +399,16 @@ public class EngineExpressionEvaluatorTest extends CategoryTest {
     assertThatThrownBy(() -> evaluator.renderExpression("<+a> + <+b> + <+c> + <+d>>", false))
         .isInstanceOf(UnresolvedExpressionsException.class)
         .hasMessage("Unresolved expressions: b");
+  }
+
+  @Test
+  @Owner(developers = BRIJESH)
+  @Category(UnitTests.class)
+  public void testCalculateExecutionMode() {
+    assertThat(EngineExpressionEvaluator.calculateExpressionMode(true))
+        .isEqualTo(ExpressionMode.RETURN_NULL_IF_UNRESOLVED);
+    assertThat(EngineExpressionEvaluator.calculateExpressionMode(false))
+        .isEqualTo(ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED);
   }
 
   @Value

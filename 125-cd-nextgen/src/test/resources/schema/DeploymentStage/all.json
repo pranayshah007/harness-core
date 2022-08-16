@@ -209,6 +209,21 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "ApplicationSettingsConfiguration": {
+      "type": "object",
+      "required": [
+        "store"
+      ],
+      "properties": {
+        "metadata": {
+          "type": "string"
+        },
+        "store": {
+          "$ref": "#/definitions/StoreConfigWrapper"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "ArtifactConfig": {
       "type": "object",
       "discriminator": "type",
@@ -507,13 +522,13 @@
           "type": "object",
           "properties": {
             "applicationSettings": {
-              "$ref": "#/definitions/StoreConfigWrapper"
+              "$ref": "#/definitions/ApplicationSettingsConfiguration"
             },
             "connectionStrings": {
-              "$ref": "#/definitions/StoreConfigWrapper"
+              "$ref": "#/definitions/ConnectionStringsConfiguration"
             },
             "startupCommand": {
-              "$ref": "#/definitions/StoreConfigWrapper"
+              "$ref": "#/definitions/StartupCommandConfiguration"
             }
           }
         }
@@ -1242,12 +1257,57 @@
     },
     "CommandUnitWrapper": {
       "type": "object",
+      "required": [
+        "identifier",
+        "name",
+        "type"
+      ],
       "properties": {
-        "commandUnit": {
-          "$ref": "#/definitions/StepCommandUnit"
+        "identifier": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string"
         }
       },
-      "$schema": "http://json-schema.org/draft-07/schema#"
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "Copy"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/CopyCommandUnitSpec"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "Script"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/ScriptCommandUnitSpec"
+              }
+            }
+          }
+        }
+      ]
     },
     "ConfigFile": {
       "type": "object",
@@ -1318,6 +1378,21 @@
       "properties": {
         "configFile": {
           "$ref": "#/definitions/ConfigFile"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "ConnectionStringsConfiguration": {
+      "type": "object",
+      "required": [
+        "store"
+      ],
+      "properties": {
+        "metadata": {
+          "type": "string"
+        },
+        "store": {
+          "$ref": "#/definitions/StoreConfigWrapper"
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -3625,6 +3700,16 @@
                 }
               ]
             },
+            "skipRendering": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
             "skipSteadyStateCheck": {
               "oneOf": [
                 {
@@ -4094,7 +4179,7 @@
         },
         {
           "type": "object",
-          "properties": {}
+          "properties": { }
         }
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -4613,7 +4698,7 @@
         },
         {
           "type": "object",
-          "properties": {}
+          "properties": { }
         }
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -5223,7 +5308,7 @@
         {
           "$ref": "#/definitions/Infrastructure"
         },
-        {}
+        { }
       ],
       "$schema": "http://json-schema.org/draft-07/schema#",
       "oneOf": [
@@ -6063,7 +6148,7 @@
         },
         {
           "type": "object",
-          "properties": {}
+          "properties": { }
         }
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -6301,6 +6386,21 @@
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "ServiceUseFromStageV2": {
+      "type": "object",
+      "required": [
+        "stage"
+      ],
+      "properties": {
+        "metadata": {
+          "type": "string"
+        },
+        "stage": {
+          "type": "string"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "ServiceYaml": {
       "type": "object",
       "required": [
@@ -6328,9 +6428,6 @@
     },
     "ServiceYamlV2": {
       "type": "object",
-      "required": [
-        "serviceRef"
-      ],
       "properties": {
         "serviceInputs": {
           "oneOf": [
@@ -6347,9 +6444,28 @@
         "serviceRef": {
           "type": "string",
           "pattern": "\\<\\+input\\>|^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$"
+        },
+        "useFromStage": {
+          "$ref": "#/definitions/ServiceUseFromStageV2"
         }
       },
-      "$schema": "http://json-schema.org/draft-07/schema#"
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "allOf": [
+        {
+          "oneOf": [
+            {
+              "required": [
+                "useFromStage"
+              ]
+            },
+            {
+              "required": [
+                "serviceRef"
+              ]
+            }
+          ]
+        }
+      ]
     },
     "ShellScriptBaseSource": {
       "type": "object",
@@ -6598,7 +6714,7 @@
         },
         {
           "type": "object",
-          "properties": {}
+          "properties": { }
         }
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -6608,80 +6724,12 @@
         {
           "$ref": "#/definitions/Infrastructure"
         },
-        {}
-      ],
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "oneOf": [
         {
           "type": "object",
           "required": [
+            "awsInstanceFilter",
             "connectorRef",
             "credentialsRef",
-            "hostNameConvention",
-            "loadBalancer",
-            "region"
-          ],
-          "properties": {
-            "autoScalingGroupName": {
-              "type": "string"
-            },
-            "connectorRef": {
-              "type": "string",
-              "minLength": 1
-            },
-            "credentialsRef": {
-              "type": "string",
-              "minLength": 1
-            },
-            "delegateSelectors": {
-              "oneOf": [
-                {
-                  "type": "array",
-                  "items": {
-                    "type": "string"
-                  }
-                },
-                {
-                  "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-                  "minLength": 1
-                }
-              ]
-            },
-            "hostNameConvention": {
-              "oneOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-                  "minLength": 1
-                }
-              ],
-              "minLength": 1
-            },
-            "loadBalancer": {
-              "type": "string",
-              "minLength": 1
-            },
-            "region": {
-              "type": "string",
-              "minLength": 1
-            },
-            "useAutoScalingGroup": {
-              "type": "boolean"
-            }
-          },
-          "additionalProperties": false
-        },
-        {
-          "type": "object",
-          "required": [
-            "connectorRef",
-            "credentialsRef",
-            "hostNameConvention",
-            "loadBalancer",
             "region"
           ],
           "properties": {
@@ -6696,49 +6744,14 @@
               "type": "string",
               "minLength": 1
             },
-            "delegateSelectors": {
-              "oneOf": [
-                {
-                  "type": "array",
-                  "items": {
-                    "type": "string"
-                  }
-                },
-                {
-                  "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-                  "minLength": 1
-                }
-              ]
-            },
-            "hostNameConvention": {
-              "oneOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-                  "minLength": 1
-                }
-              ],
-              "minLength": 1
-            },
-            "loadBalancer": {
-              "type": "string",
-              "minLength": 1
-            },
             "region": {
               "type": "string",
               "minLength": 1
-            },
-            "useAutoScalingGroup": {
-              "type": "boolean"
             }
-          },
-          "additionalProperties": false
+          }
         }
-      ]
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "SshWinRmAzureInfrastructure": {
       "allOf": [
@@ -6879,55 +6892,20 @@
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
-    "StepCommandUnit": {
+    "StartupCommandConfiguration": {
       "type": "object",
       "required": [
-        "name",
-        "type"
+        "store"
       ],
       "properties": {
-        "name": {
+        "metadata": {
           "type": "string"
         },
-        "type": {
-          "type": "string"
+        "store": {
+          "$ref": "#/definitions/StoreConfigWrapper"
         }
       },
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "allOf": [
-        {
-          "if": {
-            "properties": {
-              "type": {
-                "const": "Copy"
-              }
-            }
-          },
-          "then": {
-            "properties": {
-              "spec": {
-                "$ref": "#/definitions/CopyCommandUnitSpec"
-              }
-            }
-          }
-        },
-        {
-          "if": {
-            "properties": {
-              "type": {
-                "const": "Script"
-              }
-            }
-          },
-          "then": {
-            "properties": {
-              "spec": {
-                "$ref": "#/definitions/ScriptCommandUnitSpec"
-              }
-            }
-          }
-        }
-      ]
+      "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "StepElementConfig": {
       "type": "object",

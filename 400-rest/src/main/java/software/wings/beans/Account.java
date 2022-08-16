@@ -10,6 +10,7 @@ package software.wings.beans;
 import static io.harness.annotations.dev.HarnessTeam.DX;
 import static io.harness.delegate.beans.DelegateConfiguration.DelegateConfigurationKeys;
 
+import static software.wings.beans.Account.AccountKeys;
 import static software.wings.beans.CGConstants.GLOBAL_APP_ID;
 import static software.wings.common.VerificationConstants.SERVICE_GUAARD_LIMIT;
 
@@ -67,7 +68,7 @@ import org.mongodb.morphia.annotations.Transient;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @Entity(value = "accounts", noClassnameStored = true)
 @HarnessEntity(exportable = true)
-@ChangeDataCapture(table = "accounts", fields = {}, handler = "Account")
+@ChangeDataCapture(table = "accounts", fields = {AccountKeys.accountName, AccountKeys.createdAt}, handler = "")
 public class Account extends Base implements PersistentRegularIterable, NGMigrationEntity {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
@@ -172,6 +173,8 @@ public class Account extends Base implements PersistentRegularIterable, NGMigrat
   @Getter @Setter private Long serviceGuardLimit = SERVICE_GUAARD_LIMIT;
 
   @Getter @Setter ServiceAccountConfig serviceAccountConfig;
+
+  @FdIndex @Getter @Setter boolean globalDelegateAccount;
 
   private transient Map<String, String> defaults = new HashMap<>();
   /**
@@ -597,6 +600,7 @@ public class Account extends Base implements PersistentRegularIterable, NGMigrat
     private boolean isProductLed;
     private boolean accountActivelyUsed;
     private ServiceAccountConfig serviceAccountConfig;
+    private boolean globalDelegateAccount;
 
     private Builder() {}
 
@@ -766,6 +770,11 @@ public class Account extends Base implements PersistentRegularIterable, NGMigrat
 
     public Builder withServiceAccountConfig(ServiceAccountConfig serviceAccountConfig) {
       this.serviceAccountConfig = serviceAccountConfig;
+      return this;
+    }
+
+    public Builder withGlobalDelegateAccount(boolean globalDelegateAccount) {
+      this.globalDelegateAccount = globalDelegateAccount;
       return this;
     }
 

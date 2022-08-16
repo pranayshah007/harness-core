@@ -497,7 +497,11 @@ public class CloudFormationCreateStackStateTest extends WingsBaseTest {
     CloudFormationInfrastructureProvisioner cloudFormationInfrastructureProvisioner =
         CloudFormationInfrastructureProvisioner.builder()
             .sourceType(GIT.name())
-            .gitFileConfig(GitFileConfig.builder().connectorId("sourceRepoSettingId").commitId("commitId").build())
+            .gitFileConfig(GitFileConfig.builder()
+                               .filePath("filePath")
+                               .connectorId("sourceRepoSettingId")
+                               .commitId("commitId")
+                               .build())
             .build();
 
     GitConfig gitConfig = GitConfig.builder().urlType(GitConfig.UrlType.REPO).repoUrl(repoUrl).build();

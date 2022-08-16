@@ -116,6 +116,7 @@ public class NGTriggerEntity implements PersistentEntity, PersistentNGCronIterab
   @Builder.Default Boolean deleted = Boolean.FALSE;
   @Singular @Size(max = 128) List<NGTag> tags;
   @Builder.Default Boolean enabled = Boolean.TRUE;
+  String pollInterval;
   @FdIndex private List<Long> nextIterations; // List of activation times for cron triggers
   @Builder.Default Long ymlVersion = Long.valueOf(3);
 

@@ -39,8 +39,8 @@ import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.template.TemplateApplyRequestDTO;
 import io.harness.ng.core.template.TemplateListType;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
+import io.harness.ng.core.template.TemplateMetadataSummaryResponseDTO;
 import io.harness.ng.core.template.TemplateReferenceRequestDTO;
-import io.harness.ng.core.template.TemplateReferenceSummary;
 import io.harness.ng.core.template.TemplateSummaryResponseDTO;
 import io.harness.pms.contracts.service.VariableMergeResponseProto;
 import io.harness.pms.contracts.service.VariablesServiceGrpc.VariablesServiceBlockingStub;
@@ -49,8 +49,11 @@ import io.harness.pms.mappers.VariablesResponseDtoMapper;
 import io.harness.pms.variables.VariableMergeServiceResponse;
 import io.harness.security.annotations.NextGenManagerAuth;
 import io.harness.template.TemplateFilterPropertiesDTO;
+import io.harness.template.beans.FilterParamsDTO;
+import io.harness.template.beans.PageParamsDTO;
 import io.harness.template.beans.PermissionTypes;
 import io.harness.template.beans.TemplateDeleteListRequestDTO;
+import io.harness.template.beans.TemplateFilterProperties;
 import io.harness.template.beans.TemplateResponseDTO;
 import io.harness.template.beans.TemplateWrapperResponseDTO;
 import io.harness.template.beans.yaml.NGTemplateConfig;
@@ -81,8 +84,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.BeanParam;
 import javax.ws.rs.Consumes;
@@ -439,6 +440,60 @@ public class NGTemplateResource {
     return ResponseDTO.newResponse(templateSummaryResponseDTOS);
   }
 
+  @POST
+  @Path("/list-metadata")
+  @Hidden
+  @ApiOperation(value = "Gets all template list", nickname = "getTemplateMetadataList")
+  @Operation(operationId = "getTemplateMetadataList", summary = "Gets all metadata of template list",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "Returns a list of all the metadata of all Templates")
+      })
+
+  public ResponseDTO<Page<TemplateMetadataSummaryResponseDTO>>
+  listTemplateMetadata(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
+                           NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
+      @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgIdentifier,
+      @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier,
+      @Parameter(description = NGCommonEntityConstants.PAGE_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.PAGE) @DefaultValue("0") int page,
+      @Parameter(description = NGCommonEntityConstants.SIZE_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.SIZE) @DefaultValue("25") int size,
+      @Parameter(
+          description =
+              "Specifies sorting criteria of the list. Like sorting based on the last updated entity, alphabetical sorting in an ascending or descending order")
+      @QueryParam("sort") List<String> sort,
+      @Parameter(description = "The word to be searched and included in the list response") @QueryParam(
+          NGResourceFilterConstants.SEARCH_TERM_KEY) String searchTerm,
+      @Parameter(description = "Filter Identifier") @QueryParam("filterIdentifier") String filterIdentifier,
+      @Parameter(description = "Template List Type") @NotNull @QueryParam(
+          "templateListType") TemplateListType templateListType,
+      @Parameter(description = "Specify true if all accessible Templates are to be included") @QueryParam(
+          INCLUDE_ALL_TEMPLATES_ACCESSIBLE) boolean includeAllTemplatesAccessibleAtScope,
+      @Parameter(description = "This contains details of Template filters based on Template Types and Template Names ")
+      @Body TemplateFilterPropertiesDTO filterProperties,
+      @QueryParam("getDistinctFromBranches") boolean getDistinctFromBranches) {
+    accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
+        Resource.of(TEMPLATE, null), PermissionTypes.TEMPLATE_VIEW_PERMISSION);
+    log.info(String.format("Get List of templates in project: %s, org: %s, account: %s", projectIdentifier,
+        orgIdentifier, accountIdentifier));
+
+    TemplateFilterProperties templateFilterProperties =
+        NGTemplateDtoMapper.toTemplateFilterProperties(filterProperties);
+    FilterParamsDTO filterParamsDTO = NGTemplateDtoMapper.prepareFilterParamsDTO(searchTerm, filterIdentifier,
+        templateListType, templateFilterProperties, includeAllTemplatesAccessibleAtScope, getDistinctFromBranches);
+    PageParamsDTO pageParamsDTO = NGTemplateDtoMapper.preparePageParamsDTO(page, size, sort);
+
+    Page<TemplateMetadataSummaryResponseDTO> templateMetadataSummaryResponseDTOS =
+        templateService
+            .listTemplateMetadata(accountIdentifier, orgIdentifier, projectIdentifier, filterParamsDTO, pageParamsDTO)
+            .map(NGTemplateDtoMapper::prepareTemplateMetaDataSummaryResponseDto);
+    return ResponseDTO.newResponse(templateMetadataSummaryResponseDTOS);
+  }
+
   @PUT
   @Path("/updateTemplateSettings/{templateIdentifier}")
   @ApiOperation(value = "Updating template settings, template scope and template stable version",
@@ -544,7 +599,7 @@ public class NGTemplateResource {
   }
 
   @POST
-  @Path("/applyTemplates/V2")
+  @Path("v2/applyTemplates")
   @ApiOperation(value = "Gets complete yaml with templateRefs resolved", nickname = "getYamlWithTemplateRefsResolvedV2")
   @Operation(operationId = "getYamlWithTemplateRefsResolvedV2",
       summary = "Gets complete yaml with templateRefs resolved",
@@ -571,15 +626,8 @@ public class NGTemplateResource {
 
   private void checkLinkedTemplateAccess(String accountId, String orgId, String projectId,
       TemplateApplyRequestDTO templateApplyRequestDTO, TemplateMergeResponseDTO templateMergeResponseDTO) {
-    if (templateApplyRequestDTO.isCheckForAccess() && templateMergeResponseDTO != null
-        && EmptyPredicate.isNotEmpty(templateMergeResponseDTO.getTemplateReferenceSummaries())) {
-      Set<String> templateIdentifiers = templateMergeResponseDTO.getTemplateReferenceSummaries()
-                                            .stream()
-                                            .map(TemplateReferenceSummary::getTemplateIdentifier)
-                                            .collect(Collectors.toSet());
-      templateIdentifiers.forEach(templateIdentifier
-          -> accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgId, projectId),
-              Resource.of(TEMPLATE, templateIdentifier), PermissionTypes.TEMPLATE_ACCESS_PERMISSION));
+    if (templateApplyRequestDTO.isCheckForAccess()) {
+      templateService.checkLinkedTemplateAccess(accountId, orgId, projectId, templateMergeResponseDTO);
     }
   }
 

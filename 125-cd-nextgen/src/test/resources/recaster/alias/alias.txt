@@ -251,7 +251,6 @@ io.harness.cdng.ssh.CommandStepNode
 io.harness.cdng.ssh.CommandStepParameters
 io.harness.cdng.ssh.TailFilePattern
 io.harness.cdng.ssh.CommandUnitWrapper
-io.harness.cdng.ssh.StepCommandUnit
 io.harness.cdng.ssh.ScriptCommandUnitSpec
 io.harness.cdng.ssh.CopyCommandUnitSpec
 io.harness.cdng.ssh.CommandUnitSourceType
@@ -388,3 +387,10 @@ io.harness.cdng.artifact.bean.yaml.customartifact.CustomArtifactScriptSourceWrap
 io.harness.cdng.artifact.bean.yaml.customartifact.CustomScriptInlineSource
 io.harness.cdng.artifact.bean.yaml.customartifact.FetchAllArtifacts
 io.harness.cdng.artifact.bean.yaml.customartifact.CustomArtifactSpecInfo
+io.harness.plancreator.strategy.ExpressionAxisConfig
+io.harness.cdng.service.beans.ServiceUseFromStageV2
+io.harness.cdng.execution.ExecutionInfoKeyOutput
+io.harness.cdng.gitpolling.bean.yaml.GitHubPollingConfig
+io.harness.cdng.azure.config.yaml.ApplicationSettingsConfiguration
+io.harness.cdng.azure.config.yaml.ConnectionStringsConfiguration
+io.harness.cdng.azure.config.yaml.StartupCommandConfiguration

@@ -7,7 +7,6 @@
 
 package io.harness.azure.impl;
 
-import static io.harness.azure.model.AzureConstants.ACR_SCOPE;
 import static io.harness.azure.model.AzureConstants.OBJECT_ID_NAME_BLANK_VALIDATION_MSG;
 import static io.harness.azure.model.AzureConstants.ROLE_ASSIGNMENT_NAME_BLANK_VALIDATION_MSG;
 import static io.harness.azure.model.AzureConstants.SUBSCRIPTION_ID_NULL_VALIDATION_MSG;
@@ -158,7 +157,7 @@ public class AzureAuthorizationClientImpl extends AzureClient implements AzureAu
         response =
             azureAuthorizationRestClient
                 .servicePrincipalAccessToken(azureConfig.getTenantId(), AzureConstants.CLIENT_CREDENTIALS_GRANT_TYPE,
-                    azureConfig.getClientId(), ACR_SCOPE, String.valueOf(azureConfig.getKey()))
+                    azureConfig.getClientId(), scope, String.valueOf(azureConfig.getKey()))
                 .execute();
       }
 

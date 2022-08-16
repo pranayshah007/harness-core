@@ -40,6 +40,7 @@ import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
@@ -113,9 +114,6 @@ public class OrchestrationServiceImpl implements OrchestrationService {
     try (AcquiredLock acquiredLock =
              persistentLocker.waitToAcquireLock(lockString, Duration.ofSeconds(SRM_STATEMACHINE_LOCK_TIMEOUT),
                  Duration.ofSeconds(SRM_STATEMACHINE_LOCK_WAIT_TIMEOUT))) {
-      if (isAnalysisOrchestratorTerminatedOrIsFailFast(orchestrator)) {
-        return;
-      }
       orchestrateAtRunningState(orchestrator);
     } catch (Exception e) {
       // TODO: these errors needs to go to execution log so that we can connect it with the right context and show them
@@ -126,36 +124,24 @@ public class OrchestrationServiceImpl implements OrchestrationService {
     }
   }
 
-  private boolean isAnalysisOrchestratorTerminatedOrIsFailFast(AnalysisOrchestrator orchestrator) {
-    if (orchestrator.getStatus().equals(AnalysisOrchestratorStatus.TERMINATED)) {
-      log.info(
-          "DeploymentTimeSeriesAnalysis from LE is FailFast, so not orchestrating analysis for verificationTaskId: {}",
-          orchestrator.getVerificationTaskId());
-      return true;
-    }
-    if (deploymentTimeSeriesAnalysisService.isAnalysisFailFastForLatestTimeRange(
-            orchestrator.getVerificationTaskId())) {
-      terminateExistingAnalysisOrchestratorAndStateMachines(orchestrator);
-      return true;
-    }
-    return false;
+  @Override
+  public void markTerminated(String verificationTaskId) {
+    updateStatusOfOrchestrator(verificationTaskId, AnalysisOrchestratorStatus.TERMINATED);
   }
 
-  private void terminateExistingAnalysisOrchestratorAndStateMachines(AnalysisOrchestrator orchestrator) {
-    Query<AnalysisOrchestrator> orchestratorQuery =
-        hPersistence.createQuery(AnalysisOrchestrator.class)
-            .filter(AnalysisOrchestratorKeys.verificationTaskId, orchestrator.getVerificationTaskId());
-
+  @Override
+  public void markStateMachineTerminated(String verificationTaskId) {
+    AnalysisOrchestrator orchestrator = getAnalysisOrchestrator(verificationTaskId);
     List<AnalysisStateMachine> analysisStateMachines = orchestrator.getAnalysisStateMachineQueue();
     analysisStateMachines.forEach(analysisStateMachine -> analysisStateMachine.setStatus(AnalysisStatus.TERMINATED));
-    stateMachineService.save(analysisStateMachines);
-
+    Query<AnalysisOrchestrator> orchestratorQuery =
+        hPersistence.createQuery(AnalysisOrchestrator.class)
+            .filter(AnalysisOrchestratorKeys.verificationTaskId, verificationTaskId);
     UpdateOperations<AnalysisOrchestrator> updateOperations =
         hPersistence.createUpdateOperations(AnalysisOrchestrator.class)
-            .setOnInsert(AnalysisOrchestratorKeys.verificationTaskId, orchestrator.getVerificationTaskId())
             .set(AnalysisOrchestratorKeys.status, AnalysisOrchestratorStatus.TERMINATED)
-            .addToSet(AnalysisOrchestratorKeys.analysisStateMachineQueue, analysisStateMachines);
-
+            .set(AnalysisOrchestratorKeys.analysisStateMachineQueue, Collections.EMPTY_LIST);
+    hPersistence.save(analysisStateMachines);
     hPersistence.upsert(orchestratorQuery, updateOperations);
   }
 
@@ -215,6 +201,9 @@ public class OrchestrationServiceImpl implements OrchestrationService {
         case TIMEOUT:
           orchestrateFailedStateMachine(currentlyExecutingStateMachine);
           break;
+        case TERMINATED:
+          markTerminated(currentlyExecutingStateMachine.getVerificationTaskId());
+          break;
         case COMPLETED:
           log.info("Analysis for the entire duration is done. Time to close down");
           markCompleted(orchestrator.getVerificationTaskId());
@@ -222,7 +211,8 @@ public class OrchestrationServiceImpl implements OrchestrationService {
         default:
           log.info("Unknown analysis status of the state machine under execution");
       }
-      if (AnalysisStatus.SUCCESS == stateMachineStatus || AnalysisStatus.COMPLETED == stateMachineStatus) {
+      if ((AnalysisStatus.SUCCESS == stateMachineStatus || AnalysisStatus.COMPLETED == stateMachineStatus)
+          && !AnalysisOrchestratorStatus.getFinalStates().contains(orchestrator.getStatus())) {
         orchestrateNewAnalysisStateMachine(
             orchestrator.getVerificationTaskId(), currentlyExecutingStateMachine.getTotalRetryCountToBePropagated());
       }

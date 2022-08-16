@@ -61,6 +61,7 @@ cp ${HOME}/.bazel-dirs/bin/300-cv-nextgen/module_deploy.jar cv-nextgen-capsule.j
 cp ../../300-cv-nextgen/keystore.jks .
 cp ../../300-cv-nextgen/cv-nextgen-config.yml .
 cp ../../300-cv-nextgen/src/main/resources/redisson-jcache.yaml .
+cp ../../300-cv-nextgen/src/main/resources/enterprise-redisson-jcache.yaml .
 
 
 cp ../../dockerization/cv-nextgen/Dockerfile-verification-jenkins-k8-openjdk ./Dockerfile
@@ -190,12 +191,13 @@ cd ../..
 mkdir -p dist/ci-manager
 cd dist/ci-manager
 
-cp ${HOME}/.bazel-dirs/bin/310-ci-manager/module_deploy.jar ci-manager-capsule.jar
-cp ../../310-ci-manager/ci-manager-config.yml .
+cp ${HOME}/.bazel-dirs/bin/332-ci-manager/app/module_deploy.jar ci-manager-capsule.jar
+cp ../../332-ci-manager/config/ci-manager-config.yml .
 cp ../../keystore.jks .
-cp ../../310-ci-manager/key.pem .
-cp ../../310-ci-manager/cert.pem .
-cp ../../310-ci-manager/src/main/resources/redisson-jcache.yaml .
+cp ../../332-ci-manager/config/key.pem .
+cp ../../332-ci-manager/config/cert.pem .
+cp ../../332-ci-manager/service/src/main/resources/redisson-jcache.yaml .
+cp ../../332-ci-manager/service/src/main/resources/enterprise-redisson-jcache.yaml .
 
 cp ../../dockerization/ci-manager/Dockerfile-ci-manager-jenkins-k8-openjdk ./Dockerfile
 cp ../../dockerization/ci-manager/Dockerfile-ci-manager-jenkins-k8-gcr-openjdk ./Dockerfile-gcr
@@ -250,7 +252,7 @@ cp ../../pipeline-service/config/keystore.jks .
 cp ../../pipeline-service/config/key.pem .
 cp ../../pipeline-service/config/cert.pem .
 cp ../../pipeline-service/service/src/main/resources/redisson-jcache.yaml .
-cp ../../pipeline-service/src/main/resources/enterprise-redisson-jcache.yaml .
+cp ../../pipeline-service/service/src/main/resources/enterprise-redisson-jcache.yaml .
 
 cp ../../dockerization/pipeline-service/Dockerfile-pipeline-service-jenkins-k8-openjdk ./Dockerfile
 cp ../../dockerization/pipeline-service/Dockerfile-pipeline-service-jenkins-k8-gcr-openjdk ./Dockerfile-gcr

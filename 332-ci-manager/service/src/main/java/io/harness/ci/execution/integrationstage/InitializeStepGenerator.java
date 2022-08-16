@@ -12,10 +12,10 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.beans.executionargs.CIExecutionArgs;
 import io.harness.beans.serializer.RunTimeInputHandler;
-import io.harness.beans.stages.IntegrationStageConfig;
 import io.harness.beans.steps.stepinfo.InitializeStepInfo;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.ci.ff.CIFeatureFlagService;
+import io.harness.cimanager.stages.IntegrationStageConfig;
 import io.harness.plancreator.execution.ExecutionElementConfig;
 import io.harness.plancreator.execution.ExecutionWrapperConfig;
 import io.harness.plancreator.stages.stage.StageElementConfig;
@@ -50,6 +50,8 @@ public class InitializeStepGenerator {
     boolean pipelineMatrixEnabled = ciFeatureFlagService.isEnabled(FeatureName.PIPELINE_MATRIX, accountId);
     if (pipelineMatrixEnabled) {
       for (ExecutionWrapperConfig config : executionElement.getSteps()) {
+        // Inject the envVariables before calling strategy expansion
+        IntegrationStageUtils.injectLoopEnvVariables(config);
         ExpandedExecutionWrapperInfo expandedExecutionWrapperInfo = strategyHelper.expandExecutionWrapperConfig(config);
         expandedExecutionElement.addAll(expandedExecutionWrapperInfo.getExpandedExecutionConfigs());
         strategyExpansionMap.putAll(expandedExecutionWrapperInfo.getUuidToStrategyExpansionData());

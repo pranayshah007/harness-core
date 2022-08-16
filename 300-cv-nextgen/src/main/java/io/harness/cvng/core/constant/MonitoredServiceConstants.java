@@ -9,4 +9,5 @@ package io.harness.cvng.core.constant;
 
 public interface MonitoredServiceConstants {
   String REGULAR_EXPRESSION = "<+monitoredService.serviceRef>_<+monitoredService.environmentRef>";
+  String CUSTOM_METRIC_PACK = "Custom";
 }

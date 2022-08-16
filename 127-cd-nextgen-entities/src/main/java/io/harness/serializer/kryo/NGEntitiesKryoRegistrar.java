@@ -37,6 +37,9 @@ import io.harness.cdng.artifact.outcome.EcrArtifactOutcome;
 import io.harness.cdng.artifact.outcome.GcrArtifactOutcome;
 import io.harness.cdng.artifact.outcome.JenkinsArtifactOutcome;
 import io.harness.cdng.artifact.outcome.S3ArtifactOutcome;
+import io.harness.cdng.azure.config.yaml.ApplicationSettingsConfiguration;
+import io.harness.cdng.azure.config.yaml.ConnectionStringsConfiguration;
+import io.harness.cdng.azure.config.yaml.StartupCommandConfiguration;
 import io.harness.cdng.configfile.ConfigFile;
 import io.harness.cdng.configfile.ConfigFileAttributes;
 import io.harness.cdng.configfile.ConfigFileOutcome;
@@ -215,14 +218,18 @@ public class NGEntitiesKryoRegistrar implements KryoRegistrar {
     kryo.register(CustomRemoteStoreConfig.class, 12589);
     kryo.register(OverlayConfiguration.class, 12591);
     kryo.register(JenkinsArtifactConfig.class, 130012);
-    kryo.register(CustomScriptBaseSource.class, 130013);
-    kryo.register(CustomArtifactScriptInfo.class, 130014);
-    kryo.register(CustomArtifactScripts.class, 130015);
-    kryo.register(CustomArtifactScriptSourceWrapper.class, 130016);
     kryo.register(CustomArtifactSpecInfo.class, 130017);
     kryo.register(CustomArtifactSpecVisitorHelper.class, 130018);
     kryo.register(CustomScriptInlineSource.class, 130019);
     kryo.register(FetchAllArtifacts.class, 130020);
     kryo.register(ConfigFileOutcome.class, 130021);
+    kryo.register(ConfigFileOutcome.class, 130013);
+    kryo.register(ApplicationSettingsConfiguration.class, 140014);
+    kryo.register(ConnectionStringsConfiguration.class, 140015);
+    kryo.register(StartupCommandConfiguration.class, 140016);
+    kryo.register(CustomArtifactScriptInfo.class, 140017);
+    kryo.register(CustomArtifactScripts.class, 140018);
+    kryo.register(CustomArtifactScriptSourceWrapper.class, 140019);
+    kryo.register(CustomScriptBaseSource.class, 140020);
   }
 }

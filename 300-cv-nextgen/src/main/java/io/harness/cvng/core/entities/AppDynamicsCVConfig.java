@@ -18,6 +18,7 @@ import io.harness.cvng.beans.ThresholdConfigType;
 import io.harness.cvng.beans.TimeSeriesMetricType;
 import io.harness.cvng.core.beans.monitoredService.TimeSeriesMetricPackDTO;
 import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.AppDynamicsHealthSourceSpec.AppDMetricDefinitions;
+import io.harness.cvng.core.constant.MonitoredServiceConstants;
 import io.harness.cvng.core.entities.AppDynamicsCVConfig.MetricInfo;
 import io.harness.cvng.core.services.CVNextGenConstants;
 import io.harness.cvng.core.utils.analysisinfo.AnalysisInfoUtility;
@@ -188,7 +189,7 @@ public class AppDynamicsCVConfig extends MetricCVConfig<MetricInfo> {
         if (!isEmpty(timeSeriesMetricPackDTO.getMetricThresholds())) {
           timeSeriesMetricPackDTO.getMetricThresholds()
               .stream()
-              .filter(metricPackDTO -> metric.getIdentifier().equals(metricPackDTO.getMetricName()))
+              .filter(metricPackDTO -> metric.getName().equals(metricPackDTO.getMetricName()))
               .forEach(metricPackDTO -> metricPackDTO.getTimeSeriesThresholdCriteria().forEach(criteria -> {
                 List<TimeSeriesThreshold> timeSeriesThresholds =
                     metric.getThresholds() != null ? metric.getThresholds() : new ArrayList<>();
@@ -198,11 +199,16 @@ public class AppDynamicsCVConfig extends MetricCVConfig<MetricInfo> {
                         .projectIdentifier(getProjectIdentifier())
                         .dataSourceType(getType())
                         .metricType(metric.getType())
+                        .metricIdentifier(metric.getIdentifier())
                         .metricName(metricPackDTO.getMetricName())
                         .action(metricPackDTO.getType().getTimeSeriesThresholdActionType())
                         .criteria(criteria)
                         .thresholdConfigType(ThresholdConfigType.CUSTOMER)
                         .build();
+                if (!MonitoredServiceConstants.CUSTOM_METRIC_PACK.equalsIgnoreCase(
+                        timeSeriesMetricPackDTO.getIdentifier())) {
+                  timeSeriesThreshold.setMetricGroupName(metricPackDTO.getGroupName());
+                }
                 timeSeriesThresholds.add(timeSeriesThreshold);
                 metric.setThresholds(timeSeriesThresholds);
               }));

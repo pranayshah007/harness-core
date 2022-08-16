@@ -110,79 +110,84 @@ ciExecutionServiceConfig:
   defaultInternalImageConnector: ''
   pvcDefaultStorageSize: 25600
   delegateServiceEndpointVariableValue: "delegate-service:8080"
-  addonImage: harness/ci-addon:1.14.5
-  liteEngineImage: harness/ci-lite-engine:1.14.5
+  addonImage: harness/ci-addon:1.14.11
+  liteEngineImage: harness/ci-lite-engine:1.14.11
   isLocal: false
   stepConfig:
     # The below config is for K8 steps
     gitCloneConfig:
       # Use rootless image only for K8 git clone
-      image: harness/drone-git:1.1.0-rootless
+      image: harness/drone-git:1.2.2-rootless
       entrypoint:
         - /usr/local/bin/clone
       windowsEntrypoint:
         - "pwsh"
         - "C:\\bin\\clone.ps1"
     buildAndPushDockerRegistryConfig:
-      image: plugins/kaniko:1.3.1
+      image: plugins/kaniko:1.6.1
       entrypoint:
         - /kaniko/kaniko-docker
     buildAndPushECRConfig:
-      image: plugins/kaniko-ecr:1.3.1
+      image: plugins/kaniko-ecr:1.6.1
       entrypoint:
         - /kaniko/kaniko-ecr
     buildAndPushGCRConfig:
-      image: plugins/kaniko-gcr:1.3.1
+      image: plugins/kaniko-gcr:1.6.1
       entrypoint:
         - /kaniko/kaniko-gcr
+    buildAndPushACRConfig:
+      image: plugins/kaniko-acr:1.6.4-linux-amd64
+      entrypoint:
+        - /kaniko/kaniko-acr
     gcsUploadConfig:
-      image: plugins/gcs:1.2.6
+      image: plugins/gcs:1.3.0
       entrypoint:
         - /bin/drone-gcs
       windowsEntrypoint:
         - "C:\\drone-gcs.exe"
     s3UploadConfig:
-      image: plugins/s3:1.0.5
+      image: plugins/s3:1.1.0
       entrypoint:
         - /bin/drone-s3
       windowsEntrypoint:
         - "C:\\drone-s3.exe"
     securityConfig:
-      image: zeronorth/sto_plugin:dev
+      image: harness/sto-plugin:dev
       entrypoint:
         - /bin/sh
         - -c
         - python3 ${DOCKER_ENTRYPOINT}
     artifactoryUploadConfig:
-      image: plugins/artifactory:1.0.6
+      image: plugins/artifactory:1.2.0
       entrypoint:
         - /bin/plugin
       windowsEntrypoint:
         - "C:\\bin\\drone-artifactory.exe"
     cacheGCSConfig:
-      image: plugins/cache:1.3.8
+      image: plugins/cache:1.4.2
       entrypoint:
         - /bin/drone-cache
       windowsEntrypoint:
         - "C:\\drone-cache.exe"
     cacheS3Config:
-      image: plugins/cache:1.3.8
+      image: plugins/cache:1.4.2
       entrypoint:
         - /bin/drone-cache
       windowsEntrypoint:
         - "C:\\drone-cache.exe"
     vmImageConfig:
       # Use root image for VM git clone
-      gitClone: harness/drone-git:1.1.0
-      buildAndPushDockerRegistry: plugins/docker:latest
-      buildAndPushECR: plugins/ecr:latest
-      buildAndPushGCR: plugins/gcr:latest
-      gcsUpload: plugins/gcs:1.2.6
-      s3Upload: plugins/s3:1.0.5
-      security: plugin/sto_plugin:dev
-      artifactoryUpload: plugins/artifactory:1.0.6
-      cacheGCS: plugins/cache:1.3.8
-      cacheS3: plugins/cache:1.3.8
+      gitClone: harness/drone-git:1.2.0
+      buildAndPushDockerRegistry: plugins/docker:20.13.0
+      buildAndPushACR: plugins/acr:20.13.0
+      buildAndPushECR: plugins/ecr:20.13.0
+      buildAndPushGCR: plugins/gcr:20.13.0
+      gcsUpload: plugins/gcs:1.3.0
+      s3Upload: plugins/s3:1.1.0
+      security: harness/sto-plugin:dev
+      artifactoryUpload: plugins/artifactory:1.2.0
+      cacheGCS: plugins/cache:1.4.2
+      cacheS3: plugins/cache:1.4.2
 
 pmsSdkExecutionPoolConfig:
   corePoolSize: ${PMS_SDK_EXECUTION_POOL_CORE_SIZE:-50}
@@ -260,6 +265,7 @@ cacheConfig:
   cacheBackend: REDIS
   cacheNamespace: ""
   disabledCaches: [ ]
+  enterpriseCacheEnabled: true
 
 enforcementClientConfiguration:
   enforcementCheckEnabled: false

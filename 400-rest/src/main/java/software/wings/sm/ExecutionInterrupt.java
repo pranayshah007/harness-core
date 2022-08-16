@@ -18,9 +18,9 @@ import io.harness.beans.EmbeddedUser;
 import io.harness.beans.ExecutionInterruptType;
 import io.harness.logging.AccountLogContext;
 import io.harness.logging.AutoLogContext;
-import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.MongoIndex;
+import io.harness.mongo.index.SortCompoundMongoIndex;
 import io.harness.persistence.CreatedAtAware;
 import io.harness.persistence.CreatedByAware;
 import io.harness.persistence.PersistentEntity;
@@ -59,17 +59,18 @@ public class ExecutionInterrupt implements PersistentEntity, UuidAware, CreatedA
                                            UpdatedByAware, ApplicationAccess {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
-        .add(CompoundMongoIndex.builder()
-                 .name("appId_seized_executionUuid")
+        .add(SortCompoundMongoIndex.builder()
+                 .name("appId_seized_executionUuid_createdAt")
                  .field(ExecutionInterruptKeys.appId)
                  .field(ExecutionInterruptKeys.seized)
                  .field(ExecutionInterruptKeys.executionUuid)
+                 .descSortField(ExecutionInterruptKeys.createdAt)
                  .build())
         .build();
   }
 
   @Id @NotNull(groups = {Update.class}) @SchemaIgnore private String uuid;
-  @FdIndex @NotNull @SchemaIgnore protected String appId;
+  @NotNull @SchemaIgnore protected String appId;
   @SchemaIgnore private EmbeddedUser createdBy;
   @SchemaIgnore @FdIndex private long createdAt;
 

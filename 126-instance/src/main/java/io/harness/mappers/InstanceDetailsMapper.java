@@ -10,6 +10,7 @@ package io.harness.mappers;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.dtos.InstanceDTO;
+import io.harness.dtos.instanceinfo.AzureSshWinrmInstanceInfoDTO;
 import io.harness.dtos.instanceinfo.AzureWebAppInstanceInfoDTO;
 import io.harness.dtos.instanceinfo.GitOpsInstanceInfoDTO;
 import io.harness.dtos.instanceinfo.K8sInstanceInfoDTO;
@@ -26,6 +27,7 @@ import com.google.inject.Singleton;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.AllArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
 
 @OwnedBy(HarnessTeam.DX)
 @Singleton
@@ -45,8 +47,11 @@ public class InstanceDetailsMapper {
   private InstanceDetailsDTO toInstanceDetailsDTO(InstanceDTO instanceDTO) {
     AbstractInstanceSyncHandler instanceSyncHandler = instanceSyncHandlerFactoryService.getInstanceSyncHandler(
         getInstanceInfoDTOType(instanceDTO), instanceDTO.getInfrastructureKind());
+    String artifactDisplayName = instanceDTO.getPrimaryArtifact().getDisplayName();
+    String artifactName =
+        StringUtils.isNotBlank(artifactDisplayName) ? artifactDisplayName : instanceDTO.getPrimaryArtifact().getTag();
     return InstanceDetailsDTO.builder()
-        .artifactName(instanceDTO.getPrimaryArtifact().getTag())
+        .artifactName(artifactName)
         .connectorRef(instanceDTO.getConnectorRef())
         .deployedAt(instanceDTO.getLastDeployedAt())
         .deployedById(instanceDTO.getLastDeployedById())
@@ -72,6 +77,8 @@ public class InstanceDetailsMapper {
       return ServiceSpecType.GITOPS;
     } else if (instanceDTO.getInstanceInfoDTO() instanceof PdcInstanceInfoDTO) {
       return ((PdcInstanceInfoDTO) instanceDTO.getInstanceInfoDTO()).getServiceType();
+    } else if (instanceDTO.getInstanceInfoDTO() instanceof AzureSshWinrmInstanceInfoDTO) {
+      return ((AzureSshWinrmInstanceInfoDTO) instanceDTO.getInstanceInfoDTO()).getServiceType();
     }
     return null;
   }

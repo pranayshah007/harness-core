@@ -35,8 +35,6 @@ import io.harness.beans.plugin.compatible.PluginCompatibleStep;
 import io.harness.beans.quantity.unit.DecimalQuantityUnit;
 import io.harness.beans.quantity.unit.StorageQuantityUnit;
 import io.harness.beans.serializer.RunTimeInputHandler;
-import io.harness.beans.stages.IntegrationStageConfig;
-import io.harness.beans.stages.IntegrationStageConfigImpl;
 import io.harness.beans.steps.CIStepInfo;
 import io.harness.beans.steps.CIStepInfoType;
 import io.harness.beans.steps.stepinfo.InitializeStepInfo;
@@ -54,6 +52,7 @@ import io.harness.ci.ff.CIFeatureFlagService;
 import io.harness.ci.utils.CIStepInfoUtils;
 import io.harness.ci.utils.PortFinder;
 import io.harness.ci.utils.QuantityUtils;
+import io.harness.cimanager.stages.IntegrationStageConfig;
 import io.harness.delegate.beans.ci.pod.CIContainerType;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.ci.pod.ContainerResourceParams;
@@ -100,70 +99,9 @@ public class K8InitializeStepUtils {
   @Inject private ConnectorUtils connectorUtils;
   private final String AXA_ACCOUNT_ID = "UVxMDMhNQxOCvroqqImWdQ";
 
-  public List<ContainerDefinitionInfo> createStepContainerDefinitions(List<ExecutionWrapperConfig> steps,
+  public List<ContainerDefinitionInfo> createStepContainerDefinitions(InitializeStepInfo initializeStepInfo,
       StageElementConfig integrationStage, CIExecutionArgs ciExecutionArgs, PortFinder portFinder, String accountId,
-      OSType os) {
-    List<ContainerDefinitionInfo> containerDefinitionInfos = new ArrayList<>();
-    if (steps == null) {
-      return containerDefinitionInfos;
-    }
-
-    Integer stageMemoryRequest = getStageMemoryRequest(steps, accountId);
-    Integer stageCpuRequest = getStageCpuRequest(steps, accountId);
-
-    int stepIndex = 0;
-    for (ExecutionWrapperConfig executionWrapper : steps) {
-      if (executionWrapper.getStep() != null && !executionWrapper.getStep().isNull()) {
-        StepElementConfig stepElementConfig = IntegrationStageUtils.getStepElementConfig(executionWrapper);
-        stepIndex++;
-        if (stepElementConfig.getTimeout() != null && stepElementConfig.getTimeout().isExpression()) {
-          throw new InvalidRequestException(
-              "Timeout field must be resolved in step: " + stepElementConfig.getIdentifier());
-        }
-
-        ContainerResource containerResource = getContainerResource(stepElementConfig);
-        Integer extraMemoryPerStep = Math.max(
-            0, stageMemoryRequest - getContainerMemoryLimit(containerResource, "stepType", "stepId", accountId));
-        Integer extraCPUPerStep =
-            Math.max(0, stageCpuRequest - getContainerCpuLimit(containerResource, "stepType", "stepId", accountId));
-        ContainerDefinitionInfo containerDefinitionInfo =
-            createStepContainerDefinition(stepElementConfig, integrationStage, ciExecutionArgs, portFinder, stepIndex,
-                accountId, os, extraMemoryPerStep, extraCPUPerStep);
-        if (containerDefinitionInfo != null) {
-          containerDefinitionInfos.add(containerDefinitionInfo);
-        }
-      } else if (executionWrapper.getParallel() != null && !executionWrapper.getParallel().isNull()) {
-        ParallelStepElementConfig parallelStepElementConfig =
-            IntegrationStageUtils.getParallelStepElementConfig(executionWrapper);
-        if (isNotEmpty(parallelStepElementConfig.getSections())) {
-          Integer extraMemoryPerStep =
-              calculateExtraMemoryForParallelStep(parallelStepElementConfig, accountId, stageMemoryRequest);
-          Integer extraCPUPerStep =
-              calculateExtraCPUForParallelStep(parallelStepElementConfig, accountId, stageCpuRequest);
-          for (ExecutionWrapperConfig executionWrapperInParallel : parallelStepElementConfig.getSections()) {
-            if (executionWrapperInParallel.getStep() == null || executionWrapperInParallel.getStep().isNull()) {
-              continue;
-            }
-
-            stepIndex++;
-            StepElementConfig stepElementConfig =
-                IntegrationStageUtils.getStepElementConfig(executionWrapperInParallel);
-            ContainerDefinitionInfo containerDefinitionInfo =
-                createStepContainerDefinition(stepElementConfig, integrationStage, ciExecutionArgs, portFinder,
-                    stepIndex, accountId, os, extraMemoryPerStep, extraCPUPerStep);
-            if (containerDefinitionInfo != null) {
-              containerDefinitionInfos.add(containerDefinitionInfo);
-            }
-          }
-        }
-      }
-    }
-    return containerDefinitionInfos;
-  }
-
-  public List<ContainerDefinitionInfo> createStepContainerDefinitionsStepGroupWithFF(
-      InitializeStepInfo initializeStepInfo, StageElementConfig integrationStage, CIExecutionArgs ciExecutionArgs,
-      PortFinder portFinder, String accountId, OSType os, int stepIndex) {
+      OSType os, int stepIndex) {
     List<ExecutionWrapperConfig> steps = initializeStepInfo.getExecutionElementConfig().getSteps();
     List<ContainerDefinitionInfo> containerDefinitionInfos = new ArrayList<>();
     if (steps == null) {
@@ -414,7 +352,7 @@ public class K8InitializeStepUtils {
 
   private void setEnvVariablesForHostedBuids(
       StageElementConfig integrationStage, PluginCompatibleStep stepInfo, Map<String, String> envVarMap) {
-    IntegrationStageConfigImpl stage = (IntegrationStageConfigImpl) integrationStage.getStageType();
+    IntegrationStageConfig stage = (IntegrationStageConfig) integrationStage.getStageType();
     if (stage != null && stage.getInfrastructure() != null
         && stage.getInfrastructure().getType() == Infrastructure.Type.KUBERNETES_HOSTED) {
       switch (stepInfo.getNonYamlInfo().getStepInfoType()) {

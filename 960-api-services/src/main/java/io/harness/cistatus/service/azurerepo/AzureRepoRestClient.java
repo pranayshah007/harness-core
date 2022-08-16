@@ -10,9 +10,12 @@ package io.harness.cistatus.service.azurerepo;
 import io.harness.cistatus.StatusCreationResponse;
 
 import java.util.Map;
+import okhttp3.RequestBody;
 import retrofit2.Call;
 import retrofit2.http.Body;
 import retrofit2.http.Header;
+import retrofit2.http.Headers;
+import retrofit2.http.PATCH;
 import retrofit2.http.POST;
 import retrofit2.http.Path;
 
@@ -22,4 +25,10 @@ public interface AzureRepoRestClient {
       @Path("organization") String organization, @Path("project") String project,
       @Path("repositoryId") String repositoryId, @Path("commitId") String commitId,
       @Body Map<String, Object> parameters);
+
+  @PATCH("{organization}/{project}/_apis/git/repositories/{repositoryId}/pullrequests/{prNumber}?api-version=6.0")
+  @Headers("Accept: application/json")
+  Call<Object> mergePR(@Header("Authorization") String authorization, @Path("organization") String organization,
+      @Path("project") String project, @Path("repositoryId") String repositoryId, @Path("prNumber") String prNumber,
+      @Body RequestBody parameters);
 }

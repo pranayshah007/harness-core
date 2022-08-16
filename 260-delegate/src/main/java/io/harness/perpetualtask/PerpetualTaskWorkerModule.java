@@ -26,6 +26,8 @@ import io.harness.perpetualtask.instancesync.AwsAmiInstanceSyncPerpetualTaskPara
 import io.harness.perpetualtask.instancesync.AwsCodeDeployInstanceSyncPerpetualTaskParams;
 import io.harness.perpetualtask.instancesync.AwsLambdaInstanceSyncPerpetualTaskParams;
 import io.harness.perpetualtask.instancesync.AwsSshInstanceSyncPerpetualTaskParams;
+import io.harness.perpetualtask.instancesync.AwsSshInstanceSyncPerpetualTaskParamsNg;
+import io.harness.perpetualtask.instancesync.AzureSshInstanceSyncPerpetualTaskParamsNg;
 import io.harness.perpetualtask.instancesync.AzureVmssInstanceSyncPerpetualTaskParams;
 import io.harness.perpetualtask.instancesync.AzureWebAppInstanceSyncPerpetualProtoTaskParams;
 import io.harness.perpetualtask.instancesync.AzureWebAppNGInstanceSyncPerpetualTaskParams;
@@ -47,8 +49,10 @@ import io.harness.perpetualtask.k8s.watch.WatcherFactory;
 import io.harness.perpetualtask.manifest.ManifestCollectionTaskParams;
 import io.harness.perpetualtask.manifest.ManifestPerpetualTaskExecutor;
 import io.harness.perpetualtask.polling.ArtifactCollectionTaskParamsNg;
+import io.harness.perpetualtask.polling.GitPollingTaskParamsNg;
 import io.harness.perpetualtask.polling.ManifestCollectionTaskParamsNg;
 import io.harness.perpetualtask.polling.artifact.ArtifactPerpetualTaskExecutorNg;
+import io.harness.perpetualtask.polling.gitpolling.GitPollingPerpetualTaskExecutorNg;
 import io.harness.perpetualtask.polling.manifest.ManifestPerpetualTaskExecutorNg;
 
 import com.google.inject.AbstractModule;
@@ -110,11 +114,16 @@ public class PerpetualTaskWorkerModule extends AbstractModule {
         .to(ManifestPerpetualTaskExecutorNg.class);
     mapBinder.addBinding(ArtifactCollectionTaskParamsNg.class.getSimpleName())
         .to(ArtifactPerpetualTaskExecutorNg.class);
+    mapBinder.addBinding(GitPollingTaskParamsNg.class.getSimpleName()).to(GitPollingPerpetualTaskExecutorNg.class);
     mapBinder.addBinding(ServerlessAwsLambdaInstanceSyncPerpetualTaskParams.class.getSimpleName())
         .to(ServerlessAwsLambdaInstanceSyncPerpetualTaskExecutor.class);
     mapBinder.addBinding(AzureWebAppNGInstanceSyncPerpetualTaskParams.class.getSimpleName())
         .to(AzureWebAppInstanceSyncPerpetualTaskExecutor.class);
     mapBinder.addBinding(PdcPerpetualTaskParamsNg.class.getSimpleName()).to(PdcPerpetualTaskExecutorNg.class);
+    mapBinder.addBinding(AzureSshInstanceSyncPerpetualTaskParamsNg.class.getSimpleName())
+        .to(AzureSshWinrmInstanceSyncPerpetualTaskExecutor.class);
+    mapBinder.addBinding(AwsSshInstanceSyncPerpetualTaskParamsNg.class.getSimpleName())
+        .to(AwsSshWinrmPerpetualTaskExecutorNg.class);
 
     install(new FactoryModuleBuilder()
                 .implement(PodWatcher.class, PodWatcher.class)

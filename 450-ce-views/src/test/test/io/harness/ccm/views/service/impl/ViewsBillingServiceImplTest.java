@@ -150,6 +150,7 @@ public class ViewsBillingServiceImplTest extends CategoryTest {
         .buildQueryParams(any(), anyBoolean(), anyBoolean(), anyBoolean(), anyBoolean(), anyInt());
     doCallRealMethod().when(viewsQueryBuilder).getViewFieldInput(any());
     doCallRealMethod().when(viewsQueryBuilder).mapConditionToFilter(any());
+    doCallRealMethod().when(viewsQueryBuilder).getModifiedQLCEViewFieldInput(any(), anyBoolean());
 
     clusterId = QLCEViewFieldInput.builder()
                     .fieldId(CLUSTER_ID)
@@ -165,7 +166,7 @@ public class ViewsBillingServiceImplTest extends CategoryTest {
                    .build();
     doReturn(Collections.singletonList(LABEL_KEY))
         .when(viewsBillingService)
-        .convertToFilterValuesData(resultSet, Collections.singletonList(labelKey));
+        .convertToFilterValuesData(resultSet, Collections.singletonList(labelKey), false);
 
     labelValue = QLCEViewFieldInput.builder()
                      .fieldId(ViewsMetaDataFields.LABEL_VALUE.getFieldName())
@@ -175,7 +176,7 @@ public class ViewsBillingServiceImplTest extends CategoryTest {
                      .build();
     doReturn(Collections.singletonList(LABEL_VALUE))
         .when(viewsBillingService)
-        .convertToFilterValuesData(resultSet, Collections.singletonList(labelValue));
+        .convertToFilterValuesData(resultSet, Collections.singletonList(labelValue), false);
 
     currentTime = System.currentTimeMillis();
     startTime = currentTime - 7 * ONE_DAY_IN_MILLIS;
@@ -231,7 +232,7 @@ public class ViewsBillingServiceImplTest extends CategoryTest {
   public void getFilterValueStats() {
     doReturn(Collections.singletonList(CLUSTER))
         .when(viewsBillingService)
-        .convertToFilterValuesData(resultSet, Collections.singletonList(clusterId));
+        .convertToFilterValuesData(resultSet, Collections.singletonList(clusterId), false);
     List<QLCEViewFilterWrapper> filters = new ArrayList<>();
     filters.add(QLCEViewFilterWrapper.builder()
                     .idFilter(QLCEViewFilter.builder().field(clusterId).values(new String[] {""}).build())

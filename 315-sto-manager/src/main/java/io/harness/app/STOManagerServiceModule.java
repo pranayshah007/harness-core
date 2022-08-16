@@ -8,6 +8,7 @@
 package io.harness.app;
 
 import static io.harness.AuthorizationServiceHeader.STO_MANAGER;
+import static io.harness.ci.utils.HostedVmSecretResolver.SECRET_CACHE_KEY;
 import static io.harness.lock.DistributedLockImplementation.MONGO;
 import static io.harness.pms.listener.NgOrchestrationNotifyEventListener.NG_ORCHESTRATION;
 
@@ -19,10 +20,12 @@ import io.harness.app.impl.STOYamlSchemaServiceImpl;
 import io.harness.app.intfc.STOYamlSchemaService;
 import io.harness.aws.AwsClient;
 import io.harness.aws.AwsClientImpl;
+import io.harness.cache.NoOpCache;
 import io.harness.callback.DelegateCallback;
 import io.harness.callback.DelegateCallbackToken;
 import io.harness.callback.MongoDatabase;
 import io.harness.ci.CIExecutionServiceModule;
+import io.harness.ci.beans.entities.EncryptedDataDetails;
 import io.harness.ci.buildstate.SecretDecryptorViaNg;
 import io.harness.ci.ff.CIFeatureFlagService;
 import io.harness.ci.ff.impl.CIFeatureFlagServiceImpl;
@@ -88,6 +91,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
+import javax.cache.Cache;
 import lombok.extern.slf4j.Slf4j;
 import org.reflections.Reflections;
 
@@ -118,6 +122,12 @@ public class STOManagerServiceModule extends AbstractModule {
       return apiUrl.substring(0, apiUrl.length() - 1);
     }
     return apiUrl;
+  }
+
+  @Provides
+  @Named(SECRET_CACHE_KEY)
+  Cache<String, EncryptedDataDetails> getSecretTokenCache() {
+    return new NoOpCache<>();
   }
 
   private DelegateCallbackToken getDelegateCallbackToken(

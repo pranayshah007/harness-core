@@ -19,6 +19,7 @@ import io.harness.ngmigration.service.entity.PipelineMigrationService;
 import io.harness.ngmigration.service.entity.SecretManagerMigrationService;
 import io.harness.ngmigration.service.entity.SecretMigrationService;
 import io.harness.ngmigration.service.entity.ServiceMigrationService;
+import io.harness.ngmigration.service.entity.TemplateMigrationService;
 import io.harness.ngmigration.service.entity.WorkflowMigrationService;
 
 import software.wings.ngmigration.NGMigrationEntityType;
@@ -39,6 +40,7 @@ public class NgMigrationFactory {
   @Inject DummyMigrationService dummyMigrationService;
   @Inject AppMigrationService appMigrationService;
   @Inject AccountMigrationService accountMigrationService;
+  @Inject TemplateMigrationService templateMigrationService;
 
   public NgMigrationService getMethod(NGMigrationEntityType type) {
     switch (type) {
@@ -54,6 +56,8 @@ public class NgMigrationFactory {
         return workflowMigrationService;
       case CONNECTOR:
         return connectorMigrationService;
+      case TEMPLATE:
+        return templateMigrationService;
       case SERVICE:
         return serviceMigrationService;
       case ARTIFACT_STREAM:

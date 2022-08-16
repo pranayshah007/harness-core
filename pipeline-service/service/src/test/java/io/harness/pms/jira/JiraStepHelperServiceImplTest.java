@@ -68,6 +68,11 @@ public class JiraStepHelperServiceImplTest extends CategoryTest {
                             .putSetupAbstractions("orgIdentifier", "orgIdentifier")
                             .putSetupAbstractions("projectIdentifier", "projectIdentifier")
                             .build();
+    assertThatCode(()
+                       -> jiraStepHelperService.prepareTaskRequest(
+                           JiraTaskNGParameters.builder(), ambiance, "null", "time", "task"))
+        .isInstanceOf(InvalidRequestException.class);
+
     aStatic.when(() -> NGRestUtils.getResponse(any())).thenReturn(Optional.empty());
     assertThatCode(()
                        -> jiraStepHelperService.prepareTaskRequest(
