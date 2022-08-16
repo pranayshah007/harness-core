@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 
-package io.harness.polling;
+package io.harness.ng.webhook.polling;
 
 import static io.harness.delegate.task.artifacts.ArtifactSourceType.ARTIFACTORY_REGISTRY;
 import static io.harness.delegate.task.artifacts.ArtifactSourceType.DOCKER_REGISTRY;
@@ -16,6 +16,7 @@ import static io.harness.polling.contracts.Type.DOCKER_HUB;
 import static io.harness.polling.contracts.Type.ECR;
 import static io.harness.polling.contracts.Type.GCR;
 import static io.harness.polling.contracts.Type.GCS_HELM;
+import static io.harness.polling.contracts.Type.GIT_POLL;
 import static io.harness.polling.contracts.Type.HTTP_HELM;
 import static io.harness.polling.contracts.Type.NEXUS3;
 import static io.harness.polling.contracts.Type.S3_HELM;
@@ -39,6 +40,7 @@ import io.harness.cdng.manifest.yaml.HttpStoreConfig;
 import io.harness.cdng.manifest.yaml.S3StoreConfig;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigType;
 import io.harness.delegate.beans.polling.ArtifactPollingDelegateResponse;
+import io.harness.delegate.beans.polling.GitPollingDelegateResponse;
 import io.harness.delegate.beans.polling.ManifestPollingDelegateResponse;
 import io.harness.delegate.beans.polling.PollingDelegateResponse;
 import io.harness.delegate.beans.polling.PollingResponseInfc;
@@ -50,6 +52,7 @@ import io.harness.delegate.task.artifacts.ecr.EcrArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.gcr.GcrArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.nexus.NexusArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.response.ArtifactDelegateResponse;
+import io.harness.gitpolling.github.GitPollingWebhookData;
 import io.harness.k8s.model.HelmVersion;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.polling.bean.PolledResponse;
@@ -63,11 +66,13 @@ import io.harness.polling.bean.artifact.DockerHubArtifactInfo;
 import io.harness.polling.bean.artifact.EcrArtifactInfo;
 import io.harness.polling.bean.artifact.GcrArtifactInfo;
 import io.harness.polling.bean.artifact.NexusRegistryArtifactInfo;
+import io.harness.polling.bean.gitpolling.GitHubPollingInfo;
+import io.harness.polling.bean.gitpolling.GitPollingInfo;
+import io.harness.polling.bean.gitpolling.GitPollingPolledResponse;
 import io.harness.polling.bean.manifest.HelmChartManifestInfo;
 import io.harness.polling.bean.manifest.ManifestPolledResponse;
 import io.harness.polling.contracts.PollingResponse;
 import io.harness.polling.contracts.Type;
-import io.harness.polling.service.PolledItemPublisher;
 import io.harness.polling.service.intfc.PollingPerpetualTaskService;
 import io.harness.polling.service.intfc.PollingService;
 import io.harness.rule.Owner;
@@ -215,6 +220,13 @@ public class PollingResponseHandlerTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = OwnerRule.SRIDHAR)
+  @Category(UnitTests.class)
+  public void testSuccessGitPollingResponseWithDelegateRebalance() {
+    testSuccessResponse(GIT_POLL, PollingType.WEBHOOK_POLLING);
+  }
+
+  @Test
   @Owner(developers = OwnerRule.BUHA)
   @Category(UnitTests.class)
   public void testSuccessAcrPollingResponseWithDelegateRebalance() {
@@ -228,9 +240,14 @@ public class PollingResponseHandlerTest extends CategoryTest {
     // first collection. unpublished keys - [0-1000], tobeDeletedKeys = []
     when(pollingService.get(ACCOUNT_ID, POLLING_DOC_ID)).thenReturn(pollingDocument);
     pollingResponseHandler.handlePollingResponse(PERPETUAL_TASK_ID, ACCOUNT_ID, delegateResponse);
-    PolledResponse polledResponse = pollingType.equals(PollingType.MANIFEST)
-        ? validateFirstManifestCollectionOnManager()
-        : validateFirstArtifactCollectionOnManager();
+    PolledResponse polledResponse = null;
+    if (pollingType.equals(PollingType.MANIFEST)) {
+      polledResponse = validateFirstManifestCollectionOnManager();
+    } else if (pollingType.equals(PollingType.ARTIFACT)) {
+      polledResponse = validateFirstArtifactCollectionOnManager();
+    } else if (pollingType.equals(PollingType.WEBHOOK_POLLING)) {
+      polledResponse = validateFirstGitPollingOnManager();
+    }
 
     PollingDocument savedPollingDocument = getPollingDocumentFromType(type, polledResponse);
     PollingDelegateResponse newDelegateResponse = getPollingDelegateResponse(type, pollingType, false, 1001, 1005, -1);
@@ -240,12 +257,15 @@ public class PollingResponseHandlerTest extends CategoryTest {
     pollingResponseHandler.handlePollingResponse(PERPETUAL_TASK_ID, ACCOUNT_ID, newDelegateResponse);
     verify(pollingService, times(2)).get(ACCOUNT_ID, POLLING_DOC_ID);
 
-    PolledResponse newPolledResponse;
+    PolledResponse newPolledResponse = null;
     if (pollingType.equals(PollingType.MANIFEST)) {
       newPolledResponse = assertAndGetManifestPolledResponse(2, 1006);
-    } else {
+    } else if (pollingType.equals(PollingType.ARTIFACT)) {
       newPolledResponse = assertAndGetArtifactPolledResponse(2, 1006);
+    } else if (pollingType.equals(PollingType.WEBHOOK_POLLING)) {
+      newPolledResponse = assertAndGetGitPolledResponse(2, 1006);
     }
+
     assertPublishedItem(type, 5, 1, pollingType);
 
     PollingDocument savedPollingDocument1 = getPollingDocumentFromType(type, newPolledResponse);
@@ -258,8 +278,10 @@ public class PollingResponseHandlerTest extends CategoryTest {
 
     if (pollingType.equals(PollingType.MANIFEST)) {
       assertAndGetManifestPolledResponse(3, 1009);
-    } else {
+    } else if (pollingType.equals(PollingType.ARTIFACT)) {
       assertAndGetArtifactPolledResponse(3, 1009);
+    } else if (pollingType.equals(PollingType.WEBHOOK_POLLING)) {
+      assertAndGetGitPolledResponse(3, 1009);
     }
     assertPublishedItem(type, 6, 2, pollingType);
   }
@@ -284,19 +306,38 @@ public class PollingResponseHandlerTest extends CategoryTest {
     return newPolledResponse;
   }
 
+  private GitPollingPolledResponse assertAndGetGitPolledResponse(int nofOfTimes, int expectedSize) {
+    ArgumentCaptor<GitPollingPolledResponse> captor = ArgumentCaptor.forClass(GitPollingPolledResponse.class);
+    verify(pollingService, times(nofOfTimes))
+        .updatePolledResponse(eq(ACCOUNT_ID), eq(POLLING_DOC_ID), captor.capture());
+    GitPollingPolledResponse newPolledResponse = captor.getValue();
+    assertThat(newPolledResponse).isNotNull();
+    assertThat(newPolledResponse.getAllPolledKeys()).hasSize(expectedSize);
+    return newPolledResponse;
+  }
+
   private void assertPublishedItem(Type type, int publishedSize, int noOfTimePublished, PollingType pollingType) {
     ArgumentCaptor<PollingResponse> pollingResponseArgumentCaptor1 = ArgumentCaptor.forClass(PollingResponse.class);
-    verify(polledItemPublisher, times(noOfTimePublished)).publishPolledItems(pollingResponseArgumentCaptor1.capture());
-    PollingResponse pollingResponse = pollingResponseArgumentCaptor1.getValue();
-    assertThat(pollingResponse).isNotNull();
-    assertThat(pollingResponse.getType()).isEqualTo(type);
-    assertThat(pollingResponse.getAccountId()).isEqualTo(ACCOUNT_ID);
-    assertThat(pollingResponse.getSignaturesCount()).isEqualTo(1);
-    assertThat(pollingResponse.getSignatures(0)).isEqualTo(SIGNATURE_1);
-    assertThat(pollingResponse.getBuildInfo()).isNotNull();
-    assertThat(pollingResponse.getBuildInfo().getName())
-        .isEqualTo(pollingType == PollingType.MANIFEST ? "chartName" : "imagePath");
-    assertThat(pollingResponse.getBuildInfo().getVersionsCount()).isEqualTo(publishedSize);
+    if (pollingType == PollingType.ARTIFACT || pollingType == PollingType.MANIFEST) {
+      verify(polledItemPublisher, times(noOfTimePublished))
+          .publishPolledItems(pollingResponseArgumentCaptor1.capture());
+      PollingResponse pollingResponse = pollingResponseArgumentCaptor1.getValue();
+      assertThat(pollingResponse).isNotNull();
+      assertThat(pollingResponse.getType()).isEqualTo(type);
+      assertThat(pollingResponse.getAccountId()).isEqualTo(ACCOUNT_ID);
+      assertThat(pollingResponse.getSignaturesCount()).isEqualTo(1);
+      assertThat(pollingResponse.getSignatures(0)).isEqualTo(SIGNATURE_1);
+      assertThat(pollingResponse.getBuildInfo()).isNotNull();
+      assertThat(pollingResponse.getBuildInfo().getName())
+          .isEqualTo(pollingType == PollingType.MANIFEST ? "chartName" : "imagePath");
+      assertThat(pollingResponse.getBuildInfo().getVersionsCount()).isEqualTo(publishedSize);
+    } else {
+      ArgumentCaptor<List<GitPollingWebhookData>> listCaptor = ArgumentCaptor.forClass((Class) List.class);
+      verify(polledItemPublisher, times(noOfTimePublished)).sendWebhookRequest(any(), listCaptor.capture());
+      List<GitPollingWebhookData> response = listCaptor.getValue();
+      assertThat(response).isNotNull();
+      assertThat(response.size()).isEqualTo(publishedSize);
+    }
   }
 
   private PolledResponse validateFirstManifestCollectionOnManager() {
@@ -323,16 +364,31 @@ public class PollingResponseHandlerTest extends CategoryTest {
     return polledResponse;
   }
 
+  private PolledResponse validateFirstGitPollingOnManager() {
+    verify(pollingService, times(1)).get(ACCOUNT_ID, POLLING_DOC_ID);
+
+    ArgumentCaptor<GitPollingPolledResponse> captor = ArgumentCaptor.forClass(GitPollingPolledResponse.class);
+    verify(pollingService).updatePolledResponse(eq(ACCOUNT_ID), eq(POLLING_DOC_ID), captor.capture());
+    GitPollingPolledResponse polledResponse = captor.getValue();
+    assertThat(polledResponse).isNotNull();
+    assertThat(polledResponse.getAllPolledKeys()).hasSize(1001);
+    verify(polledItemPublisher, never()).publishPolledItems(any());
+    return polledResponse;
+  }
+
   private PollingDelegateResponse getPollingDelegateResponse(Type type, PollingType pollingType,
       boolean firstCollectionOnDelegate, int startIndexUnpublishedManifests, int endIndexUnpublishedManifest,
       int endIndexToBeDeleted) {
     if (pollingType.equals(PollingType.MANIFEST)) {
       return getManifestPollingDelegateResponse(
           firstCollectionOnDelegate, startIndexUnpublishedManifests, endIndexUnpublishedManifest, endIndexToBeDeleted);
+    } else if (pollingType.equals(PollingType.ARTIFACT)) {
+      return getArtifactPollingDelegateResponse(type, firstCollectionOnDelegate, startIndexUnpublishedManifests,
+          endIndexUnpublishedManifest, endIndexToBeDeleted);
+    } else {
+      return getAGitPollingDelegateResponse(type, firstCollectionOnDelegate, startIndexUnpublishedManifests,
+          endIndexUnpublishedManifest, endIndexToBeDeleted);
     }
-
-    return getArtifactPollingDelegateResponse(type, firstCollectionOnDelegate, startIndexUnpublishedManifests,
-        endIndexUnpublishedManifest, endIndexToBeDeleted);
   }
 
   private PollingDelegateResponse getManifestPollingDelegateResponse(boolean firstCollectionOnDelegate,
@@ -387,6 +443,20 @@ public class PollingResponseHandlerTest extends CategoryTest {
     return getPollingDelegateResponse(artifactPollingDelegateResponse);
   }
 
+  private PollingDelegateResponse getAGitPollingDelegateResponse(Type type, boolean firstCollectionOnDelegate,
+      int startIndexUnpublished, int endIndexUnpublished, int endIndexToBeDeleted) {
+    Set<String> toBeDeletedIds =
+        IntStream.rangeClosed(0, endIndexToBeDeleted).boxed().map(String::valueOf).collect(Collectors.toSet());
+    List<GitPollingWebhookData> gitPollingWebhookDataResponse;
+    gitPollingWebhookDataResponse = getGitPollingDelegateResponseList(startIndexUnpublished, endIndexUnpublished);
+    GitPollingDelegateResponse gitPollingDelegateResponse = GitPollingDelegateResponse.builder()
+                                                                .firstCollectionOnDelegate(firstCollectionOnDelegate)
+                                                                .toBeDeletedIds(toBeDeletedIds)
+                                                                .unpublishedEvents(gitPollingWebhookDataResponse)
+                                                                .build();
+    return getPollingDelegateResponse(gitPollingDelegateResponse);
+  }
+
   private List<ArtifactDelegateResponse> getDockerArtifactDelegateResponseList(int startIndex, int endIndex) {
     return IntStream.rangeClosed(startIndex, endIndex)
         .boxed()
@@ -436,6 +506,13 @@ public class PollingResponseHandlerTest extends CategoryTest {
         .collect(Collectors.toList());
   }
 
+  private List<GitPollingWebhookData> getGitPollingDelegateResponseList(int startIndex, int endIndex) {
+    return IntStream.rangeClosed(startIndex, endIndex)
+        .boxed()
+        .map(i -> GitPollingWebhookData.builder().deliveryId(String.valueOf(i)).build())
+        .collect(Collectors.toList());
+  }
+
   private PollingDelegateResponse getPollingDelegateResponse(PollingResponseInfc pollingResponseInfc) {
     return PollingDelegateResponse.builder()
         .pollingDocId(POLLING_DOC_ID)
@@ -472,8 +549,12 @@ public class PollingResponseHandlerTest extends CategoryTest {
         return getArtifactoryRegistryPollingDocument(polledResponse);
       case ACR:
         return getAcrRegistryPollingDocument(polledResponse);
-      default:
+      case ECR:
         return getEcrPollingDocument(polledResponse);
+      case GIT_POLL:
+        return getGitPollingDocument(polledResponse);
+      default:
+        return null;
     }
   }
 
@@ -537,6 +618,11 @@ public class PollingResponseHandlerTest extends CategoryTest {
   private PollingDocument getAcrRegistryPollingDocument(PolledResponse polledResponse) {
     AcrArtifactInfo acrArtifactInfo = AcrArtifactInfo.builder().repository("imagePath").build();
     return getPollingDocument(polledResponse, acrArtifactInfo, PollingType.ARTIFACT);
+  }
+
+  private PollingDocument getGitPollingDocument(PolledResponse polledResponse) {
+    GitPollingInfo gitPollingInfo = GitHubPollingInfo.builder().pollInterval(2).webhookId("123").build();
+    return getPollingDocument(polledResponse, gitPollingInfo, PollingType.WEBHOOK_POLLING);
   }
 
   private PollingDocument getPollingDocument(

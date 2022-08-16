@@ -29,16 +29,22 @@ import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
 import static io.harness.rule.OwnerRule.RAGHAV_GUPTA;
 import static io.harness.rule.OwnerRule.ROHITKARELIA;
 import static io.harness.rule.OwnerRule.RUTVIJ_MEHTA;
+import static io.harness.rule.OwnerRule.SRIDHAR;
 
 import static com.fasterxml.jackson.dataformat.yaml.YAMLGenerator.Feature.USE_NATIVE_TYPE_ID;
 import static java.util.Arrays.asList;
+import static junit.framework.TestCase.assertNotNull;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ngtriggers.beans.config.NGTriggerConfigV2;
@@ -91,6 +97,7 @@ import io.harness.ngtriggers.beans.source.webhook.v2.gitlab.GitlabSpec;
 import io.harness.ngtriggers.beans.source.webhook.v2.gitlab.action.GitlabMRCommentAction;
 import io.harness.ngtriggers.beans.source.webhook.v2.gitlab.action.GitlabPRAction;
 import io.harness.ngtriggers.beans.source.webhook.v2.gitlab.event.GitlabTriggerEvent;
+import io.harness.pms.PmsFeatureFlagService;
 import io.harness.repositories.spring.TriggerEventHistoryRepository;
 import io.harness.rule.Owner;
 import io.harness.webhook.WebhookConfigProvider;
@@ -146,6 +153,8 @@ public class NGTriggerElementMapperV2Test extends CategoryTest {
   private String ngTriggerYaml_artifact_artifactorydockerregistry;
   private String ngTriggerYaml_manifest;
 
+  private String ngTriggerYaml_gitpolling;
+
   private List<TriggerEventDataCondition> payloadConditions;
   private List<TriggerEventDataCondition> headerConditions;
   private static final String inputYaml = "pipeline:\n"
@@ -163,6 +172,7 @@ public class NGTriggerElementMapperV2Test extends CategoryTest {
   private static final String CONN = "conn";
   @Mock private TriggerEventHistoryRepository triggerEventHistoryRepository;
   @Mock private WebhookConfigProvider webhookConfigProvider;
+  @Mock PmsFeatureFlagService pmsFeatureFlagService;
   @InjectMocks @Inject private NGTriggerElementMapper ngTriggerElementMapper;
 
   @Before
@@ -178,6 +188,8 @@ public class NGTriggerElementMapperV2Test extends CategoryTest {
             StandardCharsets.UTF_8);
     ngTriggerYaml_gitlab_pr = Resources.toString(
         Objects.requireNonNull(classLoader.getResource("ng-trigger-gitlab-pr-v2.yaml")), StandardCharsets.UTF_8);
+    ngTriggerYaml_gitpolling = Resources.toString(
+        Objects.requireNonNull(classLoader.getResource("ng-trigger-gitpolling.yaml")), StandardCharsets.UTF_8);
     ngTriggerYaml_gitlab_push = Resources.toString(
         Objects.requireNonNull(classLoader.getResource("ng-trigger-gitlab-push-v2.yaml")), StandardCharsets.UTF_8);
     ngTriggerYaml_gitlab_mr_comment =
@@ -1027,6 +1039,7 @@ public class NGTriggerElementMapperV2Test extends CategoryTest {
   @Owner(developers = ADWAIT)
   @Category(UnitTests.class)
   public void testToResponseDTO() {
+    when(pmsFeatureFlagService.isEnabled(any(), eq(FeatureName.GIT_WEBHOOK_POLLING))).thenReturn(Boolean.FALSE);
     NGTriggerEntity ngTriggerEntity =
         ngTriggerElementMapper.toTriggerDetails("accId", "org", "proj", ngTriggerYaml_gitlab_pr).getNgTriggerEntity();
     NGTriggerResponseDTO responseDTO = ngTriggerElementMapper.toResponseDTO(ngTriggerEntity);
@@ -1040,6 +1053,29 @@ public class NGTriggerElementMapperV2Test extends CategoryTest {
     assertThat(responseDTO.getIdentifier()).isEqualTo(ngTriggerEntity.getIdentifier());
     assertThat(responseDTO.isEnabled()).isEqualTo(ngTriggerEntity.getEnabled());
     assertThat(responseDTO.getDescription()).isEqualTo(ngTriggerEntity.getDescription());
+  }
+
+  @Test
+  @Owner(developers = SRIDHAR)
+  @Category(UnitTests.class)
+  public void testToResponseDTOGitPolling() {
+    when(pmsFeatureFlagService.isEnabled(any(), eq(FeatureName.GIT_WEBHOOK_POLLING))).thenReturn(Boolean.TRUE);
+    NGTriggerEntity ngTriggerEntity =
+        ngTriggerElementMapper.toTriggerDetails("accId", "org", "proj", ngTriggerYaml_gitpolling).getNgTriggerEntity();
+    NGTriggerResponseDTO responseDTO = ngTriggerElementMapper.toResponseDTO(ngTriggerEntity);
+    assertThat(responseDTO.getAccountIdentifier()).isEqualTo(ngTriggerEntity.getAccountId());
+    assertThat(responseDTO.getTargetIdentifier()).isEqualTo(ngTriggerEntity.getTargetIdentifier());
+    assertThat(responseDTO.getOrgIdentifier()).isEqualTo(ngTriggerEntity.getOrgIdentifier());
+    assertThat(responseDTO.getProjectIdentifier()).isEqualTo(ngTriggerEntity.getProjectIdentifier());
+    assertThat(responseDTO.getYaml()).isEqualTo(ngTriggerEntity.getYaml());
+    assertThat(responseDTO.getType()).isEqualTo(ngTriggerEntity.getType());
+    assertThat(responseDTO.getName()).isEqualTo(ngTriggerEntity.getName());
+    assertThat(responseDTO.getIdentifier()).isEqualTo(ngTriggerEntity.getIdentifier());
+    assertThat(responseDTO.isEnabled()).isEqualTo(ngTriggerEntity.getEnabled());
+    assertThat(responseDTO.getDescription()).isEqualTo(ngTriggerEntity.getDescription());
+    assertNotNull(ngTriggerEntity.getMetadata().getBuildMetadata());
+    assertThat(ngTriggerEntity.getMetadata().getBuildMetadata().getType()).isEqualTo(WEBHOOK);
+    assertNotNull(ngTriggerEntity.getMetadata().getBuildMetadata().getPollingConfig().getSignature());
   }
 
   @Test
