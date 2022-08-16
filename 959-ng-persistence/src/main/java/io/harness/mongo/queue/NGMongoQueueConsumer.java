@@ -23,8 +23,10 @@ import java.time.Duration;
 import java.util.Date;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Sort;
@@ -78,18 +80,16 @@ public class NGMongoQueueConsumer<T extends Queuable> implements QueueConsumer<T
       Query query = createQuery()
                         .addCriteria(Criteria.where(QueuableKeys.earliestGet).lte(now))
                         .with(Sort.by(Direction.ASC, QueuableKeys.earliestGet));
-
-      List<T> documents = persistence.find(query, klass);
-      log.info("Before findAndModify" + documents);
-
       Update update = new Update().set(QueuableKeys.earliestGet, new Date(now.getTime() + heartbeat().toMillis()));
 
+      List<T> documentsBefore = persistence.find(query, klass);
       T message = HPersistence.retry(() -> persistence.findAndModify(query, update, klass));
+      List<T> documentsAfter = persistence.find(query, klass);
 
-      documents = persistence.find(query, klass);
-      log.info("After findAndModify" + documents);
-
-      log.info(String.valueOf(message));
+      List<String> idsBefore = documentsBefore.stream().map(Queuable::getId).collect(Collectors.toList());
+      List<String> idsAfter = documentsAfter.stream().map(Queuable::getId).collect(Collectors.toList());
+      log.info("Before findAndModify " + idsBefore + " After findAndModify " + idsAfter + " The document "
+          + Optional.ofNullable(message).flatMap(t -> Optional.of(t.getId())).orElse(null));
 
       if (message != null) {
         return message;
