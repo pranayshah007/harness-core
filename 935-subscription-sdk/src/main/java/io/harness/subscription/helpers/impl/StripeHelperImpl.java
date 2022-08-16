@@ -75,12 +75,23 @@ public class StripeHelperImpl implements StripeHelper {
 
   @Override
   public CustomerDetailDTO createCustomer(CustomerParams customerParams) {
+    CustomerCreateParams.Address address = CustomerCreateParams.Address.builder()
+                                               .setCity(customerParams.getAddress().getCity())
+                                               .setCountry(customerParams.getAddress().getCountry())
+                                               .setLine1(customerParams.getAddress().getLine1())
+                                               .setLine2(customerParams.getAddress().getLine2())
+                                               .setPostalCode(customerParams.getAddress().getPostalCode())
+                                               .setState(customerParams.getAddress().getState())
+                                               .build();
+
     CustomerCreateParams params =
         CustomerCreateParams.builder()
+            .setAddress(address)
             .setEmail(customerParams.getBillingContactEmail())
             .setName(customerParams.getName())
             .setMetadata(ImmutableMap.of(ACCOUNT_IDENTIFIER_KEY, customerParams.getAccountIdentifier()))
             .build();
+
     Customer customer = stripeHandler.createCustomer(params);
     return toCustomerDetailDTO(customer);
   }
