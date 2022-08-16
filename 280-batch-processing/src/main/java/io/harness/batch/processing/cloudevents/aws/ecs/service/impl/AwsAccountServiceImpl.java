@@ -121,6 +121,9 @@ public class AwsAccountServiceImpl implements AwsAccountService {
     infraAccountMap.forEach((accountIdentifierKey, ceCloudAccount) -> {
       if (!ceExistingAccountMap.containsKey(accountIdentifierKey)) {
         ceCloudAccountDao.create(ceCloudAccount);
+      } else {
+        CECloudAccount savedCECloudAccount = ceExistingAccountMap.get(accountIdentifierKey);
+        ceCloudAccountDao.updateAccountName(savedCECloudAccount, ceCloudAccount.getAccountName());
       }
     });
 
