@@ -79,7 +79,7 @@ public interface UserGroupService {
 
   void addUserToUserGroups(Scope scope, String userId, List<String> userGroups);
 
-  void addUserToDefaultUserGroups(Scope scope, String userId, List<String> userGroups);
+  void addUserToDefaultUserGroups(Scope scope, String userId);
 
   UserGroup removeMember(Scope scope, String userGroupIdentifier, String userIdentifier);
 

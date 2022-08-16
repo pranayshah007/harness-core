@@ -429,17 +429,20 @@ public class UserGroupServiceImpl implements UserGroupService {
   }
 
   @Override
-  public void addUserToDefaultUserGroups(Scope scope, String userId, List<String> userGroups) {
-    if (isEmpty(userGroups)) {
-      return;
+  public void addUserToDefaultUserGroups(Scope scope, String userId) {
+    addUserToDefaultUserGroup(scope.getAccountIdentifier(), null, null, DEFAULT_ACCOUNT_LEVEL_USER_GROUP_IDENTIFIER, userId);
+    if (!isEmpty(scope.getOrgIdentifier())) {
+      addUserToDefaultUserGroup(scope.getAccountIdentifier(), scope.getOrgIdentifier(), null, DEFAULT_ORGANIZATION_LEVEL_USER_GROUP_IDENTIFIER, userId);
     }
-    userGroups.forEach(userGroup -> {
-      if (!checkMember(scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier(), userGroup,
-              userId)) {
-        addMemberInternal(
-                scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier(), userGroup, userId);
-      }
-    });
+    if (!isEmpty(scope.getProjectIdentifier())) {
+      addUserToDefaultUserGroup(scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier(), DEFAULT_PROJECT_LEVEL_USER_GROUP_IDENTIFIER, userId);
+    }
+  }
+
+  private void addUserToDefaultUserGroup(String accountIdentifier, String orgIdentifier, String projectIdentifier, String userGroupId, String userId) {
+    if (!checkMember(accountIdentifier, orgIdentifier, projectIdentifier, userGroupId, userId)) {
+      addMemberInternal(accountIdentifier, orgIdentifier, projectIdentifier, userGroupId, userId);
+    }
   }
 
   @Override
@@ -699,6 +702,9 @@ public class UserGroupServiceImpl implements UserGroupService {
     UserGroup existingUserGroup = getOrThrow(accountIdentifier, orgIdentifier, projectIdentifier, userGroupIdentifier);
     UserGroupDTO oldUserGroup = (UserGroupDTO) HObjectMapper.clone(toDTO(existingUserGroup));
 
+    if (TRUE.equals(existingUserGroup.isHarnessManaged())) {
+      throw new InvalidRequestException("Cannot link SSO Provider to the Harness Managed group.");
+    }
     if (TRUE.equals(existingUserGroup.getIsSsoLinked())) {
       throw new InvalidRequestException("SSO Provider already linked to the group. Try unlinking first.");
     }
