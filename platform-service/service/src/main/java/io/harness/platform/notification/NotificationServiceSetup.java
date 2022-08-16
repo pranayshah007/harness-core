@@ -95,7 +95,7 @@ public class NotificationServiceSetup {
   private void registerQueueListeners(Injector injector) {
     log.info("Initializing queue listeners...");
     QueueListenerController queueListenerController = injector.getInstance(QueueListenerController.class);
-    queueListenerController.register(injector.getInstance(MongoMessageConsumer.class), 1);
+    queueListenerController.register(injector.getInstance(MongoMessageConsumer.class), 30);
   }
 
   private void registerScheduleJobs(Injector injector) {
