@@ -100,8 +100,8 @@ public class ArtifactConfigToDelegateReqMapper {
     }
 
     return ArtifactDelegateRequestUtils.getGithubPackagesDelegateRequest(artifactConfig.getPackageName().getValue(),
-        artifactConfig.getPackageType().getValue(), version, versionRegex, connectorRef, connectorDTO,
-        encryptedDataDetails, ArtifactSourceType.GITHUB_PACKAGES);
+        artifactConfig.getPackageType().getValue(), version, versionRegex, artifactConfig.getOrg().getValue(),
+        connectorRef, connectorDTO, encryptedDataDetails, ArtifactSourceType.GITHUB_PACKAGES);
   }
 
   public JenkinsArtifactDelegateRequest getJenkinsDelegateRequest(JenkinsArtifactConfig artifactConfig,

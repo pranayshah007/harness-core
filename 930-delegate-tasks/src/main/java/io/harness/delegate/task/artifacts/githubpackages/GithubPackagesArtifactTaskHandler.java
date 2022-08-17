@@ -45,7 +45,7 @@ public class GithubPackagesArtifactTaskHandler
   public ArtifactTaskExecutionResponse getBuilds(GithubPackagesArtifactDelegateRequest attributes) {
     List<BuildDetails> builds = githubPackagesRegistryService.getBuilds(
         GithubPackagesRequestResponseMapper.toGithubPackagesInternalConfig(attributes), attributes.getPackageName(),
-        attributes.getPackageType(), MAX_NO_OF_TAGS_PER_IMAGE);
+        attributes.getPackageType(), attributes.getOrg(), MAX_NO_OF_TAGS_PER_IMAGE);
 
     List<GithubPackagesArtifactDelegateResponse> githubPackagesArtifactDelegateResponses =
         builds.stream()
@@ -62,7 +62,8 @@ public class GithubPackagesArtifactTaskHandler
     if (isRegex(attributesRequest)) {
       lastSuccessfulBuild = githubPackagesRegistryService.getLastSuccessfulBuildFromRegex(
           GithubPackagesRequestResponseMapper.toGithubPackagesInternalConfig(attributesRequest),
-          attributesRequest.getPackageName(), attributesRequest.getPackageType(), attributesRequest.getVersionRegex());
+          attributesRequest.getPackageName(), attributesRequest.getPackageType(), attributesRequest.getVersionRegex(),
+          attributesRequest.getOrg());
 
     } else {
       lastSuccessfulBuild = githubPackagesRegistryService.getBuild(

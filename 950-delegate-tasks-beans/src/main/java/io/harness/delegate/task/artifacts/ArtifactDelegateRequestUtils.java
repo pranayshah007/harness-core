@@ -218,8 +218,9 @@ public class ArtifactDelegateRequestUtils {
   }
 
   public static GithubPackagesArtifactDelegateRequest getGithubPackagesDelegateRequest(String packageName,
-      String packageType, String version, String versionRegex, String connectorRef, GithubConnectorDTO githubConnector,
-      List<EncryptedDataDetail> encryptionDetails, ArtifactSourceType artifactSourceType) {
+      String packageType, String version, String versionRegex, String org, String connectorRef,
+      GithubConnectorDTO githubConnector, List<EncryptedDataDetail> encryptionDetails,
+      ArtifactSourceType artifactSourceType) {
     return GithubPackagesArtifactDelegateRequest.builder()
         .packageName(packageName)
         .githubConnectorDTO(githubConnector)
@@ -229,6 +230,7 @@ public class ArtifactDelegateRequestUtils {
         .encryptedDataDetails(encryptionDetails)
         .sourceType(artifactSourceType)
         .packageType(packageType)
+        .org(org)
         .build();
   }
 }

@@ -82,12 +82,13 @@ public class GithubPackagesArtifactResource {
       @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @NotNull @QueryParam("packageName") String packageName, @NotNull @QueryParam("packageType") String packageType,
-      @QueryParam("versionRegex") String versionRegex, @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo) {
+      @QueryParam("versionRegex") String versionRegex, @QueryParam("org") String org,
+      @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo) {
     IdentifierRef connectorRef =
         IdentifierRefHelper.getIdentifierRef(gitConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
 
     List<BuildDetails> response = githubPackagesResourceService.getVersionsOfPackage(
-        connectorRef, packageName, packageType, versionRegex, accountId, orgIdentifier, projectIdentifier);
+        connectorRef, packageName, packageType, versionRegex, org, accountId, orgIdentifier, projectIdentifier);
 
     return ResponseDTO.newResponse(response);
   }

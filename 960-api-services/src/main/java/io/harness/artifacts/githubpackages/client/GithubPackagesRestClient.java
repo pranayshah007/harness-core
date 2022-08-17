@@ -26,6 +26,11 @@ public interface GithubPackagesRestClient {
       @Path(value = "packageName", encoded = true) String packageName,
       @Path(value = "packageType", encoded = true) String packageType);
 
+  @GET("/orgs/{org}/packages/{packageType}/{packageName}/versions")
+  Call<List<JsonNode>> listVersionsForPackagesInOrg(@Header("Authorization") String bearerAuthHeader,
+      @Path(value = "org", encoded = true) String org, @Path(value = "packageName", encoded = true) String packageName,
+      @Path(value = "packageType", encoded = true) String packageType);
+
   @GET("/user/packages/{packageType}/{packageName}/versions/{versionId}")
   Call<GithubPackagesVersion> getVersion(@Header("Authorization") String bearerAuthHeader,
       @Path(value = "packageName", encoded = true) String packageName,

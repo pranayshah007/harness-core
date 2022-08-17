@@ -18,6 +18,7 @@ import io.harness.artifacts.githubpackages.beans.GithubPackagesVersion;
 import io.harness.artifacts.githubpackages.beans.GithubPackagesVersionsResponse;
 import io.harness.artifacts.githubpackages.client.GithubPackagesRestClient;
 import io.harness.artifacts.githubpackages.client.GithubPackagesRestClientFactory;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.ArtifactServerException;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidArtifactServerException;
@@ -53,11 +54,11 @@ public class GithubPackagesRegistryServiceImpl implements GithubPackagesRegistry
 
   @Override
   public List<BuildDetails> getBuilds(GithubPackagesInternalConfig githubPackagesInternalConfig, String packageName,
-      String packageType, int maxNoOfVersionsPerPackage) {
+      String packageType, String org, int maxNoOfVersionsPerPackage) {
     List<BuildDetails> buildDetails;
 
     try {
-      buildDetails = getBuildDetails(githubPackagesInternalConfig, packageName, packageType);
+      buildDetails = getBuildDetails(githubPackagesInternalConfig, packageName, packageType, org);
     } catch (GithubPackagesServerRuntimeException ex) {
       throw ex;
     } catch (Exception e) {
@@ -73,11 +74,11 @@ public class GithubPackagesRegistryServiceImpl implements GithubPackagesRegistry
 
   @Override
   public BuildDetails getLastSuccessfulBuildFromRegex(GithubPackagesInternalConfig githubPackagesInternalConfig,
-      String packageName, String packageType, String versionRegex) {
+      String packageName, String packageType, String versionRegex, String org) {
     List<BuildDetails> buildDetails;
 
     try {
-      buildDetails = getBuildDetails(githubPackagesInternalConfig, packageName, packageType);
+      buildDetails = getBuildDetails(githubPackagesInternalConfig, packageName, packageType, org);
     } catch (GithubPackagesServerRuntimeException ex) {
       throw ex;
     } catch (Exception e) {
@@ -139,7 +140,7 @@ public class GithubPackagesRegistryServiceImpl implements GithubPackagesRegistry
   }
 
   private List<BuildDetails> getBuildDetails(GithubPackagesInternalConfig githubPackagesInternalConfig,
-      String packageName, String packageType) throws IOException {
+      String packageName, String packageType, String org) throws IOException {
     GithubPackagesRestClient githubPackagesRestClient =
         githubPackagesRestClientFactory.getGithubPackagesRestClient(githubPackagesInternalConfig);
 
@@ -159,8 +160,14 @@ public class GithubPackagesRegistryServiceImpl implements GithubPackagesRegistry
 
     GithubPackagesVersionsResponse githubPackagesVersionsResponse = GithubPackagesVersionsResponse.builder().build();
 
-    Response<List<JsonNode>> response =
-        githubPackagesRestClient.listVersionsForPackages(basicAuthHeader, packageName, packageType).execute();
+    Response<List<JsonNode>> response;
+
+    if (EmptyPredicate.isEmpty(org)) {
+      response = githubPackagesRestClient.listVersionsForPackages(basicAuthHeader, packageName, packageType).execute();
+    } else {
+      response = githubPackagesRestClient.listVersionsForPackagesInOrg(basicAuthHeader, org, packageName, packageType)
+                     .execute();
+    }
 
     if (!isSuccessful(response)) {
       throw NestedExceptionUtils.hintWithExplanationException("Unable to fetch the versions for the package",
@@ -194,7 +201,7 @@ public class GithubPackagesRegistryServiceImpl implements GithubPackagesRegistry
       build.setNumber(tag);
       build.setBuildUrl(v.getVersionUrl());
       build.setStatus(BuildDetails.BuildStatus.SUCCESS);
-      build.setBuildFullDisplayName(packageName + ": " + tag);
+      build.setBuildFullDisplayName(v.getVersionName());
       build.setMetadata(metadata);
 
       buildDetails.add(build);
