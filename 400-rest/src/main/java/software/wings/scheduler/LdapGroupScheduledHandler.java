@@ -28,6 +28,7 @@ import io.harness.workers.background.AccountStatusBasedEntityProcessController;
 import software.wings.beans.sso.LdapSettings;
 import software.wings.beans.sso.SSOSettings.SSOSettingsKeys;
 import software.wings.beans.sso.SSOType;
+import software.wings.security.authentication.NgLdapGroupSyncEventPublisher;
 import software.wings.service.intfc.AccountService;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
@@ -52,7 +53,7 @@ public class LdapGroupScheduledHandler implements Handler<LdapSettings> {
   @Inject private AccountService accountService;
   @Inject private LdapGroupSyncJobHelper ldapGroupSyncJobHelper;
   @Inject private FeatureFlagService featureFlagService;
-
+  @Inject private NgLdapGroupSyncEventPublisher ngLdapGroupSyncEventPublisher;
   private static ExecutorService executor =
       Executors.newSingleThreadExecutor(new ThreadFactoryBuilder().setNameFormat("scheduled-ldap-handler").build());
   private static final ScheduledThreadPoolExecutor executorService = new ScheduledThreadPoolExecutor(
@@ -96,5 +97,16 @@ public class LdapGroupScheduledHandler implements Handler<LdapSettings> {
   @Override
   public void handle(LdapSettings settings) {
     ldapGroupSyncJobHelper.syncJob(settings);
+    // TODO: Make above CG Ldap Group sync also an async call
+    processForNG(settings);
+  }
+
+  private void processForNG(LdapSettings settings) {
+    try {
+      ngLdapGroupSyncEventPublisher.publishLdapGroupSyncEvent(settings.getAccountId(), settings.getUuid());
+    } catch (Exception e) {
+      log.error("EVENT_LDAP_GROUP_SYNC: Exception in publishing event for LDAP Group Sync for account {} and SSO {} ",
+          settings.getAccountId(), settings.getUuid());
+    }
   }
 }

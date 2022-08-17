@@ -14,9 +14,6 @@ import static io.harness.remote.client.RestClientUtils.getResponse;
 
 import static software.wings.beans.TaskType.NG_LDAP_GROUPS_SYNC;
 import static software.wings.beans.TaskType.NG_LDAP_SEARCH_GROUPS;
-import static software.wings.beans.TaskType.NG_LDAP_TEST_CONN_SETTINGS;
-import static software.wings.beans.TaskType.NG_LDAP_TEST_GROUP_SETTINGS;
-import static software.wings.beans.TaskType.NG_LDAP_TEST_USER_SETTINGS;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -26,8 +23,6 @@ import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.delegate.beans.RemoteMethodReturnValueData;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.ldap.LdapSettingsWithEncryptedDataDetail;
-import io.harness.delegate.beans.ldap.NGLdapDelegateTaskParameters;
-import io.harness.delegate.beans.ldap.NGLdapDelegateTaskResponse;
 import io.harness.delegate.beans.ldap.NGLdapGroupSearchTaskParameters;
 import io.harness.delegate.beans.ldap.NGLdapGroupSearchTaskResponse;
 import io.harness.delegate.beans.ldap.NGLdapGroupSyncTaskResponse;
@@ -40,6 +35,7 @@ import io.harness.ng.authenticationsettings.remote.AuthSettingsManagerClient;
 import io.harness.ng.core.api.UserGroupService;
 import io.harness.ng.core.user.entities.UserGroup;
 import io.harness.rest.RestResponse;
+import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.service.DelegateGrpcClientWrapper;
 
 import software.wings.beans.TaskType;
