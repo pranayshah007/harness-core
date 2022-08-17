@@ -82,7 +82,8 @@ public class GithubPackagesArtifactTaskHandler
 
   public ArtifactTaskExecutionResponse listPackages(GithubPackagesArtifactDelegateRequest attributes) {
     List<Map<String, String>> packageDetails = githubPackagesRegistryService.listPackages(
-        GithubPackagesRequestResponseMapper.toGithubPackagesInternalConfig(attributes), attributes.getOrg());
+        GithubPackagesRequestResponseMapper.toGithubPackagesInternalConfig(attributes), attributes.getPackageType(),
+        attributes.getOrg());
     return getSuccessTaskExecutionResponse(
         GithubPackagesRequestResponseMapper.toGithubPackagesResponse(packageDetails, attributes), null);
   }

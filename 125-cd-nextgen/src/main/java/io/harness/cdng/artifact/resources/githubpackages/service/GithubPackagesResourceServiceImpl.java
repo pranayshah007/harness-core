@@ -78,8 +78,8 @@ public class GithubPackagesResourceServiceImpl implements GithubPackagesResource
   }
 
   @Override
-  public GithubPackagesResponseDTO getPackageDetails(
-      IdentifierRef connectorRef, String accountId, String orgIdentifier, String projectIdentifier, String org) {
+  public GithubPackagesResponseDTO getPackageDetails(IdentifierRef connectorRef, String accountId, String orgIdentifier,
+      String projectIdentifier, String packageType, String org) {
     GithubConnectorDTO githubConnector = getConnector(connectorRef);
 
     BaseNGAccess baseNGAccess = getBaseNGAccess(connectorRef.getAccountIdentifier(), orgIdentifier, projectIdentifier);
@@ -87,7 +87,7 @@ public class GithubPackagesResourceServiceImpl implements GithubPackagesResource
     List<EncryptedDataDetail> encryptionDetails = getEncryptionDetails(githubConnector, baseNGAccess);
 
     GithubPackagesArtifactDelegateRequest githubPackagesArtifactDelegateRequest =
-        ArtifactDelegateRequestUtils.getGithubPackagesDelegateRequest(null, null, null, null, org,
+        ArtifactDelegateRequestUtils.getGithubPackagesDelegateRequest(null, packageType, null, null, org,
             connectorRef.getIdentifier(), githubConnector, encryptionDetails, ArtifactSourceType.GITHUB_PACKAGES);
 
     try {

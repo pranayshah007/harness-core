@@ -120,8 +120,69 @@ public class GithubPackagesRegistryServiceImpl implements GithubPackagesRegistry
   }
 
   @Override
-  public List<Map<String, String>> listPackages(GithubPackagesInternalConfig githubPackagesInternalConfig, String org) {
-    return null;
+  public List<Map<String, String>> listPackages(
+      GithubPackagesInternalConfig githubPackagesInternalConfig, String packageType, String org) {
+    List<Map<String, String>> map;
+
+    try {
+      map = getPackages(githubPackagesInternalConfig, packageType, org);
+    } catch (GithubPackagesServerRuntimeException ex) {
+      throw ex;
+    } catch (Exception e) {
+      throw NestedExceptionUtils.hintWithExplanationException("Could not fetch the packages",
+          "Check if the permissions are scoped for the authenticated user",
+          new ArtifactServerException(ExceptionUtils.getMessage(e), e, USER));
+    }
+
+    return map;
+  }
+
+  private List<Map<String, String>> getPackages(
+      GithubPackagesInternalConfig githubPackagesInternalConfig, String packageType, String org) throws IOException {
+    GithubPackagesRestClient githubPackagesRestClient =
+        githubPackagesRestClientFactory.getGithubPackagesRestClient(githubPackagesInternalConfig);
+
+    String authType = githubPackagesInternalConfig.getAuthMechanism();
+
+    String basicAuthHeader = "";
+
+    if (authType == USERNAME_PASSWORD) {
+      basicAuthHeader =
+          Credentials.basic(githubPackagesInternalConfig.getUsername(), githubPackagesInternalConfig.getPassword());
+    } else if (authType == USERNAME_TOKEN) {
+      basicAuthHeader = "token " + githubPackagesInternalConfig.getToken();
+    } else if (authType == OAUTH) {
+      basicAuthHeader =
+          Credentials.basic(githubPackagesInternalConfig.getUsername(), githubPackagesInternalConfig.getToken());
+    }
+
+    Response<List<JsonNode>> response;
+
+    if (EmptyPredicate.isEmpty(org)) {
+      response = githubPackagesRestClient.listPackages(basicAuthHeader, packageType).execute();
+    } else {
+      response = githubPackagesRestClient.listPackagesForOrg(basicAuthHeader, packageType, org).execute();
+    }
+
+    return processPackagesResponse(response.body());
+  }
+
+  private List<Map<String, String>> processPackagesResponse(List<JsonNode> response) {
+    List<Map<String, String>> packages = new ArrayList<>();
+
+    for (JsonNode node : response) {
+      Map<String, String> resMap = new HashMap<>();
+
+      resMap.put("packageId", node.get("id").asText());
+      resMap.put("packageName", node.get("name").asText());
+      resMap.put("packageType", node.get("package_type").asText());
+      resMap.put("visibility", node.get("visibility").asText());
+      resMap.put("packageUrl", node.get("html_url").asText());
+
+      packages.add(resMap);
+    }
+
+    return packages;
   }
 
   private List<BuildDetails> regexFilteringForGetBuilds(

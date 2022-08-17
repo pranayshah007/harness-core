@@ -19,6 +19,11 @@ import lombok.experimental.FieldDefaults;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class GithubPackageDTO {
   /**
+   * Package Id
+   */
+  String packageId;
+
+  /**
    * Github Package Name
    */
   String packageName;
@@ -29,7 +34,12 @@ public class GithubPackageDTO {
   String packageType;
 
   /**
-   * Github Organization(optional)
+   * Package Visibility
    */
-  String org;
+  String visibility;
+
+  /**
+   * Package Url
+   */
+  String packageUrl;
 }

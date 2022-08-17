@@ -37,5 +37,6 @@ public interface GithubPackagesRegistryService {
   BuildDetails getBuild(GithubPackagesInternalConfig toGithubPackagesInternalConfig, String packageName,
       String packageType, String version, String org);
 
-  List<Map<String, String>> listPackages(GithubPackagesInternalConfig githubPackagesInternalConfig, String org);
+  List<Map<String, String>> listPackages(
+      GithubPackagesInternalConfig githubPackagesInternalConfig, String packageType, String org);
 }
