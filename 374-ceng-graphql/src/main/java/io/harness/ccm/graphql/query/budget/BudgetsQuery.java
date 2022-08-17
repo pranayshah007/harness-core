@@ -84,11 +84,15 @@ public class BudgetsQuery {
     rbacHelper.checkBudgetViewPermission(accountId, null, null);
     List<BudgetSummary> budgetSummaryList = new ArrayList<>();
     List<Budget> budgets = budgetDao.list(accountId, limit, offset);
+    log.info("budgets 1: {}", budgets);
     if (fetchOnlyPerspectiveBudgets) {
       budgets = budgets.stream().filter(BudgetUtils::isPerspectiveBudget).collect(Collectors.toList());
     }
+    log.info("budgets 2: {}", budgets);
     budgets.sort(Comparator.comparing(Budget::getLastUpdatedAt).reversed());
+    log.info("budgets 3: {}", budgets);
     budgets.forEach(budget -> budgetSummaryList.add(buildBudgetSummary(budget, false)));
+    log.info("budgetSummaryList: {}", budgetSummaryList);
 
     return budgetSummaryList;
   }
