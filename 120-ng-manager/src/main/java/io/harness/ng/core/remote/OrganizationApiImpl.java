@@ -118,8 +118,7 @@ public class OrganizationApiImpl implements OrganizationApi {
 
   @NGAccessControlCheck(resourceType = ORGANIZATION, permission = EDIT_ORGANIZATION_PERMISSION)
   @Override
-  public Response updateOrganization(
-      @ResourceIdentifier String id, UpdateOrganizationRequest request, @AccountIdentifier String account) {
+  public Response updateOrganization(UpdateOrganizationRequest request, @ResourceIdentifier String id, @AccountIdentifier String account) {
     Organization updatedOrganization =
         organizationService.update(account, id, OrganizationApiMapper.getOrganizationDto(id, request));
     return Response.ok().entity(getOrganizationResponse(updatedOrganization)).build();
