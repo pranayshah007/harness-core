@@ -792,8 +792,18 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
     String stageYamlWithMissingInputs = readFile("service/updated-stage-template-with-step-template.yaml");
     TemplateEntity stageTemplateWithMissingInputs =
         entity.withYaml(stageYamlWithMissingInputs).withIdentifier(stageTemplateIdentifier);
-    testShouldThrowExceptionWithInvalidTemplateInputs(
-        () -> templateService.create(stageTemplateWithMissingInputs, false, ""));
+    assertThatThrownBy(() -> templateService.create(stageTemplateWithMissingInputs, false, ""))
+        .isInstanceOf(NGTemplateResolveExceptionV2.class)
+        .hasMessage("Exception in resolving template refs in given yaml.")
+        .extracting(ex -> ((NGTemplateResolveExceptionV2) ex).getMetadata())
+        .isInstanceOf(ValidateTemplateInputsResponseDTO.class)
+        .isNotNull()
+        .hasFieldOrPropertyWithValue("validYaml", false)
+        .extracting(resp -> ((ValidateTemplateInputsResponseDTO) resp).getErrorNodeSummary())
+        .isNotNull()
+        .hasFieldOrPropertyWithValue("childrenErrorNodes", new ArrayList<>())
+        .extracting(ErrorNodeSummary::getTemplateResponse)
+        .isNull();
 
     String stageYaml = readFile("service/stage-template-with-step-template.yaml");
     TemplateEntity stageTemplate = entity.withYaml(stageYaml).withIdentifier(stageTemplateIdentifier);
@@ -840,6 +850,7 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
         .extracting(resp -> ((ValidateTemplateInputsResponseDTO) resp).getErrorNodeSummary())
         .isNotNull()
         .hasFieldOrPropertyWithValue("childrenErrorNodes", new ArrayList<>())
+        .hasFieldOrProperty("nodeInfo")
         .extracting(ErrorNodeSummary::getTemplateResponse)
         .isNotNull()
         .hasFieldOrPropertyWithValue("identifier", "template2")
