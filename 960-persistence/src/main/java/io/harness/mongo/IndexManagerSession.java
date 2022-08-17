@@ -60,7 +60,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.time.Duration;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
@@ -70,6 +69,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
@@ -173,49 +173,49 @@ public class IndexManagerSession {
     return processIndexesInternal(datastore, morphia, store, includeUnannotatedStoreIn, processor);
   }
 
+  // IndexesProcessor should be used in a thread safe manner. For example, see usage of CopyOnWriteArrayList in allIndexes
   private static Set<String> processIndexesInternal(AdvancedDatastore datastore, Morphia morphia, Store store,
       boolean includeUnannotatedStoreIn, IndexesProcessor processor) {
-    Set<String> processedCollections = new HashSet<>();
     Collection<MappedClass> mappedClasses = morphia.getMapper().getMappedClasses();
-    mappedClasses.forEach(mc -> {
-      Entity entity = mc.getEntityAnnotation();
-      if (entity == null) {
-        return;
-      }
+    Map<String, MappedClass> map =
+        mappedClasses.stream()
+            .filter(mc -> mc.getEntityAnnotation() != null)
+            .filter(mc -> {
+              Set<String> storeInSet = addStoreInInSet(mc);
+              if (isNotEmpty(storeInSet)) {
+                return storeInSet.contains(DbAliases.ALL) || (store != null && storeInSet.contains(store.getName()));
+              } else {
+                return includeUnannotatedStoreIn;
+              }
+            })
+            .collect(Collectors.toMap(mc -> {
+              DBCollection collection = datastore.getCollection(mc.getClazz());
+              return collection.getName();
+            }, mc -> mc, (mc1, mc2) -> mc1));
 
-      DBCollection collection = datastore.getCollection(mc.getClazz());
+    return map.values()
+        .parallelStream()
+        .map(mc -> {
+          Entity entity = mc.getEntityAnnotation();
+          DBCollection collection = datastore.getCollection(mc.getClazz());
 
-      Set<String> storeInSet = new HashSet<>();
-      addStoreInInSet(mc, storeInSet);
-      if (isNotEmpty(storeInSet)) {
-        if (!storeInSet.contains(DbAliases.ALL) && (store == null || !storeInSet.contains(store.getName()))) {
-          return;
-        }
-      } else if (!includeUnannotatedStoreIn) {
-        return;
-      }
-      try (AutoLogContext ignore = new CollectionLogContext(collection.getName(), OVERRIDE_ERROR)) {
-        if (processedCollections.contains(collection.getName())) {
-          return;
-        }
-        processedCollections.add(collection.getName());
-
-        if (entity.noClassnameStored() && !Modifier.isFinal(mc.getClazz().getModifiers())) {
-          log.error(
-              "No class store collection {} with not final class {}", collection.getName(), mc.getClazz().getName());
-        }
-        if (!entity.noClassnameStored() && Modifier.isFinal(mc.getClazz().getModifiers())) {
-          log.error("Class store collection {} with final class {}", collection.getName(), mc.getClazz().getName());
-        }
-
-        processor.process(mc, collection);
-      }
-    });
-
-    return processedCollections;
+          try (AutoLogContext ignore = new CollectionLogContext(collection.getName(), OVERRIDE_ERROR)) {
+            if (entity.noClassnameStored() && !Modifier.isFinal(mc.getClazz().getModifiers())) {
+              log.error("No class store collection {} with not final class {}", collection.getName(),
+                  mc.getClazz().getName());
+            }
+            if (!entity.noClassnameStored() && Modifier.isFinal(mc.getClazz().getModifiers())) {
+              log.error("Class store collection {} with final class {}", collection.getName(), mc.getClazz().getName());
+            }
+            processor.process(mc, collection);
+            return collection.getName();
+          }
+        })
+        .collect(Collectors.toSet());
   }
 
-  private static void addStoreInInSet(MappedClass mc, Set<String> storeInSet) {
+  private static Set<String> addStoreInInSet(MappedClass mc) {
+    Set<String> storeInSet = new HashSet<>();
     final StoreIn storeIn = mc.getClazz().getAnnotation(StoreIn.class);
     final StoreInMultiple storeInMultiple = mc.getClazz().getAnnotation(StoreInMultiple.class);
     if (storeIn != null) {
@@ -225,12 +225,13 @@ public class IndexManagerSession {
       storeInSet.addAll(
           emptyIfNull(Arrays.stream(storeInMultiple.value()).map(StoreIn::value).collect(Collectors.toList())));
     }
+    return storeInSet;
   }
 
   // TODO(KARAN): clean includeUnannotatedStoreIn variable after all collections have @StoreIn annotations
   public static List<IndexCreator> allIndexes(
       AdvancedDatastore datastore, Morphia morphia, Store store, Boolean includeUnannotatedStoreIn) {
-    List<IndexCreator> result = new ArrayList<>();
+    List<IndexCreator> result = new CopyOnWriteArrayList<>();
     processIndexes(datastore, morphia, store, firstNonNull(includeUnannotatedStoreIn, true),
         (mc, collection) -> result.addAll(indexCreators(mc, collection).values()));
     return result;
