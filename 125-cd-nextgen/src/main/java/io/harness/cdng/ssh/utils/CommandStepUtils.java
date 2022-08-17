@@ -18,6 +18,8 @@ import io.harness.cdng.service.steps.ServiceStepOutcome;
 import io.harness.cdng.ssh.CommandStepParameters;
 import io.harness.common.ParameterFieldHelper;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.delegate.task.utils.PhysicalDataCenterUtils;
+import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.k8s.ServiceSpecType;
 import io.harness.pms.yaml.ParameterField;
@@ -126,6 +128,8 @@ public class CommandStepUtils {
   }
 
   public static String getHost(CommandStepParameters commandStepParameters) {
-    return ParameterFieldHelper.getParameterFieldValue(commandStepParameters.getHost());
+    String host = ParameterFieldHelper.getParameterFieldValue(commandStepParameters.getHost());
+    return PhysicalDataCenterUtils.extractHostnameFromHost(host).orElseThrow(
+        () -> new InvalidArgumentsException(format("Failed to resolve hostname: %s", host)));
   }
 }

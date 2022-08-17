@@ -8,6 +8,7 @@
 package io.harness.delegate.task.shell;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.delegate.task.utils.PhysicalDataCenterConstants.DEFAULT_WINRM_PORT;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.connector.awsconnector.AwsCapabilityHelper;
@@ -47,7 +48,8 @@ public class WinrmTaskParameters extends CommandTaskParameters {
       PdcWinRmInfraDelegateConfig pdcSshInfraDelegateConfig = (PdcWinRmInfraDelegateConfig) winRmInfraDelegateConfig;
       if (pdcSshInfraDelegateConfig.getPhysicalDataCenterConnectorDTO() != null) {
         capabilities.addAll(PhysicalDataCenterConnectorCapabilityHelper.fetchRequiredExecutionCapabilities(
-            pdcSshInfraDelegateConfig.getPhysicalDataCenterConnectorDTO(), maskingEvaluator));
+            pdcSshInfraDelegateConfig.getPhysicalDataCenterConnectorDTO(), maskingEvaluator,
+            getDefaultPort(pdcSshInfraDelegateConfig)));
       }
       capabilities.addAll(EncryptedDataDetailsCapabilityHelper.fetchExecutionCapabilitiesForEncryptedDataDetails(
           pdcSshInfraDelegateConfig.getEncryptionDataDetails(), maskingEvaluator));
@@ -69,5 +71,12 @@ public class WinrmTaskParameters extends CommandTaskParameters {
       capabilities.addAll(EncryptedDataDetailsCapabilityHelper.fetchExecutionCapabilitiesForEncryptedDataDetails(
           awsWinrmInfraDelegateConfig.getEncryptionDataDetails(), maskingEvaluator));
     }
+  }
+
+  private String getDefaultPort(PdcWinRmInfraDelegateConfig pdcSshInfraDelegateConfig) {
+    return pdcSshInfraDelegateConfig.getWinRmCredentials() == null
+            || pdcSshInfraDelegateConfig.getWinRmCredentials().getPort() == 0
+        ? DEFAULT_WINRM_PORT
+        : String.valueOf(pdcSshInfraDelegateConfig.getWinRmCredentials().getPort());
   }
 }
