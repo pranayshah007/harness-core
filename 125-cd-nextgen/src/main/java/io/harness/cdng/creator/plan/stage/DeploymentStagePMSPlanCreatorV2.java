@@ -330,8 +330,8 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
     return new AddServiceDependencyResponse(serviceField, serviceSpecNodeUuid);
   }
 
-  @AllArgsConstructor
   @Data
+  @AllArgsConstructor
   static class AddServiceDependencyResponse {
     YamlField serviceField;
     String serviceSpecNodeId;

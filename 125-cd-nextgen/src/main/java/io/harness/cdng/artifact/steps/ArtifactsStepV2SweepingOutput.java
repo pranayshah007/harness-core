@@ -14,10 +14,10 @@ import lombok.EqualsAndHashCode;
 import lombok.Value;
 import org.springframework.data.annotation.TypeAlias;
 
-@Builder
-@Value
-@EqualsAndHashCode(callSuper = false)
 @OwnedBy(HarnessTeam.CI)
+@Value
+@Builder
+@EqualsAndHashCode(callSuper = false)
 @TypeAlias("ArtifactsStepV2SweepingOutput")
 @JsonTypeName("artifactsStepV2SweepingOutput")
 @RecasterAlias("io.harness.cdng.artifact.steps.ArtifactsStepV2SweepingOutput")
