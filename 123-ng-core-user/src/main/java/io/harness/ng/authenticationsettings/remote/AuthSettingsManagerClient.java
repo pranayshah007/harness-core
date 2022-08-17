@@ -113,8 +113,15 @@ public interface AuthSettingsManagerClient {
   @POST(API_PREFIX + "sso/ldap/setting-with-encrypted-details")
   @KryoRequest
   @KryoResponse
-  Call<RestResponse<LdapSettingsWithEncryptedDataDetail>> getLdapSettingsWithEncryptedDataDetails(
+  Call<RestResponse<LdapSettingsWithEncryptedDataDetail>> getLdapSettingsUsingAccountIdAndLdapSettings(
       @Query("accountId") String accountIdentifier, @Body LdapSettings ldapSettings);
+
+  @GET(API_PREFIX + "sso/ldap/setting-with-encrypted-details")
+  @KryoRequest
+  @KryoResponse
+  Call<RestResponse<LdapSettingsWithEncryptedDataDetail>> getLdapSettingsUsingAccountId(
+          @Query("accountId") String accountIdentifier);
+
 
   @POST(API_PREFIX + "sso/ldap/settings")
   Call<RestResponse<LdapSettings>> createLdapSettings(
