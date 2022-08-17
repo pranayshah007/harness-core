@@ -30,6 +30,7 @@ import software.wings.infra.InfrastructureDefinition;
 import software.wings.infra.InfrastructureDefinition.InfrastructureDefinitionKeys;
 import software.wings.infra.ListInfraDefinitionParams;
 import software.wings.security.PermissionAttribute.ResourceType;
+import software.wings.security.annotations.ApiKeyAuthorized;
 import software.wings.security.annotations.AuthRule;
 import software.wings.security.annotations.Scope;
 import software.wings.service.impl.aws.model.AwsAsgGetRunningCountData;
@@ -72,6 +73,7 @@ public class InfrastructureDefinitionResource {
   @Timed
   @ExceptionMetered
   @AuthRule(permissionType = ENV, action = READ)
+  @ApiKeyAuthorized(permissionType = ENV, action = READ)
   public RestResponse<PageResponse<InfrastructureDefinition>> list(
       @BeanParam PageRequest<InfrastructureDefinition> pageRequest) {
     return new RestResponse<>(infrastructureDefinitionService.list(pageRequest));
@@ -82,6 +84,7 @@ public class InfrastructureDefinitionResource {
   @Timed
   @ExceptionMetered
   @AuthRule(permissionType = ENV, action = READ)
+  @ApiKeyAuthorized(permissionType = ENV, action = READ)
   public RestResponse<PageResponse<InfrastructureDefinition>> listPost(
       @Context PageRequest pageRequest, ListInfraDefinitionParams listInfraDefinitionParams) {
     if (EmptyPredicate.isNotEmpty(listInfraDefinitionParams.getDeploymentTypeFromMetaData())) {
@@ -97,6 +100,7 @@ public class InfrastructureDefinitionResource {
   @Timed
   @ExceptionMetered
   @AuthRule(permissionType = ENV, action = READ)
+  @ApiKeyAuthorized(permissionType = ENV, action = READ)
   public RestResponse<PageResponse<InfraDefinitionDetail>> listDetails(
       @BeanParam PageRequest<InfrastructureDefinition> pageRequest, @NotEmpty @QueryParam("appId") String appId,
       @NotEmpty @QueryParam("envId") String envId) {
@@ -107,6 +111,7 @@ public class InfrastructureDefinitionResource {
   @Timed
   @ExceptionMetered
   @AuthRule(permissionType = ENV, action = UPDATE)
+  @ApiKeyAuthorized(permissionType = ENV, action = UPDATE)
   public RestResponse<InfrastructureDefinition> save(@QueryParam("appId") String appId,
       @QueryParam("envId") String envId, InfrastructureDefinition infrastructureDefinition) {
     infrastructureDefinition.setAppId(appId);
@@ -119,6 +124,7 @@ public class InfrastructureDefinitionResource {
   @Timed
   @ExceptionMetered
   @AuthRule(permissionType = ENV, action = READ)
+  @ApiKeyAuthorized(permissionType = ENV, action = READ)
   public RestResponse<InfrastructureDefinition> get(@QueryParam("appId") String appId,
       @QueryParam("envId") String envId, @PathParam("infraDefinitionId") String infraDefinitionId) {
     return new RestResponse<>(infrastructureDefinitionService.get(appId, infraDefinitionId));
@@ -129,6 +135,7 @@ public class InfrastructureDefinitionResource {
   @Timed
   @ExceptionMetered
   @AuthRule(permissionType = ENV, action = READ)
+  @ApiKeyAuthorized(permissionType = ENV, action = READ)
   public RestResponse<InfraDefinitionDetail> getDetail(@QueryParam("appId") String appId,
       @QueryParam("envId") String envId, @PathParam("infraDefinitionId") String infraDefinitionId) {
     return new RestResponse<>(infrastructureDefinitionService.getDetail(appId, infraDefinitionId));
@@ -139,6 +146,7 @@ public class InfrastructureDefinitionResource {
   @Timed
   @ExceptionMetered
   @AuthRule(permissionType = ENV, action = UPDATE)
+  @ApiKeyAuthorized(permissionType = ENV, action = UPDATE)
   public RestResponse delete(@QueryParam("appId") String appId, @QueryParam("envId") String envId,
       @PathParam("infraDefinitionId") String infraDefinitionId) {
     infrastructureDefinitionService.delete(appId, infraDefinitionId);
@@ -150,6 +158,7 @@ public class InfrastructureDefinitionResource {
   @Timed
   @ExceptionMetered
   @AuthRule(permissionType = ENV, action = UPDATE)
+  @ApiKeyAuthorized(permissionType = ENV, action = UPDATE)
   public RestResponse<InfrastructureDefinition> update(@QueryParam("appId") String appId,
       @QueryParam("envId") String envId, @PathParam("infraDefinitionId") String infraDefinitionId,
       InfrastructureDefinition infrastructureDefinition) {
@@ -164,6 +173,7 @@ public class InfrastructureDefinitionResource {
   @Timed
   @ExceptionMetered
   @AuthRule(permissionType = LOGGED_IN)
+  @ApiKeyAuthorized(permissionType = LOGGED_IN)
   public RestResponse<Map<DeploymentType, List<SettingVariableTypes>>> infrastructureTypes() {
     return new RestResponse<>(infrastructureDefinitionService.getDeploymentTypeCloudProviderOptions());
   }
@@ -173,6 +183,7 @@ public class InfrastructureDefinitionResource {
   @Timed
   @ExceptionMetered
   @AuthRule(permissionType = ENV, action = READ, skipAuth = true)
+  @ApiKeyAuthorized(permissionType = ENV, action = READ, skipAuth = true)
   public RestResponse<List<String>> listHosts(
       @QueryParam("appId") String appId, @PathParam("infraDefinitionId") String infraDefinitionId) {
     return new RestResponse<>(infrastructureDefinitionService.listHostDisplayNames(appId, infraDefinitionId, null));
@@ -183,6 +194,7 @@ public class InfrastructureDefinitionResource {
   @Timed
   @ExceptionMetered
   @AuthRule(permissionType = ENV, action = READ, skipAuth = true)
+  @ApiKeyAuthorized(permissionType = ENV, action = READ, skipAuth = true)
   public RestResponse<Map<String, String>> getInstanceRoles(
       @QueryParam("appId") String appId, @PathParam("infraDefinitionId") String infraDefinitionId) {
     return new RestResponse<>(infrastructureDefinitionService.listAwsIamRoles(appId, infraDefinitionId));
@@ -193,6 +205,7 @@ public class InfrastructureDefinitionResource {
   @Timed
   @ExceptionMetered
   @AuthRule(permissionType = ENV, action = READ, skipAuth = true)
+  @ApiKeyAuthorized(permissionType = ENV, action = READ, skipAuth = true)
   public RestResponse<Map<String, String>> getLoadBalancers(
       @QueryParam("appId") String appId, @PathParam("infraDefinitionId") String infraDefinitionId) {
     return new RestResponse<>(infrastructureDefinitionService.listLoadBalancers(appId, infraDefinitionId));
@@ -203,6 +216,7 @@ public class InfrastructureDefinitionResource {
   @Timed
   @ExceptionMetered
   @AuthRule(permissionType = ENV, action = READ, skipAuth = true)
+  @ApiKeyAuthorized(permissionType = ENV, action = READ, skipAuth = true)
   public RestResponse<Map<String, String>> getAwsLoadBalancers(
       @QueryParam("appId") String appId, @PathParam("infraDefinitionId") String infraDefinitionId) {
     return new RestResponse<>(infrastructureDefinitionService.listElasticLoadBalancers(appId, infraDefinitionId));
@@ -213,6 +227,7 @@ public class InfrastructureDefinitionResource {
   @Timed
   @ExceptionMetered
   @AuthRule(permissionType = ENV, action = READ, skipAuth = true)
+  @ApiKeyAuthorized(permissionType = ENV, action = READ, skipAuth = true)
   public RestResponse<List<AwsLoadBalancerDetails>> getAwsLoadBalancerDetails(
       @QueryParam("appId") String appId, @PathParam("infraDefinitionId") String infraDefinitionId) {
     return new RestResponse<>(infrastructureDefinitionService.listElasticLoadBalancerDetails(appId, infraDefinitionId));
@@ -223,6 +238,7 @@ public class InfrastructureDefinitionResource {
   @Timed
   @ExceptionMetered
   @AuthRule(permissionType = ENV, action = READ, skipAuth = true)
+  @ApiKeyAuthorized(permissionType = ENV, action = READ, skipAuth = true)
   public RestResponse<Map<String, String>> getAwsNetworkLoadBalancers(
       @QueryParam("appId") String appId, @PathParam("infraDefinitionId") String infraDefinitionId) {
     return new RestResponse<>(infrastructureDefinitionService.listNetworkLoadBalancers(appId, infraDefinitionId));
@@ -233,6 +249,7 @@ public class InfrastructureDefinitionResource {
   @Timed
   @ExceptionMetered
   @AuthRule(permissionType = ENV, action = READ, skipAuth = true)
+  @ApiKeyAuthorized(permissionType = ENV, action = READ, skipAuth = true)
   public RestResponse<List<AwsLoadBalancerDetails>> getAwsNetworkLoadBalancerDetails(
       @QueryParam("appId") String appId, @PathParam("infraDefinitionId") String infraDefinitionId) {
     return new RestResponse<>(infrastructureDefinitionService.listNetworkLoadBalancerDetails(appId, infraDefinitionId));
@@ -243,6 +260,7 @@ public class InfrastructureDefinitionResource {
   @Timed
   @ExceptionMetered
   @AuthRule(permissionType = ENV, action = READ, skipAuth = true)
+  @ApiKeyAuthorized(permissionType = ENV, action = READ, skipAuth = true)
   public RestResponse<Map<String, String>> getTargetGroups(@QueryParam("appId") String appId,
       @PathParam("infraDefinitionId") String infraDefinitionId,
       @PathParam("loadbalancerName") String loadbalancerName) {
@@ -255,6 +273,7 @@ public class InfrastructureDefinitionResource {
   @Timed
   @ExceptionMetered
   @AuthRule(permissionType = ENV, action = READ, skipAuth = true)
+  @ApiKeyAuthorized(permissionType = ENV, action = READ, skipAuth = true)
   public RestResponse<List<AwsElbListener>> getListeners(@QueryParam("appId") String appId,
       @PathParam("infraDefinitionId") String infraDefinitionId,
       @PathParam("loadbalancerName") String loadbalancerName) {
@@ -267,6 +286,7 @@ public class InfrastructureDefinitionResource {
   @Timed
   @ExceptionMetered
   @AuthRule(permissionType = ENV, action = READ, skipAuth = true)
+  @ApiKeyAuthorized(permissionType = ENV, action = READ, skipAuth = true)
   public RestResponse<List<AwsRoute53HostedZoneData>> getHostedZones(
       @QueryParam("appId") String appId, @PathParam("infraDefinitionId") String infraDefinitionId) {
     return new RestResponse<>(infrastructureDefinitionService.listHostedZones(appId, infraDefinitionId));
@@ -277,6 +297,7 @@ public class InfrastructureDefinitionResource {
   @Timed
   @ExceptionMetered
   @AuthRule(permissionType = ENV, action = READ, skipAuth = true)
+  @ApiKeyAuthorized(permissionType = ENV, action = READ, skipAuth = true)
   public RestResponse<Integer> getRunningCountForPcfApp(@QueryParam("appId") String appId,
       @QueryParam("appNameExpr") String appNameExpr, @PathParam("infraDefinitionId") String infraDefinitionId,
       @QueryParam("serviceId") String serviceId) {
@@ -289,6 +310,7 @@ public class InfrastructureDefinitionResource {
   @Timed
   @ExceptionMetered
   @AuthRule(permissionType = ENV, action = READ, skipAuth = true)
+  @ApiKeyAuthorized(permissionType = ENV, action = READ, skipAuth = true)
   public RestResponse<List<ElastiGroup>> listElastgroups(
       @QueryParam("appId") String appId, @PathParam("computeProviderId") String computeProviderId) {
     return new RestResponse<>(infrastructureDefinitionService.listElastiGroups(appId, computeProviderId));
@@ -299,6 +321,7 @@ public class InfrastructureDefinitionResource {
   @Timed
   @ExceptionMetered
   @AuthRule(permissionType = ENV, action = READ, skipAuth = true)
+  @ApiKeyAuthorized(permissionType = ENV, action = READ, skipAuth = true)
   public RestResponse<String> getElastigroupJson(@QueryParam("appId") String appId,
       @PathParam("computeProviderId") String computeProviderId, @PathParam("elastigroupId") String elastigroupId) {
     return new RestResponse<>(
@@ -310,6 +333,7 @@ public class InfrastructureDefinitionResource {
   @Timed
   @ExceptionMetered
   @AuthRule(permissionType = ENV, action = READ, skipAuth = true)
+  @ApiKeyAuthorized(permissionType = ENV, action = READ, skipAuth = true)
   public RestResponse<AwsAsgGetRunningCountData> getRunningCountForAmi(@QueryParam("appId") String appId,
       @PathParam("infraDefinitionId") String infraDefinitionId, @QueryParam("serviceId") String serviceId) {
     return new RestResponse<>(
@@ -321,6 +345,7 @@ public class InfrastructureDefinitionResource {
   @Timed
   @ExceptionMetered
   @AuthRule(permissionType = ENV, action = READ, skipAuth = true)
+  @ApiKeyAuthorized(permissionType = ENV, action = READ, skipAuth = true)
   public RestResponse<SpotinstElastigroupRunningCountData> getRunningCountForSpotinst(@QueryParam("appId") String appId,
       @PathParam("infraDefinitionId") String infraDefinitionId, @QueryParam("serviceId") String serviceId,
       @QueryParam("blueGreen") boolean blueGreen, @QueryParam("groupNameExpr") String groupNameExpr) {
@@ -333,6 +358,7 @@ public class InfrastructureDefinitionResource {
   @Timed
   @ExceptionMetered
   @AuthRule(permissionType = ENV, action = READ, skipAuth = true)
+  @ApiKeyAuthorized(permissionType = ENV, action = READ, skipAuth = true)
   public RestResponse<String> getRunningContainerCount(@QueryParam("appId") String appId,
       @QueryParam("serviceNameExpr") String serviceNameExpr, @PathParam("infraDefinitionId") String infraDefinitionId,
       @QueryParam("serviceId") String serviceId) {
@@ -345,6 +371,7 @@ public class InfrastructureDefinitionResource {
   @Timed
   @ExceptionMetered
   @AuthRule(permissionType = ENV, action = READ)
+  @ApiKeyAuthorized(permissionType = ENV, action = READ)
   public RestResponse<List<String>> getRoutesForPcf(
       @QueryParam("appId") String appId, @PathParam("infraDefinitionId") String infraDefinitionId) {
     return new RestResponse<>(infrastructureDefinitionService.listRoutesForPcf(appId, infraDefinitionId));
@@ -355,6 +382,7 @@ public class InfrastructureDefinitionResource {
   @Timed
   @ExceptionMetered
   @AuthRule(permissionType = ENV, action = READ, skipAuth = true)
+  @ApiKeyAuthorized(permissionType = ENV, action = READ, skipAuth = true)
   public RestResponse<List<String>> getAzureLoadBalancers(
       @QueryParam("appId") String appId, @PathParam("infraDefinitionId") String infraDefinitionId) {
     return new RestResponse<>(infrastructureDefinitionService.listAzureLoadBalancers(appId, infraDefinitionId));
@@ -365,6 +393,7 @@ public class InfrastructureDefinitionResource {
   @Timed
   @ExceptionMetered
   @AuthRule(permissionType = ENV, action = READ, skipAuth = true)
+  @ApiKeyAuthorized(permissionType = ENV, action = READ, skipAuth = true)
   public RestResponse<List<String>> getAzureLoadBalancerBackendPools(@QueryParam("appId") String appId,
       @PathParam("infraDefinitionId") String infraDefinitionId,
       @PathParam("loadBalancerName") String loadBalancerName) {
@@ -377,6 +406,7 @@ public class InfrastructureDefinitionResource {
   @Timed
   @ExceptionMetered
   @AuthRule(permissionType = ENV, action = READ, skipAuth = true)
+  @ApiKeyAuthorized(permissionType = ENV, action = READ, skipAuth = true)
   public RestResponse<List<AwsVPC>> listVpcs(@QueryParam("appId") String appId, @QueryParam("region") String region,
       @PathParam("computeProviderId") String computeProviderId) {
     return new RestResponse<>(infrastructureDefinitionService.listVPC(appId, computeProviderId, region));
@@ -387,6 +417,7 @@ public class InfrastructureDefinitionResource {
   @Timed
   @ExceptionMetered
   @AuthRule(permissionType = ENV, action = READ, skipAuth = true)
+  @ApiKeyAuthorized(permissionType = ENV, action = READ, skipAuth = true)
   public RestResponse<List<AwsSecurityGroup>> listSecurityGroups(@QueryParam("appId") String appId,
       @QueryParam("region") String region, @QueryParam("vpcIds") @NotNull List<String> vpcIds,
       @PathParam("computeProviderId") String computeProviderId) {
@@ -399,6 +430,7 @@ public class InfrastructureDefinitionResource {
   @Timed
   @ExceptionMetered
   @AuthRule(permissionType = ENV, action = READ, skipAuth = true)
+  @ApiKeyAuthorized(permissionType = ENV, action = READ, skipAuth = true)
   public RestResponse<List<AwsSubnet>> listSubnets(@QueryParam("appId") String appId,
       @QueryParam("region") String region, @QueryParam("vpcIds") @NotNull List<String> vpcIds,
       @PathParam("computeProviderId") String computeProviderId) {
@@ -410,6 +442,7 @@ public class InfrastructureDefinitionResource {
   @Timed
   @ExceptionMetered
   @AuthRule(permissionType = ENV, action = READ, skipAuth = true)
+  @ApiKeyAuthorized(permissionType = ENV, action = READ, skipAuth = true)
   public RestResponse<Map<String, String>> getAzureSubscriptions(@QueryParam("appId") String appId,
       @QueryParam("deploymentType") String deploymentType, @PathParam("computeProviderId") String computeProviderId) {
     return new RestResponse<>(
@@ -421,6 +454,7 @@ public class InfrastructureDefinitionResource {
   @Timed
   @ExceptionMetered
   @AuthRule(permissionType = ENV, action = READ, skipAuth = true)
+  @ApiKeyAuthorized(permissionType = ENV, action = READ, skipAuth = true)
   public RestResponse<List<String>> getAzureResourceGroupsNames(@QueryParam("appId") String appId,
       @QueryParam("deploymentType") String deploymentType, @QueryParam("subscriptionId") String subscriptionId,
       @PathParam("computeProviderId") String computeProviderId) {
@@ -433,6 +467,7 @@ public class InfrastructureDefinitionResource {
   @Timed
   @ExceptionMetered
   @AuthRule(permissionType = ENV, action = READ, skipAuth = true)
+  @ApiKeyAuthorized(permissionType = ENV, action = READ, skipAuth = true)
   public RestResponse<List<String>> getSubscriptionLocations(@QueryParam("appId") String appId,
       @PathParam("computeProviderId") String computeProviderId, @PathParam("subscriptionId") String subscriptionId) {
     return new RestResponse<>(
@@ -444,6 +479,7 @@ public class InfrastructureDefinitionResource {
   @Timed
   @ExceptionMetered
   @AuthRule(permissionType = ENV, action = READ, skipAuth = true)
+  @ApiKeyAuthorized(permissionType = ENV, action = READ, skipAuth = true)
   public RestResponse<List<String>> getCloudProviderLocations(
       @QueryParam("appId") String appId, @PathParam("computeProviderId") String computeProviderId) {
     return new RestResponse<>(
@@ -455,6 +491,7 @@ public class InfrastructureDefinitionResource {
   @Timed
   @ExceptionMetered
   @AuthRule(permissionType = ENV, action = READ, skipAuth = true)
+  @ApiKeyAuthorized(permissionType = ENV, action = READ, skipAuth = true)
   public RestResponse<Map<String, String>> getManagementGroups(
       @QueryParam("appId") String appId, @PathParam("computeProviderId") String computeProviderId) {
     return new RestResponse<>(infrastructureDefinitionService.listManagementGroups(appId, computeProviderId));
@@ -465,6 +502,7 @@ public class InfrastructureDefinitionResource {
   @Timed
   @ExceptionMetered
   @AuthRule(permissionType = ENV, action = READ, skipAuth = true)
+  @ApiKeyAuthorized(permissionType = ENV, action = READ, skipAuth = true)
   public RestResponse<Map<String, String>> getAzureVirtualMachineScaleSets(@QueryParam("appId") String appId,
       @QueryParam("subscriptionId") String subscriptionId, @QueryParam("resourceGroupName") String resourceGroupName,
       @QueryParam("deploymentType") String deploymentType, @PathParam("computeProviderId") String computeProviderId) {
@@ -477,6 +515,7 @@ public class InfrastructureDefinitionResource {
   @Timed
   @ExceptionMetered
   @AuthRule(permissionType = ENV, action = READ, skipAuth = true)
+  @ApiKeyAuthorized(permissionType = ENV, action = READ, skipAuth = true)
   public RestResponse<VirtualMachineScaleSetData> getAzureVirtualMachineScaleSetByName(
       @QueryParam("appId") String appId, @QueryParam("subscriptionId") String subscriptionId,
       @QueryParam("resourceGroupName") String resourceGroupName, @QueryParam("deploymentType") String deploymentType,
@@ -490,6 +529,7 @@ public class InfrastructureDefinitionResource {
   @Timed
   @ExceptionMetered
   @AuthRule(permissionType = ENV, action = READ, skipAuth = true)
+  @ApiKeyAuthorized(permissionType = ENV, action = READ, skipAuth = true)
   public RestResponse<List<String>> getAppServiceNamesByResourceGroup(@QueryParam("appId") String appId,
       @QueryParam("subscriptionId") String subscriptionId, @QueryParam("resourceGroupName") String resourceGroupName,
       @QueryParam("appType") String appType, @PathParam("computeProviderId") String computeProviderId) {
@@ -502,6 +542,7 @@ public class InfrastructureDefinitionResource {
   @Timed
   @ExceptionMetered
   @AuthRule(permissionType = ENV, action = READ, skipAuth = true)
+  @ApiKeyAuthorized(permissionType = ENV, action = READ, skipAuth = true)
   public RestResponse<List<String>> getAppServiceNames(@QueryParam("appId") String appId,
       @QueryParam("appType") String appType, @PathParam("infraDefinitionId") String infraDefinitionId) {
     return new RestResponse<>(infrastructureDefinitionService.getAppServiceNames(appId, infraDefinitionId, appType));
@@ -512,6 +553,7 @@ public class InfrastructureDefinitionResource {
   @Timed
   @ExceptionMetered
   @AuthRule(permissionType = ENV, action = READ, skipAuth = true)
+  @ApiKeyAuthorized(permissionType = ENV, action = READ, skipAuth = true)
   public RestResponse<List<DeploymentSlotData>> getAppServiceDeploymentSlotNames(@QueryParam("appId") String appId,
       @QueryParam("subscriptionId") String subscriptionId, @QueryParam("resourceGroupName") String resourceGroupName,
       @QueryParam("appType") String appType, @PathParam("computeProviderId") String computeProviderId,
@@ -525,6 +567,7 @@ public class InfrastructureDefinitionResource {
   @Timed
   @ExceptionMetered
   @AuthRule(permissionType = ENV, action = READ, skipAuth = true)
+  @ApiKeyAuthorized(permissionType = ENV, action = READ, skipAuth = true)
   public RestResponse<List<DeploymentSlotData>> getDeploymentSlotNames(@QueryParam("appId") String appId,
       @QueryParam("appType") String appType, @PathParam("infraDefinitionId") String infraDefinitionId,
       @PathParam("appName") String appName) {

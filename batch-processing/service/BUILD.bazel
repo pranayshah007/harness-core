@@ -61,7 +61,7 @@ java_binary(
     data = ["//:resource"],
     main_class = "io.harness.batch.processing.BatchProcessingApplication",
     resources = [
-        "//280-batch-processing/src/main/resources:resource",
+        "//batch-processing/service/src/main/resources:resource",
     ],
     visibility = ["//visibility:public"],
     deps = shared_dependencies,
@@ -95,8 +95,8 @@ java_library(
         "//:resource",
     ],
     resources = [
-        "//280-batch-processing/src/main/resources:resource",
-        "//280-batch-processing/src/test/resources:resource",
+        "//batch-processing/service/src/main/resources:resource",
+        "//batch-processing/service/src/test/resources:resource",
     ],
     visibility = ["//visibility:public"],
     deps = shared_dependencies + [
