@@ -41,6 +41,11 @@ public class GithubPackagesVersion {
   String versionUrl;
 
   /**
+   * Version Html URL
+   */
+  String versionHtmlUrl;
+
+  /**
    * Package URL
    */
   String packageUrl;

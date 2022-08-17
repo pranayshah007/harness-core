@@ -11,7 +11,6 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.exception.WingsException.USER;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.artifact.ArtifactMetadataKeys;
 import io.harness.artifacts.githubpackages.beans.GithubPackagesInternalConfig;
 import io.harness.artifacts.githubpackages.beans.GithubPackagesVersion;
 import io.harness.artifacts.githubpackages.beans.GithubPackagesVersionsResponse;
@@ -88,11 +87,11 @@ public class GithubPackagesRegistryServiceImpl implements GithubPackagesRegistry
           new ArtifactServerException(ExceptionUtils.getMessage(e), e, USER));
     }
 
-    Pattern pattern = Pattern.compile(versionRegex.replace(".", "\\.").replace("?", ".?").replace("*", ".*?"));
+    buildDetails = regexFilteringForGetBuilds(versionRegex, buildDetails, packageName);
 
-    buildDetails = buildDetails.stream()
-                       .filter(build -> !build.getNumber().endsWith("/") && pattern.matcher(build.getNumber()).find())
-                       .collect(Collectors.toList());
+    if (buildDetails.isEmpty()) {
+      throw new InvalidRequestException("No version with matching regex is present");
+    }
 
     return buildDetails.get(0);
   }
@@ -112,11 +111,50 @@ public class GithubPackagesRegistryServiceImpl implements GithubPackagesRegistry
           new ArtifactServerException(ExceptionUtils.getMessage(e), e, USER));
     }
 
-    for (BuildDetails b : builds) {
-      String compareVersion = b.getNumber();
+    return versionFiltering(version, builds, packageName);
+  }
 
-      if (compareVersion.equals(version)) {
-        return b;
+  private List<BuildDetails> regexFilteringForGetBuilds(
+      String versionRegex, List<BuildDetails> builds, String packageName) {
+    Pattern pattern = Pattern.compile(versionRegex.replace(".", "\\.").replace("?", ".?").replace("*", ".*?"));
+
+    for (BuildDetails build : builds) {
+      Map<String, String> map = build.getMetadata();
+
+      List<String> keys = map.keySet().stream().collect(Collectors.toList());
+
+      keys =
+          keys.stream().filter(key -> !key.endsWith("/") && pattern.matcher(key).find()).collect(Collectors.toList());
+
+      if (!keys.isEmpty()) {
+        build.setNumber(keys.get(0));
+        build.setBuildDisplayName(packageName + ": " + keys.get(0));
+        build.setUiDisplayName("Tag# " + keys.get(0));
+
+        Map<String, String> finalMap = new HashMap<>();
+
+        for (String key : keys) {
+          finalMap.put(key, map.get(key));
+        }
+        build.setMetadata(finalMap);
+      } else {
+        builds.remove(build);
+        return regexFilteringForGetBuilds(versionRegex, builds, packageName);
+      }
+    }
+    return builds;
+  }
+
+  private BuildDetails versionFiltering(String version, List<BuildDetails> builds, String packageName) {
+    for (BuildDetails build : builds) {
+      Map<String, String> map = build.getMetadata();
+
+      if (map.containsKey(version)) {
+        build.setBuildDisplayName(packageName + ": " + version);
+        build.setUiDisplayName("Tag# " + version);
+        build.setNumber(version);
+
+        return build;
       }
     }
 
@@ -192,11 +230,11 @@ public class GithubPackagesRegistryServiceImpl implements GithubPackagesRegistry
 
     githubPackagesVersionsResponse = processResponse(response.body());
 
-    return processBuildDetails(githubPackagesVersionsResponse, packageName, packageType);
+    return processBuildDetails(githubPackagesVersionsResponse, packageName);
   }
 
   private List<BuildDetails> processBuildDetails(
-      GithubPackagesVersionsResponse githubPackagesVersionsResponse, String packageName, String packageType) {
+      GithubPackagesVersionsResponse githubPackagesVersionsResponse, String packageName) {
     List<GithubPackagesVersion> versions = githubPackagesVersionsResponse.getVersionDetails();
 
     List<BuildDetails> buildDetails = new ArrayList<>();
@@ -204,12 +242,15 @@ public class GithubPackagesRegistryServiceImpl implements GithubPackagesRegistry
     for (GithubPackagesVersion v : versions) {
       BuildDetails build = new BuildDetails();
 
+      List<String> tags = v.getTags();
+
       Map<String, String> metadata = new HashMap<>();
 
-      String tag = v.getTags().get(0);
+      for (String t : tags) {
+        metadata.put(t, packageName);
+      }
 
-      metadata.put(ArtifactMetadataKeys.IMAGE, packageName);
-      metadata.put(ArtifactMetadataKeys.TAG, tag);
+      String tag = tags.get(0);
 
       build.setBuildDisplayName(packageName + ": " + tag);
       build.setUiDisplayName("Tag# " + tag);
@@ -218,6 +259,7 @@ public class GithubPackagesRegistryServiceImpl implements GithubPackagesRegistry
       build.setStatus(BuildDetails.BuildStatus.SUCCESS);
       build.setBuildFullDisplayName(v.getVersionName());
       build.setMetadata(metadata);
+      build.setArtifactPath(v.getVersionHtmlUrl());
 
       buildDetails.add(build);
     }
@@ -248,6 +290,7 @@ public class GithubPackagesRegistryServiceImpl implements GithubPackagesRegistry
                                             .versionId(node.get("id").asText())
                                             .versionName(node.get("name").asText())
                                             .versionUrl(node.get("url").asText())
+                                            .versionHtmlUrl(node.get("html_url").asText())
                                             .packageUrl(node.get("package_html_url").asText())
                                             .createdAt(node.get("created_at").asText())
                                             .lastUpdatedAt(node.get("updated_at").asText())
