@@ -1,15 +1,16 @@
 package io.harness.cdng.artifact.steps;
 
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+
 import io.harness.beans.DelegateTaskRequest;
 import io.harness.cdng.artifact.bean.ArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.ArtifactListConfig;
-import io.harness.cdng.artifact.bean.yaml.PrimaryArtifact;
+import io.harness.cdng.artifact.bean.yaml.SidecarArtifactWrapper;
 import io.harness.cdng.artifact.mappers.ArtifactResponseToOutcomeMapper;
 import io.harness.cdng.artifact.outcome.ArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactsOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactsOutcome.ArtifactsOutcomeBuilder;
 import io.harness.cdng.artifact.outcome.SidecarsOutcome;
-import io.harness.cdng.artifact.steps.ArtifactsStepV2SweepingOutput.ArtifactsStepV2SweepingOutputBuilder;
 import io.harness.cdng.artifact.utils.ArtifactStepHelper;
 import io.harness.cdng.artifact.utils.ArtifactUtils;
 import io.harness.cdng.service.steps.ServiceStepV3;
@@ -18,8 +19,8 @@ import io.harness.cdng.service.steps.ServiceSweepingOutput;
 import io.harness.cdng.steps.EmptyStepParameters;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.delegate.TaskSelector;
-import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.task.artifacts.ArtifactSourceDelegateRequest;
+import io.harness.delegate.task.artifacts.ArtifactSourceType;
 import io.harness.delegate.task.artifacts.ArtifactTaskType;
 import io.harness.delegate.task.artifacts.request.ArtifactTaskParameters;
 import io.harness.delegate.task.artifacts.response.ArtifactTaskResponse;
@@ -42,7 +43,6 @@ import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.yaml.YamlUtils;
-import io.harness.serializer.KryoSerializer;
 import io.harness.service.DelegateGrpcClientWrapper;
 import io.harness.tasks.ResponseData;
 import io.harness.waiter.WaitNotifyEngine;
@@ -54,11 +54,12 @@ import software.wings.beans.LogWeight;
 import com.google.inject.Inject;
 import java.io.IOException;
 import java.time.Duration;
-import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -73,8 +74,8 @@ public class ArtifactsStepV2 implements AsyncExecutable<EmptyStepParameters> {
   @Inject private ExecutionSweepingOutputService sweepingOutputService;
   @Inject private ServiceStepsHelper serviceStepsHelper;
   @Inject private ArtifactStepHelper artifactStepHelper;
-  @Inject private KryoSerializer kryoSerializer;
   @Inject private DelegateGrpcClientWrapper delegateGrpcClientWrapper;
+
   @Inject private WaitNotifyEngine waitNotifyEngine;
 
   @Override
@@ -96,28 +97,42 @@ public class ArtifactsStepV2 implements AsyncExecutable<EmptyStepParameters> {
         throw new RuntimeException(e);
       }
     }
+
+    if (ngServiceConfig == null || ngServiceConfig.getNgServiceV2InfoConfig() == null) {
+      log.info("No service configuration found");
+      return AsyncExecutableResponse.newBuilder().build();
+    }
+
     final Set<String> taskIds = new HashSet<>();
     final NGServiceV2InfoConfig ngServiceV2InfoConfig = ngServiceConfig.getNgServiceV2InfoConfig();
-    final ArtifactsStepV2SweepingOutputBuilder artifactsStepV2SweepingOutputBuilder =
-        ArtifactsStepV2SweepingOutput.builder();
-    if (ngServiceV2InfoConfig != null && ngServiceV2InfoConfig.getServiceDefinition() != null) {
-      if (ngServiceV2InfoConfig.getServiceDefinition().getServiceSpec() != null) {
-        final ArtifactListConfig artifacts =
-            ngServiceV2InfoConfig.getServiceDefinition().getServiceSpec().getArtifacts();
-        if (artifacts != null) {
-          if (artifacts.getPrimary() != null) {
-            String taskId = handle(ambiance, artifacts.getPrimary());
+    final Map<String, ArtifactConfig> artifactConfigMap = new HashMap<>();
+
+    if (ngServiceV2InfoConfig.getServiceDefinition().getServiceSpec() != null) {
+      String primaryArtifactTaskId = null;
+      final ArtifactListConfig artifacts = ngServiceV2InfoConfig.getServiceDefinition().getServiceSpec().getArtifacts();
+
+      if (artifacts != null) {
+        if (artifacts.getPrimary() != null) {
+          primaryArtifactTaskId =
+              handle(ambiance, artifacts.getPrimary().getSpec(), artifacts.getPrimary().getSourceType(), true);
+          taskIds.add(primaryArtifactTaskId);
+          artifactConfigMap.put(primaryArtifactTaskId, artifacts.getPrimary().getSpec());
+        }
+
+        if (isNotEmpty(artifacts.getSidecars())) {
+          for (SidecarArtifactWrapper sidecar : artifacts.getSidecars()) {
+            String taskId =
+                handle(ambiance, sidecar.getSidecar().getSpec(), sidecar.getSidecar().getSourceType(), false);
             taskIds.add(taskId);
-            ArtifactsStepV2SweepingOutput sweepingOutput =
-                artifactsStepV2SweepingOutputBuilder.primaryArtifactTaskId(taskId).build();
-            sweepingOutput.getArtifactConfigMap().put(taskId, artifacts.getPrimary().getSpec());
-            sweepingOutputService.consume(ambiance, ARTIFACTS_STEP_V_2, sweepingOutput, "");
+            artifactConfigMap.put(taskId, sidecar.getSidecar().getSpec());
           }
         }
+
+        sweepingOutputService.consume(ambiance, ARTIFACTS_STEP_V_2,
+            new ArtifactsStepV2SweepingOutput(primaryArtifactTaskId, artifactConfigMap), "");
       }
-      return AsyncExecutableResponse.newBuilder().addAllCallbackIds(taskIds).build();
     }
-    return AsyncExecutableResponse.newBuilder().addAllCallbackIds(Collections.emptyList()).build();
+    return AsyncExecutableResponse.newBuilder().addAllCallbackIds(taskIds).build();
   }
 
   @Override
@@ -139,8 +154,9 @@ public class ArtifactsStepV2 implements AsyncExecutable<EmptyStepParameters> {
 
     for (String taskId : responseDataMap.keySet()) {
       final ArtifactConfig artifactConfig = artifactsSweepingOutput.getArtifactConfigMap().get(taskId);
-      ArtifactTaskResponse taskResponse = (ArtifactTaskResponse) responseDataMap.get(taskId);
+      final ArtifactTaskResponse taskResponse = (ArtifactTaskResponse) responseDataMap.get(taskId);
       final boolean isPrimary = taskId.equals(artifactsSweepingOutput.getPrimaryArtifactTaskId());
+
       if (isPrimary) {
         logCallback.saveExecutionLog(LogHelper.color(String.format("Fetched details of primary artifact [status:%s]",
                                                          taskResponse.getCommandExecutionStatus().name()),
@@ -190,14 +206,23 @@ public class ArtifactsStepV2 implements AsyncExecutable<EmptyStepParameters> {
 
   @Override
   public void handleAbort(
-      Ambiance ambiance, EmptyStepParameters stepParameters, AsyncExecutableResponse executableResponse) {}
+      Ambiance ambiance, EmptyStepParameters stepParameters, AsyncExecutableResponse executableResponse) {
+    // Todo:(yogesh) handle this ?
+  }
 
-  private String handle(final Ambiance ambiance, final PrimaryArtifact primary) {
+  private String handle(final Ambiance ambiance, final ArtifactConfig artifactConfig,
+      final ArtifactSourceType sourceType, boolean isPrimary) {
     final NGLogCallback logCallback = serviceStepsHelper.getServiceLogCallback(ambiance);
-    logCallback.saveExecutionLog("Processing primary artifact...");
-    final ArtifactConfig artifactConfig = primary.getSpec();
-    logCallback.saveExecutionLog(
-        String.format("Primary artifact info: %s", ArtifactUtils.getLogInfo(artifactConfig, primary.getSourceType())));
+    if (isPrimary) {
+      logCallback.saveExecutionLog("Processing primary artifact...");
+      logCallback.saveExecutionLog(
+          String.format("Primary artifact info: %s", ArtifactUtils.getLogInfo(artifactConfig, sourceType)));
+    } else {
+      logCallback.saveExecutionLog(
+          String.format("Processing sidecar artifact [%s]...", artifactConfig.getIdentifier()));
+      logCallback.saveExecutionLog(String.format("Sidecar artifact [%s] info: %s", artifactConfig.getIdentifier(),
+          ArtifactUtils.getLogInfo(artifactConfig, sourceType)));
+    }
 
     ArtifactSourceDelegateRequest artifactSourceDelegateRequest =
         artifactStepHelper.toSourceDelegateRequest(artifactConfig, ambiance);
@@ -206,15 +231,6 @@ public class ArtifactsStepV2 implements AsyncExecutable<EmptyStepParameters> {
                                                       .artifactTaskType(ArtifactTaskType.GET_LAST_SUCCESSFUL_BUILD)
                                                       .attributes(artifactSourceDelegateRequest)
                                                       .build();
-    final TaskData taskData = TaskData.builder()
-                                  .async(true)
-                                  .taskType(artifactStepHelper.getArtifactStepTaskType(artifactConfig).name())
-                                  .parameters(new Object[] {taskParameters})
-                                  //                                  .timeout(DEFAULT_TIMEOUT)
-                                  .build();
-
-    String taskName = artifactStepHelper.getArtifactStepTaskType(artifactConfig).getDisplayName() + ": "
-        + taskParameters.getArtifactTaskType().getDisplayName();
     logCallback.saveExecutionLog(
         LogHelper.color("Starting delegate task to fetch details of primary artifact", LogColor.Cyan, LogWeight.Bold));
     List<TaskSelector> delegateSelectors = artifactStepHelper.getDelegateSelectors(artifactConfig, ambiance);
@@ -223,12 +239,10 @@ public class ArtifactsStepV2 implements AsyncExecutable<EmptyStepParameters> {
         DelegateTaskRequest.builder()
             .accountId(AmbianceUtils.getAccountId(ambiance))
             .taskParameters(taskParameters)
-            // Todo
-            //                                .taskSelectors(delegateSelectors.stream().map(TaskSelector).collect(Collectors.toList()))
+            .taskSelectors(delegateSelectors.stream().map(TaskSelector::getSelector).collect(Collectors.toSet()))
             .taskType(artifactStepHelper.getArtifactStepTaskType(artifactConfig).name())
             .executionTimeout(DEFAULT_TIMEOUT)
             .taskSetupAbstraction("ng", "true")
-            //            .logStreamingAbstractions(logAbstractions)
             .build();
 
     return delegateGrpcClientWrapper.submitAsyncTask(delegateTaskRequest, Duration.ZERO);
