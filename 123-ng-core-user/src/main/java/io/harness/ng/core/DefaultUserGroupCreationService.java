@@ -170,11 +170,11 @@ public class DefaultUserGroupCreationService implements Runnable {
                     UserGroup userGroup = userGroupOptional.get();
                     List<String> currentUsers = userGroup.getUsers();
                     HashSet<String> existingUsers = new HashSet<>(currentUsers);
-                    HashSet<String> users = new HashSet<>(userIds);
-                    HashSet<String> usersToAdd =  new HashSet<>(Sets.difference(existingUsers, users));
+                    HashSet<String> newUsers = new HashSet<>(userIds);
+                    HashSet<String> usersToAdd =  new HashSet<>(Sets.difference(newUsers, existingUsers));
                     if(isNotEmpty(usersToAdd))
                     {
-                        log.info(DEBUG_MESSAGE + String.format("Existing %s users in user group at scope %s", currentUsers.size());
+                        log.info(DEBUG_MESSAGE + String.format("Existing %s users in user group at scope %s", currentUsers.size(), scope));
                         log.info(DEBUG_MESSAGE + String.format("Adding %s users to user group at scope %s", usersToAdd.size(), scope));
                         currentUsers = new ArrayList<>(currentUsers);
                         currentUsers.addAll(usersToAdd);

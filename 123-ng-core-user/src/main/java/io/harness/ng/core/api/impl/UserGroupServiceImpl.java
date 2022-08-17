@@ -440,6 +440,13 @@ public class UserGroupServiceImpl implements UserGroupService {
   }
 
   private void addUserToDefaultUserGroup(String accountIdentifier, String orgIdentifier, String projectIdentifier, String userGroupId, String userId) {
+    Optional<UserGroup> userGroupOptional = get(accountIdentifier, orgIdentifier, projectIdentifier, userGroupId);
+    if (!userGroupOptional.isPresent())
+    {
+      //Skipping safe. As Default UG at that scope may not be present if Migration has not run yet for that scope. And migration will add user to UG.
+      //TODO: Remove once migration job has run for all scopes.
+      return;
+    }
     if (!checkMember(accountIdentifier, orgIdentifier, projectIdentifier, userGroupId, userId)) {
       addMemberInternal(accountIdentifier, orgIdentifier, projectIdentifier, userGroupId, userId);
     }
@@ -799,11 +806,11 @@ public class UserGroupServiceImpl implements UserGroupService {
     String userGroupName = "Account All Users";
     String userGroupDescription = "Account all users user group";
     if (isNotEmpty(scope.getProjectIdentifier())) {
-      userGroupIdentifier = DEFAULT_ORGANIZATION_LEVEL_USER_GROUP_IDENTIFIER;
+      userGroupIdentifier = DEFAULT_PROJECT_LEVEL_USER_GROUP_IDENTIFIER;
       userGroupName = "Project All Users";
       userGroupDescription = "Project all users user group";
     } else if (isNotEmpty(scope.getOrgIdentifier())) {
-      userGroupIdentifier = DEFAULT_PROJECT_LEVEL_USER_GROUP_IDENTIFIER;
+      userGroupIdentifier = DEFAULT_ORGANIZATION_LEVEL_USER_GROUP_IDENTIFIER;
       userGroupName = "Organization All Users";
       userGroupDescription = "Organization all users user group";
     }
