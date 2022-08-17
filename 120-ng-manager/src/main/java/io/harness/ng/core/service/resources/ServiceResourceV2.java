@@ -37,6 +37,7 @@ import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.cdng.artifact.ArtifactSummary;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.cdng.yaml.CdYamlSchemaService;
@@ -63,6 +64,7 @@ import io.harness.rbac.CDNGRbacUtility;
 import io.harness.repositories.UpsertOptions;
 import io.harness.security.annotations.NextGenManagerAuth;
 import io.harness.utils.PageUtils;
+import io.harness.utils.featureflaghelper.NGFeatureFlagHelperService;
 
 import com.google.inject.Inject;
 import io.swagger.annotations.Api;
@@ -140,6 +142,7 @@ public class ServiceResourceV2 {
   private final ServiceEntityManagementService serviceEntityManagementService;
   private final OrgAndProjectValidationHelper orgAndProjectValidationHelper;
   private final CdYamlSchemaService cdYamlSchemaService;
+  private final NGFeatureFlagHelperService featureFlagHelperService;
 
   public static final String SERVICE_PARAM_MESSAGE = "Service Identifier for the entity";
 
@@ -197,7 +200,9 @@ public class ServiceResourceV2 {
         ResourceScope.of(accountId, serviceRequestDTO.getOrgIdentifier(), serviceRequestDTO.getProjectIdentifier()),
         Resource.of(NGResourceType.SERVICE, null), SERVICE_CREATE_PERMISSION);
     ServiceEntity serviceEntity = ServiceElementMapper.toServiceEntity(accountId, serviceRequestDTO);
-    cdYamlSchemaService.validateSchema(EntityType.SERVICE, serviceEntity.fetchNonEmptyYaml());
+    if (featureFlagHelperService.isEnabled(accountId, FeatureName.NG_SVC_ENV_REDESIGN)) {
+      cdYamlSchemaService.validateSchema(EntityType.SERVICE, serviceEntity.fetchNonEmptyYaml());
+    }
     orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(
         serviceEntity.getOrgIdentifier(), serviceEntity.getProjectIdentifier(), serviceEntity.getAccountId());
     ServiceEntity createdService = serviceEntityService.create(serviceEntity);
@@ -232,8 +237,10 @@ public class ServiceResourceV2 {
     serviceEntities.forEach(serviceEntity
         -> orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(
             serviceEntity.getOrgIdentifier(), serviceEntity.getProjectIdentifier(), serviceEntity.getAccountId()));
-    serviceEntities.forEach(
-        serviceEntity -> cdYamlSchemaService.validateSchema(EntityType.SERVICE, serviceEntity.fetchNonEmptyYaml()));
+    if (featureFlagHelperService.isEnabled(accountId, FeatureName.NG_SVC_ENV_REDESIGN)) {
+      serviceEntities.forEach(
+          serviceEntity -> cdYamlSchemaService.validateSchema(EntityType.SERVICE, serviceEntity.fetchNonEmptyYaml()));
+    }
     Page<ServiceEntity> createdServices = serviceEntityService.bulkCreate(accountId, serviceEntities);
     return ResponseDTO.newResponse(getNGPageResponse(createdServices.map(ServiceElementMapper::toResponseWrapper)));
   }
@@ -274,7 +281,9 @@ public class ServiceResourceV2 {
         Resource.of(NGResourceType.SERVICE, serviceRequestDTO.getIdentifier()), SERVICE_UPDATE_PERMISSION);
     ServiceEntity requestService = ServiceElementMapper.toServiceEntity(accountId, serviceRequestDTO);
     requestService.setVersion(isNumeric(ifMatch) ? parseLong(ifMatch) : null);
-    cdYamlSchemaService.validateSchema(EntityType.SERVICE, requestService.fetchNonEmptyYaml());
+    if (featureFlagHelperService.isEnabled(accountId, FeatureName.NG_SVC_ENV_REDESIGN)) {
+      cdYamlSchemaService.validateSchema(EntityType.SERVICE, requestService.fetchNonEmptyYaml());
+    }
     ServiceEntity updatedService = serviceEntityService.update(requestService);
     return ResponseDTO.newResponse(
         updatedService.getVersion().toString(), ServiceElementMapper.toResponseWrapper(updatedService));
@@ -298,7 +307,9 @@ public class ServiceResourceV2 {
     requestService.setVersion(isNumeric(ifMatch) ? parseLong(ifMatch) : null);
     orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(
         requestService.getOrgIdentifier(), requestService.getProjectIdentifier(), requestService.getAccountId());
-    cdYamlSchemaService.validateSchema(EntityType.SERVICE, requestService.fetchNonEmptyYaml());
+    if (featureFlagHelperService.isEnabled(accountId, FeatureName.NG_SVC_ENV_REDESIGN)) {
+      cdYamlSchemaService.validateSchema(EntityType.SERVICE, requestService.fetchNonEmptyYaml());
+    }
     ServiceEntity upsertService = serviceEntityService.upsert(requestService, UpsertOptions.DEFAULT);
     return ResponseDTO.newResponse(
         upsertService.getVersion().toString(), ServiceElementMapper.toResponseWrapper(upsertService));

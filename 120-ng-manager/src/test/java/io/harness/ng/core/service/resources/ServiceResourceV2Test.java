@@ -33,6 +33,7 @@ import io.harness.ng.core.service.services.ServiceEntityService;
 import io.harness.pms.rbac.NGResourceType;
 import io.harness.repositories.UpsertOptions;
 import io.harness.rule.Owner;
+import io.harness.utils.featureflaghelper.NGFeatureFlagHelperService;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -53,6 +54,7 @@ public class ServiceResourceV2Test extends CategoryTest {
   @Mock OrgAndProjectValidationHelper orgAndProjectValidationHelper;
   @Mock AccessControlClient accessControlClient;
   @Mock CdYamlSchemaService cdYamlSchemaService;
+  @Mock NGFeatureFlagHelperService featureFlagHelperService;
 
   private final String ACCOUNT_ID = "account_id";
   private final String ORG_IDENTIFIER = "orgId";
