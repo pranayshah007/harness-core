@@ -145,8 +145,9 @@ public class ServiceNowTaskNGHelperTest extends CategoryTest {
     Retrofit retrofit = Mockito.mock(Retrofit.class);
     Call mockCall = Mockito.mock(Call.class);
     when(serviceNowRestClient.getAdditionalFields(anyString(), anyString())).thenReturn(mockCall);
-    List<Map<String, String>> responseMap = Arrays.asList(
-        ImmutableMap.of("label", "field1", "name", "value1"), ImmutableMap.of("label", "field2", "name", "value2"));
+    List<Map<String, String>> responseMap =
+        Arrays.asList(ImmutableMap.of("label", "field1", "name", "value1", "internalType", "boolean"),
+            ImmutableMap.of("label", "field2", "name", "value2", "internalType", "string"));
     JsonNode successResponse = JsonUtils.asTree(Collections.singletonMap("result", responseMap));
     Response<JsonNode> jsonNodeResponse = Response.success(successResponse);
     when(mockCall.execute()).thenReturn(jsonNodeResponse);
@@ -167,6 +168,11 @@ public class ServiceNowTaskNGHelperTest extends CategoryTest {
         .containsExactlyInAnyOrder("field1", "field2");
     assertThat(response.getServiceNowFieldNGList().stream().map(ServiceNowFieldNG::getKey).collect(Collectors.toList()))
         .containsExactlyInAnyOrder("value1", "value2");
+    assertThat(response.getServiceNowFieldNGList()
+                   .stream()
+                   .map(ServiceNowFieldNG::getInternalType)
+                   .collect(Collectors.toList()))
+        .containsExactlyInAnyOrder("string", "boolean");
     verify(secretDecryptionService).decrypt(any(), any());
   }
 

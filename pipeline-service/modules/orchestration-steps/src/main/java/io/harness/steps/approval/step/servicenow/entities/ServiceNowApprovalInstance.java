@@ -19,6 +19,7 @@ import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.servicenow.ServiceNowTicketTypeNG;
 import io.harness.steps.approval.step.beans.CriteriaSpecWrapperDTO;
+import io.harness.steps.approval.step.beans.ServiceNowChangeWindowSpecDTO;
 import io.harness.steps.approval.step.entities.ApprovalInstance;
 import io.harness.steps.approval.step.servicenow.ServiceNowApprovalOutCome;
 import io.harness.steps.approval.step.servicenow.ServiceNowApprovalSpecParameters;
@@ -51,6 +52,7 @@ public class ServiceNowApprovalInstance extends ApprovalInstance {
   @NotNull CriteriaSpecWrapperDTO approvalCriteria;
   CriteriaSpecWrapperDTO rejectionCriteria;
   ParameterField<List<TaskSelectorYaml>> delegateSelectors;
+  ServiceNowChangeWindowSpecDTO changeWindow;
 
   public static ServiceNowApprovalInstance fromStepParameters(Ambiance ambiance, StepElementParameters stepParameters) {
     if (stepParameters == null) {
@@ -87,6 +89,8 @@ public class ServiceNowApprovalInstance extends ApprovalInstance {
             .rejectionCriteria(
                 CriteriaSpecWrapperDTO.fromCriteriaSpecWrapper(specParameters.getRejectionCriteria(), true))
             .delegateSelectors(specParameters.getDelegateSelectors())
+            .changeWindow(
+                ServiceNowChangeWindowSpecDTO.fromServiceNowChangeWindowSpec(specParameters.getChangeWindowSpec()))
             .build();
     instance.updateFromStepParameters(ambiance, stepParameters);
     return instance;

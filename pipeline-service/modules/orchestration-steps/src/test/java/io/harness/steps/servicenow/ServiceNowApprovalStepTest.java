@@ -37,6 +37,7 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 import io.harness.steps.approval.step.ApprovalInstanceService;
 import io.harness.steps.approval.step.beans.ApprovalStatus;
+import io.harness.steps.approval.step.beans.ServiceNowChangeWindowSpec;
 import io.harness.steps.approval.step.entities.ApprovalInstance;
 import io.harness.steps.approval.step.servicenow.ServiceNowApprovalOutCome;
 import io.harness.steps.approval.step.servicenow.ServiceNowApprovalSpecParameters;
@@ -60,6 +61,8 @@ public class ServiceNowApprovalStepTest extends CategoryTest {
   public static final String CONNECTOR = "CONNECTOR";
   public static final String PROBLEM = "PROBLEM";
   public static final String INSTANCE_ID = "INSTANCE_ID";
+  public static final String CHANGE_WINDOW_START = "CHANGE_WINDOW_START";
+  public static final String CHANGE_WINDOW_END = "CHANGE_WINDOW_END";
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
   @Mock ApprovalInstanceService approvalInstanceService;
   @Mock LogStreamingStepClientFactory logStreamingStepClientFactory;
@@ -112,6 +115,8 @@ public class ServiceNowApprovalStepTest extends CategoryTest {
     assertThat(instance.getTicketNumber()).isEqualTo(TICKET_NUMBER);
     assertThat(instance.getTicketType()).isEqualTo(PROBLEM);
     assertThat(instance.getConnectorRef()).isEqualTo(CONNECTOR);
+    assertThat(instance.getChangeWindow().getStartField()).isEqualTo(CHANGE_WINDOW_START);
+    assertThat(instance.getChangeWindow().getEndField()).isEqualTo(CHANGE_WINDOW_END);
     verify(logStreamingStepClient, times(5)).openStream(ShellScriptTaskNG.COMMAND_UNIT);
   }
 
@@ -205,6 +210,10 @@ public class ServiceNowApprovalStepTest extends CategoryTest {
                   .ticketNumber(ParameterField.<String>builder().value(ticketNumber).build())
                   .connectorRef(ParameterField.<String>builder().value(connector).build())
                   .ticketType(ParameterField.<String>builder().value(ticketType).build())
+                  .changeWindowSpec(ServiceNowChangeWindowSpec.builder()
+                                        .startField(ParameterField.<String>builder().value(CHANGE_WINDOW_START).build())
+                                        .endField(ParameterField.<String>builder().value(CHANGE_WINDOW_END).build())
+                                        .build())
                   .build())
         .build();
   }
