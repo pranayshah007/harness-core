@@ -11,13 +11,18 @@ import io.harness.beans.ExecutionStrategyType;
 import io.harness.ng.core.k8s.ServiceSpecType;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonValue;
 import io.fabric8.utils.Lists;
+import io.swagger.annotations.ApiModelProperty;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 public enum ServiceDefinitionType {
+  @ApiModelProperty(hidden = true) @JsonIgnore __RUNTIME("runtime", Collections.emptyList(), "runtime"),
+
   @JsonProperty(ServiceSpecType.KUBERNETES)
   KUBERNETES(ServiceSpecType.KUBERNETES,
       Lists.newArrayList(ExecutionStrategyType.ROLLING, ExecutionStrategyType.BLUE_GREEN, ExecutionStrategyType.CANARY,
