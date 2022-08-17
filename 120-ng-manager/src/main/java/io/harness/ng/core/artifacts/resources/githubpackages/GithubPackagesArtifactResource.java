@@ -92,4 +92,25 @@ public class GithubPackagesArtifactResource {
 
     return ResponseDTO.newResponse(response);
   }
+
+  // GET Api to fetch Last Successful Version for a Github Package
+  @GET
+  @Path("lastSuccessfulVersion")
+  @ApiOperation(value = "Gets Last Successful Version for the Package", nickname = "getLastSuccessfulVersion")
+  public ResponseDTO<BuildDetails> getLastSuccessfulVersion(
+      @NotNull @QueryParam("connectorRef") String gitConnectorIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
+      @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @NotNull @QueryParam("packageName") String packageName, @NotNull @QueryParam("packageType") String packageType,
+      @QueryParam("version") String version, @QueryParam("versionRegex") String versionRegex,
+      @QueryParam("org") String org, @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo) {
+    IdentifierRef connectorRef =
+        IdentifierRefHelper.getIdentifierRef(gitConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
+
+    BuildDetails build = githubPackagesResourceService.getLastSuccessfulVersion(connectorRef, packageName, packageType,
+        version, versionRegex, org, accountId, orgIdentifier, projectIdentifier);
+
+    return ResponseDTO.newResponse(build);
+  }
 }

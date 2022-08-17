@@ -34,5 +34,5 @@ public interface GithubPackagesRegistryService {
    * Get build
    */
   BuildDetails getBuild(GithubPackagesInternalConfig toGithubPackagesInternalConfig, String packageName,
-      String packageType, String version);
+      String packageType, String version, String org);
 }

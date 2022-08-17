@@ -113,6 +113,42 @@ public class GithubPackagesResourceServiceImpl implements GithubPackagesResource
     }
   }
 
+  @Override
+  public BuildDetails getLastSuccessfulVersion(IdentifierRef connectorRef, String packageName, String packageType,
+      String version, String versionRegex, String org, String accountId, String orgIdentifier,
+      String projectIdentifier) {
+    if (EmptyPredicate.isEmpty(versionRegex) && EmptyPredicate.isEmpty(version)) {
+      versionRegex = "*";
+    }
+
+    GithubConnectorDTO githubConnector = getConnector(connectorRef);
+
+    BaseNGAccess baseNGAccess = getBaseNGAccess(connectorRef.getAccountIdentifier(), orgIdentifier, projectIdentifier);
+
+    List<EncryptedDataDetail> encryptionDetails = getEncryptionDetails(githubConnector, baseNGAccess);
+
+    GithubPackagesArtifactDelegateRequest githubPackagesArtifactDelegateRequest =
+        ArtifactDelegateRequestUtils.getGithubPackagesDelegateRequest(packageName, packageType, version, versionRegex,
+            org, connectorRef.getIdentifier(), githubConnector, encryptionDetails, ArtifactSourceType.GITHUB_PACKAGES);
+
+    try {
+      ArtifactTaskExecutionResponse artifactTaskExecutionResponse =
+          executeSyncTask(githubPackagesArtifactDelegateRequest, ArtifactTaskType.GET_LAST_SUCCESSFUL_BUILD,
+              baseNGAccess, "Github Packages Get Last Successful Build task failure due to error");
+
+      return artifactTaskExecutionResponse.getBuildDetails().get(0);
+
+    } catch (DelegateServiceDriverException ex) {
+      throw new HintException(
+          String.format(HintException.DELEGATE_NOT_AVAILABLE, DocumentLinksConstants.DELEGATE_INSTALLATION_LINK),
+          new DelegateNotAvailableException(ex.getCause().getMessage(), WingsException.USER));
+
+    } catch (ExplanationException e) {
+      throw new HintException(
+          HintException.HINT_GITHUB_ACCESS_DENIED, new InvalidRequestException(e.getMessage(), USER));
+    }
+  }
+
   private ArtifactTaskExecutionResponse executeSyncTask(
       GithubPackagesArtifactDelegateRequest githubPackagesArtifactDelegateRequest, ArtifactTaskType taskType,
       BaseNGAccess ngAccess, String ifFailedMessage) {

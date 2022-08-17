@@ -68,7 +68,8 @@ public class GithubPackagesArtifactTaskHandler
     } else {
       lastSuccessfulBuild = githubPackagesRegistryService.getBuild(
           GithubPackagesRequestResponseMapper.toGithubPackagesInternalConfig(attributesRequest),
-          attributesRequest.getPackageName(), attributesRequest.getPackageType(), attributesRequest.getVersion());
+          attributesRequest.getPackageName(), attributesRequest.getPackageType(), attributesRequest.getVersion(),
+          attributesRequest.getOrg());
     }
 
     GithubPackagesArtifactDelegateResponse githubPackagesArtifactDelegateResponse =

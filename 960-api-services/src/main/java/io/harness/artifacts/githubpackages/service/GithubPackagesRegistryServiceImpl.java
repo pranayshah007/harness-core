@@ -18,11 +18,7 @@ import io.harness.artifacts.githubpackages.beans.GithubPackagesVersionsResponse;
 import io.harness.artifacts.githubpackages.client.GithubPackagesRestClient;
 import io.harness.artifacts.githubpackages.client.GithubPackagesRestClientFactory;
 import io.harness.data.structure.EmptyPredicate;
-import io.harness.exception.ArtifactServerException;
-import io.harness.exception.ExceptionUtils;
-import io.harness.exception.InvalidArtifactServerException;
-import io.harness.exception.NestedExceptionUtils;
-import io.harness.exception.WingsException;
+import io.harness.exception.*;
 import io.harness.exception.runtime.GithubPackagesServerRuntimeException;
 
 import software.wings.helpers.ext.jenkins.BuildDetails;
@@ -92,16 +88,22 @@ public class GithubPackagesRegistryServiceImpl implements GithubPackagesRegistry
           new ArtifactServerException(ExceptionUtils.getMessage(e), e, USER));
     }
 
+    Pattern pattern = Pattern.compile(versionRegex.replace(".", "\\.").replace("?", ".?").replace("*", ".*?"));
+
+    buildDetails = buildDetails.stream()
+                       .filter(build -> !build.getNumber().endsWith("/") && pattern.matcher(build.getNumber()).find())
+                       .collect(Collectors.toList());
+
     return buildDetails.get(0);
   }
 
   @Override
   public BuildDetails getBuild(GithubPackagesInternalConfig githubPackagesInternalConfig, String packageName,
-      String packageType, String version) {
-    BuildDetails build = null;
+      String packageType, String version, String org) {
+    List<BuildDetails> builds = new ArrayList<>();
 
     try {
-      build = getBuildForAVersion(githubPackagesInternalConfig, packageName, packageType, version);
+      builds = getBuildDetails(githubPackagesInternalConfig, packageName, packageType, org);
     } catch (GithubPackagesServerRuntimeException ex) {
       throw ex;
     } catch (Exception e) {
@@ -110,7 +112,15 @@ public class GithubPackagesRegistryServiceImpl implements GithubPackagesRegistry
           new ArtifactServerException(ExceptionUtils.getMessage(e), e, USER));
     }
 
-    return build;
+    for (BuildDetails b : builds) {
+      String compareVersion = b.getNumber();
+
+      if (compareVersion.equals(version)) {
+        return b;
+      }
+    }
+
+    throw new InvalidRequestException("Could not find version " + version + " in the package " + packageName);
   }
 
   private BuildDetails getBuildForAVersion(GithubPackagesInternalConfig githubPackagesInternalConfig,
