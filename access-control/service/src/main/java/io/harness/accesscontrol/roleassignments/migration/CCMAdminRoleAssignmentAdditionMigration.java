@@ -8,6 +8,7 @@ import static org.springframework.data.mongodb.core.query.Update.update;
 
 import io.harness.accesscontrol.commons.helpers.AccountHelperService;
 import io.harness.accesscontrol.roleassignments.persistence.RoleAssignmentDBO;
+import io.harness.accesscontrol.roleassignments.persistence.RoleAssignmentDBO.RoleAssignmentDBOKeys;
 import io.harness.accesscontrol.roleassignments.persistence.repositories.RoleAssignmentRepository;
 import io.harness.accesscontrol.scopes.core.ScopeService;
 import io.harness.accesscontrol.scopes.harness.HarnessScopeLevel;
@@ -52,19 +53,18 @@ public class CCMAdminRoleAssignmentAdditionMigration implements NGMigration {
 
     do {
       Pageable pageable = PageRequest.of(pageIndex, pageSize);
-      Criteria criteria = Criteria.where(RoleAssignmentDBO.RoleAssignmentDBOKeys.roleIdentifier)
+      Criteria criteria = Criteria.where(RoleAssignmentDBOKeys.roleIdentifier)
                               .is(ACCOUNT_VIEWER)
-                              .and(RoleAssignmentDBO.RoleAssignmentDBOKeys.resourceGroupIdentifier)
+                              .and(RoleAssignmentDBOKeys.resourceGroupIdentifier)
                               .is(DEFAULT_ACCOUNT_LEVEL_RESOURCE_GROUP_IDENTIFIER)
-                              .and(RoleAssignmentDBO.RoleAssignmentDBOKeys.scopeLevel)
+                              .and(RoleAssignmentDBOKeys.scopeLevel)
                               .is(HarnessScopeLevel.ACCOUNT.getName())
-                              .and(RoleAssignmentDBO.RoleAssignmentDBOKeys.principalType)
+                              .and(RoleAssignmentDBOKeys.principalType)
                               .is(USER);
 
       List<RoleAssignmentDBO> roleAssignmentList =
           roleAssignmentRepository
-              .findAll(
-                  criteria, pageable, Sort.by(Sort.Direction.ASC, RoleAssignmentDBO.RoleAssignmentDBOKeys.createdAt))
+              .findAll(criteria, pageable, Sort.by(Sort.Direction.ASC, RoleAssignmentDBOKeys.createdAt))
               .getContent();
       List<String> ceEnabledAccountIds = accountHelperService.getCeEnabledNgAccounts();
 
@@ -73,23 +73,23 @@ public class CCMAdminRoleAssignmentAdditionMigration implements NGMigration {
         break;
       }
       for (RoleAssignmentDBO roleAssignment : roleAssignmentList) {
-          String accountId =
-              scopeService.buildScopeFromScopeIdentifier(roleAssignment.getScopeIdentifier()).getInstanceId();
-          if (ceEnabledAccountIds.contains(accountId)) {
+        String accountId =
+            scopeService.buildScopeFromScopeIdentifier(roleAssignment.getScopeIdentifier()).getInstanceId();
+        if (ceEnabledAccountIds.contains(accountId)) {
+          try {
+            RoleAssignmentDBO newRoleAssignmentDBO = buildRoleAssignmentDBO(roleAssignment);
             try {
-              RoleAssignmentDBO newRoleAssignmentDBO = buildRoleAssignmentDBO(roleAssignment);
-              try {
-                roleAssignmentRepository.save(newRoleAssignmentDBO);
-              } catch (DuplicateKeyException e) {
-                log.error("Corresponding ccm admin was already created {}", newRoleAssignmentDBO.toString(), e);
-              }
-              roleAssignmentRepository.updateById(
-                  roleAssignment.getId(), update(RoleAssignmentDBO.RoleAssignmentDBOKeys.managed, false));
-
-            } catch (Exception exception) {
-              log.error("[CCMAdminRoleAssignmentAdditionMigration] Unexpected error occurred.", exception);
+              roleAssignmentRepository.save(newRoleAssignmentDBO);
+            } catch (DuplicateKeyException e) {
+              log.error("Corresponding ccm admin was already created {}", newRoleAssignmentDBO.toString(), e);
             }
+            roleAssignmentRepository.updateById(
+                roleAssignment.getId(), update(RoleAssignmentDBO.RoleAssignmentDBOKeys.managed, false));
+
+          } catch (Exception exception) {
+            log.error("[CCMAdminRoleAssignmentAdditionMigration] Unexpected error occurred.", exception);
           }
+        }
       }
       pageIndex++;
     } while (true);
