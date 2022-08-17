@@ -48,12 +48,15 @@ import io.harness.delegate.task.artifacts.request.ArtifactTaskParameters;
 import io.harness.delegate.task.artifacts.response.ArtifactTaskResponse;
 import io.harness.delegate.task.gcp.request.GcpValidationRequest;
 import io.harness.delegate.task.gcp.response.GcpValidationTaskResponse;
+import io.harness.delegate.task.gitpolling.GitPollingSourceType;
+import io.harness.delegate.task.gitpolling.GitPollingTaskType;
+import io.harness.delegate.task.gitpolling.github.GitHubPollingDelegateRequest;
+import io.harness.delegate.task.gitpolling.request.GitPollingTaskParameters;
 import io.harness.delegate.task.spotinst.request.SpotInstDeployTaskParameters;
 import io.harness.delegate.task.spotinst.request.SpotInstSetupTaskParameters;
 import io.harness.delegate.task.spotinst.request.SpotInstSwapRoutesTaskParameters;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.morphia.MorphiaRegistrarHelperPut;
-import io.harness.ng.core.models.Secret;
 
 import software.wings.beans.AwsConfig;
 import software.wings.beans.CustomArtifactServerConfig;
@@ -114,7 +117,6 @@ public class DelegateTasksBeansMorphiaRegistrar implements MorphiaRegistrar {
     set.add(HDelegateTask.class);
     set.add(ExecutionCapabilityDemander.class);
     set.add(ExecutionCapability.class);
-    set.add(Secret.class);
     set.add(SettingAttribute.class);
     set.add(YamlGitConfig.class);
     set.add(ArtifactSourceable.class);
@@ -163,6 +165,10 @@ public class DelegateTasksBeansMorphiaRegistrar implements MorphiaRegistrar {
     h.put("delegate.task.gcp.response.GcpValidationTaskResponse", GcpValidationTaskResponse.class);
     h.put("software.wings.helpers.ext.ecs.response.EcsServiceDeployResponse", EcsServiceDeployResponse.class);
     w.put("helpers.ext.helm.response.HelmInstallCommandResponse", HelmInstallCommandResponse.class);
+    h.put("delegate.task.gitpolling.request.GitPollingTaskParameters", GitPollingTaskParameters.class);
+    h.put("delegate.task.gitpolling.github", GitHubPollingDelegateRequest.class);
+    h.put("delegate.task.gitpolling.GitPollingSourceType", GitPollingSourceType.class);
+    h.put("delegate.task.gitpolling.GitPollingTaskType", GitPollingTaskType.class);
     w.put("beans.AwsConfig", AwsConfig.class);
     w.put("beans.GitConfig", GitConfig.class);
     w.put("beans.yaml.GitCommandExecutionResponse", GitCommandExecutionResponse.class);

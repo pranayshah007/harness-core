@@ -12,6 +12,8 @@ import static com.fasterxml.jackson.annotation.JsonTypeInfo.Id.NAME;
 
 import io.harness.beans.dependencies.DependencyElement;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
+import io.harness.beans.yaml.extended.platform.Platform;
+import io.harness.beans.yaml.extended.runtime.Runtime;
 import io.harness.plancreator.execution.ExecutionElementConfig;
 import io.harness.plancreator.stages.stage.StageInfoConfig;
 import io.harness.pms.yaml.ParameterField;
@@ -27,5 +29,6 @@ public interface IntegrationStageConfig extends StageInfoConfig {
   ParameterField<List<DependencyElement>> getServiceDependencies();
   ParameterField<Boolean> getCloneCodebase();
 
-  ParameterField<String> getRunsOn();
+  ParameterField<Platform> getPlatform();
+  Runtime getRuntime();
 }

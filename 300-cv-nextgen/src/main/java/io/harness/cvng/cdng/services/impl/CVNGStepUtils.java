@@ -23,6 +23,7 @@ import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.base.Preconditions;
 import java.util.List;
 import java.util.Objects;
@@ -45,6 +46,8 @@ public class CVNGStepUtils {
   public static final String USE_FROM_STAGE_KEY = "useFromStage";
   public static final String PIPELINE = "pipeline";
 
+  public static final String IDENTIFIER_KEY = "identifier";
+
   public static YamlNode getServiceRefNode(YamlNode stageYaml) {
     YamlField serviceConfigKey = stageYaml.getField(SPEC_KEY).getNode().getField(SERVICE_CONFIG_KEY);
     YamlField serviceKey = stageYaml.getField(SPEC_KEY).getNode().getField(SERVICE_KEY);
@@ -60,6 +63,25 @@ public class CVNGStepUtils {
     }
   }
 
+  public static JsonNode getServiceRefNode(JsonNode fieldValue) {
+    JsonNode serviceConfigKey = fieldValue.get(SERVICE_CONFIG_KEY);
+    JsonNode serviceKey = fieldValue.get(SERVICE_KEY);
+    try {
+      if (serviceKey != null) {
+        return serviceKey.get(SERVICE_REF_KEY);
+      } else {
+        if (serviceConfigKey.get(SERVICE_REF_KEY) != null) {
+          return serviceConfigKey.get(SERVICE_REF_KEY);
+        } else {
+          return serviceConfigKey.get(SERVICE_KEY).get(IDENTIFIER_KEY);
+        }
+      }
+    } catch (Exception e) {
+      log.error("Exception: " + e.getMessage() + ", Incorrect Service Ref in pipeline Yaml for SLO policy.");
+      throw e;
+    }
+  }
+
   public static boolean hasServiceIdentifier(YamlNode stageYaml) {
     YamlField serviceConfigKey = stageYaml.getField(SPEC_KEY).getNode().getField(SERVICE_CONFIG_KEY);
     YamlField serviceKey = stageYaml.getField(SPEC_KEY).getNode().getField(SERVICE_KEY);
@@ -67,6 +89,18 @@ public class CVNGStepUtils {
       return serviceKey.getNode().getField(SERVICE_REF_KEY) != null;
     } else {
       return serviceConfigKey.getNode().getField(SERVICE_REF_KEY) != null;
+    }
+  }
+
+  public static boolean hasServiceIdentifier(JsonNode fieldValue) {
+    JsonNode serviceConfigKey = fieldValue.get(SERVICE_CONFIG_KEY);
+    JsonNode serviceKey = fieldValue.get(SERVICE_KEY);
+    if (serviceKey != null) {
+      return serviceKey.get(SERVICE_REF_KEY) != null;
+    } else {
+      return (serviceConfigKey.get(SERVICE_REF_KEY) != null)
+          || (serviceConfigKey.get(SERVICE_KEY) != null
+              && serviceConfigKey.get(SERVICE_KEY).get(IDENTIFIER_KEY) != null);
     }
   }
 

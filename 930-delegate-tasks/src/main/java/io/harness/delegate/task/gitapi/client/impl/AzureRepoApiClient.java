@@ -30,13 +30,16 @@ import io.harness.delegate.beans.gitapi.GitApiTaskParams;
 import io.harness.delegate.beans.gitapi.GitApiTaskResponse;
 import io.harness.delegate.beans.gitapi.GitApiTaskResponse.GitApiTaskResponseBuilder;
 import io.harness.delegate.task.gitapi.client.GitApiClient;
+import io.harness.delegate.task.gitpolling.github.GitHubPollingDelegateRequest;
 import io.harness.exception.InvalidRequestException;
 import io.harness.git.GitClientHelper;
+import io.harness.gitpolling.github.GitPollingWebhookData;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.security.encryption.SecretDecryptionService;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -112,6 +115,11 @@ public class AzureRepoApiClient implements GitApiClient {
     }
 
     return responseBuilder.build();
+  }
+
+  @Override
+  public List<GitPollingWebhookData> getWebhookRecentDeliveryEvents(GitHubPollingDelegateRequest attributesRequest) {
+    throw new InvalidRequestException("Not implemented");
   }
 
   private String retrieveAzureRepoAuthToken(ConnectorDetails gitConnector) {

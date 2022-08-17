@@ -9,7 +9,6 @@ package io.harness.debezium;
 
 import static io.harness.AuthorizationServiceHeader.DEBEZIUM_SERVICE;
 import static io.harness.debezium.DebeziumConstants.DEBEZIUM_PREFIX;
-import static io.harness.debezium.DebeziumConstants.DEBEZIUM_TOPIC_SIZE;
 
 import io.harness.eventsframework.EventsFrameworkConfiguration;
 import io.harness.eventsframework.api.Producer;
@@ -45,15 +44,15 @@ public class DebeziumProducerFactory {
     }
   }
 
-  public Producer get(String collection) {
+  public Producer get(String collection, int redisStreamSize) {
     if (producerMap.containsKey(collection)) {
       return producerMap.get(collection);
     }
 
     RedisConfig redisConfig = configuration.getRedisConfig();
     RedissonClient client = getRedissonClient(redisConfig);
-    Producer producer = redisProducerFactory.createRedisProducer(DEBEZIUM_PREFIX + collection, client,
-        DEBEZIUM_TOPIC_SIZE, DEBEZIUM_SERVICE.getServiceId(), redisConfig.getEnvNamespace());
+    Producer producer = redisProducerFactory.createRedisProducer(DEBEZIUM_PREFIX + collection, client, redisStreamSize,
+        DEBEZIUM_SERVICE.getServiceId(), redisConfig.getEnvNamespace());
     producerMap.put(collection, producer);
     return producer;
   }

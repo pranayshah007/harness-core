@@ -19,6 +19,7 @@ java_library(
         "//970-ng-commons:module",
         "//980-commons:module",
         "//platform-service/modules/notification-service/contracts/src/main/proto:notification_beans_java_proto",
+        "@maven//:org_springframework_data_spring_data_mongodb",
     ],
 )
 

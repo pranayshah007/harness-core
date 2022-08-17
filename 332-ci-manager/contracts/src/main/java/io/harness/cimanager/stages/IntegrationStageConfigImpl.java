@@ -7,8 +7,6 @@
 
 package io.harness.cimanager.stages;
 
-import static io.harness.beans.SwaggerConstants.STRING_CLASSPATH;
-import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.string;
 
 import io.harness.annotation.RecasterAlias;
@@ -18,10 +16,14 @@ import io.harness.beans.SwaggerConstants;
 import io.harness.beans.dependencies.DependencyElement;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.beans.yaml.extended.infrastrucutre.UseFromStageInfraYaml;
+import io.harness.beans.yaml.extended.platform.Platform;
+import io.harness.beans.yaml.extended.runtime.CloudRuntime;
+import io.harness.beans.yaml.extended.runtime.Runtime;
 import io.harness.plancreator.execution.ExecutionElementConfig;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.yaml.YamlSchemaTypes;
+import io.harness.yaml.schema.beans.SupportedPossibleFieldTypes;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -61,11 +63,17 @@ public class IntegrationStageConfigImpl implements IntegrationStageConfig {
       use = JsonTypeInfo.Id.NAME, property = "type", visible = true, defaultImpl = UseFromStageInfraYaml.class)
   Infrastructure infrastructure;
 
-  @ApiModelProperty(dataType = STRING_CLASSPATH) private ParameterField<String> runsOn;
-  @YamlSchemaTypes(value = {runtime})
+  @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type", visible = true, defaultImpl = CloudRuntime.class)
+  Runtime runtime;
+
+  @YamlSchemaTypes(value = {SupportedPossibleFieldTypes.runtime})
+  @ApiModelProperty(dataType = "io.harness.beans.yaml.extended.platform.Platform")
+  ParameterField<Platform> platform;
+
+  @YamlSchemaTypes(value = {SupportedPossibleFieldTypes.runtime})
   @ApiModelProperty(dataType = "[Lio.harness.beans.dependencies.DependencyElement;")
   ParameterField<List<DependencyElement>> serviceDependencies;
-  @YamlSchemaTypes(value = {runtime})
+  @YamlSchemaTypes(value = {SupportedPossibleFieldTypes.runtime})
   @ApiModelProperty(dataType = SwaggerConstants.BOOLEAN_CLASSPATH)
   private ParameterField<Boolean> cloneCodebase;
 }
