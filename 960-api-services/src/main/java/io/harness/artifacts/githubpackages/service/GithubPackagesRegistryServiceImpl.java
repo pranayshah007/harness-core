@@ -9,6 +9,7 @@ package io.harness.artifacts.githubpackages.service;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.exception.WingsException.USER;
+import static io.harness.exception.WingsException.builder;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.artifacts.githubpackages.beans.GithubPackagesInternalConfig;
@@ -26,6 +27,7 @@ import io.harness.exception.runtime.GithubPackagesServerRuntimeException;
 import software.wings.helpers.ext.jenkins.BuildDetails;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.io.IOException;
@@ -163,14 +165,13 @@ public class GithubPackagesRegistryServiceImpl implements GithubPackagesRegistry
           new InvalidArtifactServerException(response.message(), USER));
     }
 
-    githubPackagesVersionsResponse = processResponse(response.body(), packageName);
+    githubPackagesVersionsResponse = processResponse(response.body());
 
-    List<BuildDetails> builds = processBuildDetails(githubPackagesVersionsResponse);
-
-    return builds;
+    return processBuildDetails(githubPackagesVersionsResponse, packageName, packageType);
   }
 
-  private List<BuildDetails> processBuildDetails(GithubPackagesVersionsResponse githubPackagesVersionsResponse) {
+  private List<BuildDetails> processBuildDetails(
+      GithubPackagesVersionsResponse githubPackagesVersionsResponse, String packageName, String packageType) {
     List<GithubPackagesVersion> versions = githubPackagesVersionsResponse.getVersionDetails();
 
     List<BuildDetails> buildDetails = new ArrayList<>();
@@ -180,10 +181,12 @@ public class GithubPackagesRegistryServiceImpl implements GithubPackagesRegistry
 
       String tag = v.getTags().get(0);
 
-      build.setBuildDisplayName(tag);
-      build.setUiDisplayName(tag);
+      build.setBuildDisplayName(packageName + ": " + tag);
+      build.setUiDisplayName(packageName + ": " + tag);
       build.setNumber(v.getVersionId());
       build.setBuildUrl(v.getVersionUrl());
+      build.setStatus(BuildDetails.BuildStatus.SUCCESS);
+      build.setBuildFullDisplayName(packageName + ": " + tag);
 
       buildDetails.add(build);
     }
@@ -191,7 +194,7 @@ public class GithubPackagesRegistryServiceImpl implements GithubPackagesRegistry
     return buildDetails;
   }
 
-  private GithubPackagesVersionsResponse processResponse(List<JsonNode> versionDetails, String packageName) {
+  private GithubPackagesVersionsResponse processResponse(List<JsonNode> versionDetails) {
     List<GithubPackagesVersion> versions = new ArrayList<>();
 
     if (versionDetails != null) {
@@ -200,7 +203,15 @@ public class GithubPackagesRegistryServiceImpl implements GithubPackagesRegistry
 
         JsonNode container = metadata.get("container");
 
-        List<String> tags = container.findValuesAsText("tags");
+        ArrayNode tags = (ArrayNode) container.get("tags");
+
+        List<String> tagList = new ArrayList<>();
+
+        for (JsonNode jsonNode : tags) {
+          String tag = jsonNode.asText();
+
+          tagList.add(tag);
+        }
 
         GithubPackagesVersion version = GithubPackagesVersion.builder()
                                             .versionId(node.get("id").asText())
@@ -210,7 +221,7 @@ public class GithubPackagesRegistryServiceImpl implements GithubPackagesRegistry
                                             .createdAt(node.get("created_at").asText())
                                             .lastUpdatedAt(node.get("updated_at").asText())
                                             .packageType(metadata.get("package_type").asText())
-                                            .tags(tags)
+                                            .tags(tagList)
                                             .build();
 
         versions.add(version);
@@ -224,10 +235,7 @@ public class GithubPackagesRegistryServiceImpl implements GithubPackagesRegistry
       return null;
     }
 
-    GithubPackagesVersionsResponse finalResponse =
-        GithubPackagesVersionsResponse.builder().versionDetails(versions).build();
-
-    return finalResponse;
+    return GithubPackagesVersionsResponse.builder().versionDetails(versions).build();
   }
 
   public static boolean isSuccessful(Response<?> response) {

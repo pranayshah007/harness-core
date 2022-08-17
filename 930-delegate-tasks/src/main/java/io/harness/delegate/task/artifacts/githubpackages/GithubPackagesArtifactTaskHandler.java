@@ -53,7 +53,7 @@ public class GithubPackagesArtifactTaskHandler
             .map(build -> GithubPackagesRequestResponseMapper.toGithubPackagesResponse(build, attributes))
             .collect(Collectors.toList());
 
-    return getSuccessTaskExecutionResponse(githubPackagesArtifactDelegateResponses);
+    return getSuccessTaskExecutionResponse(githubPackagesArtifactDelegateResponses, builds);
   }
 
   public ArtifactTaskExecutionResponse getLastSuccessfulBuild(GithubPackagesArtifactDelegateRequest attributesRequest) {
@@ -73,7 +73,8 @@ public class GithubPackagesArtifactTaskHandler
     GithubPackagesArtifactDelegateResponse githubPackagesArtifactDelegateResponse =
         GithubPackagesRequestResponseMapper.toGithubPackagesResponse(lastSuccessfulBuild, attributesRequest);
 
-    return getSuccessTaskExecutionResponse(Collections.singletonList(githubPackagesArtifactDelegateResponse));
+    return getSuccessTaskExecutionResponse(Collections.singletonList(githubPackagesArtifactDelegateResponse),
+        Collections.singletonList(lastSuccessfulBuild));
   }
 
   public void decryptRequestDTOs(GithubPackagesArtifactDelegateRequest attributes) {
@@ -105,9 +106,10 @@ public class GithubPackagesArtifactTaskHandler
   }
 
   private ArtifactTaskExecutionResponse getSuccessTaskExecutionResponse(
-      List<GithubPackagesArtifactDelegateResponse> responseList) {
+      List<GithubPackagesArtifactDelegateResponse> responseList, List<BuildDetails> buildDetails) {
     return ArtifactTaskExecutionResponse.builder()
         .artifactDelegateResponses(responseList)
+        .buildDetails(buildDetails)
         .isArtifactSourceValid(true)
         .isArtifactServerValid(true)
         .build();
