@@ -76,6 +76,7 @@ public enum FeatureRestrictionName {
   AZURE_SWAP_SLOT,
   AZURE_WEBAPP_ROLLBACK,
   JENKINS_BUILD,
+  AZURE_CREATE_ARM_RESOURCE,
 
   // STO Features
   SECURITY,

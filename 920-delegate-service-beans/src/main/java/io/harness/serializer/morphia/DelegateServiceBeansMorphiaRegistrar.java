@@ -9,6 +9,7 @@ package io.harness.serializer.morphia;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.delegate.beans.Delegate;
 import io.harness.delegate.beans.DelegateAsyncTaskResponse;
 import io.harness.delegate.beans.DelegateCallbackRecord;
 import io.harness.delegate.beans.DelegateNgToken;
@@ -28,6 +29,7 @@ import java.util.Set;
 public class DelegateServiceBeansMorphiaRegistrar implements MorphiaRegistrar {
   @Override
   public void registerClasses(Set<Class> set) {
+    set.add(Delegate.class);
     set.add(DelegateAsyncTaskResponse.class);
     set.add(DelegateCallbackRecord.class);
     set.add(DelegateProfile.class);

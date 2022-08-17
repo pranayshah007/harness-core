@@ -378,7 +378,6 @@ public enum FeatureName {
   USE_K8S_API_FOR_STEADY_STATE_CHECK,
   WINRM_ASG_ROLLBACK("Used for Collect remaining instances rollback step", HarnessTeam.CDP),
   NEW_LEFT_NAVBAR_SETTINGS("Used for new left navbar configuration", HarnessTeam.PL),
-
   SAVE_ARTIFACT_TO_DB("Saves artifact to db and proceed in artifact collection step if not found", HarnessTeam.CDC),
   NG_INLINE_MANIFEST,
   NG_CUSTOM_REMOTE_MANIFEST,
@@ -412,8 +411,10 @@ public enum FeatureName {
       "Making multiple optimizations for workflow execution graphql in CG", HarnessTeam.SPG),
   NG_ENABLE_LDAP_CHECK("Enables NG Ldap in NG-UI", HarnessTeam.PL),
   CUSTOM_SECRET_MANAGER_NG("Enable Custom Secret Manager in NG", HarnessTeam.PL),
+  AZURE_ARM_BP_NG("Used to allow customers to access ARM/BP capabilities", HarnessTeam.CDP),
   CV_AWS_PROMETHEUS("Enable AWS Prometheus for CV State", HarnessTeam.CV),
-  GIT_WEBHOOK_POLLING("Used to poll git webhook recent delivery events", HarnessTeam.CDP);
+  GIT_WEBHOOK_POLLING("Used to poll git webhook recent delivery events", HarnessTeam.CDP),
+  TRIGGERS_REFACTOR("Enable NG Triggers UI refactoring", HarnessTeam.CDP);
   @Deprecated
   FeatureName() {
     scope = Scope.PER_ACCOUNT;
