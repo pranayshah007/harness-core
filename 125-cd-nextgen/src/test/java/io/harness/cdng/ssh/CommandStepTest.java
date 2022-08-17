@@ -10,12 +10,14 @@ package io.harness.cdng.ssh;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.rule.OwnerRule.ACASIAN;
 import static io.harness.rule.OwnerRule.ARVIND;
+import static io.harness.rule.OwnerRule.VITALIE;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
@@ -25,11 +27,13 @@ import io.harness.beans.EnvironmentType;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.infra.beans.PdcInfrastructureOutcome;
+import io.harness.cdng.infra.beans.SshWinRmAwsInfrastructureOutcome;
 import io.harness.cdng.infra.beans.SshWinRmAzureInfrastructureOutcome;
 import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.cdng.service.steps.ServiceStepOutcome;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
+import io.harness.delegate.beans.instancesync.info.AwsSshWinrmServerInstanceInfo;
 import io.harness.delegate.beans.instancesync.info.AzureSshWinrmServerInstanceInfo;
 import io.harness.delegate.beans.instancesync.info.PdcServerInstanceInfo;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
@@ -42,10 +46,12 @@ import io.harness.delegate.task.ssh.ScriptCommandUnit;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.UnitProgress;
+import io.harness.logging.UnitStatus;
 import io.harness.ng.core.k8s.ServiceSpecType;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
+import io.harness.pms.contracts.execution.failure.FailureInfo;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
@@ -57,6 +63,7 @@ import io.harness.serializer.KryoSerializer;
 import io.harness.serializer.kryo.ApiServiceBeansKryoRegister;
 import io.harness.serializer.kryo.DelegateTasksBeansKryoRegister;
 import io.harness.steps.StepHelper;
+import io.harness.supplier.ThrowingSupplier;
 
 import software.wings.beans.TaskType;
 
@@ -83,6 +90,7 @@ public class CommandStepTest extends CategoryTest {
 
   @Mock private CDStepHelper cdStepHelper;
   @Mock private InstanceInfoService instanceInfoService;
+  @Mock private ThrowingSupplier exceptionThrowingSupplier;
   @Captor private ArgumentCaptor<List<ServerInstanceInfo>> serverInstanceInfoListCaptor;
 
   @InjectMocks private CommandStep commandStep;
@@ -228,6 +236,46 @@ public class CommandStepTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = VITALIE)
+  @Category(UnitTests.class)
+  public void testHandleTaskResultWithSecurityContextSuccessAws() throws Exception {
+    final StepElementParameters stepElementParameters = StepElementParameters.builder()
+                                                            .spec(commandStepParameters)
+                                                            .timeout(ParameterField.createValueField("30m"))
+                                                            .build();
+    doReturn(ServiceStepOutcome.builder().type(ServiceSpecType.SSH).build())
+        .when(outcomeService)
+        .resolve(ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.SERVICE));
+
+    doReturn(SshWinRmAwsInfrastructureOutcome.builder().infrastructureKey(infraKey).build())
+        .when(cdStepHelper)
+        .getInfrastructureOutcome(ambiance);
+
+    List<UnitProgress> unitProgresses = Collections.singletonList(UnitProgress.newBuilder().build());
+    UnitProgressData unitProgressData = UnitProgressData.builder().unitProgresses(unitProgresses).build();
+
+    CommandTaskResponse commandTaskResponse =
+        CommandTaskResponse.builder().status(CommandExecutionStatus.SUCCESS).unitProgressData(unitProgressData).build();
+
+    StepResponse stepResponse =
+        commandStep.handleTaskResultWithSecurityContext(ambiance, stepElementParameters, () -> commandTaskResponse);
+    assertThat(stepResponse).isNotNull();
+    assertThat(stepResponse.getStatus()).isEqualTo(Status.SUCCEEDED);
+    assertThat(stepResponse.getUnitProgressList()).containsAll(unitProgresses);
+    assertThat(stepResponse.getStepOutcomes()).hasSize(1);
+
+    verify(instanceInfoService)
+        .saveServerInstancesIntoSweepingOutput(eq(ambiance), serverInstanceInfoListCaptor.capture());
+    List<ServerInstanceInfo> serverInstanceInfoList = serverInstanceInfoListCaptor.getValue();
+    assertThat(serverInstanceInfoList).hasSize(1);
+    assertThat(((AwsSshWinrmServerInstanceInfo) serverInstanceInfoList.get(0)).getHost()).isEqualTo(localhost);
+    assertThat(((AwsSshWinrmServerInstanceInfo) serverInstanceInfoList.get(0)).getInfrastructureKey())
+        .isEqualTo(infraKey);
+    assertThat(((AwsSshWinrmServerInstanceInfo) serverInstanceInfoList.get(0)).getServiceType())
+        .isEqualTo(ServiceSpecType.SSH);
+  }
+
+  @Test
   @Owner(developers = ACASIAN)
   @Category(UnitTests.class)
   public void testHandleTaskResultWithSecurityContextFailure() throws Exception {
@@ -259,6 +307,43 @@ public class CommandStepTest extends CategoryTest {
     assertThat(stepResponse.getStatus()).isEqualTo(Status.FAILED);
     assertThat(stepResponse.getUnitProgressList()).containsAll(unitProgresses);
     assertThat(stepResponse.getFailureInfo().getErrorMessage()).isEqualTo("Something went wrong");
+    verify(instanceInfoService, times(0)).saveServerInstancesIntoSweepingOutput(any(), any());
+  }
+
+  @Test
+  @Owner(developers = ACASIAN)
+  @Category(UnitTests.class)
+  public void testHandleTaskResultWithSecurityContextErrorFromDelegate() throws Exception {
+    final StepElementParameters stepElementParameters = StepElementParameters.builder()
+                                                            .spec(commandStepParameters)
+                                                            .timeout(ParameterField.createValueField("30m"))
+                                                            .build();
+
+    List<UnitProgress> unitProgresses =
+        Arrays.asList(UnitProgress.newBuilder().setStatus(UnitStatus.RUNNING).setUnitName("Init").build());
+
+    doReturn(ServiceStepOutcome.builder().type(ServiceSpecType.SSH).build())
+        .when(outcomeService)
+        .resolve(ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.SERVICE));
+
+    doReturn(PdcInfrastructureOutcome.builder().infrastructureKey(infraKey).build())
+        .when(cdStepHelper)
+        .getInfrastructureOutcome(ambiance);
+
+    doReturn(StepResponse.builder()
+                 .status(Status.FAILED)
+                 .failureInfo(FailureInfo.newBuilder().build())
+                 .unitProgressList(unitProgresses)
+                 .build())
+        .when(sshCommandStepHelper)
+        .handleTaskException(eq(ambiance), any(), any());
+    doThrow(new RuntimeException("Failed to execute the task")).when(exceptionThrowingSupplier).get();
+
+    StepResponse stepResponse =
+        commandStep.handleTaskResultWithSecurityContext(ambiance, stepElementParameters, exceptionThrowingSupplier);
+    assertThat(stepResponse).isNotNull();
+    assertThat(stepResponse.getStatus()).isEqualTo(Status.FAILED);
+    assertThat(stepResponse.getUnitProgressList()).containsAll(unitProgresses);
     verify(instanceInfoService, times(0)).saveServerInstancesIntoSweepingOutput(any(), any());
   }
 

@@ -18,6 +18,7 @@ java_library(
         "//999-annotations:module",
         "@maven//:com_healthmarketscience_sqlbuilder_sqlbuilder",
         "@maven//:org_jfree_jfreechart",
+        "@maven//:org_springframework_spring_context",
     ],
 )
 

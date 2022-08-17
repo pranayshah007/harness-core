@@ -20,14 +20,14 @@ service HarnessToGitPushInfoService {
   rpc pushFromHarness(PushInfo) returns (PushResponse);
   rpc pushFile(FileInfo) returns (PushFileResponse);
   rpc isGitSyncEnabledForScope(io.harness.eventsframework.schemas.entity.EntityScopeInfo) returns (IsGitSyncEnabled);
-  rpc isGitSimplificationEnabledForScope(io.harness.eventsframework.schemas.entity.EntityScopeInfo)
-      returns (IsGitSimplificationEnabled);
+  rpc isGitSimplificationEnabledForScope(IsGitSimplificationEnabledRequest) returns (IsGitSimplificationEnabled);
   rpc getDefaultBranch(RepoDetails) returns (BranchDetails);
   rpc getFile(GetFileRequest) returns (GetFileResponse);
   rpc createFile(CreateFileRequest) returns (CreateFileResponse);
   rpc updateFile(UpdateFileRequest) returns (UpdateFileResponse);
   rpc createPullRequest(CreatePRRequest) returns (CreatePRResponse);
   rpc getRepoUrl(GetRepoUrlRequest) returns (GetRepoUrlResponse);
+  rpc isOldGitSyncEnabledForModule(IsOldGitSyncEnabledForModule) returns (IsOldGitSyncEnabledResponse);
 }
 
 message PushInfo {
@@ -83,6 +83,13 @@ message IsGitSyncEnabled {
 
 message IsGitSimplificationEnabled {
   bool enabled = 1;
+}
+
+message IsGitSimplificationEnabledRequest {
+  io.harness.eventsframework.schemas.entity.EntityScopeInfo entityScopeInfo = 1;
+  bool isNotForFFModule = 2;
+  // set it to false only for feature flag module,
+  // by default, we will show old git exp for feature flag module
 }
 
 message RepoDetails {
@@ -201,4 +208,13 @@ message ErrorDetails {
   string errorMessage = 1;
   string explanationMessage = 2;
   string hintMessage = 3;
+}
+
+message IsOldGitSyncEnabledForModule {
+  io.harness.eventsframework.schemas.entity.EntityScopeInfo entityScopeInfo = 1;
+  bool isNotFFModule = 2;
+}
+
+message IsOldGitSyncEnabledResponse {
+  bool isEnabled = 1;
 }

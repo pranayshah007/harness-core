@@ -70,6 +70,8 @@ public class DelegateGroup implements PersistentEntity, UuidAware {
 
   @EntityIdentifier private String identifier;
 
+  private long upgraderLastUpdated;
+
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
         .add(CompoundMongoIndex.builder()

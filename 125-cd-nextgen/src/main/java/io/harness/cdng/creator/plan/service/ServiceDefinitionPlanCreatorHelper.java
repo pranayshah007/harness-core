@@ -8,13 +8,15 @@
 package io.harness.cdng.creator.plan.service;
 
 import io.harness.cdng.artifact.bean.yaml.ArtifactListConfig;
+import io.harness.cdng.azure.config.yaml.ApplicationSettingsConfiguration;
+import io.harness.cdng.azure.config.yaml.ConnectionStringsConfiguration;
+import io.harness.cdng.azure.config.yaml.StartupCommandConfiguration;
 import io.harness.cdng.azure.webapp.ApplicationSettingsParameters;
 import io.harness.cdng.azure.webapp.ConnectionStringsParameters;
 import io.harness.cdng.azure.webapp.StartupCommandParameters;
 import io.harness.cdng.configfile.ConfigFileWrapper;
 import io.harness.cdng.creator.plan.PlanCreatorConstants;
 import io.harness.cdng.manifest.yaml.ManifestConfigWrapper;
-import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
 import io.harness.cdng.service.beans.AzureWebAppServiceSpec;
 import io.harness.cdng.service.beans.ServiceConfig;
 import io.harness.cdng.utilities.ArtifactsUtility;
@@ -242,7 +244,7 @@ public class ServiceDefinitionPlanCreatorHelper {
         serviceConfigNode, isUseFromStage, yamlUpdates, YamlTypes.STARTUP_COMMAND);
     String startupCommandPlanNodeId = "startupCommnad-" + UUIDGenerator.generateUuid();
 
-    StoreConfigWrapper startupCommand =
+    StartupCommandConfiguration startupCommand =
         ((AzureWebAppServiceSpec) serviceConfig.getServiceDefinition().getServiceSpec()).getStartupCommand();
     Map<String, YamlField> dependenciesMap = new HashMap<>();
     dependenciesMap.put(startupCommandPlanNodeId, startupCommandYamlField);
@@ -270,7 +272,7 @@ public class ServiceDefinitionPlanCreatorHelper {
         serviceConfigNode, isUseFromStage, yamlUpdates, YamlTypes.APPLICATION_SETTINGS);
     String applicationSettingsYamlFieldPlanNodeId = "applicationSettings-" + UUIDGenerator.generateUuid();
 
-    StoreConfigWrapper applicationSettings =
+    ApplicationSettingsConfiguration applicationSettings =
         ((AzureWebAppServiceSpec) serviceConfig.getServiceDefinition().getServiceSpec()).getApplicationSettings();
     Map<String, YamlField> dependenciesMap = new HashMap<>();
     dependenciesMap.put(applicationSettingsYamlFieldPlanNodeId, applicationSettingsYamlField);
@@ -299,7 +301,7 @@ public class ServiceDefinitionPlanCreatorHelper {
         serviceConfigNode, isUseFromStage, yamlUpdates, YamlTypes.CONNECTION_STRINGS);
     String connectionStringsYamlFieldPlanNodeId = "connectionStrings-" + UUIDGenerator.generateUuid();
 
-    StoreConfigWrapper connectionStrings =
+    ConnectionStringsConfiguration connectionStrings =
         ((AzureWebAppServiceSpec) serviceConfig.getServiceDefinition().getServiceSpec()).getConnectionStrings();
     Map<String, YamlField> dependenciesMap = new HashMap<>();
     dependenciesMap.put(connectionStringsYamlFieldPlanNodeId, connectionStringsYamlField);
@@ -326,7 +328,7 @@ public class ServiceDefinitionPlanCreatorHelper {
         serviceV2Node, false, yamlUpdates, YamlTypes.STARTUP_COMMAND);
     String startupCommandPlanNodeId = "startupCommand-" + UUIDGenerator.generateUuid();
 
-    StoreConfigWrapper startupCommand =
+    StartupCommandConfiguration startupCommand =
         ((AzureWebAppServiceSpec) serviceV2Config.getServiceDefinition().getServiceSpec()).getStartupCommand();
 
     Map<String, YamlField> dependenciesMap = new HashMap<>();
@@ -354,7 +356,7 @@ public class ServiceDefinitionPlanCreatorHelper {
         serviceV2Node, false, yamlUpdates, YamlTypes.APPLICATION_SETTINGS);
     String applicationSettingsPlanNodeId = "applicationSettings-" + UUIDGenerator.generateUuid();
 
-    StoreConfigWrapper applicationSettings =
+    ApplicationSettingsConfiguration applicationSettings =
         ((AzureWebAppServiceSpec) serviceV2Config.getServiceDefinition().getServiceSpec()).getApplicationSettings();
 
     Map<String, YamlField> dependenciesMap = new HashMap<>();
@@ -382,7 +384,7 @@ public class ServiceDefinitionPlanCreatorHelper {
         serviceV2Node, false, yamlUpdates, YamlTypes.CONNECTION_STRINGS);
     String connectionStringsPlanNodeId = "connectionStrings-" + UUIDGenerator.generateUuid();
 
-    StoreConfigWrapper connectionStrings =
+    ConnectionStringsConfiguration connectionStrings =
         ((AzureWebAppServiceSpec) serviceV2Config.getServiceDefinition().getServiceSpec()).getConnectionStrings();
 
     Map<String, YamlField> dependenciesMap = new HashMap<>();

@@ -46,6 +46,7 @@ import io.harness.template.entity.TemplateEntity;
 import io.harness.template.entity.TemplateEntity.TemplateEntityKeys;
 import io.harness.template.events.TemplateUpdateEventType;
 import io.harness.template.gitsync.TemplateGitSyncBranchContextGuard;
+import io.harness.template.utils.TemplateUtils;
 
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
@@ -90,9 +91,17 @@ public class NGTemplateServiceHelper {
       log.error(String.format("Error while retrieving template with identifier [%s] and versionLabel [%s]",
                     templateIdentifier, versionLabel),
           e);
-      throw new InvalidRequestException(
-          String.format("Error while retrieving template with identifier [%s] and versionLabel [%s]: %s",
-              templateIdentifier, versionLabel, e.getMessage()));
+      ScmException exception = TemplateUtils.getScmException(e);
+      if (null != exception) {
+        throw new InvalidRequestException(
+            String.format("Error while retrieving template with identifier [%s] and versionLabel [%s]",
+                templateIdentifier, versionLabel),
+            e);
+      } else {
+        throw new InvalidRequestException(
+            String.format("Error while retrieving template with identifier [%s] and versionLabel [%s]: %s",
+                templateIdentifier, versionLabel, e.getMessage()));
+      }
     }
   }
 

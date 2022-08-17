@@ -1,3 +1,10 @@
+/*
+ * Copyright 2022 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
+
 package io.harness.cdng.pipeline.helpers;
 
 import static io.harness.cdng.pipeline.helpers.ExecutionStrategyTemplates.SSH_WINRM_BASIC_SH_FTL;
@@ -29,11 +36,14 @@ import java.util.stream.Collectors;
 public class CDNGPipelineExecutionStrategyHelper {
   private static String failureStrategiesSnippet;
   private static String setupRuntimePathsScript;
+  private static String setupRuntimePathsScriptWar;
   private static String processStopScript;
   private static String portClearedScript;
   private static String processRunScript;
   private static String portListeningScript;
+  // canary
   private static String setupRuntimePathsCanaryScript;
+  private static String setupRuntimePathsWarCanaryScript;
   private static String processStopCanaryScript;
   private static String portClearedCanaryScript;
   private static String processRunCanaryScript;
@@ -57,59 +67,74 @@ public class CDNGPipelineExecutionStrategyHelper {
     if (isEmpty(setupRuntimePathsScript)) {
       setupRuntimePathsScript = Resources.toString(
           Objects.requireNonNull(
-              classLoader.getResource("snippets/Pipelines/execution/setup-runtime-paths-script-bash.yaml")),
+              classLoader.getResource("snippets/Pipelines/execution/ssh/script/setup-runtime-paths-script-bash.yaml")),
           StandardCharsets.UTF_8);
+    }
+    if (isEmpty(setupRuntimePathsScriptWar)) {
+      setupRuntimePathsScriptWar =
+          Resources.toString(Objects.requireNonNull(classLoader.getResource(
+                                 "snippets/Pipelines/execution/ssh/script/setup-runtime-paths-script-war-bash.yaml")),
+              StandardCharsets.UTF_8);
     }
     if (isEmpty(processStopScript)) {
       processStopScript = Resources.toString(
-          Objects.requireNonNull(classLoader.getResource("snippets/Pipelines/execution/process-stop-script-bash.yaml")),
+          Objects.requireNonNull(
+              classLoader.getResource("snippets/Pipelines/execution/ssh/script/process-stop-script-bash.yaml")),
           StandardCharsets.UTF_8);
     }
     if (isEmpty(portClearedScript)) {
       portClearedScript = Resources.toString(
-          Objects.requireNonNull(classLoader.getResource("snippets/Pipelines/execution/port-cleared-script-bash.yaml")),
+          Objects.requireNonNull(
+              classLoader.getResource("snippets/Pipelines/execution/ssh/script/port-cleared-script-bash.yaml")),
           StandardCharsets.UTF_8);
     }
     if (isEmpty(processRunScript)) {
       processRunScript = Resources.toString(
-          Objects.requireNonNull(classLoader.getResource("snippets/Pipelines/execution/process-run-script-bash.yaml")),
+          Objects.requireNonNull(
+              classLoader.getResource("snippets/Pipelines/execution/ssh/script/process-run-script-bash.yaml")),
           StandardCharsets.UTF_8);
     }
     if (isEmpty(portListeningScript)) {
-      portListeningScript = Resources.toString(Objects.requireNonNull(classLoader.getResource(
-                                                   "snippets/Pipelines/execution/port-listening-script-bash.yaml")),
+      portListeningScript = Resources.toString(
+          Objects.requireNonNull(
+              classLoader.getResource("snippets/Pipelines/execution/ssh/script/port-listening-script-bash.yaml")),
           StandardCharsets.UTF_8);
     }
-
     if (isEmpty(setupRuntimePathsCanaryScript)) {
       setupRuntimePathsCanaryScript = Resources.toString(
-          Objects.requireNonNull(
-              classLoader.getResource("snippets/Pipelines/execution/setup-runtime-paths-script-canary-bash.yaml")),
+          Objects.requireNonNull(classLoader.getResource(
+              "snippets/Pipelines/execution/ssh/script/setup-runtime-paths-script-canary-bash.yaml")),
+          StandardCharsets.UTF_8);
+    }
+    if (isEmpty(setupRuntimePathsWarCanaryScript)) {
+      setupRuntimePathsWarCanaryScript = Resources.toString(
+          Objects.requireNonNull(classLoader.getResource(
+              "snippets/Pipelines/execution/ssh/script/setup-runtime-paths-script-canary-war-bash.yaml")),
           StandardCharsets.UTF_8);
     }
     if (isEmpty(processStopCanaryScript)) {
       processStopCanaryScript = Resources.toString(
           Objects.requireNonNull(
-              classLoader.getResource("snippets/Pipelines/execution/process-stop-script-canary-bash.yaml")),
+              classLoader.getResource("snippets/Pipelines/execution/ssh/script/process-stop-script-canary-bash.yaml")),
           StandardCharsets.UTF_8);
     }
     if (isEmpty(portClearedCanaryScript)) {
       portClearedCanaryScript = Resources.toString(
           Objects.requireNonNull(
-              classLoader.getResource("snippets/Pipelines/execution/port-cleared-script-canary-bash.yaml")),
+              classLoader.getResource("snippets/Pipelines/execution/ssh/script/port-cleared-script-canary-bash.yaml")),
           StandardCharsets.UTF_8);
     }
     if (isEmpty(processRunCanaryScript)) {
       processRunCanaryScript = Resources.toString(
           Objects.requireNonNull(
-              classLoader.getResource("snippets/Pipelines/execution/process-run-script-canary-bash.yaml")),
+              classLoader.getResource("snippets/Pipelines/execution/ssh/script/process-run-script-canary-bash.yaml")),
           StandardCharsets.UTF_8);
     }
     if (isEmpty(portListeningCanaryScript)) {
-      portListeningCanaryScript = Resources.toString(
-          Objects.requireNonNull(
-              classLoader.getResource("snippets/Pipelines/execution/port-listening-script-canary-bash.yaml")),
-          StandardCharsets.UTF_8);
+      portListeningCanaryScript =
+          Resources.toString(Objects.requireNonNull(classLoader.getResource(
+                                 "snippets/Pipelines/execution/ssh/script/port-listening-script-canary-bash.yaml")),
+              StandardCharsets.UTF_8);
     }
   }
 
@@ -146,19 +171,28 @@ public class CDNGPipelineExecutionStrategyHelper {
     try (StringWriter stringWriter = new StringWriter()) {
       ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
       String artifactType = artifactTypeSuffix(strategyParameters.getArtifactType());
-      String canarySnippet = Resources.toString(
-          Objects.requireNonNull(classLoader.getResource(String.format(
-              "snippets/Pipelines/execution/%s-canary-%s%s.yaml", serviceDefinitionType.name().toLowerCase(Locale.ROOT),
-              artifactType, includeVerify ? "-with-verify" : ""))),
+      String canarySnippet = Resources.toString(Objects.requireNonNull(classLoader.getResource(String.format(
+                                                    "snippets/Pipelines/execution/ssh/canary/%s-canary-%s%s.yaml",
+                                                    serviceDefinitionType.name().toLowerCase(Locale.ROOT), artifactType,
+                                                    includeVerify ? "-with-verify" : ""))),
           StandardCharsets.UTF_8);
+      String canaryRollbackSnippet =
+          Resources.toString(Objects.requireNonNull(classLoader.getResource(
+                                 String.format("snippets/Pipelines/execution/ssh/canary/%s-canary-%s%s-rollback.yaml",
+                                     serviceDefinitionType.name().toLowerCase(Locale.ROOT), artifactType,
+                                     includeVerify ? "-with-verify" : ""))),
+              StandardCharsets.UTF_8);
       Map<String, Object> templateParams =
           ImmutableMap.<String, Object>builder()
               .put("failureStrategies", failureStrategiesSnippet)
+              .put("maxConcurrency", 1)
               .put("phases", strategyParameters.getPhases())
               .put("unitType",
                   NGInstanceUnitType.PERCENTAGE.equals(strategyParameters.getUnitType()) ? "Percentage" : "Count")
               .put("canarySnippet", canarySnippet)
+              .put("canaryRollbackSnippet", canaryRollbackSnippet)
               .put("setupRuntimePathsScript", setupRuntimePathsCanaryScript)
+              .put("setupRuntimePathsScriptWar", setupRuntimePathsWarCanaryScript)
               .put("processStopScript", processStopCanaryScript)
               .put("portClearedScript", portClearedCanaryScript)
               .put("processRunScript", processRunCanaryScript)
@@ -202,19 +236,21 @@ public class CDNGPipelineExecutionStrategyHelper {
     try (StringWriter stringWriter = new StringWriter()) {
       ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
       String artifactType = artifactTypeSuffix(strategyParameters.getArtifactType());
-      String rollingSnippet = Resources.toString(Objects.requireNonNull(classLoader.getResource(
-                                                     String.format("snippets/Pipelines/execution/%s-rolling-%s%s.yaml",
-                                                         serviceDefinitionType.name().toLowerCase(Locale.ROOT),
-                                                         artifactType, includeVerify ? "-with-verify" : ""))),
+      String rollingSnippet = Resources.toString(Objects.requireNonNull(classLoader.getResource(String.format(
+                                                     "snippets/Pipelines/execution/ssh/rolling/%s-rolling-%s%s.yaml",
+                                                     serviceDefinitionType.name().toLowerCase(Locale.ROOT),
+                                                     artifactType, includeVerify ? "-with-verify" : ""))),
           StandardCharsets.UTF_8);
       Map<String, Object> templateParams =
           ImmutableMap.<String, Object>builder()
               .put("failureStrategies", failureStrategiesSnippet)
-              .put("maxConcurrency", strategyParameters.getInstances())
+              .put("maxConcurrency", 1)
+              .put("end", strategyParameters.getInstances())
               .put("rollingSnippet", rollingSnippet)
               .put("unitType",
                   NGInstanceUnitType.PERCENTAGE.equals(strategyParameters.getUnitType()) ? "Percentage" : "Count")
               .put("setupRuntimePathsScript", setupRuntimePathsScript)
+              .put("setupRuntimePathsScriptWar", setupRuntimePathsScriptWar)
               .put("processStopScript", processStopScript)
               .put("portClearedScript", portClearedScript)
               .put("processRunScript", processRunScript)
@@ -236,14 +272,20 @@ public class CDNGPipelineExecutionStrategyHelper {
     try (StringWriter stringWriter = new StringWriter()) {
       ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
       String artifactType = artifactTypeSuffix(strategyParameters.getArtifactType());
-      String basicSnippet = Resources.toString(
-          Objects.requireNonNull(classLoader.getResource(String.format(
-              "snippets/Pipelines/execution/%s-basic-%s%s.yaml", serviceDefinitionType.name().toLowerCase(Locale.ROOT),
-              artifactType, includeVerify ? "-with-verify" : ""))),
+      String basicSnippet = Resources.toString(Objects.requireNonNull(classLoader.getResource(String.format(
+                                                   "snippets/Pipelines/execution/ssh/basic/%s-basic-%s%s.yaml",
+                                                   serviceDefinitionType.name().toLowerCase(Locale.ROOT), artifactType,
+                                                   includeVerify ? "-with-verify" : ""))),
           StandardCharsets.UTF_8);
       Map<String, Object> templateParams = ImmutableMap.<String, Object>builder()
                                                .put("failureStrategies", failureStrategiesSnippet)
                                                .put("basicSnippet", basicSnippet)
+                                               .put("setupRuntimePathsScript", setupRuntimePathsScript)
+                                               .put("setupRuntimePathsScriptWar", setupRuntimePathsScriptWar)
+                                               .put("processStopScript", processStopScript)
+                                               .put("portClearedScript", portClearedScript)
+                                               .put("processRunScript", processRunScript)
+                                               .put("portListeningScript", portListeningScript)
                                                .build();
       try {
         ExecutionStrategyTemplates.getTemplate(SSH_WINRM_BASIC_SH_FTL).process(templateParams, stringWriter);

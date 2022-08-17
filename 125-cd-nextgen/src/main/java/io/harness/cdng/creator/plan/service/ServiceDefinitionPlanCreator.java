@@ -9,9 +9,11 @@ package io.harness.cdng.creator.plan.service;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.azure.config.yaml.ApplicationSettingsConfiguration;
+import io.harness.cdng.azure.config.yaml.ConnectionStringsConfiguration;
+import io.harness.cdng.azure.config.yaml.StartupCommandConfiguration;
 import io.harness.cdng.configfile.ConfigFileWrapper;
 import io.harness.cdng.creator.plan.PlanCreatorConstants;
-import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
 import io.harness.cdng.service.ServiceSpec;
 import io.harness.cdng.service.beans.AzureWebAppServiceSpec;
 import io.harness.cdng.service.beans.ServiceConfig;
@@ -141,21 +143,21 @@ public class ServiceDefinitionPlanCreator extends ChildrenPlanCreator<YamlField>
       AzureWebAppServiceSpec azureWebAppServiceSpec =
           (AzureWebAppServiceSpec) serviceConfig.getServiceDefinition().getServiceSpec();
 
-      StoreConfigWrapper startupCommand = azureWebAppServiceSpec.getStartupCommand();
+      StartupCommandConfiguration startupCommand = azureWebAppServiceSpec.getStartupCommand();
       if (startupCommand != null) {
         String startupCommandPlanNodeId = ServiceDefinitionPlanCreatorHelper.addDependenciesForStartupCommand(
             serviceConfigNode, planCreationResponseMap, serviceConfig, kryoSerializer);
         serviceSpecChildrenIds.add(startupCommandPlanNodeId);
       }
 
-      StoreConfigWrapper applicationSettings = azureWebAppServiceSpec.getApplicationSettings();
+      ApplicationSettingsConfiguration applicationSettings = azureWebAppServiceSpec.getApplicationSettings();
       if (applicationSettings != null) {
         String applicationSettingsPlanNodeId = ServiceDefinitionPlanCreatorHelper.addDependenciesForApplicationSettings(
             serviceConfigNode, planCreationResponseMap, serviceConfig, kryoSerializer);
         serviceSpecChildrenIds.add(applicationSettingsPlanNodeId);
       }
 
-      StoreConfigWrapper connectionStrings = azureWebAppServiceSpec.getConnectionStrings();
+      ConnectionStringsConfiguration connectionStrings = azureWebAppServiceSpec.getConnectionStrings();
       if (connectionStrings != null) {
         String connectionStringsPlanNodeId = ServiceDefinitionPlanCreatorHelper.addDependenciesForConnectionStrings(
             serviceConfigNode, planCreationResponseMap, serviceConfig, kryoSerializer);
@@ -195,14 +197,14 @@ public class ServiceDefinitionPlanCreator extends ChildrenPlanCreator<YamlField>
       AzureWebAppServiceSpec azureWebAppServiceSpec =
           (AzureWebAppServiceSpec) config.getServiceDefinition().getServiceSpec();
 
-      StoreConfigWrapper startupCommand = azureWebAppServiceSpec.getStartupCommand();
+      StartupCommandConfiguration startupCommand = azureWebAppServiceSpec.getStartupCommand();
       if (startupCommand != null) {
         String configFilesPlanNodeId = ServiceDefinitionPlanCreatorHelper.addDependenciesForStartupCommandV2(
             serviceV2Node, planCreationResponseMap, config, kryoSerializer);
         serviceSpecChildrenIds.add(configFilesPlanNodeId);
       }
 
-      StoreConfigWrapper applicationSettings = azureWebAppServiceSpec.getApplicationSettings();
+      ApplicationSettingsConfiguration applicationSettings = azureWebAppServiceSpec.getApplicationSettings();
       if (applicationSettings != null) {
         String applicationSettingsPlanNodeId =
             ServiceDefinitionPlanCreatorHelper.addDependenciesForApplicationSettingsV2(
@@ -210,7 +212,7 @@ public class ServiceDefinitionPlanCreator extends ChildrenPlanCreator<YamlField>
         serviceSpecChildrenIds.add(applicationSettingsPlanNodeId);
       }
 
-      StoreConfigWrapper connectionStrings = azureWebAppServiceSpec.getConnectionStrings();
+      ConnectionStringsConfiguration connectionStrings = azureWebAppServiceSpec.getConnectionStrings();
       if (connectionStrings != null) {
         String connectionStringsPlanNodeId = ServiceDefinitionPlanCreatorHelper.addDependenciesForConnectionStringsV2(
             serviceV2Node, planCreationResponseMap, config, kryoSerializer);

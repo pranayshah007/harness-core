@@ -251,6 +251,7 @@ import io.harness.delegate.beans.gitapi.GitApiResult;
 import io.harness.delegate.beans.gitapi.GitApiTaskParams;
 import io.harness.delegate.beans.gitapi.GitApiTaskResponse;
 import io.harness.delegate.beans.gitapi.GitRepoType;
+import io.harness.delegate.beans.instancesync.info.AwsSshWinrmServerInstanceInfo;
 import io.harness.delegate.beans.instancesync.info.AzureSshWinrmServerInstanceInfo;
 import io.harness.delegate.beans.instancesync.info.K8sServerInstanceInfo;
 import io.harness.delegate.beans.instancesync.info.PdcServerInstanceInfo;
@@ -269,6 +270,7 @@ import io.harness.delegate.beans.pcf.CfRouteUpdateRequestConfigData;
 import io.harness.delegate.beans.pcf.CfServiceData;
 import io.harness.delegate.beans.pcf.ResizeStrategy;
 import io.harness.delegate.beans.polling.ArtifactPollingDelegateResponse;
+import io.harness.delegate.beans.polling.GitPollingDelegateResponse;
 import io.harness.delegate.beans.polling.ManifestPollingDelegateResponse;
 import io.harness.delegate.beans.polling.PollingDelegateResponse;
 import io.harness.delegate.beans.secrets.SSHConfigValidationTaskResponse;
@@ -451,6 +453,10 @@ import io.harness.delegate.task.git.GitOpsTaskType;
 import io.harness.delegate.task.git.NGGitOpsResponse;
 import io.harness.delegate.task.git.NGGitOpsTaskParams;
 import io.harness.delegate.task.git.TaskStatus;
+import io.harness.delegate.task.gitpolling.GitPollingSourceType;
+import io.harness.delegate.task.gitpolling.GitPollingTaskType;
+import io.harness.delegate.task.gitpolling.github.GitHubPollingDelegateRequest;
+import io.harness.delegate.task.gitpolling.request.GitPollingTaskParameters;
 import io.harness.delegate.task.helm.HelmChartInfo;
 import io.harness.delegate.task.helm.HelmCmdExecResponseNG;
 import io.harness.delegate.task.helm.HelmCommandFlag;
@@ -1649,5 +1655,11 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(AwsWinrmInfraDelegateConfig.class, 55418);
     kryo.register(PdcServerInstanceInfo.class, 55501);
     kryo.register(AzureSshWinrmServerInstanceInfo.class, 55502);
+    kryo.register(AwsSshWinrmServerInstanceInfo.class, 55503);
+    kryo.register(GitPollingTaskParameters.class, 56335);
+    kryo.register(GitHubPollingDelegateRequest.class, 56336);
+    kryo.register(GitPollingSourceType.class, 56337);
+    kryo.register(GitPollingTaskType.class, 56338);
+    kryo.register(GitPollingDelegateResponse.class, 56339);
   }
 }

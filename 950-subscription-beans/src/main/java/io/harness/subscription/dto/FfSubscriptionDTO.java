@@ -28,4 +28,5 @@ public class FfSubscriptionDTO {
   private String paymentFreq;
   private String edition;
   private boolean premiumSupport;
+  private CustomerDTO customer;
 }

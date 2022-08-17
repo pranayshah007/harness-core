@@ -16,6 +16,7 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -23,6 +24,7 @@ import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.task.shell.ShellScriptTaskNG;
 import io.harness.exception.ApprovalStepNGException;
+import io.harness.exception.InvalidRequestException;
 import io.harness.logstreaming.ILogStreamingStepClient;
 import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.plancreator.steps.common.StepElementParameters;
@@ -75,7 +77,24 @@ public class ServiceNowApprovalStepTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testExecuteAsync() {
     Ambiance ambiance = buildAmbiance();
-    StepElementParameters parameters = getStepElementParameters();
+    assertThatThrownBy(()
+                           -> serviceNowApprovalStep.executeAsync(
+                               ambiance, getStepElementParameters("", PROBLEM, CONNECTOR), null, null))
+        .isInstanceOf(InvalidRequestException.class);
+    assertThatThrownBy(()
+                           -> serviceNowApprovalStep.executeAsync(
+                               ambiance, getStepElementParameters(TICKET_NUMBER, PROBLEM, ""), null, null))
+        .isInstanceOf(InvalidRequestException.class);
+    assertThatThrownBy(()
+                           -> serviceNowApprovalStep.executeAsync(
+                               ambiance, getStepElementParameters(TICKET_NUMBER, "", CONNECTOR), null, null))
+        .isInstanceOf(InvalidRequestException.class);
+    assertThatThrownBy(()
+                           -> serviceNowApprovalStep.executeAsync(ambiance,
+                               getStepElementParameters(TICKET_NUMBER, "invalidValue", CONNECTOR), null, null))
+        .isInstanceOf(InvalidRequestException.class);
+
+    StepElementParameters parameters = getStepElementParameters(TICKET_NUMBER, PROBLEM, CONNECTOR);
     doAnswer(invocationOnMock -> {
       ServiceNowApprovalInstance instance = invocationOnMock.getArgument(0, ServiceNowApprovalInstance.class);
       instance.setId(INSTANCE_ID);
@@ -93,7 +112,7 @@ public class ServiceNowApprovalStepTest extends CategoryTest {
     assertThat(instance.getTicketNumber()).isEqualTo(TICKET_NUMBER);
     assertThat(instance.getTicketType()).isEqualTo(PROBLEM);
     assertThat(instance.getConnectorRef()).isEqualTo(CONNECTOR);
-    verify(logStreamingStepClient).openStream(ShellScriptTaskNG.COMMAND_UNIT);
+    verify(logStreamingStepClient, times(5)).openStream(ShellScriptTaskNG.COMMAND_UNIT);
   }
 
   @Test
@@ -101,7 +120,7 @@ public class ServiceNowApprovalStepTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testHandleAsyncResponseFailure() {
     Ambiance ambiance = buildAmbiance();
-    StepElementParameters parameters = getStepElementParameters();
+    StepElementParameters parameters = getStepElementParameters(TICKET_NUMBER, PROBLEM, CONNECTOR);
 
     ServiceNowApprovalResponseData responseData =
         ServiceNowApprovalResponseData.builder().instanceId(INSTANCE_ID).build();
@@ -122,7 +141,7 @@ public class ServiceNowApprovalStepTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testHandleAsyncResponseSuccess() {
     Ambiance ambiance = buildAmbiance();
-    StepElementParameters parameters = getStepElementParameters();
+    StepElementParameters parameters = getStepElementParameters(TICKET_NUMBER, PROBLEM, CONNECTOR);
 
     ServiceNowApprovalResponseData responseData =
         ServiceNowApprovalResponseData.builder().instanceId(INSTANCE_ID).build();
@@ -143,7 +162,7 @@ public class ServiceNowApprovalStepTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testHandleAsyncResponseRejected() {
     Ambiance ambiance = buildAmbiance();
-    StepElementParameters parameters = getStepElementParameters();
+    StepElementParameters parameters = getStepElementParameters(TICKET_NUMBER, PROBLEM, CONNECTOR);
 
     ServiceNowApprovalResponseData responseData =
         ServiceNowApprovalResponseData.builder().instanceId(INSTANCE_ID).build();
@@ -167,7 +186,7 @@ public class ServiceNowApprovalStepTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testAbort() {
     Ambiance ambiance = buildAmbiance();
-    StepElementParameters parameters = getStepElementParameters();
+    StepElementParameters parameters = getStepElementParameters(TICKET_NUMBER, PROBLEM, CONNECTOR);
     serviceNowApprovalStep.handleAbort(ambiance, parameters, null);
     verify(approvalInstanceService).abortByNodeExecutionId(any());
     verify(logStreamingStepClient).closeStream(ShellScriptTaskNG.COMMAND_UNIT);
@@ -179,13 +198,13 @@ public class ServiceNowApprovalStepTest extends CategoryTest {
   public void testgetStepParametersClass() {
     assertThat(serviceNowApprovalStep.getStepParametersClass()).isEqualTo(StepElementParameters.class);
   }
-  private StepElementParameters getStepElementParameters() {
+  private StepElementParameters getStepElementParameters(String ticketNumber, String ticketType, String connector) {
     return StepElementParameters.builder()
         .type("SERVICENOW_APPROVAL")
         .spec(ServiceNowApprovalSpecParameters.builder()
-                  .ticketNumber(ParameterField.<String>builder().value(TICKET_NUMBER).build())
-                  .connectorRef(ParameterField.<String>builder().value(CONNECTOR).build())
-                  .ticketType(ParameterField.<String>builder().value(PROBLEM).build())
+                  .ticketNumber(ParameterField.<String>builder().value(ticketNumber).build())
+                  .connectorRef(ParameterField.<String>builder().value(connector).build())
+                  .ticketType(ParameterField.<String>builder().value(ticketType).build())
                   .build())
         .build();
   }
