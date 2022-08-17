@@ -12,6 +12,7 @@ import static io.harness.exception.WingsException.USER;
 import static io.harness.exception.WingsException.builder;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.artifact.ArtifactMetadataKeys;
 import io.harness.artifacts.githubpackages.beans.GithubPackagesInternalConfig;
 import io.harness.artifacts.githubpackages.beans.GithubPackagesVersion;
 import io.harness.artifacts.githubpackages.beans.GithubPackagesVersionsResponse;
@@ -32,7 +33,9 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.Credentials;
 import org.apache.commons.lang3.StringUtils;
@@ -179,14 +182,20 @@ public class GithubPackagesRegistryServiceImpl implements GithubPackagesRegistry
     for (GithubPackagesVersion v : versions) {
       BuildDetails build = new BuildDetails();
 
+      Map<String, String> metadata = new HashMap<>();
+
       String tag = v.getTags().get(0);
 
+      metadata.put(ArtifactMetadataKeys.IMAGE, packageName);
+      metadata.put(ArtifactMetadataKeys.TAG, tag);
+
       build.setBuildDisplayName(packageName + ": " + tag);
-      build.setUiDisplayName(packageName + ": " + tag);
-      build.setNumber(v.getVersionId());
+      build.setUiDisplayName("Tag# " + tag);
+      build.setNumber(tag);
       build.setBuildUrl(v.getVersionUrl());
       build.setStatus(BuildDetails.BuildStatus.SUCCESS);
       build.setBuildFullDisplayName(packageName + ": " + tag);
+      build.setMetadata(metadata);
 
       buildDetails.add(build);
     }
