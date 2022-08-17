@@ -307,7 +307,8 @@ public class EcsRunTaskDeploy extends State {
                   .async(true)
                   .taskType(GIT_FETCH_FILES_TASK.name())
                   .parameters(new Object[] {fetchFilesTaskParams})
-                  .timeout(TimeUnit.MINUTES.toMillis(GIT_FETCH_FILES_TASK_ASYNC_TIMEOUT))
+                  .timeout(TimeUnit.MINUTES.toMillis(
+                      Math.max(serviceSteadyStateTimeout, GIT_FETCH_FILES_TASK_ASYNC_TIMEOUT)))
                   .build())
         .build();
   }

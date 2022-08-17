@@ -22,7 +22,7 @@ public class ChangeDataCaptureBulkSyncTask {
   @Inject private ChangeDataCaptureBulkMigrationHelper changeDataCaptureBulkMigrationHelper;
   @Inject private Set<CDCEntity<?>> cdcEntities;
 
-  public boolean run() {
-    return changeDataCaptureBulkMigrationHelper.doBulkSync(cdcEntities);
+  public void run() {
+    changeDataCaptureBulkMigrationHelper.doBulkSync(cdcEntities);
   }
 }

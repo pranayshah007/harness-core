@@ -47,7 +47,11 @@ public class K8sGlobalConfigServiceImpl implements K8sGlobalConfigService {
 
   @Override
   public String getGoTemplateClientPath() {
-    return getToolPath(GO_TEMPLATE, GoTemplateVersion.V0_4);
+    try {
+      return getToolPath(GO_TEMPLATE, GoTemplateVersion.V0_4_1);
+    } catch (IllegalArgumentException e) {
+      return getToolPath(GO_TEMPLATE, GoTemplateVersion.V0_4);
+    }
   }
 
   /*
@@ -93,15 +97,6 @@ public class K8sGlobalConfigServiceImpl implements K8sGlobalConfigService {
   }
 
   private String getToolPath(ClientTool tool, ClientToolVersion version) {
-    try {
-      return InstallUtils.getPath(tool, version);
-    } catch (Exception e) {
-      // Temporary solution to ignore InstallUtils.getPath exception to handle the case when user manually installs only
-      // required tools. We should improve our logic to fetch only tools that are required for a specific
-      // deployment/manifest type
-      log.warn("Failed to get tool path for {} and version {}. Failing to default value: {}", tool.getBinaryName(),
-          version.getVersion(), tool.getBinaryName(), e);
-      return tool.getBinaryName();
-    }
+    return InstallUtils.getPath(tool, version);
   }
 }

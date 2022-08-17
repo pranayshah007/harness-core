@@ -38,6 +38,7 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -81,6 +82,9 @@ public class BillingDataServiceImpl {
 
   static final String RETRIEVE_BILLING_DATA =
       "SELECT COUNT(*) as ENTRIESCOUNT, SUM(billingamount) as BILLINGAMOUNTSUM from BILLING_DATA WHERE ACCOUNTID = '%s' AND STARTTIME = '%s' ;";
+
+  private static final String AWS_CLUSTER_DATA_PRESENT_QUERY =
+      "SELECT COUNT(*) as ENTRIESCOUNT from BILLING_DATA WHERE ACCOUNTID = '%s' AND STARTTIME >= '%s' AND CLOUDPROVIDER = '%s';";
 
   private static final String READER_QUERY =
       "SELECT * FROM %s WHERE ACCOUNTID = '%s' AND STARTTIME >= '%s' AND STARTTIME < '%s' ORDER BY accountid, clusterid, instanceid OFFSET %s LIMIT %s;";
@@ -378,6 +382,27 @@ public class BillingDataServiceImpl {
       }
     }
     return null;
+  }
+
+  public boolean isAWSClusterDataPresent(final String accountId, final Instant startTime) {
+    ResultSet resultSet = null;
+    int retryCount = 0;
+    final String query = String.format(AWS_CLUSTER_DATA_PRESENT_QUERY, accountId, startTime.toString(), "AWS");
+    while (retryCount < SELECT_MAX_RETRY_COUNT) {
+      retryCount++;
+      try (Connection connection = timeScaleDBService.getDBConnection();
+           Statement statement = connection.createStatement()) {
+        resultSet = statement.executeQuery(query);
+        if (Objects.nonNull(resultSet) && resultSet.next()) {
+          return resultSet.getInt("ENTRIESCOUNT") > 0;
+        }
+      } catch (final SQLException e) {
+        log.error("Error while checking AWS cluster data present in billing data table", e);
+      } finally {
+        DBUtils.close(resultSet);
+      }
+    }
+    return false;
   }
 
   public Cost getECSServiceLastAvailableDayCost(

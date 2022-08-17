@@ -81,11 +81,13 @@ public class GitlabToGitMapperTest extends CategoryTest {
                                                 .connectionType(ACCOUNT)
                                                 .authentication(gitlabAuthenticationDTO)
                                                 .delegateSelectors(delegateSelectors)
+                                                .executeOnDelegate(false)
                                                 .build();
     GitConfigDTO gitConfigDTO = GitlabToGitMapper.mapToGitConfigDTO(gitlabConnectorDTO);
     assertThat(gitConfigDTO).isNotNull();
     assertThat(gitConfigDTO.getGitAuthType()).isEqualTo(HTTP);
     assertThat(gitConfigDTO.getDelegateSelectors()).isEqualTo(delegateSelectors);
+    assertThat(gitConfigDTO.getExecuteOnDelegate()).isEqualTo(false);
     GitHTTPAuthenticationDTO gitAuthentication = (GitHTTPAuthenticationDTO) gitConfigDTO.getGitAuth();
     assertThat(gitConfigDTO.getGitConnectionType()).isEqualTo(ACCOUNT);
     assertThat(gitConfigDTO.getUrl()).isEqualTo(url);

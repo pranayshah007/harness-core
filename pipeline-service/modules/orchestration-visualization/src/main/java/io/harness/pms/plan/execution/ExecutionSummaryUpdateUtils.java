@@ -96,6 +96,9 @@ public class ExecutionSummaryUpdateUtils {
       update.set(PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys.layoutNodeMap + "." + stageUuid + ".skipInfo",
           nodeExecution.getSkipInfo());
     }
+    update.set(PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys.layoutNodeMap + "." + stageUuid
+            + ".executionInputConfigured",
+        nodeExecution.getExecutionInputConfigured());
   }
 
   public static void addPipelineUpdateCriteria(Update update, NodeExecution nodeExecution) {

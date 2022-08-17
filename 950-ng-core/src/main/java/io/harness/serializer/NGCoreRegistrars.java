@@ -9,9 +9,12 @@ package io.harness.serializer;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.filter.serializer.FiltersRegistrars;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.serializer.kryo.NGCoreKryoRegistrar;
+import io.harness.serializer.kryo.NgPersistenceKryoRegistrar;
 import io.harness.serializer.morphia.NGCoreMorphiaClassesRegistrar;
+import io.harness.serializer.morphia.NgPersistenceMorphiaRegistrar;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -28,7 +31,9 @@ public class NGCoreRegistrars {
           .addAll(ConnectorBeansRegistrars.kryoRegistrars)
           .addAll(ScmJavaClientRegistrars.kryoRegistrars)
           .add(NGCoreKryoRegistrar.class)
+          .add(NgPersistenceKryoRegistrar.class)
           .addAll(OutboxEventRegistrars.kryoRegistrars)
+          .addAll(FiltersRegistrars.kryoRegistrars)
           .build();
 
   public final ImmutableSet<Class<? extends MorphiaRegistrar>> morphiaRegistrars =
@@ -38,8 +43,10 @@ public class NGCoreRegistrars {
           .addAll(ConnectorBeansRegistrars.morphiaRegistrars)
           .addAll(ScmJavaClientRegistrars.morphiaRegistrars)
           .add(NGCoreMorphiaClassesRegistrar.class)
+          .add(NgPersistenceMorphiaRegistrar.class)
           .addAll(NGAuditCommonsRegistrars.morphiaRegistrars)
           .addAll(OutboxEventRegistrars.morphiaRegistrars)
+          .addAll(FiltersRegistrars.morphiaRegistrars)
           .build();
 
   public static final ImmutableList<Class<? extends Converter<?, ?>>> springConverters =

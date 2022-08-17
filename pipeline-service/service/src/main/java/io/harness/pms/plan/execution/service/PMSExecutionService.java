@@ -42,6 +42,8 @@ public interface PMSExecutionService {
   PipelineExecutionSummaryEntity getPipelineExecutionSummaryEntity(
       String accountId, String orgId, String projectId, String planExecutionId);
 
+  void sendGraphUpdateEvent(PipelineExecutionSummaryEntity pipelineExecutionSummaryEntity);
+
   OrchestrationGraphDTO getOrchestrationGraph(String stageNodeId, String planExecutionId, String stageNodeExecutionId);
 
   InterruptDTO registerInterrupt(

@@ -66,7 +66,7 @@ public class StageExecutionInfoRepositoryCustomImpl implements StageExecutionInf
       criteria.and(StageExecutionInfoKeys.deploymentIdentifier).is(executionInfoKey.getDeploymentIdentifier());
     }
     criteria.and(StageExecutionInfoKeys.stageExecutionId).ne(executionId);
-    criteria.and(StageExecutionInfoKeys.stageStatus).is(StageStatus.SUCCEEDED);
+    criteria.and(StageExecutionInfoKeys.stageStatus).is(StageStatus.SUCCEEDED.getName());
 
     Query query = new Query();
     query.addCriteria(criteria);

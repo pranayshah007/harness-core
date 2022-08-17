@@ -344,7 +344,7 @@ aeriform("//950-wait-engine:tests")
 
 aeriform("//951-cg-git-sync:module")
 
-aeriform("//951-debezium-service")
+aeriform("//debezium-service")
 
 aeriform("//952-debezium-engine")
 

@@ -8,24 +8,19 @@
 package io.harness.delegate.task.shell;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
-import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryCapabilityHelper;
+import io.harness.delegate.beans.connector.awsconnector.AwsCapabilityHelper;
+import io.harness.delegate.beans.connector.azureconnector.AzureCapabilityHelper;
 import io.harness.delegate.beans.connector.pdcconnector.PhysicalDataCenterConnectorCapabilityHelper;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
-import io.harness.delegate.beans.executioncapability.ExecutionCapabilityDemander;
-import io.harness.delegate.beans.storeconfig.HarnessStoreDelegateConfig;
-import io.harness.delegate.beans.storeconfig.StoreDelegateConfig;
 import io.harness.delegate.capability.EncryptedDataDetailsCapabilityHelper;
+import io.harness.delegate.task.ssh.AwsWinrmInfraDelegateConfig;
+import io.harness.delegate.task.ssh.AzureWinrmInfraDelegateConfig;
 import io.harness.delegate.task.ssh.PdcWinRmInfraDelegateConfig;
 import io.harness.delegate.task.ssh.WinRmInfraDelegateConfig;
-import io.harness.delegate.task.ssh.artifact.ArtifactoryArtifactDelegateConfig;
-import io.harness.delegate.task.ssh.artifact.SshWinRmArtifactType;
-import io.harness.delegate.task.ssh.config.ConfigFileParameters;
 import io.harness.expression.ExpressionEvaluator;
 
-import java.util.ArrayList;
 import java.util.List;
 import lombok.Getter;
 import lombok.Value;
@@ -35,32 +30,19 @@ import lombok.experimental.SuperBuilder;
 @Value
 @Getter
 @OwnedBy(CDP)
-public class WinrmTaskParameters extends CommandTaskParameters implements ExecutionCapabilityDemander {
+public class WinrmTaskParameters extends CommandTaskParameters {
   String host;
   WinRmInfraDelegateConfig winRmInfraDelegateConfig;
   boolean disableWinRMCommandEncodingFFSet;
   boolean useWinRMKerberosUniqueCacheFile;
 
   @Override
-  public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {
-    List<ExecutionCapability> capabilities = new ArrayList<>();
-    if (winRmInfraDelegateConfig != null) {
-      fetchInfraExecutionCapabilities(capabilities, maskingEvaluator);
-    }
-
-    if (artifactDelegateConfig != null) {
-      fetchArtifactExecutionCapabilities(capabilities, maskingEvaluator);
-    }
-
-    if (fileDelegateConfig != null && isNotEmpty(fileDelegateConfig.getStores())) {
-      fetchStoreExecutionCapabilities(capabilities, maskingEvaluator);
-    }
-
-    return capabilities;
-  }
-
-  private void fetchInfraExecutionCapabilities(
+  public void fetchInfraExecutionCapabilities(
       final List<ExecutionCapability> capabilities, ExpressionEvaluator maskingEvaluator) {
+    if (winRmInfraDelegateConfig == null) {
+      return;
+    }
+
     if (winRmInfraDelegateConfig instanceof PdcWinRmInfraDelegateConfig) {
       PdcWinRmInfraDelegateConfig pdcSshInfraDelegateConfig = (PdcWinRmInfraDelegateConfig) winRmInfraDelegateConfig;
       if (pdcSshInfraDelegateConfig.getPhysicalDataCenterConnectorDTO() != null) {
@@ -69,33 +51,23 @@ public class WinrmTaskParameters extends CommandTaskParameters implements Execut
       }
       capabilities.addAll(EncryptedDataDetailsCapabilityHelper.fetchExecutionCapabilitiesForEncryptedDataDetails(
           pdcSshInfraDelegateConfig.getEncryptionDataDetails(), maskingEvaluator));
-    }
-  }
-
-  private void fetchArtifactExecutionCapabilities(
-      final List<ExecutionCapability> capabilities, ExpressionEvaluator maskingEvaluator) {
-    if (SshWinRmArtifactType.ARTIFACTORY.equals(artifactDelegateConfig.getArtifactType())) {
-      ArtifactoryArtifactDelegateConfig artifactoryDelegateConfig =
-          (ArtifactoryArtifactDelegateConfig) artifactDelegateConfig;
-      capabilities.addAll(ArtifactoryCapabilityHelper.fetchRequiredExecutionCapabilities(
-          artifactoryDelegateConfig.getConnectorDTO().getConnectorConfig(), maskingEvaluator));
-      capabilities.addAll(EncryptedDataDetailsCapabilityHelper.fetchExecutionCapabilitiesForEncryptedDataDetails(
-          artifactoryDelegateConfig.getEncryptedDataDetails(), maskingEvaluator));
-    }
-  }
-
-  private void fetchStoreExecutionCapabilities(
-      final List<ExecutionCapability> capabilities, ExpressionEvaluator maskingEvaluator) {
-    for (StoreDelegateConfig store : fileDelegateConfig.getStores()) {
-      if (store instanceof HarnessStoreDelegateConfig) {
-        HarnessStoreDelegateConfig harnessStoreDelegateConfig = (HarnessStoreDelegateConfig) store;
-        for (ConfigFileParameters configFile : harnessStoreDelegateConfig.getConfigFiles()) {
-          if (configFile.isEncrypted()) {
-            capabilities.addAll(EncryptedDataDetailsCapabilityHelper.fetchExecutionCapabilitiesForEncryptedDataDetails(
-                configFile.getEncryptionDataDetails(), maskingEvaluator));
-          }
-        }
+    } else if (winRmInfraDelegateConfig instanceof AzureWinrmInfraDelegateConfig) {
+      AzureWinrmInfraDelegateConfig azureWinrmInfraDelegateConfig =
+          (AzureWinrmInfraDelegateConfig) winRmInfraDelegateConfig;
+      if (azureWinrmInfraDelegateConfig.getAzureConnectorDTO() != null) {
+        capabilities.addAll(AzureCapabilityHelper.fetchRequiredExecutionCapabilities(
+            azureWinrmInfraDelegateConfig.getAzureConnectorDTO(), maskingEvaluator));
       }
+      capabilities.addAll(EncryptedDataDetailsCapabilityHelper.fetchExecutionCapabilitiesForEncryptedDataDetails(
+          azureWinrmInfraDelegateConfig.getEncryptionDataDetails(), maskingEvaluator));
+    } else if (winRmInfraDelegateConfig instanceof AwsWinrmInfraDelegateConfig) {
+      AwsWinrmInfraDelegateConfig awsWinrmInfraDelegateConfig = (AwsWinrmInfraDelegateConfig) winRmInfraDelegateConfig;
+      if (awsWinrmInfraDelegateConfig.getAwsConnectorDTO() != null) {
+        capabilities.addAll(AwsCapabilityHelper.fetchRequiredExecutionCapabilities(
+            awsWinrmInfraDelegateConfig.getAwsConnectorDTO(), maskingEvaluator));
+      }
+      capabilities.addAll(EncryptedDataDetailsCapabilityHelper.fetchExecutionCapabilitiesForEncryptedDataDetails(
+          awsWinrmInfraDelegateConfig.getEncryptionDataDetails(), maskingEvaluator));
     }
   }
 }

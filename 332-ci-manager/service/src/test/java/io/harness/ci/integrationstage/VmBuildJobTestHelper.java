@@ -10,10 +10,10 @@ package io.harness.ci.integrationstage;
 import static io.harness.annotations.dev.HarnessTeam.CI;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.stages.IntegrationStageConfigImpl;
 import io.harness.beans.yaml.extended.infrastrucutre.VmInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.VmPoolYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.VmPoolYaml.VmPoolYamlSpec;
+import io.harness.cimanager.stages.IntegrationStageConfigImpl;
 import io.harness.plancreator.stages.stage.StageElementConfig;
 import io.harness.pms.yaml.ParameterField;
 

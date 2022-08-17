@@ -97,14 +97,26 @@ public class CdngPipelineExecutionUpdateEventHandler implements OrchestrationEve
       String accountIdentifier = AmbianceUtils.getAccountId(ambiance);
       String orgIdentifier = AmbianceUtils.getOrgIdentifier(ambiance);
       String projectIdentifier = AmbianceUtils.getProjectIdentifier(ambiance);
+      Scope scope = Scope.of(accountIdentifier, orgIdentifier, projectIdentifier);
 
       try {
-        stageExecutionInfoService.updateStatus(
-            Scope.of(accountIdentifier, orgIdentifier, projectIdentifier), stageExecutionId, stageStatus);
+        stageExecutionInfoService.updateStatus(scope, stageExecutionId, stageStatus);
       } catch (Exception ex) {
         log.error(
             String.format(
                 "Unable to update stage execution status, accountIdentifier: %s, orgIdentifier: %s, projectIdentifier: %s, "
+                    + "stageExecutionId: %s, stageStatus: %s",
+                accountIdentifier, orgIdentifier, projectIdentifier, stageExecutionId, stageStatus),
+            ex);
+      }
+
+      try {
+        stageExecutionInfoService.deleteStageStatusKeyLock(scope, stageExecutionId);
+      } catch (Exception ex) {
+        // after expire time set on LoadingCache concurrent map, the stage status key locks will be auto-deleted
+        log.warn(
+            String.format(
+                "Unable to delete stage status key lock, accountIdentifier: %s, orgIdentifier: %s, projectIdentifier: %s, "
                     + "stageExecutionId: %s, stageStatus: %s",
                 accountIdentifier, orgIdentifier, projectIdentifier, stageExecutionId, stageStatus),
             ex);

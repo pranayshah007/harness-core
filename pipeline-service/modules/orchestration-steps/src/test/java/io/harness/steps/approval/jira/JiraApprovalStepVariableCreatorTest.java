@@ -88,6 +88,7 @@ public class JiraApprovalStepVariableCreatorTest extends CategoryTest {
             "pipeline.stages.stage1.spec.execution.steps.jira_approval.description",
             "pipeline.stages.stage1.spec.execution.steps.jira_approval.timeout",
             "pipeline.stages.stage1.spec.execution.steps.jira_approval.spec.issueKey",
+            "pipeline.stages.stage1.spec.execution.steps.jira_approval.spec.issueType",
             "pipeline.stages.stage1.spec.execution.steps.jira_approval.spec.connectorRef",
             "pipeline.stages.stage1.spec.execution.steps.jira_approval.spec.delegateSelectors");
 

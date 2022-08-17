@@ -201,6 +201,19 @@ func GetTiHTTPClient() (ticlient.Client, error) {
 	return ticlient.NewHTTPClient(l, account, token, false), nil
 }
 
+// GetTiHTTPClientWithToken returns a client to talk to the TI service
+func GetTiHTTPClientWithToken(token string) (ticlient.Client, error) {
+	l, ok := os.LookupEnv(tiSvcEp)
+	if !ok {
+		return nil, fmt.Errorf("ti service endpoint variable not set %s", tiSvcEp)
+	}
+	account, err := GetAccountId()
+	if err != nil {
+		return nil, err
+	}
+	return ticlient.NewHTTPClient(l, account, token, false), nil
+}
+
 func GetAccountId() (string, error) {
 	account, ok := os.LookupEnv(accountIDEnv)
 	if !ok {
@@ -315,6 +328,14 @@ func GetCommitLink() (string, error) {
 		return "", fmt.Errorf("commit link variable not set %s", dCommitLink)
 	}
 	return link, nil
+}
+
+func GetTiSvcToken() (string, error) {
+	token, ok := os.LookupEnv(tiSvcToken)
+	if !ok {
+		return "", fmt.Errorf("ti service token variable not set %s", tiSvcToken)
+	}
+	return token, nil
 }
 
 func IsManualExecution() bool {

@@ -648,7 +648,7 @@ public class YamlGitServiceImpl implements YamlGitService {
             USER);
       }
 
-      ensureValidNameSyntax(gitFileChanges);
+      ensureValidNameSyntax(gitFileChanges, yamlChangeSet);
 
       gitConfigHelperService.convertToRepoGitConfig(gitConfig, yamlGitConfig.getRepositoryName());
 
@@ -706,9 +706,10 @@ public class YamlGitServiceImpl implements YamlGitService {
    * Check filePath is valid.
    *
    * @param gitFileChanges
+   * @param yamlChangeSet
    */
   @VisibleForTesting
-  void ensureValidNameSyntax(List<GitFileChange> gitFileChanges) {
+  void ensureValidNameSyntax(List<GitFileChange> gitFileChanges, YamlChangeSet yamlChangeSet) {
     if (isEmpty(gitFileChanges)) {
       return;
     }
@@ -723,10 +724,11 @@ public class YamlGitServiceImpl implements YamlGitService {
     gitFileChanges.forEach(gitFileChange
         -> matchPathPrefix(gitFileChange.getFilePath().charAt(0) == '/' ? gitFileChange.getFilePath().substring(1)
                                                                         : gitFileChange.getFilePath(),
-            folderYamlTypes));
+            folderYamlTypes, yamlChangeSet, gitFileChange));
   }
 
-  private void matchPathPrefix(String filePath, List<YamlType> folderYamlTypes) {
+  private void matchPathPrefix(
+      String filePath, List<YamlType> folderYamlTypes, YamlChangeSet yamlChangeSet, GitFileChange gitFileChange) {
     // only check for file and not directories
 
     if (Pattern.compile(YamlType.MANIFEST_FILE.getPathExpression()).matcher(filePath).matches()
@@ -759,8 +761,11 @@ public class YamlGitServiceImpl implements YamlGitService {
     if (filePath.endsWith(YamlConstants.YAML_EXTENSION)) {
       if (folderYamlTypes.stream().noneMatch(
               yamlType -> Pattern.compile(yamlType.getPathExpression()).matcher(filePath).matches())) {
-        throw new WingsException(
-            "Invalid entity name, entity can not contain / in the name. Caused invalid file path: " + filePath, USER);
+        String message =
+            "Invalid entity name, entity can not contain / in the name. Caused invalid file path: " + filePath;
+        gitSyncErrorService.upsertGitSyncErrors(
+            gitFileChange, message, yamlChangeSet.isFullSync(), yamlChangeSet.isGitToHarness());
+        throw new WingsException(message, USER);
       }
     }
   }

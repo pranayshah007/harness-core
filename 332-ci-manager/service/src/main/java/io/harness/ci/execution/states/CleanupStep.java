@@ -42,6 +42,7 @@ import io.harness.supplier.ThrowingSupplier;
 
 import com.google.inject.Inject;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 
@@ -103,7 +104,7 @@ public class CleanupStep implements TaskExecutable<CleanupStepInfo, K8sTaskExecu
                                   .parameters(new Object[] {cik8CleanupTaskParams})
                                   .build();
 
-    return StepUtils.prepareTaskRequest(ambiance, taskData, kryoSerializer);
+    return StepUtils.prepareTaskRequest(ambiance, taskData, kryoSerializer, false, Collections.emptyList());
   }
 
   @Override

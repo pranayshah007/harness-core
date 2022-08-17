@@ -140,12 +140,15 @@ io.harness.beans.yaml.extended.volumes.EmptyDirYaml
 io.harness.beans.GCPArtifactUploadInfo
 io.harness.beans.yaml.extended.volumes.HostPathYaml
 io.harness.beans.yaml.extended.ImagePullPolicy
-io.harness.beans.stages.IntegrationStageConfigImpl
+io.harness.cimanager.stages.IntegrationStageConfigImpl
 io.harness.beans.yaml.extended.reports.JUnitTestReport
 io.harness.beans.environment.K8BuildJobEnvInfo
 io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml
 io.harness.beans.yaml.extended.infrastrucutre.K8sHostedInfraYaml
-io.harness.beans.yaml.extended.infrastrucutre.RunsOnInfra
+io.harness.beans.yaml.extended.infrastrucutre.HostedVmInfraYaml
+io.harness.beans.yaml.extended.platform.Platform
+io.harness.beans.yaml.extended.platform.ArchType
+io.harness.beans.yaml.extended.runtime.CloudRuntime
 io.harness.ci.beans.entities.LogServiceConfig
 io.harness.beans.execution.ManualExecutionSource
 io.harness.beans.yaml.extended.infrastrucutre.OSType

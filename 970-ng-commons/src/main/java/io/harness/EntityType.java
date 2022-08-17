@@ -273,6 +273,9 @@ public enum EntityType {
   @JsonProperty(EntityTypeConstants.JENKINS_BUILD)
   JENKINS_BUILD(
       ModuleType.CD, EntityTypeConstants.JENKINS_BUILD, IdentifierRef.class, EntityYamlRootNames.JENKINS_BUILD),
+  @JsonProperty(EntityTypeConstants.AZURE_CREATE_ARM_RESOURCE_STEP)
+  AZURE_CREATE_ARM_RESOURCE_STEP(ModuleType.CD, EntityTypeConstants.AZURE_CREATE_ARM_RESOURCE_STEP, IdentifierRef.class,
+      EntityYamlRootNames.AZURE_CREATE_ARM_RESOURCE_STEP),
   @JsonProperty(EntityTypeConstants.BUILD_AND_PUSH_ACR)
   BUILD_AND_PUSH_ACR(ModuleType.CI, EntityTypeConstants.BUILD_AND_PUSH_ACR, IdentifierRef.class,
       EntityYamlRootNames.BUILD_AND_PUSH_ACR);

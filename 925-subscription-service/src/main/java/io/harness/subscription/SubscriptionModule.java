@@ -11,6 +11,7 @@ import static io.harness.AuthorizationServiceHeader.SUBSCRIPTION_SERVICE;
 
 import io.harness.AccessControlClientModule;
 import io.harness.subscription.handlers.InvoicePaymentSucceedHandler;
+import io.harness.subscription.handlers.InvoiceUpdatedHandler;
 import io.harness.subscription.handlers.StripeEventHandler;
 import io.harness.subscription.handlers.SubscriptionDeleteHandler;
 import io.harness.subscription.handlers.SubscriptionUpdateHandler;
@@ -45,6 +46,7 @@ public class SubscriptionModule extends AbstractModule {
     MapBinder<String, StripeEventHandler> eventHandlerMapBinder =
         MapBinder.newMapBinder(binder(), String.class, StripeEventHandler.class);
     eventHandlerMapBinder.addBinding("invoice.paid").to(InvoicePaymentSucceedHandler.class);
+    eventHandlerMapBinder.addBinding("invoice.updated").to(InvoiceUpdatedHandler.class);
     eventHandlerMapBinder.addBinding("customer.subscription.updated").to(SubscriptionUpdateHandler.class);
     eventHandlerMapBinder.addBinding("customer.subscription.deleted").to(SubscriptionDeleteHandler.class);
   }
