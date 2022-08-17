@@ -8,6 +8,7 @@
 package io.harness.pms.pipeline.service;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.exception.WingsException.USER;
 import static io.harness.exception.WingsException.USER_SRE;
 import static io.harness.pms.pipeline.service.PMSPipelineServiceStepHelper.LIBRARY;
 
@@ -110,8 +111,8 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
     PMSPipelineServiceHelper.validatePresenceOfRequiredFields(pipelineEntity.getAccountId(),
         pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier(), pipelineEntity.getIdentifier(),
         pipelineEntity.getIdentifier());
-    GovernanceMetadata governanceMetadata = pmsPipelineServiceHelper.validatePipelineYaml(pipelineEntity);
     try {
+      GovernanceMetadata governanceMetadata = pmsPipelineServiceHelper.validatePipelineYaml(pipelineEntity);
       if (governanceMetadata.getDeny()) {
         return PipelineCRUDResult.builder().governanceMetadata(governanceMetadata).build();
       }
@@ -123,6 +124,13 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
     } catch (IOException ex) {
       log.error(format("Invalid yaml in node [%s]", YamlUtils.getErrorNodePartialFQN(ex)), ex);
       throw new InvalidYamlException(format("Invalid yaml in node [%s]", YamlUtils.getErrorNodePartialFQN(ex)), ex);
+    } catch (NGTemplateResolveExceptionV2 ex) {
+      if (ex.getMetadata() instanceof ValidateTemplateInputsResponseDTO) {
+        ValidateTemplateInputsResponseDTO responseDTO = (ValidateTemplateInputsResponseDTO) ex.getMetadata();
+        responseDTO.getErrorNodeSummary().setNodeInfo(null);
+        throw new NGTemplateResolveExceptionV2(ex.getMessage(), USER, responseDTO);
+      }
+      throw ex;
     }
   }
 
@@ -267,17 +275,9 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
     PMSPipelineServiceHelper.validatePresenceOfRequiredFields(pipelineEntity.getAccountId(),
         pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier(), pipelineEntity.getIdentifier());
 
-    try {
-      GovernanceMetadata governanceMetadata = pmsPipelineServiceHelper.validatePipelineYaml(pipelineEntity);
-      if (governanceMetadata.getDeny()) {
-        return PipelineCRUDResult.builder().governanceMetadata(governanceMetadata).build();
-      }
-    } catch (NGTemplateResolveExceptionV2 ex) {
-      if (ex.getMetadata() instanceof ValidateTemplateInputsResponseDTO) {
-        ValidateTemplateInputsResponseDTO responseDTO = (ValidateTemplateInputsResponseDTO) ex.getMetadata();
-        responseDTO.getErrorNodeSummary().setNodeInfo(
-            NodeInfo.builder().identifier(pipelineEntity.getIdentifier()).name(pipelineEntity.getName()).build());
-      }
+    GovernanceMetadata governanceMetadata = pmsPipelineServiceHelper.validatePipelineYaml(pipelineEntity);
+    if (governanceMetadata.getDeny()) {
+      return PipelineCRUDResult.builder().governanceMetadata(governanceMetadata).build();
     }
     PipelineEntity updatedEntity = updatePipelineWithoutValidation(pipelineEntity, changeType);
     return PipelineCRUDResult.builder().governanceMetadata(governanceMetadata).pipelineEntity(updatedEntity).build();

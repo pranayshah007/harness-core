@@ -9,6 +9,7 @@ package io.harness.pms.pipeline.service;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.exception.WingsException.USER;
 import static io.harness.telemetry.Destination.AMPLITUDE;
 
 import static org.springframework.data.mongodb.core.query.Criteria.where;
@@ -67,6 +68,8 @@ import io.harness.pms.yaml.YamlUtils;
 import io.harness.repositories.pipeline.PMSPipelineRepository;
 import io.harness.serializer.JsonUtils;
 import io.harness.telemetry.TelemetryReporter;
+import io.harness.template.beans.refresh.NodeInfo;
+import io.harness.template.beans.refresh.ValidateTemplateInputsResponseDTO;
 import io.harness.yaml.validator.InvalidYamlException;
 
 import com.google.common.collect.Lists;
@@ -218,6 +221,12 @@ public class PMSPipelineServiceHelper {
       ex.setYaml(pipelineEntity.getData());
       throw ex;
     } catch (NGTemplateResolveExceptionV2 ex) {
+      if (ex.getMetadata() instanceof ValidateTemplateInputsResponseDTO) {
+        ValidateTemplateInputsResponseDTO responseDTO = (ValidateTemplateInputsResponseDTO) ex.getMetadata();
+        responseDTO.getErrorNodeSummary().setNodeInfo(
+            NodeInfo.builder().identifier(pipelineEntity.getIdentifier()).name(pipelineEntity.getName()).build());
+        throw new NGTemplateResolveExceptionV2(ex.getMessage(), USER, responseDTO);
+      }
       throw ex;
     } catch (Exception ex) {
       YamlSchemaErrorWrapperDTO errorWrapperDTO =
