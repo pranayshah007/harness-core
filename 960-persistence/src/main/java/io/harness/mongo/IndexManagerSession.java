@@ -70,6 +70,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
@@ -77,6 +78,7 @@ import lombok.AllArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang.time.StopWatch;
 import org.mongodb.morphia.AdvancedDatastore;
 import org.mongodb.morphia.Morphia;
 import org.mongodb.morphia.annotations.Entity;
@@ -177,7 +179,11 @@ public class IndexManagerSession {
       boolean includeUnannotatedStoreIn, IndexesProcessor processor) {
     Set<String> processedCollections = new HashSet<>();
     Collection<MappedClass> mappedClasses = morphia.getMapper().getMappedClasses();
-    mappedClasses.forEach(mc -> {
+    ForkJoinPool customThreadPool = new ForkJoinPool(4);
+//    StopWatch watch = new StopWatch();
+//    watch.start();
+    // call to the methods you want to benchmark
+    customThreadPool.submit( () -> mappedClasses.parallelStream().forEach(mc -> {
       Entity entity = mc.getEntityAnnotation();
       if (entity == null) {
         return;
@@ -210,8 +216,10 @@ public class IndexManagerSession {
 
         processor.process(mc, collection);
       }
-    });
-
+    }));
+//    watch.stop();
+//    long result = watch.getTime();
+//    log.info("Time taken for processing collections: {} ms", result);
     return processedCollections;
   }
 
