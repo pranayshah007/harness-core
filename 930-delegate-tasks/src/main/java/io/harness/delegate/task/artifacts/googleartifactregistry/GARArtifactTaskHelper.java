@@ -59,11 +59,13 @@ public class GARArtifactTaskHelper {
           break;
         default:
           saveLogs(executionLogCallback,
-              "No corresponding Docker artifact task type [{}]: " + artifactTaskParameters.toString());
-          log.error("No corresponding Docker artifact task type [{}]", artifactTaskParameters.toString());
+              "No corresponding Google Artifact Registry artifact task type [{}]: "
+                  + artifactTaskParameters.toString());
+          log.error(
+              "No corresponding Google Artifact Registry artifact task type [{}]", artifactTaskParameters.toString());
           return ArtifactTaskResponse.builder()
               .commandExecutionStatus(CommandExecutionStatus.FAILURE)
-              .errorMessage("There is no Docker artifact task type impl defined for - "
+              .errorMessage("There is no Google Artifact Registry artifact task type impl defined for - "
                   + artifactTaskParameters.getArtifactTaskType().name())
               .errorCode(ErrorCode.INVALID_ARGUMENT)
               .build();
