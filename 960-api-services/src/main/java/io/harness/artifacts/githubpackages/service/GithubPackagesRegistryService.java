@@ -15,6 +15,7 @@ import io.harness.artifacts.githubpackages.beans.GithubPackagesInternalConfig;
 import software.wings.helpers.ext.jenkins.BuildDetails;
 
 import java.util.List;
+import java.util.Map;
 
 @OwnedBy(CDC)
 public interface GithubPackagesRegistryService {
@@ -35,4 +36,6 @@ public interface GithubPackagesRegistryService {
    */
   BuildDetails getBuild(GithubPackagesInternalConfig toGithubPackagesInternalConfig, String packageName,
       String packageType, String version, String org);
+
+  List<Map<String, String>> listPackages(GithubPackagesInternalConfig githubPackagesInternalConfig, String org);
 }

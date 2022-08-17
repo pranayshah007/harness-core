@@ -27,6 +27,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -77,6 +78,13 @@ public class GithubPackagesArtifactTaskHandler
 
     return getSuccessTaskExecutionResponse(Collections.singletonList(githubPackagesArtifactDelegateResponse),
         Collections.singletonList(lastSuccessfulBuild));
+  }
+
+  public ArtifactTaskExecutionResponse listPackages(GithubPackagesArtifactDelegateRequest attributes) {
+    List<Map<String, String>> packageDetails = githubPackagesRegistryService.listPackages(
+        GithubPackagesRequestResponseMapper.toGithubPackagesInternalConfig(attributes), attributes.getOrg());
+    return getSuccessTaskExecutionResponse(
+        GithubPackagesRequestResponseMapper.toGithubPackagesResponse(packageDetails, attributes), null);
   }
 
   public void decryptRequestDTOs(GithubPackagesArtifactDelegateRequest attributes) {

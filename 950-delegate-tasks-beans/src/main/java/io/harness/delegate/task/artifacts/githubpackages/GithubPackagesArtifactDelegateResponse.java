@@ -24,6 +24,11 @@ public class GithubPackagesArtifactDelegateResponse extends ArtifactDelegateResp
   String packageName;
 
   /**
+   * Package Name in repos need to be referenced.
+   */
+  String packageType;
+
+  /**
    * Exact Version of the artifact
    */
   String version;
@@ -35,9 +40,10 @@ public class GithubPackagesArtifactDelegateResponse extends ArtifactDelegateResp
 
   @Builder
   public GithubPackagesArtifactDelegateResponse(ArtifactBuildDetailsNG buildDetails, ArtifactSourceType sourceType,
-      String packageName, String version, String versionRegex) {
+      String packageName, String packageType, String version, String versionRegex) {
     super(buildDetails, sourceType);
     this.packageName = packageName;
+    this.packageType = packageType;
     this.version = version;
     this.versionRegex = versionRegex;
   }

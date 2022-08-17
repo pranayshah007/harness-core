@@ -32,9 +32,4 @@ public class GithubPackageDTO {
    * Github Organization(optional)
    */
   String org;
-
-  /**
-   * Version of the Github Package
-   */
-  String version;
 }

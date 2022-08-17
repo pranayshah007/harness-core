@@ -119,6 +119,11 @@ public class GithubPackagesRegistryServiceImpl implements GithubPackagesRegistry
     return versionFiltering(version, builds, packageName);
   }
 
+  @Override
+  public List<Map<String, String>> listPackages(GithubPackagesInternalConfig githubPackagesInternalConfig, String org) {
+    return null;
+  }
+
   private List<BuildDetails> regexFilteringForGetBuilds(
       String versionRegex, List<BuildDetails> builds, String packageName) {
     Pattern pattern = Pattern.compile(versionRegex.replace(".", "\\.").replace("?", ".?").replace("*", ".*?"));

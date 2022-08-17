@@ -17,7 +17,7 @@ import java.util.List;
 public interface GithubPackagesResourceService {
   // List Packages
   GithubPackagesResponseDTO getPackageDetails(
-      IdentifierRef connectorRef, String accountId, String orgIdentifier, String projectIdentifier);
+      IdentifierRef connectorRef, String accountId, String orgIdentifier, String projectIdentifier, String org);
 
   // List Versions from a Github Package
   List<BuildDetails> getVersionsOfPackage(IdentifierRef connectorRef, String packageName, String packageType,

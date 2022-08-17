@@ -60,14 +60,14 @@ public class GithubPackagesArtifactResource {
   @ApiOperation(value = "Gets Package details for GithubPackages", nickname = "getPackagesFromGithub")
   public ResponseDTO<GithubPackagesResponseDTO> getPackages(@QueryParam("connectorRef") String gitConnectorIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
-      @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
-      @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier, @QueryParam("org") String org,
       @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo) {
     IdentifierRef connectorRef =
         IdentifierRefHelper.getIdentifierRef(gitConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
 
     GithubPackagesResponseDTO response =
-        githubPackagesResourceService.getPackageDetails(connectorRef, accountId, orgIdentifier, projectIdentifier);
+        githubPackagesResourceService.getPackageDetails(connectorRef, accountId, orgIdentifier, projectIdentifier, org);
 
     return ResponseDTO.newResponse(response);
   }

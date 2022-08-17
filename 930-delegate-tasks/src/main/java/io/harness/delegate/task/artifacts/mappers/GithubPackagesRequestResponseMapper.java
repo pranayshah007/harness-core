@@ -23,6 +23,8 @@ import io.harness.utils.FieldWithPlainTextOrSecretValueHelper;
 
 import software.wings.helpers.ext.jenkins.BuildDetails;
 
+import java.util.List;
+import java.util.Map;
 import lombok.experimental.UtilityClass;
 
 @UtilityClass
@@ -103,5 +105,10 @@ public class GithubPackagesRequestResponseMapper {
         .versionRegex(request.getVersionRegex())
         .sourceType(ArtifactSourceType.GITHUB_PACKAGES)
         .build();
+  }
+
+  public List<GithubPackagesArtifactDelegateResponse> toGithubPackagesResponse(
+      List<Map<String, String>> map, GithubPackagesArtifactDelegateRequest request) {
+    return null;
   }
 }

@@ -85,6 +85,15 @@ public class GithubPackagesArtifactTaskHelper {
           saveLogs(executionLogCallback, "Fetched last successful artifact");
 
           break;
+        case GET_GITHUB_PACKAGES:
+
+          saveLogs(executionLogCallback, "Fetching list of Github Packages");
+
+          artifactTaskResponse = getSuccessTaskResponse(githubPackagesArtifactTaskHandler.listPackages(attributes));
+
+          saveLogs(executionLogCallback, "Fetched Github Packages");
+
+          break;
         default:
 
           saveLogs(executionLogCallback,

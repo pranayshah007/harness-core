@@ -13,7 +13,9 @@ import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 
 import io.harness.beans.DelegateTaskRequest;
 import io.harness.beans.IdentifierRef;
+import io.harness.cdng.artifact.resources.docker.mappers.DockerResourceMapper;
 import io.harness.cdng.artifact.resources.githubpackages.dtos.GithubPackagesResponseDTO;
+import io.harness.cdng.artifact.resources.githubpackages.mappers.GithubPackagesResourceMapper;
 import io.harness.common.NGTaskType;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
@@ -29,7 +31,9 @@ import io.harness.delegate.beans.connector.scm.github.GithubHttpCredentialsDTO;
 import io.harness.delegate.task.artifacts.ArtifactDelegateRequestUtils;
 import io.harness.delegate.task.artifacts.ArtifactSourceType;
 import io.harness.delegate.task.artifacts.ArtifactTaskType;
+import io.harness.delegate.task.artifacts.docker.DockerArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.githubpackages.GithubPackagesArtifactDelegateRequest;
+import io.harness.delegate.task.artifacts.githubpackages.GithubPackagesArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.request.ArtifactTaskParameters;
 import io.harness.delegate.task.artifacts.response.ArtifactTaskExecutionResponse;
 import io.harness.delegate.task.artifacts.response.ArtifactTaskResponse;
@@ -55,6 +59,7 @@ import com.google.inject.name.Named;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
@@ -74,8 +79,33 @@ public class GithubPackagesResourceServiceImpl implements GithubPackagesResource
 
   @Override
   public GithubPackagesResponseDTO getPackageDetails(
-      IdentifierRef connectorRef, String accountId, String orgIdentifier, String projectIdentifier) {
-    return null;
+      IdentifierRef connectorRef, String accountId, String orgIdentifier, String projectIdentifier, String org) {
+    GithubConnectorDTO githubConnector = getConnector(connectorRef);
+
+    BaseNGAccess baseNGAccess = getBaseNGAccess(connectorRef.getAccountIdentifier(), orgIdentifier, projectIdentifier);
+
+    List<EncryptedDataDetail> encryptionDetails = getEncryptionDetails(githubConnector, baseNGAccess);
+
+    GithubPackagesArtifactDelegateRequest githubPackagesArtifactDelegateRequest =
+        ArtifactDelegateRequestUtils.getGithubPackagesDelegateRequest(null, null, null, null, org,
+            connectorRef.getIdentifier(), githubConnector, encryptionDetails, ArtifactSourceType.GITHUB_PACKAGES);
+
+    try {
+      ArtifactTaskExecutionResponse artifactTaskExecutionResponse =
+          executeSyncTask(githubPackagesArtifactDelegateRequest, ArtifactTaskType.GET_GITHUB_PACKAGES, baseNGAccess,
+              "Github Packages Get Packages task failure due to error");
+
+      return getGithubPackagesResponseDTO(artifactTaskExecutionResponse);
+
+    } catch (DelegateServiceDriverException ex) {
+      throw new HintException(
+          String.format(HintException.DELEGATE_NOT_AVAILABLE, DocumentLinksConstants.DELEGATE_INSTALLATION_LINK),
+          new DelegateNotAvailableException(ex.getCause().getMessage(), WingsException.USER));
+
+    } catch (ExplanationException e) {
+      throw new HintException(
+          HintException.HINT_GITHUB_ACCESS_DENIED, new InvalidRequestException(e.getMessage(), USER));
+    }
   }
 
   @Override
@@ -209,7 +239,15 @@ public class GithubPackagesResourceServiceImpl implements GithubPackagesResource
     return artifactTaskResponse.getArtifactTaskExecutionResponse();
   }
 
-  private void getGithubPackagesResponseDTO(ArtifactTaskExecutionResponse artifactTaskExecutionResponse) {}
+  private GithubPackagesResponseDTO getGithubPackagesResponseDTO(
+      ArtifactTaskExecutionResponse artifactTaskExecutionResponse) {
+    List<GithubPackagesArtifactDelegateResponse> githubPackagesArtifactDelegateResponses =
+        artifactTaskExecutionResponse.getArtifactDelegateResponses()
+            .stream()
+            .map(delegateResponse -> (GithubPackagesArtifactDelegateResponse) delegateResponse)
+            .collect(Collectors.toList());
+    return GithubPackagesResourceMapper.toPackagesResponse(githubPackagesArtifactDelegateResponses);
+  }
 
   private GithubConnectorDTO getConnector(IdentifierRef connectorRef) {
     Optional<ConnectorResponseDTO> connectorDTO = connectorService.get(connectorRef.getAccountIdentifier(),
