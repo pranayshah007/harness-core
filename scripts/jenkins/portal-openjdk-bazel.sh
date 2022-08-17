@@ -274,12 +274,13 @@ cd ../..
 mkdir -p dist/debezium-service
 cd dist/debezium-service
 
-cp ${HOME}/.bazel-dirs/bin/951-debezium-service/module_deploy.jar debezium-service-capsule.jar
-cp ../../951-debezium-service/config.yml .
-cp ../../951-debezium-service/src/main/resources/redisson-jcache.yaml .
+cp ${HOME}/.bazel-dirs/bin/debezium-service/service/module_deploy.jar debezium-service-capsule.jar
+cp ../../debezium-service/config/config.yml .
+cp ../../debezium-service/service/src/main/resources/redisson-jcache.yaml .
 
 cp ../../dockerization/debezium-service/Dockerfile-debezium-service-jenkins-k8-openjdk ./Dockerfile
 cp ../../dockerization/debezium-service/Dockerfile-debezium-service-jenkins-k8-gcr-openjdk ./Dockerfile-gcr
+cp ../../dockerization/debezium-service/Dockerfile-debezium-service-cie-jdk ./Dockerfile-cie-jdk
 cp ../../dockerization/base-images/apm/inject-onprem-apm-bins-into-dockerimage.sh .
 cp ../../dockerization/base-images/apm/inject-saas-apm-bins-into-dockerimage.sh .
 cp -r ../../dockerization/debezium-service/scripts/ .

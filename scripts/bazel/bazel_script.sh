@@ -152,7 +152,7 @@ BAZEL_MODULES="\
   //950-events-framework-monitor:module \
   //950-log-client:module \
   //951-cg-git-sync:module \
-  //951-debezium-service:module \
+  //debezium-service:module \
   //952-debezium-engine:module \
   //959-debezium-beans:module \
   //950-ng-authentication-service:module \

@@ -20,11 +20,11 @@ pkg_tar(
     name = "files",
     srcs = [
         "//400-rest/src/main/resources:redisson-jcache.yaml",
-        "//951-debezium-service:config.yml",
+        "//debezium-service/config:config.yml",
     ],
     files = {
         "@alpn_boot_8.1.13.v20181017//file": "alpn-boot-8.1.13.v20181017.jar",
-        "//951-debezium-service:module_deploy.jar": "debezium-service-capsule.jar",
+        "//debezium-service/service:module_deploy.jar": "debezium-service-capsule.jar",
     },
     mode = "0600",
     owner = "65534.65534",
