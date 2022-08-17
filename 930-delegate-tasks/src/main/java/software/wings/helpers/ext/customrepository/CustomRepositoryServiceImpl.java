@@ -51,7 +51,7 @@ import lombok.extern.slf4j.Slf4j;
 @Singleton
 @Slf4j
 public class CustomRepositoryServiceImpl implements CustomRepositoryService {
-  private static final String ARTIFACT_RESULT_PATH = "ARTIFACT_RESULT_PATH";
+  private static final String ARTIFACT_RESULT_PATH = "HARNESS_ARTIFACT_RESULT_PATH";
 
   @Inject private ShellExecutionService shellExecutionService;
 

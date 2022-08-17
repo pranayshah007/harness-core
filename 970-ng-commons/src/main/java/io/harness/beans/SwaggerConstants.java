@@ -14,6 +14,7 @@ import io.harness.annotations.dev.OwnedBy;
 // TODO this should go to yaml commons
 public interface SwaggerConstants {
   String STRING_CLASSPATH = "java.lang.String";
+  String LONG_CLASSPATH = "java.lang.Long";
   String INTEGER_CLASSPATH = "java.lang.Integer";
   String DOUBLE_CLASSPATH = "java.lang.Double";
   String BOOLEAN_CLASSPATH = "java.lang.Boolean";

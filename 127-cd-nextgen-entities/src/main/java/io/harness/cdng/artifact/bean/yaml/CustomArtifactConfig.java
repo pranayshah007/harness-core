@@ -22,10 +22,12 @@ import io.harness.data.validator.EntityIdentifier;
 import io.harness.delegate.task.artifacts.ArtifactSourceType;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.validator.NGRegexValidatorConstants;
 import io.harness.walktree.visitor.SimpleVisitorHelper;
 import io.harness.walktree.visitor.Visitable;
 import io.harness.yaml.YamlSchemaTypes;
 import io.harness.yaml.core.VariableExpression;
+import io.harness.yaml.core.timeout.Timeout;
 import io.harness.yaml.core.variables.NGVariable;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
@@ -33,6 +35,7 @@ import io.swagger.annotations.ApiModelProperty;
 import java.util.Collections;
 import java.util.List;
 import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Pattern;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -66,7 +69,10 @@ public class CustomArtifactConfig implements ArtifactConfig, Visitable {
   /**
    * Script timeout
    */
-  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) @Wither ParameterField<String> timeout;
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
+  @Pattern(regexp = NGRegexValidatorConstants.TIMEOUT_PATTERN)
+  @VariableExpression(skipInnerObjectTraversal = true)
+  ParameterField<Timeout> timeout;
 
   /**
    * Scripts Details
@@ -83,6 +89,7 @@ public class CustomArtifactConfig implements ArtifactConfig, Visitable {
    */
   @YamlSchemaTypes(value = {runtime})
   @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
+  @VariableExpression(skipVariableExpression = true)
   ParameterField<List<TaskSelectorYaml>> delegateSelectors;
 
   /** Whether this config corresponds to primary artifact.*/

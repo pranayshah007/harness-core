@@ -42,7 +42,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class CustomArtifactTaskHandler extends DelegateArtifactTaskHandler<CustomArtifactDelegateRequest> {
   @Inject private ShellScriptExecutionOnDelegateNG shellScriptExecutionOnDelegateNG;
-  private static final String ARTIFACT_RESULT_PATH = "ARTIFACT_RESULT_PATH";
+  private static final String ARTIFACT_RESULT_PATH = "HARNESS_ARTIFACT_RESULT_PATH";
 
   @Override
   public void decryptRequestDTOs(CustomArtifactDelegateRequest dto) {}

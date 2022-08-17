@@ -113,6 +113,7 @@ import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.yaml.NGServiceV2InfoConfig;
 import io.harness.serializer.KryoRegistrar;
+import io.harness.yaml.core.timeout.Timeout;
 
 import com.esotericsoftware.kryo.Kryo;
 

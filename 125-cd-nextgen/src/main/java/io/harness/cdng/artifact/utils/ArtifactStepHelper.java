@@ -333,7 +333,6 @@ public class ArtifactStepHelper {
                                                    .map(TaskSelectorYaml::new)
                                                    .collect(Collectors.toList()));
       case CUSTOM_ARTIFACT:
-        CustomArtifactConfig customArtifactConfig = (CustomArtifactConfig) artifactConfig;
         return TaskSelectorYaml.toTaskSelector(((CustomArtifactConfig) artifactConfig).getDelegateSelectors());
       default:
         throw new UnsupportedOperationException(
