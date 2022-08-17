@@ -223,7 +223,7 @@ public class ServicePlanCreatorV2 extends ChildrenPlanCreator<ServicePlanCreator
             .stepParameters(new EmptyStepParameters())
             .facilitatorObtainment(
                 FacilitatorObtainment.newBuilder()
-                    .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.SYNC).build())
+                    .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.ASYNC).build())
                     .build())
             //            .adviserObtainment(
             //                AdviserObtainment.newBuilder()

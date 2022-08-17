@@ -26,12 +26,16 @@ import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.rbac.NGResourceType;
 import io.harness.pms.rbac.PipelineRbacHelper;
 import io.harness.pms.rbac.PrincipalTypeProtoToPrincipalTypeMapper;
+import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.executables.SyncExecutable;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.rbac.CDNGRbacPermissions;
 import io.harness.steps.EntityReferenceExtractorUtils;
+import io.harness.utils.YamlPipelineUtils;
+
+import software.wings.service.impl.instana.InstanaAnalyzeMetricRequest;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
@@ -42,10 +46,13 @@ import java.util.Set;
 public class ServiceStepV3 implements SyncExecutable<ServiceStepV3Parameters> {
   public static final StepType STEP_TYPE =
       StepType.newBuilder().setType(ExecutionNodeType.SERVICE_V3.getName()).setStepCategory(StepCategory.STEP).build();
+  public static final String SERVICE_SWEEPING_OUTPUT = "serviceSweepingOutput";
   @Inject private EntityReferenceExtractorUtils entityReferenceExtractorUtils;
   @Inject @Named("PRIVILEGED") private AccessControlClient accessControlClient;
   @Inject private PipelineRbacHelper pipelineRbacHelper;
   @Inject private ServiceEntityService serviceEntityService;
+
+  @Inject private ExecutionSweepingOutputService sweepingOutputService;
 
   @Override
   public Class<ServiceStepV3Parameters> getStepParametersClass() {
@@ -72,6 +79,11 @@ public class ServiceStepV3 implements SyncExecutable<ServiceStepV3Parameters> {
     // Todo: merge serviceOpt inputs
 
     validateResources(ambiance, ngServiceConfig);
+
+    // Todo:(yogesh) check the step category
+    sweepingOutputService.consume(ambiance, SERVICE_SWEEPING_OUTPUT,
+        ServiceSweepingOutput.builder().finalServiceYaml(YamlPipelineUtils.writeYamlString(ngServiceConfig)).build(),
+        StepCategory.STAGE.name());
 
     return StepResponse.builder()
         .status(Status.SUCCEEDED)
