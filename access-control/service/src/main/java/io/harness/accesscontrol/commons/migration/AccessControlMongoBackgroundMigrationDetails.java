@@ -11,7 +11,12 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.accesscontrol.acl.migration.ACLAddBooleanFieldsMigration;
 import io.harness.accesscontrol.resources.resourcegroups.migration.MultipleManagedResourceGroupMigration;
-import io.harness.accesscontrol.roleassignments.migration.*;
+import io.harness.accesscontrol.roleassignments.migration.AccountBasicRoleAssignmentAdditionMigration;
+import io.harness.accesscontrol.roleassignments.migration.CCMAdminRoleAssignmentAdditionMigration;
+import io.harness.accesscontrol.roleassignments.migration.RoleAssignmentPrincipalScopeLevelMigration;
+import io.harness.accesscontrol.roleassignments.migration.RoleAssignmentResourceGroupMigration;
+import io.harness.accesscontrol.roleassignments.migration.RoleAssignmentScopeAdditionMigration;
+import io.harness.accesscontrol.roleassignments.migration.SuperAdminViaAllResourcesMigration;
 import io.harness.accesscontrol.scopes.harness.migration.ScopeMigration;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.migration.MigrationDetails;

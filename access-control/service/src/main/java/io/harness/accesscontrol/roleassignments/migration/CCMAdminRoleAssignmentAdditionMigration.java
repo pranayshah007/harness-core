@@ -66,24 +66,15 @@ public class CCMAdminRoleAssignmentAdditionMigration implements NGMigration {
               .findAll(
                   criteria, pageable, Sort.by(Sort.Direction.ASC, RoleAssignmentDBO.RoleAssignmentDBOKeys.createdAt))
               .getContent();
-
-      log.info("roleAssignmentList Size: {}", roleAssignmentList.size());
       List<String> ceEnabledAccountIds = accountHelperService.getCeEnabledNgAccounts();
-      log.info("ceEnabledAccountIds Size: {}", roleAssignmentList.size());
-      for (String account: ceEnabledAccountIds
-           ) {
-        log.info("AccountId: {}", account);
-      }
 
       if (isEmpty(roleAssignmentList)) {
         log.info("roleAssignmentList break");
         break;
       }
       for (RoleAssignmentDBO roleAssignment : roleAssignmentList) {
-        if (roleAssignment.isManaged()) {
           String accountId =
               scopeService.buildScopeFromScopeIdentifier(roleAssignment.getScopeIdentifier()).getInstanceId();
-          log.info("AccountId: {}", accountId);
           if (ceEnabledAccountIds.contains(accountId)) {
             try {
               RoleAssignmentDBO newRoleAssignmentDBO = buildRoleAssignmentDBO(roleAssignment);
@@ -99,7 +90,6 @@ public class CCMAdminRoleAssignmentAdditionMigration implements NGMigration {
               log.error("[CCMAdminRoleAssignmentAdditionMigration] Unexpected error occurred.", exception);
             }
           }
-        }
       }
       pageIndex++;
     } while (true);
