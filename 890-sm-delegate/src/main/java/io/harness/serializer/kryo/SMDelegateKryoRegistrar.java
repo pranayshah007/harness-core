@@ -29,6 +29,7 @@ import io.harness.delegatetasks.ValidateSecretManagerConfigurationTaskParameters
 import io.harness.delegatetasks.ValidateSecretManagerConfigurationTaskResponse;
 import io.harness.delegatetasks.ValidateSecretReferenceTaskParameters;
 import io.harness.delegatetasks.ValidateSecretReferenceTaskResponse;
+import io.harness.ng.core.entities.NGEncryptedData;
 import io.harness.serializer.KryoRegistrar;
 
 import com.esotericsoftware.kryo.Kryo;
@@ -50,6 +51,7 @@ public class SMDelegateKryoRegistrar implements KryoRegistrar {
     kryo.register(UpsertSecretTaskType.class, 15011);
     kryo.register(ValidateSecretManagerConfigurationTaskParameters.class, 15015);
     kryo.register(ValidateSecretManagerConfigurationTaskResponse.class, 15016);
+    kryo.register(NGEncryptedData.class, 15017);
     kryo.register(NGVaultRenewalTaskParameters.class, 150018);
     kryo.register(NGVaultRenewalTaskResponse.class, 150019);
     kryo.register(NGVaultFetchEngineTaskResponse.class, 150020);
