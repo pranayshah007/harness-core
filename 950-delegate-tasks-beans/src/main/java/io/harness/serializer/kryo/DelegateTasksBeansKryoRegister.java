@@ -615,6 +615,7 @@ import io.harness.delegate.task.ssh.PdcSshInfraDelegateConfig;
 import io.harness.delegate.task.ssh.PdcWinRmInfraDelegateConfig;
 import io.harness.delegate.task.ssh.ScriptCommandUnit;
 import io.harness.delegate.task.ssh.artifact.ArtifactoryArtifactDelegateConfig;
+import io.harness.delegate.task.ssh.artifact.JenkinsArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.SshWinRmArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.SshWinRmArtifactType;
 import io.harness.delegate.task.ssh.config.ConfigFileParameters;
@@ -1661,5 +1662,6 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(GitPollingSourceType.class, 56337);
     kryo.register(GitPollingTaskType.class, 56338);
     kryo.register(GitPollingDelegateResponse.class, 56339);
+    kryo.register(JenkinsArtifactDelegateConfig.class, 9800003);
   }
 }
