@@ -84,6 +84,7 @@ public class AwsECSClusterServiceImpl implements AwsECSClusterService {
                                   .infraAccountId(ceAwsConfig.getAwsAccountId())
                                   .infraMasterAccountId(ceAwsConfig.getAwsMasterAccountId())
                                   .parentAccountSettingId(settingId)
+                                  .isDeactivated(false)
                                   .labels(clusterTags)
                                   .build();
         clusters.add(ceCluster);
@@ -123,7 +124,7 @@ public class AwsECSClusterServiceImpl implements AwsECSClusterService {
     });
     ceExistingClusterMap.forEach((clusterIdentifierKey, ceCluster) -> {
       if (!infraClusterMap.containsKey(clusterIdentifierKey)) {
-        ceClusterDao.deleteCluster(ceCluster.getUuid());
+        ceClusterDao.deactivateCluster(ceCluster);
       }
     });
   }

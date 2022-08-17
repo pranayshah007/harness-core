@@ -44,7 +44,7 @@ public class AwsECSClusterServiceImplTest extends CategoryTest {
   @Mock private CEClusterDao ceClusterDao;
 
   @Captor private ArgumentCaptor<CECluster> ceCreateClusterArgumentCaptor;
-  @Captor private ArgumentCaptor<String> ceDeleteClusterArgumentCaptor;
+  @Captor private ArgumentCaptor<CECluster> ceDeleteClusterArgumentCaptor;
 
   private String accountId = "ACCOUNT_ID";
   private String deleteRecordUUID = "DELETE_RECORD_UUID";
@@ -87,12 +87,11 @@ public class AwsECSClusterServiceImplTest extends CategoryTest {
     awsECSClusterService.syncCEClusters(getCECloudAccount(accountName, accountArn, infraAccountId));
 
     verify(ceClusterDao).create(ceCreateClusterArgumentCaptor.capture());
-    verify(ceClusterDao).deleteCluster(ceDeleteClusterArgumentCaptor.capture());
+    verify(ceClusterDao).deactivateCluster(ceDeleteClusterArgumentCaptor.capture());
 
     CECluster createCECluster = ceCreateClusterArgumentCaptor.getValue();
-    String deleteClusterUUID = ceDeleteClusterArgumentCaptor.getValue();
     assertThat(createCECluster.getClusterName()).isEqualTo(clusterNameCreate);
-    assertThat(deleteClusterUUID).isEqualTo(deleteRecordUUID);
+    assertThat(ceDeleteClusterArgumentCaptor.getValue()).isEqualTo(ceClusterDelete);
   }
 
   private CECluster getCECluster(String clusterName, String region) {
