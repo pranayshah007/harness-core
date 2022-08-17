@@ -10,6 +10,8 @@ package io.harness.cdng.servicenow.resources.service;
 import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
 import static io.harness.utils.DelegateOwner.getNGTaskSetupAbstractionsWithOwner;
 
+import static java.util.Objects.isNull;
+
 import io.harness.beans.DelegateTaskRequest;
 import io.harness.beans.IdentifierRef;
 import io.harness.common.NGTaskType;
@@ -35,6 +37,8 @@ import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.service.DelegateGrpcClientWrapper;
 import io.harness.servicenow.ServiceNowActionNG;
 import io.harness.servicenow.ServiceNowFieldNG;
+import io.harness.servicenow.ServiceNowFieldSchemaNG;
+import io.harness.servicenow.ServiceNowFieldTypeNG;
 import io.harness.servicenow.ServiceNowTemplate;
 
 import com.google.inject.Inject;
@@ -43,6 +47,7 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 public class ServiceNowResourceServiceImpl implements ServiceNowResourceService {
   private static final Duration TIMEOUT = Duration.ofSeconds(30);
@@ -66,7 +71,26 @@ public class ServiceNowResourceServiceImpl implements ServiceNowResourceService 
                                                               .action(ServiceNowActionNG.GET_TICKET_CREATE_METADATA)
                                                               .ticketType(ticketType);
     return obtainServiceNowTaskNGResponse(serviceNowConnectorRef, orgId, projectId, parametersBuilder)
-        .getServiceNowFieldNGList();
+        .getServiceNowFieldNGList()
+        .stream()
+        .map(this::populateFieldTypeFromInternalType)
+        .collect(Collectors.toList());
+  }
+
+  private ServiceNowFieldNG populateFieldTypeFromInternalType(ServiceNowFieldNG serviceNowFieldNG) {
+    ServiceNowFieldTypeNG serviceNowFieldTypeNG =
+        ServiceNowFieldTypeNG.fromTypeString(serviceNowFieldNG.getInternalType());
+    String typeStrOutput = isNull(serviceNowFieldTypeNG) || serviceNowFieldTypeNG.equals(ServiceNowFieldTypeNG.UNKNOWN)
+        ? null
+        : serviceNowFieldNG.getInternalType();
+    serviceNowFieldNG.setSchema(ServiceNowFieldSchemaNG.builder()
+                                    .array(false)
+                                    .customType(null)
+                                    .type(serviceNowFieldTypeNG)
+                                    .typeStr(typeStrOutput)
+                                    .build());
+    serviceNowFieldNG.setInternalType(null);
+    return serviceNowFieldNG;
   }
 
   @Override
