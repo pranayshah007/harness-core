@@ -7,27 +7,6 @@
 
 package io.harness.ldap.service.impl;
 
-import static io.harness.rule.OwnerRule.PRATEEK;
-import static io.harness.rule.OwnerRule.SHASHANK;
-
-import static software.wings.beans.sso.LdapTestResponse.Status.FAILURE;
-import static software.wings.beans.sso.LdapTestResponse.Status.SUCCESS;
-
-import static junit.framework.TestCase.assertEquals;
-import static junit.framework.TestCase.assertNotNull;
-import static junit.framework.TestCase.assertNull;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.failBecauseExceptionWasNotThrown;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-import static org.mockito.MockitoAnnotations.initMocks;
-
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -48,8 +27,17 @@ import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.service.DelegateGrpcClientWrapper;
-
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
+import org.mockito.InjectMocks;
+import org.mockito.Spy;
+import org.mockito.runners.MockitoJUnitRunner;
+import retrofit2.Call;
+import retrofit2.Response;
 import software.wings.beans.dto.LdapSettings;
+import software.wings.beans.sso.LdapConnectionSettings;
 import software.wings.beans.sso.LdapGroupResponse;
 import software.wings.beans.sso.LdapTestResponse;
 import software.wings.beans.sso.LdapUserResponse;
@@ -60,15 +48,25 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
-import org.mockito.InjectMocks;
-import org.mockito.Spy;
-import org.mockito.runners.MockitoJUnitRunner;
-import retrofit2.Call;
-import retrofit2.Response;
+
+import static io.harness.rule.OwnerRule.PRATEEK;
+import static io.harness.rule.OwnerRule.SHASHANK;
+import static junit.framework.TestCase.assertEquals;
+import static junit.framework.TestCase.assertNotNull;
+import static junit.framework.TestCase.assertNull;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.failBecauseExceptionWasNotThrown;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static org.mockito.MockitoAnnotations.initMocks;
+import static software.wings.beans.sso.LdapTestResponse.Status.FAILURE;
+import static software.wings.beans.sso.LdapTestResponse.Status.SUCCESS;
 
 @OwnedBy(HarnessTeam.PL)
 @RunWith(MockitoJUnitRunner.class)
@@ -101,11 +99,13 @@ public class NGLdapServiceImplTest extends CategoryTest {
   @Test
   @Owner(developers = SHASHANK)
   @Category(UnitTests.class)
-  public void testLdapConnectionSuccessfulAndUnsuccessful() {
+  public void testLdapConnectionSuccessfulAndUnsuccessful() throws IOException {
     final String accountId = "testAccountId";
     software.wings.beans.sso.LdapSettings ldapSettings = getLdapSettings(accountId);
     LdapTestResponse successfulTestResponse =
         LdapTestResponse.builder().status(SUCCESS).message("Connection Successful").build();
+
+    mockCgClientCall();
 
     when(delegateGrpcClientWrapper.executeSyncTask(any()))
         .thenReturn(NGLdapDelegateTaskResponse.builder().ldapTestResponse(successfulTestResponse).build());
@@ -131,10 +131,10 @@ public class NGLdapServiceImplTest extends CategoryTest {
   @Test
   @Owner(developers = SHASHANK)
   @Category(UnitTests.class)
-  public void testLdapConnectionException() {
+  public void testLdapConnectionException() throws IOException {
     final String accountId = "testAccountId";
     software.wings.beans.sso.LdapSettings ldapSettings = getLdapSettings(accountId);
-
+    mockCgClientCall();
     when(delegateGrpcClientWrapper.executeSyncTask(any())).thenReturn(buildErrorNotifyResponseData());
 
     LdapTestResponse ldapTestResponse = null;
@@ -219,7 +219,7 @@ public class NGLdapServiceImplTest extends CategoryTest {
   @Test
   @Owner(developers = SHASHANK)
   @Category(UnitTests.class)
-  public void testLdapUserQuerySuccessfulAndUnsuccessful() {
+  public void testLdapUserQuerySuccessfulAndUnsuccessful() throws IOException {
     final String accountId = "testAccountId";
     software.wings.beans.sso.LdapSettings ldapSettings = getLdapSettings(accountId);
     LdapTestResponse successfulTestResponse =
@@ -227,7 +227,7 @@ public class NGLdapServiceImplTest extends CategoryTest {
             .status(SUCCESS)
             .message("Configuration looks good. Server returned non-zero number of records")
             .build();
-
+    mockCgClientCall();
     when(delegateGrpcClientWrapper.executeSyncTask(any()))
         .thenReturn(NGLdapDelegateTaskResponse.builder().ldapTestResponse(successfulTestResponse).build());
 
@@ -250,7 +250,7 @@ public class NGLdapServiceImplTest extends CategoryTest {
   @Test
   @Owner(developers = SHASHANK)
   @Category(UnitTests.class)
-  public void testLdapGroupQuerySuccessfulAndUnsuccessful() {
+  public void testLdapGroupQuerySuccessfulAndUnsuccessful() throws IOException {
     final String accountId = "testAccountId";
     software.wings.beans.sso.LdapSettings ldapSettings = getLdapSettings(accountId);
     LdapTestResponse successfulTestResponse =
@@ -258,7 +258,7 @@ public class NGLdapServiceImplTest extends CategoryTest {
             .status(SUCCESS)
             .message("Configuration looks good. Server returned non-zero number of records")
             .build();
-
+    mockCgClientCall();
     when(delegateGrpcClientWrapper.executeSyncTask(any()))
         .thenReturn(NGLdapDelegateTaskResponse.builder().ldapTestResponse(successfulTestResponse).build());
 
@@ -285,10 +285,10 @@ public class NGLdapServiceImplTest extends CategoryTest {
   @Test
   @Owner(developers = SHASHANK)
   @Category(UnitTests.class)
-  public void testLdapUserQueryException() {
+  public void testLdapUserQueryException() throws IOException {
     final String accountId = "testAccountId";
     software.wings.beans.sso.LdapSettings ldapSettings = getLdapSettings(accountId);
-
+    mockCgClientCall();
     when(delegateGrpcClientWrapper.executeSyncTask(any())).thenReturn(buildErrorNotifyResponseData());
 
     LdapTestResponse ldapTestResponse = null;
@@ -305,10 +305,10 @@ public class NGLdapServiceImplTest extends CategoryTest {
   @Test
   @Owner(developers = SHASHANK)
   @Category(UnitTests.class)
-  public void testLdapGroupQueryException() {
+  public void testLdapGroupQueryException() throws IOException {
     final String accountId = "testAccountId";
     software.wings.beans.sso.LdapSettings ldapSettings = getLdapSettings(accountId);
-
+    mockCgClientCall();
     when(delegateGrpcClientWrapper.executeSyncTask(any())).thenReturn(buildErrorNotifyResponseData());
 
     LdapTestResponse ldapTestResponse = null;
@@ -369,8 +369,22 @@ public class NGLdapServiceImplTest extends CategoryTest {
   }
 
   private software.wings.beans.sso.LdapSettings getLdapSettings(String accountId) {
-    software.wings.beans.sso.LdapSettings ldapSettings =
-        software.wings.beans.sso.LdapSettings.builder().accountId(accountId).build();
+    LdapConnectionSettings settings = new LdapConnectionSettings();
+    settings.setBindPassword("somePassword");
+    software.wings.beans.sso.LdapSettings ldapSettings = software.wings.beans.sso.LdapSettings.builder()
+                                                             .connectionSettings(settings)
+                                                             .displayName("someDisplayName")
+                                                             .accountId(accountId)
+                                                             .build();
+    ldapSettings.setUuid("someUuid");
     return ldapSettings;
+  }
+
+  private void mockCgClientCall() throws IOException {
+    Call<RestResponse<LdapSettingsWithEncryptedDataDetail>> request = mock(Call.class);
+    RestResponse<LdapSettingsWithEncryptedDataDetail> mockResponse =
+        new RestResponse<>(ldapSettingsWithEncryptedDataDetail);
+    doReturn(request).when(managerClient).getLdapSettingsUsingAccountIdAndLdapSettings(any(), any());
+    doReturn(Response.success(mockResponse)).when(request).execute();
   }
 }

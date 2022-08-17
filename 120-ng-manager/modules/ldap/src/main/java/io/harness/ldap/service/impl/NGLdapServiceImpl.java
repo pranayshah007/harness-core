@@ -174,11 +174,10 @@ public class NGLdapServiceImpl implements NGLdapService {
     LdapSettingsWithEncryptedDataDetail settingsWithEncryptedDataDetail =
         getLdapSettingsWithEncryptedDataInternal(accountIdentifier, settings);
     EncryptedDataDetail encryptedDataDetail = settingsWithEncryptedDataDetail.getEncryptedDataDetail();
-    NGLdapDelegateTaskParameters parameters = NGLdapDelegateTaskParameters.builder()
-                                                  .ldapSettings(settingsWithEncryptedDataDetail.getLdapSettings())
-                                                  .encryptedDataDetail(encryptedDataDetail)
-                                                  .build();
-    return parameters;
+    return NGLdapDelegateTaskParameters.builder()
+        .ldapSettings(settingsWithEncryptedDataDetail.getLdapSettings())
+        .encryptedDataDetail(encryptedDataDetail)
+        .build();
   }
 
   private LdapSettingsWithEncryptedDataDetail getLdapSettingsWithEncryptedDataInternal(
