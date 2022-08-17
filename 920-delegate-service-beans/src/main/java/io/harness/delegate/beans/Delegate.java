@@ -129,6 +129,8 @@ public class Delegate implements PersistentEntity, UuidAware, CreatedAtAware, Ac
 
   private boolean immutable;
 
+  private boolean mtls;
+
   @Override
   public void updateNextIteration(String fieldName, long nextIteration) {
     if (DelegateKeys.taskExpiryCheckNextIteration.equals(fieldName)) {

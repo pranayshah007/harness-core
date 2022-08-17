@@ -7,6 +7,8 @@
 
 package software.wings.resources;
 
+import static io.harness.agent.AgentGatewayConstants.HEADER_AGENT_MTLS_AUTHORITY;
+import static io.harness.agent.AgentGatewayUtils.isAgentConnectedUsingMtls;
 import static io.harness.annotations.dev.HarnessTeam.DEL;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
@@ -86,6 +88,7 @@ import io.swagger.annotations.Api;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import javax.annotation.Nullable;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.GET;
 import javax.ws.rs.HeaderParam;
@@ -234,11 +237,13 @@ public class DelegateAgentResource {
   @Path("register")
   @Timed
   @ExceptionMetered
-  public RestResponse<DelegateRegisterResponse> register(
-      @QueryParam("accountId") @NotEmpty final String accountId, final DelegateParams delegateParams) {
+  public RestResponse<DelegateRegisterResponse> register(@QueryParam("accountId") @NotEmpty final String accountId,
+      final DelegateParams delegateParams,
+      @HeaderParam(HEADER_AGENT_MTLS_AUTHORITY) @Nullable String agentMtlsAuthority) {
     try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR)) {
       final long startTime = System.currentTimeMillis();
-      final DelegateRegisterResponse registerResponse = delegateService.register(delegateParams);
+      final boolean isConnectedUsingMtls = isAgentConnectedUsingMtls(agentMtlsAuthority);
+      final DelegateRegisterResponse registerResponse = delegateService.register(delegateParams, isConnectedUsingMtls);
       log.info("Delegate registration took {} in ms", System.currentTimeMillis() - startTime);
       return new RestResponse<>(registerResponse);
     }
@@ -440,18 +445,21 @@ public class DelegateAgentResource {
   @Path("heartbeat-with-polling")
   @Timed
   @ExceptionMetered
-  public RestResponse<DelegateHeartbeatResponse> updateDelegateHB(
-      @QueryParam("accountId") @NotEmpty String accountId, DelegateParams delegateParams) {
+  public RestResponse<DelegateHeartbeatResponse> updateDelegateHB(@QueryParam("accountId") @NotEmpty String accountId,
+      @HeaderParam(HEADER_AGENT_MTLS_AUTHORITY) @Nullable String agentMtlsAuthority, DelegateParams delegateParams) {
     try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR);
          AutoLogContext ignore2 = new DelegateLogContext(delegateParams.getDelegateId(), OVERRIDE_ERROR)) {
+      final boolean isConnectedUsingMtls = isAgentConnectedUsingMtls(agentMtlsAuthority);
+
       // delegate.isPollingModeEnabled() will be true here.
       if ("ECS".equals(delegateParams.getDelegateType())) {
-        Delegate registeredDelegate = delegateService.handleEcsDelegateRequest(buildDelegateFromParams(delegateParams));
+        Delegate registeredDelegate =
+            delegateService.handleEcsDelegateRequest(buildDelegateFromParams(delegateParams, isConnectedUsingMtls));
 
         return new RestResponse<>(buildDelegateHBResponse(registeredDelegate));
       } else {
-        return new RestResponse<>(buildDelegateHBResponse(
-            delegateService.updateHeartbeatForDelegateWithPollingEnabled(buildDelegateFromParams(delegateParams))));
+        return new RestResponse<>(buildDelegateHBResponse(delegateService.updateHeartbeatForDelegateWithPollingEnabled(
+            buildDelegateFromParams(delegateParams, isConnectedUsingMtls))));
       }
     }
   }
@@ -583,7 +591,7 @@ public class DelegateAgentResource {
         .build();
   }
 
-  private Delegate buildDelegateFromParams(DelegateParams delegateParams) {
+  private Delegate buildDelegateFromParams(DelegateParams delegateParams, boolean isConnectedUsingMtls) {
     return Delegate.builder()
         .uuid(delegateParams.getDelegateId())
         .accountId(delegateParams.getAccountId())
@@ -604,6 +612,7 @@ public class DelegateAgentResource {
         .sampleDelegate(delegateParams.isSampleDelegate())
         .currentlyExecutingDelegateTasks(delegateParams.getCurrentlyExecutingDelegateTasks())
         .location(delegateParams.getLocation())
+        .mtls(isConnectedUsingMtls)
         .build();
   }
 }
