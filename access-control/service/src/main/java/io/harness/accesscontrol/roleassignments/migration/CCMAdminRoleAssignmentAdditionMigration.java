@@ -83,8 +83,7 @@ public class CCMAdminRoleAssignmentAdditionMigration implements NGMigration {
             } catch (DuplicateKeyException e) {
               log.error("Corresponding ccm admin was already created {}", newRoleAssignmentDBO.toString(), e);
             }
-            roleAssignmentRepository.updateById(
-                roleAssignment.getId(), update(RoleAssignmentDBO.RoleAssignmentDBOKeys.managed, false));
+            roleAssignmentRepository.updateById(roleAssignment.getId(), update(RoleAssignmentDBOKeys.managed, false));
 
           } catch (Exception exception) {
             log.error("[CCMAdminRoleAssignmentAdditionMigration] Unexpected error occurred.", exception);
