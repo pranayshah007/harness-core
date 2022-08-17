@@ -15,6 +15,7 @@ import io.harness.licensing.beans.modules.StartTrialDTO;
 import io.harness.licensing.beans.response.CheckExpiryResultDTO;
 import io.harness.licensing.beans.summary.LicensesWithSummaryDTO;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -29,4 +30,5 @@ public interface LicenseService extends LicenseCrudService {
   Edition calculateAccountEdition(String accountIdentifier);
   Map<Edition, Set<EditionActionDTO>> getEditionActions(String accountIdentifier, ModuleType moduleType);
   Map<ModuleType, Long> getLastUpdatedAtMap(String accountIdentifier);
+  List<ModuleLicenseDTO> getAllModuleLicences(String accountIdentifier);
 }
