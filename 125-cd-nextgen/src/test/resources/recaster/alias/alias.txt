@@ -399,3 +399,4 @@ io.harness.cdng.provision.azure.AzureCreateARMResourceStepConfiguration
 io.harness.cdng.provision.azure.AzureCreateARMResourceStepScope
 io.harness.cdng.provision.azure.AzureCreateARMResourceStepParameters
 io.harness.yaml.core.failurestrategy.ProceedWithDefaultValuesFailureActionConfig
+io.harness.cdng.steps.EmptyStepParameters
