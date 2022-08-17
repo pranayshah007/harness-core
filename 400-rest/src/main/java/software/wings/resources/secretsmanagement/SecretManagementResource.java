@@ -220,6 +220,7 @@ public class SecretManagementResource {
   @DELETE
   @Path("/delete-secret")
   @AuthRule(permissionType = MANAGE_SECRETS)
+  @ApiKeyAuthorized(permissionType = MANAGE_SECRETS)
   @Deprecated
   public RestResponse<Boolean> deleteSecret(
       @QueryParam("accountId") final String accountId, @QueryParam("uuid") final String uuId) {
