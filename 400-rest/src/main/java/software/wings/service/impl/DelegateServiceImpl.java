@@ -1010,6 +1010,8 @@ public class DelegateServiceImpl implements DelegateService {
       setUnset(updateOperations, DelegateKeys.delegateTokenName, delegate.getDelegateTokenName());
     }
     setUnset(updateOperations, DelegateKeys.heartbeatAsObject, delegate.isHeartbeatAsObject());
+    setUnset(updateOperations, DelegateKeys.mtls, delegate.isMtls());
+
     return updateOperations;
   }
 
@@ -2576,7 +2578,7 @@ public class DelegateServiceImpl implements DelegateService {
   }
 
   @Override
-  public DelegateRegisterResponse register(final DelegateParams delegateParams) {
+  public DelegateRegisterResponse register(final DelegateParams delegateParams, final boolean isConnectedUsingMtls) {
     if (licenseService.isAccountDeleted(delegateParams.getAccountId())) {
       delegateMetricsService.recordDelegateMetrics(
           Delegate.builder().accountId(delegateParams.getAccountId()).version(delegateParams.getVersion()).build(),
@@ -2706,6 +2708,7 @@ public class DelegateServiceImpl implements DelegateService {
                                   .delegateTokenName(delegateTokenName.orElse(null))
                                   .heartbeatAsObject(delegateParams.isHeartbeatAsObject())
                                   .immutable(delegateParams.isImmutable())
+                                  .mtls(isConnectedUsingMtls)
                                   .build();
 
     if (ECS.equals(delegateParams.getDelegateType())) {

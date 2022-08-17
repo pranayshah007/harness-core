@@ -135,7 +135,7 @@ public interface DelegateService extends OwnedByAccount {
 
   DelegateRegisterResponse register(@Valid Delegate delegate);
 
-  DelegateRegisterResponse register(@Valid DelegateParams delegateParams);
+  DelegateRegisterResponse register(@Valid DelegateParams delegateParams, boolean isConnectedUsingMtls);
 
   void unregister(String accountId, DelegateUnregisterRequest request);
 
