@@ -26,7 +26,11 @@ import io.harness.ngtriggers.buildtriggers.helpers.generator.EcrPollingItemGener
 import io.harness.ngtriggers.buildtriggers.helpers.generator.GCSHelmPollingItemGenerator;
 import io.harness.ngtriggers.buildtriggers.helpers.generator.GcrPollingItemGenerator;
 import io.harness.ngtriggers.buildtriggers.helpers.generator.GeneratorFactory;
+<<<<<<< Updated upstream
 import io.harness.ngtriggers.buildtriggers.helpers.generator.GitPollingItemGenerator;
+=======
+import io.harness.ngtriggers.buildtriggers.helpers.generator.GithubPackagesPollingItemGenerator;
+>>>>>>> Stashed changes
 import io.harness.ngtriggers.buildtriggers.helpers.generator.HttpHelmPollingItemGenerator;
 import io.harness.ngtriggers.buildtriggers.helpers.generator.JenkinsPollingItemGenerator;
 import io.harness.ngtriggers.buildtriggers.helpers.generator.PollingItemGenerator;
@@ -76,12 +80,15 @@ public class GeneratorFactoryTest extends CategoryTest {
         new DockerRegistryPollingItemGenerator(buildTriggerHelper);
     JenkinsPollingItemGenerator jenkinsPollingItemGenerator = new JenkinsPollingItemGenerator(buildTriggerHelper);
     AcrPollingItemGenerator acrPollingItemGenerator = new AcrPollingItemGenerator(buildTriggerHelper);
+    GithubPackagesPollingItemGenerator githubPackagesPollingItemGenerator =
+        new GithubPackagesPollingItemGenerator(buildTriggerHelper);
     ArtifactoryRegistryPollingItemGenerator artifactoryRegistryPollingItemGenerator =
         new ArtifactoryRegistryPollingItemGenerator(buildTriggerHelper);
-    generatorFactory = new GeneratorFactory(buildTriggerHelper, httpHelmPollingItemGenerator,
-        s3HelmPollingItemGenerator, s3PollingItemGenerator, gcsHelmPollingItemGenerator, gcrPollingItemGenerator,
-        ecrPollingItemGenerator, dockerRegistryPollingItemGenerator, artifactoryRegistryPollingItemGenerator,
-        acrPollingItemGenerator, jenkinsPollingItemGenerator, gitPollingItemGenerator);
+    generatorFactory =
+        new GeneratorFactory(buildTriggerHelper, httpHelmPollingItemGenerator, s3HelmPollingItemGenerator,
+            s3PollingItemGenerator, gcsHelmPollingItemGenerator, gcrPollingItemGenerator, ecrPollingItemGenerator,
+            dockerRegistryPollingItemGenerator, artifactoryRegistryPollingItemGenerator, acrPollingItemGenerator,
+            jenkinsPollingItemGenerator, gitPollingItemGenerator, githubPackagesPollingItemGenerator);
     classLoader = getClass().getClassLoader();
   }
 

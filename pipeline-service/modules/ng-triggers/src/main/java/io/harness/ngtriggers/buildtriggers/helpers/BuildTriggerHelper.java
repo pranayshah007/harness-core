@@ -253,6 +253,8 @@ public class BuildTriggerHelper {
       validatePollingItemForS3(pollingItem);
     } else if (pollingPayloadData.hasJenkinsPayload()) {
       validatePollingItemForJenkins(pollingItem);
+    } else if (pollingPayloadData.hasGithubPackagesPayload()) {
+      validatePollingItemForJenkins(pollingItem);
     } else {
       throw new InvalidRequestException("Invalid Polling Type");
     }

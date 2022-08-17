@@ -13,6 +13,7 @@ import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.CUSTOM_
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.DOCKER_REGISTRY_NAME;
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.ECR_NAME;
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.GCR_NAME;
+import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.GITHUB_PACKAGES_NAME;
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.JENKINS_NAME;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
@@ -31,7 +32,9 @@ public enum ArtifactSourceType {
   @JsonProperty(CUSTOM_ARTIFACT_NAME) CUSTOM_ARTIFACT(CUSTOM_ARTIFACT_NAME),
   @JsonProperty(ACR_NAME) ACR(ACR_NAME),
   @JsonProperty(JENKINS_NAME) JENKINS(JENKINS_NAME),
-  @JsonProperty(AMAZON_S3_NAME) AMAZONS3(AMAZON_S3_NAME);
+  @JsonProperty(AMAZON_S3_NAME) AMAZONS3(AMAZON_S3_NAME),
+  @JsonProperty(GITHUB_PACKAGES_NAME) GITHUB_PACKAGES(GITHUB_PACKAGES_NAME);
+
   private final String displayName;
 
   ArtifactSourceType(String displayName) {

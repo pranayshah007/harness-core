@@ -18,6 +18,7 @@ import static io.harness.ngtriggers.beans.source.artifact.ArtifactType.ARTIFACTO
 import static io.harness.ngtriggers.beans.source.artifact.ArtifactType.DOCKER_REGISTRY;
 import static io.harness.ngtriggers.beans.source.artifact.ArtifactType.ECR;
 import static io.harness.ngtriggers.beans.source.artifact.ArtifactType.GCR;
+import static io.harness.ngtriggers.beans.source.artifact.ArtifactType.GITHUB_PACKAGES;
 import static io.harness.ngtriggers.beans.source.artifact.ArtifactType.JENKINS;
 
 import io.harness.annotations.dev.OwnedBy;
@@ -46,6 +47,8 @@ public class GeneratorFactory {
   private final AcrPollingItemGenerator acrPollingItemGenerator;
   private final JenkinsPollingItemGenerator jenkinsPollingItemGenerator;
   private final GitPollingItemGenerator gitPollingItemGenerator;
+
+  private final GithubPackagesPollingItemGenerator githubPackagesPollingItemGenerator;
 
   public PollingItemGenerator retrievePollingItemGenerator(BuildTriggerOpsData buildTriggerOpsData) {
     NGTriggerEntity ngTriggerEntity = buildTriggerOpsData.getTriggerDetails().getNgTriggerEntity();
@@ -76,6 +79,8 @@ public class GeneratorFactory {
       return s3PollingItemGenerator;
     } else if (JENKINS.getValue().equals(buildType)) {
       return jenkinsPollingItemGenerator;
+    } else if (GITHUB_PACKAGES.getValue().equals(buildType)) {
+      return githubPackagesPollingItemGenerator;
     }
     return null;
   }

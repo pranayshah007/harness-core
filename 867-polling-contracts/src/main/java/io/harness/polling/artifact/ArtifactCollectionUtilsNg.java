@@ -49,6 +49,8 @@ public class ArtifactCollectionUtilsNg {
         return ((S3ArtifactDelegateResponse) artifactDelegateResponse).getFilePath();
       case JENKINS:
         return ((JenkinsArtifactDelegateResponse) artifactDelegateResponse).getBuild();
+      case GITHUB_PACKAGES:
+        return null;
       default:
         throw new InvalidRequestException(
             String.format("Source type %s not supported", artifactDelegateResponse.getSourceType()));

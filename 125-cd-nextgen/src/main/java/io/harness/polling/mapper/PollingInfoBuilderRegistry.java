@@ -15,6 +15,7 @@ import io.harness.polling.mapper.artifact.ArtifactoryRegistryArtifactInfoBuilder
 import io.harness.polling.mapper.artifact.DockerHubArtifactInfoBuilder;
 import io.harness.polling.mapper.artifact.EcrArtifactInfoBuilder;
 import io.harness.polling.mapper.artifact.GcrArtifactInfoBuilder;
+import io.harness.polling.mapper.artifact.GithubPackagesArtifactInfoBuilder;
 import io.harness.polling.mapper.artifact.JenkinsArtifactInfoBuilder;
 import io.harness.polling.mapper.artifact.NexusRegistryArtifactInfoBuilder;
 import io.harness.polling.mapper.artifact.S3ArtifactInfoBuilder;
@@ -51,6 +52,7 @@ public class PollingInfoBuilderRegistry {
     registeredPollingInfoBuilders.put(Type.AMAZON_S3, S3ArtifactInfoBuilder.class);
     registeredPollingInfoBuilders.put(Type.JENKINS, JenkinsArtifactInfoBuilder.class);
     registeredPollingInfoBuilders.put(Type.GIT_POLL, GitPollingInfoBuilder.class);
+    registeredPollingInfoBuilders.put(Type.GITHUB_PACKAGES, GithubPackagesArtifactInfoBuilder.class);
   }
 
   public Optional<PollingInfoBuilder> getPollingInfoBuilder(Type type) {
