@@ -7,24 +7,7 @@
 
 package io.harness.ng.core.remote;
 
-import static io.harness.NGCommonEntityConstants.NEXT_REL;
-import static io.harness.NGCommonEntityConstants.PAGE;
-import static io.harness.NGCommonEntityConstants.PAGE_SIZE;
-import static io.harness.NGCommonEntityConstants.PREVIOUS_REL;
-import static io.harness.NGCommonEntityConstants.SELF_REL;
-import static io.harness.NGConstants.DEFAULT_ORG_IDENTIFIER;
-import static io.harness.exception.WingsException.USER;
-import static io.harness.ng.accesscontrol.PlatformPermissions.CREATE_ORGANIZATION_PERMISSION;
-import static io.harness.ng.accesscontrol.PlatformPermissions.DELETE_ORGANIZATION_PERMISSION;
-import static io.harness.ng.accesscontrol.PlatformPermissions.EDIT_ORGANIZATION_PERMISSION;
-import static io.harness.ng.accesscontrol.PlatformPermissions.VIEW_ORGANIZATION_PERMISSION;
-import static io.harness.ng.accesscontrol.PlatformResourceTypes.ORGANIZATION;
-import static io.harness.ng.core.remote.OrganizationApiMapper.getOrganizationDto;
-import static io.harness.ng.core.remote.OrganizationApiMapper.getOrganizationResponse;
-import static io.harness.ng.core.remote.OrganizationApiMapper.getPageRequest;
-
-import static javax.ws.rs.core.UriBuilder.fromPath;
-
+import com.google.inject.Inject;
 import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.accesscontrol.NGAccessControlCheck;
 import io.harness.accesscontrol.ResourceIdentifier;
@@ -37,17 +20,26 @@ import io.harness.spec.server.ng.OrganizationApi;
 import io.harness.spec.server.ng.model.CreateOrganizationRequest;
 import io.harness.spec.server.ng.model.OrganizationResponse;
 import io.harness.spec.server.ng.model.UpdateOrganizationRequest;
-
-import com.google.inject.Inject;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import javax.ws.rs.NotFoundException;
-import javax.ws.rs.core.Link;
-import javax.ws.rs.core.Response;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Page;
+
+import javax.ws.rs.NotFoundException;
+import javax.ws.rs.core.Response;
+import java.util.List;
+import java.util.Optional;
+
+import static io.harness.NGConstants.DEFAULT_ORG_IDENTIFIER;
+import static io.harness.exception.WingsException.USER;
+import static io.harness.ng.accesscontrol.PlatformPermissions.CREATE_ORGANIZATION_PERMISSION;
+import static io.harness.ng.accesscontrol.PlatformPermissions.DELETE_ORGANIZATION_PERMISSION;
+import static io.harness.ng.accesscontrol.PlatformPermissions.EDIT_ORGANIZATION_PERMISSION;
+import static io.harness.ng.accesscontrol.PlatformPermissions.VIEW_ORGANIZATION_PERMISSION;
+import static io.harness.ng.accesscontrol.PlatformResourceTypes.ORGANIZATION;
+import static io.harness.ng.core.remote.OrganizationApiMapper.addLinksHeader;
+import static io.harness.ng.core.remote.OrganizationApiMapper.getOrganizationDto;
+import static io.harness.ng.core.remote.OrganizationApiMapper.getOrganizationResponse;
+import static io.harness.ng.core.remote.OrganizationApiMapper.getPageRequest;
 
 @AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor = @__({ @Inject }))
 @NextGenManagerAuth
@@ -93,27 +85,6 @@ public class OrganizationApiImpl implements OrganizationApi {
         addLinksHeader(responseBuilder, "/v1/orgs", organizations.size(), page, limit);
 
     return responseBuilderWithLinks.entity(organizations).build();
-  }
-
-  private Response.ResponseBuilder addLinksHeader(
-      Response.ResponseBuilder responseBuilder, String path, int currentResultCount, int page, int limit) {
-    ArrayList<Link> links = new ArrayList<>();
-
-    links.add(
-        Link.fromUri(fromPath(path).queryParam(PAGE, page).queryParam(PAGE_SIZE, limit).build()).rel(SELF_REL).build());
-
-    if (page >= 1) {
-      links.add(Link.fromUri(fromPath(path).queryParam(PAGE, page - 1).queryParam(PAGE_SIZE, limit).build())
-                    .rel(PREVIOUS_REL)
-                    .build());
-    }
-    if (limit == currentResultCount) {
-      links.add(Link.fromUri(fromPath(path).queryParam(PAGE, page + 1).queryParam(PAGE_SIZE, limit).build())
-                    .rel(NEXT_REL)
-                    .build());
-    }
-
-    return responseBuilder.links(links.toArray(new Link[links.size()]));
   }
 
   @NGAccessControlCheck(resourceType = ORGANIZATION, permission = EDIT_ORGANIZATION_PERMISSION)

@@ -28,7 +28,6 @@ import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Page;
 
 import javax.ws.rs.NotFoundException;
-import javax.ws.rs.core.Link;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
 import java.util.ArrayList;
@@ -36,11 +35,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
-import static io.harness.NGCommonEntityConstants.NEXT_REL;
-import static io.harness.NGCommonEntityConstants.PAGE;
-import static io.harness.NGCommonEntityConstants.PAGE_SIZE;
-import static io.harness.NGCommonEntityConstants.PREVIOUS_REL;
-import static io.harness.NGCommonEntityConstants.SELF_REL;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.ng.accesscontrol.PlatformPermissions.CREATE_PROJECT_PERMISSION;
 import static io.harness.ng.accesscontrol.PlatformPermissions.DELETE_PROJECT_PERMISSION;
@@ -52,7 +46,6 @@ import static io.harness.ng.core.remote.ProjectApiMapper.getPageRequest;
 import static io.harness.ng.core.remote.ProjectApiMapper.getProjectDto;
 import static io.harness.ng.core.remote.ProjectApiMapper.getProjectResponse;
 import static java.lang.String.format;
-import static javax.ws.rs.core.UriBuilder.fromPath;
 
 @OwnedBy(PL)
 @AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor = @__({ @Inject }))

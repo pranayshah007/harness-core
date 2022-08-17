@@ -7,11 +7,33 @@
 
 package io.harness.ng.core.remote;
 
-import static io.harness.NGCommonEntityConstants.NEXT_REL;
-import static io.harness.NGCommonEntityConstants.PAGE;
-import static io.harness.NGCommonEntityConstants.PAGE_SIZE;
-import static io.harness.NGCommonEntityConstants.PREVIOUS_REL;
-import static io.harness.NGCommonEntityConstants.SELF_REL;
+import com.google.common.collect.Sets;
+import com.google.inject.Inject;
+import io.harness.ModuleType;
+import io.harness.accesscontrol.AccountIdentifier;
+import io.harness.accesscontrol.NGAccessControlCheck;
+import io.harness.accesscontrol.ResourceIdentifier;
+import io.harness.annotations.dev.OwnedBy;
+import io.harness.ng.core.dto.ProjectFilterDTO;
+import io.harness.ng.core.entities.Project;
+import io.harness.ng.core.services.ProjectService;
+import io.harness.security.annotations.NextGenManagerAuth;
+import io.harness.spec.server.ng.AccountProjectApi;
+import io.harness.spec.server.ng.model.CreateProjectRequest;
+import io.harness.spec.server.ng.model.ProjectResponse;
+import io.harness.spec.server.ng.model.UpdateProjectRequest;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import org.springframework.data.domain.Page;
+
+import javax.ws.rs.NotFoundException;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.ResponseBuilder;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+
 import static io.harness.NGConstants.DEFAULT_ORG_IDENTIFIER;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.ng.accesscontrol.PlatformPermissions.CREATE_PROJECT_PERMISSION;
@@ -23,38 +45,7 @@ import static io.harness.ng.core.remote.ProjectApiMapper.addLinksHeader;
 import static io.harness.ng.core.remote.ProjectApiMapper.getPageRequest;
 import static io.harness.ng.core.remote.ProjectApiMapper.getProjectDto;
 import static io.harness.ng.core.remote.ProjectApiMapper.getProjectResponse;
-
 import static java.lang.String.format;
-import static javax.ws.rs.core.UriBuilder.fromPath;
-
-import io.harness.ModuleType;
-import io.harness.accesscontrol.AccountIdentifier;
-import io.harness.accesscontrol.NGAccessControlCheck;
-import io.harness.accesscontrol.OrgIdentifier;
-import io.harness.accesscontrol.ResourceIdentifier;
-import io.harness.annotations.dev.OwnedBy;
-import io.harness.ng.core.dto.ProjectFilterDTO;
-import io.harness.ng.core.entities.Project;
-import io.harness.ng.core.services.ProjectService;
-import io.harness.security.annotations.NextGenManagerAuth;
-import io.harness.spec.server.ng.AccountProjectApi;
-import io.harness.spec.server.ng.model.CreateProjectRequest;
-import io.harness.spec.server.ng.model.ProjectResponse;
-import io.harness.spec.server.ng.model.UpdateProjectRequest;
-
-import com.google.common.collect.Sets;
-import com.google.inject.Inject;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-import javax.ws.rs.NotFoundException;
-import javax.ws.rs.core.Link;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.ResponseBuilder;
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import org.springframework.data.domain.Page;
 
 @OwnedBy(PL)
 @AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor = @__({ @Inject }))

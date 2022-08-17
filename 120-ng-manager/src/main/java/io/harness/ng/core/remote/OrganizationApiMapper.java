@@ -7,11 +7,17 @@
 
 package io.harness.ng.core.remote;
 
+import static io.harness.NGCommonEntityConstants.NEXT_REL;
+import static io.harness.NGCommonEntityConstants.PAGE;
+import static io.harness.NGCommonEntityConstants.PAGE_SIZE;
+import static io.harness.NGCommonEntityConstants.PREVIOUS_REL;
+import static io.harness.NGCommonEntityConstants.SELF_REL;
 import static io.harness.beans.SortOrder.Builder.aSortOrder;
 import static io.harness.beans.SortOrder.OrderType.ASC;
 import static io.harness.beans.SortOrder.OrderType.DESC;
 import static io.harness.ng.core.entities.Organization.OrganizationKeys;
 import static io.harness.utils.PageUtils.COMMA_SEPARATOR;
+import static javax.ws.rs.core.UriBuilder.fromPath;
 
 import io.harness.beans.SortOrder;
 import io.harness.ng.core.common.beans.NGTag;
@@ -27,6 +33,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import org.springframework.data.domain.Pageable;
+
+import javax.ws.rs.core.Link;
+import javax.ws.rs.core.Response;
 
 public class OrganizationApiMapper {
   public static OrganizationDTO getOrganizationDto(CreateOrganizationRequest request) {
@@ -76,5 +85,25 @@ public class OrganizationApiMapper {
       orders.add(sortOrder.getFieldName() + COMMA_SEPARATOR + sortOrder.getOrderType());
     }
     return PageUtils.getPageRequest(page, limit, orders);
+  }
+
+  public static Response.ResponseBuilder addLinksHeader(
+          Response.ResponseBuilder responseBuilder, String path, int currentResultCount, int page, int limit) {
+    ArrayList<Link> links = new ArrayList<>();
+
+    links.add(
+            Link.fromUri(fromPath(path).queryParam(PAGE, page).queryParam(PAGE_SIZE, limit).build()).rel(SELF_REL).build());
+
+    if (page >= 1) {
+      links.add(Link.fromUri(fromPath(path).queryParam(PAGE, page - 1).queryParam(PAGE_SIZE, limit).build())
+              .rel(PREVIOUS_REL)
+              .build());
+    }
+    if (limit == currentResultCount) {
+      links.add(Link.fromUri(fromPath(path).queryParam(PAGE, page + 1).queryParam(PAGE_SIZE, limit).build())
+              .rel(NEXT_REL)
+              .build());
+    }
+    return responseBuilder.links(links.toArray(new Link[links.size()]));
   }
 }
