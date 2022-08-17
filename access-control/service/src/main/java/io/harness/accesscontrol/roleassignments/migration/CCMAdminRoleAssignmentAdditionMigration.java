@@ -67,9 +67,13 @@ public class CCMAdminRoleAssignmentAdditionMigration implements NGMigration {
                   criteria, pageable, Sort.by(Sort.Direction.ASC, RoleAssignmentDBO.RoleAssignmentDBOKeys.createdAt))
               .getContent();
 
-      log.info("roleAssignmentList Size (...): ", roleAssignmentList.size());
+      log.info("roleAssignmentList Size: {}", roleAssignmentList.size());
       List<String> ceEnabledAccountIds = accountHelperService.getCeEnabledNgAccounts();
-      log.info("ceEnabledAccountIds Size (...): ", roleAssignmentList.size());
+      log.info("ceEnabledAccountIds Size: {}", roleAssignmentList.size());
+      for (String account: ceEnabledAccountIds
+           ) {
+        log.info("AccountId: {}", account);
+      }
 
       if (isEmpty(roleAssignmentList)) {
         log.info("roleAssignmentList break");
