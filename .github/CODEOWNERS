@@ -3,6 +3,7 @@ DockerFile* diptiman.adak@harness.io udham.singh@harness.io guna.chandrasekaran@
 bazel* diptiman.adak@harness.io udham.singh@harness.io
 /dockerization/delegate/ raghu@harness.io jenny.james@harness.io marko.milic@harness.io arpit.tiwari@harness.io gaurav.jain@harness.io
 /access-control/ utkarsh.gupta@harness.io ankit.singhal@harness.io mallavarapu.reetika@harness.io manish.manchanda@harness.io
+/batch-processing/ hitesh.aringa@harness.io nikunj.badjatya@harness.io shubhanshu.verma@harness.io trunapushpa.surkar@harness.io
 /clients/access-control/ utkarsh.gupta@harness.io ankit.singhal@harness.io mallavarapu.reetika@harness.io manish.manchanda@harness.io
 /platform-service/modules/resource-group-service/ utkarsh.gupta@harness.io ankit.singhal@harness.io jimit.gandhi@harness.io mallavarapu.reetika@harness.io manish.manchanda@harness.io
 /clients/resource-group/ utkarsh.gupta@harness.io ankit.singhal@harness.io jimit.gandhi@harness.io mallavarapu.reetika@harness.io manish.manchanda@harness.io
