@@ -22,7 +22,7 @@ public interface GithubPackagesRegistryService {
    * Get builds
    */
   List<BuildDetails> getBuilds(GithubPackagesInternalConfig githubPackagesInternalConfig, String packageName,
-      String packageType, String org, int maxNoOfTagsPerImage);
+      String packageType, String org, String versionRegex, int maxNoOfTagsPerImage);
 
   /**
    * Get last successful build

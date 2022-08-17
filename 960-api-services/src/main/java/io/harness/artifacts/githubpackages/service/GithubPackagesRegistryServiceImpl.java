@@ -9,7 +9,6 @@ package io.harness.artifacts.githubpackages.service;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.exception.WingsException.USER;
-import static io.harness.exception.WingsException.builder;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.artifact.ArtifactMetadataKeys;
@@ -37,6 +36,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.Credentials;
 import org.apache.commons.lang3.StringUtils;
@@ -54,7 +55,7 @@ public class GithubPackagesRegistryServiceImpl implements GithubPackagesRegistry
 
   @Override
   public List<BuildDetails> getBuilds(GithubPackagesInternalConfig githubPackagesInternalConfig, String packageName,
-      String packageType, String org, int maxNoOfVersionsPerPackage) {
+      String packageType, String org, String versionRegex, int maxNoOfVersionsPerPackage) {
     List<BuildDetails> buildDetails;
 
     try {
@@ -67,7 +68,11 @@ public class GithubPackagesRegistryServiceImpl implements GithubPackagesRegistry
           new ArtifactServerException(ExceptionUtils.getMessage(e), e, USER));
     }
 
-    // Version Regex Filtering - TODO
+    Pattern pattern = Pattern.compile(versionRegex.replace(".", "\\.").replace("?", ".?").replace("*", ".*?"));
+
+    buildDetails = buildDetails.stream()
+                       .filter(build -> !build.getNumber().endsWith("/") && pattern.matcher(build.getNumber()).find())
+                       .collect(Collectors.toList());
 
     return buildDetails;
   }
