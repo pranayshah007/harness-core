@@ -8,7 +8,9 @@
 package io.harness.cdng.creator.plan.service;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
+import io.harness.beans.FeatureName;
 import io.harness.cdng.creator.plan.infrastructure.InfrastructurePmsPlanCreator;
 import io.harness.cdng.creator.plan.stage.DeploymentStageConfig;
 import io.harness.cdng.creator.plan.stage.DeploymentStageNode;
@@ -17,11 +19,12 @@ import io.harness.cdng.service.beans.ServiceConfig;
 import io.harness.cdng.service.beans.ServiceUseFromStageV2;
 import io.harness.cdng.service.beans.ServiceYamlV2;
 import io.harness.cdng.visitor.YamlTypes;
-import io.harness.data.structure.EmptyPredicate;
+import io.harness.data.structure.UUIDGenerator;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.services.ServiceEntityService;
+import io.harness.ng.core.service.yaml.NGServiceV2InfoConfig;
 import io.harness.pms.contracts.plan.Dependencies;
 import io.harness.pms.contracts.plan.Dependency;
 import io.harness.pms.merger.helpers.MergeHelper;
@@ -32,11 +35,15 @@ import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.serializer.KryoSerializer;
+import io.harness.utils.NGFeatureFlagHelperService;
 import io.harness.utils.YamlPipelineUtils;
+
+import software.wings.beans.Pipeline;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.protobuf.ByteString;
+import com.google.protobuf.Service;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
@@ -53,6 +60,8 @@ public class ServicePlanCreatorHelper {
   @Inject private ServiceEntityService serviceEntityService;
   @Inject private ServicePlanCreator servicePlanCreator;
 
+  @Inject private NGFeatureFlagHelperService featureFlagService;
+
   public YamlField getResolvedServiceField(
       YamlField parentSpecField, DeploymentStageNode stageNode, PlanCreationContext ctx) {
     YamlField serviceField = parentSpecField.getNode().getField(YamlTypes.SERVICE_CONFIG);
@@ -64,8 +73,8 @@ public class ServicePlanCreatorHelper {
     }
   }
 
-  public Dependencies getDependenciesForService(
-      YamlField serviceField, DeploymentStageNode stageNode, String environmentUuid, String infraSectionUuid) {
+  public Dependencies getDependenciesForService(YamlField serviceField, DeploymentStageNode stageNode,
+      String environmentUuid, String infraSectionUuid, String serviceSpecNodeUuid) {
     Map<String, YamlField> serviceYamlFieldMap = new HashMap<>();
     String serviceNodeUuid = serviceField.getNode().getUuid();
     serviceYamlFieldMap.put(serviceNodeUuid, serviceField);
@@ -86,6 +95,8 @@ public class ServicePlanCreatorHelper {
           YamlTypes.ENVIRONMENT_NODE_ID, ByteString.copyFrom(kryoSerializer.asDeflatedBytes(environmentUuid)));
       serviceDependencyMap.put(
           YamlTypes.NEXT_UUID, ByteString.copyFrom(kryoSerializer.asDeflatedBytes(infraSectionUuid)));
+      serviceDependencyMap.put(
+          "SERVICE_SPEC_NODE_ID", ByteString.copyFrom(kryoSerializer.asDeflatedBytes(serviceSpecNodeUuid)));
     }
 
     Dependency serviceDependency = Dependency.newBuilder().putAllMetadata(serviceDependencyMap).build();
@@ -126,11 +137,33 @@ public class ServicePlanCreatorHelper {
     if (serviceYamlV2 == null) {
       throw new InvalidRequestException("ServiceRef cannot be absent in a stage - " + stageNode.getIdentifier());
     }
+
+    final String accountIdentifier = ctx.getMetadata().getAccountIdentifier();
+
     if (serviceYamlV2.getServiceRef().isExpression()) {
+      //      String serviceYaml = "{\n"
+      //          + "        \"serviceDefinition\": {\n"
+      //          + "            \"spec\": {\n"
+      //          + "            }\n"
+      //          + "        }\n"
+      //          + "}";
+      if (featureFlagService.isEnabled(accountIdentifier, FeatureName.SERVICE_V2_EXPRESSION)) {
+        ServicePlanCreatorV2Config config =
+            ServicePlanCreatorV2Config.builder()
+                .identifier((String) serviceYamlV2.getServiceRef().fetchFinalValue())
+                //                .inputs((Map<String, Object>) serviceYamlV2.getServiceInputs().fetchFinalValue())
+                .build();
+        try {
+          YamlField yamlField = YamlUtils.injectUuidInYamlField(YamlUtils.write(config));
+          return new YamlField(YamlTypes.SERVICE_ENTITY,
+              new YamlNode(YamlTypes.SERVICE_ENTITY, yamlField.getNode().getCurrJsonNode(), parentSpecField.getNode()));
+        } catch (IOException e) {
+          throw new RuntimeException(e);
+        }
+      }
       throw new InvalidRequestException("ServiceRef cannot be expression or runtime input during execution");
     }
 
-    final String accountIdentifier = ctx.getMetadata().getAccountIdentifier();
     final String orgIdentifier = ctx.getMetadata().getOrgIdentifier();
     final String projectIdentifier = ctx.getMetadata().getProjectIdentifier();
     final String serviceRef = serviceYamlV2.getServiceRef().getValue();
@@ -150,8 +183,7 @@ public class ServicePlanCreatorHelper {
     }
 
     try {
-      if (serviceYamlV2.getServiceInputs() != null
-          && EmptyPredicate.isNotEmpty(serviceYamlV2.getServiceInputs().getValue())) {
+      if (serviceYamlV2.getServiceInputs() != null && isNotEmpty(serviceYamlV2.getServiceInputs().getValue())) {
         serviceEntityYaml =
             mergeServiceInputsIntoService(serviceEntityYaml, serviceYamlV2.getServiceInputs().getValue());
       }
@@ -178,13 +210,17 @@ public class ServicePlanCreatorHelper {
         originalServiceYaml, YamlPipelineUtils.writeYamlString(serviceInputsYaml));
   }
 
-  public String fetchServiceSpecUuid(YamlField serviceField) {
-    return serviceField.getNode()
-        .getField(YamlTypes.SERVICE_DEFINITION)
-        .getNode()
-        .getField(YamlTypes.SERVICE_SPEC)
-        .getNode()
-        .getUuid();
+  public String fetchOrGenerateSpecId(YamlField serviceField) {
+    if (serviceField.getNode().getField(YamlTypes.SERVICE_DEFINITION) != null) {
+      return serviceField.getNode()
+          .getField(YamlTypes.SERVICE_DEFINITION)
+          .getNode()
+          .getField(YamlTypes.SERVICE_SPEC)
+          .getNode()
+          .getUuid();
+    } else {
+      return "serviceSpec-" + UUIDGenerator.generateUuid();
+    }
   }
 
   private ServiceYamlV2 useServiceYamlFromStage(@NotNull ServiceUseFromStageV2 useFromStage, YamlField serviceField) {

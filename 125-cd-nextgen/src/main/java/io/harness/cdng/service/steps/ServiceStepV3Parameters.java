@@ -10,6 +10,6 @@ import lombok.Data;
 @Data
 @Builder
 public class ServiceStepV3Parameters implements StepParameters {
-  private ParameterField<String> serviceRef;
+  private String serviceRef;
   private Map<String, Object> inputs;
 }
