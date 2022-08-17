@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.advisers.nextstep.NextStepAdviserParameters;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.plancreator.strategy.StrategyUtils;
 import io.harness.pms.contracts.advisers.AdviserObtainment;
 import io.harness.pms.contracts.advisers.AdviserType;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
@@ -137,6 +138,7 @@ public class ParallelPlanCreator extends ChildrenPlanCreator<YamlField> {
 
   private List<AdviserObtainment> getAdviserObtainmentFromMetaData(YamlField currentField) {
     List<AdviserObtainment> adviserObtainments = new ArrayList<>();
+
     if (currentField != null && currentField.getNode() != null) {
       YamlField siblingField = currentField.getNode().nextSiblingFromParentArray(currentField.getName(),
           Arrays.asList(YAMLFieldNameConstants.STAGE, YAMLFieldNameConstants.STEP, YAMLFieldNameConstants.STEP_GROUP,
@@ -145,12 +147,8 @@ public class ParallelPlanCreator extends ChildrenPlanCreator<YamlField> {
         AdviserObtainment adviserObtainment;
         YamlNode parallelNodeInStage = YamlUtils.findParentNode(currentField.getNode(), YAMLFieldNameConstants.STAGE);
         if (parallelNodeInStage != null) {
-          adviserObtainment =
-              AdviserObtainment.newBuilder()
-                  .setType(AdviserType.newBuilder().setType(OrchestrationAdviserTypes.NEXT_STEP.name()).build())
-                  .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(
-                      NextStepAdviserParameters.builder().nextNodeId(siblingField.getNode().getUuid()).build())))
-                  .build();
+          adviserObtainment = StrategyUtils.getAdviserObtainmentsForParallelStepParent(
+              currentField, kryoSerializer, siblingField.getNode().getUuid());
         } else {
           adviserObtainment =
               AdviserObtainment.newBuilder()
