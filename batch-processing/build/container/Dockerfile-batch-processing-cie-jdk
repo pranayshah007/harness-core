@@ -14,6 +14,9 @@ RUN yum install -y hostname tar gzip python3
 COPY --chown=65534:65534 batch-processing-capsule.jar /opt/harness/
 COPY --chown=65534:65534 batch-processing-config.yml  /opt/harness/
 COPY --chown=65534:65534 protocol.info /opt/harness/
+RUN chmod 755 /opt/harness/batch-processing-capsule.jar
+RUN chmod 755 /opt/harness/batch-processing-config.yml
+
 
 RUN pip3 install awscli
 
@@ -28,9 +31,13 @@ RUN aws configure set default.s3.multipart_chunksize 16MB
 ENV AZCOPY_LOG_LOCATION=/opt/harness/azlogs
 ENV AZCOPY_JOB_PLAN_LOCATION=/opt/harness/azlogs
 
-COPY --chown=65534:65534 scripts /opt/harness
+COPY --chown=65534:65534 scripts /opt/harness/
 
 CMD [ "./run.sh" ]
+
+RUN chmod 755 /opt/harness/replace_configs.sh
+RUN chmod 755 /opt/harness/run.sh
+RUN chmod 755 /opt/harness/start_process.sh
 
 USER 65534
 
