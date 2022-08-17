@@ -23,6 +23,7 @@ import io.harness.utils.FieldWithPlainTextOrSecretValueHelper;
 
 import software.wings.helpers.ext.jenkins.BuildDetails;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import lombok.experimental.UtilityClass;
@@ -109,6 +110,22 @@ public class GithubPackagesRequestResponseMapper {
 
   public List<GithubPackagesArtifactDelegateResponse> toGithubPackagesResponse(
       List<Map<String, String>> map, GithubPackagesArtifactDelegateRequest request) {
-    return null;
+    List<GithubPackagesArtifactDelegateResponse> response = new ArrayList<>();
+
+    for (Map<String, String> resMap : map) {
+      GithubPackagesArtifactDelegateResponse githubPackagesArtifactDelegateResponse =
+          GithubPackagesArtifactDelegateResponse.builder()
+              .packageId(resMap.get("packageId"))
+              .packageName(resMap.get("packageName"))
+              .packageType(resMap.get("packageType"))
+              .packageVisibility(resMap.get("visibility"))
+              .packageUrl(resMap.get("packageUrl"))
+              .sourceType(ArtifactSourceType.GITHUB_PACKAGES)
+              .build();
+
+      response.add(githubPackagesArtifactDelegateResponse);
+    }
+
+    return response;
   }
 }

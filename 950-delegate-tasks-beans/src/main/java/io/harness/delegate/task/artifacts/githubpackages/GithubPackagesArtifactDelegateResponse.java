@@ -19,6 +19,11 @@ import lombok.Value;
 @EqualsAndHashCode(callSuper = false)
 public class GithubPackagesArtifactDelegateResponse extends ArtifactDelegateResponse {
   /**
+   * Package Id in repos need to be referenced.
+   */
+  String packageId;
+
+  /**
    * Package Name in repos need to be referenced.
    */
   String packageName;
@@ -38,13 +43,27 @@ public class GithubPackagesArtifactDelegateResponse extends ArtifactDelegateResp
    */
   String versionRegex;
 
+  /**
+   * Package Visibility
+   */
+  String packageVisibility;
+
+  /**
+   * Package Url
+   */
+  String packageUrl;
+
   @Builder
   public GithubPackagesArtifactDelegateResponse(ArtifactBuildDetailsNG buildDetails, ArtifactSourceType sourceType,
-      String packageName, String packageType, String version, String versionRegex) {
+      String packageId, String packageName, String packageType, String version, String versionRegex,
+      String packageVisibility, String packageUrl) {
     super(buildDetails, sourceType);
+    this.packageId = packageId;
     this.packageName = packageName;
     this.packageType = packageType;
     this.version = version;
     this.versionRegex = versionRegex;
+    this.packageVisibility = packageVisibility;
+    this.packageUrl = packageUrl;
   }
 }

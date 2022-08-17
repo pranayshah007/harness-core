@@ -170,6 +170,10 @@ public class GithubPackagesRegistryServiceImpl implements GithubPackagesRegistry
   private List<Map<String, String>> processPackagesResponse(List<JsonNode> response) {
     List<Map<String, String>> packages = new ArrayList<>();
 
+    if (EmptyPredicate.isEmpty(response)) {
+      throw new InvalidRequestException("Empty response for the get packages call");
+    }
+
     for (JsonNode node : response) {
       Map<String, String> resMap = new HashMap<>();
 
