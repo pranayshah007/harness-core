@@ -2523,7 +2523,8 @@ public class DelegateServiceImpl implements DelegateService {
 
   @Override
   public DelegateRegisterResponse register(Delegate delegate) {
-    if (licenseService.isAccountDeleted(delegate.getAccountId())) {
+    if (licenseService.isAccountDeleted(delegate.getAccountId())
+        || licenseService.isAccountStatusInActive(delegate.getAccountId())) {
       delegateMetricsService.recordDelegateMetrics(delegate, DELEGATE_DESTROYED);
       broadcasterFactory.lookup(STREAM_DELEGATE + delegate.getAccountId(), true).broadcast(SELF_DESTRUCT);
       log.warn("Sending self destruct command from register delegate because the account is deleted.");
@@ -2577,7 +2578,8 @@ public class DelegateServiceImpl implements DelegateService {
 
   @Override
   public DelegateRegisterResponse register(final DelegateParams delegateParams) {
-    if (licenseService.isAccountDeleted(delegateParams.getAccountId())) {
+    if (licenseService.isAccountDeleted(delegateParams.getAccountId())
+        || licenseService.isAccountStatusInActive(delegateParams.getAccountId())) {
       delegateMetricsService.recordDelegateMetrics(
           Delegate.builder().accountId(delegateParams.getAccountId()).version(delegateParams.getVersion()).build(),
           DELEGATE_DESTROYED);

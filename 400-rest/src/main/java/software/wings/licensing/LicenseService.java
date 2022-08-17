@@ -40,6 +40,8 @@ public interface LicenseService {
 
   boolean isAccountExpired(String accountId);
 
+  boolean isAccountStatusInActive(String accountId);
+
   void validateLicense(String accountId, String operation);
 
   void setLicense(Account account);

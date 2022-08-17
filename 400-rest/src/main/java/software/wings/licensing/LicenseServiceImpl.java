@@ -569,6 +569,11 @@ public class LicenseServiceImpl implements LicenseService {
     return false;
   }
 
+  @Override
+  public boolean isAccountStatusInActive(String accountId) {
+    return AccountStatus.INACTIVE.equals(accountService.getAccountStatus(accountId));
+  }
+
   private void expireLicense(String accountId, LicenseInfo licenseInfo) {
     licenseInfo.setAccountStatus(AccountStatus.EXPIRED);
     updateAccountLicense(accountId, licenseInfo);
