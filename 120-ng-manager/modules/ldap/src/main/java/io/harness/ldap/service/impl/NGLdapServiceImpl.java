@@ -73,44 +73,20 @@ public class NGLdapServiceImpl implements NGLdapService {
 
   @Override
   public LdapTestResponse validateLdapConnectionSettings(String accountIdentifier, String orgIdentifier,
-      String projectIdentifier, software.wings.beans.dto.LdapSettings settings) {
-    NGLdapDelegateTaskParameters parameters = NGLdapDelegateTaskParameters.builder().ldapSettings(settings).build();
-
-    DelegateResponseData delegateResponseData = getDelegateResponseData(
-        accountIdentifier, orgIdentifier, projectIdentifier, parameters, NG_LDAP_TEST_CONN_SETTINGS);
-
-    NGLdapDelegateTaskResponse delegateTaskResponse = (NGLdapDelegateTaskResponse) delegateResponseData;
-    log.info("Delegate response for validateLdapConnectionSettings: "
-        + delegateTaskResponse.getLdapTestResponse().getStatus());
-    return delegateTaskResponse.getLdapTestResponse();
+      String projectIdentifier, software.wings.beans.sso.LdapSettings settings) {
+    return getResponse(managerClient.validateLdapConnectionSettings(accountIdentifier, settings));
   }
 
   @Override
-  public LdapTestResponse validateLdapUserSettings(
-      String accountIdentifier, String orgIdentifier, String projectIdentifier, LdapSettings settings) {
-    NGLdapDelegateTaskParameters parameters = NGLdapDelegateTaskParameters.builder().ldapSettings(settings).build();
-
-    DelegateResponseData delegateResponseData = getDelegateResponseData(
-        accountIdentifier, orgIdentifier, projectIdentifier, parameters, NG_LDAP_TEST_USER_SETTINGS);
-
-    NGLdapDelegateTaskResponse delegateTaskResponse = (NGLdapDelegateTaskResponse) delegateResponseData;
-    log.info(
-        "Delegate response for validateLdapUserSettings: " + delegateTaskResponse.getLdapTestResponse().getStatus());
-    return delegateTaskResponse.getLdapTestResponse();
+  public LdapTestResponse validateLdapUserSettings(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, software.wings.beans.sso.LdapSettings settings) {
+    return getResponse(managerClient.validateLdapUserSettings(accountIdentifier, settings));
   }
 
   @Override
-  public LdapTestResponse validateLdapGroupSettings(
-      String accountIdentifier, String orgIdentifier, String projectIdentifier, LdapSettings settings) {
-    NGLdapDelegateTaskParameters parameters = NGLdapDelegateTaskParameters.builder().ldapSettings(settings).build();
-
-    DelegateResponseData delegateResponseData = getDelegateResponseData(
-        accountIdentifier, orgIdentifier, projectIdentifier, parameters, NG_LDAP_TEST_GROUP_SETTINGS);
-
-    NGLdapDelegateTaskResponse delegateTaskResponse = (NGLdapDelegateTaskResponse) delegateResponseData;
-    log.info(
-        "Delegate response for validateLdapGroupSettings: " + delegateTaskResponse.getLdapTestResponse().getStatus());
-    return delegateTaskResponse.getLdapTestResponse();
+  public LdapTestResponse validateLdapGroupSettings(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, software.wings.beans.sso.LdapSettings settings) {
+    return getResponse(managerClient.validateLdapGroupSettings(accountIdentifier, settings));
   }
 
   @Override

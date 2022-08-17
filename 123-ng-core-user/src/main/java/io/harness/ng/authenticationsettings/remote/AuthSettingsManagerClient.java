@@ -19,6 +19,7 @@ import io.harness.serializer.kryo.KryoResponse;
 import software.wings.beans.loginSettings.LoginSettings;
 import software.wings.beans.loginSettings.PasswordStrengthPolicy;
 import software.wings.beans.sso.LdapSettings;
+import software.wings.beans.sso.LdapTestResponse;
 import software.wings.beans.sso.OauthSettings;
 import software.wings.beans.sso.SamlSettings;
 import software.wings.security.authentication.LoginTypeResponse;
@@ -129,4 +130,16 @@ public interface AuthSettingsManagerClient {
 
   @DELETE(API_PREFIX + "sso/ldap/settings")
   Call<RestResponse<LdapSettings>> deleteLdapSettings(@Query("accountId") @NotEmpty String accountId);
+
+  @POST(API_PREFIX + "ldap/settings/test/connection")
+  Call<RestResponse<LdapTestResponse>> validateLdapConnectionSettings(
+      @Query("accountId") @NotEmpty String accountId, @Body LdapSettings ldapSettings);
+
+  @POST(API_PREFIX + "ldap/settings/test/user")
+  Call<RestResponse<LdapTestResponse>> validateLdapUserSettings(
+      @Query("accountId") @NotEmpty String accountId, @Body LdapSettings ldapSettings);
+
+  @POST(API_PREFIX + "ldap/settings/test/group")
+  Call<RestResponse<LdapTestResponse>> validateLdapGroupSettings(
+      @Query("accountId") @NotEmpty String accountId, @Body LdapSettings ldapSettings);
 }

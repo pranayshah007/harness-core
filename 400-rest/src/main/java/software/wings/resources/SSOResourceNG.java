@@ -30,6 +30,7 @@ import io.harness.secretmanagers.SecretManagerConfigService;
 import io.harness.security.annotations.NextGenManagerAuth;
 
 import software.wings.beans.sso.LdapSettings;
+import software.wings.beans.sso.LdapTestResponse;
 import software.wings.beans.sso.OauthSettings;
 import software.wings.beans.sso.SamlSettings;
 import software.wings.security.annotations.AuthRule;
@@ -230,6 +231,33 @@ public class SSOResourceNG {
   @ExceptionMetered
   public RestResponse<LdapSettings> deleteLdapSettings(@QueryParam("accountId") @NotBlank String accountId) {
     return new RestResponse<>(ssoService.deleteLdapSettings(accountId));
+  }
+
+  @POST
+  @Path("ldap/settings/test/connection")
+  @Timed
+  @ExceptionMetered
+  public RestResponse<LdapTestResponse> validateLdapConnectionSettings(
+      @QueryParam("accountId") @NotBlank String accountId, @Valid LdapSettings settings) {
+    return new RestResponse<>(ssoService.validateLdapConnectionSettings(settings, accountId));
+  }
+
+  @POST
+  @Path("ldap/settings/test/user")
+  @Timed
+  @ExceptionMetered
+  public RestResponse<LdapTestResponse> validateLdapUserSettings(
+      @QueryParam("accountId") @NotBlank String accountId, @Valid LdapSettings settings) {
+    return new RestResponse<>(ssoService.validateLdapUserSettings(settings, accountId));
+  }
+
+  @POST
+  @Path("ldap/settings/test/group")
+  @Timed
+  @ExceptionMetered
+  public RestResponse<LdapTestResponse> validateLdapGroupSettings(
+      @QueryParam("accountId") @NotBlank String accountId, @Valid LdapSettings settings) {
+    return new RestResponse<>(ssoService.validateLdapGroupSettings(settings, accountId));
   }
 
   @VisibleForTesting

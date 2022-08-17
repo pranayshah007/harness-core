@@ -10,8 +10,8 @@ package io.harness.ldap.service;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
-import software.wings.beans.dto.LdapSettings;
 import software.wings.beans.sso.LdapGroupResponse;
+import software.wings.beans.sso.LdapSettings;
 import software.wings.beans.sso.LdapTestResponse;
 
 import java.util.Collection;
