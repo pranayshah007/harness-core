@@ -144,6 +144,7 @@ public class NGLdapServiceImpl implements NGLdapService {
 
   @Override
   public void syncUserGroupsJob(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
+    // TODO: Add more logs
     LdapSettingsWithEncryptedDataDetail settingsWithEncryptedDataDetail =
         getLdapSettingsWithEncryptedDataInternal(accountIdentifier);
 
