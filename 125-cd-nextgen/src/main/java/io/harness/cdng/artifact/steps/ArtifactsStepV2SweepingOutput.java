@@ -10,12 +10,13 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.util.HashMap;
 import java.util.Map;
 import lombok.Builder;
+import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.Value;
 import org.springframework.data.annotation.TypeAlias;
 
-@OwnedBy(HarnessTeam.CI)
-@Value
+@OwnedBy(HarnessTeam.CDC)
+@Data
 @Builder
 @EqualsAndHashCode(callSuper = false)
 @TypeAlias("ArtifactsStepV2SweepingOutput")
