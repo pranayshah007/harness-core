@@ -39,6 +39,7 @@ import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.gitsync.scm.EntityObjectIdUtils;
 import io.harness.governance.GovernanceMetadata;
 import io.harness.grpc.utils.StringValueUtils;
+import io.harness.ng.core.template.exception.NGTemplateResolveExceptionV2;
 import io.harness.pms.contracts.steps.StepInfo;
 import io.harness.pms.gitsync.PmsGitSyncBranchContextGuard;
 import io.harness.pms.governance.PipelineSaveResponse;
@@ -58,6 +59,8 @@ import io.harness.pms.pipeline.mappers.PMSPipelineFilterHelper;
 import io.harness.pms.sdk.PmsSdkInstanceService;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.repositories.pipeline.PMSPipelineRepository;
+import io.harness.template.beans.refresh.NodeInfo;
+import io.harness.template.beans.refresh.ValidateTemplateInputsResponseDTO;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -263,9 +266,18 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
     }
     PMSPipelineServiceHelper.validatePresenceOfRequiredFields(pipelineEntity.getAccountId(),
         pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier(), pipelineEntity.getIdentifier());
-    GovernanceMetadata governanceMetadata = pmsPipelineServiceHelper.validatePipelineYaml(pipelineEntity);
-    if (governanceMetadata.getDeny()) {
-      return PipelineCRUDResult.builder().governanceMetadata(governanceMetadata).build();
+
+    try {
+      GovernanceMetadata governanceMetadata = pmsPipelineServiceHelper.validatePipelineYaml(pipelineEntity);
+      if (governanceMetadata.getDeny()) {
+        return PipelineCRUDResult.builder().governanceMetadata(governanceMetadata).build();
+      }
+    } catch (NGTemplateResolveExceptionV2 ex) {
+      if (ex.getMetadata() instanceof ValidateTemplateInputsResponseDTO) {
+        ValidateTemplateInputsResponseDTO responseDTO = (ValidateTemplateInputsResponseDTO) ex.getMetadata();
+        responseDTO.getErrorNodeSummary().setNodeInfo(
+            NodeInfo.builder().identifier(pipelineEntity.getIdentifier()).name(pipelineEntity.getName()).build());
+      }
     }
     PipelineEntity updatedEntity = updatePipelineWithoutValidation(pipelineEntity, changeType);
     return PipelineCRUDResult.builder().governanceMetadata(governanceMetadata).pipelineEntity(updatedEntity).build();
