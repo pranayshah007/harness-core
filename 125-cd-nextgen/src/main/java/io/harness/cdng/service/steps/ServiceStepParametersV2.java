@@ -10,9 +10,9 @@ package io.harness.cdng.service.steps;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.creator.plan.service.ServicePlanCreatorV2Config;
 import io.harness.cdng.service.beans.ServiceDefinition;
 import io.harness.exception.InvalidRequestException;
-import io.harness.ng.core.service.yaml.NGServiceV2InfoConfig;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.SkipAutoEvaluation;
@@ -39,7 +39,7 @@ public class ServiceStepParametersV2 implements StepParameters {
   // as manifests expressions may not be resolved.
   @SkipAutoEvaluation ParameterField<ServiceDefinition> serviceDefinition;
 
-  public static ServiceStepParametersV2 fromServiceV2InfoConfig(NGServiceV2InfoConfig serviceV2InfoConfig) {
+  public static ServiceStepParametersV2 fromServiceV2InfoConfig(ServicePlanCreatorV2Config serviceV2InfoConfig) {
     if (serviceV2InfoConfig == null) {
       throw new InvalidRequestException("Exception in creating step inputs for service step.");
     }

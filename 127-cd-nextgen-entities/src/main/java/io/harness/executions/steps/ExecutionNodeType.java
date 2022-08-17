@@ -25,6 +25,7 @@ public enum ExecutionNodeType {
   SERVICE_DEFINITION("SERVICE_DEFINITION", YamlTypes.SERVICE_DEFINITION),
   SERVICE_SPEC("SERVICE_SPEC", YamlTypes.SERVICE_SPEC),
   ARTIFACTS("ARTIFACTS", "artifacts"),
+  ARTIFACTS_V2("ARTIFACTS_V2", "artifacts"),
   ARTIFACT("ARTIFACT", "artifact"),
   ARTIFACT_SYNC("ARTIFACT_SYNC", "artifact"),
   SIDECARS("SIDECARS", "sidecars"),

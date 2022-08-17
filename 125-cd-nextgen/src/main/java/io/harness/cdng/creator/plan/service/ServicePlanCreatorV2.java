@@ -11,21 +11,32 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.artifact.steps.ArtifactsStepV2;
 import io.harness.cdng.creator.plan.PlanCreatorConstants;
 import io.harness.cdng.licenserestriction.EnforcementValidator;
+import io.harness.cdng.service.ServiceSpec;
+import io.harness.cdng.service.steps.ServiceDefinitionStep;
+import io.harness.cdng.service.steps.ServiceDefinitionStepParameters;
 import io.harness.cdng.service.steps.ServiceSectionStep;
 import io.harness.cdng.service.steps.ServiceSectionStepParameters;
+import io.harness.cdng.service.steps.ServiceSpecStep;
+import io.harness.cdng.service.steps.ServiceSpecStepParameters;
 import io.harness.cdng.service.steps.ServiceStepParametersV2;
 import io.harness.cdng.service.steps.ServiceStepV2;
+import io.harness.cdng.service.steps.ServiceStepV3;
+import io.harness.cdng.service.steps.ServiceStepV3Parameters;
+import io.harness.cdng.steps.EmptyStepParameters;
 import io.harness.cdng.visitor.YamlTypes;
+import io.harness.data.structure.EmptyPredicate;
+import io.harness.data.structure.UUIDGenerator;
 import io.harness.exception.InvalidRequestException;
-import io.harness.ng.core.service.yaml.NGServiceV2InfoConfig;
 import io.harness.pms.contracts.advisers.AdviserObtainment;
 import io.harness.pms.contracts.advisers.AdviserType;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
 import io.harness.pms.contracts.plan.Dependencies;
 import io.harness.pms.contracts.plan.Dependency;
+import io.harness.pms.contracts.plan.Plan;
 import io.harness.pms.contracts.steps.SkipType;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.plan.creation.PlanCreatorUtils;
@@ -42,6 +53,7 @@ import io.harness.serializer.KryoSerializer;
 
 import com.google.inject.Inject;
 import com.google.protobuf.ByteString;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -50,13 +62,13 @@ import java.util.Map;
 import java.util.Set;
 
 @OwnedBy(HarnessTeam.CDC)
-public class ServicePlanCreatorV2 extends ChildrenPlanCreator<NGServiceV2InfoConfig> {
+public class ServicePlanCreatorV2 extends ChildrenPlanCreator<ServicePlanCreatorV2Config> {
   @Inject private KryoSerializer kryoSerializer;
   @Inject private EnforcementValidator enforcementValidator;
 
   @Override
   public LinkedHashMap<String, PlanCreationResponse> createPlanForChildrenNodes(
-      PlanCreationContext ctx, NGServiceV2InfoConfig config) {
+      PlanCreationContext ctx, ServicePlanCreatorV2Config config) {
     final LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap = new LinkedHashMap<>();
 
     // enforcement validator
@@ -66,6 +78,22 @@ public class ServicePlanCreatorV2 extends ChildrenPlanCreator<NGServiceV2InfoCon
 
     YamlField serviceField = ctx.getCurrentField();
     YamlField serviceDefField = serviceField.getNode().getField(YamlTypes.SERVICE_DEFINITION);
+
+    if (serviceRefExpression(config)) {
+      addServiceNodeWithExpression(config, planCreationResponseMap,
+          (String) kryoSerializer.asInflatedObject(
+              ctx.getDependency().getMetadataMap().get(YamlTypes.ENVIRONMENT_NODE_ID).toByteArray()),
+          (String) kryoSerializer.asInflatedObject(
+              ctx.getDependency().getMetadataMap().get("SERVICE_SPEC_NODE_ID").toByteArray()));
+
+      //      planCreationResponseMap.put(serviceDefinitionNodeUuid,
+      //          PlanCreationResponse.builder()
+      //              .dependencies(getDependenciesForServiceDefinitionNode(serviceDefField, ctx))
+      //              .build());
+
+      return planCreationResponseMap;
+    }
+
     if (serviceDefField == null || isEmpty(serviceDefField.getNode().getUuid())) {
       throw new InvalidRequestException("ServiceDefinition node is invalid in service - " + config.getIdentifier());
     }
@@ -81,9 +109,14 @@ public class ServicePlanCreatorV2 extends ChildrenPlanCreator<NGServiceV2InfoCon
     return planCreationResponseMap;
   }
 
+  // Todo:(yogesh) Better way to check expression
+  private boolean serviceRefExpression(ServicePlanCreatorV2Config config) {
+    return config.getIdentifier().contains("<+");
+  }
+
   @Override
   public PlanNode createPlanForParentNode(
-      PlanCreationContext ctx, NGServiceV2InfoConfig config, List<String> childrenNodeIds) {
+      PlanCreationContext ctx, ServicePlanCreatorV2Config config, List<String> childrenNodeIds) {
     YamlField serviceField = ctx.getCurrentField();
     String serviceUuid = serviceField.getNode().getUuid();
     String serviceActualStepUUid = "service-" + serviceUuid;
@@ -117,7 +150,7 @@ public class ServicePlanCreatorV2 extends ChildrenPlanCreator<NGServiceV2InfoCon
         .build();
   }
 
-  private void addServiceNode(NGServiceV2InfoConfig config,
+  private void addServiceNode(ServicePlanCreatorV2Config config,
       LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap, String serviceDefinitionNodeId) {
     ServiceStepParametersV2 stepParameters = ServiceStepParametersV2.fromServiceV2InfoConfig(config);
     String uuid = "service-" + config.getUuid();
@@ -145,9 +178,114 @@ public class ServicePlanCreatorV2 extends ChildrenPlanCreator<NGServiceV2InfoCon
     planCreationResponseMap.put(node.getUuid(), PlanCreationResponse.builder().node(node.getUuid(), node).build());
   }
 
+  private void addServiceNodeWithExpression(ServicePlanCreatorV2Config config,
+      LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap, String envNodeId,
+      String service_spec_node_id) {
+    ServiceStepV3Parameters stepParameters =
+        ServiceStepV3Parameters.builder().serviceRef(config.getIdentifier()).build();
+    String serviceDefinitionNodeUuid = UUIDGenerator.generateUuid();
+    String uuid = "service-" + config.getUuid();
+
+    PlanNode node =
+        PlanNode.builder()
+            .uuid(uuid)
+            .stepType(ServiceStepV3.STEP_TYPE)
+            .name(PlanCreatorConstants.SERVICE_NODE_NAME)
+            .identifier(YamlTypes.SERVICE_ENTITY)
+            .stepParameters(stepParameters)
+            .facilitatorObtainment(
+                FacilitatorObtainment.newBuilder()
+                    .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.SYNC).build())
+                    .build())
+            .adviserObtainment(
+                AdviserObtainment.newBuilder()
+                    .setType(AdviserType.newBuilder().setType(OrchestrationAdviserTypes.ON_SUCCESS.name()).build())
+                    .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(
+                        OnSuccessAdviserParameters.builder().nextNodeId(serviceDefinitionNodeUuid).build())))
+                    .build())
+            .skipExpressionChain(true)
+            //            .skipGraphType(SkipType.SKIP_TREE)
+            .build();
+    planCreationResponseMap.put(node.getUuid(), PlanCreationResponse.builder().planNode(node).build());
+
+    addServiceDefinitionNode(planCreationResponseMap, serviceDefinitionNodeUuid, envNodeId, service_spec_node_id);
+  }
+
+  private void addServiceDefinitionNode(LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap,
+      String serviceDefinitionNodeId, String envNodeId, String service_spec_node_id) {
+    String artifactUuid = "artifacts-" + UUIDGenerator.generateUuid();
+    PlanNode artifactsNode =
+        PlanNode.builder()
+            .uuid(artifactUuid)
+            .stepType(ArtifactsStepV2.STEP_TYPE)
+            .name(PlanCreatorConstants.SERVICE_NODE_NAME)
+            .identifier(YamlTypes.SERVICE_ENTITY)
+            .stepParameters(new EmptyStepParameters())
+            .facilitatorObtainment(
+                FacilitatorObtainment.newBuilder()
+                    .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.SYNC).build())
+                    .build())
+            //            .adviserObtainment(
+            //                AdviserObtainment.newBuilder()
+            //                    .setType(AdviserType.newBuilder().setType(OrchestrationAdviserTypes.ON_SUCCESS.name()).build())
+            //                    //                    .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(
+            //                    // OnSuccessAdviserParameters.builder().nextNodeId(serviceDefinitionNodeId).build())))
+            //                    .build())
+            .skipExpressionChain(true)
+            //            .skipGraphType(SkipType.SKIP_TREE)
+            .build();
+
+    planCreationResponseMap.put(
+        artifactsNode.getUuid(), PlanCreationResponse.builder().planNode(artifactsNode).build());
+
+    ServiceDefinitionStepParameters stepParameters =
+        ServiceDefinitionStepParameters.builder().childNodeId(envNodeId).build();
+    PlanNode serviceDefNode =
+        PlanNode.builder()
+            .uuid(serviceDefinitionNodeId)
+            .stepType(ServiceDefinitionStep.STEP_TYPE)
+            .name(PlanCreatorConstants.SERVICE_DEFINITION_NODE_NAME)
+            .identifier(YamlTypes.SERVICE_DEFINITION)
+            .stepParameters(stepParameters)
+            .facilitatorObtainment(
+                FacilitatorObtainment.newBuilder()
+                    .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.CHILD).build())
+                    .build())
+            .skipExpressionChain(false)
+            //            .skipGraphType(SkipType.SKIP_TREE)
+            .build();
+
+    planCreationResponseMap.put(
+        serviceDefinitionNodeId, PlanCreationResponse.builder().planNode(serviceDefNode).build());
+
+    // Add service spec node
+    ServiceSpecStepParameters serviceSpecStepParameters =
+        ServiceSpecStepParameters
+            .builder()
+            //            .originalVariables(ParameterField.createValueField(serviceSpec.getVariables()))
+            .childrenNodeIds(Arrays.asList(artifactsNode.getUuid()))
+            .build();
+    PlanNode serviceSpecNode =
+        PlanNode.builder()
+            .uuid(service_spec_node_id)
+            .stepType(ServiceSpecStep.STEP_TYPE)
+            .name(PlanCreatorConstants.SERVICE_SPEC_NODE_NAME)
+            .identifier(YamlTypes.SERVICE_SPEC)
+            .stepParameters(serviceSpecStepParameters)
+            .facilitatorObtainment(
+                FacilitatorObtainment.newBuilder()
+                    .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.CHILDREN).build())
+                    .build())
+            .skipExpressionChain(false)
+            .build();
+    planCreationResponseMap.put(
+        serviceSpecNode.getUuid(), PlanCreationResponse.builder().planNode(serviceSpecNode).build());
+    //    planCreationResponseMap.put(artifactUuid, PlanCreationResponse.builder().planNode(artifactsNode).build());
+  }
+
   @Override
-  public Class<NGServiceV2InfoConfig> getFieldClass() {
-    return NGServiceV2InfoConfig.class;
+  public Class<ServicePlanCreatorV2Config> getFieldClass() {
+    return ServicePlanCreatorV2Config.class;
   }
 
   @Override

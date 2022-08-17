@@ -34,6 +34,7 @@ import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.serializer.KryoSerializer;
+import io.harness.utils.NGFeatureFlagHelperService;
 import io.harness.utils.YamlPipelineUtils;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -58,6 +59,8 @@ public class ServicePlanCreatorHelper {
   @Inject private KryoSerializer kryoSerializer;
   @Inject private ServiceEntityService serviceEntityService;
   @Inject private ServicePlanCreator servicePlanCreator;
+
+  @Inject private NGFeatureFlagHelperService featureFlagService;
 
   public YamlField getResolvedServiceField(
       YamlField parentSpecField, DeploymentStageNode stageNode, PlanCreationContext ctx) {
