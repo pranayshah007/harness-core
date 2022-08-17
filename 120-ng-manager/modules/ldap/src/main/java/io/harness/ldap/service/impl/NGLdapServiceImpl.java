@@ -40,6 +40,7 @@ import io.harness.ng.authenticationsettings.remote.AuthSettingsManagerClient;
 import io.harness.ng.core.api.UserGroupService;
 import io.harness.ng.core.user.entities.UserGroup;
 import io.harness.rest.RestResponse;
+import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.service.DelegateGrpcClientWrapper;
 
 import software.wings.beans.TaskType;
@@ -74,7 +75,12 @@ public class NGLdapServiceImpl implements NGLdapService {
   @Override
   public LdapTestResponse validateLdapConnectionSettings(String accountIdentifier, String orgIdentifier,
       String projectIdentifier, software.wings.beans.dto.LdapSettings settings) {
-    NGLdapDelegateTaskParameters parameters = NGLdapDelegateTaskParameters.builder().ldapSettings(settings).build();
+    // plaintext - create, edit{if exist && not masked string then send plaintext, else send savedSetting}
+    // encrypted - create: create secret in CG, edit{masked: bring from CG, Unmasked}
+
+    EncryptedDataDetail encryptedDataDetail = EncryptedDataDetail.builder().build();
+    NGLdapDelegateTaskParameters parameters =
+        NGLdapDelegateTaskParameters.builder().ldapSettings(settings).encryptedDataDetail(encryptedDataDetail).build();
 
     DelegateResponseData delegateResponseData = getDelegateResponseData(
         accountIdentifier, orgIdentifier, projectIdentifier, parameters, NG_LDAP_TEST_CONN_SETTINGS);

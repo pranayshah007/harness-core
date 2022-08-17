@@ -208,6 +208,11 @@ public class EventsFrameworkModule extends AbstractModule {
           .toInstance(RedisConsumer.of(EventsFrameworkConstants.SAML_AUTHORIZATION_ASSERTION, NG_MANAGER.getServiceId(),
               redissonClient, EventsFrameworkConstants.DEFAULT_MAX_PROCESSING_TIME,
               EventsFrameworkConstants.DEFAULT_READ_BATCH_SIZE, redisConfig.getEnvNamespace()));
+      bind(Consumer.class)
+          .annotatedWith(Names.named(EventsFrameworkConstants.LDAP_GROUP_SYNC))
+          .toInstance(RedisConsumer.of(EventsFrameworkConstants.LDAP_GROUP_SYNC, NG_MANAGER.getServiceId(),
+              redissonClient, EventsFrameworkConstants.DEFAULT_MAX_PROCESSING_TIME,
+              EventsFrameworkConstants.DEFAULT_READ_BATCH_SIZE, redisConfig.getEnvNamespace()));
       bind(Producer.class)
           .annotatedWith(Names.named(GIT_BRANCH_HOOK_EVENT_STREAM))
           .toInstance(RedisProducer.of(GIT_BRANCH_HOOK_EVENT_STREAM, redissonClient,
