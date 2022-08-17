@@ -223,7 +223,6 @@ public class NGEntitiesKryoRegistrar implements KryoRegistrar {
     kryo.register(CustomScriptInlineSource.class, 130019);
     kryo.register(FetchAllArtifacts.class, 130020);
     kryo.register(ConfigFileOutcome.class, 130021);
-    kryo.register(ConfigFileOutcome.class, 130013);
     kryo.register(ApplicationSettingsConfiguration.class, 140014);
     kryo.register(ConnectionStringsConfiguration.class, 140015);
     kryo.register(StartupCommandConfiguration.class, 140016);
