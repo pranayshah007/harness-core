@@ -189,7 +189,18 @@ public class SSOResourceNG {
   @Produces("application/x-kryo")
   @Consumes("application/x-kryo")
   public RestResponse<LdapSettingsWithEncryptedDataDetail> getLdapSetting(@QueryParam("accountId") String accountId) {
-    return new RestResponse<>(ssoService.getLdapSettingWithEncryptedDataDetail(accountId));
+    return new RestResponse<>(ssoService.getLdapSettingWithEncryptedDataDetail(accountId, null));
+  }
+
+  @POST
+  @Path("ldap/setting-with-encrypted-details")
+  @Timed
+  @ExceptionMetered
+  @Produces("application/x-kryo")
+  @Consumes("application/x-kryo")
+  public RestResponse<LdapSettingsWithEncryptedDataDetail> getLdapSetting(
+      @QueryParam("accountId") String accountId, @Valid LdapSettings settings) {
+    return new RestResponse<>(ssoService.getLdapSettingWithEncryptedDataDetail(accountId, settings));
   }
 
   @POST
