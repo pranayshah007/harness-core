@@ -118,7 +118,11 @@ public class NGManagerEncryptorHelper {
             .accountId(accountId)
             .taskSetupAbstractions(buildAbstractions(parameters.getEncryptionConfig()))
             .build();
+    long syncCallStartTime = System.currentTimeMillis();
+    log.info("The Async task for Vault Url Validation has started at {}", syncCallStartTime);
     DelegateResponseData delegateResponseData = delegateService.executeSyncTask(delegateTaskRequest);
+    long syncCallEndTime = System.currentTimeMillis();
+    log.info("The Async task fo Vault Url Validation has ended at {}, the duration of which is {}", syncCallEndTime, syncCallEndTime-syncCallStartTime);
     DelegateTaskUtils.validateDelegateTaskResponse(delegateResponseData);
     if (!(delegateResponseData instanceof ValidateSecretManagerConfigurationTaskResponse)) {
       throw new SecretManagementException(SECRET_MANAGEMENT_ERROR, "Unknown Response from delegate", USER);
