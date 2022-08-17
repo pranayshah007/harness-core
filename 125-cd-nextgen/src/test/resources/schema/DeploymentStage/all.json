@@ -373,6 +373,199 @@
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "AzureCreateARMResourceParameterFile": {
+      "type": "object",
+      "required": [
+        "store"
+      ],
+      "properties": {
+        "store": {
+          "$ref": "#/definitions/StoreConfigWrapper"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "AzureCreateARMResourceStepConfiguration": {
+      "type": "object",
+      "required": [
+        "connectorRef",
+        "scope",
+        "template"
+      ],
+      "properties": {
+        "connectorRef": {
+          "type": "string"
+        },
+        "parameters": {
+          "$ref": "#/definitions/AzureCreateARMResourceParameterFile"
+        },
+        "scope": {
+          "$ref": "#/definitions/AzureCreateARMResourceStepScope"
+        },
+        "template": {
+          "$ref": "#/definitions/AzureCreateARMResourceTemplateFile"
+        },
+        "type": {
+          "type": "string"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "AzureCreateARMResourceStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "required": [
+            "configuration",
+            "provisionerIdentifier"
+          ],
+          "properties": {
+            "configuration": {
+              "$ref": "#/definitions/AzureCreateARMResourceStepConfiguration"
+            },
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "metadata": {
+              "type": "string"
+            },
+            "provisionerIdentifier": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "AzureCreateARMResourceStepScope": {
+      "type": "object",
+      "required": [
+        "spec",
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "type": "string"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "ManagementGroup"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/AzureManagementSpec"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "ResourceGroup"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/AzureResourceGroupSpec"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "Subscription"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/AzureSubscriptionSpec"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "Tenant"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/AzureTenantSpec"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "AzureCreateARMResourceTemplateFile": {
+      "type": "object",
+      "required": [
+        "store"
+      ],
+      "properties": {
+        "store": {
+          "$ref": "#/definitions/StoreConfigWrapper"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "AzureManagementSpec": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/AzureScopeType"
+        },
+        {
+          "type": "object",
+          "required": [
+            "location",
+            "managementGroupId"
+          ],
+          "properties": {
+            "location": {
+              "type": "string"
+            },
+            "managementGroupId": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "AzureRepoStore": {
       "allOf": [
         {
@@ -451,6 +644,83 @@
               ]
             }
           ]
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "AzureResourceGroupSpec": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/AzureScopeType"
+        },
+        {
+          "type": "object",
+          "required": [
+            "resourceGroup",
+            "subscription"
+          ],
+          "properties": {
+            "mode": {
+              "type": "string",
+              "enum": [
+                "Incremental",
+                "Complete"
+              ]
+            },
+            "resourceGroup": {
+              "type": "string"
+            },
+            "subscription": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "AzureScopeType": {
+      "type": "object",
+      "discriminator": "type",
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "AzureSubscriptionSpec": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/AzureScopeType"
+        },
+        {
+          "type": "object",
+          "required": [
+            "location",
+            "subscription"
+          ],
+          "properties": {
+            "location": {
+              "type": "string"
+            },
+            "subscription": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "AzureTenantSpec": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/AzureScopeType"
+        },
+        {
+          "type": "object",
+          "required": [
+            "location"
+          ],
+          "properties": {
+            "location": {
+              "type": "string"
+            }
+          }
         }
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -6550,80 +6820,12 @@
         {
           "$ref": "#/definitions/Infrastructure"
         },
-        { }
-      ],
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "oneOf": [
         {
           "type": "object",
           "required": [
+            "awsInstanceFilter",
             "connectorRef",
             "credentialsRef",
-            "hostNameConvention",
-            "loadBalancer",
-            "region"
-          ],
-          "properties": {
-            "autoScalingGroupName": {
-              "type": "string"
-            },
-            "connectorRef": {
-              "type": "string",
-              "minLength": 1
-            },
-            "credentialsRef": {
-              "type": "string",
-              "minLength": 1
-            },
-            "delegateSelectors": {
-              "oneOf": [
-                {
-                  "type": "array",
-                  "items": {
-                    "type": "string"
-                  }
-                },
-                {
-                  "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-                  "minLength": 1
-                }
-              ]
-            },
-            "hostNameConvention": {
-              "oneOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-                  "minLength": 1
-                }
-              ],
-              "minLength": 1
-            },
-            "loadBalancer": {
-              "type": "string",
-              "minLength": 1
-            },
-            "region": {
-              "type": "string",
-              "minLength": 1
-            },
-            "useAutoScalingGroup": {
-              "type": "boolean"
-            }
-          },
-          "additionalProperties": false
-        },
-        {
-          "type": "object",
-          "required": [
-            "connectorRef",
-            "credentialsRef",
-            "hostNameConvention",
-            "loadBalancer",
             "region"
           ],
           "properties": {
@@ -6638,49 +6840,14 @@
               "type": "string",
               "minLength": 1
             },
-            "delegateSelectors": {
-              "oneOf": [
-                {
-                  "type": "array",
-                  "items": {
-                    "type": "string"
-                  }
-                },
-                {
-                  "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-                  "minLength": 1
-                }
-              ]
-            },
-            "hostNameConvention": {
-              "oneOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-                  "minLength": 1
-                }
-              ],
-              "minLength": 1
-            },
-            "loadBalancer": {
-              "type": "string",
-              "minLength": 1
-            },
             "region": {
               "type": "string",
               "minLength": 1
-            },
-            "useAutoScalingGroup": {
-              "type": "boolean"
             }
-          },
-          "additionalProperties": false
+          }
         }
-      ]
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "SshWinRmAzureInfrastructure": {
       "allOf": [
@@ -6877,6 +7044,22 @@
       },
       "$schema": "http://json-schema.org/draft-07/schema#",
       "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "AzureCreateARMResource"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/AzureCreateARMResourceStepInfo"
+              }
+            }
+          }
+        },
         {
           "if": {
             "properties": {

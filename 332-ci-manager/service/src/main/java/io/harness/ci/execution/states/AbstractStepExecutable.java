@@ -599,10 +599,12 @@ public abstract class AbstractStepExecutable implements AsyncExecutableWithRbac<
       CIExecuteStepTaskParams ciExecuteStepTaskParams, List<String> taskSelectors,
       List<String> eligibleToExecuteDelegateIds) {
     String taskType = CI_EXECUTE_STEP;
+    boolean executeOnHarnessHostedDelegates = false;
     SerializationFormat serializationFormat = SerializationFormat.KRYO;
     if (ciExecuteStepTaskParams.getType() == CIExecuteStepTaskParams.Type.DLITE_VM) {
       taskType = TaskType.DLITE_CI_VM_EXECUTE_TASK.getDisplayName();
       serializationFormat = SerializationFormat.JSON;
+      executeOnHarnessHostedDelegates = true;
     }
     final TaskData taskData = TaskData.builder()
                                   .async(true)
@@ -618,7 +620,8 @@ public abstract class AbstractStepExecutable implements AsyncExecutableWithRbac<
 
     HDelegateTask task = (HDelegateTask) StepUtils.prepareDelegateTaskInput(accountId, taskData, abstractions);
 
-    return executor.queueTask(abstractions, task, taskSelectors, eligibleToExecuteDelegateIds);
+    return executor.queueTask(
+        abstractions, task, taskSelectors, eligibleToExecuteDelegateIds, executeOnHarnessHostedDelegates);
   }
 
   private String queueParkedDelegateTask(
@@ -634,7 +637,7 @@ public abstract class AbstractStepExecutable implements AsyncExecutableWithRbac<
     Map<String, String> abstractions = buildAbstractions(ambiance, Scope.PROJECT);
     HDelegateTask task = (HDelegateTask) StepUtils.prepareDelegateTaskInput(accountId, taskData, abstractions);
 
-    return executor.queueTask(abstractions, task, new ArrayList<>(), new ArrayList<>());
+    return executor.queueTask(abstractions, task, new ArrayList<>(), new ArrayList<>(), false);
   }
 
   private String getLogKey(Ambiance ambiance) {

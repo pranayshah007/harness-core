@@ -47,6 +47,9 @@ debeziumConfigs:
     snapshot.fetch.size: ${SNAPSHOT_FETCH_SIZE:-2000}
     sleepInterval: ${SLEEP_INTERVAL:-60}
     producingCountPerBatch: ${PRODUCING_COUNT_PER_BATCH:-1000}
+    redisStreamSize: ${REDIS_STREAM_SIZE:-10000}
+    snapshot.mode: ${SNAPSHOT_MODE:-initial}
+    transforms.unwrap.array.encoding: ${TRANSFORMS_UNWRAP_ARRAY_ENCODING:-document}
 
 eventsFramework:
   redis:

@@ -148,6 +148,7 @@ public class DelegateServiceGrpcImpl extends DelegateServiceImplBase {
               .executionCapabilities(capabilities)
               .selectionLogsTrackingEnabled(request.getSelectionTrackingLogEnabled())
               .eligibleToExecuteDelegateIds(new LinkedList<>(request.getEligibleToExecuteDelegateIdsList()))
+              .executeOnHarnessHostedDelegates(request.getExecuteOnHarnessHostedDelegates())
               .forceExecute(request.getForceExecute())
               .data(createTaskData(taskDetails));
 

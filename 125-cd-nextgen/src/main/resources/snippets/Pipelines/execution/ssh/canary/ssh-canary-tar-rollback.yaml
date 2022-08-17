@@ -7,6 +7,7 @@ spec:
           strategy:
             repeat:
               items: <+stage.output.hosts>
+              maxConcurrency: <+maxConcurrency>
               start: <+start>
               end: <+end>
               unit: <+unit>
@@ -110,7 +111,7 @@ spec:
                       name: "Port Listening Rollback"
                       type: Script
                       spec:
-                        workingDirectory: $HARNESS_RUNTIME_PATHH/tomcat/bin
+                        workingDirectory: $HARNESS_RUNTIME_PATH/tomcat/bin
                         shell: Bash
                         source:
                           type: Inline

@@ -29,4 +29,5 @@ public class DelegateScalingGroup {
   List<DelegateStatus.DelegateInner> delegates;
   boolean autoUpgrade;
   long upgraderLastUpdated;
+  long delegateGroupExpirationTime;
 }

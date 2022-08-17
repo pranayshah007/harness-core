@@ -27,6 +27,7 @@ import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
+import io.harness.common.NGTimeConversionHelper;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.dto.ResponseDTO;
@@ -35,6 +36,10 @@ import io.harness.ngtriggers.beans.dto.TriggerDetails;
 import io.harness.ngtriggers.beans.entity.NGTriggerEntity;
 import io.harness.ngtriggers.beans.entity.metadata.NGTriggerMetadata;
 import io.harness.ngtriggers.beans.entity.metadata.WebhookMetadata;
+import io.harness.ngtriggers.beans.entity.metadata.WebhookRegistrationStatus;
+import io.harness.ngtriggers.beans.entity.metadata.status.TriggerStatus;
+import io.harness.ngtriggers.beans.entity.metadata.status.WebhookAutoRegistrationStatus;
+import io.harness.ngtriggers.beans.entity.metadata.status.WebhookInfo;
 import io.harness.ngtriggers.beans.source.NGTriggerSourceV2;
 import io.harness.ngtriggers.beans.source.NGTriggerType;
 import io.harness.ngtriggers.beans.source.scheduled.CronTriggerSpec;
@@ -44,29 +49,40 @@ import io.harness.ngtriggers.beans.target.TargetType;
 import io.harness.ngtriggers.buildtriggers.helpers.BuildTriggerHelper;
 import io.harness.ngtriggers.mapper.NGTriggerElementMapper;
 import io.harness.ngtriggers.service.impl.NGTriggerServiceImpl;
+import io.harness.ngtriggers.utils.PollingSubscriptionHelper;
+import io.harness.ngtriggers.validations.TriggerValidationHandler;
 import io.harness.outbox.api.OutboxService;
 import io.harness.pipeline.remote.PipelineServiceClient;
 import io.harness.pms.PmsFeatureFlagService;
 import io.harness.pms.inputset.MergeInputSetResponseDTOPMS;
+import io.harness.polling.client.PollingResourceClient;
+import io.harness.polling.contracts.GitPollingPayload;
+import io.harness.polling.contracts.PollingItem;
+import io.harness.polling.contracts.PollingPayloadData;
 import io.harness.repositories.spring.NGTriggerRepository;
 import io.harness.rule.Owner;
+import io.harness.serializer.KryoSerializer;
 import io.harness.utils.YamlPipelineUtils;
 
 import com.google.common.io.Resources;
 import com.mongodb.client.result.DeleteResult;
 import com.mongodb.client.result.UpdateResult;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.ExecutorService;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
+import org.mockito.stubbing.Answer;
 import org.springframework.data.mongodb.core.query.Criteria;
 import retrofit2.Call;
 import retrofit2.Response;
@@ -82,6 +98,14 @@ public class NGTriggerServiceTest extends CategoryTest {
   @Mock NGTriggerRepository ngTriggerRepository;
 
   @Mock OutboxService outboxService;
+  @Mock ExecutorService executorService;
+  @Mock PollingSubscriptionHelper pollingSubscriptionHelper;
+
+  @Mock KryoSerializer kryoSerializer;
+
+  @Mock PollingResourceClient pollingResourceClient;
+
+  TriggerValidationHandler triggerValidationHandler;
 
   private final String ACCOUNT_ID = "account_id";
   private final String ORG_IDENTIFIER = "orgId";
@@ -89,6 +113,11 @@ public class NGTriggerServiceTest extends CategoryTest {
   private final String IDENTIFIER = "first_trigger";
   private final String NAME = "first trigger";
   private final String PIPELINE_IDENTIFIER = "myPipeline";
+  private final String WEBHOOK_ID = "webhook_id";
+
+  private final String CONNECTOR_REF = "connector_ref";
+
+  private final String POLLING_DOC_ID = "polling_doc_id";
   ClassLoader classLoader = getClass().getClassLoader();
 
   String filenameGitSync = "ng-trigger-github-pr-gitsync.yaml";
@@ -117,6 +146,7 @@ public class NGTriggerServiceTest extends CategoryTest {
   @Before
   public void setup() throws Exception {
     on(ngTriggerServiceImpl).set("ngTriggerElementMapper", ngTriggerElementMapper);
+
     when(validationHelper.fetchPipelineForTrigger(any())).thenReturn(Optional.empty());
     ngTriggerYamlWithGitSync =
         Resources.toString(Objects.requireNonNull(classLoader.getResource(filenameGitSync)), StandardCharsets.UTF_8);
@@ -242,7 +272,6 @@ public class NGTriggerServiceTest extends CategoryTest {
   @Test
   @Owner(developers = SRIDHAR)
   @Category(UnitTests.class)
-
   public void testDelete() {
     NGTriggerEntity ngTrigger = NGTriggerEntity.builder()
                                     .accountId(ACCOUNT_ID)
@@ -333,5 +362,75 @@ public class NGTriggerServiceTest extends CategoryTest {
     when(ngTriggerRepository.hardDelete(any(Criteria.class))).thenReturn(DeleteResult.unacknowledged());
 
     ngTriggerServiceImpl.delete(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, IDENTIFIER, null);
+  }
+  @Test
+  @Owner(developers = SRIDHAR)
+  @Category(UnitTests.class)
+  public void testHardDeleteWebhookPolling() throws IOException {
+    NGTriggerEntity ngTrigger =
+        NGTriggerEntity.builder()
+            .accountId(ACCOUNT_ID)
+            .enabled(Boolean.TRUE)
+            .deleted(Boolean.FALSE)
+            .identifier(IDENTIFIER)
+            .projectIdentifier(PROJ_IDENTIFIER)
+            .targetIdentifier(PIPELINE_IDENTIFIER)
+            .orgIdentifier(ORG_IDENTIFIER)
+            .type(NGTriggerType.WEBHOOK)
+            .pollInterval("2m")
+            .triggerStatus(TriggerStatus.builder()
+                               .webhookAutoRegistrationStatus(WebhookAutoRegistrationStatus.builder()
+                                                                  .registrationResult(WebhookRegistrationStatus.SUCCESS)
+                                                                  .build())
+                               .webhookInfo(WebhookInfo.builder().webhookId(WEBHOOK_ID).build())
+                               .build())
+            .build();
+
+    PollingItem pollingItem = createPollingItem(ngTrigger);
+    Call<Boolean> call = mock(Call.class);
+    ArgumentCaptor<Runnable> runnableCaptor = ArgumentCaptor.forClass(Runnable.class);
+    Optional<NGTriggerEntity> optionalNGTrigger = Optional.of(ngTrigger);
+    byte[] bytes = {70};
+
+    when(pmsFeatureFlagService.isEnabled(eq(ACCOUNT_ID), eq(FeatureName.HARD_DELETE_ENTITIES)))
+        .thenReturn(Boolean.TRUE);
+    when(pmsFeatureFlagService.isEnabled(eq(ACCOUNT_ID), eq(FeatureName.GIT_WEBHOOK_POLLING))).thenReturn(Boolean.TRUE);
+    when(ngTriggerRepository
+             .findByAccountIdAndOrgIdentifierAndProjectIdentifierAndTargetIdentifierAndIdentifierAndDeletedNot(
+                 eq(ACCOUNT_ID), eq(ORG_IDENTIFIER), eq(PROJ_IDENTIFIER), eq(PIPELINE_IDENTIFIER), eq(IDENTIFIER),
+                 eq(Boolean.TRUE)))
+        .thenReturn(optionalNGTrigger);
+    when(ngTriggerRepository.hardDelete(any(Criteria.class))).thenReturn(DeleteResult.acknowledged(1));
+    when(executorService.submit(runnableCaptor.capture())).then(executeRunnable(runnableCaptor));
+    when(pollingSubscriptionHelper.generatePollingItem(eq(ngTrigger))).thenReturn(pollingItem);
+    when(pollingResourceClient.unsubscribe(any())).thenReturn(call);
+    when(call.execute()).thenReturn(Response.success(Boolean.TRUE));
+    when(kryoSerializer.asBytes(any(PollingItem.class))).thenReturn(bytes);
+
+    Boolean res =
+        ngTriggerServiceImpl.delete(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, IDENTIFIER, null);
+    assertTrue(res);
+  }
+
+  private PollingItem createPollingItem(NGTriggerEntity ngTrigger) {
+    return PollingItem.newBuilder()
+        .setPollingDocId(POLLING_DOC_ID)
+        .setPollingPayloadData(
+            PollingPayloadData.newBuilder()
+                .setConnectorRef(CONNECTOR_REF)
+                .setGitPollPayload(GitPollingPayload.newBuilder()
+                                       .setWebhookId(ngTrigger.getTriggerStatus().getWebhookInfo().getWebhookId())
+                                       .setPollInterval(NGTimeConversionHelper.convertTimeStringToMinutesZeroAllowed(
+                                           ngTrigger.getPollInterval()))
+                                       .buildPartial())
+                .build())
+        .build();
+  }
+
+  private static Answer executeRunnable(ArgumentCaptor<Runnable> runnableCaptor) {
+    return invocation -> {
+      runnableCaptor.getValue().run();
+      return null;
+    };
   }
 }

@@ -1,3 +1,10 @@
+/*
+ * Copyright 2022 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
+
 package io.harness.buildcleaner;
 
 import io.harness.buildcleaner.bazel.BuildFile;
@@ -49,9 +56,9 @@ public class BuildCleaner {
       this.mavenManifest = MavenManifest.loadFromFile(mavenManifestFileLocation);
     }
 
-    Path mavenManifestOverrideFileLocation = mavenManifestFile();
+    Path mavenManifestOverrideFileLocation = mavenManifestOverrideFile();
     if (Files.exists(mavenManifestOverrideFileLocation)) {
-      this.mavenManifestOverride = MavenManifest.loadFromFile(mavenManifestOverrideFileLocation);
+      this.mavenManifestOverride = MavenManifest.loadFromOverrideFile(mavenManifestOverrideFileLocation);
     }
 
     this.packageParser = new PackageParser(workspace());
@@ -141,11 +148,18 @@ public class BuildCleaner {
 
     Set<String> dependencies = new TreeSet<>();
     for (String importStatement : classpathParser.getUsedTypes()) {
-      if (importStatement.startsWith("java")) {
+      if (importStatement.startsWith("java.")) {
         continue;
       }
 
       Optional<String> resolvedSymbol = resolve(importStatement, harnessSymbolMap);
+
+      // Skip the symbols from the same package. Resolved symbol starts with "//" and rest of it is just a path -
+      // therefore, removing first two characters before comparing.
+      if (resolvedSymbol.isPresent() && resolvedSymbol.get().substring(2).equals(path.toString())) {
+        continue;
+      }
+
       resolvedSymbol.ifPresent(dependencies::add);
       if (!resolvedSymbol.isPresent()) {
         logger.info("No build dependency found for " + importStatement);

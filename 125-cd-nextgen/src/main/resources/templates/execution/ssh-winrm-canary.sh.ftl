@@ -2,6 +2,7 @@ ${failureStrategies}
 <#list phases as phase>
 <#if phase_index=0>
 ${canarySnippet
+?replace("<+maxConcurrency>", maxConcurrency)
 ?replace("<+start>", 0)
 ?replace("<+end>", phase)
 ?replace("<+unit>", unitType)
@@ -16,6 +17,7 @@ ${canarySnippet
 <#else>
 ${canarySnippet
 ?replace("spec:\n  execution:\n    steps:\n", "")
+?replace("<+maxConcurrency>", maxConcurrency)
 ?replace("<+start>", prevPhase)
 ?replace("<+end>", phase)
 ?replace("<+unit>", unitType)
@@ -34,6 +36,7 @@ ${canarySnippet
 <#if phase_index=0>
 ${canaryRollbackSnippet
 ?replace("spec:\n  execution:\n    rollbackSteps:\n", "")
+?replace("<+maxConcurrency>", maxConcurrency)
 ?replace("<+start>", 0)
 ?replace("<+end>", phase)
 ?replace("<+unit>", unitType)
@@ -48,6 +51,7 @@ ${canaryRollbackSnippet
 <#else>
 ${canaryRollbackSnippet
 ?replace("spec:\n  execution:\n    rollbackSteps:\n", "")
+?replace("<+maxConcurrency>", maxConcurrency)
 ?replace("<+start>", prevPhase)
 ?replace("<+end>", phase)
 ?replace("<+unit>", unitType)
