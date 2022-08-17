@@ -174,15 +174,19 @@ public class NGLdapServiceImpl implements NGLdapService {
         userGroupsToLdapGroupMap, settingsWithEncryptedDataDetail.getLdapSettings().getUuid(), accountIdentifier);
   }
 
-  private LdapSettingsWithEncryptedDataDetail getLdapSettingsWithEncryptedDataInternal(String accountIdentifier) {
+  private LdapSettingsWithEncryptedDataDetail getLdapSettingsWithEncryptedDataInternal(
+      String accountIdentifier, software.wings.beans.sso.LdapSettings ldapSettings) {
     Call<RestResponse<LdapSettingsWithEncryptedDataDetail>> settingsWithEncryptedDataDetails =
-        managerClient.getLdapSettingsWithEncryptedDataDetails(accountIdentifier);
+        managerClient.getLdapSettingsWithEncryptedDataDetails(accountIdentifier, ldapSettings);
     if (null == settingsWithEncryptedDataDetails) {
       log.warn(
           "Failed to get ldap settings with encrypted data detail from manager for account: {}", accountIdentifier);
       throw new InvalidRequestException("Failed to get LDAPSettings with encrypted data detail for the request");
     }
     return getResponse(settingsWithEncryptedDataDetails);
+  }
+  private LdapSettingsWithEncryptedDataDetail getLdapSettingsWithEncryptedDataInternal(String accountIdentifier) {
+    return getLdapSettingsWithEncryptedDataInternal(accountIdentifier, null);
   }
 
   private DelegateResponseData getDelegateResponseData(String accountIdentifier, String orgIdentifier,

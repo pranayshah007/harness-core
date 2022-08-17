@@ -110,11 +110,11 @@ public interface AuthSettingsManagerClient {
   @GET(API_PREFIX + "login-settings/username-password/password-strength-policy")
   Call<RestResponse<PasswordStrengthPolicy>> getPasswordStrengthSettings(@Query("accountId") String accountIdentifier);
 
-  @GET(API_PREFIX + "sso/ldap/setting-with-encrypted-details")
+  @POST(API_PREFIX + "sso/ldap/setting-with-encrypted-details")
   @KryoRequest
   @KryoResponse
   Call<RestResponse<LdapSettingsWithEncryptedDataDetail>> getLdapSettingsWithEncryptedDataDetails(
-      @Query("accountId") String accountIdentifier);
+      @Query("accountId") String accountIdentifier, @Body LdapSettings ldapSettings);
 
   @POST(API_PREFIX + "sso/ldap/settings")
   Call<RestResponse<LdapSettings>> createLdapSettings(

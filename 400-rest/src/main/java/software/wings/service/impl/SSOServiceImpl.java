@@ -374,14 +374,38 @@ public class SSOServiceImpl implements SSOService {
   }
 
   @Override
-  public LdapSettingsWithEncryptedDataDetail getLdapSettingWithEncryptedDataDetail(@NotBlank String accountId) {
-    LdapSettings ldapSettings = ssoSettingService.getLdapSettingsByAccountId(accountId);
-    populateEncryptedFields(ldapSettings);
-    encryptSecretIfFFisEnabled(ldapSettings);
-    ldapSettings.encryptLdapInlineSecret(secretManager);
-    EncryptedDataDetail encryptedDataDetail = ldapSettings.getEncryptedDataDetails(secretManager);
+  public LdapSettingsWithEncryptedDataDetail getLdapSettingWithEncryptedDataDetail(
+      @NotBlank String accountId, LdapSettings inputLdapSettings) {
+    if (null == inputLdapSettings) {
+      LdapSettings ldapSettings = ssoSettingService.getLdapSettingsByAccountId(accountId);
+      populateEncryptedFields(ldapSettings);
+      encryptSecretIfFFisEnabled(ldapSettings);
+      ldapSettings.encryptLdapInlineSecret(secretManager, false);
+      EncryptedDataDetail encryptedDataDetail = ldapSettings.getEncryptedDataDetails(secretManager);
+      return LdapSettingsWithEncryptedDataDetail.builder()
+          .ldapSettings(LdapSettingsMapper.ldapSettingsDTO(ldapSettings))
+          .encryptedDataDetail(encryptedDataDetail)
+          .build();
+    } else {
+      return getSavedLdapSettingsWithEncryptedDataDetail(accountId, inputLdapSettings);
+    }
+  }
+
+  private LdapSettingsWithEncryptedDataDetail getSavedLdapSettingsWithEncryptedDataDetail(
+      String accountId, LdapSettings inputLdapSettings) {
+    boolean temporaryEncryption = !populateEncryptedFields(inputLdapSettings);
+    encryptSecretIfFFisEnabled(inputLdapSettings);
+    EncryptedDataDetail encryptedDataDetail = null;
+    try {
+      inputLdapSettings.encryptLdapInlineSecret(secretManager, true);
+      encryptedDataDetail = inputLdapSettings.getEncryptedDataDetails(secretManager);
+    } finally {
+      if (null != encryptedDataDetail) {
+        deleteTempSecret(temporaryEncryption, encryptedDataDetail, inputLdapSettings, accountId);
+      }
+    }
     return LdapSettingsWithEncryptedDataDetail.builder()
-        .ldapSettings(LdapSettingsMapper.ldapSettingsDTO(ldapSettings))
+        .ldapSettings(LdapSettingsMapper.ldapSettingsDTO(inputLdapSettings))
         .encryptedDataDetail(encryptedDataDetail)
         .build();
   }
@@ -396,7 +420,7 @@ public class SSOServiceImpl implements SSOService {
       @NotNull LdapSettings ldapSettings, @NotBlank final String accountId) {
     boolean temporaryEncryption = !populateEncryptedFields(ldapSettings);
     encryptSecretIfFFisEnabled(ldapSettings);
-    ldapSettings.encryptLdapInlineSecret(secretManager);
+    ldapSettings.encryptLdapInlineSecret(secretManager, false);
     EncryptedDataDetail encryptedDataDetail = ldapSettings.getEncryptedDataDetails(secretManager);
     try {
       SyncTaskContext syncTaskContext = SyncTaskContext.builder()
@@ -416,7 +440,7 @@ public class SSOServiceImpl implements SSOService {
       @NotNull LdapSettings ldapSettings, @NotBlank final String accountId) {
     boolean temporaryEncryption = !populateEncryptedFields(ldapSettings);
     encryptSecretIfFFisEnabled(ldapSettings);
-    ldapSettings.encryptLdapInlineSecret(secretManager);
+    ldapSettings.encryptLdapInlineSecret(secretManager, false);
     EncryptedDataDetail encryptedDataDetail = ldapSettings.getEncryptedDataDetails(secretManager);
     try {
       SyncTaskContext syncTaskContext = SyncTaskContext.builder()
@@ -436,7 +460,7 @@ public class SSOServiceImpl implements SSOService {
       @NotNull LdapSettings ldapSettings, @NotBlank final String accountId) {
     boolean temporaryEncryption = !populateEncryptedFields(ldapSettings);
     encryptSecretIfFFisEnabled(ldapSettings);
-    ldapSettings.encryptLdapInlineSecret(secretManager);
+    ldapSettings.encryptLdapInlineSecret(secretManager, false);
     EncryptedDataDetail encryptedDataDetail = ldapSettings.getEncryptedDataDetails(secretManager);
     try {
       SyncTaskContext syncTaskContext = SyncTaskContext.builder()

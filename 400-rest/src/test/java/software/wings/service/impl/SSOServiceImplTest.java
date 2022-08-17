@@ -376,7 +376,8 @@ public class SSOServiceImplTest extends WingsBaseTest {
         .thenReturn(null);
     ssoSettingService.createLdapSettings(ldapSettings);
 
-    LdapSettingsWithEncryptedDataDetail resultDetails = ssoService.getLdapSettingWithEncryptedDataDetail(testAccountId);
+    LdapSettingsWithEncryptedDataDetail resultDetails =
+        ssoService.getLdapSettingWithEncryptedDataDetail(testAccountId, null);
     assertThat(resultDetails.getLdapSettings().getAccountId()).isEqualTo(testAccountId);
     assertThat(resultDetails.getLdapSettings().getDisplayName()).isEqualTo(displayName);
     assertNotNull(resultDetails.getEncryptedDataDetail());
@@ -414,7 +415,8 @@ public class SSOServiceImplTest extends WingsBaseTest {
         .thenReturn(null);
     ssoSettingService.createLdapSettings(ldapSettings);
 
-    LdapSettingsWithEncryptedDataDetail resultDetails = ssoService.getLdapSettingWithEncryptedDataDetail(testAccountId);
+    LdapSettingsWithEncryptedDataDetail resultDetails =
+        ssoService.getLdapSettingWithEncryptedDataDetail(testAccountId, null);
     assertThat(resultDetails.getLdapSettings().getAccountId()).isEqualTo(testAccountId);
     assertThat(resultDetails.getLdapSettings().getDisplayName()).isEqualTo(displayName);
     assertNotNull(resultDetails.getEncryptedDataDetail());

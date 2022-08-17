@@ -26,7 +26,6 @@ import com.google.inject.name.Named;
 import com.google.protobuf.InvalidProtocolBufferException;
 import java.time.Duration;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
 
@@ -99,7 +98,6 @@ public class LdapGroupSyncStreamConsumer implements Runnable {
 
   private void processMessage(Message message) {
     if (message.hasMessage()) {
-      Map<String, String> metadataMap = message.getMessage().getMetadataMap();
       LdapGroupSyncDTO ldapGroupSyncDTO;
       try {
         ldapGroupSyncDTO = LdapGroupSyncDTO.parseFrom(message.getMessage().getData());

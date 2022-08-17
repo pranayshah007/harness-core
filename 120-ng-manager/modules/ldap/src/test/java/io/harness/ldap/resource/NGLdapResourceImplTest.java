@@ -70,7 +70,8 @@ public class NGLdapResourceImplTest extends CategoryTest {
     int totalMembers = 4;
     final String groupQueryStr = "testGroupName";
     Call<RestResponse<LdapSettingsWithEncryptedDataDetail>> request = mock(Call.class);
-    doReturn(request).when(managerClient).getLdapSettingsWithEncryptedDataDetails(ACCOUNT_ID);
+    System.out.println();
+    doReturn(request).when(managerClient).getLdapSettingsWithEncryptedDataDetails(ACCOUNT_ID, null);
     RestResponse<LdapSettingsWithEncryptedDataDetail> mockResponse =
         new RestResponse<>(ldapSettingsWithEncryptedDataDetail);
     doReturn(Response.success(mockResponse)).when(request).execute();
