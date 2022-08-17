@@ -35,8 +35,6 @@ import io.harness.rbac.CDNGRbacPermissions;
 import io.harness.steps.EntityReferenceExtractorUtils;
 import io.harness.utils.YamlPipelineUtils;
 
-import software.wings.service.impl.instana.InstanaAnalyzeMetricRequest;
-
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import java.util.Optional;
