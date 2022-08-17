@@ -18,6 +18,7 @@ import io.harness.eventsframework.schemas.entity.EntityScopeInfo;
 import io.harness.gitsync.BranchDetails;
 import io.harness.gitsync.HarnessToGitPushInfoServiceGrpc.HarnessToGitPushInfoServiceBlockingStub;
 import io.harness.gitsync.IsGitSimplificationEnabled;
+import io.harness.gitsync.IsGitSimplificationEnabledRequest;
 import io.harness.gitsync.RepoDetails;
 import io.harness.gitsync.exceptions.GitSyncException;
 import io.harness.gitsync.interceptor.GitEntityInfo;
@@ -54,9 +55,13 @@ public class GitSyncSdkServiceImpl implements GitSyncSdkService {
   public boolean isGitSimplificationEnabled(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
     try {
       // Need to add caching
+      IsGitSimplificationEnabledRequest isGitSimplificationEnabledRequest =
+          IsGitSimplificationEnabledRequest.newBuilder()
+              .setEntityScopeInfo(buildEntityScopeInfo(projectIdentifier, orgIdentifier, accountIdentifier))
+              .setIsNotForFFModule(true)
+              .build();
       IsGitSimplificationEnabled isGitSimplificationEnabled =
-          harnessToGitPushInfoServiceBlockingStub.isGitSimplificationEnabledForScope(
-              buildEntityScopeInfo(projectIdentifier, orgIdentifier, accountIdentifier));
+          harnessToGitPushInfoServiceBlockingStub.isGitSimplificationEnabledForScope(isGitSimplificationEnabledRequest);
       return isGitSimplificationEnabled.getEnabled();
     } catch (Exception ex) {
       log.error(
