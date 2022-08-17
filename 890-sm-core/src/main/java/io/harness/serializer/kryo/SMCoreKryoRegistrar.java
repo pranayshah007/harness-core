@@ -10,7 +10,6 @@ package io.harness.serializer.kryo;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.ng.core.entities.NGEncryptedData;
 import io.harness.serializer.KryoRegistrar;
 
 import com.esotericsoftware.kryo.Kryo;
@@ -18,7 +17,5 @@ import com.esotericsoftware.kryo.Kryo;
 @OwnedBy(PL)
 public class SMCoreKryoRegistrar implements KryoRegistrar {
   @Override
-  public void register(Kryo kryo) {
-    kryo.register(NGEncryptedData.class, 15017);
-  }
+  public void register(Kryo kryo) {}
 }

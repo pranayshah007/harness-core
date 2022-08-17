@@ -34,8 +34,6 @@ import lombok.experimental.FieldDefaults;
 import lombok.experimental.FieldNameConstants;
 import org.mongodb.morphia.annotations.Entity;
 import org.springframework.data.annotation.Id;
-import org.springframework.data.annotation.TypeAlias;
-import org.springframework.data.mongodb.core.mapping.Document;
 
 @OwnedBy(PL)
 @Data
@@ -43,8 +41,6 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @FieldNameConstants(innerTypeName = "NGEncryptedDataKeys")
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Entity(value = "ngEncryptedRecords", noClassnameStored = true)
-@Document("ngEncryptedRecords")
-@TypeAlias("ngEncryptedData")
 @StoreIn(DbAliases.NG_MANAGER)
 public class NGEncryptedData implements PersistentEntity, EncryptedRecord {
   public static List<MongoIndex> mongoIndexes() {

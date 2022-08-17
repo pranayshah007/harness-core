@@ -38,5 +38,6 @@ public class SMCoreRegistrars {
           .addAll(DelegateAgentBeansRegistrars.morphiaRegistrars)
           .add(SMCoreMorphiaRegistrar.class)
           .addAll(ConnectorBeansRegistrars.morphiaRegistrars)
+          .addAll(SMDelegateRegistrars.morphiaRegistrars)
           .build();
 }

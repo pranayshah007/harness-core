@@ -1136,6 +1136,7 @@
 15014:software.wings.beans.BaseVaultConfig
 15015:io.harness.delegatetasks.ValidateSecretManagerConfigurationTaskParameters
 15016:io.harness.delegatetasks.ValidateSecretManagerConfigurationTaskResponse
+15017:io.harness.ng.core.entities.NGEncryptedData
 19001:io.harness.delegate.beans.SecretDetail
 19002:io.harness.delegate.beans.TaskData
 19003:io.harness.delegate.beans.executioncapability.HttpConnectionExecutionCapability
