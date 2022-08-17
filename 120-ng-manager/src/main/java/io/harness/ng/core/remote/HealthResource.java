@@ -16,6 +16,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.eraro.ErrorCode;
 import io.harness.exception.NoResultFoundException;
 import io.harness.health.HealthException;
+import io.harness.health.HealthProbe;
 import io.harness.health.HealthService;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.security.annotations.PublicApi;
@@ -42,11 +43,11 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @PublicApi
 public class HealthResource {
-  private HealthService healthService;
+  private HealthProbe healthProbe;
 
   @Inject
-  public HealthResource(HealthService healthService) {
-    this.healthService = healthService;
+  public HealthResource(HealthProbe healthProbe) {
+    this.healthProbe = healthProbe;
   }
 
   @GET
@@ -54,16 +55,7 @@ public class HealthResource {
   @ExceptionMetered
   @ApiOperation(value = "get health for NGManager service", nickname = "getNGManagerHealthStatus")
   public ResponseDTO<String> get() throws Exception {
-    if (getMaintenanceFlag()) {
-      log.info("In maintenance mode. Throwing exception to prevent traffic.");
-      throw NoResultFoundException.newBuilder()
-          .code(ErrorCode.RESOURCE_NOT_FOUND)
-          .message("in maintenance mode")
-          .reportTargets(USER)
-          .build();
-    }
-
-    final HealthCheck.Result check = healthService.check();
+    final HealthCheck.Result check = healthProbe.check();
     if (check.isHealthy()) {
       return ResponseDTO.newResponse("healthy");
     }
