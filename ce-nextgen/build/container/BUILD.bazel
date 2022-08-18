@@ -19,12 +19,12 @@ container_image(
 pkg_tar(
     name = "files",
     srcs = [
-        "//340-ce-nextgen:config.yml",
-        "//340-ce-nextgen:keystore.jks",
+        "//ce-nextgen/config:config.yml",
+        "//ce-nextgen/config:keystore.jks",
     ],
     files = {
         "@alpn_boot_8.1.13.v20181017//file": "alpn-boot-8.1.13.v20181017.jar",
-        "//340-ce-nextgen:module_deploy.jar": "ce-nextgen-capsule.jar",
+        "//ce-nextgen:module_deploy.jar": "ce-nextgen-capsule.jar",
     },
     mode = "0600",
     owner = "65534.65534",

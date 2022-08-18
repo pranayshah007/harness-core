@@ -79,7 +79,7 @@ java_binary(
     data = ["//:resource"],
     main_class = "io.harness.ccm.CENextGenApplication",
     resources = [
-        "//340-ce-nextgen/src/main/resources:resource",
+        "//ce-nextgen/service/src/main/resources:resource",
     ],
     visibility = ["//visibility:public"],
     runtime_deps = [
@@ -93,10 +93,10 @@ java_library(
     testonly = True,
     srcs = glob(["src/test/**/*.java"]),
     data = [
-        "//340-ce-nextgen/src/test/resources:resource",
+        "//ce-nextgen/service/src/test/resources:resource",
     ],
     resources = [
-        "//340-ce-nextgen/src/test/resources:resource",
+        "//ce-nextgen/service/src/test/resources:resource",
     ],
     visibility = ["//visibility:public"],
     deps = shared_dependencies + [
