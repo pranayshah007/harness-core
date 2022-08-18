@@ -195,7 +195,7 @@ public class PipelineServiceConfiguration extends Configuration {
         .stream()
         .filter(klazz
             -> StringUtils.startsWithAny(klazz.getPackage().getName(), RESOURCE_PACKAGE, NG_TRIGGER_RESOURCE_PACKAGE,
-                FILTER_PACKAGE, ENFORCEMENT_PACKAGE))
+                FILTER_PACKAGE, ENFORCEMENT_PACKAGE, "io.harness.reflection"))
         .collect(Collectors.toSet());
   }
 
