@@ -129,6 +129,8 @@ public class PMSPipelineRepositoryCustomImpl implements PMSPipelineRepositoryCus
     }
     if (gitSyncSdkService.isGitSimplificationEnabled(pipelineToSave.getAccountIdentifier(),
             pipelineToSave.getOrgIdentifier(), pipelineToSave.getProjectIdentifier())) {
+      // for storetype = REMOTE draft flag should be false always
+      pipelineToSave.setIsDraft(false);
       Scope scope = buildScope(pipelineToSave);
       String yamlToPush = pipelineToSave.getYaml();
       addGitParamsToPipelineEntity(pipelineToSave, gitEntityInfo);

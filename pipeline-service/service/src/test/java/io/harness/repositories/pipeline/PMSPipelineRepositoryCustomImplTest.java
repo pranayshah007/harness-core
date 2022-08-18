@@ -171,7 +171,8 @@ public class PMSPipelineRepositoryCustomImplTest extends CategoryTest {
     PipelineEntity pipelineToSaveWithStoreType = pipelineToSave.withStoreType(StoreType.REMOTE)
                                                      .withConnectorRef(connectorRef)
                                                      .withRepo(repoName)
-                                                     .withFilePath(filePath);
+                                                     .withFilePath(filePath)
+                                                     .withIsDraft(false);
     PipelineEntity pipelineToSaveWithStoreTypeWithExtraFields =
         pipelineToSave.withStoreType(StoreType.INLINE).withVersion(0L);
     doReturn(pipelineToSaveWithStoreTypeWithExtraFields).when(mongoTemplate).save(pipelineToSaveWithStoreType);
