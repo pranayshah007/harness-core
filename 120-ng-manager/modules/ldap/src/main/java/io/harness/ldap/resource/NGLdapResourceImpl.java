@@ -38,7 +38,7 @@ public class NGLdapResourceImpl implements NGLdapResource {
   public RestResponse<LdapTestResponse> validateLdapConnectionSettings(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, LdapSettings settings) {
     LdapTestResponse ldapTestResponse = ngLdapService.validateLdapConnectionSettings(
-        accountIdentifier, orgIdentifier, projectIdentifier, LdapSettingsMapper.ldapSettingsDTO(settings));
+        accountIdentifier, orgIdentifier, projectIdentifier, settings);
     return new RestResponse<>(ldapTestResponse);
   }
 
@@ -46,7 +46,7 @@ public class NGLdapResourceImpl implements NGLdapResource {
   public RestResponse<LdapTestResponse> validateLdapUserSettings(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, LdapSettings settings) {
     LdapTestResponse ldapTestResponse = ngLdapService.validateLdapUserSettings(
-        accountIdentifier, orgIdentifier, projectIdentifier, LdapSettingsMapper.ldapSettingsDTO(settings));
+        accountIdentifier, orgIdentifier, projectIdentifier, settings);
     return new RestResponse<>(ldapTestResponse);
   }
 
@@ -54,7 +54,7 @@ public class NGLdapResourceImpl implements NGLdapResource {
   public RestResponse<LdapTestResponse> validateLdapGroupSettings(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, LdapSettings settings) {
     LdapTestResponse ldapTestResponse = ngLdapService.validateLdapGroupSettings(
-        accountIdentifier, orgIdentifier, projectIdentifier, LdapSettingsMapper.ldapSettingsDTO(settings));
+        accountIdentifier, orgIdentifier, projectIdentifier, settings);
     return new RestResponse<>(ldapTestResponse);
   }
 
