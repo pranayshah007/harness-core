@@ -4,7 +4,6 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.artifacts.docker.service.DockerRegistryServiceImpl.isSuccessful;
 import static io.harness.exception.WingsException.USER;
 
-import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
 
 import io.harness.annotations.dev.OwnedBy;
@@ -16,8 +15,11 @@ import io.harness.artifacts.gar.beans.GarInternalConfig;
 import io.harness.artifacts.gar.beans.GarPackageVersionResponse;
 import io.harness.artifacts.gar.beans.GarTags;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.exception.ArtifactServerException;
+import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidArtifactServerException;
 import io.harness.exception.NestedExceptionUtils;
+import io.harness.exception.WingsException;
 import io.harness.expression.RegexFunctor;
 import io.harness.network.Http;
 
@@ -40,7 +42,7 @@ import retrofit2.converter.jackson.JacksonConverterFactory;
 @Singleton
 @Slf4j
 public class GARApiServiceImpl implements GarApiService {
-  private static final int Page_Size = 50;
+  private static final int PAGESIZE = 30;
   private GarRestClient getGarRestClient(GarInternalConfig garinternalConfig) {
     String url = getUrl();
     OkHttpClient okHttpClient = Http.getOkHttpClient(url, garinternalConfig.isCertValidationRequired());
@@ -66,8 +68,10 @@ public class GARApiServiceImpl implements GarApiService {
     try {
       GarRestClient garRestClient = getGarRestClient(garinternalConfig);
       return paginate(garinternalConfig, garRestClient, versionRegex, maxNumberOfBuilds);
-    } catch (IOException ie) {
-      return emptyList(); // todo @vivek
+    } catch (IOException e) {
+      throw NestedExceptionUtils.hintWithExplanationException("Could not fetch tags for the image",
+          "Check if the image exists and if the permissions are scoped for the authenticated user",
+          new ArtifactServerException(ExceptionUtils.getMessage(e), e, WingsException.USER));
     }
   }
 
@@ -102,11 +106,11 @@ public class GARApiServiceImpl implements GarApiService {
           .number(tagFinal)
           .metadata(metadata)
           .build();
-    } catch (IOException ie) {
-      // todo @vivek
+    } catch (IOException e) {
+      throw NestedExceptionUtils.hintWithExplanationException("Unable to fetch the given tag for the image",
+          "The tag provided for the image may be incorrect.",
+          new ArtifactServerException(ExceptionUtils.getMessage(e), e, USER));
     }
-
-    return null;
   }
 
   private List<BuildDetailsInternal> paginate(GarInternalConfig garinternalConfig, GarRestClient garRestClient,
@@ -116,17 +120,18 @@ public class GARApiServiceImpl implements GarApiService {
     String nextPage = "";
     String project = garinternalConfig.getProject();
     String region = garinternalConfig.getRegion();
-    String repositories = garinternalConfig.getRepositoryName(); // TODO
+    String repositoryName = garinternalConfig.getRepositoryName();
     String pkg = garinternalConfig.getPkg();
     // process rest of pages
     do {
       Response<GarPackageVersionResponse> response = garRestClient
                                                          .listImageTags(garinternalConfig.getBearerToken(), project,
-                                                             region, repositories, pkg, Page_Size, nextPage)
+                                                             region, repositoryName, pkg, PAGESIZE, nextPage)
                                                          .execute();
 
       if (!isSuccessful(response)) {
-        throw NestedExceptionUtils.hintWithExplanationException("Unable to fetch the versions for the package",
+        throw NestedExceptionUtils.hintWithExplanationException(
+            "GOOGLE ARTIFACT REGISTRY : Unable to fetch the versions for the package",
             "Check if the package exists and if the permissions are scoped for the authenticated user",
             new InvalidArtifactServerException(response.message(), USER));
       }
@@ -174,6 +179,6 @@ public class GARApiServiceImpl implements GarApiService {
         log.warn("Google Artifact Registry Package version response had an empty or missing tag list.");
       }
       return Collections.emptyList();
-    } // TODO
+    }
   }
 }

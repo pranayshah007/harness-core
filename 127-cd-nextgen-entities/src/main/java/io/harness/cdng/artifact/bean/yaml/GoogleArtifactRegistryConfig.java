@@ -81,6 +81,7 @@ public class GoogleArtifactRegistryConfig implements ArtifactConfig, Visitable, 
    */
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) @Wither ParameterField<String> versionRegex;
 
+  @NotNull
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
   @Wither
   ParameterField<GoogleArtifactRegistryType> googleArtifactRegistryType;
