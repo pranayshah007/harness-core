@@ -1,6 +1,6 @@
 # Any edit in this file should accompany an increment in version.
 name: resourceTypeConfiguration
-version: 16
+version: 17
 resourceTypes:
   - identifier: ACCOUNT
     permissionKey: account
@@ -90,6 +90,20 @@ resourceTypes:
     permissionKey: chaosgitops
   - identifier: CHAOS_WORKFLOW
     permissionKey: chaosworkflow
+  - identifier: CCM_OVERVIEW
+    permissionKey: overview
+  - identifier: CCM_PERSPECTIVE
+    permissionKey: perspective
+  - identifier: CCM_FOLDER
+    permissionKey: folder
+  - identifier: CCM_BUDGET
+    permissionKey: budget
+  - identifier: CCM_COSTCATEGORY
+    permissionKey: costCategory
+  - identifier: CCM_AUTOSTOPPINGRULE
+    permissionKey: autoStoppingRule
+  - identifier: CCM_LOADBALANCER
+    permissionKey: loadBalancer
   - identifier: SMTP
     permissionKey: smtp
   - identifier: SETTING
