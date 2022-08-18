@@ -1,8 +1,8 @@
 /*
- * Copyright 2021 Harness Inc. All rights reserved.
- * Use of this source code is governed by the PolyForm Shield 1.0.0 license
+ * Copyright 2022 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
  * that can be found in the licenses directory at the root of this repository, also available at
- * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
 package io.harness.migrations.timescaledb.data;
@@ -15,28 +15,24 @@ import io.harness.timescaledb.TimeScaleDBService;
 import software.wings.timescale.migrations.DeploymentsMigrationHelper;
 
 import com.google.inject.Inject;
-import com.google.inject.Singleton;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
-/**
- * This will migrate the last 30 days of top level executions to TimeScaleDB
- */
 @Slf4j
-@Singleton
-public class AddWorkflowExecutionFailureDetails implements TimeScaleDBDataMigration {
-  public static final int BATCH_LIMIT = 500;
+public class AddParentPipelineDataToDeployment implements TimeScaleDBDataMigration {
+  public static final int BATCH_LIMIT = 1000;
   @Inject TimeScaleDBService timeScaleDBService;
 
   @Inject FeatureFlagService featureFlagService;
-
   @Inject DeploymentsMigrationHelper deploymentsMigrationHelper;
 
   private static final String update_statement =
-      "UPDATE DEPLOYMENT SET FAILURE_DETAILS=?,FAILED_STEP_NAMES=?,FAILED_STEP_TYPES=? WHERE EXECUTIONID=?";
+      "UPDATE DEPLOYMENT SET PARENT_PIPELINE_ID=?, WORKFLOWS=?, CREATED_BY_TYPE=? WHERE EXECUTIONID=?";
 
-  private String debugLine = "EXECUTION_FAILURE_TIMESCALE MIGRATION: ";
+  private static final String query_statement = "SELECT * FROM DEPLOYMENT WHERE EXECUTIONID=?";
+
+  private String debugLine = "PARENT_PIPELINE_TIMESCALE MIGRATION: ";
 
   @Override
   public boolean migrate() {
@@ -45,10 +41,10 @@ public class AddWorkflowExecutionFailureDetails implements TimeScaleDBDataMigrat
       return false;
     }
     try {
-      log.info(debugLine + "Migration of stateExecutionInstances started");
+      log.info(debugLine + "Migration of deployments table started");
       List<String> accountIds =
           featureFlagService.getAccountIds(FeatureName.TIME_SCALE_CG_SYNC).stream().collect(Collectors.toList());
-      deploymentsMigrationHelper.setFailureDetailsForAccountIds(accountIds, debugLine, BATCH_LIMIT, update_statement);
+      deploymentsMigrationHelper.setParentPipelineForAccountIds(accountIds, debugLine, BATCH_LIMIT, update_statement);
       log.info(debugLine + "Migration to populate parent pipeline id to timescale deployments successful");
       return true;
     } catch (Exception e) {
