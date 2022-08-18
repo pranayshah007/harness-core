@@ -8,7 +8,7 @@
 package io.harness.batch.processing.anomalydetection;
 
 public class AnomalyDetectionConstants {
-  public static final int DAYS_TO_CONSIDER = 36;
+  public static final int DAYS_TO_CONSIDER = 42;
   public static final double DEFAULT_COST = -1.0;
   public static final double MINIMUM_AMOUNT = 100.0;
   public static final int MIN_DAYS_REQUIRED_DAILY = 14;
