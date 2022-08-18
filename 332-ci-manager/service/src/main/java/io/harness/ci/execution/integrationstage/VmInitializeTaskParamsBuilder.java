@@ -222,7 +222,7 @@ public class VmInitializeTaskParamsBuilder {
         .build();
   }
 
-  private void validateInfrastructure(Infrastructure infrastructure) {
+  public void validateInfrastructure(Infrastructure infrastructure) {
     if (infrastructure == null) {
       throw new CIStageExecutionException("Input infrastructure can not be empty");
     }

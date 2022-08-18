@@ -4991,6 +4991,9 @@
         "identifier": {
           "type": "string"
         },
+        "initTimeout": {
+          "type": "string"
+        },
         "os": {
           "oneOf": [
             {
