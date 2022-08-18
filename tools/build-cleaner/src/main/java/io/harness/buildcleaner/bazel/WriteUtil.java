@@ -12,9 +12,6 @@ public class WriteUtil {
 
   public static void updateResponseWithSet(SortedSet<String> collection, String name, StringBuilder response,
                                            boolean leadingIndent) {
-    if (collection.isEmpty()) {
-      return;
-    }
     if (leadingIndent) {
       response.append(INDENTATION);
     }
