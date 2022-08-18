@@ -359,10 +359,17 @@
       "type": "object",
       "properties": {
         "tags": {
-          "type": "object",
-          "additionalProperties": {
-            "type": "string"
-          }
+          "oneOf": [
+            {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              }
+            },
+            {
+              "type": "string"
+            }
+          ]
         },
         "vpcs": {
           "type": "array",
