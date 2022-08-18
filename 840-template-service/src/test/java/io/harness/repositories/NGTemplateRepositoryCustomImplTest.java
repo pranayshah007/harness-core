@@ -273,7 +273,7 @@ public class NGTemplateRepositoryCustomImplTest {
                                    .filePath(filePath)
                                    .build();
 
-    when(ngTemplateFeatureFlagHelperService.isEnabled(accountIdentifier, FeatureName.FF_TEMPLATE_GITSYNC))
+    when(ngTemplateFeatureFlagHelperService.isEnabled(accountIdentifier, FeatureName.NG_TEMPLATE_GITX_ACCOUNT_ORG))
         .thenReturn(true);
 
     boolean isNewGitXEnabled = ngTemplateRepositoryCustom.isNewGitXEnabled(templateToSave, branchInfo);

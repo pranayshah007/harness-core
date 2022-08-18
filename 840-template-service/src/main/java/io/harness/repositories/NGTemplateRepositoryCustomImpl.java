@@ -495,7 +495,7 @@ public class NGTemplateRepositoryCustomImpl implements NGTemplateRepositoryCusto
       return isGitSimplificationEnabled(templateToSave, gitEntityInfo);
     } else {
       return ngTemplateFeatureFlagHelperService.isEnabled(
-                 templateToSave.getAccountId(), FeatureName.FF_TEMPLATE_GITSYNC)
+                 templateToSave.getAccountId(), FeatureName.NG_TEMPLATE_GITX_ACCOUNT_ORG)
           && TemplateUtils.isRemoteEntity(gitEntityInfo);
     }
   }
