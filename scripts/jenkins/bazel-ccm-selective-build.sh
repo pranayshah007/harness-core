@@ -62,11 +62,6 @@ else
     echo "Codebase Hash:${RANDOM_CODEHASH}" > protocol.info;
   fi
 
-  if [ "${BUILD_CE_NEXTGEN}" == "true" ]; then
-    build_bazel_application 340-ce-nextgen
-    [ "$DOCKERIZE" == "true" ] && copy_ce_nextgen_jars
-  fi
-
   if [ "${BUILD_NG_MANAGER}" == "true" ]; then
     build_bazel_application 120-ng-manager
     [ "$DOCKERIZE" == "true" ] && copy_ng_manager_jars

@@ -18,8 +18,6 @@ copy_event_server_jars
 
 copy_change_data_capture_jars
 
-copy_ce_nextgen_jars
-
 copy_ng_manager_jars
 
 copy_ng_dashboard_jars

@@ -104,9 +104,9 @@ aeriform("//332-ci-manager/contracts:module")
 
 aeriform("//332-ci-manager/contracts:tests")
 
-aeriform("//340-ce-nextgen:module")
+aeriform("//ce-nextgen:module")
 
-aeriform("//340-ce-nextgen:tests")
+aeriform("//ce-nextgen:tests")
 
 aeriform("//350-event-server:module")
 

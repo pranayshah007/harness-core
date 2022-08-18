@@ -112,7 +112,7 @@ public class BatchProcessingModule extends AbstractModule {
 
   /**
    * Required by io.harness.ccm.commons.utils.BigQueryHelper, though io.harness.ccm.commons.beans.config.GcpConfig is
-   * utilized 340-ce-nextgen application only.
+   * utilized ce-nextgen application only.
    */
   @Provides
   @Singleton

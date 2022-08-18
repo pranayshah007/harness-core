@@ -65,7 +65,6 @@ BAZEL_MODULES="\
   //332-ci-manager/app:module \
   //332-ci-manager/contracts:module \
   //332-ci-manager/service:module \
-  //340-ce-nextgen:module \
   //350-event-server:module \
   //360-cg-manager:module \
   //380-cg-graphql:module \
@@ -205,6 +204,7 @@ BAZEL_MODULES="\
   //999-annotations:module \
   //access-control/service:module \
   //access-control/contracts:module \
+  //ce-nextgen:module \
   //product/ci/engine/proto:all \
   //product/ci/scm/proto:all \
 "
