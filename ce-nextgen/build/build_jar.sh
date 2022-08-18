@@ -13,4 +13,4 @@ fi
 BAZEL_DIRS=${HOME}/.bazel-dirs
 BAZEL_ARGUMENTS="--show_timestamps --announce_rc --experimental_convenience_symlinks=normal --remote_download_outputs=all --symlink_prefix=${BAZEL_DIRS}/"
 CE_NEXTGEN_MODULE="//ce-nextgen/service:module //ce-nextgen/service:module_deploy.jar"
-bazel ${bazelrc} build CE_NEXTGEN_MODULE ${BAZEL_ARGUMENTS}
+bazel ${bazelrc} build $CE_NEXTGEN_MODULE ${BAZEL_ARGUMENTS}
