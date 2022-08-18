@@ -34,12 +34,12 @@ fi
 cp ${HOME}/.bazel-dirs/bin/ce-nextgen/service/module_deploy.jar ce-nextgen-capsule.jar
 cp ../../ce-nextgen/config/keystore.jks .
 cp ../../ce-nextgen/config/config.yml .
-cp ../../dockerization/ce-nextgen/Dockerfile-ce-nextgen-cie-jdk Dockerfile-cie-jdk
-cp ../../dockerization/ce-nextgen/Dockerfile-ce-nextgen-jenkins-k8-openjdk Dockerfile
-cp ../../dockerization/ce-nextgen/Dockerfile-ce-nextgen-jenkins-k8-gcr-openjdk Dockerfile-gcr
-cp ../../dockerization/base-images/apm/inject-onprem-apm-bins-into-dockerimage.sh .
-cp ../../dockerization/base-images/apm/inject-saas-apm-bins-into-dockerimage.sh .
-cp -r ../../dockerization/ce-nextgen/scripts/ .
+cp ../../ce-nextgen/build/container/Dockerfile-ce-nextgen-cie-jdk Dockerfile-cie-jdk
+cp ../../ce-nextgen/build/container/Dockerfile-ce-nextgen-jenkins-k8-openjdk Dockerfile
+cp ../../ce-nextgen/build/container/Dockerfile-ce-nextgen-jenkins-k8-gcr-openjdk Dockerfile-gcr
+cp ../../ce-nextgen/build/container/inject-onprem-apm-bins-into-dockerimage.sh .
+cp ../../ce-nextgen/build/container/inject-saas-apm-bins-into-dockerimage.sh .
+cp -r ../../ce-nextgen/build/container/scripts/ .
 
 cp ../../protocol.info .
 echo ${JDK} > jdk.txt
