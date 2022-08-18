@@ -27,6 +27,7 @@ import com.slack.api.model.block.SectionBlock;
 import com.slack.api.model.block.composition.MarkdownTextObject;
 import com.slack.api.model.block.element.BlockElement;
 import com.slack.api.model.block.element.ButtonElement;
+import java.net.URISyntaxException;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -229,7 +230,8 @@ public class SlackMessageGenerator {
     return SectionBlock.builder().text(MarkdownTextObject.builder().text(templateString).build()).build();
   }
 
-  public String getAnomalyDetailsTemplateString(AnomalyData anomaly) {
+  public String getAnomalyDetailsTemplateString(
+      String accountId, String perspectiveId, String perspectiveName, AnomalyData anomaly) throws URISyntaxException {
     AnomalyEntity anomalyEntity = convertToAnomalyEntity(anomaly);
 
     String templateString = "${ANOMALY_COST}`* (+${ANOMALY_COST_PERCENTAGE}%)  ";
@@ -245,8 +247,8 @@ public class SlackMessageGenerator {
         + "}* detected. Would be typically at *$ ${" + AnomalyEntityKeys.expectedCost + "}*\n\n";
 
     templateString = " *`$" + replace(templateString, AnomalyUtility.getEntityMap(anomalyEntity));
-    // Todo: NG Urls here
-    templateString = replace(templateString, AnomalyUtility.getURLMap(anomalyEntity, mainConfiguration.getBaseUrl()));
+    templateString = replace(templateString,
+        AnomalyUtility.getNgURLMap(accountId, perspectiveId, perspectiveName, anomaly, mainConfiguration.getBaseUrl()));
     return templateString;
   }
 

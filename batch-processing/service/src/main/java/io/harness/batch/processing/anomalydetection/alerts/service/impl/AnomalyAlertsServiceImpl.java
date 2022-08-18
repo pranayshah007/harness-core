@@ -14,7 +14,6 @@ import static io.harness.notification.dtos.NotificationChannelDTO.NotificationCh
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.slack.api.webhook.WebhookPayloads.payload;
-import static java.lang.String.format;
 
 import io.harness.batch.processing.anomalydetection.alerts.SlackMessageGenerator;
 import io.harness.batch.processing.anomalydetection.alerts.service.itfc.AnomalyAlertsService;
@@ -22,6 +21,7 @@ import io.harness.batch.processing.config.BatchMainConfig;
 import io.harness.batch.processing.shard.AccountShardService;
 import io.harness.ccm.anomaly.entities.AnomalyEntity;
 import io.harness.ccm.anomaly.service.itfc.AnomalyService;
+import io.harness.ccm.anomaly.url.HarnessNgUrl;
 import io.harness.ccm.anomaly.utility.AnomalyUtility;
 import io.harness.ccm.commons.dao.notifications.CCMNotificationsDao;
 import io.harness.ccm.commons.entities.anomaly.AnomalyData;
@@ -55,7 +55,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.http.client.utils.URIBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import retrofit2.Response;
@@ -76,9 +75,6 @@ public class AnomalyAlertsServiceImpl implements AnomalyAlertsService {
   @Autowired private CCMNotificationsDao notificationSettingsDao;
   @Autowired private NotificationResourceClient notificationResourceClient;
   @Autowired private BatchMainConfig mainConfiguration;
-
-  private static final String NG_PATH_CONST = "ng/";
-  private static final String PERSPECTIVE_URL_FORMAT_NG = "/account/%s/ce/perspectives/%s/name/%s";
 
   int MAX_RETRY = 3;
 
@@ -203,12 +199,15 @@ public class AnomalyAlertsServiceImpl implements AnomalyAlertsService {
     //                                                    .templateId("template-id-here")
     //                                                    .userGroups(Collections.emptyList());
 
-    String perspectiveUrl = getPerspectiveUrl(accountId, perspectiveNotificationSetting.getPerspectiveId(),
-        perspectiveNotificationSetting.getPerspectiveName());
+    String perspectiveUrl = HarnessNgUrl.getPerspectiveUrl(accountId, perspectiveNotificationSetting.getPerspectiveId(),
+        perspectiveNotificationSetting.getPerspectiveName(), mainConfiguration.getBaseUrl());
 
     Map<String, String> templateData = new HashMap<>();
     templateData.put("perspective_name", perspectiveNotificationSetting.getPerspectiveName());
-    templateData.put("anomalies", slackMessageGenerator.getAnomalyDetailsTemplateString(perspectiveAnomalies.get(0)));
+    templateData.put("anomalies",
+        slackMessageGenerator.getAnomalyDetailsTemplateString(accountId,
+            perspectiveNotificationSetting.getPerspectiveId(), perspectiveNotificationSetting.getPerspectiveName(),
+            perspectiveAnomalies.get(0)));
     templateData.put("perspective_url", perspectiveUrl);
 
     // Sending email alerts
@@ -224,7 +223,9 @@ public class AnomalyAlertsServiceImpl implements AnomalyAlertsService {
     slackTemplateData.put("perspective_url", perspectiveUrl);
     StringBuilder anomaliesDetails = new StringBuilder();
     for (AnomalyData perspectiveAnomaly : perspectiveAnomalies) {
-      anomaliesDetails.append(slackMessageGenerator.getAnomalyDetailsTemplateString(perspectiveAnomaly));
+      anomaliesDetails.append(slackMessageGenerator.getAnomalyDetailsTemplateString(accountId,
+          perspectiveNotificationSetting.getPerspectiveId(), perspectiveNotificationSetting.getPerspectiveName(),
+          perspectiveAnomaly));
     }
     slackTemplateData.put("anomalies_details", anomaliesDetails.toString());
 
@@ -263,14 +264,5 @@ public class AnomalyAlertsServiceImpl implements AnomalyAlertsService {
     List<String> channelUrls = new ArrayList<>();
     relevantChannels.forEach(channel -> channelUrls.addAll(channel.getChannelUrls()));
     return channelUrls;
-  }
-
-  public String getPerspectiveUrl(String accountId, String perspectiveId, String perspectiveName)
-      throws URISyntaxException {
-    String baseUrl = mainConfiguration.getBaseUrl();
-    URIBuilder uriBuilder = new URIBuilder(baseUrl);
-    uriBuilder.setPath(NG_PATH_CONST);
-    uriBuilder.setFragment(format(PERSPECTIVE_URL_FORMAT_NG, accountId, perspectiveId, perspectiveName));
-    return uriBuilder.toString();
   }
 }

@@ -14,8 +14,11 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.ccm.anomaly.entities.AnomalyEntity;
 import io.harness.ccm.anomaly.entities.AnomalyEntity.AnomalyEntityKeys;
+import io.harness.ccm.anomaly.url.HarnessNgUrl;
 import io.harness.ccm.anomaly.url.HarnessUrl;
+import io.harness.ccm.commons.entities.anomaly.AnomalyData;
 
+import java.net.URISyntaxException;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.util.Date;
@@ -56,6 +59,28 @@ public class AnomalyUtility {
     substitutes.put("GCP_SKU_URL", HarnessUrl.getK8sUrl(anomaly, baseUrl));
     substitutes.put("AWS_ACCOUNT_URL", HarnessUrl.getK8sUrl(anomaly, baseUrl));
     substitutes.put("AWS_SERVICE_URL", HarnessUrl.getK8sUrl(anomaly, baseUrl));
+    return substitutes;
+  }
+
+  public Map<String, String> getNgURLMap(String accountId, String perspectiveId, String perspectiveName,
+      AnomalyData anomaly, String baseUrl) throws URISyntaxException {
+    Map<String, String> substitutes = new HashMap<>();
+    substitutes.put("CLUSTER_URL",
+        HarnessNgUrl.getPerspectiveAnomalyUrl(accountId, perspectiveId, perspectiveName, anomaly, baseUrl));
+    substitutes.put("NAMESPACE_URL",
+        HarnessNgUrl.getPerspectiveAnomalyUrl(accountId, perspectiveId, perspectiveName, anomaly, baseUrl));
+    substitutes.put("WORKLOAD_URL",
+        HarnessNgUrl.getPerspectiveAnomalyUrl(accountId, perspectiveId, perspectiveName, anomaly, baseUrl));
+    substitutes.put("GCP_PROJECT_URL",
+        HarnessNgUrl.getPerspectiveAnomalyUrl(accountId, perspectiveId, perspectiveName, anomaly, baseUrl));
+    substitutes.put("GCP_PRODUCT_URL",
+        HarnessNgUrl.getPerspectiveAnomalyUrl(accountId, perspectiveId, perspectiveName, anomaly, baseUrl));
+    substitutes.put("GCP_SKU_URL",
+        HarnessNgUrl.getPerspectiveAnomalyUrl(accountId, perspectiveId, perspectiveName, anomaly, baseUrl));
+    substitutes.put("AWS_ACCOUNT_URL",
+        HarnessNgUrl.getPerspectiveAnomalyUrl(accountId, perspectiveId, perspectiveName, anomaly, baseUrl));
+    substitutes.put("AWS_SERVICE_URL",
+        HarnessNgUrl.getPerspectiveAnomalyUrl(accountId, perspectiveId, perspectiveName, anomaly, baseUrl));
     return substitutes;
   }
 
