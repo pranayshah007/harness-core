@@ -17,6 +17,7 @@ java_binary(
         "//pipeline-service/build:__subpackages__",
     ],
     runtime_deps = [
+        "//980-commons/src/test/resources",
         "//pipeline-service/service/src/main/resources",
         "@maven//:javax_ws_rs_javax_ws_rs_api",
     ],
