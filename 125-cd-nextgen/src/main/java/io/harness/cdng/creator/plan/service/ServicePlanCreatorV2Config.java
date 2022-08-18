@@ -30,5 +30,5 @@ public class ServicePlanCreatorV2Config {
 
   ServiceDefinition serviceDefinition;
 
-  Map<String, Object> inputs;
+  ParameterField<Map<String, Object>> inputs;
 }

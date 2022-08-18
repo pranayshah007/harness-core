@@ -1,7 +1,7 @@
 package io.harness.cdng.service.steps;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
-
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static java.lang.String.format;
 
 import io.harness.accesscontrol.clients.AccessControlClient;
@@ -9,11 +9,11 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.service.beans.ServiceDefinition;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
+import io.harness.cdng.visitor.YamlTypes;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.exception.InvalidRequestException;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.ng.core.service.entity.ServiceEntity;
-import io.harness.ng.core.service.mappers.NGServiceEntityMapper;
 import io.harness.ng.core.service.services.ServiceEntityService;
 import io.harness.ng.core.service.yaml.NGServiceConfig;
 import io.harness.ng.core.service.yaml.NGServiceV2InfoConfig;
@@ -23,6 +23,7 @@ import io.harness.pms.contracts.plan.ExecutionPrincipalInfo;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
+import io.harness.pms.merger.helpers.MergeHelper;
 import io.harness.pms.rbac.NGResourceType;
 import io.harness.pms.rbac.PipelineRbacHelper;
 import io.harness.pms.rbac.PrincipalTypeProtoToPrincipalTypeMapper;
@@ -31,12 +32,16 @@ import io.harness.pms.sdk.core.steps.executables.SyncExecutable;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
+import io.harness.pms.yaml.YamlUtils;
 import io.harness.rbac.CDNGRbacPermissions;
 import io.harness.steps.EntityReferenceExtractorUtils;
 import io.harness.utils.YamlPipelineUtils;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
@@ -71,33 +76,42 @@ public class ServiceStepV3 implements SyncExecutable<ServiceStepV3Parameters> {
     }
 
     final ServiceEntity serviceEntity = serviceOpt.get();
-    final NGServiceConfig ngServiceConfig = NGServiceEntityMapper.toNGServiceConfig(serviceEntity);
-    final NGServiceV2InfoConfig ngServiceV2InfoConfig = ngServiceConfig.getNgServiceV2InfoConfig();
+    final String mergedServiceYaml;
+    if (stepParameters.getInputs() != null && isNotEmpty(stepParameters.getInputs().getValue())) {
+      mergedServiceYaml = mergeServiceInputsIntoService(serviceEntity.getYaml(), stepParameters.getInputs().getValue());
+    } else {
+      mergedServiceYaml = serviceEntity.getYaml();
+    }
 
-    // Todo: merge serviceOpt inputs
-
-    validateResources(ambiance, ngServiceConfig);
+    final NGServiceConfig ngServiceConfig;
+    try {
+      ngServiceConfig = YamlUtils.read(mergedServiceYaml, NGServiceConfig.class);
+    } catch (IOException e) {
+      throw new InvalidRequestException("corrupt service yaml for service " + serviceEntity.getIdentifier(), e);
+    }
 
     // Todo:(yogesh) check the step category
     sweepingOutputService.consume(ambiance, SERVICE_SWEEPING_OUTPUT,
-        ServiceSweepingOutput.builder().finalServiceYaml(YamlPipelineUtils.writeYamlString(ngServiceConfig)).build(),
-        StepCategory.STAGE.name());
+        ServiceSweepingOutput.builder().finalServiceYaml(mergedServiceYaml).build(), StepCategory.STAGE.name());
+
+    final NGServiceV2InfoConfig ngServiceV2InfoConfig = ngServiceConfig.getNgServiceV2InfoConfig();
+
+    validateResources(ambiance, ngServiceConfig);
 
     return StepResponse.builder()
         .status(Status.SUCCEEDED)
-        .stepOutcome(StepResponse.StepOutcome.builder()
-                         .name(OutcomeExpressionConstants.SERVICE)
-                         .outcome(ServiceStepOutcome.fromServiceStepV2(ngServiceV2InfoConfig.getIdentifier(),
-                             ngServiceV2InfoConfig.getName(),
-                             ngServiceV2InfoConfig.getServiceDefinition().getType().getYamlName(),
-                             ngServiceV2InfoConfig.getDescription(), ngServiceV2InfoConfig.getTags(),
-                             ngServiceV2InfoConfig.getGitOpsEnabled()))
-                         .group(StepCategory.STAGE.name())
-                         .build())
+        .stepOutcome(
+            StepResponse.StepOutcome.builder()
+                .name(OutcomeExpressionConstants.SERVICE)
+                .outcome(ServiceStepOutcome.fromServiceStepV2(serviceEntity.getIdentifier(), serviceEntity.getName(),
+                    ngServiceV2InfoConfig.getServiceDefinition().getType().getYamlName(),
+                    serviceEntity.getDescription(), ngServiceV2InfoConfig.getTags(), serviceEntity.getGitOpsEnabled()))
+                .group(StepCategory.STAGE.name())
+                .build())
         .build();
   }
 
-  void validateResources(Ambiance ambiance, NGServiceConfig serviceConfig) {
+  private void validateResources(Ambiance ambiance, NGServiceConfig serviceConfig) {
     final ExecutionPrincipalInfo executionPrincipalInfo = ambiance.getMetadata().getPrincipalInfo();
     final String principal = executionPrincipalInfo.getPrincipal();
     if (isEmpty(principal)) {
@@ -117,5 +131,12 @@ public class ServiceStepV3 implements SyncExecutable<ServiceStepV3Parameters> {
         io.harness.accesscontrol.acl.api.Resource.of(
             NGResourceType.SERVICE, serviceConfig.getNgServiceV2InfoConfig().getIdentifier()),
         CDNGRbacPermissions.SERVICE_RUNTIME_PERMISSION, "Validation for Service Step failed");
+  }
+
+  private String mergeServiceInputsIntoService(String originalServiceYaml, Map<String, Object> serviceInputs) {
+    Map<String, Object> serviceInputsYaml = new HashMap<>();
+    serviceInputsYaml.put(YamlTypes.SERVICE_ENTITY, serviceInputs);
+    return MergeHelper.mergeInputSetFormatYamlToOriginYaml(
+        originalServiceYaml, YamlPipelineUtils.writeYamlString(serviceInputsYaml));
   }
 }
