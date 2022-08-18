@@ -11,5 +11,5 @@ import lombok.Data;
 @Builder
 public class ServiceStepV3Parameters implements StepParameters {
   private ParameterField<String> serviceRef;
-  private Map<String, Object> inputs;
+  private ParameterField<Map<String, Object>> inputs;
 }

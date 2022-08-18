@@ -144,8 +144,10 @@ public class ServicePlanCreatorHelper {
 
     if (serviceYamlV2.getServiceRef().isExpression()) {
       if (featureFlagService.isEnabled(accountIdentifier, FeatureName.SERVICE_V2_EXPRESSION)) {
-        ServicePlanCreatorV2Config config =
-            ServicePlanCreatorV2Config.builder().identifier(serviceYamlV2.getServiceRef()).build();
+        ServicePlanCreatorV2Config config = ServicePlanCreatorV2Config.builder()
+                                                .identifier(serviceYamlV2.getServiceRef())
+                                                .inputs(serviceYamlV2.getServiceInputs())
+                                                .build();
         try {
           YamlField yamlField = YamlUtils.injectUuidInYamlField(YamlUtils.write(config));
           return new YamlField(YamlTypes.SERVICE_ENTITY,
