@@ -32,6 +32,8 @@ import io.harness.beans.steps.stepinfo.PluginStepInfo;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.OSType;
+import io.harness.beans.yaml.extended.infrastrucutre.VmInfraYaml;
+import io.harness.beans.yaml.extended.infrastrucutre.VmPoolYaml;
 import io.harness.ci.config.CIExecutionServiceConfig;
 import io.harness.ci.execution.CIExecutionConfigService;
 import io.harness.cimanager.stages.IntegrationStageConfig;
@@ -66,6 +68,7 @@ public class CIStepGroupUtils {
   @Inject private InitializeStepGenerator initializeStepGenerator;
   @Inject private CIExecutionConfigService ciExecutionConfigService;
   @Inject private CIExecutionServiceConfig ciExecutionServiceConfig;
+  @Inject private VmInitializeTaskParamsBuilder vmInitializeTaskParamsBuilder;
 
   public List<ExecutionWrapperConfig> createExecutionWrapperWithInitializeStep(StageElementConfig stageElementConfig,
       CIExecutionArgs ciExecutionArgs, CodeBase ciCodebase, Infrastructure infrastructure, String accountId) {
@@ -139,19 +142,26 @@ public class CIStepGroupUtils {
       throw new CIStageExecutionException("Input infrastructure can not be empty");
     }
 
-    if (infrastructure.getType() != Infrastructure.Type.KUBERNETES_DIRECT) {
+    if (infrastructure.getType() == Infrastructure.Type.VM) {
+      vmInitializeTaskParamsBuilder.validateInfrastructure(infrastructure);
+      VmPoolYaml vmPoolYaml = (VmPoolYaml) ((VmInfraYaml) infrastructure).getSpec();
+      return parseTimeout(vmPoolYaml.getSpec().getInitTimeout(), "15m");
+    } else if (infrastructure.getType() == Infrastructure.Type.KUBERNETES_DIRECT) {
+      if (((K8sDirectInfraYaml) infrastructure).getSpec() == null) {
+        throw new CIStageExecutionException("Input infrastructure can not be empty");
+      }
+      ParameterField<String> timeout = ((K8sDirectInfraYaml) infrastructure).getSpec().getInitTimeout();
+      return parseTimeout(timeout, "10m");
+    } else {
       return ParameterField.createValueField(Timeout.fromString("10m"));
     }
+  }
 
-    if (((K8sDirectInfraYaml) infrastructure).getSpec() == null) {
-      throw new CIStageExecutionException("Input infrastructure can not be empty");
-    }
-    ParameterField<String> timeout = ((K8sDirectInfraYaml) infrastructure).getSpec().getInitTimeout();
-
+  private ParameterField<Timeout> parseTimeout(ParameterField<String> timeout, String defaultTimeout) {
     if (timeout != null && timeout.fetchFinalValue() != null && isNotEmpty((String) timeout.fetchFinalValue())) {
       return ParameterField.createValueField(Timeout.fromString((String) timeout.fetchFinalValue()));
     } else {
-      return ParameterField.createValueField(Timeout.fromString("10m"));
+      return ParameterField.createValueField(Timeout.fromString(defaultTimeout));
     }
   }
 
