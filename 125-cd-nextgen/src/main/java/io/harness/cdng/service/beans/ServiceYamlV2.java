@@ -42,9 +42,7 @@ public class ServiceYamlV2 implements Visitable {
   private String uuid;
 
   // For New Service Yaml
-  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
-  //  @Pattern(regexp = NGRegexValidatorConstants.RUNTIME_OR_FIXED_IDENTIFIER_PATTERN)
-  private ParameterField<String> serviceRef;
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) private ParameterField<String> serviceRef;
 
   @VariableExpression(skipVariableExpression = true) private ServiceUseFromStageV2 useFromStage;
 
