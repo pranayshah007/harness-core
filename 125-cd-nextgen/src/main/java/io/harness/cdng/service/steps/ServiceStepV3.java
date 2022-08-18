@@ -64,7 +64,7 @@ public class ServiceStepV3 implements SyncExecutable<ServiceStepV3Parameters> {
 
     final Optional<ServiceEntity> serviceOpt =
         serviceEntityService.get(AmbianceUtils.getAccountId(ambiance), AmbianceUtils.getOrgIdentifier(ambiance),
-            AmbianceUtils.getProjectIdentifier(ambiance), stepParameters.getServiceRef(), false);
+            AmbianceUtils.getProjectIdentifier(ambiance), stepParameters.getServiceRef().getValue(), false);
     if (serviceOpt.isEmpty()) {
       throw new InvalidRequestException(
           format("serviceOpt with identifier %s not found", stepParameters.getServiceRef()));
