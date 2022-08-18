@@ -10,23 +10,29 @@ package io.harness.cdng.artifact.resources.githubpackages.mappers;
 import io.harness.cdng.artifact.resources.githubpackages.dtos.GithubPackageDTO;
 import io.harness.cdng.artifact.resources.githubpackages.dtos.GithubPackagesResponseDTO;
 import io.harness.delegate.task.artifacts.githubpackages.GithubPackagesArtifactDelegateResponse;
-import io.harness.delegate.task.artifacts.response.ArtifactBuildDetailsNG;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 import lombok.experimental.UtilityClass;
 
 @UtilityClass
 public class GithubPackagesResourceMapper {
   public GithubPackagesResponseDTO toPackagesResponse(
       List<GithubPackagesArtifactDelegateResponse> githubPackagesArtifactDelegateResponses) {
-    List<GithubPackageDTO> packages = githubPackagesArtifactDelegateResponses.stream()
-                                          .map(response -> toGithubPackagesDTO(response.getBuildDetails()))
-                                          .collect(Collectors.toList());
-    return GithubPackagesResponseDTO.builder().githubPackageResponse(packages).build();
-  }
+    List<GithubPackageDTO> githubPackages = new ArrayList<>();
 
-  public GithubPackageDTO toGithubPackagesDTO(ArtifactBuildDetailsNG artifactBuildDetailsNG) {
-    return GithubPackageDTO.builder().build();
+    for (GithubPackagesArtifactDelegateResponse response : githubPackagesArtifactDelegateResponses) {
+      GithubPackageDTO githubPackage = GithubPackageDTO.builder()
+                                           .packageId(response.getPackageId())
+                                           .packageName(response.getPackageName())
+                                           .packageUrl(response.getPackageUrl())
+                                           .packageType(response.getPackageType())
+                                           .visibility(response.getPackageVisibility())
+                                           .build();
+
+      githubPackages.add(githubPackage);
+    }
+
+    return GithubPackagesResponseDTO.builder().githubPackageResponse(githubPackages).build();
   }
 }
