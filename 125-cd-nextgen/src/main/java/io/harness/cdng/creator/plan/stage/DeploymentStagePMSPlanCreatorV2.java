@@ -190,11 +190,11 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
           Preconditions.checkNotNull(ctx.getCurrentField().getNode().getField(YAMLFieldNameConstants.SPEC));
       logStepYamlField(specField);
 
-      String postServiceStepUuid = "service-" + UUIDGenerator.generateUuid();
-      String environmentUuid = "environment-" + UUIDGenerator.generateUuid();
+      final String postServiceStepUuid = "service-" + UUIDGenerator.generateUuid();
+      final String environmentUuid = "environment-" + UUIDGenerator.generateUuid();
 
       // Spec node is also added in this method
-      AddServiceDependencyResponse addServiceDependencyResponse = addServiceDependency(
+      final AddServiceDependencyResponse addServiceDependencyResponse = addServiceDependency(
           ctx, planCreationResponseMap, specField, stageNode, environmentUuid, postServiceStepUuid);
 
       PipelineInfrastructure pipelineInfrastructure = stageNode.getDeploymentStageConfig().getInfrastructure();
@@ -307,7 +307,7 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
       LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap, YamlField specField,
       DeploymentStageNode stageNode, String environmentUuid, String infraSectionUuid) throws IOException {
     // Adding service child by resolving the serviceField
-    YamlField serviceField = servicePlanCreatorHelper.getResolvedServiceField(specField, stageNode, ctx);
+    final YamlField serviceField = servicePlanCreatorHelper.getResolvedServiceField(ctx, specField, stageNode);
     final String serviceNodeUuid = serviceField.getNode().getUuid();
     final String serviceSpecNodeUuid = servicePlanCreatorHelper.fetchOrGenerateSpecId(serviceField);
 
@@ -328,13 +328,6 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
             .build());
 
     return new AddServiceDependencyResponse(serviceField, serviceSpecNodeUuid);
-  }
-
-  @Data
-  @AllArgsConstructor
-  static class AddServiceDependencyResponse {
-    YamlField serviceField;
-    String serviceSpecNodeId;
   }
 
   public Dependencies getDependenciesForSpecNode(YamlField specField, String childNodeUuid) {
@@ -381,5 +374,11 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
 
   private boolean isGitopsEnabled(DeploymentStageConfig deploymentStageConfig) {
     return deploymentStageConfig.getGitOpsEnabled();
+  }
+  @Data
+  @AllArgsConstructor
+  static class AddServiceDependencyResponse {
+    YamlField serviceField;
+    String serviceSpecNodeId;
   }
 }

@@ -44,7 +44,7 @@ public class ServiceStepParametersV2 implements StepParameters {
       throw new InvalidRequestException("Exception in creating step inputs for service step.");
     }
     return ServiceStepParametersV2.builder()
-        .identifier(serviceV2InfoConfig.getIdentifier())
+        .identifier(serviceV2InfoConfig.getIdentifier().getValue())
         .name(serviceV2InfoConfig.getName())
         .type(serviceV2InfoConfig.getServiceDefinition().getType().getYamlName())
         .tags(serviceV2InfoConfig.getTags())

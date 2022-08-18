@@ -58,21 +58,27 @@ public class ServicePlanCreatorHelper {
 
   @Inject private NGFeatureFlagHelperService featureFlagService;
 
+  /**
+   * @param ctx             Plancreation context
+   * @param parentSpecField spec field for the parent i.e spec field for the Deployment stage
+   * @param stageNode       DeploymentStage node
+   * @return Resolved service field ("serviceConfig" for v1, "service" for v2)
+   */
   public YamlField getResolvedServiceField(
-      YamlField parentSpecField, DeploymentStageNode stageNode, PlanCreationContext ctx) {
+      PlanCreationContext ctx, YamlField parentSpecField, DeploymentStageNode stageNode) {
     YamlField serviceField = parentSpecField.getNode().getField(YamlTypes.SERVICE_CONFIG);
     if (serviceField != null) {
       return getResolvedServiceFieldForV1(serviceField);
     } else {
       YamlField serviceV2Field = parentSpecField.getNode().getField(YamlTypes.SERVICE_ENTITY);
-      return getResolvedServiceFieldForV2(serviceV2Field, stageNode, parentSpecField, ctx);
+      return getResolvedServiceFieldForV2(ctx, serviceV2Field, stageNode, parentSpecField);
     }
   }
 
   public Dependencies getDependenciesForService(YamlField serviceField, DeploymentStageNode stageNode,
       String environmentUuid, String infraSectionUuid, String serviceSpecNodeUuid) {
-    Map<String, YamlField> serviceYamlFieldMap = new HashMap<>();
-    String serviceNodeUuid = serviceField.getNode().getUuid();
+    final Map<String, YamlField> serviceYamlFieldMap = new HashMap<>();
+    final String serviceNodeUuid = serviceField.getNode().getUuid();
     serviceYamlFieldMap.put(serviceNodeUuid, serviceField);
 
     Map<String, ByteString> serviceDependencyMap = new HashMap<>();
@@ -91,8 +97,8 @@ public class ServicePlanCreatorHelper {
           YamlTypes.ENVIRONMENT_NODE_ID, ByteString.copyFrom(kryoSerializer.asDeflatedBytes(environmentUuid)));
       serviceDependencyMap.put(
           YamlTypes.NEXT_UUID, ByteString.copyFrom(kryoSerializer.asDeflatedBytes(infraSectionUuid)));
-      serviceDependencyMap.put(
-          "SERVICE_SPEC_NODE_ID", ByteString.copyFrom(kryoSerializer.asDeflatedBytes(serviceSpecNodeUuid)));
+      serviceDependencyMap.put(PlanCreationConstants.SERVICE_SPEC_NODE_ID,
+          ByteString.copyFrom(kryoSerializer.asDeflatedBytes(serviceSpecNodeUuid)));
     }
 
     Dependency serviceDependency = Dependency.newBuilder().putAllMetadata(serviceDependencyMap).build();
@@ -125,7 +131,7 @@ public class ServicePlanCreatorHelper {
 
   @VisibleForTesting
   YamlField getResolvedServiceFieldForV2(
-      YamlField serviceV2Field, DeploymentStageNode stageNode, YamlField parentSpecField, PlanCreationContext ctx) {
+      PlanCreationContext ctx, YamlField serviceV2Field, DeploymentStageNode stageNode, YamlField parentSpecField) {
     final ServiceYamlV2 serviceYamlV2 = stageNode.getDeploymentStageConfig().getService().getUseFromStage() != null
         ? useServiceYamlFromStage(stageNode.getDeploymentStageConfig().getService().getUseFromStage(), serviceV2Field)
         : stageNode.getDeploymentStageConfig().getService();
@@ -137,18 +143,9 @@ public class ServicePlanCreatorHelper {
     final String accountIdentifier = ctx.getMetadata().getAccountIdentifier();
 
     if (serviceYamlV2.getServiceRef().isExpression()) {
-      //      String serviceYaml = "{\n"
-      //          + "        \"serviceDefinition\": {\n"
-      //          + "            \"spec\": {\n"
-      //          + "            }\n"
-      //          + "        }\n"
-      //          + "}";
       if (featureFlagService.isEnabled(accountIdentifier, FeatureName.SERVICE_V2_EXPRESSION)) {
         ServicePlanCreatorV2Config config =
-            ServicePlanCreatorV2Config.builder()
-                .identifier((String) serviceYamlV2.getServiceRef().fetchFinalValue())
-                //                .inputs((Map<String, Object>) serviceYamlV2.getServiceInputs().fetchFinalValue())
-                .build();
+            ServicePlanCreatorV2Config.builder().identifier(serviceYamlV2.getServiceRef()).build();
         try {
           YamlField yamlField = YamlUtils.injectUuidInYamlField(YamlUtils.write(config));
           return new YamlField(YamlTypes.SERVICE_ENTITY,
@@ -206,6 +203,10 @@ public class ServicePlanCreatorHelper {
         originalServiceYaml, YamlPipelineUtils.writeYamlString(serviceInputsYaml));
   }
 
+  /**
+   * @param serviceField Service Field from a stage yaml
+   * @return The node id for the spec field within service.serviceDefinition if present, or else generates a uuid
+   */
   public String fetchOrGenerateSpecId(YamlField serviceField) {
     if (serviceField.getNode().getField(YamlTypes.SERVICE_DEFINITION) != null) {
       return serviceField.getNode()
