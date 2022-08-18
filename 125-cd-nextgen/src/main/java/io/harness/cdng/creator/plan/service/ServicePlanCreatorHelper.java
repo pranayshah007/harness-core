@@ -153,7 +153,7 @@ public class ServicePlanCreatorHelper {
           return new YamlField(YamlTypes.SERVICE_ENTITY,
               new YamlNode(YamlTypes.SERVICE_ENTITY, yamlField.getNode().getCurrJsonNode(), parentSpecField.getNode()));
         } catch (IOException e) {
-          throw new RuntimeException(e);
+          throw new InvalidRequestException("Invalid service yaml", e);
         }
       }
       throw new InvalidRequestException("ServiceRef cannot be expression or runtime input during execution");
