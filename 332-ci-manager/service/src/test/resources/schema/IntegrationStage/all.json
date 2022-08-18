@@ -2951,6 +2951,19 @@
             "connectorRef": {
               "type": "string"
             },
+            "entrypoint": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
             "image": {
               "type": "string"
             },
