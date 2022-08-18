@@ -57,6 +57,7 @@ import io.harness.delegate.task.spotinst.request.SpotInstSetupTaskParameters;
 import io.harness.delegate.task.spotinst.request.SpotInstSwapRoutesTaskParameters;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.morphia.MorphiaRegistrarHelperPut;
+import io.harness.ng.core.models.Secret;
 
 import software.wings.beans.AwsConfig;
 import software.wings.beans.CustomArtifactServerConfig;
@@ -117,6 +118,7 @@ public class DelegateTasksBeansMorphiaRegistrar implements MorphiaRegistrar {
     set.add(HDelegateTask.class);
     set.add(ExecutionCapabilityDemander.class);
     set.add(ExecutionCapability.class);
+    set.add(Secret.class);
     set.add(SettingAttribute.class);
     set.add(YamlGitConfig.class);
     set.add(ArtifactSourceable.class);

@@ -8,11 +8,13 @@
 package io.harness.ng.core.dto.secrets;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.ng.core.mapper.TagMapper.convertToList;
 
 import io.harness.NGCommonEntityConstants;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.validator.EntityIdentifier;
 import io.harness.data.validator.NGEntityName;
+import io.harness.ng.core.models.Secret;
 import io.harness.secretmanagerclient.SecretType;
 import io.harness.security.dto.Principal;
 
@@ -24,6 +26,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Map;
+import java.util.Optional;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import lombok.Builder;
@@ -68,5 +71,19 @@ public class SecretDTOV2 {
     this.projectIdentifier = projectIdentifier;
     this.tags = tags;
     this.spec = spec;
+  }
+
+  public Secret toEntity() {
+    return Secret.builder()
+        .orgIdentifier(getOrgIdentifier())
+        .projectIdentifier(getProjectIdentifier())
+        .identifier(getIdentifier())
+        .description(getDescription())
+        .name(getName())
+        .tags(convertToList(getTags()))
+        .type(getType())
+        .secretSpec(Optional.ofNullable(getSpec()).map(SecretSpecDTO::toEntity).orElse(null))
+        .owner(getOwner())
+        .build();
   }
 }

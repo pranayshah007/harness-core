@@ -12,6 +12,7 @@ java_library(
     deps = [
         "//:lombok",
         "//951-opa-contracts:opa_contracts_java_proto",
+        "//955-filters-sdk:module",
         "//960-api-services:module",
         "//970-api-services-beans:module",
         "//970-ng-commons:module",
