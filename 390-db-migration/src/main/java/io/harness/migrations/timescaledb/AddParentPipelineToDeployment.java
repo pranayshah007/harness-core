@@ -5,6 +5,11 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.helm;
+package io.harness.migrations.timescaledb;
 
-public enum HelmCommandType { INSTALL, ROLLBACK, LIST_RELEASE, RELEASE_HISTORY }
+public class AddParentPipelineToDeployment extends AbstractTimeScaleDBMigration {
+  @Override
+  public String getFileName() {
+    return "timescaledb/add_parent_pipeline_to_deployment.sql";
+  }
+}

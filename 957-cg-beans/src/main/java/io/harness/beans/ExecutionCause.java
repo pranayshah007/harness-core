@@ -5,6 +5,6 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.helm;
+package io.harness.beans;
 
-public enum HelmCommandType { INSTALL, ROLLBACK, LIST_RELEASE, RELEASE_HISTORY }
+public enum ExecutionCause { ExecutedByUser, ExecutedAlongPipeline, ExecutedByTrigger, ExecutedByAPIKey }
