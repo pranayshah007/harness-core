@@ -1,7 +1,11 @@
 package io.harness.cdng.creator.plan.service;
 
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
+
 import io.harness.cdng.service.beans.ServiceDefinition;
 import io.harness.cdng.service.beans.ServiceUseFromStageV2;
+import io.harness.pms.yaml.ParameterField;
+import io.harness.yaml.YamlSchemaTypes;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.annotations.ApiModelProperty;
@@ -19,7 +23,9 @@ public class ServicePlanCreatorV2Config {
   @ApiModelProperty(hidden = true)
   String uuid;
 
-  @NotNull String identifier;
+  //  @YamlSchemaTypes(runtime)
+  ParameterField<String> identifier;
+
   String name;
   String description;
   Map<String, String> tags;

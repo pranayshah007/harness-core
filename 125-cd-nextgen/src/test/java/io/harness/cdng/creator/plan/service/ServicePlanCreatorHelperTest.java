@@ -82,7 +82,7 @@ public class ServicePlanCreatorHelperTest extends CategoryTest {
                                        .infrastructure(PipelineInfrastructure.builder().build())
                                        .build())
             .build(),
-        "environmentUuid", "infraSectionUuid", serviceSpecNodeUuid);
+        "environmentUuid", "infraSectionUuid", "serviceSpecNodeUuid");
     assertThat(dependencies).isNotEqualTo(null);
     assertThat(dependencies.getDependenciesMap().containsKey(serviceNodeId)).isEqualTo(true);
     assertThat(dependencies.getDependencyMetadataMap()
@@ -161,7 +161,7 @@ public class ServicePlanCreatorHelperTest extends CategoryTest {
     when(serviceEntityService.get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, SERVICE_IDENTIFIER, false))
         .thenReturn(Optional.of(serviceEntity));
     YamlField serviceFieldForV2 =
-        servicePlanCreatorHelper.getResolvedServiceFieldForV2(null, stageNode, specField, context);
+        servicePlanCreatorHelper.getResolvedServiceFieldForV2(context, null, stageNode, specField);
     assertThat(serviceFieldForV2).isNotNull();
     assertThat(serviceFieldForV2.getNode().getField(YamlTypes.SERVICE_DEFINITION)).isNotNull();
   }
@@ -226,7 +226,7 @@ public class ServicePlanCreatorHelperTest extends CategoryTest {
     when(serviceEntityService.get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, SERVICE_IDENTIFIER, false))
         .thenReturn(Optional.of(serviceEntity));
     YamlField serviceFieldForV2 =
-        servicePlanCreatorHelper.getResolvedServiceFieldForV2(null, stageNode, specField, context);
+        servicePlanCreatorHelper.getResolvedServiceFieldForV2(context, null, stageNode, specField);
     assertThat(serviceFieldForV2).isNotNull();
     assertThat(serviceFieldForV2.getNode().getField(YamlTypes.SERVICE_DEFINITION)).isNotNull();
   }
