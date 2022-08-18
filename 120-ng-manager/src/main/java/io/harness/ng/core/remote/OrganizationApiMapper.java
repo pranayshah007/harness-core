@@ -36,6 +36,7 @@ import org.springframework.data.domain.Pageable;
 
 import javax.ws.rs.core.Link;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.ResponseBuilder;
 
 public class OrganizationApiMapper {
   public static OrganizationDTO getOrganizationDto(CreateOrganizationRequest request) {
@@ -87,8 +88,8 @@ public class OrganizationApiMapper {
     return PageUtils.getPageRequest(page, limit, orders);
   }
 
-  public static Response.ResponseBuilder addLinksHeader(
-          Response.ResponseBuilder responseBuilder, String path, int currentResultCount, int page, int limit) {
+  public static ResponseBuilder addLinksHeader(
+          ResponseBuilder responseBuilder, String path, int currentResultCount, int page, int limit) {
     ArrayList<Link> links = new ArrayList<>();
 
     links.add(

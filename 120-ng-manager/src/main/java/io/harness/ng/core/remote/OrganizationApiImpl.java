@@ -26,6 +26,7 @@ import org.springframework.data.domain.Page;
 
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.ResponseBuilder;
 import java.util.List;
 import java.util.Optional;
 
@@ -79,9 +80,9 @@ public class OrganizationApiImpl implements OrganizationApi {
 
     List<OrganizationResponse> organizations = organizationResponsePage.getContent();
 
-    Response.ResponseBuilder responseBuilder = Response.ok();
+    ResponseBuilder responseBuilder = Response.ok();
 
-    Response.ResponseBuilder responseBuilderWithLinks =
+    ResponseBuilder responseBuilderWithLinks =
         addLinksHeader(responseBuilder, "/v1/orgs", organizations.size(), page, limit);
 
     return responseBuilderWithLinks.entity(organizations).build();
