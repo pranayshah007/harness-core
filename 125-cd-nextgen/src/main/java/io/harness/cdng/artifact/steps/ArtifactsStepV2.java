@@ -1,5 +1,6 @@
 package io.harness.cdng.artifact.steps;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.beans.DelegateTaskRequest;
@@ -138,6 +139,10 @@ public class ArtifactsStepV2 implements AsyncExecutable<EmptyStepParameters> {
   @Override
   public StepResponse handleAsyncResponse(
       Ambiance ambiance, EmptyStepParameters stepParameters, Map<String, ResponseData> responseDataMap) {
+    if (isEmpty(responseDataMap)) {
+      return StepResponse.builder().status(Status.SKIPPED).build();
+    }
+
     final ArtifactsOutcomeBuilder outcomeBuilder = ArtifactsOutcome.builder();
     final SidecarsOutcome sidecarsOutcome = new SidecarsOutcome();
     final NGLogCallback logCallback = serviceStepsHelper.getServiceLogCallback(ambiance);
