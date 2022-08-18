@@ -20,11 +20,13 @@ import io.harness.beans.DecryptableEntity;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.artifact.outcome.ArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactoryGenericArtifactOutcome;
+import io.harness.cdng.artifact.outcome.CustomArtifactOutcome;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.services.ConnectorService;
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryConnectorDTO;
 import io.harness.delegate.task.ssh.artifact.ArtifactoryArtifactDelegateConfig;
+import io.harness.delegate.task.ssh.artifact.CustomArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.SshWinRmArtifactDelegateConfig;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.NGAccess;
@@ -63,6 +65,14 @@ public class SshWinRmArtifactHelper {
           .artifactDirectory(artifactoryGenericArtifactOutcome.getArtifactDirectory())
           .artifactPath(artifactoryGenericArtifactOutcome.getArtifactPath())
           .repositoryFormat(artifactoryGenericArtifactOutcome.getRepositoryFormat())
+          .build();
+    } else if (artifactOutcome instanceof CustomArtifactOutcome) {
+      CustomArtifactOutcome customArtifactOutcome = (CustomArtifactOutcome) artifactOutcome;
+      return CustomArtifactDelegateConfig.builder()
+          .identifier(customArtifactOutcome.getIdentifier())
+          .primaryArtifact(customArtifactOutcome.isPrimaryArtifact())
+          .version(customArtifactOutcome.getVersion())
+          .metadata(customArtifactOutcome.getMetadata())
           .build();
     } else {
       throw new UnsupportedOperationException(

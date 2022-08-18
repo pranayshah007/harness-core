@@ -53,4 +53,7 @@ public class SshExceptionConstants {
       "Please provide artifact details with the service definition";
   public final String ARTIFACT_CONFIGURATION_NOT_FOUND_EXPLANATION =
       "Selected copy artifact option requires artifact details to be specified with the service definition";
+
+  public final String COPY_ARTIFACT_NOT_SUPPORTED_FOR_CUSTOM_ARTIFACT =
+      "Copy Artifact is not supported for Custom Repository artifacts";
 }

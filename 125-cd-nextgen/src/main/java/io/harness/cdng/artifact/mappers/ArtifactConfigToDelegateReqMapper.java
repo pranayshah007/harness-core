@@ -95,6 +95,13 @@ public class ArtifactConfigToDelegateReqMapper {
                                                             .getShellScriptBaseStepInfo()
                                                             .getSource()
                                                             .getSpec();
+
+    // TODO remove when UI fixed
+    long timeout = 2 * 60 * 1000;
+    if (artifactConfig.getTimeout().getValue() != null) {
+      timeout = artifactConfig.getTimeout().getValue().getTimeoutInMillis();
+    }
+
     return ArtifactDelegateRequestUtils.getCustomDelegateRequest(
         artifactConfig.getScripts().getFetchAllArtifacts().getArtifactsArrayPath().getValue(),
         artifactConfig.getVersionRegex().getValue(),
@@ -105,8 +112,7 @@ public class ArtifactConfigToDelegateReqMapper {
         customScriptInlineSource.getScript().fetchFinalValue().toString(),
         NGVariablesUtils.getStringMapVariables(artifactConfig.getScripts().getFetchAllArtifacts().getAttributes(), 0L),
         NGVariablesUtils.getStringMapVariables(artifactConfig.getInputs(), 0L), artifactConfig.getVersion().getValue(),
-        AmbianceUtils.obtainCurrentRuntimeId(ambiance), artifactConfig.getTimeout().getValue().getTimeoutInMillis(),
-        AmbianceUtils.getAccountId(ambiance));
+        AmbianceUtils.obtainCurrentRuntimeId(ambiance), timeout, AmbianceUtils.getAccountId(ambiance));
   }
 
   public GcrArtifactDelegateRequest getGcrDelegateRequest(GcrArtifactConfig gcrArtifactConfig,
