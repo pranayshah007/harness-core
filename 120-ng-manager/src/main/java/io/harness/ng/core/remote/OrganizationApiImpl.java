@@ -7,7 +7,18 @@
 
 package io.harness.ng.core.remote;
 
-import com.google.inject.Inject;
+import static io.harness.NGConstants.DEFAULT_ORG_IDENTIFIER;
+import static io.harness.exception.WingsException.USER;
+import static io.harness.ng.accesscontrol.PlatformPermissions.CREATE_ORGANIZATION_PERMISSION;
+import static io.harness.ng.accesscontrol.PlatformPermissions.DELETE_ORGANIZATION_PERMISSION;
+import static io.harness.ng.accesscontrol.PlatformPermissions.EDIT_ORGANIZATION_PERMISSION;
+import static io.harness.ng.accesscontrol.PlatformPermissions.VIEW_ORGANIZATION_PERMISSION;
+import static io.harness.ng.accesscontrol.PlatformResourceTypes.ORGANIZATION;
+import static io.harness.ng.core.remote.OrganizationApiMapper.addLinksHeader;
+import static io.harness.ng.core.remote.OrganizationApiMapper.getOrganizationDto;
+import static io.harness.ng.core.remote.OrganizationApiMapper.getOrganizationResponse;
+import static io.harness.ng.core.remote.OrganizationApiMapper.getPageRequest;
+
 import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.accesscontrol.NGAccessControlCheck;
 import io.harness.accesscontrol.ResourceIdentifier;
@@ -20,27 +31,16 @@ import io.harness.spec.server.ng.OrganizationApi;
 import io.harness.spec.server.ng.model.CreateOrganizationRequest;
 import io.harness.spec.server.ng.model.OrganizationResponse;
 import io.harness.spec.server.ng.model.UpdateOrganizationRequest;
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import org.springframework.data.domain.Page;
 
+import com.google.inject.Inject;
+import java.util.List;
+import java.util.Optional;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
-import java.util.List;
-import java.util.Optional;
-
-import static io.harness.NGConstants.DEFAULT_ORG_IDENTIFIER;
-import static io.harness.exception.WingsException.USER;
-import static io.harness.ng.accesscontrol.PlatformPermissions.CREATE_ORGANIZATION_PERMISSION;
-import static io.harness.ng.accesscontrol.PlatformPermissions.DELETE_ORGANIZATION_PERMISSION;
-import static io.harness.ng.accesscontrol.PlatformPermissions.EDIT_ORGANIZATION_PERMISSION;
-import static io.harness.ng.accesscontrol.PlatformPermissions.VIEW_ORGANIZATION_PERMISSION;
-import static io.harness.ng.accesscontrol.PlatformResourceTypes.ORGANIZATION;
-import static io.harness.ng.core.remote.OrganizationApiMapper.addLinksHeader;
-import static io.harness.ng.core.remote.OrganizationApiMapper.getOrganizationDto;
-import static io.harness.ng.core.remote.OrganizationApiMapper.getOrganizationResponse;
-import static io.harness.ng.core.remote.OrganizationApiMapper.getPageRequest;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import org.springframework.data.domain.Page;
 
 @AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor = @__({ @Inject }))
 @NextGenManagerAuth
@@ -90,7 +90,8 @@ public class OrganizationApiImpl implements OrganizationApi {
 
   @NGAccessControlCheck(resourceType = ORGANIZATION, permission = EDIT_ORGANIZATION_PERMISSION)
   @Override
-  public Response updateOrganization(UpdateOrganizationRequest request, @ResourceIdentifier String id, @AccountIdentifier String account) {
+  public Response updateOrganization(
+      UpdateOrganizationRequest request, @ResourceIdentifier String id, @AccountIdentifier String account) {
     Organization updatedOrganization =
         organizationService.update(account, id, OrganizationApiMapper.getOrganizationDto(id, request));
     return Response.ok().entity(getOrganizationResponse(updatedOrganization)).build();

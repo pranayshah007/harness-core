@@ -17,6 +17,7 @@ import static io.harness.beans.SortOrder.OrderType.ASC;
 import static io.harness.beans.SortOrder.OrderType.DESC;
 import static io.harness.ng.core.entities.Organization.OrganizationKeys;
 import static io.harness.utils.PageUtils.COMMA_SEPARATOR;
+
 import static javax.ws.rs.core.UriBuilder.fromPath;
 
 import io.harness.beans.SortOrder;
@@ -32,11 +33,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import org.springframework.data.domain.Pageable;
-
 import javax.ws.rs.core.Link;
-import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
+import org.springframework.data.domain.Pageable;
 
 public class OrganizationApiMapper {
   public static OrganizationDTO getOrganizationDto(CreateOrganizationRequest request) {
@@ -89,21 +88,21 @@ public class OrganizationApiMapper {
   }
 
   public static ResponseBuilder addLinksHeader(
-          ResponseBuilder responseBuilder, String path, int currentResultCount, int page, int limit) {
+      ResponseBuilder responseBuilder, String path, int currentResultCount, int page, int limit) {
     ArrayList<Link> links = new ArrayList<>();
 
     links.add(
-            Link.fromUri(fromPath(path).queryParam(PAGE, page).queryParam(PAGE_SIZE, limit).build()).rel(SELF_REL).build());
+        Link.fromUri(fromPath(path).queryParam(PAGE, page).queryParam(PAGE_SIZE, limit).build()).rel(SELF_REL).build());
 
     if (page >= 1) {
       links.add(Link.fromUri(fromPath(path).queryParam(PAGE, page - 1).queryParam(PAGE_SIZE, limit).build())
-              .rel(PREVIOUS_REL)
-              .build());
+                    .rel(PREVIOUS_REL)
+                    .build());
     }
     if (limit == currentResultCount) {
       links.add(Link.fromUri(fromPath(path).queryParam(PAGE, page + 1).queryParam(PAGE_SIZE, limit).build())
-              .rel(NEXT_REL)
-              .build());
+                    .rel(NEXT_REL)
+                    .build());
     }
     return responseBuilder.links(links.toArray(new Link[links.size()]));
   }

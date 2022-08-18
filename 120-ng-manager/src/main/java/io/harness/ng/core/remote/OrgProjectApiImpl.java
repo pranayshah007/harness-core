@@ -7,8 +7,19 @@
 
 package io.harness.ng.core.remote;
 
-import com.google.common.collect.Sets;
-import com.google.inject.Inject;
+import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.ng.accesscontrol.PlatformPermissions.CREATE_PROJECT_PERMISSION;
+import static io.harness.ng.accesscontrol.PlatformPermissions.DELETE_PROJECT_PERMISSION;
+import static io.harness.ng.accesscontrol.PlatformPermissions.EDIT_PROJECT_PERMISSION;
+import static io.harness.ng.accesscontrol.PlatformPermissions.VIEW_PROJECT_PERMISSION;
+import static io.harness.ng.accesscontrol.PlatformResourceTypes.PROJECT;
+import static io.harness.ng.core.remote.ProjectApiMapper.addLinksHeader;
+import static io.harness.ng.core.remote.ProjectApiMapper.getPageRequest;
+import static io.harness.ng.core.remote.ProjectApiMapper.getProjectDto;
+import static io.harness.ng.core.remote.ProjectApiMapper.getProjectResponse;
+
+import static java.lang.String.format;
+
 import io.harness.ModuleType;
 import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.accesscontrol.NGAccessControlCheck;
@@ -23,29 +34,19 @@ import io.harness.spec.server.ng.OrgProjectApi;
 import io.harness.spec.server.ng.model.CreateProjectRequest;
 import io.harness.spec.server.ng.model.ProjectResponse;
 import io.harness.spec.server.ng.model.UpdateProjectRequest;
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import org.springframework.data.domain.Page;
 
-import javax.ws.rs.NotFoundException;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.ResponseBuilder;
+import com.google.common.collect.Sets;
+import com.google.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-
-import static io.harness.annotations.dev.HarnessTeam.PL;
-import static io.harness.ng.accesscontrol.PlatformPermissions.CREATE_PROJECT_PERMISSION;
-import static io.harness.ng.accesscontrol.PlatformPermissions.DELETE_PROJECT_PERMISSION;
-import static io.harness.ng.accesscontrol.PlatformPermissions.EDIT_PROJECT_PERMISSION;
-import static io.harness.ng.accesscontrol.PlatformPermissions.VIEW_PROJECT_PERMISSION;
-import static io.harness.ng.accesscontrol.PlatformResourceTypes.PROJECT;
-import static io.harness.ng.core.remote.ProjectApiMapper.addLinksHeader;
-import static io.harness.ng.core.remote.ProjectApiMapper.getPageRequest;
-import static io.harness.ng.core.remote.ProjectApiMapper.getProjectDto;
-import static io.harness.ng.core.remote.ProjectApiMapper.getProjectResponse;
-import static java.lang.String.format;
+import javax.ws.rs.NotFoundException;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.ResponseBuilder;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import org.springframework.data.domain.Page;
 
 @OwnedBy(PL)
 @AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor = @__({ @Inject }))
@@ -55,7 +56,8 @@ public class OrgProjectApiImpl implements OrgProjectApi {
 
   @NGAccessControlCheck(resourceType = PROJECT, permission = CREATE_PROJECT_PERMISSION)
   @Override
-  public Response createOrgScopedProject(CreateProjectRequest createProjectRequest, @OrgIdentifier String org, @AccountIdentifier String account) {
+  public Response createOrgScopedProject(
+      CreateProjectRequest createProjectRequest, @OrgIdentifier String org, @AccountIdentifier String account) {
     return Response.ok().entity(createProject(createProjectRequest, account, org)).build();
   }
 
@@ -82,14 +84,15 @@ public class OrgProjectApiImpl implements OrgProjectApi {
     ResponseBuilder responseBuilder = Response.ok();
 
     ResponseBuilder responseBuilderWithLinks =
-            addLinksHeader(responseBuilder, format("/v1/orgs/%s/projects)", org), projects.size(), page, limit);
+        addLinksHeader(responseBuilder, format("/v1/orgs/%s/projects)", org), projects.size(), page, limit);
 
     return responseBuilderWithLinks.entity(projects).build();
   }
 
   @NGAccessControlCheck(resourceType = PROJECT, permission = EDIT_PROJECT_PERMISSION)
   @Override
-  public Response updateOrgScopedProject(UpdateProjectRequest updateProjectRequest, @OrgIdentifier String org, @ResourceIdentifier String id, @AccountIdentifier String account) {
+  public Response updateOrgScopedProject(UpdateProjectRequest updateProjectRequest, @OrgIdentifier String org,
+      @ResourceIdentifier String id, @AccountIdentifier String account) {
     return Response.ok().entity(updateProject(id, updateProjectRequest, account, org)).build();
   }
 

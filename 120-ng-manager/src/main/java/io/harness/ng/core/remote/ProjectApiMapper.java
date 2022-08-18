@@ -14,6 +14,7 @@ import static io.harness.NGCommonEntityConstants.PREVIOUS_REL;
 import static io.harness.NGCommonEntityConstants.SELF_REL;
 import static io.harness.beans.SortOrder.Builder.aSortOrder;
 import static io.harness.beans.SortOrder.OrderType.DESC;
+
 import static javax.ws.rs.core.UriBuilder.fromPath;
 
 import io.harness.beans.SortOrder;
@@ -27,16 +28,13 @@ import io.harness.spec.server.ng.model.ProjectResponse;
 import io.harness.utils.PageUtils;
 
 import com.google.common.collect.ImmutableList;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import org.springframework.data.domain.Pageable;
-
 import javax.ws.rs.core.Link;
-import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
+import org.springframework.data.domain.Pageable;
 
 public class ProjectApiMapper {
   public static ProjectDTO getProjectDto(
@@ -86,21 +84,21 @@ public class ProjectApiMapper {
   }
 
   public static ResponseBuilder addLinksHeader(
-          ResponseBuilder responseBuilder, String path, int currentResultCount, int page, int limit) {
+      ResponseBuilder responseBuilder, String path, int currentResultCount, int page, int limit) {
     ArrayList<Link> links = new ArrayList<>();
 
     links.add(
-            Link.fromUri(fromPath(path).queryParam(PAGE, page).queryParam(PAGE_SIZE, limit).build()).rel(SELF_REL).build());
+        Link.fromUri(fromPath(path).queryParam(PAGE, page).queryParam(PAGE_SIZE, limit).build()).rel(SELF_REL).build());
 
     if (page >= 1) {
       links.add(Link.fromUri(fromPath(path).queryParam(PAGE, page - 1).queryParam(PAGE_SIZE, limit).build())
-              .rel(PREVIOUS_REL)
-              .build());
+                    .rel(PREVIOUS_REL)
+                    .build());
     }
     if (limit == currentResultCount) {
       links.add(Link.fromUri(fromPath(path).queryParam(PAGE, page + 1).queryParam(PAGE_SIZE, limit).build())
-              .rel(NEXT_REL)
-              .build());
+                    .rel(NEXT_REL)
+                    .build());
     }
 
     return responseBuilder.links(links.toArray(new Link[links.size()]));
