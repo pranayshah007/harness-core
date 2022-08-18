@@ -63,6 +63,9 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
+/**
+ * Fetch all artifacts ( primary + sidecars using async strategy and produce artifact outcome )
+ */
 @Slf4j
 public class ArtifactsStepV2 implements AsyncExecutable<EmptyStepParameters> {
   public static final StepType STEP_TYPE = StepType.newBuilder()
