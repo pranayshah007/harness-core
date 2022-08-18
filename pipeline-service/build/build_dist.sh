@@ -36,7 +36,7 @@ cp ../../pipeline-service/build/container/Dockerfile-pipeline-service-jenkins-k8
 cp ../../pipeline-service/build/container/Dockerfile-pipeline-service-cie-jdk ./Dockerfile-cie-jdk
 
 cp -r ../../pipeline-service/build/container/scripts/ .
-cp ../../pipeline-service-protocol.info .
+
 
 echo ${JDK} > jdk.txt
 echo ${VERSION} > version.txt
@@ -45,6 +45,7 @@ then
     echo ${PURPOSE} > purpose.txt
 fi
 java -jar pipeline-service-capsule.jar scan-classpath-metadata
+cp ../../pipeline-service-protocol.info .
 echo $PWD
 
 cd ../..
