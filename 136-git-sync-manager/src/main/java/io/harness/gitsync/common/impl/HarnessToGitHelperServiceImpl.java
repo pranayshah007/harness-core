@@ -42,6 +42,7 @@ import io.harness.gitsync.GetFileResponse;
 import io.harness.gitsync.GetRepoUrlRequest;
 import io.harness.gitsync.GetRepoUrlResponse;
 import io.harness.gitsync.GitMetaData;
+import io.harness.gitsync.IsGitSimplificationEnabledRequest;
 import io.harness.gitsync.PushFileResponse;
 import io.harness.gitsync.PushInfo;
 import io.harness.gitsync.RepoDetails;
@@ -259,19 +260,22 @@ public class HarnessToGitHelperServiceImpl implements HarnessToGitHelperService 
   }
 
   @Override
-  public Boolean isGitSimplificationEnabled(EntityScopeInfo entityScopeInfo) {
+  public Boolean isGitSimplificationEnabled(IsGitSimplificationEnabledRequest isGitSimplificationEnabledRequest) {
+    String accountIdentifier = isGitSimplificationEnabledRequest.getEntityScopeInfo().getAccountId();
+    String orgIdentifier = isGitSimplificationEnabledRequest.getEntityScopeInfo().getOrgId().getValue();
+    String projectIdentifier = isGitSimplificationEnabledRequest.getEntityScopeInfo().getProjectId().getValue();
     try {
-      if (isEnabled(entityScopeInfo.getAccountId(), FeatureName.NG_GIT_EXPERIENCE)) {
-        return true;
+      if (isEnabled(accountIdentifier, FeatureName.USE_OLD_GIT_SYNC)) {
+        return gitSyncSettingsService.getGitSimplificationStatus(accountIdentifier, orgIdentifier, projectIdentifier);
+      } else {
+        return !isOldGitSyncEnabledForModule(isGitSimplificationEnabledRequest.getEntityScopeInfo(),
+            isGitSimplificationEnabledRequest.getIsNotForFFModule());
       }
-      return gitSyncSettingsService.getGitSimplificationStatus(entityScopeInfo.getAccountId(),
-          entityScopeInfo.getOrgId().getValue(), entityScopeInfo.getProjectId().getValue());
     } catch (Exception ex) {
       log.error(
           String.format(
               "Exception while checking git Simplification status for accountId: %s , orgId: %s , projectId: %s "),
-          entityScopeInfo.getAccountId(), entityScopeInfo.getOrgId().getValue(),
-          entityScopeInfo.getProjectId().getValue(), ex);
+          accountIdentifier, orgIdentifier, projectIdentifier, ex);
       return false;
     }
   }
@@ -505,6 +509,12 @@ public class HarnessToGitHelperServiceImpl implements HarnessToGitHelperService 
           .setError(prepareErrorDetails(ex))
           .build();
     }
+  }
+
+  @Override
+  public Boolean isOldGitSyncEnabledForModule(EntityScopeInfo entityScopeInfo, boolean isNotForFFModule) {
+    return gitSyncSettingsService.isOldGitSyncEnabledForModule(entityScopeInfo.getAccountId(),
+        entityScopeInfo.getOrgId().getValue(), entityScopeInfo.getProjectId().getValue(), isNotForFFModule);
   }
 
   private InfoForGitPush getInfoForGitPush(

@@ -117,7 +117,7 @@ public class CustomApprovalCallback extends AbstractApprovalCallback implements 
           shellExecutionData.getSweepingOutputEnvVariables(), instance.getOutputVariables());
       CustomApprovalTicketNG ticketNG =
           CustomApprovalTicketNG.builder().fields(shellScriptOutcome.getOutputVariables()).build();
-      checkApprovalAndRejectionCriteria(
+      checkApprovalAndRejectionCriteriaAndWithinChangeWindow(
           ticketNG, instance, logCallback, instance.getApprovalCriteria(), instance.getRejectionCriteria());
     } catch (Exception ex) {
       log.error("An error occurred with custom approval", ex);

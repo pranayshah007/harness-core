@@ -8,10 +8,13 @@
 package io.harness.gitsync.common.impl;
 
 import static io.harness.annotations.dev.HarnessTeam.DX;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.gitsync.common.beans.GitSyncSettings.IS_ENABLED_ONLY_FOR_FF;
 import static io.harness.gitsync.common.beans.GitSyncSettings.IS_EXECUTE_ON_DELEGATE;
 import static io.harness.gitsync.common.beans.GitSyncSettings.IS_GIT_SIMPLIFICATION_ENABLED;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.exception.InvalidRequestException;
 import io.harness.gitsync.common.beans.GitSyncSettings;
 import io.harness.gitsync.common.beans.GitSyncSettings.GitSyncSettingsKeys;
@@ -20,6 +23,7 @@ import io.harness.gitsync.common.remote.GitSyncSettingsMapper;
 import io.harness.gitsync.common.service.GitSyncSettingsService;
 import io.harness.gitsync.common.service.YamlGitConfigService;
 import io.harness.repositories.gitSyncSettings.GitSyncSettingsRepository;
+import io.harness.utils.NGFeatureFlagHelperService;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -39,6 +43,7 @@ import org.springframework.data.mongodb.core.query.Update;
 public class GitSyncSettingsServiceImpl implements GitSyncSettingsService {
   private final GitSyncSettingsRepository gitSyncSettingsRepository;
   private final YamlGitConfigService yamlGitConfigService;
+  private final NGFeatureFlagHelperService ngFeatureFlagHelperService;
 
   @Override
   public Optional<GitSyncSettingsDTO> get(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
@@ -51,6 +56,7 @@ public class GitSyncSettingsServiceImpl implements GitSyncSettingsService {
   @Override
   public GitSyncSettingsDTO save(GitSyncSettingsDTO request) {
     GitSyncSettings gitSyncSettings = GitSyncSettingsMapper.getGitSyncSettingsFromDTO(request);
+    gitSyncSettings.setSettings(getSettingsForOldGitSync(gitSyncSettings));
     GitSyncSettings savedGitSyncSettings = null;
     try {
       savedGitSyncSettings = gitSyncSettingsRepository.save(gitSyncSettings);
@@ -60,6 +66,19 @@ public class GitSyncSettingsServiceImpl implements GitSyncSettingsService {
               request.getProjectIdentifier(), request.getOrgIdentifier()));
     }
     return GitSyncSettingsMapper.getDTOFromGitSyncSettings(savedGitSyncSettings);
+  }
+
+  private Map<String, String> getSettingsForOldGitSync(GitSyncSettings gitSyncSettings) {
+    Map<String, String> settings = new HashMap<>();
+    if (isNotEmpty(gitSyncSettings.getSettings())) {
+      settings.putAll(gitSyncSettings.getSettings());
+    }
+    if (isGitSimplificationDisabledOnAccount(gitSyncSettings.getAccountIdentifier())) {
+      settings.put(IS_ENABLED_ONLY_FOR_FF, String.valueOf(false));
+    } else {
+      settings.put(IS_ENABLED_ONLY_FOR_FF, String.valueOf(true));
+    }
+    return settings;
   }
 
   @Override
@@ -111,6 +130,21 @@ public class GitSyncSettingsServiceImpl implements GitSyncSettingsService {
     }
   }
 
+  @Override
+  public boolean isOldGitSyncEnabledForModule(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, boolean isNotForFFModule) {
+    Optional<GitSyncSettingsDTO> optionalGitSyncSettingsDTO = get(accountIdentifier, orgIdentifier, projectIdentifier);
+    if (optionalGitSyncSettingsDTO.isPresent() && !optionalGitSyncSettingsDTO.get().isGitSimplificationEnabled()) {
+      GitSyncSettingsDTO gitSyncSettings = optionalGitSyncSettingsDTO.get();
+      if (gitSyncSettings.isEnabledOnlyForFF()) {
+        return !isNotForFFModule;
+      } else {
+        return true;
+      }
+    }
+    return false;
+  }
+
   private boolean isGitSimplificationEnabled(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
     Optional<GitSyncSettingsDTO> optionalGitSyncSettingsDTO = get(accountIdentifier, orgIdentifier, projectIdentifier);
     if (optionalGitSyncSettingsDTO.isPresent()) {
@@ -138,5 +172,9 @@ public class GitSyncSettingsServiceImpl implements GitSyncSettingsService {
   private void throwExceptionIfGitSyncAlreadyEnabled() {
     throw new InvalidRequestException(
         "Git Management experience is already enabled in this project, cannot enable Git Simplification experience on the same project. Please try with a new project.");
+  }
+
+  private boolean isGitSimplificationDisabledOnAccount(String accountId) {
+    return ngFeatureFlagHelperService.isEnabled(accountId, FeatureName.USE_OLD_GIT_SYNC);
   }
 }

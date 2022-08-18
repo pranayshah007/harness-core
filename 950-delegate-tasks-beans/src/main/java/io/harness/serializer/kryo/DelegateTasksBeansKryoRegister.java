@@ -133,6 +133,7 @@ import io.harness.delegate.beans.ci.vm.CIVmExecuteStepTaskParams;
 import io.harness.delegate.beans.ci.vm.CIVmInitializeTaskParams;
 import io.harness.delegate.beans.ci.vm.VmServiceStatus;
 import io.harness.delegate.beans.ci.vm.VmTaskExecutionResponse;
+import io.harness.delegate.beans.ci.vm.steps.VmBackgroundStep;
 import io.harness.delegate.beans.ci.vm.steps.VmJunitTestReport;
 import io.harness.delegate.beans.ci.vm.steps.VmPluginStep;
 import io.harness.delegate.beans.ci.vm.steps.VmRunStep;
@@ -617,6 +618,7 @@ import io.harness.delegate.task.ssh.PdcSshInfraDelegateConfig;
 import io.harness.delegate.task.ssh.PdcWinRmInfraDelegateConfig;
 import io.harness.delegate.task.ssh.ScriptCommandUnit;
 import io.harness.delegate.task.ssh.artifact.ArtifactoryArtifactDelegateConfig;
+import io.harness.delegate.task.ssh.artifact.JenkinsArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.SshWinRmArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.SshWinRmArtifactType;
 import io.harness.delegate.task.ssh.config.ConfigFileParameters;
@@ -1658,6 +1660,7 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(PdcServerInstanceInfo.class, 55501);
     kryo.register(AzureSshWinrmServerInstanceInfo.class, 55502);
     kryo.register(AwsSshWinrmServerInstanceInfo.class, 55503);
+    kryo.register(VmBackgroundStep.class, 55504);
     kryo.register(GithubPackagesArtifactDelegateRequest.class, 55511);
     kryo.register(GithubPackagesArtifactDelegateResponse.class, 55512);
     kryo.register(GitPollingTaskParameters.class, 56335);
@@ -1665,5 +1668,6 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(GitPollingSourceType.class, 56337);
     kryo.register(GitPollingTaskType.class, 56338);
     kryo.register(GitPollingDelegateResponse.class, 56339);
+    kryo.register(JenkinsArtifactDelegateConfig.class, 9800003);
   }
 }

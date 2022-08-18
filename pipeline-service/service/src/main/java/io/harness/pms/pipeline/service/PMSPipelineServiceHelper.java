@@ -55,6 +55,7 @@ import io.harness.pms.governance.ExpansionRequestsExtractor;
 import io.harness.pms.governance.ExpansionsMerger;
 import io.harness.pms.governance.JsonExpander;
 import io.harness.pms.instrumentaion.PipelineInstrumentationConstants;
+import io.harness.pms.instrumentaion.PipelineInstrumentationUtils;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.PipelineEntity.PipelineEntityKeys;
 import io.harness.pms.pipeline.PipelineEntityUtils;
@@ -352,6 +353,7 @@ public class PMSPipelineServiceHelper {
     properties.put(PIPELINE_SAVE_ACTION_TYPE, actionType);
     properties.put(PipelineInstrumentationConstants.MODULE_NAME,
         PipelineEntityUtils.getModuleNameFromPipelineEntity(entity, "cd"));
+    properties.put(PipelineInstrumentationConstants.STAGE_TYPES, PipelineInstrumentationUtils.getStageTypes(entity));
     telemetryReporter.sendTrackEvent(PIPELINE_SAVE, null, entity.getAccountId(), properties,
         Collections.singletonMap(AMPLITUDE, true), io.harness.telemetry.Category.GLOBAL);
   }

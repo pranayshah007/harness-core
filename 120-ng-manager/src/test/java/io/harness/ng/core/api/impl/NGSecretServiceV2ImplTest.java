@@ -138,7 +138,7 @@ public class NGSecretServiceV2ImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testCreate() {
     SecretDTOV2 secretDTOV2 = getSecretDTO();
-    Secret secret = Secret.fromDTO(secretDTOV2);
+    Secret secret = secretDTOV2.toEntity();
     when(secretRepository.save(any())).thenReturn(secret);
     when(transactionTemplate.execute(any())).thenReturn(secret);
 
