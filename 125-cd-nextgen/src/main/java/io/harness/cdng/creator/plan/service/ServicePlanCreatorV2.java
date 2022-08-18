@@ -7,7 +7,6 @@
 
 package io.harness.cdng.creator.plan.service;
 
-import static io.harness.cdng.creator.plan.service.PlanCreationConstants.SERVICE_SPEC_NODE_ID;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -72,7 +71,7 @@ public class ServicePlanCreatorV2 extends ChildrenPlanCreator<ServicePlanCreator
               (String) kryoSerializer.asInflatedObject(
                   ctx.getDependency().getMetadataMap().get(YamlTypes.ENVIRONMENT_NODE_ID).toByteArray()),
               (String) kryoSerializer.asInflatedObject(
-                  ctx.getDependency().getMetadataMap().get(SERVICE_SPEC_NODE_ID).toByteArray()));
+                  ctx.getDependency().getMetadataMap().get(PlanCreationConstants.SERVICE_SPEC_NODE_ID).toByteArray()));
       planCreationResponseMap.putAll(planForAllNodesUnderService);
       return planCreationResponseMap;
     }
