@@ -66,8 +66,9 @@ public class K8InitializeStepUtilsTest extends CIExecutionTestBase {
         InitializeStepInfo.builder()
             .executionElementConfig(ExecutionElementConfig.builder().steps(steps).build())
             .build();
+    Ambiance ambiance = Ambiance.newBuilder().build();
     List<ContainerDefinitionInfo> stepContainers = k8InitializeStepUtils.createStepContainerDefinitions(
-        initializeStepInfo, integrationStageConfig, ciExecutionArgs, portFinder, "test", OSType.Linux, 0);
+        initializeStepInfo, integrationStageConfig, ciExecutionArgs, portFinder, "test", OSType.Linux, ambiance, 0);
 
     assertThat(stepContainers).isEqualTo(expected);
   }
@@ -85,8 +86,10 @@ public class K8InitializeStepUtilsTest extends CIExecutionTestBase {
         InitializeStepInfo.builder()
             .executionElementConfig(ExecutionElementConfig.builder().steps(steps).build())
             .build();
+    Ambiance ambiance = Ambiance.newBuilder().build();
+
     List<ContainerDefinitionInfo> stepContainers = k8InitializeStepUtils.createStepContainerDefinitions(
-        initializeStepInfo, integrationStageConfig, ciExecutionArgs, portFinder, "test", OSType.Linux, 0);
+        initializeStepInfo, integrationStageConfig, ciExecutionArgs, portFinder, "test", OSType.Linux, ambiance, 0);
 
     HashMap<String, ContainerResourceParams> map = populateMap(stepContainers);
 
@@ -121,8 +124,10 @@ public class K8InitializeStepUtilsTest extends CIExecutionTestBase {
         InitializeStepInfo.builder()
             .executionElementConfig(ExecutionElementConfig.builder().steps(steps).build())
             .build();
+    Ambiance ambiance = Ambiance.newBuilder().build();
+
     List<ContainerDefinitionInfo> stepContainers = k8InitializeStepUtils.createStepContainerDefinitions(
-        initializeStepInfo, integrationStageConfig, ciExecutionArgs, portFinder, "test", OSType.Linux, 0);
+        initializeStepInfo, integrationStageConfig, ciExecutionArgs, portFinder, "test", OSType.Linux, ambiance, 0);
 
     HashMap<String, ContainerResourceParams> map = populateMap(stepContainers);
 
@@ -149,8 +154,10 @@ public class K8InitializeStepUtilsTest extends CIExecutionTestBase {
         InitializeStepInfo.builder()
             .executionElementConfig(ExecutionElementConfig.builder().steps(steps).build())
             .build();
+    Ambiance ambiance = Ambiance.newBuilder().build();
+
     List<ContainerDefinitionInfo> stepContainers = k8InitializeStepUtils.createStepContainerDefinitions(
-        initializeStepInfo, integrationStageConfig, ciExecutionArgs, portFinder, "test", OSType.Linux, 0);
+        initializeStepInfo, integrationStageConfig, ciExecutionArgs, portFinder, "test", OSType.Linux, ambiance, 0);
 
     HashMap<String, ContainerResourceParams> map = populateMap(stepContainers);
 
@@ -193,8 +200,9 @@ public class K8InitializeStepUtilsTest extends CIExecutionTestBase {
             .executionElementConfig(ExecutionElementConfig.builder().steps(steps).build())
             .strategyExpansionMap(strategyExpansionMap)
             .build();
+    Ambiance ambiance = Ambiance.newBuilder().build();
     List<ContainerDefinitionInfo> stepContainers = k8InitializeStepUtils.createStepContainerDefinitions(
-        initializeStepInfo, integrationStageConfig, ciExecutionArgs, portFinder, "test", OSType.Linux, 0);
+        initializeStepInfo, integrationStageConfig, ciExecutionArgs, portFinder, "test", OSType.Linux, ambiance, 0);
     assertThat(stepContainers.size()).isEqualTo(15);
     Pair<Integer, Integer> wrapperRequest = k8InitializeStepUtils.getStageRequest(initializeStepInfo, "test");
     assertThat(wrapperRequest.getLeft()).isEqualTo(1600);
@@ -215,8 +223,9 @@ public class K8InitializeStepUtilsTest extends CIExecutionTestBase {
         InitializeStepInfo.builder()
             .executionElementConfig(ExecutionElementConfig.builder().steps(steps).build())
             .build();
+    Ambiance ambiance = Ambiance.newBuilder().build();
     List<ContainerDefinitionInfo> stepContainers = k8InitializeStepUtils.createStepContainerDefinitions(
-        initializeStepInfo, integrationStageConfig, ciExecutionArgs, portFinder, "test", OSType.Windows, 0);
+        initializeStepInfo, integrationStageConfig, ciExecutionArgs, portFinder, "test", OSType.Windows, ambiance, 0);
 
     assertThat(stepContainers).isEqualTo(expected);
   }

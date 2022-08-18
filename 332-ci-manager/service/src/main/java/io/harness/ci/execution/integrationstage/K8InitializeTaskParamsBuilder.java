@@ -231,7 +231,8 @@ public class K8InitializeTaskParamsBuilder {
     Map<String, String> logEnvVars = k8InitializeTaskUtils.getLogServiceEnvVariables(k8PodDetails, accountId);
     Map<String, String> tiEnvVars = k8InitializeTaskUtils.getTIServiceEnvVariables(accountId);
     Map<String, String> stoEnvVars = k8InitializeTaskUtils.getSTOServiceEnvVariables(accountId);
-    Map<String, String> gitEnvVars = codebaseUtils.getGitEnvVariables(gitConnector, ciCodebase);
+    Map<String, String> gitEnvVars =
+        codebaseUtils.getGitEnvVariables(gitConnector, ciCodebase, initializeStepInfo.isSkipGitClone());
     Map<String, String> runtimeCodebaseVars = codebaseUtils.getRuntimeCodebaseVars(ambiance);
     Map<String, String> commonEnvVars = k8InitializeTaskUtils.getCommonStepEnvVariables(
         k8PodDetails, gitEnvVars, runtimeCodebaseVars, k8InitializeTaskUtils.getWorkDir(), logPrefix, ambiance);
@@ -402,7 +403,7 @@ public class K8InitializeTaskParamsBuilder {
         k8InitializeServiceUtils.createServiceContainerDefinitions(stageElementConfig, portFinder, os);
     List<ContainerDefinitionInfo> stepCtrDefinitionInfos =
         k8InitializeStepUtils.createStepContainerDefinitions(initializeStepInfo, stageElementConfig, ciExecutionArgs,
-            portFinder, AmbianceUtils.getAccountId(ambiance), os, 0);
+            portFinder, AmbianceUtils.getAccountId(ambiance), os, ambiance, 0);
 
     List<ContainerDefinitionInfo> containerDefinitionInfos = new ArrayList<>();
     containerDefinitionInfos.addAll(serviceCtrDefinitionInfos);
