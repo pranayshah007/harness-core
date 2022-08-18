@@ -240,6 +240,7 @@ public class CIK8InitializeTaskHandler implements CIInitializeTaskHandler {
         switch (containerParams.getContainerType()) {
           case SERVICE:
           case PLUGIN:
+          case BACKGROUND:
             updateContainerWithSecretVariable(HARNESS_IMAGE_SECRET,
                 SecretParams.builder().type(SecretParams.Type.TEXT).secretKey(DOCKER_CONFIG_KEY).build(), secretName,
                 containerParams);

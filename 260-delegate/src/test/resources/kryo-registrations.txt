@@ -1726,6 +1726,7 @@
 55501:io.harness.delegate.beans.instancesync.info.PdcServerInstanceInfo
 55502:io.harness.delegate.beans.instancesync.info.AzureSshWinrmServerInstanceInfo
 55503:io.harness.delegate.beans.instancesync.info.AwsSshWinrmServerInstanceInfo
+55504:io.harness.delegate.beans.ci.vm.steps.VmBackgroundStep
 56335:io.harness.delegate.task.gitpolling.request.GitPollingTaskParameters
 56336:io.harness.delegate.task.gitpolling.github.GitHubPollingDelegateRequest
 56337:io.harness.delegate.task.gitpolling.GitPollingSourceType
