@@ -399,3 +399,5 @@ io.harness.cdng.provision.azure.AzureCreateARMResourceStepConfiguration
 io.harness.cdng.provision.azure.AzureCreateARMResourceStepScope
 io.harness.cdng.provision.azure.AzureCreateARMResourceStepParameters
 io.harness.cdng.steps.EmptyStepParameters
+io.harness.cdng.service.steps.ServiceSweepingOutput
+io.harness.cdng.artifact.steps.ArtifactsStepV2SweepingOutput
