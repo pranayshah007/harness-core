@@ -249,6 +249,7 @@ import org.apache.commons.math3.util.Precision;
 import org.apache.http.client.utils.URIBuilder;
 import org.asynchttpclient.AsyncHttpClient;
 import org.atmosphere.wasync.Client;
+import org.atmosphere.wasync.ClientFactory;
 import org.atmosphere.wasync.Encoder;
 import org.atmosphere.wasync.Event;
 import org.atmosphere.wasync.Function;
@@ -554,12 +555,6 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
         log.info("Registering delegate with delegate profile: {}", delegateProfile);
       }
 
-      if (DeployMode.KUBERNETES.name().equals(System.getenv().get(DeployMode.DEPLOY_MODE))) {
-        Pod kp = kubernetesClient.pods().withName(HOST_NAME).get();
-        log.info("Delegate Pod id from pod {}", kp.getMetadata().getUid());
-        log.info("Delegate Pod name from pod {}", kp.getMetadata().getName());
-      }
-
       boolean isSample = "true".equals(System.getenv().get("SAMPLE_DELEGATE"));
 
       final List<String> supportedTasks = Arrays.stream(TaskType.values()).map(Enum::name).collect(toList());
@@ -604,6 +599,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
               .sampleDelegate(isSample)
               .location(Paths.get("").toAbsolutePath().toString())
               .heartbeatAsObject(true)
+              .k8PodId(getk8PodId())
               .immutable(isImmutableDelegate)
               .ceEnabled(Boolean.parseBoolean(System.getenv("ENABLE_CE")));
 
@@ -622,7 +618,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
         startHeartbeat(builder);
         startTaskPolling();
       } else {
-        client = org.atmosphere.wasync.ClientFactory.getDefault().newClient();
+        client = ClientFactory.getDefault().newClient();
 
         RequestBuilder requestBuilder = prepareRequestBuilder();
 
@@ -1110,6 +1106,10 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
         migrate(delegateResponse.getMigrateUrl());
         continue;
       }
+      if (DelegateRegisterResponse.Action.ERROR == delegateResponse.getAction()) {
+        log.error("Unable to register delegate {} ", delegateResponse.getFailureReason());
+        continue;
+      }
       builder.delegateId(responseDelegateId);
       log.info("Delegate registered with id {}", responseDelegateId);
       return responseDelegateId;
@@ -1122,7 +1122,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
 
   private void unregisterDelegate() {
     final DelegateUnregisterRequest request = new DelegateUnregisterRequest(delegateId, HOST_NAME, delegateNg,
-        DELEGATE_TYPE, getLocalHostAddress(), delegateOrgIdentifier, delegateProjectIdentifier);
+        DELEGATE_TYPE, getLocalHostAddress(), delegateOrgIdentifier, delegateProjectIdentifier, getk8PodId());
     try {
       log.info("Unregistering delegate {}", delegateId);
       executeRestCall(delegateAgentManagerClient.unregisterDelegate(accountId, request));
@@ -2771,5 +2771,19 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
     } catch (Exception e) {
       log.error("SSL Cert Verification failed with exception ", e);
     }
+  }
+
+  private String getk8PodId() {
+    if (DeployMode.KUBERNETES.name().equals(System.getenv().get(DeployMode.DEPLOY_MODE))) {
+      if (kubernetesClient.pods() != null) {
+        Pod pod = kubernetesClient.pods().withName(HOST_NAME).get();
+        if (pod != null && pod.getMetadata() != null) {
+          String podUID = pod.getMetadata().getUid();
+          log.info("Delegate Pod id from pod {}", podUID);
+          return podUID;
+        }
+      }
+    }
+    return EMPTY;
   }
 }

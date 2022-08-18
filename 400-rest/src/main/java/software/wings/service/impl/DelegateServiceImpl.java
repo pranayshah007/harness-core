@@ -16,6 +16,7 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.data.structure.UUIDGenerator.convertFromBase64;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
+import static io.harness.delegate.beans.DelegateRegisterResponse.Action.ERROR;
 import static io.harness.delegate.beans.DelegateType.CE_KUBERNETES;
 import static io.harness.delegate.beans.DelegateType.DOCKER;
 import static io.harness.delegate.beans.DelegateType.ECS;
@@ -2541,8 +2542,8 @@ public class DelegateServiceImpl implements DelegateService {
           .build();
     }
 
-    final Delegate existingDelegate = getExistingDelegate(
-        delegate.getAccountId(), delegate.getHostName(), delegate.isNg(), delegate.getDelegateType(), delegate.getIp());
+    final Delegate existingDelegate = getExistingDelegate(delegate.getAccountId(), delegate.getHostName(),
+        delegate.isNg(), delegate.getDelegateType(), delegate.getIp(), delegate.getK8PodId());
 
     if (existingDelegate != null && existingDelegate.getStatus() == DelegateInstanceStatus.DELETED) {
       broadcasterFactory.lookup(STREAM_DELEGATE + delegate.getAccountId(), true)
@@ -2554,8 +2555,17 @@ public class DelegateServiceImpl implements DelegateService {
     }
 
     if (existingDelegate != null) {
-      log.debug("Delegate {} already registered for Hostname with : {} IP: {}", delegate.getUuid(),
-          delegate.getHostName(), delegate.getIp());
+      if (KUBERNETES.equals(delegate.getDelegateType())) {
+        log.info("K8 Delegate {} already registered for Hostname with : {}, IP: {}, POD ID: {}", delegate.getUuid(),
+            delegate.getHostName(), delegate.getIp(), delegate.getK8PodId());
+        return DelegateRegisterResponse.builder()
+            .action(ERROR)
+            .failureReason("Found existing k8 delegate already registered with same name")
+            .build();
+      } else {
+        log.debug("Delegate {} already registered for Hostname with : {} IP: {}", delegate.getUuid(),
+            delegate.getHostName(), delegate.getIp());
+      }
     } else {
       log.info("Registering delegate for Hostname: {} IP: {}", delegate.getHostName(), delegate.getIp());
     }
@@ -2598,7 +2608,7 @@ public class DelegateServiceImpl implements DelegateService {
     }
 
     final Delegate existingDelegate = getExistingDelegate(delegateParams.getAccountId(), delegateParams.getHostName(),
-        delegateParams.isNg(), delegateParams.getDelegateType(), delegateParams.getIp());
+        delegateParams.isNg(), delegateParams.getDelegateType(), delegateParams.getIp(), delegateParams.getK8PodId());
 
     if (existingDelegate != null && existingDelegate.getStatus() == DelegateInstanceStatus.DELETED) {
       broadcasterFactory.lookup(STREAM_DELEGATE + delegateParams.getAccountId(), true)
@@ -2606,6 +2616,14 @@ public class DelegateServiceImpl implements DelegateService {
       log.warn(
           "Sending self destruct command from register delegate parameters because the existing delegate has status deleted.");
       return DelegateRegisterResponse.builder().action(DelegateRegisterResponse.Action.SELF_DESTRUCT).build();
+    }
+    if (existingDelegate != null && KUBERNETES.equals(delegateParams.getDelegateType())) {
+      log.info("Found K8 delegate already registered for Hostname with : {}, IP: {}, POD ID: {}",
+          delegateParams.getHostName(), delegateParams.getIp(), delegateParams.getK8PodId());
+      return DelegateRegisterResponse.builder()
+          .action(ERROR)
+          .failureReason("Found k8 delegate already registered with same name")
+          .build();
     }
 
     log.info("Registering delegate for Hostname: {} IP: {}", delegateParams.getHostName(), delegateParams.getIp());
@@ -2698,6 +2716,7 @@ public class DelegateServiceImpl implements DelegateService {
                                   .delegateTokenName(delegateTokenName.orElse(null))
                                   .heartbeatAsObject(delegateParams.isHeartbeatAsObject())
                                   .immutable(delegateParams.isImmutable())
+                                  .k8PodId(delegateParams.getK8PodId())
                                   .build();
 
     if (ECS.equals(delegateParams.getDelegateType())) {
@@ -2713,8 +2732,8 @@ public class DelegateServiceImpl implements DelegateService {
     }
   }
 
-  private Delegate getExistingDelegate(
-      final String accountId, final String hostName, final boolean ng, final String delegateType, final String ip) {
+  private Delegate getExistingDelegate(final String accountId, final String hostName, final boolean ng,
+      final String delegateType, final String ip, final String k8PodId) {
     final Query<Delegate> delegateQuery = persistence.createQuery(Delegate.class)
                                               .filter(DelegateKeys.accountId, accountId)
                                               .filter(DelegateKeys.hostName, hostName);
@@ -2724,6 +2743,10 @@ public class DelegateServiceImpl implements DelegateService {
       delegateQuery.filter(DelegateKeys.ip, ip);
     }
 
+    if (KUBERNETES.equals(delegateType)) {
+      delegateQuery.filter(DelegateKeys.k8PodId, k8PodId);
+    }
+
     return delegateQuery.project(DelegateKeys.status, true)
         .project(DelegateKeys.delegateProfileId, true)
         .project(DelegateKeys.ng, true)
@@ -2731,13 +2754,14 @@ public class DelegateServiceImpl implements DelegateService {
         .project(DelegateKeys.owner, true)
         .project(DelegateKeys.delegateGroupName, true)
         .project(DelegateKeys.description, true)
+        .project(DelegateKeys.k8PodId, true)
         .get();
   }
 
   @Override
   public void unregister(final String accountId, final DelegateUnregisterRequest request) {
-    final Delegate existingDelegate = getExistingDelegate(
-        accountId, request.getHostName(), request.isNg(), request.getDelegateType(), request.getIpAddress());
+    final Delegate existingDelegate = getExistingDelegate(accountId, request.getHostName(), request.isNg(),
+        request.getDelegateType(), request.getIpAddress(), request.getK8PodId());
 
     if (existingDelegate != null) {
       log.info("Removing delegate instance {} from delegate {}", request.getHostName(), request.getDelegateId());

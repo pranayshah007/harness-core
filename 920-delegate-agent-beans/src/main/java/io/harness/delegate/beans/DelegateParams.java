@@ -41,6 +41,7 @@ public class DelegateParams {
   String delegateRandomToken;
   String sequenceNum;
   String location;
+  String k8PodId;
   long lastHeartBeat;
 
   boolean ng;

@@ -22,4 +22,5 @@ public class DelegateUnregisterRequest {
   private final String ipAddress;
   private final String orgIdentifier;
   private final String projectIdentifier;
+  private final String k8PodId;
 }

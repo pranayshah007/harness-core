@@ -111,6 +111,7 @@ public class Delegate implements PersistentEntity, UuidAware, CreatedAtAware, Ac
   private boolean profileError;
   private long profileExecutedAt;
   private boolean sampleDelegate;
+  private String k8PodId;
 
   @FdIndex Long capabilitiesCheckNextIteration;
 
