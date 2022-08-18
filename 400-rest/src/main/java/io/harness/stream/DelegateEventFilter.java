@@ -9,6 +9,7 @@ package io.harness.stream;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.delegate.beans.DelegateTaskEvent.DelegateTaskEventBuilder.aDelegateTaskEvent;
+import static io.harness.delegate.message.ManagerMessageConstants.SELF_DESTRUCT;
 
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
@@ -107,6 +108,10 @@ public class DelegateEventFilter extends BroadcastFilterAdapter {
         return abort(message);
       }
       return continueWith(message);
+    }
+
+    if (StringUtils.contains((String) message, SELF_DESTRUCT)) {
+      return continueWith(SELF_DESTRUCT);
     }
     log.info("Broadcasting generic event to delegate: {} by {}", delegateId, broadcasterId);
     return continueWith(message);

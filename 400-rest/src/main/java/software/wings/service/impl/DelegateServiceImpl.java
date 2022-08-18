@@ -1089,6 +1089,17 @@ public class DelegateServiceImpl implements DelegateService {
     return updatedDelegate;
   }
 
+  public boolean sendSelfDestructToDelegate(String accountId, String delegateId) {
+    try {
+      log.warn("Sending self destruct signal to delegate {} on account {}.", delegateId, accountId);
+      broadcasterFactory.lookup(STREAM_DELEGATE + accountId, true).broadcast(SELF_DESTRUCT + delegateId);
+      return true;
+    } catch (Exception e) {
+      log.error("Encountered exception while sending kill signal to delegate {}", delegateId, e);
+      return false;
+    }
+  }
+
   private DelegateInstanceStatus mapApprovalActionToDelegateStatus(DelegateApproval action) {
     if (DelegateApproval.ACTIVATE == action) {
       return DelegateInstanceStatus.ENABLED;

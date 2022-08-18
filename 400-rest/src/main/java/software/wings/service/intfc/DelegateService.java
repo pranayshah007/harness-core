@@ -125,6 +125,8 @@ public interface DelegateService extends OwnedByAccount {
       String hostname, String delegateGroupName, String delegateProfile, String tokenName) throws IOException;
   Delegate add(Delegate delegate);
 
+  boolean sendSelfDestructToDelegate(String accountId, String delegateId);
+
   void delete(String accountId, String delegateId);
 
   void retainOnlySelectedDelegatesAndDeleteRest(String accountId, List<String> delegatesToRetain);

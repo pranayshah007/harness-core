@@ -8,6 +8,7 @@
 package software.wings.resources;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.delegate.message.ManagerMessageConstants.SELF_DESTRUCT;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 import static io.harness.remote.client.NGRestUtils.getResponse;
 
@@ -32,6 +33,7 @@ import io.harness.limits.impl.model.StaticLimit;
 import io.harness.logging.AccountLogContext;
 import io.harness.logging.AutoLogContext;
 import io.harness.rest.RestResponse;
+import io.harness.security.annotations.PublicApi;
 
 import software.wings.beans.Account;
 import software.wings.beans.CeLicenseUpdateInfo;
@@ -94,6 +96,14 @@ public class AdminAccountResource {
   public RestResponse<List<AccountSummary>> getAccounts(
       @QueryParam("pageSize") Integer pageSize, @QueryParam("offset") String offset) {
     return new RestResponse<>(adminAccountService.getPaginatedAccountSummaries(offset, pageSize));
+  }
+
+  @GET
+  @PublicApi
+  @Path("{accountId}/delegate/{delegateId}/selfdestruct")
+  public RestResponse<Boolean> selfDestructDelegate(
+      @PathParam("accountId") @NotEmpty String accountId, @PathParam("delegateId") @NotEmpty String delegateId) {
+    return new RestResponse<>(delegateService.sendSelfDestructToDelegate(accountId, delegateId));
   }
 
   @GET
