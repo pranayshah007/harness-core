@@ -252,6 +252,11 @@ public class CDLicenseUsageImpl implements LicenseUsageInterface<CDLicenseUsageD
                .computeIfAbsent(service.getIdentifier(), name -> Pair.of(service.getName(), 0L)));
 
     activeServiceWithInstanceCountList.forEach(serviceWithInstanceCount
+        -> serviceNamesMap.computeIfAbsent(serviceWithInstanceCount.getOrgid(), key -> new HashMap<>())
+               .computeIfAbsent(serviceWithInstanceCount.getProjectid(), key -> new HashMap<>())
+               .computeIfAbsent(serviceWithInstanceCount.getServiceid(), key -> Pair.of(StringUtils.EMPTY, 0L)));
+
+    activeServiceWithInstanceCountList.forEach(serviceWithInstanceCount
         -> serviceNamesMap.get(serviceWithInstanceCount.getOrgid())
                .get(serviceWithInstanceCount.getProjectid())
                .put(serviceWithInstanceCount.getServiceid(),
