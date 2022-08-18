@@ -900,49 +900,54 @@ public class K8InitializeStepUtils {
 
     Map<String, List<K8BuildJobEnvInfo.ConnectorConversionInfo>> map = new HashMap<>();
     for (ExecutionWrapperConfig executionWrapperConfig : executionWrappers) {
-      populateStepConnectorRefsUtil(executionWrapperConfig, ambiance, map);
+      populateStepConnectorRefsUtil(executionWrapperConfig, ambiance, map, null);
     }
     return map;
   }
 
   public void populateStepConnectorRefsUtil(ExecutionWrapperConfig executionWrapperConfig, Ambiance ambiance,
-      Map<String, List<K8BuildJobEnvInfo.ConnectorConversionInfo>> map) {
+      Map<String, List<K8BuildJobEnvInfo.ConnectorConversionInfo>> map, String stepGroupIdOfParent) {
     if (executionWrapperConfig.getStep() != null && !executionWrapperConfig.getStep().isNull()) {
       StepElementConfig stepElementConfig = getStepElementConfig(executionWrapperConfig);
-      map.putAll(getStepConnectorConversionInfo(stepElementConfig, ambiance));
+      map.putAll(getStepConnectorConversionInfo(stepElementConfig, ambiance, stepGroupIdOfParent));
     } else if (executionWrapperConfig.getParallel() != null && !executionWrapperConfig.getParallel().isNull()) {
       ParallelStepElementConfig parallelStepElementConfig = getParallelStepElementConfig(executionWrapperConfig);
       for (ExecutionWrapperConfig executionWrapper : parallelStepElementConfig.getSections()) {
-        populateStepConnectorRefsUtil(executionWrapper, ambiance, map);
+        populateStepConnectorRefsUtil(executionWrapper, ambiance, map, stepGroupIdOfParent);
       }
     } else if (executionWrapperConfig.getStepGroup() != null && !executionWrapperConfig.getStepGroup().isNull()) {
       StepGroupElementConfig stepGroupElementConfig =
           IntegrationStageUtils.getStepGroupElementConfig(executionWrapperConfig);
       for (ExecutionWrapperConfig executionWrapper : stepGroupElementConfig.getSteps()) {
-        populateStepConnectorRefsUtil(executionWrapper, ambiance, map);
+        populateStepConnectorRefsUtil(executionWrapper, ambiance, map, stepGroupElementConfig.getIdentifier());
       }
     }
   }
 
   private Map<String, List<K8BuildJobEnvInfo.ConnectorConversionInfo>> getStepConnectorConversionInfo(
-      StepElementConfig stepElement, Ambiance ambiance) {
+      StepElementConfig stepElement, Ambiance ambiance, String stepGroupIdOfParent) {
     Map<String, List<K8BuildJobEnvInfo.ConnectorConversionInfo>> map = new HashMap<>();
     if ((stepElement.getStepSpecType() instanceof PluginCompatibleStep)
         && (stepElement.getStepSpecType() instanceof WithConnectorRef)) {
-      map.put(stepElement.getIdentifier(), new ArrayList<>());
+      String stepIdentifier = stepElement.getIdentifier();
+      if (Strings.isNotBlank(stepGroupIdOfParent)) {
+        stepIdentifier = stepGroupIdOfParent + "_" + stepIdentifier;
+      }
+
+      map.put(stepIdentifier, new ArrayList<>());
       PluginCompatibleStep step = (PluginCompatibleStep) stepElement.getStepSpecType();
 
       String connectorRef = PluginSettingUtils.getConnectorRef(step);
       Map<EnvVariableEnum, String> envToSecretMap =
           PluginSettingUtils.getConnectorSecretEnvMap(step.getNonYamlInfo().getStepInfoType());
-      map.get(stepElement.getIdentifier())
+      map.get(stepIdentifier)
           .add(K8BuildJobEnvInfo.ConnectorConversionInfo.builder()
                    .connectorRef(connectorRef)
                    .envToSecretsMap(envToSecretMap)
                    .build());
       List<K8BuildJobEnvInfo.ConnectorConversionInfo> baseConnectorConversionInfo =
           this.getBaseImageConnectorConversionInfo(step, ambiance);
-      map.get(stepElement.getIdentifier()).addAll(baseConnectorConversionInfo);
+      map.get(stepIdentifier).addAll(baseConnectorConversionInfo);
     }
     return map;
   }

@@ -34,6 +34,9 @@ import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.rule.Owner;
 import io.harness.steps.matrix.StrategyExpansionData;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.inject.Inject;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -248,17 +251,31 @@ public class K8InitializeStepUtilsTest extends CIExecutionTestBase {
   public void testGetStepConnectorRefs() throws Exception {
     List<ExecutionWrapperConfig> wrapperConfigs =
         K8InitializeStepUtilsHelper.getExecutionWrapperConfigListWithStepGroup1();
+
+    ObjectMapper mapper = new ObjectMapper();
+    ObjectNode stepGroupElementConfig = mapper.createObjectNode();
+
+    ArrayNode arrayNode = mapper.createArrayNode();
+    arrayNode.add(
+        mapper.createObjectNode().set("step", K8InitializeStepUtilsHelper.getDockerStepElementConfigAsJsonNode()));
+
+    stepGroupElementConfig.put("identifier", "step-group1");
+    stepGroupElementConfig.put("steps", arrayNode);
+
+    wrapperConfigs.add(ExecutionWrapperConfig.builder().stepGroup(stepGroupElementConfig).build());
     wrapperConfigs.add(ExecutionWrapperConfig.builder()
                            .step(K8InitializeStepUtilsHelper.getDockerStepElementConfigAsJsonNode())
                            .build());
+
     ExecutionElementConfig executionElementConfig = ExecutionElementConfig.builder().steps(wrapperConfigs).build();
     IntegrationStageConfig integrationStageConfig =
         IntegrationStageConfigImpl.builder().execution(executionElementConfig).build();
     Ambiance ambiance = Ambiance.newBuilder().build();
     Map<String, List<K8BuildJobEnvInfo.ConnectorConversionInfo>> stepConnectorRefs =
         k8InitializeStepUtils.getStepConnectorRefs(integrationStageConfig, ambiance);
-    assertThat(stepConnectorRefs.size()).isEqualTo(1);
-    assertThat(stepConnectorRefs.containsKey("step-3")).isTrue();
+    assertThat(stepConnectorRefs.size()).isEqualTo(2);
+    assertThat(stepConnectorRefs.containsKey("step-docker")).isTrue();
+    assertThat(stepConnectorRefs.containsKey("step-group1_step-docker")).isTrue();
   }
 
   @Test
