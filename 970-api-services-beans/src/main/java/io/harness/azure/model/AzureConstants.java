@@ -47,6 +47,7 @@ public interface AzureConstants {
   String ZIP_EXTENSION = ".zip";
   String JAR_EXTENSION = ".jar";
   String FILE_RENAME_FAILURE = "Failed to rename the file - [%s] to [%s]";
+  String DEFAULT_JAR_ARTIFACT_NAME = "app.jar";
 
   // VMSS Tags names and values
   String HARNESS_AUTOSCALING_GROUP_TAG_NAME = "HARNESS_REVISION";
