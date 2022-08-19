@@ -7,23 +7,36 @@
 
 package io.harness.cdng.service.steps;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+
+import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.service.beans.ServiceDefinition;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.exception.UnsupportedOperationException;
 import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.logstreaming.NGLogCallback;
+import io.harness.ng.core.service.yaml.NGServiceConfig;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.data.StepOutcomeRef;
+import io.harness.pms.contracts.plan.ExecutionPrincipalInfo;
 import io.harness.pms.execution.utils.AmbianceUtils;
+import io.harness.pms.rbac.NGResourceType;
+import io.harness.pms.rbac.PipelineRbacHelper;
+import io.harness.pms.rbac.PrincipalTypeProtoToPrincipalTypeMapper;
 import io.harness.pms.sdk.core.data.Outcome;
 import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
 import io.harness.pms.sdk.core.steps.io.StepResponseNotifyData;
+import io.harness.rbac.CDNGRbacPermissions;
+import io.harness.steps.EntityReferenceExtractorUtils;
 import io.harness.tasks.ResponseData;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.google.inject.name.Named;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -36,6 +49,54 @@ import java.util.Set;
 public class ServiceStepsHelper {
   @Inject private LogStreamingStepClientFactory logStreamingStepClientFactory;
   @Inject private OutcomeService outcomeService;
+  @Inject private EntityReferenceExtractorUtils entityReferenceExtractorUtils;
+  @Inject private PipelineRbacHelper pipelineRbacHelper;
+  @Inject @Named("PRIVILEGED") private AccessControlClient accessControlClient;
+
+  void validateResources(Ambiance ambiance, NGServiceConfig serviceConfig) {
+    final ExecutionPrincipalInfo executionPrincipalInfo = ambiance.getMetadata().getPrincipalInfo();
+    final String principal = executionPrincipalInfo.getPrincipal();
+    if (isEmpty(principal)) {
+      return;
+    }
+
+    io.harness.accesscontrol.principals.PrincipalType principalType =
+        PrincipalTypeProtoToPrincipalTypeMapper.convertToAccessControlPrincipalType(
+            executionPrincipalInfo.getPrincipalType());
+    ServiceDefinition serviceDefinition = serviceConfig.getNgServiceV2InfoConfig().getServiceDefinition();
+    Set<EntityDetailProtoDTO> entityDetails =
+        entityReferenceExtractorUtils.extractReferredEntities(ambiance, serviceDefinition);
+    pipelineRbacHelper.checkRuntimePermissions(ambiance, entityDetails);
+    accessControlClient.checkForAccessOrThrow(io.harness.accesscontrol.acl.api.Principal.of(principalType, principal),
+        io.harness.accesscontrol.acl.api.ResourceScope.of(AmbianceUtils.getAccountId(ambiance),
+            AmbianceUtils.getOrgIdentifier(ambiance), AmbianceUtils.getProjectIdentifier(ambiance)),
+        io.harness.accesscontrol.acl.api.Resource.of(
+            NGResourceType.SERVICE, serviceConfig.getNgServiceV2InfoConfig().getIdentifier()),
+        CDNGRbacPermissions.SERVICE_RUNTIME_PERMISSION, "Validation for Service Step failed");
+  }
+
+  void validateResourcesV2(Ambiance ambiance, ServiceStepParametersV2 stepParameters) {
+    String accountIdentifier = AmbianceUtils.getAccountId(ambiance);
+    String orgIdentifier = AmbianceUtils.getOrgIdentifier(ambiance);
+    String projectIdentifier = AmbianceUtils.getProjectIdentifier(ambiance);
+    ExecutionPrincipalInfo executionPrincipalInfo = ambiance.getMetadata().getPrincipalInfo();
+    String principal = executionPrincipalInfo.getPrincipal();
+    if (EmptyPredicate.isEmpty(principal)) {
+      return;
+    }
+
+    io.harness.accesscontrol.principals.PrincipalType principalType =
+        PrincipalTypeProtoToPrincipalTypeMapper.convertToAccessControlPrincipalType(
+            executionPrincipalInfo.getPrincipalType());
+    ServiceDefinition serviceDefinition = stepParameters.getServiceDefinition().getValue();
+    Set<EntityDetailProtoDTO> entityDetails =
+        entityReferenceExtractorUtils.extractReferredEntities(ambiance, serviceDefinition);
+    pipelineRbacHelper.checkRuntimePermissions(ambiance, entityDetails);
+    accessControlClient.checkForAccessOrThrow(io.harness.accesscontrol.acl.api.Principal.of(principalType, principal),
+        io.harness.accesscontrol.acl.api.ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
+        io.harness.accesscontrol.acl.api.Resource.of(NGResourceType.SERVICE, stepParameters.getIdentifier()),
+        CDNGRbacPermissions.SERVICE_RUNTIME_PERMISSION, "Validation for Service Step failed");
+  }
 
   public NGLogCallback getServiceLogCallback(Ambiance ambiance) {
     return getServiceLogCallback(ambiance, false);
