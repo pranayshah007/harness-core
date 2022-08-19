@@ -79,7 +79,8 @@ public class NGConnectorSecretManagerServiceImpl implements NGConnectorSecretMan
     return connectorDTO;
   }
 
-  private ConnectorDTO getConnectorDTO(
+  @Override
+  public ConnectorDTO getConnectorDTO(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier) {
     Optional<ConnectorResponseDTO> connectorResponseDTO = Optional.empty();
     final GitEntityInfo emptyInfo = GitEntityInfo.builder().build();
