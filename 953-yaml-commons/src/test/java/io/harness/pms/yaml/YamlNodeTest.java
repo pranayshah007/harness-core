@@ -101,24 +101,4 @@ public class YamlNodeTest extends CategoryTest {
     YamlNode stage0ParallelName = stage0Parallel.getFieldOrThrow("name").getNode();
     assertThat(stage0ParallelName.extractStageLocalYamlPath()).isEqualTo("stage/name");
   }
-
-  @Test
-  @Owner(developers = NAMAN)
-  @Category(UnitTests.class)
-  public void testGet() {
-    String serviceYaml = "{\n"
-        + "    \"service\": {\n"
-        + "        \"serviceDefinition\": {\n"
-        + "            \"spec\": {\n"
-        + "            }\n"
-        + "        }\n"
-        + "    }\n"
-        + "}";
-    try {
-      YamlNode yamlNode = YamlNode.fromYamlPath(serviceYaml, "service");
-      int i = 1;
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
-  }
 }
