@@ -23,4 +23,18 @@ public class LdapSettingsMapper {
         .groupSettings(ldapSettings.getGroupSettings())
         .build();
   }
+
+  public LdapSettings fromLdapSettingsDTO(software.wings.beans.dto.LdapSettings ldapSettings) {
+    LdapSettings ssoSettings = LdapSettings.builder()
+        .accountId(ldapSettings.getAccountId())
+        .connectionSettings(ldapSettings.getConnectionSettings())
+        .userSettingsList(ldapSettings.getUserSettingsList())
+        .groupSettingsList(ldapSettings.getGroupSettingsList())
+        .displayName(ldapSettings.getDisplayName())
+        .build();
+    ssoSettings.setUserSettings(ldapSettings.getUserSettings());
+    ssoSettings.setGroupSettings(ldapSettings.getGroupSettings());
+    ssoSettings.setUuid(ldapSettings.getUuid());
+    return ssoSettings;
+  }
 }

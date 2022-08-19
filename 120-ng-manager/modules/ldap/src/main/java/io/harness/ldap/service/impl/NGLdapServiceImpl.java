@@ -46,6 +46,7 @@ import io.harness.service.DelegateGrpcClientWrapper;
 import software.wings.beans.TaskType;
 import software.wings.beans.dto.LdapSettings;
 import software.wings.beans.sso.LdapGroupResponse;
+import software.wings.beans.sso.LdapSettingsMapper;
 import software.wings.beans.sso.LdapTestResponse;
 import software.wings.service.impl.ldap.LdapDelegateException;
 
@@ -183,7 +184,7 @@ public class NGLdapServiceImpl implements NGLdapService {
   private LdapSettingsWithEncryptedDataDetail getLdapSettingsWithEncryptedDataInternal(
       String accountIdentifier, software.wings.beans.sso.LdapSettings ldapSettings) {
     Call<RestResponse<LdapSettingsWithEncryptedDataDetail>> settingsWithEncryptedDataDetails =
-        managerClient.getLdapSettingsUsingAccountIdAndLdapSettings(accountIdentifier, ldapSettings);
+        managerClient.getLdapSettingsUsingAccountIdAndLdapSettings(accountIdentifier, LdapSettingsMapper.ldapSettingsDTO(ldapSettings));
     if (null == settingsWithEncryptedDataDetails) {
       log.warn(
           "Failed to get ldap settings with encrypted data detail from manager for account: {}", accountIdentifier);

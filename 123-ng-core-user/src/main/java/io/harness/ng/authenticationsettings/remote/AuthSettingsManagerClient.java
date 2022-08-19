@@ -114,7 +114,7 @@ public interface AuthSettingsManagerClient {
   @KryoRequest
   @KryoResponse
   Call<RestResponse<LdapSettingsWithEncryptedDataDetail>> getLdapSettingsUsingAccountIdAndLdapSettings(
-      @Query("accountId") String accountIdentifier, @Body LdapSettings ldapSettings);
+      @Query("accountId") String accountIdentifier, @Body software.wings.beans.dto.LdapSettings ldapSettings);
 
   @GET(API_PREFIX + "sso/ldap/setting-with-encrypted-details")
   @KryoRequest
