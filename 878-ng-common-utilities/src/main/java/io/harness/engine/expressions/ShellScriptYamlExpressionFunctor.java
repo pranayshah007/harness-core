@@ -16,6 +16,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import lombok.Builder;
 import lombok.Value;
 
@@ -26,7 +27,7 @@ public class ShellScriptYamlExpressionFunctor {
   YamlField rootYamlField;
 
   public Object get(String expression) {
-    Map<String, Map<String, Object>> fqnToValueMap = new HashMap<>();
+    Map<String, Map<String, Object>> fqnToValueMap = new ConcurrentHashMap<>();
     // Get the current element
     Map<String, Object> currentElementMap = getYamlMap(rootYamlField, fqnToValueMap, new LinkedList<>());
     // Check child first
@@ -38,9 +39,9 @@ public class ShellScriptYamlExpressionFunctor {
 
   private Map<String, Object> getYamlMap(
       YamlField yamlField, Map<String, Map<String, Object>> fqnToValueMap, List<String> fqnList) {
-    Map<String, Object> contextMap = new HashMap<>();
+    Map<String, Object> contextMap = new ConcurrentHashMap<>();
 
-    Map<String, Object> valueMap = new HashMap<>();
+    Map<String, Object> valueMap = new ConcurrentHashMap<>();
     // Add node to fqn path.
     fqnList.add(yamlField.getName());
 
@@ -63,7 +64,7 @@ public class ShellScriptYamlExpressionFunctor {
 
   private Map<String, Object> getValueFromArray(
       YamlNode yamlNode, Map<String, Map<String, Object>> fqnToValueMap, List<String> fqnList) {
-    Map<String, Object> contextMap = new HashMap<>();
+    Map<String, Object> contextMap = new ConcurrentHashMap<>();
     for (YamlNode arrayElement : yamlNode.asArray()) {
       /*
        * For nodes such as variables where only value field is associated with name, key.
@@ -72,7 +73,7 @@ public class ShellScriptYamlExpressionFunctor {
           && EmptyPredicate.isNotEmpty(arrayElement.getArrayUniqueIdentifier())) {
         contextMap.put(arrayElement.getArrayUniqueIdentifier(), arrayElement.getField("value").getNode().asText());
       } else {
-        Map<String, Object> valueMap = new HashMap<>();
+        Map<String, Object> valueMap = new ConcurrentHashMap<>();
         if (arrayElement.getCurrJsonNode().isValueNode()) {
           contextMap.put(arrayElement.getName(), arrayElement.asText());
         } else if (arrayElement.isArray()) {
@@ -88,7 +89,7 @@ public class ShellScriptYamlExpressionFunctor {
 
   private Map<String, Object> getValueFromObject(
       YamlNode yamlNode, Map<String, Map<String, Object>> fqnToValueMap, List<String> fqnList) {
-    Map<String, Object> contextMap = new HashMap<>();
+    Map<String, Object> contextMap = new ConcurrentHashMap<>();
     for (YamlField field : yamlNode.fields()) {
       if (field.getNode().getCurrJsonNode().isValueNode()) {
         contextMap.put(field.getName(), field.getNode().asText());

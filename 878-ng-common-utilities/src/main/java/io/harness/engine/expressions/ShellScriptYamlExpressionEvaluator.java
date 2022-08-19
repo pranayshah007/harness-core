@@ -60,14 +60,14 @@ public class ShellScriptYamlExpressionEvaluator extends EngineExpressionEvaluato
 
   @Override
   public Object resolve(Object o, boolean skipUnresolvedExpressionsCheck) {
-    return ExpressionEvaluatorUtils.updateExpressions(
-        o, new ShellScriptFunctorImpl(this, skipUnresolvedExpressionsCheck));
+    ExpressionMode expressionMode = skipUnresolvedExpressionsCheck ? ExpressionMode.RETURN_NULL_IF_UNRESOLVED
+                                                                   : ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED;
+    return ExpressionEvaluatorUtils.updateExpressions(o, new ShellScriptFunctorImpl(this, expressionMode));
   }
 
   public static class ShellScriptFunctorImpl extends ResolveFunctorImpl {
-    public ShellScriptFunctorImpl(
-        EngineExpressionEvaluator expressionEvaluator, boolean skipUnresolvedExpressionsCheck) {
-      super(expressionEvaluator, ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED);
+    public ShellScriptFunctorImpl(EngineExpressionEvaluator expressionEvaluator, ExpressionMode expressionMode) {
+      super(expressionEvaluator, expressionMode);
     }
 
     @Override
