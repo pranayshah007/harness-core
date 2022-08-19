@@ -1074,7 +1074,7 @@ public class DelegateServiceImplTest extends WingsBaseTest {
                             .build();
     persistence.save(delegate);
     DelegateUnregisterRequest request = new DelegateUnregisterRequest(delegate.getUuid(), delegate.getHostName(),
-        delegate.isNg(), delegate.getDelegateType(), "xx", ORG_ID, PROJECT_ID);
+        delegate.isNg(), delegate.getDelegateType(), "xx", ORG_ID, PROJECT_ID, "");
     delegateService.unregister(accountId, request);
 
     List<OutboxEvent> outboxEvents = outboxService.list(OutboxEventFilter.builder().maximumEventsPolled(10).build());
