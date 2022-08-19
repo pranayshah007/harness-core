@@ -61,8 +61,8 @@ public class ShellScriptYamlExpressionEvaluatorTest extends CategoryTest {
     return yamlBeforeScript + scriptStringBuilder.append(script).toString() + yamlAfterScript;
   }
   @Test
-  @Category(UnitTests.class)
   @Owner(developers = SHREYAS)
+  @Category(UnitTests.class)
   public void testResolveSingleValue() throws Exception {
     String yaml = getYaml("AnyScript");
     ShellScriptYamlExpressionEvaluator shellScriptYamlExpressionEvaluator =
@@ -74,8 +74,8 @@ public class ShellScriptYamlExpressionEvaluatorTest extends CategoryTest {
   }
 
   @Test
-  @Category(UnitTests.class)
   @Owner(developers = SHREYAS)
+  @Category(UnitTests.class)
   // Tests for resolution of Hierarchical resolution
   // ie resolve(expression 1) where expression 1 needs resolution of expression 2 or more levels
   public void testResolveHierarichalExpression() throws Exception {
@@ -90,8 +90,8 @@ public class ShellScriptYamlExpressionEvaluatorTest extends CategoryTest {
   }
 
   @Test
-  @Category(UnitTests.class)
   @Owner(developers = SHREYAS)
+  @Category(UnitTests.class)
   // Test resolving secret evaluation
   public void testResolveSecretExpression() throws Exception {
     String script = "echo <+secrets.getValue(\"Token\")>";
