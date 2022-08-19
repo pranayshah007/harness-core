@@ -12,11 +12,17 @@ COPY --chown=65534:65534 ce-nextgen-capsule.jar /opt/harness/
 COPY --chown=65534:65534 keystore.jks /opt/harness/
 COPY --chown=65534:65534 config.yml /opt/harness/
 COPY --chown=65534:65534 protocol.info /opt/harness/
+RUN chmod 755 /opt/harness/ce-nextgen-capsule.jar
+RUN chmod 755 /opt/harness/keystore.jks
+RUN chmod 755 /opt/harness/config.yml
 
 COPY --chown=65534:65534 scripts /opt/harness
 
 CMD [ "./run.sh" ]
 
+RUN chmod 755 /opt/harness/replace_configs.sh
+RUN chmod 755 /opt/harness/run.sh
+RUN chmod 755 /opt/harness/start_process.sh
 
 ############################ON PREM#########################
 FROM base as onprem
