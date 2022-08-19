@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.ng.AwsKmsConfigDTOMapper.getAwsKmsConfigDTO;
 import static io.harness.ng.AwsSMConfigDTOMapper.getAwsSMConfigDTO;
 import static io.harness.ng.AzureKeyVaultConfigDTOMapper.getAzureKeyVaultConfigDTO;
+import static io.harness.ng.CustomSecretManagerConfigDTOMapper.getCustomSecretManagerConfigDTO;
 import static io.harness.ng.GcpKmsConfigDTOMapper.getGcpKmsConfigDTO;
 import static io.harness.ng.LocalConfigDTOMapper.getLocalConfigDTO;
 import static io.harness.ng.VaultConfigDTOMapper.getVaultConfigDTO;
@@ -22,6 +23,7 @@ import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.beans.connector.awskmsconnector.AwsKmsConnectorDTO;
 import io.harness.delegate.beans.connector.awssecretmanager.AwsSecretManagerDTO;
 import io.harness.delegate.beans.connector.azurekeyvaultconnector.AzureKeyVaultConnectorDTO;
+import io.harness.delegate.beans.connector.customseceretmanager.CustomSecretManagerConnectorDTO;
 import io.harness.delegate.beans.connector.gcpkmsconnector.GcpKmsConnectorDTO;
 import io.harness.delegate.beans.connector.localconnector.LocalConnectorDTO;
 import io.harness.delegate.beans.connector.vaultconnector.VaultConnectorDTO;
@@ -49,6 +51,9 @@ public class SecretManagerConfigDTOMapper {
         return getAwsSMConfigDTO(accountIdentifier, connectorRequestDTO, (AwsSecretManagerDTO) connectorConfigDTO);
       case LOCAL:
         return getLocalConfigDTO(accountIdentifier, connectorRequestDTO, (LocalConnectorDTO) connectorConfigDTO);
+      case CUSTOM_SECRET_MANAGER:
+        return getCustomSecretManagerConfigDTO(
+            accountIdentifier, connectorRequestDTO, (CustomSecretManagerConnectorDTO) connectorConfigDTO);
       default:
         throw new IllegalArgumentException("This is not a valid secret manager type: " + connector.getConnectorType());
     }
