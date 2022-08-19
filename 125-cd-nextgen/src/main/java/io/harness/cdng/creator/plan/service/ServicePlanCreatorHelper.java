@@ -55,7 +55,6 @@ public class ServicePlanCreatorHelper {
   @Inject private KryoSerializer kryoSerializer;
   @Inject private ServiceEntityService serviceEntityService;
   @Inject private ServicePlanCreator servicePlanCreator;
-
   @Inject private NGFeatureFlagHelperService featureFlagService;
 
   /**

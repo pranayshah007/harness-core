@@ -8,13 +8,17 @@
 package io.harness.cdng.creator.plan.service;
 
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
+import static io.harness.rule.OwnerRule.YOGESH;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
+import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.creator.plan.stage.DeploymentStageConfig;
 import io.harness.cdng.creator.plan.stage.DeploymentStageNode;
@@ -34,6 +38,7 @@ import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.rule.Owner;
 import io.harness.serializer.KryoSerializer;
+import io.harness.utils.NGFeatureFlagHelperService;
 
 import com.google.common.base.Charsets;
 import com.google.common.io.Resources;
@@ -52,8 +57,10 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 public class ServicePlanCreatorHelperTest extends CategoryTest {
-  @Mock KryoSerializer kryoSerializer;
-  @Mock ServiceEntityService serviceEntityService;
+  @Mock private KryoSerializer kryoSerializer;
+  @Mock private ServiceEntityService serviceEntityService;
+
+  @Mock private NGFeatureFlagHelperService featureFlagService;
   private final String ACCOUNT_ID = "account_id";
   private final String ORG_IDENTIFIER = "orgId";
   private final String PROJ_IDENTIFIER = "projId";
@@ -229,5 +236,52 @@ public class ServicePlanCreatorHelperTest extends CategoryTest {
         servicePlanCreatorHelper.getResolvedServiceFieldForV2(context, null, stageNode, specField);
     assertThat(serviceFieldForV2).isNotNull();
     assertThat(serviceFieldForV2.getNode().getField(YamlTypes.SERVICE_DEFINITION)).isNotNull();
+  }
+
+  @Test
+  @Owner(developers = YOGESH)
+  @Category(UnitTests.class)
+  public void testGetResolvedServiceFieldForV2WithServiceInputAsExpression() throws IOException {
+    doReturn(true).when(featureFlagService).isEnabled(anyString(), eq(FeatureName.SERVICE_V2_EXPRESSION));
+
+    DeploymentStageNode stageNode =
+        DeploymentStageNode.builder()
+            .type(StepType.Deployment)
+            .deploymentStageConfig(
+                DeploymentStageConfig.builder()
+                    .service(
+                        ServiceYamlV2.builder()
+                            .serviceRef(
+                                ParameterField.<String>builder().expression(true).expressionValue("<+abc>").build())
+                            .build())
+                    .build())
+            .build();
+    stageNode.setIdentifier("stage1");
+    Map<String, PlanCreationContextValue> globalContext = new HashMap<>();
+    globalContext.put("metadata",
+        PlanCreationContextValue.newBuilder()
+            .setAccountIdentifier(ACCOUNT_ID)
+            .setOrgIdentifier(ORG_IDENTIFIER)
+            .setProjectIdentifier(PROJ_IDENTIFIER)
+            .build());
+    PlanCreationContext context = PlanCreationContext.builder().globalContext(globalContext).build();
+
+    ClassLoader classLoader = this.getClass().getClassLoader();
+    final URL testFile = classLoader.getResource("cdng/serviceV2WithServiceInputAsExpression.yaml");
+    String yamlContent = Resources.toString(testFile, Charsets.UTF_8);
+    YamlField yamlField = YamlUtils.readTree(YamlUtils.injectUuid(yamlContent));
+    // Pipeline Node
+    YamlNode pipelineNode = yamlField.getNode().getField("pipeline").getNode();
+    // Stages Node
+    YamlField stagesNode = pipelineNode.getField("stages");
+    // Stage1 Node
+    YamlNode stage1Node = stagesNode.getNode().asArray().get(0).getField("stage").getNode();
+    // Stage1 spec Node
+    YamlField specField = stage1Node.getField("spec");
+
+    YamlField serviceFieldForV2 =
+        servicePlanCreatorHelper.getResolvedServiceFieldForV2(context, null, stageNode, specField);
+    serviceFieldForV2.getNode().removePath("__uuid");
+    assertThat(serviceFieldForV2.getNode().getCurrJsonNode().toString()).isEqualTo("{\"identifier\":\"<+abc>\"}");
   }
 }

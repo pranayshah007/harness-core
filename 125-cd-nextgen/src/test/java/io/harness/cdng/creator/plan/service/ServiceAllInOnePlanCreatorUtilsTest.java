@@ -62,6 +62,7 @@ public class ServiceAllInOnePlanCreatorUtilsTest {
                     .type(ServiceDefinitionType.KUBERNETES)
                     .serviceSpec(KubernetesServiceSpec.builder()
                                      .manifests(Collections.emptyList())
+                                     .configFiles(Collections.emptyList())
                                      .artifacts(ArtifactListConfig.builder()
                                                     .primary(PrimaryArtifact.builder()
                                                                  .sourceType(ArtifactSourceType.DOCKER_REGISTRY)
@@ -77,8 +78,8 @@ public class ServiceAllInOnePlanCreatorUtilsTest {
 
     List<PlanNode> collect =
         planCreationResponseMap.values().stream().map(PlanCreationResponse::getPlanNode).collect(Collectors.toList());
+    assertThat(planCreationResponseMap).hasSize(4);
     assertThat(collect.stream().map(PlanNode::getIdentifier).collect(Collectors.toList()))
         .containsExactly("service", "artifacts", "serviceDefinition", "spec");
-    assertThat(planCreationResponseMap).hasSize(4);
   }
 }
