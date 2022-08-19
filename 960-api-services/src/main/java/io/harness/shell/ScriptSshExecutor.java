@@ -214,6 +214,8 @@ public class ScriptSshExecutor extends AbstractScriptExecutor {
           config.getExecutionId(), config.getHost());
       saveExecutionLog(format("Retry connecting to %s ....", config.getHost()));
       return getExecuteCommandResponse(command, envVariablesToCollect, secretEnvVariablesToCollect, true);
+    } finally {
+      logCallback.dispatchLogs();
     }
   }
 

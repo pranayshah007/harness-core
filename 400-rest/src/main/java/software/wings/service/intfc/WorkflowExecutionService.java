@@ -353,4 +353,7 @@ public interface WorkflowExecutionService extends StateStatusUpdate {
   WorkflowExecutionInfo getWorkflowExecutionInfo(String appId, String workflowExecutionId);
 
   WorkflowExecution getWorkflowExecutionWithFailureDetails(@NotNull String appId, @NotNull String workflowExecutionId);
+
+  List<WorkflowExecution> getWorkflowExecutionsWithFailureDetails(
+      String appId, List<WorkflowExecution> workflowExecutions);
 }

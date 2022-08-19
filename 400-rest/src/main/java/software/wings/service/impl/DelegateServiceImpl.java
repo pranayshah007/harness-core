@@ -861,10 +861,17 @@ public class DelegateServiceImpl implements DelegateService {
               .groupName(entry.getKey())
               .upgraderLastUpdated(delegateGroupMap.getOrDefault(entry.getKey(), 0L))
               .autoUpgrade(setAutoUpgrade(delegateGroupMap.getOrDefault(entry.getKey(), 0L)))
+              .delegateGroupExpirationTime(setDelegateScalingGroupExpiration(entry.getValue()))
               .delegates(buildInnerDelegates(accountId, entry.getValue(), activeDelegateConnections, true))
               .build();
         })
         .collect(toList());
+  }
+
+  private long setDelegateScalingGroupExpiration(List<Delegate> delegates) {
+    return isNotEmpty(delegates)
+        ? delegates.stream().max(Comparator.comparing(Delegate::getExpirationTime)).get().getExpirationTime()
+        : 0;
   }
 
   private boolean setAutoUpgrade(Long upgraderLastUpdated) {
@@ -930,6 +937,7 @@ public class DelegateServiceImpl implements DelegateService {
               .tokenActive(delegate.getDelegateTokenName() == null
                   || (delegateTokenStatusMap.containsKey(delegate.getDelegateTokenName())
                       && delegateTokenStatusMap.get(delegate.getDelegateTokenName())))
+              .delegateExpirationTime(delegate.getExpirationTime())
               .build();
         })
         .collect(toList());
@@ -1003,6 +1011,8 @@ public class DelegateServiceImpl implements DelegateService {
       setUnset(updateOperations, DelegateKeys.delegateTokenName, delegate.getDelegateTokenName());
     }
     setUnset(updateOperations, DelegateKeys.heartbeatAsObject, delegate.isHeartbeatAsObject());
+    setUnset(updateOperations, DelegateKeys.mtls, delegate.isMtls());
+
     return updateOperations;
   }
 
@@ -2578,7 +2588,7 @@ public class DelegateServiceImpl implements DelegateService {
   }
 
   @Override
-  public DelegateRegisterResponse register(final DelegateParams delegateParams) {
+  public DelegateRegisterResponse register(final DelegateParams delegateParams, final boolean isConnectedUsingMtls) {
     if (licenseService.isAccountDeleted(delegateParams.getAccountId())) {
       delegateMetricsService.recordDelegateMetrics(
           Delegate.builder().accountId(delegateParams.getAccountId()).version(delegateParams.getVersion()).build(),
@@ -2717,6 +2727,7 @@ public class DelegateServiceImpl implements DelegateService {
                                   .heartbeatAsObject(delegateParams.isHeartbeatAsObject())
                                   .immutable(delegateParams.isImmutable())
                                   .k8PodId(delegateParams.getK8PodId())
+                                  .mtls(isConnectedUsingMtls)
                                   .build();
 
     if (ECS.equals(delegateParams.getDelegateType())) {

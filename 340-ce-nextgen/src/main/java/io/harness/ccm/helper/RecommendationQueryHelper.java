@@ -37,6 +37,7 @@ public class RecommendationQueryHelper {
         .resourceTypes(areK8sRecommendationPropertiesPresent
                 ? ccmFilter.getK8sRecommendationFilterPropertiesDTO().getResourceTypes()
                 : null)
+        .perspectiveFilters(ccmFilter.getPerspectiveFilters())
         .minSaving(ccmFilter.getMinSaving())
         .minCost(ccmFilter.getMinCost())
         .offset(ccmFilter.getOffset())

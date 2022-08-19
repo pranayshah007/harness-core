@@ -263,6 +263,10 @@ public class TemplateInputsValidatorTest extends TemplateServiceTestBase {
     assertThat(response.isValidYaml()).isFalse();
     assertThat(response.getErrorNodeSummary()).isNotNull();
     ErrorNodeSummary errorNodeSummary = response.getErrorNodeSummary();
+    assertThat(errorNodeSummary.getNodeInfo()).isNotNull();
+    assertThat(errorNodeSummary.getNodeInfo().getIdentifier()).isEqualTo("pipelineTest");
+    assertThat(errorNodeSummary.getNodeInfo().getName()).isEqualTo("Test Pipline");
+    assertThat(errorNodeSummary.getNodeInfo().getLocalFqn()).isEqualTo("pipeline");
     assertThat(errorNodeSummary.getChildrenErrorNodes()).isNotNull().isNotEmpty().hasSize(2);
 
     ErrorNodeSummary firstChild = errorNodeSummary.getChildrenErrorNodes().get(0);

@@ -30,6 +30,7 @@ import software.wings.beans.FailureStrategy;
 import software.wings.beans.Pipeline;
 import software.wings.security.PermissionAttribute.Action;
 import software.wings.security.PermissionAttribute.PermissionType;
+import software.wings.security.annotations.ApiKeyAuthorized;
 import software.wings.security.annotations.AuthRule;
 import software.wings.security.annotations.Scope;
 import software.wings.service.intfc.AuthService;
@@ -65,6 +66,7 @@ import javax.ws.rs.QueryParam;
 @Produces("application/json")
 @Scope(APPLICATION)
 @AuthRule(permissionType = PermissionType.PIPELINE)
+@ApiKeyAuthorized(permissionType = PermissionType.PIPELINE)
 @OwnedBy(HarnessTeam.CDC)
 public class PipelineResource {
   private WorkflowService workflowService;

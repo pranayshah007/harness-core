@@ -8,6 +8,7 @@
 package io.harness.delegate.task.shell;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.delegate.task.utils.PhysicalDataCenterConstants.DEFAULT_SSH_PORT;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.connector.awsconnector.AwsCapabilityHelper;
@@ -43,7 +44,8 @@ public class SshCommandTaskParameters extends CommandTaskParameters {
       PdcSshInfraDelegateConfig pdcSshInfraDelegateConfig = (PdcSshInfraDelegateConfig) sshInfraDelegateConfig;
       if (pdcSshInfraDelegateConfig.getPhysicalDataCenterConnectorDTO() != null) {
         capabilities.addAll(PhysicalDataCenterConnectorCapabilityHelper.fetchRequiredExecutionCapabilities(
-            pdcSshInfraDelegateConfig.getPhysicalDataCenterConnectorDTO(), maskingEvaluator));
+            pdcSshInfraDelegateConfig.getPhysicalDataCenterConnectorDTO(), maskingEvaluator,
+            getDefaultPort(pdcSshInfraDelegateConfig)));
       }
       capabilities.addAll(EncryptedDataDetailsCapabilityHelper.fetchExecutionCapabilitiesForEncryptedDataDetails(
           pdcSshInfraDelegateConfig.getEncryptionDataDetails(), maskingEvaluator));
@@ -64,5 +66,12 @@ public class SshCommandTaskParameters extends CommandTaskParameters {
       capabilities.addAll(EncryptedDataDetailsCapabilityHelper.fetchExecutionCapabilitiesForEncryptedDataDetails(
           awsSshInfraDelegateConfig.getEncryptionDataDetails(), maskingEvaluator));
     }
+  }
+
+  private String getDefaultPort(PdcSshInfraDelegateConfig pdcSshInfraDelegateConfig) {
+    return pdcSshInfraDelegateConfig.getSshKeySpecDto() == null
+            || pdcSshInfraDelegateConfig.getSshKeySpecDto().getPort() == 0
+        ? DEFAULT_SSH_PORT
+        : String.valueOf(pdcSshInfraDelegateConfig.getSshKeySpecDto().getPort());
   }
 }

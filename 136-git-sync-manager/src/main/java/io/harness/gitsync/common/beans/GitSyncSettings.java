@@ -69,4 +69,5 @@ public class GitSyncSettings {
 
   public static final String IS_EXECUTE_ON_DELEGATE = "isExecuteOnDelegate";
   public static final String IS_GIT_SIMPLIFICATION_ENABLED = "isGitSimplificationEnabled";
+  public static final String IS_ENABLED_ONLY_FOR_FF = "isEnabledOnlyForFF";
 }

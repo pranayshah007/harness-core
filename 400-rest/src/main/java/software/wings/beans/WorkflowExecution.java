@@ -425,8 +425,8 @@ public class WorkflowExecution implements PersistentRegularIterable, AccountData
     public static final String pipelineExecution_pipelineStageExecutions =
         pipelineExecution + "." + PipelineExecutionKeys.pipelineStageExecutions;
     public static final String executionArgs_helmCharts = executionArgs + "." + ExecutionArgsKeys.helmCharts;
-    public static final String executionArgs_helmCharts_version = executionArgs_helmCharts + "."
-        + "version";
+    public static final String executionArgs_helmCharts_displayName = executionArgs_helmCharts + "."
+        + "displayName";
   }
 
   @PrePersist

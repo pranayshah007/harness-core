@@ -18,5 +18,6 @@ import org.springframework.data.repository.CrudRepository;
 @HarnessRepo
 @OwnedBy(HarnessTeam.DX)
 public interface InfrastructureMappingRepository extends CrudRepository<InfrastructureMapping, String> {
-  Optional<InfrastructureMapping> findByInfrastructureKey(String infrastructureKey);
+  Optional<InfrastructureMapping> findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndInfrastructureKey(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String infrastructureKey);
 }

@@ -18,6 +18,7 @@ import io.harness.polling.mapper.artifact.GcrArtifactInfoBuilder;
 import io.harness.polling.mapper.artifact.JenkinsArtifactInfoBuilder;
 import io.harness.polling.mapper.artifact.NexusRegistryArtifactInfoBuilder;
 import io.harness.polling.mapper.artifact.S3ArtifactInfoBuilder;
+import io.harness.polling.mapper.gitpolling.GitPollingInfoBuilder;
 import io.harness.polling.mapper.manifest.GcsHelmChartManifestInfoBuilder;
 import io.harness.polling.mapper.manifest.HttpHelmChartManifestInfoBuilder;
 import io.harness.polling.mapper.manifest.S3HelmChartManifestInfoBuilder;
@@ -49,6 +50,7 @@ public class PollingInfoBuilderRegistry {
     registeredPollingInfoBuilders.put(Type.ACR, AcrArtifactInfoBuilder.class);
     registeredPollingInfoBuilders.put(Type.AMAZON_S3, S3ArtifactInfoBuilder.class);
     registeredPollingInfoBuilders.put(Type.JENKINS, JenkinsArtifactInfoBuilder.class);
+    registeredPollingInfoBuilders.put(Type.GIT_POLL, GitPollingInfoBuilder.class);
   }
 
   public Optional<PollingInfoBuilder> getPollingInfoBuilder(Type type) {

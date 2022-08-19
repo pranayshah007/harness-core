@@ -112,6 +112,7 @@ public class Delegate implements PersistentEntity, UuidAware, CreatedAtAware, Ac
   private long profileExecutedAt;
   private boolean sampleDelegate;
   private String k8PodId;
+  private long expirationTime;
 
   @FdIndex Long capabilitiesCheckNextIteration;
 
@@ -128,6 +129,8 @@ public class Delegate implements PersistentEntity, UuidAware, CreatedAtAware, Ac
   private boolean heartbeatAsObject;
 
   private boolean immutable;
+
+  private boolean mtls;
 
   @Override
   public void updateNextIteration(String fieldName, long nextIteration) {

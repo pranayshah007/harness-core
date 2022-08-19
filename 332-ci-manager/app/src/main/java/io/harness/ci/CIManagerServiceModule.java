@@ -49,6 +49,7 @@ import io.harness.grpc.DelegateServiceGrpcClient;
 import io.harness.grpc.client.AbstractManagerGrpcClientModule;
 import io.harness.grpc.client.ManagerGrpcClientModule;
 import io.harness.impl.scm.ScmServiceClientImpl;
+import io.harness.licensing.remote.NgLicenseHttpClientModule;
 import io.harness.lock.DistributedLockImplementation;
 import io.harness.lock.PersistentLockModule;
 import io.harness.manage.ManagedScheduledExecutorService;
@@ -199,6 +200,10 @@ public class CIManagerServiceModule extends AbstractModule {
     bind(BitbucketService.class).to(BitbucketServiceImpl.class);
     bind(AzureRepoService.class).to(AzureRepoServiceImpl.class);
     bind(SecretDecryptor.class).to(SecretDecryptorViaNg.class);
+
+    install(NgLicenseHttpClientModule.getInstance(ciManagerConfiguration.getNgManagerClientConfig(),
+        ciManagerConfiguration.getNgManagerServiceSecret(), CI_MANAGER.getServiceId()));
+
     bind(ScheduledExecutorService.class)
         .annotatedWith(Names.named("ciTelemetryPublisherExecutor"))
         .toInstance(new ScheduledThreadPoolExecutor(1,

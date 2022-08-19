@@ -7,6 +7,7 @@
 
 package io.harness.steps.shellscript;
 
+import static io.harness.AuthorizationServiceHeader.NG_MANAGER;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import static java.util.Collections.emptyList;
@@ -32,6 +33,8 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.secretmanagerclient.services.SshKeySpecDTOHelper;
 import io.harness.secrets.remote.SecretNGManagerClient;
+import io.harness.security.SecurityContextBuilder;
+import io.harness.security.dto.ServicePrincipal;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.shell.ScriptType;
 import io.harness.steps.OutputExpressionConstants;
@@ -190,6 +193,7 @@ public class ShellScriptHelperServiceImpl implements ShellScriptHelperService {
   @Override
   public ShellScriptTaskParametersNG buildShellScriptTaskParametersNG(
       @Nonnull Ambiance ambiance, @Nonnull ShellScriptStepParameters shellScriptStepParameters) {
+    SecurityContextBuilder.setContext(new ServicePrincipal(NG_MANAGER.getServiceId()));
     ScriptType scriptType = shellScriptStepParameters.getShell().getScriptType();
     ShellScriptTaskParametersNGBuilder taskParametersNGBuilder = ShellScriptTaskParametersNG.builder();
 

@@ -569,7 +569,7 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
         currentTimeEpoch = getStartingDateEpochValue(currentTimeEpoch, startInterval);
         total++;
         totalCountMap.put(currentTimeEpoch, totalCountMap.get(currentTimeEpoch) + 1);
-        if (status.get(i).contentEquals(ExecutionStatus.SUCCESS.name())) {
+        if (CDDashboardServiceHelper.successStatusList.contains(status.get(i))) {
           currentSuccess++;
           successCountMap.put(currentTimeEpoch, successCountMap.get(currentTimeEpoch) + 1);
         } else if (activeStatusList.contains(status.get(i)) || pendingStatusList.contains(status.get(i))) {
@@ -581,7 +581,7 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
         }
       } else {
         previousDeployment++;
-        if (status.get(i).contentEquals(ExecutionStatus.SUCCESS.name())) {
+        if (CDDashboardServiceHelper.successStatusList.contains(status.get(i))) {
           previousSuccess++;
         } else if (activeStatusList.contains(status.get(i)) || pendingStatusList.contains(status.get(i))) {
           previousActive++;
@@ -773,7 +773,7 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
       long currentTimeEpoch = time.get(i);
       currentTimeEpoch = getStartingDateEpochValue(currentTimeEpoch, startInterval);
       totalCountMap.put(currentTimeEpoch, totalCountMap.get(currentTimeEpoch) + 1);
-      if (status.get(i).contentEquals(ExecutionStatus.SUCCESS.name())) {
+      if (CDDashboardServiceHelper.successStatusList.contains(status.get(i))) {
         successCountMap.put(currentTimeEpoch, successCountMap.get(currentTimeEpoch) + 1);
       } else if (CDDashboardServiceHelper.failedStatusList.contains(status.get(i))) {
         failedCountMap.put(currentTimeEpoch, failedCountMap.get(currentTimeEpoch) + 1);
@@ -1101,7 +1101,7 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
           io.harness.ng.overview.dto.ServiceDeployment serviceDeployment = resultMap.get(bucketTime);
           io.harness.ng.overview.dto.DeploymentCount deployments = serviceDeployment.getDeployments();
           deployments.setTotal(deployments.getTotal() + numberOfRecords);
-          if ((ExecutionStatus.SUCCESS).toString().equals(status)) {
+          if (CDDashboardServiceHelper.successStatusList.contains(status)) {
             deployments.setSuccess(deployments.getSuccess() + numberOfRecords);
           } else if (CDDashboardServiceHelper.failedStatusList.contains(status)) {
             deployments.setFailure(deployments.getFailure() + numberOfRecords);
@@ -1606,7 +1606,7 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
             currentTimeEpoch = getStartingDateEpochValue(currentTimeEpoch, startDate);
             totalDeployment++;
             deploymentCountMap.put(currentTimeEpoch, deploymentCountMap.get(currentTimeEpoch) + 1);
-            if (status.get(i).contentEquals(ExecutionStatus.SUCCESS.name())) {
+            if (CDDashboardServiceHelper.successStatusList.contains(status.get(i))) {
               success++;
             }
             if (CDDashboardServiceHelper.failedStatusList.contains(status.get(i))) {

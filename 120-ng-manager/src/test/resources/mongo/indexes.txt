@@ -453,8 +453,7 @@ infrastructureMapping {"name": "infra_mapping_appId_envId_serviceId", "backgroun
 infrastructureMapping {"name": "infra_mapping_appId_infrastructureDefinitionId_idx", "background": true} {"appId": 1, "infrastructureDefinitionId": 1}
 infrastructureMapping {"name": "nextIteration_1", "background": true} {"nextIteration": 1}
 infrastructureMapping {"name": "yaml", "unique": true} {"appId": 1, "envId": 1, "name": 1}
-infrastructureMappingNG {"name": "accountId_orgId_projectId_idx", "background": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1}
-infrastructureMappingNG {"name": "infrastructureKey_1", "unique": true} {"infrastructureKey": 1}
+infrastructureMappingNG {"name": "accountId_orgId_projectId_infrastructureKey_unique_idx", "unique": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1, "infrastructureKey": 1}
 infrastructureProvisioner {"name": "accountIdCreatedAtIdx", "background": true} {"accountId": 1, "createdAt": -1}
 infrastructureProvisioner {"name": "accountId_1", "background": true} {"accountId": 1}
 infrastructureProvisioner {"name": "appId_1", "background": true} {"appId": 1}

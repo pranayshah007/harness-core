@@ -6,9 +6,6 @@ public class WriteUtil {
   public static final String INDENTATION = "    ";
 
   public static void updateResponseWithSet(SortedSet<String> collection, String name, StringBuilder response) {
-    if (collection.isEmpty()) {
-      return;
-    }
     response.append(INDENTATION).append(name).append(" = [");
     if (collection.size() > 1) {
       response.append("\n");
