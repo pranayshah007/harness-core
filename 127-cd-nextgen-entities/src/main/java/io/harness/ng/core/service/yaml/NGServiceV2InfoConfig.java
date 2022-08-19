@@ -54,8 +54,6 @@ public class NGServiceV2InfoConfig implements Visitable {
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) String description;
   Map<String, String> tags;
   Boolean gitOpsEnabled;
-  ServiceUseFromStageV2 useFromStage;
-
   ServiceDefinition serviceDefinition;
 
   @Override
