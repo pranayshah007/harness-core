@@ -7,10 +7,14 @@
 
 package io.harness.engine.expressions;
 
+import static io.harness.annotations.dev.HarnessTeam.PL;
+
+import io.harness.annotations.dev.OwnedBy;
 import io.harness.expression.ExpressionFunctor;
 
 import lombok.Value;
 
+@OwnedBy(PL)
 @Value
 public class SecretFunctor implements ExpressionFunctor {
   long expressionFunctorToken;
