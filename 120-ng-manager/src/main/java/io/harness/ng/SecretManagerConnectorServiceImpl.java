@@ -33,6 +33,7 @@ import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.awskmsconnector.AwsKmsConnectorDTO;
 import io.harness.delegate.beans.connector.awssecretmanager.AwsSecretManagerDTO;
 import io.harness.delegate.beans.connector.azurekeyvaultconnector.AzureKeyVaultConnectorDTO;
+import io.harness.delegate.beans.connector.customseceretmanager.CustomSecretManagerConnectorDTO;
 import io.harness.delegate.beans.connector.gcpkmsconnector.GcpKmsConnectorDTO;
 import io.harness.delegate.beans.connector.localconnector.LocalConnectorDTO;
 import io.harness.delegate.beans.connector.vaultconnector.VaultConnectorDTO;
@@ -163,6 +164,8 @@ public class SecretManagerConnectorServiceImpl implements ConnectorService {
         return ((AwsSecretManagerDTO) connector.getConnectorConfig()).isDefault();
       case LOCAL:
         return ((LocalConnectorDTO) connector.getConnectorConfig()).isDefault();
+      case CUSTOM_SECRET_MANAGER:
+        return ((CustomSecretManagerConnectorDTO) connector.getConnectorConfig()).isDefault();
       default:
         throw new SecretManagementException(ErrorCode.SECRET_MANAGEMENT_ERROR,
             String.format("Unsupported Secret Manager type [%s]", connector.getConnectorType()), WingsException.USER);

@@ -13,6 +13,8 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.ConnectorDTO;
 import io.harness.secretmanagerclient.dto.SecretManagerConfigDTO;
 
+import software.wings.beans.CustomSecretNGManagerConfig;
+
 @OwnedBy(PL)
 public interface NGConnectorSecretManagerService {
   SecretManagerConfigDTO getUsingIdentifier(
@@ -20,4 +22,9 @@ public interface NGConnectorSecretManagerService {
 
   ConnectorDTO decrypt(
       String accountIdentifier, String projectIdentifier, String orgIdentifier, ConnectorDTO connectorConfig);
+
+  default ConnectorDTO getConnectorDTO(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier) {
+    throw new RuntimeException("Can not find the connector dto. ");
+  }
 }
