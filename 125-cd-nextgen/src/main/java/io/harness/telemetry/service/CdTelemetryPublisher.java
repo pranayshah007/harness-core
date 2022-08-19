@@ -15,9 +15,6 @@ import static io.harness.telemetry.Destination.ALL;
 import io.harness.ModuleType;
 import io.harness.account.AccountClient;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdlicense.bean.CgActiveServicesUsageInfo;
-import io.harness.cdlicense.bean.CgServiceUsage;
-import io.harness.cdlicense.impl.CgCdLicenseUsageService;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.licensing.usage.beans.cd.CDLicenseUsageDTO;
 import io.harness.licensing.usage.interfaces.LicenseUsageInterface;
@@ -34,20 +31,16 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.collections.CollectionUtils;
 
 @Slf4j
 @OwnedBy(CDP)
 public class CdTelemetryPublisher {
   @Inject private LicenseUsageInterface licenseUsageInterface;
-  @Inject private CgCdLicenseUsageService cgLicenseUsageService;
   @Inject private TelemetryReporter telemetryReporter;
   @Inject private AccountClient accountClient;
   @Inject private CdTelemetryStatusRepository cdTelemetryStatusRepository;
   private static final String COUNT_ACTIVE_SERVICES = "cd_license_services_used";
   private static final String COUNT_ACTIVE_SERVICE_INSTANCES = "cd_license_service_instances_used";
-  private static final String CG_COUNT_ACTIVE_SERVICES = "cd_license_cg_services_used";
-  private static final String CG_COUNT_ACTIVE_SERVICE_INSTANCES = "cd_license_cg_service_instances_used";
   private static final String ACCOUNT_DEPLOY_TYPE = "account_deploy_type";
   // Locking for a bit less than one day. It's ok to send a bit more than less considering downtime/etc
   //(24*60*60*1000)-(10*60*1000)
@@ -88,19 +81,6 @@ public class CdTelemetryPublisher {
         map.put(COUNT_ACTIVE_SERVICES, cdLicenseUsage.getActiveServices().getCount());
         map.put(COUNT_ACTIVE_SERVICE_INSTANCES, cdLicenseUsage.getActiveServiceInstances().getCount());
         map.put(ACCOUNT_DEPLOY_TYPE, System.getenv().get(DEPLOY_VERSION));
-
-        CgActiveServicesUsageInfo cgLicenseUsage = cgLicenseUsageService.getActiveServiceLicenseUsage(accountId);
-        long cgServiceInstancesCount = 0L;
-        if (CollectionUtils.isNotEmpty(cgLicenseUsage.getActiveServiceUsage())) {
-          cgServiceInstancesCount = cgLicenseUsage.getActiveServiceUsage()
-                                        .stream()
-                                        .map(CgServiceUsage::getInstanceCount)
-                                        .reduce(0L, Long::sum);
-        }
-
-        map.put(CG_COUNT_ACTIVE_SERVICES, cgLicenseUsage.getServicesConsumed());
-        map.put(CG_COUNT_ACTIVE_SERVICE_INSTANCES, cgServiceInstancesCount);
-
         telemetryReporter.sendGroupEvent(accountId, null, map, Collections.singletonMap(ALL, true),
             TelemetryOption.builder().sendForCommunity(true).build());
         log.info("Scheduled CdTelemetryPublisher event sent for account {}", accountId);
