@@ -9,6 +9,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.cdng.visitor.YamlTypes;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.UnresolvedExpressionsException;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.services.ServiceEntityService;
@@ -31,6 +32,7 @@ import io.harness.utils.YamlPipelineUtils;
 import com.google.inject.Inject;
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -51,14 +53,17 @@ public class ServiceStepV3 implements SyncExecutable<ServiceStepV3Parameters> {
   @Override
   public StepResponse executeSync(Ambiance ambiance, ServiceStepV3Parameters stepParameters,
       StepInputPackage inputPackage, PassThroughData passThroughData) {
-    // Todo: check if service ref is resolved
+    if (stepParameters.getServiceRef().isExpression()) {
+      throw new UnresolvedExpressionsException(List.of((String) stepParameters.getServiceRef().fetchFinalValue()));
+    }
 
-    final Optional<ServiceEntity> serviceOpt =
-        serviceEntityService.get(AmbianceUtils.getAccountId(ambiance), AmbianceUtils.getOrgIdentifier(ambiance),
-            AmbianceUtils.getProjectIdentifier(ambiance), stepParameters.getServiceRef().getValue(), false);
+    final Optional<ServiceEntity> serviceOpt = serviceEntityService.get(AmbianceUtils.getAccountId(ambiance),
+        AmbianceUtils.getOrgIdentifier(ambiance), AmbianceUtils.getProjectIdentifier(ambiance),
+        (String) stepParameters.getServiceRef().fetchFinalValue(), false);
+
     if (serviceOpt.isEmpty()) {
       throw new InvalidRequestException(
-          format("serviceOpt with identifier %s not found", stepParameters.getServiceRef()));
+          format("service with identifier %s not found", stepParameters.getServiceRef().fetchFinalValue()));
     }
 
     final ServiceEntity serviceEntity = serviceOpt.get();

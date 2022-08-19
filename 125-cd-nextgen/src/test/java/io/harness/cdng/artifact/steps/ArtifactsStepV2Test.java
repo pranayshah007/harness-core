@@ -360,7 +360,7 @@ public class ArtifactsStepV2Test {
     return ServiceSweepingOutput.builder().finalServiceYaml(serviceYaml).build();
   }
 
-  public Ambiance buildAmbiance(StepType stepType) {
+  private Ambiance buildAmbiance(StepType stepType) {
     List<Level> levels = new ArrayList<>();
     levels.add(
         Level.newBuilder().setRuntimeId(generateUuid()).setSetupId(generateUuid()).setStepType(stepType).build());
