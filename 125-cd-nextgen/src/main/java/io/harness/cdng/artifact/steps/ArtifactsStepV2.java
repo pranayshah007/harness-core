@@ -26,7 +26,10 @@ import io.harness.delegate.task.artifacts.ArtifactTaskType;
 import io.harness.delegate.task.artifacts.request.ArtifactTaskParameters;
 import io.harness.delegate.task.artifacts.response.ArtifactTaskResponse;
 import io.harness.exception.ArtifactServerException;
+import io.harness.exception.InvalidRequestException;
 import io.harness.executions.steps.ExecutionNodeType;
+import io.harness.logging.CommandExecutionStatus;
+import io.harness.logging.LogLevel;
 import io.harness.logstreaming.NGLogCallback;
 import io.harness.ng.core.service.yaml.NGServiceConfig;
 import io.harness.ng.core.service.yaml.NGServiceV2InfoConfig;
@@ -43,6 +46,7 @@ import io.harness.pms.sdk.core.steps.executables.AsyncExecutable;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
+import io.harness.pms.sdk.core.steps.io.StepResponse.StepOutcome;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.service.DelegateGrpcClientWrapper;
 import io.harness.tasks.ResponseData;
@@ -73,7 +77,7 @@ public class ArtifactsStepV2 implements AsyncExecutable<EmptyStepParameters> {
                                                .build();
 
   private static final Duration DEFAULT_TIMEOUT = Duration.ofMinutes(1);
-  private static final String ARTIFACTS_STEP_V_2 = "artifacts_step_v2";
+  static final String ARTIFACTS_STEP_V_2 = "artifacts_step_v2";
   @Inject private ExecutionSweepingOutputService sweepingOutputService;
   @Inject private ServiceStepsHelper serviceStepsHelper;
   @Inject private ArtifactStepHelper artifactStepHelper;
@@ -87,15 +91,17 @@ public class ArtifactsStepV2 implements AsyncExecutable<EmptyStepParameters> {
   @Override
   public AsyncExecutableResponse executeAsync(Ambiance ambiance, EmptyStepParameters stepParameters,
       StepInputPackage inputPackage, PassThroughData passThroughData) {
-    ServiceSweepingOutput serviceSweepingOutput = (ServiceSweepingOutput) sweepingOutputService.resolve(
+    // Obtain resolved service yaml from sweeping output
+    final ServiceSweepingOutput serviceSweepingOutput = (ServiceSweepingOutput) sweepingOutputService.resolve(
         ambiance, RefObjectUtils.getOutcomeRefObject(ServiceStepV3.SERVICE_SWEEPING_OUTPUT));
+
     NGServiceConfig ngServiceConfig = null;
     if (serviceSweepingOutput != null) {
       try {
         ngServiceConfig = YamlUtils.read(serviceSweepingOutput.getFinalServiceYaml(), NGServiceConfig.class);
       } catch (IOException e) {
-        // Todo:(yogesh) handle exception
-        throw new RuntimeException(e);
+        log.error("Failed to read service yaml", e);
+        throw new InvalidRequestException("Unable to read service yaml. " + e.getMessage());
       }
     }
 
@@ -182,9 +188,12 @@ public class ArtifactsStepV2 implements AsyncExecutable<EmptyStepParameters> {
       }
     }
     final ArtifactsOutcome artifactsOutcome = outcomeBuilder.sidecars(sidecarsOutcome).build();
+
+    logCallback.saveExecutionLog("Artifacts Step Completed.", LogLevel.INFO, CommandExecutionStatus.SUCCESS);
+
     return StepResponse.builder()
         .status(Status.SUCCEEDED)
-        .stepOutcome(StepResponse.StepOutcome.builder()
+        .stepOutcome(StepOutcome.builder()
                          .name(OutcomeExpressionConstants.ARTIFACTS)
                          .outcome(artifactsOutcome)
                          .group(StepCategory.STAGE.name())
@@ -196,11 +205,12 @@ public class ArtifactsStepV2 implements AsyncExecutable<EmptyStepParameters> {
   public void handleAbort(
       Ambiance ambiance, EmptyStepParameters stepParameters, AsyncExecutableResponse executableResponse) {
     // Todo:(yogesh) handle this ?
+    final NGLogCallback logCallback = serviceStepsHelper.getServiceLogCallback(ambiance);
+    logCallback.saveExecutionLog("Artifacts Step was aborted", LogLevel.ERROR, CommandExecutionStatus.FAILURE);
   }
 
-  private String handle(final Ambiance ambiance, final ArtifactConfig artifactConfig,
-      final ArtifactSourceType sourceType, boolean isPrimary) {
-    final NGLogCallback logCallback = serviceStepsHelper.getServiceLogCallback(ambiance);
+  private String handle(final Ambiance ambiance, final NGLogCallback logCallback, final ArtifactConfig artifactConfig,
+      final ArtifactSourceType sourceType, final boolean isPrimary) {
     if (isPrimary) {
       logCallback.saveExecutionLog("Processing primary artifact...");
       logCallback.saveExecutionLog(
@@ -212,7 +222,7 @@ public class ArtifactsStepV2 implements AsyncExecutable<EmptyStepParameters> {
           ArtifactUtils.getLogInfo(artifactConfig, sourceType)));
     }
 
-    ArtifactSourceDelegateRequest artifactSourceDelegateRequest =
+    final ArtifactSourceDelegateRequest artifactSourceDelegateRequest =
         artifactStepHelper.toSourceDelegateRequest(artifactConfig, ambiance);
     final ArtifactTaskParameters taskParameters = ArtifactTaskParameters.builder()
                                                       .accountId(AmbianceUtils.getAccountId(ambiance))
@@ -221,9 +231,10 @@ public class ArtifactsStepV2 implements AsyncExecutable<EmptyStepParameters> {
                                                       .build();
     logCallback.saveExecutionLog(
         LogHelper.color("Starting delegate task to fetch details of primary artifact", LogColor.Cyan, LogWeight.Bold));
-    List<TaskSelector> delegateSelectors = artifactStepHelper.getDelegateSelectors(artifactConfig, ambiance);
 
-    DelegateTaskRequest delegateTaskRequest =
+    final List<TaskSelector> delegateSelectors = artifactStepHelper.getDelegateSelectors(artifactConfig, ambiance);
+
+    final DelegateTaskRequest delegateTaskRequest =
         DelegateTaskRequest.builder()
             .accountId(AmbianceUtils.getAccountId(ambiance))
             .taskParameters(taskParameters)
