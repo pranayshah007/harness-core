@@ -615,6 +615,8 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
                   public void on(Exception e) {
                     log.error("Exception on websocket", e);
                     handleError(e);
+                    log.info("socket closed");
+                    requestBuilder.header("token", "dummy");
                   }
                 })
             .on(Event.OPEN,
@@ -622,6 +624,8 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
                   @Override
                   public void on(Object o) {
                     handleOpen(o);
+                    log.info("socket opened, closing it now ");
+
                   }
                 })
             .on(Event.CLOSE,
@@ -629,6 +633,8 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
                   @Override
                   public void on(Object o) {
                     handleClose(o);
+                    log.info("socket closed");
+                    requestBuilder.header("token", "dummy");
                   }
                 })
             .on(new Function<IOException>() {
@@ -910,7 +916,6 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
     } else {
       sendJreInformationToWatcher = clock.millis() - delegateJreVersionChangedAt > DELEGATE_JRE_VERSION_TIMEOUT;
     }
-
     log.debug("Send info to watcher {}", sendJreInformationToWatcher);
   }
 
