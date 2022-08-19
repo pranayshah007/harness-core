@@ -82,7 +82,7 @@ public class ServiceAllInOnePlanCreatorUtils {
             .uuid("artifacts-" + UUIDGenerator.generateUuid())
             .stepType(ArtifactsStepV2.STEP_TYPE)
             .name(PlanCreatorConstants.SERVICE_NODE_NAME)
-            .identifier(YamlTypes.SERVICE_ENTITY)
+            .identifier(YamlTypes.ARTIFACT_LIST_CONFIG)
             .stepParameters(new EmptyStepParameters())
             .facilitatorObtainment(
                 FacilitatorObtainment.newBuilder()
