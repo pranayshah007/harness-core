@@ -51,6 +51,20 @@ replace_key_value gcpConfig.gcpAwsConnectorCrudPubSubTopic "$GCP_AWS_CONNECTOR_C
 replace_key_value gcpConfig.gcpGcpConnectorCrudPubSubTopic "$GCP_GCP_CONNECTOR_CRUD_PUBSUB_TOPIC"
 replace_key_value gcpConfig.gcpAzureConnectorCrudPubSubTopic "$GCP_AZURE_CONNECTOR_CRUD_PUBSUB_TOPIC"
 
+replace_key_value enforcementClientConfiguration.enforcementCheckEnabled "$ENFORCEMENT_CHECK_ENABLED"
+replace_key_value secretsConfiguration.gcpSecretManagerProject "$GCP_SECRET_MANAGER_PROJECT"
+replace_key_value secretsConfiguration.secretResolutionEnabled  "$RESOLVE_SECRETS"
+
+replace_key_value accessControlClient.enableAccessControl "$ACCESS_CONTROL_ENABLED"
+replace_key_value accessControlClient.accessControlServiceConfig.baseUrl "$ACCESS_CONTROL_BASE_URL"
+replace_key_value accessControlClient.accessControlServiceSecret "$ACCESS_CONTROL_SECRET"
+replace_key_value accessControlAdminClient.accessControlServiceConfig.baseUrl "$ACCESS_CONTROL_BASE_URL"
+replace_key_value accessControlAdminClient.accessControlServiceSecret "$ACCESS_CONTROL_SECRET"
+
+replace_key_value notificationClient.httpClient.baseUrl "$NOTIFICATION_BASE_URL"
+replace_key_value notificationClient.secrets.notificationClientSecret "$NEXT_GEN_MANAGER_SECRET"
+replace_key_value notificationClient.messageBroker.uri "${NOTIFICATION_MONGO_URI//\\&/&}"
+
 replace_key_value ceAzureSetupConfig.azureAppClientId "$AZURE_APP_CLIENT_ID"
 replace_key_value ceAzureSetupConfig.azureAppClientSecret "$AZURE_APP_CLIENT_SECRET"
 replace_key_value ceAzureSetupConfig.enableFileCheckAtSource "$AZURE_ENABLE_FILE_CHECK_AT_SOURCE"
@@ -110,14 +124,6 @@ fi
 
 if [[ "" != "$AUDIT_ENABLED" ]]; then
   yq write -i $CONFIG_FILE enableAudit "$AUDIT_ENABLED"
-fi
-
-if [[ "" != "$NOTIFICATION_BASE_URL" ]]; then
-  yq write -i $CONFIG_FILE notificationClient.httpClient.baseUrl "$NOTIFICATION_BASE_URL"
-fi
-
-if [[ "" != "$NOTIFICATION_MONGO_URI" ]]; then
-  yq write -i $CONFIG_FILE notificationClient.messageBroker.uri "${NOTIFICATION_MONGO_URI//\\&/&}"
 fi
 
 replace_key_value outboxPollConfig.initialDelayInSeconds "$OUTBOX_POLL_INITIAL_DELAY"
