@@ -26,6 +26,14 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 @OwnedBy(PL)
 public class ShellScriptYamlExpressionEvaluatorTest extends CategoryTest {
+  /*
+   Yaml string is broken in 3 parts for easy testing purpose.
+   1- String before script.
+   2- Script
+   3- String after script.
+   Any new test case can use the getYaml function passing the script as a string to create a simple yaml string.
+   Other use cases might need new yaml string creation as well but the above acts as a simple example for most cases.
+   */
   private String yamlBeforeScript = "---\n"
       + "connector:\n"
       + "  type: SecretManager\n"
@@ -60,6 +68,7 @@ public class ShellScriptYamlExpressionEvaluatorTest extends CategoryTest {
   public String getYaml(String script) {
     return yamlBeforeScript + scriptStringBuilder.append(script).toString() + yamlAfterScript;
   }
+
   @Test
   @Owner(developers = SHREYAS)
   @Category(UnitTests.class)
