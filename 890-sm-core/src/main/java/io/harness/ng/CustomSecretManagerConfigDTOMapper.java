@@ -35,7 +35,7 @@ public class CustomSecretManagerConfigDTOMapper {
             //.unmergedConnectorRequest(YamlUtils.write(connectorRequestDTO))
 
             .delegateSelectors(connectorDTO.getDelegateSelectors())
-            .onDelegate(connectorDTO.isOnDelegate())
+            .onDelegate(connectorDTO.getExecuteOnDelegate())
             .connectorRef(SecretRefHelper.getSecretConfigString(connectorDTO.getConnectorRef()))
             .host(connectorDTO.getHost())
             .workingDirectory(connectorDTO.getWorkingDirectory())

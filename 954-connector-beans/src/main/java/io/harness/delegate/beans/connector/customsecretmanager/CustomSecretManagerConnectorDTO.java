@@ -13,13 +13,12 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DecryptableEntity;
 import io.harness.connector.DelegateSelectable;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
-import io.harness.delegate.beans.connector.customseceretmanager.TemplateLinkConfig;
 import io.harness.encryption.SecretRefData;
 import io.harness.encryption.SecretReference;
-import io.harness.security.encryption.EncryptedDataParams;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -46,6 +45,7 @@ import lombok.experimental.FieldDefaults;
 public class CustomSecretManagerConnectorDTO extends ConnectorConfigDTO implements DelegateSelectable {
   Set<String> delegateSelectors;
   private boolean onDelegate;
+  @JsonProperty("onDelegate") @Builder.Default Boolean executeOnDelegate = true;
   @Schema(description = SecretManagerDescriptionConstants.DEFAULT) private boolean isDefault;
   @Schema @JsonIgnore private boolean harnessManaged;
 
@@ -57,8 +57,6 @@ public class CustomSecretManagerConnectorDTO extends ConnectorConfigDTO implemen
   private String host;
   private String workingDirectory;
   private TemplateLinkConfig template;
-  // TODO: remove this
-  private Set<EncryptedDataParams> testVariables;
   @Override
   public List<DecryptableEntity> getDecryptableEntities() {
     return Collections.singletonList(this);

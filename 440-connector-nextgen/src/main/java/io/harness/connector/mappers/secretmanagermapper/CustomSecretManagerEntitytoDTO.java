@@ -21,9 +21,9 @@ public class CustomSecretManagerEntitytoDTO
         .connectorRef(SecretRefHelper.createSecretRef(connector.getConnectorRef()))
         .isDefault(connector.isDefault())
         .host(connector.getHost())
-        .onDelegate(connector.isOnDelegate())
+        .workingDirectory(connector.getWorkingDirectory())
+        .executeOnDelegate(connector.isOnDelegate())
         .delegateSelectors(connector.getDelegateSelectors())
-        .testVariables(connector.getTestVariables())
         .build();
   }
 }

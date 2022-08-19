@@ -12,8 +12,9 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.entities.Connector;
 import io.harness.delegate.beans.connector.customseceretmanager.TemplateLinkConfig;
-import io.harness.security.encryption.EncryptedDataParams;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import java.util.Set;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
@@ -28,17 +29,16 @@ import org.springframework.data.annotation.TypeAlias;
 @Builder
 @EqualsAndHashCode(callSuper = true)
 @FieldNameConstants(innerTypeName = "CustomSecretManagerConnectorKeys")
+@JsonInclude(JsonInclude.Include.NON_NULL)
 @Entity(value = "connectors", noClassnameStored = true)
 @Persistent
 @TypeAlias("io.harness.connector.entities.embedded.customsecretmanager.CustomSecretManagerConnector")
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class CustomSecretManagerConnector extends Connector {
-  private boolean onDelegate;
-  // Use annotations
+  @Builder.Default private boolean onDelegate = true;
   private boolean isDefault;
   private String connectorRef;
   private String host;
   private String workingDirectory;
   private TemplateLinkConfig template;
-  // TODO: Remove this
-  private Set<EncryptedDataParams> testVariables;
 }
