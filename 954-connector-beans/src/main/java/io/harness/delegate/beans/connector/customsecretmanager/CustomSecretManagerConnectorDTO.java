@@ -32,6 +32,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 import lombok.experimental.FieldDefaults;
 @Data
 @Builder
@@ -39,6 +40,7 @@ import lombok.experimental.FieldDefaults;
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = true)
 @JsonIgnoreProperties(ignoreUnknown = true)
+@ToString(exclude = {"connectorRef"})
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @ApiModel("CustomSecretManager")
 @OwnedBy(HarnessTeam.DX)
@@ -47,7 +49,7 @@ public class CustomSecretManagerConnectorDTO
     extends ConnectorConfigDTO implements DelegateSelectable, ManagerExecutable {
   Set<String> delegateSelectors;
   @JsonProperty("onDelegate") @Builder.Default Boolean executeOnDelegate = true;
-  @Schema(description = SecretManagerDescriptionConstants.DEFAULT) private boolean isDefault;
+  @Schema(description = SecretManagerDescriptionConstants.DEFAULT) private boolean isDefault = false;
   @Schema @JsonIgnore private boolean harnessManaged;
 
   @SecretReference

@@ -19,7 +19,7 @@ public class CustomSecretManagerEntitytoDTO
     return CustomSecretManagerConnectorDTO.builder()
         .template(connector.getTemplate())
         .connectorRef(SecretRefHelper.createSecretRef(connector.getConnectorRef()))
-        .isDefault(connector.isDefault())
+        .isDefault(connector.getIsDefault())
         .host(connector.getHost())
         .workingDirectory(connector.getWorkingDirectory())
         .executeOnDelegate(connector.getExecuteOnDelegate())
