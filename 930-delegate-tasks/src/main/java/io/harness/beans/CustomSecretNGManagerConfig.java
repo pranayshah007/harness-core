@@ -34,11 +34,12 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import lombok.NonNull;
 import lombok.ToString;
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.SuperBuilder;
+import org.hibernate.validator.constraints.NotEmpty;
 
-// DTO , Entity , Mapper
 @OwnedBy(PL)
 @Data
 @SuperBuilder
@@ -111,7 +112,7 @@ public class CustomSecretNGManagerConfig extends SecretManagerConfig {
       }
       return executionCapabilities;
     }
-    // TODO: Get the right exectution capability
+    // TODO: Get the right execution capability
     return Collections.emptyList();
   }
 }

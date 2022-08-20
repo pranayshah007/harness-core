@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.ConnectorInfoDTO;
+import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.beans.connector.ConnectorValidationParams;
 import io.harness.delegate.beans.connector.customseceretmanager.CustomSecretManagerConnectorDTO;
 import io.harness.delegate.beans.connector.customsecretmanager.CustomSecretManagerValidationParams;
@@ -24,8 +25,10 @@ public class CustomSecretManagerValidationParamProvider
   @Override
   public ConnectorValidationParams getConnectorValidationParams(ConnectorInfoDTO connectorInfoDTO, String connectorName,
       String accountIdentifier, String orgIdentifier, String projectIdentifier) {
+    ConnectorConfigDTO connectorConfig =
+        getDecryptedConnectorConfigDTO(connectorInfoDTO, accountIdentifier, orgIdentifier, projectIdentifier);
     return CustomSecretManagerValidationParams.builder()
-        .customSecretManagerConnectorDTO((CustomSecretManagerConnectorDTO) connectorInfoDTO.getConnectorConfig())
+        .customSecretManagerConnectorDTO((CustomSecretManagerConnectorDTO) connectorConfig)
         .connectorName(connectorName)
         .build();
   }

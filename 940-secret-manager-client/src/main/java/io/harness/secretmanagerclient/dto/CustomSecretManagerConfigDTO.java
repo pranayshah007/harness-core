@@ -27,7 +27,7 @@ import lombok.experimental.SuperBuilder;
 @Getter
 @Setter
 @NoArgsConstructor
-@ToString(exclude = {"connectorRef", "unmergedConnectorRequest"})
+@ToString(exclude = {"connectorRef"})
 @EqualsAndHashCode(callSuper = true)
 @SuperBuilder
 public class CustomSecretManagerConfigDTO extends SecretManagerConfigDTO implements DelegateSelectable {
@@ -39,5 +39,4 @@ public class CustomSecretManagerConfigDTO extends SecretManagerConfigDTO impleme
   private String workingDirectory;
   private TemplateLinkConfig template;
   private String script;
-  private String unmergedConnectorRequest;
 }
