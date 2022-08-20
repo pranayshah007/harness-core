@@ -175,6 +175,7 @@ import io.harness.delegate.beans.connector.azureconnector.AzureTaskParams;
 import io.harness.delegate.beans.connector.azureconnector.AzureTaskType;
 import io.harness.delegate.beans.connector.azureconnector.AzureValidationParams;
 import io.harness.delegate.beans.connector.azurekeyvaultconnector.AzureKeyVaultValidationParams;
+import io.harness.delegate.beans.connector.customsecretmanager.CustomSecretManagerValidationParams;
 import io.harness.delegate.beans.connector.cvconnector.CVConnectorTaskParams;
 import io.harness.delegate.beans.connector.cvconnector.CVConnectorTaskResponse;
 import io.harness.delegate.beans.connector.cvconnector.CVConnectorValidationParams;
@@ -1665,5 +1666,6 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(GitPollingTaskType.class, 56338);
     kryo.register(GitPollingDelegateResponse.class, 56339);
     kryo.register(JenkinsArtifactDelegateConfig.class, 9800003);
+    kryo.register(CustomSecretManagerValidationParams.class, 19876);
   }
 }
