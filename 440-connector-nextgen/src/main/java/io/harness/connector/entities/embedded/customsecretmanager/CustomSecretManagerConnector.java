@@ -27,11 +27,11 @@ import org.springframework.data.annotation.TypeAlias;
 @OwnedBy(PL)
 @Value
 @Builder
+@ToString(exclude = {"connectorRef"})
 @EqualsAndHashCode(callSuper = true)
 @FieldNameConstants(innerTypeName = "CustomSecretManagerConnectorKeys")
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Entity(value = "connectors", noClassnameStored = true)
-@ToString(exclude = {"connectorRef"})
 @Persistent
 @TypeAlias("io.harness.connector.entities.embedded.customsecretmanager.CustomSecretManagerConnector")
 @JsonIgnoreProperties(ignoreUnknown = true)

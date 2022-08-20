@@ -20,8 +20,6 @@ import io.harness.secretmanagerclient.dto.CustomSecretManagerConfigDTO;
 import io.harness.security.encryption.EncryptedDataParams;
 import io.harness.template.remote.TemplateResourceClient;
 
-import software.wings.beans.CustomSecretNGManagerConfig;
-
 import com.google.inject.Inject;
 import java.io.IOException;
 import java.util.HashSet;

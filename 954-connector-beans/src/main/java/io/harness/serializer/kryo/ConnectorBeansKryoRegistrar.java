@@ -145,7 +145,6 @@ import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoApiAccessDTO;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoApiAccessSpecDTO;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoApiAccessType;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoAuthenticationDTO;
-import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectionTypeDTO;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectorDTO;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoCredentialsDTO;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoHttpAuthenticationType;
