@@ -17,6 +17,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
+import lombok.ToString;
 import lombok.Value;
 import lombok.experimental.FieldNameConstants;
 import org.mongodb.morphia.annotations.Entity;
@@ -30,11 +31,12 @@ import org.springframework.data.annotation.TypeAlias;
 @FieldNameConstants(innerTypeName = "CustomSecretManagerConnectorKeys")
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Entity(value = "connectors", noClassnameStored = true)
+@ToString(exclude = {"connectorRef"})
 @Persistent
 @TypeAlias("io.harness.connector.entities.embedded.customsecretmanager.CustomSecretManagerConnector")
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class CustomSecretManagerConnector extends Connector {
-  private boolean isDefault;
+  @Builder.Default private Boolean isDefault = false;
   private String connectorRef;
   private String host;
   private String workingDirectory;

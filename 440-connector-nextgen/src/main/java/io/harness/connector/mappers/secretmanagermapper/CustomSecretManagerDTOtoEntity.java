@@ -17,6 +17,7 @@ public class CustomSecretManagerDTOtoEntity
   @Override
   public CustomSecretManagerConnector toConnectorEntity(CustomSecretManagerConnectorDTO connectorDTO) {
     return CustomSecretManagerConnector.builder()
+        .isDefault(connectorDTO.isDefault())
         .connectorRef(SecretRefHelper.getSecretConfigString(connectorDTO.getConnectorRef()))
         .template(connectorDTO.getTemplate())
         .host(connectorDTO.getHost())
