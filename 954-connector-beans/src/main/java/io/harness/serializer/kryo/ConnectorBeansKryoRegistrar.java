@@ -72,6 +72,8 @@ import io.harness.delegate.beans.connector.cek8s.CEKubernetesClusterConfigDTO;
 import io.harness.delegate.beans.connector.customhealthconnector.CustomHealthConnectorDTO;
 import io.harness.delegate.beans.connector.customhealthconnector.CustomHealthKeyAndValue;
 import io.harness.delegate.beans.connector.customhealthconnector.CustomHealthMethod;
+import io.harness.delegate.beans.connector.customseceretmanager.CustomSecretManagerConnectorDTO;
+import io.harness.delegate.beans.connector.customseceretmanager.TemplateLinkConfig;
 import io.harness.delegate.beans.connector.datadog.DatadogConnectorDTO;
 import io.harness.delegate.beans.connector.docker.DockerAuthCredentialsDTO;
 import io.harness.delegate.beans.connector.docker.DockerAuthType;
@@ -405,6 +407,7 @@ public class ConnectorBeansKryoRegistrar implements KryoRegistrar {
     kryo.register(OciHelmAuthType.class, 29133);
     kryo.register(OciHelmConnectorDTO.class, 29134);
     kryo.register(OciHelmUsernamePasswordDTO.class, 29135);
-    kryo.register(AzureRepoConnectionTypeDTO.class, 19854);
+    kryo.register(CustomSecretManagerConnectorDTO.class, 19875);
+    kryo.register(TemplateLinkConfig.class, 19877);
   }
 }
