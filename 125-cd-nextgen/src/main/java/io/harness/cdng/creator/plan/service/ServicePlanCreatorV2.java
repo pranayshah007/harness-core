@@ -62,9 +62,6 @@ public class ServicePlanCreatorV2 extends ChildrenPlanCreator<ServicePlanCreator
         ctx.getMetadata().getProjectIdentifier(), ctx.getMetadata().getMetadata().getPipelineIdentifier(),
         ctx.getYaml(), ctx.getMetadata().getMetadata().getExecutionUuid());
 
-    YamlField serviceField = ctx.getCurrentField();
-    YamlField serviceDefField = serviceField.getNode().getField(YamlTypes.SERVICE_DEFINITION);
-
     if (serviceRefExpression(config)) {
       final LinkedHashMap<String, PlanCreationResponse> planForAllNodesUnderService =
           ServiceAllInOnePlanCreatorUtils.addServiceNodeWithExpression(kryoSerializer, config,
@@ -76,6 +73,8 @@ public class ServicePlanCreatorV2 extends ChildrenPlanCreator<ServicePlanCreator
       return planCreationResponseMap;
     }
 
+    YamlField serviceField = ctx.getCurrentField();
+    YamlField serviceDefField = serviceField.getNode().getField(YamlTypes.SERVICE_DEFINITION);
     if (serviceDefField == null || isEmpty(serviceDefField.getNode().getUuid())) {
       throw new InvalidRequestException("ServiceDefinition node is invalid in service - " + config.getIdentifier());
     }

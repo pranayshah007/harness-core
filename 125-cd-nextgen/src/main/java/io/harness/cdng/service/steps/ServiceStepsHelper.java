@@ -76,15 +76,15 @@ public class ServiceStepsHelper {
   }
 
   void validateResourcesV2(Ambiance ambiance, ServiceStepParametersV2 stepParameters) {
-    String accountIdentifier = AmbianceUtils.getAccountId(ambiance);
-    String orgIdentifier = AmbianceUtils.getOrgIdentifier(ambiance);
-    String projectIdentifier = AmbianceUtils.getProjectIdentifier(ambiance);
     ExecutionPrincipalInfo executionPrincipalInfo = ambiance.getMetadata().getPrincipalInfo();
     String principal = executionPrincipalInfo.getPrincipal();
-    if (EmptyPredicate.isEmpty(principal)) {
+    if (isEmpty(principal)) {
       return;
     }
 
+    String accountIdentifier = AmbianceUtils.getAccountId(ambiance);
+    String orgIdentifier = AmbianceUtils.getOrgIdentifier(ambiance);
+    String projectIdentifier = AmbianceUtils.getProjectIdentifier(ambiance);
     io.harness.accesscontrol.principals.PrincipalType principalType =
         PrincipalTypeProtoToPrincipalTypeMapper.convertToAccessControlPrincipalType(
             executionPrincipalInfo.getPrincipalType());
@@ -131,7 +131,7 @@ public class ServiceStepsHelper {
       }
     }
 
-    if (EmptyPredicate.isEmpty(outcomeRefs)) {
+    if (isEmpty(outcomeRefs)) {
       return Collections.emptyList();
     }
 
