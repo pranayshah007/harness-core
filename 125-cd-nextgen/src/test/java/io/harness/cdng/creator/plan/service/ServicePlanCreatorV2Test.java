@@ -45,7 +45,7 @@ public class ServicePlanCreatorV2Test extends CDNGTestBase {
   @Owner(developers = ARCHIT)
   @Category(UnitTests.class)
   public void testGetFieldClass() {
-    assertThat(servicePlanCreatorV2.getFieldClass()).isEqualTo(NGServiceV2InfoConfig.class);
+    assertThat(servicePlanCreatorV2.getFieldClass()).isEqualTo(ServicePlanCreatorV2Config.class);
   }
 
   @Test

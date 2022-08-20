@@ -107,34 +107,35 @@ public class ArtifactsStepV2 implements AsyncExecutable<EmptyStepParameters> {
       return AsyncExecutableResponse.newBuilder().build();
     }
 
-    final Set<String> taskIds = new HashSet<>();
     final NGServiceV2InfoConfig ngServiceV2InfoConfig = ngServiceConfig.getNgServiceV2InfoConfig();
+    if (ngServiceV2InfoConfig.getServiceDefinition().getServiceSpec() == null
+        || ngServiceV2InfoConfig.getServiceDefinition().getServiceSpec().getArtifacts() == null) {
+      log.info("No artifact configuration found");
+      return AsyncExecutableResponse.newBuilder().build();
+    }
+
+    final Set<String> taskIds = new HashSet<>();
     final Map<String, ArtifactConfig> artifactConfigMap = new HashMap<>();
 
-    if (ngServiceV2InfoConfig.getServiceDefinition().getServiceSpec() != null) {
-      String primaryArtifactTaskId = null;
-      final ArtifactListConfig artifacts = ngServiceV2InfoConfig.getServiceDefinition().getServiceSpec().getArtifacts();
+    String primaryArtifactTaskId = null;
+    final ArtifactListConfig artifacts = ngServiceV2InfoConfig.getServiceDefinition().getServiceSpec().getArtifacts();
 
-      if (artifacts != null) {
-        if (artifacts.getPrimary() != null) {
-          primaryArtifactTaskId =
-              handle(ambiance, artifacts.getPrimary().getSpec(), artifacts.getPrimary().getSourceType(), true);
-          taskIds.add(primaryArtifactTaskId);
-          artifactConfigMap.put(primaryArtifactTaskId, artifacts.getPrimary().getSpec());
-        }
+    if (artifacts.getPrimary() != null) {
+      primaryArtifactTaskId =
+          handle(ambiance, artifacts.getPrimary().getSpec(), artifacts.getPrimary().getSourceType(), true);
+      taskIds.add(primaryArtifactTaskId);
+      artifactConfigMap.put(primaryArtifactTaskId, artifacts.getPrimary().getSpec());
+    }
 
-        if (isNotEmpty(artifacts.getSidecars())) {
-          for (SidecarArtifactWrapper sidecar : artifacts.getSidecars()) {
-            String taskId =
-                handle(ambiance, sidecar.getSidecar().getSpec(), sidecar.getSidecar().getSourceType(), false);
-            taskIds.add(taskId);
-            artifactConfigMap.put(taskId, sidecar.getSidecar().getSpec());
-          }
-        }
-
-        sweepingOutputService.consume(ambiance, ARTIFACTS_STEP_V_2,
-            new ArtifactsStepV2SweepingOutput(primaryArtifactTaskId, artifactConfigMap), "");
+    if (isNotEmpty(artifacts.getSidecars())) {
+      for (SidecarArtifactWrapper sidecar : artifacts.getSidecars()) {
+        String taskId = handle(ambiance, sidecar.getSidecar().getSpec(), sidecar.getSidecar().getSourceType(), false);
+        taskIds.add(taskId);
+        artifactConfigMap.put(taskId, sidecar.getSidecar().getSpec());
       }
+
+      sweepingOutputService.consume(ambiance, ARTIFACTS_STEP_V_2,
+          new ArtifactsStepV2SweepingOutput(primaryArtifactTaskId, artifactConfigMap), "");
     }
     return AsyncExecutableResponse.newBuilder().addAllCallbackIds(taskIds).build();
   }
@@ -146,10 +147,6 @@ public class ArtifactsStepV2 implements AsyncExecutable<EmptyStepParameters> {
       return StepResponse.builder().status(Status.SKIPPED).build();
     }
 
-    final ArtifactsOutcomeBuilder outcomeBuilder = ArtifactsOutcome.builder();
-    final SidecarsOutcome sidecarsOutcome = new SidecarsOutcome();
-    final NGLogCallback logCallback = serviceStepsHelper.getServiceLogCallback(ambiance);
-
     OptionalSweepingOutput outputOptional =
         sweepingOutputService.resolveOptional(ambiance, RefObjectUtils.getSweepingOutputRefObject(ARTIFACTS_STEP_V_2));
 
@@ -160,6 +157,9 @@ public class ArtifactsStepV2 implements AsyncExecutable<EmptyStepParameters> {
 
     ArtifactsStepV2SweepingOutput artifactsSweepingOutput = (ArtifactsStepV2SweepingOutput) outputOptional.getOutput();
 
+    final NGLogCallback logCallback = serviceStepsHelper.getServiceLogCallback(ambiance);
+    final ArtifactsOutcomeBuilder outcomeBuilder = ArtifactsOutcome.builder();
+    final SidecarsOutcome sidecarsOutcome = new SidecarsOutcome();
     for (String taskId : responseDataMap.keySet()) {
       final ArtifactConfig artifactConfig = artifactsSweepingOutput.getArtifactConfigMap().get(taskId);
       final ArtifactTaskResponse taskResponse = (ArtifactTaskResponse) responseDataMap.get(taskId);
