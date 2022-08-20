@@ -38,9 +38,9 @@ import lombok.experimental.FieldDefaults;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@ToString(exclude = {"connectorRef"})
 @EqualsAndHashCode(callSuper = true)
 @JsonIgnoreProperties(ignoreUnknown = true)
-@ToString(exclude = {"connectorRef"})
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @ApiModel("CustomSecretManager")
 @OwnedBy(HarnessTeam.DX)

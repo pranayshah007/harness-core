@@ -9,7 +9,7 @@ package io.harness.connector.mappers.secretmanagermappper;
 
 import static io.harness.rule.OwnerRule.SHREYAS;
 
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
