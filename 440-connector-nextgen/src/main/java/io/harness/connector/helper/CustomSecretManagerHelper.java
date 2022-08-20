@@ -57,13 +57,6 @@ public class CustomSecretManagerHelper {
     // get the script out of resolved yaml
     String script = shellScriptBaseDTO.getShellScriptSpec().getSource().getSpec().getScript().getValue();
     log.info("Resolved script is " + script);
-    // pass the script to encryptor -> encryptor passes call to create delegate task which is then executed.
-    // delegate task is picked by encryptor to execute it.
-
-    // delegate task creation ->
-    // Get template id , version , name all will be in secManagerConfigDTO-> template service (id, ver) ->
-    // template (yaml) yeml -> resolve -> yaml -> filter relevant fields ( script field ) -> encryptor( resolved
-    // yaml / script , config
     Set<EncryptedDataParams> encryptedDataParamsSet = new HashSet<>();
     encryptedDataParamsSet.add(EncryptedDataParams.builder().name("Script").value(script).build());
     encryptedDataParamsSet.add(
@@ -77,54 +70,5 @@ public class CustomSecretManagerHelper {
         customNGSecretManagerConfigDTO.getAccountIdentifier(), customNGSecretManagerConfigDTO.getOrgIdentifier(),
         customNGSecretManagerConfigDTO.getProjectIdentifier(), customNGSecretManagerConfigDTO.getIdentifier()));
     return prepareEncryptedDataParamsSet(customNGSecretManagerConfigDTO, yaml);
-  }
-
-  public Set<EncryptedDataParams> prepareEncryptedDataParamsSet(
-      CustomSecretManagerConfigDTO customNGSecretManagerConfigDTO, CustomSecretNGManagerConfig encryptionConfig) {
-    String yaml = YamlUtils.write(ngConnectorSecretManagerService.getConnectorDTO(
-        customNGSecretManagerConfigDTO.getAccountIdentifier(), customNGSecretManagerConfigDTO.getOrgIdentifier(),
-        customNGSecretManagerConfigDTO.getProjectIdentifier(), customNGSecretManagerConfigDTO.getIdentifier()));
-    return prepareEncryptedDataParamsSet(customNGSecretManagerConfigDTO, encryptionConfig, yaml);
-  }
-
-  private Set<EncryptedDataParams> prepareEncryptedDataParamsSet(
-      CustomSecretManagerConfigDTO customNGSecretManagerConfigDTO, CustomSecretNGManagerConfig encryptionConfig,
-      String yaml) {
-    String mergedYaml = NGRestUtils
-                            .getResponse(templateResourceClient.applyTemplatesOnGivenYaml(
-                                customNGSecretManagerConfigDTO.getAccountIdentifier(),
-                                customNGSecretManagerConfigDTO.getOrgIdentifier(),
-                                customNGSecretManagerConfigDTO.getProjectIdentifier(), null, null, null,
-                                TemplateApplyRequestDTO.builder().originalEntityYaml(yaml).build()))
-                            .getMergedPipelineYaml();
-
-    log.info("Yaml received from template service is \n" + mergedYaml);
-    int functorToken = HashGenerator.generateIntegerHash();
-    ShellScriptYamlExpressionEvaluator shellScriptYamlExpressionEvaluator =
-        new ShellScriptYamlExpressionEvaluator(mergedYaml, functorToken);
-    ShellScriptBaseDTO shellScriptBaseDTO;
-    try {
-      shellScriptBaseDTO = YamlUtils.read(mergedYaml, ShellScriptYamlDTO.class).getShellScriptBaseDTO();
-    } catch (IOException e) {
-      throw new InvalidRequestException("Can not convert input to shell script base dto");
-    }
-    shellScriptBaseDTO = (ShellScriptBaseDTO) shellScriptYamlExpressionEvaluator.resolve(shellScriptBaseDTO, false);
-    // get the script out of resolved yaml
-    String script = shellScriptBaseDTO.getShellScriptSpec().getSource().getSpec().getScript().getValue();
-    log.info("Resolved script is " + script);
-    // pass the script to encryptor -> encryptor passes call to create delegate task which is then executed.
-    // delegate task is picked by encryptor to execute it.
-
-    // delegate task creation ->
-    // Get template id , version , name all will be in secManagerConfigDTO-> template service (id, ver) ->
-    // template (yaml) yeml -> resolve -> yaml -> filter relevant fields ( script field ) -> encryptor( resolved
-    // yaml / script , config
-    Set<EncryptedDataParams> encryptedDataParamsSet = new HashSet<>();
-
-    //    customSecretNGManagerConfig.setScript(script);
-    encryptedDataParamsSet.add(EncryptedDataParams.builder().name("Script").value(script).build());
-    encryptedDataParamsSet.add(
-        EncryptedDataParams.builder().name("expressionFunctorToken").value(String.valueOf(functorToken)).build());
-    return encryptedDataParamsSet;
   }
 }
