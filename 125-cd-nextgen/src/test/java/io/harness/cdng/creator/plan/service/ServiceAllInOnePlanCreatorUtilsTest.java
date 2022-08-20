@@ -42,14 +42,12 @@ public class ServiceAllInOnePlanCreatorUtilsTest {
         .when(kryoSerializer)
         .asBytes(ArgumentMatchers.any());
   }
-
   @After
   public void tearDown() throws Exception {
     if (mocks != null) {
       mocks.close();
     }
   }
-
   @Test
   @Owner(developers = OwnerRule.YOGESH)
   @Category(UnitTests.class)
@@ -78,8 +76,8 @@ public class ServiceAllInOnePlanCreatorUtilsTest {
 
     List<PlanNode> collect =
         planCreationResponseMap.values().stream().map(PlanCreationResponse::getPlanNode).collect(Collectors.toList());
-    assertThat(planCreationResponseMap).hasSize(4);
+    assertThat(planCreationResponseMap).hasSize(6);
     assertThat(collect.stream().map(PlanNode::getIdentifier).collect(Collectors.toList()))
-        .containsExactly("service", "artifacts", "serviceDefinition", "spec");
+        .containsExactly("service", "artifacts", "manifest", "configFiles", "serviceDefinition", "spec");
   }
 }
