@@ -74,7 +74,7 @@ public class DelegateStreamHandler extends AtmosphereHandlerAdapter {
         String delegateTokenName = req.getParameter("delegateTokenName");
         String agentMtlsAuthority = req.getHeader(HEADER_AGENT_MTLS_AUTHORITY);
 
-        log.info("token received {} {}", req.getParameter("token"), req.getHeader("token"));
+        log.info("token received {} ", req.getHeader("newtoken"));
         authService.validateDelegateToken(
             accountId, req.getParameter("token"), delegateId, delegateTokenName, agentMtlsAuthority, false);
         try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR);

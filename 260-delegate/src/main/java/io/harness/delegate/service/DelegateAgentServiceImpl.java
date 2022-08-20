@@ -616,7 +616,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
                     log.error("Exception on websocket", e);
                     handleError(e);
                     log.info("socket closed");
-                    requestBuilder.header("token", "dummy");
+                    requestBuilder.header("newtoken", "dummy");
                   }
                 })
             .on(Event.OPEN,
@@ -634,7 +634,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
                   public void on(Object o) {
                     handleClose(o);
                     log.info("socket closed");
-                    requestBuilder.header("token", "dummy");
+                    requestBuilder.header("newtoken", "dummy");
 
                   }
                 })
@@ -751,7 +751,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       // Stream the request body
       final RequestBuilder requestBuilder = client.newRequestBuilder().method(METHOD.GET).uri(uri.toString());
 
-      requestBuilder.header("token", "def");
+      requestBuilder.header("newtoken", "oldtoken");
       requestBuilder
           .encoder(new Encoder<Delegate, Reader>() { // Do not change this, wasync doesn't like lambdas
             @Override
