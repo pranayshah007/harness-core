@@ -635,6 +635,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
                     handleClose(o);
                     log.info("socket closed");
                     requestBuilder.header("token", "dummy");
+
                   }
                 })
             .on(new Function<IOException>() {
@@ -750,6 +751,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       // Stream the request body
       final RequestBuilder requestBuilder = client.newRequestBuilder().method(METHOD.GET).uri(uri.toString());
 
+      requestBuilder.header("token", "def");
       requestBuilder
           .encoder(new Encoder<Delegate, Reader>() { // Do not change this, wasync doesn't like lambdas
             @Override
