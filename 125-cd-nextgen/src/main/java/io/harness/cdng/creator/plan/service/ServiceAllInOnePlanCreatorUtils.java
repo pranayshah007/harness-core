@@ -155,7 +155,7 @@ public class ServiceAllInOnePlanCreatorUtils {
     // Add service spec node
     final ServiceSpecStepParameters serviceSpecStepParameters =
         ServiceSpecStepParameters.builder()
-            .childrenNodeIds(List.of(artifactsNode.getUuid(), manifestsNode.getUuid()))
+            .childrenNodeIds(List.of(artifactsNode.getUuid(), manifestsNode.getUuid(), configFilesNode.getUuid()))
             .build();
     final PlanNode serviceSpecNode =
         PlanNode.builder()

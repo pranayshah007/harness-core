@@ -23,6 +23,7 @@ import io.harness.cdng.azure.webapp.AzureWebAppTrafficShiftStep;
 import io.harness.cdng.azure.webapp.ConnectionStringsStep;
 import io.harness.cdng.azure.webapp.StartupCommandStep;
 import io.harness.cdng.configfile.steps.ConfigFilesStep;
+import io.harness.cdng.configfile.steps.ConfigFilesStepV2;
 import io.harness.cdng.configfile.steps.IndividualConfigFileStep;
 import io.harness.cdng.creator.plan.environment.steps.EnvironmentStepV2;
 import io.harness.cdng.gitops.CreatePRStep;
@@ -138,6 +139,7 @@ public class NgStepRegistrar {
     engineSteps.put(ServerlessAwsLambdaRollbackStep.STEP_TYPE, ServerlessAwsLambdaRollbackStep.class);
     engineSteps.put(IndividualConfigFileStep.STEP_TYPE, IndividualConfigFileStep.class);
     engineSteps.put(ConfigFilesStep.STEP_TYPE, ConfigFilesStep.class);
+    engineSteps.put(ConfigFilesStepV2.STEP_TYPE, ConfigFilesStepV2.class);
     engineSteps.put(CommandStep.STEP_TYPE, CommandStep.class);
     engineSteps.put(AzureWebAppSlotDeploymentStep.STEP_TYPE, AzureWebAppSlotDeploymentStep.class);
     engineSteps.put(AzureWebAppTrafficShiftStep.STEP_TYPE, AzureWebAppTrafficShiftStep.class);
