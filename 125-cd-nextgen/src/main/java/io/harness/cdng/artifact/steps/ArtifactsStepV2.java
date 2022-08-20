@@ -133,10 +133,9 @@ public class ArtifactsStepV2 implements AsyncExecutable<EmptyStepParameters> {
         taskIds.add(taskId);
         artifactConfigMap.put(taskId, sidecar.getSidecar().getSpec());
       }
-
-      sweepingOutputService.consume(ambiance, ARTIFACTS_STEP_V_2,
-          new ArtifactsStepV2SweepingOutput(primaryArtifactTaskId, artifactConfigMap), "");
     }
+    sweepingOutputService.consume(
+        ambiance, ARTIFACTS_STEP_V_2, new ArtifactsStepV2SweepingOutput(primaryArtifactTaskId, artifactConfigMap), "");
     return AsyncExecutableResponse.newBuilder().addAllCallbackIds(taskIds).build();
   }
 
