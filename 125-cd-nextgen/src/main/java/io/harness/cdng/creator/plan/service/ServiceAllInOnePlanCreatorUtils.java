@@ -1,7 +1,9 @@
 package io.harness.cdng.creator.plan.service;
 
 import io.harness.cdng.artifact.steps.ArtifactsStepV2;
+import io.harness.cdng.configfile.steps.ConfigFilesStepV2;
 import io.harness.cdng.creator.plan.PlanCreatorConstants;
+import io.harness.cdng.manifest.steps.ManifestsStepV2;
 import io.harness.cdng.service.steps.ServiceDefinitionStep;
 import io.harness.cdng.service.steps.ServiceDefinitionStepParameters;
 import io.harness.cdng.service.steps.ServiceSpecStep;
@@ -24,8 +26,8 @@ import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.serializer.KryoSerializer;
 
 import com.google.protobuf.ByteString;
-import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.List;
 import lombok.experimental.UtilityClass;
 
 @UtilityClass
@@ -94,6 +96,42 @@ public class ServiceAllInOnePlanCreatorUtils {
     planCreationResponseMap.put(
         artifactsNode.getUuid(), PlanCreationResponse.builder().planNode(artifactsNode).build());
 
+    // Add manifests node
+    final PlanNode manifestsNode =
+        PlanNode.builder()
+            .uuid("manifests-" + UUIDGenerator.generateUuid())
+            .stepType(ManifestsStepV2.STEP_TYPE)
+            .name(PlanCreatorConstants.MANIFEST_NODE_NAME)
+            .identifier(YamlTypes.MANIFEST_CONFIG)
+            .stepParameters(new EmptyStepParameters())
+            .facilitatorObtainment(
+                FacilitatorObtainment.newBuilder()
+                    .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.SYNC).build())
+                    .build())
+            .skipExpressionChain(true)
+            .skipGraphType(SkipType.SKIP_TREE)
+            .build();
+    planCreationResponseMap.put(
+        manifestsNode.getUuid(), PlanCreationResponse.builder().planNode(manifestsNode).build());
+
+    // Add config files node
+    final PlanNode configFilesNode =
+        PlanNode.builder()
+            .uuid("configFiles-" + UUIDGenerator.generateUuid())
+            .stepType(ConfigFilesStepV2.STEP_TYPE)
+            .name(PlanCreatorConstants.CONFIG_FILES_NODE_NAME)
+            .identifier(YamlTypes.CONFIG_FILES)
+            .stepParameters(new EmptyStepParameters())
+            .facilitatorObtainment(
+                FacilitatorObtainment.newBuilder()
+                    .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.SYNC).build())
+                    .build())
+            .skipExpressionChain(true)
+            .skipGraphType(SkipType.SKIP_TREE)
+            .build();
+    planCreationResponseMap.put(
+        configFilesNode.getUuid(), PlanCreationResponse.builder().planNode(configFilesNode).build());
+
     // Add service definition node
     final ServiceDefinitionStepParameters stepParameters =
         ServiceDefinitionStepParameters.builder().childNodeId(envNodeId).build();
@@ -116,7 +154,9 @@ public class ServiceAllInOnePlanCreatorUtils {
 
     // Add service spec node
     final ServiceSpecStepParameters serviceSpecStepParameters =
-        ServiceSpecStepParameters.builder().childrenNodeIds(Collections.singletonList(artifactsNode.getUuid())).build();
+        ServiceSpecStepParameters.builder()
+            .childrenNodeIds(List.of(artifactsNode.getUuid(), manifestsNode.getUuid()))
+            .build();
     final PlanNode serviceSpecNode =
         PlanNode.builder()
             .uuid(service_spec_node_id)

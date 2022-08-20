@@ -46,6 +46,7 @@ import io.harness.cdng.k8s.K8sRollingStep;
 import io.harness.cdng.k8s.K8sScaleStep;
 import io.harness.cdng.manifest.steps.ManifestStep;
 import io.harness.cdng.manifest.steps.ManifestsStep;
+import io.harness.cdng.manifest.steps.ManifestsStepV2;
 import io.harness.cdng.pipeline.steps.DeploymentStageStep;
 import io.harness.cdng.pipeline.steps.NGSectionStep;
 import io.harness.cdng.pipeline.steps.RollbackOptionalChildChainStep;
@@ -108,6 +109,7 @@ public class NgStepRegistrar {
     engineSteps.put(ArtifactStep.STEP_TYPE, ArtifactStep.class);
     engineSteps.put(ArtifactSyncStep.STEP_TYPE, ArtifactSyncStep.class);
     engineSteps.put(ManifestsStep.STEP_TYPE, ManifestsStep.class);
+    engineSteps.put(ManifestsStepV2.STEP_TYPE, ManifestsStepV2.class);
     engineSteps.put(ManifestStep.STEP_TYPE, ManifestStep.class);
     engineSteps.put(K8sDeleteStep.STEP_TYPE, K8sDeleteStep.class);
     engineSteps.put(K8sRollingStep.STEP_TYPE, K8sRollingStep.class);
