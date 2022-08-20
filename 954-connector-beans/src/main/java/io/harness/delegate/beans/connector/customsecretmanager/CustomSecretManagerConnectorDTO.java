@@ -43,13 +43,13 @@ import lombok.experimental.FieldDefaults;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @ApiModel("CustomSecretManager")
-@OwnedBy(HarnessTeam.DX)
+@OwnedBy(HarnessTeam.PL)
 @Schema(name = "CustomSecretManager", description = "This contains details of Custom Secret Manager connectors")
 public class CustomSecretManagerConnectorDTO
     extends ConnectorConfigDTO implements DelegateSelectable, ManagerExecutable {
   Set<String> delegateSelectors;
   @JsonProperty("onDelegate") @Builder.Default Boolean executeOnDelegate = true;
-  @Schema(description = SecretManagerDescriptionConstants.DEFAULT) private boolean isDefault = false;
+  @Schema(description = SecretManagerDescriptionConstants.DEFAULT) private boolean isDefault;
   @Schema @JsonIgnore private boolean harnessManaged;
 
   @SecretReference
