@@ -65,7 +65,6 @@ public class ServiceStepUtils {
     }
   }
 
-
   // NOTE: Returned service entity shouldn't contain a version. Multiple stages running in parallel might see
   // DuplicateKeyException if they're trying to deploy the same service.
   public ServiceEntity getServiceEntity(
