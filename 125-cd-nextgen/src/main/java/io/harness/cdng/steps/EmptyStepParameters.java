@@ -7,4 +7,4 @@ import lombok.NoArgsConstructor;
 
 @NoArgsConstructor
 @RecasterAlias("io.harness.cdng.steps.EmptyStepParameters")
-public class EmptyStepParameters implements StepParameters {}
+public final class EmptyStepParameters implements StepParameters {}

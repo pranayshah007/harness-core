@@ -103,7 +103,7 @@ public class ManifestsStepV2 implements SyncExecutable<EmptyStepParameters> {
 
     final ManifestsOutcome manifestsOutcome = new ManifestsOutcome();
     for (int i = 0; i < manifestAttributes.size(); i++) {
-      ManifestOutcome manifestOutcome = ManifestOutcomeMapper.toManifestOutcome(manifestAttributes.get(i), i);
+      ManifestOutcome manifestOutcome = ManifestOutcomeMapper.toManifestOutcome(manifestAttributes.get(i), i + 1);
       manifestsOutcome.put(manifestOutcome.getIdentifier(), manifestOutcome);
     }
 

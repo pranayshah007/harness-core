@@ -123,16 +123,18 @@ public class ArtifactsStepV2 implements AsyncExecutable<EmptyStepParameters> {
     String primaryArtifactTaskId = null;
     final ArtifactListConfig artifacts = ngServiceV2InfoConfig.getServiceDefinition().getServiceSpec().getArtifacts();
 
+    final NGLogCallback logCallback = serviceStepsHelper.getServiceLogCallback(ambiance);
     if (artifacts.getPrimary() != null) {
       primaryArtifactTaskId =
-          handle(ambiance, artifacts.getPrimary().getSpec(), artifacts.getPrimary().getSourceType(), true);
+          handle(ambiance, logCallback, artifacts.getPrimary().getSpec(), artifacts.getPrimary().getSourceType(), true);
       taskIds.add(primaryArtifactTaskId);
       artifactConfigMap.put(primaryArtifactTaskId, artifacts.getPrimary().getSpec());
     }
 
     if (isNotEmpty(artifacts.getSidecars())) {
       for (SidecarArtifactWrapper sidecar : artifacts.getSidecars()) {
-        String taskId = handle(ambiance, sidecar.getSidecar().getSpec(), sidecar.getSidecar().getSourceType(), false);
+        String taskId =
+            handle(ambiance, logCallback, sidecar.getSidecar().getSpec(), sidecar.getSidecar().getSourceType(), false);
         taskIds.add(taskId);
         artifactConfigMap.put(taskId, sidecar.getSidecar().getSpec());
       }
