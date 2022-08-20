@@ -20,7 +20,6 @@ public class CustomSecretManagerDTOtoEntity
         .connectorRef(SecretRefHelper.getSecretConfigString(connectorDTO.getConnectorRef()))
         .template(connectorDTO.getTemplate())
         .host(connectorDTO.getHost())
-        .onDelegate(connectorDTO.getExecuteOnDelegate())
         .workingDirectory(connectorDTO.getWorkingDirectory())
         .build();
   }

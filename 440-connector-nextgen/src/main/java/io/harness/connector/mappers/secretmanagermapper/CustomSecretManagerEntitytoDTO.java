@@ -22,7 +22,7 @@ public class CustomSecretManagerEntitytoDTO
         .isDefault(connector.isDefault())
         .host(connector.getHost())
         .workingDirectory(connector.getWorkingDirectory())
-        .executeOnDelegate(connector.isOnDelegate())
+        .executeOnDelegate(connector.getExecuteOnDelegate())
         .delegateSelectors(connector.getDelegateSelectors())
         .build();
   }

@@ -15,7 +15,6 @@ import io.harness.delegate.beans.connector.customseceretmanager.TemplateLinkConf
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
-import java.util.Set;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Value;
@@ -35,7 +34,6 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("io.harness.connector.entities.embedded.customsecretmanager.CustomSecretManagerConnector")
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class CustomSecretManagerConnector extends Connector {
-  @Builder.Default private boolean onDelegate = true;
   private boolean isDefault;
   private String connectorRef;
   private String host;
