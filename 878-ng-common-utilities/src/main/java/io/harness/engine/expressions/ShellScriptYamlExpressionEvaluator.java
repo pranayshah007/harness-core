@@ -68,8 +68,7 @@ public class ShellScriptYamlExpressionEvaluator extends EngineExpressionEvaluato
       YamlField yamlField = YamlUtils.readTree(yaml);
       return yamlField.getNode().getField(CONNECTOR_ROOT_FIELD);
     } catch (IOException e) {
-      log.error("Connector root field is not present in " + yaml + "\n Exception is " + e.getMessage());
-      e.printStackTrace();
+      log.error("Connector root field is not present in " + yaml + "\n Exception is " + e);
       throw new InvalidRequestException("Not valid yaml passed. Root field should be " + CONNECTOR_ROOT_FIELD);
     }
   }
