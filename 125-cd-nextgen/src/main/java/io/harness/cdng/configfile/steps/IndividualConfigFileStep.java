@@ -9,13 +9,11 @@ package io.harness.cdng.configfile.steps;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.cdng.configfile.validator.IndividualConfigFileStepValidator.validateConfigFileAttributes;
-import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.configfile.ConfigFileAttributes;
 import io.harness.cdng.configfile.mapper.ConfigFileOutcomeMapper;
 import io.harness.cdng.expressions.CDExpressionResolver;
-import io.harness.connector.services.ConnectorService;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
@@ -28,7 +26,6 @@ import io.harness.pms.sdk.core.steps.io.StepResponse;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import com.google.inject.name.Named;
 import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(CDP)
@@ -39,8 +36,6 @@ public class IndividualConfigFileStep
   private static final String OUTPUT = "output";
   public static final StepType STEP_TYPE =
       StepType.newBuilder().setType(ExecutionNodeType.CONFIG_FILE.getName()).setStepCategory(StepCategory.STEP).build();
-
-  @Named(DEFAULT_CONNECTOR_SERVICE) @Inject private ConnectorService connectorService;
   @Inject private CDExpressionResolver cdExpressionResolver;
   @Override
   public Class<ConfigFileStepParameters> getStepParametersClass() {

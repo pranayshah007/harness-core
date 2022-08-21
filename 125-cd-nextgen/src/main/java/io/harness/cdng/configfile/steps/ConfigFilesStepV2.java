@@ -1,7 +1,5 @@
 package io.harness.cdng.configfile.steps;
 
-import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
-
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.configfile.ConfigFileAttributes;
@@ -13,7 +11,6 @@ import io.harness.cdng.service.steps.ServiceStepV3;
 import io.harness.cdng.service.steps.ServiceSweepingOutput;
 import io.harness.cdng.steps.EmptyStepParameters;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
-import io.harness.connector.services.ConnectorService;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.ng.core.service.yaml.NGServiceConfig;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -29,7 +26,6 @@ import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.yaml.YamlUtils;
 
 import com.google.inject.Inject;
-import com.google.inject.name.Named;
 import java.io.IOException;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
@@ -42,7 +38,6 @@ public class ConfigFilesStepV2 extends AbstractConfigFileStep implements SyncExe
                                                .setStepCategory(StepCategory.STEP)
                                                .build();
   @Inject private ExecutionSweepingOutputService sweepingOutputService;
-  @Named(DEFAULT_CONNECTOR_SERVICE) @Inject private ConnectorService connectorService;
   @Inject private CDExpressionResolver cdExpressionResolver;
 
   @Override
