@@ -6,6 +6,9 @@
  */
 
 package io.harness.engine.expressions;
+import static io.harness.annotations.dev.HarnessTeam.PL;
+
+import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.InvalidRequestException;
 import io.harness.expression.EngineExpressionEvaluator;
 import io.harness.expression.ExpressionEvaluatorUtils;
@@ -20,12 +23,20 @@ import java.io.IOException;
 import java.util.List;
 import lombok.Builder;
 import lombok.Value;
+import lombok.extern.slf4j.Slf4j;
 
+@OwnedBy(PL)
 @Value
 @Builder
+@Slf4j
 public class ShellScriptYamlExpressionEvaluator extends EngineExpressionEvaluator {
   protected final String yaml;
-  public int functorToken;
+
+  private int functorToken;
+  private static final String YAML_EXPRESSION_PREFIX = "__yamlExpression";
+  private static final String SECRETS_PREFIX = "secrets";
+  private static final String YAML_EXPRESSION_CONNECTOR_PREFIX = "__yamlExpression.connector";
+  private static final String CONNECTOR_ROOT_FIELD = "connector";
 
   public ShellScriptYamlExpressionEvaluator(String yaml, int functorToken) {
     super(null);
@@ -37,24 +48,28 @@ public class ShellScriptYamlExpressionEvaluator extends EngineExpressionEvaluato
   protected void initialize() {
     super.initialize();
     // Add Shell Script Yaml Expression Functor
-    addToContext("__yamlExpression",
+    addToContext(YAML_EXPRESSION_PREFIX,
         ShellScriptYamlExpressionFunctor.builder().rootYamlField(getShellScriptYamlField()).build());
     // Add secret functor
-    addToContext("secrets", new SecretFunctor(functorToken));
+    addToContext(SECRETS_PREFIX, new SecretFunctor(functorToken));
   }
 
   @Override
   protected List<String> fetchPrefixes() {
     ImmutableList.Builder<String> listBuilder = ImmutableList.builder();
-    return listBuilder.add("__yamlExpression").add("__yamlExpression.connector").addAll(super.fetchPrefixes()).build();
+    return listBuilder.add(YAML_EXPRESSION_PREFIX)
+        .add(YAML_EXPRESSION_CONNECTOR_PREFIX)
+        .addAll(super.fetchPrefixes())
+        .build();
   }
 
   private YamlField getShellScriptYamlField() {
     try {
       YamlField yamlField = YamlUtils.readTree(yaml);
-      return yamlField.getNode().getField("connector");
+      return yamlField.getNode().getField(CONNECTOR_ROOT_FIELD);
     } catch (IOException e) {
-      throw new InvalidRequestException("Not valid yaml passed.");
+      log.error("Connector root field is not present in " + yaml + "\n Exception is " + e);
+      throw new InvalidRequestException("Not valid yaml passed. Root field should be " + CONNECTOR_ROOT_FIELD);
     }
   }
 
