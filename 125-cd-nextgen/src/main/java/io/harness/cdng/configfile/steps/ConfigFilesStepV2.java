@@ -15,6 +15,9 @@ import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.ng.core.service.yaml.NGServiceConfig;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
+import io.harness.pms.contracts.execution.failure.FailureData;
+import io.harness.pms.contracts.execution.failure.FailureInfo;
+import io.harness.pms.contracts.execution.failure.FailureType;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
@@ -48,44 +51,55 @@ public class ConfigFilesStepV2 extends AbstractConfigFileStep implements SyncExe
   @Override
   public StepResponse executeSync(Ambiance ambiance, EmptyStepParameters stepParameters, StepInputPackage inputPackage,
       PassThroughData passThroughData) {
-    ServiceSweepingOutput serviceSweepingOutput = (ServiceSweepingOutput) sweepingOutputService.resolve(
-        ambiance, RefObjectUtils.getOutcomeRefObject(ServiceStepV3.SERVICE_SWEEPING_OUTPUT));
-    NGServiceConfig ngServiceConfig = null;
-    if (serviceSweepingOutput != null) {
-      try {
-        ngServiceConfig = YamlUtils.read(serviceSweepingOutput.getFinalServiceYaml(), NGServiceConfig.class);
-      } catch (IOException e) {
-        // Todo:(yogesh) handle exception
-        throw new RuntimeException(e);
+    try {
+      ServiceSweepingOutput serviceSweepingOutput = (ServiceSweepingOutput) sweepingOutputService.resolve(
+          ambiance, RefObjectUtils.getOutcomeRefObject(ServiceStepV3.SERVICE_SWEEPING_OUTPUT));
+      NGServiceConfig ngServiceConfig = null;
+      if (serviceSweepingOutput != null) {
+        try {
+          ngServiceConfig = YamlUtils.read(serviceSweepingOutput.getFinalServiceYaml(), NGServiceConfig.class);
+        } catch (IOException e) {
+          // Todo:(yogesh) handle exception
+          throw new RuntimeException(e);
+        }
       }
+
+      if (ngServiceConfig == null || ngServiceConfig.getNgServiceV2InfoConfig() == null) {
+        log.info("No service configuration found");
+        return StepResponse.builder().status(Status.SKIPPED).build();
+      }
+
+      final List<ConfigFileWrapper> configFiles =
+          ngServiceConfig.getNgServiceV2InfoConfig().getServiceDefinition().getServiceSpec().getConfigFiles();
+
+      final ConfigFilesOutcome configFilesOutcome = new ConfigFilesOutcome();
+      for (int i = 0; i < configFiles.size(); i++) {
+        ConfigFileWrapper file = configFiles.get(i);
+        ConfigFileAttributes spec = file.getConfigFile().getSpec();
+        String identifier = file.getConfigFile().getIdentifier();
+        cdExpressionResolver.updateStoreConfigExpressions(ambiance, spec.getStore().getValue());
+        IndividualConfigFileStepValidator.validateConfigFileAttributes(identifier, spec, true);
+        verifyConfigFileReference(identifier, spec, ambiance);
+        configFilesOutcome.put(identifier, ConfigFileOutcomeMapper.toConfigFileOutcome(identifier, i + 1, spec));
+      }
+
+      return StepResponse.builder()
+          .status(Status.SUCCEEDED)
+          .stepOutcome(StepResponse.StepOutcome.builder()
+                           .name(OutcomeExpressionConstants.CONFIG_FILES)
+                           .outcome(configFilesOutcome)
+                           .group(StepCategory.STAGE.name())
+                           .build())
+          .build();
+    } catch (Exception ex) {
+      log.error("Exception occurred in config files step v2", ex);
+      return StepResponse.builder()
+          .status(Status.FAILED)
+          .failureInfo(
+              FailureInfo.newBuilder()
+                  .addFailureData(0, FailureData.newBuilder().addFailureTypes(FailureType.APPLICATION_FAILURE).build())
+                  .build())
+          .build();
     }
-
-    if (ngServiceConfig == null || ngServiceConfig.getNgServiceV2InfoConfig() == null) {
-      log.info("No service configuration found");
-      return StepResponse.builder().status(Status.SKIPPED).build();
-    }
-
-    final List<ConfigFileWrapper> configFiles =
-        ngServiceConfig.getNgServiceV2InfoConfig().getServiceDefinition().getServiceSpec().getConfigFiles();
-
-    final ConfigFilesOutcome configFilesOutcome = new ConfigFilesOutcome();
-    for (int i = 0; i < configFiles.size(); i++) {
-      ConfigFileWrapper file = configFiles.get(i);
-      ConfigFileAttributes spec = file.getConfigFile().getSpec();
-      String identifier = file.getConfigFile().getIdentifier();
-      cdExpressionResolver.updateStoreConfigExpressions(ambiance, spec.getStore().getValue());
-      IndividualConfigFileStepValidator.validateConfigFileAttributes(identifier, spec, true);
-      verifyConfigFileReference(identifier, spec, ambiance);
-      configFilesOutcome.put(identifier, ConfigFileOutcomeMapper.toConfigFileOutcome(identifier, i, spec));
-    }
-
-    return StepResponse.builder()
-        .status(Status.SUCCEEDED)
-        .stepOutcome(StepResponse.StepOutcome.builder()
-                         .name(OutcomeExpressionConstants.CONFIG_FILES)
-                         .outcome(configFilesOutcome)
-                         .group(StepCategory.STAGE.name())
-                         .build())
-        .build();
   }
 }

@@ -4,6 +4,7 @@ import static io.harness.data.structure.UUIDGenerator.generateUuid;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 
@@ -22,6 +23,9 @@ import io.harness.cdng.service.steps.ServiceStepV3;
 import io.harness.cdng.service.steps.ServiceStepsHelper;
 import io.harness.cdng.service.steps.ServiceSweepingOutput;
 import io.harness.cdng.steps.EmptyStepParameters;
+import io.harness.connector.ConnectorResponseDTO;
+import io.harness.connector.services.ConnectorService;
+import io.harness.gitsync.sdk.EntityValidityDetails;
 import io.harness.logstreaming.NGLogCallback;
 import io.harness.ng.core.service.yaml.NGServiceConfig;
 import io.harness.ng.core.service.yaml.NGServiceV2InfoConfig;
@@ -39,6 +43,7 @@ import io.harness.rule.OwnerRule;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -51,9 +56,8 @@ public class ConfigFilesStepV2Test {
   @Mock private NGLogCallback mockNgLogCallback;
   @Mock private ServiceStepsHelper serviceStepsHelper;
   @Mock private CDExpressionResolver expressionResolver;
-  @Mock private ConfigFileStepUtils configFileStepUtils;
+  @Mock private ConnectorService connectorService;
   @Mock private ExecutionSweepingOutputService mockSweepingOutputService;
-
   @InjectMocks private final ConfigFilesStepV2 step = new ConfigFilesStepV2();
   private AutoCloseable mocks;
   private static final String ACCOUNT_ID = "accountId";
@@ -61,6 +65,11 @@ public class ConfigFilesStepV2Test {
   @Before
   public void setUp() throws Exception {
     mocks = MockitoAnnotations.openMocks(this);
+    doReturn(Optional.of(ConnectorResponseDTO.builder()
+                             .entityValidityDetails(EntityValidityDetails.builder().valid(true).build())
+                             .build()))
+        .when(connectorService)
+        .get(anyString(), anyString(), anyString(), anyString());
   }
 
   @After
@@ -93,6 +102,22 @@ public class ConfigFilesStepV2Test {
     assertThat(outcome.get("file3").getOrder()).isEqualTo(3);
   }
 
+  @Test
+  @Owner(developers = OwnerRule.YOGESH)
+  @Category(UnitTests.class)
+  public void executeSyncConnectorNotFound() {
+    doReturn(Optional.empty()).when(connectorService).get(anyString(), anyString(), anyString(), anyString());
+    ConfigFileWrapper file1 = sampleConfigFile("file404");
+
+    doReturn(getServiceSweepingOutput(List.of(file1)))
+        .when(mockSweepingOutputService)
+        .resolve(any(Ambiance.class), eq(RefObjectUtils.getOutcomeRefObject(ServiceStepV3.SERVICE_SWEEPING_OUTPUT)));
+
+    StepResponse stepResponse = step.executeSync(buildAmbiance(), new EmptyStepParameters(), null, null);
+
+    assertThat(stepResponse.getStatus()).isEqualTo(Status.FAILED);
+  }
+
   private ServiceSweepingOutput getServiceSweepingOutput(List<ConfigFileWrapper> configFileWrapperList) {
     NGServiceV2InfoConfig config =
         NGServiceV2InfoConfig.builder()
@@ -116,7 +141,7 @@ public class ConfigFilesStepV2Test {
                                   .store(ParameterField.createValueField(
                                       StoreConfigWrapper.builder()
                                           .spec(GitStore.builder()
-                                                    .connectorRef(ParameterField.createValueField("account.connector"))
+                                                    .connectorRef(ParameterField.createValueField("connector"))
                                                     .build())
                                           .type(StoreConfigType.GIT)
                                           .build()))
@@ -134,7 +159,8 @@ public class ConfigFilesStepV2Test {
                    .build());
     return Ambiance.newBuilder()
         .setPlanExecutionId(generateUuid())
-        .putAllSetupAbstractions(Map.of("accountId", ACCOUNT_ID))
+        .putAllSetupAbstractions(
+            Map.of("accountId", ACCOUNT_ID, "orgIdentifier", "ORG_ID", "projectIdentifier", "PROJECT_ID"))
         .addAllLevels(levels)
         .setExpressionFunctorToken(1234)
         .build();

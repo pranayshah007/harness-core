@@ -22,13 +22,15 @@ import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.services.ConnectorService;
 import io.harness.connector.utils.ConnectorUtils;
-import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.ng.core.NGAccess;
 import io.harness.ng.core.service.yaml.NGServiceConfig;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
+import io.harness.pms.contracts.execution.failure.FailureData;
+import io.harness.pms.contracts.execution.failure.FailureInfo;
+import io.harness.pms.contracts.execution.failure.FailureType;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
@@ -70,51 +72,62 @@ public class ManifestsStepV2 implements SyncExecutable<EmptyStepParameters> {
   @Override
   public StepResponse executeSync(Ambiance ambiance, EmptyStepParameters stepParameters, StepInputPackage inputPackage,
       PassThroughData passThroughData) {
-    ServiceSweepingOutput serviceSweepingOutput = (ServiceSweepingOutput) sweepingOutputService.resolve(
-        ambiance, RefObjectUtils.getOutcomeRefObject(ServiceStepV3.SERVICE_SWEEPING_OUTPUT));
-    NGServiceConfig ngServiceConfig = null;
-    if (serviceSweepingOutput != null) {
-      try {
-        ngServiceConfig = YamlUtils.read(serviceSweepingOutput.getFinalServiceYaml(), NGServiceConfig.class);
-      } catch (IOException e) {
-        // Todo:(yogesh) handle exception
-        throw new RuntimeException(e);
+    try {
+      ServiceSweepingOutput serviceSweepingOutput = (ServiceSweepingOutput) sweepingOutputService.resolve(
+          ambiance, RefObjectUtils.getOutcomeRefObject(ServiceStepV3.SERVICE_SWEEPING_OUTPUT));
+      NGServiceConfig ngServiceConfig = null;
+      if (serviceSweepingOutput != null) {
+        try {
+          ngServiceConfig = YamlUtils.read(serviceSweepingOutput.getFinalServiceYaml(), NGServiceConfig.class);
+        } catch (IOException e) {
+          // Todo:(yogesh) handle exception
+          throw new RuntimeException(e);
+        }
       }
+
+      if (ngServiceConfig == null || ngServiceConfig.getNgServiceV2InfoConfig() == null) {
+        log.info("No service configuration found");
+        return StepResponse.builder().status(Status.SKIPPED).build();
+      }
+
+      final List<ManifestConfigWrapper> manifests =
+          ngServiceConfig.getNgServiceV2InfoConfig().getServiceDefinition().getServiceSpec().getManifests();
+
+      if (isEmpty(manifests)) {
+        return StepResponse.builder().status(Status.SKIPPED).build();
+      }
+
+      List<ManifestAttributes> manifestAttributes = manifests.stream()
+                                                        .map(ManifestConfigWrapper::getManifest)
+                                                        .map(ManifestConfig::getSpec)
+                                                        .collect(Collectors.toList());
+
+      validateConnectors(ambiance, manifestAttributes);
+
+      final ManifestsOutcome manifestsOutcome = new ManifestsOutcome();
+      for (int i = 0; i < manifestAttributes.size(); i++) {
+        ManifestOutcome manifestOutcome = ManifestOutcomeMapper.toManifestOutcome(manifestAttributes.get(i), i + 1);
+        manifestsOutcome.put(manifestOutcome.getIdentifier(), manifestOutcome);
+      }
+
+      return StepResponse.builder()
+          .status(Status.SUCCEEDED)
+          .stepOutcome(StepResponse.StepOutcome.builder()
+                           .name(OutcomeExpressionConstants.MANIFESTS)
+                           .outcome(manifestsOutcome)
+                           .group(StepCategory.STAGE.name())
+                           .build())
+          .build();
+    } catch (Exception ex) {
+      log.error("Exception occurred in config files step v2", ex);
+      return StepResponse.builder()
+          .status(Status.FAILED)
+          .failureInfo(
+              FailureInfo.newBuilder()
+                  .addFailureData(0, FailureData.newBuilder().addFailureTypes(FailureType.APPLICATION_FAILURE).build())
+                  .build())
+          .build();
     }
-
-    if (ngServiceConfig == null || ngServiceConfig.getNgServiceV2InfoConfig() == null) {
-      log.info("No service configuration found");
-      return StepResponse.builder().status(Status.SKIPPED).build();
-    }
-
-    final List<ManifestConfigWrapper> manifests =
-        ngServiceConfig.getNgServiceV2InfoConfig().getServiceDefinition().getServiceSpec().getManifests();
-
-    if (isEmpty(manifests)) {
-      return StepResponse.builder().status(Status.SKIPPED).build();
-    }
-
-    List<ManifestAttributes> manifestAttributes = manifests.stream()
-                                                      .map(ManifestConfigWrapper::getManifest)
-                                                      .map(ManifestConfig::getSpec)
-                                                      .collect(Collectors.toList());
-
-    validateConnectors(ambiance, manifestAttributes);
-
-    final ManifestsOutcome manifestsOutcome = new ManifestsOutcome();
-    for (int i = 0; i < manifestAttributes.size(); i++) {
-      ManifestOutcome manifestOutcome = ManifestOutcomeMapper.toManifestOutcome(manifestAttributes.get(i), i + 1);
-      manifestsOutcome.put(manifestOutcome.getIdentifier(), manifestOutcome);
-    }
-
-    return StepResponse.builder()
-        .status(Status.SUCCEEDED)
-        .stepOutcome(StepResponse.StepOutcome.builder()
-                         .name(OutcomeExpressionConstants.MANIFESTS)
-                         .outcome(manifestsOutcome)
-                         .group(StepCategory.STAGE.name())
-                         .build())
-        .build();
   }
 
   private void validateConnectors(Ambiance ambiance, List<ManifestAttributes> manifestAttributes) {
@@ -130,7 +143,7 @@ public class ManifestsStepV2 implements SyncExecutable<EmptyStepParameters> {
         manifestsToConsider.stream()
             .filter(m -> ParameterField.isNull(m.getStoreConfig().getConnectorReference()))
             .collect(Collectors.toList());
-    if (EmptyPredicate.isNotEmpty(missingConnectorManifests)) {
+    if (isNotEmpty(missingConnectorManifests)) {
       throw new InvalidRequestException("Connector ref field not present in manifests with identifiers "
           + missingConnectorManifests.stream().map(ManifestAttributes::getIdentifier).collect(Collectors.joining(",")));
     }
