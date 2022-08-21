@@ -13,7 +13,6 @@ import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 
 import io.harness.beans.DelegateTaskRequest;
 import io.harness.beans.IdentifierRef;
-import io.harness.cdng.artifact.resources.docker.mappers.DockerResourceMapper;
 import io.harness.cdng.artifact.resources.githubpackages.dtos.GithubPackagesResponseDTO;
 import io.harness.cdng.artifact.resources.githubpackages.mappers.GithubPackagesResourceMapper;
 import io.harness.common.NGTaskType;
@@ -31,7 +30,6 @@ import io.harness.delegate.beans.connector.scm.github.GithubHttpCredentialsDTO;
 import io.harness.delegate.task.artifacts.ArtifactDelegateRequestUtils;
 import io.harness.delegate.task.artifacts.ArtifactSourceType;
 import io.harness.delegate.task.artifacts.ArtifactTaskType;
-import io.harness.delegate.task.artifacts.docker.DockerArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.githubpackages.GithubPackagesArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.githubpackages.GithubPackagesArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.request.ArtifactTaskParameters;

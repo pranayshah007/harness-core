@@ -291,10 +291,12 @@ public class GithubPackagesRegistryServiceImpl implements GithubPackagesRegistry
     Response<List<JsonNode>> response;
 
     if (EmptyPredicate.isEmpty(org)) {
-      response = githubPackagesRestClient.listVersionsForPackages(basicAuthHeader, packageName, packageType).execute();
+      response =
+          githubPackagesRestClient.listVersionsForPackages(basicAuthHeader, packageName, packageType, 100).execute();
     } else {
-      response = githubPackagesRestClient.listVersionsForPackagesInOrg(basicAuthHeader, org, packageName, packageType)
-                     .execute();
+      response =
+          githubPackagesRestClient.listVersionsForPackagesInOrg(basicAuthHeader, org, packageName, packageType, 100)
+              .execute();
     }
 
     if (!isSuccessful(response)) {
