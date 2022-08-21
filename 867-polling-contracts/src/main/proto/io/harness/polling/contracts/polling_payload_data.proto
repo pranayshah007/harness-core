@@ -24,6 +24,7 @@ message PollingPayloadData {
     AcrPayload acrPayload = 11;
     AmazonS3Payload amazonS3Payload = 12;
     JenkinsPayload jenkinsPayload = 13;
+    GitPollingPayload gitPollPayload = 14;
   }
 }
 
@@ -40,6 +41,7 @@ enum Type {
   ACR = 9;
   AMAZON_S3 = 10;
   JENKINS = 11;
+  GIT_POLL = 12;
 }
 
 message HttpHelmPayload {
@@ -110,4 +112,10 @@ message AmazonS3Payload {
 message JenkinsPayload {
   string jobName = 1;
   string artifactPath = 2;
+}
+
+message GitPollingPayload {
+  string eventType = 1;
+  string webhookId = 2;
+  int32 pollInterval = 3;
 }

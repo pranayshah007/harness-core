@@ -89,6 +89,7 @@ public class EntityYamlRootNames {
   public static final String SECURITY = "Security";
   public static final String SECURITY_STAGE = "securityStage";
   public static final String SECURITY_STEP = "securitySteps";
+  public static final String GIT_CLONE = "GitClone";
   public static final String RESTORE_CACHE_GCS = "RestoreCacheGCS";
   public static final String RESTORE_CACHE_S3 = "RestoreCacheS3";
   public static final String SAVE_CACHE_GCS = "SaveCacheGCS";
@@ -116,4 +117,5 @@ public class EntityYamlRootNames {
   public static final String AZURE_SWAP_SLOT_STEP = "AzureSwapSlot";
   public static final String AZURE_WEBAPP_ROLLBACK_STEP = "AzureWebAppRollback";
   public static final String EMAIL = "EMAIL";
+  public static final String AZURE_CREATE_ARM_RESOURCE_STEP = "AzureCreateARMResource";
 }

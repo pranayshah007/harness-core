@@ -10,12 +10,15 @@ package io.harness.cdng.ssh;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.cdng.execution.ExecutionInfoUtility.getScope;
 import static io.harness.cdng.ssh.utils.CommandStepUtils.getEnvironmentVariables;
+import static io.harness.cdng.ssh.utils.CommandStepUtils.getHarnessBuiltInEnvVariables;
 import static io.harness.cdng.ssh.utils.CommandStepUtils.getHost;
 import static io.harness.cdng.ssh.utils.CommandStepUtils.getOutputVariables;
 import static io.harness.cdng.ssh.utils.CommandStepUtils.getWorkingDirectory;
 import static io.harness.common.ParameterFieldHelper.getBooleanParameterFieldValue;
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.HarnessStringUtils.emptyIfNull;
+import static io.harness.eraro.ErrorCode.GENERAL_ERROR;
 
 import static java.lang.String.format;
 import static java.util.Collections.emptyList;
@@ -26,10 +29,13 @@ import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.artifact.outcome.ArtifactOutcome;
 import io.harness.cdng.configfile.steps.ConfigFilesOutcome;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
+import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.service.steps.ServiceStepOutcome;
 import io.harness.cdng.ssh.rollback.CommandStepRollbackHelper;
 import io.harness.cdng.ssh.rollback.SshWinRmRollbackData;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
+import io.harness.delegate.beans.logstreaming.UnitProgressData;
+import io.harness.delegate.exception.TaskNGDataException;
 import io.harness.delegate.task.shell.CommandTaskParameters;
 import io.harness.delegate.task.shell.SshCommandTaskParameters;
 import io.harness.delegate.task.shell.TailFilePatternDto;
@@ -41,13 +47,23 @@ import io.harness.delegate.task.ssh.NgInitCommandUnit;
 import io.harness.delegate.task.ssh.ScriptCommandUnit;
 import io.harness.delegate.task.ssh.artifact.SshWinRmArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.config.FileDelegateConfig;
+import io.harness.eraro.Level;
+import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
+import io.harness.logging.UnitProgress;
+import io.harness.logging.UnitStatus;
 import io.harness.ng.core.k8s.ServiceSpecType;
+import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.execution.Status;
+import io.harness.pms.contracts.execution.failure.FailureData;
+import io.harness.pms.contracts.execution.failure.FailureInfo;
+import io.harness.pms.contracts.execution.failure.FailureType;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
+import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.steps.OutputExpressionConstants;
 import io.harness.steps.shellscript.ShellScriptInlineSource;
 import io.harness.steps.shellscript.ShellScriptSourceWrapper;
@@ -80,20 +96,57 @@ public class SshCommandStepHelper extends CDStepHelper {
       @Nonnull Ambiance ambiance, @Nonnull CommandStepParameters commandStepParameters) {
     ServiceStepOutcome serviceOutcome = (ServiceStepOutcome) outcomeService.resolve(
         ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.SERVICE));
+    InfrastructureOutcome infrastructure = getInfrastructureOutcome(ambiance);
+    Map<String, String> builtInEnvVariables = getHarnessBuiltInEnvVariables(infrastructure, serviceOutcome);
 
     switch (serviceOutcome.getType()) {
       case ServiceSpecType.SSH:
-        return buildSshCommandTaskParameters(ambiance, commandStepParameters);
+        return buildSshCommandTaskParameters(ambiance, commandStepParameters, builtInEnvVariables);
       case ServiceSpecType.WINRM:
-        return buildWinRmTaskParameters(ambiance, commandStepParameters);
+        return buildWinRmTaskParameters(ambiance, commandStepParameters, builtInEnvVariables);
       default:
         throw new UnsupportedOperationException(
             format("Unsupported service type: [%s] selected for command step", serviceOutcome.getType()));
     }
   }
 
-  private SshCommandTaskParameters buildSshCommandTaskParameters(
-      @Nonnull Ambiance ambiance, @Nonnull CommandStepParameters commandStepParameters) {
+  public StepResponse handleTaskException(Ambiance ambiance, StepElementParameters stepElementParameters, Exception e)
+      throws Exception {
+    // Trying to figure out if exception is coming from command task or it is an exception from delegate service.
+    // In the second case we need to close log stream and provide unit progress data as part of response
+    if (ExceptionUtils.cause(TaskNGDataException.class, e) != null) {
+      throw e;
+    }
+    CommandStepParameters executeCommandStepParameters = (CommandStepParameters) stepElementParameters.getSpec();
+    List<UnitProgress> commandExecutionUnits =
+        executeCommandStepParameters.getCommandUnits()
+            .stream()
+            .map(cu -> UnitProgress.newBuilder().setUnitName(cu.getName()).setStatus(UnitStatus.RUNNING).build())
+            .collect(Collectors.toList());
+
+    UnitProgressData currentUnitProgressData = UnitProgressData.builder().unitProgresses(commandExecutionUnits).build();
+    UnitProgressData unitProgressData =
+        completeUnitProgressData(currentUnitProgressData, ambiance, ExceptionUtils.getMessage(e));
+    FailureData failureData = FailureData.newBuilder()
+                                  .addFailureTypes(FailureType.APPLICATION_FAILURE)
+                                  .setLevel(Level.ERROR.name())
+                                  .setCode(GENERAL_ERROR.name())
+                                  .setMessage(emptyIfNull(ExceptionUtils.getMessage(e)))
+                                  .build();
+
+    return StepResponse.builder()
+        .unitProgressList(unitProgressData.getUnitProgresses())
+        .status(Status.FAILED)
+        .failureInfo(FailureInfo.newBuilder()
+                         .addAllFailureTypes(failureData.getFailureTypesList())
+                         .setErrorMessage(failureData.getMessage())
+                         .addFailureData(failureData)
+                         .build())
+        .build();
+  }
+
+  private SshCommandTaskParameters buildSshCommandTaskParameters(@Nonnull Ambiance ambiance,
+      @Nonnull CommandStepParameters commandStepParameters, Map<String, String> builtInEnvVariables) {
     OptionalSweepingOutput optionalInfraOutput = executionSweepingOutputService.resolveOptional(ambiance,
         RefObjectUtils.getSweepingOutputRefObject(OutputExpressionConstants.SSH_INFRA_DELEGATE_CONFIG_OUTPUT_NAME));
     if (!optionalInfraOutput.isFound()) {
@@ -111,11 +164,11 @@ public class SshCommandStepHelper extends CDStepHelper {
     if (commandStepParameters.isRollback) {
       String stageExecutionId = ambiance.getStageExecutionId();
       log.info("Start getting rollback data from DB, stageExecutionId: {}", stageExecutionId);
-      Optional<SshWinRmRollbackData> rollbackData = commandStepRollbackHelper.getRollbackData(ambiance);
+      Optional<SshWinRmRollbackData> rollbackData =
+          commandStepRollbackHelper.getRollbackData(ambiance, builtInEnvVariables);
       if (!rollbackData.isPresent()) {
         log.info("Not found rollback data from DB, hence skipping rollback, stageExecutionId: {}", stageExecutionId);
-        throw new InvalidRequestException(
-            format("Not found previous successful rollback data, hence skipping rollback, %s", stageExecutionId));
+        throw new InvalidRequestException("Not found previous successful rollback data, hence skipping rollback");
       }
 
       log.info("Found rollback data in DB, stageExecutionId: {}", stageExecutionId);
@@ -129,7 +182,8 @@ public class SshCommandStepHelper extends CDStepHelper {
           commandStepParameters.getEnvironmentVariables(), commandStepParameters.getOutputVariables());
       artifactDelegateConfig = getArtifactDelegateConfig(ambiance);
       fileDelegateConfig = getFileDelegateConfig(ambiance);
-      environmentVariables = getEnvironmentVariables(commandStepParameters.getEnvironmentVariables());
+      environmentVariables =
+          getEnvironmentVariables(commandStepParameters.getEnvironmentVariables(), builtInEnvVariables);
       outputVars = getOutputVariables(commandStepParameters.getOutputVariables());
     }
 
@@ -148,8 +202,8 @@ public class SshCommandStepHelper extends CDStepHelper {
         .build();
   }
 
-  private WinrmTaskParameters buildWinRmTaskParameters(
-      @Nonnull Ambiance ambiance, @Nonnull CommandStepParameters commandStepParameters) {
+  private WinrmTaskParameters buildWinRmTaskParameters(@Nonnull Ambiance ambiance,
+      @Nonnull CommandStepParameters commandStepParameters, Map<String, String> builtInEnvVariables) {
     OptionalSweepingOutput optionalInfraOutput = executionSweepingOutputService.resolveOptional(ambiance,
         RefObjectUtils.getSweepingOutputRefObject(OutputExpressionConstants.WINRM_INFRA_DELEGATE_CONFIG_OUTPUT_NAME));
     if (!optionalInfraOutput.isFound()) {
@@ -168,11 +222,11 @@ public class SshCommandStepHelper extends CDStepHelper {
     if (commandStepParameters.isRollback) {
       String stageExecutionId = ambiance.getStageExecutionId();
       log.info("Start getting rollback data from DB, stageExecutionId: {}", stageExecutionId);
-      Optional<SshWinRmRollbackData> rollbackData = commandStepRollbackHelper.getRollbackData(ambiance);
+      Optional<SshWinRmRollbackData> rollbackData =
+          commandStepRollbackHelper.getRollbackData(ambiance, builtInEnvVariables);
       if (!rollbackData.isPresent()) {
         log.info("Not found rollback data from DB, hence skipping rollback, stageExecutionId: {}", stageExecutionId);
-        throw new InvalidRequestException(
-            format("Not found previous successful rollback data, hence skipping rollback, %s", stageExecutionId));
+        throw new InvalidRequestException("Not found previous successful rollback data, hence skipping rollback");
       }
 
       log.info("Found rollback data in DB, stageExecutionId: {}", stageExecutionId);
@@ -186,7 +240,8 @@ public class SshCommandStepHelper extends CDStepHelper {
           commandStepParameters.getEnvironmentVariables(), commandStepParameters.getOutputVariables());
       artifactDelegateConfig = getArtifactDelegateConfig(ambiance);
       fileDelegateConfig = getFileDelegateConfig(ambiance);
-      environmentVariables = getEnvironmentVariables(commandStepParameters.getEnvironmentVariables());
+      environmentVariables =
+          getEnvironmentVariables(commandStepParameters.getEnvironmentVariables(), builtInEnvVariables);
       outputVars = getOutputVariables(commandStepParameters.getOutputVariables());
     }
 

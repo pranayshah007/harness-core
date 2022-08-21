@@ -82,6 +82,7 @@ function copy_ng_manager_jars(){
 	cp ../../120-ng-manager/key.pem .
 	cp ../../120-ng-manager/cert.pem .
 	cp ../../120-ng-manager/src/main/resources/redisson-jcache.yaml .
+	cp ../../120-ng-manager/src/main/resources/enterprise-redisson-jcache.yaml .
 
 	cp ../../dockerization/ng-manager/Dockerfile-ng-manager-jenkins-k8-openjdk ./Dockerfile
 	cp ../../dockerization/ng-manager/Dockerfile-ng-manager-cie-jdk ./Dockerfile-cie-jdk
@@ -118,23 +119,6 @@ function copy_ce_nextgen_jars(){
 	cd ../..
 }
 
-function copy_batch_processing_jars(){
-	mkdir -p dist/batch-processing ;
-	cd dist/batch-processing
-
-	cp ${BAZEL_BIN}/280-batch-processing/module_deploy.jar batch-processing-capsule.jar
-	cp ../../280-batch-processing/batch-processing-config.yml .
-	cp ../../dockerization/batch-processing/Dockerfile-batch-processing-jenkins-k8-openjdk Dockerfile
-	cp ../../dockerization/batch-processing/Dockerfile-batch-processing-cie-jdk Dockerfile-cie-jdk
-	cp ../../dockerization/batch-processing/Dockerfile-batch-processing-jenkins-k8-gcr-openjdk Dockerfile-gcr
-	cp ../../dockerization/base-images/apm/inject-onprem-apm-bins-into-dockerimage.sh .
-  cp ../../dockerization/base-images/apm/inject-saas-apm-bins-into-dockerimage.sh .
-	cp -r ../../dockerization/batch-processing/scripts/ .
-	
-	copy_common_files
-
-	cd ../..
-}
 
 function copy_change_data_capture_jars(){
 	mkdir -p dist/change-data-capture ;

@@ -19,6 +19,7 @@ import io.harness.cdng.pipeline.StepCategory;
 import io.harness.cdng.pipeline.StepData;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.exception.GeneralException;
+import io.harness.steps.matrix.StrategyParameters;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.cache.CacheBuilder;
@@ -38,6 +39,7 @@ import java.util.stream.Collectors;
 @OwnedBy(CDP)
 public class CDNGPipelineConfigurationHelper {
   @Inject private CdEnumFilter enumFilter;
+  @Inject private CDNGPipelineExecutionStrategyHelper cdngPipelineExecutionStrategyHelper;
 
   @VisibleForTesting static String LIBRARY = "Library";
 
@@ -69,6 +71,23 @@ public class CDNGPipelineConfigurationHelper {
           StandardCharsets.UTF_8);
     } else {
       throw new GeneralException("Execution Strategy Not supported for given deployment type");
+    }
+  }
+
+  public String getSshExecutionStrategyYaml(ServiceDefinitionType serviceDefinitionType,
+      ExecutionStrategyType executionStrategyType, boolean includeVerify, StrategyParameters strategyParameters)
+      throws IOException {
+    if (ExecutionStrategyType.CANARY.equals(executionStrategyType)) {
+      return cdngPipelineExecutionStrategyHelper.generateCanaryYaml(
+          serviceDefinitionType, strategyParameters, includeVerify);
+    } else if (ExecutionStrategyType.ROLLING.equals(executionStrategyType)) {
+      return cdngPipelineExecutionStrategyHelper.generateRollingYaml(
+          serviceDefinitionType, strategyParameters, includeVerify);
+    } else if (ExecutionStrategyType.BASIC.equals(executionStrategyType)) {
+      return cdngPipelineExecutionStrategyHelper.generateBasicYaml(
+          serviceDefinitionType, strategyParameters, includeVerify);
+    } else {
+      return getExecutionStrategyYaml(serviceDefinitionType, executionStrategyType, includeVerify);
     }
   }
 

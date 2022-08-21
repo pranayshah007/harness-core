@@ -549,6 +549,85 @@ public class DelegateServiceTest extends WingsBaseTest {
   }
 
   @Test
+  @Owner(developers = ANUPAM)
+  @Category(UnitTests.class)
+  public void shouldGetDelegateStatusWithScalingGroupForImmutableDelegates() {
+    String accountId = generateUuid();
+    when(accountService.getDelegateConfiguration(anyString()))
+        .thenReturn(DelegateConfiguration.builder().delegateVersions(singletonList(VERSION)).build());
+
+    Delegate deletedDelegate = createDelegateBuilder().build();
+    deletedDelegate.setAccountId(accountId);
+    deletedDelegate.setStatus(DelegateInstanceStatus.DELETED);
+
+    // these two delegates should be returned
+    Delegate delegateWithScalingGroup1 = createDelegateBuilder().build();
+    delegateWithScalingGroup1.setAccountId(accountId);
+    delegateWithScalingGroup1.setDelegateGroupName("test1");
+    DelegateGroup scalingGroup1 = DelegateGroup.builder()
+                                      .accountId(accountId)
+                                      .name("test1")
+                                      .status(DelegateGroupStatus.ENABLED)
+                                      .upgraderLastUpdated(123)
+                                      .ng(false)
+                                      .build();
+
+    Delegate delegateWithScalingGroup2 = createDelegateBuilder().build();
+    delegateWithScalingGroup2.setAccountId(accountId);
+    delegateWithScalingGroup2.setDelegateGroupName("test2");
+    DelegateGroup scalingGroup2 = DelegateGroup.builder()
+                                      .accountId(accountId)
+                                      .name("test2")
+                                      .status(DelegateGroupStatus.ENABLED)
+                                      .ng(false)
+                                      .build();
+
+    // these two delegates should not appear.
+    Delegate delegateWithScalingGroup4 = createDelegateBuilder().build();
+    delegateWithScalingGroup4.setAccountId(accountId);
+    delegateWithScalingGroup4.setDelegateGroupName("test2");
+    // this delegate should cause an empty group to be returned
+    Delegate delegateWithScalingGroup5 = createDelegateBuilder().build();
+    delegateWithScalingGroup5.setAccountId(accountId);
+    delegateWithScalingGroup5.setDelegateGroupName("test3");
+
+    persistence.save(Arrays.asList(deletedDelegate, delegateWithScalingGroup1, delegateWithScalingGroup2,
+        delegateWithScalingGroup4, delegateWithScalingGroup5));
+    persistence.save(Arrays.asList(scalingGroup1, scalingGroup2));
+    delegateService.registerHeartbeat(accountId, delegateWithScalingGroup1.getUuid(),
+        DelegateConnectionHeartbeat.builder().delegateConnectionId(generateUuid()).version(VERSION).build(),
+        ConnectionMode.POLLING);
+    delegateService.registerHeartbeat(accountId, delegateWithScalingGroup2.getUuid(),
+        DelegateConnectionHeartbeat.builder().delegateConnectionId(generateUuid()).version(VERSION).build(),
+        ConnectionMode.POLLING);
+
+    DelegateStatus delegateStatus = delegateService.getDelegateStatusWithScalingGroups(accountId);
+
+    assertThat(delegateStatus.getPublishedVersions()).hasSize(1).contains(VERSION);
+
+    assertThat(delegateStatus.getScalingGroups()).hasSize(3);
+    assertThat(delegateStatus.getScalingGroups())
+        .extracting(DelegateScalingGroup::getGroupName)
+        .containsOnly("test1", "test2", "test3");
+
+    for (DelegateScalingGroup group : delegateStatus.getScalingGroups()) {
+      if (group.getGroupName().equals("test1")) {
+        assertThat(group.getDelegates()).hasSize(1);
+        assertThat(group.getDelegates())
+            .extracting(DelegateStatus.DelegateInner::getUuid)
+            .containsOnly(delegateWithScalingGroup1.getUuid());
+        assertThat(group.getUpgraderLastUpdated()).isEqualTo(123);
+      } else if (group.getGroupName().equals("test2")) {
+        assertThat(group.getDelegates()).hasSize(1);
+        assertThat(group.getDelegates().get(0).getUuid()).isEqualTo(delegateWithScalingGroup2.getUuid());
+        assertThat(group.getUpgraderLastUpdated()).isEqualTo(0);
+      } else if (group.getGroupName().equals("test3")) {
+        assertThat(group.getDelegates()).hasSize(0);
+      }
+    }
+  }
+
+  @Test
   @Owner(developers = SANJA)
   @Category(UnitTests.class)
   public void shouldGetDelegateStatus2ScalingGroupEmpty() {
@@ -1102,7 +1181,7 @@ public class DelegateServiceTest extends WingsBaseTest {
     when(delegateProfileService.fetchNgPrimaryProfile(accountId, null)).thenReturn(profile);
     when(delegatesFeature.getMaxUsageAllowedForAccount(accountId)).thenReturn(Integer.MAX_VALUE);
 
-    DelegateRegisterResponse registerResponse = delegateService.register(params);
+    DelegateRegisterResponse registerResponse = delegateService.register(params, true);
     Delegate delegateFromDb = delegateCache.get(accountId, registerResponse.getDelegateId(), true);
     DelegateGroup delegateGroupFromDb = delegateCache.getDelegateGroup(accountId, delegateGroup.getUuid());
 
@@ -1119,6 +1198,7 @@ public class DelegateServiceTest extends WingsBaseTest {
     assertThat(delegateFromDb.isPolllingModeEnabled()).isEqualTo(params.isPollingModeEnabled());
     assertThat(delegateFromDb.isSampleDelegate()).isEqualTo(params.isSampleDelegate());
     assertThat(delegateGroupFromDb.getTags()).containsExactlyInAnyOrder("tag1", "tag2");
+    assertThat(delegateFromDb.isMtls()).isTrue();
   }
 
   @Test
@@ -1150,7 +1230,7 @@ public class DelegateServiceTest extends WingsBaseTest {
 
     when(delegatesFeature.getMaxUsageAllowedForAccount(ACCOUNT_ID)).thenReturn(Integer.MAX_VALUE);
 
-    DelegateRegisterResponse registerResponse = delegateService.register(params);
+    DelegateRegisterResponse registerResponse = delegateService.register(params, false);
     Delegate delegateFromDb = delegateCache.get(ACCOUNT_ID, registerResponse.getDelegateId(), true);
     DelegateGroup delegateGroupFromDb = delegateCache.getDelegateGroup(ACCOUNT_ID, delegateGroup.getUuid());
 
@@ -1167,6 +1247,7 @@ public class DelegateServiceTest extends WingsBaseTest {
     assertThat(delegateFromDb.isSampleDelegate()).isEqualTo(params.isSampleDelegate());
     assertThat(delegateGroupFromDb.getAccountId()).isEqualTo(delegateGroup.getAccountId());
     assertThat(delegateGroupFromDb.getName()).isEqualTo(delegateGroup.getName());
+    assertThat(delegateFromDb.isMtls()).isFalse();
   }
 
   @Test
@@ -1201,7 +1282,7 @@ public class DelegateServiceTest extends WingsBaseTest {
     when(delegateProfileService.fetchNgPrimaryProfile(accountId, owner)).thenReturn(profile);
     when(delegatesFeature.getMaxUsageAllowedForAccount(accountId)).thenReturn(Integer.MAX_VALUE);
 
-    DelegateRegisterResponse registerResponse = delegateService.register(params);
+    DelegateRegisterResponse registerResponse = delegateService.register(params, false);
     Delegate delegateFromDb = delegateCache.get(accountId, registerResponse.getDelegateId(), true);
 
     assertThat(delegateFromDb.getOwner().getIdentifier()).isEqualTo(orgId);
@@ -1241,7 +1322,7 @@ public class DelegateServiceTest extends WingsBaseTest {
     when(delegateProfileService.fetchNgPrimaryProfile(accountId, owner)).thenReturn(profile);
     when(delegatesFeature.getMaxUsageAllowedForAccount(accountId)).thenReturn(Integer.MAX_VALUE);
 
-    DelegateRegisterResponse registerResponse = delegateService.register(params);
+    DelegateRegisterResponse registerResponse = delegateService.register(params, false);
     Delegate delegateFromDb = delegateCache.get(accountId, registerResponse.getDelegateId(), true);
 
     assertThat(delegateFromDb.getOwner().getIdentifier()).isEqualTo("orgId/projectId");
@@ -1270,7 +1351,7 @@ public class DelegateServiceTest extends WingsBaseTest {
     when(delegateProfileService.fetchCgPrimaryProfile(accountId)).thenReturn(profile);
     when(delegatesFeature.getMaxUsageAllowedForAccount(accountId)).thenReturn(Integer.MAX_VALUE);
 
-    DelegateRegisterResponse registerResponse = delegateService.register(params);
+    DelegateRegisterResponse registerResponse = delegateService.register(params, false);
     Delegate delegateFromDb = delegateCache.get(accountId, registerResponse.getDelegateId(), true);
 
     assertThat(delegateFromDb.getAccountId()).isEqualTo(params.getAccountId());
@@ -1285,6 +1366,7 @@ public class DelegateServiceTest extends WingsBaseTest {
     assertThat(delegateFromDb.isPolllingModeEnabled()).isEqualTo(params.isPollingModeEnabled());
     assertThat(delegateFromDb.isSampleDelegate()).isEqualTo(params.isSampleDelegate());
     assertThat(delegateFromDb.isNg()).isEqualTo(params.isNg());
+    assertThat(delegateFromDb.isMtls()).isFalse();
   }
 
   @Test
@@ -1294,6 +1376,7 @@ public class DelegateServiceTest extends WingsBaseTest {
     String accountId = generateUuid();
     Delegate delegate = createDelegateBuilder().build();
     delegate.setAccountId(accountId);
+    delegate.setMtls(true);
     DelegateProfile primaryDelegateProfile =
         createDelegateProfileBuilder().accountId(delegate.getAccountId()).primary(true).build();
 
@@ -1306,6 +1389,7 @@ public class DelegateServiceTest extends WingsBaseTest {
     delegateService.register(delegate);
     Delegate registeredDelegate = delegateCache.get(accountId, delegate.getUuid(), true);
     assertThat(registeredDelegate).isEqualToIgnoringGivenFields(delegate, DelegateKeys.validUntil);
+    assertThat(registeredDelegate.isMtls()).isTrue();
   }
 
   @Test
@@ -1324,7 +1408,7 @@ public class DelegateServiceTest extends WingsBaseTest {
                             .proxy(false)
                             .polllingModeEnabled(false)
                             .sampleDelegate(false)
-                            .tags(Arrays.asList("existingTag1", "existingTag2"))
+                            .mtls(false)
                             .build();
     DelegateProfile primaryDelegateProfile =
         createDelegateProfileBuilder().accountId(delegate.getAccountId()).primary(true).build();
@@ -1348,10 +1432,9 @@ public class DelegateServiceTest extends WingsBaseTest {
                                 .proxy(true)
                                 .pollingModeEnabled(true)
                                 .sampleDelegate(false)
-                                .tags(Arrays.asList("newTag1", "newTag2"))
                                 .build();
 
-    delegateService.register(params);
+    delegateService.register(params, true);
 
     Delegate delegateFromDb = delegateCache.get(accountId, delegate.getUuid(), true);
     assertThat(delegateFromDb.getAccountId()).isEqualTo(params.getAccountId());
@@ -1365,8 +1448,7 @@ public class DelegateServiceTest extends WingsBaseTest {
     assertThat(delegateFromDb.isProxy()).isEqualTo(params.isProxy());
     assertThat(delegateFromDb.isPolllingModeEnabled()).isEqualTo(params.isPollingModeEnabled());
     assertThat(delegateFromDb.isSampleDelegate()).isEqualTo(params.isSampleDelegate());
-    assertThat(delegate.getTags()).isEqualTo(Arrays.asList("existingTag1", "existingTag2"));
-    assertThat(delegateFromDb.getTags()).isEqualTo(Arrays.asList("newTag1", "newTag2"));
+    assertThat(delegateFromDb.isMtls()).isTrue();
   }
 
   @Test
@@ -1386,7 +1468,7 @@ public class DelegateServiceTest extends WingsBaseTest {
                             .ng(false)
                             .polllingModeEnabled(false)
                             .sampleDelegate(false)
-                            .tags(Arrays.asList("existingTag1", "existingTag2"))
+                            .mtls(false)
                             .build();
     DelegateProfile primaryDelegateProfile =
         createDelegateProfileBuilder().accountId(delegate.getAccountId()).primary(true).build();
@@ -1411,10 +1493,9 @@ public class DelegateServiceTest extends WingsBaseTest {
                                 .proxy(true)
                                 .pollingModeEnabled(true)
                                 .sampleDelegate(false)
-                                .tags(Arrays.asList("newTag1", "newTag2"))
                                 .build();
 
-    delegateService.register(params);
+    delegateService.register(params, true);
 
     Delegate delegateFromDb = delegateCache.get(accountId, delegate.getUuid(), true);
 
@@ -1428,8 +1509,7 @@ public class DelegateServiceTest extends WingsBaseTest {
     assertThat(delegateFromDb.isPolllingModeEnabled()).isEqualTo(params.isPollingModeEnabled());
     assertThat(delegateFromDb.isSampleDelegate()).isEqualTo(params.isSampleDelegate());
     assertThat(delegateFromDb.isNg()).isEqualTo(params.isNg());
-    assertThat(delegate.getTags()).isEqualTo(Arrays.asList("existingTag1", "existingTag2"));
-    assertThat(delegateFromDb.getTags()).isEqualTo(Arrays.asList("newTag1", "newTag2"));
+    assertThat(delegateFromDb.isMtls()).isTrue();
   }
 
   @Test
@@ -1647,7 +1727,7 @@ public class DelegateServiceTest extends WingsBaseTest {
                                 .ng(false)
                                 .build();
 
-    delegateService.register(params);
+    delegateService.register(params, false);
 
     Delegate delegateFromDb = delegateCache.get(accountId, delegate.getUuid(), true);
     assertThat(delegateFromDb.getAccountId()).isEqualTo(params.getAccountId());
@@ -1661,6 +1741,7 @@ public class DelegateServiceTest extends WingsBaseTest {
     assertThat(delegateFromDb.isPolllingModeEnabled()).isEqualTo(params.isPollingModeEnabled());
     assertThat(delegateFromDb.isSampleDelegate()).isEqualTo(params.isSampleDelegate());
     assertThat(delegateFromDb.isNg()).isFalse();
+    assertThat(delegateFromDb.isMtls()).isFalse();
   }
 
   @Test
@@ -1704,7 +1785,7 @@ public class DelegateServiceTest extends WingsBaseTest {
                                         .lastHeartBeat(System.currentTimeMillis())
                                         .build();
     when(licenseService.isAccountDeleted("DELETED_ACCOUNT")).thenReturn(true);
-    DelegateRegisterResponse registerResponse = delegateService.register(delegateParams);
+    DelegateRegisterResponse registerResponse = delegateService.register(delegateParams, false);
     assertThat(registerResponse.getAction()).isEqualTo(DelegateRegisterResponse.Action.SELF_DESTRUCT);
   }
 
@@ -1751,7 +1832,7 @@ public class DelegateServiceTest extends WingsBaseTest {
                                         .delegateGroupId(delegateGroup.getUuid())
                                         .build();
 
-    DelegateRegisterResponse registerResponse = delegateService.register(delegateParams);
+    DelegateRegisterResponse registerResponse = delegateService.register(delegateParams, false);
     assertThat(registerResponse.getAction()).isEqualTo(DelegateRegisterResponse.Action.SELF_DESTRUCT);
   }
 
@@ -3509,7 +3590,7 @@ public class DelegateServiceTest extends WingsBaseTest {
     when(delegateProfileService.fetchNgPrimaryProfile(accountId, null)).thenReturn(profile);
     when(delegatesFeature.getMaxUsageAllowedForAccount(accountId)).thenReturn(Integer.MAX_VALUE);
 
-    DelegateRegisterResponse registerResponse = delegateService.register(params);
+    DelegateRegisterResponse registerResponse = delegateService.register(params, false);
     assertThat(registerResponse.getAction()).isEqualTo(Action.SELF_DESTRUCT);
     assertThat(registerResponse.getDelegateId()).isNull();
   }
@@ -3534,7 +3615,7 @@ public class DelegateServiceTest extends WingsBaseTest {
 
     when(delegatesFeature.getMaxUsageAllowedForAccount(ACCOUNT_ID)).thenReturn(Integer.MAX_VALUE);
 
-    DelegateRegisterResponse registerResponse = delegateService.register(params);
+    DelegateRegisterResponse registerResponse = delegateService.register(params, true);
     Delegate delegateFromDb = delegateCache.get(ACCOUNT_ID, registerResponse.getDelegateId(), true);
     DelegateGroup delegateGroupFromDb = delegateCache.getDelegateGroup(ACCOUNT_ID, delegateFromDb.getDelegateGroupId());
 
@@ -3550,6 +3631,7 @@ public class DelegateServiceTest extends WingsBaseTest {
     assertThat(delegateFromDb.isPolllingModeEnabled()).isEqualTo(params.isPollingModeEnabled());
     assertThat(delegateFromDb.isSampleDelegate()).isEqualTo(params.isSampleDelegate());
     assertThat(delegateGroupFromDb.getAccountId()).isEqualTo(ACCOUNT_ID);
+    assertThat(delegateFromDb.isMtls()).isTrue();
   }
 
   @Test
@@ -3888,7 +3970,7 @@ public class DelegateServiceTest extends WingsBaseTest {
     when(delegateProfileService.fetchNgPrimaryProfile(accountId, owner)).thenReturn(profile);
     when(delegatesFeature.getMaxUsageAllowedForAccount(accountId)).thenReturn(Integer.MAX_VALUE);
 
-    DelegateRegisterResponse registerResponse = delegateService.register(params);
+    DelegateRegisterResponse registerResponse = delegateService.register(params, false);
     Delegate delegateFromDb = delegateCache.get(accountId, registerResponse.getDelegateId(), true);
 
     assertThat(delegateFromDb.getOwner()).isEqualTo(owner);

@@ -8,11 +8,9 @@
 package io.harness.delegate.task.gcp.taskHandlers;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
-import static io.harness.connector.ConnectivityStatus.FAILURE;
 import static io.harness.connector.ConnectivityStatus.SUCCESS;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.joor.Reflect.on;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doCallRealMethod;
 import static org.mockito.Mockito.doThrow;
@@ -33,7 +31,6 @@ import io.harness.delegate.beans.connector.gcpconnector.GcpManualDetailsDTO;
 import io.harness.delegate.task.gcp.GcpRequestMapper;
 import io.harness.delegate.task.gcp.request.GcpValidationRequest;
 import io.harness.encryption.SecretRefData;
-import io.harness.errorhandling.NGErrorHelper;
 import io.harness.gcp.client.GcpClient;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
@@ -54,7 +51,6 @@ public class GcpValidationTaskHandlerTest extends CategoryTest {
   @Mock private GcpClient gcpClient;
   @Mock private SecretDecryptionService secretDecryptionService;
   @Mock private DecryptionHelper decryptionHelper;
-  @InjectMocks private NGErrorHelper ngErrorHelper;
   @Mock private GcpRequestMapper gcpRequestMapper;
   @InjectMocks private GcpValidationTaskHandler taskHandler;
   private String accountIdentifier = "accountIdentifier";
@@ -62,7 +58,6 @@ public class GcpValidationTaskHandlerTest extends CategoryTest {
   @Before
   public void setUp() throws Exception {
     MockitoAnnotations.initMocks(this);
-    on(taskHandler).set("ngErrorHelper", ngErrorHelper);
   }
 
   @Test
@@ -73,15 +68,12 @@ public class GcpValidationTaskHandlerTest extends CategoryTest {
     assertThat(connectorValidationResult.getStatus()).isEqualTo(SUCCESS);
   }
 
-  @Test
+  @Test(expected = RuntimeException.class)
   @Owner(developers = OwnerRule.YOGESH)
   @Category(UnitTests.class)
   public void executeRequestFailure() {
     doThrow(new RuntimeException("No Default Credentials found")).when(gcpClient).validateDefaultCredentials();
-    final ConnectorValidationResult connectorValidationResult = taskHandler.validate(buildGcpValidationRequest());
-    assertThat(connectorValidationResult.getStatus()).isEqualTo(FAILURE);
-    assertThat(connectorValidationResult.getErrorSummary())
-        .isEqualTo("Error Encountered (No Default Credentials found)");
+    taskHandler.validate(buildGcpValidationRequest());
   }
 
   private GcpValidationRequest buildGcpValidationRequest() {
@@ -99,17 +91,14 @@ public class GcpValidationTaskHandlerTest extends CategoryTest {
     assertThat(connectorValidationResult.getStatus()).isEqualTo(SUCCESS);
   }
 
-  @Test
+  @Test(expected = RuntimeException.class)
   @Owner(developers = OwnerRule.ABHINAV)
   @Category(UnitTests.class)
   public void executeRequestFailureForSecretKey() {
     when(decryptionHelper.decrypt(any(), any()))
         .thenReturn(GcpManualDetailsDTO.builder().secretKeyRef(SecretRefData.builder().build()).build());
     doThrow(new RuntimeException("No Credentials found")).when(gcpClient).getGkeContainerService(any());
-    final ConnectorValidationResult connectorValidationResult =
-        taskHandler.validate(buildGcpValidationRequestWithSecretKey());
-    assertThat(connectorValidationResult.getStatus()).isEqualTo(FAILURE);
-    assertThat(connectorValidationResult.getErrorSummary()).isEqualTo("Error Encountered (No Credentials found)");
+    taskHandler.validate(buildGcpValidationRequestWithSecretKey());
   }
 
   private GcpValidationRequest buildGcpValidationRequestWithSecretKey() {
@@ -144,7 +133,7 @@ public class GcpValidationTaskHandlerTest extends CategoryTest {
     assertThat(result.getStatus()).isEqualTo(SUCCESS);
   }
 
-  @Test
+  @Test(expected = RuntimeException.class)
   @Owner(developers = OwnerRule.MEENAKSHI)
   @Category(UnitTests.class)
   public void validateFailure() {
@@ -164,8 +153,6 @@ public class GcpValidationTaskHandlerTest extends CategoryTest {
                                                               .encryptionDetails(null)
                                                               .build();
 
-    ConnectorValidationResult result = taskHandler.validate(connectorValidationParams, accountIdentifier);
-    assertThat(result.getStatus()).isEqualTo(FAILURE);
-    assertThat(result.getErrorSummary()).isEqualTo("Error Encountered (No Credentials found)");
+    taskHandler.validate(connectorValidationParams, accountIdentifier);
   }
 }

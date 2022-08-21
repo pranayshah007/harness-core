@@ -7,8 +7,7 @@
 
 package io.harness.connector.task.aws;
 
-import static io.harness.aws.AwsExceptionHandler.handleAmazonClientException;
-import static io.harness.aws.AwsExceptionHandler.handleAmazonServiceException;
+import static io.harness.exception.WingsException.ExecutionContext.MANAGER;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -21,28 +20,31 @@ import io.harness.delegate.beans.connector.ConnectorValidationParams;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsTaskParams;
 import io.harness.delegate.beans.connector.awsconnector.AwsValidationParams;
-import io.harness.errorhandling.NGErrorHelper;
+import io.harness.exception.exceptionmanager.ExceptionManager;
 import io.harness.security.encryption.EncryptedDataDetail;
 
-import com.amazonaws.AmazonClientException;
-import com.amazonaws.services.ec2.model.AmazonEC2Exception;
 import com.google.inject.Inject;
-import java.util.Collections;
 import java.util.List;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @OwnedBy(HarnessTeam.CI)
 public class AwsValidationHandler implements ConnectorValidationHandler {
   @Inject AwsNgConfigMapper ngConfigMapper;
   @Inject private AwsClient awsClient;
-  @Inject private NGErrorHelper ngErrorHelper;
+  @Inject ExceptionManager exceptionManager;
 
   @Override
   public ConnectorValidationResult validate(
       ConnectorValidationParams connectorValidationParams, String accountIdentifier) {
-    final AwsValidationParams awsValidationParams = (AwsValidationParams) connectorValidationParams;
-    final AwsConnectorDTO connectorDTO = awsValidationParams.getAwsConnectorDTO();
-    final List<EncryptedDataDetail> encryptedDataDetails = awsValidationParams.getEncryptedDataDetails();
-    return validateInternal(connectorDTO, encryptedDataDetails);
+    try {
+      final AwsValidationParams awsValidationParams = (AwsValidationParams) connectorValidationParams;
+      final AwsConnectorDTO connectorDTO = awsValidationParams.getAwsConnectorDTO();
+      final List<EncryptedDataDetail> encryptedDataDetails = awsValidationParams.getEncryptedDataDetails();
+      return validateInternal(connectorDTO, encryptedDataDetails);
+    } catch (Exception e) {
+      throw exceptionManager.processException(e, MANAGER, log);
+    }
   }
 
   public ConnectorValidationResult validate(AwsTaskParams awsTaskParams, List<EncryptedDataDetail> encryptionDetails) {
@@ -52,36 +54,15 @@ public class AwsValidationHandler implements ConnectorValidationHandler {
 
   private ConnectorValidationResult validateInternal(
       AwsConnectorDTO awsConnectorDTO, List<EncryptedDataDetail> encryptedDataDetails) {
-    ConnectorValidationResult connectorValidationResult;
-
-    try {
-      AwsConfig awsConfig = ngConfigMapper.mapAwsConfigWithDecryption(awsConnectorDTO, encryptedDataDetails);
-      connectorValidationResult = handleValidateTask(awsConfig);
-    } catch (Exception e) {
-      String errorMessage = e.getMessage();
-      connectorValidationResult = ConnectorValidationResult.builder()
-                                      .status(ConnectivityStatus.FAILURE)
-                                      .errors(Collections.singletonList(ngErrorHelper.createErrorDetail(errorMessage)))
-                                      .errorSummary(ngErrorHelper.getErrorSummary(errorMessage))
-                                      .testedAt(System.currentTimeMillis())
-                                      .build();
-    }
-    return connectorValidationResult;
+    AwsConfig awsConfig = ngConfigMapper.mapAwsConfigWithDecryption(awsConnectorDTO, encryptedDataDetails);
+    return handleValidateTask(awsConfig);
   }
 
   private ConnectorValidationResult handleValidateTask(AwsConfig awsConfig) {
-    ConnectorValidationResult result = null;
-    try {
-      awsClient.validateAwsAccountCredential(awsConfig);
-      result = ConnectorValidationResult.builder()
-                   .status(ConnectivityStatus.SUCCESS)
-                   .testedAt(System.currentTimeMillis())
-                   .build();
-    } catch (AmazonEC2Exception amazonEC2Exception) {
-      handleAmazonServiceException(amazonEC2Exception);
-    } catch (AmazonClientException amazonClientException) {
-      handleAmazonClientException(amazonClientException);
-    }
-    return result;
+    awsClient.validateAwsAccountCredential(awsConfig);
+    return ConnectorValidationResult.builder()
+        .status(ConnectivityStatus.SUCCESS)
+        .testedAt(System.currentTimeMillis())
+        .build();
   }
 }

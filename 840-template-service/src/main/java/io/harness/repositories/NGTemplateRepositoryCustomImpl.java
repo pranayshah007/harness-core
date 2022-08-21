@@ -35,6 +35,7 @@ import io.harness.template.events.TemplateCreateEvent;
 import io.harness.template.events.TemplateDeleteEvent;
 import io.harness.template.events.TemplateUpdateEvent;
 import io.harness.template.events.TemplateUpdateEventType;
+import io.harness.template.helpers.TemplateGitXHelper;
 import io.harness.template.utils.NGTemplateFeatureFlagHelperService;
 import io.harness.template.utils.TemplateUtils;
 
@@ -65,6 +66,7 @@ public class NGTemplateRepositoryCustomImpl implements NGTemplateRepositoryCusto
   private final GitAwareEntityHelper gitAwareEntityHelper;
   private final MongoTemplate mongoTemplate;
   private final NGTemplateFeatureFlagHelperService ngTemplateFeatureFlagHelperService;
+  private final TemplateGitXHelper templateGitXHelper;
   OutboxService outboxService;
 
   @Override
@@ -249,7 +251,8 @@ public class NGTemplateRepositoryCustomImpl implements NGTemplateRepositoryCusto
     }
     if (savedEntity.getStoreType() == StoreType.REMOTE) {
       // fetch yaml from git
-      String branchName = GitAwareContextHelper.getWorkingBranch(savedEntity.getRepoURL());
+      String branchName = templateGitXHelper.getWorkingBranch(
+          Scope.of(accountId, orgIdentifier, projectIdentifier), savedEntity.getRepoURL());
       savedEntity = (TemplateEntity) gitAwareEntityHelper.fetchEntityFromRemote(savedEntity,
           Scope.of(accountId, orgIdentifier, projectIdentifier),
           GitContextRequestParams.builder()
@@ -495,7 +498,7 @@ public class NGTemplateRepositoryCustomImpl implements NGTemplateRepositoryCusto
       return isGitSimplificationEnabled(templateToSave, gitEntityInfo);
     } else {
       return ngTemplateFeatureFlagHelperService.isEnabled(
-                 templateToSave.getAccountId(), FeatureName.FF_TEMPLATE_GITSYNC)
+                 templateToSave.getAccountId(), FeatureName.NG_TEMPLATE_GITX_ACCOUNT_ORG)
           && TemplateUtils.isRemoteEntity(gitEntityInfo);
     }
   }

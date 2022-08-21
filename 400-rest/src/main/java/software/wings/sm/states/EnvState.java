@@ -6,6 +6,7 @@
  */
 
 package software.wings.sm.states;
+
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.beans.ExecutionStatus.FAILED;
 import static io.harness.beans.ExecutionStatus.REJECTED;
@@ -92,6 +93,7 @@ import software.wings.sm.WorkflowStandardParams;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.github.reinert.jjschema.Attributes;
 import com.github.reinert.jjschema.SchemaIgnore;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
 import java.util.ArrayList;
@@ -102,6 +104,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.FieldNameConstants;
@@ -121,6 +125,8 @@ import org.mongodb.morphia.annotations.Transient;
 @TargetModule(HarnessModule._870_CG_ORCHESTRATION)
 public class EnvState extends State implements WorkflowState {
   public static final Integer ENV_STATE_TIMEOUT_MILLIS = 7 * 24 * 60 * 60 * 1000;
+
+  private static final Pattern secretNamePattern = Pattern.compile("\\$\\{secrets.getValue\\([^{}]+\\)}");
 
   // NOTE: This field should no longer be used. It contains incorrect/stale values.
   @Attributes(required = true, title = "Environment") @Setter @Deprecated private String envId;
@@ -221,13 +227,7 @@ public class EnvState extends State implements WorkflowState {
                 .filter(variable -> hasExpressionValue(variable.getValue()))
                 .map(Entry::getKey)
                 .collect(toList());
-        if (isNotEmpty(workflowVariablesWithExpressionValue)) {
-          workflowVariablesWithExpressionValue.forEach(variable -> {
-            String value = context.renderExpression(executionArgs.getWorkflowVariables().get(variable));
-            executionArgs.getWorkflowVariables().put(variable,
-                value == null || "null".equals(value) ? executionArgs.getWorkflowVariables().get(variable) : value);
-          });
-        }
+        renderWorkflowExpression(context, executionArgs, workflowVariablesWithExpressionValue);
       }
       WorkflowExecution execution = executionService.triggerOrchestrationExecution(
           appId, null, workflowId, context.getWorkflowExecutionId(), executionArgs, null);
@@ -258,6 +258,22 @@ public class EnvState extends State implements WorkflowState {
           .errorMessage(message)
           .stateExecutionData(envStateExecutionData)
           .build();
+    }
+  }
+
+  @VisibleForTesting
+  void renderWorkflowExpression(
+      ExecutionContext context, ExecutionArgs executionArgs, List<String> workflowVariablesWithExpressionValue) {
+    if (isNotEmpty(workflowVariablesWithExpressionValue)) {
+      workflowVariablesWithExpressionValue.forEach(variable -> {
+        String secretVariable = executionArgs.getWorkflowVariables().get(variable);
+        Matcher matcher = secretNamePattern.matcher(secretVariable);
+        if (!matcher.matches()) {
+          String value = context.renderExpression(executionArgs.getWorkflowVariables().get(variable));
+          executionArgs.getWorkflowVariables().put(variable,
+              value == null || "null".equals(value) ? executionArgs.getWorkflowVariables().get(variable) : value);
+        }
+      });
     }
   }
 

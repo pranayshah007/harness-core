@@ -27,4 +27,7 @@ import lombok.Value;
 public class DelegateScalingGroup {
   String groupName;
   List<DelegateStatus.DelegateInner> delegates;
+  boolean autoUpgrade;
+  long upgraderLastUpdated;
+  long delegateGroupExpirationTime;
 }

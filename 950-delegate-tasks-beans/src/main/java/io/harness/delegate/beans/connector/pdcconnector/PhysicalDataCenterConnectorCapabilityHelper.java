@@ -28,7 +28,8 @@ import lombok.experimental.UtilityClass;
 @UtilityClass
 public class PhysicalDataCenterConnectorCapabilityHelper extends ConnectorCapabilityBaseHelper {
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(
-      PhysicalDataCenterConnectorDTO physicalDataCenterConnectorDTO, ExpressionEvaluator maskingEvaluator) {
+      PhysicalDataCenterConnectorDTO physicalDataCenterConnectorDTO, ExpressionEvaluator evaluator,
+      String defaultPort) {
     List<String> hostNames =
         physicalDataCenterConnectorDTO.getHosts().stream().map(HostDTO::getHostName).collect(Collectors.toList());
     List<ExecutionCapability> capabilityList =
@@ -39,11 +40,17 @@ public class PhysicalDataCenterConnectorCapabilityHelper extends ConnectorCapabi
                       -> new InvalidArgumentsException(
                           format("Not found hostName for host capability check, host: %s", host), USER_SRE));
               return SocketConnectivityCapabilityGenerator.buildSocketConnectivityCapability(
-                  hostName, PhysicalDataCenterUtils.getPortOrSSHDefault(host));
+                  hostName, getPortFromHost(host, defaultPort));
             })
             .collect(Collectors.toList());
 
     populateDelegateSelectorCapability(capabilityList, physicalDataCenterConnectorDTO.getDelegateSelectors());
     return capabilityList;
+  }
+
+  private String getPortFromHost(String host, String defaultPort) {
+    return PhysicalDataCenterUtils.extractPortFromHost(host).isPresent()
+        ? String.valueOf(PhysicalDataCenterUtils.extractPortFromHost(host).get())
+        : defaultPort;
   }
 }

@@ -1,0 +1,15 @@
+# Execute as root and pass environment variables
+                              # su -p -
+
+                              # Execute as root via user credentials (with root privileges)
+                              # sudo -E su -p -
+
+                              # Env variables are defined with the following values:
+                              # HARNESS_RUNTIME_PATH: deployment_type/service_name/env_name/runtime
+                              # HARNESS_BACKUP_PATH: deployment_type/service_name/env_name/backup
+                              # HARNESS_STAGING_PATH: deployment_type/service_name/env_name/staging
+
+                              mkdir -p $HARNESS_RUNTIME_PATH
+                              mkdir -p $HARNESS_BACKUP_PATH
+                              mkdir -p $HARNESS_STAGING_PATH
+                              mkdir -p $HARNESS_RUNTIME_PATH/tomcat/bin

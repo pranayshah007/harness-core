@@ -9,6 +9,7 @@ package io.harness.pms.template;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.FilterCreatorException;
 import io.harness.exception.bean.FilterCreatorErrorResponse;
 import io.harness.pms.contracts.service.EntityReferenceErrorResponse;
@@ -36,12 +37,14 @@ public class EntityReferenceGrpcService extends EntityReferenceServiceImplBase {
     } catch (FilterCreatorException ex) {
       FilterCreatorErrorResponse errorResponse = (FilterCreatorErrorResponse) ex.getMetadata();
       EntityReferenceErrorResponse.Builder errorResponseBuilder = EntityReferenceErrorResponse.newBuilder();
-      errorResponse.getErrorMetadataList().forEach(errorMetadata
-          -> errorResponseBuilder.addErrorMetadata(
-              ErrorMetadata.newBuilder()
-                  .setErrorMessage(errorMetadata.getErrorMessage())
-                  .setWingsExceptionErrorCode(String.valueOf(errorMetadata.getErrorCode()))
-                  .build()));
+      if (errorResponse != null && EmptyPredicate.isNotEmpty(errorResponse.getErrorMetadataList())) {
+        errorResponse.getErrorMetadataList().forEach(errorMetadata
+            -> errorResponseBuilder.addErrorMetadata(
+                ErrorMetadata.newBuilder()
+                    .setErrorMessage(errorMetadata.getErrorMessage())
+                    .setWingsExceptionErrorCode(String.valueOf(errorMetadata.getErrorCode()))
+                    .build()));
+      }
       entityReferenceResponseWrapper =
           EntityReferenceResponseWrapper.newBuilder().setErrorResponse(errorResponseBuilder.build()).build();
     }

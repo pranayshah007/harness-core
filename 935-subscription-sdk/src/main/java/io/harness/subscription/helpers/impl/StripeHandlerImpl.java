@@ -195,4 +195,14 @@ public class StripeHandlerImpl {
       throw new InvalidRequestException("Unable to retrieve payment methods", e);
     }
   }
+
+  public Invoice finalizeInvoice(String invoiceId) {
+    try {
+      Invoice invoice = Invoice.retrieve(invoiceId);
+
+      return invoice.finalizeInvoice();
+    } catch (StripeException e) {
+      throw new InvalidRequestException("Unable to finalize invoice", e);
+    }
+  }
 }

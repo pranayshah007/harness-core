@@ -14,11 +14,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.beans.environment.ServiceDefinitionInfo;
 import io.harness.beans.environment.pod.container.ContainerDefinitionInfo;
-import io.harness.beans.stages.IntegrationStageConfig;
 import io.harness.beans.yaml.extended.infrastrucutre.OSType;
 import io.harness.category.element.UnitTests;
 import io.harness.ci.executionplan.CIExecutionTestBase;
 import io.harness.ci.utils.PortFinder;
+import io.harness.cimanager.stages.IntegrationStageConfig;
 import io.harness.plancreator.stages.stage.StageElementConfig;
 import io.harness.rule.Owner;
 

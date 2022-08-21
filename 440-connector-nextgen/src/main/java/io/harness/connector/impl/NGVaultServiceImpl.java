@@ -9,6 +9,7 @@ package io.harness.connector.impl;
 
 import static io.harness.NGConstants.HARNESS_SECRET_MANAGER_IDENTIFIER;
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.beans.FeatureName.DO_NOT_RENEW_APPROLE_TOKEN;
 import static io.harness.beans.FeatureName.ENABLE_CERT_VALIDATION;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -75,6 +76,7 @@ import io.harness.ng.core.dto.secrets.SecretDTOV2;
 import io.harness.ng.core.dto.secrets.SecretTextSpecDTO;
 import io.harness.ng.core.encryptors.NGManagerEncryptorHelper;
 import io.harness.ng.core.entities.NGEncryptedData;
+import io.harness.remote.client.RestClientUtils;
 import io.harness.repositories.ConnectorRepository;
 import io.harness.secretmanagerclient.NGSecretManagerMetadata;
 import io.harness.secretmanagerclient.SecretType;
@@ -200,6 +202,12 @@ public class NGVaultServiceImpl implements NGVaultService {
 
   @Override
   public void renewAppRoleClientToken(VaultConnector vaultConnector) {
+    if (RestClientUtils.getResponse(accountClient.isFeatureFlagEnabled(
+            DO_NOT_RENEW_APPROLE_TOKEN.name(), vaultConnector.getAccountIdentifier()))) {
+      vaultConnector.setRenewAppRoleToken(false);
+      connectorRepository.save(vaultConnector, ChangeType.NONE);
+      return;
+    }
     SecretManagerConfig secretManagerConfig = getSecretManagerConfig(vaultConnector.getAccountIdentifier(),
         vaultConnector.getOrgIdentifier(), vaultConnector.getProjectIdentifier(), vaultConnector.getIdentifier());
     BaseVaultConfig baseVaultConfig = (BaseVaultConfig) secretManagerConfig;
@@ -317,6 +325,7 @@ public class NGVaultServiceImpl implements NGVaultService {
                                   .vaultUrl(vaultConnectorDTO.getVaultUrl())
                                   .appRoleId(vaultConnectorDTO.getAppRoleId())
                                   .secretId(String.valueOf(secretRefData.getDecryptedValue()))
+                                  .namespace(vaultConnectorDTO.getNamespace())
                                   .ngMetadata(NGSecretManagerMetadata.builder()
                                                   .accountIdentifier(accountIdentifier)
                                                   .orgIdentifier(orgIdentifier)

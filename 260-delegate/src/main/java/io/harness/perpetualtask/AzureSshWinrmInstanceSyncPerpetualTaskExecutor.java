@@ -35,11 +35,9 @@ import io.harness.serializer.KryoSerializer;
 
 import software.wings.delegatetasks.azure.AzureAsyncTaskHelper;
 
+import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
 import java.time.Instant;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -49,10 +47,7 @@ import lombok.extern.slf4j.Slf4j;
 @TargetModule(HarnessModule._930_DELEGATE_TASKS)
 @OwnedBy(CDP)
 public class AzureSshWinrmInstanceSyncPerpetualTaskExecutor implements PerpetualTaskExecutor {
-  private static final String SUCCESS_RESPONSE_MSG = "success";
-
-  private static final Set<String> VALID_SERVICE_TYPES =
-      Collections.unmodifiableSet(new HashSet(Arrays.asList(ServiceSpecType.SSH, ServiceSpecType.WINRM)));
+  private static final Set<String> VALID_SERVICE_TYPES = ImmutableSet.of(ServiceSpecType.SSH, ServiceSpecType.WINRM);
 
   @Inject private DelegateAgentManagerClient delegateAgentManagerClient;
   @Inject private KryoSerializer kryoSerializer;

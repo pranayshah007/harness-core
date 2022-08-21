@@ -1249,6 +1249,9 @@
                 "type": "string"
               }
             },
+            "executeOnDelegate": {
+              "type": "boolean"
+            },
             "type": {
               "type": "string",
               "enum": [
@@ -1563,6 +1566,9 @@
               "items": {
                 "type": "string"
               }
+            },
+            "executeOnDelegate": {
+              "type": "boolean"
             },
             "type": {
               "type": "string",
@@ -3728,6 +3734,9 @@
                 "type": "string"
               }
             },
+            "executeOnDelegate": {
+              "type": "boolean"
+            },
             "type": {
               "type": "string",
               "enum": [
@@ -5177,6 +5186,9 @@
               "type": "string"
             },
             "readOnly": {
+              "type": "boolean"
+            },
+            "renewAppRoleToken": {
               "type": "boolean"
             },
             "renewalIntervalMinutes": {

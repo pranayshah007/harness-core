@@ -7,6 +7,7 @@
 
 package io.harness.delegate.task.citasks.vm;
 
+import static io.harness.rule.OwnerRule.RAGHAV_GUPTA;
 import static io.harness.rule.OwnerRule.SHUBHAM;
 
 import static junit.framework.TestCase.assertEquals;
@@ -21,6 +22,7 @@ import io.harness.delegate.beans.ci.vm.CIVmExecuteStepTaskParams;
 import io.harness.delegate.beans.ci.vm.VmTaskExecutionResponse;
 import io.harness.delegate.beans.ci.vm.runner.ExecuteStepRequest;
 import io.harness.delegate.beans.ci.vm.runner.ExecuteStepRequest.ExecuteStepRequestBuilder;
+import io.harness.delegate.beans.ci.vm.steps.VmBackgroundStep;
 import io.harness.delegate.beans.ci.vm.steps.VmRunStep;
 import io.harness.delegate.task.citasks.vm.helper.HttpHelper;
 import io.harness.delegate.task.citasks.vm.helper.StepExecutionHelper;
@@ -29,6 +31,9 @@ import io.harness.rule.Owner;
 import io.harness.vm.VmExecuteStepUtils;
 
 import java.io.IOException;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Before;
 import org.junit.Test;
@@ -87,5 +92,37 @@ public class CIVMExecuteStepTaskHandlerTest extends CategoryTest {
 
     VmTaskExecutionResponse response = CIVMExecuteStepTaskHandler.executeTaskInternal(params, "");
     assertEquals(CommandExecutionStatus.FAILURE, response.getCommandExecutionStatus());
+  }
+
+  @Test()
+  @Owner(developers = RAGHAV_GUPTA)
+  @Category(UnitTests.class)
+  public void executeBackgroundTaskInternal() throws IOException {
+    Map<String, String> portBinding = new HashMap();
+    portBinding.put("6379", "6379");
+
+    VmBackgroundStep vmBackgroundStep = VmBackgroundStep.builder()
+                                            .identifier("identifier")
+                                            .name("name")
+                                            .command(null)
+                                            .entrypoint(Collections.singletonList("ls"))
+                                            .pullPolicy("always")
+                                            .runAsUser("0")
+                                            .privileged(true)
+                                            .portBindings(portBinding)
+                                            .build();
+
+    CIVmExecuteStepTaskParams params = CIVmExecuteStepTaskParams.builder()
+                                           .stageRuntimeId("stage")
+                                           .stepRuntimeId("step")
+                                           .stepInfo(vmBackgroundStep)
+                                           .build();
+
+    when(vmExecuteStepUtils.convertStep(any())).thenCallRealMethod();
+
+    when(stepExecutionHelper.callRunnerForStepExecution(any()))
+        .thenReturn(VmTaskExecutionResponse.builder().commandExecutionStatus(CommandExecutionStatus.SUCCESS).build());
+    VmTaskExecutionResponse response = CIVMExecuteStepTaskHandler.executeTaskInternal(params, "");
+    assertEquals(CommandExecutionStatus.SUCCESS, response.getCommandExecutionStatus());
   }
 }

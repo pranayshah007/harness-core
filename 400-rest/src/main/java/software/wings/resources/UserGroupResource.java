@@ -31,6 +31,7 @@ import software.wings.beans.sso.LdapLinkGroupRequest;
 import software.wings.beans.sso.SSOType;
 import software.wings.beans.sso.SamlLinkGroupRequest;
 import software.wings.security.PermissionAttribute.ResourceType;
+import software.wings.security.annotations.ApiKeyAuthorized;
 import software.wings.security.annotations.AuthRule;
 import software.wings.security.annotations.Scope;
 import software.wings.service.intfc.UserGroupService;
@@ -74,6 +75,7 @@ import org.hibernate.validator.constraints.NotEmpty;
 @Produces(MediaType.APPLICATION_JSON)
 @Scope(ResourceType.USER)
 @AuthRule(permissionType = USER_PERMISSION_MANAGEMENT)
+@ApiKeyAuthorized(permissionType = USER_PERMISSION_MANAGEMENT)
 @Slf4j
 public class UserGroupResource {
   private UserGroupService userGroupService;

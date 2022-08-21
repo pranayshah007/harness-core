@@ -29,10 +29,6 @@ public class SshWinRmAwsInfrastructureOutcome extends InfrastructureDetailsAbstr
   private String connectorRef;
   private String credentialsRef;
   private String region;
-  private String loadBalancer;
-  private String hostNameConvention;
-  private Boolean useAutoScalingGroup;
-  private String autoScalingGroupName;
   private AwsInstanceFilter awsInstanceFilter;
 
   @VariableExpression(skipVariableExpression = true) private EnvironmentOutcome environment;

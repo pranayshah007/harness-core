@@ -129,6 +129,9 @@ public class TimeSeriesAnalysisServiceImpl implements TimeSeriesAnalysisService 
                                   .log("Time series analysis")
                                   .verificationTaskId(analysisInput.getVerificationTaskId())
                                   .build();
+    boolean isFailFast =
+        deploymentTimeSeriesAnalysisService.isAnalysisFailFastForLatestTimeRange(analysisInput.getVerificationTaskId());
+    progressLog.shouldTerminate(isFailFast);
     verificationJobInstanceService.logProgress(progressLog);
   }
 
@@ -393,6 +396,7 @@ public class TimeSeriesAnalysisServiceImpl implements TimeSeriesAnalysisService 
             .transactionMetricSummaries(analysis.getTransactionMetricSummaries())
             .risk(analysis.getRisk())
             .score(analysis.getScore())
+            .failFast(analysis.isFailFast())
             .build();
     deploymentTimeSeriesAnalysisService.save(deploymentTimeSeriesAnalysis);
   }

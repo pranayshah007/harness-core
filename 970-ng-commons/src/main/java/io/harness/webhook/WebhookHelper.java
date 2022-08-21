@@ -66,7 +66,7 @@ public class WebhookHelper {
     }
 
     // This will change to common endpoint that will be used by all
-    urlBuilder.append("webhook/custom?accountIdentifier=")
+    urlBuilder.append("webhook/custom/v2?accountIdentifier=")
         .append(accountId)
         .append("&orgIdentifier=")
         .append(orgIdentifier)

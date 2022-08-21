@@ -1742,6 +1742,13 @@
 55418:io.harness.delegate.task.ssh.AwsWinrmInfraDelegateConfig
 55501:io.harness.delegate.beans.instancesync.info.PdcServerInstanceInfo
 55502:io.harness.delegate.beans.instancesync.info.AzureSshWinrmServerInstanceInfo
+55503:io.harness.delegate.beans.instancesync.info.AwsSshWinrmServerInstanceInfo
+55504:io.harness.delegate.beans.ci.vm.steps.VmBackgroundStep
+56335:io.harness.delegate.task.gitpolling.request.GitPollingTaskParameters
+56336:io.harness.delegate.task.gitpolling.github.GitHubPollingDelegateRequest
+56337:io.harness.delegate.task.gitpolling.GitPollingSourceType
+56338:io.harness.delegate.task.gitpolling.GitPollingTaskType
+56339:io.harness.delegate.beans.polling.GitPollingDelegateResponse
 56403:io.harness.delegate.beans.storeconfig.CustomRemoteStoreDelegateConfig
 70001:io.harness.accesscontrol.commons.exceptions.AccessDeniedErrorDTO
 70002:io.harness.accesscontrol.acl.api.PermissionCheckDTO
@@ -1758,6 +1765,8 @@
 71123:java.time.ZonedDateTime
 72100:software.wings.beans.GcpSecretsManagerConfig
 72101:io.harness.security.encryption.AdditionalMetadata
+73001:io.harness.gitpolling.github.GitPollingWebhookData
+73002:javax.ws.rs.core.MultivaluedHashMap
 73982:io.harness.delegate.beans.DelegateScope
 73983:io.harness.delegate.beans.DelegateSelectionLogParams
 73984:io.harness.delegate.beans.DelegateProfile
@@ -2260,3 +2269,4 @@
 980032:io.harness.exception.ngexception.AzureAppServiceTaskException
 9800001:io.harness.beans.RecasterMap
 9800002:io.harness.licensing.beans.modules.ChaosModuleLicenseDTO
+9800003:io.harness.delegate.task.ssh.artifact.JenkinsArtifactDelegateConfig

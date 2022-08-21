@@ -31,6 +31,8 @@ import io.harness.subscription.dto.PriceCollectionDTO;
 import io.harness.subscription.dto.StripeBillingDTO;
 import io.harness.subscription.dto.SubscriptionDTO;
 import io.harness.subscription.dto.SubscriptionDetailDTO;
+import io.harness.subscription.params.RecommendationParams;
+import io.harness.subscription.params.UsageKey;
 import io.harness.subscription.services.SubscriptionService;
 
 import com.google.inject.Inject;
@@ -44,6 +46,7 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.util.EnumMap;
 import java.util.List;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
@@ -86,6 +89,26 @@ public class SubscriptionResource {
   private static final String INVOICE_ID = "invoiceId";
   private static final String CUSTOMER_ID = "customerId";
   @Inject private SubscriptionService subscriptionService;
+
+  @GET
+  @Path("/recommendation")
+  @ApiOperation(value = "Retrieves subscription recommendation", nickname = "retrieveRecommendation")
+  @Operation(operationId = "retrieveRecommendation", summary = "Retrieves subscription recommendation",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "Returns product prices")
+      })
+  @NGAccessControlCheck(resourceType = ResourceTypes.LICENSE, permission = VIEW_LICENSE_PERMISSION)
+  public ResponseDTO<EnumMap<UsageKey, Long>>
+  retrieveRecommendedUsage(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
+                               NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
+      @io.swagger.v3.oas.annotations.parameters.RequestBody(
+          required = true, description = "This is the details of the Subscription Request.") @NotNull
+      @Valid RecommendationParams params) {
+    return ResponseDTO.newResponse(
+        subscriptionService.getRecommendation(accountIdentifier, params.getModuleType(), params.getUsage()));
+  }
 
   @GET
   @Path("/prices")

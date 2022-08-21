@@ -840,6 +840,7 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
         .extracting(resp -> ((ValidateTemplateInputsResponseDTO) resp).getErrorNodeSummary())
         .isNotNull()
         .hasFieldOrPropertyWithValue("childrenErrorNodes", new ArrayList<>())
+        .hasFieldOrProperty("nodeInfo")
         .extracting(ErrorNodeSummary::getTemplateResponse)
         .isNotNull()
         .hasFieldOrPropertyWithValue("identifier", "template2")

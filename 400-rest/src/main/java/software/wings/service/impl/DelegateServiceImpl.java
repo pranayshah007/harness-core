@@ -841,16 +841,40 @@ public class DelegateServiceImpl implements DelegateService {
             .hasAnyOf(Arrays.asList(DelegateInstanceStatus.ENABLED, DelegateInstanceStatus.WAITING_FOR_APPROVAL))
             .asList();
 
+    List<DelegateGroup> delegateGroupList = persistence.createQuery(DelegateGroup.class)
+                                                .filter(DelegateGroupKeys.accountId, accountId)
+                                                .filter(DelegateGroupKeys.ng, false)
+                                                .project(DelegateGroupKeys.upgraderLastUpdated, true)
+                                                .project(DelegateGroupKeys.name, true)
+                                                .asList();
+
+    Map<String, Long> delegateGroupMap = delegateGroupList.stream().collect(
+        Collectors.toMap(DelegateGroup::getName, DelegateGroup::getUpgraderLastUpdated));
+
     return activeDelegates.stream()
         .collect(groupingBy(Delegate::getDelegateGroupName))
         .entrySet()
         .stream()
-        .map(entry
-            -> DelegateScalingGroup.builder()
-                   .groupName(entry.getKey())
-                   .delegates(buildInnerDelegates(accountId, entry.getValue(), activeDelegateConnections, true))
-                   .build())
+        .map(entry -> {
+          return DelegateScalingGroup.builder()
+              .groupName(entry.getKey())
+              .upgraderLastUpdated(delegateGroupMap.getOrDefault(entry.getKey(), 0L))
+              .autoUpgrade(setAutoUpgrade(delegateGroupMap.getOrDefault(entry.getKey(), 0L)))
+              .delegateGroupExpirationTime(setDelegateScalingGroupExpiration(entry.getValue()))
+              .delegates(buildInnerDelegates(accountId, entry.getValue(), activeDelegateConnections, true))
+              .build();
+        })
         .collect(toList());
+  }
+
+  private long setDelegateScalingGroupExpiration(List<Delegate> delegates) {
+    return isNotEmpty(delegates)
+        ? delegates.stream().max(Comparator.comparing(Delegate::getExpirationTime)).get().getExpirationTime()
+        : 0;
+  }
+
+  private boolean setAutoUpgrade(Long upgraderLastUpdated) {
+    return TimeUnit.MILLISECONDS.toMinutes(System.currentTimeMillis() - upgraderLastUpdated) <= 1;
   }
 
   private List<Delegate> getDelegatesWithoutScalingGroup(String accountId) {
@@ -912,6 +936,7 @@ public class DelegateServiceImpl implements DelegateService {
               .tokenActive(delegate.getDelegateTokenName() == null
                   || (delegateTokenStatusMap.containsKey(delegate.getDelegateTokenName())
                       && delegateTokenStatusMap.get(delegate.getDelegateTokenName())))
+              .delegateExpirationTime(delegate.getExpirationTime())
               .build();
         })
         .collect(toList());
@@ -985,6 +1010,8 @@ public class DelegateServiceImpl implements DelegateService {
       setUnset(updateOperations, DelegateKeys.delegateTokenName, delegate.getDelegateTokenName());
     }
     setUnset(updateOperations, DelegateKeys.heartbeatAsObject, delegate.isHeartbeatAsObject());
+    setUnset(updateOperations, DelegateKeys.mtls, delegate.isMtls());
+
     return updateOperations;
   }
 
@@ -2551,7 +2578,7 @@ public class DelegateServiceImpl implements DelegateService {
   }
 
   @Override
-  public DelegateRegisterResponse register(final DelegateParams delegateParams) {
+  public DelegateRegisterResponse register(final DelegateParams delegateParams, final boolean isConnectedUsingMtls) {
     if (licenseService.isAccountDeleted(delegateParams.getAccountId())) {
       delegateMetricsService.recordDelegateMetrics(
           Delegate.builder().accountId(delegateParams.getAccountId()).version(delegateParams.getVersion()).build(),
@@ -2635,12 +2662,12 @@ public class DelegateServiceImpl implements DelegateService {
           upsertDelegateGroup(delegateParams.getDelegateName(), delegateParams.getAccountId(), delegateSetupDetails);
       delegateGroupId = delegateGroup.getUuid();
       delegateGroupName = delegateGroup.getName();
+    }
 
+    if (isNotBlank(delegateGroupId) && isNotEmpty(delegateParams.getTags())) {
       persistence.update(persistence.createQuery(DelegateGroup.class).filter(DelegateGroupKeys.uuid, delegateGroupId),
           persistence.createUpdateOperations(DelegateGroup.class)
-              .set(DelegateGroupKeys.tags,
-                  isEmpty(delegateParams.getTags()) ? Collections.emptySet()
-                                                    : new HashSet<>(delegateParams.getTags())));
+              .set(DelegateGroupKeys.tags, new HashSet<>(delegateParams.getTags())));
     }
 
     final DelegateEntityOwner owner = DelegateEntityOwnerHelper.buildOwner(orgIdentifier, projectIdentifier);
@@ -2681,6 +2708,7 @@ public class DelegateServiceImpl implements DelegateService {
                                   .delegateTokenName(delegateTokenName.orElse(null))
                                   .heartbeatAsObject(delegateParams.isHeartbeatAsObject())
                                   .immutable(delegateParams.isImmutable())
+                                  .mtls(isConnectedUsingMtls)
                                   .build();
 
     if (ECS.equals(delegateParams.getDelegateType())) {
@@ -2780,11 +2808,6 @@ public class DelegateServiceImpl implements DelegateService {
       } else {
         registeredDelegate = update(delegate);
       }
-
-      // this condition is satisfied only while registering for the first time after delegate starts/restarts
-      if (delegateSetupDetails != null) {
-        updateDelegateTagsAfterReRegistering(registeredDelegate, delegate.getTags());
-      }
     }
 
     // Not needed to be done when polling is enabled for delegate
@@ -2799,18 +2822,6 @@ public class DelegateServiceImpl implements DelegateService {
       }
     }
     return registeredDelegate;
-  }
-
-  private void updateDelegateTagsAfterReRegistering(Delegate registeredDelegate, List<String> delegateTags) {
-    Query<Delegate> delegateQuery = persistence.createQuery(Delegate.class)
-                                        .filter(DelegateKeys.accountId, registeredDelegate.getAccountId())
-                                        .filter(DelegateKeys.uuid, registeredDelegate.getUuid());
-
-    UpdateOperations<Delegate> updateOperations = persistence.createUpdateOperations(Delegate.class);
-    setUnset(updateOperations, DelegateKeys.tags, delegateTags);
-
-    persistence.update(delegateQuery, updateOperations);
-    registeredDelegate.setTags(delegateTags);
   }
 
   private void broadcastDelegateHeartBeatResponse(Delegate delegate, Delegate registeredDelegate) {
@@ -3702,6 +3713,7 @@ public class DelegateServiceImpl implements DelegateService {
     delegate.setExcludeScopes(existingInactiveDelegate.getExcludeScopes());
     delegate.setIncludeScopes(existingInactiveDelegate.getIncludeScopes());
     delegate.setDelegateProfileId(existingInactiveDelegate.getDelegateProfileId());
+    delegate.setTags(existingInactiveDelegate.getTags());
     delegate.setKeywords(existingInactiveDelegate.getKeywords());
     delegate.setDescription(existingInactiveDelegate.getDescription());
   }

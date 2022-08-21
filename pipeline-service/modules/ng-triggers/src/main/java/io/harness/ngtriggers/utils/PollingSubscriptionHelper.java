@@ -10,6 +10,7 @@ package io.harness.ngtriggers.utils;
 import static io.harness.exception.WingsException.USER_SRE;
 import static io.harness.ngtriggers.beans.source.NGTriggerType.ARTIFACT;
 import static io.harness.ngtriggers.beans.source.NGTriggerType.MANIFEST;
+import static io.harness.ngtriggers.beans.source.NGTriggerType.WEBHOOK;
 
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.TriggerException;
@@ -40,7 +41,7 @@ public class PollingSubscriptionHelper {
 
   public PollingItem generatePollingItem(NGTriggerEntity ngTriggerEntity) {
     NGTriggerType triggerType = ngTriggerEntity.getType();
-    if (triggerType != ARTIFACT && triggerType != MANIFEST) {
+    if (triggerType != ARTIFACT && triggerType != MANIFEST && triggerType != WEBHOOK) {
       throw new InvalidRequestException("");
     }
 
@@ -57,9 +58,11 @@ public class PollingSubscriptionHelper {
       if (triggerType == ARTIFACT) {
         buildTriggerOpsData =
             buildTriggerHelper.generateBuildTriggerOpsDataForArtifact(triggerDetails, pipelineYml.get());
-      } else {
+      } else if (triggerType == MANIFEST) {
         buildTriggerOpsData =
             buildTriggerHelper.generateBuildTriggerOpsDataForManifest(triggerDetails, pipelineYml.get());
+      } else if (triggerType == WEBHOOK) {
+        buildTriggerOpsData = buildTriggerHelper.generateBuildTriggerOpsDataForGitPolling(triggerDetails);
       }
 
       pollingItemGenerator = generatorFactory.retrievePollingItemGenerator(buildTriggerOpsData);

@@ -161,6 +161,7 @@ public class ServiceNowApprovalHelperServiceImplTest extends CategoryTest {
     ServiceNowApprovalInstance instance =
         ServiceNowApprovalInstance.builder()
             .ticketNumber("ticketNumber")
+            .ticketType("PROBLEM")
             .delegateSelectors(ParameterField.createValueField(Collections.singletonList(taskSelectorYaml)))
             .connectorRef("connectorRed")
             .approvalCriteria(

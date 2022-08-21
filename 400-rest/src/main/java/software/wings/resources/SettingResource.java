@@ -16,6 +16,7 @@ import static io.harness.exception.WingsException.USER;
 
 import static software.wings.beans.CGConstants.GLOBAL_APP_ID;
 import static software.wings.beans.SettingAttribute.Builder.aSettingAttribute;
+import static software.wings.security.PermissionAttribute.PermissionType.LOGGED_IN;
 import static software.wings.service.impl.security.SecretManagerImpl.ENCRYPTED_FIELD_MASK;
 import static software.wings.settings.SettingVariableTypes.GCP;
 
@@ -54,6 +55,8 @@ import software.wings.helpers.ext.jenkins.BuildDetails;
 import software.wings.helpers.ext.jenkins.JobDetails;
 import software.wings.security.PermissionAttribute.ResourceType;
 import software.wings.security.UsageRestrictions;
+import software.wings.security.annotations.ApiKeyAuthorized;
+import software.wings.security.annotations.AuthRule;
 import software.wings.security.annotations.Scope;
 import software.wings.service.impl.SettingServiceHelper;
 import software.wings.service.impl.security.auth.SettingAuthHandler;
@@ -109,6 +112,8 @@ import org.hibernate.validator.constraints.NotEmpty;
 @Consumes(APPLICATION_JSON)
 @Produces(APPLICATION_JSON)
 @Scope(ResourceType.SETTING)
+@AuthRule(permissionType = LOGGED_IN)
+@ApiKeyAuthorized(permissionType = LOGGED_IN)
 @OwnedBy(CDC)
 @TargetModule(HarnessModule._360_CG_MANAGER)
 public class SettingResource {

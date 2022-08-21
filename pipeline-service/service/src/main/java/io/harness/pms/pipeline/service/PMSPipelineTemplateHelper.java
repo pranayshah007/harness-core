@@ -78,19 +78,20 @@ public class PMSPipelineTemplateHelper {
         if (gitEntityInfo != null) {
           return NGRestUtils.getResponse(templateResourceClient.applyTemplatesOnGivenYamlV2(accountId, orgId, projectId,
               gitEntityInfo.getBranch(), gitEntityInfo.getYamlGitConfigId(), true,
+              gitEntityInfo.getParentEntityConnectorRef(), gitEntityInfo.getParentEntityRepoName(),
               TemplateApplyRequestDTO.builder()
                   .originalEntityYaml(yaml)
                   .checkForAccess(checkForTemplateAccess)
                   .getMergedYamlWithTemplateField(getMergedTemplateWithTemplateReferences)
                   .build()));
         }
-        return NGRestUtils.getResponse(
-            templateResourceClient.applyTemplatesOnGivenYamlV2(accountId, orgId, projectId, null, null, null,
-                TemplateApplyRequestDTO.builder()
-                    .originalEntityYaml(yaml)
-                    .checkForAccess(checkForTemplateAccess)
-                    .getMergedYamlWithTemplateField(getMergedTemplateWithTemplateReferences)
-                    .build()));
+        return NGRestUtils.getResponse(templateResourceClient.applyTemplatesOnGivenYamlV2(accountId, orgId, projectId,
+            null, null, null, null, null,
+            TemplateApplyRequestDTO.builder()
+                .originalEntityYaml(yaml)
+                .checkForAccess(checkForTemplateAccess)
+                .getMergedYamlWithTemplateField(getMergedTemplateWithTemplateReferences)
+                .build()));
       } catch (InvalidRequestException e) {
         if (e.getMetadata() instanceof TemplateInputsErrorMetadataDTO) {
           throw new NGTemplateResolveException(

@@ -9,20 +9,26 @@ package io.harness.cdng.ssh.utils;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
+import static java.lang.String.format;
 import static java.util.Collections.emptyList;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.infra.beans.InfrastructureOutcome;
+import io.harness.cdng.service.steps.ServiceStepOutcome;
 import io.harness.cdng.ssh.CommandStepParameters;
 import io.harness.common.ParameterFieldHelper;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.delegate.task.utils.PhysicalDataCenterUtils;
+import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
+import io.harness.ng.core.k8s.ServiceSpecType;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.shell.ScriptType;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import javax.annotation.Nonnull;
 import lombok.experimental.UtilityClass;
@@ -32,26 +38,53 @@ import lombok.extern.slf4j.Slf4j;
 @UtilityClass
 @Slf4j
 public class CommandStepUtils {
-  public static Map<String, String> getEnvironmentVariables(Map<String, Object> inputVariables) {
+  public static final String HARNESS_BACKUP_PATH = "HARNESS_BACKUP_PATH";
+  public static final String HARNESS_RUNTIME_PATH = "HARNESS_RUNTIME_PATH";
+  public static final String HARNESS_STAGING_PATH = "HARNESS_STAGING_PATH";
+  public static final String WINDOWS_RUNTIME_PATH = "WINDOWS_RUNTIME_PATH";
+
+  public static Map<String, String> getEnvironmentVariables(
+      Map<String, Object> inputVariables, Map<String, String> builtInEnvVariables) {
     if (EmptyPredicate.isEmpty(inputVariables)) {
-      return new HashMap<>();
+      return builtInEnvVariables;
     }
     Map<String, String> res = new LinkedHashMap<>();
+    res.putAll(builtInEnvVariables);
     inputVariables.forEach((key, value) -> {
       if (value instanceof ParameterField) {
         ParameterField<?> parameterFieldValue = (ParameterField<?>) value;
         if (parameterFieldValue.getValue() == null) {
-          throw new InvalidRequestException(String.format("Env. variable [%s] value found to be null", key));
+          throw new InvalidRequestException(format("Env. variable [%s] value found to be null", key));
         }
         res.put(key, parameterFieldValue.getValue().toString());
       } else if (value instanceof String) {
         res.put(key, (String) value);
       } else {
-        log.error(String.format(
-            "Value other than String or ParameterField found for env. variable [%s]. value: [%s]", key, value));
+        log.error(
+            format("Value other than String or ParameterField found for env. variable [%s]. value: [%s]", key, value));
       }
     });
     return res;
+  }
+
+  public static Map<String, String> getHarnessBuiltInEnvVariables(
+      InfrastructureOutcome infrastructure, ServiceStepOutcome serviceOutcome) {
+    Map<String, String> harnessEnvVariables = new LinkedHashMap<>();
+    if (ServiceSpecType.SSH.equals(serviceOutcome.getType())) {
+      String basePath = format("$HOME/%s/%s/%s", serviceOutcome.getType().toLowerCase(Locale.ENGLISH),
+          serviceOutcome.getName(), infrastructure.getEnvironment().getName());
+
+      harnessEnvVariables.putIfAbsent(HARNESS_BACKUP_PATH, basePath + "/backup");
+      harnessEnvVariables.putIfAbsent(HARNESS_RUNTIME_PATH, basePath + "/runtime");
+      harnessEnvVariables.putIfAbsent(HARNESS_STAGING_PATH, basePath + "/staging");
+    } else {
+      String basePath = "%USERPROFILE%"
+          + format("\\%s\\%s\\%s", serviceOutcome.getType().toLowerCase(Locale.ENGLISH), serviceOutcome.getName(),
+              infrastructure.getEnvironment().getName());
+
+      harnessEnvVariables.putIfAbsent(WINDOWS_RUNTIME_PATH, basePath + "\\runtime");
+    }
+    return harnessEnvVariables;
   }
 
   public static String getWorkingDirectory(
@@ -81,20 +114,22 @@ public class CommandStepUtils {
       if (val instanceof ParameterField) {
         ParameterField<?> parameterFieldValue = (ParameterField<?>) val;
         if (parameterFieldValue.getValue() == null) {
-          throw new InvalidRequestException(String.format("Output variable [%s] value found to be null", key));
+          throw new InvalidRequestException(format("Output variable [%s] value found to be null", key));
         }
         outputVars.add(((ParameterField<?>) val).getValue().toString());
       } else if (val instanceof String) {
         outputVars.add((String) val);
       } else {
-        log.error(String.format(
-            "Value other than String or ParameterField found for output variable [%s]. value: [%s]", key, val));
+        log.error(
+            format("Value other than String or ParameterField found for output variable [%s]. value: [%s]", key, val));
       }
     });
     return outputVars;
   }
 
   public static String getHost(CommandStepParameters commandStepParameters) {
-    return ParameterFieldHelper.getParameterFieldValue(commandStepParameters.getHost());
+    String host = ParameterFieldHelper.getParameterFieldValue(commandStepParameters.getHost());
+    return PhysicalDataCenterUtils.extractHostnameFromHost(host).orElseThrow(
+        () -> new InvalidArgumentsException(format("Failed to resolve hostname: %s", host)));
   }
 }

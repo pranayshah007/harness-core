@@ -14,12 +14,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 
 import io.harness.beans.FeatureName;
-import io.harness.beans.stages.IntegrationStageConfig;
 import io.harness.beans.steps.stepinfo.InitializeStepInfo;
 import io.harness.beans.yaml.extended.infrastrucutre.OSType;
 import io.harness.category.element.UnitTests;
 import io.harness.ci.executionplan.CIExecutionTestBase;
 import io.harness.ci.ff.CIFeatureFlagService;
+import io.harness.cimanager.stages.IntegrationStageConfig;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 

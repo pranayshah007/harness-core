@@ -40,6 +40,7 @@ import io.harness.ssh.FileSourceType;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -57,6 +58,7 @@ public class WinRmCopyCommandHandlerTest {
   @Mock private FileBasedWinRmExecutorNG fileBasedWinRmExecutorNG;
   @Mock private EncryptedDataDetail encryptedDataDetail;
   @Mock private SecretDecryptionService secretDecryptionService;
+  @Mock private Map<String, Object> taskContext;
   ;
   final List<EncryptedDataDetail> encryptedDataDetailList = Collections.emptyList();
 
@@ -87,8 +89,8 @@ public class WinRmCopyCommandHandlerTest {
     WinrmTaskParameters winrmTaskParameters = getWinrmTaskParameters(copyConfigCommandUnit, outputVariables);
     when(fileBasedWinRmExecutorNG.copyConfigFiles(any(ConfigFileParameters.class)))
         .thenReturn(CommandExecutionStatus.SUCCESS);
-    CommandExecutionStatus result = winRmCopyCommandHandler.handle(
-        winrmTaskParameters, copyConfigCommandUnit, iLogStreamingTaskClient, CommandUnitsProgress.builder().build());
+    CommandExecutionStatus result = winRmCopyCommandHandler.handle(winrmTaskParameters, copyConfigCommandUnit,
+        iLogStreamingTaskClient, CommandUnitsProgress.builder().build(), taskContext);
     assertThat(result).isEqualTo(CommandExecutionStatus.SUCCESS);
   }
 
@@ -100,8 +102,8 @@ public class WinRmCopyCommandHandlerTest {
     WinrmTaskParameters winrmTaskParameters = getWinrmTaskParameters(copyArtifactCommandUnit, outputVariables);
 
     when(fileBasedWinRmExecutorNG.copyArtifacts(any(), any())).thenReturn(CommandExecutionStatus.SUCCESS);
-    CommandExecutionStatus result = winRmCopyCommandHandler.handle(
-        winrmTaskParameters, copyArtifactCommandUnit, iLogStreamingTaskClient, CommandUnitsProgress.builder().build());
+    CommandExecutionStatus result = winRmCopyCommandHandler.handle(winrmTaskParameters, copyArtifactCommandUnit,
+        iLogStreamingTaskClient, CommandUnitsProgress.builder().build(), taskContext);
     assertThat(result).isEqualTo(CommandExecutionStatus.SUCCESS);
   }
 

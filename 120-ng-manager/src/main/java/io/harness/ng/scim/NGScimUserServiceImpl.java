@@ -36,6 +36,7 @@ import io.harness.utils.featureflaghelper.NGFeatureFlagHelperService;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.inject.Inject;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -143,6 +144,29 @@ public class NGScimUserServiceImpl implements ScimUserService {
     ScimListResponse<ScimUser> result = ngUserService.searchScimUsersByEmailQuery(accountId, filter, count, startIndex);
     log.info("NGSCIM: completed search. accountId {}, search query {}, resultSize: {}", accountId, filter,
         result.getTotalResults());
+    if (result.getTotalResults() > 0) {
+      result = removeUsersNotinNG(result, accountId);
+    }
+    return result;
+  }
+
+  private ScimListResponse<ScimUser> removeUsersNotinNG(ScimListResponse<ScimUser> result, String accountId) {
+    List<ScimUser> usersNotinNG = new ArrayList<>();
+    for (ScimUser scimUser : result.getResources()) {
+      Optional<UserMetadataDTO> userOptional = ngUserService.getUserByEmail(scimUser.getUserName(), false);
+      if (!userOptional.isPresent()) {
+        usersNotinNG.add(scimUser);
+      }
+    }
+    if (!usersNotinNG.isEmpty()) {
+      log.warn(
+          "NGSCIM: Removing the following users from the search result, as they don't exist in NG {}, for accountID {}",
+          usersNotinNG, accountId);
+      List<ScimUser> updatedResources = result.getResources();
+      updatedResources.removeAll(usersNotinNG);
+      result.setResources(updatedResources);
+      result.setTotalResults(updatedResources.size());
+    }
     return result;
   }
 

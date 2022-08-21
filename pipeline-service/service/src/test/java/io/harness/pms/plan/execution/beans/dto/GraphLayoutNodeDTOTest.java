@@ -29,7 +29,7 @@ public class GraphLayoutNodeDTOTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testIfNewFieldsAreAdded() {
     assertThat(ReflectionUtils.getAllDeclaredAndInheritedFields(GraphLayoutNodeDTO.class).size())
-        .isEqualTo(20)
+        .isEqualTo(21)
         .withFailMessage("You have added a new field in GraphLayoutNodeDTO. If you are not "
             + "updating it anywhere after creating then please update PmsExecutionSummaryService#cloneGraphLayoutNodeDtoWithModifications");
   }

@@ -201,7 +201,6 @@ public class SignupServiceImplTest extends CategoryTest {
     verify(telemetryReporter, times(1)).sendGroupEvent(eq(ACCOUNT_ID), eq(EMAIL), any(), any());
 
     verify(licenseService, times(1)).startTrialLicense(eq(ACCOUNT_ID), any(StartTrialDTO.class));
-    verify(licenseService, times(3)).startFreeLicense(eq(ACCOUNT_ID), any(ModuleType.class));
     verify(executorService, times(1));
     assertThat(userInfo.getIntent()).isEqualTo("ci");
     assertThat(userInfo.getEmail()).isEqualTo(EMAIL);
@@ -257,7 +256,6 @@ public class SignupServiceImplTest extends CategoryTest {
     verify(telemetryReporter, times(1)).sendGroupEvent(eq(ACCOUNT_ID), eq(EMAIL), any(), any());
 
     verify(licenseService, times(1)).startTrialLicense(eq(ACCOUNT_ID), any(StartTrialDTO.class));
-    verify(licenseService, times(3)).startFreeLicense(eq(ACCOUNT_ID), any(ModuleType.class));
     verify(executorService, times(1));
     assertThat(returnedUser.getEmail()).isEqualTo(newUser.getEmail());
   }
