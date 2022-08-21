@@ -32,11 +32,11 @@ import lombok.extern.slf4j.Slf4j;
 public class ShellScriptYamlExpressionEvaluator extends EngineExpressionEvaluator {
   protected final String yaml;
 
-  public int functorToken;
-  public static final String YAML_EXPRESSION_PREFIX = "__yamlExpression";
-  public static final String SECRETS_PREFIX = "secrets";
-  public static final String YAML_EXPRESSION_CONNECTOR_PREFIX = "__yamlExpression.connector";
-  public static final String CONNECTOR_ROOT_FIELD = "connector";
+  private int functorToken;
+  private static final String YAML_EXPRESSION_PREFIX = "__yamlExpression";
+  private static final String SECRETS_PREFIX = "secrets";
+  private static final String YAML_EXPRESSION_CONNECTOR_PREFIX = "__yamlExpression.connector";
+  private static final String CONNECTOR_ROOT_FIELD = "connector";
 
   public ShellScriptYamlExpressionEvaluator(String yaml, int functorToken) {
     super(null);
@@ -68,7 +68,8 @@ public class ShellScriptYamlExpressionEvaluator extends EngineExpressionEvaluato
       YamlField yamlField = YamlUtils.readTree(yaml);
       return yamlField.getNode().getField(CONNECTOR_ROOT_FIELD);
     } catch (IOException e) {
-      log.info("Connector root field is not present in " + yaml);
+      log.error("Connector root field is not present in " + yaml + "\n Exception is " + e.getMessage());
+      e.printStackTrace();
       throw new InvalidRequestException("Not valid yaml passed. Root field should be " + CONNECTOR_ROOT_FIELD);
     }
   }
