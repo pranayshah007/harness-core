@@ -36,16 +36,14 @@ import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.CDC)
 @Slf4j
-public class ConfigFilesStepV2 implements SyncExecutable<EmptyStepParameters> {
+public class ConfigFilesStepV2 extends AbstractConfigFileStep implements SyncExecutable<EmptyStepParameters> {
   public static final StepType STEP_TYPE = StepType.newBuilder()
                                                .setType(ExecutionNodeType.CONFIG_FILES_V2.getName())
                                                .setStepCategory(StepCategory.STEP)
                                                .build();
-
   @Inject private ExecutionSweepingOutputService sweepingOutputService;
   @Named(DEFAULT_CONNECTOR_SERVICE) @Inject private ConnectorService connectorService;
   @Inject private CDExpressionResolver cdExpressionResolver;
-  @Inject private ConfigFileStepUtils configFileStepUtils;
 
   @Override
   public Class<EmptyStepParameters> getStepParametersClass() {
@@ -82,7 +80,7 @@ public class ConfigFilesStepV2 implements SyncExecutable<EmptyStepParameters> {
       String identifier = file.getConfigFile().getIdentifier();
       cdExpressionResolver.updateStoreConfigExpressions(ambiance, spec.getStore().getValue());
       IndividualConfigFileStepValidator.validateConfigFileAttributes(identifier, spec, true);
-      configFileStepUtils.verifyConfigFileReference(identifier, spec, ambiance);
+      verifyConfigFileReference(identifier, spec, ambiance);
       configFilesOutcome.put(identifier, ConfigFileOutcomeMapper.toConfigFileOutcome(identifier, i, spec));
     }
 

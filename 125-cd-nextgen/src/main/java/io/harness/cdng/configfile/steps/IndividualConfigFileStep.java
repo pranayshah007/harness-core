@@ -34,15 +34,14 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(CDP)
 @Singleton
 @Slf4j
-public class IndividualConfigFileStep implements SyncExecutable<ConfigFileStepParameters> {
+public class IndividualConfigFileStep
+    extends AbstractConfigFileStep implements SyncExecutable<ConfigFileStepParameters> {
   private static final String OUTPUT = "output";
   public static final StepType STEP_TYPE =
       StepType.newBuilder().setType(ExecutionNodeType.CONFIG_FILE.getName()).setStepCategory(StepCategory.STEP).build();
 
   @Named(DEFAULT_CONNECTOR_SERVICE) @Inject private ConnectorService connectorService;
   @Inject private CDExpressionResolver cdExpressionResolver;
-  @Inject private ConfigFileStepUtils configFileStepUtils;
-
   @Override
   public Class<ConfigFileStepParameters> getStepParametersClass() {
     return ConfigFileStepParameters.class;
@@ -51,10 +50,10 @@ public class IndividualConfigFileStep implements SyncExecutable<ConfigFileStepPa
   @Override
   public StepResponse executeSync(Ambiance ambiance, ConfigFileStepParameters stepParameters,
       StepInputPackage inputPackage, PassThroughData passThroughData) {
-    ConfigFileAttributes finalConfigFile = configFileStepUtils.applyConfigFileOverrides(stepParameters);
+    ConfigFileAttributes finalConfigFile = applyConfigFileOverrides(stepParameters);
     cdExpressionResolver.updateStoreConfigExpressions(ambiance, finalConfigFile.getStore().getValue());
     validateConfigFileAttributes(stepParameters.getIdentifier(), finalConfigFile, true);
-    configFileStepUtils.verifyConfigFileReference(stepParameters.getIdentifier(), finalConfigFile, ambiance);
+    verifyConfigFileReference(stepParameters.getIdentifier(), finalConfigFile, ambiance);
     return StepResponse.builder()
         .status(Status.SUCCEEDED)
         .stepOutcome(StepResponse.StepOutcome.builder()

@@ -7,6 +7,8 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static java.lang.String.format;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
+import io.harness.annotations.dev.HarnessTeam;
+import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FileReference;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.configfile.ConfigFileAttributes;
@@ -29,18 +31,18 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.utils.IdentifierRefHelper;
 
 import com.google.inject.Inject;
-import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 
-@Singleton
-public class ConfigFileStepUtils {
+@OwnedBy(HarnessTeam.CDP)
+public abstract class AbstractConfigFileStep {
   @Inject private FileStoreService fileStoreService;
   @Inject private NGEncryptedDataService ngEncryptedDataService;
   @Named(DEFAULT_CONNECTOR_SERVICE) @Inject private ConnectorService connectorService;
-  ConfigFileAttributes applyConfigFileOverrides(ConfigFileStepParameters stepParameters) {
+
+  protected ConfigFileAttributes applyConfigFileOverrides(ConfigFileStepParameters stepParameters) {
     List<ConfigFileAttributes> configFileAttributesList = new LinkedList<>();
 
     if (stepParameters.getSpec() != null) {
@@ -64,7 +66,7 @@ public class ConfigFileStepUtils {
     return resultantConfigFile;
   }
 
-  void verifyConfigFileReference(
+  protected void verifyConfigFileReference(
       final String configFileIdentifier, ConfigFileAttributes configFileAttributes, Ambiance ambiance) {
     StoreConfig storeConfig = configFileAttributes.getStore().getValue().getSpec();
     String storeKind = storeConfig.getKind();
