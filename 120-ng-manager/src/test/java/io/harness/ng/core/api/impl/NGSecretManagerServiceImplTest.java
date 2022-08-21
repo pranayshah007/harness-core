@@ -50,6 +50,7 @@ import io.harness.secretmanagerclient.dto.VaultMetadataSpecDTO;
 import io.harness.secretmanagerclient.remote.SecretManagerClient;
 import io.harness.security.encryption.EncryptionType;
 import io.harness.service.DelegateGrpcClientWrapper;
+import io.harness.utils.featureflaghelper.NGFeatureFlagHelperService;
 
 import software.wings.beans.BaseVaultConfig;
 import software.wings.beans.VaultConfig;
@@ -75,6 +76,7 @@ public class NGSecretManagerServiceImplTest extends CategoryTest {
   ConnectorService connectorService;
   AccountClient accountClient;
   DelegateGrpcClientWrapper delegateService;
+  NGFeatureFlagHelperService ngFeatureFlagHelperService;
 
   private final String ACCOUNT_IDENTIFIER = "ACCOUNT_ID";
   private final String ORG_IDENTIFIER = "ACCOUNT_ID";
@@ -93,8 +95,9 @@ public class NGSecretManagerServiceImplTest extends CategoryTest {
     connectorService = mock(ConnectorService.class);
     accountClient = mock(AccountClient.class);
     delegateService = mock(DelegateGrpcClientWrapper.class);
+    ngFeatureFlagHelperService = mock(NGFeatureFlagHelperService.class);
     ngSecretManagerService = new NGSecretManagerServiceImpl(secretManagerClient, ngConnectorSecretManagerService,
-        kmsEncryptorsRegistry, vaultEncryptorsRegistry, ngVaultService);
+        kmsEncryptorsRegistry, vaultEncryptorsRegistry, ngVaultService, ngFeatureFlagHelperService);
   }
 
   @Test

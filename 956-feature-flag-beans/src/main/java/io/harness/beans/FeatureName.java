@@ -367,6 +367,9 @@ public enum FeatureName {
   TEMPLATE_SCHEMA_VALIDATION,
   YAML_APIS_GRANULAR_PERMISSION,
   JENKINS_BUILD,
+  DO_NOT_RENEW_APPROLE_TOKEN(
+      "CAUTION: USE THIS ONLY WHEN THE CUSTOMER DELEGATE IS IN VERSION HIGHER OR EQUAL TO 764xx. Used for disabling appRole token renewal and fetching token on the fly before CRUD",
+      HarnessTeam.PL),
   ENABLE_DEFAULT_NG_EXPERIENCE_FOR_ONPREM,
   NG_SETTINGS("Enable Settings at various scopes in NG", HarnessTeam.PL),
   QUEUED_COUNT_FOR_QUEUEKEY("Used to display the count of the queue in CG git sync", HarnessTeam.SPG),
