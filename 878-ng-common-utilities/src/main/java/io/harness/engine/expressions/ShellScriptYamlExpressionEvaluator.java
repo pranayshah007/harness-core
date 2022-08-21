@@ -31,6 +31,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class ShellScriptYamlExpressionEvaluator extends EngineExpressionEvaluator {
   protected final String yaml;
+
   public int functorToken;
   public static final String YAML_EXPRESSION_PREFIX = "__yamlExpression";
   public static final String SECRETS_PREFIX = "secrets";
