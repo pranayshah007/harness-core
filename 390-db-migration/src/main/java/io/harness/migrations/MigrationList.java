@@ -38,6 +38,7 @@ import io.harness.migrations.all.AddEnableIteratorsToTriggers;
 import io.harness.migrations.all.AddHarnessCommandLibraryToAccount;
 import io.harness.migrations.all.AddHarnessGroupAccessFlagToAccount;
 import io.harness.migrations.all.AddInstanceStatsCollectionJobToAllAccounts;
+import io.harness.migrations.all.AddIsProductLedToAccount;
 import io.harness.migrations.all.AddLimitVicinityCheckJobToAllAccounts;
 import io.harness.migrations.all.AddLoginSettingsToAccountMigration;
 import io.harness.migrations.all.AddNgFieldToDelegateGroupMigration;
@@ -452,6 +453,7 @@ public class MigrationList {
         .add(Pair.of(371, BaseMigration.class))
         .add(Pair.of(372, BaseMigration.class))
         .add(Pair.of(373, AddRingDetailsToDelegateRing.class))
+        .add(Pair.of(374, AddIsProductLedToAccount.class))
         .build();
   }
 }

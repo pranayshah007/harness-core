@@ -428,6 +428,12 @@ public class DefaultLicenseServiceImpl implements LicenseService {
     return lastUpdatedAtMap;
   }
 
+  @Override
+  public List<ModuleLicenseDTO> getAllModuleLicences(String accountIdentifier) {
+    List<ModuleLicense> licenses = moduleLicenseRepository.findByAccountIdentifier(accountIdentifier);
+    return licenses.stream().map(licenseObjectConverter::<ModuleLicenseDTO>toDTO).collect(Collectors.toList());
+  }
+
   private EditionActionDTO toEditionActionDTO(EditionAction editionAction) {
     return EditionActionDTO.builder().action(editionAction).reason(editionAction.getReason()).build();
   }

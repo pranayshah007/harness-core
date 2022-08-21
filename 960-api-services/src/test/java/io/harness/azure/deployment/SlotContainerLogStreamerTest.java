@@ -9,13 +9,18 @@ package io.harness.azure.deployment;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.rule.OwnerRule.ABOSII;
+import static io.harness.rule.OwnerRule.TMACARI;
 
 import static java.lang.String.format;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.fail;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
@@ -64,8 +69,6 @@ public class SlotContainerLogStreamerTest extends CategoryTest {
 
   @Before
   public void setup() {
-    slotContainerLogStreamer = new SlotContainerLogStreamer(clientContext, webClient, SLOT_NAME, logCallback);
-
     doReturn(Optional.of(deploymentSlot)).when(webClient).getDeploymentSlotByName(clientContext, SLOT_NAME);
 
     doAnswer(invocation -> {
@@ -88,6 +91,24 @@ public class SlotContainerLogStreamerTest extends CategoryTest {
         .when(deploymentSlot)
         .getContainerLogs();
     initOldLogs();
+    slotContainerLogStreamer = new SlotContainerLogStreamer(clientContext, webClient, SLOT_NAME, logCallback);
+  }
+
+  @Test
+  @Owner(developers = TMACARI)
+  @Category(UnitTests.class)
+  public void testDDMMYYYYdateTimeparrternLogs() {
+    DeploymentSlot deploymentSlot = mock(DeploymentSlot.class);
+    doReturn(Optional.of(deploymentSlot)).when(webClient).getDeploymentSlotByName(clientContext, SLOT_NAME);
+    when(deploymentSlot.getContainerLogs())
+        .thenReturn("14/08/2022 12:41:38.167 STDOUT - Site: test log 1".getBytes(StandardCharsets.UTF_8))
+        .thenReturn("14/08/2022 12:45:38.167 STDOUT - Site: test log 2".getBytes(StandardCharsets.UTF_8));
+    SlotContainerLogStreamer slotContainerLogStreamer =
+        new SlotContainerLogStreamer(clientContext, webClient, SLOT_NAME, logCallback);
+
+    slotContainerLogStreamer.readContainerLogs();
+
+    verify(logCallback).saveExecutionLog(eq("14/08/2022 12:45:38.167 STDOUT - Site: test log 2"));
   }
 
   @Test

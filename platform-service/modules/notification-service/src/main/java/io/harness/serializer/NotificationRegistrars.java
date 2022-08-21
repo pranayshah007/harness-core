@@ -10,7 +10,6 @@ package io.harness.serializer;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.filter.serializer.FiltersRegistrars;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.serializer.kryo.DelegateServiceBeansKryoRegistrar;
 import io.harness.serializer.kryo.DelegateTasksBeansKryoRegister;
@@ -37,8 +36,6 @@ public class NotificationRegistrars {
           .addAll(io.harness.serializer.ApiServiceBeansRegistrars.kryoRegistrars)
           .addAll(AccessControlClientRegistrars.kryoRegistrars)
           .addAll(CvNextGenBeansRegistrars.kryoRegistrars)
-          .addAll(ProjectAndOrgRegistrars.kryoRegistrars)
-          .addAll(FiltersRegistrars.kryoRegistrars)
           .add(NGCoreKryoRegistrar.class)
           .add(DelegateTasksKryoRegistrar.class)
           .add(DelegateServiceBeansKryoRegistrar.class)
@@ -52,8 +49,6 @@ public class NotificationRegistrars {
           .addAll(NGCoreClientRegistrars.morphiaRegistrars)
           .addAll(SMCoreRegistrars.morphiaRegistrars)
           .addAll(io.harness.serializer.DelegateTaskRegistrars.morphiaRegistrars)
-          .addAll(ProjectAndOrgRegistrars.morphiaRegistrars)
-          .addAll(FiltersRegistrars.morphiaRegistrars)
           .build();
 
   public static final ImmutableSet<Class<? extends TypeConverter>> morphiaConverters =

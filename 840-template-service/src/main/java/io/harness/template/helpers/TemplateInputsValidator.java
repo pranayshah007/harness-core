@@ -12,6 +12,7 @@ import static io.harness.template.beans.NGTemplateConstants.TEMPLATE_INPUTS;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ngexception.NGTemplateException;
 import io.harness.pms.merger.helpers.RuntimeInputsValidator;
@@ -32,6 +33,7 @@ import com.google.inject.Inject;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 
@@ -65,29 +67,41 @@ public class TemplateInputsValidator {
 
   public ValidateTemplateInputsResponseDTO validateNestedTemplateInputsForGivenYaml(
       String accountId, String orgId, String projectId, String yaml) {
-    ErrorNodeSummary errorNodeSummary = ErrorNodeSummary.builder().childrenErrorNodes(new ArrayList<>()).build();
+    YamlNode yamlNode = validateAndGetYamlNode(yaml);
+    ErrorNodeSummary errorNodeSummary =
+        ErrorNodeSummary.builder().nodeInfo(getRootNodeInfo(yamlNode)).childrenErrorNodes(new ArrayList<>()).build();
 
     ValidateTemplateInputsResponseDTO validateTemplateInputsResponse =
         ValidateTemplateInputsResponseDTO.builder().validYaml(true).errorNodeSummary(errorNodeSummary).build();
-    validateNestedTemplateInputsInternal(
-        accountId, orgId, projectId, yaml, 0, new HashMap<>(), validateTemplateInputsResponse);
+    validateNestedTemplateInputsInObject(
+        accountId, orgId, projectId, yamlNode, new HashMap<>(), 0, validateTemplateInputsResponse);
     return validateTemplateInputsResponse;
   }
 
   public ValidateTemplateInputsResponseDTO validateNestedTemplateInputsForGivenYaml(
       String accountId, String orgId, String projectId, String yaml, Map<String, TemplateEntity> templateCacheMap) {
-    ErrorNodeSummary errorNodeSummary = ErrorNodeSummary.builder().childrenErrorNodes(new ArrayList<>()).build();
+    YamlNode yamlNode = validateAndGetYamlNode(yaml);
+    ErrorNodeSummary errorNodeSummary =
+        ErrorNodeSummary.builder().nodeInfo(getRootNodeInfo(yamlNode)).childrenErrorNodes(new ArrayList<>()).build();
 
     ValidateTemplateInputsResponseDTO validateTemplateInputsResponse =
         ValidateTemplateInputsResponseDTO.builder().validYaml(true).errorNodeSummary(errorNodeSummary).build();
-    validateNestedTemplateInputsInternal(
-        accountId, orgId, projectId, yaml, 0, templateCacheMap, validateTemplateInputsResponse);
+    validateNestedTemplateInputsInObject(
+        accountId, orgId, projectId, yamlNode, templateCacheMap, 0, validateTemplateInputsResponse);
     return validateTemplateInputsResponse;
   }
 
   private void validateNestedTemplateInputsInternal(String accountId, String orgId, String projectId, String yaml,
       int depth, Map<String, TemplateEntity> templateCacheMap,
       ValidateTemplateInputsResponseDTO validateTemplateInputsResponse) {
+    YamlNode yamlNode = validateAndGetYamlNode(yaml);
+
+    // populates validateTemplateInputsResponse if any validation fails
+    validateNestedTemplateInputsInObject(
+        accountId, orgId, projectId, yamlNode, templateCacheMap, depth, validateTemplateInputsResponse);
+  }
+
+  private YamlNode validateAndGetYamlNode(String yaml) {
     // Case -> empty YAML, cannot validate
     if (isEmpty(yaml)) {
       throw new NGTemplateException("Yaml to be validated cannot be empty.");
@@ -101,10 +115,7 @@ public class TemplateInputsValidator {
       log.error("Could not convert yaml to JsonNode. Yaml:\n" + yaml, e);
       throw new NGTemplateException("Could not convert yaml to JsonNode: " + e.getMessage());
     }
-
-    // populates validateTemplateInputsResponse if any validation fails
-    validateNestedTemplateInputsInObject(
-        accountId, orgId, projectId, yamlNode, templateCacheMap, depth, validateTemplateInputsResponse);
+    return yamlNode;
   }
 
   private void validateNestedTemplateInputsInObject(String accountId, String orgId, String projectId, YamlNode yamlNode,
@@ -218,5 +229,22 @@ public class TemplateInputsValidator {
             .childrenErrorNodes(new ArrayList<>())
             .build();
     return ValidateTemplateInputsResponseDTO.builder().validYaml(true).errorNodeSummary(childErrorNodeSummary).build();
+  }
+
+  private NodeInfo getRootNodeInfo(YamlNode yamlNode) {
+    if (yamlNode == null) {
+      return null;
+    }
+
+    List<YamlField> yamlFieldList = yamlNode.fields();
+    if (EmptyPredicate.isNotEmpty(yamlFieldList)) {
+      YamlNode rootYamlNode = yamlFieldList.get(0).getNode();
+      return NodeInfo.builder()
+          .identifier(rootYamlNode.getIdentifier())
+          .name(rootYamlNode.getName())
+          .localFqn(rootYamlNode.getFieldName())
+          .build();
+    }
+    return null;
   }
 }

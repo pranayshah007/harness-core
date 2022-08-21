@@ -281,12 +281,12 @@ public class DelegateLogServiceImpl implements DelegateLogService {
 
         byte[] logSerialized = kryoSerializer.asBytes(logObject);
 
-        log.debug("Dispatched logObject status- [{}] [{}] for activityId [{}]", logObject.getCommandUnitName(),
+        log.info("Dispatched logObject status- [{}] [{}] for activityId [{}]", logObject.getCommandUnitName(),
             logObject.getCommandExecutionStatus(), activityId);
         RestResponse restResponse = execute(delegateAgentManagerClient.saveCommandUnitLogs(activityId,
             URLEncoder.encode(unitName, StandardCharsets.UTF_8.toString()), accountId,
             RequestBody.create(MediaType.parse("application/octet-stream"), logSerialized)));
-        log.debug("{} logObject lines dispatched for accountId: {}, activityId: {}",
+        log.info("{} logObject lines dispatched for accountId: {}, activityId: {}",
             restResponse.getResource() != null ? logBatch.size() : 0, accountId, activityId);
       } catch (Exception e) {
         log.error("Dispatch log failed. lost logs[{}]", logBatch.size(), e);
@@ -309,7 +309,7 @@ public class DelegateLogServiceImpl implements DelegateLogService {
           String delegateId = getDelegateId().orElse(null);
           logsList.forEach(logObject -> logObject.setDelegateId(delegateId));
           try {
-            log.debug("Dispatching {} api call logs for [{}] [{}]", logsList.size(), stateExecutionId, accountId);
+            log.info("Dispatching {} api call logs for [{}] [{}]", logsList.size(), stateExecutionId, accountId);
 
             log.debug("Converting the logs into a byte array.");
             byte[] logsListAsBytes = kryoSerializer.asBytes(logsList);
@@ -319,7 +319,7 @@ public class DelegateLogServiceImpl implements DelegateLogService {
 
             RestResponse restResponse =
                 execute(delegateAgentManagerClient.saveApiCallLogs(delegateId, accountId, logsAsRequestBody));
-            log.debug("Dispatched {} api call logs for [{}] [{}]",
+            log.info("Dispatched {} api call logs for [{}] [{}]",
                 restResponse == null || restResponse.getResource() != null ? logsList.size() : 0, stateExecutionId,
                 accountId);
           } catch (IOException e) {
@@ -341,10 +341,10 @@ public class DelegateLogServiceImpl implements DelegateLogService {
       }
       String traceableId = logsList.get(0).getTraceableId();
       try {
-        log.debug("Dispatching {} api call logs to  CVNG for [{}] [{}]", logsList.size(), traceableId, accountId);
+        log.info("Dispatching {} api call logs to  CVNG for [{}] [{}]", logsList.size(), traceableId, accountId);
 
         RestResponse<Void> restResponse = execute(cvNextGenServiceClient.saveCVNGLogRecords(accountId, logsList));
-        log.debug("Dispatched {} api call logs to CVNG for [{}] [{}]", logsList.size(), traceableId, accountId);
+        log.info("Dispatched {} api call logs to CVNG for [{}] [{}]", logsList.size(), traceableId, accountId);
       } catch (IOException e) {
         log.error("Dispatch log failed for {}. printing lost logs[{}]", traceableId, logsList.size(), e);
         logsList.forEach(logObject -> log.error(logObject.toString()));
@@ -361,7 +361,7 @@ public class DelegateLogServiceImpl implements DelegateLogService {
     Iterables.partition(logs, 100).forEach(batch -> {
       try {
         safeExecute(verificationServiceClient.saveActivityLogs(accountId, logs));
-        log.debug("Dispatched {} cv activity logs [{}]", batch.size(), accountId);
+        log.info("Dispatched {} cv activity logs [{}]", batch.size(), accountId);
       } catch (Exception e) {
         log.error("Dispatch log failed. printing lost activity logs[{}]", batch.size(), e);
         batch.forEach(logObject -> log.error(logObject.toString()));

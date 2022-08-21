@@ -115,7 +115,7 @@ public class JiraApprovalCallback extends AbstractApprovalCallback implements Pu
     }
 
     try {
-      checkApprovalAndRejectionCriteria(jiraTaskNGResponse.getIssue(), instance, logCallback,
+      checkApprovalAndRejectionCriteriaAndWithinChangeWindow(jiraTaskNGResponse.getIssue(), instance, logCallback,
           instance.getApprovalCriteria(), instance.getRejectionCriteria());
     } catch (Exception ex) {
       if (ex instanceof ApprovalStepNGException && ((ApprovalStepNGException) ex).isFatal()) {

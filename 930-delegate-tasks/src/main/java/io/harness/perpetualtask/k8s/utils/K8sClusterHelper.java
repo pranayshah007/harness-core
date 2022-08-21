@@ -17,9 +17,11 @@ import java.util.HashSet;
 import java.util.Set;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
 
 @Slf4j
 @Singleton
+@Service
 public class K8sClusterHelper {
   public static final String SEEN_CLUSTER_FILE_NAME = "k8sSeenClusters.txt";
   private static final String SEPARATOR = "$";

@@ -605,7 +605,8 @@
             "PLUGIN",
             "SERVICE",
             "LITE_ENGINE",
-            "TEST_INTELLIGENCE"
+            "TEST_INTELLIGENCE",
+            "BACKGROUND"
           ]
         },
         "envVars": {
@@ -4989,6 +4990,9 @@
           "type": "string"
         },
         "identifier": {
+          "type": "string"
+        },
+        "initTimeout": {
           "type": "string"
         },
         "os": {
