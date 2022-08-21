@@ -28,16 +28,15 @@ import lombok.Value;
 public class ShellScriptYamlExpressionFunctor {
   // Root yaml map
   YamlField rootYamlField;
+  private final String FQN_DELIMITER = ".";
+  private final String VALUE_FIELD_NAME = "value";
 
   public Object get(String expression) {
     Map<String, Map<String, Object>> fqnToValueMap = new ConcurrentHashMap<>();
     // Get the current element
     Map<String, Object> currentElementMap = getYamlMap(rootYamlField, fqnToValueMap, new LinkedList<>());
     // Check child first
-    if (currentElementMap.containsKey(expression)) {
-      return currentElementMap.get(expression);
-    }
-    return null;
+    return currentElementMap.getOrDefault(expression, null);
   }
 
   private Map<String, Object> getYamlMap(
@@ -55,7 +54,7 @@ public class ShellScriptYamlExpressionFunctor {
     }
 
     if (EmptyPredicate.isNotEmpty(valueMap)) {
-      fqnToValueMap.put(String.join(".", fqnList), valueMap);
+      fqnToValueMap.put(String.join(FQN_DELIMITER, fqnList), valueMap);
       contextMap.put(yamlField.getName(), valueMap);
     }
 
@@ -74,7 +73,8 @@ public class ShellScriptYamlExpressionFunctor {
        */
       if (EmptyPredicate.isEmpty(arrayElement.getIdentifier())
           && EmptyPredicate.isNotEmpty(arrayElement.getArrayUniqueIdentifier())) {
-        contextMap.put(arrayElement.getArrayUniqueIdentifier(), arrayElement.getField("value").getNode().asText());
+        contextMap.put(
+            arrayElement.getArrayUniqueIdentifier(), arrayElement.getField(VALUE_FIELD_NAME).getNode().asText());
       } else {
         Map<String, Object> valueMap = new ConcurrentHashMap<>();
         if (arrayElement.getCurrJsonNode().isValueNode()) {
