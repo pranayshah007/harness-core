@@ -161,23 +161,7 @@ public class ArtifactsStepV2 implements AsyncExecutable<EmptyStepParameters> {
       final ArtifactTaskResponse taskResponse = (ArtifactTaskResponse) responseDataMap.get(taskId);
       final boolean isPrimary = taskId.equals(artifactsSweepingOutput.getPrimaryArtifactTaskId());
 
-      if (isPrimary) {
-        logCallback.saveExecutionLog(LogHelper.color(String.format("Fetched details of primary artifact [status:%s]",
-                                                         taskResponse.getCommandExecutionStatus().name()),
-            LogColor.Cyan, LogWeight.Bold));
-      } else {
-        logCallback.saveExecutionLog(
-            LogHelper.color(String.format("Fetched details of sidecar artifact [%s] [status: %s]",
-                                artifactConfig.getIdentifier(), taskResponse.getCommandExecutionStatus().name()),
-                LogColor.Cyan, LogWeight.Bold));
-      }
-
-      if (taskResponse.getArtifactTaskExecutionResponse() != null
-          && taskResponse.getArtifactTaskExecutionResponse().getArtifactDelegateResponses() != null) {
-        logCallback.saveExecutionLog(LogHelper.color(
-            taskResponse.getArtifactTaskExecutionResponse().getArtifactDelegateResponses().get(0).describe(),
-            LogColor.Green, LogWeight.Bold));
-      }
+      logArtifactFetchedMessage(logCallback, artifactConfig, taskResponse, isPrimary);
 
       switch (taskResponse.getCommandExecutionStatus()) {
         case SUCCESS:
@@ -250,5 +234,25 @@ public class ArtifactsStepV2 implements AsyncExecutable<EmptyStepParameters> {
             .build();
 
     return delegateGrpcClientWrapper.submitAsyncTask(delegateTaskRequest, Duration.ZERO);
+  }
+
+  private void logArtifactFetchedMessage(
+      NGLogCallback logCallback, ArtifactConfig artifactConfig, ArtifactTaskResponse taskResponse, boolean isPrimary) {
+    if (isPrimary) {
+      logCallback.saveExecutionLog(LogHelper.color(String.format("Fetched details of primary artifact [status:%s]",
+                                                       taskResponse.getCommandExecutionStatus().name()),
+          LogColor.Cyan, LogWeight.Bold));
+    } else {
+      logCallback.saveExecutionLog(
+          LogHelper.color(String.format("Fetched details of sidecar artifact [%s] [status: %s]",
+                              artifactConfig.getIdentifier(), taskResponse.getCommandExecutionStatus().name()),
+              LogColor.Cyan, LogWeight.Bold));
+    }
+    if (taskResponse.getArtifactTaskExecutionResponse() != null
+        && taskResponse.getArtifactTaskExecutionResponse().getArtifactDelegateResponses() != null) {
+      logCallback.saveExecutionLog(LogHelper.color(
+          taskResponse.getArtifactTaskExecutionResponse().getArtifactDelegateResponses().get(0).describe(),
+          LogColor.Green, LogWeight.Bold));
+    }
   }
 }
