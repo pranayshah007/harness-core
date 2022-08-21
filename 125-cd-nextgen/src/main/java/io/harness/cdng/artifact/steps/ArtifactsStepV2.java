@@ -26,7 +26,10 @@ import io.harness.delegate.task.artifacts.ArtifactTaskType;
 import io.harness.delegate.task.artifacts.request.ArtifactTaskParameters;
 import io.harness.delegate.task.artifacts.response.ArtifactTaskResponse;
 import io.harness.exception.ArtifactServerException;
+import io.harness.exception.InvalidRequestException;
 import io.harness.executions.steps.ExecutionNodeType;
+import io.harness.logging.CommandExecutionStatus;
+import io.harness.logging.LogLevel;
 import io.harness.logstreaming.NGLogCallback;
 import io.harness.ng.core.service.yaml.NGServiceConfig;
 import io.harness.ng.core.service.yaml.NGServiceV2InfoConfig;
@@ -94,8 +97,7 @@ public class ArtifactsStepV2 implements AsyncExecutable<EmptyStepParameters> {
       try {
         ngServiceConfig = YamlUtils.read(serviceSweepingOutput.getFinalServiceYaml(), NGServiceConfig.class);
       } catch (IOException e) {
-        // Todo:(yogesh) handle exception
-        throw new RuntimeException(e);
+        throw new InvalidRequestException("Unable to read service yaml", e);
       }
     }
 
@@ -147,8 +149,8 @@ public class ArtifactsStepV2 implements AsyncExecutable<EmptyStepParameters> {
         sweepingOutputService.resolveOptional(ambiance, RefObjectUtils.getSweepingOutputRefObject(ARTIFACTS_STEP_V_2));
 
     if (!outputOptional.isFound()) {
-      // throw exception
-      throw new RuntimeException("unexpected");
+      log.error(ARTIFACTS_STEP_V_2 + " sweeping output not found. Failing...");
+      throw new InvalidRequestException("Unable to read artifacts");
     }
 
     ArtifactsStepV2SweepingOutput artifactsSweepingOutput = (ArtifactsStepV2SweepingOutput) outputOptional.getOutput();
@@ -195,7 +197,8 @@ public class ArtifactsStepV2 implements AsyncExecutable<EmptyStepParameters> {
   @Override
   public void handleAbort(
       Ambiance ambiance, EmptyStepParameters stepParameters, AsyncExecutableResponse executableResponse) {
-    // Todo:(yogesh) handle this ?
+    final NGLogCallback logCallback = serviceStepsHelper.getServiceLogCallback(ambiance);
+    logCallback.saveExecutionLog("Artifacts Step was aborted", LogLevel.ERROR, CommandExecutionStatus.FAILURE);
   }
 
   private String handle(final Ambiance ambiance, final ArtifactConfig artifactConfig,
