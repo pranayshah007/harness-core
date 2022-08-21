@@ -46,7 +46,6 @@ import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.service.DelegateGrpcClientWrapper;
 import io.harness.tasks.ResponseData;
-import io.harness.waiter.WaitNotifyEngine;
 
 import software.wings.beans.LogColor;
 import software.wings.beans.LogHelper;
@@ -74,13 +73,11 @@ public class ArtifactsStepV2 implements AsyncExecutable<EmptyStepParameters> {
                                                .build();
 
   private static final Duration DEFAULT_TIMEOUT = Duration.ofMinutes(1);
-  public static final String ARTIFACTS_STEP_V_2 = "artifacts_step_v2";
+  private static final String ARTIFACTS_STEP_V_2 = "artifacts_step_v2";
   @Inject private ExecutionSweepingOutputService sweepingOutputService;
   @Inject private ServiceStepsHelper serviceStepsHelper;
   @Inject private ArtifactStepHelper artifactStepHelper;
   @Inject private DelegateGrpcClientWrapper delegateGrpcClientWrapper;
-
-  @Inject private WaitNotifyEngine waitNotifyEngine;
 
   @Override
   public Class<EmptyStepParameters> getStepParametersClass() {
