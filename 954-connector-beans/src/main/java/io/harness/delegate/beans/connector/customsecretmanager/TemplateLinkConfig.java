@@ -30,6 +30,6 @@ import org.springframework.data.annotation.TypeAlias;
 @OwnedBy(PL)
 public class TemplateLinkConfig {
   @NotNull String templateRef;
-  @Pattern(regexp = NGRegexValidatorConstants.VERSION_LABEL_PATTERN) String versionLabel;
+  @NotNull @Pattern(regexp = NGRegexValidatorConstants.VERSION_LABEL_PATTERN) String versionLabel;
   Map<String, Object> templateInputs;
 }

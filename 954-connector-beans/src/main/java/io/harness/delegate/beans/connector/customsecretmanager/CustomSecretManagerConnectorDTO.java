@@ -26,6 +26,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+import javax.validation.constraints.NotNull;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -34,6 +35,7 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 import lombok.experimental.FieldDefaults;
+
 @Data
 @Builder
 @NoArgsConstructor
@@ -45,8 +47,7 @@ import lombok.experimental.FieldDefaults;
 @ApiModel("CustomSecretManager")
 @OwnedBy(HarnessTeam.PL)
 @Schema(name = "CustomSecretManager", description = "This contains details of Custom Secret Manager connectors")
-public class CustomSecretManagerConnectorDTO
-    extends ConnectorConfigDTO implements DelegateSelectable, ManagerExecutable {
+public class CustomSecretManagerConnectorDTO extends ConnectorConfigDTO implements DelegateSelectable {
   Set<String> delegateSelectors;
   @JsonProperty("onDelegate") @Builder.Default Boolean executeOnDelegate = true;
   @Schema(description = SecretManagerDescriptionConstants.DEFAULT) private boolean isDefault;
@@ -59,7 +60,7 @@ public class CustomSecretManagerConnectorDTO
 
   private String host;
   private String workingDirectory;
-  private TemplateLinkConfig template;
+  @NotNull private TemplateLinkConfig template;
   @Override
   public List<DecryptableEntity> getDecryptableEntities() {
     return Collections.singletonList(this);

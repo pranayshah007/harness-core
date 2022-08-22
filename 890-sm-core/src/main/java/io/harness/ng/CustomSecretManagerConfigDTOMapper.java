@@ -21,7 +21,6 @@ public class CustomSecretManagerConfigDTOMapper {
     ConnectorInfoDTO connector = connectorRequestDTO.getConnectorInfo();
     CustomSecretManagerConfigDTOBuilder<?, ?> builder =
         CustomSecretManagerConfigDTO.builder()
-            .isDefault(false)
             .encryptionType(EncryptionType.CUSTOM_NG)
 
             .name(connector.getName())
@@ -31,8 +30,9 @@ public class CustomSecretManagerConfigDTOMapper {
             .tags(connector.getTags())
             .identifier(connector.getIdentifier())
             .description(connector.getDescription())
-            .harnessManaged(connectorDTO.isHarnessManaged())
 
+            .isDefault(connectorDTO.isDefault())
+            .harnessManaged(connectorDTO.isHarnessManaged())
             .delegateSelectors(connectorDTO.getDelegateSelectors())
             .onDelegate(connectorDTO.getExecuteOnDelegate())
             .connectorRef(SecretRefHelper.getSecretConfigString(connectorDTO.getConnectorRef()))

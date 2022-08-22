@@ -16,6 +16,7 @@ import io.harness.delegate.beans.connector.customseceretmanager.TemplateLinkConf
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Set;
+import javax.validation.constraints.NotNull;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -37,6 +38,6 @@ public class CustomSecretManagerConfigDTO extends SecretManagerConfigDTO impleme
   @Schema(description = SecretManagerDescriptionConstants.CUSTOM_AUTH_TOKEN) private String connectorRef;
   private String host;
   private String workingDirectory;
-  private TemplateLinkConfig template;
+  @NotNull private TemplateLinkConfig template;
   private String script;
 }
