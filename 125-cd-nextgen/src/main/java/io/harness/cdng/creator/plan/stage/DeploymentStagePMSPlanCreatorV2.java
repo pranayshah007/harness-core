@@ -187,7 +187,14 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
       YamlField specField =
           Preconditions.checkNotNull(ctx.getCurrentField().getNode().getField(YAMLFieldNameConstants.SPEC));
       YamlField infraField = specField.getNode().getField(YAMLFieldNameConstants.PIPELINE_INFRASTRUCTURE);
-      log.info("infraField : {}", infraField);
+      log.info("infraField : {}", infraField.getNode().getCurrJsonNode());
+      YamlField infrastructureDefField =
+          Preconditions.checkNotNull(infraField.getNode().getField(YamlTypes.INFRASTRUCTURE_DEF));
+      YamlField provisionerYamlField = infrastructureDefField.getNode().getField(YAMLFieldNameConstants.PROVISIONER);
+      if (provisionerYamlField != null) {
+        YamlField stepsYamlField = provisionerYamlField.getNode().getField(YAMLFieldNameConstants.STEPS);
+        log.info("stepsYamlField before : {}", stepsYamlField.getNode().getCurrJsonNode());
+      }
 
       String postServiceStepUuid = "service-" + UUIDGenerator.generateUuid();
       String environmentUuid = "environment-" + UUIDGenerator.generateUuid();
