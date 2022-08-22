@@ -34,6 +34,8 @@ public final class InstanceSyncConstants {
   public static final int VALIDATION_TIMEOUT_MINUTES = 2;
   public static final String COUNT = "count";
   public static final String PRIMARY_ARTIFACT_TAG = InstanceKeys.primaryArtifact + "." + ArtifactDetailsKeys.tag;
+  public static final String PRIMARY_ARTIFACT_DISPLAY_NAME =
+      InstanceKeys.primaryArtifact + "." + ArtifactDetailsKeys.displayName;
   public static final String ID = "_id";
   public static final String INSTANCES = "instances";
   public static final int INSTANCE_LIMIT = 20;

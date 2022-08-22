@@ -56,7 +56,7 @@ public abstract class AbstractApprovalCallback {
     log.error(errorMessage, responseData.getException());
   }
 
-  protected void checkApprovalAndRejectionCriteria(TicketNG ticket, ApprovalInstance instance,
+  protected void checkApprovalAndRejectionCriteriaAndWithinChangeWindow(TicketNG ticket, ApprovalInstance instance,
       NGLogCallback logCallback, CriteriaSpecWrapperDTO approvalCriteria, CriteriaSpecWrapperDTO rejectionCriteria) {
     if (isNull(approvalCriteria) || isNull(approvalCriteria.getCriteriaSpecDTO())) {
       log.warn("Approval criteria can't be empty for instance id - {}", instance.getId());
@@ -68,11 +68,17 @@ public abstract class AbstractApprovalCallback {
     CriteriaSpecDTO approvalCriteriaSpec = approvalCriteria.getCriteriaSpecDTO();
     boolean approvalEvaluationResult = evaluateCriteria(ticket, approvalCriteriaSpec);
     if (approvalEvaluationResult) {
-      log.info("Approval criteria has been met for instance id - {}", instance.getId());
-      updateApprovalInstanceAndLog(logCallback, "Approval criteria has been met", LogColor.Cyan,
-          CommandExecutionStatus.SUCCESS, ApprovalStatus.APPROVED, instance.getId(), ticket);
+      if (evaluateWithinChangeWindow(ticket, instance, logCallback)) {
+        log.info("Approval criteria has been met for instance id - {}", instance.getId());
+        updateApprovalInstanceAndLog(logCallback, "Approval criteria has been met", LogColor.Cyan,
+            CommandExecutionStatus.SUCCESS, ApprovalStatus.APPROVED, instance.getId(), ticket);
+        return;
+      }
+      log.info("Approval criteria met and waiting for change window for instance id - {}", instance.getId());
+      logCallback.saveExecutionLog("Approval criteria has been met, waiting for change window");
       return;
     }
+
     log.info("Approval criteria has not been met for instance id - {}", instance.getId());
     logCallback.saveExecutionLog("Approval criteria has not been met");
 
@@ -108,4 +114,8 @@ public abstract class AbstractApprovalCallback {
   }
 
   protected abstract boolean evaluateCriteria(TicketNG ticket, CriteriaSpecDTO criteriaSpec);
+  protected boolean evaluateWithinChangeWindow(TicketNG ticket, ApprovalInstance instance, NGLogCallback logCallback) {
+    // to add implementation, override this method in approval callback
+    return true;
+  }
 }

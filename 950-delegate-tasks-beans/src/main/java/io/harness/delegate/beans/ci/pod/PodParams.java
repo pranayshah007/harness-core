@@ -37,6 +37,7 @@ public abstract class PodParams<T extends ContainerParams> implements NestedAnno
   private List<PodVolume> volumes;
   private String runtime;
   private String priorityClassName;
+  private Long activeDeadLineSeconds;
 
   public abstract PodParams.Type getType();
 

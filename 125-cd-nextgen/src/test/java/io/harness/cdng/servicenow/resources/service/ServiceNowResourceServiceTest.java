@@ -7,9 +7,11 @@
 
 package io.harness.cdng.servicenow.resources.service;
 
+import static io.harness.rule.OwnerRule.NAMANG;
 import static io.harness.rule.OwnerRule.PRABU;
 import static io.harness.rule.OwnerRule.vivekveman;
 
+import static junit.framework.TestCase.assertTrue;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.verify;
@@ -34,6 +36,8 @@ import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.service.DelegateGrpcClientWrapper;
 import io.harness.servicenow.ServiceNowActionNG;
 import io.harness.servicenow.ServiceNowFieldNG;
+import io.harness.servicenow.ServiceNowFieldSchemaNG;
+import io.harness.servicenow.ServiceNowFieldTypeNG;
 import io.harness.servicenow.ServiceNowTemplate;
 
 import com.google.common.collect.Lists;
@@ -81,13 +85,75 @@ public class ServiceNowResourceServiceTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testGetIssueCreateMeta() {
     List<ServiceNowFieldNG> serviceNowFieldNGList =
-        Arrays.asList(ServiceNowFieldNG.builder().name("name1").key("key1").build(),
-            ServiceNowFieldNG.builder().name("name2").key("key2").build());
+        Arrays.asList(ServiceNowFieldNG.builder().name("name1").key("key1").internalType("string").build(),
+            ServiceNowFieldNG.builder().name("name2").key("key2").internalType("unknown_xyz").build());
+    List<ServiceNowFieldNG> serviceNowFieldNGListExpected =
+        Arrays.asList(ServiceNowFieldNG.builder()
+                          .name("name1")
+                          .key("key1")
+                          .internalType(null)
+                          .schema(ServiceNowFieldSchemaNG.builder()
+                                      .array(false)
+                                      .customType(null)
+                                      .typeStr("string")
+                                      .type(ServiceNowFieldTypeNG.STRING)
+                                      .build())
+                          .build(),
+            ServiceNowFieldNG.builder()
+                .name("name2")
+                .key("key2")
+                .internalType(null)
+                .schema(ServiceNowFieldSchemaNG.builder()
+                            .array(false)
+                            .customType(null)
+                            .typeStr(null)
+                            .type(ServiceNowFieldTypeNG.UNKNOWN)
+                            .build())
+                .build());
     when(delegateGrpcClientWrapper.executeSyncTask(any()))
         .thenReturn(ServiceNowTaskNGResponse.builder().serviceNowFieldNGList(serviceNowFieldNGList).build());
-    assertThat(serviceNowResourceService.getIssueCreateMetadata(
-                   identifierRef, ORG_IDENTIFIER, PROJECT_IDENTIFIER, "CHANGE_REQUEST"))
-        .isEqualTo(serviceNowFieldNGList);
+    List<ServiceNowFieldNG> serviceNowFieldNGListReturn = serviceNowResourceService.getIssueCreateMetadata(
+        identifierRef, ORG_IDENTIFIER, PROJECT_IDENTIFIER, "CHANGE_REQUEST");
+    assertTrue(serviceNowFieldNGListReturn.size() == serviceNowFieldNGListExpected.size()
+        && serviceNowFieldNGListReturn.containsAll(serviceNowFieldNGListExpected)
+        && serviceNowFieldNGListExpected.containsAll(serviceNowFieldNGListReturn));
+    ArgumentCaptor<DelegateTaskRequest> requestArgumentCaptor = ArgumentCaptor.forClass(DelegateTaskRequest.class);
+    verify(delegateGrpcClientWrapper).executeSyncTask(requestArgumentCaptor.capture());
+    assertThat(requestArgumentCaptor.getValue().getTaskType()).isEqualTo(NGTaskType.SERVICENOW_TASK_NG.name());
+    assertThat(requestArgumentCaptor.getValue().getAccountId()).isEqualTo(ACCOUNT_ID);
+    ServiceNowTaskNGParameters parameters =
+        (ServiceNowTaskNGParameters) requestArgumentCaptor.getValue().getTaskParameters();
+    assertThat(parameters.getAction()).isEqualTo(ServiceNowActionNG.GET_TICKET_CREATE_METADATA);
+    assertThat(parameters.getTicketType()).isEqualTo("CHANGE_REQUEST");
+  }
+
+  @Test
+  @Owner(developers = NAMANG)
+  @Category(UnitTests.class)
+  public void testGetIssueCreateMetaWhenDelegateResponseNotHaveType() {
+    ServiceNowFieldNG field1 = ServiceNowFieldNG.builder().name("name1").key("key1").build();
+    ServiceNowFieldNG field2 = ServiceNowFieldNG.builder().name("name2").key("key2").build();
+    List<ServiceNowFieldNG> serviceNowFieldNGList = Arrays.asList(field1, field2);
+    List<ServiceNowFieldNG> serviceNowFieldNGListExpected = Arrays.asList(
+        ServiceNowFieldNG.builder()
+            .name("name1")
+            .key("key1")
+            .internalType(null)
+            .schema(ServiceNowFieldSchemaNG.builder().array(false).customType(null).typeStr(null).type(null).build())
+            .build(),
+        ServiceNowFieldNG.builder()
+            .name("name2")
+            .key("key2")
+            .internalType(null)
+            .schema(ServiceNowFieldSchemaNG.builder().array(false).customType(null).typeStr(null).type(null).build())
+            .build());
+    when(delegateGrpcClientWrapper.executeSyncTask(any()))
+        .thenReturn(ServiceNowTaskNGResponse.builder().serviceNowFieldNGList(serviceNowFieldNGList).build());
+    List<ServiceNowFieldNG> serviceNowFieldNGListReturn = serviceNowResourceService.getIssueCreateMetadata(
+        identifierRef, ORG_IDENTIFIER, PROJECT_IDENTIFIER, "CHANGE_REQUEST");
+    assertTrue(serviceNowFieldNGListReturn.size() == serviceNowFieldNGListExpected.size()
+        && serviceNowFieldNGListReturn.containsAll(serviceNowFieldNGListExpected)
+        && serviceNowFieldNGListExpected.containsAll(serviceNowFieldNGListReturn));
     ArgumentCaptor<DelegateTaskRequest> requestArgumentCaptor = ArgumentCaptor.forClass(DelegateTaskRequest.class);
     verify(delegateGrpcClientWrapper).executeSyncTask(requestArgumentCaptor.capture());
     assertThat(requestArgumentCaptor.getValue().getTaskType()).isEqualTo(NGTaskType.SERVICENOW_TASK_NG.name());
