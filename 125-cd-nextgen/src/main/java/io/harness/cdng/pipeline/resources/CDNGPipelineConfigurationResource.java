@@ -153,7 +153,7 @@ public class CDNGPipelineConfigurationResource {
       @NotNull @QueryParam("strategyType") ExecutionStrategyType executionStrategyType,
       @QueryParam("includeVerify") boolean includeVerify, @NotNull @Body StrategyParameters strategyParameters)
       throws IOException {
-    return ResponseDTO.newResponse(cdngPipelineConfigurationHelper.getSshExecutionStrategyYaml(
+    return ResponseDTO.newResponse(cdngPipelineConfigurationHelper.generateExecutionStrategyYaml(
         serviceDefinitionType, executionStrategyType, includeVerify, strategyParameters));
   }
 }

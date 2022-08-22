@@ -89,6 +89,7 @@ public class EntityYamlRootNames {
   public static final String SECURITY = "Security";
   public static final String SECURITY_STAGE = "securityStage";
   public static final String SECURITY_STEP = "securitySteps";
+  public static final String GIT_CLONE = "GitClone";
   public static final String RESTORE_CACHE_GCS = "RestoreCacheGCS";
   public static final String RESTORE_CACHE_S3 = "RestoreCacheS3";
   public static final String SAVE_CACHE_GCS = "SaveCacheGCS";

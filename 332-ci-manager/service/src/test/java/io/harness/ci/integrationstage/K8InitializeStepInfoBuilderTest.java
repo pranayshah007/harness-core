@@ -26,6 +26,7 @@ import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml.K8sDirectInfraYamlSpec;
 import io.harness.category.element.UnitTests;
 import io.harness.ci.buildstate.ConnectorUtils;
+import io.harness.ci.buildstate.PluginSettingUtils;
 import io.harness.ci.commonconstants.CIExecutionConstants;
 import io.harness.ci.execution.CIExecutionConfigService;
 import io.harness.ci.executionplan.CIExecutionTestBase;
@@ -72,6 +73,7 @@ public class K8InitializeStepInfoBuilderTest extends CIExecutionTestBase {
 
   @Mock private ConnectorUtils connectorUtils;
   @Mock private ConnectorDetails connectorDetails;
+  @Mock private PluginSettingUtils pluginSettingUtils;
   @Inject private CIExecutionConfigService ciExecutionConfigService;
   @Inject private CIFeatureFlagService featureFlagService;
   @InjectMocks private K8InitializeStepInfoBuilder k8InitializeStepInfoBuilder;
@@ -80,6 +82,7 @@ public class K8InitializeStepInfoBuilderTest extends CIExecutionTestBase {
   public void setUp() {
     on(k8InitializeStepInfoBuilder).set("ciExecutionConfigService", ciExecutionConfigService);
     on(k8InitializeStepInfoBuilder).set("featureFlagService", featureFlagService);
+    on(k8InitializeStepInfoBuilder).set("pluginSettingUtils", pluginSettingUtils);
   }
 
   @Test

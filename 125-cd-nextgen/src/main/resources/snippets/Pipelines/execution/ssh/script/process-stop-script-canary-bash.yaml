@@ -1,7 +1,7 @@
 # i=0
                               # while [ "$i" -lt 30 ]
                               # do
-                              #   pgrep -f "\-Dcatalina.home=$HARNESS_RUNTIME_PATH/tomcat"
+                              #   pgrep -f "\-Dcatalina.home=$HOME/<+service.name>/<+env.name>/tomcat"
                               #   rc=$?
                               #   if [ "$rc" -eq 0 ]
                               #   then

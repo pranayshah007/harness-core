@@ -10,6 +10,7 @@ package io.harness.buildcleaner;
 import io.harness.buildcleaner.bazel.BuildFile;
 import io.harness.buildcleaner.bazel.JavaBinary;
 import io.harness.buildcleaner.bazel.JavaLibrary;
+import io.harness.buildcleaner.bazel.LoadStatement;
 import io.harness.buildcleaner.javaparser.ClassMetadata;
 import io.harness.buildcleaner.javaparser.ClasspathParser;
 import io.harness.buildcleaner.javaparser.PackageParser;
@@ -41,6 +42,7 @@ import org.slf4j.LoggerFactory;
 public class BuildCleaner {
   private static final String DEFAULT_VISIBILITY = "//visibility:public";
   private static final String BUILD_CLEANER_INDEX_FILE_NAME = ".build-cleaner-index";
+  private static final String DEFAULT_JAVA_LIBRARY_NAME = "module";
 
   private static final Logger logger = LoggerFactory.getLogger(BuildCleaner.class);
   private CommandLine options;
@@ -154,9 +156,10 @@ public class BuildCleaner {
 
       Optional<String> resolvedSymbol = resolve(importStatement, harnessSymbolMap);
 
-      // Skip the symbols from the same package. Resolved symbol starts with "//" and rest of it is just a path -
-      // therefore, removing first two characters before comparing.
-      if (resolvedSymbol.isPresent() && resolvedSymbol.get().substring(2).equals(path.toString())) {
+      // Skip the symbols from the same package. Resolved symbol starts with "//" and ends with ":module" and rest of
+      // it is just a path - therefore, removing first two characters before comparing.
+      if (resolvedSymbol.isPresent()
+          && resolvedSymbol.get().substring(2, resolvedSymbol.get().length() - 7).equals(path.toString())) {
         continue;
       }
 
@@ -173,8 +176,9 @@ public class BuildCleaner {
     }
 
     BuildFile buildFile = new BuildFile();
-    JavaLibrary javaLibrary =
-        new JavaLibrary(path.getFileName().toString(), DEFAULT_VISIBILITY, srcsGlob(), dependencies);
+    buildFile.enableAnalysisPerModule();
+
+    JavaLibrary javaLibrary = new JavaLibrary(DEFAULT_JAVA_LIBRARY_NAME, DEFAULT_VISIBILITY, srcsGlob(), dependencies);
     buildFile.addJavaLibrary(javaLibrary);
 
     // Find main files in the folder and create java binary targets.
@@ -216,7 +220,7 @@ public class BuildCleaner {
     // Look up symbol in the harness symbol map.
     resolvedSymbol = harnessSymbolMap.getTarget(importStatement);
     if (resolvedSymbol.isPresent()) {
-      return Optional.of("//" + resolvedSymbol.get());
+      return Optional.of("//" + resolvedSymbol.get() + ":" + DEFAULT_JAVA_LIBRARY_NAME);
     }
 
     return Optional.empty();

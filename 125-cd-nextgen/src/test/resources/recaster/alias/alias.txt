@@ -401,3 +401,4 @@ io.harness.cdng.provision.azure.AzureCreateARMResourceStepNode
 io.harness.cdng.provision.azure.AzureCreateARMResourceStepConfiguration
 io.harness.cdng.provision.azure.AzureCreateARMResourceStepScope
 io.harness.cdng.provision.azure.AzureCreateARMResourceStepParameters
+io.harness.yaml.core.failurestrategy.ProceedWithDefaultValuesFailureActionConfig

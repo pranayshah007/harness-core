@@ -258,7 +258,7 @@ public class CIStepGroupUtils {
                               .name(GIT_CLONE_STEP_NAME)
                               .settings(ParameterField.createValueField(settings))
                               .envVariables(envVariables)
-                              .entrypoint(entrypoint)
+                              .entrypoint(ParameterField.createValueField(entrypoint))
                               .harnessManagedImage(true)
                               .resources(ciCodebase.getResources())
                               .build();

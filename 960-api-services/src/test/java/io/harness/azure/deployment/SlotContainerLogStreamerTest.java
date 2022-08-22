@@ -15,7 +15,7 @@ import static java.lang.String.format;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.fail;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
@@ -97,7 +97,7 @@ public class SlotContainerLogStreamerTest extends CategoryTest {
   @Test
   @Owner(developers = TMACARI)
   @Category(UnitTests.class)
-  public void testDDMMYYYYdateTimeparrternLogs() {
+  public void testDDMMYYYYdateTimeParrternLogs() {
     DeploymentSlot deploymentSlot = mock(DeploymentSlot.class);
     doReturn(Optional.of(deploymentSlot)).when(webClient).getDeploymentSlotByName(clientContext, SLOT_NAME);
     when(deploymentSlot.getContainerLogs())
@@ -108,7 +108,7 @@ public class SlotContainerLogStreamerTest extends CategoryTest {
 
     slotContainerLogStreamer.readContainerLogs();
 
-    verify(logCallback).saveExecutionLog(eq("14/08/2022 12:45:38.167 STDOUT - Site: test log 2"));
+    verify(logCallback).saveExecutionLog(contains("14/08/2022 12:45:38.167 STDOUT - Site: test log 2"));
   }
 
   @Test

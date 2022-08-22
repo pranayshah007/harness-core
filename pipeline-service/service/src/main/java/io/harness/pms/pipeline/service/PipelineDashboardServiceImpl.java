@@ -27,6 +27,7 @@ import com.google.inject.Singleton;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.CDC)
@@ -38,8 +39,16 @@ public class PipelineDashboardServiceImpl implements PipelineDashboardService {
   private String tableName_default = "pipeline_execution_summary_ci";
   private String CI_TableName = "pipeline_execution_summary_ci";
   private String CD_TableName = "pipeline_execution_summary_cd";
-  private List<String> failedList = Arrays.asList(ExecutionStatus.FAILED.name(), ExecutionStatus.ABORTED.name(),
-      ExecutionStatus.EXPIRED.name(), ExecutionStatus.IGNOREFAILED.name(), ExecutionStatus.ERRORED.name());
+  private static final List<String> FAILED_STATUS_LIST =
+      Arrays.asList(ExecutionStatus.FAILED, ExecutionStatus.ABORTED, ExecutionStatus.EXPIRED, ExecutionStatus.ERRORED)
+          .stream()
+          .map(ExecutionStatus::name)
+          .collect(Collectors.toList());
+  private static final List<String> SUCCESS_STATUS_LIST =
+      Arrays.asList(ExecutionStatus.IGNOREFAILED, ExecutionStatus.SUCCESS)
+          .stream()
+          .map(ExecutionStatus::name)
+          .collect(Collectors.toList());
 
   public double getRate(long current, long previous) {
     double rate = 0.0;
@@ -89,7 +98,7 @@ public class PipelineDashboardServiceImpl implements PipelineDashboardService {
       long variableEpoch = statusAndTime.get(i).getStartts();
       if (variableEpoch >= startInterval && variableEpoch < endInterval) {
         currentTotal++;
-        if (statusAndTime.get(i).getStatus().contentEquals(ExecutionStatus.SUCCESS.name())) {
+        if (SUCCESS_STATUS_LIST.contains(statusAndTime.get(i).getStatus())) {
           currentSuccess++;
         }
       }
@@ -97,7 +106,7 @@ public class PipelineDashboardServiceImpl implements PipelineDashboardService {
       // previous interval record
       if (previousStartInterval <= variableEpoch && startInterval > variableEpoch) {
         previousTotal++;
-        if (statusAndTime.get(i).getStatus().contentEquals(ExecutionStatus.SUCCESS.name())) {
+        if (SUCCESS_STATUS_LIST.contains(statusAndTime.get(i).getStatus())) {
           previousSuccess++;
         }
       }
@@ -148,22 +157,31 @@ public class PipelineDashboardServiceImpl implements PipelineDashboardService {
     List<PipelineExecutionInfo> pipelineExecutionInfoList = new ArrayList<>();
 
     while (startInterval < endInterval) {
-      long total = 0, success = 0, failed = 0;
+      long total = 0, success = 0, failed = 0, aborted = 0, expired = 0;
       for (int i = 0; i < statusAndTime.size(); i++) {
         if (startInterval == getStartingDateEpochValue(statusAndTime.get(i).getStartts())) {
           total++;
-          if (statusAndTime.get(i).getStatus().contentEquals(ExecutionStatus.SUCCESS.name())) {
+          if (SUCCESS_STATUS_LIST.contains(statusAndTime.get(i).getStatus())) {
             success++;
-          } else if (failedList.contains(statusAndTime.get(i).getStatus())) {
+          } else if (statusAndTime.get(i).getStatus().contentEquals(ExecutionStatus.ABORTED.name())) {
+            aborted++;
+          } else if (statusAndTime.get(i).getStatus().contentEquals(ExecutionStatus.EXPIRED.name())) {
+            expired++;
+          } else if (FAILED_STATUS_LIST.contains(statusAndTime.get(i).getStatus())) {
             failed++;
           }
         }
       }
-      pipelineExecutionInfoList.add(
-          PipelineExecutionInfo.builder()
-              .date(startInterval)
-              .count(PipelineCountInfo.builder().total(total).success(success).failure(failed).build())
-              .build());
+      pipelineExecutionInfoList.add(PipelineExecutionInfo.builder()
+                                        .date(startInterval)
+                                        .count(PipelineCountInfo.builder()
+                                                   .total(total)
+                                                   .success(success)
+                                                   .failure(failed)
+                                                   .aborted(aborted)
+                                                   .expired(expired)
+                                                   .build())
+                                        .build());
       startInterval = startInterval + DAY_IN_MS;
     }
 

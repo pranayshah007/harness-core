@@ -21,7 +21,6 @@ import io.harness.InstancesTestBase;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
-import io.harness.cdng.infra.beans.AwsInstanceFilter;
 import io.harness.cdng.infra.beans.SshWinRmAwsInfrastructureOutcome;
 import io.harness.cdng.serverless.ServerlessEntityHelper;
 import io.harness.cdng.ssh.SshEntityHelper;
@@ -95,12 +94,11 @@ public class AwsSshWinrmInstanceSyncPerpetualTaskHandlerTest extends InstancesTe
                                                             .envIdentifier("random")
                                                             .serviceIdentifier(SSH_SERVICE)
                                                             .build();
-    SshWinRmAwsInfrastructureOutcome outcome =
-        SshWinRmAwsInfrastructureOutcome.builder()
-            .infrastructureKey(INFRASTRUCTURE_KEY)
-            .credentialsRef(CRED_REF)
-            .awsInstanceFilter(AwsInstanceFilter.builder().tags(new HashMap<>()).build())
-            .build();
+    SshWinRmAwsInfrastructureOutcome outcome = SshWinRmAwsInfrastructureOutcome.builder()
+                                                   .infrastructureKey(INFRASTRUCTURE_KEY)
+                                                   .credentialsRef(CRED_REF)
+                                                   .tags(new HashMap<>())
+                                                   .build();
     SecretSpec secretSpec = Mockito.mock(SecretSpec.class);
     doReturn(SSHKeySpecDTO.builder().port(PORT).build()).when(secretSpec).toDTO();
     doReturn(Optional.of(Secret.builder().secretSpec(secretSpec).build()))

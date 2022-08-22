@@ -68,6 +68,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Stage plan graph V1 -
@@ -102,6 +103,7 @@ import lombok.SneakyThrows;
  */
 
 @OwnedBy(CDC)
+@Slf4j
 public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<DeploymentStageNode> {
   @Inject private KryoSerializer kryoSerializer;
   @Inject private EnvironmentService environmentService;
@@ -184,6 +186,7 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
 
       YamlField specField =
           Preconditions.checkNotNull(ctx.getCurrentField().getNode().getField(YAMLFieldNameConstants.SPEC));
+      logStepYamlField(specField);
 
       String postServiceStepUuid = "service-" + UUIDGenerator.generateUuid();
       String environmentUuid = "environment-" + UUIDGenerator.generateUuid();
@@ -211,6 +214,24 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
     } catch (IOException e) {
       throw new InvalidRequestException(
           "Invalid yaml for Deployment stage with identifier - " + stageNode.getIdentifier(), e);
+    }
+  }
+
+  private void logStepYamlField(YamlField specField) {
+    try {
+      YamlField infraField = specField.getNode().getField(YAMLFieldNameConstants.PIPELINE_INFRASTRUCTURE);
+      if (infraField != null) {
+        log.info("infraField : {}", infraField.getNode().getCurrJsonNode());
+        YamlField infrastructureDefField =
+            Preconditions.checkNotNull(infraField.getNode().getField(YamlTypes.INFRASTRUCTURE_DEF));
+        YamlField provisionerYamlField = infrastructureDefField.getNode().getField(YAMLFieldNameConstants.PROVISIONER);
+        if (provisionerYamlField != null) {
+          YamlField stepsYamlField = provisionerYamlField.getNode().getField(YAMLFieldNameConstants.STEPS);
+          log.info("stepsYamlField before : {}", stepsYamlField.getNode().getCurrJsonNode());
+        }
+      }
+    } catch (Exception e) {
+      // Ignoring
     }
   }
 

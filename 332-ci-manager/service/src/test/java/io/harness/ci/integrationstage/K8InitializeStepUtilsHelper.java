@@ -202,7 +202,7 @@ public class K8InitializeStepUtilsHelper {
   public static JsonNode getDockerStepElementConfigAsJsonNode() {
     ObjectMapper mapper = new ObjectMapper();
     ObjectNode stepElementConfig = mapper.createObjectNode();
-    stepElementConfig.put("identifier", PLUGIN_STEP_ID);
+    stepElementConfig.put("identifier", "step-docker");
 
     stepElementConfig.put("type", "BuildAndPushDockerRegistry");
     stepElementConfig.put("name", "docker step");
