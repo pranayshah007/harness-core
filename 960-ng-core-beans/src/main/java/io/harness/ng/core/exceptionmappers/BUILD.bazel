@@ -1,0 +1,26 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "exceptionmappers",
+    srcs = glob(["*.java"]),
+    visibility = ["//visibility:public"],
+    deps = [
+        "//960-ng-core-beans/src/main/java/io/harness/ng/core",
+        "//960-ng-core-beans/src/main/java/io/harness/ng/core/dto",
+        "//970-ng-commons/src/main/java/io/harness/ng/core",
+        "//970-ng-commons/src/main/java/io/harness/ng/core/dto",
+        "//980-commons/src/main/java/io/harness/annotations",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//980-commons/src/main/java/io/harness/eraro",
+        "//980-commons/src/main/java/io/harness/exception",
+        "//980-commons/src/main/java/io/harness/logging",
+        "//999-annotations:module",
+        "//:lombok",
+        "@maven//:io_dropwizard_dropwizard_jersey",
+        "@maven//:jakarta_validation_jakarta_validation_api",
+        "@maven//:javax_javaee_api",
+        "@maven//:javax_ws_rs_javax_ws_rs_api",
+    ],
+)
+
+

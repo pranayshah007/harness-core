@@ -1,0 +1,17 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "kryo",
+    srcs = glob(["*.java"]),
+    visibility = ["//visibility:public"],
+    deps = [
+        "//960-ng-core-beans/src/main/java/io/harness/ng/core/account",
+        "//960-ng-core-beans/src/main/java/io/harness/ng/core/environment/beans",
+        "//960-ng-core-beans/src/main/java/io/harness/ng/core/user",
+        "//980-commons/src/main/java/io/harness/serializer",
+        "//999-annotations:module",
+        "@maven//:com_esotericsoftware_kryo",
+    ],
+)
+
+

@@ -1,0 +1,15 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "notification",
+    srcs = glob(["*.java"]),
+    visibility = ["//visibility:public"],
+    deps = [
+        "//970-ng-commons:module",
+        "//:lombok",
+        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
+        "@maven//:javax_validation_validation_api",
+    ],
+)
+
+

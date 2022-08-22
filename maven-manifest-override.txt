@@ -21,3 +21,4 @@ lombok.var,//:lombok
 org.hibernate.validator.constraints,@maven//:org_hibernate_validator_hibernate_validator
 org.slf4j,@maven//:org_slf4j_slf4j_api
 org.w3c.dom,@maven//:xml_apis_xml_apis
+javax.ws.rs.core,@maven//:javax_ws_rs_javax_ws_rs_api

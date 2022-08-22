@@ -1,0 +1,17 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "dto",
+    srcs = glob(["*.java"]),
+    visibility = ["//visibility:public"],
+    deps = [
+        "//960-ng-core-beans/src/main/java/io/harness/ng/core/infrastructure",
+        "//980-commons/src/main/java/io/harness/data/validator",
+        "//999-annotations:module",
+        "//:lombok",
+        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
+        "@maven//:io_swagger_core_v3_swagger_annotations",
+    ],
+)
+
+

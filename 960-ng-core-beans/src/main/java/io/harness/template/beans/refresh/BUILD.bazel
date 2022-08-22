@@ -1,0 +1,17 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "refresh",
+    srcs = glob(["*.java"]),
+    visibility = ["//visibility:public"],
+    deps = [
+        "//960-ng-core-beans/src/main/java/io/harness/ng/core/template",
+        "//960-ng-core-beans/src/main/java/io/harness/template/beans",
+        "//980-commons/src/main/java/io/harness/exception/ngexception",
+        "//999-annotations:module",
+        "//:lombok",
+        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
+    ],
+)
+
+

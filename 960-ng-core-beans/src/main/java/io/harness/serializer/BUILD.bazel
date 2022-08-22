@@ -1,0 +1,16 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "serializer",
+    srcs = glob(["*.java"]),
+    visibility = ["//visibility:public"],
+    deps = [
+        "//960-ng-core-beans/src/main/java/io/harness/serializer/kryo",
+        "//970-ng-commons/src/main/java/io/serializer/registrars",
+        "//980-commons/src/main/java/io/harness/morphia",
+        "//:lombok",
+        "@maven//:com_google_guava_guava",
+    ],
+)
+
+

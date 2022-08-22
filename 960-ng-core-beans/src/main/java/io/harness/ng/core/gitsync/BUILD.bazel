@@ -1,0 +1,14 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "gitsync",
+    srcs = glob(["*.java"]),
+    visibility = ["//visibility:public"],
+    deps = [
+        "//970-api-services-beans/src/main/java/io/harness/git/model",
+        "//970-ng-commons/src/main/java/io/harness",
+        "//:lombok",
+    ],
+)
+
+

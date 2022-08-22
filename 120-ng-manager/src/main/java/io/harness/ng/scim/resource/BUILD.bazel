@@ -1,0 +1,20 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "resource",
+    srcs = glob(["*.java"]),
+    visibility = ["//visibility:public"],
+    deps = [
+        "//947-scim-core:module",
+        "//960-ng-core-beans:module",
+        "//970-ng-commons:module",
+        "//:lombok",
+        "@maven//:com_google_inject_guice",
+        "@maven//:io_dropwizard_dropwizard_jersey",
+        "@maven//:io_swagger_core_v3_swagger_annotations",
+        "@maven//:io_swagger_swagger_annotations",
+        "@maven//:javax_ws_rs_javax_ws_rs_api",
+    ],
+)
+
+

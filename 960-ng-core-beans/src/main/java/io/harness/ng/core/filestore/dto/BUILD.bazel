@@ -1,0 +1,26 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "dto",
+    srcs = glob(["*.java"]),
+    visibility = ["//visibility:public"],
+    deps = [
+        "//960-ng-core-beans/src/main/java/io/harness/ng/core/dto",
+        "//960-ng-core-beans/src/main/java/io/harness/ng/core/filestore",
+        "//970-ng-commons/src/main/java/io/harness",
+        "//970-ng-commons/src/main/java/io/harness/gitsync/beans",
+        "//970-ng-commons/src/main/java/io/harness/ng/core/common/beans",
+        "//980-commons/src/main/java/io/harness/data/validator",
+        "//999-annotations:module",
+        "//:lombok",
+        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
+        "@maven//:io_swagger_core_v3_swagger_annotations",
+        "@maven//:io_swagger_swagger_annotations",
+        "@maven//:jakarta_validation_jakarta_validation_api",
+        "@maven//:javax_validation_validation_api",
+        "@maven//:org_glassfish_jersey_media_jersey_media_multipart",
+        "@maven//:org_hibernate_validator_hibernate_validator",
+    ],
+)
+
+

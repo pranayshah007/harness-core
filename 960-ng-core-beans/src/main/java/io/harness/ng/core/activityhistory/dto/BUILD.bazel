@@ -1,0 +1,22 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "dto",
+    srcs = glob(["*.java"]),
+    visibility = ["//visibility:public"],
+    deps = [
+        "//960-ng-core-beans/src/main/java/io/harness/ng/core/activityhistory",
+        "//970-ng-commons/src/main/java/io/harness/connector",
+        "//970-ng-commons/src/main/java/io/harness/ng/core",
+        "//970-ng-commons/src/main/java/io/harness/ng/core/dto",
+        "//999-annotations:module",
+        "//:lombok",
+        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
+        "@maven//:io_swagger_core_v3_swagger_annotations",
+        "@maven//:io_swagger_swagger_annotations",
+        "@maven//:javax_validation_validation_api",
+        "@maven//:org_hibernate_validator_hibernate_validator",
+    ],
+)
+
+

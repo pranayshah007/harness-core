@@ -1,0 +1,16 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "exception",
+    srcs = glob(["*.java"]),
+    visibility = ["//visibility:public"],
+    deps = [
+        "//960-ng-core-beans/src/main/java/io/harness/template/beans/refresh",
+        "//980-commons/src/main/java/io/harness/exception/ngexception",
+        "//980-commons/src/main/java/io/harness/exception/ngexception/beans/templateservice",
+        "//999-annotations:module",
+        "//:lombok",
+    ],
+)
+
+

@@ -1,0 +1,13 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "invites",
+    srcs = glob(["*.java"]),
+    visibility = ["//visibility:public"],
+    deps = [
+        "//999-annotations:module",
+        "@maven//:org_codehaus_jackson_jackson_core_asl",
+    ],
+)
+
+

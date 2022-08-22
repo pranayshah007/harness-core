@@ -1,0 +1,16 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "featureflaghelper",
+    srcs = glob(["*.java"]),
+    visibility = ["//visibility:public"],
+    deps = [
+        "//945-account-mgmt:module",
+        "//956-feature-flag-beans:module",
+        "//970-ng-commons:module",
+        "//999-annotations:module",
+        "@maven//:com_google_inject_guice",
+    ],
+)
+
+
