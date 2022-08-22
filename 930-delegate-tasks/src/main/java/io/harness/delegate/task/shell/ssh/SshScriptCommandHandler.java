@@ -17,6 +17,7 @@ import io.harness.delegate.task.ssh.NgCommandUnit;
 import io.harness.delegate.task.ssh.ScriptCommandUnit;
 import io.harness.exception.InvalidRequestException;
 import io.harness.logging.CommandExecutionStatus;
+import io.harness.logging.LogLevel;
 import io.harness.shell.AbstractScriptExecutor;
 
 import com.google.inject.Inject;
@@ -61,7 +62,15 @@ public class SshScriptCommandHandler implements CommandHandler {
 
     AbstractScriptExecutor executor = sshScriptExecutorFactory.getExecutor(context);
 
-    return executor.executeCommandString(scriptCommandUnit.getCommand(), sshCommandTaskParameters.getOutputVariables())
-        .getStatus();
+    CommandExecutionStatus commandExecutionStatus =
+        executor.executeCommandString(scriptCommandUnit.getCommand(), sshCommandTaskParameters.getOutputVariables())
+            .getStatus();
+
+    if (parameters.isExecuteOnDelegate()) {
+      executor.getLogCallback().saveExecutionLog(
+          "Command finished with status " + commandExecutionStatus, LogLevel.INFO, commandExecutionStatus);
+    }
+
+    return commandExecutionStatus;
   }
 }

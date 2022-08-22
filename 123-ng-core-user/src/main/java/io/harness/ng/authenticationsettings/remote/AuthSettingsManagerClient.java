@@ -21,6 +21,7 @@ import software.wings.beans.loginSettings.PasswordStrengthPolicy;
 import software.wings.beans.sso.LdapSettings;
 import software.wings.beans.sso.OauthSettings;
 import software.wings.beans.sso.SamlSettings;
+import software.wings.helpers.ext.ldap.LdapResponse;
 import software.wings.security.authentication.LoginTypeResponse;
 import software.wings.security.authentication.SSOConfig;
 
@@ -129,4 +130,9 @@ public interface AuthSettingsManagerClient {
 
   @DELETE(API_PREFIX + "sso/ldap/settings")
   Call<RestResponse<LdapSettings>> deleteLdapSettings(@Query("accountId") @NotEmpty String accountId);
+
+  @Multipart
+  @POST(API_PREFIX + "sso/ldap/settings/test/authentication")
+  Call<RestResponse<LdapResponse>> testLdapAuthentication(@Query("accountId") @NotEmpty String accountId,
+      @Part("email") RequestBody email, @Part("password") RequestBody password);
 }

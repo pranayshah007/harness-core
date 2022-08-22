@@ -21,6 +21,7 @@ import io.harness.beans.steps.stepinfo.CleanupStepInfo;
 import io.harness.beans.steps.stepinfo.DockerStepInfo;
 import io.harness.beans.steps.stepinfo.ECRStepInfo;
 import io.harness.beans.steps.stepinfo.GCRStepInfo;
+import io.harness.beans.steps.stepinfo.GitCloneStepInfo;
 import io.harness.beans.steps.stepinfo.PluginStepInfo;
 import io.harness.beans.steps.stepinfo.RestoreCacheGCSStepInfo;
 import io.harness.beans.steps.stepinfo.RestoreCacheS3StepInfo;
@@ -68,6 +69,7 @@ public class CIContractsKryoRegistrar implements KryoRegistrar {
     kryo.register(CIStepOutcome.class, 100057);
     kryo.register(PluginStepInfo.class, 100058);
     kryo.register(SecurityStepInfo.class, 110105);
+    kryo.register(GitCloneStepInfo.class, 110115);
     kryo.register(CustomSecretVariable.class, 100061);
     kryo.register(CustomTextVariable.class, 100062);
     kryo.register(CustomVariable.Type.class, 100063);

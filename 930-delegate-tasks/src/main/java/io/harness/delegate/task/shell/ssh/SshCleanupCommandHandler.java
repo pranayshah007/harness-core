@@ -18,6 +18,7 @@ import io.harness.delegate.task.ssh.NgCleanupCommandUnit;
 import io.harness.delegate.task.ssh.NgCommandUnit;
 import io.harness.exception.InvalidRequestException;
 import io.harness.logging.CommandExecutionStatus;
+import io.harness.logging.LogLevel;
 import io.harness.shell.AbstractScriptExecutor;
 
 import com.google.inject.Inject;
@@ -60,7 +61,13 @@ public class SshCleanupCommandHandler implements CommandHandler {
 
     AbstractScriptExecutor executor = sshScriptExecutorFactory.getExecutor(context);
 
-    return cleanup(sshCommandTaskParameters, executor);
+    CommandExecutionStatus commandExecutionStatus = cleanup(sshCommandTaskParameters, executor);
+    if (parameters.isExecuteOnDelegate()) {
+      executor.getLogCallback().saveExecutionLog(
+          "Command finished with status " + commandExecutionStatus, LogLevel.INFO, commandExecutionStatus);
+    }
+
+    return commandExecutionStatus;
   }
 
   private CommandExecutionStatus cleanup(SshCommandTaskParameters taskParameters, AbstractScriptExecutor executor) {

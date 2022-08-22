@@ -28,7 +28,7 @@ import io.harness.enforcement.constants.RestrictionType;
 import io.harness.enforcement.exceptions.LimitExceededException;
 import io.harness.enforcement.services.impl.EnforcementSdkClient;
 import io.harness.licensing.Edition;
-import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.remote.client.NGRestUtils;
 import io.harness.rule.Owner;
 
 import java.io.IOException;
@@ -36,9 +36,10 @@ import java.time.temporal.ChronoUnit;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import retrofit2.Call;
-import retrofit2.Response;
+import org.mockito.Mockito;
+import org.powermock.core.classloader.annotations.PrepareForTest;
 
+@PrepareForTest({NGRestUtils.class})
 public class RateLimitRestrictionHandlerTest extends CategoryTest {
   private RateLimitRestrictionHandler handler;
   private FeatureRestrictionName featureRestrictionName = FeatureRestrictionName.TEST1;
@@ -52,12 +53,10 @@ public class RateLimitRestrictionHandlerTest extends CategoryTest {
   public void setup() throws IOException {
     handler = new RateLimitRestrictionHandler();
     client = mock(EnforcementSdkClient.class);
-    Call<ResponseDTO<FeatureRestrictionUsageDTO>> usageCall = mock(Call.class);
-    when(usageCall.execute())
-        .thenReturn(Response.success(ResponseDTO.newResponse(FeatureRestrictionUsageDTO.builder().count(10).build())));
-    when(client.getRestrictionUsage(any(), any(), any())).thenReturn(usageCall);
     restriction =
         new RateLimitRestriction(RestrictionType.RATE_LIMIT, 11, new TimeUnit(ChronoUnit.DAYS, 1), false, client);
+    Mockito.mockStatic(NGRestUtils.class);
+    when(NGRestUtils.getResponseWithRetry(any())).thenReturn(FeatureRestrictionUsageDTO.builder().count(10).build());
   }
 
   @Test

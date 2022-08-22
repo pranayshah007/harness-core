@@ -25,6 +25,7 @@ import io.harness.cdng.infra.beans.ServerlessAwsLambdaInfraMapping;
 import io.harness.cdng.infra.beans.SshWinRmAwsInfraMapping;
 import io.harness.cdng.infra.beans.SshWinRmAzureInfraMapping;
 import io.harness.cdng.infra.steps.InfraStepParameters;
+import io.harness.cdng.instance.InstanceDeploymentInfo;
 import io.harness.cdng.pipeline.executions.CDAccountExecutionMetadata;
 import io.harness.cdng.provision.cloudformation.beans.CloudformationConfig;
 import io.harness.cdng.provision.terraform.TerraformConfig;
@@ -58,6 +59,7 @@ public class NGMorphiaRegistrar implements MorphiaRegistrar {
     set.add(AzureWebAppInfraMapping.class);
     set.add(CdTelemetrySentStatus.class);
     set.add(StageExecutionInfo.class);
+    set.add(InstanceDeploymentInfo.class);
   }
 
   @Override
@@ -71,5 +73,6 @@ public class NGMorphiaRegistrar implements MorphiaRegistrar {
     h.put("io.harness.cdng.provision.cloudformation.beans.CloudformationConfig", CloudformationConfig.class);
     h.put("io.harness.polling.bean.PollingDocument", PollingDocument.class);
     h.put("io.harness.cdng.execution.StageExecutionInfo", StageExecutionInfo.class);
+    h.put("io.harness.cdng.instance.InstanceDeploymentInfo", InstanceDeploymentInfo.class);
   }
 }

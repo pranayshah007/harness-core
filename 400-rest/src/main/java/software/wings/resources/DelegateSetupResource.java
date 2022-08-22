@@ -165,6 +165,7 @@ public class DelegateSetupResource {
   @Timed
   @ExceptionMetered
   @AuthRule(permissionType = LOGGED_IN)
+  @ApiKeyAuthorized(permissionType = LOGGED_IN)
   public RestResponse<DelegateStatus> listDelegateStatusWithScalingGroups(
       @QueryParam("accountId") @NotEmpty String accountId) {
     try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR)) {
@@ -636,6 +637,7 @@ public class DelegateSetupResource {
   @ExceptionMetered
   @AuthRule(permissionType = ACCOUNT_MANAGEMENT)
   @AuthRule(permissionType = MANAGE_DELEGATES)
+  @ApiKeyAuthorized(permissionType = MANAGE_DELEGATES)
   @Deprecated
   public RestResponse<Map<String, String>> downloadUrl(
       @Context HttpServletRequest request, @QueryParam("accountId") @NotEmpty String accountId) {

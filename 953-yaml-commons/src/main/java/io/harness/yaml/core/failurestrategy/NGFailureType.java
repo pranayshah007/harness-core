@@ -51,7 +51,10 @@ public enum NGFailureType {
       NGFailureTypeConstants.DELEGATE_PROVISIONING_ERROR, EnumSet.of(DELEGATE_PROVISIONING_FAILURE)),
   @JsonProperty(NGFailureTypeConstants.POLICY_EVALUATION_FAILURE)
   POLICY_EVALUATION_FAILURE(
-      NGFailureTypeConstants.POLICY_EVALUATION_FAILURE, EnumSet.of(FailureType.POLICY_EVALUATION_FAILURE));
+      NGFailureTypeConstants.POLICY_EVALUATION_FAILURE, EnumSet.of(FailureType.POLICY_EVALUATION_FAILURE)),
+  @JsonProperty(NGFailureTypeConstants.EXECUTION_INPUT_TIMEOUT_ERROR)
+  EXECUTION_INPUT_TIMEOUT_FAILURE(
+      NGFailureTypeConstants.EXECUTION_INPUT_TIMEOUT_ERROR, EnumSet.of(FailureType.EXECUTION_INPUT_TIMEOUT_FAILURE));
 
   private final String yamlName;
   private final EnumSet<FailureType> failureType;

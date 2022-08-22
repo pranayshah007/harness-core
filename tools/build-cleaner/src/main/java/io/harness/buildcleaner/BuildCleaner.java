@@ -1,8 +1,16 @@
+/*
+ * Copyright 2022 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
+
 package io.harness.buildcleaner;
 
 import io.harness.buildcleaner.bazel.BuildFile;
 import io.harness.buildcleaner.bazel.JavaBinary;
 import io.harness.buildcleaner.bazel.JavaLibrary;
+import io.harness.buildcleaner.bazel.LoadStatement;
 import io.harness.buildcleaner.javaparser.ClassMetadata;
 import io.harness.buildcleaner.javaparser.ClasspathParser;
 import io.harness.buildcleaner.javaparser.PackageParser;
@@ -34,6 +42,7 @@ import org.slf4j.LoggerFactory;
 public class BuildCleaner {
   private static final String DEFAULT_VISIBILITY = "//visibility:public";
   private static final String BUILD_CLEANER_INDEX_FILE_NAME = ".build-cleaner-index";
+  private static final String DEFAULT_JAVA_LIBRARY_NAME = "module";
 
   private static final Logger logger = LoggerFactory.getLogger(BuildCleaner.class);
   private CommandLine options;
@@ -49,9 +58,9 @@ public class BuildCleaner {
       this.mavenManifest = MavenManifest.loadFromFile(mavenManifestFileLocation);
     }
 
-    Path mavenManifestOverrideFileLocation = mavenManifestFile();
+    Path mavenManifestOverrideFileLocation = mavenManifestOverrideFile();
     if (Files.exists(mavenManifestOverrideFileLocation)) {
-      this.mavenManifestOverride = MavenManifest.loadFromFile(mavenManifestOverrideFileLocation);
+      this.mavenManifestOverride = MavenManifest.loadFromOverrideFile(mavenManifestOverrideFileLocation);
     }
 
     this.packageParser = new PackageParser(workspace());
@@ -141,11 +150,19 @@ public class BuildCleaner {
 
     Set<String> dependencies = new TreeSet<>();
     for (String importStatement : classpathParser.getUsedTypes()) {
-      if (importStatement.startsWith("java")) {
+      if (importStatement.startsWith("java.")) {
         continue;
       }
 
       Optional<String> resolvedSymbol = resolve(importStatement, harnessSymbolMap);
+
+      // Skip the symbols from the same package. Resolved symbol starts with "//" and ends with ":module" and rest of
+      // it is just a path - therefore, removing first two characters before comparing.
+      if (resolvedSymbol.isPresent()
+          && resolvedSymbol.get().substring(2, resolvedSymbol.get().length() - 7).equals(path.toString())) {
+        continue;
+      }
+
       resolvedSymbol.ifPresent(dependencies::add);
       if (!resolvedSymbol.isPresent()) {
         logger.info("No build dependency found for " + importStatement);
@@ -159,8 +176,9 @@ public class BuildCleaner {
     }
 
     BuildFile buildFile = new BuildFile();
-    JavaLibrary javaLibrary =
-        new JavaLibrary(path.getFileName().toString(), DEFAULT_VISIBILITY, srcsGlob(), dependencies);
+    buildFile.enableAnalysisPerModule();
+
+    JavaLibrary javaLibrary = new JavaLibrary(DEFAULT_JAVA_LIBRARY_NAME, DEFAULT_VISIBILITY, srcsGlob(), dependencies);
     buildFile.addJavaLibrary(javaLibrary);
 
     // Find main files in the folder and create java binary targets.
@@ -202,7 +220,7 @@ public class BuildCleaner {
     // Look up symbol in the harness symbol map.
     resolvedSymbol = harnessSymbolMap.getTarget(importStatement);
     if (resolvedSymbol.isPresent()) {
-      return Optional.of("//" + resolvedSymbol.get());
+      return Optional.of("//" + resolvedSymbol.get() + ":" + DEFAULT_JAVA_LIBRARY_NAME);
     }
 
     return Optional.empty();

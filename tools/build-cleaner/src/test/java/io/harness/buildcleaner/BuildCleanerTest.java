@@ -1,3 +1,10 @@
+/*
+ * Copyright 2022 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
+
 package io.harness.buildcleaner;
 
 import static junit.framework.TestCase.assertEquals;
@@ -17,7 +24,7 @@ import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
+import java.util.SortedSet;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -77,14 +84,14 @@ public class BuildCleanerTest {
     // Assert
     assertTrue(outputBuildFile.getJavaBinaryList().isEmpty());
 
-    Set<LoadStatement> loadStatementSet = outputBuildFile.getLoadStatements();
-    assertEquals(1, loadStatementSet.size());
+    SortedSet<LoadStatement> loadStatementSet = outputBuildFile.getLoadStatements();
+    assertEquals(2, loadStatementSet.size());
     assertEquals("load(\"@rules_java//java:defs.bzl\", \"java_library\")",
         loadStatementSet.stream().findFirst().get().toString());
 
     List<JavaLibrary> javaLibraryTargets = outputBuildFile.getJavaLibraryList();
     assertEquals(1, javaLibraryTargets.size());
-    assertEquals(ImmutableSet.of("//root", "//root/nested"), javaLibraryTargets.get(0).getDeps());
+    assertEquals(ImmutableSet.of("//root:module", "//root/nested:module"), javaLibraryTargets.get(0).getDeps());
   }
 
   private void writeClassToFile(File folder, String fileName) throws IOException, FileNotFoundException {

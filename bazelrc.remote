@@ -15,4 +15,3 @@ build --experimental_inmemory_jdeps_files
 build --nobuild_runfile_links
 
 test --flaky_test_attempts=3
-test --local_ram_resources=HOST_RAM*.4

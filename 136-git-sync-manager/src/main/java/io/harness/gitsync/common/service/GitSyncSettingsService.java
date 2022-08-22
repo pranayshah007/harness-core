@@ -27,4 +27,7 @@ public interface GitSyncSettingsService {
   boolean enableGitSimplification(String accountIdentifier, String orgIdentifier, String projectIdentifier);
 
   boolean getGitSimplificationStatus(String accountIdentifier, String orgIdentifier, String projectIdentifier);
+
+  boolean isOldGitSyncEnabledForModule(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, boolean isNotForFFModule);
 }

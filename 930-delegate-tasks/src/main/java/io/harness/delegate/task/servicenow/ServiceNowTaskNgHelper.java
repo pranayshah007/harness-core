@@ -514,6 +514,7 @@ public class ServiceNowTaskNgHelper {
           fields.add(ServiceNowFieldNG.builder()
                          .name(fieldObj.get("label").textValue())
                          .key(fieldObj.get("name").textValue())
+                         .internalType(fieldObj.get("internalType").textValue())
                          .build());
         }
         return ServiceNowTaskNGResponse.builder().serviceNowFieldNGList(fields).build();

@@ -132,7 +132,7 @@ public class ShellScriptStep extends TaskExecutableWithRollback<ShellScriptTaskR
 
   private void closeLogStream(Ambiance ambiance) {
     try {
-      Thread.sleep(100, 0);
+      Thread.sleep(500, 0);
     } catch (InterruptedException e) {
       log.error("Close Log Stream was interrupted", e);
     } finally {

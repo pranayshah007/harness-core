@@ -7,6 +7,7 @@ spec:
           strategy:
             repeat:
               items: <+stage.output.hosts>
+              maxConcurrency: <+maxConcurrency>
               start: <+start>
               end: <+end>
               unit: <+unit>
@@ -17,7 +18,6 @@ spec:
                 type: Command
                 timeout: 10m
                 spec:
-                  host: <+repeat.item>
                   onDelegate: false
                   environmentVariables: [ ]
                   outputVariables: [ ]
@@ -26,7 +26,7 @@ spec:
                       name: "Stop Service Rollback"
                       type: Script
                       spec:
-                        workingDirectory: $HARNESS_RUNTIME_PATH\tomcat\bin
+                        workingDirectory: $HOME\<+service.name>\<+env.name>\tomcat\bin
                         shell: PowerShell
                         source:
                           type: Inline
@@ -36,7 +36,7 @@ spec:
                       name: "Process Stopped Rollback"
                       type: Script
                       spec:
-                        workingDirectory: $HARNESS_RUNTIME_PATH\tomcat\bin
+                        workingDirectory: $HOME\<+service.name>\<+env.name>\tomcat\bin
                         shell: PowerShell
                         source:
                           type: Inline
@@ -47,7 +47,7 @@ spec:
                       name: "Port Cleared Rollback"
                       type: Script
                       spec:
-                        workingDirectory: $HARNESS_RUNTIME_PATH\tomcat\bin
+                        workingDirectory: $HOME\<+service.name>\<+env.name>\tomcat\bin
                         shell: PowerShell
                         source:
                           type: Inline
@@ -58,43 +58,42 @@ spec:
                       name: "Setup Runtime Paths Rollback"
                       type: Script
                       spec:
+                        workingDirectory: $HOME\<+service.name>\<+env.name>
                         shell: PowerShell
                         source:
                           type: Inline
                           spec:
                             script: |-
-                              # Env variables are defined with the following values:
-                              # HARNESS_RUNTIME_PATH: deployment_type/service_name/env_name/runtime
-                              # HARNESS_BACKUP_PATH: deployment_type/service_name/env_name/backup
-                              # HARNESS_STAGING_PATH: deployment_type/service_name/env_name/staging
-                              New-Item -Path "$HARNESS_RUNTIME_PATH" -ItemType Directory
-                              New-Item -Path "$HARNESS_RUNTIME_PATH" -ItemType Directory
-                              New-Item -Path "$HARNESS_RUNTIME_PATH" -ItemType Directory
-                              New-Item -Path "$HARNESS_RUNTIME_PATH\tomcat\bin" -ItemType Directory
+                              # Creating runtime, backup and staging directories:
+
+                              New-Item -Path "$HOME\<+service.name>\<+env.name>\runtime" -ItemType Directory
+                              New-Item -Path "$HOME\<+service.name>\<+env.name>\backup" -ItemType Directory
+                              New-Item -Path "$HOME\<+service.name>\<+env.name>\staging" -ItemType Directory
+                              New-Item -Path "$HOME\<+service.name>\<+env.name>\tomcat\bin" -ItemType Directory
                     - identifier: Copy_Artifact_Rollback_<+phase>
                       name: "Copy Artifact Rollback"
                       type: Copy
                       spec:
                         sourceType: Artifact
-                        destinationPath: $HARNESS_RUNTIME_PATH
+                        destinationPath: $HOME\<+service.name>\<+env.name>
                     - identifier: Expand_Artifact_<+phase>
                       name: "Expand Artifact Rollback"
                       type: Script
                       spec:
                         shell: PowerShell
-                        workingDirectory: $HARNESS_RUNTIME_PATH
+                        workingDirectory: $HOME\<+service.name>\<+env.name>
                         source:
                           type: Inline
                           spec:
                             script: |-
-                              # Remove-Item –path $HARNESS_RUNTIME_PATH\tomcat remove-item * –recurse
+                              # Remove-Item –path $HOME\<+service.name>\<+env.name>\tomcat remove-item * –recurse
                               # Remove-Item ${TomcatBinaryName}
                               # Write-Host "Extracting artifact..."
                     - identifier: Start_Service_Rollback_<+phase>
                       name: "Start Service Rollback"
                       type: Script
                       spec:
-                        workingDirectory: $HARNESS_RUNTIME_PATH\tomcat\bin
+                        workingDirectory: $HOME\<+service.name>\<+env.name>\tomcat\bin
                         shell: PowerShell
                         source:
                           type: Inline
@@ -104,7 +103,7 @@ spec:
                       name: "Process Running Rollback"
                       type: Script
                       spec:
-                        workingDirectory: $HARNESS_RUNTIME_PATH\tomcat\bin
+                        workingDirectory: $HOME\<+service.name>\<+env.name>\tomcat\bin
                         shell: PowerShell
                         source:
                           type: Inline
@@ -115,7 +114,7 @@ spec:
                       name: "Port Listening Rollback"
                       type: Script
                       spec:
-                        workingDirectory: $HARNESS_RUNTIME_PATH\tomcat\bin
+                        workingDirectory: $HOME\<+service.name>\<+env.name>\tomcat\bin
                         shell: PowerShell
                         source:
                           type: Inline

@@ -21,4 +21,5 @@ public interface NGFailureTypeConstants {
   String VERIFICATION_ERROR = "Verification";
   String DELEGATE_PROVISIONING_ERROR = "DelegateProvisioning";
   String POLICY_EVALUATION_FAILURE = "PolicyEvaluationFailure";
+  String EXECUTION_INPUT_TIMEOUT_ERROR = "ExecutionInputTimeoutError";
 }

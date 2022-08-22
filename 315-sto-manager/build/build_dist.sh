@@ -29,6 +29,7 @@ cp ../../keystore.jks .
 cp ../../315-sto-manager/key.pem .
 cp ../../315-sto-manager/cert.pem .
 cp ../../315-sto-manager/src/main/resources/redisson-jcache.yaml .
+cp ../../315-sto-manager/src/main/resources/enterprise-redisson-jcache.yaml .
 
 cp ../../315-sto-manager/build/container/Dockerfile-stomanager-service-jenkins-k8-openjdk ./Dockerfile
 cp ../../315-sto-manager/build/container/Dockerfile-stomanager-service-jenkins-k8-gcr-openjdk ./Dockerfile-gcr

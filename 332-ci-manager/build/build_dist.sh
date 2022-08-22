@@ -15,6 +15,7 @@ cp ../../keystore.jks .
 cp ../../332-ci-manager/config/key.pem .
 cp ../../332-ci-manager/config/cert.pem .
 cp ../../332-ci-manager/service/src/main/resources/redisson-jcache.yaml .
+cp ../../332-ci-manager/service/src/main/resources/enterprise-redisson-jcache.yaml .
 
 cp ../../332-ci-manager/build/container/Dockerfile-ci-manager-jenkins-k8-openjdk ./Dockerfile
 cp ../../332-ci-manager/build/container/Dockerfile-ci-manager-jenkins-k8-gcr-openjdk ./Dockerfile-gcr

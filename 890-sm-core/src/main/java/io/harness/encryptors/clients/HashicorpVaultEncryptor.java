@@ -12,6 +12,7 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.eraro.ErrorCode.VAULT_OPERATION_ERROR;
 import static io.harness.exception.WingsException.USER;
+import static io.harness.helpers.NGVaultTaskHelper.getVaultAppRoleLoginResult;
 import static io.harness.helpers.NGVaultTaskHelper.getVaultAwmIamAuthLoginResult;
 import static io.harness.helpers.NGVaultTaskHelper.getVaultK8sAuthLoginResult;
 import static io.harness.threading.Morpheus.sleep;
@@ -262,6 +263,9 @@ public class HashicorpVaultEncryptor implements VaultEncryptor {
     } else if (vaultConfig.isUseK8sAuth()) {
       VaultK8sLoginResult vaultK8sLoginResult = getVaultK8sAuthLoginResult(vaultConfig);
       vaultConfig.setAuthToken(vaultK8sLoginResult.getClientToken());
+    } else if (!vaultConfig.getRenewAppRoleToken()) {
+      VaultAppRoleLoginResult vaultAppRoleLoginResult = getVaultAppRoleLoginResult(vaultConfig);
+      vaultConfig.setAuthToken(vaultAppRoleLoginResult.getClientToken());
     }
     return vaultConfig.getAuthToken();
   }

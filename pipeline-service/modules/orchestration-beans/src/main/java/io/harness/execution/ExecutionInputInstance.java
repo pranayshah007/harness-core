@@ -38,5 +38,6 @@ public class ExecutionInputInstance {
   @CreatedDate Long validUntil;
   String template;
   String userInput;
+  String fieldYaml;
   Map<String, Object> mergedInputTemplate;
 }

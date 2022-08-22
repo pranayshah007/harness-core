@@ -145,6 +145,7 @@ public class DashboardPipelineHealthAndExecutionInfoTest extends CategoryTest {
     long endInterval = 1617580800000L;
 
     List<StatusAndTime> statusAndTime = Arrays.asList(new StatusAndTime(ExecutionStatus.SUCCESS.name(), 1617365265000L),
+        new StatusAndTime(ExecutionStatus.IGNOREFAILED.name(), 1617365265000L),
         new StatusAndTime(ExecutionStatus.FAILED.name(), 1617365265000L),
         new StatusAndTime(ExecutionStatus.ABORTED.name(), 1617321600000L),
         new StatusAndTime(ExecutionStatus.RUNNING.name(), 1617580800000L),
@@ -162,14 +163,16 @@ public class DashboardPipelineHealthAndExecutionInfoTest extends CategoryTest {
             "ac", "or", "pr", "pip", startInterval, endInterval, "CI");
 
     List<PipelineExecutionInfo> pipelineExecutionInfoList = new ArrayList<>();
-    pipelineExecutionInfoList.add(PipelineExecutionInfo.builder()
-                                      .date(1617235200000L)
-                                      .count(PipelineCountInfo.builder().total(2).success(0).failure(2).build())
-                                      .build());
-    pipelineExecutionInfoList.add(PipelineExecutionInfo.builder()
-                                      .date(1617321600000L)
-                                      .count(PipelineCountInfo.builder().total(3).success(1).failure(2).build())
-                                      .build());
+    pipelineExecutionInfoList.add(
+        PipelineExecutionInfo.builder()
+            .date(1617235200000L)
+            .count(PipelineCountInfo.builder().total(2).success(0).failure(0).aborted(1).expired(1).build())
+            .build());
+    pipelineExecutionInfoList.add(
+        PipelineExecutionInfo.builder()
+            .date(1617321600000L)
+            .count(PipelineCountInfo.builder().total(4).success(2).failure(1).aborted(1).build())
+            .build());
     pipelineExecutionInfoList.add(PipelineExecutionInfo.builder()
                                       .date(1617408000000L)
                                       .count(PipelineCountInfo.builder().total(1).success(0).failure(1).build())

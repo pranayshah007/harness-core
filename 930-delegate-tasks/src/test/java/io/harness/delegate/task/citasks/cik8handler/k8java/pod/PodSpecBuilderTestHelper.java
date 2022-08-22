@@ -173,6 +173,18 @@ public class PodSpecBuilderTestHelper {
         .stepExecVolumeName(stepExecVolumeName)
         .stepExecWorkingDir(stepExecWorkingDir)
         .containerParamsList(asList(basicContainerParamsWithoutImageCred()))
+        .activeDeadLineSeconds(CIConstants.POD_MAX_TTL_SECS)
+        .build();
+  }
+
+  public static CIK8PodParams<CIK8ContainerParams> basicInputWithHostedTtl() {
+    return CIK8PodParams.<CIK8ContainerParams>builder()
+        .name(podName)
+        .namespace(namespace)
+        .stepExecVolumeName(stepExecVolumeName)
+        .stepExecWorkingDir(stepExecWorkingDir)
+        .containerParamsList(asList(basicContainerParamsWithoutImageCred()))
+        .activeDeadLineSeconds(CIConstants.POD_MAX_TTL_SECS_HOSTED_FREE)
         .build();
   }
 
@@ -253,6 +265,25 @@ public class PodSpecBuilderTestHelper {
         .withContainers(basicContainerBuilder().build())
         .withRestartPolicy(CIConstants.RESTART_POLICY)
         .withActiveDeadlineSeconds(CIConstants.POD_MAX_TTL_SECS)
+        .withHostAliases(new ArrayList<>())
+        .withVolumes(new ArrayList<>())
+        .withInitContainers(new ArrayList<>())
+        .withImagePullSecrets(new ArrayList<>())
+        .withTolerations(new ArrayList<>())
+        .endSpec()
+        .build();
+  }
+
+  public static V1Pod basicExpectedPodWithHostedTtl() {
+    return new V1PodBuilder()
+        .withNewMetadata()
+        .withName(podName)
+        .withNamespace(namespace)
+        .endMetadata()
+        .withNewSpec()
+        .withContainers(basicContainerBuilder().build())
+        .withRestartPolicy(CIConstants.RESTART_POLICY)
+        .withActiveDeadlineSeconds(CIConstants.POD_MAX_TTL_SECS_HOSTED_FREE)
         .withHostAliases(new ArrayList<>())
         .withVolumes(new ArrayList<>())
         .withInitContainers(new ArrayList<>())

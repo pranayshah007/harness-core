@@ -5188,6 +5188,9 @@
             "readOnly": {
               "type": "boolean"
             },
+            "renewAppRoleToken": {
+              "type": "boolean"
+            },
             "renewalIntervalMinutes": {
               "type": "integer",
               "format": "int64"
