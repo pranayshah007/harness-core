@@ -70,6 +70,7 @@ public class RetryHelper {
 
     nodeExecutionService.updateRelationShipsForRetryNode(updatedRetriedNode.getUuid(), savedNodeExecution.getUuid());
     nodeExecutionService.markRetried(updatedRetriedNode.getUuid());
+    // Todo: Check with product if we want to stop again for execution time input
     executorService.submit(() -> engine.startNodeExecution(finalAmbiance));
   }
 
