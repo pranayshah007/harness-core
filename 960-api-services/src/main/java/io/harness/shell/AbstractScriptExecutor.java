@@ -190,4 +190,8 @@ public abstract class AbstractScriptExecutor implements BaseScriptExecutor {
      */
     void downloadToStream(OutputStream outputStream) throws IOException, ExecutionException;
   }
+
+  public LogCallback getLogCallback() {
+    return this.logCallback;
+  }
 }
