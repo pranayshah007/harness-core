@@ -13,6 +13,8 @@ import io.harness.ng.core.services.OrganizationService;
 import io.harness.ng.core.services.ProjectService;
 import io.harness.ng.core.user.entities.UserGroup;
 import io.harness.repositories.user.spring.UserMembershipRepository;
+import io.harness.security.SecurityContextBuilder;
+import io.harness.security.dto.ServicePrincipal;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -24,6 +26,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 
+import static io.harness.AuthorizationServiceHeader.NG_MANAGER;
 import static io.harness.NGConstants.DEFAULT_ACCOUNT_LEVEL_USER_GROUP_IDENTIFIER;
 import static io.harness.NGConstants.DEFAULT_ORGANIZATION_LEVEL_USER_GROUP_IDENTIFIER;
 import static io.harness.NGConstants.DEFAULT_PROJECT_LEVEL_USER_GROUP_IDENTIFIER;
@@ -52,7 +55,20 @@ public class DefaultUserGroupCreationService implements Runnable {
 
     @Override
     public void run() {
-        createDefaultUserGroups();
+        log.info(DEBUG_MESSAGE + "Started running...");
+        try {
+            log.info(DEBUG_MESSAGE + "Setting SecurityContext.");
+            SecurityContextBuilder.setContext(new ServicePrincipal(NG_MANAGER.getServiceId()));
+            log.info(DEBUG_MESSAGE + "Setting SecurityContext completed.");
+            createDefaultUserGroups();
+        } catch (Exception ex) {
+            log.error(DEBUG_MESSAGE + " unexpectedly stopped", ex);
+        } finally {
+            log.info(DEBUG_MESSAGE + "Unsetting SecurityContext.");
+            SecurityContextBuilder.unsetCompleteContext();
+            log.info(DEBUG_MESSAGE + "Unsetting SecurityContext completed.");
+        }
+        log.info(DEBUG_MESSAGE + "Stopped running...");
     }
 
     private void createDefaultUserGroups() {
@@ -89,9 +105,9 @@ public class DefaultUserGroupCreationService implements Runnable {
     }
 
     private void createUserGroupForOrganizations(String accountId) {
+        int pageIndex = 0;
+        int pageSize = 100;
         do {
-            int pageIndex = 0;
-            int pageSize = 100;
             Pageable pageable = PageRequest.of(pageIndex, pageSize);
             Criteria criteria = Criteria.where("accountIdentifier").is(accountId);
             List<Organization> organizations = organizationService.list(criteria, pageable).getContent();
@@ -100,7 +116,7 @@ public class DefaultUserGroupCreationService implements Runnable {
             }
             for (Organization organization : organizations) {
                 try {
-                    Scope scope = Scope.of(accountId, organization.getId(), null);
+                    Scope scope = Scope.of(accountId, organization.getIdentifier(), null);
                     if (Boolean.FALSE.equals(userGroupService.exists(scope, getDefaultUserGroupId(scope)))) {
                         userGroupService.setUpDefaultUserGroup(scope);
                     }
@@ -112,14 +128,15 @@ public class DefaultUserGroupCreationService implements Runnable {
                     log.error(DEBUG_MESSAGE + "User Group Creation failed for Organization: " + organization.getId(), ex);
                 }
             }
+            pageIndex++;
         }
         while (true);
     }
 
     private void createUserGroupForProjects(String accountId, String organizationId) {
+        int pageIndex = 0;
+        int pageSize = 100;
         do {
-            int pageIndex = 0;
-            int pageSize = 100;
             Pageable pageable = PageRequest.of(pageIndex, pageSize);
             Criteria criteria = Criteria.where("accountIdentifier").is(accountId).and("organizationId").is(organizationId);
             List<Project> projects = projectService.list(criteria, pageable).getContent();
@@ -128,7 +145,7 @@ public class DefaultUserGroupCreationService implements Runnable {
             }
             for (Project project : projects) {
                 try {
-                    Scope scope = Scope.of(accountId, organizationId, project.getId());
+                    Scope scope = Scope.of(accountId, organizationId, project.getIdentifier());
                     if (Boolean.FALSE.equals(userGroupService.exists(scope, getDefaultUserGroupId(scope)))) {
                         userGroupService.setUpDefaultUserGroup(scope);
                     }
@@ -139,6 +156,7 @@ public class DefaultUserGroupCreationService implements Runnable {
                     log.error(DEBUG_MESSAGE + "User Group Creation failed for Project: " + project.getId(), ex);
                 }
             }
+            pageIndex++;
         }
         while (true);
     }
