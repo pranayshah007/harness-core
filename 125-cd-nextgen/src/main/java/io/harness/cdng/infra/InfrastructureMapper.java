@@ -13,7 +13,6 @@ import static java.lang.String.format;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.infra.beans.AwsInstanceFilter;
 import io.harness.cdng.infra.beans.AzureWebAppInfrastructureOutcome;
 import io.harness.cdng.infra.beans.InfrastructureDetailsAbstract;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
@@ -153,10 +152,8 @@ public class InfrastructureMapper {
                 .environment(environmentOutcome)
                 .infrastructureKey(InfrastructureKey.generate(
                     service, environmentOutcome, infrastructure.getInfrastructureKeyValues()))
-                .awsInstanceFilter(AwsInstanceFilter.builder()
-                                       .vpcs(sshWinRmAwsInfrastructure.getAwsInstanceFilter().getVpcs())
-                                       .tags(sshWinRmAwsInfrastructure.getAwsInstanceFilter().getTags())
-                                       .build())
+                .tags(ParameterFieldHelper.getParameterFieldValue(
+                    sshWinRmAwsInfrastructure.getAwsInstanceFilter().getTags()))
                 .build();
 
         setInfraIdentifierAndName(sshWinRmAwsInfrastructureOutcome, sshWinRmAwsInfrastructure.getInfraIdentifier(),

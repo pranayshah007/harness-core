@@ -152,15 +152,16 @@ public class InfrastructureTaskExecutableStepTest extends CategoryTest {
       AwsSshInfraDelegateConfig.sshAwsBuilder().awsConnectorDTO(awsConnectorDTO).build();
   private final AwsWinrmInfraDelegateConfig awsWinrmInfraDelegateConfig =
       AwsWinrmInfraDelegateConfig.winrmAwsBuilder().awsConnectorDTO(awsConnectorDTO).build();
-  private final Infrastructure awsInfra = SshWinRmAwsInfrastructure.builder()
-                                              .connectorRef(connectorRef)
-                                              .credentialsRef(ParameterField.createValueField("sshKeyRef"))
-                                              .region(ParameterField.createValueField("regionId"))
-                                              .awsInstanceFilter(AwsInstanceFilter.builder()
-                                                                     .vpcs(Arrays.asList("vpc1"))
-                                                                     .tags(Collections.singletonMap("testTag", "test"))
-                                                                     .build())
-                                              .build();
+  private final Infrastructure awsInfra =
+      SshWinRmAwsInfrastructure.builder()
+          .connectorRef(connectorRef)
+          .credentialsRef(ParameterField.createValueField("sshKeyRef"))
+          .region(ParameterField.createValueField("regionId"))
+          .awsInstanceFilter(AwsInstanceFilter.builder()
+                                 .vpcs(Arrays.asList("vpc1"))
+                                 .tags(ParameterField.createValueField(Collections.singletonMap("testTag", "test")))
+                                 .build())
+          .build();
 
   @Before
   public void setUp() {

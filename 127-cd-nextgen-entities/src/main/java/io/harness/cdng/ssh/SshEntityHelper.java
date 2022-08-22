@@ -145,8 +145,7 @@ public class SshEntityHelper {
             .sshKeySpecDto(sshKeySpecDto)
             .encryptionDataDetails(sshKeySpecDTOHelper.getSSHKeyEncryptionDetails(sshKeySpecDto, ngAccess))
             .region(awsInfrastructureOutcome.getRegion())
-            .vpcIds(awsInfrastructureOutcome.getAwsInstanceFilter().getVpcs())
-            .tags(filterInfraTags(awsInfrastructureOutcome.getAwsInstanceFilter().getTags()))
+            .tags(filterInfraTags(awsInfrastructureOutcome.getTags()))
             .build();
 
       default:
@@ -203,8 +202,7 @@ public class SshEntityHelper {
             .winRmCredentials(winRmCredentials)
             .encryptionDataDetails(winRmCredentialsSpecDTOHelper.getWinRmEncryptionDetails(winRmCredentials, ngAccess))
             .region(awsInfrastructureOutcome.getRegion())
-            .vpcIds(awsInfrastructureOutcome.getAwsInstanceFilter().getVpcs())
-            .tags(filterInfraTags(awsInfrastructureOutcome.getAwsInstanceFilter().getTags()))
+            .tags(filterInfraTags(awsInfrastructureOutcome.getTags()))
             .build();
       default:
         throw new UnsupportedOperationException(
