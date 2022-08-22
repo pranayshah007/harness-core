@@ -146,7 +146,6 @@ public class TOTPAuthHandler implements TwoFactorAuthHandler {
     templateModel.put("totpSecret", user.getTotpSecretKey());
     String totpUrl = generateOtpUrl(defaultAccount.getCompanyName(), user.getEmail(), user.getTotpSecretKey());
     templateModel.put("totpUrl", totpUrl);
-
     List<String> toList = new ArrayList();
     toList.add(user.getEmail());
     EmailData emailData = EmailData.builder()
@@ -158,6 +157,7 @@ public class TOTPAuthHandler implements TwoFactorAuthHandler {
     emailData.setCc(Collections.emptyList());
     emailData.setRetries(2);
     emailNotificationService.send(emailData);
+    log.info("Sent TwoFactorAuthenticationResetEmail for user {} with totpUrl {}", user.getUuid(), totpUrl);
     return true;
   }
 }
