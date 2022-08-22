@@ -10,13 +10,16 @@ package io.harness.workers.background.critical.iterator;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.beans.ExecutionStatus.EXPIRED;
 import static io.harness.beans.ExecutionStatus.PREPARING;
+import static io.harness.beans.ExecutionStatus.STARTING;
 import static io.harness.rule.OwnerRule.AADITI;
 import static io.harness.rule.OwnerRule.AGORODETKI;
 import static io.harness.rule.OwnerRule.LUCAS_SALES;
 import static io.harness.rule.OwnerRule.PRABU;
+import static io.harness.rule.OwnerRule.RAFAEL;
 import static io.harness.rule.OwnerRule.YOGESH;
 
 import static software.wings.sm.StateExecutionInstance.Builder.aStateExecutionInstance;
+import static software.wings.sm.StateType.JIRA_CREATE_UPDATE;
 import static software.wings.sm.StateType.SHELL_SCRIPT;
 import static software.wings.utils.WingsTestConstants.ACCOUNT_ID;
 import static software.wings.utils.WingsTestConstants.APP_ID;
@@ -144,6 +147,18 @@ public class WorkflowExecutionMonitorHandlerTest extends WingsBaseTest {
     return expiredStateExecutionInstance;
   }
 
+  private StateExecutionInstance createStartingJiraStateExecutionInstance() {
+    StateExecutionInstance startingStateExecutionInstance = aStateExecutionInstance()
+                                                                .appId(APP_ID)
+                                                                .executionUuid(WORKFLOW_EXECUTION_ID)
+                                                                .stateType(JIRA_CREATE_UPDATE.getName())
+                                                                .status(STARTING)
+                                                                .build();
+    startingStateExecutionInstance.setStartTs(System.currentTimeMillis() - EXPIRE_THRESHOLD.toMillis());
+    persistence.save(startingStateExecutionInstance);
+    return startingStateExecutionInstance;
+  }
+
   private StateExecutionInstance createSuccessStateExecutionInstance() {
     StateExecutionInstance successStateExecutionInstance = aStateExecutionInstance()
                                                                .appId(APP_ID)
@@ -252,5 +267,18 @@ public class WorkflowExecutionMonitorHandlerTest extends WingsBaseTest {
     ExecutionInterrupt executionInterrupt = executionInterruptArgumentCaptor.getValue();
     assertThat(executionInterrupt.getExecutionInterruptType()).isEqualTo(ExecutionInterruptType.MARK_EXPIRED);
     persistence.delete(expiredStateExecutionInstance);
+  }
+
+  @Test
+  @Owner(developers = RAFAEL)
+  @Category(UnitTests.class)
+  public void shouldRetryStateWhenItPassesStartThreshold() {
+    StateExecutionInstance startingStateExecutionInstance = createStartingJiraStateExecutionInstance();
+    ArgumentCaptor<ExecutionInterrupt> executionInterruptArgumentCaptor =
+        ArgumentCaptor.forClass(ExecutionInterrupt.class);
+    workflowExecutionMonitorHandler.handle(workflowExecution);
+    verify(executionInterruptManager, times(1)).registerExecutionInterrupt(executionInterruptArgumentCaptor.capture());
+    ExecutionInterrupt executionInterrupt = executionInterruptArgumentCaptor.getValue();
+    assertThat(executionInterrupt.getExecutionInterruptType()).isEqualTo(ExecutionInterruptType.RETRY);
   }
 }
