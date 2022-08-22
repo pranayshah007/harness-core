@@ -68,6 +68,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Stage plan graph V1 -
@@ -102,6 +103,7 @@ import lombok.SneakyThrows;
  */
 
 @OwnedBy(CDC)
+@Slf4j
 public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<DeploymentStageNode> {
   @Inject private KryoSerializer kryoSerializer;
   @Inject private EnvironmentService environmentService;
@@ -184,6 +186,8 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
 
       YamlField specField =
           Preconditions.checkNotNull(ctx.getCurrentField().getNode().getField(YAMLFieldNameConstants.SPEC));
+      YamlField infraField = specField.getNode().getField(YAMLFieldNameConstants.PIPELINE_INFRASTRUCTURE);
+      log.info("infraField : {}", infraField);
 
       String postServiceStepUuid = "service-" + UUIDGenerator.generateUuid();
       String environmentUuid = "environment-" + UUIDGenerator.generateUuid();
