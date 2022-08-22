@@ -8,7 +8,6 @@
 package io.harness.accesscontrol;
 
 import static io.harness.AuthorizationServiceHeader.ACCESS_CONTROL_SERVICE;
-import static io.harness.AuthorizationServiceHeader.MANAGER;
 import static io.harness.accesscontrol.principals.PrincipalType.SERVICE_ACCOUNT;
 import static io.harness.accesscontrol.principals.PrincipalType.USER;
 import static io.harness.accesscontrol.principals.PrincipalType.USER_GROUP;
@@ -263,7 +262,7 @@ public class AccessControlModule extends AbstractModule {
         config.getAccountClientConfiguration().getAccountServiceSecret(), ACCESS_CONTROL_SERVICE.toString()));
 
     install(NgLicenseHttpClientModule.getInstance(config.getNgManagerServiceConfiguration().getNgManagerServiceConfig(),
-        config.getNgManagerServiceConfiguration().getNgManagerServiceSecret(), MANAGER.getServiceId()));
+        config.getNgManagerServiceConfiguration().getNgManagerServiceSecret(), ACCESS_CONTROL_SERVICE.getServiceId()));
 
     install(new ProjectClientModule(config.getProjectClientConfiguration().getProjectServiceConfig(),
         config.getProjectClientConfiguration().getProjectServiceSecret(), ACCESS_CONTROL_SERVICE.getServiceId()));

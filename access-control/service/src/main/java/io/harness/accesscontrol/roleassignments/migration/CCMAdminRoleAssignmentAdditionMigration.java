@@ -4,8 +4,6 @@ import static io.harness.accesscontrol.principals.PrincipalType.USER;
 import static io.harness.accesscontrol.resources.resourcegroups.HarnessResourceGroupConstants.DEFAULT_ACCOUNT_LEVEL_RESOURCE_GROUP_IDENTIFIER;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
-import static org.springframework.data.mongodb.core.query.Update.update;
-
 import io.harness.accesscontrol.commons.helpers.AccountHelperService;
 import io.harness.accesscontrol.roleassignments.persistence.RoleAssignmentDBO;
 import io.harness.accesscontrol.roleassignments.persistence.RoleAssignmentDBO.RoleAssignmentDBOKeys;
@@ -83,8 +81,6 @@ public class CCMAdminRoleAssignmentAdditionMigration implements NGMigration {
             } catch (DuplicateKeyException e) {
               log.error("Corresponding ccm admin was already created {}", newRoleAssignmentDBO.toString(), e);
             }
-            roleAssignmentRepository.updateById(roleAssignment.getId(), update(RoleAssignmentDBOKeys.managed, false));
-
           } catch (Exception exception) {
             log.error("[CCMAdminRoleAssignmentAdditionMigration] Unexpected error occurred.", exception);
           }
