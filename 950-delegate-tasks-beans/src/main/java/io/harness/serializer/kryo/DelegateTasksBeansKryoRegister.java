@@ -80,6 +80,8 @@ import io.harness.delegate.beans.azure.response.AzureDeploymentSlotResponse;
 import io.harness.delegate.beans.azure.response.AzureDeploymentSlotsResponse;
 import io.harness.delegate.beans.azure.response.AzureHostResponse;
 import io.harness.delegate.beans.azure.response.AzureHostsResponse;
+import io.harness.delegate.beans.azure.response.AzureLocationsResponse;
+import io.harness.delegate.beans.azure.response.AzureMngGroupsResponse;
 import io.harness.delegate.beans.azure.response.AzureRegistriesResponse;
 import io.harness.delegate.beans.azure.response.AzureRepositoriesResponse;
 import io.harness.delegate.beans.azure.response.AzureResourceGroupsResponse;
@@ -1659,6 +1661,8 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(PdcServerInstanceInfo.class, 55501);
     kryo.register(AzureSshWinrmServerInstanceInfo.class, 55502);
     kryo.register(AwsSshWinrmServerInstanceInfo.class, 55503);
+    kryo.register(AzureMngGroupsResponse.class, 55506);
+    kryo.register(AzureLocationsResponse.class, 55505);
     kryo.register(VmBackgroundStep.class, 55504);
     kryo.register(GitPollingTaskParameters.class, 56335);
     kryo.register(GitHubPollingDelegateRequest.class, 56336);
