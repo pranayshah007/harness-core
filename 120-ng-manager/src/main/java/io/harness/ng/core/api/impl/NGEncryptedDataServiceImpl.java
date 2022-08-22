@@ -205,7 +205,8 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
                             .encryptSecret(encryptedData.getAccountIdentifier(), value, secretManagerConfig);
       validateEncryptedRecord(encryptedRecord);
     } else if (VAULT.equals(secretManagerType)) {
-      if (APP_ROLE.equals(((BaseVaultConfig) secretManagerConfig).getAccessType())
+      if (EncryptionType.VAULT.equals(secretManagerConfig.getEncryptionType())
+          && APP_ROLE.equals(((BaseVaultConfig) secretManagerConfig).getAccessType())
           && (ngFeatureFlagHelperService.isEnabled(
               encryptedData.getAccountIdentifier(), FeatureName.DO_NOT_RENEW_APPROLE_TOKEN))) {
         ((BaseVaultConfig) secretManagerConfig).setRenewAppRoleToken(false);
@@ -237,7 +238,8 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
       }
 
     } else if (VAULT.equals(secretManagerType)) {
-      if (APP_ROLE.equals(((BaseVaultConfig) secretManagerConfig).getAccessType())
+      if (EncryptionType.VAULT.equals(secretManagerConfig.getEncryptionType())
+          && APP_ROLE.equals(((BaseVaultConfig) secretManagerConfig).getAccessType())
           && (ngFeatureFlagHelperService.isEnabled(
               encryptedData.getAccountIdentifier(), FeatureName.DO_NOT_RENEW_APPROLE_TOKEN))) {
         ((BaseVaultConfig) secretManagerConfig).setRenewAppRoleToken(false);
@@ -453,14 +455,14 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
       String accountIdentifier, NGEncryptedData encryptedData, SecretManagerConfig secretManagerConfig) {
     SecretManagerType secretManagerType = secretManagerConfig.getType();
     if (VAULT.equals(secretManagerType)) {
-      BaseVaultConfig baseVaultConfig = (BaseVaultConfig) secretManagerConfig;
-      if (APP_ROLE.equals(baseVaultConfig.getAccessType())
+      if (EncryptionType.VAULT.equals(secretManagerConfig.getEncryptionType())
+          && APP_ROLE.equals(((BaseVaultConfig) secretManagerConfig).getAccessType())
           && (ngFeatureFlagHelperService.isEnabled(
               encryptedData.getAccountIdentifier(), FeatureName.DO_NOT_RENEW_APPROLE_TOKEN))) {
-        baseVaultConfig.setRenewAppRoleToken(false);
+        ((BaseVaultConfig) secretManagerConfig).setRenewAppRoleToken(false);
       }
       vaultEncryptorsRegistry.getVaultEncryptor(secretManagerConfig.getEncryptionType())
-          .deleteSecret(accountIdentifier, encryptedData, baseVaultConfig);
+          .deleteSecret(accountIdentifier, encryptedData, secretManagerConfig);
     }
   }
 
