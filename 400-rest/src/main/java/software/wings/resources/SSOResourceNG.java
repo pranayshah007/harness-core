@@ -32,6 +32,7 @@ import io.harness.security.annotations.NextGenManagerAuth;
 import software.wings.beans.sso.LdapSettings;
 import software.wings.beans.sso.OauthSettings;
 import software.wings.beans.sso.SamlSettings;
+import software.wings.helpers.ext.ldap.LdapResponse;
 import software.wings.security.annotations.AuthRule;
 import software.wings.security.authentication.LoginTypeResponse;
 import software.wings.security.authentication.LoginTypeResponse.LoginTypeResponseBuilder;
@@ -230,6 +231,20 @@ public class SSOResourceNG {
   @ExceptionMetered
   public RestResponse<LdapSettings> deleteLdapSettings(@QueryParam("accountId") @NotBlank String accountId) {
     return new RestResponse<>(ssoService.deleteLdapSettings(accountId));
+  }
+
+  @POST
+  @Path("ldap/settings/test/authentication")
+  @Timed
+  @ExceptionMetered
+  public RestResponse<LdapResponse> testLdapAuthentication(@QueryParam("accountId") @NotBlank String accountId,
+      @FormDataParam("email") String email, @FormDataParam("password") String password) {
+    LdapSettings settings = ssoService.getLdapSettings(accountId);
+    if (null == settings) {
+      throw new InvalidRequestException(
+          String.format("No LDAP SSO Provider settings found for account: %s", accountId));
+    }
+    return new RestResponse<>(ssoService.validateLdapAuthentication(settings, email, password));
   }
 
   @VisibleForTesting
