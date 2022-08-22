@@ -25,6 +25,7 @@ import software.wings.beans.approval.SlackApprovalParams;
 import software.wings.security.SecretManager;
 import software.wings.service.impl.notifications.SlackApprovalMessageKeys;
 import software.wings.service.intfc.WorkflowExecutionService;
+import software.wings.utils.Utils;
 
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.JWTVerifier;
@@ -176,6 +177,21 @@ public class SlackApprovalUtils {
     } catch (IOException e) {
       log.error("Error in loading given template");
     }
+
+    if (!Utils.isJSONValid(loadedTemplate)) {
+      return createNestedMessageFromTemplate(sub, loadedTemplate);
+    }
+
+    return sub.replace(loadedTemplate)
+        .replaceAll("<<<", "*<")
+        .replaceAll("\\|-\\|", "|")
+        .replaceAll(">>>", ">*")
+        .replaceAll("\\\\n", "\n")
+        .replaceAll("\\\\\\*", "*")
+        .replaceAll("\\*<\\|>\\*", "");
+  }
+
+  private static String createNestedMessageFromTemplate(StrSubstitutor sub, String loadedTemplate) {
     return sub.replace(loadedTemplate)
         .replaceAll("<<<", "*<")
         .replaceAll("\\|-\\|", "|")
