@@ -51,7 +51,7 @@ public class GarResourceServiceImplTest extends CategoryTest {
   private static final String repositoryName = "repositoryName";
   private static final String project = "project";
   private static final String version = "version";
-  private static final String pkg = "pjg";
+  private static final String pkg = "pkg";
   private static final String ORG_IDENTIFIER = "orgIdentifier";
   private static final String PROJECT_IDENTIFIER = "projectIdentifier";
   @Mock ConnectorService connectorService;

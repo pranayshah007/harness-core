@@ -5,6 +5,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.task.artifacts.ArtifactSourceConstants;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import lombok.Builder;
 import lombok.Data;
@@ -14,8 +15,11 @@ import lombok.Data;
 @Builder
 @JsonTypeName(ArtifactSourceConstants.GOOGLE_ARTIFACT_REGISTRY_NAME)
 public class GarArtifactSummary implements ArtifactSummary {
-  String pkg;
+  @JsonProperty("package") String pkg;
   String version;
+  String region;
+  String repositoryName;
+  String project;
   @Override
   public String getType() {
     return ArtifactSourceConstants.GOOGLE_ARTIFACT_REGISTRY_NAME;

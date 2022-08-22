@@ -7,6 +7,7 @@
 
 package io.harness.serializer.morphia;
 
+import io.harness.cdng.artifact.bean.GoogleArtifactRegistryType;
 import io.harness.cdng.artifact.bean.yaml.AcrArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.AmazonS3ArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.ArtifactListConfig;
@@ -73,5 +74,6 @@ public class NGEntitiesMorphiaRegistrar implements MorphiaRegistrar {
     h.put("ngpipeline.artifact.bean.JenkinsArtifactOutcome", JenkinsArtifactOutcome.class);
     h.put("cdng.artifact.bean.yaml.GoogleArtifactRegistryConfig", GoogleArtifactRegistryConfig.class);
     h.put("ngpipeline.artifact.bean.GarArtifactOutcome", GarArtifactOutcome.class);
+    h.put("beans.GoogleArtifactRegistryType", GoogleArtifactRegistryType.class);
   }
 }

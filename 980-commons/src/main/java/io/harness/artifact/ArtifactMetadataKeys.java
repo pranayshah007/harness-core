@@ -18,5 +18,8 @@ public interface ArtifactMetadataKeys {
   String artifactPath = "artifactPath";
   String artifactName = "artifactName";
   String artifactFileSize = "artifactFileSize";
-  String PACKAGE = "package";
+  String artifactPackage = "artifactPackage";
+  String artifactProject = "artifactProject";
+  String artifactRepositoryName = "artifactRepositoryName";
+  String artifactRegion = "artifactRegion";
 }

@@ -14,7 +14,6 @@ import retrofit2.http.Query;
 @OwnedBy(HarnessTeam.CDC)
 
 public interface GarRestClient {
-  // v1beta2/projects/cd-play/locations/us/repositories/puthraya-test/packages/alphine/tags
   @GET("/v1/projects/{project}/locations/{region}/repositories/{repositories}/packages/{package}/tags")
   Call<GarPackageVersionResponse> listImageTags(@Header("Authorization") String bearerAuthHeader,
       @Path(value = "project", encoded = true) String project, @Path(value = "region", encoded = true) String region,

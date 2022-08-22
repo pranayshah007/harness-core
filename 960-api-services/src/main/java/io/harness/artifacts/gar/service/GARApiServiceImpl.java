@@ -54,8 +54,7 @@ public class GARApiServiceImpl implements GarApiService {
     return retrofit.create(GarRestClient.class);
   }
   public String getUrl() {
-    return "https://"
-        + "artifactregistry.googleapis.com";
+    return "https://artifactregistry.googleapis.com";
   }
 
   @Override
@@ -137,7 +136,7 @@ public class GARApiServiceImpl implements GarApiService {
       }
 
       GarPackageVersionResponse page = response.body();
-      List<BuildDetailsInternal> pageDetails = processPage(page, versionRegex);
+      List<BuildDetailsInternal> pageDetails = processPage(page, versionRegex, garinternalConfig);
       details.addAll(pageDetails);
 
       if (details.size() >= maxNumberOfBuilds || page == null || StringUtils.isBlank(page.getNextPageToken())) {
@@ -149,7 +148,8 @@ public class GARApiServiceImpl implements GarApiService {
 
     return details.stream().limit(maxNumberOfBuilds).collect(Collectors.toList());
   }
-  private List<BuildDetailsInternal> processPage(GarPackageVersionResponse tagsPage, String versionRegex) {
+  private List<BuildDetailsInternal> processPage(
+      GarPackageVersionResponse tagsPage, String versionRegex, GarInternalConfig garinternalConfig) {
     if (tagsPage != null && EmptyPredicate.isNotEmpty(tagsPage.getTags())) {
       int index = tagsPage.getTags().get(0).getName().lastIndexOf("/");
       List<BuildDetailsInternal> buildDetails =
@@ -158,7 +158,11 @@ public class GARApiServiceImpl implements GarApiService {
               .map(tag -> {
                 String tagFinal = tag.getName().substring(index + 1);
                 Map<String, String> metadata = new HashMap();
-                metadata.put(ArtifactMetadataKeys.PACKAGE, tagFinal);
+                metadata.put(ArtifactMetadataKeys.artifactPackage, tagFinal);
+                metadata.put(ArtifactMetadataKeys.artifactPackage, garinternalConfig.getPkg());
+                metadata.put(ArtifactMetadataKeys.artifactProject, garinternalConfig.getProject());
+                metadata.put(ArtifactMetadataKeys.artifactRepositoryName, garinternalConfig.getRepositoryName());
+                metadata.put(ArtifactMetadataKeys.artifactRegion, garinternalConfig.getRegion());
                 metadata.put(ArtifactMetadataKeys.TAG, tagFinal);
                 return BuildDetailsInternal.builder()
                     .uiDisplayName("Tag# " + tagFinal)

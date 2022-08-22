@@ -5,6 +5,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.artifact.ArtifactSummary;
+import io.harness.cdng.artifact.GarArtifactSummary;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
@@ -36,7 +37,13 @@ public class GarArtifactOutcome implements ArtifactOutcome {
   boolean primaryArtifact;
   @Override
   public ArtifactSummary getArtifactSummary() {
-    return null;
+    return GarArtifactSummary.builder()
+        .pkg(pkg)
+        .project(project)
+        .region(region)
+        .repositoryName(repositoryName)
+        .version(version)
+        .build();
   }
   @Override
   public String getArtifactType() {
