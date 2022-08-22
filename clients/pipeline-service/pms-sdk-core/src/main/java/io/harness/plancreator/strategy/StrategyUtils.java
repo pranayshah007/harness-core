@@ -14,6 +14,7 @@ import static io.harness.plancreator.strategy.StrategyConstants.ITEM;
 import static io.harness.plancreator.strategy.StrategyConstants.ITERATION;
 import static io.harness.plancreator.strategy.StrategyConstants.ITERATIONS;
 import static io.harness.plancreator.strategy.StrategyConstants.MATRIX;
+import static io.harness.plancreator.strategy.StrategyConstants.PARTITION;
 import static io.harness.plancreator.strategy.StrategyConstants.REPEAT;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.IDENTIFIER;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.NAME;
@@ -281,7 +282,7 @@ public class StrategyUtils {
   public Map<String, Object> fetchStrategyObjectMap(List<Level> levelsWithStrategyMetadata) {
     Map<String, Object> strategyObjectMap = new HashMap<>();
     Map<String, Object> matrixValuesMap = new HashMap<>();
-    Map<String, String> repeatValuesMap = new HashMap<>();
+    Map<String, Object> repeatValuesMap = new HashMap<>();
 
     for (Level level : levelsWithStrategyMetadata) {
       if (level.getStrategyMetadata().hasMatrixMetadata()) {
@@ -301,6 +302,7 @@ public class StrategyUtils {
       }
       if (level.getStrategyMetadata().hasForMetadata()) {
         repeatValuesMap.put(ITEM, level.getStrategyMetadata().getForMetadata().getValue());
+        repeatValuesMap.put(PARTITION, level.getStrategyMetadata().getForMetadata().getPartitionList());
       }
       strategyObjectMap.put(ITERATION, level.getStrategyMetadata().getCurrentIteration());
       strategyObjectMap.put(ITERATIONS, level.getStrategyMetadata().getTotalIterations());

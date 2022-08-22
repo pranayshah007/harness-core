@@ -1443,6 +1443,20 @@
             }
           ]
         },
+        "partitions": {
+          "oneOf": [
+            {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            },
+            {
+              "type": "string",
+              "pattern": "(^<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>$|^<\\+input>.*)",
+              "minLength": 1
+            }
+          ]
+        },
         "start": {
           "oneOf": [
             {
