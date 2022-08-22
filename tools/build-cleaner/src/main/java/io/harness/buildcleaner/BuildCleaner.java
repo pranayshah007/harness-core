@@ -25,6 +25,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.PathMatcher;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -161,7 +162,7 @@ public class BuildCleaner {
     logger.info("Creating index using sources matching: " + indexSourceGlob());
 
     ClasspathParser classpathParser = packageParser.getClassPathParser();
-    classpathParser.parseClasses(indexSourceGlob(), options.hasOption("findBuildInParent"));
+    classpathParser.parseClasses(indexSourceGlob(), assumedPackagePrefixesWithBuildFile());
 
     // Add repository java source code index to the cache.
     Set<ClassMetadata> fullyQualifiedClassNames = classpathParser.getFullyQualifiedClassNames();
@@ -191,7 +192,7 @@ public class BuildCleaner {
     // and don't care about the BUILD file paths.
     ClasspathParser classpathParser = this.packageParser.getClassPathParser();
     String parseClassPattern = path.toString().isEmpty() ? srcsGlob() : path.toString() + "/" + srcsGlob();
-    classpathParser.parseClasses(parseClassPattern, false);
+    classpathParser.parseClasses(parseClassPattern, new HashSet<>());
 
     Set<String> dependencies = new TreeSet<>();
     for (String importStatement : classpathParser.getUsedTypes()) {
@@ -324,6 +325,12 @@ public class BuildCleaner {
     return options.hasOption("srcsGlob") ? options.getOptionValue("srcsGlob") : "*.java";
   }
 
+  private Set<String> assumedPackagePrefixesWithBuildFile() {
+    return options.hasOption("assumedPackagePrefixesWithBuildFile")
+        ? new HashSet<String>(Arrays.asList(options.getOptionValue("assumedPackagePrefixesWithBuildFile").split(",")))
+        : new HashSet<String>();
+  }
+
   private Path mavenManifestFile() {
     return options.hasOption("mavenManifestFile") ? Paths.get(options.getOptionValue("mavenManifestFile"))
                                                   : Paths.get(workspace() + "/maven-manifest.json");
@@ -346,7 +353,7 @@ public class BuildCleaner {
     options.addOption(new Option(null, "workspace", true, "Workspace root"));
     options.addOption(new Option(
         null, "indexSourceGlob", true, "Pattern for source files to build index. Defaults to '**/src/main/**/*.java'"));
-    options.addOption(new Option(null, "overrideIndex", true, "Override the existing index"));
+    options.addOption(new Option(null, "overrideIndex", false, "Override the existing index"));
     options.addOption(new Option(null, "module", true, "Relative path of the module from the workspace"));
     options.addOption(new Option(null, "srcsGlob", true, "Pattern to match for finding source files."));
     options.addOption(
@@ -356,10 +363,10 @@ public class BuildCleaner {
             + "Defaults to workspace/maven_manifest.json"));
     options.addOption(
         new Option(null, "mavenManifestOverrideFile", true, "Specify overrides for conflicting imports."));
-    options.addOption(new Option(null, "recursive", true, "Generate BUILD files for all folders inside the module"));
-    options.addOption(new Option(null, "findBuildInParent", true,
-        "Don't assume build file is present in every folder, rather keep going up the tree until a build file is found. "
-            + "This would not override the index file if already present."));
+    options.addOption(new Option(null, "recursive", false, "Generate BUILD files for all folders inside the module"));
+    options.addOption(new Option(null, "assumedPackagePrefixesWithBuildFile", true,
+        "Comma separate list of module prefixes for which we can assume BUILD file to be present. "
+            + "Set to 'all' if need same behavior for all folders"));
 
     CommandLine commandLineOptions = null;
     try {
