@@ -173,7 +173,7 @@ public class NGSecretServiceV2Impl implements NGSecretServiceV2 {
 
   @Override
   public Secret create(String accountIdentifier, @Valid SecretDTOV2 secretDTO, boolean draft) {
-    Secret secret = Secret.fromDTO(secretDTO);
+    Secret secret = secretDTO.toEntity();
     secret.setDraft(draft);
     secret.setAccountIdentifier(accountIdentifier);
     try {
@@ -205,7 +205,7 @@ public class NGSecretServiceV2Impl implements NGSecretServiceV2 {
       Secret oldSecret = secretOptional.get();
       SecretDTOV2 oldSecretClone = (SecretDTOV2) HObjectMapper.clone(oldSecret.toDTO());
 
-      Secret newSecret = Secret.fromDTO(secretDTO);
+      Secret newSecret = secretDTO.toEntity();
       oldSecret.setDescription(newSecret.getDescription());
       oldSecret.setName(newSecret.getName());
       oldSecret.setTags(newSecret.getTags());

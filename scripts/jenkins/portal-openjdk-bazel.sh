@@ -16,8 +16,6 @@ copy_cg_manager_jars
 
 copy_event_server_jars
 
-copy_batch_processing_jars
-
 copy_change_data_capture_jars
 
 copy_ce_nextgen_jars

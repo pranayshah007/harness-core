@@ -34,7 +34,9 @@ import javax.validation.constraints.NotNull;
       @Type(value = MarkAsSuccessFailureActionConfig.class, name = NGFailureActionTypeConstants.MARK_AS_SUCCESS),
       @Type(value = RetryFailureActionConfig.class, name = NGFailureActionTypeConstants.RETRY),
       @Type(value = StageRollbackFailureActionConfig.class, name = NGFailureActionTypeConstants.STAGE_ROLLBACK),
-      @Type(value = StepGroupFailureActionConfig.class, name = NGFailureActionTypeConstants.STEP_GROUP_ROLLBACK)
+      @Type(value = StepGroupFailureActionConfig.class, name = NGFailureActionTypeConstants.STEP_GROUP_ROLLBACK),
+      @Type(value = ProceedWithDefaultValuesFailureActionConfig.class,
+          name = NGFailureActionTypeConstants.PROCEED_WITH_DEFAULT_VALUE)
 })
 @OwnedBy(HarnessTeam.PIPELINE)
 public interface FailureStrategyActionConfig {

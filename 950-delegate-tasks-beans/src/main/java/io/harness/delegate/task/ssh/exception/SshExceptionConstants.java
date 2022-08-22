@@ -53,4 +53,10 @@ public class SshExceptionConstants {
       "Please provide artifact details with the service definition";
   public final String ARTIFACT_CONFIGURATION_NOT_FOUND_EXPLANATION =
       "Selected copy artifact option requires artifact details to be specified with the service definition";
+
+  public final String JENKINS_ARTIFACT_DOWNLOAD_FAILED = "Failed while trying to download Jenkins Artifact"
+      + " with identifier: %s";
+  public final String JENKINS_ARTIFACT_DOWNLOAD_HINT = "Please review the Jenkins Artifact Details and check "
+      + "Path to the artifact. We recommend also checking for the artifact on Jenkins server";
+  public final String JENKINS_ARTIFACT_DOWNLOAD_EXPLANATION = "Failed to download Jenkins Artifact with id: %s";
 }

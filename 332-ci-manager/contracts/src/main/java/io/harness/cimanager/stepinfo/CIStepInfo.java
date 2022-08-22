@@ -15,6 +15,7 @@ import io.harness.beans.steps.stepinfo.ACRStepInfo;
 import io.harness.beans.steps.stepinfo.DockerStepInfo;
 import io.harness.beans.steps.stepinfo.ECRStepInfo;
 import io.harness.beans.steps.stepinfo.GCRStepInfo;
+import io.harness.beans.steps.stepinfo.GitCloneStepInfo;
 import io.harness.beans.steps.stepinfo.PluginStepInfo;
 import io.harness.beans.steps.stepinfo.RestoreCacheGCSStepInfo;
 import io.harness.beans.steps.stepinfo.RestoreCacheS3StepInfo;
@@ -37,10 +38,11 @@ import io.swagger.annotations.ApiModel;
 import java.time.Duration;
 import java.util.List;
 
-@ApiModel(subTypes = {DockerStepInfo.class, ECRStepInfo.class, GCRStepInfo.class, PluginStepInfo.class,
-              SecurityStepInfo.class, RestoreCacheGCSStepInfo.class, RestoreCacheS3StepInfo.class, RunStepInfo.class,
-              SaveCacheGCSStepInfo.class, SaveCacheS3StepInfo.class, UploadToGCSStepInfo.class,
-              UploadToS3StepInfo.class, UploadToArtifactoryStepInfo.class, RunTestsStepInfo.class, ACRStepInfo.class})
+@ApiModel(
+    subTypes = {DockerStepInfo.class, ECRStepInfo.class, GCRStepInfo.class, PluginStepInfo.class,
+        SecurityStepInfo.class, RestoreCacheGCSStepInfo.class, RestoreCacheS3StepInfo.class, RunStepInfo.class,
+        SaveCacheGCSStepInfo.class, SaveCacheS3StepInfo.class, UploadToGCSStepInfo.class, UploadToS3StepInfo.class,
+        UploadToArtifactoryStepInfo.class, RunTestsStepInfo.class, ACRStepInfo.class, GitCloneStepInfo.class})
 @OwnedBy(CI)
 public interface CIStepInfo extends StepSpecType, WithStepElementParameters, SpecParameters {
   int MIN_RETRY = 0;

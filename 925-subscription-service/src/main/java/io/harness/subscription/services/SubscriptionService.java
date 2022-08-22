@@ -17,10 +17,14 @@ import io.harness.subscription.dto.PriceCollectionDTO;
 import io.harness.subscription.dto.StripeBillingDTO;
 import io.harness.subscription.dto.SubscriptionDTO;
 import io.harness.subscription.dto.SubscriptionDetailDTO;
+import io.harness.subscription.params.UsageKey;
 
+import java.util.EnumMap;
 import java.util.List;
 
 public interface SubscriptionService {
+  EnumMap<UsageKey, Long> getRecommendation(
+      String accountIdentifier, ModuleType moduleType, EnumMap<UsageKey, Long> usage);
   PriceCollectionDTO listPrices(String accountIdentifier, ModuleType moduleType);
   InvoiceDetailDTO previewInvoice(String accountIdentifier, SubscriptionDTO subscriptionDTO);
   void payInvoice(String invoiceId);

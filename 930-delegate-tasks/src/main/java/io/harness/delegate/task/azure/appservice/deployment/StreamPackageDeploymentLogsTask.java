@@ -37,6 +37,7 @@ import org.joda.time.DateTime;
 import rx.Observable;
 import rx.Subscriber;
 import rx.Subscription;
+import rx.schedulers.Schedulers;
 
 @OwnedBy(CDP)
 public class StreamPackageDeploymentLogsTask implements Runnable {
@@ -129,7 +130,7 @@ public class StreamPackageDeploymentLogsTask implements Runnable {
       }
     };
     subscription = streamSubscriber;
-    logStreamObservable.subscribe(streamSubscriber);
+    logStreamObservable.subscribeOn(Schedulers.newThread()).subscribe(streamSubscriber);
   }
 
   public boolean operationFailed() {

@@ -233,8 +233,7 @@ public class InputSetResourcePMSImpl implements InputSetResourcePMS {
         pmsInputSetService.list(criteria, pageRequest, accountId, orgIdentifier, projectIdentifier);
 
     Page<InputSetSummaryResponseDTOPMS> inputSetList =
-        PMSInputSetElementMapper.toInputSetSummaryResponseDTOPMSList(pmsInputSetService, pipelineService,
-            gitSyncSdkService, accountId, orgIdentifier, projectIdentifier, inputSetEntities);
+        inputSetEntities.map(PMSInputSetElementMapper::toInputSetSummaryResponseDTOPMS);
     return ResponseDTO.newResponse(getNGPageResponse(inputSetList));
   }
 

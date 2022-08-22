@@ -323,7 +323,8 @@
                 "Abort",
                 "StageRollback",
                 "StepGroupRollback",
-                "ManualIntervention"
+                "ManualIntervention",
+                "ProceedWithDefaultValue"
               ]
             }
           },
@@ -707,6 +708,9 @@
                   "$ref": "#/definitions/cvng/MarkAsSuccessFailureActionConfig"
                 },
                 {
+                  "$ref": "#/definitions/cvng/ProceedWithDefaultValuesFailureActionConfig"
+                },
+                {
                   "$ref": "#/definitions/cvng/RetryFailureActionConfig"
                 },
                 {
@@ -730,7 +734,8 @@
                   "Authorization",
                   "Verification",
                   "DelegateProvisioning",
-                  "PolicyEvaluationFailure"
+                  "PolicyEvaluationFailure",
+                  "ExecutionInputTimeoutError"
                 ]
               }
             }
@@ -753,6 +758,9 @@
                 },
                 {
                   "$ref": "#/definitions/cvng/MarkAsSuccessFailureActionConfig"
+                },
+                {
+                  "$ref": "#/definitions/cvng/ProceedWithDefaultValuesFailureActionConfig"
                 },
                 {
                   "$ref": "#/definitions/cvng/RetryFailureActionConfig"
@@ -784,6 +792,9 @@
                 },
                 {
                   "$ref": "#/definitions/cvng/MarkAsSuccessFailureActionConfig"
+                },
+                {
+                  "$ref": "#/definitions/cvng/ProceedWithDefaultValuesFailureActionConfig"
                 },
                 {
                   "$ref": "#/definitions/cvng/RetryFailureActionConfig"
@@ -869,6 +880,28 @@
               }
             }
           },
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "ProceedWithDefaultValuesFailureActionConfig": {
+          "allOf": [
+            {
+              "$ref": "#/definitions/cvng/FailureStrategyActionConfig"
+            },
+            {
+              "type": "object",
+              "required": [
+                "type"
+              ],
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "enum": [
+                    "ProceedWithDefaultValue"
+                  ]
+                }
+              }
+            }
+          ],
           "$schema": "http://json-schema.org/draft-07/schema#"
         },
         "RetryFailureActionConfig": {

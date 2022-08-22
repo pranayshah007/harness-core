@@ -9,6 +9,7 @@ package io.harness.ng.core.handler;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.rule.OwnerRule.SHASHANK;
+import static io.harness.rule.OwnerRule.VIKAS_M;
 
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.times;
@@ -98,6 +99,34 @@ public class NGVaultSecretManagerRenewalHandlerTest extends CategoryTest {
     vaultSecretManagerRenewalHandler.handle(vaultConnector);
     verify(ngVaultService, times(0)).renewToken(any());
     verify(ngVaultService, times(0)).renewAppRoleClientToken(any());
+  }
+
+  @Test
+  @Owner(developers = VIKAS_M)
+  @Category(UnitTests.class)
+  public void testRenewalForAppRole_doNotRenew_doNotRenewAppRoleSetToTrue() {
+    VaultConnector vaultConnector = getAppRoleBasedVault();
+    vaultConnector.setRenewAppRoleToken(false);
+    vaultConnector.setAccountIdentifier("accountId");
+    when(mongoTemplate.findById(any(), any())).thenReturn(vaultConnector);
+    vaultSecretManagerRenewalHandler.handle(vaultConnector);
+    verify(ngVaultService, times(0)).renewToken(any());
+    verify(ngVaultService, times(0)).renewAppRoleClientToken(any());
+  }
+
+  private VaultConnector getAppRoleBasedVault() {
+    return VaultConnector.builder()
+        .accessType(AccessType.APP_ROLE)
+        .vaultUrl("vaultUrl")
+        .secretEngineVersion(2)
+        .secretEngineManuallyConfigured(false)
+        .renewalIntervalMinutes(10L)
+        .renewedAt(System.currentTimeMillis())
+        .appRoleId("appRoleId")
+        .secretIdRef("sampleSecretId")
+        .basePath("/harness")
+        .sinkPath("/sinkPath")
+        .build();
   }
 
   private VaultConnector getVaultConnectorWithAccessType(AccessType accessType) {

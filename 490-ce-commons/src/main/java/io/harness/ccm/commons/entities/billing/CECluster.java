@@ -61,13 +61,14 @@ public final class CECluster implements PersistentEntity, UuidAware, CreatedAtAw
   String parentAccountSettingId; // setting id of ce connectors
   Map<String, String> labels;
   @FdIndex String hash;
+  boolean isDeactivated;
   long lastReceivedAt;
   long createdAt;
   long lastUpdatedAt;
 
   @Builder(toBuilder = true)
   private CECluster(String accountId, String clusterName, String clusterArn, String region, String infraAccountId,
-      String infraMasterAccountId, String parentAccountSettingId, Map<String, String> labels) {
+      String infraMasterAccountId, String parentAccountSettingId, Map<String, String> labels, boolean isDeactivated) {
     this.accountId = accountId;
     this.clusterName = clusterName;
     this.clusterArn = clusterArn;
@@ -76,6 +77,7 @@ public final class CECluster implements PersistentEntity, UuidAware, CreatedAtAw
     this.infraMasterAccountId = infraMasterAccountId;
     this.parentAccountSettingId = parentAccountSettingId;
     this.labels = labels;
+    this.isDeactivated = isDeactivated;
     this.hash = hash(accountId, clusterName, region, infraAccountId);
   }
 

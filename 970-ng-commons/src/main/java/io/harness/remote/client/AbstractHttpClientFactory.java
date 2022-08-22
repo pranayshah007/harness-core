@@ -61,6 +61,7 @@ import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509TrustManager;
 import javax.validation.constraints.NotNull;
+import lombok.extern.slf4j.Slf4j;
 import okhttp3.ConnectionPool;
 import okhttp3.HttpUrl;
 import okhttp3.Interceptor;
@@ -72,6 +73,7 @@ import retrofit2.Retrofit;
 import retrofit2.converter.jackson.JacksonConverterFactory;
 
 @OwnedBy(PL)
+@Slf4j
 public abstract class AbstractHttpClientFactory {
   private final ServiceHttpClientConfig serviceHttpClientConfig;
   private final String serviceSecret;
@@ -109,6 +111,9 @@ public abstract class AbstractHttpClientFactory {
 
   private Retrofit getRetrofit(boolean isSafeOk) {
     String baseUrl = serviceHttpClientConfig.getBaseUrl();
+    log.info(
+        "OkHttpClientsTracker: Creating a new Retrofit client with OkHttpClient with baseUrl: [{}], and for clientId: [{}], and isSafeOk param as: [{}]",
+        baseUrl, this.clientId, isSafeOk);
     Retrofit.Builder retrofitBuilder = new Retrofit.Builder().baseUrl(baseUrl);
     if (this.kryoConverterFactory != null) {
       retrofitBuilder.addConverterFactory(kryoConverterFactory);
