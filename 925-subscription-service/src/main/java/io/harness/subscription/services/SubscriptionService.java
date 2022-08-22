@@ -43,7 +43,7 @@ public interface SubscriptionService {
   CustomerDetailDTO getStripeCustomer(String accountIdentifier, String customerId);
   CustomerDetailDTO updateStripeBilling(String accountIdentifier, StripeBillingDTO stripeBillingDTO);
 
-  PaymentMethodCollectionDTO listPaymentMethods(String accountIdentifier, String customerId);
+  PaymentMethodCollectionDTO listPaymentMethods(String accountIdentifier);
 
   void syncStripeEvent(String event);
 }

@@ -49,7 +49,7 @@ public class TemplateGitXHelperTest {
   @Test
   @Owner(developers = ADITHYA)
   @Category(UnitTests.class)
-  public void testGetWorkingBranch() {
+  public void testGetWorkingBranchRemote() {
     GitEntityInfo branchInfo = GitEntityInfo.builder()
                                    .branch(BranchName)
                                    .parentEntityRepoName(PARENT_ENTITY_REPO)
@@ -62,10 +62,25 @@ public class TemplateGitXHelperTest {
         .getRepoUrl(any(), any(), any(), any());
     assertThat(templateGitXHelper.getWorkingBranch(scope, ENTITY_REPO_URL)).isEqualTo(BranchName);
 
+    branchInfo = GitEntityInfo.builder()
+                     .branch(BranchName)
+                     .parentEntityRepoName(PARENT_ENTITY_REPO)
+                     .parentEntityConnectorRef(PARENT_ENTITY_CONNECTOR_REF)
+                     .build();
+    setupGitContext(branchInfo);
+    assertThat(templateGitXHelper.getWorkingBranch(scope, "random repo url")).isEqualTo("");
     branchInfo = GitEntityInfo.builder().branch(BranchName).parentEntityRepoUrl(ENTITY_REPO_URL).build();
     setupGitContext(branchInfo);
-    doReturn(ScmGetRepoUrlResponse.builder().build()).when(scmGitSyncHelper).getRepoUrl(any(), any(), any(), any());
-    assertThat(templateGitXHelper.getWorkingBranch(scope, "random repo url")).isEqualTo("");
+    assertThat(templateGitXHelper.getWorkingBranch(scope, ENTITY_REPO_URL)).isEqualTo(BranchName);
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testGetWorkingBranchInline() {
+    GitEntityInfo branchInfo = GitEntityInfo.builder().branch(BranchName).build();
+    setupGitContext(branchInfo);
+    Scope scope = Scope.of(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER);
     assertThat(templateGitXHelper.getWorkingBranch(scope, ENTITY_REPO_URL)).isEqualTo(BranchName);
   }
 

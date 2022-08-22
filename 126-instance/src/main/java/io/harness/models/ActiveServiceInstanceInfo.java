@@ -21,5 +21,6 @@ public class ActiveServiceInstanceInfo {
   private String envIdentifier;
   private String envName;
   private String tag;
+  private String displayName;
   private int count;
 }

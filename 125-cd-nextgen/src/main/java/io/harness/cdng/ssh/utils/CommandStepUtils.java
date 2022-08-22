@@ -13,22 +13,18 @@ import static java.lang.String.format;
 import static java.util.Collections.emptyList;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.infra.beans.InfrastructureOutcome;
-import io.harness.cdng.service.steps.ServiceStepOutcome;
 import io.harness.cdng.ssh.CommandStepParameters;
 import io.harness.common.ParameterFieldHelper;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.task.utils.PhysicalDataCenterUtils;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
-import io.harness.ng.core.k8s.ServiceSpecType;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.shell.ScriptType;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import javax.annotation.Nonnull;
 import lombok.experimental.UtilityClass;
@@ -38,12 +34,7 @@ import lombok.extern.slf4j.Slf4j;
 @UtilityClass
 @Slf4j
 public class CommandStepUtils {
-  public static final String HARNESS_BACKUP_PATH = "HARNESS_BACKUP_PATH";
-  public static final String HARNESS_RUNTIME_PATH = "HARNESS_RUNTIME_PATH";
-  public static final String HARNESS_STAGING_PATH = "HARNESS_STAGING_PATH";
-  public static final String WINDOWS_RUNTIME_PATH = "WINDOWS_RUNTIME_PATH";
-
-  public static Map<String, String> getEnvironmentVariables(
+  public static Map<String, String> mergeEnvironmentVariables(
       Map<String, Object> inputVariables, Map<String, String> builtInEnvVariables) {
     if (EmptyPredicate.isEmpty(inputVariables)) {
       return builtInEnvVariables;
@@ -65,26 +56,6 @@ public class CommandStepUtils {
       }
     });
     return res;
-  }
-
-  public static Map<String, String> getHarnessBuiltInEnvVariables(
-      InfrastructureOutcome infrastructure, ServiceStepOutcome serviceOutcome) {
-    Map<String, String> harnessEnvVariables = new LinkedHashMap<>();
-    if (ServiceSpecType.SSH.equals(serviceOutcome.getType())) {
-      String basePath = format("$HOME/%s/%s/%s", serviceOutcome.getType().toLowerCase(Locale.ENGLISH),
-          serviceOutcome.getName(), infrastructure.getEnvironment().getName());
-
-      harnessEnvVariables.putIfAbsent(HARNESS_BACKUP_PATH, basePath + "/backup");
-      harnessEnvVariables.putIfAbsent(HARNESS_RUNTIME_PATH, basePath + "/runtime");
-      harnessEnvVariables.putIfAbsent(HARNESS_STAGING_PATH, basePath + "/staging");
-    } else {
-      String basePath = "%USERPROFILE%"
-          + format("\\%s\\%s\\%s", serviceOutcome.getType().toLowerCase(Locale.ENGLISH), serviceOutcome.getName(),
-              infrastructure.getEnvironment().getName());
-
-      harnessEnvVariables.putIfAbsent(WINDOWS_RUNTIME_PATH, basePath + "\\runtime");
-    }
-    return harnessEnvVariables;
   }
 
   public static String getWorkingDirectory(

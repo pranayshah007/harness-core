@@ -40,7 +40,7 @@ public class CIExecutionConstants {
 
   // Constants for implicit git clone step
   public static final String GIT_CLONE_STEP_ID = "harness-git-clone";
-  public static final String GIT_CLONE_STEP_NAME = "Git clone";
+  public static final String GIT_CLONE_STEP_NAME = "Clone codebase";
   public static final Integer GIT_CLONE_MANUAL_DEPTH = 50;
   public static final String GIT_CLONE_DEPTH_ATTRIBUTE = "depth";
   public static final String PR_CLONE_STRATEGY_ATTRIBUTE = "PR_CLONE_STRATEGY";
@@ -121,6 +121,7 @@ public class CIExecutionConstants {
   public static final String HARNESS_SERVICE_ARGS = "HARNESS_SERVICE_ARGS";
 
   public static final String HARNESS_WORKSPACE = "HARNESS_WORKSPACE";
+  public static final String DRONE_WORKSPACE = "DRONE_WORKSPACE";
 
   public static final String PLUGIN_USERNAME = "PLUGIN_USERNAME";
   public static final String PLUGIN_PASSW = "PLUGIN_PASSWORD";

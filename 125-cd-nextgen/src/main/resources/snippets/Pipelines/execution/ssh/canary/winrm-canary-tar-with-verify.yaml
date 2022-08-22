@@ -18,33 +18,31 @@ spec:
                 type: Command
                 timeout: 10m
                 spec:
-                  host: <+repeat.item>
                   onDelegate: false
                   environmentVariables: [ ]
                   outputVariables: [ ]
                   commandUnits:
                     - identifier: Setup_Runtime_Paths_<+phase>
-                      name: Setup Runtime Paths
+                      name: "Setup Runtime Paths"
                       type: Script
                       spec:
+                        workingDirectory: $HOME\<+service.name>\<+env.name>
                         shell: PowerShell
                         source:
                           type: Inline
                           spec:
                             script: |-
-                              # Env variables are defined with the following values: 
-                              # HARNESS_RUNTIME_PATH: deployment_type/service_name/env_name/runtime
-                              # HARNESS_BACKUP_PATH: deployment_type/service_name/env_name/backup
-                              # HARNESS_STAGING_PATH: deployment_type/service_name/env_name/staging
-                              New-Item -Path "$HARNESS_RUNTIME_PATH" -ItemType Directory
-                              New-Item -Path "$HARNESS_RUNTIME_PATH" -ItemType Directory
-                              New-Item -Path "$HARNESS_RUNTIME_PATH" -ItemType Directory
-                              New-Item -Path "$HARNESS_RUNTIME_PATH\tomcat\bin" -ItemType Directory
+                              # Creating runtime, backup and staging directories:
+
+                              New-Item -Path "$HOME\<+service.name>\<+env.name>\runtime" -ItemType Directory
+                              New-Item -Path "$HOME\<+service.name>\<+env.name>\backup" -ItemType Directory
+                              New-Item -Path "$HOME\<+service.name>\<+env.name>\staging" -ItemType Directory
+                              New-Item -Path "$HOME\<+service.name>\<+env.name>\tomcat\bin" -ItemType Directory
                     - identifier: Stop_Service_<+phase>
                       name: "Stop Service"
                       type: Script
                       spec:
-                        workingDirectory: $HARNESS_RUNTIME_PATH\tomcat\bin
+                        workingDirectory: $HOME\<+service.name>\<+env.name>\tomcat\bin
                         shell: PowerShell
                         source:
                           type: Inline
@@ -54,7 +52,7 @@ spec:
                       name: "Process Stopped"
                       type: Script
                       spec:
-                        workingDirectory: $HARNESS_RUNTIME_PATH\tomcat\bin
+                        workingDirectory: $HOME\<+service.name>\<+env.name>\tomcat\bin
                         shell: PowerShell
                         source:
                           type: Inline
@@ -65,7 +63,7 @@ spec:
                       name: "Port Cleared"
                       type: Script
                       spec:
-                        workingDirectory: $HARNESS_RUNTIME_PATH\tomcat\bin
+                        workingDirectory: $HOME\<+service.name>\<+env.name>\tomcat\bin
                         shell: PowerShell
                         source:
                           type: Inline
@@ -77,25 +75,25 @@ spec:
                       type: Copy
                       spec:
                         sourceType: Artifact
-                        destinationPath: $HARNESS_RUNTIME_PATH
+                        destinationPath: $HOME\<+service.name>\<+env.name>
                     - identifier: Expand_Artifact_<+phase>
                       name: "Expand Artifact"
                       type: Script
                       spec:
                         shell: PowerShell
-                        workingDirectory: $HARNESS_RUNTIME_PATH
+                        workingDirectory: $HOME\<+service.name>\<+env.name>
                         source:
                           type: Inline
                           spec:
                             script: |-
-                              # Remove-Item –path $HARNESS_RUNTIME_PATH\tomcat remove-item * –recurse
+                              # Remove-Item –path $HOME\<+service.name>\<+env.name>\tomcat remove-item * –recurse
                               # Remove-Item ${TomcatBinaryName}
                               # Write-Host "Extracting artifact..."
                     - identifier: Start_Service_<+phase>
                       name: "Start Service"
                       type: Script
                       spec:
-                        workingDirectory: $HARNESS_RUNTIME_PATH\tomcat\bin
+                        workingDirectory: $HOME\<+service.name>\<+env.name>\tomcat\bin
                         shell: PowerShell
                         source:
                           type: Inline
@@ -105,7 +103,7 @@ spec:
                       name: "Process Running"
                       type: Script
                       spec:
-                        workingDirectory: $HARNESS_RUNTIME_PATH\tomcat\bin
+                        workingDirectory: $HOME\<+service.name>\<+env.name>\tomcat\bin
                         shell: PowerShell
                         source:
                           type: Inline
@@ -116,7 +114,7 @@ spec:
                       name: "Port Listening"
                       type: Script
                       spec:
-                        workingDirectory: $HARNESS_RUNTIME_PATH\tomcat\bin
+                        workingDirectory: $HOME\<+service.name>\<+env.name>\tomcat\bin
                         shell: PowerShell
                         source:
                           type: Inline

@@ -479,16 +479,15 @@ public class SubscriptionServiceImpl implements SubscriptionService {
   //  }
 
   @Override
-  public PaymentMethodCollectionDTO listPaymentMethods(String accountIdentifier, String customerId) {
+  public PaymentMethodCollectionDTO listPaymentMethods(String accountIdentifier) {
     isSelfServiceEnable(accountIdentifier);
 
     // TODO: Might not needed any more because we request every time user input a payment method
-    StripeCustomer stripeCustomer =
-        stripeCustomerRepository.findByAccountIdentifierAndCustomerId(accountIdentifier, customerId);
+    StripeCustomer stripeCustomer = stripeCustomerRepository.findByAccountIdentifier(accountIdentifier);
     if (stripeCustomer == null) {
       throw new InvalidRequestException("Customer doesn't exists");
     }
-    return stripeHelper.listPaymentMethods(customerId);
+    return stripeHelper.listPaymentMethods(stripeCustomer.getCustomerId());
   }
 
   @Override

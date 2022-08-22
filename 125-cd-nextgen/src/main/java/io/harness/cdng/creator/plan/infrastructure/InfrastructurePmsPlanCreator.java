@@ -290,6 +290,7 @@ public class InfrastructurePmsPlanCreator {
     YamlField infraDefField = infraField.getNode().getField(YamlTypes.INFRASTRUCTURE_DEF);
     YamlField provisionerYamlField = infraDefField.getNode().getField(YAMLFieldNameConstants.PROVISIONER);
     YamlField stepsYamlField = provisionerYamlField.getNode().getField(YAMLFieldNameConstants.STEPS);
+    log.info("stepsYamlField after : {}", stepsYamlField.getNode().getCurrJsonNode());
 
     // Add each step dependency
     LinkedHashMap<String, PlanCreationResponse> responseMap = new LinkedHashMap<>();

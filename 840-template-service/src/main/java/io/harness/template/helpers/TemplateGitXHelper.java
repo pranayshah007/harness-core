@@ -19,6 +19,9 @@ public class TemplateGitXHelper {
   public String getWorkingBranch(Scope scope, String entityRepoURL) {
     GitEntityInfo gitEntityInfo = GitAwareContextHelper.getGitRequestParamsInfo();
     String branchName = gitEntityInfo.getBranch();
+    if (isParentReferenceEntityNotPresent(gitEntityInfo)) {
+      return branchName;
+    }
     String parentEntityRepoUrl = getRepoUrl(scope);
     if (null != parentEntityRepoUrl && !parentEntityRepoUrl.equals(entityRepoURL)) {
       branchName = "";
@@ -31,22 +34,18 @@ public class TemplateGitXHelper {
     if (!GitAwareContextHelper.isNullOrDefault(gitEntityInfo.getParentEntityRepoUrl())) {
       return gitEntityInfo.getParentEntityRepoUrl();
     }
-    String parentEntityRepoUrl;
-    if (isInlineEntity(gitEntityInfo)) {
-      parentEntityRepoUrl = "";
-    } else {
-      parentEntityRepoUrl = scmGitSyncHelper
-                                .getRepoUrl(scope, gitEntityInfo.getParentEntityRepoName(),
-                                    gitEntityInfo.getParentEntityConnectorRef(), Collections.emptyMap())
-                                .getRepoUrl();
+    String parentEntityRepoUrl = scmGitSyncHelper
+                                     .getRepoUrl(scope, gitEntityInfo.getParentEntityRepoName(),
+                                         gitEntityInfo.getParentEntityConnectorRef(), Collections.emptyMap())
+                                     .getRepoUrl();
 
-      gitEntityInfo.setParentEntityRepoUrl(parentEntityRepoUrl);
-      GitAwareContextHelper.updateGitEntityContext(gitEntityInfo);
-    }
+    gitEntityInfo.setParentEntityRepoUrl(parentEntityRepoUrl);
+    GitAwareContextHelper.updateGitEntityContext(gitEntityInfo);
+
     return parentEntityRepoUrl;
   }
 
-  private boolean isInlineEntity(GitEntityInfo gitEntityInfo) {
+  private boolean isParentReferenceEntityNotPresent(GitEntityInfo gitEntityInfo) {
     return GitAwareContextHelper.isNullOrDefault(gitEntityInfo.getParentEntityRepoName())
         && GitAwareContextHelper.isNullOrDefault(gitEntityInfo.getParentEntityConnectorRef());
   }

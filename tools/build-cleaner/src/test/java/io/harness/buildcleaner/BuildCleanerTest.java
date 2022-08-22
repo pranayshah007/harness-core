@@ -67,6 +67,42 @@ public class BuildCleanerTest {
   }
 
   @Test
+  public void generateIndex_findBuildInParentFolder_generatesHarnessSymbolMap()
+      throws IOException, ClassNotFoundException {
+    // Arrange
+    writeClassToFile(workspace.getRoot(), "Root.java");
+    createEmptyFile(workspace.getRoot(), "BUILD.bazel");
+
+    File nestedFolder = workspace.newFolder("nested");
+    writeClassToFile(nestedFolder, "Nested.java");
+
+    BuildCleaner buildCleaner =
+        new BuildCleaner(new String[] {"--workspace", workspace.getRoot().toString(), "--indexSourceGlob", "**"});
+
+    // Act & Assert
+    assertThat(buildCleaner.buildHarnessSymbolMap().getSymbolToTargetMap())
+        .isEqualTo(Map.of("io.harness.Root", "", "io.harness.nested.Nested", ""));
+  }
+
+  @Test
+  public void generateIndex_withAssumedPackagePrefixes_doesNotFindInParentFolder()
+      throws IOException, ClassNotFoundException {
+    // Arrange
+    writeClassToFile(workspace.getRoot(), "Root.java");
+    createEmptyFile(workspace.getRoot(), "BUILD.bazel");
+
+    File nestedFolder = workspace.newFolder("nested");
+    writeClassToFile(nestedFolder, "Nested.java");
+
+    BuildCleaner buildCleaner = new BuildCleaner(new String[] {"--workspace", workspace.getRoot().toString(),
+        "--indexSourceGlob", "**", "--assumedPackagePrefixesWithBuildFile", "nested"});
+
+    // Act & Assert
+    assertThat(buildCleaner.buildHarnessSymbolMap().getSymbolToTargetMap())
+        .isEqualTo(Map.of("io.harness.Root", "", "io.harness.nested.Nested", "nested"));
+  }
+
+  @Test
   public void generateBuildForModule_oneSourceFile_allImportsInSymbolMap_returnBuildWithDeps() throws IOException {
     // Arrange
     List<String> imports = List.of("io.harness.RootClass", "io.harness.nested.NestedClass");
@@ -94,12 +130,11 @@ public class BuildCleanerTest {
     assertEquals(ImmutableSet.of("//root:module", "//root/nested:module"), javaLibraryTargets.get(0).getDeps());
   }
 
-  private void writeClassToFile(File folder, String fileName) throws IOException, FileNotFoundException {
+  private void writeClassToFile(File folder, String fileName) throws IOException {
     writeClassToFile(folder, fileName, Collections.emptyList());
   }
 
-  private void writeClassToFile(File folder, String fileName, List<String> imports)
-      throws IOException, FileNotFoundException {
+  private void writeClassToFile(File folder, String fileName, List<String> imports) throws IOException {
     File file = new File(folder + "/" + fileName);
     file.createNewFile();
 
@@ -120,5 +155,10 @@ public class BuildCleanerTest {
       out.println(content);
       out.flush();
     }
+  }
+
+  private void createEmptyFile(File folder, String fileName) throws IOException {
+    File file = new File(folder + "/" + fileName);
+    file.createNewFile();
   }
 }

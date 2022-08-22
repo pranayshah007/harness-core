@@ -37,7 +37,7 @@ public class AddIsProductLedToAccount implements Migration {
         List<ModuleLicenseDTO> moduleLicenses =
             NGRestUtils.getResponse(ngLicenseHttpClient.getModuleLicenses(account.getUuid()));
         String accountID = account.getUuid();
-        if (moduleLicenses.size() == 0) {
+        if (moduleLicenses == null || moduleLicenses.size() == 0) {
           wingsPersistence.updateField(Account.class, accountID, isProductLed, Boolean.TRUE);
         } else {
           boolean salesLedFound = false;

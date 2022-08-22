@@ -62,13 +62,13 @@ public class VmStepSerializer {
       case SAVE_CACHE_S3:
       case SECURITY:
       case RESTORE_CACHE_S3:
+      case GIT_CLONE:
         return vmPluginCompatibleStepSerializer.serialize(
             ambiance, (PluginCompatibleStep) stepInfo, stageInfraDetails, identifier, parameterFieldTimeout, stepName);
       case CLEANUP:
       case TEST:
       case BUILD:
       case SETUP_ENV:
-      case GIT_CLONE:
       case INITIALIZE_TASK:
       default:
         //                log.info("serialisation is not implemented");
