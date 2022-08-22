@@ -173,12 +173,13 @@ public class IndexManagerSession {
     return processIndexesInternal(datastore, morphia, store, includeUnannotatedStoreIn, processor);
   }
 
-  // IndexesProcessor should be used in a thread safe manner. For example, see usage of CopyOnWriteArrayList in allIndexes
+  // IndexesProcessor should be used in a thread safe manner. For example, see usage of CopyOnWriteArrayList in
+  // allIndexes
   private static Set<String> processIndexesInternal(AdvancedDatastore datastore, Morphia morphia, Store store,
       boolean includeUnannotatedStoreIn, IndexesProcessor processor) {
     Collection<MappedClass> mappedClasses = morphia.getMapper().getMappedClasses();
     Map<String, MappedClass> map =
-        mappedClasses.stream()
+        mappedClasses.parallelStream()
             .filter(mc -> mc.getEntityAnnotation() != null)
             .filter(mc -> {
               Set<String> storeInSet = addStoreInInSet(mc);
