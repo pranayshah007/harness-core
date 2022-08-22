@@ -16,6 +16,7 @@ import io.harness.filter.serializer.FiltersRegistrars;
 import io.harness.gitsync.serializer.GitSyncSdkRegistrar;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.serializer.kryo.ConnectorNextGenKryoRegistrar;
+import io.harness.serializer.kryo.NotificationBeansKryoRegistrar;
 import io.harness.serializer.morphia.ConnectorMorphiaClassesRegistrar;
 import io.harness.yaml.schema.beans.YamlSchemaRootClass;
 
@@ -41,6 +42,7 @@ public class ConnectorNextGenRegistrars {
           .addAll(LicenseBeanRegistrar.kryoRegistrars)
           .addAll(AccessControlClientRegistrars.kryoRegistrars)
           .addAll(NGCommonModuleRegistrars.kryoRegistrars)
+          .add(NotificationBeansKryoRegistrar.class)
           .build();
 
   public static final ImmutableSet<Class<? extends MorphiaRegistrar>> morphiaRegistrars =

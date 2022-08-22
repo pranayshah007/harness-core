@@ -2668,6 +2668,9 @@
         },
         {
           "type": "object",
+          "required": [
+            "template"
+          ],
           "properties": {
             "connectorRef": {
               "type": "string"
@@ -5193,7 +5196,8 @@
     "TemplateLinkConfig": {
       "type": "object",
       "required": [
-        "templateRef"
+        "templateRef",
+        "versionLabel"
       ],
       "properties": {
         "templateInputs": {

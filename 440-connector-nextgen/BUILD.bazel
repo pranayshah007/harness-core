@@ -43,6 +43,7 @@ java_library(
         "//clients/access-control/sdk:module",
         "//clients/audit:module",
         "//platform-service/modules/audit-service/contracts:module",
+        "//platform-service/modules/notification-service/contracts:module",
     ],
 )
 
@@ -58,6 +59,7 @@ java_library(
     deps = [
         "module",
         "//:lombok",
+        "//878-ng-common-utilities:module",
         "//890-sm-core:module",
         "//900-git-sync-sdk:module",
         "//910-delegate-service-driver:module",
@@ -83,6 +85,7 @@ java_library(
         "//999-annotations:module",
         "//clients/access-control/sdk:module",
         "//clients/audit:module",
+        "//platform-service/modules/notification-service/contracts:module",
         "@maven//:com_amazonaws_aws_java_sdk_costandusagereport",
         "@maven//:com_amazonaws_aws_java_sdk_iam",
         "@maven//:com_amazonaws_aws_java_sdk_s3",
