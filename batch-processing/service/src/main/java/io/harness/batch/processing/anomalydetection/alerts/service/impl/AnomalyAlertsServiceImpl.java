@@ -15,6 +15,7 @@ import static io.harness.notification.dtos.NotificationChannelDTO.NotificationCh
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.slack.api.webhook.WebhookPayloads.payload;
 
+import io.harness.batch.processing.anomalydetection.alerts.EmailMessageGenerator;
 import io.harness.batch.processing.anomalydetection.alerts.SlackMessageGenerator;
 import io.harness.batch.processing.anomalydetection.alerts.service.itfc.AnomalyAlertsService;
 import io.harness.batch.processing.config.BatchMainConfig;
@@ -67,6 +68,7 @@ public class AnomalyAlertsServiceImpl implements AnomalyAlertsService {
   @Autowired @Inject private CESlackWebhookService ceSlackWebhookService;
   @Autowired @Inject private AccountShardService accountShardService;
   @Autowired @Inject private SlackMessageGenerator slackMessageGenerator;
+  @Autowired @Inject private EmailMessageGenerator emailMessageGenerator;
   @Autowired @Inject private Slack slack;
 
   // NG Anomaly alerts
@@ -204,17 +206,20 @@ public class AnomalyAlertsServiceImpl implements AnomalyAlertsService {
 
     Map<String, String> templateData = new HashMap<>();
     templateData.put("perspective_name", perspectiveNotificationSetting.getPerspectiveName());
+    templateData.put("anomaly_count", String.valueOf(perspectiveAnomalies.size()));
     templateData.put("anomalies",
-        slackMessageGenerator.getAnomalyDetailsTemplateString(accountId,
-            perspectiveNotificationSetting.getPerspectiveId(), perspectiveNotificationSetting.getPerspectiveName(),
-            perspectiveAnomalies.get(0)));
+        emailMessageGenerator.getAnomalyDetailsString(accountId, perspectiveNotificationSetting.getPerspectiveId(),
+            perspectiveNotificationSetting.getPerspectiveName(), perspectiveAnomalies));
     templateData.put("perspective_url", perspectiveUrl);
 
     // Sending email alerts
     emailChannelBuilder.templateData(templateData);
-    // TODO: Fix Email Template
-    // Call<RestResponse<NotificationResult>> call = notificationResourceClient.sendNotification(accountId,
-    // emailChannelBuilder.build());
+    Response<RestResponse<NotificationResult>> response =
+        notificationResourceClient.sendNotification(accountId, emailChannelBuilder.build()).execute();
+    if (!response.isSuccessful()) {
+      log.error("Failed to send email notification: {}",
+          (response.errorBody() != null) ? response.errorBody().string() : response.code());
+    }
 
     Map<String, String> slackTemplateData = new HashMap<>();
     slackTemplateData.put("perspective_name", perspectiveNotificationSetting.getPerspectiveName());
@@ -231,8 +236,7 @@ public class AnomalyAlertsServiceImpl implements AnomalyAlertsService {
 
     // Sending slack alerts
     slackChannelBuilder.templateData(slackTemplateData);
-    Response<RestResponse<NotificationResult>> response =
-        notificationResourceClient.sendNotification(accountId, slackChannelBuilder.build()).execute();
+    response = notificationResourceClient.sendNotification(accountId, slackChannelBuilder.build()).execute();
     if (!response.isSuccessful()) {
       log.error("Failed to send slack notification: {}",
           (response.errorBody() != null) ? response.errorBody().string() : response.code());

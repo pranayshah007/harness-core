@@ -41,11 +41,11 @@ public class AnomalyUtility {
     substitutes.put(AnomalyEntityKeys.gcpSKUDescription, anomaly.getGcpSKUDescription());
     substitutes.put(AnomalyEntityKeys.awsAccount, anomaly.getAwsAccount());
     substitutes.put(AnomalyEntityKeys.awsService, anomaly.getAwsService());
-    substitutes.put(AnomalyEntityKeys.actualCost, getRoundedDoubleValue(anomaly.getActualCost()).toString());
-    substitutes.put(AnomalyEntityKeys.expectedCost, getRoundedDoubleValue(anomaly.getExpectedCost()).toString());
-    substitutes.put("ANOMALY_COST", getAnomalousCost(anomaly).toString());
+    substitutes.put(AnomalyEntityKeys.actualCost, "$" + getRoundedDoubleValue(anomaly.getActualCost()).toString());
+    substitutes.put(AnomalyEntityKeys.expectedCost, "$" + getRoundedDoubleValue(anomaly.getExpectedCost()).toString());
+    substitutes.put("ANOMALY_COST", "$" + getAnomalousCost(anomaly).toString());
     substitutes.put("ANOMALY_COST_PERCENTAGE",
-        getPercentageRaise(anomaly.getActualCost(), anomaly.getExpectedCost(), true).toString());
+        getPercentageRaise(anomaly.getActualCost(), anomaly.getExpectedCost(), true).toString() + "%");
     return substitutes;
   }
 
