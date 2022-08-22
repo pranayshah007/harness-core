@@ -12,6 +12,7 @@ import static io.harness.rule.OwnerRule.ANUBHAW;
 import static io.harness.rule.OwnerRule.GARVIT;
 import static io.harness.rule.OwnerRule.GEORGE;
 import static io.harness.rule.OwnerRule.MILOS;
+import static io.harness.rule.OwnerRule.RAFAEL;
 
 import static software.wings.beans.Application.Builder.anApplication;
 import static software.wings.beans.Environment.Builder.anEnvironment;
@@ -667,5 +668,28 @@ public class ExecutionInterruptManagerTest extends WingsBaseTest {
     executionInterruptManager.registerExecutionInterrupt(executionInterrupt);
 
     verify(stateMachineExecutor, times(1)).sendPipelineNotification(any(), any(), any(), any());
+  }
+
+  @Test
+  @Owner(developers = RAFAEL)
+  @Category(UnitTests.class)
+  public void shouldThrowStateStartingForRetry() {
+    Application app = anApplication().name("App1").build();
+    wingsPersistence.save(app);
+    Environment env = anEnvironment().appId(app.getUuid()).build();
+    wingsPersistence.save(env);
+
+    StateExecutionInstance stateExecutionInstance =
+        aStateExecutionInstance().appId(app.getUuid()).displayName("state1").status(ExecutionStatus.STARTING).build();
+    wingsPersistence.save(stateExecutionInstance);
+    ExecutionInterrupt executionInterrupt = anExecutionInterrupt()
+                                                .appId(app.getUuid())
+                                                .executionInterruptType(ExecutionInterruptType.RETRY)
+                                                .envId(env.getUuid())
+                                                .executionUuid(generateUuid())
+                                                .stateExecutionInstanceId(stateExecutionInstance.getUuid())
+                                                .build();
+    executionInterrupt = executionInterruptManager.registerExecutionInterrupt(executionInterrupt);
+    assertThat(executionInterrupt.getExecutionInterruptType()).isEqualTo(ExecutionInterruptType.RETRY);
   }
 }

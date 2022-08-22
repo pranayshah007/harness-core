@@ -84,12 +84,6 @@ public class InstanceSyncServiceImpl implements InstanceSyncService {
     long startTime = System.currentTimeMillis();
     DeploymentSummaryDTO deploymentSummaryDTO = deploymentEvent.getDeploymentSummaryDTO();
     InfrastructureMappingDTO infrastructureMappingDTO = deploymentSummaryDTO.getInfrastructureMapping();
-    String infraIdentifier = deploymentEvent.getInfrastructureOutcome() == null
-        ? null
-        : deploymentEvent.getInfrastructureOutcome().getInfraIdentifier();
-    String infraName = deploymentEvent.getInfrastructureOutcome() == null
-        ? null
-        : deploymentEvent.getInfrastructureOutcome().getInfraName();
     log.info("processInstanceSyncForNewDeployment, deploymentEvent: {}", deploymentEvent);
     try (AutoLogContext ignore1 =
              new AccountLogContext(infrastructureMappingDTO.getAccountIdentifier(), OverrideBehavior.OVERRIDE_ERROR);

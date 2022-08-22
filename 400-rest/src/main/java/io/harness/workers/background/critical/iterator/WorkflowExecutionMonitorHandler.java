@@ -18,6 +18,8 @@ import static io.harness.beans.RepairActionCode.CONTINUE_WITH_DEFAULTS;
 import static io.harness.exception.WingsException.ExecutionContext.MANAGER;
 
 import static software.wings.sm.ExecutionInterrupt.ExecutionInterruptBuilder.anExecutionInterrupt;
+import static software.wings.sm.StateType.PHASE;
+import static software.wings.sm.StateType.PHASE_STEP;
 import static software.wings.sm.StateType.SHELL_SCRIPT;
 
 import io.harness.annotations.dev.HarnessModule;
@@ -120,6 +122,8 @@ public class WorkflowExecutionMonitorHandler implements Handler<WorkflowExecutio
         while (stateExecutionInstances.hasNext()) {
           StateExecutionInstance stateExecutionInstance = stateExecutionInstances.next();
           long now = System.currentTimeMillis();
+
+          checkIfStateExecutionIsStartingOrRunningWithoutResponse(stateExecutionInstance, now, entity.getEnvId());
 
           if (shouldAvoidExpiringWithThreshold(stateExecutionInstance, now)) {
             continue;
@@ -233,6 +237,26 @@ public class WorkflowExecutionMonitorHandler implements Handler<WorkflowExecutio
                                                         .unset(WorkflowExecutionKeys.message);
 
     wingsPersistence.findAndModify(query, updateOps, HPersistence.returnNewOptions);
+  }
+
+  private void checkIfStateExecutionIsStartingOrRunningWithoutResponse(
+      StateExecutionInstance stateExecutionInstance, long currentTimeMillis, String envId) {
+    if (stateExecutionInstance.getStateType() != null && !stateExecutionInstance.getStateType().equals(PHASE.getType())
+        && !stateExecutionInstance.getStateType().equals(PHASE_STEP.getType())
+        && stateExecutionInstance.getStatus().equals(ExecutionStatus.STARTING)
+        && (currentTimeMillis - stateExecutionInstance.getStartTs()) > EXPIRE_THRESHOLD.toMillis()) {
+      log.info("Restart StateExecutionInstance found: {}", stateExecutionInstance.getUuid());
+      ExecutionInterrupt executionInterrupt = anExecutionInterrupt()
+                                                  .accountId(stateExecutionInstance.getAccountId())
+                                                  .executionInterruptType(ExecutionInterruptType.RETRY)
+                                                  .envId(envId)
+                                                  .appId(stateExecutionInstance.getAppId())
+                                                  .executionUuid(stateExecutionInstance.getExecutionUuid())
+                                                  .stateExecutionInstanceId(stateExecutionInstance.getUuid())
+                                                  .build();
+
+      executionInterruptManager.registerExecutionInterrupt(executionInterrupt);
+    }
   }
 
   private boolean shouldAvoidExpiringWithThreshold(

@@ -61,4 +61,5 @@ public class ResourceTypeConstants {
   public static final String AUTOSTOPPING_LB = "AUTOSTOPPING_LB";
   public static final String AUTOSTOPPING_STARTSTOP = "AUTOSTOPPING_STARTSTOP";
   public static final String SETTING = "SETTING";
+  public static final String NG_LOGIN_SETTINGS = "NG_LOGIN_SETTINGS";
 }

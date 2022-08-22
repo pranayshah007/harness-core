@@ -54,7 +54,8 @@ public enum ResourceType {
   AUTOSTOPPING_RULE(ResourceTypeConstants.AUTOSTOPPING_RULE),
   AUTOSTOPPING_LB(ResourceTypeConstants.AUTOSTOPPING_LB),
   AUTOSTOPPING_STARTSTOP(ResourceTypeConstants.AUTOSTOPPING_STARTSTOP),
-  SETTING(ResourceTypeConstants.SETTING);
+  SETTING(ResourceTypeConstants.SETTING),
+  NG_LOGIN_SETTINGS(ResourceTypeConstants.NG_LOGIN_SETTINGS);
 
   ResourceType(String resourceType) {
     if (!this.name().equals(resourceType)) {

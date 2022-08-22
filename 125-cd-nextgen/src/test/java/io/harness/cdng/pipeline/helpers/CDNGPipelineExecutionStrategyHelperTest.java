@@ -52,8 +52,8 @@ public class CDNGPipelineExecutionStrategyHelperTest extends CategoryTest {
                                                 .unitType(NGInstanceUnitType.PERCENTAGE)
                                                 .artifactType(ArtifactType.WAR)
                                                 .build();
-    String result =
-        cdngPipelineExecutionStrategyHelper.generateCanaryYaml(ServiceDefinitionType.SSH, strategyParameters, false);
+    String result = cdngPipelineExecutionStrategyHelper.generateSshWinRmCanaryYaml(
+        ServiceDefinitionType.SSH, strategyParameters, false);
     assertThat(result).contains(STRATEGY);
     assertThat(result).contains("start: 0");
     assertThat(result).contains("end: 50");
@@ -72,12 +72,11 @@ public class CDNGPipelineExecutionStrategyHelperTest extends CategoryTest {
                                                 .unitType(NGInstanceUnitType.PERCENTAGE)
                                                 .artifactType(ArtifactType.JAR)
                                                 .build();
-    String result =
-        cdngPipelineExecutionStrategyHelper.generateRollingYaml(ServiceDefinitionType.SSH, strategyParameters, false);
+    String result = cdngPipelineExecutionStrategyHelper.generateSshWinRmRollingYaml(
+        ServiceDefinitionType.SSH, strategyParameters, false);
     assertThat(result).contains(STRATEGY);
     assertThat(result).contains("maxConcurrency: 1");
-    assertThat(result).contains("start: 0");
-    assertThat(result).contains("end: 50");
+    assertThat(result).contains("partitions: 50");
     assertThat(result).contains("unit: Percentage");
   }
 
@@ -90,12 +89,11 @@ public class CDNGPipelineExecutionStrategyHelperTest extends CategoryTest {
                                                 .unitType(NGInstanceUnitType.PERCENTAGE)
                                                 .artifactType(ArtifactType.WAR)
                                                 .build();
-    String result =
-        cdngPipelineExecutionStrategyHelper.generateRollingYaml(ServiceDefinitionType.SSH, strategyParameters, false);
+    String result = cdngPipelineExecutionStrategyHelper.generateSshWinRmRollingYaml(
+        ServiceDefinitionType.SSH, strategyParameters, false);
     assertThat(result).contains(STRATEGY);
     assertThat(result).contains("maxConcurrency: 1");
-    assertThat(result).contains("start: 0");
-    assertThat(result).contains("end: 50");
+    assertThat(result).contains("partitions: 50");
     assertThat(result).contains("unit: Percentage");
   }
 
@@ -108,12 +106,11 @@ public class CDNGPipelineExecutionStrategyHelperTest extends CategoryTest {
                                                 .unitType(NGInstanceUnitType.COUNT)
                                                 .artifactType(ArtifactType.JAR)
                                                 .build();
-    String result =
-        cdngPipelineExecutionStrategyHelper.generateRollingYaml(ServiceDefinitionType.WINRM, strategyParameters, false);
+    String result = cdngPipelineExecutionStrategyHelper.generateSshWinRmRollingYaml(
+        ServiceDefinitionType.WINRM, strategyParameters, false);
     assertThat(result).contains(STRATEGY);
     assertThat(result).contains("maxConcurrency: 1");
-    assertThat(result).contains("start: 0");
-    assertThat(result).contains("end: 1");
+    assertThat(result).contains("partitions: 1");
     assertThat(result).contains("unit: Count");
   }
 
@@ -127,8 +124,8 @@ public class CDNGPipelineExecutionStrategyHelperTest extends CategoryTest {
                                                 .unitType(NGInstanceUnitType.PERCENTAGE)
                                                 .artifactType(ArtifactType.JAR)
                                                 .build();
-    String result =
-        cdngPipelineExecutionStrategyHelper.generateCanaryYaml(ServiceDefinitionType.WINRM, strategyParameters, false);
+    String result = cdngPipelineExecutionStrategyHelper.generateSshWinRmCanaryYaml(
+        ServiceDefinitionType.WINRM, strategyParameters, false);
     assertThat(result).contains(STRATEGY);
     assertThat(result).contains("start: 0");
     assertThat(result).contains("end: 50");

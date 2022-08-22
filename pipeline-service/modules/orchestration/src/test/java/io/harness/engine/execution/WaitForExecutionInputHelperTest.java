@@ -13,6 +13,7 @@ import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertNotNull;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -23,17 +24,21 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.engine.executions.node.NodeExecutionService;
+import io.harness.engine.executions.plan.PlanExecutionMetadataService;
 import io.harness.engine.pms.data.PmsEngineExpressionService;
 import io.harness.execution.ExecutionInputInstance;
 import io.harness.execution.NodeExecution;
+import io.harness.execution.PlanExecutionMetadata;
 import io.harness.plan.PlanNode;
 import io.harness.pms.PmsFeatureFlagService;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.rule.Owner;
 import io.harness.waiter.WaitNotifyEngine;
 
 import java.util.EnumSet;
+import java.util.Optional;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -50,6 +55,7 @@ public class WaitForExecutionInputHelperTest extends OrchestrationTestBase {
   @InjectMocks private WaitForExecutionInputHelper waitForExecutionInputHelper;
   @Mock private PmsFeatureFlagService pmsFeatureFlagService;
   @Mock private PmsEngineExpressionService pmsEngineExpressionService;
+  @Mock private PlanExecutionMetadataService planExecutionMetadataService;
 
   @Before
   public void setup() {
@@ -68,9 +74,15 @@ public class WaitForExecutionInputHelperTest extends OrchestrationTestBase {
         ArgumentCaptor.forClass(WaitForExecutionInputCallback.class);
     ArgumentCaptor<ExecutionInputInstance> inputInstanceArgumentCaptor =
         ArgumentCaptor.forClass(ExecutionInputInstance.class);
+    doReturn(Optional.of(PlanExecutionMetadata.builder().yaml("pipeline:\n  name: pipeline1\n").build()))
+        .when(planExecutionMetadataService)
+        .findByPlanExecutionId(any());
     waitForExecutionInputHelper.waitForExecutionInput(
-        Ambiance.newBuilder().putSetupAbstractions("accountId", "accountId").build(), nodeExecution.getUuid(),
-        PlanNode.builder().executionInputTemplate(template).build());
+        Ambiance.newBuilder()
+            .addLevels(Level.newBuilder().setOriginalIdentifier("pipeline").buildPartial())
+            .putSetupAbstractions("accountId", "accountId")
+            .build(),
+        nodeExecution.getUuid(), PlanNode.builder().executionInputTemplate(template).build());
     verify(waitNotifyEngine, times(1)).waitForAllOnInList(any(), callbackArgumentCaptor.capture(), any(), any());
     WaitForExecutionInputCallback waitForExecutionInputCallback = callbackArgumentCaptor.getValue();
 

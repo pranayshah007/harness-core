@@ -23,6 +23,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -38,6 +39,12 @@ public class PlanExecutionSummaryCdChangeServiceInfraChangeDataHandlerNew implem
   @Inject private TimeScaleDBService timeScaleDBService;
   private static String SERVICE_STARTTS = "service_startts";
   private static String SERVICE_ENDTS = "service_endts";
+  // These set of keys we can use to populate data to 'artifact_image' in service_infra_info
+  private static List<String> artifactPathNameSet = Arrays.asList("imagePath", "artifactPath", "bucketName", "jobName");
+  // These set of keys we can use to populate data to 'tag' in service_infra_info.
+  // Passing artifactPath as both tag and artifact_image in case of ArtifactoryGenericArtifactSummary. Have put in end
+  // to avoid conflict for other ArtifactSummary
+  private static List<String> tagNameSet = Arrays.asList("tag", "version", "build", "artifactPath");
 
   @Override
   public boolean handleChange(ChangeEvent<?> changeEvent, String tableName, String[] fields) {
@@ -202,18 +209,21 @@ public class PlanExecutionSummaryCdChangeServiceInfraChangeDataHandlerNew implem
               String imagePath = "";
               if (artifacts.get("primary") != null) {
                 DBObject primary = (DBObject) artifacts.get("primary");
-                if (primary.get("tag") != null || primary.get("version") != null) {
-                  tag = primary.get("tag") == null ? primary.get("version").toString() : primary.get("tag").toString();
-                  columnValueMapping.put("tag", tag);
-                } else {
-                  columnValueMapping.put("tag", "");
+
+                for (String tagName : tagNameSet) {
+                  if (primary.get(tagName) != null) {
+                    tag = primary.get(tagName).toString();
+                    break;
+                  }
                 }
-                if (primary.get("imagePath") != null) {
-                  imagePath = primary.get("imagePath").toString();
-                  columnValueMapping.put("artifact_image", imagePath);
-                } else {
-                  columnValueMapping.put("artifact_image", "");
+                for (String artifactPath : artifactPathNameSet) {
+                  if (primary.get(artifactPath) != null) {
+                    imagePath = primary.get(artifactPath).toString();
+                    break;
+                  }
                 }
+                columnValueMapping.put("tag", tag);
+                columnValueMapping.put("artifact_image", imagePath);
               }
             }
 

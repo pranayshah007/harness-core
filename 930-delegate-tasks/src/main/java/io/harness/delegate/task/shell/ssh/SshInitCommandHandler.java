@@ -29,6 +29,7 @@ import io.harness.delegate.task.ssh.ScriptCommandUnit;
 import io.harness.exception.CommandExecutionException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.logging.CommandExecutionStatus;
+import io.harness.logging.LogLevel;
 import io.harness.shell.AbstractScriptExecutor;
 
 import com.google.common.collect.ImmutableMap;
@@ -148,6 +149,10 @@ public class SshInitCommandHandler implements CommandHandler {
       throw new CommandExecutionException("Failed to process destination host env variables", e);
     }
 
+    if (taskParameters.isExecuteOnDelegate()) {
+      executor.getLogCallback().saveExecutionLog(
+          "Command finished with status " + commandExecutionStatus, LogLevel.INFO, commandExecutionStatus);
+    }
     return commandExecutionStatus;
   }
 

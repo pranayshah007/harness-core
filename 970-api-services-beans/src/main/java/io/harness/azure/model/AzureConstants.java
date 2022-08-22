@@ -269,6 +269,7 @@ public interface AzureConstants {
       + "App name: [%s]%nSlot name: [%s]";
   String SUCCESS_UPDATE_STARTUP_COMMAND = "Startup command updated successfully";
   String SWAP_SLOT_SUCCESS = "Swapping slots done successfully";
+  String SWAP_SLOT_FAILURE = "Swapping slots failed for slot - [%s] due to: %s";
 
   String SUCCESS_SLOT_DEPLOYMENT = "Deployment to slot - [%s] is successful";
   String FAIL_DEPLOYMENT = "Deployment failed for slot - [%s]";
