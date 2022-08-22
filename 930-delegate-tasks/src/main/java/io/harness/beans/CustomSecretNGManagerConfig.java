@@ -16,7 +16,7 @@ import io.harness.SecretManagerDescriptionConstants;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SecretManagerCapabilities;
 import io.harness.beans.SecretManagerConfig;
-import io.harness.delegate.beans.connector.customseceretmanager.TemplateLinkConfig;
+import io.harness.delegate.beans.connector.customsecretmanager.TemplateLinkConfig;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.SelectorCapability;
 import io.harness.expression.ExpressionEvaluator;

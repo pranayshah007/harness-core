@@ -12,7 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import io.harness.SecretManagerDescriptionConstants;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.DelegateSelectable;
-import io.harness.delegate.beans.connector.customseceretmanager.TemplateLinkConfig;
+import io.harness.delegate.beans.connector.customsecretmanager.TemplateLinkConfig;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Set;
