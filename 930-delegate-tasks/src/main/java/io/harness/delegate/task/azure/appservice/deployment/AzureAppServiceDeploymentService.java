@@ -49,6 +49,7 @@ import static io.harness.azure.model.AzureConstants.SUCCESS_TRAFFIC_SHIFT;
 import static io.harness.azure.model.AzureConstants.SUCCESS_UPDATE_CONTAINER_SETTINGS;
 import static io.harness.azure.model.AzureConstants.SUCCESS_UPDATE_IMAGE_SETTINGS;
 import static io.harness.azure.model.AzureConstants.SUCCESS_UPDATE_STARTUP_COMMAND;
+import static io.harness.azure.model.AzureConstants.SWAP_SLOT_FAILURE;
 import static io.harness.azure.model.AzureConstants.SWAP_SLOT_SUCCESS;
 import static io.harness.azure.model.AzureConstants.UNSUPPORTED_ARTIFACT;
 import static io.harness.azure.model.AzureConstants.UPDATE_APPLICATION_CONFIGURATIONS;
@@ -96,6 +97,7 @@ import io.harness.delegate.task.azure.appservice.deployment.verifier.SlotStatusV
 import io.harness.delegate.task.azure.appservice.webapp.AppServiceDeploymentProgress;
 import io.harness.delegate.task.azure.common.AzureLogCallbackProvider;
 import io.harness.delegate.task.azure.common.validator.Validators;
+import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.runtime.azure.AzureAppServicesDeployArtifactFileException;
 import io.harness.logging.LogCallback;
@@ -509,8 +511,15 @@ public class AzureAppServiceDeploymentService {
         sourceSlotName, targetSlotName, azureWebClient, webClientContext, restCallBack, slotSwapLogCallback));
     executorService.shutdown();
 
-    slotSteadyStateChecker.waitUntilCompleteWithTimeout(steadyStateTimeoutInMinutes,
-        SLOT_STOPPING_STATUS_CHECK_INTERVAL, slotSwapLogCallback, SLOT_SWAP, statusVerifier);
+    try {
+      slotSteadyStateChecker.waitUntilCompleteWithTimeout(steadyStateTimeoutInMinutes,
+          SLOT_STOPPING_STATUS_CHECK_INTERVAL, slotSwapLogCallback, SLOT_SWAP, statusVerifier);
+    } catch (Exception e) {
+      String message = ExceptionUtils.getMessage(e);
+      slotSwapLogCallback.saveExecutionLog(format(SWAP_SLOT_FAILURE, targetSlotName, message), ERROR, FAILURE);
+      throw e;
+    }
+
     slotSwapLogCallback.saveExecutionLog(SWAP_SLOT_SUCCESS, INFO, SUCCESS);
   }
 

@@ -344,6 +344,7 @@ import io.harness.delegate.task.azure.appservice.settings.AppSettingsFile;
 import io.harness.delegate.task.azure.appservice.settings.EncryptedAppSettingsFile;
 import io.harness.delegate.task.azure.appservice.webapp.ng.AzureWebAppInfraDelegateConfig;
 import io.harness.delegate.task.azure.appservice.webapp.ng.AzureWebAppRequestType;
+import io.harness.delegate.task.azure.appservice.webapp.ng.exception.AzureWebAppRollbackExceptionData;
 import io.harness.delegate.task.azure.appservice.webapp.ng.exception.AzureWebAppSlotDeploymentExceptionData;
 import io.harness.delegate.task.azure.appservice.webapp.ng.request.AzureWebAppFetchPreDeploymentDataRequest;
 import io.harness.delegate.task.azure.appservice.webapp.ng.request.AzureWebAppRollbackRequest;
@@ -1665,5 +1666,6 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(GitPollingTaskType.class, 56338);
     kryo.register(GitPollingDelegateResponse.class, 56339);
     kryo.register(JenkinsArtifactDelegateConfig.class, 9800003);
+    kryo.register(AzureWebAppRollbackExceptionData.class, 55419);
   }
 }
