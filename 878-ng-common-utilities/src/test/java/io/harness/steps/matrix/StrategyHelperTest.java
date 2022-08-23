@@ -571,7 +571,8 @@ public class StrategyHelperTest extends NGCommonUtilitiesTestBase {
     ExecutionWrapperConfig executionWrapperConfig = YamlUtils.read(stepYaml, ExecutionWrapperConfig.class);
     assertThatThrownBy(() -> strategyHelper.expandExecutionWrapperConfig(executionWrapperConfig))
         .isInstanceOf(InvalidYamlException.class)
-        .hasMessage("Cannot deserialize value of type `int` from String \"as\": not a valid `int` value");
+        .hasMessage(
+            "Cannot deserialize value of type `java.lang.Integer` from String \"as\": not a valid `java.lang.Integer` value");
   }
 
   @Test
