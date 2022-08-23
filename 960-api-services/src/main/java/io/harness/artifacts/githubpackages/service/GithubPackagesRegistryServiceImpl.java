@@ -332,7 +332,7 @@ public class GithubPackagesRegistryServiceImpl implements GithubPackagesRegistry
       build.setBuildDisplayName(packageName + ": " + tag);
       build.setUiDisplayName("Tag# " + tag);
       build.setNumber(tag);
-      build.setBuildUrl(v.getVersionUrl());
+      build.setBuildUrl(v.getVersionHtmlUrl());
       build.setStatus(BuildDetails.BuildStatus.SUCCESS);
       build.setBuildFullDisplayName(v.getVersionName());
       build.setMetadata(metadata);

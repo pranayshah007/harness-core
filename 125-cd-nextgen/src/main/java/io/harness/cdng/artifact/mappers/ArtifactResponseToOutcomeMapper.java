@@ -139,6 +139,8 @@ public class ArtifactResponseToOutcomeMapper {
       GithubPackagesArtifactConfig githubPackagesArtifactConfig,
       GithubPackagesArtifactDelegateResponse githubPackagesArtifactDelegateResponse, boolean useDelegateResponse) {
     return GithubPackagesArtifactOutcome.builder()
+        .image(githubPackagesArtifactDelegateResponse.getPackageUrl())
+        .imagePullSecret(createImagePullSecret(ArtifactUtils.getArtifactKey(githubPackagesArtifactConfig)))
         .packageName(githubPackagesArtifactConfig.getPackageName().getValue())
         .version(githubPackagesArtifactDelegateResponse.getVersion())
         .connectorRef(githubPackagesArtifactConfig.getConnectorRef().getValue())

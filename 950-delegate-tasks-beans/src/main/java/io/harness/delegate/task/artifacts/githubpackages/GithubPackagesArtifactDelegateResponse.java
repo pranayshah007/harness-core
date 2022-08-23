@@ -53,10 +53,15 @@ public class GithubPackagesArtifactDelegateResponse extends ArtifactDelegateResp
    */
   String packageUrl;
 
+  /**
+   * Version Url
+   */
+  String versionUrl;
+
   @Builder
   public GithubPackagesArtifactDelegateResponse(ArtifactBuildDetailsNG buildDetails, ArtifactSourceType sourceType,
       String packageId, String packageName, String packageType, String version, String versionRegex,
-      String packageVisibility, String packageUrl) {
+      String packageVisibility, String packageUrl, String versionUrl) {
     super(buildDetails, sourceType);
     this.packageId = packageId;
     this.packageName = packageName;
@@ -65,5 +70,6 @@ public class GithubPackagesArtifactDelegateResponse extends ArtifactDelegateResp
     this.versionRegex = versionRegex;
     this.packageVisibility = packageVisibility;
     this.packageUrl = packageUrl;
+    this.versionUrl = versionUrl;
   }
 }

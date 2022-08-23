@@ -29,11 +29,6 @@ import org.springframework.data.annotation.TypeAlias;
 @RecasterAlias("io.harness.ngpipeline.artifact.bean.GithubPackagesArtifactOutcome")
 public class GithubPackagesArtifactOutcome implements ArtifactOutcome {
   /**
-   * Image pull link.
-   */
-  String image;
-
-  /**
    * Github connector.
    */
   String connectorRef;
@@ -67,6 +62,16 @@ public class GithubPackagesArtifactOutcome implements ArtifactOutcome {
    * Whether this config corresponds to primary artifact.
    */
   boolean primaryArtifact;
+
+  /**
+   * Image pull link.
+   */
+  String image;
+
+  /**
+   * imagePullSecret for Github Package credentials base encoded.
+   * */
+  String imagePullSecret;
 
   @Override
   public ArtifactSummary getArtifactSummary() {

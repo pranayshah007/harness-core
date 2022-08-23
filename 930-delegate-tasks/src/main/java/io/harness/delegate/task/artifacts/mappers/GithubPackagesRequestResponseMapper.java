@@ -105,6 +105,7 @@ public class GithubPackagesRequestResponseMapper {
         .version(buildDetails.getNumber())
         .versionRegex(request.getVersionRegex())
         .sourceType(ArtifactSourceType.GITHUB_PACKAGES)
+        .packageUrl(buildDetails.getBuildUrl())
         .build();
   }
 
