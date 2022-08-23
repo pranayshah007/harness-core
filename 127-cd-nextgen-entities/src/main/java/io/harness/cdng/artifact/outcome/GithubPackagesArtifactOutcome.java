@@ -29,6 +29,11 @@ import org.springframework.data.annotation.TypeAlias;
 @RecasterAlias("io.harness.ngpipeline.artifact.bean.GithubPackagesArtifactOutcome")
 public class GithubPackagesArtifactOutcome implements ArtifactOutcome {
   /**
+   * Image pull link.
+   */
+  String image;
+
+  /**
    * Github connector.
    */
   String connectorRef;

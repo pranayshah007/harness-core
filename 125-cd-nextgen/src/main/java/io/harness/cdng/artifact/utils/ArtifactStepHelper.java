@@ -43,7 +43,9 @@ import io.harness.delegate.beans.connector.docker.DockerConnectorDTO;
 import io.harness.delegate.beans.connector.gcpconnector.GcpConnectorDTO;
 import io.harness.delegate.beans.connector.jenkins.JenkinsConnectorDTO;
 import io.harness.delegate.beans.connector.nexusconnector.NexusConnectorDTO;
+import io.harness.delegate.beans.connector.scm.GitAuthType;
 import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubHttpCredentialsDTO;
 import io.harness.delegate.task.artifacts.ArtifactSourceDelegateRequest;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidConnectorTypeException;
@@ -120,10 +122,8 @@ public class ArtifactStepHelper {
               WingsException.USER);
         }
         GithubConnectorDTO githubConnectorDTO = (GithubConnectorDTO) connectorDTO.getConnectorConfig();
-        if (githubConnectorDTO.getAuthentication().getCredentials() != null) {
-          encryptedDataDetails = secretManagerClientService.getEncryptionDetails(
-              ngAccess, githubConnectorDTO.getAuthentication().getCredentials());
-        }
+        encryptedDataDetails = getGithubEncryptedDetails(githubConnectorDTO, ngAccess);
+
         return ArtifactConfigToDelegateReqMapper.getGithubPackagesDelegateRequest(githubPackagesArtifactConfig,
             githubConnectorDTO, encryptedDataDetails, githubPackagesArtifactConfig.getConnectorRef().getValue());
       case GCR:
@@ -236,6 +236,45 @@ public class ArtifactStepHelper {
         throw new UnsupportedOperationException(
             String.format("Unknown Artifact Config type: [%s]", artifactConfig.getSourceType()));
     }
+  }
+
+  private List<EncryptedDataDetail> getGithubEncryptedDetails(
+      GithubConnectorDTO githubConnectorDTO, NGAccess ngAccess) {
+    List<EncryptedDataDetail> encryptedDataDetails = new ArrayList<>();
+
+    if (githubConnectorDTO.getAuthentication() != null
+        && githubConnectorDTO.getAuthentication().getCredentials() != null) {
+      encryptedDataDetails = getGithubEncryptionDetails(githubConnectorDTO, ngAccess);
+    }
+
+    return encryptedDataDetails;
+  }
+
+  private List<EncryptedDataDetail> getGithubEncryptionDetails(
+      GithubConnectorDTO githubConnectorDTO, NGAccess ngAccess) {
+    List<EncryptedDataDetail> encryptedDataDetails = new ArrayList<>();
+
+    if (githubConnectorDTO.getAuthentication().getAuthType() == GitAuthType.HTTP) {
+      GithubHttpCredentialsDTO githubHttpCredentialsDTO =
+          (GithubHttpCredentialsDTO) githubConnectorDTO.getAuthentication().getCredentials();
+
+      encryptedDataDetails =
+          secretManagerClientService.getEncryptionDetails(ngAccess, githubHttpCredentialsDTO.getHttpCredentialsSpec());
+
+      if (githubConnectorDTO.getApiAccess() != null && githubConnectorDTO.getApiAccess().getSpec() != null) {
+        encryptedDataDetails.addAll(
+            secretManagerClientService.getEncryptionDetails(ngAccess, githubConnectorDTO.getApiAccess().getSpec()));
+      }
+    } else if (githubConnectorDTO.getAuthentication().getAuthType() == GitAuthType.SSH) {
+      if (githubConnectorDTO.getApiAccess() != null && githubConnectorDTO.getApiAccess().getSpec() != null) {
+        encryptedDataDetails =
+            secretManagerClientService.getEncryptionDetails(ngAccess, githubConnectorDTO.getApiAccess().getSpec());
+      }
+    } else {
+      throw new InvalidRequestException("Cannot get Encrypted Details for the Github Connector");
+    }
+
+    return encryptedDataDetails;
   }
 
   private ConnectorInfoDTO getConnector(String connectorIdentifierRef, Ambiance ambiance) {
