@@ -117,6 +117,7 @@ public class Mailer {
 
         body = bodyWriter.toString();
       }
+      log.info("The body of the email being sent for user {} is {}", emailData.getTo(), emailData.getBody());
 
       email.setSubject(subject);
       if (emailData.isHasHtml()) {

@@ -158,6 +158,7 @@ public class TOTPAuthHandler implements TwoFactorAuthHandler {
     emailData.setCc(Collections.emptyList());
     emailData.setRetries(2);
     emailNotificationService.send(emailData);
+    log.info("Sent TwoFactorAuthenticationResetEmail for user {} with totpUrl {}", user.getUuid(), totpUrl);
     return true;
   }
 }

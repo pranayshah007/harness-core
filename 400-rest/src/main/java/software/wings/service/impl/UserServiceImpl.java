@@ -1143,10 +1143,15 @@ public class UserServiceImpl implements UserService {
 
     boolean shouldMailContainTwoFactorInfo = user.isTwoFactorAuthenticationEnabled();
     model.put("shouldMailContainTwoFactorInfo", Boolean.toString(shouldMailContainTwoFactorInfo));
+
+    log.info("The shouldMailContainTwoFactorInfo for userId {} and accountId {} is {}", user.getUuid(),
+        account.getUuid(), shouldMailContainTwoFactorInfo);
+
     model.put("totpSecret", user.getTotpSecretKey());
     String otpUrl = totpAuthHandler.generateOtpUrl(account.getCompanyName(), user.getEmail(), user.getTotpSecretKey());
     model.put("totpUrl", otpUrl);
 
+    log.info("The totpUrl for userId {} and accountId {} is {}", user.getUuid(), account.getUuid(), otpUrl);
     return model;
   }
 
