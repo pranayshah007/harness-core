@@ -158,7 +158,7 @@ public class NGTemplateRepositoryCustomImplTest {
                                         .orgIdentifier(orgIdentifier)
                                         .projectIdentifier(projectIdentifier)
                                         .identifier(templateId)
-                                        .templateEntityType(TemplateEntityType.PIPELINE_TEMPLATE)
+                                        .templateEntityType(TemplateEntityType.STEP_TEMPLATE)
                                         .yaml(pipelineYaml)
                                         .build();
 

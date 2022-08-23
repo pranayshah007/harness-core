@@ -97,14 +97,14 @@ public class NGTemplateRepositoryCustomImpl implements NGTemplateRepositoryCusto
       }
       return savedTemplateEntity;
     }
-    if (isPipelineTemplateEntity(templateToSave) && isNewGitXEnabled(templateToSave, gitEntityInfo)) {
+    if (isAllowedRemoteTemplateEntityType(templateToSave) && isNewGitXEnabled(templateToSave, gitEntityInfo)) {
       Scope scope = TemplateUtils.buildScope(templateToSave);
       String yamlToPush = templateToSave.getYaml();
       addGitParamsToTemplateEntity(templateToSave, gitEntityInfo);
 
       gitAwareEntityHelper.createEntityOnGit(templateToSave, yamlToPush, scope);
     } else {
-      if (templateToSave.getTemplateEntityType() != null && !isPipelineTemplateEntity(templateToSave)) {
+      if (templateToSave.getTemplateEntityType() != null && !isAllowedRemoteTemplateEntityType(templateToSave)) {
         throw new InvalidRequestException(format(
             "Remote template entity cannot for template type [%s] on git simplification enabled for Project [%s] in Organisation [%s] in Account [%s]",
             templateToSave.getTemplateEntityType(), templateToSave.getProjectIdentifier(),
@@ -510,8 +510,10 @@ public class NGTemplateRepositoryCustomImpl implements NGTemplateRepositoryCusto
     }
   }
 
-  boolean isPipelineTemplateEntity(TemplateEntity templateToSave) {
-    return TemplateEntityType.PIPELINE_TEMPLATE.equals(templateToSave.getTemplateEntityType());
+  boolean isAllowedRemoteTemplateEntityType(TemplateEntity templateToSave) {
+    return TemplateEntityType.PIPELINE_TEMPLATE.equals(templateToSave.getTemplateEntityType())
+        || TemplateEntityType.STEP_TEMPLATE.equals(templateToSave.getTemplateEntityType())
+        || TemplateEntityType.STAGE_TEMPLATE.equals(templateToSave.getTemplateEntityType());
   }
 
   private boolean isGitSimplificationEnabled(TemplateEntity templateToSave, GitEntityInfo gitEntityInfo) {
