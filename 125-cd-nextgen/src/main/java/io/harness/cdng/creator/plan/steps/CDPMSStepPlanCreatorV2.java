@@ -457,23 +457,23 @@ public abstract class CDPMSStepPlanCreatorV2<T extends CdAbstractStepNode> exten
       return Collections.emptyList();
     }
 
-    if (stages.asArray().get(0).getField(PARALLEL) != null) {
-      YamlNode parallelStages = stages.asArray().get(0).getField(PARALLEL).getNode();
-      for (YamlNode stageNode : parallelStages.asArray()) {
-        YamlNode stage = stageNode.getField(STAGE).getNode();
-        if (stage == null) {
-          continue;
-        }
+    for (YamlNode stageNode : stages.asArray()) {
+      if (stageNode.getField(PARALLEL) != null) {
+        YamlNode parallelStages = stageNode.getField(PARALLEL).getNode();
+        for (YamlNode stageParallelNode : parallelStages.asArray()) {
+          YamlNode stage = stageParallelNode.getField(STAGE).getNode();
+          if (stage == null) {
+            continue;
+          }
 
-        steps.addAll(findExecutionStepsFromStage(stage, filter));
-        steps.addAll(findProvisionerStepsFromStage(stage, filter));
+          steps.addAll(findExecutionStepsFromStage(stage, filter));
+          steps.addAll(findProvisionerStepsFromStage(stage, filter));
 
-        if (currentStageIdentifier.equals(stage.getIdentifier())) {
-          break;
+          if (currentStageIdentifier.equals(stage.getIdentifier())) {
+            break;
+          }
         }
-      }
-    } else {
-      for (YamlNode stageNode : stages.asArray()) {
+      } else {
         YamlNode stage = stageNode.getField(STAGE).getNode();
         if (stage == null) {
           continue;
