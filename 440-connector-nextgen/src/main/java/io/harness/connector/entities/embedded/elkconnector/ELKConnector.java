@@ -10,6 +10,7 @@ package io.harness.connector.entities.embedded.elkconnector;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.entities.Connector;
+import io.harness.delegate.beans.connector.elkconnector.ELKAuthType;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Builder;
@@ -29,4 +30,11 @@ import org.springframework.data.annotation.TypeAlias;
 @Persistent
 @TypeAlias("io.harness.connector.entities.embedded.elkconnector.ELKConnector")
 @OwnedBy(HarnessTeam.CV)
-public class ELKConnector extends Connector {}
+public class ELKConnector extends Connector {
+  private String url;
+  private String username;
+  private String passwordRef;
+  private String apiKeyId;
+  private String apiKeyRef;
+  private ELKAuthType authType;
+}

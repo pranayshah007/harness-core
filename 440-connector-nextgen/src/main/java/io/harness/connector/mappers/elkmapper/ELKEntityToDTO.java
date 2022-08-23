@@ -9,11 +9,20 @@ package io.harness.connector.mappers.elkmapper;
 
 import io.harness.connector.entities.embedded.elkconnector.ELKConnector;
 import io.harness.connector.mappers.ConnectorEntityToDTOMapper;
+import io.harness.delegate.beans.connector.elkconnector.ELKAuthType;
 import io.harness.delegate.beans.connector.elkconnector.ELKConnectorDTO;
+import io.harness.encryption.SecretRefHelper;
 
 public class ELKEntityToDTO implements ConnectorEntityToDTOMapper<ELKConnectorDTO, ELKConnector> {
   @Override
   public ELKConnectorDTO createConnectorDTO(ELKConnector connector) {
-    return null;
+    return ELKConnectorDTO.builder()
+        .url(connector.getUrl())
+        .username(connector.getUsername())
+        .passwordRef(SecretRefHelper.createSecretRef(connector.getPasswordRef()))
+        .apiKeyId(connector.getApiKeyId())
+        .apiKeyRef(SecretRefHelper.createSecretRef(connector.getApiKeyRef()))
+        .authType(connector.getAuthType() == null ? ELKAuthType.USERNAME_PASSWORD : connector.getAuthType())
+        .build();
   }
 }
