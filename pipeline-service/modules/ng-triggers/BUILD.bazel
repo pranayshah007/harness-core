@@ -12,7 +12,6 @@ java_library(
         "//884-pms-commons:module",
         "//890-sm-core:module",
         "//930-ng-core-clients:module",
-        "//945-account-mgmt:module",
         "//950-ng-project-n-orgs:module",
         "//952-scm-java-client:module",
         "//953-events-api:module",
