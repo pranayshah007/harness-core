@@ -121,6 +121,7 @@ public class VaultServiceImpl extends BaseVaultServiceImpl implements VaultServi
     savedVaultConfig.setTemplatizedFields(vaultConfig.getTemplatizedFields());
     savedVaultConfig.setUsageRestrictions(vaultConfig.getUsageRestrictions());
     savedVaultConfig.setScopedToAccount(vaultConfig.isScopedToAccount());
+    savedVaultConfig.setRenewAppRoleToken(vaultConfig.getRenewAppRoleToken());
     savedVaultConfig.setDelegateSelectors(vaultConfig.getDelegateSelectors());
     // Handle vault Agent Properties
     updateVaultAgentConfiguration(vaultConfig, savedVaultConfig);
@@ -229,9 +230,9 @@ public class VaultServiceImpl extends BaseVaultServiceImpl implements VaultServi
     checkIfTemplatizedSecretManagerCanBeCreatedOrUpdated(vaultConfig);
 
     // App Role Token renew FF
-    if (accountService.isFeatureFlagEnabled(FeatureName.DO_NOT_RENEW_APPROLE_TOKEN.name(), accountId)) {
-      vaultConfig.setRenewAppRoleToken(false);
-    }
+    vaultConfig.setRenewAppRoleToken(
+        !accountService.isFeatureFlagEnabled(FeatureName.DO_NOT_RENEW_APPROLE_TOKEN.name(), accountId));
+
     return isBlank(vaultConfig.getUuid()) ? saveVaultConfig(accountId, vaultConfig, validateBySavingTestSecret)
                                           : updateVaultConfig(accountId, vaultConfig, true, validateBySavingTestSecret);
   }
