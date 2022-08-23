@@ -418,7 +418,8 @@ public enum FeatureName {
   AZURE_ARM_BP_NG("Used to allow customers to access ARM/BP capabilities", HarnessTeam.CDP),
   CV_AWS_PROMETHEUS("Enable AWS Prometheus for CV State", HarnessTeam.CV),
   GIT_WEBHOOK_POLLING("Used to poll git webhook recent delivery events", HarnessTeam.CDP),
-  TRIGGERS_REFACTOR("Enable NG Triggers UI refactoring", HarnessTeam.CDP);
+  TRIGGERS_REFACTOR("Enable NG Triggers UI refactoring", HarnessTeam.CDP),
+  CI_TI_DASHBOARDS_ENABLED;
   @Deprecated
   FeatureName() {
     scope = Scope.PER_ACCOUNT;
