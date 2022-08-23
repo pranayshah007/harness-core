@@ -80,7 +80,7 @@ public class GoogleArtifactRegistryConfig implements ArtifactConfig, Visitable, 
    * Version regex is used to get latest build from builds matching regex.
    */
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) @Wither ParameterField<String> versionRegex;
-
+  @JsonProperty("repositoryType")
   @NotNull
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
   @Wither
