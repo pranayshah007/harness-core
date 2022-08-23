@@ -33,7 +33,7 @@ public class NGEntityNameValidatorTest extends CategoryTest {
   private Validator validator;
 
   private static final String ALLOWED_CHARS_STRING =
-      "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_ ";
+      "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_. ";
   private static final int MAX_ALLOWED_LENGTH = 64;
 
   @Builder
