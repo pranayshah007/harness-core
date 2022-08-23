@@ -1,7 +1,7 @@
 package io.harness.artifacts.gar.service;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
-import static io.harness.artifacts.docker.service.DockerRegistryServiceImpl.isSuccessful;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.USER;
 
 import static java.util.stream.Collectors.toList;
@@ -10,18 +10,26 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.artifact.ArtifactMetadataKeys;
 import io.harness.artifacts.beans.BuildDetailsInternal;
 import io.harness.artifacts.comparator.BuildDetailsInternalComparatorDescending;
+import io.harness.artifacts.docker.service.DockerRegistryUtils;
 import io.harness.artifacts.gar.GarRestClient;
 import io.harness.artifacts.gar.beans.GarInternalConfig;
 import io.harness.artifacts.gar.beans.GarPackageVersionResponse;
 import io.harness.artifacts.gar.beans.GarTags;
+import io.harness.artifacts.gcr.service.GcrApiServiceImpl;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.eraro.ErrorCode;
 import io.harness.exception.ArtifactServerException;
 import io.harness.exception.ExceptionUtils;
+import io.harness.exception.GcpServerException;
 import io.harness.exception.InvalidArtifactServerException;
 import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.WingsException;
+import io.harness.exception.runtime.GcrImageNotFoundRuntimeException;
 import io.harness.expression.RegexFunctor;
+import io.harness.globalcontex.ErrorHandlingGlobalContextData;
+import io.harness.manage.GlobalContextManager;
 import io.harness.network.Http;
+import io.harness.serializer.JsonUtils;
 
 import com.google.inject.Singleton;
 import java.io.IOException;
@@ -68,8 +76,8 @@ public class GARApiServiceImpl implements GarApiService {
       GarRestClient garRestClient = getGarRestClient(garinternalConfig);
       return paginate(garinternalConfig, garRestClient, versionRegex, maxNumberOfBuilds);
     } catch (IOException e) {
-      throw NestedExceptionUtils.hintWithExplanationException("Could not fetch tags for the image",
-          "Check if the image exists and if the permissions are scoped for the authenticated user",
+      throw NestedExceptionUtils.hintWithExplanationException("Could not fetch versions for the package",
+          "Check if the package exists and if the permissions are scoped for the authenticated user",
           new ArtifactServerException(ExceptionUtils.getMessage(e), e, WingsException.USER));
     }
   }
@@ -113,7 +121,7 @@ public class GARApiServiceImpl implements GarApiService {
   }
 
   private List<BuildDetailsInternal> paginate(GarInternalConfig garinternalConfig, GarRestClient garRestClient,
-      String versionRegex, int maxNumberOfBuilds) throws IOException {
+      String versionRegex, int maxNumberOfBuilds) throws WingsException, IOException {
     List<BuildDetailsInternal> details = new ArrayList<>();
 
     String nextPage = "";
@@ -148,6 +156,41 @@ public class GARApiServiceImpl implements GarApiService {
 
     return details.stream().limit(maxNumberOfBuilds).collect(Collectors.toList());
   }
+
+  private boolean isSuccessful(Response<GarPackageVersionResponse> response) {
+    if (response == null) {
+      throw NestedExceptionUtils.hintWithExplanationException("GOOGLE ARTIFACT REGISTRY : Response Is Null",
+          "Check Whether Artifact exists or not", new InvalidArtifactServerException(response.message(), USER));
+    }
+
+    if (response.isSuccessful()) {
+      return true;
+    }
+
+    log.error("Request not successful. Reason: {}", response);
+    int code = response.code();
+    switch (code) {
+      case 404:
+        throw NestedExceptionUtils.hintWithExplanationException(
+            "Google Artifact Registry: Check Project,RepositoryName,Package,Region",
+            "Check Project,RepositoryName,Package,Region",
+            new InvalidArtifactServerException(response.message(), USER));
+      case 400:
+        return false;
+      case 401:
+        throw NestedExceptionUtils.hintWithExplanationException(
+            "Google Artifact Registry: Connector provided Is not Having Artifact Registry Reader permission",
+            "Check connector's permission and credentials",
+            new InvalidArtifactServerException(response.message(), USER));
+      default:
+        throw NestedExceptionUtils.hintWithExplanationException("Google Artifact Registry", "Google Artifact Registry",
+            new InvalidArtifactServerException(StringUtils.isNotBlank(response.message())
+                    ? response.message()
+                    : String.format("Server responded with the following error code - %d", code),
+                USER));
+    }
+  }
+
   private List<BuildDetailsInternal> processPage(
       GarPackageVersionResponse tagsPage, String versionRegex, GarInternalConfig garinternalConfig) {
     if (tagsPage != null && EmptyPredicate.isNotEmpty(tagsPage.getTags())) {

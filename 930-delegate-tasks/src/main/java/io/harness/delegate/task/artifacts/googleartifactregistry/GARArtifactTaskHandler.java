@@ -18,7 +18,9 @@ import io.harness.delegate.task.artifacts.mappers.GarRequestResponseMapper;
 import io.harness.delegate.task.artifacts.response.ArtifactTaskExecutionResponse;
 import io.harness.delegate.task.gcp.helpers.GcpHelperService;
 import io.harness.encryption.SecretRefData;
+import io.harness.exception.InvalidArtifactServerException;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.runtime.SecretNotFoundRuntimeException;
 import io.harness.security.encryption.SecretDecryptionService;
 
@@ -50,9 +52,9 @@ public class GARArtifactTaskHandler extends DelegateArtifactTaskHandler<GarDeleg
     try {
       garInternalConfig = getGarInternalConfig(attributesRequest);
     } catch (IOException e) {
-      log.error("Could not get basic auth header", e);
-      throw new InvalidRequestException(
-          "Could not get basic auth header - " + e.getMessage(), USER); // HintExcpetion Explaination
+      log.error("Google Artifact Registry: Could not get BearerToken", e);
+      throw NestedExceptionUtils.hintWithExplanationException("Google Artifact Registry: Could not get Bearer Token",
+          "Refresh Token might be not getting generated", new InvalidArtifactServerException(e.getMessage(), USER));
     }
     if (isRegex(attributesRequest)) {
       lastSuccessfulBuild =
@@ -71,9 +73,9 @@ public class GARArtifactTaskHandler extends DelegateArtifactTaskHandler<GarDeleg
     try {
       garInternalConfig = getGarInternalConfig(attributesRequest);
     } catch (IOException e) {
-      log.error("Could not get basic auth header", e);
-      throw new InvalidRequestException(
-          "Could not get basic auth header - " + e.getMessage(), USER); // HintExcpetion Explaination
+      log.error("Could not get Bearer Token", e);
+      throw NestedExceptionUtils.hintWithExplanationException("Google Artifact Registry: Could not get Bearer Token",
+          "", new InvalidArtifactServerException(e.getMessage(), USER));
     }
     builds = garApiService.getBuilds(
         garInternalConfig, attributesRequest.getVersionRegex(), attributesRequest.getMaxBuilds());
@@ -95,8 +97,8 @@ public class GARArtifactTaskHandler extends DelegateArtifactTaskHandler<GarDeleg
       } else {
         SecretRefData secretRef = ((GcpManualDetailsDTO) credential.getConfig()).getSecretKeyRef();
         if (secretRef.getDecryptedValue() == null) {
-          throw new SecretNotFoundRuntimeException("Could not find secret " + secretRef.getIdentifier()
-                  + " under the scope of current " + secretRef.getScope(),
+          throw new SecretNotFoundRuntimeException("Google Artifact Registry: Could not find secret "
+                  + secretRef.getIdentifier() + " under the scope of current " + secretRef.getScope(),
               secretRef.getIdentifier(), secretRef.getScope().toString(), attributesRequest.getConnectorRef());
         }
         serviceAccountKeyFileContent = secretRef.getDecryptedValue();
