@@ -28,7 +28,7 @@ import org.springframework.data.annotation.TypeAlias;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @TypeAlias("delegate.beans.connector.customsecretmanager.TemplateLinkConfig")
 @OwnedBy(PL)
-public class TemplateLinkConfig {
+public class ConnectorTemplateLinkConfig {
   @NotNull String templateRef;
   @NotNull @Pattern(regexp = NGRegexValidatorConstants.VERSION_LABEL_PATTERN) String versionLabel;
   Map<String, Object> templateInputs;

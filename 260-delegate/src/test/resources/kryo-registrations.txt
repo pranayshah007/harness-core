@@ -1580,7 +1580,7 @@
 19854:io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectionTypeDTO
 19875:io.harness.delegate.beans.connector.customsecretmanager.CustomSecretManagerConnectorDTO
 19876:io.harness.delegate.beans.connector.customsecretmanager.CustomSecretManagerValidationParams
-19877:io.harness.delegate.beans.connector.customsecretmanager.TemplateLinkConfig
+19877:io.harness.delegate.beans.connector.customsecretmanager.ConnectorTemplateLinkConfig
 20001:io.harness.delegate.task.shell.ShellScriptApprovalTaskParameters
 20002:io.harness.delegate.task.http.HttpTaskParameters
 20100:io.harness.ng.core.environment.beans.EnvironmentType

@@ -16,7 +16,7 @@ import io.harness.SecretManagerDescriptionConstants;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SecretManagerCapabilities;
 import io.harness.beans.SecretManagerConfig;
-import io.harness.delegate.beans.connector.customsecretmanager.TemplateLinkConfig;
+import io.harness.delegate.beans.connector.customsecretmanager.ConnectorTemplateLinkConfig;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.SelectorCapability;
 import io.harness.encryption.Encrypted;
@@ -56,7 +56,7 @@ public class CustomSecretNGManagerConfig extends SecretManagerConfig {
   private String connectorRef;
   private String host;
   private String workingDirectory;
-  private TemplateLinkConfig template;
+  private ConnectorTemplateLinkConfig template;
   private String script;
 
   @Override

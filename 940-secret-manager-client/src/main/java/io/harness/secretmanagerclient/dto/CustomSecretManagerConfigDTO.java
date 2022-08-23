@@ -12,7 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import io.harness.SecretManagerDescriptionConstants;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.DelegateSelectable;
-import io.harness.delegate.beans.connector.customsecretmanager.TemplateLinkConfig;
+import io.harness.delegate.beans.connector.customsecretmanager.ConnectorTemplateLinkConfig;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Set;
@@ -38,6 +38,6 @@ public class CustomSecretManagerConfigDTO extends SecretManagerConfigDTO impleme
   @Schema(description = SecretManagerDescriptionConstants.CUSTOM_AUTH_TOKEN) private String connectorRef;
   private String host;
   private String workingDirectory;
-  @NotNull private TemplateLinkConfig template;
+  @NotNull private ConnectorTemplateLinkConfig template;
   private String script;
 }
