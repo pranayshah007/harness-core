@@ -10,6 +10,7 @@ package io.harness.ng.core.environment.beans;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.configfile.ConfigFileWrapper;
 import io.harness.cdng.manifest.yaml.ManifestConfigWrapper;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.pms.yaml.YamlNode;
@@ -31,6 +32,7 @@ import org.springframework.data.annotation.TypeAlias;
 @OwnedBy(HarnessTeam.CDP)
 public class NGEnvironmentGlobalOverride implements Visitable {
   List<ManifestConfigWrapper> manifests;
+  List<ConfigFileWrapper> configFiles;
 
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
@@ -42,6 +44,9 @@ public class NGEnvironmentGlobalOverride implements Visitable {
     VisitableChildren children = VisitableChildren.builder().build();
     if (EmptyPredicate.isNotEmpty(manifests)) {
       manifests.forEach(manifest -> children.add("manifests", manifest));
+    }
+    if (EmptyPredicate.isNotEmpty(configFiles)) {
+      configFiles.forEach(configFile -> children.add("configFiles", configFile));
     }
     return children;
   }

@@ -106,7 +106,7 @@ public class EnvironmentMapperTest extends CategoryTest {
   @Owner(developers = ARCHIT)
   @Category(UnitTests.class)
   public void testToEnvironment() {
-    Environment environment = EnvironmentMapper.toEnvironmentEntity("ACCOUNT_ID", environmentRequestDTO, false);
+    Environment environment = EnvironmentMapper.toEnvironmentEntity("ACCOUNT_ID", environmentRequestDTO, false, false);
     assertThat(environment).isNotNull();
     assertThat(environment).isEqualTo(requestEnvironment);
   }
@@ -124,7 +124,7 @@ public class EnvironmentMapperTest extends CategoryTest {
                                                  .type(PreProduction)
                                                  .yaml(yaml)
                                                  .build();
-    Environment environment = EnvironmentMapper.toEnvironmentEntity("ACCOUNT_ID", requestDTO, true);
+    Environment environment = EnvironmentMapper.toEnvironmentEntity("ACCOUNT_ID", requestDTO, true, false);
     assertThat(environment).isNotNull();
   }
 
@@ -141,7 +141,7 @@ public class EnvironmentMapperTest extends CategoryTest {
                                                  .type(PreProduction)
                                                  .yaml(yaml)
                                                  .build();
-    assertThatThrownBy(() -> EnvironmentMapper.toEnvironmentEntity("ACCOUNT_ID", requestDTO, false))
+    assertThatThrownBy(() -> EnvironmentMapper.toEnvironmentEntity("ACCOUNT_ID", requestDTO, false, false))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessageContaining("Manifest Override is not supported with FF NG_SERVICE_MANIFEST_OVERRIDE disabled");
   }
@@ -159,7 +159,7 @@ public class EnvironmentMapperTest extends CategoryTest {
                                                  .type(PreProduction)
                                                  .yaml(yaml)
                                                  .build();
-    assertThatThrownBy(() -> EnvironmentMapper.toEnvironmentEntity("ACCOUNT_ID", requestDTO, true))
+    assertThatThrownBy(() -> EnvironmentMapper.toEnvironmentEntity("ACCOUNT_ID", requestDTO, true, false))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessageContaining("Found duplicate manifest identifiers [m1]");
   }
