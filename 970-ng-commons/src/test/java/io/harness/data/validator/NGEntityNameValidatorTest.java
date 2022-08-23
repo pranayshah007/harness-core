@@ -79,11 +79,7 @@ public class NGEntityNameValidatorTest extends CategoryTest {
   public void testEntityNameValidatorForDot() {
     String name = "abc.abc";
     int violationsCount = validator.validate(EntityNameValidatorTestStructure.builder().name(name).build()).size();
-    if (isValidEntityName(name)) {
-      assertEquals("name : " + name, 0, violationsCount);
-    } else {
-      assertTrue("name : " + name, violationsCount > 0);
-    }
+    assertEquals("name : " + name, 0, violationsCount);
   }
 
   private static String generateRandomAsciiString() {
