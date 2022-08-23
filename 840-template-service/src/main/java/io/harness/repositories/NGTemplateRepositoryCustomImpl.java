@@ -27,6 +27,7 @@ import io.harness.gitsync.helpers.GitContextHelper;
 import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.persistance.GitAwarePersistence;
 import io.harness.gitsync.persistance.GitSyncSdkService;
+import io.harness.ng.core.template.TemplateEntityType;
 import io.harness.outbox.OutboxEvent;
 import io.harness.outbox.api.OutboxService;
 import io.harness.template.entity.TemplateEntity;
@@ -96,13 +97,19 @@ public class NGTemplateRepositoryCustomImpl implements NGTemplateRepositoryCusto
       }
       return savedTemplateEntity;
     }
-    if (isNewGitXEnabled(templateToSave, gitEntityInfo)) {
+    if (isPipelineTemplateEntity(templateToSave) && isNewGitXEnabled(templateToSave, gitEntityInfo)) {
       Scope scope = TemplateUtils.buildScope(templateToSave);
       String yamlToPush = templateToSave.getYaml();
       addGitParamsToTemplateEntity(templateToSave, gitEntityInfo);
 
       gitAwareEntityHelper.createEntityOnGit(templateToSave, yamlToPush, scope);
     } else {
+      if (templateToSave.getTemplateEntityType() != null && !isPipelineTemplateEntity(templateToSave)) {
+        throw new InvalidRequestException(format(
+            "Remote template entity cannot for template type [%s] on git simplification enabled for Project [%s] in Organisation [%s] in Account [%s]",
+            templateToSave.getTemplateEntityType(), templateToSave.getProjectIdentifier(),
+            templateToSave.getOrgIdentifier(), templateToSave.getAccountIdentifier()));
+      }
       if (templateToSave.getProjectIdentifier() != null) {
         throw new InvalidRequestException(
             format("Remote git simplification was not enabled for Project [%s] in Organisation [%s] in Account [%s]",
@@ -501,6 +508,10 @@ public class NGTemplateRepositoryCustomImpl implements NGTemplateRepositoryCusto
                  templateToSave.getAccountId(), FeatureName.NG_TEMPLATE_GITX_ACCOUNT_ORG)
           && TemplateUtils.isRemoteEntity(gitEntityInfo);
     }
+  }
+
+  boolean isPipelineTemplateEntity(TemplateEntity templateToSave) {
+    return TemplateEntityType.PIPELINE_TEMPLATE.equals(templateToSave.getTemplateEntityType());
   }
 
   private boolean isGitSimplificationEnabled(TemplateEntity templateToSave, GitEntityInfo gitEntityInfo) {

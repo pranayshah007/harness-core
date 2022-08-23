@@ -25,6 +25,7 @@ import io.harness.beans.FeatureName;
 import io.harness.beans.Scope;
 import io.harness.category.element.UnitTests;
 import io.harness.context.GlobalContext;
+import io.harness.exception.InvalidRequestException;
 import io.harness.git.model.ChangeType;
 import io.harness.gitaware.helper.GitAwareEntityHelper;
 import io.harness.gitsync.beans.StoreType;
@@ -33,6 +34,7 @@ import io.harness.gitsync.interceptor.GitSyncBranchContext;
 import io.harness.gitsync.persistance.GitAwarePersistence;
 import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.manage.GlobalContextManager;
+import io.harness.ng.core.template.TemplateEntityType;
 import io.harness.outbox.api.OutboxService;
 import io.harness.rule.Owner;
 import io.harness.template.entity.TemplateEntity;
@@ -156,9 +158,10 @@ public class NGTemplateRepositoryCustomImplTest {
                                         .orgIdentifier(orgIdentifier)
                                         .projectIdentifier(projectIdentifier)
                                         .identifier(templateId)
-
+                                        .templateEntityType(TemplateEntityType.PIPELINE_TEMPLATE)
                                         .yaml(pipelineYaml)
                                         .build();
+
     TemplateEntity templateToSaveWithStoreType = templateToSave.withStoreType(StoreType.REMOTE)
                                                      .withConnectorRef(connectorRef)
                                                      .withRepo(repoName)
@@ -172,6 +175,31 @@ public class NGTemplateRepositoryCustomImplTest {
     assertThat(savedTemplateEntity).isEqualTo(templateToSaveWithStoreTypeWithExtraFields);
     // to check if the supplier is actually called
     verify(gitAwareEntityHelper, times(1)).createEntityOnGit(templateToSave, pipelineYaml, scope);
+  }
+
+  @Test(expected = InvalidRequestException.class)
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testSaveRemoteTemplateEntityWithMonitoredServiceTemplateType() {
+    GitEntityInfo branchInfo = GitEntityInfo.builder()
+                                   .storeType(StoreType.REMOTE)
+                                   .connectorRef(connectorRef)
+                                   .repoName(repoName)
+                                   .branch(branch)
+                                   .filePath(filePath)
+                                   .build();
+    setupGitContext(branchInfo);
+
+    TemplateEntity templateToSave = TemplateEntity.builder()
+                                        .accountId(accountIdentifier)
+                                        .orgIdentifier(orgIdentifier)
+                                        .projectIdentifier(projectIdentifier)
+                                        .identifier(templateId)
+                                        .templateEntityType(TemplateEntityType.MONITORED_SERVICE_TEMPLATE)
+                                        .yaml(pipelineYaml)
+                                        .build();
+
+    ngTemplateRepositoryCustom.save(templateToSave, templateComment);
   }
 
   @Test
