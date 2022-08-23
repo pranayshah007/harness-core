@@ -1,0 +1,22 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "metrics",
+    srcs = glob(["*.java"]),
+    visibility = ["//visibility:public"],
+    deps = [
+        "//420-delegate-agent/src/main/java/io/harness/delegate/service",
+        "//980-commons:module",
+        "//999-annotations:module",
+        "//:lombok",
+        "@maven//:com_google_guava_guava",
+        "@maven//:com_google_inject_guice",
+        "@maven//:io_dropwizard_metrics_metrics_annotation",
+        "@maven//:io_prometheus_simpleclient_common",
+        "@maven//:io_swagger_swagger_annotations",
+        "@maven//:javax_javaee_api",
+        "@maven//:javax_ws_rs_javax_ws_rs_api",
+    ],
+)
+
+

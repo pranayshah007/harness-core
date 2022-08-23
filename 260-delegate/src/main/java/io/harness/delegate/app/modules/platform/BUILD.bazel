@@ -1,0 +1,28 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "platform",
+    srcs = glob(["*.java"]),
+    visibility = ["//visibility:public"],
+    deps = [
+        "//260-delegate/src/main/java/io/harness/delegate/app/modules/common",
+        "//260-delegate/src/main/java/io/harness/delegate/service",
+        "//260-delegate/src/main/java/io/harness/managerclient",
+        "//420-delegate-agent/src/main/java/io/harness/delegate/service",
+        "//930-delegate-tasks/src/main/java/io/harness/delegate/task",
+        "//930-delegate-tasks/src/main/java/software/wings/delegatetasks",
+        "//950-delegate-tasks-beans/src/main/java/software/wings/beans",
+        "//950-log-client/src/main/java/io/harness/logstreaming",
+        "//960-api-services/src/main/java/io/harness/delegate/configuration",
+        "//980-commons:module",
+        "//:lombok",
+        "@maven//:com_google_guava_guava",
+        "@maven//:com_google_inject_guice",
+        "@maven//:io_dropwizard_metrics_metrics_core",
+        "@maven//:io_netty_netty_all",
+        "@maven//:org_apache_commons_commons_lang3",
+        "@maven//:org_asynchttpclient_async_http_client",
+    ],
+)
+
+

@@ -1,0 +1,37 @@
+load("@rules_java//java:defs.bzl", "java_library")
+load("@rules_java//java:defs.bzl", "java_binary")
+
+java_library(
+    name = "platform",
+    srcs = glob(["*.java"]),
+    visibility = ["//visibility:public"],
+    deps = [
+        "//260-delegate/src/main/java/io/harness/delegate/app/modules/platform",
+        "//260-delegate/src/main/java/io/harness/delegate/app/resource",
+        "//260-delegate/src/main/java/io/harness/delegate/metrics",
+        "//420-delegate-agent/src/main/java/io/harness/delegate/service",
+        "//960-api-services/src/main/java/io/harness/delegate/configuration",
+        "//970-grpc:module",
+        "//980-commons:module",
+        "//:lombok",
+        "@maven//:ch_qos_logback_logback_classic",
+        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
+        "@maven//:com_google_guava_guava",
+        "@maven//:com_google_inject_guice",
+        "@maven//:commons_io_commons_io",
+        "@maven//:io_dropwizard_dropwizard_core",
+        "@maven//:io_dropwizard_metrics_metrics_core",
+        "@maven//:org_apache_commons_commons_lang3",
+        "@maven//:org_asynchttpclient_async_http_client",
+        "@maven//:org_slf4j_jul_to_slf4j",
+        "@maven//:org_slf4j_slf4j_api",
+    ],
+)
+
+java_binary(
+    name = "DelegatePlatformApplication",
+    main_class = "io.harness.delegate.app.platform.DelegatePlatformApplication",
+    visibility = ["//visibility:public"],
+    runtime_deps = [":platform"],
+)
+

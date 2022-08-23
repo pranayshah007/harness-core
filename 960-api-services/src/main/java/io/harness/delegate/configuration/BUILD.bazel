@@ -1,0 +1,15 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "configuration",
+    srcs = glob(["*.java"]),
+    visibility = ["//visibility:public"],
+    deps = [
+        "//970-grpc:module",
+        "//999-annotations:module",
+        "//:lombok",
+        "@maven//:org_apache_commons_commons_lang3",
+    ],
+)
+
+

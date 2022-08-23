@@ -13,7 +13,6 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.health.HealthException;
 import io.harness.health.HealthService;
 import io.harness.ng.core.dto.ResponseDTO;
-import io.harness.security.annotations.PublicApi;
 
 import com.codahale.metrics.annotation.ExceptionMetered;
 import com.codahale.metrics.annotation.Timed;
@@ -34,7 +33,7 @@ import lombok.extern.slf4j.Slf4j;
 @Produces(MediaType.APPLICATION_JSON)
 @OwnedBy(DEL)
 @Slf4j
-@PublicApi
+//@PublicApi - TODO: Test, but I don't think this is used on agent side since we don't process it
 public class HealthResource {
   private final HealthService healthService;
 

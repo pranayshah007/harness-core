@@ -1,0 +1,21 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "resource",
+    srcs = glob(["*.java"]),
+    visibility = ["//visibility:public"],
+    deps = [
+        "//970-ng-commons:module",
+        "//980-commons:module",
+        "//999-annotations:module",
+        "//:lombok",
+        "@maven//:com_google_inject_guice",
+        "@maven//:io_dropwizard_metrics_metrics_annotation",
+        "@maven//:io_dropwizard_metrics_metrics_healthchecks",
+        "@maven//:io_swagger_swagger_annotations",
+        "@maven//:javax_javaee_api",
+        "@maven//:javax_ws_rs_javax_ws_rs_api",
+    ],
+)
+
+
