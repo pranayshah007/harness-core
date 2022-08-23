@@ -13,7 +13,9 @@ import static io.harness.git.model.ChangeType.MODIFY;
 import static io.harness.logging.LogLevel.ERROR;
 import static io.harness.logging.LogLevel.INFO;
 
+import static software.wings.beans.LogColor.White;
 import static software.wings.beans.LogHelper.color;
+import static software.wings.beans.LogWeight.Bold;
 
 import static java.lang.String.format;
 
@@ -221,7 +223,8 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
       ScmConnector scmConnector =
           gitOpsTaskParams.getGitFetchFilesConfig().getGitStoreDelegateConfig().getGitConfigDTO();
 
-      updateFiles(gitOpsTaskParams.getFilesToVariablesMap(), fetchFilesResult);
+      updateFiles(gitOpsTaskParams.getFilesToVariablesMap(), fetchFilesResult, logCallback);
+      logCallback = markDoneAndStartNew(logCallback, CommitAndPush, commandUnitsProgress);
 
       List<GitFile> fetchFilesResultFiles = fetchFilesResult.getFiles();
       StringBuilder sb = new StringBuilder(1024);
@@ -425,25 +428,29 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
 
   /**
    * updateFiles iterates over checkout files converts the yaml to json format. It finds the variables from
-   * filesToVariablesMap map and then perfoms a merge.
-   * If the variable key exists in the checkout file then it updates it's value(override).
+   * filesToVariablesMap map and then performs a merge.
+   * If the variable key exists in the checkout file then it updates its value(override).
    * If the variable doesn't exist, we append the variable to the file.
    *
    * @param filesToVariablesMap resolve filesPaths from the releaseRepoConfig to Cluster Variables
    * @param fetchFilesResult    Files checkout out from git
+   * @param logCallback
    * @throws ParseException
    * @throws IOException
    */
-  public void updateFiles(Map<String, Map<String, String>> filesToVariablesMap, FetchFilesResult fetchFilesResult)
-      throws ParseException, IOException {
+  public void updateFiles(Map<String, Map<String, String>> filesToVariablesMap, FetchFilesResult fetchFilesResult,
+      LogCallback logCallback) throws ParseException, IOException {
     List<String> updatedFiles = new ArrayList<>();
-
+    logCallback.saveExecutionLog("Updating files with the following variables.");
     for (GitFile gitFile : fetchFilesResult.getFiles()) {
+      Map<String, String> stringObjectMap = filesToVariablesMap.get(gitFile.getFilePath());
+      stringObjectMap.forEach(
+          (k, v)
+              -> logCallback.saveExecutionLog(
+                  format("Modifying %s with value %s", color(k, White, Bold), color(k, White, Bold)), INFO));
       if (gitFile.getFilePath().contains(".yaml") || gitFile.getFilePath().contains(".yml")) {
-        Map<String, String> stringObjectMap = filesToVariablesMap.get(gitFile.getFilePath());
         updatedFiles.add(replaceFields(convertYamlToJson(gitFile.getFileContent()), stringObjectMap));
       } else if (gitFile.getFilePath().contains(".json")) {
-        Map<String, String> stringObjectMap = filesToVariablesMap.get(gitFile.getFilePath());
         updatedFiles.add(replaceFields(gitFile.getFileContent(), stringObjectMap));
       }
     }
