@@ -14,7 +14,10 @@ import static io.harness.exception.WingsException.USER;
 import static io.harness.utils.DelegateOwner.NG_DELEGATE_ENABLED_CONSTANT;
 import static io.harness.utils.DelegateOwner.NG_DELEGATE_OWNER_CONSTANT;
 
+import static software.wings.beans.TaskType.FETCH_CUSTOM_SECRET;
 import static software.wings.beans.TaskType.FETCH_SECRET;
+import static software.wings.beans.TaskType.RESOLVE_CUSTOM_SM_CONFIG;
+import static software.wings.beans.TaskType.VALIDATE_CUSTOM_SECRET_MANAGER_SECRET_REFERENCE;
 import static software.wings.beans.TaskType.VALIDATE_SECRET_MANAGER_CONFIGURATION;
 import static software.wings.beans.TaskType.VALIDATE_SECRET_REFERENCE;
 
@@ -23,8 +26,12 @@ import io.harness.beans.DelegateTaskRequest;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.utils.TaskSetupAbstractionHelper;
+import io.harness.delegatetasks.FetchCustomSecretTaskParameters;
+import io.harness.delegatetasks.FetchCustomSecretTaskResponse;
 import io.harness.delegatetasks.FetchSecretTaskParameters;
 import io.harness.delegatetasks.FetchSecretTaskResponse;
+import io.harness.delegatetasks.ValidateCustomSecretManagerSecretReferenceTaskParameters;
+import io.harness.delegatetasks.ValidateCustomSecretManagerSecretReferenceTaskResponse;
 import io.harness.delegatetasks.ValidateSecretManagerConfigurationTaskParameters;
 import io.harness.delegatetasks.ValidateSecretManagerConfigurationTaskResponse;
 import io.harness.delegatetasks.ValidateSecretReferenceTaskParameters;
@@ -47,6 +54,8 @@ import lombok.extern.slf4j.Slf4j;
 public class NGManagerEncryptorHelper {
   private final DelegateGrpcClientWrapper delegateService;
   private final TaskSetupAbstractionHelper taskSetupAbstractionHelper;
+  private static final String ORG_IDENTIFIER = "orgIdentifier";
+  private static final String PROJECT_IDENTIFIER = "projectIdentifier";
 
   @Inject
   public NGManagerEncryptorHelper(
@@ -67,6 +76,8 @@ public class NGManagerEncryptorHelper {
         abstractions.put(NG_DELEGATE_OWNER_CONSTANT, owner);
       }
       abstractions.put(NG_DELEGATE_ENABLED_CONSTANT, "true");
+      abstractions.put(ORG_IDENTIFIER, ngAccess.getOrgIdentifier());
+      abstractions.put(PROJECT_IDENTIFIER, ngAccess.getProjectIdentifier());
     }
     return abstractions;
   }
@@ -126,5 +137,72 @@ public class NGManagerEncryptorHelper {
     ValidateSecretManagerConfigurationTaskResponse responseData =
         (ValidateSecretManagerConfigurationTaskResponse) delegateResponseData;
     return responseData.isConfigurationValid();
+  }
+
+  public char[] fetchSecretValue(String accountId, String script, int expressionFunctorToken,
+      EncryptedRecord encryptedRecord, EncryptionConfig encryptionConfig) {
+    FetchCustomSecretTaskParameters parameters = FetchCustomSecretTaskParameters.builder()
+                                                     .encryptedRecord(encryptedRecord)
+                                                     .encryptionConfig(encryptionConfig)
+                                                     .script(script)
+                                                     .build();
+    DelegateTaskRequest delegateTaskRequest =
+        DelegateTaskRequest.builder()
+            .taskType(FETCH_CUSTOM_SECRET.name())
+            .taskParameters(parameters)
+            .executionTimeout(Duration.ofMillis(TaskData.DEFAULT_SYNC_CALL_TIMEOUT))
+            .accountId(accountId)
+            .taskSetupAbstractions(buildAbstractions(parameters.getEncryptionConfig()))
+            .expressionFunctorToken(expressionFunctorToken)
+            .build();
+    DelegateResponseData delegateResponseData = delegateService.executeSyncTask(delegateTaskRequest);
+    DelegateTaskUtils.validateDelegateTaskResponse(delegateResponseData);
+    if (!(delegateResponseData instanceof FetchCustomSecretTaskResponse)) {
+      throw new SecretManagementException(SECRET_MANAGEMENT_ERROR, "Unknown Response from delegate", USER);
+    }
+    FetchCustomSecretTaskResponse fetchCustomSecretTaskResponse = (FetchCustomSecretTaskResponse) delegateResponseData;
+    return fetchCustomSecretTaskResponse.getSecretValue();
+  }
+
+  public boolean validateCustomSecretManagerSecretReference(String accountId, int expressionFunctorToken,
+      ValidateCustomSecretManagerSecretReferenceTaskParameters parameters) {
+    DelegateTaskRequest delegateTaskRequest =
+        DelegateTaskRequest.builder()
+            .taskType(VALIDATE_CUSTOM_SECRET_MANAGER_SECRET_REFERENCE.name())
+            .taskParameters(parameters)
+            .executionTimeout(Duration.ofMillis(TaskData.DEFAULT_SYNC_CALL_TIMEOUT))
+            .accountId(accountId)
+            .taskSetupAbstractions(buildAbstractions(parameters.getEncryptionConfig()))
+            .expressionFunctorToken(expressionFunctorToken)
+            .build();
+    DelegateResponseData delegateResponseData = delegateService.executeSyncTask(delegateTaskRequest);
+    DelegateTaskUtils.validateDelegateTaskResponse(delegateResponseData);
+    if (!(delegateResponseData instanceof ValidateCustomSecretManagerSecretReferenceTaskResponse)) {
+      throw new SecretManagementException(SECRET_MANAGEMENT_ERROR, "Unknown Response from delegate", USER);
+    }
+    ValidateCustomSecretManagerSecretReferenceTaskResponse responseData =
+        (ValidateCustomSecretManagerSecretReferenceTaskResponse) delegateResponseData;
+    return responseData.isReferenceValid();
+  }
+
+  public String resolveSecretManagerConfig(String accountId, int expressionFunctorToken,
+      ValidateCustomSecretManagerSecretReferenceTaskParameters parameters) {
+    DelegateTaskRequest delegateTaskRequest =
+        DelegateTaskRequest.builder()
+            .taskType(RESOLVE_CUSTOM_SM_CONFIG.name())
+            .taskParameters(parameters)
+            .executionTimeout(Duration.ofMillis(TaskData.DEFAULT_SYNC_CALL_TIMEOUT))
+            .accountId(accountId)
+            .taskSetupAbstractions(buildAbstractions(parameters.getEncryptionConfig()))
+            .expressionFunctorToken(expressionFunctorToken)
+            .build();
+    DelegateResponseData delegateResponseData = delegateService.executeSyncTask(delegateTaskRequest);
+    DelegateTaskUtils.validateDelegateTaskResponse(delegateResponseData);
+    if (!(delegateResponseData instanceof ValidateCustomSecretManagerSecretReferenceTaskResponse)) {
+      throw new SecretManagementException(SECRET_MANAGEMENT_ERROR, "Unknown Response from delegate", USER);
+    }
+    ValidateCustomSecretManagerSecretReferenceTaskResponse responseData =
+        (ValidateCustomSecretManagerSecretReferenceTaskResponse) delegateResponseData;
+    return responseData.getScript();
   }
 }

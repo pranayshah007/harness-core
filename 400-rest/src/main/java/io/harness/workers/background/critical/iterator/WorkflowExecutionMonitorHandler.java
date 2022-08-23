@@ -123,7 +123,9 @@ public class WorkflowExecutionMonitorHandler implements Handler<WorkflowExecutio
           StateExecutionInstance stateExecutionInstance = stateExecutionInstances.next();
           long now = System.currentTimeMillis();
 
-          checkIfStateExecutionIsStartingOrRunningWithoutResponse(stateExecutionInstance, now, entity.getEnvId());
+          if (featureFlagService.isEnabled(FeatureName.ENABLE_CHECK_STATE_EXECUTION_STARTING, entity.getAccountId())) {
+            checkIfStateExecutionIsStartingOrRunningWithoutResponse(stateExecutionInstance, now, entity.getEnvId());
+          }
 
           if (shouldAvoidExpiringWithThreshold(stateExecutionInstance, now)) {
             continue;

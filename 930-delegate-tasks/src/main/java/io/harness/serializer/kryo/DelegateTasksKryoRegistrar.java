@@ -91,6 +91,7 @@ import software.wings.beans.BastionConnectionAttributes;
 import software.wings.beans.BugsnagConfig;
 import software.wings.beans.ClusterSelectionCriteriaEntry;
 import software.wings.beans.ConnectionType;
+import software.wings.beans.CustomSecretNGManagerConfig;
 import software.wings.beans.CyberArkConfig;
 import software.wings.beans.DatadogConfig;
 import software.wings.beans.DockerConfig;
@@ -994,5 +995,6 @@ public class DelegateTasksKryoRegistrar implements KryoRegistrar {
     kryo.register(HelmChartSpecification.class, 5269);
     kryo.register(ManifestFile.class, 5539);
     kryo.register(AWSPrometheusInfo.class, 90001);
+    kryo.register(CustomSecretNGManagerConfig.class, 40114);
   }
 }

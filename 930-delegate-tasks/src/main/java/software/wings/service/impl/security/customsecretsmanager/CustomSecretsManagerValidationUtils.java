@@ -20,10 +20,14 @@ import static software.wings.settings.SettingVariableTypes.HOST_CONNECTION_ATTRI
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.data.structure.UUIDGenerator;
+import io.harness.delegate.task.shell.ShellScriptTaskParametersNG;
+import io.harness.delegate.task.shell.ShellScriptTaskParametersNG.ShellScriptTaskParametersNGBuilder;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.security.encryption.EncryptedDataParams;
+import io.harness.security.encryption.EncryptedRecord;
 import io.harness.shell.ScriptType;
 
+import software.wings.beans.CustomSecretNGManagerConfig;
 import software.wings.beans.HostConnectionAttributes;
 import software.wings.beans.WinRmConnectionAttributes;
 import software.wings.beans.delegation.ShellScriptParameters;
@@ -32,7 +36,10 @@ import software.wings.security.encryption.secretsmanagerconfigs.CustomSecretsMan
 
 import com.google.common.collect.Sets;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -124,5 +131,21 @@ public class CustomSecretsManagerValidationUtils {
       }
     }
     return shellScriptParametersBuilder.build();
+  }
+
+  public static ShellScriptTaskParametersNG buildShellScriptTaskParametersNG(String accountId,
+      EncryptedRecord encryptedRecord, CustomSecretNGManagerConfig customSecretNGManagerConfig, String script) {
+    ScriptType scriptType = ScriptType.BASH;
+    ShellScriptTaskParametersNGBuilder taskParametersNGBuilder = ShellScriptTaskParametersNG.builder();
+    Map<String, String> envVars = new HashMap<>();
+    return taskParametersNGBuilder.accountId(accountId)
+        .executeOnDelegate(customSecretNGManagerConfig.isOnDelegate())
+        .environmentVariables(envVars)
+        .outputVars(Collections.singletonList(OUTPUT_VARIABLE))
+        .script(script)
+        .scriptType(scriptType)
+        .workingDirectory(customSecretNGManagerConfig.getWorkingDirectory())
+        .host(customSecretNGManagerConfig.getHost())
+        .build();
   }
 }

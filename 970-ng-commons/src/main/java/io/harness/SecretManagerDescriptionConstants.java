@@ -59,4 +59,6 @@ public class SecretManagerDescriptionConstants {
   public static final String GCP_KEYRING = "Name of the Key Ring where Google Cloud Symmetric Key is created.";
   public static final String GCP_KEYNAME = "Name of the Google Cloud Symmetric Key.";
   public static final String GCP_CRED_FILE = "File Secret which is Service Account Key.";
+  public static final String CUSTOM_AUTH_TOKEN =
+      "This is the authentication token used to connect underlying secret manager.";
 }

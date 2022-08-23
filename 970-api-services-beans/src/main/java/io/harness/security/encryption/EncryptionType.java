@@ -17,7 +17,8 @@ public enum EncryptionType {
   VAULT("hashicorpvault"),
   GCP_SECRETS_MANAGER("gcpsecretsmanager"),
   CUSTOM("custom"),
-  VAULT_SSH("vaultssh");
+  VAULT_SSH("vaultssh"),
+  CUSTOM_NG("customNG");
 
   private final String yamlName;
 

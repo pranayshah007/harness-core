@@ -1924,7 +1924,8 @@
             "Pdc",
             "AzureRepo",
             "Jenkins",
-            "OciHelmRepo"
+            "OciHelmRepo",
+            "CustomSecretManager"
           ]
         }
       },
@@ -2150,6 +2151,22 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/CustomHealthConnectorDTO"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "CustomSecretManager"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/CustomSecretManager"
               }
             }
           }
@@ -2642,6 +2659,48 @@
           "type": "boolean"
         }
       },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "CustomSecretManager": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/ConnectorConfigDTO"
+        },
+        {
+          "type": "object",
+          "required": [
+            "onDelegate",
+            "template"
+          ],
+          "properties": {
+            "connectorRef": {
+              "type": "string"
+            },
+            "default": {
+              "type": "boolean"
+            },
+            "delegateSelectors": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string"
+              }
+            },
+            "host": {
+              "type": "string"
+            },
+            "onDelegate": {
+              "type": "boolean"
+            },
+            "template": {
+              "$ref": "#/definitions/TemplateLinkConfigForCustomSecretManager"
+            },
+            "workingDirectory": {
+              "type": "string"
+            }
+          }
+        }
+      ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "DatadogConnectorDTO": {
@@ -5133,6 +5192,29 @@
           }
         }
       ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "TemplateLinkConfigForCustomSecretManager": {
+      "type": "object",
+      "required": [
+        "templateRef",
+        "versionLabel"
+      ],
+      "properties": {
+        "templateInputs": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object"
+          }
+        },
+        "templateRef": {
+          "type": "string"
+        },
+        "versionLabel": {
+          "type": "string",
+          "pattern": "^[0-9a-zA-Z][^\\s]{0,63}$"
+        }
+      },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "VaultConnectorDTO": {

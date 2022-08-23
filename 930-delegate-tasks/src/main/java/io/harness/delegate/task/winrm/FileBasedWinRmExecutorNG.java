@@ -33,14 +33,12 @@ import io.harness.delegate.task.shell.WinrmTaskParameters;
 import io.harness.delegate.task.ssh.CopyCommandUnit;
 import io.harness.delegate.task.ssh.artifact.ArtifactoryArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.JenkinsArtifactDelegateConfig;
-import io.harness.delegate.task.ssh.artifact.SkipCopyArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.SshWinRmArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.config.ConfigFileParameters;
 import io.harness.eraro.ResponseMessage;
 import io.harness.exception.InvalidRequestException;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
-import io.harness.logging.LogLevel;
 import io.harness.security.encryption.SecretDecryptionService;
 
 import software.wings.utils.ExecutionLogWriter;
@@ -82,10 +80,6 @@ public class FileBasedWinRmExecutorNG extends FileBasedAbstractWinRmExecutor {
       return handleArtifactoryArtifact((ArtifactoryArtifactDelegateConfig) artifactDelegateConfig, copyCommandUnit);
     } else if (artifactDelegateConfig instanceof JenkinsArtifactDelegateConfig) {
       return handleJenkinsArtifact((JenkinsArtifactDelegateConfig) artifactDelegateConfig, copyCommandUnit);
-    } else if (artifactDelegateConfig instanceof SkipCopyArtifactDelegateConfig) {
-      log.info("Artifactory docker registry found, skipping copy artifact.");
-      logCallback.saveExecutionLog("Command finished with status " + SUCCESS, LogLevel.INFO, SUCCESS);
-      return SUCCESS;
     } else {
       log.warn("Wrong artifact delegate config submitted");
       throw new InvalidRequestException("Expecting artifactory or jenkins delegate config");

@@ -86,6 +86,9 @@ public class ServicePlanCreatorHelper {
           YamlTypes.ENVIRONMENT_NODE_ID, ByteString.copyFrom(kryoSerializer.asDeflatedBytes(environmentUuid)));
       serviceDependencyMap.put(
           YamlTypes.NEXT_UUID, ByteString.copyFrom(kryoSerializer.asDeflatedBytes(infraSectionUuid)));
+      serviceDependencyMap.put(YamlTypes.ENVIRONMENT_REF,
+          ByteString.copyFrom(kryoSerializer.asDeflatedBytes(
+              stageNode.getDeploymentStageConfig().getEnvironment().getEnvironmentRef())));
     }
 
     Dependency serviceDependency = Dependency.newBuilder().putAllMetadata(serviceDependencyMap).build();

@@ -7,10 +7,14 @@
 
 package io.harness.ng.core.environment.resources;
 
+import static io.harness.beans.FeatureName.NG_SERVICE_MANIFEST_OVERRIDE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.ng.accesscontrol.PlatformPermissions.VIEW_PROJECT_PERMISSION;
 import static io.harness.ng.accesscontrol.PlatformResourceTypes.PROJECT;
+import static io.harness.ng.core.environment.mappers.EnvironmentMapper.checkDuplicateManifestIdentifiersWithIn;
+import static io.harness.ng.core.environment.mappers.EnvironmentMapper.toNGEnvironmentConfig;
+import static io.harness.ng.core.serviceoverride.mapper.NGServiceOverrideEntityConfigMapper.toNGServiceOverrideConfig;
 import static io.harness.pms.rbac.NGResourceType.ENVIRONMENT;
 import static io.harness.pms.rbac.NGResourceType.SERVICE;
 import static io.harness.rbac.CDNGRbacPermissions.ENVIRONMENT_CREATE_PERMISSION;
@@ -38,6 +42,7 @@ import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
@@ -156,6 +161,7 @@ public class EnvironmentResourceV2 {
   private final EnvironmentValidationHelper environmentValidationHelper;
   private final ServiceEntityValidationHelper serviceEntityValidationHelper;
   private final EnvironmentFilterHelper environmentFilterHelper;
+  private final CDFeatureFlagHelper cdFeatureFlagHelper;
 
   public static final String ENVIRONMENT_PARAM_MESSAGE = "Environment Identifier for the entity";
 
@@ -186,7 +192,7 @@ public class EnvironmentResourceV2 {
     if (environment.isPresent()) {
       version = environment.get().getVersion().toString();
       if (EmptyPredicate.isEmpty(environment.get().getYaml())) {
-        NGEnvironmentConfig ngEnvironmentConfig = EnvironmentMapper.toNGEnvironmentConfig(environment.get());
+        NGEnvironmentConfig ngEnvironmentConfig = toNGEnvironmentConfig(environment.get());
         environment.get().setYaml(EnvironmentMapper.toYaml(ngEnvironmentConfig));
       }
     } else {
@@ -219,7 +225,9 @@ public class EnvironmentResourceV2 {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, environmentRequestDTO.getOrgIdentifier(),
                                                   environmentRequestDTO.getProjectIdentifier()),
         Resource.of(ENVIRONMENT, null, environmentAttributes), ENVIRONMENT_CREATE_PERMISSION);
-    Environment environmentEntity = EnvironmentMapper.toEnvironmentEntity(accountId, environmentRequestDTO);
+    final boolean ngSvcManifestOverrideEnabled = cdFeatureFlagHelper.isEnabled(accountId, NG_SERVICE_MANIFEST_OVERRIDE);
+    Environment environmentEntity =
+        EnvironmentMapper.toEnvironmentEntity(accountId, environmentRequestDTO, ngSvcManifestOverrideEnabled);
     orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(environmentEntity.getOrgIdentifier(),
         environmentEntity.getProjectIdentifier(), environmentEntity.getAccountId());
     Environment createdEnvironment = environmentService.create(environmentEntity);
@@ -270,7 +278,9 @@ public class EnvironmentResourceV2 {
                                                   environmentRequestDTO.getProjectIdentifier()),
         Resource.of(ENVIRONMENT, environmentRequestDTO.getIdentifier()), ENVIRONMENT_UPDATE_PERMISSION);
 
-    Environment requestEnvironment = EnvironmentMapper.toEnvironmentEntity(accountId, environmentRequestDTO);
+    final boolean ngSvcManifestOverrideEnabled = cdFeatureFlagHelper.isEnabled(accountId, NG_SERVICE_MANIFEST_OVERRIDE);
+    Environment requestEnvironment =
+        EnvironmentMapper.toEnvironmentEntity(accountId, environmentRequestDTO, ngSvcManifestOverrideEnabled);
     requestEnvironment.setVersion(isNumeric(ifMatch) ? parseLong(ifMatch) : null);
     Environment updatedEnvironment = environmentService.update(requestEnvironment);
     return ResponseDTO.newResponse(
@@ -297,7 +307,9 @@ public class EnvironmentResourceV2 {
                                                   environmentRequestDTO.getProjectIdentifier()),
         Resource.of(ENVIRONMENT, environmentRequestDTO.getIdentifier()), ENVIRONMENT_UPDATE_PERMISSION);
 
-    Environment requestEnvironment = EnvironmentMapper.toEnvironmentEntity(accountId, environmentRequestDTO);
+    final boolean ngSvcManifestOverrideEnabled = cdFeatureFlagHelper.isEnabled(accountId, NG_SERVICE_MANIFEST_OVERRIDE);
+    Environment requestEnvironment =
+        EnvironmentMapper.toEnvironmentEntity(accountId, environmentRequestDTO, ngSvcManifestOverrideEnabled);
     requestEnvironment.setVersion(isNumeric(ifMatch) ? parseLong(ifMatch) : null);
     orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(requestEnvironment.getOrgIdentifier(),
         requestEnvironment.getProjectIdentifier(), requestEnvironment.getAccountId());
@@ -349,7 +361,7 @@ public class EnvironmentResourceV2 {
     Page<Environment> environmentEntities = environmentService.list(criteria, pageRequest);
     environmentEntities.forEach(environment -> {
       if (EmptyPredicate.isEmpty(environment.getYaml())) {
-        NGEnvironmentConfig ngEnvironmentConfig = EnvironmentMapper.toNGEnvironmentConfig(environment);
+        NGEnvironmentConfig ngEnvironmentConfig = toNGEnvironmentConfig(environment);
         environment.setYaml(EnvironmentMapper.toYaml(ngEnvironmentConfig));
       }
     });
@@ -404,7 +416,7 @@ public class EnvironmentResourceV2 {
     Page<Environment> environmentEntities = environmentService.list(criteria, pageRequest);
     environmentEntities.forEach(environment -> {
       if (EmptyPredicate.isEmpty(environment.getYaml())) {
-        NGEnvironmentConfig ngEnvironmentConfig = EnvironmentMapper.toNGEnvironmentConfig(environment);
+        NGEnvironmentConfig ngEnvironmentConfig = toNGEnvironmentConfig(environment);
         environment.setYaml(EnvironmentMapper.toYaml(ngEnvironmentConfig));
       }
     });
@@ -494,9 +506,24 @@ public class EnvironmentResourceV2 {
     checkForServiceOverrideUpdateAccess(accountId, serviceOverridesEntity.getOrgIdentifier(),
         serviceOverridesEntity.getProjectIdentifier(), serviceOverridesEntity.getEnvironmentRef(),
         serviceOverridesEntity.getServiceRef());
+    final boolean ngManifestOverrideEnabled = cdFeatureFlagHelper.isEnabled(accountId, NG_SERVICE_MANIFEST_OVERRIDE);
+    validateServiceOverrides(serviceOverridesEntity, ngManifestOverrideEnabled);
 
     NGServiceOverridesEntity createdServiceOverride = serviceOverrideService.upsert(serviceOverridesEntity);
     return ResponseDTO.newResponse(ServiceOverridesMapper.toResponseWrapper(createdServiceOverride));
+  }
+
+  private void validateServiceOverrides(
+      NGServiceOverridesEntity serviceOverridesEntity, boolean ngManifestOverrideEnabled) {
+    final NGServiceOverrideConfig serviceOverrideConfig = toNGServiceOverrideConfig(serviceOverridesEntity);
+    if (serviceOverrideConfig.getServiceOverrideInfoConfig() != null) {
+      if (!ngManifestOverrideEnabled
+          && isNotEmpty(serviceOverrideConfig.getServiceOverrideInfoConfig().getManifests())) {
+        throw new InvalidRequestException(
+            "Manifest Override is not supported with FF  disabled NG_SERVICE_MANIFEST_OVERRIDE");
+      }
+      checkDuplicateManifestIdentifiersWithIn(serviceOverrideConfig.getServiceOverrideInfoConfig().getManifests());
+    }
   }
 
   @DELETE

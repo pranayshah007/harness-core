@@ -29,9 +29,11 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.connector.ConnectivityStatus;
 import io.harness.connector.ConnectorValidationResult;
+import io.harness.connector.helper.CustomSecretManagerHelper;
 import io.harness.connector.services.ConnectorService;
 import io.harness.connector.services.NGConnectorSecretManagerService;
 import io.harness.connector.services.NGVaultService;
+import io.harness.encryptors.CustomEncryptorsRegistry;
 import io.harness.encryptors.KmsEncryptorsRegistry;
 import io.harness.encryptors.VaultEncryptorsRegistry;
 import io.harness.exception.DelegateServiceDriverException;
@@ -76,6 +78,9 @@ public class NGSecretManagerServiceImplTest extends CategoryTest {
   ConnectorService connectorService;
   AccountClient accountClient;
   DelegateGrpcClientWrapper delegateService;
+  CustomEncryptorsRegistry customEncryptorsRegistry;
+
+  CustomSecretManagerHelper customSecretManagerHelper;
   NGFeatureFlagHelperService ngFeatureFlagHelperService;
 
   private final String ACCOUNT_IDENTIFIER = "ACCOUNT_ID";
@@ -96,8 +101,11 @@ public class NGSecretManagerServiceImplTest extends CategoryTest {
     accountClient = mock(AccountClient.class);
     delegateService = mock(DelegateGrpcClientWrapper.class);
     ngFeatureFlagHelperService = mock(NGFeatureFlagHelperService.class);
+    customEncryptorsRegistry = mock(CustomEncryptorsRegistry.class);
+    customSecretManagerHelper = mock(CustomSecretManagerHelper.class);
     ngSecretManagerService = new NGSecretManagerServiceImpl(secretManagerClient, ngConnectorSecretManagerService,
-        kmsEncryptorsRegistry, vaultEncryptorsRegistry, ngVaultService, ngFeatureFlagHelperService);
+        kmsEncryptorsRegistry, vaultEncryptorsRegistry, customEncryptorsRegistry, ngVaultService,
+        customSecretManagerHelper, ngFeatureFlagHelperService);
   }
 
   @Test

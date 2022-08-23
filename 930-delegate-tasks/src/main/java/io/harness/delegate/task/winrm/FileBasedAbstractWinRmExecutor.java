@@ -119,7 +119,7 @@ public abstract class FileBasedAbstractWinRmExecutor {
     saveExecutionLog(line, level, RUNNING);
   }
 
-  protected void saveExecutionLog(String line, LogLevel level, CommandExecutionStatus commandExecutionStatus) {
+  public void saveExecutionLog(String line, LogLevel level, CommandExecutionStatus commandExecutionStatus) {
     if (shouldSaveExecutionLogs) {
       logCallback.saveExecutionLog(line, level, commandExecutionStatus);
     }

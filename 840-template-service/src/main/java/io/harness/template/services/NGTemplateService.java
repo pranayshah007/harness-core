@@ -34,7 +34,7 @@ public interface NGTemplateService {
   Optional<TemplateEntity> get(String accountId, String orgIdentifier, String projectIdentifier,
       String templateIdentifier, String versionLabel, boolean deleted);
 
-  Optional<TemplateEntity> getOrThrowExceptionIfInvalid(String accountId, String orgIdentifier,
+  Optional<TemplateEntity> getMetadataOrThrowExceptionIfInvalid(String accountId, String orgIdentifier,
       String projectIdentifier, String templateIdentifier, String versionLabel, boolean deleted);
 
   boolean delete(String accountId, String orgIdentifier, String projectIdentifier, String templateIdentifier,

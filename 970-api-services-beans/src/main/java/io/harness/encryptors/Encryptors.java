@@ -25,7 +25,8 @@ public enum Encryptors {
   AZURE_VAULT_ENCRYPTOR,
   GCP_VAULT_ENCRYPTOR,
   CYBERARK_VAULT_ENCRYPTOR,
-  CUSTOM_ENCRYPTOR;
+  CUSTOM_ENCRYPTOR,
+  CUSTOM_ENCRYPTOR_NG;
 
   @Getter private final String name;
 

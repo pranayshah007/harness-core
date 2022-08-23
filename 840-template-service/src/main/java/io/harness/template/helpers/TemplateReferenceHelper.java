@@ -131,7 +131,7 @@ public class TemplateReferenceHelper {
           String versionLabel = "";
           if (versionLabelNode == null) {
             Optional<TemplateEntity> templateEntity =
-                templateServiceHelper.getOrThrowExceptionIfInvalid(templateIdentifierRef.getAccountIdentifier(),
+                templateServiceHelper.getMetadataOrThrowExceptionIfInvalid(templateIdentifierRef.getAccountIdentifier(),
                     templateIdentifierRef.getOrgIdentifier(), templateIdentifierRef.getProjectIdentifier(),
                     templateIdentifierRef.getIdentifier(), versionLabel, false);
             if (templateEntity.isPresent()) {
