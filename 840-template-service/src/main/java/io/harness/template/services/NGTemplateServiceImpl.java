@@ -39,6 +39,7 @@ import io.harness.exception.ReferencedEntityException;
 import io.harness.exception.ScmException;
 import io.harness.exception.UnexpectedException;
 import io.harness.git.model.ChangeType;
+import io.harness.gitaware.helper.GitAwareContextHelper;
 import io.harness.gitsync.common.utils.GitEntityFilePath;
 import io.harness.gitsync.common.utils.GitSyncFilePathUtils;
 import io.harness.gitsync.helpers.GitContextHelper;
@@ -130,6 +131,13 @@ public class NGTemplateServiceImpl implements NGTemplateService {
           "The template with identifier %s and version label %s already exists in the account %s, org %s, project %s",
           templateEntity.getIdentifier(), templateEntity.getVersionLabel(), templateEntity.getAccountId(),
           templateEntity.getOrgIdentifier(), templateEntity.getProjectIdentifier()));
+    }
+
+    if (!isGitRemoteEntity(templateEntity)) {
+      throw new InvalidRequestException(format(
+          "Remote template entity cannot for template type [%s] on git simplification enabled for Project [%s] in Organisation [%s] in Account [%s]",
+          templateEntity.getTemplateEntityType(), templateEntity.getProjectIdentifier(),
+          templateEntity.getOrgIdentifier(), templateEntity.getAccountIdentifier()));
     }
 
     // apply templates to template yaml for validation and populating module info
@@ -1010,6 +1018,17 @@ public class NGTemplateServiceImpl implements NGTemplateService {
     } else {
       return format("Error while retrieving template with identifier [%s] and versionLabel [%s]", templateIdentifier,
           versionLabel);
+    }
+  }
+
+  private boolean isGitRemoteEntity(TemplateEntity templateEntity) {
+    GitAwareContextHelper.initDefaultScmGitMetaData();
+    GitEntityInfo gitEntityInfo = GitContextHelper.getGitEntityInfo();
+    if(gitEntityInfo != null) {
+      return TemplateUtils.isRemoteEntity(gitEntityInfo)
+              && templateEntity.getTemplateEntityType().isGitEntity();
+    } else {
+      return true;
     }
   }
 }
