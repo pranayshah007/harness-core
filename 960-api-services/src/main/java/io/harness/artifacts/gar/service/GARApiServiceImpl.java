@@ -160,7 +160,8 @@ public class GARApiServiceImpl implements GarApiService {
   private boolean isSuccessful(Response<GarPackageVersionResponse> response) {
     if (response == null) {
       throw NestedExceptionUtils.hintWithExplanationException("GOOGLE ARTIFACT REGISTRY : Response Is Null",
-          "Check Whether Artifact exists or not", new InvalidArtifactServerException(response.message(), USER));
+          "Check Whether Artifact exists or not",
+          new InvalidArtifactServerException(response.errorBody().toString(), USER));
     }
 
     if (response.isSuccessful()) {
@@ -172,20 +173,20 @@ public class GARApiServiceImpl implements GarApiService {
     switch (code) {
       case 404:
         throw NestedExceptionUtils.hintWithExplanationException(
-            "Google Artifact Registry: Check Project,RepositoryName,Package,Region",
-            "Check Project,RepositoryName,Package,Region",
-            new InvalidArtifactServerException(response.message(), USER));
+            "Please Check Project,RepositoryName,Package,Region fields",
+            "Google Artifact Registry: Check Values of Project,RepositoryName,Package,Region Field",
+            new InvalidArtifactServerException(response.errorBody().toString(), USER));
       case 400:
         return false;
-      case 401:
+      case 403:
         throw NestedExceptionUtils.hintWithExplanationException(
             "Google Artifact Registry: Connector provided Is not Having Artifact Registry Reader permission",
             "Check connector's permission and credentials",
-            new InvalidArtifactServerException(response.message(), USER));
+            new InvalidArtifactServerException(response.errorBody().toString(), USER));
       default:
         throw NestedExceptionUtils.hintWithExplanationException("Google Artifact Registry", "Google Artifact Registry",
-            new InvalidArtifactServerException(StringUtils.isNotBlank(response.message())
-                    ? response.message()
+            new InvalidArtifactServerException(StringUtils.isNotBlank(response.errorBody().toString())
+                    ? response.errorBody().toString()
                     : String.format("Server responded with the following error code - %d", code),
                 USER));
     }
