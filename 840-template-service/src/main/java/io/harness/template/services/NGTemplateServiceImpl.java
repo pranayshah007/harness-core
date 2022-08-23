@@ -133,7 +133,7 @@ public class NGTemplateServiceImpl implements NGTemplateService {
           templateEntity.getOrgIdentifier(), templateEntity.getProjectIdentifier()));
     }
 
-    if (!isGitRemoteEntity(templateEntity)) {
+    if (!isRemoteTemplateAndGitEntity(templateEntity)) {
       throw new InvalidRequestException(format(
           "Remote template entity cannot for template type [%s] on git simplification enabled for Project [%s] in Organisation [%s] in Account [%s]",
           templateEntity.getTemplateEntityType(), templateEntity.getProjectIdentifier(),
@@ -1021,12 +1021,11 @@ public class NGTemplateServiceImpl implements NGTemplateService {
     }
   }
 
-  private boolean isGitRemoteEntity(TemplateEntity templateEntity) {
+  private boolean isRemoteTemplateAndGitEntity(TemplateEntity templateEntity) {
     GitAwareContextHelper.initDefaultScmGitMetaData();
     GitEntityInfo gitEntityInfo = GitContextHelper.getGitEntityInfo();
-    if(gitEntityInfo != null) {
-      return TemplateUtils.isRemoteEntity(gitEntityInfo)
-              && templateEntity.getTemplateEntityType().isGitEntity();
+    if (gitEntityInfo != null && TemplateUtils.isRemoteEntity(gitEntityInfo)) {
+      return templateEntity.getTemplateEntityType().isGitEntity();
     } else {
       return true;
     }
