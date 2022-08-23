@@ -18,7 +18,6 @@ import io.harness.cdng.azure.config.yaml.ConnectionStringsConfiguration;
 import io.harness.cdng.azure.config.yaml.StartupCommandConfiguration;
 import io.harness.cdng.configfile.ConfigFileWrapper;
 import io.harness.cdng.creator.plan.PlanCreatorConstants;
-import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.service.ServiceSpec;
 import io.harness.cdng.service.beans.AzureWebAppServiceSpec;
 import io.harness.cdng.service.beans.ServiceConfig;
@@ -80,7 +79,6 @@ public class ServiceDefinitionPlanCreator extends ChildrenPlanCreator<YamlField>
   @Inject KryoSerializer kryoSerializer;
   @Inject ServiceOverrideService serviceOverrideService;
   @Inject EnvironmentService environmentService;
-  @Inject CDFeatureFlagHelper cdFeatureFlagHelper;
 
   /*
   TODO: currently we are using many yaml updates. For ex - if we do not have service definition and we need to call plan
@@ -205,7 +203,7 @@ public class ServiceDefinitionPlanCreator extends ChildrenPlanCreator<YamlField>
         fetchServiceOverrideConfig(ctx, config, ngEnvironmentConfig.getNgEnvironmentInfoConfig().getIdentifier());
 
     if (isSvcOverridesManifestPresent(serviceOverrideConfig)
-        || isEnvGlobalManifestOverridePresent(ngEnvironmentConfig)) {
+        || isEnvGlobalManifestOverridesPresent(ngEnvironmentConfig)) {
       String manifestPlanNodeId = ServiceDefinitionPlanCreatorHelper.addDependenciesForSvcAndSvcOverrideManifestsV2(
           serviceV2Node, planCreationResponseMap, config, serviceOverrideConfig, ngEnvironmentConfig, kryoSerializer);
       // handling no manifest present case
@@ -218,7 +216,16 @@ public class ServiceDefinitionPlanCreator extends ChildrenPlanCreator<YamlField>
       serviceSpecChildrenIds.add(manifestPlanNodeId);
     }
 
-    if (ServiceDefinitionPlanCreatorHelper.shouldCreatePlanNodeForConfigFilesV2(config)) {
+    if (isSvcOverridesConfigFilesPresent(serviceOverrideConfig)
+        || isEnvGlobalConfigFileOverridesPresent(ngEnvironmentConfig)) {
+      String configFilesPlanNodeId =
+          ServiceDefinitionPlanCreatorHelper.addDependenciesForSvcAndSvcOverrideConfigFilesV2(serviceV2Node,
+              planCreationResponseMap, config, serviceOverrideConfig, ngEnvironmentConfig, kryoSerializer);
+      if (isNotBlank(configFilesPlanNodeId)) {
+        serviceSpecChildrenIds.add(configFilesPlanNodeId);
+      }
+
+    } else if (ServiceDefinitionPlanCreatorHelper.shouldCreatePlanNodeForConfigFilesV2(config)) {
       String configFilesPlanNodeId = ServiceDefinitionPlanCreatorHelper.addDependenciesForConfigFilesV2(
           serviceV2Node, planCreationResponseMap, config, kryoSerializer);
       serviceSpecChildrenIds.add(configFilesPlanNodeId);
@@ -255,16 +262,39 @@ public class ServiceDefinitionPlanCreator extends ChildrenPlanCreator<YamlField>
     addServiceSpecNodeV2(config, planCreationResponseMap, serviceSpecChildrenIds);
   }
 
-  private boolean isEnvGlobalManifestOverridePresent(NGEnvironmentConfig ngEnvironmentConfig) {
-    if (ngEnvironmentConfig == null || ngEnvironmentConfig.getNgEnvironmentInfoConfig() == null
-        || ngEnvironmentConfig.getNgEnvironmentInfoConfig().getNgEnvironmentGlobalOverride() != null) {
+  private boolean isServiceOverridePresent(NGServiceOverrideConfig serviceOverrideConfig) {
+    return serviceOverrideConfig != null && serviceOverrideConfig.getServiceOverrideInfoConfig() != null;
+  }
+
+  private boolean isEnvGlobalOverridesPresent(NGEnvironmentConfig ngEnvironmentConfig) {
+    return ngEnvironmentConfig != null && ngEnvironmentConfig.getNgEnvironmentInfoConfig() != null
+        && ngEnvironmentConfig.getNgEnvironmentInfoConfig().getNgEnvironmentGlobalOverride() != null;
+  }
+
+  private boolean isEnvGlobalConfigFileOverridesPresent(NGEnvironmentConfig ngEnvironmentConfig) {
+    if (!isEnvGlobalOverridesPresent(ngEnvironmentConfig)) {
+      return false;
+    }
+    return isNotEmpty(
+        ngEnvironmentConfig.getNgEnvironmentInfoConfig().getNgEnvironmentGlobalOverride().getConfigFiles());
+  }
+
+  private boolean isSvcOverridesConfigFilesPresent(NGServiceOverrideConfig serviceOverrideConfig) {
+    if (!isServiceOverridePresent(serviceOverrideConfig)) {
+      return false;
+    }
+    return isNotEmpty(serviceOverrideConfig.getServiceOverrideInfoConfig().getConfigFiles());
+  }
+
+  private boolean isEnvGlobalManifestOverridesPresent(NGEnvironmentConfig ngEnvironmentConfig) {
+    if (!isEnvGlobalOverridesPresent(ngEnvironmentConfig)) {
       return false;
     }
     return isNotEmpty(ngEnvironmentConfig.getNgEnvironmentInfoConfig().getNgEnvironmentGlobalOverride().getManifests());
   }
 
   private boolean isSvcOverridesManifestPresent(NGServiceOverrideConfig serviceOverrideConfig) {
-    if (serviceOverrideConfig == null || serviceOverrideConfig.getServiceOverrideInfoConfig() == null) {
+    if (!isServiceOverridePresent(serviceOverrideConfig)) {
       return false;
     }
     return isNotEmpty(serviceOverrideConfig.getServiceOverrideInfoConfig().getManifests());

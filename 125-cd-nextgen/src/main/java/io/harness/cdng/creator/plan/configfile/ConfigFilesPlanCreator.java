@@ -86,7 +86,24 @@ public class ConfigFilesPlanCreator extends ChildrenPlanCreator<ConfigFiles> {
         addDependenciesForIndividualConfigFile(identifierToConfigFileStepParametersEntry.getKey(),
             identifierToConfigFileStepParametersEntry.getValue(), configFilesYamlField, planCreationResponseMap);
       }
-    } else if (ctx.getDependency().getMetadataMap().containsKey(YamlTypes.SERVICE_ENTITY)) {
+    } else if (ctx.getDependency().getMetadataMap().containsKey(YamlTypes.CONFIG_FILES)) {
+      List<ConfigFileWrapper> configFiles = (List<ConfigFileWrapper>) kryoSerializer.asInflatedObject(
+          ctx.getDependency().getMetadataMap().get(YamlTypes.CONFIG_FILES).toByteArray());
+      ConfigFileList configFileList = new ConfigFileListBuilder().addConfigFiles(configFiles).build();
+      if (isEmpty(configFileList.getConfigFiles())) {
+        return planCreationResponseMap;
+      }
+
+      YamlField configFilesYamlField = ctx.getCurrentField();
+
+      for (Map.Entry<String, ConfigFileStepParameters> identifierToConfigFileStepParametersEntry :
+          configFileList.getConfigFiles().entrySet()) {
+        addDependenciesForIndividualConfigFile(identifierToConfigFileStepParametersEntry.getKey(),
+            identifierToConfigFileStepParametersEntry.getValue(), configFilesYamlField, planCreationResponseMap);
+      }
+    }
+
+    else if (ctx.getDependency().getMetadataMap().containsKey(YamlTypes.SERVICE_ENTITY)) {
       // v2
       NGServiceV2InfoConfig serviceV2InfoConfig = (NGServiceV2InfoConfig) kryoSerializer.asInflatedObject(
           ctx.getDependency().getMetadataMap().get(YamlTypes.SERVICE_ENTITY).toByteArray());
@@ -196,6 +213,10 @@ public class ConfigFilesPlanCreator extends ChildrenPlanCreator<ConfigFiles> {
 
     public ConfigFileListBuilder addServiceDefinition(ServiceDefinition serviceDefinition) {
       List<ConfigFileWrapper> configFileWrappers = serviceDefinition.getServiceSpec().getConfigFiles();
+      return addConfigFiles(configFileWrappers);
+    }
+
+    public ConfigFileListBuilder addConfigFiles(List<ConfigFileWrapper> configFileWrappers) {
       if (configFileWrappers == null) {
         return this;
       }
