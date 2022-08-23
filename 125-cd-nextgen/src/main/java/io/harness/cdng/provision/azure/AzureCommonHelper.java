@@ -166,7 +166,7 @@ public class AzureCommonHelper {
         .build();
   }
 
-  boolean isTemplateStoredOnGit(AzureCreateARMResourceTemplateFile azureCreateTemplateFileSpec) {
+  boolean isTemplateStoredOnGit(AzureTemplateFile azureCreateTemplateFileSpec) {
     return ManifestStoreType.isInGitSubset(azureCreateTemplateFileSpec.getStore().getSpec().getKind());
   }
 
@@ -180,7 +180,7 @@ public class AzureCommonHelper {
 
   AzureDeploymentMode retrieveDeploymentMode(ARMScopeType scopeType, String mode) {
     if (ARMScopeType.RESOURCE_GROUP == scopeType) {
-      return mode != null ? AzureDeploymentMode.valueOf(mode) : AzureDeploymentMode.INCREMENTAL;
+      return mode != null ? AzureDeploymentMode.valueOf(mode.toUpperCase()) : AzureDeploymentMode.INCREMENTAL;
     }
     return AzureDeploymentMode.INCREMENTAL;
   }

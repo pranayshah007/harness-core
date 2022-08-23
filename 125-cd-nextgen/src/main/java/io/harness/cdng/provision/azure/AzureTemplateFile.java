@@ -23,7 +23,7 @@ import lombok.NoArgsConstructor;
 @OwnedBy(CDP)
 @Data
 @NoArgsConstructor
-public class AzureCreateARMResourceTemplateFile {
+public class AzureTemplateFile {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)

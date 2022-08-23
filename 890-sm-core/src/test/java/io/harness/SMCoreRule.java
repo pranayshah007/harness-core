@@ -230,6 +230,11 @@ public class SMCoreRule implements MethodRule, InjectorRuleMixin, MongoRuleMixin
             .annotatedWith(Names.named(Encryptors.CUSTOM_ENCRYPTOR.getName()))
             .toInstance(mock(CustomEncryptor.class));
 
+        binder()
+            .bind(CustomEncryptor.class)
+            .annotatedWith(Names.named(Encryptors.CUSTOM_ENCRYPTOR_NG.getName()))
+            .toInstance(mock(CustomEncryptor.class));
+
         bind(SecretsFileService.class).toInstance(mock(SecretsFileService.class));
         bind(SecretsAuditService.class).toInstance(mock(SecretsAuditService.class));
         bind(SecretsRBACService.class).toInstance(mock(SecretsRBACService.class));

@@ -54,6 +54,7 @@ import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 import io.harness.serializer.KryoRegistrar;
 import io.harness.serializer.NextGenRegistrars;
 import io.harness.service.DelegateGrpcClientWrapper;
+import io.harness.template.remote.TemplateResourceClient;
 
 import software.wings.service.intfc.FileService;
 
@@ -265,6 +266,13 @@ public class SecretManagementModuleTest extends CategoryTest {
       }
     });
     modules.add(cacheModule);
+    modules.add(new ProviderModule() {
+      @Provides
+      @Singleton
+      TemplateResourceClient getTemplateResourceClient() {
+        return mock(TemplateResourceClient.class);
+      }
+    });
 
     Injector injector = Guice.createInjector(modules);
 

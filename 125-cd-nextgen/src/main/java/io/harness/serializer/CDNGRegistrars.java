@@ -32,6 +32,7 @@ import io.harness.cdng.k8s.K8sRollingStepNode;
 import io.harness.cdng.k8s.K8sScaleStepNode;
 import io.harness.cdng.pipeline.CDStepInfo;
 import io.harness.cdng.provision.azure.AzureCreateARMResourceStepNode;
+import io.harness.cdng.provision.azure.AzureCreateBPStepNode;
 import io.harness.cdng.provision.cloudformation.CloudformationCreateStackStepNode;
 import io.harness.cdng.provision.cloudformation.CloudformationDeleteStackStepNode;
 import io.harness.cdng.provision.cloudformation.CloudformationRollbackStepNode;
@@ -386,6 +387,18 @@ public class CDNGRegistrars {
                    .availableAtOrgLevel(false)
                    .availableAtAccountLevel(false)
                    .clazz(AzureCreateARMResourceStepNode.class)
+                   .yamlSchemaMetadata(YamlSchemaMetadata.builder()
+                                           .namespace(SchemaNamespaceConstants.CD)
+                                           .modulesSupported(Arrays.asList(ModuleType.CD, ModuleType.PMS))
+                                           .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
+                                           .build())
+                   .build())
+          .add(YamlSchemaRootClass.builder()
+                   .entityType(EntityType.AZURE_CREATE_BP_RESOURCE_STEP)
+                   .availableAtProjectLevel(true)
+                   .availableAtOrgLevel(false)
+                   .availableAtAccountLevel(false)
+                   .clazz(AzureCreateBPStepNode.class)
                    .yamlSchemaMetadata(YamlSchemaMetadata.builder()
                                            .namespace(SchemaNamespaceConstants.CD)
                                            .modulesSupported(Arrays.asList(ModuleType.CD, ModuleType.PMS))

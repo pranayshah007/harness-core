@@ -9,8 +9,12 @@ package io.harness.cdng.creator.plan.service;
 
 import static io.harness.rule.OwnerRule.ARCHIT;
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
+import static io.harness.rule.OwnerRule.TATHAGAT;
 
+import static java.util.Collections.EMPTY_LIST;
+import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Matchers.any;
 
 import io.harness.CategoryTest;
@@ -30,7 +34,13 @@ import io.harness.cdng.service.beans.ServiceUseFromStage;
 import io.harness.cdng.service.beans.StageOverridesConfig;
 import io.harness.cdng.visitor.YamlTypes;
 import io.harness.data.structure.UUIDGenerator;
+import io.harness.exception.InvalidRequestException;
+import io.harness.ng.core.environment.beans.NGEnvironmentGlobalOverride;
+import io.harness.ng.core.environment.yaml.NGEnvironmentConfig;
+import io.harness.ng.core.environment.yaml.NGEnvironmentInfoConfig;
 import io.harness.ng.core.service.yaml.NGServiceV2InfoConfig;
+import io.harness.ng.core.serviceoverride.yaml.NGServiceOverrideConfig;
+import io.harness.ng.core.serviceoverride.yaml.NGServiceOverrideInfoConfig;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
@@ -42,7 +52,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
 import org.junit.Before;
@@ -54,6 +66,25 @@ import org.mockito.MockitoAnnotations;
 
 public class ServiceDefinitionPlanCreatorHelperTest extends CategoryTest {
   @Mock KryoSerializer kryoSerializer;
+
+  private static final String SVC_REF = "SVC_REF";
+  private static final String ENV_REF = "ENV_REF";
+  private static final ManifestConfigWrapper k8sManifest =
+      ManifestConfigWrapper.builder()
+          .manifest(ManifestConfig.builder().identifier("k8s_test1").type(ManifestConfigType.K8_MANIFEST).build())
+          .build();
+  private static final ManifestConfigWrapper valuesManifest1 =
+      ManifestConfigWrapper.builder()
+          .manifest(ManifestConfig.builder().identifier("values_test1").type(ManifestConfigType.VALUES).build())
+          .build();
+  private static final ManifestConfigWrapper valuesManifest2 =
+      ManifestConfigWrapper.builder()
+          .manifest(ManifestConfig.builder().identifier("values_test2").type(ManifestConfigType.VALUES).build())
+          .build();
+  private static final ManifestConfigWrapper valuesManifest3 =
+      ManifestConfigWrapper.builder()
+          .manifest(ManifestConfig.builder().identifier("values_test3").type(ManifestConfigType.VALUES).build())
+          .build();
 
   @Before
   public void setUp() {
@@ -502,5 +533,206 @@ public class ServiceDefinitionPlanCreatorHelperTest extends CategoryTest {
             .build();
     result = ServiceDefinitionPlanCreatorHelper.shouldCreatePlanNodeForManifests(serviceConfig);
     assertThat(result).isEqualTo(true);
+  }
+
+  @Test
+  @Owner(developers = TATHAGAT)
+  @Category(UnitTests.class)
+  public void testPrepareFinalManifests() {
+    final NGServiceV2InfoConfig serviceInfoConfig =
+        NGServiceV2InfoConfig.builder()
+            .identifier(SVC_REF)
+            .serviceDefinition(
+                ServiceDefinition.builder()
+                    .serviceSpec(
+                        KubernetesServiceSpec.builder().manifests(Collections.singletonList(valuesManifest1)).build())
+                    .build())
+            .build();
+    final NGServiceOverrideConfig serviceOverrideConfig =
+        NGServiceOverrideConfig.builder()
+            .serviceOverrideInfoConfig(NGServiceOverrideInfoConfig.builder()
+                                           .serviceRef(SVC_REF)
+                                           .environmentRef(ENV_REF)
+                                           .manifests(Collections.singletonList(valuesManifest2))
+                                           .build())
+            .build();
+    final NGEnvironmentConfig environmentConfig =
+        NGEnvironmentConfig.builder()
+            .ngEnvironmentInfoConfig(
+                NGEnvironmentInfoConfig.builder()
+                    .identifier(ENV_REF)
+                    .ngEnvironmentGlobalOverride(NGEnvironmentGlobalOverride.builder()
+                                                     .manifests(Collections.singletonList(valuesManifest3))
+                                                     .build())
+                    .build())
+            .build();
+
+    final List<ManifestConfigWrapper> finalManifests = ServiceDefinitionPlanCreatorHelper.prepareFinalManifests(
+        serviceInfoConfig, serviceOverrideConfig, environmentConfig);
+
+    assertThat(finalManifests).hasSize(3);
+    assertThat(finalManifests).containsExactly(valuesManifest1, valuesManifest3, valuesManifest2);
+  }
+
+  @Test
+  @Owner(developers = TATHAGAT)
+  @Category(UnitTests.class)
+  public void testPrepareFinalManifestsInvalidManifestType() {
+    final NGServiceV2InfoConfig serviceInfoConfig =
+        NGServiceV2InfoConfig.builder()
+            .identifier(SVC_REF)
+            .serviceDefinition(
+                ServiceDefinition.builder()
+                    .serviceSpec(
+                        KubernetesServiceSpec.builder().manifests(Collections.singletonList(valuesManifest1)).build())
+                    .build())
+            .build();
+    final NGServiceOverrideConfig serviceOverrideConfig =
+        NGServiceOverrideConfig.builder()
+            .serviceOverrideInfoConfig(NGServiceOverrideInfoConfig.builder()
+                                           .serviceRef(SVC_REF)
+                                           .environmentRef(ENV_REF)
+                                           .manifests(Arrays.asList(k8sManifest, valuesManifest2))
+                                           .build())
+            .build();
+    final NGEnvironmentConfig environmentConfig =
+        NGEnvironmentConfig.builder()
+            .ngEnvironmentInfoConfig(NGEnvironmentInfoConfig.builder()
+                                         .identifier(ENV_REF)
+                                         .ngEnvironmentGlobalOverride(NGEnvironmentGlobalOverride.builder().build())
+                                         .build())
+            .build();
+    // service overrides manifest type validation
+    assertThatThrownBy(()
+                           -> ServiceDefinitionPlanCreatorHelper.prepareFinalManifests(
+                               serviceInfoConfig, serviceOverrideConfig, environmentConfig))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("Unsupported Manifest Types: [K8sManifest] found for service overrides");
+
+    // environment global overrides manifest type validation
+    serviceOverrideConfig.getServiceOverrideInfoConfig().setManifests(EMPTY_LIST);
+    environmentConfig.getNgEnvironmentInfoConfig().setNgEnvironmentGlobalOverride(
+        NGEnvironmentGlobalOverride.builder().manifests(Arrays.asList(k8sManifest, valuesManifest3)).build());
+    assertThatThrownBy(()
+                           -> ServiceDefinitionPlanCreatorHelper.prepareFinalManifests(
+                               serviceInfoConfig, serviceOverrideConfig, environmentConfig))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("Unsupported Manifest Types: [K8sManifest] found for environment global overrides");
+  }
+
+  @Test
+  @Owner(developers = TATHAGAT)
+  @Category(UnitTests.class)
+  public void testPrepareFinalManifestsDuplicateManifestsIdentifiers() {
+    final NGServiceV2InfoConfig serviceInfoConfig =
+        NGServiceV2InfoConfig.builder()
+            .identifier(SVC_REF)
+            .serviceDefinition(
+                ServiceDefinition.builder()
+                    .serviceSpec(KubernetesServiceSpec.builder()
+                                     .manifests(Arrays.asList(k8sManifest, valuesManifest1, valuesManifest2))
+                                     .build())
+                    .build())
+            .build();
+    final NGServiceOverrideConfig serviceOverrideConfig =
+        NGServiceOverrideConfig.builder()
+            .serviceOverrideInfoConfig(NGServiceOverrideInfoConfig.builder()
+                                           .serviceRef(SVC_REF)
+                                           .environmentRef(ENV_REF)
+                                           .manifests(Collections.singletonList(valuesManifest1))
+                                           .build())
+            .build();
+    final NGEnvironmentConfig environmentConfig =
+        NGEnvironmentConfig.builder()
+            .ngEnvironmentInfoConfig(NGEnvironmentInfoConfig.builder()
+                                         .identifier(ENV_REF)
+                                         .ngEnvironmentGlobalOverride(NGEnvironmentGlobalOverride.builder().build())
+                                         .build())
+            .build();
+
+    // service overrides manifest identifier duplication
+    assertThatThrownBy(()
+                           -> ServiceDefinitionPlanCreatorHelper.prepareFinalManifests(
+                               serviceInfoConfig, serviceOverrideConfig, environmentConfig))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(
+            "Found duplicate manifest identifiers [values_test1] in service overrides for service [SVC_REF] and environment [ENV_REF]");
+
+    // environment global overrides manifest identifier duplication
+    serviceOverrideConfig.getServiceOverrideInfoConfig().setManifests(EMPTY_LIST);
+    environmentConfig.getNgEnvironmentInfoConfig().setNgEnvironmentGlobalOverride(
+        NGEnvironmentGlobalOverride.builder().manifests(Arrays.asList(valuesManifest1, valuesManifest2)).build());
+    assertThatThrownBy(()
+                           -> ServiceDefinitionPlanCreatorHelper.prepareFinalManifests(
+                               serviceInfoConfig, serviceOverrideConfig, environmentConfig))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(
+            "Found duplicate manifest identifiers [values_test1,values_test2] in environment global overrides for service [SVC_REF] and environment [ENV_REF]");
+  }
+
+  @Test
+  @Owner(developers = TATHAGAT)
+  @Category(UnitTests.class)
+  public void testPrepareFinalManifestsEmptyOverrideManifests() {
+    final NGServiceV2InfoConfig serviceInfoConfig =
+        NGServiceV2InfoConfig.builder()
+            .identifier(SVC_REF)
+            .serviceDefinition(
+                ServiceDefinition.builder()
+                    .serviceSpec(KubernetesServiceSpec.builder()
+                                     .manifests(Arrays.asList(k8sManifest, valuesManifest1, valuesManifest2))
+                                     .build())
+                    .build())
+            .build();
+    final NGServiceOverrideConfig serviceOverrideConfig =
+        NGServiceOverrideConfig.builder()
+            .serviceOverrideInfoConfig(
+                NGServiceOverrideInfoConfig.builder().serviceRef(SVC_REF).environmentRef(ENV_REF).build())
+            .build();
+    final NGEnvironmentConfig environmentConfig =
+        NGEnvironmentConfig.builder()
+            .ngEnvironmentInfoConfig(NGEnvironmentInfoConfig.builder()
+                                         .identifier(ENV_REF)
+                                         .ngEnvironmentGlobalOverride(NGEnvironmentGlobalOverride.builder().build())
+                                         .build())
+            .build();
+
+    final List<ManifestConfigWrapper> finalManifests = ServiceDefinitionPlanCreatorHelper.prepareFinalManifests(
+        serviceInfoConfig, serviceOverrideConfig, environmentConfig);
+    assertThat(finalManifests).hasSize(3);
+    assertThat(finalManifests).containsExactly(k8sManifest, valuesManifest1, valuesManifest2);
+  }
+
+  @Test
+  @Owner(developers = TATHAGAT)
+  @Category(UnitTests.class)
+  public void testPrepareFinalManifestsEmptyServiceManifests() {
+    final NGServiceV2InfoConfig serviceInfoConfig =
+        NGServiceV2InfoConfig.builder()
+            .identifier(SVC_REF)
+            .serviceDefinition(ServiceDefinition.builder().serviceSpec(KubernetesServiceSpec.builder().build()).build())
+            .build();
+    final NGServiceOverrideConfig serviceOverrideConfig =
+        NGServiceOverrideConfig.builder()
+            .serviceOverrideInfoConfig(NGServiceOverrideInfoConfig.builder()
+                                           .serviceRef(SVC_REF)
+                                           .environmentRef(ENV_REF)
+                                           .manifests(singletonList(valuesManifest1))
+                                           .build())
+            .build();
+    final NGEnvironmentConfig environmentConfig =
+        NGEnvironmentConfig.builder()
+            .ngEnvironmentInfoConfig(
+                NGEnvironmentInfoConfig.builder()
+                    .identifier(ENV_REF)
+                    .ngEnvironmentGlobalOverride(
+                        NGEnvironmentGlobalOverride.builder().manifests(singletonList(valuesManifest2)).build())
+                    .build())
+            .build();
+
+    final List<ManifestConfigWrapper> finalManifests = ServiceDefinitionPlanCreatorHelper.prepareFinalManifests(
+        serviceInfoConfig, serviceOverrideConfig, environmentConfig);
+    assertThat(finalManifests).hasSize(2);
+    assertThat(finalManifests).containsExactly(valuesManifest2, valuesManifest1);
   }
 }
