@@ -20,4 +20,9 @@ public interface NGConnectorSecretManagerService {
 
   ConnectorDTO decrypt(
       String accountIdentifier, String projectIdentifier, String orgIdentifier, ConnectorDTO connectorConfig);
+
+  default ConnectorDTO getConnectorDTO(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier) {
+    throw new RuntimeException("Can not find the connector dto. ");
+  }
 }

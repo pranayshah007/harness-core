@@ -35,6 +35,8 @@ import io.harness.delegate.beans.connector.scm.awscodecommit.AwsCodeCommitConnec
 import io.harness.delegate.beans.connector.scm.awscodecommit.AwsCodeCommitUrlType;
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketConnectorDTO;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubApiAccessDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubApiAccessType;
 import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabConnectorDTO;
 import io.harness.delegate.task.scm.ScmPathFilterEvaluationTaskResponse;
@@ -238,6 +240,16 @@ public class FilepathTriggerFilter implements TriggerFilter {
 
       boolean executeOnDelegate =
           connectorDetails.getExecuteOnDelegate() == null || connectorDetails.getExecuteOnDelegate();
+
+      if (!executeOnDelegate && scmConnector.getConnectorType() == GITHUB) {
+        GithubConnectorDTO githubConnectorDTO = (GithubConnectorDTO) connectorDetails.getConnectorConfig();
+        GithubApiAccessDTO githubApiAccessDTO = githubConnectorDTO.getApiAccess();
+        if (githubApiAccessDTO != null && githubApiAccessDTO.getType() == GithubApiAccessType.GITHUB_APP) {
+          // execute on delegate if authentication type is GITHUB_APP
+          executeOnDelegate = true;
+          log.warn("Executing file trigger via delegate since git auth type is GITHUB_APP");
+        }
+      }
 
       SCMFilePathEvaluator scmFilePathEvaluator = scmFilePathEvaluatorFactory.getEvaluator(executeOnDelegate);
       return scmFilePathEvaluator.execute(filterRequestData, pathCondition, connectorDetails, scmConnector);
