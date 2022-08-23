@@ -8,6 +8,7 @@
 package io.harness.data.validator;
 
 import static io.harness.rule.OwnerRule.KARAN;
+import static io.harness.rule.OwnerRule.YUVRAJ;
 
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertTrue;
@@ -69,6 +70,19 @@ public class NGEntityNameValidatorTest extends CategoryTest {
       } else {
         assertTrue("name : " + name, violationsCount > 0);
       }
+    }
+  }
+
+  @Test
+  @Owner(developers = YUVRAJ)
+  @Category(UnitTests.class)
+  public void testEntityNameValidatorForDot() {
+    String name = "abc.abc";
+    int violationsCount = validator.validate(EntityNameValidatorTestStructure.builder().name(name).build()).size();
+    if (isValidEntityName(name)) {
+      assertEquals("name : " + name, 0, violationsCount);
+    } else {
+      assertTrue("name : " + name, violationsCount > 0);
     }
   }
 
