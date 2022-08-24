@@ -26,9 +26,9 @@ public interface GithubPackagesRestClient {
   Call<List<JsonNode>> listPackages(
       @Header("Authorization") String bearerAuthHeader, @Query("package_type") String packageType);
 
-  @GET("/org/{org}/packages")
+  @GET("/orgs/{org}/packages")
   Call<List<JsonNode>> listPackagesForOrg(@Header("Authorization") String bearerAuthHeader,
-      @Query("package_type") String packageType, @Path(value = "org", encoded = true) String org);
+      @Path(value = "org", encoded = true) String org, @Query("package_type") String packageType);
 
   @GET("/user/packages/{packageType}/{packageName}/versions")
   Call<List<JsonNode>> listVersionsForPackages(@Header("Authorization") String bearerAuthHeader,

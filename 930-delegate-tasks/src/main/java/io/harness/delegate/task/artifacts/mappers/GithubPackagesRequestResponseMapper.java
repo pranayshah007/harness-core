@@ -10,15 +10,11 @@ package io.harness.delegate.task.artifacts.mappers;
 import io.harness.artifacts.githubpackages.beans.GithubPackagesInternalConfig;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.connector.scm.GitAuthType;
-import io.harness.delegate.beans.connector.scm.github.GithubHttpAuthenticationType;
-import io.harness.delegate.beans.connector.scm.github.GithubHttpCredentialsDTO;
-import io.harness.delegate.beans.connector.scm.github.GithubOauthDTO;
-import io.harness.delegate.beans.connector.scm.github.GithubSshCredentialsDTO;
-import io.harness.delegate.beans.connector.scm.github.GithubUsernamePasswordDTO;
-import io.harness.delegate.beans.connector.scm.github.GithubUsernameTokenDTO;
+import io.harness.delegate.beans.connector.scm.github.*;
 import io.harness.delegate.task.artifacts.ArtifactSourceType;
 import io.harness.delegate.task.artifacts.githubpackages.GithubPackagesArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.githubpackages.GithubPackagesArtifactDelegateResponse;
+import io.harness.exception.InvalidRequestException;
 import io.harness.utils.FieldWithPlainTextOrSecretValueHelper;
 
 import software.wings.helpers.ext.jenkins.BuildDetails;
@@ -48,42 +44,37 @@ public class GithubPackagesRequestResponseMapper {
           username = FieldWithPlainTextOrSecretValueHelper.getSecretAsStringFromPlainTextOrSecretRef(
               githubUsernamePasswordDTO.getUsername(), githubUsernamePasswordDTO.getUsernameRef());
 
-          if (githubUsernamePasswordDTO.getPasswordRef() != null) {
-            password = EmptyPredicate.isNotEmpty(githubUsernamePasswordDTO.getPasswordRef().getDecryptedValue())
-                ? new String(githubUsernamePasswordDTO.getPasswordRef().getDecryptedValue())
-                : null;
-          }
         } else if (httpDTO.getType() == GithubHttpAuthenticationType.USERNAME_AND_TOKEN) {
           GithubUsernameTokenDTO githubUsernameTokenDTO = (GithubUsernameTokenDTO) httpDTO.getHttpCredentialsSpec();
 
           username = FieldWithPlainTextOrSecretValueHelper.getSecretAsStringFromPlainTextOrSecretRef(
               githubUsernameTokenDTO.getUsername(), githubUsernameTokenDTO.getUsernameRef());
-
-          if (githubUsernameTokenDTO.getTokenRef() != null) {
-            token = EmptyPredicate.isNotEmpty(githubUsernameTokenDTO.getTokenRef().getDecryptedValue())
-                ? new String(githubUsernameTokenDTO.getTokenRef().getDecryptedValue())
-                : null;
-          }
-        } else if (httpDTO.getType() == GithubHttpAuthenticationType.OAUTH) {
-          GithubOauthDTO githubOauthDTO = (GithubOauthDTO) httpDTO.getHttpCredentialsSpec();
-
-          if (githubOauthDTO.getTokenRef() != null) {
-            token = EmptyPredicate.isNotEmpty(githubOauthDTO.getTokenRef().getDecryptedValue())
-                ? new String(githubOauthDTO.getTokenRef().getDecryptedValue())
-                : null;
-          }
-        }
-      } else if (request.getGithubConnectorDTO().getAuthentication().getAuthType() == GitAuthType.SSH) {
-        // Note - We are not going to enable the ssh authentication as of now.
-        GithubSshCredentialsDTO sshDTO =
-            (GithubSshCredentialsDTO) request.getGithubConnectorDTO().getAuthentication().getCredentials();
-
-        if (sshDTO.getSshKeyRef() != null) {
-          token = EmptyPredicate.isNotEmpty(sshDTO.getSshKeyRef().getDecryptedValue())
-              ? new String(sshDTO.getSshKeyRef().getDecryptedValue())
-              : null;
         }
       }
+    }
+
+    GithubApiAccessDTO githubApiAccessDTO = request.getGithubConnectorDTO().getApiAccess();
+
+    if (githubApiAccessDTO == null) {
+      throw new InvalidRequestException("Please enable the API Access for the Github Connector");
+    }
+
+    GithubApiAccessType githubApiAccessType = githubApiAccessDTO.getType();
+
+    if (githubApiAccessType == GithubApiAccessType.TOKEN) {
+      GithubTokenSpecDTO githubTokenSpecDTO = (GithubTokenSpecDTO) githubApiAccessDTO.getSpec();
+
+      if (githubTokenSpecDTO.getTokenRef() != null) {
+        token = EmptyPredicate.isNotEmpty(githubTokenSpecDTO.getTokenRef().getDecryptedValue())
+            ? new String(githubTokenSpecDTO.getTokenRef().getDecryptedValue())
+            : null;
+
+      } else {
+        throw new InvalidRequestException("The token reference for the Github Connector is null");
+      }
+
+    } else {
+      throw new InvalidRequestException("Please select the API Access auth type to Token");
     }
 
     return GithubPackagesInternalConfig.builder()

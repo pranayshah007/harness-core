@@ -44,8 +44,7 @@ import io.harness.delegate.beans.connector.gcpconnector.GcpConnectorDTO;
 import io.harness.delegate.beans.connector.jenkins.JenkinsConnectorDTO;
 import io.harness.delegate.beans.connector.nexusconnector.NexusConnectorDTO;
 import io.harness.delegate.beans.connector.scm.GitAuthType;
-import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
-import io.harness.delegate.beans.connector.scm.github.GithubHttpCredentialsDTO;
+import io.harness.delegate.beans.connector.scm.github.*;
 import io.harness.delegate.task.artifacts.ArtifactSourceDelegateRequest;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidConnectorTypeException;
@@ -242,9 +241,10 @@ public class ArtifactStepHelper {
       GithubConnectorDTO githubConnectorDTO, NGAccess ngAccess) {
     List<EncryptedDataDetail> encryptedDataDetails = new ArrayList<>();
 
-    if (githubConnectorDTO.getAuthentication() != null
-        && githubConnectorDTO.getAuthentication().getCredentials() != null) {
+    if (githubConnectorDTO.getApiAccess() != null) {
       encryptedDataDetails = getGithubEncryptionDetails(githubConnectorDTO, ngAccess);
+    } else {
+      throw new InvalidRequestException("Please enable API Access for the Github Connector");
     }
 
     return encryptedDataDetails;
@@ -254,24 +254,17 @@ public class ArtifactStepHelper {
       GithubConnectorDTO githubConnectorDTO, NGAccess ngAccess) {
     List<EncryptedDataDetail> encryptedDataDetails = new ArrayList<>();
 
-    if (githubConnectorDTO.getAuthentication().getAuthType() == GitAuthType.HTTP) {
-      GithubHttpCredentialsDTO githubHttpCredentialsDTO =
-          (GithubHttpCredentialsDTO) githubConnectorDTO.getAuthentication().getCredentials();
+    GithubApiAccessDTO githubApiAccessDTO = githubConnectorDTO.getApiAccess();
 
-      encryptedDataDetails =
-          secretManagerClientService.getEncryptionDetails(ngAccess, githubHttpCredentialsDTO.getHttpCredentialsSpec());
+    GithubApiAccessType type = githubApiAccessDTO.getType();
 
-      if (githubConnectorDTO.getApiAccess() != null && githubConnectorDTO.getApiAccess().getSpec() != null) {
-        encryptedDataDetails.addAll(
-            secretManagerClientService.getEncryptionDetails(ngAccess, githubConnectorDTO.getApiAccess().getSpec()));
-      }
-    } else if (githubConnectorDTO.getAuthentication().getAuthType() == GitAuthType.SSH) {
-      if (githubConnectorDTO.getApiAccess() != null && githubConnectorDTO.getApiAccess().getSpec() != null) {
-        encryptedDataDetails =
-            secretManagerClientService.getEncryptionDetails(ngAccess, githubConnectorDTO.getApiAccess().getSpec());
-      }
+    if (type == GithubApiAccessType.TOKEN) {
+      GithubTokenSpecDTO githubTokenSpecDTO = (GithubTokenSpecDTO) githubApiAccessDTO.getSpec();
+
+      encryptedDataDetails = secretManagerClientService.getEncryptionDetails(ngAccess, githubTokenSpecDTO);
+
     } else {
-      throw new InvalidRequestException("Cannot get Encrypted Details for the Github Connector");
+      throw new InvalidRequestException("Please select the authentication type for API Access as Token");
     }
 
     return encryptedDataDetails;

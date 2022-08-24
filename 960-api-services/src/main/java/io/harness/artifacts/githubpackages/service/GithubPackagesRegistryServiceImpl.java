@@ -144,24 +144,14 @@ public class GithubPackagesRegistryServiceImpl implements GithubPackagesRegistry
 
     String authType = githubPackagesInternalConfig.getAuthMechanism();
 
-    String basicAuthHeader = "";
-
-    if (authType == USERNAME_PASSWORD) {
-      basicAuthHeader =
-          Credentials.basic(githubPackagesInternalConfig.getUsername(), githubPackagesInternalConfig.getPassword());
-    } else if (authType == USERNAME_TOKEN) {
-      basicAuthHeader = "token " + githubPackagesInternalConfig.getToken();
-    } else if (authType == OAUTH) {
-      basicAuthHeader =
-          Credentials.basic(githubPackagesInternalConfig.getUsername(), githubPackagesInternalConfig.getToken());
-    }
+    String basicAuthHeader = "token " + githubPackagesInternalConfig.getToken();
 
     Response<List<JsonNode>> response;
 
     if (EmptyPredicate.isEmpty(org)) {
       response = githubPackagesRestClient.listPackages(basicAuthHeader, packageType).execute();
     } else {
-      response = githubPackagesRestClient.listPackagesForOrg(basicAuthHeader, packageType, org).execute();
+      response = githubPackagesRestClient.listPackagesForOrg(basicAuthHeader, org, packageType).execute();
     }
 
     return processPackagesResponse(response.body());
@@ -243,17 +233,7 @@ public class GithubPackagesRegistryServiceImpl implements GithubPackagesRegistry
 
     String authType = githubPackagesInternalConfig.getAuthMechanism();
 
-    String basicAuthHeader = "";
-
-    if (authType == USERNAME_PASSWORD) {
-      basicAuthHeader =
-          Credentials.basic(githubPackagesInternalConfig.getUsername(), githubPackagesInternalConfig.getPassword());
-    } else if (authType == USERNAME_TOKEN) {
-      basicAuthHeader = "token " + githubPackagesInternalConfig.getToken();
-    } else if (authType == OAUTH) {
-      basicAuthHeader =
-          Credentials.basic(githubPackagesInternalConfig.getUsername(), githubPackagesInternalConfig.getToken());
-    }
+    String basicAuthHeader = "token " + githubPackagesInternalConfig.getToken();
 
     Integer versionId = Integer.parseInt(version);
 
@@ -274,17 +254,7 @@ public class GithubPackagesRegistryServiceImpl implements GithubPackagesRegistry
 
     String authType = githubPackagesInternalConfig.getAuthMechanism();
 
-    String basicAuthHeader = "";
-
-    if (authType == USERNAME_PASSWORD) {
-      basicAuthHeader =
-          Credentials.basic(githubPackagesInternalConfig.getUsername(), githubPackagesInternalConfig.getPassword());
-    } else if (authType == USERNAME_TOKEN) {
-      basicAuthHeader = "token " + githubPackagesInternalConfig.getToken();
-    } else if (authType == OAUTH) {
-      basicAuthHeader =
-          Credentials.basic(githubPackagesInternalConfig.getUsername(), githubPackagesInternalConfig.getToken());
-    }
+    String basicAuthHeader = "token " + githubPackagesInternalConfig.getToken();
 
     GithubPackagesVersionsResponse githubPackagesVersionsResponse = GithubPackagesVersionsResponse.builder().build();
 

@@ -62,13 +62,7 @@ import io.harness.delegate.beans.connector.nexusconnector.NexusAuthType;
 import io.harness.delegate.beans.connector.nexusconnector.NexusConnectorDTO;
 import io.harness.delegate.beans.connector.nexusconnector.NexusUsernamePasswordAuthDTO;
 import io.harness.delegate.beans.connector.scm.GitAuthType;
-import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
-import io.harness.delegate.beans.connector.scm.github.GithubHttpAuthenticationType;
-import io.harness.delegate.beans.connector.scm.github.GithubHttpCredentialsDTO;
-import io.harness.delegate.beans.connector.scm.github.GithubOauthDTO;
-import io.harness.delegate.beans.connector.scm.github.GithubSshCredentialsDTO;
-import io.harness.delegate.beans.connector.scm.github.GithubUsernamePasswordDTO;
-import io.harness.delegate.beans.connector.scm.github.GithubUsernameTokenDTO;
+import io.harness.delegate.beans.connector.scm.github.*;
 import io.harness.delegate.task.artifacts.ArtifactDelegateRequestUtils;
 import io.harness.delegate.task.artifacts.ArtifactSourceConstants;
 import io.harness.delegate.task.artifacts.ArtifactSourceType;
@@ -184,16 +178,16 @@ public class ImagePullSecretUtils {
 
     ConnectorInfoDTO connectorDTO = getConnector(connectorRef, ambiance);
 
-    GithubConnectorDTO connectorConfig = (GithubConnectorDTO) connectorDTO.getConnectorConfig();
+    GithubConnectorDTO githubConnectorDTO = (GithubConnectorDTO) connectorDTO.getConnectorConfig();
 
     String username = "";
     String password = "";
-    String token = "";
 
-    if (connectorConfig.getAuthentication() != null && connectorConfig.getAuthentication().getCredentials() != null) {
-      if (connectorConfig.getAuthentication().getAuthType() == GitAuthType.HTTP) {
+    if (githubConnectorDTO.getAuthentication() != null
+        && githubConnectorDTO.getAuthentication().getCredentials() != null) {
+      if (githubConnectorDTO.getAuthentication().getAuthType() == GitAuthType.HTTP) {
         GithubHttpCredentialsDTO httpDTO =
-            (GithubHttpCredentialsDTO) connectorConfig.getAuthentication().getCredentials();
+            (GithubHttpCredentialsDTO) githubConnectorDTO.getAuthentication().getCredentials();
 
         if (httpDTO.getType() == GithubHttpAuthenticationType.USERNAME_AND_PASSWORD) {
           GithubUsernamePasswordDTO githubUsernamePasswordDTO =
@@ -202,40 +196,37 @@ public class ImagePullSecretUtils {
           username = FieldWithPlainTextOrSecretValueHelper.getSecretAsStringFromPlainTextOrSecretRef(
               githubUsernamePasswordDTO.getUsername(), githubUsernamePasswordDTO.getUsernameRef());
 
-          if (githubUsernamePasswordDTO.getPasswordRef() != null) {
-            password = EmptyPredicate.isNotEmpty(githubUsernamePasswordDTO.getPasswordRef().getDecryptedValue())
-                ? new String(githubUsernamePasswordDTO.getPasswordRef().getDecryptedValue())
-                : getPasswordExpression(githubUsernamePasswordDTO.getPasswordRef().getIdentifier(), ambiance);
-          }
         } else if (httpDTO.getType() == GithubHttpAuthenticationType.USERNAME_AND_TOKEN) {
           GithubUsernameTokenDTO githubUsernameTokenDTO = (GithubUsernameTokenDTO) httpDTO.getHttpCredentialsSpec();
 
           username = FieldWithPlainTextOrSecretValueHelper.getSecretAsStringFromPlainTextOrSecretRef(
               githubUsernameTokenDTO.getUsername(), githubUsernameTokenDTO.getUsernameRef());
-
-          if (githubUsernameTokenDTO.getTokenRef() != null) {
-            password = EmptyPredicate.isNotEmpty(githubUsernameTokenDTO.getTokenRef().getDecryptedValue())
-                ? new String(githubUsernameTokenDTO.getTokenRef().getDecryptedValue())
-                : getPasswordExpression(githubUsernameTokenDTO.getTokenRef().getIdentifier(), ambiance);
-          }
-        } else if (httpDTO.getType() == GithubHttpAuthenticationType.OAUTH) {
-          GithubOauthDTO githubOauthDTO = (GithubOauthDTO) httpDTO.getHttpCredentialsSpec();
-
-          if (githubOauthDTO.getTokenRef() != null) {
-            password = EmptyPredicate.isNotEmpty(githubOauthDTO.getTokenRef().getDecryptedValue())
-                ? new String(githubOauthDTO.getTokenRef().getDecryptedValue())
-                : getPasswordExpression(githubOauthDTO.getTokenRef().getIdentifier(), ambiance);
-          }
-        }
-      } else if (connectorConfig.getAuthentication().getAuthType() == GitAuthType.SSH) {
-        GithubSshCredentialsDTO sshDTO = (GithubSshCredentialsDTO) connectorConfig.getAuthentication().getCredentials();
-
-        if (sshDTO.getSshKeyRef() != null) {
-          password = EmptyPredicate.isNotEmpty(sshDTO.getSshKeyRef().getDecryptedValue())
-              ? new String(sshDTO.getSshKeyRef().getDecryptedValue())
-              : getPasswordExpression(sshDTO.getSshKeyRef().getIdentifier(), ambiance);
         }
       }
+    }
+
+    GithubApiAccessDTO githubApiAccessDTO = githubConnectorDTO.getApiAccess();
+
+    if (githubApiAccessDTO == null) {
+      throw new InvalidRequestException("Please enable the API Access for the Github Connector");
+    }
+
+    GithubApiAccessType githubApiAccessType = githubApiAccessDTO.getType();
+
+    if (githubApiAccessType == GithubApiAccessType.TOKEN) {
+      GithubTokenSpecDTO githubTokenSpecDTO = (GithubTokenSpecDTO) githubApiAccessDTO.getSpec();
+
+      if (githubTokenSpecDTO.getTokenRef() != null) {
+        password = EmptyPredicate.isNotEmpty(githubTokenSpecDTO.getTokenRef().getDecryptedValue())
+            ? new String(githubTokenSpecDTO.getTokenRef().getDecryptedValue())
+            : getPasswordExpression(githubTokenSpecDTO.getTokenRef().getIdentifier(), ambiance);
+
+      } else {
+        throw new InvalidRequestException("The token reference for the Github Connector is null");
+      }
+
+    } else {
+      throw new InvalidRequestException("Please select the API Access auth type to Token");
     }
 
     imageDetailsBuilder.username(username);

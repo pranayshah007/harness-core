@@ -10,12 +10,7 @@ package io.harness.delegate.task.artifacts.githubpackages;
 import io.harness.artifacts.comparator.BuildDetailsComparatorDescending;
 import io.harness.artifacts.githubpackages.service.GithubPackagesRegistryService;
 import io.harness.data.structure.EmptyPredicate;
-import io.harness.delegate.beans.connector.scm.GitAuthType;
-import io.harness.delegate.beans.connector.scm.github.GithubHttpAuthenticationType;
-import io.harness.delegate.beans.connector.scm.github.GithubHttpCredentialsDTO;
-import io.harness.delegate.beans.connector.scm.github.GithubOauthDTO;
-import io.harness.delegate.beans.connector.scm.github.GithubUsernamePasswordDTO;
-import io.harness.delegate.beans.connector.scm.github.GithubUsernameTokenDTO;
+import io.harness.delegate.beans.connector.scm.github.*;
 import io.harness.delegate.task.artifacts.DelegateArtifactTaskHandler;
 import io.harness.delegate.task.artifacts.mappers.GithubPackagesRequestResponseMapper;
 import io.harness.delegate.task.artifacts.response.ArtifactTaskExecutionResponse;
@@ -89,30 +84,14 @@ public class GithubPackagesArtifactTaskHandler
   }
 
   public void decryptRequestDTOs(GithubPackagesArtifactDelegateRequest attributes) {
-    if (attributes.getGithubConnectorDTO().getAuthentication() != null) {
-      GitAuthType authType = attributes.getGithubConnectorDTO().getAuthentication().getAuthType();
+    GithubConnectorDTO githubConnectorDTO = attributes.getGithubConnectorDTO();
 
-      if (authType == GitAuthType.HTTP) {
-        GithubHttpCredentialsDTO httpDTO =
-            (GithubHttpCredentialsDTO) attributes.getGithubConnectorDTO().getAuthentication().getCredentials();
+    GithubApiAccessDTO githubApiAccessDTO = githubConnectorDTO.getApiAccess();
 
-        if (httpDTO.getType() == GithubHttpAuthenticationType.USERNAME_AND_PASSWORD) {
-          GithubUsernamePasswordDTO githubUsernamePasswordDTO =
-              (GithubUsernamePasswordDTO) httpDTO.getHttpCredentialsSpec();
+    if (githubApiAccessDTO != null) {
+      GithubTokenSpecDTO githubTokenSpecDTO = (GithubTokenSpecDTO) githubApiAccessDTO.getSpec();
 
-          secretDecryptionService.decrypt(githubUsernamePasswordDTO, attributes.getEncryptedDataDetails());
-
-        } else if (httpDTO.getType() == GithubHttpAuthenticationType.USERNAME_AND_TOKEN) {
-          GithubUsernameTokenDTO githubUsernameTokenDTO = (GithubUsernameTokenDTO) httpDTO.getHttpCredentialsSpec();
-
-          secretDecryptionService.decrypt(githubUsernameTokenDTO, attributes.getEncryptedDataDetails());
-
-        } else if (httpDTO.getType() == GithubHttpAuthenticationType.OAUTH) {
-          GithubOauthDTO githubOauthDTO = (GithubOauthDTO) httpDTO.getHttpCredentialsSpec();
-
-          secretDecryptionService.decrypt(githubOauthDTO, attributes.getEncryptedDataDetails());
-        }
-      }
+      secretDecryptionService.decrypt(githubTokenSpecDTO, attributes.getEncryptedDataDetails());
     }
   }
 
