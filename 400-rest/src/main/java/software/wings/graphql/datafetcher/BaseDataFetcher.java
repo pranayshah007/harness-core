@@ -12,6 +12,7 @@ import io.harness.annotations.dev.TargetModule;
 
 import software.wings.dl.WingsPersistence;
 import software.wings.graphql.directive.DataFetcherDirective.DataFetcherDirectiveAttributes;
+import software.wings.service.intfc.AuthService;
 
 import com.google.inject.Inject;
 import graphql.schema.DataFetcher;
@@ -33,6 +34,7 @@ public abstract class BaseDataFetcher implements DataFetcher {
   @Inject protected AuthRuleGraphQL authRuleInstrumentation;
   @Inject protected DataFetcherUtils utils;
   @Inject protected WingsPersistence wingsPersistence;
+  @Inject protected AuthService authService;
   protected final Map<String, DataFetcherDirectiveAttributes> parentToContextFieldArgsMap;
 
   public BaseDataFetcher() {

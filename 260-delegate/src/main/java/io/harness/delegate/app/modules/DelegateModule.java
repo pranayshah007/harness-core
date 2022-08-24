@@ -66,6 +66,7 @@ import io.harness.connector.service.git.NGGitService;
 import io.harness.connector.service.git.NGGitServiceImpl;
 import io.harness.connector.service.scm.ScmDelegateClient;
 import io.harness.connector.task.ConnectorValidationHandler;
+import io.harness.connector.task.NotSupportedValidationHandler;
 import io.harness.connector.task.artifactory.ArtifactoryValidationHandler;
 import io.harness.connector.task.aws.AwsValidationHandler;
 import io.harness.connector.task.azure.AzureValidationHandler;
@@ -291,13 +292,16 @@ import io.harness.delegate.utils.DecryptionHelperDelegate;
 import io.harness.delegatetasks.DeleteSecretTask;
 import io.harness.delegatetasks.EncryptSecretTask;
 import io.harness.delegatetasks.EncryptSecretTaskValidationHandler;
+import io.harness.delegatetasks.FetchCustomSecretTask;
 import io.harness.delegatetasks.FetchSecretTask;
 import io.harness.delegatetasks.NGAzureKeyVaultFetchEngineTask;
 import io.harness.delegatetasks.NGVaultFetchEngineTask;
 import io.harness.delegatetasks.NGVaultRenewalAppRoleTask;
 import io.harness.delegatetasks.NGVaultRenewalTask;
+import io.harness.delegatetasks.ResolveCustomSecretManagerConfigTask;
 import io.harness.delegatetasks.UpsertSecretTask;
 import io.harness.delegatetasks.UpsertSecretTaskValidationHandler;
+import io.harness.delegatetasks.ValidateCustomSecretManagerSecretReferenceTask;
 import io.harness.delegatetasks.ValidateSecretManagerConfigurationTask;
 import io.harness.delegatetasks.ValidateSecretReferenceTask;
 import io.harness.encryptors.CustomEncryptor;
@@ -313,6 +317,7 @@ import io.harness.encryptors.clients.GcpKmsEncryptor;
 import io.harness.encryptors.clients.GcpSecretsManagerEncryptor;
 import io.harness.encryptors.clients.HashicorpVaultEncryptor;
 import io.harness.encryptors.clients.LocalEncryptor;
+import io.harness.encryptors.clients.NGCustomSecretManagerEncryptor;
 import io.harness.exception.DelegateServiceDriverExceptionHandler;
 import io.harness.exception.ExplanationException;
 import io.harness.exception.KeyManagerBuilderException;
@@ -1599,6 +1604,10 @@ public class DelegateModule extends AbstractModule {
     mapBinder.addBinding(TaskType.NG_AZURE_VAULT_FETCH_ENGINES).toInstance(NGAzureKeyVaultFetchEngineTask.class);
     mapBinder.addBinding(TaskType.VALIDATE_SECRET_MANAGER_CONFIGURATION)
         .toInstance(ValidateSecretManagerConfigurationTask.class);
+    mapBinder.addBinding(TaskType.VALIDATE_CUSTOM_SECRET_MANAGER_SECRET_REFERENCE)
+        .toInstance(ValidateCustomSecretManagerSecretReferenceTask.class);
+    mapBinder.addBinding(TaskType.FETCH_CUSTOM_SECRET).toInstance(FetchCustomSecretTask.class);
+    mapBinder.addBinding(TaskType.RESOLVE_CUSTOM_SM_CONFIG).toInstance(ResolveCustomSecretManagerConfigTask.class);
 
     mapBinder.addBinding(TaskType.HOST_VALIDATION).toInstance(HostValidationTask.class);
     mapBinder.addBinding(TaskType.CONTAINER_ACTIVE_SERVICE_COUNTS).toInstance(ServiceImplDelegateTask.class);
@@ -1815,6 +1824,12 @@ public class DelegateModule extends AbstractModule {
         .bind(CustomEncryptor.class)
         .annotatedWith(Names.named(Encryptors.CUSTOM_ENCRYPTOR.getName()))
         .to(CustomSecretsManagerEncryptor.class);
+
+    binder()
+        .bind(CustomEncryptor.class)
+        .annotatedWith(Names.named(Encryptors.CUSTOM_ENCRYPTOR_NG.getName()))
+        // Use ng encryptor
+        .to(NGCustomSecretManagerEncryptor.class);
   }
 
   private void registerConnectorValidatorsBindings() {
@@ -1884,6 +1899,8 @@ public class DelegateModule extends AbstractModule {
         .to(AzureValidationHandler.class);
     connectorTypeToConnectorValidationHandlerMap.addBinding(ConnectorType.AZURE_REPO.getDisplayName())
         .to(GitValidationHandler.class);
+    connectorTypeToConnectorValidationHandlerMap.addBinding(ConnectorType.CUSTOM_SECRET_MANAGER.getDisplayName())
+        .to(NotSupportedValidationHandler.class);
   }
 
   private void bindExceptionHandlers() {

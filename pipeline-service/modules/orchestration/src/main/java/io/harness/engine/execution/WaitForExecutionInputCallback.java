@@ -8,12 +8,20 @@
 package io.harness.engine.execution;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.eraro.ErrorCode.TIMEOUT_ENGINE_EXCEPTION;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.engine.OrchestrationEngine;
 import io.harness.engine.executions.node.NodeExecutionService;
+import io.harness.engine.pms.advise.NodeAdviseHelper;
+import io.harness.eraro.Level;
+import io.harness.execution.NodeExecution;
+import io.harness.plan.PlanNode;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
+import io.harness.pms.contracts.execution.failure.FailureData;
+import io.harness.pms.contracts.execution.failure.FailureInfo;
+import io.harness.pms.contracts.execution.failure.FailureType;
 import io.harness.tasks.ResponseData;
 import io.harness.waiter.OldNotifyCallback;
 import io.harness.waiter.WaitNotifyEngine;
@@ -34,7 +42,10 @@ public class WaitForExecutionInputCallback implements OldNotifyCallback {
   @Inject private NodeExecutionService nodeExecutionService;
   @Inject private WaitNotifyEngine waitNotifyEngine;
   @Inject private OrchestrationEngine engine;
+  @Inject private NodeAdviseHelper nodeAdviseHelper;
+
   @Inject @Named("EngineExecutorService") private ExecutorService executorService;
+  @Inject NodeAdviseHelper adviseHelper;
   private Ambiance ambiance;
 
   String nodeExecutionId;
@@ -49,8 +60,20 @@ public class WaitForExecutionInputCallback implements OldNotifyCallback {
 
   @Override
   public void notifyTimeout(Map<String, ResponseData> responseMap) {
-    // TODO(BRIJESH): Update the pipeline status to Failed.
-    log.error("Execution input timed out for nodeExecutionId {}", nodeExecutionId);
+    NodeExecution nodeExecution = nodeExecutionService.get(nodeExecutionId);
+    PlanNode node = nodeExecution.getNode();
+    FailureInfo failureInfo = FailureInfo.newBuilder()
+                                  .setErrorMessage("ExecutionInputExpired")
+                                  .addFailureTypes(FailureType.EXECUTION_INPUT_TIMEOUT_FAILURE)
+                                  .addFailureData(FailureData.newBuilder()
+                                                      .addFailureTypes(FailureType.EXECUTION_INPUT_TIMEOUT_FAILURE)
+                                                      .setLevel(Level.ERROR.name())
+                                                      .setCode(TIMEOUT_ENGINE_EXCEPTION.name())
+                                                      .setMessage("ExecutionInputExpired")
+                                                      .build())
+                                  .build();
+    adviseHelper.queueAdvisingEvent(nodeExecution, failureInfo, node, Status.INPUT_WAITING);
+    log.warn("Execution input timed out for nodeExecutionId {}", nodeExecutionId);
   }
 
   @Override

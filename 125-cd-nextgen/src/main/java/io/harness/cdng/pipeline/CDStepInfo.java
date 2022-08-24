@@ -30,6 +30,7 @@ import io.harness.cdng.k8s.K8sRollingStepInfo;
 import io.harness.cdng.k8s.K8sScaleStepInfo;
 import io.harness.cdng.pipeline.steps.CdStepParametersUtils;
 import io.harness.cdng.provision.azure.AzureCreateARMResourceStepInfo;
+import io.harness.cdng.provision.azure.AzureCreateBPStepInfo;
 import io.harness.cdng.provision.cloudformation.CloudformationCreateStackStepInfo;
 import io.harness.cdng.provision.cloudformation.CloudformationDeleteStackStepInfo;
 import io.harness.cdng.provision.cloudformation.CloudformationRollbackStepInfo;
@@ -50,16 +51,17 @@ import io.harness.yaml.core.StepSpecType;
 
 import io.swagger.annotations.ApiModel;
 
-@ApiModel(subTypes = {CreatePRStepInfo.class, MergePRStepInfo.class, K8sApplyStepInfo.class, K8sBlueGreenStepInfo.class,
-              K8sCanaryStepInfo.class, K8sRollingStepInfo.class, K8sRollingRollbackStepInfo.class,
-              K8sScaleStepInfo.class, K8sDeleteStepInfo.class, K8sBGSwapServicesStepInfo.class,
-              K8sCanaryDeleteStepInfo.class, TerraformApplyStepInfo.class, TerraformPlanStepInfo.class,
-              TerraformDestroyStepInfo.class, TerraformRollbackStepInfo.class, HelmDeployStepInfo.class,
-              HelmRollbackStepInfo.class, CloudformationCreateStackStepInfo.class,
-              CloudformationDeleteStackStepInfo.class, ServerlessAwsLambdaDeployStepInfo.class,
-              ServerlessAwsLambdaRollbackStepInfo.class, CloudformationRollbackStepInfo.class, CommandStepInfo.class,
-              AzureWebAppSlotDeploymentStep.class, AzureWebAppTrafficShiftStep.class, AzureWebAppSwapSlotStep.class,
-              AzureWebAppRollbackStep.class, JenkinsBuildStepInfo.class, AzureCreateARMResourceStepInfo.class})
+@ApiModel(
+    subTypes = {CreatePRStepInfo.class, MergePRStepInfo.class, K8sApplyStepInfo.class, K8sBlueGreenStepInfo.class,
+        K8sCanaryStepInfo.class, K8sRollingStepInfo.class, K8sRollingRollbackStepInfo.class, K8sScaleStepInfo.class,
+        K8sDeleteStepInfo.class, K8sBGSwapServicesStepInfo.class, K8sCanaryDeleteStepInfo.class,
+        TerraformApplyStepInfo.class, TerraformPlanStepInfo.class, TerraformDestroyStepInfo.class,
+        TerraformRollbackStepInfo.class, HelmDeployStepInfo.class, HelmRollbackStepInfo.class,
+        CloudformationCreateStackStepInfo.class, CloudformationDeleteStackStepInfo.class,
+        ServerlessAwsLambdaDeployStepInfo.class, ServerlessAwsLambdaRollbackStepInfo.class,
+        CloudformationRollbackStepInfo.class, CommandStepInfo.class, AzureWebAppSlotDeploymentStep.class,
+        AzureWebAppTrafficShiftStep.class, AzureWebAppSwapSlotStep.class, AzureWebAppRollbackStep.class,
+        JenkinsBuildStepInfo.class, AzureCreateARMResourceStepInfo.class, AzureCreateBPStepInfo.class})
 
 @OwnedBy(HarnessTeam.CDC)
 public interface CDStepInfo extends StepSpecType, WithStepElementParameters, WithDelegateSelector {

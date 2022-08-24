@@ -19,6 +19,7 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.Setter;
 import lombok.ToString;
 import lombok.experimental.FieldDefaults;
 import org.hibernate.validator.constraints.NotEmpty;
@@ -42,10 +43,11 @@ public class GitApiTaskParams implements TaskParameters, ExecutionCapabilityDema
   GitRepoType gitRepoType;
   @NotEmpty GitApiRequestType requestType;
   String sha;
+  @Setter boolean deleteSourceBranch;
 
   public GitApiTaskParams(String prNumber, String repo, String owner, String slug, String key, String installId,
       String appId, String userName, ConnectorDetails connectorDetails, GitRepoType gitRepoType,
-      GitApiRequestType requestType, String sha) {
+      GitApiRequestType requestType, String sha, boolean deleteSourceBranch) {
     this.prNumber = prNumber;
     this.repo = repo;
     this.owner = owner;
@@ -58,6 +60,7 @@ public class GitApiTaskParams implements TaskParameters, ExecutionCapabilityDema
     this.gitRepoType = gitRepoType;
     this.requestType = requestType;
     this.sha = sha;
+    this.deleteSourceBranch = deleteSourceBranch;
   }
 
   @Override

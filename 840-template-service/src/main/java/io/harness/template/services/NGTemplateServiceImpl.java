@@ -349,9 +349,9 @@ public class NGTemplateServiceImpl implements NGTemplateService {
   }
 
   @Override
-  public Optional<TemplateEntity> getOrThrowExceptionIfInvalid(String accountId, String orgIdentifier,
+  public Optional<TemplateEntity> getMetadataOrThrowExceptionIfInvalid(String accountId, String orgIdentifier,
       String projectIdentifier, String templateIdentifier, String versionLabel, boolean deleted) {
-    return templateServiceHelper.getOrThrowExceptionIfInvalid(
+    return templateServiceHelper.getMetadataOrThrowExceptionIfInvalid(
         accountId, orgIdentifier, projectIdentifier, templateIdentifier, versionLabel, deleted);
   }
 
@@ -732,7 +732,7 @@ public class NGTemplateServiceImpl implements NGTemplateService {
           accountIdentifier, orgIdentifier, projectIdentifier, templateIdentifier, newStableTemplateVersion);
       makePreviousLastUpdatedTemplateFalse(
           accountIdentifier, orgIdentifier, projectIdentifier, templateIdentifier, newStableTemplateVersion);
-      Optional<TemplateEntity> optionalTemplateEntity = getOrThrowExceptionIfInvalid(
+      Optional<TemplateEntity> optionalTemplateEntity = getMetadataOrThrowExceptionIfInvalid(
           accountIdentifier, orgIdentifier, projectIdentifier, templateIdentifier, newStableTemplateVersion, false);
       if (!optionalTemplateEntity.isPresent()) {
         throw new InvalidRequestException(format(

@@ -9,6 +9,7 @@ package io.harness.cdng.infra.beans;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.cdng.pipeline.NGStepType.AZURE_CREATE_ARM_RESOURCE;
+import static io.harness.cdng.pipeline.NGStepType.AZURE_CREATE_BP_RESOURCE;
 import static io.harness.cdng.pipeline.NGStepType.CF_CREATE_STACK;
 import static io.harness.cdng.pipeline.NGStepType.CF_DELETE_STACK;
 import static io.harness.cdng.pipeline.NGStepType.CF_ROLLBACK_STACK;
@@ -36,7 +37,7 @@ public enum ProvisionerType {
   private static final Set<ProvisionerType> supportedTypes = ImmutableSet.of(TERRAFORM, CLOUD_FORMATION, AZURE_ARM);
   private static final List<NGStepType> supportedSteps =
       Arrays.asList(TERRAFORM_APPLY, TERRAFORM_PLAN, TERRAFORM_DESTROY, TERRAFORM_ROLLBACK, CF_CREATE_STACK,
-          CF_DELETE_STACK, CF_ROLLBACK_STACK, AZURE_CREATE_ARM_RESOURCE);
+          CF_DELETE_STACK, CF_ROLLBACK_STACK, AZURE_CREATE_ARM_RESOURCE, AZURE_CREATE_BP_RESOURCE);
 
   @Getter private final String displayName;
   ProvisionerType(String displayName) {

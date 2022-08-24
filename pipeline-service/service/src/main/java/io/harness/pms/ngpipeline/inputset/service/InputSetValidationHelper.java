@@ -18,6 +18,7 @@ import io.harness.gitsync.helpers.GitContextHelper;
 import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.interceptor.GitSyncBranchContext;
 import io.harness.gitsync.persistance.GitSyncSdkService;
+import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.pms.gitsync.PmsGitSyncBranchContextGuard;
 import io.harness.pms.inputset.InputSetErrorWrapperDTOPMS;
 import io.harness.pms.merger.helpers.InputSetYamlHelper;
@@ -28,6 +29,7 @@ import io.harness.pms.ngpipeline.inputset.exceptions.InvalidInputSetException;
 import io.harness.pms.ngpipeline.inputset.helpers.InputSetErrorsHelper;
 import io.harness.pms.ngpipeline.inputset.helpers.InputSetSanitizer;
 import io.harness.pms.ngpipeline.inputset.helpers.ValidateAndMergeHelper;
+import io.harness.pms.ngpipeline.inputset.mappers.PMSInputSetElementMapper;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.service.PMSPipelineService;
 import io.harness.pms.pipeline.service.PipelineCRUDErrorResponse;
@@ -200,6 +202,8 @@ public class InputSetValidationHelper {
           String.format("InputSet with the given ID: %s does not exist or has been deleted", inputSetIdentifier));
     }
     InputSetEntity inputSetEntity = optionalInputSetEntity.get();
+    EntityGitDetails entityGitDetails = PMSInputSetElementMapper.getEntityGitDetails(inputSetEntity);
+
     boolean isOldGitSyncFlow = gitSyncSdkService.isGitSyncEnabled(accountId, orgIdentifier, projectIdentifier);
     String pipelineYaml;
     if (isOldGitSyncFlow) {
@@ -210,13 +214,18 @@ public class InputSetValidationHelper {
           getPipelineEntity(pipelineService, accountId, orgIdentifier, projectIdentifier, pipelineIdentifier);
       pipelineYaml = pipelineEntity.getYaml();
     }
+
+    InputSetYamlDiffDTO yamlDiffDTO;
     if (inputSetEntity.getInputSetEntityType() == InputSetEntityType.INPUT_SET) {
-      return getYAMLDiffForInputSet(
-          validateAndMergeHelper, inputSetEntity, pipelineBranch, pipelineRepoID, pipelineYaml);
+      yamlDiffDTO =
+          getYAMLDiffForInputSet(validateAndMergeHelper, inputSetEntity, pipelineBranch, pipelineRepoID, pipelineYaml);
     } else {
-      return OverlayInputSetValidationHelper.getYAMLDiffForOverlayInputSet(
+      yamlDiffDTO = OverlayInputSetValidationHelper.getYAMLDiffForOverlayInputSet(
           gitSyncSdkService, inputSetService, inputSetEntity, pipelineYaml);
     }
+
+    yamlDiffDTO.setGitDetails(entityGitDetails);
+    return yamlDiffDTO;
   }
 
   InputSetYamlDiffDTO getYAMLDiffForInputSet(ValidateAndMergeHelper validateAndMergeHelper,

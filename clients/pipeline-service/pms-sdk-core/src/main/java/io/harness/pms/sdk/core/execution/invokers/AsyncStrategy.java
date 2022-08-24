@@ -11,7 +11,6 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.exception.InvalidRequestException;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.AsyncExecutableResponse;
 import io.harness.pms.contracts.execution.ExecutableResponse;
@@ -35,6 +34,7 @@ import io.harness.tasks.ResponseData;
 import com.google.inject.Inject;
 import com.google.protobuf.ByteString;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 
@@ -75,10 +75,10 @@ public class AsyncStrategy extends ProgressableStrategy {
     String nodeExecutionId = AmbianceUtils.obtainCurrentRuntimeId(ambiance);
     String stepParamString = RecastOrchestrationUtils.toJson(stepParameters);
     if (isEmpty(response.getCallbackIdsList())) {
-      log.error("StepResponse has no callbackIds - currentState : " + AmbianceUtils.obtainStepIdentifier(ambiance)
+      log.warn("StepResponse has no callbackIds - currentState : " + AmbianceUtils.obtainStepIdentifier(ambiance)
           + ", nodeExecutionId: " + nodeExecutionId);
-      // Todo: Create new ExecutionException and throw that over here.
-      throw new InvalidRequestException("Callback Ids cannot be empty for Async Executable Response");
+      sdkNodeExecutionService.resumeNodeExecution(ambiance, Collections.emptyMap(), false);
+      return;
     }
     // TODO : This is the last use of add executable response need to remove it as causing issues. Find a way to remove
     // this

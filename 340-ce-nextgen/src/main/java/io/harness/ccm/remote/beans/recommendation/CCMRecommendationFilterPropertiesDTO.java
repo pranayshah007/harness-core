@@ -27,7 +27,6 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
-import org.hibernate.validator.constraints.NotBlank;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonTypeName(CCM_RECOMMENDATION_FILTER)
@@ -56,7 +55,6 @@ public class CCMRecommendationFilterPropertiesDTO extends FilterPropertiesDTO {
 
   @Override
   @Schema(type = "string", allowableValues = {"CCMRecommendation"})
-  @NotBlank
   public FilterType getFilterType() {
     return FilterType.CCMRECOMMENDATION;
   }

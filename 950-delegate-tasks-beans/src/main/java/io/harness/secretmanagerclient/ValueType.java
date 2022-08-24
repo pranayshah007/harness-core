@@ -7,4 +7,4 @@
 
 package io.harness.secretmanagerclient;
 
-public enum ValueType { Inline, Reference }
+public enum ValueType { Inline, Reference, CustomSecretManagerValues }

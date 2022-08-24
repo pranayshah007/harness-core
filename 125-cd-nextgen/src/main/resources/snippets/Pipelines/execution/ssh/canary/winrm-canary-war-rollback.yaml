@@ -18,36 +18,34 @@ spec:
                 type: Command
                 timeout: 10m
                 spec:
-                  host: <+repeat.item>
                   onDelegate: false
                   environmentVariables: [ ]
                   outputVariables: [ ]
                   commandUnits:
                     - identifier: Setup_Runtime_Paths_Rollback_<+phase>
-                      name: Setup Runtime Paths Rollback
+                      name: "Setup Runtime Paths Rollback"
                       type: Script
                       spec:
+                        workingDirectory: $HOME\<+service.name>\<+env.name>
                         shell: PowerShell
                         source:
                           type: Inline
                           spec:
                             script: |-
-                              # Env variables are defined with the following values: 
-                              # HARNESS_RUNTIME_PATH: deployment_type/service_name/env_name/runtime
-                              # HARNESS_BACKUP_PATH: deployment_type/service_name/env_name/backup
-                              # HARNESS_STAGING_PATH: deployment_type/service_name/env_name/staging
-                              New-Item -Path "$HARNESS_RUNTIME_PATH" -ItemType Directory
-                              New-Item -Path "$HARNESS_RUNTIME_PATH" -ItemType Directory
-                              New-Item -Path "$HARNESS_RUNTIME_PATH" -ItemType Directory
+                              # Creating runtime, backup and staging directories:
+
+                              New-Item -Path "$HOME\<+service.name>\<+env.name>\runtime" -ItemType Directory
+                              New-Item -Path "$HOME\<+service.name>\<+env.name>\backup" -ItemType Directory
+                              New-Item -Path "$HOME\<+service.name>\<+env.name>\staging" -ItemType Directory
                     - identifier: Copy_Artifact_Rollback_<+phase>
-                      name: Copy Artifact Rollback
+                      name: "Copy Artifact Rollback"
                       type: Copy
                       spec:
                         sourceType: Artifact
-                        destinationPath: $HARNESS_RUNTIME_PATH
+                        destinationPath: $HOME\<+service.name>\<+env.name>
                     - identifier: Copy_Config_Rollback_<+phase>
-                      name: Copy Config Rollback
+                      name: "Copy Config Rollback"
                       type: Copy
                       spec:
                         sourceType: Config
-                        destinationPath: $HARNESS_RUNTIME_PATH
+                        destinationPath: $HOME\<+service.name>\<+env.name>
