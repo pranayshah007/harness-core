@@ -2741,17 +2741,32 @@ public class DelegateServiceImpl implements DelegateService {
 
   private Delegate getExistingDelegate(final String accountId, final String hostName, final boolean ng,
       final String delegateType, final String ip, final String k8PodId) {
+    if (KUBERNETES.equals(delegateType)) {
+      return getExistingK8Delegate(accountId, hostName, ng, ip, k8PodId);
+    }
     final Query<Delegate> delegateQuery = persistence.createQuery(Delegate.class)
                                               .filter(DelegateKeys.accountId, accountId)
                                               .filter(DelegateKeys.hostName, hostName);
+    return delegateQuery.project(DelegateKeys.status, true)
+        .project(DelegateKeys.delegateProfileId, true)
+        .project(DelegateKeys.ng, true)
+        .project(DelegateKeys.hostName, true)
+        .project(DelegateKeys.owner, true)
+        .project(DelegateKeys.delegateGroupName, true)
+        .project(DelegateKeys.description, true)
+        .get();
+  }
+
+  private Delegate getExistingK8Delegate(
+      final String accountId, final String hostName, final boolean ng, final String ip, final String k8PodId) {
+    final Query<Delegate> delegateQuery = persistence.createQuery(Delegate.class)
+                                              .filter(DelegateKeys.accountId, accountId)
+                                              .filter(DelegateKeys.hostName, hostName)
+                                              .filter(DelegateKeys.k8PodId, k8PodId);
     // For delegates running in a kubernetes cluster we include lowercase account ID in the hostname to identify it.
     // We ignore IP address because that can change with every restart of the pod.
-    if (!(ng && KUBERNETES.equals(delegateType)) && !hostName.contains(getAccountIdentifier(accountId))) {
+    if (!ng && !hostName.contains(getAccountIdentifier(accountId))) {
       delegateQuery.filter(DelegateKeys.ip, ip);
-    }
-
-    if (KUBERNETES.equals(delegateType)) {
-      delegateQuery.filter(DelegateKeys.k8PodId, k8PodId);
     }
 
     return delegateQuery.project(DelegateKeys.status, true)
