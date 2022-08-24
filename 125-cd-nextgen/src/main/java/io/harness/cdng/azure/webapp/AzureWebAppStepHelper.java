@@ -29,6 +29,7 @@ import io.harness.azure.utility.AzureResourceUtility;
 import io.harness.beans.DecryptableEntity;
 import io.harness.beans.FileReference;
 import io.harness.beans.IdentifierRef;
+import io.harness.beans.Scope;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.artifact.outcome.AcrArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactOutcome;
@@ -43,12 +44,15 @@ import io.harness.cdng.azure.config.ApplicationSettingsOutcome;
 import io.harness.cdng.azure.config.ConnectionStringsOutcome;
 import io.harness.cdng.azure.config.StartupCommandOutcome;
 import io.harness.cdng.azure.webapp.beans.AzureWebAppPreDeploymentDataOutput;
+import io.harness.cdng.execution.ExecutionInfoKey;
 import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.infra.beans.AzureWebAppInfrastructureOutcome;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.manifest.yaml.GitStoreConfig;
 import io.harness.cdng.manifest.yaml.harness.HarnessStore;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
+import io.harness.cdng.service.steps.ServiceStepOutcome;
+import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.azure.registry.AzureRegistryType;
@@ -109,6 +113,7 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
+import org.jetbrains.annotations.NotNull;
 
 @Singleton
 @Slf4j
@@ -123,6 +128,33 @@ public class AzureWebAppStepHelper {
   @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
   @Inject private NGEncryptedDataService ngEncryptedDataService;
   @Named("PRIVILEGED") @Inject private SecretManagerClientService secretManagerClientService;
+
+  public ExecutionInfoKey getExecutionInfoKey(Ambiance ambiance, AzureWebAppInfraDelegateConfig infraDelegateConfig) {
+    ServiceStepOutcome serviceOutcome = (ServiceStepOutcome) outcomeService.resolve(
+        ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.SERVICE));
+
+    AzureWebAppInfrastructureOutcome infrastructure = getAzureWebAppInfrastructureOutcome(ambiance);
+
+    Scope scope = Scope.builder()
+                      .accountIdentifier(AmbianceUtils.getAccountId(ambiance))
+                      .orgIdentifier(AmbianceUtils.getOrgIdentifier(ambiance))
+                      .projectIdentifier(AmbianceUtils.getProjectIdentifier(ambiance))
+                      .build();
+    return ExecutionInfoKey.builder()
+        .scope(scope)
+        .deploymentIdentifier(getDeploymentIdentifier(
+            ambiance, infraDelegateConfig.getAppName(), infraDelegateConfig.getDeploymentSlot()))
+        .envIdentifier(infrastructure.getEnvironment().getIdentifier())
+        .infraIdentifier(infrastructure.getInfraIdentifier())
+        .serviceIdentifier(serviceOutcome.getIdentifier())
+        .build();
+  }
+
+  public String getDeploymentIdentifier(Ambiance ambiance, String appName, String deploymentSlot) {
+    AzureWebAppInfrastructureOutcome infrastructureOutcome = getAzureWebAppInfrastructureOutcome(ambiance);
+    return String.format("%s-%s-%s-%s", infrastructureOutcome.getSubscription(),
+        infrastructureOutcome.getResourceGroup(), appName, deploymentSlot);
+  }
 
   public AzureAppServicePreDeploymentData getPreDeploymentData(Ambiance ambiance, String sweepingOutputName) {
     OptionalSweepingOutput sweepingOutput = executionSweepingOutputService.resolveOptional(
@@ -183,6 +215,12 @@ public class AzureWebAppStepHelper {
 
   public TaskRequest prepareTaskRequest(StepElementParameters stepElementParameters, Ambiance ambiance,
       TaskParameters taskParameters, TaskType taskType, List<String> units) {
+    return prepareTaskRequest(
+        stepElementParameters, ambiance, taskParameters, taskType, taskType.getDisplayName(), units);
+  }
+
+  public TaskRequest prepareTaskRequest(StepElementParameters stepElementParameters, Ambiance ambiance,
+      TaskParameters taskParameters, TaskType taskType, String displayName, List<String> units) {
     AzureWebAppStepParameters stepSpec = (AzureWebAppStepParameters) stepElementParameters.getSpec();
     List<TaskSelectorYaml> taskSelectors = stepSpec.getDelegateSelectors().getValue();
 
@@ -193,8 +231,8 @@ public class AzureWebAppStepHelper {
                                   .parameters(new Object[] {taskParameters})
                                   .build();
 
-    return cdStepHelper.prepareTaskRequest(ambiance, taskData, units, taskType.getDisplayName(),
-        TaskSelectorYaml.toTaskSelector(emptyIfNull(taskSelectors)));
+    return cdStepHelper.prepareTaskRequest(
+        ambiance, taskData, units, displayName, TaskSelectorYaml.toTaskSelector(emptyIfNull(taskSelectors)));
   }
 
   public Map<String, AppSettingsFile> fetchWebAppConfigsFromHarnessStore(
@@ -205,15 +243,19 @@ public class AzureWebAppStepHelper {
 
   public AzureWebAppInfraDelegateConfig getInfraDelegateConfig(
       Ambiance ambiance, String webApp, String deploymentSlot) {
+    AzureWebAppInfrastructureOutcome infrastructure = getAzureWebAppInfrastructureOutcome(ambiance);
+    return getInfraDelegateConfig(ambiance, infrastructure, webApp, deploymentSlot);
+  }
+
+  @NotNull
+  private AzureWebAppInfrastructureOutcome getAzureWebAppInfrastructureOutcome(Ambiance ambiance) {
     InfrastructureOutcome infrastructureOutcome = cdStepHelper.getInfrastructureOutcome(ambiance);
     if (!(infrastructureOutcome instanceof AzureWebAppInfrastructureOutcome)) {
       throw new InvalidArgumentsException(Pair.of("infrastructure",
           format("Invalid infrastructure type: %s, expected: %s", infrastructureOutcome.getKind(),
               InfrastructureKind.AZURE_WEB_APP)));
     }
-
-    AzureWebAppInfrastructureOutcome infrastructure = (AzureWebAppInfrastructureOutcome) infrastructureOutcome;
-    return getInfraDelegateConfig(ambiance, infrastructure, webApp, deploymentSlot);
+    return (AzureWebAppInfrastructureOutcome) infrastructureOutcome;
   }
 
   public AzureWebAppInfraDelegateConfig getInfraDelegateConfig(

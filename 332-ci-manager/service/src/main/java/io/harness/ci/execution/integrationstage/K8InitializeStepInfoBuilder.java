@@ -49,7 +49,6 @@ import io.harness.beans.plugin.compatible.PluginCompatibleStep;
 import io.harness.beans.quantity.unit.DecimalQuantityUnit;
 import io.harness.beans.quantity.unit.StorageQuantityUnit;
 import io.harness.beans.serializer.RunTimeInputHandler;
-import io.harness.beans.stages.IntegrationStageConfig;
 import io.harness.beans.steps.CIStepInfo;
 import io.harness.beans.steps.CIStepInfoType;
 import io.harness.beans.steps.stepinfo.PluginStepInfo;
@@ -72,6 +71,7 @@ import io.harness.ci.utils.CIStepInfoUtils;
 import io.harness.ci.utils.ExceptionUtility;
 import io.harness.ci.utils.PortFinder;
 import io.harness.ci.utils.QuantityUtils;
+import io.harness.cimanager.stages.IntegrationStageConfig;
 import io.harness.delegate.beans.ci.pod.CIContainerType;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.ci.pod.ContainerResourceParams;
@@ -131,6 +131,7 @@ public class K8InitializeStepInfoBuilder implements InitializeStepInfoBuilder {
   @Inject private CIExecutionConfigService ciExecutionConfigService;
   @Inject private CIFeatureFlagService featureFlagService;
   @Inject private ConnectorUtils connectorUtils;
+  @Inject private PluginSettingUtils pluginSettingUtils;
 
   @Override
   public BuildJobEnvInfo getInitializeStepInfoBuilder(StageElementConfig stageElementConfig,
@@ -139,7 +140,7 @@ public class K8InitializeStepInfoBuilder implements InitializeStepInfoBuilder {
     String uniqueStageExecutionIdentifier = generatePodName(stageElementConfig.getIdentifier());
     return K8BuildJobEnvInfo.builder()
         .podsSetupInfo(getCIPodsSetupInfo(stageElementConfig, infrastructure, ciExecutionArgs, steps, true,
-            uniqueStageExecutionIdentifier, AmbianceUtils.getAccountId(ambiance)))
+            uniqueStageExecutionIdentifier, AmbianceUtils.getAccountId(ambiance), ambiance))
         .workDir(STEP_WORK_DIR)
         .stepConnectorRefs(getStepConnectorRefs(stageElementConfig, ambiance))
         .build();
@@ -173,7 +174,7 @@ public class K8InitializeStepInfoBuilder implements InitializeStepInfoBuilder {
 
   private K8BuildJobEnvInfo.PodsSetupInfo getCIPodsSetupInfo(StageElementConfig stageElementConfig,
       Infrastructure infrastructure, CIExecutionArgs ciExecutionArgs, List<ExecutionWrapperConfig> steps,
-      boolean isFirstPod, String podName, String accountId) {
+      boolean isFirstPod, String podName, String accountId, Ambiance ambiance) {
     List<PodSetupInfo> pods = new ArrayList<>();
 
     OSType os = getOS(infrastructure);
@@ -184,7 +185,7 @@ public class K8InitializeStepInfoBuilder implements InitializeStepInfoBuilder {
     List<ContainerDefinitionInfo> serviceContainerDefinitionInfos = CIServiceBuilder.createServicesContainerDefinition(
         stageElementConfig, portFinder, ciExecutionConfigService.getCiExecutionServiceConfig(), os);
     List<ContainerDefinitionInfo> stepContainerDefinitionInfos =
-        createStepsContainerDefinition(steps, stageElementConfig, ciExecutionArgs, portFinder, accountId, os);
+        createStepsContainerDefinition(steps, stageElementConfig, ciExecutionArgs, portFinder, accountId, os, ambiance);
 
     List<ContainerDefinitionInfo> containerDefinitionInfos = new ArrayList<>();
     containerDefinitionInfos.addAll(serviceContainerDefinitionInfos);
@@ -289,7 +290,7 @@ public class K8InitializeStepInfoBuilder implements InitializeStepInfoBuilder {
 
   private List<ContainerDefinitionInfo> createStepsContainerDefinition(List<ExecutionWrapperConfig> steps,
       StageElementConfig integrationStage, CIExecutionArgs ciExecutionArgs, PortFinder portFinder, String accountId,
-      OSType os) {
+      OSType os, Ambiance ambiance) {
     List<ContainerDefinitionInfo> containerDefinitionInfos = new ArrayList<>();
     if (steps == null) {
       return containerDefinitionInfos;
@@ -306,7 +307,7 @@ public class K8InitializeStepInfoBuilder implements InitializeStepInfoBuilder {
         }
 
         ContainerDefinitionInfo containerDefinitionInfo = createStepContainerDefinition(
-            stepElementConfig, integrationStage, ciExecutionArgs, portFinder, stepIndex, accountId, os);
+            stepElementConfig, integrationStage, ciExecutionArgs, portFinder, stepIndex, accountId, os, ambiance);
         if (containerDefinitionInfo != null) {
           containerDefinitionInfos.add(containerDefinitionInfo);
         }
@@ -323,7 +324,7 @@ public class K8InitializeStepInfoBuilder implements InitializeStepInfoBuilder {
             StepElementConfig stepElementConfig =
                 IntegrationStageUtils.getStepElementConfig(executionWrapperInParallel);
             ContainerDefinitionInfo containerDefinitionInfo = createStepContainerDefinition(
-                stepElementConfig, integrationStage, ciExecutionArgs, portFinder, stepIndex, accountId, os);
+                stepElementConfig, integrationStage, ciExecutionArgs, portFinder, stepIndex, accountId, os, ambiance);
             if (containerDefinitionInfo != null) {
               containerDefinitionInfos.add(containerDefinitionInfo);
             }
@@ -336,7 +337,7 @@ public class K8InitializeStepInfoBuilder implements InitializeStepInfoBuilder {
 
   private ContainerDefinitionInfo createStepContainerDefinition(StepElementConfig stepElement,
       StageElementConfig integrationStage, CIExecutionArgs ciExecutionArgs, PortFinder portFinder, int stepIndex,
-      String accountId, OSType os) {
+      String accountId, OSType os, Ambiance ambiance) {
     if (!(stepElement.getStepSpecType() instanceof CIStepInfo)) {
       return null;
     }
@@ -361,9 +362,10 @@ public class K8InitializeStepInfoBuilder implements InitializeStepInfoBuilder {
       case UPLOAD_ARTIFACTORY:
       case UPLOAD_S3:
       case UPLOAD_GCS:
+      case GIT_CLONE:
         return createPluginCompatibleStepContainerDefinition((PluginCompatibleStep) ciStepInfo, integrationStage,
             ciExecutionArgs, portFinder, stepIndex, stepElement.getIdentifier(), stepElement.getName(),
-            stepElement.getType(), timeout, accountId, os);
+            stepElement.getType(), timeout, accountId, os, ambiance);
       case PLUGIN:
         return createPluginStepContainerDefinition((PluginStepInfo) ciStepInfo, integrationStage, ciExecutionArgs,
             portFinder, stepIndex, stepElement.getIdentifier(), stepElement.getName(), accountId, os);
@@ -393,14 +395,16 @@ public class K8InitializeStepInfoBuilder implements InitializeStepInfoBuilder {
 
   private ContainerDefinitionInfo createPluginCompatibleStepContainerDefinition(PluginCompatibleStep stepInfo,
       StageElementConfig integrationStage, CIExecutionArgs ciExecutionArgs, PortFinder portFinder, int stepIndex,
-      String identifier, String stepName, String stepType, long timeout, String accountId, OSType os) {
+      String identifier, String stepName, String stepType, long timeout, String accountId, OSType os,
+      Ambiance ambiance) {
     Integer port = portFinder.getNextPort();
 
     String containerName = format("%s%d", STEP_PREFIX, stepIndex);
     Map<String, String> envVarMap = new HashMap<>();
     envVarMap.putAll(getEnvVariables(integrationStage));
-    envVarMap.putAll(BuildEnvironmentUtils.getBuildEnvironmentVariables(ciExecutionArgs));
-    envVarMap.putAll(PluginSettingUtils.getPluginCompatibleEnvVariables(stepInfo, identifier, timeout, Type.K8));
+    envVarMap.putAll(PluginSettingUtils.getBuildEnvironmentVariables(stepInfo, ciExecutionArgs));
+    envVarMap.putAll(
+        pluginSettingUtils.getPluginCompatibleEnvVariables(stepInfo, identifier, timeout, ambiance, Type.K8));
     Integer runAsUser = resolveIntegerParameter(stepInfo.getRunAsUser(), null);
 
     Boolean privileged = null;
@@ -792,6 +796,7 @@ public class K8InitializeStepInfoBuilder implements InitializeStepInfoBuilder {
       case SAVE_CACHE_S3:
       case SAVE_CACHE_GCS:
       case SECURITY:
+      case GIT_CLONE:
         return getContainerMemoryLimit(((PluginCompatibleStep) ciStepInfo).getResources(), stepElement.getType(),
             stepElement.getIdentifier(), accountId);
       default:
@@ -858,6 +863,7 @@ public class K8InitializeStepInfoBuilder implements InitializeStepInfoBuilder {
       case SAVE_CACHE_S3:
       case SAVE_CACHE_GCS:
       case SECURITY:
+      case GIT_CLONE:
         return getContainerCpuLimit(((PluginCompatibleStep) ciStepInfo).getResources(), stepElement.getType(),
             stepElement.getIdentifier(), accountId);
       default:

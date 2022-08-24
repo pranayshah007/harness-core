@@ -29,7 +29,6 @@ import io.harness.network.SafeHttpCall;
 import software.wings.beans.command.ExecutionLogCallback;
 import software.wings.delegatetasks.DelegateLogService;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -135,8 +134,8 @@ public class LogStreamingTaskClient implements ILogStreamingTaskClient {
     }
   }
 
-  @VisibleForTesting
-  void dispatchLogs() {
+  @Override
+  public void dispatchLogs() {
     synchronized (logCache) {
       for (Iterator<Map.Entry<String, List<LogLine>>> iterator = logCache.entrySet().iterator(); iterator.hasNext();) {
         Map.Entry<String, List<LogLine>> next = iterator.next();

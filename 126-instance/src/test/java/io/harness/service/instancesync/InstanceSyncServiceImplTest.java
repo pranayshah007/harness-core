@@ -7,9 +7,17 @@
 
 package io.harness.service.instancesync;
 
+import static io.harness.rule.OwnerRule.ARVIND;
 import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
 
-import static org.mockito.Matchers.any;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -18,22 +26,33 @@ import io.harness.InstancesTestBase;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sDirectInfrastructureOutcome;
+import io.harness.cdng.infra.beans.SshWinRmAzureInfrastructureOutcome;
 import io.harness.delegate.beans.instancesync.InstanceSyncPerpetualTaskResponse;
 import io.harness.delegate.beans.instancesync.K8sInstanceSyncPerpetualTaskResponse;
 import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
+import io.harness.delegate.beans.instancesync.info.AzureSshWinrmServerInstanceInfo;
 import io.harness.delegate.beans.instancesync.info.K8sServerInstanceInfo;
 import io.harness.dtos.DeploymentSummaryDTO;
 import io.harness.dtos.InfrastructureMappingDTO;
+import io.harness.dtos.InstanceDTO;
+import io.harness.dtos.deploymentinfo.AzureSshWinrmDeploymentInfoDTO;
 import io.harness.dtos.deploymentinfo.DeploymentInfoDTO;
 import io.harness.dtos.deploymentinfo.K8sDeploymentInfoDTO;
+import io.harness.dtos.instanceinfo.AzureSshWinrmInstanceInfoDTO;
+import io.harness.dtos.instanceinfo.InstanceInfoDTO;
+import io.harness.dtos.instancesyncperpetualtaskinfo.DeploymentInfoDetailsDTO;
 import io.harness.dtos.instancesyncperpetualtaskinfo.InstanceSyncPerpetualTaskInfoDTO;
+import io.harness.entities.ArtifactDetails;
 import io.harness.helper.InstanceSyncHelper;
+import io.harness.instancesyncmonitoring.service.InstanceSyncMonitoringService;
 import io.harness.lock.AcquiredLock;
 import io.harness.lock.PersistentLocker;
 import io.harness.models.DeploymentEvent;
 import io.harness.models.RollbackInfo;
 import io.harness.models.constants.InstanceSyncConstants;
+import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.infrastructure.InfrastructureKind;
+import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.rule.Owner;
 import io.harness.service.deploymentsummary.DeploymentSummaryService;
 import io.harness.service.infrastructuremapping.InfrastructureMappingService;
@@ -43,13 +62,20 @@ import io.harness.service.instancesynchandlerfactory.InstanceSyncHandlerFactoryS
 import io.harness.service.instancesyncperpetualtask.InstanceSyncPerpetualTaskService;
 import io.harness.service.instancesyncperpetualtaskinfo.InstanceSyncPerpetualTaskInfoService;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
+import org.mockito.stubbing.Answer;
 
 public class InstanceSyncServiceImplTest extends InstancesTestBase {
   @Mock AbstractInstanceSyncHandler abstractInstanceSyncHandler;
@@ -62,7 +88,9 @@ public class InstanceSyncServiceImplTest extends InstancesTestBase {
   @Mock InstanceService instanceService;
   @Mock DeploymentSummaryService deploymentSummaryService;
   @Mock InstanceSyncHelper instanceSyncHelper;
+  @Spy @InjectMocks InstanceSyncServiceUtils instanceSyncServiceUtils;
   @InjectMocks InstanceSyncServiceImpl instanceSyncService;
+  @Mock private InstanceSyncMonitoringService instanceSyncMonitoringService;
 
   private final String ACCOUNT_IDENTIFIER = "acc";
   private final String PERPETUAL_TASK = "perp";
@@ -74,13 +102,19 @@ public class InstanceSyncServiceImplTest extends InstancesTestBase {
   private final String INFRASTRUCTURE_KEY = "key";
   private final String INFRASTRUCTURE_MAPPING_ID = "inframappingid";
   private final String ID = "id";
+  private final String HOST1 = "host1";
+  private final String HOST2 = "host2";
+  private final String HOST3 = "host3";
 
-  enum OperationsOnInstances { ADD, DELETE, UPDATE }
+  @Before
+  public void setup() {
+    doNothing().when(instanceSyncMonitoringService).recordMetrics(any(), anyBoolean(), anyLong());
+  }
 
   @Test
   @Owner(developers = PIYUSH_BHUWALKA)
   @Category(UnitTests.class)
-  public void processInstanceSyncForNewDeploymentTest() {
+  public void processInstanceSyncForNewDeploymentTestWithFailure() {
     InfrastructureMappingDTO infrastructureMappingDTO = InfrastructureMappingDTO.builder()
                                                             .accountIdentifier(ACCOUNT_IDENTIFIER)
                                                             .id(ID)
@@ -121,6 +155,247 @@ public class InstanceSyncServiceImplTest extends InstancesTestBase {
     instanceSyncService.processInstanceSyncForNewDeployment(deploymentEvent);
     verify(instanceSyncHandlerFactoryService, times(3))
         .getInstanceSyncHandler(deploymentSummaryDTO.getDeploymentInfoDTO().getType(), infrastructureOutcome.getKind());
+  }
+
+  @Test
+  @Owner(developers = ARVIND)
+  @Category(UnitTests.class)
+  public void processInstanceSyncForNewDeploymentTestWithSuccessAdd() {
+    InfrastructureMappingDTO infrastructureMappingDTO = InfrastructureMappingDTO.builder()
+                                                            .accountIdentifier(ACCOUNT_IDENTIFIER)
+                                                            .id(INFRASTRUCTURE_MAPPING_ID)
+                                                            .orgIdentifier(ORG_IDENTIFIER)
+                                                            .projectIdentifier(PROJECT_IDENTIFIER)
+                                                            .envIdentifier(ENV_IDENTIFIER)
+                                                            .serviceIdentifier(SERVICE_IDENTIFIER)
+                                                            .infrastructureKind(InfrastructureKind.SSH_WINRM_AZURE)
+                                                            .connectorRef(CONNECTOR_REF)
+                                                            .infrastructureKey(INFRASTRUCTURE_KEY)
+                                                            .build();
+    DeploymentInfoDTO deploymentInfoDTO =
+        AzureSshWinrmDeploymentInfoDTO.builder().infrastructureKey(INFRASTRUCTURE_KEY).host(HOST3).build();
+    DeploymentSummaryDTO deploymentSummaryDTO =
+        DeploymentSummaryDTO.builder()
+            .instanceSyncKey("AzureSshWinrmInstanceInfoDTO_host3_key")
+            .infrastructureMapping(infrastructureMappingDTO)
+            .deploymentInfoDTO(deploymentInfoDTO)
+            .infrastructureMappingId(INFRASTRUCTURE_MAPPING_ID)
+            .serverInstanceInfoList(Arrays.asList(
+                AzureSshWinrmServerInstanceInfo.builder().infrastructureKey(INFRASTRUCTURE_KEY).host(HOST3).build()))
+            .build();
+    doReturn(Optional.of(deploymentSummaryDTO))
+        .when(deploymentSummaryService)
+        .getLatestByInstanceKey(anyString(), any());
+
+    RollbackInfo rollbackInfo = RollbackInfo.builder().build();
+    InfrastructureOutcome infrastructureOutcome = SshWinRmAzureInfrastructureOutcome.builder().build();
+    DeploymentEvent deploymentEvent = new DeploymentEvent(deploymentSummaryDTO, rollbackInfo, infrastructureOutcome);
+
+    when(persistentLocker.waitToAcquireLock(
+             InstanceSyncConstants.INSTANCE_SYNC_PREFIX + deploymentSummaryDTO.getInfrastructureMappingId(),
+             InstanceSyncConstants.INSTANCE_SYNC_LOCK_TIMEOUT, InstanceSyncConstants.INSTANCE_SYNC_WAIT_TIMEOUT))
+        .thenReturn(acquiredLock);
+    List<DeploymentInfoDetailsDTO> deploymentInfoDetailsDTOS = new ArrayList<>();
+
+    deploymentInfoDetailsDTOS.add(
+        DeploymentInfoDetailsDTO.builder()
+            .deploymentInfoDTO(
+                AzureSshWinrmDeploymentInfoDTO.builder().infrastructureKey(INFRASTRUCTURE_KEY).host(HOST1).build())
+            .build());
+    deploymentInfoDetailsDTOS.add(
+        DeploymentInfoDetailsDTO.builder()
+            .deploymentInfoDTO(
+                AzureSshWinrmDeploymentInfoDTO.builder().infrastructureKey(INFRASTRUCTURE_KEY).host(HOST2).build())
+            .build());
+
+    InstanceSyncPerpetualTaskInfoDTO instanceSyncPerpetualTaskInfoDTO =
+        InstanceSyncPerpetualTaskInfoDTO.builder().deploymentInfoDetailsDTOList(deploymentInfoDetailsDTOS).build();
+
+    when(instanceSyncPerpetualTaskInfoService.findByInfrastructureMappingId(infrastructureMappingDTO.getId()))
+        .thenReturn(Optional.of(instanceSyncPerpetualTaskInfoDTO));
+    when(instanceSyncPerpetualTaskService.createPerpetualTask(infrastructureMappingDTO, abstractInstanceSyncHandler,
+             Collections.singletonList(deploymentSummaryDTO.getDeploymentInfoDTO()),
+             deploymentEvent.getInfrastructureOutcome()))
+        .thenReturn(PERPETUAL_TASK);
+    when(instanceSyncPerpetualTaskInfoService.save(any())).thenReturn(instanceSyncPerpetualTaskInfoDTO);
+    when(instanceSyncHandlerFactoryService.getInstanceSyncHandler(
+             deploymentSummaryDTO.getDeploymentInfoDTO().getType(), infrastructureOutcome.getKind()))
+        .thenReturn(abstractInstanceSyncHandler);
+
+    List<InstanceDTO> instanceDTOS = new ArrayList<>();
+    instanceDTOS.add(
+        InstanceDTO.builder()
+            .instanceInfoDTO(
+                AzureSshWinrmInstanceInfoDTO.builder().infrastructureKey(INFRASTRUCTURE_KEY).host(HOST1).build())
+            .build());
+    instanceDTOS.add(
+        InstanceDTO.builder()
+            .instanceInfoDTO(
+                AzureSshWinrmInstanceInfoDTO.builder().infrastructureKey(INFRASTRUCTURE_KEY).host(HOST2).build())
+            .build());
+
+    doReturn(instanceDTOS)
+        .when(instanceService)
+        .getActiveInstancesByInfrastructureMappingId(infrastructureMappingDTO.getAccountIdentifier(),
+            infrastructureMappingDTO.getOrgIdentifier(), infrastructureMappingDTO.getProjectIdentifier(),
+            infrastructureMappingDTO.getId());
+    when(abstractInstanceSyncHandler.getInstanceSyncHandlerKey(any(InstanceInfoDTO.class))).thenAnswer(invocation -> {
+      InstanceInfoDTO instanceInfoDTO = invocation.getArgument(0);
+      return instanceInfoDTO.prepareInstanceSyncHandlerKey();
+    });
+
+    when(abstractInstanceSyncHandler.getInstanceKey(any(InstanceInfoDTO.class))).thenAnswer(invocation -> {
+      InstanceInfoDTO instanceInfoDTO = invocation.getArgument(0);
+      return instanceInfoDTO.prepareInstanceKey();
+    });
+
+    doAnswer((Answer<InstanceInfoDTO>) invocation -> {
+      Object[] args = invocation.getArguments();
+      AzureSshWinrmServerInstanceInfo s = (AzureSshWinrmServerInstanceInfo) args[0];
+      return AzureSshWinrmInstanceInfoDTO.builder()
+          .host(s.getHost())
+          .infrastructureKey(s.getInfrastructureKey())
+          .build();
+    })
+        .when(abstractInstanceSyncHandler)
+        .getInstanceDetailsFromServerInstances(deploymentSummaryDTO.getServerInstanceInfoList());
+
+    doReturn(Environment.builder().build()).when(instanceSyncHelper).fetchEnvironment(any());
+    doReturn(ServiceEntity.builder().build()).when(instanceSyncHelper).fetchService(any());
+
+    instanceSyncService.processInstanceSyncForNewDeployment(deploymentEvent);
+    ArgumentCaptor<Map<OperationsOnInstances, List<InstanceDTO>>> captor = ArgumentCaptor.forClass(Map.class);
+    verify(instanceSyncServiceUtils).processInstances(captor.capture());
+    Map<OperationsOnInstances, List<InstanceDTO>> value = captor.getValue();
+    assertThat(value).hasSize(3);
+    assertThat(value.get(OperationsOnInstances.ADD)).hasSize(1);
+    assertThat(value.get(OperationsOnInstances.DELETE)).hasSize(0);
+    assertThat(value.get(OperationsOnInstances.UPDATE)).hasSize(0);
+  }
+
+  @Test
+  @Owner(developers = ARVIND)
+  @Category(UnitTests.class)
+  public void processInstanceSyncForNewDeploymentTestWithSuccessUpdate() {
+    ArtifactDetails artifactDetails = ArtifactDetails.builder().artifactId(ID).build();
+    InfrastructureMappingDTO infrastructureMappingDTO = InfrastructureMappingDTO.builder()
+                                                            .accountIdentifier(ACCOUNT_IDENTIFIER)
+                                                            .id(INFRASTRUCTURE_MAPPING_ID)
+                                                            .orgIdentifier(ORG_IDENTIFIER)
+                                                            .projectIdentifier(PROJECT_IDENTIFIER)
+                                                            .envIdentifier(ENV_IDENTIFIER)
+                                                            .serviceIdentifier(SERVICE_IDENTIFIER)
+                                                            .infrastructureKind(InfrastructureKind.SSH_WINRM_AZURE)
+                                                            .connectorRef(CONNECTOR_REF)
+                                                            .infrastructureKey(INFRASTRUCTURE_KEY)
+                                                            .build();
+    DeploymentInfoDTO deploymentInfoDTO =
+        AzureSshWinrmDeploymentInfoDTO.builder().infrastructureKey(INFRASTRUCTURE_KEY).host(HOST2).build();
+    DeploymentSummaryDTO deploymentSummaryDTO =
+        DeploymentSummaryDTO.builder()
+            .instanceSyncKey("AzureSshWinrmInstanceInfoDTO_host3_key")
+            .infrastructureMapping(infrastructureMappingDTO)
+            .deploymentInfoDTO(deploymentInfoDTO)
+            .infrastructureMappingId(INFRASTRUCTURE_MAPPING_ID)
+            .artifactDetails(artifactDetails)
+            .serverInstanceInfoList(Arrays.asList(
+                AzureSshWinrmServerInstanceInfo.builder().infrastructureKey(INFRASTRUCTURE_KEY).host(HOST2).build()))
+            .build();
+    doReturn(Optional.of(deploymentSummaryDTO))
+        .when(deploymentSummaryService)
+        .getLatestByInstanceKey(anyString(), any());
+
+    RollbackInfo rollbackInfo = RollbackInfo.builder().build();
+    InfrastructureOutcome infrastructureOutcome = SshWinRmAzureInfrastructureOutcome.builder().build();
+    DeploymentEvent deploymentEvent = new DeploymentEvent(deploymentSummaryDTO, rollbackInfo, infrastructureOutcome);
+
+    when(persistentLocker.waitToAcquireLock(
+             InstanceSyncConstants.INSTANCE_SYNC_PREFIX + deploymentSummaryDTO.getInfrastructureMappingId(),
+             InstanceSyncConstants.INSTANCE_SYNC_LOCK_TIMEOUT, InstanceSyncConstants.INSTANCE_SYNC_WAIT_TIMEOUT))
+        .thenReturn(acquiredLock);
+    List<DeploymentInfoDetailsDTO> deploymentInfoDetailsDTOS = new ArrayList<>();
+
+    deploymentInfoDetailsDTOS.add(
+        DeploymentInfoDetailsDTO.builder()
+            .deploymentInfoDTO(
+                AzureSshWinrmDeploymentInfoDTO.builder().infrastructureKey(INFRASTRUCTURE_KEY).host(HOST1).build())
+            .build());
+    deploymentInfoDetailsDTOS.add(
+        DeploymentInfoDetailsDTO.builder()
+            .deploymentInfoDTO(
+                AzureSshWinrmDeploymentInfoDTO.builder().infrastructureKey(INFRASTRUCTURE_KEY).host(HOST2).build())
+            .build());
+
+    InstanceSyncPerpetualTaskInfoDTO instanceSyncPerpetualTaskInfoDTO =
+        InstanceSyncPerpetualTaskInfoDTO.builder().deploymentInfoDetailsDTOList(deploymentInfoDetailsDTOS).build();
+
+    when(instanceSyncPerpetualTaskInfoService.findByInfrastructureMappingId(infrastructureMappingDTO.getId()))
+        .thenReturn(Optional.of(instanceSyncPerpetualTaskInfoDTO));
+    when(instanceSyncPerpetualTaskService.createPerpetualTask(infrastructureMappingDTO, abstractInstanceSyncHandler,
+             Collections.singletonList(deploymentSummaryDTO.getDeploymentInfoDTO()),
+             deploymentEvent.getInfrastructureOutcome()))
+        .thenReturn(PERPETUAL_TASK);
+    when(instanceSyncPerpetualTaskInfoService.save(any())).thenReturn(instanceSyncPerpetualTaskInfoDTO);
+    when(instanceSyncHandlerFactoryService.getInstanceSyncHandler(
+             deploymentSummaryDTO.getDeploymentInfoDTO().getType(), infrastructureOutcome.getKind()))
+        .thenReturn(abstractInstanceSyncHandler);
+
+    List<InstanceDTO> instanceDTOS = new ArrayList<>();
+    instanceDTOS.add(
+        InstanceDTO.builder()
+            .instanceInfoDTO(
+                AzureSshWinrmInstanceInfoDTO.builder().infrastructureKey(INFRASTRUCTURE_KEY).host(HOST1).build())
+            .build());
+    instanceDTOS.add(
+        InstanceDTO.builder()
+            .instanceInfoDTO(
+                AzureSshWinrmInstanceInfoDTO.builder().infrastructureKey(INFRASTRUCTURE_KEY).host(HOST2).build())
+            .build());
+
+    doReturn(instanceDTOS)
+        .when(instanceService)
+        .getActiveInstancesByInfrastructureMappingId(infrastructureMappingDTO.getAccountIdentifier(),
+            infrastructureMappingDTO.getOrgIdentifier(), infrastructureMappingDTO.getProjectIdentifier(),
+            infrastructureMappingDTO.getId());
+    when(abstractInstanceSyncHandler.getInstanceSyncHandlerKey(any(InstanceInfoDTO.class))).thenAnswer(invocation -> {
+      InstanceInfoDTO instanceInfoDTO = invocation.getArgument(0);
+      return instanceInfoDTO.prepareInstanceSyncHandlerKey();
+    });
+
+    when(abstractInstanceSyncHandler.getInstanceKey(any(InstanceInfoDTO.class))).thenAnswer(invocation -> {
+      InstanceInfoDTO instanceInfoDTO = invocation.getArgument(0);
+      return instanceInfoDTO.prepareInstanceKey();
+    });
+
+    doAnswer((Answer<InstanceInfoDTO>) invocation -> {
+      Object[] args = invocation.getArguments();
+      AzureSshWinrmServerInstanceInfo s = (AzureSshWinrmServerInstanceInfo) args[0];
+      return AzureSshWinrmInstanceInfoDTO.builder()
+          .host(s.getHost())
+          .infrastructureKey(s.getInfrastructureKey())
+          .build();
+    })
+        .when(abstractInstanceSyncHandler)
+        .getInstanceDetailsFromServerInstances(deploymentSummaryDTO.getServerInstanceInfoList());
+
+    doReturn(Environment.builder().build()).when(instanceSyncHelper).fetchEnvironment(any());
+    doReturn(ServiceEntity.builder().build()).when(instanceSyncHelper).fetchService(any());
+    doAnswer(invocation -> {
+      Object[] args = invocation.getArguments();
+      return args[0];
+    })
+        .when(abstractInstanceSyncHandler)
+        .updateInstance(any(InstanceDTO.class), any());
+
+    instanceSyncService.processInstanceSyncForNewDeployment(deploymentEvent);
+    ArgumentCaptor<Map<OperationsOnInstances, List<InstanceDTO>>> captor = ArgumentCaptor.forClass(Map.class);
+    verify(instanceSyncServiceUtils).processInstances(captor.capture());
+    Map<OperationsOnInstances, List<InstanceDTO>> value = captor.getValue();
+    assertThat(value).hasSize(3);
+    assertThat(value.get(OperationsOnInstances.ADD)).hasSize(0);
+    assertThat(value.get(OperationsOnInstances.DELETE)).hasSize(0);
+    assertThat(value.get(OperationsOnInstances.UPDATE)).hasSize(1);
+    assertThat(value.get(OperationsOnInstances.UPDATE).get(0).getPrimaryArtifact()).isEqualTo(artifactDetails);
   }
 
   @Test

@@ -223,6 +223,7 @@ public class ExecutionDetailsResource {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgId, projectId),
         Resource.of("PIPELINE", executionSummaryEntity.getPipelineIdentifier()), PipelineRbacPermissions.PIPELINE_VIEW);
     if (EmptyPredicate.isEmpty(stageNodeId) && (renderFullBottomGraph == null || !renderFullBottomGraph)) {
+      pmsExecutionService.sendGraphUpdateEvent(executionSummaryEntity);
       return ResponseDTO.newResponse(PipelineExecutionDetailDTO.builder()
                                          .pipelineExecutionSummary(PipelineExecutionSummaryDtoMapper.toDto(
                                              executionSummaryEntity, entityGitDetails))

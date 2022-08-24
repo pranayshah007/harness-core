@@ -46,6 +46,7 @@ import java.util.Calendar;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import lombok.experimental.UtilityClass;
 
@@ -122,7 +123,7 @@ public class PMSPipelineDtoMapper {
       String yaml, String ifMatch, Boolean isDraft) {
     PipelineEntity pipelineEntity = toPipelineEntity(accountId, orgId, projectId, yaml, isDraft);
     PipelineEntity withVersion = pipelineEntity.withVersion(isNumeric(ifMatch) ? parseLong(ifMatch) : null);
-    if (!withVersion.getIdentifier().equals(pipelineId)) {
+    if (!Objects.equals(pipelineId, withVersion.getIdentifier())) {
       throw new InvalidRequestException(String.format(
           "Expected Pipeline identifier in YAML to be [%s], but was [%s]", pipelineId, pipelineEntity.getIdentifier()));
     }
@@ -154,6 +155,9 @@ public class PMSPipelineDtoMapper {
       PipelineEntity pipelineEntity, EntityGitDetails entityGitDetails) {
     if (pipelineEntity.getIsDraft() == null) {
       pipelineEntity.setIsDraft(false);
+    }
+    if (entityGitDetails != null) {
+      entityGitDetails.setRepoUrl(pipelineEntity.getRepoURL());
     }
     return PMSPipelineSummaryResponseDTO.builder()
         .identifier(pipelineEntity.getIdentifier())

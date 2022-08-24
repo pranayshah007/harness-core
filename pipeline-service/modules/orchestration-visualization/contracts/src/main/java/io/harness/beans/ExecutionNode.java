@@ -50,4 +50,5 @@ public class ExecutionNode {
   List<InterruptEffectDTO> interruptHistories;
   Map<String, OrchestrationMap> stepDetails;
   StrategyMetadata strategyMetadata;
+  Boolean executionInputConfigured;
 }

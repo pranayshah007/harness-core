@@ -17,18 +17,13 @@ import io.harness.persistence.PersistentEntity;
 
 import software.wings.dl.WingsPersistence;
 
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.inject.Inject;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoCursor;
 import com.mongodb.client.MongoDatabase;
-import java.util.ArrayList;
-import java.util.List;
+import java.time.Duration;
 import java.util.Set;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
+import java.util.concurrent.locks.LockSupport;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.Document;
 
@@ -37,23 +32,10 @@ import org.bson.Document;
 public class ChangeDataCaptureBulkMigrationHelper {
   @Inject private ChangeTracker changeTracker;
   @Inject private WingsPersistence wingsPersistence;
-  private static final int NUMBER_OF_BULK_SYNC_THREADS = 5;
-  private static final int BULK_SYNC_TASK_QUEUE_SIZE = 200;
-  private static final String BULK_THREAD_SUFFIX = "-bulk-migration-%d";
+  @Inject private ChangeEventProcessor changeEventProcessor;
 
-  private boolean runBulkMigration(CDCEntity<?> cdcEntity) {
-    return migrateDocuments(cdcEntity);
-  }
-
-  private <T extends PersistentEntity> boolean migrateDocuments(CDCEntity<T> cdcEntity) {
-    String threadPoolNameFormat = cdcEntity.getClass().getSimpleName().concat(BULK_THREAD_SUFFIX);
-    ExecutorService executorService = Executors.newFixedThreadPool(
-        NUMBER_OF_BULK_SYNC_THREADS, new ThreadFactoryBuilder().setNameFormat(threadPoolNameFormat).build());
-    BoundedExecutorService boundedExecutorService =
-        new BoundedExecutorService(executorService, BULK_SYNC_TASK_QUEUE_SIZE);
-    List<Future<Boolean>> taskFutures = new ArrayList<>();
-
-    Class<? extends PersistentEntity> subscriptionEntity = cdcEntity.getSubscriptionEntity();
+  private <T extends PersistentEntity> void runBulkMigration(CDCEntity<T> cdcEntity) {
+    Class<T> subscriptionEntity = cdcEntity.getSubscriptionEntity();
 
     MongoDatabase mongoDatabase =
         changeTracker.connectToMongoDatabase(changeTracker.getChangeDataCaptureDataStore(subscriptionEntity));
@@ -64,55 +46,32 @@ public class ChangeDataCaptureBulkMigrationHelper {
     try (MongoCursor<Document> cursor = collection.find().iterator()) {
       while (cursor.hasNext()) {
         final Document document = cursor.next();
-        ChangeDataCapture[] dataCaptures =
-            cdcEntity.getSubscriptionEntity().getAnnotationsByType(ChangeDataCapture.class);
+        ChangeDataCapture[] dataCaptures = subscriptionEntity.getAnnotationsByType(ChangeDataCapture.class);
         for (ChangeDataCapture changeDataCapture : dataCaptures) {
           ChangeHandler changeHandler = cdcEntity.getChangeHandler(changeDataCapture.handler());
           if (changeHandler != null) {
-            CDCEntityBulkMigrationTask<T> cdcEntityBulkMigrationTask = new CDCEntityBulkMigrationTask<>(
-                changeHandler, subscriptionEntity, document, changeDataCapture.table(), changeDataCapture.fields());
-            taskFutures.add(boundedExecutorService.submit(cdcEntityBulkMigrationTask));
+            changeEventProcessor.processChangeEvent(CDCEntityBulkTaskConverter.convert(subscriptionEntity, document));
           } else {
             log.info("ChangeHandler for {} is null", changeDataCapture.handler());
           }
         }
       }
-      for (Future<Boolean> taskFuture : taskFutures) {
-        boolean result = taskFuture.get();
-        if (!result) {
-          return false;
-        }
-      }
-      return true;
-    } catch (InterruptedException e) {
-      log.error("Bulk migration interrupted", e);
-      Thread.currentThread().interrupt();
-    } catch (ExecutionException e) {
-      log.error("Bulk migration errored due to error", e.getCause());
-    } finally {
-      executorService.shutdownNow();
     }
-    return false;
   }
 
-  boolean doBulkSync(Set<CDCEntity<?>> entitiesToBulkSync) {
-    boolean hasMigrationSucceeded = true;
+  void doBulkSync(Set<CDCEntity<?>> entitiesToBulkSync) {
+    changeEventProcessor.startProcessingChangeEvents();
     for (CDCEntity<?> cdcEntity : entitiesToBulkSync) {
       CDCStateEntity cdcStateEntityState =
           wingsPersistence.get(CDCStateEntity.class, cdcEntity.getSubscriptionEntity().getCanonicalName());
       if (null == cdcStateEntityState) {
         log.info("Migrating {} to Sink Change Data Capture", cdcEntity.getClass().getCanonicalName());
-        hasMigrationSucceeded = runBulkMigration(cdcEntity);
-
-        if (hasMigrationSucceeded) {
-          log.info("{} migrated to Sink Change Data Capture", cdcEntity.getClass().getCanonicalName());
-        } else {
-          log.error(String.format(
-              "Failed to migrate %s to Sink Change Data Capture", cdcEntity.getClass().getCanonicalName()));
-          break;
-        }
+        runBulkMigration(cdcEntity);
+        log.info("{} migrated to Sink Change Data Capture", cdcEntity.getClass().getCanonicalName());
       }
     }
-    return hasMigrationSucceeded;
+    while (changeEventProcessor.isWorking()) {
+      LockSupport.parkNanos(Duration.ofSeconds(1).toNanos());
+    }
   }
 }

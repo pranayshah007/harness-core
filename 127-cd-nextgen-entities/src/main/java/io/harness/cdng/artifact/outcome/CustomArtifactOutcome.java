@@ -9,12 +9,14 @@ package io.harness.cdng.artifact.outcome;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.artifact.ArtifactSummary;
 import io.harness.cdng.artifact.CustomArtifactSummary;
 import io.harness.delegate.task.artifacts.ArtifactSourceType;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
+import java.util.Map;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Value;
@@ -26,6 +28,7 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("customArtifactOutcome")
 @JsonTypeName("customArtifactOutcome")
 @OwnedBy(CDC)
+@RecasterAlias("io.harness.cdng.artifact.outcome.customArtifactOutcome")
 public class CustomArtifactOutcome implements ArtifactOutcome {
   /** Identifier for artifact. */
   String identifier;
@@ -33,6 +36,8 @@ public class CustomArtifactOutcome implements ArtifactOutcome {
   boolean primaryArtifact;
   /** Value that refers to exact artifact version. */
   String version;
+  /** Custom Artifact metadata */
+  Map<String, String> metadata;
 
   @Override
   public ArtifactSummary getArtifactSummary() {

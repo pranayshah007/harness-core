@@ -8,7 +8,6 @@
 package io.harness.cdng.infra.yaml;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
-import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
@@ -21,20 +20,16 @@ import io.harness.cdng.infra.beans.SshWinRmAwsInfraMapping.SshWinRmAwsInfraMappi
 import io.harness.filters.ConnectorRefExtractorHelper;
 import io.harness.filters.WithConnectorRef;
 import io.harness.ng.core.infrastructure.InfrastructureKind;
-import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlNode;
-import io.harness.validation.OneOfSet;
 import io.harness.walktree.visitor.SimpleVisitorHelper;
 import io.harness.walktree.visitor.Visitable;
-import io.harness.yaml.YamlSchemaTypes;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.annotations.ApiModelProperty;
 import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 import javax.validation.constraints.NotNull;
 import lombok.Builder;
@@ -49,7 +44,6 @@ import org.springframework.data.annotation.TypeAlias;
 @Builder
 @JsonTypeName(InfrastructureKind.SSH_WINRM_AWS)
 @SimpleVisitorHelper(helperClass = ConnectorRefExtractorHelper.class)
-@OneOfSet(fields = {"autoScalingGroupName", "awsInstanceFilter"})
 @TypeAlias("SshWinRmAwsInfrastructure")
 @RecasterAlias("io.harness.cdng.infra.yaml.SshWinRmAwsInfrastructure")
 public class SshWinRmAwsInfrastructure
@@ -77,29 +71,7 @@ public class SshWinRmAwsInfrastructure
   @Wither
   ParameterField<String> region;
 
-  @NotNull
-  @NotEmpty
-  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
-  @Wither
-  ParameterField<String> loadBalancer;
-
-  @NotNull
-  @NotEmpty
-  @YamlSchemaTypes({runtime})
-  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
-  @Wither
-  ParameterField<String> hostNameConvention;
-
-  @ApiModelProperty(dataType = SwaggerConstants.BOOLEAN_CLASSPATH) @Wither ParameterField<Boolean> useAutoScalingGroup;
-
-  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) @Wither ParameterField<String> autoScalingGroupName;
-
-  @Wither AwsInstanceFilter awsInstanceFilter;
-
-  @YamlSchemaTypes({runtime})
-  @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
-  @Wither
-  ParameterField<List<TaskSelectorYaml>> delegateSelectors;
+  @NotNull @Wither AwsInstanceFilter awsInstanceFilter;
 
   // For Visitor Framework Impl
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String metadata;
@@ -113,9 +85,6 @@ public class SshWinRmAwsInfrastructure
     }
     if (region != null) {
       builder.region(region.getValue());
-    }
-    if (loadBalancer != null) {
-      builder.loadBalancer(loadBalancer.getValue());
     }
 
     return builder.build();
@@ -149,23 +118,8 @@ public class SshWinRmAwsInfrastructure
     if (!ParameterField.isNull(config.getRegion())) {
       resultantInfra = resultantInfra.withRegion(config.getRegion());
     }
-    if (!ParameterField.isNull(config.getLoadBalancer())) {
-      resultantInfra = resultantInfra.withLoadBalancer(config.getLoadBalancer());
-    }
-    if (!ParameterField.isNull(config.getHostNameConvention())) {
-      resultantInfra = resultantInfra.withHostNameConvention(config.getHostNameConvention());
-    }
-    if (!ParameterField.isNull(config.getUseAutoScalingGroup())) {
-      resultantInfra = resultantInfra.withUseAutoScalingGroup(config.getUseAutoScalingGroup());
-    }
-    if (!ParameterField.isNull(config.getAutoScalingGroupName())) {
-      resultantInfra = resultantInfra.withAutoScalingGroupName(config.getAutoScalingGroupName());
-    }
     if (config.getAwsInstanceFilter() != null) {
       resultantInfra = resultantInfra.withAwsInstanceFilter(config.getAwsInstanceFilter());
-    }
-    if (!ParameterField.isNull(config.getDelegateSelectors())) {
-      resultantInfra = resultantInfra.withDelegateSelectors(config.getDelegateSelectors());
     }
 
     return resultantInfra;

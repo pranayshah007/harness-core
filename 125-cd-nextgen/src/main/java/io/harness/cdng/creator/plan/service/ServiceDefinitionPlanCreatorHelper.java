@@ -7,45 +7,76 @@
 
 package io.harness.cdng.creator.plan.service;
 
+import static io.harness.cdng.creator.plan.manifest.ManifestsPlanCreator.SERVICE_ENTITY_DEFINITION_TYPE_KEY;
+import static io.harness.cdng.manifest.ManifestType.SERVICE_OVERRIDE_SUPPORTED_MANIFEST_TYPES;
+import static io.harness.data.structure.CollectionUtils.emptyIfNull;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+
+import static java.lang.String.format;
+import static java.util.Collections.EMPTY_LIST;
+import static java.util.Collections.emptyList;
+
 import io.harness.cdng.artifact.bean.yaml.ArtifactListConfig;
+import io.harness.cdng.azure.config.yaml.ApplicationSettingsConfiguration;
+import io.harness.cdng.azure.config.yaml.ConnectionStringsConfiguration;
+import io.harness.cdng.azure.config.yaml.StartupCommandConfiguration;
 import io.harness.cdng.azure.webapp.ApplicationSettingsParameters;
 import io.harness.cdng.azure.webapp.ConnectionStringsParameters;
 import io.harness.cdng.azure.webapp.StartupCommandParameters;
 import io.harness.cdng.configfile.ConfigFileWrapper;
 import io.harness.cdng.creator.plan.PlanCreatorConstants;
+import io.harness.cdng.manifest.ManifestConfigType;
+import io.harness.cdng.manifest.yaml.ManifestConfig;
 import io.harness.cdng.manifest.yaml.ManifestConfigWrapper;
-import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
 import io.harness.cdng.service.beans.AzureWebAppServiceSpec;
 import io.harness.cdng.service.beans.ServiceConfig;
+import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.cdng.utilities.ArtifactsUtility;
 import io.harness.cdng.utilities.AzureConfigsUtility;
 import io.harness.cdng.utilities.ConfigFileUtility;
 import io.harness.cdng.utilities.ManifestsUtility;
 import io.harness.cdng.visitor.YamlTypes;
-import io.harness.data.structure.EmptyPredicate;
 import io.harness.data.structure.UUIDGenerator;
+import io.harness.exception.InvalidRequestException;
+import io.harness.ng.core.environment.yaml.NGEnvironmentConfig;
 import io.harness.ng.core.service.yaml.NGServiceV2InfoConfig;
+import io.harness.ng.core.serviceoverride.yaml.NGServiceOverrideConfig;
 import io.harness.pms.contracts.plan.Dependencies;
 import io.harness.pms.contracts.plan.Dependency;
 import io.harness.pms.contracts.plan.YamlUpdates;
+import io.harness.pms.plan.creation.PlanCreatorUtils;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse.PlanCreationResponseBuilder;
 import io.harness.pms.yaml.DependenciesUtils;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
+import io.harness.pms.yaml.YamlUtils;
 import io.harness.serializer.KryoSerializer;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.protobuf.ByteString;
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
+import lombok.NonNull;
 import lombok.experimental.UtilityClass;
+import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Contains method useful for serviceDefinition plan creator
  */
 @UtilityClass
 public class ServiceDefinitionPlanCreatorHelper {
+  private final String SERVICE_OVERRIDES = "service overrides";
+  private final String ENVIRONMENT_GLOBAL_OVERRIDES = "environment global overrides";
+
   public Map<String, ByteString> prepareMetadata(
       String planNodeId, ServiceConfig actualServiceConfig, KryoSerializer kryoSerializer) {
     Map<String, ByteString> metadataDependency = new HashMap<>();
@@ -53,6 +84,18 @@ public class ServiceDefinitionPlanCreatorHelper {
     // TODO: Find an efficient way to not pass whole service config
     metadataDependency.put(
         YamlTypes.SERVICE_CONFIG, ByteString.copyFrom(kryoSerializer.asDeflatedBytes(actualServiceConfig)));
+    return metadataDependency;
+  }
+
+  public Map<String, ByteString> prepareMetadataManifestV2(String planNodeId,
+      List<ManifestConfigWrapper> finalManifests, ServiceDefinitionType serviceDefinitionType,
+      KryoSerializer kryoSerializer) {
+    Map<String, ByteString> metadataDependency = new HashMap<>();
+    metadataDependency.put(YamlTypes.UUID, ByteString.copyFrom(kryoSerializer.asDeflatedBytes(planNodeId)));
+    metadataDependency.put(
+        YamlTypes.MANIFEST_LIST_CONFIG, ByteString.copyFrom(kryoSerializer.asDeflatedBytes(finalManifests)));
+    metadataDependency.put(
+        SERVICE_ENTITY_DEFINITION_TYPE_KEY, ByteString.copyFrom(kryoSerializer.asDeflatedBytes(serviceDefinitionType)));
     return metadataDependency;
   }
 
@@ -71,7 +114,7 @@ public class ServiceDefinitionPlanCreatorHelper {
 
     // Contains either primary artifacts or side-car artifacts
     if (artifactListConfig != null) {
-      if (artifactListConfig.getPrimary() != null || EmptyPredicate.isNotEmpty(artifactListConfig.getSidecars())) {
+      if (artifactListConfig.getPrimary() != null || isNotEmpty(artifactListConfig.getSidecars())) {
         return true;
       }
     }
@@ -79,7 +122,7 @@ public class ServiceDefinitionPlanCreatorHelper {
     if (actualServiceConfig.getStageOverrides() != null
         && actualServiceConfig.getStageOverrides().getArtifacts() != null) {
       return actualServiceConfig.getStageOverrides().getArtifacts().getPrimary() != null
-          || EmptyPredicate.isNotEmpty(actualServiceConfig.getStageOverrides().getArtifacts().getSidecars());
+          || isNotEmpty(actualServiceConfig.getStageOverrides().getArtifacts().getSidecars());
     }
 
     return false;
@@ -90,7 +133,7 @@ public class ServiceDefinitionPlanCreatorHelper {
 
     // Contains either primary artifacts or side-car artifacts
     if (artifactListConfig != null) {
-      return artifactListConfig.getPrimary() != null || EmptyPredicate.isNotEmpty(artifactListConfig.getSidecars());
+      return artifactListConfig.getPrimary() != null || isNotEmpty(artifactListConfig.getSidecars());
     }
     return false;
   }
@@ -175,7 +218,7 @@ public class ServiceDefinitionPlanCreatorHelper {
     return manifestsPlanNodeId;
   }
 
-  String addDependenciesForManifestsV2(YamlNode serviceV2Node,
+  String addDependenciesForServiceManifestsV2(YamlNode serviceV2Node,
       Map<String, PlanCreationResponse> planCreationResponseMap, NGServiceV2InfoConfig serviceV2Config,
       KryoSerializer kryoSerializer) {
     YamlUpdates.Builder yamlUpdates = YamlUpdates.newBuilder();
@@ -186,19 +229,182 @@ public class ServiceDefinitionPlanCreatorHelper {
     Map<String, ByteString> metadataDependency =
         prepareMetadataV2(manifestsPlanNodeId, serviceV2Config, kryoSerializer);
 
-    Map<String, YamlField> dependenciesMap = new HashMap<>();
-    dependenciesMap.put(manifestsPlanNodeId, manifestsYamlField);
-    PlanCreationResponseBuilder manifestsPlanCreationResponse = PlanCreationResponse.builder().dependencies(
-        DependenciesUtils.toDependenciesProto(dependenciesMap)
-            .toBuilder()
-            .putDependencyMetadata(
-                manifestsPlanNodeId, Dependency.newBuilder().putAllMetadata(metadataDependency).build())
-            .build());
+    PlanCreationResponseBuilder manifestsPlanCreationResponse =
+        preparePlanCreationResponseBuilder(manifestsYamlField, manifestsPlanNodeId, metadataDependency);
     if (yamlUpdates.getFqnToYamlCount() > 0) {
       manifestsPlanCreationResponse.yamlUpdates(yamlUpdates.build());
     }
     planCreationResponseMap.put(manifestsPlanNodeId, manifestsPlanCreationResponse.build());
     return manifestsPlanNodeId;
+  }
+
+  String addDependenciesForSvcAndSvcOverrideManifestsV2(YamlNode serviceV2Node,
+      Map<String, PlanCreationResponse> planCreationResponseMap, NGServiceV2InfoConfig serviceV2Config,
+      NGServiceOverrideConfig serviceOverrideConfig, NGEnvironmentConfig ngEnvironmentConfig,
+      KryoSerializer kryoSerializer) throws IOException {
+    YamlUpdates.Builder yamlUpdates = YamlUpdates.newBuilder();
+
+    List<ManifestConfigWrapper> finalManifests =
+        prepareFinalManifests(serviceV2Config, serviceOverrideConfig, ngEnvironmentConfig);
+
+    // in case no manifest is present no node should be created
+    if (isEmpty(finalManifests)) {
+      return StringUtils.EMPTY;
+    }
+
+    YamlField manifestsYamlField = prepareFinalUuidInjectedManifestYamlField(serviceV2Node, finalManifests);
+    PlanCreatorUtils.setYamlUpdate(manifestsYamlField, yamlUpdates);
+    String manifestsPlanNodeId = "manifests-" + UUIDGenerator.generateUuid();
+
+    Map<String, ByteString> metadataDependency = prepareMetadataManifestV2(
+        manifestsPlanNodeId, finalManifests, serviceV2Config.getServiceDefinition().getType(), kryoSerializer);
+    PlanCreationResponseBuilder manifestsPlanCreationResponse =
+        preparePlanCreationResponseBuilder(manifestsYamlField, manifestsPlanNodeId, metadataDependency);
+    if (yamlUpdates.getFqnToYamlCount() > 0) {
+      manifestsPlanCreationResponse.yamlUpdates(yamlUpdates.build());
+    }
+    planCreationResponseMap.put(manifestsPlanNodeId, manifestsPlanCreationResponse.build());
+    return manifestsPlanNodeId;
+  }
+
+  private PlanCreationResponseBuilder preparePlanCreationResponseBuilder(
+      YamlField manifestsYamlField, String manifestsPlanNodeId, Map<String, ByteString> metadataDependency) {
+    Map<String, YamlField> dependenciesMap = new HashMap<>();
+    dependenciesMap.put(manifestsPlanNodeId, manifestsYamlField);
+    return PlanCreationResponse.builder().dependencies(
+        DependenciesUtils.toDependenciesProto(dependenciesMap)
+            .toBuilder()
+            .putDependencyMetadata(
+                manifestsPlanNodeId, Dependency.newBuilder().putAllMetadata(metadataDependency).build())
+            .build());
+  }
+
+  @NotNull
+  private YamlField prepareFinalUuidInjectedManifestYamlField(
+      YamlNode serviceV2Node, List<ManifestConfigWrapper> finalManifests) throws IOException {
+    YamlField manifestsYamlField = YamlUtils.injectUuidInYamlField(YamlUtils.write(finalManifests));
+    manifestsYamlField = new YamlField(YamlTypes.MANIFEST_LIST_CONFIG,
+        new YamlNode(YamlTypes.MANIFEST_LIST_CONFIG, manifestsYamlField.getNode().getCurrJsonNode(),
+            serviceV2Node.getField(YamlTypes.SERVICE_DEFINITION).getNode().getField(YamlTypes.SPEC).getNode()));
+    return manifestsYamlField;
+  }
+
+  @VisibleForTesting
+  @NotNull
+  List<ManifestConfigWrapper> prepareFinalManifests(NGServiceV2InfoConfig serviceV2Config,
+      NGServiceOverrideConfig serviceOverrideConfig, NGEnvironmentConfig ngEnvironmentConfig) {
+    final List<ManifestConfigWrapper> svcManifests = getManifests(serviceV2Config);
+    final List<ManifestConfigWrapper> envGlobalManifests =
+        getAndValidateEnvGlobalManifests(serviceV2Config, ngEnvironmentConfig, svcManifests);
+    final List<ManifestConfigWrapper> svcOverrideManifests =
+        getAndValidateSvcOverrideManifests(serviceV2Config, serviceOverrideConfig, ngEnvironmentConfig, svcManifests);
+    checkCrossLocationDuplicateIdentifiers(svcOverrideManifests, envGlobalManifests, serviceV2Config.getIdentifier(),
+        ngEnvironmentConfig.getNgEnvironmentInfoConfig().getIdentifier(), SERVICE_OVERRIDES);
+
+    final List<ManifestConfigWrapper> finalManifests = new ArrayList<>();
+
+    finalManifests.addAll(svcManifests);
+    finalManifests.addAll(envGlobalManifests);
+    finalManifests.addAll(svcOverrideManifests);
+    return finalManifests;
+  }
+
+  @NotNull
+  private List<ManifestConfigWrapper> getAndValidateEnvGlobalManifests(NGServiceV2InfoConfig serviceV2Config,
+      NGEnvironmentConfig ngEnvironmentConfig, List<ManifestConfigWrapper> svcManifests) {
+    final List<ManifestConfigWrapper> envGlobalManifests = getEnvGlobalManifests(ngEnvironmentConfig);
+
+    checkCrossLocationDuplicateIdentifiers(svcManifests, envGlobalManifests, serviceV2Config.getIdentifier(),
+        ngEnvironmentConfig.getNgEnvironmentInfoConfig().getIdentifier(),
+        ServiceDefinitionPlanCreatorHelper.ENVIRONMENT_GLOBAL_OVERRIDES);
+    validateAllowedManifestTypesInOverrides(
+        envGlobalManifests, ServiceDefinitionPlanCreatorHelper.ENVIRONMENT_GLOBAL_OVERRIDES);
+
+    return envGlobalManifests;
+  }
+
+  @NotNull
+  private List<ManifestConfigWrapper> getAndValidateSvcOverrideManifests(NGServiceV2InfoConfig serviceV2Config,
+      NGServiceOverrideConfig serviceOverrideConfig, NGEnvironmentConfig ngEnvironmentConfig,
+      List<ManifestConfigWrapper> svcManifests) {
+    if (serviceOverrideConfig == null) {
+      return EMPTY_LIST;
+    }
+    List<ManifestConfigWrapper> svcOverrideManifests = getSvcOverrideManifests(serviceOverrideConfig);
+
+    checkCrossLocationDuplicateIdentifiers(svcManifests, svcOverrideManifests, serviceV2Config.getIdentifier(),
+        ngEnvironmentConfig.getNgEnvironmentInfoConfig().getIdentifier(), SERVICE_OVERRIDES);
+    validateAllowedManifestTypesInOverrides(svcOverrideManifests, SERVICE_OVERRIDES);
+
+    return svcOverrideManifests;
+  }
+
+  @NonNull
+  private static List<ManifestConfigWrapper> getEnvGlobalManifests(NGEnvironmentConfig ngEnvironmentConfig) {
+    if (checkManifestAvailability(ngEnvironmentConfig)) {
+      return EMPTY_LIST;
+    }
+    return ngEnvironmentConfig.getNgEnvironmentInfoConfig().getNgEnvironmentGlobalOverride().getManifests();
+  }
+
+  private static boolean checkManifestAvailability(NGEnvironmentConfig ngEnvironmentConfig) {
+    return ngEnvironmentConfig == null || ngEnvironmentConfig.getNgEnvironmentInfoConfig() == null
+        || ngEnvironmentConfig.getNgEnvironmentInfoConfig().getNgEnvironmentGlobalOverride() == null
+        || ngEnvironmentConfig.getNgEnvironmentInfoConfig().getNgEnvironmentGlobalOverride().getManifests() == null;
+  }
+
+  private static void validateAllowedManifestTypesInOverrides(
+      List<ManifestConfigWrapper> svcOverrideManifests, String overrideLocation) {
+    if (isEmpty(svcOverrideManifests)) {
+      return;
+    }
+    Set<String> unsupportedManifestTypesUsed =
+        svcOverrideManifests.stream()
+            .map(ManifestConfigWrapper::getManifest)
+            .filter(Objects::nonNull)
+            .map(ManifestConfig::getType)
+            .map(ManifestConfigType::getDisplayName)
+            .filter(type -> !SERVICE_OVERRIDE_SUPPORTED_MANIFEST_TYPES.contains(type))
+            .collect(Collectors.toSet());
+    if (isNotEmpty(unsupportedManifestTypesUsed)) {
+      throw new InvalidRequestException(format("Unsupported Manifest Types: [%s] found for %s",
+          unsupportedManifestTypesUsed.stream().map(Object::toString).collect(Collectors.joining(",")),
+          overrideLocation));
+    }
+  }
+
+  private static void checkCrossLocationDuplicateIdentifiers(List<ManifestConfigWrapper> manifestsA,
+      List<ManifestConfigWrapper> manifestsB, String svcIdentifier, String envIdentifier, String overrideLocation) {
+    if (isEmpty(manifestsA) || isEmpty(manifestsB)) {
+      return;
+    }
+    Set<String> overridesIdentifiers = manifestsB.stream()
+                                           .map(ManifestConfigWrapper::getManifest)
+                                           .map(ManifestConfig::getIdentifier)
+                                           .collect(Collectors.toSet());
+    List<String> duplicateManifestIds = manifestsA.stream()
+                                            .map(ManifestConfigWrapper::getManifest)
+                                            .map(ManifestConfig::getIdentifier)
+                                            .filter(overridesIdentifiers::contains)
+                                            .collect(Collectors.toList());
+    if (isNotEmpty(duplicateManifestIds)) {
+      throw new InvalidRequestException(
+          format("Found duplicate manifest identifiers [%s] in %s for service [%s] and environment [%s]",
+              duplicateManifestIds.stream().map(Object::toString).collect(Collectors.joining(",")), overrideLocation,
+              svcIdentifier, envIdentifier));
+    }
+  }
+
+  private List<ManifestConfigWrapper> getManifests(NGServiceV2InfoConfig serviceV2Config) {
+    return emptyIfNull(serviceV2Config.getServiceDefinition().getServiceSpec().getManifests());
+  }
+
+  @NonNull
+  private List<ManifestConfigWrapper> getSvcOverrideManifests(@NonNull NGServiceOverrideConfig serviceOverrideConfigs) {
+    if (serviceOverrideConfigs.getServiceOverrideInfoConfig() == null) {
+      return emptyList();
+    }
+    return emptyIfNull(serviceOverrideConfigs.getServiceOverrideInfoConfig().getManifests());
   }
 
   String addDependenciesForConfigFilesV2(YamlNode serviceV2Node,
@@ -242,7 +448,7 @@ public class ServiceDefinitionPlanCreatorHelper {
         serviceConfigNode, isUseFromStage, yamlUpdates, YamlTypes.STARTUP_COMMAND);
     String startupCommandPlanNodeId = "startupCommnad-" + UUIDGenerator.generateUuid();
 
-    StoreConfigWrapper startupCommand =
+    StartupCommandConfiguration startupCommand =
         ((AzureWebAppServiceSpec) serviceConfig.getServiceDefinition().getServiceSpec()).getStartupCommand();
     Map<String, YamlField> dependenciesMap = new HashMap<>();
     dependenciesMap.put(startupCommandPlanNodeId, startupCommandYamlField);
@@ -270,7 +476,7 @@ public class ServiceDefinitionPlanCreatorHelper {
         serviceConfigNode, isUseFromStage, yamlUpdates, YamlTypes.APPLICATION_SETTINGS);
     String applicationSettingsYamlFieldPlanNodeId = "applicationSettings-" + UUIDGenerator.generateUuid();
 
-    StoreConfigWrapper applicationSettings =
+    ApplicationSettingsConfiguration applicationSettings =
         ((AzureWebAppServiceSpec) serviceConfig.getServiceDefinition().getServiceSpec()).getApplicationSettings();
     Map<String, YamlField> dependenciesMap = new HashMap<>();
     dependenciesMap.put(applicationSettingsYamlFieldPlanNodeId, applicationSettingsYamlField);
@@ -299,7 +505,7 @@ public class ServiceDefinitionPlanCreatorHelper {
         serviceConfigNode, isUseFromStage, yamlUpdates, YamlTypes.CONNECTION_STRINGS);
     String connectionStringsYamlFieldPlanNodeId = "connectionStrings-" + UUIDGenerator.generateUuid();
 
-    StoreConfigWrapper connectionStrings =
+    ConnectionStringsConfiguration connectionStrings =
         ((AzureWebAppServiceSpec) serviceConfig.getServiceDefinition().getServiceSpec()).getConnectionStrings();
     Map<String, YamlField> dependenciesMap = new HashMap<>();
     dependenciesMap.put(connectionStringsYamlFieldPlanNodeId, connectionStringsYamlField);
@@ -326,7 +532,7 @@ public class ServiceDefinitionPlanCreatorHelper {
         serviceV2Node, false, yamlUpdates, YamlTypes.STARTUP_COMMAND);
     String startupCommandPlanNodeId = "startupCommand-" + UUIDGenerator.generateUuid();
 
-    StoreConfigWrapper startupCommand =
+    StartupCommandConfiguration startupCommand =
         ((AzureWebAppServiceSpec) serviceV2Config.getServiceDefinition().getServiceSpec()).getStartupCommand();
 
     Map<String, YamlField> dependenciesMap = new HashMap<>();
@@ -354,7 +560,7 @@ public class ServiceDefinitionPlanCreatorHelper {
         serviceV2Node, false, yamlUpdates, YamlTypes.APPLICATION_SETTINGS);
     String applicationSettingsPlanNodeId = "applicationSettings-" + UUIDGenerator.generateUuid();
 
-    StoreConfigWrapper applicationSettings =
+    ApplicationSettingsConfiguration applicationSettings =
         ((AzureWebAppServiceSpec) serviceV2Config.getServiceDefinition().getServiceSpec()).getApplicationSettings();
 
     Map<String, YamlField> dependenciesMap = new HashMap<>();
@@ -382,7 +588,7 @@ public class ServiceDefinitionPlanCreatorHelper {
         serviceV2Node, false, yamlUpdates, YamlTypes.CONNECTION_STRINGS);
     String connectionStringsPlanNodeId = "connectionStrings-" + UUIDGenerator.generateUuid();
 
-    StoreConfigWrapper connectionStrings =
+    ConnectionStringsConfiguration connectionStrings =
         ((AzureWebAppServiceSpec) serviceV2Config.getServiceDefinition().getServiceSpec()).getConnectionStrings();
 
     Map<String, YamlField> dependenciesMap = new HashMap<>();
@@ -406,25 +612,25 @@ public class ServiceDefinitionPlanCreatorHelper {
     List<ManifestConfigWrapper> manifests = actualServiceConfig.getServiceDefinition().getServiceSpec().getManifests();
 
     // Contains either manifests or overrides or nothing.
-    if (EmptyPredicate.isNotEmpty(manifests)) {
+    if (isNotEmpty(manifests)) {
       return true;
     }
 
     return actualServiceConfig.getStageOverrides() != null
         && actualServiceConfig.getStageOverrides().getManifests() != null
-        && EmptyPredicate.isNotEmpty(actualServiceConfig.getStageOverrides().getManifests());
+        && isNotEmpty(actualServiceConfig.getStageOverrides().getManifests());
   }
 
   boolean shouldCreatePlanNodeForManifestsV2(NGServiceV2InfoConfig serviceV2InfoConfig) {
     List<ManifestConfigWrapper> manifests = serviceV2InfoConfig.getServiceDefinition().getServiceSpec().getManifests();
 
     // Contains either manifests or not.
-    return EmptyPredicate.isNotEmpty(manifests);
+    return isNotEmpty(manifests);
   }
 
   boolean shouldCreatePlanNodeForConfigFilesV2(NGServiceV2InfoConfig serviceV2InfoConfig) {
     List<ConfigFileWrapper> configFiles = serviceV2InfoConfig.getServiceDefinition().getServiceSpec().getConfigFiles();
 
-    return EmptyPredicate.isNotEmpty(configFiles);
+    return isNotEmpty(configFiles);
   }
 }

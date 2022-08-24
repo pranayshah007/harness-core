@@ -2164,8 +2164,8 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
         "service_2_local", "service_2", Sets.newHashSet("service_1_local"));
     monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceOneDTO);
     monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceTwoDTO);
-    CountServiceDTO countServiceDTO = monitoredServiceService.getCountOfServices(projectParams, null, "service_2");
-    assertThat(countServiceDTO.getAllServicesCount()).isEqualTo(1);
+    CountServiceDTO countServiceDTO = monitoredServiceService.getCountOfServices(projectParams, null, "service");
+    assertThat(countServiceDTO.getAllServicesCount()).isEqualTo(2);
     assertThat(countServiceDTO.getServicesAtRiskCount()).isEqualTo(0);
   }
 

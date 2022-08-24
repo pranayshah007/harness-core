@@ -15,6 +15,7 @@ import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.NO_CO
 import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.NO_DESTINATION_PATH_SPECIFIED;
 import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.NO_DESTINATION_PATH_SPECIFIED_EXPLANATION;
 import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.NO_DESTINATION_PATH_SPECIFIED_HINT;
+import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 
 import static java.lang.String.format;
 
@@ -29,6 +30,7 @@ import io.harness.delegate.task.shell.WinrmTaskParameters;
 import io.harness.delegate.task.shell.ssh.CommandHandler;
 import io.harness.delegate.task.ssh.CopyCommandUnit;
 import io.harness.delegate.task.ssh.NgCommandUnit;
+import io.harness.delegate.task.ssh.artifact.SkipCopyArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.config.ConfigFileParameters;
 import io.harness.delegate.task.ssh.config.SecretConfigFile;
 import io.harness.delegate.task.winrm.FileBasedWinRmExecutorNG;
@@ -39,6 +41,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.runtime.WinRmCommandExecutionException;
 import io.harness.logging.CommandExecutionStatus;
+import io.harness.logging.LogLevel;
 import io.harness.security.encryption.SecretDecryptionService;
 import io.harness.ssh.FileSourceType;
 
@@ -47,6 +50,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -59,7 +63,8 @@ public class WinRmCopyCommandHandler implements CommandHandler {
 
   @Override
   public CommandExecutionStatus handle(CommandTaskParameters parameters, NgCommandUnit commandUnit,
-      ILogStreamingTaskClient logStreamingTaskClient, CommandUnitsProgress commandUnitsProgress) {
+      ILogStreamingTaskClient logStreamingTaskClient, CommandUnitsProgress commandUnitsProgress,
+      Map<String, Object> taskContext) {
     if (!(parameters instanceof WinrmTaskParameters)) {
       throw new InvalidRequestException("Invalid task parameters submitted for command task.");
     }
@@ -126,6 +131,11 @@ public class WinRmCopyCommandHandler implements CommandHandler {
   private CommandExecutionStatus copyArtifact(
       WinrmTaskParameters taskParameters, CopyCommandUnit copyCommandUnit, FileBasedWinRmExecutorNG executor) {
     log.info("About to copy artifact");
+    if (taskParameters.getArtifactDelegateConfig() instanceof SkipCopyArtifactDelegateConfig) {
+      log.info("Artifactory docker registry found, skipping copy artifact.");
+      executor.saveExecutionLog("Command finished with status " + SUCCESS, LogLevel.INFO, SUCCESS);
+      return SUCCESS;
+    }
     CommandExecutionStatus result;
     try {
       result = executor.copyArtifacts(taskParameters, copyCommandUnit);

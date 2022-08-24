@@ -74,4 +74,12 @@ public class CECloudAccountDao {
     UpdateResults updateResults = hPersistence.update(ceCloudAccount, updateOperations);
     return updateResults.getUpdatedCount() > 0;
   }
+
+  public boolean updateAccountName(CECloudAccount ceCloudAccount, String accountName) {
+    UpdateOperations<CECloudAccount> updateOperations = hPersistence.createUpdateOperations(CECloudAccount.class);
+
+    updateOperations.set(CECloudAccountKeys.accountName, accountName);
+    UpdateResults updateResults = hPersistence.update(ceCloudAccount, updateOperations);
+    return updateResults.getUpdatedCount() > 0;
+  }
 }

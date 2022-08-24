@@ -9,13 +9,20 @@ package io.harness.pms.approval.jira;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.rule.OwnerRule.BRIJESH;
+import static io.harness.rule.OwnerRule.LUCAS_SALES;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.joor.Reflect.on;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
@@ -33,6 +40,7 @@ import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.rule.Owner;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.approval.step.ApprovalInstanceService;
+import io.harness.steps.approval.step.beans.ApprovalStatus;
 import io.harness.steps.approval.step.beans.ApprovalType;
 import io.harness.steps.approval.step.beans.CriteriaSpecWrapperDTO;
 import io.harness.steps.approval.step.beans.JexlCriteriaSpecDTO;
@@ -127,6 +135,71 @@ public class JiraApprovalCallbackTest extends CategoryTest {
     // To throw exception while casting the response to ResponseData and catch the exception
     doReturn(null).when(kryoSerializer).asInflatedObject(any());
     jiraApprovalCallback.push(response);
+  }
+
+  @Test
+  @Owner(developers = LUCAS_SALES)
+  @Category(UnitTests.class)
+  public void testValidateNotMatchingIssueType_ShouldFail() {
+    Map<String, String> fieldsMap = new HashMap<>();
+    fieldsMap.put("Issue Type", "Bug");
+    JiraApprovalInstance instance = JiraApprovalInstance.builder().issueType("Task").build();
+
+    instance.setId("instanceId");
+
+    JiraIssueNG jiraIssueNG = mock(JiraIssueNG.class);
+    doReturn(fieldsMap).when(jiraIssueNG).getFields();
+    doNothing().when(approvalInstanceService).finalizeStatus(any(), any(), any(), any());
+    JiraTaskNGResponse response = JiraTaskNGResponse.builder().issue(jiraIssueNG).build();
+
+    boolean success = jiraApprovalCallback.validateIssueType(instance, response);
+
+    assertThat(success).isFalse();
+    verify(approvalInstanceService).finalizeStatus(eq(instance.getId()), eq(ApprovalStatus.FAILED), anyString());
+  }
+
+  @Test
+  @Owner(developers = LUCAS_SALES)
+  @Category(UnitTests.class)
+  public void testValidateMatchingIssueType_ShouldSucceed() {
+    Map<String, String> fieldsMap = new HashMap<>();
+    fieldsMap.put("Issue Type", "Bug");
+    JiraApprovalInstance instance = JiraApprovalInstance.builder().issueType("Bug").build();
+
+    instance.setId("instanceId");
+
+    JiraIssueNG jiraIssueNG = mock(JiraIssueNG.class);
+    doReturn(fieldsMap).when(jiraIssueNG).getFields();
+    doNothing().when(approvalInstanceService).finalizeStatus(any(), any(), any(), any());
+    JiraTaskNGResponse response = JiraTaskNGResponse.builder().issue(jiraIssueNG).build();
+
+    boolean success = jiraApprovalCallback.validateIssueType(instance, response);
+
+    assertThat(success).isTrue();
+    verify(approvalInstanceService, never())
+        .finalizeStatus(eq(instance.getId()), eq(ApprovalStatus.FAILED), anyString());
+  }
+
+  @Test
+  @Owner(developers = LUCAS_SALES)
+  @Category(UnitTests.class)
+  public void testValidateNullIssueType_ShouldSucceed() {
+    Map<String, String> fieldsMap = new HashMap<>();
+    fieldsMap.put("Issue Type", "Bug");
+    JiraApprovalInstance instance = JiraApprovalInstance.builder().build();
+
+    instance.setId("instanceId");
+
+    JiraIssueNG jiraIssueNG = mock(JiraIssueNG.class);
+    doReturn(fieldsMap).when(jiraIssueNG).getFields();
+    doNothing().when(approvalInstanceService).finalizeStatus(any(), any(), any(), any());
+    JiraTaskNGResponse response = JiraTaskNGResponse.builder().issue(jiraIssueNG).build();
+
+    boolean success = jiraApprovalCallback.validateIssueType(instance, response);
+
+    assertThat(success).isTrue();
+    verify(approvalInstanceService, never())
+        .finalizeStatus(eq(instance.getId()), eq(ApprovalStatus.FAILED), anyString());
   }
 
   private JiraApprovalInstance getJiraApprovalInstance(Ambiance ambiance) {

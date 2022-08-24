@@ -47,7 +47,7 @@ import io.harness.licensing.Edition;
 import io.harness.licensing.beans.summary.CDLicenseSummaryDTO;
 import io.harness.licensing.beans.summary.CILicenseSummaryDTO;
 import io.harness.licensing.services.LicenseService;
-import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.remote.client.NGRestUtils;
 import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
 
@@ -58,9 +58,12 @@ import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.Mockito;
+import org.powermock.core.classloader.annotations.PrepareForTest;
 import retrofit2.Call;
 import retrofit2.Response;
 
+@PrepareForTest({NGRestUtils.class})
 public class EnforcementServiceImplTest extends CategoryTest {
   EnforcementServiceImpl enforcementService;
   private LicenseService licenseService;
@@ -94,10 +97,8 @@ public class EnforcementServiceImplTest extends CategoryTest {
         new LicenseStaticLimitRestrictionHandler(licenseService));
 
     enforcementSdkClient = mock(EnforcementSdkClient.class);
-    Call<ResponseDTO<FeatureRestrictionUsageDTO>> featureUsageCall = mock(Call.class);
-    when(featureUsageCall.execute())
-        .thenReturn(Response.success(ResponseDTO.newResponse(FeatureRestrictionUsageDTO.builder().count(10).build())));
-    when(enforcementSdkClient.getRestrictionUsage(any(), any(), any())).thenReturn(featureUsageCall);
+    Mockito.mockStatic(NGRestUtils.class);
+    when(NGRestUtils.getResponseWithRetry(any())).thenReturn(FeatureRestrictionUsageDTO.builder().count(10).build());
 
     enforcementService = new EnforcementServiceImpl(licenseService, restrictionHandlerFactory, accountClient,
         new ConversionHandlerFactory(new AllAvailableConversionHandlerImpl(restrictionHandlerFactory),

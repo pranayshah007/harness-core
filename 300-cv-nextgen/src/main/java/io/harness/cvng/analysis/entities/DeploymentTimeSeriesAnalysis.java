@@ -69,7 +69,7 @@ public final class DeploymentTimeSeriesAnalysis
   private Instant endTime;
   private Risk risk;
   private Double score;
-  private boolean isFailFast;
+  private boolean failFast;
   private List<DeploymentTimeSeriesAnalysisDTO.HostInfo> hostSummaries;
   private List<DeploymentTimeSeriesAnalysisDTO.TransactionMetricHostData> transactionMetricSummaries;
 

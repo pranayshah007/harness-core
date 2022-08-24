@@ -1,0 +1,11 @@
+# Execute as root and pass environment variables
+                        # su -p -
+
+                        # Execute as root via user credentials (with root privileges)
+                        # sudo -E su -p -
+
+                        # Creating runtime, backup and staging folders:
+
+                        mkdir -p $HOME/<+service.name>/<+env.name>/runtime
+                        mkdir -p $HOME/<+service.name>/<+env.name>/backup
+                        mkdir -p $HOME/<+service.name>/<+env.name>/staging

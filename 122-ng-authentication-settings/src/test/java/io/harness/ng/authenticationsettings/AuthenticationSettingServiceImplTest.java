@@ -35,6 +35,7 @@ import io.harness.rule.Owner;
 
 import software.wings.beans.sso.LdapConnectionSettings;
 import software.wings.beans.sso.SamlSettings;
+import software.wings.helpers.ext.ldap.LdapResponse;
 import software.wings.security.authentication.SSOConfig;
 
 import com.google.inject.Inject;
@@ -205,5 +206,23 @@ public class AuthenticationSettingServiceImplTest extends CategoryTest {
     doReturn(Response.success(mockResponse)).when(request).execute();
     authenticationSettingsServiceImpl.deleteLdapSettings(ACCOUNT_ID);
     verify(managerClient, times(1)).deleteLdapSettings(ACCOUNT_ID);
+  }
+
+  @Test
+  @Owner(developers = PRATEEK)
+  @Category(UnitTests.class)
+  public void testLdapLoginTest() throws IOException {
+    Call<RestResponse<LdapResponse>> request = mock(Call.class);
+    doReturn(request).when(managerClient).testLdapAuthentication(anyString(), any(), any());
+    final String authNSuccessMsg = "Authentication Success";
+    LdapResponse authNResponse =
+        LdapResponse.builder().message(authNSuccessMsg).status(LdapResponse.Status.SUCCESS).build();
+    RestResponse<LdapResponse> mockResponse = new RestResponse<>(authNResponse);
+    doReturn(Response.success(mockResponse)).when(request).execute();
+    LdapResponse resultResponse =
+        authenticationSettingsServiceImpl.testLDAPLogin(ACCOUNT_ID, "testEmail", "testPassword");
+    verify(managerClient, times(1)).testLdapAuthentication(anyString(), any(), any());
+    assertThat(resultResponse.getStatus()).isEqualTo(LdapResponse.Status.SUCCESS);
+    assertThat(resultResponse.getMessage()).isEqualTo(authNSuccessMsg);
   }
 }

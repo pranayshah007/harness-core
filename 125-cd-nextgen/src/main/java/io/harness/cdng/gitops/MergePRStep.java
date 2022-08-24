@@ -25,6 +25,7 @@ import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectorDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
+import io.harness.delegate.beans.connector.scm.gitlab.GitlabConnectorDTO;
 import io.harness.delegate.beans.gitapi.GitApiRequestType;
 import io.harness.delegate.beans.gitapi.GitApiTaskParams;
 import io.harness.delegate.beans.gitapi.GitRepoType;
@@ -35,6 +36,7 @@ import io.harness.delegate.task.git.NGGitOpsTaskParams;
 import io.harness.delegate.task.git.TaskStatus;
 import io.harness.exception.InvalidRequestException;
 import io.harness.executions.steps.ExecutionNodeType;
+import io.harness.impl.scm.ScmGitProviderHelper;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.plancreator.steps.common.rollback.TaskExecutableWithRollbackAndRbac;
@@ -73,6 +75,7 @@ public class MergePRStep extends TaskExecutableWithRollbackAndRbac<NGGitOpsRespo
   @Inject private CDStepHelper cdStepHelper;
   @Inject private GitOpsStepHelper gitOpsStepHelper;
   @Inject private ConnectorUtils connectorUtils;
+  @Inject private ScmGitProviderHelper scmGitProviderHelper;
 
   public static final StepType STEP_TYPE = StepType.newBuilder()
                                                .setType(ExecutionNodeType.GITOPS_MERGE_PR.getYamlType())
@@ -174,6 +177,21 @@ public class MergePRStep extends TaskExecutableWithRollbackAndRbac<NGGitOpsRespo
                                .repo(azureRepoConnectorDTO.getGitRepositoryDetails().getName())
                                .sha(sha)
                                .build();
+        break;
+      case GITLAB:
+        GitlabConnectorDTO gitlabConnectorDTO = (GitlabConnectorDTO) gitStoreDelegateConfig.getGitConfigDTO();
+        String slug = scmGitProviderHelper.getSlug(gitlabConnectorDTO);
+        gitApiTaskParams =
+            GitApiTaskParams.builder()
+                .gitRepoType(GitRepoType.GITLAB)
+                .requestType(GitApiRequestType.MERGE_PR)
+                .connectorDetails(connectorDetails)
+                .prNumber(String.valueOf(prNumber))
+                .slug(slug)
+                .sha(sha)
+                .deleteSourceBranch(CDStepHelper.getParameterFieldBooleanValue(gitOpsSpecParams.getDeleteSourceBranch(),
+                    MergePRStepInfo.MergePRBaseStepInfoKeys.deleteSourceBranch, stepParameters))
+                .build();
         break;
       default:
         throw new InvalidRequestException("Failed to run MergePR Step. Connector not supported", USER);

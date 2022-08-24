@@ -18,6 +18,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.DelegateType;
 import io.harness.delegate.beans.UpgradeCheckResult;
 import io.harness.delegate.service.impl.DelegateUpgraderServiceImpl;
+import io.harness.persistence.HPersistence;
 import io.harness.rule.Owner;
 
 import org.junit.Before;
@@ -31,6 +32,7 @@ import org.mockito.runners.MockitoJUnitRunner;
 @RunWith(MockitoJUnitRunner.class)
 public class DelegateUpgraderServiceTest {
   private static final String TEST_ACCOUNT_ID1 = "accountId1";
+
   private static final String LATEST_DELEGATE_IMAGE_TAG = "harness/delegate:latest";
   private static final String LATEST_UPGRADER_IMAGE_TAG = "harness/upgrader:latest";
   private static final String DELEGATE_IMAGE_TAG_1 = "harness/delegate:1";
@@ -39,10 +41,11 @@ public class DelegateUpgraderServiceTest {
   private DelegateUpgraderServiceImpl underTest;
 
   @Mock private DelegateVersionService delegateVersionService;
+  @Mock private HPersistence persistence;
 
   @Before
   public void setUp() {
-    underTest = new DelegateUpgraderServiceImpl(delegateVersionService);
+    underTest = new DelegateUpgraderServiceImpl(delegateVersionService, persistence);
   }
 
   @Test

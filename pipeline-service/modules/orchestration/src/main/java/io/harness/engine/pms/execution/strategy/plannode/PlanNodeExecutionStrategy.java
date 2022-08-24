@@ -13,8 +13,10 @@ import static io.harness.pms.contracts.execution.Status.RUNNING;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.engine.ExecutionCheck;
 import io.harness.engine.OrchestrationEngine;
+import io.harness.engine.execution.WaitForExecutionInputHelper;
 import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.executions.plan.PlanService;
 import io.harness.engine.facilitation.FacilitationHelper;
@@ -38,6 +40,7 @@ import io.harness.execution.NodeExecution.NodeExecutionKeys;
 import io.harness.execution.NodeExecutionMetadata;
 import io.harness.logging.AutoLogContext;
 import io.harness.plan.PlanNode;
+import io.harness.pms.PmsFeatureFlagService;
 import io.harness.pms.contracts.advisers.AdviseType;
 import io.harness.pms.contracts.advisers.AdviserResponse;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -61,12 +64,14 @@ import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.google.inject.Singleton;
+import com.google.inject.name.Named;
 import com.google.protobuf.ByteString;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.ExecutorService;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
@@ -92,31 +97,36 @@ public class PlanNodeExecutionStrategy extends AbstractNodeExecutionStrategy<Pla
   @Inject private OrchestrationEngine orchestrationEngine;
   @Inject private PmsOutcomeService outcomeService;
   @Inject private KryoSerializer kryoSerializer;
+  @Inject @Named("EngineExecutorService") ExecutorService executorService;
+  @Inject WaitForExecutionInputHelper waitForExecutionInputHelper;
+  @Inject PmsFeatureFlagService pmsFeatureFlagService;
 
   @Override
   public NodeExecution createNodeExecution(@NotNull Ambiance ambiance, @NotNull PlanNode node,
       NodeExecutionMetadata metadata, String notifyId, String parentId, String previousId) {
     String uuid = AmbianceUtils.obtainCurrentRuntimeId(ambiance);
-    NodeExecution nodeExecution = NodeExecution.builder()
-                                      .uuid(uuid)
-                                      .planNode(node)
-                                      .ambiance(ambiance)
-                                      .levelCount(ambiance.getLevelsCount())
-                                      .status(Status.QUEUED)
-                                      .notifyId(notifyId)
-                                      .parentId(parentId)
-                                      .previousId(previousId)
-                                      .unitProgresses(new ArrayList<>())
-                                      .startTs(AmbianceUtils.getCurrentLevelStartTs(ambiance))
-                                      .module(node.getServiceName())
-                                      .name(AmbianceUtils.modifyIdentifier(ambiance, node.getName()))
-                                      .skipGraphType(node.getSkipGraphType())
-                                      .identifier(AmbianceUtils.modifyIdentifier(ambiance, node.getIdentifier()))
-                                      .stepType(node.getStepType())
-                                      .nodeId(node.getUuid())
-                                      .stageFqn(node.getStageFqn())
-                                      .group(node.getGroup())
-                                      .build();
+    NodeExecution nodeExecution =
+        NodeExecution.builder()
+            .uuid(uuid)
+            .planNode(node)
+            .executionInputConfigured(!EmptyPredicate.isEmpty(node.getExecutionInputTemplate()))
+            .ambiance(ambiance)
+            .levelCount(ambiance.getLevelsCount())
+            .status(Status.QUEUED)
+            .notifyId(notifyId)
+            .parentId(parentId)
+            .previousId(previousId)
+            .unitProgresses(new ArrayList<>())
+            .startTs(AmbianceUtils.getCurrentLevelStartTs(ambiance))
+            .module(node.getServiceName())
+            .name(AmbianceUtils.modifyIdentifier(ambiance, node.getName()))
+            .skipGraphType(node.getSkipGraphType())
+            .identifier(AmbianceUtils.modifyIdentifier(ambiance, node.getIdentifier()))
+            .stepType(node.getStepType())
+            .nodeId(node.getUuid())
+            .stageFqn(node.getStageFqn())
+            .group(node.getGroup())
+            .build();
     return nodeExecutionService.save(nodeExecution);
   }
 
@@ -149,6 +159,9 @@ public class PlanNodeExecutionStrategy extends AbstractNodeExecutionStrategy<Pla
       }
       log.info("Proceeding with  Execution. Reason : {}", check.getReason());
 
+      if (waitForExecutionInputHelper.waitForExecutionInput(ambiance, nodeExecutionId, planNode)) {
+        return;
+      }
       if (facilitationHelper.customFacilitatorPresent(planNode)) {
         facilitateEventPublisher.publishEvent(ambiance, planNode);
         return;

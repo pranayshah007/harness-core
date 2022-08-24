@@ -130,7 +130,8 @@ public class ShellScriptProvisionState extends State implements SweepingOutputSt
             .textVariables(infrastructureProvisionerService.extractTextVariables(variables, context))
             .encryptedVariables(infrastructureProvisionerService.extractEncryptedTextVariables(
                 variables, context.getAppId(), context.getWorkflowExecutionId()))
-            .timeoutInMillis(TimeUnit.MINUTES.toMillis(TIMEOUT_IN_MINUTES))
+            .timeoutInMillis(Math.max(
+                defaultIfNullTimeout(DEFAULT_ASYNC_CALL_TIMEOUT), TimeUnit.MINUTES.toMillis(TIMEOUT_IN_MINUTES)))
             .accountId(context.getAccountId())
             .appId(context.getAppId())
             .activityId(activityId)

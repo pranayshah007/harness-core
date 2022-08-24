@@ -35,13 +35,14 @@ public class VmPluginCompatibleStepSerializer {
   @Inject private CIExecutionConfigService ciExecutionConfigService;
   @Inject private ConnectorUtils connectorUtils;
   @Inject private HarnessImageUtils harnessImageUtils;
+  @Inject private PluginSettingUtils pluginSettingUtils;
 
   public VmPluginStep serialize(Ambiance ambiance, PluginCompatibleStep pluginCompatibleStep,
       StageInfraDetails stageInfraDetails, String identifier, ParameterField<Timeout> parameterFieldTimeout,
       String stepName) {
     long timeout = TimeoutUtils.getTimeoutInSeconds(parameterFieldTimeout, pluginCompatibleStep.getDefaultTimeout());
-    Map<String, String> envVars =
-        PluginSettingUtils.getPluginCompatibleEnvVariables(pluginCompatibleStep, identifier, timeout, Type.VM);
+    Map<String, String> envVars = pluginSettingUtils.getPluginCompatibleEnvVariables(
+        pluginCompatibleStep, identifier, timeout, ambiance, Type.VM);
     String image = CIStepInfoUtils.getPluginCustomStepImage(
         pluginCompatibleStep, ciExecutionConfigService, Type.VM, AmbianceUtils.getAccountId(ambiance));
     String connectorRef = PluginSettingUtils.getConnectorRef(pluginCompatibleStep);

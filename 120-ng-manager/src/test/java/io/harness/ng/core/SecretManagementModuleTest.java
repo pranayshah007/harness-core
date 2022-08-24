@@ -45,7 +45,6 @@ import io.harness.pms.redisConsumer.DebeziumConsumerConfig;
 import io.harness.redis.RedisConfig;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.repositories.ConnectorRepository;
-import io.harness.repositories.NGEncryptedDataRepository;
 import io.harness.repositories.accountsetting.AccountSettingRepository;
 import io.harness.repositories.ng.core.spring.SecretRepository;
 import io.harness.rule.Owner;
@@ -54,6 +53,7 @@ import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 import io.harness.serializer.KryoRegistrar;
 import io.harness.serializer.NextGenRegistrars;
 import io.harness.service.DelegateGrpcClientWrapper;
+import io.harness.template.remote.TemplateResourceClient;
 
 import software.wings.service.intfc.FileService;
 
@@ -151,13 +151,6 @@ public class SecretManagementModuleTest extends CategoryTest {
       @Singleton
       AccessControlClient getAccessControlClient() {
         return mock(AccessControlClient.class);
-      }
-    });
-    modules.add(new ProviderModule() {
-      @Provides
-      @Singleton
-      NGEncryptedDataRepository ngEncryptedDataRepository() {
-        return mock(NGEncryptedDataRepository.class);
       }
     });
     modules.add(new ProviderModule() {
@@ -265,6 +258,13 @@ public class SecretManagementModuleTest extends CategoryTest {
       }
     });
     modules.add(cacheModule);
+    modules.add(new ProviderModule() {
+      @Provides
+      @Singleton
+      TemplateResourceClient getTemplateResourceClient() {
+        return mock(TemplateResourceClient.class);
+      }
+    });
 
     Injector injector = Guice.createInjector(modules);
 

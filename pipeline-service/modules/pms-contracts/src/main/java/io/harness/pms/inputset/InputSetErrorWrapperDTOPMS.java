@@ -15,6 +15,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.annotations.ApiModel;
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.util.List;
 import java.util.Map;
 import lombok.Builder;
 import lombok.Value;
@@ -30,6 +31,7 @@ public class InputSetErrorWrapperDTOPMS implements ErrorMetadataDTO {
   @Schema(description = InputSetSchemaConstants.INPUT_SET_ERROR_PIPELINE_YAML_MESSAGE) String errorPipelineYaml;
   @Schema(description = InputSetSchemaConstants.INPUT_SET_UUID_TO_ERROR_YAML_MESSAGE)
   Map<String, InputSetErrorResponseDTOPMS> uuidToErrorResponseMap;
+  @Schema(description = "List of Input Sets that are invalid") List<String> invalidInputSetReferences;
 
   @Override
   public String getType() {

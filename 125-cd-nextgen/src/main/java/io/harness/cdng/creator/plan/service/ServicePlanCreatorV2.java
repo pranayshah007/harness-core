@@ -164,6 +164,8 @@ public class ServicePlanCreatorV2 extends ChildrenPlanCreator<NGServiceV2InfoCon
     Map<String, ByteString> serviceDefDependencyMap = new HashMap<>();
     serviceDefDependencyMap.put(
         YamlTypes.ENVIRONMENT_NODE_ID, ctx.getDependency().getMetadataMap().get(YamlTypes.ENVIRONMENT_NODE_ID));
+    serviceDefDependencyMap.put(
+        YamlTypes.ENVIRONMENT_REF, ctx.getDependency().getMetadataMap().get(YamlTypes.ENVIRONMENT_REF));
     Dependency serviceDefDependency = Dependency.newBuilder().putAllMetadata(serviceDefDependencyMap).build();
     return DependenciesUtils.toDependenciesProto(serviceDefYamlFieldMap)
         .toBuilder()

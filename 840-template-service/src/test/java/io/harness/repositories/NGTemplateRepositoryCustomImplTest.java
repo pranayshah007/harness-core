@@ -38,6 +38,7 @@ import io.harness.rule.Owner;
 import io.harness.template.entity.TemplateEntity;
 import io.harness.template.entity.TemplateEntity.TemplateEntityKeys;
 import io.harness.template.events.TemplateUpdateEventType;
+import io.harness.template.helpers.TemplateGitXHelper;
 import io.harness.template.services.NGTemplateServiceHelper;
 import io.harness.template.utils.NGTemplateFeatureFlagHelperService;
 
@@ -70,6 +71,8 @@ public class NGTemplateRepositoryCustomImplTest {
   @Mock OutboxService outboxService;
   @Mock NGTemplateFeatureFlagHelperService ngTemplateFeatureFlagHelperService;
 
+  @Mock TemplateGitXHelper templateGitXHelper;
+
   String accountIdentifier = "acc";
   String orgIdentifier = "org";
   String projectIdentifier = "proj";
@@ -94,7 +97,7 @@ public class NGTemplateRepositoryCustomImplTest {
     MockitoAnnotations.initMocks(this);
 
     ngTemplateRepositoryCustom = new NGTemplateRepositoryCustomImpl(gitAwarePersistence, gitSyncSdkService,
-        gitAwareEntityHelper, mongoTemplate, ngTemplateFeatureFlagHelperService, outboxService);
+        gitAwareEntityHelper, mongoTemplate, ngTemplateFeatureFlagHelperService, templateGitXHelper, outboxService);
 
     doReturn(true)
         .when(gitSyncSdkService)
@@ -273,7 +276,7 @@ public class NGTemplateRepositoryCustomImplTest {
                                    .filePath(filePath)
                                    .build();
 
-    when(ngTemplateFeatureFlagHelperService.isEnabled(accountIdentifier, FeatureName.FF_TEMPLATE_GITSYNC))
+    when(ngTemplateFeatureFlagHelperService.isEnabled(accountIdentifier, FeatureName.NG_TEMPLATE_GITX_ACCOUNT_ORG))
         .thenReturn(true);
 
     boolean isNewGitXEnabled = ngTemplateRepositoryCustom.isNewGitXEnabled(templateToSave, branchInfo);
@@ -299,7 +302,7 @@ public class NGTemplateRepositoryCustomImplTest {
     Optional<TemplateEntity> optionalPipelineEntity =
         ngTemplateRepositoryCustom
             .findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndIsStableAndDeletedNot(
-                accountIdentifier, orgIdentifier, projectIdentifier, templateId, true);
+                accountIdentifier, orgIdentifier, projectIdentifier, templateId, true, false);
     assertThat(optionalPipelineEntity.isPresent()).isTrue();
     assertThat(optionalPipelineEntity.get()).isEqualTo(templateEntity);
     verify(gitAwareEntityHelper, times(1)).fetchEntityFromRemote(any(), any(), any(), any());
@@ -324,7 +327,7 @@ public class NGTemplateRepositoryCustomImplTest {
     Optional<TemplateEntity> optionalPipelineEntity =
         ngTemplateRepositoryCustom
             .findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndIsStableAndDeletedNot(
-                accountIdentifier, orgIdentifier, projectIdentifier, templateId, true);
+                accountIdentifier, orgIdentifier, projectIdentifier, templateId, true, true);
     assertThat(optionalPipelineEntity.isPresent()).isTrue();
     assertThat(optionalPipelineEntity.get()).isEqualTo(templateEntity);
     verify(gitAwareEntityHelper, times(0)).fetchEntityFromRemote(any(), any(), any(), any());
@@ -349,7 +352,7 @@ public class NGTemplateRepositoryCustomImplTest {
     Optional<TemplateEntity> optionalPipelineEntity =
         ngTemplateRepositoryCustom
             .findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndVersionLabelAndDeletedNot(
-                accountIdentifier, orgIdentifier, projectIdentifier, templateId, templateVersion, true);
+                accountIdentifier, orgIdentifier, projectIdentifier, templateId, templateVersion, true, false);
     assertThat(optionalPipelineEntity.isPresent()).isTrue();
     assertThat(optionalPipelineEntity.get()).isEqualTo(templateEntity);
     verify(gitAwareEntityHelper, times(1)).fetchEntityFromRemote(any(), any(), any(), any());
@@ -374,7 +377,7 @@ public class NGTemplateRepositoryCustomImplTest {
     Optional<TemplateEntity> optionalPipelineEntity =
         ngTemplateRepositoryCustom
             .findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndVersionLabelAndDeletedNot(
-                accountIdentifier, orgIdentifier, projectIdentifier, templateId, templateVersion, true);
+                accountIdentifier, orgIdentifier, projectIdentifier, templateId, templateVersion, true, true);
     assertThat(optionalPipelineEntity.isPresent()).isTrue();
     assertThat(optionalPipelineEntity.get()).isEqualTo(templateEntity);
     verify(gitAwareEntityHelper, times(0)).fetchEntityFromRemote(any(), any(), any(), any());
@@ -399,7 +402,7 @@ public class NGTemplateRepositoryCustomImplTest {
     Optional<TemplateEntity> optionalPipelineEntity =
         ngTemplateRepositoryCustom
             .findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndIsLastUpdatedAndDeletedNot(
-                accountIdentifier, orgIdentifier, projectIdentifier, templateId, true);
+                accountIdentifier, orgIdentifier, projectIdentifier, templateId, true, false);
     assertThat(optionalPipelineEntity.isPresent()).isTrue();
     assertThat(optionalPipelineEntity.get()).isEqualTo(templateEntity);
     verify(gitAwareEntityHelper, times(1)).fetchEntityFromRemote(any(), any(), any(), any());
@@ -424,7 +427,7 @@ public class NGTemplateRepositoryCustomImplTest {
     Optional<TemplateEntity> optionalPipelineEntity =
         ngTemplateRepositoryCustom
             .findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndIsLastUpdatedAndDeletedNot(
-                accountIdentifier, orgIdentifier, projectIdentifier, templateId, true);
+                accountIdentifier, orgIdentifier, projectIdentifier, templateId, true, true);
     assertThat(optionalPipelineEntity.isPresent()).isTrue();
     assertThat(optionalPipelineEntity.get()).isEqualTo(templateEntity);
     verify(gitAwareEntityHelper, times(0)).fetchEntityFromRemote(any(), any(), any(), any());

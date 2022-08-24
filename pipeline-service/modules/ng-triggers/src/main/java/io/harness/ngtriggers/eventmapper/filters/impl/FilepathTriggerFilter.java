@@ -26,8 +26,6 @@ import static io.harness.ngtriggers.Constants.TRIGGER_PAYLOAD_COMMITS;
 import static io.harness.ngtriggers.beans.response.TriggerEventResponse.FinalStatus.NO_MATCHING_TRIGGER_FOR_FILEPATH_CONDITIONS;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.DelegateTaskRequest;
-import io.harness.beans.DelegateTaskRequest.DelegateTaskRequestBuilder;
 import io.harness.beans.IdentifierRef;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
@@ -37,13 +35,11 @@ import io.harness.delegate.beans.connector.scm.awscodecommit.AwsCodeCommitConnec
 import io.harness.delegate.beans.connector.scm.awscodecommit.AwsCodeCommitUrlType;
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketConnectorDTO;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubApiAccessDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubApiAccessType;
 import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabConnectorDTO;
-import io.harness.delegate.task.scm.ScmPathFilterEvaluationTaskParams;
-import io.harness.delegate.task.scm.ScmPathFilterEvaluationTaskParams.ScmPathFilterEvaluationTaskParamsBuilder;
 import io.harness.delegate.task.scm.ScmPathFilterEvaluationTaskResponse;
-import io.harness.exception.TriggerException;
-import io.harness.exception.WingsException;
 import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.ngtriggers.beans.config.NGTriggerConfigV2;
 import io.harness.ngtriggers.beans.dto.TriggerDetails;
@@ -61,21 +57,15 @@ import io.harness.ngtriggers.eventmapper.filters.dto.FilterRequestData;
 import io.harness.ngtriggers.expressions.TriggerExpressionEvaluator;
 import io.harness.ngtriggers.helpers.TriggerEventResponseHelper;
 import io.harness.ngtriggers.mapper.NGTriggerElementMapper;
-import io.harness.ngtriggers.utils.TaskExecutionUtils;
+import io.harness.ngtriggers.utils.SCMFilePathEvaluator;
+import io.harness.ngtriggers.utils.SCMFilePathEvaluatorFactory;
 import io.harness.ngtriggers.utils.WebhookTriggerFilterUtils;
 import io.harness.product.ci.scm.proto.ParseWebhookResponse;
-import io.harness.serializer.KryoSerializer;
-import io.harness.tasks.BinaryResponseData;
-import io.harness.tasks.ErrorResponseData;
-import io.harness.tasks.ResponseData;
 import io.harness.utils.ConnectorUtils;
-
-import software.wings.beans.TaskType;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -90,9 +80,8 @@ import org.apache.commons.lang3.StringUtils;
 @Singleton
 @OwnedBy(PIPELINE)
 public class FilepathTriggerFilter implements TriggerFilter {
-  private TaskExecutionUtils taskExecutionUtils;
+  private SCMFilePathEvaluatorFactory scmFilePathEvaluatorFactory;
   private NGTriggerElementMapper ngTriggerElementMapper;
-  private KryoSerializer kryoSerializer;
   private ConnectorUtils connectorUtils;
 
   @Override
@@ -182,8 +171,8 @@ public class FilepathTriggerFilter implements TriggerFilter {
         return true;
       }
 
-      if (shouldEvaluateOnDelegate(filterRequestData)) {
-        return initiateDeleteTaskAndEvaluate(filterRequestData, triggerDetails, pathCondition);
+      if (shouldEvaluateOnSCM(filterRequestData)) {
+        return initiateSCMTaskAndEvaluate(filterRequestData, triggerDetails, pathCondition);
       } else {
         return evaluateFromPushPayload(filterRequestData, pathCondition);
       }
@@ -209,7 +198,7 @@ public class FilepathTriggerFilter implements TriggerFilter {
   }
 
   @VisibleForTesting
-  boolean initiateDeleteTaskAndEvaluate(
+  boolean initiateSCMTaskAndEvaluate(
       FilterRequestData filterRequestData, TriggerDetails triggerDetails, TriggerEventDataCondition pathCondition) {
     ScmPathFilterEvaluationTaskResponse scmPathFilterEvaluationTaskResponse =
         performScmPathFilterEvaluation(triggerDetails.getNgTriggerEntity(), filterRequestData, pathCondition);
@@ -243,93 +232,66 @@ public class FilepathTriggerFilter implements TriggerFilter {
                                                  .build(),
               webhook.getGit().getConnectorIdentifier());
 
-      ScmConnector connector = null;
-      ConnectorConfigDTO connectorConfigDTO = connectorDetails.getConnectorConfig();
-      if (connectorConfigDTO.getClass().isAssignableFrom(GithubConnectorDTO.class)) {
-        connector = (GithubConnectorDTO) connectorConfigDTO;
-      } else if (connectorConfigDTO.getClass().isAssignableFrom(GitlabConnectorDTO.class)) {
-        connector = (GitlabConnectorDTO) connectorConfigDTO;
-      } else if (connectorConfigDTO.getClass().isAssignableFrom(BitbucketConnectorDTO.class)) {
-        connector = (BitbucketConnectorDTO) connectorConfigDTO;
-      }
+      ScmConnector scmConnector = getSCMConnector(connectorDetails, webhook);
 
-      if (connector == null) {
+      if (scmConnector == null) {
         return null;
       }
-      ScmConnector scmConnector = (ScmConnector) connectorDetails.getConnectorConfig();
-      String completeUrl = scmConnector.getUrl();
-      GitConnectionType gitConnectionType = getGitConnectionType(connectorDetails);
-      if (isNotEmpty(webhook.getGit().getRepoName())
-          && (gitConnectionType == null || gitConnectionType == GitConnectionType.ACCOUNT)) {
-        completeUrl = StringUtils.stripEnd(scmConnector.getUrl(), "/") + "/"
-            + StringUtils.stripStart(webhook.getGit().getRepoName(), "/");
-      }
-      scmConnector.setUrl(completeUrl);
 
-      ScmPathFilterEvaluationTaskParamsBuilder paramsBuilder =
-          ScmPathFilterEvaluationTaskParams.builder()
-              .encryptedDataDetails(connectorDetails.getEncryptedDataDetails())
-              .scmConnector(connector)
-              .operator(pathCondition.getOperator().getValue())
-              .standard(pathCondition.getValue());
-      ParseWebhookResponse parseWebhookResponse = filterRequestData.getWebhookPayloadData().getParseWebhookResponse();
+      boolean executeOnDelegate =
+          connectorDetails.getExecuteOnDelegate() == null || connectorDetails.getExecuteOnDelegate();
 
-      switch (parseWebhookResponse.getHookCase()) {
-        case PR:
-          paramsBuilder.prNumber((int) parseWebhookResponse.getPr().getPr().getNumber());
-          break;
-        default:
-          paramsBuilder.branch(parseWebhookResponse.getPush().getRef())
-              .latestCommit(parseWebhookResponse.getPush().getAfter())
-              .previousCommit(parseWebhookResponse.getPush().getBefore());
-      }
-
-      ScmPathFilterEvaluationTaskParams params = paramsBuilder.build();
-      DelegateTaskRequestBuilder delegateTaskRequestBuilder =
-          DelegateTaskRequest.builder()
-              .accountId(filterRequestData.getAccountId())
-              .taskType(TaskType.SCM_PATH_FILTER_EVALUATION_TASK.toString())
-              .taskParameters(params)
-              .executionTimeout(Duration.ofMinutes(1l))
-              .taskSetupAbstraction("ng", "true");
-
-      if (connectorDetails.getOrgIdentifier() != null) {
-        delegateTaskRequestBuilder.taskSetupAbstraction("orgIdentifier", connectorDetails.getOrgIdentifier());
-      }
-
-      if (connectorDetails.getProjectIdentifier() != null) {
-        delegateTaskRequestBuilder
-            .taskSetupAbstraction(
-                "owner", connectorDetails.getOrgIdentifier() + "/" + connectorDetails.getProjectIdentifier())
-            .taskSetupAbstraction("projectIdentifier", connectorDetails.getProjectIdentifier());
-      }
-      if (connectorDetails.getDelegateSelectors() != null) {
-        delegateTaskRequestBuilder.taskSelectors(connectorDetails.getDelegateSelectors());
-      }
-
-      ResponseData responseData = taskExecutionUtils.executeSyncTask(delegateTaskRequestBuilder.build());
-
-      if (BinaryResponseData.class.isAssignableFrom(responseData.getClass())) {
-        BinaryResponseData binaryResponseData = (BinaryResponseData) responseData;
-        Object object = kryoSerializer.asInflatedObject(binaryResponseData.getData());
-        if (object instanceof ScmPathFilterEvaluationTaskResponse) {
-          return (ScmPathFilterEvaluationTaskResponse) object;
-        } else if (object instanceof ErrorResponseData) {
-          ErrorResponseData errorResponseData = (ErrorResponseData) object;
-          throw new TriggerException(
-              String.format("Failed to fetch PR Details. Reason: {}", errorResponseData.getErrorMessage()),
-              WingsException.SRE);
+      if (!executeOnDelegate && scmConnector.getConnectorType() == GITHUB) {
+        GithubConnectorDTO githubConnectorDTO = (GithubConnectorDTO) connectorDetails.getConnectorConfig();
+        GithubApiAccessDTO githubApiAccessDTO = githubConnectorDTO.getApiAccess();
+        if (githubApiAccessDTO != null && githubApiAccessDTO.getType() == GithubApiAccessType.GITHUB_APP) {
+          // execute on delegate if authentication type is GITHUB_APP
+          executeOnDelegate = true;
+          log.warn("Executing file trigger via delegate since git auth type is GITHUB_APP");
         }
       }
+
+      SCMFilePathEvaluator scmFilePathEvaluator = scmFilePathEvaluatorFactory.getEvaluator(executeOnDelegate);
+      return scmFilePathEvaluator.execute(filterRequestData, pathCondition, connectorDetails, scmConnector);
     } catch (Exception e) {
       log.error(getTriggerSkipMessage(ngTriggerEntity) + ". Filed in executing delegate task", e);
-      return null;
     }
 
     return null;
   }
 
-  public GitConnectionType getGitConnectionType(ConnectorDetails gitConnector) {
+  private ScmConnector getSCMConnector(ConnectorDetails connectorDetails, WebhookMetadata webhookMetadata) {
+    ScmConnector connector = null;
+    ConnectorConfigDTO connectorConfigDTO = connectorDetails.getConnectorConfig();
+    switch (connectorDetails.getConnectorType()) {
+      case GITHUB:
+        connector = (GithubConnectorDTO) connectorConfigDTO;
+        break;
+      case GITLAB:
+        connector = (GitlabConnectorDTO) connectorConfigDTO;
+        break;
+      case BITBUCKET:
+        connector = (BitbucketConnectorDTO) connectorConfigDTO;
+        break;
+      default:
+        break;
+    }
+
+    if (connector != null) {
+      String completeUrl = connector.getUrl();
+      GitConnectionType gitConnectionType = getGitConnectionType(connectorDetails);
+      if (isNotEmpty(webhookMetadata.getGit().getRepoName())
+          && (gitConnectionType == null || gitConnectionType == GitConnectionType.ACCOUNT)) {
+        completeUrl = StringUtils.stripEnd(connector.getUrl(), "/") + "/"
+            + StringUtils.stripStart(webhookMetadata.getGit().getRepoName(), "/");
+      }
+      connector.setUrl(completeUrl);
+    }
+
+    return connector;
+  }
+
+  private GitConnectionType getGitConnectionType(ConnectorDetails gitConnector) {
     if (gitConnector == null) {
       return null;
     }
@@ -359,7 +321,7 @@ public class FilepathTriggerFilter implements TriggerFilter {
   // So if there more than or equal to 20 commits, there is a chance, few commits were truncated.
   // So, we go to delegate task.
   @VisibleForTesting
-  boolean shouldEvaluateOnDelegate(FilterRequestData filterRequestData) {
+  boolean shouldEvaluateOnSCM(FilterRequestData filterRequestData) {
     if (filterRequestData.getWebhookPayloadData().getParseWebhookResponse().hasPr()) {
       return true;
     } else if (filterRequestData.getWebhookPayloadData().getParseWebhookResponse().hasPush()) {

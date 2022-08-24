@@ -71,7 +71,8 @@ public class InputSetPipelineObserver implements PipelineActionObserver {
 
   private void checkIfOverlayInputSetIsValid(InputSetEntity overlayInputSet, PipelineEntity pipelineEntity) {
     try {
-      OverlayInputSetValidationHelper.validateOverlayInputSet(inputSetService, overlayInputSet);
+      OverlayInputSetValidationHelper.validateOverlayInputSet(
+          inputSetService, overlayInputSet, pipelineEntity.getYaml());
     } catch (InvalidOverlayInputSetException e) {
       markAsInvalid(overlayInputSet);
       return;

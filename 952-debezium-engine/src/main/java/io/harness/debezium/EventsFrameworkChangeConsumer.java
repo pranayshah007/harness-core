@@ -29,13 +29,15 @@ public class EventsFrameworkChangeConsumer implements MongoCollectionChangeConsu
   private int cnt;
   private long sleepInterval;
   private long producingCountPerBatch;
+  private int redisStreamSize;
 
-  public EventsFrameworkChangeConsumer(
-      long sleepInterval, String collectionName, DebeziumProducerFactory producerFactory, long producingCountPerBatch) {
+  public EventsFrameworkChangeConsumer(long sleepInterval, String collectionName,
+      DebeziumProducerFactory producerFactory, long producingCountPerBatch, int redisStreamSize) {
     this.collectionName = collectionName;
     this.producerFactory = producerFactory;
     this.sleepInterval = sleepInterval;
     this.producingCountPerBatch = producingCountPerBatch;
+    this.redisStreamSize = redisStreamSize;
   }
 
   @Override
@@ -54,7 +56,7 @@ public class EventsFrameworkChangeConsumer implements MongoCollectionChangeConsu
                                                     .setTimestamp(System.currentTimeMillis())
                                                     .build();
 
-      Producer producer = producerFactory.get(record.destination());
+      Producer producer = producerFactory.get(record.destination(), redisStreamSize);
       producer.send(Message.newBuilder().setData(debeziumChangeEvent.toByteString()).build());
       try {
         recordCommitter.markProcessed(record);

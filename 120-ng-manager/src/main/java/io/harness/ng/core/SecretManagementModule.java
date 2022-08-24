@@ -29,6 +29,8 @@ import io.harness.ng.core.api.impl.NGSecretsFileServiceImpl;
 import io.harness.ng.core.api.impl.SecretCrudServiceImpl;
 import io.harness.ng.core.dao.NGEncryptedDataDao;
 import io.harness.ng.core.dao.impl.NGEncryptedDaoServiceImpl;
+import io.harness.repositories.NGEncryptedDataRepository;
+import io.harness.repositories.NGEncryptedDataRepositoryImpl;
 import io.harness.secrets.SecretsFileService;
 
 import software.wings.service.impl.security.NGEncryptorService;
@@ -44,6 +46,7 @@ public class SecretManagementModule extends AbstractModule {
     registerRequiredBindings();
     bind(SecretsFileService.class).to(NGSecretsFileServiceImpl.class);
     bind(NGEncryptedDataDao.class).to(NGEncryptedDaoServiceImpl.class);
+    bind(NGEncryptedDataRepository.class).to(NGEncryptedDataRepositoryImpl.class);
     bind(NGEncryptedDataService.class).to(NGEncryptedDataServiceImpl.class);
     bind(NGConnectorSecretManagerService.class).to(NGConnectorSecretManagerServiceImpl.class);
     bind(NGSecretManagerService.class).to(NGSecretManagerServiceImpl.class);

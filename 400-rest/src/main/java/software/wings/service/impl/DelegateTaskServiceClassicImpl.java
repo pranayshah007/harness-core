@@ -59,7 +59,9 @@ import io.harness.cache.HarnessCacheManager;
 import io.harness.capability.CapabilityRequirement;
 import io.harness.capability.CapabilityTaskSelectionDetails;
 import io.harness.capability.service.CapabilityService;
+import io.harness.delegate.DelegateGlobalAccountController;
 import io.harness.delegate.NoEligibleDelegatesInAccountException;
+import io.harness.delegate.NoGlobalDelegateAccountException;
 import io.harness.delegate.beans.Delegate;
 import io.harness.delegate.beans.Delegate.DelegateKeys;
 import io.harness.delegate.beans.DelegateInstanceStatus;
@@ -93,6 +95,7 @@ import io.harness.delegate.task.pcf.request.CfCommandTaskParameters;
 import io.harness.delegate.task.pcf.request.CfCommandTaskParameters.CfCommandTaskParametersBuilder;
 import io.harness.delegate.task.pcf.request.CfRunPluginCommandRequest;
 import io.harness.environment.SystemEnvironment;
+import io.harness.eraro.ErrorCode;
 import io.harness.event.handler.impl.EventPublishHelper;
 import io.harness.exception.CriticalExpressionEvaluationException;
 import io.harness.exception.DelegateNotAvailableException;
@@ -110,8 +113,10 @@ import io.harness.logstreaming.LogStreamingServiceRestClient;
 import io.harness.metrics.intfc.DelegateMetricsService;
 import io.harness.mongo.DelayLogContext;
 import io.harness.network.SafeHttpCall;
+import io.harness.observer.RemoteObserverInformer;
 import io.harness.observer.Subject;
 import io.harness.persistence.HPersistence;
+import io.harness.reflection.ReflectionUtils;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.EncryptionConfig;
@@ -269,14 +274,16 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
   @Inject private DelegateSetupService delegateSetupService;
   @Inject private AuditHelper auditHelper;
   @Inject private DelegateMetricsService delegateMetricsService;
+  @Inject private DelegateGlobalAccountController delegateGlobalAccountController;
   @Inject @Named(SECRET_CACHE) Cache<String, EncryptedDataDetails> secretsCache;
   @Inject @Getter private Subject<DelegateObserver> subject = new Subject<>();
 
   private static final SecureRandom random = new SecureRandom();
   private HarnessCacheManager harnessCacheManager;
-
   private Supplier<Long> taskCountCache = Suppliers.memoizeWithExpiration(this::fetchTaskCount, 1, TimeUnit.MINUTES);
   @Inject @Getter private Subject<DelegateTaskStatusObserver> delegateTaskStatusObserverSubject;
+  @Inject @Getter private Subject<DelegateTaskObserver> delegateTaskObserverSubject;
+  @Inject private RemoteObserverInformer remoteObserverInformer;
 
   private LoadingCache<String, String> logStreamingAccountTokenCache =
       CacheBuilder.newBuilder()
@@ -426,6 +433,16 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
     task.setStatus(taskStatus);
     task.setVersion(getVersion());
     task.setLastBroadcastAt(clock.millis());
+    if (task.isExecuteOnHarnessHostedDelegates()) {
+      task.setSecondaryAccountId(task.getAccountId());
+      if (delegateGlobalAccountController.getGlobalAccount().isPresent()) {
+        String globalDelegateAccount = delegateGlobalAccountController.getGlobalAccount().get().getUuid();
+        task.setAccountId(globalDelegateAccount);
+      } else {
+        throw new NoGlobalDelegateAccountException(
+            "No Global Delegate Account Found", ErrorCode.NO_GLOBAL_DELEGATE_ACCOUNT);
+      }
+    }
 
     // For forward compatibility set the wait id to the uuid
     if (task.getUuid() == null) {
@@ -765,13 +782,13 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
       if (delegate == null || DelegateInstanceStatus.ENABLED != delegate.getStatus()) {
         log.warn("Delegate rejected to acquire task, because it was not found to be in {} status.",
             DelegateInstanceStatus.ENABLED);
-        return null;
+        return DelegateTaskPackage.builder().build();
       }
 
       log.debug("Acquiring delegate task");
       DelegateTask delegateTask = getUnassignedDelegateTask(accountId, taskId, delegateInstanceId);
       if (delegateTask == null) {
-        return null;
+        return DelegateTaskPackage.builder().build();
       }
 
       try (AutoLogContext ignore = new TaskLogContext(taskId, delegateTask.getData().getTaskType(),
@@ -783,7 +800,7 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
           return assignTask(delegateId, taskId, delegateTask, delegateInstanceId);
         }
         log.info("Delegate {} is blacklisted for task {}", delegateId, taskId);
-        return null;
+        return DelegateTaskPackage.builder().build();
       }
     } finally {
       if (log.isDebugEnabled()) {
@@ -924,6 +941,8 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
 
       ExpressionReflectionUtils.applyExpression(delegateTask.getData().getParameters()[0], (secretMode, value) -> {
         if (value == null) {
+          log.error("Unable to assign task {} due to error on ManagerPreExecutionExpressionEvaluator , value is null",
+              delegateTask.getUuid());
           return null;
         }
         return managerPreExecutionExpressionEvaluator.substitute(value, new HashMap<>());
@@ -937,6 +956,8 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
       });
 
       if (secretManagerFunctor == null && ngSecretManagerFunctor == null) {
+        log.error(
+            "Unable to assign task {} due to Error on ManagerPreExecutionExpressionEvaluator", delegateTask.getUuid());
         return null;
       }
 
@@ -1059,8 +1080,13 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
       }
       task.getData().setParameters(delegateTask.getData().getParameters());
       delegateSelectionLogsService.logTaskAssigned(delegateId, task);
-      delegateTaskStatusObserverSubject.fireInform(DelegateTaskStatusObserver::onTaskAssigned,
-          delegateTask.getAccountId(), taskId, delegateId, task.getData().getTimeout());
+
+      delegateTaskObserverSubject.fireInform(
+          DelegateTaskObserver::onTaskAssigned, delegateTask.getAccountId(), taskId, delegateId);
+      remoteObserverInformer.sendEvent(ReflectionUtils.getMethod(DelegateTaskObserver.class, "onTaskAssigned",
+                                           String.class, String.class, String.class),
+          DelegateTaskServiceClassicImpl.class, delegateTask.getAccountId(), taskId);
+
       delegateMetricsService.recordDelegateTaskMetrics(delegateTask, DELEGATE_TASK_ACQUIRE);
 
       return resolvePreAssignmentExpressions(task, SecretManagerMode.APPLY);

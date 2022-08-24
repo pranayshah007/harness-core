@@ -17,10 +17,12 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
 @OwnedBy(HarnessTeam.PIPELINE)
 @RecasterAlias("io.harness.plancreator.steps.TaskSelectorYaml")
+@NoArgsConstructor
 public class TaskSelectorYaml {
   String delegateSelectors;
   String origin;

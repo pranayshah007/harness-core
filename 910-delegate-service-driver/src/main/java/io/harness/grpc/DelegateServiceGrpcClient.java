@@ -148,7 +148,8 @@ public class DelegateServiceGrpcClient {
 
   public SubmitTaskResponse submitTask(DelegateCallbackToken delegateCallbackToken, AccountId accountId,
       TaskSetupAbstractions taskSetupAbstractions, TaskLogAbstractions taskLogAbstractions, TaskDetails taskDetails,
-      List<ExecutionCapability> capabilities, List<String> taskSelectors, Duration holdFor, boolean forceExecute) {
+      List<ExecutionCapability> capabilities, List<String> taskSelectors, Duration holdFor, boolean forceExecute,
+      boolean executeOnHarnessHostedDelegates, List<String> eligibleToExecuteDelegateIds) {
     try {
       if (taskSetupAbstractions == null || taskSetupAbstractions.getValuesCount() == 0) {
         Map<String, String> setupAbstractions = new HashMap<>();
@@ -164,13 +165,15 @@ public class DelegateServiceGrpcClient {
                                     .build();
       }
 
-      SubmitTaskRequest.Builder submitTaskRequestBuilder = SubmitTaskRequest.newBuilder()
-                                                               .setCallbackToken(delegateCallbackToken)
-                                                               .setAccountId(accountId)
-                                                               .setSetupAbstractions(taskSetupAbstractions)
-                                                               .setLogAbstractions(taskLogAbstractions)
-                                                               .setDetails(taskDetails)
-                                                               .setForceExecute(forceExecute);
+      SubmitTaskRequest.Builder submitTaskRequestBuilder =
+          SubmitTaskRequest.newBuilder()
+              .setCallbackToken(delegateCallbackToken)
+              .setAccountId(accountId)
+              .setSetupAbstractions(taskSetupAbstractions)
+              .setLogAbstractions(taskLogAbstractions)
+              .setExecuteOnHarnessHostedDelegates(executeOnHarnessHostedDelegates)
+              .setDetails(taskDetails)
+              .setForceExecute(forceExecute);
 
       if (isNotEmpty(capabilities)) {
         submitTaskRequestBuilder.addAllCapabilities(
@@ -189,6 +192,11 @@ public class DelegateServiceGrpcClient {
                 .collect(toList()));
       }
 
+      if (isNotEmpty(eligibleToExecuteDelegateIds)) {
+        submitTaskRequestBuilder.addAllEligibleToExecuteDelegateIds(
+            eligibleToExecuteDelegateIds.stream().collect(toList()));
+      }
+
       SubmitTaskResponse response = delegateServiceBlockingStub.withDeadlineAfter(30, TimeUnit.SECONDS)
                                         .submitTask(submitTaskRequestBuilder.build());
 
@@ -199,6 +207,9 @@ public class DelegateServiceGrpcClient {
 
       return response;
     } catch (StatusRuntimeException ex) {
+      if (ex.getStatus() != null && isNotEmpty(ex.getStatus().getDescription())) {
+        throw new DelegateServiceDriverException(ex.getStatus().getDescription());
+      }
       throw new DelegateServiceDriverException("Unexpected error occurred while submitting task.", ex);
     }
   }
@@ -236,8 +247,8 @@ public class DelegateServiceGrpcClient {
         TaskLogAbstractions.newBuilder()
             .putAllValues(MapUtils.emptyIfNull(taskRequest.getLogStreamingAbstractions()))
             .build(),
-        taskDetailsBuilder.build(), capabilities, taskRequest.getTaskSelectors(), holdFor,
-        taskRequest.isForceExecute());
+        taskDetailsBuilder.build(), capabilities, taskRequest.getTaskSelectors(), holdFor, taskRequest.isForceExecute(),
+        taskRequest.isExecuteOnHarnessHostedDelegates(), taskRequest.getEligibleToExecuteDelegateIds());
   }
 
   public TaskExecutionStage cancelTask(AccountId accountId, TaskId taskId) {

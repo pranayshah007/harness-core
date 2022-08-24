@@ -19,6 +19,7 @@ import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.times;
@@ -31,6 +32,8 @@ import io.harness.beans.EnvironmentType;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.common.beans.SetupAbstractionKeys;
+import io.harness.cdng.execution.ExecutionInfoKey;
+import io.harness.cdng.execution.helper.StageExecutionHelper;
 import io.harness.cdng.infra.beans.AwsInstanceFilter;
 import io.harness.cdng.infra.yaml.Infrastructure;
 import io.harness.cdng.infra.yaml.K8sGcpInfrastructure;
@@ -58,6 +61,7 @@ import io.harness.delegate.task.ssh.AzureSshInfraDelegateConfig;
 import io.harness.delegate.task.ssh.AzureWinrmInfraDelegateConfig;
 import io.harness.exception.InvalidRequestException;
 import io.harness.logging.CommandExecutionStatus;
+import io.harness.ng.core.infrastructure.InfrastructureKind;
 import io.harness.ng.core.k8s.ServiceSpecType;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
@@ -69,6 +73,7 @@ import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
+import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 import io.harness.serializer.KryoSerializer;
@@ -110,6 +115,7 @@ public class InfrastructureTaskExecutableStepTest extends CategoryTest {
   @Mock StepHelper stepHelper;
   @Mock KryoSerializer kryoSerializer;
   @Mock ThrowingSupplier throwingSupplier;
+  @Mock private StageExecutionHelper stageExecutionHelper;
 
   @InjectMocks private InfrastructureTaskExecutableStep infrastructureStep;
 
@@ -146,15 +152,16 @@ public class InfrastructureTaskExecutableStepTest extends CategoryTest {
       AwsSshInfraDelegateConfig.sshAwsBuilder().awsConnectorDTO(awsConnectorDTO).build();
   private final AwsWinrmInfraDelegateConfig awsWinrmInfraDelegateConfig =
       AwsWinrmInfraDelegateConfig.winrmAwsBuilder().awsConnectorDTO(awsConnectorDTO).build();
-  private final Infrastructure awsInfra = SshWinRmAwsInfrastructure.builder()
-                                              .connectorRef(connectorRef)
-                                              .credentialsRef(ParameterField.createValueField("sshKeyRef"))
-                                              .region(ParameterField.createValueField("regionId"))
-                                              .awsInstanceFilter(AwsInstanceFilter.builder()
-                                                                     .vpcs(Arrays.asList("vpc1"))
-                                                                     .tags(Collections.singletonMap("testTag", "test"))
-                                                                     .build())
-                                              .build();
+  private final Infrastructure awsInfra =
+      SshWinRmAwsInfrastructure.builder()
+          .connectorRef(connectorRef)
+          .credentialsRef(ParameterField.createValueField("sshKeyRef"))
+          .region(ParameterField.createValueField("regionId"))
+          .awsInstanceFilter(AwsInstanceFilter.builder()
+                                 .vpcs(Arrays.asList("vpc1"))
+                                 .tags(ParameterField.createValueField(Collections.singletonMap("testTag", "test")))
+                                 .build())
+          .build();
 
   @Before
   public void setUp() {
@@ -275,7 +282,14 @@ public class InfrastructureTaskExecutableStepTest extends CategoryTest {
     when(outcomeService.resolve(any(), eq(RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.SERVICE))))
         .thenReturn(ServiceStepOutcome.builder().type(ServiceSpecType.SSH).build());
     when(cdStepHelper.getSshInfraDelegateConfig(any(), eq(ambiance))).thenReturn(azureSshInfraDelegateConfig);
-
+    doNothing()
+        .when(stageExecutionHelper)
+        .saveStageExecutionInfoAndPublishExecutionInfoKey(
+            eq(ambiance), any(ExecutionInfoKey.class), eq(InfrastructureKind.SSH_WINRM_AZURE));
+    doNothing()
+        .when(stageExecutionHelper)
+        .addRollbackArtifactToStageOutcomeIfPresent(eq(ambiance), any(StepResponseBuilder.class),
+            any(ExecutionInfoKey.class), eq(InfrastructureKind.SSH_WINRM_AZURE));
     AzureHostsResponse azureHostsResponse =
         AzureHostsResponse.builder()
             .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
@@ -311,7 +325,14 @@ public class InfrastructureTaskExecutableStepTest extends CategoryTest {
     when(outcomeService.resolve(any(), eq(RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.SERVICE))))
         .thenReturn(ServiceStepOutcome.builder().type(ServiceSpecType.SSH).build());
     when(cdStepHelper.getSshInfraDelegateConfig(any(), eq(ambiance))).thenReturn(awsSshInfraDelegateConfig);
-
+    doNothing()
+        .when(stageExecutionHelper)
+        .saveStageExecutionInfoAndPublishExecutionInfoKey(
+            eq(ambiance), any(ExecutionInfoKey.class), eq(InfrastructureKind.SSH_WINRM_AWS));
+    doNothing()
+        .when(stageExecutionHelper)
+        .addRollbackArtifactToStageOutcomeIfPresent(eq(ambiance), any(StepResponseBuilder.class),
+            any(ExecutionInfoKey.class), eq(InfrastructureKind.SSH_WINRM_AWS));
     AwsListEC2InstancesTaskResponse awsListEC2InstancesTaskResponse =
         AwsListEC2InstancesTaskResponse.builder()
             .commandExecutionStatus(CommandExecutionStatus.SUCCESS)

@@ -91,7 +91,7 @@ public class EnvironmentResource {
   @ApiOperation(value = "Create an Environment", nickname = "createEnvironment")
   public ResponseDTO<EnvironmentResponseDTO> create(
       @QueryParam("accountId") String accountId, @NotNull @Valid EnvironmentRequestDTO environmentRequestDTO) {
-    Environment environmentEntity = EnvironmentMapper.toEnvironmentEntity(accountId, environmentRequestDTO);
+    Environment environmentEntity = EnvironmentMapper.toEnvironmentEntity(accountId, environmentRequestDTO, false);
     Environment createdEnvironment = environmentService.create(environmentEntity);
     return ResponseDTO.newResponse(
         createdEnvironment.getVersion().toString(), EnvironmentMapper.writeDTO(createdEnvironment));
@@ -112,7 +112,7 @@ public class EnvironmentResource {
   @ApiOperation(value = "Update an environment by identifier", nickname = "updateEnvironment")
   public ResponseDTO<EnvironmentResponseDTO> update(@HeaderParam(IF_MATCH) String ifMatch,
       @QueryParam("accountId") String accountId, @NotNull @Valid EnvironmentRequestDTO environmentRequestDTO) {
-    Environment requestEnvironment = EnvironmentMapper.toEnvironmentEntity(accountId, environmentRequestDTO);
+    Environment requestEnvironment = EnvironmentMapper.toEnvironmentEntity(accountId, environmentRequestDTO, false);
     requestEnvironment.setVersion(isNumeric(ifMatch) ? parseLong(ifMatch) : null);
     Environment updatedEnvironment = environmentService.update(requestEnvironment);
     return ResponseDTO.newResponse(
@@ -124,7 +124,7 @@ public class EnvironmentResource {
   @ApiOperation(value = "Upsert an environment by identifier", nickname = "upsertEnvironment")
   public ResponseDTO<EnvironmentResponseDTO> upsert(@HeaderParam(IF_MATCH) String ifMatch,
       @QueryParam("accountId") String accountId, @NotNull @Valid EnvironmentRequestDTO environmentRequestDTO) {
-    Environment requestEnvironment = EnvironmentMapper.toEnvironmentEntity(accountId, environmentRequestDTO);
+    Environment requestEnvironment = EnvironmentMapper.toEnvironmentEntity(accountId, environmentRequestDTO, false);
     requestEnvironment.setVersion(isNumeric(ifMatch) ? parseLong(ifMatch) : null);
     Environment upsertedEnvironment = environmentService.upsert(requestEnvironment, UpsertOptions.DEFAULT);
     return ResponseDTO.newResponse(

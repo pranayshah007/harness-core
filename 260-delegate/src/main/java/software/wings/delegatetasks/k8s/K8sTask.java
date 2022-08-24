@@ -10,9 +10,12 @@ package software.wings.delegatetasks.k8s;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.UUIDGenerator.convertBase64UuidToCanonicalForm;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
+import static io.harness.delegate.clienttools.ClientTool.OC;
 import static io.harness.filesystem.FileIo.createDirectoryIfDoesNotExist;
 import static io.harness.filesystem.FileIo.deleteDirectoryAndItsContentIfExists;
 import static io.harness.filesystem.FileIo.waitForDirectoryToBeAccessibleOutOfProcess;
+
+import static java.util.Objects.isNull;
 
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
@@ -20,6 +23,7 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.DelegateTaskResponse;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
+import io.harness.delegate.clienttools.InstallUtils;
 import io.harness.delegate.task.AbstractDelegateRunnableTask;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.k8s.K8sTaskType;
@@ -27,21 +31,31 @@ import io.harness.exception.ExceptionUtils;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.k8s.K8sConstants;
 import io.harness.k8s.K8sGlobalConfigService;
+import io.harness.k8s.model.HelmVersion;
 import io.harness.k8s.model.K8sDelegateTaskParams;
+import io.harness.k8s.model.K8sDelegateTaskParams.K8sDelegateTaskParamsBuilder;
 import io.harness.logging.CommandExecutionStatus;
 
+import software.wings.beans.appmanifest.StoreType;
 import software.wings.delegatetasks.k8s.taskhandler.K8sTaskHandler;
 import software.wings.helpers.ext.container.ContainerDeploymentDelegateHelper;
+import software.wings.helpers.ext.k8s.request.K8sApplyTaskParameters;
+import software.wings.helpers.ext.k8s.request.K8sBlueGreenDeployTaskParameters;
+import software.wings.helpers.ext.k8s.request.K8sCanaryDeployTaskParameters;
+import software.wings.helpers.ext.k8s.request.K8sDeleteTaskParameters;
+import software.wings.helpers.ext.k8s.request.K8sRollingDeployTaskParameters;
 import software.wings.helpers.ext.k8s.request.K8sTaskParameters;
 import software.wings.helpers.ext.k8s.response.K8sTaskExecutionResponse;
 
 import com.google.inject.Inject;
 import java.nio.file.Paths;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.NotImplementedException;
+
 @Slf4j
 @TargetModule(HarnessModule._930_DELEGATE_TASKS)
 @OwnedBy(CDP)
@@ -95,18 +109,10 @@ public class K8sTask extends AbstractDelegateRunnableTask {
 
         createDirectoryIfDoesNotExist(Paths.get(workingDirectory, K8sConstants.MANIFEST_FILES_DIR).toString());
 
-        K8sDelegateTaskParams k8SDelegateTaskParams =
-            K8sDelegateTaskParams.builder()
-                .kubectlPath(k8sGlobalConfigService.getKubectlPath(k8sTaskParameters.isUseNewKubectlVersion()))
-                .kubeconfigPath(K8sConstants.KUBECONFIG_FILENAME)
-                .workingDirectory(workingDirectory)
-                .goTemplateClientPath(k8sGlobalConfigService.getGoTemplateClientPath())
-                .helmPath(k8sGlobalConfigService.getHelmPath(k8sTaskParameters.getHelmVersion()))
-                .ocPath(k8sGlobalConfigService.getOcPath())
-                .kustomizeBinaryPath(
-                    k8sGlobalConfigService.getKustomizePath(k8sTaskParameters.isUseLatestKustomizeVersion()))
-                .useLatestKustomizeVersion(k8sTaskParameters.isUseLatestKustomizeVersion())
-                .build();
+        Optional<StoreType> optionalStoreType = getStoreTypeFromK8sTaskParameters(k8sTaskParameters);
+        K8sDelegateTaskParams k8SDelegateTaskParams = getK8sDelegateTaskParamsBasedOnManifestType(workingDirectory,
+            k8sTaskParameters.getHelmVersion(), k8sTaskParameters.isUseNewKubectlVersion(),
+            k8sTaskParameters.isUseLatestKustomizeVersion(), optionalStoreType.orElse(null));
 
         logK8sVersion(k8sTaskParameters, k8SDelegateTaskParams);
 
@@ -142,5 +148,80 @@ public class K8sTask extends AbstractDelegateRunnableTask {
     } catch (Exception ex) {
       log.warn("Exception in directory cleanup.", ExceptionMessageSanitizer.sanitizeException(ex));
     }
+  }
+
+  private K8sDelegateTaskParams getK8sDelegateTaskParamsBasedOnManifestType(String workingDirectory,
+      HelmVersion helmVersion, boolean isUseNewKubectlVersion, boolean isUseLatestKustomizeVersion,
+      StoreType storeType) {
+    K8sDelegateTaskParamsBuilder k8sDelegateTaskParamsBuilder =
+        K8sDelegateTaskParams.builder()
+            .kubectlPath(k8sGlobalConfigService.getKubectlPath(isUseNewKubectlVersion))
+            .kubeconfigPath(K8sConstants.KUBECONFIG_FILENAME)
+            .workingDirectory(workingDirectory);
+
+    if (!isNull(storeType)) {
+      switch (storeType) {
+        case Local:
+        case Remote:
+        case CUSTOM:
+          k8sDelegateTaskParamsBuilder.goTemplateClientPath(k8sGlobalConfigService.getGoTemplateClientPath());
+          break;
+
+        case HelmChartRepo:
+        case HelmSourceRepo:
+          k8sDelegateTaskParamsBuilder.helmPath(k8sGlobalConfigService.getHelmPath(helmVersion));
+          break;
+
+        case KustomizeSourceRepo:
+          k8sDelegateTaskParamsBuilder
+              .kustomizeBinaryPath(k8sGlobalConfigService.getKustomizePath(isUseLatestKustomizeVersion))
+              .useLatestKustomizeVersion(isUseLatestKustomizeVersion);
+          break;
+
+        case OC_TEMPLATES:
+        case CUSTOM_OPENSHIFT_TEMPLATE:
+          k8sDelegateTaskParamsBuilder.ocPath(InstallUtils.getLatestVersionPath(OC));
+          break;
+
+        default:
+          return k8sDelegateTaskParamsBuilder.build();
+      }
+    }
+    return k8sDelegateTaskParamsBuilder.build();
+  }
+
+  private Optional<StoreType> getStoreTypeFromK8sTaskParameters(K8sTaskParameters k8sTaskParameters) {
+    if (k8sTaskParameters instanceof K8sApplyTaskParameters) {
+      K8sApplyTaskParameters k8sApplyTaskParameters = (K8sApplyTaskParameters) k8sTaskParameters;
+      if (k8sApplyTaskParameters.getK8sDelegateManifestConfig() != null) {
+        return Optional.ofNullable(k8sApplyTaskParameters.getK8sDelegateManifestConfig().getManifestStoreTypes());
+      }
+    } else if (k8sTaskParameters instanceof K8sBlueGreenDeployTaskParameters) {
+      K8sBlueGreenDeployTaskParameters k8sBlueGreenDeployTaskParameters =
+          (K8sBlueGreenDeployTaskParameters) k8sTaskParameters;
+      if (k8sBlueGreenDeployTaskParameters.getK8sDelegateManifestConfig() != null) {
+        return Optional.ofNullable(
+            k8sBlueGreenDeployTaskParameters.getK8sDelegateManifestConfig().getManifestStoreTypes());
+      }
+    } else if (k8sTaskParameters instanceof K8sCanaryDeployTaskParameters) {
+      K8sCanaryDeployTaskParameters k8sCanaryDeployTaskParameters = (K8sCanaryDeployTaskParameters) k8sTaskParameters;
+      if (k8sCanaryDeployTaskParameters.getK8sDelegateManifestConfig() != null) {
+        return Optional.ofNullable(
+            k8sCanaryDeployTaskParameters.getK8sDelegateManifestConfig().getManifestStoreTypes());
+      }
+    } else if (k8sTaskParameters instanceof K8sDeleteTaskParameters) {
+      K8sDeleteTaskParameters k8sDeleteTaskParameters = (K8sDeleteTaskParameters) k8sTaskParameters;
+      if (k8sDeleteTaskParameters.getK8sDelegateManifestConfig() != null) {
+        return Optional.ofNullable(k8sDeleteTaskParameters.getK8sDelegateManifestConfig().getManifestStoreTypes());
+      }
+    } else if (k8sTaskParameters instanceof K8sRollingDeployTaskParameters) {
+      K8sRollingDeployTaskParameters k8sRollingDeployTaskParameters =
+          (K8sRollingDeployTaskParameters) k8sTaskParameters;
+      if (k8sRollingDeployTaskParameters.getK8sDelegateManifestConfig() != null) {
+        return Optional.ofNullable(
+            k8sRollingDeployTaskParameters.getK8sDelegateManifestConfig().getManifestStoreTypes());
+      }
+    }
+    return Optional.empty();
   }
 }

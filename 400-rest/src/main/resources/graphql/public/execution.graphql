@@ -36,6 +36,8 @@ input ExecutionFilter {
   creationTime: TimeFilter
   pipelineExecutionId: IdFilter
   tag: DeploymentTagFilter
+  artifactBuildNo: IdFilter
+  helmChartVersion: IdFilter
 }
 
 input DeploymentTagFilter {

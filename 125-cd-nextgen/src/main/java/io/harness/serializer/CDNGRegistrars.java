@@ -31,6 +31,8 @@ import io.harness.cdng.k8s.K8sRollingRollbackStepNode;
 import io.harness.cdng.k8s.K8sRollingStepNode;
 import io.harness.cdng.k8s.K8sScaleStepNode;
 import io.harness.cdng.pipeline.CDStepInfo;
+import io.harness.cdng.provision.azure.AzureCreateARMResourceStepNode;
+import io.harness.cdng.provision.azure.AzureCreateBPStepNode;
 import io.harness.cdng.provision.cloudformation.CloudformationCreateStackStepNode;
 import io.harness.cdng.provision.cloudformation.CloudformationDeleteStackStepNode;
 import io.harness.cdng.provision.cloudformation.CloudformationRollbackStepNode;
@@ -45,8 +47,6 @@ import io.harness.morphia.MorphiaRegistrar;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.serializer.kryo.NGKryoRegistrar;
 import io.harness.serializer.morphia.NGMorphiaRegistrar;
-import io.harness.serializer.spring.RollbackDeploymentInfoReadConverter;
-import io.harness.serializer.spring.RollbackDeploymentInfoWriteConverter;
 import io.harness.yaml.schema.beans.SchemaNamespaceConstants;
 import io.harness.yaml.schema.beans.YamlGroup;
 import io.harness.yaml.schema.beans.YamlSchemaMetadata;
@@ -58,7 +58,6 @@ import io.serializer.kryo.PollingKryoRegistrar;
 import java.util.Arrays;
 import java.util.Collections;
 import lombok.experimental.UtilityClass;
-import org.springframework.core.convert.converter.Converter;
 
 @OwnedBy(HarnessTeam.CDP)
 @UtilityClass
@@ -383,6 +382,30 @@ public class CDNGRegistrars {
                                            .build())
                    .build())
           .add(YamlSchemaRootClass.builder()
+                   .entityType(EntityType.AZURE_CREATE_ARM_RESOURCE_STEP)
+                   .availableAtProjectLevel(true)
+                   .availableAtOrgLevel(false)
+                   .availableAtAccountLevel(false)
+                   .clazz(AzureCreateARMResourceStepNode.class)
+                   .yamlSchemaMetadata(YamlSchemaMetadata.builder()
+                                           .namespace(SchemaNamespaceConstants.CD)
+                                           .modulesSupported(Arrays.asList(ModuleType.CD, ModuleType.PMS))
+                                           .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
+                                           .build())
+                   .build())
+          .add(YamlSchemaRootClass.builder()
+                   .entityType(EntityType.AZURE_CREATE_BP_RESOURCE_STEP)
+                   .availableAtProjectLevel(true)
+                   .availableAtOrgLevel(false)
+                   .availableAtAccountLevel(false)
+                   .clazz(AzureCreateBPStepNode.class)
+                   .yamlSchemaMetadata(YamlSchemaMetadata.builder()
+                                           .namespace(SchemaNamespaceConstants.CD)
+                                           .modulesSupported(Arrays.asList(ModuleType.CD, ModuleType.PMS))
+                                           .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
+                                           .build())
+                   .build())
+          .add(YamlSchemaRootClass.builder()
                    .entityType(EntityType.COMMAND_STEP)
                    .availableAtProjectLevel(true)
                    .availableAtOrgLevel(false)
@@ -455,7 +478,4 @@ public class CDNGRegistrars {
                                            .build())
                    .build())
           .build();
-
-  public final ImmutableList<Class<? extends Converter<?, ?>>> springConverters =
-      ImmutableList.of(RollbackDeploymentInfoReadConverter.class, RollbackDeploymentInfoWriteConverter.class);
 }

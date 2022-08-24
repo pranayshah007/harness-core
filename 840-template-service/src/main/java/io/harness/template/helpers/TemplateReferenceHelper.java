@@ -16,41 +16,29 @@ import static io.harness.template.beans.NGTemplateConstants.TEMPLATE_REF;
 import static io.harness.template.beans.NGTemplateConstants.TEMPLATE_VERSION_LABEL;
 
 import io.harness.EntityType;
-import io.harness.account.AccountClient;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
 import io.harness.common.NGExpressionUtils;
-import io.harness.eraro.ErrorCode;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum;
-import io.harness.eventsframework.schemas.entity.IdentifierRefProtoDTO;
 import io.harness.exception.InvalidIdentifierRefException;
-import io.harness.exception.ngexception.NGTemplateException;
 import io.harness.ng.core.entitysetupusage.dto.EntitySetupUsageDTO;
-import io.harness.ng.core.template.TemplateEntityType;
-import io.harness.pms.contracts.service.EntityReferenceErrorResponse;
-import io.harness.pms.contracts.service.EntityReferenceRequest;
-import io.harness.pms.contracts.service.EntityReferenceResponse;
-import io.harness.pms.contracts.service.EntityReferenceResponseWrapper;
-import io.harness.pms.contracts.service.EntityReferenceServiceGrpc.EntityReferenceServiceBlockingStub;
-import io.harness.pms.contracts.service.ErrorMetadata;
-import io.harness.pms.gitsync.PmsGitSyncHelper;
 import io.harness.pms.merger.YamlConfig;
 import io.harness.pms.merger.fqn.FQN;
 import io.harness.pms.merger.fqn.FQNNode;
 import io.harness.preflight.PreFlightCheckMetadata;
 import io.harness.template.TemplateReferenceProtoUtils;
 import io.harness.template.entity.TemplateEntity;
+import io.harness.template.helpers.crud.TemplateCrudHelper;
+import io.harness.template.helpers.crud.TemplateCrudHelperFactory;
 import io.harness.template.services.NGTemplateServiceHelper;
 import io.harness.utils.IdentifierRefHelper;
 import io.harness.utils.IdentifierRefProtoUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import com.google.protobuf.ByteString;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
@@ -68,56 +56,35 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class TemplateReferenceHelper {
   private static final String FQN_SEPARATOR = ".";
-  EntityReferenceServiceBlockingStub entityReferenceServiceBlockingStub;
   TemplateYamlConversionHelper templateYamlConversionHelper;
-  PmsGitSyncHelper pmsGitSyncHelper;
   NGTemplateServiceHelper templateServiceHelper;
   TemplateSetupUsageHelper templateSetupUsageHelper;
-  AccountClient accountClient;
-
-  private boolean skipTemplateReference(TemplateEntity templateEntity) {
-    return !templateEntity.getTemplateEntityType().getOwnerTeam().equals(HarnessTeam.PIPELINE);
-  }
+  TemplateCrudHelperFactory templateCrudHelperFactory;
 
   public void deleteTemplateReferences(TemplateEntity templateEntity) {
-    if (skipTemplateReference(templateEntity)) {
+    TemplateCrudHelper templateCrudHelper =
+        templateCrudHelperFactory.getCrudHelperForTemplateType(templateEntity.getTemplateEntityType());
+    if (!templateCrudHelper.supportsReferences()) {
       return;
     }
+
     templateSetupUsageHelper.deleteExistingSetupUsages(templateEntity);
   }
 
   public void populateTemplateReferences(TemplateEntity templateEntity) {
-    if (skipTemplateReference(templateEntity)) {
+    TemplateCrudHelper templateCrudHelper =
+        templateCrudHelperFactory.getCrudHelperForTemplateType(templateEntity.getTemplateEntityType());
+    if (!templateCrudHelper.supportsReferences()) {
       return;
     }
+
+    String entityYaml = templateYamlConversionHelper.convertTemplateYamlToEntityYaml(templateEntity);
     try {
-      String pmsUnderstandableYaml = templateYamlConversionHelper.convertTemplateYamlToEntityYaml(templateEntity);
-      EntityReferenceRequest.Builder entityReferenceRequestBuilder =
-          EntityReferenceRequest.newBuilder()
-              .setYaml(pmsUnderstandableYaml)
-              .setAccountIdentifier(templateEntity.getAccountIdentifier());
-      if (isNotEmpty(templateEntity.getOrgIdentifier())) {
-        entityReferenceRequestBuilder.setOrgIdentifier(templateEntity.getOrgIdentifier());
-      }
-      if (isNotEmpty(templateEntity.getProjectIdentifier())) {
-        entityReferenceRequestBuilder.setProjectIdentifier(templateEntity.getProjectIdentifier());
-      }
-      ByteString gitSyncBranchContext = pmsGitSyncHelper.getGitSyncBranchContextBytesThreadLocal();
-      if (gitSyncBranchContext != null) {
-        entityReferenceRequestBuilder.setGitSyncBranchContext(gitSyncBranchContext);
-      }
-      EntityReferenceResponseWrapper referenceResponse =
-          entityReferenceServiceBlockingStub.getReferences(entityReferenceRequestBuilder.build());
-
-      checkAndThrowExceptionOnErrorResponse(templateEntity, referenceResponse);
-
-      EntityReferenceResponse response = referenceResponse.getReferenceResponse();
-      //    templateEntity.setModules(new HashSet<>(response.getModuleInfoList()));
       List<EntityDetailProtoDTO> referredEntities =
-          correctFQNsOfReferredEntities(response.getReferredEntitiesList(), templateEntity.getTemplateEntityType());
+          new ArrayList<>(templateCrudHelper.getReferences(templateEntity, entityYaml));
       List<EntityDetailProtoDTO> referredEntitiesInLinkedTemplates =
           getNestedTemplateReferences(templateEntity.getAccountId(), templateEntity.getOrgIdentifier(),
-              templateEntity.getProjectIdentifier(), pmsUnderstandableYaml, true);
+              templateEntity.getProjectIdentifier(), entityYaml, true);
       referredEntities.addAll(referredEntitiesInLinkedTemplates);
       templateSetupUsageHelper.publishSetupUsageEvent(templateEntity, referredEntities);
     } catch (InvalidIdentifierRefException ex) {
@@ -127,52 +94,6 @@ public class TemplateReferenceHelper {
           "Unable to save to %s. Template can be saved to %s only when all the referenced entities are available in the scope.",
           scope, scope));
     }
-  }
-
-  private void checkAndThrowExceptionOnErrorResponse(
-      TemplateEntity templateEntity, EntityReferenceResponseWrapper referenceResponse) {
-    if (referenceResponse.getResponseCase() == EntityReferenceResponseWrapper.ResponseCase.ERRORRESPONSE) {
-      EntityReferenceErrorResponse errorResponse = referenceResponse.getErrorResponse();
-      List<String> errorMessages = new ArrayList<>();
-      for (ErrorMetadata errorMetadata : errorResponse.getErrorMetadataList()) {
-        errorMessages.add(errorMetadata.getErrorMessage());
-        if (String.valueOf(ErrorCode.INVALID_IDENTIFIER_REF).equals(errorMetadata.getWingsExceptionErrorCode())) {
-          throw new InvalidIdentifierRefException(errorMetadata.getErrorMessage());
-        }
-      }
-      throw new NGTemplateException(
-          String.format("Exception in calculating references for template with identifier %s and version label %s: %s",
-              templateEntity.getIdentifier(), templateEntity.getVersionLabel(), String.join(", ", errorMessages)));
-    }
-  }
-
-  @VisibleForTesting
-  List<EntityDetailProtoDTO> correctFQNsOfReferredEntities(
-      List<EntityDetailProtoDTO> referredEntities, TemplateEntityType templateEntityType) {
-    List<EntityDetailProtoDTO> referredEntitiesWithModifiedFqn = new ArrayList<>();
-    referredEntities.forEach(referredEntity -> {
-      if (referredEntity.getIdentifierRef() != null && referredEntity.getIdentifierRef().getMetadataMap() != null) {
-        String fqn = referredEntity.getIdentifierRef().getMetadataMap().get(PreFlightCheckMetadata.FQN);
-        if (isEmpty(fqn)) {
-          // FQN should never be empty. Let's skip this referred entity.
-          return;
-        }
-        Map<String, String> metadata = new HashMap<>(referredEntity.getIdentifierRef().getMetadataMap());
-        switch (templateEntityType) {
-          case STEP_TEMPLATE:
-            fqn = TEMPLATE_INPUTS + FQN_SEPARATOR + fqn;
-            break;
-          default:
-            fqn = replaceBaseIdentifierInFQNWithTemplateInputs(fqn);
-        }
-        metadata.put(PreFlightCheckMetadata.FQN, fqn);
-        IdentifierRefProtoDTO identifierRefProtoDTO =
-            referredEntity.getIdentifierRef().toBuilder().clearMetadata().putAllMetadata(metadata).build();
-        referredEntitiesWithModifiedFqn.add(
-            referredEntity.toBuilder().clearIdentifierRef().setIdentifierRef(identifierRefProtoDTO).build());
-      }
-    });
-    return referredEntitiesWithModifiedFqn;
   }
 
   /**
@@ -210,7 +131,7 @@ public class TemplateReferenceHelper {
           String versionLabel = "";
           if (versionLabelNode == null) {
             Optional<TemplateEntity> templateEntity =
-                templateServiceHelper.getOrThrowExceptionIfInvalid(templateIdentifierRef.getAccountIdentifier(),
+                templateServiceHelper.getMetadataOrThrowExceptionIfInvalid(templateIdentifierRef.getAccountIdentifier(),
                     templateIdentifierRef.getOrgIdentifier(), templateIdentifierRef.getProjectIdentifier(),
                     templateIdentifierRef.getIdentifier(), versionLabel, false);
             if (templateEntity.isPresent()) {

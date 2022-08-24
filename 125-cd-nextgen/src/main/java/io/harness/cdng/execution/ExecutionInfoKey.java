@@ -23,7 +23,7 @@ import lombok.Value;
 public class ExecutionInfoKey {
   @NotNull Scope scope;
   @NotNull String envIdentifier;
-  @Nullable String infraIdentifier;
+  @NotNull String infraIdentifier;
   @NotNull String serviceIdentifier;
   @Nullable String deploymentIdentifier;
 }

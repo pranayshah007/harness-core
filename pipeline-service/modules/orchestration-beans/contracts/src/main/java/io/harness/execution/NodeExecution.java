@@ -117,6 +117,7 @@ public class NodeExecution implements PersistentEntity, UuidAccess, PmsNodeExecu
   SkipInfo skipInfo;
   NodeRunInfo nodeRunInfo;
 
+  @Builder.Default Boolean executionInputConfigured = false;
   // Retries
   @Singular List<String> retryIds;
   @Builder.Default Boolean oldRetry = false;

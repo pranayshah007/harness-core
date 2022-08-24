@@ -56,6 +56,20 @@ public class DelegateUpgraderResource {
 
   @DelegateAuth
   @GET
+  @Path("/delegate-v2")
+  @Timed
+  @ExceptionMetered
+  public RestResponse<UpgradeCheckResult> getDelegateImageTag(@QueryParam("accountId") @NotEmpty String accountId,
+      @QueryParam("currentDelegateImageTag") @NotEmpty String currentDelegateImageTag,
+      @QueryParam("delegateGroupName") String delegateGroupName) {
+    try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR)) {
+      return new RestResponse<>(
+          delegateUpgraderService.getDelegateImageTag(accountId, currentDelegateImageTag, delegateGroupName));
+    }
+  }
+
+  @DelegateAuth
+  @GET
   @Path("/upgrader")
   @Timed
   @ExceptionMetered

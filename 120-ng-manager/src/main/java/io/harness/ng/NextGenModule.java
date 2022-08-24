@@ -7,6 +7,7 @@
 
 package io.harness.ng;
 
+import static io.harness.AuthorizationServiceHeader.CHAOS_SERVICE;
 import static io.harness.AuthorizationServiceHeader.NG_MANAGER;
 import static io.harness.audit.ResourceTypeConstants.API_KEY;
 import static io.harness.audit.ResourceTypeConstants.CONNECTOR;
@@ -72,6 +73,7 @@ import io.harness.connector.services.ConnectorService;
 import io.harness.delegate.beans.DelegateAsyncTaskResponse;
 import io.harness.delegate.beans.DelegateSyncTaskResponse;
 import io.harness.delegate.beans.DelegateTaskProgressResponse;
+import io.harness.encryptors.CustomEncryptor;
 import io.harness.encryptors.Encryptors;
 import io.harness.encryptors.KmsEncryptor;
 import io.harness.encryptors.VaultEncryptor;
@@ -138,6 +140,7 @@ import io.harness.ng.core.api.impl.NGSecretServiceV2Impl;
 import io.harness.ng.core.api.impl.TokenServiceImpl;
 import io.harness.ng.core.api.impl.UserGroupServiceImpl;
 import io.harness.ng.core.delegate.client.DelegateNgManagerCgManagerClientModule;
+import io.harness.ng.core.encryptors.NGManagerCustomEncryptor;
 import io.harness.ng.core.encryptors.NGManagerKmsEncryptor;
 import io.harness.ng.core.encryptors.NGManagerVaultEncryptor;
 import io.harness.ng.core.entityactivity.event.EntityActivityCrudEventMessageListener;
@@ -247,7 +250,6 @@ import io.harness.scim.service.ScimUserService;
 import io.harness.secretmanagerclient.SecretManagementClientModule;
 import io.harness.secrets.SecretNGManagerClientModule;
 import io.harness.security.ServiceTokenGenerator;
-import io.harness.serializer.CDNGRegistrars;
 import io.harness.serializer.KryoRegistrar;
 import io.harness.serializer.ManagerRegistrars;
 import io.harness.serializer.NGLdapServiceRegistrars;
@@ -631,7 +633,6 @@ public class NextGenModule extends AbstractModule {
       List<Class<? extends Converter<?, ?>>> springConverters() {
         return ImmutableList.<Class<? extends Converter<?, ?>>>builder()
             .addAll(ManagerRegistrars.springConverters)
-            .addAll(CDNGRegistrars.springConverters)
             .build();
       }
 
@@ -684,20 +685,19 @@ public class NextGenModule extends AbstractModule {
       }
     });
     install(new AbstractChaosModule() {
-      // todo: implement this
       @Override
       public ServiceHttpClientConfig chaosClientConfig() {
-        return null;
+        return appConfig.getChaosServiceClientConfig();
       }
 
       @Override
       public String serviceSecret() {
-        return null;
+        return appConfig.getNextGenConfig().getChaosServiceSecret();
       }
 
       @Override
       public String clientId() {
-        return null;
+        return CHAOS_SERVICE.name();
       }
     });
 
@@ -820,6 +820,11 @@ public class NextGenModule extends AbstractModule {
         .bind(KmsEncryptor.class)
         .annotatedWith(Names.named(Encryptors.GLOBAL_GCP_KMS_ENCRYPTOR.getName()))
         .to(GcpKmsEncryptor.class);
+
+    binder()
+        .bind(CustomEncryptor.class)
+        .annotatedWith(Names.named(Encryptors.CUSTOM_ENCRYPTOR_NG.getName()))
+        .to(NGManagerCustomEncryptor.class);
   }
 
   private void registerOutboxEventHandlers() {

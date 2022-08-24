@@ -8,6 +8,7 @@
 package io.harness.stream;
 
 import static io.harness.agent.AgentGatewayConstants.HEADER_AGENT_MTLS_AUTHORITY;
+import static io.harness.agent.AgentGatewayUtils.isAgentConnectedUsingMtls;
 import static io.harness.eraro.ErrorCode.UNKNOWN_ERROR;
 import static io.harness.govern.Switch.unhandled;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
@@ -65,13 +66,18 @@ public class DelegateStreamHandler extends AtmosphereHandlerAdapter {
   public void onRequest(AtmosphereResource resource) throws IOException {
     AtmosphereRequest req = resource.getRequest();
 
+    // get mTLS information independent of request type
+    String agentMtlsAuthority = req.getHeader(HEADER_AGENT_MTLS_AUTHORITY);
+    boolean isConnectedUsingMtls = isAgentConnectedUsingMtls(agentMtlsAuthority);
+
     if (req.getMethod().equals("GET")) {
+      String accountId;
+      String delegateId;
       try {
         List<String> pathSegments = SPLITTER.splitToList(req.getPathInfo());
-        String accountId = pathSegments.get(1);
-        String delegateId = req.getParameter("delegateId");
+        accountId = pathSegments.get(1);
+        delegateId = req.getParameter("delegateId");
         String delegateTokenName = req.getParameter("delegateTokenName");
-        String agentMtlsAuthority = req.getHeader(HEADER_AGENT_MTLS_AUTHORITY);
 
         authService.validateDelegateToken(
             accountId, req.getParameter("token"), delegateId, delegateTokenName, agentMtlsAuthority, false);
@@ -85,6 +91,7 @@ public class DelegateStreamHandler extends AtmosphereHandlerAdapter {
           String delegateToken = req.getParameter("delegateToken");
 
           Delegate delegate = delegateCache.get(accountId, delegateId, true);
+          delegate.setMtls(isConnectedUsingMtls);
           delegate.setStatus(DelegateInstanceStatus.ENABLED);
 
           updateIfEcsDelegate(delegate, sequenceNum, delegateToken);
@@ -115,7 +122,10 @@ public class DelegateStreamHandler extends AtmosphereHandlerAdapter {
         sendError(resource, UNKNOWN_ERROR);
         return;
       }
-      resource.suspend();
+      try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR);
+           AutoLogContext ignore2 = new DelegateLogContext(delegateId, OVERRIDE_ERROR)) {
+        resource.suspend();
+      }
     } else if (req.getMethod().equalsIgnoreCase("POST")) {
       List<String> pathSegments = SPLITTER.splitToList(req.getPathInfo());
       String accountId = pathSegments.get(1);
@@ -128,6 +138,8 @@ public class DelegateStreamHandler extends AtmosphereHandlerAdapter {
 
         Delegate delegate = JsonUtils.asObject(CharStreams.toString(req.getReader()), Delegate.class);
         delegate.setUuid(delegateId);
+        delegate.setMtls(isConnectedUsingMtls);
+
         delegateService.register(delegate);
         delegateService.registerHeartbeat(accountId, delegateId,
             DelegateConnectionHeartbeat.builder()

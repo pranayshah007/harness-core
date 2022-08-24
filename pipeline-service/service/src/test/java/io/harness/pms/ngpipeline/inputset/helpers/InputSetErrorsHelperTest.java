@@ -147,14 +147,22 @@ public class InputSetErrorsHelperTest extends CategoryTest {
   @Owner(developers = NAMAN)
   @Category(UnitTests.class)
   public void testGetInvalidInputSetReferences() {
+    String pipelineYaml = "pipeline:\n"
+        + "  runtime: <+input>";
     List<String> identifiers = Arrays.asList("i1", "i2", "i3", "i4");
     List<Optional<InputSetEntity>> inputSets = new ArrayList<>();
-    inputSets.add(Optional.of(InputSetEntity.builder().isInvalid(false).inputSetEntityType(INPUT_SET).build()));
+    inputSets.add(Optional.of(InputSetEntity.builder()
+                                  .isInvalid(false)
+                                  .inputSetEntityType(INPUT_SET)
+                                  .yaml("inputSet:\n"
+                                      + "  pipeline:\n"
+                                      + "    runtime: input")
+                                  .build()));
     inputSets.add(Optional.of(InputSetEntity.builder().isInvalid(true).inputSetEntityType(INPUT_SET).build()));
     inputSets.add(Optional.of(InputSetEntity.builder().isInvalid(false).inputSetEntityType(OVERLAY_INPUT_SET).build()));
     inputSets.add(Optional.empty());
     Map<String, String> invalidInputSetReferences =
-        InputSetErrorsHelper.getInvalidInputSetReferences(inputSets, identifiers);
+        InputSetErrorsHelper.getInvalidInputSetReferences(inputSets, identifiers, pipelineYaml);
     assertThat(invalidInputSetReferences).hasSize(3);
     assertThat(invalidInputSetReferences.get("i2")).isEqualTo("Reference is an outdated input set");
     assertThat(invalidInputSetReferences.get("i3")).isEqualTo("References can't be other overlay input sets");

@@ -182,19 +182,6 @@ public class WorkflowExecution implements PersistentRegularIterable, AccountData
                  .descSortField(WorkflowExecutionKeys.createdAt)
                  .build())
         .add(SortCompoundMongoIndex.builder()
-                 .name("accountId_cdPageCandidate_keywords_createdAt")
-                 .field(WorkflowExecutionKeys.accountId)
-                 .field(WorkflowExecutionKeys.cdPageCandidate)
-                 .field(WorkflowExecutionKeys.keywords)
-                 .descSortField(WorkflowExecutionKeys.createdAt)
-                 .build())
-        .add(CompoundMongoIndex.builder()
-                 .name("accountId_cdPageCandidate_appId")
-                 .field(WorkflowExecutionKeys.accountId)
-                 .field(WorkflowExecutionKeys.cdPageCandidate)
-                 .field(WorkflowExecutionKeys.appId)
-                 .build())
-        .add(SortCompoundMongoIndex.builder()
                  .name("accountId_endTs")
                  .field(WorkflowExecutionKeys.accountId)
                  .descSortField(WorkflowExecutionKeys.endTs)
@@ -221,19 +208,6 @@ public class WorkflowExecution implements PersistentRegularIterable, AccountData
                  .field(WorkflowExecutionKeys.status)
                  .field(WorkflowExecutionKeys.pipelineExecutionId)
                  .field(WorkflowExecutionKeys.endTs)
-                 .build())
-        .add(SortCompoundMongoIndex.builder()
-                 .name("accountId_cdPageCandidate_appId_createdAtDesc")
-                 .field(WorkflowExecutionKeys.accountId)
-                 .field(WorkflowExecutionKeys.cdPageCandidate)
-                 .field(WorkflowExecutionKeys.appId)
-                 .descSortField(WorkflowExecutionKeys.createdAt)
-                 .build())
-        .add(CompoundMongoIndex.builder()
-                 .name("accountId_pipelineExecutionId_appId")
-                 .field(WorkflowExecutionKeys.accountId)
-                 .field(WorkflowExecutionKeys.pipelineExecutionId)
-                 .field(WorkflowExecutionKeys.appId)
                  .build())
         .add(CompoundMongoIndex.builder()
                  .name("accountId_startTs_serviceIds")
@@ -262,11 +236,11 @@ public class WorkflowExecution implements PersistentRegularIterable, AccountData
   public static final Duration EXPIRY = Duration.ofDays(7);
 
   @Id @NotNull(groups = {Update.class}) private String uuid;
-  @FdIndex @NotNull protected String appId;
+  @NotNull protected String appId;
   private EmbeddedUser createdBy;
   private CreatedByType createdByType;
   @FdIndex private long createdAt;
-  @FdIndex private String accountId;
+  private String accountId;
 
   private String workflowId;
 
@@ -289,7 +263,7 @@ public class WorkflowExecution implements PersistentRegularIterable, AccountData
   @Transient private GraphNode executionNode; // used for workflow details.
   private PipelineExecution pipelineExecution; // used for pipeline details.
 
-  @FdIndex private String pipelineExecutionId;
+  private String pipelineExecutionId;
   private String stageName;
   private ErrorStrategy errorStrategy;
 
@@ -413,6 +387,10 @@ public class WorkflowExecution implements PersistentRegularIterable, AccountData
     public static final String executionArgs_pipelinePhaseElementId =
         executionArgs + "." + ExecutionArgsKeys.pipelinePhaseElementId;
     public static final String executionArgs_artifacts = executionArgs + "." + ExecutionArgsKeys.artifacts;
+    public static final String executionArgs_artifacts_buildNo = executionArgs_artifacts + "."
+        + "metadata"
+        + "."
+        + "buildNo";
     public static final String executionArgs_artifact_variables =
         executionArgs + "." + ExecutionArgsKeys.artifactVariables;
     public static final String tags_name = tags + "." + NameValuePairKeys.name;
@@ -421,6 +399,8 @@ public class WorkflowExecution implements PersistentRegularIterable, AccountData
     public static final String pipelineExecution_pipelineStageExecutions =
         pipelineExecution + "." + PipelineExecutionKeys.pipelineStageExecutions;
     public static final String executionArgs_helmCharts = executionArgs + "." + ExecutionArgsKeys.helmCharts;
+    public static final String executionArgs_helmCharts_displayName = executionArgs_helmCharts + "."
+        + "displayName";
   }
 
   @PrePersist

@@ -65,9 +65,11 @@ import java.util.List;
 import java.util.Map;
 import javax.validation.constraints.NotNull;
 import lombok.experimental.UtilityClass;
+import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.CDC)
 @UtilityClass
+@Slf4j
 public class InfrastructurePmsPlanCreator {
   public PlanNode getInfraStepPlanNode(Infrastructure pipelineInfrastructure) {
     return PlanNode.builder()
@@ -288,12 +290,15 @@ public class InfrastructurePmsPlanCreator {
     YamlField infraDefField = infraField.getNode().getField(YamlTypes.INFRASTRUCTURE_DEF);
     YamlField provisionerYamlField = infraDefField.getNode().getField(YAMLFieldNameConstants.PROVISIONER);
     YamlField stepsYamlField = provisionerYamlField.getNode().getField(YAMLFieldNameConstants.STEPS);
+    log.info("stepsYamlField after : {}", stepsYamlField.getNode().getCurrJsonNode());
 
     // Add each step dependency
     LinkedHashMap<String, PlanCreationResponse> responseMap = new LinkedHashMap<>();
 
     Map<String, YamlField> stepsYamlFieldMap = new HashMap<>();
     stepsYamlFieldMap.put(stepsYamlField.getNode().getUuid(), stepsYamlField);
+    log.info("stepsYamlField uuid : {}", stepsYamlField.getNode().getUuid());
+    log.info("stepsYamlField YamlPath : {}", stepsYamlField.getYamlPath());
     responseMap.put(stepsYamlField.getNode().getUuid(),
         PlanCreationResponse.builder().dependencies(DependenciesUtils.toDependenciesProto(stepsYamlFieldMap)).build());
 

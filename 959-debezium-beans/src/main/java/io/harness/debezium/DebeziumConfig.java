@@ -107,7 +107,24 @@ public class DebeziumConfig {
    the server chooses an appropriate fetch size.
    */
   @JsonProperty("snapshot.fetch.size") private String snapshotFetchSize;
-
+  /**
+   * Specifies maximum topic size for redis stream
+   */
+  @JsonProperty("redisStreamSize") private int redisStreamSize;
+  /**
+   * Specifies the criteria for running a snapshot upon startup of the connector. The default is initial, and specifies
+   * that the connector reads a snapshot when either no offset is found or if the oplog/change stream no longer contains
+   * the previous offset. The never option specifies that the connector should never use snapshots, instead the
+   * connector should proceed to tail the log.
+   */
+  @JsonProperty("snapshot.mode") private String snapshotMode;
+  /**
+   * To bypass the impedance mismatch in heterogeneous array, it is possible to encode the array in two different ways
+   * using array.encoding configuration option. Value document will convert the array into a struct of structs in the
+   * similar way as done by BSON serialization. The main struct contains fields named _0, _1, _2 etc. where the name
+   * represents the index of the element in the array. Every element is then passed as the value for the given field.
+   */
+  @JsonProperty("transforms.unwrap.array.encoding") private String transformsUnwrapArrayEncoding;
   public List<String> getMonitoredCollections() {
     if (EmptyPredicate.isEmpty(collectionIncludeList)) {
       return new ArrayList<>();

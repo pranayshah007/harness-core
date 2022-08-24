@@ -14,6 +14,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.gitsync.sdk.GitSyncApiConstants;
 
+import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Schema;
 import javax.ws.rs.QueryParam;
@@ -42,4 +43,12 @@ public class GitEntityFindInfoDTO {
   @Parameter(description = "if true, return all the default entities")
   @QueryParam(GitSyncApiConstants.DEFAULT_FROM_OTHER_REPO)
   Boolean defaultFromOtherRepo;
+  @Hidden
+  @Parameter(description = "Connector ref of parent entity if its remote")
+  @QueryParam(GitSyncApiConstants.PARENT_ENTITY_CONNECTOR_REF)
+  String parentEntityConnectorRef;
+  @Hidden
+  @Parameter(description = "Repo name of parent entity if its remote")
+  @QueryParam(GitSyncApiConstants.PARENT_ENTITY_REPO_NAME)
+  String parentEntityRepoName;
 }

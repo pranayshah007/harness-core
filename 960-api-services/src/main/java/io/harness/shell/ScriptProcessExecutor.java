@@ -189,26 +189,30 @@ public class ScriptProcessExecutor extends AbstractScriptExecutor {
   @Override
   public ExecuteCommandResponse executeCommandString(String command, List<String> envVariablesToCollect,
       List<String> secretEnvVariablesToCollect, Long timeoutInMillis) {
-    ExecuteCommandResponse executeCommandResponse = null;
+    try {
+      ExecuteCommandResponse executeCommandResponse = null;
 
-    saveExecutionLog("Executing command ...", INFO);
+      saveExecutionLog("Executing command ...", INFO);
 
-    switch (this.scriptType) {
-      case POWERSHELL:
-      case BASH:
-        try {
-          executeCommandResponse =
-              executeBashScript(command, envVariablesToCollect, secretEnvVariablesToCollect, timeoutInMillis);
-        } catch (Exception e) {
-          saveExecutionLog(format("Exception: %s", e), ERROR);
-        }
-        break;
+      switch (this.scriptType) {
+        case POWERSHELL:
+        case BASH:
+          try {
+            executeCommandResponse =
+                executeBashScript(command, envVariablesToCollect, secretEnvVariablesToCollect, timeoutInMillis);
+          } catch (Exception e) {
+            saveExecutionLog(format("Exception: %s", e), ERROR);
+          }
+          break;
 
-      default:
-        unhandled(this.scriptType);
+        default:
+          unhandled(this.scriptType);
+      }
+
+      return executeCommandResponse;
+    } finally {
+      logCallback.dispatchLogs();
     }
-
-    return executeCommandResponse;
   }
 
   private ExecuteCommandResponse executeBashScript(String command, List<String> envVariablesToCollect,
