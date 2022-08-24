@@ -42,6 +42,7 @@ public class CCMAdminRoleAssignmentMigration implements NGMigration {
     int pageSize = 1000;
     int pageIndex = 0;
     List<String> ceEnabledAccountIds = accountHelperService.getCeEnabledNgAccounts();
+    log.info("CE enabled accounts: {}", ceEnabledAccountIds);
 
     for (String accountId : ceEnabledAccountIds) {
       do {
@@ -57,8 +58,14 @@ public class CCMAdminRoleAssignmentMigration implements NGMigration {
 
         PageResponse<RoleAssignmentResponseDTO> roleAssignmentPage =
             getResponse(accessControlAdminClient.getFilteredRoleAssignments(accountId, null, null, 0, DEFAULT_PAGE_SIZE,
-                RoleAssignmentFilterDTO.builder().roleFilter(Collections.singleton(ACCOUNT_VIEWER)).build()));
+                RoleAssignmentFilterDTO.builder()
+                    .resourceGroupFilter(Collections.singleton(DEFAULT_ACCOUNT_LEVEL_RESOURCE_GROUP_IDENTIFIER))
+                    .principalTypeFilter(Collections.singleton(USER))
+                    .roleFilter(Collections.singleton(ACCOUNT_VIEWER))
+                    .build()));
         List<RoleAssignmentResponseDTO> accountViewerRoleAssignments = roleAssignmentPage.getContent();
+        log.info("AccountId : {}", accountId);
+        log.info("Role assignments: {}", accountViewerRoleAssignments);
 
         if (isEmpty(accountViewerRoleAssignments)) {
           log.info("roleAssignmentList break");
