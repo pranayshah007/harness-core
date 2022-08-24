@@ -62,17 +62,6 @@ public class ServicePlanCreatorV2 extends ChildrenPlanCreator<ServicePlanCreator
         ctx.getMetadata().getProjectIdentifier(), ctx.getMetadata().getMetadata().getPipelineIdentifier(),
         ctx.getYaml(), ctx.getMetadata().getMetadata().getExecutionUuid());
 
-    if (serviceRefExpression(config)) {
-      final LinkedHashMap<String, PlanCreationResponse> planForAllNodesUnderService =
-          ServiceAllInOnePlanCreatorUtils.addServiceNodeWithExpression(kryoSerializer, config,
-              (String) kryoSerializer.asInflatedObject(
-                  ctx.getDependency().getMetadataMap().get(YamlTypes.ENVIRONMENT_NODE_ID).toByteArray()),
-              (String) kryoSerializer.asInflatedObject(
-                  ctx.getDependency().getMetadataMap().get(PlanCreationConstants.SERVICE_SPEC_NODE_ID).toByteArray()));
-      planCreationResponseMap.putAll(planForAllNodesUnderService);
-      return planCreationResponseMap;
-    }
-
     YamlField serviceField = ctx.getCurrentField();
     YamlField serviceDefField = serviceField.getNode().getField(YamlTypes.SERVICE_DEFINITION);
     if (serviceDefField == null || isEmpty(serviceDefField.getNode().getUuid())) {
@@ -181,7 +170,4 @@ public class ServicePlanCreatorV2 extends ChildrenPlanCreator<ServicePlanCreator
         .build();
   }
 
-  private boolean serviceRefExpression(ServicePlanCreatorV2Config config) {
-    return config.getIdentifier().isExpression();
-  }
 }

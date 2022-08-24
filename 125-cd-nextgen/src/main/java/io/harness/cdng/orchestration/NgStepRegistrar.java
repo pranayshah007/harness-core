@@ -34,6 +34,7 @@ import io.harness.cdng.infra.steps.EnvironmentStep;
 import io.harness.cdng.infra.steps.InfrastructureSectionStep;
 import io.harness.cdng.infra.steps.InfrastructureStep;
 import io.harness.cdng.infra.steps.InfrastructureTaskExecutableStep;
+import io.harness.cdng.infra.steps.InfrastructureTaskExecutableStepV2;
 import io.harness.cdng.jenkins.jenkinsstep.JenkinsBuildStep;
 import io.harness.cdng.k8s.K8sApplyStep;
 import io.harness.cdng.k8s.K8sBGSwapServicesStep;
@@ -96,6 +97,7 @@ public class NgStepRegistrar {
     engineSteps.put(InfrastructureSectionStep.STEP_TYPE, InfrastructureSectionStep.class);
     engineSteps.put(InfrastructureStep.STEP_TYPE, InfrastructureStep.class);
     engineSteps.put(InfrastructureTaskExecutableStep.STEP_TYPE, InfrastructureTaskExecutableStep.class);
+    engineSteps.put(InfrastructureTaskExecutableStepV2.STEP_TYPE, InfrastructureTaskExecutableStepV2.class);
     engineSteps.put(DeploymentStageStep.STEP_TYPE, DeploymentStageStep.class);
     engineSteps.put(ServiceConfigStep.STEP_TYPE, ServiceConfigStep.class);
     engineSteps.put(ServiceSectionStep.STEP_TYPE, ServiceSectionStep.class);

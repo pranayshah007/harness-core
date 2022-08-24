@@ -67,7 +67,7 @@ public class InfrastructurePmsPlanCreatorTest extends CDNGTestBase {
     }
 
     PlanNode planNode =
-        InfrastructurePmsPlanCreator.planBuilderForInfraSection(yamlField.getNode(), "infraSectionUuid").build();
+        InfrastructurePmsPlanCreator.planBuilderForInfraSection("infraSectionUuid").build();
     assertThat(planNode.getUuid()).isEqualTo("infraSectionUuid");
     assertThat(planNode.getName()).isEqualTo(PlanCreatorConstants.INFRA_SECTION_NODE_NAME);
     assertThat(planNode.getIdentifier()).isEqualTo(PlanCreatorConstants.INFRA_SECTION_NODE_IDENTIFIER);

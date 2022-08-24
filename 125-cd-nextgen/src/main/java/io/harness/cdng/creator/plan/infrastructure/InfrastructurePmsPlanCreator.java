@@ -14,10 +14,13 @@ import io.harness.cdng.creator.plan.PlanCreatorConstants;
 import io.harness.cdng.creator.plan.gitops.ClusterPlanCreatorUtils;
 import io.harness.cdng.envGroup.yaml.EnvGroupPlanCreatorConfig;
 import io.harness.cdng.environment.yaml.EnvironmentPlanCreatorConfig;
+import io.harness.cdng.environment.yaml.EnvironmentYamlV2;
 import io.harness.cdng.infra.steps.InfraSectionStepParameters;
 import io.harness.cdng.infra.steps.InfrastructureSectionStep;
 import io.harness.cdng.infra.steps.InfrastructureStep;
 import io.harness.cdng.infra.steps.InfrastructureTaskExecutableStep;
+import io.harness.cdng.infra.steps.InfrastructureTaskExecutableStepV2;
+import io.harness.cdng.infra.steps.InfrastructureTaskExecutableStepV2Params;
 import io.harness.cdng.infra.yaml.Infrastructure;
 import io.harness.cdng.infra.yaml.InfrastructureDefinitionConfig;
 import io.harness.cdng.pipeline.PipelineInfrastructure;
@@ -89,6 +92,25 @@ public class InfrastructurePmsPlanCreator {
         .build();
   }
 
+  public PlanNode getInfraTaskExecutableStepV2PlanNode(
+      @NotNull YamlNode envYamlNode, EnvironmentYamlV2 environmentYamlV2, KryoSerializer kryoSerializer) {
+    final List<AdviserObtainment> adviserObtainments =
+        getAdviserObtainmentFromMetaDataToExecution(envYamlNode, kryoSerializer);
+    InfrastructureTaskExecutableStepV2Params params = InfrastructureTaskExecutableStepV2Params.builder().build();
+    return PlanNode.builder()
+        .uuid(UUIDGenerator.generateUuid())
+        .name(PlanCreatorConstants.INFRA_NODE_NAME)
+        .identifier(PlanCreatorConstants.INFRA_DEFINITION_NODE_IDENTIFIER)
+        .stepType(InfrastructureTaskExecutableStepV2.STEP_TYPE)
+        .stepParameters(params)
+        .facilitatorObtainment(
+            FacilitatorObtainment.newBuilder()
+                .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.TASK).build())
+                .build())
+        .adviserObtainments(adviserObtainments)
+        .build();
+  }
+
   private boolean isTaskStep(Infrastructure pipelineInfrastructure) {
     return InfrastructureKind.SSH_WINRM_AZURE.equals(pipelineInfrastructure.getKind())
         || InfrastructureKind.SSH_WINRM_AWS.equals(pipelineInfrastructure.getKind());
@@ -101,7 +123,7 @@ public class InfrastructurePmsPlanCreator {
         getInfraSectionStepParamsFromConfig(infrastructureDefinitionConfig, infraStepNodeUuid);
     LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap = new LinkedHashMap<>();
 
-    PlanNodeBuilder planNodeBuilder = planBuilderForInfraSection(infraSectionNode, infraSectionUuid);
+    PlanNodeBuilder planNodeBuilder = planBuilderForInfraSection(infraSectionUuid);
     planNodeBuilder = planNodeBuilder.stepParameters(infraSectionStepParameters);
 
     List<AdviserObtainment> adviserObtainments =
@@ -153,7 +175,7 @@ public class InfrastructurePmsPlanCreator {
         getInfraSectionStepParams(pipelineInfrastructure, infraStepNodeUuid);
     LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap = new LinkedHashMap<>();
 
-    PlanNodeBuilder planNodeBuilder = planBuilderForInfraSection(infraSectionNode, infraSectionUuid);
+    PlanNodeBuilder planNodeBuilder = planBuilderForInfraSection(infraSectionUuid);
     planNodeBuilder = planNodeBuilder.stepParameters(infraSectionStepParameters);
 
     if (!isProvisionerConfigured(pipelineInfrastructure)) {
@@ -203,7 +225,7 @@ public class InfrastructurePmsPlanCreator {
     return rcYamlField;
   }
 
-  public PlanNodeBuilder planBuilderForInfraSection(YamlNode infraSectionNode, String infraSectionUuid) {
+  public PlanNodeBuilder planBuilderForInfraSection(String infraSectionUuid) {
     return PlanNode.builder()
         .uuid(infraSectionUuid)
         .name(PlanCreatorConstants.INFRA_SECTION_NODE_NAME)

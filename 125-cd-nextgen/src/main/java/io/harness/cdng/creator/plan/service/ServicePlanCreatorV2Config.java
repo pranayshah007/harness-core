@@ -21,14 +21,15 @@ public class ServicePlanCreatorV2Config {
 
   //  @YamlSchemaTypes(runtime)
   ParameterField<String> identifier;
-
   String name;
   String description;
   Map<String, String> tags;
   Boolean gitOpsEnabled;
   ServiceUseFromStageV2 useFromStage;
-
   ServiceDefinition serviceDefinition;
-
   ParameterField<Map<String, Object>> inputs;
+
+  // environment
+  ParameterField<String> envRef;
+  ParameterField<Map<String, Object>> envInputs;
 }
