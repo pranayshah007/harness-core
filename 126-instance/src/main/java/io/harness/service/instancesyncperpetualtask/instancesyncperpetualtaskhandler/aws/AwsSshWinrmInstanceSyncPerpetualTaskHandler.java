@@ -23,9 +23,7 @@ import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.task.ssh.AwsInfraDelegateConfig;
 import io.harness.delegate.task.ssh.AwsSshInfraDelegateConfig;
-import io.harness.delegate.task.ssh.AwsSshInfraDelegateConfig.AwsSshInfraDelegateConfigBuilder;
 import io.harness.delegate.task.ssh.AwsWinrmInfraDelegateConfig;
-import io.harness.delegate.task.ssh.AwsWinrmInfraDelegateConfig.AwsWinrmInfraDelegateConfigBuilder;
 import io.harness.dtos.InfrastructureMappingDTO;
 import io.harness.dtos.deploymentinfo.AwsSshWinrmDeploymentInfoDTO;
 import io.harness.dtos.deploymentinfo.DeploymentInfoDTO;
@@ -134,30 +132,21 @@ public class AwsSshWinrmInstanceSyncPerpetualTaskHandler extends InstanceSyncPer
   private AwsInfraDelegateConfig getAwsInfraDelegateConfig(SecretSpecDTO secretSpecDTO, AwsConnectorDTO awsConnectorDTO,
       List<EncryptedDataDetail> encryptedData, SshWinRmAwsInfrastructureOutcome awsInfrastructureOutcome) {
     if (secretSpecDTO instanceof SSHKeySpecDTO) {
-      AwsSshInfraDelegateConfigBuilder builder = AwsSshInfraDelegateConfig.sshAwsBuilder()
-                                                     .sshKeySpecDto((SSHKeySpecDTO) secretSpecDTO)
-                                                     .awsConnectorDTO(awsConnectorDTO)
-                                                     .region(awsInfrastructureOutcome.getRegion())
-                                                     .connectorEncryptionDataDetails(encryptedData);
-      if (EmptyPredicate.isEmpty(awsInfrastructureOutcome.getAutoScalingGroupName())) {
-        builder.tags(sshEntityHelper.filterInfraTags(awsInfrastructureOutcome.getAwsInstanceFilter().getTags()))
-            .vpcIds(awsInfrastructureOutcome.getAwsInstanceFilter().getVpcs());
-      } else {
-        builder.autoScalingGroupName(awsInfrastructureOutcome.getAutoScalingGroupName());
-      }
-      return builder.build();
+      return AwsSshInfraDelegateConfig.sshAwsBuilder()
+          .sshKeySpecDto((SSHKeySpecDTO) secretSpecDTO)
+          .awsConnectorDTO(awsConnectorDTO)
+          .region(awsInfrastructureOutcome.getRegion())
+          .connectorEncryptionDataDetails(encryptedData)
+          .tags(sshEntityHelper.filterInfraTags(awsInfrastructureOutcome.getTags()))
+          .build();
     } else if (secretSpecDTO instanceof WinRmCredentialsSpecDTO) {
-      AwsWinrmInfraDelegateConfigBuilder builder = AwsWinrmInfraDelegateConfig.winrmAwsBuilder()
-                                                       .winRmCredentials((WinRmCredentialsSpecDTO) secretSpecDTO)
-                                                       .awsConnectorDTO(awsConnectorDTO)
-                                                       .connectorEncryptionDataDetails(encryptedData);
-      if (EmptyPredicate.isEmpty(awsInfrastructureOutcome.getAutoScalingGroupName())) {
-        builder.tags(sshEntityHelper.filterInfraTags(awsInfrastructureOutcome.getAwsInstanceFilter().getTags()))
-            .vpcIds(awsInfrastructureOutcome.getAwsInstanceFilter().getVpcs());
-      } else {
-        builder.autoScalingGroupName(awsInfrastructureOutcome.getAutoScalingGroupName());
-      }
-      return builder.build();
+      return AwsWinrmInfraDelegateConfig.winrmAwsBuilder()
+          .winRmCredentials((WinRmCredentialsSpecDTO) secretSpecDTO)
+          .awsConnectorDTO(awsConnectorDTO)
+          .connectorEncryptionDataDetails(encryptedData)
+          .region(awsInfrastructureOutcome.getRegion())
+          .tags(sshEntityHelper.filterInfraTags(awsInfrastructureOutcome.getTags()))
+          .build();
     }
     throw new InvalidArgumentsException(format("Invalid subclass %s provided for %s",
         secretSpecDTO.getClass().getSimpleName(), SecretSpecDTO.class.getSimpleName()));

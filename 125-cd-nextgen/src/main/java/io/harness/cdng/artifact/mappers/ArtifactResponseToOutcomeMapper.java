@@ -41,6 +41,7 @@ import io.harness.delegate.task.artifacts.S3ArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.artifactory.ArtifactoryArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.artifactory.ArtifactoryGenericArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.azure.AcrArtifactDelegateResponse;
+import io.harness.delegate.task.artifacts.custom.CustomArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.docker.DockerArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.ecr.EcrArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.gar.GarDelegateResponse;
@@ -114,6 +115,11 @@ public class ArtifactResponseToOutcomeMapper {
         return getAcrArtifactOutcome(acrArtifactConfig, acrArtifactDelegateResponse, useDelegateResponse);
       case CUSTOM_ARTIFACT:
         CustomArtifactConfig customArtifactConfig = (CustomArtifactConfig) artifactConfig;
+        if (customArtifactConfig.getScripts() != null) {
+          CustomArtifactDelegateResponse customArtifactDelegateResponse =
+              (CustomArtifactDelegateResponse) artifactDelegateResponse;
+          return getCustomArtifactOutcome(customArtifactConfig, customArtifactDelegateResponse);
+        }
         return getCustomArtifactOutcome(customArtifactConfig);
       case AMAZONS3:
         AmazonS3ArtifactConfig amazonS3ArtifactConfig = (AmazonS3ArtifactConfig) artifactConfig;
@@ -293,6 +299,16 @@ public class ArtifactResponseToOutcomeMapper {
         .identifier(artifactConfig.getIdentifier())
         .primaryArtifact(artifactConfig.isPrimaryArtifact())
         .version(artifactConfig.getVersion().getValue())
+        .build();
+  }
+
+  private CustomArtifactOutcome getCustomArtifactOutcome(
+      CustomArtifactConfig artifactConfig, CustomArtifactDelegateResponse customArtifactDelegateResponse) {
+    return CustomArtifactOutcome.builder()
+        .identifier(artifactConfig.getIdentifier())
+        .primaryArtifact(artifactConfig.isPrimaryArtifact())
+        .version(artifactConfig.getVersion().getValue())
+        .metadata(customArtifactDelegateResponse.getMetadata())
         .build();
   }
 

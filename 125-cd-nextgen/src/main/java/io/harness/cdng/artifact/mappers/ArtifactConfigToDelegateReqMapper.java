@@ -14,12 +14,14 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.artifact.bean.yaml.AcrArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.AmazonS3ArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.ArtifactoryRegistryArtifactConfig;
+import io.harness.cdng.artifact.bean.yaml.CustomArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.DockerHubArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.EcrArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.GcrArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.GoogleArtifactRegistryConfig;
 import io.harness.cdng.artifact.bean.yaml.JenkinsArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.NexusRegistryArtifactConfig;
+import io.harness.cdng.artifact.bean.yaml.customartifact.CustomScriptInlineSource;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryConnectorDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
@@ -33,6 +35,7 @@ import io.harness.delegate.task.artifacts.ArtifactSourceDelegateRequest;
 import io.harness.delegate.task.artifacts.ArtifactSourceType;
 import io.harness.delegate.task.artifacts.artifactory.ArtifactoryArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.artifactory.ArtifactoryGenericArtifactDelegateRequest;
+import io.harness.delegate.task.artifacts.custom.CustomArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.docker.DockerArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.ecr.EcrArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.gar.GarDelegateRequest;
@@ -40,8 +43,11 @@ import io.harness.delegate.task.artifacts.gcr.GcrArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.jenkins.JenkinsArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.nexus.NexusArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.s3.S3ArtifactDelegateRequest;
+import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.security.encryption.EncryptedDataDetail;
+import io.harness.yaml.utils.NGVariablesUtils;
 
 import java.util.Arrays;
 import java.util.List;
@@ -84,6 +90,25 @@ public class ArtifactConfigToDelegateReqMapper {
     String jobName = artifactConfig.getJobName() != null ? artifactConfig.getJobName().getValue() : "";
     return ArtifactDelegateRequestUtils.getJenkinsDelegateRequest(connectorRef, connectorDTO, encryptedDataDetails,
         ArtifactSourceType.JENKINS, null, null, jobName, Arrays.asList(artifactPath));
+  }
+  public CustomArtifactDelegateRequest getCustomDelegateRequest(
+      CustomArtifactConfig artifactConfig, Ambiance ambiance) {
+    CustomScriptInlineSource customScriptInlineSource = (CustomScriptInlineSource) artifactConfig.getScripts()
+                                                            .getFetchAllArtifacts()
+                                                            .getShellScriptBaseStepInfo()
+                                                            .getSource()
+                                                            .getSpec();
+    return ArtifactDelegateRequestUtils.getCustomDelegateRequest(
+        artifactConfig.getScripts().getFetchAllArtifacts().getArtifactsArrayPath().getValue(),
+        artifactConfig.getVersionRegex().getValue(),
+        artifactConfig.getScripts().getFetchAllArtifacts().getShellScriptBaseStepInfo().getSource().getType(),
+        ArtifactSourceType.CUSTOM_ARTIFACT,
+        artifactConfig.getScripts().getFetchAllArtifacts().getVersionPath().getValue(),
+        customScriptInlineSource.getScript().fetchFinalValue().toString(),
+        NGVariablesUtils.getStringMapVariables(artifactConfig.getScripts().getFetchAllArtifacts().getAttributes(), 0L),
+        NGVariablesUtils.getStringMapVariables(artifactConfig.getInputs(), 0L), artifactConfig.getVersion().getValue(),
+        AmbianceUtils.obtainCurrentRuntimeId(ambiance), artifactConfig.getTimeout().getValue().getTimeoutInMillis(),
+        AmbianceUtils.getAccountId(ambiance));
   }
 
   public GcrArtifactDelegateRequest getGcrDelegateRequest(GcrArtifactConfig gcrArtifactConfig,

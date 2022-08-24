@@ -15,6 +15,7 @@ import io.harness.steps.environment.EnvironmentOutcome;
 import io.harness.yaml.core.VariableExpression;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
+import java.util.Map;
 import lombok.Builder;
 import lombok.Value;
 import org.springframework.data.annotation.TypeAlias;
@@ -29,11 +30,7 @@ public class SshWinRmAwsInfrastructureOutcome extends InfrastructureDetailsAbstr
   private String connectorRef;
   private String credentialsRef;
   private String region;
-  private String loadBalancer;
-  private String hostNameConvention;
-  private Boolean useAutoScalingGroup;
-  private String autoScalingGroupName;
-  private AwsInstanceFilter awsInstanceFilter;
+  Map<String, String> tags;
 
   @VariableExpression(skipVariableExpression = true) private EnvironmentOutcome environment;
   private String infrastructureKey;

@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.ngtriggers.beans.source.ManifestType.HELM_MANIFEST;
 import static io.harness.ngtriggers.beans.source.NGTriggerType.ARTIFACT;
 import static io.harness.ngtriggers.beans.source.NGTriggerType.MANIFEST;
+import static io.harness.ngtriggers.beans.source.NGTriggerType.WEBHOOK;
 import static io.harness.ngtriggers.beans.source.artifact.ArtifactType.ACR;
 import static io.harness.ngtriggers.beans.source.artifact.ArtifactType.AMAZON_S3;
 import static io.harness.ngtriggers.beans.source.artifact.ArtifactType.ARTIFACTORY_REGISTRY;
@@ -44,6 +45,7 @@ public class GeneratorFactory {
   private final ArtifactoryRegistryPollingItemGenerator artifactoryRegistryPollingItemGenerator;
   private final AcrPollingItemGenerator acrPollingItemGenerator;
   private final JenkinsPollingItemGenerator jenkinsPollingItemGenerator;
+  private final GitPollingItemGenerator gitPollingItemGenerator;
 
   public PollingItemGenerator retrievePollingItemGenerator(BuildTriggerOpsData buildTriggerOpsData) {
     NGTriggerEntity ngTriggerEntity = buildTriggerOpsData.getTriggerDetails().getNgTriggerEntity();
@@ -51,6 +53,8 @@ public class GeneratorFactory {
       return retrievePollingItemGeneratorForManifest(buildTriggerOpsData);
     } else if (ngTriggerEntity.getType() == ARTIFACT) {
       return retrievePollingItemGeneratorForArtifact(buildTriggerOpsData);
+    } else if (ngTriggerEntity.getType() == WEBHOOK) {
+      return retrievePollingItemGeneratorForGitPolling(buildTriggerOpsData);
     }
 
     return null;
@@ -96,5 +100,9 @@ public class GeneratorFactory {
     }
 
     return null;
+  }
+
+  private PollingItemGenerator retrievePollingItemGeneratorForGitPolling(BuildTriggerOpsData buildTriggerOpsData) {
+    return gitPollingItemGenerator;
   }
 }

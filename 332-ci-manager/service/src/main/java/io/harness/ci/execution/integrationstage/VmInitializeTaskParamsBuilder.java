@@ -184,7 +184,8 @@ public class VmInitializeTaskParamsBuilder {
     ConnectorDetails gitConnector = codebaseUtils.getGitConnector(
         ngAccess, initializeStepInfo.getCiCodebase(), initializeStepInfo.isSkipGitClone());
     Map<String, String> codebaseEnvVars = codebaseUtils.getCodebaseVars(ambiance, ciExecutionArgs);
-    Map<String, String> gitEnvVars = codebaseUtils.getGitEnvVariables(gitConnector, initializeStepInfo.getCiCodebase());
+    Map<String, String> gitEnvVars = codebaseUtils.getGitEnvVariables(
+        gitConnector, initializeStepInfo.getCiCodebase(), initializeStepInfo.isSkipGitClone());
 
     Map<String, String> envVars = new HashMap<>();
     envVars.putAll(codebaseEnvVars);
@@ -222,7 +223,7 @@ public class VmInitializeTaskParamsBuilder {
         .build();
   }
 
-  private void validateInfrastructure(Infrastructure infrastructure) {
+  public void validateInfrastructure(Infrastructure infrastructure) {
     if (infrastructure == null) {
       throw new CIStageExecutionException("Input infrastructure can not be empty");
     }
@@ -426,7 +427,7 @@ public class VmInitializeTaskParamsBuilder {
     return LogStreamingHelper.generateLogBaseKey(logAbstractions);
   }
 
-  private String getHostedPoolId(ParameterField<Platform> platform) {
+  public String getHostedPoolId(ParameterField<Platform> platform) {
     OSType os = OSType.Linux;
     ArchType arch = ArchType.Amd64;
     if (platform != null && platform.getValue() != null) {

@@ -10,6 +10,7 @@ package io.harness.cdng.creator.plan.artifact;
 import static io.harness.rule.OwnerRule.ABOSII;
 import static io.harness.rule.OwnerRule.MLUKIC;
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
+import static io.harness.rule.OwnerRule.SHIVAM;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -17,7 +18,9 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDNGTestBase;
+import io.harness.cdng.artifact.bean.yaml.CustomArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.SidecarArtifact;
+import io.harness.cdng.artifact.bean.yaml.customartifact.CustomArtifactScripts;
 import io.harness.cdng.artifact.steps.ArtifactStep;
 import io.harness.cdng.artifact.steps.ArtifactStepParameters;
 import io.harness.cdng.artifact.steps.ArtifactSyncStep;
@@ -31,6 +34,7 @@ import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.sdk.core.plan.PlanNode;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 import io.harness.serializer.KryoSerializer;
 
@@ -123,7 +127,11 @@ public class SideCarPlanCreatorTest extends CDNGTestBase {
     String uuid = UUIDGenerator.generateUuid();
     String identifier = "sidecar1";
     ArtifactStepParameters artifactStepParameters =
-        ArtifactStepParameters.builder().identifier(identifier).type(ArtifactSourceType.CUSTOM_ARTIFACT).build();
+        ArtifactStepParameters.builder()
+            .identifier(identifier)
+            .type(ArtifactSourceType.CUSTOM_ARTIFACT)
+            .spec(CustomArtifactConfig.builder().version(new ParameterField<>()).build())
+            .build();
 
     metadataDependency.put(YamlTypes.UUID, ByteString.copyFrom(kryoSerializer.asDeflatedBytes(uuid)));
     metadataDependency.put(
@@ -140,5 +148,36 @@ public class SideCarPlanCreatorTest extends CDNGTestBase {
     assertThat(sidecarPlanNode.getStepType()).isEqualTo(ArtifactSyncStep.STEP_TYPE);
     assertThat(sidecarPlanNode.getFacilitatorObtainments().get(0).getType().getType())
         .isEqualTo(OrchestrationFacilitatorType.SYNC);
+  }
+
+  @Test
+  @Owner(developers = SHIVAM)
+  @Category(UnitTests.class)
+  public void testGetParentNodeCustomArtifactWithScript() {
+    HashMap<String, ByteString> metadataDependency = new HashMap<>();
+    String uuid = UUIDGenerator.generateUuid();
+    String identifier = "sidecar1";
+    ArtifactStepParameters artifactStepParameters =
+        ArtifactStepParameters.builder()
+            .identifier(identifier)
+            .type(ArtifactSourceType.CUSTOM_ARTIFACT)
+            .spec(CustomArtifactConfig.builder().scripts(new CustomArtifactScripts()).build())
+            .build();
+
+    metadataDependency.put(YamlTypes.UUID, ByteString.copyFrom(kryoSerializer.asDeflatedBytes(uuid)));
+    metadataDependency.put(
+        PlanCreatorConstants.IDENTIFIER, ByteString.copyFrom(kryoSerializer.asDeflatedBytes(identifier)));
+    metadataDependency.put(PlanCreatorConstants.SIDECAR_STEP_PARAMETERS,
+        ByteString.copyFrom(kryoSerializer.asDeflatedBytes(artifactStepParameters)));
+    Dependency dependency = Dependency.newBuilder().putAllMetadata(metadataDependency).build();
+    PlanCreationContext ctx = PlanCreationContext.builder().dependency(dependency).build();
+    PlanCreationResponse sidecarPlanCreationResponse = sidecarPlanCreator.createPlanForField(ctx, null);
+    PlanNode sidecarPlanNode = sidecarPlanCreationResponse.getPlanNode();
+    assertThat(sidecarPlanNode.getUuid()).isEqualTo(uuid);
+    assertThat(sidecarPlanNode.getIdentifier()).isEqualTo(identifier);
+    assertThat(sidecarPlanNode.getStepParameters()).isEqualTo(artifactStepParameters);
+    assertThat(sidecarPlanNode.getStepType()).isEqualTo(ArtifactStep.STEP_TYPE);
+    assertThat(sidecarPlanNode.getFacilitatorObtainments().get(0).getType().getType())
+        .isEqualTo(OrchestrationFacilitatorType.TASK);
   }
 }

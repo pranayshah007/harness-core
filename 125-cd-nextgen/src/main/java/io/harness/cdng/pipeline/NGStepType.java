@@ -132,7 +132,14 @@ public enum NGStepType {
   // Jenkns Build
   @JsonProperty(StepSpecTypeConstants.JENKINS_BUILD)
   JENKINS_BUILD(
-      "Jenkins Build", Arrays.asList(ServiceDefinitionType.values()), "Builds", StepSpecTypeConstants.JENKINS_BUILD);
+      "Jenkins Build", Arrays.asList(ServiceDefinitionType.values()), "Builds", StepSpecTypeConstants.JENKINS_BUILD),
+  // Azure ARM/BP
+  @JsonProperty(StepSpecTypeConstants.AZURE_CREATE_ARM_RESOURCE)
+  AZURE_CREATE_ARM_RESOURCE("Azure Create ARM", Arrays.asList(ServiceDefinitionType.values()),
+      "Infrastructure Provisioners/ARM", StepSpecTypeConstants.AZURE_CREATE_ARM_RESOURCE),
+  @JsonProperty(StepSpecTypeConstants.AZURE_CREATE_BP_RESOURCE)
+  AZURE_CREATE_BP_RESOURCE("Azure Create Blueprint Resource", Arrays.asList(ServiceDefinitionType.values()),
+      "Infrastructure Provisioners/Azure Blueprint", StepSpecTypeConstants.AZURE_CREATE_BP_RESOURCE);
 
   private String displayName;
   private List<ServiceDefinitionType> serviceDefinitionTypes;

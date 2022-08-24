@@ -159,6 +159,13 @@ public class FileStoreServiceImpl implements FileStoreService {
   }
 
   @Override
+  public Optional<FileDTO> get(@NotNull FileDTO fileDTO) {
+    Optional<NGFile> ngFileOpt = find(fileDTO.getAccountIdentifier(), fileDTO.getOrgIdentifier(),
+        fileDTO.getProjectIdentifier(), fileDTO.getIdentifier());
+    return ngFileOpt.map(FileDTOMapper::getFileDTOFromNGFile);
+  }
+
+  @Override
   public Optional<FileDTO> getByPath(
       @NotNull String accountIdentifier, String orgIdentifier, String projectIdentifier, @NotNull String path) {
     if (isEmpty(accountIdentifier)) {

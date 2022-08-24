@@ -15,10 +15,15 @@ import static io.harness.data.structure.HarnessStringUtils.join;
 import static io.harness.ng.core.mapper.TagMapper.convertToList;
 import static io.harness.ng.core.mapper.TagMapper.convertToMap;
 
+import static java.lang.String.format;
+
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.manifest.yaml.ManifestConfig;
+import io.harness.cdng.manifest.yaml.ManifestConfigWrapper;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.environment.beans.EnvironmentBasicInfo;
+import io.harness.ng.core.environment.beans.NGEnvironmentGlobalOverride;
 import io.harness.ng.core.environment.dto.EnvironmentRequestDTO;
 import io.harness.ng.core.environment.dto.EnvironmentResponse;
 import io.harness.ng.core.environment.dto.EnvironmentResponseDTO;
@@ -28,6 +33,7 @@ import io.harness.pms.yaml.YamlUtils;
 import io.harness.utils.YamlPipelineUtils;
 
 import java.io.IOException;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -45,12 +51,14 @@ public class EnvironmentMapper {
   ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
   Validator validator = factory.getValidator();
 
-  public Environment toEnvironmentEntity(String accountId, EnvironmentRequestDTO environmentRequestDTO) {
+  public Environment toEnvironmentEntity(
+      String accountId, EnvironmentRequestDTO environmentRequestDTO, boolean ngSvcManifestOverrideEnabled) {
     final Environment environment;
     if (isNotEmpty(environmentRequestDTO.getYaml())) {
       NGEnvironmentConfig ngEnvironmentConfig = toNGEnvironmentConfig(environmentRequestDTO);
 
       validate(ngEnvironmentConfig);
+      validateEnvGlobalManifestsOverrides(ngEnvironmentConfig, ngSvcManifestOverrideEnabled);
 
       environment = toNGEnvironmentEntity(accountId, ngEnvironmentConfig, environmentRequestDTO.getColor());
       environment.setYaml(environmentRequestDTO.getYaml());
@@ -202,6 +210,37 @@ public class EnvironmentMapper {
       return YamlPipelineUtils.getYamlString(ngEnvironmentConfig);
     } catch (IOException e) {
       throw new InvalidRequestException("Cannot create environment entity due to " + e.getMessage());
+    }
+  }
+
+  private void validateEnvGlobalManifestsOverrides(
+      NGEnvironmentConfig ngEnvironmentConfig, boolean ngSvcManifestOverrideEnabled) {
+    if (ngEnvironmentConfig.getNgEnvironmentInfoConfig() != null
+        && ngEnvironmentConfig.getNgEnvironmentInfoConfig().getNgEnvironmentGlobalOverride() != null) {
+      if (!ngSvcManifestOverrideEnabled) {
+        throw new InvalidRequestException(
+            "Manifest Override is not supported with FF NG_SERVICE_MANIFEST_OVERRIDE disabled");
+      }
+      final NGEnvironmentGlobalOverride environmentGlobalOverride =
+          ngEnvironmentConfig.getNgEnvironmentInfoConfig().getNgEnvironmentGlobalOverride();
+      checkDuplicateManifestIdentifiersWithIn(environmentGlobalOverride.getManifests());
+    }
+  }
+
+  public static void checkDuplicateManifestIdentifiersWithIn(List<ManifestConfigWrapper> manifests) {
+    if (isEmpty(manifests)) {
+      return;
+    }
+    Set<String> uniqueIds = new HashSet<>();
+    Set<String> duplicateIds = new HashSet<>();
+    manifests.stream().map(ManifestConfigWrapper::getManifest).map(ManifestConfig::getIdentifier).forEach(id -> {
+      if (!uniqueIds.add(id)) {
+        duplicateIds.add(id);
+      }
+    });
+    if (isNotEmpty(duplicateIds)) {
+      throw new InvalidRequestException(format("Found duplicate manifest identifiers [%s]",
+          duplicateIds.stream().map(Object::toString).collect(Collectors.joining(","))));
     }
   }
 }

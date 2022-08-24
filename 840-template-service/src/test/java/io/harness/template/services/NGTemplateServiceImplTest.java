@@ -273,8 +273,8 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
         ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER, TEMPLATE_VERSION_LABEL, "INVALID_YAML");
     assertThat(markEntityInvalid).isTrue();
     assertThatThrownBy(()
-                           -> templateService.getOrThrowExceptionIfInvalid(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
-                               TEMPLATE_IDENTIFIER, TEMPLATE_VERSION_LABEL, false))
+                           -> templateService.getMetadataOrThrowExceptionIfInvalid(ACCOUNT_ID, ORG_IDENTIFIER,
+                               PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER, TEMPLATE_VERSION_LABEL, false))
         .isInstanceOf(NGTemplateException.class);
 
     boolean delete = templateService.delete(
@@ -840,6 +840,7 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
         .extracting(resp -> ((ValidateTemplateInputsResponseDTO) resp).getErrorNodeSummary())
         .isNotNull()
         .hasFieldOrPropertyWithValue("childrenErrorNodes", new ArrayList<>())
+        .hasFieldOrProperty("nodeInfo")
         .extracting(ErrorNodeSummary::getTemplateResponse)
         .isNotNull()
         .hasFieldOrPropertyWithValue("identifier", "template2")

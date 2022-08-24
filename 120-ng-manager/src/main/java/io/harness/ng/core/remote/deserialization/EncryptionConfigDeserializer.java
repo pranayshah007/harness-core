@@ -12,6 +12,7 @@ import io.harness.security.encryption.EncryptionType;
 
 import software.wings.beans.AwsSecretsManagerConfig;
 import software.wings.beans.AzureVaultConfig;
+import software.wings.beans.CustomSecretNGManagerConfig;
 import software.wings.beans.CyberArkConfig;
 import software.wings.beans.GcpKmsConfig;
 import software.wings.beans.KmsConfig;
@@ -56,6 +57,8 @@ public class EncryptionConfigDeserializer extends StdDeserializer<EncryptionConf
         return mapper.treeToValue(obj, AzureVaultConfig.class);
       case CYBERARK:
         return mapper.treeToValue(obj, CyberArkConfig.class);
+      case CUSTOM_NG:
+        return mapper.treeToValue(obj, CustomSecretNGManagerConfig.class);
       default:
         throw new IllegalArgumentException("Unsupported type: " + encryptionType);
     }

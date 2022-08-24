@@ -61,6 +61,7 @@ message StrategyMetadata {
 
 message ForMetadata {
   string value = 1;
+  repeated string partition = 2;
 }
 
 message MatrixMetadata {

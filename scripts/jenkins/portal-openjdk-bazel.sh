@@ -16,8 +16,6 @@ copy_cg_manager_jars
 
 copy_event_server_jars
 
-copy_batch_processing_jars
-
 copy_change_data_capture_jars
 
 copy_ce_nextgen_jars
@@ -61,6 +59,7 @@ cp ${HOME}/.bazel-dirs/bin/300-cv-nextgen/module_deploy.jar cv-nextgen-capsule.j
 cp ../../300-cv-nextgen/keystore.jks .
 cp ../../300-cv-nextgen/cv-nextgen-config.yml .
 cp ../../300-cv-nextgen/src/main/resources/redisson-jcache.yaml .
+cp ../../300-cv-nextgen/src/main/resources/enterprise-redisson-jcache.yaml .
 
 
 cp ../../dockerization/cv-nextgen/Dockerfile-verification-jenkins-k8-openjdk ./Dockerfile
@@ -196,6 +195,7 @@ cp ../../keystore.jks .
 cp ../../332-ci-manager/config/key.pem .
 cp ../../332-ci-manager/config/cert.pem .
 cp ../../332-ci-manager/service/src/main/resources/redisson-jcache.yaml .
+cp ../../332-ci-manager/service/src/main/resources/enterprise-redisson-jcache.yaml .
 
 cp ../../dockerization/ci-manager/Dockerfile-ci-manager-jenkins-k8-openjdk ./Dockerfile
 cp ../../dockerization/ci-manager/Dockerfile-ci-manager-jenkins-k8-gcr-openjdk ./Dockerfile-gcr
@@ -272,12 +272,13 @@ cd ../..
 mkdir -p dist/debezium-service
 cd dist/debezium-service
 
-cp ${HOME}/.bazel-dirs/bin/951-debezium-service/module_deploy.jar debezium-service-capsule.jar
-cp ../../951-debezium-service/config.yml .
-cp ../../951-debezium-service/src/main/resources/redisson-jcache.yaml .
+cp ${HOME}/.bazel-dirs/bin/debezium-service/service/module_deploy.jar debezium-service-capsule.jar
+cp ../../debezium-service/config/config.yml .
+cp ../../debezium-service/service/src/main/resources/redisson-jcache.yaml .
 
 cp ../../dockerization/debezium-service/Dockerfile-debezium-service-jenkins-k8-openjdk ./Dockerfile
 cp ../../dockerization/debezium-service/Dockerfile-debezium-service-jenkins-k8-gcr-openjdk ./Dockerfile-gcr
+cp ../../dockerization/debezium-service/Dockerfile-debezium-service-cie-jdk ./Dockerfile-cie-jdk
 cp ../../dockerization/base-images/apm/inject-onprem-apm-bins-into-dockerimage.sh .
 cp ../../dockerization/base-images/apm/inject-saas-apm-bins-into-dockerimage.sh .
 cp -r ../../dockerization/debezium-service/scripts/ .

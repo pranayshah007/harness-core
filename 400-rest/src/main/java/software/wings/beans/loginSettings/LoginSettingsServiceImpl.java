@@ -19,6 +19,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.WingsException;
+import io.harness.outbox.api.OutboxService;
 
 import software.wings.beans.Account;
 import software.wings.beans.Event;
@@ -27,6 +28,8 @@ import software.wings.beans.Notification;
 import software.wings.beans.User;
 import software.wings.beans.User.UserKeys;
 import software.wings.beans.loginSettings.LoginSettings.LoginSettingKeys;
+import software.wings.beans.loginSettings.events.LoginSettingsHarnessUsernamePasswordUpdateEvent;
+import software.wings.beans.loginSettings.events.LoginSettingsYamlDTO;
 import software.wings.beans.security.UserGroup;
 import software.wings.dl.WingsPersistence;
 import software.wings.service.impl.AuditServiceHelper;
@@ -69,6 +72,7 @@ public class LoginSettingsServiceImpl implements LoginSettingsService {
   @Inject UserGroupBasedDispatcher userGroupBasedDispatcher;
   @Inject UserGroupService userGroupService;
   @Inject AuditServiceHelper auditServiceHelper;
+  @Inject OutboxService outboxService;
 
   private PasswordStrengthPolicy getDefaultPasswordStrengthPolicy() {
     return PasswordStrengthPolicy.builder().enabled(false).build();
@@ -171,6 +175,20 @@ public class LoginSettingsServiceImpl implements LoginSettingsService {
     loginSettings.setPasswordExpirationPolicy(passwordExpirationPolicy);
   }
 
+  private void ngAuditLoginSettings(String accountId, LoginSettings oldLoginSettings, LoginSettings newLoginSettings) {
+    try {
+      outboxService.save(
+          LoginSettingsHarnessUsernamePasswordUpdateEvent.builder()
+              .accountIdentifier(accountId)
+              .loginSettingsId(newLoginSettings.getUuid())
+              .oldLoginSettingsYamlDTO(LoginSettingsYamlDTO.builder().loginSettings(oldLoginSettings).build())
+              .newLoginSettingsYamlDTO(LoginSettingsYamlDTO.builder().loginSettings(newLoginSettings).build())
+              .build());
+    } catch (Exception ex) {
+      log.error("Audit trails for LoginSettings update event failed with exception: ", ex);
+    }
+  }
+
   @Override
   public LoginSettings updateUserLockoutPolicy(String accountId, UserLockoutPolicy newUserLockoutPolicy) {
     validateUserLockoutPolicy(newUserLockoutPolicy);
@@ -243,19 +261,21 @@ public class LoginSettingsServiceImpl implements LoginSettingsService {
   }
 
   @Override
-  public LoginSettings updateLoginSettings(String loginSettingsId, String accountId, LoginSettings newLoginSettings) {
-    validatePasswordExpirationPolicy(newLoginSettings.getPasswordExpirationPolicy());
-    validatePasswordStrengthPolicy(newLoginSettings.getPasswordStrengthPolicy());
-    validateUserLockoutPolicy(newLoginSettings.getUserLockoutPolicy());
+  public LoginSettings updateLoginSettings(String loginSettingsId, String accountId, LoginSettings loginSettings) {
+    validatePasswordExpirationPolicy(loginSettings.getPasswordExpirationPolicy());
+    validatePasswordStrengthPolicy(loginSettings.getPasswordStrengthPolicy());
+    validateUserLockoutPolicy(loginSettings.getUserLockoutPolicy());
 
     UpdateOperations<LoginSettings> operations = wingsPersistence.createUpdateOperations(LoginSettings.class);
-    setUnset(operations, LoginSettingKeys.passwordExpirationPolicy, newLoginSettings.getPasswordExpirationPolicy());
-    setUnset(operations, LoginSettingKeys.passwordStrengthPolicy, newLoginSettings.getPasswordStrengthPolicy());
-    setUnset(operations, LoginSettingKeys.userLockoutPolicy, newLoginSettings.getUserLockoutPolicy());
-    LoginSettings loginSettings = updateAndGetLoginSettings(loginSettingsId, accountId, operations);
-    auditLoginSettings(accountId, loginSettings);
+    setUnset(operations, LoginSettingKeys.passwordExpirationPolicy, loginSettings.getPasswordExpirationPolicy());
+    setUnset(operations, LoginSettingKeys.passwordStrengthPolicy, loginSettings.getPasswordStrengthPolicy());
+    setUnset(operations, LoginSettingKeys.userLockoutPolicy, loginSettings.getUserLockoutPolicy());
+    LoginSettings oldLoginSettings = getLoginSettingsWithId(loginSettingsId);
+    LoginSettings newLoginSettings = updateAndGetLoginSettings(loginSettingsId, accountId, operations);
+    auditLoginSettings(accountId, newLoginSettings);
+    ngAuditLoginSettings(accountId, oldLoginSettings, newLoginSettings);
     log.info("Auditing updation of LoginSettings for account={}", accountId);
-    return loginSettings;
+    return newLoginSettings;
   }
 
   @Override

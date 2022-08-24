@@ -9,11 +9,13 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"os"
 	"path/filepath"
 	"time"
 
 	"github.com/harness/harness-core/commons/go/lib/exec"
 	"github.com/harness/harness-core/commons/go/lib/filesystem"
+	"github.com/harness/harness-core/commons/go/lib/images"
 	"github.com/harness/harness-core/commons/go/lib/utils"
 	pb "github.com/harness/harness-core/product/ci/engine/proto"
 	"go.uber.org/zap"
@@ -52,6 +54,9 @@ type runTask struct {
 	procWriter        io.Writer
 	fs                filesystem.FileSystem
 	cmdContextFactory exec.CmdContextFactory
+	detach            bool
+	image             string
+	entrypoint        []string
 }
 
 // NewRunTask creates a run step executor
@@ -87,6 +92,9 @@ func NewRunTask(step *pb.UnitStep, prevStepOutputs map[string]*pb.StepOutput, tm
 		fs:                fs,
 		procWriter:        w,
 		addonLogger:       addonLogger,
+		detach:            r.GetDetach(),
+		image:             r.GetImage(),
+		entrypoint:        r.GetEntrypoint(),
 	}
 }
 
@@ -138,15 +146,24 @@ func (r *runTask) execute(ctx context.Context, retryCount int32) (map[string]str
 		return nil, err
 	}
 
-	shell, entrypointArg, err := r.getEntrypoint()
+	cmdArgs, err := r.getEntrypoint(ctx, cmdToExecute)
 	if err != nil {
 		return nil, err
 	}
-	cmdArgs := []string{entrypointArg, cmdToExecute}
 
-	cmd := r.cmdContextFactory.CmdContextWithSleep(ctx, cmdExitWaitTime, shell, cmdArgs...).
-		WithStdout(r.procWriter).WithStderr(r.procWriter).WithEnvVarsMap(envVars)
-	err = runCmd(ctx, cmd, r.id, cmdArgs, retryCount, start, r.logMetrics, r.addonLogger)
+	if r.detach {
+		go func() {
+			ctx := context.Background()
+			cmd := r.cmdContextFactory.CmdContextWithSleep(ctx, cmdExitWaitTime, cmdArgs[0], cmdArgs[1:]...).
+				WithStdout(r.procWriter).WithStderr(r.procWriter).WithEnvVarsMap(envVars)
+			_ = runCmd(ctx, cmd, r.id, cmdArgs, retryCount, start, r.logMetrics, r.addonLogger)
+		}()
+	} else {
+		cmd := r.cmdContextFactory.CmdContextWithSleep(ctx, cmdExitWaitTime, cmdArgs[0], cmdArgs[1:]...).
+			WithStdout(r.procWriter).WithStderr(r.procWriter).WithEnvVarsMap(envVars)
+		err = runCmd(ctx, cmd, r.id, cmdArgs, retryCount, start, r.logMetrics, r.addonLogger)
+	}
+
 	if err != nil {
 		return nil, err
 	}
@@ -165,7 +182,7 @@ func (r *runTask) execute(ctx context.Context, retryCount int32) (map[string]str
 
 	r.addonLogger.Infow(
 		"Successfully executed run step",
-		"arguments", cmdToExecute,
+		"arguments", cmdArgs,
 		"output", stepOutput,
 		"elapsed_time_ms", utils.TimeSince(start),
 	)
@@ -173,6 +190,10 @@ func (r *runTask) execute(ctx context.Context, retryCount int32) (map[string]str
 }
 
 func (r *runTask) getScript(ctx context.Context, outputVarFile string) (string, error) {
+	if r.detach && len(r.command) == 0 {
+		return "", nil
+	}
+
 	outputVarCmd := r.getOutputVarCmd(r.envVarOutputs, outputVarFile)
 	resolvedCmd, err := resolveExprInCmd(r.command)
 	if err != nil {
@@ -186,11 +207,37 @@ func (r *runTask) getScript(ctx context.Context, outputVarFile string) (string, 
 
 	// Using set -xe instead of printing command via utils.GetLoggableCmd(command) since if ' is present in a command,
 	// echo on the command fails with an error.
-	command := fmt.Sprintf("%s%s %s", earlyExitCmd, resolvedCmd, outputVarCmd)
+	command := ""
+	if r.detach {
+		command = fmt.Sprintf("%s%s", earlyExitCmd, resolvedCmd)
+	} else {
+		command = fmt.Sprintf("%s%s %s", earlyExitCmd, resolvedCmd, outputVarCmd)
+	}
 	return command, nil
 }
 
-func (r *runTask) getEntrypoint() (string, string, error) {
+func (r *runTask) getEntrypoint(ctx context.Context, cmdToExecute string) ([]string, error) {
+	// give priority to entrypoint
+	if len(r.entrypoint) != 0 {
+		return r.entrypoint, nil
+	} else if len(cmdToExecute) != 0 {
+		shell, ep, err := r.getShell(ctx)
+		if err != nil {
+			return nil, err
+		}
+		return []string{shell, ep, cmdToExecute}, nil
+	}
+
+	// fetch default ep
+	imageSecret, _ := os.LookupEnv(imageSecretEnv)
+	ep, args, err := getImgMetadata(ctx, r.id, r.image, imageSecret, r.log)
+	if err != nil {
+		return nil, err
+	}
+	return images.CombinedEntrypoint(ep, args), nil
+}
+
+func (r *runTask) getShell(ctx context.Context) (string, string, error) {
 	if r.shellType == pb.ShellType_BASH {
 		return "bash", "-c", nil
 	} else if r.shellType == pb.ShellType_SH {

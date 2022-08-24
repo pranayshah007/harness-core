@@ -35,6 +35,7 @@ import static org.apache.commons.lang3.StringUtils.EMPTY;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.beans.HeaderConfig;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.TriggerException;
@@ -82,6 +83,7 @@ import io.harness.ngtriggers.exceptions.InvalidTriggerYamlException;
 import io.harness.ngtriggers.helpers.TriggerHelper;
 import io.harness.ngtriggers.helpers.WebhookConfigHelper;
 import io.harness.ngtriggers.utils.WebhookEventPayloadParser;
+import io.harness.pms.PmsFeatureFlagService;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
@@ -123,6 +125,7 @@ public class NGTriggerElementMapper {
   private TriggerEventHistoryRepository triggerEventHistoryRepository;
   private WebhookEventPayloadParser webhookEventPayloadParser;
   private WebhookConfigProvider webhookConfigProvider;
+  private final PmsFeatureFlagService pmsFeatureFlagService;
 
   public NGTriggerConfigV2 toTriggerConfigV2(String yaml) {
     try {
@@ -209,7 +212,9 @@ public class NGTriggerElementMapper {
   }
 
   public void copyEntityFieldsOutsideOfYml(NGTriggerEntity existingEntity, NGTriggerEntity newEntity) {
-    if (newEntity.getType() == ARTIFACT || newEntity.getType() == MANIFEST) {
+    boolean isWebhookPollingEnabled = isWebhookPollingEnabled(
+        existingEntity.getType(), existingEntity.getAccountId(), existingEntity.getPollInterval());
+    if (newEntity.getType() == ARTIFACT || newEntity.getType() == MANIFEST || isWebhookPollingEnabled) {
       PollingConfig existingPollingConfig = existingEntity.getMetadata().getBuildMetadata().getPollingConfig();
 
       if (existingPollingConfig != null && isNotEmpty(existingPollingConfig.getSignature())) {
@@ -245,8 +250,9 @@ public class NGTriggerElementMapper {
                                                .projectIdentifier(projectIdentifier)
                                                .targetIdentifier(config.getPipelineIdentifier())
                                                .targetType(TargetType.PIPELINE)
-                                               .metadata(toMetadata(config.getSource()))
+                                               .metadata(toMetadata(config.getSource(), accountIdentifier))
                                                .enabled(config.getEnabled())
+                                               .pollInterval(config.getSource().getPollInterval())
                                                .tags(TagMapper.convertToList(config.getTags()));
 
     if (config.getSource().getType() == NGTriggerType.SCHEDULED) {
@@ -262,7 +268,7 @@ public class NGTriggerElementMapper {
     return entity;
   }
 
-  NGTriggerMetadata toMetadata(NGTriggerSourceV2 triggerSource) {
+  NGTriggerMetadata toMetadata(NGTriggerSourceV2 triggerSource, String accountIdentifier) {
     switch (triggerSource.getType()) {
       case WEBHOOK:
         WebhookTriggerConfigV2 webhookTriggerConfig = (WebhookTriggerConfigV2) triggerSource.getSpec();
@@ -276,6 +282,17 @@ public class NGTriggerElementMapper {
           metadata.custom(CustomMetadata.builder().build());
         } else if (WebhookConfigHelper.isGitSpec(webhookTriggerConfig)) {
           metadata.git(prepareGitMetadata(webhookTriggerConfig));
+        }
+
+        if (isWebhookPollingEnabled(triggerSource.getType(), accountIdentifier, triggerSource.getPollInterval())) {
+          return NGTriggerMetadata.builder()
+              .webhook(metadata.build())
+              .buildMetadata(
+                  BuildMetadata.builder()
+                      .type(WEBHOOK)
+                      .pollingConfig(PollingConfig.builder().buildRef(EMPTY).signature(generateUuid()).build())
+                      .build())
+              .build();
         }
 
         return NGTriggerMetadata.builder().webhook(metadata.build()).build();
@@ -313,6 +330,16 @@ public class NGTriggerElementMapper {
       default:
         throw new InvalidRequestException("Type " + triggerSource.getType().toString() + " is invalid");
     }
+  }
+
+  private boolean isWebhookPollingEnabled(NGTriggerType type, String accountIdentifier, String pollInterval) {
+    if (type == NGTriggerType.WEBHOOK
+        && pmsFeatureFlagService.isEnabled(accountIdentifier, FeatureName.GIT_WEBHOOK_POLLING)
+        && !StringUtils.isEmpty(pollInterval)) {
+      return true;
+    }
+
+    return false;
   }
 
   @VisibleForTesting

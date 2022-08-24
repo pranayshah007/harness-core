@@ -1578,6 +1578,9 @@
 19810:io.harness.delegate.beans.connector.azureconnector.AzureMSIAuthUADTO
 19811:io.harness.delegate.beans.connector.azureconnector.AzureMSIAuthSADTO
 19854:io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectionTypeDTO
+19875:io.harness.delegate.beans.connector.customsecretmanager.CustomSecretManagerConnectorDTO
+19876:io.harness.delegate.beans.connector.customsecretmanager.CustomSecretManagerValidationParams
+19877:io.harness.delegate.beans.connector.customsecretmanager.TemplateLinkConfigForCustomSecretManager
 20001:io.harness.delegate.task.shell.ShellScriptApprovalTaskParameters
 20002:io.harness.delegate.task.http.HttpTaskParameters
 20100:io.harness.ng.core.environment.beans.EnvironmentType
@@ -1585,6 +1588,7 @@
 20102:io.harness.ng.core.user.UserMembershipUpdateMechanism
 20103:io.harness.ng.core.account.AuthenticationMechanism
 20104:io.harness.ng.core.account.ServiceAccountConfig
+20105:io.harness.steps.shellscript.ShellType
 22001:io.harness.ng.core.common.beans.NGTag
 22004:io.harness.ng.core.common.beans.KeyValuePair
 22005:io.harness.ng.core.ResourceScope
@@ -1660,6 +1664,7 @@
 40099:software.wings.beans.SlackConfig
 40100:software.wings.beans.ce.CEAzureConfig
 40113:com.amazonaws.services.cloudformation.model.StackStatus
+40114:software.wings.beans.CustomSecretNGManagerConfig
 50002:software.wings.api.RancherClusterElement
 50004:software.wings.delegatetasks.rancher.RancherResolveClustersTaskParameters
 50005:software.wings.delegatetasks.rancher.RancherResolveClustersResponse
@@ -1722,6 +1727,8 @@
 55334:io.harness.delegate.task.ssh.config.SecretConfigFile
 55335:io.harness.delegate.task.ssh.PdcWinRmInfraDelegateConfig
 55336:io.harness.delegate.task.shell.WinrmTaskParameters
+55337:io.harness.delegate.task.artifacts.custom.CustomArtifactDelegateRequest
+55338:io.harness.delegate.task.artifacts.custom.CustomArtifactDelegateResponse
 55401:io.harness.delegate.beans.SerializedResponseData
 55402:software.wings.beans.SerializationFormat
 55403:io.harness.delegate.beans.gitapi.GitApiMergePRTaskResponse
@@ -1740,11 +1747,20 @@
 55416:io.harness.delegate.task.ssh.AwsInfraDelegateConfig
 55417:io.harness.delegate.task.ssh.AwsSshInfraDelegateConfig
 55418:io.harness.delegate.task.ssh.AwsWinrmInfraDelegateConfig
-55419:io.harness.delegate.task.artifacts.gar.GarDelegateRequest
-55420:io.harness.delegate.task.artifacts.gar.GarDelegateResponse
+55419:io.harness.delegate.task.azure.appservice.webapp.ng.exception.AzureWebAppRollbackExceptionData
+55420:io.harness.delegate.task.artifacts.gar.GarDelegateRequest
+55421:io.harness.delegate.task.artifacts.gar.GarDelegateResponse
 55501:io.harness.delegate.beans.instancesync.info.PdcServerInstanceInfo
 55502:io.harness.delegate.beans.instancesync.info.AzureSshWinrmServerInstanceInfo
 55503:io.harness.delegate.beans.instancesync.info.AwsSshWinrmServerInstanceInfo
+55504:io.harness.delegate.beans.ci.vm.steps.VmBackgroundStep
+55505:io.harness.delegate.beans.azure.response.AzureLocationsResponse
+55506:io.harness.delegate.beans.azure.response.AzureMngGroupsResponse
+56335:io.harness.delegate.task.gitpolling.request.GitPollingTaskParameters
+56336:io.harness.delegate.task.gitpolling.github.GitHubPollingDelegateRequest
+56337:io.harness.delegate.task.gitpolling.GitPollingSourceType
+56338:io.harness.delegate.task.gitpolling.GitPollingTaskType
+56339:io.harness.delegate.beans.polling.GitPollingDelegateResponse
 56403:io.harness.delegate.beans.storeconfig.CustomRemoteStoreDelegateConfig
 70001:io.harness.accesscontrol.commons.exceptions.AccessDeniedErrorDTO
 70002:io.harness.accesscontrol.acl.api.PermissionCheckDTO
@@ -1761,6 +1777,8 @@
 71123:java.time.ZonedDateTime
 72100:software.wings.beans.GcpSecretsManagerConfig
 72101:io.harness.security.encryption.AdditionalMetadata
+73001:io.harness.gitpolling.github.GitPollingWebhookData
+73002:javax.ws.rs.core.MultivaluedHashMap
 73982:io.harness.delegate.beans.DelegateScope
 73983:io.harness.delegate.beans.DelegateSelectionLogParams
 73984:io.harness.delegate.beans.DelegateProfile
@@ -1849,6 +1867,10 @@
 150021:io.harness.delegatetasks.NGVaultRenewalAppRoleTaskResponse
 150022:io.harness.delegatetasks.NGAzureKeyVaultFetchEngineTaskParameters
 150023:io.harness.delegatetasks.NGAzureKeyVaultFetchEngineResponse
+150024:io.harness.delegatetasks.ValidateCustomSecretManagerSecretReferenceTaskResponse
+150025:io.harness.delegatetasks.ValidateCustomSecretManagerSecretReferenceTaskParameters
+150026:io.harness.delegatetasks.FetchCustomSecretTaskResponse
+150027:io.harness.delegatetasks.FetchCustomSecretTaskParameters
 193418:io.harness.delegate.beans.ci.pod.ConnectorDetails
 400101:software.wings.beans.ce.CEAwsConfig
 400102:software.wings.beans.ce.CEGcpConfig
@@ -2261,5 +2283,9 @@
 980030:io.harness.exception.InterruptedRuntimeException
 980031:io.harness.exception.InvalidIdentifierRefException
 980032:io.harness.exception.ngexception.AzureAppServiceTaskException
+9300122:io.harness.yaml.core.timeout.Timeout
 9800001:io.harness.beans.RecasterMap
 9800002:io.harness.licensing.beans.modules.ChaosModuleLicenseDTO
+9800003:io.harness.delegate.task.ssh.artifact.JenkinsArtifactDelegateConfig
+9800004:io.harness.delegate.task.ssh.artifact.SkipCopyArtifactDelegateConfig
+9800005:io.harness.delegate.task.ssh.artifact.ArtifactoryDockerArtifactDelegateConfig

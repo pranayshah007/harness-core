@@ -110,14 +110,14 @@ ciExecutionServiceConfig:
   defaultInternalImageConnector: ''
   pvcDefaultStorageSize: 25600
   delegateServiceEndpointVariableValue: "delegate-service:8080"
-  addonImage: harness/ci-addon:1.14.11
-  liteEngineImage: harness/ci-lite-engine:1.14.11
+  addonImage: harness/ci-addon:1.14.12
+  liteEngineImage: harness/ci-lite-engine:1.14.12
   isLocal: false
   stepConfig:
     # The below config is for K8 steps
     gitCloneConfig:
       # Use rootless image only for K8 git clone
-      image: harness/drone-git:1.2.2-rootless
+      image: harness/drone-git:1.2.3-rootless
       entrypoint:
         - /usr/local/bin/clone
       windowsEntrypoint:
@@ -177,7 +177,7 @@ ciExecutionServiceConfig:
         - "C:\\drone-cache.exe"
     vmImageConfig:
       # Use root image for VM git clone
-      gitClone: harness/drone-git:1.2.0
+      gitClone: harness/drone-git:1.2.3
       buildAndPushDockerRegistry: plugins/docker:20.13.0
       buildAndPushACR: plugins/acr:20.13.0
       buildAndPushECR: plugins/ecr:20.13.0
@@ -265,6 +265,7 @@ cacheConfig:
   cacheBackend: REDIS
   cacheNamespace: ""
   disabledCaches: [ ]
+  enterpriseCacheEnabled: true
 
 enforcementClientConfiguration:
   enforcementCheckEnabled: false

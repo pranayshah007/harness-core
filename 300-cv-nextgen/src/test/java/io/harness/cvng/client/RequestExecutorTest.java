@@ -7,6 +7,7 @@
 
 package io.harness.cvng.client;
 
+import static io.harness.rule.OwnerRule.DHRUVX;
 import static io.harness.rule.OwnerRule.KAMAL;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -102,7 +103,8 @@ public class RequestExecutorTest extends CategoryTest {
     when(call.execute()).thenReturn((Response<String>) response);
     assertThatThrownBy(() -> requestExecutor.execute(call))
         .isInstanceOf(ServiceCallException.class)
-        .hasMessage("Response code: 500, Message: error message from manager")
+        .hasMessage(
+            "Response code: 500, Message: error message from manager, Error: {\"metaData\":{},\"responseMessages\":[{\"code\":\"DEFAULT_ERROR_CODE\",\"level\":\"ERROR\",\"message\":\"error message from manager\",\"failureTypes\":[]}]}")
         .hasNoCause();
   }
 
@@ -133,10 +135,8 @@ public class RequestExecutorTest extends CategoryTest {
     when(call.execute()).thenReturn((Response<String>) response);
     assertThatThrownBy(() -> requestExecutor.execute(call))
         .isInstanceOf(ServiceCallException.class)
-        .hasMessage("Response code: 500, Message: error message from manager")
-        .hasCauseInstanceOf(Throwable.class)
-        .getCause()
-        .hasMessage("exception cause from manager");
+        .hasMessageContaining(
+            "Response code: 500, Message: error message from manager, Error: {\"metaData\":{},\"responseMessages\":[{\"code\":\"DEFAULT_ERROR_CODE\",\"level\":\"ERROR\",\"message\":\"error message from manager\",\"exception\":{\"stackTrace\":[{\"classLoaderName\":\"app\"");
   }
 
   @Test
@@ -152,5 +152,58 @@ public class RequestExecutorTest extends CategoryTest {
     assertThatThrownBy(() -> requestExecutor.execute(call))
         .isInstanceOf(ServiceCallException.class)
         .hasCause(ioException);
+  }
+
+  @Test
+  @Owner(developers = DHRUVX)
+  @Category(UnitTests.class)
+  public void testExecute_withDataCollectionError() throws IOException {
+    Request request = new Request.Builder().url("http://example.com/test").build();
+    Call<String> call = mock(Call.class);
+    when(call.clone()).thenReturn(call);
+    when(call.request()).thenReturn(request);
+    String errorBody =
+        "{\"metaData\":null,\"resource\":null,\"responseMessages\":[{\"code\":\"DATA_COLLECTION_ERROR\",\"level\":\"ERROR\",\"message\":\"Error: io.harness.datacollection.exception.DataCollectionException: Response code: 400, Message: , Error: {  \\\"error\\\": {    \\\"code\\\": 400,    \\\"message\\\": \\\"Unsupportedresourcetype: k8s_containers\\\",    \\\"status\\\": \\\"INVALID_ARGUMENT\\\"  }}\",\"exception\":null,\"failureTypes\":null}]}";
+    Response<?> response = Response.error(ResponseBody.create(MediaType.parse("application/json"), errorBody),
+        new okhttp3.Response.Builder()
+            .message("message")
+            .code(400)
+            .protocol(Protocol.HTTP_1_1)
+            .request(new Request.Builder().url("http://localhost/").build())
+            .build());
+    when(call.execute()).thenReturn((Response<String>) response);
+
+    String errorMsg =
+        "Error: io.harness.datacollection.exception.DataCollectionException: Response code: 400, Message: , Error: {  \"error\": {    \"code\": 400,    \"message\": \"Unsupportedresourcetype: k8s_containers\",    \"status\": \"INVALID_ARGUMENT\"  }}";
+    assertThatThrownBy(() -> requestExecutor.execute(call))
+        .isInstanceOf(ServiceCallException.class)
+        .hasMessage(
+            "Response code: 400, Message: Error: io.harness.datacollection.exception.DataCollectionException: Response code: 400, Message: , Error: {  \"error\": {    \"code\": 400,    \"message\": \"Unsupportedresourcetype: k8s_containers\",    \"status\": \"INVALID_ARGUMENT\"  }}, Error: {\"metaData\":null,\"resource\":null,\"responseMessages\":[{\"code\":\"DATA_COLLECTION_ERROR\",\"level\":\"ERROR\",\"message\":\"Error: io.harness.datacollection.exception.DataCollectionException: Response code: 400, Message: , Error: {  \\\"error\\\": {    \\\"code\\\": 400,    \\\"message\\\": \\\"Unsupportedresourcetype: k8s_containers\\\",    \\\"status\\\": \\\"INVALID_ARGUMENT\\\"  }}\",\"exception\":null,\"failureTypes\":null}]}");
+  }
+
+  @Test
+  @Owner(developers = DHRUVX)
+  @Category(UnitTests.class)
+  public void testExecute_withNonDataCollectionError() throws IOException {
+    Request request = new Request.Builder().url("http://example.com/test").build();
+    Call<String> call = mock(Call.class);
+    when(call.clone()).thenReturn(call);
+    when(call.request()).thenReturn(request);
+    String errorBody =
+        "{\"metaData\":null,\"resource\":null,\"responseMessages\":[{\"code\":\"UNKNOWN_ERROR\",\"level\":\"ERROR\",\"message\":\"Error: io.harness.datacollection.exception.DataCollectionException: Response code: 400, Message: , Error: {  \\\"error\\\": {    \\\"code\\\": 400,    \\\"message\\\": \\\"Unsupportedresourcetype: k8s_containers\\\",    \\\"status\\\": \\\"INVALID_ARGUMENT\\\"  }}\",\"exception\":null,\"failureTypes\":null}]}";
+    Response<?> response = Response.error(ResponseBody.create(MediaType.parse("application/json"), errorBody),
+        new okhttp3.Response.Builder()
+            .message("message")
+            .code(400)
+            .protocol(Protocol.HTTP_1_1)
+            .request(new Request.Builder().url("http://localhost/").build())
+            .build());
+    when(call.execute()).thenReturn((Response<String>) response);
+
+    String errorMsg =
+        "Response code: 400, Message: Error: io.harness.datacollection.exception.DataCollectionException: Response code: 400, Message: , Error: {  \"error\": {    \"code\": 400,    \"message\": \"Unsupportedresourcetype: k8s_containers\",    \"status\": \"INVALID_ARGUMENT\"  }}, Error: {\"metaData\":null,\"resource\":null,\"responseMessages\":[{\"code\":\"UNKNOWN_ERROR\",\"level\":\"ERROR\",\"message\":\"Error: io.harness.datacollection.exception.DataCollectionException: Response code: 400, Message: , Error: {  \\\"error\\\": {    \\\"code\\\": 400,    \\\"message\\\": \\\"Unsupportedresourcetype: k8s_containers\\\",    \\\"status\\\": \\\"INVALID_ARGUMENT\\\"  }}\",\"exception\":null,\"failureTypes\":null}]}";
+    assertThatThrownBy(() -> requestExecutor.execute(call))
+        .isInstanceOf(ServiceCallException.class)
+        .hasMessage(errorMsg);
   }
 }

@@ -40,6 +40,7 @@ import io.harness.governance.GovernanceMetadata;
 import io.harness.governance.PolicySetMetadata;
 import io.harness.ng.core.common.beans.NGTag.NGTagKeys;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
+import io.harness.ng.core.template.TemplateReferenceSummary;
 import io.harness.ng.core.template.exception.NGTemplateResolveExceptionV2;
 import io.harness.opaclient.model.OpaConstants;
 import io.harness.pms.PmsFeatureFlagService;
@@ -55,6 +56,7 @@ import io.harness.pms.governance.ExpansionRequestsExtractor;
 import io.harness.pms.governance.ExpansionsMerger;
 import io.harness.pms.governance.JsonExpander;
 import io.harness.pms.instrumentaion.PipelineInstrumentationConstants;
+import io.harness.pms.instrumentaion.PipelineInstrumentationUtils;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.PipelineEntity.PipelineEntityKeys;
 import io.harness.pms.pipeline.PipelineEntityUtils;
@@ -76,6 +78,7 @@ import com.google.protobuf.ByteString;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -142,8 +145,19 @@ public class PMSPipelineServiceHelper {
                                    .withStageNames(filtersAndStageCount.getStageNames());
     newEntity.getFilters().clear();
     if (isNotEmpty(filtersAndStageCount.getFilters())) {
-      filtersAndStageCount.getFilters().forEach((key, value) -> newEntity.getFilters().put(key, Document.parse(value)));
+      filtersAndStageCount.getFilters().forEach(
+          (key,
+              value) -> newEntity.getFilters().put(key, value != null ? Document.parse(value) : Document.parse("{}")));
     }
+
+    if (isNotEmpty(pipelineEntity.getTemplateModules())) {
+      for (String module : pipelineEntity.getTemplateModules()) {
+        if (!newEntity.getFilters().containsKey(module)) {
+          newEntity.getFilters().put(module, Document.parse("{}"));
+        }
+      }
+    }
+
     return newEntity;
   }
 
@@ -239,6 +253,17 @@ public class PMSPipelineServiceHelper {
         pipelineTemplateHelper.resolveTemplateRefsInPipeline(pipelineEntity, checkAgainstOPAPolicies);
     String resolveTemplateRefsInPipeline = templateMergeResponseDTO.getMergedPipelineYaml();
     pmsYamlSchemaService.validateYamlSchema(accountId, orgIdentifier, projectIdentifier, resolveTemplateRefsInPipeline);
+
+    // Add Template Module Info temporarily to Pipeline Entity
+    HashSet<String> templateModuleInfo = new HashSet<>();
+    if (isNotEmpty(templateMergeResponseDTO.getTemplateReferenceSummaries())) {
+      for (TemplateReferenceSummary templateReferenceSummary :
+          templateMergeResponseDTO.getTemplateReferenceSummaries()) {
+        templateModuleInfo.addAll(templateReferenceSummary.getModuleInfo());
+      }
+    }
+    pipelineEntity.setTemplateModules(templateModuleInfo);
+
     // validate unique fqn in resolveTemplateRefsInPipeline
     pmsYamlSchemaService.validateUniqueFqn(resolveTemplateRefsInPipeline);
     if (checkAgainstOPAPolicies) {
@@ -352,6 +377,7 @@ public class PMSPipelineServiceHelper {
     properties.put(PIPELINE_SAVE_ACTION_TYPE, actionType);
     properties.put(PipelineInstrumentationConstants.MODULE_NAME,
         PipelineEntityUtils.getModuleNameFromPipelineEntity(entity, "cd"));
+    properties.put(PipelineInstrumentationConstants.STAGE_TYPES, PipelineInstrumentationUtils.getStageTypes(entity));
     telemetryReporter.sendTrackEvent(PIPELINE_SAVE, null, entity.getAccountId(), properties,
         Collections.singletonMap(AMPLITUDE, true), io.harness.telemetry.Category.GLOBAL);
   }

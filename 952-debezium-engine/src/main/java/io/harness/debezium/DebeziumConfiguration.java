@@ -42,15 +42,19 @@ public class DebeziumConfiguration {
   public static final String CONNECT_BACKOFF_MAX_DELAY_MS = "connect.backoff.max.delay.ms";
   public static final String CONNECT_MAX_ATTEMPTS = "connect.max.attempts";
   public static final String SNAPSHOT_FETCH_SIZE = "snapshot.fetch.size";
+  public static final String SNAPSHOT_MODE = "snapshot.mode";
+  public static final String TRANSFORMS_UNWRAP_ARRAY_ENCODING = "transforms.unwrap.array.encoding";
 
   public static Properties getDebeziumProperties(DebeziumConfig debeziumConfig, RedisConfig redisLockConfig) {
     Properties props = new Properties();
+    props.setProperty(SNAPSHOT_MODE, debeziumConfig.getSnapshotMode());
     props.setProperty(CONNECTOR_NAME, debeziumConfig.getConnectorName());
     props.setProperty(OFFSET_STORAGE, RedisOffsetBackingStore.class.getName());
     props.setProperty(OFFSET_STORAGE_FILE_FILENAME, JsonUtils.asJson(redisLockConfig));
     props.setProperty(KEY_CONVERTER_SCHEMAS_ENABLE, debeziumConfig.getKeyConverterSchemasEnable());
     props.setProperty(VALUE_CONVERTER_SCHEMAS_ENABLE, debeziumConfig.getValueConverterSchemasEnable());
     props.setProperty(OFFSET_FLUSH_INTERVAL_MS, debeziumConfig.getOffsetFlushIntervalMillis());
+    props.setProperty(TRANSFORMS_UNWRAP_ARRAY_ENCODING, debeziumConfig.getTransformsUnwrapArrayEncoding());
 
     /* begin connector properties */
     props.setProperty(CONNECTOR_CLASS, MONGO_DB_CONNECTOR);

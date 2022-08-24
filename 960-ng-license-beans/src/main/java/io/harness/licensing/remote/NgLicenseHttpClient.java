@@ -26,6 +26,7 @@ public interface NgLicenseHttpClient {
   String LICENSE_SUMMARY_API = "licenses/{accountId}/summary";
   String MODULE_LICENSE_EXPIRY_API = "licenses/{moduleType}/enabled";
   String MODULE_LICENSE_FOR_ACCOUNT = "licenses/account";
+  String MODULE_LICENSES_FOR_ACCOUNT = "licenses/account-license";
   @GET(CHECK_NG_LICENSE_EXPIRY_API)
   Call<ResponseDTO<CheckExpiryResultDTO>> checkExpiry(@Path("accountId") String accountId);
 
@@ -41,4 +42,7 @@ public interface NgLicenseHttpClient {
 
   @GET(MODULE_LICENSE_FOR_ACCOUNT)
   Call<ResponseDTO<AccountLicenseDTO>> getAccountLicensesDTO(@Query("accountIdentifier") String accountIdentifier);
+
+  @GET(MODULE_LICENSES_FOR_ACCOUNT)
+  Call<ResponseDTO<List<ModuleLicenseDTO>>> getModuleLicenses(@Query("accountIdentifier") String accountIdentifier);
 }

@@ -52,7 +52,8 @@ public class VaultConfigDTOMapper {
             .useK8sAuth(vaultConnectorDTO.isUseK8sAuth())
             .vaultK8sAuthRole(vaultConnectorDTO.getVaultK8sAuthRole())
             .serviceAccountTokenPath(vaultConnectorDTO.getServiceAccountTokenPath())
-            .k8sAuthEndpoint(vaultConnectorDTO.getK8sAuthEndpoint());
+            .k8sAuthEndpoint(vaultConnectorDTO.getK8sAuthEndpoint())
+            .renewAppRoleToken(vaultConnectorDTO.isRenewAppRoleToken());
 
     if (null != vaultConnectorDTO.getHeaderAwsIam()
         && null != vaultConnectorDTO.getHeaderAwsIam().getDecryptedValue()) {
@@ -101,7 +102,8 @@ public class VaultConfigDTOMapper {
                                               .useK8sAuth(vaultConnectorDTO.isUseK8sAuth())
                                               .vaultK8sAuthRole(vaultConnectorDTO.getVaultK8sAuthRole())
                                               .serviceAccountTokenPath(vaultConnectorDTO.getServiceAccountTokenPath())
-                                              .k8sAuthEndpoint(vaultConnectorDTO.getK8sAuthEndpoint());
+                                              .k8sAuthEndpoint(vaultConnectorDTO.getK8sAuthEndpoint())
+                                              .renewAppRoleToken(vaultConnectorDTO.isRenewAppRoleToken());
 
     if (null != vaultConnectorDTO.getHeaderAwsIam()
         && null != vaultConnectorDTO.getHeaderAwsIam().getDecryptedValue()) {
