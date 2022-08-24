@@ -165,6 +165,7 @@ import com.google.inject.Singleton;
 import com.healthmarketscience.sqlbuilder.SelectQuery;
 import com.healthmarketscience.sqlbuilder.custom.postgresql.PgLimitClause;
 import com.healthmarketscience.sqlbuilder.custom.postgresql.PgOffsetClause;
+import io.fabric8.utils.Lists;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Duration;
@@ -245,13 +246,6 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
     // First value is the original filter string, the others are awsAccountIds
     List<QLCEViewFilter> idFilters =
         awsAccountFieldHelper.addAccountIdsByAwsAccountNameFilter(getIdFilters(filters), queryParams.getAccountId());
-
-    List<QLCEViewRule> rules = getRuleFilters(filters);
-    if (!rules.isEmpty()) {
-      for (QLCEViewRule rule : rules) {
-        viewRuleList.add(convertQLCEViewRuleToViewRule(rule));
-      }
-    }
 
     if (viewMetadataFilter.isPresent()) {
       QLCEViewMetadataFilter metadataFilter = viewMetadataFilter.get().getViewMetadataFilter();
@@ -505,7 +499,7 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
         }
       } else {
         dataSourceCondition = true;
-        ruleCondition = isClusterPerspectiveRules(getRuleFilters(filters));
+        ruleCondition = isClusterPerspectiveFilters(filters);
       }
     }
     for (ViewRule rule : viewRuleList) {
@@ -521,17 +515,33 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
     return dataSourceCondition && ruleCondition;
   }
 
-  private boolean isClusterPerspectiveRules(final List<QLCEViewRule> qlCEViewRules) {
-    boolean ruleCondition = true;
-    for (final QLCEViewRule qlCEViewRule : qlCEViewRules) {
-      for (final QLCEViewFilter qlCEViewFilter : qlCEViewRule.getConditions()) {
-        if (isNotClusterPerspective(qlCEViewFilter.getField().getIdentifier())) {
-          ruleCondition = false;
-          break;
-        }
+  private boolean isClusterPerspectiveFilters(final List<QLCEViewFilterWrapper> filters) {
+    final List<QLCEViewRule> qlCEViewRules = getRuleFilters(filters);
+    final List<QLCEViewFilter> qlCEViewFilters = getIdFilters(filters);
+    return (!Lists.isNullOrEmpty(qlCEViewRules) || !Lists.isNullOrEmpty(qlCEViewFilters))
+        && isClusterPerspectiveRules(qlCEViewRules) && isClusterPerspectiveViewFilters(qlCEViewFilters);
+  }
+
+  private boolean isClusterPerspectiveViewFilters(final List<QLCEViewFilter> qlCEViewFilters) {
+    boolean isClusterPerspectiveViewFilters = true;
+    for (final QLCEViewFilter qlCEViewFilter : qlCEViewFilters) {
+      if (isNotClusterPerspective(qlCEViewFilter.getField().getIdentifier())) {
+        isClusterPerspectiveViewFilters = false;
+        break;
       }
     }
-    return ruleCondition;
+    return isClusterPerspectiveViewFilters;
+  }
+
+  private boolean isClusterPerspectiveRules(final List<QLCEViewRule> qlCEViewRules) {
+    boolean isClusterPerspectiveRules = true;
+    for (final QLCEViewRule qlCEViewRule : qlCEViewRules) {
+      isClusterPerspectiveRules = isClusterPerspectiveViewFilters(qlCEViewRule.getConditions());
+      if (!isClusterPerspectiveRules) {
+        break;
+      }
+    }
+    return isClusterPerspectiveRules;
   }
 
   private boolean isNotClusterPerspective(final ViewFieldIdentifier viewFieldIdentifier) {
