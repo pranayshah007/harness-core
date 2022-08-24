@@ -39,7 +39,6 @@ import java.util.Map;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
-import okhttp3.Credentials;
 import org.apache.commons.lang3.StringUtils;
 import retrofit2.Response;
 
