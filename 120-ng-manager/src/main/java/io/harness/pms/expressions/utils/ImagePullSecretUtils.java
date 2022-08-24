@@ -205,7 +205,7 @@ public class ImagePullSecretUtils {
           if (githubUsernamePasswordDTO.getPasswordRef() != null) {
             password = EmptyPredicate.isNotEmpty(githubUsernamePasswordDTO.getPasswordRef().getDecryptedValue())
                 ? new String(githubUsernamePasswordDTO.getPasswordRef().getDecryptedValue())
-                : null;
+                : getPasswordExpression(githubUsernamePasswordDTO.getPasswordRef().getIdentifier(), ambiance);
           }
         } else if (httpDTO.getType() == GithubHttpAuthenticationType.USERNAME_AND_TOKEN) {
           GithubUsernameTokenDTO githubUsernameTokenDTO = (GithubUsernameTokenDTO) httpDTO.getHttpCredentialsSpec();
@@ -214,33 +214,33 @@ public class ImagePullSecretUtils {
               githubUsernameTokenDTO.getUsername(), githubUsernameTokenDTO.getUsernameRef());
 
           if (githubUsernameTokenDTO.getTokenRef() != null) {
-            token = EmptyPredicate.isNotEmpty(githubUsernameTokenDTO.getTokenRef().getDecryptedValue())
+            password = EmptyPredicate.isNotEmpty(githubUsernameTokenDTO.getTokenRef().getDecryptedValue())
                 ? new String(githubUsernameTokenDTO.getTokenRef().getDecryptedValue())
-                : null;
+                : getPasswordExpression(githubUsernameTokenDTO.getTokenRef().getIdentifier(), ambiance);
           }
         } else if (httpDTO.getType() == GithubHttpAuthenticationType.OAUTH) {
           GithubOauthDTO githubOauthDTO = (GithubOauthDTO) httpDTO.getHttpCredentialsSpec();
 
           if (githubOauthDTO.getTokenRef() != null) {
-            token = EmptyPredicate.isNotEmpty(githubOauthDTO.getTokenRef().getDecryptedValue())
+            password = EmptyPredicate.isNotEmpty(githubOauthDTO.getTokenRef().getDecryptedValue())
                 ? new String(githubOauthDTO.getTokenRef().getDecryptedValue())
-                : null;
+                : getPasswordExpression(githubOauthDTO.getTokenRef().getIdentifier(), ambiance);
           }
         }
       } else if (connectorConfig.getAuthentication().getAuthType() == GitAuthType.SSH) {
         GithubSshCredentialsDTO sshDTO = (GithubSshCredentialsDTO) connectorConfig.getAuthentication().getCredentials();
 
         if (sshDTO.getSshKeyRef() != null) {
-          token = EmptyPredicate.isNotEmpty(sshDTO.getSshKeyRef().getDecryptedValue())
+          password = EmptyPredicate.isNotEmpty(sshDTO.getSshKeyRef().getDecryptedValue())
               ? new String(sshDTO.getSshKeyRef().getDecryptedValue())
-              : null;
+              : getPasswordExpression(sshDTO.getSshKeyRef().getIdentifier(), ambiance);
         }
       }
     }
 
     imageDetailsBuilder.username(username);
     imageDetailsBuilder.password(password);
-    imageDetailsBuilder.registryUrl(connectorConfig.getUrl());
+    imageDetailsBuilder.registryUrl("https://ghcr.io");
   }
 
   public static String getArtifactRegistryCredentials(ImageDetails imageDetails) {

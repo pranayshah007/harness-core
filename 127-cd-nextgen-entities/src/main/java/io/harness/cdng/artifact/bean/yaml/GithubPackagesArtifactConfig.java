@@ -60,7 +60,11 @@ public class GithubPackagesArtifactConfig implements ArtifactConfig, Visitable, 
   /**
    * Package Type.
    */
-  @NotNull @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) @Wither ParameterField<String> packageType;
+  @NotNull
+  @ApiModelProperty(
+      dataType = SwaggerConstants.STRING_CLASSPATH, allowableValues = "npm, maven, rubygems, nuget, container")
+  @Wither
+  ParameterField<String> packageType;
 
   /**
    * packageName.

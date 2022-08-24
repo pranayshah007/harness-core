@@ -307,11 +307,12 @@ public class GithubPackagesRegistryServiceImpl implements GithubPackagesRegistry
 
     githubPackagesVersionsResponse = processResponse(response.body());
 
-    return processBuildDetails(githubPackagesVersionsResponse, packageName);
+    return processBuildDetails(
+        githubPackagesVersionsResponse, packageName, githubPackagesInternalConfig.getUsername(), org);
   }
 
   private List<BuildDetails> processBuildDetails(
-      GithubPackagesVersionsResponse githubPackagesVersionsResponse, String packageName) {
+      GithubPackagesVersionsResponse githubPackagesVersionsResponse, String packageName, String username, String org) {
     List<GithubPackagesVersion> versions = githubPackagesVersionsResponse.getVersionDetails();
 
     List<BuildDetails> buildDetails = new ArrayList<>();
@@ -329,6 +330,14 @@ public class GithubPackagesRegistryServiceImpl implements GithubPackagesRegistry
 
       String tag = tags.get(0);
 
+      String artifactPath = "ghcr.io";
+
+      if (EmptyPredicate.isEmpty(org)) {
+        artifactPath += "/" + username + "/" + packageName + ":" + tag;
+      } else {
+        artifactPath += "/" + org + "/" + packageName + ":" + tag;
+      }
+
       build.setBuildDisplayName(packageName + ": " + tag);
       build.setUiDisplayName("Tag# " + tag);
       build.setNumber(tag);
@@ -336,7 +345,7 @@ public class GithubPackagesRegistryServiceImpl implements GithubPackagesRegistry
       build.setStatus(BuildDetails.BuildStatus.SUCCESS);
       build.setBuildFullDisplayName(v.getVersionName());
       build.setMetadata(metadata);
-      build.setArtifactPath(v.getVersionHtmlUrl());
+      build.setArtifactPath(artifactPath);
 
       buildDetails.add(build);
     }
