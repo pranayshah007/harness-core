@@ -43,8 +43,10 @@ import org.mongodb.morphia.query.UpdateOperations;
 @OwnedBy(PL)
 @Slf4j
 public class ElasticsearchBulkSyncTask {
-  public static final String PARENT_PIPELNE_UPDATE_STATEMENT = "UPDATE DEPLOYMENT SET PARENT_PIPELINE_ID=?, WORKFLOWS=?, CREATED_BY_TYPE=? WHERE EXECUTIONID=?";
-  public static final String EXECUTION_FAILURE_UPDATE_STATEMENT = "UPDATE DEPLOYMENT SET FAILURE_DETAILS=?,FAILED_STEP_NAMES=?,FAILED_STEP_TYPES=? WHERE EXECUTIONID=?";
+  public static final String PARENT_PIPELNE_UPDATE_STATEMENT =
+      "UPDATE DEPLOYMENT SET PARENT_PIPELINE_ID=?, WORKFLOWS=?, CREATED_BY_TYPE=? WHERE EXECUTIONID=?";
+  public static final String EXECUTION_FAILURE_UPDATE_STATEMENT =
+      "UPDATE DEPLOYMENT SET FAILURE_DETAILS=?,FAILED_STEP_NAMES=?,FAILED_STEP_TYPES=? WHERE EXECUTIONID=?";
   @Inject private WingsPersistence wingsPersistence;
   @Inject private ElasticsearchSyncHelper elasticsearchSyncHelper;
   @Inject private ElasticsearchBulkMigrationHelper elasticsearchBulkMigrationHelper;
@@ -232,25 +234,26 @@ public class ElasticsearchBulkSyncTask {
     }
 
     TimeScaleEntityIndexState workflowExecutionEntityIndexState =
-            wingsPersistence.get(TimeScaleEntityIndexState.class, WorkflowExecution.class.getCanonicalName());
-    executorService.submit( () -> {
+        wingsPersistence.get(TimeScaleEntityIndexState.class, WorkflowExecution.class.getCanonicalName());
+    executorService.submit(() -> {
       if (workflowExecutionEntityIndexState == null) {
         runDeploymentMigrations(accountIds);
         TimeScaleEntityIndexState execution_entity = new TimeScaleEntityIndexState(
-                WorkflowExecution.class.getCanonicalName(), System.currentTimeMillis(), accountIds, new ArrayList<>());
+            WorkflowExecution.class.getCanonicalName(), System.currentTimeMillis(), accountIds, new ArrayList<>());
         wingsPersistence.save(execution_entity);
       } else {
         List<String> toMigrateAccountIds = workflowExecutionEntityIndexState.getToMigrateAccountIds() != null
-                ? workflowExecutionEntityIndexState.getToMigrateAccountIds()
-                : new LinkedList<>(accountIds);
-        List<String> alreadyMigratedAccountIds = workflowExecutionEntityIndexState.getAlreadyMigratedAccountIds() != null
-                ? workflowExecutionEntityIndexState.getAlreadyMigratedAccountIds()
-                : new LinkedList<>();
+            ? workflowExecutionEntityIndexState.getToMigrateAccountIds()
+            : new LinkedList<>(accountIds);
+        List<String> alreadyMigratedAccountIds =
+            workflowExecutionEntityIndexState.getAlreadyMigratedAccountIds() != null
+            ? workflowExecutionEntityIndexState.getAlreadyMigratedAccountIds()
+            : new LinkedList<>();
         runDeploymentMigrations(toMigrateAccountIds);
         alreadyMigratedAccountIds.addAll(toMigrateAccountIds);
         TimeScaleEntityIndexState execution_entity =
-                new TimeScaleEntityIndexState(WorkflowExecution.class.getCanonicalName(), System.currentTimeMillis(),
-                        alreadyMigratedAccountIds, toMigrateAccountIds);
+            new TimeScaleEntityIndexState(WorkflowExecution.class.getCanonicalName(), System.currentTimeMillis(),
+                alreadyMigratedAccountIds, toMigrateAccountIds);
         wingsPersistence.save(execution_entity);
       }
     });
@@ -259,12 +262,10 @@ public class ElasticsearchBulkSyncTask {
   }
 
   private void runDeploymentMigrations(List<String> accountIds) {
-    deploymentsMigrationHelper.setFailureDetailsForAccountIds(accountIds,
-            "EXECUTION_FAILURE_TIMESCALE MIGRATION: ", 500,
-            EXECUTION_FAILURE_UPDATE_STATEMENT);
-    deploymentsMigrationHelper.setParentPipelineForAccountIds(accountIds,
-            "PARENT_PIPELINE_TIMESCALE MIGRATION: ", 1000,
-            PARENT_PIPELNE_UPDATE_STATEMENT);
+    deploymentsMigrationHelper.setFailureDetailsForAccountIds(
+        accountIds, "EXECUTION_FAILURE_TIMESCALE MIGRATION: ", 500, EXECUTION_FAILURE_UPDATE_STATEMENT);
+    deploymentsMigrationHelper.setParentPipelineForAccountIds(
+        accountIds, "PARENT_PIPELINE_TIMESCALE MIGRATION: ", 1000, PARENT_PIPELNE_UPDATE_STATEMENT);
   }
 
   public ElasticsearchBulkSyncTaskResult run() {
