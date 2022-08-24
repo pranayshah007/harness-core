@@ -39,6 +39,7 @@ import io.harness.waiter.PushThroughNotifyCallback;
 import software.wings.beans.LogColor;
 import software.wings.beans.LogHelper;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import java.util.Map;
 import lombok.Builder;
@@ -99,6 +100,10 @@ public class JiraApprovalCallback extends AbstractApprovalCallback implements Pu
         return;
       }
 
+      if (!validateIssueType(instance, jiraTaskNGResponse)) {
+        return;
+      }
+
       logCallback.saveExecutionLog(String.format("Issue url: %s", jiraTaskNGResponse.getIssue().getUrl()));
     } catch (Exception ex) {
       logCallback.saveExecutionLog(
@@ -110,7 +115,7 @@ public class JiraApprovalCallback extends AbstractApprovalCallback implements Pu
     }
 
     try {
-      checkApprovalAndRejectionCriteria(jiraTaskNGResponse.getIssue(), instance, logCallback,
+      checkApprovalAndRejectionCriteriaAndWithinChangeWindow(jiraTaskNGResponse.getIssue(), instance, logCallback,
           instance.getApprovalCriteria(), instance.getRejectionCriteria());
     } catch (Exception ex) {
       if (ex instanceof ApprovalStepNGException && ((ApprovalStepNGException) ex).isFatal()) {
@@ -124,6 +129,22 @@ public class JiraApprovalCallback extends AbstractApprovalCallback implements Pu
               LogColor.Red));
       throw new HarnessJiraException("Error while evaluating approval/rejection criteria", ex, USER_SRE);
     }
+  }
+
+  @VisibleForTesting
+  // Return false if validation fails
+  protected boolean validateIssueType(JiraApprovalInstance instance, JiraTaskNGResponse jiraTaskNGResponse) {
+    if (!isNull(instance.getIssueType())) {
+      final String issueType = jiraTaskNGResponse.getIssue().getFields().getOrDefault("Issue Type", "").toString();
+      if (!instance.getIssueType().equals(issueType)) {
+        String errorMessage = String.format(
+            "Invalid issue type. Execution sent: %s. Parsed from issue: %s", instance.getIssueType(), issueType);
+        log.warn(errorMessage);
+        approvalInstanceService.finalizeStatus(instance.getId(), ApprovalStatus.FAILED, errorMessage);
+        return false;
+      }
+    }
+    return true;
   }
 
   @Override

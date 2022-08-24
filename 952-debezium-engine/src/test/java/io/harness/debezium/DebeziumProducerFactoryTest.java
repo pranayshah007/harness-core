@@ -60,7 +60,7 @@ public class DebeziumProducerFactoryTest extends CategoryTest {
     doReturn(redisProducer)
         .when(redisProducerFactory)
         .createRedisProducer(anyString(), any(RedissonClient.class), anyInt(), anyString(), isNull());
-    assertThat(debeziumProducerFactory.get("coll")).isInstanceOf(Producer.class);
+    assertThat(debeziumProducerFactory.get("coll", 1000)).isInstanceOf(Producer.class);
   }
 
   @Test

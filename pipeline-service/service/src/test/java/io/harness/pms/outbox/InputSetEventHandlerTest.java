@@ -37,6 +37,7 @@ import io.harness.pms.events.InputSetDeleteEvent;
 import io.harness.pms.events.InputSetUpdateEvent;
 import io.harness.pms.events.PipelineOutboxEvents;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntity;
+import io.harness.pms.ngpipeline.inputset.service.PMSInputSetService;
 import io.harness.rule.Owner;
 import io.harness.security.SourcePrincipalContextData;
 import io.harness.security.dto.Principal;
@@ -56,6 +57,7 @@ import org.mockito.ArgumentCaptor;
 public class InputSetEventHandlerTest extends CategoryTest {
   private ObjectMapper objectMapper;
   private AuditClientService auditClientService;
+  private PMSInputSetService inputSetService;
   private InputSetEventHandler eventHandler;
   String newYaml;
   String oldYaml;
@@ -64,7 +66,8 @@ public class InputSetEventHandlerTest extends CategoryTest {
   public void setup() throws IOException {
     objectMapper = HObjectMapper.NG_DEFAULT_OBJECT_MAPPER;
     auditClientService = mock(AuditClientService.class);
-    eventHandler = spy(new InputSetEventHandler(auditClientService));
+    inputSetService = mock(PMSInputSetService.class);
+    eventHandler = spy(new InputSetEventHandler(auditClientService, inputSetService));
     newYaml = Resources.toString(this.getClass().getClassLoader().getResource("inputSet1.yml"), Charsets.UTF_8);
     oldYaml = Resources.toString(this.getClass().getClassLoader().getResource("inputSet2.yml"), Charsets.UTF_8);
   }

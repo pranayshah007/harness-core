@@ -77,6 +77,54 @@ then
     exit 1
 fi
 
+#Get Previous Tag and Tagging Master Branch according to type of release.
+echo "INFO: Get Previous Tag and Tagging Master Branch according to type of release."
+if [[ "$EXECUTE_NEW_CODE" == "true" ]]; then
+    #Getting Latest Tag on master branch
+    TAG=$(git describe --tags --abbrev=0 --match "[0-9]*" 2> /dev/null || echo 0.0.0)
+
+    # break down the version number into it's components
+    regex="([0-9]+).([0-9]+).([0-9]+)"
+    if [[ $TAG =~ $regex ]]; then
+        major="${BASH_REMATCH[1]}"
+        minor="${BASH_REMATCH[2]}"
+        patchVersion="${BASH_REMATCH[4]}"
+    fi
+    echo "INFO: Current Tag: $TAG: major.minor.patchVersion: ${major}.${minor}.${patchVersion}"
+
+    # check ENV paramater RELEASE_TYPE to see which number to increment
+    echo "INFO: Release Type: $RELEASE_TYPE"
+    case $RELEASE_TYPE in
+      major)
+        echo "INFO: Incrementing major version."
+        major=$(($major+1))
+        minor=0
+        patchVersion=0
+        ;;
+      minor)
+        echo "INFO: Incrementing minor version."
+        minor=$(($minor + 1))
+        patchVersion=0
+        ;;
+      patchVersion)
+        echo "INFO: Incrementing patchVersion version."
+        patchVersion=$(($patchVersion + 1))
+        ;;
+      *)
+        echo "ERROR: Invalid Release Type. Release type can be [major,minor,patchVersion]. Exiting..."
+        exit 1
+        ;;
+    esac
+
+    # echo the new version number
+    export NEW_TAG=${major}.${minor}.${patchVersion}
+    echo "New version: major.minor.patchVersion: $NEW_TAG"
+    git tag -a ${NEW_TAG} ${SHA} -m "Release Tag: v${NEW_TAG}"
+    print_err "$?" "Tagging Failed"
+    git push origin ${NEW_TAG}
+    print_err "$?" "Pushing Tag to master failed"
+fi
+
 # Bumping version in build.properties in develop branch.
 echo "STEP2: INFO: Bumping version in build.properties in develop branch."
 

@@ -46,6 +46,7 @@ import io.harness.template.entity.TemplateEntity;
 import io.harness.template.entity.TemplateEntity.TemplateEntityKeys;
 import io.harness.template.events.TemplateUpdateEventType;
 import io.harness.template.gitsync.TemplateGitSyncBranchContextGuard;
+import io.harness.template.utils.TemplateUtils;
 
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
@@ -74,11 +75,24 @@ public class NGTemplateServiceHelper {
   private final NGTemplateRepository templateRepository;
   private GitSyncSdkService gitSyncSdkService;
 
-  public Optional<TemplateEntity> getOrThrowExceptionIfInvalid(String accountId, String orgIdentifier,
+  public Optional<TemplateEntity> getTemplateOrThrowExceptionIfInvalid(String accountId, String orgIdentifier,
       String projectIdentifier, String templateIdentifier, String versionLabel, boolean deleted) {
+    return getOrThrowExceptionIfInvalid(
+        accountId, orgIdentifier, projectIdentifier, templateIdentifier, versionLabel, deleted, false);
+  }
+
+  public Optional<TemplateEntity> getMetadataOrThrowExceptionIfInvalid(String accountId, String orgIdentifier,
+      String projectIdentifier, String templateIdentifier, String versionLabel, boolean deleted) {
+    return getOrThrowExceptionIfInvalid(
+        accountId, orgIdentifier, projectIdentifier, templateIdentifier, versionLabel, deleted, true);
+  }
+
+  public Optional<TemplateEntity> getOrThrowExceptionIfInvalid(String accountId, String orgIdentifier,
+      String projectIdentifier, String templateIdentifier, String versionLabel, boolean deleted,
+      boolean getMetadataOnly) {
     try {
-      Optional<TemplateEntity> optionalTemplate =
-          getTemplate(accountId, orgIdentifier, projectIdentifier, templateIdentifier, versionLabel, deleted, false);
+      Optional<TemplateEntity> optionalTemplate = getTemplate(
+          accountId, orgIdentifier, projectIdentifier, templateIdentifier, versionLabel, deleted, getMetadataOnly);
       if (optionalTemplate.isPresent() && optionalTemplate.get().isEntityInvalid()) {
         throw new NGTemplateException(
             "Invalid Template yaml cannot be used. Please correct the template version yaml.");
@@ -90,9 +104,17 @@ public class NGTemplateServiceHelper {
       log.error(String.format("Error while retrieving template with identifier [%s] and versionLabel [%s]",
                     templateIdentifier, versionLabel),
           e);
-      throw new InvalidRequestException(
-          String.format("Error while retrieving template with identifier [%s] and versionLabel [%s]: %s",
-              templateIdentifier, versionLabel, e.getMessage()));
+      ScmException exception = TemplateUtils.getScmException(e);
+      if (null != exception) {
+        throw new InvalidRequestException(
+            String.format("Error while retrieving template with identifier [%s] and versionLabel [%s]",
+                templateIdentifier, versionLabel),
+            e);
+      } else {
+        throw new InvalidRequestException(
+            String.format("Error while retrieving template with identifier [%s] and versionLabel [%s]: %s",
+                templateIdentifier, versionLabel, e.getMessage()));
+      }
     }
   }
 

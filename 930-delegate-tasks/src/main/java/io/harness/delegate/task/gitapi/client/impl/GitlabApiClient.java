@@ -28,13 +28,16 @@ import io.harness.delegate.beans.gitapi.GitApiTaskParams;
 import io.harness.delegate.beans.gitapi.GitApiTaskResponse;
 import io.harness.delegate.beans.gitapi.GitApiTaskResponse.GitApiTaskResponseBuilder;
 import io.harness.delegate.task.gitapi.client.GitApiClient;
+import io.harness.delegate.task.gitpolling.github.GitHubPollingDelegateRequest;
 import io.harness.exception.GitClientException;
 import io.harness.exception.InvalidRequestException;
+import io.harness.gitpolling.github.GitPollingWebhookData;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.security.encryption.SecretDecryptionService;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import lombok.AllArgsConstructor;
@@ -73,7 +76,8 @@ public class GitlabApiClient implements GitApiClient {
       String gitApiURL = getGitApiURL(gitConfigDTO.getUrl());
       String slug = gitApiTaskParams.getSlug();
       String prNumber = gitApiTaskParams.getPrNumber();
-      JSONObject mergePRResponse = gitlabService.mergePR(gitApiURL, slug, token, prNumber);
+      boolean deleteSourceBranch = gitApiTaskParams.isDeleteSourceBranch();
+      JSONObject mergePRResponse = gitlabService.mergePR(gitApiURL, slug, token, prNumber, deleteSourceBranch);
       if (mergePRResponse != null) {
         responseBuilder.commandExecutionStatus(CommandExecutionStatus.SUCCESS)
             .gitApiResult(GitApiMergePRTaskResponse.builder().sha(mergePRResponse.get("sha").toString()).build());
@@ -90,6 +94,11 @@ public class GitlabApiClient implements GitApiClient {
     }
 
     return responseBuilder.build();
+  }
+
+  @Override
+  public List<GitPollingWebhookData> getWebhookRecentDeliveryEvents(GitHubPollingDelegateRequest attributesRequest) {
+    throw new InvalidRequestException("Not implemented");
   }
 
   private String getGitApiURL(String url) {

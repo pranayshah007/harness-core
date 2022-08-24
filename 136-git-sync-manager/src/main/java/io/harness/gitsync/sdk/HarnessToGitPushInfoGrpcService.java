@@ -27,7 +27,10 @@ import io.harness.gitsync.GetRepoUrlRequest;
 import io.harness.gitsync.GetRepoUrlResponse;
 import io.harness.gitsync.HarnessToGitPushInfoServiceGrpc.HarnessToGitPushInfoServiceImplBase;
 import io.harness.gitsync.IsGitSimplificationEnabled;
+import io.harness.gitsync.IsGitSimplificationEnabledRequest;
 import io.harness.gitsync.IsGitSyncEnabled;
+import io.harness.gitsync.IsOldGitSyncEnabledForModule;
+import io.harness.gitsync.IsOldGitSyncEnabledResponse;
 import io.harness.gitsync.PushFileResponse;
 import io.harness.gitsync.PushInfo;
 import io.harness.gitsync.PushResponse;
@@ -250,9 +253,19 @@ public class HarnessToGitPushInfoGrpcService extends HarnessToGitPushInfoService
 
   @Override
   public void isGitSimplificationEnabledForScope(
-      EntityScopeInfo request, StreamObserver<IsGitSimplificationEnabled> responseObserver) {
+      IsGitSimplificationEnabledRequest request, StreamObserver<IsGitSimplificationEnabled> responseObserver) {
     final Boolean isGitSimplificationEnabled = harnessToGitHelperService.isGitSimplificationEnabled(request);
     responseObserver.onNext(IsGitSimplificationEnabled.newBuilder().setEnabled(isGitSimplificationEnabled).build());
+    responseObserver.onCompleted();
+  }
+
+  @Override
+  public void isOldGitSyncEnabledForModule(
+      IsOldGitSyncEnabledForModule request, StreamObserver<IsOldGitSyncEnabledResponse> responseObserver) {
+    final Boolean isOldGitSyncEnabledForModule = harnessToGitHelperService.isOldGitSyncEnabledForModule(
+        request.getEntityScopeInfo(), request.getIsNotFFModule());
+    responseObserver.onNext(
+        IsOldGitSyncEnabledResponse.newBuilder().setIsEnabled(isOldGitSyncEnabledForModule).build());
     responseObserver.onCompleted();
   }
 

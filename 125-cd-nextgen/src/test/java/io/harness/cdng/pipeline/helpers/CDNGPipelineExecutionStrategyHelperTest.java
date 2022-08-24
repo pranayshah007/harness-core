@@ -1,3 +1,10 @@
+/*
+ * Copyright 2022 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
+
 package io.harness.cdng.pipeline.helpers;
 
 import static io.harness.rule.OwnerRule.VLAD;
@@ -45,20 +52,66 @@ public class CDNGPipelineExecutionStrategyHelperTest extends CategoryTest {
                                                 .unitType(NGInstanceUnitType.PERCENTAGE)
                                                 .artifactType(ArtifactType.WAR)
                                                 .build();
-    String result =
-        cdngPipelineExecutionStrategyHelper.generateCanaryYaml(ServiceDefinitionType.SSH, strategyParameters, false);
+    String result = cdngPipelineExecutionStrategyHelper.generateSshWinRmCanaryYaml(
+        ServiceDefinitionType.SSH, strategyParameters, false);
     assertThat(result).contains(STRATEGY);
+    assertThat(result).contains("start: 0");
+    assertThat(result).contains("end: 50");
+    assertThat(result).contains("start: 50");
+    assertThat(result).contains("end: 100");
+    assertThat(result).contains("unit: Percentage");
+    assertThat(result).contains("maxConcurrency: 1");
   }
 
   @Test
   @Owner(developers = VLAD)
   @Category(UnitTests.class)
-  public void testGenerateRollingYaml() throws IOException {
-    StrategyParameters strategyParameters =
-        StrategyParameters.builder().instances(5).artifactType(ArtifactType.JAR).build();
-    String result =
-        cdngPipelineExecutionStrategyHelper.generateRollingYaml(ServiceDefinitionType.WINRM, strategyParameters, false);
+  public void testGenerateRollingYamlPercentage() throws IOException {
+    StrategyParameters strategyParameters = StrategyParameters.builder()
+                                                .instances(50)
+                                                .unitType(NGInstanceUnitType.PERCENTAGE)
+                                                .artifactType(ArtifactType.JAR)
+                                                .build();
+    String result = cdngPipelineExecutionStrategyHelper.generateSshWinRmRollingYaml(
+        ServiceDefinitionType.SSH, strategyParameters, false);
     assertThat(result).contains(STRATEGY);
+    assertThat(result).contains("maxConcurrency: 1");
+    assertThat(result).contains("partitions: 50");
+    assertThat(result).contains("unit: Percentage");
+  }
+
+  @Test
+  @Owner(developers = VLAD)
+  @Category(UnitTests.class)
+  public void testGenerateRollingYamlWarPercentage() throws IOException {
+    StrategyParameters strategyParameters = StrategyParameters.builder()
+                                                .instances(50)
+                                                .unitType(NGInstanceUnitType.PERCENTAGE)
+                                                .artifactType(ArtifactType.WAR)
+                                                .build();
+    String result = cdngPipelineExecutionStrategyHelper.generateSshWinRmRollingYaml(
+        ServiceDefinitionType.SSH, strategyParameters, false);
+    assertThat(result).contains(STRATEGY);
+    assertThat(result).contains("maxConcurrency: 1");
+    assertThat(result).contains("partitions: 50");
+    assertThat(result).contains("unit: Percentage");
+  }
+
+  @Test
+  @Owner(developers = VLAD)
+  @Category(UnitTests.class)
+  public void testGenerateRollingYamlCount() throws IOException {
+    StrategyParameters strategyParameters = StrategyParameters.builder()
+                                                .instances(1)
+                                                .unitType(NGInstanceUnitType.COUNT)
+                                                .artifactType(ArtifactType.JAR)
+                                                .build();
+    String result = cdngPipelineExecutionStrategyHelper.generateSshWinRmRollingYaml(
+        ServiceDefinitionType.WINRM, strategyParameters, false);
+    assertThat(result).contains(STRATEGY);
+    assertThat(result).contains("maxConcurrency: 1");
+    assertThat(result).contains("partitions: 1");
+    assertThat(result).contains("unit: Count");
   }
 
   @Test
@@ -71,8 +124,14 @@ public class CDNGPipelineExecutionStrategyHelperTest extends CategoryTest {
                                                 .unitType(NGInstanceUnitType.PERCENTAGE)
                                                 .artifactType(ArtifactType.JAR)
                                                 .build();
-    String result =
-        cdngPipelineExecutionStrategyHelper.generateCanaryYaml(ServiceDefinitionType.WINRM, strategyParameters, false);
+    String result = cdngPipelineExecutionStrategyHelper.generateSshWinRmCanaryYaml(
+        ServiceDefinitionType.WINRM, strategyParameters, false);
     assertThat(result).contains(STRATEGY);
+    assertThat(result).contains("start: 0");
+    assertThat(result).contains("end: 50");
+    assertThat(result).contains("start: 50");
+    assertThat(result).contains("end: 100");
+    assertThat(result).contains("unit: Percentage");
+    assertThat(result).contains("maxConcurrency: 1");
   }
 }

@@ -11,7 +11,6 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.logstreaming.CommandUnitProgress.CommandUnitProgressBuilder;
 import io.harness.delegate.beans.taskprogress.ITaskProgressClient;
-import io.harness.exception.InvalidRequestException;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.logging.LogLevel;
@@ -31,14 +30,11 @@ public class NGDelegateLogCallback implements LogCallback {
 
   public NGDelegateLogCallback(ILogStreamingTaskClient iLogStreamingTaskClient, String commandUnitName,
       boolean shouldOpenStream, CommandUnitsProgress commandUnitsProgress) {
-    if (iLogStreamingTaskClient == null) {
-      throw new InvalidRequestException("Log Streaming Client is not present.");
-    }
     this.iLogStreamingTaskClient = iLogStreamingTaskClient;
     this.commandUnitName = commandUnitName;
     this.commandUnitsProgress = commandUnitsProgress;
 
-    if (shouldOpenStream) {
+    if (this.iLogStreamingTaskClient != null && shouldOpenStream) {
       iLogStreamingTaskClient.openStream(commandUnitName);
     }
   }
@@ -55,6 +51,9 @@ public class NGDelegateLogCallback implements LogCallback {
 
   @Override
   public void saveExecutionLog(String line, LogLevel logLevel, CommandExecutionStatus commandExecutionStatus) {
+    if (this.iLogStreamingTaskClient == null) {
+      return;
+    }
     Instant now = Instant.now();
     LogLine logLine = LogLine.builder().message(line).level(logLevel).timestamp(now).build();
     iLogStreamingTaskClient.writeLogLine(logLine, commandUnitName);
@@ -108,6 +107,13 @@ public class NGDelegateLogCallback implements LogCallback {
       } catch (Exception exception) {
         log.error("Failed to send task progress update {}", commandUnitsProgress, exception);
       }
+    }
+  }
+
+  @Override
+  public void dispatchLogs() {
+    if (this.iLogStreamingTaskClient != null) {
+      this.iLogStreamingTaskClient.dispatchLogs();
     }
   }
 }

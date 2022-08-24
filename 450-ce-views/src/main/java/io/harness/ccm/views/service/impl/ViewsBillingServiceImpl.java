@@ -1874,9 +1874,11 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
       try {
         for (QLCEViewEntityStatsDataPoint dataPoint : gridData.getData()) {
           ClusterData clusterData = dataPoint.getClusterData();
-          java.lang.reflect.Field clusterField = clusterDataFields.get(field.toLowerCase());
-          clusterField.setAccessible(true);
-          values.add((String) clusterField.get(clusterData));
+          if (Objects.nonNull(clusterData)) {
+            java.lang.reflect.Field clusterField = clusterDataFields.get(field.toLowerCase());
+            clusterField.setAccessible(true);
+            values.add((String) clusterField.get(clusterData));
+          }
         }
       } catch (Exception e) {
         log.error("Unable to fetch field values for filter: {}", e.toString());

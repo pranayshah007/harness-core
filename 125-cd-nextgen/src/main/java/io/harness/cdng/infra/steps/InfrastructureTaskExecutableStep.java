@@ -229,6 +229,9 @@ public class InfrastructureTaskExecutableStep implements TaskExecutableWithRbac<
         azureHostsResponse.getHosts().stream().map(AzureHostResponse::getHostName).collect(Collectors.toList());
     infrastructureStepHelper.saveExecutionLog(
         logCallback, color(format("Successfully fetched %s instance(s)", hostNames.size()), Green));
+    infrastructureStepHelper.saveExecutionLog(
+        logCallback, color(format("Fetched following instance(s) %s)", hostNames), Green));
+
     executionSweepingOutputService.consume(ambiance, OutputExpressionConstants.OUTPUT,
         HostsOutput.builder().hosts(hostNames).build(), StepCategory.STAGE.name());
 
@@ -244,6 +247,9 @@ public class InfrastructureTaskExecutableStep implements TaskExecutableWithRbac<
                                  .collect(Collectors.toList());
     infrastructureStepHelper.saveExecutionLog(
         logCallback, color(format("Successfully fetched %s instance(s)", hostNames.size()), Green));
+    infrastructureStepHelper.saveExecutionLog(
+        logCallback, color(format("Fetched following instance(s) %s)", hostNames), Green));
+
     executionSweepingOutputService.consume(ambiance, OutputExpressionConstants.OUTPUT,
         HostsOutput.builder().hosts(hostNames).build(), StepCategory.STAGE.name());
 

@@ -8,10 +8,12 @@
 package io.harness.polling.service.impl;
 
 import static io.harness.perpetualtask.PerpetualTaskType.ARTIFACT_COLLECTION_NG;
+import static io.harness.perpetualtask.PerpetualTaskType.GITPOLLING_NG;
 import static io.harness.perpetualtask.PerpetualTaskType.MANIFEST_COLLECTION_NG;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.gitpolling.bean.GitPollingConfig;
 import io.harness.delegate.AccountId;
 import io.harness.exception.InvalidRequestException;
 import io.harness.grpc.DelegateServiceGrpcClient;
@@ -21,7 +23,9 @@ import io.harness.perpetualtask.PerpetualTaskId;
 import io.harness.perpetualtask.PerpetualTaskSchedule;
 import io.harness.polling.bean.PollingDocument;
 import io.harness.polling.bean.PollingType;
+import io.harness.polling.bean.gitpolling.GitPollingInfo;
 import io.harness.polling.service.impl.artifact.ArtifactPerpetualTaskHelperNg;
+import io.harness.polling.service.impl.gitpolling.GitPollingPerpetualTaskHelperNg;
 import io.harness.polling.service.impl.manifest.ManifestPerpetualTaskHelperNg;
 import io.harness.polling.service.intfc.PollingPerpetualTaskService;
 import io.harness.polling.service.intfc.PollingService;
@@ -39,6 +43,7 @@ import lombok.extern.slf4j.Slf4j;
 public class PollingPerpetualTaskServiceImpl implements PollingPerpetualTaskService {
   ManifestPerpetualTaskHelperNg manifestPerpetualTaskHelperNg;
   ArtifactPerpetualTaskHelperNg artifactPerpetualTaskHelperNg;
+  GitPollingPerpetualTaskHelperNg gitPollingPerpetualTaskHelperNg;
   DelegateServiceGrpcClient delegateServiceGrpcClient;
   PollingService pollingService;
 
@@ -64,6 +69,18 @@ public class PollingPerpetualTaskServiceImpl implements PollingPerpetualTaskServ
         schedule = PerpetualTaskSchedule.newBuilder()
                        .setInterval(Durations.fromMinutes(1))
                        .setTimeout(Durations.fromMinutes(2))
+                       .build();
+        break;
+      case WEBHOOK_POLLING:
+        executionBundle = gitPollingPerpetualTaskHelperNg.createPerpetualTaskExecutionBundle(pollingDocument);
+        GitPollingInfo gitPollingInfo = (GitPollingInfo) pollingDocument.getPollingInfo();
+        GitPollingConfig pollingConfig = gitPollingInfo.toGitPollingConfig();
+        int pollInterval = pollingConfig.getPollInterval();
+
+        perpetualTaskType = GITPOLLING_NG;
+        schedule = PerpetualTaskSchedule.newBuilder()
+                       .setInterval(Durations.fromMinutes(pollInterval))
+                       .setTimeout(Durations.fromMinutes(pollInterval + 1))
                        .build();
         break;
       default:

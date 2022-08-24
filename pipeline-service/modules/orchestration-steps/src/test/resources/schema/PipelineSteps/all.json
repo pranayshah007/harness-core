@@ -797,6 +797,9 @@
             "issueKey": {
               "type": "string"
             },
+            "issueType": {
+              "type": "string"
+            },
             "rejectionCriteria": {
               "$ref": "#/definitions/CriteriaSpecWrapper"
             }
@@ -1293,6 +1296,9 @@
             "approvalCriteria": {
               "$ref": "#/definitions/CriteriaSpecWrapper"
             },
+            "changeWindow": {
+              "$ref": "#/definitions/ServiceNowChangeWindowSpec"
+            },
             "connectorRef": {
               "type": "string"
             },
@@ -1323,6 +1329,22 @@
           }
         }
       ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "ServiceNowChangeWindowSpec": {
+      "type": "object",
+      "required": [
+        "endField",
+        "startField"
+      ],
+      "properties": {
+        "endField": {
+          "type": "string"
+        },
+        "startField": {
+          "type": "string"
+        }
+      },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "ServiceNowCreateStepInfo": {

@@ -121,7 +121,7 @@ public class ExecutionInterruptManager {
       ImmutableMap.<ExecutionInterruptType, List<ExecutionStatus>>builder()
           .put(RESUME, asList(PAUSED))
           .put(IGNORE, asList(PAUSED, WAITING))
-          .put(RETRY, asList(WAITING, FAILED, ERROR, EXPIRED))
+          .put(RETRY, asList(WAITING, FAILED, ERROR, EXPIRED, STARTING))
           .put(ABORT, asList(NEW, STARTING, RUNNING, PAUSED, WAITING))
           .put(MARK_EXPIRED, asList(NEW, STARTING, RUNNING, PAUSED, WAITING, DISCONTINUING))
           .put(PAUSE, asList(NEW, STARTING, RUNNING))

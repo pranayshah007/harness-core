@@ -30,6 +30,7 @@ import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.events.OrchestrationEvent;
 import io.harness.pms.sdk.core.events.OrchestrationEventHandler;
+import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
 import io.harness.service.DelegateGrpcClientWrapper;
 import io.harness.steps.StepUtils;
 
@@ -40,6 +41,7 @@ import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -52,6 +54,7 @@ import net.jodah.failsafe.RetryPolicy;
 @Slf4j
 @OwnedBy(HarnessTeam.CI)
 public class PipelineExecutionUpdateEventHandler implements OrchestrationEventHandler {
+  @Inject private OutcomeService outcomeService;
   @Inject private GitBuildStatusUtility gitBuildStatusUtility;
   @Inject private StageCleanupUtility stageCleanupUtility;
   @Inject private CILogServiceUtils ciLogServiceUtils;
@@ -146,13 +149,19 @@ public class PipelineExecutionUpdateEventHandler implements OrchestrationEventHa
     Map<String, String> abstractions = buildAbstractions(ambiance, Scope.PROJECT);
     String taskType = "CI_CLEANUP";
     SerializationFormat serializationFormat = SerializationFormat.KRYO;
+    boolean executeOnHarnessHostedDelegates = false;
+    // TODO: Retrieve delegate ID from outcome of init task and populate it here
+    List<String> eligibleToExecuteDelegateIds = new ArrayList<>();
     if (ciCleanupTaskParams.getType() == CICleanupTaskParams.Type.DLITE_VM) {
       taskType = TaskType.DLITE_CI_VM_CLEANUP_TASK.getDisplayName();
+      executeOnHarnessHostedDelegates = true;
       serializationFormat = SerializationFormat.JSON;
     }
 
     return DelegateTaskRequest.builder()
         .accountId(accountId)
+        .executeOnHarnessHostedDelegates(executeOnHarnessHostedDelegates)
+        .eligibleToExecuteDelegateIds(eligibleToExecuteDelegateIds)
         .taskSelectors(taskSelectors.stream().map(TaskSelector::getSelector).collect(Collectors.toList()))
         .taskSetupAbstractions(abstractions)
         .executionTimeout(java.time.Duration.ofSeconds(900))

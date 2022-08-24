@@ -133,7 +133,9 @@ public class FileBasedWinRmExecutorTest extends CategoryTest {
         configFileMetaData.getDestinationDirectoryPath(), configFileMetaData.getFilename());
     assertThat(command).isEqualTo("$decodedFile = 'TEST_PATH\\TEST_FILE_NAME'\n"
         + "Write-Host \"Clearing target config file $decodedFile  on the host.\"\n"
-        + "[IO.File]::Delete($decodedFile)");
+        + "if ([IO.File]::Exists($decodedFile)) {\n"
+        + "  [IO.File]::Delete($decodedFile)\n"
+        + "}");
   }
 
   /**

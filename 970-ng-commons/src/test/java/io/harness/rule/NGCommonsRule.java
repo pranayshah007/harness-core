@@ -11,6 +11,7 @@ import io.harness.factory.ClosingFactory;
 import io.harness.govern.ProviderModule;
 import io.harness.govern.ServersModule;
 import io.harness.instancesyncmonitoring.module.InstanceSyncMonitoringModule;
+import io.harness.metrics.modules.MetricsModule;
 import io.harness.serializer.KryoModule;
 import io.harness.serializer.KryoRegistrar;
 import io.harness.testing.ComponentTestsModule;
@@ -79,6 +80,7 @@ public class NGCommonsRule implements MethodRule, InjectorRuleMixin {
       }
     });
     modules.add(new InstanceSyncMonitoringModule());
+    modules.add(new MetricsModule());
     return modules;
   }
 

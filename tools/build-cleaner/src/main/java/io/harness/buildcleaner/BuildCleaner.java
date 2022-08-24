@@ -1,3 +1,10 @@
+/*
+ * Copyright 2022 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
+
 package io.harness.buildcleaner;
 
 import io.harness.buildcleaner.bazel.BuildFile;
@@ -16,6 +23,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.PathMatcher;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Optional;
@@ -34,6 +42,7 @@ import org.slf4j.LoggerFactory;
 public class BuildCleaner {
   private static final String DEFAULT_VISIBILITY = "//visibility:public";
   private static final String BUILD_CLEANER_INDEX_FILE_NAME = ".build-cleaner-index";
+  private static final String DEFAULT_JAVA_LIBRARY_NAME = "module";
 
   private static final Logger logger = LoggerFactory.getLogger(BuildCleaner.class);
   private CommandLine options;
@@ -49,9 +58,9 @@ public class BuildCleaner {
       this.mavenManifest = MavenManifest.loadFromFile(mavenManifestFileLocation);
     }
 
-    Path mavenManifestOverrideFileLocation = mavenManifestFile();
+    Path mavenManifestOverrideFileLocation = mavenManifestOverrideFile();
     if (Files.exists(mavenManifestOverrideFileLocation)) {
-      this.mavenManifestOverride = MavenManifest.loadFromFile(mavenManifestOverrideFileLocation);
+      this.mavenManifestOverride = MavenManifest.loadFromOverrideFile(mavenManifestOverrideFileLocation);
     }
 
     this.packageParser = new PackageParser(workspace());
@@ -107,7 +116,7 @@ public class BuildCleaner {
     logger.info("Creating index using sources matching: " + indexSourceGlob());
 
     ClasspathParser classpathParser = packageParser.getClassPathParser();
-    classpathParser.parseClasses(indexSourceGlob(), options.hasOption("findBuildInParent"));
+    classpathParser.parseClasses(indexSourceGlob(), assumedPackagePrefixesWithBuildFile());
 
     // Add repository java source code index to the cache.
     Set<ClassMetadata> fullyQualifiedClassNames = classpathParser.getFullyQualifiedClassNames();
@@ -137,15 +146,23 @@ public class BuildCleaner {
     // and don't care about the BUILD file paths.
     ClasspathParser classpathParser = this.packageParser.getClassPathParser();
     String parseClassPattern = path.toString().isEmpty() ? srcsGlob() : path.toString() + "/" + srcsGlob();
-    classpathParser.parseClasses(parseClassPattern, false);
+    classpathParser.parseClasses(parseClassPattern, new HashSet<>());
 
     Set<String> dependencies = new TreeSet<>();
     for (String importStatement : classpathParser.getUsedTypes()) {
-      if (importStatement.startsWith("java")) {
+      if (importStatement.startsWith("java.")) {
         continue;
       }
 
       Optional<String> resolvedSymbol = resolve(importStatement, harnessSymbolMap);
+
+      // Skip the symbols from the same package. Resolved symbol starts with "//" and ends with ":module" and rest of
+      // it is just a path - therefore, removing first two characters before comparing.
+      if (resolvedSymbol.isPresent()
+          && resolvedSymbol.get().substring(2, resolvedSymbol.get().length() - 7).equals(path.toString())) {
+        continue;
+      }
+
       resolvedSymbol.ifPresent(dependencies::add);
       if (!resolvedSymbol.isPresent()) {
         logger.info("No build dependency found for " + importStatement);
@@ -159,8 +176,9 @@ public class BuildCleaner {
     }
 
     BuildFile buildFile = new BuildFile();
-    JavaLibrary javaLibrary =
-        new JavaLibrary(path.getFileName().toString(), DEFAULT_VISIBILITY, srcsGlob(), dependencies);
+    buildFile.enableAnalysisPerModule();
+
+    JavaLibrary javaLibrary = new JavaLibrary(DEFAULT_JAVA_LIBRARY_NAME, DEFAULT_VISIBILITY, srcsGlob(), dependencies);
     buildFile.addJavaLibrary(javaLibrary);
 
     // Find main files in the folder and create java binary targets.
@@ -202,7 +220,7 @@ public class BuildCleaner {
     // Look up symbol in the harness symbol map.
     resolvedSymbol = harnessSymbolMap.getTarget(importStatement);
     if (resolvedSymbol.isPresent()) {
-      return Optional.of("//" + resolvedSymbol.get());
+      return Optional.of("//" + resolvedSymbol.get() + ":" + DEFAULT_JAVA_LIBRARY_NAME);
     }
 
     return Optional.empty();
@@ -261,6 +279,12 @@ public class BuildCleaner {
     return options.hasOption("srcsGlob") ? options.getOptionValue("srcsGlob") : "*.java";
   }
 
+  private Set<String> assumedPackagePrefixesWithBuildFile() {
+    return options.hasOption("assumedPackagePrefixesWithBuildFile")
+        ? new HashSet<String>(Arrays.asList(options.getOptionValue("assumedPackagePrefixesWithBuildFile").split(",")))
+        : new HashSet<String>();
+  }
+
   private Path mavenManifestFile() {
     return options.hasOption("mavenManifestFile") ? Paths.get(options.getOptionValue("mavenManifestFile"))
                                                   : Paths.get(workspace() + "/maven-manifest.json");
@@ -283,7 +307,7 @@ public class BuildCleaner {
     options.addOption(new Option(null, "workspace", true, "Workspace root"));
     options.addOption(new Option(
         null, "indexSourceGlob", true, "Pattern for source files to build index. Defaults to '**/src/main/**/*.java'"));
-    options.addOption(new Option(null, "overrideIndex", true, "Override the existing index"));
+    options.addOption(new Option(null, "overrideIndex", false, "Override the existing index"));
     options.addOption(new Option(null, "module", true, "Relative path of the module from the workspace"));
     options.addOption(new Option(null, "srcsGlob", true, "Pattern to match for finding source files."));
     options.addOption(
@@ -293,10 +317,10 @@ public class BuildCleaner {
             + "Defaults to workspace/maven_manifest.json"));
     options.addOption(
         new Option(null, "mavenManifestOverrideFile", true, "Specify overrides for conflicting imports."));
-    options.addOption(new Option(null, "recursive", true, "Generate BUILD files for all folders inside the module"));
-    options.addOption(new Option(null, "findBuildInParent", true,
-        "Don't assume build file is present in every folder, rather keep going up the tree until a build file is found. "
-            + "This would not override the index file if already present."));
+    options.addOption(new Option(null, "recursive", false, "Generate BUILD files for all folders inside the module"));
+    options.addOption(new Option(null, "assumedPackagePrefixesWithBuildFile", true,
+        "Comma separate list of module prefixes for which we can assume BUILD file to be present. "
+            + "Set to 'all' if need same behavior for all folders"));
 
     CommandLine commandLineOptions = null;
     try {

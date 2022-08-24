@@ -65,6 +65,8 @@ import lombok.experimental.FieldDefaults;
 public class ManifestsPlanCreator extends ChildrenPlanCreator<ManifestsListConfigWrapper> {
   @Inject KryoSerializer kryoSerializer;
 
+  public static final String SERVICE_ENTITY_DEFINITION_TYPE_KEY = "SERVICE_ENTITY_DEFINITION_TYPE_KEY";
+
   @Override
   public LinkedHashMap<String, PlanCreationResponse> createPlanForChildrenNodes(
       PlanCreationContext ctx, ManifestsListConfigWrapper config) {
@@ -85,6 +87,15 @@ public class ManifestsPlanCreator extends ChildrenPlanCreator<ManifestsListConfi
       manifestListBuilder.addStageOverrides(serviceConfig.getStageOverrides());
       manifestList = manifestListBuilder.build();
 
+    } else if (ctx.getDependency().getMetadataMap().containsKey(SERVICE_ENTITY_DEFINITION_TYPE_KEY)) {
+      serviceDefinitionType = (ServiceDefinitionType) kryoSerializer.asInflatedObject(
+          ctx.getDependency().getMetadataMap().get(SERVICE_ENTITY_DEFINITION_TYPE_KEY).toByteArray());
+      final List<ManifestConfigWrapper> manifestListConfig =
+          (List<ManifestConfigWrapper>) kryoSerializer.asInflatedObject(
+              ctx.getDependency().getMetadataMap().get(YamlTypes.MANIFEST_LIST_CONFIG).toByteArray());
+
+      ManifestListBuilder manifestListBuilder = new ManifestListBuilder(manifestListConfig);
+      manifestList = manifestListBuilder.build();
     } else if (ctx.getDependency().getMetadataMap().containsKey(YamlTypes.SERVICE_ENTITY)) {
       NGServiceV2InfoConfig serviceV2InfoConfig = (NGServiceV2InfoConfig) kryoSerializer.asInflatedObject(
           ctx.getDependency().getMetadataMap().get(YamlTypes.SERVICE_ENTITY).toByteArray());

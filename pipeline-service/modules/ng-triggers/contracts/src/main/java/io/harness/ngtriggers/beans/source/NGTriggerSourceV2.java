@@ -29,11 +29,14 @@ import lombok.experimental.FieldDefaults;
 @OwnedBy(PIPELINE)
 public class NGTriggerSourceV2 {
   NGTriggerType type;
+
+  String pollInterval;
   @JsonTypeInfo(use = NAME, property = "type", include = EXTERNAL_PROPERTY, visible = true) NGTriggerSpecV2 spec;
 
   @Builder
-  public NGTriggerSourceV2(NGTriggerType type, NGTriggerSpecV2 spec) {
+  public NGTriggerSourceV2(NGTriggerType type, NGTriggerSpecV2 spec, String pollInterval) {
     this.type = type;
     this.spec = spec;
+    this.pollInterval = pollInterval;
   }
 }

@@ -29,8 +29,8 @@ import io.harness.beans.environment.pod.container.ContainerDefinitionInfo;
 import io.harness.beans.environment.pod.container.ContainerImageDetails;
 import io.harness.beans.execution.ManualExecutionSource;
 import io.harness.beans.executionargs.CIExecutionArgs;
-import io.harness.beans.stages.IntegrationStageConfig;
-import io.harness.beans.stages.IntegrationStageConfigImpl;
+import io.harness.cimanager.stages.IntegrationStageConfig;
+import io.harness.cimanager.stages.IntegrationStageConfigImpl;
 import io.harness.delegate.beans.ci.pod.ContainerResourceParams;
 import io.harness.exception.InvalidRequestException;
 import io.harness.k8s.model.ImageDetails;
@@ -202,7 +202,7 @@ public class K8InitializeStepUtilsHelper {
   public static JsonNode getDockerStepElementConfigAsJsonNode() {
     ObjectMapper mapper = new ObjectMapper();
     ObjectNode stepElementConfig = mapper.createObjectNode();
-    stepElementConfig.put("identifier", PLUGIN_STEP_ID);
+    stepElementConfig.put("identifier", "step-docker");
 
     stepElementConfig.put("type", "BuildAndPushDockerRegistry");
     stepElementConfig.put("name", "docker step");

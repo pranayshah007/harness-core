@@ -22,6 +22,7 @@ import io.harness.beans.PageResponse;
 import io.harness.delegate.beans.DelegateScope;
 import io.harness.rest.RestResponse;
 
+import software.wings.security.annotations.ApiKeyAuthorized;
 import software.wings.security.annotations.AuthRule;
 import software.wings.security.annotations.Scope;
 import software.wings.service.intfc.DelegateScopeService;
@@ -51,6 +52,7 @@ import org.hibernate.validator.constraints.NotEmpty;
 @Produces("application/json")
 @Scope(DELEGATE_SCOPE)
 @AuthRule(permissionType = LOGGED_IN)
+@ApiKeyAuthorized(permissionType = LOGGED_IN)
 @TargetModule(HarnessModule._420_DELEGATE_SERVICE)
 @OwnedBy(DEL)
 public class DelegateScopeResource {

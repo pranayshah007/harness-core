@@ -27,7 +27,10 @@ import io.harness.delegate.beans.connector.scm.gitlab.GitlabHttpCredentialsDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabOauthDTO;
 import io.harness.encryption.Scope;
 import io.harness.encryption.SecretRefData;
+import io.harness.gitsync.interceptor.GitEntityInfo;
+import io.harness.gitsync.interceptor.GitSyncBranchContext;
 import io.harness.iterator.PersistenceIteratorFactory;
+import io.harness.manage.GlobalContextManager;
 import io.harness.mongo.iterator.MongoPersistenceIterator;
 import io.harness.mongo.iterator.MongoPersistenceIterator.Handler;
 import io.harness.mongo.iterator.filter.SpringFilterExpander;
@@ -121,16 +124,24 @@ public class OAuthTokenRefresher implements Handler<GitlabConnector> {
         secretDTOV2.getIdentifier(), secretDTOV2);
   }
 
+  private void updateContext() {
+    Principal principal = SecurityContextBuilder.getPrincipal();
+    if (principal == null) {
+      principal = new ServicePrincipal(NG_MANAGER.getServiceId());
+      SecurityContextBuilder.setContext(principal);
+    }
+    final GitEntityInfo emptyInfo = GitEntityInfo.builder().build();
+    try (GlobalContextManager.GlobalContextGuard guard = GlobalContextManager.ensureGlobalContextGuard()) {
+      GlobalContextManager.upsertGlobalContextRecord(GitSyncBranchContext.builder().gitBranchInfo(emptyInfo).build());
+    }
+  }
+
   @Override
   public void handle(GitlabConnector entity) {
-    log.info("[OAuth refresh] Working on {}", entity.getAccountIdentifier() + ":" + entity.getIdentifier());
+    log.info("[OAuth refresh] Working on: {}", entity.getAccountIdentifier() + " , " + entity.getIdentifier());
 
     try {
-      Principal principal = SecurityContextBuilder.getPrincipal();
-      if (principal == null) {
-        principal = new ServicePrincipal(NG_MANAGER.getServiceId());
-        SecurityContextBuilder.setContext(principal);
-      }
+      updateContext();
       GitlabOauthDTO gitlabOauthDTO = getGitlabOauthDecrypted(entity);
 
       SecretDTOV2 tokenDTO = getSecretSecretValue(entity, gitlabOauthDTO.getTokenRef());
@@ -142,21 +153,23 @@ public class OAuthTokenRefresher implements Handler<GitlabConnector> {
       }
 
       RefreshTokenResponse refreshTokenResponse = null;
+      String clientId = configuration.getGitlabConfig().getClientId();
+      String clientSecret = configuration.getGitlabConfig().getClientSecret();
+
+      String clientIdShort = clientId.substring(0, Math.min(clientId.length(), 3));
+      String clientSecretShort = clientSecret.substring(0, Math.min(clientSecret.length(), 3));
 
       try {
-        refreshTokenResponse = scmClient.refreshToken(null, configuration.getGitlabConfig().getClientId(),
-            configuration.getGitlabConfig().getClientSecret(), "https://gitlab.com/oauth/token",
+        refreshTokenResponse = scmClient.refreshToken(null, clientId, clientSecret, "https://gitlab.com/oauth/token",
             String.valueOf(gitlabOauthDTO.getRefreshTokenRef().getDecryptedValue()));
       } catch (Exception e) {
         log.error(
-            "[OAuth refresh] Error from SCM for refreshing token for connector:{}, clientID:{}, Account:{}, Error:{}",
-            entity.getIdentifier(), configuration.getGitlabConfig().getClientId(), entity.getAccountIdentifier(),
-            e.getMessage());
+            "[OAuth refresh] Error from SCM for refreshing token for connector:{}, clientID short:{}, client Secret short:{}, Account:{}, Error:{}",
+            entity.getIdentifier(), clientIdShort, clientSecretShort, entity.getAccountIdentifier(), e.getMessage());
         return;
       }
 
-      log.info("[OAuth refresh]:" + entity.getName() + " New AccessToken: " + refreshTokenResponse.getAccessToken()
-          + " New RefreshToken:" + refreshTokenResponse.getRefreshToken());
+      log.info("[OAuth refresh]:" + entity.getName() + "-Got new access & refresh token");
 
       updateSecretSecretValue(entity, tokenDTO, refreshTokenResponse.getAccessToken());
       updateSecretSecretValue(entity, refreshTokenDTO, refreshTokenResponse.getRefreshToken());

@@ -372,6 +372,9 @@ public enum TaskType {
   OCI_HELM_CONNECTIVITY_TASK(TaskGroup.HELM_REPO_CONFIG_VALIDATION),
   AZURE_WEB_APP_TASK_NG(TaskGroup.AZURE, "Azure Web App Task"),
   COMMAND_TASK_NG(TaskGroup.COMMAND_TASK_NG, "Command Task"),
+  VALIDATE_CUSTOM_SECRET_MANAGER_SECRET_REFERENCE(TaskGroup.COMMAND_TASK_NG),
+  FETCH_CUSTOM_SECRET(TaskGroup.COMMAND_TASK_NG),
+  RESOLVE_CUSTOM_SM_CONFIG(TaskGroup.COMMAND_TASK_NG),
   CI_DOCKER_INITIALIZE_TASK(TaskGroup.CI, CIDockerInitializeTaskRequest.class, DockerTaskExecutionResponse.class, true),
   CI_DOCKER_EXECUTE_TASK(TaskGroup.CI, CIDockerExecuteStepRequest.class, DockerTaskExecutionResponse.class, true),
   CI_DOCKER_CLEANUP_TASK(TaskGroup.CI, CIDockerCleanupStepRequest.class, DockerTaskExecutionResponse.class, true),
@@ -380,7 +383,8 @@ public enum TaskType {
   DLITE_CI_VM_INITIALIZE_TASK(TaskGroup.CI, DliteVmInitializeTaskParams.class, VmTaskExecutionResponse.class, true),
   DLITE_CI_VM_EXECUTE_TASK(TaskGroup.CI, DliteVmExecuteStepTaskParams.class, VmTaskExecutionResponse.class, true),
   DLITE_CI_VM_CLEANUP_TASK(TaskGroup.CI, DliteVmCleanupTaskParams.class, VmTaskExecutionResponse.class, true),
-  NG_LDAP_GROUPS_SYNC(TaskGroup.LDAP);
+  NG_LDAP_GROUPS_SYNC(TaskGroup.LDAP),
+  AZURE_NG_ARM(TaskGroup.AZURE_NG_ARM_BLUEPRINT, "Azure ARM");
 
   private final TaskGroup taskGroup;
   private final String displayName;

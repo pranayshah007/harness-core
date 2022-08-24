@@ -7,6 +7,7 @@
 
 package io.harness.steps.matrix;
 
+import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.plancreator.strategy.HarnessForConfig;
 import io.harness.plancreator.strategy.RepeatUnit;
@@ -40,6 +41,22 @@ public class ForLoopStrategyConfigService implements StrategyConfigService {
                                                   .build())
                          .build());
       }
+    } else if (!ParameterField.isBlank(harnessForConfig.getPartitions())) {
+      int currentIteration = 0;
+      List<List<String>> partitions = partitionItems(harnessForConfig);
+
+      for (List<String> partition : partitions) {
+        children.add(
+            ChildrenExecutableResponse.Child.newBuilder()
+                .setChildNodeId(childNodeId)
+                .setStrategyMetadata(StrategyMetadata.newBuilder()
+                                         .setForMetadata(ForMetadata.newBuilder().addAllPartition(partition).build())
+                                         .setCurrentIteration(currentIteration)
+                                         .setTotalIterations(partition.size())
+                                         .build())
+                .build());
+        currentIteration++;
+      }
     } else {
       int currentIteration = 0;
       List<String> params = splitParamsIfNeeded(harnessForConfig);
@@ -56,7 +73,49 @@ public class ForLoopStrategyConfigService implements StrategyConfigService {
         currentIteration++;
       }
     }
+
     return children;
+  }
+
+  private List<List<String>> partitionItems(HarnessForConfig harnessForConfig) {
+    if (harnessForConfig.getUnit() == RepeatUnit.PERCENTAGE) {
+      return partitionItemsByPercentage(harnessForConfig);
+    } else {
+      return partitionItemsByCount(harnessForConfig);
+    }
+  }
+
+  private List<List<String>> partitionItemsByPercentage(HarnessForConfig harnessForConfig) {
+    List<String> items = harnessForConfig.getItems().getValue();
+    int itemsSize = items.size();
+    ParameterField<Integer> partitionSizeInPercentage = harnessForConfig.getPartitions();
+    float partitionSizeInPercentageValue = partitionSizeInPercentage.getValue().floatValue();
+
+    int partitionSize = Math.round((partitionSizeInPercentageValue / 100) * itemsSize);
+    // fix partitionSize if provided percentage value is greater than 0
+    if (partitionSize == 0 && partitionSizeInPercentageValue > 0) {
+      partitionSize = 1;
+    }
+
+    // fix partitionSize if partitionSize is greater than number of items
+    if (partitionSize > itemsSize) {
+      partitionSize = itemsSize;
+    }
+    validatePartition(partitionSize, itemsSize);
+    return com.google.common.collect.Lists.partition(items, partitionSize);
+  }
+
+  private List<List<String>> partitionItemsByCount(HarnessForConfig harnessForConfig) {
+    List<String> items = harnessForConfig.getItems().getValue();
+    int itemsSize = items.size();
+    int partitionSize = harnessForConfig.getPartitions().getValue();
+
+    // fix partitionSize if partitionSize is greater than number of items
+    if (partitionSize > itemsSize) {
+      partitionSize = itemsSize;
+    }
+    validatePartition(partitionSize, itemsSize);
+    return com.google.common.collect.Lists.partition(items, partitionSize);
   }
 
   private List<String> splitParamsIfNeeded(HarnessForConfig harnessForConfig) {
@@ -109,6 +168,15 @@ public class ForLoopStrategyConfigService implements StrategyConfigService {
     }
     if (start > end) {
       throw new InvalidRequestException("start cannot be greater than end");
+    }
+  }
+
+  private void validatePartition(int partitionSize, int itemsSize) {
+    if (itemsSize == 0) {
+      throw new InvalidArgumentsException("items list cannot be empty");
+    }
+    if (partitionSize <= 0) {
+      throw new InvalidArgumentsException("partition size cannot be equal or less that 0");
     }
   }
 

@@ -22,6 +22,7 @@ import io.harness.rest.RestResponse;
 
 import software.wings.beans.ResourceConstraintUsage;
 import software.wings.security.PermissionAttribute.ResourceType;
+import software.wings.security.annotations.ApiKeyAuthorized;
 import software.wings.security.annotations.AuthRule;
 import software.wings.security.annotations.ListAPI;
 import software.wings.security.annotations.Scope;
@@ -57,6 +58,7 @@ public class ResourceConstraintResource {
   @ExceptionMetered
   @ListAPI(ResourceType.SETTING)
   @AuthRule(permissionType = LOGGED_IN)
+  @ApiKeyAuthorized(permissionType = LOGGED_IN)
   public RestResponse<PageResponse<ResourceConstraint>> list(
       @QueryParam("accountId") String accountId, @BeanParam PageRequest<ResourceConstraint> pageRequest) {
     return new RestResponse<>(resourceConstraintService.list(pageRequest));
@@ -66,6 +68,7 @@ public class ResourceConstraintResource {
   @Timed
   @ExceptionMetered
   @AuthRule(permissionType = ACCOUNT_MANAGEMENT)
+  @ApiKeyAuthorized(permissionType = ACCOUNT_MANAGEMENT)
   public RestResponse<ResourceConstraint> save(
       @QueryParam("accountId") String accountId, ResourceConstraint resourceConstraint) {
     resourceConstraint.setAccountId(accountId);
@@ -80,6 +83,7 @@ public class ResourceConstraintResource {
   @Timed
   @ExceptionMetered
   @AuthRule(permissionType = ACCOUNT_MANAGEMENT)
+  @ApiKeyAuthorized(permissionType = ACCOUNT_MANAGEMENT)
   public RestResponse<ResourceConstraint> update(@QueryParam("accountId") String accountId,
       @PathParam("resourceConstraintId") String resourceConstraintId, ResourceConstraint resourceConstraint) {
     resourceConstraint.setUuid(resourceConstraintId);
@@ -93,6 +97,7 @@ public class ResourceConstraintResource {
   @Timed
   @ExceptionMetered
   @AuthRule(permissionType = ACCOUNT_MANAGEMENT)
+  @ApiKeyAuthorized(permissionType = ACCOUNT_MANAGEMENT)
   public RestResponse delete(
       @QueryParam("accountId") String accountId, @PathParam("resourceConstraintId") String resourceConstraintId) {
     resourceConstraintService.delete(accountId, resourceConstraintId);
@@ -105,6 +110,7 @@ public class ResourceConstraintResource {
   @ExceptionMetered
   @ListAPI(ResourceType.SETTING)
   @AuthRule(permissionType = LOGGED_IN)
+  @ApiKeyAuthorized(permissionType = LOGGED_IN)
   public RestResponse<List<ResourceConstraintUsage>> usage(
       @QueryParam("accountId") String accountId, List<String> resourceConstraintIds) {
     return new RestResponse<>(resourceConstraintService.usage(accountId, resourceConstraintIds));

@@ -19,6 +19,7 @@ import static java.lang.String.format;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.eraro.ResponseMessage;
+import io.harness.exception.AccessDeniedException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.logging.ExceptionLogger;
@@ -40,6 +41,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.ListUtils;
+import org.jetbrains.annotations.Nullable;
 import org.joor.Reflect;
 
 @Slf4j
@@ -74,6 +76,11 @@ public abstract class BaseMutatorDataFetcher<P, R> extends BaseDataFetcher {
 
   @Override
   public R get(DataFetchingEnvironment dataFetchingEnvironment) throws Exception {
+    return getInternal(dataFetchingEnvironment, 0);
+  }
+
+  @Nullable
+  private R getInternal(DataFetchingEnvironment dataFetchingEnvironment, int retryCount) throws Exception {
     try {
       log.info("Executing gql {}", this.getClass().getName());
       final P parameters = fetchParameters(parameterClass, dataFetchingEnvironment);
@@ -85,6 +92,16 @@ public abstract class BaseMutatorDataFetcher<P, R> extends BaseDataFetcher {
       final R result = mutateAndFetch(parameters, mutationContext);
       handlePostMutation(mutationContext, parameters, result);
       return result;
+    } catch (AccessDeniedException ex) {
+      if (retryCount == 0) {
+        log.error("got access denied", ex);
+        authService.evictUserPermissionAndRestrictionCacheForAccount(
+            utils.getAccountId(dataFetchingEnvironment), true, true);
+        getInternal(dataFetchingEnvironment, retryCount + 1);
+      } else {
+        log.error("got access denied in second retry returning", ex);
+        throw new InvalidRequestException(getCombinedErrorMessages(ex), ex, ex.getReportTargets());
+      }
     } catch (WingsException ex) {
       throw new InvalidRequestException(getCombinedErrorMessages(ex), ex, ex.getReportTargets());
     } catch (Exception ex) {
@@ -92,6 +109,7 @@ public abstract class BaseMutatorDataFetcher<P, R> extends BaseDataFetcher {
     } finally {
       authRuleInstrumentation.unsetAllThreadLocal();
     }
+    return null;
   }
 
   private P fetchParameters(Class<P> parameterClass, DataFetchingEnvironment dataFetchingEnvironment) {

@@ -55,7 +55,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.MultivaluedMap;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -67,10 +67,10 @@ public class WebhookHelper {
   @Inject @Named(GIT_PR_EVENT_STREAM) private Producer gitPrEventProducer;
   @Inject @Named(GIT_BRANCH_HOOK_EVENT_STREAM) private Producer gitBranchHookEventProducer;
 
-  public WebhookEvent toNGTriggerWebhookEvent(String accountIdentifier, String payload, HttpHeaders httpHeaders) {
+  public WebhookEvent toNGTriggerWebhookEvent(
+      String accountIdentifier, String payload, MultivaluedMap<String, String> httpHeaders) {
     List<HeaderConfig> headerConfigs = new ArrayList<>();
-    httpHeaders.getRequestHeaders().forEach(
-        (k, v) -> headerConfigs.add(HeaderConfig.builder().key(k).values(v).build()));
+    httpHeaders.forEach((k, v) -> headerConfigs.add(HeaderConfig.builder().key(k).values(v).build()));
 
     WebhookEventBuilder webhookEventBuilder =
         WebhookEvent.builder().accountId(accountIdentifier).headers(headerConfigs).payload(payload);

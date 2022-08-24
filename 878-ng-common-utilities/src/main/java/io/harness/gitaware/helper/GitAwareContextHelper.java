@@ -99,13 +99,10 @@ public class GitAwareContextHelper {
     return EmptyPredicate.isEmpty(val) || val.equals(DEFAULT);
   }
 
-  public String getWorkingBranch(String entityRepoURL) {
-    GitEntityInfo gitEntityInfo = GitAwareContextHelper.getGitRequestParamsInfo();
-    String branchName = gitEntityInfo.getBranch();
-    if (!GitAwareContextHelper.isNullOrDefault(gitEntityInfo.getParentEntityRepoURL())
-        && !gitEntityInfo.getParentEntityRepoURL().equals(entityRepoURL)) {
-      branchName = "";
+  public void updateGitEntityContext(GitEntityInfo branchInfo) {
+    if (!GlobalContextManager.isAvailable()) {
+      GlobalContextManager.set(new GlobalContext());
     }
-    return branchName;
+    GlobalContextManager.upsertGlobalContextRecord(GitSyncBranchContext.builder().gitBranchInfo(branchInfo).build());
   }
 }

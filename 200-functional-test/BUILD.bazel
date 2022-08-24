@@ -18,7 +18,6 @@ java_library(
         "//:lombok",
         "//210-command-library-server:module",
         "//230-model-test:module",
-        "//280-batch-processing:module",
         "//350-event-server:module",
         "//360-cg-manager:module",
         "//380-cg-graphql:module",
@@ -43,7 +42,6 @@ java_library(
         "//200-functional-test/src/test/resources:resource",
     ] + ["//:resource"] + [
         "//260-delegate:module_deploy",
-        "//280-batch-processing:module_deploy.jar",
         "//332-ci-manager/app:module_deploy.jar",
         "//350-event-server:module_deploy.jar",
         "//360-cg-manager:module_deploy.jar",

@@ -61,6 +61,7 @@ import io.harness.template.gitsync.TemplateGitSyncBranchContextGuard;
 import io.harness.template.helpers.TemplateReferenceHelper;
 import io.harness.template.mappers.NGTemplateDtoMapper;
 import io.harness.template.resources.NGTemplateResource;
+import io.harness.template.utils.TemplateUtils;
 import io.harness.template.yaml.TemplateRefHelper;
 import io.harness.utils.PageUtils;
 
@@ -322,8 +323,9 @@ public class NGTemplateServiceImpl implements NGTemplateService {
       log.error(String.format("Error while saving template [%s] of versionLabel [%s]", templateEntity.getIdentifier(),
                     templateEntity.getVersionLabel()),
           e);
-      throw new InvalidRequestException(String.format("Error while saving template [%s] of versionLabel [%s]: %s",
-          templateEntity.getIdentifier(), templateEntity.getVersionLabel(), e.getMessage()));
+      throw new InvalidRequestException(String.format("Error while saving template [%s] of versionLabel [%s]",
+                                            templateEntity.getIdentifier(), templateEntity.getVersionLabel()),
+          e);
     }
   }
 
@@ -335,19 +337,21 @@ public class NGTemplateServiceImpl implements NGTemplateService {
       return templateServiceHelper.getTemplate(
           accountId, orgIdentifier, projectIdentifier, templateIdentifier, versionLabel, deleted, false);
     } catch (Exception e) {
-      log.error(String.format("Error while retrieving template with identifier [%s] and versionLabel [%s]",
-                    templateIdentifier, versionLabel),
-          e);
-      throw new InvalidRequestException(
-          String.format("Error while retrieving template with identifier [%s] and versionLabel [%s]: %s",
-              templateIdentifier, versionLabel, ExceptionUtils.getMessage(e)));
+      String errorMessage = getErrorMessage(templateIdentifier, versionLabel);
+      log.error(errorMessage, e);
+      ScmException exception = TemplateUtils.getScmException(e);
+      if (null != exception) {
+        throw new InvalidRequestException(errorMessage, e);
+      } else {
+        throw new InvalidRequestException(String.format("[%s]: %s", errorMessage, ExceptionUtils.getMessage(e)));
+      }
     }
   }
 
   @Override
-  public Optional<TemplateEntity> getOrThrowExceptionIfInvalid(String accountId, String orgIdentifier,
+  public Optional<TemplateEntity> getMetadataOrThrowExceptionIfInvalid(String accountId, String orgIdentifier,
       String projectIdentifier, String templateIdentifier, String versionLabel, boolean deleted) {
-    return templateServiceHelper.getOrThrowExceptionIfInvalid(
+    return templateServiceHelper.getMetadataOrThrowExceptionIfInvalid(
         accountId, orgIdentifier, projectIdentifier, templateIdentifier, versionLabel, deleted);
   }
 
@@ -468,6 +472,10 @@ public class NGTemplateServiceImpl implements NGTemplateService {
       log.error(String.format("Error while deleting template with identifier [%s] and versionLabel [%s]",
                     templateIdentifier, versionLabel),
           e);
+      ScmException exception = TemplateUtils.getScmException(e);
+      if (null != exception) {
+        throw e;
+      }
       throw new InvalidRequestException(
           String.format("Error while deleting template with identifier [%s] and versionLabel [%s]: %s",
               templateIdentifier, versionLabel, e.getMessage()));
@@ -724,7 +732,7 @@ public class NGTemplateServiceImpl implements NGTemplateService {
           accountIdentifier, orgIdentifier, projectIdentifier, templateIdentifier, newStableTemplateVersion);
       makePreviousLastUpdatedTemplateFalse(
           accountIdentifier, orgIdentifier, projectIdentifier, templateIdentifier, newStableTemplateVersion);
-      Optional<TemplateEntity> optionalTemplateEntity = getOrThrowExceptionIfInvalid(
+      Optional<TemplateEntity> optionalTemplateEntity = getMetadataOrThrowExceptionIfInvalid(
           accountIdentifier, orgIdentifier, projectIdentifier, templateIdentifier, newStableTemplateVersion, false);
       if (!optionalTemplateEntity.isPresent()) {
         throw new InvalidRequestException(format(
@@ -748,6 +756,10 @@ public class NGTemplateServiceImpl implements NGTemplateService {
           String.format("Error while updating template with identifier [%s] to stable template of versionLabel [%s]",
               templateIdentifier, newStableTemplateVersion),
           e);
+      ScmException exception = TemplateUtils.getScmException(e);
+      if (null != exception) {
+        throw e;
+      }
       throw new InvalidRequestException(String.format(
           "Error while updating template with identifier [%s] to stable template of versionLabel [%s]: %s",
           templateIdentifier, newStableTemplateVersion, ExceptionUtils.getMessage(e)));
@@ -882,9 +894,13 @@ public class NGTemplateServiceImpl implements NGTemplateService {
                templateToUpdate, GitContextHelper.getGitEntityInfo(),
                format("Template with identifier [%s] and versionLabel [%s] marking last updated template as true.",
                    templateToUpdate, templateToUpdate.getVersionLabel()))) {
-        TemplateEntity withLastUpdatedTemplate = templateToUpdate.withLastUpdatedTemplate(true);
-        templateServiceHelper.makeTemplateUpdateCall(withLastUpdatedTemplate, templateToUpdate, ChangeType.MODIFY, "",
-            TemplateUpdateEventType.TEMPLATE_LAST_UPDATED_TRUE_EVENT, true);
+        if (templateServiceHelper.isOldGitSync(templateToUpdate)) {
+          TemplateEntity withLastUpdatedTemplate = templateToUpdate.withLastUpdatedTemplate(true);
+          templateServiceHelper.makeTemplateUpdateCall(withLastUpdatedTemplate, templateToUpdate, ChangeType.MODIFY, "",
+              TemplateUpdateEventType.TEMPLATE_LAST_UPDATED_TRUE_EVENT, true);
+        } else {
+          templateRepository.updateIsLastUpdatedTemplate(templateToUpdate, true);
+        }
       }
     }
   }
@@ -953,5 +969,14 @@ public class NGTemplateServiceImpl implements NGTemplateService {
           templateEntity.getOrgIdentifier(), oldTemplateEntity.getChildType()));
     }
     return oldTemplateEntity;
+  }
+
+  private String getErrorMessage(String templateIdentifier, String versionLabel) {
+    if (EmptyPredicate.isEmpty(versionLabel)) {
+      return format("Error while retrieving stable template with identifier [%s] ", templateIdentifier);
+    } else {
+      return format("Error while retrieving template with identifier [%s] and versionLabel [%s]", templateIdentifier,
+          versionLabel);
+    }
   }
 }

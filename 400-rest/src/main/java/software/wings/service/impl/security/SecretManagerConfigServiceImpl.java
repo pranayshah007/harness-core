@@ -17,6 +17,7 @@ import static io.harness.eraro.ErrorCode.SECRET_MANAGER_ID_NOT_FOUND;
 import static io.harness.eraro.ErrorCode.UNSUPPORTED_OPERATION_EXCEPTION;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.persistence.HPersistence.returnNewOptions;
+import static io.harness.security.encryption.AccessType.APP_ROLE;
 import static io.harness.security.encryption.EncryptionType.LOCAL;
 import static io.harness.security.encryption.EncryptionType.VAULT;
 
@@ -27,6 +28,7 @@ import static software.wings.service.intfc.security.SecretManager.CREATED_AT_KEY
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.EncryptedData;
 import io.harness.beans.EncryptedData.EncryptedDataKeys;
+import io.harness.beans.FeatureName;
 import io.harness.beans.SecretManagerConfig;
 import io.harness.beans.SecretManagerConfig.SecretManagerConfigKeys;
 import io.harness.exception.InvalidRequestException;
@@ -41,6 +43,7 @@ import io.harness.templatizedsm.RuntimeCredentialsInjector;
 import software.wings.beans.Account;
 import software.wings.beans.AwsSecretsManagerConfig;
 import software.wings.beans.AzureVaultConfig;
+import software.wings.beans.BaseVaultConfig;
 import software.wings.beans.CyberArkConfig;
 import software.wings.beans.GcpKmsConfig;
 import software.wings.beans.GcpSecretsManagerConfig;
@@ -236,6 +239,7 @@ public class SecretManagerConfigServiceImpl implements SecretManagerConfigServic
     if (secretManagerConfig.isTemplatized()) {
       updateRuntimeParameters(secretManagerConfig, runtimeParameters, true);
     }
+    updateConfigForAppRoleTokenRenewal(secretManagerConfig, accountId);
     return secretManagerConfig;
   }
 
@@ -246,6 +250,7 @@ public class SecretManagerConfigServiceImpl implements SecretManagerConfigServic
       decryptEncryptionConfigSecrets(accountId, secretManagerConfig, maskSecrets);
       secretManagerConfig.setNumOfEncryptedValue(getEncryptedDataCount(accountId, entityId));
     }
+    updateConfigForAppRoleTokenRenewal(secretManagerConfig, accountId);
     return secretManagerConfig;
   }
 
@@ -314,6 +319,15 @@ public class SecretManagerConfigServiceImpl implements SecretManagerConfigServic
           .equal(null)
           .enableValidation()
           .get();
+    }
+  }
+
+  private void updateConfigForAppRoleTokenRenewal(SecretManagerConfig secretManagerConfig, String accountId) {
+    if ((secretManagerConfig instanceof BaseVaultConfig)
+        && (((BaseVaultConfig) secretManagerConfig).getAccessType() == APP_ROLE)
+        && ((BaseVaultConfig) secretManagerConfig).getRenewAppRoleToken()
+        && (accountService.isFeatureFlagEnabled(FeatureName.DO_NOT_RENEW_APPROLE_TOKEN.name(), accountId))) {
+      ((BaseVaultConfig) secretManagerConfig).setRenewAppRoleToken(false);
     }
   }
 
