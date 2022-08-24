@@ -1,5 +1,6 @@
 package io.harness.ccm.migration;
 
+import static io.harness.AuthorizationServiceHeader.CE_NEXT_GEN;
 import static io.harness.accesscontrol.principals.PrincipalType.USER;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.remote.client.NGRestUtils.getResponse;
@@ -15,6 +16,8 @@ import io.harness.licensing.remote.NgLicenseHttpClient;
 import io.harness.migration.NGMigration;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.security.SecurityContextBuilder;
+import io.harness.security.dto.ServicePrincipal;
 import io.harness.utils.CryptoUtils;
 import io.harness.utils.RestCallToNGManagerClientUtils;
 
@@ -41,16 +44,16 @@ public class CCMAdminRoleAssignmentMigration implements NGMigration {
 
   @Override
   public void migrate() {
+    SecurityContextBuilder.setContext(new ServicePrincipal(CE_NEXT_GEN.getServiceId()));
     log.info("CCMAdminRoleAssignmentAdditionMigration starts ...");
-    int pageSize = 1000;
     int pageIndex = 0;
     List<String> ceEnabledAccountIds = getCeEnabledNgAccounts();
     log.info("CE enabled accounts: {}", ceEnabledAccountIds);
 
     for (String accountId : ceEnabledAccountIds) {
       do {
-        PageResponse<RoleAssignmentResponseDTO> roleAssignmentPage =
-            getResponse(accessControlAdminClient.getFilteredRoleAssignments(accountId, null, null, 0, DEFAULT_PAGE_SIZE,
+        PageResponse<RoleAssignmentResponseDTO> roleAssignmentPage = getResponse(
+            accessControlAdminClient.getFilteredRoleAssignments(accountId, null, null, pageIndex, DEFAULT_PAGE_SIZE,
                 RoleAssignmentFilterDTO.builder()
                     .resourceGroupFilter(Collections.singleton(DEFAULT_ACCOUNT_LEVEL_RESOURCE_GROUP_IDENTIFIER))
                     .principalTypeFilter(Collections.singleton(USER))
