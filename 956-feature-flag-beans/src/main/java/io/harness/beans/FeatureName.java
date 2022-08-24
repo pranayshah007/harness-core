@@ -308,11 +308,9 @@ public enum FeatureName {
   CUSTOM_ARTIFACT_NG,
   NG_TEMPLATE_REFERENCES_SUPPORT,
   APPLICATION_DROPDOWN_MULTISELECT,
-  NG_AZURE,
   NG_GIT_EXPERIENCE,
   LDAP_SECRET_AUTH,
   WORKFLOW_EXECUTION_REFRESH_STATUS,
-  SERVERLESS_SUPPORT,
   TRIGGERS_PAGE_PAGINATION,
   CVNG_NOTIFICATION_UI,
   STALE_FLAGS_FFM_1510,
@@ -421,7 +419,9 @@ public enum FeatureName {
   NG_SERVICE_MANIFEST_OVERRIDE("Enable Service Manifests override from Environment", HarnessTeam.CDP),
   ENABLE_CHECK_STATE_EXECUTION_STARTING(
       "Used to allow create retry state execution when event is status equals to STARTING", HarnessTeam.SPG),
+  NG_DEFAULT_K8S_MANIFESTS("Sample k8s manifests at account level file store", HarnessTeam.CDP, Scope.GLOBAL),
   CI_TI_DASHBOARDS_ENABLED;
+
   @Deprecated
   FeatureName() {
     scope = Scope.PER_ACCOUNT;
@@ -438,6 +438,12 @@ public enum FeatureName {
     this.description = description;
     this.owner = owner;
     this.scope = Scope.PER_ACCOUNT;
+  }
+
+  FeatureName(String description, HarnessTeam owner, FeatureFlag.Scope scope) {
+    this.description = description;
+    this.owner = owner;
+    this.scope = scope;
   }
 
   @Getter private String description;

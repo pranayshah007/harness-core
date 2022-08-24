@@ -51,6 +51,7 @@ import io.harness.delegate.task.ssh.config.FileDelegateConfig;
 import io.harness.eraro.Level;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.SkipRollbackException;
 import io.harness.logging.UnitProgress;
 import io.harness.logging.UnitStatus;
 import io.harness.ng.core.k8s.ServiceSpecType;
@@ -300,7 +301,7 @@ public class SshCommandStepHelper extends CDStepHelper {
         commandStepRollbackHelper.getRollbackData(ambiance, mergedEnvVariables);
     if (!rollbackData.isPresent()) {
       log.info("Not found rollback data from DB, hence skipping rollback, stageExecutionId: {}", stageExecutionId);
-      throw new InvalidRequestException("Not found previous successful rollback data, hence skipping rollback");
+      throw new SkipRollbackException("Not found previous successful rollback data, hence skipping rollback");
     }
 
     log.info("Found rollback data in DB, stageExecutionId: {}", stageExecutionId);
