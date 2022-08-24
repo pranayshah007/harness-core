@@ -184,34 +184,41 @@ public class MetricServiceImpl implements MetricService {
     registerMetricConfigDefinitions(metricConfigDefinitions);
     metricConfigurations.addAll(metricConfigDefinitions);
 
-    try {
-      StackdriverStatsConfiguration configuration =
-          StackdriverStatsConfiguration.builder()
-              .setExportInterval(Duration.fromMillis(TimeUnit.MINUTES.toMillis(exportIntervalMins)))
+    //This create and reg logic is expensive. Let's run it in a separate thread
+    Runnable createAndRegTask = () -> {
+      StackdriverStatsConfiguration.Builder sd = StackdriverStatsConfiguration.builder();
+
+      sd = sd.setExportInterval(Duration.fromMillis(TimeUnit.MINUTES.toMillis(exportIntervalMins)))
               .setDeadline(Duration.fromMillis(TimeUnit.MINUTES.toMillis(Math.max(10, exportIntervalMins * 5))))
-              .setConstantLabels(Collections.emptyMap())
-              .build();
-      StackdriverStatsExporter.createAndRegister(configuration);
+              .setConstantLabels(Collections.emptyMap());
+
+      StackdriverStatsConfiguration configuration = sd.build();
+      try {
+        StackdriverStatsExporter.createAndRegister(configuration);
+      } catch (IOException e) {
+        log.error("Exception while trying to register stackdriver metrics exporter", e);
+      }
 
       log.info("StackdriverStatsExporter created");
-    } catch (Exception ex) {
-      log.error("Exception while trying to register stackdriver metrics exporter", ex);
-    }
 
-    if (isPrometheusConnectorEnabled()) {
-      try {
-        PrometheusStatsCollector.createAndRegister();
-        log.info("Created prometheus exporter");
-      } catch (Exception ex) {
-        log.error("Exception while trying to register prometheus metrics exporter", ex);
+      if (isPrometheusConnectorEnabled()) {
+        try {
+          PrometheusStatsCollector.createAndRegister();
+          log.info("Created prometheus exporter");
+        } catch (Exception ex) {
+          log.error("Exception while trying to register prometheus metrics exporter", ex);
+        }
       }
-    }
+
+      for (MetricConfiguration metricConfiguration : metricConfigurations) {
+        log.info("Loaded metric definition: {}", metricConfiguration);
+      }
+    };
+    Thread createAndRegThread = new Thread(createAndRegTask);
+    createAndRegThread.start();
 
     log.info("Finished loading metrics definitions from YAML. time taken is {} ms, {} metrics loaded",
-        Instant.now().toEpochMilli() - startTime, metricConfigurations.size());
-    for (MetricConfiguration metricConfiguration : metricConfigurations) {
-      log.info("Loaded metric definition: {}", metricConfiguration);
-    }
+            Instant.now().toEpochMilli() - startTime, metricConfigurations.size());
   }
 
   @Override
