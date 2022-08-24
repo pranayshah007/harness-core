@@ -17,27 +17,21 @@ import io.harness.mongo.changestreams.ChangeEvent;
 import io.harness.mongo.changestreams.ChangeSubscriber;
 import io.harness.persistence.HIterator;
 
+import software.wings.beans.WorkflowExecution;
 import software.wings.dl.WingsPersistence;
 import software.wings.search.framework.ElasticsearchBulkMigrationJob.ElasticsearchBulkMigrationJobBuilder;
 import software.wings.search.framework.SearchEntityIndexState.SearchEntityIndexStateKeys;
 import software.wings.timescale.framework.TimeScaleEntityIndexState;
+import software.wings.timescale.migrations.DeploymentsMigrationHelper;
 
 import com.google.inject.Inject;
 import java.time.Instant;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Queue;
-import java.util.Set;
+import java.util.*;
+import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.mongodb.morphia.query.Query;
 import org.mongodb.morphia.query.UpdateOperations;
-import software.wings.timescale.migrations.DeploymentsMigrationHelper;
 
 /**
  * The task responsible for carrying out the bulk sync
@@ -49,6 +43,8 @@ import software.wings.timescale.migrations.DeploymentsMigrationHelper;
 @OwnedBy(PL)
 @Slf4j
 public class ElasticsearchBulkSyncTask {
+  public static final String PARENT_PIPELNE_UPDATE_STATEMENT = "UPDATE DEPLOYMENT SET PARENT_PIPELINE_ID=?, WORKFLOWS=?, CREATED_BY_TYPE=? WHERE EXECUTIONID=?";
+  public static final String EXECUTION_FAILURE_UPDATE_STATEMENT = "UPDATE DEPLOYMENT SET FAILURE_DETAILS=?,FAILED_STEP_NAMES=?,FAILED_STEP_TYPES=? WHERE EXECUTIONID=?";
   @Inject private WingsPersistence wingsPersistence;
   @Inject private ElasticsearchSyncHelper elasticsearchSyncHelper;
   @Inject private ElasticsearchBulkMigrationHelper elasticsearchBulkMigrationHelper;
@@ -56,11 +52,11 @@ public class ElasticsearchBulkSyncTask {
   @Inject private Set<SearchEntity<?>> searchEntities;
   @Inject private Set<TimeScaleEntity<?>> timeScaleEntities;
   @Inject private FeatureFlagService featureFlagService;
+  @Inject private ExecutorService executorService;
   private Queue<ChangeEvent<?>> changeEventsDuringBulkSync;
   private Map<Class, Boolean> isFirstChangeReceived;
 
-  @Inject
-  private DeploymentsMigrationHelper deploymentsMigrationHelper;
+  @Inject private DeploymentsMigrationHelper deploymentsMigrationHelper;
 
   private void cleanupFailedBulkMigrationJobs() {
     try (HIterator<ElasticsearchBulkMigrationJob> iterator =
@@ -211,9 +207,7 @@ public class ElasticsearchBulkSyncTask {
       if (toMigrateAccountIds != null) {
         n = toMigrateAccountIds.size();
       }
-      if(!deploymentTimescaleMigrated) {
-        deploymentsMigrationHelper.setFailureDetailsForAccountIds(toMigrateAccountIds, "EXECUTION_FAILURE_TIMESCALE MIGRATION: ", 500, "UPDATE DEPLOYMENT SET FAILURE_DETAILS=?,FAILED_STEP_NAMES=?,FAILED_STEP_TYPES=? WHERE EXECUTIONID=?");
-        deploymentsMigrationHelper.setParentPipelineForAccountIds(toMigrateAccountIds, "PARENT_PIPELINE_TIMESCALE MIGRATION: ", 1000, "UPDATE DEPLOYMENT SET PARENT_PIPELINE_ID=?, WORKFLOWS=?, CREATED_BY_TYPE=? WHERE EXECUTIONID=?");
+      if (!deploymentTimescaleMigrated) {
         deploymentTimescaleMigrated = true;
       }
       for (int i = 0; i < n; i++) {
@@ -236,7 +230,41 @@ public class ElasticsearchBulkSyncTask {
         break;
       }
     }
+
+    TimeScaleEntityIndexState workflowExecutionEntityIndexState =
+            wingsPersistence.get(TimeScaleEntityIndexState.class, WorkflowExecution.class.getCanonicalName());
+    executorService.submit( () -> {
+      if (workflowExecutionEntityIndexState == null) {
+        runDeploymentMigrations(accountIds);
+        TimeScaleEntityIndexState execution_entity = new TimeScaleEntityIndexState(
+                WorkflowExecution.class.getCanonicalName(), System.currentTimeMillis(), accountIds, new ArrayList<>());
+        wingsPersistence.save(execution_entity);
+      } else {
+        List<String> toMigrateAccountIds = workflowExecutionEntityIndexState.getToMigrateAccountIds() != null
+                ? workflowExecutionEntityIndexState.getToMigrateAccountIds()
+                : new LinkedList<>(accountIds);
+        List<String> alreadyMigratedAccountIds = workflowExecutionEntityIndexState.getAlreadyMigratedAccountIds() != null
+                ? workflowExecutionEntityIndexState.getAlreadyMigratedAccountIds()
+                : new LinkedList<>();
+        runDeploymentMigrations(toMigrateAccountIds);
+        alreadyMigratedAccountIds.addAll(toMigrateAccountIds);
+        TimeScaleEntityIndexState execution_entity =
+                new TimeScaleEntityIndexState(WorkflowExecution.class.getCanonicalName(), System.currentTimeMillis(),
+                        alreadyMigratedAccountIds, toMigrateAccountIds);
+        wingsPersistence.save(execution_entity);
+      }
+    });
+
     return hasTimeScaleMigrationSucceeded;
+  }
+
+  private void runDeploymentMigrations(List<String> accountIds) {
+    deploymentsMigrationHelper.setFailureDetailsForAccountIds(accountIds,
+            "EXECUTION_FAILURE_TIMESCALE MIGRATION: ", 500,
+            EXECUTION_FAILURE_UPDATE_STATEMENT);
+    deploymentsMigrationHelper.setParentPipelineForAccountIds(accountIds,
+            "PARENT_PIPELINE_TIMESCALE MIGRATION: ", 1000,
+            PARENT_PIPELNE_UPDATE_STATEMENT);
   }
 
   public ElasticsearchBulkSyncTaskResult run() {
