@@ -60,24 +60,6 @@ public class InterruptMonitorTest extends OrchestrationTestBase {
 
   @Inject @InjectMocks private InterruptMonitor interruptMonitor;
 
-  @Test
-  @Owner(developers = PRASHANT)
-  @Category(UnitTests.class)
-  public void shouldTestActiveInterruptForCompetedPlan() {
-    String planExecutionId = generateUuid();
-    PlanExecution planExecution = PlanExecution.builder().uuid(planExecutionId).status(Status.ABORTED).build();
-    Interrupt interrupt = Interrupt.builder()
-                              .uuid(generateUuid())
-                              .planExecutionId(planExecutionId)
-                              .type(InterruptType.ABORT_ALL)
-                              .state(Interrupt.State.PROCESSING)
-                              .build();
-    when(planExecutionService.get(eq(planExecutionId))).thenReturn(planExecution);
-    interruptMonitor.handle(interrupt);
-
-    verify(interruptService).markProcessedForceful(eq(interrupt.getUuid()), eq(PROCESSED_SUCCESSFULLY), eq(true));
-  }
-
   /**
    * Setup for the test
    * pipeline (running)
