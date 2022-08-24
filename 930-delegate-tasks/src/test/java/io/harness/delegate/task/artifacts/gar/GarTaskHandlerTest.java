@@ -5,6 +5,7 @@ import static io.harness.rule.OwnerRule.vivekveman;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
 
 import io.harness.CategoryTest;
 import io.harness.artifacts.beans.BuildDetailsInternal;
@@ -20,6 +21,7 @@ import io.harness.delegate.task.artifacts.response.ArtifactTaskExecutionResponse
 import io.harness.delegate.task.gcp.helpers.GcpHelperService;
 import io.harness.encryption.Scope;
 import io.harness.encryption.SecretRefData;
+import io.harness.exception.HintException;
 import io.harness.exception.runtime.SecretNotFoundRuntimeException;
 import io.harness.rule.Owner;
 
@@ -47,6 +49,7 @@ public class GarTaskHandlerTest extends CategoryTest {
       String.format("{\"project_id\": \"%s\"}", TEST_PROJECT_ID).toCharArray();
 
   private GoogleCredential googleCredential;
+
   @Test
   @Owner(developers = vivekveman)
   @Category(UnitTests.class)
@@ -93,6 +96,7 @@ public class GarTaskHandlerTest extends CategoryTest {
     GarDelegateResponse attributes = (GarDelegateResponse) lastSuccessfulBuild.getArtifactDelegateResponses().get(0);
     assertThat(attributes.getVersion()).isEqualTo("version");
   }
+
   @Test
   @Owner(developers = vivekveman)
   @Category(UnitTests.class)
@@ -139,6 +143,7 @@ public class GarTaskHandlerTest extends CategoryTest {
     GarDelegateResponse attributes = (GarDelegateResponse) lastSuccessfulBuild.getArtifactDelegateResponses().get(0);
     assertThat(attributes.getVersion()).isEqualTo("version");
   }
+
   @Test
   @Owner(developers = vivekveman)
   @Category(UnitTests.class)
@@ -186,10 +191,11 @@ public class GarTaskHandlerTest extends CategoryTest {
     GarDelegateResponse attributes = (GarDelegateResponse) getbuild.getArtifactDelegateResponses().get(0);
     assertThat(attributes.getVersion()).isEqualTo("version");
   }
+
   @Test
   @Owner(developers = vivekveman)
   @Category(UnitTests.class)
-  public void testExceptions() throws IOException {
+  public void testSecretExceptions() throws IOException {
     GarDelegateRequest garDelegateRequest =
         GarDelegateRequest.builder()
             .region("us")
@@ -214,5 +220,94 @@ public class GarTaskHandlerTest extends CategoryTest {
     assertThatThrownBy(() -> garArtifactTaskHandler.getBuilds(garDelegateRequest))
         .extracting(ex -> ((SecretNotFoundRuntimeException) ex).getMessage())
         .isEqualTo("Google Artifact Registry: Could not find secret identifier under the scope of current ACCOUNT");
+  }
+
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void testIoExceptionsLastSuccesfulBuild() throws IOException {
+    googleCredential = new GoogleCredential();
+    BuildDetailsInternal buildDetailsInternal = BuildDetailsInternal.builder().number("version").build();
+    GarInternalConfig garInternalConfig;
+    garInternalConfig = GarInternalConfig.builder()
+                            .region("us")
+                            .project("cd-play")
+                            .pkg("mongo")
+                            .bearerToken("Bearer null")
+                            .repositoryName("vivek-repo")
+                            .maxBuilds(Integer.MAX_VALUE)
+                            .build();
+    doReturn(buildDetailsInternal).when(garApiService).getLastSuccessfulBuildFromRegex(garInternalConfig, "v");
+
+    doThrow(new IOException("hello-world"))
+        .when(gcpHelperService)
+        .getGoogleCredential(serviceAccountKeyFileContent, false);
+    GarDelegateRequest garDelegateRequest =
+        GarDelegateRequest.builder()
+            .region("us")
+            .project("cd-play")
+            .maxBuilds(Integer.MAX_VALUE)
+            .repositoryName("vivek-repo")
+            .pkg("mongo")
+            .gcpConnectorDTO(
+                GcpConnectorDTO.builder()
+                    .credential(
+                        GcpConnectorCredentialDTO.builder()
+                            .gcpCredentialType(GcpCredentialType.MANUAL_CREDENTIALS)
+                            .config(
+                                GcpManualDetailsDTO.builder()
+                                    .secretKeyRef(
+                                        SecretRefData.builder().decryptedValue(serviceAccountKeyFileContent).build())
+                                    .build())
+                            .build())
+                    .build())
+            .versionRegex("v")
+            .build();
+    assertThatThrownBy(() -> garArtifactTaskHandler.getLastSuccessfulBuild(garDelegateRequest))
+        .isInstanceOf(HintException.class)
+        .hasMessage("Google Artifact Registry: Could not get Bearer Token");
+  }
+
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void testgetBuild() throws IOException {
+    googleCredential = new GoogleCredential();
+    GarInternalConfig garInternalConfig;
+    garInternalConfig = GarInternalConfig.builder()
+                            .region("us")
+                            .project("cd-play")
+                            .pkg("mongo")
+                            .bearerToken("Bearer null")
+                            .repositoryName("vivek-repo")
+                            .maxBuilds(Integer.MAX_VALUE)
+                            .build();
+    doThrow(new IOException("hello-world"))
+        .when(gcpHelperService)
+        .getGoogleCredential(serviceAccountKeyFileContent, false);
+    GarDelegateRequest garDelegateRequest =
+        GarDelegateRequest.builder()
+            .region("us")
+            .project("cd-play")
+            .maxBuilds(Integer.MAX_VALUE)
+            .repositoryName("vivek-repo")
+            .pkg("mongo")
+            .gcpConnectorDTO(
+                GcpConnectorDTO.builder()
+                    .credential(
+                        GcpConnectorCredentialDTO.builder()
+                            .gcpCredentialType(GcpCredentialType.MANUAL_CREDENTIALS)
+                            .config(
+                                GcpManualDetailsDTO.builder()
+                                    .secretKeyRef(
+                                        SecretRefData.builder().decryptedValue(serviceAccountKeyFileContent).build())
+                                    .build())
+                            .build())
+                    .build())
+            .versionRegex("v")
+            .build();
+    assertThatThrownBy(() -> garArtifactTaskHandler.getBuilds(garDelegateRequest))
+        .isInstanceOf(HintException.class)
+        .hasMessage("Google Artifact Registry: Could not get Bearer Token");
   }
 }
