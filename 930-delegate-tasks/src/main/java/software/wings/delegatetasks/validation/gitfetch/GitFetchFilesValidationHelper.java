@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package software.wings.delegatetasks.validation;
+package software.wings.delegatetasks.validation.gitfetch;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 

@@ -25,7 +25,7 @@ import io.harness.rule.Owner;
 import software.wings.WingsBaseTest;
 import software.wings.beans.Application;
 import software.wings.beans.ConfigFile;
-import software.wings.beans.ConfigFileDto;
+import software.wings.beans.configfile.ConfigFileDto;
 import software.wings.beans.EntityType;
 import software.wings.beans.Service;
 import software.wings.beans.infrastructure.Host;

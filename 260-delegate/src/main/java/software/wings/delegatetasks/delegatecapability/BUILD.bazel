@@ -1,0 +1,20 @@
+load("@rules_java//java:defs.bzl", "java_library")
+load("//:tools/bazel/macros.bzl", "run_analysis_per_module")
+
+java_library(
+    name = "module",
+    srcs = glob(["*.java"]),
+    visibility = ["//visibility:public"],
+    deps = [
+        "//930-delegate-tasks/src/main/java/io/harness/delegate/task/executioncapability:module",
+        "//930-delegate-tasks/src/main/java/software/wings/delegatetasks/validation:module",
+        "//950-delegate-tasks-beans:module",
+        "//980-commons:module",
+        "//999-annotations/src/main/java/io/harness/annotations/dev:module",
+        "//:lombok",
+        "@maven//:com_google_inject_guice",
+    ],
+)
+
+run_analysis_per_module()
+

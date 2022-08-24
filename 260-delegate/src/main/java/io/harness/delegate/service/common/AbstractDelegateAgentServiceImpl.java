@@ -79,7 +79,7 @@ public abstract class AbstractDelegateAgentServiceImpl implements DelegateAgentS
   @Inject @Getter(AccessLevel.PROTECTED) private HarnessMetricRegistry metricRegistry;
   @Inject @Getter(AccessLevel.PROTECTED) private Clock clock;
 
-  private final AtomicBoolean sentFirstHeartbeat = new AtomicBoolean(false);
+  protected final AtomicBoolean sentFirstHeartbeat = new AtomicBoolean(false);
   private final AtomicLong lastHeartbeatSentAt = new AtomicLong(System.currentTimeMillis());
   protected final AtomicBoolean closingSocket = new AtomicBoolean(false);
   protected final AtomicBoolean reconnectingSocket = new AtomicBoolean(false);

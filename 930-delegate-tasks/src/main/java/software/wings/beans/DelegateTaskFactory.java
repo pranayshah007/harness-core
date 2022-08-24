@@ -16,7 +16,7 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.DelegateTaskResponse;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
-import io.harness.delegate.task.DelegateRunnableTask;
+import io.harness.delegate.task.common.DelegateRunnableTask;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;

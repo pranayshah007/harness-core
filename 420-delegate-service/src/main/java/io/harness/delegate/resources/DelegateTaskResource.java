@@ -13,7 +13,7 @@ import static software.wings.security.PermissionAttribute.ResourceType.DELEGATE;
 
 import io.harness.delegate.beans.DelegateTaskResponse;
 import io.harness.delegate.task.DelegateLogContext;
-import io.harness.delegate.task.TaskLogContext;
+import io.harness.delegate.task.tasklogging.TaskLogContext;
 import io.harness.logging.AccountLogContext;
 import io.harness.logging.AutoLogContext;
 import io.harness.security.annotations.DelegateAuth;

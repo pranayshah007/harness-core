@@ -32,7 +32,6 @@ import static java.time.Duration.ofMinutes;
 import static java.time.Duration.ofSeconds;
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
-import static org.apache.commons.lang3.StringUtils.EMPTY;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
@@ -43,8 +42,6 @@ import io.harness.concurrent.HTimeLimiter;
 import io.harness.configuration.DeployMode;
 import io.harness.data.structure.NullSafeImmutableMap;
 import io.harness.delegate.DelegateAgentCommonVariables;
-import io.harness.delegate.DelegateServiceAgentClient;
-import io.harness.delegate.beans.Delegate;
 import io.harness.delegate.beans.DelegateConnectionHeartbeat;
 import io.harness.delegate.beans.DelegateInstanceStatus;
 import io.harness.delegate.beans.DelegateParams;
@@ -56,27 +53,19 @@ import io.harness.delegate.beans.DelegateTaskResponse;
 import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.delegate.beans.SecretDetail;
 import io.harness.delegate.beans.TaskData;
-import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.expression.DelegateExpressionEvaluator;
 import io.harness.delegate.logging.DelegateStackdriverLogAppender;
-import io.harness.delegate.service.common.DelegateTaskExecutionData;
 import io.harness.delegate.service.ExecutionConfigOverrideFromFileOnDelegate;
 import io.harness.delegate.service.common.AbstractDelegateAgentServiceImpl;
-import io.harness.delegate.task.AbstractDelegateRunnableTask;
+import io.harness.delegate.service.common.DelegateTaskExecutionData;
 import io.harness.delegate.task.ActivityAccess;
-import io.harness.delegate.task.Cd1ApplicationAccess;
-import io.harness.delegate.task.DelegateRunnableTask;
-import io.harness.delegate.task.TaskLogContext;
 import io.harness.delegate.task.TaskParameters;
+import io.harness.delegate.task.tasklogging.TaskLogContext;
 import io.harness.delegate.task.validation.DelegateConnectionResultDetail;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.UnexpectedException;
 import io.harness.expression.ExpressionReflectionUtils;
 import io.harness.logging.AutoLogContext;
-import io.harness.logstreaming.LogStreamingClient;
-import io.harness.logstreaming.LogStreamingHelper;
-import io.harness.logstreaming.LogStreamingSanitizer;
-import io.harness.logstreaming.LogStreamingTaskClient;
 import io.harness.network.FibonacciBackOff;
 import io.harness.rest.RestResponse;
 import io.harness.security.TokenGenerator;
@@ -84,17 +73,13 @@ import io.harness.security.encryption.DelegateDecryptionService;
 import io.harness.security.encryption.EncryptedRecord;
 import io.harness.security.encryption.EncryptionConfig;
 import io.harness.serializer.JsonUtils;
-import io.harness.serializer.KryoSerializer;
-import io.harness.taskprogress.TaskProgressClient;
 import io.harness.threading.Schedulable;
 
-import software.wings.beans.DelegateTaskFactory;
 import software.wings.beans.TaskType;
 import software.wings.beans.delegation.ShellScriptParameters;
 import software.wings.delegatetasks.ActivityBasedLogSanitizer;
-import software.wings.delegatetasks.DelegateLogService;
-import software.wings.delegatetasks.GenericLogSanitizer;
 import software.wings.delegatetasks.LogSanitizer;
+import software.wings.delegatetasks.ShellScriptTask;
 import software.wings.delegatetasks.delegatecapability.CapabilityCheckController;
 import software.wings.delegatetasks.validation.DelegateConnectionResult;
 import software.wings.delegatetasks.validation.DelegateValidateTask;
@@ -129,7 +114,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -139,9 +123,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import javax.annotation.Nullable;
 import javax.net.ssl.SSLException;
 import javax.validation.constraints.NotNull;
 import lombok.AccessLevel;
@@ -177,7 +159,6 @@ public class DelegatePlatformService extends AbstractDelegateAgentServiceImpl {
   private final AtomicInteger heartbeatSuccessCalls = new AtomicInteger();
   private final AtomicLong lastHeartbeatSentAt = new AtomicLong(System.currentTimeMillis());
   private final AtomicLong lastHeartbeatReceivedAt = new AtomicLong(System.currentTimeMillis());
-  private final AtomicBoolean sentFirstHeartbeat = new AtomicBoolean(false);
 
   private final AtomicInteger maxValidatingTasksCount = new AtomicInteger();
   private final AtomicInteger maxExecutingTasksCount = new AtomicInteger();
@@ -193,20 +174,22 @@ public class DelegatePlatformService extends AbstractDelegateAgentServiceImpl {
   //  @Inject @Named("inputExecutor") private ScheduledExecutorService inputExecutor;
   //  @Inject @Named("backgroundExecutor") private ExecutorService backgroundExecutor;
   //  @Inject @Named("taskPollExecutor") private ScheduledExecutorService taskPollExecutor;
+  //  @Inject @Named("taskProgressExecutor") private ExecutorService taskProgressExecutor;
+  //  @Inject @Named("grpcServiceExecutor") private ExecutorService grpcServiceExecutor;
   @Inject @Named("taskExecutor") private ThreadPoolExecutor taskExecutor;
   @Inject @Named("timeoutExecutor") private ThreadPoolExecutor timeoutEnforcement;
-  @Inject @Named("grpcServiceExecutor") private ExecutorService grpcServiceExecutor;
-  @Inject @Named("taskProgressExecutor") private ExecutorService taskProgressExecutor;
 
   @Inject private Injector injector;
-  @Inject private DelegateTaskFactory delegateTaskFactory;
-  @Inject private DelegateLogService delegateLogService;
-  @Inject(optional = true) @Nullable private LogStreamingClient logStreamingClient;
-  @Inject(optional = true) @Nullable private DelegateServiceAgentClient delegateServiceAgentClient;
+  //  @Inject private DelegateTaskFactory delegateTaskFactory;
+  // FIXME DelegateLogService and coresponding fields are needed for streaming logs to UI, but is an optional feature
+  // and has heavy deps to 930-tasks and other big modules. Disabling in interest of time
+  //  @Inject private DelegateLogService delegateLogService;
+  //  @Inject(optional = true) @Nullable private LogStreamingClient logStreamingClient;
+  //  @Inject(optional = true) @Nullable private DelegateServiceAgentClient delegateServiceAgentClient;
+  //  @Inject private KryoSerializer kryoSerializer;
   @Inject private DelegateDecryptionService delegateDecryptionService;
   @Inject private AsyncHttpClient asyncHttpClient;
   @Inject private TokenGenerator tokenGenerator;
-  @Inject private KryoSerializer kryoSerializer;
   @Inject private ExecutionConfigOverrideFromFileOnDelegate delegateLocalConfigService;
 
   private TimeLimiter delegateHealthTimeLimiter;
@@ -389,12 +372,13 @@ public class DelegatePlatformService extends AbstractDelegateAgentServiceImpl {
       log.info("Manager Authority:{}, Manager Target:{}", getDelegateConfiguration().getManagerAuthority(),
           getDelegateConfiguration().getManagerTarget());
 
-      if (delegateLocalConfigService.isLocalConfigPresent()) {
-        Map<String, String> localSecrets = delegateLocalConfigService.getLocalDelegateSecrets();
-        if (isNotEmpty(localSecrets)) {
-          delegateLogService.registerLogSanitizer(new GenericLogSanitizer(new HashSet<>(localSecrets.values())));
-        }
-      }
+      //      if (delegateLocalConfigService.isLocalConfigPresent()) {
+      //        Map<String, String> localSecrets = delegateLocalConfigService.getLocalDelegateSecrets();
+      //        if (isNotEmpty(localSecrets)) {
+      //          delegateLogService.registerLogSanitizer(new GenericLogSanitizer(new
+      //          HashSet<>(localSecrets.values())));
+      //        }
+      //      }
     } catch (RuntimeException | IOException e) {
       log.error("Exception while starting/running delegate", e);
     }
@@ -552,7 +536,7 @@ public class DelegatePlatformService extends AbstractDelegateAgentServiceImpl {
         if (socket.status() == Socket.STATUS.OPEN || socket.status() == Socket.STATUS.REOPENED) {
           log.debug("Sending heartbeat...");
           HTimeLimiter.callInterruptible21(
-              delegateHealthTimeLimiter, Duration.ofSeconds(15), () -> socket.fire(JsonUtils.asJson(delegateParams)));
+              delegateHealthTimeLimiter, Duration.ofSeconds(15), () -> socket.fire(delegateParams));
 
         } else {
           log.warn("Socket is not open, status: {}", socket.status().toString());
@@ -667,9 +651,9 @@ public class DelegatePlatformService extends AbstractDelegateAgentServiceImpl {
       final RequestBuilder requestBuilder = client.newRequestBuilder().method(Request.METHOD.GET).uri(uri.toString());
 
       requestBuilder
-          .encoder(new Encoder<Delegate, Reader>() { // Do not change this, wasync doesn't like lambdas
+          .encoder(new Encoder<DelegateParams, Reader>() { // Do not change this, wasync doesn't like lambdas
             @Override
-            public Reader encode(Delegate s) {
+            public Reader encode(final DelegateParams s) {
               return new StringReader(JsonUtils.asJson(s));
             }
           })
@@ -1013,22 +997,30 @@ public class DelegatePlatformService extends AbstractDelegateAgentServiceImpl {
         taskData.getTaskType());
     Pair<String, Set<String>> activitySecrets = obtainActivitySecrets(delegateTaskPackage);
     Optional<LogSanitizer> sanitizer = getLogSanitizer(activitySecrets);
-    ILogStreamingTaskClient logStreamingTaskClient = getLogStreamingTaskClient(activitySecrets, delegateTaskPackage);
+    //    ILogStreamingTaskClient logStreamingTaskClient = getLogStreamingTaskClient(activitySecrets,
+    //    delegateTaskPackage);
     // At the moment used to download and render terraform json plan file and keep track of the download tf plans
     // so we can clean up at the end of the task. Expected mainly to be used in Shell Script Task
     // but not limited to usage in other tasks
-    DelegateExpressionEvaluator delegateExpressionEvaluator = new DelegateExpressionEvaluator(
-        injector, delegateTaskPackage.getAccountId(), delegateTaskPackage.getData().getExpressionFunctorToken());
-    applyDelegateExpressionEvaluator(delegateTaskPackage, delegateExpressionEvaluator);
+    //    DelegateExpressionEvaluator delegateExpressionEvaluator = new DelegateExpressionEvaluator(
+    //        injector, delegateTaskPackage.getAccountId(), delegateTaskPackage.getData().getExpressionFunctorToken());
+    //    applyDelegateExpressionEvaluator(delegateTaskPackage, delegateExpressionEvaluator);
 
-    DelegateRunnableTask delegateRunnableTask = delegateTaskFactory.getDelegateRunnableTask(
-        TaskType.valueOf(taskData.getTaskType()), delegateTaskPackage, logStreamingTaskClient,
-        getPostExecutionFunction(delegateTaskPackage.getDelegateTaskId(), sanitizer.orElse(null),
-            logStreamingTaskClient, delegateExpressionEvaluator),
-        getPreExecutionFunction(delegateTaskPackage, sanitizer.orElse(null), logStreamingTaskClient));
-    if (delegateRunnableTask instanceof AbstractDelegateRunnableTask) {
-      ((AbstractDelegateRunnableTask) delegateRunnableTask).setDelegateHostname(HOST_NAME);
+    final TaskType taskType = TaskType.valueOf(taskData.getTaskType());
+    if (taskType != SCRIPT) { // TODO: Add support for SCRIPT_NG
+      throw new IllegalArgumentException("PlatformDelegate can only take shel script tasks");
     }
+
+    final BooleanSupplier preExecutionFunction = getPreExecutionFunction(delegateTaskPackage);
+    final Consumer<DelegateTaskResponse> postExecutionFunction =
+        getPostExecutionFunction(delegateTaskPackage.getDelegateTaskId());
+
+    //    DelegateRunnableTask delegateRunnableTask = delegateTaskFactory.getDelegateRunnableTask(
+    //        taskType, delegateTaskPackage, logStreamingTaskClient, postExecutionFunction, preExecutionFunction);
+    final ShellScriptTask delegateRunnableTask =
+        new ShellScriptTask(delegateTaskPackage, null, postExecutionFunction, preExecutionFunction);
+
+    //    ((AbstractDelegateRunnableTask) delegateRunnableTask).setDelegateHostname(HOST_NAME);
     injector.injectMembers(delegateRunnableTask);
     currentlyExecutingFutures.get(delegateTaskPackage.getDelegateTaskId()).setExecutionStartTime(getClock().millis());
 
@@ -1139,25 +1131,24 @@ public class DelegatePlatformService extends AbstractDelegateAgentServiceImpl {
     return secrets;
   }
 
-  private BooleanSupplier getPreExecutionFunction(@NotNull DelegateTaskPackage delegateTaskPackage,
-      LogSanitizer sanitizer, ILogStreamingTaskClient logStreamingTaskClient) {
+  private BooleanSupplier getPreExecutionFunction(@NotNull DelegateTaskPackage delegateTaskPackage) {
     return () -> {
-      if (logStreamingTaskClient != null) {
-        try {
-          // Opens the log stream for task
-          logStreamingTaskClient.openStream(null);
-        } catch (Exception ex) {
-          log.error("Unexpected error occurred while opening the log stream.");
-        }
-      }
+      //      if (logStreamingTaskClient != null) {
+      //        try {
+      //          // Opens the log stream for task
+      //          logStreamingTaskClient.openStream(null);
+      //        } catch (Exception ex) {
+      //          log.error("Unexpected error occurred while opening the log stream.");
+      //        }
+      //      }
 
       if (!currentlyExecutingTasks.containsKey(delegateTaskPackage.getDelegateTaskId())) {
         log.debug("Adding task to executing tasks");
         currentlyExecutingTasks.put(delegateTaskPackage.getDelegateTaskId(), delegateTaskPackage);
         updateCounterIfLessThanCurrent(maxExecutingTasksCount, currentlyExecutingTasks.size());
-        if (sanitizer != null) {
-          delegateLogService.registerLogSanitizer(sanitizer);
-        }
+        //        if (sanitizer != null) {
+        //          delegateLogService.registerLogSanitizer(sanitizer);
+        //        }
         return true;
       } else {
         // We should have already checked this before acquiring this task. If we here, than we
@@ -1168,17 +1159,16 @@ public class DelegatePlatformService extends AbstractDelegateAgentServiceImpl {
     };
   }
 
-  private Consumer<DelegateTaskResponse> getPostExecutionFunction(String taskId, LogSanitizer sanitizer,
-      ILogStreamingTaskClient logStreamingTaskClient, DelegateExpressionEvaluator delegateExpressionEvaluator) {
+  private Consumer<DelegateTaskResponse> getPostExecutionFunction(String taskId) {
     return taskResponse -> {
-      if (logStreamingTaskClient != null) {
-        try {
-          // Closes the log stream for the task
-          logStreamingTaskClient.closeStream(null);
-        } catch (Exception ex) {
-          log.error("Unexpected error occurred while closing the log stream.");
-        }
-      }
+      //      if (logStreamingTaskClient != null) {
+      //        try {
+      //          // Closes the log stream for the task
+      //          logStreamingTaskClient.closeStream(null);
+      //        } catch (Exception ex) {
+      //          log.error("Unexpected error occurred while closing the log stream.");
+      //        }
+      //      }
 
       Response<ResponseBody> response = null;
       try {
@@ -1203,13 +1193,10 @@ public class DelegatePlatformService extends AbstractDelegateAgentServiceImpl {
       } catch (Exception e) {
         log.error("Unable to send response to manager", e);
       } finally {
-        if (sanitizer != null) {
-          delegateLogService.unregisterLogSanitizer(sanitizer);
-        }
+        //        if (sanitizer != null) {
+        //          delegateLogService.unregisterLogSanitizer(sanitizer);
+        //        }
 
-        if (delegateExpressionEvaluator != null) {
-          delegateExpressionEvaluator.cleanup();
-        }
         currentlyExecutingTasks.remove(taskId);
         if (currentlyExecutingFutures.remove(taskId) != null) {
           log.debug("Removed from executing futures on post execution");
@@ -1264,68 +1251,68 @@ public class DelegatePlatformService extends AbstractDelegateAgentServiceImpl {
     }
   }
 
-  private ILogStreamingTaskClient getLogStreamingTaskClient(
-      Pair<String, Set<String>> activitySecrets, DelegateTaskPackage delegateTaskPackage) {
-    boolean logStreamingConfigPresent = false;
-    boolean logCallbackConfigPresent = false;
-    String appId = null;
-    String activityId = null;
-
-    if (logStreamingClient != null && !isBlank(delegateTaskPackage.getLogStreamingToken())
-        && !isEmpty(delegateTaskPackage.getLogStreamingAbstractions())) {
-      logStreamingConfigPresent = true;
-    }
-
-    // Extract appId and activityId from task params, in case LogCallback logging has to be used for backward
-    // compatibility reasons
-    Object[] taskParameters = delegateTaskPackage.getData().getParameters();
-    if (taskParameters != null && taskParameters.length == 1 && taskParameters[0] instanceof Cd1ApplicationAccess
-        && taskParameters[0] instanceof ActivityAccess) {
-      Cd1ApplicationAccess applicationAccess = (Cd1ApplicationAccess) taskParameters[0];
-      appId = applicationAccess.getAppId();
-
-      ActivityAccess activityAccess = (ActivityAccess) taskParameters[0];
-      activityId = activityAccess.getActivityId();
-    }
-
-    if (!isBlank(appId) && !isBlank(activityId)) {
-      logCallbackConfigPresent = true;
-    }
-
-    if (!logStreamingConfigPresent && !logCallbackConfigPresent) {
-      return null;
-    }
-    String logBaseKey = delegateTaskPackage.getLogStreamingAbstractions() != null
-        ? LogStreamingHelper.generateLogBaseKey(delegateTaskPackage.getLogStreamingAbstractions())
-        : EMPTY;
-
-    LogStreamingTaskClient.LogStreamingTaskClientBuilder taskClientBuilder =
-        LogStreamingTaskClient.builder()
-            .logStreamingClient(logStreamingClient)
-            .accountId(delegateTaskPackage.getAccountId())
-            .token(delegateTaskPackage.getLogStreamingToken())
-            .logStreamingSanitizer(
-                LogStreamingSanitizer.builder()
-                    .secrets(activitySecrets.getRight().stream().map(String::trim).collect(Collectors.toSet()))
-                    .build())
-            .baseLogKey(logBaseKey)
-            .logService(delegateLogService)
-            .taskProgressExecutor(taskProgressExecutor)
-            .appId(appId)
-            .activityId(activityId);
-
-    if (isNotBlank(delegateTaskPackage.getDelegateCallbackToken()) && delegateServiceAgentClient != null) {
-      taskClientBuilder.taskProgressClient(TaskProgressClient.builder()
-                                               .accountId(delegateTaskPackage.getAccountId())
-                                               .taskId(delegateTaskPackage.getDelegateTaskId())
-                                               .delegateCallbackToken(delegateTaskPackage.getDelegateCallbackToken())
-                                               .delegateServiceAgentClient(delegateServiceAgentClient)
-                                               .kryoSerializer(kryoSerializer)
-                                               .build());
-    }
-
-    return taskClientBuilder.build();
-  }
+  //  private ILogStreamingTaskClient getLogStreamingTaskClient(
+  //      Pair<String, Set<String>> activitySecrets, DelegateTaskPackage delegateTaskPackage) {
+  //    boolean logStreamingConfigPresent = false;
+  //    boolean logCallbackConfigPresent = false;
+  //    String appId = null;
+  //    String activityId = null;
+  //
+  //    if (logStreamingClient != null && !isBlank(delegateTaskPackage.getLogStreamingToken())
+  //        && !isEmpty(delegateTaskPackage.getLogStreamingAbstractions())) {
+  //      logStreamingConfigPresent = true;
+  //    }
+  //
+  //    // Extract appId and activityId from task params, in case LogCallback logging has to be used for backward
+  //    // compatibility reasons
+  //    Object[] taskParameters = delegateTaskPackage.getData().getParameters();
+  //    if (taskParameters != null && taskParameters.length == 1 && taskParameters[0] instanceof Cd1ApplicationAccess
+  //        && taskParameters[0] instanceof ActivityAccess) {
+  //      Cd1ApplicationAccess applicationAccess = (Cd1ApplicationAccess) taskParameters[0];
+  //      appId = applicationAccess.getAppId();
+  //
+  //      ActivityAccess activityAccess = (ActivityAccess) taskParameters[0];
+  //      activityId = activityAccess.getActivityId();
+  //    }
+  //
+  //    if (!isBlank(appId) && !isBlank(activityId)) {
+  //      logCallbackConfigPresent = true;
+  //    }
+  //
+  //    if (!logStreamingConfigPresent && !logCallbackConfigPresent) {
+  //      return null;
+  //    }
+  //    String logBaseKey = delegateTaskPackage.getLogStreamingAbstractions() != null
+  //        ? LogStreamingHelper.generateLogBaseKey(delegateTaskPackage.getLogStreamingAbstractions())
+  //        : EMPTY;
+  //
+  //    LogStreamingTaskClient.LogStreamingTaskClientBuilder taskClientBuilder =
+  //        LogStreamingTaskClient.builder()
+  //            .logStreamingClient(logStreamingClient)
+  //            .accountId(delegateTaskPackage.getAccountId())
+  //            .token(delegateTaskPackage.getLogStreamingToken())
+  //            .logStreamingSanitizer(
+  //                LogStreamingSanitizer.builder()
+  //                    .secrets(activitySecrets.getRight().stream().map(String::trim).collect(Collectors.toSet()))
+  //                    .build())
+  //            .baseLogKey(logBaseKey)
+  //            .logService(delegateLogService)
+  //            .taskProgressExecutor(taskProgressExecutor)
+  //            .appId(appId)
+  //            .activityId(activityId);
+  //
+  //    if (isNotBlank(delegateTaskPackage.getDelegateCallbackToken()) && delegateServiceAgentClient != null) {
+  //      taskClientBuilder.taskProgressClient(TaskProgressClient.builder()
+  //                                               .accountId(delegateTaskPackage.getAccountId())
+  //                                               .taskId(delegateTaskPackage.getDelegateTaskId())
+  //                                               .delegateCallbackToken(delegateTaskPackage.getDelegateCallbackToken())
+  //                                               .delegateServiceAgentClient(delegateServiceAgentClient)
+  //                                               .kryoSerializer(kryoSerializer)
+  //                                               .build());
+  //    }
+  //
+  //    return taskClientBuilder.build();
+  //  }
 
   @VisibleForTesting
   void applyDelegateSecretFunctor(DelegateTaskPackage delegateTaskPackage) {

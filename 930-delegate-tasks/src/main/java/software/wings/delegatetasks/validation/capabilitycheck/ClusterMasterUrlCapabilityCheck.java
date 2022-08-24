@@ -14,7 +14,7 @@ import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.task.executioncapability.CapabilityCheck;
 import io.harness.network.Http;
 
-import software.wings.delegatetasks.validation.ContainerValidationHelper;
+import software.wings.delegatetasks.validation.container.ContainerValidationHelper;
 import software.wings.delegatetasks.validation.capabilities.ClusterMasterUrlValidationCapability;
 
 import com.google.inject.Inject;

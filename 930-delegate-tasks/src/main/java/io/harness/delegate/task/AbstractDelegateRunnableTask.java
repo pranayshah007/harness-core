@@ -29,6 +29,8 @@ import io.harness.delegate.beans.ThirdPartyApiCallLogDetails;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.exception.DelegateRetryableException;
 import io.harness.delegate.exceptionhandler.DelegateExceptionManager;
+import io.harness.delegate.task.common.DelegateRunnableTask;
+import io.harness.delegate.task.tasklogging.TaskLogContext;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.FailureType;
 import io.harness.globalcontex.ErrorHandlingGlobalContextData;
@@ -82,7 +84,7 @@ public abstract class AbstractDelegateRunnableTask implements DelegateRunnableTa
   @Override
   @SuppressWarnings("PMD")
   public void run() {
-    try (TaskLogContext ignore = new TaskLogContext(this.taskId, OVERRIDE_ERROR);
+    try (io.harness.delegate.task.tasklogging.TaskLogContext ignore = new TaskLogContext(this.taskId, OVERRIDE_ERROR);
          AccountLogContext ignore2 = new AccountLogContext(this.accountId, OVERRIDE_ERROR)) {
       runDelegateTask();
     } catch (Throwable e) {

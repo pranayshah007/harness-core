@@ -7,7 +7,7 @@
 
 package io.harness.delegate.app.modules.platform;
 
-import io.harness.delegate.task.DelegateRunnableTask;
+import io.harness.delegate.task.common.DelegateRunnableTask;
 
 import software.wings.beans.TaskType;
 import software.wings.delegatetasks.ShellScriptTask;
