@@ -1,7 +1,6 @@
 package io.harness.artifacts.gar.service;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
-import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.USER;
 
 import static java.util.stream.Collectors.toList;
@@ -10,26 +9,18 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.artifact.ArtifactMetadataKeys;
 import io.harness.artifacts.beans.BuildDetailsInternal;
 import io.harness.artifacts.comparator.BuildDetailsInternalComparatorDescending;
-import io.harness.artifacts.docker.service.DockerRegistryUtils;
 import io.harness.artifacts.gar.GarRestClient;
 import io.harness.artifacts.gar.beans.GarInternalConfig;
 import io.harness.artifacts.gar.beans.GarPackageVersionResponse;
 import io.harness.artifacts.gar.beans.GarTags;
-import io.harness.artifacts.gcr.service.GcrApiServiceImpl;
 import io.harness.data.structure.EmptyPredicate;
-import io.harness.eraro.ErrorCode;
 import io.harness.exception.ArtifactServerException;
 import io.harness.exception.ExceptionUtils;
-import io.harness.exception.GcpServerException;
 import io.harness.exception.InvalidArtifactServerException;
 import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.WingsException;
-import io.harness.exception.runtime.GcrImageNotFoundRuntimeException;
 import io.harness.expression.RegexFunctor;
-import io.harness.globalcontex.ErrorHandlingGlobalContextData;
-import io.harness.manage.GlobalContextManager;
 import io.harness.network.Http;
-import io.harness.serializer.JsonUtils;
 
 import com.google.inject.Singleton;
 import java.io.IOException;

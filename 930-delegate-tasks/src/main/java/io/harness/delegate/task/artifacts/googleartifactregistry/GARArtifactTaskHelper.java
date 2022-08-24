@@ -11,7 +11,6 @@ import io.harness.delegate.task.artifacts.response.ArtifactTaskResponse;
 import io.harness.eraro.ErrorCode;
 import io.harness.exception.WingsException;
 import io.harness.exception.exceptionmanager.exceptionhandler.ExceptionMetadataKeys;
-import io.harness.exception.runtime.DockerHubServerRuntimeException;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.manage.GlobalContextManager;
