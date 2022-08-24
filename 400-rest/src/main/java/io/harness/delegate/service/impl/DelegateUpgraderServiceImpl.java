@@ -19,6 +19,7 @@ import io.harness.persistence.HPersistence;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.util.List;
 import javax.validation.executable.ValidateOnExecution;
 import lombok.extern.slf4j.Slf4j;
 
@@ -41,6 +42,14 @@ public class DelegateUpgraderServiceImpl implements DelegateUpgraderService {
       String accountId, String currentDelegateImageTag, String delegateGroupName) {
     String newDelegateImageTag = delegateVersionService.getImmutableDelegateImageTag(accountId);
     updateDelegateUpgrader(accountId, delegateGroupName);
+    log.info("Updated delegate upgrader status in db, delegateName : {}", delegateGroupName);
+    List<DelegateGroup> delegateGroupList = persistence.createQuery(DelegateGroup.class)
+                                                .filter(DelegateGroupKeys.name, delegateGroupName)
+                                                .project(DelegateGroupKeys.upgraderLastUpdated, true)
+                                                .project(DelegateGroupKeys.name, true)
+                                                .asList();
+    log.info("upgrader info about saved group, delegateName {} upgraderLastUpdated: {}",
+        delegateGroupList.get(0).getName(), delegateGroupList.get(0).getUpgraderLastUpdated());
     final boolean shouldUpgrade = !currentDelegateImageTag.equals(newDelegateImageTag);
     return new UpgradeCheckResult(shouldUpgrade ? newDelegateImageTag : currentDelegateImageTag, shouldUpgrade);
   }
