@@ -8,7 +8,6 @@
 package io.harness.engine.interrupts;
 
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
-import static io.harness.interrupts.Interrupt.State.PROCESSED_SUCCESSFULLY;
 import static io.harness.interrupts.Interrupt.State.PROCESSED_UNSUCCESSFULLY;
 import static io.harness.rule.OwnerRule.PRASHANT;
 
