@@ -9,6 +9,7 @@ import io.harness.delegate.task.artifacts.request.ArtifactTaskParameters;
 import io.harness.delegate.task.artifacts.response.ArtifactTaskExecutionResponse;
 import io.harness.delegate.task.artifacts.response.ArtifactTaskResponse;
 import io.harness.eraro.ErrorCode;
+import io.harness.exception.WingsException;
 import io.harness.exception.exceptionmanager.exceptionhandler.ExceptionMetadataKeys;
 import io.harness.exception.runtime.DockerHubServerRuntimeException;
 import io.harness.logging.CommandExecutionStatus;
@@ -70,7 +71,7 @@ public class GARArtifactTaskHelper {
               .errorCode(ErrorCode.INVALID_ARGUMENT)
               .build();
       }
-    } catch (DockerHubServerRuntimeException ex) {
+    } catch (WingsException ex) {
       if (GlobalContextManager.get(MdcGlobalContextData.MDC_ID) == null) {
         MdcGlobalContextData mdcGlobalContextData = MdcGlobalContextData.builder().map(new HashMap<>()).build();
         GlobalContextManager.upsertGlobalContextRecord(mdcGlobalContextData);
