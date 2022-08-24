@@ -98,6 +98,7 @@ public class CEMailer {
 
       for (String to : emailData.getTo()) {
         email.addBcc(to);
+        email.addTo(to);
       }
 
       if (emailData.getCc() != null) {
