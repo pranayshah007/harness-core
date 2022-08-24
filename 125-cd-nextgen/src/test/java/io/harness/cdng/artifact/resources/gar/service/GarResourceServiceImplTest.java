@@ -3,6 +3,7 @@ package io.harness.cdng.artifact.resources.gar.service;
 import static io.harness.rule.OwnerRule.vivekveman;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -18,6 +19,8 @@ import io.harness.cdng.artifact.resources.googleartifactregistry.service.GARReso
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.services.ConnectorService;
+import io.harness.delegate.beans.ErrorNotifyResponseData;
+import io.harness.delegate.beans.RemoteMethodReturnValueData;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.gcpconnector.GcpConnectorCredentialDTO;
 import io.harness.delegate.beans.connector.gcpconnector.GcpConnectorDTO;
@@ -25,6 +28,9 @@ import io.harness.delegate.task.artifacts.ArtifactTaskType;
 import io.harness.delegate.task.artifacts.request.ArtifactTaskParameters;
 import io.harness.delegate.task.artifacts.response.ArtifactTaskExecutionResponse;
 import io.harness.delegate.task.artifacts.response.ArtifactTaskResponse;
+import io.harness.exception.ArtifactServerException;
+import io.harness.exception.InvalidAccessRequestException;
+import io.harness.exception.InvalidRequestException;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.rule.Owner;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
@@ -110,5 +116,59 @@ public class GarResourceServiceImplTest extends CategoryTest {
     DelegateTaskRequest delegateTaskRequest = delegateTaskRequestCaptor.getValue();
     ArtifactTaskParameters artifactTaskParameters = (ArtifactTaskParameters) delegateTaskRequest.getTaskParameters();
     assertThat(artifactTaskParameters.getArtifactTaskType()).isEqualTo(ArtifactTaskType.GET_BUILDS);
+  }
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void testErrorNotifyResponseDataException() {
+    IdentifierRef connectorRef = IdentifierRef.builder()
+                                     .accountIdentifier(ACCOUNT_ID)
+                                     .identifier("identifier")
+                                     .projectIdentifier(PROJECT_IDENTIFIER)
+                                     .orgIdentifier(ORG_IDENTIFIER)
+                                     .build();
+    ConnectorResponseDTO connectorResponse = getConnector();
+    when(connectorService.get(ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER, "identifier"))
+        .thenReturn(Optional.of(connectorResponse));
+    EncryptedDataDetail encryptedDataDetail = EncryptedDataDetail.builder().build();
+    when(secretManagerClientService.getEncryptionDetails(any(), any()))
+        .thenReturn(Lists.newArrayList(encryptedDataDetail));
+    when(delegateGrpcClientWrapper.executeSyncTask(any()))
+        .thenReturn(ErrorNotifyResponseData.builder().errorMessage("Testing").build());
+
+    assertThatThrownBy(()
+                           -> garResourceService.getBuildDetails(connectorRef, REGION, repositoryName, project, pkg,
+                               version, "", ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+        .isInstanceOf(ArtifactServerException.class)
+        .hasMessage("Google Artifact Registry Get Builds task failure due to error - Testing");
+  }
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void testRemoteMethodReturnValueData() {
+    IdentifierRef connectorRef = IdentifierRef.builder()
+                                     .accountIdentifier(ACCOUNT_ID)
+                                     .identifier("identifier")
+                                     .projectIdentifier(PROJECT_IDENTIFIER)
+                                     .orgIdentifier(ORG_IDENTIFIER)
+                                     .build();
+    ConnectorResponseDTO connectorResponse = getConnector();
+    when(connectorService.get(ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER, "identifier"))
+        .thenReturn(Optional.of(connectorResponse));
+    EncryptedDataDetail encryptedDataDetail = EncryptedDataDetail.builder().build();
+    when(secretManagerClientService.getEncryptionDetails(any(), any()))
+        .thenReturn(Lists.newArrayList(encryptedDataDetail));
+    Object obj = new Object();
+    when(delegateGrpcClientWrapper.executeSyncTask(any()))
+        .thenReturn(RemoteMethodReturnValueData.builder()
+                        .exception(InvalidRequestException.builder().message("Testing").build())
+                        .returnValue(obj)
+                        .build());
+
+    assertThatThrownBy(()
+                           -> garResourceService.getBuildDetails(connectorRef, REGION, repositoryName, project, pkg,
+                               version, "", ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+        .isInstanceOf(ArtifactServerException.class)
+        .hasMessage("Unexpected error during authentication to Google Artifact Registry server " + obj);
   }
 }
