@@ -400,9 +400,9 @@ featureFlagConfig:
 enableDashboardTimescale: false
 
 timescaledb:
-  timescaledbUrl: ""
-  timescaledbUsername: ""
-  timescaledbPassword: ""
+  timescaledbUrl: "jdbc:postgresql://34.83.25.129:5432/harnessdev"
+  timescaledbUsername: "harnessappdev"
+  timescaledbPassword: "harnessappdev"
   connectTimeout: 10
   socketTimeout: 30
   logUnclosedConnections: false
