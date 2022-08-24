@@ -425,6 +425,7 @@ cacheConfig:
   cacheNamespace: ""
   disabledCaches: [ ]
   enterpriseCacheEnabled: true
+
 scopeAccessCheckEnabled: true
 
 hostname: ${HOSTNAME:-localhost}
