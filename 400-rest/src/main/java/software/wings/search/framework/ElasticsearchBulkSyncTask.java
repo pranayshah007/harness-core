@@ -37,6 +37,7 @@ import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.mongodb.morphia.query.Query;
 import org.mongodb.morphia.query.UpdateOperations;
+import software.wings.timescale.migrations.DeploymentsMigrationHelper;
 
 /**
  * The task responsible for carrying out the bulk sync
@@ -57,6 +58,9 @@ public class ElasticsearchBulkSyncTask {
   @Inject private FeatureFlagService featureFlagService;
   private Queue<ChangeEvent<?>> changeEventsDuringBulkSync;
   private Map<Class, Boolean> isFirstChangeReceived;
+
+  @Inject
+  private DeploymentsMigrationHelper deploymentsMigrationHelper;
 
   private void cleanupFailedBulkMigrationJobs() {
     try (HIterator<ElasticsearchBulkMigrationJob> iterator =
@@ -180,6 +184,7 @@ public class ElasticsearchBulkSyncTask {
     List<String> accountIds =
         featureFlagService.getAccountIds(FeatureName.TIME_SCALE_CG_SYNC).stream().collect(Collectors.toList());
 
+    boolean deploymentTimescaleMigrated = false;
     for (TimeScaleEntity timeScaleEntity : entitiesToMigrate) {
       log.info("Migrating {} to timescale", timeScaleEntity.getClass().getCanonicalName());
 
@@ -205,6 +210,11 @@ public class ElasticsearchBulkSyncTask {
       int n = 0;
       if (toMigrateAccountIds != null) {
         n = toMigrateAccountIds.size();
+      }
+      if(!deploymentTimescaleMigrated) {
+        deploymentsMigrationHelper.setFailureDetailsForAccountIds(toMigrateAccountIds, "EXECUTION_FAILURE_TIMESCALE MIGRATION: ", 500, "UPDATE DEPLOYMENT SET FAILURE_DETAILS=?,FAILED_STEP_NAMES=?,FAILED_STEP_TYPES=? WHERE EXECUTIONID=?");
+        deploymentsMigrationHelper.setParentPipelineForAccountIds(toMigrateAccountIds, "PARENT_PIPELINE_TIMESCALE MIGRATION: ", 1000, "UPDATE DEPLOYMENT SET PARENT_PIPELINE_ID=?, WORKFLOWS=?, CREATED_BY_TYPE=? WHERE EXECUTIONID=?");
+        deploymentTimescaleMigrated = true;
       }
       for (int i = 0; i < n; i++) {
         String accountId = toMigrateAccountIds.get(0);
