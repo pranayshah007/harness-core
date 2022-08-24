@@ -38,8 +38,10 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.ExecutionInterruptType;
 import io.harness.beans.ExecutionStatus;
+import io.harness.beans.FeatureName;
 import io.harness.beans.RepairActionCode;
 import io.harness.category.element.UnitTests;
+import io.harness.ff.FeatureFlagService;
 import io.harness.iterator.PersistenceIteratorFactory;
 import io.harness.mongo.iterator.MongoPersistenceIterator;
 import io.harness.mongo.iterator.MongoPersistenceIterator.MongoPersistenceIteratorBuilder;
@@ -79,6 +81,7 @@ public class WorkflowExecutionMonitorHandlerTest extends WingsBaseTest {
   @Mock private ExecutionInterruptManager executionInterruptManager;
   @Mock private StateMachineExecutor stateMachineExecutor;
   @Mock private WorkflowExecutionZombieHandler zombieHandler;
+  @Mock private FeatureFlagService featureFlagService;
 
   @Inject private HPersistence persistence;
   @Inject @InjectMocks private WorkflowExecutionMonitorHandler workflowExecutionMonitorHandler;
@@ -276,6 +279,7 @@ public class WorkflowExecutionMonitorHandlerTest extends WingsBaseTest {
     StateExecutionInstance startingStateExecutionInstance = createStartingJiraStateExecutionInstance();
     ArgumentCaptor<ExecutionInterrupt> executionInterruptArgumentCaptor =
         ArgumentCaptor.forClass(ExecutionInterrupt.class);
+    when(featureFlagService.isEnabled(eq(FeatureName.ENABLE_CHECK_STATE_EXECUTION_STARTING), any())).thenReturn(true);
     workflowExecutionMonitorHandler.handle(workflowExecution);
     verify(executionInterruptManager, times(1)).registerExecutionInterrupt(executionInterruptArgumentCaptor.capture());
     ExecutionInterrupt executionInterrupt = executionInterruptArgumentCaptor.getValue();

@@ -1578,6 +1578,9 @@
 19810:io.harness.delegate.beans.connector.azureconnector.AzureMSIAuthUADTO
 19811:io.harness.delegate.beans.connector.azureconnector.AzureMSIAuthSADTO
 19854:io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectionTypeDTO
+19875:io.harness.delegate.beans.connector.customsecretmanager.CustomSecretManagerConnectorDTO
+19876:io.harness.delegate.beans.connector.customsecretmanager.CustomSecretManagerValidationParams
+19877:io.harness.delegate.beans.connector.customsecretmanager.TemplateLinkConfigForCustomSecretManager
 20001:io.harness.delegate.task.shell.ShellScriptApprovalTaskParameters
 20002:io.harness.delegate.task.http.HttpTaskParameters
 20100:io.harness.ng.core.environment.beans.EnvironmentType
@@ -1660,6 +1663,7 @@
 40099:software.wings.beans.SlackConfig
 40100:software.wings.beans.ce.CEAzureConfig
 40113:com.amazonaws.services.cloudformation.model.StackStatus
+40114:software.wings.beans.CustomSecretNGManagerConfig
 50002:software.wings.api.RancherClusterElement
 50004:software.wings.delegatetasks.rancher.RancherResolveClustersTaskParameters
 50005:software.wings.delegatetasks.rancher.RancherResolveClustersResponse
@@ -1858,6 +1862,10 @@
 150021:io.harness.delegatetasks.NGVaultRenewalAppRoleTaskResponse
 150022:io.harness.delegatetasks.NGAzureKeyVaultFetchEngineTaskParameters
 150023:io.harness.delegatetasks.NGAzureKeyVaultFetchEngineResponse
+150024:io.harness.delegatetasks.ValidateCustomSecretManagerSecretReferenceTaskResponse
+150025:io.harness.delegatetasks.ValidateCustomSecretManagerSecretReferenceTaskParameters
+150026:io.harness.delegatetasks.FetchCustomSecretTaskResponse
+150027:io.harness.delegatetasks.FetchCustomSecretTaskParameters
 193418:io.harness.delegate.beans.ci.pod.ConnectorDetails
 400101:software.wings.beans.ce.CEAwsConfig
 400102:software.wings.beans.ce.CEGcpConfig
@@ -2273,3 +2281,5 @@
 9800001:io.harness.beans.RecasterMap
 9800002:io.harness.licensing.beans.modules.ChaosModuleLicenseDTO
 9800003:io.harness.delegate.task.ssh.artifact.JenkinsArtifactDelegateConfig
+9800004:io.harness.delegate.task.ssh.artifact.SkipCopyArtifactDelegateConfig
+9800005:io.harness.delegate.task.ssh.artifact.ArtifactoryDockerArtifactDelegateConfig

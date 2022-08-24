@@ -39,6 +39,7 @@ import io.harness.ng.core.dto.OrganizationDTO;
 import io.harness.ng.core.dto.ProjectDTO;
 import io.harness.ng.core.entities.Organization;
 import io.harness.ng.core.entities.Project;
+import io.harness.ng.core.manifests.SampleManifestFileService;
 import io.harness.ng.core.services.OrganizationService;
 import io.harness.ng.core.services.ProjectService;
 import io.harness.ng.core.user.UserInfo;
@@ -81,6 +82,8 @@ public class NGAccountSetupService {
   private final NGAccountSettingService accountSettingService;
   private final FeatureFlagService featureFlagService;
 
+  private final SampleManifestFileService sampleManifestFileService;
+
   @Inject
   public NGAccountSetupService(OrganizationService organizationService,
       AccountOrgProjectValidator accountOrgProjectValidator,
@@ -88,7 +91,8 @@ public class NGAccountSetupService {
       UserClient userClient, AccessControlMigrationService accessControlMigrationService,
       HarnessSMManager harnessSMManager, CIDefaultEntityManager ciDefaultEntityManager,
       NextGenConfiguration nextGenConfiguration, NGAccountSettingService accountSettingService,
-      ProjectService projectService, FeatureFlagService featureFlagService) {
+      ProjectService projectService, FeatureFlagService featureFlagService,
+      SampleManifestFileService sampleManifestFileService) {
     this.organizationService = organizationService;
     this.accountOrgProjectValidator = accountOrgProjectValidator;
     this.accessControlAdminClient = accessControlAdminClient;
@@ -103,6 +107,7 @@ public class NGAccountSetupService {
     this.accountSettingService = accountSettingService;
     this.projectService = projectService;
     this.featureFlagService = featureFlagService;
+    this.sampleManifestFileService = sampleManifestFileService;
   }
 
   public void setupAccountForNG(String accountIdentifier) {
@@ -125,6 +130,20 @@ public class NGAccountSetupService {
     harnessSMManager.createHarnessSecretManager(accountIdentifier, null, null);
     ciDefaultEntityManager.createCIDefaultEntities(accountIdentifier, null, null);
     accountSettingService.setUpDefaultAccountSettings(accountIdentifier);
+    createSampleFiles(accountIdentifier);
+  }
+
+  private void createSampleFiles(String accountIdentifier) {
+    try {
+      SampleManifestFileService.SampleManifestFileCreateResponse fileCreateResponse =
+          sampleManifestFileService.createDefaultFilesInFileStore(accountIdentifier);
+      if (!fileCreateResponse.isCreated()) {
+        log.error(String.format("Failed to create sample manifest files for account:%s. Reason %s", accountIdentifier,
+            fileCreateResponse.getErrorMessage()));
+      }
+    } catch (Exception ex) {
+      log.error("Failed to create sample manifest files for account:" + accountIdentifier, ex);
+    }
   }
 
   private Organization createDefaultOrg(String accountIdentifier) {

@@ -70,7 +70,8 @@ public abstract class CommandTaskParameters implements TaskParameters, Execution
 
   private void fetchArtifactExecutionCapabilities(
       final List<ExecutionCapability> capabilities, ExpressionEvaluator maskingEvaluator) {
-    if (SshWinRmArtifactType.ARTIFACTORY.equals(artifactDelegateConfig.getArtifactType())) {
+    if (SshWinRmArtifactType.ARTIFACTORY.equals(artifactDelegateConfig.getArtifactType())
+        && artifactDelegateConfig instanceof ArtifactoryArtifactDelegateConfig) {
       ArtifactoryArtifactDelegateConfig artifactoryDelegateConfig =
           (ArtifactoryArtifactDelegateConfig) artifactDelegateConfig;
       capabilities.addAll(ArtifactoryCapabilityHelper.fetchRequiredExecutionCapabilities(

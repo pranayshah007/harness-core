@@ -7,14 +7,18 @@
 
 package io.harness.ng.core.environment.mappers;
 
+import static io.harness.ng.core.environment.EnvironmentTestHelper.readFile;
 import static io.harness.ng.core.environment.beans.EnvironmentType.PreProduction;
 import static io.harness.rule.OwnerRule.ARCHIT;
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
+import static io.harness.rule.OwnerRule.TATHAGAT;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
+import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.common.beans.NGTag;
 import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.environment.beans.EnvironmentType;
@@ -40,6 +44,7 @@ public class EnvironmentMapperTest extends CategoryTest {
   Environment responseEnvironment;
   List<NGTag> tags;
   NGEnvironmentConfig ngEnvironmentConfig;
+
   @Before
   public void setUp() {
     tags = Arrays.asList(NGTag.builder().key("k1").value("v1").build(), NGTag.builder().key("k2").value("v2").build());
@@ -101,9 +106,62 @@ public class EnvironmentMapperTest extends CategoryTest {
   @Owner(developers = ARCHIT)
   @Category(UnitTests.class)
   public void testToEnvironment() {
-    Environment environment = EnvironmentMapper.toEnvironmentEntity("ACCOUNT_ID", environmentRequestDTO);
+    Environment environment = EnvironmentMapper.toEnvironmentEntity("ACCOUNT_ID", environmentRequestDTO, false);
     assertThat(environment).isNotNull();
     assertThat(environment).isEqualTo(requestEnvironment);
+  }
+
+  @Test
+  @Owner(developers = TATHAGAT)
+  @Category(UnitTests.class)
+  public void testToEnvironmentValidateManifestOverride() {
+    final String filename = "env-with-manifest-overrides.yaml";
+    final String yaml = readFile(filename, getClass());
+    final EnvironmentRequestDTO requestDTO = EnvironmentRequestDTO.builder()
+                                                 .identifier("ENV")
+                                                 .orgIdentifier("ORG_ID")
+                                                 .projectIdentifier("PROJECT_ID")
+                                                 .type(PreProduction)
+                                                 .yaml(yaml)
+                                                 .build();
+    Environment environment = EnvironmentMapper.toEnvironmentEntity("ACCOUNT_ID", requestDTO, true);
+    assertThat(environment).isNotNull();
+  }
+
+  @Test
+  @Owner(developers = TATHAGAT)
+  @Category(UnitTests.class)
+  public void testToEnvironmentValidateManifestOverrideFailFfOff() {
+    final String filename = "env-with-manifest-overrides.yaml";
+    final String yaml = readFile(filename, getClass());
+    final EnvironmentRequestDTO requestDTO = EnvironmentRequestDTO.builder()
+                                                 .identifier("ENV")
+                                                 .orgIdentifier("ORG_ID")
+                                                 .projectIdentifier("PROJECT_ID")
+                                                 .type(PreProduction)
+                                                 .yaml(yaml)
+                                                 .build();
+    assertThatThrownBy(() -> EnvironmentMapper.toEnvironmentEntity("ACCOUNT_ID", requestDTO, false))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessageContaining("Manifest Override is not supported with FF NG_SERVICE_MANIFEST_OVERRIDE disabled");
+  }
+
+  @Test
+  @Owner(developers = TATHAGAT)
+  @Category(UnitTests.class)
+  public void testToEnvironmentValidateManifestOverrideFail() {
+    final String filename = "env-with-invalid-manifest-overrides.yaml";
+    final String yaml = readFile(filename, getClass());
+    final EnvironmentRequestDTO requestDTO = EnvironmentRequestDTO.builder()
+                                                 .identifier("ENV")
+                                                 .orgIdentifier("ORG_ID")
+                                                 .projectIdentifier("PROJECT_ID")
+                                                 .type(PreProduction)
+                                                 .yaml(yaml)
+                                                 .build();
+    assertThatThrownBy(() -> EnvironmentMapper.toEnvironmentEntity("ACCOUNT_ID", requestDTO, true))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessageContaining("Found duplicate manifest identifiers [m1]");
   }
 
   @Test

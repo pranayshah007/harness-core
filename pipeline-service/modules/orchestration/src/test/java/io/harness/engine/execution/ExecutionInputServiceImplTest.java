@@ -11,6 +11,7 @@ import static io.harness.rule.OwnerRule.BRIJESH;
 
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertFalse;
+import static junit.framework.TestCase.assertNull;
 import static junit.framework.TestCase.assertTrue;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.joor.Reflect.on;
@@ -86,8 +87,7 @@ public class ExecutionInputServiceImplTest extends OrchestrationTestBase {
     assertEquals(inputInstance.getTemplate(), template);
 
     doReturn(Optional.empty()).when(executionInputRepository).findByNodeExecutionId("differentNodeExecutionId");
-    assertThatThrownBy(() -> inputService.getExecutionInputInstance("differentNodeExecutionId"))
-        .isInstanceOf(InvalidRequestException.class);
+    assertNull(inputService.getExecutionInputInstance("differentNodeExecutionId"));
   }
 
   @Test

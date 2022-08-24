@@ -9,6 +9,7 @@ package io.harness.ng.core.serviceoverride.yaml;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.manifest.yaml.ManifestConfigWrapper;
 import io.harness.yaml.core.variables.NGVariable;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -43,4 +44,5 @@ public class NGServiceOverrideInfoConfig {
   @NotNull String environmentRef;
   @NotNull String serviceRef;
   List<NGVariable> variables;
+  List<ManifestConfigWrapper> manifests;
 }

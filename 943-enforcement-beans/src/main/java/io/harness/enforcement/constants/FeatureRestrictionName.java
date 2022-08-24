@@ -77,6 +77,7 @@ public enum FeatureRestrictionName {
   AZURE_WEBAPP_ROLLBACK,
   JENKINS_BUILD,
   AZURE_CREATE_ARM_RESOURCE,
+  AZURE_CREATE_BP_RESOURCE,
 
   // STO Features
   SECURITY,

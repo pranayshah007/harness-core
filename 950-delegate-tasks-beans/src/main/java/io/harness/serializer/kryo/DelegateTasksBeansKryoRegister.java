@@ -177,6 +177,7 @@ import io.harness.delegate.beans.connector.azureconnector.AzureTaskParams;
 import io.harness.delegate.beans.connector.azureconnector.AzureTaskType;
 import io.harness.delegate.beans.connector.azureconnector.AzureValidationParams;
 import io.harness.delegate.beans.connector.azurekeyvaultconnector.AzureKeyVaultValidationParams;
+import io.harness.delegate.beans.connector.customsecretmanager.CustomSecretManagerValidationParams;
 import io.harness.delegate.beans.connector.cvconnector.CVConnectorTaskParams;
 import io.harness.delegate.beans.connector.cvconnector.CVConnectorTaskResponse;
 import io.harness.delegate.beans.connector.cvconnector.CVConnectorValidationParams;
@@ -619,7 +620,9 @@ import io.harness.delegate.task.ssh.PdcSshInfraDelegateConfig;
 import io.harness.delegate.task.ssh.PdcWinRmInfraDelegateConfig;
 import io.harness.delegate.task.ssh.ScriptCommandUnit;
 import io.harness.delegate.task.ssh.artifact.ArtifactoryArtifactDelegateConfig;
+import io.harness.delegate.task.ssh.artifact.ArtifactoryDockerArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.JenkinsArtifactDelegateConfig;
+import io.harness.delegate.task.ssh.artifact.SkipCopyArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.SshWinRmArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.SshWinRmArtifactType;
 import io.harness.delegate.task.ssh.config.ConfigFileParameters;
@@ -1671,5 +1674,8 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(GitPollingDelegateResponse.class, 56339);
     kryo.register(JenkinsArtifactDelegateConfig.class, 9800003);
     kryo.register(AzureWebAppRollbackExceptionData.class, 55419);
+    kryo.register(SkipCopyArtifactDelegateConfig.class, 9800004);
+    kryo.register(ArtifactoryDockerArtifactDelegateConfig.class, 9800005);
+    kryo.register(CustomSecretManagerValidationParams.class, 19876);
   }
 }

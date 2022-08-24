@@ -23,6 +23,8 @@ import io.harness.beans.DecryptableEntity;
 import io.harness.data.encoding.EncodingUtils;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.encryption.SecretRefData;
+import io.harness.encryptors.CustomEncryptor;
+import io.harness.encryptors.CustomEncryptorsRegistry;
 import io.harness.encryptors.KmsEncryptor;
 import io.harness.encryptors.KmsEncryptorsRegistry;
 import io.harness.encryptors.VaultEncryptor;
@@ -49,12 +51,16 @@ public class NGEncryptorServiceImpl implements NGEncryptorService {
   private final KmsEncryptorsRegistry kmsEncryptorsRegistry;
   private final VaultEncryptorsRegistry vaultEncryptorsRegistry;
 
+  private final CustomEncryptorsRegistry customEncryptorsRegistry;
+
   @Inject
   public NGEncryptorServiceImpl(NGEncryptedDataService encryptedDataService,
-      KmsEncryptorsRegistry kmsEncryptorsRegistry, VaultEncryptorsRegistry vaultEncryptorsRegistry) {
+      KmsEncryptorsRegistry kmsEncryptorsRegistry, VaultEncryptorsRegistry vaultEncryptorsRegistry,
+      CustomEncryptorsRegistry customEncryptorsRegistry) {
     this.encryptedDataService = encryptedDataService;
     this.kmsEncryptorsRegistry = kmsEncryptorsRegistry;
     this.vaultEncryptorsRegistry = vaultEncryptorsRegistry;
+    this.customEncryptorsRegistry = customEncryptorsRegistry;
   }
 
   @Override
@@ -110,15 +116,23 @@ public class NGEncryptorServiceImpl implements NGEncryptorService {
     char[] value;
     SecretManagerType secretManagerType = secretManagerConfig.getType();
 
-    if (secretManagerType == KMS) {
-      KmsEncryptor kmsEncryptor = kmsEncryptorsRegistry.getKmsEncryptor(secretManagerConfig);
-      value = kmsEncryptor.fetchSecretValue(accountIdentifier, encryptedData, secretManagerConfig);
-    } else if (secretManagerType == VAULT) {
-      VaultEncryptor vaultEncryptor =
-          vaultEncryptorsRegistry.getVaultEncryptor(secretManagerConfig.getEncryptionType());
-      value = vaultEncryptor.fetchSecretValue(accountIdentifier, encryptedData, secretManagerConfig);
-    } else {
-      throw new UnsupportedOperationException("Secret Manager type not supported: " + secretManagerType);
+    switch (secretManagerType) {
+      case KMS:
+        KmsEncryptor kmsEncryptor = kmsEncryptorsRegistry.getKmsEncryptor(secretManagerConfig);
+        value = kmsEncryptor.fetchSecretValue(accountIdentifier, encryptedData, secretManagerConfig);
+        break;
+      case VAULT:
+        VaultEncryptor vaultEncryptor =
+            vaultEncryptorsRegistry.getVaultEncryptor(secretManagerConfig.getEncryptionType());
+        value = vaultEncryptor.fetchSecretValue(accountIdentifier, encryptedData, secretManagerConfig);
+        break;
+      case CUSTOM:
+        CustomEncryptor customEncryptor =
+            customEncryptorsRegistry.getCustomEncryptor(secretManagerConfig.getEncryptionType());
+        value = customEncryptor.fetchSecretValue(accountIdentifier, encryptedData, secretManagerConfig);
+        break;
+      default:
+        throw new UnsupportedOperationException("Secret Manager type not supported: " + secretManagerType);
     }
     if (encryptedData.isBase64Encoded()) {
       byte[] decodedBytes = EncodingUtils.decodeBase64(value);

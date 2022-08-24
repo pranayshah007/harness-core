@@ -32,6 +32,7 @@ import io.harness.delegate.task.shell.FileBasedAbstractScriptExecutorNG;
 import io.harness.delegate.task.shell.SshCommandTaskParameters;
 import io.harness.delegate.task.ssh.CopyCommandUnit;
 import io.harness.delegate.task.ssh.NgCommandUnit;
+import io.harness.delegate.task.ssh.artifact.SkipCopyArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.config.ConfigFileParameters;
 import io.harness.delegate.task.ssh.config.SecretConfigFile;
 import io.harness.exception.InvalidRequestException;
@@ -108,6 +109,12 @@ public class SshCopyCommandHandler implements CommandHandler {
             ARTIFACT_CONFIGURATION_NOT_FOUND_EXPLANATION,
             new SshCommandExecutionException(ARTIFACT_CONFIGURATION_NOT_FOUND));
       }
+      if (context.getArtifactDelegateConfig() instanceof SkipCopyArtifactDelegateConfig) {
+        log.info("Artifactory docker registry found, skipping copy artifact.");
+        executor.getLogCallback().saveExecutionLog("Command finished with status " + result, LogLevel.INFO, result);
+        return result;
+      }
+
       result = executor.copyFiles(context);
       executor.getLogCallback().saveExecutionLog("Command finished with status " + result, LogLevel.INFO, result);
       if (result == CommandExecutionStatus.FAILURE) {

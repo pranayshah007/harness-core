@@ -69,6 +69,7 @@ import software.wings.beans.BambooConfig;
 import software.wings.beans.BaseVaultConfig;
 import software.wings.beans.BastionConnectionAttributes;
 import software.wings.beans.BugsnagConfig;
+import software.wings.beans.CustomSecretNGManagerConfig;
 import software.wings.beans.CyberArkConfig;
 import software.wings.beans.DatadogConfig;
 import software.wings.beans.DockerConfig;
@@ -210,6 +211,7 @@ public class DelegateTasksMorphiaRegistrar implements MorphiaRegistrar {
     set.add(CommandUnit.class);
     set.add(CustomSecretsManagerConfig.class);
     set.add(ServiceVariable.class);
+    set.add(CustomSecretNGManagerConfig.class);
   }
 
   @Override

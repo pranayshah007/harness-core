@@ -365,10 +365,8 @@ public class SubscriptionResource {
   @NGAccessControlCheck(resourceType = ResourceTypes.LICENSE, permission = VIEW_LICENSE_PERMISSION)
   public ResponseDTO<PaymentMethodCollectionDTO>
   listPaymentMethods(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
-                         NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
-      @Parameter(required = true, description = "Customer Identifier for the Entity") @NotNull @QueryParam(
-          "customerId") String customerId) {
-    return ResponseDTO.newResponse(subscriptionService.listPaymentMethods(accountIdentifier, customerId));
+      NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier) {
+    return ResponseDTO.newResponse(subscriptionService.listPaymentMethods(accountIdentifier));
   }
 
   @GET
