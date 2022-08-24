@@ -5,11 +5,11 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.delegate.service;
+package io.harness.delegate.service.tasklogging;
 
-import static io.harness.delegate.service.DelegateLogServiceImpl.ACTIVITY_LOGS_TOTAL_SIZE;
-import static io.harness.delegate.service.DelegateLogServiceImpl.ACTIVITY_STATUS_LOGLINE_LIMIT;
-import static io.harness.delegate.service.DelegateLogServiceImpl.TRUNCATION_MESSAGE;
+import static io.harness.delegate.service.tasklogging.DelegateLogServiceImpl.ACTIVITY_LOGS_TOTAL_SIZE;
+import static io.harness.delegate.service.tasklogging.DelegateLogServiceImpl.ACTIVITY_STATUS_LOGLINE_LIMIT;
+import static io.harness.delegate.service.tasklogging.DelegateLogServiceImpl.TRUNCATION_MESSAGE;
 import static io.harness.logging.CommandExecutionStatus.FAILURE;
 import static io.harness.logging.CommandExecutionStatus.RUNNING;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;

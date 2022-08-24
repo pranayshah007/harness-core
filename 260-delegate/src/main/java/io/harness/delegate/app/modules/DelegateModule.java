@@ -136,7 +136,7 @@ import io.harness.delegate.service.DelegateCVActivityLogServiceImpl;
 import io.harness.delegate.service.DelegateCVTaskServiceImpl;
 import io.harness.delegate.service.DelegateConfigServiceImpl;
 import io.harness.delegate.service.DelegateFileManagerImpl;
-import io.harness.delegate.service.DelegateLogServiceImpl;
+import io.harness.delegate.service.tasklogging.DelegateLogServiceImpl;
 import io.harness.delegate.service.DelegatePropertyService;
 import io.harness.delegate.service.DelegatePropertyServiceImpl;
 import io.harness.delegate.service.K8sGlobalConfigServiceImpl;

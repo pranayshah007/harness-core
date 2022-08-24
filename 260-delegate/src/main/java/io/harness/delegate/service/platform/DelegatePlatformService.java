@@ -59,7 +59,7 @@ import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.expression.DelegateExpressionEvaluator;
 import io.harness.delegate.logging.DelegateStackdriverLogAppender;
-import io.harness.delegate.service.DelegateTaskExecutionData;
+import io.harness.delegate.service.common.DelegateTaskExecutionData;
 import io.harness.delegate.service.ExecutionConfigOverrideFromFileOnDelegate;
 import io.harness.delegate.service.common.AbstractDelegateAgentServiceImpl;
 import io.harness.delegate.task.AbstractDelegateRunnableTask;
@@ -1002,6 +1002,7 @@ public class DelegatePlatformService extends AbstractDelegateAgentServiceImpl {
       target.setValidUntil(source.getValidUntil());
       delegateConnectionResultDetails.add(target);
     }
+
     return delegateConnectionResultDetails;
   }
 

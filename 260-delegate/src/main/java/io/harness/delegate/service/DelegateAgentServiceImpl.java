@@ -121,6 +121,7 @@ import io.harness.delegate.expression.DelegateExpressionEvaluator;
 import io.harness.delegate.logging.DelegateStackdriverLogAppender;
 import io.harness.delegate.message.Message;
 import io.harness.delegate.message.MessageService;
+import io.harness.delegate.service.common.DelegateTaskExecutionData;
 import io.harness.delegate.task.AbstractDelegateRunnableTask;
 import io.harness.delegate.task.ActivityAccess;
 import io.harness.delegate.task.Cd1ApplicationAccess;

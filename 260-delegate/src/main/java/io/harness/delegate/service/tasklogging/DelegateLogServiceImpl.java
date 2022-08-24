@@ -5,11 +5,10 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.delegate.service;
+package io.harness.delegate.service.tasklogging;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.delegate.service.DelegateAgentServiceImpl.getDelegateId;
 import static io.harness.logging.CommandExecutionStatus.FAILURE;
 import static io.harness.logging.CommandExecutionStatus.RUNNING;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
@@ -31,6 +30,7 @@ import static org.apache.commons.lang3.StringUtils.right;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.cvng.beans.cvnglog.CVNGLogDTO;
+import io.harness.delegate.DelegateAgentCommonVariables;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogLevel;
 import io.harness.managerclient.DelegateAgentManagerClient;
@@ -306,7 +306,7 @@ public class DelegateLogServiceImpl implements DelegateLogService {
             return;
           }
           String stateExecutionId = logsList.get(0).getStateExecutionId();
-          String delegateId = getDelegateId().orElse(null);
+          String delegateId = DelegateAgentCommonVariables.getDelegateId();
           logsList.forEach(logObject -> logObject.setDelegateId(delegateId));
           try {
             log.debug("Dispatching {} api call logs for [{}] [{}]", logsList.size(), stateExecutionId, accountId);

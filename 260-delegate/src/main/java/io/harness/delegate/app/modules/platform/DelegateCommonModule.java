@@ -9,8 +9,8 @@ package io.harness.delegate.app.modules.platform;
 
 import io.harness.delegate.configuration.DelegateConfiguration;
 import io.harness.delegate.service.DelegateAgentService;
-import io.harness.delegate.service.DelegateAgentServiceImpl;
-import io.harness.delegate.service.DelegateLogServiceImpl;
+import io.harness.delegate.service.tasklogging.DelegateLogServiceImpl;
+import io.harness.delegate.service.platform.DelegatePlatformService;
 import io.harness.exception.KeyManagerBuilderException;
 import io.harness.exception.TrustManagerBuilderException;
 import io.harness.security.X509KeyManagerBuilder;
@@ -70,7 +70,7 @@ public class DelegateCommonModule extends AbstractModule {
     //        install(ExceptionModule.getInstance());//??
 
     bind(DelegateConfiguration.class).toInstance(configuration);
-    bind(DelegateAgentService.class).to(DelegateAgentServiceImpl.class);
+    bind(DelegateAgentService.class).to(DelegatePlatformService.class);
     // Secrets Related ???
     //        bind(SecretsDelegateCacheHelperService.class).to(SecretsDelegateCacheHelperServiceImpl.class);
     //        bind(DelegatePropertyService.class).to(DelegatePropertyServiceImpl.class);
