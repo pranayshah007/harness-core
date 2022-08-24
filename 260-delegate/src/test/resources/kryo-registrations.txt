@@ -2283,3 +2283,5 @@
 9800001:io.harness.beans.RecasterMap
 9800002:io.harness.licensing.beans.modules.ChaosModuleLicenseDTO
 9800003:io.harness.delegate.task.ssh.artifact.JenkinsArtifactDelegateConfig
+9800004:io.harness.delegate.task.ssh.artifact.SkipCopyArtifactDelegateConfig
+9800005:io.harness.delegate.task.ssh.artifact.ArtifactoryDockerArtifactDelegateConfig
