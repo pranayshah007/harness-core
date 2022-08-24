@@ -26,7 +26,16 @@ import software.wings.timescale.migrations.DeploymentsMigrationHelper;
 
 import com.google.inject.Inject;
 import java.time.Instant;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Queue;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
@@ -182,7 +191,6 @@ public class ElasticsearchBulkSyncTask {
     List<String> accountIds =
         featureFlagService.getAccountIds(FeatureName.TIME_SCALE_CG_SYNC).stream().collect(Collectors.toList());
 
-    boolean deploymentTimescaleMigrated = false;
     for (TimeScaleEntity timeScaleEntity : entitiesToMigrate) {
       log.info("Migrating {} to timescale", timeScaleEntity.getClass().getCanonicalName());
 
@@ -208,9 +216,6 @@ public class ElasticsearchBulkSyncTask {
       int n = 0;
       if (toMigrateAccountIds != null) {
         n = toMigrateAccountIds.size();
-      }
-      if (!deploymentTimescaleMigrated) {
-        deploymentTimescaleMigrated = true;
       }
       for (int i = 0; i < n; i++) {
         String accountId = toMigrateAccountIds.get(0);
