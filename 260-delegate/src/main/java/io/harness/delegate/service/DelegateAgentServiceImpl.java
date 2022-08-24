@@ -119,8 +119,6 @@ import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.delegate.beans.FileBucket;
 import io.harness.delegate.beans.SecretDetail;
 import io.harness.delegate.beans.TaskData;
-import io.fabric8.kubernetes.api.model.Service;
-import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.configuration.DelegateConfiguration;
 import io.harness.delegate.expression.DelegateExpressionEvaluator;
@@ -2841,13 +2839,11 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
     if (DeployMode.KUBERNETES.name().equals(System.getenv().get(DeployMode.DEPLOY_MODE))) {
       if (kubernetesClient.pods() != null) {
         Pod pod = kubernetesClient.pods().withName(HOST_NAME).get();
-        Service service = kubernetesClient.services().withName(HOST_NAME).get();
-        if (service != null){
-          log.info("Cluster name is {}", service.getMetadata().getClusterName());
-        }
         if (pod != null && pod.getMetadata() != null) {
           String podUID = pod.getMetadata().getUid();
+          String clusterName = pod.getMetadata().getClusterName();
           log.info("Delegate Pod id from pod {}", podUID);
+          log.info("Delegate Pod cluster name from pod {}", clusterName);
           return podUID;
         }
       }
