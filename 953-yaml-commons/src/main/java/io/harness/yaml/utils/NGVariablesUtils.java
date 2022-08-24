@@ -21,6 +21,7 @@ import io.harness.yaml.core.variables.NGVariable;
 import io.harness.yaml.core.variables.SecretNGVariable;
 
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import lombok.experimental.UtilityClass;
@@ -144,5 +145,28 @@ public class NGVariablesUtils {
     Map<String, Object> overrideVariablesMap = getMapOfVariables(overrideVariables, expressionFunctorToken);
     originalVariablesMap.putAll(overrideVariablesMap);
     return originalVariablesMap;
+  }
+
+  public Map<String, String> getStringMapVariables(List<NGVariable> variables, long expressionFunctorToken) {
+    Map<String, Object> inputVariables = getMapOfVariables(variables, expressionFunctorToken);
+    if (EmptyPredicate.isEmpty(inputVariables)) {
+      return new HashMap<>();
+    }
+    Map<String, String> res = new LinkedHashMap<>();
+    inputVariables.forEach((key, value) -> {
+      if (value instanceof ParameterField) {
+        ParameterField<?> parameterFieldValue = (ParameterField<?>) value;
+        if (parameterFieldValue.getValue() == null) {
+          throw new InvalidRequestException(String.format("Env. variable [%s] value found to be null", key));
+        }
+        res.put(key, parameterFieldValue.getValue().toString());
+      } else if (value instanceof String) {
+        res.put(key, (String) value);
+      } else {
+        log.error(String.format(
+            "Value other than String or ParameterField found for env. variable [%s]. value: [%s]", key, value));
+      }
+    });
+    return res;
   }
 }

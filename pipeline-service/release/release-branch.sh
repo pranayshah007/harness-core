@@ -137,9 +137,9 @@ if [[ "$EXECUTE_NEW_CODE" == "true" ]]; then
     git checkout ${SHA}
     git checkout -b release/${PURPOSE}/${newBranch}
 
-    sed -i "s:build.majorVersion=${major}:build.majorVersion=${newMajor}:g" ${VERSION_FILE}
-    sed -i "s:build.minorVersion=${minor}:build.minorVersion=${newMinor}:g" ${VERSION_FILE}
-    sed -i "s:build.patchVersion=${patchVersion}:build.patchVersion=${newPatchVersion}:g" ${VERSION_FILE}
+    sed -i "s:build.majorVersion=${major}:build.majorVersion=${major}:g" ${VERSION_FILE}
+    sed -i "s:build.minorVersion=${minor}:build.minorVersion=${minor}:g" ${VERSION_FILE}
+    sed -i "s:build.patchVersion=${patchVersion}:build.patchVersion=${patchVersion}:g" ${VERSION_FILE}
 
     git add ${VERSION_FILE}
     git commit --allow-empty -m "Set the proper version branch release/${PURPOSE}/${newBranch}"

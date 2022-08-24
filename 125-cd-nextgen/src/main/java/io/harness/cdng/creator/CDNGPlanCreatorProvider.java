@@ -126,6 +126,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
       Arrays.asList("Kubernetes", "Provisioner", "Cloudformation", "Helm");
   private static final String CLOUDFORMATION_STEP_METADATA = "Cloudformation";
   private static final List<String> TERRAFORM_CATEGORY = Arrays.asList("Kubernetes", "Provisioner", "Helm");
+  private static final String BUILD_STEP = "Builds";
 
   private static final List<String> AZURE_RESOURCE_CATEGORY =
       Arrays.asList("Kubernetes", "Provisioner", "Azure", "Helm", "AzureWebApp");
@@ -482,13 +483,14 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
             .setFeatureFlag(FeatureName.AZURE_WEBAPP_NG.name())
             .build();
 
-    StepInfo jenkinsBuildStepInfo = StepInfo.newBuilder()
-                                        .setName("Jenkins Build")
-                                        .setType(StepSpecTypeConstants.JENKINS_BUILD)
-                                        .setFeatureRestrictionName(FeatureRestrictionName.JENKINS_BUILD.name())
-                                        .setStepMetaData(StepMetaData.newBuilder().addFolderPaths("Builds").build())
-                                        .setFeatureFlag(FeatureName.JENKINS_ARTIFACT.name())
-                                        .build();
+    StepInfo jenkinsBuildStepInfo =
+        StepInfo.newBuilder()
+            .setName("Jenkins Build")
+            .setType(StepSpecTypeConstants.JENKINS_BUILD)
+            .setFeatureRestrictionName(FeatureRestrictionName.JENKINS_BUILD.name())
+            .setStepMetaData(StepMetaData.newBuilder().addCategory(BUILD_STEP).addFolderPaths("Builds").build())
+            .setFeatureFlag(FeatureName.JENKINS_ARTIFACT.name())
+            .build();
 
     StepInfo azureCreateARMResources =
         StepInfo.newBuilder()
