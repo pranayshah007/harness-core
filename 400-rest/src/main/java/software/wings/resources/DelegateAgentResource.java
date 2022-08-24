@@ -450,15 +450,16 @@ public class DelegateAgentResource {
     try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR);
          AutoLogContext ignore2 = new DelegateLogContext(delegateParams.getDelegateId(), OVERRIDE_ERROR)) {
       final boolean isConnectedUsingMtls = isAgentConnectedUsingMtls(agentMtlsAuthority);
+
       // delegate.isPollingModeEnabled() will be true here.
       if ("ECS".equals(delegateParams.getDelegateType())) {
-        Delegate registeredDelegate = delegateService.handleEcsDelegateRequest(
-            Delegate.getDelegateFromParams(delegateParams, isConnectedUsingMtls));
+        Delegate registeredDelegate =
+            delegateService.handleEcsDelegateRequest(buildDelegateFromParams(delegateParams, isConnectedUsingMtls));
 
         return new RestResponse<>(buildDelegateHBResponse(registeredDelegate));
       } else {
         return new RestResponse<>(buildDelegateHBResponse(delegateService.updateHeartbeatForDelegateWithPollingEnabled(
-            Delegate.getDelegateFromParams(delegateParams, isConnectedUsingMtls))));
+            buildDelegateFromParams(delegateParams, isConnectedUsingMtls))));
       }
     }
   }
@@ -587,6 +588,31 @@ public class DelegateAgentResource {
         .sequenceNumber(delegate.getSequenceNum())
         .status(delegate.getStatus().toString())
         .useCdn(delegate.isUseCdn())
+        .build();
+  }
+
+  private Delegate buildDelegateFromParams(DelegateParams delegateParams, boolean isConnectedUsingMtls) {
+    return Delegate.builder()
+        .uuid(delegateParams.getDelegateId())
+        .accountId(delegateParams.getAccountId())
+        .description(delegateParams.getDescription())
+        .ip(delegateParams.getIp())
+        .hostName(delegateParams.getHostName())
+        .delegateGroupName(delegateParams.getDelegateGroupName())
+        .delegateName(delegateParams.getDelegateName())
+        .delegateProfileId(delegateParams.getDelegateProfileId())
+        .lastHeartBeat(delegateParams.getLastHeartBeat())
+        .version(delegateParams.getVersion())
+        .sequenceNum(delegateParams.getSequenceNum())
+        .delegateType(delegateParams.getDelegateType())
+        .delegateRandomToken(delegateParams.getDelegateRandomToken())
+        .keepAlivePacket(delegateParams.isKeepAlivePacket())
+        .polllingModeEnabled(delegateParams.isPollingModeEnabled())
+        .ng(delegateParams.isNg())
+        .sampleDelegate(delegateParams.isSampleDelegate())
+        .currentlyExecutingDelegateTasks(delegateParams.getCurrentlyExecutingDelegateTasks())
+        .location(delegateParams.getLocation())
+        .mtls(isConnectedUsingMtls)
         .build();
   }
 }

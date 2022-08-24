@@ -9,7 +9,6 @@ package io.harness.stream;
 
 import static io.harness.agent.AgentGatewayConstants.HEADER_AGENT_MTLS_AUTHORITY;
 import static io.harness.agent.AgentGatewayUtils.isAgentConnectedUsingMtls;
-import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.eraro.ErrorCode.UNKNOWN_ERROR;
 import static io.harness.govern.Switch.unhandled;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
@@ -18,7 +17,6 @@ import io.harness.delegate.beans.ConnectionMode;
 import io.harness.delegate.beans.Delegate;
 import io.harness.delegate.beans.DelegateConnectionHeartbeat;
 import io.harness.delegate.beans.DelegateInstanceStatus;
-import io.harness.delegate.beans.DelegateParams;
 import io.harness.delegate.task.DelegateLogContext;
 import io.harness.eraro.ErrorCode;
 import io.harness.eraro.ErrorCodeName;
@@ -79,7 +77,10 @@ public class DelegateStreamHandler extends AtmosphereHandlerAdapter {
         List<String> pathSegments = SPLITTER.splitToList(req.getPathInfo());
         accountId = pathSegments.get(1);
         delegateId = req.getParameter("delegateId");
+        String delegateTokenName = req.getParameter("delegateTokenName");
 
+        authService.validateDelegateToken(
+            accountId, req.getParameter("token"), delegateId, delegateTokenName, agentMtlsAuthority, false);
         try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR);
              AutoLogContext ignore2 = new DelegateLogContext(delegateId, OVERRIDE_ERROR)) {
           String delegateConnectionId = req.getParameter("delegateConnectionId");
@@ -132,23 +133,19 @@ public class DelegateStreamHandler extends AtmosphereHandlerAdapter {
 
       try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR);
            AutoLogContext ignore2 = new DelegateLogContext(delegateId, OVERRIDE_ERROR)) {
-        DelegateParams delegateParams = JsonUtils.asObject(CharStreams.toString(req.getReader()), DelegateParams.class);
-        String delegateConnectionId = delegateParams.getDelegateConnectionId();
-        String delegateVersion = delegateParams.getVersion();
+        String delegateConnectionId = req.getParameter("delegateConnectionId");
+        String delegateVersion = req.getParameter("version");
 
-        if (isNotEmpty(delegateParams.getToken())) {
-          authService.validateDelegateToken(accountId, delegateParams.getToken(), delegateId,
-              delegateParams.getTokenName(), agentMtlsAuthority, false);
-        }
-        Delegate delegate = Delegate.getDelegateFromParams(delegateParams, isConnectedUsingMtls);
+        Delegate delegate = JsonUtils.asObject(CharStreams.toString(req.getReader()), Delegate.class);
         delegate.setUuid(delegateId);
+        delegate.setMtls(isConnectedUsingMtls);
 
         delegateService.register(delegate);
         delegateService.registerHeartbeat(accountId, delegateId,
             DelegateConnectionHeartbeat.builder()
                 .delegateConnectionId(delegateConnectionId)
                 .version(delegateVersion)
-                .location(delegateParams.getLocation())
+                .location(delegate.getLocation())
                 .build(),
             ConnectionMode.STREAMING);
       }
