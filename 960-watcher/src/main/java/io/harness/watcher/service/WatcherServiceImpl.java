@@ -186,6 +186,7 @@ public class WatcherServiceImpl implements WatcherService {
   private static final String FILE_HANDLES_LOGS_FOLDER = "file_handle_logs";
   private final String watcherJreVersion = System.getProperty("java.version");
   private long delegateRestartedToUpgradeJreAt;
+  private static String WATCHER_VERSION;
 
   private static final String DELEGATE_NAME =
       isNotBlank(System.getenv().get("DELEGATE_NAME")) ? System.getenv().get("DELEGATE_NAME") : "";
@@ -1528,7 +1529,12 @@ public class WatcherServiceImpl implements WatcherService {
 
   @VisibleForTesting
   String getVersion() {
-    return (new VersionInfoManager()).getVersionInfo().getVersion();
+    if (isEmpty(WATCHER_VERSION)) {
+      log.info("returning version from version info yaml");
+      WATCHER_VERSION = (new VersionInfoManager()).getVersionInfo().getVersion();
+    }
+    log.info("returning version from cache");
+    return WATCHER_VERSION;
   }
 
   private void migrate(String newUrl) {
