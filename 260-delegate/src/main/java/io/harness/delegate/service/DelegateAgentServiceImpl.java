@@ -250,7 +250,6 @@ import org.apache.commons.math3.util.Precision;
 import org.apache.http.client.utils.URIBuilder;
 import org.asynchttpclient.AsyncHttpClient;
 import org.atmosphere.wasync.Client;
-import org.atmosphere.wasync.ClientFactory;
 import org.atmosphere.wasync.Encoder;
 import org.atmosphere.wasync.Event;
 import org.atmosphere.wasync.Function;
@@ -620,7 +619,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
         startHeartbeat(builder);
         startTaskPolling();
       } else {
-        client = ClientFactory.getDefault().newClient();
+        client = org.atmosphere.wasync.ClientFactory.getDefault().newClient();
 
         RequestBuilder requestBuilder = prepareRequestBuilder();
 
