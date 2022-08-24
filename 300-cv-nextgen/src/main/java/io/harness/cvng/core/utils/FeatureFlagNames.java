@@ -10,4 +10,6 @@ package io.harness.cvng.core.utils;
 public class FeatureFlagNames {
   public static final String CVNG_MONITORED_SERVICE_DEMO = "CVNG_MONITORED_SERVICE_DEMO";
   public static final String CVNG_LICENSE_ENFORCEMENT = "CVNG_LICENSE_ENFORCEMENT";
+
+  public static final String PERSIST_MONITORED_SERVICE_TEMPLATE_STEP = "PERSIST_MONITORED_SERVICE_TEMPLATE_STEP";
 }

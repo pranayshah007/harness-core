@@ -30,6 +30,7 @@ import io.harness.cvng.core.services.api.MonitoringSourcePerpetualTaskService;
 import io.harness.cvng.core.services.api.SideKickService;
 import io.harness.cvng.core.services.api.monitoredService.HealthSourceService;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
+import io.harness.cvng.core.utils.FeatureFlagNames;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.pms.sdk.core.filter.creation.beans.FilterCreationContext;
 import io.harness.pms.yaml.YamlField;
@@ -122,7 +123,9 @@ public class TemplateVerifyStepMonitoredServiceResolutionServiceImpl
     if (Objects.nonNull(monitoredServiceDTO) && Objects.nonNull(monitoredServiceDTO.getSources())
         && CollectionUtils.isNotEmpty(monitoredServiceDTO.getSources().getHealthSources())) {
       try {
-        if (Objects.isNull(monitoredServiceService.getMonitoredService(
+        if (featureFlagService.isFeatureFlagEnabled(serviceEnvironmentParams.getAccountIdentifier(),
+                FeatureFlagNames.PERSIST_MONITORED_SERVICE_TEMPLATE_STEP)
+            && Objects.isNull(monitoredServiceService.getMonitoredService(
                 MonitoredServiceParams.builder()
                     .projectIdentifier(serviceEnvironmentParams.getProjectIdentifier())
                     .orgIdentifier(serviceEnvironmentParams.getOrgIdentifier())
