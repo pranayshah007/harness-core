@@ -2568,10 +2568,6 @@ public class DelegateServiceImpl implements DelegateService {
       if (KUBERNETES.equals(delegate.getDelegateType())) {
         log.info("K8 Delegate {} already registered for Hostname with : {}, IP: {}, POD ID: {}", delegate.getUuid(),
             delegate.getHostName(), delegate.getIp(), delegate.getK8PodId());
-        return DelegateRegisterResponse.builder()
-            .action(ERROR)
-            .failureReason("Found existing k8 delegate already registered with same name")
-            .build();
       } else {
         log.debug("Delegate {} already registered for Hostname with : {} IP: {}", delegate.getUuid(),
             delegate.getHostName(), delegate.getIp());
