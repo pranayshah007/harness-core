@@ -19,7 +19,6 @@ import io.harness.delegate.task.artifacts.response.ArtifactTaskExecutionResponse
 import io.harness.delegate.task.gcp.helpers.GcpHelperService;
 import io.harness.encryption.SecretRefData;
 import io.harness.exception.InvalidArtifactServerException;
-import io.harness.exception.InvalidRequestException;
 import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.runtime.SecretNotFoundRuntimeException;
 import io.harness.security.encryption.SecretDecryptionService;
@@ -104,10 +103,14 @@ public class GARArtifactTaskHandler extends DelegateArtifactTaskHandler<GarDeleg
         serviceAccountKeyFileContent = secretRef.getDecryptedValue();
       }
     }
+
+    String token = getToken(serviceAccountKeyFileContent, isUseDelegate);
+    return GarRequestResponseMapper.toGarInternalConfig(attributesRequest, "Bearer " + token);
+  }
+  public String getToken(char[] serviceAccountKeyFileContent, boolean isUseDelegate) throws IOException {
     GoogleCredential gc = gcpHelperService.getGoogleCredential(serviceAccountKeyFileContent, isUseDelegate);
     gc.refreshToken();
-    String token = gc.getAccessToken();
-    return GarRequestResponseMapper.toGarInternalConfig(attributesRequest, "Bearer " + token);
+    return gc.getAccessToken();
   }
   private ArtifactTaskExecutionResponse getSuccessTaskExecutionResponse(List<GarDelegateResponse> responseList) {
     return ArtifactTaskExecutionResponse.builder()
