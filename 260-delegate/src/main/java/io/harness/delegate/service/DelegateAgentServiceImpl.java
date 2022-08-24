@@ -970,6 +970,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
 
   private void updateTasks() {
     if (perpetualTaskWorker != null) {
+      log.info("Received Perpetual task update event for delegate {}.", delegateId);
       perpetualTaskWorker.updateTasks();
     }
   }
