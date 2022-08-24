@@ -261,9 +261,6 @@ public class AccessControlModule extends AbstractModule {
     install(new AccountClientModule(config.getAccountClientConfiguration().getAccountServiceConfig(),
         config.getAccountClientConfiguration().getAccountServiceSecret(), ACCESS_CONTROL_SERVICE.toString()));
 
-    install(NgLicenseHttpClientModule.getInstance(config.getNgManagerServiceConfiguration().getNgManagerServiceConfig(),
-        config.getNgManagerServiceConfiguration().getNgManagerServiceSecret(), ACCESS_CONTROL_SERVICE.getServiceId()));
-
     install(new ProjectClientModule(config.getProjectClientConfiguration().getProjectServiceConfig(),
         config.getProjectClientConfiguration().getProjectServiceSecret(), ACCESS_CONTROL_SERVICE.getServiceId()));
 

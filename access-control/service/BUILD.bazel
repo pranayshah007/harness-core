@@ -30,7 +30,6 @@ java_binary(
         "//958-migration-sdk:module",
         "//959-ng-persistence:module",
         "//960-ng-core-beans:module",
-        "//960-ng-license-beans:module",
         "//965-api-key-filter:module",
         "//970-ng-commons:module",
         "//980-commons:module",
