@@ -51,7 +51,7 @@ public class TaskStrategy extends ProgressableStrategy {
   public void start(InvokerPackage invokerPackage) {
     Ambiance ambiance = invokerPackage.getAmbiance();
     TaskExecutable taskExecutable = extractStep(ambiance);
-    Optional<TaskRequest> taskOptional = taskExecutable.obtainTaskOptional(
+    final Optional<TaskRequest> taskOptional = taskExecutable.obtainTaskOptional(
         ambiance, invokerPackage.getStepParameters(), invokerPackage.getInputPackage());
     if (taskOptional.isEmpty()) {
       sdkNodeExecutionService.resumeNodeExecution(ambiance, Collections.emptyMap(), false);
