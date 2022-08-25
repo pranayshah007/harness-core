@@ -48,6 +48,7 @@ import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.rbac.PipelineRbacHelper;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
+import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
 import io.harness.steps.EntityReferenceExtractorUtils;
 import io.harness.steps.OutputExpressionConstants;
 import io.harness.steps.environment.EnvironmentOutcome;
@@ -161,7 +162,7 @@ public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTa
 
     publishInfraDelegateConfigOutput(serviceOutcome, infraOutput, ambiance);
 
-    StepResponse.StepResponseBuilder stepResponseBuilder = StepResponse.builder();
+    StepResponseBuilder stepResponseBuilder = StepResponse.builder();
     String infrastructureKind = infraOutput.getKind();
     if (stageExecutionHelper.shouldSaveStageExecutionInfo(infrastructureKind)) {
       ExecutionInfoKey executionInfoKey = ExecutionInfoKeyMapper.getExecutionInfoKey(

@@ -79,6 +79,7 @@ import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
+import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.OutputExpressionConstants;
@@ -336,7 +337,7 @@ abstract class AbstractInfrastructureTaskExecutableStep {
           color("Completed infrastructure step", Green), LogLevel.INFO, CommandExecutionStatus.SUCCESS);
     }
 
-    StepResponse.StepResponseBuilder stepResponseBuilder = StepResponse.builder().status(Status.SUCCEEDED);
+    StepResponseBuilder stepResponseBuilder = StepResponse.builder().status(Status.SUCCEEDED);
     String infrastructureKind = infrastructureOutcome.getKind();
     stageExecutionHelper.saveStageExecutionInfoAndPublishExecutionInfoKey(
         ambiance, executionInfoKey, infrastructureKind);
