@@ -47,10 +47,10 @@ public class CCMAdminRoleAssignmentMigration implements NGMigration {
     try {
       SecurityContextBuilder.setContext(new ServicePrincipal(CE_NEXT_GEN.getServiceId()));
       log.info("CCMAdminRoleAssignmentAdditionMigration starts ...");
-      int pageIndex = 0;
       List<String> ceEnabledAccountIds = getCeEnabledNgAccounts();
 
       for (String accountId : ceEnabledAccountIds) {
+        int pageIndex = 0;
         do {
           PageResponse<RoleAssignmentResponseDTO> roleAssignmentPage = getResponse(
               accessControlAdminClient.getFilteredRoleAssignments(accountId, null, null, pageIndex, DEFAULT_PAGE_SIZE,
