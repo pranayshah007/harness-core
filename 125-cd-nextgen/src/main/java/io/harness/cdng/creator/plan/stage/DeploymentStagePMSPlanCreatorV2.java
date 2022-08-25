@@ -10,6 +10,7 @@ package io.harness.cdng.creator.plan.stage;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.cdng.creator.plan.envGroup.EnvGroupPlanCreatorHelper;
 import io.harness.cdng.creator.plan.environment.EnvironmentPlanCreatorHelper;
 import io.harness.cdng.creator.plan.infrastructure.InfrastructurePmsPlanCreator;
@@ -227,9 +228,8 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
   }
 
   private boolean useNewFlow(PlanCreationContext ctx) {
-    return true;
-    //    return featureFlagHelperService.isEnabled(AmbianceUtils.getAccountId(ambiance),
-    //    FeatureName.SERVICE_V2_EXPRESSION);
+    return featureFlagHelperService.isEnabled(
+        ctx.getMetadata().getAccountIdentifier(), FeatureName.SERVICE_V2_EXPRESSION);
   }
 
   private void logStepYamlField(YamlField specField) {
