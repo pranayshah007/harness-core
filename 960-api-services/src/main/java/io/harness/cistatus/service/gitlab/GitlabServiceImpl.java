@@ -71,6 +71,12 @@ public class GitlabServiceImpl implements GitlabService {
                   (String) bodyObjectMap.get(TARGET_URL))
               .execute();
 
+      if (!statusCreationResponseResponse.isSuccessful()) {
+        log.error("Failed to send status for bitbucket url {} and sha {} error {}, message {}",
+            gitlabConfig.getGitlabUrl(), sha, statusCreationResponseResponse.errorBody().string(),
+            statusCreationResponseResponse.message());
+      }
+
       return statusCreationResponseResponse.isSuccessful();
     } catch (Exception e) {
       log.error("Failed to post commit status request to Gitlab with url {} and sha {} ", gitlabConfig.getGitlabUrl(),
