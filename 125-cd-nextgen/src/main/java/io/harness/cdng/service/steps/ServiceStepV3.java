@@ -2,7 +2,6 @@ package io.harness.cdng.service.steps;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.steps.SdkCoreStepUtils.createStepResponseFromChildResponse;
 
 import static java.lang.String.format;
 
@@ -14,9 +13,10 @@ import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.manifest.steps.ManifestsOutcome;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.cdng.visitor.YamlTypes;
-import io.harness.connector.services.ConnectorService;
 import io.harness.exception.InvalidRequestException;
 import io.harness.executions.steps.ExecutionNodeType;
+import io.harness.logging.CommandExecutionStatus;
+import io.harness.logging.LogLevel;
 import io.harness.logstreaming.NGLogCallback;
 import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.environment.services.EnvironmentService;
@@ -31,6 +31,7 @@ import io.harness.pms.contracts.execution.ChildrenExecutableResponse;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
+import io.harness.pms.execution.utils.StatusUtils;
 import io.harness.pms.merger.helpers.MergeHelper;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
@@ -41,9 +42,14 @@ import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.steps.OutputExpressionConstants;
+import io.harness.steps.SdkCoreStepUtils;
+import io.harness.steps.StepUtils;
 import io.harness.steps.environment.EnvironmentOutcome;
 import io.harness.tasks.ResponseData;
 import io.harness.utils.YamlPipelineUtils;
+
+import software.wings.beans.LogColor;
+import software.wings.beans.LogHelper;
 
 import com.google.inject.Inject;
 import java.io.IOException;
@@ -68,7 +74,6 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
   @Inject private ExecutionSweepingOutputService sweepingOutputService;
   @Inject private EnvironmentService environmentService;
   @Inject private CDExpressionResolver expressionResolver;
-  @Inject @com.google.inject.name.Named(value = "defaultConnectorService") private ConnectorService connectorService;
 
   @Override
   public Class<ServiceStepV3Parameters> getStepParametersClass() {
@@ -77,8 +82,10 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
 
   public ChildrenExecutableResponse obtainChildren(
       Ambiance ambiance, ServiceStepV3Parameters stepParameters, StepInputPackage inputPackage) {
-    final NGLogCallback logCallback = serviceStepsHelper.getServiceLogCallback(ambiance);
     try {
+      NGLogCallback logCallback = serviceStepsHelper.getServiceLogCallback(ambiance, true);
+      logCallback.saveExecutionLog("Starting service step...");
+
       final ServicePartResponse servicePartResponse = executeServicePart(ambiance, stepParameters);
       executeEnvironmentPart(ambiance, stepParameters, servicePartResponse);
       return ChildrenExecutableResponse.newBuilder()
@@ -146,6 +153,18 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
     }
     final NGServiceV2InfoConfig ngServiceV2InfoConfig = ngServiceConfig.getNgServiceV2InfoConfig();
 
+    // Todo: (yogesh) check if this is ok ?
+    RollbackUtility.publishRollbackInformation(ambiance, responseDataMap, sweepingOutputService);
+    StepResponse stepResponse = SdkCoreStepUtils.createStepResponseFromChildResponse(responseDataMap);
+
+    NGLogCallback logCallback = serviceStepsHelper.getServiceLogCallback(ambiance);
+    if (StatusUtils.brokeStatuses().contains(stepResponse.getStatus())) {
+      logCallback.saveExecutionLog(LogHelper.color("Failed to complete service step", LogColor.Red), LogLevel.INFO,
+          CommandExecutionStatus.FAILURE);
+    } else {
+      logCallback.saveExecutionLog("Completed service step", LogLevel.INFO, CommandExecutionStatus.SUCCESS);
+    }
+
     List<StepResponse.StepOutcome> stepOutcomes = new ArrayList<>();
     stepOutcomes.add(
         StepResponse.StepOutcome.builder()
@@ -176,11 +195,6 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
                            .group(StepCategory.STAGE.name())
                            .build());
     }
-
-    // Todo: (yogesh) check if this is ok ?
-    RollbackUtility.publishRollbackInformation(ambiance, responseDataMap, sweepingOutputService);
-    StepResponse stepResponse = createStepResponseFromChildResponse(responseDataMap);
-
     return stepResponse.withStepOutcomes(stepOutcomes);
   }
 
