@@ -3091,13 +3091,11 @@
             "package",
             "project",
             "region",
-            "repositoryName"
+            "repositoryName",
+            "repositoryType"
           ],
           "properties": {
             "connectorRef": {
-              "type": "string"
-            },
-            "googleArtifactRegistryType": {
               "type": "string"
             },
             "metadata": {
@@ -3113,6 +3111,9 @@
               "type": "string"
             },
             "repositoryName": {
+              "type": "string"
+            },
+            "repositoryType": {
               "type": "string"
             },
             "version": {
