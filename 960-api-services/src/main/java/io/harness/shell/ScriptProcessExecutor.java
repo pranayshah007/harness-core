@@ -200,6 +200,7 @@ public class ScriptProcessExecutor extends AbstractScriptExecutor {
           executeCommandResponse =
               executeBashScript(command, envVariablesToCollect, secretEnvVariablesToCollect, timeoutInMillis);
         } catch (Exception e) {
+          log.error("Error while executing script on delegate {}",e);
           saveExecutionLog(format("Exception: %s", e), ERROR);
         }
         break;
@@ -304,6 +305,7 @@ public class ScriptProcessExecutor extends AbstractScriptExecutor {
                  new InputStreamReader(new FileInputStream(envVariablesOutputFile), StandardCharsets.UTF_8))) {
           processScriptOutputFile(envVariablesMap, br, secretVariablesToCollect);
         } catch (IOException e) {
+          log.error("[ShellProcessExecutor] Error in processing script output {}",e);
           saveExecutionLog("IOException:" + e, ERROR);
         }
       }

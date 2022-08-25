@@ -82,6 +82,11 @@ public class ManagerEncryptorHelper {
     FetchSecretTaskParameters parameters =
         FetchSecretTaskParameters.builder().encryptedRecord(encryptedRecord).encryptionConfig(encryptionConfig).build();
 
+    // if encryptionConfig is CustomSecretManagerConfig
+    // then take the task timeout as parameter
+    // initialize as default timeout from ShellScript
+    // otherwise use DEFAULT_SYNC_CALL_TIMEOUT
+
     DelegateTask delegateTask = DelegateTask.builder()
                                     .data(TaskData.builder()
                                               .async(false)
