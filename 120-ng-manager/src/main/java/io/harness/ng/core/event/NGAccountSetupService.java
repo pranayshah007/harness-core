@@ -35,6 +35,7 @@ import io.harness.ng.accesscontrol.migrations.models.AccessControlMigration;
 import io.harness.ng.accesscontrol.migrations.services.AccessControlMigrationService;
 import io.harness.ng.core.AccountOrgProjectValidator;
 import io.harness.ng.core.accountsetting.services.NGAccountSettingService;
+import io.harness.ng.core.api.UserGroupService;
 import io.harness.ng.core.dto.OrganizationDTO;
 import io.harness.ng.core.dto.ProjectDTO;
 import io.harness.ng.core.entities.Organization;
@@ -81,6 +82,7 @@ public class NGAccountSetupService {
   private final boolean shouldAssignAdmins;
   private final NGAccountSettingService accountSettingService;
   private final FeatureFlagService featureFlagService;
+  private final UserGroupService userGroupService;
 
   private final SampleManifestFileService sampleManifestFileService;
 
@@ -92,7 +94,7 @@ public class NGAccountSetupService {
       HarnessSMManager harnessSMManager, CIDefaultEntityManager ciDefaultEntityManager,
       NextGenConfiguration nextGenConfiguration, NGAccountSettingService accountSettingService,
       ProjectService projectService, FeatureFlagService featureFlagService,
-      SampleManifestFileService sampleManifestFileService) {
+      SampleManifestFileService sampleManifestFileService, UserGroupService userGroupService) {
     this.organizationService = organizationService;
     this.accountOrgProjectValidator = accountOrgProjectValidator;
     this.accessControlAdminClient = accessControlAdminClient;
@@ -108,6 +110,7 @@ public class NGAccountSetupService {
     this.projectService = projectService;
     this.featureFlagService = featureFlagService;
     this.sampleManifestFileService = sampleManifestFileService;
+    this.userGroupService = userGroupService;
   }
 
   public void setupAccountForNG(String accountIdentifier) {
@@ -116,7 +119,8 @@ public class NGAccountSetupService {
           "Account with accountIdentifier %s not found, skipping creation of Default Organization", accountIdentifier));
       return;
     }
-
+    Scope accountScope = Scope.of(accountIdentifier, null, null);
+    userGroupService.setUpDefaultUserGroup(accountScope);
     Organization defaultOrg = createDefaultOrg(accountIdentifier);
     if (featureFlagService.isGlobalEnabled(FeatureName.CREATE_DEFAULT_PROJECT)) {
       Project defaultProject = createDefaultProject(accountIdentifier, defaultOrg.getIdentifier());

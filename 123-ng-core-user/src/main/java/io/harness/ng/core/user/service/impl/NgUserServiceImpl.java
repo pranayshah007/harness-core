@@ -550,6 +550,7 @@ public class NgUserServiceImpl implements NgUserService {
     addUserToParentScope(userId, scope, source, isAccountBasicFeatureFlagEnabled);
     createRoleAssignments(
         userId, scope, createRoleAssignmentDTOs(roleBindings, userId, scope), isAccountBasicFeatureFlagEnabled);
+    userGroupService.addUserToDefaultUserGroups(scope, userId);
     userGroupService.addUserToUserGroups(scope, userId, getValidUserGroups(scope, userGroups));
   }
 

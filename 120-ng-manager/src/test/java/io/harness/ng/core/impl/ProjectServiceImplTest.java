@@ -48,6 +48,7 @@ import io.harness.gitsync.common.service.YamlGitConfigService;
 import io.harness.manage.GlobalContextManager;
 import io.harness.ng.beans.PageRequest;
 import io.harness.ng.beans.PageResponse;
+import io.harness.ng.core.api.UserGroupService;
 import io.harness.ng.core.beans.ProjectsPerOrganizationCount;
 import io.harness.ng.core.dto.ProjectDTO;
 import io.harness.ng.core.dto.ProjectFilterDTO;
@@ -116,13 +117,14 @@ public class ProjectServiceImplTest extends CategoryTest {
   private ProjectServiceImpl projectService;
   @Mock private NGFeatureFlagHelperService ngFeatureFlagHelperService;
   @Mock private FeatureFlagService featureFlagService;
+  @Mock private UserGroupService userGroupService;
 
   @Before
   public void setup() {
     MockitoAnnotations.initMocks(this);
     projectService = spy(new ProjectServiceImpl(projectRepository, organizationService, transactionTemplate,
         outboxService, ngUserService, accessControlClient, scopeAccessHelper, instrumentationHelper,
-        yamlGitConfigService, ngFeatureFlagHelperService, featureFlagService));
+        yamlGitConfigService, ngFeatureFlagHelperService, featureFlagService, userGroupService));
     when(scopeAccessHelper.getPermittedScopes(any())).then(returnsFirstArg());
   }
 
