@@ -144,20 +144,23 @@ public class PMSPipelineServiceHelper {
     PipelineEntity newEntity = pipelineEntity.withStageCount(filtersAndStageCount.getStageCount())
                                    .withStageNames(filtersAndStageCount.getStageNames());
     newEntity.getFilters().clear();
-    if (isNotEmpty(filtersAndStageCount.getFilters())) {
-      filtersAndStageCount.getFilters().forEach(
-          (key,
-              value) -> newEntity.getFilters().put(key, value != null ? Document.parse(value) : Document.parse("{}")));
-    }
+    try {
+      if (isNotEmpty(filtersAndStageCount.getFilters())) {
+        filtersAndStageCount.getFilters().forEach(
+            (key, value)
+                -> newEntity.getFilters().put(key, isNotEmpty(value) ? Document.parse(value) : Document.parse("{}")));
+      }
 
-    if (isNotEmpty(pipelineEntity.getTemplateModules())) {
-      for (String module : pipelineEntity.getTemplateModules()) {
-        if (!newEntity.getFilters().containsKey(module)) {
-          newEntity.getFilters().put(module, Document.parse("{}"));
+      if (isNotEmpty(pipelineEntity.getTemplateModules())) {
+        for (String module : pipelineEntity.getTemplateModules()) {
+          if (!newEntity.getFilters().containsKey(module)) {
+            newEntity.getFilters().put(module, Document.parse("{}"));
+          }
         }
       }
+    } catch (Exception e) {
+      log.error("Unable to parse the Filter value", e);
     }
-
     return newEntity;
   }
 

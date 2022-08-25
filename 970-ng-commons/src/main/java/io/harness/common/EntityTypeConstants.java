@@ -110,4 +110,5 @@ public interface EntityTypeConstants {
   String JENKINS_BUILD = "JenkinsBuild";
   String AZURE_CREATE_ARM_RESOURCE_STEP = "AzureCreateARMResource";
   String AZURE_CREATE_BP_RESOURCE_STEP = "AzureCreateBPResource";
+  String AZURE_ROLLBACK_ARM_RESOURCE_STEP = "AzureARMRollback";
 }

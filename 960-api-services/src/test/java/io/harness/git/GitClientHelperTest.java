@@ -550,6 +550,10 @@ public class GitClientHelperTest extends CategoryTest {
     assertThatCode(() -> GitClientHelper.validateURL("ssh://github.com/smjt-h")).doesNotThrowAnyException();
     assertThatCode(() -> GitClientHelper.validateURL("git@github.com:smjt-h/goHelloWorldServer.git"))
         .doesNotThrowAnyException();
+    assertThatThrownBy(() -> GitClientHelper.validateURL("git@github.com/smjt-h/goHelloWorldServer.git"))
+        .isExactlyInstanceOf(InvalidRequestException.class);
+    assertThatCode(() -> GitClientHelper.validateURL("ssh://git@github.com/smjt-h/goHelloWorldServer.git"))
+        .doesNotThrowAnyException();
     assertThatCode(() -> GitClientHelper.validateURL("https://github.com/smjt-h/goHelloWorldServer.git"))
         .doesNotThrowAnyException();
   }

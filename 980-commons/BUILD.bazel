@@ -43,6 +43,7 @@ java_library(
         "@maven//:org_modelmapper_modelmapper",
         "@maven//:org_mongodb_morphia_morphia",
         "@maven//:org_springframework_data_spring_data_commons",
+        "@maven//:org_springframework_data_spring_data_mongodb",
         "@maven//:org_zeroturnaround_zt_exec",
     ],
 )

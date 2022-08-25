@@ -139,7 +139,10 @@ public enum NGStepType {
       "Infrastructure Provisioners/ARM", StepSpecTypeConstants.AZURE_CREATE_ARM_RESOURCE),
   @JsonProperty(StepSpecTypeConstants.AZURE_CREATE_BP_RESOURCE)
   AZURE_CREATE_BP_RESOURCE("Azure Create Blueprint Resource", Arrays.asList(ServiceDefinitionType.values()),
-      "Infrastructure Provisioners/Azure Blueprint", StepSpecTypeConstants.AZURE_CREATE_BP_RESOURCE);
+      "Infrastructure Provisioners/Azure Blueprint", StepSpecTypeConstants.AZURE_CREATE_BP_RESOURCE),
+  @JsonProperty(StepSpecTypeConstants.AZURE_ROLLBACK_ARM_RESOURCE)
+  AZURE_ROLLBACK_ARM_RESOURCE("Azure ARM Rollback", Arrays.asList(ServiceDefinitionType.values()),
+      "Infrastructure Provisioners/Azure ARM", StepSpecTypeConstants.AZURE_ROLLBACK_ARM_RESOURCE);
 
   private String displayName;
   private List<ServiceDefinitionType> serviceDefinitionTypes;

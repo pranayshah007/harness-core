@@ -907,37 +907,42 @@ public class DelegateServiceImpl implements DelegateService {
         .map(delegate -> {
           List<DelegateConnectionDetails> connections =
               perDelegateConnections.computeIfAbsent(delegate.getUuid(), uuid -> emptyList());
-          return DelegateStatus.DelegateInner.builder()
-              .uuid(delegate.getUuid())
-              .delegateName(delegate.getDelegateName())
-              .description(delegate.getDescription())
-              .hostName(delegate.getHostName())
-              .delegateGroupName(delegate.getDelegateGroupName())
-              .ip(delegate.getIp())
-              .status(delegate.getStatus())
-              .lastHeartBeat(delegate.getLastHeartBeat())
-              // currently, we do not return stale connections, but if we do this must filter them out
-              .activelyConnected(!connections.isEmpty())
-              .delegateProfileId(delegate.getDelegateProfileId())
-              .delegateType(delegate.getDelegateType())
-              .polllingModeEnabled(delegate.isPolllingModeEnabled())
-              .proxy(delegate.isProxy())
-              .ceEnabled(delegate.isCeEnabled())
-              .excludeScopes(delegate.getExcludeScopes())
-              .includeScopes(delegate.getIncludeScopes())
-              .tags(delegate.getTags())
-              .profileExecutedAt(delegate.getProfileExecutedAt())
-              .profileError(delegate.isProfileError())
-              .grpcActive(connections.stream().allMatch(
-                  connection -> connection.getLastGrpcHeartbeat() > System.currentTimeMillis() - MAX_GRPC_HB_TIMEOUT))
-              .implicitSelectors(delegateSetupService.retrieveDelegateImplicitSelectors(delegate, false))
-              .sampleDelegate(delegate.isSampleDelegate())
-              .connections(connections)
-              .tokenActive(delegate.getDelegateTokenName() == null
-                  || (delegateTokenStatusMap.containsKey(delegate.getDelegateTokenName())
-                      && delegateTokenStatusMap.get(delegate.getDelegateTokenName())))
-              .delegateExpirationTime(delegate.getExpirationTime())
-              .build();
+          DelegateStatus.DelegateInner.DelegateInnerBuilder delegateInnerBuilder =
+              DelegateStatus.DelegateInner.builder()
+                  .uuid(delegate.getUuid())
+                  .delegateName(delegate.getDelegateName())
+                  .description(delegate.getDescription())
+                  .hostName(delegate.getHostName())
+                  .delegateGroupName(delegate.getDelegateGroupName())
+                  .ip(delegate.getIp())
+                  .status(delegate.getStatus())
+                  .lastHeartBeat(delegate.getLastHeartBeat())
+                  // currently, we do not return stale connections, but if we do this must filter them out
+                  .activelyConnected(!connections.isEmpty())
+                  .delegateProfileId(delegate.getDelegateProfileId())
+                  .delegateType(delegate.getDelegateType())
+                  .polllingModeEnabled(delegate.isPolllingModeEnabled())
+                  .proxy(delegate.isProxy())
+                  .ceEnabled(delegate.isCeEnabled())
+                  .excludeScopes(delegate.getExcludeScopes())
+                  .includeScopes(delegate.getIncludeScopes())
+                  .tags(delegate.getTags())
+                  .profileExecutedAt(delegate.getProfileExecutedAt())
+                  .profileError(delegate.isProfileError())
+                  .grpcActive(connections.stream().allMatch(connection
+                      -> connection.getLastGrpcHeartbeat() > System.currentTimeMillis() - MAX_GRPC_HB_TIMEOUT))
+                  .implicitSelectors(delegateSetupService.retrieveDelegateImplicitSelectors(delegate, false))
+                  .sampleDelegate(delegate.isSampleDelegate())
+                  .connections(connections)
+                  .tokenActive(delegate.getDelegateTokenName() == null
+                      || (delegateTokenStatusMap.containsKey(delegate.getDelegateTokenName())
+                          && delegateTokenStatusMap.get(delegate.getDelegateTokenName())))
+                  .delegateExpirationTime(delegate.getExpirationTime());
+          // Set autoUpgrade as true for legacy delegate.
+          if (!delegate.isImmutable()) {
+            delegateInnerBuilder.autoUpgrade(true);
+          }
+          return delegateInnerBuilder.build();
         })
         .collect(toList());
   }

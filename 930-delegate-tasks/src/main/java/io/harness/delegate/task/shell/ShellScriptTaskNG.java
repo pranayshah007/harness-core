@@ -11,15 +11,19 @@ import io.harness.connector.task.shell.SshSessionConfigMapper;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.DelegateTaskResponse;
+import io.harness.delegate.beans.connector.gcpconnector.GcpConnectorDTO;
+import io.harness.delegate.beans.connector.gcpconnector.GcpManualDetailsDTO;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
 import io.harness.delegate.task.AbstractDelegateRunnableTask;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.k8s.ContainerDeploymentDelegateBaseHelper;
+import io.harness.delegate.task.k8s.GcpK8sInfraDelegateConfig;
 import io.harness.k8s.K8sConstants;
 import io.harness.k8s.KubernetesContainerService;
 import io.harness.logging.CommandExecutionStatus;
+import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.SecretDecryptionService;
 import io.harness.shell.ExecuteCommandResponse;
 import io.harness.shell.ScriptProcessExecutor;
@@ -29,6 +33,7 @@ import io.harness.shell.SshSessionConfig;
 import io.harness.shell.SshSessionManager;
 
 import com.google.inject.Inject;
+import java.util.List;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import lombok.extern.slf4j.Slf4j;
@@ -136,6 +141,19 @@ public class ShellScriptTaskNG extends AbstractDelegateRunnableTask {
         ? containerDeploymentDelegateBaseHelper.getKubeconfigFileContent(taskParameters.getK8sInfraDelegateConfig())
         : "";
 
+    char[] serviceAccountKeyFileContent = null;
+    if (taskParameters.getK8sInfraDelegateConfig() instanceof GcpK8sInfraDelegateConfig) {
+      GcpK8sInfraDelegateConfig gcpK8sInfraDelegateConfig =
+          (GcpK8sInfraDelegateConfig) taskParameters.getK8sInfraDelegateConfig();
+      GcpConnectorDTO gcpConnectorDTO = gcpK8sInfraDelegateConfig.getGcpConnectorDTO();
+      if (gcpConnectorDTO.getCredential().getConfig() instanceof GcpManualDetailsDTO) {
+        GcpManualDetailsDTO gcpManualDetailsDTO = (GcpManualDetailsDTO) gcpConnectorDTO.getCredential().getConfig();
+        List<EncryptedDataDetail> encryptedDataDetails = gcpK8sInfraDelegateConfig.getEncryptionDataDetails();
+        secretDecryptionService.decrypt(gcpManualDetailsDTO, encryptedDataDetails);
+        serviceAccountKeyFileContent = gcpManualDetailsDTO.getSecretKeyRef().getDecryptedValue();
+      }
+    }
+
     return ShellExecutorConfig.builder()
         .accountId(taskParameters.getAccountId())
         .executionId(taskParameters.getExecutionId())
@@ -144,6 +162,7 @@ public class ShellScriptTaskNG extends AbstractDelegateRunnableTask {
         .environment(taskParameters.getEnvironmentVariables())
         .kubeConfigContent(kubeConfigFileContent)
         .scriptType(taskParameters.getScriptType())
+        .gcpKeyFileContent(serviceAccountKeyFileContent)
         .build();
   }
 }
