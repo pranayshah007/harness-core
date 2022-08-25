@@ -257,7 +257,7 @@ public class GithubPackagesRegistryServiceImpl implements GithubPackagesRegistry
 
     GithubPackagesVersionsResponse githubPackagesVersionsResponse = GithubPackagesVersionsResponse.builder().build();
 
-    List<JsonNode> response = new ArrayList<JsonNode>();
+    List<JsonNode> response = new ArrayList<>();
 
     if (EmptyPredicate.isEmpty(org)) {
       for (int i = 1;; i++) {
