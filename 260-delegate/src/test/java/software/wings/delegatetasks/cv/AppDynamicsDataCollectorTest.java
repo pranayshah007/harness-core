@@ -20,7 +20,7 @@ import static org.mockito.Mockito.verify;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.category.element.UnitTests;
-import io.harness.delegate.task.DataCollectionExecutorService;
+import io.harness.delegate.task.common.DataCollectionExecutorService;
 import io.harness.rule.Owner;
 
 import software.wings.WingsBaseTest;

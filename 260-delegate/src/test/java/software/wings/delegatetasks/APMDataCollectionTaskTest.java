@@ -25,7 +25,7 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.TaskData;
-import io.harness.delegate.task.DataCollectionExecutorService;
+import io.harness.delegate.task.common.DataCollectionExecutorService;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.rule.Owner;
 import io.harness.security.encryption.EncryptedDataDetail;

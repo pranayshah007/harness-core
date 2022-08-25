@@ -16,6 +16,7 @@ import io.harness.delegate.beans.NotificationProcessingResponse;
 import io.harness.delegate.beans.NotificationTaskResponse;
 import io.harness.delegate.beans.SlackTaskParams;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
+import io.harness.delegate.task.common.AbstractDelegateRunnableTask;
 import io.harness.notification.senders.SlackSenderImpl;
 
 import com.google.inject.Inject;

@@ -28,7 +28,7 @@ import io.harness.beans.DelegateTask;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.TaskData;
-import io.harness.delegate.task.DataCollectionExecutorService;
+import io.harness.delegate.task.common.DataCollectionExecutorService;
 import io.harness.delegate.task.gcp.helpers.GcpHelperService;
 import io.harness.rule.Owner;
 import io.harness.time.Timestamp;

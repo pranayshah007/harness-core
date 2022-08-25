@@ -19,7 +19,7 @@ import io.harness.delegate.beans.connector.helm.OciHelmConnectivityTaskResponse;
 import io.harness.delegate.beans.connector.helm.OciHelmConnectorDTO;
 import io.harness.delegate.beans.connector.helm.OciHelmValidationParams;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
-import io.harness.delegate.task.AbstractDelegateRunnableTask;
+import io.harness.delegate.task.common.AbstractDelegateRunnableTask;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.exception.HelmClientException;
 import io.harness.exception.HelmClientRuntimeException;

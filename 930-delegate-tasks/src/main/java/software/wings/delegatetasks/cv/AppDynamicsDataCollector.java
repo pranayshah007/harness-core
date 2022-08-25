@@ -15,7 +15,7 @@ import static software.wings.service.impl.appdynamics.AppdynamicsDelegateService
 
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;
-import io.harness.delegate.task.DataCollectionExecutorService;
+import io.harness.delegate.task.common.DataCollectionExecutorService;
 
 import software.wings.beans.AppDynamicsConfig;
 import software.wings.helpers.ext.appdynamics.AppdynamicsRestClient;

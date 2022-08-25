@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 
-package io.harness.delegate.task;
+package io.harness.delegate.task.common;
 
 import io.harness.exception.UnexpectedException;
 

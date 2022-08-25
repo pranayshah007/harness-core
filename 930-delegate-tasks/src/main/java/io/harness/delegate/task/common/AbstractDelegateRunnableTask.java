@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 
-package io.harness.delegate.task;
+package io.harness.delegate.task.common;
 
 import static io.harness.exception.WingsException.ExecutionContext.DELEGATE;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
@@ -29,7 +29,7 @@ import io.harness.delegate.beans.ThirdPartyApiCallLogDetails;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.exception.DelegateRetryableException;
 import io.harness.delegate.exceptionhandler.DelegateExceptionManager;
-import io.harness.delegate.task.common.DelegateRunnableTask;
+import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.tasklogging.TaskLogContext;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.FailureType;

@@ -26,7 +26,7 @@ import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
 import io.harness.delegate.clienttools.InstallUtils;
 import io.harness.delegate.exception.TaskNGDataException;
 import io.harness.delegate.k8s.K8sRequestHandler;
-import io.harness.delegate.task.AbstractDelegateRunnableTask;
+import io.harness.delegate.task.common.AbstractDelegateRunnableTask;
 import io.harness.delegate.task.ManifestDelegateConfigHelper;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.exception.ExceptionUtils;
