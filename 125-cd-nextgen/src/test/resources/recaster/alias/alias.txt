@@ -416,3 +416,6 @@ io.harness.cdng.provision.azure.AzureCreateBPStepConfiguration
 io.harness.cdng.provision.azure.AzureCreateBPStepConfigurationParameters
 io.harness.cdng.provision.azure.AzureCreateBPStepParameters
 io.harness.cdng.provision.azure.beans.AzureCreateBPPassThroughData
+io.harness.cdng.provision.azure.AzureARMRollbackStepInfo
+io.harness.cdng.provision.azure.AzureARMRollback
+io.harness.cdng.provision.azure.AzureARMRollbackStepParameters

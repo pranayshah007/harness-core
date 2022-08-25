@@ -35,6 +35,7 @@ java_library(
     visibility = ["//visibility:public"],
     deps = shared_dependencies + [
         "module",
+        "//950-ng-authentication-service:module",
         "//960-persistence:supporter-test",
         "//990-commons-test:module",
         "@maven//:io_dropwizard_dropwizard_testing",

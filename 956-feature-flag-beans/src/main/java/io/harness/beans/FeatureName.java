@@ -60,7 +60,6 @@ public enum FeatureName {
   CUSTOM_MAX_PAGE_SIZE,
   EXTRA_LARGE_PAGE_SIZE,
   CUSTOM_RESOURCEGROUP_SCOPE,
-  CUSTOM_SECRETS_MANAGER,
   CVNG_ENABLED,
   CV_DEMO,
   CV_FEEDBACKS,
@@ -418,6 +417,7 @@ public enum FeatureName {
   GIT_WEBHOOK_POLLING("Used to poll git webhook recent delivery events", HarnessTeam.CDP),
   TRIGGERS_REFACTOR("Enable NG Triggers UI refactoring", HarnessTeam.CDP),
   NG_SERVICE_MANIFEST_OVERRIDE("Enable Service Manifests override from Environment", HarnessTeam.CDP),
+  NG_SERVICE_CONFIG_FILES_OVERRIDE("Enable Service Config Files override from Environment", HarnessTeam.CDP),
   ENABLE_CHECK_STATE_EXECUTION_STARTING(
       "Used to allow create retry state execution when event is status equals to STARTING", HarnessTeam.SPG),
   NG_DEFAULT_K8S_MANIFESTS("Sample k8s manifests at account level file store", HarnessTeam.CDP, Scope.GLOBAL),

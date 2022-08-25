@@ -17,6 +17,7 @@ import static io.harness.eraro.Status.MOVED_PERMANENTLY;
 import static io.harness.eraro.Status.NOT_FOUND;
 import static io.harness.eraro.Status.SERVICE_UNAVAILABLE;
 import static io.harness.eraro.Status.UNAUTHORIZED;
+import static io.harness.eraro.Status.UNSUPPORTED_MEDIA_TYPE;
 
 import static java.util.stream.Collectors.joining;
 
@@ -632,7 +633,8 @@ public enum ErrorCode {
   SPOTINST_NULL_ERROR,
   SCM_UNEXPECTED_ERROR,
   DUPLICATE_FILE_IMPORT,
-  AZURE_APP_SERVICES_TASK_EXCEPTION;
+  AZURE_APP_SERVICES_TASK_EXCEPTION,
+  MEDIA_NOT_SUPPORTED(UNSUPPORTED_MEDIA_TYPE);
 
   private Status status = BAD_REQUEST;
   private String description;

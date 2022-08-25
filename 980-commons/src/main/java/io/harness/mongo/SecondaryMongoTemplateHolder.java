@@ -1,0 +1,23 @@
+package io.harness.mongo;
+
+import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.mongo.MongoConstants.SECONDARY_MONGO;
+
+import io.harness.annotations.dev.OwnedBy;
+
+import com.google.inject.Inject;
+import com.google.inject.Singleton;
+import com.google.inject.name.Named;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.mongodb.core.MongoTemplate;
+
+@Slf4j
+@OwnedBy(PL)
+@Singleton
+public class SecondaryMongoTemplateHolder {
+  @Inject @Named(SECONDARY_MONGO) public MongoTemplate secondaryMongoTemplate;
+
+  public MongoTemplate getSecondaryMongoTemplate() {
+    return secondaryMongoTemplate;
+  }
+}
