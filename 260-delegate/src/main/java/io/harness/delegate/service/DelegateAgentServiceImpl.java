@@ -2844,6 +2844,12 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
           String clusterName = pod.getMetadata().getClusterName();
           log.info("Delegate Pod id from pod {}", podUID);
           log.info("Delegate Pod cluster name from pod {}", clusterName);
+          try {
+            log.info("Delegate pod objectMeta {}",JsonUtils.asPrettyJson(pod.getMetadata()));
+          }catch (Exception e){
+            log.error(e.getMessage());
+          }
+
           return podUID;
         }
       }
