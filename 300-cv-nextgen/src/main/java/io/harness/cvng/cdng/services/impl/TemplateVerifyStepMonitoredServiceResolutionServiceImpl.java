@@ -122,26 +122,31 @@ public class TemplateVerifyStepMonitoredServiceResolutionServiceImpl
         getTemplateYaml(templateMonitoredServiceSpec));
     if (Objects.nonNull(monitoredServiceDTO) && Objects.nonNull(monitoredServiceDTO.getSources())
         && CollectionUtils.isNotEmpty(monitoredServiceDTO.getSources().getHealthSources())) {
-      try {
-        if (featureFlagService.isFeatureFlagEnabled(serviceEnvironmentParams.getAccountIdentifier(),
-                FeatureFlagNames.PERSIST_MONITORED_SERVICE_TEMPLATE_STEP)
-            && Objects.isNull(monitoredServiceService.getMonitoredService(
-                MonitoredServiceParams.builder()
-                    .projectIdentifier(serviceEnvironmentParams.getProjectIdentifier())
-                    .orgIdentifier(serviceEnvironmentParams.getOrgIdentifier())
-                    .accountIdentifier(serviceEnvironmentParams.getAccountIdentifier())
-                    .monitoredServiceIdentifier(monitoredServiceDTO.getIdentifier())
-                    .build()))) {
-          monitoredServiceService.create(serviceEnvironmentParams.getAccountIdentifier(), monitoredServiceDTO);
-        }
-      } catch (Exception e) {
-        log.error(e.getMessage() + " Failed to persist monitored service");
-        log.error(e.getStackTrace().toString());
-      }
+      persistTemplateMonitoredService(serviceEnvironmentParams, monitoredServiceDTO);
       populateCvConfigAndHealSourceData(serviceEnvironmentParams, monitoredServiceDTO.getSources().getHealthSources(),
           resolvedCVConfigInfoBuilder, executionIdentifier);
     } else {
       resolvedCVConfigInfoBuilder.cvConfigs(Collections.emptyList()).healthSources(Collections.emptyList());
+    }
+  }
+
+  private void persistTemplateMonitoredService(
+      ServiceEnvironmentParams serviceEnvironmentParams, MonitoredServiceDTO monitoredServiceDTO) {
+    try {
+      if (featureFlagService.isFeatureFlagEnabled(
+              serviceEnvironmentParams.getAccountIdentifier(), FeatureFlagNames.PERSIST_MONITORED_SERVICE_TEMPLATE_STEP)
+          && Objects.isNull(monitoredServiceService.getMonitoredService(
+              MonitoredServiceParams.builder()
+                  .projectIdentifier(serviceEnvironmentParams.getProjectIdentifier())
+                  .orgIdentifier(serviceEnvironmentParams.getOrgIdentifier())
+                  .accountIdentifier(serviceEnvironmentParams.getAccountIdentifier())
+                  .monitoredServiceIdentifier(monitoredServiceDTO.getIdentifier())
+                  .build()))) {
+        monitoredServiceService.create(serviceEnvironmentParams.getAccountIdentifier(), monitoredServiceDTO);
+      }
+    } catch (Exception e) {
+      log.error(e.getMessage() + " Failed to persist monitored service");
+      log.error(e.getStackTrace().toString());
     }
   }
 
