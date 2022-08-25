@@ -16,6 +16,7 @@ import static io.harness.ccm.commons.constants.ViewFieldConstants.NAMESPACE_FIEL
 import static io.harness.ccm.commons.constants.ViewFieldConstants.TASK_FIELD_ID;
 import static io.harness.ccm.commons.constants.ViewFieldConstants.WORKLOAD_NAME_FIELD_ID;
 import static io.harness.ccm.views.entities.ViewFieldIdentifier.CLUSTER;
+import static io.harness.ccm.views.entities.ViewFieldIdentifier.COMMON;
 import static io.harness.ccm.views.entities.ViewFieldIdentifier.LABEL;
 import static io.harness.ccm.views.graphql.QLCEViewAggregateOperation.MAX;
 import static io.harness.ccm.views.graphql.QLCEViewAggregateOperation.MIN;
@@ -165,7 +166,6 @@ import com.google.inject.Singleton;
 import com.healthmarketscience.sqlbuilder.SelectQuery;
 import com.healthmarketscience.sqlbuilder.custom.postgresql.PgLimitClause;
 import com.healthmarketscience.sqlbuilder.custom.postgresql.PgOffsetClause;
-import io.fabric8.utils.Lists;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Duration;
@@ -471,81 +471,55 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
   }
 
   @Override
-  public boolean isClusterPerspective(List<QLCEViewFilterWrapper> filters) {
-    boolean dataSourceCondition = false;
-    boolean ruleCondition = true;
-    List<ViewRule> viewRuleList = new ArrayList<>();
-    Optional<QLCEViewFilterWrapper> viewMetadataFilter = getViewMetadataFilter(filters);
+  public boolean isClusterPerspective(final List<QLCEViewFilterWrapper> filters) {
+    Set<ViewFieldIdentifier> dataSources = null;
+    final Optional<QLCEViewFilterWrapper> viewMetadataFilter = getViewMetadataFilter(filters);
     if (viewMetadataFilter.isPresent()) {
-      QLCEViewMetadataFilter metadataFilter = viewMetadataFilter.get().getViewMetadataFilter();
-      final String viewId = metadataFilter.getViewId();
+      final QLCEViewMetadataFilter metadataFilter = viewMetadataFilter.get().getViewMetadataFilter();
       if (!metadataFilter.isPreview()) {
-        CEView ceView = viewService.get(viewId);
-        viewRuleList = ceView.getViewRules();
-        List<ViewFieldIdentifier> dataSources;
+        final CEView ceView = viewService.get(metadataFilter.getViewId());
         try {
-          dataSources = ceView.getDataSources();
-        } catch (Exception e) {
-          dataSources = null;
-        }
-        if (dataSources != null) {
-          dataSourceCondition = true;
-          for (ViewFieldIdentifier identifier : dataSources) {
-            if (!identifier.equals(CLUSTER) && !identifier.equals(LABEL)) {
-              dataSourceCondition = false;
-              break;
-            }
-          }
+          dataSources = ceView.getDataSources().stream().collect(Collectors.toSet());
+        } catch (final Exception e) {
+          log.error("Exception while fetching dataSources for ceView: {}", ceView, e);
         }
       } else {
-        dataSourceCondition = true;
-        ruleCondition = isClusterPerspectiveFilters(filters);
-      }
-    }
-    for (ViewRule rule : viewRuleList) {
-      for (ViewCondition condition : rule.getViewConditions()) {
-        ViewIdCondition viewIdCondition = (ViewIdCondition) condition;
-        if (isNotClusterPerspective(viewIdCondition.getViewField().getIdentifier())) {
-          ruleCondition = false;
-          break;
-        }
+        dataSources = getDataSourcesFromFilters(filters);
       }
     }
 
-    return dataSourceCondition && ruleCondition;
+    return dataSources != null && isClusterDataSources(dataSources);
   }
 
-  private boolean isClusterPerspectiveFilters(final List<QLCEViewFilterWrapper> filters) {
-    final List<QLCEViewRule> qlCEViewRules = getRuleFilters(filters);
-    final List<QLCEViewFilter> qlCEViewFilters = getIdFilters(filters);
-    return (!Lists.isNullOrEmpty(qlCEViewRules) || !Lists.isNullOrEmpty(qlCEViewFilters))
-        && isClusterPerspectiveRules(qlCEViewRules) && isClusterPerspectiveViewFilters(qlCEViewFilters);
+  private Set<ViewFieldIdentifier> getDataSourcesFromFilters(final List<QLCEViewFilterWrapper> filters) {
+    final Set<ViewFieldIdentifier> dataSources = new HashSet<>();
+    dataSources.addAll(getDataSourcesFromViewFilters(getIdFilters(filters)));
+    dataSources.addAll(getDataSourcesFromViewRules(getRuleFilters(filters)));
+    return dataSources;
   }
 
-  private boolean isClusterPerspectiveViewFilters(final List<QLCEViewFilter> qlCEViewFilters) {
-    boolean isClusterPerspectiveViewFilters = true;
+  private Set<ViewFieldIdentifier> getDataSourcesFromViewFilters(final List<QLCEViewFilter> qlCEViewFilters) {
+    final Set<ViewFieldIdentifier> dataSources = new HashSet<>();
     for (final QLCEViewFilter qlCEViewFilter : qlCEViewFilters) {
-      if (isNotClusterPerspective(qlCEViewFilter.getField().getIdentifier())) {
-        isClusterPerspectiveViewFilters = false;
-        break;
-      }
+      dataSources.add(qlCEViewFilter.getField().getIdentifier());
     }
-    return isClusterPerspectiveViewFilters;
+    return dataSources;
   }
 
-  private boolean isClusterPerspectiveRules(final List<QLCEViewRule> qlCEViewRules) {
-    boolean isClusterPerspectiveRules = true;
+  private Set<ViewFieldIdentifier> getDataSourcesFromViewRules(final List<QLCEViewRule> qlCEViewRules) {
+    final Set<ViewFieldIdentifier> dataSources = new HashSet<>();
     for (final QLCEViewRule qlCEViewRule : qlCEViewRules) {
-      isClusterPerspectiveRules = isClusterPerspectiveViewFilters(qlCEViewRule.getConditions());
-      if (!isClusterPerspectiveRules) {
-        break;
-      }
+      dataSources.addAll(getDataSourcesFromViewFilters(qlCEViewRule.getConditions()));
     }
-    return isClusterPerspectiveRules;
+    return dataSources;
   }
 
-  private boolean isNotClusterPerspective(final ViewFieldIdentifier viewFieldIdentifier) {
-    return !(viewFieldIdentifier.equals(CLUSTER) || viewFieldIdentifier.equals(LABEL));
+  public boolean isClusterDataSources(final Set<ViewFieldIdentifier> dataSources) {
+    return (dataSources.size() == 1 && dataSources.contains(CLUSTER))
+        || (dataSources.size() == 2 && dataSources.contains(CLUSTER)
+            && (dataSources.contains(COMMON) || dataSources.contains(LABEL)))
+        || (dataSources.size() == 3 && dataSources.contains(CLUSTER) && dataSources.contains(COMMON)
+            && dataSources.contains(LABEL));
   }
 
   @Override
