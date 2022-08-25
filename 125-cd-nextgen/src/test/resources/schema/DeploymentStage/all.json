@@ -1917,19 +1917,119 @@
             "version"
           ],
           "properties": {
-            "version": {
+            "delegateSelectors": {
               "oneOf": [
                 {
-                  "$ref": "#/definitions/ParameterFieldString"
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
                 },
                 {
-                  "type": "string"
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
                 }
               ]
+            },
+            "inputs": {
+              "type": "array",
+              "items": {
+                "oneOf": [
+                  {
+                    "$ref": "#/definitions/NumberNGVariable"
+                  },
+                  {
+                    "$ref": "#/definitions/SecretNGVariable"
+                  },
+                  {
+                    "$ref": "#/definitions/StringNGVariable"
+                  }
+                ]
+              }
+            },
+            "metadata": {
+              "type": "string"
+            },
+            "scripts": {
+              "$ref": "#/definitions/CustomArtifactScripts"
+            },
+            "timeout": {
+              "type": "string",
+              "pattern": "^(([1-9])+\\d+[s])|(((([1-9])+\\d*[mhwd])+([\\s]?\\d+[smhwd])*)|(<\\+input>.*)|(.*<\\+.*>.*)|(^$))$"
+            },
+            "version": {
+              "type": "string"
+            },
+            "versionRegex": {
+              "type": "string"
             }
           }
         }
       ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "CustomArtifactScriptInfo": {
+      "type": "object",
+      "required": [
+        "shell",
+        "source"
+      ],
+      "properties": {
+        "shell": {
+          "type": "string",
+          "enum": [
+            "Bash",
+            "PowerShell"
+          ]
+        },
+        "source": {
+          "$ref": "#/definitions/CustomArtifactScriptSourceWrapper"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "CustomArtifactScriptSourceWrapper": {
+      "type": "object",
+      "required": [
+        "spec",
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "type": "string"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "Inline"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/CustomScriptInlineSource"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "CustomArtifactScripts": {
+      "type": "object",
+      "required": [
+        "fetchAllArtifacts"
+      ],
+      "properties": {
+        "fetchAllArtifacts": {
+          "$ref": "#/definitions/FetchAllArtifacts"
+        }
+      },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "CustomRemoteStoreConfig": {
@@ -1963,6 +2063,32 @@
               "type": "string"
             },
             "filePath": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "CustomScriptBaseSource": {
+      "type": "object",
+      "discriminator": "type",
+      "properties": {
+        "type": {
+          "type": "string"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "CustomScriptInlineSource": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/CustomScriptBaseSource"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "script": {
               "type": "string"
             }
           }
@@ -2583,6 +2709,54 @@
       "properties": {
         "onFailure": {
           "$ref": "#/definitions/OnFailureConfig"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "FetchAllArtifacts": {
+      "type": "object",
+      "required": [
+        "spec"
+      ],
+      "properties": {
+        "artifactsArrayPath": {
+          "oneOf": [
+            {
+              "$ref": "#/definitions/ParameterFieldString"
+            },
+            {
+              "type": "string"
+            }
+          ]
+        },
+        "attributes": {
+          "type": "array",
+          "items": {
+            "oneOf": [
+              {
+                "$ref": "#/definitions/NumberNGVariable"
+              },
+              {
+                "$ref": "#/definitions/SecretNGVariable"
+              },
+              {
+                "$ref": "#/definitions/StringNGVariable"
+              }
+            ]
+          }
+        },
+        "spec": {
+          "$ref": "#/definitions/CustomArtifactScriptInfo"
+        },
+        "versionPath": {
+          "oneOf": [
+            {
+              "$ref": "#/definitions/ParameterFieldString"
+            },
+            {
+              "type": "string"
+            }
+          ]
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -3782,9 +3956,6 @@
             "jobName"
           ],
           "properties": {
-            "captureEnvironmentVariable": {
-              "type": "boolean"
-            },
             "connectorRef": {
               "type": "string"
             },
@@ -3826,6 +3997,9 @@
             },
             "unstableStatusAsSuccess": {
               "type": "boolean"
+            },
+            "useConnectorUrlForJobExecution": {
+              "type": "boolean"
             }
           }
         }
@@ -3838,9 +4012,11 @@
         "value"
       ],
       "properties": {
+        "metadata": {
+          "type": "string"
+        },
         "name": {
-          "type": "string",
-          "minLength": 1
+          "type": "string"
         },
         "value": {
           "type": "string"

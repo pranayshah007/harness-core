@@ -27,6 +27,7 @@ import io.harness.encryptors.VaultEncryptor;
 import io.harness.exception.SecretManagementDelegateException;
 import io.harness.exception.runtime.HashiCorpVaultRuntimeException;
 import io.harness.helpers.ext.vault.VaultAppRoleLoginResult;
+import io.harness.security.encryption.AccessType;
 import io.harness.security.encryption.EncryptedRecord;
 import io.harness.security.encryption.EncryptedRecordData;
 import io.harness.security.encryption.EncryptionConfig;
@@ -263,7 +264,7 @@ public class HashicorpVaultEncryptor implements VaultEncryptor {
     } else if (vaultConfig.isUseK8sAuth()) {
       VaultK8sLoginResult vaultK8sLoginResult = getVaultK8sAuthLoginResult(vaultConfig);
       vaultConfig.setAuthToken(vaultK8sLoginResult.getClientToken());
-    } else if (!vaultConfig.getRenewAppRoleToken()) {
+    } else if (AccessType.APP_ROLE.equals(vaultConfig.getAccessType()) && !vaultConfig.getRenewAppRoleToken()) {
       VaultAppRoleLoginResult vaultAppRoleLoginResult = getVaultAppRoleLoginResult(vaultConfig);
       vaultConfig.setAuthToken(vaultAppRoleLoginResult.getClientToken());
     }

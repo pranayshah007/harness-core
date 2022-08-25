@@ -17,6 +17,7 @@ import io.harness.cdng.artifact.bean.ArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.AcrArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.AmazonS3ArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.ArtifactoryRegistryArtifactConfig;
+import io.harness.cdng.artifact.bean.yaml.CustomArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.DockerHubArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.EcrArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.GcrArtifactConfig;
@@ -233,6 +234,9 @@ public class ArtifactStepHelper {
         }
         return ArtifactConfigToDelegateReqMapper.getJenkinsDelegateRequest(jenkinsArtifactConfig, jenkinsConnectorDTO,
             encryptedDataDetails, jenkinsArtifactConfig.getConnectorRef().getValue());
+      case CUSTOM_ARTIFACT:
+        CustomArtifactConfig customArtifactConfig = (CustomArtifactConfig) artifactConfig;
+        return ArtifactConfigToDelegateReqMapper.getCustomDelegateRequest(customArtifactConfig, ambiance);
       default:
         throw new UnsupportedOperationException(
             String.format("Unknown Artifact Config type: [%s]", artifactConfig.getSourceType()));
@@ -306,6 +310,8 @@ public class ArtifactStepHelper {
         return TaskType.JENKINS_ARTIFACT_TASK_NG;
       case GITHUB_PACKAGES:
         return TaskType.GITHUB_PACKAGES_TASK_NG;
+      case CUSTOM_ARTIFACT:
+        return TaskType.CUSTOM_ARTIFACT_NG;
       default:
         throw new UnsupportedOperationException(
             String.format("Unknown Artifact Config type: [%s]", artifactConfig.getSourceType()));
@@ -388,6 +394,8 @@ public class ArtifactStepHelper {
                                                    .stream()
                                                    .map(TaskSelectorYaml::new)
                                                    .collect(Collectors.toList()));
+      case CUSTOM_ARTIFACT:
+        return TaskSelectorYaml.toTaskSelector(((CustomArtifactConfig) artifactConfig).getDelegateSelectors());
       default:
         throw new UnsupportedOperationException(
             String.format("Unknown Artifact Config type: [%s]", artifactConfig.getSourceType()));

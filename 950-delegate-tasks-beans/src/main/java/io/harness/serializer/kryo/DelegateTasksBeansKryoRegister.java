@@ -312,6 +312,8 @@ import io.harness.delegate.task.artifacts.artifactory.ArtifactoryGenericArtifact
 import io.harness.delegate.task.artifacts.artifactory.ArtifactoryGenericArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.azure.AcrArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.azure.AcrArtifactDelegateResponse;
+import io.harness.delegate.task.artifacts.custom.CustomArtifactDelegateRequest;
+import io.harness.delegate.task.artifacts.custom.CustomArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.docker.DockerArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.docker.DockerArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.ecr.EcrArtifactDelegateRequest;
@@ -1648,6 +1650,8 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(CustomRemoteStoreDelegateConfig.class, 56403);
     kryo.register(PdcWinRmInfraDelegateConfig.class, 55335);
     kryo.register(WinrmTaskParameters.class, 55336);
+    kryo.register(CustomArtifactDelegateRequest.class, 55337);
+    kryo.register(CustomArtifactDelegateResponse.class, 55338);
     kryo.register(LocalFileStoreDelegateConfig.class, 55404);
     kryo.register(LocalStoreFetchFilesResult.class, 55405);
     kryo.register(ManifestFiles.class, 55406);

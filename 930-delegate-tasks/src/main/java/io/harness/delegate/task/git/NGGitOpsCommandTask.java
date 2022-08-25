@@ -6,7 +6,6 @@
  */
 
 package io.harness.delegate.task.git;
-
 import static io.harness.annotations.dev.HarnessTeam.GITOPS;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.git.model.ChangeType.MODIFY;
@@ -76,8 +75,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.google.inject.Inject;
 import java.io.IOException;
+import java.nio.file.NoSuchFileException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -106,6 +108,8 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
   @Inject private GithubApiClient githubApiClient;
   @Inject private GitlabApiClient gitlabApiClient;
   @Inject private AzureRepoApiClient azureRepoApiClient;
+
+  private Gson gson = new GsonBuilder().setPrettyPrinting().create();
 
   public static final String FetchFiles = "Fetch Files";
   public static final String UpdateFiles = "Update GitOps Configuration files";
@@ -199,41 +203,48 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
     }
   }
 
+  public FetchFilesResult getFiles(NGGitOpsTaskParams gitOpsTaskParams, LogCallback logCallback)
+      throws IOException, ParseException {
+    try {
+      FetchFilesResult fetchFilesResult =
+          getFetchFilesResult(gitOpsTaskParams.getGitFetchFilesConfig(), gitOpsTaskParams.getAccountId());
+      updateFiles(gitOpsTaskParams.getFilesToVariablesMap(), fetchFilesResult, logCallback);
+      return fetchFilesResult;
+    } catch (Exception e) {
+      if (e instanceof NoSuchFileException) {
+        this.logCallback.saveExecutionLog(color(format("%Files were not found. Creating files at the requested path."),
+                                              LogColor.White, LogWeight.Bold),
+            ERROR);
+        List<GitFile> gitFiles = new ArrayList<>();
+        gitOpsTaskParams.getFilesToVariablesMap().forEach((file, values) -> {
+          gitFiles.add(GitFile.builder().filePath(file).fileContent(gson.toJson(values)).build());
+        });
+        return FetchFilesResult.builder().files(gitFiles).build();
+      }
+      throw e;
+    }
+  }
+
   public DelegateResponseData handleCreatePR(NGGitOpsTaskParams gitOpsTaskParams) {
     CommandUnitsProgress commandUnitsProgress = CommandUnitsProgress.builder().build();
     try {
       log.info("Running Create PR Task for activityId {}", gitOpsTaskParams.getActivityId());
 
       logCallback = new NGDelegateLogCallback(getLogStreamingTaskClient(), FetchFiles, true, commandUnitsProgress);
-
-      FetchFilesResult fetchFilesResult =
-          getFetchFilesResult(gitOpsTaskParams.getGitFetchFilesConfig(), gitOpsTaskParams.getAccountId());
-
-      if (fetchFilesResult == null || fetchFilesResult.getFiles().isEmpty()) {
-        logCallback.saveExecutionLog(
-            color(format("%nFetch Files task was not successful."), LogColor.White, LogWeight.Bold), ERROR);
-        throw new InvalidRequestException("Fetch Files task was not successful.");
-      }
-
+      FetchFilesResult fetchFilesResult = getFiles(gitOpsTaskParams, logCallback);
       logCallback = markDoneAndStartNew(logCallback, UpdateFiles, commandUnitsProgress);
-
-      String baseBranch = gitOpsTaskParams.getGitFetchFilesConfig().getGitStoreDelegateConfig().getBranch();
-      String newBranch = baseBranch + "_" + RandomStringUtils.randomAlphabetic(12);
-
-      ScmConnector scmConnector =
-          gitOpsTaskParams.getGitFetchFilesConfig().getGitStoreDelegateConfig().getGitConfigDTO();
-
-      updateFiles(gitOpsTaskParams.getFilesToVariablesMap(), fetchFilesResult, logCallback);
-      logCallback = markDoneAndStartNew(logCallback, CommitAndPush, commandUnitsProgress);
-
       List<GitFile> fetchFilesResultFiles = fetchFilesResult.getFiles();
       StringBuilder sb = new StringBuilder(1024);
       fetchFilesResultFiles.forEach(f -> sb.append("\n- ").append(f.getFilePath()));
 
       logCallback.saveExecutionLog("Following files will be updated.");
       logCallback.saveExecutionLog(sb.toString(), INFO);
-
       logCallback = markDoneAndStartNew(logCallback, CommitAndPush, commandUnitsProgress);
+
+      String baseBranch = gitOpsTaskParams.getGitFetchFilesConfig().getGitStoreDelegateConfig().getBranch();
+      String newBranch = baseBranch + "_" + RandomStringUtils.randomAlphabetic(12);
+      ScmConnector scmConnector =
+          gitOpsTaskParams.getGitFetchFilesConfig().getGitStoreDelegateConfig().getGitConfigDTO();
 
       createNewBranch(scmConnector, newBranch, baseBranch);
       CommitAndPushResult gitCommitAndPushResult = commit(gitOpsTaskParams, fetchFilesResult, COMMIT_MSG, newBranch);

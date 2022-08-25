@@ -108,6 +108,7 @@ public class CDPMSStepPlanCreatorV2Test extends CategoryTest {
         pipeline.fromYamlPath("pipeline/stages/[3]/parallel/[0]/stage/spec/execution/steps/[1]/step");
     List<YamlNode> steps = cdPMSStepPlanCreator.findStepsBeforeCurrentStep(
         currentStep, yamlNode -> SHELL_SCRIPT_TYPE.equals(yamlNode.getType()));
+
     assertThat(steps).hasSize(2);
     assertThat(steps.stream().map(YamlUtils::getFullyQualifiedName))
         .containsOnly("pipeline.stages.Install_dependencies.spec.execution.steps.Provisioner_Step1",

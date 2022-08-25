@@ -24,6 +24,7 @@ import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.delegate.task.artifacts.artifactory.ArtifactoryArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.artifactory.ArtifactoryGenericArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.azure.AcrArtifactDelegateRequest;
+import io.harness.delegate.task.artifacts.custom.CustomArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.docker.DockerArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.ecr.EcrArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.gcr.GcrArtifactDelegateRequest;
@@ -210,6 +211,26 @@ public class ArtifactDelegateRequestUtils {
         .awsConnectorDTO(connectorDTO)
         .encryptedDataDetails(encryptedDataDetails)
         .sourceType(sourceType)
+        .build();
+  }
+
+  public CustomArtifactDelegateRequest getCustomDelegateRequest(String artifactsArrayPath, String versionRegex,
+      String type, ArtifactSourceType sourceType, String versionPath, String script, Map<String, String> attributes,
+      Map<String, String> inputs, String version, String executionId, long timeout, String accountId) {
+    return CustomArtifactDelegateRequest.builder()
+        .artifactsArrayPath(artifactsArrayPath)
+        .attributes(attributes)
+        .versionRegex(trim(versionRegex))
+        .sourceType(sourceType)
+        .type(type)
+        .versionPath(versionPath)
+        .script(script)
+        .timeout(timeout)
+        .inputs(inputs)
+        .version(version)
+        .executionId(executionId)
+        .workingDirectory("/tmp")
+        .accountId(accountId)
         .build();
   }
 

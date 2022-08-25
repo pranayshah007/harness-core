@@ -48,6 +48,7 @@ import io.harness.grpc.DelegateServiceGrpcClient;
 import io.harness.grpc.client.AbstractManagerGrpcClientModule;
 import io.harness.grpc.client.ManagerGrpcClientModule;
 import io.harness.impl.scm.ScmServiceClientImpl;
+import io.harness.licensing.remote.NgLicenseHttpClientModule;
 import io.harness.lock.DistributedLockImplementation;
 import io.harness.lock.PersistentLockModule;
 import io.harness.manage.ManagedScheduledExecutorService;
@@ -226,6 +227,9 @@ public class STOManagerServiceModule extends AbstractModule {
     bind(ScheduledExecutorService.class)
         .annotatedWith(Names.named("taskPollExecutor"))
         .toInstance(new ManagedScheduledExecutorService("TaskPoll-Thread"));
+
+    install(NgLicenseHttpClientModule.getInstance(stoManagerConfiguration.getNgManagerClientConfig(),
+        stoManagerConfiguration.getNgManagerServiceSecret(), STO_MANAGER.getServiceId()));
 
     install(new CIExecutionServiceModule(
         stoManagerConfiguration.getCiExecutionServiceConfig(), stoManagerConfiguration.getShouldConfigureWithPMS()));

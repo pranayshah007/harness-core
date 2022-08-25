@@ -9,6 +9,7 @@ package io.harness.subscription.helpers.impl;
 
 import io.harness.ModuleType;
 import io.harness.exception.InvalidArgumentsException;
+import io.harness.subscription.dto.AddressDto;
 import io.harness.subscription.dto.CardDTO;
 import io.harness.subscription.dto.CustomerDetailDTO;
 import io.harness.subscription.dto.CustomerDetailDTO.CustomerDetailDTOBuilder;
@@ -33,6 +34,7 @@ import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.inject.Singleton;
+import com.stripe.model.Address;
 import com.stripe.model.Customer;
 import com.stripe.model.Invoice;
 import com.stripe.model.InvoiceLineItem;
@@ -435,9 +437,30 @@ public class StripeHelperImpl implements StripeHelper {
     return NextActionDetailDTO.builder().type(nextAction.getType()).useStripeSdk(nextAction.getUseStripeSdk()).build();
   }
 
+  private AddressDto toAddressDto(Address address) {
+    if (address == null) {
+      return null;
+    }
+
+    return AddressDto.builder()
+        .city(address.getCity())
+        .country(address.getCountry())
+        .city(address.getCity())
+        .line1(address.getLine1())
+        .line2(address.getLine2())
+        .postalCode(address.getPostalCode())
+        .state(address.getState())
+        .build();
+  }
+
   private CustomerDetailDTO toCustomerDetailDTO(Customer customer) {
+    AddressDto address = toAddressDto(customer.getAddress());
+
     CustomerDetailDTOBuilder builder = CustomerDetailDTO.builder();
-    builder.customerId(customer.getId()).billingEmail(customer.getEmail()).companyName(customer.getName());
+    builder.customerId(customer.getId())
+        .address(address)
+        .billingEmail(customer.getEmail())
+        .companyName(customer.getName());
     // display default payment method
     if (customer.getInvoiceSettings() != null) {
       builder.defaultSource(customer.getInvoiceSettings().getDefaultPaymentMethod());
