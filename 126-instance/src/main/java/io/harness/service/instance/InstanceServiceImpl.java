@@ -25,6 +25,7 @@ import io.harness.repositories.instance.InstanceRepository;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.mongodb.client.result.UpdateResult;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -237,6 +238,12 @@ public class InstanceServiceImpl implements InstanceService {
       String orgIdentifier, String projectIdentifier, List<String> serviceId, long timestampInMs) {
     return instanceRepository.getActiveServiceInstanceCountBreakdown(
         accountIdentifier, orgIdentifier, projectIdentifier, serviceId, timestampInMs);
+  }
+
+  @Override
+  public void updateInfrastructureMapping(List<String> instanceIds, String infrastructureMappingId) {
+    UpdateResult updateResult = instanceRepository.updateInfrastructureMapping(instanceIds, infrastructureMappingId);
+    log.info("Updated infrastructure mapping for {} instances", updateResult.getModifiedCount());
   }
 
   // ----------------------------------- PRIVATE METHODS -------------------------------------

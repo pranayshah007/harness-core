@@ -130,11 +130,12 @@ public class ForLoopStrategyConfigService implements StrategyConfigService {
     validateItems(params);
     int end = params.size() - 1;
     if (!ParameterField.isBlank(harnessForConfig.getStart())) {
-      start = (int) (((harnessForConfig.getStart().getValue().floatValue()) / 100) * params.size());
+      start = Math.round(((harnessForConfig.getStart().getValue().floatValue()) / 100) * params.size());
     }
     if (!ParameterField.isBlank(harnessForConfig.getEnd())) {
-      end = (int) (((harnessForConfig.getEnd().getValue().floatValue()) / 100) * params.size());
+      end = Math.round(((harnessForConfig.getEnd().getValue().floatValue()) / 100) * params.size());
     }
+
     validateStartEnd(start, end, params.size());
     return params.subList(start, end);
   }

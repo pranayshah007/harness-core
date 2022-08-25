@@ -112,7 +112,7 @@ public class LdapSettings extends SSOSettings implements ExecutionCapabilityDema
         .get();
   }
 
-  public void encryptLdapInlineSecret(SecretManager secretManager) {
+  public void encryptLdapInlineSecret(SecretManager secretManager, boolean localSM) {
     if (isNotEmpty(connectionSettings.getBindPassword())
         && !LdapConstants.MASKED_STRING.equals(connectionSettings.getBindPassword())) {
       connectionSettings.setPasswordType(LdapConnectionSettings.INLINE_SECRET);
@@ -126,6 +126,9 @@ public class LdapSettings extends SSOSettings implements ExecutionCapabilityDema
                                   .name(UUID.randomUUID().toString())
                                   .scopedToAccount(true)
                                   .build();
+      if (localSM) {
+        secretText.setKmsId(accountId);
+      }
       String encryptedBindPassword = secretManager.saveSecretText(accountId, secretText, false);
       connectionSettings.setEncryptedBindPassword(encryptedBindPassword);
       connectionSettings.setBindPassword(LdapConstants.MASKED_STRING);

@@ -35,6 +35,8 @@ import io.harness.ci.config.VmImageConfig;
 import io.harness.ci.execution.OrchestrationExecutionEventHandlerRegistrar;
 import io.harness.ci.ff.CIFeatureFlagNoopServiceImpl;
 import io.harness.ci.ff.CIFeatureFlagService;
+import io.harness.ci.license.CILicenseNoopServiceImpl;
+import io.harness.ci.license.CILicenseService;
 import io.harness.ci.registrars.ExecutionAdvisers;
 import io.harness.ci.registrars.ExecutionRegistrar;
 import io.harness.cistatus.service.GithubService;
@@ -131,6 +133,12 @@ public class CIExecutionRule implements MethodRule, InjectorRuleMixin, MongoRule
       @Override
       protected void configure() {
         bind(CIFeatureFlagService.class).to(CIFeatureFlagNoopServiceImpl.class);
+      }
+    });
+    modules.add(new AbstractModule() {
+      @Override
+      protected void configure() {
+        bind(CILicenseService.class).to(CILicenseNoopServiceImpl.class);
       }
     });
 

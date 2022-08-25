@@ -16,6 +16,7 @@ import static java.time.Duration.ofSeconds;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
+import io.harness.beans.FeatureName;
 import io.harness.ff.FeatureFlagService;
 import io.harness.iterator.PersistenceIterator;
 import io.harness.iterator.PersistenceIteratorFactory;
@@ -28,6 +29,7 @@ import io.harness.workers.background.AccountStatusBasedEntityProcessController;
 import software.wings.beans.sso.LdapSettings;
 import software.wings.beans.sso.SSOSettings.SSOSettingsKeys;
 import software.wings.beans.sso.SSOType;
+import software.wings.security.authentication.NgLdapGroupSyncEventPublisher;
 import software.wings.service.intfc.AccountService;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
@@ -52,7 +54,7 @@ public class LdapGroupScheduledHandler implements Handler<LdapSettings> {
   @Inject private AccountService accountService;
   @Inject private LdapGroupSyncJobHelper ldapGroupSyncJobHelper;
   @Inject private FeatureFlagService featureFlagService;
-
+  @Inject private NgLdapGroupSyncEventPublisher ngLdapGroupSyncEventPublisher;
   private static ExecutorService executor =
       Executors.newSingleThreadExecutor(new ThreadFactoryBuilder().setNameFormat("scheduled-ldap-handler").build());
   private static final ScheduledThreadPoolExecutor executorService = new ScheduledThreadPoolExecutor(
@@ -96,5 +98,27 @@ public class LdapGroupScheduledHandler implements Handler<LdapSettings> {
   @Override
   public void handle(LdapSettings settings) {
     ldapGroupSyncJobHelper.syncJob(settings);
+    processForNG(settings);
+  }
+
+  private void processForNG(LdapSettings settings) {
+    if (featureFlagService.isEnabled(FeatureName.NG_ENABLE_LDAP_CHECK, settings.getAccountId())) {
+      publishEventToNG(settings);
+    } else {
+      log.error("Please enable feature flag NG_ENABLE_LDAP_CHECK for your account");
+    }
+  }
+
+  private void publishEventToNG(LdapSettings settings) {
+    try {
+      log.info(
+          "EVENT_LDAP_GROUP_SYNC: Publishing event from CG CronScheduler for NG LDAP Group Sync for account {} and SSO {} ",
+          settings.getAccountId(), settings.getUuid());
+      ngLdapGroupSyncEventPublisher.publishLdapGroupSyncEvent(settings.getAccountId(), settings.getUuid());
+
+    } catch (Exception e) {
+      log.error("EVENT_LDAP_GROUP_SYNC: Exception in publishing event for LDAP Group Sync for account {} and SSO {} ",
+          settings.getAccountId(), settings.getUuid(), e);
+    }
   }
 }

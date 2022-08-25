@@ -36,6 +36,8 @@ public interface StepSpecTypeConstants {
 
   String AZURE_CREATE_ARM_RESOURCE = "AzureCreateARMResource";
   String AZURE_CREATE_BP_RESOURCE = "AzureCreateBPResource";
+  String AZURE_ROLLBACK_ARM_RESOURCE = "AzureARMRollback";
+
   String PLACEHOLDER = "Placeholder";
 
   String HELM_DEPLOY = "HelmDeploy";
