@@ -197,7 +197,7 @@ public class DeploymentStageVariableCreator extends AbstractStageVariableCreator
       if (environmentRef != null) {
         createVariablesForEnvironment(ctx, environmentRef, responseMap, serviceVariables);
       }
-      if (environmentRef != null && infraDefinitionRefs != null) {
+      if (environmentRef != null && isNotEmpty(infraDefinitionRefs)) {
         // todo: multi-infra
         createVariablesForInfraDefinitions(ctx, environmentRef, infraDefinitionRefs, responseMap);
       }
