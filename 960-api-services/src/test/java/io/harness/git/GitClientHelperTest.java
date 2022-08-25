@@ -504,6 +504,28 @@ public class GitClientHelperTest extends CategoryTest {
         .isEqualTo("https://api.bitbucket.org/");
     assertThat(GitClientHelper.getBitBucketApiURL("http://10.67.0.1/devkimittal/harness-core"))
         .isEqualTo("http://10.67.0.1/");
+    assertThat(GitClientHelper.getBitBucketApiURL("https://bb.harness.io/stash/scm/rutvijproject/rutvijrepo.git"))
+        .isEqualTo("https://bb.harness.io/stash/");
+    assertThat(GitClientHelper.getBitBucketApiURL("https://bb.harness.io/scm/rutvijproject/rutvijrepo.git"))
+        .isEqualTo("https://bb.harness.io/");
+    assertThat(
+        GitClientHelper.getBitBucketApiURL("https://rutvijmehta@bb.harness.io/stash/scm/rutvijproject/rutvijrepo.git"))
+        .isEqualTo("https://bb.harness.io/stash/");
+    assertThat(GitClientHelper.getBitBucketApiURL("https://rutvijmehta@bb.harness.io/scm/rutvijproject/rutvijrepo.git"))
+        .isEqualTo("https://bb.harness.io/");
+    assertThat(GitClientHelper.getBitBucketApiURL("https://bb.harness.io")).isEqualTo("https://bb.harness.io/");
+    assertThat(GitClientHelper.getBitBucketApiURL("https://bb.harness.io/")).isEqualTo("https://bb.harness.io/");
+    assertThat(GitClientHelper.getBitBucketApiURL("https://bb.harness.io/scm")).isEqualTo("https://bb.harness.io/");
+    assertThat(GitClientHelper.getBitBucketApiURL("https://bb.harness.io/scm/")).isEqualTo("https://bb.harness.io/");
+    assertThat(GitClientHelper.getBitBucketApiURL("https://bb.harness.io/stash/")).isEqualTo("https://bb.harness.io/");
+    assertThat(GitClientHelper.getBitBucketApiURL("https://bb.harness.io/stash/scm"))
+        .isEqualTo("https://bb.harness.io/stash/");
+    assertThat(GitClientHelper.getBitBucketApiURL("ssh://git@bb.harness.io/rutvijproject/rutvijrepo.git"))
+        .isEqualTo("https://bb.harness.io/");
+    assertThat(GitClientHelper.getBitBucketApiURL("ssh://git@bb.harness.io/scm/rutvijproject/rutvijrepo.git"))
+        .isEqualTo("https://bb.harness.io/");
+    assertThat(GitClientHelper.getBitBucketApiURL("ssh://git@bb.harness.io/stash/scm/rutvijproject/rutvijrepo.git"))
+        .isEqualTo("https://bb.harness.io/stash/");
   }
 
   @Test
