@@ -3,6 +3,7 @@ package io.harness.cdng.creator.plan.service;
 import io.harness.cdng.artifact.steps.ArtifactsStepV2;
 import io.harness.cdng.creator.plan.PlanCreatorConstants;
 import io.harness.cdng.environment.yaml.EnvironmentYamlV2;
+import io.harness.cdng.manifest.steps.ManifestsStepV2;
 import io.harness.cdng.service.beans.ServiceYamlV2;
 import io.harness.cdng.service.steps.ServiceStepV3;
 import io.harness.cdng.service.steps.ServiceStepV3Parameters;
@@ -76,7 +77,7 @@ public class ServiceAllInOnePlanCreatorUtils {
   }
 
   private List<String> addChildrenNodes(LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap) {
-    // Add artifact node
+    // Add artifacts node
     final PlanNode artifactsNode =
         PlanNode.builder()
             .uuid("artifacts-" + UUIDGenerator.generateUuid())
@@ -94,6 +95,24 @@ public class ServiceAllInOnePlanCreatorUtils {
     planCreationResponseMap.put(
         artifactsNode.getUuid(), PlanCreationResponse.builder().planNode(artifactsNode).build());
 
-    return List.of(artifactsNode.getUuid());
+    // Add manifests node
+    final PlanNode manifestsNode =
+        PlanNode.builder()
+            .uuid("manifests-" + UUIDGenerator.generateUuid())
+            .stepType(ManifestsStepV2.STEP_TYPE)
+            .name(PlanCreatorConstants.MANIFESTS_NODE_NAME)
+            .identifier(YamlTypes.MANIFEST_LIST_CONFIG)
+            .stepParameters(new EmptyStepParameters())
+            .facilitatorObtainment(
+                FacilitatorObtainment.newBuilder()
+                    .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.SYNC).build())
+                    .build())
+            .skipExpressionChain(true)
+            .skipGraphType(SkipType.SKIP_TREE)
+            .build();
+    planCreationResponseMap.put(
+        manifestsNode.getUuid(), PlanCreationResponse.builder().planNode(manifestsNode).build());
+
+    return List.of(artifactsNode.getUuid(), manifestsNode.getUuid());
   }
 }

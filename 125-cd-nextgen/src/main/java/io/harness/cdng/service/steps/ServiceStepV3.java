@@ -2,7 +2,6 @@ package io.harness.cdng.service.steps;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-
 import static java.lang.String.format;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -14,6 +13,7 @@ import io.harness.cdng.visitor.YamlTypes;
 import io.harness.connector.services.ConnectorService;
 import io.harness.exception.InvalidRequestException;
 import io.harness.executions.steps.ExecutionNodeType;
+import io.harness.logstreaming.NGLogCallback;
 import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.environment.services.EnvironmentService;
 import io.harness.ng.core.environment.yaml.NGEnvironmentConfig;
@@ -72,6 +72,7 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
 
   public ChildrenExecutableResponse obtainChildren(
       Ambiance ambiance, ServiceStepV3Parameters stepParameters, StepInputPackage inputPackage) {
+    final NGLogCallback logCallback = serviceStepsHelper.getServiceLogCallback(ambiance);
     try {
       final ServicePartResponse servicePartResponse = executeServicePart(ambiance, stepParameters);
       executeEnvironmentPart(ambiance, stepParameters, servicePartResponse);
@@ -142,25 +143,36 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
     serviceStepsHelper.validateResources(
         ambiance, ngServiceV2InfoConfig.getServiceDefinition(), ngServiceV2InfoConfig.getIdentifier());
 
-    return StepResponse.builder()
-        .status(Status.SUCCEEDED)
-        .stepOutcome(
-            StepResponse.StepOutcome.builder()
-                .name(OutcomeExpressionConstants.SERVICE)
-                .outcome(ServiceStepOutcome.fromServiceStepV2(ngServiceV2InfoConfig.getIdentifier(),
-                    ngServiceV2InfoConfig.getName(), ngServiceV2InfoConfig.getServiceDefinition().getType().name(),
-                    ngServiceV2InfoConfig.getDescription(), ngServiceV2InfoConfig.getTags(),
-                    ngServiceV2InfoConfig.getGitOpsEnabled()))
-                .group(StepCategory.STAGE.name())
-                .build())
-        .build();
+    List<StepResponse.StepOutcome> stepOutcomes = new ArrayList<>();
+//    List<Outcome> childrenOutcomes = serviceStepsHelper.getChildrenOutcomes(responseDataMap);
+    //    Optional<Outcome> manifestsOutcome =
+    //        childrenOutcomes.stream().filter(ManifestsOutcome.class ::isInstance).findFirst();
+    //    manifestsOutcome.ifPresent(o
+    //        -> stepOutcomes.add(StepResponse.StepOutcome.builder()
+    //                                .name(OutcomeExpressionConstants.MANIFESTS)
+    //                                .outcome(o)
+    //                                .group(StepCategory.STAGE.name())
+    //                                .build()));
+    //    Optional<Outcome> artifactsOutcome =
+    //        childrenOutcomes.stream().filter(ArtifactsOutcome.class ::isInstance).findFirst();
+    //    artifactsOutcome.ifPresent(o
+    //        -> stepOutcomes.add(StepResponse.StepOutcome.builder()
+    //                                .name(OutcomeExpressionConstants.ARTIFACTS)
+    //                                .outcome(o)
+    //                                .group(StepCategory.STAGE.name())
+    //                                .build()));
+    stepOutcomes.add(
+        StepResponse.StepOutcome.builder()
+            .name(OutcomeExpressionConstants.SERVICE)
+            .outcome(ServiceStepOutcome.fromServiceStepV2(ngServiceV2InfoConfig.getIdentifier(),
+                ngServiceV2InfoConfig.getName(), ngServiceV2InfoConfig.getServiceDefinition().getType().name(),
+                ngServiceV2InfoConfig.getDescription(), ngServiceV2InfoConfig.getTags(),
+                ngServiceV2InfoConfig.getGitOpsEnabled()))
+            .group(StepCategory.STAGE.name())
+            .build());
+    return StepResponse.builder().status(Status.SUCCEEDED).stepOutcomes(stepOutcomes).build();
   }
 
-  @Data
-  @Builder
-  static class ServicePartResponse {
-    NGServiceConfig ngServiceConfig;
-  }
   public ServicePartResponse executeServicePart(Ambiance ambiance, ServiceStepV3Parameters stepParameters) {
     // Todo: check if service ref is resolved
     final Optional<ServiceEntity> serviceOpt =
@@ -220,5 +232,11 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
     String resolvedYaml = MergeHelper.mergeInputSetFormatYamlToOriginYaml(
         originalEnvYaml, YamlPipelineUtils.writeYamlString(environmentInputYaml));
     return YamlUtils.read(resolvedYaml, NGEnvironmentConfig.class);
+  }
+
+  @Data
+  @Builder
+  static class ServicePartResponse {
+    NGServiceConfig ngServiceConfig;
   }
 }

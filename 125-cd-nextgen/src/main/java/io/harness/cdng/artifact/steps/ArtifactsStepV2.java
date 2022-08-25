@@ -155,7 +155,7 @@ public class ArtifactsStepV2 implements AsyncExecutable<EmptyStepParameters> {
 
     ArtifactsStepV2SweepingOutput artifactsSweepingOutput = (ArtifactsStepV2SweepingOutput) outputOptional.getOutput();
 
-    final NGLogCallback logCallback = serviceStepsHelper.getServiceLogCallback(ambiance);
+    final NGLogCallback logCallback = serviceStepsHelper.getServiceLogCallback(ambiance, true);
     final ArtifactsOutcomeBuilder outcomeBuilder = ArtifactsOutcome.builder();
     final SidecarsOutcome sidecarsOutcome = new SidecarsOutcome();
     for (String taskId : responseDataMap.keySet()) {
@@ -203,7 +203,7 @@ public class ArtifactsStepV2 implements AsyncExecutable<EmptyStepParameters> {
 
   private String handle(final Ambiance ambiance, final ArtifactConfig artifactConfig,
       final ArtifactSourceType sourceType, boolean isPrimary) {
-    final NGLogCallback logCallback = serviceStepsHelper.getServiceLogCallback(ambiance);
+    final NGLogCallback logCallback = serviceStepsHelper.getServiceLogCallback(ambiance, true);
     if (isPrimary) {
       logCallback.saveExecutionLog("Processing primary artifact...");
       logCallback.saveExecutionLog(
