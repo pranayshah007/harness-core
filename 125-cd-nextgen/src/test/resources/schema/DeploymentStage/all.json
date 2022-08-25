@@ -3020,7 +3020,14 @@
               "type": "string"
             },
             "packageType": {
-              "type": "string"
+              "type": "string",
+              "enum": [
+                "npm",
+                "maven",
+                "rubygems",
+                "nuget",
+                "container"
+              ]
             },
             "version": {
               "type": "string"
@@ -6025,7 +6032,7 @@
             "Acr",
             "Jenkins",
             "AmazonS3",
-            "GithubPackagesRegistry"
+            "GithubPackageRegistry"
           ]
         }
       },
@@ -6147,7 +6154,7 @@
           "if": {
             "properties": {
               "type": {
-                "const": "GithubPackagesRegistry"
+                "const": "GithubPackageRegistry"
               }
             }
           },
@@ -7021,7 +7028,7 @@
             "Acr",
             "Jenkins",
             "AmazonS3",
-            "GithubPackagesRegistry"
+            "GithubPackageRegistry"
           ]
         }
       },
@@ -7143,7 +7150,7 @@
           "if": {
             "properties": {
               "type": {
-                "const": "GithubPackagesRegistry"
+                "const": "GithubPackageRegistry"
               }
             }
           },
