@@ -9,11 +9,13 @@ package io.harness.delegate.task.terraform.handlers;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.delegate.beans.DelegateFile.Builder.aDelegateFile;
 import static io.harness.delegate.beans.storeconfig.StoreDelegateConfigType.ARTIFACTORY;
 import static io.harness.delegate.task.terraform.TerraformExceptionConstants.Explanation.EXPLANATION_NO_CONFIG_SET;
 import static io.harness.delegate.task.terraform.TerraformExceptionConstants.Hints.HINT_NO_CONFIG_SET;
 import static io.harness.logging.LogLevel.INFO;
 import static io.harness.provision.TerraformConstants.TERRAFORM_BACKEND_CONFIGS_FILE_NAME;
+import static io.harness.provision.TerraformConstants.TERRAFORM_PLAN_FILE_OUTPUT_NAME;
 import static io.harness.provision.TerraformConstants.TERRAFORM_VARIABLES_FILE_NAME;
 import static io.harness.provision.TerraformConstants.TF_VAR_FILES_DIR;
 
@@ -22,6 +24,8 @@ import static software.wings.beans.LogHelper.color;
 import static java.lang.String.format;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.delegate.beans.DelegateFile;
+import io.harness.delegate.beans.FileBucket;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
 import io.harness.delegate.beans.storeconfig.ArtifactoryStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
@@ -148,7 +152,8 @@ public class TerraformPlanTaskHandler extends TerraformAbstractTaskHandler {
                                            // sent from manager side
               .timeoutInMillis(taskParameters.getTimeoutInMillis())
               .isTfPlanDestroy(taskParameters.getTerraformCommand() == TerraformCommand.DESTROY)
-              .useOptimizedTfPlan(true)
+              .useOptimizedTfPlan(taskParameters.isUseOptimizedTfPlan())
+              .accountId(taskParameters.getAccountId())
               .build();
 
       TerraformStepResponse terraformStepResponse =
@@ -177,7 +182,8 @@ public class TerraformPlanTaskHandler extends TerraformAbstractTaskHandler {
 
       EncryptedRecordData encryptedTfPlan =
           terraformBaseHelper.encryptPlan(Files.readAllBytes(Paths.get(scriptDirectory, planName)),
-              taskParameters.getPlanName(), taskParameters.getEncryptionConfig());
+              taskParameters.getPlanName(), taskParameters.getEncryptionConfig(), taskParameters.isUseOptimizedTfPlan(),
+              taskParameters.getAccountId(), delegateId, taskId, taskParameters.getEntityId());
 
       String tfPlanJsonFileId = null;
       if (taskParameters.isSaveTerraformStateJson()) {
@@ -189,6 +195,9 @@ public class TerraformPlanTaskHandler extends TerraformAbstractTaskHandler {
         String tfPlanJsonFilePath = planJsonLogOutputStream.getTfPlanJsonLocalPath();
         tfPlanJsonFileId = terraformBaseHelper.uploadTfPlanJson(taskParameters.getAccountId(), delegateId, taskId,
             taskParameters.getEntityId(), planName, tfPlanJsonFilePath);
+
+        logCallback.saveExecutionLog(format("\nTerraform JSON plan will be available at: %s\n", tfPlanJsonFilePath),
+            INFO, CommandExecutionStatus.RUNNING);
       }
 
       logCallback.saveExecutionLog("\nDone executing scripts.\n", INFO, CommandExecutionStatus.RUNNING);
