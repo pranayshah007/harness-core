@@ -662,8 +662,6 @@ public class ApprovalState extends State implements SweepingOutputStateMixin {
               .stateExecutionData(executionData));
     }
 
-    // Create a cron job which polls JIRA for approval status
-    log.info("IssueId = {} while creating Jira polling Job", jiraApprovalParams.getIssueId());
     ApprovalPollingJobEntity approvalPollingJobEntity =
         ApprovalPollingJobEntity.builder()
             .accountId(app.getAccountId())
@@ -680,7 +678,11 @@ public class ApprovalState extends State implements SweepingOutputStateMixin {
             .workflowExecutionId(context.getWorkflowExecutionId())
             .build();
     try {
-      approvalPolingService.save(approvalPollingJobEntity);
+      // Create a cron job which polls JIRA for approval status
+
+      String id = approvalPolingService.save(approvalPollingJobEntity);
+      log.info("IssueId = {} while creating Jira polling Job. ApprovalPollingJobId: {}",
+          jiraApprovalParams.getIssueId(), id);
       return respondWithStatus(context, executionData, null,
           ExecutionResponse.builder()
               .async(true)

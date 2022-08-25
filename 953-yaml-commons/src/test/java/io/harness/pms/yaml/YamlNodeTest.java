@@ -8,6 +8,7 @@
 package io.harness.pms.yaml;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.rule.OwnerRule.BRIJESH;
 import static io.harness.rule.OwnerRule.NAMAN;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -17,6 +18,8 @@ import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.InvalidRequestException;
+import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.ambiance.Level;
 import io.harness.rule.Owner;
 
 import com.google.common.io.Resources;
@@ -38,6 +41,15 @@ public class YamlNodeTest extends CategoryTest {
     try {
       return Resources.toString(
           Objects.requireNonNull(classLoader.getResource("pipeline-extensive.yml")), StandardCharsets.UTF_8);
+    } catch (IOException e) {
+      throw new InvalidRequestException("Could not read resource file: opa-pipeline.yaml");
+    }
+  }
+
+  private String readFile(String filePath) {
+    ClassLoader classLoader = getClass().getClassLoader();
+    try {
+      return Resources.toString(Objects.requireNonNull(classLoader.getResource(filePath)), StandardCharsets.UTF_8);
     } catch (IOException e) {
       throw new InvalidRequestException("Could not read resource file: opa-pipeline.yaml");
     }
@@ -100,5 +112,59 @@ public class YamlNodeTest extends CategoryTest {
     YamlNode stage0Parallel = parallelStages.get(0).getFieldOrThrow("stage").getNode();
     YamlNode stage0ParallelName = stage0Parallel.getFieldOrThrow("name").getNode();
     assertThat(stage0ParallelName.extractStageLocalYamlPath()).isEqualTo("stage/name");
+  }
+
+  @Test
+  @Owner(developers = BRIJESH)
+  @Category(UnitTests.class)
+  public void testGetNodeYaml() {
+    Ambiance ambiance = Ambiance.newBuilder()
+                            .addLevels(Level.newBuilder().setOriginalIdentifier("pipeline").buildPartial())
+                            .addLevels(Level.newBuilder().setOriginalIdentifier("stages").buildPartial())
+                            .addLevels(Level.newBuilder().setOriginalIdentifier("qaStage").buildPartial())
+                            .build();
+
+    String yaml = YamlNode.getNodeYaml(pipelineYaml, ambiance);
+    String stageYaml = readFile("stageyaml.yml");
+    assertThat(yaml).isEqualTo(stageYaml);
+
+    ambiance = Ambiance.newBuilder()
+                   .addLevels(Level.newBuilder().setOriginalIdentifier("pipeline").buildPartial())
+                   .addLevels(Level.newBuilder().setOriginalIdentifier("stages").buildPartial())
+                   .addLevels(Level.newBuilder().setOriginalIdentifier("qaStage").buildPartial())
+                   .addLevels(Level.newBuilder().setOriginalIdentifier("spec").buildPartial())
+                   .addLevels(Level.newBuilder().setOriginalIdentifier("execution").buildPartial())
+                   .addLevels(Level.newBuilder().setOriginalIdentifier("steps").buildPartial())
+                   .addLevels(Level.newBuilder().setOriginalIdentifier("httpStep1").buildPartial())
+                   .build();
+
+    yaml = YamlNode.getNodeYaml(pipelineYaml, ambiance);
+    assertThat(yaml).isEqualTo("step:\n"
+        + "  name: \"http step 1\"\n"
+        + "  identifier: \"httpStep1\"\n"
+        + "  type: \"Http\"\n"
+        + "  spec:\n"
+        + "    socketTimeoutMillis: 1000\n"
+        + "    method: \"GET\"\n"
+        + "    url: \"<+input>\"\n");
+
+    ambiance = Ambiance.newBuilder()
+                   .addLevels(Level.newBuilder().setOriginalIdentifier("pipeline").buildPartial())
+                   .addLevels(Level.newBuilder().setOriginalIdentifier("stages").buildPartial())
+                   .addLevels(Level.newBuilder().setOriginalIdentifier("qaStage4").buildPartial())
+                   .addLevels(Level.newBuilder().setOriginalIdentifier("spec").buildPartial())
+                   .addLevels(Level.newBuilder().setOriginalIdentifier("execution").buildPartial())
+                   .addLevels(Level.newBuilder().setOriginalIdentifier("steps").buildPartial())
+                   .addLevels(Level.newBuilder().setOriginalIdentifier("httpStep8").buildPartial())
+                   .build();
+    yaml = YamlNode.getNodeYaml(pipelineYaml, ambiance);
+    assertThat(yaml).isEqualTo("step:\n"
+        + "  name: \"http step 8\"\n"
+        + "  identifier: \"httpStep8\"\n"
+        + "  type: \"Http\"\n"
+        + "  spec:\n"
+        + "    socketTimeoutMillis: 1000\n"
+        + "    method: \"GET\"\n"
+        + "    url: \"https://google.com\"\n");
   }
 }

@@ -39,6 +39,8 @@ public class SecretManagerDescriptionConstants {
   public static final String SERVICE_ACCOUNT_TOKEN_PATH =
       "This is the SA token path where the token is mounted in the K8s Pod.";
   public static final String K8S_AUTH_ENDPOINT = "This is the path where kubernetes auth is enabled in Vault.";
+  public static final String RENEW_APPROLE_TOKEN =
+      "Boolean value to indicate if appRole token renewal is enabled or not.";
   public static final String ACCESS_KEY = "Access Key for AWS authentication.";
   public static final String SECRET_KEY = "Secret Key for AWS authentication.";
   public static final String ROLE_ARN = "Role ARN for the Delegate with STS Role.";
@@ -57,4 +59,6 @@ public class SecretManagerDescriptionConstants {
   public static final String GCP_KEYRING = "Name of the Key Ring where Google Cloud Symmetric Key is created.";
   public static final String GCP_KEYNAME = "Name of the Google Cloud Symmetric Key.";
   public static final String GCP_CRED_FILE = "File Secret which is Service Account Key.";
+  public static final String CUSTOM_AUTH_TOKEN =
+      "This is the authentication token used to connect underlying secret manager.";
 }

@@ -43,7 +43,7 @@ public class AzureCreateARMResourceStepConfiguration {
   String uuid;
 
   @NotNull @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> connectorRef;
-  @NotNull AzureCreateARMResourceTemplateFile template;
+  @NotNull AzureTemplateFile template;
 
   AzureCreateARMResourceParameterFile parameters;
 

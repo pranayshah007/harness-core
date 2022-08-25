@@ -8,6 +8,8 @@
 package io.harness.stream;
 
 import static io.harness.agent.AgentGatewayConstants.HEADER_AGENT_MTLS_AUTHORITY;
+import static io.harness.agent.AgentGatewayUtils.isAgentConnectedUsingMtls;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.eraro.ErrorCode.UNKNOWN_ERROR;
 import static io.harness.govern.Switch.unhandled;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
@@ -16,6 +18,7 @@ import io.harness.delegate.beans.ConnectionMode;
 import io.harness.delegate.beans.Delegate;
 import io.harness.delegate.beans.DelegateConnectionHeartbeat;
 import io.harness.delegate.beans.DelegateInstanceStatus;
+import io.harness.delegate.beans.DelegateParams;
 import io.harness.delegate.task.DelegateLogContext;
 import io.harness.eraro.ErrorCode;
 import io.harness.eraro.ErrorCodeName;
@@ -64,6 +67,11 @@ public class DelegateStreamHandler extends AtmosphereHandlerAdapter {
   @Override
   public void onRequest(AtmosphereResource resource) throws IOException {
     AtmosphereRequest req = resource.getRequest();
+
+    // get mTLS information independent of request type
+    String agentMtlsAuthority = req.getHeader(HEADER_AGENT_MTLS_AUTHORITY);
+    boolean isConnectedUsingMtls = isAgentConnectedUsingMtls(agentMtlsAuthority);
+
     if (req.getMethod().equals("GET")) {
       String accountId;
       String delegateId;
@@ -71,11 +79,7 @@ public class DelegateStreamHandler extends AtmosphereHandlerAdapter {
         List<String> pathSegments = SPLITTER.splitToList(req.getPathInfo());
         accountId = pathSegments.get(1);
         delegateId = req.getParameter("delegateId");
-        String delegateTokenName = req.getParameter("delegateTokenName");
-        String agentMtlsAuthority = req.getHeader(HEADER_AGENT_MTLS_AUTHORITY);
 
-        authService.validateDelegateToken(
-            accountId, req.getParameter("token"), delegateId, delegateTokenName, agentMtlsAuthority, false);
         try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR);
              AutoLogContext ignore2 = new DelegateLogContext(delegateId, OVERRIDE_ERROR)) {
           String delegateConnectionId = req.getParameter("delegateConnectionId");
@@ -86,6 +90,7 @@ public class DelegateStreamHandler extends AtmosphereHandlerAdapter {
           String delegateToken = req.getParameter("delegateToken");
 
           Delegate delegate = delegateCache.get(accountId, delegateId, true);
+          delegate.setMtls(isConnectedUsingMtls);
           delegate.setStatus(DelegateInstanceStatus.ENABLED);
 
           updateIfEcsDelegate(delegate, sequenceNum, delegateToken);
@@ -124,20 +129,26 @@ public class DelegateStreamHandler extends AtmosphereHandlerAdapter {
       List<String> pathSegments = SPLITTER.splitToList(req.getPathInfo());
       String accountId = pathSegments.get(1);
       String delegateId = req.getParameter("delegateId");
+      String delegateConnectionId = req.getParameter("delegateConnectionId");
 
       try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR);
            AutoLogContext ignore2 = new DelegateLogContext(delegateId, OVERRIDE_ERROR)) {
-        String delegateConnectionId = req.getParameter("delegateConnectionId");
-        String delegateVersion = req.getParameter("version");
+        DelegateParams delegateParams = JsonUtils.asObject(CharStreams.toString(req.getReader()), DelegateParams.class);
+        String delegateVersion = delegateParams.getVersion();
 
-        Delegate delegate = JsonUtils.asObject(CharStreams.toString(req.getReader()), Delegate.class);
+        if (isNotEmpty(delegateParams.getToken())) {
+          authService.validateDelegateToken(accountId, delegateParams.getToken(), delegateId,
+              delegateParams.getTokenName(), agentMtlsAuthority, false);
+        }
+        Delegate delegate = Delegate.getDelegateFromParams(delegateParams, isConnectedUsingMtls);
         delegate.setUuid(delegateId);
+
         delegateService.register(delegate);
         delegateService.registerHeartbeat(accountId, delegateId,
             DelegateConnectionHeartbeat.builder()
                 .delegateConnectionId(delegateConnectionId)
                 .version(delegateVersion)
-                .location(delegate.getLocation())
+                .location(delegateParams.getLocation())
                 .build(),
             ConnectionMode.STREAMING);
       }

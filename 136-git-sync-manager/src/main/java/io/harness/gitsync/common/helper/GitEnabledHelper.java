@@ -41,6 +41,8 @@ public class GitEnabledHelper {
                                                     .map(settings -> ConnectivityMode.MANAGER)
                                                     .orElse(ConnectivityMode.DELEGATE);
       gitEnabledDTOBuilder.connectivityMode(connectivityMode);
+      gitSyncSettingsDTO.ifPresent(
+          settingsDTO -> gitEnabledDTOBuilder.isGitSyncEnabledOnlyForFF(settingsDTO.isEnabledOnlyForFF()));
     } else {
       gitSyncSettingsDTO.ifPresent(syncSettingsDTO
           -> gitEnabledDTOBuilder.isGitSimplificationEnabled(syncSettingsDTO.isGitSimplificationEnabled()));

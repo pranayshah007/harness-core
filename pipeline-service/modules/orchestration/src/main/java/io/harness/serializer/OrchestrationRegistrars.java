@@ -10,12 +10,12 @@ package io.harness.serializer;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.filter.serializer.FiltersRegistrars;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.serializer.kryo.CommonEntitiesKryoRegistrar;
 import io.harness.serializer.kryo.DelegateServiceBeansKryoRegistrar;
 import io.harness.serializer.kryo.NGCoreKryoRegistrar;
 import io.harness.serializer.kryo.OrchestrationKryoRegistrar;
+import io.harness.serializer.kryo.ProjectAndOrgKryoRegistrar;
 import io.harness.serializer.kryo.SecretManagerClientKryoRegistrar;
 import io.harness.serializer.morphia.OrchestrationMorphiaRegistrar;
 import io.harness.serializer.morphia.converters.AdviserObtainmentMorphiaConverter;
@@ -147,13 +147,13 @@ public class OrchestrationRegistrars {
           .addAll(OrchestrationDelayRegistrars.kryoRegistrars)
           .addAll(LicenseBeanRegistrar.kryoRegistrars)
           .add(NGCoreKryoRegistrar.class)
+          .add(ProjectAndOrgKryoRegistrar.class)
           .add(SecretManagerClientKryoRegistrar.class)
           .add(OrchestrationKryoRegistrar.class)
           .add(DelegateServiceBeansKryoRegistrar.class)
           .add(CommonEntitiesKryoRegistrar.class)
           .addAll(DelegateTaskRegistrars.kryoRegistrars)
           .addAll(AccessControlClientRegistrars.kryoRegistrars)
-          .addAll(FiltersRegistrars.kryoRegistrars)
           .build();
 
   public static final ImmutableSet<Class<? extends MorphiaRegistrar>> morphiaRegistrars =
@@ -167,7 +167,6 @@ public class OrchestrationRegistrars {
           .addAll(RbacCoreRegistrars.morphiaRegistrars)
           .add(OrchestrationMorphiaRegistrar.class)
           .addAll(DelegateTaskRegistrars.morphiaRegistrars)
-          .addAll(FiltersRegistrars.morphiaRegistrars)
           .build();
 
   public static final ImmutableSet<Class<? extends TypeConverter>> morphiaConverters =

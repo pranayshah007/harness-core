@@ -19,6 +19,8 @@ import lombok.Getter;
  */
 @OwnedBy(HarnessTeam.PL)
 public enum FeatureName {
+  DISABLE_HELM_REPO_YAML_CACHE(
+      "Enable to create a temporary folder (based on execution id) to store repository.yaml file", HarnessTeam.CDP),
   DEPRECATE_K8S_STEADY_STATE_CHECK_STEP,
   NG_GITOPS,
   APPD_CV_TASK,
@@ -74,7 +76,8 @@ public enum FeatureName {
   ENABLE_WINRM_ENV_VARIABLES,
   FF_PIPELINE,
   FF_GITSYNC,
-  FF_TEMPLATE_GITSYNC,
+  NG_TEMPLATE_GITX_ACCOUNT_ORG,
+  NG_TEMPLATE_GITX,
   FFM_1513,
   FFM_1512,
   FFM_1827,
@@ -236,7 +239,6 @@ public enum FeatureName {
   CI_INCREASE_DEFAULT_RESOURCES,
   DISABLE_DEPLOYMENTS_SEARCH_AND_LIMIT_DEPLOYMENT_STATS,
   RATE_LIMITED_TOTP,
-  USE_HELM_REPO_FLAGS,
   CLOSE_TIME_SCALE_SYNC_PROCESSING_ON_FAILURE(Scope.GLOBAL),
   RESOURCE_CENTER_ENABLED,
   USE_IMMUTABLE_DELEGATE("Use immutable delegate on download delegate from UI", HarnessTeam.DEL),
@@ -262,7 +264,6 @@ public enum FeatureName {
   USE_ANALYTIC_MONGO_FOR_GRAPHQL_QUERY,
   DYNATRACE_APM_ENABLED,
   CUSTOM_POLICY_STEP,
-  KEEP_PT_AFTER_K8S_DOWNSCALE,
   CCM_AS_DRY_RUN("Dry Run functionality of the AutoStopping Rules", HarnessTeam.CE),
   DONT_RESTRICT_PARALLEL_STAGE_COUNT,
   NG_EXECUTION_INPUT,
@@ -284,7 +285,6 @@ public enum FeatureName {
   SHOW_NG_REFINER_FEEDBACK,
   NG_NEXUS_ARTIFACTORY,
   HELM_VERSION_3_8_0,
-  DELETE_HELM_REPO_CACHE_DIR,
   DELEGATE_ENABLE_DYNAMIC_HANDLING_OF_REQUEST("Enable dynamic handling of task request", HarnessTeam.DEL),
   YAML_GIT_CONNECTOR_NAME,
   STOP_SHOWING_RUNNING_EXECUTIONS,
@@ -308,11 +308,9 @@ public enum FeatureName {
   CUSTOM_ARTIFACT_NG,
   NG_TEMPLATE_REFERENCES_SUPPORT,
   APPLICATION_DROPDOWN_MULTISELECT,
-  NG_AZURE,
   NG_GIT_EXPERIENCE,
   LDAP_SECRET_AUTH,
   WORKFLOW_EXECUTION_REFRESH_STATUS,
-  SERVERLESS_SUPPORT,
   TRIGGERS_PAGE_PAGINATION,
   CVNG_NOTIFICATION_UI,
   STALE_FLAGS_FFM_1510,
@@ -361,20 +359,24 @@ public enum FeatureName {
   CCM_MICRO_FRONTEND("Micro front for CCM", HarnessTeam.CE),
   NG_GIT_EXPERIENCE_IMPORT_FLOW,
   CVNG_LICENSE_ENFORCEMENT,
+  CVNG_SLO_DISABLE_ENABLE,
   SERVICE_DASHBOARD_V2,
   DEBEZIUM_ENABLED,
   TEMPLATE_SCHEMA_VALIDATION,
   YAML_APIS_GRANULAR_PERMISSION,
   JENKINS_BUILD,
+  DO_NOT_RENEW_APPROLE_TOKEN(
+      "CAUTION: USE THIS ONLY WHEN THE CUSTOMER DELEGATE IS IN VERSION HIGHER OR EQUAL TO 764xx. Used for disabling appRole token renewal and fetching token on the fly before CRUD",
+      HarnessTeam.PL),
   ENABLE_DEFAULT_NG_EXPERIENCE_FOR_ONPREM,
   NG_SETTINGS("Enable Settings at various scopes in NG", HarnessTeam.PL),
   QUEUED_COUNT_FOR_QUEUEKEY("Used to display the count of the queue in CG git sync", HarnessTeam.SPG),
   NG_EMAIL_STEP,
   PRUNE_KUBERNETES_RESOURCES_NG,
+  USE_OLD_GIT_SYNC("Used for enabling old Git Experience on projects", HarnessTeam.PL),
   DISABLE_PIPELINE_SCHEMA_VALIDATION(
       "Used to disable pipeline yaml schema as We saw some intermittent issue in Schema Validation due to invalid schema generation. Will keep this FF until root cause is found and fixed.",
       HarnessTeam.PIPELINE),
-  GIT_SIMPLIFICATION_DISABLED,
   USE_K8S_API_FOR_STEADY_STATE_CHECK,
   WINRM_ASG_ROLLBACK("Used for Collect remaining instances rollback step", HarnessTeam.CDP),
   NEW_LEFT_NAVBAR_SETTINGS("Used for new left navbar configuration", HarnessTeam.PL),
@@ -399,8 +401,8 @@ public enum FeatureName {
       HarnessTeam.CDP),
   TERRAFORM_REMOTE_BACKEND_CONFIG("Enables storing Terraform backend configuration in a remote repo", HarnessTeam.CDP),
   NG_OPTIMIZE_FETCH_FILES_KUSTOMIZE("Used to Optimize kustomize Manifest files fetch in NG", HarnessTeam.CDP),
-  REMOVE_HINT_YAML_GIT_COMMITS("Removes the hint usage in GitCommits collection", HarnessTeam.SPG),
   FIXED_INSTANCE_ZERO_ALLOW("To allow user to set the fixed instance count to 0 for ECS Deployments", HarnessTeam.CDP),
+  REMOVE_HINT_YAML_GIT_COMMITS("Removes the hint usage in GitCommits collection", HarnessTeam.SPG),
   USE_PAGINATED_ENCRYPT_FOR_VARIABLE_OVERRIDES(
       "Enables PaginatedComponent & Formik for VariableOverrides in CG-UI", HarnessTeam.PL),
   ON_DEMAND_ROLLBACK_WITH_DIFFERENT_ARTIFACT(
@@ -414,7 +416,13 @@ public enum FeatureName {
   AZURE_ARM_BP_NG("Used to allow customers to access ARM/BP capabilities", HarnessTeam.CDP),
   CV_AWS_PROMETHEUS("Enable AWS Prometheus for CV State", HarnessTeam.CV),
   GIT_WEBHOOK_POLLING("Used to poll git webhook recent delivery events", HarnessTeam.CDP),
-  TRIGGERS_REFACTOR("Enable NG Triggers UI refactoring", HarnessTeam.CDP);
+  TRIGGERS_REFACTOR("Enable NG Triggers UI refactoring", HarnessTeam.CDP),
+  NG_SERVICE_MANIFEST_OVERRIDE("Enable Service Manifests override from Environment", HarnessTeam.CDP),
+  ENABLE_CHECK_STATE_EXECUTION_STARTING(
+      "Used to allow create retry state execution when event is status equals to STARTING", HarnessTeam.SPG),
+  NG_DEFAULT_K8S_MANIFESTS("Sample k8s manifests at account level file store", HarnessTeam.CDP, Scope.GLOBAL),
+  CI_TI_DASHBOARDS_ENABLED;
+
   @Deprecated
   FeatureName() {
     scope = Scope.PER_ACCOUNT;
@@ -431,6 +439,12 @@ public enum FeatureName {
     this.description = description;
     this.owner = owner;
     this.scope = Scope.PER_ACCOUNT;
+  }
+
+  FeatureName(String description, HarnessTeam owner, FeatureFlag.Scope scope) {
+    this.description = description;
+    this.owner = owner;
+    this.scope = scope;
   }
 
   @Getter private String description;

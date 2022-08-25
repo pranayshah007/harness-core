@@ -11,9 +11,21 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotations.dev.OwnedBy;
 
+import lombok.Getter;
+
 @OwnedBy(CDP)
 public class AzureAppServicesSlotSteadyStateException extends AzureAppServicesRuntimeException {
+  @Getter private String action;
+  @Getter private long timeoutIntervalInMin;
+
   public AzureAppServicesSlotSteadyStateException(String message) {
     super(message);
+  }
+
+  public AzureAppServicesSlotSteadyStateException(
+      String message, String action, long timeoutIntervalInMin, Throwable cause) {
+    super(message, cause);
+    this.action = action;
+    this.timeoutIntervalInMin = timeoutIntervalInMin;
   }
 }

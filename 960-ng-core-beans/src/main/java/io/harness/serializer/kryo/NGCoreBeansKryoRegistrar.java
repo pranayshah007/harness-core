@@ -15,6 +15,7 @@ import io.harness.ng.core.account.ServiceAccountConfig;
 import io.harness.ng.core.environment.beans.EnvironmentType;
 import io.harness.ng.core.user.UserMembershipUpdateMechanism;
 import io.harness.serializer.KryoRegistrar;
+import io.harness.steps.shellscript.ShellType;
 
 import com.esotericsoftware.kryo.Kryo;
 
@@ -27,5 +28,6 @@ public class NGCoreBeansKryoRegistrar implements KryoRegistrar {
     kryo.register(UserMembershipUpdateMechanism.class, 20102);
     kryo.register(AuthenticationMechanism.class, 20103);
     kryo.register(ServiceAccountConfig.class, 20104);
+    kryo.register(ShellType.class, 20105);
   }
 }

@@ -13,6 +13,7 @@ import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.beans.logstreaming.NGDelegateLogCallback;
 import io.harness.delegate.task.shell.ssh.ArtifactCommandUnitHandler;
+import io.harness.logging.DummyLogCallbackImpl;
 import io.harness.logging.LogCallback;
 import io.harness.shell.ScriptProcessExecutor;
 import io.harness.shell.ShellExecutorConfig;
@@ -26,7 +27,7 @@ public class ShellExecutorFactoryNG {
   public ScriptProcessExecutor getExecutor(ShellExecutorConfig shellExecutorConfig,
       ILogStreamingTaskClient logStreamingTaskClient, CommandUnitsProgress commandUnitsProgress) {
     return new ScriptProcessExecutor(
-        getExecutionLogCallback(shellExecutorConfig, logStreamingTaskClient, commandUnitsProgress), true,
+        getExecutionLogCallback(shellExecutorConfig, logStreamingTaskClient, commandUnitsProgress, false), true,
         shellExecutorConfig);
   }
 
@@ -34,13 +35,27 @@ public class ShellExecutorFactoryNG {
       ILogStreamingTaskClient logStreamingTaskClient, CommandUnitsProgress commandUnitsProgress,
       Map<String, ArtifactCommandUnitHandler> artifactCommandHandlers) {
     return new FileBasedProcessScriptExecutorNG(
-        getExecutionLogCallback(shellExecutorConfig, logStreamingTaskClient, commandUnitsProgress), true,
+        getExecutionLogCallback(shellExecutorConfig, logStreamingTaskClient, commandUnitsProgress, true), true,
         artifactCommandHandlers);
   }
 
+  public ScriptProcessExecutor getExecutor(ShellExecutorConfig shellExecutorConfig,
+      ILogStreamingTaskClient logStreamingTaskClient, CommandUnitsProgress commandUnitsProgress,
+      boolean shouldOpenStream) {
+    return new ScriptProcessExecutor(
+        getExecutionLogCallback(shellExecutorConfig, logStreamingTaskClient, commandUnitsProgress, shouldOpenStream),
+        true, shellExecutorConfig);
+  }
+
   private static LogCallback getExecutionLogCallback(ShellExecutorConfig shellExecutorConfig,
-      ILogStreamingTaskClient logStreamingTaskClient, CommandUnitsProgress commandUnitsProgress) {
+      ILogStreamingTaskClient logStreamingTaskClient, CommandUnitsProgress commandUnitsProgress,
+      boolean shouldOpenStream) {
     return new NGDelegateLogCallback(
-        logStreamingTaskClient, shellExecutorConfig.getCommandUnitName(), false, commandUnitsProgress);
+        logStreamingTaskClient, shellExecutorConfig.getCommandUnitName(), shouldOpenStream, commandUnitsProgress);
+  }
+
+  public ScriptProcessExecutor getExecutor(
+      ShellExecutorConfig shellExecutorConfig, CommandUnitsProgress commandUnitsProgress) {
+    return new ScriptProcessExecutor(new DummyLogCallbackImpl(), false, shellExecutorConfig);
   }
 }

@@ -16,21 +16,22 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.engine.execution.ExecutionInputService;
+import io.harness.engine.executions.plan.PlanExecutionMetadataService;
 import io.harness.exception.InvalidRequestException;
 import io.harness.execution.ExecutionInputInstance;
+import io.harness.execution.PlanExecutionMetadata;
 import io.harness.gitsync.interceptor.GitEntityFindInfoDTO;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.pms.PmsFeatureFlagService;
 import io.harness.pms.annotations.PipelineServiceAuth;
-import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.PipelineResourceConstants;
 import io.harness.pms.pipeline.service.PMSPipelineService;
-import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 import io.harness.pms.plan.execution.beans.dto.ExecutionInputDTO;
 import io.harness.pms.plan.execution.beans.dto.ExecutionInputStatus;
 import io.harness.pms.plan.execution.beans.dto.ExecutionInputStatusDTO;
+import io.harness.pms.plan.execution.beans.dto.ExecutionInputVariablesResponseDTO;
 import io.harness.pms.plan.execution.mapper.ExecutionInputDTOMapper;
 import io.harness.pms.plan.execution.service.PMSExecutionService;
 import io.harness.pms.rbac.PipelineRbacPermissions;
@@ -94,6 +95,8 @@ public class ExecutionInputResource {
   @Inject private final VariableCreatorMergeService variableCreatorMergeService;
   @Inject private final ExecutionInputService executionInputService;
   @Inject private final PmsFeatureFlagService pmsFeatureFlagService;
+  @Inject PlanExecutionMetadataService planExecutionMetadataService;
+
   @GET
   @Path("/{nodeExecutionId}")
   @ApiOperation(
@@ -122,6 +125,10 @@ public class ExecutionInputResource {
           "Feature flag [NG_EXECUTION_INPUT] not enabled to support execution inputs in a Pipeline.");
     }
     ExecutionInputInstance executionInputInstance = executionInputService.getExecutionInputInstance(nodeExecutionId);
+    if (executionInputInstance == null) {
+      throw new InvalidRequestException(
+          String.format("Execution Input template does not exist for input execution id : %s", nodeExecutionId));
+    }
     return ResponseDTO.newResponse(ExecutionInputDTOMapper.toExecutionInputDTO(executionInputInstance));
   }
 
@@ -178,7 +185,7 @@ public class ExecutionInputResource {
   @Hidden
   // This API is different from PipelineResource variable apis as at execution time we want to refer the yaml used for
   // execution.
-  public ResponseDTO<VariableMergeServiceResponse>
+  public ResponseDTO<ExecutionInputVariablesResponseDTO>
   listVariablesDuringExecution(
       @Parameter(description = PipelineResourceConstants.ACCOUNT_PARAM_MESSAGE, required = true) @NotNull @QueryParam(
           NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
@@ -190,18 +197,15 @@ public class ExecutionInputResource {
       @Parameter(description = PlanExecutionResourceConstants.PLAN_EXECUTION_ID_PARAM_MESSAGE,
           required = true) @NotNull @QueryParam(NGCommonEntityConstants.PLAN_KEY) String planExecutionId) {
     log.info("Creating variables for pipeline execution.");
-
-    PipelineExecutionSummaryEntity pipelineExecutionSummaryEntity =
-        pmsExecutionService.getPipelineExecutionSummaryEntity(accountId, orgId, projectId, planExecutionId);
-
-    Optional<PipelineEntity> pipelineEntityOptional = pmsPipelineService.get(
-        accountId, orgId, projectId, pipelineExecutionSummaryEntity.getPipelineIdentifier(), false);
-    if (pipelineEntityOptional.isPresent()) {
+    Optional<PlanExecutionMetadata> planExecutionMetadataOptional =
+        planExecutionMetadataService.findByPlanExecutionId(planExecutionId);
+    if (planExecutionMetadataOptional.isPresent()) {
       VariableMergeServiceResponse variablesResponse =
-          variableCreatorMergeService.createVariablesResponses(pipelineEntityOptional.get().getYaml(), false);
-
-      return ResponseDTO.newResponse(variablesResponse);
-
+          variableCreatorMergeService.createVariablesResponses(planExecutionMetadataOptional.get().getYaml(), false);
+      return ResponseDTO.newResponse(ExecutionInputVariablesResponseDTO.builder()
+                                         .variableMergeServiceResponse(variablesResponse)
+                                         .pipelineYaml(planExecutionMetadataOptional.get().getYaml())
+                                         .build());
     } else {
       log.error("Pipeline for planExecutionId {} is deleted or not does not exist.", planExecutionId);
       throw new InvalidRequestException(

@@ -17,11 +17,15 @@ public interface AzureConstants {
   Pattern deploymentLogPattern = Pattern.compile("Deployment successful\\.", Pattern.CASE_INSENSITIVE);
   Pattern containerSuccessPattern =
       Pattern.compile("initialized successfully and is ready to serve requests\\.", Pattern.CASE_INSENSITIVE);
+  Pattern windowsServicePlanContainerSuccessPattern =
+      Pattern.compile(".* Container start-up and configuration completed successfully.*", Pattern.CASE_INSENSITIVE);
   Pattern tomcatSuccessPattern =
       Pattern.compile("Deployment of web application directory .* has finished", Pattern.CASE_INSENSITIVE);
 
   String TIME_PATTERN = "yyyy-MM-dd'T'HH:mm:ss";
-  String TIME_STAMP_REGEX = "(\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2})\\s*";
+  String DDMMYYYY_TIME_PATTERN = "dd/MM/yyyy' 'HH:mm:ss.SSS";
+  String TIME_STAMP_REGEX =
+      "(\\d{2}\\/\\d{2}\\/\\d{4} \\d{2}:\\d{2}:\\d{2}\\.\\d{3})\\s*|(\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2})\\s*";
 
   int DEFAULT_SYNC_AZURE_VMSS_TIMEOUT_MIN = 2;
   int DEFAULT_SYNC_AZURE_RESOURCE_TIMEOUT_MIN = 2;
@@ -43,6 +47,7 @@ public interface AzureConstants {
   String ZIP_EXTENSION = ".zip";
   String JAR_EXTENSION = ".jar";
   String FILE_RENAME_FAILURE = "Failed to rename the file - [%s] to [%s]";
+  String DEFAULT_JAR_ARTIFACT_NAME = "app.jar";
 
   // VMSS Tags names and values
   String HARNESS_AUTOSCALING_GROUP_TAG_NAME = "HARNESS_REVISION";
@@ -264,6 +269,7 @@ public interface AzureConstants {
       + "App name: [%s]%nSlot name: [%s]";
   String SUCCESS_UPDATE_STARTUP_COMMAND = "Startup command updated successfully";
   String SWAP_SLOT_SUCCESS = "Swapping slots done successfully";
+  String SWAP_SLOT_FAILURE = "Swapping slots failed for slot - [%s] due to: %s";
 
   String SUCCESS_SLOT_DEPLOYMENT = "Deployment to slot - [%s] is successful";
   String FAIL_DEPLOYMENT = "Deployment failed for slot - [%s]";

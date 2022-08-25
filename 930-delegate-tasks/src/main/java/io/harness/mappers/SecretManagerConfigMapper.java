@@ -13,6 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SecretManagerConfig;
 import io.harness.ng.core.mapper.TagMapper;
 import io.harness.secretmanagerclient.NGSecretManagerMetadata;
+import io.harness.secretmanagerclient.dto.CustomSecretManagerConfigDTO;
 import io.harness.secretmanagerclient.dto.GcpKmsConfigDTO;
 import io.harness.secretmanagerclient.dto.GcpKmsConfigUpdateDTO;
 import io.harness.secretmanagerclient.dto.LocalConfigDTO;
@@ -55,6 +56,8 @@ public class SecretManagerConfigMapper {
         return AwsSMConfigMapper.fromDTO((AwsSMConfigDTO) dto);
       case LOCAL:
         return LocalConfigMapper.fromDTO((LocalConfigDTO) dto);
+      case CUSTOM_NG:
+        return CustomConfigMapper.fromDTO((CustomSecretManagerConfigDTO) dto);
       default:
         throw new UnsupportedOperationException("Secret Manager not supported");
     }

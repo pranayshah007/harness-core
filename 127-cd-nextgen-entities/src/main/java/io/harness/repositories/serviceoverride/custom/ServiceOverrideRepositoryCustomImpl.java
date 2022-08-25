@@ -65,6 +65,12 @@ public class ServiceOverrideRepositoryCustomImpl implements ServiceOverrideRepos
     return Failsafe.with(retryPolicy).get(() -> mongoTemplate.remove(query, NGServiceOverridesEntity.class));
   }
 
+  @Override
+  public List<NGServiceOverridesEntity> findAll(Criteria criteria) {
+    Query query = new Query(criteria);
+    return mongoTemplate.find(query, NGServiceOverridesEntity.class);
+  }
+
   private RetryPolicy<Object> getRetryPolicy(String failedAttemptMessage, String failureMessage) {
     return new RetryPolicy<>()
         .handle(OptimisticLockingFailureException.class)

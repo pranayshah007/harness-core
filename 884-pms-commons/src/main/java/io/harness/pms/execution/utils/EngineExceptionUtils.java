@@ -104,6 +104,8 @@ public class EngineExceptionUtils {
         return io.harness.exception.FailureType.DELEGATE_PROVISIONING;
       case POLICY_EVALUATION_FAILURE:
         return io.harness.exception.FailureType.POLICY_EVALUATION_FAILURE;
+      case EXECUTION_INPUT_TIMEOUT_FAILURE:
+        return io.harness.exception.FailureType.EXECUTION_INPUT_TIMEOUT_FAILURE;
       default:
         throw new InvalidRequestException("No failure mapped to " + oFailureType.name());
     }

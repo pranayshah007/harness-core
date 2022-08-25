@@ -19,12 +19,17 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DecryptableEntity;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.artifact.outcome.ArtifactOutcome;
+import io.harness.cdng.artifact.outcome.ArtifactoryArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactoryGenericArtifactOutcome;
+import io.harness.cdng.artifact.outcome.JenkinsArtifactOutcome;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.services.ConnectorService;
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryConnectorDTO;
+import io.harness.delegate.beans.connector.jenkins.JenkinsConnectorDTO;
 import io.harness.delegate.task.ssh.artifact.ArtifactoryArtifactDelegateConfig;
+import io.harness.delegate.task.ssh.artifact.ArtifactoryDockerArtifactDelegateConfig;
+import io.harness.delegate.task.ssh.artifact.JenkinsArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.SshWinRmArtifactDelegateConfig;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.NGAccess;
@@ -64,6 +69,29 @@ public class SshWinRmArtifactHelper {
           .artifactPath(artifactoryGenericArtifactOutcome.getArtifactPath())
           .repositoryFormat(artifactoryGenericArtifactOutcome.getRepositoryFormat())
           .build();
+    } else if (artifactOutcome instanceof JenkinsArtifactOutcome) {
+      JenkinsArtifactOutcome jenkinsArtifactOutcome = (JenkinsArtifactOutcome) artifactOutcome;
+      connectorDTO = getConnectorInfoDTO(jenkinsArtifactOutcome.getConnectorRef(), ngAccess);
+      return JenkinsArtifactDelegateConfig.builder()
+          .artifactPath(jenkinsArtifactOutcome.getArtifactPath())
+          .jobName(jenkinsArtifactOutcome.getJobName())
+          .connectorDTO(connectorDTO)
+          .identifier(jenkinsArtifactOutcome.getIdentifier())
+          .build(jenkinsArtifactOutcome.getBuild())
+          .encryptedDataDetails(getArtifactEncryptionDataDetails(connectorDTO, ngAccess))
+          .build();
+    } else if (artifactOutcome instanceof ArtifactoryArtifactOutcome) {
+      ArtifactoryArtifactOutcome artifactoryArtifactOutcome = (ArtifactoryArtifactOutcome) artifactOutcome;
+      connectorDTO = getConnectorInfoDTO(artifactoryArtifactOutcome.getConnectorRef(), ngAccess);
+      return ArtifactoryDockerArtifactDelegateConfig.builder()
+          .identifier(artifactoryArtifactOutcome.getIdentifier())
+          .connectorDTO(connectorDTO)
+          .artifactPath(artifactoryArtifactOutcome.getArtifactPath())
+          .repositoryFormat(artifactoryArtifactOutcome.getRepositoryFormat())
+          .tag(artifactoryArtifactOutcome.getTag())
+          .image(artifactoryArtifactOutcome.getImage())
+          .encryptedDataDetails(getArtifactEncryptionDataDetails(connectorDTO, ngAccess))
+          .build();
     } else {
       throw new UnsupportedOperationException(
           format("Unsupported Artifact type: [%s]", artifactOutcome.getArtifactType()));
@@ -79,6 +107,15 @@ public class SshWinRmArtifactHelper {
         if (isNotEmpty(artifactoryDecryptableEntities)) {
           return secretManagerClientService.getEncryptionDetails(
               ngAccess, artifactoryConnectorDTO.getAuth().getCredentials());
+        } else {
+          return emptyList();
+        }
+      case JENKINS:
+        JenkinsConnectorDTO jenkinsConnectorDTO = (JenkinsConnectorDTO) connectorDTO.getConnectorConfig();
+        List<DecryptableEntity> jenkinsDecryptableEntities = jenkinsConnectorDTO.getDecryptableEntities();
+        if (isNotEmpty(jenkinsDecryptableEntities)) {
+          return secretManagerClientService.getEncryptionDetails(
+              ngAccess, jenkinsConnectorDTO.getAuth().getCredentials());
         } else {
           return emptyList();
         }

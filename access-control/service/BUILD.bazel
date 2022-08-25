@@ -109,7 +109,6 @@ java_library(
         "//930-ng-core-clients:module",
         "//950-telemetry:module",
         "//955-outbox-sdk:module",
-        "//958-migration-sdk:module",
         "//960-persistence:module",
         "//960-persistence:supporter-test",
         "//970-ng-commons:module",

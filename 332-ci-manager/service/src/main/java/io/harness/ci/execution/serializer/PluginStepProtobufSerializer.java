@@ -86,7 +86,7 @@ public class PluginStepProtobufSerializer implements ProtobufStepSerializer<Plug
         builder.setContainerPort(port)
             .setImage(RunTimeInputHandler.resolveStringParameter(
                 "Image", "Plugin", identifier, pluginStepInfo.getImage(), true))
-            .addAllEntrypoint(Optional.ofNullable(pluginStepInfo.getEntrypoint()).orElse(emptyList()))
+            .addAllEntrypoint(Optional.ofNullable(pluginStepInfo.getEntrypoint().getValue()).orElse(emptyList()))
             .putAllEnvironment(envVarMap)
             .setContext(stepContext)
             .build();

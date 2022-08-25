@@ -907,37 +907,42 @@ public class DelegateServiceImpl implements DelegateService {
         .map(delegate -> {
           List<DelegateConnectionDetails> connections =
               perDelegateConnections.computeIfAbsent(delegate.getUuid(), uuid -> emptyList());
-          return DelegateStatus.DelegateInner.builder()
-              .uuid(delegate.getUuid())
-              .delegateName(delegate.getDelegateName())
-              .description(delegate.getDescription())
-              .hostName(delegate.getHostName())
-              .delegateGroupName(delegate.getDelegateGroupName())
-              .ip(delegate.getIp())
-              .status(delegate.getStatus())
-              .lastHeartBeat(delegate.getLastHeartBeat())
-              // currently, we do not return stale connections, but if we do this must filter them out
-              .activelyConnected(!connections.isEmpty())
-              .delegateProfileId(delegate.getDelegateProfileId())
-              .delegateType(delegate.getDelegateType())
-              .polllingModeEnabled(delegate.isPolllingModeEnabled())
-              .proxy(delegate.isProxy())
-              .ceEnabled(delegate.isCeEnabled())
-              .excludeScopes(delegate.getExcludeScopes())
-              .includeScopes(delegate.getIncludeScopes())
-              .tags(delegate.getTags())
-              .profileExecutedAt(delegate.getProfileExecutedAt())
-              .profileError(delegate.isProfileError())
-              .grpcActive(connections.stream().allMatch(
-                  connection -> connection.getLastGrpcHeartbeat() > System.currentTimeMillis() - MAX_GRPC_HB_TIMEOUT))
-              .implicitSelectors(delegateSetupService.retrieveDelegateImplicitSelectors(delegate, false))
-              .sampleDelegate(delegate.isSampleDelegate())
-              .connections(connections)
-              .tokenActive(delegate.getDelegateTokenName() == null
-                  || (delegateTokenStatusMap.containsKey(delegate.getDelegateTokenName())
-                      && delegateTokenStatusMap.get(delegate.getDelegateTokenName())))
-              .delegateExpirationTime(delegate.getExpirationTime())
-              .build();
+          DelegateStatus.DelegateInner.DelegateInnerBuilder delegateInnerBuilder =
+              DelegateStatus.DelegateInner.builder()
+                  .uuid(delegate.getUuid())
+                  .delegateName(delegate.getDelegateName())
+                  .description(delegate.getDescription())
+                  .hostName(delegate.getHostName())
+                  .delegateGroupName(delegate.getDelegateGroupName())
+                  .ip(delegate.getIp())
+                  .status(delegate.getStatus())
+                  .lastHeartBeat(delegate.getLastHeartBeat())
+                  // currently, we do not return stale connections, but if we do this must filter them out
+                  .activelyConnected(!connections.isEmpty())
+                  .delegateProfileId(delegate.getDelegateProfileId())
+                  .delegateType(delegate.getDelegateType())
+                  .polllingModeEnabled(delegate.isPolllingModeEnabled())
+                  .proxy(delegate.isProxy())
+                  .ceEnabled(delegate.isCeEnabled())
+                  .excludeScopes(delegate.getExcludeScopes())
+                  .includeScopes(delegate.getIncludeScopes())
+                  .tags(delegate.getTags())
+                  .profileExecutedAt(delegate.getProfileExecutedAt())
+                  .profileError(delegate.isProfileError())
+                  .grpcActive(connections.stream().allMatch(connection
+                      -> connection.getLastGrpcHeartbeat() > System.currentTimeMillis() - MAX_GRPC_HB_TIMEOUT))
+                  .implicitSelectors(delegateSetupService.retrieveDelegateImplicitSelectors(delegate, false))
+                  .sampleDelegate(delegate.isSampleDelegate())
+                  .connections(connections)
+                  .tokenActive(delegate.getDelegateTokenName() == null
+                      || (delegateTokenStatusMap.containsKey(delegate.getDelegateTokenName())
+                          && delegateTokenStatusMap.get(delegate.getDelegateTokenName())))
+                  .delegateExpirationTime(delegate.getExpirationTime());
+          // Set autoUpgrade as true for legacy delegate.
+          if (!delegate.isImmutable()) {
+            delegateInnerBuilder.autoUpgrade(true);
+          }
+          return delegateInnerBuilder.build();
         })
         .collect(toList());
   }
@@ -1010,6 +1015,8 @@ public class DelegateServiceImpl implements DelegateService {
       setUnset(updateOperations, DelegateKeys.delegateTokenName, delegate.getDelegateTokenName());
     }
     setUnset(updateOperations, DelegateKeys.heartbeatAsObject, delegate.isHeartbeatAsObject());
+    setUnset(updateOperations, DelegateKeys.mtls, delegate.isMtls());
+
     return updateOperations;
   }
 
@@ -2576,7 +2583,7 @@ public class DelegateServiceImpl implements DelegateService {
   }
 
   @Override
-  public DelegateRegisterResponse register(final DelegateParams delegateParams) {
+  public DelegateRegisterResponse register(final DelegateParams delegateParams, final boolean isConnectedUsingMtls) {
     if (licenseService.isAccountDeleted(delegateParams.getAccountId())) {
       delegateMetricsService.recordDelegateMetrics(
           Delegate.builder().accountId(delegateParams.getAccountId()).version(delegateParams.getVersion()).build(),
@@ -2660,12 +2667,12 @@ public class DelegateServiceImpl implements DelegateService {
           upsertDelegateGroup(delegateParams.getDelegateName(), delegateParams.getAccountId(), delegateSetupDetails);
       delegateGroupId = delegateGroup.getUuid();
       delegateGroupName = delegateGroup.getName();
+    }
 
+    if (isNotBlank(delegateGroupId) && isNotEmpty(delegateParams.getTags())) {
       persistence.update(persistence.createQuery(DelegateGroup.class).filter(DelegateGroupKeys.uuid, delegateGroupId),
           persistence.createUpdateOperations(DelegateGroup.class)
-              .set(DelegateGroupKeys.tags,
-                  isEmpty(delegateParams.getTags()) ? Collections.emptySet()
-                                                    : new HashSet<>(delegateParams.getTags())));
+              .set(DelegateGroupKeys.tags, new HashSet<>(delegateParams.getTags())));
     }
 
     final DelegateEntityOwner owner = DelegateEntityOwnerHelper.buildOwner(orgIdentifier, projectIdentifier);
@@ -2706,6 +2713,7 @@ public class DelegateServiceImpl implements DelegateService {
                                   .delegateTokenName(delegateTokenName.orElse(null))
                                   .heartbeatAsObject(delegateParams.isHeartbeatAsObject())
                                   .immutable(delegateParams.isImmutable())
+                                  .mtls(isConnectedUsingMtls)
                                   .build();
 
     if (ECS.equals(delegateParams.getDelegateType())) {
@@ -2805,11 +2813,6 @@ public class DelegateServiceImpl implements DelegateService {
       } else {
         registeredDelegate = update(delegate);
       }
-
-      // this condition is satisfied only while registering for the first time after delegate starts/restarts
-      if (delegateSetupDetails != null) {
-        updateDelegateTagsAfterReRegistering(registeredDelegate, delegate.getTags());
-      }
     }
 
     // Not needed to be done when polling is enabled for delegate
@@ -2824,18 +2827,6 @@ public class DelegateServiceImpl implements DelegateService {
       }
     }
     return registeredDelegate;
-  }
-
-  private void updateDelegateTagsAfterReRegistering(Delegate registeredDelegate, List<String> delegateTags) {
-    Query<Delegate> delegateQuery = persistence.createQuery(Delegate.class)
-                                        .filter(DelegateKeys.accountId, registeredDelegate.getAccountId())
-                                        .filter(DelegateKeys.uuid, registeredDelegate.getUuid());
-
-    UpdateOperations<Delegate> updateOperations = persistence.createUpdateOperations(Delegate.class);
-    setUnset(updateOperations, DelegateKeys.tags, delegateTags);
-
-    persistence.update(delegateQuery, updateOperations);
-    registeredDelegate.setTags(delegateTags);
   }
 
   private void broadcastDelegateHeartBeatResponse(Delegate delegate, Delegate registeredDelegate) {
@@ -3727,6 +3718,7 @@ public class DelegateServiceImpl implements DelegateService {
     delegate.setExcludeScopes(existingInactiveDelegate.getExcludeScopes());
     delegate.setIncludeScopes(existingInactiveDelegate.getIncludeScopes());
     delegate.setDelegateProfileId(existingInactiveDelegate.getDelegateProfileId());
+    delegate.setTags(existingInactiveDelegate.getTags());
     delegate.setKeywords(existingInactiveDelegate.getKeywords());
     delegate.setDescription(existingInactiveDelegate.getDescription());
   }

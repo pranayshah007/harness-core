@@ -47,6 +47,7 @@ import io.harness.connector.entities.embedded.ceawsconnector.S3BucketDetails;
 import io.harness.connector.entities.embedded.ceazure.CEAzureConfig;
 import io.harness.connector.entities.embedded.cek8s.CEK8sDetails;
 import io.harness.connector.entities.embedded.customhealthconnector.CustomHealthConnector;
+import io.harness.connector.entities.embedded.customsecretmanager.CustomSecretManagerConnector;
 import io.harness.connector.entities.embedded.datadogconnector.DatadogConnector;
 import io.harness.connector.entities.embedded.docker.DockerConnector;
 import io.harness.connector.entities.embedded.docker.DockerUserNamePasswordAuthentication;
@@ -148,6 +149,7 @@ public class ConnectorMorphiaClassesRegistrar implements MorphiaRegistrar {
     set.add(AzureRepoConnector.class);
     set.add(JenkinsConnector.class);
     set.add(OciHelmConnector.class);
+    set.add(CustomSecretManagerConnector.class);
   }
 
   @Override

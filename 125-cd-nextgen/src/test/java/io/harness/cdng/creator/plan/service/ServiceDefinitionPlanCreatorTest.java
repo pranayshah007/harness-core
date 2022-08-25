@@ -7,10 +7,19 @@
 
 package io.harness.cdng.creator.plan.service;
 
+import static io.harness.ng.core.environment.beans.EnvironmentType.PreProduction;
 import static io.harness.rule.OwnerRule.IVAN;
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
+import static io.harness.rule.OwnerRule.TATHAGAT;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.MockitoAnnotations.initMocks;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -19,25 +28,57 @@ import io.harness.cdng.CDNGTestBase;
 import io.harness.cdng.service.beans.ServiceConfig;
 import io.harness.cdng.service.beans.ServiceUseFromStage;
 import io.harness.cdng.visitor.YamlTypes;
+import io.harness.ng.core.environment.beans.Environment;
+import io.harness.ng.core.environment.services.EnvironmentService;
+import io.harness.ng.core.environment.yaml.NGEnvironmentConfig;
 import io.harness.ng.core.k8s.ServiceSpecType;
+import io.harness.ng.core.service.yaml.NGServiceV2InfoConfig;
+import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity;
+import io.harness.ng.core.serviceoverride.services.ServiceOverrideService;
+import io.harness.ng.core.serviceoverride.yaml.NGServiceOverrideConfig;
+import io.harness.pms.contracts.plan.Dependency;
+import io.harness.pms.contracts.plan.PlanCreationContextValue;
+import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.rule.Owner;
+import io.harness.serializer.KryoSerializer;
 
 import com.google.inject.Inject;
+import com.google.protobuf.ByteString;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Scanner;
 import java.util.Set;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
 
 @OwnedBy(HarnessTeam.CDC)
 public class ServiceDefinitionPlanCreatorTest extends CDNGTestBase {
-  @Inject ServiceDefinitionPlanCreator serviceDefinitionPlanCreator;
+  @InjectMocks @Inject ServiceDefinitionPlanCreator serviceDefinitionPlanCreator;
+  @Mock private EnvironmentService environmentService;
+  @Mock private ServiceOverrideService serviceOverrideService;
+  @Inject private KryoSerializer kryoSerializer;
+
+  private static final String ACCOUNT_ID = "account_id";
+  private static final String ORG_IDENTIFIER = "orgId";
+  private static final String PROJ_IDENTIFIER = "projId";
+  private static final String SVC_REF = "SVC_REF";
+  private static final String ENV_REF = "ENV_REF";
+
+  @Before
+  public void setupMocks() {
+    initMocks(this);
+  }
 
   @Test
   @Owner(developers = PRASHANTSHARMA)
@@ -218,5 +259,77 @@ public class ServiceDefinitionPlanCreatorTest extends CDNGTestBase {
         .isEqualTo("stageOverrides/configFiles");
 
     assertThat(planCreationResponse1.getYamlUpdates()).isNotNull();
+  }
+
+  @Test
+  @Owner(developers = TATHAGAT)
+  @Category(UnitTests.class)
+  public void testFetchEnvironmentConfig() {
+    Map<String, ByteString> metadataDependency = new HashMap<>();
+    ParameterField<String> envRef = new ParameterField<>();
+    envRef.setValue("ENV_REF");
+
+    Map<String, PlanCreationContextValue> globalContext = new HashMap<>();
+    final PlanCreationContextValue contextValue = PlanCreationContextValue.newBuilder()
+                                                      .setAccountIdentifier(ACCOUNT_ID)
+                                                      .setOrgIdentifier(ORG_IDENTIFIER)
+                                                      .setProjectIdentifier(PROJ_IDENTIFIER)
+                                                      .build();
+    globalContext.put("metadata", contextValue);
+
+    metadataDependency.put(YamlTypes.ENVIRONMENT_REF, ByteString.copyFrom(kryoSerializer.asDeflatedBytes(envRef)));
+    Dependency dependency = Dependency.newBuilder().putAllMetadata(metadataDependency).build();
+    PlanCreationContext ctx = PlanCreationContext.builder().dependency(dependency).build();
+    ctx.setGlobalContext(globalContext);
+    Environment entity = Environment.builder()
+                             .type(PreProduction)
+                             .accountId(ACCOUNT_ID)
+                             .orgIdentifier(ORG_IDENTIFIER)
+                             .projectIdentifier(PROJ_IDENTIFIER)
+                             .identifier("id")
+                             .name("name")
+                             .build();
+    doReturn(Optional.of(entity))
+        .when(environmentService)
+        .get(anyString(), anyString(), anyString(), anyString(), anyBoolean());
+    NGEnvironmentConfig ngEnvironmentConfig = serviceDefinitionPlanCreator.fetchEnvironmentConfig(ctx, kryoSerializer);
+    verify(environmentService, times(1))
+        .get(eq(contextValue.getAccountIdentifier()), eq(contextValue.getOrgIdentifier()),
+            eq(contextValue.getProjectIdentifier()), eq(envRef.getValue()), eq(false));
+    assertThat(ngEnvironmentConfig).isNotNull();
+    assertThat(ngEnvironmentConfig.getNgEnvironmentInfoConfig().getIdentifier()).isEqualTo("id");
+    assertThat(ngEnvironmentConfig.getNgEnvironmentInfoConfig().getOrgIdentifier()).isEqualTo(ORG_IDENTIFIER);
+    assertThat(ngEnvironmentConfig.getNgEnvironmentInfoConfig().getProjectIdentifier()).isEqualTo(PROJ_IDENTIFIER);
+    assertThat(ngEnvironmentConfig.getNgEnvironmentInfoConfig().getName()).isEqualTo("name");
+  }
+
+  @Test
+  @Owner(developers = TATHAGAT)
+  @Category(UnitTests.class)
+  public void testFetchServiceOverrideEntities() {
+    Map<String, PlanCreationContextValue> globalContext = new HashMap<>();
+    final PlanCreationContextValue contextValue = PlanCreationContextValue.newBuilder()
+                                                      .setAccountIdentifier(ACCOUNT_ID)
+                                                      .setOrgIdentifier(ORG_IDENTIFIER)
+                                                      .setProjectIdentifier(PROJ_IDENTIFIER)
+                                                      .build();
+    globalContext.put("metadata", contextValue);
+    PlanCreationContext ctx = PlanCreationContext.builder().build();
+    ctx.setGlobalContext(globalContext);
+    doReturn(Optional.of(NGServiceOverridesEntity.builder()
+                             .accountId(ACCOUNT_ID)
+                             .serviceRef(SVC_REF)
+                             .environmentRef(ENV_REF)
+                             .build()))
+        .when(serviceOverrideService)
+        .get(anyString(), anyString(), anyString(), anyString(), anyString());
+    NGServiceOverrideConfig serviceOverrideConfig = serviceDefinitionPlanCreator.fetchServiceOverrideConfig(
+        ctx, NGServiceV2InfoConfig.builder().identifier(SVC_REF).build(), ENV_REF);
+    verify(serviceOverrideService, times(1))
+        .get(eq(contextValue.getAccountIdentifier()), eq(contextValue.getOrgIdentifier()),
+            eq(contextValue.getProjectIdentifier()), eq(ENV_REF), eq(SVC_REF));
+    assertThat(serviceOverrideConfig).isNotNull();
+    assertThat(serviceOverrideConfig.getServiceOverrideInfoConfig().getServiceRef()).isEqualTo(SVC_REF);
+    assertThat(serviceOverrideConfig.getServiceOverrideInfoConfig().getEnvironmentRef()).isEqualTo(ENV_REF);
   }
 }

@@ -21,6 +21,7 @@ import io.harness.artifact.ArtifactMetadataKeys;
 import io.harness.artifact.ArtifactUtilities;
 import io.harness.artifacts.beans.BuildDetailsInternal;
 import io.harness.artifacts.comparator.BuildDetailsInternalComparatorDescending;
+import io.harness.azure.AzureEnvironmentType;
 import io.harness.azure.client.AzureAuthorizationClient;
 import io.harness.azure.client.AzureComputeClient;
 import io.harness.azure.client.AzureContainerRegistryClient;
@@ -36,12 +37,16 @@ import io.harness.azure.utility.AzureUtils;
 import io.harness.connector.ConnectivityStatus;
 import io.harness.connector.ConnectorValidationResult;
 import io.harness.data.encoding.EncodingUtils;
+import io.harness.delegate.beans.DelegateResponseData;
+import io.harness.delegate.beans.azure.ManagementGroupData;
 import io.harness.delegate.beans.azure.response.AzureAcrTokenTaskResponse;
 import io.harness.delegate.beans.azure.response.AzureClustersResponse;
 import io.harness.delegate.beans.azure.response.AzureDeploymentSlotResponse;
 import io.harness.delegate.beans.azure.response.AzureDeploymentSlotsResponse;
 import io.harness.delegate.beans.azure.response.AzureHostResponse;
 import io.harness.delegate.beans.azure.response.AzureHostsResponse;
+import io.harness.delegate.beans.azure.response.AzureLocationsResponse;
+import io.harness.delegate.beans.azure.response.AzureMngGroupsResponse;
 import io.harness.delegate.beans.azure.response.AzureRegistriesResponse;
 import io.harness.delegate.beans.azure.response.AzureRepositoriesResponse;
 import io.harness.delegate.beans.azure.response.AzureResourceGroupsResponse;
@@ -73,7 +78,10 @@ import com.google.inject.Singleton;
 import com.microsoft.azure.management.appservice.DeploymentSlot;
 import com.microsoft.azure.management.containerregistry.Registry;
 import com.microsoft.azure.management.resources.Subscription;
+import com.microsoft.azure.management.resources.fluentcore.arm.Region;
 import com.microsoft.azure.management.resources.fluentcore.arm.models.HasName;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -640,5 +648,67 @@ public class AzureAsyncTaskHelper {
         .token(refreshToken)
         .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
         .build();
+  }
+
+  public AzureMngGroupsResponse listMngGroup(
+      List<EncryptedDataDetail> encryptionDetails, AzureConnectorDTO azureConnector) {
+    log.info("Fetching Azure management groups");
+    AzureConfig azureConfig = AcrRequestResponseMapper.toAzureInternalConfig(azureConnector.getCredential(),
+        encryptionDetails, azureConnector.getCredential().getAzureCredentialType(),
+        azureConnector.getAzureEnvironmentType(), secretDecryptionService);
+
+    AzureMngGroupsResponse azureMngGroupsResponse =
+        AzureMngGroupsResponse.builder()
+            .managementGroups(azureManagementClient.listManagementGroups(azureConfig)
+                                  .stream()
+                                  .map(group
+                                      -> ManagementGroupData.builder()
+                                             .name(group.getName())
+                                             .id(group.getId())
+                                             .displayName(group.getProperties().getDisplayName())
+                                             .build())
+                                  .collect(Collectors.toList()))
+            .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
+            .build();
+
+    log.info(format("Retrieved %d management groups", azureMngGroupsResponse.getManagementGroups().size()));
+    return azureMngGroupsResponse;
+  }
+
+  public AzureLocationsResponse listSubscriptionLocations(
+      List<EncryptedDataDetail> encryptionDetails, AzureConnectorDTO azureConnector, String subscriptionId) {
+    log.info("Fetching Azure locations");
+    AzureConfig azureConfig = AcrRequestResponseMapper.toAzureInternalConfig(azureConnector.getCredential(),
+        encryptionDetails, azureConnector.getCredential().getAzureCredentialType(),
+        azureConnector.getAzureEnvironmentType(), secretDecryptionService);
+    AzureLocationsResponse azureLocationsResponse =
+        AzureLocationsResponse.builder()
+            .locations(
+                new ArrayList<>(azureManagementClient.listLocationsBySubscriptionId(azureConfig, subscriptionId)))
+            .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
+            .build();
+    log.info(format("Retrieved %d locations", azureLocationsResponse.getLocations().size()));
+    return azureLocationsResponse;
+  }
+
+  public DelegateResponseData listLocations(
+      List<EncryptedDataDetail> encryptionDetails, AzureConnectorDTO azureConnector) {
+    log.info("Fetching Azure locations");
+    AzureConfig azureConfig = AcrRequestResponseMapper.toAzureInternalConfig(azureConnector.getCredential(),
+        encryptionDetails, azureConnector.getCredential().getAzureCredentialType(),
+        azureConnector.getAzureEnvironmentType(), secretDecryptionService);
+    AzureEnvironmentType azureEnvironmentType = azureConfig.getAzureEnvironmentType();
+    AzureLocationsResponse azureLocationsResponse =
+        AzureLocationsResponse.builder()
+            .locations(Arrays.stream(Region.values())
+                           .filter(region
+                               -> (AzureEnvironmentType.AZURE_US_GOVERNMENT == azureEnvironmentType)
+                                   == AzureUtils.AZURE_GOV_REGIONS_NAMES.contains(region.name()))
+                           .map(Region::label)
+                           .collect(Collectors.toList()))
+            .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
+            .build();
+    log.info(format("Retrieved %d locations", azureLocationsResponse.getLocations().size()));
+    return azureLocationsResponse;
   }
 }

@@ -1022,8 +1022,8 @@ go_repository(
 go_repository(
     name = "com_github_drone_go_scm",
     importpath = "github.com/drone/go-scm",
-    sum = "h1:tx7Xgpt64DYq90WFPVi9T/5c7IuNQ8ckbb8qUEK05gU=",
-    version = "v1.26.1-0.20220718061611-2e3f1a56c8dd",
+    sum = "h1:nXqrXP/edQDr0gaIIdohlayBSUrKWh0/C2E1VQcvokM=",
+    version = "v1.27.1-0.20220817160204-09a4fde5917c",
 )
 
 go_repository(
@@ -4464,9 +4464,9 @@ plain_artifacts = [
     "com.hazelcast:hazelcast:5.1",
     "com.healthmarketscience.sqlbuilder:sqlbuilder:3.0.0",
     "com.helger:profiler:1.1.1",
-    "com.hierynomus:asn-one:0.4.0",
-    "com.hierynomus:smbj:0.9.0",
-    "com.hierynomus:sshj:0.26.0",
+    "com.hierynomus:asn-one:0.6.0",
+    "com.hierynomus:smbj:0.11.5",
+    "com.hierynomus:sshj:0.34.0",
     "com.hubspot.jackson:jackson-datatype-protobuf:0.9.11-jackson2.7",
     "com.intellij:annotations:12.0",
     "com.j256.two-factor-auth:two-factor-auth:1.0",
@@ -4730,7 +4730,7 @@ plain_artifacts = [
     "net.arnx:nashorn-promise:0.1.1",
     "net.bytebuddy:byte-buddy:1.10.7",
     "net.engio:mbassador:1.3.0",
-    "net.i2p.crypto:eddsa:0.2.0",
+    "net.i2p.crypto:eddsa:0.3.0",
     "net.java.dev.jna:jna-platform:5.5.0",
     "net.java.dev.jna:jna:5.5.0",
     "net.jcip:jcip-annotations:1.0",

@@ -1,0 +1,38 @@
+environment:
+  name: envtest
+  identifier: envtest
+  tags: {}
+  type: Production
+  orgIdentifier: default
+  projectIdentifier: pq
+  variables:
+    - name: a
+      type: String
+      value: valueab
+  overrides:
+    manifests:
+      - manifest:
+          identifier: m1
+          type: Values
+          spec:
+            store:
+              type: Git
+              spec:
+                connectorRef: gitConnector
+                gitFetchType: Branch
+                paths:
+                  - path.yaml
+                branch: master
+      - manifest:
+          identifier: m1
+          type: Values
+          spec:
+            store:
+              type: Git
+              spec:
+                connectorRef: gitConnector
+                gitFetchType: Branch
+                paths:
+                  - path.yaml
+                branch: master
+

@@ -181,14 +181,17 @@ public class MergePRStep extends TaskExecutableWithRollbackAndRbac<NGGitOpsRespo
       case GITLAB:
         GitlabConnectorDTO gitlabConnectorDTO = (GitlabConnectorDTO) gitStoreDelegateConfig.getGitConfigDTO();
         String slug = scmGitProviderHelper.getSlug(gitlabConnectorDTO);
-        gitApiTaskParams = GitApiTaskParams.builder()
-                               .gitRepoType(GitRepoType.GITLAB)
-                               .requestType(GitApiRequestType.MERGE_PR)
-                               .connectorDetails(connectorDetails)
-                               .prNumber(String.valueOf(prNumber))
-                               .slug(slug)
-                               .sha(sha)
-                               .build();
+        gitApiTaskParams =
+            GitApiTaskParams.builder()
+                .gitRepoType(GitRepoType.GITLAB)
+                .requestType(GitApiRequestType.MERGE_PR)
+                .connectorDetails(connectorDetails)
+                .prNumber(String.valueOf(prNumber))
+                .slug(slug)
+                .sha(sha)
+                .deleteSourceBranch(CDStepHelper.getParameterFieldBooleanValue(gitOpsSpecParams.getDeleteSourceBranch(),
+                    MergePRStepInfo.MergePRBaseStepInfoKeys.deleteSourceBranch, stepParameters))
+                .build();
         break;
       default:
         throw new InvalidRequestException("Failed to run MergePR Step. Connector not supported", USER);

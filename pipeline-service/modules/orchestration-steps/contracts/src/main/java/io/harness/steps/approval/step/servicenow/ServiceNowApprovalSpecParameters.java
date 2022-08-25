@@ -15,6 +15,7 @@ import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.SpecParameters;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.steps.approval.step.beans.CriteriaSpecWrapper;
+import io.harness.steps.approval.step.beans.ServiceNowChangeWindowSpec;
 
 import java.util.List;
 import javax.validation.constraints.NotNull;
@@ -37,4 +38,5 @@ public class ServiceNowApprovalSpecParameters implements SpecParameters {
   @NotNull CriteriaSpecWrapper approvalCriteria;
   CriteriaSpecWrapper rejectionCriteria;
   ParameterField<List<TaskSelectorYaml>> delegateSelectors;
+  ServiceNowChangeWindowSpec changeWindowSpec;
 }

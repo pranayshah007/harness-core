@@ -273,8 +273,8 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
         ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER, TEMPLATE_VERSION_LABEL, "INVALID_YAML");
     assertThat(markEntityInvalid).isTrue();
     assertThatThrownBy(()
-                           -> templateService.getOrThrowExceptionIfInvalid(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
-                               TEMPLATE_IDENTIFIER, TEMPLATE_VERSION_LABEL, false))
+                           -> templateService.getMetadataOrThrowExceptionIfInvalid(ACCOUNT_ID, ORG_IDENTIFIER,
+                               PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER, TEMPLATE_VERSION_LABEL, false))
         .isInstanceOf(NGTemplateException.class);
 
     boolean delete = templateService.delete(
@@ -792,18 +792,8 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
     String stageYamlWithMissingInputs = readFile("service/updated-stage-template-with-step-template.yaml");
     TemplateEntity stageTemplateWithMissingInputs =
         entity.withYaml(stageYamlWithMissingInputs).withIdentifier(stageTemplateIdentifier);
-    assertThatThrownBy(() -> templateService.create(stageTemplateWithMissingInputs, false, ""))
-        .isInstanceOf(NGTemplateResolveExceptionV2.class)
-        .hasMessage("Exception in resolving template refs in given yaml.")
-        .extracting(ex -> ((NGTemplateResolveExceptionV2) ex).getMetadata())
-        .isInstanceOf(ValidateTemplateInputsResponseDTO.class)
-        .isNotNull()
-        .hasFieldOrPropertyWithValue("validYaml", false)
-        .extracting(resp -> ((ValidateTemplateInputsResponseDTO) resp).getErrorNodeSummary())
-        .isNotNull()
-        .hasFieldOrPropertyWithValue("childrenErrorNodes", new ArrayList<>())
-        .extracting(ErrorNodeSummary::getTemplateResponse)
-        .isNull();
+    testShouldThrowExceptionWithInvalidTemplateInputs(
+        () -> templateService.create(stageTemplateWithMissingInputs, false, ""));
 
     String stageYaml = readFile("service/stage-template-with-step-template.yaml");
     TemplateEntity stageTemplate = entity.withYaml(stageYaml).withIdentifier(stageTemplateIdentifier);

@@ -45,7 +45,10 @@ public class InfrastructureMappingServiceImpl implements InfrastructureMappingSe
       log.warn("Duplicate key error while inserting infrastructure mapping for infrastructure key : {}",
           infrastructureMappingDTO.getInfrastructureKey());
       Optional<InfrastructureMapping> infrastructureMappingOptional =
-          infrastructureMappingRepository.findByInfrastructureKey(infrastructureMappingDTO.getInfrastructureKey());
+          infrastructureMappingRepository
+              .findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndInfrastructureKey(
+                  infrastructureMappingDTO.getAccountIdentifier(), infrastructureMappingDTO.getOrgIdentifier(),
+                  infrastructureMappingDTO.getProjectIdentifier(), infrastructureMappingDTO.getInfrastructureKey());
       return infrastructureMappingOptional.map(InfrastructureMappingMapper::toDTO);
     }
   }

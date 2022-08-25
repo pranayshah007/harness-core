@@ -52,7 +52,6 @@ import io.harness.template.TemplateFilterPropertiesDTO;
 import io.harness.template.beans.FilterParamsDTO;
 import io.harness.template.beans.PageParamsDTO;
 import io.harness.template.beans.PermissionTypes;
-import io.harness.template.beans.refresh.NodeInfo;
 import io.harness.template.beans.refresh.ValidateTemplateInputsResponseDTO;
 import io.harness.template.beans.yaml.NGTemplateConfig;
 import io.harness.template.entity.TemplateEntity;
@@ -207,19 +206,27 @@ public class NGTemplateServiceImpl implements NGTemplateService {
   }
 
   private void applyTemplatesToYamlAndValidateSchema(TemplateEntity templateEntity) {
-    TemplateMergeResponseDTO templateMergeResponseDTO = null;
-    if (TemplateRefHelper.hasTemplateRef(templateEntity.getYaml())) {
-      templateMergeResponseDTO = templateMergeService.applyTemplatesToYamlV2(templateEntity.getAccountId(),
-          templateEntity.getOrgIdentifier(), templateEntity.getProjectIdentifier(), templateEntity.getYaml(), false);
-      populateLinkedTemplatesModules(templateEntity, templateMergeResponseDTO);
-      checkLinkedTemplateAccess(templateEntity.getAccountId(), templateEntity.getOrgIdentifier(),
-          templateEntity.getProjectIdentifier(), templateMergeResponseDTO);
-    }
+    try {
+      TemplateMergeResponseDTO templateMergeResponseDTO = null;
+      if (TemplateRefHelper.hasTemplateRef(templateEntity.getYaml())) {
+        templateMergeResponseDTO = templateMergeService.applyTemplatesToYamlV2(templateEntity.getAccountId(),
+            templateEntity.getOrgIdentifier(), templateEntity.getProjectIdentifier(), templateEntity.getYaml(), false);
+        populateLinkedTemplatesModules(templateEntity, templateMergeResponseDTO);
+        checkLinkedTemplateAccess(templateEntity.getAccountId(), templateEntity.getOrgIdentifier(),
+            templateEntity.getProjectIdentifier(), templateMergeResponseDTO);
+      }
 
-    // validate schema on resolved yaml to validate template inputs value as well.
-    ngTemplateSchemaService.validateYamlSchemaInternal(templateMergeResponseDTO == null
-            ? templateEntity
-            : templateEntity.withYaml(templateMergeResponseDTO.getMergedPipelineYaml()));
+      // validate schema on resolved yaml to validate template inputs value as well.
+      ngTemplateSchemaService.validateYamlSchemaInternal(templateMergeResponseDTO == null
+              ? templateEntity
+              : templateEntity.withYaml(templateMergeResponseDTO.getMergedPipelineYaml()));
+    } catch (NGTemplateResolveExceptionV2 ex) {
+      ValidateTemplateInputsResponseDTO validateTemplateInputsResponse = ex.getValidateTemplateInputsResponseDTO();
+      validateTemplateInputsResponse.getErrorNodeSummary().setTemplateResponse(
+          NGTemplateDtoMapper.writeTemplateResponseDto(templateEntity));
+      throw new NGTemplateResolveExceptionV2(
+          "Exception in resolving template refs in given yaml.", USER, validateTemplateInputsResponse);
+    }
   }
 
   private void populateLinkedTemplatesModules(
@@ -241,20 +248,8 @@ public class NGTemplateServiceImpl implements NGTemplateService {
       TemplateEntity templateEntity, ChangeType changeType, boolean setDefaultTemplate, String comments) {
     enforcementClientService.checkAvailability(
         FeatureRestrictionName.TEMPLATE_SERVICE, templateEntity.getAccountIdentifier());
-
-    try {
-      // apply templates to template yaml for validations and populating module info
-      applyTemplatesToYamlAndValidateSchema(templateEntity);
-    } catch (NGTemplateResolveExceptionV2 ex) {
-      ValidateTemplateInputsResponseDTO validateTemplateInputsResponse = ex.getValidateTemplateInputsResponseDTO();
-      validateTemplateInputsResponse.getErrorNodeSummary().setTemplateResponse(
-          NGTemplateDtoMapper.writeTemplateResponseDto(templateEntity));
-      validateTemplateInputsResponse.getErrorNodeSummary().setNodeInfo(
-          NodeInfo.builder().identifier(templateEntity.getIdentifier()).name(templateEntity.getName()).build());
-      throw new NGTemplateResolveExceptionV2(
-          "Exception in resolving template refs in given yaml.", USER, validateTemplateInputsResponse);
-    }
-
+    // apply templates to template yaml for validations and populating module info
+    applyTemplatesToYamlAndValidateSchema(templateEntity);
     // update template references
     templateReferenceHelper.populateTemplateReferences(templateEntity);
     return transactionHelper.performTransaction(() -> {
@@ -354,9 +349,9 @@ public class NGTemplateServiceImpl implements NGTemplateService {
   }
 
   @Override
-  public Optional<TemplateEntity> getOrThrowExceptionIfInvalid(String accountId, String orgIdentifier,
+  public Optional<TemplateEntity> getMetadataOrThrowExceptionIfInvalid(String accountId, String orgIdentifier,
       String projectIdentifier, String templateIdentifier, String versionLabel, boolean deleted) {
-    return templateServiceHelper.getOrThrowExceptionIfInvalid(
+    return templateServiceHelper.getMetadataOrThrowExceptionIfInvalid(
         accountId, orgIdentifier, projectIdentifier, templateIdentifier, versionLabel, deleted);
   }
 
@@ -737,7 +732,7 @@ public class NGTemplateServiceImpl implements NGTemplateService {
           accountIdentifier, orgIdentifier, projectIdentifier, templateIdentifier, newStableTemplateVersion);
       makePreviousLastUpdatedTemplateFalse(
           accountIdentifier, orgIdentifier, projectIdentifier, templateIdentifier, newStableTemplateVersion);
-      Optional<TemplateEntity> optionalTemplateEntity = getOrThrowExceptionIfInvalid(
+      Optional<TemplateEntity> optionalTemplateEntity = getMetadataOrThrowExceptionIfInvalid(
           accountIdentifier, orgIdentifier, projectIdentifier, templateIdentifier, newStableTemplateVersion, false);
       if (!optionalTemplateEntity.isPresent()) {
         throw new InvalidRequestException(format(
