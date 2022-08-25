@@ -245,6 +245,7 @@ public class GithubPackagesResourceServiceImpl implements GithubPackagesResource
             .stream()
             .map(delegateResponse -> (GithubPackagesArtifactDelegateResponse) delegateResponse)
             .collect(Collectors.toList());
+
     return GithubPackagesResourceMapper.toPackagesResponse(githubPackagesArtifactDelegateResponses);
   }
 

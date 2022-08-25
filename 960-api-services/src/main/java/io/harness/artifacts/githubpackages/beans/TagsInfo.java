@@ -25,5 +25,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class TagsInfo {
+  /**
+   * Tags
+   */
   List<String> tags;
 }

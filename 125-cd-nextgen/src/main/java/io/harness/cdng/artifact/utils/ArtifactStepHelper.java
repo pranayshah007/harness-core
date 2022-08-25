@@ -117,12 +117,14 @@ public class ArtifactStepHelper {
       case GITHUB_PACKAGES:
         GithubPackagesArtifactConfig githubPackagesArtifactConfig = (GithubPackagesArtifactConfig) artifactConfig;
         connectorDTO = getConnector(githubPackagesArtifactConfig.getConnectorRef().getValue(), ambiance);
+
         if (!(connectorDTO.getConnectorConfig() instanceof GithubConnectorDTO)) {
           throw new InvalidConnectorTypeException("provided Connector "
                   + githubPackagesArtifactConfig.getConnectorRef().getValue() + " is not compatible with "
                   + githubPackagesArtifactConfig.getSourceType() + " Artifact",
               WingsException.USER);
         }
+
         GithubConnectorDTO githubConnectorDTO = (GithubConnectorDTO) connectorDTO.getConnectorConfig();
         encryptedDataDetails = getGithubEncryptedDetails(githubConnectorDTO, ngAccess);
 

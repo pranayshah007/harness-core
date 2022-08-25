@@ -200,12 +200,15 @@ public class GithubPackagesRegistryServiceImpl implements GithubPackagesRegistry
         for (String key : keys) {
           finalMap.put(key, map.get(key));
         }
+
         build.setMetadata(finalMap);
       } else {
         builds.remove(build);
+
         return regexFilteringForGetBuilds(versionRegex, builds, packageName);
       }
     }
+
     return builds;
   }
 
@@ -223,27 +226,6 @@ public class GithubPackagesRegistryServiceImpl implements GithubPackagesRegistry
     }
 
     throw new InvalidRequestException("Could not find version " + version + " in the package " + packageName);
-  }
-
-  private BuildDetails getBuildForAVersion(GithubPackagesInternalConfig githubPackagesInternalConfig,
-      String packageName, String packageType, String version) throws IOException {
-    GithubPackagesRestClient githubPackagesRestClient =
-        githubPackagesRestClientFactory.getGithubPackagesRestClient(githubPackagesInternalConfig);
-
-    String authType = githubPackagesInternalConfig.getAuthMechanism();
-
-    String basicAuthHeader = "token " + githubPackagesInternalConfig.getToken();
-
-    Integer versionId = Integer.parseInt(version);
-
-    Response<GithubPackagesVersion> response =
-        githubPackagesRestClient.getVersion(basicAuthHeader, packageName, packageType, versionId).execute();
-
-    GithubPackagesVersion githubPackagesVersion = response.body();
-
-    BuildDetails build = new BuildDetails();
-
-    return null;
   }
 
   private List<BuildDetails> getBuildDetails(GithubPackagesInternalConfig githubPackagesInternalConfig,
@@ -385,6 +367,7 @@ public class GithubPackagesRegistryServiceImpl implements GithubPackagesRegistry
       } else {
         log.warn("Github Packages Version response was empty.");
       }
+
       return null;
     }
 
@@ -401,7 +384,9 @@ public class GithubPackagesRegistryServiceImpl implements GithubPackagesRegistry
     }
 
     log.error("Request not successful. Reason: {}", response);
+
     int code = response.code();
+
     switch (code) {
       case 404:
       case 400:
