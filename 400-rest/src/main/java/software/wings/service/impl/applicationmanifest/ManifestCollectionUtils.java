@@ -87,12 +87,6 @@ public class ManifestCollectionUtils {
     HelmChartConfigParamsBuilder helmChartConfigParamsBuilder = constructHelmChartConfigParamsBuilder(
         appId, helmChartConfig, service.getHelmVersion(), appManifest.getPerpetualTaskId(), appManifestId, accountId);
 
-    boolean useRepoFlags = false;
-    if (featureFlagService.isEnabled(FeatureName.USE_HELM_REPO_FLAGS, accountId)
-        && HelmVersion.isHelmV3(service.getHelmVersion())) {
-      useRepoFlags = true;
-    }
-
     return HelmChartCollectionParams.builder()
         .accountId(accountId)
         .appId(appId)
@@ -100,7 +94,6 @@ public class ManifestCollectionUtils {
         .serviceId(appManifest.getServiceId())
         .publishedVersions(getPublishedVersionsForAppManifest(accountId, appManifestId))
         .helmChartConfigParams(helmChartConfigParamsBuilder.build())
-        .useRepoFlags(useRepoFlags)
         .build();
   }
 
@@ -124,12 +117,6 @@ public class ManifestCollectionUtils {
     // add version to config
     helmChartConfigParamsBuilder.chartVersion(chartVersion);
 
-    boolean useRepoFlags = false;
-    if (featureFlagService.isEnabled(FeatureName.USE_HELM_REPO_FLAGS, accountId)
-        && HelmVersion.isHelmV3(service.getHelmVersion())) {
-      useRepoFlags = true;
-    }
-
     return HelmChartCollectionParams.builder()
         .accountId(accountId)
         .appId(appId)
@@ -137,7 +124,6 @@ public class ManifestCollectionUtils {
         .serviceId(appManifest.getServiceId())
         .publishedVersions(getPublishedVersionsForAppManifest(accountId, appManifestId))
         .helmChartConfigParams(helmChartConfigParamsBuilder.build())
-        .useRepoFlags(useRepoFlags)
         .collectionType(helmChartCollectionType)
         .build();
   }
@@ -163,12 +149,16 @@ public class ManifestCollectionUtils {
             .chartUrl(helmChartConfig.getChartUrl())
             .basePath(helmChartConfig.getBasePath())
             .encryptedDataDetails(encryptionDataDetails)
+            // TODO(achyuth): confirm if we need appManifestId here or can we use same logic as CDP
             .repoName(convertBase64UuidToCanonicalForm(appManifestId))
             .repoDisplayName(settingAttribute.getName())
             .helmVersion(helmVersion)
             .useLatestChartMuseumVersion(
                 featureFlagService.isEnabled(FeatureName.USE_LATEST_CHARTMUSEUM_VERSION, accountId))
             .bypassHelmFetch(featureFlagService.isEnabled(FeatureName.BYPASS_HELM_FETCH, accountId))
+            .useRepoFlags(true)
+            .deleteRepoCacheDir(true)
+            .useCache(!featureFlagService.isEnabled(FeatureName.DISABLE_HELM_REPO_YAML_CACHE, accountId))
             .helmRepoConfig(helmRepoConfig);
 
     if (isNotBlank(helmRepoConfig.getConnectorId())) {
