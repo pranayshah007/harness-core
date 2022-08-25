@@ -254,16 +254,19 @@ public class WatcherServiceImpl implements WatcherService {
         log.info(message != null ? "[New] Got go-ahead. Proceeding"
                                  : "[New] Timed out waiting for go-ahead. Proceeding anyway");
       }
-      if (chronicleEventTailer != null) {
-        chronicleEventTailer.startAsync().awaitRunning();
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-          // needed to satisfy infer since chronicleEventTailer is not final and it's nullable so it could be null
-          // technically when the hook is executed.
-          if (chronicleEventTailer != null) {
-            chronicleEventTailer.stopAsync().awaitTerminated();
-          }
-        }));
-      }
+
+      watchExecutor.submit(() -> {
+        if (chronicleEventTailer != null) {
+          chronicleEventTailer.startAsync().awaitRunning();
+          Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            // needed to satisfy infer since chronicleEventTailer is not final and it's nullable so it could be null
+            // technically when the hook is executed.
+            if (chronicleEventTailer != null) {
+              chronicleEventTailer.stopAsync().awaitTerminated();
+            }
+          }));
+        }
+      });
       messageService.removeData(WATCHER_DATA, NEXT_WATCHER);
 
       log.info(upgrade ? "[New] Watcher upgraded" : "Watcher started");
@@ -1429,9 +1432,11 @@ public class WatcherServiceImpl implements WatcherService {
           if (message != null && message.getMessage().equals(WATCHER_STARTED)) {
             log.info(
                 "[Old] Retrieved watcher-started message from new watcher {}. Sending go-ahead", newWatcherProcess);
-            if (chronicleEventTailer != null) {
-              chronicleEventTailer.stopAsync().awaitTerminated();
-            }
+            watchExecutor.submit(() -> {
+              if (chronicleEventTailer != null) {
+                chronicleEventTailer.stopAsync().awaitTerminated();
+              }
+            });
             messageService.writeMessageToChannel(WATCHER, newWatcherProcess, WATCHER_GO_AHEAD);
             log.info("[Old] Watcher upgraded. Stopping");
             removeWatcherVersionFromCapsule(version, newVersion);
