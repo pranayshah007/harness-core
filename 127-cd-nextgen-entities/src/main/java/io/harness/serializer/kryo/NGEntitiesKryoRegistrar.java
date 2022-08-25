@@ -233,8 +233,8 @@ public class NGEntitiesKryoRegistrar implements KryoRegistrar {
     kryo.register(CustomArtifactScripts.class, 140018);
     kryo.register(CustomArtifactScriptSourceWrapper.class, 140019);
     kryo.register(CustomScriptBaseSource.class, 140020);
-    kryo.register(GoogleArtifactRegistryConfig.class, 130017);
-    kryo.register(GarArtifactOutcome.class, 130018);
-    kryo.register(GoogleArtifactRegistryType.class, 130019);
+    kryo.register(GoogleArtifactRegistryConfig.class, 130021);
+    kryo.register(GarArtifactOutcome.class, 130022);
+    kryo.register(GoogleArtifactRegistryType.class, 130023);
   }
 }
