@@ -12,6 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.CE;
 import static java.util.stream.Collectors.toSet;
 
 import io.harness.AccessControlClientConfiguration;
+import io.harness.accesscontrol.AccessControlAdminClientConfiguration;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ccm.commons.beans.config.AwsConfig;
 import io.harness.ccm.commons.beans.config.GcpConfig;
@@ -94,6 +95,9 @@ public class CENextGenConfiguration extends Configuration {
   @JsonProperty("accessControlClient")
   @ConfigSecret
   private AccessControlClientConfiguration accessControlClientConfiguration;
+  @JsonProperty("accessControlAdminClient")
+  @ConfigSecret
+  private AccessControlAdminClientConfiguration accessControlAdminClientConfiguration;
 
   @JsonProperty(defaultValue = "KUBERNETES") private DeployMode deployMode = DeployMode.KUBERNETES;
   @JsonProperty(value = "featureFlagsEnabled", defaultValue = "") private String featureFlagsEnabled;
