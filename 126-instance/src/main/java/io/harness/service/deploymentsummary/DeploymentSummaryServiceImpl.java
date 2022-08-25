@@ -48,6 +48,15 @@ public class DeploymentSummaryServiceImpl implements DeploymentSummaryService {
   }
 
   @Override
+  public Optional<DeploymentSummaryDTO> getLatestByInstanceKeyAndPipelineExecutionIdNot(
+      String instanceSyncKey, InfrastructureMappingDTO infrastructureMappingDTO, String pipelineExecutionId) {
+    Optional<DeploymentSummary> deploymentSummaryOptional =
+        deploymentSummaryRepository.fetchLatestByInstanceKeyAndPipelineExecutionIdNot(
+            instanceSyncKey, infrastructureMappingDTO, pipelineExecutionId);
+    return deploymentSummaryOptional.map(DeploymentSummaryMapper::toDTO);
+  }
+
+  @Override
   public Optional<DeploymentSummaryDTO> getLatestByInstanceKey(
       String instanceSyncKey, InfrastructureMappingDTO infrastructureMappingDTO) {
     return getNthDeploymentSummaryFromNow(1, instanceSyncKey, infrastructureMappingDTO);

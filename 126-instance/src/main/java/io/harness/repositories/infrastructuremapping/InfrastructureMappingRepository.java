@@ -12,6 +12,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.entities.InfrastructureMapping;
 
+import java.util.List;
 import java.util.Optional;
 import org.springframework.data.repository.CrudRepository;
 
@@ -20,4 +21,7 @@ import org.springframework.data.repository.CrudRepository;
 public interface InfrastructureMappingRepository extends CrudRepository<InfrastructureMapping, String> {
   Optional<InfrastructureMapping> findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndInfrastructureKey(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String infrastructureKey);
+
+  List<InfrastructureMapping> findAllByAccountIdentifierAndInfrastructureKey(
+      String accountIdentifier, String infrastructureKey);
 }

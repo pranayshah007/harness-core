@@ -1,7 +1,7 @@
 package io.harness.mongo;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
-import static io.harness.mongo.MongoConstants.SECONDARY_MONGO;
+import static io.harness.mongo.MongoConstants.SECONDARY;
 
 import io.harness.annotations.dev.OwnedBy;
 
@@ -15,7 +15,7 @@ import org.springframework.data.mongodb.core.MongoTemplate;
 @OwnedBy(PL)
 @Singleton
 public class SecondaryMongoTemplateHolder {
-  @Inject @Named(SECONDARY_MONGO) public MongoTemplate secondaryMongoTemplate;
+  @Inject @Named(SECONDARY) public MongoTemplate secondaryMongoTemplate;
 
   public MongoTemplate getSecondaryMongoTemplate() {
     return secondaryMongoTemplate;

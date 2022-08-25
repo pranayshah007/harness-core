@@ -7,9 +7,11 @@
 
 package io.harness.cdng.creator.plan.service;
 
+import static io.harness.rule.OwnerRule.INDER;
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.when;
@@ -23,8 +25,10 @@ import io.harness.cdng.pipeline.PipelineInfrastructure;
 import io.harness.cdng.service.beans.ServiceConfig;
 import io.harness.cdng.service.beans.ServiceYamlV2;
 import io.harness.cdng.visitor.YamlTypes;
+import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.services.ServiceEntityService;
+import io.harness.ng.core.service.yaml.NGServiceConfig;
 import io.harness.pms.contracts.plan.Dependencies;
 import io.harness.pms.contracts.plan.PlanCreationContextValue;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
@@ -34,14 +38,21 @@ import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.rule.Owner;
 import io.harness.serializer.KryoSerializer;
+import io.harness.utils.YamlPipelineUtils;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.base.Charsets;
 import com.google.common.io.Resources;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Scanner;
 import org.junit.Before;
@@ -58,6 +69,8 @@ public class ServicePlanCreatorHelperTest extends CategoryTest {
   private static final String ORG_IDENTIFIER = "orgId";
   private static final String PROJ_IDENTIFIER = "projId";
   private static final String SERVICE_IDENTIFIER = "service1";
+
+  private static final String RESOURCE_PATH = "cdng/plan/service/";
 
   @InjectMocks private ServicePlanCreatorHelper servicePlanCreatorHelper;
 
@@ -229,5 +242,104 @@ public class ServicePlanCreatorHelperTest extends CategoryTest {
         servicePlanCreatorHelper.getResolvedServiceFieldForV2(null, stageNode, specField, context);
     assertThat(serviceFieldForV2).isNotNull();
     assertThat(serviceFieldForV2.getNode().getField(YamlTypes.SERVICE_DEFINITION)).isNotNull();
+  }
+
+  @Test
+  @Owner(developers = INDER)
+  @Category(UnitTests.class)
+  public void testModifyArtifactsWithFixedPrimaryArtifactRefInYaml() throws IOException {
+    String yaml = readFile("serviceV2WithFixedPrimaryArtifactRef.yaml");
+    YamlField serviceFieldForV2 = servicePlanCreatorHelper.validateAndModifyArtifactsInYaml(null, null, yaml);
+    assertThat(serviceFieldForV2).isNotNull();
+    removeUuid(serviceFieldForV2.getNode().getCurrJsonNode());
+    String finalYaml = YamlPipelineUtils.writeYamlString(serviceFieldForV2.getNode().getCurrJsonNode());
+    assertThat(finalYaml).isNotEmpty();
+
+    String modifiedYaml = readFile("modifiedServiceV2WithFixedPrimaryArtifactRef.yaml");
+    assertThat(finalYaml).isEqualTo(modifiedYaml);
+    NGServiceConfig config = YamlPipelineUtils.read(finalYaml, NGServiceConfig.class);
+    assertThat(config).isNotNull();
+  }
+
+  @Test
+  @Owner(developers = INDER)
+  @Category(UnitTests.class)
+  public void testModifyArtifactsWithIncorrectPrimaryArtifactRefInYaml() throws IOException {
+    String yaml = readFile("serviceV2WithIncorrectPrimaryArtifactRef.yaml");
+    DeploymentStageNode deploymentStageNode = DeploymentStageNode.builder().build();
+    deploymentStageNode.setIdentifier("stage1");
+    assertThatThrownBy(
+        () -> servicePlanCreatorHelper.validateAndModifyArtifactsInYaml(deploymentStageNode, SERVICE_IDENTIFIER, yaml))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(
+            "No artifact source exists with the identifier i5 inside service service1 of DeploymentStage - stage1");
+  }
+
+  @Test
+  @Owner(developers = INDER)
+  @Category(UnitTests.class)
+  public void testModifyArtifactsWithPrimaryArtifactRefAsExpressionInYaml() throws IOException {
+    String yaml = readFile("serviceV2WithPrimaryArtifactRefAsExpression.yaml");
+    DeploymentStageNode deploymentStageNode = DeploymentStageNode.builder().build();
+    deploymentStageNode.setIdentifier("stage1");
+    assertThatThrownBy(
+        () -> servicePlanCreatorHelper.validateAndModifyArtifactsInYaml(deploymentStageNode, SERVICE_IDENTIFIER, yaml))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(
+            "Primary artifact ref cannot be runtime or expression inside service service1 of DeploymentStage - stage1");
+  }
+
+  @Test
+  @Owner(developers = INDER)
+  @Category(UnitTests.class)
+  public void testModifyArtifactsWithPrimaryAndSidecarArtifactsInYaml() throws IOException {
+    String yaml = readFile("modifiedServiceV2WithFixedPrimaryArtifactRef.yaml");
+    YamlField serviceFieldForV2 = servicePlanCreatorHelper.validateAndModifyArtifactsInYaml(null, null, yaml);
+    assertThat(serviceFieldForV2).isNotNull();
+    removeUuid(serviceFieldForV2.getNode().getCurrJsonNode());
+    String finalYaml = YamlPipelineUtils.writeYamlString(serviceFieldForV2.getNode().getCurrJsonNode());
+    assertThat(finalYaml).isNotEmpty();
+
+    assertThat(finalYaml).isEqualTo(yaml);
+    NGServiceConfig config = YamlPipelineUtils.read(finalYaml, NGServiceConfig.class);
+    assertThat(config).isNotNull();
+  }
+
+  private String readFile(String filename) {
+    filename = RESOURCE_PATH + filename;
+    ClassLoader classLoader = getClass().getClassLoader();
+    try {
+      return Resources.toString(Objects.requireNonNull(classLoader.getResource(filename)), StandardCharsets.UTF_8);
+    } catch (IOException e) {
+      throw new InvalidRequestException("Could not read resource file: " + filename);
+    }
+  }
+
+  public void removeUuid(JsonNode node) {
+    if (node.isObject()) {
+      removeUuidInObject(node);
+    } else if (node.isArray()) {
+      removeUuidInArray(node);
+    }
+  }
+
+  private void removeUuidInObject(JsonNode node) {
+    ObjectNode objectNode = (ObjectNode) node;
+    if (objectNode.has(YamlNode.UUID_FIELD_NAME)) {
+      objectNode.remove(YamlNode.UUID_FIELD_NAME);
+    } else {
+      throw new InvalidRequestException("Uuid is not present at object node");
+    }
+    for (Iterator<Map.Entry<String, JsonNode>> it = objectNode.fields(); it.hasNext();) {
+      Map.Entry<String, JsonNode> field = it.next();
+      removeUuid(field.getValue());
+    }
+  }
+
+  private void removeUuidInArray(JsonNode node) {
+    ArrayNode arrayNode = (ArrayNode) node;
+    for (Iterator<JsonNode> it = arrayNode.elements(); it.hasNext();) {
+      removeUuid(it.next());
+    }
   }
 }
