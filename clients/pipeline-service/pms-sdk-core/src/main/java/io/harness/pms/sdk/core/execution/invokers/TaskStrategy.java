@@ -33,6 +33,8 @@ import io.harness.pms.sdk.core.steps.io.StepResponse.StepOutcome;
 import io.harness.pms.sdk.core.steps.io.StepResponseMapper;
 
 import com.google.inject.Inject;
+import java.util.Collections;
+import java.util.Optional;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
@@ -49,9 +51,12 @@ public class TaskStrategy extends ProgressableStrategy {
   public void start(InvokerPackage invokerPackage) {
     Ambiance ambiance = invokerPackage.getAmbiance();
     TaskExecutable taskExecutable = extractStep(ambiance);
-    TaskRequest task =
-        taskExecutable.obtainTask(ambiance, invokerPackage.getStepParameters(), invokerPackage.getInputPackage());
-    handleResponse(ambiance, task);
+    Optional<TaskRequest> taskOptional = taskExecutable.obtainTaskOptional(
+        ambiance, invokerPackage.getStepParameters(), invokerPackage.getInputPackage());
+    if (taskOptional.isEmpty()) {
+      sdkNodeExecutionService.resumeNodeExecution(ambiance, Collections.emptyMap(), false);
+    }
+    handleResponse(ambiance, taskOptional.get());
   }
 
   @Override
