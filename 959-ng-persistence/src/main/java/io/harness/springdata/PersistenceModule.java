@@ -8,21 +8,15 @@
 package io.harness.springdata;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
-import static io.harness.mongo.MongoConstants.SECONDARY_MONGO;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.exceptionmanager.exceptionhandler.ExceptionHandler;
 import io.harness.springdata.exceptions.SpringMongoExceptionHandler;
 
 import com.google.inject.AbstractModule;
-import com.google.inject.Provides;
-import com.google.inject.Singleton;
 import com.google.inject.TypeLiteral;
 import com.google.inject.multibindings.MapBinder;
-import com.google.inject.name.Named;
-import com.mongodb.ReadPreference;
 import org.springframework.data.mongodb.UncategorizedMongoDbException;
-import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.guice.module.BeanFactoryProvider;
 import org.springframework.guice.module.SpringModule;
 import org.springframework.transaction.TransactionException;
@@ -38,15 +32,6 @@ public abstract class PersistenceModule extends AbstractModule {
 
     exceptionHandlerMapBinder.addBinding(TransactionException.class).to(SpringMongoExceptionHandler.class);
     exceptionHandlerMapBinder.addBinding(UncategorizedMongoDbException.class).to(SpringMongoExceptionHandler.class);
-  }
-
-  @Provides
-  @Named(SECONDARY_MONGO)
-  @Singleton
-  protected MongoTemplate getSecondaryMongoTemplate(MongoTemplate mongoTemplate) {
-    HMongoTemplate template = new HMongoTemplate(mongoTemplate.getMongoDbFactory(), mongoTemplate.getConverter());
-    template.setReadPreference(ReadPreference.secondaryPreferred());
-    return template;
   }
 
   protected abstract Class<?>[] getConfigClasses();
