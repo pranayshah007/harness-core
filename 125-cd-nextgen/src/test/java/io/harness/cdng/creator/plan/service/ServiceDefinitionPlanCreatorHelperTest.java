@@ -24,6 +24,8 @@ import io.harness.cdng.artifact.bean.yaml.DockerHubArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.PrimaryArtifact;
 import io.harness.cdng.artifact.bean.yaml.SidecarArtifact;
 import io.harness.cdng.artifact.bean.yaml.SidecarArtifactWrapper;
+import io.harness.cdng.configfile.ConfigFile;
+import io.harness.cdng.configfile.ConfigFileWrapper;
 import io.harness.cdng.manifest.ManifestConfigType;
 import io.harness.cdng.manifest.yaml.ManifestConfig;
 import io.harness.cdng.manifest.yaml.ManifestConfigWrapper;
@@ -85,6 +87,12 @@ public class ServiceDefinitionPlanCreatorHelperTest extends CategoryTest {
       ManifestConfigWrapper.builder()
           .manifest(ManifestConfig.builder().identifier("values_test3").type(ManifestConfigType.VALUES).build())
           .build();
+  private static final ConfigFileWrapper configFile1 =
+      ConfigFileWrapper.builder().configFile(ConfigFile.builder().identifier("config_file1").build()).build();
+  private static final ConfigFileWrapper configFile2 =
+      ConfigFileWrapper.builder().configFile(ConfigFile.builder().identifier("config_file2").build()).build();
+  private static final ConfigFileWrapper configFile3 =
+      ConfigFileWrapper.builder().configFile(ConfigFile.builder().identifier("config_file3").build()).build();
 
   @Before
   public void setUp() {
@@ -572,6 +580,45 @@ public class ServiceDefinitionPlanCreatorHelperTest extends CategoryTest {
 
     assertThat(finalManifests).hasSize(3);
     assertThat(finalManifests).containsExactly(valuesManifest1, valuesManifest3, valuesManifest2);
+  }
+
+  @Test
+  @Owner(developers = TATHAGAT)
+  @Category(UnitTests.class)
+  public void testPrepareFinalConfigFiles() {
+    final NGServiceV2InfoConfig serviceInfoConfig =
+        NGServiceV2InfoConfig.builder()
+            .identifier(SVC_REF)
+            .serviceDefinition(
+                ServiceDefinition.builder()
+                    .serviceSpec(
+                        KubernetesServiceSpec.builder().manifests(Collections.singletonList(valuesManifest1)).build())
+                    .build())
+            .build();
+    final NGServiceOverrideConfig serviceOverrideConfig =
+        NGServiceOverrideConfig.builder()
+            .serviceOverrideInfoConfig(NGServiceOverrideInfoConfig.builder()
+                                           .serviceRef(SVC_REF)
+                                           .environmentRef(ENV_REF)
+                                           .configFiles(Collections.singletonList(configFile1))
+                                           .build())
+            .build();
+    final NGEnvironmentConfig environmentConfig =
+        NGEnvironmentConfig.builder()
+            .ngEnvironmentInfoConfig(
+                NGEnvironmentInfoConfig.builder()
+                    .identifier(ENV_REF)
+                    .ngEnvironmentGlobalOverride(NGEnvironmentGlobalOverride.builder()
+                                                     .configFiles(Arrays.asList(configFile2, configFile3))
+                                                     .build())
+                    .build())
+            .build();
+
+    final List<ConfigFileWrapper> finalConfigFiles = ServiceDefinitionPlanCreatorHelper.prepareFinalConfigFiles(
+        serviceInfoConfig, serviceOverrideConfig, environmentConfig);
+
+    assertThat(finalConfigFiles).hasSize(3);
+    assertThat(finalConfigFiles).containsExactly(configFile2, configFile3, configFile1);
   }
 
   @Test

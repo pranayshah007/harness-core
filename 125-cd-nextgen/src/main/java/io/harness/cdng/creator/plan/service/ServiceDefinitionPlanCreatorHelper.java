@@ -487,7 +487,8 @@ public class ServiceDefinitionPlanCreatorHelper {
     return configFilesYamlField;
   }
 
-  private static List<ConfigFileWrapper> prepareFinalConfigFiles(NGServiceV2InfoConfig serviceV2Config,
+  @VisibleForTesting
+  List<ConfigFileWrapper> prepareFinalConfigFiles(NGServiceV2InfoConfig serviceV2Config,
       NGServiceOverrideConfig serviceOverrideConfig, NGEnvironmentConfig ngEnvironmentConfig) {
     final List<ConfigFileWrapper> svcConfigFiles = getSvcConfigFiles(serviceV2Config);
     final List<ConfigFileWrapper> envGlobalConfigFiles =
