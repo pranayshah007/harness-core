@@ -55,7 +55,6 @@ import io.harness.delegate.beans.SecretDetail;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.expression.DelegateExpressionEvaluator;
 import io.harness.delegate.logging.DelegateStackdriverLogAppender;
-import io.harness.delegate.service.ExecutionConfigOverrideFromFileOnDelegate;
 import io.harness.delegate.service.common.AbstractDelegateAgentServiceImpl;
 import io.harness.delegate.service.common.DelegateTaskExecutionData;
 import io.harness.delegate.task.ActivityAccess;
@@ -79,10 +78,8 @@ import software.wings.beans.TaskType;
 import software.wings.beans.delegation.ShellScriptParameters;
 import software.wings.delegatetasks.ActivityBasedLogSanitizer;
 import software.wings.delegatetasks.LogSanitizer;
-import software.wings.delegatetasks.ShellScriptTask;
-import software.wings.delegatetasks.delegatecapability.CapabilityCheckController;
+import software.wings.delegatetasks.bash.BashScriptTask;
 import software.wings.delegatetasks.validation.DelegateConnectionResult;
-import software.wings.delegatetasks.validation.DelegateValidateTask;
 import software.wings.misc.MemoryHelper;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -190,7 +187,6 @@ public class DelegatePlatformService extends AbstractDelegateAgentServiceImpl {
   @Inject private DelegateDecryptionService delegateDecryptionService;
   @Inject private AsyncHttpClient asyncHttpClient;
   @Inject private TokenGenerator tokenGenerator;
-  @Inject private ExecutionConfigOverrideFromFileOnDelegate delegateLocalConfigService;
 
   private TimeLimiter delegateHealthTimeLimiter;
   private TimeLimiter delegateTaskTimeLimiter;
@@ -902,22 +898,16 @@ public class DelegatePlatformService extends AbstractDelegateAgentServiceImpl {
           log.info("received task package {} for delegateInstance {}", delegateTaskPackage, DELEGATE_INSTANCE_ID);
         }
 
-        if (isEmpty(delegateTaskPackage.getDelegateInstanceId())) {
-          // Not whitelisted. Perform validation.
-          // TODO: Remove this once TaskValidation does not use secrets
-
-          // applyDelegateSecretFunctor(delegatePackage);
-          DelegateValidateTask delegateValidateTask = getDelegateValidateTask(delegateTaskEvent, delegateTaskPackage);
-          injector.injectMembers(delegateValidateTask);
-          currentlyValidatingTasks.put(delegateTaskPackage.getDelegateTaskId(), delegateTaskPackage);
-          updateCounterIfLessThanCurrent(maxValidatingTasksCount, currentlyValidatingTasks.size());
-          delegateValidateTask.validationResults();
-        } else if (DELEGATE_INSTANCE_ID.equals(delegateTaskPackage.getDelegateInstanceId())) {
+        if (isEmpty(delegateTaskPackage.getDelegateInstanceId())
+            || DELEGATE_INSTANCE_ID.equals(delegateTaskPackage.getDelegateInstanceId())) {
           applyDelegateSecretFunctor(delegateTaskPackage);
           // Whitelisted. Proceed immediately.
           log.info("Delegate {} whitelisted for task and accountId: {}", DelegateAgentCommonVariables.getDelegateId(),
               getDelegateConfiguration().getAccountId());
           executeTask(delegateTaskPackage);
+        } else {
+          throw new IllegalArgumentException("Delegate received a task intended for delegate with instanceId "
+              + delegateTaskPackage.getDelegateInstanceId());
         }
 
       } catch (IOException e) {
@@ -927,15 +917,6 @@ public class DelegatePlatformService extends AbstractDelegateAgentServiceImpl {
         currentlyExecutingFutures.remove(delegateTaskId);
       }
     }
-  }
-
-  private DelegateValidateTask getDelegateValidateTask(
-      DelegateTaskEvent delegateTaskEvent, DelegateTaskPackage delegateTaskPackage) {
-    Consumer<List<DelegateConnectionResult>> postValidationFunction =
-        getPostValidationFunction(delegateTaskEvent, delegateTaskPackage.getDelegateTaskId());
-
-    return new CapabilityCheckController(
-        DelegateAgentCommonVariables.getDelegateId(), delegateTaskPackage, postValidationFunction);
   }
 
   private Consumer<List<DelegateConnectionResult>> getPostValidationFunction(
@@ -1007,7 +988,7 @@ public class DelegatePlatformService extends AbstractDelegateAgentServiceImpl {
     //    applyDelegateExpressionEvaluator(delegateTaskPackage, delegateExpressionEvaluator);
 
     final TaskType taskType = TaskType.valueOf(taskData.getTaskType());
-    if (taskType != SCRIPT) { // TODO: Add support for SCRIPT_NG
+    if (taskType != SCRIPT && taskType != SHELL_SCRIPT_TASK_NG) {
       throw new IllegalArgumentException("PlatformDelegate can only take shel script tasks");
     }
 
@@ -1017,8 +998,8 @@ public class DelegatePlatformService extends AbstractDelegateAgentServiceImpl {
 
     //    DelegateRunnableTask delegateRunnableTask = delegateTaskFactory.getDelegateRunnableTask(
     //        taskType, delegateTaskPackage, logStreamingTaskClient, postExecutionFunction, preExecutionFunction);
-    final ShellScriptTask delegateRunnableTask =
-        new ShellScriptTask(delegateTaskPackage, null, postExecutionFunction, preExecutionFunction);
+    final BashScriptTask delegateRunnableTask =
+        new BashScriptTask(delegateTaskPackage, preExecutionFunction, postExecutionFunction);
 
     //    ((AbstractDelegateRunnableTask) delegateRunnableTask).setDelegateHostname(HOST_NAME);
     injector.injectMembers(delegateRunnableTask);
