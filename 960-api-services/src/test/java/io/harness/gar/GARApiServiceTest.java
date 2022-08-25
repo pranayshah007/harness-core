@@ -6,6 +6,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.notMatching;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
@@ -14,6 +15,7 @@ import io.harness.artifacts.beans.BuildDetailsInternal;
 import io.harness.artifacts.gar.beans.GarInternalConfig;
 import io.harness.artifacts.gar.service.GARApiServiceImpl;
 import io.harness.category.element.UnitTests;
+import io.harness.exception.WingsException;
 import io.harness.rule.Owner;
 
 import com.github.tomakehurst.wiremock.client.WireMock;
@@ -79,7 +81,7 @@ public class GARApiServiceTest extends CategoryTest {
             .get(WireMock.urlPathEqualTo(
                 "/v1/projects/cd-play/locations/us/repositories/vivek-repo/packages/wrongpackage/tags"))
             .withHeader("Authorization", equalTo("bearerToken"))
-            .willReturn(aResponse().withStatus(400).withBody("Wrong bearer Token")));
+            .willReturn(aResponse().withStatus(404).withBody("Test Body")));
     wireMockRule.stubFor(
         WireMock
             .get(WireMock.urlPathEqualTo(
@@ -122,26 +124,26 @@ public class GARApiServiceTest extends CategoryTest {
     BuildDetailsInternal actual = garApiServiceImpl.verifyBuildNumber(gcpInternalConfig, "latest10");
     assertThat(actual.getNumber()).isEqualTo("latest10");
   }
-  //  @Test
-  //  @Owner(developers = vivekveman)
-  //  @Category(UnitTests.class)
-  //  public void hintExecptionTest() {
-  //    GarInternalConfig modiifedInternalConfig = GarInternalConfig.builder()
-  //                                                   .region("us")
-  //                                                   .project("cd-play")
-  //                                                   .pkg("mongo")
-  //                                                   .bearerToken("wrongbearerToken")
-  //                                                   .repositoryName("vivek-repo")
-  //                                                   .maxBuilds(10000)
-  //                                                   .build();
-  //    assertThatThrownBy(() -> garApiServiceImpl.getBuilds(modiifedInternalConfig, "", 100))
-  //        .extracting(ex -> ((WingsException) ex).getParams().get("message"))
-  //        .isEqualTo("Google Artifact Registry: Connector provided Is not Having Artifact Registry Reader
-  //        permission");
-  //    modiifedInternalConfig.setBearerToken("bearerToken");
-  //    modiifedInternalConfig.setPkg("wrongpackage");
-  //    assertThatThrownBy(() -> garApiServiceImpl.getBuilds(modiifedInternalConfig, "", 100))
-  //        .extracting(ex -> ((WingsException) ex).getParams().get("message"))
-  //        .isEqualTo("GOOGLE ARTIFACT REGISTRY : Unable to fetch the versions for the package");
-  //  }
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void hintExecptionTest() {
+    GarInternalConfig modiifedInternalConfig = GarInternalConfig.builder()
+                                                   .region("us")
+                                                   .project("cd-play")
+                                                   .pkg("mongo")
+                                                   .bearerToken("wrongbearerToken")
+                                                   .repositoryName("vivek-repo")
+                                                   .maxBuilds(10000)
+                                                   .build();
+    assertThatThrownBy(() -> garApiServiceImpl.getBuilds(modiifedInternalConfig, "", 100))
+        .extracting(ex -> ((WingsException) ex).getParams().get("message"))
+        .isEqualTo(
+            "Google Artifact Registry: Connector provided Is not Having Artifact Registry Reader permission"); // 401
+    modiifedInternalConfig.setBearerToken("bearerToken");
+    modiifedInternalConfig.setPkg("wrongpackage");
+    assertThatThrownBy(() -> garApiServiceImpl.getBuilds(modiifedInternalConfig, "", 100))
+        .extracting(ex -> ((WingsException) ex).getParams().get("message"))
+        .isEqualTo("Please Check Project,RepositoryName,Package,Region fields"); // 400
+  }
 }

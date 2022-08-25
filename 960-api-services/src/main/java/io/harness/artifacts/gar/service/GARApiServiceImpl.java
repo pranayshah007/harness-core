@@ -169,7 +169,7 @@ public class GARApiServiceImpl implements GarApiService {
             new InvalidArtifactServerException(response.errorBody().toString(), USER));
       case 400:
         return false;
-      case 403:
+      case 401:
         throw NestedExceptionUtils.hintWithExplanationException(
             "Google Artifact Registry: Connector provided Is not Having Artifact Registry Reader permission",
             "Check connector's permission and credentials",
