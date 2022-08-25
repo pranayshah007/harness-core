@@ -22,7 +22,6 @@ import static java.time.Duration.ofMillis;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
-import io.harness.concurrent.HTimeLimiter;
 import io.harness.delegate.command.CommandExecutionResult;
 import io.harness.encryptors.CustomEncryptor;
 import io.harness.exception.CommandExecutionException;
@@ -37,10 +36,8 @@ import software.wings.beans.delegation.ShellScriptParameters;
 import software.wings.delegatetasks.ShellScriptTaskHandler;
 import software.wings.security.encryption.secretsmanagerconfigs.CustomSecretsManagerConfig;
 
-import com.google.common.util.concurrent.TimeLimiter;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import java.time.Duration;
 import java.util.Set;
 import javax.validation.executable.ValidateOnExecution;
 
@@ -51,12 +48,10 @@ import javax.validation.executable.ValidateOnExecution;
 public class CustomSecretsManagerEncryptor implements CustomEncryptor {
   private final ShellScriptTaskHandler shellScriptTaskHandler;
   private static final String OUTPUT_VARIABLE = "secret";
-  private final TimeLimiter timeLimiter;
 
   @Inject
-  public CustomSecretsManagerEncryptor(TimeLimiter timeLimiter, ShellScriptTaskHandler shellScriptTaskHandler) {
+  public CustomSecretsManagerEncryptor(ShellScriptTaskHandler shellScriptTaskHandler) {
     this.shellScriptTaskHandler = shellScriptTaskHandler;
-    this.timeLimiter = timeLimiter;
   }
 
   @Override
@@ -73,14 +68,14 @@ public class CustomSecretsManagerEncryptor implements CustomEncryptor {
     int failedAttempts = 0;
     while (true) {
       try {
-        return HTimeLimiter.callInterruptible21(timeLimiter, Duration.ofSeconds(20),
-            () -> fetchSecretValueInternal(encryptedRecord, customSecretsManagerConfig));
+        return fetchSecretValueInternal(encryptedRecord, customSecretsManagerConfig);
       } catch (SecretManagementDelegateException e) {
         throw e;
       } catch (Exception e) {
         failedAttempts++;
         if (failedAttempts == NUM_OF_RETRIES) {
-          String message = "Faild to decrypt " + encryptedRecord.getName() + " after " + NUM_OF_RETRIES + " retries";
+          String message = String.format(
+              "Failed to read '{}' from shell script after {} retries", encryptedRecord.getName(), NUM_OF_RETRIES);
           throw new SecretManagementDelegateException(SECRET_MANAGEMENT_ERROR, message, e, USER);
         }
         sleep(ofMillis(1000));
