@@ -2,12 +2,15 @@ package io.harness.cdng.service.steps;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+
 import static java.lang.String.format;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.artifact.outcome.ArtifactsOutcome;
 import io.harness.cdng.creator.plan.environment.EnvironmentMapper;
 import io.harness.cdng.expressions.CDExpressionResolver;
+import io.harness.cdng.manifest.steps.ManifestsOutcome;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.cdng.visitor.YamlTypes;
 import io.harness.connector.services.ConnectorService;
@@ -28,6 +31,7 @@ import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.merger.helpers.MergeHelper;
+import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.executables.ChildrenExecutable;
@@ -144,23 +148,6 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
         ambiance, ngServiceV2InfoConfig.getServiceDefinition(), ngServiceV2InfoConfig.getIdentifier());
 
     List<StepResponse.StepOutcome> stepOutcomes = new ArrayList<>();
-//    List<Outcome> childrenOutcomes = serviceStepsHelper.getChildrenOutcomes(responseDataMap);
-    //    Optional<Outcome> manifestsOutcome =
-    //        childrenOutcomes.stream().filter(ManifestsOutcome.class ::isInstance).findFirst();
-    //    manifestsOutcome.ifPresent(o
-    //        -> stepOutcomes.add(StepResponse.StepOutcome.builder()
-    //                                .name(OutcomeExpressionConstants.MANIFESTS)
-    //                                .outcome(o)
-    //                                .group(StepCategory.STAGE.name())
-    //                                .build()));
-    //    Optional<Outcome> artifactsOutcome =
-    //        childrenOutcomes.stream().filter(ArtifactsOutcome.class ::isInstance).findFirst();
-    //    artifactsOutcome.ifPresent(o
-    //        -> stepOutcomes.add(StepResponse.StepOutcome.builder()
-    //                                .name(OutcomeExpressionConstants.ARTIFACTS)
-    //                                .outcome(o)
-    //                                .group(StepCategory.STAGE.name())
-    //                                .build()));
     stepOutcomes.add(
         StepResponse.StepOutcome.builder()
             .name(OutcomeExpressionConstants.SERVICE)
@@ -170,6 +157,26 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
                 ngServiceV2InfoConfig.getGitOpsEnabled()))
             .group(StepCategory.STAGE.name())
             .build());
+
+    OptionalSweepingOutput manifestsOutput = sweepingOutputService.resolveOptional(
+        ambiance, RefObjectUtils.getSweepingOutputRefObject(OutcomeExpressionConstants.MANIFESTS));
+    if (manifestsOutput.isFound()) {
+      stepOutcomes.add(StepResponse.StepOutcome.builder()
+                           .name(OutcomeExpressionConstants.MANIFESTS)
+                           .outcome((ManifestsOutcome) manifestsOutput.getOutput())
+                           .group(StepCategory.STAGE.name())
+                           .build());
+    }
+
+    OptionalSweepingOutput artifactsOutput = sweepingOutputService.resolveOptional(
+        ambiance, RefObjectUtils.getSweepingOutputRefObject(OutcomeExpressionConstants.ARTIFACTS));
+    if (artifactsOutput.isFound()) {
+      stepOutcomes.add(StepResponse.StepOutcome.builder()
+                           .name(OutcomeExpressionConstants.ARTIFACTS)
+                           .outcome((ArtifactsOutcome) artifactsOutput.getOutput())
+                           .group(StepCategory.STAGE.name())
+                           .build());
+    }
     return StepResponse.builder().status(Status.SUCCEEDED).stepOutcomes(stepOutcomes).build();
   }
 

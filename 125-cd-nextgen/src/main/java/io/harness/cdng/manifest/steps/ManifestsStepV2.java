@@ -3,7 +3,6 @@ package io.harness.cdng.manifest.steps;
 import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-
 import static java.lang.String.format;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -107,13 +106,11 @@ public class ManifestsStepV2 implements SyncExecutable<EmptyStepParameters> {
       manifestsOutcome.put(manifestOutcome.getIdentifier(), manifestOutcome);
     }
 
+    sweepingOutputService.consume(
+        ambiance, OutcomeExpressionConstants.MANIFESTS, manifestsOutcome, StepCategory.STAGE.name());
+
     return StepResponse.builder()
         .status(Status.SUCCEEDED)
-        .stepOutcome(StepResponse.StepOutcome.builder()
-                         .name(OutcomeExpressionConstants.MANIFESTS)
-                         .outcome(manifestsOutcome)
-                         .group(StepCategory.STAGE.name())
-                         .build())
         .build();
   }
 
