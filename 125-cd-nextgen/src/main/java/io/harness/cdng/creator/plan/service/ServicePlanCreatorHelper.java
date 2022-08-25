@@ -61,14 +61,6 @@ public class ServicePlanCreatorHelper {
   @Inject private ServiceEntityService serviceEntityService;
   @Inject private ServicePlanCreator servicePlanCreator;
 
-  @Inject private NGFeatureFlagHelperService featureFlagService;
-
-  /**
-   * @param ctx             Plancreation context
-   * @param parentSpecField spec field for the parent i.e spec field for the Deployment stage
-   * @param stageNode       DeploymentStage node
-   * @return Resolved service field ("serviceConfig" for v1, "service" for v2)
-   */
   public YamlField getResolvedServiceField(
       YamlField parentSpecField, DeploymentStageNode stageNode, PlanCreationContext ctx) {
     YamlField serviceField = parentSpecField.getNode().getField(YamlTypes.SERVICE_CONFIG);

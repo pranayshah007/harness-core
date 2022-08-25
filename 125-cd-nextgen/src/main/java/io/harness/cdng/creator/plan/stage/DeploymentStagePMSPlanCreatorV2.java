@@ -70,8 +70,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import lombok.AllArgsConstructor;
-import lombok.Data;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
@@ -194,21 +192,21 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
           Preconditions.checkNotNull(ctx.getCurrentField().getNode().getField(YAMLFieldNameConstants.SPEC));
       logStepYamlField(specField);
 
-      final String postServiceStepUuid = "service-" + UUIDGenerator.generateUuid();
-      final String environmentUuid = "environment-" + UUIDGenerator.generateUuid();
-
       if (useNewFlow(ctx)) {
         String infraNodeId = addInfrastructureNode(ctx, planCreationResponseMap, specField, stageNode);
         String serviceNodeId = addServiceNode(planCreationResponseMap, stageNode, infraNodeId);
         addSpecNode(planCreationResponseMap, specField, serviceNodeId);
       } else {
+        final String postServiceStepUuid = "service-" + UUIDGenerator.generateUuid();
+        final String environmentUuid = "environment-" + UUIDGenerator.generateUuid();
         // Spec node is also added in this method
-        final AddServiceDependencyResponse addServiceDependencyResponse = addServiceDependency(
-            ctx, planCreationResponseMap, specField, stageNode, environmentUuid, postServiceStepUuid);
+        YamlField serviceField = addServiceDependency(
+            planCreationResponseMap, specField, stageNode, ctx, environmentUuid, postServiceStepUuid);
 
         PipelineInfrastructure pipelineInfrastructure = stageNode.getDeploymentStageConfig().getInfrastructure();
+        String serviceSpecNodeUuid = servicePlanCreatorHelper.fetchServiceSpecUuid(serviceField);
         addEnvAndInfraDependency(ctx, stageNode, planCreationResponseMap, specField, pipelineInfrastructure,
-            postServiceStepUuid, environmentUuid, addServiceDependencyResponse.getServiceSpecNodeId(), environmentUuid);
+            postServiceStepUuid, environmentUuid, serviceSpecNodeUuid, environmentUuid);
       }
 
       // Add dependency for execution
@@ -226,13 +224,6 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
       throw new InvalidRequestException(
           "Invalid yaml for Deployment stage with identifier - " + stageNode.getIdentifier(), e);
     }
-  }
-
-  private void addSpecNode(
-      LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap, YamlField specField, String nextNodeId) {
-    // Adding Spec node
-    planCreationResponseMap.put(specField.getNode().getUuid(),
-        PlanCreationResponse.builder().dependencies(getDependenciesForSpecNode(specField, nextNodeId)).build());
   }
 
   private boolean useNewFlow(PlanCreationContext ctx) {
@@ -326,13 +317,12 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
   }
 
   // This function adds the service dependency and returns the resolved service field
-  private AddServiceDependencyResponse addServiceDependency(PlanCreationContext ctx,
-      LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap, YamlField specField,
-      DeploymentStageNode stageNode, String environmentUuid, String infraSectionUuid) throws IOException {
+  private YamlField addServiceDependency(LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap,
+      YamlField specField, DeploymentStageNode stageNode, PlanCreationContext ctx, String environmentUuid,
+      String infraSectionUuid) throws IOException {
     // Adding service child by resolving the serviceField
-    final YamlField serviceField = servicePlanCreatorHelper.getResolvedServiceField(ctx, specField, stageNode);
-    final String serviceNodeUuid = serviceField.getNode().getUuid();
-    final String serviceSpecNodeUuid = servicePlanCreatorHelper.fetchServiceSpecUuid(serviceField);
+    YamlField serviceField = servicePlanCreatorHelper.getResolvedServiceField(specField, stageNode, ctx);
+    String serviceNodeUuid = serviceField.getNode().getUuid();
 
     // Adding Spec node
     planCreationResponseMap.put(specField.getNode().getUuid(),
@@ -343,14 +333,14 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
     planCreationResponseMap.put(serviceNodeUuid,
         PlanCreationResponse.builder()
             .dependencies(servicePlanCreatorHelper.getDependenciesForService(
-                serviceField, stageNode, environmentUuid, infraSectionUuid, serviceSpecNodeUuid))
+                serviceField, stageNode, environmentUuid, infraSectionUuid))
             .yamlUpdates(YamlUpdates.newBuilder()
                              .putFqnToYaml(serviceField.getYamlPath(),
                                  YamlUtils.writeYamlString(serviceField).replace("---\n", ""))
                              .build())
             .build());
 
-    return new AddServiceDependencyResponse(serviceField, serviceSpecNodeUuid);
+    return serviceField;
   }
 
   private String addServiceNode(LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap,
@@ -372,6 +362,13 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
         envYamlField.getNode(), stageNode.getDeploymentStageConfig().getEnvironment(), kryoSerializer);
     planCreationResponseMap.put(node.getUuid(), PlanCreationResponse.builder().planNode(node).build());
     return node.getUuid();
+  }
+
+  private void addSpecNode(
+      LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap, YamlField specField, String nextNodeId) {
+    // Adding Spec node
+    planCreationResponseMap.put(specField.getNode().getUuid(),
+        PlanCreationResponse.builder().dependencies(getDependenciesForSpecNode(specField, nextNodeId)).build());
   }
 
   public Dependencies getDependenciesForSpecNode(YamlField specField, String childNodeUuid) {
@@ -418,11 +415,5 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
 
   private boolean isGitopsEnabled(DeploymentStageConfig deploymentStageConfig) {
     return deploymentStageConfig.getGitOpsEnabled();
-  }
-  @Data
-  @AllArgsConstructor
-  static class AddServiceDependencyResponse {
-    YamlField serviceField;
-    String serviceSpecNodeId;
   }
 }
