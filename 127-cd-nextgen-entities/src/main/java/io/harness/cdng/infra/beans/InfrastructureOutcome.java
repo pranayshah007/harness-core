@@ -21,7 +21,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
 @OwnedBy(HarnessTeam.CDP)
 @JsonTypeInfo(use = NAME, property = "type", include = EXTERNAL_PROPERTY, visible = true)
-public interface InfrastructureOutcome  extends Outcome, PassThroughData, ExecutionSweepingOutput {
+public interface InfrastructureOutcome extends Outcome, PassThroughData, ExecutionSweepingOutput {
   String getKind();
   EnvironmentOutcome getEnvironment();
   String getInfrastructureKey();

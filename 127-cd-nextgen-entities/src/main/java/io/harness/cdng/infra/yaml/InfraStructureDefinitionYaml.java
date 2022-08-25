@@ -39,10 +39,8 @@ public class InfraStructureDefinitionYaml implements Visitable {
   @ApiModelProperty(hidden = true)
   private String uuid;
 
-//  @Pattern(regexp = NGRegexValidatorConstants.RUNTIME_OR_FIXED_IDENTIFIER_PATTERN)
-  @NotNull
-  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
-  private ParameterField<String> identifier;
+  //  @Pattern(regexp = NGRegexValidatorConstants.RUNTIME_OR_FIXED_IDENTIFIER_PATTERN)
+  @NotNull @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) private ParameterField<String> identifier;
 
   // inputs
   @ApiModelProperty(dataType = SwaggerConstants.JSON_NODE_CLASSPATH) Map<String, Object> inputs;
