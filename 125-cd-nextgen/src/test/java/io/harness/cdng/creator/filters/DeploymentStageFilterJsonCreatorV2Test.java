@@ -175,8 +175,10 @@ public class DeploymentStageFilterJsonCreatorV2Test extends CategoryTest {
                              .environmentRef(ParameterField.<String>builder().value(envEntity.getIdentifier()).build())
                              // default to false
                              .deployToAll(ParameterField.createValueField(false))
-                             .infrastructureDefinitions(ParameterField.createValueField(asList(
-                                 InfraStructureDefinitionYaml.builder().identifier("some-random-infra").build())))
+                             .infrastructureDefinitions(ParameterField.createValueField(
+                                 asList(InfraStructureDefinitionYaml.builder()
+                                            .identifier(ParameterField.createValueField("some-random-infra"))
+                                            .build())))
                              .build())
             .deploymentType(KUBERNETES)
             .build());
@@ -249,7 +251,7 @@ public class DeploymentStageFilterJsonCreatorV2Test extends CategoryTest {
                              // default to false
                              .deployToAll(ParameterField.createValueField(false))
                              .infrastructureDefinitions(ParameterField.createValueField(asList(
-                                 InfraStructureDefinitionYaml.builder().identifier(infra.getIdentifier()).build())))
+                                 InfraStructureDefinitionYaml.builder().identifier(ParameterField.createValueField(infra.getIdentifier())).build())))
                              .build())
             .deploymentType(KUBERNETES)
             .build());

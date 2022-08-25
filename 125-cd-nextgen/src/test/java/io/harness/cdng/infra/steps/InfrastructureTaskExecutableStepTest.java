@@ -35,6 +35,7 @@ import io.harness.cdng.common.beans.SetupAbstractionKeys;
 import io.harness.cdng.execution.ExecutionInfoKey;
 import io.harness.cdng.execution.helper.StageExecutionHelper;
 import io.harness.cdng.infra.beans.AwsInstanceFilter;
+import io.harness.cdng.infra.beans.AzureWebAppInfrastructureOutcome;
 import io.harness.cdng.infra.yaml.Infrastructure;
 import io.harness.cdng.infra.yaml.K8sGcpInfrastructure;
 import io.harness.cdng.infra.yaml.SshWinRmAwsInfrastructure;
@@ -67,6 +68,7 @@ import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.contracts.steps.StepCategory;
+import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.execution.invokers.StrategyHelper;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
@@ -101,6 +103,7 @@ import org.junit.experimental.categories.Category;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 
@@ -165,10 +168,15 @@ public class InfrastructureTaskExecutableStepTest extends CategoryTest {
 
   @Before
   public void setUp() {
+    MockitoAnnotations.openMocks(this);
     when(stepHelper.getEnvironmentType(eq(ambiance))).thenReturn(EnvironmentType.ALL);
     when(executionSweepingOutputService.resolve(
              any(), eq(RefObjectUtils.getSweepingOutputRefObject(OutputExpressionConstants.ENVIRONMENT))))
         .thenReturn(EnvironmentOutcome.builder().build());
+    doReturn(
+        OptionalSweepingOutput.builder().found(true).output(AzureWebAppInfrastructureOutcome.builder().build()).build())
+        .when(executionSweepingOutputService)
+        .resolveOptional(ambiance, RefObjectUtils.getSweepingOutputRefObject(OutputExpressionConstants.OUTPUT));
   }
 
   @Test
@@ -182,7 +190,7 @@ public class InfrastructureTaskExecutableStepTest extends CategoryTest {
     when(cdStepHelper.getSshInfraDelegateConfig(any(), eq(ambiance))).thenReturn(azureSshInfraDelegateConfig);
 
     TaskRequest taskRequest =
-        infrastructureStep.obtainTaskInternal(ambiance, azureInfra, StepInputPackage.builder().build());
+        infrastructureStep.obtainTaskInternal(ambiance, azureInfra, StepInputPackage.builder().build()).get();
 
     ArgumentCaptor<SshInfraDelegateConfigOutput> azureConfigOutputCaptor =
         ArgumentCaptor.forClass(SshInfraDelegateConfigOutput.class);
@@ -208,7 +216,7 @@ public class InfrastructureTaskExecutableStepTest extends CategoryTest {
     when(cdStepHelper.getSshInfraDelegateConfig(any(), eq(ambiance))).thenReturn(awsSshInfraDelegateConfig);
 
     TaskRequest taskRequest =
-        infrastructureStep.obtainTaskInternal(ambiance, awsInfra, StepInputPackage.builder().build());
+        infrastructureStep.obtainTaskInternal(ambiance, awsInfra, StepInputPackage.builder().build()).get();
 
     ArgumentCaptor<SshInfraDelegateConfigOutput> awsConfigOutputCaptor =
         ArgumentCaptor.forClass(SshInfraDelegateConfigOutput.class);
@@ -234,7 +242,7 @@ public class InfrastructureTaskExecutableStepTest extends CategoryTest {
     when(cdStepHelper.getWinRmInfraDelegateConfig(any(), eq(ambiance))).thenReturn(azureWinrmInfraDelegateConfig);
 
     TaskRequest taskRequest =
-        infrastructureStep.obtainTaskInternal(ambiance, azureInfra, StepInputPackage.builder().build());
+        infrastructureStep.obtainTaskInternal(ambiance, azureInfra, StepInputPackage.builder().build()).get();
 
     ArgumentCaptor<WinRmInfraDelegateConfigOutput> azureConfigOutputCaptor =
         ArgumentCaptor.forClass(WinRmInfraDelegateConfigOutput.class);
@@ -260,7 +268,7 @@ public class InfrastructureTaskExecutableStepTest extends CategoryTest {
     when(cdStepHelper.getWinRmInfraDelegateConfig(any(), eq(ambiance))).thenReturn(awsWinrmInfraDelegateConfig);
 
     TaskRequest taskRequest =
-        infrastructureStep.obtainTaskInternal(ambiance, awsInfra, StepInputPackage.builder().build());
+        infrastructureStep.obtainTaskInternal(ambiance, awsInfra, StepInputPackage.builder().build()).get();
 
     ArgumentCaptor<WinRmInfraDelegateConfigOutput> awsConfigOutputCaptor =
         ArgumentCaptor.forClass(WinRmInfraDelegateConfigOutput.class);
