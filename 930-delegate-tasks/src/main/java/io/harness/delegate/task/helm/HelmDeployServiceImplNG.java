@@ -169,6 +169,7 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
     int prevVersion = -1;
     boolean isInstallUpgrade = false;
     List<KubernetesResource> resources = Collections.emptyList();
+    String initWorkingDir = commandRequest.getWorkingDir();
     try {
       HelmInstallCmdResponseNG commandResponse;
       logCallback.saveExecutionLog(
@@ -279,7 +280,7 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
         logCallback.saveExecutionLog("Deployment failed.");
         deleteAndPurgeHelmRelease(commandRequest, logCallback);
       }
-      cleanUpWorkingDirectory(Paths.get(commandRequest.getWorkingDir()).getParent().toString());
+      cleanUpWorkingDirectory(initWorkingDir);
     }
   }
 
@@ -393,6 +394,12 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
         Optional<String> ocPath = setupPathOfOcBinaries(entry.getValue());
         if (ocPath.isPresent()) {
           commandRequest.setOcPath(ocPath.get());
+        }
+        if (isNotEmpty(commandRequest.getGcpKeyPath())) {
+          Path oldPath = Paths.get(commandRequest.getGcpKeyPath());
+          Path newPath = Paths.get(commandRequest.getWorkingDir(), K8sConstants.GCP_JSON_KEY_FILE_NAME);
+          Files.move(oldPath, newPath);
+          commandRequest.setGcpKeyPath(newPath.toAbsolutePath().toString());
         }
         success = success
             && doStatusCheckAllResourcesForHelm(client, entry.getValue(), commandRequest.getOcPath(),

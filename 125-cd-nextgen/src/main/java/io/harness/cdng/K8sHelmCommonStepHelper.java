@@ -10,6 +10,7 @@ package io.harness.cdng;
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.data.structure.UUIDGenerator.convertBase64UuidToCanonicalForm;
 import static io.harness.filestore.utils.FileStoreNodeUtils.mapFileNodes;
 import static io.harness.k8s.manifest.ManifestHelper.getValuesYamlGitFilePath;
 import static io.harness.k8s.manifest.ManifestHelper.values_filename;
@@ -572,13 +573,12 @@ public class K8sHelmCommonStepHelper {
             .chartVersion(getParameterFieldValue(helmChartManifestOutcome.getChartVersion()))
             .helmVersion(helmVersion)
             .helmCommandFlag(getDelegateHelmCommandFlag(helmChartManifestOutcome.getCommandFlags()))
-            .useRepoFlags(helmVersion != HelmVersion.V2
-                && cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.USE_HELM_REPO_FLAGS))
+            .useCache(!cdFeatureFlagHelper.isEnabled(
+                AmbianceUtils.getAccountId(ambiance), FeatureName.DISABLE_HELM_REPO_YAML_CACHE))
             .checkIncorrectChartVersion(cdFeatureFlagHelper.isEnabled(
                 AmbianceUtils.getAccountId(ambiance), FeatureName.HELM_CHART_VERSION_STRICT_MATCH))
-            .deleteRepoCacheDir(helmVersion != HelmVersion.V2
-                && cdFeatureFlagHelper.isEnabled(
-                    AmbianceUtils.getAccountId(ambiance), FeatureName.DELETE_HELM_REPO_CACHE_DIR))
+            .useRepoFlags(true)
+            .deleteRepoCacheDir(true)
             .build();
 
       case ManifestType.Kustomize:
@@ -831,7 +831,7 @@ public class K8sHelmCommonStepHelper {
       cdStepHelper.validateManifest(storeConfig.getKind(), helmConnectorDTO, validationErrorMessage);
 
       return HttpHelmStoreDelegateConfig.builder()
-          .repoName(helmConnectorDTO.getIdentifier())
+          .repoName(getRepoName(ambiance, helmConnectorDTO.getIdentifier()))
           .repoDisplayName(helmConnectorDTO.getName())
           .httpHelmConnector((HttpHelmConnectorDTO) helmConnectorDTO.getConnectorConfig())
           .encryptedDataDetails(
@@ -849,7 +849,7 @@ public class K8sHelmCommonStepHelper {
       cdStepHelper.validateManifest(storeConfig.getKind(), helmConnectorDTO, validationErrorMessage);
 
       return OciHelmStoreDelegateConfig.builder()
-          .repoName(helmConnectorDTO.getIdentifier())
+          .repoName(getRepoName(ambiance, helmConnectorDTO.getIdentifier()))
           .basePath(getParameterFieldValue(ociStoreConfig.getBasePath()))
           .repoDisplayName(helmConnectorDTO.getName())
           .ociHelmConnector((OciHelmConnectorDTO) helmConnectorDTO.getConnectorConfig())
@@ -866,7 +866,7 @@ public class K8sHelmCommonStepHelper {
       cdStepHelper.validateManifest(storeConfig.getKind(), awsConnectorDTO, validationErrorMessage);
 
       return S3HelmStoreDelegateConfig.builder()
-          .repoName(awsConnectorDTO.getIdentifier())
+          .repoName(getRepoName(ambiance, awsConnectorDTO.getIdentifier()))
           .repoDisplayName(awsConnectorDTO.getName())
           .bucketName(getParameterFieldValue(s3StoreConfig.getBucketName()))
           .region(getParameterFieldValue(s3StoreConfig.getRegion()))
@@ -886,7 +886,7 @@ public class K8sHelmCommonStepHelper {
       cdStepHelper.validateManifest(storeConfig.getKind(), gcpConnectorDTO, validationErrorMessage);
 
       return GcsHelmStoreDelegateConfig.builder()
-          .repoName(gcpConnectorDTO.getIdentifier())
+          .repoName(getRepoName(ambiance, gcpConnectorDTO.getIdentifier()))
           .repoDisplayName(gcpConnectorDTO.getName())
           .bucketName(getParameterFieldValue(gcsStoreConfig.getBucketName()))
           .folderPath(getParameterFieldValue(gcsStoreConfig.getFolderPath()))
@@ -899,6 +899,19 @@ public class K8sHelmCommonStepHelper {
     }
 
     throw new UnsupportedOperationException(format("Unsupported Store Config type: [%s]", storeConfig.getKind()));
+  }
+
+  public String getRepoName(Ambiance ambiance, String connectorId) {
+    /*
+      going forward, we will be creating default cache based on connectorId unless FF is enabled
+      in which case we will create based on executionId
+      details here: https://harness.atlassian.net/wiki/spaces/CDP/pages/21134344193/Helm+FFs+cleanup
+     */
+    boolean useCache =
+        !cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.DISABLE_HELM_REPO_YAML_CACHE);
+    String repoId = useCache ? connectorId : ambiance.getPlanExecutionId();
+
+    return convertBase64UuidToCanonicalForm(repoId);
   }
 
   public List<String> getPathsBasedOnManifest(GitStoreConfig gitstoreConfig, String manifestType) {

@@ -11,7 +11,12 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.persistence.HQuery.excludeAuthorityCount;
 
 import io.harness.annotations.retry.RetryOnException;
+import io.harness.cvng.core.beans.params.MonitoredServiceParams;
 import io.harness.cvng.core.beans.params.TimeRangeParams;
+import io.harness.cvng.core.entities.EntityDisableTime;
+import io.harness.cvng.core.entities.MonitoredService;
+import io.harness.cvng.core.services.api.EntityDisabledTimeService;
+import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
 import io.harness.cvng.servicelevelobjective.beans.SLIMissingDataType;
 import io.harness.cvng.servicelevelobjective.beans.SLIValue;
 import io.harness.cvng.servicelevelobjective.beans.SLODashboardWidget.Point;
@@ -20,6 +25,7 @@ import io.harness.cvng.servicelevelobjective.entities.SLIRecord;
 import io.harness.cvng.servicelevelobjective.entities.SLIRecord.SLIRecordKeys;
 import io.harness.cvng.servicelevelobjective.entities.SLIRecord.SLIRecordParam;
 import io.harness.cvng.servicelevelobjective.entities.SLIRecord.SLIState;
+import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
 import io.harness.cvng.servicelevelobjective.services.api.SLIRecordService;
 import io.harness.persistence.HPersistence;
 
@@ -38,6 +44,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import org.apache.commons.lang3.tuple.Pair;
 import org.mongodb.morphia.query.FindOptions;
 import org.mongodb.morphia.query.Sort;
 
@@ -46,6 +53,10 @@ public class SLIRecordServiceImpl implements SLIRecordService {
   private static final int RETRY_COUNT = 3;
   @Inject private HPersistence hPersistence;
   @Inject Clock clock;
+
+  @Inject MonitoredServiceService monitoredServiceService;
+
+  @Inject EntityDisabledTimeService entityDisabledTimeService;
 
   @Override
   public void create(List<SLIRecordParam> sliRecordParamList, String sliId, String verificationTaskId, int sliVersion) {
@@ -135,19 +146,35 @@ public class SLIRecordServiceImpl implements SLIRecordService {
   }
 
   @Override
-  public SLOGraphData getGraphData(String sliId, Instant startTime, Instant endTime, int totalErrorBudgetMinutes,
-      SLIMissingDataType sliMissingDataType, int sliVersion) {
-    return getGraphData(sliId, startTime, endTime, totalErrorBudgetMinutes, sliMissingDataType, sliVersion, null);
+  public SLOGraphData getGraphData(ServiceLevelIndicator serviceLevelIndicator, Instant startTime, Instant endTime,
+      int totalErrorBudgetMinutes, SLIMissingDataType sliMissingDataType, int sliVersion) {
+    return getGraphData(
+        serviceLevelIndicator, startTime, endTime, totalErrorBudgetMinutes, sliMissingDataType, sliVersion, null);
   }
 
   @Override
-  public SLOGraphData getGraphData(String sliId, Instant startTime, Instant endTime, int totalErrorBudgetMinutes,
-      SLIMissingDataType sliMissingDataType, int sliVersion, TimeRangeParams filter) {
+  public SLOGraphData getGraphData(ServiceLevelIndicator serviceLevelIndicator, Instant startTime, Instant endTime,
+      int totalErrorBudgetMinutes, SLIMissingDataType sliMissingDataType, int sliVersion, TimeRangeParams filter) {
     Preconditions.checkState(totalErrorBudgetMinutes != 0, "Total error budget minutes should not be zero.");
     if (Objects.isNull(filter)) {
       filter = TimeRangeParams.builder().startTime(startTime).endTime(endTime).build();
     }
-    List<SLIRecord> sliRecords = sliRecords(sliId, startTime, endTime, filter);
+    List<SLIRecord> sliRecords = sliRecords(serviceLevelIndicator.getUuid(), startTime, endTime, filter);
+    MonitoredServiceParams monitoredServiceParams =
+        MonitoredServiceParams.builder()
+            .accountIdentifier(serviceLevelIndicator.getAccountId())
+            .orgIdentifier(serviceLevelIndicator.getOrgIdentifier())
+            .projectIdentifier(serviceLevelIndicator.getProjectIdentifier())
+            .monitoredServiceIdentifier(serviceLevelIndicator.getMonitoredServiceIdentifier())
+            .build();
+
+    MonitoredService monitoredService = monitoredServiceService.getMonitoredService(monitoredServiceParams);
+    List<EntityDisableTime> disableTimes =
+        entityDisabledTimeService.get(monitoredService.getUuid(), monitoredService.getAccountId());
+    int currentDisabledRange = 0;
+    long disabledMinutesFromStart = 0;
+    int currentSLIRecord = 0;
+
     List<Point> sliTread = new ArrayList<>();
     List<Point> errorBudgetBurndown = new ArrayList<>();
     double errorBudgetRemainingPercentage = 100;
@@ -164,17 +191,38 @@ public class SLIRecordServiceImpl implements SLIRecordService {
         long goodCountFromStart = sliRecord.getRunningGoodCount() - prevRecordGoodCount;
         long badCountFromStart = sliRecord.getRunningBadCount() - prevRecordBadCount;
         long minutesFromStart = sliRecord.getEpochMinute() - beginningMinute + 1;
+        boolean enabled = true;
+        if (!disableTimes.isEmpty() && currentDisabledRange <= disableTimes.size() && currentSLIRecord != 0) {
+          Pair<Long, Long> disabledMinData =
+              getDisabledMinBetweenRecords(sliRecords.get(currentSLIRecord - 1).getTimestamp().toEpochMilli(),
+                  sliRecord.getTimestamp().toEpochMilli(), currentDisabledRange, disableTimes);
+          disabledMinutesFromStart += disabledMinData.getLeft();
+          currentDisabledRange = Math.toIntExact(disabledMinData.getRight());
+        }
+        if (currentDisabledRange < disableTimes.size()) {
+          enabled = !disableTimes.get(currentDisabledRange).contains(sliRecord.getTimestamp().toEpochMilli());
+        }
+        if (currentDisabledRange > 0) {
+          enabled =
+              enabled && !disableTimes.get(currentDisabledRange - 1).contains(sliRecord.getTimestamp().toEpochMilli());
+        }
         if (!isCalculatingSLI && sliRecord.getSliVersion() != sliVersion) {
           isCalculatingSLI = true;
         }
-        sliValue = sliMissingDataType.calculateSLIValue(goodCountFromStart, badCountFromStart, minutesFromStart);
-        sliTread.add(
-            Point.builder().timestamp(sliRecord.getTimestamp().toEpochMilli()).value(sliValue.sliPercentage()).build());
+        sliValue = sliMissingDataType.calculateSLIValue(
+            goodCountFromStart, badCountFromStart, minutesFromStart, disabledMinutesFromStart);
+        sliTread.add(Point.builder()
+                         .timestamp(sliRecord.getTimestamp().toEpochMilli())
+                         .value(sliValue.sliPercentage())
+                         .enabled(enabled)
+                         .build());
         errorBudgetBurndown.add(
             Point.builder()
                 .timestamp(sliRecord.getTimestamp().toEpochMilli())
                 .value(((totalErrorBudgetMinutes - sliValue.getBadCount()) * 100.0) / totalErrorBudgetMinutes)
+                .enabled(enabled)
                 .build());
+        currentSLIRecord++;
       }
       errorBudgetRemainingPercentage = errorBudgetBurndown.get(errorBudgetBurndown.size() - 1).getValue();
       errorBudgetRemaining = totalErrorBudgetMinutes - sliValue.getBadCount();
@@ -202,6 +250,43 @@ public class SLIRecordServiceImpl implements SLIRecordService {
         .isCalculatingSLI(isCalculatingSLI)
         .errorBudgetRemainingPercentage(errorBudgetRemainingPercentage)
         .build();
+  }
+
+  @VisibleForTesting
+  public Pair<Long, Long> getDisabledMinBetweenRecords(
+      long startTime, long endTime, int currentRange, List<EntityDisableTime> disableTimes) {
+    long extra = 0;
+    while (currentRange < disableTimes.size() && disableTimes.get(currentRange).getStartTime() <= endTime) {
+      long x = disableTimes.get(currentRange).getStartTime();
+      long y = disableTimes.get(currentRange).getEndTime();
+
+      x = (long) (Math.ceil(x / 60000) * 60000);
+      y = (long) (Math.floor(y / 60000) * 60000);
+
+      if (y <= startTime) {
+        currentRange++;
+      } else if (x > startTime && y <= endTime) {
+        extra += y - x + 60000;
+        currentRange++;
+      } else if (x == startTime && y <= endTime) {
+        extra += y - x;
+        currentRange++;
+      } else if (x < startTime && y <= endTime) {
+        extra += y - startTime;
+        currentRange++;
+      } else if (x > startTime && y > endTime) {
+        extra += endTime - x + 60000;
+        break;
+      } else if (x == startTime && y > endTime) {
+        extra += endTime - x;
+        break;
+      } else if (x < startTime && y > endTime) {
+        extra += endTime - startTime;
+        break;
+      }
+    }
+
+    return Pair.of(extra / 60000, (long) currentRange);
   }
 
   @Override

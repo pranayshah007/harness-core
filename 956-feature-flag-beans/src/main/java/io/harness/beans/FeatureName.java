@@ -19,6 +19,8 @@ import lombok.Getter;
  */
 @OwnedBy(HarnessTeam.PL)
 public enum FeatureName {
+  DISABLE_HELM_REPO_YAML_CACHE(
+      "Enable to create a temporary folder (based on execution id) to store repository.yaml file", HarnessTeam.CDP),
   DEPRECATE_K8S_STEADY_STATE_CHECK_STEP,
   NG_GITOPS,
   APPD_CV_TASK,
@@ -237,7 +239,6 @@ public enum FeatureName {
   CI_INCREASE_DEFAULT_RESOURCES,
   DISABLE_DEPLOYMENTS_SEARCH_AND_LIMIT_DEPLOYMENT_STATS,
   RATE_LIMITED_TOTP,
-  USE_HELM_REPO_FLAGS,
   CLOSE_TIME_SCALE_SYNC_PROCESSING_ON_FAILURE(Scope.GLOBAL),
   RESOURCE_CENTER_ENABLED,
   USE_IMMUTABLE_DELEGATE("Use immutable delegate on download delegate from UI", HarnessTeam.DEL),
@@ -284,7 +285,6 @@ public enum FeatureName {
   SHOW_NG_REFINER_FEEDBACK,
   NG_NEXUS_ARTIFACTORY,
   HELM_VERSION_3_8_0,
-  DELETE_HELM_REPO_CACHE_DIR,
   DELEGATE_ENABLE_DYNAMIC_HANDLING_OF_REQUEST("Enable dynamic handling of task request", HarnessTeam.DEL),
   YAML_GIT_CONNECTOR_NAME,
   STOP_SHOWING_RUNNING_EXECUTIONS,
@@ -308,11 +308,9 @@ public enum FeatureName {
   CUSTOM_ARTIFACT_NG,
   NG_TEMPLATE_REFERENCES_SUPPORT,
   APPLICATION_DROPDOWN_MULTISELECT,
-  NG_AZURE,
   NG_GIT_EXPERIENCE,
   LDAP_SECRET_AUTH,
   WORKFLOW_EXECUTION_REFRESH_STATUS,
-  SERVERLESS_SUPPORT,
   TRIGGERS_PAGE_PAGINATION,
   CVNG_NOTIFICATION_UI,
   STALE_FLAGS_FFM_1510,
@@ -361,6 +359,7 @@ public enum FeatureName {
   CCM_MICRO_FRONTEND("Micro front for CCM", HarnessTeam.CE),
   NG_GIT_EXPERIENCE_IMPORT_FLOW,
   CVNG_LICENSE_ENFORCEMENT,
+  CVNG_SLO_DISABLE_ENABLE,
   SERVICE_DASHBOARD_V2,
   DEBEZIUM_ENABLED,
   TEMPLATE_SCHEMA_VALIDATION,
@@ -423,6 +422,7 @@ public enum FeatureName {
   NG_SERVICE_MANIFEST_OVERRIDE("Enable Service Manifests override from Environment", HarnessTeam.CDP),
   ENABLE_CHECK_STATE_EXECUTION_STARTING(
       "Used to allow create retry state execution when event is status equals to STARTING", HarnessTeam.SPG),
+  NG_DEFAULT_K8S_MANIFESTS("Sample k8s manifests at account level file store", HarnessTeam.CDP, Scope.GLOBAL),
   CI_TI_DASHBOARDS_ENABLED;
 
   @Deprecated
@@ -441,6 +441,12 @@ public enum FeatureName {
     this.description = description;
     this.owner = owner;
     this.scope = Scope.PER_ACCOUNT;
+  }
+
+  FeatureName(String description, HarnessTeam owner, FeatureFlag.Scope scope) {
+    this.description = description;
+    this.owner = owner;
+    this.scope = scope;
   }
 
   @Getter private String description;

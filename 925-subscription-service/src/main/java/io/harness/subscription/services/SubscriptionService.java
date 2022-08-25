@@ -40,7 +40,7 @@ public interface SubscriptionService {
 
   CustomerDetailDTO createStripeCustomer(String accountIdentifier, CustomerDTO customerDTO);
   CustomerDetailDTO updateStripeCustomer(String accountIdentifier, String customerId, CustomerDTO customerDTO);
-  CustomerDetailDTO getStripeCustomer(String accountIdentifier, String customerId);
+  CustomerDetailDTO getStripeCustomer(String accountIdentifier);
   CustomerDetailDTO updateStripeBilling(String accountIdentifier, StripeBillingDTO stripeBillingDTO);
 
   PaymentMethodCollectionDTO listPaymentMethods(String accountIdentifier);

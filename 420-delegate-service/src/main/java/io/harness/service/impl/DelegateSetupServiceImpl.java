@@ -460,7 +460,7 @@ public class DelegateSetupServiceImpl implements DelegateSetupService {
         .delegateGroupIdentifier(delegateGroupIdentifier)
         .delegateType(delegateType)
         .groupName(groupName)
-        .autoUpgrade(setAutoUpgrader(upgraderLastUpdated))
+        .autoUpgrade(setAutoUpgrader(upgraderLastUpdated, immutableDelegate))
         .upgraderLastUpdated(upgraderLastUpdated)
         .delegateGroupExpirationTime(groupExpirationTime)
         .delegateDescription(delegateDescription)
@@ -477,7 +477,11 @@ public class DelegateSetupServiceImpl implements DelegateSetupService {
         .build();
   }
 
-  private boolean setAutoUpgrader(long upgraderLastUpdated) {
+  private boolean setAutoUpgrader(long upgraderLastUpdated, boolean immutableDelegate) {
+    // Auto Upgrade is on for legacy delegates.
+    if (!immutableDelegate) {
+      return true;
+    }
     return TimeUnit.MILLISECONDS.toHours(System.currentTimeMillis() - upgraderLastUpdated) <= 1;
   }
 

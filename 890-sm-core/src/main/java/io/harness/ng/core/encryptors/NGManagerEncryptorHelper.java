@@ -76,8 +76,12 @@ public class NGManagerEncryptorHelper {
         abstractions.put(NG_DELEGATE_OWNER_CONSTANT, owner);
       }
       abstractions.put(NG_DELEGATE_ENABLED_CONSTANT, "true");
-      abstractions.put(ORG_IDENTIFIER, ngAccess.getOrgIdentifier());
-      abstractions.put(PROJECT_IDENTIFIER, ngAccess.getProjectIdentifier());
+      if (isNotEmpty(ngAccess.getOrgIdentifier())) {
+        abstractions.put(ORG_IDENTIFIER, ngAccess.getOrgIdentifier());
+      }
+      if (isNotEmpty(ngAccess.getProjectIdentifier())) {
+        abstractions.put(PROJECT_IDENTIFIER, ngAccess.getProjectIdentifier());
+      }
     }
     return abstractions;
   }
