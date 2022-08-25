@@ -8,10 +8,12 @@
 package io.harness.repositories.instance;
 
 import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
+import static io.harness.rule.OwnerRule.VIKYATH_HAREKAL;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import io.harness.InstancesTestBase;
@@ -25,6 +27,7 @@ import io.harness.models.InstancesByBuildId;
 import io.harness.ng.core.environment.beans.EnvironmentType;
 import io.harness.rule.Owner;
 
+import com.mongodb.client.result.UpdateResult;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -285,5 +288,22 @@ public class InstanceRepositoryCustomImplTest extends InstancesTestBase {
     assertThat(instanceRepositoryCustom.getActiveServiceInstanceCountBreakdown(
                    ACCOUNT_ID, ORGANIZATION_ID, PROJECT_ID, Arrays.asList(SERVICE_ID), TIMESTAMP))
         .isEqualTo(aggregationResults);
+  }
+
+  @Test
+  @Owner(developers = VIKYATH_HAREKAL)
+  @Category(UnitTests.class)
+  public void testUpdateInfrastructureMapping() {
+    String infraMappingId = "2";
+    List<String> instanceIds = Arrays.asList("1", "2", "3");
+    Criteria criteria = Criteria.where(InstanceKeys.id).in(instanceIds);
+    Query query = new Query().addCriteria(criteria);
+    Update update = new Update();
+    update.set(InstanceKeys.infrastructureMappingId, infraMappingId);
+
+    UpdateResult updateResult = mock(UpdateResult.class);
+    when(mongoTemplate.updateMulti(query, update, Instance.class)).thenReturn(updateResult);
+    assertThat(instanceRepositoryCustom.updateInfrastructureMapping(instanceIds, infraMappingId))
+        .isEqualTo(updateResult);
   }
 }

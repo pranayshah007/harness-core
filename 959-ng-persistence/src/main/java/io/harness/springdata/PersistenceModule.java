@@ -8,7 +8,7 @@
 package io.harness.springdata;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
-import static io.harness.mongo.MongoConstants.SECONDARY_MONGO;
+import static io.harness.mongo.MongoConstants.SECONDARY;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.exceptionmanager.exceptionhandler.ExceptionHandler;
@@ -41,9 +41,9 @@ public abstract class PersistenceModule extends AbstractModule {
   }
 
   @Provides
-  @Named(SECONDARY_MONGO)
+  @Named(SECONDARY)
   @Singleton
-  protected MongoTemplate getSecondaryMongoTemplate(MongoTemplate mongoTemplate) {
+  protected MongoTemplate getSecondaryPreferredMongoTemplate(MongoTemplate mongoTemplate) {
     HMongoTemplate template = new HMongoTemplate(mongoTemplate.getMongoDbFactory(), mongoTemplate.getConverter());
     template.setReadPreference(ReadPreference.secondaryPreferred());
     return template;
