@@ -75,7 +75,7 @@ public class CustomSecretsManagerEncryptor implements CustomEncryptor {
         failedAttempts++;
         if (failedAttempts == NUM_OF_RETRIES) {
           String message = String.format(
-              "Failed to read '{}' from shell script after {} retries", encryptedRecord.getName(), NUM_OF_RETRIES);
+              "Failed to read '%s' from shell script after %s retries", encryptedRecord.getName(), NUM_OF_RETRIES);
           throw new SecretManagementDelegateException(SECRET_MANAGEMENT_ERROR, message, e, USER);
         }
         sleep(ofMillis(1000));
