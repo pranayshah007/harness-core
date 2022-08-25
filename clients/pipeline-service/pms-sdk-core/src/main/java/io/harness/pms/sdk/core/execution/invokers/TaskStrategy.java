@@ -55,6 +55,7 @@ public class TaskStrategy extends ProgressableStrategy {
         ambiance, invokerPackage.getStepParameters(), invokerPackage.getInputPackage());
     if (taskOptional.isEmpty()) {
       sdkNodeExecutionService.resumeNodeExecution(ambiance, Collections.emptyMap(), false);
+      return;
     }
     handleResponse(ambiance, taskOptional.get());
   }

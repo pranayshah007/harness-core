@@ -38,10 +38,12 @@ import java.util.Optional;
 @OwnedBy(PIPELINE)
 public interface TaskExecutable<T extends StepParameters, R extends ResponseData>
     extends Step<T>, Abortable<T, TaskExecutableResponse>, Failable<T>, Progressable<T> {
-  TaskRequest obtainTask(Ambiance ambiance, T stepParameters, StepInputPackage inputPackage);
+
   default Optional<TaskRequest> obtainTaskOptional(Ambiance ambiance, T stepParameters, StepInputPackage inputPackage) {
-    return Optional.of(obtainTask(ambiance, stepParameters, inputPackage));
+    return Optional.ofNullable(obtainTask(ambiance, stepParameters, inputPackage));
   }
+  TaskRequest obtainTask(Ambiance ambiance, T stepParameters, StepInputPackage inputPackage);
+
   StepResponse handleTaskResult(Ambiance ambiance, T stepParameters, ThrowingSupplier<R> responseDataSupplier)
       throws Exception;
 
