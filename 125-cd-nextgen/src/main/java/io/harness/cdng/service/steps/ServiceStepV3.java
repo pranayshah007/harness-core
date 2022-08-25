@@ -2,6 +2,7 @@ package io.harness.cdng.service.steps;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.steps.SdkCoreStepUtils.createStepResponseFromChildResponse;
 
 import static java.lang.String.format;
 
@@ -24,9 +25,9 @@ import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.services.ServiceEntityService;
 import io.harness.ng.core.service.yaml.NGServiceConfig;
 import io.harness.ng.core.service.yaml.NGServiceV2InfoConfig;
+import io.harness.plancreator.steps.common.rollback.RollbackUtility;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.ChildrenExecutableResponse;
-import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
@@ -144,8 +145,6 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
       throw new InvalidRequestException("Unable to read service yaml");
     }
     final NGServiceV2InfoConfig ngServiceV2InfoConfig = ngServiceConfig.getNgServiceV2InfoConfig();
-    serviceStepsHelper.validateResources(
-        ambiance, ngServiceV2InfoConfig.getServiceDefinition(), ngServiceV2InfoConfig.getIdentifier());
 
     List<StepResponse.StepOutcome> stepOutcomes = new ArrayList<>();
     stepOutcomes.add(
@@ -177,7 +176,12 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
                            .group(StepCategory.STAGE.name())
                            .build());
     }
-    return StepResponse.builder().status(Status.SUCCEEDED).stepOutcomes(stepOutcomes).build();
+
+    // Todo: (yogesh) check if this is ok ?
+    RollbackUtility.publishRollbackInformation(ambiance, responseDataMap, sweepingOutputService);
+    StepResponse stepResponse = createStepResponseFromChildResponse(responseDataMap);
+
+    return stepResponse.withStepOutcomes(stepOutcomes);
   }
 
   public ServicePartResponse executeServicePart(Ambiance ambiance, ServiceStepV3Parameters stepParameters) {
