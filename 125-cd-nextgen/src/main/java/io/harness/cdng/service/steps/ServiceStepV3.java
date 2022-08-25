@@ -7,12 +7,14 @@ import static java.lang.String.format;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.common.VariablesSweepingOutput;
 import io.harness.cdng.artifact.outcome.ArtifactsOutcome;
 import io.harness.cdng.creator.plan.environment.EnvironmentMapper;
 import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.manifest.steps.ManifestsOutcome;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.cdng.visitor.YamlTypes;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.logging.CommandExecutionStatus;
@@ -25,6 +27,9 @@ import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.services.ServiceEntityService;
 import io.harness.ng.core.service.yaml.NGServiceConfig;
 import io.harness.ng.core.service.yaml.NGServiceV2InfoConfig;
+import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity;
+import io.harness.ng.core.serviceoverride.mapper.NGServiceOverrideEntityConfigMapper;
+import io.harness.ng.core.serviceoverride.services.ServiceOverrideService;
 import io.harness.plancreator.steps.common.rollback.RollbackUtility;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.ChildrenExecutableResponse;
@@ -40,17 +45,20 @@ import io.harness.pms.sdk.core.steps.executables.ChildrenExecutable;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.steps.OutputExpressionConstants;
 import io.harness.steps.SdkCoreStepUtils;
-import io.harness.steps.StepUtils;
 import io.harness.steps.environment.EnvironmentOutcome;
 import io.harness.tasks.ResponseData;
 import io.harness.utils.YamlPipelineUtils;
+import io.harness.yaml.core.variables.NGVariable;
+import io.harness.yaml.utils.NGVariablesUtils;
 
 import software.wings.beans.LogColor;
 import software.wings.beans.LogHelper;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -74,6 +82,7 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
   @Inject private ExecutionSweepingOutputService sweepingOutputService;
   @Inject private EnvironmentService environmentService;
   @Inject private CDExpressionResolver expressionResolver;
+  @Inject private ServiceOverrideService serviceOverrideService;
 
   @Override
   public Class<ServiceStepV3Parameters> getStepParametersClass() {
@@ -86,8 +95,8 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
       NGLogCallback logCallback = serviceStepsHelper.getServiceLogCallback(ambiance, true);
       logCallback.saveExecutionLog("Starting service step...");
 
-      final ServicePartResponse servicePartResponse = executeServicePart(ambiance, stepParameters);
-      executeEnvironmentPart(ambiance, stepParameters, servicePartResponse);
+      final ServicePartResponse servicePartResponse = executeServicePart(ambiance, stepParameters, logCallback);
+      executeEnvironmentPart(ambiance, stepParameters, servicePartResponse, logCallback);
       return ChildrenExecutableResponse.newBuilder()
           .addAllChildren(stepParameters.getChildrenNodeIds()
                               .stream()
@@ -100,7 +109,7 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
   }
 
   private void executeEnvironmentPart(Ambiance ambiance, ServiceStepV3Parameters parameters,
-      ServicePartResponse servicePartResponse) throws IOException {
+      ServicePartResponse servicePartResponse, NGLogCallback logCallback) throws IOException {
     final ParameterField<String> envRef = parameters.getEnvRef();
     final ParameterField<Map<String, Object>> envInputs = parameters.getEnvInputs();
     if (ParameterField.isNull(envRef)) {
@@ -123,14 +132,39 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
         throw new RuntimeException("env not found");
       }
 
+      Optional<NGServiceOverridesEntity> ngServiceOverridesEntity =
+          serviceOverrideService.get(AmbianceUtils.getAccountId(ambiance), AmbianceUtils.getOrgIdentifier(ambiance),
+              AmbianceUtils.getProjectIdentifier(ambiance), envRef.getValue(), parameters.getServiceRef().getValue());
+
       NGEnvironmentConfig ngEnvironmentConfig =
           mergeEnvironmentInputs(environment.get().getYaml(), envInputs.getValue());
 
-      EnvironmentOutcome environmentOutcome = EnvironmentMapper.toEnvironmentOutcome(
-          environment.get(), ngEnvironmentConfig, servicePartResponse.getNgServiceConfig());
+      EnvironmentOutcome environmentOutcome =
+          EnvironmentMapper.toEnvironmentOutcome(environment.get(), ngEnvironmentConfig,
+              NGServiceOverrideEntityConfigMapper.toNGServiceOverrideConfig(
+                  ngServiceOverridesEntity.orElse(NGServiceOverridesEntity.builder().build())));
+
       sweepingOutputService.consume(
           ambiance, OutputExpressionConstants.ENVIRONMENT, environmentOutcome, StepCategory.STAGE.name());
+
+      processServiceVariables(ambiance, servicePartResponse, logCallback, environmentOutcome);
     }
+  }
+
+  private void processServiceVariables(Ambiance ambiance, ServicePartResponse servicePartResponse,
+      NGLogCallback logCallback, EnvironmentOutcome environmentOutcome) {
+    VariablesSweepingOutput variablesSweepingOutput = getVariablesSweepingOutput(
+        ambiance, servicePartResponse.getNgServiceConfig().getNgServiceV2InfoConfig(), logCallback, environmentOutcome);
+
+    sweepingOutputService.consume(ambiance, YAMLFieldNameConstants.VARIABLES, variablesSweepingOutput, null);
+
+    Object outputObj = variablesSweepingOutput.get("output");
+    if (!(outputObj instanceof VariablesSweepingOutput)) {
+      outputObj = new VariablesSweepingOutput();
+    }
+    sweepingOutputService.consume(ambiance, YAMLFieldNameConstants.SERVICE_VARIABLES,
+        (VariablesSweepingOutput) outputObj, StepCategory.STAGE.name());
+    saveExecutionLog(logCallback, "Processed service variables");
   }
 
   @Override
@@ -198,7 +232,8 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
     return stepResponse.withStepOutcomes(stepOutcomes);
   }
 
-  public ServicePartResponse executeServicePart(Ambiance ambiance, ServiceStepV3Parameters stepParameters) {
+  private ServicePartResponse executeServicePart(
+      Ambiance ambiance, ServiceStepV3Parameters stepParameters, NGLogCallback logCallback) {
     // Todo: check if service ref is resolved
     final Optional<ServiceEntity> serviceOpt =
         serviceEntityService.get(AmbianceUtils.getAccountId(ambiance), AmbianceUtils.getOrgIdentifier(ambiance),
@@ -247,7 +282,7 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
         originalServiceYaml, YamlPipelineUtils.writeYamlString(serviceInputsYaml));
   }
 
-  public NGEnvironmentConfig mergeEnvironmentInputs(String originalEnvYaml, Map<String, Object> environmentInputs)
+  private NGEnvironmentConfig mergeEnvironmentInputs(String originalEnvYaml, Map<String, Object> environmentInputs)
       throws IOException {
     if (isEmpty(environmentInputs)) {
       return YamlUtils.read(originalEnvYaml, NGEnvironmentConfig.class);
@@ -257,6 +292,51 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
     String resolvedYaml = MergeHelper.mergeInputSetFormatYamlToOriginYaml(
         originalEnvYaml, YamlPipelineUtils.writeYamlString(environmentInputYaml));
     return YamlUtils.read(resolvedYaml, NGEnvironmentConfig.class);
+  }
+
+  private VariablesSweepingOutput getVariablesSweepingOutput(Ambiance ambiance,
+      NGServiceV2InfoConfig serviceV2InfoConfig, NGLogCallback logCallback, EnvironmentOutcome environmentOutcome) {
+    // env v2 incorporating env variables into service variables
+    final Map<String, Object> envVariables = new HashMap<>();
+    if (isNotEmpty(environmentOutcome.getVariables())) {
+      envVariables.putAll(environmentOutcome.getVariables());
+    }
+    Map<String, Object> variables = getFinalVariablesMap(serviceV2InfoConfig, envVariables, logCallback);
+    VariablesSweepingOutput variablesOutcome = new VariablesSweepingOutput();
+    variablesOutcome.putAll(variables);
+    return variablesOutcome;
+  }
+
+  @VisibleForTesting
+  Map<String, Object> getFinalVariablesMap(
+      NGServiceV2InfoConfig serviceV2InfoConfig, Map<String, Object> envVariables, NGLogCallback logCallback) {
+    List<NGVariable> variableList = serviceV2InfoConfig.getServiceDefinition().getServiceSpec().getVariables();
+    Map<String, Object> variables = new HashMap<>();
+    Map<String, Object> outputVariables = new VariablesSweepingOutput();
+    if (isNotEmpty(variableList)) {
+      Map<String, Object> originalVariables = NGVariablesUtils.getMapOfVariables(variableList);
+      variables.putAll(originalVariables);
+      outputVariables.putAll(originalVariables);
+    }
+    addEnvVariables(outputVariables, envVariables, logCallback);
+    variables.put("output", outputVariables);
+    return variables;
+  }
+
+  private void addEnvVariables(
+      Map<String, Object> variables, Map<String, Object> envVariables, NGLogCallback logCallback) {
+    if (EmptyPredicate.isEmpty(envVariables)) {
+      return;
+    }
+
+    saveExecutionLog(logCallback, "Applying environment variables and service overrides");
+    variables.putAll(envVariables);
+  }
+
+  private void saveExecutionLog(NGLogCallback logCallback, String line) {
+    if (logCallback != null) {
+      logCallback.saveExecutionLog(line);
+    }
   }
 
   @Data

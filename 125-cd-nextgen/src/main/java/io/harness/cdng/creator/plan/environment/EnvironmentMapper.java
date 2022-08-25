@@ -20,7 +20,7 @@ import io.harness.ng.core.envGroup.EnvironmentGroupOutcome;
 import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.environment.yaml.NGEnvironmentConfig;
 import io.harness.ng.core.mapper.TagMapper;
-import io.harness.ng.core.service.yaml.NGServiceConfig;
+import io.harness.ng.core.serviceoverride.yaml.NGServiceOverrideConfig;
 import io.harness.steps.environment.EnvironmentOutcome;
 import io.harness.yaml.core.variables.NGVariable;
 import io.harness.yaml.utils.NGVariablesUtils;
@@ -101,10 +101,11 @@ public class EnvironmentMapper {
         .build();
   }
 
-  public static EnvironmentOutcome toEnvironmentOutcome(Environment environment, NGEnvironmentConfig ngEnvironmentConfig, NGServiceConfig ngServiceConfig) {
-    final Map<String, Object> variables = overrideVariables(
-        ngServiceConfig.getNgServiceV2InfoConfig().getServiceDefinition().getServiceSpec().getVariables(),
-        ngEnvironmentConfig.getNgEnvironmentInfoConfig().getVariables());
+  public static EnvironmentOutcome toEnvironmentOutcome(
+      Environment environment, NGEnvironmentConfig ngEnvironmentConfig, NGServiceOverrideConfig ngServiceOverrides) {
+    final Map<String, Object> variables =
+        overrideVariables(ngServiceOverrides.getServiceOverrideInfoConfig().getVariables(),
+            ngEnvironmentConfig.getNgEnvironmentInfoConfig().getVariables());
     return EnvironmentOutcome.builder()
         .identifier(environment.getIdentifier())
         .name(StringUtils.defaultIfBlank(environment.getName(), ""))
