@@ -18,4 +18,5 @@ public interface GitApiClient {
   DelegateResponseData findPullRequest(GitApiTaskParams gitApiTaskParams);
   DelegateResponseData mergePR(GitApiTaskParams gitApiTaskParams);
   List<GitPollingWebhookData> getWebhookRecentDeliveryEvents(GitHubPollingDelegateRequest attributesRequest);
+  DelegateResponseData deleteRef(GitApiTaskParams gitApiTaskParams);
 }

@@ -26,7 +26,6 @@ spec:
                       name: "Setup Runtime Paths"
                       type: Script
                       spec:
-                        workingDirectory: $HOME/<+service.name>/<+env.name>
                         shell: Bash
                         source:
                           type: Inline

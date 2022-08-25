@@ -197,6 +197,22 @@ pipeline:
                     environmentVariables: []
                     outputVariables: []
                     commandUnits: []
+              - step:
+                  name: Deploy Percentage With Start And End
+                  identifier: Deploy_Percentage_Start_End
+                  type: Command
+                  timeout: 10m
+                  strategy:
+                    repeat:
+                      items: ["host1", "host2"]
+                      start: 0
+                      end: 30
+                      unit: Percentage
+                  spec:
+                    onDelegate: false
+                    environmentVariables: []
+                    outputVariables: []
+                    commandUnits: []
         tags: {}
         failureStrategies:
           - onFailure:

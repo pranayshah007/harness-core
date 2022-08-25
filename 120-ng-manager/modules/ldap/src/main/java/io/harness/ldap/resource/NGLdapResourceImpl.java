@@ -17,7 +17,6 @@ import io.harness.rest.RestResponse;
 
 import software.wings.beans.sso.LdapGroupResponse;
 import software.wings.beans.sso.LdapSettings;
-import software.wings.beans.sso.LdapSettingsMapper;
 import software.wings.beans.sso.LdapTestResponse;
 
 import com.google.inject.Inject;
@@ -37,24 +36,24 @@ public class NGLdapResourceImpl implements NGLdapResource {
   @Override
   public RestResponse<LdapTestResponse> validateLdapConnectionSettings(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, LdapSettings settings) {
-    LdapTestResponse ldapTestResponse = ngLdapService.validateLdapConnectionSettings(
-        accountIdentifier, orgIdentifier, projectIdentifier, LdapSettingsMapper.ldapSettingsDTO(settings));
+    LdapTestResponse ldapTestResponse =
+        ngLdapService.validateLdapConnectionSettings(accountIdentifier, orgIdentifier, projectIdentifier, settings);
     return new RestResponse<>(ldapTestResponse);
   }
 
   @Override
   public RestResponse<LdapTestResponse> validateLdapUserSettings(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, LdapSettings settings) {
-    LdapTestResponse ldapTestResponse = ngLdapService.validateLdapUserSettings(
-        accountIdentifier, orgIdentifier, projectIdentifier, LdapSettingsMapper.ldapSettingsDTO(settings));
+    LdapTestResponse ldapTestResponse =
+        ngLdapService.validateLdapUserSettings(accountIdentifier, orgIdentifier, projectIdentifier, settings);
     return new RestResponse<>(ldapTestResponse);
   }
 
   @Override
   public RestResponse<LdapTestResponse> validateLdapGroupSettings(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, LdapSettings settings) {
-    LdapTestResponse ldapTestResponse = ngLdapService.validateLdapGroupSettings(
-        accountIdentifier, orgIdentifier, projectIdentifier, LdapSettingsMapper.ldapSettingsDTO(settings));
+    LdapTestResponse ldapTestResponse =
+        ngLdapService.validateLdapGroupSettings(accountIdentifier, orgIdentifier, projectIdentifier, settings);
     return new RestResponse<>(ldapTestResponse);
   }
 

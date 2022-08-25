@@ -13,6 +13,7 @@ import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.visitor.helpers.artifact.ArtifactListConfigVisitorHelper;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.walktree.beans.VisitableChildren;
 import io.harness.walktree.visitor.SimpleVisitorHelper;
@@ -50,13 +51,17 @@ public class ArtifactListConfig implements Visitable {
   @ApiModelProperty(hidden = true)
   List<ArtifactSource> sources;
 
+  @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
+  @ApiModelProperty(hidden = true)
+  ParameterField<String> primaryArtifactRef;
+
   // For Visitor Framework Impl
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String metadata;
 
   @Builder
-  @ConstructorProperties({"uuid", "primary", "sidecars", "sources", "metadata"})
+  @ConstructorProperties({"uuid", "primary", "sidecars", "primaryArtifactRef", "sources", "metadata"})
   public ArtifactListConfig(String uuid, PrimaryArtifact primary, @Singular List<SidecarArtifactWrapper> sidecars,
-      List<ArtifactSource> sources, String metadata) {
+      ParameterField<String> primaryArtifactRef, List<ArtifactSource> sources, String metadata) {
     this.uuid = uuid;
     this.primary = primary;
     if (primary != null) {
@@ -76,6 +81,7 @@ public class ArtifactListConfig implements Visitable {
         source.getSpec().setIdentifier(source.getIdentifier());
       }
     }
+    this.primaryArtifactRef = primaryArtifactRef;
   }
 
   @Override
