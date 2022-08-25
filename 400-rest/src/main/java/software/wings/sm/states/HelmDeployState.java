@@ -533,6 +533,7 @@ public class HelmDeployState extends State {
     int prevVersion = 0;
     HelmReleaseHistoryCommandRequest helmReleaseHistoryCommandRequest =
         HelmReleaseHistoryCommandRequest.builder()
+            .activityId(obtainActivityId(context))
             .releaseName(releaseName)
             .containerServiceParams(containerServiceParams)
             .gitConfig(gitConfig)
