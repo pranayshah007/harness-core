@@ -257,24 +257,48 @@ public class GithubPackagesRegistryServiceImpl implements GithubPackagesRegistry
 
     GithubPackagesVersionsResponse githubPackagesVersionsResponse = GithubPackagesVersionsResponse.builder().build();
 
-    Response<List<JsonNode>> response;
+    List<JsonNode> response = new ArrayList<JsonNode>();
 
     if (EmptyPredicate.isEmpty(org)) {
-      response =
-          githubPackagesRestClient.listVersionsForPackages(basicAuthHeader, packageName, packageType, 100).execute();
+      for (int i = 1;; i++) {
+        Response<List<JsonNode>> pageResponse =
+            githubPackagesRestClient.listVersionsForPackages(basicAuthHeader, packageName, packageType, 100, i)
+                .execute();
+
+        if (!isSuccessful(pageResponse)) {
+          throw NestedExceptionUtils.hintWithExplanationException("Unable to fetch the versions for the package",
+              "Check if the package exists and if the permissions are scoped for the authenticated user",
+              new InvalidArtifactServerException(pageResponse.message(), USER));
+        }
+
+        if (EmptyPredicate.isNotEmpty(pageResponse.body())) {
+          response.addAll(pageResponse.body());
+        } else {
+          break;
+        }
+      }
     } else {
-      response =
-          githubPackagesRestClient.listVersionsForPackagesInOrg(basicAuthHeader, org, packageName, packageType, 100)
-              .execute();
+      for (int i = 1;; i++) {
+        Response<List<JsonNode>> pageResponse =
+            githubPackagesRestClient
+                .listVersionsForPackagesInOrg(basicAuthHeader, org, packageName, packageType, 100, i)
+                .execute();
+
+        if (!isSuccessful(pageResponse)) {
+          throw NestedExceptionUtils.hintWithExplanationException("Unable to fetch the versions for the package",
+              "Check if the package exists and if the permissions are correct for the org",
+              new InvalidArtifactServerException(pageResponse.message(), USER));
+        }
+
+        if (EmptyPredicate.isNotEmpty(pageResponse.body())) {
+          response.addAll(pageResponse.body());
+        } else {
+          break;
+        }
+      }
     }
 
-    if (!isSuccessful(response)) {
-      throw NestedExceptionUtils.hintWithExplanationException("Unable to fetch the versions for the package",
-          "Check if the package exists and if the permissions are scoped for the authenticated user",
-          new InvalidArtifactServerException(response.message(), USER));
-    }
-
-    githubPackagesVersionsResponse = processResponse(response.body());
+    githubPackagesVersionsResponse = processResponse(response);
 
     return processBuildDetails(
         githubPackagesVersionsResponse, packageName, githubPackagesInternalConfig.getUsername(), org);

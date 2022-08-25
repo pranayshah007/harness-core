@@ -33,12 +33,14 @@ public interface GithubPackagesRestClient {
   @GET("/user/packages/{packageType}/{packageName}/versions")
   Call<List<JsonNode>> listVersionsForPackages(@Header("Authorization") String bearerAuthHeader,
       @Path(value = "packageName", encoded = true) String packageName,
-      @Path(value = "packageType", encoded = true) String packageType, @Query("per_page") Integer perPageEntries);
+      @Path(value = "packageType", encoded = true) String packageType, @Query("per_page") Integer perPageEntries,
+      @Query("page") Integer pageNumber);
 
   @GET("/orgs/{org}/packages/{packageType}/{packageName}/versions")
   Call<List<JsonNode>> listVersionsForPackagesInOrg(@Header("Authorization") String bearerAuthHeader,
       @Path(value = "org", encoded = true) String org, @Path(value = "packageName", encoded = true) String packageName,
-      @Path(value = "packageType", encoded = true) String packageType, @Query("per_page") Integer perPageEntries);
+      @Path(value = "packageType", encoded = true) String packageType, @Query("per_page") Integer perPageEntries,
+      @Query("page") Integer pageNumber);
 
   @GET("/user/packages/{packageType}/{packageName}/versions/{versionId}")
   Call<GithubPackagesVersion> getVersion(@Header("Authorization") String bearerAuthHeader,
