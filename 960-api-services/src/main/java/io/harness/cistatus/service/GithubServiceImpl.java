@@ -88,7 +88,11 @@ public class GithubServiceImpl implements GithubService {
     try {
       Response<StatusCreationResponse> githubStatusCreationResponseResponse =
           getGithubClient(githubAppConfig).createStatus(getAuthToken(token), owner, repo, sha, bodyObjectMap).execute();
-
+      if (!githubStatusCreationResponseResponse.isSuccessful()) {
+        log.error("Failed to send status for github url {} and sha {} error {}, message {}",
+            githubAppConfig.getGithubUrl(), sha, githubStatusCreationResponseResponse.errorBody().string(),
+            githubStatusCreationResponseResponse.message());
+      }
       return githubStatusCreationResponseResponse.isSuccessful();
 
     } catch (Exception e) {
@@ -106,6 +110,7 @@ public class GithubServiceImpl implements GithubService {
       if (response.isSuccessful()) {
         return new ObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(response.body());
       } else {
+        log.error("Failed to find pr error {}, message {}", response.errorBody().string(), response.message());
         return null;
       }
 
@@ -128,6 +133,7 @@ public class GithubServiceImpl implements GithubService {
         json.put("message", ((LinkedHashMap) response.body()).get("message"));
         return json;
       } else {
+        log.error("Failed to merge pr error {}, message {}", response.errorBody().string(), response.message());
         log.warn("Merge Request for merging PR returned with response code {}", prNumber, response.code());
         return new JSONObject();
       }
