@@ -19,6 +19,7 @@ import io.harness.cdng.service.steps.ServiceStepParametersV2;
 import io.harness.cdng.service.steps.ServiceStepV2;
 import io.harness.cdng.visitor.YamlTypes;
 import io.harness.exception.InvalidRequestException;
+import io.harness.ng.core.service.yaml.NGServiceV2InfoConfig;
 import io.harness.pms.contracts.advisers.AdviserObtainment;
 import io.harness.pms.contracts.advisers.AdviserType;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
@@ -35,6 +36,7 @@ import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.sdk.core.plan.creation.creators.ChildrenPlanCreator;
 import io.harness.pms.yaml.DependenciesUtils;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlField;
 import io.harness.serializer.KryoSerializer;
 
@@ -48,13 +50,13 @@ import java.util.Map;
 import java.util.Set;
 
 @OwnedBy(HarnessTeam.CDC)
-public class ServicePlanCreatorV2 extends ChildrenPlanCreator<ServicePlanCreatorV2Config> {
+public class ServicePlanCreatorV2 extends ChildrenPlanCreator<NGServiceV2InfoConfig> {
   @Inject private KryoSerializer kryoSerializer;
   @Inject private EnforcementValidator enforcementValidator;
 
   @Override
   public LinkedHashMap<String, PlanCreationResponse> createPlanForChildrenNodes(
-      PlanCreationContext ctx, ServicePlanCreatorV2Config config) {
+      PlanCreationContext ctx, NGServiceV2InfoConfig config) {
     final LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap = new LinkedHashMap<>();
 
     // enforcement validator
@@ -81,14 +83,15 @@ public class ServicePlanCreatorV2 extends ChildrenPlanCreator<ServicePlanCreator
 
   @Override
   public PlanNode createPlanForParentNode(
-      PlanCreationContext ctx, ServicePlanCreatorV2Config config, List<String> childrenNodeIds) {
+      PlanCreationContext ctx, NGServiceV2InfoConfig config, List<String> childrenNodeIds) {
     YamlField serviceField = ctx.getCurrentField();
     String serviceUuid = serviceField.getNode().getUuid();
     String serviceActualStepUUid = "service-" + serviceUuid;
-    ServiceSectionStepParameters stepParameters = ServiceSectionStepParameters.builder()
-                                                      .childNodeId(serviceActualStepUUid)
-                                                      .serviceRef(config.getIdentifier())
-                                                      .build();
+    ServiceSectionStepParameters stepParameters =
+        ServiceSectionStepParameters.builder()
+            .childNodeId(serviceActualStepUUid)
+            .serviceRef(ParameterField.createValueField(config.getIdentifier()))
+            .build();
 
     String infraSectionNodeUUid = (String) kryoSerializer.asInflatedObject(
         ctx.getDependency().getMetadataMap().get(YamlTypes.NEXT_UUID).toByteArray());
@@ -114,7 +117,7 @@ public class ServicePlanCreatorV2 extends ChildrenPlanCreator<ServicePlanCreator
         .build();
   }
 
-  private void addServiceNode(ServicePlanCreatorV2Config config,
+  private void addServiceNode(NGServiceV2InfoConfig config,
       LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap, String serviceDefinitionNodeId) {
     ServiceStepParametersV2 stepParameters = ServiceStepParametersV2.fromServiceV2InfoConfig(config);
     String uuid = "service-" + config.getUuid();
@@ -143,8 +146,8 @@ public class ServicePlanCreatorV2 extends ChildrenPlanCreator<ServicePlanCreator
   }
 
   @Override
-  public Class<ServicePlanCreatorV2Config> getFieldClass() {
-    return ServicePlanCreatorV2Config.class;
+  public Class<NGServiceV2InfoConfig> getFieldClass() {
+    return NGServiceV2InfoConfig.class;
   }
 
   @Override

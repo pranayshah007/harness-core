@@ -17,6 +17,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDNGTestBase;
 import io.harness.cdng.licenserestriction.EnforcementValidator;
 import io.harness.cdng.visitor.YamlTypes;
+import io.harness.ng.core.service.yaml.NGServiceV2InfoConfig;
 import io.harness.pms.plan.creation.PlanCreatorUtils;
 import io.harness.rule.Owner;
 
@@ -44,7 +45,7 @@ public class ServicePlanCreatorV2Test extends CDNGTestBase {
   @Owner(developers = ARCHIT)
   @Category(UnitTests.class)
   public void testGetFieldClass() {
-    assertThat(servicePlanCreatorV2.getFieldClass()).isEqualTo(ServicePlanCreatorV2Config.class);
+    assertThat(servicePlanCreatorV2.getFieldClass()).isEqualTo(NGServiceV2InfoConfig.class);
   }
 
   @Test
