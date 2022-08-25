@@ -38,7 +38,6 @@ import java.util.Optional;
 @OwnedBy(PIPELINE)
 public interface TaskExecutable<T extends StepParameters, R extends ResponseData>
     extends Step<T>, Abortable<T, TaskExecutableResponse>, Failable<T>, Progressable<T> {
-
   default Optional<TaskRequest> obtainTaskOptional(Ambiance ambiance, T stepParameters, StepInputPackage inputPackage) {
     return Optional.ofNullable(obtainTask(ambiance, stepParameters, inputPackage));
   }
