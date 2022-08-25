@@ -19,7 +19,6 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.ng.core.envGroup.EnvironmentGroupOutcome;
 import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.environment.yaml.NGEnvironmentConfig;
-import io.harness.ng.core.environment.yaml.NGEnvironmentInfoConfig;
 import io.harness.ng.core.mapper.TagMapper;
 import io.harness.ng.core.service.yaml.NGServiceConfig;
 import io.harness.steps.environment.EnvironmentOutcome;

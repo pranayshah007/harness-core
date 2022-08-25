@@ -7,8 +7,8 @@ import java.util.Map;
 import lombok.Builder;
 import lombok.Data;
 
-@Builder
 @Data
+@Builder
 public class InfrastructureTaskExecutableStepV2Params implements StepParameters {
   private ParameterField<String> envRef;
   private ParameterField<String> infraRef;

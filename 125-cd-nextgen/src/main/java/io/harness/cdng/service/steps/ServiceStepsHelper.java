@@ -76,6 +76,12 @@ public class ServiceStepsHelper {
   }
 
   void validateResourcesV2(Ambiance ambiance, ServiceStepParametersV2 stepParameters) {
+    final ServiceDefinition serviceDefinition = stepParameters.getServiceDefinition().getValue();
+    final String identifier = stepParameters.getIdentifier();
+    validateResources(ambiance, serviceDefinition, identifier);
+  }
+
+  void validateResources(Ambiance ambiance, ServiceDefinition serviceDefinition, String identifier) {
     ExecutionPrincipalInfo executionPrincipalInfo = ambiance.getMetadata().getPrincipalInfo();
     String principal = executionPrincipalInfo.getPrincipal();
     if (isEmpty(principal)) {
@@ -88,13 +94,12 @@ public class ServiceStepsHelper {
     io.harness.accesscontrol.principals.PrincipalType principalType =
         PrincipalTypeProtoToPrincipalTypeMapper.convertToAccessControlPrincipalType(
             executionPrincipalInfo.getPrincipalType());
-    ServiceDefinition serviceDefinition = stepParameters.getServiceDefinition().getValue();
     Set<EntityDetailProtoDTO> entityDetails =
         entityReferenceExtractorUtils.extractReferredEntities(ambiance, serviceDefinition);
     pipelineRbacHelper.checkRuntimePermissions(ambiance, entityDetails);
     accessControlClient.checkForAccessOrThrow(io.harness.accesscontrol.acl.api.Principal.of(principalType, principal),
         io.harness.accesscontrol.acl.api.ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
-        io.harness.accesscontrol.acl.api.Resource.of(NGResourceType.SERVICE, stepParameters.getIdentifier()),
+        io.harness.accesscontrol.acl.api.Resource.of(NGResourceType.SERVICE, identifier),
         CDNGRbacPermissions.SERVICE_RUNTIME_PERMISSION, "Validation for Service Step failed");
   }
 

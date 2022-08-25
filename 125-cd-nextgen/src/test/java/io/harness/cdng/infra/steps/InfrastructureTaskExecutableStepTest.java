@@ -182,7 +182,7 @@ public class InfrastructureTaskExecutableStepTest extends CategoryTest {
     when(cdStepHelper.getSshInfraDelegateConfig(any(), eq(ambiance))).thenReturn(azureSshInfraDelegateConfig);
 
     TaskRequest taskRequest =
-        infrastructureStep.obtainTaskAfterRbac(ambiance, azureInfra, StepInputPackage.builder().build());
+        infrastructureStep.obtainTaskInternal(ambiance, azureInfra, StepInputPackage.builder().build());
 
     ArgumentCaptor<SshInfraDelegateConfigOutput> azureConfigOutputCaptor =
         ArgumentCaptor.forClass(SshInfraDelegateConfigOutput.class);
@@ -208,7 +208,7 @@ public class InfrastructureTaskExecutableStepTest extends CategoryTest {
     when(cdStepHelper.getSshInfraDelegateConfig(any(), eq(ambiance))).thenReturn(awsSshInfraDelegateConfig);
 
     TaskRequest taskRequest =
-        infrastructureStep.obtainTaskAfterRbac(ambiance, awsInfra, StepInputPackage.builder().build());
+        infrastructureStep.obtainTaskInternal(ambiance, awsInfra, StepInputPackage.builder().build());
 
     ArgumentCaptor<SshInfraDelegateConfigOutput> awsConfigOutputCaptor =
         ArgumentCaptor.forClass(SshInfraDelegateConfigOutput.class);
@@ -234,7 +234,7 @@ public class InfrastructureTaskExecutableStepTest extends CategoryTest {
     when(cdStepHelper.getWinRmInfraDelegateConfig(any(), eq(ambiance))).thenReturn(azureWinrmInfraDelegateConfig);
 
     TaskRequest taskRequest =
-        infrastructureStep.obtainTaskAfterRbac(ambiance, azureInfra, StepInputPackage.builder().build());
+        infrastructureStep.obtainTaskInternal(ambiance, azureInfra, StepInputPackage.builder().build());
 
     ArgumentCaptor<WinRmInfraDelegateConfigOutput> azureConfigOutputCaptor =
         ArgumentCaptor.forClass(WinRmInfraDelegateConfigOutput.class);
@@ -260,7 +260,7 @@ public class InfrastructureTaskExecutableStepTest extends CategoryTest {
     when(cdStepHelper.getWinRmInfraDelegateConfig(any(), eq(ambiance))).thenReturn(awsWinrmInfraDelegateConfig);
 
     TaskRequest taskRequest =
-        infrastructureStep.obtainTaskAfterRbac(ambiance, awsInfra, StepInputPackage.builder().build());
+        infrastructureStep.obtainTaskInternal(ambiance, awsInfra, StepInputPackage.builder().build());
 
     ArgumentCaptor<WinRmInfraDelegateConfigOutput> awsConfigOutputCaptor =
         ArgumentCaptor.forClass(WinRmInfraDelegateConfigOutput.class);

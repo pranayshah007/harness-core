@@ -12,10 +12,8 @@ import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.cdng.visitor.YamlTypes;
 import io.harness.connector.services.ConnectorService;
-import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.executions.steps.ExecutionNodeType;
-import io.harness.expression.EngineExpressionEvaluator;
 import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.environment.services.EnvironmentService;
 import io.harness.ng.core.environment.yaml.NGEnvironmentConfig;
@@ -30,6 +28,7 @@ import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.merger.helpers.MergeHelper;
+import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.executables.ChildrenExecutable;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
@@ -124,7 +123,37 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
   @Override
   public StepResponse handleChildrenResponse(
       Ambiance ambiance, ServiceStepV3Parameters stepParameters, Map<String, ResponseData> responseDataMap) {
-    return StepResponse.builder().status(Status.SUCCEEDED).build();
+    ServiceSweepingOutput serviceSweepingOutput = (ServiceSweepingOutput) sweepingOutputService.resolve(
+        ambiance, RefObjectUtils.getOutcomeRefObject(ServiceStepV3.SERVICE_SWEEPING_OUTPUT));
+    NGServiceConfig ngServiceConfig = null;
+    if (serviceSweepingOutput != null) {
+      try {
+        ngServiceConfig = YamlUtils.read(serviceSweepingOutput.getFinalServiceYaml(), NGServiceConfig.class);
+      } catch (IOException e) {
+        throw new InvalidRequestException("Unable to read service yaml", e);
+      }
+    }
+
+    if (ngServiceConfig == null || ngServiceConfig.getNgServiceV2InfoConfig() == null) {
+      log.info("No service configuration found");
+      throw new InvalidRequestException("Unable to read service yaml");
+    }
+    final NGServiceV2InfoConfig ngServiceV2InfoConfig = ngServiceConfig.getNgServiceV2InfoConfig();
+    serviceStepsHelper.validateResources(
+        ambiance, ngServiceV2InfoConfig.getServiceDefinition(), ngServiceV2InfoConfig.getIdentifier());
+
+    return StepResponse.builder()
+        .status(Status.SUCCEEDED)
+        .stepOutcome(
+            StepResponse.StepOutcome.builder()
+                .name(OutcomeExpressionConstants.SERVICE)
+                .outcome(ServiceStepOutcome.fromServiceStepV2(ngServiceV2InfoConfig.getIdentifier(),
+                    ngServiceV2InfoConfig.getName(), ngServiceV2InfoConfig.getServiceDefinition().getType().name(),
+                    ngServiceV2InfoConfig.getDescription(), ngServiceV2InfoConfig.getTags(),
+                    ngServiceV2InfoConfig.getGitOpsEnabled()))
+                .group(StepCategory.STAGE.name())
+                .build())
+        .build();
   }
 
   @Data
@@ -159,7 +188,7 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
 
     // Todo:(yogesh) check the step category
     sweepingOutputService.consume(ambiance, SERVICE_SWEEPING_OUTPUT,
-        ServiceSweepingOutput.builder().finalServiceYaml(mergedServiceYaml).build(), StepCategory.STAGE.name());
+        ServiceSweepingOutput.builder().finalServiceYaml(mergedServiceYaml).build(), "");
 
     final NGServiceV2InfoConfig ngServiceV2InfoConfig = ngServiceConfig.getNgServiceV2InfoConfig();
 

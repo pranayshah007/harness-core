@@ -332,7 +332,7 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
     // Adding service child by resolving the serviceField
     final YamlField serviceField = servicePlanCreatorHelper.getResolvedServiceField(ctx, specField, stageNode);
     final String serviceNodeUuid = serviceField.getNode().getUuid();
-    final String serviceSpecNodeUuid = servicePlanCreatorHelper.fetchOrGenerateSpecId(serviceField);
+    final String serviceSpecNodeUuid = servicePlanCreatorHelper.fetchServiceSpecUuid(serviceField);
 
     // Adding Spec node
     planCreationResponseMap.put(specField.getNode().getUuid(),

@@ -96,12 +96,17 @@ public class InfrastructurePmsPlanCreator {
       @NotNull YamlNode envYamlNode, EnvironmentYamlV2 environmentYamlV2, KryoSerializer kryoSerializer) {
     final List<AdviserObtainment> adviserObtainments =
         getAdviserObtainmentFromMetaDataToExecution(envYamlNode, kryoSerializer);
-    InfrastructureTaskExecutableStepV2Params params = InfrastructureTaskExecutableStepV2Params.builder().build();
+    InfrastructureTaskExecutableStepV2Params params =
+        InfrastructureTaskExecutableStepV2Params.builder()
+            .envRef(environmentYamlV2.getEnvironmentRef())
+            .infraRef(environmentYamlV2.getInfrastructureDefinitions().getValue().get(0).getIdentifier())
+            .build();
     return PlanNode.builder()
         .uuid(UUIDGenerator.generateUuid())
         .name(PlanCreatorConstants.INFRA_NODE_NAME)
         .identifier(PlanCreatorConstants.INFRA_DEFINITION_NODE_IDENTIFIER)
         .stepType(InfrastructureTaskExecutableStepV2.STEP_TYPE)
+        .group(OutcomeExpressionConstants.INFRASTRUCTURE_GROUP)
         .stepParameters(params)
         .facilitatorObtainment(
             FacilitatorObtainment.newBuilder()

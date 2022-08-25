@@ -396,6 +396,8 @@ public class DeploymentStageVariableCreator extends AbstractStageVariableCreator
       if (isNotEmpty(infraStructureDefinitionYamls)) {
         return infraStructureDefinitionYamls.stream()
             .map(InfraStructureDefinitionYaml::getIdentifier)
+            .filter(p -> !p.isExpression())
+            .map(ParameterField::getValue)
             .collect(Collectors.toList());
       }
     }
