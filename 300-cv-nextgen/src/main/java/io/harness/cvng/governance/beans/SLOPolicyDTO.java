@@ -10,6 +10,7 @@ package io.harness.cvng.governance.beans;
 import static io.harness.annotations.dev.HarnessTeam.CV;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cvng.servicelevelobjective.entities.SLOHealthIndicator;
 import io.harness.gitsync.beans.YamlDTO;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -21,6 +22,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.experimental.FieldDefaults;
 
+import java.util.Map;
+
 @Data
 @JsonIgnoreProperties(ignoreUnknown = true)
 @FieldDefaults(level = AccessLevel.PRIVATE)
@@ -30,6 +33,7 @@ import lombok.experimental.FieldDefaults;
 public class SLOPolicyDTO implements YamlDTO {
   @JsonProperty("sloErrorBudgetRemainingPercentage") @Valid Double sloErrorBudgetRemainingPercentage;
   @JsonProperty("statusOfMonitoredService") @Valid MonitoredServiceStatus statusOfMonitoredService;
+  @JsonProperty("sloMappedToTheirHealthIndicators") @Valid Map<String, SLOHealthIndicator> sloMappedToTheirHealthIndicators;
 
   public enum MonitoredServiceStatus { CONFIGURED, NOT_CONFIGURED }
 }

@@ -35,9 +35,8 @@ import io.harness.pms.yaml.YamlUtils;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.inject.Inject;
 import java.io.IOException;
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
+
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -74,15 +73,17 @@ public class SLOPolicyExpansionHandler implements JsonExpansionHandler {
       List<SLOHealthIndicator> sloHealthIndicatorList = sloHealthIndicatorService.getByMonitoredServiceIdentifiers(
           projectParams, Collections.singletonList(monitoredServiceResponse.getMonitoredServiceDTO().getIdentifier()));
       double sloErrorBudgetRemainingPercentage = 100D;
-
+      Map<String, SLOHealthIndicator> sloMappedToTheirHealthIndicators = new HashMap<>();
       for (SLOHealthIndicator sloHealthIndicator : sloHealthIndicatorList) {
         if (sloErrorBudgetRemainingPercentage > sloHealthIndicator.getErrorBudgetRemainingPercentage()) {
           sloErrorBudgetRemainingPercentage = sloHealthIndicator.getErrorBudgetRemainingPercentage();
         }
+        sloMappedToTheirHealthIndicators.put(sloHealthIndicator.getServiceLevelObjectiveIdentifier(), sloHealthIndicator);
       }
       sloPolicyDTO = SLOPolicyDTO.builder()
                          .sloErrorBudgetRemainingPercentage(sloErrorBudgetRemainingPercentage)
                          .statusOfMonitoredService(SLOPolicyDTO.MonitoredServiceStatus.CONFIGURED)
+                         .sloMappedToTheirHealthIndicators(sloMappedToTheirHealthIndicators)
                          .build();
     }
     ExpandedValue value = SLOPolicyExpandedValue.builder().sloPolicyDTO(sloPolicyDTO).build();

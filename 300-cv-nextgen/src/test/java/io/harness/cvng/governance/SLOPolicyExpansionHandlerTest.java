@@ -23,6 +23,8 @@ import io.harness.cvng.governance.beans.SLOPolicyDTO;
 import io.harness.cvng.governance.beans.SLOPolicyDTO.MonitoredServiceStatus;
 import io.harness.cvng.governance.services.SLOPolicyExpansionHandler;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveDTO;
+import io.harness.cvng.servicelevelobjective.entities.SLOHealthIndicator;
+import io.harness.cvng.servicelevelobjective.services.api.SLOHealthIndicatorService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveService;
 import io.harness.pms.contracts.governance.ExpansionPlacementStrategy;
 import io.harness.pms.contracts.governance.ExpansionRequestMetadata;
@@ -31,27 +33,35 @@ import io.harness.rule.Owner;
 import io.harness.serializer.JsonUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.google.common.base.Charsets;
+import java.nio.charset.StandardCharsets;
 import com.google.inject.Inject;
 import com.google.protobuf.ByteString;
 import java.io.IOException;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import org.apache.commons.io.IOUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.MockitoAnnotations;
 
-;
-
 public class SLOPolicyExpansionHandlerTest extends CvNextGenTestBase {
   @Inject SLOPolicyExpansionHandler sloPolicyExpansionHandler;
   @Inject MonitoredServiceService monitoredServiceService;
   @Inject ServiceLevelObjectiveService serviceLevelObjectiveService;
-  BuilderFactory builderFactory;
+  @Inject SLOHealthIndicatorService sloHealthIndicatorService;
+  private BuilderFactory builderFactory;
+  private Map<String, SLOHealthIndicator> sloMappedToTheirHealthIndicators;
+  private String pipelineYaml;
 
   @Before
-  public void setUp() throws IllegalAccessException {
+  public void setUp() throws IllegalAccessException, IOException {
     MockitoAnnotations.initMocks(this);
+    pipelineYaml = IOUtils.resourceToString(
+            "governance/SLOPolicyExpansionHandlerFromStagePipeline.yaml", StandardCharsets.UTF_8, this.getClass().getClassLoader());
     BuilderFactory.Context context = BuilderFactory.Context.builder()
                                          .projectParams(ProjectParams.builder()
                                                             .accountIdentifier(randomAlphabetic(20))
@@ -67,6 +77,12 @@ public class SLOPolicyExpansionHandlerTest extends CvNextGenTestBase {
     monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
     ServiceLevelObjectiveDTO serviceLevelObjectiveDTO = builderFactory.getServiceLevelObjectiveDTOBuilder().build();
     serviceLevelObjectiveService.create(builderFactory.getProjectParams(), serviceLevelObjectiveDTO);
+    List<SLOHealthIndicator> sloHealthIndicatorList = sloHealthIndicatorService.getByMonitoredServiceIdentifiers(
+            builderFactory.getProjectParams(), Collections.singletonList(monitoredServiceDTO.getIdentifier()));
+    sloMappedToTheirHealthIndicators = new HashMap<>();
+    for (SLOHealthIndicator sloHealthIndicator : sloHealthIndicatorList) {
+      sloMappedToTheirHealthIndicators.put(sloHealthIndicator.getServiceLevelObjectiveIdentifier(), sloHealthIndicator);
+    }
   }
 
   @Test
@@ -76,9 +92,10 @@ public class SLOPolicyExpansionHandlerTest extends CvNextGenTestBase {
     SLOPolicyDTO sloPolicyDTO = SLOPolicyDTO.builder()
                                     .sloErrorBudgetRemainingPercentage(100D)
                                     .statusOfMonitoredService(MonitoredServiceStatus.CONFIGURED)
+                                    .sloMappedToTheirHealthIndicators(sloMappedToTheirHealthIndicators)
                                     .build();
     final String yaml = IOUtils.resourceToString(
-        "governance/SLOPolicyExpansionHandlerInput.json", Charsets.UTF_8, this.getClass().getClassLoader());
+        "governance/SLOPolicyExpansionHandlerInput.json", StandardCharsets.UTF_8, this.getClass().getClassLoader());
     JsonNode jsonNode = JsonUtils.asObject(yaml, JsonNode.class);
     ExpansionRequestMetadata metadataProject =
         ExpansionRequestMetadata.newBuilder()
@@ -100,9 +117,10 @@ public class SLOPolicyExpansionHandlerTest extends CvNextGenTestBase {
     SLOPolicyDTO sloPolicyDTO = SLOPolicyDTO.builder()
                                     .sloErrorBudgetRemainingPercentage(100D)
                                     .statusOfMonitoredService(MonitoredServiceStatus.CONFIGURED)
+                                    .sloMappedToTheirHealthIndicators(sloMappedToTheirHealthIndicators)
                                     .build();
     final String yaml = IOUtils.resourceToString(
-        "governance/SLOPolicyExpansionHandlerWithServiceKey.json", Charsets.UTF_8, this.getClass().getClassLoader());
+        "governance/SLOPolicyExpansionHandlerWithServiceKey.json", StandardCharsets.UTF_8, this.getClass().getClassLoader());
     JsonNode jsonNode = JsonUtils.asObject(yaml, JsonNode.class);
     ExpansionRequestMetadata metadataProject =
         ExpansionRequestMetadata.newBuilder()
@@ -124,7 +142,7 @@ public class SLOPolicyExpansionHandlerTest extends CvNextGenTestBase {
     SLOPolicyDTO sloPolicyDTO =
         SLOPolicyDTO.builder().statusOfMonitoredService(MonitoredServiceStatus.NOT_CONFIGURED).build();
     final String yaml = IOUtils.resourceToString(
-        "governance/SLOPolicyExpansionHandlerWrongInput.json", Charsets.UTF_8, this.getClass().getClassLoader());
+        "governance/SLOPolicyExpansionHandlerWrongInput.json", StandardCharsets.UTF_8, this.getClass().getClassLoader());
     JsonNode jsonNode = JsonUtils.asObject(yaml, JsonNode.class);
     ExpansionRequestMetadata metadataProject =
         ExpansionRequestMetadata.newBuilder()
@@ -144,14 +162,13 @@ public class SLOPolicyExpansionHandlerTest extends CvNextGenTestBase {
   @Category(UnitTests.class)
   public void testExpand_withFromStage() throws IOException {
     SLOPolicyDTO sloPolicyDTO = SLOPolicyDTO.builder()
-                                    .sloErrorBudgetRemainingPercentage(100D)
-                                    .statusOfMonitoredService(MonitoredServiceStatus.CONFIGURED)
-                                    .build();
+            .sloErrorBudgetRemainingPercentage(100D)
+            .statusOfMonitoredService(MonitoredServiceStatus.CONFIGURED)
+            .sloMappedToTheirHealthIndicators(sloMappedToTheirHealthIndicators)
+            .build();
     final String stageYaml = IOUtils.resourceToString(
-        "governance/SLOPolicyExpansionHandlerFromStage.json", Charsets.UTF_8, this.getClass().getClassLoader());
+        "governance/SLOPolicyExpansionHandlerFromStage.json", StandardCharsets.UTF_8, this.getClass().getClassLoader());
     JsonNode jsonNode = JsonUtils.asObject(stageYaml, JsonNode.class);
-    final String pipelineYaml = IOUtils.resourceToString(
-        "governance/SLOPolicyExpansionHandlerFromStagePipeline.yaml", Charsets.UTF_8, this.getClass().getClassLoader());
     ExpansionRequestMetadata metadataProject =
         ExpansionRequestMetadata.newBuilder()
             .setAccountId(builderFactory.getProjectParams().getAccountIdentifier())
@@ -171,14 +188,13 @@ public class SLOPolicyExpansionHandlerTest extends CvNextGenTestBase {
   @Category(UnitTests.class)
   public void testExpand_withServiceIdentifier() throws IOException {
     SLOPolicyDTO sloPolicyDTO = SLOPolicyDTO.builder()
-                                    .sloErrorBudgetRemainingPercentage(100D)
-                                    .statusOfMonitoredService(MonitoredServiceStatus.CONFIGURED)
-                                    .build();
+            .sloErrorBudgetRemainingPercentage(100D)
+            .statusOfMonitoredService(MonitoredServiceStatus.CONFIGURED)
+            .sloMappedToTheirHealthIndicators(sloMappedToTheirHealthIndicators)
+            .build();
     final String stageYaml = IOUtils.resourceToString(
-        "governance/SLOPolicyExpansionHandlerServiceIdentifier.json", Charsets.UTF_8, this.getClass().getClassLoader());
+        "governance/SLOPolicyExpansionHandlerServiceIdentifier.json", StandardCharsets.UTF_8, this.getClass().getClassLoader());
     JsonNode jsonNode = JsonUtils.asObject(stageYaml, JsonNode.class);
-    final String pipelineYaml = IOUtils.resourceToString(
-        "governance/SLOPolicyExpansionHandlerFromStagePipeline.yaml", Charsets.UTF_8, this.getClass().getClassLoader());
     ExpansionRequestMetadata metadataProject =
         ExpansionRequestMetadata.newBuilder()
             .setAccountId(builderFactory.getProjectParams().getAccountIdentifier())
@@ -198,14 +214,13 @@ public class SLOPolicyExpansionHandlerTest extends CvNextGenTestBase {
   @Category(UnitTests.class)
   public void testExpand_withoutFromStage() throws IOException {
     SLOPolicyDTO sloPolicyDTO = SLOPolicyDTO.builder()
-                                    .sloErrorBudgetRemainingPercentage(100D)
-                                    .statusOfMonitoredService(MonitoredServiceStatus.CONFIGURED)
-                                    .build();
+            .sloErrorBudgetRemainingPercentage(100D)
+            .statusOfMonitoredService(MonitoredServiceStatus.CONFIGURED)
+            .sloMappedToTheirHealthIndicators(sloMappedToTheirHealthIndicators)
+            .build();
     final String stageYaml = IOUtils.resourceToString(
-        "governance/SLOPolicyExpansionHandlerInValidStage.json", Charsets.UTF_8, this.getClass().getClassLoader());
+        "governance/SLOPolicyExpansionHandlerInValidStage.json", StandardCharsets.UTF_8, this.getClass().getClassLoader());
     JsonNode jsonNode = JsonUtils.asObject(stageYaml, JsonNode.class);
-    final String pipelineYaml = IOUtils.resourceToString(
-        "governance/SLOPolicyExpansionHandlerFromStagePipeline.yaml", Charsets.UTF_8, this.getClass().getClassLoader());
     ExpansionRequestMetadata metadataProject =
         ExpansionRequestMetadata.newBuilder()
             .setAccountId(builderFactory.getProjectParams().getAccountIdentifier())
@@ -214,5 +229,9 @@ public class SLOPolicyExpansionHandlerTest extends CvNextGenTestBase {
             .setYaml(ByteString.copyFromUtf8(pipelineYaml))
             .build();
     ExpansionResponse expansionResponse = sloPolicyExpansionHandler.expand(jsonNode, metadataProject, null);
+    assertThat(expansionResponse.isSuccess()).isTrue();
+    assertThat(expansionResponse.getKey()).isEqualTo("sloPolicy");
+    assertThat(expansionResponse.getValue().toJson()).isEqualTo(JsonUtils.asJson(sloPolicyDTO));
+    assertThat(expansionResponse.getPlacement()).isEqualTo(ExpansionPlacementStrategy.APPEND);
   }
 }
