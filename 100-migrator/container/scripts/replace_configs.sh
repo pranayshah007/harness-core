@@ -899,13 +899,6 @@ if [[ "" != "$NG_MANAGER_BASE_URL" ]]; then
   yq -i '.ngManagerServiceHttpClientConfig.baseUrl="$NG_MANAGER_BASE_URL"' $CONFIG_FILE
 fi
 
-<<<<<<< HEAD
-=======
-if [[ "" != "$MANAGER_CLIENT_BASEURL" ]]; then
-  yq -i '.managerServiceHttpClientConfig.baseUrl="$MANAGER_CLIENT_BASEURL"' $CONFIG_FILE
-fi
-
->>>>>>> e15c0336a9d (feat: [SPG-143]]: upgrade from yq3 to yq4: update write and delete)
 if [[ "" != "$ENABLE_USER_CHANGESTREAM" ]]; then
   yq -i '.userChangeStreamEnabled="$ENABLE_USER_CHANGESTREAM"' $CONFIG_FILE
 fi

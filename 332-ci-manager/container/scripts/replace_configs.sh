@@ -120,7 +120,7 @@ if [[ "" != "$VM_S3_UPLOAD_IMAGE" ]]; then
 fi
 
 if [[ "" != "$VM_SECURITY_IMAGE" ]]; then
-  yq write -i $CONFIG_FILE ciExecutionServiceConfig.stepConfig.vmImageConfig.security "$VM_SECURITY_IMAGE"
+  yq -i '.ciExecutionServiceConfig.stepConfig.vmImageConfig.security="$VM_SECURITY_IMAGE"' $CONFIG_FILE
 fi
 
 if [[ "" != "$VM_ARTIFACTORY_UPLOAD_IMAGE" ]]; then
@@ -326,48 +326,48 @@ if [[ "" != "$REDIS_NETTY_THREADS" ]]; then
   yq -i '.nettyThreads="$REDIS_NETTY_THREADS"' $REDISSON_CACHE_FILE
 fi
 
-yq delete -i $ENTERPRISE_REDISSON_CACHE_FILE codec
+yq 'del(.codec)' $ENTERPRISE_REDISSON_CACHE_FILE
 
 if [[ "$REDIS_SCRIPT_CACHE" == "false" ]]; then
-  yq write -i $ENTERPRISE_REDISSON_CACHE_FILE useScriptCache false
+  yq -i '.useScriptCache="false"' $ENTERPRISE_REDISSON_CACHE_FILE
 fi
 
 if [[ "" != "$EVENTS_FRAMEWORK_NETTY_THREADS" ]]; then
-  yq write -i $ENTERPRISE_REDISSON_CACHE_FILE nettyThreads "$EVENTS_FRAMEWORK_NETTY_THREADS"
+  yq -i '.nettyThreads="$EVENTS_FRAMEWORK_NETTY_THREADS"' $ENTERPRISE_REDISSON_CACHE_FILE
 fi
 
 if [[ "" != "$EVENTS_FRAMEWORK_REDIS_URL" ]]; then
-  yq write -i $ENTERPRISE_REDISSON_CACHE_FILE singleServerConfig.address "$EVENTS_FRAMEWORK_REDIS_URL"
+  yq -i '.singleServerConfig.address="$EVENTS_FRAMEWORK_REDIS_URL"' $ENTERPRISE_REDISSON_CACHE_FILE
 fi
 
 if [[ "" != "$EVENTS_FRAMEWORK_REDIS_USERNAME" ]]; then
-  yq write -i $ENTERPRISE_REDISSON_CACHE_FILE singleServerConfig.username "$EVENTS_FRAMEWORK_REDIS_USERNAME"
+  yq -i '.singleServerConfig.username="$EVENTS_FRAMEWORK_REDIS_USERNAME"' $ENTERPRISE_REDISSON_CACHE_FILE
 fi
 
 if [[ "" != "$EVENTS_FRAMEWORK_REDIS_PASSWORD" ]]; then
-  yq write -i $ENTERPRISE_REDISSON_CACHE_FILE singleServerConfig.password "$EVENTS_FRAMEWORK_REDIS_PASSWORD"
+  yq -i '.singleServerConfig.password="$EVENTS_FRAMEWORK_REDIS_PASSWORD"' $ENTERPRISE_REDISSON_CACHE_FILE
 fi
 
 if [[ "" != "$EVENTS_FRAMEWORK_REDIS_SSL_CA_TRUST_STORE_PATH" ]]; then
-  yq write -i $ENTERPRISE_REDISSON_CACHE_FILE singleServerConfig.sslTruststore file:"$EVENTS_FRAMEWORK_REDIS_SSL_CA_TRUST_STORE_PATH"
+  yq -i '.singleServerConfig.sslTruststore="file:$EVENTS_FRAMEWORK_REDIS_SSL_CA_TRUST_STORE_PATH"' $ENTERPRISE_REDISSON_CACHE_FILE
 fi
 
 if [[ "" != "$EVENTS_FRAMEWORK_REDIS_SSL_CA_TRUST_STORE_PASSWORD" ]]; then
-  yq write -i $ENTERPRISE_REDISSON_CACHE_FILE singleServerConfig.sslTruststorePassword "$EVENTS_FRAMEWORK_REDIS_SSL_CA_TRUST_STORE_PASSWORD"
+  yq -i '.singleServerConfig.sslTruststorePassword="$EVENTS_FRAMEWORK_REDIS_SSL_CA_TRUST_STORE_PASSWORD"' $ENTERPRISE_REDISSON_CACHE_FILE
 fi
 
 if [[ "$EVENTS_FRAMEWORK_USE_SENTINEL" == "true" ]]; then
-  yq delete -i $ENTERPRISE_REDISSON_CACHE_FILE singleServerConfig
+  yq 'del(.singleServerConfig)' $ENTERPRISE_REDISSON_CACHE_FILE
 
   if [[ "" != "$EVENTS_FRAMEWORK_SENTINEL_MASTER_NAME" ]]; then
-    yq write -i $ENTERPRISE_REDISSON_CACHE_FILE sentinelServersConfig.masterName "$EVENTS_FRAMEWORK_SENTINEL_MASTER_NAME"
+    yq -i '.sentinelServersConfig.masterName="$EVENTS_FRAMEWORK_SENTINEL_MASTER_NAME"' $ENTERPRISE_REDISSON_CACHE_FILE
   fi
 
   if [[ "" != "$EVENTS_FRAMEWORK_REDIS_SENTINELS" ]]; then
     IFS=',' read -ra SENTINEL_URLS <<< "$EVENTS_FRAMEWORK_REDIS_SENTINELS"
     INDEX=0
     for REDIS_SENTINEL_URL in "${SENTINEL_URLS[@]}"; do
-      yq write -i $ENTERPRISE_REDISSON_CACHE_FILE sentinelServersConfig.sentinelAddresses.[$INDEX] "${REDIS_SENTINEL_URL}"
+      yq -i '.sentinelServersConfig.sentinelAddresses.[$INDEX]="${REDIS_SENTINEL_URL}"' $ENTERPRISE_REDISSON_CACHE_FILE
       INDEX=$(expr $INDEX + 1)
     done
   fi
