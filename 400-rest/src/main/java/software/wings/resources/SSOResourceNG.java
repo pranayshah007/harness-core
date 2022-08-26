@@ -30,6 +30,7 @@ import io.harness.secretmanagers.SecretManagerConfigService;
 import io.harness.security.annotations.NextGenManagerAuth;
 
 import software.wings.beans.sso.LdapSettings;
+import software.wings.beans.sso.LdapSettingsMapper;
 import software.wings.beans.sso.OauthSettings;
 import software.wings.beans.sso.SamlSettings;
 import software.wings.helpers.ext.ldap.LdapResponse;
@@ -190,7 +191,19 @@ public class SSOResourceNG {
   @Produces("application/x-kryo")
   @Consumes("application/x-kryo")
   public RestResponse<LdapSettingsWithEncryptedDataDetail> getLdapSetting(@QueryParam("accountId") String accountId) {
-    return new RestResponse<>(ssoService.getLdapSettingWithEncryptedDataDetail(accountId));
+    return new RestResponse<>(ssoService.getLdapSettingWithEncryptedDataDetail(accountId, null));
+  }
+
+  @POST
+  @Path("ldap/setting-with-encrypted-details")
+  @Timed
+  @ExceptionMetered
+  @Produces("application/x-kryo")
+  @Consumes("application/x-kryo")
+  public RestResponse<LdapSettingsWithEncryptedDataDetail> getLdapSetting(
+      @QueryParam("accountId") String accountId, @Valid software.wings.beans.dto.LdapSettings settings) {
+    return new RestResponse<>(
+        ssoService.getLdapSettingWithEncryptedDataDetail(accountId, LdapSettingsMapper.fromLdapSettingsDTO(settings)));
   }
 
   @POST

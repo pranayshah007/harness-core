@@ -537,6 +537,13 @@ public class GitClientHelper {
       throw new InvalidRequestException(
           format("Invalid repo url  %s,should start with either http:// , https:// , ssh:// or git@", url));
     }
+    if (url.startsWith("git@") && !url.contains(":")) {
+      throw new InvalidRequestException(
+          format("Invalid repo url  %s, valid ssh url formats are git@provider.com:username/repo, "
+                  + "ssh://provider.com/username/repo, "
+                  + "ssh://git@provider.com/username/repo",
+              url));
+    }
   }
 
   public static String getCompleteUrlForProjectLevelAzureConnector(String url, String repoName) {

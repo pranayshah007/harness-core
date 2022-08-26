@@ -18,6 +18,8 @@ import static io.harness.ng.core.mapper.TagMapper.convertToMap;
 import static java.lang.String.format;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.configfile.ConfigFile;
+import io.harness.cdng.configfile.ConfigFileWrapper;
 import io.harness.cdng.manifest.yaml.ManifestConfig;
 import io.harness.cdng.manifest.yaml.ManifestConfigWrapper;
 import io.harness.exception.InvalidRequestException;
@@ -38,12 +40,14 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import javax.validation.ConstraintViolation;
 import javax.validation.Valid;
 import javax.validation.Validation;
 import javax.validation.Validator;
 import javax.validation.ValidatorFactory;
 import lombok.experimental.UtilityClass;
+import org.jetbrains.annotations.NotNull;
 
 @OwnedBy(PIPELINE)
 @UtilityClass
@@ -51,14 +55,14 @@ public class EnvironmentMapper {
   ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
   Validator validator = factory.getValidator();
 
-  public Environment toEnvironmentEntity(
-      String accountId, EnvironmentRequestDTO environmentRequestDTO, boolean ngSvcManifestOverrideEnabled) {
+  public Environment toEnvironmentEntity(String accountId, EnvironmentRequestDTO environmentRequestDTO,
+      boolean ngSvcManifestOverrideEnabled, boolean ngSvcConfigFilesOverrideEnabled) {
     final Environment environment;
     if (isNotEmpty(environmentRequestDTO.getYaml())) {
       NGEnvironmentConfig ngEnvironmentConfig = toNGEnvironmentConfig(environmentRequestDTO);
 
       validate(ngEnvironmentConfig);
-      validateEnvGlobalManifestsOverrides(ngEnvironmentConfig, ngSvcManifestOverrideEnabled);
+      validateEnvGlobalOverrides(ngEnvironmentConfig, ngSvcManifestOverrideEnabled, ngSvcConfigFilesOverrideEnabled);
 
       environment = toNGEnvironmentEntity(accountId, ngEnvironmentConfig, environmentRequestDTO.getColor());
       environment.setYaml(environmentRequestDTO.getYaml());
@@ -213,17 +217,27 @@ public class EnvironmentMapper {
     }
   }
 
-  private void validateEnvGlobalManifestsOverrides(
-      NGEnvironmentConfig ngEnvironmentConfig, boolean ngSvcManifestOverrideEnabled) {
+  private void validateEnvGlobalOverrides(NGEnvironmentConfig ngEnvironmentConfig, boolean ngSvcManifestOverrideEnabled,
+      boolean ngSvcConfigFileOverrideEnabled) {
     if (ngEnvironmentConfig.getNgEnvironmentInfoConfig() != null
         && ngEnvironmentConfig.getNgEnvironmentInfoConfig().getNgEnvironmentGlobalOverride() != null) {
-      if (!ngSvcManifestOverrideEnabled) {
+      if (!ngSvcManifestOverrideEnabled
+          && isNotEmpty(
+              ngEnvironmentConfig.getNgEnvironmentInfoConfig().getNgEnvironmentGlobalOverride().getManifests())) {
         throw new InvalidRequestException(
             "Manifest Override is not supported with FF NG_SERVICE_MANIFEST_OVERRIDE disabled");
       }
+      if (!ngSvcConfigFileOverrideEnabled
+          && isNotEmpty(
+              ngEnvironmentConfig.getNgEnvironmentInfoConfig().getNgEnvironmentGlobalOverride().getConfigFiles())) {
+        throw new InvalidRequestException(
+            "Config Files Override is not supported with FF disabled NG_SERVICE_CONFIG_FILES_OVERRIDE");
+      }
+
       final NGEnvironmentGlobalOverride environmentGlobalOverride =
           ngEnvironmentConfig.getNgEnvironmentInfoConfig().getNgEnvironmentGlobalOverride();
       checkDuplicateManifestIdentifiersWithIn(environmentGlobalOverride.getManifests());
+      checkDuplicateConfigFilesIdentifiersWithIn(environmentGlobalOverride.getConfigFiles());
     }
   }
 
@@ -231,16 +245,37 @@ public class EnvironmentMapper {
     if (isEmpty(manifests)) {
       return;
     }
-    Set<String> uniqueIds = new HashSet<>();
-    Set<String> duplicateIds = new HashSet<>();
-    manifests.stream().map(ManifestConfigWrapper::getManifest).map(ManifestConfig::getIdentifier).forEach(id -> {
-      if (!uniqueIds.add(id)) {
-        duplicateIds.add(id);
-      }
-    });
+    final Stream<String> identifierStream =
+        manifests.stream().map(ManifestConfigWrapper::getManifest).map(ManifestConfig::getIdentifier);
+    Set<String> duplicateIds = getDuplicateIdentifiers(identifierStream);
     if (isNotEmpty(duplicateIds)) {
       throw new InvalidRequestException(format("Found duplicate manifest identifiers [%s]",
           duplicateIds.stream().map(Object::toString).collect(Collectors.joining(","))));
     }
+  }
+
+  public static void checkDuplicateConfigFilesIdentifiersWithIn(List<ConfigFileWrapper> configFiles) {
+    if (isEmpty(configFiles)) {
+      return;
+    }
+    final Stream<String> identifierStream =
+        configFiles.stream().map(ConfigFileWrapper::getConfigFile).map(ConfigFile::getIdentifier);
+    Set<String> duplicateIds = getDuplicateIdentifiers(identifierStream);
+    if (isNotEmpty(duplicateIds)) {
+      throw new InvalidRequestException(format("Found duplicate configFiles identifiers [%s]",
+          duplicateIds.stream().map(Object::toString).collect(Collectors.joining(","))));
+    }
+  }
+
+  @NotNull
+  private static Set<String> getDuplicateIdentifiers(Stream<String> identifierStream) {
+    Set<String> uniqueIds = new HashSet<>();
+    Set<String> duplicateIds = new HashSet<>();
+    identifierStream.forEach(id -> {
+      if (!uniqueIds.add(id)) {
+        duplicateIds.add(id);
+      }
+    });
+    return duplicateIds;
   }
 }

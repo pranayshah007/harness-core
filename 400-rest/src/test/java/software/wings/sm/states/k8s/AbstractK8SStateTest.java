@@ -22,6 +22,7 @@ import static io.harness.rule.OwnerRule.ANSHUL;
 import static io.harness.rule.OwnerRule.BOJANA;
 import static io.harness.rule.OwnerRule.NAMAN_TALAYCHA;
 import static io.harness.rule.OwnerRule.PARDHA;
+import static io.harness.rule.OwnerRule.TARUN_UBA;
 import static io.harness.rule.OwnerRule.TATHAGAT;
 import static io.harness.rule.OwnerRule.YOGESH;
 
@@ -128,6 +129,7 @@ import software.wings.api.InstanceElementListParam;
 import software.wings.api.PhaseElement;
 import software.wings.api.ServiceElement;
 import software.wings.api.instancedetails.InstanceInfoVariables;
+import software.wings.api.k8s.K8sCanaryDeleteServiceElement;
 import software.wings.api.k8s.K8sElement;
 import software.wings.api.k8s.K8sGitConfigMapInfo;
 import software.wings.api.k8s.K8sHelmDeploymentElement;
@@ -1872,5 +1874,31 @@ public class AbstractK8SStateTest extends WingsBaseTest {
     K8sTaskParameters taskParams = (K8sTaskParameters) delegateTask.getData().getParameters()[0];
 
     assertThat(taskParams.getDelegateSelectors()).isEqualTo(Collections.singleton("renderedDelegate"));
+  }
+
+  @Test
+  @Owner(developers = TARUN_UBA)
+  @Category(UnitTests.class)
+  public void testGetK8sCanaryDeleteServiceElement() {
+    on(abstractK8SState).set("sweepingOutputService", mockedSweepingOutputService);
+    ArgumentCaptor<SweepingOutputInquiry> inquiryCaptor = ArgumentCaptor.forClass(SweepingOutputInquiry.class);
+    abstractK8SState.fetchK8sCanaryDeleteServiceElement(context);
+    verify(mockedSweepingOutputService, times(1)).findSweepingOutput(inquiryCaptor.capture());
+
+    SweepingOutputInquiry inquiry = inquiryCaptor.getValue();
+    assertThat(inquiry.getName()).isEqualTo(K8sCanaryDeleteServiceElement.SWEEPING_OUTPUT_NAME);
+  }
+
+  @Test
+  @Owner(developers = TARUN_UBA)
+  @Category(UnitTests.class)
+  public void testSaveK8sCanaryDeployRun() {
+    on(abstractK8SState).set("sweepingOutputService", mockedSweepingOutputService);
+    abstractK8SState.saveK8sCanaryDeployRun(context);
+
+    ArgumentCaptor<SweepingOutputInstance> argumentCaptor = ArgumentCaptor.forClass(SweepingOutputInstance.class);
+    verify(mockedSweepingOutputService, times(1)).save(argumentCaptor.capture());
+
+    assertThat(argumentCaptor.getValue().getName()).isEqualTo(K8sCanaryDeleteServiceElement.SWEEPING_OUTPUT_NAME);
   }
 }

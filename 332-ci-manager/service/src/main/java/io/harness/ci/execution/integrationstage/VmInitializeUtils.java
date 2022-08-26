@@ -22,6 +22,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.beans.plugin.compatible.PluginCompatibleStep;
 import io.harness.beans.steps.CIStepInfo;
+import io.harness.beans.steps.stepinfo.BackgroundStepInfo;
 import io.harness.beans.steps.stepinfo.RunStepInfo;
 import io.harness.beans.steps.stepinfo.RunTestsStepInfo;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
@@ -92,6 +93,9 @@ public class VmInitializeUtils {
         case RUN:
           validateRunStepConnector((RunStepInfo) ciStepInfo);
           break;
+        case BACKGROUND:
+          validateBackgroundStepConnector((BackgroundStepInfo) ciStepInfo);
+          break;
         case RUN_TESTS:
           validateRunTestsStepConnector((RunTestsStepInfo) ciStepInfo);
           break;
@@ -118,6 +122,15 @@ public class VmInitializeUtils {
       throw new CIStageExecutionException("connector ref can't be empty if image is provided");
     }
     if (runStepInfo.getImage() == null && runStepInfo.getConnectorRef() != null) {
+      throw new CIStageExecutionException("image can't be empty if connector ref is provided");
+    }
+  }
+
+  private void validateBackgroundStepConnector(BackgroundStepInfo backgroundStepInfo) {
+    if (backgroundStepInfo.getImage() != null && backgroundStepInfo.getConnectorRef() == null) {
+      throw new CIStageExecutionException("connector ref can't be empty if image is provided");
+    }
+    if (backgroundStepInfo.getImage() == null && backgroundStepInfo.getConnectorRef() != null) {
       throw new CIStageExecutionException("image can't be empty if connector ref is provided");
     }
   }

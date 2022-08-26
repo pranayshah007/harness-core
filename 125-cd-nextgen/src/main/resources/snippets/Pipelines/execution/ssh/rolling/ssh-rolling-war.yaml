@@ -32,7 +32,6 @@ spec:
                             name: "Setup Runtime Paths"
                             type: Script
                             spec:
-                              workingDirectory: $HOME/<+service.name>/<+env.name>
                               shell: Bash
                               source:
                                 type: Inline
@@ -83,7 +82,6 @@ spec:
                             name: "Setup Runtime Paths Rollback"
                             type: Script
                             spec:
-                              workingDirectory: $HOME/<+service.name>/<+env.name>
                               shell: Bash
                               source:
                                 type: Inline

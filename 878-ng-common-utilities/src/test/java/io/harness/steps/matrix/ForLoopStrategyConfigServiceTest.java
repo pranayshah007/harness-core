@@ -9,6 +9,7 @@ package io.harness.steps.matrix;
 
 import static io.harness.rule.OwnerRule.IVAN;
 import static io.harness.rule.OwnerRule.SAHIL;
+import static io.harness.rule.OwnerRule.SHALINI;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -16,8 +17,10 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import io.harness.NGCommonUtilitiesTestBase;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.InvalidArgumentsException;
+import io.harness.plancreator.strategy.HarnessForConfig;
 import io.harness.plancreator.strategy.StrategyConfig;
 import io.harness.pms.contracts.execution.ChildrenExecutableResponse;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
@@ -57,6 +60,16 @@ public class ForLoopStrategyConfigServiceTest extends NGCommonUtilitiesTestBase 
     List<ChildrenExecutableResponse.Child> children =
         forLoopStrategyConfigService.fetchChildren(strategyConfig, "childNodeId");
     assertThat(children.size()).isEqualTo(10);
+  }
+
+  @Test
+  @Owner(developers = SHALINI)
+  @Category(UnitTests.class)
+  public void testFetchChildrenWithNullParams() {
+    StrategyConfig strategyConfig =
+        StrategyConfig.builder().repeat(HarnessForConfig.builder().items(new ParameterField<>()).build()).build();
+    assertThatThrownBy(() -> forLoopStrategyConfigService.fetchChildren(strategyConfig, ""))
+        .isInstanceOf(InvalidArgumentsException.class);
   }
 
   @Test
@@ -246,6 +259,22 @@ public class ForLoopStrategyConfigServiceTest extends NGCommonUtilitiesTestBase 
     List<YamlNode> stepNodes = getStepNodes();
 
     YamlField stepFiled = stepNodes.get(5).getField("step");
+    YamlField strategyFiled = stepFiled.getNode().getField("strategy");
+
+    StrategyConfig strategyConfig = YamlUtils.read(strategyFiled.getNode().toString(), StrategyConfig.class);
+
+    List<ChildrenExecutableResponse.Child> children =
+        forLoopStrategyConfigService.fetchChildren(strategyConfig, "childNodeId");
+    assertThat(children.size()).isEqualTo(1);
+  }
+
+  @Test
+  @Owner(developers = SAHIL)
+  @Category(UnitTests.class)
+  public void testRepeatItemsWithStartAndEnd() throws IOException {
+    List<YamlNode> stepNodes = getStepNodes();
+
+    YamlField stepFiled = stepNodes.get(6).getField("step");
     YamlField strategyFiled = stepFiled.getNode().getField("strategy");
 
     StrategyConfig strategyConfig = YamlUtils.read(strategyFiled.getNode().toString(), StrategyConfig.class);

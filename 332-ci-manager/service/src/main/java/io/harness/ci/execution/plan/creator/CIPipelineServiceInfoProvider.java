@@ -12,6 +12,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.beans.steps.StepSpecTypeConstants;
 import io.harness.ci.creator.variables.ArtifactoryUploadStepVariableCreator;
+import io.harness.ci.creator.variables.BackgroundStepVariableCreator;
 import io.harness.ci.creator.variables.BuildAndPushACRStepVariableCreator;
 import io.harness.ci.creator.variables.BuildAndPushECRStepVariableCreator;
 import io.harness.ci.creator.variables.BuildAndPushGCRStepVariableCreator;
@@ -35,6 +36,7 @@ import io.harness.ci.plan.creator.step.CIPMSStepFilterJsonCreator;
 import io.harness.ci.plan.creator.step.CIPMSStepPlanCreator;
 import io.harness.ci.plan.creator.step.CIStepFilterJsonCreatorV2;
 import io.harness.ci.plancreator.ArtifactoryUploadStepPlanCreator;
+import io.harness.ci.plancreator.BackgroundStepPlanCreator;
 import io.harness.ci.plancreator.BuildAndPushACRStepPlanCreator;
 import io.harness.ci.plancreator.BuildAndPushECRStepPlanCreator;
 import io.harness.ci.plancreator.BuildAndPushGCRStepPlanCreator;
@@ -83,6 +85,7 @@ public class CIPipelineServiceInfoProvider implements PipelineServiceInfoProvide
     planCreators.add(new IntegrationStagePMSPlanCreator());
     planCreators.add(new CIPMSStepPlanCreator());
     planCreators.add(new RunStepPlanCreator());
+    planCreators.add(new BackgroundStepPlanCreator());
     planCreators.add(new RunTestStepPlanCreator());
     planCreators.add(new S3UploadStepPlanCreator());
     planCreators.add(new SaveCacheGCSStepPlanCreator());
@@ -125,7 +128,7 @@ public class CIPipelineServiceInfoProvider implements PipelineServiceInfoProvide
     variableCreators.add(new ExecutionVariableCreator());
     variableCreators.add(new CIStepVariableCreator());
     variableCreators.add(new RunStepVariableCreator());
-
+    variableCreators.add(new BackgroundStepVariableCreator());
     variableCreators.add(new RunTestStepVariableCreator());
     variableCreators.add(new S3UploadStepVariableCreator());
     variableCreators.add(new SaveCacheGCSStepVariableCreator());
@@ -153,6 +156,12 @@ public class CIPipelineServiceInfoProvider implements PipelineServiceInfoProvide
                                .setType(StepSpecTypeConstants.RUN)
                                .setStepMetaData(StepMetaData.newBuilder().addFolderPaths("Build").build())
                                .build();
+
+    StepInfo backgroundStepInfo = StepInfo.newBuilder()
+                                      .setName("Background")
+                                      .setType(StepSpecTypeConstants.BACKGROUND)
+                                      .setStepMetaData(StepMetaData.newBuilder().addFolderPaths("Build").build())
+                                      .build();
 
     StepInfo runTestsStepInfo = StepInfo.newBuilder()
                                     .setName("Run Tests")
@@ -255,6 +264,7 @@ public class CIPipelineServiceInfoProvider implements PipelineServiceInfoProvide
     List<StepInfo> stepInfos = new ArrayList<>();
 
     stepInfos.add(runStepInfo);
+    stepInfos.add(backgroundStepInfo);
     stepInfos.add(uploadToGCS);
     stepInfos.add(ecrPushBuilds);
     stepInfos.add(uploadToS3);

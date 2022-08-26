@@ -57,6 +57,7 @@ public interface EntityTypeConstants {
   String K8S_BG_SWAP_SERVICES = "K8sBGSwapServices";
   String K8S_CANARY_DELETE = "K8sCanaryDelete";
   String RUN_STEP = "Run";
+  String BACKGROUND_STEP = "Background";
   String RUN_TEST = "RunTests";
   String PLUGIN = "Plugin";
   String RESTORE_CACHE_GCS = "RestoreCacheGCS";
@@ -110,4 +111,5 @@ public interface EntityTypeConstants {
   String JENKINS_BUILD = "JenkinsBuild";
   String AZURE_CREATE_ARM_RESOURCE_STEP = "AzureCreateARMResource";
   String AZURE_CREATE_BP_RESOURCE_STEP = "AzureCreateBPResource";
+  String AZURE_ROLLBACK_ARM_RESOURCE_STEP = "AzureARMRollback";
 }

@@ -83,6 +83,7 @@ public final class MonitoredService
   private long lastUpdatedAt;
   private long createdAt;
   private boolean enabled;
+  private long lastDisabledAt;
   List<NotificationRuleRef> notificationRuleRefs;
   @FdIndex private long nextNotificationIteration;
   String templateIdentifier;

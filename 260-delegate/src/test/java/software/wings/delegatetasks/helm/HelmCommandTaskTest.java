@@ -11,7 +11,6 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.rule.OwnerRule.ABOSII;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
@@ -28,6 +27,7 @@ import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.task.helm.HelmCommandResponse;
 import io.harness.k8s.K8sGlobalConfigService;
+import io.harness.k8s.model.KubernetesConfig;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.logging.NoopExecutionCallback;
@@ -45,7 +45,6 @@ import software.wings.helpers.ext.helm.request.HelmReleaseHistoryCommandRequest;
 import software.wings.helpers.ext.helm.request.HelmRollbackCommandRequest;
 import software.wings.helpers.ext.helm.response.HelmInstallCommandResponse;
 import software.wings.helpers.ext.helm.response.HelmReleaseHistoryCommandResponse;
-import software.wings.service.impl.ContainerServiceParams;
 
 import java.io.IOException;
 import org.apache.commons.lang3.NotImplementedException;
@@ -78,6 +77,8 @@ public class HelmCommandTaskTest extends WingsBaseTest {
     doReturn(ensureHelmInstalledResponse).when(helmDeployService).ensureHelmInstalled(any(HelmCommandRequest.class));
 
     when(k8sGlobalConfigService.getOcPath()).thenReturn("/tmp");
+    when(containerDeploymentDelegateHelper.getKubernetesConfig(any())).thenReturn(KubernetesConfig.builder().build());
+    when(containerDeploymentDelegateHelper.createKubeConfig(any())).thenReturn(".kube/config");
   }
 
   @Test
@@ -87,9 +88,6 @@ public class HelmCommandTaskTest extends WingsBaseTest {
     String kubeConfigLocation = ".kube/config";
 
     doReturn(mock(LogCallback.class)).when(dummyCommandRequest).getExecutionLogCallback();
-    doReturn(kubeConfigLocation)
-        .when(containerDeploymentDelegateHelper)
-        .createAndGetKubeConfigLocation(nullable(ContainerServiceParams.class));
     helmCommandTask.run(dummyCommandRequest);
 
     verify(helmDeployService, times(1)).ensureHelmInstalled(dummyCommandRequest);

@@ -61,6 +61,7 @@ public class SLODashboardWidget {
   public static class Point {
     long timestamp;
     double value;
+    boolean enabled;
   }
 
   public static SLODashboardWidgetBuilder withGraphData(SLOGraphData sloGraphData) {

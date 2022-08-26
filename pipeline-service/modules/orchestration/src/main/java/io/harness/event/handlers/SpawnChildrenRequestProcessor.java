@@ -15,6 +15,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.concurrency.ConcurrentChildInstance;
 import io.harness.concurrency.MaxConcurrentChildCallback;
+import io.harness.engine.OrchestrationEngine;
 import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.pms.resume.EngineResumeCallback;
 import io.harness.execution.InitiateNodeHelper;
@@ -36,6 +37,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
@@ -49,6 +51,7 @@ public class SpawnChildrenRequestProcessor implements SdkResponseProcessor {
   @Inject private InitiateNodeHelper initiateNodeHelper;
   @Inject private PmsFeatureFlagService pmsFeatureFlagService;
   @Inject private PmsGraphStepDetailsService nodeExecutionInfoService;
+  @Inject private OrchestrationEngine orchestrationEngine;
   @Inject @Named(OrchestrationPublisherName.PUBLISHER_NAME) private String publisherName;
 
   @Override
@@ -69,6 +72,12 @@ public class SpawnChildrenRequestProcessor implements SdkResponseProcessor {
       }
       for (int i = 0; i < request.getChildren().getChildrenList().size(); i++) {
         callbackIds.add(generateUuid());
+      }
+      if (callbackIds.isEmpty()) {
+        // If callbackIds are empty then it means that there are no children, we should just do a no-op and return to
+        // parent.
+        orchestrationEngine.resumeNodeExecution(ambiance, new HashMap<>(), false);
+        return;
       }
       if (isMatrixFeatureEnabled) {
         // Save the ConcurrentChildInstance in db first so that whenever callback is called, this information is readily

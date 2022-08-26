@@ -96,8 +96,8 @@ public class AzureRepoApiClient implements GitApiClient {
             AzureRepoConfig.builder().azureRepoUrl(getAzureRepoApiURL(azureRepoConnectorDTO.getUrl())).build();
 
         JSONObject mergePRResponse;
-        mergePRResponse = azureRepoService.mergePR(azureRepoConfig, gitApiTaskParams.getUserName(), token, sha,
-            gitApiTaskParams.getOwner(), project, repo, prNumber);
+        mergePRResponse = azureRepoService.mergePR(azureRepoConfig, token, sha, gitApiTaskParams.getOwner(), project,
+            repo, prNumber, gitApiTaskParams.isDeleteSourceBranch());
 
         if (mergePRResponse != null) {
           responseBuilder.commandExecutionStatus(CommandExecutionStatus.SUCCESS)
@@ -119,6 +119,11 @@ public class AzureRepoApiClient implements GitApiClient {
 
   @Override
   public List<GitPollingWebhookData> getWebhookRecentDeliveryEvents(GitHubPollingDelegateRequest attributesRequest) {
+    throw new InvalidRequestException("Not implemented");
+  }
+
+  @Override
+  public DelegateResponseData deleteRef(GitApiTaskParams gitApiTaskParams) {
     throw new InvalidRequestException("Not implemented");
   }
 

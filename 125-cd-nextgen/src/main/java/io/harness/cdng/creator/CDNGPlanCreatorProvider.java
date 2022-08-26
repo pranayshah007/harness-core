@@ -35,6 +35,7 @@ import io.harness.cdng.creator.plan.service.ServiceDefinitionPlanCreator;
 import io.harness.cdng.creator.plan.service.ServicePlanCreator;
 import io.harness.cdng.creator.plan.service.ServicePlanCreatorV2;
 import io.harness.cdng.creator.plan.stage.DeploymentStagePMSPlanCreatorV2;
+import io.harness.cdng.creator.plan.steps.AzureARMRollbackResourceStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.AzureCreateARMResourceStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.AzureCreateBPResourceStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.CDPMSStepFilterJsonCreator;
@@ -85,6 +86,7 @@ import io.harness.cdng.creator.variables.ServerlessAwsLambdaDeployStepVariableCr
 import io.harness.cdng.creator.variables.ServerlessAwsLambdaRollbackStepVariableCreator;
 import io.harness.cdng.jenkins.jenkinsstep.JenkinsBuildStepVariableCreator;
 import io.harness.cdng.jenkins.jenkinsstep.JenkinsCreateStepPlanCreator;
+import io.harness.cdng.provision.azure.variablecreator.AzureARMRollbackStepVariableCreator;
 import io.harness.cdng.provision.azure.variablecreator.AzureCreateARMResourceStepVariableCreator;
 import io.harness.cdng.provision.azure.variablecreator.AzureCreateBPStepVariableCreator;
 import io.harness.cdng.provision.cloudformation.variablecreator.CloudformationCreateStepVariableCreator;
@@ -191,6 +193,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     planCreators.add(new ConnectionStringsPlanCreator());
     planCreators.add(new AzureCreateARMResourceStepPlanCreator());
     planCreators.add(new AzureCreateBPResourceStepPlanCreator());
+    planCreators.add(new AzureARMRollbackResourceStepPlanCreator());
     injectorUtils.injectMembers(planCreators);
     return planCreators;
   }
@@ -243,6 +246,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     variableCreators.add(new StrategyVariableCreator());
     variableCreators.add(new AzureCreateARMResourceStepVariableCreator());
     variableCreators.add(new AzureCreateBPStepVariableCreator());
+    variableCreators.add(new AzureARMRollbackStepVariableCreator());
     return variableCreators;
   }
 
@@ -516,6 +520,18 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
             .setFeatureFlag(FeatureName.AZURE_ARM_BP_NG.name())
             .build();
 
+    StepInfo azureARMRollback =
+        StepInfo.newBuilder()
+            .setName("Rollback Azure ARM Resources")
+            .setType(StepSpecTypeConstants.AZURE_ROLLBACK_ARM_RESOURCE)
+            .setFeatureRestrictionName(FeatureRestrictionName.AZURE_ROLLBACK_ARM_RESOURCE.name())
+            .setStepMetaData(StepMetaData.newBuilder()
+                                 .addAllCategory(AZURE_RESOURCE_CATEGORY)
+                                 .addFolderPaths(AZURE_RESOURCE_STEP_METADATA)
+                                 .build())
+            .setFeatureFlag(FeatureName.AZURE_ARM_BP_NG.name())
+            .build();
+
     List<StepInfo> stepInfos = new ArrayList<>();
 
     stepInfos.add(gitOpsCreatePR);
@@ -548,6 +564,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     stepInfos.add(jenkinsBuildStepInfo);
     stepInfos.add(azureCreateARMResources);
     stepInfos.add(azureCreateBPResources);
+    stepInfos.add(azureARMRollback);
     return stepInfos;
   }
 }

@@ -48,7 +48,6 @@ import io.harness.steps.approval.step.harness.beans.HarnessApprovalActivityReque
 import io.harness.steps.approval.step.harness.entities.HarnessApprovalInstance;
 import io.harness.user.remote.UserClient;
 import io.harness.usergroups.UserGroupClient;
-import io.harness.utils.NGFeatureFlagHelperService;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -81,14 +80,13 @@ public class ApprovalResourceImplServiceImplTest extends CategoryTest {
   @Mock private UserGroupClient userGroupClient;
   @Mock private CurrentUserHelper currentUserHelper;
   @Mock private UserClient userClient;
-  @Mock private NGFeatureFlagHelperService ngFeatureFlagHelperService;
 
   ApprovalResourceServiceImpl approvalResourceService;
   @Before
   public void setUp() {
     MockitoAnnotations.initMocks(this);
     approvalResourceService = new ApprovalResourceServiceImpl(approvalInstanceService, approvalInstanceResponseMapper,
-        planExecutionService, userGroupClient, currentUserHelper, userClient, ngFeatureFlagHelperService);
+        planExecutionService, userGroupClient, currentUserHelper, userClient);
   }
 
   @Test
@@ -167,8 +165,6 @@ public class ApprovalResourceImplServiceImplTest extends CategoryTest {
   @Owner(developers = HINGER)
   @Category(UnitTests.class)
   public void testSnippetWithServiceNowCreateUpdate() throws IOException {
-    MockedStatic<NGRestUtils> aStatic = Mockito.mockStatic(NGRestUtils.class);
-    when(ngFeatureFlagHelperService.isEnabled(any(), any())).thenReturn(true);
     String yaml = approvalResourceService.getYamlSnippet(ApprovalType.SERVICENOW_APPROVAL, "accountId");
     assertThat(yaml.contains(EntityTypeConstants.SERVICENOW_CREATE)).isTrue();
     assertThat(yaml.contains(EntityTypeConstants.SERVICENOW_UPDATE)).isTrue();

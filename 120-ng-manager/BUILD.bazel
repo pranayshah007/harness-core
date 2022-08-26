@@ -640,6 +640,7 @@ shared_dependencies = [
     "@maven//:xpp3_xpp3",
     "@maven//:io_harness_ff_java_server_sdk",
     "@maven//:io_harness_cv_data_collection_dsl",
+    "@maven//:io_harness_ng_manager_server_spec",
     "@maven//:io_swagger_core_v3_swagger_jaxrs2",
     "@maven//:io_swagger_core_v3_swagger_jaxrs2_servlet_initializer_v2",
     "@maven//:io_swagger_core_v3_swagger_core",
