@@ -98,7 +98,7 @@ public class HashicorpVaultEncryptor implements VaultEncryptor {
             () -> upsertSecretInternal(name, plaintext, accountId, existingRecord, vaultConfig, false));
       } catch (Exception e) {
         failedAttempts++;
-        log.warn("encryption failed. trial num: {}", failedAttempts, e);
+        log.warn("encryption failed. trial num for: {}", failedAttempts, e);
         if (failedAttempts == NUM_OF_RETRIES) {
           if (e instanceof UncheckedTimeoutException) {
             throw timeoutException(e);
