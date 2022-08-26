@@ -10,10 +10,12 @@ package io.harness.delegate.k8s;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.delegate.k8s.K8sRollingBaseHandler.HARNESS_TRACK_STABLE_SELECTOR;
-import static io.harness.delegate.k8s.releasehistory.ReleaseConstants.RELEASE_HARNESS_SECRET_TYPE;
-import static io.harness.delegate.k8s.releasehistory.ReleaseConstants.RELEASE_KEY;
-import static io.harness.delegate.k8s.releasehistory.ReleaseConstants.RELEASE_OWNER_LABEL_KEY;
-import static io.harness.delegate.k8s.releasehistory.ReleaseConstants.RELEASE_OWNER_LABEL_VALUE;
+import static io.harness.delegate.k8s.releasehistory.K8sReleaseConstants.RELEASE_HARNESS_SECRET_LABELS;
+import static io.harness.delegate.k8s.releasehistory.K8sReleaseConstants.RELEASE_HARNESS_SECRET_TYPE;
+import static io.harness.delegate.k8s.releasehistory.K8sReleaseConstants.RELEASE_KEY;
+import static io.harness.delegate.k8s.releasehistory.K8sReleaseConstants.RELEASE_NUMBER_LABEL_KEY;
+import static io.harness.delegate.k8s.releasehistory.K8sReleaseConstants.RELEASE_OWNER_LABEL_KEY;
+import static io.harness.delegate.k8s.releasehistory.K8sReleaseConstants.RELEASE_OWNER_LABEL_VALUE;
 import static io.harness.delegate.task.k8s.K8sTaskHelperBase.getTimeoutMillisFromMinutes;
 import static io.harness.k8s.K8sCommandUnitConstants.Apply;
 import static io.harness.k8s.K8sCommandUnitConstants.FetchFiles;
@@ -43,7 +45,8 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FileData;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
-import io.harness.delegate.k8s.releasehistory.ReleaseHistoryServiceImpl;
+import io.harness.delegate.k8s.releasehistory.K8sReleaseHistoryService;
+import io.harness.delegate.k8s.releasehistory.K8sReleaseService;
 import io.harness.delegate.task.k8s.ContainerDeploymentDelegateBaseHelper;
 import io.harness.delegate.task.k8s.K8sDeployRequest;
 import io.harness.delegate.task.k8s.K8sDeployResponse;
@@ -75,6 +78,7 @@ import com.google.inject.Inject;
 import io.kubernetes.client.openapi.models.V1Secret;
 import java.nio.file.Paths;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -92,7 +96,8 @@ public class K8sRollingRequestHandler extends K8sRequestHandler {
   @Inject private K8sTaskHelperBase k8sTaskHelperBase;
   @Inject K8sRollingBaseHandler k8sRollingBaseHandler;
   @Inject private ContainerDeploymentDelegateBaseHelper containerDeploymentDelegateBaseHelper;
-  @Inject private ReleaseHistoryServiceImpl releaseHistoryService;
+  @Inject private K8sReleaseHistoryService releaseHistoryService;
+  @Inject private K8sReleaseService releaseService;
 
   private KubernetesConfig kubernetesConfig;
   private Kubectl client;
@@ -150,6 +155,7 @@ public class K8sRollingRequestHandler extends K8sRequestHandler {
       k8sTaskHelperBase.getLogCallback(logStreamingTaskClient, WaitForSteadyState, true, commandUnitsProgress)
           .saveExecutionLog("Skipping Status Check since there is no Managed Workload.", INFO, SUCCESS);
     } else {
+      releaseHistoryService.markStatusAndSaveRelease(currentRelease, Status.Succeeded.name(), kubernetesConfig);
       List<KubernetesResourceId> managedWorkloadKubernetesResourceIds =
           managedWorkloads.stream().map(KubernetesResource::getResourceId).collect(Collectors.toList());
       LogCallback waitForeSteadyStateLogCallback =
@@ -187,13 +193,11 @@ public class K8sRollingRequestHandler extends K8sRequestHandler {
             .loadBalancer(loadBalancer)
             .build();
 
-    releaseHistoryService.updateReleaseStatus(currentRelease, Status.Succeeded.name());
-    releaseHistoryService.saveRelease(currentRelease, kubernetesConfig);
+    releaseHistoryService.markStatusAndSaveRelease(currentRelease, Status.Succeeded.name(), kubernetesConfig);
     executionLogCallback.saveExecutionLog("\nDone.", INFO, CommandExecutionStatus.SUCCESS);
 
     if (k8sRollingDeployRequest.isPruningEnabled()) {
-      V1Secret lastSuccessfulRelease =
-          releaseHistoryService.getLastSuccessfulRelease(releaseList, currentReleaseNumber);
+      V1Secret lastSuccessfulRelease = releaseService.getLastSuccessfulRelease(releaseList, currentReleaseNumber);
       LogCallback pruneResourcesLogCallback =
           k8sTaskHelperBase.getLogCallback(logStreamingTaskClient, Prune, true, commandUnitsProgress);
       List<KubernetesResourceId> prunedResourceIds =
@@ -216,7 +220,7 @@ public class K8sRollingRequestHandler extends K8sRequestHandler {
     }
 
     List<KubernetesResource> resourcesFromPreviousSuccessfulRelease =
-        releaseHistoryService.getResourcesFromRelease(previousSuccessfulRelease);
+        releaseService.getResourcesFromRelease(previousSuccessfulRelease);
 
     if (isEmpty(resourcesFromPreviousSuccessfulRelease)) {
       String logCallbackMessage =
@@ -230,7 +234,7 @@ public class K8sRollingRequestHandler extends K8sRequestHandler {
     if (isEmpty(resourcesToPrune)) {
       executionLogCallback.saveExecutionLog(
           format("No resource is eligible to be pruned from last successful release %s, So no pruning required",
-              previousSuccessfulRelease.getMetadata() != null ? previousSuccessfulRelease.getMetadata().getName() : ""),
+              releaseService.getReleaseLabelValue(previousSuccessfulRelease, RELEASE_NUMBER_LABEL_KEY)),
           INFO, CommandExecutionStatus.SUCCESS);
       return emptyList();
     }
@@ -244,8 +248,7 @@ public class K8sRollingRequestHandler extends K8sRequestHandler {
   @Override
   protected void handleTaskFailure(K8sDeployRequest request, Exception exception) throws Exception {
     if (shouldSaveReleaseHistory) {
-      releaseHistoryService.updateReleaseStatus(currentRelease, Status.Failed.name());
-      releaseHistoryService.saveRelease(currentRelease, kubernetesConfig);
+      releaseHistoryService.markStatusAndSaveRelease(currentRelease, Status.Failed.name(), kubernetesConfig);
     }
   }
 
@@ -258,10 +261,11 @@ public class K8sRollingRequestHandler extends K8sRequestHandler {
         containerDeploymentDelegateBaseHelper.createKubernetesConfig(request.getK8sInfraDelegateConfig());
     client = Kubectl.client(k8sDelegateTaskParams.getKubectlPath(), k8sDelegateTaskParams.getKubeconfigPath());
 
-    releaseList = releaseHistoryService.getReleaseHistory(kubernetesConfig,
-        Map.of(RELEASE_KEY, request.getReleaseName(), RELEASE_OWNER_LABEL_KEY, RELEASE_OWNER_LABEL_VALUE),
-        RELEASE_HARNESS_SECRET_TYPE);
-    currentReleaseNumber = releaseHistoryService.getCurrentReleaseNumber(releaseList);
+    Map<String, String> labels = new HashMap<>(RELEASE_HARNESS_SECRET_LABELS);
+    labels.put(RELEASE_KEY, request.getReleaseName());
+
+    releaseList = releaseHistoryService.getReleaseHistory(kubernetesConfig, labels, RELEASE_HARNESS_SECRET_TYPE);
+    currentReleaseNumber = releaseService.getCurrentReleaseNumber(releaseList);
 
     k8sTaskHelperBase.deleteSkippedManifestFiles(manifestFilesDirectory, executionLogCallback);
 
@@ -284,8 +288,7 @@ public class K8sRollingRequestHandler extends K8sRequestHandler {
 
     executionLogCallback.saveExecutionLog(ManifestHelper.toYamlForLogs(resources));
 
-    currentRelease = releaseHistoryService.createRelease(
-        releaseName, currentReleaseNumber, ManifestHelper.toYaml(resources), Status.InProgress.name());
+    currentRelease = releaseHistoryService.createRelease(releaseName, currentReleaseNumber, Status.InProgress.name());
 
     if (request.isSkipDryRun()) {
       executionLogCallback.saveExecutionLog(color("\nSkipping Dry Run", Yellow, Bold), INFO);
@@ -306,7 +309,7 @@ public class K8sRollingRequestHandler extends K8sRequestHandler {
 
     executionLogCallback.saveExecutionLog("\nCurrent release number is: " + currentReleaseNumber);
 
-    releaseHistoryService.cleanReleases(kubernetesConfig, releaseName, currentReleaseNumber, releaseList);
+    releaseHistoryService.cleanReleaseHistory(kubernetesConfig, releaseName, currentReleaseNumber, releaseList);
 
     customWorkloads = getCustomResourceDefinitionWorkloads(resources);
     nonManagedResources = getNonManagedResources(resources, managedWorkloads, customWorkloads);
@@ -331,6 +334,6 @@ public class K8sRollingRequestHandler extends K8sRequestHandler {
     resources = Stream.of(managedWorkloads, customWorkloads, nonManagedResources)
                     .flatMap(Collection::stream)
                     .collect(Collectors.toList());
-    releaseHistoryService.setResourcesInRelease(currentRelease, resources);
+    releaseService.setResourcesInRelease(currentRelease, resources);
   }
 }

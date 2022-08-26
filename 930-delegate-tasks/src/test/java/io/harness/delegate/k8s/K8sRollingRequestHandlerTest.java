@@ -18,6 +18,8 @@ import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.joor.Reflect.on;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyList;
@@ -37,6 +39,8 @@ import io.harness.beans.FileData;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
+import io.harness.delegate.k8s.releasehistory.K8sReleaseHistoryService;
+import io.harness.delegate.k8s.releasehistory.K8sReleaseService;
 import io.harness.delegate.task.k8s.ContainerDeploymentDelegateBaseHelper;
 import io.harness.delegate.task.k8s.K8sDeployResponse;
 import io.harness.delegate.task.k8s.K8sInfraDelegateConfig;
@@ -58,6 +62,8 @@ import io.harness.k8s.model.Release;
 import io.harness.logging.LogCallback;
 import io.harness.rule.Owner;
 
+import io.kubernetes.client.openapi.models.V1Secret;
+import io.kubernetes.client.openapi.models.V1SecretBuilder;
 import java.util.List;
 import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
@@ -76,6 +82,8 @@ public class K8sRollingRequestHandlerTest extends CategoryTest {
   @Mock KubernetesContainerService kubernetesContainerService;
   @Mock K8sTaskHelperBase taskHelperBase;
   @Mock ContainerDeploymentDelegateBaseHelper containerDeploymentDelegateBaseHelper;
+  @Mock K8sReleaseService releaseService;
+  @Mock K8sReleaseHistoryService releaseHistoryService;
 
   @InjectMocks @Spy K8sRollingBaseHandler baseHandler;
   @InjectMocks @Spy K8sRollingRequestHandler rollingRequestHandler;
@@ -162,8 +170,7 @@ public class K8sRollingRequestHandlerTest extends CategoryTest {
                                rollingDeployRequest, delegateTaskParams, logStreamingTaskClient, commandUnitsProgress))
         .isEqualTo(thrownException);
 
-    verify(kubernetesContainerService, times(1))
-        .saveReleaseHistory(any(KubernetesConfig.class), anyString(), anyString(), anyBoolean());
+    verify(releaseHistoryService, times(1)).markStatusAndSaveRelease(any(), anyString(), any(KubernetesConfig.class));
     verify(baseHandler, times(1))
         .addLabelsInDeploymentSelectorForCanary(anyBoolean(), anyBoolean(), anyList(), anyList());
   }
@@ -180,6 +187,14 @@ public class K8sRollingRequestHandlerTest extends CategoryTest {
             .manifestDelegateConfig(K8sManifestDelegateConfig.builder().build())
             .k8sInfraDelegateConfig(mock(K8sInfraDelegateConfig.class))
             .build();
+    doReturn(emptyList())
+        .when(releaseHistoryService)
+        .getReleaseHistory(any(KubernetesConfig.class), anyMap(), anyMap());
+    doReturn(1).when(releaseService).getCurrentReleaseNumber(anyList());
+    doReturn(new V1SecretBuilder().build())
+        .when(releaseHistoryService)
+        .createRelease(anyString(), anyInt(), anyString());
+
     List<KubernetesResourceId> prunedResourceIds = singletonList(KubernetesResourceId.builder().build());
     doReturn(prunedResourceIds).when(rollingRequestHandler).prune(any(), any(), any());
 
@@ -196,13 +211,18 @@ public class K8sRollingRequestHandlerTest extends CategoryTest {
     on(rollingRequestHandler).set("release", Release.builder().resourcesWithSpec(emptyList()).build());
     assertThat(rollingRequestHandler.prune(null, null, logCallback)).isEmpty();
 
-    Release releaseWithEmptySpecs = Release.builder().resourcesWithSpec(emptyList()).build();
-    assertThat(rollingRequestHandler.prune(null, releaseWithEmptySpecs, logCallback)).isEmpty();
+    //    Release releaseWithEmptySpecs = Release.builder().resourcesWithSpec(emptyList()).build();
+    V1Secret dummyRelease = new V1SecretBuilder().build();
+    doReturn(emptyList()).when(releaseService).getResourcesFromRelease(any(V1Secret.class));
+    assertThat(rollingRequestHandler.prune(null, dummyRelease, logCallback)).isEmpty();
 
+    doReturn(singletonList(KubernetesResource.builder().build()))
+        .when(releaseService)
+        .getResourcesFromRelease(any(V1Secret.class));
     doReturn(emptyList()).when(taskHelperBase).getResourcesToBePrunedInOrder(any(), any());
-    Release releaseWithDummySpec =
-        Release.builder().resourcesWithSpec(singletonList(KubernetesResource.builder().build())).build();
-    assertThat(rollingRequestHandler.prune(null, releaseWithDummySpec, logCallback)).isEmpty();
+    //    Release releaseWithDummySpec =
+    //        Release.builder().resourcesWithSpec(singletonList(KubernetesResource.builder().build())).build();
+    assertThat(rollingRequestHandler.prune(null, dummyRelease, logCallback)).isEmpty();
   }
 
   @Test
@@ -210,18 +230,19 @@ public class K8sRollingRequestHandlerTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testPruning() throws Exception {
     on(rollingRequestHandler).set("release", Release.builder().resourcesWithSpec(emptyList()).build());
-    Release releaseWithDummySpec =
-        Release.builder().resourcesWithSpec(singletonList(KubernetesResource.builder().build())).build();
+    //    Release releaseWithDummySpec =
+    //        Release.builder().resourcesWithSpec(singletonList(KubernetesResource.builder().build())).build();
+    V1Secret dummyRelease = new V1SecretBuilder().build();
     List<KubernetesResourceId> toBePruned = singletonList(
         KubernetesResourceId.builder().kind("Deployment").name("test-deployment").versioned(false).build());
+    doReturn(singletonList(KubernetesResource.builder().build()))
+        .when(releaseService)
+        .getResourcesFromRelease(any(V1Secret.class));
     doReturn(toBePruned)
         .when(taskHelperBase)
-        .executeDeleteHandlingPartialExecution(any(Kubectl.class), any(K8sDelegateTaskParams.class),
-            anyListOf(KubernetesResourceId.class), any(LogCallback.class), anyBoolean());
-    doReturn(toBePruned)
-        .when(taskHelperBase)
-        .getResourcesToBePrunedInOrder(anyListOf(KubernetesResource.class), anyListOf(KubernetesResource.class));
-    rollingRequestHandler.prune(null, releaseWithDummySpec, logCallback);
+        .executeDeleteHandlingPartialExecution(any(), any(), anyList(), any(LogCallback.class), anyBoolean());
+    doReturn(toBePruned).when(taskHelperBase).getResourcesToBePrunedInOrder(any(), any());
+    rollingRequestHandler.prune(null, dummyRelease, logCallback);
     verify(taskHelperBase).executeDeleteHandlingPartialExecution(any(), any(), captor.capture(), any(), anyBoolean());
 
     assertThat(captor.getValue().get(0)).isEqualTo(toBePruned.get(0));

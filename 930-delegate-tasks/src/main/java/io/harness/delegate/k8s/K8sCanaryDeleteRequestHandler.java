@@ -10,6 +10,12 @@ package io.harness.delegate.k8s;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.delegate.k8s.releasehistory.K8sReleaseConstants.RELEASE_HARNESS_SECRET_LABELS;
+import static io.harness.delegate.k8s.releasehistory.K8sReleaseConstants.RELEASE_HARNESS_SECRET_TYPE;
+import static io.harness.delegate.k8s.releasehistory.K8sReleaseConstants.RELEASE_KEY;
+import static io.harness.delegate.k8s.releasehistory.K8sReleaseConstants.RELEASE_OWNER_LABEL_KEY;
+import static io.harness.delegate.k8s.releasehistory.K8sReleaseConstants.RELEASE_OWNER_LABEL_VALUE;
+import static io.harness.delegate.k8s.releasehistory.K8sReleaseConstants.RELEASE_STATUS_LABEL_KEY;
 import static io.harness.delegate.task.k8s.K8sTaskHelperBase.getResourcesInStringFormat;
 import static io.harness.k8s.K8sCommandUnitConstants.Delete;
 import static io.harness.k8s.K8sCommandUnitConstants.Init;
@@ -29,6 +35,8 @@ import static java.lang.String.format;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
+import io.harness.delegate.k8s.releasehistory.K8sReleaseHistoryService;
+import io.harness.delegate.k8s.releasehistory.K8sReleaseService;
 import io.harness.delegate.task.k8s.ContainerDeploymentDelegateBaseHelper;
 import io.harness.delegate.task.k8s.K8sCanaryDeleteRequest;
 import io.harness.delegate.task.k8s.K8sDeployRequest;
@@ -39,15 +47,16 @@ import io.harness.k8s.K8sConstants;
 import io.harness.k8s.kubectl.Kubectl;
 import io.harness.k8s.model.K8sDelegateTaskParams;
 import io.harness.k8s.model.KubernetesConfig;
+import io.harness.k8s.model.KubernetesResource;
 import io.harness.k8s.model.KubernetesResourceId;
-import io.harness.k8s.model.Release;
-import io.harness.k8s.model.ReleaseHistory;
 import io.harness.logging.LogCallback;
 
 import com.google.inject.Inject;
-import java.io.IOException;
+import io.kubernetes.client.openapi.models.V1Secret;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
@@ -58,6 +67,8 @@ public class K8sCanaryDeleteRequestHandler extends K8sRequestHandler {
   @Inject K8sTaskHelperBase k8sTaskHelperBase;
   @Inject K8sDeleteBaseHandler k8sDeleteBaseHandler;
   @Inject private ContainerDeploymentDelegateBaseHelper containerDeploymentDelegateBaseHelper;
+  @Inject private K8sReleaseHistoryService releaseHistoryService;
+  @Inject private K8sReleaseService releaseService;
 
   private Kubectl client;
   private KubernetesConfig kubernetesConfig;
@@ -90,8 +101,7 @@ public class K8sCanaryDeleteRequestHandler extends K8sRequestHandler {
     return K8sDeployResponse.builder().commandExecutionStatus(SUCCESS).build();
   }
 
-  private void init(K8sCanaryDeleteRequest request, K8sDelegateTaskParams delegateParams, LogCallback logCallback)
-      throws Exception {
+  private void init(K8sCanaryDeleteRequest request, K8sDelegateTaskParams delegateParams, LogCallback logCallback) {
     logCallback.saveExecutionLog("Initializing...\n");
 
     client = Kubectl.client(delegateParams.getKubectlPath(), delegateParams.getKubeconfigPath());
@@ -117,19 +127,18 @@ public class K8sCanaryDeleteRequestHandler extends K8sRequestHandler {
     return true;
   }
 
-  private List<KubernetesResourceId> getCanaryResourceIdsFromReleaseHistory(String releaseName, LogCallback logCallback)
-      throws IOException {
+  private List<KubernetesResourceId> getCanaryResourceIdsFromReleaseHistory(
+      String releaseName, LogCallback logCallback) {
     logCallback.saveExecutionLog(format("Getting canary workloads from release %s\n", releaseName));
-    String releaseHistoryData = k8sTaskHelperBase.getReleaseHistoryData(kubernetesConfig, releaseName);
 
-    if (isEmpty(releaseHistoryData)) {
+    Map<String, String> labels = new HashMap<>(RELEASE_HARNESS_SECRET_LABELS);
+    labels.put(RELEASE_KEY, releaseName);
+
+    List<V1Secret> releaseHistory =
+        releaseHistoryService.getReleaseHistory(kubernetesConfig, labels, RELEASE_HARNESS_SECRET_TYPE);
+
+    if (isEmpty(releaseHistory)) {
       logCallback.saveExecutionLog(format("Empty or missing release history for release %s", releaseName), WARN);
-      return Collections.emptyList();
-    }
-
-    ReleaseHistory releaseHistory = ReleaseHistory.createFromData(releaseHistoryData);
-    if (isEmpty(releaseHistory.getReleases())) {
-      logCallback.saveExecutionLog(format("No previous deployments found for release %s", releaseName), WARN);
       return Collections.emptyList();
     }
 
@@ -137,15 +146,19 @@ public class K8sCanaryDeleteRequestHandler extends K8sRequestHandler {
     // Since we may catch some interrupted exceptions during task abortions it may happen that we will fail the canary
     // release. To ensure that the latest release is actually a canary release we have a more deep logic
     // in K8s Canary Delete Step (we will rely on release history only when we queued K8s Canary Task and step expire)
-    Release release = releaseHistory.getLatestRelease();
-    if (InProgress != release.getStatus() && Failed != release.getStatus()) {
+
+    V1Secret release = releaseService.getLatestRelease(releaseHistory);
+    String releaseStatus = releaseService.getReleaseLabelValue(release, RELEASE_STATUS_LABEL_KEY);
+
+    if (!InProgress.name().equals(releaseStatus) && !Failed.name().equals(releaseStatus)) {
       logCallback.saveExecutionLog(
           format("Unable to identify any canary deployments for release %s.", releaseName), WARN);
       return Collections.emptyList();
     }
 
-    return release.getResources()
-        .stream()
+    List<KubernetesResource> resources = releaseService.getResourcesFromRelease(release);
+    return resources.stream()
+        .map(KubernetesResource::getResourceId)
         .filter(resource -> resource.getName().endsWith(K8sConstants.CANARY_WORKLOAD_SUFFIX_NAME))
         .collect(Collectors.toList());
   }

@@ -10,6 +10,7 @@ package io.harness.delegate.k8s;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.delegate.k8s.releasehistory.K8sReleaseConstants.RELEASE_NUMBER_LABEL_KEY;
 import static io.harness.exception.ExceptionUtils.getMessage;
 import static io.harness.govern.Switch.unhandled;
 import static io.harness.logging.CommandExecutionStatus.RUNNING;
@@ -23,12 +24,13 @@ import static software.wings.beans.LogHelper.color;
 import static software.wings.beans.LogWeight.Bold;
 
 import static java.lang.String.format;
-import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.delegate.k8s.releasehistory.K8sReleaseHistoryService;
+import io.harness.delegate.k8s.releasehistory.K8sReleaseService;
 import io.harness.delegate.task.k8s.K8sTaskHelperBase;
 import io.harness.k8s.KubernetesContainerService;
 import io.harness.k8s.kubectl.Kubectl;
@@ -39,8 +41,6 @@ import io.harness.k8s.model.K8sPod;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.k8s.model.KubernetesResource;
 import io.harness.k8s.model.KubernetesResourceId;
-import io.harness.k8s.model.Release;
-import io.harness.k8s.model.ReleaseHistory;
 import io.harness.logging.LogCallback;
 
 import software.wings.beans.LogColor;
@@ -48,9 +48,9 @@ import software.wings.beans.LogColor;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1Service;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -64,6 +64,8 @@ import org.jetbrains.annotations.NotNull;
 public class K8sBGBaseHandler {
   @Inject K8sTaskHelperBase k8sTaskHelperBase;
   @Inject KubernetesContainerService kubernetesContainerService;
+  @Inject private K8sReleaseHistoryService releaseHistoryService;
+  @Inject private K8sReleaseService releaseService;
 
   private String encodeColor(String color) {
     switch (color) {
@@ -144,13 +146,13 @@ public class K8sBGBaseHandler {
     return allPods;
   }
 
-  public PrePruningInfo cleanupForBlueGreen(K8sDelegateTaskParams k8sDelegateTaskParams, ReleaseHistory releaseHistory,
-      LogCallback executionLogCallback, String primaryColor, String stageColor, Release currentRelease, Kubectl client)
-      throws Exception {
+  public PrePruningInfo cleanup(KubernetesConfig kubernetesConfig, K8sDelegateTaskParams k8sDelegateTaskParams,
+      List<V1Secret> releaseList, LogCallback executionLogCallback, String primaryColor, String stageColor,
+      Kubectl client, int currentReleaseNumber, String releaseName) throws Exception {
     if (StringUtils.equals(primaryColor, stageColor)) {
       return PrePruningInfo.builder()
           .deletedResourcesInStage(emptyList())
-          .releaseHistoryBeforeStageCleanUp(releaseHistory)
+          .releaseHistoryBeforeCleanup(releaseList)
           .build();
     }
 
@@ -159,45 +161,43 @@ public class K8sBGBaseHandler {
 
     executionLogCallback.saveExecutionLog("\nCleaning up non primary releases");
 
-    List<KubernetesResourceId> resourceDeleted = new ArrayList<>();
-    for (int releaseIndex = releaseHistory.getReleases().size() - 1; releaseIndex >= 0; releaseIndex--) {
-      Release release = releaseHistory.getReleases().get(releaseIndex);
-      if (release.getNumber() != currentRelease.getNumber() && release.getManagedWorkload() != null
-          && release.getManagedWorkload().getName().endsWith(stageColor)) {
-        for (int resourceIndex = release.getResources().size() - 1; resourceIndex >= 0; resourceIndex--) {
-          KubernetesResourceId resourceId = release.getResources().get(resourceIndex);
-          if (resourceId.isVersioned()) {
-            k8sTaskHelperBase.delete(client, k8sDelegateTaskParams, asList(resourceId), executionLogCallback, true);
-            resourceDeleted.add(resourceId);
-          }
-        }
-      }
+    List<V1Secret> nonPrimaryReleases =
+        releaseService.getReleasesMatchingColor(releaseList, stageColor, currentReleaseNumber);
+
+    List<KubernetesResourceId> resourcesToDelete =
+        nonPrimaryReleases.stream()
+            .flatMap(release -> releaseService.getResourcesFromRelease(release).stream())
+            .map(KubernetesResource::getResourceId)
+            .filter(KubernetesResourceId::isVersioned)
+            .collect(toList());
+
+    Set<String> releaseNumbersToDelete = releaseService.getReleaseNumbers(nonPrimaryReleases);
+
+    if (isNotEmpty(resourcesToDelete)) {
+      k8sTaskHelperBase.delete(client, k8sDelegateTaskParams, resourcesToDelete, executionLogCallback, true);
     }
 
-    PrePruningInfo prePruningInfo = PrePruningInfo.builder()
-                                        .releaseHistoryBeforeStageCleanUp(releaseHistory.cloneInternal())
-                                        .deletedResourcesInStage(resourceDeleted)
-                                        .build();
+    if (isNotEmpty(releaseNumbersToDelete)) {
+      releaseHistoryService.deleteReleases(kubernetesConfig, releaseName, releaseNumbersToDelete);
+    }
 
-    releaseHistory.getReleases().removeIf(release
-        -> release.getNumber() != currentRelease.getNumber() && release.getManagedWorkload() != null
-            && release.getManagedWorkload().getName().endsWith(stageColor));
-
-    return prePruningInfo;
+    return PrePruningInfo.builder()
+        .releaseHistoryBeforeCleanup(releaseList)
+        .deletedResourcesInStage(resourcesToDelete)
+        .build();
   }
 
   public List<KubernetesResourceId> pruneForBg(K8sDelegateTaskParams k8sDelegateTaskParams,
       LogCallback executionLogCallback, String primaryColor, String stageColor, PrePruningInfo prePruningInfo,
-      Release currentRelease, Kubectl client) {
-    // Todo: Investigate when this case is possible
+      V1Secret currentRelease, Kubectl client, int currentReleaseNumber) {
     try {
       if (StringUtils.equals(primaryColor, stageColor)) {
         executionLogCallback.saveExecutionLog("Primary and secondary service are at same color, No pruning required.");
         return emptyList();
       }
-      ReleaseHistory oldReleaseHistory = prePruningInfo.getReleaseHistoryBeforeStageCleanUp();
+      List<V1Secret> oldReleaseHistory = prePruningInfo.getReleaseHistoryBeforeCleanup();
 
-      if (oldReleaseHistory == null || isEmpty(oldReleaseHistory.getReleases())) {
+      if (oldReleaseHistory == null || isEmpty(oldReleaseHistory)) {
         executionLogCallback.saveExecutionLog(
             "No older releases are available in release history, No pruning Required.");
         return emptyList();
@@ -208,23 +208,29 @@ public class K8sBGBaseHandler {
       executionLogCallback.saveExecutionLog("Pruning up resources in non primary releases");
 
       Set<KubernetesResourceId> resourcesUsedInPrimaryReleases =
-          getResourcesUsedInPrimaryReleases(oldReleaseHistory, currentRelease, primaryColor);
-      Set<KubernetesResourceId> resourcesInCurrentRelease = new HashSet<>(currentRelease.getResources());
+          releaseService.getReleasesMatchingColor(oldReleaseHistory, primaryColor, currentReleaseNumber)
+              .stream()
+              .flatMap(release -> releaseService.getResourcesFromRelease(release).stream())
+              .map(KubernetesResource::getResourceId)
+              .collect(toSet());
+      Set<KubernetesResourceId> resourcesInCurrentRelease = releaseService.getResourcesFromRelease(currentRelease)
+                                                                .stream()
+                                                                .map(KubernetesResource::getResourceId)
+                                                                .collect(toSet());
       Set<KubernetesResourceId> alreadyDeletedResources = new HashSet<>(prePruningInfo.getDeletedResourcesInStage());
       List<KubernetesResourceId> resourcesPruned = new ArrayList<>();
+      List<V1Secret> nonPrimaryReleases =
+          releaseService.getReleasesMatchingColor(oldReleaseHistory, stageColor, currentReleaseNumber);
 
-      for (int releaseIndex = oldReleaseHistory.getReleases().size() - 1; releaseIndex >= 0; releaseIndex--) {
-        // deleting resources per release seems safer and more accountable
-        Release release = oldReleaseHistory.getReleases().get(releaseIndex);
-        if (isReleaseAssociatedWithStage(stageColor, currentRelease, release)) {
-          List<KubernetesResourceId> resourcesDeleted =
-              pruneInternalForStageRelease(k8sDelegateTaskParams, executionLogCallback, client,
-                  resourcesUsedInPrimaryReleases, resourcesInCurrentRelease, alreadyDeletedResources, release);
-          resourcesPruned.addAll(resourcesDeleted);
-          // to handle the case where multiple stage releases have same undesired resources for current release
-          alreadyDeletedResources.addAll(resourcesDeleted);
-        }
+      for (V1Secret release : nonPrimaryReleases) {
+        List<KubernetesResourceId> resourcesDeleted =
+            pruneInternalForStageRelease(k8sDelegateTaskParams, executionLogCallback, client,
+                resourcesUsedInPrimaryReleases, resourcesInCurrentRelease, alreadyDeletedResources, release);
+        resourcesPruned.addAll(resourcesDeleted);
+        // to handle the case where multiple stage releases have same undesired resources for current release
+        alreadyDeletedResources.addAll(resourcesDeleted);
       }
+
       if (isEmpty(resourcesPruned)) {
         executionLogCallback.saveExecutionLog("No resources needed to be pruned", INFO, RUNNING);
       }
@@ -240,14 +246,15 @@ public class K8sBGBaseHandler {
   private List<KubernetesResourceId> pruneInternalForStageRelease(K8sDelegateTaskParams k8sDelegateTaskParams,
       LogCallback executionLogCallback, Kubectl client, Set<KubernetesResourceId> resourcesUsedInPrimaryReleases,
       Set<KubernetesResourceId> resourcesInCurrentRelease, Set<KubernetesResourceId> alreadyDeletedResources,
-      Release release) throws Exception {
-    if (isEmpty(release.getResourcesWithSpec())) {
+      V1Secret release) throws Exception {
+    List<KubernetesResource> resources = releaseService.getResourcesFromRelease(release);
+    if (isEmpty(resources)) {
       executionLogCallback.saveExecutionLog(
-          "Previous successful deployment executed with pruning disabled, Pruning can't be done", INFO, RUNNING);
+          "Did not find any resources in the previous release, skipping pruning.", INFO, RUNNING);
       return emptyList();
     }
     List<KubernetesResourceId> resourcesToBePrunedInOrder = getResourcesToBePrunedInOrder(
-        resourcesUsedInPrimaryReleases, resourcesInCurrentRelease, alreadyDeletedResources, release);
+        resourcesUsedInPrimaryReleases, resourcesInCurrentRelease, alreadyDeletedResources, resources);
 
     logIfPruningRequiredForRelease(executionLogCallback, release, resourcesToBePrunedInOrder);
 
@@ -258,15 +265,14 @@ public class K8sBGBaseHandler {
   @NotNull
   private List<KubernetesResourceId> getResourcesToBePrunedInOrder(
       Set<KubernetesResourceId> resourcesUsedInPrimaryReleases, Set<KubernetesResourceId> resourcesInCurrentRelase,
-      Set<KubernetesResourceId> alreadyDeletedResources, Release release) {
+      Set<KubernetesResourceId> alreadyDeletedResources, List<KubernetesResource> resources) {
     Set<KubernetesResourceId> resourcesToRetain = new HashSet<>();
     resourcesToRetain.addAll(alreadyDeletedResources);
     resourcesToRetain.addAll(resourcesUsedInPrimaryReleases);
     resourcesToRetain.addAll(resourcesInCurrentRelase);
 
     List<KubernetesResourceId> resourcesToBePruned =
-        release.getResourcesWithSpec()
-            .stream()
+        resources.stream()
             .filter(resource -> !resourcesToRetain.contains(resource.getResourceId()))
             .filter(resource -> !resource.isSkipPruning())
             .map(KubernetesResource::getResourceId)
@@ -276,32 +282,12 @@ public class K8sBGBaseHandler {
   }
 
   private void logIfPruningRequiredForRelease(
-      LogCallback executionLogCallback, Release release, List<KubernetesResourceId> resourceasToBePruned) {
+      LogCallback executionLogCallback, V1Secret release, List<KubernetesResourceId> resourceasToBePruned) {
+    String releaseNumber = releaseService.getReleaseLabelValue(release, RELEASE_NUMBER_LABEL_KEY);
     if (isNotEmpty(resourceasToBePruned)) {
-      executionLogCallback.saveExecutionLog(format("Pruning resources of release %s", release.getNumber()));
+      executionLogCallback.saveExecutionLog(format("Pruning resources of release %s", releaseNumber));
     } else {
-      executionLogCallback.saveExecutionLog(format("No resource to be pruned for release %s", release.getNumber()));
+      executionLogCallback.saveExecutionLog(format("No resource to be pruned for release %s", releaseNumber));
     }
-  }
-
-  @NotNull
-  private Set<KubernetesResourceId> getResourcesUsedInPrimaryReleases(
-      ReleaseHistory releaseHistory, Release currentRelease, String primaryColor) {
-    return releaseHistory.getReleases()
-        .stream()
-        .filter(release -> isReleaseAssociatedWithPrimary(primaryColor, currentRelease, release))
-        .map(Release::getResources)
-        .flatMap(Collection::stream)
-        .collect(toSet());
-  }
-
-  private boolean isReleaseAssociatedWithStage(String stageColor, Release currentRelease, Release release) {
-    return release.getNumber() != currentRelease.getNumber() && release.getManagedWorkload() != null
-        && release.getManagedWorkload().getName().endsWith(stageColor);
-  }
-
-  private boolean isReleaseAssociatedWithPrimary(String primaryColor, Release currentRelease, Release release) {
-    return release.getNumber() != currentRelease.getNumber() && release.getManagedWorkload() != null
-        && release.getManagedWorkload().getName().endsWith(primaryColor);
   }
 }

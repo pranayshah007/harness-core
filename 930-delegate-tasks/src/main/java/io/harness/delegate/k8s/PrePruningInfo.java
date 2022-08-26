@@ -11,8 +11,8 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.k8s.model.KubernetesResourceId;
-import io.harness.k8s.model.ReleaseHistory;
 
+import io.kubernetes.client.openapi.models.V1Secret;
 import java.util.List;
 import lombok.Builder;
 import lombok.Value;
@@ -20,7 +20,7 @@ import lombok.Value;
 @Value
 @Builder
 @OwnedBy(CDP)
-public final class PrePruningInfo {
-  private final List<KubernetesResourceId> deletedResourcesInStage;
-  private final ReleaseHistory releaseHistoryBeforeStageCleanUp;
+public class PrePruningInfo {
+  List<KubernetesResourceId> deletedResourcesInStage;
+  List<V1Secret> releaseHistoryBeforeCleanup;
 }

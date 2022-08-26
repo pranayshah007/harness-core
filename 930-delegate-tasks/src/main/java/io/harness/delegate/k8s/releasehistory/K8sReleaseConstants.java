@@ -7,9 +7,15 @@
 
 package io.harness.delegate.k8s.releasehistory;
 
-import java.util.Map;
+import io.harness.annotations.dev.HarnessTeam;
+import io.harness.annotations.dev.OwnedBy;
 
-public class ReleaseConstants {
+import java.util.Map;
+import lombok.experimental.UtilityClass;
+
+@OwnedBy(HarnessTeam.CDP)
+@UtilityClass
+public class K8sReleaseConstants {
   public static final String RELEASE_KEY = "release";
   public static final String RELEASE_NAME_DELIMITER = ".";
   public static final String SECRET_LABEL_DELIMITER = ",";
@@ -21,5 +27,9 @@ public class ReleaseConstants {
   public static final String RELEASE_SECRET_TYPE_VALUE = "harness.io/release/v2";
   public static final Map<String, String> RELEASE_HARNESS_SECRET_TYPE =
       Map.of(RELEASE_SECRET_TYPE_KEY, RELEASE_SECRET_TYPE_VALUE);
+  public static final Map<String, String> RELEASE_HARNESS_SECRET_LABELS =
+      Map.of(RELEASE_OWNER_LABEL_KEY, RELEASE_OWNER_LABEL_VALUE);
   public static final int RELEASE_HISTORY_LIMIT = 5;
+  public static final String RELEASE_LABEL_QUERY_SET_FORMAT = "%s in (%s)";
+  public static final String RELEASE_LABEL_QUERY_LIST_FORMAT = "%s=%s";
 }

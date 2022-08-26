@@ -13,9 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.k8s.kubectl.Kubectl;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.k8s.model.KubernetesResource;
-import io.harness.k8s.model.Release;
 import io.harness.k8s.model.Release.KubernetesResourceIdRevision;
-import io.harness.k8s.model.ReleaseHistory;
 
 import io.kubernetes.client.openapi.models.V1Secret;
 import java.util.ArrayList;
@@ -27,16 +25,12 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 public class K8sRollingRollbackHandlerConfig {
-  // TODO remove older release history vars once migration is complete
   private KubernetesConfig kubernetesConfig;
   private Kubectl client;
-  private ReleaseHistory releaseHistory;
-  private Release release;
-  private V1Secret releaseV2;
-  private Release previousRollbackEligibleRelease;
+  private V1Secret release;
   private boolean isNoopRollBack;
   List<KubernetesResourceIdRevision> previousManagedWorkloads = new ArrayList<>();
   List<KubernetesResource> previousCustomManagedWorkloads = new ArrayList<>();
-  List<V1Secret> releaseHistoryV2 = new ArrayList<>();
+  List<V1Secret> releaseHistory = new ArrayList<>();
   List<KubernetesResource> previousResources = new ArrayList<>();
 }

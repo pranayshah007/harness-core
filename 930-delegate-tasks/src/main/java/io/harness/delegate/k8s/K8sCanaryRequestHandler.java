@@ -8,10 +8,11 @@
 package io.harness.delegate.k8s;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
-import static io.harness.delegate.k8s.releasehistory.ReleaseConstants.RELEASE_HARNESS_SECRET_TYPE;
-import static io.harness.delegate.k8s.releasehistory.ReleaseConstants.RELEASE_KEY;
-import static io.harness.delegate.k8s.releasehistory.ReleaseConstants.RELEASE_OWNER_LABEL_KEY;
-import static io.harness.delegate.k8s.releasehistory.ReleaseConstants.RELEASE_OWNER_LABEL_VALUE;
+import static io.harness.delegate.k8s.releasehistory.K8sReleaseConstants.RELEASE_HARNESS_SECRET_LABELS;
+import static io.harness.delegate.k8s.releasehistory.K8sReleaseConstants.RELEASE_HARNESS_SECRET_TYPE;
+import static io.harness.delegate.k8s.releasehistory.K8sReleaseConstants.RELEASE_KEY;
+import static io.harness.delegate.k8s.releasehistory.K8sReleaseConstants.RELEASE_OWNER_LABEL_KEY;
+import static io.harness.delegate.k8s.releasehistory.K8sReleaseConstants.RELEASE_OWNER_LABEL_VALUE;
 import static io.harness.delegate.task.k8s.K8sTaskHelperBase.getTimeoutMillisFromMinutes;
 import static io.harness.govern.Switch.unhandled;
 import static io.harness.k8s.K8sCommandUnitConstants.Apply;
@@ -33,7 +34,7 @@ import io.harness.beans.FileData;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.k8s.beans.K8sCanaryHandlerConfig;
-import io.harness.delegate.k8s.releasehistory.ReleaseHistoryServiceImpl;
+import io.harness.delegate.k8s.releasehistory.K8sReleaseHistoryService;
 import io.harness.delegate.task.k8s.ContainerDeploymentDelegateBaseHelper;
 import io.harness.delegate.task.k8s.K8sCanaryDeployRequest;
 import io.harness.delegate.task.k8s.K8sCanaryDeployResponse;
@@ -62,6 +63,7 @@ import com.google.inject.Inject;
 import io.kubernetes.client.openapi.models.V1Secret;
 import java.nio.file.Paths;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
@@ -73,7 +75,7 @@ public class K8sCanaryRequestHandler extends K8sRequestHandler {
   @Inject private K8sTaskHelperBase k8sTaskHelperBase;
   @Inject private K8sCanaryBaseHandler k8sCanaryBaseHandler;
   @Inject private ContainerDeploymentDelegateBaseHelper containerDeploymentDelegateBaseHelper;
-  @Inject private ReleaseHistoryServiceImpl releaseHistoryService;
+  @Inject private K8sReleaseHistoryService releaseHistoryService;
 
   private final K8sCanaryHandlerConfig k8sCanaryHandlerConfig = new K8sCanaryHandlerConfig();
   private boolean canaryWorkloadDeployed;
@@ -141,9 +143,9 @@ public class K8sCanaryRequestHandler extends K8sRequestHandler {
         k8sCanaryHandlerConfig, k8sCanaryDeployRequest.getReleaseName(), timeoutInMillis);
     k8sCanaryBaseHandler.wrapUp(k8sCanaryHandlerConfig.getClient(), k8sDelegateTaskParams, wrapUpLogCallback);
 
-    V1Secret release = k8sCanaryHandlerConfig.getCurrentReleaseSecret();
-    releaseHistoryService.updateReleaseStatus(release, Release.Status.Succeeded.name());
-    releaseHistoryService.saveRelease(release, k8sCanaryHandlerConfig.getKubernetesConfig());
+    V1Secret release = k8sCanaryHandlerConfig.getRelease();
+    releaseHistoryService.markStatusAndSaveRelease(
+        release, Release.Status.Succeeded.name(), k8sCanaryHandlerConfig.getKubernetesConfig());
 
     wrapUpLogCallback.saveExecutionLog("\nDone.", INFO, CommandExecutionStatus.SUCCESS);
 
@@ -152,7 +154,7 @@ public class K8sCanaryRequestHandler extends K8sRequestHandler {
         .k8sNGTaskResponse(K8sCanaryDeployResponse.builder()
                                .canaryWorkload(canaryWorkload.getResourceId().namespaceKindNameRef())
                                .k8sPodList(allPods)
-                               .releaseNumber(k8sCanaryHandlerConfig.getCurrentRelease().getNumber())
+                               .releaseNumber(k8sCanaryHandlerConfig.getCurrentReleaseNumber())
                                .currentInstances(k8sCanaryHandlerConfig.getTargetInstances())
                                .canaryWorkloadDeployed(this.canaryWorkloadDeployed)
                                .build())
@@ -167,9 +169,9 @@ public class K8sCanaryRequestHandler extends K8sRequestHandler {
   @Override
   protected void handleTaskFailure(K8sDeployRequest request, Exception exception) throws Exception {
     if (saveReleaseHistory) {
-      V1Secret release = k8sCanaryHandlerConfig.getCurrentReleaseSecret();
-      releaseHistoryService.updateReleaseStatus(release, Release.Status.Failed.name());
-      releaseHistoryService.saveRelease(release, k8sCanaryHandlerConfig.getKubernetesConfig());
+      V1Secret release = k8sCanaryHandlerConfig.getRelease();
+      releaseHistoryService.markStatusAndSaveRelease(
+          release, Release.Status.Failed.name(), k8sCanaryHandlerConfig.getKubernetesConfig());
     }
 
     K8sCanaryDataExceptionBuilder k8sCanaryDataBuilder =
@@ -192,11 +194,12 @@ public class K8sCanaryRequestHandler extends K8sRequestHandler {
     k8sCanaryHandlerConfig.setClient(
         Kubectl.client(k8sDelegateTaskParams.getKubectlPath(), k8sDelegateTaskParams.getKubeconfigPath()));
 
-    List<V1Secret> releaseHistory =
-        releaseHistoryService.getReleaseHistory(k8sCanaryHandlerConfig.getKubernetesConfig(),
-            Map.of(RELEASE_KEY, request.getReleaseName(), RELEASE_OWNER_LABEL_KEY, RELEASE_OWNER_LABEL_VALUE),
-            RELEASE_HARNESS_SECRET_TYPE);
-    k8sCanaryHandlerConfig.setReleaseHistoryV2(releaseHistory);
+    Map<String, String> labels = new HashMap<>(RELEASE_HARNESS_SECRET_LABELS);
+    labels.put(RELEASE_KEY, request.getReleaseName());
+
+    List<V1Secret> releaseHistory = releaseHistoryService.getReleaseHistory(
+        k8sCanaryHandlerConfig.getKubernetesConfig(), labels, RELEASE_HARNESS_SECRET_TYPE);
+    k8sCanaryHandlerConfig.setReleaseHistory(releaseHistory);
 
     k8sTaskHelperBase.deleteSkippedManifestFiles(k8sCanaryHandlerConfig.getManifestFilesDirectory(), logCallback);
 

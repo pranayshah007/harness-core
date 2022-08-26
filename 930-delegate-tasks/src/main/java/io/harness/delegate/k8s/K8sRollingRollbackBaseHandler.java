@@ -10,23 +10,21 @@ package io.harness.delegate.k8s;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.delegate.k8s.releasehistory.ReleaseConstants.RELEASE_HARNESS_SECRET_TYPE;
-import static io.harness.delegate.k8s.releasehistory.ReleaseConstants.RELEASE_KEY;
-import static io.harness.delegate.k8s.releasehistory.ReleaseConstants.RELEASE_NUMBER_LABEL_KEY;
-import static io.harness.delegate.k8s.releasehistory.ReleaseConstants.RELEASE_OWNER_LABEL_KEY;
-import static io.harness.delegate.k8s.releasehistory.ReleaseConstants.RELEASE_OWNER_LABEL_VALUE;
-import static io.harness.delegate.k8s.releasehistory.ReleaseConstants.RELEASE_STATUS_LABEL_KEY;
+import static io.harness.delegate.k8s.releasehistory.K8sReleaseConstants.RELEASE_HARNESS_SECRET_LABELS;
+import static io.harness.delegate.k8s.releasehistory.K8sReleaseConstants.RELEASE_HARNESS_SECRET_TYPE;
+import static io.harness.delegate.k8s.releasehistory.K8sReleaseConstants.RELEASE_KEY;
+import static io.harness.delegate.k8s.releasehistory.K8sReleaseConstants.RELEASE_NUMBER_LABEL_KEY;
+import static io.harness.delegate.k8s.releasehistory.K8sReleaseConstants.RELEASE_OWNER_LABEL_KEY;
+import static io.harness.delegate.k8s.releasehistory.K8sReleaseConstants.RELEASE_OWNER_LABEL_VALUE;
+import static io.harness.delegate.k8s.releasehistory.K8sReleaseConstants.RELEASE_STATUS_LABEL_KEY;
 import static io.harness.delegate.task.k8s.K8sTaskHelperBase.getExecutionLogOutputStream;
 import static io.harness.delegate.task.k8s.K8sTaskHelperBase.getOcCommandPrefix;
 import static io.harness.delegate.task.k8s.K8sTaskHelperBase.getTimeoutMillisFromMinutes;
 import static io.harness.exception.ExceptionUtils.getMessage;
-import static io.harness.k8s.K8sConstants.ocRolloutUndoCommand;
-import static io.harness.k8s.kubectl.AbstractExecutable.getPrintableCommand;
 import static io.harness.k8s.manifest.ManifestHelper.getCustomResourceDefinitionWorkloads;
 import static io.harness.k8s.manifest.ManifestHelper.getWorkloads;
 import static io.harness.logging.CommandExecutionStatus.RUNNING;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
-import static io.harness.logging.LogLevel.ERROR;
 import static io.harness.logging.LogLevel.INFO;
 import static io.harness.logging.LogLevel.WARN;
 
@@ -42,39 +40,31 @@ import static java.util.stream.Collectors.toMap;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.k8s.beans.K8sRollingRollbackHandlerConfig;
-import io.harness.delegate.k8s.releasehistory.ReleaseHistoryServiceImpl;
+import io.harness.delegate.k8s.releasehistory.K8sReleaseHistoryService;
+import io.harness.delegate.k8s.releasehistory.K8sReleaseService;
 import io.harness.delegate.task.k8s.K8sTaskHelperBase;
-import io.harness.exception.ExplanationException;
-import io.harness.exception.KubernetesTaskException;
-import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
-import io.harness.k8s.exception.KubernetesExceptionExplanation;
-import io.harness.k8s.exception.KubernetesExceptionHints;
-import io.harness.k8s.exception.KubernetesExceptionMessages;
 import io.harness.k8s.kubectl.Kubectl;
 import io.harness.k8s.kubectl.RolloutUndoCommand;
 import io.harness.k8s.kubectl.Utils;
 import io.harness.k8s.model.K8sDelegateTaskParams;
 import io.harness.k8s.model.K8sPod;
-import io.harness.k8s.model.Kind;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.k8s.model.KubernetesResource;
 import io.harness.k8s.model.KubernetesResourceId;
 import io.harness.k8s.model.Release;
 import io.harness.k8s.model.Release.KubernetesResourceIdRevision;
-import io.harness.k8s.model.ReleaseHistory;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.collect.Maps;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import io.kubernetes.client.openapi.models.V1Secret;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -82,7 +72,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.zeroturnaround.exec.ProcessResult;
 import org.zeroturnaround.exec.stream.LogOutputStream;
@@ -92,22 +81,25 @@ import org.zeroturnaround.exec.stream.LogOutputStream;
 @Slf4j
 public class K8sRollingRollbackBaseHandler {
   @Inject private K8sTaskHelperBase k8sTaskHelperBase;
-  @Inject private ReleaseHistoryServiceImpl releaseHistoryService;
+  @Inject private K8sReleaseHistoryService releaseHistoryService;
+  @Inject private K8sReleaseService releaseService;
 
   public void init(K8sRollingRollbackHandlerConfig rollbackHandlerConfig, String releaseName, LogCallback logCallback)
       throws IOException {
-    List<V1Secret> releases = releaseHistoryService.getReleaseHistory(rollbackHandlerConfig.getKubernetesConfig(),
-        Map.of(RELEASE_KEY, releaseName, RELEASE_OWNER_LABEL_KEY, RELEASE_OWNER_LABEL_VALUE),
-        RELEASE_HARNESS_SECRET_TYPE);
+    Map<String, String> labels = new HashMap<>(RELEASE_HARNESS_SECRET_LABELS);
+    labels.put(RELEASE_KEY, releaseName);
+
+    List<V1Secret> releases = releaseHistoryService.getReleaseHistory(
+        rollbackHandlerConfig.getKubernetesConfig(), labels, RELEASE_HARNESS_SECRET_TYPE);
     if (isEmpty(releases)) {
       rollbackHandlerConfig.setNoopRollBack(true);
       logCallback.saveExecutionLog("\nNo release history found for release " + releaseName);
     } else {
-      rollbackHandlerConfig.setReleaseHistoryV2(releases);
+      rollbackHandlerConfig.setReleaseHistory(releases);
 
-      V1Secret latestRelease = releaseHistoryService.getLatestRelease(releases);
-      rollbackHandlerConfig.setReleaseV2(latestRelease);
-      List<KubernetesResource> resourcesInRelease = releaseHistoryService.getResourcesFromRelease(latestRelease);
+      V1Secret latestRelease = releaseService.getLatestRelease(releases);
+      rollbackHandlerConfig.setRelease(latestRelease);
+      List<KubernetesResource> resourcesInRelease = releaseService.getResourcesFromRelease(latestRelease);
       List<KubernetesResource> managedWorkloads = getWorkloads(resourcesInRelease);
       if (isNotEmpty(managedWorkloads)) {
         logCallback.saveExecutionLog(color("\nFound following Managed Workloads: \n", Cyan, Bold)
@@ -120,7 +112,7 @@ public class K8sRollingRollbackBaseHandler {
 
   public void steadyStateCheck(K8sRollingRollbackHandlerConfig rollbackHandlerConfig,
       K8sDelegateTaskParams k8sDelegateTaskParams, Integer timeoutInMin, LogCallback logCallback) throws Exception {
-    V1Secret currentRelease = rollbackHandlerConfig.getReleaseV2();
+    V1Secret currentRelease = rollbackHandlerConfig.getRelease();
     Kubectl client = rollbackHandlerConfig.getClient();
     KubernetesConfig kubernetesConfig = rollbackHandlerConfig.getKubernetesConfig();
 
@@ -149,7 +141,7 @@ public class K8sRollingRollbackBaseHandler {
     boolean isNoopRollBack = rollbackHandlerConfig.isNoopRollBack();
     KubernetesConfig kubernetesConfig = rollbackHandlerConfig.getKubernetesConfig();
     if (!isNoopRollBack) {
-      releaseHistoryService.saveRelease(rollbackHandlerConfig.getReleaseV2(), kubernetesConfig);
+      releaseHistoryService.saveRelease(rollbackHandlerConfig.getRelease(), kubernetesConfig);
     }
   }
 
@@ -157,8 +149,8 @@ public class K8sRollingRollbackBaseHandler {
   public boolean rollback(K8sRollingRollbackHandlerConfig rollbackHandlerConfig,
       K8sDelegateTaskParams k8sDelegateTaskParams, Integer releaseNumber, LogCallback logCallback,
       Set<KubernetesResourceId> resourcesRecreated, boolean isErrorFrameworkEnabled) throws Exception {
-    V1Secret release = rollbackHandlerConfig.getReleaseV2();
-    List<V1Secret> releases = rollbackHandlerConfig.getReleaseHistoryV2();
+    V1Secret release = rollbackHandlerConfig.getRelease();
+    List<V1Secret> releases = rollbackHandlerConfig.getReleaseHistory();
 
     if (release == null) {
       logCallback.saveExecutionLog("No previous release found. Skipping rollback.");
@@ -168,9 +160,7 @@ public class K8sRollingRollbackBaseHandler {
 
     // TODO - handle this case better
     if (releaseNumber == null) { // RollingDeploy was aborted
-      String releaseStatus = release.getMetadata() != null && release.getMetadata().getLabels() != null
-          ? release.getMetadata().getLabels().get(RELEASE_STATUS_LABEL_KEY)
-          : "";
+      String releaseStatus = releaseService.getReleaseLabelValue(release, RELEASE_STATUS_LABEL_KEY);
       if (Release.Status.Succeeded.name().equals(releaseStatus)) {
         logCallback.saveExecutionLog("No failed release found. Skipping rollback.");
         logCallback.saveExecutionLog("\nDone.", INFO, CommandExecutionStatus.SUCCESS);
@@ -178,22 +168,18 @@ public class K8sRollingRollbackBaseHandler {
       }
     }
 
-    V1Secret previousSuccessfulRelease = releaseHistoryService.getLastSuccessfulRelease(releases, releaseNumber);
+    V1Secret previousSuccessfulRelease = releaseService.getLastSuccessfulRelease(releases, releaseNumber);
     if (previousSuccessfulRelease == null) {
       logCallback.saveExecutionLog("No previous eligible release found. Can't rollback.");
       logCallback.saveExecutionLog("\nDone.", INFO, CommandExecutionStatus.SUCCESS);
       return true;
     }
 
-    if (previousSuccessfulRelease.getMetadata() != null
-        && previousSuccessfulRelease.getMetadata().getLabels() != null) {
-      logCallback.saveExecutionLog("Previous eligible Release is "
-          + previousSuccessfulRelease.getMetadata().getLabels().get(RELEASE_NUMBER_LABEL_KEY) + " with status "
-          + previousSuccessfulRelease.getMetadata().getLabels().get(RELEASE_STATUS_LABEL_KEY));
-    }
+    logCallback.saveExecutionLog(String.format("Previous eligible Release is %s with status %s.",
+        releaseService.getReleaseLabelValue(previousSuccessfulRelease, RELEASE_NUMBER_LABEL_KEY),
+        releaseService.getReleaseLabelValue(previousSuccessfulRelease, RELEASE_STATUS_LABEL_KEY)));
 
-    List<KubernetesResource> resourcesInPrevRelease =
-        releaseHistoryService.getResourcesFromRelease(previousSuccessfulRelease);
+    List<KubernetesResource> resourcesInPrevRelease = releaseService.getResourcesFromRelease(previousSuccessfulRelease);
     rollbackHandlerConfig.setPreviousResources(resourcesInPrevRelease);
 
     return rollback(
@@ -277,7 +263,7 @@ public class K8sRollingRollbackBaseHandler {
       return ResourceRecreationStatus.NO_RESOURCE_CREATED;
     }
 
-    List<V1Secret> releases = rollbackHandlerConfig.getReleaseHistoryV2();
+    List<V1Secret> releases = rollbackHandlerConfig.getReleaseHistory();
     if (isEmpty(releases)) {
       pruneLogCallback.saveExecutionLog(
           "No release history found, No need to recreate pruned resources", INFO, SUCCESS);
@@ -285,10 +271,8 @@ public class K8sRollingRollbackBaseHandler {
     }
 
     if (releaseNumber == null) { // RollingDeploy was aborted
-      V1Secret release = rollbackHandlerConfig.getReleaseV2();
-      String releaseStatus = release.getMetadata() != null && release.getMetadata().getLabels() != null
-          ? release.getMetadata().getLabels().get(RELEASE_STATUS_LABEL_KEY)
-          : "";
+      V1Secret release = rollbackHandlerConfig.getRelease();
+      String releaseStatus = releaseService.getReleaseLabelValue(release, RELEASE_STATUS_LABEL_KEY);
       if (Release.Status.Succeeded.name().equals(releaseStatus)) {
         pruneLogCallback.saveExecutionLog(
             "No failed release found. No need to recreate pruned resources.", INFO, RUNNING);
@@ -297,7 +281,7 @@ public class K8sRollingRollbackBaseHandler {
       }
     }
 
-    V1Secret previousSuccessfulRelease = releaseHistoryService.getLastSuccessfulRelease(releases, releaseNumber);
+    V1Secret previousSuccessfulRelease = releaseService.getLastSuccessfulRelease(releases, releaseNumber);
     if (previousSuccessfulRelease == null) {
       pruneLogCallback.saveExecutionLog("No previous eligible release found. Can't recreate pruned resources.");
       pruneLogCallback.saveExecutionLog("\nDone.", INFO, CommandExecutionStatus.SUCCESS);
@@ -305,7 +289,7 @@ public class K8sRollingRollbackBaseHandler {
     }
 
     List<KubernetesResource> resourcesInPreviousRelease =
-        releaseHistoryService.getResourcesFromRelease(previousSuccessfulRelease);
+        releaseService.getResourcesFromRelease(previousSuccessfulRelease);
 
     List<KubernetesResource> prunedResourcesToBeRecreated =
         resourcesInPreviousRelease.stream()
@@ -327,7 +311,7 @@ public class K8sRollingRollbackBaseHandler {
   public void deleteNewResourcesForCurrentFailedRelease(K8sRollingRollbackHandlerConfig rollbackHandlerConfig,
       Integer releaseNumber, LogCallback deleteLogCallback, K8sDelegateTaskParams k8sDelegateTaskParams) {
     try {
-      List<V1Secret> releases = rollbackHandlerConfig.getReleaseHistoryV2();
+      List<V1Secret> releases = rollbackHandlerConfig.getReleaseHistory();
       if (isEmpty(releases)) {
         deleteLogCallback.saveExecutionLog(
             "No release history available, No successful release available to compute newly created resources", INFO,
@@ -337,10 +321,8 @@ public class K8sRollingRollbackBaseHandler {
 
       // TODO - handle this case better
       if (releaseNumber == null) { // RollingDeploy was aborted
-        V1Secret release = rollbackHandlerConfig.getReleaseV2();
-        String releaseStatus = release.getMetadata() != null && release.getMetadata().getLabels() != null
-            ? release.getMetadata().getLabels().get(RELEASE_STATUS_LABEL_KEY)
-            : "";
+        V1Secret release = rollbackHandlerConfig.getRelease();
+        String releaseStatus = releaseService.getReleaseLabelValue(release, RELEASE_STATUS_LABEL_KEY);
         if (Release.Status.Succeeded.name().equals(releaseStatus)) {
           deleteLogCallback.saveExecutionLog("No failed release found. No need to delete resources.", INFO, RUNNING);
           deleteLogCallback.saveExecutionLog("\nDone.", INFO, SUCCESS);
@@ -348,14 +330,14 @@ public class K8sRollingRollbackBaseHandler {
         }
       }
 
-      V1Secret previousSuccessfulRelease = releaseHistoryService.getLastSuccessfulRelease(releases, releaseNumber);
+      V1Secret previousSuccessfulRelease = releaseService.getLastSuccessfulRelease(releases, releaseNumber);
       if (previousSuccessfulRelease == null) {
         deleteLogCallback.saveExecutionLog(
             "No successful previous release available to compute newly created resources", INFO, SUCCESS);
         return;
       }
 
-      V1Secret release = rollbackHandlerConfig.getReleaseV2();
+      V1Secret release = rollbackHandlerConfig.getRelease();
       List<KubernetesResourceId> resourceToBeDeleted =
           getResourcesTobeDeletedInOrder(previousSuccessfulRelease, release);
 
@@ -395,11 +377,11 @@ public class K8sRollingRollbackBaseHandler {
   private List<KubernetesResourceId> getResourcesTobeDeletedInOrder(
       V1Secret previousSuccessfulEligibleRelease, V1Secret release) throws IOException {
     List<KubernetesResourceId> previousResources =
-        releaseHistoryService.getResourcesFromRelease(previousSuccessfulEligibleRelease)
+        releaseService.getResourcesFromRelease(previousSuccessfulEligibleRelease)
             .stream()
             .map(KubernetesResource::getResourceId)
             .collect(toList());
-    List<KubernetesResource> currentResources = releaseHistoryService.getResourcesFromRelease(release);
+    List<KubernetesResource> currentResources = releaseService.getResourcesFromRelease(release);
 
     List<KubernetesResourceId> resourcesToBeDeleted = currentResources.stream()
                                                           .filter(resource -> !resource.isSkipPruning())

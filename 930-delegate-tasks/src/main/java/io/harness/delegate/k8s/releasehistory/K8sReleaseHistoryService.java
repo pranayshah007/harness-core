@@ -7,19 +7,18 @@
 
 package io.harness.delegate.k8s.releasehistory;
 
-import static io.harness.delegate.k8s.releasehistory.ReleaseConstants.RELEASE_HARNESS_SECRET_TYPE;
-import static io.harness.delegate.k8s.releasehistory.ReleaseConstants.RELEASE_KEY;
-import static io.harness.delegate.k8s.releasehistory.ReleaseConstants.RELEASE_NAME_DELIMITER;
-import static io.harness.delegate.k8s.releasehistory.ReleaseConstants.RELEASE_NUMBER_LABEL_KEY;
-import static io.harness.delegate.k8s.releasehistory.ReleaseConstants.RELEASE_OWNER_LABEL_KEY;
-import static io.harness.delegate.k8s.releasehistory.ReleaseConstants.RELEASE_OWNER_LABEL_VALUE;
-import static io.harness.delegate.k8s.releasehistory.ReleaseConstants.RELEASE_SECRET_TYPE_VALUE;
-import static io.harness.delegate.k8s.releasehistory.ReleaseConstants.RELEASE_STATUS_LABEL_KEY;
-import static io.harness.delegate.k8s.releasehistory.ReleaseConstants.SECRET_LABEL_DELIMITER;
+import static io.harness.delegate.k8s.releasehistory.K8sReleaseConstants.RELEASE_HARNESS_SECRET_TYPE;
+import static io.harness.delegate.k8s.releasehistory.K8sReleaseConstants.RELEASE_KEY;
+import static io.harness.delegate.k8s.releasehistory.K8sReleaseConstants.RELEASE_NAME_DELIMITER;
+import static io.harness.delegate.k8s.releasehistory.K8sReleaseConstants.RELEASE_NUMBER_LABEL_KEY;
+import static io.harness.delegate.k8s.releasehistory.K8sReleaseConstants.RELEASE_OWNER_LABEL_KEY;
+import static io.harness.delegate.k8s.releasehistory.K8sReleaseConstants.RELEASE_OWNER_LABEL_VALUE;
+import static io.harness.delegate.k8s.releasehistory.K8sReleaseConstants.RELEASE_SECRET_TYPE_VALUE;
+import static io.harness.delegate.k8s.releasehistory.K8sReleaseConstants.RELEASE_STATUS_LABEL_KEY;
+import static io.harness.delegate.k8s.releasehistory.K8sReleaseConstants.SECRET_LABEL_DELIMITER;
 
 import io.harness.k8s.KubernetesContainerService;
 import io.harness.k8s.model.KubernetesConfig;
-import io.harness.k8s.model.KubernetesResource;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -35,13 +34,11 @@ import lombok.extern.slf4j.Slf4j;
 
 @Singleton
 @Slf4j
-public class ReleaseHistoryServiceImpl implements ReleaseHistoryService {
+public class K8sReleaseHistoryService {
   @Inject KubernetesContainerService kubernetesContainerService;
-  @Inject ReleaseUtils releaseUtils;
+  @Inject K8sReleaseService releaseService;
 
-  @Override
-  public V1Secret createRelease(String releaseName, int releaseNumber, String releaseYaml, String status)
-      throws IOException {
+  public V1Secret createRelease(String releaseName, int releaseNumber, String status) throws IOException {
     return new V1SecretBuilder()
         .withMetadata(
             new V1ObjectMetaBuilder()
@@ -53,7 +50,6 @@ public class ReleaseHistoryServiceImpl implements ReleaseHistoryService {
         .build();
   }
 
-  @Override
   public V1Secret updateReleaseStatus(V1Secret release, String status) {
     V1ObjectMeta releaseMeta = release.getMetadata();
     if (releaseMeta != null && releaseMeta.getLabels() != null) {
@@ -66,57 +62,33 @@ public class ReleaseHistoryServiceImpl implements ReleaseHistoryService {
     return release;
   }
 
-  @Override
   public void deleteReleases(KubernetesConfig kubernetesConfig, String releaseName, Set<String> releaseNumbers) {
     log.info("Release numbers to be deleted are: {}", String.join(SECRET_LABEL_DELIMITER, releaseNumbers));
-    String labelArg = releaseUtils.createListBasedArg(RELEASE_KEY, releaseName) + SECRET_LABEL_DELIMITER
-        + releaseUtils.createSetBasedArg(RELEASE_NUMBER_LABEL_KEY, releaseNumbers);
-    String fieldArg = releaseUtils.createCommaSeparatedKeyValueList(RELEASE_HARNESS_SECRET_TYPE);
+    String labelArg = releaseService.createListBasedArg(RELEASE_KEY, releaseName) + SECRET_LABEL_DELIMITER
+        + releaseService.createSetBasedArg(RELEASE_NUMBER_LABEL_KEY, releaseNumbers);
+    String fieldArg = releaseService.createCommaSeparatedKeyValueList(RELEASE_HARNESS_SECRET_TYPE);
     kubernetesContainerService.deleteSecrets(kubernetesConfig, labelArg, fieldArg);
   }
 
-  @Override
-  public void cleanReleases(
+  public void cleanReleaseHistory(
       KubernetesConfig kubernetesConfig, String releaseName, int currentReleaseNumber, List<V1Secret> releases) {
-    Set<String> releasesToDelete = releaseUtils.getReleaseNumbersToClean(releases, currentReleaseNumber);
+    Set<String> releasesToDelete = releaseService.getReleaseNumbersToClean(releases, currentReleaseNumber);
     deleteReleases(kubernetesConfig, releaseName, releasesToDelete);
   }
 
-  @Override
   public List<V1Secret> getReleaseHistory(
       KubernetesConfig kubernetesConfig, Map<String, String> labels, Map<String, String> fields) {
-    String labelArg = releaseUtils.createCommaSeparatedKeyValueList(labels);
-    String fieldArg = releaseUtils.createCommaSeparatedKeyValueList(fields);
+    String labelArg = releaseService.createCommaSeparatedKeyValueList(labels);
+    String fieldArg = releaseService.createCommaSeparatedKeyValueList(fields);
     return kubernetesContainerService.getSecretsWithLabelsAndFields(kubernetesConfig, labelArg, fieldArg);
   }
 
-  @Override
   public V1Secret saveRelease(V1Secret release, KubernetesConfig kubernetesConfig) {
     return kubernetesContainerService.createOrReplaceSecret(kubernetesConfig, release);
   }
 
-  @Override
-  public V1Secret setResourcesInRelease(V1Secret release, List<KubernetesResource> resources) throws IOException {
-    return releaseUtils.setResourcesInRelease(release, resources);
-  }
-
-  @Override
-  public int getCurrentReleaseNumber(List<V1Secret> releases) {
-    return releaseUtils.getCurrentReleaseNumber(releases);
-  }
-
-  @Override
-  public V1Secret getLastSuccessfulRelease(List<V1Secret> releases, int currentReleaseNumber) {
-    return releaseUtils.getLastSuccessfulRelease(releases, currentReleaseNumber);
-  }
-
-  @Override
-  public V1Secret getLatestRelease(List<V1Secret> releases) {
-    return releaseUtils.getLatestRelease(releases);
-  }
-
-  @Override
-  public List<KubernetesResource> getResourcesFromRelease(V1Secret release) throws IOException {
-    return releaseUtils.getResourcesFromRelease(release);
+  public V1Secret markStatusAndSaveRelease(V1Secret release, String status, KubernetesConfig kubernetesConfig) {
+    release = releaseService.updateReleaseStatus(release, status);
+    return releaseService.saveRelease(release, kubernetesConfig);
   }
 }

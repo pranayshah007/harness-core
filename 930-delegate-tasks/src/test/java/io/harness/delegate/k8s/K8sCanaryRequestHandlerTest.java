@@ -19,6 +19,7 @@ import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
@@ -42,6 +43,7 @@ import io.harness.beans.NGInstanceUnitType;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.k8s.beans.K8sCanaryHandlerConfig;
+import io.harness.delegate.k8s.releasehistory.K8sReleaseHistoryService;
 import io.harness.delegate.task.k8s.ContainerDeploymentDelegateBaseHelper;
 import io.harness.delegate.task.k8s.K8sCanaryDeployRequest;
 import io.harness.delegate.task.k8s.K8sCanaryDeployResponse;
@@ -68,6 +70,8 @@ import io.harness.k8s.model.ReleaseHistory;
 import io.harness.logging.LogCallback;
 import io.harness.rule.Owner;
 
+import io.kubernetes.client.openapi.models.V1Secret;
+import io.kubernetes.client.openapi.models.V1SecretBuilder;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collections;
@@ -84,6 +88,7 @@ public class K8sCanaryRequestHandlerTest extends CategoryTest {
   @Mock private K8sTaskHelperBase k8sTaskHelperBase;
   @Mock private K8sCanaryBaseHandler k8sCanaryBaseHandler;
   @Mock private ContainerDeploymentDelegateBaseHelper containerDeploymentDelegateBaseHelper;
+  @Mock K8sReleaseHistoryService releaseHistoryService;
 
   @InjectMocks private K8sCanaryRequestHandler k8sCanaryRequestHandler;
 
@@ -179,7 +184,7 @@ public class K8sCanaryRequestHandlerTest extends CategoryTest {
         .renderTemplate(delegateTaskParams, manifestDelegateConfig, manifestFileDirectory, openshiftParamList,
             releaseName, namespace, logCallback, timeoutIntervalInMin);
     verify(k8sTaskHelperBase, times(1)).deleteSkippedManifestFiles(manifestFileDirectory, logCallback);
-    verify(k8sTaskHelperBase, times(1)).getReleaseHistoryDataFromConfigMap(kubernetesConfig, releaseName);
+    verify(releaseHistoryService, times(1)).getReleaseHistory(any(KubernetesConfig.class), anyMap(), anyMap());
     verify(k8sCanaryBaseHandler, times(1))
         .updateDestinationRuleManifestFilesWithSubsets(kubernetesResources, kubernetesConfig, logCallback);
     verify(k8sCanaryBaseHandler, times(1))
@@ -252,8 +257,9 @@ public class K8sCanaryRequestHandlerTest extends CategoryTest {
     releaseHistory.setReleases(asList(Release.builder().number(2).build()));
     k8sCanaryHandlerConfig.setCanaryWorkload(ManifestHelper.processYaml(K8sTestConstants.DEPLOYMENT_YAML).get(0));
     k8sCanaryHandlerConfig.setResources(Collections.emptyList());
-    k8sCanaryHandlerConfig.setReleaseHistory(releaseHistory);
-    k8sCanaryHandlerConfig.setCurrentRelease(releaseHistory.getLatestRelease());
+    k8sCanaryHandlerConfig.setReleaseHistory(emptyList());
+    k8sCanaryHandlerConfig.setRelease(new V1SecretBuilder().build());
+    k8sCanaryHandlerConfig.setCurrentReleaseNumber(2);
     k8sCanaryHandlerConfig.setTargetInstances(3);
     k8sCanaryHandlerConfig.setKubernetesConfig(kubernetesConfig);
 
@@ -270,8 +276,8 @@ public class K8sCanaryRequestHandlerTest extends CategoryTest {
     K8sDeployResponse k8sDeployResponse =
         spyRequestHandler.executeTask(canaryDeployRequest, delegateTaskParams, iLogStreamingTaskClient, null);
     verify(k8sCanaryBaseHandler, times(1)).wrapUp(nullable(Kubectl.class), eq(delegateTaskParams), eq(logCallback));
-    verify(k8sTaskHelperBase, times(1))
-        .saveReleaseHistoryInConfigMap(kubernetesConfig, releaseName, releaseHistory.getAsYaml());
+    verify(releaseHistoryService, times(1))
+        .markStatusAndSaveRelease(any(V1Secret.class), anyString(), eq(kubernetesConfig));
     K8sCanaryDeployResponse canaryDeployResponse = (K8sCanaryDeployResponse) k8sDeployResponse.getK8sNGTaskResponse();
     assertThat(k8sDeployResponse.getCommandExecutionStatus()).isEqualTo(SUCCESS);
     assertThat(canaryDeployResponse.getCanaryWorkload()).isEqualTo("Deployment/deployment");
@@ -402,7 +408,8 @@ public class K8sCanaryRequestHandlerTest extends CategoryTest {
     when(k8sTaskHelperBase.getReleaseHistoryDataFromConfigMap(kubernetesConfig, releaseName)).thenReturn(null);
 
     k8sCanaryRequestHandler.init(deployRequest, delegateTaskParams, logCallback);
-    verify(k8sTaskHelperBase, times(1)).getReleaseHistoryDataFromConfigMap(kubernetesConfig, releaseName);
+    //    verify(k8sTaskHelperBase, times(1)).getReleaseHistoryDataFromConfigMap(kubernetesConfig, releaseName);
+    verify(releaseHistoryService, times(1)).getReleaseHistory(any(KubernetesConfig.class), anyMap(), anyMap());
   }
 
   @Test
@@ -435,12 +442,12 @@ public class K8sCanaryRequestHandlerTest extends CategoryTest {
 
     k8sCanaryHandlerConfig.setCanaryWorkload(deployment);
     k8sCanaryHandlerConfig.setResources(emptyList());
-    k8sCanaryHandlerConfig.setCurrentRelease(releaseHist.getLatestRelease());
+    k8sCanaryHandlerConfig.setRelease(new V1SecretBuilder().build());
     k8sCanaryHandlerConfig.setTargetInstances(3);
 
     k8sCanaryRequestHandler.executeTask(request, delegateTaskParams, iLogStreamingTaskClient, null);
-    verify(k8sTaskHelperBase, times(1))
-        .saveReleaseHistoryInConfigMap(kubernetesConfig, "success", releaseHist.getAsYaml());
+    verify(releaseHistoryService, times(1))
+        .markStatusAndSaveRelease(any(V1Secret.class), anyString(), eq(kubernetesConfig));
   }
 
   @Test
@@ -479,7 +486,8 @@ public class K8sCanaryRequestHandlerTest extends CategoryTest {
       return true;
     });
 
-    verify(k8sCanaryBaseHandler, never()).failAndSaveKubernetesRelease(any(K8sCanaryHandlerConfig.class), anyString());
+    verify(releaseHistoryService, never())
+        .markStatusAndSaveRelease(any(V1Secret.class), anyString(), any(KubernetesConfig.class));
   }
 
   @Test
@@ -492,7 +500,8 @@ public class K8sCanaryRequestHandlerTest extends CategoryTest {
       return true;
     });
 
-    verify(k8sCanaryBaseHandler, times(1)).failAndSaveKubernetesRelease(k8sCanaryHandlerConfig, "failed");
+    verify(releaseHistoryService, times(1))
+        .markStatusAndSaveRelease(any(V1Secret.class), anyString(), any(KubernetesConfig.class));
   }
 
   private void testExecutionWithFailure(Exception applyThrowable, Exception statusCheckThrowable) throws Exception {
@@ -520,7 +529,7 @@ public class K8sCanaryRequestHandlerTest extends CategoryTest {
 
     k8sCanaryHandlerConfig.setCanaryWorkload(ManifestHelper.processYaml(K8sTestConstants.DEPLOYMENT_YAML).get(0));
     k8sCanaryHandlerConfig.setResources(emptyList());
-    k8sCanaryHandlerConfig.setCurrentRelease(releaseHist.getLatestRelease());
+    k8sCanaryHandlerConfig.setRelease(new V1SecretBuilder().build());
 
     if (applyThrowable != null) {
       doThrow(applyThrowable)

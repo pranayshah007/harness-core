@@ -15,6 +15,8 @@ import io.harness.k8s.model.KubernetesResource;
 import io.harness.k8s.model.Release;
 import io.harness.k8s.model.ReleaseHistory;
 
+import io.kubernetes.client.openapi.models.V1Secret;
+import java.util.List;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -22,12 +24,15 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 public class K8sBlueGreenHandlerConfig extends K8sHandlerConfig {
-  private ReleaseHistory releaseHistory;
-  private Release currentRelease;
+  //  private ReleaseHistory releaseHistory;
+  //  private Release currentRelease;
   private KubernetesResource managedWorkload;
   private KubernetesResource primaryService;
   private KubernetesResource stageService;
   private String primaryColor;
   private String stageColor;
   private PrePruningInfo prePruningInfo;
+  private List<V1Secret> releaseHistory;
+  private V1Secret currentRelease;
+  private int currentReleaseNumber;
 }
