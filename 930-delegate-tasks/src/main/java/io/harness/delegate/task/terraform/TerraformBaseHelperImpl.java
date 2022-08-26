@@ -514,22 +514,23 @@ public class TerraformBaseHelperImpl implements TerraformBaseHelper {
     return (EncryptedRecordData) encryptDecryptHelper.encryptContent(content, planName, encryptionConfig);
   }
 
-  public EncryptedRecordData encryptPlan(byte[] content, String planName, EncryptionConfig encryptionConfig,
-      boolean encryptFile, String accountId, String delegateId, String taskId, String entityId) throws IOException {
-    if (encryptFile) {
-      DelegateFile planDelegateFile = aDelegateFile()
-                                          .withAccountId(accountId)
-                                          .withDelegateId(delegateId)
-                                          .withTaskId(taskId)
-                                          .withEntityId(entityId)
-                                          .withBucket(FileBucket.TERRAFORM_PLAN)
-                                          .withFileName(format(TERRAFORM_PLAN_FILE_OUTPUT_NAME, planName))
-                                          .build();
+  public EncryptedRecordData encryptPlan(
+      byte[] content, TerraformTaskNGParameters taskNGParameters, String delegateId, String taskId) throws IOException {
+    if (taskNGParameters.isUseOptimizedTfPlan()) {
+      DelegateFile planDelegateFile =
+          aDelegateFile()
+              .withAccountId(taskNGParameters.getAccountId())
+              .withDelegateId(delegateId)
+              .withTaskId(taskId)
+              .withEntityId(taskNGParameters.getEntityId())
+              .withBucket(FileBucket.TERRAFORM_PLAN)
+              .withFileName(format(TERRAFORM_PLAN_FILE_OUTPUT_NAME, taskNGParameters.getPlanName()))
+              .build();
       return (EncryptedRecordData) encryptDecryptHelper.encryptFile(
-          content, planName, encryptionConfig, planDelegateFile);
+          content, taskNGParameters.getPlanName(), taskNGParameters.getEncryptionConfig(), planDelegateFile);
     }
 
-    return encryptPlan(content, planName, encryptionConfig);
+    return encryptPlan(content, taskNGParameters.getPlanName(), taskNGParameters.getEncryptionConfig());
   }
 
   @NotNull

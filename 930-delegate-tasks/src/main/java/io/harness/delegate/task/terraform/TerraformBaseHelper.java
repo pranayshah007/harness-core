@@ -80,8 +80,8 @@ public interface TerraformBaseHelper {
 
   EncryptedRecordData encryptPlan(byte[] content, String planName, EncryptionConfig encryptionConfig);
 
-  EncryptedRecordData encryptPlan(byte[] readAllBytes, String planName, EncryptionConfig encryptionConfig,
-      boolean encryptFile, String accountId, String delegateId, String taskId, String entityId) throws IOException;
+  EncryptedRecordData encryptPlan(byte[] readAllBytes, TerraformTaskNGParameters taskNGParameters, String delegateId,
+      String taskId) throws IOException;
 
   String getPlanName(TerraformCommand terraformCommand);
 
