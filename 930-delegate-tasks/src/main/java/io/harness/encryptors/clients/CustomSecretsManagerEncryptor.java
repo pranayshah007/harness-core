@@ -22,6 +22,7 @@ import static java.time.Duration.ofMillis;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
+import io.harness.concurrent.HTimeLimiter;
 import io.harness.delegate.command.CommandExecutionResult;
 import io.harness.encryptors.CustomEncryptor;
 import io.harness.exception.CommandExecutionException;
@@ -36,8 +37,10 @@ import software.wings.beans.delegation.ShellScriptParameters;
 import software.wings.delegatetasks.ShellScriptTaskHandler;
 import software.wings.security.encryption.secretsmanagerconfigs.CustomSecretsManagerConfig;
 
+import com.google.common.util.concurrent.TimeLimiter;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.time.Duration;
 import java.util.Set;
 import javax.validation.executable.ValidateOnExecution;
 
@@ -48,10 +51,12 @@ import javax.validation.executable.ValidateOnExecution;
 public class CustomSecretsManagerEncryptor implements CustomEncryptor {
   private final ShellScriptTaskHandler shellScriptTaskHandler;
   private static final String OUTPUT_VARIABLE = "secret";
+  private final TimeLimiter timeLimiter;
 
   @Inject
-  public CustomSecretsManagerEncryptor(ShellScriptTaskHandler shellScriptTaskHandler) {
+  public CustomSecretsManagerEncryptor(TimeLimiter timeLimiter, ShellScriptTaskHandler shellScriptTaskHandler) {
     this.shellScriptTaskHandler = shellScriptTaskHandler;
+    this.timeLimiter = timeLimiter;
   }
 
   @Override
@@ -68,7 +73,8 @@ public class CustomSecretsManagerEncryptor implements CustomEncryptor {
     int failedAttempts = 0;
     while (true) {
       try {
-        return fetchSecretValueInternal(encryptedRecord, customSecretsManagerConfig);
+        return HTimeLimiter.callInterruptible21(timeLimiter, Duration.ofSeconds(60),
+            () -> fetchSecretValueInternal(encryptedRecord, customSecretsManagerConfig));
       } catch (SecretManagementDelegateException e) {
         throw e;
       } catch (Exception e) {

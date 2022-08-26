@@ -275,6 +275,8 @@ public class ScriptProcessExecutor extends AbstractScriptExecutor {
       String[] commandList = new String[] {"/bin/bash", scriptFilename};
       ProcessStopper processStopper = new ChildProcessStopper(
           scriptFilename, workingDirectory, new ProcessExecutor().environment(environment).directory(workingDirectory));
+
+      StringBuilder errorLog = new StringBuilder();
       ProcessExecutor processExecutor = new ProcessExecutor()
                                             .command(commandList)
                                             .directory(workingDirectory)
@@ -290,6 +292,8 @@ public class ScriptProcessExecutor extends AbstractScriptExecutor {
                                             .redirectError(new LogOutputStream() {
                                               @Override
                                               protected void processLine(String line) {
+                                                errorLog.append(line);
+                                                errorLog.append('\n');
                                                 saveExecutionLog(line, ERROR);
                                               }
                                             });
@@ -299,6 +303,11 @@ public class ScriptProcessExecutor extends AbstractScriptExecutor {
       }
 
       ProcessResult processResult = processExecutor.execute();
+
+      if (errorLog.length() > 0) {
+        log.error("[ScriptProcessExecutor-03] Error output stream:\n{}", errorLog);
+      }
+
       commandExecutionStatus = processResult.getExitValue() == 0 ? SUCCESS : FAILURE;
       if (commandExecutionStatus == SUCCESS && envVariablesOutputFile != null) {
         try (BufferedReader br = new BufferedReader(
@@ -309,6 +318,7 @@ public class ScriptProcessExecutor extends AbstractScriptExecutor {
           saveExecutionLog("IOException:" + e, ERROR);
         }
       }
+
       executionDataBuilder.sweepingOutputEnvVariables(envVariablesMap);
 
       if (config.isCloseLogStream()) {
