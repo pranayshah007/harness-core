@@ -37,8 +37,8 @@ public class TimescaleDBDataMigrationList {
         .add(Pair.of(6, OptimizeNodeRecommendationQuery.class))
         .add(Pair.of(7, AddAccountNameInAccountTable.class))
         .add(Pair.of(8, PodInfoPartialIndexForSyncQuery.class))
-        .add(Pair.of(9, AddWorkflowExecutionFailureDetails.class))
-        .add(Pair.of(10, AddParentPipelineDataToDeployment.class))
+        .add(Pair.of(9, BaseTimeScaleDBDataMigration.class))
+        .add(Pair.of(10, BaseTimeScaleDBDataMigration.class))
         .build();
   }
 }
