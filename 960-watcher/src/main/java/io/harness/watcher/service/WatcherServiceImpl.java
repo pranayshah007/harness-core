@@ -186,6 +186,7 @@ public class WatcherServiceImpl implements WatcherService {
   private static final String FILE_HANDLES_LOGS_FOLDER = "file_handle_logs";
   private final String watcherJreVersion = System.getProperty("java.version");
   private long delegateRestartedToUpgradeJreAt;
+  private static String WatcherVersion;
 
   private static final String DELEGATE_NAME =
       isNotBlank(System.getenv().get("DELEGATE_NAME")) ? System.getenv().get("DELEGATE_NAME") : "";
@@ -1334,6 +1335,7 @@ public class WatcherServiceImpl implements WatcherService {
 
   @VisibleForTesting
   void checkForWatcherUpgrade() {
+    log.info("Checking for watcher upgrade");
     try {
       if (!watcherConfiguration.isDoUpgrade()) {
         log.info("Auto upgrade is disabled in watcher configuration");
@@ -1341,6 +1343,7 @@ public class WatcherServiceImpl implements WatcherService {
         return;
       }
     } catch (VersionInfoException e) {
+      log.error("Exception while reading watcher configuration ", e);
       return;
     }
     try {
@@ -1533,7 +1536,10 @@ public class WatcherServiceImpl implements WatcherService {
 
   @VisibleForTesting
   String getVersion() {
-    return (new VersionInfoManager()).getVersionInfo().getVersion();
+    if (isEmpty(WatcherVersion)) {
+      WatcherVersion = (new VersionInfoManager()).getVersionInfo().getVersion();
+    }
+    return WatcherVersion;
   }
 
   private void migrate(String newUrl) {
